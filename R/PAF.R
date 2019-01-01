@@ -1,7 +1,7 @@
 #' Principle Axis Factoring
 #'
 #' This function implements the principal axis factoring procedure. It can
-#' reproduce the results from \code{\link[psych::fa]{psych::fa}} and the SPSS
+#' reproduce the results from \code{\link[psych:fa]{psych::fa}} and the SPSS
 #' FACTOR algorithm. To reproduce psych or SPSS PAF, only the type argument has
 #' to be specified in addition to the data and number of factors. The other
 #' arguments can be used to control the procedure more flexibly.
@@ -33,15 +33,15 @@
 #'  and tests it against the specified criterion. This is also used by SPSS.
 #'  "sums" takes difference of the sum of all communalities in one iteration and
 #'  the sum of all communalities in the next iteration and tests it against the
-#'  criterion. This procedure is used by the \code{\link[psych::fa]{psych::fa}} function.
+#'  criterion. This procedure is used by the \code{\link[psych:fa]{psych::fa}} function.
 #' @param abs_eigen logical. Which algorithm to use in the PAF iterations. If
 #'  FALSE, the loadings are computed from the eigenvalues. This is
-#'  also used by the \code{\link[psych::fa]{psych::fa}} function. If TRUE the
+#'  also used by the \code{\link[psych:fa]{psych::fa}} function. If TRUE the
 #'  loadings are computed
 #'  with the absolute eigenvalues as done by SPSS.
 #' @param signed_loadings logical. If \code{TRUE} (default), the sign of factors with
 #'  negative sum of loadings is reflected. This is done by both SPSS and
-#'  \code{\link[psych::fa]{psych::fa}}.
+#'  \code{\link[psych:fa]{psych::fa}}.
 #'
 #' @details Values of \code{init_comm}, \code{criterion}, \code{criterion_type},
 #' and \code{abs_eig} depend on the \code{type} argument.
@@ -60,6 +60,8 @@
 #'  with the initial communality estimates as diagonal.}
 #' \item{final_eigen}{Eigenvalues of the final iteration.}
 #' \item{loadings}{Loading matrix containing the final loadings.}
+#'
+#' @export
 PAF <- function(x, n_factors, cors = TRUE, max_iter = 300,
                 type = "EFAdiff", init_comm = NULL, criterion = NULL,
                 criterion_type = NULL, abs_eigen = NULL,

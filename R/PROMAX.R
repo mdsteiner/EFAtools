@@ -1,7 +1,7 @@
 #' Promax rotation
 #'
 #' This function implements the promax rotation procedure. It can
-#' reproduce the results from \code{\link[psych::fa]{psych::fa}} and the
+#' reproduce the results from \code{\link[psych:fa]{psych::fa}} and the
 #' SPSS FACTOR algorithm. To reproduce psych or SPSS principal axis factoring,
 #' only the \code{type} argument has to be specified additional to \code{x}. The other
 #' arguments can be used to control the procedure more flexibly.
@@ -26,7 +26,7 @@
 #'  it will use the SPSS version (see below or Steiner and Grieder, 2019 for details).
 #' @param precision numeric. The tolerance for stopping in the varimax procecdure.
 #'  This is passed to the "eps" argument of the
-#'  \code{\link[stats::varimax]{stats::varimax}} function. Default is \code{NULL}
+#'  \code{\link[stats:varimax]{stats::varimax}} function. Default is \code{NULL}
 #' @param order_type character. How to order the factors and when to reflect
 #'  their signs. Default is \code{NULL} "psych" will use the psych method, "SPSS" the
 #'  SPSS method. See below for details.
@@ -58,6 +58,8 @@
 #' \item{rotmat}{The rotation matrix.}
 #' \item{Phi}{The factor intercorrelations.}
 #' \item{Structure}{The structure matrix.}
+#'
+#' @export
 PROMAX <- function (x, k = 4, type = "EFAdiff", kaiser = TRUE, P_type = NULL,
                     precision = NULL, order_type = NULL) {
 

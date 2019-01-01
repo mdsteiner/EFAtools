@@ -27,6 +27,8 @@
 #' \item{sl}{A matrix with g loadings, group factor loadings, communalities,
 #' and uniquenesses.}
 #' \item{L2}{Second-order factor loadings.}
+#'
+#' @export
 SL <- function(x, Phi = NULL, type = "EFAdiff", ...) {
 
   if(all(class(x) == "PROMAX")) {
@@ -70,10 +72,7 @@ SL <- function(x, Phi = NULL, type = "EFAdiff", ...) {
 
   # perform a factor analysis on the intercorrelation matrix of the first order
   # factors
-  paf_phi <- PAF(Phi, n_factors = 1, cors = TRUE, max_iter = 300,
-                type = type, init_comm = init_comm, criterion = criterion,
-                criterion_type = criterion_type, abs_eigen = abs_eigen,
-                signed_loadings = TRUE)
+  paf_phi <- PAF(Phi, n_factors = 1, type = type, ...)
 
   # extract second order loadings
   L2 <- paf_phi$loadings
