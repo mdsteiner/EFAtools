@@ -1,4 +1,19 @@
-PROMAX <- function (L, k = 4, do_varimax = FALSE, type = "EFAdiff",
+#' Title
+#'
+#' @param L
+#' @param k
+#' @param do_varimax
+#' @param type
+#' @param P_type
+#' @param kaiser
+#' @param precision
+#' @param order_type
+#'
+#' @return
+#' @export
+#'
+#' @examples
+PROMAX <- function (L, k = 4, do_varimax = TRUE, type = "EFAdiff",
                     P_type = "HW", kaiser = TRUE, precision = 1e-10,
                     order_type = "SPSS") {
   dim_names <- dimnames(L)
@@ -26,7 +41,7 @@ PROMAX <- function (L, k = 4, do_varimax = FALSE, type = "EFAdiff",
   } else {
 
     # if the entered data was already varimax rotated, bring it in the
-    # apropriate form for further use
+    # appropriate form for further use
     A <- L$loadings
     AV <- L
   }
