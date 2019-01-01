@@ -1,0 +1,19 @@
+#' MacOrtho_sl
+#'
+#' Output of the Schmid Leiman transformation performed in Steiner & Grieder (2019), using the MacOrtho (Watkins, 2004) program.
+#'
+#'
+#' @format A 14 x 9 data.frame
+#' \describe{
+#'   \item{Subtest}{(character) - Abbreviation of the Subtest name. For the full subtest names, see IDS2_R helppage or for more detail Grieder and Grob (2019).}
+#'   \item{General}{(numeric) - A peson's age in years.}
+#'   \item{1}{(numeric) - Income of the household a person lives in.}
+#'   \item{2}{(numeric) - A person's weight in kg.}
+#'   \item{3}{(numeric) - A person's height in cm.}
+#'   \item{4}{(numeric) - The number of children a person has.}
+#'   \item{5}{(numeric) - How happy a person is on a scale from 1 to 10.}
+#'   \item{6}{(numeric) - A person's fitness level rated from 1 to 10.}
+#'   \item{7}{(numeric) - How much (CHF) a person spends on food per month.}
+#'  }
+#' @source Steiner, M.D., & Grieder, S. (2019). Resolving differences in principal axis factor analysis and promax rotation in SPSS and R psych. Submitted Manuscript.
+"MacOrtho_sl"

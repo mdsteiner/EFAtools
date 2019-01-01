@@ -1,0 +1,372 @@
+#' Principle Axis Factoring
+#' This function implements the principal axis factoring procedure. It can
+#' reproduce the results from psych::fa() and the SPSS FACTOR algorithm. To
+#' reproduce psych or SPSS PAF, only the type argument has to be specified
+#' additional to the data and number of factors. The other arguments can be used
+#' to control the procedure more flexibly.
+#'
+#' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
+#'  correlations.
+#' @param n_factors numeric. Number of factors to extract.
+#' @param cors logical. If TRUE (default) a correlation matrix is expected in x,
+#'  otherwise raw data is expected.
+#' @param max_iter numeric. The maximum number of iterations (default is 300) to
+#'  perform after which the iterative PAF procedure is halted with a warning.
+#' @param type character. If one of "EFAdiff" (default), "psych", or "SPSS" is
+#'  used, and the following arguments are left with NULL, these implementations
+#'  are executed as reported in Steiner and Grieder (2019). Individual properties
+#'  can be adapted using one of the three types and specifying some of the following
+#'  arguments. If set to another value than one of the three specified above, all
+#'  following arguments must be specified.
+#' @param init_comm character. The method to estimate the initial communalities.
+#'  "smc" (default) will use squared multiple correlations. "mac" will use
+#'   maximum absolute correlations. "unity" will use 1s.
+#' @param criterion numeric. The convergence criterion (default is .00001).
+#'  If the change in communalities from one iteration to the next is smaller than
+#'  this criterion the solution is accepted and the procedure ends. Details
+#'  depend on criterion_type.
+#' @param criterion_type character. "max_individual" (default) selects the
+#'  maximum change in any of the communalities from one iteration to the next
+#'  and tests it against the specified criterion. This is also used by SPSS.
+#'  "sums" takes difference of the sum of all communalities in one iteration and
+#'  the sum of all communalities in the next iteration and tests it against the
+#'  criterion. This procedure is used by the psych fa() function.
+#' @param abs_eigen logical. Which algorithm to use in the PAF iterations. If
+#'  FALSE, the loadings are computed from the eigenvalues. This is
+#'  also used by the psych fa() function. If TRUE the loadings are computed
+#'  with the absolute eigenvalues as done by SPSS.
+#' @param signed_loadings logical. If TRUE (default), the sign of factors with
+#'  negative sum of loadings is reflected. This is done by both SPSS and psych::fa().
+#'
+#' @return A list containing the following
+#' \item{orig_R}{Original correlation matrix.}
+#' \item{h2_init}{Initial communality estimates.}
+#' \item{iter}{The number of iterations needed for convergence.}
+#' \item{orig_eigen}{Eigen values of the original correlation matrix.}
+#' \item{init_eigen}{Initial eigenvalues, obtained from the correlation matrix with the initial communality estimates as diagonal.}
+#' \item{final_eigen}{Eigenvalues of the final iteration.}
+#' \item{loadings}{Loading matrix containing the final loadings.}
+PAF <- function(x, n_factors, cors = TRUE, max_iter = 300,
+                type = "EFAdiff", init_comm = "smc", criterion = .00001,
+                criterion_type = "max_individual", abs_eigen = "norm",
+                signed_loadings = TRUE) {
+
+  # create R correlation matrix object, if from data, using
+  # pairwise binary correlations
+  if (cors) {
+    R <- x
+  } else {
+    R <- stats::cor(x, use = "pairwise")
+    colnames(R) <- colnames(x)
+  }
+
+
+  if (is.null(type) || !(type %in% c("EFAdiff", "psych", "SPSS"))) {
+
+    # if type is not one of the three valid inputs, throw an error if not
+    # all the other necessary arguments are specified.
+
+    if (is.null(init_comm) || is.null(criterion) || is.null(criterion_type) ||
+        is.null(paf_type) || is.null(signed_loadings)) {
+      stop('One of "init_comm", "criterion", "criterion_type", "paf_type", or
+           "signed_loadings" was NULL and no valid "type" was specified.
+           Either use one of "EFAdiff", "psych", or "SPSS" for type, or specify
+           all other arguments')
+    }
+  } else if (type == "EFAdiff") {
+
+    # if not specified, set PAF properties. If specified, throw warning that
+    # results may not exactly match the specified type
+
+    if (is.null(init_comm)) {
+      init_comm <- "smc"
+    } else {
+      warning("type and init_comm is specified. init_comm is used with value",
+              init_comm, ". Results may differ from the specified type")
+    }
+
+    if (is.null(criterion)) {
+      criterion <- .00001
+    } else {
+      warning("type and criterion is specified. init_comm is used with value",
+              criterion, ". Results may differ from the specified type")
+    }
+
+    if (is.null(criterion_type)) {
+      criterion_type <- "max_individual"
+    } else {
+      warning("type and criterion_type is specified. init_comm is used with value",
+              criterion_type, ". Results may differ from the specified type")
+    }
+
+    if (is.null(abs_eigen)) {
+      abs_eigen <- FALSE
+    } else {
+      warning("type and abs_eigen is specified. init_comm is used with value",
+              abs_eigen, ". Results may differ from the specified type")
+    }
+
+    if (is.null(signed_loadings)) {
+      signed_loadings <- TRUE
+    } else {
+      warning("type and signed_loadings is specified. init_comm is used with value",
+              signed_loadings, ". Results may differ from the specified type")
+    }
+
+  } else if (type == "psych") {
+
+    # if not specified, set PAF properties. If specified, throw warning that
+    # results may not exactly match the specified type
+
+    if (is.null(init_comm)) {
+      init_comm <- "smc"
+    } else {
+      warning("type and init_comm is specified. init_comm is used with value",
+              init_comm, ". Results may differ from the specified type")
+    }
+
+    if (is.null(criterion)) {
+      criterion <- .001
+    } else {
+      warning("type and criterion is specified. init_comm is used with value",
+              criterion, ". Results may differ from the specified type")
+    }
+
+    if (is.null(criterion_type)) {
+      criterion_type <- "sums"
+    } else {
+      warning("type and criterion_type is specified. init_comm is used with value",
+              criterion_type, ". Results may differ from the specified type")
+    }
+
+    if (is.null(abs_eigen)) {
+      abs_eigen <- FALSE
+    } else {
+      warning("type and abs_eigen is specified. init_comm is used with value",
+              abs_eigen, ". Results may differ from the specified type")
+    }
+
+    if (is.null(signed_loadings)) {
+      signed_loadings <- TRUE
+    } else {
+      warning("type and signed_loadings is specified. init_comm is used with value",
+              signed_loadings, ". Results may differ from the specified type")
+    }
+
+
+  } else if (type == "SPSS") {
+
+    # if not specified, set PAF properties. If specified, throw warning that
+    # results may not exactly match the specified type
+
+    if (is.null(init_comm)) {
+      init_comm <- "smc"
+    } else {
+      warning("type and init_comm is specified. init_comm is used with value",
+              init_comm, ". Results may differ from the specified type")
+    }
+
+    if (is.null(criterion)) {
+      criterion <- .001
+    } else {
+      warning("type and criterion is specified. init_comm is used with value",
+              criterion, ". Results may differ from the specified type")
+    }
+
+    if (is.null(criterion_type)) {
+      criterion_type <- "max_individual"
+    } else {
+      warning("type and criterion_type is specified. init_comm is used with value",
+              criterion_type, ". Results may differ from the specified type")
+    }
+
+    if (is.null(abs_eigen)) {
+      abs_eigen <- TRUE
+    } else {
+      warning("type and abs_eigen is specified. init_comm is used with value",
+              abs_eigen, ". Results may differ from the specified type")
+    }
+
+    if (is.null(signed_loadings)) {
+      signed_loadings <- TRUE
+    } else {
+      warning("type and signed_loadings is specified. init_comm is used with value",
+              signed_loadings, ". Results may differ from the specified type")
+    }
+
+  }
+
+  # set initial communality estimates. This can be done in three ways:
+  #  init_comm == "smc": uses the Squared Multiple Correlation
+  #  init_comm == "unity": uses unity as inital estimates
+  #  init_comm == "mac": uses Maximum Absolute Correlations
+  if (init_comm == "smc") {
+
+    # compute the inverse of R
+    inverse_R <- solve(R)
+
+    # compute and print the initial communality estimates
+    h2_init <- 1 - 1 / diag(inverse_R)
+
+    # save original correlation matrix
+    orig_R <- R
+
+    # set diagonal of R to the initial communality estimates
+    diag(R) <- h2_init
+
+  } else if (init_comm == "unity") {
+    # create h2_init object with a vector of 1s
+    h2_init <- diag(R)
+
+    # save original correlation matrix
+    orig_R <- R
+
+  } else if (init_comm == "mac") {
+
+    # save original correlation matrix
+    orig_R <- R
+
+    # avoid using the diagonal as maximum correlations
+    diag(R) <- 0
+
+    # get maximum absolute correlations
+    h2_init <- apply(R, 1, function(x){
+      max(abs(x))
+    })
+
+    # set diagonal of R to the initial communality estimates
+    diag(R) <- h2_init
+
+  }
+
+  # save initial eigenvalues
+  init_eigen <- eigen(R)$values
+
+  # define the number of factors m
+  m <- n_factors
+
+  ### now we set up a loop to iterate through the procedure until the criterion
+  #   is reached
+
+  # counter for the number of iterations
+  iter <- 1
+
+  # set communalities to init_communalities for comparison in first iteration
+  h2 <- h2_init
+
+  # set initial delta such that at least one iteration is performed
+  delta <- 1
+
+  # iterative PAF
+  while (delta > criterion){
+
+    # compute the eigenvalues and eigenvectors using the R eigen function
+    eigen_list <- eigen(R)
+
+    # for clarity, store the m eigenvalues and
+    # m eigenvectors separately
+    Lambda <- eigen_list$values[1:m]
+    V <- eigen_list$vectors[, 1:m]
+
+    if (isFALSE(abs_eigen)) {
+
+      # compute the loadings from the eigenvector matrix and diagonal
+      # eigenvalue matrix
+      if (m > 1) {
+        L <- V %*% diag(sqrt(Lambda))
+      } else {
+        L <- V * sqrt(Lambda)
+      }
+
+      # get the new communality estimates from the loadings
+      new_h2 <- diag(L %*% t(L))
+
+    } else if (isTRUE(abs_eigen)) {
+      # this is the implementation according to SPSS, which uses
+      # absolute eigenvalues to avoid problems when having to compute
+      # the square root
+
+      # compute the loadings from the eigenvector matrix and diagonal
+      # eigenvalue matrix
+      if (m > 1) {
+        L <- V %*% diag(sqrt(abs(Lambda)))
+      } else {
+        L <- V * sqrt(abs(Lambda))
+      }
+      # get the new communality estimates from the loadings
+      # in SPSS implemented as rowSums(V^2 %*% diag(abs(Lambda)))
+      # which is equivalent to
+      new_h2 <- diag(L %*% t(L))
+
+    }
+
+
+    if (criterion_type == "max_individual") {
+      # save the maximum change in the communality estimates
+      delta <- max(abs(h2 - new_h2))
+    } else if (criterion_type == "sums"){
+      # convergence criterion according to the psych package
+      delta <- abs(sum(h2) - sum(new_h2))
+    }
+
+    # update diagonal of R with the new communality estimates
+    diag(R) <- new_h2
+
+    # update old communality estimates with new ones
+    h2 <- new_h2
+
+    # break if after maximum iterations there was no convergence
+    if (iter > max_iter){
+      warning("reached maximum number of iterations without convergence.
+              Results may not be interpretable.")
+      break
+    }
+
+    # incerase iterator
+    iter <- iter + 1
+
+  }
+
+  if (signed_loadings) {
+    # reverse the sign of loadings as done in the psych package,
+    # and spss
+    if (m > 1) {
+      signs <- sign(colSums(L))
+      signs[signs == 0] <- 1
+      L <- L %*% diag(signs)
+    } else {
+      if (sum(L) < 0) {
+        L <- -as.matrix(L)
+      } else {
+        L <- as.matrix(L)
+      }
+
+    }
+
+  }
+
+  if (!is.null(colnames(orig_R))) {
+    # name the loading matrix so the variables can be identified
+    rownames(L) <- colnames(orig_R)
+  }
+
+  colnames(L) <- paste0("F", 1:m)
+
+
+  # create the output object
+  output <- list(
+    orig_R = orig_R,
+    h2_init = h2_init,
+    h2 = h2,
+    iter = iter,
+    orig_eigen = eigen(orig_R)$values,
+    init_eigen = init_eigen,
+    final_eigen = eigen(R)$values,
+    loadings = L
+  )
+
+  class(output) <- "PAF"
+
+  output
+
+}
