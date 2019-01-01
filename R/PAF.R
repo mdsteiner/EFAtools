@@ -81,8 +81,8 @@ PAF <- function(x, n_factors, cors = TRUE, max_iter = 300,
     # all the other necessary arguments are specified.
 
     if (is.null(init_comm) || is.null(criterion) || is.null(criterion_type) ||
-        is.null(paf_type) || is.null(signed_loadings)) {
-      stop('One of "init_comm", "criterion", "criterion_type", "paf_type", or
+        is.null(abs_eigen) || is.null(signed_loadings)) {
+      stop('One of "init_comm", "criterion", "criterion_type", "abs_eigen", or
            "signed_loadings" was NULL and no valid "type" was specified.
            Either use one of "EFAdiff", "psych", or "SPSS" for type, or specify
            all other arguments')

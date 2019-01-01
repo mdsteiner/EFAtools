@@ -210,7 +210,7 @@ PROMAX <- function (x, k = 4, type = "EFAdiff", kaiser = TRUE, P_type = NULL,
   }
 
   # run the least squares fit
-  U <- lm.fit(A, P)$coefficients
+  U <- stats::lm.fit(A, P)$coefficients
 
   # rescale the transformation matrix
   D <- diag(solve(t(U) %*% U))
