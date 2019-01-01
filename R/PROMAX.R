@@ -13,16 +13,16 @@
 #' @export
 #'
 #' @examples
-PROMAX <- function (L, k = 4, do_varimax = TRUE, type = "EFAdiff",
+PROMAX <- function (x, k = 4, do_varimax = TRUE, type = "EFAdiff",
                     P_type = "HW", kaiser = TRUE, precision = 1e-10,
                     order_type = "SPSS") {
-  dim_names <- dimnames(L)
+  dim_names <- dimnames(x)
 
   # if Loadings are not yet rotated orthogonally
   if (do_varimax) {
 
     # perform the varimax rotation
-    AV <- stats::varimax(L, normalize = kaiser, eps = precision)
+    AV <- stats::varimax(x, normalize = kaiser, eps = precision)
 
     if (order_type == "SPSS") {
 
@@ -42,8 +42,8 @@ PROMAX <- function (L, k = 4, do_varimax = TRUE, type = "EFAdiff",
 
     # if the entered data was already varimax rotated, bring it in the
     # appropriate form for further use
-    A <- L$loadings
-    AV <- L
+    A <- x$loadings
+    AV <- x
   }
 
   if (P_type == "HW") {
