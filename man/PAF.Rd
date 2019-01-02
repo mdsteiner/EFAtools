@@ -2,11 +2,12 @@
 % Please edit documentation in R/PAF.R
 \name{PAF}
 \alias{PAF}
-\title{Principle Axis Factoring}
+\title{Principal Axis Factoring}
 \usage{
 PAF(x, n_factors, cors = TRUE, max_iter = 300, type = "EFAdiff",
   init_comm = NULL, criterion = NULL, criterion_type = NULL,
-  abs_eigen = NULL, signed_loadings = TRUE)
+  abs_eigen = NULL, signed_loadings = TRUE,
+  use = "pairwise.complete.obs")
 }
 \arguments{
 \item{x}{data.frame or matrix. Dataframe or matrix of raw data or matrix with
@@ -54,6 +55,10 @@ with the absolute eigenvalues as done by SPSS.}
 \item{signed_loadings}{logical. If \code{TRUE} (default), the sign of
 factors with negative sum of loadings is reflected. This is done by both
 SPSS and \code{\link[psych:fa]{psych::fa}}.}
+
+\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
+is given as input. Note that in this case \code{cors} must be set to
+\code{FALSE}}
 }
 \value{
 A list of class PAF containing the following

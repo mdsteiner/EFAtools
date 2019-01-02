@@ -1,4 +1,4 @@
-#' Principle Axis Factoring
+#' Principal Axis Factoring
 #'
 #' This function implements the principal axis factoring procedure. It can
 #' reproduce the results from \code{\link[psych:fa]{psych::fa}} and the SPSS
@@ -42,6 +42,9 @@
 #' @param signed_loadings logical. If \code{TRUE} (default), the sign of
 #' factors with negative sum of loadings is reflected. This is done by both
 #' SPSS and \code{\link[psych:fa]{psych::fa}}.
+#' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
+#'  is given as input. Note that in this case \code{cors} must be set to
+#'  \code{FALSE}
 #'
 #' @details Values of \code{init_comm}, \code{criterion}, \code{criterion_type},
 #' and \code{abs_eig} depend on the \code{type} argument.
@@ -69,14 +72,14 @@
 PAF <- function(x, n_factors, cors = TRUE, max_iter = 300,
                 type = "EFAdiff", init_comm = NULL, criterion = NULL,
                 criterion_type = NULL, abs_eigen = NULL,
-                signed_loadings = TRUE) {
+                signed_loadings = TRUE, use = "pairwise.complete.obs") {
 
   # create R correlation matrix object, if from data, using
   # pairwise binary correlations
   if (cors) {
     R <- x
   } else {
-    R <- stats::cor(x, use = "pairwise")
+    R <- stats::cor(x, use = use)
     colnames(R) <- colnames(x)
   }
 
