@@ -3,3 +3,4 @@
 export(PAF)
 export(PROMAX)
 export(SL)
+export(VARIMAX)

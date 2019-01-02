@@ -2,12 +2,12 @@
 #'
 #' This function implements the promax rotation procedure. It can
 #' reproduce the results from \code{\link[psych:fa]{psych::fa}} and the
-#' SPSS FACTOR algorithm. To reproduce psych or SPSS principal axis factoring,
-#' only the \code{type} argument has to be specified additional to \code{x}. The other
-#' arguments can be used to control the procedure more flexibly.
+#' SPSS FACTOR algorithm. To reproduce psych or SPSS promax results,
+#' only the \code{type} argument has to be specified additional to \code{x}.
+#' The other arguments can be used to control the procedure more flexibly.
 #'
-#' @param x matrix or class \code{\link{PAF}} object. Either a matrix containing an unrotated factor
-#' solution, or a \code{\link{PAF}} output object.
+#' @param x matrix or class \code{\link{PAF}} object. Either a matrix containing
+#' an unrotated factor solution, or a \code{\link{PAF}} output object.
 #' @param k numeric. The power used for computing the target matrix P in the
 #'  promax rotation.
 #' @param type character. If one of "EFAdiff" (default), "psych", or "SPSS" is
@@ -18,17 +18,17 @@
 #'  specifying some of the following
 #'  arguments. If set to another value than one of the three specified above, all
 #'  following arguments must be specified.
-#' @param kaiser logical. If \code{TRUE} (default), kaiser normalization is performed in
-#'  the varimax rotation.
-#' @param P_type character. Default is \code{NULL} This specifies how the target matrix
-#'  P is computed. If "HW" it will use the implementation of Hendrickson and
+#' @param kaiser logical. If \code{TRUE} (default), kaiser normalization is
+#' performed in the varimax rotation.
+#' @param P_type character. Default is \code{NULL} This specifies how the target
+#'  matrix P is computed. If "HW" it will use the implementation of Hendrickson and
 #'  White (1964), which is also used by the psych and stats packages. If "SPSS"
 #'  it will use the SPSS version (see below or Steiner and Grieder, 2019 for details).
 #' @param precision numeric. The tolerance for stopping in the varimax procecdure.
 #'  This is passed to the "eps" argument of the
 #'  \code{\link[stats:varimax]{stats::varimax}} function. Default is \code{NULL}
 #' @param order_type character. How to order the factors and when to reflect
-#'  their signs. Default is \code{NULL} "psych" will use the psych method, "SPSS" the
+#'  their signs. Default is \code{NULL}. "psych" will use the psych method, "SPSS" the
 #'  SPSS method. See below for details.
 #'
 #' @details \code{type = "EFAdiff"} will use the following argument specification:
@@ -195,7 +195,18 @@ PROMAX <- function (x, k = 4, type = "EFAdiff", kaiser = TRUE, P_type = NULL,
 
     # reorder the factors according to largest sums of squares
     ss <- colSums(AV$loadings ^2)
-    AV$loadings <- AV$loadings[, order(ss, decreasing = TRUE)]
+    ss_order <- order(ss, decreasing = TRUE)
+
+    AV$loadings <- AV$loadings[, ss_order]
+
+    AV$rotmat <- AV$rotmat[ss_order, ss_order]
+
+    if (!is.null(dim_names[[2]])) {
+      dim_names[[2]] <- dim_names[[2]][ss_order]
+    } else {
+      dim_names[[2]] <- paste0("F", 1:ncol(AV$loadings))[ss_order]
+    }
+
   }
 
   # store the loading matrix in a separate object for use
@@ -240,8 +251,14 @@ PROMAX <- function (x, k = 4, type = "EFAdiff", kaiser = TRUE, P_type = NULL,
 
     Phi <- diag(signs) %*% Phi %*% diag(signs)
     Phi <- Phi[comm_order, comm_order]
-  }
 
+    if (!is.null(dim_names[[2]])) {
+      dim_names[[2]] <- dim_names[[2]][comm_order]
+    } else {
+      dim_names[[2]] <- paste0("F", 1:ncol(AV$loadings))[comm_order]
+    }
+
+  }
 
   # get structure matrix
   Structure <- AP %*% Phi
