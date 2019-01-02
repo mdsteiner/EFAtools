@@ -51,9 +51,9 @@ also used by the \code{\link[psych:fa]{psych::fa}} function. If TRUE the
 loadings are computed
 with the absolute eigenvalues as done by SPSS.}
 
-\item{signed_loadings}{logical. If \code{TRUE} (default), the sign of factors with
-negative sum of loadings is reflected. This is done by both SPSS and
-\code{\link[psych:fa]{psych::fa}}.}
+\item{signed_loadings}{logical. If \code{TRUE} (default), the sign of
+factors with negative sum of loadings is reflected. This is done by both
+SPSS and \code{\link[psych:fa]{psych::fa}}.}
 }
 \value{
 A list of class PAF containing the following
@@ -76,9 +76,13 @@ arguments can be used to control the procedure more flexibly.
 \details{
 Values of \code{init_comm}, \code{criterion}, \code{criterion_type},
 and \code{abs_eig} depend on the \code{type} argument.
-For all three types, \code{init_comm = "smc"} and \code{criterion = .001}.
-For \code{type = "SPSS"} and \code{type = "EFAdiff"},
-\code{criterion_type = "max_individual"} and
-\code{abs_eig = TRUE}. For \code{type = "psych"}, \code{criterion_type = "sums"} and
-\code{abs_eig = FALSE}.
+\code{type = "EFAdiff"} will use the following argument specification:
+\code{init_comm = "smc", criterion = .001, criterion_type = "max_individual",
+abs_eig = FALSE}.
+\code{type = "psych"} will use the following argument specification:
+\code{init_comm = "smc", criterion = .001, criterion_type = "sums",
+abs_eig = FALSE}.
+\code{type = "SPSS"} will use the following argument specification:
+\code{init_comm = "smc", criterion = .001, criterion_type = "max_individual",
+abs_eig = TRUE}.
 }

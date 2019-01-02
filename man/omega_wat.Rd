@@ -18,6 +18,6 @@ Steiner, M.D., & Grieder, S. (2019). Resolving differences in principal axis fac
 omega_wat
 }
 \description{
-Output of the omega computation performed in Steiner & Grieder (2019), using Watkins' omega program.
+Output of the omega computation performed in Steiner & Grieder (2019), using Watkins' omega program (Watkins, 2013).
 }
 \keyword{datasets}

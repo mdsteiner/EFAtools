@@ -75,7 +75,6 @@
 #' uniquenesses are taken, with a warning.
 #'
 #' @return
-
 OMEGA <- function(model = NULL, var_names = NULL, fac_names = NULL,
                   factor_corres = NULL, g_load = NULL,
                   s_load = NULL, u2 = NULL, Phi = NULL, pattern = NULL,

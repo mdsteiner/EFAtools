@@ -176,7 +176,7 @@ PROMAX <- function (x, k = 4, type = "EFAdiff", kaiser = TRUE, P_type = NULL,
   if (all(class(x) == "PAF")) {
     L <- x$loadings
     dim_names <- dimnames(L)
-  } else if (all(class(L) == "matrix")) {
+  } else if (all(class(x) == "matrix")) {
     dim_names <- dimnames(L)
   } else {
     stop("x is not of class PAF and not a matrix. Either provide a PAF output
