@@ -11,49 +11,66 @@ OMEGA(model = NULL, var_names = NULL, fac_names = NULL,
 \arguments{
 \item{model}{class \code{\link{SL}}, class \code{\link{schmid}}, or class
 \code{\link{lavaan}} object. An output object from \code{\link{SL}}, from
-\code{\link[psych::schmid]{psych::schmid}}, or from a \code{\link{lavaan}}
+\code{\link[psych:schmid]{psych::schmid}}, or from a \code{\link{lavaan}}
 bifactor model. If of class \code{\link{lavaan}}, no other arguments need to
 be specified. If of class \code{\link{SL}} or \code{\link{schmid}}, only
 the argument \code{factor_corres} needs to be specified additionally.}
 
-\item{var_names}{numeric.}
+\item{var_names}{numeric. A vector with subtest names in the same order as
+\code{g_load}.}
 
-\item{fac_names}{character.}
+\item{fac_names}{character. An optional vector of group factor names in the order
+of the S-L solution.}
 
-\item{factor_corres}{numeric.}
+\item{factor_corres}{numeric. A vector that indicates which variable corresponds
+to which factor. Must be in the same order as the S-L solution. E.g.
+c(3, 3, 3, 1, 1, 2, 2) if the first three variables load on the third group
+factor of the S-L solution, the next two on the first group factor and the
+last two on the second group factor.}
 
-\item{g_load}{numeric.}
+\item{g_load}{numeric. A vector of g loadings from an S-L solution.}
 
-\item{s_load}{numeric.}
+\item{s_load}{matrix. A matrix of group factor loadings from an S-L solution.}
 
-\item{u2}{numeric.}
+\item{u2}{numeric. A vector of uniquenesses from an S-L solution.}
 
-\item{Phi}{matrix.}
+\item{Phi}{matrix. Factor intercorrelations from the oblique solution used
+for the S-L transformation.}
 
-\item{pattern}{matrix.}
+\item{pattern}{matrix. Pattern coefficients from the oblique solution used
+for the S-L transformation.}
 
-\item{type}{character.}
+\item{type}{character. Either "EFAdiff" (default), "psych", or "Watkins".}
+}
+\value{
+A matrix with Omegas for g / the whole scale and for the subscales.
+\item{omega_tot}{Omega total.}
+\item{omega_h}{Omega hierarchical.}
+\item{omega_sub}{Omega subscale.}
 }
 \description{
 This function finds omega total, omega hierarchical, and omega subscale
-from a Schmid-Leiman solution or lavaan bifactor solution. The Schmid-Leiman
-based omegas can either be found using the outputs from
-\code{\link[psych::schmid]{psych::schmid}} or from \code{\link{SL}}, or, in a
+from a Schmid-Leiman (S-L) solution or lavaan bifactor solution. The S-L-based
+omegas can either be found using the outputs from
+\code{\link[psych:schmid]{psych::schmid}} or from \code{\link{SL}}, or, in a
 more flexible way, by leaving model empty and specifying additional arguments.
-This last option allows to reproduce results from \code{\link[psych::omega]{psych::omega}}
-or Watkin's omega program (Watkins, 2013).
+By setting the \code{type} argument, results from \code{\link[psych:omega]{psych::omega}}
+or Watkins' omega program (Watkins, 2013) can be reproduced.
 }
 \details{
 If \code{model} is specified and of class \code{\link{lavaan}},
-no other arguments need to be specified. If \code{model} is of class
+no other arguments need to be specified.
+If \code{model} is of class
 \code{\link{SL}} or \code{\link{schmid}}, only the argument \code{factor_corres}
-needs to be specified additionally.
+needs to be specified additionally. There is, however, the option to reproduce
+Watkins' or \code{\link[psych:omega]{psych::omega}} results by setting the
+\code{type} argument to "Watkins" or "psych".
 If \code{model = NULL} and \code{type = "EFAdiff"}(default), the arguments
 \code{var_names}, \code{factor_corres}, \code{g_load}, \code{s_load}, and \code{u2}
 need to be specified.
 If \code{model = NULL} and \code{type = "psych"}, the additional arguments
 \code{Phi} and \code{pattern} must be specified. Additionally, the argument
-\code{factor_corres} should be left NULL to replicate \code{\link[psych::omega]{psych::omega}}
+\code{factor_corres} should be left NULL to replicate \code{\link[psych:omega]{psych::omega}}
 results, where variable-to-factor correspondences are found by taking the highest
 group factor loading for each variable as the relevant group factor loading.
 If, however, the argument \code{factor_corres} is specified, the specified
@@ -63,4 +80,6 @@ should be left NULL to replicate results from Watkins' omega program, where
 uniquenesses are found based on the g loadings and relevant group factor
 loadings only. If, however, the argument \code{u2} is specified, the specified
 uniquenesses are taken, with a warning.
+
+Explain omegas (incl. formula) for all type settings.
 }
