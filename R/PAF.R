@@ -360,6 +360,8 @@ PAF <- function(x, n_factors, cors = TRUE, max_iter = 300,
 
   colnames(L) <- paste0("F", 1:m)
 
+  class(L) <- "LOADINGS"
+
 
   # create the output object
   output <- list(

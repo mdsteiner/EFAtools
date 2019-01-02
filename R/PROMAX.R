@@ -265,6 +265,7 @@ PROMAX <- function (x, k = 4, type = "EFAdiff", kaiser = TRUE, P_type = NULL,
 
   # prepare and return output list
   dimnames(AP) <- dim_names
+  class(AP) <- "LOADINGS"
   output <- list(loadings = AP, rotmat = U, Phi = Phi, Structure = Structure)
   class(output) <- "PROMAX"
   output

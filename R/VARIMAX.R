@@ -185,8 +185,11 @@ VARIMAX <- function (x, type = "EFAdiff", kaiser = TRUE,
   }
 
   # prepare and return output list
-  dimnames(AV$loadings) <- dim_names
-  output <- list(loadings = AV$loadings,
+  load_mat <- AV$loadings
+  dimnames(load_mat) <- dim_names
+  class(load_mat) <- "LOADINGS"
+
+  output <- list(loadings = load_mat,
                  rotmat = AV$rotmat)
   class(output) <- "VARIMAX"
   output
