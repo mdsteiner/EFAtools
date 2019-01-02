@@ -1,9 +1,37 @@
 # Flexible omega function (e.g. to use with loadings obtained by MacOrtho)-------
-OMEGA_FLEX <- function(var_names, fac_names = NULL, factor_corres = NULL, g_load,
-                       s_load, u2 = NULL, Phi = NULL, pattern = NULL,
+OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres = NULL,
+                       g_load, s_load, u2 = NULL, Phi = NULL, pattern = NULL,
                        type = "EFAdiff"){
 
-  factor_names <- c("g", 1:ncol(s_load))
+  if(all(class(model) == c("psych", "schmid"))){
+
+    model <-  model$sl
+    factor_names <- c("g", 1:n_factors)
+    var_names <- rownames(model)
+    g_load <- model$sl[, 1]
+    s_load <- model$sl[, 2:(n_factors + 1)]
+
+    if(type != "Watkins"){
+      u2 <- model[, ncol(model) - 1]
+    }
+
+  } else if(all(class(model) == c("SL"))){
+
+    model <-  model$sl
+    factor_names <- c("g", 1:n_factors)
+    var_names <- rownames(model)
+    g_load <- model$sl[, 1]
+    s_load <- model$sl[, 2:(n_factors + 1)]
+
+    if(type != "Watkins"){
+      u2 <- model[, ncol(model)]
+    }
+
+  } else {
+
+    factor_names <- c("g", 1:ncol(s_load))
+
+    }
 
   # Create an input dataframe
   input <- data.frame(g_load, s_load)
@@ -134,7 +162,7 @@ OMEGA_FLEX <- function(var_names, fac_names = NULL, factor_corres = NULL, g_load
   omega_h <- c(omega_h_g, omega_h_sub)
   omega_sub <- c(omega_sub_g, omega_sub_sub)
 
-  omegas <- data.frame(omega_tot, omega_h, omega_sub)
+  omegas <- cbind(omega_tot, omega_h, omega_sub)
 
   if(!is.null(fac_names)){
     rownames(omegas) <- c("g", fac_names)
@@ -143,69 +171,8 @@ OMEGA_FLEX <- function(var_names, fac_names = NULL, factor_corres = NULL, g_load
   }
 
   omegas
+
     }
-
-
-# Omega function to use with psych::schmid() output as input-------
-OMEGA_PSYCH <- function(model, fac_names = NULL, factor_corres){
-
-  model = model$sl
-
-  n_factors <- ncol(model) - 4
-
-  factor_names <- c("g", 1:n_factors)
-
-  # Create an input dataframe
-  input <- data.frame(factor_corres, model[, c(1:(n_factors + 1), ncol(model) - 1)])
-  colnames(input) <- c("factor", factor_names, "u2")
-
-  # Create all sums of factor loadings for each factor
-
-  # Sums of all group factor loadings for each group factor
-  sums_s <- colSums(input[, 3:(n_factors + 2)])
-
-  # Sum of all g loadings
-  sum_g <- sum(input$g)
-
-  # Sum of all error variances
-  sum_e <- sum(input$u2)
-
-  # Compute sums of error variances and g-loadings for group factors
-  sums_e_s <- NULL
-  sums_g_s <- NULL
-  sums_s_s <- NULL
-  for (i in 1:n_factors){
-    sums_e_s[i] <- sum(input[input$factor == i, "u2"])
-    sums_g_s[i] <- sum(input[input$factor == i, "g"])
-    sums_s_s[i] <- sum(input[input$factor == i, i + 2])
-  }
-
-  # Compute omega total, hierarchical, and subscale for g-factor
-  omega_tot_g <- (sum_g^2 + sum(sums_s^2)) / (sum_g^2 + sum(sums_s^2) + sum_e)
-  omega_h_g <- sum_g^2 / (sum_g^2 + sum(sums_s^2) + sum_e)
-  omega_sub_g <- sum(sums_s_s^2) / (sum_g^2 + sum(sums_s^2) + sum_e)
-
-  # Compute omega total, hierarchical, and subscale for group factors
-  omega_tot_sub <- (sums_s_s^2 + sums_g_s^2) / (sums_g_s^2 + sums_s_s^2 + sums_e_s)
-  omega_h_sub <- sums_g_s^2 / (sums_g_s^2 + sums_s_s^2 + sums_e_s)
-  omega_sub_sub <- sums_s_s^2 / (sums_g_s^2 + sums_s_s^2 + sums_e_s)
-
-  # Combine and display results in a table
-  omega_tot <- c(omega_tot_g, omega_tot_sub)
-  omega_h <- c(omega_h_g, omega_h_g)
-  omega_sub <- c(omega_sub_g, omega_sub_sub)
-
-  omegas <- data.frame(omega_tot, omega_h, omega_sub)
-
-  if(!is.null(fac_names)){
-    rownames(omegas) <- c("g", fac_names)
-  } else {
-    rownames(omegas) <- c("g", 1:n_factors)
-  }
-
-  omegas
-
-}
 
 # Omega function to use with lavaan bifactor output as input-------
 OMEGA_LAVAAN <- function(model){
@@ -276,70 +243,10 @@ OMEGA_LAVAAN <- function(model){
   omega_h <- c(omega_h_g, omega_h_sub)
   omega_sub <- c(omega_sub_g, omega_sub_sub)
 
-  omegas <- data.frame(omega_tot, omega_h, omega_sub)
+  omegas <- matrix(omega_tot, omega_h, omega_sub)
   rownames(omegas) <- fac_names
 
   omegas
 
 }
 
-# Omega function for EFAdiff input of class "SL" -------
-OMEGA_EFADIFF <- function(model, fac_names = NULL, factor_corres){
-
-  model = model$sl
-
-  n_factors <- ncol(model) - 3
-
-  factor_names <- c("g", 1:n_factors)
-
-  # Create an input dataframe
-  input <- data.frame(factor_corres, model[, c(1:(n_factors + 1), ncol(model))])
-  colnames(input) <- c("factor", factor_names, "u2")
-
-  # Create all sums of factor loadings for each factor
-
-  # Sums of all group factor loadings for each group factor
-  sums_s <- colSums(input[, 3:(n_factors + 2)])
-
-  # Sum of all g loadings
-  sum_g <- sum(input$g)
-
-  # Sum of all error variances
-  sum_e <- sum(input$u2)
-
-  # Compute sums of error variances and g-loadings for group factors
-  sums_e_s <- NULL
-  sums_g_s <- NULL
-  sums_s_s <- NULL
-  for (i in 1:n_factors){
-    sums_e_s[i] <- sum(input[input$factor == i, "u2"])
-    sums_g_s[i] <- sum(input[input$factor == i, "g"])
-    sums_s_s[i] <- sum(input[input$factor == i, i + 2])
-  }
-
-  # Compute omega total, hierarchical, and subscale for g-factor
-  omega_tot_g <- (sum_g^2 + sum(sums_s^2)) / (sum_g^2 + sum(sums_s^2) + sum_e)
-  omega_h_g <- sum_g^2 / (sum_g^2 + sum(sums_s^2) + sum_e)
-  omega_sub_g <- sum(sums_s_s^2) / (sum_g^2 + sum(sums_s^2) + sum_e)
-
-  # Compute omega total, hierarchical, and subscale for group factors
-  omega_tot_sub <- (sums_s_s^2 + sums_g_s^2) / (sums_g_s^2 + sums_s_s^2 + sums_e_s)
-  omega_h_sub <- sums_g_s^2 / (sums_g_s^2 + sums_s_s^2 + sums_e_s)
-  omega_sub_sub <- sums_s_s^2 / (sums_g_s^2 + sums_s_s^2 + sums_e_s)
-
-  # Combine and display results in a table
-  omega_tot <- c(omega_tot_g, omega_tot_sub)
-  omega_h <- c(omega_h_g, omega_h_g)
-  omega_sub <- c(omega_sub_g, omega_sub_sub)
-
-  omegas <- data.frame(omega_tot, omega_h, omega_sub)
-
-  if(!is.null(fac_names)){
-    rownames(omegas) <- c("g", fac_names)
-  } else {
-    rownames(omegas) <- c("g", 1:n_factors)
-  }
-
-  omegas
-
-}
