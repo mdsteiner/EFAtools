@@ -137,7 +137,9 @@ VARIMAX <- function (x, type = "EFAdiff", kaiser = TRUE,
   if (all(class(x) == "PAF")) {
     L <- x$loadings
     dim_names <- dimnames(L)
-  } else if (all(class(x) == "matrix")) {
+  } else if (all(class(x) == "matrix") |
+             any(class(x) %in% c("loadings", "LOADINGS"))) {
+    L <- x
     dim_names <- dimnames(L)
   } else {
     stop("x is not of class PAF and not a matrix. Either provide a PAF output
@@ -187,10 +189,40 @@ VARIMAX <- function (x, type = "EFAdiff", kaiser = TRUE,
   # prepare and return output list
   load_mat <- AV$loadings
   dimnames(load_mat) <- dim_names
+
+  # compute variance proportions
+  if (ncol(L) > 1) {
+    vars <- colSums(L^2)
+  }
+  else {
+    vars <- sum(L^2)
+  }
+
+  # Compute the explained variances. The code is based on the psych::fac() function
+  # total variance (sum of communalities and uniquenesses)
+  h2 <- diag(L %*% t(L))
+  var_total <- sum(h2 + (1 - h2))
+  vars_explained <- rbind(`SS loadings` = vars)
+  vars_explained <- rbind(vars_explained, `Proportion Var` = vars / var_total)
+
+  if (ncol(L) > 1) {
+    vars_explained <- rbind(vars_explained,
+                            `Cumulative Var` = cumsum(vars / var_total))
+    vars_explained <- rbind(vars_explained,
+                            `Prop of Explained Var` = vars / sum(vars))
+    vars_explained <- rbind(vars_explained,
+                            `Cum Prop of Explained Var` = cumsum(vars / sum(vars)))
+  }
+  vars_accounted <- vars_explained
+
+  colnames(vars_accounted) <- colnames(load_mat)
+
   class(load_mat) <- "LOADINGS"
 
   output <- list(loadings = load_mat,
-                 rotmat = AV$rotmat)
+                 rotmat = AV$rotmat,
+                 h2 = h2,
+                 vars_accounted = vars_accounted)
   class(output) <- "VARIMAX"
   output
 }

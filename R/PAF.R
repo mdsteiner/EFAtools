@@ -360,6 +360,33 @@ PAF <- function(x, n_factors, cors = TRUE, max_iter = 300,
 
   colnames(L) <- paste0("F", 1:m)
 
+
+  # compute variance proportions
+  if (n_factors > 1) {
+    vars <- colSums(L^2)
+  }
+  else {
+    vars <- sum(L^2)
+  }
+
+  # Compute the explained variances. The code is based on the psych::fac() function
+  # total variance (sum of communalities and uniquenesses)
+  var_total <- sum(h2 + (1 - h2))
+  vars_explained <- rbind(`SS loadings` = vars)
+  vars_explained <- rbind(vars_explained, `Proportion Var` = vars / var_total)
+
+  if (n_factors > 1) {
+    vars_explained <- rbind(vars_explained,
+                            `Cumulative Var` = cumsum(vars / var_total))
+    vars_explained <- rbind(vars_explained,
+                            `Prop of Explained Var` = vars / sum(vars))
+    vars_explained <- rbind(vars_explained,
+                            `Cum Prop of Explained Var` = cumsum(vars / sum(vars)))
+  }
+  vars_accounted <- vars_explained
+
+  colnames(vars_accounted) <- colnames(L)
+
   class(L) <- "LOADINGS"
 
 
@@ -372,7 +399,8 @@ PAF <- function(x, n_factors, cors = TRUE, max_iter = 300,
     orig_eigen = eigen(orig_R)$values,
     init_eigen = init_eigen,
     final_eigen = eigen(R)$values,
-    loadings = L
+    loadings = L,
+    vars_accounted = vars_accounted
   )
 
   class(output) <- "PAF"
