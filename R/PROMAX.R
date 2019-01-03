@@ -26,7 +26,7 @@
 #'  it will use the SPSS version (see below or Steiner and Grieder, 2019 for details).
 #' @param precision numeric. The tolerance for stopping in the varimax procecdure.
 #'  This is passed to the "eps" argument of the
-#'  \code{\link[stats:varimax]{stats::varimax}} function. Default is \code{NULL}
+#'  \code{\link[stats:varimax]{stats::varimax}} function. Default is \code{NULL}.
 #' @param order_type character. How to order the factors and when to reflect
 #'  their signs. Default is \code{NULL}. "psych" will use the psych method, "SPSS" the
 #'  SPSS method. See below for details.
@@ -284,27 +284,7 @@ PROMAX <- function (x, k = 4, type = "EFAdiff", kaiser = TRUE, P_type = NULL,
   }
 
   dimnames(AP) <- dim_names
-
-
-  # compute variance proportions
-  vars <- diag(Phi %*% t(AP) %*% AP)
-
-  # Compute the explained variances. The code is based on the psych::fac() function
-  # total variance (sum of communalities and uniquenesses)
-  h2 <- diag(L %*% t(L))
-  var_total <- sum(h2 + (1 - h2))
-  vars_explained <- rbind(`SS loadings` = vars)
-  vars_explained <- rbind(vars_explained, `Proportion Var` = vars / var_total)
-
-  if (ncol(L) > 1) {
-    vars_explained <- rbind(vars_explained,
-                            `Cumulative Var` = cumsum(vars / var_total))
-    vars_explained <- rbind(vars_explained,
-                            `Prop of Explained Var` = vars / sum(vars))
-    vars_explained <- rbind(vars_explained,
-                            `Cum Prop of Explained Var` = cumsum(vars / sum(vars)))
-  }
-  vars_accounted <- vars_explained
+  vars_accounted <- .compute_vars(L_unrot = L, L_rot = AP, Phi = Phi)
 
   colnames(vars_accounted) <- colnames(AP)
 

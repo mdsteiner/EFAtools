@@ -33,7 +33,7 @@ it will use the SPSS version (see below or Steiner and Grieder, 2019 for details
 
 \item{precision}{numeric. The tolerance for stopping in the varimax procecdure.
 This is passed to the "eps" argument of the
-\code{\link[stats:varimax]{stats::varimax}} function. Default is \code{NULL}}
+\code{\link[stats:varimax]{stats::varimax}} function. Default is \code{NULL}.}
 
 \item{order_type}{character. How to order the factors and when to reflect
 their signs. Default is \code{NULL}. "psych" will use the psych method, "SPSS" the

@@ -86,10 +86,18 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = 300,
   # pairwise binary correlations
   if (cors) {
     R <- x
+
+    # test whether a real correlation matrix is used
+    if (nrow(R) != ncol(R)) {
+      stop("Entered data is no correlation matrix but cors = TRUE. Either set ",
+           "cors = FALSE if you entered raw data, or enter a correlation matrix.")
+    }
+
     if (is.null(N)) {
       stop("Argument 'N' is NULL. Either provide N, N = NA, or raw data.")
     } else if (is.na(N)) {
-      warning("Argument 'N = NA' but correlation matrix entered. Not all fit indices will be computed.")
+      warning("Argument 'N = NA' but correlation matrix entered. Not all fit ",
+              "indices will be computed.")
     }
   } else {
     R <- stats::cor(x, use = use)
@@ -374,30 +382,7 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = 300,
 
   colnames(L) <- paste0("F", 1:m)
 
-
-  # compute variance proportions
-  if (n_factors > 1) {
-    vars <- colSums(L^2)
-  }
-  else {
-    vars <- sum(L^2)
-  }
-
-  # Compute the explained variances. The code is based on the psych::fac() function
-  # total variance (sum of communalities and uniquenesses)
-  var_total <- sum(h2 + (1 - h2))
-  vars_explained <- rbind(`SS loadings` = vars)
-  vars_explained <- rbind(vars_explained, `Proportion Var` = vars / var_total)
-
-  if (n_factors > 1) {
-    vars_explained <- rbind(vars_explained,
-                            `Cumulative Var` = cumsum(vars / var_total))
-    vars_explained <- rbind(vars_explained,
-                            `Prop of Explained Var` = vars / sum(vars))
-    vars_explained <- rbind(vars_explained,
-                            `Cum Prop of Explained Var` = cumsum(vars / sum(vars)))
-  }
-  vars_accounted <- vars_explained
+  vars_accounted <- .compute_vars(L_unrot = L, L_rot = L)
 
   colnames(vars_accounted) <- colnames(L)
 

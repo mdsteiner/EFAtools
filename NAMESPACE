@@ -2,6 +2,7 @@
 
 S3method(print,LOADINGS)
 S3method(print,SLLOADINGS)
+export(EFA)
 export(PAF)
 export(PROMAX)
 export(SL)

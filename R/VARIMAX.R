@@ -211,31 +211,7 @@ VARIMAX <- function (x, type = "EFAdiff", kaiser = TRUE,
   load_mat <- AV$loadings
   dimnames(load_mat) <- dim_names
 
-  # compute variance proportions
-  if (ncol(L) > 1) {
-    vars <- colSums(L^2)
-  }
-  else {
-    vars <- sum(L^2)
-  }
-
-  # Compute the explained variances. The code is based on the psych::fac() function
-  # total variance (sum of communalities and uniquenesses)
-  h2 <- diag(L %*% t(L))
-  var_total <- sum(h2 + (1 - h2))
-  vars_explained <- rbind(`SS loadings` = vars)
-  vars_explained <- rbind(vars_explained, `Proportion Var` = vars / var_total)
-
-  if (ncol(L) > 1) {
-    vars_explained <- rbind(vars_explained,
-                            `Cumulative Var` = cumsum(vars / var_total))
-    vars_explained <- rbind(vars_explained,
-                            `Prop of Explained Var` = vars / sum(vars))
-    vars_explained <- rbind(vars_explained,
-                            `Cum Prop of Explained Var` = cumsum(vars / sum(vars)))
-  }
-
-  vars_accounted <- vars_explained
+  vars_accounted <- .compute_vars(L_unrot = L, L_rot = load_mat)
   colnames(vars_accounted) <- colnames(load_mat)
 
   # compute fit indices
