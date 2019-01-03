@@ -224,6 +224,7 @@ VARIMAX <- function (x, type = "EFAdiff", kaiser = TRUE,
                  h2 = h2,
                  vars_accounted = vars_accounted,
                  fit_indices = fit_ind)
+  class(output$h2) <- "COMMUNALITIES"
   class(output) <- "VARIMAX"
   output
 }

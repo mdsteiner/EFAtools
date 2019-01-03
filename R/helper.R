@@ -61,7 +61,7 @@
   vars_explained <- rbind(`SS loadings` = vars)
   vars_explained <- rbind(vars_explained, `Proportion Var` = vars / var_total)
 
-  if (ncol(L) > 1) {
+  if (ncol(L_rot) > 1) {
     vars_explained <- rbind(vars_explained,
                             `Cumulative Var` = cumsum(vars / var_total))
     vars_explained <- rbind(vars_explained,

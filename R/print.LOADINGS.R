@@ -78,6 +78,7 @@ print.LOADINGS <- function(x, cutoff = .3, digits = 3) {
                                          "Heywood cases were detected!"))
   }
 
+  temp <- stringr::str_c(temp, "\n")
   # print the results to the console
   cat(temp)
 }

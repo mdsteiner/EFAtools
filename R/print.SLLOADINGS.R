@@ -86,6 +86,7 @@ print.SLLOADINGS <- function(x, cutoff = .2, digits = 3) {
                   collapse = "\n")
   }
 
+  temp <- stringr::str_c(temp, "\n")
   # print the results to the console
   cat(temp)
 }

@@ -298,6 +298,7 @@ PROMAX <- function (x, k = 4, type = "EFAdiff", kaiser = TRUE, P_type = NULL,
   class(AP) <- "LOADINGS"
   output <- list(loadings = AP, rotmat = U, Phi = Phi, Structure = Structure,
                  h2 = h2, vars_accounted = vars_accounted, fit_indices = fit_ind)
+  class(output$h2) <- "COMMUNALITIES"
   class(output) <- "PROMAX"
   output
 }
