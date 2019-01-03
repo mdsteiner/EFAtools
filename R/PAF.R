@@ -11,6 +11,10 @@
 #' @param n_factors numeric. Number of factors to extract.
 #' @param cors logical. If \code{TRUE} (default) a correlation matrix is expected in x,
 #'  otherwise raw data is expected.
+#' @param N numeric. The number of observations. Needs only be specified if a
+#'  correlation matrix is used. If input is a correlation matrix and N = NA
+#'  (default), not all fit indices can be computed. See
+#'  \code{\link[psych:factor.stats]{psych::factor.stats}} for details.
 #' @param max_iter numeric. The maximum number of iterations (default is 300) to
 #'  perform after which the iterative PAF procedure is halted with a warning.
 #' @param type character. If one of "EFAdiff" (default), "psych", or "SPSS" is
@@ -61,15 +65,19 @@
 #' @return A list of class PAF containing the following
 #' \item{orig_R}{Original correlation matrix.}
 #' \item{h2_init}{Initial communality estimates.}
+#' \item{h2}{Final communality estimates.}
 #' \item{iter}{The number of iterations needed for convergence.}
 #' \item{orig_eigen}{Eigen values of the original correlation matrix.}
 #' \item{init_eigen}{Initial eigenvalues, obtained from the correlation matrix
 #'  with the initial communality estimates as diagonal.}
 #' \item{final_eigen}{Eigenvalues of the final iteration.}
 #' \item{loadings}{Loading matrix containing the final loadings.}
+#' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings}
+#' \item{fit_indices}{Fit indices as returned by
+#'  \code{\link[psych:factor.stats]{psych::factor.stats}}}
 #'
 #' @export
-PAF <- function(x, n_factors, cors = TRUE, max_iter = 300,
+PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = 300,
                 type = "EFAdiff", init_comm = NULL, criterion = NULL,
                 criterion_type = NULL, abs_eigen = NULL,
                 signed_loadings = TRUE, use = "pairwise.complete.obs") {
@@ -78,9 +86,15 @@ PAF <- function(x, n_factors, cors = TRUE, max_iter = 300,
   # pairwise binary correlations
   if (cors) {
     R <- x
+    if (is.null(N)) {
+      stop("Argument 'N' is NULL. Either provide N, N = NA, or raw data.")
+    } else if (is.na(N)) {
+      warning("Argument 'N = NA' but correlation matrix entered. Not all fit indices will be computed.")
+    }
   } else {
     R <- stats::cor(x, use = use)
     colnames(R) <- colnames(x)
+    N <- nrow(x)
   }
 
 
@@ -387,10 +401,12 @@ PAF <- function(x, n_factors, cors = TRUE, max_iter = 300,
 
   colnames(vars_accounted) <- colnames(L)
 
-  class(L) <- "LOADINGS"
-
+  # compute fit indices
+  fit_ind <- psych::factor.stats(orig_R, L, n.obs = N)
 
   # create the output object
+  class(L) <- "LOADINGS"
+
   output <- list(
     orig_R = orig_R,
     h2_init = h2_init,
@@ -400,7 +416,8 @@ PAF <- function(x, n_factors, cors = TRUE, max_iter = 300,
     init_eigen = init_eigen,
     final_eigen = eigen(R)$values,
     loadings = L,
-    vars_accounted = vars_accounted
+    vars_accounted = vars_accounted,
+    fit_indices = fit_ind
   )
 
   class(output) <- "PAF"

@@ -24,6 +24,10 @@
 #' @param order_type character. How to order the factors and when to reflect
 #'  their signs. Default is \code{NULL}. "psych" will use the psych method,
 #'  "SPSS" the SPSS method. See below for details.
+#' @param N numeric. The number of observations. Needs only be specified if a
+#'  loading matrix (i.e. no PAF object) is used. If input is a loading matrix
+#'  and N = NA (default), not all fit indices can be computed. See
+#'  \code{\link[psych:factor.stats]{psych::factor.stats}} for details.
 #'
 #' @details \code{type = "EFAdiff"} will use the following argument specification:
 #' \code{precision = 1e-10, order_type = "psych"}.
@@ -41,10 +45,14 @@
 #'
 #' \item{loadings}{The varimax rotated loadings (the pattern matrix).}
 #' \item{rotmat}{The rotation matrix.}
+#' \item{h2}{The communalities from the unrotated solution.}
+#' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings}
+#' \item{fit_indices}{Fit indices as returned by
+#'  \code{\link[psych:factor.stats]{psych::factor.stats}}}
 #'
 #' @export
 VARIMAX <- function (x, type = "EFAdiff", kaiser = TRUE,
-                    precision = NULL, order_type = NULL) {
+                    precision = NULL, order_type = NULL, N = NA) {
 
   if (is.null(type) || !(type %in% c("EFAdiff", "psych", "SPSS"))) {
     # if type is not one of the three valid inputs, throw an error if not
@@ -137,10 +145,23 @@ VARIMAX <- function (x, type = "EFAdiff", kaiser = TRUE,
   if (all(class(x) == "PAF")) {
     L <- x$loadings
     dim_names <- dimnames(L)
+
+    if (is.na(N)) {
+      if (is.na(x$fit_indices$n.obs)) {
+        warning("Argument N = NA and N from PAF object was also NA. Not all ",
+                "fit indices will be computed.")
+      } else {
+        N <- x$fit_indices$n.obs
+      }
+    }
+
   } else if (all(class(x) == "matrix") |
              any(class(x) %in% c("loadings", "LOADINGS"))) {
     L <- x
     dim_names <- dimnames(L)
+    if (is.na(N)) {
+      warning("Argument N = NA. Not all fit indices will be computed.")
+    }
   } else {
     stop("x is not of class PAF and not a matrix. Either provide a PAF output
          object, or a matrix containing unrotated factor loadings")
@@ -213,16 +234,20 @@ VARIMAX <- function (x, type = "EFAdiff", kaiser = TRUE,
     vars_explained <- rbind(vars_explained,
                             `Cum Prop of Explained Var` = cumsum(vars / sum(vars)))
   }
-  vars_accounted <- vars_explained
 
+  vars_accounted <- vars_explained
   colnames(vars_accounted) <- colnames(load_mat)
 
-  class(load_mat) <- "LOADINGS"
+  # compute fit indices
+  fit_ind <- psych::factor.stats(f = load_mat, n.obs = N)
 
+  # prepare output
+  class(load_mat) <- "LOADINGS"
   output <- list(loadings = load_mat,
                  rotmat = AV$rotmat,
                  h2 = h2,
-                 vars_accounted = vars_accounted)
+                 vars_accounted = vars_accounted,
+                 fit_indices = fit_ind)
   class(output) <- "VARIMAX"
   output
 }
