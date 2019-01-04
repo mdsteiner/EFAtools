@@ -7,8 +7,8 @@ OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres 
 
     model <-  model$sl
     var_names <- rownames(model)
-    g_load <- model$sl[, 1]
-    s_load <- model$sl[, 2:(ncol(model) - 3)]
+    g_load <- model[, 1]
+    s_load <- model[, 2:(ncol(model) - 3)]
     factor_names <- c("g", 1:ncol(s_load))
 
     if(type != "Watkins"){
@@ -19,8 +19,8 @@ OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres 
 
     model <-  model$sl
     var_names <- rownames(model)
-    g_load <- model$sl[, 1]
-    s_load <- model$sl[, 2:(ncol(model) - 2)]
+    g_load <- model[, 1]
+    s_load <- model[, 2:(ncol(model) - 2)]
     factor_names <- c("g", 1:ncol(s_load))
 
     if(type != "Watkins"){
@@ -123,7 +123,7 @@ OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres 
   if(type == "psych"){
 
     # Compute omega total, hierarchical, and subscale for g-factor
-    omega_tot <- (sum(cormat) - sum(input$u2)) / sum(cormat)
+    omega_tot_g <- (sum(cormat) - sum(input$u2)) / sum(cormat)
     omega_h_g <- sum_g^2 / sum(cormat)
     omega_sub_g <- sum(sums_s_s^2) / sum(cormat)
 
@@ -148,10 +148,6 @@ OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres 
     omega_sub_g <- sum(sums_s_s^2) / (sum_g^2 + sum(sums_s^2) + sum_e)
 
     # Compute omega total, hierarchical, and subscale for group factors
-    omega_tot_sub <- NULL
-    omega_h_sub <- NULL
-    omega_sub_sub <- NULL
-
     omega_tot_sub <- (sums_s_s^2 + sums_g_s^2) / (sums_g_s^2 + sums_s_s^2 + sums_e_s)
     omega_h_sub <- sums_g_s^2 / (sums_g_s^2 + sums_s_s^2 + sums_e_s)
     omega_sub_sub <- sums_s_s^2 / (sums_g_s^2 + sums_s_s^2 + sums_e_s)
