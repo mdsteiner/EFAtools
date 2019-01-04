@@ -57,9 +57,9 @@ print.SLLOADINGS <- function(x, cutoff = .2, digits = 3) {
         }
       } else {
         if (i[kk] <= 1 & i[kk] >= 0) {
-          tt <- c(tt, crayon::black(i[kk]))
+          tt <- c(tt, .numformat(i[kk], digits = digits))
         } else {
-          tt <- c(tt, crayon::red$bold(i[kk]))
+          tt <- c(tt, crayon::red$bold(.numformat(i[kk], digits = digits)))
         }
       }
     }
