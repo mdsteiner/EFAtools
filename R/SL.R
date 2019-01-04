@@ -96,6 +96,7 @@ SL <- function(x, Phi = NULL, type = "EFAdiff", ...) {
   # Finalize output object
   sl <- cbind(sl_load, h2_sl, u2_sl)
   colnames(sl) <- c("g", 1:n_first_fac, "h2", "u2")
+  class(sl) <- "SLLOADINGS"
 
   output <- list(
     sl = sl,
