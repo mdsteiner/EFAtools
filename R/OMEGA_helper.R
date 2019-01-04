@@ -6,10 +6,10 @@ OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres 
   if(all(class(model) == c("psych", "schmid"))){
 
     model <-  model$sl
-    factor_names <- c("g", 1:n_factors)
     var_names <- rownames(model)
     g_load <- model$sl[, 1]
-    s_load <- model$sl[, 2:(n_factors + 1)]
+    s_load <- model$sl[, 2:(ncol(model) - 3)]
+    factor_names <- c("g", 1:ncol(s_load))
 
     if(type != "Watkins"){
       u2 <- model[, ncol(model) - 1]
@@ -18,10 +18,10 @@ OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres 
   } else if(all(class(model) == c("SL"))){
 
     model <-  model$sl
-    factor_names <- c("g", 1:n_factors)
     var_names <- rownames(model)
     g_load <- model$sl[, 1]
-    s_load <- model$sl[, 2:(n_factors + 1)]
+    s_load <- model$sl[, 2:(ncol(model) - 2)]
+    factor_names <- c("g", 1:ncol(s_load))
 
     if(type != "Watkins"){
       u2 <- model[, ncol(model)]
@@ -53,7 +53,7 @@ OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres 
 
       # Create the correlation matrix from the pattern coefficients and factor
       # intercorrelations
-      cormat <- factor.model(f = pattern, Phi = Phi, U2 = FALSE)
+      cormat <- psych::factor.model(f = pattern, Phi = Phi, U2 = FALSE)
     }
 
     if(is.null(factor_corres)){
@@ -177,45 +177,45 @@ OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres 
 # Omega function to use with lavaan bifactor output as input-------
 OMEGA_LAVAAN <- function(model){
 
-  if(inspect(model, what = "converged") == FALSE){
+  if(lavaan::inspect(model, what = "converged") == FALSE){
     stop("Model did not converge. No omegas are computed.")
   }
 
-  if(any(is.na(inspect(model, what = "std")$lambda))){
+  if(any(is.na(lavaan::inspect(model, what = "std")$lambda))){
     stop("Some loadings are NA or NaN. No omegas are computed.")
   }
 
-  if(any(inspect(model, what = "std")$lambda > 1)){
+  if(any(lavaan::inspect(model, what = "std")$lambda > 1)){
     stop("A Heywood case was detected. No omegas are computed.")
   }
 
-  if(any(inspect(model, what = "std")$lambda == 1)){
+  if(any(lavaan::inspect(model, what = "std")$lambda == 1)){
     warning("Perfect relationship (loading equal to 1) was detected.
             At least one variable is redundant.")
   }
 
   # Create list with factor and subtest names
-  col_names <- colnames(inspect(model, what = "std")$lambda)
-  col_names <- head(col_names, -1)
+  col_names <- colnames(lavaan::inspect(model, what = "std")$lambda)
+  col_names <- utils::head(col_names, -1)
   fac_names <- c("g", col_names)
 
   var_names <- list()
   for(i in 1:(length(fac_names)-1)){
-    temp0 <- inspect(model, what = "std")$lambda[, i] != 0
+    temp0 <- lavaan::inspect(model, what = "std")$lambda[, i] != 0
     var_names[[i]] <- names(temp0)[temp0]
   }
 
   # Create all sums of factor loadings for each factor
   sums_all <- NULL
   for (i in 1:length(fac_names)){
-    temp <- sum(inspect(model, what = "std")$lambda[, fac_names[i]])
+    temp <- sum(lavaan::inspect(model, what = "std")$lambda[, fac_names[i]])
     sums_all[i] <- temp
   }
 
   # Extract g-loadings and error variances, sum of g-loadings for g and sum of
   # respective loadings for every factor
-  g_load <- inspect(model, what = "std")$lambda[,"g"]
-  e_load <- diag(inspect(model, what = "std")$theta)
+  g_load <- lavaan::inspect(model, what = "std")$lambda[,"g"]
+  e_load <- diag(lavaan::inspect(model, what = "std")$theta)
   sum_e <- sum(e_load)
   sum_g <- sums_all[1]
   sums_s <- sums_all[2:length(fac_names)]
