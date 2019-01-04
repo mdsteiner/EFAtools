@@ -5,7 +5,7 @@
 \title{Promax rotation}
 \usage{
 PROMAX(x, k = 4, type = "EFAdiff", kaiser = TRUE, P_type = NULL,
-  precision = NULL, order_type = NULL, N = NA)
+  precision = NULL, order_type = NULL)
 }
 \arguments{
 \item{x}{matrix or class \code{\link{PAF}} object. Either a matrix containing
@@ -38,11 +38,6 @@ This is passed to the "eps" argument of the
 \item{order_type}{character. How to order the factors and when to reflect
 their signs. Default is \code{NULL}. "psych" will use the psych method, "SPSS" the
 SPSS method. See below for details.}
-
-\item{N}{numeric. The number of observations. Needs only be specified if a
-loading matrix (i.e. no PAF object) is used. If input is a loading matrix
-and N = NA (default), not all fit indices can be computed. See
-\code{\link[psych:factor.stats]{psych::factor.stats}} for details.}
 }
 \value{
 A list of class PROMAX containing the following

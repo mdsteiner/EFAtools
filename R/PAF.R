@@ -95,10 +95,8 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = 300,
 
     if (is.null(N)) {
       stop("Argument 'N' is NULL. Either provide N, N = NA, or raw data.")
-    } else if (is.na(N)) {
-      warning("Argument 'N = NA' but correlation matrix entered. Not all fit ",
-              "indices will be computed.")
     }
+
   } else {
     R <- stats::cor(x, use = use)
     colnames(R) <- colnames(x)
@@ -387,8 +385,8 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = 300,
   colnames(vars_accounted) <- colnames(L)
 
   # compute fit indices
-  #fit_ind <- psych::factor.stats(orig_R, L, n.obs = N)
-  fit_ind <- NA
+  fit_ind <- psych::factor.stats(orig_R, L, n.obs = N)
+
   # create the output object
   class(L) <- "LOADINGS"
 

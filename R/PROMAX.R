@@ -30,10 +30,6 @@
 #' @param order_type character. How to order the factors and when to reflect
 #'  their signs. Default is \code{NULL}. "psych" will use the psych method, "SPSS" the
 #'  SPSS method. See below for details.
-#' @param N numeric. The number of observations. Needs only be specified if a
-#'  loading matrix (i.e. no PAF object) is used. If input is a loading matrix
-#'  and N = NA (default), not all fit indices can be computed. See
-#'  \code{\link[psych:factor.stats]{psych::factor.stats}} for details.
 #'
 #' @details \code{type = "EFAdiff"} will use the following argument specification:
 #' \code{P_type = "HW", precision = 1e-10, order_type = "psych"}.
@@ -69,7 +65,7 @@
 #'
 #' @export
 PROMAX <- function (x, k = 4, type = "EFAdiff", kaiser = TRUE, P_type = NULL,
-                    precision = NULL, order_type = NULL, N = NA) {
+                    precision = NULL, order_type = NULL) {
 
   if (is.null(type) || !(type %in% c("EFAdiff", "psych", "SPSS"))) {
     # if type is not one of the three valid inputs, throw an error if not
@@ -185,22 +181,12 @@ PROMAX <- function (x, k = 4, type = "EFAdiff", kaiser = TRUE, P_type = NULL,
     L <- x$loadings
     dim_names <- dimnames(L)
 
-    if (is.na(N)) {
-      if (is.na(x$fit_indices$n.obs)) {
-        warning("Argument N = NA and N from PAF object was also NA. Not all ",
-                "fit indices will be computed.")
-      } else {
-        N <- x$fit_indices$n.obs
-      }
-    }
+    N <- x$fit_indices$n.obs
 
   } else if (all(class(x) == "matrix") |
              any(class(x) %in% c("loadings", "LOADINGS"))) {
     L <- x
     dim_names <- dimnames(L)
-    if (is.na(N)) {
-      warning("Argument N = NA. Not all fit indices will be computed.")
-    }
   } else {
     stop("x is not of class PAF and not a matrix. Either provide a PAF output
          object, or a matrix containing unrotated factor loadings")
@@ -288,9 +274,14 @@ PROMAX <- function (x, k = 4, type = "EFAdiff", kaiser = TRUE, P_type = NULL,
 
   colnames(vars_accounted) <- colnames(AP)
 
-  # compute fit indices
-  #fit_ind <- psych::factor.stats(f = AP, phi = Phi, r = , n.obs = N)
-  fit_ind <- NA
+  if (any(class(x) == "PAF")) {
+    # compute fit indices
+    fit_ind <- psych::factor.stats(f = AP, phi = Phi, r = x$orig_R, n.obs = N)
+  } else {
+    fit_ind <- NA
+  }
+
+
   # get structure matrix
   Structure <- AP %*% Phi
 

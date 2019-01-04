@@ -105,11 +105,11 @@ EFA <- function(x, n_factors, cors = TRUE, N = NA, rotation = "promax",
   if (rotation == "promax") {
 
     paf_rot <- PROMAX(paf_out, type = type, kaiser = kaiser, P_type = P_type,
-                      precision = precision, order_type = order_type, N = N)
+                      precision = precision, order_type = order_type)
 
   } else if (rotation == "varimax") {
     paf_rot <- VARIMAX(paf_out, type = type, kaiser = kaiser, precision = precision,
-                       order_type = order_type, N = N)
+                       order_type = order_type)
   } else {
     if (rotation != "none") {
       warning("You entered rotation = '", rotation, "', which is no valid input.",
