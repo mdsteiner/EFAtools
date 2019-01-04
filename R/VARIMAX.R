@@ -39,7 +39,7 @@
 #'loadings = AP, rotmat = U, Phi = Phi, Structure = Structure
 #' @return A list of class VARIMAX containing the following
 #'
-#' \item{loadings}{The varimax rotated loadings (the pattern matrix).}
+#' \item{rot_loadings}{The varimax rotated loadings (the pattern matrix).}
 #' \item{rotmat}{The rotation matrix.}
 #' \item{h2}{The communalities from the unrotated solution.}
 #' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings}
@@ -211,7 +211,7 @@ VARIMAX <- function (x, type = "EFAdiff", kaiser = TRUE,
 
   # prepare output
   class(load_mat) <- "LOADINGS"
-  output <- list(loadings = load_mat,
+  output <- list(rot_loadings = load_mat,
                  rotmat = AV$rotmat,
                  h2 = diag(L %*% t(L)),
                  vars_accounted = vars_accounted,

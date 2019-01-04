@@ -42,7 +42,7 @@ SPSS method. See below for details.}
 \value{
 A list of class PROMAX containing the following
 
-\item{loadings}{The promax rotated loadings (the pattern matrix).}
+\item{rot_loadings}{The promax rotated loadings (the pattern matrix).}
 \item{rotmat}{The rotation matrix.}
 \item{Phi}{The factor intercorrelations.}
 \item{Structure}{The structure matrix.}

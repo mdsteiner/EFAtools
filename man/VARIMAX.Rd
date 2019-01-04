@@ -34,7 +34,7 @@ their signs. Default is \code{NULL}. "psych" will use the psych method,
 \value{
 A list of class VARIMAX containing the following
 
-\item{loadings}{The varimax rotated loadings (the pattern matrix).}
+\item{rot_loadings}{The varimax rotated loadings (the pattern matrix).}
 \item{rotmat}{The rotation matrix.}
 \item{h2}{The communalities from the unrotated solution.}
 \item{vars_accounted}{Matrix of explained variances and sums of squared loadings}

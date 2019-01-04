@@ -75,7 +75,7 @@ A list of class PAF containing the following
 \item{init_eigen}{Initial eigenvalues, obtained from the correlation matrix
  with the initial communality estimates as diagonal.}
 \item{final_eigen}{Eigenvalues of the final iteration.}
-\item{loadings}{Loading matrix containing the final loadings.}
+\item{unrot_loadings}{Loading matrix containing the final loadings.}
 \item{vars_accounted}{Matrix of explained variances and sums of squared loadings}
 \item{fit_indices}{Fit indices as returned by
  \code{\link[psych:factor.stats]{psych::factor.stats}}}
