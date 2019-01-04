@@ -215,8 +215,8 @@ VARIMAX <- function (x, type = "EFAdiff", kaiser = TRUE,
   colnames(vars_accounted) <- colnames(load_mat)
 
   # compute fit indices
-  fit_ind <- psych::factor.stats(f = load_mat, n.obs = N)
-
+  #fit_ind <- psych::factor.stats(f = load_mat, n.obs = N)
+  fit_ind <- NA
   # prepare output
   class(load_mat) <- "LOADINGS"
   output <- list(loadings = load_mat,

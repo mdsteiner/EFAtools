@@ -289,8 +289,8 @@ PROMAX <- function (x, k = 4, type = "EFAdiff", kaiser = TRUE, P_type = NULL,
   colnames(vars_accounted) <- colnames(AP)
 
   # compute fit indices
-  fit_ind <- psych::factor.stats(f = AP, phi = Phi, r = , n.obs = N)
-
+  #fit_ind <- psych::factor.stats(f = AP, phi = Phi, r = , n.obs = N)
+  fit_ind <- NA
   # get structure matrix
   Structure <- AP %*% Phi
 
