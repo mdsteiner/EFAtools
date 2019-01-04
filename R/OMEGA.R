@@ -63,6 +63,7 @@
 #' \item{omega_h}{Omega hierarchical.}
 #' \item{omega_sub}{Omega subscale.}
 #'
+#' @export
 OMEGA <- function(model = NULL, var_names = NULL, fac_names = NULL,
                   factor_corres = NULL, g_load = NULL,
                   s_load = NULL, u2 = NULL, Phi = NULL, pattern = NULL,

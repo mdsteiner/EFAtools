@@ -58,7 +58,7 @@ VARIMAX <- function (x, type = "EFAdiff", kaiser = TRUE,
     # if type is not one of the three valid inputs, throw an error if not
     # all the other necessary arguments are specified.
 
-    if (is.null(P_type) || is.null(precision) || is.null(order_type)) {
+    if (is.null(precision) || is.null(order_type)) {
       stop('One of "precision", or "order_type" was NULL and no valid
            "type" was specified. Either use one of "EFAdiff", "psych", or "SPSS"
            for type, or specify all other arguments')
@@ -221,7 +221,7 @@ VARIMAX <- function (x, type = "EFAdiff", kaiser = TRUE,
   class(load_mat) <- "LOADINGS"
   output <- list(loadings = load_mat,
                  rotmat = AV$rotmat,
-                 h2 = h2,
+                 h2 = diag(L %*% t(L)),
                  vars_accounted = vars_accounted,
                  fit_indices = fit_ind)
   class(output$h2) <- "COMMUNALITIES"
