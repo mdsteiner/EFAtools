@@ -1,11 +1,12 @@
 # Flexible omega function (e.g. to use with loadings obtained by MacOrtho)-------
 OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres = NULL,
                        g_load, s_load, u2 = NULL, Phi = NULL, pattern = NULL,
-                       type = "EFAdiff"){
+                       cormat = NULL, type = "EFAdiff"){
 
   if(all(class(model) == c("psych", "schmid"))){
 
     model <-  model$sl
+
     var_names <- rownames(model)
     g_load <- model[, 1]
     s_load <- model[, 2:(ncol(model) - 3)]
@@ -47,13 +48,19 @@ OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres 
   }
 
   if(type == "psych"){
+
+    if(is.null(cormat)) {
+
     if(is.null(Phi) | is.null(pattern)){
       stop("Please specify the Phi and pattern arguments")
-    } else {
+
+      } else {
 
       # Create the correlation matrix from the pattern coefficients and factor
       # intercorrelations
       cormat <- psych::factor.model(f = pattern, Phi = Phi, U2 = FALSE)
+
+      }
     }
 
     if(is.null(factor_corres)){

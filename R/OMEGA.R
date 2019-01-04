@@ -30,6 +30,9 @@
 #' for the S-L transformation.
 #' @param pattern matrix. Pattern coefficients from the oblique solution used
 #' for the S-L transformation.
+#' @param cormat matrix. An optional correlation matrix to be used when type = "psych".
+#' If left NULL, the correlation matrix is found based on the pattern matrix and
+#' Phi using \code{\link[psych:factor.model]{psych::factor.model}}
 #' @param type character. Either "EFAdiff" (default), "psych", or "Watkins".
 #'
 #' @details If \code{model} is specified and of class \code{\link{lavaan}},
@@ -67,7 +70,17 @@
 OMEGA <- function(model = NULL, var_names = NULL, fac_names = NULL,
                   factor_corres = NULL, g_load = NULL,
                   s_load = NULL, u2 = NULL, Phi = NULL, pattern = NULL,
-                  type = "EFAdiff"){
+                  cormat = NULL, type = "EFAdiff"){
+
+  if(!is.null(model) & (!is.null(var_names) || !is.null(g_load) || !is.null(s_load)
+                        || !is.null(u2))){
+
+    warning("You entered a model and specified at least one of the arguments
+            var_names, g_load, s_load, or u2. These arguments are ignored.
+            To use specific values for these, leave model = NULL and specify
+            all arguments separately.")
+
+  }
 
   if(all(class(model) == "lavaan")){
 
@@ -83,10 +96,17 @@ OMEGA <- function(model = NULL, var_names = NULL, fac_names = NULL,
 
       OMEGA_FLEX(model = model, var_names = var_names, fac_names = fac_names,
                  factor_corres = factor_corres, g_load = g_load, s_load = s_load,
-                 u2 = u2, Phi = Phi, pattern = pattern, type = type)
+                 u2 = u2, Phi = Phi, pattern = pattern, cormat = cormat, type = type)
     }
 
     } else {
+
+      if(!is.null(model)){
+
+        stop("Invalid input for model. Either enter a lavaan, psych::schmid or
+             SL object or specify the arguments var_names, g_load, and s_load.")
+
+      }
 
       if(is.null(var_names) | is.null(g_load) | is.null(s_load)){
 
@@ -97,7 +117,7 @@ OMEGA <- function(model = NULL, var_names = NULL, fac_names = NULL,
 
           OMEGA_FLEX(model = model, var_names = var_names, fac_names = fac_names,
                  factor_corres = factor_corres, g_load = g_load, s_load = s_load,
-                 u2 = u2, Phi = Phi, pattern = pattern, type = type)
+                 u2 = u2, Phi = Phi, pattern = pattern, cormat = cormat, type = type)
 
         }
 
