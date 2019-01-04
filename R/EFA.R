@@ -136,7 +136,7 @@ EFA <- function(x, n_factors, cors = TRUE, N = NA, rotation = "promax",
   )
 
   if (rotation == "promax" || rotation != "varimax") {
-    output$Phi = paf_rot$fit_indices
+    output$Phi = paf_rot$Phi
     output$Structure = paf_rot$Structure
     class(output) <- "PROMAX"
   } else if (rotation == "varimax") {
