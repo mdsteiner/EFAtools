@@ -1,7 +1,7 @@
-#' WISC-V Age 16
+#' WISC-V Age 15
 #'
 #' A list containing the bivariate correlations of the 16 intelligence
-#' subtests from the WISC-V for 16 year olds obtained from the publicly
+#' subtests from the WISC-V for 15 year olds obtained from the publicly
 #' available technical supplement
 #' (\url{downloads.pearsonclinical.com/images/assets/wisc-v/wisc-v-tech-manual-supplement.pdf}),
 #' an intelligence test battery for children and adolescents aged 6 to
@@ -35,4 +35,4 @@
 #' Children-Fifth Edition technical and interpretive manual supplement.
 #' San Antonio, TX: NCS Pearson.
 #' \url{downloads.pearsonclinical.com/images/assets/wisc-v/wisc-v-tech-manual-supplement.pdf}
-"WISCV_age_16"
+"WISCV_age_15"
