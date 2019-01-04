@@ -178,10 +178,10 @@ PROMAX <- function (x, k = 4, type = "EFAdiff", kaiser = TRUE, P_type = NULL,
 
   # extract loadings and dim names
   if (any(class(x) == "PAF")) {
-    L <- x$loadings
+    L <- x$unrot_loadings
     dim_names <- dimnames(L)
 
-    N <- x$fit_indices$n.obs
+    # N <- x$fit_indices$n.obs
 
   } else if (all(class(x) == "matrix") |
              any(class(x) %in% c("loadings", "LOADINGS"))) {
@@ -276,7 +276,8 @@ PROMAX <- function (x, k = 4, type = "EFAdiff", kaiser = TRUE, P_type = NULL,
 
   if (any(class(x) == "PAF")) {
     # compute fit indices
-    fit_ind <- psych::factor.stats(f = AP, phi = Phi, r = x$orig_R, n.obs = N)
+    #fit_ind <- psych::factor.stats(f = AP, phi = Phi, r = x$orig_R, n.obs = N)
+    fit_ind <- NA
   } else {
     fit_ind <- NA
   }

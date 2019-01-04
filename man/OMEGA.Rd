@@ -6,7 +6,7 @@
 \usage{
 OMEGA(model = NULL, var_names = NULL, fac_names = NULL,
   factor_corres = NULL, g_load = NULL, s_load = NULL, u2 = NULL,
-  Phi = NULL, pattern = NULL, type = "EFAdiff")
+  Phi = NULL, pattern = NULL, cormat = NULL, type = "EFAdiff")
 }
 \arguments{
 \item{model}{class \code{\link{SL}}, class \code{\link{schmid}}, or class
@@ -39,6 +39,10 @@ for the S-L transformation.}
 
 \item{pattern}{matrix. Pattern coefficients from the oblique solution used
 for the S-L transformation.}
+
+\item{cormat}{matrix. An optional correlation matrix to be used when type = "psych".
+If left NULL, the correlation matrix is found based on the pattern matrix and
+Phi using \code{\link[psych:factor.model]{psych::factor.model}}}
 
 \item{type}{character. Either "EFAdiff" (default), "psych", or "Watkins".}
 }

@@ -385,7 +385,8 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = 300,
   colnames(vars_accounted) <- colnames(L)
 
   # compute fit indices
-  fit_ind <- psych::factor.stats(orig_R, L, n.obs = N)
+  # fit_ind <- psych::factor.stats(orig_R, L, n.obs = N)
+  fit_ind <- NA
 
   # create the output object
   class(L) <- "LOADINGS"

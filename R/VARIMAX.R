@@ -139,10 +139,10 @@ VARIMAX <- function (x, type = "EFAdiff", kaiser = TRUE,
 
   # extract loadings and dim names
   if (all(class(x) == "PAF")) {
-    L <- x$loadings
+    L <- x$unrot_loadings
     dim_names <- dimnames(L)
 
-    N <- x$fit_indices$n.obs
+    # N <- x$fit_indices$n.obs
 
   } else if (all(class(x) == "matrix") |
              any(class(x) %in% c("loadings", "LOADINGS"))) {
@@ -203,8 +203,9 @@ VARIMAX <- function (x, type = "EFAdiff", kaiser = TRUE,
 
   if (any(class(x) == "PAF")) {
     # compute fit indices
-    fit_ind <- psych::factor.stats(f = load_mat, phi = NULL, r = x$orig_R,
-                                   n.obs = N)
+    #fit_ind <- psych::factor.stats(f = load_mat, phi = NULL, r = x$orig_R,
+    #                               n.obs = N)
+    fit_ind <- NA
   } else {
     fit_ind <- NA
   }
