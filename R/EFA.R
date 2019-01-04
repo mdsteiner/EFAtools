@@ -129,7 +129,7 @@ EFA <- function(x, n_factors, cors = TRUE, N = NA, rotation = "promax",
     init_eigen = paf_out$init_eigen,
     final_eigen = paf_out$final_eigen,
     unrot_loadings = paf_out$loadings,
-    rot_loadings = paf_rot$loadings,
+    rot_loadings = paf_rot$rot_loadings,
     rotmat = paf_rot$rotmat,
     vars_accounted = paf_rot$vars_accounted,
     fit_indices = paf_rot$fit_indices

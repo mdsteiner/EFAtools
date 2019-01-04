@@ -33,8 +33,8 @@ SL <- function(x, Phi = NULL, type = "EFAdiff", ...) {
 
   if(all(class(x) == "PROMAX")) {
 
-    L1 <- x$loadings
-    n_first_fac <- ncol(x$loadings)
+    L1 <- x$rot_loadings
+    n_first_fac <- ncol(x$rot_loadings)
 
     if(!is.null(Phi)){
       warning("Phi argument is specified. Specified factor intercorrelations are
