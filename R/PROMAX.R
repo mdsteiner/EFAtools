@@ -181,6 +181,7 @@ PROMAX <- function (x, k = 4, type = "EFAdiff", kaiser = TRUE, P_type = NULL,
     L <- x$unrot_loadings
     dim_names <- dimnames(L)
 
+
     # N <- x$fit_indices$n.obs
 
   } else if (all(class(x) == "matrix") |
@@ -190,6 +191,24 @@ PROMAX <- function (x, k = 4, type = "EFAdiff", kaiser = TRUE, P_type = NULL,
   } else {
     stop("x is not of class PAF and not a matrix. Either provide a PAF output
          object, or a matrix containing unrotated factor loadings")
+  }
+
+  if (ncol(L) < 2) {
+    # prepare and return output list
+    if (any(class(x) == "PAF")) {
+      vars_accounted <- x$vars_accounted
+    } else {
+      vars_accounted <- NA
+    }
+    output <- list(rot_loadings = L, rotmat = NA, Phi = NA, Structure = NA,
+                   h2 = diag(L %*% t(L)),
+                   vars_accounted = vars_accounted,
+                   fit_indices = NA)
+    class(output$h2) <- "COMMUNALITIES"
+    class(output) <- "PROMAX"
+
+    warning("Cannot rotate single factor. Unrotated loadings returned.")
+    return(output)
   }
 
   # perform the varimax rotation

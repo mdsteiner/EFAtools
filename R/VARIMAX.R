@@ -154,6 +154,24 @@ VARIMAX <- function (x, type = "EFAdiff", kaiser = TRUE,
          object, or a matrix containing unrotated factor loadings")
   }
 
+  if (ncol(L) < 2) {
+    if (any(class(x) == "PAF")) {
+      vars_accounted <- x$vars_accounted
+    } else {
+      vars_accounted <- NA
+    }
+    # prepare and return output list
+    output <- list(rot_loadings = L, rotmat = NA,
+                   h2 = diag(L %*% t(L)),
+                   vars_accounted = vars_accounted,
+                   fit_indices = NA)
+    class(output$h2) <- "COMMUNALITIES"
+    class(output) <- "VARIMAX"
+
+    warning("Cannot rotate single factor. Unrotated loadings returned.")
+    return(output)
+  }
+
   # perform the varimax rotation
   AV <- stats::varimax(L, normalize = kaiser, eps = precision)
 
