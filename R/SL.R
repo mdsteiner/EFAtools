@@ -75,7 +75,7 @@ SL <- function(x, Phi = NULL, type = "EFAdiff", ...) {
   paf_phi <- PAF(Phi, n_factors = 1, type = type, ...)
 
   # extract second order loadings
-  L2 <- paf_phi$loadings
+  L2 <- paf_phi$unrot_loadings
 
   # Schmid-Leiman solution, direct loadings of second order factor
   L_sls_2 <- L1 %*% L2

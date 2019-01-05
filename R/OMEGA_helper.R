@@ -110,6 +110,7 @@ OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres 
 
   # Sums of all group factor loadings for each group factor
   sums_s <- colSums(input[, 3:(ncol(s_load) + 2)])
+  input$sums_var <- rowSums(input[, 3:(ncol(s_load) + 2)])
 
   # Sum of all g loadings
   sum_g <- sum(input$g)
@@ -125,6 +126,7 @@ OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres 
     sums_e_s[i] <- sum(input[input$factor == i, "u2"])
     sums_g_s[i] <- sum(input[input$factor == i, "g"])
     sums_s_s[i] <- sum(input[input$factor == i, i + 2])
+    sums_var_s[i] <- input[input$factor == i, "sums_var"])
   }
 
   if(type == "psych"){
@@ -155,9 +157,9 @@ OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres 
     omega_sub_g <- sum(sums_s_s^2) / (sum_g^2 + sum(sums_s^2) + sum_e)
 
     # Compute omega total, hierarchical, and subscale for group factors
-    omega_tot_sub <- (sums_s_s^2 + sums_g_s^2) / (sums_g_s^2 + sums_s_s^2 + sums_e_s)
-    omega_h_sub <- sums_g_s^2 / (sums_g_s^2 + sums_s_s^2 + sums_e_s)
-    omega_sub_sub <- sums_s_s^2 / (sums_g_s^2 + sums_s_s^2 + sums_e_s)
+    omega_tot_sub <- (sums_s_s^2 + sums_g_s^2) / (sums_g_s^2 + sums_var^2 + sums_e_s)
+    omega_h_sub <- sums_g_s^2 / (sums_g_s^2 + sums_var^2 + sums_e_s)
+    omega_sub_sub <- sums_s_s^2 / (sums_g_s^2 + sums_var^2 + sums_e_s)
   }
 
   # Combine and display results in a table
