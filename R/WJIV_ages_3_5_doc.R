@@ -49,33 +49,3 @@
 #' San Antonio, TX: NCS Pearson.
 #' \url{downloads.pearsonclinical.com/images/assets/wisc-v/wisc-v-tech-manual-supplement.pdf}
 "WJIV_ages_3_5"
-
-OrVo
-VeAt
-PhPr
-StRe
-Vi
-GeIn
-CoFo
-NuRe
-NuPaMa
-NoRe
-ViAuLe
-PiRe
-MeWo
-PiVo
-OrCo
-Se
-RaPiNa
-SeRe
-UnDi
-SoBl
-ReFl
-SoAw
-LeWoId
-ApPr
-Sp
-PaCo
-Sc
-SoSt
-Hu
