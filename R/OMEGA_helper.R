@@ -121,9 +121,10 @@ OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres 
   sums_e_s <- NULL
   sums_g_s <- NULL
   sums_s_s <- NULL
-  sums_var_S <- NULL
+  sums_var_s <- NULL
 
   for (i in 1:ncol(s_load)){
+    if(input$factor[i] > 0)
     sums_e_s[i] <- sum(input[input$factor == i, "u2"])
     sums_g_s[i] <- sum(input[input$factor == i, "g"])
     sums_s_s[i] <- sum(input[input$factor == i, i + 2])
@@ -158,9 +159,9 @@ OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres 
     omega_sub_g <- sum(sums_s_s^2) / (sum_g^2 + sum(sums_s^2) + sum_e)
 
     # Compute omega total, hierarchical, and subscale for group factors
-    omega_tot_sub <- (sums_s_s^2 + sums_g_s^2) / (sums_g_s^2 + sums_var_S^2 + sums_e_s)
-    omega_h_sub <- sums_g_s^2 / (sums_g_s^2 + sums_var_S^2 + sums_e_s)
-    omega_sub_sub <- sums_s_s^2 / (sums_g_s^2 + sums_var_S^2 + sums_e_s)
+    omega_tot_sub <- (sums_s_s^2 + sums_g_s^2) / (sums_g_s^2 + sums_s_s^2 + sums_e_s)
+    omega_h_sub <- sums_g_s^2 / (sums_g_s^2 + sums_s_s^2 + sums_e_s)
+    omega_sub_sub <- sums_s_s^2 / (sums_g_s^2 + sums_s_s^2 + sums_e_s)
   }
 
   # Combine and display results in a table
