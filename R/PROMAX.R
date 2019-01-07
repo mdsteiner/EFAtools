@@ -197,13 +197,15 @@ PROMAX <- function (x, k = 4, type = "EFAdiff", kaiser = TRUE, P_type = NULL,
     # prepare and return output list
     if (any(class(x) == "PAF")) {
       vars_accounted <- x$vars_accounted
+      fit_ind <- x$fit_indices
     } else {
       vars_accounted <- NA
+      fit_ind <- NA
     }
     output <- list(rot_loadings = L, rotmat = NA, Phi = NA, Structure = NA,
                    h2 = diag(L %*% t(L)),
                    vars_accounted = vars_accounted,
-                   fit_indices = NA)
+                   fit_indices = fit_ind)
     class(output$h2) <- "COMMUNALITIES"
     class(output) <- "PROMAX"
 
@@ -293,10 +295,13 @@ PROMAX <- function (x, k = 4, type = "EFAdiff", kaiser = TRUE, P_type = NULL,
 
   colnames(vars_accounted) <- colnames(AP)
 
-  if (any(class(x) == "PAF")) {
+  if (any(class(x) == "PAF") && all(class(x$fit_indices) == c("psych", "stats"))) {
     # compute fit indices
-    #fit_ind <- psych::factor.stats(f = AP, phi = Phi, r = x$orig_R, n.obs = N)
-    fit_ind <- NA
+    fit_ind <- try(psych::factor.stats(f = AP, phi = Phi, r = x$orig_R, n.obs = N))
+    if(all(class(x) == "try_error")) {
+      fit_ind <- NA
+    }
+
   } else {
     fit_ind <- NA
   }

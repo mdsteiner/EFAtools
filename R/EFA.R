@@ -12,7 +12,7 @@
 #'  correlation matrix is used. If input is a correlation matrix and N = NA
 #'  (default), not all fit indices can be computed. See
 #'  \code{\link[psych:factor.stats]{psych::factor.stats}} for details.
-#' @param rotation character. One of "promax" (default), "varimax", or "none".
+#' @param rotation character. One of "none" (default), "promax", or "varimax".
 #'  Specifies the type of rotation to perform.
 #' @param type character. If one of "EFAdiff" (default), "psych", or "SPSS" is
 #'  used, and the following arguments with default NULL are left with
@@ -135,7 +135,7 @@ EFA <- function(x, n_factors, cors = TRUE, N = NA, rotation = "none",
     fit_indices = paf_rot$fit_indices
   )
 
-  if (rotation == "promax" || rotation != "varimax") {
+  if (rotation == "promax") {
     output$Phi = paf_rot$Phi
     output$Structure = paf_rot$Structure
     class(output) <- "PROMAX"

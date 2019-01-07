@@ -4,7 +4,7 @@
 \alias{PAF}
 \title{Principal Axis Factoring}
 \usage{
-PAF(x, n_factors, cors = TRUE, N = NA, max_iter = 300,
+PAF(x, n_factors, cors = TRUE, N = NA, max_iter = 1e+05,
   type = "EFAdiff", init_comm = NULL, criterion = NULL,
   criterion_type = NULL, abs_eigen = NULL, signed_loadings = TRUE,
   use = "pairwise.complete.obs")

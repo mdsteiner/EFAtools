@@ -157,14 +157,16 @@ VARIMAX <- function (x, type = "EFAdiff", kaiser = TRUE,
   if (ncol(L) < 2) {
     if (any(class(x) == "PAF")) {
       vars_accounted <- x$vars_accounted
+      fit_ind <- x$fit_indices
     } else {
       vars_accounted <- NA
+      fit_ind <- NA
     }
     # prepare and return output list
     output <- list(rot_loadings = L, rotmat = NA,
                    h2 = diag(L %*% t(L)),
                    vars_accounted = vars_accounted,
-                   fit_indices = NA)
+                   fit_indices = fit_ind)
     class(output$h2) <- "COMMUNALITIES"
     class(output) <- "VARIMAX"
 
@@ -219,11 +221,15 @@ VARIMAX <- function (x, type = "EFAdiff", kaiser = TRUE,
   vars_accounted <- .compute_vars(L_unrot = L, L_rot = load_mat)
   colnames(vars_accounted) <- colnames(load_mat)
 
-  if (any(class(x) == "PAF")) {
+  if (any(class(x) == "PAF") && all(class(x$fit_indices) == c("psych", "stats"))) {
     # compute fit indices
-    #fit_ind <- psych::factor.stats(f = load_mat, phi = NULL, r = x$orig_R,
-    #                               n.obs = N)
-    fit_ind <- NA
+    fit_ind <- psych::factor.stats(f = load_mat, phi = NULL, r = x$orig_R,
+                                   n.obs = N)
+
+    if(all(class(x) == "try_error")) {
+      fit_ind <- NA
+    }
+
   } else {
     fit_ind <- NA
   }
