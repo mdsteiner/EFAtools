@@ -88,8 +88,8 @@
 #'  returned by \code{\link[psych:factor.stats]{psych::factor.stats}}}
 #'
 #' @export
-EFA <- function(x, n_factors, cors = TRUE, N = NA, rotation = "promax",
-                type = "EFAdiff", max_iter = 300, init_comm = NULL,
+EFA <- function(x, n_factors, cors = TRUE, N = NA, rotation = "none",
+                type = "EFAdiff", max_iter = 1e5, init_comm = NULL,
                 criterion = NULL, criterion_type = NULL, abs_eigen = NULL,
                 signed_loadings = TRUE, use = "pairwise.complete.obs",
                 k = 4, kaiser = TRUE, P_type = NULL,

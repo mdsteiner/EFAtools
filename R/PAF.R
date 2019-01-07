@@ -77,7 +77,7 @@
 #'  \code{\link[psych:factor.stats]{psych::factor.stats}}}
 #'
 #' @export
-PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = 300,
+PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = 1e5,
                 type = "EFAdiff", init_comm = NULL, criterion = NULL,
                 criterion_type = NULL, abs_eigen = NULL,
                 signed_loadings = TRUE, use = "pairwise.complete.obs") {
@@ -129,7 +129,7 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = 300,
     }
 
     if (is.null(criterion)) {
-      criterion <- .001
+      criterion <- 1e-6
     } else {
       warning("Type and criterion is specified. criterion is used with value '",
               criterion, "'. Results may differ from the specified type")
