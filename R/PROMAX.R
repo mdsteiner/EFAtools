@@ -297,7 +297,8 @@ PROMAX <- function (x, k = 4, type = "EFAdiff", kaiser = TRUE, P_type = NULL,
 
   if (any(class(x) == "PAF") && all(class(x$fit_indices) == c("psych", "stats"))) {
     # compute fit indices
-    fit_ind <- try(psych::factor.stats(f = AP, phi = Phi, r = x$orig_R, n.obs = N))
+    fit_ind <- try(psych::factor.stats(f = AP, phi = Phi, r = x$orig_R,
+                                       n.obs = x$fit_indices$n.obs))
     if(all(class(x) == "try_error")) {
       fit_ind <- NA
     }

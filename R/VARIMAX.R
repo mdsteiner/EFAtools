@@ -224,7 +224,7 @@ VARIMAX <- function (x, type = "EFAdiff", kaiser = TRUE,
   if (any(class(x) == "PAF") && all(class(x$fit_indices) == c("psych", "stats"))) {
     # compute fit indices
     fit_ind <- psych::factor.stats(f = load_mat, phi = NULL, r = x$orig_R,
-                                   n.obs = N)
+                                   n.obs = x$fit_indices$n.obs)
 
     if(all(class(x) == "try_error")) {
       fit_ind <- NA
