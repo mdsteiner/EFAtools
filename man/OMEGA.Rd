@@ -6,7 +6,8 @@
 \usage{
 OMEGA(model = NULL, var_names = NULL, fac_names = NULL,
   factor_corres = NULL, g_load = NULL, s_load = NULL, u2 = NULL,
-  Phi = NULL, pattern = NULL, cormat = NULL, type = "EFAdiff")
+  Phi = NULL, pattern = NULL, cormat = NULL, variance = NULL,
+  type = "EFAdiff")
 }
 \arguments{
 \item{model}{class \code{\link{SL}}, class \code{\link{schmid}}, or class
@@ -34,15 +35,19 @@ last two on the second group factor.}
 
 \item{u2}{numeric. A vector of uniquenesses from an S-L solution.}
 
-\item{Phi}{matrix. Factor intercorrelations from the oblique solution used
-for the S-L transformation.}
+\item{Phi}{matrix. Factor intercorrelations from an oblique factor solution.}
 
-\item{pattern}{matrix. Pattern coefficients from the oblique solution used
-for the S-L transformation.}
+\item{pattern}{matrix. Pattern coefficients from an oblique factor solution.}
 
-\item{cormat}{matrix. An optional correlation matrix to be used when type = "psych".
-If left NULL, the correlation matrix is found based on the pattern matrix and
-Phi using \code{\link[psych:factor.model]{psych::factor.model}}}
+\item{cormat}{matrix. A correlation matrix to be used when type = "psych" or
+type = "EFAdiff". If left NULL, the correlation matrix is found based on the
+pattern matrix and Phi using \code{\link[psych:factor.model]{psych::factor.model}}.}
+
+\item{variance}{character. If "correlation", then total variances for the whole
+scale as well as the group factors are calculated
+based on the correlation matrix. If "sums_load", then total variances are
+calculated using the squared sums of g loadings and group factor loadings and
+the sum of uniquenesses (see details).}
 
 \item{type}{character. Either "EFAdiff" (default), "psych", or "Watkins".}
 }
@@ -72,14 +77,13 @@ Watkins' or \code{\link[psych:omega]{psych::omega}} results by setting the
 If \code{model = NULL} and \code{type = "EFAdiff"}(default), the arguments
 \code{var_names}, \code{factor_corres}, \code{g_load}, \code{s_load}, and \code{u2}
 need to be specified.
-If \code{model = NULL} and \code{type = "psych"}, the additional arguments
-\code{Phi} and \code{pattern} must be specified. Additionally, the argument
-\code{factor_corres} should be left NULL to replicate \code{\link[psych:omega]{psych::omega}}
+If \code{type = "psych"} or \code{type = "EFAdiff"}, either \code{cormat}
+(recommended) or \code{Phi} and \code{pattern} must be specified.
+Additionally, the argument \code{factor_corres} should be left NULL to
+replicate \code{\link[psych:omega]{psych::omega}}
 results, where variable-to-factor correspondences are found by taking the highest
 group factor loading for each variable as the relevant group factor loading.
-If, however, the argument \code{factor_corres} is specified, the specified
-variable-to-factor correspondences are taken, with a warning.
-If \code{model = NULL} and \code{type = "Watkins"}, the \code{u2} argument
+If \code{type = "Watkins"}, the \code{u2} argument
 should be left NULL to replicate results from Watkins' omega program, where
 uniquenesses are found based on the g loadings and relevant group factor
 loadings only. If, however, the argument \code{u2} is specified, the specified

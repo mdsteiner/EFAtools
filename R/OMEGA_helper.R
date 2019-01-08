@@ -1,7 +1,7 @@
 # Flexible omega function (e.g. to use with loadings obtained by MacOrtho)-------
 OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres = NULL,
                        g_load, s_load, u2 = NULL, Phi = NULL, pattern = NULL,
-                       cormat = NULL, type = "EFAdiff"){
+                       cormat = NULL, variance = NULL, type = "EFAdiff"){
 
   if(all(class(model) == c("psych", "schmid"))){
 
@@ -34,6 +34,33 @@ OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres 
 
     }
 
+  if(type == "psych" || type == "EFAdiff"){
+
+    if(is.null(variance)){
+
+      variance <- "correlation"
+
+    } else {
+
+      warning("Argument variance is specified. Variances are computed as specified.
+              Results may differ from the specified type")
+
+    }
+
+  } else if(type == "Watkins"){
+
+    if(is.null(variance)){
+
+      variance <- "sums_load"
+
+      } else {
+
+      warning("Argument variance is specified. Variances are computed as specified.
+              Results may differ from the specified type")
+
+      }
+  }
+
   # Create an input dataframe
   input <- data.frame(g_load, s_load)
   colnames(input) <- factor_names
@@ -47,7 +74,7 @@ OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres 
     stop("Either specify the u2 argument or set type = 'Watkins'")
   }
 
-  if(type == "psych"){
+  if(variance == "correlation"){
 
     if(is.null(cormat)) {
 
@@ -68,9 +95,12 @@ OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres 
                              function(x) which.max(abs(x[2:(ncol(s_load) + 1)])))
 
     } else {
+
+      if(type = "psych"){
       warning("Argument factor_corres is specified. Specified variable-to-factor
               correspondences are taken. To compute factor correspondences as done
               in psych, leave factor_corres = NULL.")
+      }
     }
     }
 
@@ -121,17 +151,14 @@ OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres 
   sums_e_s <- NULL
   sums_g_s <- NULL
   sums_s_s <- NULL
-  sums_var_s <- NULL
 
   for (i in 1:ncol(s_load)){
-    if(input$factor[i] > 0)
     sums_e_s[i] <- sum(input[input$factor == i, "u2"])
     sums_g_s[i] <- sum(input[input$factor == i, "g"])
     sums_s_s[i] <- sum(input[input$factor == i, i + 2])
-    sums_var_s[i] <- sum(input[input$factor == i, 3:(ncol(s_load) + 2)])
   }
 
-  if(type == "psych"){
+  if(variance == "correlation"){
 
     # Compute omega total, hierarchical, and subscale for g-factor
     omega_tot_g <- (sum(cormat) - sum(input$u2)) / sum(cormat)
@@ -151,7 +178,7 @@ OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres 
       omega_tot_sub[i] <- (sums_s_s[i]^2 + sums_g_s[i]^2) / Vgr
     }
 
-  } else {
+  } else if(variance == "sums_load") {
 
     # Compute omega total, hierarchical, and subscale for g-factor
     omega_tot_g <- (sum_g^2 + sum(sums_s^2)) / (sum_g^2 + sum(sums_s^2) + sum_e)
