@@ -31,7 +31,7 @@ print.SLLOADINGS <- function(x, cutoff = .2, digits = 3) {
 
   if (max_char > 10) {
     vn_nchar <- sapply(var_names, nchar)
-    var_names[which(vn_nchar > digits + 2)] <- substr(var_names[which(vn_nchar > 10)] ,
+    var_names[which(vn_nchar > 10)] <- substr(var_names[which(vn_nchar > 10)] ,
                                                       1, 10)
     max_char <- 10
   }
