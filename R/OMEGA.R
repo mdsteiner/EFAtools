@@ -26,13 +26,16 @@
 #' @param g_load numeric. A vector of g loadings from an S-L solution.
 #' @param s_load matrix. A matrix of group factor loadings from an S-L solution.
 #' @param u2 numeric. A vector of uniquenesses from an S-L solution.
-#' @param Phi matrix. Factor intercorrelations from the oblique solution used
-#' for the S-L transformation.
-#' @param pattern matrix. Pattern coefficients from the oblique solution used
-#' for the S-L transformation.
-#' @param cormat matrix. An optional correlation matrix to be used when type = "psych".
-#' If left NULL, the correlation matrix is found based on the pattern matrix and
-#' Phi using \code{\link[psych:factor.model]{psych::factor.model}}
+#' @param cormat matrix. A correlation matrix to be used when type = "psych" or
+#' type = "EFAdiff". If left NULL, the correlation matrix is found based on the
+#' pattern matrix and Phi using \code{\link[psych:factor.model]{psych::factor.model}}.
+#' @param Phi matrix. Factor intercorrelations from an oblique factor solution.
+#' @param pattern matrix. Pattern coefficients from an oblique factor solution.
+#' @param variance character. If "correlation", then total variances for the whole
+#' scale as well as the group factors are calculated
+#' based on the correlation matrix. If "sums_load", then total variances are
+#' calculated using the squared sums of g loadings and group factor loadings and
+#' the sum of uniquenesses (see details).
 #' @param type character. Either "EFAdiff" (default), "psych", or "Watkins".
 #'
 #' @details If \code{model} is specified and of class \code{\link{lavaan}},
@@ -45,14 +48,13 @@
 #' If \code{model = NULL} and \code{type = "EFAdiff"}(default), the arguments
 #' \code{var_names}, \code{factor_corres}, \code{g_load}, \code{s_load}, and \code{u2}
 #' need to be specified.
-#' If \code{model = NULL} and \code{type = "psych"}, the additional arguments
-#' \code{Phi} and \code{pattern} must be specified. Additionally, the argument
-#' \code{factor_corres} should be left NULL to replicate \code{\link[psych:omega]{psych::omega}}
+#' If \code{type = "psych"} or \code{type = "EFAdiff"}, either \code{cormat}
+#' (recommended) or \code{Phi} and \code{pattern} must be specified.
+#' Additionally, the argument \code{factor_corres} should be left NULL to
+#' replicate \code{\link[psych:omega]{psych::omega}}
 #' results, where variable-to-factor correspondences are found by taking the highest
 #' group factor loading for each variable as the relevant group factor loading.
-#' If, however, the argument \code{factor_corres} is specified, the specified
-#' variable-to-factor correspondences are taken, with a warning.
-#' If \code{model = NULL} and \code{type = "Watkins"}, the \code{u2} argument
+#' If \code{type = "Watkins"}, the \code{u2} argument
 #' should be left NULL to replicate results from Watkins' omega program, where
 #' uniquenesses are found based on the g loadings and relevant group factor
 #' loadings only. If, however, the argument \code{u2} is specified, the specified
@@ -70,7 +72,7 @@
 OMEGA <- function(model = NULL, var_names = NULL, fac_names = NULL,
                   factor_corres = NULL, g_load = NULL,
                   s_load = NULL, u2 = NULL, Phi = NULL, pattern = NULL,
-                  cormat = NULL, type = "EFAdiff"){
+                  cormat = NULL, variance = NULL, type = "EFAdiff"){
 
   if(!is.null(model) & (!is.null(var_names) || !is.null(g_load) || !is.null(s_load)
                         || !is.null(u2))){
@@ -96,7 +98,8 @@ OMEGA <- function(model = NULL, var_names = NULL, fac_names = NULL,
 
       OMEGA_FLEX(model = model, var_names = var_names, fac_names = fac_names,
                  factor_corres = factor_corres, g_load = g_load, s_load = s_load,
-                 u2 = u2, Phi = Phi, pattern = pattern, cormat = cormat, type = type)
+                 u2 = u2, Phi = Phi, pattern = pattern, cormat = cormat,
+                 variance = variance, type = type)
     }
 
     } else {
@@ -117,7 +120,8 @@ OMEGA <- function(model = NULL, var_names = NULL, fac_names = NULL,
 
           OMEGA_FLEX(model = model, var_names = var_names, fac_names = fac_names,
                  factor_corres = factor_corres, g_load = g_load, s_load = s_load,
-                 u2 = u2, Phi = Phi, pattern = pattern, cormat = cormat, type = type)
+                 u2 = u2, Phi = Phi, pattern = pattern, cormat = cormat,
+                 variance = variance, type = type)
 
         }
 
