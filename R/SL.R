@@ -27,6 +27,7 @@
 #' \item{sl}{A matrix with g loadings, group factor loadings, communalities,
 #' and uniquenesses.}
 #' \item{L2}{Second-order factor loadings.}
+#' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings}
 #'
 #' @export
 SL <- function(x, Phi = NULL, type = "EFAdiff", ...) {
@@ -93,6 +94,9 @@ SL <- function(x, Phi = NULL, type = "EFAdiff", ...) {
   h2_sl <- rowSums(sl_load^2)
   u2_sl <- 1 - h2_sl
 
+  vars_accounted <- .compute_vars(L_unrot = sl_load, L_rot = sl_load)
+  colnames(vars_accounted) <- colnames(load_mat)
+
   # Finalize output object
   sl <- cbind(sl_load, h2_sl, u2_sl)
   colnames(sl) <- c("g", 1:n_first_fac, "h2", "u2")
@@ -100,7 +104,8 @@ SL <- function(x, Phi = NULL, type = "EFAdiff", ...) {
 
   output <- list(
     sl = sl,
-    L2 = L2)
+    L2 = L2,
+    vars_accounted = vars_accounted)
 
   class(output) <- "SL"
 

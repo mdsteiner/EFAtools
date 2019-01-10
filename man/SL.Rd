@@ -27,6 +27,7 @@ A list containing the following
 \item{sl}{A matrix with g loadings, group factor loadings, communalities,
 and uniquenesses.}
 \item{L2}{Second-order factor loadings.}
+\item{vars_accounted}{Matrix of explained variances and sums of squared loadings}
 }
 \description{
 This function implements the Schmid-Leiman transformation. It takes the pattern
