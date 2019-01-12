@@ -19,10 +19,12 @@
 #' @param fac_names character. An optional vector of group factor names in the order
 #' of the S-L solution.
 #' @param factor_corres numeric. A vector that indicates which variable corresponds
-#' to which factor. Must be in the same order as the S-L solution. E.g.
+#' to which group factor. Must be in the same order as the S-L solution. E.g.
 #' c(3, 3, 3, 1, 1, 2, 2) if the first three variables load on the third group
 #' factor of the S-L solution, the next two on the first group factor and the
-#' last two on the second group factor.
+#' last two on the second group factor. If a variable should not be assigned to
+#' any group factor, insert a zero at its position (e.g. c(3, 3, 0, 1, 1, 2, 2),
+#' the third variable has no corresponding group factor).
 #' @param g_load numeric. A vector of g loadings from an S-L solution.
 #' @param s_load matrix. A matrix of group factor loadings from an S-L solution.
 #' @param u2 numeric. A vector of uniquenesses from an S-L solution.
