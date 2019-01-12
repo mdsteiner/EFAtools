@@ -95,7 +95,7 @@ SL <- function(x, Phi = NULL, type = "EFAdiff", ...) {
   u2_sl <- 1 - h2_sl
 
   vars_accounted <- .compute_vars(L_unrot = sl_load, L_rot = sl_load)
-  colnames(vars_accounted) <- colnames(load_mat)
+  colnames(vars_accounted) <- colnames(sl_load)
 
   # Finalize output object
   sl <- cbind(sl_load, h2_sl, u2_sl)
