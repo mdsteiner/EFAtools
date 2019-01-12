@@ -97,6 +97,7 @@ OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres 
     } else {
 
       if(type == "psych"){
+
       warning("Argument factor_corres is specified. Specified variable-to-factor
               correspondences are taken. To compute factor correspondences as done
               in psych, leave factor_corres = NULL.")
