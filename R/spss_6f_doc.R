@@ -1,0 +1,18 @@
+#' spss_6f
+#'
+#' Various outputs from SPSS FACTOR used in Steiner & Grieder (2019). See below for details
+#'
+#'
+#' @format A list of 8
+#' \describe{
+#'   \item{final_communalities}{(data.frame) - Subtest = abbreviated subtest names. For details see Grieder and Grob (2019). FACTOR = the final communalities obtained with the FACTOR algorithm with PAF and no rotation.}
+#'   \item{final_eigenvalues}{(data.frame) - Factor = the factors from 1 to 6 factors. eigen = final eigenvalues obtained with the FACTOR algorithm with PAF and no rotation.}
+#'   \item{loadings_unrotated}{(data.frame) - subtest = the abbreviated subtest names. For details see Grieder and Grob (2019). F1 to F6 = unrotated factor loadings obtained with the FACTOR algorithm with PAF}
+#'   \item{paf_iter}{(numeric) - Number of iterations needed for the principal axis factoring to converge.}
+#'   \item{loadings_varimax}{(data.frame) - subtest = the abbreviated subtest names. For details see Grieder and Grob (2019). F1 to F6 = varimax rotated factor loadings obtained with the FACTOR algorithm with PAF}
+#'   \item{loadings_promax}{(data.frame) - subtest = the abbreviated subtest names. For details see Grieder and Grob (2019). F1 to F6 = promax rotated factor loadings obtained with the FACTOR algorithm with PAF}
+#'   \item{structure_promax}{(data.frame) - subtest = the abbreviated subtest names. For details see Grieder and Grob (2019). F1 to F6  = promax rotated factor loadings obtained with the FACTOR algorithm with PAF}
+#'   \item{phi_promax}{(matrix) - F1 to F6  = intercorrelations of the promax rotated loadings.}
+#'  }
+#' @source Steiner, M.D., & Grieder, S. (2019). Resolving differences in principal axis factor analysis and promax rotation in SPSS and R psych. Submitted Manuscript.
+"spss_6f"
