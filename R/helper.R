@@ -59,15 +59,15 @@
   h2 <- diag(L_unrot %*% t(L_unrot))
   var_total <- sum(h2 + (1 - h2))
   vars_explained <- rbind(`SS loadings` = vars)
-  vars_explained <- rbind(vars_explained, `Proportion Var` = vars / var_total)
+  vars_explained <- rbind(vars_explained, `Prop Tot Var` = vars / var_total)
 
   if (ncol(L_rot) > 1) {
     vars_explained <- rbind(vars_explained,
-                            `Cumulative Var` = cumsum(vars / var_total))
+                            `Cum Prop Tot Var` = cumsum(vars / var_total))
     vars_explained <- rbind(vars_explained,
-                            `Prop of Explained Var` = vars / sum(vars))
+                            `Prop Comm Var` = vars / sum(vars))
     vars_explained <- rbind(vars_explained,
-                            `Cum Prop of Explained Var` = cumsum(vars / sum(vars)))
+                            `Cum Prop Comm Var` = cumsum(vars / sum(vars)))
   }
 
   vars_explained
