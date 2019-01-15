@@ -4,13 +4,16 @@
 \name{spss_7f}
 \alias{spss_7f}
 \title{spss_7f}
-\format{A list of 5
+\format{A list of 8
 \describe{
   \item{final_communalities}{(data.frame) - Subtest = abbreviated subtest names. For details see Grieder and Grob (2019). FACTOR = the final communalities obtained with the FACTOR algorithm with PAF and no rotation.}
-  \item{final_eigenvalues}{(data.frame) - Factor = the factors from 1 to n factors. eigen = final eigenvalues obtained with the FACTOR algorithm with PAF and no rotation.}
-  \item{loadings_unrotated}{(data.frame) - subtest = the abbreviated subtest names. For details see Grieder and Grob (2019). F1 to Fn (where n = number of factors) = unrotated factor loadings obtained with the FACTOR algorithm with PAF}
-  \item{loadings_varimax}{(data.frame) - subtest = the abbreviated subtest names. For details see Grieder and Grob (2019). F1 to Fn (where n = number of factors) = varimax rotated factor loadings obtained with the FACTOR algorithm with PAF}
-  \item{loadings_promax}{(data.frame) - subtest = the abbreviated subtest names. For details see Grieder and Grob (2019). F1 to Fn (where n = number of factors) = promax rotated factor loadings obtained with the FACTOR algorithm with PAF}
+  \item{final_eigenvalues}{(data.frame) - Factor = the factors from 1 to 7 factors. eigen = final eigenvalues obtained with the FACTOR algorithm with PAF and no rotation.}
+  \item{loadings_unrotated}{(data.frame) - subtest = the abbreviated subtest names. For details see Grieder and Grob (2019). F1 to F7 = unrotated factor loadings obtained with the FACTOR algorithm with PAF}
+  \item{loadings_varimax}{(data.frame) - subtest = the abbreviated subtest names. For details see Grieder and Grob (2019). F1 to F7 = varimax rotated factor loadings obtained with the FACTOR algorithm with PAF}
+  \item{loadings_promax}{(data.frame) - subtest = the abbreviated subtest names. For details see Grieder and Grob (2019). F1 to F7 = promax rotated factor loadings obtained with the FACTOR algorithm with PAF}
+  \item{structure_promax}{(data.frame) - subtest = the abbreviated subtest names. For details see Grieder and Grob (2019). F1 to F7  = promax rotated factor loadings obtained with the FACTOR algorithm with PAF}
+  \item{phi_promax}{(matrix) - F1 to F7  = intercorrelations of the promax rotated loadings.}
+  \item{paf_iter}{(numeric) - Number of iterations needed for the principal axis factoring to converge.}
  }}
 \source{
 Steiner, M.D., & Grieder, S. (2019). Resolving differences in principal axis factor analysis and promax rotation in SPSS and R psych. Submitted Manuscript.
