@@ -62,14 +62,15 @@
 #' loadings only. If, however, the argument \code{u2} is specified, the specified
 #' uniquenesses are taken, with a warning.
 #'
-#' Explain omegas (incl. formula) for all type settings.
+#' Explain omegas (incl. formula) for all type settings. 1 - omega tot as
+#' variance in the composite that is not explained by g or the group factor.
 #'
 #' @return
 #' A matrix with Omegas for g / the whole scale and for the subscales.
 #' \item{omega_tot}{Omega total.}
 #' \item{omega_h}{Omega hierarchical.}
 #' \item{omega_sub}{Omega subscale.}
-#'
+#' \item{1 - omega_tot}{1 - Omega total.}
 #' @export
 OMEGA <- function(model = NULL, var_names = NULL, fac_names = NULL,
                   factor_corres = NULL, g_load = NULL,

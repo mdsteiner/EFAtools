@@ -196,8 +196,10 @@ OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres 
   omega_tot <- c(omega_tot_g, omega_tot_sub)
   omega_h <- c(omega_h_g, omega_h_sub)
   omega_sub <- c(omega_sub_g, omega_sub_sub)
+  not_exp <- c(1 - omega_tot)
 
-  omegas <- cbind(omega_tot, omega_h, omega_sub)
+  omegas <- cbind(omega_tot, omega_h, omega_sub, not_exp)
+  colnames(omegas) <- c("omega tot", "omega h", "omega sub", "1 - omega tot")
 
   if(!is.null(fac_names)){
     rownames(omegas) <- c("g", fac_names)
@@ -277,8 +279,11 @@ OMEGA_LAVAAN <- function(model){
   omega_tot <- c(omega_tot_g, omega_tot_sub)
   omega_h <- c(omega_h_g, omega_h_sub)
   omega_sub <- c(omega_sub_g, omega_sub_sub)
+  not_exp <- c(1 - omega_tot)
 
-  omegas <- matrix(omega_tot, omega_h, omega_sub)
+  omegas <- cbind(omega_tot, omega_h, omega_sub, not_exp)
+  colnames(omegas) <- c("omega tot", "omega h", "omega sub", "1 - omega tot")
+
   rownames(omegas) <- fac_names
 
   omegas
