@@ -40,7 +40,10 @@
 #' the sum of uniquenesses (see details).
 #' @param type character. Either "EFAdiff" (default), "psych", or "Watkins".
 #'
-#' @details If \code{model} is specified and of class \code{\link{lavaan}},
+#' @details
+#'
+#' @section How to combine arguments:
+#' If \code{model} is specified and of class \code{\link{lavaan}},
 #' no other arguments need to be specified.
 #' If \code{model} is of class
 #' \code{\link{SL}} or \code{\link{schmid}}, only the argument \code{factor_corres}
@@ -62,8 +65,35 @@
 #' loadings only. If, however, the argument \code{u2} is specified, the specified
 #' uniquenesses are taken, with a warning.
 #'
-#' Explain omegas (incl. formula) for all type settings. 1 - omega tot as
-#' variance in the composite that is not explained by g or the group factor.
+#' @section What is Omega?:
+#' Omega (McDonald, 1999) is a model-based reliability estimate that is especially
+#' useful for multidimensional measures, as it allows variance partitioning. The
+#' present function finds Omega from an SL solution or a lavaan bifactor solution
+#' with one g factor and two or more group factors.
+#'
+#' Omega total is the total true score variance. For the whole scale, this is the
+#' total variance explained by the model. For subscale composites, this is the sum of
+#' the squared sums of loadings on the g factor and the group factors, divided by the
+#' total variance of the respective indicators.
+#'
+#' Omega hierarchical is the g-factor variance. For the whole scale, this is the
+#' g saturation of the scale: the squared sum of all g loadings divided by the
+#' total variance. For the subscale composites, this is the squared sum of g
+#' loadings of the respective indicators divided by the total variance of the
+#' respective indicators. Omega hierarchical for a subscale therefore indicates the variance
+#' that is actually accounted for by the g factor and not the group factor itself.
+#'
+#' Omega subscale is the group-factor variance. For the whole scale, this is the
+#' sum of the squared sums of the group factor loadings for all group factors
+#' divided by the total variance. Omega subscale for the whole scale therefore
+#' indicates the true score variance due to all the group factors together.
+#' For the subscale composites, this is the squared sum of the group factor loadings
+#' divided by the total variance of the respective indicators.
+#'
+#' 1 - omega tot as variance in the composite that is not explained by g or the group factor.
+#'
+#' @section Calculation of omega for different types:
+#' Explain omegas (incl. formula) for all type settings.
 #'
 #' @return
 #' A matrix with Omegas for g / the whole scale and for the subscales.
