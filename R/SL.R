@@ -1,6 +1,7 @@
 #' Schmid-Leiman Transformation
 #'
-#' This function implements the Schmid-Leiman transformation. It takes the pattern
+#' This function implements the Schmid-Leiman (SL) transformation. It takes the
+#'  pattern
 #' coefficients and factor intercorrelations from an oblique factor solution as
 #' input and can reproduce the results from \code{\link[psych:schmid]{psych::schmid}},
 #' from the SPSS
@@ -28,6 +29,20 @@
 #' and uniquenesses.}
 #' \item{L2}{Second-order factor loadings.}
 #' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings}
+#'
+#' @details
+#' The SL transformation (also called SL orthogonalization) is a procedure with
+#' which an oblique factor solution is transformed into a hierarchical,
+#' orthogonalized solution. As a first step, the factor intercorrelations are
+#' again factor analyzed to find second-order factor loadings. If there is only
+#' one higher-order factor, this step of the procedure stops there, resulting in
+#' a second-order factor structure. The first-order factor and the second-order
+#' factor are then orthogonalized, resulting in an orthogonalized factor solution
+#' with proportionaliy constraints. The procedure thus makes a suggested
+#' hierarchical data structure based on factor intercorrelations explicit. One
+#' major advantage of SL transformation is that it enables variance
+#' partitioning between higher-order and first-order factors, including the
+#' calculation of Omega (see \code{\link[EFAdiff:Omega]{EFAdiff::Omega}}).
 #'
 #' @export
 SL <- function(x, Phi = NULL, type = "EFAdiff", ...) {

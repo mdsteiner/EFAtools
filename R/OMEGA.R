@@ -113,8 +113,6 @@
 #' based on all using the squared sums of g loadings and group factor loadings
 #' and the sum of these uniquenesses.
 #'
-#'  \code{type = "Watkins"}
-#'
 #' @return
 #' A matrix with Omegas for g / the whole scale and for the subscales.
 #' \item{omega_tot}{Omega total.}
