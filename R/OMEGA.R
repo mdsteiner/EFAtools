@@ -5,7 +5,8 @@
 #' omegas can either be found using the outputs from
 #' \code{\link[psych:schmid]{psych::schmid}} or from \code{\link{SL}}, or, in a
 #' more flexible way, by leaving model empty and specifying additional arguments.
-#' By setting the \code{type} argument, results from \code{\link[psych:omega]{psych::omega}}
+#' By setting the \code{type} argument, results from
+#' \code{\link[psych:omega]{psych::omega}}
 #' or Watkins' omega program (Watkins, 2013) can be reproduced.
 #'
 #' @param model class \code{\link{SL}}, class \code{\link{schmid}}, or class
@@ -44,7 +45,7 @@
 #'
 #' @section How to combine arguments:
 #' If \code{model} is specified and of class \code{\link{lavaan}},
-#' no other arguments need to be specified.
+#' no other arguments need to be specified / all other arguments are ignored.
 #' If \code{model} is of class
 #' \code{\link{SL}} or \code{\link{schmid}}, only the argument \code{factor_corres}
 #' needs to be specified additionally. There is, however, the option to reproduce
@@ -80,8 +81,9 @@
 #' g saturation of the scale: the squared sum of all g loadings divided by the
 #' total variance. For the subscale composites, this is the squared sum of g
 #' loadings of the respective indicators divided by the total variance of the
-#' respective indicators. Omega hierarchical for a subscale therefore indicates the variance
-#' that is actually accounted for by the g factor and not the group factor itself.
+#' respective indicators. Omega hierarchical for a subscale therefore indicates
+#' the variance that is actually accounted for by the g factor and not the group
+#' factor itself.
 #'
 #' Omega subscale is the group-factor variance. For the whole scale, this is the
 #' sum of the squared sums of the group factor loadings for all group factors
@@ -90,10 +92,28 @@
 #' For the subscale composites, this is the squared sum of the group factor loadings
 #' divided by the total variance of the respective indicators.
 #'
-#' 1 - omega tot as variance in the composite that is not explained by g or the group factor.
+#' Additionally, 1 - omega total is given for comparison with omega hierarchical
+#' and omega subscale.
 #'
 #' @section Calculation of omega for different types:
-#' Explain omegas (incl. formula) for all type settings.
+#' The main differences between the types concern the calculation of the total
+#' variance (for the whole scale as well as the subscale composites) as well as
+#' the finding of variable-to-factor correspondences. The former aspect
+#' can also be controlled individually specifying the variance argument, the
+#' latter by specifying the factor_corres argument.
+#' For \code{type = "EFAdiff"}, total variances are found using the correlation
+#' matrix, and variable-to-factor correspondences have to be specified manually.
+#' The only difference for \code{type = "psych"} is that it takes the highest
+#' group factor loading for each variable as the relevant group factor loading.
+#' To mimik results from Watkins' Omega program, for \code{type = "Watkins"}
+#' for each variablce only the g-factor loading and the relevant group-factor
+#' loadings according to the specified variable-to-factor correspondences is
+#' taken into account. The other loadings are set to zero. Uniquenesses are found
+#' based on these two loadings per variable only and total variance is calculated
+#' based on all using the squared sums of g loadings and group factor loadings
+#' and the sum of these uniquenesses.
+#'
+#'  \code{type = "Watkins"}
 #'
 #' @return
 #' A matrix with Omegas for g / the whole scale and for the subscales.
