@@ -7,6 +7,7 @@
 #'  to round the loadings to (default is 3).
 #'
 #' @return A string created using the crayon package
+#' @method print COMMUNALITIES
 #' @export
 print.COMMUNALITIES <- function(x, cutoff = .3, digits = 3) {
 

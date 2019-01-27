@@ -58,6 +58,7 @@ A matrix with Omegas for g / the whole scale and for the subscales.
 \item{omega_tot}{Omega total.}
 \item{omega_h}{Omega hierarchical.}
 \item{omega_sub}{Omega subscale.}
+\item{1 - omega_tot}{1 - Omega total.}
 }
 \description{
 This function finds omega total, omega hierarchical, and omega subscale
@@ -65,12 +66,17 @@ from a Schmid-Leiman (S-L) solution or lavaan bifactor solution. The S-L-based
 omegas can either be found using the outputs from
 \code{\link[psych:schmid]{psych::schmid}} or from \code{\link{SL}}, or, in a
 more flexible way, by leaving model empty and specifying additional arguments.
-By setting the \code{type} argument, results from \code{\link[psych:omega]{psych::omega}}
+By setting the \code{type} argument, results from
+\code{\link[psych:omega]{psych::omega}}
 or Watkins' omega program (Watkins, 2013) can be reproduced.
 }
 \details{
+
+}
+\section{How to combine arguments}{
+
 If \code{model} is specified and of class \code{\link{lavaan}},
-no other arguments need to be specified.
+no other arguments need to be specified / all other arguments are ignored.
 If \code{model} is of class
 \code{\link{SL}} or \code{\link{schmid}}, only the argument \code{factor_corres}
 needs to be specified additionally. There is, however, the option to reproduce
@@ -90,6 +96,56 @@ should be left NULL to replicate results from Watkins' omega program, where
 uniquenesses are found based on the g loadings and relevant group factor
 loadings only. If, however, the argument \code{u2} is specified, the specified
 uniquenesses are taken, with a warning.
-
-Explain omegas (incl. formula) for all type settings.
 }
+
+\section{What is Omega?}{
+
+Omega (McDonald, 1999) is a model-based reliability estimate that is especially
+useful for multidimensional measures, as it allows variance partitioning. The
+present function finds Omega from an SL solution or a lavaan bifactor solution
+with one g factor and two or more group factors.
+
+Omega total is the total true score variance. For the whole scale, this is the
+total variance explained by the model. For subscale composites, this is the sum of
+the squared sums of loadings on the g factor and the group factors, divided by the
+total variance of the respective indicators.
+
+Omega hierarchical is the g-factor variance. For the whole scale, this is the
+g saturation of the scale: the squared sum of all g loadings divided by the
+total variance. For the subscale composites, this is the squared sum of g
+loadings of the respective indicators divided by the total variance of the
+respective indicators. Omega hierarchical for a subscale therefore indicates
+the variance that is actually accounted for by the g factor and not the group
+factor itself.
+
+Omega subscale is the group-factor variance. For the whole scale, this is the
+sum of the squared sums of the group factor loadings for all group factors
+divided by the total variance. Omega subscale for the whole scale therefore
+indicates the true score variance due to all the group factors together.
+For the subscale composites, this is the squared sum of the group factor loadings
+divided by the total variance of the respective indicators.
+
+Additionally, 1 - omega total is given for comparison with omega hierarchical
+and omega subscale.
+}
+
+\section{Calculation of omega for different types}{
+
+The main differences between the types concern the calculation of the total
+variance (for the whole scale as well as the subscale composites) as well as
+the finding of variable-to-factor correspondences. The former aspect
+can also be controlled individually specifying the variance argument, the
+latter by specifying the factor_corres argument.
+For \code{type = "EFAdiff"}, total variances are found using the correlation
+matrix, and variable-to-factor correspondences have to be specified manually.
+The only difference for \code{type = "psych"} is that it takes the highest
+group factor loading for each variable as the relevant group factor loading.
+To mimik results from Watkins' Omega program, for \code{type = "Watkins"}
+for each variablce only the g-factor loading and the relevant group-factor
+loadings according to the specified variable-to-factor correspondences is
+taken into account. The other loadings are set to zero. Uniquenesses are found
+based on these two loadings per variable only and total variance is calculated
+based on all using the squared sums of g loadings and group factor loadings
+and the sum of these uniquenesses.
+}
+

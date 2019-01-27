@@ -7,6 +7,7 @@
 #'  to round the loadings to (default is 3).
 #'
 #' @return A string created using the crayon package
+#' @method print SLLOADINGS
 #' @export
 print.SLLOADINGS <- function(x, cutoff = .2, digits = 3) {
 
