@@ -17,7 +17,7 @@
 #'  \code{\link[psych:factor.stats]{psych::factor.stats}} for details.
 #' @param max_iter numeric. The maximum number of iterations (default is 300) to
 #'  perform after which the iterative PAF procedure is halted with a warning.
-#' @param type character. If one of "EFAdiff" (default), "psych", or "SPSS" is
+#' @param type character. If one of "SG" (default), "psych", or "SPSS" is
 #'  used, and the following arguments (except \code{signed_loadings}) are left with
 #'  NULL, these implementations
 #'  are executed as reported in Steiner and Grieder (2019; see details).
@@ -52,7 +52,7 @@
 #'
 #' @details Values of \code{init_comm}, \code{criterion}, \code{criterion_type},
 #' and \code{abs_eig} depend on the \code{type} argument.
-#'\code{type = "EFAdiff"} will use the following argument specification:
+#'\code{type = "SG"} will use the following argument specification:
 #' \code{init_comm = "smc", criterion = .001, criterion_type = "max_individual",
 #' abs_eig = FALSE}.
 #' \code{type = "psych"} will use the following argument specification:
@@ -77,8 +77,8 @@
 #'  \code{\link[psych:factor.stats]{psych::factor.stats}}}
 #'
 #' @export
-PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = 1e5,
-                type = "EFAdiff", init_comm = NULL, criterion = NULL,
+PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
+                type = "SG", init_comm = NULL, criterion = NULL,
                 criterion_type = NULL, abs_eigen = NULL,
                 signed_loadings = TRUE, use = "pairwise.complete.obs") {
 
@@ -104,19 +104,19 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = 1e5,
   }
 
 
-  if (is.null(type) || !(type %in% c("EFAdiff", "psych", "SPSS"))) {
+  if (is.null(type) || !(type %in% c("SG", "psych", "SPSS"))) {
 
     # if type is not one of the three valid inputs, throw an error if not
     # all the other necessary arguments are specified.
 
     if (is.null(init_comm) || is.null(criterion) || is.null(criterion_type) ||
-        is.null(abs_eigen) || is.null(signed_loadings)) {
-      stop('One of "init_comm", "criterion", "criterion_type", "abs_eigen", or
-           "signed_loadings" was NULL and no valid "type" was specified.
-           Either use one of "EFAdiff", "psych", or "SPSS" for type, or specify
-           all other arguments')
+        is.null(abs_eigen) || is.null(signed_loadings) || is.null(max_iter)) {
+      stop('One of "init_comm", "criterion", "criterion_type", "abs_eigen",
+           "max_iter", or "signed_loadings" was NULL and no valid "type" was
+           specified. Either use one of "SG", "psych", or "SPSS" for type,
+           or specify all other arguments')
     }
-  } else if (type == "EFAdiff") {
+  } else if (type == "SG") {
 
     # if not specified, set PAF properties. If specified, throw warning that
     # results may not exactly match the specified type
@@ -140,6 +140,13 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = 1e5,
     } else {
       warning("Type and criterion_type is specified. criterion_type is used with value '",
               criterion_type, "'. Results may differ from the specified type")
+    }
+
+    if (is.null(max_iter)) {
+      max_iter <- 1e5
+    } else {
+      warning("Type and max_iter is specified. max_iter is used with value '",
+              max_iter, "'. Results may differ from the specified type")
     }
 
     if (is.null(abs_eigen)) {
@@ -176,6 +183,13 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = 1e5,
               criterion_type, "'. Results may differ from the specified type")
     }
 
+    if (is.null(max_iter)) {
+      max_iter <- 50
+    } else {
+      warning("Type and max_iter is specified. max_iter is used with value '",
+              max_iter, "'. Results may differ from the specified type")
+    }
+
     if (is.null(abs_eigen)) {
       abs_eigen <- FALSE
     } else {
@@ -208,6 +222,13 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = 1e5,
     } else {
       warning("Type and criterion_type is specified. criterion_type is used with value '",
               criterion_type, "'. Results may differ from the specified type")
+    }
+
+    if (is.null(max_iter)) {
+      max_iter <- 25
+    } else {
+      warning("Type and max_iter is specified. max_iter is used with value '",
+              max_iter, "'. Results may differ from the specified type")
     }
 
     if (is.null(abs_eigen)) {

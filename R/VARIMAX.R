@@ -8,7 +8,7 @@
 #'
 #' @param x matrix or class \code{\link{PAF}} object. Either a matrix containing
 #' an unrotated factor solution, or a \code{\link{PAF}} output object.
-#' @param type character. If one of "EFAdiff" (default), "psych", or "SPSS" is
+#' @param type character. If one of "SG" (default), "psych", or "SPSS" is
 #'  used, and the following arguments (except kaiser) are left with \code{NULL},
 #'  these implementations
 #'  are executed as reported in Steiner and Grieder (2019; see details).
@@ -25,7 +25,7 @@
 #'  their signs. Default is \code{NULL}. "psych" will use the psych method,
 #'  "SPSS" the SPSS method. See below for details.
 #'
-#' @details \code{type = "EFAdiff"} will use the following argument specification:
+#' @details \code{type = "SG"} will use the following argument specification:
 #' \code{precision = 1e-10, order_type = "psych"}.
 #' \code{type = "psych"} will use the following argument specification:
 #' \code{precision = 1e-5, order_type = "psych"}.
@@ -47,19 +47,19 @@
 #'  \code{\link[psych:factor.stats]{psych::factor.stats}}}
 #'
 #' @export
-VARIMAX <- function (x, type = "EFAdiff", kaiser = TRUE,
+VARIMAX <- function (x, type = "SG", kaiser = TRUE,
                     precision = NULL, order_type = NULL) {
 
-  if (is.null(type) || !(type %in% c("EFAdiff", "psych", "SPSS"))) {
+  if (is.null(type) || !(type %in% c("SG", "psych", "SPSS"))) {
     # if type is not one of the three valid inputs, throw an error if not
     # all the other necessary arguments are specified.
 
     if (is.null(precision) || is.null(order_type)) {
       stop('One of "precision", or "order_type" was NULL and no valid
-           "type" was specified. Either use one of "EFAdiff", "psych", or "SPSS"
+           "type" was specified. Either use one of "SG", "psych", or "SPSS"
            for type, or specify all other arguments')
       }
-    } else if (type == "EFAdiff") {
+    } else if (type == "SG") {
 
       # if not specified, set PAF properties. If specified, throw warning that
       # results may not exactly match the specified type

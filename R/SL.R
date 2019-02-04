@@ -19,7 +19,7 @@
 #' @param Phi matrix. A matrix of factor intercorrelations from an oblique factor
 #' solution. Only needs to be specified if x is not of class \code{\link{PROMAX}}
 #' or class \code{\link{fa}}.
-#' @param type character. One of "EFAdiff" (default), "psych", or "SPSS". This
+#' @param type character. One of "SG" (default), "psych", or "SPSS". This
 #' is used to control the procedure of the second order factor analysis. See
 #' \code{\link{PAF}} for details.
 #' @param ... Arguments to be passed to \code{PAF}.
@@ -42,10 +42,10 @@
 #' hierarchical data structure based on factor intercorrelations explicit. One
 #' major advantage of SL transformation is that it enables variance
 #' partitioning between higher-order and first-order factors, including the
-#' calculation of Omega (see \code{\link[EFAdiff:Omega]{EFAdiff::Omega}}).
+#' calculation of Omega (see \code{\link{OMEGA}}).
 #'
 #' @export
-SL <- function(x, Phi = NULL, type = "EFAdiff", ...) {
+SL <- function(x, Phi = NULL, type = "SG", ...) {
 
   if(all(class(x) == "PROMAX")) {
 

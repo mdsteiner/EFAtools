@@ -42,7 +42,6 @@
 #' @param type character. Either "EFAdiff" (default), "psych", or "Watkins".
 #'
 #' @details
-#'
 #' @section How to combine arguments:
 #' If \code{model} is specified and of class \code{\link{lavaan}},
 #' no other arguments need to be specified / all other arguments are ignored.

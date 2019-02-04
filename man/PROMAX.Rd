@@ -4,7 +4,7 @@
 \alias{PROMAX}
 \title{Promax rotation}
 \usage{
-PROMAX(x, k = 4, type = "EFAdiff", kaiser = TRUE, P_type = NULL,
+PROMAX(x, k = 3, type = "SG", kaiser = TRUE, P_type = NULL,
   precision = NULL, order_type = NULL)
 }
 \arguments{
@@ -14,7 +14,7 @@ an unrotated factor solution, or a \code{\link{PAF}} output object.}
 \item{k}{numeric. The power used for computing the target matrix P in the
 promax rotation.}
 
-\item{type}{character. If one of "EFAdiff" (default), "psych", or "SPSS" is
+\item{type}{character. If one of "SG" (default), "psych", or "SPSS" is
 used, and the following arguments (except kaiser) are left with \code{NULL},
 these implementations
 are executed as reported in Steiner and Grieder (2019; see details).
@@ -59,7 +59,7 @@ only the \code{type} argument has to be specified additional to \code{x}.
 The other arguments can be used to control the procedure more flexibly.
 }
 \details{
-\code{type = "EFAdiff"} will use the following argument specification:
+\code{type = "SG"} will use the following argument specification:
 \code{P_type = "HW", precision = 1e-10, order_type = "psych"}.
 \code{type = "psych"} will use the following argument specification:
 \code{P_type = "HW", precision = 1e-5, order_type = "psych"}.

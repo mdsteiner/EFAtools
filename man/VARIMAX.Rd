@@ -4,14 +4,14 @@
 \alias{VARIMAX}
 \title{Varimax rotation}
 \usage{
-VARIMAX(x, type = "EFAdiff", kaiser = TRUE, precision = NULL,
+VARIMAX(x, type = "SG", kaiser = TRUE, precision = NULL,
   order_type = NULL)
 }
 \arguments{
 \item{x}{matrix or class \code{\link{PAF}} object. Either a matrix containing
 an unrotated factor solution, or a \code{\link{PAF}} output object.}
 
-\item{type}{character. If one of "EFAdiff" (default), "psych", or "SPSS" is
+\item{type}{character. If one of "SG" (default), "psych", or "SPSS" is
 used, and the following arguments (except kaiser) are left with \code{NULL},
 these implementations
 are executed as reported in Steiner and Grieder (2019; see details).
@@ -49,7 +49,7 @@ only the \code{type} argument has to be specified additional to \code{x}.
 The other arguments can be used to control the procedure more flexibly.
 }
 \details{
-\code{type = "EFAdiff"} will use the following argument specification:
+\code{type = "SG"} will use the following argument specification:
 \code{precision = 1e-10, order_type = "psych"}.
 \code{type = "psych"} will use the following argument specification:
 \code{precision = 1e-5, order_type = "psych"}.

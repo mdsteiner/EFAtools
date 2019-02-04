@@ -14,7 +14,7 @@
 #'  \code{\link[psych:factor.stats]{psych::factor.stats}} for details.
 #' @param rotation character. One of "none" (default), "promax", or "varimax".
 #'  Specifies the type of rotation to perform.
-#' @param type character. If one of "EFAdiff" (default), "psych", or "SPSS" is
+#' @param type character. If one of "SG" (default), "psych", or "SPSS" is
 #'  used, and the following arguments with default NULL are left with
 #'  NULL, these implementations are executed as reported in Steiner and Grieder
 #'  (2019). Individual properties can be adapted using one of the three types and
@@ -89,10 +89,10 @@
 #'
 #' @export
 EFA <- function(x, n_factors, cors = TRUE, N = NA, rotation = "none",
-                type = "EFAdiff", max_iter = 1e5, init_comm = NULL,
+                type = "SG", max_iter = NULL, init_comm = NULL,
                 criterion = NULL, criterion_type = NULL, abs_eigen = NULL,
                 signed_loadings = TRUE, use = "pairwise.complete.obs",
-                k = 4, kaiser = TRUE, P_type = NULL,
+                k = 3, kaiser = TRUE, P_type = NULL,
                 precision = NULL, order_type = NULL) {
 
   # run principal axis factoring

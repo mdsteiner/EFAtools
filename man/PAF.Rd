@@ -4,8 +4,8 @@
 \alias{PAF}
 \title{Principal Axis Factoring}
 \usage{
-PAF(x, n_factors, cors = TRUE, N = NA, max_iter = 1e+05,
-  type = "EFAdiff", init_comm = NULL, criterion = NULL,
+PAF(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
+  type = "SG", init_comm = NULL, criterion = NULL,
   criterion_type = NULL, abs_eigen = NULL, signed_loadings = TRUE,
   use = "pairwise.complete.obs")
 }
@@ -26,7 +26,7 @@ correlation matrix is used. If input is a correlation matrix and N = NA
 \item{max_iter}{numeric. The maximum number of iterations (default is 300) to
 perform after which the iterative PAF procedure is halted with a warning.}
 
-\item{type}{character. If one of "EFAdiff" (default), "psych", or "SPSS" is
+\item{type}{character. If one of "SG" (default), "psych", or "SPSS" is
 used, and the following arguments (except \code{signed_loadings}) are left with
 NULL, these implementations
 are executed as reported in Steiner and Grieder (2019; see details).
@@ -90,7 +90,7 @@ arguments can be used to control the procedure more flexibly.
 \details{
 Values of \code{init_comm}, \code{criterion}, \code{criterion_type},
 and \code{abs_eig} depend on the \code{type} argument.
-\code{type = "EFAdiff"} will use the following argument specification:
+\code{type = "SG"} will use the following argument specification:
 \code{init_comm = "smc", criterion = .001, criterion_type = "max_individual",
 abs_eig = FALSE}.
 \code{type = "psych"} will use the following argument specification:

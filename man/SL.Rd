@@ -4,7 +4,7 @@
 \alias{SL}
 \title{Schmid-Leiman Transformation}
 \usage{
-SL(x, Phi = NULL, type = "EFAdiff", ...)
+SL(x, Phi = NULL, type = "SG", ...)
 }
 \arguments{
 \item{x}{object of class \code{\link{PROMAX}} or class \code{\link{fa}} or
@@ -16,7 +16,7 @@ x can also be a pattern matrix from an oblique factor solution (see \code{Phi}).
 solution. Only needs to be specified if x is not of class \code{\link{PROMAX}}
 or class \code{\link{fa}}.}
 
-\item{type}{character. One of "EFAdiff" (default), "psych", or "SPSS". This
+\item{type}{character. One of "SG" (default), "psych", or "SPSS". This
 is used to control the procedure of the second order factor analysis. See
 \code{\link{PAF}} for details.}
 
@@ -54,5 +54,5 @@ with proportionaliy constraints. The procedure thus makes a suggested
 hierarchical data structure based on factor intercorrelations explicit. One
 major advantage of SL transformation is that it enables variance
 partitioning between higher-order and first-order factors, including the
-calculation of Omega (see \code{\link[EFAdiff:Omega]{EFAdiff::Omega}}).
+calculation of Omega (see \code{\link{OMEGA}}).
 }

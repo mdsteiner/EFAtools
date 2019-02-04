@@ -70,9 +70,6 @@ By setting the \code{type} argument, results from
 \code{\link[psych:omega]{psych::omega}}
 or Watkins' omega program (Watkins, 2013) can be reproduced.
 }
-\details{
-
-}
 \section{How to combine arguments}{
 
 If \code{model} is specified and of class \code{\link{lavaan}},

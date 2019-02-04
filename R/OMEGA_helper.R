@@ -1,7 +1,7 @@
 # Flexible omega function (e.g. to use with loadings obtained by MacOrtho)-------
 OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres = NULL,
                        g_load, s_load, u2 = NULL, Phi = NULL, pattern = NULL,
-                       cormat = NULL, variance = NULL, type = "EFAdiff"){
+                       cormat = NULL, variance = NULL, type = "SG"){
 
   if(all(class(model) == c("psych", "schmid"))){
 
@@ -34,7 +34,7 @@ OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres 
 
     }
 
-  if(type == "psych" || type == "EFAdiff"){
+  if(type == "psych" || type == "SG"){
 
     if(is.null(variance)){
 
