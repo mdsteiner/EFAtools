@@ -30,7 +30,7 @@
 #' @param s_load matrix. A matrix of group factor loadings from an S-L solution.
 #' @param u2 numeric. A vector of uniquenesses from an S-L solution.
 #' @param cormat matrix. A correlation matrix to be used when type = "psych" or
-#' type = "EFAdiff". If left NULL, the correlation matrix is found based on the
+#' type = "SG". If left NULL, the correlation matrix is found based on the
 #' pattern matrix and Phi using \code{\link[psych:factor.model]{psych::factor.model}}.
 #' @param Phi matrix. Factor intercorrelations from an oblique factor solution.
 #' @param pattern matrix. Pattern coefficients from an oblique factor solution.
@@ -39,7 +39,7 @@
 #' based on the correlation matrix. If "sums_load", then total variances are
 #' calculated using the squared sums of g loadings and group factor loadings and
 #' the sum of uniquenesses (see details).
-#' @param type character. Either "EFAdiff" (default), "psych", or "Watkins".
+#' @param type character. Either "SG" (default), "psych", or "Watkins".
 #'
 #' @details
 #' @section How to combine arguments:
@@ -50,10 +50,10 @@
 #' needs to be specified additionally. There is, however, the option to reproduce
 #' Watkins' or \code{\link[psych:omega]{psych::omega}} results by setting the
 #' \code{type} argument to "Watkins" or "psych".
-#' If \code{model = NULL} and \code{type = "EFAdiff"}(default), the arguments
+#' If \code{model = NULL} and \code{type = "SG"}(default), the arguments
 #' \code{var_names}, \code{factor_corres}, \code{g_load}, \code{s_load}, and \code{u2}
 #' need to be specified.
-#' If \code{type = "psych"} or \code{type = "EFAdiff"}, either \code{cormat}
+#' If \code{type = "psych"} or \code{type = "SG"}, either \code{cormat}
 #' (recommended) or \code{Phi} and \code{pattern} must be specified.
 #' Additionally, the argument \code{factor_corres} should be left NULL to
 #' replicate \code{\link[psych:omega]{psych::omega}}
@@ -100,7 +100,7 @@
 #' the finding of variable-to-factor correspondences. The former aspect
 #' can also be controlled individually specifying the variance argument, the
 #' latter by specifying the factor_corres argument.
-#' For \code{type = "EFAdiff"}, total variances are found using the correlation
+#' For \code{type = "SG"}, total variances are found using the correlation
 #' matrix, and variable-to-factor correspondences have to be specified manually.
 #' The only difference for \code{type = "psych"} is that it takes the highest
 #' group factor loading for each variable as the relevant group factor loading.
@@ -122,7 +122,7 @@
 OMEGA <- function(model = NULL, var_names = NULL, fac_names = NULL,
                   factor_corres = NULL, g_load = NULL,
                   s_load = NULL, u2 = NULL, Phi = NULL, pattern = NULL,
-                  cormat = NULL, variance = NULL, type = "EFAdiff"){
+                  cormat = NULL, variance = NULL, type = "SG"){
 
   if(!is.null(model) & (!is.null(var_names) || !is.null(g_load) || !is.null(s_load)
                         || !is.null(u2))){
