@@ -4,15 +4,12 @@
 \alias{PROMAX}
 \title{Promax rotation}
 \usage{
-PROMAX(x, k = 3, type = "SG", kaiser = TRUE, P_type = NULL,
-  precision = NULL, order_type = NULL)
+PROMAX(x, type = "SG", kaiser = TRUE, P_type = NULL,
+  precision = NULL, order_type = NULL, k = NULL)
 }
 \arguments{
 \item{x}{matrix or class \code{\link{PAF}} object. Either a matrix containing
 an unrotated factor solution, or a \code{\link{PAF}} output object.}
-
-\item{k}{numeric. The power used for computing the target matrix P in the
-promax rotation.}
 
 \item{type}{character. If one of "SG" (default), "psych", or "SPSS" is
 used, and the following arguments (except kaiser) are left with \code{NULL},
@@ -38,6 +35,9 @@ This is passed to the "eps" argument of the
 \item{order_type}{character. How to order the factors and when to reflect
 their signs. Default is \code{NULL}. "psych" will use the psych method, "SPSS" the
 SPSS method. See below for details.}
+
+\item{k}{numeric. The power used for computing the target matrix P in the
+promax rotation.}
 }
 \value{
 A list of class PROMAX containing the following

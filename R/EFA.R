@@ -92,7 +92,7 @@ EFA <- function(x, n_factors, cors = TRUE, N = NA, rotation = "none",
                 type = "SG", max_iter = NULL, init_comm = NULL,
                 criterion = NULL, criterion_type = NULL, abs_eigen = NULL,
                 signed_loadings = TRUE, use = "pairwise.complete.obs",
-                k = 3, kaiser = TRUE, P_type = NULL,
+                k = NULL, kaiser = TRUE, P_type = NULL,
                 precision = NULL, order_type = NULL) {
 
   # run principal axis factoring

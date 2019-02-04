@@ -8,8 +8,6 @@
 #'
 #' @param x matrix or class \code{\link{PAF}} object. Either a matrix containing
 #' an unrotated factor solution, or a \code{\link{PAF}} output object.
-#' @param k numeric. The power used for computing the target matrix P in the
-#'  promax rotation.
 #' @param type character. If one of "SG" (default), "psych", or "SPSS" is
 #'  used, and the following arguments (except kaiser) are left with \code{NULL},
 #'  these implementations
@@ -30,6 +28,8 @@
 #' @param order_type character. How to order the factors and when to reflect
 #'  their signs. Default is \code{NULL}. "psych" will use the psych method, "SPSS" the
 #'  SPSS method. See below for details.
+#' @param k numeric. The power used for computing the target matrix P in the
+#'  promax rotation.
 #'
 #' @details \code{type = "SG"} will use the following argument specification:
 #' \code{P_type = "HW", precision = 1e-10, order_type = "psych"}.
@@ -64,15 +64,16 @@
 #'  \code{\link[psych:factor.stats]{psych::factor.stats}}}
 #'
 #' @export
-PROMAX <- function (x, k = 3, type = "SG", kaiser = TRUE, P_type = NULL,
-                    precision = NULL, order_type = NULL) {
+PROMAX <- function (x, type = "SG", kaiser = TRUE, P_type = NULL,
+                    precision = NULL, order_type = NULL, k = NULL) {
 
   if (is.null(type) || !(type %in% c("SG", "psych", "SPSS"))) {
     # if type is not one of the three valid inputs, throw an error if not
     # all the other necessary arguments are specified.
 
-    if (is.null(P_type) || is.null(precision) || is.null(order_type)) {
-      stop('One of "P_type", "precision", or "order_type" was NULL and no valid
+    if (is.null(P_type) || is.null(precision) || is.null(order_type)
+        || is.null(k)) {
+      stop('One of "P_type", "precision", "order_type", or "k" was NULL and no valid
            "type" was specified. Either use one of "SG", "psych", or "SPSS"
             for type, or specify all other arguments')
     }
@@ -88,7 +89,7 @@ PROMAX <- function (x, k = 3, type = "SG", kaiser = TRUE, P_type = NULL,
     }
 
     if (is.null(P_type)) {
-      P_type <- "HW"
+      P_type <- "unnorm"
     } else {
       warning("Type and P_type is specified. P_type is used with value '",
               P_type, "'. Results may differ from the specified type")
@@ -108,6 +109,13 @@ PROMAX <- function (x, k = 3, type = "SG", kaiser = TRUE, P_type = NULL,
               order_type, "'. Results may differ from the specified type")
     }
 
+    if (is.null(k)) {
+      k <- 3
+    } else {
+      warning("Type and k is specified. k is used with value '",
+              k, "'. Results may differ from the specified type")
+    }
+
 
   } else if (type == "psych") {
 
@@ -121,7 +129,7 @@ PROMAX <- function (x, k = 3, type = "SG", kaiser = TRUE, P_type = NULL,
     }
 
     if (is.null(P_type)) {
-      P_type <- "HW"
+      P_type <- "unnorm"
     } else {
       warning("Type and P_type is specified. P_type is used with value '",
               P_type, "'. Results may differ from the specified type")
@@ -141,6 +149,13 @@ PROMAX <- function (x, k = 3, type = "SG", kaiser = TRUE, P_type = NULL,
               order_type, "'. Results may differ from the specified type")
     }
 
+    if (is.null(k)) {
+      k <- 4
+    } else {
+      warning("Type and k is specified. k is used with value '",
+              k, "'. Results may differ from the specified type")
+    }
+
 
   } else if (type == "SPSS") {
 
@@ -154,7 +169,7 @@ PROMAX <- function (x, k = 3, type = "SG", kaiser = TRUE, P_type = NULL,
     }
 
     if (is.null(P_type)) {
-      P_type <- "SPSS"
+      P_type <- "norm"
     } else {
       warning("Type and P_type is specified. P_type is used with value '",
               P_type, "'. Results may differ from the specified type")
@@ -172,6 +187,13 @@ PROMAX <- function (x, k = 3, type = "SG", kaiser = TRUE, P_type = NULL,
     } else {
       warning("Type and order_type is specified. order_type is used with value '",
               order_type, "'. Results may differ from the specified type")
+    }
+
+    if (is.null(k)) {
+      k <- 4
+    } else {
+      warning("Type and k is specified. k is used with value '",
+              k, "'. Results may differ from the specified type")
     }
 
   }
@@ -242,13 +264,13 @@ PROMAX <- function (x, k = 3, type = "SG", kaiser = TRUE, P_type = NULL,
   # store the loading matrix in a separate object for use
   A <- AV$loadings
 
-  if (P_type == "HW") {
+  if (P_type == "unnorm") {
 
     # this is the formula for P as given by Hendricks and White (1964)
     P <- abs(A^(k + 1)) / A
-  } else if (P_type == "SPSS") {
+  } else if (P_type == "norm") {
 
-    # this is the formula as given by SPSS Version 23
+    # this is the formula as used by SPSS Version 23
     P <- abs(A / sqrt(rowSums(A^2))) ^(k + 1) * (sqrt(rowSums(A^2)) / A)
   }
 
