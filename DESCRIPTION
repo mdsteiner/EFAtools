@@ -13,4 +13,5 @@ Imports:
     lavaan,
     psych,
     crayon,
-    stringr
+    stringr,
+    stats

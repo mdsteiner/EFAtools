@@ -11,14 +11,24 @@
 #' @param digits numeric. Number of digits after the comma to keep.
 #'
 #' @return A formated number
-.numformat <- function(x, digits = 2) {
-  if (x >= 0) {
-    ncode <- paste0("%.", digits, "f")
-    x <- sub("^(-?)0.", "\\1.", sprintf(ncode, x))
-    paste0(" ", x)
+.numformat <- function(x, digits = 2, print_zero = FALSE) {
+
+  if (isFALSE(print_zero)) {
+
+    if (x >= 0) {
+      ncode <- paste0("%.", digits, "f")
+      x <- sub("^(-?)0.", "\\1.", sprintf(ncode, x))
+      paste0(" ", x)
+    } else {
+      ncode <- paste0("%.", digits, "f")
+      sub("^(-?)0.", "\\1.", sprintf(ncode, x))
+    }
+
   } else {
+
     ncode <- paste0("%.", digits, "f")
-    sub("^(-?)0.", "\\1.", sprintf(ncode, x))
+    x <- sprintf(ncode, x)
+
   }
 
 }

@@ -4,7 +4,7 @@
 \alias{.numformat}
 \title{Format numbers for print method}
 \usage{
-.numformat(x, digits = 2)
+.numformat(x, digits = 2, print_zero = FALSE)
 }
 \arguments{
 \item{x}{numeric. Number to be formated.}
