@@ -3,14 +3,14 @@
 #' @param x matrix or dataframe. Loadings of one implementation.
 #' @param y matrix or dataframe. Loadings of another implementation to compare to
 #' x.
-#' @param digits numeric. Number of decimals to round loadings to and compare
-#'   whether they are all equal.
 #' @param reorder logical. Whether factors should be reordered according to their
 #'   colnames.
+#' @param print_digits numeric. Number of decimals to print in the output
+#'  (default is 4).
 #'
 #' @return Print out a comparison summary.
 #' @export
-compare <- function(x, y, round_digits = 4, reorder = TRUE, print_digits = 4) {
+compare <- function(x, y, reorder = TRUE, print_digits = 4) {
 
   if (isTRUE(reorder) && !(class(x) %in% c("numeric", "COMMUNALITIES")) &&
       !(class(y) %in% c("numeric", "COMMUNALITIES"))) {
@@ -38,7 +38,12 @@ compare <- function(x, y, round_digits = 4, reorder = TRUE, print_digits = 4) {
   min_abs_diff <- min(abs(diff))
   max_abs_diff <- max(abs(diff))
 
-  are_equal <- all(round(x, digits = round_digits) == round(y, digits = round_digits))
+  are_equal_v <- c()
+  for (ii in 1:20) {
+    are_equal_v[ii] <- all(round(x, digits = ii) == round(y, digits = ii))
+  }
+
+  are_equal <- utils::tail(which(are_equal_v), 1)
 
   # prepare to print statistics
 
@@ -69,19 +74,20 @@ compare <- function(x, y, round_digits = 4, reorder = TRUE, print_digits = 4) {
     max_out <- crayon::red$bold(.numformat(max_abs_diff, print_digits, TRUE))
   }
 
-  if (isTRUE(are_equal)) {
-    equal_out <- crayon::green$bold("All equal")
+  if (length(are_equal) == 0) {
+    equal_out <- crayon::red$bold("none")
+  } else if (are_equal < 3) {
+    equal_out <- crayon::red$bold(are_equal)
   } else {
-    equal_out <- crayon::red$bold("Not all equal")
+    equal_out <- crayon::green$bold(are_equal)
   }
-
 
   cat("Mean [min, max] absolute difference: ")
   cat(paste0(mean_out, " [", min_out, ", ", max_out, "]"))
   cat("\n")
   cat(paste0("Median absolute difference: ", median_out))
   cat("\n")
-  cat(paste0("Loadings equal when rounded to ", round_digits, " decimals: ",
+  cat(paste0("Max decimals to round to where loadings are equal: ",
              equal_out))
 
 }

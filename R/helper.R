@@ -9,6 +9,8 @@
 #'
 #' @param x numeric. Number to be formated.
 #' @param digits numeric. Number of digits after the comma to keep.
+#' @param print_zero logical. Whether, if a number is between ]-1, 1[, the
+#'  zero should be omitted or printed (default is FALSE, i.e. omit zeros).
 #'
 #' @return A formated number
 .numformat <- function(x, digits = 2, print_zero = FALSE) {

@@ -4,7 +4,7 @@
 \alias{compare}
 \title{Compare loadings of different implementations}
 \usage{
-compare(x, y, round_digits = 4, reorder = TRUE, print_digits = 4)
+compare(x, y, reorder = TRUE, print_digits = 4)
 }
 \arguments{
 \item{x}{matrix or dataframe. Loadings of one implementation.}
@@ -15,8 +15,8 @@ x.}
 \item{reorder}{logical. Whether factors should be reordered according to their
 colnames.}
 
-\item{digits}{numeric. Number of decimals to round loadings to and compare
-whether they are all equal.}
+\item{print_digits}{numeric. Number of decimals to print in the output
+(default is 4).}
 }
 \value{
 Print out a comparison summary.
