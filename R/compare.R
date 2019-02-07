@@ -116,13 +116,10 @@ compare <- function(x, y, reorder = TRUE, print_digits = 4, m_red = .001,
     cat("\n")
     if (any(class(x) == "LOADINGS") || any(class(y) == "LOADINGS")) {
       class(diff) <- "LOADINGS"
-      print(diff, digits = print_digits)
-    } else if (any(class(x) == "COMMUNALITIES") ||
-               any(class(y) == "COMMUNALITIES")) {
-
-      class(diff) <- "COMMUNALITIES"
-      print(diff, digits = print_digits)
-
+      print.LOADINGS(diff, digits = print_digits)
+    } else if (any(class(x) == "SLLOADINGS") || any(class(y) == "SLLOADINGS")) {
+      class(diff) <- "SLLOADINGS"
+      print.SLLOADINGS(diff, digits = print_digits)
     } else {
       print(round(diff, digits = print_digits))
     }

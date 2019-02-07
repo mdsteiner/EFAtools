@@ -114,7 +114,7 @@ SL <- function(x, Phi = NULL, type = "SG", ...) {
 
   # Finalize output object
   sl <- cbind(sl_load, h2_sl, u2_sl)
-  colnames(sl) <- c("g", 1:n_first_fac, "h2", "u2")
+  colnames(sl) <- c("g", paste0("F", 1:n_first_fac), "h2", "u2")
   class(sl) <- "SLLOADINGS"
 
   output <- list(
