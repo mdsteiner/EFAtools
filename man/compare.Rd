@@ -2,25 +2,49 @@
 % Please edit documentation in R/compare.R
 \name{compare}
 \alias{compare}
-\title{Compare loadings of different implementations}
+\title{Compare loadings or communalities of different implementations}
 \usage{
-compare(x, y, reorder = TRUE, print_digits = 4)
+compare(x, y, reorder = TRUE, print_digits = 4, m_red = 0.001,
+  range_red = 0.001, round_red = 3, print_diff = TRUE)
 }
 \arguments{
-\item{x}{matrix or dataframe. Loadings of one implementation.}
+\item{x}{matrix, dataframe, or vector. Loadings or communalities of one
+implementation.}
 
-\item{y}{matrix or dataframe. Loadings of another implementation to compare to
-x.}
+\item{y}{matrix, dataframe, or vector. Loadings or communalities of another
+implementation to compare to x.}
 
 \item{reorder}{logical. Whether factors should be reordered according to their
 colnames.}
 
 \item{print_digits}{numeric. Number of decimals to print in the output
 (default is 4).}
+
+\item{m_red}{numeric. Number above which the mean and median should be printed
+in red (i.e., if .001 is used, the mean will be in red if it is larger than
+.001, otherwise it will be displayed in green. Default is .001).}
+
+\item{range_red}{numeric. Number above which the min and max should be printed
+in red (i.e., if .001 is used, min and max will be in red if the max is larger
+ than .001, otherwise it will be displayed in green. Default is .001). Note that
+ the color of min also depends on max.}
+
+\item{round_red}{numeric. Number above which the max decimals to round to where
+all corresponding elements of x and y are still equal are displayed in red
+(i.e., if 3 is used, the number will be in red if it is smaller than
+ 3, otherwise it will be displayed in green. Default is 3).}
+
+\item{print_diff}{logical. Whether the difference vector or matrix should be
+printed or not (default is TRUE).}
 }
 \value{
 Print out a comparison summary.
 }
 \description{
-Compare loadings of different implementations
+The functions takes two objects of the same dimensions containing numeric
+information (loadings or communalities) and prints the following summary
+information of the absolute difference of the objects: mean, median, min, max,
+number above which the max decimals to round to where
+all corresponding elements of x and y are still equal are displayed, and the
+difference object itself.
 }
