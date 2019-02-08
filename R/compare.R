@@ -34,6 +34,7 @@
 compare <- function(x, y, reorder = TRUE, print_digits = 4, m_red = .001,
                     range_red = .001, round_red = 3, print_diff = TRUE) {
 
+
   if (isTRUE(reorder) && !(class(x) %in% c("numeric", "COMMUNALITIES")) &&
       !(class(y) %in% c("numeric", "COMMUNALITIES"))) {
 
