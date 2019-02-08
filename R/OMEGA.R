@@ -9,7 +9,7 @@
 #' \code{\link[psych:omega]{psych::omega}}
 #' or Watkins' omega program (Watkins, 2013) can be reproduced.
 #'
-#' @param model class \code{\link{SL}}, class \code{\link{schmid}}, or class
+#' @param model UPDATE!!! class \code{\link{SL}}, class \code{\link{schmid}}, or class
 #' \code{\link{lavaan}} object. An output object from \code{\link{SL}}, from
 #' \code{\link[psych:schmid]{psych::schmid}}, or from a \code{\link{lavaan}}
 #' bifactor model. If of class \code{\link{lavaan}}, no other arguments need to
@@ -91,9 +91,6 @@
 #' For the subscale composites, this is the squared sum of the group factor loadings
 #' divided by the total variance of the respective indicators.
 #'
-#' Additionally, 1 - omega total is given for comparison with omega hierarchical
-#' and omega subscale.
-#'
 #' @section Calculation of omega for different types:
 #' The main differences between the types concern the calculation of the total
 #' variance (for the whole scale as well as the subscale composites) as well as
@@ -117,7 +114,6 @@
 #' \item{omega_tot}{Omega total.}
 #' \item{omega_h}{Omega hierarchical.}
 #' \item{omega_sub}{Omega subscale.}
-#' \item{1 - omega_tot}{1 - Omega total.}
 #' @export
 OMEGA <- function(model = NULL, var_names = NULL, fac_names = NULL,
                   factor_corres = NULL, g_load = NULL,

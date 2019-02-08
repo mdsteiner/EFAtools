@@ -68,18 +68,34 @@ OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres 
 
   if(type != "psych" & is.null(factor_corres)){
     stop("Either specify the factor_corres argument or set type = 'psych'")
-  }
+
+    }
+
+  if(type == "psych"){
+
+    if(is.null(factor_corres)){
+      factor_corres <- apply(input, 1,
+                             function(x) which.max(abs(x[2:(ncol(s_load) + 1)])))
+
+    } else {
+
+      warning("Argument factor_corres is specified. Specified variable-to-factor
+              correspondences are taken. To compute factor correspondences as done
+              in psych, leave factor_corres = NULL.")
+    }
+    }
+
+  input <- cbind(factor_corres, input)
+  names(input)[1] <- "factor"
 
   if(type != "Watkins" & is.null(u2)){
     stop("Either specify the u2 argument or set type = 'Watkins'")
   }
 
-  if(variance == "correlation"){
+  if(variance == "correlation" & is.null(cormat)){
 
-    if(is.null(cormat)) {
-
-    if(is.null(Phi) | is.null(pattern)){
-      stop("Please specify the Phi and pattern arguments")
+      if(is.null(Phi) | is.null(pattern)) {
+      stop("Either specify the cormat argument or the Phi and pattern arguments")
 
       } else {
 
@@ -89,24 +105,6 @@ OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres 
 
       }
     }
-
-    if(is.null(factor_corres)){
-      factor_corres <- apply(input, 1,
-                             function(x) which.max(abs(x[2:(ncol(s_load) + 1)])))
-
-    } else {
-
-      if(type == "psych"){
-
-      warning("Argument factor_corres is specified. Specified variable-to-factor
-              correspondences are taken. To compute factor correspondences as done
-              in psych, leave factor_corres = NULL.")
-      }
-    }
-    }
-
-  input <- cbind(factor_corres, input)
-  names(input)[1] <- "factor"
 
   if(type == "Watkins"){
 
@@ -279,10 +277,9 @@ OMEGA_LAVAAN <- function(model){
   omega_tot <- c(omega_tot_g, omega_tot_sub)
   omega_h <- c(omega_h_g, omega_h_sub)
   omega_sub <- c(omega_sub_g, omega_sub_sub)
-  not_exp <- c(1 - omega_tot)
 
-  omegas <- cbind(omega_tot, omega_h, omega_sub, not_exp)
-  colnames(omegas) <- c("omega tot", "omega h", "omega sub", "1 - omega tot")
+  omegas <- cbind(omega_tot, omega_h, omega_sub)
+  colnames(omegas) <- c("omega tot", "omega h", "omega sub")
 
   rownames(omegas) <- fac_names
 
