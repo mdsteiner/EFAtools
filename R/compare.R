@@ -52,7 +52,7 @@ compare <- function(x, y, reorder = TRUE, print_digits = 4, m_red = .001,
     }
 
     # check if dimensions match:
-    if (dim(x) != dim(y)) {
+    if (any(dim(x) != dim(y))) {
 
       stop("x and y have different dimensions. Compare only works with identical dimensions")
 
@@ -91,12 +91,12 @@ compare <- function(x, y, reorder = TRUE, print_digits = 4, m_red = .001,
 
       if (!is.null(names(x))) {
         ind_x <- order(names(x))
-        x <- x[, ind_x]
+        x <- x[ind_x]
       }
 
       if (!is.null(names(y))) {
         ind_y <- order(names(y))
-        y <- y[, ind_y]
+        y <- y[ind_y]
       }
 
     }
