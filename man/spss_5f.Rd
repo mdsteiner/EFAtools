@@ -4,19 +4,23 @@
 \name{spss_5f}
 \alias{spss_5f}
 \title{spss_5f}
-\format{A list of 8
+\format{A list of 10
 \describe{
-  \item{final_communalities}{(data.frame) - Subtest = abbreviated subtest names. For details see Grieder and Grob (2019). FACTOR = the final communalities obtained with the FACTOR algorithm with PAF and no rotation.}
-  \item{final_eigenvalues}{(data.frame) - Factor = the factors from 1 to 5 factors. eigen = final eigenvalues obtained with the FACTOR algorithm with PAF and no rotation.}
-  \item{loadings_unrotated}{(data.frame) - subtest = the abbreviated subtest names. For details see Grieder and Grob (2019). F1 to F5 = unrotated factor loadings obtained with the FACTOR algorithm with PAF}
+  \item{final_communalities}{(vector) - The final communalities obtained with the FACTOR algorithm with PAF and no rotation. For details see Grieder and Grob (2019).}
+  \item{final_eigenvalues}{(vector) - Final eigenvalues obtained with the FACTOR algorithm with PAF and no rotation.}
+  \item{loadings_unrotated}{(matrix) - F1 to F5 = unrotated factor loadings obtained with the FACTOR algorithm with PAF. Rownames are the abbreviated subtest names. For details see Grieder and Grob (2019).}
   \item{paf_iter}{(numeric) - Number of iterations needed for the principal axis factoring to converge.}
-  \item{loadings_varimax}{(data.frame) - subtest = the abbreviated subtest names. For details see Grieder and Grob (2019). F1 to F5 = varimax rotated factor loadings obtained with the FACTOR algorithm with PAF}
-  \item{loadings_promax}{(data.frame) - subtest = the abbreviated subtest names. For details see Grieder and Grob (2019). F1 to F5 = promax rotated factor loadings obtained with the FACTOR algorithm with PAF}
-  \item{structure_promax}{(data.frame) - subtest = the abbreviated subtest names. For details see Grieder and Grob (2019). F1 to F5  = promax rotated factor loadings obtained with the FACTOR algorithm with PAF}
+  \item{loadings_varimax}{(matrix) - F1 to F5 = varimax rotated factor loadings obtained with the FACTOR algorithm with PAF. Rownames are the abbreviated subtest names. For details see Grieder and Grob (2019).}
+  \item{loadings_promax}{(matrix) - F1 to F5 = promax rotated factor loadings obtained with the FACTOR algorithm with PAF. Rownames are the abbreviated subtest names. For details see Grieder and Grob (2019).}
+  \item{structure_promax}{(matrix) - F1 to F5  = promax rotated factor loadings obtained with the FACTOR algorithm with PAF. Rownames are the abbreviated subtest names. For details see Grieder and Grob (2019).}
   \item{phi_promax}{(matrix) - F1 to F5  = intercorrelations of the promax rotated loadings.}
+  \item{sl}{(matrix) - g = General / second order factor of the Schmid-Leiman solution. F1 to F5  = First order factors of the Schmid-Leiman solution. h2 = Communalities of the Schmid-Leiman solution. This Schmid-Leiman solution was found using the SPSS Syntax provided by Wolff and Preising (2005).}
+  \item{L2}{(matrix) - Second order loadings used for the Schmid-Leiman transformation. This Schmid-Leiman solution was found using the SPSS Syntax provided by Wolff and Preising (2005).}
  }}
 \source{
 Steiner, M.D., & Grieder, S. (2019). Resolving differences in principal axis factor analysis and promax rotation in SPSS and R psych. Submitted Manuscript.
+
+Wolff, H.G., & Preising, K. (2005). Exploring item and higher order factor structure with the schmid-leiman solution: Syntax codes for spss and sas. Behavior Research Methods, 37, 48–58. doi: 10.3758/BF03206397
 }
 \usage{
 spss_5f

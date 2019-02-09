@@ -5,7 +5,8 @@
 \title{Compare loadings or communalities of different implementations}
 \usage{
 compare(x, y, reorder = TRUE, print_digits = 4, m_red = 0.001,
-  range_red = 0.001, round_red = 3, print_diff = TRUE)
+  range_red = 0.001, round_red = 3, print_diff = TRUE,
+  na.rm = FALSE)
 }
 \arguments{
 \item{x}{matrix, dataframe, or vector. Loadings or communalities of one
@@ -36,6 +37,9 @@ all corresponding elements of x and y are still equal are displayed in red
 
 \item{print_diff}{logical. Whether the difference vector or matrix should be
 printed or not (default is TRUE).}
+
+\item{na.rm}{logical. Whether NAs should be removed in the mean, median, min,
+and max functions. Default is FALSE.}
 }
 \value{
 Print out a comparison summary.

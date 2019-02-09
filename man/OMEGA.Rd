@@ -10,7 +10,7 @@ OMEGA(model = NULL, var_names = NULL, fac_names = NULL,
   type = "SG")
 }
 \arguments{
-\item{model}{class \code{\link{SL}}, class \code{\link{schmid}}, or class
+\item{model}{UPDATE!!! class \code{\link{SL}}, class \code{\link{schmid}}, or class
 \code{\link{lavaan}} object. An output object from \code{\link{SL}}, from
 \code{\link[psych:schmid]{psych::schmid}}, or from a \code{\link{lavaan}}
 bifactor model. If of class \code{\link{lavaan}}, no other arguments need to
@@ -58,7 +58,6 @@ A matrix with Omegas for g / the whole scale and for the subscales.
 \item{omega_tot}{Omega total.}
 \item{omega_h}{Omega hierarchical.}
 \item{omega_sub}{Omega subscale.}
-\item{1 - omega_tot}{1 - Omega total.}
 }
 \description{
 This function finds omega total, omega hierarchical, and omega subscale
@@ -121,9 +120,6 @@ divided by the total variance. Omega subscale for the whole scale therefore
 indicates the true score variance due to all the group factors together.
 For the subscale composites, this is the squared sum of the group factor loadings
 divided by the total variance of the respective indicators.
-
-Additionally, 1 - omega total is given for comparison with omega hierarchical
-and omega subscale.
 }
 
 \section{Calculation of omega for different types}{

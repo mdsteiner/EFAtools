@@ -28,15 +28,20 @@
 #'  3, otherwise it will be displayed in green. Default is 3).
 #' @param print_diff logical. Whether the difference vector or matrix should be
 #'  printed or not (default is TRUE).
+#' @param na.rm logical. Whether NAs should be removed in the mean, median, min,
+#'  and max functions. Default is FALSE.
 #'
 #' @return Print out a comparison summary.
 #' @export
 compare <- function(x, y, reorder = TRUE, print_digits = 4, m_red = .001,
-                    range_red = .001, round_red = 3, print_diff = TRUE) {
+                    range_red = .001, round_red = 3, print_diff = TRUE,
+                    na.rm = FALSE)  {
 
 
-  if (isTRUE(reorder) && !(class(x) %in% c("numeric", "COMMUNALITIES")) &&
-      !(class(y) %in% c("numeric", "COMMUNALITIES"))) {
+  # reclass data.frames and tibbles to matrices so the stats functions afterwards
+  # work
+  if (!(class(x) %in% c("numeric", "COMMUNALITIES", "EIGEN")) &&
+      !(class(y) %in% c("numeric", "COMMUNALITIES", "EIGEN"))) {
 
     if (any(class(x) == "data.frame")) {
       x <- as.matrix(x)
@@ -46,20 +51,66 @@ compare <- function(x, y, reorder = TRUE, print_digits = 4, m_red = .001,
       y <- as.matrix(y)
     }
 
-    ind_x <- order(colnames(x))
-    x <- x[, ind_x]
-    ind_y <- order(colnames(y))
-    y <- y[, ind_y]
+    # check if dimensions match:
+    if (dim(x) != dim(y)) {
+
+      stop("x and y have different dimensions. Compare only works with identical dimensions")
+
+    }
+
+  } else if (class(x) %in% c("numeric", "COMMUNALITIES", "EIGEN") &&
+             class(y) %in% c("numeric", "COMMUNALITIES", "EIGEN")) {
+
+    x <- unclass(x)
+    y <- unclass(y)
+
+    if (length(x) != length(y)) {
+
+      stop("x and y have different lengths Compare only works with identical dimensions")
+
+    }
+
+  }
+
+  if (isTRUE(reorder)) {
+
+    if (class(x) == "matrix") {
+
+      if (!is.null(colnames(x))) {
+        ind_x <- order(colnames(x))
+        x <- x[, ind_x]
+      }
+
+      if(!is.null(colnames(y))) {
+        ind_y <- order(colnames(y))
+        y <- y[, ind_y]
+      }
+
+
+    } else if (class(x) == "numeric") {
+
+      if (!is.null(names(x))) {
+        ind_x <- order(names(x))
+        x <- x[, ind_x]
+      }
+
+      if (!is.null(names(y))) {
+        ind_y <- order(names(y))
+        y <- y[, ind_y]
+      }
+
+    }
+
 
   }
 
   # compute differences and statistics
   diff <- x - y
-  mean_abs_diff <- mean(abs(diff))
-  median_abs_diff <- stats::median(abs(diff))
+  mean_abs_diff <- mean(abs(diff), na.rm = na.rm)
+  median_abs_diff <- stats::median(abs(diff), na.rm = na.rm)
 
-  min_abs_diff <- min(abs(diff))
-  max_abs_diff <- max(abs(diff))
+  min_abs_diff <- min(abs(diff), na.rm = na.rm)
+  max_abs_diff <- max(abs(diff), na.rm = na.rm)
 
   are_equal_v <- c()
   for (ii in 1:20) {
