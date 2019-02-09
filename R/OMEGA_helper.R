@@ -210,7 +210,7 @@ OMEGA_FLEX <- function(model = NULL, var_names, fac_names = NULL, factor_corres 
 
     } else {
 
-      rownames(omegas) <- c("g", colnames(model)[2:(ncol(model) - 3)])
+      rownames(omegas) <- c("g", colnames(model)[2:(ncol(sload) + 1)])
 
     }
   }
