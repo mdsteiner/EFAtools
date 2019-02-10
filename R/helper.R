@@ -17,19 +17,15 @@
 
   if (isFALSE(print_zero)) {
 
-    if (x >= 0) {
-      ncode <- paste0("%.", digits, "f")
-      x <- sub("^(-?)0.", "\\1.", sprintf(ncode, x))
-      paste0(" ", x)
-    } else {
-      ncode <- paste0("%.", digits, "f")
-      sub("^(-?)0.", "\\1.", sprintf(ncode, x))
-    }
+    ncode <- paste0("%.", digits, "f")
+    x <- sub("^(-?)0.", "\\1.", sprintf(ncode, x))
+    x <- stringr::str_pad(x, digits + 2, "left")
 
   } else {
 
     ncode <- paste0("%.", digits, "f")
     x <- sprintf(ncode, x)
+    x <- stringr::str_pad(x, digits + 3, "left")
 
   }
 
@@ -93,4 +89,116 @@
 
   sum((n * colSums(lambda ** 4) - colSums(lambda ** 2) ** 2)/ n ** 2)
 
+}
+
+
+.get_compare_matrix <- function(x, digits = 3, r_red = .001) {
+
+  # create factor names to display
+  factor_names <- colnames(x)
+  if (is.null(factor_names)) {
+    factor_names <- paste0("F", 1:ncol(x))
+  }
+
+  # for equal spacing, fill the factor names such that they match the columns
+  fn_nchar <- sapply(factor_names, nchar)
+  factor_names[which(fn_nchar > digits + 2)] <- substr(
+    factor_names[which(fn_nchar > digits + 2)] , 1, digits + 2)
+  factor_names <- stringr::str_pad(factor_names, digits + 2, side = "both")
+
+  var_names <- rownames(x)
+  if (is.null(var_names)) {
+    var_names <- paste0("V", 1:nrow(x))
+  }
+
+  max_char <- max(sapply(var_names, nchar))
+
+  if (max_char > 10) {
+    vn_nchar <- sapply(var_names, nchar)
+    var_names[which(vn_nchar > 10)] <- substr(var_names[which(vn_nchar > 10)] ,
+                                              1, 10)
+    max_char <- 10
+  }
+
+  var_names <- stringr::str_pad(var_names, max_char, side = "right")
+
+  n_col <- ncol(x)
+
+  # create the string to paste using the crayon package
+  temp <- apply(matrix(1:nrow(x), ncol = 1), 1,
+                function(ind, x, cutoff, n_col, vn, digits){
+                  i <- x[ind,]
+
+                  tt <- crayon::blue(vn[ind])
+
+                  for (kk in 1:n_col) {
+                    if (abs(i[kk]) <= cutoff) {
+                      tt <- c(tt, .numformat(round(i[kk], digits = digits),
+                                                          digits = digits,
+                                             print_zero = TRUE))
+                    } else {
+                      tt <- c(tt,
+                              crayon::red(.numformat(round(i[kk],
+                                                                digits = digits),
+                                                              digits = digits,
+                                                              print_zero = TRUE)))
+                    }
+                  }
+                  stringr::str_c(tt, collapse = "\t")
+                }, cutoff = r_red, n_col = n_col, digits = digits, x = x,
+                vn = var_names)
+
+  factor_names <- stringr::str_c(factor_names,
+                                 collapse = "\t")
+  factor_names <- crayon::blue(stringr::str_c( stringr::str_pad(" ", max_char),
+                                               "\t", factor_names))
+
+
+  temp <- stringr::str_c(temp, collapse = "\n")
+
+  temp <- stringr::str_c(factor_names, "\n", temp)
+
+
+  temp <- stringr::str_c(temp, "\n")
+  # print the results to the console
+
+  temp
+}
+
+
+.get_compare_vector <- function(x, digits = 3, r_red = .001) {
+
+  temp_i <- NULL
+
+  for (ii in seq_along(x)) {
+    if (abs(x[ii]) >= r_red) {
+      temp_i <- c(temp_i, crayon::red(.numformat(round(x[ii], digits = digits),
+                                                      digits = digits,
+                                                      print_zero = TRUE)))
+    } else {
+      temp_i <- c(temp_i, .numformat(round(x[ii], digits = digits),
+                                     digits = digits,
+                                     print_zero = TRUE))
+    }
+  }
+
+  for (ss in seq(1, length(x), 7)) {
+    if (length(x) > ss + 6) {
+      tt <- ss + 6
+    } else {
+      tt <- length(x)
+    }
+    if (ss == 1) {
+      temp <- stringr::str_c(temp_i[ss:tt], collapse = "  ")
+    } else {
+      temp <- stringr::str_c(temp, "\n", stringr::str_c(temp_i[ss:tt],
+                                                        collapse = "  "))
+    }
+
+  }
+
+  temp <- stringr::str_c(temp, "\n")
+
+  # print the results to the console
+  return(temp)
 }

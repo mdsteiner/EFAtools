@@ -63,9 +63,10 @@ print.LOADINGS <- function(x, cutoff = .3, digits = 3) {
     stringr::str_c(tt, collapse = "\t")
   }, cutoff = cutoff, n_col = n_col, digits = digits, x = x, vn = var_names)
 
-  factor_names <- stringr::str_c(factor_names, collapse = "\t")
-  factor_names <- crayon::blue(stringr::str_c(stringr::str_pad(" ", max_char),
-                                              "\t", factor_names))
+  factor_names <- stringr::str_c(factor_names,
+                                 collapse = "\t")
+  factor_names <- crayon::blue(stringr::str_c( stringr::str_pad(" ", max_char),
+                                               "\t", factor_names))
 
   temp <- stringr::str_c(temp, collapse = "\n")
 

@@ -45,13 +45,13 @@ compare <- function(x, y, reorder = TRUE, digits = 4, m_red = .001,
 
     if (any(class(x) == "data.frame")) {
       x <- as.matrix(x)
-    } else if (any(class(x) == "loadings")) {
+    } else if (any(class(x) %in% c("loadings", "LOADINGS", "SLLOADINGS"))) {
       x <- unclass(x)
     }
 
     if (any(class(y) == "data.frame")) {
       y <- as.matrix(y)
-    } else if (any(class(y) == "loadings")) {
+    } else if (any(class(y) %in% c("loadings", "LOADINGS", "SLLOADINGS"))) {
       y <- unclass(y)
     }
 
@@ -167,16 +167,17 @@ compare <- function(x, y, reorder = TRUE, digits = 4, m_red = .001,
   if (isTRUE(print_diff)) {
     cat("\n")
     cat("\n")
-    if (any(class(x) == "LOADINGS") || any(class(y) == "LOADINGS")) {
-      class(diff) <- "LOADINGS"
-      print.LOADINGS(diff, digits = digits)
-    } else if (any(class(x) == "SLLOADINGS") || any(class(y) == "SLLOADINGS")) {
-      class(diff) <- "SLLOADINGS"
-      print.SLLOADINGS(diff, digits = digits)
+    if (class(diff) == "matrix") {
+
+      out_diff <- .get_compare_matrix(diff, digits = digits, r_red = range_red)
+
     } else {
-      print(round(diff, digits = digits))
+
+      out_diff <- .get_compare_vector(diff, digits = digits, r_red = range_red)
+
     }
 
   }
+  cat(out_diff)
 
 }
