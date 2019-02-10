@@ -76,12 +76,10 @@ compare <- function(x, y, reorder = TRUE, print_digits = 4, m_red = .001,
 
     if (class(x) == "matrix") {
 
-      if (!is.null(colnames(x))) {
+      if (!is.null(colnames(x)) && !is.null(colnames(y))) {
         ind_x <- order(colnames(x))
         x <- x[, ind_x]
-      }
 
-      if(!is.null(colnames(y))) {
         ind_y <- order(colnames(y))
         y <- y[, ind_y]
       }
@@ -89,12 +87,10 @@ compare <- function(x, y, reorder = TRUE, print_digits = 4, m_red = .001,
 
     } else if (class(x) == "numeric") {
 
-      if (!is.null(names(x))) {
+      if (!is.null(names(x)) && !is.null(names(y))) {
         ind_x <- order(names(x))
         x <- x[ind_x]
-      }
 
-      if (!is.null(names(y))) {
         ind_y <- order(names(y))
         y <- y[ind_y]
       }
@@ -159,7 +155,7 @@ compare <- function(x, y, reorder = TRUE, print_digits = 4, m_red = .001,
   cat("\n")
   cat(paste0("Median absolute difference: ", median_out))
   cat("\n")
-  cat(paste0("Max decimals to round to where loadings are equal: ",
+  cat(paste0("Max decimals to round to where numbers are equal: ",
              equal_out))
 
   # create the difference object
