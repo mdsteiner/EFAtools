@@ -34,7 +34,7 @@ VARIMAX_SPSS <- function(loadings, precision = 1e-5, normalize = TRUE) {
   # initialize rotation matrix as identity matrix
   rotmat <- diag(1, n_cols)
 
-  SV_now <- SV(loadings)
+  SV_now <- .SV(loadings)
 
 
   for (it in 1:10000) {
@@ -67,7 +67,7 @@ VARIMAX_SPSS <- function(loadings, precision = 1e-5, normalize = TRUE) {
     }
 
     SV_old <- SV_now
-    SV_now <- SV(loadings)
+    SV_now <- .SV(loadings)
 
     if (abs(SV_now - SV_old) <= precision) {
       break
