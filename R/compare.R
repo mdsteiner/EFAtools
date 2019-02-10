@@ -45,10 +45,14 @@ compare <- function(x, y, reorder = TRUE, print_digits = 4, m_red = .001,
 
     if (any(class(x) == "data.frame")) {
       x <- as.matrix(x)
+    } else if (any(class(x) == "loadings")) {
+      x <- unclass(x)
     }
 
     if (any(class(y) == "data.frame")) {
       y <- as.matrix(y)
+    } else if (any(class(y) == "loadings")) {
+      x <- unclass(y)
     }
 
     # check if dimensions match:
