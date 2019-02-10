@@ -4,7 +4,7 @@
 \alias{compare}
 \title{Compare loadings or communalities of different implementations}
 \usage{
-compare(x, y, reorder = TRUE, print_digits = 4, m_red = 0.001,
+compare(x, y, reorder = TRUE, digits = 4, m_red = 0.001,
   range_red = 0.001, round_red = 3, print_diff = TRUE,
   na.rm = FALSE)
 }
@@ -18,7 +18,7 @@ implementation to compare to x.}
 \item{reorder}{logical. Whether factors should be reordered according to their
 colnames.}
 
-\item{print_digits}{numeric. Number of decimals to print in the output
+\item{digits}{numeric. Number of decimals to print in the output
 (default is 4).}
 
 \item{m_red}{numeric. Number above which the mean and median should be printed

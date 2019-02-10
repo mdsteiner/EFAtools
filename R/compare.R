@@ -13,7 +13,7 @@
 #'  implementation to compare to x.
 #' @param reorder logical. Whether factors should be reordered according to their
 #'   colnames.
-#' @param print_digits numeric. Number of decimals to print in the output
+#' @param digits numeric. Number of decimals to print in the output
 #'  (default is 4).
 #' @param m_red numeric. Number above which the mean and median should be printed
 #'  in red (i.e., if .001 is used, the mean will be in red if it is larger than
@@ -33,7 +33,7 @@
 #'
 #' @return Print out a comparison summary.
 #' @export
-compare <- function(x, y, reorder = TRUE, print_digits = 4, m_red = .001,
+compare <- function(x, y, reorder = TRUE, digits = 4, m_red = .001,
                     range_red = .001, round_red = 3, print_diff = TRUE,
                     na.rm = FALSE)  {
 
@@ -106,11 +106,12 @@ compare <- function(x, y, reorder = TRUE, print_digits = 4, m_red = .001,
 
   # compute differences and statistics
   diff <- x - y
-  mean_abs_diff <- mean(abs(diff), na.rm = na.rm)
-  median_abs_diff <- stats::median(abs(diff), na.rm = na.rm)
+  mean_abs_diff <- round(mean(abs(diff), na.rm = na.rm), digits = digits)
+  median_abs_diff <- round(stats::median(abs(diff), na.rm = na.rm),
+                           digits = digits)
 
-  min_abs_diff <- min(abs(diff), na.rm = na.rm)
-  max_abs_diff <- max(abs(diff), na.rm = na.rm)
+  min_abs_diff <- round(min(abs(diff), na.rm = na.rm), digits = digits)
+  max_abs_diff <- round(max(abs(diff), na.rm = na.rm), digits = digits)
 
   are_equal_v <- c()
   for (ii in 1:20) {
@@ -122,26 +123,26 @@ compare <- function(x, y, reorder = TRUE, print_digits = 4, m_red = .001,
   # prepare to print statistics
 
   if (mean_abs_diff <= m_red) {
-    mean_out <- crayon::green$bold(.numformat(mean_abs_diff, print_digits,
+    mean_out <- crayon::green$bold(.numformat(mean_abs_diff, digits,
                                               TRUE))
   } else {
-    mean_out <- crayon::red$bold(.numformat(mean_abs_diff, print_digits, TRUE))
+    mean_out <- crayon::red$bold(.numformat(mean_abs_diff, digits, TRUE))
   }
 
   if (median_abs_diff <= m_red) {
-    median_out <- crayon::green$bold(.numformat(median_abs_diff, print_digits,
+    median_out <- crayon::green$bold(.numformat(median_abs_diff, digits,
                                                 TRUE))
   } else {
-    median_out <- crayon::red$bold(.numformat(median_abs_diff, print_digits,
+    median_out <- crayon::red$bold(.numformat(median_abs_diff, digits,
                                               TRUE))
   }
 
   if (max_abs_diff <= range_red) {
-    max_out <- crayon::green$bold(.numformat(max_abs_diff, print_digits, TRUE))
-    min_out <- crayon::green$bold(.numformat(min_abs_diff, print_digits, TRUE))
+    max_out <- crayon::green$bold(.numformat(max_abs_diff, digits, TRUE))
+    min_out <- crayon::green$bold(.numformat(min_abs_diff, digits, TRUE))
   } else {
-    max_out <- crayon::red$bold(.numformat(max_abs_diff, print_digits, TRUE))
-    min_out <- crayon::red$bold(.numformat(min_abs_diff, print_digits, TRUE))
+    max_out <- crayon::red$bold(.numformat(max_abs_diff, digits, TRUE))
+    min_out <- crayon::red$bold(.numformat(min_abs_diff, digits, TRUE))
   }
 
   if (length(are_equal) == 0) {
@@ -168,12 +169,12 @@ compare <- function(x, y, reorder = TRUE, print_digits = 4, m_red = .001,
     cat("\n")
     if (any(class(x) == "LOADINGS") || any(class(y) == "LOADINGS")) {
       class(diff) <- "LOADINGS"
-      print.LOADINGS(diff, digits = print_digits)
+      print.LOADINGS(diff, digits = digits)
     } else if (any(class(x) == "SLLOADINGS") || any(class(y) == "SLLOADINGS")) {
       class(diff) <- "SLLOADINGS"
-      print.SLLOADINGS(diff, digits = print_digits)
+      print.SLLOADINGS(diff, digits = digits)
     } else {
-      print(round(diff, digits = print_digits))
+      print(round(diff, digits = digits))
     }
 
   }

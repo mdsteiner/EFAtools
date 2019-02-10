@@ -175,7 +175,12 @@ VARIMAX <- function (x, type = "SG", kaiser = TRUE,
   }
 
   # perform the varimax rotation
-  AV <- stats::varimax(L, normalize = kaiser, eps = precision)
+  if (type != "SPSS") {
+    AV <- stats::varimax(L, normalize = kaiser, eps = precision)
+  } else {
+    AV <- VARIMAX_SPSS(L, normalize = kaiser, precision = precision)
+  }
+
 
   # reflect factors with negative sums
   signs <- sign(colSums(AV$loadings))

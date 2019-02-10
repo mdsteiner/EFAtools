@@ -84,3 +84,13 @@
 
   vars_explained
 }
+
+
+
+.SV <- function(lambda) {
+
+  n <- nrow(lambda)
+
+  sum((n * colSums(lambda ** 4) - colSums(lambda ** 2) ** 2)/ n ** 2)
+
+}
