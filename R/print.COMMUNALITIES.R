@@ -15,9 +15,11 @@ print.COMMUNALITIES <- function(x, cutoff = .3, digits = 3) {
 
   for (ii in seq_along(x)) {
     if (x[ii] >= 1 || x[ii] < 0) {
-      temp_i <- c(temp_i, crayon::red$bold(.numformat(x[ii], digits = digits)))
+      temp_i <- c(temp_i, crayon::red$bold(.numformat(round(x[ii], digits = digits),
+                                                      digits = digits)))
     } else {
-      temp_i <- c(temp_i, .numformat(x[ii], digits = digits))
+      temp_i <- c(temp_i, .numformat(round(x[ii], digits = digits),
+                                     digits = digits))
     }
   }
 

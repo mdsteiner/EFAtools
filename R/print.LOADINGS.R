@@ -19,8 +19,8 @@ print.LOADINGS <- function(x, cutoff = .3, digits = 3) {
 
   # for equal spacing, fill the factor names such that they match the columns
   fn_nchar <- sapply(factor_names, nchar)
-  factor_names[which(fn_nchar > digits + 2)] <- substr(factor_names[which(fn_nchar > digits + 2)] ,
-                                                       1, digits + 2)
+  factor_names[which(fn_nchar > digits + 2)] <- substr(
+    factor_names[which(fn_nchar > digits + 2)] , 1, digits + 2)
   factor_names <- stringr::str_pad(factor_names, digits + 2, side = "both")
 
   var_names <- rownames(x)
@@ -50,11 +50,14 @@ print.LOADINGS <- function(x, cutoff = .3, digits = 3) {
 
     for (kk in 1:n_col) {
       if (abs(i[kk]) < cutoff) {
-        tt <- c(tt, crayon::silver(.numformat(i[kk], digits = digits)))
+        tt <- c(tt, crayon::silver(.numformat(round(i[kk], digits = digits),
+                                              digits = digits)))
       } else if (abs(i[kk]) <= 1) {
-        tt <- c(tt, crayon::bold(.numformat(i[kk], digits = digits)))
+        tt <- c(tt, crayon::bold(.numformat(round(i[kk], digits = digits),
+                                            digits = digits)))
       } else {
-        tt <- c(tt, crayon::red$bold(.numformat(i[kk], digits = digits)))
+        tt <- c(tt, crayon::red$bold(.numformat(round(i[kk], digits = digits),
+                                                digits = digits)))
       }
     }
     stringr::str_c(tt, collapse = "\t")
