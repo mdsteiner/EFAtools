@@ -160,7 +160,7 @@ compare <- function(x, y, reorder = TRUE, digits = 4, m_red = .001,
   cat("\n")
   cat(paste0("Median absolute difference: ", median_out))
   cat("\n")
-  cat(paste0("Max decimals to round to where numbers are equal: ",
+  cat(paste0("Max decimals to round to where numbers are still equal: ",
              equal_out))
 
   # create the difference object
