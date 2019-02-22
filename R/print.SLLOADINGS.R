@@ -5,11 +5,12 @@
 #'  default is .2.
 #' @param digits numeric. Passed to \code{\link[base]{round}}. Number of digits
 #'  to round the loadings to (default is 3).
+#' @param ... additional arguments passed to print
 #'
 #' @return A string created using the crayon package
 #' @method print SLLOADINGS
 #' @export
-print.SLLOADINGS <- function(x, cutoff = .2, digits = 3) {
+print.SLLOADINGS <- function(x, cutoff = .2, digits = 3, ...) {
 
   # create factor names to display
   factor_names <- colnames(x)

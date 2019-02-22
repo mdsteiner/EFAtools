@@ -6,7 +6,8 @@
 \usage{
 compare(x, y, reorder = TRUE, digits = 4, m_red = 0.001,
   range_red = 0.001, round_red = 3, print_diff = TRUE,
-  na.rm = FALSE)
+  na.rm = FALSE, x_labels = c("x", "y"), plot = TRUE,
+  plot_red = 0.001)
 }
 \arguments{
 \item{x}{matrix, dataframe, or vector. Loadings or communalities of one
@@ -40,6 +41,17 @@ printed or not (default is TRUE).}
 
 \item{na.rm}{logical. Whether NAs should be removed in the mean, median, min,
 and max functions. Default is FALSE.}
+
+\item{x_labels}{character. A vector of length two containing identifying
+labels for the two objects x and y that will be compared. These will be used
+as labels on the x-axis of the plot. If left to NULL, "Var 1" and "Var 2" will
+be used.}
+
+\item{plot}{logical. If TRUE (default), a plot illustrating the differences
+will be shown.}
+
+\item{plot_red}{numeric. Threshold above which to plot the absolute differences
+in red.}
 }
 \value{
 Print out a comparison summary.

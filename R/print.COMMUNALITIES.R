@@ -5,11 +5,11 @@
 #'  default is .3.
 #' @param digits numeric. Passed to \code{\link[base]{round}}. Number of digits
 #'  to round the loadings to (default is 3).
-#'
-#' @return A string created using the crayon package
+#' @param ... additional arguments passed to print
 #' @method print COMMUNALITIES
+#' @return A string created using the crayon package
 #' @export
-print.COMMUNALITIES <- function(x, cutoff = .3, digits = 3) {
+print.COMMUNALITIES <- function(x, cutoff = .3, digits = 3, ...) {
 
   temp_i <- NULL
 

@@ -30,12 +30,21 @@
 #'  printed or not (default is TRUE).
 #' @param na.rm logical. Whether NAs should be removed in the mean, median, min,
 #'  and max functions. Default is FALSE.
+#' @param x_labels character. A vector of length two containing identifying
+#'  labels for the two objects x and y that will be compared. These will be used
+#'  as labels on the x-axis of the plot. If left to NULL, "Var 1" and "Var 2" will
+#'  be used.
+#' @param plot logical. If TRUE (default), a plot illustrating the differences
+#'  will be shown.
+#' @param plot_red numeric. Threshold above which to plot the absolute differences
+#'  in red.
 #'
 #' @return Print out a comparison summary.
 #' @export
 compare <- function(x, y, reorder = TRUE, digits = 4, m_red = .001,
                     range_red = .001, round_red = 3, print_diff = TRUE,
-                    na.rm = FALSE)  {
+                    na.rm = FALSE, x_labels = c("x", "y"), plot = TRUE,
+                    plot_red = .001)  {
 
 
   # reclass data.frames and tibbles to matrices so the stats functions afterwards
@@ -179,5 +188,47 @@ compare <- function(x, y, reorder = TRUE, digits = 4, m_red = .001,
 
   }
   cat(out_diff)
+
+  if (isTRUE(plot)) {
+
+    if (length(x_labels) < 2) {
+      warning("Less than two x_labels specified, using 'x' and 'y'.")
+      x_labels <- c("x", "y")
+    } else if (length(x_labels) > 2) {
+      warning("More than two x_labels specified, using only the first two.")
+      x_labels <- x_labels[1:2]
+    }
+
+    # prepare variable for plot
+    diff_dat <- tibble::tibble(diffs = abs(diff)) %>%
+      dplyr::mutate(color = dplyr::case_when(diffs >= plot_red ~ "large difference",
+                                             TRUE ~ "acceptable difference"),
+                    comp = paste(x_labels, collapse = " vs. "))
+
+    diff_plot <- ggplot2::ggplot(diff_dat, ggplot2::aes_string("comp", "diffs",
+                                                               col = "color")) +
+      ggplot2::geom_violin(col = "grey20", width = .7, size = .7) +
+      ggplot2::geom_hline(yintercept = plot_red, lty = 2, alpha = .5,
+                          size = 1.25) +
+      ggplot2::geom_jitter(alpha = .5, width = 0.05, size = 2) +
+      ggplot2::scale_color_manual(values = c("black", "red")) +
+      ggplot2::theme_bw() +
+      ggplot2::labs(
+        subtitle = paste("Threshold for difference coloring:", plot_red),
+        x = "Compared Variables",
+        y = "Absolute Difference"
+      ) +
+      ggplot2::theme(
+        legend.position = "none",
+        strip.text = ggplot2::element_text(size = 11, face = "bold"),
+        axis.text = ggplot2::element_text(size = 11),
+        axis.title = ggplot2::element_text(size = 13,face = "bold")
+      )
+
+      diff_plot
+
+
+  }
+
 
 }

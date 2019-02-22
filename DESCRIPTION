@@ -14,4 +14,9 @@ Imports:
     psych,
     crayon,
     stringr,
-    stats
+    stats,
+    ggplot2,
+    plotly,
+    tibble,
+    magrittr,
+    dplyr

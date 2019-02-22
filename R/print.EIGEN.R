@@ -5,11 +5,12 @@
 #'  default is .3.
 #' @param digits numeric. Passed to \code{\link[base]{round}}. Number of digits
 #'  to round the loadings to (default is 3).
+#' @param ... additional arguments passed to print
 #'
 #' @return A string created using the crayon package
 #' @method print EIGEN
 #' @export
-print.EIGEN <- function(x, cutoff = .3, digits = 3) {
+print.EIGEN <- function(x, cutoff = .3, digits = 3, ...) {
 
   x <- round(x, digits = digits)
   temp_i <- ifelse(x >= 1, crayon::bold(x), ifelse(x < 0, crayon::red(x),

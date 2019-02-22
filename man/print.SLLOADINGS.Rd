@@ -4,7 +4,7 @@
 \alias{print.SLLOADINGS}
 \title{A print method for factor loadings}
 \usage{
-\method{print}{SLLOADINGS}(x, cutoff = 0.2, digits = 3)
+\method{print}{SLLOADINGS}(x, cutoff = 0.2, digits = 3, ...)
 }
 \arguments{
 \item{x}{class SLLOADINGS matrix.}
@@ -14,6 +14,8 @@ default is .2.}
 
 \item{digits}{numeric. Passed to \code{\link[base]{round}}. Number of digits
 to round the loadings to (default is 3).}
+
+\item{...}{additional arguments passed to print}
 }
 \value{
 A string created using the crayon package
