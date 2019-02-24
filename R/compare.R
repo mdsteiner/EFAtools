@@ -200,7 +200,7 @@ compare <- function(x, y, reorder = TRUE, digits = 4, m_red = .001,
     }
 
     # prepare variable for plot
-    diff_dat <- tibble::tibble(diffs = abs(diff)) %>%
+    diff_dat <- tibble::tibble(diffs = as.vector(abs(diff))) %>%
       dplyr::mutate(color = dplyr::case_when(diffs >= plot_red ~ "large difference",
                                              TRUE ~ "acceptable difference"),
                     comp = paste(x_labels, collapse = " vs. "))
@@ -210,7 +210,7 @@ compare <- function(x, y, reorder = TRUE, digits = 4, m_red = .001,
       ggplot2::geom_violin(col = "grey20", width = .7, size = .7) +
       ggplot2::geom_hline(yintercept = plot_red, lty = 2, alpha = .5,
                           size = 1.25) +
-      ggplot2::geom_jitter(alpha = .5, width = 0.05, size = 2) +
+      ggplot2::geom_jitter(alpha = .5, width = 0.05, height = 0, size = 2) +
       ggplot2::scale_color_manual(values = c("black", "red")) +
       ggplot2::theme_bw() +
       ggplot2::labs(
