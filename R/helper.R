@@ -92,7 +92,7 @@
 }
 
 
-.get_compare_matrix <- function(x, digits = 3, r_red = .001) {
+.get_compare_matrix <- function(x, digits = 3, r_red = .001, n_char = 10) {
 
   # create factor names to display
   factor_names <- colnames(x)
@@ -113,11 +113,11 @@
 
   max_char <- max(sapply(var_names, nchar))
 
-  if (max_char > 10) {
+  if (max_char > n_char) {
     vn_nchar <- sapply(var_names, nchar)
-    var_names[which(vn_nchar > 10)] <- substr(var_names[which(vn_nchar > 10)] ,
-                                              1, 10)
-    max_char <- 10
+    var_names[which(vn_nchar > n_char)] <- substr(var_names[which(n_char)] ,
+                                              1, n_char)
+    max_char <- n_char
   }
 
   var_names <- stringr::str_pad(var_names, max_char, side = "right")
@@ -202,3 +202,4 @@
   # print the results to the console
   return(temp)
 }
+

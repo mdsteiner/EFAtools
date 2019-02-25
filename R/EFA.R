@@ -86,8 +86,19 @@
 #' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings. Based on rotated loadings and, if applicable, the factor intercorrelations.}
 #' \item{fit_indices}{Fit indices derived from the rotated factor loadings as
 #'  returned by \code{\link[psych:factor.stats]{psych::factor.stats}}}
+#' \item{settings}{list. The settings (arguments) used in the EFA.}
 #'
 #' @export
+#'
+#' @examples
+#' # A type SG (as presented in Steiner and Grieder, 2019) EFA
+#' EFA_SG_5 <- EFA(IDS2_R, n_factors = 5, type = "SG")
+#'
+#' # A type SPSS EFA to mimick the SPSS implementation
+#' EFA_SPSS_5 <- EFA(IDS2_R, n_factors = 5, type = "SPSS")
+#'
+#' # A type psych EFA to mimick the psych::fa() implementation
+#' EFA_psych_5 <- EFA(IDS2_R, n_factors = 5, type = "psych")
 EFA <- function(x, n_factors, cors = TRUE, N = NA, rotation = "none",
                 type = "SG", max_iter = NULL, init_comm = NULL,
                 criterion = NULL, criterion_type = NULL, abs_eigen = NULL,
@@ -113,7 +124,8 @@ EFA <- function(x, n_factors, cors = TRUE, N = NA, rotation = "none",
   } else {
     if (rotation != "none") {
       warning("You entered rotation = '", rotation, "', which is no valid input.",
-              " Valid inputs are 'promax', 'varimax', or 'none'. No rotation was done.")
+              " Valid inputs are 'promax', 'varimax', or 'none'. No rotation was done;",
+              " returning unrotated loadings.")
     }
 
     return(paf_out)
@@ -132,10 +144,18 @@ EFA <- function(x, n_factors, cors = TRUE, N = NA, rotation = "none",
     rot_loadings = paf_rot$rot_loadings,
     rotmat = paf_rot$rotmat,
     vars_accounted = paf_rot$vars_accounted,
-    fit_indices = paf_rot$fit_indices
+    fit_indices = paf_rot$fit_indices,
+    settings = paf_out$settings
   )
 
+  # add additional settings
+  output$settings$kaiser <- paf_rot$settings$kaiser
+  output$settings$precision <- paf_rot$settings$precision
+  output$settings$order_type <- paf_rot$settings$order_type
+
   if (rotation == "promax") {
+    output$settings$P_type <- paf_rot$settings$P_type
+    output$settings$k <- paf_rot$settings$k
     output$Phi = paf_rot$Phi
     output$Structure = paf_rot$Structure
     class(output) <- "PROMAX"

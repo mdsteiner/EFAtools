@@ -112,8 +112,19 @@ A list of type PAF if no rotation is used (see \code{\link{PAF}}
 \item{vars_accounted}{Matrix of explained variances and sums of squared loadings. Based on rotated loadings and, if applicable, the factor intercorrelations.}
 \item{fit_indices}{Fit indices derived from the rotated factor loadings as
  returned by \code{\link[psych:factor.stats]{psych::factor.stats}}}
+\item{settings}{list. The settings (arguments) used in the EFA.}
 }
 \description{
 This is just a wrapper function to call \code{\link{PAF}} and then one of
 \code{\link{PROMAX}} or \code{\link{VARIMAX}} or no rotation is performed.
+}
+\examples{
+# A type SG (as presented in Steiner and Grieder, 2019) EFA
+EFA_SG_5 <- EFA(IDS2_R, n_factors = 5, type = "SG")
+
+# A type SPSS EFA to mimick the SPSS implementation
+EFA_SPSS_5 <- EFA(IDS2_R, n_factors = 5, type = "SPSS")
+
+# A type psych EFA to mimick the psych::fa() implementation
+EFA_psych_5 <- EFA(IDS2_R, n_factors = 5, type = "psych")
 }

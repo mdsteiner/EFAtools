@@ -28,8 +28,9 @@ This is passed to the "eps" argument of the
 \code{\link[stats:varimax]{stats::varimax}} function. Default is \code{NULL}}
 
 \item{order_type}{character. How to order the factors and when to reflect
-their signs. Default is \code{NULL}. "psych" will use the psych method,
-"SPSS" the SPSS method. See below for details.}
+their signs. Default is \code{NULL}. "eigen" will order the factors according,
+to their eigenvalues. "ss_factors" will order them according to the sum of
+squared loadings. In both cases signs are reflected. See below for details.}
 }
 \value{
 A list of class VARIMAX containing the following
@@ -40,6 +41,7 @@ A list of class VARIMAX containing the following
 \item{vars_accounted}{Matrix of explained variances and sums of squared loadings}
 \item{fit_indices}{Fit indices as returned by
  \code{\link[psych:factor.stats]{psych::factor.stats}}}
+\item{settings}{list. The settings (arguments) used in the varimax.}
 }
 \description{
 This function implements the varimax rotation procedure. It can
@@ -50,15 +52,23 @@ The other arguments can be used to control the procedure more flexibly.
 }
 \details{
 \code{type = "SG"} will use the following argument specification:
-\code{precision = 1e-10, order_type = "psych"}.
+\code{precision = 1e-10, order_type = "eigen"}.
 \code{type = "psych"} will use the following argument specification:
-\code{precision = 1e-5, order_type = "psych"}.
+\code{precision = 1e-5, order_type = "eigen"}.
 \code{type = "SPSS"} will use the following argument specification:
-\code{precision = 1e-10, order_type = "SPSS"}.
+\code{precision = 1e-10, order_type = "ss_factors"}.
 
-The \code{order_type} argument can take two arguments "psych" or "SPSS". The
+The \code{order_type} argument can take two arguments "eigen" or "ss_factors". The
 order of factors is then determined using the ordered communalities of the
-promax pattern matrix, if \code{order_type = "psych"}, and using the ordered
-sums of squares of factor loadings per factor if \code{order_type = "SPSS"}.
+promax pattern matrix, if \code{order_type = "eigen"}, and using the ordered
+sums of squares of factor loadings per factor if \code{order_type = "ss_factors"}.
 loadings = AP, rotmat = U, Phi = Phi, Structure = Structure
+}
+\examples{
+# call within EFA function:
+EFA(IDS2_R, n_factors = 5, type = "SG", rotation = "varimax")
+
+# call as single function
+unrot <- EFA(IDS2_R, n_factors = 5, type = "SG")
+VARIMAX(unrot$unrot_loadings, type = "SG")
 }

@@ -19,4 +19,5 @@ Imports:
     plotly,
     tibble,
     magrittr,
-    dplyr
+    dplyr,
+    cli

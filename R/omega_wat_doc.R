@@ -1,6 +1,8 @@
 #' omega_Watkins
 #'
-#' Output of the omega computation performed in Steiner & Grieder (2019), using Watkins' omega program (Watkins, 2013) on the Schmid-Leiman solution of the \code{\link[EFAdiff:IDS2_R]{IDS-2}}} data.
+#' @description Output of the omega computation performed in Steiner & Grieder (2019),
+#' using Watkins' omega program (Watkins, 2013) on the Schmid-Leiman
+#' solution of the IDS-2 data.
 #'
 #'
 #' @format A 6 x 3 data.frame

@@ -28,6 +28,8 @@ A list containing the following
 and uniquenesses.}
 \item{L2}{Second-order factor loadings.}
 \item{vars_accounted}{Matrix of explained variances and sums of squared loadings}
+\item{settings}{list. The settings (arguments) used in the PAF to get the second order loadings.}
+\item{iter}{Number of iterations needed in the PAF for the second order loadings.}
 }
 \description{
 This function implements the Schmid-Leiman (SL) transformation. It takes the

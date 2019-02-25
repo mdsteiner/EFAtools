@@ -29,6 +29,8 @@
 #' and uniquenesses.}
 #' \item{L2}{Second-order factor loadings.}
 #' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings}
+#' \item{settings}{list. The settings (arguments) used in the PAF to get the second order loadings.}
+#' \item{iter}{Number of iterations needed in the PAF for the second order loadings.}
 #'
 #' @details
 #' The SL transformation (also called SL orthogonalization) is a procedure with
@@ -110,7 +112,8 @@ SL <- function(x, Phi = NULL, type = "SG", ...) {
   u2_sl <- 1 - h2_sl
 
   vars_accounted <- .compute_vars(L_unrot = sl_load, L_rot = sl_load)
-  colnames(vars_accounted) <- colnames(sl_load)
+
+  colnames(vars_accounted) <-c("g", paste0("F", 1:n_first_fac))
 
   # Finalize output object
   sl <- cbind(sl_load, h2_sl, u2_sl)
@@ -120,7 +123,9 @@ SL <- function(x, Phi = NULL, type = "SG", ...) {
   output <- list(
     sl = sl,
     L2 = L2,
-    vars_accounted = vars_accounted)
+    vars_accounted = vars_accounted,
+    settings = paf_phi$settings,
+    iter = paf_phi$iter)
 
   class(output) <- "SL"
 

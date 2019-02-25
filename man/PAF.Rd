@@ -99,4 +99,12 @@ abs_eig = FALSE}.
 \code{type = "SPSS"} will use the following argument specification:
 \code{init_comm = "smc", criterion = .001, criterion_type = "max_individual",
 abs_eig = TRUE}.
+\item{settings}{list. The settings (arguments) used in the PAF.}
+}
+\examples{
+# call within EFA function:
+EFA(IDS2_R, n_factors = 5, type = "SG")
+
+# call as single function
+PAF(IDS2_R, n_factors = 5, type = "SG")
 }

@@ -61,6 +61,7 @@
 #' \code{type = "SPSS"} will use the following argument specification:
 #' \code{init_comm = "smc", criterion = .001, criterion_type = "max_individual",
 #' abs_eig = TRUE}.
+#' \item{settings}{list. The settings (arguments) used in the PAF.}
 #'
 #' @return A list of class PAF containing the following
 #' \item{orig_R}{Original correlation matrix.}
@@ -77,6 +78,12 @@
 #'  \code{\link[psych:factor.stats]{psych::factor.stats}}}
 #'
 #' @export
+#' @examples
+#' # call within EFA function:
+#' EFA(IDS2_R, n_factors = 5, type = "SG")
+#'
+#' # call as single function
+#' PAF(IDS2_R, n_factors = 5, type = "SG")
 PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
                 type = "SG", init_comm = NULL, criterion = NULL,
                 criterion_type = NULL, abs_eigen = NULL,
@@ -416,6 +423,21 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
   # create the output object
   class(L) <- "LOADINGS"
 
+  # store the settings used:
+
+  settings <- list(
+    N = N,
+    max_iter = max_iter,
+    type = type,
+    init_comm = init_comm,
+    criterion = criterion,
+    criterion_type = criterion_type,
+    abs_eigen = abs_eigen,
+    signed_loadings = signed_loadings,
+    use = use
+  )
+
+
   output <- list(
     orig_R = orig_R,
     h2_init = h2_init,
@@ -426,7 +448,8 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
     final_eigen = eigen(R)$values,
     unrot_loadings = L,
     vars_accounted = vars_accounted,
-    fit_indices = fit_ind
+    fit_indices = fit_ind,
+    settings = settings
   )
 
   class(output$h2_init) <- "COMMUNALITIES"

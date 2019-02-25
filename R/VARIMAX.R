@@ -22,20 +22,21 @@
 #'  This is passed to the "eps" argument of the
 #'  \code{\link[stats:varimax]{stats::varimax}} function. Default is \code{NULL}
 #' @param order_type character. How to order the factors and when to reflect
-#'  their signs. Default is \code{NULL}. "psych" will use the psych method,
-#'  "SPSS" the SPSS method. See below for details.
+#'  their signs. Default is \code{NULL}. "eigen" will order the factors according,
+#'  to their eigenvalues. "ss_factors" will order them according to the sum of
+#'  squared loadings. In both cases signs are reflected. See below for details.
 #'
 #' @details \code{type = "SG"} will use the following argument specification:
-#' \code{precision = 1e-10, order_type = "psych"}.
+#' \code{precision = 1e-10, order_type = "eigen"}.
 #' \code{type = "psych"} will use the following argument specification:
-#' \code{precision = 1e-5, order_type = "psych"}.
+#' \code{precision = 1e-5, order_type = "eigen"}.
 #' \code{type = "SPSS"} will use the following argument specification:
-#' \code{precision = 1e-10, order_type = "SPSS"}.
+#' \code{precision = 1e-10, order_type = "ss_factors"}.
 #'
-#' The \code{order_type} argument can take two arguments "psych" or "SPSS". The
+#' The \code{order_type} argument can take two arguments "eigen" or "ss_factors". The
 #' order of factors is then determined using the ordered communalities of the
-#' promax pattern matrix, if \code{order_type = "psych"}, and using the ordered
-#' sums of squares of factor loadings per factor if \code{order_type = "SPSS"}.
+#' promax pattern matrix, if \code{order_type = "eigen"}, and using the ordered
+#' sums of squares of factor loadings per factor if \code{order_type = "ss_factors"}.
 #'loadings = AP, rotmat = U, Phi = Phi, Structure = Structure
 #' @return A list of class VARIMAX containing the following
 #'
@@ -45,8 +46,16 @@
 #' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings}
 #' \item{fit_indices}{Fit indices as returned by
 #'  \code{\link[psych:factor.stats]{psych::factor.stats}}}
+#' \item{settings}{list. The settings (arguments) used in the varimax.}
 #'
 #' @export
+#' @examples
+#' # call within EFA function:
+#' EFA(IDS2_R, n_factors = 5, type = "SG", rotation = "varimax")
+#'
+#' # call as single function
+#' unrot <- EFA(IDS2_R, n_factors = 5, type = "SG")
+#' VARIMAX(unrot$unrot_loadings, type = "SG")
 VARIMAX <- function (x, type = "SG", kaiser = TRUE,
                     precision = NULL, order_type = NULL) {
 
@@ -78,7 +87,7 @@ VARIMAX <- function (x, type = "SG", kaiser = TRUE,
       }
 
       if (is.null(order_type)) {
-        order_type <- "psych"
+        order_type <- "eigen"
       } else {
         warning("Type and order_type is specified. order_type is used with value '",
                 order_type, "'. Results may differ from the specified type")
@@ -104,7 +113,7 @@ VARIMAX <- function (x, type = "SG", kaiser = TRUE,
       }
 
       if (is.null(order_type)) {
-        order_type <- "psych"
+        order_type <- "eigen"
       } else {
         warning("Type and order_type is specified. order_type is used with value '",
                 order_type, "'. Results may differ from the specified type")
@@ -129,7 +138,7 @@ VARIMAX <- function (x, type = "SG", kaiser = TRUE,
       }
 
       if (is.null(order_type)) {
-        order_type <- "SPSS"
+        order_type <- "ss_loadings"
       } else {
         warning("Type and order_type is specified. order_type is used with value '",
                 order_type, "'. Results may differ from the specified type")
@@ -187,7 +196,7 @@ VARIMAX <- function (x, type = "SG", kaiser = TRUE,
   signs[signs == 0] <- 1
   AV$loadings <- AV$loadings %*% diag(signs)
 
-  if (order_type == "SPSS") {
+  if (order_type == "ss_factors") {
 
     # reorder the factors according to largest sums of squares
     ss <- colSums(AV$loadings ^2)
@@ -203,18 +212,18 @@ VARIMAX <- function (x, type = "SG", kaiser = TRUE,
       dim_names[[2]] <- paste0("F", 1:ncol(AV$loadings))[ss_order]
     }
 
-  } else if (order_type == "psych") {
+  } else if (order_type == "eigen") {
 
     # order according to communalities
-    comm_rotated <- diag(t(AV$loadings) %*% AV$loadings)
-    comm_order <- order(comm_rotated, decreasing = TRUE)
-    AV$loadings <- AV$loadings[, comm_order]
-    AV$rotmat <- AV$rotmat[comm_order, comm_order]
+    eig_rotated <- diag(t(AV$loadings) %*% AV$loadings)
+    eig_order <- order(eig_rotated, decreasing = TRUE)
+    AV$loadings <- AV$loadings[, eig_order]
+    AV$rotmat <- AV$rotmat[eig_order, eig_order]
 
     if (!is.null(dim_names[[2]])) {
-      dim_names[[2]] <- dim_names[[2]][comm_order]
+      dim_names[[2]] <- dim_names[[2]][eig_order]
     } else {
-      dim_names[[2]] <- paste0("F", 1:ncol(AV$loadings))[comm_order]
+      dim_names[[2]] <- paste0("F", 1:ncol(AV$loadings))[eig_order]
     }
 
   }
@@ -241,11 +250,16 @@ VARIMAX <- function (x, type = "SG", kaiser = TRUE,
 
   # prepare output
   class(load_mat) <- "LOADINGS"
+
+  # prepare settings
+  settings <- list(type = type, kaiser = kaiser, precision = precision,
+                   order_type = order_type)
   output <- list(rot_loadings = load_mat,
                  rotmat = AV$rotmat,
                  h2 = diag(L %*% t(L)),
                  vars_accounted = vars_accounted,
-                 fit_indices = fit_ind)
+                 fit_indices = fit_ind,
+                 settings = settings)
   class(output$h2) <- "COMMUNALITIES"
   class(output) <- "VARIMAX"
   output

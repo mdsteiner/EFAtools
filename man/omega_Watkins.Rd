@@ -19,6 +19,8 @@ Watkins, M. W. (2013). Omega [Computer Software]. Phoenix, AZ: Ed & Psych Associ
 omega_Watkins
 }
 \description{
-omega_Watkins
+Output of the omega computation performed in Steiner & Grieder (2019),
+using Watkins' omega program (Watkins, 2013) on the Schmid-Leiman
+solution of the IDS-2 data.
 }
 \keyword{datasets}
