@@ -203,3 +203,45 @@
   return(temp)
 }
 
+
+
+.decimals <- function(x) {
+
+  if ((is.null(dim(x)) && !(class(x) %in% c("numeric", "COMMUNALITIES", "EIGEN"))) ||
+      (!is.null(dim(x)) && !(class(x) %in% c("matrix", "loadings", "LOADINGS",
+                                             "SLLOADINGS")))) {
+    stop("x is of class ", class(x), " but must be a numeric vector or matrix")
+  }
+
+  if (!is.null(dim(x))) {
+
+    max(apply(x, 1:2, function(ll) {
+      if (abs(ll - round(ll)) > .Machine$double.eps^0.5) {
+        nchar(strsplit(sub('0+$', '', as.character(ll)), ".", fixed = TRUE)[[1]][[2]])
+      } else {
+        return(0)
+      }
+    }))
+
+  } else if (length(x) > 1) {
+
+    max(sapply(x, function(ll) {
+      if (abs(ll - round(ll)) > .Machine$double.eps^0.5) {
+        nchar(strsplit(sub('0+$', '', as.character(ll)), ".", fixed = TRUE)[[1]][[2]])
+      } else {
+        return(0)
+      }
+    }))
+
+
+  } else {
+
+    if (abs(x - round(x)) > .Machine$double.eps^0.5) {
+      nchar(strsplit(sub('0+$', '', as.character(x)), ".", fixed = TRUE)[[1]][[2]])
+    } else {
+      return(0)
+    }
+
+  }
+
+}

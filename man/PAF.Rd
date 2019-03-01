@@ -79,6 +79,7 @@ A list of class PAF containing the following
 \item{vars_accounted}{Matrix of explained variances and sums of squared loadings}
 \item{fit_indices}{Fit indices as returned by
  \code{\link[psych:factor.stats]{psych::factor.stats}}}
+\item{settings}{list. The settings (arguments) used in the PAF.}
 }
 \description{
 This function implements the principal axis factoring procedure. It can
@@ -99,7 +100,6 @@ abs_eig = FALSE}.
 \code{type = "SPSS"} will use the following argument specification:
 \code{init_comm = "smc", criterion = .001, criterion_type = "max_individual",
 abs_eig = TRUE}.
-\item{settings}{list. The settings (arguments) used in the PAF.}
 }
 \examples{
 # call within EFA function:

@@ -123,7 +123,9 @@ compare <- function(x, y, reorder = TRUE, digits = 4, m_red = .001,
   max_abs_diff <- round(max(abs(diff), na.rm = na.rm), digits = digits)
 
   are_equal_v <- c()
-  for (ii in 1:20) {
+
+  max_dec <- min(c(.decimals(x), .decimals(y)))
+  for (ii in 1:max_dec) {
     are_equal_v[ii] <- all(round(x, digits = ii) == round(y, digits = ii))
   }
 
@@ -171,6 +173,8 @@ compare <- function(x, y, reorder = TRUE, digits = 4, m_red = .001,
   cat("\n")
   cat(paste0("Max decimals to round to where numbers are still equal: ",
              equal_out))
+  cat("\n")
+  cat(paste0("Minimum number of decimals provided: ", crayon::blue$bold(max_dec)))
 
   # create the difference object
   if (isTRUE(print_diff)) {
