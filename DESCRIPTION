@@ -20,4 +20,8 @@ Imports:
     tibble,
     magrittr,
     dplyr,
-    cli
+    cli,
+    Rcpp,
+    RcppArmadillo
+LinkingTo: 
+    Rcpp, RcppArmadillo

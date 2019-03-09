@@ -49,18 +49,21 @@
 #' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
 #'  is given as input. Note that in this case \code{cors} must be set to
 #'  \code{FALSE}
+#' @param use_cpp logical. If \code{TRUE}, the iterative PAF procedure to find the
+#'  factor solution is performed using Rcpp. This is faster, but can lead to some,
+#'  very small, differences in the output.
 #'
 #' @details Values of \code{init_comm}, \code{criterion}, \code{criterion_type},
-#' and \code{abs_eig} depend on the \code{type} argument.
+#' \code{abs_eigen}, and \code{use_cpp} depend on the \code{type} argument.
 #'\code{type = "SG"} will use the following argument specification:
 #' \code{init_comm = "smc", criterion = .001, criterion_type = "max_individual",
-#' abs_eig = FALSE}.
+#' abs_eigen = FALSE, use_cpp = TRUE}.
 #' \code{type = "psych"} will use the following argument specification:
 #' \code{init_comm = "smc", criterion = .001, criterion_type = "sums",
-#' abs_eig = FALSE}.
+#' abs_eigen = FALSE, use_cpp = FALSE}.
 #' \code{type = "SPSS"} will use the following argument specification:
 #' \code{init_comm = "smc", criterion = .001, criterion_type = "max_individual",
-#' abs_eig = TRUE}.
+#' abs_eigen = TRUE, use_cpp = FALSE}.
 #'
 #' @return A list of class PAF containing the following
 #' \item{orig_R}{Original correlation matrix.}
@@ -87,7 +90,8 @@
 PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
                 type = "SG", init_comm = NULL, criterion = NULL,
                 criterion_type = NULL, abs_eigen = NULL,
-                signed_loadings = TRUE, use = "pairwise.complete.obs") {
+                signed_loadings = TRUE, use = "pairwise.complete.obs",
+                use_cpp = NULL) {
 
   # create R correlation matrix object, if from data, using
   # pairwise binary correlations
@@ -117,11 +121,12 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
     # all the other necessary arguments are specified.
 
     if (is.null(init_comm) || is.null(criterion) || is.null(criterion_type) ||
-        is.null(abs_eigen) || is.null(signed_loadings) || is.null(max_iter)) {
+        is.null(abs_eigen) || is.null(signed_loadings) || is.null(max_iter) ||
+        is.null(use_cpp)) {
       stop('One of "init_comm", "criterion", "criterion_type", "abs_eigen",
-           "max_iter", or "signed_loadings" was NULL and no valid "type" was
-           specified. Either use one of "SG", "psych", or "SPSS" for type,
-           or specify all other arguments')
+           "max_iter", "signed_loadings", "use_cpp", was NULL and no valid
+           "type" was specified. Either use one of "SG", "psych", or "SPSS"
+           for type, or specify all other arguments')
     }
   } else if (type == "SG") {
 
@@ -161,6 +166,14 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
     } else {
       warning("Type and abs_eigen is specified. abs_eigen is used with value '",
               abs_eigen, "'. Results may differ from the specified type")
+    }
+
+
+    if (is.null(use_cpp)) {
+      use_cpp <- TRUE
+    } else {
+      warning("Type and use_cpp is specified. use_cpp is used with value '",
+              use_cpp, "'. Results may differ from the specified type")
     }
 
 
@@ -204,6 +217,13 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
               abs_eigen, "'. Results may differ from the specified type")
     }
 
+    if (is.null(use_cpp)) {
+      use_cpp <- FALSE
+    } else {
+      warning("Type and use_cpp is specified. use_cpp is used with value '",
+              use_cpp, "'. Results may differ from the specified type")
+    }
+
 
   } else if (type == "SPSS") {
 
@@ -243,6 +263,13 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
     } else {
       warning("Type and abs_eigen is specified. abs_eigen is used with value '",
               abs_eigen, "'. Results may differ from the specified type")
+    }
+
+    if (is.null(use_cpp)) {
+      use_cpp <- FALSE
+    } else {
+      warning("Type and use_cpp is specified. use_cpp is used with value '",
+              use_cpp, "'. Results may differ from the specified type")
     }
 
   }
@@ -308,78 +335,94 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
   # set initial delta such that at least one iteration is performed
   delta <- 1
 
-  # iterative PAF
-  while (delta > criterion){
+  if (isFALSE(use_cpp)) {
+    # iterative PAF
+    while (delta > criterion){
 
-    # compute the eigenvalues and eigenvectors using the R eigen function
-    eigen_list <- eigen(R)
+      # compute the eigenvalues and eigenvectors using the R eigen function
+      eigen_list <- eigen(R)
 
-    # for clarity, store the m eigenvalues and
-    # m eigenvectors separately
-    Lambda <- eigen_list$values[1:m]
-    V <- eigen_list$vectors[, 1:m]
+      # for clarity, store the m eigenvalues and
+      # m eigenvectors separately
+      Lambda <- eigen_list$values[1:m]
+      V <- eigen_list$vectors[, 1:m]
 
-    if (isFALSE(abs_eigen)) {
+      if (isFALSE(abs_eigen)) {
 
-      if(any(Lambda < 0)){
-        stop("Negative Eigenvalues detected; cannot compute communality estimates.
-             Try again with init_comm = 'unity' or 'mac'")
+        if(any(Lambda < 0)){
+          stop("Negative Eigenvalues detected; cannot compute communality estimates.
+               Try again with init_comm = 'unity' or 'mac'")
+        }
+
+        # compute the loadings from the eigenvector matrix and diagonal
+        # eigenvalue matrix
+        if (m > 1) {
+          L <- V %*% diag(sqrt(Lambda))
+        } else {
+          L <- V * sqrt(Lambda)
+        }
+
+        # get the new communality estimates from the loadings
+        new_h2 <- diag(L %*% t(L))
+
+      } else if (isTRUE(abs_eigen)) {
+        # this is the implementation according to SPSS, which uses
+        # absolute eigenvalues to avoid problems when having to compute
+        # the square root
+
+        # compute the loadings from the eigenvector matrix and diagonal
+        # eigenvalue matrix
+        if (m > 1) {
+          L <- V %*% diag(sqrt(abs(Lambda)))
+        } else {
+          L <- V * sqrt(abs(Lambda))
+        }
+        # get the new communality estimates from the loadings
+        # in SPSS implemented as rowSums(V^2 %*% diag(abs(Lambda)))
+        # which is equivalent to
+        new_h2 <- diag(L %*% t(L))
+
       }
 
-      # compute the loadings from the eigenvector matrix and diagonal
-      # eigenvalue matrix
-      if (m > 1) {
-        L <- V %*% diag(sqrt(Lambda))
-      } else {
-        L <- V * sqrt(Lambda)
+
+      if (criterion_type == "max_individual") {
+        # save the maximum change in the communality estimates
+        delta <- max(abs(h2 - new_h2))
+      } else if (criterion_type == "sums"){
+        # convergence criterion according to the psych package
+        delta <- abs(sum(h2) - sum(new_h2))
       }
 
-      # get the new communality estimates from the loadings
-      new_h2 <- diag(L %*% t(L))
+      # update diagonal of R with the new communality estimates
+      diag(R) <- new_h2
 
-    } else if (isTRUE(abs_eigen)) {
-      # this is the implementation according to SPSS, which uses
-      # absolute eigenvalues to avoid problems when having to compute
-      # the square root
+      # update old communality estimates with new ones
+      h2 <- new_h2
 
-      # compute the loadings from the eigenvector matrix and diagonal
-      # eigenvalue matrix
-      if (m > 1) {
-        L <- V %*% diag(sqrt(abs(Lambda)))
-      } else {
-        L <- V * sqrt(abs(Lambda))
+      # break if after maximum iterations there was no convergence
+      if (iter > max_iter){
+        warning("Reached maximum number of iterations without convergence.
+                Results may not be interpretable.")
+        break
       }
-      # get the new communality estimates from the loadings
-      # in SPSS implemented as rowSums(V^2 %*% diag(abs(Lambda)))
-      # which is equivalent to
-      new_h2 <- diag(L %*% t(L))
+
+      # incerase iterator
+      iter <- iter + 1
 
     }
+  } else if (isTRUE(use_cpp)) {
 
+    crit_type <- ifelse(criterion_type == "max_individual", 1, 2)
 
-    if (criterion_type == "max_individual") {
-      # save the maximum change in the communality estimates
-      delta <- max(abs(h2 - new_h2))
-    } else if (criterion_type == "sums"){
-      # convergence criterion according to the psych package
-      delta <- abs(sum(h2) - sum(new_h2))
-    }
+    # run the iterative PAF procedure using Rcpp
+    L_list <- paf_iter(h2 = h2, criterion = criterion, R = R, n_fac = m,
+                       abs_eig = abs_eigen, crit_type = crit_type,
+                       max_iter = max_iter)
 
-    # update diagonal of R with the new communality estimates
-    diag(R) <- new_h2
-
-    # update old communality estimates with new ones
-    h2 <- new_h2
-
-    # break if after maximum iterations there was no convergence
-    if (iter > max_iter){
-      warning("Reached maximum number of iterations without convergence.
-              Results may not be interpretable.")
-      break
-    }
-
-    # incerase iterator
-    iter <- iter + 1
+    h2 <- L_list$h2
+    R <- L_list$R
+    iter <- L_list$iter
+    L <- L_list$L
 
   }
 

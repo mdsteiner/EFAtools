@@ -245,3 +245,9 @@
   }
 
 }
+
+
+
+.onUnload <- function (libpath) {
+  library.dynam.unload("EFAdiff", libpath)
+}

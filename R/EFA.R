@@ -49,6 +49,9 @@
 #' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
 #'  is given as input. Note that in this case \code{cors} must be set to
 #'  \code{FALSE}.
+#' @param use_cpp logical. If \code{TRUE}, the iterative PAF procedure to find the
+#'  factor solution is performed using Rcpp. This is faster, but can lead to some,
+#'  very small, differences in the output.
 #' @param k numeric. The power used for computing the target matrix P in the
 #'  promax rotation.
 #' @param kaiser logical. If \code{TRUE} (default), kaiser normalization is
@@ -103,14 +106,14 @@ EFA <- function(x, n_factors, cors = TRUE, N = NA, rotation = "none",
                 type = "SG", max_iter = NULL, init_comm = NULL,
                 criterion = NULL, criterion_type = NULL, abs_eigen = NULL,
                 signed_loadings = TRUE, use = "pairwise.complete.obs",
-                k = NULL, kaiser = TRUE, P_type = NULL,
+                use_cpp = NULL, k = NULL, kaiser = TRUE, P_type = NULL,
                 precision = NULL, order_type = NULL) {
 
   # run principal axis factoring
   paf_out <- PAF(x, n_factors = n_factors, cors = cors, N = N, type = type,
                  max_iter = max_iter, init_comm = init_comm, criterion = criterion,
                  criterion_type = criterion_type, abs_eigen = abs_eigen,
-                 signed_loadings = signed_loadings, use = use)
+                 signed_loadings = signed_loadings, use = use, use_cpp = use_cpp)
 
   # rotate factor analysis results
   if (rotation == "promax") {
