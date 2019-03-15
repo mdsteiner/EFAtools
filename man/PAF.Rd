@@ -7,7 +7,7 @@
 PAF(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
   type = "SG", init_comm = NULL, criterion = NULL,
   criterion_type = NULL, abs_eigen = NULL, signed_loadings = TRUE,
-  use = "pairwise.complete.obs")
+  use = "pairwise.complete.obs", use_cpp = NULL)
 }
 \arguments{
 \item{x}{data.frame or matrix. Dataframe or matrix of raw data or matrix with
@@ -64,6 +64,10 @@ SPSS and \code{\link[psych:fa]{psych::fa}}.}
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
 is given as input. Note that in this case \code{cors} must be set to
 \code{FALSE}}
+
+\item{use_cpp}{logical. If \code{TRUE}, the iterative PAF procedure to find the
+factor solution is performed using Rcpp. This is faster, but can lead to some,
+very small, differences in the output.}
 }
 \value{
 A list of class PAF containing the following
@@ -90,16 +94,16 @@ arguments can be used to control the procedure more flexibly.
 }
 \details{
 Values of \code{init_comm}, \code{criterion}, \code{criterion_type},
-and \code{abs_eig} depend on the \code{type} argument.
+\code{abs_eigen}, and \code{use_cpp} depend on the \code{type} argument.
 \code{type = "SG"} will use the following argument specification:
 \code{init_comm = "smc", criterion = .001, criterion_type = "max_individual",
-abs_eig = FALSE}.
+abs_eigen = FALSE, use_cpp = TRUE}.
 \code{type = "psych"} will use the following argument specification:
 \code{init_comm = "smc", criterion = .001, criterion_type = "sums",
-abs_eig = FALSE}.
+abs_eigen = FALSE, use_cpp = FALSE}.
 \code{type = "SPSS"} will use the following argument specification:
 \code{init_comm = "smc", criterion = .001, criterion_type = "max_individual",
-abs_eig = TRUE}.
+abs_eigen = TRUE, use_cpp = FALSE}.
 }
 \examples{
 # call within EFA function:

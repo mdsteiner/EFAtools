@@ -51,11 +51,12 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
 
       // compute the loadings from the eigenvector matrix and diagonal
       // eigenvalue matrix
-      if (n_fac > 1) {
-        L = V * arma::diagmat(sqrt(Lambda));
-      } else {
-        L = V % sqrt(Lambda);
-      }
+      L = V * arma::diagmat(sqrt(Lambda));
+      // if (n_fac > 1) {
+      //   L = V * arma::diagmat(sqrt(Lambda));
+      // } else {
+      //   L = V % sqrt(Lambda);
+      // }
 
       // get the new communality estimates from the loadings
       Lt = L * L.t();
@@ -70,11 +71,12 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
       // compute the loadings from the eigenvector matrix and diagonal
       // eigenvalue matrix
 
-      if (n_fac > 1) {
-        L = V * arma::diagmat(sqrt(arma::abs(Lambda)));
-      } else {
-        L = V % sqrt(arma::abs(Lambda));
-      }
+      L = V * arma::diagmat(sqrt(arma::abs(Lambda)));
+      // if (n_fac > 1) {
+      //   L = V * arma::diagmat(sqrt(arma::abs(Lambda)));
+      // } else {
+      //   L = V % sqrt(arma::abs(Lambda));
+      // }
 
       // get the new communality estimates from the loadings
       // in SPSS implemented as rowSums(V^2 %*% diag(abs(Lambda)))

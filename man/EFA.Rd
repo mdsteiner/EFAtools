@@ -7,8 +7,9 @@
 EFA(x, n_factors, cors = TRUE, N = NA, rotation = "none",
   type = "SG", max_iter = NULL, init_comm = NULL, criterion = NULL,
   criterion_type = NULL, abs_eigen = NULL, signed_loadings = TRUE,
-  use = "pairwise.complete.obs", k = NULL, kaiser = TRUE,
-  P_type = NULL, precision = NULL, order_type = NULL)
+  use = "pairwise.complete.obs", use_cpp = NULL, k = NULL,
+  kaiser = TRUE, P_type = NULL, precision = NULL,
+  order_type = NULL)
 }
 \arguments{
 \item{x}{data.frame or matrix. Dataframe or matrix of raw data or matrix with
@@ -69,6 +70,10 @@ both SPSS and \code{\link[psych:fa]{psych::fa}}.}
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
 is given as input. Note that in this case \code{cors} must be set to
 \code{FALSE}.}
+
+\item{use_cpp}{logical. If \code{TRUE}, the iterative PAF procedure to find the
+factor solution is performed using Rcpp. This is faster, but can lead to some,
+very small, differences in the output.}
 
 \item{k}{numeric. The power used for computing the target matrix P in the
 promax rotation.}
