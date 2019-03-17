@@ -24,6 +24,7 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
 
   int iter = 1;
   double delta = 1.0;
+  arma::vec tv(R.n_cols);
   arma::vec Lambda;
   arma::mat V;
   arma::mat L;
@@ -33,11 +34,7 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
   arma::mat Lt;
 
   while (delta > criterion) {
-    //  compute the eigenvalues and eigenvectors using the R eigen function
-    //eigen_list = eigs_sym_c(R, n_fac);
-
-    // for clarity, store the m eigenvalues and
-    // n_fac eigenvectors separately
+    //  compute the eigenvalues and eigenvectors
     arma::mat xx(R.begin(),R.n_rows,R.n_cols, false);
     eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx), n_fac);
     Lambda = flipud(eigval);
@@ -51,12 +48,14 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
 
       // compute the loadings from the eigenvector matrix and diagonal
       // eigenvalue matrix
-      L = V * arma::diagmat(sqrt(Lambda));
-      // if (n_fac > 1) {
-      //   L = V * arma::diagmat(sqrt(Lambda));
-      // } else {
-      //   L = V % sqrt(Lambda);
-      // }
+
+      if (n_fac > 1) {
+        L = V * arma::diagmat(sqrt(Lambda));
+      } else {
+        Lambda = arma::sqrt(Lambda);
+        tv.fill(Lambda[0]);
+        L = V % tv;
+      }
 
       // get the new communality estimates from the loadings
       Lt = L * L.t();
@@ -71,18 +70,19 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
       // compute the loadings from the eigenvector matrix and diagonal
       // eigenvalue matrix
 
-      L = V * arma::diagmat(sqrt(arma::abs(Lambda)));
-      // if (n_fac > 1) {
-      //   L = V * arma::diagmat(sqrt(arma::abs(Lambda)));
-      // } else {
-      //   L = V % sqrt(arma::abs(Lambda));
-      // }
+
+      if (n_fac > 1) {
+        L = V * arma::diagmat(sqrt(arma::abs(Lambda)));
+      } else {
+        Lambda = arma::sqrt(Lambda);
+        tv.fill(Lambda[0]);
+        L = V %  tv;
+      }
 
       // get the new communality estimates from the loadings
       // in SPSS implemented as rowSums(V^2 %*% diag(abs(Lambda)))
       // which is equivalent to
 
-      //new_h2 = MM(L).diag();
       Lt = L * L.t();
       new_h2 = Lt.diag();
     }

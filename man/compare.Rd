@@ -54,7 +54,18 @@ will be shown.}
 in red.}
 }
 \value{
-Print out a comparison summary.
+A list of class COMPARE containing summary statistics on the differences
+ of x and y.
+
+\item{diff}{The vector or matrix containing the }
+\item{mean_abs_diff}{Initial communality estimates from PAF.}
+\item{median_abs_diff}{Final communality estimates from unrotated loadings.}
+\item{min_abs_diff}{The number of iterations needed for convergence in PAF.}
+\item{max_abs_diff}{Eigen values of the original correlation matrix.}
+\item{max_dec}{Initial eigenvalues, obtained from the correlation matrix
+ with the initial communality estimates as diagonal in PAF.}
+\item{are_equal}{Eigenvalues of the final iteration in PAF.}
+\item{ctrl}{List of control settings used in the print method.}
 }
 \description{
 The functions takes two objects of the same dimensions containing numeric
@@ -63,4 +74,15 @@ information of the absolute difference of the objects: mean, median, min, max,
 number above which the max decimals to round to where
 all corresponding elements of x and y are still equal are displayed, and the
 difference object itself.
+}
+\examples{
+# A type SPSS EFA to mimick the SPSS implementation
+EFA_SPSS_5 <- EFA(IDS2_R, n_factors = 5, type = "SPSS")
+
+# A type psych EFA to mimick the psych::fa() implementation
+EFA_psych_5 <- EFA(IDS2_R, n_factors = 5, type = "psych")
+
+# compare the two
+compare(EFA_SPSS_5$unrot_loadings, EFA_psych_5$unrot_loadings,
+        x_labels = c("SPSS", "psych"))
 }

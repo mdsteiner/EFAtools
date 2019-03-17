@@ -68,8 +68,8 @@
 #'  their signs. Default is \code{NULL}. "psych" will use the psych method, "SPSS" the
 #'  SPSS method. See \code{\link{PROMAX}} or \code{\link{VARIMAX}} for details.
 #'
-#' @return A list of type PAF if no rotation is used (see \code{\link{PAF}}
-#'  documentation for a description), and of type PROMAX, or
+#' @return A list of class PAF if no rotation is used (see \code{\link{PAF}}
+#'  documentation for a description), and of class PROMAX, or
 #'  VARIMAX, if the respective rotation is used. In the latter cases the output
 #'  list is of the following structure:
 #'

@@ -10,61 +10,68 @@ OMEGA(model = NULL, var_names = NULL, fac_names = NULL,
   type = "SG")
 }
 \arguments{
-\item{model}{UPDATE!!! class \code{\link{SL}}, class \code{\link{schmid}}, or class
+\item{model}{class \code{\link{SL}}, class \code{\link{schmid}}, or class
 \code{\link{lavaan}} object. An output object from \code{\link{SL}}, from
 \code{\link[psych:schmid]{psych::schmid}}, or from a \code{\link{lavaan}}
 bifactor model. If of class \code{\link{lavaan}}, no other arguments need to
 be specified. If of class \code{\link{SL}} or \code{\link{schmid}}, only
-the argument \code{factor_corres} needs to be specified additionally.}
+the arguments \code{factor_corres} and \code{cormat} need to be specified
+additionally. CHECK IF TRUE}
 
-\item{var_names}{numeric. A vector with subtest names in the same order as
-\code{g_load}.}
+\item{var_names}{numeric. A vector with subtest names in the order
+of the rows from the SL solution. This needs only be specified if \code{model}
+is left NULL.}
 
-\item{fac_names}{character. An optional vector of group factor names in the order
-of the S-L solution.}
+\item{fac_names}{character. An optional vector of group factor names in the
+order of the columns of the SL solution.}
 
 \item{factor_corres}{numeric. A vector that indicates which variable corresponds
-to which group factor. Must be in the same order as the S-L solution. E.g.
+to which group factor. Must be in the same order as the SL solution. For example
 c(3, 3, 3, 1, 1, 2, 2) if the first three variables load on the third group
-factor of the S-L solution, the next two on the first group factor and the
+factor of the SL solution, the next two on the first group factor and the
 last two on the second group factor. If a variable should not be assigned to
 any group factor, insert a zero at its position (e.g. c(3, 3, 0, 1, 1, 2, 2),
 the third variable has no corresponding group factor).}
 
-\item{g_load}{numeric. A vector of g loadings from an S-L solution.}
+\item{g_load}{numeric. A vector of general factor loadings from an SL solution.
+This needs
+only be specified if \code{model} is left NULL.}
 
-\item{s_load}{matrix. A matrix of group factor loadings from an S-L solution.}
+\item{s_load}{matrix. A matrix of group factor loadings from an SL solution. This needs
+only be specified if \code{model} is left NULL.}
 
-\item{u2}{numeric. A vector of uniquenesses from an S-L solution.}
+\item{u2}{numeric. A vector of uniquenesses from an SL solution. This needs
+only be specified if \code{model} is left NULL and \code{type} is not \code{Watkins}.}
 
 \item{Phi}{matrix. Factor intercorrelations from an oblique factor solution.}
 
 \item{pattern}{matrix. Pattern coefficients from an oblique factor solution.}
 
-\item{cormat}{matrix. A correlation matrix to be used when type = "psych" or
-type = "SG". If left NULL, the correlation matrix is found based on the
-pattern matrix and Phi using \code{\link[psych:factor.model]{psych::factor.model}}.}
+\item{cormat}{matrix. A correlation matrix to be used when \code{type = "psych"} or
+\code{type = "SG"}. If left NULL, the correlation matrix is found based on the
+pattern matrix and Phi using \code{\link[psych:factor.model]{psych::factor.model}}.
+If the correlation matrix is available, \code{cormat} should be specified instead
+of \code{Phi} and \code{pattern}.}
 
-\item{variance}{character. If "correlation", then total variances for the whole
-scale as well as the group factors are calculated
-based on the correlation matrix. If "sums_load", then total variances are
-calculated using the squared sums of g loadings and group factor loadings and
+\item{variance}{character. If \code{"correlation"}, then total variances for the whole
+scale as well as for the subscale composites are calculated based on the correlation matrix. If \code{"sums_load"}, then total variances are
+calculated using the squared sums of general factor loadings and group factor loadings and
 the sum of uniquenesses (see details).}
 
-\item{type}{character. Either "SG" (default), "psych", or "Watkins".}
+\item{type}{character. Either \code{"SG"} (default), \code{"psych"}, or \code{"Watkins"}.}
 }
 \value{
-A matrix with Omegas for g / the whole scale and for the subscales.
+A matrix with omegas for the whole scale and for the subscales.
 \item{omega_tot}{Omega total.}
 \item{omega_h}{Omega hierarchical.}
 \item{omega_sub}{Omega subscale.}
 }
 \description{
 This function finds omega total, omega hierarchical, and omega subscale
-from a Schmid-Leiman (S-L) solution or lavaan bifactor solution. The S-L-based
+from a Schmid-Leiman (SL) solution or lavaan bifactor solution. The SL-based
 omegas can either be found using the outputs from
 \code{\link[psych:schmid]{psych::schmid}} or from \code{\link{SL}}, or, in a
-more flexible way, by leaving model empty and specifying additional arguments.
+more flexible way, by leaving \code{model = NULL} and specifying additional arguments.
 By setting the \code{type} argument, results from
 \code{\link[psych:omega]{psych::omega}}
 or Watkins' omega program (Watkins, 2013) can be reproduced.
@@ -72,12 +79,12 @@ or Watkins' omega program (Watkins, 2013) can be reproduced.
 \section{How to combine arguments}{
 
 If \code{model} is specified and of class \code{\link{lavaan}},
-no other arguments need to be specified / all other arguments are ignored.
+no other arguments need to be specified.
 If \code{model} is of class
 \code{\link{SL}} or \code{\link{schmid}}, only the argument \code{factor_corres}
 needs to be specified additionally. There is, however, the option to reproduce
-Watkins' or \code{\link[psych:omega]{psych::omega}} results by setting the
-\code{type} argument to "Watkins" or "psych".
+Watkins' Omega or \code{\link[psych:omega]{psych::omega}} results by setting the
+\code{type} argument to \code{"Watkins"} or \code{"psych"}.
 If \code{model = NULL} and \code{type = "SG"}(default), the arguments
 \code{var_names}, \code{factor_corres}, \code{g_load}, \code{s_load}, and \code{u2}
 need to be specified.
@@ -88,30 +95,30 @@ replicate \code{\link[psych:omega]{psych::omega}}
 results, where variable-to-factor correspondences are found by taking the highest
 group factor loading for each variable as the relevant group factor loading.
 If \code{type = "Watkins"}, the \code{u2} argument
-should be left NULL to replicate results from Watkins' omega program, where
-uniquenesses are found based on the g loadings and relevant group factor
+should be left NULL to replicate results from Watkins' Omega program, where
+uniquenesses are found based on the general factor loadings and relevant group factor
 loadings only. If, however, the argument \code{u2} is specified, the specified
 uniquenesses are taken, with a warning.
 }
 
 \section{What is Omega?}{
-
+ UPDATE
 Omega (McDonald, 1999) is a model-based reliability estimate that is especially
 useful for multidimensional measures, as it allows variance partitioning. The
 present function finds Omega from an SL solution or a lavaan bifactor solution
-with one g factor and two or more group factors.
+with one general factor and two or more group factors.
 
 Omega total is the total true score variance. For the whole scale, this is the
 total variance explained by the model. For subscale composites, this is the sum of
-the squared sums of loadings on the g factor and the group factors, divided by the
+the squared sums of loadings on the general factor and the group factors, divided by the
 total variance of the respective indicators.
 
-Omega hierarchical is the g-factor variance. For the whole scale, this is the
-g saturation of the scale: the squared sum of all g loadings divided by the
+Omega hierarchical is the general-factor variance. For the whole scale, this is the
+general saturation of the scale: the squared sum of all general loadings divided by the
 total variance. For the subscale composites, this is the squared sum of g
 loadings of the respective indicators divided by the total variance of the
 respective indicators. Omega hierarchical for a subscale therefore indicates
-the variance that is actually accounted for by the g factor and not the group
+the variance that is actually accounted for by the general factor and not the group
 factor itself.
 
 Omega subscale is the group-factor variance. For the whole scale, this is the
@@ -123,7 +130,7 @@ divided by the total variance of the respective indicators.
 }
 
 \section{Calculation of omega for different types}{
-
+ UPDATE
 The main differences between the types concern the calculation of the total
 variance (for the whole scale as well as the subscale composites) as well as
 the finding of variable-to-factor correspondences. The former aspect
@@ -134,11 +141,11 @@ matrix, and variable-to-factor correspondences have to be specified manually.
 The only difference for \code{type = "psych"} is that it takes the highest
 group factor loading for each variable as the relevant group factor loading.
 To mimik results from Watkins' Omega program, for \code{type = "Watkins"}
-for each variablce only the g-factor loading and the relevant group-factor
+for each variablce only the general factor loading and the relevant group-factor
 loadings according to the specified variable-to-factor correspondences is
 taken into account. The other loadings are set to zero. Uniquenesses are found
 based on these two loadings per variable only and total variance is calculated
-based on all using the squared sums of g loadings and group factor loadings
+based on all using the squared sums of general loadings and group factor loadings
 and the sum of these uniquenesses.
 }
 

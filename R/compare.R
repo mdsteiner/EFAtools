@@ -39,8 +39,31 @@
 #' @param plot_red numeric. Threshold above which to plot the absolute differences
 #'  in red.
 #'
-#' @return Print out a comparison summary.
+#' @return A list of class COMPARE containing summary statistics on the differences
+#'  of x and y.
+#'
+#' \item{diff}{The vector or matrix containing the }
+#' \item{mean_abs_diff}{Initial communality estimates from PAF.}
+#' \item{median_abs_diff}{Final communality estimates from unrotated loadings.}
+#' \item{min_abs_diff}{The number of iterations needed for convergence in PAF.}
+#' \item{max_abs_diff}{Eigen values of the original correlation matrix.}
+#' \item{max_dec}{Initial eigenvalues, obtained from the correlation matrix
+#'  with the initial communality estimates as diagonal in PAF.}
+#' \item{are_equal}{Eigenvalues of the final iteration in PAF.}
+#' \item{ctrl}{List of control settings used in the print method.}
+#'
 #' @export
+#'
+#' @examples
+#' # A type SPSS EFA to mimick the SPSS implementation
+#' EFA_SPSS_5 <- EFA(IDS2_R, n_factors = 5, type = "SPSS")
+#'
+#' # A type psych EFA to mimick the psych::fa() implementation
+#' EFA_psych_5 <- EFA(IDS2_R, n_factors = 5, type = "psych")
+#'
+#' # compare the two
+#' compare(EFA_SPSS_5$unrot_loadings, EFA_psych_5$unrot_loadings,
+#'         x_labels = c("SPSS", "psych"))
 compare <- function(x, y, reorder = TRUE, digits = 4, m_red = .001,
                     range_red = .001, round_red = 3, print_diff = TRUE,
                     na.rm = FALSE, x_labels = c("x", "y"), plot = TRUE,
@@ -131,108 +154,30 @@ compare <- function(x, y, reorder = TRUE, digits = 4, m_red = .001,
 
   are_equal <- utils::tail(which(are_equal_v), 1)
 
-  # prepare to print statistics
+  ctrl <- list(
+    digits = digits,
+    m_red = m_red,
+    range_red = range_red,
+    round_red = round_red,
+    print_diff = print_diff,
+    x_labels = x_labels,
+    plot = plot,
+    plot_red = plot_red
+  )
 
-  if (mean_abs_diff <= m_red) {
-    mean_out <- crayon::green$bold(.numformat(mean_abs_diff, digits,
-                                              TRUE))
-  } else {
-    mean_out <- crayon::red$bold(.numformat(mean_abs_diff, digits, TRUE))
-  }
+  # create output list
+  out <- list(
+    diff = diff,
+    mean_abs_diff = mean_abs_diff,
+    median_abs_diff = median_abs_diff,
+    min_abs_diff = min_abs_diff,
+    max_abs_diff = max_abs_diff,
+    max_dec = max_dec,
+    are_equal = are_equal,
+    ctrl = ctrl
+  )
 
-  if (median_abs_diff <= m_red) {
-    median_out <- crayon::green$bold(.numformat(median_abs_diff, digits,
-                                                TRUE))
-  } else {
-    median_out <- crayon::red$bold(.numformat(median_abs_diff, digits,
-                                              TRUE))
-  }
+  class(out) <- "COMPARE"
 
-  if (max_abs_diff <= range_red) {
-    max_out <- crayon::green$bold(.numformat(max_abs_diff, digits, TRUE))
-    min_out <- crayon::green$bold(.numformat(min_abs_diff, digits, TRUE))
-  } else {
-    max_out <- crayon::red$bold(.numformat(max_abs_diff, digits, TRUE))
-    min_out <- crayon::red$bold(.numformat(min_abs_diff, digits, TRUE))
-  }
-
-  if (length(are_equal) == 0) {
-    equal_out <- crayon::red$bold("none")
-  } else if (are_equal < round_red) {
-    equal_out <- crayon::red$bold(are_equal)
-  } else {
-    equal_out <- crayon::green$bold(are_equal)
-  }
-
-
-
-  cat("Mean [min, max] absolute difference: ")
-  cat(paste0(mean_out, " [", min_out, ", ", max_out, "]"))
-  cat("\n")
-  cat(paste0("Median absolute difference: ", median_out))
-  cat("\n")
-  cat(paste0("Max decimals to round to where numbers are still equal: ",
-             equal_out))
-  cat("\n")
-  cat(paste0("Minimum number of decimals provided: ", crayon::blue$bold(max_dec)))
-
-  # create the difference object
-  if (isTRUE(print_diff)) {
-    cat("\n")
-    cat("\n")
-    if (class(diff) == "matrix") {
-
-      out_diff <- .get_compare_matrix(diff, digits = digits, r_red = range_red)
-
-    } else {
-
-      out_diff <- .get_compare_vector(diff, digits = digits, r_red = range_red)
-
-    }
-
-  }
-  cat(out_diff)
-
-  if (isTRUE(plot)) {
-
-    if (length(x_labels) < 2) {
-      warning("Less than two x_labels specified, using 'x' and 'y'.")
-      x_labels <- c("x", "y")
-    } else if (length(x_labels) > 2) {
-      warning("More than two x_labels specified, using only the first two.")
-      x_labels <- x_labels[1:2]
-    }
-
-    # prepare variable for plot
-    diff_dat <- tibble::tibble(diffs = as.vector(abs(diff))) %>%
-      dplyr::mutate(color = dplyr::case_when(diffs >= plot_red ~ "large difference",
-                                             TRUE ~ "acceptable difference"),
-                    comp = paste(x_labels, collapse = " vs. "))
-
-    diff_plot <- ggplot2::ggplot(diff_dat, ggplot2::aes_string("comp", "diffs",
-                                                               col = "color")) +
-      ggplot2::geom_violin(col = "grey20", width = .7, size = .7) +
-      ggplot2::geom_hline(yintercept = plot_red, lty = 2, alpha = .5,
-                          size = 1.25) +
-      ggplot2::geom_jitter(alpha = .5, width = 0.05, height = 0, size = 2) +
-      ggplot2::scale_color_manual(values = c("black", "red")) +
-      ggplot2::theme_bw() +
-      ggplot2::labs(
-        subtitle = paste("Threshold for difference coloring:", plot_red),
-        x = "Compared Variables",
-        y = "Absolute Difference"
-      ) +
-      ggplot2::theme(
-        legend.position = "none",
-        strip.text = ggplot2::element_text(size = 11, face = "bold"),
-        axis.text = ggplot2::element_text(size = 11),
-        axis.title = ggplot2::element_text(size = 13,face = "bold")
-      )
-
-      diff_plot
-
-
-  }
-
-
+  out
 }
