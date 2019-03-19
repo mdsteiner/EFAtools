@@ -419,7 +419,7 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
                        abs_eig = abs_eigen, crit_type = crit_type,
                        max_iter = max_iter)
 
-    h2 <- L_list$h2
+    h2 <- as.vector(L_list$h2)
     R <- L_list$R
     iter <- L_list$iter
     L <- L_list$L
