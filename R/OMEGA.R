@@ -138,7 +138,7 @@ OMEGA <- function(model = NULL, var_names = NULL, fac_names = NULL,
 
   if(all(class(model) == "lavaan")){
 
-    OMEGA_LAVAAN(model = model)
+    .OMEGA_LAVAAN(model = model)
 
   } else if(all(class(model) == c("psych", "schmid")) || all(class(model) == "SL")) {
 
@@ -148,7 +148,7 @@ OMEGA <- function(model = NULL, var_names = NULL, fac_names = NULL,
 
     } else {
 
-      OMEGA_FLEX(model = model, var_names = var_names, fac_names = fac_names,
+      .OMEGA_FLEX(model = model, var_names = var_names, fac_names = fac_names,
                  factor_corres = factor_corres, g_load = g_load, s_load = s_load,
                  u2 = u2, Phi = Phi, pattern = pattern, cormat = cormat,
                  variance = variance, type = type)
@@ -170,7 +170,7 @@ OMEGA <- function(model = NULL, var_names = NULL, fac_names = NULL,
 
         } else {
 
-          OMEGA_FLEX(model = model, var_names = var_names, fac_names = fac_names,
+          .OMEGA_FLEX(model = model, var_names = var_names, fac_names = fac_names,
                  factor_corres = factor_corres, g_load = g_load, s_load = s_load,
                  u2 = u2, Phi = Phi, pattern = pattern, cormat = cormat,
                  variance = variance, type = type)

@@ -1,5 +1,5 @@
 # Flexible omega function (e.g. to use with loadings obtained by MacOrtho)-------
-OMEGA_FLEX <- function(model = NULL, var_names = NULL, fac_names = NULL,
+.OMEGA_FLEX <- function(model = NULL, var_names = NULL, fac_names = NULL,
                        factor_corres = NULL, g_load = NULL, s_load = NULL,
                        u2 = NULL, Phi = NULL, pattern = NULL,
                        cormat = NULL, variance = NULL, type = "SG"){
@@ -240,7 +240,7 @@ OMEGA_FLEX <- function(model = NULL, var_names = NULL, fac_names = NULL,
     }
 
 # Omega function to use with lavaan bifactor output as input-------
-OMEGA_LAVAAN <- function(model){
+.OMEGA_LAVAAN <- function(model){
 
   if(lavaan::inspect(model, what = "converged") == FALSE){
     stop("Model did not converge. No omegas are computed.")
