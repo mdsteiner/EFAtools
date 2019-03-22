@@ -1,51 +1,47 @@
 #' WJ-IV Ages 3 to 5
 #'
-#' A list containing the bivariate correlations of the 16 intelligence
-#' subtests from the WISC-V for 10 year olds obtained from the publicly
-#' available technical supplement
-#' (\url{downloads.pearsonclinical.com/images/assets/wisc-v/wisc-v-tech-manual-supplement.pdf}),
-#' an intelligence test battery for children and adolescents aged 6 to
-#' 16 years. Details can be found in the WISC-V manual (2014).
+#' A list containing the bivariate correlations (N = 435) of the 47
+#' intelligence subtests from the WJ-IV for 20 to 39 years olds obtained from
+#' the technical Manual (McGrew, LaForte, & Schrank, 2014);
+#' an intelligence test battery. Details can be found in the  WJ-IV technical
+#' manual (2014). Tables reproduced with permission from the publisher.
 #'
 #'
-#' @format A 14 x 14 matrix of bivariate correlations
+#' @format A list of 2 with elements "n" (scalar) and "cormat" (29 x 29 matrix of bivariate correlations)
 #' \describe{
-#'   \item{OrVo}{(numeric) - Similarities}
-#'   \item{VeAt}{(numeric) - Vocabulary}
-#'   \item{PhPr}{(numeric) - Information}
-#'   \item{StRe}{(numeric) - Comprehension.}
-#'   \item{Vi}{(numeric) - Block Design.}
-#'   \item{GeIn}{(numeric) - Visual Puzzles.}
-#'   \item{CoFo}{(numeric) - Matrix Reasoning.}
-#'   \item{NuRe}{(numeric) - Figure Weights.}
-#'   \item{NuPaMa}{(numeric) - Picture Concepts.}
-#'   \item{NoRe}{(numeric) - Arithmetic.}
-#'   \item{ViAuLe}{(numeric) - Digit Span}
-#'   \item{PiRe}{(numeric) - Processing Speed}
-#'   \item{MeWo}{(numeric) - Letter-Number Sequencing.}
-#'   \item{PiVo}{(numeric) - Coding.}
-#'   \item{OrCo}{(numeric) - Symbol Search.}
-#'   \item{Se}{(numeric) - Cancellation.}
-#'   \item{RaPiNa}{(numeric) - Cancellation.}
-#'   \item{SeRe}{(numeric) - Cancellation.}
-#'   \item{UnDi}{(numeric) - Cancellation.}
-#'   \item{SoBl}{(numeric) - Cancellation.}
-#'   \item{ReFl}{(numeric) - Cancellation.}
-#'   \item{SoAw}{(numeric) - Cancellation.}
-#'   \item{LeWoId}{(numeric) - Cancellation.}
-#'   \item{ApPr}{(numeric) - Cancellation.}
-#'   \item{Sp}{(numeric) - Cancellation.}
-#'   \item{PaCo}{(numeric) - Cancellation.}
-#'   \item{Sc}{(numeric) - Cancellation.}
-#'   \item{SoSt}{(numeric) - Cancellation.}
-#'   \item{Hu}{(numeric) - Cancellation.}
+#'   \item{ORLVOC}{(numeric) - Oral Vocabulary.}
+#'   \item{VRBATN}{(numeric) - Verbal Attention.}
+#'   \item{LETPAT}{(numeric) - Phonological Processing.}
+#'   \item{STYREC}{(numeric) - Story Recall.}
+#'   \item{VISUAL}{(numeric) - Visualization.}
+#'   \item{GENINF}{(numeric) - General Information.}
+#'   \item{CONFRM}{(numeric) - Concept Formation.}
+#'   \item{NUMREV}{(numeric) - Numbers Reversed.}
+#'   \item{NUMPAT}{(numeric) - Number-Pattern Matching.}
+#'   \item{NWDREP}{(numeric) - Nonword Repetition.}
+#'   \item{VAL}{(numeric) - Visual-Auditory Learning.}
+#'   \item{PICREC}{(numeric) - Picture Recognition.}
+#'   \item{MEMWRD}{(numeric) - Memory for Words.}
+#'   \item{PICVOC}{(numeric) - Picture Vocabulary.}
+#'   \item{ORLCMP}{(numeric) - Oral Comprehension.}
+#'   \item{SEGMNT}{(numeric) - Segmentation.}
+#'   \item{RPCNAM}{(numeric) - Rapid Picture Naming.}
+#'   \item{SENREP}{(numeric) - Sentence Repetition.}
+#'   \item{UNDDIR}{(numeric) - Understanding Directions.}
+#'   \item{SNDBLN}{(numeric) - Sound Blending.}
+#'   \item{RETFLU}{(numeric) - Retrieval Fluency.}
+#'   \item{SNDAWR}{(numeric) - Sound Awareness.}
+#'   \item{LWIDNT}{(numeric) - Letter-Word Identification.}
+#'   \item{APPROB}{(numeric) - Applied Problems.}
+#'   \item{SPELL}{(numeric) - Spelling.}
+#'   \item{PSGCMP}{(numeric) - Passage Comprehension.}
+#'   \item{SCI}{(numeric) - Science.}
+#'   \item{SOC}{(numeric) - Social Studies.}
+#'   \item{HUM}{(numeric) - Humanities.}
 #'  }
-#' @source Wechsler, D. (2014). Wechsler Intelligence Scale for
-#' Children-Fifth Edition technical and interpretive manual.
-#' San Antonio, TX: NCS Pearson.
+#' @source McGrew, K. S., LaForte, E. M., & Schrank, F. A. (2014). Technical
+#'  Manual. Woodcock-Johnson IV. Rolling Meadows, IL: Riverside.
 #'
-#' Wechsler, D. (2014). Wechsler Intelligence Scale for
-#' Children-Fifth Edition technical and interpretive manual supplement.
-#' San Antonio, TX: NCS Pearson.
-#' \url{downloads.pearsonclinical.com/images/assets/wisc-v/wisc-v-tech-manual-supplement.pdf}
+#' Schrank, F. A., McGrew, K. S., & Mather, N. (2014). Woodcock-Johnson IV.
+#' Rolling Meadows, IL: Riverside.
 "WJIV_ages_3_5"

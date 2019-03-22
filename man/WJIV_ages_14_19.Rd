@@ -4,44 +4,71 @@
 \name{WJIV_ages_14_19}
 \alias{WJIV_ages_14_19}
 \title{WJ-IV Ages 14 to 19}
-\format{A 14 x 14 matrix of bivariate correlations
+\format{A list of 2 with elements "n" (scalar) and "cormat" (47 x 47 matrix of bivariate correlations)
 \describe{
-  \item{SI}{(numeric) - Similarities}
-  \item{VC}{(numeric) - Vocabulary}
-  \item{IN}{(numeric) - Information}
-  \item{CO}{(numeric) - Comprehension.}
-  \item{BD}{(numeric) - Block Design.}
-  \item{VP}{(numeric) - Visual Puzzles.}
-  \item{MR}{(numeric) - Matrix Reasoning.}
-  \item{FW}{(numeric) - Figure Weights.}
-  \item{PC}{(numeric) - Picture Concepts.}
-  \item{AR}{(numeric) - Arithmetic.}
-  \item{DS}{(numeric) - Digit Span}
-  \item{PS}{(numeric) - Processing Speed}
-  \item{LN}{(numeric) - Letter-Number Sequencing.}
-  \item{CD}{(numeric) - Coding.}
-  \item{SS}{(numeric) - Symbol Search.}
-  \item{CA}{(numeric) - Cancellation.}
+  \item{ORLVOC}{(numeric) - Oral Vocabulary.}
+  \item{NUMSER}{(numeric) - Number Series.}
+  \item{VRBATN}{(numeric) - Verbal Attention.}
+  \item{LETPAT}{(numeric) - Letter-Pattern Matching.}
+  \item{PHNPRO}{(numeric) - Phonological Processing.}
+  \item{STYREC}{(numeric) - Story Recall.}
+  \item{VISUAL}{(numeric) - Visualization.}
+  \item{GENINF}{(numeric) - General Information.}
+  \item{CONFRM}{(numeric) - Concept Formation.}
+  \item{NUMREV}{(numeric) - Numbers Reversed.}
+  \item{NUMPAT}{(numeric) - Number-Pattern Matching.}
+  \item{NWDREP}{(numeric) - Nonword Repetition.}
+  \item{VAL}{(numeric) - Visual-Auditory Learning.}
+  \item{PICREC}{(numeric) - Picture Recognition.}
+  \item{ANLSYN}{(numeric) - Analysis-Synthesis.}
+  \item{OBJNUM}{(numeric) - Object-Number Sequencing.}
+  \item{PAIRCN}{(numeric) - Pair Cancellation.}
+  \item{MEMWRD}{(numeric) - Memory for Words.}
+  \item{PICVOC}{(numeric) - Picture Vocabulary.}
+  \item{ORLCMP}{(numeric) - Oral Comprehension.}
+  \item{SEGMNT}{(numeric) - Segmentation.}
+  \item{RPCNAM}{(numeric) - Rapid Picture Naming.}
+  \item{SENREP}{(numeric) - Sentence Repetition.}
+  \item{UNDDIR}{(numeric) - Understanding Directions.}
+  \item{SNDBLN}{(numeric) - Sound Blending.}
+  \item{RETFLU}{(numeric) - Retrieval Fluency.}
+  \item{SNDAWR}{(numeric) - Sound Awareness.}
+  \item{LWIDNT}{(numeric) - Letter-Word Identification.}
+  \item{APPROB}{(numeric) - Applied Problems.}
+  \item{SPELL}{(numeric) - Spelling.}
+  \item{PSGCMP}{(numeric) - Passage Comprehension.}
+  \item{CALC}{(numeric) - Calculation.}
+  \item{WRTSMP}{(numeric) - Writing Samples.}
+  \item{WRDATK}{(numeric) - Word Attack.}
+  \item{ORLRDG}{(numeric) - Oral Reading.}
+  \item{SNRDFL}{(numeric) - Sentence Reading Fluency.}
+  \item{MTHFLU}{(numeric) - Math Facts Fluency.}
+  \item{SNWRFL}{(numeric) - Sentence Writing Fluency.}
+  \item{RDGREC}{(numeric) - Reading Recall.}
+  \item{NUMMAT}{(numeric) - Number Matrices.}
+  \item{EDIT}{(numeric) - Editing.}
+  \item{WRDFLU}{(numeric) - Word Reading Fluency.}
+  \item{SPLSND}{(numeric) - Spelling of Sounds.}
+  \item{RDGVOC}{(numeric) - Reading Vocabulary.}
+  \item{SCI}{(numeric) - Science.}
+  \item{SOC}{(numeric) - Social Studies.}
+  \item{HUM}{(numeric) - Humanities.}
  }}
 \source{
-Wechsler, D. (2014). Wechsler Intelligence Scale for
-Children-Fifth Edition technical and interpretive manual.
-San Antonio, TX: NCS Pearson.
+McGrew, K. S., LaForte, E. M., & Schrank, F. A. (2014). Technical
+ Manual. Woodcock-Johnson IV. Rolling Meadows, IL: Riverside.
 
-Wechsler, D. (2014). Wechsler Intelligence Scale for
-Children-Fifth Edition technical and interpretive manual supplement.
-San Antonio, TX: NCS Pearson.
-\url{downloads.pearsonclinical.com/images/assets/wisc-v/wisc-v-tech-manual-supplement.pdf}
+Schrank, F. A., McGrew, K. S., & Mather, N. (2014). Woodcock-Johnson IV.
+Rolling Meadows, IL: Riverside.
 }
 \usage{
 WJIV_ages_14_19
 }
 \description{
-A list containing the bivariate correlations of the 16 intelligence
-subtests from the WISC-V for 10 year olds obtained from the publicly
-available technical supplement
-(\url{downloads.pearsonclinical.com/images/assets/wisc-v/wisc-v-tech-manual-supplement.pdf}),
-an intelligence test battery for children and adolescents aged 6 to
-16 years. Details can be found in the WISC-V manual (2014).
+A list containing the bivariate correlations (N = 1685) of the 47
+intelligence subtests from the WJ-IV for 14 to 19 years olds obtained from
+the technical Manual (McGrew, LaForte, & Schrank, 2014);
+an intelligence test battery. Details can be found in the  WJ-IV technical
+manual (2014). Tables reproduced with permission from the publisher.
 }
 \keyword{datasets}
