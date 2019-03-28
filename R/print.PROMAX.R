@@ -533,6 +533,84 @@ print.PROMAX <- function(x, ...) {
         def_k_used <- FALSE
       }
 
+    } else {
+
+      # if no valid type is specified
+
+      # if no type is specified
+
+      i_c_used <- crayon::blue("    ",cli::symbol$bullet, "Initial Communalities:",
+                               crayon::bold(init_comm))
+      def_i_c_used <- FALSE
+
+      crit_used <- crayon::blue("    ",cli::symbol$bullet, "Convergence Criterion:",
+                                crayon::bold(criterion))
+      def_crit_used <- FALSE
+
+
+      crit_tp_used <- crayon::blue("    ",cli::symbol$bullet, "Criterion Type:",
+                                   crayon::bold(criterion_type))
+      def_crit_tp_used <- FALSE
+
+      mx_it_used <- crayon::blue("    ",cli::symbol$bullet, "Maximum Iteration:",
+                                 crayon::bold(max_iter))
+      def_mx_it_used <- FALSE
+
+
+      if (isTRUE(abs_eigen)) {
+        abs_eigen_used <- crayon::blue("    ",cli::symbol$bullet, "Absolute Eigenvalues:",
+                                       crayon::bold("Yes"))
+        def_abs_eigen_used <- FALSE
+      } else {
+        abs_eigen_used <- crayon::blue("    ",cli::symbol$bullet, "Absolute Eigenvalues:",
+                                       crayon::bold("No"))
+        def_abs_eigen_used <- FALSE
+      }
+
+      # Varimax settings
+
+      if (isTRUE(kaiser)) {
+        kaiser_used <- crayon::blue("    ",cli::symbol$bullet, "Kaiser Normalization:",
+                                    crayon::bold("Yes"))
+        def_kaiser_used <- FALSE
+      } else {
+        kaiser_used <- crayon::blue("    ",cli::symbol$bullet, "Kaiser Normalization:",
+                                    crayon::bold("No"))
+        def_kaiser_used <- FALSE
+      }
+
+
+      prcsn_used <- crayon::blue("    ",cli::symbol$bullet, "Precision:",
+                                 crayon::bold(precision))
+      def_prcsn_used <- FALSE
+
+
+      if (order_type == "ss_loadings") {
+        ordr_tp_used <- crayon::blue("    ",cli::symbol$bullet, "Factors ordered according to:",
+                                     crayon::bold("Sum of Squared Loadings"))
+        def_ordr_tp_used <- FALSE
+      } else {
+        ordr_tp_used <- crayon::blue("    ",cli::symbol$bullet, "Factors ordered according to:",
+                                     crayon::bold("Eigenvalues"))
+        def_ordr_tp_used <- FALSE
+      }
+
+      # Promax settings
+
+      if (P_type == "norm") {
+        trgt_mtrx_used <- crayon::blue("    ",cli::symbol$bullet, "Target matrix:",
+                                       crayon::bold("Unnormalized"))
+        def_trgt_mtrx_used <- FALSE
+      } else {
+        trgt_mtrx_used <- crayon::blue("    ",cli::symbol$bullet, "Target matrix:",
+                                       crayon::bold("Normalized"))
+        def_trgt_mtrx_used <- FALSE
+      }
+
+        k_used <- crayon::blue("    ",cli::symbol$bullet, "Power used:",
+                               crayon::bold(k))
+        def_k_used <- FALSE
+
     }
 
     if (all(def_i_c_used, def_crit_used, def_crit_tp_used, def_mx_it_used,
@@ -627,8 +705,13 @@ print.PROMAX <- function(x, ...) {
 
   } else {
 
-
+    # Varimax settings Intro message
     sttngs_intro_vrmx <- crayon::blue("Varimax with type =", crayon::bold(type),
+                                      "performed with the",
+                                      "following settings:")
+
+    # Promax settings Intro message
+    sttngs_intro_prmx <- crayon::blue("Promax with type =", crayon::bold(type),
                                       "performed with the",
                                       "following settings:")
 
@@ -677,6 +760,36 @@ print.PROMAX <- function(x, ...) {
                                      " (", crayon::red(cli::symbol$cross),
                                      "default)")
         def_ordr_tp_used <- FALSE
+      }
+
+      # Promax settings
+
+      if (P_type == "unnorm") {
+        trgt_mtrx_used <- crayon::blue("    ",cli::symbol$bullet, "Target matrix:",
+                                       crayon::bold("Unnormalized"),
+                                       " (", crayon::green(cli::symbol$tick),
+                                       "default)")
+        def_trgt_mtrx_used <- TRUE
+      } else {
+        trgt_mtrx_used <- crayon::blue("    ",cli::symbol$bullet, "Target matrix:",
+                                       crayon::bold("Normalized"),
+                                       " (", crayon::red(cli::symbol$cross),
+                                       "default)")
+        def_trgt_mtrx_used <- FALSE
+      }
+
+      if (k == 3) {
+        k_used <- crayon::blue("    ",cli::symbol$bullet, "Power used:",
+                               crayon::bold(k),
+                               " (", crayon::green(cli::symbol$tick),
+                               "default)")
+        def_k_used <- TRUE
+      } else {
+        k_used <- crayon::blue("    ",cli::symbol$bullet, "Power used:",
+                               crayon::bold(k),
+                               " (", crayon::red(cli::symbol$cross),
+                               "default)")
+        def_k_used <- FALSE
       }
 
 
@@ -730,6 +843,36 @@ print.PROMAX <- function(x, ...) {
         def_ordr_tp_used <- FALSE
       }
 
+      # Promax settings
+
+      if (P_type == "unnorm") {
+        trgt_mtrx_used <- crayon::blue("    ",cli::symbol$bullet, "Target matrix:",
+                                       crayon::bold("Unnormalized"),
+                                       " (", crayon::green(cli::symbol$tick),
+                                       "default)")
+        def_trgt_mtrx_used <- TRUE
+      } else {
+        trgt_mtrx_used <- crayon::blue("    ",cli::symbol$bullet, "Target matrix:",
+                                       crayon::bold("Normalized"),
+                                       " (", crayon::red(cli::symbol$cross),
+                                       "default)")
+        def_trgt_mtrx_used <- FALSE
+      }
+
+      if (k == 4) {
+        k_used <- crayon::blue("    ",cli::symbol$bullet, "Power used:",
+                               crayon::bold(k),
+                               " (", crayon::green(cli::symbol$tick),
+                               "default)")
+        def_k_used <- TRUE
+      } else {
+        k_used <- crayon::blue("    ",cli::symbol$bullet, "Power used:",
+                               crayon::bold(k),
+                               " (", crayon::red(cli::symbol$cross),
+                               "default)")
+        def_k_used <- FALSE
+      }
+
 
 
     } else if (type == "SPSS") {
@@ -780,6 +923,80 @@ print.PROMAX <- function(x, ...) {
         def_ordr_tp_used <- FALSE
       }
 
+      # Promax settings
+
+      if (P_type == "norm") {
+        trgt_mtrx_used <- crayon::blue("    ",cli::symbol$bullet, "Target matrix:",
+                                       crayon::bold("Unnormalized"),
+                                       " (", crayon::green(cli::symbol$tick),
+                                       "default)")
+        def_trgt_mtrx_used <- TRUE
+      } else {
+        trgt_mtrx_used <- crayon::blue("    ",cli::symbol$bullet, "Target matrix:",
+                                       crayon::bold("Normalized"),
+                                       " (", crayon::red(cli::symbol$cross),
+                                       "default)")
+        def_trgt_mtrx_used <- FALSE
+      }
+
+      if (k == 4) {
+        k_used <- crayon::blue("    ",cli::symbol$bullet, "Power used:",
+                               crayon::bold(k),
+                               " (", crayon::green(cli::symbol$tick),
+                               "default)")
+        def_k_used <- TRUE
+      } else {
+        k_used <- crayon::blue("    ",cli::symbol$bullet, "Power used:",
+                               crayon::bold(k),
+                               " (", crayon::red(cli::symbol$cross),
+                               "default)")
+        def_k_used <- FALSE
+      }
+
+    } else {
+      # Varimax settings
+
+      if (isTRUE(kaiser)) {
+        kaiser_used <- crayon::blue("    ",cli::symbol$bullet, "Kaiser Normalization:",
+                                    crayon::bold("Yes"))
+        def_kaiser_used <- FALSE
+      } else {
+        kaiser_used <- crayon::blue("    ",cli::symbol$bullet, "Kaiser Normalization:",
+                                    crayon::bold("No"))
+        def_kaiser_used <- FALSE
+      }
+
+
+      prcsn_used <- crayon::blue("    ",cli::symbol$bullet, "Precision:",
+                                 crayon::bold(precision))
+      def_prcsn_used <- FALSE
+
+
+      if (order_type == "ss_loadings") {
+        ordr_tp_used <- crayon::blue("    ",cli::symbol$bullet, "Factors ordered according to:",
+                                     crayon::bold("Sum of Squared Loadings"))
+        def_ordr_tp_used <- FALSE
+      } else {
+        ordr_tp_used <- crayon::blue("    ",cli::symbol$bullet, "Factors ordered according to:",
+                                     crayon::bold("Eigenvalues"))
+        def_ordr_tp_used <- FALSE
+      }
+
+      # Promax settings
+
+      if (P_type == "norm") {
+        trgt_mtrx_used <- crayon::blue("    ",cli::symbol$bullet, "Target matrix:",
+                                       crayon::bold("Unnormalized"))
+        def_trgt_mtrx_used <- FALSE
+      } else {
+        trgt_mtrx_used <- crayon::blue("    ",cli::symbol$bullet, "Target matrix:",
+                                       crayon::bold("Normalized"))
+        def_trgt_mtrx_used <- FALSE
+      }
+
+      k_used <- crayon::blue("    ",cli::symbol$bullet, "Power used:",
+                             crayon::bold(k))
+      def_k_used <- FALSE
     }
 
 
@@ -808,6 +1025,15 @@ print.PROMAX <- function(x, ...) {
     cat(ordr_tp_used)
     cat("\n")
     cat(def_msg_vrmx)
+    cat("\n")
+    cat("\n")
+    cat(sttngs_intro_prmx)
+    cat("\n")
+    cat(trgt_mtrx_used)
+    cat("\n")
+    cat(k_used)
+    cat("\n")
+    cat(def_msg_prmx)
     cat("\n")
     cat("\n")
     cat(crayon::blue$bold("Rotated Loadings:"))

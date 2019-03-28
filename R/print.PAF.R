@@ -274,6 +274,38 @@ print.PAF <- function(x, ...) {
       def_abs_eigen_used <- FALSE
     }
 
+  } else {
+
+    # if no type is specified
+
+      i_c_used <- crayon::blue("    ",cli::symbol$bullet, "Initial Communalities:",
+                               crayon::bold(init_comm))
+      def_i_c_used <- FALSE
+
+      crit_used <- crayon::blue("    ",cli::symbol$bullet, "Convergence Criterion:",
+                                crayon::bold(criterion))
+      def_crit_used <- FALSE
+
+
+      crit_tp_used <- crayon::blue("    ",cli::symbol$bullet, "Criterion Type:",
+                                   crayon::bold(criterion_type))
+      def_crit_tp_used <- FALSE
+
+      mx_it_used <- crayon::blue("    ",cli::symbol$bullet, "Maximum Iteration:",
+                                 crayon::bold(max_iter))
+      def_mx_it_used <- FALSE
+
+
+    if (isTRUE(abs_eigen)) {
+      abs_eigen_used <- crayon::blue("    ",cli::symbol$bullet, "Absolute Eigenvalues:",
+                                     crayon::bold("Yes"))
+      def_abs_eigen_used <- FALSE
+    } else {
+      abs_eigen_used <- crayon::blue("    ",cli::symbol$bullet, "Absolute Eigenvalues:",
+                                     crayon::bold("No"))
+      def_abs_eigen_used <- FALSE
+    }
+
   }
 
   if (all(def_i_c_used, def_crit_used, def_crit_tp_used, def_mx_it_used,
