@@ -138,7 +138,7 @@ VARIMAX <- function (x, type = "SG", kaiser = TRUE,
       }
 
       if (is.null(order_type)) {
-        order_type <- "ss_loadings"
+        order_type <- "ss_factors"
       } else {
         warning("Type and order_type is specified. order_type is used with value '",
                 order_type, "'. Results may differ from the specified type")

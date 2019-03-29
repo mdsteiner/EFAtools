@@ -5,7 +5,7 @@
 \title{Function to run PAF and obtain varimax or promax rotated loadings}
 \usage{
 EFA(x, n_factors, cors = TRUE, N = NA, rotation = "none",
-  type = "SG", max_iter = NULL, init_comm = NULL, criterion = NULL,
+  type = "GS", max_iter = NULL, init_comm = NULL, criterion = NULL,
   criterion_type = NULL, abs_eigen = NULL, signed_loadings = TRUE,
   use = "pairwise.complete.obs", use_cpp = NULL, k = NULL,
   kaiser = TRUE, P_type = NULL, precision = NULL,
@@ -28,7 +28,7 @@ correlation matrix is used. If input is a correlation matrix and N = NA
 \item{rotation}{character. One of "none" (default), "promax", or "varimax".
 Specifies the type of rotation to perform.}
 
-\item{type}{character. If one of "SG" (default), "psych", or "SPSS" is
+\item{type}{character. If one of "GS" (default), "psych", or "SPSS" is
 used, and the following arguments with default NULL are left with
 NULL, these implementations are executed as reported in Steiner and Grieder
 (2019). Individual properties can be adapted using one of the three types and
@@ -124,8 +124,8 @@ This is just a wrapper function to call \code{\link{PAF}} and then one of
 \code{\link{PROMAX}} or \code{\link{VARIMAX}} or no rotation is performed.
 }
 \examples{
-# A type SG (as presented in Steiner and Grieder, 2019) EFA
-EFA_SG_5 <- EFA(IDS2_R, n_factors = 5, type = "SG")
+# A type GS (as presented in Steiner and Grieder, 2019) EFA
+EFA_GS_5 <- EFA(IDS2_R, n_factors = 5, type = "GS")
 
 # A type SPSS EFA to mimick the SPSS implementation
 EFA_SPSS_5 <- EFA(IDS2_R, n_factors = 5, type = "SPSS")

@@ -4,7 +4,7 @@
 \alias{SL}
 \title{Schmid-Leiman Transformation}
 \usage{
-SL(x, Phi = NULL, type = "SG", ...)
+SL(x, Phi = NULL, type = "GS", ...)
 }
 \arguments{
 \item{x}{object of class \code{\link{PROMAX}} or class \code{\link{fa}} or
@@ -16,7 +16,7 @@ x can also be a pattern matrix from an oblique factor solution (see \code{Phi}).
 solution. Only needs to be specified if x is not of class \code{\link{PROMAX}}
 or class \code{\link{fa}}.}
 
-\item{type}{character. One of "SG" (default), "psych", or "SPSS". This
+\item{type}{character. One of "GS" (default), "psych", or "SPSS". This
 is used to control the procedure of the second order factor analysis. See
 \code{\link{PAF}} for details.}
 
