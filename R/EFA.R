@@ -14,7 +14,7 @@
 #'  \code{\link[psych:factor.stats]{psych::factor.stats}} for details.
 #' @param rotation character. One of "none" (default), "promax", or "varimax".
 #'  Specifies the type of rotation to perform.
-#' @param type character. If one of "SG" (default), "psych", or "SPSS" is
+#' @param type character. If one of "GS" (default), "psych", or "SPSS" is
 #'  used, and the following arguments with default NULL are left with
 #'  NULL, these implementations are executed as reported in Steiner and Grieder
 #'  (2019). Individual properties can be adapted using one of the three types and
@@ -94,8 +94,8 @@
 #' @export
 #'
 #' @examples
-#' # A type SG (as presented in Steiner and Grieder, 2019) EFA
-#' EFA_SG_5 <- EFA(IDS2_R, n_factors = 5, type = "SG")
+#' # A type GS (as presented in Steiner and Grieder, 2019) EFA
+#' EFA_GS_5 <- EFA(IDS2_R, n_factors = 5, type = "GS")
 #'
 #' # A type SPSS EFA to mimick the SPSS implementation
 #' EFA_SPSS_5 <- EFA(IDS2_R, n_factors = 5, type = "SPSS")
@@ -103,7 +103,7 @@
 #' # A type psych EFA to mimick the psych::fa() implementation
 #' EFA_psych_5 <- EFA(IDS2_R, n_factors = 5, type = "psych")
 EFA <- function(x, n_factors, cors = TRUE, N = NA, rotation = "none",
-                type = "SG", max_iter = NULL, init_comm = NULL,
+                type = "GS", max_iter = NULL, init_comm = NULL,
                 criterion = NULL, criterion_type = NULL, abs_eigen = NULL,
                 signed_loadings = TRUE, use = "pairwise.complete.obs",
                 use_cpp = NULL, k = NULL, kaiser = TRUE, P_type = NULL,

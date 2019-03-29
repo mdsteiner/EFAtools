@@ -102,7 +102,8 @@ compare <- function(x, y, reorder = TRUE, digits = 4, m_red = .001,
 
     if (length(x) != length(y)) {
 
-      stop("x and y have different lengths Compare only works with identical dimensions")
+      stop("x and y have different lengths Compare only works with identical
+           dimensions")
 
     }
 
@@ -153,6 +154,10 @@ compare <- function(x, y, reorder = TRUE, digits = 4, m_red = .001,
   }
 
   are_equal <- utils::tail(which(are_equal_v), 1)
+
+  if(length(are_equal) == 0){
+    are_equal <- NA
+  }
 
   ctrl <- list(
     digits = digits,

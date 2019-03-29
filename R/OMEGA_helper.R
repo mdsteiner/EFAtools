@@ -2,7 +2,7 @@
 .OMEGA_FLEX <- function(model = NULL, var_names = NULL, fac_names = NULL,
                        factor_corres = NULL, g_load = NULL, s_load = NULL,
                        u2 = NULL, Phi = NULL, pattern = NULL,
-                       cormat = NULL, variance = NULL, type = "SG"){
+                       cormat = NULL, variance = NULL, type = "GS"){
 
   if(all(class(model) == c("psych", "schmid"))){
 
@@ -35,7 +35,7 @@
 
     }
 
-  if(type == "psych" || type == "SG"){
+  if(type == "psych" || type == "GS"){
 
     if(is.null(variance)){
 
