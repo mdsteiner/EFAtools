@@ -8,10 +8,10 @@
 #'
 #' @param x matrix or class \code{\link{PAF}} object. Either a matrix containing
 #' an unrotated factor solution, or a \code{\link{PAF}} output object.
-#' @param type character. If one of "SG" (default), "psych", or "SPSS" is
+#' @param type character. If one of "GS" (default), "psych", or "SPSS" is
 #'  used, and the following arguments (except kaiser) are left with \code{NULL},
 #'  these implementations
-#'  are executed as reported in Steiner and Grieder (2019; see details).
+#'  are executed as reported in Grieder and Steiner (2019; see details).
 #'  Individual properties can be adapted using one of the three types and
 #'  specifying some of the following
 #'  arguments. If set to another value than one of the three specified above, all
@@ -21,7 +21,7 @@
 #' @param P_type character. Default is \code{NULL} This specifies how the target
 #'  matrix P is computed. If "HW" it will use the implementation of Hendrickson and
 #'  White (1964), which is also used by the psych and stats packages. If "SPSS"
-#'  it will use the SPSS version (see below or Steiner and Grieder, 2019 for details).
+#'  it will use the SPSS version (see below or Grieder and Steiner, 2019 for details).
 #' @param precision numeric. The tolerance for stopping in the varimax procecdure.
 #'  This is passed to the "eps" argument of the
 #'  \code{\link[stats:varimax]{stats::varimax}} function. Default is \code{NULL}.
@@ -32,7 +32,7 @@
 #' @param k numeric. The power used for computing the target matrix P in the
 #'  promax rotation.
 #'
-#' @details \code{type = "SG"} will use the following argument specification:
+#' @details \code{type = "GS"} will use the following argument specification:
 #' \code{P_type = "HW", precision = 1e-10, order_type = "eigen"}.
 #' \code{type = "psych"} will use the following argument specification:
 #' \code{P_type = "HW", precision = 1e-5, order_type = "eigen"}.
@@ -68,25 +68,25 @@
 #' @export
 #' @examples
 #' # call within EFA function:
-#' EFA(IDS2_R, n_factors = 5, type = "SG", rotation = "promax")
+#' EFA(IDS2_R, n_factors = 5, type = "GS", rotation = "promax")
 #'
 #' # call as single function
-#' unrot <- EFA(IDS2_R, n_factors = 5, type = "SG")
-#' PROMAX(unrot$unrot_loadings, type = "SG")
-PROMAX <- function (x, type = "SG", kaiser = TRUE, P_type = NULL,
+#' unrot <- EFA(IDS2_R, n_factors = 5, type = "GS")
+#' PROMAX(unrot$unrot_loadings, type = "GS")
+PROMAX <- function (x, type = "GS", kaiser = TRUE, P_type = NULL,
                     precision = NULL, order_type = NULL, k = NULL) {
 
-  if (is.null(type) || !(type %in% c("SG", "psych", "SPSS"))) {
+  if (is.null(type) || !(type %in% c("GS", "psych", "SPSS"))) {
     # if type is not one of the three valid inputs, throw an error if not
     # all the other necessary arguments are specified.
 
     if (is.null(P_type) || is.null(precision) || is.null(order_type)
         || is.null(k)) {
       stop('One of "P_type", "precision", "order_type", or "k" was NULL and no valid
-           "type" was specified. Either use one of "SG", "psych", or "SPSS"
+           "type" was specified. Either use one of "GS", "psych", or "SPSS"
             for type, or specify all other arguments')
     }
-  } else if (type == "SG") {
+  } else if (type == "GS") {
 
     # if not specified, set PAF properties. If specified, throw warning that
     # results may not exactly match the specified type
@@ -233,10 +233,13 @@ PROMAX <- function (x, type = "SG", kaiser = TRUE, P_type = NULL,
       vars_accounted <- NA
       fit_ind <- NA
     }
+    settings <- list( type = type, kaiser = kaiser, P_type = P_type,
+                      precision = precision, order_type = order_type, k = k)
+
     output <- list(rot_loadings = L, rotmat = NA, Phi = NA, Structure = NA,
                    h2 = diag(L %*% t(L)),
                    vars_accounted = vars_accounted,
-                   fit_indices = fit_ind)
+                   fit_indices = fit_ind, settings = settings)
     class(output$h2) <- "COMMUNALITIES"
     class(output) <- "PROMAX"
 

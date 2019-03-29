@@ -4,17 +4,17 @@
 \alias{VARIMAX}
 \title{Varimax rotation}
 \usage{
-VARIMAX(x, type = "SG", kaiser = TRUE, precision = NULL,
+VARIMAX(x, type = "GS", kaiser = TRUE, precision = NULL,
   order_type = NULL)
 }
 \arguments{
 \item{x}{matrix or class \code{\link{PAF}} object. Either a matrix containing
 an unrotated factor solution, or a \code{\link{PAF}} output object.}
 
-\item{type}{character. If one of "SG" (default), "psych", or "SPSS" is
+\item{type}{character. If one of "GS" (default), "psych", or "SPSS" is
 used, and the following arguments (except kaiser) are left with \code{NULL},
 these implementations
-are executed as reported in Steiner and Grieder (2019; see details).
+are executed as reported in Grieder and Steiner (2019; see details).
 Individual properties can be adapted using one of the three types and
 specifying some of the following
 arguments. If set to another value than one of the three specified above, all
@@ -51,7 +51,7 @@ only the \code{type} argument has to be specified additional to \code{x}.
 The other arguments can be used to control the procedure more flexibly.
 }
 \details{
-\code{type = "SG"} will use the following argument specification:
+\code{type = "GS"} will use the following argument specification:
 \code{precision = 1e-10, order_type = "eigen"}.
 \code{type = "psych"} will use the following argument specification:
 \code{precision = 1e-5, order_type = "eigen"}.
@@ -66,9 +66,9 @@ loadings = AP, rotmat = U, Phi = Phi, Structure = Structure
 }
 \examples{
 # call within EFA function:
-EFA(IDS2_R, n_factors = 5, type = "SG", rotation = "varimax")
+EFA(IDS2_R, n_factors = 5, type = "GS", rotation = "varimax")
 
 # call as single function
-unrot <- EFA(IDS2_R, n_factors = 5, type = "SG")
-VARIMAX(unrot$unrot_loadings, type = "SG")
+unrot <- EFA(IDS2_R, n_factors = 5, type = "GS")
+VARIMAX(unrot$unrot_loadings, type = "GS")
 }

@@ -36,7 +36,7 @@
 #' @param u2 numeric. A vector of uniquenesses from an SL solution. This needs
 #' only be specified if \code{model} is left NULL and \code{type} is not \code{Watkins}.
 #' @param cormat matrix. A correlation matrix to be used when \code{type = "psych"} or
-#' \code{type = "SG"}. If left NULL, the correlation matrix is found based on the
+#' \code{type = "GS"}. If left NULL, the correlation matrix is found based on the
 #' pattern matrix and Phi using \code{\link[psych:factor.model]{psych::factor.model}}.
 #' If the correlation matrix is available, \code{cormat} should be specified instead
 #' of \code{Phi} and \code{pattern}.
@@ -46,7 +46,7 @@
 #' scale as well as for the subscale composites are calculated based on the correlation matrix. If \code{"sums_load"}, then total variances are
 #' calculated using the squared sums of general factor loadings and group factor loadings and
 #' the sum of uniquenesses (see details).
-#' @param type character. Either \code{"SG"} (default), \code{"psych"}, or \code{"Watkins"}.
+#' @param type character. Either \code{"GS"} (default), \code{"psych"}, or \code{"Watkins"}.
 #'
 #' @section How to combine arguments:
 #' If \code{model} is specified and of class \code{\link{lavaan}},
@@ -56,10 +56,10 @@
 #' needs to be specified additionally. There is, however, the option to reproduce
 #' Watkins' Omega or \code{\link[psych:omega]{psych::omega}} results by setting the
 #' \code{type} argument to \code{"Watkins"} or \code{"psych"}.
-#' If \code{model = NULL} and \code{type = "SG"}(default), the arguments
+#' If \code{model = NULL} and \code{type = "GS"}(default), the arguments
 #' \code{var_names}, \code{factor_corres}, \code{g_load}, \code{s_load}, and \code{u2}
 #' need to be specified.
-#' If \code{type = "psych"} or \code{type = "SG"}, either \code{cormat}
+#' If \code{type = "psych"} or \code{type = "GS"}, either \code{cormat}
 #' (recommended) or \code{Phi} and \code{pattern} must be specified.
 #' Additionally, the argument \code{factor_corres} should be left NULL to
 #' replicate \code{\link[psych:omega]{psych::omega}}
@@ -103,7 +103,7 @@
 #' the finding of variable-to-factor correspondences. The former aspect
 #' can also be controlled individually specifying the variance argument, the
 #' latter by specifying the factor_corres argument.
-#' For \code{type = "SG"}, total variances are found using the correlation
+#' For \code{type = "GS"}, total variances are found using the correlation
 #' matrix, and variable-to-factor correspondences have to be specified manually.
 #' The only difference for \code{type = "psych"} is that it takes the highest
 #' group factor loading for each variable as the relevant group factor loading.
@@ -124,7 +124,7 @@
 OMEGA <- function(model = NULL, var_names = NULL, fac_names = NULL,
                   factor_corres = NULL, g_load = NULL,
                   s_load = NULL, u2 = NULL, Phi = NULL, pattern = NULL,
-                  cormat = NULL, variance = NULL, type = "SG"){
+                  cormat = NULL, variance = NULL, type = "GS"){
 
   if(!is.null(model) & (!is.null(var_names) || !is.null(g_load) || !is.null(s_load)
                         || !is.null(u2))){

@@ -9,7 +9,7 @@
 #' @method print PROMAX
 #'
 #' @examples
-#' EFA(IDS2_R, n_factors = 5, type = "SG", rotation = "promax")
+#' EFA(IDS2_R, n_factors = 5, type = "GS", rotation = "promax")
 print.PROMAX <- function(x, ...) {
 
 
@@ -88,8 +88,8 @@ print.PROMAX <- function(x, ...) {
                                       "performed with the",
                                       "following settings:")
 
-    if (type == "SG") {
-      # test if all type SG arguments are on default
+    if (type == "GS") {
+      # test if all type GS arguments are on default
 
       if (init_comm == "smc") {
         i_c_used <- crayon::blue("    ",cli::symbol$bullet, "Initial Communalities:",
@@ -507,13 +507,13 @@ print.PROMAX <- function(x, ...) {
 
       if (P_type == "norm") {
         trgt_mtrx_used <- crayon::blue("    ",cli::symbol$bullet, "Target matrix:",
-                                       crayon::bold("Unnormalized"),
+                                       crayon::bold("Normalized"),
                                        " (", crayon::green(cli::symbol$tick),
                                        "default)")
         def_trgt_mtrx_used <- TRUE
       } else {
         trgt_mtrx_used <- crayon::blue("    ",cli::symbol$bullet, "Target matrix:",
-                                       crayon::bold("Normalized"),
+                                       crayon::bold("Unnormalized"),
                                        " (", crayon::red(cli::symbol$cross),
                                        "default)")
         def_trgt_mtrx_used <- FALSE
@@ -599,11 +599,11 @@ print.PROMAX <- function(x, ...) {
 
       if (P_type == "norm") {
         trgt_mtrx_used <- crayon::blue("    ",cli::symbol$bullet, "Target matrix:",
-                                       crayon::bold("Unnormalized"))
+                                       crayon::bold("Normalized"))
         def_trgt_mtrx_used <- FALSE
       } else {
         trgt_mtrx_used <- crayon::blue("    ",cli::symbol$bullet, "Target matrix:",
-                                       crayon::bold("Normalized"))
+                                       crayon::bold("Unnormalized"))
         def_trgt_mtrx_used <- FALSE
       }
 
@@ -715,8 +715,8 @@ print.PROMAX <- function(x, ...) {
                                       "performed with the",
                                       "following settings:")
 
-    if (type == "SG") {
-      # test if all type SG arguments are on default
+    if (type == "GS") {
+      # test if all type GS arguments are on default
 
 
       # Varimax settings
@@ -927,13 +927,13 @@ print.PROMAX <- function(x, ...) {
 
       if (P_type == "norm") {
         trgt_mtrx_used <- crayon::blue("    ",cli::symbol$bullet, "Target matrix:",
-                                       crayon::bold("Unnormalized"),
+                                       crayon::bold("Normalized"),
                                        " (", crayon::green(cli::symbol$tick),
                                        "default)")
         def_trgt_mtrx_used <- TRUE
       } else {
         trgt_mtrx_used <- crayon::blue("    ",cli::symbol$bullet, "Target matrix:",
-                                       crayon::bold("Normalized"),
+                                       crayon::bold("Unnormalized"),
                                        " (", crayon::red(cli::symbol$cross),
                                        "default)")
         def_trgt_mtrx_used <- FALSE
@@ -986,11 +986,11 @@ print.PROMAX <- function(x, ...) {
 
       if (P_type == "norm") {
         trgt_mtrx_used <- crayon::blue("    ",cli::symbol$bullet, "Target matrix:",
-                                       crayon::bold("Unnormalized"))
+                                       crayon::bold("Normalized"))
         def_trgt_mtrx_used <- FALSE
       } else {
         trgt_mtrx_used <- crayon::blue("    ",cli::symbol$bullet, "Target matrix:",
-                                       crayon::bold("Normalized"))
+                                       crayon::bold("Unnormalized"))
         def_trgt_mtrx_used <- FALSE
       }
 
@@ -1008,6 +1008,16 @@ print.PROMAX <- function(x, ...) {
 
     } else {
       def_msg_vrmx <- crayon::red("    ", cli::symbol$cross, "Type", type,
+                                  "with customized", "arguments used.")
+    }
+
+    if (all(def_k_used, def_trgt_mtrx_used)) {
+
+      def_msg_prmx <- crayon::green("    ", cli::symbol$tick, "Type", type,
+                                    "with default", "arguments used.")
+
+    } else {
+      def_msg_prmx <- crayon::red("    ", cli::symbol$cross, "Type", type,
                                   "with customized", "arguments used.")
     }
 

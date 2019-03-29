@@ -15,5 +15,5 @@
 Print method showing a summarized output of the VARIMAX procedure.
 }
 \examples{
-EFA(IDS2_R, n_factors = 5, type = "SG", rotation = "varimax")
+EFA(IDS2_R, n_factors = 5, type = "GS", rotation = "varimax")
 }

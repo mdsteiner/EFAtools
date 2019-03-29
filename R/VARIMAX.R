@@ -8,10 +8,10 @@
 #'
 #' @param x matrix or class \code{\link{PAF}} object. Either a matrix containing
 #' an unrotated factor solution, or a \code{\link{PAF}} output object.
-#' @param type character. If one of "SG" (default), "psych", or "SPSS" is
+#' @param type character. If one of "GS" (default), "psych", or "SPSS" is
 #'  used, and the following arguments (except kaiser) are left with \code{NULL},
 #'  these implementations
-#'  are executed as reported in Steiner and Grieder (2019; see details).
+#'  are executed as reported in Grieder and Steiner (2019; see details).
 #'  Individual properties can be adapted using one of the three types and
 #'  specifying some of the following
 #'  arguments. If set to another value than one of the three specified above, all
@@ -26,7 +26,7 @@
 #'  to their eigenvalues. "ss_factors" will order them according to the sum of
 #'  squared loadings. In both cases signs are reflected. See below for details.
 #'
-#' @details \code{type = "SG"} will use the following argument specification:
+#' @details \code{type = "GS"} will use the following argument specification:
 #' \code{precision = 1e-10, order_type = "eigen"}.
 #' \code{type = "psych"} will use the following argument specification:
 #' \code{precision = 1e-5, order_type = "eigen"}.
@@ -51,24 +51,24 @@
 #' @export
 #' @examples
 #' # call within EFA function:
-#' EFA(IDS2_R, n_factors = 5, type = "SG", rotation = "varimax")
+#' EFA(IDS2_R, n_factors = 5, type = "GS", rotation = "varimax")
 #'
 #' # call as single function
-#' unrot <- EFA(IDS2_R, n_factors = 5, type = "SG")
-#' VARIMAX(unrot$unrot_loadings, type = "SG")
-VARIMAX <- function (x, type = "SG", kaiser = TRUE,
+#' unrot <- EFA(IDS2_R, n_factors = 5, type = "GS")
+#' VARIMAX(unrot$unrot_loadings, type = "GS")
+VARIMAX <- function (x, type = "GS", kaiser = TRUE,
                     precision = NULL, order_type = NULL) {
 
-  if (is.null(type) || !(type %in% c("SG", "psych", "SPSS"))) {
+  if (is.null(type) || !(type %in% c("GS", "psych", "SPSS"))) {
     # if type is not one of the three valid inputs, throw an error if not
     # all the other necessary arguments are specified.
 
     if (is.null(precision) || is.null(order_type)) {
       stop('One of "precision", or "order_type" was NULL and no valid
-           "type" was specified. Either use one of "SG", "psych", or "SPSS"
+           "type" was specified. Either use one of "GS", "psych", or "SPSS"
            for type, or specify all other arguments')
       }
-    } else if (type == "SG") {
+    } else if (type == "GS") {
 
       # if not specified, set PAF properties. If specified, throw warning that
       # results may not exactly match the specified type
@@ -171,11 +171,15 @@ VARIMAX <- function (x, type = "SG", kaiser = TRUE,
       vars_accounted <- NA
       fit_ind <- NA
     }
+    # prepare settings
+    settings <- list(type = type, kaiser = kaiser, precision = precision,
+                     order_type = order_type)
+
     # prepare and return output list
     output <- list(rot_loadings = L, rotmat = NA,
                    h2 = diag(L %*% t(L)),
                    vars_accounted = vars_accounted,
-                   fit_indices = fit_ind)
+                   fit_indices = fit_ind, settings = settings)
     class(output$h2) <- "COMMUNALITIES"
     class(output) <- "VARIMAX"
 

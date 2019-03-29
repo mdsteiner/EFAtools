@@ -15,6 +15,6 @@
 Print Method showing a summarized output of the SL procedure.
 }
 \examples{
-EFA_SG_5 <- EFA(IDS2_R, n_factors = 5, type = "SG", rotation = "promax")
-SL(EFA_SG_5)
+EFA_GS_5 <- EFA(IDS2_R, n_factors = 5, type = "GS", rotation = "promax")
+SL(EFA_GS_5)
 }

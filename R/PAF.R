@@ -17,10 +17,10 @@
 #'  \code{\link[psych:factor.stats]{psych::factor.stats}} for details.
 #' @param max_iter numeric. The maximum number of iterations (default is 300) to
 #'  perform after which the iterative PAF procedure is halted with a warning.
-#' @param type character. If one of "SG" (default), "psych", or "SPSS" is
+#' @param type character. If one of "GS" (default), "psych", or "SPSS" is
 #'  used, and the following arguments (except \code{signed_loadings}) are left with
 #'  NULL, these implementations
-#'  are executed as reported in Steiner and Grieder (2019; see details).
+#'  are executed as reported in Gieder and Steiner (2019; see details).
 #'  Individual properties can be adapted using one of the three types and
 #'  specifying some of the following
 #'  arguments. If set to another value than one of the three specified above, all
@@ -55,7 +55,7 @@
 #'
 #' @details Values of \code{init_comm}, \code{criterion}, \code{criterion_type},
 #' \code{abs_eigen}, and \code{use_cpp} depend on the \code{type} argument.
-#'\code{type = "SG"} will use the following argument specification:
+#'\code{type = "GS"} will use the following argument specification:
 #' \code{init_comm = "smc", criterion = .001, criterion_type = "max_individual",
 #' abs_eigen = FALSE, use_cpp = TRUE}.
 #' \code{type = "psych"} will use the following argument specification:
@@ -83,12 +83,12 @@
 #' @export
 #' @examples
 #' # call within EFA function:
-#' EFA(IDS2_R, n_factors = 5, type = "SG")
+#' EFA(IDS2_R, n_factors = 5, type = "GS")
 #'
 #' # call as single function
-#' PAF(IDS2_R, n_factors = 5, type = "SG")
+#' PAF(IDS2_R, n_factors = 5, type = "GS")
 PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
-                type = "SG", init_comm = NULL, criterion = NULL,
+                type = "GS", init_comm = NULL, criterion = NULL,
                 criterion_type = NULL, abs_eigen = NULL,
                 signed_loadings = TRUE, use = "pairwise.complete.obs",
                 use_cpp = NULL) {
@@ -115,7 +115,7 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
   }
 
 
-  if (is.null(type) || !(type %in% c("SG", "psych", "SPSS"))) {
+  if (is.null(type) || !(type %in% c("GS", "psych", "SPSS"))) {
 
     # if type is not one of the three valid inputs, throw an error if not
     # all the other necessary arguments are specified.
@@ -125,10 +125,10 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
         is.null(use_cpp)) {
       stop('One of "init_comm", "criterion", "criterion_type", "abs_eigen",
            "max_iter", "signed_loadings", "use_cpp", was NULL and no valid
-           "type" was specified. Either use one of "SG", "psych", or "SPSS"
+           "type" was specified. Either use one of "GS", "psych", or "SPSS"
            for type, or specify all other arguments')
     }
-  } else if (type == "SG") {
+  } else if (type == "GS") {
 
     # if not specified, set PAF properties. If specified, throw warning that
     # results may not exactly match the specified type

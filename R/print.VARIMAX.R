@@ -9,7 +9,7 @@
 #' @method print VARIMAX
 #'
 #' @examples
-#' EFA(IDS2_R, n_factors = 5, type = "SG", rotation = "varimax")
+#' EFA(IDS2_R, n_factors = 5, type = "GS", rotation = "varimax")
 print.VARIMAX <- function(x, ...) {
 
 
@@ -73,8 +73,8 @@ print.VARIMAX <- function(x, ...) {
                                "performed with the",
                                "following settings:")
 
-  if (type == "SG") {
-    # test if all type SG arguments are on default
+  if (type == "GS") {
+    # test if all type GS arguments are on default
 
     if (init_comm == "smc") {
       i_c_used <- crayon::blue("    ",cli::symbol$bullet, "Initial Communalities:",
@@ -573,8 +573,8 @@ print.VARIMAX <- function(x, ...) {
                                       "performed with the",
                                       "following settings:")
 
-    if (type == "SG") {
-      # test if all type SG arguments are on default
+    if (type == "GS") {
+      # test if all type GS arguments are on default
 
 
       # Varimax settings

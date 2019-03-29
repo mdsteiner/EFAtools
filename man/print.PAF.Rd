@@ -15,6 +15,6 @@
 Print Method showing a summarized output of the PAF procedure.
 }
 \examples{
-EFA_SG_5 <- EFA(IDS2_R, n_factors = 5, type = "SG")
-EFA_SG_5
+EFA_GS_5 <- EFA(IDS2_R, n_factors = 5, type = "GS")
+EFA_GS_5
 }

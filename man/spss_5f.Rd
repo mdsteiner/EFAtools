@@ -18,7 +18,7 @@
   \item{L2}{(matrix) - Second order loadings used for the Schmid-Leiman transformation. This Schmid-Leiman solution was found using the SPSS Syntax provided by Wolff and Preising (2005).}
  }}
 \source{
-Steiner, M.D., & Grieder, S. (2019). Resolving differences in principal axis factor analysis and promax rotation in SPSS and R psych. Submitted Manuscript.
+Grieder, S., & Steiner, M.D. (2019). Resolving differences in principal axis factor analysis and promax rotation in SPSS and R psych. Submitted Manuscript.
 
 Wolff, H.G., & Preising, K. (2005). Exploring item and higher order factor structure with the schmid-leiman solution: Syntax codes for spss and sas. Behavior Research Methods, 37, 48–58. doi: 10.3758/BF03206397
 }
@@ -26,6 +26,6 @@ Wolff, H.G., & Preising, K. (2005). Exploring item and higher order factor struc
 spss_5f
 }
 \description{
-Various outputs from SPSS FACTOR used in Steiner & Grieder (2019). See below for details
+Various outputs from SPSS FACTOR used in Grieder and Steiner (2019). See below for details
 }
 \keyword{datasets}

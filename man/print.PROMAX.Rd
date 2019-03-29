@@ -15,5 +15,5 @@
 Print method showing a summarized output of the PROMAX procedure.
 }
 \examples{
-EFA(IDS2_R, n_factors = 5, type = "SG", rotation = "promax")
+EFA(IDS2_R, n_factors = 5, type = "GS", rotation = "promax")
 }

@@ -5,7 +5,7 @@
 \title{Principal Axis Factoring}
 \usage{
 PAF(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
-  type = "SG", init_comm = NULL, criterion = NULL,
+  type = "GS", init_comm = NULL, criterion = NULL,
   criterion_type = NULL, abs_eigen = NULL, signed_loadings = TRUE,
   use = "pairwise.complete.obs", use_cpp = NULL)
 }
@@ -26,10 +26,10 @@ correlation matrix is used. If input is a correlation matrix and N = NA
 \item{max_iter}{numeric. The maximum number of iterations (default is 300) to
 perform after which the iterative PAF procedure is halted with a warning.}
 
-\item{type}{character. If one of "SG" (default), "psych", or "SPSS" is
+\item{type}{character. If one of "GS" (default), "psych", or "SPSS" is
 used, and the following arguments (except \code{signed_loadings}) are left with
 NULL, these implementations
-are executed as reported in Steiner and Grieder (2019; see details).
+are executed as reported in Gieder and Steiner (2019; see details).
 Individual properties can be adapted using one of the three types and
 specifying some of the following
 arguments. If set to another value than one of the three specified above, all
@@ -95,7 +95,7 @@ arguments can be used to control the procedure more flexibly.
 \details{
 Values of \code{init_comm}, \code{criterion}, \code{criterion_type},
 \code{abs_eigen}, and \code{use_cpp} depend on the \code{type} argument.
-\code{type = "SG"} will use the following argument specification:
+\code{type = "GS"} will use the following argument specification:
 \code{init_comm = "smc", criterion = .001, criterion_type = "max_individual",
 abs_eigen = FALSE, use_cpp = TRUE}.
 \code{type = "psych"} will use the following argument specification:
@@ -107,8 +107,8 @@ abs_eigen = TRUE, use_cpp = FALSE}.
 }
 \examples{
 # call within EFA function:
-EFA(IDS2_R, n_factors = 5, type = "SG")
+EFA(IDS2_R, n_factors = 5, type = "GS")
 
 # call as single function
-PAF(IDS2_R, n_factors = 5, type = "SG")
+PAF(IDS2_R, n_factors = 5, type = "GS")
 }

@@ -9,8 +9,8 @@
 #' @method print PAF
 #'
 #' @examples
-#' EFA_SG_5 <- EFA(IDS2_R, n_factors = 5, type = "SG")
-#' EFA_SG_5
+#' EFA_GS_5 <- EFA(IDS2_R, n_factors = 5, type = "GS")
+#' EFA_GS_5
 print.PAF <- function(x, ...) {
 
   # extract the different settings
@@ -48,8 +48,8 @@ print.PAF <- function(x, ...) {
                                "performed with the",
                                "following settings:")
 
-  if (type == "SG") {
-    # test if all type SG arguments are on default
+  if (type == "GS") {
+    # test if all type GS arguments are on default
 
     if (init_comm == "smc") {
       i_c_used <- crayon::blue("    ",cli::symbol$bullet, "Initial Communalities:",

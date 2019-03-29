@@ -4,17 +4,17 @@
 \alias{PROMAX}
 \title{Promax rotation}
 \usage{
-PROMAX(x, type = "SG", kaiser = TRUE, P_type = NULL,
+PROMAX(x, type = "GS", kaiser = TRUE, P_type = NULL,
   precision = NULL, order_type = NULL, k = NULL)
 }
 \arguments{
 \item{x}{matrix or class \code{\link{PAF}} object. Either a matrix containing
 an unrotated factor solution, or a \code{\link{PAF}} output object.}
 
-\item{type}{character. If one of "SG" (default), "psych", or "SPSS" is
+\item{type}{character. If one of "GS" (default), "psych", or "SPSS" is
 used, and the following arguments (except kaiser) are left with \code{NULL},
 these implementations
-are executed as reported in Steiner and Grieder (2019; see details).
+are executed as reported in Grieder and Steiner (2019; see details).
 Individual properties can be adapted using one of the three types and
 specifying some of the following
 arguments. If set to another value than one of the three specified above, all
@@ -26,7 +26,7 @@ performed in the varimax rotation.}
 \item{P_type}{character. Default is \code{NULL} This specifies how the target
 matrix P is computed. If "HW" it will use the implementation of Hendrickson and
 White (1964), which is also used by the psych and stats packages. If "SPSS"
-it will use the SPSS version (see below or Steiner and Grieder, 2019 for details).}
+it will use the SPSS version (see below or Grieder and Steiner, 2019 for details).}
 
 \item{precision}{numeric. The tolerance for stopping in the varimax procecdure.
 This is passed to the "eps" argument of the
@@ -61,7 +61,7 @@ only the \code{type} argument has to be specified additional to \code{x}.
 The other arguments can be used to control the procedure more flexibly.
 }
 \details{
-\code{type = "SG"} will use the following argument specification:
+\code{type = "GS"} will use the following argument specification:
 \code{P_type = "HW", precision = 1e-10, order_type = "eigen"}.
 \code{type = "psych"} will use the following argument specification:
 \code{P_type = "HW", precision = 1e-5, order_type = "eigen"}.
@@ -85,9 +85,9 @@ loadings = AP, rotmat = U, Phi = Phi, Structure = Structure
 }
 \examples{
 # call within EFA function:
-EFA(IDS2_R, n_factors = 5, type = "SG", rotation = "promax")
+EFA(IDS2_R, n_factors = 5, type = "GS", rotation = "promax")
 
 # call as single function
-unrot <- EFA(IDS2_R, n_factors = 5, type = "SG")
-PROMAX(unrot$unrot_loadings, type = "SG")
+unrot <- EFA(IDS2_R, n_factors = 5, type = "GS")
+PROMAX(unrot$unrot_loadings, type = "GS")
 }

@@ -16,12 +16,12 @@
   \item{phi_promax}{(matrix) - F1 to F6 = intercorrelations of the promax rotated loadings.}
  }}
 \source{
-Steiner, M.D., & Grieder, S. (2019). Resolving differences in principal axis factor analysis and promax rotation in SPSS and R psych. Submitted Manuscript.
+Grieder, S., & Steiner, M.D. (2019). Resolving differences in principal axis factor analysis and promax rotation in SPSS and R psych. Submitted Manuscript.
 }
 \usage{
 spss_6f
 }
 \description{
-Various outputs from SPSS FACTOR used in Steiner & Grieder (2019). See below for details
+Various outputs from SPSS FACTOR used in Grieder & Steiner (2019). See below for details
 }
 \keyword{datasets}
