@@ -119,7 +119,7 @@ EFA <- function(x, n_factors, cors = TRUE, N = NA, rotation = "none",
   if (rotation == "promax") {
 
     paf_rot <- PROMAX(paf_out, type = type, kaiser = kaiser, P_type = P_type,
-                      precision = precision, order_type = order_type)
+                      precision = precision, order_type = order_type, k = k)
 
   } else if (rotation == "varimax") {
     paf_rot <- VARIMAX(paf_out, type = type, kaiser = kaiser, precision = precision,

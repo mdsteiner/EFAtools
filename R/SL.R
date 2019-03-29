@@ -65,6 +65,10 @@ SL <- function(x, Phi = NULL, type = "GS", ...) {
 
     }
 
+    n_order <- order(colnames(L1))
+    L1 <- L1[, n_order]
+    Phi <- Phi[n_order, n_order]
+
   } else if(all(class(x) == c("psych", "fa"))) {
 
     L1 <- unclass(x$loadings)
@@ -80,6 +84,10 @@ SL <- function(x, Phi = NULL, type = "GS", ...) {
       Phi <- x$Phi
 
     }
+
+    n_order <- order(colnames(L1))
+    L1 <- L1[, n_order]
+    Phi <- Phi[n_order, n_order]
 
   } else {
 

@@ -63,7 +63,7 @@ print.COMPARE <- function(x, ...) {
     min_out <- crayon::red$bold(.numformat(min_abs_diff, digits, TRUE))
   }
 
-  if (length(are_equal) == 0) {
+  if (is.na(are_equal)) {
     equal_out <- crayon::red$bold("none")
   } else if (are_equal < round_red) {
     equal_out <- crayon::red$bold(are_equal)
