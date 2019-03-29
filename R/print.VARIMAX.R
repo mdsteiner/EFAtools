@@ -416,7 +416,7 @@ print.VARIMAX <- function(x, ...) {
       def_prcsn_used <- FALSE
     }
 
-    if (order_type == "ss_loadings") {
+    if (order_type == "ss_factors") {
       ordr_tp_used <- crayon::blue("    ",cli::symbol$bullet, "Factors ordered according to:",
                                    crayon::bold("Sum of Squared Loadings"),
                                    " (", crayon::green(cli::symbol$tick),
@@ -482,7 +482,7 @@ print.VARIMAX <- function(x, ...) {
     def_prcsn_used <- FALSE
 
 
-    if (order_type == "ss_loadings") {
+    if (order_type == "ss_factors") {
       ordr_tp_used <- crayon::blue("    ",cli::symbol$bullet, "Factors ordered according to:",
                                    crayon::bold("Sum of Squared Loadings"))
       def_ordr_tp_used <- FALSE
@@ -707,7 +707,7 @@ print.VARIMAX <- function(x, ...) {
         def_prcsn_used <- FALSE
       }
 
-      if (order_type == "ss_loadings") {
+      if (order_type == "ss_factors") {
         ordr_tp_used <- crayon::blue("    ",cli::symbol$bullet, "Factors ordered according to:",
                                      crayon::bold("Sum of Squared Loadings"),
                                      " (", crayon::green(cli::symbol$tick),
@@ -743,7 +743,7 @@ print.VARIMAX <- function(x, ...) {
         def_prcsn_used <- FALSE
 
 
-      if (order_type == "ss_loadings") {
+      if (order_type == "ss_factors") {
         ordr_tp_used <- crayon::blue("    ",cli::symbol$bullet, "Factors ordered according to:",
                                      crayon::bold("Sum of Squared Loadings"))
         def_ordr_tp_used <- FALSE
