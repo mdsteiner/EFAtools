@@ -4,10 +4,11 @@ The EFAdiff package provides functions to perform and compare exploratory factor
 
 ## Installation
 
-You can install the released version of EFAdiff from [CRAN](https://CRAN.R-project.org) with:
+You can install EFAdiff with:
 
 ``` r
-install.packages("EFAdiff")
+install.packages("devtools")
+devtools::install_github("mdsteiner/EFAdiff")
 ```
 
 ## Example
