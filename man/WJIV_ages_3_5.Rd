@@ -4,7 +4,7 @@
 \name{WJIV_ages_3_5}
 \alias{WJIV_ages_3_5}
 \title{WJ-IV Ages 3 to 5}
-\format{A list of 2 with elements "n" (scalar) and "cormat" (29 x 29 matrix of bivariate correlations)
+\format{A list of 2 with elements "n" (scalar) and "cormat" (29 x 29 matrix of bivariate correlations). The correlation matrix contains the following variables:
 \describe{
   \item{ORLVOC}{(numeric) - Oral Vocabulary.}
   \item{VRBATN}{(numeric) - Verbal Attention.}
@@ -47,7 +47,7 @@ Rolling Meadows, IL: Riverside.
 WJIV_ages_3_5
 }
 \description{
-A list containing the bivariate correlations (N = 435) of the 47
+A list containing the bivariate correlations (N = 435) of the 29
 intelligence subtests from the WJ-IV for 20 to 39 years olds obtained from
 the technical Manual (McGrew, LaForte, & Schrank, 2014);
 an intelligence test battery. Details can be found in the  WJ-IV technical

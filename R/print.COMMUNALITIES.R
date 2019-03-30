@@ -1,4 +1,4 @@
-#' A print method for communalities
+#' Print COMMUNALITY object
 #'
 #' @param x class COMMUNALITY vector
 #' @param cutoff numeric. The number above which to print loadings in bold

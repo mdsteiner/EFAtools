@@ -3,6 +3,9 @@
 \name{PAF}
 \alias{PAF}
 \title{Principal Axis Factoring}
+\source{
+Grieder, S., & Steiner, M.D.(2019). Algorithmic Jingle Jungle: Comparison of Implementations of an EFA Procedure in R psych Versus SPSS, MacOrtho, and Omega. Submitted Manuscript.
+}
 \usage{
 PAF(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
   type = "GS", init_comm = NULL, criterion = NULL,
@@ -23,8 +26,9 @@ correlation matrix is used. If input is a correlation matrix and N = NA
 (default), not all fit indices can be computed. See
 \code{\link[psych:factor.stats]{psych::factor.stats}} for details.}
 
-\item{max_iter}{numeric. The maximum number of iterations (default is 300) to
-perform after which the iterative PAF procedure is halted with a warning.}
+\item{max_iter}{numeric. The maximum number of iterations to
+perform after which the iterative PAF procedure is halted with a warning.
+Default is \code{NULL}.}
 
 \item{type}{character. If one of "GS" (default), "psych", or "SPSS" is
 used, and the following arguments (except \code{signed_loadings}) are left with
@@ -33,29 +37,30 @@ are executed as reported in Gieder and Steiner (2019; see details).
 Individual properties can be adapted using one of the three types and
 specifying some of the following
 arguments. If set to another value than one of the three specified above, all
-following arguments must be specified.}
+arguments with default \code{NULL} must be specified.}
 
 \item{init_comm}{character. The method to estimate the initial communalities.
 "smc" will use squared multiple correlations. "mac" will use
- maximum absolute correlations. "unity" will use 1s.}
+ maximum absolute correlations. "unity" will use 1s. Default is \code{NULL}.}
 
 \item{criterion}{numeric. The convergence criterion.
 If the change in communalities from one iteration to the next is smaller than
 this criterion the solution is accepted and the procedure ends. Details
-depend on criterion_type.}
+depend on criterion_type. Default is \code{NULL}.}
 
 \item{criterion_type}{character. "max_individual" selects the
 maximum change in any of the communalities from one iteration to the next
 and tests it against the specified criterion. This is also used by SPSS.
 "sums" takes difference of the sum of all communalities in one iteration and
 the sum of all communalities in the next iteration and tests it against the
-criterion. This procedure is used by the \code{\link[psych:fa]{psych::fa}} function.}
+criterion. This procedure is used by the \code{\link[psych:fa]{psych::fa}} function.
+Default is \code{NULL}.}
 
 \item{abs_eigen}{logical. Which algorithm to use in the PAF iterations. If
 FALSE, the loadings are computed from the eigenvalues. This is
 also used by the \code{\link[psych:fa]{psych::fa}} function. If TRUE the
 loadings are computed
-with the absolute eigenvalues as done by SPSS.}
+with the absolute eigenvalues as done by SPSS. Default is \code{NULL}.}
 
 \item{signed_loadings}{logical. If \code{TRUE} (default), the sign of
 factors with negative sum of loadings is reflected. This is done by both
@@ -63,11 +68,11 @@ SPSS and \code{\link[psych:fa]{psych::fa}}.}
 
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
 is given as input. Note that in this case \code{cors} must be set to
-\code{FALSE}}
+\code{FALSE}. Default is "pairwise.complete.obs".}
 
 \item{use_cpp}{logical. If \code{TRUE}, the iterative PAF procedure to find the
-factor solution is performed using Rcpp. This is faster, but can lead to some,
-very small, differences in the output.}
+factor solution is performed using Rcpp. This is faster, but can lead to some
+very small differences in the output. Default is \code{NULL}.}
 }
 \value{
 A list of class PAF containing the following
@@ -90,7 +95,9 @@ This function implements the principal axis factoring procedure. It can
 reproduce the results from \code{\link[psych:fa]{psych::fa}} and the SPSS
 FACTOR algorithm. To reproduce psych or SPSS PAF, only the type argument has
 to be specified in addition to the data and number of factors. The other
-arguments can be used to control the procedure more flexibly.
+arguments can be used to control the procedure more flexibly by overriding
+the default settings. If type = "none" is specified, all arguments with default
+\code{NULL} have to be specified.
 }
 \details{
 Values of \code{init_comm}, \code{criterion}, \code{criterion_type},

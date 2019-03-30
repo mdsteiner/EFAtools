@@ -11,7 +11,7 @@
   \item{omega_sub}{(numeric) - Omega subscale of the general factor. For details see \code{\link{OMEGA}} Grieder and Steiner (2019).}
  }}
 \source{
-Grieder, S., & Steiner, M.D. (2019). Resolving differences in principal axis factor analysis and promax rotation in SPSS and R psych. Submitted Manuscript.
+Grieder, S., & Steiner, M.D.(2019). Algorithmic Jingle Jungle: Comparison of Implementations of an EFA Procedure in R psych Versus SPSS, MacOrtho, and Omega. Submitted Manuscript.
 
 Watkins, M. W. (2013). Omega [Computer Software]. Phoenix, AZ: Ed & Psych Associates.
 }

@@ -28,9 +28,9 @@ This is passed to the "eps" argument of the
 \code{\link[stats:varimax]{stats::varimax}} function. Default is \code{NULL}}
 
 \item{order_type}{character. How to order the factors and when to reflect
-their signs. Default is \code{NULL}. "eigen" will order the factors according,
+their signs. "eigen" will order the factors according,
 to their eigenvalues. "ss_factors" will order them according to the sum of
-squared loadings. In both cases signs are reflected. See below for details.}
+squared loadings. In both cases signs are reflected. See below for details. Default is \code{NULL}.}
 }
 \value{
 A list of class VARIMAX containing the following
@@ -62,7 +62,6 @@ The \code{order_type} argument can take two arguments "eigen" or "ss_factors". T
 order of factors is then determined using the ordered communalities of the
 promax pattern matrix, if \code{order_type = "eigen"}, and using the ordered
 sums of squares of factor loadings per factor if \code{order_type = "ss_factors"}.
-loadings = AP, rotmat = U, Phi = Phi, Structure = Structure
 }
 \examples{
 # call within EFA function:

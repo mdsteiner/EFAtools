@@ -2,7 +2,7 @@
 % Please edit documentation in R/print.LOADINGS.R
 \name{print.LOADINGS}
 \alias{print.LOADINGS}
-\title{A print method for factor loadings}
+\title{Print LOADINGS object}
 \usage{
 \method{print}{LOADINGS}(x, cutoff = 0.3, digits = 3, ...)
 }
@@ -21,5 +21,5 @@ to round the loadings to (default is 3).}
 A string created using the crayon package
 }
 \description{
-A print method for factor loadings
+Print LOADINGS object
 }

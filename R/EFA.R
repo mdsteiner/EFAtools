@@ -1,7 +1,10 @@
 #' Function to run PAF and obtain varimax or promax rotated loadings
 #'
-#' This is just a wrapper function to call \code{\link{PAF}} and then one of
+#' This is a wrapper function to call \code{\link{PAF}} and then one of
 #' \code{\link{PROMAX}} or \code{\link{VARIMAX}} or no rotation is performed.
+#' All arguments with default value \code{NULL} can be left to default if \code{type}
+#' is set to one of "GS", "SPSS", or "psych". The respective specifications are
+#' then handled by the function.
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
 #'  correlations.
@@ -16,57 +19,61 @@
 #'  Specifies the type of rotation to perform.
 #' @param type character. If one of "GS" (default), "psych", or "SPSS" is
 #'  used, and the following arguments with default NULL are left with
-#'  NULL, these implementations are executed as reported in Steiner and Grieder
+#'  NULL, these implementations are executed as reported in Grieder and Steiner
 #'  (2019). Individual properties can be adapted using one of the three types and
 #'  specifying some of the following arguments. If set to another value than one
 #'  of the three specified above, all following arguments must be specified. For
-#'  details see the helppages for \code{\link{PAF}}, \code{\link{PROMAX}}, or
-#'  \code{\link{VARIMAX}}
-#' @param max_iter numeric. The maximum number of iterations (default is 300) to
-#'  perform after which the iterative PAF procedure is halted with a warning.
+#'  details see the help pages for \code{\link{PAF}}, \code{\link{PROMAX}}, or
+#'  \code{\link{VARIMAX}}.
+#' @param max_iter numeric. The maximum number of iterations to perform after which
+#' the iterative PAF procedure is halted with a warning. If \code{type} is one of
+#' "GS", "SPSS", or "psych", this is automatically specified if \code{max_iter} is
+#' left to be \code{NULL}, but can be overridden by entering a number. Default is \code{NULL}.
 #' @param init_comm character. The method to estimate the initial communalities.
 #'  "smc" will use squared multiple correlations. "mac" will use
-#'   maximum absolute correlations. "unity" will use 1s.
+#'   maximum absolute correlations. "unity" will use 1s. Default is \code{NULL}.
 #' @param criterion numeric. The convergence criterion used in \code{\link{PAF}}.
 #'  If the change in communalities from one iteration to the next is smaller than
 #'  this criterion the solution is accepted and the procedure ends. Details
-#'  depend on criterion_type (see \code{\link{PAF}} documentation).
+#'  depend on criterion_type (see \code{\link{PAF}} documentation). Default is \code{NULL}.
 #' @param criterion_type character. Type of convergence criterion used in
 #'  \code{\link{PAF}}. "max_individual" selects the maximum change in any of the
 #'  communalities from one iteration to the next and tests it against the
 #'  specified criterion. This is also used by SPSS. "sums" takes difference of
 #'  the sum of all communalities in one iteration and the sum of all communalities
 #'  in the next iteration and tests it against the criterion. This procedure is
-#'  used by the \code{\link[psych:fa]{psych::fa}} function.
+#'  used by the \code{\link[psych:fa]{psych::fa}} function. Default is \code{NULL}.
 #' @param abs_eigen logical. Which algorithm to use in the \code{\link{PAF}}
 #'  iterations. If FALSE, the loadings are computed from the eigenvalues. This is
 #'  also used by the \code{\link[psych:fa]{psych::fa}} function. If TRUE the
 #'  loadings are computed with the absolute eigenvalues as done by SPSS. All
-#'  textbooks we know use \code{abs_eigen = FALSE}.
+#'  textbooks we know use \code{abs_eigen = FALSE}. Default is \code{NULL}.
 #' @param signed_loadings  logical. If \code{TRUE} (default), the sign of
 #' factors after PAF with negative sum of loadings is reflected. This is done by
 #' both SPSS and \code{\link[psych:fa]{psych::fa}}.
 #' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
 #'  is given as input. Note that in this case \code{cors} must be set to
-#'  \code{FALSE}.
+#'  \code{FALSE}. Default is "pairwise.complete.obs".
 #' @param use_cpp logical. If \code{TRUE}, the iterative PAF procedure to find the
-#'  factor solution is performed using Rcpp. This is faster, but can lead to some,
-#'  very small, differences in the output.
+#'  factor solution is performed using Rcpp. This is faster, but can lead to some
+#'  very small differences in the output. Default is \code{NULL}.
 #' @param k numeric. The power used for computing the target matrix P in the
-#'  promax rotation.
-#' @param kaiser logical. If \code{TRUE} (default), kaiser normalization is
-#' performed in the varimax rotation.
-#' @param P_type character. Default is \code{NULL}. This specifies how the target
-#'  matrix P is computed in a promax rotation. If "HW" it will use the
-#'  implementation of Hendrickson and White (1964), which is also used by
-#'  the psych and stats packages. If "SPSS" it will use the SPSS version
-#'  (see \code{\link{PROMAX}} or Steiner and Grieder, 2019 for details).
+#'  promax rotation. Default is \code{NULL}.
+#' @param kaiser logical. If \code{TRUE}, kaiser normalization is
+#' performed before the varimax rotation. Default is \code{NULL}.
+#' @param P_type character. This specifies how the target
+#'  matrix P is computed in a promax rotation. If "unnorm" it will use the
+#'  unnormalized target matrix as originally done in Hendrickson and White (1964).
+#'  This is also used done the psych and stats packages. If "norm" it will use the
+#'  normalized target matrix as used in SPSS (see \code{\link{PROMAX}} or
+#'  Grieder and Steiner, 2019 for details). Default is \code{NULL}.
 #' @param precision numeric. The tolerance for stopping in the varimax procecdure.
 #'  This is passed to the "eps" argument of the
 #'  \code{\link[stats:varimax]{stats::varimax}} function. Default is \code{NULL}.
-#' @param order_type character. How to order the factors and when to reflect
-#'  their signs. Default is \code{NULL}. "psych" will use the psych method, "SPSS" the
-#'  SPSS method. See \code{\link{PROMAX}} or \code{\link{VARIMAX}} for details.
+#' @param order_type character. How to order the factors. "eigen" will reorder
+#'  the factors according to the largest to lowest eigenvalues. "ss_factors" will
+#'  reorder the factors according to descending sum of squared factor loadings
+#'  per factor. See \code{\link{PROMAX}} or \code{\link{VARIMAX}} for details.
 #'
 #' @return A list of class PAF if no rotation is used (see \code{\link{PAF}}
 #'  documentation for a description), and of class PROMAX, or
@@ -90,6 +97,9 @@
 #' \item{fit_indices}{Fit indices derived from the rotated factor loadings as
 #'  returned by \code{\link[psych:factor.stats]{psych::factor.stats}}}
 #' \item{settings}{list. The settings (arguments) used in the EFA.}
+#'
+#' @source Hendrickson, A. E., & White, P. O. (1964). Promax: A quick method for rotation to oblique simple structure. British Journal of Statistical Psychology, 17 , 65–70. doi: 10.1111/j.2044-8317.1964.tb00244.x
+#' @source Grieder, S., & Steiner, M.D.(2019). Algorithmic Jingle Jungle: Comparison of Implementations of an EFA Procedure in R psych Versus SPSS, MacOrtho, and Omega. Submitted Manuscript.
 #'
 #' @export
 #'

@@ -2,7 +2,7 @@
 % Please edit documentation in R/compare.R
 \name{compare}
 \alias{compare}
-\title{Compare loadings or communalities of different implementations}
+\title{Compare two vectors or matrices (communalities or loadings)}
 \usage{
 compare(x, y, reorder = TRUE, digits = 4, m_red = 0.001,
   range_red = 0.001, round_red = 3, print_diff = TRUE,
@@ -16,11 +16,10 @@ implementation.}
 \item{y}{matrix, dataframe, or vector. Loadings or communalities of another
 implementation to compare to x.}
 
-\item{reorder}{logical. Whether factors should be reordered according to their
-colnames.}
+\item{reorder}{logical. Whether elements / columns should be reordered
+according to their colnames.}
 
-\item{digits}{numeric. Number of decimals to print in the output
-(default is 4).}
+\item{digits}{numeric. Number of decimals to print in the output (default is 4).}
 
 \item{m_red}{numeric. Number above which the mean and median should be printed
 in red (i.e., if .001 is used, the mean will be in red if it is larger than
@@ -29,7 +28,8 @@ in red (i.e., if .001 is used, the mean will be in red if it is larger than
 \item{range_red}{numeric. Number above which the min and max should be printed
 in red (i.e., if .001 is used, min and max will be in red if the max is larger
  than .001, otherwise it will be displayed in green. Default is .001). Note that
- the color of min also depends on max.}
+ the color of min also depends on max, that is min will be displayed in the
+ same color as max.}
 
 \item{round_red}{numeric. Number above which the max decimals to round to where
 all corresponding elements of x and y are still equal are displayed in red
@@ -51,29 +51,29 @@ be used.}
 will be shown.}
 
 \item{plot_red}{numeric. Threshold above which to plot the absolute differences
-in red.}
+in red (default is .001).}
 }
 \value{
 A list of class COMPARE containing summary statistics on the differences
  of x and y.
 
-\item{diff}{The vector or matrix containing the }
-\item{mean_abs_diff}{Initial communality estimates from PAF.}
-\item{median_abs_diff}{Final communality estimates from unrotated loadings.}
-\item{min_abs_diff}{The number of iterations needed for convergence in PAF.}
-\item{max_abs_diff}{Eigen values of the original correlation matrix.}
-\item{max_dec}{Initial eigenvalues, obtained from the correlation matrix
- with the initial communality estimates as diagonal in PAF.}
-\item{are_equal}{Eigenvalues of the final iteration in PAF.}
-\item{ctrl}{List of control settings used in the print method.}
+\item{diff}{The vector or matrix containing the differences between x and y.}
+\item{mean_abs_diff}{The mean absolute difference between x and y.}
+\item{median_abs_diff}{The median absolute difference between x and y.}
+\item{min_abs_diff}{The minimum absolute difference between x and y.}
+\item{max_abs_diff}{The maximum absolute difference between x and y.}
+\item{max_dec}{The maximum number of decimals to which a comparison makes sense.
+ For example, if x contains only values up to the third decimals, and y is a
+ normal double, max_dec will be three.}
+\item{are_equal}{The maximal number of decimals to which x and y can be rounded
+ and are still equal.}
+\item{ctrl}{List of control settings needed for the print method print.COMPARE.}
 }
 \description{
 The functions takes two objects of the same dimensions containing numeric
-information (loadings or communalities) and prints the following summary
-information of the absolute difference of the objects: mean, median, min, max,
-number above which the max decimals to round to where
-all corresponding elements of x and y are still equal are displayed, and the
-difference object itself.
+information (loadings or communalities) and returns a list of class COMPARE
+containing summary information of the absolute difference of the objects, as
+well as the differences themselves.
 }
 \examples{
 # A type SPSS EFA to mimick the SPSS implementation

@@ -16,7 +16,9 @@
   \item{phi_promax}{(matrix) - F1 to F7 = intercorrelations of the promax rotated loadings.}
  }}
 \source{
-Grieder, S., & Steiner, M.D. (2019). Resolving differences in principal axis factor analysis and promax rotation in SPSS and R psych. Submitted Manuscript.
+Grieder, S., & Steiner, M.D.(2019). Algorithmic Jingle Jungle: Comparison of Implementations of an EFA Procedure in R psych Versus SPSS, MacOrtho, and Omega. Submitted Manuscript.
+
+Grieder, S., & Grob, A. (in Press). Exploratory factor analysis of the intelligence and development scales–2 (IDS-2): Implications for theory and practice. Assessment.
 }
 \usage{
 spss_7f

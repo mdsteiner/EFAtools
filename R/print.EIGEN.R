@@ -1,4 +1,4 @@
-#' A print method for eigenvalues
+#' Print EIGEN object
 #'
 #' @param x class EIGEN vector
 #' @param cutoff numeric. The number above which to print loadings in bold

@@ -2,7 +2,7 @@
 % Please edit documentation in R/print.EIGEN.R
 \name{print.EIGEN}
 \alias{print.EIGEN}
-\title{A print method for eigenvalues}
+\title{Print EIGEN object}
 \usage{
 \method{print}{EIGEN}(x, cutoff = 0.3, digits = 3, ...)
 }
@@ -21,5 +21,5 @@ to round the loadings to (default is 3).}
 A string created using the crayon package
 }
 \description{
-A print method for eigenvalues
+Print EIGEN object
 }

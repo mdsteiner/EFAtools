@@ -1,4 +1,4 @@
-#' A print method for factor loadings
+#' Print LOADINGS object
 #'
 #' @param x class LOADINGS matrix.
 #' @param cutoff numeric. The number above which to print loadings in bold

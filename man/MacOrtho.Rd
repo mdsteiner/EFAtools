@@ -10,7 +10,7 @@
   \item{L2}{(matrix) - Second order loadings used for the Schmid-Leiman transformation. This Schmid-Leiman solution was found using the MacOrtho program (Watkins, 2004).}
  }}
 \source{
-Grieder, S., & Steiner, M.D.(2019). Resolving differences in principal axis factor analysis and promax rotation in SPSS and R psych. Submitted Manuscript.
+Grieder, S., & Steiner, M.D.(2019). Algorithmic Jingle Jungle: Comparison of Implementations of an EFA Procedure in R psych Versus SPSS, MacOrtho, and Omega. Submitted Manuscript.
 
 Watkins, M. W. (2004). Macortho [Computer Software]. Phoenix, AZ: EdPsych Associates, Inc.
 }

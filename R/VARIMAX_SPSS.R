@@ -1,6 +1,6 @@
 #' Varimax implementation based on the SPSS algorithms
 #'
-#' This is an implementation exactly following the SPSS algorithms manual.
+#' This is an implementation following the SPSS algorithms manual.
 #'
 #' @param loadings matrix. Unrotated loadings, e.g. from a PAF.
 #' @param precision numeric. The criterion after which to end the iterative

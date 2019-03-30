@@ -1,13 +1,13 @@
 #' WJ-IV Ages 3 to 5
 #'
-#' A list containing the bivariate correlations (N = 435) of the 47
+#' A list containing the bivariate correlations (N = 435) of the 29
 #' intelligence subtests from the WJ-IV for 20 to 39 years olds obtained from
 #' the technical Manual (McGrew, LaForte, & Schrank, 2014);
 #' an intelligence test battery. Details can be found in the  WJ-IV technical
 #' manual (2014). Tables reproduced with permission from the publisher.
 #'
 #'
-#' @format A list of 2 with elements "n" (scalar) and "cormat" (29 x 29 matrix of bivariate correlations)
+#' @format A list of 2 with elements "n" (scalar) and "cormat" (29 x 29 matrix of bivariate correlations). The correlation matrix contains the following variables:
 #' \describe{
 #'   \item{ORLVOC}{(numeric) - Oral Vocabulary.}
 #'   \item{VRBATN}{(numeric) - Verbal Attention.}
@@ -42,6 +42,6 @@
 #' @source McGrew, K. S., LaForte, E. M., & Schrank, F. A. (2014). Technical
 #'  Manual. Woodcock-Johnson IV. Rolling Meadows, IL: Riverside.
 #'
-#' Schrank, F. A., McGrew, K. S., & Mather, N. (2014). Woodcock-Johnson IV.
+#' @source Schrank, F. A., McGrew, K. S., & Mather, N. (2014). Woodcock-Johnson IV.
 #' Rolling Meadows, IL: Riverside.
 "WJIV_ages_3_5"

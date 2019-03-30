@@ -2,7 +2,7 @@
 % Please edit documentation in R/print.COMMUNALITIES.R
 \name{print.COMMUNALITIES}
 \alias{print.COMMUNALITIES}
-\title{A print method for communalities}
+\title{Print COMMUNALITY object}
 \usage{
 \method{print}{COMMUNALITIES}(x, cutoff = 0.3, digits = 3, ...)
 }
@@ -21,5 +21,5 @@ to round the loadings to (default is 3).}
 A string created using the crayon package
 }
 \description{
-A print method for communalities
+Print COMMUNALITY object
 }

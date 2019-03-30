@@ -22,8 +22,9 @@
   \item{DP}{(numeric) - Describing pictures.}
  }}
 \source{
-Grieder, S., & Grob, A. (2019). Exploratory factor analysis of the intelligence and development scales–2 (IDS-2): Implications for theory and practice. Submitted Manuscript.
-Grob, A., & Hagmann-von Arx, P. (2018a). Intelligence and Development Scales-2 (IDS-2). Intelligenz- und Entwicklungsskalen für Kinder und Jugendliche.
+Grieder, S., & Grob, A. (in Press). Exploratory factor analysis of the intelligence and development scales–2 (IDS-2): Implications for theory and practice. Assessment.
+
+Grob, A., & Hagmann-von Arx, P. (2018). Intelligence and Development Scales-2 (IDS-2). Intelligenz- und Entwicklungsskalen für Kinder und Jugendliche.
 [Intelligence and Development Scales for Children and Adolescents.]. Bern, Switzerland: Hogrefe.
 }
 \usage{

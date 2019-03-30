@@ -11,6 +11,7 @@
 #'   \item{sls_L2}{(matrix) - Second order Schmid Leiman solution reported in Wolff and Preising (2005). Note that the solution reported in the paper contains a typo in the third item of the general factor, correct loadings can be found in the Appendix, table A2.}
 #'   \item{sls_MacOrtho}{(data.frame) - subtest = the nine subtest names. General = second order Schmid Leiman solution obtained with MacOrtho (Watkins, 2004). 1 to 3 = First order Schmid Leiman solution obtained with MacOrtho (Watkins, 2004).}
 #'  }
-#' @source Grieder, S., & Steiner, M.D. (2019). Resolving differences in principal axis factor analysis and promax rotation in SPSS and R psych. Submitted Manuscript.
-#' Wolff, H.G & Preising, K. (2005). Exploring item and higher order factor structure with the Schmid–Leiman solution: Syntax codes for SPSS and SAS. Behavior Research Methods, 37 (1), 48-58.
+#' @source Grieder, S., & Steiner, M.D.(2019). Algorithmic Jingle Jungle: Comparison of Implementations of an EFA Procedure in R psych Versus SPSS, MacOrtho, and Omega. Submitted Manuscript.
+#' @source Wolff, H.G., & Preising, K. (2005). Exploring item and higher order factor structure with the schmid-leiman solution: Syntax codes for spss and sas. Behavior Research Methods, 37, 48–58. doi: 10.3758/BF03206397
+#' @source Watkins, M. W. (2004). Macortho [Computer Software]. Phoenix, AZ: EdPsych Associates, Inc.
 "wp"

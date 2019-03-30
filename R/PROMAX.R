@@ -4,7 +4,9 @@
 #' reproduce the results from \code{\link[psych:fa]{psych::fa}} and the
 #' SPSS FACTOR algorithm. To reproduce psych or SPSS promax results,
 #' only the \code{type} argument has to be specified additional to \code{x}.
-#' The other arguments can be used to control the procedure more flexibly.
+#' The other arguments can be used to control the procedure more flexibly by overriding
+#' the default settings. If type = "none" is specified, all arguments with default
+#' \code{NULL} have to be specified.
 #'
 #' @param x matrix or class \code{\link{PAF}} object. Either a matrix containing
 #' an unrotated factor solution, or a \code{\link{PAF}} output object.
@@ -18,41 +20,45 @@
 #'  following arguments must be specified.
 #' @param kaiser logical. If \code{TRUE} (default), kaiser normalization is
 #' performed in the varimax rotation.
-#' @param P_type character. Default is \code{NULL} This specifies how the target
-#'  matrix P is computed. If "HW" it will use the implementation of Hendrickson and
-#'  White (1964), which is also used by the psych and stats packages. If "SPSS"
-#'  it will use the SPSS version (see below or Grieder and Steiner, 2019 for details).
+#' @param P_type character. This specifies how the target
+#'  matrix P is computed in a promax rotation. If "unnorm" it will use the
+#'  unnormalized target matrix as originally done in Hendrickson and White (1964).
+#'  This is also used done the psych and stats packages. If "norm" it will use the
+#'  normalized target matrix as used in SPSS (see below or
+#'  Grieder and Steiner, 2019 for details). Default is \code{NULL}.
 #' @param precision numeric. The tolerance for stopping in the varimax procecdure.
 #'  This is passed to the "eps" argument of the
 #'  \code{\link[stats:varimax]{stats::varimax}} function. Default is \code{NULL}.
 #' @param order_type character. How to order the factors and when to reflect
-#'  their signs. Default is \code{NULL}. "eigen" will order the factors according,
+#'  their signs. "eigen" will order the factors according,
 #'  to their eigenvalues. "ss_factors" will order them according to the sum of
 #'  squared loadings. In both cases signs are reflected. See below for details.
+#'   Default is \code{NULL}.
 #' @param k numeric. The power used for computing the target matrix P in the
-#'  promax rotation.
+#'  promax rotation. Default is \code{NULL}.
 #'
 #' @details \code{type = "GS"} will use the following argument specification:
-#' \code{P_type = "HW", precision = 1e-10, order_type = "eigen"}.
+#' \code{P_type = "unnorm", precision = 1e-10, order_type = "eigen", k = 3}.
 #' \code{type = "psych"} will use the following argument specification:
-#' \code{P_type = "HW", precision = 1e-5, order_type = "eigen"}.
+#' \code{P_type = "unnorm", precision = 1e-5, order_type = "eigen", k = 4}.
 #' \code{type = "SPSS"} will use the following argument specification:
-#' \code{P_type = "SPSS", precision = 1e-10, order_type = "ss_factors"}.
+#' \code{P_type = "norm", precision = 1e-10, order_type = "ss_factors", k = 4}.
 #'
-#' The \code{P_type} argument can take two values, "HW" and "SPSS". It controlls
+#' The \code{P_type} argument can take two values, "unnorm" and "norm". It controlls
 #' which formula is used to compute the target matrix P in the promax rotation.
-#' "HW" uses the formula from Hendrickson and White (1964), specifically:
+#' "unnorm" uses the formula from Hendrickson and White (1964), specifically:
 #' \code{P <- abs(A^(k + 1)) / A},
-#' where A is the matrix containing varimax rotated loadings.
-#' "SPSS" uses a different formula, which can be found in the SPSS 23 Algorithms
+#' where A is the unnormalized matrix containing varimax rotated loadings.
+#' "SPSS" uses the normalized varimax rotated loadings. Specifically it used the
+#' following formula, which can be found in the SPSS 23 Algorithms
 #' manual:
 #' \code{P <- abs(A / sqrt(rowSums(A^2))) ^(k + 1) * (sqrt(rowSums(A^2)) / A)}
 #'
 #' The \code{order_type} argument can take two arguments "eigen" or "ss_factors". The
-#' order of factors is then determined using the ordered communalities of the
+#' order of factors is then determined using the ordered eigenvalues of the
 #' promax pattern matrix, if \code{order_type = "eigen"}, and using the ordered
 #' sums of squares of factor loadings per factor if \code{order_type = "ss_factors"}.
-#'loadings = AP, rotmat = U, Phi = Phi, Structure = Structure
+#' loadings = AP, rotmat = U, Phi = Phi, Structure = Structure
 #' @return A list of class PROMAX containing the following
 #'
 #' \item{rot_loadings}{The promax rotated loadings (the pattern matrix).}

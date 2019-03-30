@@ -25,5 +25,5 @@ A list of two.
 \item{rotmat}{The rotation matrix.}
 }
 \description{
-This is an implementation exactly following the SPSS algorithms manual.
+This is an implementation following the SPSS algorithms manual.
 }

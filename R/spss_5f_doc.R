@@ -16,6 +16,7 @@
 #'   \item{sl}{(matrix) - g = General / second order factor of the Schmid-Leiman solution. F1 to F5  = First order factors of the Schmid-Leiman solution. h2 = Communalities of the Schmid-Leiman solution. This Schmid-Leiman solution was found using the SPSS Syntax provided by Wolff and Preising (2005).}
 #'   \item{L2}{(matrix) - Second order loadings used for the Schmid-Leiman transformation. This Schmid-Leiman solution was found using the SPSS Syntax provided by Wolff and Preising (2005).}
 #'  }
-#' @source Grieder, S., & Steiner, M.D. (2019). Resolving differences in principal axis factor analysis and promax rotation in SPSS and R psych. Submitted Manuscript.
+#' @source Grieder, S., & Steiner, M.D.(2019). Algorithmic Jingle Jungle: Comparison of Implementations of an EFA Procedure in R psych Versus SPSS, MacOrtho, and Omega. Submitted Manuscript.
 #' @source Wolff, H.G., & Preising, K. (2005). Exploring item and higher order factor structure with the schmid-leiman solution: Syntax codes for spss and sas. Behavior Research Methods, 37, 48–58. doi: 10.3758/BF03206397
+#' @source Grieder, S., & Grob, A. (in Press). Exploratory factor analysis of the intelligence and development scales–2 (IDS-2): Implications for theory and practice. Assessment.
 "spss_5f"

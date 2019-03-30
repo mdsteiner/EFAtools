@@ -3,6 +3,11 @@
 \name{SL}
 \alias{SL}
 \title{Schmid-Leiman Transformation}
+\source{
+Wolff, H.-G., & Preising, K. (2005). Exploring item and higher order factor structure with the schmid-leiman solution: Syntax codes for spss and sas. Behavior Research Methods, 37 , 48–58. doi: 10.3758/BF03206397
+
+Watkins, M. W. (2004). Macortho [Computer Software]. Phoenix, AZ: EdPsych Associates, Inc.
+}
 \usage{
 SL(x, Phi = NULL, type = "GS", ...)
 }
@@ -33,16 +38,13 @@ and uniquenesses.}
 }
 \description{
 This function implements the Schmid-Leiman (SL) transformation. It takes the
- pattern
-coefficients and factor intercorrelations from an oblique factor solution as
+pattern coefficients and factor intercorrelations from an oblique factor solution as
 input and can reproduce the results from \code{\link[psych:schmid]{psych::schmid}},
-from the SPSS
-implementation from Wolff & Preising (2005), and from MacOrtho (Watkins, 2004).
-To reproduce
-psych or SPSS, only the type argument has to be specified additional to the
-loadings and factor intercorrelations. Other arguments from \code{\link{PAF}} can
-be used to control the procedure to find the second order loadings more
-flexibly.
+from the SPSS implementation from Wolff & Preising (2005), and from MacOrtho
+(Watkins, 2004). To reproduce psych or SPSS, only the type argument has to be
+specified additional to the loadings and factor intercorrelations. Other
+arguments from \code{\link{PAF}} can be used to control the procedure to find
+the second order loadings more flexibly.
 }
 \details{
 The SL transformation (also called SL orthogonalization) is a procedure with

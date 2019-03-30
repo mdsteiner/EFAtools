@@ -11,16 +11,16 @@ OMEGA(model = NULL, var_names = NULL, fac_names = NULL,
 }
 \arguments{
 \item{model}{class \code{\link{SL}}, class \code{\link{schmid}}, or class
-\code{\link{lavaan}} object. An output object from \code{\link{SL}}, from
+\code{\link{lavaan}} object. That is, an output object from \code{\link{SL}}, from
 \code{\link[psych:schmid]{psych::schmid}}, or from a \code{\link{lavaan}}
 bifactor model. If of class \code{\link{lavaan}}, no other arguments need to
 be specified. If of class \code{\link{SL}} or \code{\link{schmid}}, only
 the arguments \code{factor_corres} and \code{cormat} need to be specified
-additionally. CHECK IF TRUE}
+additionally.}
 
 \item{var_names}{numeric. A vector with subtest names in the order
 of the rows from the SL solution. This needs only be specified if \code{model}
-is left NULL.}
+is left \code{NULL}}
 
 \item{fac_names}{character. An optional vector of group factor names in the
 order of the columns of the SL solution.}
@@ -34,28 +34,29 @@ any group factor, insert a zero at its position (e.g. c(3, 3, 0, 1, 1, 2, 2),
 the third variable has no corresponding group factor).}
 
 \item{g_load}{numeric. A vector of general factor loadings from an SL solution.
-This needs
-only be specified if \code{model} is left NULL.}
+This needs only be specified if \code{model} is left \code{NULL}.}
 
 \item{s_load}{matrix. A matrix of group factor loadings from an SL solution. This needs
-only be specified if \code{model} is left NULL.}
+only be specified if \code{model} is left \code{NULL}}
 
 \item{u2}{numeric. A vector of uniquenesses from an SL solution. This needs
-only be specified if \code{model} is left NULL and \code{type} is not \code{Watkins}.}
+only be specified if \code{model} is left \code{NULL} and \code{type} is
+not \code{Watkins}.}
 
 \item{Phi}{matrix. Factor intercorrelations from an oblique factor solution.}
 
 \item{pattern}{matrix. Pattern coefficients from an oblique factor solution.}
 
 \item{cormat}{matrix. A correlation matrix to be used when \code{type = "psych"} or
-\code{type = "GS"}. If left NULL, the correlation matrix is found based on the
+\code{type = "GS"}. If left \code{NULL}, the correlation matrix is found based on the
 pattern matrix and Phi using \code{\link[psych:factor.model]{psych::factor.model}}.
 If the correlation matrix is available, \code{cormat} should be specified instead
 of \code{Phi} and \code{pattern}.}
 
 \item{variance}{character. If \code{"correlation"}, then total variances for the whole
-scale as well as for the subscale composites are calculated based on the correlation matrix. If \code{"sums_load"}, then total variances are
-calculated using the squared sums of general factor loadings and group factor loadings and
+scale as well as for the subscale composites are calculated based on the correlation
+matrix. If \code{"sums_load"}, then total variances are calculated using the
+squared sums of general factor loadings and group factor loadings and
 the sum of uniquenesses (see details).}
 
 \item{type}{character. Either \code{"GS"} (default), \code{"psych"}, or \code{"Watkins"}.}
@@ -95,7 +96,7 @@ replicate \code{\link[psych:omega]{psych::omega}}
 results, where variable-to-factor correspondences are found by taking the highest
 group factor loading for each variable as the relevant group factor loading.
 If \code{type = "Watkins"}, the \code{u2} argument
-should be left NULL to replicate results from Watkins' Omega program, where
+should be left \code{NULL} to replicate results from Watkins' Omega program, where
 uniquenesses are found based on the general factor loadings and relevant group factor
 loadings only. If, however, the argument \code{u2} is specified, the specified
 uniquenesses are taken, with a warning.

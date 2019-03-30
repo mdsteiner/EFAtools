@@ -4,7 +4,7 @@
 \name{WJIV_ages_14_19}
 \alias{WJIV_ages_14_19}
 \title{WJ-IV Ages 14 to 19}
-\format{A list of 2 with elements "n" (scalar) and "cormat" (47 x 47 matrix of bivariate correlations)
+\format{A list of 2 with elements "n" (scalar) and "cormat" (47 x 47 matrix of bivariate correlations). The correlation matrix contains the following variables:
 \describe{
   \item{ORLVOC}{(numeric) - Oral Vocabulary.}
   \item{NUMSER}{(numeric) - Number Series.}
