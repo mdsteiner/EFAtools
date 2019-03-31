@@ -49,7 +49,9 @@
 #' the sum of uniquenesses (see details).
 #' @param type character. Either \code{"GS"} (default), \code{"psych"}, or \code{"Watkins"}.
 #'
+#'
 #' @section How to combine arguments:
+#'
 #' If \code{model} is specified and of class \code{\link{lavaan}},
 #' no other arguments need to be specified.
 #' If \code{model} is of class
@@ -72,7 +74,8 @@
 #' loadings only. If, however, the argument \code{u2} is specified, the specified
 #' uniquenesses are taken, with a warning.
 #'
-#' @section Calculation of omega for different types
+#' @section Calculation of omega for different types:
+#'
 #' The main differences between the types concern the calculation of the total
 #' variance (for the whole scale as well as the subscale composites) as well as
 #' the finding of variable-to-factor correspondences. The former aspect
@@ -92,8 +95,7 @@
 #'
 #' For more explanations and equations, see Grieder and Steiner (2019).
 #'
-#' @return
-#' A matrix with omegas for the whole scale and for the subscales.
+#' @return A matrix with omegas for the whole scale and for the subscales.
 #' \item{tot}{Omega total.}
 #' \item{hier}{Omega hierarchical.}
 #' \item{sub}{Omega subscale.}
