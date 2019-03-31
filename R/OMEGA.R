@@ -72,33 +72,7 @@
 #' loadings only. If, however, the argument \code{u2} is specified, the specified
 #' uniquenesses are taken, with a warning.
 #'
-#' @section What is Omega?: UPDATE
-#' Omega (McDonald, 1999) is a model-based reliability estimate that is especially
-#' useful for multidimensional measures, as it allows variance partitioning. The
-#' present function finds Omega from an SL solution or a lavaan bifactor solution
-#' with one general factor and two or more group factors.
-#'
-#' Omega total is the total true score variance. For the whole scale, this is the
-#' total variance explained by the model. For subscale composites, this is the sum of
-#' the squared sums of loadings on the general factor and the group factors, divided by the
-#' total variance of the respective indicators.
-#'
-#' Omega hierarchical is the general-factor variance. For the whole scale, this is the
-#' general saturation of the scale: the squared sum of all general loadings divided by the
-#' total variance. For the subscale composites, this is the squared sum of g
-#' loadings of the respective indicators divided by the total variance of the
-#' respective indicators. Omega hierarchical for a subscale therefore indicates
-#' the variance that is actually accounted for by the general factor and not the group
-#' factor itself.
-#'
-#' Omega subscale is the group-factor variance. For the whole scale, this is the
-#' sum of the squared sums of the group factor loadings for all group factors
-#' divided by the total variance. Omega subscale for the whole scale therefore
-#' indicates the true score variance due to all the group factors together.
-#' For the subscale composites, this is the squared sum of the group factor loadings
-#' divided by the total variance of the respective indicators.
-#'
-#' @section Calculation of omega for different types: UPDATE
+#' @section Calculation of omega for different types
 #' The main differences between the types concern the calculation of the total
 #' variance (for the whole scale as well as the subscale composites) as well as
 #' the finding of variable-to-factor correspondences. The former aspect
@@ -115,6 +89,8 @@
 #' based on these two loadings per variable only and total variance is calculated
 #' based on all using the squared sums of general loadings and group factor loadings
 #' and the sum of these uniquenesses.
+#'
+#' For more explanations and equations, see Grieder and Steiner (2019).
 #'
 #' @return
 #' A matrix with omegas for the whole scale and for the subscales.
