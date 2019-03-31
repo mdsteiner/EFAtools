@@ -216,7 +216,7 @@
   omega_sub <- c(omega_sub_g, omega_sub_sub)
 
   omegas <- cbind(omega_tot, omega_h, omega_sub)
-  colnames(omegas) <- c("omega_tot", "omega_h", "omega_sub")
+  colnames(omegas) <- c("tot", "hier", "sub")
 
   if(!is.null(fac_names)){
 
@@ -309,7 +309,7 @@
   omega_sub <- c(omega_sub_g, omega_sub_sub)
 
   omegas <- cbind(omega_tot, omega_h, omega_sub)
-  colnames(omegas) <- c("omega_tot", "omega_h", "omega_sub")
+  colnames(omegas) <- c("tot", "hier", "sub")
 
   rownames(omegas) <- fac_names
 

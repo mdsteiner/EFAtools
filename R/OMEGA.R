@@ -118,9 +118,9 @@
 #'
 #' @return
 #' A matrix with omegas for the whole scale and for the subscales.
-#' \item{omega_tot}{Omega total.}
-#' \item{omega_h}{Omega hierarchical.}
-#' \item{omega_sub}{Omega subscale.}
+#' \item{tot}{Omega total.}
+#' \item{hier}{Omega hierarchical.}
+#' \item{sub}{Omega subscale.}
 #' @export
 OMEGA <- function(model = NULL, var_names = NULL, fac_names = NULL,
                   factor_corres = NULL, g_load = NULL,
