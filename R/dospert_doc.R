@@ -1,4 +1,4 @@
-#' Dospert
+#' DOSPERT
 #'
 #' A list containing the sample size (N), and the bivariate correlations (cormat)
 #' of the 40 items of the Domain Specific Risk Taking Scale (DOSPERT, Weber,
@@ -12,4 +12,4 @@
 #' @source Frey, R., Pedroni, A., Mata, R., Rieskamp, J., & Hertwig, R. (2017). Risk preference shares the psychometric structure of major psychological traits. Science Advances, 3, e1701381.
 #'
 #' \url{https://osf.io/rce7g}
-"dospert"
+"DOSPERT"
