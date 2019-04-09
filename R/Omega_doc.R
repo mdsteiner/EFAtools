@@ -1,4 +1,4 @@
-#' omega_Watkins
+#' Omega_Watkins
 #'
 #' @description Output of the omega computation performed in Grieder and Steiner (2019),
 #' using Watkins' omega program (Watkins, 2013) on the Schmid-Leiman
@@ -13,4 +13,4 @@
 #'  }
 #' @source Grieder, S., & Steiner, M.D.(2019). Algorithmic Jingle Jungle: Comparison of Implementations of an EFA Procedure in R psych Versus SPSS, MacOrtho, and Omega. Submitted Manuscript.
 #' @source Watkins, M. W. (2013). Omega [Computer Software]. Phoenix, AZ: Ed & Psych Associates.
-"omega_Watkins"
+"Omega_Watkins"
