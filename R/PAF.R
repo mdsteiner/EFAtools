@@ -60,7 +60,7 @@
 #' @details Values of \code{init_comm}, \code{criterion}, \code{criterion_type},
 #' \code{abs_eigen}, and \code{use_cpp} depend on the \code{type} argument.
 #'\code{type = "GS"} will use the following argument specification:
-#' \code{init_comm = "smc", criterion = .001, criterion_type = "max_individual",
+#' \code{init_comm = "smc", criterion = 1e-9, criterion_type = "max_individual",
 #' abs_eigen = FALSE, use_cpp = TRUE}.
 #' \code{type = "psych"} will use the following argument specification:
 #' \code{init_comm = "smc", criterion = .001, criterion_type = "sums",
@@ -147,7 +147,7 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
     }
 
     if (is.null(criterion)) {
-      criterion <- 1e-6
+      criterion <- 1e-9
     } else {
       warning("Type and criterion is specified. criterion is used with value '",
               criterion, "'. Results may differ from the specified type")
