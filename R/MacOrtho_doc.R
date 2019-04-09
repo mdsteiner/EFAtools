@@ -1,13 +1,20 @@
 #' MacOrtho
 #'
-#' Output of the Schmid Leiman transformation performed in Grieder & Steiner (2019), using the MacOrtho (Watkins, 2004) program.
+#' Outputs of the Schmid Leiman transformation performed in Grieder & Steiner (2019), using the MacOrtho (Watkins, 2004) program. Datasets are the IDS-2 (Grob & Hagmann-von Arx, 2018), the WJIV (3 to 5 and 20 to 39 years; McGrew, LaForte, & Schrank, 2014), and the DOSPERT (Frey et al., 2017; Weber, Blais, & Betz, 2002).
 #'
-#'
-#' @format A list of 2
+#' @format A list of 4
 #' \describe{
-#'   \item{sl}{(matrix) - g = General / second order factor of the Schmid-Leiman solution. F1 to F5  = First order factors of the Schmid-Leiman solution. This Schmid-Leiman solution was found using the MacOrtho program (Watkins, 2004).}
-#'   \item{L2}{(matrix) - Second order loadings used for the Schmid-Leiman transformation. This Schmid-Leiman solution was found using the MacOrtho program (Watkins, 2004).}
+#'   \item{IDS_2}{(matrix) - g = General / second order factor of the Schmid-Leiman solution. F1 to F5  = First order factors of the Schmid-Leiman solution. This Schmid-Leiman solution was found using the MacOrtho program (Watkins, 2004).}
+#'   #'   \item{WJIV_3_5}{(matrix) - g = General / second order factor of the Schmid-Leiman solution. F1 to F7  = First order factors of the Schmid-Leiman solution. This Schmid-Leiman solution was found using the MacOrtho program (Watkins, 2004).}
+#'   #'   \item{WJIV_20_39}{(matrix) - g = General / second order factor of the Schmid-Leiman solution. F1 to F7  = First order factors of the Schmid-Leiman solution. This Schmid-Leiman solution was found using the MacOrtho program (Watkins, 2004).}
+#'   #'   \item{DOSPERT}{(matrix) - g = General / second order factor of the Schmid-Leiman solution. F1 to F10  = First order factors of the Schmid-Leiman solution. This Schmid-Leiman solution was found using the MacOrtho program (Watkins, 2004).}
 #'  }
 #' @source Grieder, S., & Steiner, M.D.(2019). Algorithmic Jingle Jungle: Comparison of Implementations of an EFA Procedure in R psych Versus SPSS, MacOrtho, and Omega. Submitted Manuscript.
 #' @source Watkins, M. W. (2004). Macortho [Computer Software]. Phoenix, AZ: EdPsych Associates, Inc.
+#' @source Grieder, S., & Grob, A. (in Press). Exploratory factor analysis of the intelligence and development scales–2 (IDS-2): Implications for theory and practice. Assessment.
+#' @source Frey, R., Pedroni, A., Mata, R., Rieskamp, J., & Hertwig, R. (2017). Risk preference shares the psychometric structure of major psychological traits. Science Advances, 3, e1701381.
+#' @source McGrew, K. S., LaForte, E. M., & Schrank, F. A. (2014). Technical
+#'  Manual. Woodcock-Johnson IV. Rolling Meadows, IL: Riverside.
+#' @source Schrank, F. A., McGrew, K. S., & Mather, N. (2014). Woodcock-Johnson IV.
+#' Rolling Meadows, IL: Riverside.
 "MacOrtho"
