@@ -171,7 +171,7 @@
   temp_i <- NULL
 
   for (ii in seq_along(x)) {
-    if (abs(x[ii]) >= r_red) {
+    if (abs(x[ii]) > r_red) {
       temp_i <- c(temp_i, crayon::red(.numformat(round(x[ii], digits = digits),
                                                       digits = digits,
                                                       print_zero = TRUE)))
