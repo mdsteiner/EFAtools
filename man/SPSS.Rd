@@ -4,7 +4,17 @@
 \name{SPSS}
 \alias{SPSS}
 \title{SPSS}
-\format{An object of class \code{list} of length 5.}
+\format{A list of 5 containing EFA results for each of the data sets mentioned above. Each of these five entries is a list of 8, of the following structure:
+\describe{
+  \item{paf_comm}{(vector) - The final communalities obtained with the FACTOR algorithm with PAF and no rotation. For details see Grieder and Grob (2019).}
+  \item{paf_load}{(matrix) - F1 to FN = unrotated factor loadings obtained with the FACTOR algorithm with PAF. Rownames are the abbreviated subtest names.}
+  \item{paf_iter}{(numeric) - Number of iterations needed for the principal axis factoring to converge.}
+  \item{var_load}{(matrix) - F1 to FN = varimax rotated factor loadings obtained with the FACTOR algorithm with PAF. Rownames are the abbreviated subtest names.}
+  \item{pro_load}{(matrix) - F1 to FN = promax rotated factor loadings obtained with the FACTOR algorithm with PAF. Rownames are the abbreviated subtest names.}
+  \item{pro_phi}{(matrix) - F1 to FN = intercorrelations of the promax rotated loadings.}
+  \item{sl}{(matrix) - g = General / second order factor of the Schmid-Leiman solution. F1 to FN  = First order factors of the Schmid-Leiman solution. h2 = Communalities of the Schmid-Leiman solution. This Schmid-Leiman solution was found using the SPSS Syntax provided by Wolff and Preising (2005).}
+  \item{L2}{(matrix) - Second order loadings used for the Schmid-Leiman transformation. This Schmid-Leiman solution was found using the SPSS Syntax provided by Wolff and Preising (2005).}
+ }}
 \source{
 Grieder, S., & Steiner, M.D.(2019). Algorithmic Jingle Jungle: Comparison of Implementations of an EFA Procedure in R psych Versus SPSS, MacOrtho, and Omega. Submitted Manuscript.
 
