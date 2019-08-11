@@ -20,6 +20,8 @@
 #'   \item{case_6b}{(matrix) - 3 crossloading of .4 (One factor with 2 and one with 1 crossloading). Similar to case 10 in de Winter and Dodou (2012).}
 #'   \item{case_7}{(matrix) - Different number of indicators per factor (2, 4, and 6 respectively). Similar to cases 11/ 12 in de Winter and Dodou (2012).}
 #'   \item{case_8}{(matrix) - Random variation in loadings added, drawn from a uniform distribution between [-.2, .2]. Case 13 in de Winter and Dodou (2012).}
+#'   \item{case_9a}{(matrix) - Small number of subtests per factor, in this case 2, with different loadings within one of the factors.}
+#'   \item{case_9b}{(matrix) - Small number of subtests per factor, in this case 3, with different loadings.}
 #'   \code{phis} contains the following matrices:
 #'   \item{zero}{(matrix) - Matrix of factor intercorrelations of 0. Same intercorrelations as used in de Winter and Dodou (2012).}
 #'   \item{moderate}{(matrix) - Matrix of moderate factor intercorrelations of .3.}
