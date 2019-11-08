@@ -201,7 +201,7 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
           //  compute the eigenvalues and eigenvectors
           arma::mat xx(R.begin(),R.n_rows,R.n_cols, false);
           eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx), n_fac);
-          Lambda = flipud(eigval);
+          Lambda = arma::abs(flipud(eigval));
           V = fliplr(eigvec);
 
           if (any(Lambda < 0)) {
@@ -236,7 +236,7 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
           //  compute the eigenvalues and eigenvectors
           arma::mat xx(R.begin(),R.n_rows,R.n_cols, false);
           eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx), n_fac);
-          Lambda = flipud(eigval);
+          Lambda = arma::abs(flipud(eigval));
           V = fliplr(eigvec);
 
           // compute the loadings from the eigenvector matrix and diagonal
@@ -273,7 +273,7 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
           //  compute the eigenvalues and eigenvectors
           arma::mat xx(R.begin(),R.n_rows,R.n_cols, false);
           eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx), n_fac);
-          Lambda = flipud(eigval);
+          Lambda = arma::abs(flipud(eigval));
           V = fliplr(eigvec);
 
           // compute the loadings from the eigenvector matrix and diagonal
@@ -306,7 +306,7 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
           //  compute the eigenvalues and eigenvectors
           arma::mat xx(R.begin(),R.n_rows,R.n_cols, false);
           eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx), n_fac);
-          Lambda = flipud(eigval);
+          Lambda = arma::abs(flipud(eigval));
           V = fliplr(eigvec);
 
           // compute the loadings from the eigenvector matrix and diagonal

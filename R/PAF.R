@@ -343,7 +343,7 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
 
   if (isFALSE(use_cpp)) {
     # iterative PAF
-    while (delta > criterion){
+    while (delta > criterion && iter <= max_iter){
 
       # compute the eigenvalues and eigenvectors using the R eigen function
       eigen_list <- eigen(R)
@@ -405,17 +405,17 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
       # update old communality estimates with new ones
       h2 <- new_h2
 
-      # break if after maximum iterations there was no convergence
-      if (iter > max_iter){
-        warning("Reached maximum number of iterations without convergence.
-                Results may not be interpretable.")
-        break
-      }
-
       # incerase iterator
       iter <- iter + 1
 
     }
+
+    # break if after maximum iterations there was no convergence
+    if (iter >= max_iter){
+      warning("Reached maximum number of iterations without convergence.
+                Results may not be interpretable.")
+    }
+
   } else if (isTRUE(use_cpp)) {
 
     crit_type <- ifelse(criterion_type == "max_individual", 1, 2)
