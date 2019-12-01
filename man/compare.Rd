@@ -16,8 +16,9 @@ implementation.}
 \item{y}{matrix, dataframe, or vector. Loadings or communalities of another
 implementation to compare to x.}
 
-\item{reorder}{logical. Whether elements / columns should be reordered
-according to their colnames.}
+\item{reorder}{logical. Whether elements / columns should be reordered.
+loading matrices are reordered according to Tuckers correspondence coefficient,
+other objects according to the names.}
 
 \item{digits}{numeric. Number of decimals to print in the output (default is 4).}
 

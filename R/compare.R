@@ -9,8 +9,9 @@
 #'  implementation.
 #' @param y matrix, dataframe, or vector. Loadings or communalities of another
 #'  implementation to compare to x.
-#' @param reorder logical. Whether elements / columns should be reordered
-#'  according to their colnames.
+#' @param reorder logical. Whether elements / columns should be reordered.
+#'  loading matrices are reordered according to Tuckers correspondence coefficient,
+#'  other objects according to the names.
 #' @param digits numeric. Number of decimals to print in the output (default is 4).
 #' @param m_red numeric. Number above which the mean and median should be printed
 #'  in red (i.e., if .001 is used, the mean will be in red if it is larger than
@@ -64,9 +65,17 @@
 #' # compare the two
 #' compare(EFA_SPSS_5$unrot_loadings, EFA_psych_5$unrot_loadings,
 #'         x_labels = c("SPSS", "psych"))
-compare <- function(x, y, reorder = TRUE, digits = 4, m_red = .001,
-                    range_red = .001, round_red = 3, print_diff = TRUE,
-                    na.rm = FALSE, x_labels = c("x", "y"), plot = TRUE,
+compare <- function(x,
+                    y,
+                    reorder = TRUE,
+                    digits = 4,
+                    m_red = .001,
+                    range_red = .001,
+                    round_red = 3,
+                    print_diff = TRUE,
+                    na.rm = FALSE,
+                    x_labels = c("x", "y"),
+                    plot = TRUE,
                     plot_red = .001)  {
 
 
@@ -113,14 +122,26 @@ compare <- function(x, y, reorder = TRUE, digits = 4, m_red = .001,
 
     if (class(x) == "matrix") {
 
-      if (!is.null(colnames(x)) && !is.null(colnames(y))) {
-        ind_x <- order(colnames(x))
-        x <- x[, ind_x]
+      n_factors <- ncol(x)
 
-        ind_y <- order(colnames(y))
-        y <- y[, ind_y]
-      }
+      # get Tucker's conguence coefficients
+      congruence <- psych::factor.congruence(x, y)
 
+      # factor order for y
+      factor_order <- apply(congruence, 1, which.max)
+
+      # obtain signs to reflect signs of y if necessary
+      factor_sign <- sapply(1:n_factors, function(ll, congruence, factor_order){
+        sign(congruence[ll, factor_order[ll]])
+      }, congruence = congruence, factor_order = factor_order)
+
+      factor_sign <- rep(factor_sign, each = nrow(x))
+
+      # reorder
+      y <- y[, factor_order]
+
+      # reflect signs if necessary
+      y <- y * factor_sign
 
     } else if (class(x) == "numeric") {
 
