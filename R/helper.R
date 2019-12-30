@@ -247,6 +247,40 @@
 }
 
 
+.factor_congruence <- function(x, y, digits = 3, na.rm = TRUE) {
+
+  if (any(is.na(x) | any(is.na(y)))) {
+    warning("Some loadings were missing.")
+    if (isTRUE(na.rm)) {
+      message("Analysis is  done on complete cases")
+      if (any(is.na(x))) {
+        xc <- x[complete.cases(x), ]
+        y <- y[complete.cases(x), ]
+        x <- xc
+      }
+      if (any(is.na(y))) {
+        yc <- y[complete.cases(y), ]
+        x <- x[complete.cases(y), ]
+        y <- yc
+      }
+    }
+    else {
+      warning("Check your data or rerun with na.rm = TRUE")
+    }
+  }
+
+  nx <- dim(x)[2]
+  ny <- dim(y)[2]
+  cross <- t(y) %*% x
+  sumsx <- sqrt(1/diag(t(x) %*% x))
+  sumsy <- sqrt(1/diag(t(y) %*% y))
+  result <- matrix(rep(0, nx * ny), ncol = nx)
+  result <- round(sumsy * (cross * rep(sumsx, each = ny)),
+                  digits)
+  return(t(result))
+
+}
+
 
 .onUnload <- function (libpath) {
   library.dynam.unload("EFAdiff", libpath)

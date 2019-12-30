@@ -7,10 +7,21 @@
 Grieder, S., & Steiner, M.D.(2019). Algorithmic Jingle Jungle: Comparison of Implementations of an EFA Procedure in R psych Versus SPSS, MacOrtho, and Omega. Submitted Manuscript.
 }
 \usage{
-PAF(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
-  type = "GS", init_comm = NULL, criterion = NULL,
-  criterion_type = NULL, abs_eigen = NULL, signed_loadings = TRUE,
-  use = "pairwise.complete.obs", use_cpp = NULL)
+PAF(
+  x,
+  n_factors,
+  cors = TRUE,
+  N = NA,
+  max_iter = NULL,
+  type = "GS",
+  init_comm = NULL,
+  criterion = NULL,
+  criterion_type = NULL,
+  abs_eigen = NULL,
+  signed_loadings = TRUE,
+  use = "pairwise.complete.obs",
+  use_cpp = NULL
+)
 }
 \arguments{
 \item{x}{data.frame or matrix. Dataframe or matrix of raw data or matrix with

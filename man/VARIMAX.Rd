@@ -4,8 +4,7 @@
 \alias{VARIMAX}
 \title{Varimax rotation}
 \usage{
-VARIMAX(x, type = "GS", kaiser = TRUE, precision = NULL,
-  order_type = NULL)
+VARIMAX(x, type = "GS", kaiser = TRUE, precision = NULL, order_type = NULL)
 }
 \arguments{
 \item{x}{matrix or class \code{\link{PAF}} object. Either a matrix containing

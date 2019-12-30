@@ -9,12 +9,27 @@ Hendrickson, A. E., & White, P. O. (1964). Promax: A quick method for rotation t
 Grieder, S., & Steiner, M.D.(2019). Algorithmic Jingle Jungle: Comparison of Implementations of an EFA Procedure in R psych Versus SPSS, MacOrtho, and Omega. Submitted Manuscript.
 }
 \usage{
-EFA(x, n_factors, cors = TRUE, N = NA, rotation = "none",
-  type = "GS", max_iter = NULL, init_comm = NULL, criterion = NULL,
-  criterion_type = NULL, abs_eigen = NULL, signed_loadings = TRUE,
-  use = "pairwise.complete.obs", use_cpp = NULL, k = NULL,
-  kaiser = TRUE, P_type = NULL, precision = NULL,
-  order_type = NULL)
+EFA(
+  x,
+  n_factors,
+  cors = TRUE,
+  N = NA,
+  rotation = "none",
+  type = "GS",
+  max_iter = NULL,
+  init_comm = NULL,
+  criterion = NULL,
+  criterion_type = NULL,
+  abs_eigen = NULL,
+  signed_loadings = TRUE,
+  use = "pairwise.complete.obs",
+  use_cpp = NULL,
+  k = NULL,
+  kaiser = TRUE,
+  P_type = NULL,
+  precision = NULL,
+  order_type = NULL
+)
 }
 \arguments{
 \item{x}{data.frame or matrix. Dataframe or matrix of raw data or matrix with

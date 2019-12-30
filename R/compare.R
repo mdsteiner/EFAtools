@@ -10,7 +10,7 @@
 #' @param y matrix, dataframe, or vector. Loadings or communalities of another
 #'  implementation to compare to x.
 #' @param reorder logical. Whether elements / columns should be reordered.
-#'  loading matrices are reordered according to Tuckers correspondence coefficient,
+#'  (loading) matrices are reordered according to Tuckers correspondence coefficient,
 #'  other objects according to the names.
 #' @param digits numeric. Number of decimals to print in the output (default is 4).
 #' @param m_red numeric. Number above which the mean and median should be printed
@@ -125,7 +125,7 @@ compare <- function(x,
       n_factors <- ncol(x)
 
       # get Tucker's conguence coefficients
-      congruence <- psych::factor.congruence(x, y)
+      congruence <- .factor_congruence(x, y)
 
       # factor order for y
       factor_order <- apply(congruence, 1, which.max)

@@ -4,10 +4,20 @@
 \alias{OMEGA}
 \title{MacDonald's omega}
 \usage{
-OMEGA(model = NULL, var_names = NULL, fac_names = NULL,
-  factor_corres = NULL, g_load = NULL, s_load = NULL, u2 = NULL,
-  Phi = NULL, pattern = NULL, cormat = NULL, variance = NULL,
-  type = "GS")
+OMEGA(
+  model = NULL,
+  var_names = NULL,
+  fac_names = NULL,
+  factor_corres = NULL,
+  g_load = NULL,
+  s_load = NULL,
+  u2 = NULL,
+  Phi = NULL,
+  pattern = NULL,
+  cormat = NULL,
+  variance = NULL,
+  type = "GS"
+)
 }
 \arguments{
 \item{model}{class \code{\link{SL}}, class \code{\link{schmid}}, or class

@@ -4,8 +4,15 @@
 \alias{PROMAX}
 \title{Promax rotation}
 \usage{
-PROMAX(x, type = "GS", kaiser = TRUE, P_type = NULL,
-  precision = NULL, order_type = NULL, k = NULL)
+PROMAX(
+  x,
+  type = "GS",
+  kaiser = TRUE,
+  P_type = NULL,
+  precision = NULL,
+  order_type = NULL,
+  k = NULL
+)
 }
 \arguments{
 \item{x}{matrix or class \code{\link{PAF}} object. Either a matrix containing

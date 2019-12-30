@@ -4,10 +4,20 @@
 \alias{compare}
 \title{Compare two vectors or matrices (communalities or loadings)}
 \usage{
-compare(x, y, reorder = TRUE, digits = 4, m_red = 0.001,
-  range_red = 0.001, round_red = 3, print_diff = TRUE,
-  na.rm = FALSE, x_labels = c("x", "y"), plot = TRUE,
-  plot_red = 0.001)
+compare(
+  x,
+  y,
+  reorder = TRUE,
+  digits = 4,
+  m_red = 0.001,
+  range_red = 0.001,
+  round_red = 3,
+  print_diff = TRUE,
+  na.rm = FALSE,
+  x_labels = c("x", "y"),
+  plot = TRUE,
+  plot_red = 0.001
+)
 }
 \arguments{
 \item{x}{matrix, dataframe, or vector. Loadings or communalities of one
@@ -17,7 +27,7 @@ implementation.}
 implementation to compare to x.}
 
 \item{reorder}{logical. Whether elements / columns should be reordered.
-loading matrices are reordered according to Tuckers correspondence coefficient,
+(loading) matrices are reordered according to Tuckers correspondence coefficient,
 other objects according to the names.}
 
 \item{digits}{numeric. Number of decimals to print in the output (default is 4).}
