@@ -78,6 +78,8 @@ A list of class COMPARE containing summary statistics on the differences
  normal double, max_dec will be three.}
 \item{are_equal}{The maximal number of decimals to which x and y can be rounded
  and are still equal.}
+\item{diff_corres}{The number of differing variable to factor correspondences
+ between x and y.}
 \item{ctrl}{List of control settings needed for the print method print.COMPARE.}
 }
 \description{

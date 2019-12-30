@@ -1,6 +1,6 @@
 Package: EFAdiff
 Title: Implementation of PAF, promax, and Schmid Leiman transformation to investigate differences between R psych and SPSS
-Version: 0.0.12
+Version: 0.0.13
 Authors@R: c(person("Markus", "Steiner", role = c("aut", "cre"), email = "markus.d.steiner@gmail.com"),
              person("Silvia", "Grieder", role = "aut", email = "silvia.grieder@unibas.ch"))
 Description: Has functions to implement an exploratory factor analysis with principal axis factoring, promax rotation, Schmid Leiman transformation and omega calculation. The functions can return results as obtained by R psych and SPSS. This can be used to investigate where the implementations differ.

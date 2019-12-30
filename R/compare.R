@@ -51,6 +51,8 @@
 #'  normal double, max_dec will be three.}
 #' \item{are_equal}{The maximal number of decimals to which x and y can be rounded
 #'  and are still equal.}
+#' \item{diff_corres}{The number of differing variable to factor correspondences
+#'  between x and y.}
 #' \item{ctrl}{List of control settings needed for the print method print.COMPARE.}
 #'
 #' @export
@@ -143,6 +145,16 @@ compare <- function(x,
       # reflect signs if necessary
       y <- y * factor_sign
 
+      # factor correspondences
+      # factor correspondence x
+      x_corres <- apply(x, 1, function(mm) which.max(abs(mm)))
+
+      # factor correspondence y
+      y_corres <- apply(y, 1, function(mm) which.max(abs(mm)))
+
+      # different factor correspondences
+      diff_corres <- sum(x_corres != y_corres)
+
     } else if (class(x) == "numeric") {
 
       if (!is.null(names(x)) && !is.null(names(y))) {
@@ -200,6 +212,7 @@ compare <- function(x,
     max_abs_diff = max_abs_diff,
     max_dec = max_dec,
     are_equal = are_equal,
+    diff_corres = diff_corres,
     ctrl = ctrl
   )
 
