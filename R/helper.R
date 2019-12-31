@@ -254,17 +254,16 @@
     if (isTRUE(na.rm)) {
       message("Analysis is  done on complete cases")
       if (any(is.na(x))) {
-        xc <- x[complete.cases(x), ]
-        y <- y[complete.cases(x), ]
+        xc <- x[stats::complete.cases(x), ]
+        y <- y[stats::complete.cases(x), ]
         x <- xc
       }
       if (any(is.na(y))) {
-        yc <- y[complete.cases(y), ]
-        x <- x[complete.cases(y), ]
+        yc <- y[stats::complete.cases(y), ]
+        x <- x[stats::complete.cases(y), ]
         y <- yc
       }
-    }
-    else {
+    } else {
       warning("Check your data or rerun with na.rm = TRUE")
     }
   }
