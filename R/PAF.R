@@ -64,10 +64,10 @@
 #' abs_eigen = FALSE, use_cpp = TRUE}.
 #' \code{type = "psych"} will use the following argument specification:
 #' \code{init_comm = "smc", criterion = .001, criterion_type = "sums",
-#' abs_eigen = FALSE, use_cpp = FALSE}.
+#' abs_eigen = FALSE, use_cpp = TRUE}.
 #' \code{type = "SPSS"} will use the following argument specification:
 #' \code{init_comm = "smc", criterion = .001, criterion_type = "max_individual",
-#' abs_eigen = TRUE, use_cpp = FALSE}.
+#' abs_eigen = TRUE, use_cpp = TRUE}.
 #'
 #' @return A list of class PAF containing the following
 #' \item{orig_R}{Original correlation matrix.}
@@ -224,7 +224,7 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
     }
 
     if (is.null(use_cpp)) {
-      use_cpp <- FALSE
+      use_cpp <- TRUE
     } else {
       warning("Type and use_cpp is specified. use_cpp is used with value '",
               use_cpp, "'. Results may differ from the specified type")
@@ -272,7 +272,7 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
     }
 
     if (is.null(use_cpp)) {
-      use_cpp <- FALSE
+      use_cpp <- TRUE
     } else {
       warning("Type and use_cpp is specified. use_cpp is used with value '",
               use_cpp, "'. Results may differ from the specified type")

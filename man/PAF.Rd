@@ -118,10 +118,10 @@ Values of \code{init_comm}, \code{criterion}, \code{criterion_type},
 abs_eigen = FALSE, use_cpp = TRUE}.
 \code{type = "psych"} will use the following argument specification:
 \code{init_comm = "smc", criterion = .001, criterion_type = "sums",
-abs_eigen = FALSE, use_cpp = FALSE}.
+abs_eigen = FALSE, use_cpp = TRUE}.
 \code{type = "SPSS"} will use the following argument specification:
 \code{init_comm = "smc", criterion = .001, criterion_type = "max_individual",
-abs_eigen = TRUE, use_cpp = FALSE}.
+abs_eigen = TRUE, use_cpp = TRUE}.
 }
 \examples{
 # call within EFA function:
