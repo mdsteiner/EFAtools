@@ -126,34 +126,38 @@ compare <- function(x,
 
       n_factors <- ncol(x)
 
-      # get Tucker's conguence coefficients
-      congruence <- .factor_congruence(x, y)
+      if (ncol(x) > 1 && ncol(y) > 1) {
 
-      # factor order for y
-      factor_order <- apply(congruence, 1, which.max)
+        # get Tucker's conguence coefficients
+        congruence <- .factor_congruence(x, y)
 
-      # obtain signs to reflect signs of y if necessary
-      factor_sign <- sapply(1:n_factors, function(ll, congruence, factor_order){
-        sign(congruence[ll, factor_order[ll]])
-      }, congruence = congruence, factor_order = factor_order)
+        # factor order for y
+        factor_order <- apply(congruence, 1, which.max)
 
-      factor_sign <- rep(factor_sign, each = nrow(x))
+        # obtain signs to reflect signs of y if necessary
+        factor_sign <- sapply(1:n_factors, function(ll, congruence, factor_order){
+          sign(congruence[ll, factor_order[ll]])
+        }, congruence = congruence, factor_order = factor_order)
 
-      # reorder
-      y <- y[, factor_order]
+        factor_sign <- rep(factor_sign, each = nrow(x))
 
-      # reflect signs if necessary
-      y <- y * factor_sign
+        # reorder
+        y <- y[, factor_order]
 
-      # factor correspondences
-      # factor correspondence x
-      x_corres <- apply(x, 1, function(mm) which.max(abs(mm)))
+        # reflect signs if necessary
+        y <- y * factor_sign
 
-      # factor correspondence y
-      y_corres <- apply(y, 1, function(mm) which.max(abs(mm)))
+        # factor correspondences
+        # factor correspondence x
+        x_corres <- apply(x, 1, function(mm) which.max(abs(mm)))
 
-      # different factor correspondences
-      diff_corres <- sum(x_corres != y_corres)
+        # factor correspondence y
+        y_corres <- apply(y, 1, function(mm) which.max(abs(mm)))
+
+        # different factor correspondences
+        diff_corres <- sum(x_corres != y_corres)
+
+      }
 
     } else if (class(x) == "numeric") {
 
