@@ -157,6 +157,9 @@ compare <- function(x,
         # different factor correspondences
         diff_corres <- sum(x_corres != y_corres)
 
+      } else if (ncol(x) == 1 && ncol(y) == 1) {
+        # different factor correspondences
+        diff_corres <- 0
       }
 
     } else if (class(x) == "numeric") {
