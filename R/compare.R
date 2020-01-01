@@ -132,7 +132,7 @@ compare <- function(x,
         congruence <- .factor_congruence(x, y)
 
         # factor order for y
-        factor_order <- apply(congruence, 1, which.max)
+        factor_order <- apply(abs(congruence), 1, which.max)
 
         # obtain signs to reflect signs of y if necessary
         factor_sign <- sapply(1:n_factors, function(ll, congruence, factor_order){
