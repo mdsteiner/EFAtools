@@ -4,7 +4,7 @@
 \alias{paf_iter}
 \title{Perform the iterative PAF procedure}
 \usage{
-paf_iter(h2, criterion, R, n_fac, abs_eig, crit_type, max_iter)
+paf_iter(h2, criterion, R, n_fac, abs_eig, crit_type, max_iter, idx)
 }
 \arguments{
 \item{h2}{numeric. The initial communality estimates.}
@@ -20,6 +20,8 @@ paf_iter(h2, criterion, R, n_fac, abs_eig, crit_type, max_iter)
 \item{crit_type}{numeric. Whether maximum absolute differences (crit_type = 1), or sum of differences (crit_type = 2) should be used}
 
 \item{max_iter}{numeric. The number of iterations after which to end the procedure if no convergence has been reached by then.}
+
+\item{idx}{logical. A vector of length n_fac with TRUEs. Needed for indexing.}
 }
 \description{
 Function called from within PAF so usually no call to this is needed by the user.

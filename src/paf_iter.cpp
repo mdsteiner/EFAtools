@@ -16,11 +16,12 @@ using namespace arma;
 //' @param abs_eig logical. Whether absolute eigenvalues should be used to compute the loadings.
 //' @param crit_type numeric. Whether maximum absolute differences (crit_type = 1), or sum of differences (crit_type = 2) should be used
 //' @param max_iter numeric. The number of iterations after which to end the procedure if no convergence has been reached by then.
+//' @param idx logical. A vector of length n_fac with TRUEs. Needed for indexing.
 //' @export
 // [[Rcpp::export]]
 Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
                     const int n_fac, bool abs_eig, int crit_type,
-                    int max_iter) {
+                    int max_iter, arma::uvec idx) {
 
   int iter = 1;
   double delta = 1.0;
@@ -42,9 +43,11 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
         while (delta > criterion & iter <= max_iter) {
           //  compute the eigenvalues and eigenvectors
           arma::mat xx(R.begin(),R.n_rows,R.n_cols, false);
-          eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx), n_fac);
+          eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx),  R.n_rows - 1);
           Lambda = flipud(eigval);
+          Lambda = Lambda.elem(arma::find(idx));
           V = fliplr(eigvec);
+          V = V.cols(arma::find(idx));
 
           if (any(Lambda < 0)) {
             stop("Negative Eigenvalues detected; cannot compute communality estimates. Try again with init_comm = 'unity' or 'mac'");
@@ -77,9 +80,11 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
         while (delta > criterion & iter <= max_iter) {
           //  compute the eigenvalues and eigenvectors
           arma::mat xx(R.begin(),R.n_rows,R.n_cols, false);
-          eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx), n_fac);
+          eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx),  R.n_rows - 1);
           Lambda = flipud(eigval);
+          Lambda = Lambda.elem(arma::find(idx));
           V = fliplr(eigvec);
+          V = V.cols(arma::find(idx));
 
           if (any(Lambda < 0)) {
             stop("Negative Eigenvalues detected; cannot compute communality estimates. Try again with init_comm = 'unity' or 'mac'");
@@ -118,9 +123,11 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
         while (delta > criterion & iter <= max_iter) {
           //  compute the eigenvalues and eigenvectors
           arma::mat xx(R.begin(),R.n_rows,R.n_cols, false);
-          eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx), n_fac);
+          eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx),  R.n_rows - 1);
           Lambda = flipud(eigval);
+          Lambda = Lambda.elem(arma::find(idx));
           V = fliplr(eigvec);
+          V = V.cols(arma::find(idx));
 
           if (any(Lambda < 0)) {
             stop("Negative Eigenvalues detected; cannot compute communality estimates. Try again with init_comm = 'unity' or 'mac'");
@@ -155,9 +162,11 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
         while (delta > criterion & iter <= max_iter) {
           //  compute the eigenvalues and eigenvectors
           arma::mat xx(R.begin(),R.n_rows,R.n_cols, false);
-          eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx), n_fac);
+          eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx),  R.n_rows - 1);
           Lambda = flipud(eigval);
+          Lambda = Lambda.elem(arma::find(idx));
           V = fliplr(eigvec);
+          V = V.cols(arma::find(idx));
 
           if (any(Lambda < 0)) {
             stop("Negative Eigenvalues detected; cannot compute communality estimates. Try again with init_comm = 'unity' or 'mac'");
@@ -200,13 +209,11 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
         while (delta > criterion & iter <= max_iter) {
           //  compute the eigenvalues and eigenvectors
           arma::mat xx(R.begin(),R.n_rows,R.n_cols, false);
-          eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx), n_fac);
+          eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx),  R.n_rows - 1);
           Lambda = arma::abs(flipud(eigval));
+          Lambda = Lambda.elem(arma::find(idx));
           V = fliplr(eigvec);
-
-          if (any(Lambda < 0)) {
-            stop("Negative Eigenvalues detected; cannot compute communality estimates. Try again with init_comm = 'unity' or 'mac'");
-          }
+          V = V.cols(arma::find(idx));
 
           // compute the loadings from the eigenvector matrix and diagonal
           // eigenvalue matrix
@@ -235,9 +242,11 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
         while (delta > criterion & iter <= max_iter) {
           //  compute the eigenvalues and eigenvectors
           arma::mat xx(R.begin(),R.n_rows,R.n_cols, false);
-          eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx), n_fac);
+          eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx),  R.n_rows - 1);
           Lambda = arma::abs(flipud(eigval));
+          Lambda = Lambda.elem(arma::find(idx));
           V = fliplr(eigvec);
+          V = V.cols(arma::find(idx));
 
           // compute the loadings from the eigenvector matrix and diagonal
           // eigenvalue matrix
@@ -272,9 +281,11 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
         while (delta > criterion & iter <= max_iter) {
           //  compute the eigenvalues and eigenvectors
           arma::mat xx(R.begin(),R.n_rows,R.n_cols, false);
-          eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx), n_fac);
+          eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx),  R.n_rows - 1);
           Lambda = arma::abs(flipud(eigval));
+          Lambda = Lambda.elem(arma::find(idx));
           V = fliplr(eigvec);
+          V = V.cols(arma::find(idx));
 
           // compute the loadings from the eigenvector matrix and diagonal
           // eigenvalue matrix
@@ -305,9 +316,11 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
         while (delta > criterion & iter <= max_iter) {
           //  compute the eigenvalues and eigenvectors
           arma::mat xx(R.begin(),R.n_rows,R.n_cols, false);
-          eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx), n_fac);
+          eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx),  R.n_rows - 1);
           Lambda = arma::abs(flipud(eigval));
+          Lambda = Lambda.elem(arma::find(idx));
           V = fliplr(eigvec);
+          V = V.cols(arma::find(idx));
 
           // compute the loadings from the eigenvector matrix and diagonal
           // eigenvalue matrix

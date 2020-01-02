@@ -7,8 +7,8 @@
 using namespace Rcpp;
 
 // paf_iter
-Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R, const int n_fac, bool abs_eig, int crit_type, int max_iter);
-RcppExport SEXP _EFAdiff_paf_iter(SEXP h2SEXP, SEXP criterionSEXP, SEXP RSEXP, SEXP n_facSEXP, SEXP abs_eigSEXP, SEXP crit_typeSEXP, SEXP max_iterSEXP) {
+Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R, const int n_fac, bool abs_eig, int crit_type, int max_iter, arma::uvec idx);
+RcppExport SEXP _EFAdiff_paf_iter(SEXP h2SEXP, SEXP criterionSEXP, SEXP RSEXP, SEXP n_facSEXP, SEXP abs_eigSEXP, SEXP crit_typeSEXP, SEXP max_iterSEXP, SEXP idxSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -19,13 +19,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type abs_eig(abs_eigSEXP);
     Rcpp::traits::input_parameter< int >::type crit_type(crit_typeSEXP);
     Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
-    rcpp_result_gen = Rcpp::wrap(paf_iter(h2, criterion, R, n_fac, abs_eig, crit_type, max_iter));
+    Rcpp::traits::input_parameter< arma::uvec >::type idx(idxSEXP);
+    rcpp_result_gen = Rcpp::wrap(paf_iter(h2, criterion, R, n_fac, abs_eig, crit_type, max_iter, idx));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_EFAdiff_paf_iter", (DL_FUNC) &_EFAdiff_paf_iter, 7},
+    {"_EFAdiff_paf_iter", (DL_FUNC) &_EFAdiff_paf_iter, 8},
     {NULL, NULL, 0}
 };
 

@@ -13,8 +13,9 @@
 #' @param abs_eig logical. Whether absolute eigenvalues should be used to compute the loadings.
 #' @param crit_type numeric. Whether maximum absolute differences (crit_type = 1), or sum of differences (crit_type = 2) should be used
 #' @param max_iter numeric. The number of iterations after which to end the procedure if no convergence has been reached by then.
+#' @param idx logical. A vector of length n_fac with TRUEs. Needed for indexing.
 #' @export
-paf_iter <- function(h2, criterion, R, n_fac, abs_eig, crit_type, max_iter) {
-    .Call(`_EFAdiff_paf_iter`, h2, criterion, R, n_fac, abs_eig, crit_type, max_iter)
+paf_iter <- function(h2, criterion, R, n_fac, abs_eig, crit_type, max_iter, idx) {
+    .Call(`_EFAdiff_paf_iter`, h2, criterion, R, n_fac, abs_eig, crit_type, max_iter, idx)
 }
 
