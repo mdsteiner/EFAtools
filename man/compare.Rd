@@ -7,7 +7,9 @@
 compare(
   x,
   y,
-  reorder = TRUE,
+  reorder = c("congruence", "names", FALSE),
+  corres = TRUE,
+  thresh = 0.3,
   digits = 4,
   m_red = 0.001,
   range_red = 0.001,
@@ -29,6 +31,8 @@ implementation to compare to x.}
 \item{reorder}{logical. Whether elements / columns should be reordered.
 (loading) matrices are reordered according to Tuckers correspondence coefficient,
 other objects according to the names.}
+
+\item{thresh}{numeric. The threshold to classify a pattern coefficient as substantial. Default is .3.}
 
 \item{digits}{numeric. Number of decimals to print in the output (default is 4).}
 
@@ -76,8 +80,12 @@ A list of class COMPARE containing summary statistics on the differences
 \item{max_dec}{The maximum number of decimals to which a comparison makes sense.
  For example, if x contains only values up to the third decimals, and y is a
  normal double, max_dec will be three.}
-\item{are_equal}{The maximal number of decimals to which x and y can be rounded
- and are still equal.}
+\item{are_equal}{The maximal number of decimals to which all elements of x and y
+ are equal.}
+\item{diff_corres}{The number of differing variable to factor correspondences
+ between x and y, when only the highest loading is considered.}
+\item{diff_corres_cross}{The number of differing variable to factor correspondences
+ between x and y when all loadings \code{>= thresh} are considered.}
 \item{diff_corres}{The number of differing variable to factor correspondences
  between x and y.}
 \item{ctrl}{List of control settings needed for the print method print.COMPARE.}

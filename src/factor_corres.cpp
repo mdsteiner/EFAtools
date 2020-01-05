@@ -15,8 +15,8 @@ Rcpp::List factor_corres(NumericMatrix x,
                          NumericMatrix y,
                          double thresh = 0.3) {
 
-  NumericVector x_corres;
-  NumericVector y_corres;
+  IntegerVector x_corres;
+  IntegerVector y_corres;
   int diff_corres;
 
   StringVector x_corres_cross;
@@ -27,24 +27,60 @@ Rcpp::List factor_corres(NumericMatrix x,
   Rcpp::CharacterVector y_pos;
   Rcpp::LogicalVector x_log;
   Rcpp::LogicalVector y_log;
-  char temp;
+  int temp;
 
   for (int i = 0; i<x.nrow(); i++) {
 
-    x_corres.push_back(which_max(abs(x.row(i))));
-    y_corres.push_back(which_max(abs(y.row(i))));
+    x_pos.erase(0, x_pos.size());
+    y_pos.erase(0, y_pos.size());
 
-    x_log = abs(x.row(i)) > thresh;
-    y_log = abs(y.row(i)) > thresh;
-    for (int jj = 0; jj<x_log.size(); jj++) {
-      if (x_log[jj]) {
-        temp = (i + 1) + '0';
-        x_pos.push_back(temp);
+    x_log = abs(x.row(i)) >= thresh;
+    y_log = abs(y.row(i)) >= thresh;
+
+    if (sum(x_log) > 0 && sum(y_log) > 0) {
+
+      x_corres.push_back(which_max(abs(x.row(i))));
+      y_corres.push_back(which_max(abs(y.row(i))));
+
+      for (int jj = 0; jj<x_log.size(); jj++) {
+        if (x_log[jj]) {
+          temp = (jj + 1);
+          x_pos.push_back((char)temp);
+        }
+        if (y_log[jj]) {
+          temp = (jj + 1);
+          y_pos.push_back((char)temp);
+        }
       }
-      if (y_log[jj]) {
-        temp = (i + 1) + '0';
-        y_pos.push_back(temp);
+    } else if (sum(x_log) > 0) {
+
+      x_corres.push_back(which_max(abs(x.row(i))));
+      y_corres.push_back(0);
+
+      for (int jj = 0; jj<x_log.size(); jj++) {
+        if (x_log[jj]) {
+          temp = (i + 1);
+          x_pos.push_back((char)temp);
+        }
       }
+      y_pos.push_back('0');
+    } else if (sum(y_log) > 0) {
+
+      x_corres.push_back(0);
+      y_corres.push_back(which_max(abs(y.row(i))));
+
+      for (int jj = 0; jj<y_log.size(); jj++) {
+        if (x_log[jj]) {
+          temp = (i + 1);
+          y_pos.push_back((char)temp);
+        }
+      }
+      x_pos.push_back('0');
+    } else {
+      x_corres.push_back(0);
+      y_corres.push_back(0);
+      x_pos.push_back('0');
+      y_pos.push_back('0');
     }
 
     x_corres_cross.push_back(collapse(x_pos));
