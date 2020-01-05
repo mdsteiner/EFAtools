@@ -6,6 +6,19 @@
 
 using namespace Rcpp;
 
+// factor_corres
+Rcpp::List factor_corres(NumericMatrix x, NumericMatrix y, double thresh);
+RcppExport SEXP _EFAdiff_factor_corres(SEXP xSEXP, SEXP ySEXP, SEXP threshSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type y(ySEXP);
+    Rcpp::traits::input_parameter< double >::type thresh(threshSEXP);
+    rcpp_result_gen = Rcpp::wrap(factor_corres(x, y, thresh));
+    return rcpp_result_gen;
+END_RCPP
+}
 // paf_iter
 Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R, const int n_fac, bool abs_eig, int crit_type, int max_iter, arma::uvec idx);
 RcppExport SEXP _EFAdiff_paf_iter(SEXP h2SEXP, SEXP criterionSEXP, SEXP RSEXP, SEXP n_facSEXP, SEXP abs_eigSEXP, SEXP crit_typeSEXP, SEXP max_iterSEXP, SEXP idxSEXP) {
@@ -26,6 +39,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_EFAdiff_factor_corres", (DL_FUNC) &_EFAdiff_factor_corres, 3},
     {"_EFAdiff_paf_iter", (DL_FUNC) &_EFAdiff_paf_iter, 8},
     {NULL, NULL, 0}
 };

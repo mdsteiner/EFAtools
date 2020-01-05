@@ -12,6 +12,7 @@
 #' @param reorder logical. Whether elements / columns should be reordered.
 #'  (loading) matrices are reordered according to Tuckers correspondence coefficient,
 #'  other objects according to the names.
+#' @param thresh numeric. The threshold to classify a pattern coefficient as substantial. Default is .3.
 #' @param digits numeric. Number of decimals to print in the output (default is 4).
 #' @param m_red numeric. Number above which the mean and median should be printed
 #'  in red (i.e., if .001 is used, the mean will be in red if it is larger than
@@ -49,8 +50,12 @@
 #' \item{max_dec}{The maximum number of decimals to which a comparison makes sense.
 #'  For example, if x contains only values up to the third decimals, and y is a
 #'  normal double, max_dec will be three.}
-#' \item{are_equal}{The maximal number of decimals to which x and y can be rounded
-#'  and are still equal.}
+#' \item{are_equal}{The maximal number of decimals to which all elements of x and y
+#'  are equal.}
+#' \item{diff_corres}{The number of differing variable to factor correspondences
+#'  between x and y, when only the highest loading is considered.}
+#' \item{diff_corres_cross}{The number of differing variable to factor correspondences
+#'  between x and y when all loadings \code{>= thresh} are considered.}
 #' \item{diff_corres}{The number of differing variable to factor correspondences
 #'  between x and y.}
 #' \item{ctrl}{List of control settings needed for the print method print.COMPARE.}
@@ -69,7 +74,9 @@
 #'         x_labels = c("SPSS", "psych"))
 compare <- function(x,
                     y,
-                    reorder = TRUE,
+                    reorder = c("congruence", "names", FALSE),
+                    corres = TRUE,
+                    thresh = .3,
                     digits = 4,
                     m_red = .001,
                     range_red = .001,
@@ -80,6 +87,7 @@ compare <- function(x,
                     plot = TRUE,
                     plot_red = .001)  {
 
+  reorder <- match.arg(reorder)
 
   # reclass data.frames and tibbles to matrices so the stats functions afterwards
   # work
@@ -120,51 +128,45 @@ compare <- function(x,
 
   }
 
-  if (isTRUE(reorder)) {
+  if (class(x) == "matrix") {
 
-    if (class(x) == "matrix") {
+    n_factors <- ncol(x)
 
-      n_factors <- ncol(x)
+    if (!isFALSE(reorder) && n_factors > 1) {
+      # get Tucker's conguence coefficients
+      congruence <- .factor_congruence(x, y)
 
-      if (ncol(x) > 1 && ncol(y) > 1) {
+      # factor order for y
+      factor_order <- apply(abs(congruence), 1, which.max)
 
-        # get Tucker's conguence coefficients
-        congruence <- .factor_congruence(x, y)
+      # obtain signs to reflect signs of y if necessary
+      factor_sign <- sapply(1:n_factors, function(ll, congruence, factor_order){
+        sign(congruence[ll, factor_order[ll]])
+      }, congruence = congruence, factor_order = factor_order)
 
-        # factor order for y
-        factor_order <- apply(abs(congruence), 1, which.max)
+      factor_sign <- rep(factor_sign, each = nrow(x))
 
-        # obtain signs to reflect signs of y if necessary
-        factor_sign <- sapply(1:n_factors, function(ll, congruence, factor_order){
-          sign(congruence[ll, factor_order[ll]])
-        }, congruence = congruence, factor_order = factor_order)
+      # reorder
+      y <- y[, factor_order]
 
-        factor_sign <- rep(factor_sign, each = nrow(x))
+      # reflect signs if necessary
+      y <- y * factor_sign
+    }
 
-        # reorder
-        y <- y[, factor_order]
+    if (n_factors > 1 && isTRUE(corres)) {
+      # factor correspondences
+      corres_list <- factor_corres(x, y, thresh = thresh)
+      diff_corres <- corres_list$diff_corres
+      diff_corres_cross <- corres_list$diff_corres_cross
+    } else {
+      diff_corres <- 0
+      diff_corres_cross <- 0
+    }
 
-        # reflect signs if necessary
-        y <- y * factor_sign
 
-        # factor correspondences
-        # factor correspondence x
-        x_corres <- apply(x, 1, function(mm) which.max(abs(mm)))
+  } else if (class(x) == "numeric") {
 
-        # factor correspondence y
-        y_corres <- apply(y, 1, function(mm) which.max(abs(mm)))
-
-        # different factor correspondences
-        diff_corres <- sum(x_corres != y_corres)
-
-      } else if (ncol(x) == 1 && ncol(y) == 1) {
-        # different factor correspondences
-        diff_corres <- 0
-      }
-
-    } else if (class(x) == "numeric") {
-
-      if (!is.null(names(x)) && !is.null(names(y))) {
+      if (!isFALSE(reorder) && !is.null(names(x)) && !is.null(names(y))) {
         ind_x <- order(names(x))
         x <- x[ind_x]
 
@@ -172,25 +174,39 @@ compare <- function(x,
         y <- y[ind_y]
       }
 
-    }
+      diff_corres <- 0
+      diff_corres_cross <- 0
 
+      g <- NA
 
   }
 
   # compute differences and statistics
   diff <- x - y
-  mean_abs_diff <- round(mean(abs(diff), na.rm = na.rm), digits = digits)
-  median_abs_diff <- round(stats::median(abs(diff), na.rm = na.rm),
-                           digits = digits)
 
-  min_abs_diff <- round(min(abs(diff), na.rm = na.rm), digits = digits)
-  max_abs_diff <- round(max(abs(diff), na.rm = na.rm), digits = digits)
+  if(class(x) == "matrix") {
+    g <- sqrt(sum(diag(t(diff) %*% (diff))) / prod(dim(x)))
+  } else {
+    g <- sqrt((sum(diff ** 2) / length(diff)))
+  }
+
+
+  mean_abs_diff <- mean(abs(diff), na.rm = na.rm)
+  median_abs_diff <- stats::median(abs(diff), na.rm = na.rm)
+
+  min_abs_diff <- min(abs(diff), na.rm = na.rm)
+  max_abs_diff <- max(abs(diff), na.rm = na.rm)
 
   are_equal_v <- c()
 
   max_dec <- min(c(.decimals(x), .decimals(y)))
+
+  class(x) <- "character"
+  class(y) <- "character"
+  x <- gsub("-|\\.", "", x)
+  y <- gsub("-|\\.", "", y)
   for (ii in 1:max_dec) {
-    are_equal_v[ii] <- all(round(x, digits = ii) == round(y, digits = ii))
+    are_equal_v[ii] <- all(substr(x, 1, ii) == substr(y, 1, ii))
   }
 
   are_equal <- utils::tail(which(are_equal_v), 1)
@@ -220,6 +236,8 @@ compare <- function(x,
     max_dec = max_dec,
     are_equal = are_equal,
     diff_corres = diff_corres,
+    diff_corres_cross = diff_corres_cross,
+    g = g,
     ctrl = ctrl
   )
 
