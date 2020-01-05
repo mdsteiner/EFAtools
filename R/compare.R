@@ -205,14 +205,14 @@ compare <- function(x,
   class(y) <- "character"
   x <- gsub("-|\\.", "", x)
   y <- gsub("-|\\.", "", y)
-  for (ii in 1:max_dec) {
+  for (ii in 1:(max_dec + 1)) {
     are_equal_v[ii] <- all(substr(x, 1, ii) == substr(y, 1, ii))
   }
 
-  are_equal <- utils::tail(which(are_equal_v), 1)
-
   if(length(are_equal) == 0){
-    are_equal <- NA
+    are_equal <- 0
+  } else {
+    are_equal <- utils::tail(which(are_equal_v), 1) - 1
   }
 
   ctrl <- list(

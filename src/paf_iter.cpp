@@ -43,7 +43,7 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
         while (delta > criterion & iter <= max_iter) {
           //  compute the eigenvalues and eigenvectors
           arma::mat xx(R.begin(),R.n_rows,R.n_cols, false);
-          eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx),  R.n_rows - 1);
+          eig_sym(eigval, eigvec, R);
           Lambda = flipud(eigval);
           Lambda = Lambda.elem(arma::find(idx));
           V = fliplr(eigvec);
@@ -80,7 +80,7 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
         while (delta > criterion & iter <= max_iter) {
           //  compute the eigenvalues and eigenvectors
           arma::mat xx(R.begin(),R.n_rows,R.n_cols, false);
-          eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx),  R.n_rows - 1);
+          eig_sym(eigval, eigvec, R);
           Lambda = flipud(eigval);
           Lambda = Lambda.elem(arma::find(idx));
           V = fliplr(eigvec);
@@ -123,7 +123,7 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
         while (delta > criterion & iter <= max_iter) {
           //  compute the eigenvalues and eigenvectors
           arma::mat xx(R.begin(),R.n_rows,R.n_cols, false);
-          eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx),  R.n_rows - 1);
+          eig_sym(eigval, eigvec, R);
           Lambda = flipud(eigval);
           Lambda = Lambda.elem(arma::find(idx));
           V = fliplr(eigvec);
@@ -162,7 +162,7 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
         while (delta > criterion & iter <= max_iter) {
           //  compute the eigenvalues and eigenvectors
           arma::mat xx(R.begin(),R.n_rows,R.n_cols, false);
-          eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx),  R.n_rows - 1);
+          eig_sym(eigval, eigvec, R);
           Lambda = flipud(eigval);
           Lambda = Lambda.elem(arma::find(idx));
           V = fliplr(eigvec);
@@ -242,7 +242,7 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
         while (delta > criterion & iter <= max_iter) {
           //  compute the eigenvalues and eigenvectors
           arma::mat xx(R.begin(),R.n_rows,R.n_cols, false);
-          eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx),  R.n_rows - 1);
+          eig_sym(eigval, eigvec, R);
           Lambda = arma::abs(flipud(eigval));
           Lambda = Lambda.elem(arma::find(idx));
           V = fliplr(eigvec);
@@ -281,7 +281,7 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
         while (delta > criterion & iter <= max_iter) {
           //  compute the eigenvalues and eigenvectors
           arma::mat xx(R.begin(),R.n_rows,R.n_cols, false);
-          eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx),  R.n_rows - 1);
+          eig_sym(eigval, eigvec, R);
           Lambda = arma::abs(flipud(eigval));
           Lambda = Lambda.elem(arma::find(idx));
           V = fliplr(eigvec);
@@ -316,7 +316,7 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
         while (delta > criterion & iter <= max_iter) {
           //  compute the eigenvalues and eigenvectors
           arma::mat xx(R.begin(),R.n_rows,R.n_cols, false);
-          eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx),  R.n_rows - 1);
+          eig_sym(eigval, eigvec, R);
           Lambda = arma::abs(flipud(eigval));
           Lambda = Lambda.elem(arma::find(idx));
           V = fliplr(eigvec);
