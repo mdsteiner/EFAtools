@@ -209,7 +209,7 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
         while (delta > criterion & iter <= max_iter) {
           //  compute the eigenvalues and eigenvectors
           arma::mat xx(R.begin(),R.n_rows,R.n_cols, false);
-          eigs_sym(eigval, eigvec, conv_to<sp_mat>::from(xx),  R.n_rows - 1);
+          eig_sym(eigval, eigvec, R);
           Lambda = arma::abs(flipud(eigval));
           Lambda = Lambda.elem(arma::find(idx));
           V = fliplr(eigvec);
@@ -217,7 +217,7 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
 
           // compute the loadings from the eigenvector matrix and diagonal
           // eigenvalue matrix
-          L = arma::abs(V) * arma::diagmat(sqrt(arma::abs(Lambda)));
+          L = V * arma::diagmat(sqrt(arma::abs(Lambda)));
 
           // get the new communality estimates from the loadings
           Lt = L * L.t();
@@ -250,7 +250,7 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
 
           // compute the loadings from the eigenvector matrix and diagonal
           // eigenvalue matrix
-          L = arma::abs(V) * arma::diagmat(sqrt(arma::abs(Lambda)));
+          L = V * arma::diagmat(sqrt(arma::abs(Lambda)));
 
           // get the new communality estimates from the loadings
           Lt = L * L.t();
