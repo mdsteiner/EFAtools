@@ -6,6 +6,19 @@
 #' Function called from within PAF so usually no call to this is needed by the user.
 #' Provides a C++ implementation of the PAF procedure
 #'
+#' @param x numeric matrix. The initial communality estimates.
+#' @param y numeric matrix. The convergence criterion to use.
+#' @param thresh numeric. The threshold to classify a pattern coefficient as substantial.
+#' @export
+factor_corres <- function(x, y, thresh = 0.3) {
+    .Call(`_EFAdiff_factor_corres`, x, y, thresh)
+}
+
+#' Perform the iterative PAF procedure
+#'
+#' Function called from within PAF so usually no call to this is needed by the user.
+#' Provides a C++ implementation of the PAF procedure
+#'
 #' @param h2 numeric. The initial communality estimates.
 #' @param criterion double. The convergence criterion to use.
 #' @param R matrix. The correlation matrix with the initial communality estimates in the diagonal.

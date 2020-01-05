@@ -324,7 +324,7 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
   }
 
   # save initial eigenvalues
-  init_eigen <- eigen(R)$values
+  init_eigen <- eigen(R, symmetric = TRUE)$values
 
   # define the number of factors m
   m <- n_factors
@@ -346,7 +346,7 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
     while (delta > criterion && iter <= max_iter){
 
       # compute the eigenvalues and eigenvectors using the R eigen function
-      eigen_list <- eigen(R)
+      eigen_list <- eigen(R, symmetric = TRUE)
 
       # for clarity, store the m eigenvalues and
       # m eigenvectors separately
@@ -492,9 +492,9 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
     h2_init = h2_init,
     h2 = h2,
     iter = iter,
-    orig_eigen = eigen(orig_R)$values,
+    orig_eigen = eigen(orig_R, symmetric = TRUE)$values,
     init_eigen = init_eigen,
-    final_eigen = eigen(R)$values,
+    final_eigen = eigen(R, symmetric = TRUE)$values,
     unrot_loadings = L,
     vars_accounted = vars_accounted,
     fit_indices = fit_ind,
