@@ -209,10 +209,12 @@ compare <- function(x,
     are_equal_v[ii] <- all(substr(x, 1, ii) == substr(y, 1, ii))
   }
 
+  are_equal <- utils::tail(which(are_equal_v), 1)
+
   if(length(are_equal) == 0){
     are_equal <- 0
   } else {
-    are_equal <- utils::tail(which(are_equal_v), 1) - 1
+     are_equal <- are_equal - 1
   }
 
   ctrl <- list(
