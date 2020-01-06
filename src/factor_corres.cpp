@@ -29,11 +29,14 @@ Rcpp::List factor_corres(NumericMatrix x,
   Rcpp::LogicalVector y_log;
   int temp;
 
+  // loop through the columns to find the corresponding factor
   for (int i = 0; i<x.nrow(); i++) {
 
+    // reset objects to be filled temporarily
     x_pos.erase(0, x_pos.size());
     y_pos.erase(0, y_pos.size());
 
+    // find salient loadings
     x_log = abs(x.row(i)) >= thresh;
     y_log = abs(y.row(i)) >= thresh;
 
