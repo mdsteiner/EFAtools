@@ -4,7 +4,7 @@ Version: 0.0.22
 Authors@R: c(person("Markus", "Steiner", role = c("aut", "cre"), email = "markus.d.steiner@gmail.com"),
              person("Silvia", "Grieder", role = "aut", email = "silvia.grieder@unibas.ch"))
 Description: Has functions to implement an exploratory factor analysis with principal axis factoring, promax rotation, Schmid Leiman transformation and omega calculation. The functions can return results as obtained by R psych and SPSS. This can be used to investigate where the implementations differ.
-Depends: R (>= 3.5.0)
+Depends: R (>= 3.4.0)
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
