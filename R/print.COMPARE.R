@@ -78,7 +78,7 @@ print.COMPARE <- function(x, ...) {
   cat("\n")
   cat(paste0("Median absolute difference: ", median_out))
   cat("\n")
-  cat(paste0("Max decimals to round to where numbers are still equal: ",
+  cat(paste0("Max decimals where all numbers are equal: ",
              equal_out))
   cat("\n")
   cat(paste0("Minimum number of decimals provided: ", crayon::blue$bold(max_dec)))

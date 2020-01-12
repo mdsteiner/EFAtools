@@ -63,7 +63,7 @@ print.PAF <- function(x, ...) {
       def_i_c_used <- FALSE
     }
 
-    if (criterion == 1e-6) {
+    if (criterion == 1e-9) {
       crit_used <- crayon::blue("    ",cli::symbol$bullet, "Convergence Criterion:",
                                 crayon::bold(criterion),
                                 " (", crayon::green(cli::symbol$tick),

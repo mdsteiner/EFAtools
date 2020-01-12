@@ -252,7 +252,7 @@
   if (any(is.na(x) | any(is.na(y)))) {
     warning("Some loadings were missing.")
     if (isTRUE(na.rm)) {
-      message("Analysis is  done on complete cases")
+      message("Analysis is performed on complete cases")
       if (any(is.na(x))) {
         xc <- x[stats::complete.cases(x), ]
         y <- y[stats::complete.cases(x), ]
