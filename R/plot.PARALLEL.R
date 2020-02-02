@@ -24,8 +24,6 @@ plot.PARALLEL <- function(x, ...) {
   graphics::mtext("Indicators", side = 1, line = 3, cex = 1.5, padj =-.5)
   graphics::mtext("Eigenvalues", side = 2, line = 3, cex = 1.5, padj =.5)
 
-  graphics::abline(h = 1, lty = 2, col = "darkgrey")
-
   if (isTRUE(x$ctrl$x_dat)) {
     graphics::lines(1:x$ctrl$nvars, x$eigenvalues[,"Real Eigenvalues"])
     graphics::points(1:x$ctrl$nvars, x$eigenvalues[,"Real Eigenvalues"], pch = 16)

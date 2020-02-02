@@ -30,7 +30,7 @@
 #'  of \code{x} against the simulated ones.
 #' @param n_cores numeric. Number of cores to perform the simulations and resampling
 #'  on. By default this is found using \code{parallel::detectCores()}.
-#' @param factor_rule character. Which rule to use to determine the number of
+#' @param decision_rule character. Which rule to use to determine the number of
 #'  factors to retain. Default is \code{"mean"}, which will use the average
 #'  simulated eigenvalues. \code{"Percentile"}, uses the percentiles specified
 #'  in percent. \code{"Crawford"} uses the 95th percentile for the first factor
@@ -63,11 +63,11 @@ PARALLEL <- function(x = NULL,
                      replace = TRUE,
                      na_action = c("rm", "none"),
                      n_cores = parallel::detectCores(),
-                     factor_rule = c("Means", "Percentile", "Crawford")) {
+                     decision_rule = c("Means", "Percentile", "Crawford")) {
 
   kind <- match.arg(kind)
   na_action <- match.arg(na_action)
-  factor_rule <- match.arg(factor_rule)
+  decision_rule <- match.arg(decision_rule)
 
   size_vec <- rep(round(ndatasets / n_cores), n_cores - 1)
   size_vec[n_cores] <- ndatasets - sum(size_vec)
@@ -189,7 +189,7 @@ PARALLEL <- function(x = NULL,
   if (isTRUE(x_dat)) {
 
 
-    if (factor_rule == "Crawford") {
+    if (decision_rule == "Crawford") {
       # n factors from resampling
       if (!is.null(results_resample)) {
         if ("95 Percentile Resample" %in% colnames(results_resample)) {
@@ -197,7 +197,7 @@ PARALLEL <- function(x = NULL,
                         results_resample[-1, "Means Resample"])
           n_factors_resample <- which(!(eigvals_real > crawford))[1] - 1
         } else {
-          warning("factor_rule == 'Crawford' is specified, but 95 percentile was not used. Using Means instead. To use 'Crawford', make sure to specify percent = 95.")
+          warning("decision_rule == 'Crawford' is specified, but 95 percentile was not used. Using Means instead. To use 'Crawford', make sure to specify percent = 95.")
           n_factors_resample <- which(!(eigvals_real >
                                           results_resample[, "Means Resample"]))[1] - 1
         }
@@ -205,17 +205,17 @@ PARALLEL <- function(x = NULL,
 
       # n factors from simulated data
       if (!is.null(results_sim)) {
-        if ("95 Percentile Sim" %in% colnames(results_resample)) {
+        if ("95 Percentile Sim" %in% colnames(results_sim)) {
           crawford <- c(results_sim[1, "95 Percentile Sim"],
                         results_sim[-1, "Means Sim"])
           n_factors_sim <- which(!(eigvals_real > crawford))[1] - 1
         } else {
-          warning("factor_rule == 'Crawford' is specified, but 95 percentile was not used. Using Means instead. To use 'Crawford', make sure to specify percent = 95.")
+          warning("decision_rule == 'Crawford' is specified, but 95 percentile was not used. Using Means instead. To use 'Crawford', make sure to specify percent = 95.")
           n_factors_sim <- which(!(eigvals_real > results_sim[, "Means Sim"]))[1] - 1
         }
       }
 
-    } else if (factor_rule == "Means") {
+    } else if (decision_rule == "Means") {
 
       # n factors from resampling
       if (!is.null(results_resample)) {
@@ -228,7 +228,7 @@ PARALLEL <- function(x = NULL,
           n_factors_sim <- which(!(eigvals_real > results_sim[, "Means Sim"]))[1] - 1
       }
 
-    } else if (factor_rule == "Percentile") {
+    } else if (decision_rule == "Percentile") {
 
 
       # n factors from resampling
@@ -272,7 +272,7 @@ PARALLEL <- function(x = NULL,
     resample = resample,
     replace = replace,
     na_action = na_action,
-    factor_rule = factor_rule
+    decision_rule = decision_rule
   )
 
   eigenvalues <- cbind(eigvals_real, results_sim, results_resample)

@@ -20,7 +20,7 @@ PARALLEL(
   replace = TRUE,
   na_action = c("rm", "none"),
   n_cores = parallel::detectCores(),
-  factor_rule = c("Means", "Percentile", "Crawford")
+  decision_rule = c("Means", "Percentile", "Crawford")
 )
 }
 \arguments{
@@ -64,7 +64,7 @@ of \code{x} against the simulated ones.}
 \item{n_cores}{numeric. Number of cores to perform the simulations and resampling
 on. By default this is found using \code{parallel::detectCores()}.}
 
-\item{factor_rule}{character. Which rule to use to determine the number of
+\item{decision_rule}{character. Which rule to use to determine the number of
 factors to retain. Default is \code{"mean"}, which will use the average
 simulated eigenvalues. \code{"Percentile"}, uses the percentiles specified
 in percent. \code{"Crawford"} uses the 95th percentile for the first factor
