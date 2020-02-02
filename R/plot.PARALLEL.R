@@ -64,7 +64,7 @@ plot.PARALLEL <- function(x, ...) {
   }
 
   factors_text <- paste0("N Factors: ", text_sim, text_resample,
-                         "Decision Rule: ", x$ctrl$factor_rule)
+                         "Decision Rule: ", x$ctrl$decision_rule)
 
   graphics::mtext(factors_text)
 

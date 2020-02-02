@@ -21,7 +21,7 @@ print.PARALLEL <- function(x, ...) {
   if (isTRUE(x$ctrl$x_dat) && isTRUE(x$ctrl$sim) || isTRUE(x$ctrl$resample)) {
 
     tt <- paste("Decision rule used:",
-                       crayon::bold(x$ctrl$factor_rule))
+                       crayon::bold(x$ctrl$decision_rule))
     cat("\n")
     cat(tt)
     cat("\n")
