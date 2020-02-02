@@ -32,3 +32,46 @@ paf_iter <- function(h2, criterion, R, n_fac, abs_eig, crit_type, max_iter, idx)
     .Call(`_EFAdiff_paf_iter`, h2, criterion, R, n_fac, abs_eig, crit_type, max_iter, idx)
 }
 
+#' Parallel analysis on simulated data.
+#'
+#' Function called from within PARALLEL so usually no call to this is needed by the user.
+#' Provides a C++ implementation of the PARALLEL simulation procedure
+#'
+#' @param ndatasets numeric. Number of datasets with dimensions (ncases, nvars) to simulate.
+#' @param nvars numeric. Number of variables / indicators in dataset.
+#' @param ncases numeric. Number of cases / observations in dataset.
+#' @param kind numeric. Whether PCA (kind = 1; i.e., leaving diagonal of correlation matrix at 1) or PAF (kind = 2; i.e., setting diagonal of correlation matrix to SMCs).
+#' @export
+parallel_sim <- function(ndatasets, nvars, ncases, kind) {
+    .Call(`_EFAdiff_parallel_sim`, ndatasets, nvars, ncases, kind)
+}
+
+#' Parallel analysis on resampled real data.
+#'
+#' Function called from within PARALLEL so usually no call to this is needed by the user.
+#' Provides a C++ implementation of the PARALLEL resampling procedure
+#'
+#' @param ndatasets numeric. Number of datasets to simulate.
+#' @param data numeric matrix. The real data matrix to perform resampling on.
+#' @param kind numeric. Whether PCA (kind = 1; i.e., leaving diagonal of correlation matrix at 1) or PAF (kind = 2; i.e., setting diagonal of correlation matrix to SMCs).
+#' @param replace logical. Should resampling be done with replacement (TRUE) or without (FALSE).
+#' @export
+parallel_resample <- function(ndatasets, data, kind, replace) {
+    .Call(`_EFAdiff_parallel_resample`, ndatasets, data, kind, replace)
+}
+
+#' Summarise the raw data from the \link{parallel_sim} and \link{parallel_resample}
+#'
+#' Function called from within PARALLEL so usually no call to this is needed by the user.
+#' Provides a C++ implementation to aggregate the eigenvalues from the simulations
+#' performed using \link{parallel_sim} and \link{parallel_resample}.
+#'
+#' @param eig_vals matrix. A matrix as returned by \link{parallel_sim} or \link{parallel_resample}.
+#' @param percent numeric. A vector of percentiles for which the eigenvalues should be returned.
+#' @param ndatasets integer. The number of datasets simulated in \link{parallel_sim} or \link{parallel_resample}.
+#' @param nvars numeric. The number of variables / indicators per dataset.
+#' @export
+parallel_summarise <- function(eig_vals, percent, ndatasets, nvars) {
+    .Call(`_EFAdiff_parallel_summarise`, eig_vals, percent, ndatasets, nvars)
+}
+
