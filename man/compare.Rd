@@ -32,6 +32,9 @@ implementation to compare to x.}
 (loading) matrices are reordered according to Tuckers correspondence coefficient,
 other objects according to the names.}
 
+\item{corres}{logical. Whether factor correspondences should be compared if a matrix
+is entered.}
+
 \item{thresh}{numeric. The threshold to classify a pattern coefficient as substantial. Default is .3.}
 
 \item{digits}{numeric. Number of decimals to print in the output (default is 4).}
