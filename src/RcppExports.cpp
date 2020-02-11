@@ -38,44 +38,90 @@ BEGIN_RCPP
 END_RCPP
 }
 // parallel_sim
-arma::mat parallel_sim(const int ndatasets, const int nvars, const int ncases, const int kind);
-RcppExport SEXP _EFAdiff_parallel_sim(SEXP ndatasetsSEXP, SEXP nvarsSEXP, SEXP ncasesSEXP, SEXP kindSEXP) {
+arma::mat parallel_sim(const int n_datasets, const int n_vars, const int n_cases, const int eigen_type);
+RcppExport SEXP _EFAdiff_parallel_sim(SEXP n_datasetsSEXP, SEXP n_varsSEXP, SEXP n_casesSEXP, SEXP eigen_typeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const int >::type ndatasets(ndatasetsSEXP);
-    Rcpp::traits::input_parameter< const int >::type nvars(nvarsSEXP);
-    Rcpp::traits::input_parameter< const int >::type ncases(ncasesSEXP);
-    Rcpp::traits::input_parameter< const int >::type kind(kindSEXP);
-    rcpp_result_gen = Rcpp::wrap(parallel_sim(ndatasets, nvars, ncases, kind));
+    Rcpp::traits::input_parameter< const int >::type n_datasets(n_datasetsSEXP);
+    Rcpp::traits::input_parameter< const int >::type n_vars(n_varsSEXP);
+    Rcpp::traits::input_parameter< const int >::type n_cases(n_casesSEXP);
+    Rcpp::traits::input_parameter< const int >::type eigen_type(eigen_typeSEXP);
+    rcpp_result_gen = Rcpp::wrap(parallel_sim(n_datasets, n_vars, n_cases, eigen_type));
+    return rcpp_result_gen;
+END_RCPP
+}
+// parallel_paf
+arma::vec parallel_paf(arma::mat R, double criterion, int crit_type, int max_iter);
+RcppExport SEXP _EFAdiff_parallel_paf(SEXP RSEXP, SEXP criterionSEXP, SEXP crit_typeSEXP, SEXP max_iterSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type R(RSEXP);
+    Rcpp::traits::input_parameter< double >::type criterion(criterionSEXP);
+    Rcpp::traits::input_parameter< int >::type crit_type(crit_typeSEXP);
+    Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
+    rcpp_result_gen = Rcpp::wrap(parallel_paf(R, criterion, crit_type, max_iter));
+    return rcpp_result_gen;
+END_RCPP
+}
+// parallel_paf_sim
+arma::mat parallel_paf_sim(const int n_datasets, const int n_vars, const int n_cases, double criterion, int crit_type, int max_iter);
+RcppExport SEXP _EFAdiff_parallel_paf_sim(SEXP n_datasetsSEXP, SEXP n_varsSEXP, SEXP n_casesSEXP, SEXP criterionSEXP, SEXP crit_typeSEXP, SEXP max_iterSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const int >::type n_datasets(n_datasetsSEXP);
+    Rcpp::traits::input_parameter< const int >::type n_vars(n_varsSEXP);
+    Rcpp::traits::input_parameter< const int >::type n_cases(n_casesSEXP);
+    Rcpp::traits::input_parameter< double >::type criterion(criterionSEXP);
+    Rcpp::traits::input_parameter< int >::type crit_type(crit_typeSEXP);
+    Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
+    rcpp_result_gen = Rcpp::wrap(parallel_paf_sim(n_datasets, n_vars, n_cases, criterion, crit_type, max_iter));
+    return rcpp_result_gen;
+END_RCPP
+}
+// parallel_paf_resample
+arma::mat parallel_paf_resample(const int n_datasets, arma::mat data, const bool replace, double criterion, int crit_type, int max_iter);
+RcppExport SEXP _EFAdiff_parallel_paf_resample(SEXP n_datasetsSEXP, SEXP dataSEXP, SEXP replaceSEXP, SEXP criterionSEXP, SEXP crit_typeSEXP, SEXP max_iterSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const int >::type n_datasets(n_datasetsSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< const bool >::type replace(replaceSEXP);
+    Rcpp::traits::input_parameter< double >::type criterion(criterionSEXP);
+    Rcpp::traits::input_parameter< int >::type crit_type(crit_typeSEXP);
+    Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
+    rcpp_result_gen = Rcpp::wrap(parallel_paf_resample(n_datasets, data, replace, criterion, crit_type, max_iter));
     return rcpp_result_gen;
 END_RCPP
 }
 // parallel_resample
-arma::mat parallel_resample(const int ndatasets, arma::mat data, const int kind, const bool replace);
-RcppExport SEXP _EFAdiff_parallel_resample(SEXP ndatasetsSEXP, SEXP dataSEXP, SEXP kindSEXP, SEXP replaceSEXP) {
+arma::mat parallel_resample(const int n_datasets, arma::mat data, const int eigen_type, const bool replace);
+RcppExport SEXP _EFAdiff_parallel_resample(SEXP n_datasetsSEXP, SEXP dataSEXP, SEXP eigen_typeSEXP, SEXP replaceSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const int >::type ndatasets(ndatasetsSEXP);
+    Rcpp::traits::input_parameter< const int >::type n_datasets(n_datasetsSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type data(dataSEXP);
-    Rcpp::traits::input_parameter< const int >::type kind(kindSEXP);
+    Rcpp::traits::input_parameter< const int >::type eigen_type(eigen_typeSEXP);
     Rcpp::traits::input_parameter< const bool >::type replace(replaceSEXP);
-    rcpp_result_gen = Rcpp::wrap(parallel_resample(ndatasets, data, kind, replace));
+    rcpp_result_gen = Rcpp::wrap(parallel_resample(n_datasets, data, eigen_type, replace));
     return rcpp_result_gen;
 END_RCPP
 }
 // parallel_summarise
-NumericMatrix parallel_summarise(NumericMatrix eig_vals, NumericVector percent, const int ndatasets, const int nvars);
-RcppExport SEXP _EFAdiff_parallel_summarise(SEXP eig_valsSEXP, SEXP percentSEXP, SEXP ndatasetsSEXP, SEXP nvarsSEXP) {
+NumericMatrix parallel_summarise(NumericMatrix eig_vals, NumericVector percent, const int n_datasets, const int n_vars);
+RcppExport SEXP _EFAdiff_parallel_summarise(SEXP eig_valsSEXP, SEXP percentSEXP, SEXP n_datasetsSEXP, SEXP n_varsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericMatrix >::type eig_vals(eig_valsSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type percent(percentSEXP);
-    Rcpp::traits::input_parameter< const int >::type ndatasets(ndatasetsSEXP);
-    Rcpp::traits::input_parameter< const int >::type nvars(nvarsSEXP);
-    rcpp_result_gen = Rcpp::wrap(parallel_summarise(eig_vals, percent, ndatasets, nvars));
+    Rcpp::traits::input_parameter< const int >::type n_datasets(n_datasetsSEXP);
+    Rcpp::traits::input_parameter< const int >::type n_vars(n_varsSEXP);
+    rcpp_result_gen = Rcpp::wrap(parallel_summarise(eig_vals, percent, n_datasets, n_vars));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -84,6 +130,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EFAdiff_factor_corres", (DL_FUNC) &_EFAdiff_factor_corres, 3},
     {"_EFAdiff_paf_iter", (DL_FUNC) &_EFAdiff_paf_iter, 8},
     {"_EFAdiff_parallel_sim", (DL_FUNC) &_EFAdiff_parallel_sim, 4},
+    {"_EFAdiff_parallel_paf", (DL_FUNC) &_EFAdiff_parallel_paf, 4},
+    {"_EFAdiff_parallel_paf_sim", (DL_FUNC) &_EFAdiff_parallel_paf_sim, 6},
+    {"_EFAdiff_parallel_paf_resample", (DL_FUNC) &_EFAdiff_parallel_paf_resample, 6},
     {"_EFAdiff_parallel_resample", (DL_FUNC) &_EFAdiff_parallel_resample, 4},
     {"_EFAdiff_parallel_summarise", (DL_FUNC) &_EFAdiff_parallel_summarise, 4},
     {NULL, NULL, 0}

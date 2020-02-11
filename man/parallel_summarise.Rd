@@ -4,16 +4,16 @@
 \alias{parallel_summarise}
 \title{Summarise the raw data from the \link{parallel_sim} and \link{parallel_resample}}
 \usage{
-parallel_summarise(eig_vals, percent, ndatasets, nvars)
+parallel_summarise(eig_vals, percent, n_datasets, n_vars)
 }
 \arguments{
 \item{eig_vals}{matrix. A matrix as returned by \link{parallel_sim} or \link{parallel_resample}.}
 
 \item{percent}{numeric. A vector of percentiles for which the eigenvalues should be returned.}
 
-\item{ndatasets}{integer. The number of datasets simulated in \link{parallel_sim} or \link{parallel_resample}.}
+\item{n_datasets}{integer. The number of datasets simulated in \link{parallel_sim} or \link{parallel_resample}.}
 
-\item{nvars}{numeric. The number of variables / indicators per dataset.}
+\item{n_vars}{numeric. The number of variables / indicators per dataset.}
 }
 \description{
 Function called from within PARALLEL so usually no call to this is needed by the user.

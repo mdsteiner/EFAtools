@@ -4,16 +4,16 @@
 \alias{parallel_sim}
 \title{Parallel analysis on simulated data.}
 \usage{
-parallel_sim(ndatasets, nvars, ncases, kind)
+parallel_sim(n_datasets, n_vars, n_cases, eigen_type)
 }
 \arguments{
-\item{ndatasets}{numeric. Number of datasets with dimensions (ncases, nvars) to simulate.}
+\item{n_datasets}{numeric. Number of datasets with dimensions (n_cases, n_vars) to simulate.}
 
-\item{nvars}{numeric. Number of variables / indicators in dataset.}
+\item{n_vars}{numeric. Number of variables / indicators in dataset.}
 
-\item{ncases}{numeric. Number of cases / observations in dataset.}
+\item{n_cases}{numeric. Number of cases / observations in dataset.}
 
-\item{kind}{numeric. Whether PCA (kind = 1; i.e., leaving diagonal of correlation matrix at 1) or PAF (kind = 2; i.e., setting diagonal of correlation matrix to SMCs).}
+\item{eigen_type}{numeric. Whether PCA (eigen_type = 1; i.e., leaving diagonal of correlation matrix at 1) or PAF (eigen_type = 2; i.e., setting diagonal of correlation matrix to SMCs).}
 }
 \description{
 Function called from within PARALLEL so usually no call to this is needed by the user.

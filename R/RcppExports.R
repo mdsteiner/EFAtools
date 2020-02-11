@@ -37,13 +37,63 @@ paf_iter <- function(h2, criterion, R, n_fac, abs_eig, crit_type, max_iter, idx)
 #' Function called from within PARALLEL so usually no call to this is needed by the user.
 #' Provides a C++ implementation of the PARALLEL simulation procedure
 #'
-#' @param ndatasets numeric. Number of datasets with dimensions (ncases, nvars) to simulate.
-#' @param nvars numeric. Number of variables / indicators in dataset.
-#' @param ncases numeric. Number of cases / observations in dataset.
-#' @param kind numeric. Whether PCA (kind = 1; i.e., leaving diagonal of correlation matrix at 1) or PAF (kind = 2; i.e., setting diagonal of correlation matrix to SMCs).
+#' @param n_datasets numeric. Number of datasets with dimensions (n_cases, n_vars) to simulate.
+#' @param n_vars numeric. Number of variables / indicators in dataset.
+#' @param n_cases numeric. Number of cases / observations in dataset.
+#' @param eigen_type numeric. Whether PCA (eigen_type = 1; i.e., leaving diagonal of correlation matrix at 1) or PAF (eigen_type = 2; i.e., setting diagonal of correlation matrix to SMCs).
 #' @export
-parallel_sim <- function(ndatasets, nvars, ncases, kind) {
-    .Call(`_EFAdiff_parallel_sim`, ndatasets, nvars, ncases, kind)
+parallel_sim <- function(n_datasets, n_vars, n_cases, eigen_type) {
+    .Call(`_EFAdiff_parallel_sim`, n_datasets, n_vars, n_cases, eigen_type)
+}
+
+#' Principal Axis Factoring to extract eigenvalues from a 1 factor solution
+#'
+#' Function called from within PARALLEL so usually no call to this is needed by the user.
+#' Provides a C++ implementation of 1 factor PAF. Returns the eigenvalues obtained
+#' from the correlation matrix with the final communality estimates as diagonal of
+#' R.
+#'
+#' @param R numeric matrix. Correlation matrix to perform PAF with 1 factor solution on.
+#' @param criterion double. Convergence criterion to use.
+#' @param crit_type integer. Whether max_individual (1) or sums (2).
+#' @param max_iter integer. The maximum number of iterations after which to stop the iterative procedure if no convergence is reached by then.
+#' @export
+parallel_paf <- function(R, criterion, crit_type, max_iter) {
+    .Call(`_EFAdiff_parallel_paf`, R, criterion, crit_type, max_iter)
+}
+
+#' Parallel analysis on simulated data.
+#'
+#' Function called from within PARALLEL so usually no call to this is needed by the user.
+#' Provides a C++ implementation of the PARALLEL simulation procedure where eigenvalues
+#' are found using the parallel_paf function.
+#'
+#' @param n_datasets numeric. Number of datasets with dimensions (n_cases, n_vars) to simulate.
+#' @param n_vars numeric. Number of variables / indicators in dataset.
+#' @param n_cases numeric. Number of cases / observations in dataset.
+#' @param criterion double. Convergence criterion to use.
+#' @param crit_type integer. Whether max_individual (1) or sums (2).
+#' @param max_iter integer. The maximum number of iterations after which to stop the iterative procedure if no convergence is reached by then.
+#' @export
+parallel_paf_sim <- function(n_datasets, n_vars, n_cases, criterion, crit_type, max_iter) {
+    .Call(`_EFAdiff_parallel_paf_sim`, n_datasets, n_vars, n_cases, criterion, crit_type, max_iter)
+}
+
+#' Parallel analysis on resampled real data.
+#'
+#' Function called from within PARALLEL so usually no call to this is needed by the user.
+#' Provides a C++ implementation of the PARALLEL resampling procedure where eigenvalues
+#' are found using the parallel_paf function.
+#'
+#' @param n_datasets numeric. Number of datasets to simulate.
+#' @param data numeric matrix. The real data matrix to perform resampling on.
+#' @param replace logical. Should resampling be done with replacement (TRUE) or without (FALSE).
+#' @param criterion double. Convergence criterion to use.
+#' @param crit_type integer. Whether max_individual (1) or sums (2).
+#' @param max_iter integer. The maximum number of iterations after which to stop the iterative procedure if no convergence is reached by then.
+#' @export
+parallel_paf_resample <- function(n_datasets, data, replace, criterion, crit_type, max_iter) {
+    .Call(`_EFAdiff_parallel_paf_resample`, n_datasets, data, replace, criterion, crit_type, max_iter)
 }
 
 #' Parallel analysis on resampled real data.
@@ -51,13 +101,13 @@ parallel_sim <- function(ndatasets, nvars, ncases, kind) {
 #' Function called from within PARALLEL so usually no call to this is needed by the user.
 #' Provides a C++ implementation of the PARALLEL resampling procedure
 #'
-#' @param ndatasets numeric. Number of datasets to simulate.
+#' @param n_datasets numeric. Number of datasets to simulate.
 #' @param data numeric matrix. The real data matrix to perform resampling on.
-#' @param kind numeric. Whether PCA (kind = 1; i.e., leaving diagonal of correlation matrix at 1) or PAF (kind = 2; i.e., setting diagonal of correlation matrix to SMCs).
+#' @param eigen_type numeric. Whether PCA (eigen_type = 1; i.e., leaving diagonal of correlation matrix at 1) or PAF (eigen_type = 2; i.e., setting diagonal of correlation matrix to SMCs).
 #' @param replace logical. Should resampling be done with replacement (TRUE) or without (FALSE).
 #' @export
-parallel_resample <- function(ndatasets, data, kind, replace) {
-    .Call(`_EFAdiff_parallel_resample`, ndatasets, data, kind, replace)
+parallel_resample <- function(n_datasets, data, eigen_type, replace) {
+    .Call(`_EFAdiff_parallel_resample`, n_datasets, data, eigen_type, replace)
 }
 
 #' Summarise the raw data from the \link{parallel_sim} and \link{parallel_resample}
@@ -68,10 +118,10 @@ parallel_resample <- function(ndatasets, data, kind, replace) {
 #'
 #' @param eig_vals matrix. A matrix as returned by \link{parallel_sim} or \link{parallel_resample}.
 #' @param percent numeric. A vector of percentiles for which the eigenvalues should be returned.
-#' @param ndatasets integer. The number of datasets simulated in \link{parallel_sim} or \link{parallel_resample}.
-#' @param nvars numeric. The number of variables / indicators per dataset.
+#' @param n_datasets integer. The number of datasets simulated in \link{parallel_sim} or \link{parallel_resample}.
+#' @param n_vars numeric. The number of variables / indicators per dataset.
 #' @export
-parallel_summarise <- function(eig_vals, percent, ndatasets, nvars) {
-    .Call(`_EFAdiff_parallel_summarise`, eig_vals, percent, ndatasets, nvars)
+parallel_summarise <- function(eig_vals, percent, n_datasets, n_vars) {
+    .Call(`_EFAdiff_parallel_summarise`, eig_vals, percent, n_datasets, n_vars)
 }
 

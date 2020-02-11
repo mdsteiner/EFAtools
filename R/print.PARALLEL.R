@@ -9,16 +9,20 @@
 #' @examples
 #' \dontrun{
 #' # example without real data
-#' PARALLEL(ncases = 500, nvars = 10)
+#' PARALLEL(n_cases = 500, n_vars = 10)
 #' # example without correlation matrix
-#' PARALLEL(test_models$case_11b$cormat, ncases = test_models$case_11b$N)
+#' PARALLEL(test_models$case_11b$cormat, n_cases = test_models$case_11b$N)
 #' }
 print.PARALLEL <- function(x, ...) {
 
-  cat(paste("Parallel Analysis performed using", x$ctrl$ndatasets,
+  cat(paste("Parallel Analysis performed using", x$ctrl$n_datasets,
                "simulated data sets.\n"))
 
-  if (isTRUE(x$ctrl$x_dat) && isTRUE(x$ctrl$sim) || isTRUE(x$ctrl$resample)) {
+  cat("Eigenvalues were found using", crayon::bold(x$ctrl$eigen_type))
+  cat("\n")
+
+
+  if (isTRUE(x$ctrl$x_dat)) {
 
     tt <- paste("Decision rule used:",
                        crayon::bold(x$ctrl$decision_rule))
@@ -28,21 +32,15 @@ print.PARALLEL <- function(x, ...) {
     cat("\n")
     cat("Number of factors to retain:\n")
 
-    if (isTRUE(x$ctrl$sim)) {
-
-      tt <- paste("    ",cli::symbol$bullet, "Based on simulated data:",
-                         crayon::bold(x$n_factors_sim))
-      cat(tt)
-      cat("\n")
-
+    if (x$ctrl$data_type == "sim") {
+      ptt <- "Based on simulated data:"
+    } else if (x$ctrl$data_type == "resample") {
+      ptt <- "Based on resampled data:"
     }
-
-    if (isTRUE(x$ctrl$resample)) {
-      tt <- paste("    ",cli::symbol$bullet, "Based on resampled data:",
-                         crayon::bold(x$n_factors_resample))
-      cat(tt)
-      cat("\n")
-    }
+    tt <- paste("    ",cli::symbol$bullet, ptt,
+                       crayon::bold(x$n_factors))
+    cat(tt)
+    cat("\n")
 
   } else {
 

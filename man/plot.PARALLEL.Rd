@@ -17,7 +17,7 @@ Plot Method showing a summarized output of the \link{PARALLEL} function
 \examples{
 \dontrun{
 # example without correlation matrix
-x <- PARALLEL(test_models$case_11b$cormat, ncases = test_models$case_11b$N)
+x <- PARALLEL(test_models$case_11b$cormat, n_cases = test_models$case_11b$N)
 plot(x)
 }
 }

@@ -4,14 +4,14 @@
 \alias{parallel_resample}
 \title{Parallel analysis on resampled real data.}
 \usage{
-parallel_resample(ndatasets, data, kind, replace)
+parallel_resample(n_datasets, data, eigen_type, replace)
 }
 \arguments{
-\item{ndatasets}{numeric. Number of datasets to simulate.}
+\item{n_datasets}{numeric. Number of datasets to simulate.}
 
 \item{data}{numeric matrix. The real data matrix to perform resampling on.}
 
-\item{kind}{numeric. Whether PCA (kind = 1; i.e., leaving diagonal of correlation matrix at 1) or PAF (kind = 2; i.e., setting diagonal of correlation matrix to SMCs).}
+\item{eigen_type}{numeric. Whether PCA (eigen_type = 1; i.e., leaving diagonal of correlation matrix at 1) or PAF (eigen_type = 2; i.e., setting diagonal of correlation matrix to SMCs).}
 
 \item{replace}{logical. Should resampling be done with replacement (TRUE) or without (FALSE).}
 }

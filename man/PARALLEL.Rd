@@ -10,17 +10,20 @@ Crawford, A. V., Green, S. B., Levy, R., Lo, W. J., Scott, L., Svetina, D., & Th
 PARALLEL(
   x = NULL,
   cors = TRUE,
-  ncases = NA,
-  nvars = NA,
-  ndatasets = 1000,
+  n_cases = NA,
+  n_vars = NA,
+  n_datasets = 1000,
   percent = 95,
-  kind = c("PAF", "PCA"),
-  sim = TRUE,
-  resample = FALSE,
+  eigen_type = c("PAF", "PCA", "FA"),
+  data_type = c("sim"),
   replace = TRUE,
-  na_action = c("rm", "none"),
+  na_action = c("pairwise.complete.obs", "everything", "all.obs", "complete.obs",
+    "na.or.complete"),
   n_cores = parallel::detectCores(),
-  decision_rule = c("Means", "Percentile", "Crawford")
+  decision_rule = c("Means", "Percentile", "Crawford"),
+  criterion = 0.001,
+  criterion_type = c("sums", "max_individual"),
+  max_iter = 1000
 )
 }
 \arguments{
@@ -31,30 +34,30 @@ correlation matrix or raw data.}
 \item{cors}{logical. Whether x is a correlation matrix (TRUE), or raw data.
 against. Must not contain variables of classes other than numeric.}
 
-\item{ncases}{numeric. The number of cases / observations to simulate. Should only
+\item{n_cases}{numeric. The number of cases / observations to simulate. Should only
 be specified if \code{x} is left as \code{NULL} as otherwise the dimensions are taken from \code{x}.}
 
-\item{nvars}{numeric. The number of variables / indicators to simulate. Should only
+\item{n_vars}{numeric. The number of variables / indicators to simulate. Should only
 be specified if \code{x} is left as \code{NULL} as otherwise the dimensions are taken from \code{x}.}
 
-\item{ndatasets}{numeric. The number of datasets to simulate. Default is 1000.}
+\item{n_datasets}{numeric. The number of datasets to simulate. Default is 1000.}
 
 \item{percent}{numeric. A vector of percentiles to take the simulated eigenvalues from.
 Default is 95.}
 
-\item{kind}{character. What kind of parallel analysis to perform. Can be either
-"PAF" or "PCA". If using "PAF", the diagonal of the correlation matrices is
-replaced by the squared multiple correlations of the indicators. If using "PCA",
-the diagonal values of the correlation matrices  are left to be 1.}
+\item{eigen_type}{character. On what the eigenvalues should be found. Can be
+either "PAF", "PCA", or "FA". If using "PAF", the diagonal of the correlation
+matrices is replaced by the squared multiple correlations (SMCs) of the
+indicators. If using "PCA", the diagonal values of the correlation matrices
+are left to be 1. If using "FA", eigenvalues are found on the correlation
+matrices with the final communalities of a 1 factor principal axis factoring
+solution as diagonal.}
 
-\item{sim}{logical. Whether eigenvalues for parallel analysis should be found
-on simulated data. Default is \code{TRUE}.}
+\item{data_type}{character. Currently only "sim" is implemented. Finds eigenvalues
+for parallel analysis on simulated data.}
 
-\item{resample}{logical. Whether eigenvalues for parallel analysis should be
-found on data sets created by resampling from \code{x}. Default is \code{TRUE}.}
-
-\item{replace}{logical. Whether, if \code{resample = TRUE}, the resampling should
-be done with replacements or not. Default is \code{TRUE}.}
+\item{replace}{logical. Currently ignored. Whether, if \code{data_type = "resample"}, the
+resampling should be done with replacements or not. Default is \code{TRUE}.}
 
 \item{na_action}{character. What to do with \code{NA}s occurring in \code{x}. \code{"rm"}
 removes them list-wise. \code{"none"} returns a warning if \code{NA}s occur and
@@ -69,6 +72,23 @@ factors to retain. Default is \code{"mean"}, which will use the average
 simulated eigenvalues. \code{"Percentile"}, uses the percentiles specified
 in percent. \code{"Crawford"} uses the 95th percentile for the first factor
 and the mean afterwards (based on Crawford et al, 2010).}
+
+\item{criterion}{numeric. The convergence criterion.
+If the change in communalities from one iteration to the next is smaller than
+this criterion the solution is accepted and the procedure ends. Details
+depend on criterion_type. Default is \code{.001}.}
+
+\item{criterion_type}{character. "max_individual" selects the
+maximum change in any of the communalities from one iteration to the next
+and tests it against the specified criterion. This is also used by SPSS.
+"sums" takes difference of the sum of all communalities in one iteration and
+the sum of all communalities in the next iteration and tests it against the
+criterion. This procedure is used by the \code{\link[psych:fa]{psych::fa}} function.
+Default is \code{"sums"}.}
+
+\item{max_iter}{numeric. The maximum number of iterations to
+perform after which the iterative PAF procedure is halted with a warning.
+Default is \code{1000}.}
 }
 \value{
 A list of class PARALLEL containing the following objects
@@ -81,8 +101,8 @@ Various methods for performing parallel analysis.
 \examples{
 \dontrun{
 # example without real data
-PARALLEL(ncases = 500, nvars = 10)
+PARALLEL(n_cases = 500, n_vars = 10)
 # example without correlation matrix
-PARALLEL(test_models$case_11b$cormat, ncases = test_models$case_11b$N)
+PARALLEL(test_models$case_11b$cormat, n_cases = test_models$case_11b$N)
 }
 }
