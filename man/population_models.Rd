@@ -34,6 +34,21 @@
   \item{case_11c}{(matrix) - Six factors, with different loadings within and between. Small number of indicators per factor, in this case 4.}
   \item{case_11d}{(matrix) - Six factors, with different loadings within and between. Small number of indicators per factor, in this case 5.}
   \item{case_11e}{(matrix) - Six factors, with different loadings within and between. Each with 6 indicators.}
+  \item{case_12a}{(matrix) - One factor, with 2 equal loadings (.6).}
+  \item{case_12b}{(matrix) - One factor, with 6 equal loadings (.6).}
+  \item{case_12c}{(matrix) - One factor, with 10 equal loadings (.6).}
+  \item{case_12d}{(matrix) - One factor, with 14 equal loadings (.6).}
+  \item{case_12e}{(matrix) - One factor, with 18 equal loadings (.6).}
+  \item{case_13a}{(matrix) - One factor, with 2 different loadings (.3, and .6).}
+  \item{case_13b}{(matrix) - One factor, with 6 different loadings (.3, .6, and .9).}
+  \item{case_13c}{(matrix) - One factor, with 10 different loadings (.3, .6, and .9).}
+  \item{case_13d}{(matrix) - One factor, with 14 different loadings (.3, .6, and .9).}
+  \item{case_13e}{(matrix) - One factor, with 18 different loadings (.3, .6, and .9).}
+  \item{case_14a}{(matrix) - No factor, with 2 loadings (0).}
+  \item{case_14b}{(matrix) - No factor, with 2 loadings (0).}
+  \item{case_14c}{(matrix) - No factor, with 2 loadings (0).}
+  \item{case_14d}{(matrix) - No factor, with 2 loadings (0).}
+  \item{case_14e}{(matrix) - No factor, with 2 loadings (0).}
   \code{phis_3} contains the following 3x3 matrices:
   \item{zero}{(matrix) - Matrix of factor intercorrelations of 0. Same intercorrelations as used in de Winter and Dodou (2012).}
   \item{moderate}{(matrix) - Matrix of moderate factor intercorrelations of .3.}
