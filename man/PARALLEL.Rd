@@ -93,6 +93,7 @@ Default is \code{1000}.}
 \value{
 A list of class PARALLEL containing the following objects
 \item{eigenvalues}{A matrix containing the eigenvalues of the real and the simulated data.}
+\item{n_factors}{The number of factors to retain according to the parallel procedure.}
 \item{ctrl}{A list of control settings used in the print function.}
 }
 \description{

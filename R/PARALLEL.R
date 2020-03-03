@@ -53,6 +53,7 @@
 #'
 #' @return A list of class PARALLEL containing the following objects
 #' \item{eigenvalues}{A matrix containing the eigenvalues of the real and the simulated data.}
+#' \item{n_factors}{The number of factors to retain according to the parallel procedure.}
 #' \item{ctrl}{A list of control settings used in the print function.}
 #'
 #' @source Crawford, A. V., Green, S. B., Levy, R., Lo, W. J., Scott, L., Svetina, D., & Thompson, M. S. (2010). Evaluation of parallel analysis methods for determining the number of factors. Educational and Psychological Measurement, 70(6), 885-901.

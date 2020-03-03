@@ -17,9 +17,14 @@
 plot.PARALLEL <- function(x, ...) {
 
   graphics::plot.new()
-  graphics::plot.window(xlim = c(1, x$ctrl$n_vars), ylim = c(0, max(x$eigenvalues) + .25))
+  graphics::plot.window(xlim = c(1, x$ctrl$n_vars),
+                        ylim = c(min(x$eigenvalues) - .2,
+                                 max(x$eigenvalues) + .2))
   graphics::axis(1, 1:x$ctrl$n_vars)
-  graphics::axis(2, seq(0, max(x$eigenvalues) + .25, round((max(x$eigenvalues) + .25) / 6, 1)),
+  graphics::axis(2, round(seq(min(x$eigenvalues) - .2,
+                        max(x$eigenvalues) + .2,
+                        round(diff(c(min(x$eigenvalues) - .2,
+                                     max(x$eigenvalues)) + .2) / 6, 1)), 1),
        las = 1)
   graphics::mtext("Indicators", side = 1, line = 3, cex = 1.5, padj =-.5)
   graphics::mtext("Eigenvalues", side = 2, line = 3, cex = 1.5, padj =.5)
@@ -51,11 +56,14 @@ plot.PARALLEL <- function(x, ...) {
   factors_text <- paste0("N Factors: ", text,
                          "Decision Rule: ", x$ctrl$decision_rule)
 
-  graphics::mtext(factors_text)
+  graphics::title(factors_text)
 
-  graphics::legend(round(x$ctrl$n_vars / 2), max(x$eigenvalues) - .2,
-         colnames(x$eigenvalues), lty = c(1, rep(2, length(cols))),
-         col = c("black", cols))
+  # graphics::legend(round(x$ctrl$n_vars / 2), max(x$eigenvalues) - .2,
+  #        colnames(x$eigenvalues), lty = c(1, rep(2, length(cols))),
+  #        col = c("black", cols))
+  graphics::legend("topright",
+                   colnames(x$eigenvalues), lty = c(1, rep(2, length(cols))),
+                   col = c("black", cols))
 
 
 }

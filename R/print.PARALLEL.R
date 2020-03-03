@@ -52,4 +52,6 @@ print.PARALLEL <- function(x, ...) {
 
   }
 
+  graphics::plot(x)
+
 }
