@@ -19,6 +19,21 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// hull_paf
+arma::mat hull_paf(arma::mat R, double criterion, const int n_fac, int max_iter, arma::uvec idx);
+RcppExport SEXP _EFAdiff_hull_paf(SEXP RSEXP, SEXP criterionSEXP, SEXP n_facSEXP, SEXP max_iterSEXP, SEXP idxSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type R(RSEXP);
+    Rcpp::traits::input_parameter< double >::type criterion(criterionSEXP);
+    Rcpp::traits::input_parameter< const int >::type n_fac(n_facSEXP);
+    Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
+    Rcpp::traits::input_parameter< arma::uvec >::type idx(idxSEXP);
+    rcpp_result_gen = Rcpp::wrap(hull_paf(R, criterion, n_fac, max_iter, idx));
+    return rcpp_result_gen;
+END_RCPP
+}
 // paf_iter
 Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R, const int n_fac, bool abs_eig, int crit_type, int max_iter, arma::uvec idx);
 RcppExport SEXP _EFAdiff_paf_iter(SEXP h2SEXP, SEXP criterionSEXP, SEXP RSEXP, SEXP n_facSEXP, SEXP abs_eigSEXP, SEXP crit_typeSEXP, SEXP max_iterSEXP, SEXP idxSEXP) {
@@ -128,6 +143,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_EFAdiff_factor_corres", (DL_FUNC) &_EFAdiff_factor_corres, 3},
+    {"_EFAdiff_hull_paf", (DL_FUNC) &_EFAdiff_hull_paf, 5},
     {"_EFAdiff_paf_iter", (DL_FUNC) &_EFAdiff_paf_iter, 8},
     {"_EFAdiff_parallel_sim", (DL_FUNC) &_EFAdiff_parallel_sim, 4},
     {"_EFAdiff_parallel_paf", (DL_FUNC) &_EFAdiff_parallel_paf, 4},

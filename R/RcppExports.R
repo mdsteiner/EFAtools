@@ -19,6 +19,21 @@ factor_corres <- function(x, y, thresh = 0.3) {
 #' Function called from within PAF so usually no call to this is needed by the user.
 #' Provides a C++ implementation of the PAF procedure
 #'
+#' @param R matrix. The correlation matrix.
+#' @param criterion double. The convergence criterion to use.
+#' @param n_fac numeric. The number of factors to extract.
+#' @param max_iter numeric. The number of iterations after which to end the procedure if no convergence has been reached by then.
+#' @param idx logical. A vector of length n_fac with TRUEs. Needed for indexing.
+#' @export
+hull_paf <- function(R, criterion, n_fac, max_iter, idx) {
+    .Call(`_EFAdiff_hull_paf`, R, criterion, n_fac, max_iter, idx)
+}
+
+#' Perform the iterative PAF procedure
+#'
+#' Function called from within PAF so usually no call to this is needed by the user.
+#' Provides a C++ implementation of the PAF procedure
+#'
 #' @param h2 numeric. The initial communality estimates.
 #' @param criterion double. The convergence criterion to use.
 #' @param R matrix. The correlation matrix with the initial communality estimates in the diagonal.
