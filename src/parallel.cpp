@@ -78,7 +78,6 @@ arma::vec parallel_paf(arma::mat R, double criterion, int crit_type,
 
   int iter = 1;
   double delta = 1.0;
-  const int n_fac = 1;
   arma::vec tv(R.n_cols);
   arma::vec Lambda(R.n_cols);
   arma::vec Lambda_o(1);
