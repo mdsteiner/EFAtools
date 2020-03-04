@@ -96,36 +96,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// parallel_paf_resample
-arma::mat parallel_paf_resample(const int n_datasets, arma::mat data, const bool replace, double criterion, int crit_type, int max_iter);
-RcppExport SEXP _EFAdiff_parallel_paf_resample(SEXP n_datasetsSEXP, SEXP dataSEXP, SEXP replaceSEXP, SEXP criterionSEXP, SEXP crit_typeSEXP, SEXP max_iterSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const int >::type n_datasets(n_datasetsSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type data(dataSEXP);
-    Rcpp::traits::input_parameter< const bool >::type replace(replaceSEXP);
-    Rcpp::traits::input_parameter< double >::type criterion(criterionSEXP);
-    Rcpp::traits::input_parameter< int >::type crit_type(crit_typeSEXP);
-    Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
-    rcpp_result_gen = Rcpp::wrap(parallel_paf_resample(n_datasets, data, replace, criterion, crit_type, max_iter));
-    return rcpp_result_gen;
-END_RCPP
-}
-// parallel_resample
-arma::mat parallel_resample(const int n_datasets, arma::mat data, const int eigen_type, const bool replace);
-RcppExport SEXP _EFAdiff_parallel_resample(SEXP n_datasetsSEXP, SEXP dataSEXP, SEXP eigen_typeSEXP, SEXP replaceSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const int >::type n_datasets(n_datasetsSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type data(dataSEXP);
-    Rcpp::traits::input_parameter< const int >::type eigen_type(eigen_typeSEXP);
-    Rcpp::traits::input_parameter< const bool >::type replace(replaceSEXP);
-    rcpp_result_gen = Rcpp::wrap(parallel_resample(n_datasets, data, eigen_type, replace));
-    return rcpp_result_gen;
-END_RCPP
-}
 // parallel_summarise
 NumericMatrix parallel_summarise(NumericMatrix eig_vals, NumericVector percent, const int n_datasets, const int n_vars);
 RcppExport SEXP _EFAdiff_parallel_summarise(SEXP eig_valsSEXP, SEXP percentSEXP, SEXP n_datasetsSEXP, SEXP n_varsSEXP) {
@@ -148,8 +118,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EFAdiff_parallel_sim", (DL_FUNC) &_EFAdiff_parallel_sim, 4},
     {"_EFAdiff_parallel_paf", (DL_FUNC) &_EFAdiff_parallel_paf, 4},
     {"_EFAdiff_parallel_paf_sim", (DL_FUNC) &_EFAdiff_parallel_paf_sim, 6},
-    {"_EFAdiff_parallel_paf_resample", (DL_FUNC) &_EFAdiff_parallel_paf_resample, 6},
-    {"_EFAdiff_parallel_resample", (DL_FUNC) &_EFAdiff_parallel_resample, 4},
     {"_EFAdiff_parallel_summarise", (DL_FUNC) &_EFAdiff_parallel_summarise, 4},
     {NULL, NULL, 0}
 };

@@ -94,46 +94,15 @@ parallel_paf_sim <- function(n_datasets, n_vars, n_cases, criterion, crit_type, 
     .Call(`_EFAdiff_parallel_paf_sim`, n_datasets, n_vars, n_cases, criterion, crit_type, max_iter)
 }
 
-#' Parallel analysis on resampled real data.
-#'
-#' Function called from within PARALLEL so usually no call to this is needed by the user.
-#' Provides a C++ implementation of the PARALLEL resampling procedure where eigenvalues
-#' are found using the parallel_paf function.
-#'
-#' @param n_datasets numeric. Number of datasets to simulate.
-#' @param data numeric matrix. The real data matrix to perform resampling on.
-#' @param replace logical. Should resampling be done with replacement (TRUE) or without (FALSE).
-#' @param criterion double. Convergence criterion to use.
-#' @param crit_type integer. Whether max_individual (1) or sums (2).
-#' @param max_iter integer. The maximum number of iterations after which to stop the iterative procedure if no convergence is reached by then.
-#' @export
-parallel_paf_resample <- function(n_datasets, data, replace, criterion, crit_type, max_iter) {
-    .Call(`_EFAdiff_parallel_paf_resample`, n_datasets, data, replace, criterion, crit_type, max_iter)
-}
-
-#' Parallel analysis on resampled real data.
-#'
-#' Function called from within PARALLEL so usually no call to this is needed by the user.
-#' Provides a C++ implementation of the PARALLEL resampling procedure
-#'
-#' @param n_datasets numeric. Number of datasets to simulate.
-#' @param data numeric matrix. The real data matrix to perform resampling on.
-#' @param eigen_type numeric. Whether PCA (eigen_type = 1; i.e., leaving diagonal of correlation matrix at 1) or PAF (eigen_type = 2; i.e., setting diagonal of correlation matrix to SMCs).
-#' @param replace logical. Should resampling be done with replacement (TRUE) or without (FALSE).
-#' @export
-parallel_resample <- function(n_datasets, data, eigen_type, replace) {
-    .Call(`_EFAdiff_parallel_resample`, n_datasets, data, eigen_type, replace)
-}
-
-#' Summarise the raw data from the \link{parallel_sim} and \link{parallel_resample}
+#' Summarise the raw data from the \link{parallel_sim}
 #'
 #' Function called from within PARALLEL so usually no call to this is needed by the user.
 #' Provides a C++ implementation to aggregate the eigenvalues from the simulations
-#' performed using \link{parallel_sim} and \link{parallel_resample}.
+#' performed using \link{parallel_sim}.
 #'
-#' @param eig_vals matrix. A matrix as returned by \link{parallel_sim} or \link{parallel_resample}.
+#' @param eig_vals matrix. A matrix as returned by \link{parallel_sim}.
 #' @param percent numeric. A vector of percentiles for which the eigenvalues should be returned.
-#' @param n_datasets integer. The number of datasets simulated in \link{parallel_sim} or \link{parallel_resample}.
+#' @param n_datasets integer. The number of datasets simulated in \link{parallel_sim}.
 #' @param n_vars numeric. The number of variables / indicators per dataset.
 #' @export
 parallel_summarise <- function(eig_vals, percent, n_datasets, n_vars) {

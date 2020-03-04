@@ -32,6 +32,14 @@ plot.PARALLEL <- function(x, ...) {
   if (isTRUE(x$ctrl$x_dat)) {
     graphics::lines(1:x$ctrl$n_vars, x$eigenvalues[,"Real Eigenvalues"])
     graphics::points(1:x$ctrl$n_vars, x$eigenvalues[,"Real Eigenvalues"], pch = 16)
+    if (!is.na(x$n_factors)) {
+      graphics::points(x$n_factors, x$eigenvalues[x$n_factors,"Real Eigenvalues"],
+                       pch = 1, cex = 2, col = "red")
+      graphics::text(x$n_factors, x$eigenvalues[x$n_factors,"Real Eigenvalues"],
+                     x$n_factors, pos = 3, cex = 1.5, col = "red",
+                     font = 1, offset = .75)
+    }
+
   }
 
   cols <- viridisLite::viridis(ncol(x$eigenvalues) - x$ctrl$x_dat, end = .8)
