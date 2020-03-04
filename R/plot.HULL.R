@@ -19,7 +19,8 @@ plot.HULL <- function(x, ...) {
   sol <- as.data.frame(x$solutions)
 
   graphics::plot.new()
-  graphics::plot.window(xlim = c(0, max(sol$df) + max(sol$df) / 100 * 10),
+  graphics::plot.window(xlim = c(min(sol$df) - min(sol$df) / 100 * 10,
+                                 max(sol$df) + max(sol$df) / 100 * 10),
                         ylim = c(0, round(max(sol$f), 1) + .1), xaxs = "i",
                         yaxs = "i")
   graphics::axis(1, c(0, sol$df, round(max(sol$df) + max(sol$df) / 100 * 10)))
