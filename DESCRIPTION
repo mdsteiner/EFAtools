@@ -25,6 +25,8 @@ Imports:
     RcppArmadillo,
     viridisLite,
     graphics,
-    parallel
+    parallel,
+    future.apply,
+    future
 LinkingTo: 
     Rcpp, RcppArmadillo

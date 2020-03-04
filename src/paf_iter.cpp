@@ -16,12 +16,11 @@ using namespace arma;
 //' @param abs_eig logical. Whether absolute eigenvalues should be used to compute the loadings.
 //' @param crit_type numeric. Whether maximum absolute differences (crit_type = 1), or sum of differences (crit_type = 2) should be used
 //' @param max_iter numeric. The number of iterations after which to end the procedure if no convergence has been reached by then.
-//' @param idx logical. A vector of length n_fac with TRUEs. Needed for indexing.
 //' @export
 // [[Rcpp::export]]
 Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
                     const int n_fac, bool abs_eig, int crit_type,
-                    int max_iter, arma::uvec idx) {
+                    int max_iter) {
 
   int iter = 1;
   double delta = 1.0;
@@ -33,6 +32,8 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
   arma::vec eigval;
   arma::mat eigvec;
   arma::mat Lt;
+  arma::uvec idx(n_fac);
+  idx.fill(true);
 
   if (abs_eig == false) {
 

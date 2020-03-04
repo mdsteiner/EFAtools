@@ -4,18 +4,16 @@
 \alias{hull_paf}
 \title{Perform the iterative PAF procedure}
 \usage{
-hull_paf(R, criterion, n_fac, max_iter, idx)
+hull_paf(n_fac, R, criterion, max_iter)
 }
 \arguments{
+\item{n_fac}{numeric. The number of factors to extract.}
+
 \item{R}{matrix. The correlation matrix.}
 
 \item{criterion}{double. The convergence criterion to use.}
 
-\item{n_fac}{numeric. The number of factors to extract.}
-
 \item{max_iter}{numeric. The number of iterations after which to end the procedure if no convergence has been reached by then.}
-
-\item{idx}{logical. A vector of length n_fac with TRUEs. Needed for indexing.}
 }
 \description{
 Function called from within PAF so usually no call to this is needed by the user.

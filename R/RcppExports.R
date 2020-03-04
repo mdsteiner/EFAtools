@@ -19,14 +19,13 @@ factor_corres <- function(x, y, thresh = 0.3) {
 #' Function called from within PAF so usually no call to this is needed by the user.
 #' Provides a C++ implementation of the PAF procedure
 #'
+#' @param n_fac numeric. The number of factors to extract.
 #' @param R matrix. The correlation matrix.
 #' @param criterion double. The convergence criterion to use.
-#' @param n_fac numeric. The number of factors to extract.
 #' @param max_iter numeric. The number of iterations after which to end the procedure if no convergence has been reached by then.
-#' @param idx logical. A vector of length n_fac with TRUEs. Needed for indexing.
 #' @export
-hull_paf <- function(R, criterion, n_fac, max_iter, idx) {
-    .Call(`_EFAdiff_hull_paf`, R, criterion, n_fac, max_iter, idx)
+hull_paf <- function(n_fac, R, criterion, max_iter) {
+    .Call(`_EFAdiff_hull_paf`, n_fac, R, criterion, max_iter)
 }
 
 #' Perform the iterative PAF procedure
@@ -41,10 +40,9 @@ hull_paf <- function(R, criterion, n_fac, max_iter, idx) {
 #' @param abs_eig logical. Whether absolute eigenvalues should be used to compute the loadings.
 #' @param crit_type numeric. Whether maximum absolute differences (crit_type = 1), or sum of differences (crit_type = 2) should be used
 #' @param max_iter numeric. The number of iterations after which to end the procedure if no convergence has been reached by then.
-#' @param idx logical. A vector of length n_fac with TRUEs. Needed for indexing.
 #' @export
-paf_iter <- function(h2, criterion, R, n_fac, abs_eig, crit_type, max_iter, idx) {
-    .Call(`_EFAdiff_paf_iter`, h2, criterion, R, n_fac, abs_eig, crit_type, max_iter, idx)
+paf_iter <- function(h2, criterion, R, n_fac, abs_eig, crit_type, max_iter) {
+    .Call(`_EFAdiff_paf_iter`, h2, criterion, R, n_fac, abs_eig, crit_type, max_iter)
 }
 
 #' Parallel analysis on simulated data.

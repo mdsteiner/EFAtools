@@ -1,6 +1,9 @@
 #' Parallel analysis
 #'
-#' Various methods for performing parallel analysis.
+#' Various methods for performing parallel analysis. This function uses
+#' \link{future.apply}{future_lapply} for which a parallel processing plan can
+#' be selected. To do so, call \code{library(future)} and, for example,
+#'  \code{plan(multisession)}; see examples.
 #'
 #' @param x matrix or data.frame. The real data to compare the simulated eigenvalues
 #'  against. Must not contain variables of classes other than numeric. Can be a
@@ -29,8 +32,6 @@
 #'  removes them list-wise. \code{"none"} returns a warning if \code{NA}s occur and
 #'  in this case does not perform resampling, nor compares the the eigen values
 #'  of \code{x} against the simulated ones.
-#' @param n_cores numeric. Number of cores to perform the simulations and resampling
-#'  on. By default this is found using \code{parallel::detectCores()}.
 #' @param decision_rule character. Which rule to use to determine the number of
 #'  factors to retain. Default is \code{"mean"}, which will use the average
 #'  simulated eigenvalues. \code{"Percentile"}, uses the percentiles specified
@@ -66,6 +67,10 @@
 #' PARALLEL(n_cases = 500, n_vars = 10)
 #' # example without correlation matrix
 #' PARALLEL(test_models$case_11b$cormat, n_cases = test_models$case_11b$N)
+#'
+#' # for parallel computation
+#' future::plan(future::multisession)
+#' PARALLEL(test_models$case_11b$cormat, n_cases = test_models$case_11b$N)
 #' }
 PARALLEL <- function(x = NULL,
                      cors = TRUE,
@@ -77,7 +82,6 @@ PARALLEL <- function(x = NULL,
                      data_type = c("sim"), # , "resample"
                      replace = TRUE,
                      na_action = c("pairwise.complete.obs", "everything", "all.obs", "complete.obs", "na.or.complete"),
-                     n_cores = parallel::detectCores(),
                      decision_rule = c("Means", "Percentile", "Crawford"),
                      criterion = .001,
                      criterion_type = c("sums", "max_individual"),
@@ -89,6 +93,7 @@ PARALLEL <- function(x = NULL,
   decision_rule <- match.arg(decision_rule)
   criterion_type <- match.arg(criterion_type)
 
+  n_cores <- future::nbrOfWorkers()
   size_vec <- rep(round(n_datasets / n_cores), n_cores - 1)
   size_vec[n_cores] <- n_datasets - sum(size_vec)
 
@@ -198,26 +203,24 @@ PARALLEL <- function(x = NULL,
 
     if (eigen_type == "PCA") {
 
-      eigvals <- parallel::mclapply(size_vec, parallel_sim, n_cases = n_cases,
-                                    n_vars = n_vars, eigen_type = 1,
-                                    mc.cores = n_cores)
+      eigvals <- future.apply::future_lapply(size_vec, parallel_sim, n_cases = n_cases,
+                                             n_vars = n_vars, eigen_type = 1)
 
       eigvals <- do.call(rbind, eigvals)
 
     } else if (eigen_type == "PAF") {
 
-      eigvals <- parallel::mclapply(size_vec, parallel_sim, n_cases = n_cases,
-                                    n_vars = n_vars, eigen_type = 2,
-                                    mc.cores = n_cores)
+      eigvals <- future.apply::future_lapply(size_vec, parallel_sim, n_cases = n_cases,
+                                             n_vars = n_vars, eigen_type = 2)
       eigvals <- do.call(rbind, eigvals)
 
     } else if (eigen_type == "FA") {
 
-      eigvals <- parallel::mclapply(size_vec, parallel_paf_sim, n_cases = n_cases,
-                                    n_vars = n_vars, criterion = criterion,
+      eigvals <- future.apply::future_lapply(size_vec, parallel_paf_sim,
+                                             n_cases = n_cases, n_vars = n_vars,
+                                             criterion = criterion,
                                     crit_type = ifelse(criterion_type == "sums",
-                                                       2, 1), max_iter = max_iter,
-                                    mc.cores = n_cores)
+                                                       2, 1), max_iter = max_iter)
       eigvals <- do.call(rbind, eigvals)
 
     }

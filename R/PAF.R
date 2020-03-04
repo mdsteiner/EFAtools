@@ -423,7 +423,7 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
     # run the iterative PAF procedure using Rcpp
     L_list <- paf_iter(h2 = h2, criterion = criterion, R = R, n_fac = m,
                        abs_eig = abs_eigen, crit_type = crit_type,
-                       max_iter = max_iter, idx = rep(TRUE, m))
+                       max_iter = max_iter)
 
     h2 <- as.vector(L_list$h2)
     R <- L_list$R

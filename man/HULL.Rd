@@ -30,10 +30,22 @@ A list of class HULL containing the following objects
 }
 \description{
 Implementation of the Hull method suggested by Lorenzo-Seva, Timmereman,
-and Kiers (2011), but using principal axis factoring.
+and Kiers (2011), but using principal axis factoring. See details for
+parallelization.
+}
+\details{
+The \link{PARALLEL} function and the principal axis factoring of the
+  different number of factors can be parallelized using the future framework,
+  by calling the \link{future}{plan} function. The examples provide example code
+  on how to enable parallel processing.
 }
 \examples{
 \dontrun{
+HULL(IDS2_R, n_cases = 2000)
+
+# using parallel processing (Note: plans can be adapted, see the future
+# package for details)
+future::plan(future::multisession)
 HULL(IDS2_R, n_cases = 2000)
 }
 }

@@ -19,7 +19,6 @@ PARALLEL(
   replace = TRUE,
   na_action = c("pairwise.complete.obs", "everything", "all.obs", "complete.obs",
     "na.or.complete"),
-  n_cores = parallel::detectCores(),
   decision_rule = c("Means", "Percentile", "Crawford"),
   criterion = 0.001,
   criterion_type = c("sums", "max_individual"),
@@ -64,9 +63,6 @@ removes them list-wise. \code{"none"} returns a warning if \code{NA}s occur and
 in this case does not perform resampling, nor compares the the eigen values
 of \code{x} against the simulated ones.}
 
-\item{n_cores}{numeric. Number of cores to perform the simulations and resampling
-on. By default this is found using \code{parallel::detectCores()}.}
-
 \item{decision_rule}{character. Which rule to use to determine the number of
 factors to retain. Default is \code{"mean"}, which will use the average
 simulated eigenvalues. \code{"Percentile"}, uses the percentiles specified
@@ -97,13 +93,20 @@ A list of class PARALLEL containing the following objects
 \item{ctrl}{A list of control settings used in the print function.}
 }
 \description{
-Various methods for performing parallel analysis.
+Various methods for performing parallel analysis. This function uses
+\link{future.apply}{future_lapply} for which a parallel processing plan can
+be selected. To do so, call \code{library(future)} and, for example,
+ \code{plan(multisession)}; see examples.
 }
 \examples{
 \dontrun{
 # example without real data
 PARALLEL(n_cases = 500, n_vars = 10)
 # example without correlation matrix
+PARALLEL(test_models$case_11b$cormat, n_cases = test_models$case_11b$N)
+
+# for parallel computation
+future::plan(future::multisession)
 PARALLEL(test_models$case_11b$cormat, n_cases = test_models$case_11b$N)
 }
 }

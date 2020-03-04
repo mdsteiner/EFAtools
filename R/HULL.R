@@ -1,7 +1,8 @@
 #' Hull method for determining the number of factors to retain
 #'
 #' Implementation of the Hull method suggested by Lorenzo-Seva, Timmereman,
-#' and Kiers (2011), but using principal axis factoring.
+#' and Kiers (2011), but using principal axis factoring. See details for
+#' parallelization.
 #'
 #' @param x matrix or data.frame. Correlation matrix or raw data.
 #' @param cors logical. Whether x is a correlation matrix. Default is set to TRUE.
@@ -11,6 +12,11 @@
 #'   of this number and the number of factors suggested by \link{PARALLEL} olus
 #'   onewill be used in the Hull method.
 #' @param ... Further arguments passed to \link{PARALLEL}.
+#'
+#' @details The \link{PARALLEL} function and the principal axis factoring of the
+#'   different number of factors can be parallelized using the future framework,
+#'   by calling the \link{future}{plan} function. The examples provide example code
+#'   on how to enable parallel processing.
 #'
 #' @return A list of class HULL containing the following objects
 #' \item{n_factors}{The number of factors to retain according to the Hull method.}
@@ -22,6 +28,11 @@
 #'
 #' @examples
 #' \dontrun{
+#' HULL(IDS2_R, n_cases = 2000)
+#'
+#' # using parallel processing (Note: plans can be adapted, see the future
+#' # package for details)
+#' future::plan(future::multisession)
 #' HULL(IDS2_R, n_cases = 2000)
 #' }
 HULL <- function(x, cors = TRUE, n_cases = NA, n_factors = NA, ...) {
@@ -64,13 +75,14 @@ HULL <- function(x, cors = TRUE, n_cases = NA, n_factors = NA, ...) {
   s[1, 2] <- 1 - psych::KMO(R)$MSA
   s[1, 3] <- ((m)**2 - (m)) / 2
 
+
+  pafs <- future.apply::future_lapply(1:J, hull_paf, R = R, criterion = .001,
+                                      max_iter = 1e4)
+
   # then for 1 to J factors
   for (i in 1:J) {
-    paf_i <- hull_paf(R, n_fac = i, criterion = .001, max_iter = 1e3,
-                          idx = rep(TRUE, i))
-
     # compute goodness of fit "f" as CAF (common part accounted for; Eq 3)
-    A_i <- paf_i
+    A_i <- pafs[[i]]
     delta_hat <- R - (A_i %*% t(A_i))
     diag(delta_hat) <- 1
     s[i + 1, 2] <- 1 - psych::KMO(delta_hat)$MSA

@@ -9,15 +9,13 @@ using namespace arma;
 //' Function called from within PAF so usually no call to this is needed by the user.
 //' Provides a C++ implementation of the PAF procedure
 //'
+//' @param n_fac numeric. The number of factors to extract.
 //' @param R matrix. The correlation matrix.
 //' @param criterion double. The convergence criterion to use.
-//' @param n_fac numeric. The number of factors to extract.
 //' @param max_iter numeric. The number of iterations after which to end the procedure if no convergence has been reached by then.
-//' @param idx logical. A vector of length n_fac with TRUEs. Needed for indexing.
 //' @export
 // [[Rcpp::export]]
-arma::mat hull_paf(arma::mat R, double criterion,
-                    const int n_fac, int max_iter, arma::uvec idx) {
+arma::mat hull_paf(const int n_fac, arma::mat R, double criterion, int max_iter) {
 
   int iter = 1;
   double delta = 1.0;
@@ -30,6 +28,8 @@ arma::mat hull_paf(arma::mat R, double criterion,
   arma::mat eigvec;
   arma::mat Lt;
   arma::vec h2;
+  arma::uvec idx(n_fac);
+  idx.fill(true);
 
   // compute smcs
   arma::mat temp(R.n_cols, R.n_cols);
