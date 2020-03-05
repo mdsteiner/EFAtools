@@ -200,6 +200,13 @@ PARALLEL <- function(x = NULL,
   }
 
   if (data_type == "sim") {
+    if (is.na(n_cases)) {
+      stop('"n_cases" was not set and could not be taken from data. Please specify n_cases and try again.')
+    }
+
+    if (is.na(n_vars)) {
+      stop('"n_vars" was not set and could not be taken from data. Please specify n_vars and try again.')
+    }
 
     if (eigen_type == "PCA") {
 
