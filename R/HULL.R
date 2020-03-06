@@ -72,7 +72,7 @@ HULL <- function(x, cors = TRUE, n_cases = NA, n_factors = NA, ...) {
   colnames(s) <- c("n factors", "f", "df", "st")
 
   # first for 0 factors
-  s[1, 2] <- 1 - psych::KMO(R)$MSA
+  s[1, 2] <- 1 - KMO(R)$KMO
   s[1, 3] <- ((m)**2 - (m)) / 2
 
 
@@ -85,7 +85,7 @@ HULL <- function(x, cors = TRUE, n_cases = NA, n_factors = NA, ...) {
     A_i <- pafs[[i]]
     delta_hat <- R - (A_i %*% t(A_i))
     diag(delta_hat) <- 1
-    s[i + 1, 2] <- 1 - psych::KMO(delta_hat)$MSA
+    s[i + 1, 2] <- 1 - KMO(delta_hat)$KMO
 
     # compute dfs (Eq 4 provides the number of free parameters; using dfs yields
     # th same numbers, as the difference in df equals the difference in free parameters)

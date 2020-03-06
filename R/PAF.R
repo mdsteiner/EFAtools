@@ -80,8 +80,8 @@
 #' \item{final_eigen}{Eigenvalues of the final iteration.}
 #' \item{unrot_loadings}{Loading matrix containing the final loadings.}
 #' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings}
-#' \item{fit_indices}{Fit indices as returned by
-#'  \code{\link[psych:factor.stats]{psych::factor.stats}}}
+#' \item{fit_indices}{Common part accounted for (CAF) index as proposed by Lorenzo-Seva,
+#' Timmerman, & Kiers (2011) and degrees of freedom}}
 #' \item{settings}{list. The settings (arguments) used in the PAF.}
 #'
 #' @source Grieder, S., & Steiner, M.D.(2019). Algorithmic Jingle Jungle: Comparison of Implementations of an EFA Procedure in R psych Versus SPSS, MacOrtho, and Omega. Submitted Manuscript.
@@ -461,13 +461,14 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
 
   colnames(vars_accounted) <- colnames(L)
 
-  # compute fit indices
-  fit_ind <- try(psych::factor.stats(orig_R, L, n.obs = N), silent = TRUE)
+  # compute CAF and degrees of freedom
+  delta_hat <- orig_R - (L %*% t(L))
+  diag(delta_hat) <- 1
+  CAF <- 1 - KMO(delta_hat)$KMO
 
-  if (all(class(fit_ind) == "try-error")) {
-    fit_ind <- NA
-  }
+  df <- ((m - nrow(L))**2 - (m + nrow(L))) / 2
 
+  fit_ind <- list(CAF, df)
 
   # create the output object
   class(L) <- "LOADINGS"
