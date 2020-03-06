@@ -35,7 +35,8 @@
 #' future::plan(future::multisession)
 #' HULL(IDS2_R, n_cases = 2000)
 #' }
-HULL <- function(x, cors = TRUE, n_cases = NA, n_factors = NA, ...) {
+HULL <- function(x, cors = TRUE, n_cases = NA, n_factors = NA,
+                 method = c("PAF", "ULS"), ...) {
   # Perform hull method following Lorenzo-Seva, Timmereman, and Kiers (2011)
 
   if (!isTRUE(cors)) {
@@ -72,12 +73,17 @@ HULL <- function(x, cors = TRUE, n_cases = NA, n_factors = NA, ...) {
   colnames(s) <- c("n factors", "f", "df", "st")
 
   # first for 0 factors
-  s[1, 2] <- 1 - psych::KMO(R)$MSA
+  s[1, 2] <- 1 - KMO(R)$KMO
   s[1, 3] <- ((m)**2 - (m)) / 2
 
 
-  pafs <- future.apply::future_lapply(1:J, hull_paf, R = R, criterion = .001,
-                                      max_iter = 1e4)
+  if (method == "PAF") {
+    loadings <- future.apply::future_lapply(1:J, hull_paf, R = R, criterion = .001,
+                                           max_iter = 1e4)
+  } else if (method == "ULS") {
+    loadings <- future.apply::future_lapply(1:J, .hull_uls, R = R)
+  }
+
 
   # then for 1 to J factors
   for (i in 1:J) {
@@ -85,7 +91,7 @@ HULL <- function(x, cors = TRUE, n_cases = NA, n_factors = NA, ...) {
     A_i <- pafs[[i]]
     delta_hat <- R - (A_i %*% t(A_i))
     diag(delta_hat) <- 1
-    s[i + 1, 2] <- 1 - psych::KMO(delta_hat)$MSA
+    s[i + 1, 2] <- 1 - KMO(delta_hat)$KMO
 
     # compute dfs (Eq 4 provides the number of free parameters; using dfs yields
     # th same numbers, as the difference in df equals the difference in free parameters)
@@ -174,4 +180,10 @@ HULL <- function(x, cors = TRUE, n_cases = NA, n_factors = NA, ...) {
   class(out) <- "HULL"
 
   return(out)
+}
+
+
+.hull_uls <- function(n_factors, R) {
+  uls <- .fit_uls(R, n_factors)
+  return(uls$loadings)
 }
