@@ -108,6 +108,32 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// grad_uls
+arma::vec grad_uls(arma::vec psi, arma::mat R, const int n_fac);
+RcppExport SEXP _EFAdiff_grad_uls(SEXP psiSEXP, SEXP RSEXP, SEXP n_facSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type psi(psiSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type R(RSEXP);
+    Rcpp::traits::input_parameter< const int >::type n_fac(n_facSEXP);
+    rcpp_result_gen = Rcpp::wrap(grad_uls(psi, R, n_fac));
+    return rcpp_result_gen;
+END_RCPP
+}
+// uls_residuals
+double uls_residuals(arma::vec psi, arma::mat R, const int n_fac);
+RcppExport SEXP _EFAdiff_uls_residuals(SEXP psiSEXP, SEXP RSEXP, SEXP n_facSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type psi(psiSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type R(RSEXP);
+    Rcpp::traits::input_parameter< const int >::type n_fac(n_facSEXP);
+    rcpp_result_gen = Rcpp::wrap(uls_residuals(psi, R, n_fac));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_EFAdiff_factor_corres", (DL_FUNC) &_EFAdiff_factor_corres, 3},
@@ -117,6 +143,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EFAdiff_parallel_paf", (DL_FUNC) &_EFAdiff_parallel_paf, 4},
     {"_EFAdiff_parallel_paf_sim", (DL_FUNC) &_EFAdiff_parallel_paf_sim, 6},
     {"_EFAdiff_parallel_summarise", (DL_FUNC) &_EFAdiff_parallel_summarise, 4},
+    {"_EFAdiff_grad_uls", (DL_FUNC) &_EFAdiff_grad_uls, 3},
+    {"_EFAdiff_uls_residuals", (DL_FUNC) &_EFAdiff_uls_residuals, 3},
     {NULL, NULL, 0}
 };
 

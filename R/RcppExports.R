@@ -107,3 +107,11 @@ parallel_summarise <- function(eig_vals, percent, n_datasets, n_vars) {
     .Call(`_EFAdiff_parallel_summarise`, eig_vals, percent, n_datasets, n_vars)
 }
 
+.grad_uls <- function(psi, R, n_fac) {
+    .Call(`_EFAdiff_grad_uls`, psi, R, n_fac)
+}
+
+.uls_residuals <- function(psi, R, n_fac) {
+    .Call(`_EFAdiff_uls_residuals`, psi, R, n_fac)
+}
+
