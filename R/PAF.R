@@ -101,7 +101,7 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
 
   # create R correlation matrix object, if from data, using
   # pairwise binary correlations
-  if (cors) {
+  if (isTRUE(cors)) {
     R <- x
 
     # test whether a real correlation matrix is used
