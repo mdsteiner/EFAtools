@@ -33,6 +33,32 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// grad_ml
+arma::vec grad_ml(arma::vec psi, arma::mat R, const int n_fac);
+RcppExport SEXP _EFAdiff_grad_ml(SEXP psiSEXP, SEXP RSEXP, SEXP n_facSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type psi(psiSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type R(RSEXP);
+    Rcpp::traits::input_parameter< const int >::type n_fac(n_facSEXP);
+    rcpp_result_gen = Rcpp::wrap(grad_ml(psi, R, n_fac));
+    return rcpp_result_gen;
+END_RCPP
+}
+// error_ml
+double error_ml(arma::vec psi, arma::mat R, const int n_fac);
+RcppExport SEXP _EFAdiff_error_ml(SEXP psiSEXP, SEXP RSEXP, SEXP n_facSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type psi(psiSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type R(RSEXP);
+    Rcpp::traits::input_parameter< const int >::type n_fac(n_facSEXP);
+    rcpp_result_gen = Rcpp::wrap(error_ml(psi, R, n_fac));
+    return rcpp_result_gen;
+END_RCPP
+}
 // paf_iter
 Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R, const int n_fac, bool abs_eig, int crit_type, int max_iter);
 RcppExport SEXP _EFAdiff_paf_iter(SEXP h2SEXP, SEXP criterionSEXP, SEXP RSEXP, SEXP n_facSEXP, SEXP abs_eigSEXP, SEXP crit_typeSEXP, SEXP max_iterSEXP) {
@@ -138,6 +164,8 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_EFAdiff_factor_corres", (DL_FUNC) &_EFAdiff_factor_corres, 3},
     {"_EFAdiff_hull_paf", (DL_FUNC) &_EFAdiff_hull_paf, 4},
+    {"_EFAdiff_grad_ml", (DL_FUNC) &_EFAdiff_grad_ml, 3},
+    {"_EFAdiff_error_ml", (DL_FUNC) &_EFAdiff_error_ml, 3},
     {"_EFAdiff_paf_iter", (DL_FUNC) &_EFAdiff_paf_iter, 7},
     {"_EFAdiff_parallel_sim", (DL_FUNC) &_EFAdiff_parallel_sim, 4},
     {"_EFAdiff_parallel_paf", (DL_FUNC) &_EFAdiff_parallel_paf, 4},

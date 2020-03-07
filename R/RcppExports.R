@@ -28,6 +28,14 @@ hull_paf <- function(n_fac, R, criterion, max_iter) {
     .Call(`_EFAdiff_hull_paf`, n_fac, R, criterion, max_iter)
 }
 
+.grad_ml <- function(psi, R, n_fac) {
+    .Call(`_EFAdiff_grad_ml`, psi, R, n_fac)
+}
+
+.error_ml <- function(psi, R, n_fac) {
+    .Call(`_EFAdiff_error_ml`, psi, R, n_fac)
+}
+
 #' Perform the iterative PAF procedure
 #'
 #' Function called from within PAF so usually no call to this is needed by the user.

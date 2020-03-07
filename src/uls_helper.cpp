@@ -19,7 +19,7 @@ arma::vec grad_uls(arma::vec psi, arma::mat R, const int n_fac) {
 
   Rs = R - arma::diagmat(psi);
   eig_sym(eigval, eigvec, Rs);
-  Lambda = arma::abs(flipud(eigval));
+  Lambda = flipud(eigval);
   Lambda = Lambda.elem(arma::find(idx));
   // replace values smaller than 0
   arma::uvec idx2 = find(Lambda < 0);
@@ -55,7 +55,7 @@ double uls_residuals(arma::vec psi, arma::mat R, const int n_fac) {
 
   R.diag() = 1 - psi;
   eig_sym(eigval, eigvec, R);
-  Lambda = arma::abs(flipud(eigval));
+  Lambda = flipud(eigval);
   Lambda = Lambda.elem(arma::find(idx));
   // replace values smaller than 0
   arma::uvec idx2 = find(Lambda <   datum::eps);
