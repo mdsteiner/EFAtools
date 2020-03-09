@@ -81,7 +81,19 @@ KMO <- function(x, cors = TRUE, use = "pairwise.complete.obs") {
   KMO <- sumR2/(sumR2 + sumQ2)
   KMO_i <- colSums(R^2)/(colSums(R^2) + colSums(Q^2))
 
+  if(!is.null(colnames(R))){
+
+    names(KMO_i) <- colnames(R)
+
+  } else if(!is.null(rownames(R))) {
+
+    names(KMO_i) <- rownames(R)
+
+  }
+
   output <- list(KMO = KMO, KMO_i = KMO_i)
+
+  class(output) <- "KMO"
 
   return(output)
 
