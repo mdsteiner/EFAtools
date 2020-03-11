@@ -1,4 +1,4 @@
-#' test_models
+#' Four test models used in Grieder and Steiner (2020)
 #'
 #' Correlation matrices created from simulated data from four of the
 #' \code{population_models} cases, each with strong factor intercorrealtions.

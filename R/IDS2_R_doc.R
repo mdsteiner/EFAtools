@@ -1,4 +1,4 @@
-#' IDS2_R
+#' Intelligence subtests from the Intelligence and Development Scales--2
 #'
 #' A matrix containing the bivariate correlations of the 14 intelligence subtests from the Intelligence and Development Scales--2 (IDS-2; Grob & Hagmann-von Arx, 2018), an intelligence and development test battery for children and adolescents aged 5 to 20 years. Details can be found in Grieder & Grob (2019).
 #'

@@ -1,4 +1,4 @@
-#' WJ-IV Ages 14 to 19
+#' Woodcock Johnson IV, ages 14 to 19
 #'
 #' A list containing the bivariate correlations (N = 1,685) of the 47
 #' intelligence subtests from the WJ IV for 14- to 19-year-olds obtained from

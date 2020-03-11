@@ -103,8 +103,21 @@
 #' @source
 #' @example
 #' \dontrun{
-#' # Use with a lavaan output
+#' ## Use with a lavaan output
+#' library(lavaan)
 #'
+#' # Create and fit model in lavaan
+#' mod <- 'VP = GS + PL
+#'         PS = TC + CB
+#'         ASTM = NL + NLM
+#'         VSSTM = GF + RGF
+#'         AR = CM + EP
+#'         VR = CA + OP
+#'         LTM = RS + DP
+#'         g = VP + PS + ASTM + VSSTM + AR + VR + LTM'
+#'
+#'
+#' # Calculate omega
 #' OMEGA()
 #'
 #' # Use with an output from the SL function, with type = "GS" (default)
