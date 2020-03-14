@@ -28,6 +28,7 @@
 #' last two on the second group factor. If a variable should not be assigned to
 #' any group factor, insert a zero at its position (e.g. c(3, 3, 0, 1, 1, 2, 2),
 #' the third variable has no corresponding group factor).
+#' @param type character. Either \code{"GS"} (default), \code{"psych"}, or \code{"Watkins
 #' @param g_load numeric. A vector of general factor loadings from an SL solution.
 #' This needs only be specified if \code{model} is left \code{NULL}.
 #' @param s_load matrix. A matrix of group factor loadings from an SL solution. This needs
@@ -47,7 +48,6 @@
 #' matrix. If \code{"sums_load"}, then total variances are calculated using the
 #' squared sums of general factor loadings and group factor loadings and
 #' the sum of uniquenesses (see details).
-#' @param type character. Either \code{"GS"} (default), \code{"psych"}, or \code{"Watkins"}.
 #'
 #'
 #' @section How to combine arguments:
@@ -107,15 +107,19 @@
 #' library(lavaan)
 #'
 #' # Create and fit model in lavaan
-#' mod <- 'VP = GS + PL
-#'         PS = TC + CB
-#'         ASTM = NL + NLM
-#'         VSSTM = GF + RGF
-#'         AR = CM + EP
-#'         VR = CA + OP
-#'         LTM = RS + DP
-#'         g = VP + PS + ASTM + VSSTM + AR + VR + LTM'
-#'
+#' mod <- 'AVR =~ GS + PL + CM + EP
+#'         PS =~ b*TC + b*CB
+#'         ASTM =~ c*NL + c*NLM
+#'         VSSTM =~ d*GF + d*RGF
+#'         SLTM =~ CA + OP + RS + DP
+#'         g =~ GS + PL + TC + CB + NL + NLM + GF + RGF + CM + EP + CA + OP +
+#'              RS + DP'
+#' SD <- c(3.20, 3.18, 3.13, 3.15, 3.20, 3.11, 3.06, 3.07, 3.14, 3.18, 3.22,
+#'         3.16, 3.16, 3.08) # Taken from Table A1 in Grieder & Grob (2019)
+#' IDS2_cov <- lavaan::cor2cov(IDS2_R, sds = SD, names = colnames(IDS2_R))
+#' fit <- cfa(mod, sample.cov = IDS2_cov, sample.nobs = 1991, estimator = "ml",
+#'            orthogonal = TRUE)
+#' OMEGA(fit)
 #'
 #' # Calculate omega
 #' OMEGA()
