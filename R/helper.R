@@ -282,5 +282,5 @@
 
 
 .onUnload <- function (libpath) {
-  library.dynam.unload("EFAdiff", libpath)
+  library.dynam.unload("EFAtools", libpath)
 }
