@@ -3,8 +3,8 @@
 \docType{data}
 \name{WJIV_ages_9_13}
 \alias{WJIV_ages_9_13}
-\title{WJ-IV Ages 9 to 13}
-\format{A list of 2 with elements "n" (scalar) and "cormat" (47 x 47 matrix of bivariate correlations). The correlation matrix contains the following variables:
+\title{Woodcock Johnson IV, ages 9 to 13}
+\format{A list of 2 with elements "N" (scalar) and "cormat" (47 x 47 matrix of bivariate correlations). The correlation matrix contains the following variables:
 \describe{
   \item{ORLVOC}{(numeric) - Oral Vocabulary.}
   \item{NUMSER}{(numeric) - Number Series.}
@@ -65,10 +65,9 @@ Rolling Meadows, IL: Riverside.
 WJIV_ages_9_13
 }
 \description{
-A list containing the bivariate correlations (N = 1572) of the 47
-intelligence subtests from the WJ-IV for 9 to 13 years olds obtained from
-the technical Manual (McGrew, LaForte, & Schrank, 2014);
-an intelligence test battery. Details can be found in the  WJ-IV technical
-manual (2014). Tables reproduced with permission from the publisher.
+A list containing the bivariate correlations (N = 1,572) of the 47
+intelligence subtests from the WJ IV for 9- to 13-year-olds obtained from
+the WJ-IV technical manual (McGrew, LaForte, & Schrank, 2014).
+Tables are reproduced with permission from the publisher.
 }
 \keyword{datasets}

@@ -3,7 +3,7 @@
 \docType{data}
 \name{test_models}
 \alias{test_models}
-\title{test_models}
+\title{Four test models used in Grieder and Steiner (2020)}
 \format{A list of 4 lists "baseline", "case_1a", "case_6b", and"case_11b", each with the following elements.
 \describe{
   \item{cormat}{(matrix) - The correlation matrix of the simulated data.}
@@ -11,7 +11,7 @@
   \item{N}{(numeric) - The sample size of the generated data.}
  }}
 \source{
-Grieder, S., & Steiner, M.D.(2019). Algorithmic Jingle Jungle: Comparison of Implementations of an EFA Procedure in R psych Versus SPSS, MacOrtho, and Omega. Submitted Manuscript.
+Grieder, S., & Steiner, M.D.(2020). Algorithmic Jingle Jungle: Limited Comparability of Implementations of Principal Axis Factoring and Promax Rotation in R psych Versus SPSS. Manuscript in preparation.
 }
 \usage{
 test_models
@@ -20,7 +20,7 @@ test_models
 Correlation matrices created from simulated data from four of the
 \code{population_models} cases, each with strong factor intercorrealtions.
 These are used to compare the psych and SPSS implementations in Grieder and
-Steiner (2019) with the actual implementations. For details on the cases, see
+Steiner (2020) with the actual implementations. For details on the cases, see
 \link{population_models}.
 }
 \keyword{datasets}

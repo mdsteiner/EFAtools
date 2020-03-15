@@ -3,6 +3,9 @@
 \name{OMEGA}
 \alias{OMEGA}
 \title{MacDonald's omega}
+\source{
+
+}
 \usage{
 OMEGA(
   model = NULL,
@@ -68,8 +71,6 @@ scale as well as for the subscale composites are calculated based on the correla
 matrix. If \code{"sums_load"}, then total variances are calculated using the
 squared sums of general factor loadings and group factor loadings and
 the sum of uniquenesses (see details).}
-
-\item{type}{character. Either \code{"GS"} (default), \code{"psych"}, or \code{"Watkins"}.}
 }
 \value{
 A matrix with omegas for the whole scale and for the subscales.
@@ -119,20 +120,18 @@ uniquenesses are taken, with a warning.
 The main differences between the types concern the calculation of the total
 variance (for the whole scale as well as the subscale composites) as well as
 the finding of variable-to-factor correspondences. The former aspect
-can also be controlled individually specifying the variance argument, the
+can also be controlled individually by specifying the variance argument, the
 latter by specifying the factor_corres argument.
 For \code{type = "GS"}, total variances are found using the correlation
 matrix, and variable-to-factor correspondences have to be specified manually.
 The only difference for \code{type = "psych"} is that it takes the highest
 group factor loading for each variable as the relevant group factor loading.
 To mimik results from Watkins' Omega program, for \code{type = "Watkins"}
-for each variablce only the general factor loading and the relevant group-factor
+for each variable only the general factor loading and the relevant group-factor
 loadings according to the specified variable-to-factor correspondences is
 taken into account. The other loadings are set to zero. Uniquenesses are found
 based on these two loadings per variable only and total variance is calculated
 based on all using the squared sums of general loadings and group factor loadings
 and the sum of these uniquenesses.
-
-For more explanations and equations, see Grieder and Steiner (2019).
 }
 

@@ -7,7 +7,15 @@
 Lorenzo-Seva, U., Timmerman, M. E., & Kiers, H. A. (2011). The Hull method for selecting the number of common factors. Multivariate behavioral research, 46(2), 340-364.
 }
 \usage{
-HULL(x, cors = TRUE, n_cases = NA, n_factors = NA, ...)
+HULL(
+  x,
+  cors = TRUE,
+  n_cases = NA,
+  n_factors = NA,
+  method = c("PAF", "ULS", "ML"),
+  gof = c("CAF", "CFI", "RMSEA"),
+  ...
+)
 }
 \arguments{
 \item{x}{matrix or data.frame. Correlation matrix or raw data.}
@@ -21,12 +29,22 @@ Only has to be specified if x is a correlation matrix.}
 of this number and the number of factors suggested by \link{PARALLEL} olus
 onewill be used in the Hull method.}
 
+\item{method}{character. The estimation method to use. One of  \code{"PAF"},
+\code{"ULS"}, or  \code{"ML"}, for principal axis factoring, unweighted
+least squares, and maximum likelihood, respectively.}
+
+\item{gof}{character. The goodness of fit index to use. One of \code{"CAF"},
+\code{"CFI"}, or \code{"RMSEA"}. If \code{method = "PAF"} is used, only
+the CAF can be used as goodness of fit index. For details on the CAF, see
+Lorenzo-Seva, Timmerman, and Kiers (2011).}
+
 \item{...}{Further arguments passed to \link{PARALLEL}.}
 }
 \value{
 A list of class HULL containing the following objects
 \item{n_factors}{The number of factors to retain according to the Hull method.}
 \item{solutions}{A matrix containing the goodness of fit indices (CAF), degrees of freedom, and for the factors lying on the hull, the st values of the hull solution (see Lorenzo-Seva, Timmereman, and Kiers 2011 for details).}
+\item{ctrl}{A list of control settings used in the print and plot methods.}
 }
 \description{
 Implementation of the Hull method suggested by Lorenzo-Seva, Timmereman,
@@ -38,10 +56,23 @@ The \link{PARALLEL} function and the principal axis factoring of the
   different number of factors can be parallelized using the future framework,
   by calling the \link{future}{plan} function. The examples provide example code
   on how to enable parallel processing.
+
+  Note that if \code{gof = "RMSEA"} is used, 1 - RMSEA is actually used to
+  compare the different solutions. Thus, the threshold of .05 is now .95.
+
+  The ML estimation method uses the \link{stats}{factanal} starting values. See
+  also the \link{ML} documentation.
 }
 \examples{
 \dontrun{
+# using PAF
 HULL(IDS2_R, n_cases = 2000)
+
+# using ML with CFI
+HULL(IDS2_R, n_cases = 2000, method = "ML", gof = "CFI")
+
+# using ULS with RAMSEA
+HULL(IDS2_R, n_cases = 2000, method = "ULS", gof = "RAMSEA")
 
 # using parallel processing (Note: plans can be adapted, see the future
 # package for details)

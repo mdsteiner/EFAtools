@@ -86,20 +86,7 @@ factor solution is performed using Rcpp. This is faster, but can lead to some
 very small differences in the output. Default is \code{NULL}.}
 }
 \value{
-A list of class PAF containing the following
-\item{orig_R}{Original correlation matrix.}
-\item{h2_init}{Initial communality estimates.}
-\item{h2}{Final communality estimates.}
-\item{iter}{The number of iterations needed for convergence.}
-\item{orig_eigen}{Eigen values of the original correlation matrix.}
-\item{init_eigen}{Initial eigenvalues, obtained from the correlation matrix
- with the initial communality estimates as diagonal.}
-\item{final_eigen}{Eigenvalues of the final iteration.}
-\item{unrot_loadings}{Loading matrix containing the final loadings.}
-\item{vars_accounted}{Matrix of explained variances and sums of squared loadings}
-\item{fit_indices}{Fit indices as returned by
- \code{\link[psych:factor.stats]{psych::factor.stats}}}
-\item{settings}{list. The settings (arguments) used in the PAF.}
+
 }
 \description{
 This function implements the principal axis factoring procedure. It can

@@ -8,7 +8,7 @@ using namespace Rcpp;
 
 // factor_corres
 Rcpp::List factor_corres(NumericMatrix x, NumericMatrix y, double thresh);
-RcppExport SEXP _EFAdiff_factor_corres(SEXP xSEXP, SEXP ySEXP, SEXP threshSEXP) {
+RcppExport SEXP _EFAtools_factor_corres(SEXP xSEXP, SEXP ySEXP, SEXP threshSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -21,7 +21,7 @@ END_RCPP
 }
 // hull_paf
 arma::mat hull_paf(const int n_fac, arma::mat R, double criterion, int max_iter);
-RcppExport SEXP _EFAdiff_hull_paf(SEXP n_facSEXP, SEXP RSEXP, SEXP criterionSEXP, SEXP max_iterSEXP) {
+RcppExport SEXP _EFAtools_hull_paf(SEXP n_facSEXP, SEXP RSEXP, SEXP criterionSEXP, SEXP max_iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -35,7 +35,7 @@ END_RCPP
 }
 // grad_ml
 arma::vec grad_ml(arma::vec psi, arma::mat R, const int n_fac);
-RcppExport SEXP _EFAdiff_grad_ml(SEXP psiSEXP, SEXP RSEXP, SEXP n_facSEXP) {
+RcppExport SEXP _EFAtools_grad_ml(SEXP psiSEXP, SEXP RSEXP, SEXP n_facSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -48,7 +48,7 @@ END_RCPP
 }
 // error_ml
 double error_ml(arma::vec psi, arma::mat R, const int n_fac);
-RcppExport SEXP _EFAdiff_error_ml(SEXP psiSEXP, SEXP RSEXP, SEXP n_facSEXP) {
+RcppExport SEXP _EFAtools_error_ml(SEXP psiSEXP, SEXP RSEXP, SEXP n_facSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -61,7 +61,7 @@ END_RCPP
 }
 // paf_iter
 Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R, const int n_fac, bool abs_eig, int crit_type, int max_iter);
-RcppExport SEXP _EFAdiff_paf_iter(SEXP h2SEXP, SEXP criterionSEXP, SEXP RSEXP, SEXP n_facSEXP, SEXP abs_eigSEXP, SEXP crit_typeSEXP, SEXP max_iterSEXP) {
+RcppExport SEXP _EFAtools_paf_iter(SEXP h2SEXP, SEXP criterionSEXP, SEXP RSEXP, SEXP n_facSEXP, SEXP abs_eigSEXP, SEXP crit_typeSEXP, SEXP max_iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -78,7 +78,7 @@ END_RCPP
 }
 // parallel_sim
 arma::mat parallel_sim(const int n_datasets, const int n_vars, const int n_cases, const int eigen_type);
-RcppExport SEXP _EFAdiff_parallel_sim(SEXP n_datasetsSEXP, SEXP n_varsSEXP, SEXP n_casesSEXP, SEXP eigen_typeSEXP) {
+RcppExport SEXP _EFAtools_parallel_sim(SEXP n_datasetsSEXP, SEXP n_varsSEXP, SEXP n_casesSEXP, SEXP eigen_typeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -92,7 +92,7 @@ END_RCPP
 }
 // parallel_paf
 arma::vec parallel_paf(arma::mat R, double criterion, int crit_type, int max_iter);
-RcppExport SEXP _EFAdiff_parallel_paf(SEXP RSEXP, SEXP criterionSEXP, SEXP crit_typeSEXP, SEXP max_iterSEXP) {
+RcppExport SEXP _EFAtools_parallel_paf(SEXP RSEXP, SEXP criterionSEXP, SEXP crit_typeSEXP, SEXP max_iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -106,7 +106,7 @@ END_RCPP
 }
 // parallel_paf_sim
 arma::mat parallel_paf_sim(const int n_datasets, const int n_vars, const int n_cases, double criterion, int crit_type, int max_iter);
-RcppExport SEXP _EFAdiff_parallel_paf_sim(SEXP n_datasetsSEXP, SEXP n_varsSEXP, SEXP n_casesSEXP, SEXP criterionSEXP, SEXP crit_typeSEXP, SEXP max_iterSEXP) {
+RcppExport SEXP _EFAtools_parallel_paf_sim(SEXP n_datasetsSEXP, SEXP n_varsSEXP, SEXP n_casesSEXP, SEXP criterionSEXP, SEXP crit_typeSEXP, SEXP max_iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -122,7 +122,7 @@ END_RCPP
 }
 // parallel_summarise
 NumericMatrix parallel_summarise(NumericMatrix eig_vals, NumericVector percent, const int n_datasets, const int n_vars);
-RcppExport SEXP _EFAdiff_parallel_summarise(SEXP eig_valsSEXP, SEXP percentSEXP, SEXP n_datasetsSEXP, SEXP n_varsSEXP) {
+RcppExport SEXP _EFAtools_parallel_summarise(SEXP eig_valsSEXP, SEXP percentSEXP, SEXP n_datasetsSEXP, SEXP n_varsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -136,7 +136,7 @@ END_RCPP
 }
 // grad_uls
 arma::vec grad_uls(arma::vec psi, arma::mat R, const int n_fac);
-RcppExport SEXP _EFAdiff_grad_uls(SEXP psiSEXP, SEXP RSEXP, SEXP n_facSEXP) {
+RcppExport SEXP _EFAtools_grad_uls(SEXP psiSEXP, SEXP RSEXP, SEXP n_facSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -149,7 +149,7 @@ END_RCPP
 }
 // uls_residuals
 double uls_residuals(arma::vec psi, arma::mat R, const int n_fac);
-RcppExport SEXP _EFAdiff_uls_residuals(SEXP psiSEXP, SEXP RSEXP, SEXP n_facSEXP) {
+RcppExport SEXP _EFAtools_uls_residuals(SEXP psiSEXP, SEXP RSEXP, SEXP n_facSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -162,21 +162,21 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_EFAdiff_factor_corres", (DL_FUNC) &_EFAdiff_factor_corres, 3},
-    {"_EFAdiff_hull_paf", (DL_FUNC) &_EFAdiff_hull_paf, 4},
-    {"_EFAdiff_grad_ml", (DL_FUNC) &_EFAdiff_grad_ml, 3},
-    {"_EFAdiff_error_ml", (DL_FUNC) &_EFAdiff_error_ml, 3},
-    {"_EFAdiff_paf_iter", (DL_FUNC) &_EFAdiff_paf_iter, 7},
-    {"_EFAdiff_parallel_sim", (DL_FUNC) &_EFAdiff_parallel_sim, 4},
-    {"_EFAdiff_parallel_paf", (DL_FUNC) &_EFAdiff_parallel_paf, 4},
-    {"_EFAdiff_parallel_paf_sim", (DL_FUNC) &_EFAdiff_parallel_paf_sim, 6},
-    {"_EFAdiff_parallel_summarise", (DL_FUNC) &_EFAdiff_parallel_summarise, 4},
-    {"_EFAdiff_grad_uls", (DL_FUNC) &_EFAdiff_grad_uls, 3},
-    {"_EFAdiff_uls_residuals", (DL_FUNC) &_EFAdiff_uls_residuals, 3},
+    {"_EFAtools_factor_corres", (DL_FUNC) &_EFAtools_factor_corres, 3},
+    {"_EFAtools_hull_paf", (DL_FUNC) &_EFAtools_hull_paf, 4},
+    {"_EFAtools_grad_ml", (DL_FUNC) &_EFAtools_grad_ml, 3},
+    {"_EFAtools_error_ml", (DL_FUNC) &_EFAtools_error_ml, 3},
+    {"_EFAtools_paf_iter", (DL_FUNC) &_EFAtools_paf_iter, 7},
+    {"_EFAtools_parallel_sim", (DL_FUNC) &_EFAtools_parallel_sim, 4},
+    {"_EFAtools_parallel_paf", (DL_FUNC) &_EFAtools_parallel_paf, 4},
+    {"_EFAtools_parallel_paf_sim", (DL_FUNC) &_EFAtools_parallel_paf_sim, 6},
+    {"_EFAtools_parallel_summarise", (DL_FUNC) &_EFAtools_parallel_summarise, 4},
+    {"_EFAtools_grad_uls", (DL_FUNC) &_EFAtools_grad_uls, 3},
+    {"_EFAtools_uls_residuals", (DL_FUNC) &_EFAtools_uls_residuals, 3},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_EFAdiff(DllInfo *dll) {
+RcppExport void R_init_EFAtools(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }

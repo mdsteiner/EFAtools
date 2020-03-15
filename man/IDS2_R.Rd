@@ -3,7 +3,7 @@
 \docType{data}
 \name{IDS2_R}
 \alias{IDS2_R}
-\title{IDS2_R}
+\title{Intelligence subtests from the Intelligence and Development Scales--2}
 \format{A 14 x 14 matrix of bivariate correlations
 \describe{
   \item{GS}{(numeric) - Geometric shapes.}
@@ -22,15 +22,15 @@
   \item{DP}{(numeric) - Describing pictures.}
  }}
 \source{
-Grieder, S., & Grob, A. (in Press). Exploratory factor analysis of the intelligence and development scales–2 (IDS-2): Implications for theory and practice. Assessment.
+Grieder, S., & Grob, A. (2019). Exploratory factor analyses of the intelligence and development scales--2: Implications for theory and practice. Assessment. Advance online publication. doi:10.1177/10731911198450
 
-Grob, A., & Hagmann-von Arx, P. (2018). Intelligence and Development Scales-2 (IDS-2). Intelligenz- und Entwicklungsskalen für Kinder und Jugendliche.
+Grob, A., & Hagmann-von Arx, P. (2018). Intelligence and Development Scales--2 (IDS-2). Intelligenz- und Entwicklungsskalen für Kinder und Jugendliche.
 [Intelligence and Development Scales for Children and Adolescents.]. Bern, Switzerland: Hogrefe.
 }
 \usage{
 IDS2_R
 }
 \description{
-A matrix containing the bivariate correlations of the 14 intelligence subtests from the Intelligence and Development Scales--2 (IDS-2; Grob & Hagmann-von Arx, 2018), an intelligence and development test battery for children and adolescents aged 5 to 20 years. Details can be found in Grieder & Grob (2019).
+A matrix containing the bivariate correlations of the 14 intelligence subtests from the Intelligence and Development Scales--2 (IDS-2; Grob & Hagmann-von Arx, 2018), an intelligence and development test battery for children and adolescents aged 5 to 20 years, for the standardization and validation sample (N = 1,991). Details can be found in Grieder & Grob (2019).
 }
 \keyword{datasets}

@@ -34,10 +34,9 @@ A list containing
 }
 \description{
 This function computes the Kaiser-Meyer-Olkin (KMO) criterion overall and for
- each variable in a correlation matrix. The KMO represents the degree to
+each variable in a correlation matrix. The KMO represents the degree to
 which each observed variable is predicted by the other variables in the
-dataset and with this the suitability for factor analysis. A KMO > 0.6 is
-considered adequate.
+dataset and with this indicates the suitability for factor analysis.
 }
 \details{
 Kaiser (1970) proposed this index, originally called measure of

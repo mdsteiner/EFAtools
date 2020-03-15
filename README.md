@@ -1,14 +1,14 @@
-# EFAdiff
+# EFAtools
 
-The EFAdiff package provides functions to perform and compare exploratory factor analysis (EFA) implementations from R psych and SPSS, MacOrtho and Omega. It provides functions for principal axis factoring (PAF), promax or varimax rotation, Schmid-Leiman transformation, and computation of omegas.
+The EFAtools package provides functions to perform and compare exploratory factor analysis (EFA) implementations from R psych and SPSS, MacOrtho and Omega. It provides functions for principal axis factoring (PAF), promax or varimax rotation, Schmid-Leiman transformation, and computation of omegas.
 
 ## Installation
 
-You can install EFAdiff with:
+You can install EFAtools with:
 
 ``` r
 install.packages("devtools")
-devtools::install_github("mdsteiner/EFAdiff")
+devtools::install_github("mdsteiner/EFAtools")
 ```
 
 ## Example

@@ -11,7 +11,7 @@
 #' @param thresh numeric. The threshold to classify a pattern coefficient as substantial.
 #' @export
 factor_corres <- function(x, y, thresh = 0.3) {
-    .Call(`_EFAdiff_factor_corres`, x, y, thresh)
+    .Call(`_EFAtools_factor_corres`, x, y, thresh)
 }
 
 #' Perform the iterative PAF procedure
@@ -25,15 +25,15 @@ factor_corres <- function(x, y, thresh = 0.3) {
 #' @param max_iter numeric. The number of iterations after which to end the procedure if no convergence has been reached by then.
 #' @export
 hull_paf <- function(n_fac, R, criterion, max_iter) {
-    .Call(`_EFAdiff_hull_paf`, n_fac, R, criterion, max_iter)
+    .Call(`_EFAtools_hull_paf`, n_fac, R, criterion, max_iter)
 }
 
 .grad_ml <- function(psi, R, n_fac) {
-    .Call(`_EFAdiff_grad_ml`, psi, R, n_fac)
+    .Call(`_EFAtools_grad_ml`, psi, R, n_fac)
 }
 
 .error_ml <- function(psi, R, n_fac) {
-    .Call(`_EFAdiff_error_ml`, psi, R, n_fac)
+    .Call(`_EFAtools_error_ml`, psi, R, n_fac)
 }
 
 #' Perform the iterative PAF procedure
@@ -50,7 +50,7 @@ hull_paf <- function(n_fac, R, criterion, max_iter) {
 #' @param max_iter numeric. The number of iterations after which to end the procedure if no convergence has been reached by then.
 #' @export
 paf_iter <- function(h2, criterion, R, n_fac, abs_eig, crit_type, max_iter) {
-    .Call(`_EFAdiff_paf_iter`, h2, criterion, R, n_fac, abs_eig, crit_type, max_iter)
+    .Call(`_EFAtools_paf_iter`, h2, criterion, R, n_fac, abs_eig, crit_type, max_iter)
 }
 
 #' Parallel analysis on simulated data.
@@ -64,7 +64,7 @@ paf_iter <- function(h2, criterion, R, n_fac, abs_eig, crit_type, max_iter) {
 #' @param eigen_type numeric. Whether PCA (eigen_type = 1; i.e., leaving diagonal of correlation matrix at 1) or PAF (eigen_type = 2; i.e., setting diagonal of correlation matrix to SMCs).
 #' @export
 parallel_sim <- function(n_datasets, n_vars, n_cases, eigen_type) {
-    .Call(`_EFAdiff_parallel_sim`, n_datasets, n_vars, n_cases, eigen_type)
+    .Call(`_EFAtools_parallel_sim`, n_datasets, n_vars, n_cases, eigen_type)
 }
 
 #' Principal Axis Factoring to extract eigenvalues from a 1 factor solution
@@ -80,7 +80,7 @@ parallel_sim <- function(n_datasets, n_vars, n_cases, eigen_type) {
 #' @param max_iter integer. The maximum number of iterations after which to stop the iterative procedure if no convergence is reached by then.
 #' @export
 parallel_paf <- function(R, criterion, crit_type, max_iter) {
-    .Call(`_EFAdiff_parallel_paf`, R, criterion, crit_type, max_iter)
+    .Call(`_EFAtools_parallel_paf`, R, criterion, crit_type, max_iter)
 }
 
 #' Parallel analysis on simulated data.
@@ -97,7 +97,7 @@ parallel_paf <- function(R, criterion, crit_type, max_iter) {
 #' @param max_iter integer. The maximum number of iterations after which to stop the iterative procedure if no convergence is reached by then.
 #' @export
 parallel_paf_sim <- function(n_datasets, n_vars, n_cases, criterion, crit_type, max_iter) {
-    .Call(`_EFAdiff_parallel_paf_sim`, n_datasets, n_vars, n_cases, criterion, crit_type, max_iter)
+    .Call(`_EFAtools_parallel_paf_sim`, n_datasets, n_vars, n_cases, criterion, crit_type, max_iter)
 }
 
 #' Summarise the raw data from the \link{parallel_sim}
@@ -112,14 +112,14 @@ parallel_paf_sim <- function(n_datasets, n_vars, n_cases, criterion, crit_type, 
 #' @param n_vars numeric. The number of variables / indicators per dataset.
 #' @export
 parallel_summarise <- function(eig_vals, percent, n_datasets, n_vars) {
-    .Call(`_EFAdiff_parallel_summarise`, eig_vals, percent, n_datasets, n_vars)
+    .Call(`_EFAtools_parallel_summarise`, eig_vals, percent, n_datasets, n_vars)
 }
 
 .grad_uls <- function(psi, R, n_fac) {
-    .Call(`_EFAdiff_grad_uls`, psi, R, n_fac)
+    .Call(`_EFAtools_grad_uls`, psi, R, n_fac)
 }
 
 .uls_residuals <- function(psi, R, n_fac) {
-    .Call(`_EFAdiff_uls_residuals`, psi, R, n_fac)
+    .Call(`_EFAtools_uls_residuals`, psi, R, n_fac)
 }
 

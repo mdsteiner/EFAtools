@@ -1,5 +1,5 @@
 #' @keywords internal
-#' @useDynLib EFAdiff, .registration = TRUE
+#' @useDynLib EFAtools, .registration = TRUE
 #' @importFrom Rcpp sourceCpp
 #' @rawNamespace exportPattern("^[[:alpha:]]+")
 "_PACKAGE"
