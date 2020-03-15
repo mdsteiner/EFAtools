@@ -10,7 +10,7 @@
 #'
 #' @param x matrix or class \code{\link{PAF}} object. Either a matrix containing
 #' an unrotated factor solution, or a \code{\link{PAF}} output object.
-#' @param type character. If one of "GS" (default), "psych", or "SPSS" is
+#' @param type character. If one of "EFAtools" (default), "psych", or "SPSS" is
 #'  used, and the following arguments (except kaiser) are left with \code{NULL},
 #'  these implementations
 #'  are executed as reported in Grieder and Steiner (2019; see details).
@@ -37,7 +37,7 @@
 #' @param k numeric. The power used for computing the target matrix P in the
 #'  promax rotation. Default is \code{NULL}.
 #'
-#' @details \code{type = "GS"} will use the following argument specification:
+#' @details \code{type = "EFAtools"} will use the following argument specification:
 #' \code{P_type = "unnorm", precision = 1e-10, order_type = "eigen", k = 3}.
 #' \code{type = "psych"} will use the following argument specification:
 #' \code{P_type = "unnorm", precision = 1e-5, order_type = "eigen", k = 4}.
@@ -74,25 +74,25 @@
 #' @export
 #' @examples
 #' # call within EFA function:
-#' EFA(IDS2_R, n_factors = 5, type = "GS", rotation = "promax")
+#' EFA(IDS2_R, n_factors = 5, type = "EFAtools", rotation = "promax")
 #'
 #' # call as single function
-#' unrot <- EFA(IDS2_R, n_factors = 5, type = "GS")
-#' PROMAX(unrot$unrot_loadings, type = "GS")
-PROMAX <- function (x, type = "GS", kaiser = TRUE, P_type = NULL,
+#' unrot <- EFA(IDS2_R, n_factors = 5, type = "EFAtools")
+#' PROMAX(unrot$unrot_loadings, type = "EFAtools")
+PROMAX <- function (x, type = "EFAtools", kaiser = TRUE, P_type = NULL,
                     precision = NULL, order_type = NULL, k = NULL) {
 
-  if (is.null(type) || !(type %in% c("GS", "psych", "SPSS"))) {
+  if (is.null(type) || !(type %in% c("EFAtools", "psych", "SPSS"))) {
     # if type is not one of the three valid inputs, throw an error if not
     # all the other necessary arguments are specified.
 
     if (is.null(P_type) || is.null(precision) || is.null(order_type)
         || is.null(k)) {
       stop('One of "P_type", "precision", "order_type", or "k" was NULL and no valid
-           "type" was specified. Either use one of "GS", "psych", or "SPSS"
+           "type" was specified. Either use one of "EFAtools", "psych", or "SPSS"
             for type, or specify all other arguments')
     }
-  } else if (type == "GS") {
+  } else if (type == "EFAtools") {
 
     # if not specified, set PAF properties. If specified, throw warning that
     # results may not exactly match the specified type

@@ -3,7 +3,7 @@
 #' This is a wrapper function to call \code{\link{PAF}} and then one of
 #' \code{\link{PROMAX}} or \code{\link{VARIMAX}} or no rotation is performed.
 #' All arguments with default value \code{NULL} can be left to default if \code{type}
-#' is set to one of "GS", "SPSS", or "psych". The respective specifications are
+#' is set to one of "EFAtools", "SPSS", or "psych". The respective specifications are
 #' then handled by the function.
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
@@ -17,7 +17,7 @@
 #'  \code{\link[psych:factor.stats]{psych::factor.stats}} for details.
 #' @param rotation character. One of "none" (default), "promax", or "varimax".
 #'  Specifies the type of rotation to perform.
-#' @param type character. If one of "GS" (default), "psych", or "SPSS" is
+#' @param type character. If one of "EFAtools" (default), "psych", or "SPSS" is
 #'  used, and the following arguments with default NULL are left with
 #'  NULL, these implementations are executed as reported in Grieder and Steiner
 #'  (2019). Individual properties can be adapted using one of the three types and
@@ -27,7 +27,7 @@
 #'  \code{\link{VARIMAX}}.
 #' @param max_iter numeric. The maximum number of iterations to perform after which
 #' the iterative PAF procedure is halted with a warning. If \code{type} is one of
-#' "GS", "SPSS", or "psych", this is automatically specified if \code{max_iter} is
+#' "EFAtools", "SPSS", or "psych", this is automatically specified if \code{max_iter} is
 #' left to be \code{NULL}, but can be overridden by entering a number. Default is \code{NULL}.
 #' @param init_comm character. The method to estimate the initial communalities.
 #'  "smc" will use squared multiple correlations. "mac" will use
@@ -104,8 +104,8 @@
 #' @export
 #'
 #' @examples
-#' # A type GS (as presented in Steiner and Grieder, 2019) EFA
-#' EFA_GS_5 <- EFA(IDS2_R, n_factors = 5, type = "GS")
+#' # A type EFAtools (as presented in Steiner and Grieder, 2019) EFA
+#' EFA_EFAtools_5 <- EFA(IDS2_R, n_factors = 5, type = "EFAtools")
 #'
 #' # A type SPSS EFA to mimick the SPSS implementation
 #' EFA_SPSS_5 <- EFA(IDS2_R, n_factors = 5, type = "SPSS")
@@ -113,7 +113,7 @@
 #' # A type psych EFA to mimick the psych::fa() implementation
 #' EFA_psych_5 <- EFA(IDS2_R, n_factors = 5, type = "psych")
 EFA <- function(x, n_factors, cors = TRUE, N = NA, rotation = "none",
-                type = "GS", max_iter = NULL, init_comm = NULL,
+                type = "EFAtools", max_iter = NULL, init_comm = NULL,
                 criterion = NULL, criterion_type = NULL, abs_eigen = NULL,
                 signed_loadings = TRUE, use = "pairwise.complete.obs",
                 use_cpp = NULL, k = NULL, kaiser = TRUE, P_type = NULL,

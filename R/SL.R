@@ -16,7 +16,7 @@
 #' @param Phi matrix. A matrix of factor intercorrelations from an oblique factor
 #' solution. Only needs to be specified if x is not of class \code{\link{PROMAX}}
 #' or class \code{\link{fa}}.
-#' @param type character. One of "GS" (default), "psych", or "SPSS". This
+#' @param type character. One of "EFAtools" (default), "psych", or "SPSS". This
 #' is used to control the procedure of the second order factor analysis. See
 #' \code{\link{PAF}} for details.
 #' @param ... Arguments to be passed to \code{PAF}.
@@ -47,7 +47,7 @@
 #' @source Watkins, M. W. (2004). Macortho [Computer Software]. Phoenix, AZ: EdPsych Associates, Inc.
 #'
 #' @export
-SL <- function(x, Phi = NULL, type = "GS", ...) {
+SL <- function(x, Phi = NULL, type = "EFAtools", ...) {
 
   if(all(class(x) == "PROMAX")) {
 

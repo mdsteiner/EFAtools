@@ -28,7 +28,7 @@
 #' last two on the second group factor. If a variable should not be assigned to
 #' any group factor, insert a zero at its position (e.g. c(3, 3, 0, 1, 1, 2, 2),
 #' the third variable has no corresponding group factor).
-#' @param type character. Either \code{"GS"} (default), \code{"psych"}, or \code{"Watkins
+#' @param type character. Either \code{"EFAtools"} (default), \code{"psych"}, or \code{"Watkins
 #' @param g_load numeric. A vector of general factor loadings from an SL solution.
 #' This needs only be specified if \code{model} is left \code{NULL}.
 #' @param s_load matrix. A matrix of group factor loadings from an SL solution. This needs
@@ -37,7 +37,7 @@
 #' only be specified if \code{model} is left \code{NULL} and \code{type} is
 #' not \code{Watkins}.
 #' @param cormat matrix. A correlation matrix to be used when \code{type = "psych"} or
-#' \code{type = "GS"}. If left \code{NULL}, the correlation matrix is found based on the
+#' \code{type = "EFAtools"}. If left \code{NULL}, the correlation matrix is found based on the
 #' pattern matrix and Phi using \code{\link[psych:factor.model]{psych::factor.model}}.
 #' If the correlation matrix is available, \code{cormat} should be specified instead
 #' of \code{Phi} and \code{pattern}.
@@ -59,10 +59,10 @@
 #' needs to be specified additionally. There is, however, the option to reproduce
 #' Watkins' Omega or \code{\link[psych:omega]{psych::omega}} results by setting the
 #' \code{type} argument to \code{"Watkins"} or \code{"psych"}.
-#' If \code{model = NULL} and \code{type = "GS"}(default), the arguments
+#' If \code{model = NULL} and \code{type = "EFAtools"}(default), the arguments
 #' \code{var_names}, \code{factor_corres}, \code{g_load}, \code{s_load}, and \code{u2}
 #' need to be specified.
-#' If \code{type = "psych"} or \code{type = "GS"}, either \code{cormat}
+#' If \code{type = "psych"} or \code{type = "EFAtools"}, either \code{cormat}
 #' (recommended) or \code{Phi} and \code{pattern} must be specified.
 #' Additionally, the argument \code{factor_corres} should be left NULL to
 #' replicate \code{\link[psych:omega]{psych::omega}}
@@ -81,7 +81,7 @@
 #' the finding of variable-to-factor correspondences. The former aspect
 #' can also be controlled individually by specifying the variance argument, the
 #' latter by specifying the factor_corres argument.
-#' For \code{type = "GS"}, total variances are found using the correlation
+#' For \code{type = "EFAtools"}, total variances are found using the correlation
 #' matrix, and variable-to-factor correspondences have to be specified manually.
 #' The only difference for \code{type = "psych"} is that it takes the highest
 #' group factor loading for each variable as the relevant group factor loading.
@@ -107,12 +107,12 @@
 #' library(lavaan)
 #'
 #' # Create and fit model in lavaan
-#' mod <- 'AVR =~ GS + PL + CM + EP
+#' mod <- 'AVR =~ EFAtools + PL + CM + EP
 #'         PS =~ b*TC + b*CB
 #'         ASTM =~ c*NL + c*NLM
 #'         VSSTM =~ d*GF + d*RGF
 #'         SLTM =~ CA + OP + RS + DP
-#'         g =~ GS + PL + TC + CB + NL + NLM + GF + RGF + CM + EP + CA + OP +
+#'         g =~ EFAtools + PL + TC + CB + NL + NLM + GF + RGF + CM + EP + CA + OP +
 #'              RS + DP'
 #' SD <- c(3.20, 3.18, 3.13, 3.15, 3.20, 3.11, 3.06, 3.07, 3.14, 3.18, 3.22,
 #'         3.16, 3.16, 3.08) # Taken from Table A1 in Grieder & Grob (2019)
@@ -124,7 +124,7 @@
 #' # Calculate omega
 #' OMEGA()
 #'
-#' # Use with an output from the SL function, with type = "GS" (default)
+#' # Use with an output from the SL function, with type = "EFAtools" (default)
 #' OMEGA()
 #'
 #' # Manually specify components (useful, if omegas should be computed for a SL
@@ -134,7 +134,7 @@
 OMEGA <- function(model = NULL, var_names = NULL, fac_names = NULL,
                   factor_corres = NULL, g_load = NULL,
                   s_load = NULL, u2 = NULL, Phi = NULL, pattern = NULL,
-                  cormat = NULL, variance = NULL, type = "GS"){
+                  cormat = NULL, variance = NULL, type = "EFAtools"){
 
   if(!is.null(model) & (!is.null(var_names) || !is.null(g_load) || !is.null(s_load)
                         || !is.null(u2))){
