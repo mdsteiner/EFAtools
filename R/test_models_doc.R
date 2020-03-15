@@ -1,9 +1,9 @@
-#' test_models
+#' Four test models used in Grieder and Steiner (2020)
 #'
 #' Correlation matrices created from simulated data from four of the
 #' \code{population_models} cases, each with strong factor intercorrealtions.
 #' These are used to compare the psych and SPSS implementations in Grieder and
-#' Steiner (2019) with the actual implementations. For details on the cases, see
+#' Steiner (2020) with the actual implementations. For details on the cases, see
 #' \link{population_models}.
 #'
 #'
@@ -13,5 +13,5 @@
 #'   \item{n_factors}{(numeric) - The true number of factors.}
 #'   \item{N}{(numeric) - The sample size of the generated data.}
 #'  }
-#' @source Grieder, S., & Steiner, M.D.(2019). Algorithmic Jingle Jungle: Comparison of Implementations of an EFA Procedure in R psych Versus SPSS, MacOrtho, and Omega. Submitted Manuscript.
+#' @source Grieder, S., & Steiner, M.D.(2020). Algorithmic Jingle Jungle: Limited Comparability of Implementations of Principal Axis Factoring and Promax Rotation in R psych Versus SPSS. Manuscript in preparation.
 "test_models"

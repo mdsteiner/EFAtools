@@ -28,6 +28,7 @@
 #' last two on the second group factor. If a variable should not be assigned to
 #' any group factor, insert a zero at its position (e.g. c(3, 3, 0, 1, 1, 2, 2),
 #' the third variable has no corresponding group factor).
+#' @param type character. Either \code{"GS"} (default), \code{"psych"}, or \code{"Watkins
 #' @param g_load numeric. A vector of general factor loadings from an SL solution.
 #' This needs only be specified if \code{model} is left \code{NULL}.
 #' @param s_load matrix. A matrix of group factor loadings from an SL solution. This needs
@@ -47,7 +48,6 @@
 #' matrix. If \code{"sums_load"}, then total variances are calculated using the
 #' squared sums of general factor loadings and group factor loadings and
 #' the sum of uniquenesses (see details).
-#' @param type character. Either \code{"GS"} (default), \code{"psych"}, or \code{"Watkins"}.
 #'
 #'
 #' @section How to combine arguments:
@@ -79,27 +79,58 @@
 #' The main differences between the types concern the calculation of the total
 #' variance (for the whole scale as well as the subscale composites) as well as
 #' the finding of variable-to-factor correspondences. The former aspect
-#' can also be controlled individually specifying the variance argument, the
+#' can also be controlled individually by specifying the variance argument, the
 #' latter by specifying the factor_corres argument.
 #' For \code{type = "GS"}, total variances are found using the correlation
 #' matrix, and variable-to-factor correspondences have to be specified manually.
 #' The only difference for \code{type = "psych"} is that it takes the highest
 #' group factor loading for each variable as the relevant group factor loading.
 #' To mimik results from Watkins' Omega program, for \code{type = "Watkins"}
-#' for each variablce only the general factor loading and the relevant group-factor
+#' for each variable only the general factor loading and the relevant group-factor
 #' loadings according to the specified variable-to-factor correspondences is
 #' taken into account. The other loadings are set to zero. Uniquenesses are found
 #' based on these two loadings per variable only and total variance is calculated
 #' based on all using the squared sums of general loadings and group factor loadings
 #' and the sum of these uniquenesses.
 #'
-#' For more explanations and equations, see Grieder and Steiner (2019).
-#'
 #' @return A matrix with omegas for the whole scale and for the subscales.
 #' \item{tot}{Omega total.}
 #' \item{hier}{Omega hierarchical.}
 #' \item{sub}{Omega subscale.}
+#'
 #' @export
+#'
+#' @source
+#' @example
+#' \dontrun{
+#' ## Use with a lavaan output
+#' library(lavaan)
+#'
+#' # Create and fit model in lavaan
+#' mod <- 'AVR =~ GS + PL + CM + EP
+#'         PS =~ b*TC + b*CB
+#'         ASTM =~ c*NL + c*NLM
+#'         VSSTM =~ d*GF + d*RGF
+#'         SLTM =~ CA + OP + RS + DP
+#'         g =~ GS + PL + TC + CB + NL + NLM + GF + RGF + CM + EP + CA + OP +
+#'              RS + DP'
+#' SD <- c(3.20, 3.18, 3.13, 3.15, 3.20, 3.11, 3.06, 3.07, 3.14, 3.18, 3.22,
+#'         3.16, 3.16, 3.08) # Taken from Table A1 in Grieder & Grob (2019)
+#' IDS2_cov <- lavaan::cor2cov(IDS2_R, sds = SD, names = colnames(IDS2_R))
+#' fit <- cfa(mod, sample.cov = IDS2_cov, sample.nobs = 1991, estimator = "ml",
+#'            orthogonal = TRUE)
+#' OMEGA(fit)
+#'
+#' # Calculate omega
+#' OMEGA()
+#'
+#' # Use with an output from the SL function, with type = "GS" (default)
+#' OMEGA()
+#'
+#' # Manually specify components (useful, if omegas should be computed for a SL
+#' # or bifactor solution found with another program)
+#' OMEGA()
+#' }
 OMEGA <- function(model = NULL, var_names = NULL, fac_names = NULL,
                   factor_corres = NULL, g_load = NULL,
                   s_load = NULL, u2 = NULL, Phi = NULL, pattern = NULL,

@@ -1,10 +1,9 @@
 #' Kaiser-Meyer-Olkin criterion
 #'
 #' This function computes the Kaiser-Meyer-Olkin (KMO) criterion overall and for
-#'  each variable in a correlation matrix. The KMO represents the degree to
+#' each variable in a correlation matrix. The KMO represents the degree to
 #' which each observed variable is predicted by the other variables in the
-#' dataset and with this the suitability for factor analysis. A KMO > 0.6 is
-#' considered adequate.
+#' dataset and with this indicates the suitability for factor analysis.
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
 #'  correlations.
@@ -81,7 +80,19 @@ KMO <- function(x, cors = TRUE, use = "pairwise.complete.obs") {
   KMO <- sumR2/(sumR2 + sumQ2)
   KMO_i <- colSums(R^2)/(colSums(R^2) + colSums(Q^2))
 
+  if(!is.null(colnames(R))){
+
+    names(KMO_i) <- colnames(R)
+
+  } else if(!is.null(rownames(R))) {
+
+    names(KMO_i) <- rownames(R)
+
+  }
+
   output <- list(KMO = KMO, KMO_i = KMO_i)
+
+  class(output) <- "KMO"
 
   return(output)
 
