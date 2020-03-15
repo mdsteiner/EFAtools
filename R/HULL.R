@@ -11,6 +11,13 @@
 #' @param n_factors numeric. Theoretical number of factors to retain. The maximum
 #'   of this number and the number of factors suggested by \link{PARALLEL} olus
 #'   onewill be used in the Hull method.
+#' @param method character. The estimation method to use. One of  \code{"PAF"},
+#'    \code{"ULS"}, or  \code{"ML"}, for principal axis factoring, unweighted
+#'    least squares, and maximum likelihood, respectively.
+#' @param gof character. The goodness of fit index to use. One of \code{"CAF"},
+#'   \code{"CFI"}, or \code{"RMSEA"}. If \code{method = "PAF"} is used, only
+#'   the CAF can be used as goodness of fit index. For details on the CAF, see
+#'   Lorenzo-Seva, Timmerman, and Kiers (2011).
 #' @param ... Further arguments passed to \link{PARALLEL}.
 #'
 #' @details The \link{PARALLEL} function and the principal axis factoring of the
@@ -18,9 +25,16 @@
 #'   by calling the \link{future}{plan} function. The examples provide example code
 #'   on how to enable parallel processing.
 #'
+#'   Note that if \code{gof = "RMSEA"} is used, 1 - RMSEA is actually used to
+#'   compare the different solutions. Thus, the threshold of .05 is now .95.
+#'
+#'   The ML estimation method uses the \link{stats}{factanal} starting values. See
+#'   also the \link{ML} documentation.
+#'
 #' @return A list of class HULL containing the following objects
 #' \item{n_factors}{The number of factors to retain according to the Hull method.}
 #' \item{solutions}{A matrix containing the goodness of fit indices (CAF), degrees of freedom, and for the factors lying on the hull, the st values of the hull solution (see Lorenzo-Seva, Timmereman, and Kiers 2011 for details).}
+#' \item{ctrl}{A list of control settings used in the print and plot methods.}
 #'
 #' @source Lorenzo-Seva, U., Timmerman, M. E., & Kiers, H. A. (2011). The Hull method for selecting the number of common factors. Multivariate behavioral research, 46(2), 340-364.
 #'
@@ -28,7 +42,14 @@
 #'
 #' @examples
 #' \dontrun{
+#' # using PAF
 #' HULL(IDS2_R, n_cases = 2000)
+#'
+#' # using ML with CFI
+#' HULL(IDS2_R, n_cases = 2000, method = "ML", gof = "CFI")
+#'
+#' # using ULS with RAMSEA
+#' HULL(IDS2_R, n_cases = 2000, method = "ULS", gof = "RAMSEA")
 #'
 #' # using parallel processing (Note: plans can be adapted, see the future
 #' # package for details)
@@ -36,14 +57,37 @@
 #' HULL(IDS2_R, n_cases = 2000)
 #' }
 HULL <- function(x, cors = TRUE, n_cases = NA, n_factors = NA,
-                 method = c("PAF", "ULS"), ...) {
+                 method = c("PAF", "ULS", "ML"), gof = c("CAF", "CFI", "RMSEA"),
+                 ...) {
   # Perform hull method following Lorenzo-Seva, Timmereman, and Kiers (2011)
+
+  # # for testing
+  # x <- IDS2_R
+  # cors <- TRUE
+  # n_cases <- 2000
+  # n_factors <- 7
+  # method <- "ML"
+  # gof <- "CFI"
+
+  method <- match.arg(method)
+  gof <- match.arg(gof)
+
+  if (method == "PAF" && gof != "CAF") {
+    message('gof is set to "', gof, '" but must be CAF if method "PAF" is used.',
+            ' Setting gof to "CAF"')
+    gof <- "CAF"
+  }
 
   if (!isTRUE(cors)) {
     n_cases <- nrow(x)
     R <- stats::cor(x, use = "pairwise")
   } else {
     R <- as.matrix(x)
+  }
+
+  if (gof != "CAF" && is.na(n_cases)) {
+    stop('n_cases is not specified but is needed for computation of ', gof,
+         ' fit index.')
   }
 
   m <- ncol(R)
@@ -70,11 +114,31 @@ HULL <- function(x, cors = TRUE, n_cases = NA, n_factors = NA,
   #    df for every solution
   s <- matrix(0, ncol = 4, nrow = J + 1)
   s[, 1] <- 0:J
-  colnames(s) <- c("n factors", "f", "df", "st")
+  colnames(s) <- c("n factors", gof, "df", "st")
 
   # first for 0 factors
-  s[1, 2] <- 1 - KMO(R)$KMO
-  s[1, 3] <- ((m)**2 - (m)) / 2
+  if (gof == "CAF") {
+    s[1, 2] <- 1 - KMO(R)$KMO
+  } else if (gof == "CFI") {
+    s[1, 2] <- 0
+
+    # for later use in loop
+    chi_null <- sum(R[upper.tri(R)] ^ 2) * (n_cases - 1)
+    df_null <- (m**2 - m) / 2
+    delta_hat_null <- max(0, chi_null - df_null)
+
+  } else if (gof == "RMSEA") {
+
+    Fm <- sum(R[upper.tri(R)] ^ 2)
+    chi <- Fm * (n_cases - 1)
+    df <- (m**2 - m) / 2
+    delta_hat_m <- max(0, chi - df)
+    # compute 1 - RMSEA
+    s[1, 2] <- 1 - sqrt(max(delta_hat_m / (df * (n_cases - 1)), 0))
+  }
+
+
+  s[1, 3] <- (m**2 - m) / 2
 
 
   if (method == "PAF") {
@@ -82,20 +146,50 @@ HULL <- function(x, cors = TRUE, n_cases = NA, n_factors = NA,
                                            max_iter = 1e4)
   } else if (method == "ULS") {
     loadings <- future.apply::future_lapply(1:J, .hull_uls, R = R)
+  } else if (method == "ML") {
+    loadings <- future.apply::future_lapply(1:J, .hull_ml, R = R)
   }
 
 
   # then for 1 to J factors
   for (i in 1:J) {
-    # compute goodness of fit "f" as CAF (common part accounted for; Eq 3)
-    A_i <- pafs[[i]]
-    delta_hat <- R - (A_i %*% t(A_i))
-    diag(delta_hat) <- 1
-    s[i + 1, 2] <- 1 - KMO(delta_hat)$KMO
+    df <- ((m - i)**2 - (m + i)) / 2
+    if (method == "PAF") {
+      # compute goodness of fit "f" as CAF (common part accounted for; Eq 3)
+      A_i <- loadings[[i]]
+      delta_hat <- R - (A_i %*% t(A_i))
+      diag(delta_hat) <- 1
+      # compute CAF
+      s[i + 1, 2] <- 1 - KMO(delta_hat)$KMO
+    } else {
+      if (gof == "CAF") {
+        # compute goodness of fit "f" as CAF (common part accounted for; Eq 3)
+        A_i <- loadings[[i]]$loadings
+        delta_hat <- R - (A_i %*% t(A_i))
+        diag(delta_hat) <- 1
+        # compute CAF
+        s[i + 1, 2] <- 1 - KMO(delta_hat)$KMO
+      } else if (gof == "CFI") {
+        Fm <- loadings[[i]]$fit
+        chi <- Fm * (n_cases - 1)
+        delta_hat_m <- max(0, chi - df)
+        # compute CFI
+        s[i + 1, 2] <- 1 - delta_hat_m / delta_hat_null
+
+      } else if (gof == "RMSEA") {
+        Fm <- loadings[[i]]$fit
+        chi <- Fm * (n_cases -1)
+        delta_hat_m <- max(0, chi - df)
+        # compute 1 - RMSEA
+        s[i + 1, 2] <- 1 - sqrt(max(delta_hat_m / (df * (n_cases - 1)), 0))
+
+      }
+
+    }
 
     # compute dfs (Eq 4 provides the number of free parameters; using dfs yields
     # th same numbers, as the difference in df equals the difference in free parameters)
-    s[i + 1, 3] <- ((m - i)**2 - (m + i)) / 2
+    s[i + 1, 3] <- df
 
   }
 
@@ -174,7 +268,10 @@ HULL <- function(x, cors = TRUE, n_cases = NA, n_factors = NA,
 
   out <- list(
     n_factors = retain,
-    solutions = s_complete
+    solutions = s_complete,
+    ctrl = list(method = method,
+                gof = gof,
+                n_factors = n_factors)
   )
 
   class(out) <- "HULL"
@@ -185,5 +282,11 @@ HULL <- function(x, cors = TRUE, n_cases = NA, n_factors = NA,
 
 .hull_uls <- function(n_factors, R) {
   uls <- .fit_uls(R, n_factors)
-  return(uls$loadings)
+  return(list("loadings" = uls$loadings, "fit" = uls$res$value))
 }
+
+.hull_ml <- function(n_factors, R) {
+  ml <- .fit_ml(R, n_factors, "factanal")
+  return(list("loadings" = ml$loadings, "fit" = ml$res$value))
+}
+

@@ -1,3 +1,35 @@
+#' Maximum Likelihood Estimation of Factor Loadings
+#'
+#' @param x matrix or data.frame. A raw data or correlation matrix.
+#' @param n_factors numeric. The number of factors to extract.
+#' @param cors logical. Whether x is a correlation matrix.
+#' @param N numeric. The number of cases. Only necessary if correlation matrix is
+#'  specified. Needed for some fit indices.
+#' @param signed_loadings logical. If \code{TRUE} (default), the sign of
+#' factors with negative sum of loadings is reflected.
+#' @param start_method character. How to specify the starting values for the
+#'  optimization prodedure. Default is "factanal" which takes the starting values
+#'  specified in the \link{stats}{factanal} function. "psych" takes the starting
+#'  values specified in \link{psych}{fa}. Solutions are very similar.
+#' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
+#'  is given as input. Note that in this case \code{cors} must be set to
+#'  \code{FALSE}. Default is "pairwise.complete.obs".
+#'
+#' @return A list of class ML containing the following
+#' \item{orig_R}{Original correlation matrix.}
+#' \item{h2}{Final communality estimates.}
+#' \item{orig_eigen}{Eigen values of the original correlation matrix.}
+#' \item{final_eigen}{Eigenvalues of the final correlation matrix with the estimated communalities as diagonal.}
+#' \item{unrot_loadings}{Loading matrix containing the final loadings.}
+#' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings}
+#' \item{fit_indices}{Fit indices as returned by
+#'  \code{\link[psych:factor.stats]{psych::factor.stats}}}
+#' \item{settings}{list. The settings (arguments) used in ML}
+#' @export
+#'
+#' @examples
+#' # call as single function
+#' ML(IDS2_R, n_factors = 5)
 ML <- function(x, n_factors, cors = TRUE, N = NA, signed_loadings = TRUE,
                start_method = c("factanal", "psych"), use = "pairwise.complete.obs") {
 

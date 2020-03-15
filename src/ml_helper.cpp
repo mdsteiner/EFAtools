@@ -42,7 +42,6 @@ double error_ml(arma::vec psi, arma::mat R, const int n_fac) {
 
   arma::vec eigval;
   arma::vec Lambda;
-  double error;
 
   arma::mat sc = arma::diagmat(1 / sqrt(psi));
   arma::mat Rs = sc * R * sc;

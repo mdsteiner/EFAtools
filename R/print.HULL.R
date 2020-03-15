@@ -17,6 +17,10 @@ print.HULL <- function(x, ...) {
              " factors."))
 
   cat("\n")
+  cat(paste0(crayon::bold(max(x$ctrl$method)), " estimation and the ",
+             crayon::bold(max(x$ctrl$gof)), " fit index was used."))
+  cat("\n")
+  cat("\n")
   cat("Number of factors suggested by the Hull method:")
   cat("\n")
 
