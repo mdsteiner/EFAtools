@@ -15,7 +15,7 @@ EFA(
   cors = TRUE,
   N = NA,
   rotation = "none",
-  type = "GS",
+  type = "EFAtools",
   max_iter = NULL,
   init_comm = NULL,
   criterion = NULL,
@@ -48,7 +48,7 @@ correlation matrix is used. If input is a correlation matrix and N = NA
 \item{rotation}{character. One of "none" (default), "promax", or "varimax".
 Specifies the type of rotation to perform.}
 
-\item{type}{character. If one of "GS" (default), "psych", or "SPSS" is
+\item{type}{character. If one of "EFAtools" (default), "psych", or "SPSS" is
 used, and the following arguments with default NULL are left with
 NULL, these implementations are executed as reported in Grieder and Steiner
 (2019). Individual properties can be adapted using one of the three types and
@@ -59,7 +59,7 @@ details see the help pages for \code{\link{PAF}}, \code{\link{PROMAX}}, or
 
 \item{max_iter}{numeric. The maximum number of iterations to perform after which
 the iterative PAF procedure is halted with a warning. If \code{type} is one of
-"GS", "SPSS", or "psych", this is automatically specified if \code{max_iter} is
+"EFAtools", "SPSS", or "psych", this is automatically specified if \code{max_iter} is
 left to be \code{NULL}, but can be overridden by entering a number. Default is \code{NULL}.}
 
 \item{init_comm}{character. The method to estimate the initial communalities.
@@ -147,12 +147,12 @@ A list of class PAF if no rotation is used (see \code{\link{PAF}}
 This is a wrapper function to call \code{\link{PAF}} and then one of
 \code{\link{PROMAX}} or \code{\link{VARIMAX}} or no rotation is performed.
 All arguments with default value \code{NULL} can be left to default if \code{type}
-is set to one of "GS", "SPSS", or "psych". The respective specifications are
+is set to one of "EFAtools", "SPSS", or "psych". The respective specifications are
 then handled by the function.
 }
 \examples{
-# A type GS (as presented in Steiner and Grieder, 2019) EFA
-EFA_GS_5 <- EFA(IDS2_R, n_factors = 5, type = "GS")
+# A type EFAtools (as presented in Steiner and Grieder, 2019) EFA
+EFA_EFAtools_5 <- EFA(IDS2_R, n_factors = 5, type = "EFAtools")
 
 # A type SPSS EFA to mimick the SPSS implementation
 EFA_SPSS_5 <- EFA(IDS2_R, n_factors = 5, type = "SPSS")

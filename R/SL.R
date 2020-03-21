@@ -53,6 +53,7 @@ SL <- function(x, Phi = NULL, type = "EFAtools", ...) {
 
     L1 <- x$rot_loadings
     n_first_fac <- ncol(x$rot_loadings)
+    orig_R <- x$orig_R
 
     if(!is.null(Phi)){
       warning("Phi argument is specified. Specified factor intercorrelations are
@@ -74,6 +75,7 @@ SL <- function(x, Phi = NULL, type = "EFAtools", ...) {
 
     L1 <- unclass(x$loadings)
     n_first_fac <- ncol(x$loadings)
+    orig_R <- unclass(x$r)
 
     if(!is.null(Phi)){
       warning("Phi argument is specified. Specified factor intercorrelations are
@@ -94,6 +96,7 @@ SL <- function(x, Phi = NULL, type = "EFAtools", ...) {
 
     L1 <- x
     n_first_fac <- ncol(x)
+    orig_R <- NULL
 
   }
 
@@ -134,7 +137,9 @@ SL <- function(x, Phi = NULL, type = "EFAtools", ...) {
     L2 = L2,
     vars_accounted = vars_accounted,
     settings = paf_phi$settings,
-    iter = paf_phi$iter)
+    iter = paf_phi$iter,
+    orig_R = orig_R
+    )
 
   class(output) <- "SL"
 

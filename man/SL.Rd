@@ -9,7 +9,7 @@ Wolff, H.-G., & Preising, K. (2005). Exploring item and higher order factor stru
 Watkins, M. W. (2004). Macortho [Computer Software]. Phoenix, AZ: EdPsych Associates, Inc.
 }
 \usage{
-SL(x, Phi = NULL, type = "GS", ...)
+SL(x, Phi = NULL, type = "EFAtools", ...)
 }
 \arguments{
 \item{x}{object of class \code{\link{PROMAX}} or class \code{\link{fa}} or
@@ -21,7 +21,7 @@ x can also be a pattern matrix from an oblique factor solution (see \code{Phi}).
 solution. Only needs to be specified if x is not of class \code{\link{PROMAX}}
 or class \code{\link{fa}}.}
 
-\item{type}{character. One of "GS" (default), "psych", or "SPSS". This
+\item{type}{character. One of "EFAtools" (default), "psych", or "SPSS". This
 is used to control the procedure of the second order factor analysis. See
 \code{\link{PAF}} for details.}
 

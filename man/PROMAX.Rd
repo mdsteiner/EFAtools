@@ -6,7 +6,7 @@
 \usage{
 PROMAX(
   x,
-  type = "GS",
+  type = "EFAtools",
   kaiser = TRUE,
   P_type = NULL,
   precision = NULL,
@@ -18,7 +18,7 @@ PROMAX(
 \item{x}{matrix or class \code{\link{PAF}} object. Either a matrix containing
 an unrotated factor solution, or a \code{\link{PAF}} output object.}
 
-\item{type}{character. If one of "GS" (default), "psych", or "SPSS" is
+\item{type}{character. If one of "EFAtools" (default), "psych", or "SPSS" is
 used, and the following arguments (except kaiser) are left with \code{NULL},
 these implementations
 are executed as reported in Grieder and Steiner (2019; see details).
@@ -73,7 +73,7 @@ the default settings. If type = "none" is specified, all arguments with default
 \code{NULL} have to be specified.
 }
 \details{
-\code{type = "GS"} will use the following argument specification:
+\code{type = "EFAtools"} will use the following argument specification:
 \code{P_type = "unnorm", precision = 1e-10, order_type = "eigen", k = 3}.
 \code{type = "psych"} will use the following argument specification:
 \code{P_type = "unnorm", precision = 1e-5, order_type = "eigen", k = 4}.
@@ -98,9 +98,9 @@ loadings = AP, rotmat = U, Phi = Phi, Structure = Structure
 }
 \examples{
 # call within EFA function:
-EFA(IDS2_R, n_factors = 5, type = "GS", rotation = "promax")
+EFA(IDS2_R, n_factors = 5, type = "EFAtools", rotation = "promax")
 
 # call as single function
-unrot <- EFA(IDS2_R, n_factors = 5, type = "GS")
-PROMAX(unrot$unrot_loadings, type = "GS")
+unrot <- EFA(IDS2_R, n_factors = 5, type = "EFAtools")
+PROMAX(unrot$unrot_loadings, type = "EFAtools")
 }

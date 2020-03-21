@@ -4,13 +4,19 @@
 \alias{VARIMAX}
 \title{Varimax rotation}
 \usage{
-VARIMAX(x, type = "GS", kaiser = TRUE, precision = NULL, order_type = NULL)
+VARIMAX(
+  x,
+  type = "EFAtools",
+  kaiser = TRUE,
+  precision = NULL,
+  order_type = NULL
+)
 }
 \arguments{
 \item{x}{matrix or class \code{\link{PAF}} object. Either a matrix containing
 an unrotated factor solution, or a \code{\link{PAF}} output object.}
 
-\item{type}{character. If one of "GS" (default), "psych", or "SPSS" is
+\item{type}{character. If one of "EFAtools" (default), "psych", or "SPSS" is
 used, and the following arguments (except kaiser) are left with \code{NULL},
 these implementations
 are executed as reported in Grieder and Steiner (2019; see details).
@@ -50,7 +56,7 @@ only the \code{type} argument has to be specified additional to \code{x}.
 The other arguments can be used to control the procedure more flexibly.
 }
 \details{
-\code{type = "GS"} will use the following argument specification:
+\code{type = "EFAtools"} will use the following argument specification:
 \code{precision = 1e-10, order_type = "eigen"}.
 \code{type = "psych"} will use the following argument specification:
 \code{precision = 1e-5, order_type = "eigen"}.
@@ -64,9 +70,9 @@ sums of squares of factor loadings per factor if \code{order_type = "ss_factors"
 }
 \examples{
 # call within EFA function:
-EFA(IDS2_R, n_factors = 5, type = "GS", rotation = "varimax")
+EFA(IDS2_R, n_factors = 5, type = "EFAtools", rotation = "varimax")
 
 # call as single function
-unrot <- EFA(IDS2_R, n_factors = 5, type = "GS")
-VARIMAX(unrot$unrot_loadings, type = "GS")
+unrot <- EFA(IDS2_R, n_factors = 5, type = "EFAtools")
+VARIMAX(unrot$unrot_loadings, type = "EFAtools")
 }

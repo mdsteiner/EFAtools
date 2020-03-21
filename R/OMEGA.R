@@ -36,8 +36,8 @@
 #' @param u2 numeric. A vector of uniquenesses from an SL solution. This needs
 #' only be specified if \code{model} is left \code{NULL} and \code{type} is
 #' not \code{Watkins}.
-#' @param cormat matrix. A correlation matrix to be used when \code{type = "psych"} or
-#' \code{type = "EFAtools"}. If left \code{NULL}, the correlation matrix is found based on the
+#' @param cormat matrix. A correlation matrix to be used when \code{type = "psych"}.
+#' If left \code{NULL}, the correlation matrix is found based on the
 #' pattern matrix and Phi using \code{\link[psych:factor.model]{psych::factor.model}}.
 #' If the correlation matrix is available, \code{cormat} should be specified instead
 #' of \code{Phi} and \code{pattern}.
@@ -119,13 +119,18 @@
 #' IDS2_cov <- lavaan::cor2cov(IDS2_R, sds = SD, names = colnames(IDS2_R))
 #' fit <- cfa(mod, sample.cov = IDS2_cov, sample.nobs = 1991, estimator = "ml",
 #'            orthogonal = TRUE)
-#' OMEGA(fit)
 #'
 #' # Calculate omega
-#' OMEGA()
+#' OMEGA(fit)
 #'
 #' # Use with an output from the SL function, with type = "EFAtools" (default)
-#' OMEGA()
+#'
+#' efa_mod <- EFA(IDS2_R,  N = 1991, n_factors = 5, type = "EFAtools",
+#'                rotation = "promax")
+#' sl_mod <- SL(efa_mod, type = "EFAtools")
+#'
+#' OMEGA(sl_mod, factor_corres = c(1, 1, 5, 5, 2, 2, 4, 4, 1, 1, 3, 3, 3, 4),
+#'       type = "EFAtools")
 #'
 #' # Manually specify components (useful, if omegas should be computed for a SL
 #' # or bifactor solution found with another program)

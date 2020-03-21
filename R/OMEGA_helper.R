@@ -24,6 +24,7 @@
     g_load <- model[, 1]
     s_load <- model[, 2:(ncol(model) - 2)]
     factor_names <- c("g", 1:ncol(s_load))
+    cormat <- model$orig_R
 
     if(type != "Watkins"){
       u2 <- model[, ncol(model)]

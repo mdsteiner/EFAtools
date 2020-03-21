@@ -13,7 +13,7 @@ PAF(
   cors = TRUE,
   N = NA,
   max_iter = NULL,
-  type = "GS",
+  type = "EFAtools",
   init_comm = NULL,
   criterion = NULL,
   criterion_type = NULL,
@@ -41,7 +41,7 @@ correlation matrix is used. If input is a correlation matrix and N = NA
 perform after which the iterative PAF procedure is halted with a warning.
 Default is \code{NULL}.}
 
-\item{type}{character. If one of "GS" (default), "psych", or "SPSS" is
+\item{type}{character. If one of "EFAtools" (default), "psych", or "SPSS" is
 used, and the following arguments (except \code{signed_loadings}) are left with
 NULL, these implementations
 are executed as reported in Gieder and Steiner (2019; see details).
@@ -100,7 +100,7 @@ the default settings. If type = "none" is specified, all arguments with default
 \details{
 Values of \code{init_comm}, \code{criterion}, \code{criterion_type},
 \code{abs_eigen}, and \code{use_cpp} depend on the \code{type} argument.
-\code{type = "GS"} will use the following argument specification:
+\code{type = "EFAtools"} will use the following argument specification:
 \code{init_comm = "smc", criterion = 1e-9, criterion_type = "max_individual",
 abs_eigen = FALSE, use_cpp = TRUE}.
 \code{type = "psych"} will use the following argument specification:
@@ -112,8 +112,8 @@ abs_eigen = TRUE, use_cpp = TRUE}.
 }
 \examples{
 # call within EFA function:
-EFA(IDS2_R, n_factors = 5, type = "GS")
+EFA(IDS2_R, n_factors = 5, type = "EFAtools")
 
 # call as single function
-PAF(IDS2_R, n_factors = 5, type = "GS")
+PAF(IDS2_R, n_factors = 5, type = "EFAtools")
 }

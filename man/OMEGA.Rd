@@ -19,7 +19,7 @@ OMEGA(
   pattern = NULL,
   cormat = NULL,
   variance = NULL,
-  type = "GS"
+  type = "EFAtools"
 )
 }
 \arguments{
@@ -61,7 +61,7 @@ not \code{Watkins}.}
 \item{pattern}{matrix. Pattern coefficients from an oblique factor solution.}
 
 \item{cormat}{matrix. A correlation matrix to be used when \code{type = "psych"} or
-\code{type = "GS"}. If left \code{NULL}, the correlation matrix is found based on the
+\code{type = "EFAtools"}. If left \code{NULL}, the correlation matrix is found based on the
 pattern matrix and Phi using \code{\link[psych:factor.model]{psych::factor.model}}.
 If the correlation matrix is available, \code{cormat} should be specified instead
 of \code{Phi} and \code{pattern}.}
@@ -98,10 +98,10 @@ If \code{model} is of class
 needs to be specified additionally. There is, however, the option to reproduce
 Watkins' Omega or \code{\link[psych:omega]{psych::omega}} results by setting the
 \code{type} argument to \code{"Watkins"} or \code{"psych"}.
-If \code{model = NULL} and \code{type = "GS"}(default), the arguments
+If \code{model = NULL} and \code{type = "EFAtools"}(default), the arguments
 \code{var_names}, \code{factor_corres}, \code{g_load}, \code{s_load}, and \code{u2}
 need to be specified.
-If \code{type = "psych"} or \code{type = "GS"}, either \code{cormat}
+If \code{type = "psych"} or \code{type = "EFAtools"}, either \code{cormat}
 (recommended) or \code{Phi} and \code{pattern} must be specified.
 Additionally, the argument \code{factor_corres} should be left NULL to
 replicate \code{\link[psych:omega]{psych::omega}}
@@ -122,7 +122,7 @@ variance (for the whole scale as well as the subscale composites) as well as
 the finding of variable-to-factor correspondences. The former aspect
 can also be controlled individually by specifying the variance argument, the
 latter by specifying the factor_corres argument.
-For \code{type = "GS"}, total variances are found using the correlation
+For \code{type = "EFAtools"}, total variances are found using the correlation
 matrix, and variable-to-factor correspondences have to be specified manually.
 The only difference for \code{type = "psych"} is that it takes the highest
 group factor loading for each variable as the relevant group factor loading.
