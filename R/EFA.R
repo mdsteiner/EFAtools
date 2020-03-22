@@ -15,6 +15,7 @@
 #'  correlation matrix is used. If input is a correlation matrix and N = NA
 #'  (default), not all fit indices can be computed. See
 #'  \code{\link[psych:factor.stats]{psych::factor.stats}} for details.
+#' @param method -...
 #' @param rotation character. One of "none" (default), "promax", or "varimax".
 #'  Specifies the type of rotation to perform.
 #' @param type character. If one of "EFAtools" (default), "psych", or "SPSS" is
@@ -74,6 +75,10 @@
 #'  the factors according to the largest to lowest eigenvalues. "ss_factors" will
 #'  reorder the factors according to descending sum of squared factor loadings
 #'  per factor. See \code{\link{PROMAX}} or \code{\link{VARIMAX}} for details.
+#'  @param start_method character. How to specify the starting values for the
+#'  optimization prodedure. Default is "factanal" which takes the starting values
+#'  specified in the \link{stats}{factanal} function. "psych" takes the starting
+#'  values specified in \link{psych}{fa}. Solutions are very similar.
 #'
 #' @return A list of class PAF if no rotation is used (see \code{\link{PAF}}
 #'  documentation for a description), and of class PROMAX, or
@@ -112,69 +117,104 @@
 #'
 #' # A type psych EFA to mimick the psych::fa() implementation
 #' EFA_psych_5 <- EFA(IDS2_R, n_factors = 5, type = "psych")
-EFA <- function(x, n_factors, cors = TRUE, N = NA, rotation = "none",
-                type = "EFAtools", max_iter = NULL, init_comm = NULL,
-                criterion = NULL, criterion_type = NULL, abs_eigen = NULL,
-                signed_loadings = TRUE, use = "pairwise.complete.obs",
-                use_cpp = NULL, k = NULL, kaiser = TRUE, P_type = NULL,
-                precision = NULL, order_type = NULL) {
+EFA <- function(x, n_factors, cors = TRUE, N = NA, method = c("PAF", "ML", "ULS"),
+                rotation = c("none", "varimax", "promax"),
+                type = c("EFAtools", "psych", "SPSS"), max_iter = NULL,
+                init_comm = NULL, criterion = NULL, criterion_type = NULL,
+                abs_eigen = NULL, signed_loadings = TRUE,
+                use = c("all.obs", "complete.obs", "pairwise.complete.obs",
+                "everything", "na.or.complete"), use_cpp = NULL, k = NULL,
+                kaiser = TRUE, P_type = NULL, precision = NULL,
+                order_type = NULL, start_method = c("factanal", "psych")) {
 
-  # run principal axis factoring
-  paf_out <- PAF(x, n_factors = n_factors, cors = cors, N = N, type = type,
+  # # for testing
+  # x <- IDS2_R
+  # N <- 1991
+  # n_factors <- 5
+  # method <- "PAF"
+  # rotation <- "promax"
+  # cors <- TRUE
+  # type = "EFAtools"
+  # signed_loadings = TRUE
+  # use = "pairwise.complete.obs"
+  # kaiser = TRUE
+  # max_iter = NULL
+  # init_comm = NULL
+  # criterion = NULL
+  # criterion_type = NULL
+  # abs_eigen = NULL
+  # use_cpp = NULL
+  # k = NULL
+  # precision = NULL
+  # P_type = NULL
+  # order_type = NULL
+
+  method <- match.arg(method)
+  rotation <- match.arg(rotation)
+  use <- match.arg(use)
+  type <- match.arg(type)
+  start_method <- match.arg(start_method)
+
+  # run factor analysis with respective fit method
+
+  if (method == "PAF") {
+
+  fit_out <- PAF(x, n_factors = n_factors, cors = cors, N = N, type = type,
                  max_iter = max_iter, init_comm = init_comm, criterion = criterion,
                  criterion_type = criterion_type, abs_eigen = abs_eigen,
                  signed_loadings = signed_loadings, use = use, use_cpp = use_cpp)
 
+  } else if (method == "ML") {
+
+    fit_out <- ML(x, n_factors = n_factors, cors = cors, N = N,
+                  signed_loadings = signed_loadings, start_method = start_method,
+                  use = use)
+
+  } else if (method == "ULS") {
+
+    fit_out <- ULS(x, n_factors = n_factors, cors = cors, N = N,
+                  signed_loadings = signed_loadings, use = use)
+  }
+
+
+
   # rotate factor analysis results
   if (rotation == "promax") {
 
-    paf_rot <- PROMAX(paf_out, type = type, kaiser = kaiser, P_type = P_type,
+    rot_out <- PROMAX(fit_out, type = type, kaiser = kaiser, P_type = P_type,
                       precision = precision, order_type = order_type, k = k)
 
   } else if (rotation == "varimax") {
-    paf_rot <- VARIMAX(paf_out, type = type, kaiser = kaiser, precision = precision,
-                       order_type = order_type)
-  } else {
-    if (rotation != "none") {
-      warning("You entered rotation = '", rotation, "', which is no valid input.",
-              " Valid inputs are 'promax', 'varimax', or 'none'. No rotation was done;",
-              " returning unrotated loadings.")
-    }
 
-    return(paf_out)
+    rot_out <- VARIMAX(fit_out, type = type, kaiser = kaiser, precision = precision,
+                       order_type = order_type)
+
+  } else {
+
+    output <- fit_out
+
   }
 
-  # prepare output
-  output <- list(
-    orig_R = paf_out$orig_R,
-    h2_init = paf_out$h2_init,
-    h2 = paf_out$h2,
-    iter = paf_out$iter,
-    orig_eigen = paf_out$orig_eigen,
-    init_eigen = paf_out$init_eigen,
-    final_eigen = paf_out$final_eigen,
-    unrot_loadings = paf_out$unrot_loadings,
-    rot_loadings = paf_rot$rot_loadings,
-    rotmat = paf_rot$rotmat,
-    vars_accounted = paf_rot$vars_accounted,
-    fit_indices = paf_rot$fit_indices,
-    settings = paf_out$settings
+  if (rotation != "none"){
+
+    settings <- c(fit_out$settings, rot_out$settings)
+    output <- list(within(fit_out, rm(settings)), within(rot_out, rm(settings)),
+                settings = as.list(settings))
+
+  }
+
+  # Add settings used to output
+  settings_EFA <- list(
+    method = method,
+    rotation = rotation
   )
 
-  # add additional settings
-  output$settings$kaiser <- paf_rot$settings$kaiser
-  output$settings$precision <- paf_rot$settings$precision
-  output$settings$order_type <- paf_rot$settings$order_type
+  settings <- c(settings_EFA, output$settings)
 
-  if (rotation == "promax") {
-    output$settings$P_type <- paf_rot$settings$P_type
-    output$settings$k <- paf_rot$settings$k
-    output$Phi = paf_rot$Phi
-    output$Structure = paf_rot$Structure
-    class(output) <- "PROMAX"
-  } else if (rotation == "varimax") {
-    class(output) <- "VARIMAX"
-  }
+  output <- list(within(output, rm(settings)),
+              settings = as.list(settings))
+
+  class(output) <- "EFA"
 
   output
 

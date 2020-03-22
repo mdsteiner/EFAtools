@@ -254,7 +254,8 @@ VARIMAX <- function (x, type = "EFAtools", kaiser = TRUE,
   # prepare settings
   settings <- list(type = type, kaiser = kaiser, precision = precision,
                    order_type = order_type)
-  output <- list(rot_loadings = load_mat,
+  output <- list(orig_R = orig_R,
+                 rot_loadings = load_mat,
                  rotmat = AV$rotmat,
                  h2 = diag(L %*% t(L)),
                  vars_accounted = vars_accounted,

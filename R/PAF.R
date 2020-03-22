@@ -501,8 +501,6 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
   class(output$init_eigen) <- "EIGEN"
   class(output$final_eigen) <- "EIGEN"
 
-  class(output) <- "PAF"
-
   output
 
 }

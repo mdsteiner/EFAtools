@@ -62,24 +62,6 @@ ML <- function(x, n_factors, cors = TRUE, N = NA, signed_loadings = TRUE,
   h2 = diag(L %*% t(L))
   diag(R) <- h2
 
-  if (signed_loadings) {
-    # reverse the sign of loadings as done in the psych package,
-    # and spss
-    if (n_factors > 1) {
-      signs <- sign(colSums(L))
-      signs[signs == 0] <- 1
-      L <- L %*% diag(signs)
-    } else {
-      if (sum(L) < 0) {
-        L <- -as.matrix(L)
-      } else {
-        L <- as.matrix(L)
-      }
-
-    }
-
-  }
-
   if (!is.null(colnames(orig_R))) {
     # name the loading matrix so the variables can be identified
     rownames(L) <- colnames(orig_R)
