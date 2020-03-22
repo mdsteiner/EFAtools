@@ -89,11 +89,7 @@ ULS <- function(x, n_factors, cors = TRUE, N = NA, signed_loadings = TRUE,
   colnames(vars_accounted) <- colnames(L)
 
   # compute fit indices
-  fit_ind <- try(psych::factor.stats(orig_R, L, n.obs = N), silent = TRUE)
-
-  if (all(class(fit_ind) == "try-error")) {
-    fit_ind <- NA
-  }
+  fit_ind <- .gof(L, orig_R, N, "ULS", uls$res$value)
 
 
   # create the output object

@@ -284,3 +284,53 @@
 .onUnload <- function (libpath) {
   library.dynam.unload("EFAtools", libpath)
 }
+
+.gof <- function(L, # The loading/ pattern matrix
+                 R, # The correlation matrix
+                 N, # The number of cases
+                 method, # The estimation method
+                 Fm) { # Minimized error
+  m <- nrow(L)
+  q <- ncol(L)
+  # dfs
+  df <- ((m - q)**2 - (m + q)) / 2
+
+  ### compute CAF
+  delta_hat <- R - (L %*% t(L))
+  diag(delta_hat) <- 1
+  CAF <- 1 - KMO(delta_hat)$KMO
+
+
+  if (method != "PAF" && !is.na(N)) {
+
+    ### compute CFI
+
+    # null model
+    chi_null <- sum(R[upper.tri(R)] ^ 2) * (N - 1)
+    df_null <- (m**2 - m) / 2
+    delta_hat_null <- max(0, chi_null - df_null)
+
+    # current model
+    chi <- Fm * (N - 1)
+    delta_hat_m <- max(0, chi - df)
+    CFI <- 1 - delta_hat_m / delta_hat_null
+
+    ### compute RMSEA
+    RMSEA <- 1 - sqrt(max(delta_hat_m / (df * (N - 1)), 0))
+
+  } else {
+    CFI <- NA
+    RMSEA <- NA
+    chi <- NA
+  }
+
+  out <- list(
+    df = df,
+    CAF = CAF,
+    CFI = CFI,
+    RMSEA = RMSEA,
+    Fm = Fm,
+    chi = chi
+  )
+
+}

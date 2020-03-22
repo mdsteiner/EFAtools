@@ -461,14 +461,7 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
 
   colnames(vars_accounted) <- colnames(L)
 
-  # compute CAF and degrees of freedom
-  delta_hat <- orig_R - (L %*% t(L))
-  diag(delta_hat) <- 1
-  CAF <- 1 - KMO(delta_hat)$KMO
-
-  df <- ((m - nrow(L))**2 - (m + nrow(L))) / 2
-
-  fit_ind <- list(CAF, df)
+  fit_ind <- .gof(L, orig_R, N, "PAF", NA)
 
   # create the output object
   class(L) <- "LOADINGS"

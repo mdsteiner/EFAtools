@@ -92,11 +92,7 @@ ML <- function(x, n_factors, cors = TRUE, N = NA, signed_loadings = TRUE,
   colnames(vars_accounted) <- colnames(L)
 
   # compute fit indices
-  fit_ind <- try(psych::factor.stats(orig_R, L, n.obs = N), silent = TRUE)
-
-  if (all(class(fit_ind) == "try-error")) {
-    fit_ind <- NA
-  }
+  fit_ind <- .gof(L, orig_R, N, "ML", ml$res$value)
 
 
   # create the output object
@@ -156,6 +152,8 @@ ML <- function(x, n_factors, cors = TRUE, N = NA, signed_loadings = TRUE,
   Lambda <- .FAout(res$par, R, n_fac)
 
   result <- list(loadings = Lambda, res = res, R = R)
+
+  result
 }
 
 # .error_ml2 <- function(psi, R, n_fac)
