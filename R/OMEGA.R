@@ -139,7 +139,10 @@
 OMEGA <- function(model = NULL, var_names = NULL, fac_names = NULL,
                   factor_corres = NULL, g_load = NULL,
                   s_load = NULL, u2 = NULL, Phi = NULL, pattern = NULL,
-                  cormat = NULL, variance = NULL, type = "EFAtools"){
+                  cormat = NULL, variance = NULL, type = c("EFAtools", "psych",
+                                                           "Watkins")){
+
+  type <- match.arg(type)
 
   if(!is.null(model) & (!is.null(var_names) || !is.null(g_load) || !is.null(s_load)
                         || !is.null(u2))){
