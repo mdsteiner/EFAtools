@@ -15,7 +15,7 @@
 #'  is given as input. Note that in this case \code{cors} must be set to
 #'  \code{FALSE}. Default is "pairwise.complete.obs".
 #'
-#' @return A list of class ML containing the following
+#' @return A list containing the following
 #' \item{orig_R}{Original correlation matrix.}
 #' \item{h2}{Final communality estimates.}
 #' \item{orig_eigen}{Eigen values of the original correlation matrix.}
@@ -28,12 +28,13 @@
 #' @export
 #'
 #' @examples
-#' # call as single function
-#' ML(IDS2_R, n_factors = 5)
+#' # call within EFA function:
+#' EFA(IDS2_R, n_factors = 5, method = "ML")
 ML <- function(x, n_factors, cors = TRUE, N = NA, signed_loadings = TRUE,
-               start_method = c("factanal", "psych"), use = "pairwise.complete.obs") {
+               start_method = c("factanal", "psych"),
+               use = c("all.obs", "complete.obs", "pairwise.complete.obs",
+                       "everything", "na.or.complete")) {
 
-  start_method <- match.arg(start_method)
   # create R correlation matrix object, if from data, using
   # pairwise binary correlations
   if (isTRUE(cors)) {
@@ -104,8 +105,6 @@ ML <- function(x, n_factors, cors = TRUE, N = NA, signed_loadings = TRUE,
   class(output$h2) <- "COMMUNALITIES"
   class(output$orig_eigen) <- "EIGEN"
   class(output$final_eigen) <- "EIGEN"
-
-  class(output) <- "ML"
 
   output
 }

@@ -22,10 +22,9 @@
 #'  used, and the following arguments with default NULL are left with
 #'  NULL, these implementations are executed as reported in Grieder and Steiner
 #'  (2019). Individual properties can be adapted using one of the three types and
-#'  specifying some of the following arguments. If set to another value than one
-#'  of the three specified above, all following arguments must be specified. For
-#'  details see the help pages for \code{\link{PAF}}, \code{\link{PROMAX}}, or
-#'  \code{\link{VARIMAX}}.
+#'  specifying some of the following arguments. If set to "none" additional
+#'  arguments must be specified depending on the \code{method} and \code{rotation}
+#'  used.
 #' @param max_iter numeric. The maximum number of iterations to perform after which
 #' the iterative PAF procedure is halted with a warning. If \code{type} is one of
 #' "EFAtools", "SPSS", or "psych", this is automatically specified if \code{max_iter} is
@@ -55,9 +54,6 @@
 #' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
 #'  is given as input. Note that in this case \code{cors} must be set to
 #'  \code{FALSE}. Default is "pairwise.complete.obs".
-#' @param use_cpp logical. If \code{TRUE}, the iterative PAF procedure to find the
-#'  factor solution is performed using Rcpp. This is faster, but can lead to some
-#'  very small differences in the output. Default is \code{NULL}.
 #' @param k numeric. The power used for computing the target matrix P in the
 #'  promax rotation. Default is \code{NULL}.
 #' @param kaiser logical. If \code{TRUE}, kaiser normalization is
@@ -87,19 +83,20 @@
 #'
 #' \item{orig_R}{Original correlation matrix.}
 #' \item{h2_init}{Initial communality estimates from PAF.}
-#' \item{h2}{Final communality estimates from unrotated loadings.}
+#' \item{h2}{Final communality estimates from the unrotated solution}
 #' \item{iter}{The number of iterations needed for convergence in PAF.}
 #' \item{orig_eigen}{Eigen values of the original correlation matrix.}
 #' \item{init_eigen}{Initial eigenvalues, obtained from the correlation matrix
 #'  with the initial communality estimates as diagonal in PAF.}
 #' \item{final_eigen}{Eigenvalues of the final iteration in PAF.}
-#' \item{unrot_loadings}{Loading matrix containing the unrotated final loadings from PAF.}
-#' \item{rot_loadings}{The promax or varimax rotated loadings (the pattern matrix).}
+#' \item{unrot_loadings}{Loading matrix containing the unrotated final loadings.}
+#' \item{rot_loadings}{The pattern matrix of the rotated solution).}
 #' \item{rotmat}{The rotation matrix.}
 #' \item{Phi}{The factor intercorrelations. Only returned if promax rotation is used.}
 #' \item{Structure}{The structure matrix. Only returned if promax rotation is used.}
-#' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings. Based on rotated loadings and, if applicable, the factor intercorrelations.}
-#' \item{fit_indices}{Fit indices derived from the rotated factor loadings as
+#' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings. Based on the unrotated loadings.}
+#' \item{vars_accounted_rot}{Matrix of explained variances and sums of squared loadings. Based on rotated loadings and, if applicable, the factor intercorrelations.}
+#' \item{fit_indices}{Fit indices derived from the unrotated factor loadings as
 #'  returned by \code{\link[psych:factor.stats]{psych::factor.stats}}}
 #' \item{settings}{list. The settings (arguments) used in the EFA.}
 #'
@@ -110,20 +107,23 @@
 #'
 #' @examples
 #' # A type EFAtools (as presented in Steiner and Grieder, 2019) EFA
-#' EFA_EFAtools_5 <- EFA(IDS2_R, n_factors = 5, type = "EFAtools")
+#' EFA_EFAtools_5 <- EFA(IDS2_R, n_factors = 5, type = "EFAtools", method = "PAF",
+#'                       rotation = "none")
 #'
 #' # A type SPSS EFA to mimick the SPSS implementation
-#' EFA_SPSS_5 <- EFA(IDS2_R, n_factors = 5, type = "SPSS")
+#' EFA_SPSS_5 <- EFA(IDS2_R, n_factors = 5, type = "SPSS", method = "PAF",
+#'                   rotation = "none")
 #'
 #' # A type psych EFA to mimick the psych::fa() implementation
-#' EFA_psych_5 <- EFA(IDS2_R, n_factors = 5, type = "psych")
+#' EFA_psych_5 <- EFA(IDS2_R, n_factors = 5, type = "psych", method = "PAF",
+#'                    rotation = "none")
 EFA <- function(x, n_factors, cors = TRUE, N = NA, method = c("PAF", "ML", "ULS"),
                 rotation = c("none", "varimax", "promax"),
-                type = c("EFAtools", "psych", "SPSS"), max_iter = NULL,
+                type = c("EFAtools", "psych", "SPSS", "none"), max_iter = NULL,
                 init_comm = NULL, criterion = NULL, criterion_type = NULL,
                 abs_eigen = NULL, signed_loadings = TRUE,
                 use = c("all.obs", "complete.obs", "pairwise.complete.obs",
-                "everything", "na.or.complete"), use_cpp = NULL, k = NULL,
+                "everything", "na.or.complete"), k = NULL,
                 kaiser = TRUE, P_type = NULL, precision = NULL,
                 order_type = NULL, start_method = c("factanal", "psych")) {
 
@@ -143,7 +143,6 @@ EFA <- function(x, n_factors, cors = TRUE, N = NA, method = c("PAF", "ML", "ULS"
   # criterion = NULL
   # criterion_type = NULL
   # abs_eigen = NULL
-  # use_cpp = NULL
   # k = NULL
   # precision = NULL
   # P_type = NULL
@@ -162,7 +161,7 @@ EFA <- function(x, n_factors, cors = TRUE, N = NA, method = c("PAF", "ML", "ULS"
   fit_out <- PAF(x, n_factors = n_factors, cors = cors, N = N, type = type,
                  max_iter = max_iter, init_comm = init_comm, criterion = criterion,
                  criterion_type = criterion_type, abs_eigen = abs_eigen,
-                 signed_loadings = signed_loadings, use = use, use_cpp = use_cpp)
+                 signed_loadings = signed_loadings, use = use)
 
   } else if (method == "ML") {
 
@@ -207,6 +206,7 @@ EFA <- function(x, n_factors, cors = TRUE, N = NA, method = c("PAF", "ML", "ULS"
   settings_EFA <- list(
     method = method,
     rotation = rotation
+    type = type
   )
 
   settings <- c(settings_EFA, output$settings)

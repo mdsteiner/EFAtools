@@ -45,7 +45,11 @@
 #' @examples
 #'
 #' KMO(IDS2_R)
-KMO <- function(x, cors = TRUE, use = "pairwise.complete.obs") {
+KMO <- function(x, cors = TRUE, use = c("all.obs", "complete.obs",
+                                        "pairwise.complete.obs",
+                                        "everything", "na.or.complete")) {
+
+  use <- match.arg(use)
 
   # create R correlation matrix object, if from data, using
   # pairwise binary correlations

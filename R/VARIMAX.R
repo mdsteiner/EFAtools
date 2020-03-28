@@ -38,28 +38,22 @@
 #' promax pattern matrix, if \code{order_type = "eigen"}, and using the ordered
 #' sums of squares of factor loadings per factor if \code{order_type = "ss_factors"}.
 #'
-#' @return A list of class VARIMAX containing the following
+#' @return A list containing the following
 #'
 #' \item{rot_loadings}{The varimax rotated loadings (the pattern matrix).}
 #' \item{rotmat}{The rotation matrix.}
-#' \item{h2}{The communalities from the unrotated solution.}
-#' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings}
-#' \item{fit_indices}{Fit indices as returned by
-#'  \code{\link[psych:factor.stats]{psych::factor.stats}}}
-#' \item{settings}{list. The settings (arguments) used in the varimax.}
+#' \item{vars_accounted_rot}{Matrix of explained variances and sums of squared loadings based on the rotated loadings.}
+#' \item{settings}{list. The settings (arguments) used in varimax.}
 #'
 #' @export
 #' @examples
 #' # call within EFA function:
-#' EFA(IDS2_R, n_factors = 5, type = "EFAtools", rotation = "varimax")
-#'
-#' # call as single function
-#' unrot <- EFA(IDS2_R, n_factors = 5, type = "EFAtools")
-#' VARIMAX(unrot$unrot_loadings, type = "EFAtools")
-VARIMAX <- function (x, type = "EFAtools", kaiser = TRUE,
-                    precision = NULL, order_type = NULL) {
+#' EFA(IDS2_R, n_factors = 5, type = "EFAtools", method = "ML",
+#'     rotation = "varimax")
+VARIMAX <- function (x, type = c("EFAtools", "psych", "SPSS", "none"),
+                     kaiser = TRUE, precision = NULL, order_type = NULL) {
 
-  if (is.null(type) || !(type %in% c("EFAtools", "psych", "SPSS"))) {
+  if (type == "none") {
     # if type is not one of the three valid inputs, throw an error if not
     # all the other necessary arguments are specified.
 
@@ -67,7 +61,8 @@ VARIMAX <- function (x, type = "EFAtools", kaiser = TRUE,
       stop('One of "precision", or "order_type" was NULL and no valid
            "type" was specified. Either use one of "EFAtools", "psych", or "SPSS"
            for type, or specify all other arguments')
-      }
+    }
+
     } else if (type == "EFAtools") {
 
       # if not specified, set PAF properties. If specified, throw warning that
@@ -146,42 +141,21 @@ VARIMAX <- function (x, type = "EFAtools", kaiser = TRUE,
 
     }
 
-  # extract loadings and dim names
-  if (all(class(x) == "PAF")) {
+    # extract loadings and dim names
     L <- x$unrot_loadings
     dim_names <- dimnames(L)
 
-    # N <- x$fit_indices$n.obs
-
-  } else if (all(class(x) == "matrix") |
-             any(class(x) %in% c("loadings", "LOADINGS"))) {
-    L <- x
-    dim_names <- dimnames(L)
-
-  } else {
-    stop("x is not of class PAF and not a matrix. Either provide a PAF output
-         object, or a matrix containing unrotated factor loadings")
-  }
-
-  if (ncol(L) < 2) {
-    if (any(class(x) == "PAF")) {
-      vars_accounted <- x$vars_accounted
-      fit_ind <- x$fit_indices
-    } else {
-      vars_accounted <- NA
-      fit_ind <- NA
-    }
     # prepare settings
-    settings <- list(type = type, kaiser = kaiser, precision = precision,
+    settings <- list(kaiser = kaiser, precision = precision,
                      order_type = order_type)
 
+  if (ncol(L) < 2) {
+
     # prepare and return output list
-    output <- list(rot_loadings = L, rotmat = NA,
-                   h2 = diag(L %*% t(L)),
-                   vars_accounted = vars_accounted,
-                   fit_indices = fit_ind, settings = settings)
-    class(output$h2) <- "COMMUNALITIES"
-    class(output) <- "VARIMAX"
+    output <- list(rot_loadings = L,
+                   rotmat = NA,
+                   vars_accounted_rot = NA,
+                   settings = settings)
 
     warning("Cannot rotate single factor. Unrotated loadings returned.")
     return(output)
@@ -189,7 +163,6 @@ VARIMAX <- function (x, type = "EFAtools", kaiser = TRUE,
 
   # perform the varimax rotation
   AV <- stats::varimax(L, normalize = kaiser, eps = precision)
-
 
   # reflect factors with negative sums
   signs <- sign(colSums(AV$loadings))
@@ -232,36 +205,15 @@ VARIMAX <- function (x, type = "EFAtools", kaiser = TRUE,
   load_mat <- AV$loadings
   dimnames(load_mat) <- dim_names
 
-  vars_accounted <- .compute_vars(L_unrot = L, L_rot = load_mat)
-  colnames(vars_accounted) <- colnames(load_mat)
-
-  if (any(class(x) == "PAF") && all(class(x$fit_indices) == c("psych", "stats"))) {
-    # compute fit indices
-    fit_ind <- psych::factor.stats(f = load_mat, phi = NULL, r = x$orig_R,
-                                   n.obs = x$fit_indices$n.obs)
-
-    if(all(class(x) == "try_error")) {
-      fit_ind <- NA
-    }
-
-  } else {
-    fit_ind <- NA
-  }
+  vars_accounted_rot <- .compute_vars(L_unrot = L, L_rot = load_mat)
+  colnames(vars_accounted_rot) <- colnames(load_mat)
 
   # prepare output
   class(load_mat) <- "LOADINGS"
 
-  # prepare settings
-  settings <- list(type = type, kaiser = kaiser, precision = precision,
-                   order_type = order_type)
-  output <- list(orig_R = orig_R,
-                 rot_loadings = load_mat,
+  output <- list(rot_loadings = load_mat,
                  rotmat = AV$rotmat,
-                 h2 = diag(L %*% t(L)),
-                 vars_accounted = vars_accounted,
-                 fit_indices = fit_ind,
+                 vars_accounted_rot = vars_accounted_rot,
                  settings = settings)
-  class(output$h2) <- "COMMUNALITIES"
-  class(output) <- "VARIMAX"
   output
 }

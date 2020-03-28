@@ -11,12 +11,10 @@
 #' @param x matrix or class \code{\link{PAF}} object. Either a matrix containing
 #' an unrotated factor solution, or a \code{\link{PAF}} output object.
 #' @param type character. If one of "EFAtools" (default), "psych", or "SPSS" is
-#'  used, and the following arguments (except kaiser) are left with \code{NULL},
-#'  these implementations
-#'  are executed as reported in Grieder and Steiner (2019; see details).
-#'  Individual properties can be adapted using one of the three types and
-#'  specifying some of the following
-#'  arguments. If set to another value than one of the three specified above, all
+#'  used, and the following arguments with default NULL are left with
+#'  NULL, these implementations are executed as reported in Grieder and Steiner
+#'  (2019). Individual properties can be adapted using one of the three types and
+#'  specifying some of the following arguments. If set to "none" all
 #'  following arguments must be specified.
 #' @param kaiser logical. If \code{TRUE} (default), kaiser normalization is
 #' performed in the varimax rotation.
@@ -58,35 +56,31 @@
 #' order of factors is then determined using the ordered eigenvalues of the
 #' promax pattern matrix, if \code{order_type = "eigen"}, and using the ordered
 #' sums of squares of factor loadings per factor if \code{order_type = "ss_factors"}.
-#' loadings = AP, rotmat = U, Phi = Phi, Structure = Structure
-#' @return A list of class PROMAX containing the following
+#'
+#' @return A list containing the following
 #'
 #' \item{rot_loadings}{The promax rotated loadings (the pattern matrix).}
 #' \item{rotmat}{The rotation matrix.}
 #' \item{Phi}{The factor intercorrelations.}
 #' \item{Structure}{The structure matrix.}
-#' \item{h2}{The communalities from the unrotated solution.}
-#' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings}
-#' \item{fit_indices}{Fit indices as returned by
-#'  \code{\link[psych:factor.stats]{psych::factor.stats}}}
-#' \item{settings}{list. The settings (arguments) used in the promax.}
+#' \item{vars_accounted_rot}{Matrix of explained variances and sums of squared
+#' loadings. Based on rotated loadings and factor intercorrelations.}
+#' \item{settings}{list. The settings (arguments) used in promax.}
 #'
 #' @export
 #' @examples
 #' # call within EFA function:
-#' EFA(IDS2_R, n_factors = 5, type = "EFAtools", rotation = "promax")
-#'
-#' # call as single function
-#' unrot <- EFA(IDS2_R, n_factors = 5, type = "EFAtools")
-#' PROMAX(unrot$unrot_loadings, type = "EFAtools")
-PROMAX <- function (x, type = "EFAtools", kaiser = TRUE, P_type = NULL,
-                    precision = NULL, order_type = NULL, k = NULL) {
+#' EFA(IDS2_R, n_factors = 5, type = "EFAtools", method = "PAF",
+#'    rotation = "promax")
+PROMAX <- function (x, type = c("EFAtools", "psych", "SPSS", "none"),
+                    kaiser = TRUE, P_type = NULL, precision = NULL,
+                    order_type = NULL, k = NULL) {
 
-  if (is.null(type) || !(type %in% c("EFAtools", "psych", "SPSS"))) {
+  if (type == "none") {
     # if type is not one of the three valid inputs, throw an error if not
     # all the other necessary arguments are specified.
 
-    if (is.null(P_type) || is.null(precision) || is.null(order_type)
+    if (type == "none" || is.null(precision) || is.null(order_type)
         || is.null(k)) {
       stop('One of "P_type", "precision", "order_type", or "k" was NULL and no valid
            "type" was specified. Either use one of "EFAtools", "psych", or "SPSS"
@@ -214,40 +208,21 @@ PROMAX <- function (x, type = "EFAtools", kaiser = TRUE, P_type = NULL,
   }
 
   # extract loadings and dim names
-  if (any(class(x) == "PAF")) {
     L <- x$unrot_loadings
     dim_names <- dimnames(L)
 
-
-    # N <- x$fit_indices$n.obs
-
-  } else if (all(class(x) == "matrix") |
-             any(class(x) %in% c("loadings", "LOADINGS"))) {
-    L <- x
-    dim_names <- dimnames(L)
-  } else {
-    stop("x is not of class PAF and not a matrix. Either provide a PAF output
-         object, or a matrix containing unrotated factor loadings")
-  }
+  # store settings used
+    settings <- list(kaiser = kaiser, P_type = P_type,
+                     precision = precision, order_type = order_type, k = k)
 
   if (ncol(L) < 2) {
     # prepare and return output list
-    if (any(class(x) == "PAF")) {
-      vars_accounted <- x$vars_accounted
-      fit_ind <- x$fit_indices
-    } else {
-      vars_accounted <- NA
-      fit_ind <- NA
-    }
-    settings <- list( type = type, kaiser = kaiser, P_type = P_type,
-                      precision = precision, order_type = order_type, k = k)
-
-    output <- list(rot_loadings = L, rotmat = NA, Phi = NA, Structure = NA,
-                   h2 = diag(L %*% t(L)),
-                   vars_accounted = vars_accounted,
-                   fit_indices = fit_ind, settings = settings)
-    class(output$h2) <- "COMMUNALITIES"
-    class(output) <- "PROMAX"
+    output <- list(rot_loadings = L,
+                   rotmat = NA,
+                   Phi = NA,
+                   Structure = NA,
+                   vars_accounted_rot = NA,
+                   settings = settings)
 
     warning("Cannot rotate single factor. Unrotated loadings returned.")
     return(output)
@@ -331,22 +306,10 @@ PROMAX <- function (x, type = "EFAtools", kaiser = TRUE, P_type = NULL,
   }
 
   dimnames(AP) <- dim_names
-  vars_accounted <- .compute_vars(L_unrot = L, L_rot = AP, Phi = Phi)
 
-  colnames(vars_accounted) <- colnames(AP)
+  vars_accounted_rot <- .compute_vars(L_unrot = L, L_rot = AP, Phi = Phi)
 
-  if (any(class(x) == "PAF") && all(class(x$fit_indices) == c("psych", "stats"))) {
-    # compute fit indices
-    fit_ind <- try(psych::factor.stats(f = AP, phi = Phi, r = x$orig_R,
-                                       n.obs = x$fit_indices$n.obs))
-    if(all(class(x) == "try_error")) {
-      fit_ind <- NA
-    }
-
-  } else {
-    fit_ind <- NA
-  }
-
+  colnames(vars_accounted_rot) <- colnames(AP)
 
   # get structure matrix
   Structure <- AP %*% Phi
@@ -354,14 +317,11 @@ PROMAX <- function (x, type = "EFAtools", kaiser = TRUE, P_type = NULL,
   # prepare and return output list
   class(AP) <- "LOADINGS"
 
-  # store settings used
-  settings <- list( type = type, kaiser = kaiser, P_type = P_type,
-                    precision = precision, order_type = order_type, k = k)
-
-  output <- list(rot_loadings = AP, rotmat = U, Phi = Phi, Structure = Structure,
-                 h2 = diag(L %*% t(L)), vars_accounted = vars_accounted,
-                 fit_indices = fit_ind, settings = settings)
-  class(output$h2) <- "COMMUNALITIES"
-  class(output) <- "PROMAX"
+  output <- list(rot_loadings = AP,
+                 rotmat = U,
+                 Phi = Phi,
+                 Structure = Structure,
+                 vars_accounted_rot = vars_accounted_rot,
+                 settings = settings)
   output
 }
