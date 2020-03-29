@@ -3,8 +3,7 @@
                        factor_corres = NULL, g_load = NULL, s_load = NULL,
                        u2 = NULL, Phi = NULL, pattern = NULL,
                        cormat = NULL, variance = NULL, type = c("EFAtools",
-                                                                "psych",
-                                                                "Watkins")){
+                                                                "psych")){
 
   if(all(class(model) == c("psych", "schmid"))){
 
@@ -15,10 +14,6 @@
     s_load <- model[, 2:(ncol(model) - 3)]
     factor_names <- c("g", 1:ncol(s_load))
 
-    if(type != "Watkins"){
-      u2 <- model[, ncol(model) - 1]
-    }
-
   } else if(all(class(model) == c("SL"))){
 
     model <-  model$sl
@@ -27,10 +22,6 @@
     s_load <- model[, 2:(ncol(model) - 2)]
     factor_names <- c("g", 1:ncol(s_load))
     cormat <- model$orig_R
-
-    if(type != "Watkins"){
-      u2 <- model[, ncol(model)]
-    }
 
   } else {
 
@@ -51,18 +42,6 @@
 
     }
 
-  } else if(type == "Watkins"){
-
-    if(is.null(variance)){
-
-      variance <- "sums_load"
-
-      } else {
-
-      warning("Argument variance is specified. Variances are computed as specified.
-              Results may differ from the specified type")
-
-      }
   }
 
   # Create an input dataframe
@@ -92,10 +71,6 @@
   input <- cbind(factor_corres, input)
   names(input)[1] <- "factor"
 
-  if(type != "Watkins" & is.null(u2)){
-    stop("Either specify the u2 argument or set type = 'Watkins'")
-  }
-
   if(variance == "correlation" & is.null(cormat)){
 
       if(is.null(Phi) | is.null(pattern)) {
@@ -108,50 +83,6 @@
       cormat <- psych::factor.model(f = pattern, Phi = Phi, U2 = FALSE)
 
       }
-    }
-
-  if(type == "Watkins"){
-
-    if(is.null(u2)) {
-
-      # Set all "non-relevant" group factor loadings to 0
-      Watkins_data <- matrix(ncol = ncol(s_load), nrow = length(var_names))
-
-      for(i in 1:ncol(s_load)){
-
-        temp <- vector("double", length = nrow(s_load))
-        ind <- input$factor == i
-
-        for(j in 1:nrow(s_load)){
-
-          if(isTRUE(ind[j])){
-
-            temp[j] <- input[j, colnames(input)[i + 2]]
-
-          } else {
-
-            temp[j] <- 0
-
-          }
-
-        }
-
-        Watkins_data[, i] <- temp
-
-      }
-
-      input[, 1:ncol(s_load) + 2] <- Watkins_data
-
-      # Calculate uniquenesses based only on the relevant group factor loadings
-      u2_Wat <- 1 - rowSums(input[, c(2, 1:ncol(s_load) + 2)]^2)
-      u2 <- u2_Wat
-
-    } else {
-
-      warning("Argument u2 is specified. Specified uniquenesses are taken.
-              To compute uniquenesses as done in Watkins' program, leave u2
-              = NULL")
-    }
     }
 
   input$u2 <- u2

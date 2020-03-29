@@ -6,8 +6,7 @@
 #' \code{\link[psych:schmid]{psych::schmid}} or from \code{\link{SL}}, or, in a
 #' more flexible way, by leaving \code{model = NULL} and specifying additional arguments.
 #' By setting the \code{type} argument, results from
-#' \code{\link[psych:omega]{psych::omega}}
-#' or Watkins' omega program (Watkins, 2013) can be reproduced.
+#' \code{\link[psych:omega]{psych::omega}} can be reproduced.
 #'
 #' @param model class \code{\link{SL}}, class \code{\link{schmid}}, or class
 #' \code{\link{lavaan}} object. That is, an output object from \code{\link{SL}}, from
@@ -28,14 +27,13 @@
 #' last two on the second group factor. If a variable should not be assigned to
 #' any group factor, insert a zero at its position (e.g. c(3, 3, 0, 1, 1, 2, 2),
 #' the third variable has no corresponding group factor).
-#' @param type character. Either \code{"EFAtools"} (default), \code{"psych"}, or \code{"Watkins
+#' @param type character. Either \code{"EFAtools"} (default) or \code{"psych"}.
 #' @param g_load numeric. A vector of general factor loadings from an SL solution.
 #' This needs only be specified if \code{model} is left \code{NULL}.
 #' @param s_load matrix. A matrix of group factor loadings from an SL solution. This needs
 #' only be specified if \code{model} is left \code{NULL}
 #' @param u2 numeric. A vector of uniquenesses from an SL solution. This needs
-#' only be specified if \code{model} is left \code{NULL} and \code{type} is
-#' not \code{Watkins}.
+#' only be specified if \code{model} is left \code{NULL}.
 #' @param cormat matrix. A correlation matrix to be used when \code{type = "psych"}.
 #' If left \code{NULL}, the correlation matrix is found based on the
 #' pattern matrix and Phi using \code{\link[psych:factor.model]{psych::factor.model}}.
@@ -126,8 +124,8 @@
 #' # Use with an output from the SL function, with type = "EFAtools" (default)
 #'
 #' efa_mod <- EFA(IDS2_R,  N = 1991, n_factors = 5, type = "EFAtools",
-#'                rotation = "promax")
-#' sl_mod <- SL(efa_mod, type = "EFAtools")
+#'                method = "PAF", rotation = "promax")
+#' sl_mod <- SL(efa_mod, type = "EFAtools", method = "PAF")
 #'
 #' OMEGA(sl_mod, factor_corres = c(1, 1, 5, 5, 2, 2, 4, 4, 1, 1, 3, 3, 3, 4),
 #'       type = "EFAtools")
@@ -139,8 +137,7 @@
 OMEGA <- function(model = NULL, var_names = NULL, fac_names = NULL,
                   factor_corres = NULL, g_load = NULL,
                   s_load = NULL, u2 = NULL, Phi = NULL, pattern = NULL,
-                  cormat = NULL, variance = NULL, type = c("EFAtools", "psych",
-                                                           "Watkins")){
+                  cormat = NULL, variance = NULL, type = c("EFAtools", "psych")){
 
   type <- match.arg(type)
 

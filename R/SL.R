@@ -4,30 +4,32 @@
 #' pattern coefficients and factor intercorrelations from an oblique factor solution as
 #' input and can reproduce the results from \code{\link[psych:schmid]{psych::schmid}},
 #' from the SPSS implementation from Wolff & Preising (2005), and from MacOrtho
-#' (Watkins, 2004). To reproduce psych or SPSS, only the type argument has to be
+#' (Watkins, 2004). To reproduce psych or SPSS, only the type and method arguments have to be
 #' specified additional to the loadings and factor intercorrelations. Other
-#' arguments from \code{\link{PAF}} can be used to control the procedure to find
+#' arguments from \code{\link{EFA}} can be used to control the procedure to find
 #' the second order loadings more flexibly.
 #'
-#' @param x object of class \code{\link{PROMAX}} or class \code{\link{fa}} or
-#' matrix. If class \code{\link{PROMAX}} or class \code{\link{fa}},
+#' @param x object of class \code{\link{EFA}} or class \code{\link{fa}} or
+#' matrix. If class \code{\link{EFA}} or class \code{\link{fa}},
 #' pattern coefficients and factor intercorrelations are taken from this object.
 #' x can also be a pattern matrix from an oblique factor solution (see \code{Phi}).
 #' @param Phi matrix. A matrix of factor intercorrelations from an oblique factor
-#' solution. Only needs to be specified if x is not of class \code{\link{PROMAX}}
-#' or class \code{\link{fa}}.
-#' @param type character. One of "EFAtools" (default), "psych", or "SPSS". This
-#' is used to control the procedure of the second order factor analysis. See
-#' \code{\link{PAF}} for details.
-#' @param ... Arguments to be passed to \code{PAF}.
+#' solution. Only needs to be specified if a pattern matrix is entered directly
+#' into x}.
+#' @param type character. One of "EFAtools" (default), "psych", "SPSS", or "none".
+#' This is used to control the procedure of the second order factor analysis. See
+#' \code{\link{EFA}} for details.
+#' @param method -...
+#' @param ... Arguments to be passed to \code{EFA}.
 #'
 #' @return A list containing the following
 #' \item{sl}{A matrix with g loadings, group factor loadings, communalities,
 #' and uniquenesses.}
 #' \item{L2}{Second-order factor loadings.}
 #' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings}
-#' \item{settings}{list. The settings (arguments) used in the PAF to get the second order loadings.}
-#' \item{iter}{Number of iterations needed in the PAF for the second order loadings.}
+#' \item{settings}{list. The settings (arguments) used in EFA to get the second order loadings.}
+#' \item{iter}{The number of iterations needed for convergence in EFA if PAF
+#' was used.}
 #'
 #' @details
 #' The SL transformation (also called SL orthogonalization) is a procedure with
@@ -47,25 +49,36 @@
 #' @source Watkins, M. W. (2004). Macortho [Computer Software]. Phoenix, AZ: EdPsych Associates, Inc.
 #'
 #' @export
-SL <- function(x, Phi = NULL, type = "EFAtools", ...) {
+SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
+               method = c("PAF", "ML", "ULS"), ...) {
 
-  if(all(class(x) == "PROMAX")) {
+  type <- match.arg(type)
 
-    L1 <- x$rot_loadings
-    n_first_fac <- ncol(x$rot_loadings)
-    orig_R <- x$orig_R
+  if(all(class(x) == "EFA")) {
 
-    if(!is.null(Phi)){
-      warning("Phi argument is specified. Specified factor intercorrelations are
-              taken. To take factor intercorrelations from the PROMAX output,
+    if("Phi" %in% names(x)){
+
+      L1 <- x$rot_loadings
+      n_first_fac <- ncol(x$rot_loadings)
+      orig_R <- x$orig_R
+
+      if(!is.null(Phi)){
+        warning("Phi argument is specified. Specified factor intercorrelations are
+              taken. To take factor intercorrelations from the EFA output,
               leave Phi = NULL")
+
+      } else {
+
+        Phi <- x$Phi
+
+      }
 
     } else {
 
-      Phi <- x$Phi
+      stop("x is either a non-rotated or orthogonal factor solution. SL needs
+      an oblique factor solution")
 
     }
-
 
     n_order <- order(as.numeric(gsub("F", "", colnames(L1))))
     L1 <- L1[, n_order]
@@ -73,18 +86,27 @@ SL <- function(x, Phi = NULL, type = "EFAtools", ...) {
 
   } else if(all(class(x) == c("psych", "fa"))) {
 
-    L1 <- unclass(x$loadings)
-    n_first_fac <- ncol(x$loadings)
-    orig_R <- unclass(x$r)
+    if(Phi %in% x){
 
-    if(!is.null(Phi)){
-      warning("Phi argument is specified. Specified factor intercorrelations are
+      L1 <- unclass(x$loadings)
+      n_first_fac <- ncol(x$loadings)
+      orig_R <- unclass(x$r)
+
+      if(!is.null(Phi)){
+        warning("Phi argument is specified. Specified factor intercorrelations are
               taken. To take factor intercorrelations from the psych fa output,
               leave Phi = NULL")
 
+      } else {
+
+        Phi <- x$Phi
+
+      }
+
     } else {
 
-      Phi <- x$Phi
+      stop("x is either a non-rotated or orthogonal factor solution. SL needs
+      an oblique factor solution")
 
     }
 
@@ -94,6 +116,13 @@ SL <- function(x, Phi = NULL, type = "EFAtools", ...) {
 
   } else {
 
+    if(is.null(Phi)){
+
+      stop("Phi not provided. Either enter an oblique factor solution from
+      EFAtools::EFA or from psych::fa, or provide Phi")
+
+    }
+
     L1 <- x
     n_first_fac <- ncol(x)
     orig_R <- NULL
@@ -102,10 +131,11 @@ SL <- function(x, Phi = NULL, type = "EFAtools", ...) {
 
   # perform a factor analysis on the intercorrelation matrix of the first order
   # factors
-  paf_phi <- PAF(Phi, n_factors = 1, type = type, ...)
+  EFA_phi <- EFA(Phi, n_factors = 1, type = type, method = method,
+                 rotation = "none", ...)
 
   # extract second order loadings
-  L2 <- paf_phi$unrot_loadings
+  L2 <- EFA_phi$unrot_loadings
 
   # Schmid-Leiman solution, direct loadings of second order factor
   L_sls_2 <- L1 %*% L2
@@ -136,8 +166,8 @@ SL <- function(x, Phi = NULL, type = "EFAtools", ...) {
     sl = sl,
     L2 = L2,
     vars_accounted = vars_accounted,
-    settings = paf_phi$settings,
-    iter = paf_phi$iter,
+    settings = EFA_phi$settings,
+    iter = EFA_phi$iter,
     orig_R = orig_R
     )
 

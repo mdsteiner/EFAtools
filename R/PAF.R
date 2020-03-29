@@ -355,7 +355,6 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
   settings <- list(
     N = N,
     max_iter = max_iter,
-    type = type,
     init_comm = init_comm,
     criterion = criterion,
     criterion_type = criterion_type,

@@ -197,22 +197,22 @@ EFA <- function(x, n_factors, cors = TRUE, N = NA, method = c("PAF", "ML", "ULS"
   if (rotation != "none"){
 
     settings <- c(fit_out$settings, rot_out$settings)
-    output <- list(within(fit_out, rm(settings)), within(rot_out, rm(settings)),
-                settings = as.list(settings))
+    output <- c(within(fit_out, rm(settings)), within(rot_out, rm(settings)),
+                      settings = list(settings))
 
   }
 
   # Add settings used to output
   settings_EFA <- list(
     method = method,
-    rotation = rotation
+    rotation = rotation,
     type = type
   )
 
   settings <- c(settings_EFA, output$settings)
 
-  output <- list(within(output, rm(settings)),
-              settings = as.list(settings))
+  output <- c(within(output, rm(settings)),
+                 settings = list(settings))
 
   class(output) <- "EFA"
 
