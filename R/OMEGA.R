@@ -1,5 +1,7 @@
 #' MacDonald's omega
 #'
+#'ALSO FOR LAVAAN SINGLE FACTOR SOLUTION
+#'
 #' This function finds omega total, omega hierarchical, and omega subscale
 #' from a Schmid-Leiman (SL) solution or lavaan bifactor solution. The SL-based
 #' omegas can either be found using the outputs from
@@ -11,11 +13,14 @@
 #' @param model class \code{\link{SL}}, class \code{\link{schmid}}, or class
 #' \code{\link{lavaan}} object. That is, an output object from \code{\link{SL}}, from
 #' \code{\link[psych:schmid]{psych::schmid}}, or from a \code{\link{lavaan}}
-#' bifactor model. If of class \code{\link{lavaan}}, no other arguments need to
-#' be specified. If of class \code{\link{SL}} or \code{\link{schmid}}, only
+#' bifactor model. If of class \code{\link{lavaan}}, only \code{g_name} needs to
+#' be specified additionally. If of class \code{\link{SL}} or \code{\link{schmid}}, only
 #' the arguments \code{factor_corres} and \code{cormat} need to be specified
 #' additionally.
-#' @param var_names numeric. A vector with subtest names in the order
+#' @param g_name character. The name of the general factor from the lavaan bifactor
+#' solution. This needs only be specified if \code{model} is a class \code{\link{lavaan}}
+#' object.
+#' @param var_names character. A vector with subtest names in the order
 #' of the rows from the SL solution. This needs only be specified if \code{model}
 #' is left \code{NULL}
 #' @param fac_names character. An optional vector of group factor names in the
@@ -105,12 +110,12 @@
 #' library(lavaan)
 #'
 #' # Create and fit model in lavaan
-#' mod <- 'AVR =~ EFAtools + PL + CM + EP
+#' mod <- 'AVR =~ GS + PL + CM + EP
 #'         PS =~ b*TC + b*CB
 #'         ASTM =~ c*NL + c*NLM
 #'         VSSTM =~ d*GF + d*RGF
 #'         SLTM =~ CA + OP + RS + DP
-#'         g =~ EFAtools + PL + TC + CB + NL + NLM + GF + RGF + CM + EP + CA + OP +
+#'         g =~ GS + PL + TC + CB + NL + NLM + GF + RGF + CM + EP + CA + OP +
 #'              RS + DP'
 #' SD <- c(3.20, 3.18, 3.13, 3.15, 3.20, 3.11, 3.06, 3.07, 3.14, 3.18, 3.22,
 #'         3.16, 3.16, 3.08) # Taken from Table A1 in Grieder & Grob (2019)
@@ -134,7 +139,7 @@
 #' # or bifactor solution found with another program)
 #' OMEGA()
 #' }
-OMEGA <- function(model = NULL, var_names = NULL, fac_names = NULL,
+OMEGA <- function(model = NULL, g_name = NULL, var_names = NULL, fac_names = NULL,
                   factor_corres = NULL, g_load = NULL,
                   s_load = NULL, u2 = NULL, Phi = NULL, pattern = NULL,
                   cormat = NULL, variance = NULL, type = c("EFAtools", "psych")){

@@ -4,7 +4,7 @@
 #' \code{\link{PROMAX}} or \code{\link{VARIMAX}} or no rotation is performed.
 #' All arguments with default value \code{NULL} can be left to default if \code{type}
 #' is set to one of "EFAtools", "SPSS", or "psych". The respective specifications are
-#' then handled by the function.
+#' then handled by the function. For all rotations except varimax and promax, the \code{\link{GPArotation} package is needed.
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
 #'  correlations.
@@ -17,7 +17,7 @@
 #'  \code{\link[psych:factor.stats]{psych::factor.stats}} for details.
 #' @param method -...
 #' @param rotation character. One of "none" (default), "promax", or "varimax".
-#'  Specifies the type of rotation to perform.
+#'  Specifies the type of rotation to perform. More now (alle aufzählen)
 #' @param type character. If one of "EFAtools" (default), "psych", or "SPSS" is
 #'  used, and the following arguments with default NULL are left with
 #'  NULL, these implementations are executed as reported in Grieder and Steiner
@@ -57,7 +57,7 @@
 #' @param k numeric. The power used for computing the target matrix P in the
 #'  promax rotation. Default is \code{NULL}.
 #' @param kaiser logical. If \code{TRUE}, kaiser normalization is
-#' performed before the varimax rotation. Default is \code{NULL}.
+#' performed before the varimax rotation (now all rotation methods). Default is \code{NULL}.
 #' @param P_type character. This specifies how the target
 #'  matrix P is computed in a promax rotation. If "unnorm" it will use the
 #'  unnormalized target matrix as originally done in Hendrickson and White (1964).
@@ -66,7 +66,7 @@
 #'  Grieder and Steiner, 2019 for details). Default is \code{NULL}.
 #' @param precision numeric. The tolerance for stopping in the varimax procecdure.
 #'  This is passed to the "eps" argument of the
-#'  \code{\link[stats:varimax]{stats::varimax}} function. Default is \code{NULL}.
+#'  \code{\link[stats:varimax]{stats::varimax}} function. Default is \code{NULL}. Now for all rotation methods.
 #' @param order_type character. How to order the factors. "eigen" will reorder
 #'  the factors according to the largest to lowest eigenvalues. "ss_factors" will
 #'  reorder the factors according to descending sum of squared factor loadings
@@ -75,6 +75,8 @@
 #'  optimization prodedure. Default is "factanal" which takes the starting values
 #'  specified in the \link{stats}{factanal} function. "psych" takes the starting
 #'  values specified in \link{psych}{fa}. Solutions are very similar.
+#'  @param ... Additional arguments passed to rotation functions from GPArotation
+#'  package.
 #'
 #' @return A list of class PAF if no rotation is used (see \code{\link{PAF}}
 #'  documentation for a description), and of class PROMAX, or
@@ -100,6 +102,7 @@
 #'  returned by \code{\link[psych:factor.stats]{psych::factor.stats}}}
 #' \item{settings}{list. The settings (arguments) used in the EFA.}
 #'
+#'
 #' @source Hendrickson, A. E., & White, P. O. (1964). Promax: A quick method for rotation to oblique simple structure. British Journal of Statistical Psychology, 17 , 65–70. doi: 10.1111/j.2044-8317.1964.tb00244.x
 #' @source Grieder, S., & Steiner, M.D.(2019). Algorithmic Jingle Jungle: Comparison of Implementations of an EFA Procedure in R psych Versus SPSS, MacOrtho, and Omega. Submitted Manuscript.
 #'
@@ -118,14 +121,16 @@
 #' EFA_psych_5 <- EFA(IDS2_R, n_factors = 5, type = "psych", method = "PAF",
 #'                    rotation = "none")
 EFA <- function(x, n_factors, cors = TRUE, N = NA, method = c("PAF", "ML", "ULS"),
-                rotation = c("none", "varimax", "promax"),
+                rotation = c("none", "varimax", "equamax", "quartimax", "geominT",
+                             "bentlerT", "bifactorT", "promax"),
                 type = c("EFAtools", "psych", "SPSS", "none"), max_iter = NULL,
                 init_comm = NULL, criterion = NULL, criterion_type = NULL,
                 abs_eigen = NULL, signed_loadings = TRUE,
                 use = c("all.obs", "complete.obs", "pairwise.complete.obs",
                 "everything", "na.or.complete"), k = NULL,
                 kaiser = TRUE, P_type = NULL, precision = NULL,
-                order_type = NULL, start_method = c("factanal", "psych")) {
+                order_type = NULL, start_method = c("factanal", "psych"),
+                ...) {
 
   # # for testing
   # x <- IDS2_R
@@ -187,6 +192,16 @@ EFA <- function(x, n_factors, cors = TRUE, N = NA, method = c("PAF", "ML", "ULS"
 
     rot_out <- VARIMAX(fit_out, type = type, kaiser = kaiser, precision = precision,
                        order_type = order_type)
+
+  } else if (rotation == "quartimax" || rotation == "equamax" ||
+             rotation == "bentlerT" || rotation == "geominT" ||
+             rotation == "bifactorT") {
+
+    rot_out <- ROTATE_ORTH(fit_out, rotation = rotation, kaiser = kaiser,
+                           precision = precision, order_type = order_type,
+                           ...)
+
+    ### HIER OBLIQUE ROTATIONSMETHODEN
 
   } else {
 

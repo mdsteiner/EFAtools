@@ -171,81 +171,123 @@
 
   omegas
 
-    }
+}
+
 
 # Omega function to use with lavaan bifactor output as input-------
-.OMEGA_LAVAAN <- function(model){
+
+.OMEGA_LAVAAN <- function(model, g_name){
+
+  std_sol <- lavaan::inspect(model, what = "std")
 
   if(lavaan::inspect(model, what = "converged") == FALSE){
     stop("Model did not converge. No omegas are computed.")
   }
 
-  if(any(is.na(lavaan::inspect(model, what = "std")$lambda))){
+  if(any(is.na(std_sol$lambda))){
     stop("Some loadings are NA or NaN. No omegas are computed.")
   }
 
-  if(any(lavaan::inspect(model, what = "std")$lambda > 1)){
+  if(any(std_sol$lambda > 1)){
     stop("A Heywood case was detected. No omegas are computed.")
   }
 
-  if(any(lavaan::inspect(model, what = "std")$lambda == 1)){
+  if(any(std_sol$lambda == 1)){
     warning("Perfect relationship (loading equal to 1) was detected.
             At least one variable is redundant.")
   }
 
-  # Create list with factor and subtest names
-  col_names <- colnames(lavaan::inspect(model, what = "std")$lambda)
-  col_names <- utils::head(col_names, -1)
-  fac_names <- c("g", col_names)
+  if(ncol(std_sol$lambda) == 1){
 
-  var_names <- list()
-  for(i in 1:(length(fac_names)-1)){
-    temp0 <- lavaan::inspect(model, what = "std")$lambda[, i] != 0
-    var_names[[i]] <- names(temp0)[temp0]
-  }
+    message("The model contains a single factor. Only omega total is computed")
 
-  # Create all sums of factor loadings for each factor
-  sums_all <- NULL
-  for (i in 1:length(fac_names)){
-    temp <- sum(lavaan::inspect(model, what = "std")$lambda[, fac_names[i]])
-    sums_all[i] <- temp
-  }
+    fac_names <- colnames(std_sol$lambda)
+    var_names <- rownames(std_sol$lambda)
 
-  # Extract g-loadings and error variances, sum of g-loadings for g and sum of
-  # respective loadings for every factor
-  g_load <- lavaan::inspect(model, what = "std")$lambda[,"g"]
-  e_load <- diag(lavaan::inspect(model, what = "std")$theta)
-  sum_e <- sum(e_load)
-  sum_g <- sums_all[1]
-  sums_s <- sums_all[2:length(fac_names)]
+    # Extract sum of factor loadings and error variances
+    sum_g <- sum(std_sol$lambda[, fac_names])
+    e_load <- diag(std_sol$theta)
+    sum_e <- sum(e_load)
 
-  # Compute sums of error variances and g-loadings for group factors
-  sums_e_s <- NULL
-  sums_g_s <- NULL
-  for (i in 1:length(var_names)){
-    sums_e_s[i] <- sum(e_load[var_names[[i]]])
-    sums_g_s[i] <- sum(g_load[var_names[[i]]])
-  }
+    # Compute omega
+    omegas <- (sum_g^2) / (sum_g^2 + sum_e)
+    names(omegas) <- "omega"
 
-  # Compute omega total, hierarchical, and subscale for g-factor
-  omega_tot_g <- (sum_g^2 + sum(sums_s^2)) / (sum_g^2 + sum(sums_s^2) + sum_e)
-  omega_h_g <- sum_g^2 / (sum_g^2 + sum(sums_s^2) + sum_e)
-  omega_sub_g <- sum(sums_s^2) / (sum_g^2 + sum(sums_s^2) + sum_e)
+  } else {
 
-  # Compute omega total, hierarchical, and subscale for group factors
-  omega_tot_sub <- (sums_s^2 + sums_g_s^2) / (sums_g_s^2 + sums_s^2 + sums_e_s)
-  omega_h_sub <- sums_g_s^2 / (sums_g_s^2 + sums_s^2 + sums_e_s)
-  omega_sub_sub <- sums_s^2 / (sums_g_s^2 + sums_s^2 + sums_e_s)
+    bi_check <- std_sol$lambda
+    bi_check[bi_check != 0] <- 1
 
-  # Combine and display results in a table
-  omega_tot <- c(omega_tot_g, omega_tot_sub)
-  omega_h <- c(omega_h_g, omega_h_sub)
-  omega_sub <- c(omega_sub_g, omega_sub_sub)
+    if(all(rowSums(bi_check) < 2)){
 
-  omegas <- cbind(omega_tot, omega_h, omega_sub)
-  colnames(omegas) <- c("tot", "hier", "sub")
+      warning("You did not fit a bifactor model. Omegas cannot be computed.
+              Either provide a bifactor model or a model with a single factor.")
 
-  rownames(omegas) <- fac_names
+    }
+
+    if(!all(rowSums(bi_check) > 1)){
+
+      message("Some variables have less than two loadings. Did you really enter
+              a bifactor model? Either provide a bifactor model or a model with a
+              single factor.")
+
+    }
+
+    # Create list with factor and corresponding subtest names
+    col_names <- colnames(std_sol$lambda)
+    col_names <- col_names[!col_names %in% g_name]
+    fac_names <- c(g_name, col_names)
+
+    var_names <- list()
+    for(i in 1:(length(fac_names)-1)){
+      temp0 <- std_sol$lambda[, i] != 0
+      var_names[[i]] <- names(temp0)[temp0]
+    }
+
+    # Create all sums of factor loadings for each factor
+    sums_all <- NULL
+    for (i in 1:length(fac_names)){
+      temp <- sum(std_sol$lambda[, fac_names[i]])
+      sums_all[i] <- temp
+    }
+
+    # Extract g-loadings and error variances, sum of g-loadings for g and sum of
+    # respective loadings for every factor
+    g_load <- std_sol$lambda[, g_name]
+    e_load <- diag(std_sol$theta)
+    sum_e <- sum(e_load)
+    sum_g <- sums_all[1]
+    sums_s <- sums_all[2:length(fac_names)]
+
+    # Compute sums of error variances and g-loadings for group factors
+    sums_e_s <- NULL
+    sums_g_s <- NULL
+    for (i in 1:length(var_names)){
+      sums_e_s[i] <- sum(e_load[var_names[[i]]])
+      sums_g_s[i] <- sum(g_load[var_names[[i]]])
+    }
+
+    # Compute omega total, hierarchical, and subscale for g-factor
+    omega_tot_g <- (sum_g^2 + sum(sums_s^2)) / (sum_g^2 + sum(sums_s^2) + sum_e)
+    omega_h_g <- sum_g^2 / (sum_g^2 + sum(sums_s^2) + sum_e)
+    omega_sub_g <- sum(sums_s^2) / (sum_g^2 + sum(sums_s^2) + sum_e)
+
+    # Compute omega total, hierarchical, and subscale for group factors
+    omega_tot_sub <- (sums_s^2 + sums_g_s^2) / (sums_g_s^2 + sums_s^2 + sums_e_s)
+    omega_h_sub <- sums_g_s^2 / (sums_g_s^2 + sums_s^2 + sums_e_s)
+    omega_sub_sub <- sums_s^2 / (sums_g_s^2 + sums_s^2 + sums_e_s)
+
+    # Combine and display results in a table
+    omega_tot <- c(omega_tot_g, omega_tot_sub)
+    omega_h <- c(omega_h_g, omega_h_sub)
+    omega_sub <- c(omega_sub_g, omega_sub_sub)
+
+    omegas <- cbind(omega_tot, omega_h, omega_sub)
+    colnames(omegas) <- c("tot", "hier", "sub")
+
+    rownames(omegas) <- fac_names
+
+    }
 
   omegas
 
