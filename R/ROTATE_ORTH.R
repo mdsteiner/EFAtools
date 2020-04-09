@@ -64,55 +64,57 @@ ROTATE_ORTH <- function(x, rotation = c("equamax", "quartimax", "geominT",
 
   }
 
+  # Extract loading and rotation matrix
+  load_mat <- AV$loadings
+  dimnames(load_mat) <- dim_names
+  rotmat <- AV$Th
+
   # reflect factors with negative sums
-  signs <- sign(colSums(AV$loadings))
+  signs <- sign(colSums(load_mat))
   signs[signs == 0] <- 1
-  AV$loadings <- AV$loadings %*% diag(signs)
+  load_mat <- load_mat %*% diag(signs)
 
   if (order_type == "ss_factors") {
 
     # reorder the factors according to largest sums of squares
-    ss <- colSums(AV$loadings^2)
+    ss <- colSums(load_mat^2)
     ss_order <- order(ss, decreasing = TRUE)
 
-    AV$loadings <- AV$loadings[, ss_order]
+    load_mat <- load_mat[, ss_order]
 
-    AV$Th <- AV$Th[ss_order, ss_order]
+    rotmat <- rotmat[ss_order, ss_order]
 
     if (!is.null(dim_names[[2]])) {
       dim_names[[2]] <- dim_names[[2]][ss_order]
     } else {
-      dim_names[[2]] <- paste0("F", 1:ncol(AV$loadings))[ss_order]
+      dim_names[[2]] <- paste0("F", 1:ncol(load_mat))[ss_order]
     }
 
   } else if (order_type == "eigen") {
 
     # order according to communalities
-    eig_rotated <- diag(t(AV$loadings) %*% AV$loadings)
+    eig_rotated <- diag(t(load_mat) %*% load_mat)
     eig_order <- order(eig_rotated, decreasing = TRUE)
-    AV$loadings <- AV$loadings[, eig_order]
-    AV$Th <- AV$Th[eig_order, eig_order]
+    load_mat <- load_mat[, eig_order]
+    rotmat <- rotmat[eig_order, eig_order]
 
     if (!is.null(dim_names[[2]])) {
       dim_names[[2]] <- dim_names[[2]][eig_order]
     } else {
-      dim_names[[2]] <- paste0("F", 1:ncol(AV$loadings))[eig_order]
+      dim_names[[2]] <- paste0("F", 1:ncol(load_mat))[eig_order]
     }
 
   }
 
-  # prepare and return output list
-  load_mat <- AV$loadings
-  dimnames(load_mat) <- dim_names
-
+  # compute explained variances
   vars_accounted_rot <- .compute_vars(L_unrot = L, L_rot = load_mat)
   colnames(vars_accounted_rot) <- colnames(load_mat)
 
-  # prepare output
+  # prepare output and return output list
   class(load_mat) <- "LOADINGS"
 
   output <- list(rot_loadings = load_mat,
-                 rotmat = AV$Th,
+                 rotmat = rotmat,
                  vars_accounted_rot = vars_accounted_rot,
                  settings = settings)
   output

@@ -190,8 +190,8 @@ EFA <- function(x, n_factors, cors = TRUE, N = NA, method = c("PAF", "ML", "ULS"
 
   } else if (rotation == "varimax") {
 
-    rot_out <- VARIMAX(fit_out, type = type, kaiser = kaiser, precision = precision,
-                       order_type = order_type)
+    rot_out <- VARIMAX(fit_out, type = type, kaiser = kaiser,
+                       precision = precision, order_type = order_type)
 
   } else if (rotation == "quartimax" || rotation == "equamax" ||
              rotation == "bentlerT" || rotation == "geominT" ||
@@ -201,7 +201,13 @@ EFA <- function(x, n_factors, cors = TRUE, N = NA, method = c("PAF", "ML", "ULS"
                            precision = precision, order_type = order_type,
                            ...)
 
-    ### HIER OBLIQUE ROTATIONSMETHODEN
+  } else if (rotation == "oblimin" || rotation == "quartimin" ||
+            rotation == "bentlerQ" || rotation == "geominQ" ||
+            rotation == "bifactorQ") {
+
+    rot_out <- ROTATE_OBLQ(fit_out, rotation = rotation, kaiser = kaiser,
+                           precision = precision, order_type = order_type,
+                           ...)
 
   } else {
 

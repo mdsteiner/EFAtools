@@ -24,6 +24,7 @@ ROTATE_OBLQ <- function(x, rotation = c("oblimin", "quartimin", "bentlerQ",
     # prepare and return output list
     output <- list(rot_loadings = L,
                    rotmat = NA,
+                   Phi = NA,
                    vars_accounted_rot = NA,
                    settings = settings)
 
@@ -33,8 +34,9 @@ ROTATE_OBLQ <- function(x, rotation = c("oblimin", "quartimin", "bentlerQ",
 
   # perform the requested rotation
   if(rotation == "bentlerQ"){
-    AV <- GPArotation::bentlerQ(L, eps = precision, kappa = ncol(L)/(2 * nrow(L)),
-                           normalize = kaiser, ...)
+    AV <- GPArotation::bentlerQ(L, eps = precision,
+                                kappa = ncol(L)/(2 * nrow(L)),
+                                normalize = kaiser, ...)
 
   } else if (rotation == "geominQ"){
     AV <- GPArotation::geominQ(L, eps = precision, normalize = kaiser, ...)
@@ -48,57 +50,71 @@ ROTATE_OBLQ <- function(x, rotation = c("oblimin", "quartimin", "bentlerQ",
 
   }
 
-  ## HIER STEHENGEBLIEBEN
+  # get pattern and rotation matrix and factor intercorrelations
+  patt_mat <- AV$loadings
+  dimnames(patt_mat) <- dim_names
+  rotmat <- AV$Th
+  Phi <- AV$Phi
 
   # reflect factors with negative sums
-  signs <- sign(colSums(AV$loadings))
+  signs <- sign(colSums(patt_mat))
   signs[signs == 0] <- 1
-  AV$loadings <- AV$loadings %*% diag(signs)
+  patt_mat <- patt_mat %*% diag(signs)
 
   if (order_type == "ss_factors") {
 
     # reorder the factors according to largest sums of squares
-    ss <- colSums(AV$loadings^2)
+    ss <- colSums(patt_mat^2)
     ss_order <- order(ss, decreasing = TRUE)
 
-    AV$loadings <- AV$loadings[, ss_order]
+    patt_mat <- patt_mat[, ss_order]
 
-    AV$Th <- AV$Th[ss_order, ss_order]
+    rotmat <- rotmat[ss_order, ss_order]
 
     if (!is.null(dim_names[[2]])) {
       dim_names[[2]] <- dim_names[[2]][ss_order]
     } else {
-      dim_names[[2]] <- paste0("F", 1:ncol(AV$loadings))[ss_order]
-    }
-
-  } else if (order_type == "eigen") {
-
-    # order according to communalities
-    eig_rotated <- diag(t(AV$loadings) %*% AV$loadings)
-    eig_order <- order(eig_rotated, decreasing = TRUE)
-    AV$loadings <- AV$loadings[, eig_order]
-    AV$Th <- AV$Th[eig_order, eig_order]
-
-    if (!is.null(dim_names[[2]])) {
-      dim_names[[2]] <- dim_names[[2]][eig_order]
-    } else {
-      dim_names[[2]] <- paste0("F", 1:ncol(AV$loadings))[eig_order]
+      dim_names[[2]] <- paste0("F", 1:ncol(patt_mat))[ss_order]
     }
 
   }
 
+    if (order_type == "eigen") {
+      # reflect factors with negative sums
+      signs <- sign(colSums(patt_mat))
+      signs[signs == 0] <- 1
+      patt_mat <- patt_mat %*% diag(signs)
+
+      # order according to communalities
+      eig_rotated <- diag(t(patt_mat) %*% patt_mat)
+      eig_order <- order(eig_rotated, decreasing = TRUE)
+      patt_mat <- patt_mat[, eig_order]
+
+      Phi <- diag(signs) %*% Phi %*% diag(signs)
+      Phi <- Phi[eig_order, eig_order]
+
+      if (!is.null(dim_names[[2]])) {
+        dim_names[[2]] <- dim_names[[2]][eig_order]
+      } else {
+        dim_names[[2]] <- paste0("F", 1:ncol(patt_mat))[eig_order]
+      }
+
+    }
+
+  # get structure matrix
+  Structure <- patt_mat %*% Phi
+
+  # compute explained variances
+  vars_accounted_rot <- .compute_vars(L_unrot = L, L_rot = patt_mat, Phi = Phi)
+  colnames(vars_accounted_rot) <- colnames(patt_mat)
+
   # prepare and return output list
-  load_mat <- AV$loadings
-  dimnames(load_mat) <- dim_names
+  class(patt_mat) <- "LOADINGS"
 
-  vars_accounted_rot <- .compute_vars(L_unrot = L, L_rot = load_mat)
-  colnames(vars_accounted_rot) <- colnames(load_mat)
-
-  # prepare output
-  class(load_mat) <- "LOADINGS"
-
-  output <- list(rot_loadings = load_mat,
-                 rotmat = AV$Th,
+  output <- list(rot_loadings = patt_mat,
+                 rotmat = rotmat,
+                 Phi = Phi,
+                 Structure = Structure,
                  vars_accounted_rot = vars_accounted_rot,
                  settings = settings)
   output
