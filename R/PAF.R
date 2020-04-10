@@ -21,7 +21,7 @@
 #'  perform after which the iterative PAF procedure is halted with a warning.
 #'  Default is \code{NULL}.
 #' @param type character. If one of "EFAtools" (default), "psych", or "SPSS" is
-#'  used, and the following arguments (except \code{signed_loadings}) are left with
+#'  used, and the following arguments are left with
 #'  NULL, these implementations
 #'  are executed as reported in Gieder and Steiner (2019; see details).
 #'  Individual properties can be adapted using one of the three types and
@@ -47,12 +47,10 @@
 #'  also used by the \code{\link[psych:fa]{psych::fa}} function. If TRUE the
 #'  loadings are computed
 #'  with the absolute eigenvalues as done by SPSS. Default is \code{NULL}.
-#' @param signed_loadings logical. If \code{TRUE} (default), the sign of
-#' factors with negative sum of loadings is reflected. This is done by both
-#' SPSS and \code{\link[psych:fa]{psych::fa}}.
 #' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
 #'  is given as input. Note that in this case \code{cors} must be set to
 #'  \code{FALSE}. Default is "pairwise.complete.obs".
+#'
 #' @details Values of \code{init_comm}, \code{criterion}, \code{criterion_type},
 #' \code{abs_eigen} depend on the \code{type} argument.
 #'\code{type = "EFAtools"} will use the following argument specification:
@@ -90,9 +88,8 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
                 type = c("EFAtools", "psych", "SPSS", "none"),
                 init_comm = NULL, criterion = NULL,
                 criterion_type = NULL, abs_eigen = NULL,
-                signed_loadings = TRUE, use = c("all.obs", "complete.obs",
-                                                "pairwise.complete.obs",
-                                                "everything", "na.or.complete")) {
+                use = c("pairwise.complete.obs", "all.obs", "complete.obs",
+                        "everything", "na.or.complete")) {
 
   # create R correlation matrix object, if from data, using
   # pairwise binary correlations
@@ -122,9 +119,9 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
     # all the other necessary arguments are specified.
 
     if (is.null(init_comm) || is.null(criterion) || is.null(criterion_type) ||
-        is.null(abs_eigen) || is.null(signed_loadings) || is.null(max_iter)) {
+        is.null(abs_eigen) || is.null(max_iter)) {
       stop('One of "init_comm", "criterion", "criterion_type", "abs_eigen",
-           "max_iter", "signed_loadings" was NULL and no valid
+           "max_iter" was NULL and no valid
            "type" was specified. Either use one of "EFAtools", "psych", or "SPSS"
            for type, or specify all other arguments')
     }
@@ -316,9 +313,8 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
   iter <- L_list$iter
   L <- L_list$L
 
-  if (signed_loadings) {
-    # reverse the sign of loadings as done in the psych package,
-    # and spss
+  # reverse the sign of loadings as done in the psych package,
+  # and spss
     if (m > 1) {
       signs <- sign(colSums(L))
       signs[signs == 0] <- 1
@@ -331,8 +327,6 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
       }
 
     }
-
-  }
 
   if (!is.null(colnames(orig_R))) {
     # name the loading matrix so the variables can be identified
@@ -353,14 +347,11 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
   # store the settings used:
 
   settings <- list(
-    N = N,
     max_iter = max_iter,
     init_comm = init_comm,
     criterion = criterion,
     criterion_type = criterion_type,
-    abs_eigen = abs_eigen,
-    signed_loadings = signed_loadings,
-    use = use
+    abs_eigen = abs_eigen
   )
 
 

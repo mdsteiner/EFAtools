@@ -7,8 +7,6 @@
 #' @param cors logical. Whether x is a correlation matrix.
 #' @param N numeric. The number of cases. Only necessary if correlation matrix is
 #'  specified. Needed for some fit indices.
-#' @param signed_loadings logical. If \code{TRUE} (default), the sign of
-#' factors with negative sum of loadings is reflected.
 #' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
 #'  is given as input. Note that in this case \code{cors} must be set to
 #'  \code{FALSE}. Default is "pairwise.complete.obs".
@@ -28,8 +26,8 @@
 #' @examples
 #' # call as single function
 #' ULS(IDS2_R, n_factors = 5, method = "ULS")
-ULS <- function(x, n_factors, cors = TRUE, N = NA, signed_loadings = TRUE,
-                use = c("all.obs", "complete.obs", "pairwise.complete.obs",
+ULS <- function(x, n_factors, cors = TRUE, N = NA,
+                use = c("pairwise.complete.obs", "all.obs", "complete.obs",
                         "everything", "na.or.complete")) {
 
   # create R correlation matrix object, if from data, using
@@ -60,9 +58,7 @@ ULS <- function(x, n_factors, cors = TRUE, N = NA, signed_loadings = TRUE,
   h2 = diag(L %*% t(L))
   diag(R) <- h2
 
-  if (signed_loadings) {
-    # reverse the sign of loadings as done in the psych package,
-    # and spss
+  # reverse the sign of loadings
     if (n_factors > 1) {
       signs <- sign(colSums(L))
       signs[signs == 0] <- 1
@@ -75,8 +71,6 @@ ULS <- function(x, n_factors, cors = TRUE, N = NA, signed_loadings = TRUE,
       }
 
     }
-
-  }
 
   if (!is.null(colnames(orig_R))) {
     # name the loading matrix so the variables can be identified
@@ -96,25 +90,16 @@ ULS <- function(x, n_factors, cors = TRUE, N = NA, signed_loadings = TRUE,
   # create the output object
   class(L) <- "LOADINGS"
 
-  # store the settings used:
-
-  settings <- list(
-    N = N,
-    iter = uls$res$counts[1],
-    convergence = uls$res$convergence,
-    signed_loadings = signed_loadings
-  )
-
-
   output <- list(
     orig_R = orig_R,
     h2 = diag(L %*% t(L)),
+    iter = uls$res$counts[1],
+    convergence = uls$res$convergence,
     orig_eigen = eigen(orig_R, symmetric = TRUE)$values,
     final_eigen = eigen(R, symmetric = TRUE)$values,
     unrot_loadings = L,
     vars_accounted = vars_accounted,
-    fit_indices = fit_ind,
-    settings = settings
+    fit_indices = fit_ind
   )
 
   class(output$h2) <- "COMMUNALITIES"

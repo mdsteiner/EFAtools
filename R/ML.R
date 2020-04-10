@@ -5,8 +5,6 @@
 #' @param cors logical. Whether x is a correlation matrix.
 #' @param N numeric. The number of cases. Only necessary if correlation matrix is
 #'  specified. Needed for some fit indices.
-#' @param signed_loadings logical. If \code{TRUE} (default), the sign of
-#' factors with negative sum of loadings is reflected.
 #' @param start_method character. How to specify the starting values for the
 #'  optimization prodedure. Default is "factanal" which takes the starting values
 #'  specified in the \link{stats}{factanal} function. "psych" takes the starting
@@ -30,9 +28,9 @@
 #' @examples
 #' # call within EFA function:
 #' EFA(IDS2_R, n_factors = 5, method = "ML")
-ML <- function(x, n_factors, cors = TRUE, N = NA, signed_loadings = TRUE,
-               start_method = c("factanal", "psych"),
-               use = c("all.obs", "complete.obs", "pairwise.complete.obs",
+ML <- function(x, n_factors, cors = TRUE, N = NA, start_method = c("factanal",
+                                                                   "psych"),
+               use = c("pairwise.complete.obs", "all.obs", "complete.obs",
                        "everything", "na.or.complete")) {
 
   # create R correlation matrix object, if from data, using
@@ -63,6 +61,20 @@ ML <- function(x, n_factors, cors = TRUE, N = NA, signed_loadings = TRUE,
   h2 = diag(L %*% t(L))
   diag(R) <- h2
 
+  # reverse the sign of loadings
+  if (n_factors > 1) {
+    signs <- sign(colSums(L))
+    signs[signs == 0] <- 1
+    L <- L %*% diag(signs)
+  } else {
+    if (sum(L) < 0) {
+      L <- -as.matrix(L)
+    } else {
+      L <- as.matrix(L)
+    }
+
+  }
+
   if (!is.null(colnames(orig_R))) {
     # name the loading matrix so the variables can be identified
     rownames(L) <- colnames(orig_R)
@@ -77,23 +89,20 @@ ML <- function(x, n_factors, cors = TRUE, N = NA, signed_loadings = TRUE,
   # compute fit indices
   fit_ind <- .gof(L, orig_R, N, "ML", ml$res$value)
 
-
   # create the output object
   class(L) <- "LOADINGS"
 
   # store the settings used:
-
   settings <- list(
-    N = N,
-    iter = ml$res$counts[1],
-    convergence = ml$res$convergence,
-    signed_loadings = signed_loadings
+    start_method = start_method
   )
 
 
   output <- list(
     orig_R = orig_R,
     h2 = diag(L %*% t(L)),
+    iter = ml$res$counts[1],
+    convergence = ml$res$convergence,
     orig_eigen = eigen(orig_R, symmetric = TRUE)$values,
     final_eigen = eigen(R, symmetric = TRUE)$values,
     unrot_loadings = L,

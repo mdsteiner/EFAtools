@@ -13,16 +13,75 @@
 #' @examples
 ROTATE_ORTH <- function(x, rotation = c("equamax", "quartimax", "geominT",
                                         "bentlerT", "bifactorT"),
+                        type = c("EFAtools", "psych", "SPSS", "none"),
                         kaiser = TRUE, precision = NULL, order_type = NULL,
                         ...){
 
-  if (!requireNamespace("GPArotation")){
+  if(is.null(precision)){
 
-    stop("To perform the specified rotation, the GPArotation package is needed.
-         Please install the GPArotation package or use varimax or promax
-         rotation instead.")
+    precision <- 1e-5
 
   }
+
+if (type == "none") {
+
+  if (is.null(order_type)) {
+
+    stop('"order_type" was NULL and no valid "type" was specified. Either use
+    one of "EFAtools", "psych", or "SPSS" for type, or specify the "order_type"
+         argument')
+
+  }
+
+} else if (type == "EFAtools") {
+
+  if (isFALSE(kaiser)) {
+
+    warning("Type and kaiser is specified. kaiser is used with value '",
+            kaiser, "'. Results may differ from the specified type")
+  }
+
+  if (is.null(order_type)) {
+    order_type <- "eigen"
+  } else {
+    warning("Type and order_type is specified. order_type is used with value '",
+            order_type, "'. Results may differ from the specified type")
+  }
+
+} else if (type == "psych") {
+
+  # if not specified, set PAF properties. If specified, throw warning that
+  # results may not exactly match the specified type
+
+  if (isFALSE(kaiser)) {
+
+    warning("Type and kaiser is specified. kaiser is used with value '",
+            kaiser, "'. Results may differ from the specified type")
+  }
+
+  if (is.null(order_type)) {
+    order_type <- "eigen"
+  } else {
+    warning("Type and order_type is specified. order_type is used with value '",
+            order_type, "'. Results may differ from the specified type")
+  }
+
+} else if (type == "SPSS") {
+
+  if (isFALSE(kaiser)) {
+
+    warning("Type and kaiser is specified. kaiser is used with value '",
+            kaiser, "'. Results may differ from the specified type")
+  }
+
+  if (is.null(order_type)) {
+    order_type <- "ss_factors"
+  } else {
+    warning("Type and order_type is specified. order_type is used with value '",
+            order_type, "'. Results may differ from the specified type")
+  }
+
+}
 
   # extract loadings and dim names
   L <- x$unrot_loadings
@@ -52,15 +111,14 @@ ROTATE_ORTH <- function(x, rotation = c("equamax", "quartimax", "geominT",
   } else if (rotation == "bentlerT"){
     AV <- GPArotation::bentlerT(L, eps = precision, normalize = kaiser, ...)
 
+  } else if (rotation == "quartimax"){
+    AV <- GPArotation::bentlerT(L, eps = precision, normalize = kaiser, ...)
+
   } else if (rotation == "geominT"){
     AV <- GPArotation::geominT(L, eps = precision, normalize = kaiser, ...)
 
   } else if (rotation == "bifactorT"){
     AV <- GPArotation::bifactorT(L, eps = precision, normalize = kaiser, ...)
-
-  } else {
-    AV <- GPArotation::GPForth(L, method = rotation,
-                             normalize = kaiser, eps = precision, ...)
 
   }
 

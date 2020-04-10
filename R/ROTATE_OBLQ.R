@@ -1,13 +1,85 @@
-ROTATE_OBLQ <- function(x, rotation = c("oblimin", "quartimin", "bentlerQ",
-                                        "geominQ", "bifactorQ"),
+#' Title
+#'
+#' @param x
+#' @param rotation
+#' @param kaiser
+#' @param precision
+#' @param order_type
+#' @param ...
+#'
+#' @return
+#' @export
+#'
+#' @examples
+ROTATE_OBLQ <- function(x, rotation = c("oblimin", "quartimin", "simplimax",
+                                        "bentlerQ", "geominQ", "bifactorQ"),
+                        type = c("EFAtools", "psych", "SPSS", "none"),
                         kaiser = TRUE, precision = NULL, order_type = NULL,
-                        ...){
+                        k = NULL, ...){
 
-  if (!requireNamespace("GPArotation")){
+  if(is.null(precision)){
 
-    stop("To perform the specified rotation, the GPArotation package is needed.
-         Please install the GPArotation package or use varimax or promax
-         rotation instead.")
+    precision <- 1e-5
+
+  }
+
+  if (type == "none") {
+
+    if (is.null(order_type)) {
+
+      stop('"order_type" was NULL and no valid "type" was specified. Either use
+    one of "EFAtools", "psych", or "SPSS" for type, or specify the "order_type"
+         argument')
+
+    }
+
+  } else if (type == "EFAtools") {
+
+    if (isFALSE(kaiser)) {
+
+      warning("Type and kaiser is specified. kaiser is used with value '",
+              kaiser, "'. Results may differ from the specified type")
+    }
+
+    if (is.null(order_type)) {
+      order_type <- "eigen"
+    } else {
+      warning("Type and order_type is specified. order_type is used with value '",
+              order_type, "'. Results may differ from the specified type")
+    }
+
+  } else if (type == "psych") {
+
+    # if not specified, set PAF properties. If specified, throw warning that
+    # results may not exactly match the specified type
+
+    if (isFALSE(kaiser)) {
+
+      warning("Type and kaiser is specified. kaiser is used with value '",
+              kaiser, "'. Results may differ from the specified type")
+    }
+
+    if (is.null(order_type)) {
+      order_type <- "eigen"
+    } else {
+      warning("Type and order_type is specified. order_type is used with value '",
+              order_type, "'. Results may differ from the specified type")
+    }
+
+  } else if (type == "SPSS") {
+
+    if (isFALSE(kaiser)) {
+
+      warning("Type and kaiser is specified. kaiser is used with value '",
+              kaiser, "'. Results may differ from the specified type")
+    }
+
+    if (is.null(order_type)) {
+      order_type <- "ss_factors"
+    } else {
+      warning("Type and order_type is specified. order_type is used with value '",
+              order_type, "'. Results may differ from the specified type")
+    }
 
   }
 
@@ -17,7 +89,7 @@ ROTATE_OBLQ <- function(x, rotation = c("oblimin", "quartimin", "bentlerQ",
 
   # prepare settings
   settings <- list(kaiser = kaiser, precision = precision,
-                   order_type = order_type)
+                   order_type = order_type, k = k)
 
   if (ncol(L) < 2) {
 
@@ -34,9 +106,13 @@ ROTATE_OBLQ <- function(x, rotation = c("oblimin", "quartimin", "bentlerQ",
 
   # perform the requested rotation
   if(rotation == "bentlerQ"){
-    AV <- GPArotation::bentlerQ(L, eps = precision,
-                                kappa = ncol(L)/(2 * nrow(L)),
-                                normalize = kaiser, ...)
+    AV <- GPArotation::bentlerQ(L, eps = precision, normalize = kaiser, ...)
+
+  } else if (rotation == "oblimin"){
+    AV <- GPArotation::oblimin(L, eps = precision, normalize = kaiser, ...)
+
+  } else if (rotation == "quartimin"){
+    AV <- GPArotation::quartimin(L, eps = precision, normalize = kaiser, ...)
 
   } else if (rotation == "geominQ"){
     AV <- GPArotation::geominQ(L, eps = precision, normalize = kaiser, ...)
@@ -44,9 +120,18 @@ ROTATE_OBLQ <- function(x, rotation = c("oblimin", "quartimin", "bentlerQ",
   } else if (rotation == "bifactorQ"){
     AV <- GPArotation::bifactorQ(L, eps = precision, normalize = kaiser, ...)
 
-  } else {
-    AV <- GPArotation::GPForth(L, method = rotation,
-                               normalize = kaiser, eps = precision, ...)
+  } else if (rotation == "simplimax"){
+
+    if(is.null(k)){
+
+      k <- nrow(L)
+      # update settings
+      settings$k <- k
+
+    }
+
+    AV <- GPArotation::simplimax(L, eps = precision, normalize = kaiser,
+                                 k = k, ...)
 
   }
 

@@ -27,6 +27,7 @@ Imports:
     graphics,
     parallel,
     future.apply,
-    future
+    future,
+    GPArotation
 LinkingTo: 
     Rcpp, RcppArmadillo

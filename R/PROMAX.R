@@ -42,7 +42,7 @@
 #' \code{type = "SPSS"} will use the following argument specification:
 #' \code{P_type = "norm", precision = 1e-10, order_type = "ss_factors", k = 4}.
 #'
-#' The \code{P_type} argument can take two values, "unnorm" and "norm". It controlls
+#' The \code{P_type} argument can take two values, "unnorm" and "norm". It controls
 #' which formula is used to compute the target matrix P in the promax rotation.
 #' "unnorm" uses the formula from Hendrickson and White (1964), specifically:
 #' \code{P <- abs(A^(k + 1)) / A},
@@ -52,6 +52,7 @@
 #' manual:
 #' \code{P <- abs(A / sqrt(rowSums(A^2))) ^(k + 1) * (sqrt(rowSums(A^2)) / A)}
 #'
+#'#### REMOVE HERE AND IN ALL OTHER ROTATIONS
 #' The \code{order_type} argument can take two arguments "eigen" or "ss_factors". The
 #' order of factors is then determined using the ordered eigenvalues of the
 #' promax pattern matrix, if \code{order_type = "eigen"}, and using the ordered
@@ -80,8 +81,7 @@ PROMAX <- function (x, type = c("EFAtools", "psych", "SPSS", "none"),
     # if type is not one of the three valid inputs, throw an error if not
     # all the other necessary arguments are specified.
 
-    if (type == "none" || is.null(precision) || is.null(order_type)
-        || is.null(k)) {
+    if (is.null(precision) || is.null(order_type) || is.null(k)) {
       stop('One of "P_type", "precision", "order_type", or "k" was NULL and no valid
            "type" was specified. Either use one of "EFAtools", "psych", or "SPSS"
             for type, or specify all other arguments')
@@ -105,7 +105,7 @@ PROMAX <- function (x, type = c("EFAtools", "psych", "SPSS", "none"),
     }
 
     if (is.null(precision)) {
-      precision <- 1e-10
+      precision <- 1e-5
     } else {
       warning("Type and precision is specified. precision is used with value '",
               precision, "'. Results may differ from the specified type")
@@ -261,6 +261,7 @@ PROMAX <- function (x, type = c("EFAtools", "psych", "SPSS", "none"),
 
     # this is the formula for P as given by Hendricks and White (1964)
     P <- abs(A^(k + 1)) / A
+
   } else if (P_type == "norm") {
 
     # this is the formula as used by SPSS Version 23

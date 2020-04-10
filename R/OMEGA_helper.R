@@ -29,18 +29,14 @@
 
     }
 
-  if(type == "psych" || type == "EFAtools"){
+  if(is.null(variance)){
 
-    if(is.null(variance)){
+    variance <- "correlation"
 
-      variance <- "correlation"
+  } else {
 
-    } else {
-
-      warning("Argument variance is specified. Variances are computed as specified.
-              Results may differ from the specified type")
-
-    }
+    warning("Argument variance is specified. Variances are computed as specified.
+             Results may differ from the specified type")
 
   }
 
@@ -49,7 +45,7 @@
   colnames(input) <- factor_names
   rownames(input) <- var_names
 
-  if(type != "psych" & is.null(factor_corres)){
+  if(type == "EFAtools" & is.null(factor_corres)){
     stop("Either specify the factor_corres argument or set type = 'psych'")
 
     }
@@ -66,7 +62,7 @@
               correspondences are taken. To compute factor correspondences as done
               in psych, leave factor_corres = NULL.")
     }
-    }
+  }
 
   input <- cbind(factor_corres, input)
   names(input)[1] <- "factor"
