@@ -1,33 +1,4 @@
-#' Maximum Likelihood Estimation of Factor Loadings
-#'
-#' @param x matrix or data.frame. A raw data or correlation matrix.
-#' @param n_factors numeric. The number of factors to extract.
-#' @param cors logical. Whether x is a correlation matrix.
-#' @param N numeric. The number of cases. Only necessary if correlation matrix is
-#'  specified. Needed for some fit indices.
-#' @param start_method character. How to specify the starting values for the
-#'  optimization prodedure. Default is "factanal" which takes the starting values
-#'  specified in the \link{stats}{factanal} function. "psych" takes the starting
-#'  values specified in \link{psych}{fa}. Solutions are very similar.
-#' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
-#'  is given as input. Note that in this case \code{cors} must be set to
-#'  \code{FALSE}. Default is "pairwise.complete.obs".
-#'
-#' @return A list containing the following
-#' \item{orig_R}{Original correlation matrix.}
-#' \item{h2}{Final communality estimates.}
-#' \item{orig_eigen}{Eigen values of the original correlation matrix.}
-#' \item{final_eigen}{Eigenvalues of the final correlation matrix with the estimated communalities as diagonal.}
-#' \item{unrot_loadings}{Loading matrix containing the final loadings.}
-#' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings}
-#' \item{fit_indices}{Fit indices as returned by
-#'  \code{\link[psych:factor.stats]{psych::factor.stats}}}
-#' \item{settings}{list. The settings (arguments) used in ML}
-#' @export
-#'
-#' @examples
-#' # call within EFA function:
-#' EFA(IDS2_R, n_factors = 5, method = "ML")
+## Maximum Likelihood Estimation of Factor Loadings
 ML <- function(x, n_factors, cors = TRUE, N = NA, start_method = c("factanal",
                                                                    "psych"),
                use = c("pairwise.complete.obs", "all.obs", "complete.obs",
@@ -58,7 +29,7 @@ ML <- function(x, n_factors, cors = TRUE, N = NA, start_method = c("factanal",
 
   L <- ml$loadings
   orig_R <- R
-  h2 = diag(L %*% t(L))
+  h2 <- diag(L %*% t(L))
   diag(R) <- h2
 
   # reverse the sign of loadings
@@ -101,10 +72,10 @@ ML <- function(x, n_factors, cors = TRUE, N = NA, start_method = c("factanal",
   output <- list(
     orig_R = orig_R,
     h2 = diag(L %*% t(L)),
-    iter = ml$res$counts[1],
-    convergence = ml$res$convergence,
     orig_eigen = eigen(orig_R, symmetric = TRUE)$values,
     final_eigen = eigen(R, symmetric = TRUE)$values,
+    iter = ml$res$counts[1],
+    convergence = ml$res$convergence,
     unrot_loadings = L,
     vars_accounted = vars_accounted,
     fit_indices = fit_ind,

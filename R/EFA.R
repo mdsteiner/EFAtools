@@ -16,8 +16,8 @@
 #' (default), not all fit indices can be computed. See
 #'  \code{\link[psych:factor.stats]{psych::factor.stats}} for details.
 #' @param method character. One of "PAF", "ML", or "ULS" to use principal axis
-#' factoring, maximum likelihood, or unweighted least squares, respectively,
-#' to fit the EFA.
+#' factoring, maximum likelihood, or unweighted least squares (also called minres),
+#' respectively, to fit the EFA.
 #' @param rotation character. Either perform no rotation ("none"; default),
 #' an orthogonal rotation ("varimax", "equamax", "quartimax", "geominT",
 #' "bentlerT", or "bifactorT"), or an oblique rotation ("promax", "oblimin",
@@ -70,8 +70,7 @@
 #' matrix P is computed in promax rotation. If "unnorm" it will use the
 #' unnormalized target matrix as originally done in Hendrickson and White (1964).
 #' This is also used in the psych and stats packages. If "norm" it will use the
-#' normalized target matrix as used in SPSS (see \code{\link{PROMAX}}
-#' for details). Default is \code{NULL}.
+#' normalized target matrix as used in SPSS. Default is \code{NULL}.
 #' @param precision numeric. The tolerance for stopping in the rotation
 #' procecdure. This is passed to the "eps" argument of the
 #' \code{\link[stats:varimax]{stats::varimax}} and the GPArotation functions.
@@ -89,8 +88,7 @@
 #' @param ... Additional arguments passed to rotation functions from GPArotation
 #' package (e.g., \code{maxit} for maximum number of iterations).
 #'
-#' HIER STEHENGEBLIEBEN, ARGUMENTE OBEN IN ANDERE FUNKTIONEN REINKOPIEREN,
-#' DETAILS FERTIG SCHREIBEN
+#' WRITE DETAIL SECTION
 #'
 #' @details There are two main ways to use this function. The easiest way is to
 #' use it with a specified \code{type} (see above), which sets most of the other
@@ -100,43 +98,90 @@
 #' However, this will throw warnings to avoid unintentional deviations from the
 #' implementations according to the specified \code{type}.
 #'
-#' type no effect on uls and ml
+#'PAF
+#'Values of \code{init_comm}, \code{criterion}, \code{criterion_type},
+#' \code{abs_eigen} depend on the \code{type} argument.
+#'\code{type = "EFAtools"} will use the following argument specification:
+#' \code{init_comm = "smc", criterion = 1e-9, criterion_type = "max_individual",
+#' abs_eigen = FALSE}.
+#' \code{type = "psych"} will use the following argument specification:
+#' \code{init_comm = "smc", criterion = .001, criterion_type = "sums",
+#' abs_eigen = FALSE}.
+#' \code{type = "SPSS"} will use the following argument specification:
+#' \code{init_comm = "smc", criterion = .001, criterion_type = "max_individual",
+#' abs_eigen = TRUE}.
 #'
-#'what is done with what type
+#' PROMAX
+#' \code{type = "EFAtools"} will use the following argument specification:
+#' \code{P_type = "unnorm", precision = 1e-10, order_type = "eigen", k = 3}.
+#' \code{type = "psych"} will use the following argument specification:
+#' \code{P_type = "unnorm", precision = 1e-5, order_type = "eigen", k = 4}.
+#' \code{type = "SPSS"} will use the following argument specification:
+#' \code{P_type = "norm", precision = 1e-10, order_type = "ss_factors", k = 4}.
 #'
-#' init_Comm by type
+#'#' The \code{P_type} argument can take two values, "unnorm" and "norm". It controls
+#' which formula is used to compute the target matrix P in the promax rotation.
+#' "unnorm" uses the formula from Hendrickson and White (1964), specifically:
+#' \code{P <- abs(A^(k + 1)) / A},
+#' where A is the unnormalized matrix containing varimax rotated loadings.
+#' "SPSS" uses the normalized varimax rotated loadings. Specifically it used the
+#' following formula, which can be found in the SPSS 23 Algorithms
+#' manual:
+#' \code{P <- abs(A / sqrt(rowSums(A^2))) ^(k + 1) * (sqrt(rowSums(A^2)) / A)}
 #'
-#' @return A list of class PAF if no rotation is used (see \code{\link{PAF}}
-#'  documentation for a description), and of class PROMAX, or
-#'  VARIMAX, if the respective rotation is used. In the latter cases the output
-#'  list is of the following structure:
+#' VARIMAX:
+#' \code{type = "EFAtools"} will use the following argument specification:
+#' \code{precision = 1e-10, order_type = "eigen"}.
+#' \code{type = "psych"} will use the following argument specification:
+#' \code{precision = 1e-5, order_type = "eigen"}.
+#' \code{type = "SPSS"} will use the following argument specification:
+#' \code{precision = 1e-10, order_type = "ss_factors"}.
+#'
+#' type no effect on uls and ml and all other rotations except varimax and promax.
+#' write which arguments necessary for these.
+#'
+#' @return A list of class EFA containing (a subset of) the following:
 #'
 #' \item{orig_R}{Original correlation matrix.}
 #' \item{h2_init}{Initial communality estimates from PAF.}
-#' \item{h2}{Final communality estimates from the unrotated solution}
-#' \item{iter}{The number of iterations needed for convergence in PAF.}
+#' \item{h2}{Final communality estimates from the unrotated solution.}
 #' \item{orig_eigen}{Eigen values of the original correlation matrix.}
 #' \item{init_eigen}{Initial eigenvalues, obtained from the correlation matrix
 #'  with the initial communality estimates as diagonal in PAF.}
-#' \item{final_eigen}{Eigenvalues of the final iteration in PAF.}
-#' \item{unrot_loadings}{Loading matrix containing the unrotated final loadings.}
-#' \item{rot_loadings}{The pattern matrix of the rotated solution).}
-#' \item{rotmat}{The rotation matrix.}
-#' \item{Phi}{The factor intercorrelations. Only returned if promax rotation is used.}
-#' \item{Structure}{The structure matrix. Only returned if promax rotation is used.}
+#' \item{final_eigen}{Eigenvalues obtained from the correlation matrix
+#'  with the final communality estimates as diagonal.}
+#' \item{iter}{The number of iterations needed for convergence.}
+#' \item{convergence}{Integer code for convergence as returned by
+#' \code{\link[stats:optim]{stats:optim}} (only for ML and ULS).
+#' 0 indicates successful completion.}
+#' \item{unrot_loadings}{Loading matrix containing the final unrotated loadings.}
 #' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings. Based on the unrotated loadings.}
-#' \item{vars_accounted_rot}{Matrix of explained variances and sums of squared loadings. Based on rotated loadings and, if applicable, the factor intercorrelations.}
-#' \item{fit_indices}{Fit indices derived from the unrotated factor loadings as
-#'  returned by \code{\link[psych:factor.stats]{psych::factor.stats}}}
+#' \item{fit_indices}{For ML and ULS: Fit indices derived from the unrotated
+#' factor loadings as returned by \code{\link[psych:factor.stats]{psych::factor.stats}}
+#' and for PAF: The common part accounted for (CAF) index as proposed by Lorenzo-Seva,
+#' Timmerman, & Kiers (2011) and degrees of freedom}}
+#' \item{rot_loadings}{Loading matrix containing the final rotated loadings
+#' (pattern matrix).}
+#' \item{Phi}{The factor intercorrelations (only for oblique rotations).}
+#' \item{Structure}{The structure matrix (only for oblique rotations).}
+#' \item{rotmat}{The rotation matrix.}
+#' \item{vars_accounted_rot}{Matrix of explained variances and sums of squared
+#' loadings. Based on rotated loadings and, for oblique rotations, the factor
+#' intercorrelations.}
 #' \item{settings}{list. The settings (arguments) used in the EFA.}
 #'
-#' @source Hendrickson, A. E., & White, P. O. (1964). Promax: A quick method for rotation to oblique simple structure. British Journal of Statistical Psychology, 17 , 65–70. doi: 10.1111/j.2044-8317.1964.tb00244.x
 #' @source Grieder, S., & Steiner, M.D.(2019). Algorithmic Jingle Jungle: Comparison of Implementations of an EFA Procedure in R psych Versus SPSS, MacOrtho, and Omega. Submitted Manuscript.
+#' @source Hendrickson, A. E., & White, P. O. (1964). Promax: A quick method for rotation to oblique simple structure. British Journal of Statistical Psychology, 17 , 65–70. doi: 10.1111/j.2044-8317.1964.tb00244.x
+#' @source Lorenzo-Seva, U., Timmerman, M. E., & Kiers, H. A. L. (2011). The
+#' Hull Method for Selecting the Number of Common Factors, Multivariate Behavioral
+#' Research, 46, 340-364, doi: 10.1080/00273171.2011.564527
 #'
 #' @export
 #'
 #' @examples
 #' ADD EXAMPLE FOR type = "none"
+#' ADD EXAMPLES FOR OTHER FITMETHODS
+#' ADD EXAMPLES FOR OTHER ROTATION METHODS
 #'
 #' # A type EFAtools (as presented in Steiner and Grieder, 2019) EFA
 #' EFA_EFAtools_5 <- EFA(IDS2_R, n_factors = 5, type = "EFAtools", method = "PAF",

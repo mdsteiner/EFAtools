@@ -1,89 +1,4 @@
-#' Principal Axis Factoring
-#'
-#' This function implements the principal axis factoring procedure. It can
-#' reproduce the results from \code{\link[psych:fa]{psych::fa}} and the SPSS
-#' FACTOR algorithm. To reproduce psych or SPSS PAF, only the type argument has
-#' to be specified in addition to the data and number of factors. The other
-#' arguments can be used to control the procedure more flexibly by overriding
-#' the default settings. If type = "none" is specified, all arguments with default
-#' \code{NULL} have to be specified.
-#'
-#' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
-#'  correlations.
-#' @param n_factors numeric. Number of factors to extract.
-#' @param cors logical. If \code{TRUE} (default) a correlation matrix is expected in x,
-#'  otherwise raw data is expected.
-#' @param N numeric. The number of observations. Needs only be specified if a
-#'  correlation matrix is used. If input is a correlation matrix and N = NA
-#'  (default), not all fit indices can be computed. See
-#'  \code{\link[psych:factor.stats]{psych::factor.stats}} for details.
-#' @param max_iter numeric. The maximum number of iterations to
-#'  perform after which the iterative PAF procedure is halted with a warning.
-#'  Default is \code{NULL}.
-#' @param type character. If one of "EFAtools" (default), "psych", or "SPSS" is
-#'  used, and the following arguments are left with
-#'  NULL, these implementations
-#'  are executed as reported in Gieder and Steiner (2019; see details).
-#'  Individual properties can be adapted using one of the three types and
-#'  specifying some of the following
-#'  arguments. If set to another value than one of the three specified above, all
-#'  arguments with default \code{NULL} must be specified.
-#' @param init_comm character. The method to estimate the initial communalities.
-#'  "smc" will use squared multiple correlations. "mac" will use
-#'   maximum absolute correlations. "unity" will use 1s. Default is \code{NULL}.
-#' @param criterion numeric. The convergence criterion.
-#'  If the change in communalities from one iteration to the next is smaller than
-#'  this criterion the solution is accepted and the procedure ends. Details
-#'  depend on criterion_type. Default is \code{NULL}.
-#' @param criterion_type character. "max_individual" selects the
-#'  maximum change in any of the communalities from one iteration to the next
-#'  and tests it against the specified criterion. This is also used by SPSS.
-#'  "sums" takes difference of the sum of all communalities in one iteration and
-#'  the sum of all communalities in the next iteration and tests it against the
-#'  criterion. This procedure is used by the \code{\link[psych:fa]{psych::fa}} function.
-#'  Default is \code{NULL}.
-#' @param abs_eigen logical. Which algorithm to use in the PAF iterations. If
-#'  FALSE, the loadings are computed from the eigenvalues. This is
-#'  also used by the \code{\link[psych:fa]{psych::fa}} function. If TRUE the
-#'  loadings are computed
-#'  with the absolute eigenvalues as done by SPSS. Default is \code{NULL}.
-#' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
-#'  is given as input. Note that in this case \code{cors} must be set to
-#'  \code{FALSE}. Default is "pairwise.complete.obs".
-#'
-#' @details Values of \code{init_comm}, \code{criterion}, \code{criterion_type},
-#' \code{abs_eigen} depend on the \code{type} argument.
-#'\code{type = "EFAtools"} will use the following argument specification:
-#' \code{init_comm = "smc", criterion = 1e-9, criterion_type = "max_individual",
-#' abs_eigen = FALSE}.
-#' \code{type = "psych"} will use the following argument specification:
-#' \code{init_comm = "smc", criterion = .001, criterion_type = "sums",
-#' abs_eigen = FALSE}.
-#' \code{type = "SPSS"} will use the following argument specification:
-#' \code{init_comm = "smc", criterion = .001, criterion_type = "max_individual",
-#' abs_eigen = TRUE}.
-#'
-#' @return A list containing the following
-#' \item{orig_R}{Original correlation matrix.}
-#' \item{h2_init}{Initial communality estimates.}
-#' \item{h2}{Final communality estimates.}
-#' \item{iter}{The number of iterations needed for convergence.}
-#' \item{orig_eigen}{Eigen values of the original correlation matrix.}
-#' \item{init_eigen}{Initial eigenvalues, obtained from the correlation matrix
-#'  with the initial communality estimates as diagonal.}
-#' \item{final_eigen}{Eigenvalues of the final iteration.}
-#' \item{unrot_loadings}{Loading matrix containing the final loadings.}
-#' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings}
-#' \item{fit_indices}{Common part accounted for (CAF) index as proposed by Lorenzo-Seva,
-#' Timmerman, & Kiers (2011) and degrees of freedom}}
-#' \item{settings}{list. The settings (arguments) used in the PAF.}
-#'
-#' @source Grieder, S., & Steiner, M.D.(2019). Algorithmic Jingle Jungle: Comparison of Implementations of an EFA Procedure in R psych Versus SPSS, MacOrtho, and Omega. Submitted Manuscript.
-#'
-#' @export
-#' @examples
-#' # call within EFA function:
-#' EFA(IDS2_R, n_factors = 5, type = "EFAtools", method = "PAF")
+## Principal Axis Factoring
 PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
                 type = c("EFAtools", "psych", "SPSS", "none"),
                 init_comm = NULL, criterion = NULL,
@@ -359,10 +274,10 @@ PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
     orig_R = orig_R,
     h2_init = h2_init,
     h2 = h2,
-    iter = iter,
     orig_eigen = eigen(orig_R, symmetric = TRUE)$values,
     init_eigen = init_eigen,
     final_eigen = eigen(R, symmetric = TRUE)$values,
+    iter = iter,
     unrot_loadings = L,
     vars_accounted = vars_accounted,
     fit_indices = fit_ind,

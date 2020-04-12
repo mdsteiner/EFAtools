@@ -1,16 +1,4 @@
-#' Title
-#'
-#' @param x
-#' @param rotation
-#' @param kaiser
-#' @param precision
-#' @param order_type
-#' @param ...
-#'
-#' @return
-#' @export
-#'
-#' @examples
+# Oblique factor rotations with GPArotation package
 ROTATE_OBLQ <- function(x, rotation = c("oblimin", "quartimin", "simplimax",
                                         "bentlerQ", "geominQ", "bifactorQ"),
                         type = c("EFAtools", "psych", "SPSS", "none"),
@@ -197,9 +185,9 @@ ROTATE_OBLQ <- function(x, rotation = c("oblimin", "quartimin", "simplimax",
   class(patt_mat) <- "LOADINGS"
 
   output <- list(rot_loadings = patt_mat,
-                 rotmat = rotmat,
                  Phi = Phi,
                  Structure = Structure,
+                 rotmat = rotmat,
                  vars_accounted_rot = vars_accounted_rot,
                  settings = settings)
   output

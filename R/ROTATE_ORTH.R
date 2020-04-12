@@ -1,16 +1,4 @@
-#' Orthogonal rotations with GPArotation package
-#'
-#' @param x
-#' @param rotation
-#' @param kaiser
-#' @param precision
-#' @param order_type
-#' @param ...
-#'
-#' @return
-#' @export
-#'
-#' @examples
+# Orthogonal factor rotations with GPArotation package
 ROTATE_ORTH <- function(x, rotation = c("equamax", "quartimax", "geominT",
                                         "bentlerT", "bifactorT"),
                         type = c("EFAtools", "psych", "SPSS", "none"),

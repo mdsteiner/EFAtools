@@ -1,31 +1,4 @@
-#' Unweighted Least Squares (ULS) Estimation
-#'
-#' Function using the MinRes algorithm to find factor loadings.
-#'
-#' @param x matrix or data.frame. A raw data or correlation matrix.
-#' @param n_factors numeric. The number of factors to extract.
-#' @param cors logical. Whether x is a correlation matrix.
-#' @param N numeric. The number of cases. Only necessary if correlation matrix is
-#'  specified. Needed for some fit indices.
-#' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
-#'  is given as input. Note that in this case \code{cors} must be set to
-#'  \code{FALSE}. Default is "pairwise.complete.obs".
-#'
-#' @return A list containing the following
-#' \item{orig_R}{Original correlation matrix.}
-#' \item{h2}{Final communality estimates.}
-#' \item{orig_eigen}{Eigen values of the original correlation matrix.}
-#' \item{final_eigen}{Eigenvalues of the final correlation matrix with the estimated communalities as diagonal.}
-#' \item{unrot_loadings}{Loading matrix containing the final loadings.}
-#' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings}
-#' \item{fit_indices}{Fit indices as returned by
-#'  \code{\link[psych:factor.stats]{psych::factor.stats}}}
-#' \item{settings}{list. The settings (arguments) used in ULS.}
-#' @export
-#'
-#' @examples
-#' # call as single function
-#' ULS(IDS2_R, n_factors = 5, method = "ULS")
+## Unweighted Least Squares Estimation of Factor Loadings
 ULS <- function(x, n_factors, cors = TRUE, N = NA,
                 use = c("pairwise.complete.obs", "all.obs", "complete.obs",
                         "everything", "na.or.complete")) {
@@ -93,10 +66,10 @@ ULS <- function(x, n_factors, cors = TRUE, N = NA,
   output <- list(
     orig_R = orig_R,
     h2 = diag(L %*% t(L)),
-    iter = uls$res$counts[1],
-    convergence = uls$res$convergence,
     orig_eigen = eigen(orig_R, symmetric = TRUE)$values,
     final_eigen = eigen(R, symmetric = TRUE)$values,
+    iter = uls$res$counts[1],
+    convergence = uls$res$convergence,
     unrot_loadings = L,
     vars_accounted = vars_accounted,
     fit_indices = fit_ind
