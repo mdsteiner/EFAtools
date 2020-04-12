@@ -1,32 +1,11 @@
 ## Principal Axis Factoring
-PAF <- function(x, n_factors, cors = TRUE, N = NA, max_iter = NULL,
+PAF <- function(x, n_factors, N = NA, max_iter = NULL,
                 type = c("EFAtools", "psych", "SPSS", "none"),
                 init_comm = NULL, criterion = NULL,
-                criterion_type = NULL, abs_eigen = NULL,
-                use = c("pairwise.complete.obs", "all.obs", "complete.obs",
-                        "everything", "na.or.complete")) {
+                criterion_type = NULL, abs_eigen = NULL) {
 
-  # create R correlation matrix object, if from data, using
-  # pairwise binary correlations
-  if (isTRUE(cors)) {
-    R <- x
-
-    # test whether a real correlation matrix is used
-    if (nrow(R) != ncol(R)) {
-      stop("Entered data is no correlation matrix but cors = TRUE. Either set ",
-           "cors = FALSE if you entered raw data, or enter a correlation matrix.")
-    }
-
-    if (is.null(N)) {
-      stop("Argument 'N' is NULL. Either provide N, N = NA, or raw data.")
-    }
-
-  } else {
-    R <- stats::cor(x, use = use)
-    colnames(R) <- colnames(x)
-    N <- nrow(x)
-  }
-
+  # Get correlation matrix entered or created in EFA
+  R <- x
 
   if (is.null(type) || !(type %in% c("EFAtools", "psych", "SPSS"))) {
 

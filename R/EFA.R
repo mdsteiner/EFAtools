@@ -7,10 +7,9 @@
 #' then handled according to the specified type (see details). For all rotations except varimax and promax, the \code{\link{GPArotation} package is needed.
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
-#' correlations.
+#' correlations. If raw data is entered, the correlation matrix is found from the
+#' data.
 #' @param n_factors numeric. Number of factors to extract.
-#' @param cors logical. If \code{TRUE} (default) a correlation matrix is expected
-#' in x, otherwise raw data is expected.
 #' @param N numeric. The number of observations. Needs only be specified if a
 #' correlation matrix is used. If input is a correlation matrix and \code{N} = NA
 #' (default), not all fit indices can be computed. See
@@ -57,8 +56,7 @@
 #' loadings are computed with the absolute eigenvalues as done by SPSS.
 #' Default is \code{NULL}.
 #' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
-#' is given as input. Note that in this case \code{cors} must be set to
-#' \code{FALSE}. Default is "pairwise.complete.obs".
+#' is given as input. Default is "pairwise.complete.obs".
 #' @param k numeric. Either the power used for computing the target matrix P in
 #' the promax rotation or the number of 'close to zero loadings' for the simplimax
 #' rotation (see \code{\link[GPArotation:GPFobl]{GPArotation:GPFobl}. If left to
@@ -194,7 +192,7 @@
 #' # A type psych EFA to mimick the psych::fa() implementation
 #' EFA_psych_5 <- EFA(IDS2_R, n_factors = 5, type = "psych", method = "PAF",
 #'                    rotation = "none")
-EFA <- function(x, n_factors, cors = TRUE, N = NA, method = c("PAF", "ML", "ULS"),
+EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                 rotation = c("none", "varimax", "equamax", "quartimax", "geominT",
                              "bentlerT", "bifactorT", "promax", "oblimin",
                              "quartimin", "simplimax", "bentlerQ", "geominQ",
@@ -234,23 +232,52 @@ EFA <- function(x, n_factors, cors = TRUE, N = NA, method = c("PAF", "ML", "ULS"
   type <- match.arg(type)
   start_method <- match.arg(start_method)
 
+  # Check if it is a correlation matrix
+  if(.is_cormat(x)){
+
+      R <- x
+
+      if (is.na(N)) {
+
+        warning("Argument 'N' was NA. For ML and ULS, not all fit indices can be
+             computed. To get all fit indices, either provide N or raw data.")
+
+      }
+
+  } else {
+
+    message("x was not a correlation matrix. Correlations are found from entered
+            raw data.")
+
+    R <- stats::cor(x, use = use)
+    colnames(R) <- colnames(x)
+    N <- nrow(x)
+
+  }
+
+  # Check if correlation matrix is invertable, if it is not, stop with message
+  R_i <- try(solve(R))
+
+  if (class(R_i) == "try-error") {
+    stop("Matrix is singular, factor analysis is not possible")
+  }
+
   # run factor analysis with respective fit method
 
   if (method == "PAF") {
 
-  fit_out <- PAF(x, n_factors = n_factors, cors = cors, N = N, type = type,
-                 max_iter = max_iter, init_comm = init_comm, criterion = criterion,
-                 criterion_type = criterion_type, abs_eigen = abs_eigen,
-                 use = use)
+  fit_out <- PAF(R, n_factors = n_factors, N = N, type = type,
+                 max_iter = max_iter, init_comm = init_comm,
+                 criterion = criterion, criterion_type = criterion_type,
+                 abs_eigen = abs_eigen)
 
   } else if (method == "ML") {
 
-    fit_out <- ML(x, n_factors = n_factors, cors = cors, N = N,
-                  start_method = start_method, use = use)
+    fit_out <- ML(R, n_factors = n_factors, N = N, start_method = start_method)
 
   } else if (method == "ULS") {
 
-    fit_out <- ULS(x, n_factors = n_factors, cors = cors, N = N, use = use)
+    fit_out <- ULS(R, n_factors = n_factors, N = N)
   }
 
   # rotate factor analysis results

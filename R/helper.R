@@ -334,3 +334,18 @@
   )
 
 }
+
+.is_cormat <- function(x){
+
+  if(nrow(x) == ncol(x) && sum(diag(x)) == nrow(x) && all(x >= -1) &&
+     all(x <= 1)){
+
+    TRUE
+
+  } else {
+
+    FALSE
+
+  }
+
+}

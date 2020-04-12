@@ -1,28 +1,8 @@
 ## Unweighted Least Squares Estimation of Factor Loadings
-ULS <- function(x, n_factors, cors = TRUE, N = NA,
-                use = c("pairwise.complete.obs", "all.obs", "complete.obs",
-                        "everything", "na.or.complete")) {
+ULS <- function(x, n_factors, N = NA) {
 
-  # create R correlation matrix object, if from data, using
-  # pairwise binary correlations
-  if (isTRUE(cors)) {
-    R <- x
-
-    # test whether a real correlation matrix is used
-    if (nrow(R) != ncol(R)) {
-      stop("Entered data is no correlation matrix but cors = TRUE. Either set ",
-           "cors = FALSE if you entered raw data, or enter a correlation matrix.")
-    }
-
-    if (is.null(N)) {
-      stop("Argument 'N' is NULL. Either provide N, N = NA, or raw data.")
-    }
-
-  } else {
-    R <- stats::cor(x, use = use)
-    colnames(R) <- colnames(x)
-    N <- nrow(x)
-  }
+  # Get correlation matrix entered or created in EFA
+  R <- x
 
   uls <- .fit_uls(R, n_factors)
 

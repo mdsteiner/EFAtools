@@ -7,11 +7,8 @@
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
 #'  correlations.
-#' @param cors logical. If \code{TRUE} (default) a correlation matrix is expected
-#' in x, otherwise raw data is expected.
-#' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
-#'  is given as input. Note that in this case \code{cors} must be set to
-#'  \code{FALSE}. Default is "pairwise.complete.obs".
+#' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw
+#'  data is given as input. Default is "pairwise.complete.obs".
 #'
 #' @details Kaiser (1970) proposed this index, originally called measure of
 #' sampling adequacy (MSA), that indicates how near the inverted correlation
@@ -22,12 +19,17 @@
 #' with \eqn{Q = SR^{-1}S} and S = \eqn{(diag R^{-1})^{-1/2}} where
 #' \eqn{\underset{i<j}{\sum\sum} r_{ij}^2}} is the sum of squares of the upper
 #' off-diagonal elements of \eqn{R} and \eqn{\underset{i<j}{\sum\sum} q_{ij}^2} is the
-#' sum of squares of the upper off-diagnoal elements of \eqn{Q} (see also Cureton & DeAugustino, 1983).
+#' sum of squares of the upper off-diagonal elements of \eqn{Q} (see also Cureton & DeAugustino, 1983).
 #'
 #' So KMO varies between 0 and 1, with larger values indicating higher suitability
 #' for factor analysis. Kaiser and Rice (1974) suggest that KMO should at least
 #' exceed .50 for a correlation matrix to be suitable for factor analysis.
 #'
+#' This function was heavily influenced by the \code{\link[psych:KMO]{KMO}}
+#' function from the psych package.
+#'
+#' See also \code{\link[EFAtools:BARTLETT]{EFAtools:BARTLETT}} for another test
+#' of suitability for factor analysis.
 #'
 #' @return A list containing
 #' \item{KMO}{Overall KMO.}
@@ -39,32 +41,31 @@
 #' 35, 401-415.
 #' @source Kaiser, H. F. & Rice, J. (1974). Little jiffy, mark IV. Educational
 #' and Psychological Measurement, 34, 111-117.
-#' @source Cureton, E. E. & DeAugustino, R. B. (1983). Factor analysis: An applied
-#' approach. Hillsdale, N.J.: Lawrence Erlbaum Associates, Inc.
+#' @source Cureton, E. E. & DeAugustino, R. B. (1983). Factor analysis: An
+#'  applied approach. Hillsdale, N.J.: Lawrence Erlbaum Associates, Inc.
 #'
 #' @examples
-#'
 #' KMO(IDS2_R)
-KMO <- function(x, cors = TRUE, use = c("all.obs", "complete.obs",
-                                        "pairwise.complete.obs",
-                                        "everything", "na.or.complete")) {
+#'
+KMO <- function(x, use = c("all.obs", "complete.obs", "pairwise.complete.obs",
+                           "everything", "na.or.complete")) {
 
   use <- match.arg(use)
 
-  # create R correlation matrix object, if from data, using
-  # pairwise binary correlations
-  if (isTRUE(cors)) {
+  # Check if it is a correlation matrix
+  if(.is_cormat(x)){
+
     R <- x
 
-    # test whether a real correlation matrix is used
-    if (nrow(R) != ncol(R)) {
-      stop("Entered data is no correlation matrix but cors = TRUE. Either set ",
-           "cors = FALSE if you entered raw data, or enter a correlation matrix.")
-    }
-
   } else {
+
+    message("x was not a correlation matrix. Correlations are found from entered
+            raw data.")
+
     R <- stats::cor(x, use = use)
     colnames(R) <- colnames(x)
+    N <- nrow(x)
+
   }
 
   # Check if correlation matrix is invertable, if it is not, stop with message
