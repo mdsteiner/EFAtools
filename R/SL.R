@@ -3,11 +3,10 @@
 #' This function implements the Schmid-Leiman (SL) transformation. It takes the
 #' pattern coefficients and factor intercorrelations from an oblique factor solution as
 #' input and can reproduce the results from \code{\link[psych:schmid]{psych::schmid}},
-#' from the SPSS implementation from Wolff & Preising (2005), and from MacOrtho
-#' (Watkins, 2004). To reproduce psych or SPSS, only the type and method arguments have to be
-#' specified additional to the loadings and factor intercorrelations. Other
-#' arguments from \code{\link{EFA}} can be used to control the procedure to find
-#' the second order loadings more flexibly.
+#' from the SPSS implementation from Wolff & Preising (2005). Only the type and
+#' method arguments have to be specified additional to the loadings and factor
+#' intercorrelations. Other arguments from \code{\link{EFA}} can be used to control
+#' the procedure to find the second order loadings more flexibly.
 #'
 #' @param x object of class \code{\link{EFA}} or class \code{\link{fa}} or
 #' matrix. If class \code{\link{EFA}} or class \code{\link{fa}},
@@ -19,17 +18,10 @@
 #' @param type character. One of "EFAtools" (default), "psych", "SPSS", or "none".
 #' This is used to control the procedure of the second order factor analysis. See
 #' \code{\link{EFA}} for details.
-#' @param method -...
+#' @param method @param method character. One of "PAF", "ML", or "ULS" to use
+#' principal axis factoring, maximum likelihood, or unweighted least squares
+#' (also called minres), respectively, to find the second-order loadings.
 #' @param ... Arguments to be passed to \code{EFA}.
-#'
-#' @return A list containing the following
-#' \item{sl}{A matrix with g loadings, group factor loadings, communalities,
-#' and uniquenesses.}
-#' \item{L2}{Second-order factor loadings.}
-#' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings}
-#' \item{settings}{list. The settings (arguments) used in EFA to get the second order loadings.}
-#' \item{iter}{The number of iterations needed for convergence in EFA if PAF
-#' was used.}
 #'
 #' @details
 #' The SL transformation (also called SL orthogonalization) is a procedure with
@@ -43,12 +35,27 @@
 #' hierarchical data structure based on factor intercorrelations explicit. One
 #' major advantage of SL transformation is that it enables variance
 #' partitioning between higher-order and first-order factors, including the
-#' calculation of Omega (see \code{\link{OMEGA}}).
+#' calculation of McDonald's Omegas (see \code{\link{OMEGA}}).
 #'
-#' @source Wolff, H.-G., & Preising, K. (2005). Exploring item and higher order factor structure with the schmid-leiman solution: Syntax codes for spss and sas. Behavior Research Methods, 37 , 48–58. doi: 10.3758/BF03206397
-#' @source Watkins, M. W. (2004). Macortho [Computer Software]. Phoenix, AZ: EdPsych Associates, Inc.
+#' @return A list of class SL containing the following
+#' \item{orig_R}{The original correlation matrix.}
+#' \item{sl}{A matrix with g loadings, group factor loadings, communalities,
+#' and uniquenesses.}
+#' \item{L2}{Second-order factor loadings.}
+#' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings.}
+#' \item{iter}{The number of iterations needed for convergence in EFA.}
+#' \item{settings}{list. The settings (arguments) used in EFA to get the second-
+#' order loadings.}
+#'
+#' @source Wolff, H.-G., & Preising, K. (2005). Exploring item and higher order
+#' factor structure with the schmid-leiman solution: Syntax codes for spss and
+#' sas. Behavior Research Methods, 37 , 48–58. doi: 10.3758/BF03206397
 #'
 #' @export
+#'
+#' @examples
+#' CONTINUE HERE, EXAMPLE WITH INPUT FROM EFA, INPUT FROM FA, AND WITH FLEXIBLY
+#' ENTERED PATTERN MATRIX AND PHI -> use omega as blueprint
 SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
                method = c("PAF", "ML", "ULS"), ...) {
 
@@ -163,12 +170,12 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
   class(sl) <- "SLLOADINGS"
 
   output <- list(
+    orig_R = orig_R,
     sl = sl,
     L2 = L2,
     vars_accounted = vars_accounted,
-    settings = EFA_phi$settings,
     iter = EFA_phi$iter,
-    orig_R = orig_R
+    settings = EFA_phi$settings,
     )
 
   class(output) <- "SL"

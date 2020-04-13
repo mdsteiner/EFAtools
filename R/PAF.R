@@ -7,9 +7,9 @@ PAF <- function(x, n_factors, N = NA, max_iter = NULL,
   # Get correlation matrix entered or created in EFA
   R <- x
 
-  if (is.null(type) || !(type %in% c("EFAtools", "psych", "SPSS"))) {
+  if (type == "none") {
 
-    # if type is not one of the three valid inputs, throw an error if not
+    # if type is none, throw an error if not
     # all the other necessary arguments are specified.
 
     if (is.null(init_comm) || is.null(criterion) || is.null(criterion_type) ||
@@ -19,6 +19,7 @@ PAF <- function(x, n_factors, N = NA, max_iter = NULL,
            "type" was specified. Either use one of "EFAtools", "psych", or "SPSS"
            for type, or specify all other arguments')
     }
+
   } else if (type == "EFAtools") {
 
     # if not specified, set PAF properties. If specified, throw warning that

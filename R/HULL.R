@@ -5,11 +5,10 @@
 #' parallelization.
 #'
 #' @param x matrix or data.frame. Correlation matrix or raw data.
-#' @param cors logical. Whether x is a correlation matrix. Default is set to TRUE.
 #' @param n_cases numeric. Number of cases in the data. This is passed to \link{PARALLEL}.
 #'  Only has to be specified if x is a correlation matrix.
 #' @param n_factors numeric. Theoretical number of factors to retain. The maximum
-#'   of this number and the number of factors suggested by \link{PARALLEL} olus
+#'   of this number and the number of factors suggested by \link{PARALLEL} plus
 #'   onewill be used in the Hull method.
 #' @param method character. The estimation method to use. One of  \code{"PAF"},
 #'    \code{"ULS"}, or  \code{"ML"}, for principal axis factoring, unweighted
@@ -18,6 +17,8 @@
 #'   \code{"CFI"}, or \code{"RMSEA"}. If \code{method = "PAF"} is used, only
 #'   the CAF can be used as goodness of fit index. For details on the CAF, see
 #'   Lorenzo-Seva, Timmerman, and Kiers (2011).
+#' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
+#' is given as input. Default is "pairwise.complete.obs".
 #' @param ... Further arguments passed to \link{PARALLEL}.
 #'
 #' @details The \link{PARALLEL} function and the principal axis factoring of the
@@ -36,7 +37,9 @@
 #' \item{solutions}{A matrix containing the goodness of fit indices (CAF), degrees of freedom, and for the factors lying on the hull, the st values of the hull solution (see Lorenzo-Seva, Timmereman, and Kiers 2011 for details).}
 #' \item{ctrl}{A list of control settings used in the print and plot methods.}
 #'
-#' @source Lorenzo-Seva, U., Timmerman, M. E., & Kiers, H. A. (2011). The Hull method for selecting the number of common factors. Multivariate behavioral research, 46(2), 340-364.
+#' @source Lorenzo-Seva, U., Timmerman, M. E., & Kiers, H. A. (2011).
+#' The Hull method for selecting the number of common factors. Multivariate
+#' behavioral research, 46(2), 340-364.
 #'
 #' @export
 #'
@@ -56,9 +59,10 @@
 #' future::plan(future::multisession)
 #' HULL(IDS2_R, n_cases = 2000)
 #' }
-HULL <- function(x, cors = TRUE, n_cases = NA, n_factors = NA,
+HULL <- function(x, n_cases = NA, n_factors = NA,
                  method = c("PAF", "ULS", "ML"), gof = c("CAF", "CFI", "RMSEA"),
-                 ...) {
+                 use = c("pairwise.complete.obs", "all.obs", "complete.obs",
+                 "everything", "na.or.complete"), ...) {
   # Perform hull method following Lorenzo-Seva, Timmereman, and Kiers (2011)
 
   # # for testing
@@ -70,6 +74,7 @@ HULL <- function(x, cors = TRUE, n_cases = NA, n_factors = NA,
   # gof <- "CFI"
 
   method <- match.arg(method)
+  use <- match.arg(use)
   gof <- match.arg(gof)
 
   if (method == "PAF" && gof != "CAF") {
@@ -78,16 +83,39 @@ HULL <- function(x, cors = TRUE, n_cases = NA, n_factors = NA,
     gof <- "CAF"
   }
 
-  if (!isTRUE(cors)) {
-    n_cases <- nrow(x)
-    R <- stats::cor(x, use = "pairwise")
+  # Check if it is a correlation matrix
+  if(.is_cormat(x)){
+
+    if(any(is.na(x))){
+
+      stop("The correlation matrix you entered contains missing values.
+           Analyses are not possible.")
+
+    }
+
+    R <- x
+
   } else {
-    R <- as.matrix(x)
+
+    message("x was not a correlation matrix. Correlations are found from entered
+            raw data.")
+
+    R <- stats::cor(x, use = use)
+    colnames(R) <- colnames(x)
+    n_cases <- nrow(x)
+
   }
 
   if (gof != "CAF" && is.na(n_cases)) {
     stop('n_cases is not specified but is needed for computation of ', gof,
          ' fit index.')
+  }
+
+  # Check if correlation matrix is invertable, if it is not, stop with message
+  R_i <- try(solve(R))
+
+  if (class(R_i) == "try-error") {
+    stop("Matrix is singular, the HULL method cannot be exectued")
   }
 
   m <- ncol(R)
@@ -108,7 +136,6 @@ HULL <- function(x, cors = TRUE, n_cases = NA, n_factors = NA,
     J <- max(c(par_res$n_factor, n_factors), na.rm = TRUE) + 1
 
   }
-
 
   # 2) perform factor analysis for the range of dimensions 1:J and compute f and
   #    df for every solution

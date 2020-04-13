@@ -3,7 +3,7 @@ VARIMAX <- function (x, type = c("EFAtools", "psych", "SPSS", "none"),
                      kaiser = TRUE, precision = NULL, order_type = NULL) {
 
   if (type == "none") {
-    # if type is not one of the three valid inputs, throw an error if not
+    # if type is none, throw an error if not
     # all the other necessary arguments are specified.
 
     if (is.null(precision) || is.null(order_type)) {

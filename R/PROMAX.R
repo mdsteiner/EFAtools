@@ -4,10 +4,10 @@ PROMAX <- function (x, type = c("EFAtools", "psych", "SPSS", "none"),
                     order_type = NULL, k = NULL) {
 
   if (type == "none") {
-    # if type is not one of the three valid inputs, throw an error if not
+    # if type is none, throw an error if not
     # all the other necessary arguments are specified.
 
-    if (is.null(precision) || is.null(order_type) || is.null(k)) {
+    if (is.null(P_type) || is.null(precision) || is.null(order_type) || is.null(k)) {
       stop('One of "P_type", "precision", "order_type", or "k" was NULL and no valid
            "type" was specified. Either use one of "EFAtools", "psych", or "SPSS"
             for type, or specify all other arguments')

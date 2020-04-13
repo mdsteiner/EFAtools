@@ -92,6 +92,6 @@ BARTLETT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
 
   class(output) <- "BARTLETT"
 
-  output
+  return(output)
 
 }

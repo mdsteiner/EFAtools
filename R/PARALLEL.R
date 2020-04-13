@@ -8,8 +8,6 @@
 #' @param x matrix or data.frame. The real data to compare the simulated eigenvalues
 #'  against. Must not contain variables of classes other than numeric. Can be a
 #'  correlation matrix or raw data.
-#' @param cors logical. Whether x is a correlation matrix (TRUE), or raw data.
-#'  against. Must not contain variables of classes other than numeric.
 #' @param n_cases numeric. The number of cases / observations to simulate. Should only
 #'  be specified if \code{x} is left as \code{NULL} as otherwise the dimensions are taken from \code{x}.
 #' @param n_vars numeric. The number of variables / indicators to simulate. Should only
@@ -28,10 +26,8 @@
 #'  for parallel analysis on simulated data.
 #' @param replace logical. Currently ignored. Whether, if \code{data_type = "resample"}, the
 #'  resampling should be done with replacements or not. Default is \code{TRUE}.
-#' @param na_action character. What to do with \code{NA}s occurring in \code{x}. \code{"rm"}
-#'  removes them list-wise. \code{"none"} returns a warning if \code{NA}s occur and
-#'  in this case does not perform resampling, nor compares the the eigen values
-#'  of \code{x} against the simulated ones.
+#' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
+#' is given as input. Default is "pairwise.complete.obs".
 #' @param decision_rule character. Which rule to use to determine the number of
 #'  factors to retain. Default is \code{"mean"}, which will use the average
 #'  simulated eigenvalues. \code{"Percentile"}, uses the percentiles specified
@@ -73,7 +69,6 @@
 #' PARALLEL(test_models$case_11b$cormat, n_cases = test_models$case_11b$N)
 #' }
 PARALLEL <- function(x = NULL,
-                     cors = TRUE,
                      n_cases = NA,
                      n_vars = NA,
                      n_datasets = 1000,
@@ -81,8 +76,8 @@ PARALLEL <- function(x = NULL,
                      eigen_type = c("PAF", "PCA", "FA"),
                      data_type = c("sim"), # , "resample"
                      replace = TRUE,
-                     na_action = c("pairwise.complete.obs", "everything",
-                                   "all.obs", "complete.obs", "na.or.complete"),
+                     use = c("pairwise.complete.obs", "all.obs", "complete.obs",
+                             "everything", "na.or.complete"),
                      decision_rule = c("Means", "Percentile", "Crawford"),
                      criterion = .001,
                      criterion_type = c("sums", "max_individual"),
@@ -90,7 +85,7 @@ PARALLEL <- function(x = NULL,
 
   eigen_type <- match.arg(eigen_type)
   data_type <- match.arg(data_type)
-  na_action <- match.arg(na_action)
+  use <- match.arg(use)
   decision_rule <- match.arg(decision_rule)
   criterion_type <- match.arg(criterion_type)
 
@@ -106,19 +101,9 @@ PARALLEL <- function(x = NULL,
   if (!is.null(x)) {
 
     if (any(apply(x, 2, class) != "numeric")) {
-      warning("Data contained non-numeric columns. Eigenvalues of actual data were not computed and no PA was done using resampling.")
+      warning("Data contained non-numeric columns. Eigenvalues of actual data
+              were not computed and no PA was done using resampling.")
     } else {
-
-      # if (any(is.na(x))) {
-      #
-      #   if(na_action == "rm" && isFALSE(cors)) {
-      #
-      #     x <- x[stats::complete.cases(x), ]
-      #
-      #   }
-      #
-      # }
-
 
       if (!is.na(n_vars)) {
         warning("n_vars was set and data entered. Taking n_vars from data")
@@ -126,23 +111,52 @@ PARALLEL <- function(x = NULL,
       n_vars <- ncol(x)
       x_dat <- TRUE
 
-      if (isTRUE(cors)) {
-        R <- x
+
+      # Check if it is a correlation matrix
+      if(.is_cormat(x)){
+
+        if(any(is.na(x))){
+
+          stop("The correlation matrix you entered contains missing values.
+           Analyses are not possible.")
+
+        }
+
+        if (gof != "CAF" && is.na(n_cases)) {
+          stop('n_cases is not specified but is needed for computation of ', gof,
+               ' fit index.')
+        }
+
         # if (data_type == "resample") {
-        #   warning("data_type was set to resample, but correlation matrix was entered. Resampling can only be done on raw data. Setting data_type to sim")
+        #   warning("data_type was set to resample, but correlation matrix was
+        # entered. Resampling can only be done on raw data. Setting data_type to sim")
         #   data_type <- "sim"
         # }
 
+        R <- x
+
       } else {
+
+        message("x was not a correlation matrix. Correlations are found from entered
+            raw data.")
 
         if (!is.na(n_cases)) {
           warning("n_cases was set and data entered. Taking n_cases from data")
         }
 
+        R <- stats::cor(x, use = use)
+        colnames(R) <- colnames(x)
         n_cases <- nrow(x)
-        R <- stats::cor(x, use = na_action)
 
       }
+
+      # Check if correlation matrix is invertable, if it is not, stop with message
+      R_i <- try(solve(R))
+
+      if (class(R_i) == "try-error") {
+        stop("Matrix is singular, parallel analysis is not possible")
+      }
+
 
       if (eigen_type == "PAF") {
         # compute smcs
@@ -277,7 +291,7 @@ PARALLEL <- function(x = NULL,
     eigen_type = eigen_type,
     data_type = data_type,
     replace = replace,
-    na_action = na_action,
+    use = use,
     decision_rule = decision_rule
   )
 
