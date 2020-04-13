@@ -10,22 +10,22 @@ Kaiser, H. F. (1970). A second generation little jiffy. Psychometrika,
 Kaiser, H. F. & Rice, J. (1974). Little jiffy, mark IV. Educational
 and Psychological Measurement, 34, 111-117.
 
-Cureton, E. E. & DeAugustino, R. B. (1983). Factor analysis: An applied
-approach. Hillsdale, N.J.: Lawrence Erlbaum Associates, Inc.
+Cureton, E. E. & DeAugustino, R. B. (1983). Factor analysis: An
+ applied approach. Hillsdale, N.J.: Lawrence Erlbaum Associates, Inc.
 }
 \usage{
-KMO(x, cors = TRUE, use = "pairwise.complete.obs")
+KMO(
+  x,
+  use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
+    "na.or.complete")
+)
 }
 \arguments{
 \item{x}{data.frame or matrix. Dataframe or matrix of raw data or matrix with
 correlations.}
 
-\item{cors}{logical. If \code{TRUE} (default) a correlation matrix is expected
-in x, otherwise raw data is expected.}
-
-\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
-is given as input. Note that in this case \code{cors} must be set to
-\code{FALSE}. Default is "pairwise.complete.obs".}
+\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw
+data is given as input. Default is "pairwise.complete.obs".}
 }
 \value{
 A list containing
@@ -48,13 +48,19 @@ The index is
 with \eqn{Q = SR^{-1}S} and S = \eqn{(diag R^{-1})^{-1/2}} where
 \eqn{\underset{i<j}{\sum\sum} r_{ij}^2}} is the sum of squares of the upper
 off-diagonal elements of \eqn{R} and \eqn{\underset{i<j}{\sum\sum} q_{ij}^2} is the
-sum of squares of the upper off-diagnoal elements of \eqn{Q} (see also Cureton & DeAugustino, 1983).
+sum of squares of the upper off-diagonal elements of \eqn{Q} (see also Cureton & DeAugustino, 1983).
 
 So KMO varies between 0 and 1, with larger values indicating higher suitability
 for factor analysis. Kaiser and Rice (1974) suggest that KMO should at least
 exceed .50 for a correlation matrix to be suitable for factor analysis.
+
+This function was heavily influenced by the \code{\link[psych:KMO]{KMO}}
+function from the psych package.
+
+See also \code{\link[EFAtools:BARTLETT]{EFAtools:BARTLETT}} for another test
+of suitability for factor analysis.
 }
 \examples{
-
 KMO(IDS2_R)
+
 }

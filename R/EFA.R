@@ -4,7 +4,8 @@
 #' or \code{\link{ULS}} with or without subsequent rotation.
 #' All arguments with default value \code{NULL} can be left to default if \code{type}
 #' is set to one of "EFAtools", "SPSS", or "psych". The respective specifications are
-#' then handled according to the specified type (see details). For all rotations except varimax and promax, the \code{\link{GPArotation} package is needed.
+#' then handled according to the specified type (see details). For all rotations
+#' except varimax and promax, the \code{\link{GPArotation}} package is needed.
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
 #' correlations. If raw data is entered, the correlation matrix is found from the
@@ -59,7 +60,7 @@
 #' is given as input. Default is "pairwise.complete.obs".
 #' @param k numeric. Either the power used for computing the target matrix P in
 #' the promax rotation or the number of 'close to zero loadings' for the simplimax
-#' rotation (see \code{\link[GPArotation:GPFobl]{GPArotation:GPFobl}. If left to
+#' rotation (see \code{\link[GPArotation:GPFobl]{GPArotation:GPFobl}}. If left to
 #' \code{NULL} (default), 3 is used for promax and \code{nrow(L)}, where
 #' L is the matrix of unrotated loadings, is used for simplimax.
 #' @param kaiser logical. If \code{TRUE}, kaiser normalization is
@@ -86,8 +87,6 @@
 #' @param ... Additional arguments passed to rotation functions from GPArotation
 #' package (e.g., \code{maxit} for maximum number of iterations).
 #'
-#' WRITE DETAIL SECTION
-#'
 #' @details There are two main ways to use this function. The easiest way is to
 #' use it with a specified \code{type} (see above), which sets most of the other
 #' arguments accordingly. Another way is to use it more flexibly by explicitly
@@ -96,10 +95,13 @@
 #' However, this will throw warnings to avoid unintentional deviations from the
 #' implementations according to the specified \code{type}.
 #'
-#'PAF
-#'Values of \code{init_comm}, \code{criterion}, \code{criterion_type},
+#' The \code{type} argument is evaluated for the PAF method and for the varimax
+#' and promax rotations. The type-specific settings for these functions are
+#' detailed below.
+#'
+#' For PAF, the values of \code{init_comm}, \code{criterion}, \code{criterion_type},
 #' \code{abs_eigen} depend on the \code{type} argument.
-#'\code{type = "EFAtools"} will use the following argument specification:
+#' \code{type = "EFAtools"} will use the following argument specification:
 #' \code{init_comm = "smc", criterion = 1e-9, criterion_type = "max_individual",
 #' abs_eigen = FALSE}.
 #' \code{type = "psych"} will use the following argument specification:
@@ -109,7 +111,17 @@
 #' \code{init_comm = "smc", criterion = .001, criterion_type = "max_individual",
 #' abs_eigen = TRUE}.
 #'
-#' PROMAX
+#' For varimax, the values of \code{precision} and \code{order_type} depend on
+#' the \code{type} argument.
+#' \code{type = "EFAtools"} will use the following argument specification:
+#' \code{precision = 1e-10, order_type = "eigen"}.
+#' \code{type = "psych"} will use the following argument specification:
+#' \code{precision = 1e-5, order_type = "eigen"}.
+#' \code{type = "SPSS"} will use the following argument specification:
+#' \code{precision = 1e-10, order_type = "ss_factors"}.
+#'
+#' For promax, the values of \code{P_type}, \code{precision}, \code{order_type},
+#' and \code{k} depend on the \code{type} argument.
 #' \code{type = "EFAtools"} will use the following argument specification:
 #' \code{P_type = "unnorm", precision = 1e-10, order_type = "eigen", k = 3}.
 #' \code{type = "psych"} will use the following argument specification:
@@ -117,23 +129,14 @@
 #' \code{type = "SPSS"} will use the following argument specification:
 #' \code{P_type = "norm", precision = 1e-10, order_type = "ss_factors", k = 4}.
 #'
-#'#' The \code{P_type} argument can take two values, "unnorm" and "norm". It controls
+#' The \code{P_type} argument can take two values, "unnorm" and "norm". It controls
 #' which formula is used to compute the target matrix P in the promax rotation.
 #' "unnorm" uses the formula from Hendrickson and White (1964), specifically:
 #' \code{P <- abs(A^(k + 1)) / A},
 #' where A is the unnormalized matrix containing varimax rotated loadings.
 #' "SPSS" uses the normalized varimax rotated loadings. Specifically it used the
-#' following formula, which can be found in the SPSS 23 Algorithms
-#' manual:
+#' following formula, which can be found in the SPSS 23 Algorithms manual:
 #' \code{P <- abs(A / sqrt(rowSums(A^2))) ^(k + 1) * (sqrt(rowSums(A^2)) / A)}
-#'
-#' VARIMAX:
-#' \code{type = "EFAtools"} will use the following argument specification:
-#' \code{precision = 1e-10, order_type = "eigen"}.
-#' \code{type = "psych"} will use the following argument specification:
-#' \code{precision = 1e-5, order_type = "eigen"}.
-#' \code{type = "SPSS"} will use the following argument specification:
-#' \code{precision = 1e-10, order_type = "ss_factors"}.
 #'
 #' type no effect on uls and ml and all other rotations except varimax and promax.
 #' write which arguments necessary for these.
@@ -157,7 +160,7 @@
 #' \item{fit_indices}{For ML and ULS: Fit indices derived from the unrotated
 #' factor loadings as returned by \code{\link[psych:factor.stats]{psych::factor.stats}}
 #' and for PAF: The common part accounted for (CAF) index as proposed by Lorenzo-Seva,
-#' Timmerman, & Kiers (2011) and degrees of freedom}}
+#' Timmerman, & Kiers (2011) and degrees of freedom}
 #' \item{rot_loadings}{Loading matrix containing the final rotated loadings
 #' (pattern matrix).}
 #' \item{Phi}{The factor intercorrelations (only for oblique rotations).}
@@ -212,7 +215,6 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   # n_factors <- 5
   # method <- "PAF"
   # rotation <- "promax"
-  # cors <- TRUE
   # type = "EFAtools"
   # use = "pairwise.complete.obs"
   # kaiser = TRUE
@@ -234,6 +236,13 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
   # Check if it is a correlation matrix
   if(.is_cormat(x)){
+
+    if(any(is.na(x))){
+
+      stop("The correlation matrix you entered contains missing values. Factor
+           analysis is not possible.")
+
+    }
 
       R <- x
 
@@ -339,7 +348,6 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
     rotation = rotation,
     type = type,
     n_factors = n_factors,
-    cors = cors,
     N = N,
     use = use
   )

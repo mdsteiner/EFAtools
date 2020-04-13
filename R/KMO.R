@@ -47,13 +47,20 @@
 #' @examples
 #' KMO(IDS2_R)
 #'
-KMO <- function(x, use = c("all.obs", "complete.obs", "pairwise.complete.obs",
+KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
                            "everything", "na.or.complete")) {
 
   use <- match.arg(use)
 
   # Check if it is a correlation matrix
   if(.is_cormat(x)){
+
+    if(any(is.na(x))){
+
+      stop("The correlation matrix you entered contains missing values. KMO
+           cannot be computed.")
+
+    }
 
     R <- x
 
@@ -72,7 +79,12 @@ KMO <- function(x, use = c("all.obs", "complete.obs", "pairwise.complete.obs",
   R_i <- try(solve(R))
 
   if (class(R_i) == "try-error") {
-    stop("Matrix is singular, KMO is not computed")
+    stop("Matrix is singular, KMO cannot be computed")
+  }
+
+  # Check if correlation matrix is positive definite
+  if(any(eigen(R)$values <= 0)){
+    stop("Matrix is not positive definite, KMO cannot be computed")
   }
 
   # Start computations

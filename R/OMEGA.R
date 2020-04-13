@@ -104,7 +104,8 @@
 #' @export
 #'
 #' @source
-#' @example
+#'
+#' @examples
 #' \dontrun{
 #' ## Use with a lavaan output
 #' library(lavaan)

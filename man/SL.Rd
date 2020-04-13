@@ -9,23 +9,27 @@ Wolff, H.-G., & Preising, K. (2005). Exploring item and higher order factor stru
 Watkins, M. W. (2004). Macortho [Computer Software]. Phoenix, AZ: EdPsych Associates, Inc.
 }
 \usage{
-SL(x, Phi = NULL, type = "EFAtools", ...)
+SL(
+  x,
+  Phi = NULL,
+  type = c("EFAtools", "psych", "SPSS", "none"),
+  method = c("PAF", "ML", "ULS"),
+  ...
+)
 }
 \arguments{
-\item{x}{object of class \code{\link{PROMAX}} or class \code{\link{fa}} or
-matrix. If class \code{\link{PROMAX}} or class \code{\link{fa}},
+\item{x}{object of class \code{\link{EFA}} or class \code{\link{fa}} or
+matrix. If class \code{\link{EFA}} or class \code{\link{fa}},
 pattern coefficients and factor intercorrelations are taken from this object.
 x can also be a pattern matrix from an oblique factor solution (see \code{Phi}).}
 
-\item{Phi}{matrix. A matrix of factor intercorrelations from an oblique factor
-solution. Only needs to be specified if x is not of class \code{\link{PROMAX}}
-or class \code{\link{fa}}.}
+\item{type}{character. One of "EFAtools" (default), "psych", "SPSS", or "none".
+This is used to control the procedure of the second order factor analysis. See
+\code{\link{EFA}} for details.}
 
-\item{type}{character. One of "EFAtools" (default), "psych", or "SPSS". This
-is used to control the procedure of the second order factor analysis. See
-\code{\link{PAF}} for details.}
+\item{method}{-...}
 
-\item{...}{Arguments to be passed to \code{PAF}.}
+\item{...}{Arguments to be passed to \code{EFA}.}
 }
 \value{
 A list containing the following
@@ -33,17 +37,18 @@ A list containing the following
 and uniquenesses.}
 \item{L2}{Second-order factor loadings.}
 \item{vars_accounted}{Matrix of explained variances and sums of squared loadings}
-\item{settings}{list. The settings (arguments) used in the PAF to get the second order loadings.}
-\item{iter}{Number of iterations needed in the PAF for the second order loadings.}
+\item{settings}{list. The settings (arguments) used in EFA to get the second order loadings.}
+\item{iter}{The number of iterations needed for convergence in EFA if PAF
+was used.}
 }
 \description{
 This function implements the Schmid-Leiman (SL) transformation. It takes the
 pattern coefficients and factor intercorrelations from an oblique factor solution as
 input and can reproduce the results from \code{\link[psych:schmid]{psych::schmid}},
 from the SPSS implementation from Wolff & Preising (2005), and from MacOrtho
-(Watkins, 2004). To reproduce psych or SPSS, only the type argument has to be
+(Watkins, 2004). To reproduce psych or SPSS, only the type and method arguments have to be
 specified additional to the loadings and factor intercorrelations. Other
-arguments from \code{\link{PAF}} can be used to control the procedure to find
+arguments from \code{\link{EFA}} can be used to control the procedure to find
 the second order loadings more flexibly.
 }
 \details{

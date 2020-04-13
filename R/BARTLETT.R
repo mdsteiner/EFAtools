@@ -1,8 +1,9 @@
 #' Bartletts test of spericity
 #'
 #' This function tests whether a correlation matrix is significantly different
-#' from an identity matrix. If the Bartletts test is not significant, a factor
-#' analysis should not be carried out.
+#' from an identity matrix (Bartlett, 1951). If the Bartletts test is not
+#' significant, the correlation matrix is not suitable for factor analysis
+#' because the variables show too little covariance.
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
 #' correlations.
@@ -16,7 +17,7 @@
 #' \code{\link[EFAtools:KMO]{EFAtools:KMO}}). The statistic is approximately
 #' chi square distributed with \eqn{df = \fraq{p(p - 1)}} and is given by
 #'
-#' \deqn{chi^2 = -log(det(R)) (N - 1 - (2 * p + 5)/6)
+#' \deqn{chi^2 = -log(det(R)) (N - 1 - (2 * p + 5)/6)}
 #'
 #' where \eqn{det(R)} is the determinant of the correlation matrix, \eqn{N} is
 #' the sample size, and \eqn{p} is the number of variables.
@@ -25,7 +26,7 @@
 #' \code{\link[psych:cortest.bartlett]{cortest.bartlett}} function
 #' from the psych package.
 #'
-#' @return
+#' @return A list containing
 #' \item{chisq}{The chi square statistic.}
 #' \item{p_value}{The p value of the chi square statistic.}
 #' \item{df}{The degrees of freedom for the chi square statistic.}
@@ -38,8 +39,8 @@
 #' @examples
 #' BARTLETT(IDS2_R, N = 1991)
 #'
-BARTLETT <- function(x, N = NA, use = c("all.obs", "complete.obs",
-                                        "pairwise.complete.obs", "everything",
+BARTLETT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
+                                        "complete.obs", "everything",
                                         "na.or.complete")){
 
   use <- match.arg(use)
@@ -67,6 +68,18 @@ BARTLETT <- function(x, N = NA, use = c("all.obs", "complete.obs",
 
   }
 
+  # Check if correlation matrix is invertable, if it is not, stop with message
+  R_i <- try(solve(R))
+
+  if (class(R_i) == "try-error") {
+    stop("Matrix is singular, Bartletts test cannot be executed")
+  }
+
+  # Check if correlation matrix is positive definite
+  if(any(eigen(R)$values <= 0)){
+    stop("Matrix is not positive definite, Bartletts test cannot be executed")
+  }
+
   # Calculate test statistic
   p <- nrow(R)
   detR <- det(R)
@@ -76,6 +89,8 @@ BARTLETT <- function(x, N = NA, use = c("all.obs", "complete.obs",
 
   # prepare the output
   output <- list(chisq = statistic, p_value = pval, df = df)
+
+  class(output) <- "BARTLETT"
 
   output
 
