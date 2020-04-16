@@ -1,11 +1,13 @@
 # Flexible omega function (e.g. to use with loadings obtained by MacOrtho)------
-.OMEGA_FLEX <- function(model = NULL, var_names = NULL, fac_names = NULL,
-                       factor_corres = NULL, g_load = NULL, s_load = NULL,
-                       u2 = NULL, Phi = NULL, pattern = NULL,
-                       cormat = NULL, variance = NULL, type = c("EFAtools",
-                                                                "psych")){
+.OMEGA_FLEX <- function(model = NULL, type = c("EFAtools", "psych"), factor_corres = NULL,
+                        var_names = NULL, fac_names = NULL, g_load = NULL,
+                        s_load = NULL, u2 = NULL, cormat = NULL, pattern = NULL,
+                        Phi = NULL, variance = c("correlaton", "sums_load")){
 
   if(all(class(model) == c("psych", "schmid"))){
+
+    pattern <- model$oblique
+    Phi <- model$phi
 
     model <-  model$sl
 
@@ -13,30 +15,97 @@
     g_load <- model[, 1]
     s_load <- model[, 2:(ncol(model) - 3)]
     factor_names <- c("g", 1:ncol(s_load))
+    u2 <- model[, "u2"]
 
-  } else if(all(class(model) == c("SL"))){
+    if(variance == "correlation"){
+
+      if(is.null(cormat)){
+
+        # Create the correlation matrix from the pattern coefficients and factor
+        # intercorrelations
+        cormat <- psych::factor.model(f = pattern, Phi = Phi, U2 = FALSE)
+
+      }
+
+      } else {
+
+        # Check if it is a correlation matrix
+        if(.is_cormat(cormat)){
+
+          if(any(is.na(cormat))){
+
+            stop("The correlation matrix you entered contains missing values.
+                 Check the cormat input, specify the Phi and pattern arguments
+                 instead, or set variance to 'sums_load'")
+
+          }
+
+        } else {
+
+          stop("x was not a correlation matrix. Check the cormat input, specify
+                the Phi and pattern arguments instead, or set variance to
+                'sums_load'")
+
+        }
+
+    }
+
+ } else if(all(class(model) == c("SL"))){
+
+    cormat <- model$orig_R
 
     model <-  model$sl
     var_names <- rownames(model)
     g_load <- model[, 1]
     s_load <- model[, 2:(ncol(model) - 2)]
     factor_names <- c("g", 1:ncol(s_load))
-    cormat <- model$orig_R
+    u2 <- model[, "u2"]
 
   } else {
 
     factor_names <- c("g", 1:ncol(s_load))
 
+    if(variance == "correlation"){
+
+      if(is.null(cormat)){
+
+        if(is.null(Phi) | is.null(pattern)) {
+          stop("If you leave model NULL, either specify the cormat
+             argument or the Phi and pattern arguments, or set variance to
+             'sums_load'")
+
+        } else {
+
+          # Create the correlation matrix from the pattern coefficients and factor
+          # intercorrelations
+          cormat <- psych::factor.model(f = pattern, Phi = Phi, U2 = FALSE)
+
+        }
+
+      } else {
+
+        # Check if it is a correlation matrix
+        if(.is_cormat(cormat)){
+
+          if(any(is.na(cormat))){
+
+            stop("The correlation matrix you entered contains missing values.
+                 Check the cormat input, specify the Phi and pattern arguments
+                 instead, or set variance to 'sums_load'")
+
+          }
+
+        } else {
+
+          stop("x was not a correlation matrix. Check the cormat input, specify
+                the Phi and pattern arguments instead, or set variance to
+                'sums_load'")
+
+        }
+
+      }
+
     }
-
-  if(is.null(variance)){
-
-    variance <- "correlation"
-
-  } else {
-
-    warning("Argument variance is specified. Variances are computed as specified.
-             Results may differ from the specified type")
 
   }
 
@@ -46,11 +115,20 @@
   rownames(input) <- var_names
 
   if(type == "EFAtools" & is.null(factor_corres)){
-    stop("Either specify the factor_corres argument or set type = 'psych'")
 
-    }
+    stop("Either specify the factor_corres argument or set type = 'psych'
+         to find variable-to-factor correspondences using the highest
+         group factor loading per variable.")
+
+  }
 
   if(type == "psych"){
+
+    if(variance != "correlation"){
+
+      warning("Variance is specified. Variance is used with value '", variance,
+              "'. Results may differ from the specified type")
+      }
 
     if(is.null(factor_corres)){
       factor_corres <- apply(input, 1,
@@ -64,24 +142,9 @@
     }
   }
 
+  input$u2 <- u2
   input <- cbind(factor_corres, input)
   names(input)[1] <- "factor"
-
-  if(variance == "correlation" & is.null(cormat)){
-
-      if(is.null(Phi) | is.null(pattern)) {
-      stop("Either specify the cormat argument or the Phi and pattern arguments")
-
-      } else {
-
-      # Create the correlation matrix from the pattern coefficients and factor
-      # intercorrelations
-      cormat <- psych::factor.model(f = pattern, Phi = Phi, U2 = FALSE)
-
-      }
-    }
-
-  input$u2 <- u2
 
   # Create all sums of factor loadings for each factor
 
@@ -108,7 +171,7 @@
   if(variance == "correlation"){
 
     # Compute omega total, hierarchical, and subscale for g-factor
-    omega_tot_g <- (sum(cormat) - sum(input$u2)) / sum(cormat)
+    omega_tot_g <- (sum(cormat) - sum_e) / sum(cormat)
     omega_h_g <- sum_g^2 / sum(cormat)
     omega_sub_g <- sum(sums_s_s^2) / sum(cormat)
 
@@ -172,7 +235,7 @@
 
 # Omega function to use with lavaan bifactor output as input-------
 
-.OMEGA_LAVAAN <- function(model, g_name){
+.OMEGA_LAVAAN <- function(model = NULL, g_name = NULL){
 
   std_sol <- lavaan::inspect(model, what = "std")
 

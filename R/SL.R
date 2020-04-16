@@ -1,7 +1,8 @@
 #' Schmid-Leiman Transformation
 #'
-#' This function implements the Schmid-Leiman (SL) transformation. It takes the
-#' pattern coefficients and factor intercorrelations from an oblique factor solution as
+#' This function implements the Schmid-Leiman (SL) transformation
+#' (Schmid & Leiman, 1957). It takes the pattern coefficients and factor
+#' intercorrelations from an oblique factor solution as
 #' input and can reproduce the results from \code{\link[psych:schmid]{psych::schmid}},
 #' from the SPSS implementation from Wolff & Preising (2005). Only the type and
 #' method arguments have to be specified additional to the loadings and factor
@@ -38,7 +39,7 @@
 #' calculation of McDonald's Omegas (see \code{\link{OMEGA}}).
 #'
 #' @return A list of class SL containing the following
-#' \item{orig_R}{The original correlation matrix.}
+#' \item{orig_R}{Ooriginal correlation matrix.}
 #' \item{sl}{A matrix with g loadings, group factor loadings, communalities,
 #' and uniquenesses.}
 #' \item{L2}{Second-order factor loadings.}
@@ -47,15 +48,38 @@
 #' \item{settings}{list. The settings (arguments) used in EFA to get the second-
 #' order loadings.}
 #'
+#' @source Schmid, J. & Leiman, J. M. (1957). The development of hierarchical
+#' factor solutions, 22(1), 53–61. doi:10.1007/BF02289209
 #' @source Wolff, H.-G., & Preising, K. (2005). Exploring item and higher order
 #' factor structure with the schmid-leiman solution: Syntax codes for spss and
-#' sas. Behavior Research Methods, 37 , 48–58. doi: 10.3758/BF03206397
+#' sas. Behavior Research Methods, 37 , 48–58. doi:10.3758/BF03206397
 #'
 #' @export
 #'
 #' @examples
-#' CONTINUE HERE, EXAMPLE WITH INPUT FROM EFA, INPUT FROM FA, AND WITH FLEXIBLY
-#' ENTERED PATTERN MATRIX AND PHI -> use omega as blueprint
+#' ## Use with an output from the EFAtools::EFA function, both with type EFAtools
+#' EFA_mod <- EFA(IDS2_R, N = 1991, n_factors = 5, type = "EFAtools",
+#'                method = "PAF", rotation = "promax")
+#' SL_EFAtools <- SL(EFA_mod, type = "EFAtools", method = "PAF")
+#'
+#' \dontrun{
+#' ## Use with an output from the psych::fa function with type psych in SL
+#' fa_mod <- psych::fa(IDS2_R, nfactors = 5, n.obs = 1991, fm = "pa",
+#'                     rotate = "Promax")
+#' SL_psych <- SL(fa_mod, type = "psych", method = "PAF")
+#' }
+#'
+#' ## Use more flexibly by entering a pattern matrix and phi directly (useful if
+#' ## a factor solution found with another program should be subjected to SL
+#' ## transformation)
+#'
+#' ## For demonstration, take pattern matrix and phi from an EFA output
+#' ## This gives the same solution as the first example
+#' EFA_mod <- EFA(IDS2_R, N = 1991, n_factors = 5, type = "EFAtools",
+#'                method = "PAF", rotation = "promax")
+#' SL_flex <- SL(EFA_mod$rot_loadings, Phi = EFA_mod$Phi, type = "EFAtools",
+#'               method = "PAF")
+#'
 SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
                method = c("PAF", "ML", "ULS"), ...) {
 
@@ -93,7 +117,7 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
 
   } else if(all(class(x) == c("psych", "fa"))) {
 
-    if(Phi %in% x){
+    if("Phi" %in% names(x)){
 
       L1 <- unclass(x$loadings)
       n_first_fac <- ncol(x$loadings)
@@ -112,7 +136,7 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
 
     } else {
 
-      stop("x is either a non-rotated or orthogonal factor solution. SL needs
+      stop("x is either an unrotated or orthogonal factor solution. SL needs
       an oblique factor solution")
 
     }
@@ -137,8 +161,8 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
   }
 
   # perform a factor analysis on the intercorrelation matrix of the first order
-  # factors
-  EFA_phi <- EFA(Phi, n_factors = 1, type = type, method = method,
+  # factors (N is only specified to avoid a warning)
+  EFA_phi <- EFA(Phi, n_factors = 1, N = 100, type = type, method = method,
                  rotation = "none", ...)
 
   # extract second order loadings
@@ -175,7 +199,7 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
     L2 = L2,
     vars_accounted = vars_accounted,
     iter = EFA_phi$iter,
-    settings = EFA_phi$settings,
+    settings = EFA_phi$settings
     )
 
   class(output) <- "SL"
