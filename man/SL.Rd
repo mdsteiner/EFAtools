@@ -4,9 +4,12 @@
 \alias{SL}
 \title{Schmid-Leiman Transformation}
 \source{
-Wolff, H.-G., & Preising, K. (2005). Exploring item and higher order factor structure with the schmid-leiman solution: Syntax codes for spss and sas. Behavior Research Methods, 37 , 48–58. doi: 10.3758/BF03206397
+Schmid, J. & Leiman, J. M. (1957). The development of hierarchical
+factor solutions, 22(1), 53–61. doi:10.1007/BF02289209
 
-Watkins, M. W. (2004). Macortho [Computer Software]. Phoenix, AZ: EdPsych Associates, Inc.
+Wolff, H.-G., & Preising, K. (2005). Exploring item and higher order
+factor structure with the schmid-leiman solution: Syntax codes for spss and
+sas. Behavior Research Methods, 37 , 48–58. doi:10.3758/BF03206397
 }
 \usage{
 SL(
@@ -23,33 +26,40 @@ matrix. If class \code{\link{EFA}} or class \code{\link{fa}},
 pattern coefficients and factor intercorrelations are taken from this object.
 x can also be a pattern matrix from an oblique factor solution (see \code{Phi}).}
 
+\item{Phi}{matrix. A matrix of factor intercorrelations from an oblique factor
+solution. Only needs to be specified if a pattern matrix is entered directly
+into \code{x}.}
+
 \item{type}{character. One of "EFAtools" (default), "psych", "SPSS", or "none".
 This is used to control the procedure of the second order factor analysis. See
 \code{\link{EFA}} for details.}
 
-\item{method}{-...}
+\item{method}{@param method character. One of "PAF", "ML", or "ULS" to use
+principal axis factoring, maximum likelihood, or unweighted least squares
+(also called minres), respectively, to find the second-order loadings.}
 
 \item{...}{Arguments to be passed to \code{EFA}.}
 }
 \value{
-A list containing the following
+A list of class SL containing the following
+\item{orig_R}{Ooriginal correlation matrix.}
 \item{sl}{A matrix with g loadings, group factor loadings, communalities,
 and uniquenesses.}
 \item{L2}{Second-order factor loadings.}
-\item{vars_accounted}{Matrix of explained variances and sums of squared loadings}
-\item{settings}{list. The settings (arguments) used in EFA to get the second order loadings.}
-\item{iter}{The number of iterations needed for convergence in EFA if PAF
-was used.}
+\item{vars_accounted}{Matrix of explained variances and sums of squared loadings.}
+\item{iter}{The number of iterations needed for convergence in EFA.}
+\item{settings}{list. The settings (arguments) used in EFA to get the second-
+order loadings.}
 }
 \description{
-This function implements the Schmid-Leiman (SL) transformation. It takes the
-pattern coefficients and factor intercorrelations from an oblique factor solution as
+This function implements the Schmid-Leiman (SL) transformation
+(Schmid & Leiman, 1957). It takes the pattern coefficients and factor
+intercorrelations from an oblique factor solution as
 input and can reproduce the results from \code{\link[psych:schmid]{psych::schmid}},
-from the SPSS implementation from Wolff & Preising (2005), and from MacOrtho
-(Watkins, 2004). To reproduce psych or SPSS, only the type and method arguments have to be
-specified additional to the loadings and factor intercorrelations. Other
-arguments from \code{\link{EFA}} can be used to control the procedure to find
-the second order loadings more flexibly.
+from the SPSS implementation from Wolff & Preising (2005). Only the type and
+method arguments have to be specified additional to the loadings and factor
+intercorrelations. Other arguments from \code{\link{EFA}} can be used to control
+the procedure to find the second order loadings more flexibly.
 }
 \details{
 The SL transformation (also called SL orthogonalization) is a procedure with
@@ -63,5 +73,30 @@ with proportionaliy constraints. The procedure thus makes a suggested
 hierarchical data structure based on factor intercorrelations explicit. One
 major advantage of SL transformation is that it enables variance
 partitioning between higher-order and first-order factors, including the
-calculation of Omega (see \code{\link{OMEGA}}).
+calculation of McDonald's Omegas (see \code{\link{OMEGA}}).
+}
+\examples{
+## Use with an output from the EFAtools::EFA function, both with type EFAtools
+EFA_mod <- EFA(IDS2_R, N = 1991, n_factors = 5, type = "EFAtools",
+               method = "PAF", rotation = "promax")
+SL_EFAtools <- SL(EFA_mod, type = "EFAtools", method = "PAF")
+
+\dontrun{
+## Use with an output from the psych::fa function with type psych in SL
+fa_mod <- psych::fa(IDS2_R, nfactors = 5, n.obs = 1991, fm = "pa",
+                    rotate = "Promax")
+SL_psych <- SL(fa_mod, type = "psych", method = "PAF")
+}
+
+## Use more flexibly by entering a pattern matrix and phi directly (useful if
+## a factor solution found with another program should be subjected to SL
+## transformation)
+
+## For demonstration, take pattern matrix and phi from an EFA output
+## This gives the same solution as the first example
+EFA_mod <- EFA(IDS2_R, N = 1991, n_factors = 5, type = "EFAtools",
+               method = "PAF", rotation = "promax")
+SL_flex <- SL(EFA_mod$rot_loadings, Phi = EFA_mod$Phi, type = "EFAtools",
+              method = "PAF")
+
 }

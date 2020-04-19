@@ -4,29 +4,30 @@
 \alias{HULL}
 \title{Hull method for determining the number of factors to retain}
 \source{
-Lorenzo-Seva, U., Timmerman, M. E., & Kiers, H. A. (2011). The Hull method for selecting the number of common factors. Multivariate behavioral research, 46(2), 340-364.
+Lorenzo-Seva, U., Timmerman, M. E., & Kiers, H. A. (2011).
+The Hull method for selecting the number of common factors. Multivariate
+behavioral research, 46(2), 340-364.
 }
 \usage{
 HULL(
   x,
-  cors = TRUE,
   n_cases = NA,
   n_factors = NA,
   method = c("PAF", "ULS", "ML"),
   gof = c("CAF", "CFI", "RMSEA"),
+  use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
+    "na.or.complete"),
   ...
 )
 }
 \arguments{
 \item{x}{matrix or data.frame. Correlation matrix or raw data.}
 
-\item{cors}{logical. Whether x is a correlation matrix. Default is set to TRUE.}
-
 \item{n_cases}{numeric. Number of cases in the data. This is passed to \link{PARALLEL}.
 Only has to be specified if x is a correlation matrix.}
 
 \item{n_factors}{numeric. Theoretical number of factors to retain. The maximum
-of this number and the number of factors suggested by \link{PARALLEL} olus
+of this number and the number of factors suggested by \link{PARALLEL} plus
 onewill be used in the Hull method.}
 
 \item{method}{character. The estimation method to use. One of  \code{"PAF"},
@@ -37,6 +38,9 @@ least squares, and maximum likelihood, respectively.}
 \code{"CFI"}, or \code{"RMSEA"}. If \code{method = "PAF"} is used, only
 the CAF can be used as goodness of fit index. For details on the CAF, see
 Lorenzo-Seva, Timmerman, and Kiers (2011).}
+
+\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
+is given as input. Default is "pairwise.complete.obs".}
 
 \item{...}{Further arguments passed to \link{PARALLEL}.}
 }

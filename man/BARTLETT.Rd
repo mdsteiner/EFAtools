@@ -26,6 +26,7 @@ correlation matrix is used.}
 is given as input. Default is "pairwise.complete.obs".}
 }
 \value{
+A list containing
 \item{chisq}{The chi square statistic.}
 \item{p_value}{The p value of the chi square statistic.}
 \item{df}{The degrees of freedom for the chi square statistic.}

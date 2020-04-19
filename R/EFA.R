@@ -203,7 +203,8 @@
 #' EFA_EFAtools_PAF <- EFA(IDS2_R, n_factors = 5, N = 1991, type = "EFAtools",
 #'                         method = "PAF", rotation = "none")
 #'
-#' # A type SPSS EFA to mimick the SPSS implementation
+#' # A type SPSS EFA to mimick the SPSS implementation (this will throw a warning,
+#' # see below)
 #' EFA_SPSS_PAF <- EFA(IDS2_R, n_factors = 5, N = 1991, type = "SPSS", method = "PAF",
 #'                   rotation = "none")
 #'
@@ -288,13 +289,6 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
       R <- x
 
-      if (is.na(N)) {
-
-        warning("Argument 'N' was NA. For ML and ULS, not all fit indices can be
-             computed. To get all fit indices, either provide N or raw data.")
-
-      }
-
   } else {
 
     message("x was not a correlation matrix. Correlations are found from entered
@@ -324,9 +318,23 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
   } else if (method == "ML") {
 
+    if (is.na(N)) {
+
+      warning("Argument 'N' was NA, not all fit indices can be
+             computed. To get all fit indices, either provide N or raw data.")
+
+    }
+
     fit_out <- ML(R, n_factors = n_factors, N = N, start_method = start_method)
 
   } else if (method == "ULS") {
+
+    if (is.na(N)) {
+
+      warning("Argument 'N' was NA, not all fit indices can be
+             computed. To get all fit indices, either provide N or raw data.")
+
+    }
 
     fit_out <- ULS(R, n_factors = n_factors, N = N)
   }

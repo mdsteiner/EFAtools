@@ -19,8 +19,11 @@
 #' @param type character. Either \code{"EFAtools"} (default) or \code{"psych"}
 #' (see details)
 #' @param g_name character. The name of the general factor from the lavaan bifactor
-#' solution. This needs only be specified if \code{model} is a class
-#' \code{\link{lavaan}} object.
+#' solution. This needs only be specified if \code{model} is a
+#' \code{\link{lavaan}} bifactor solution.
+#' @param group_names character. An optional vector of group names. The length
+#' must correspond to the number of groups for which the \link{lavaan} model
+#' was fitted.
 #' @param factor_corres numeric. A vector that indicates which variable corresponds
 #' to which group factor. Must be in the same order as the SL solution. For example
 #' c(3, 3, 3, 1, 1, 2, 2) if the first three variables load on the third group
@@ -64,58 +67,75 @@
 #' squared sums of general factor loadings and group factor loadings and
 #' the sum of uniquenesses (see details).
 #'
-#' ### AB HIER ALLES ANPASSEN
-#' @section How to combine arguments:
+#' @details If \code{model} is a \code{\link{lavaan}} bifactor model, only the name
+#' of the general factor from the lavaan model needs to be specified additionally
+#' with the \code{g_name} argument. There is also the possibility to enter a
+#' \code{\link{lavaan}} single factor model. In this case, \code{g_name} is not
+#' needed. Finally, if a solution from a \code{\link{lavaan}} multiple group
+#' analysis is entered, the omegas are computed for each group. The type argument
+#' is not evaluated if \code{model} is of classe \code{\link{lavaan}}.
 #'
-#' If \code{model} is specified and of class \code{\link{lavaan}},
-#' no other arguments need to be specified.
-#' If \code{model} is of class
-#' \code{\link{SL}} or \code{\link{schmid}}, only the argument \code{factor_corres}
-#' needs to be specified additionally. There is, however, the option to reproduce
-#' Watkins' Omega or \code{\link[psych:omega]{psych::omega}} results by setting the
-#' \code{type} argument to \code{"Watkins"} or \code{"psych"}.
-#' If \code{model = NULL} and \code{type = "EFAtools"}(default), the arguments
-#' \code{var_names}, \code{factor_corres}, \code{g_load}, \code{s_load}, and \code{u2}
-#' need to be specified.
-#' If \code{type = "psych"} or \code{type = "EFAtools"}, either \code{cormat}
-#' (recommended) or \code{Phi} and \code{pattern} must be specified.
-#' Additionally, the argument \code{factor_corres} should be left NULL to
-#' replicate \code{\link[psych:omega]{psych::omega}}
-#' results, where variable-to-factor correspondences are found by taking the highest
+#' If \code{model} is of class \code{\link{SL}} or \code{\link{schmid}} only the
+#' \code{type} and, depending on the type (see below), the \code{factor_corres}
+#' arguments need to be specified additionally. If model is of class
+#' \code{\link{schmid}} and \code{variance = "correlation"} (default), it is
+#' recommended to also provide the original correlation matrix in \code{cormat}
+#' to get more accurate results. Otherwise, the correlation matrix will be found
+#' based on the pattern matrix and Phi from the
+#' \code{\link[psych:schmid]{psych::schmid}} output
+#' using the \code{\link[psych:factor.model]{psych::factor.model}} function.
+#'
+#' If \code{model = NULL}, the arguments \code{type}, \code{factor_corres}
+#' (depending on the type, see below), \code{var_names}, \code{g_load}, \code{s_load},
+#' and \code{u2} and either \code{cormat} (recommended) or \code{Phi} and
+#' \code{pattern} need to be specified. If \code{Phi} and \code{pattern} are
+#' specified instead of \code{cormat}, the correlation matrix is found using
+#' the \code{\link[psych:factor.model]{psych::factor.model}} function.
+#'
+#' The only difference between \code{type = "EFAtools"} and \code{type = "psych"}
+#' is the determination of variable-to-factor correspondences. \code{type = "psych"}
+#' reproduces the \code{\link[psych:omega]{psych::omega}} results, where
+#' variable-to-factor correspondences are found by taking the highest
 #' group factor loading for each variable as the relevant group factor loading.
-#' If \code{type = "Watkins"}, the \code{u2} argument
-#' should be left \code{NULL} to replicate results from Watkins' Omega program, where
-#' uniquenesses are found based on the general factor loadings and relevant group factor
-#' loadings only. If, however, the argument \code{u2} is specified, the specified
-#' uniquenesses are taken, with a warning.
+#' To do this, \code{factor_corres} should be left \code{NULL}.
 #'
-#' @section Calculation of omega for different types:
+#' The calculation of the total variance (for the whole scale as well as the
+#' subscale composites) can also be controlled in this function using the
+#' \code{variance} argument. For both types---\code{"EFAtools"} and \code{"psych"}
+#' ---\code{variance} is set to \code{"correlation"} by default, which means that
+#' total variances are found using the correlation matrix. If
+#' \code{variance = "sums_load"} the total variance is calculated using the
+#' squared sums of general loadings and group factor loadings and the sum of the
+#' uniquenesses. This will only get comparable results to
+#' \code{variance = "correlation"} if no cross-loadings are present and simple
+#' structure is well-achieved in general with the SL solution (i.e., the
+#' uniquenesses should capture almost all of the variance not explained by the
+#' general and the variable's allocated group factor).
 #'
-#' The main differences between the types concern the calculation of the total
-#' variance (for the whole scale as well as the subscale composites) as well as
-#' the finding of variable-to-factor correspondences. The former aspect
-#' can also be controlled individually by specifying the variance argument, the
-#' latter by specifying the factor_corres argument.
-#' For \code{type = "EFAtools"}, total variances are found using the correlation
-#' matrix, and variable-to-factor correspondences have to be specified manually.
-#' The only difference for \code{type = "psych"} is that it takes the highest
-#' group factor loading for each variable as the relevant group factor loading.
-#' To mimik results from Watkins' Omega program, for \code{type = "Watkins"}
-#' for each variable only the general factor loading and the relevant group-factor
-#' loadings according to the specified variable-to-factor correspondences is
-#' taken into account. The other loadings are set to zero. Uniquenesses are found
-#' based on these two loadings per variable only and total variance is calculated
-#' based on all using the squared sums of general loadings and group factor loadings
-#' and the sum of these uniquenesses.
-#'
-#' @return A matrix with omegas for the whole scale and for the subscales.
+#' @return If found for an SL or \code{lavaan} bifactor solution for one group:
+#' A matrix with omegas for the whole scale and for the subscales.
 #' \item{tot}{Omega total.}
 #' \item{hier}{Omega hierarchical.}
 #' \item{sub}{Omega subscale.}
 #'
-#' @export
+#' If found for a \code{lavaan} single factor solution for one group:
+#' A vector with omega total for the single factor.
 #'
-#' @source
+#' If found for a \code{lavaan} output from a multiple group analysis: A list
+#' containing the output described above for each group.
+#'
+#' @source McDonald, R. P. (1978). Generalizability in factorable domains:‘‘Domain
+#' validity and generalizability’’. Educational and Psychological Measurement,
+#' 38, 75–79.
+#' @source McDonald, R. P. (1985). Factor analysis and related methods. Hillsdale,
+#' NJ: Erlbaum.
+#' @source McDonald, R. P. (1999). Test theory: A unified treatment. Mahwah,
+#' NJ: Erlbaum.
+#' @source Gignac, G. E. (2014). On the Inappropriateness of Using Items to
+#' Calculate Total Scale Score Reliability via Coefficient Alpha for Multidimensional
+#' Scales. European Journal of Psychological Assessment, 30, 130-139.
+#'
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -158,10 +178,22 @@
 #'
 #' ## Manually specify components (useful if omegas should be computed for a SL
 #' ## or bifactor solution found with another program)
-#' OMEGA()
+#' ## As an example, we extract the elements from an SL output here. This gives
+#' ## the same results as in the second example above.
+#'
+#' efa_mod <- EFA(IDS2_R, N = 1991, n_factors = 5, type = "EFAtools",
+#'                method = "PAF", rotation = "promax")
+#' sl_mod <- SL(efa_mod, type = "EFAtools", method = "PAF")
+#'
+#' OMEGA(model = NULL, type = "EFAtools", factor_corres = c(1, 1, 5, 5, 2, 2, 4,
+#'       4, 1, 1, 3, 3, 3, 4), var_names = rownames(sl_mod$sl),
+#'       g_load = sl_mod$sl[, "g"],
+#'       s_load = sl_mod$sl[, c("F1", "F2", "F3", "F4", "F5")],
+#'       u2 = sl_mod$sl[, "u2"], cormat = IDS2_R)
 #'
 OMEGA <- function(model = NULL, type = c("EFAtools", "psych"), g_name = NULL,
-                  factor_corres = NULL, var_names = NULL, fac_names = NULL,
+                  group_names = NULL, factor_corres = NULL,
+                  var_names = NULL, fac_names = NULL,
                   g_load = NULL, s_load = NULL, u2 = NULL, cormat = NULL,
                   pattern = NULL, Phi = NULL, variance = c("correlation",
                                                            "sums_load")){
@@ -181,7 +213,7 @@ OMEGA <- function(model = NULL, type = c("EFAtools", "psych"), g_name = NULL,
 
   if(all(class(model) == "lavaan")){
 
-    .OMEGA_LAVAAN(model = model, g_name = g_name)
+    .OMEGA_LAVAAN(model = model, g_name = g_name, group_names = group_names)
 
   } else if(all(class(model) == c("psych", "schmid")) || all(class(model) == "SL")) {
 

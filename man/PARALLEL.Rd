@@ -9,7 +9,6 @@ Crawford, A. V., Green, S. B., Levy, R., Lo, W. J., Scott, L., Svetina, D., & Th
 \usage{
 PARALLEL(
   x = NULL,
-  cors = TRUE,
   n_cases = NA,
   n_vars = NA,
   n_datasets = 1000,
@@ -17,7 +16,7 @@ PARALLEL(
   eigen_type = c("PAF", "PCA", "FA"),
   data_type = c("sim"),
   replace = TRUE,
-  na_action = c("pairwise.complete.obs", "everything", "all.obs", "complete.obs",
+  use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
     "na.or.complete"),
   decision_rule = c("Means", "Percentile", "Crawford"),
   criterion = 0.001,
@@ -29,9 +28,6 @@ PARALLEL(
 \item{x}{matrix or data.frame. The real data to compare the simulated eigenvalues
 against. Must not contain variables of classes other than numeric. Can be a
 correlation matrix or raw data.}
-
-\item{cors}{logical. Whether x is a correlation matrix (TRUE), or raw data.
-against. Must not contain variables of classes other than numeric.}
 
 \item{n_cases}{numeric. The number of cases / observations to simulate. Should only
 be specified if \code{x} is left as \code{NULL} as otherwise the dimensions are taken from \code{x}.}
@@ -58,10 +54,8 @@ for parallel analysis on simulated data.}
 \item{replace}{logical. Currently ignored. Whether, if \code{data_type = "resample"}, the
 resampling should be done with replacements or not. Default is \code{TRUE}.}
 
-\item{na_action}{character. What to do with \code{NA}s occurring in \code{x}. \code{"rm"}
-removes them list-wise. \code{"none"} returns a warning if \code{NA}s occur and
-in this case does not perform resampling, nor compares the the eigen values
-of \code{x} against the simulated ones.}
+\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
+is given as input. Default is "pairwise.complete.obs".}
 
 \item{decision_rule}{character. Which rule to use to determine the number of
 factors to retain. Default is \code{"mean"}, which will use the average

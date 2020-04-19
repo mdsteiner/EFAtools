@@ -4,9 +4,13 @@
 \alias{EFA}
 \title{Function to run PAF and obtain varimax or promax rotated loadings}
 \source{
-Grieder, S., & Steiner, M.D.(2019). Algorithmic Jingle Jungle: Comparison of Implementations of an EFA Procedure in R psych Versus SPSS, MacOrtho, and Omega. Submitted Manuscript.
+Grieder, S., & Steiner, M.D.(2020). Algorithmic Jingle Jungle:
+Comparison of Implementations of an EFA Procedure in R psych Versus SPSS,
+MacOrtho, and Omega. Submitted Manuscript.
 
-Hendrickson, A. E., & White, P. O. (1964). Promax: A quick method for rotation to oblique simple structure. British Journal of Statistical Psychology, 17 , 65–70. doi: 10.1111/j.2044-8317.1964.tb00244.x
+Hendrickson, A. E., & White, P. O. (1964). Promax: A quick method for
+rotation to oblique simple structure. British Journal of Statistical Psychology,
+17 , 65–70. doi: 10.1111/j.2044-8317.1964.tb00244.x
 
 Lorenzo-Seva, U., Timmerman, M. E., & Kiers, H. A. L. (2011). The
 Hull Method for Selecting the Number of Common Factors, Multivariate Behavioral
@@ -63,7 +67,7 @@ an orthogonal rotation ("varimax", "equamax", "quartimax", "geominT",
 used, and the following arguments with default NULL are left with
 NULL, these implementations are executed according to the respective program
 ("psych" and "SPSS") or according to the best solution found in Grieder &
-Steiner (2020; "EFAtools). Individual properties can be adapted using one of
+Steiner (2020; "EFAtools"). Individual properties can be adapted using one of
 the three types and specifying some of the following arguments. If set to
 "none" additional arguments must be specified depending on the \code{method}
 and \code{rotation} used (see details).}
@@ -180,15 +184,16 @@ except varimax and promax, the \code{\link{GPArotation}} package is needed.
 There are two main ways to use this function. The easiest way is to
 use it with a specified \code{type} (see above), which sets most of the other
 arguments accordingly. Another way is to use it more flexibly by explicitly
-specifying all arguments used and set \code{type} to "none". A mix of the two
-can also be done by specifing a \code{type} as well as additional arguments.
-However, this will throw warnings to avoid unintentional deviations from the
-implementations according to the specified \code{type}.
+specifying all arguments used and set \code{type} to "none" (see examples).
+A mix of the two can also be done by specifing a \code{type} as well as
+additional arguments. However, this will throw warnings to avoid unintentional
+deviations from the implementations according to the specified \code{type}.
 
+The \code{type} argument is evaluated for PAF and for all rotations (mainly
+important for the varimax and promax rotations. The type-specific settings
+for these functions are detailed below.
 
-
-PAF
-Values of \code{init_comm}, \code{criterion}, \code{criterion_type},
+For PAF, the values of \code{init_comm}, \code{criterion}, \code{criterion_type},
 \code{abs_eigen} depend on the \code{type} argument.
 \code{type = "EFAtools"} will use the following argument specification:
 \code{init_comm = "smc", criterion = 1e-9, criterion_type = "max_individual",
@@ -199,26 +204,13 @@ abs_eigen = FALSE}.
 \code{type = "SPSS"} will use the following argument specification:
 \code{init_comm = "smc", criterion = .001, criterion_type = "max_individual",
 abs_eigen = TRUE}.
+If SMC's fail, SPSS takes "mac". However, as SPSS takes absolute eigenvalues,
+this is hardly ever the case. Psych, on the other hand, takes "unity" if SMCs
+fail.
+SAY WHAT EFATOOLS TYPE DOES!
 
-PROMAX
-\code{type = "EFAtools"} will use the following argument specification:
-\code{P_type = "unnorm", precision = 1e-10, order_type = "eigen", k = 3}.
-\code{type = "psych"} will use the following argument specification:
-\code{P_type = "unnorm", precision = 1e-5, order_type = "eigen", k = 4}.
-\code{type = "SPSS"} will use the following argument specification:
-\code{P_type = "norm", precision = 1e-10, order_type = "ss_factors", k = 4}.
-
-#' The \code{P_type} argument can take two values, "unnorm" and "norm". It controls
-which formula is used to compute the target matrix P in the promax rotation.
-"unnorm" uses the formula from Hendrickson and White (1964), specifically:
-\code{P <- abs(A^(k + 1)) / A},
-where A is the unnormalized matrix containing varimax rotated loadings.
-"SPSS" uses the normalized varimax rotated loadings. Specifically it used the
-following formula, which can be found in the SPSS 23 Algorithms
-manual:
-\code{P <- abs(A / sqrt(rowSums(A^2))) ^(k + 1) * (sqrt(rowSums(A^2)) / A)}
-
-VARIMAX:
+For varimax, the values of \code{precision} and \code{order_type} depend on
+the \code{type} argument.
 \code{type = "EFAtools"} will use the following argument specification:
 \code{precision = 1e-10, order_type = "eigen"}.
 \code{type = "psych"} will use the following argument specification:
@@ -226,23 +218,75 @@ VARIMAX:
 \code{type = "SPSS"} will use the following argument specification:
 \code{precision = 1e-10, order_type = "ss_factors"}.
 
-type no effect on uls and ml and all other rotations except varimax and promax.
-write which arguments necessary for these.
+For promax, the values of \code{P_type}, \code{precision},
+\code{order_type}, and \code{k} depend on the \code{type} argument.
+\code{type = "EFAtools"} will use the following argument specification:
+\code{P_type = "unnorm", precision = 1e-10, order_type = "eigen", k = 3}.
+\code{type = "psych"} will use the following argument specification:
+\code{P_type = "unnorm", precision = 1e-5, order_type = "eigen", k = 4}.
+\code{type = "SPSS"} will use the following argument specification:
+\code{P_type = "norm", precision = 1e-10, order_type = "ss_factors", k = 4}.
+
+The \code{P_type} argument can take two values, "unnorm" and "norm". It controls
+which formula is used to compute the target matrix P in the promax rotation.
+"unnorm" uses the formula from Hendrickson and White (1964), specifically:
+\code{P <- abs(A^(k + 1)) / A},
+where A is the unnormalized matrix containing varimax rotated loadings.
+"SPSS" uses the normalized varimax rotated loadings. Specifically it used the
+following formula, which can be found in the SPSS 23 Algorithms manual:
+\code{P <- abs(A / sqrt(rowSums(A^2))) ^(k + 1) * (sqrt(rowSums(A^2)) / A)}
+
+For all other rotations except varimax and promax, the \code{type} argument
+only controls the \link{order_type} argument with the same values as stated
+above for the varimax and promax rotations. For these other rotations, the
+\link{GPArotation} package is needed. Additional arguments can also be
+specified and will be passed to the GPArotation function (e.g., maxit to
+change the maximum number of iterations for the rotation procedure).
+
+The \code{type} argument has no effect on ULS and ML. For ULS, no additional
+arguments are needed. For ML, an additional argument
+\code{start_method} is needed to determine the starting values for the
+optimization prodedure. Default for this argument is "factanal" which takes
+the starting values specified in the \link{stats}{factanal} function.
 }
 \examples{
-ADD EXAMPLE FOR type = "none"
-ADD EXAMPLES FOR OTHER FITMETHODS
-ADD EXAMPLES FOR OTHER ROTATION METHODS
+# A type EFAtools (as presented in Steiner and Grieder, 2020) EFA
+EFA_EFAtools_PAF <- EFA(IDS2_R, n_factors = 5, N = 1991, type = "EFAtools",
+                        method = "PAF", rotation = "none")
 
-# A type EFAtools (as presented in Steiner and Grieder, 2019) EFA
-EFA_EFAtools_5 <- EFA(IDS2_R, n_factors = 5, type = "EFAtools", method = "PAF",
-                      rotation = "none")
-
-# A type SPSS EFA to mimick the SPSS implementation
-EFA_SPSS_5 <- EFA(IDS2_R, n_factors = 5, type = "SPSS", method = "PAF",
+# A type SPSS EFA to mimick the SPSS implementation (this will throw a warning,
+# see below)
+EFA_SPSS_PAF <- EFA(IDS2_R, n_factors = 5, N = 1991, type = "SPSS", method = "PAF",
                   rotation = "none")
 
+# The default maximum number of iterations was too small. Set max_iter to 1000
+# to reach convergence (this will throw a warning)
+EFA_SPSS_PAF <- EFA(IDS2_R, n_factors = 5, N = 1991, type = "SPSS", method = "PAF",
+                  rotation = "none", max_iter = 1000)
+
 # A type psych EFA to mimick the psych::fa() implementation
-EFA_psych_5 <- EFA(IDS2_R, n_factors = 5, type = "psych", method = "PAF",
+EFA_psych_PAF <- EFA(IDS2_R, n_factors = 5, N = 1991, type = "psych", method = "PAF",
                    rotation = "none")
+
+# Use ML instead of PAF with type EFAtools
+EFA_EFAtools_ML <- EFA(IDS2_R, n_factors = 5, N = 1991, type = "EFAtools",
+                       method = "ML", rotation = "none")
+
+# Use oblimin rotation instead of no rotation with type EFAtools
+EFA_EFAtools_Pro <- EFA(IDS2_R, n_factors = 5, N = 1991, type = "EFAtools",
+                        method = "PAF", rotation = "oblimin")
+
+# Do a PAF without rotation without specifying a type, so the arguments
+# can be flexibly specified (this is only recommended if you know what your doing)
+EFA_none_PAF <- EFA(IDS2_R, n_factors = 5, N = 1991, type = "none", method = "PAF",
+                    rotation = "none", max_iter = 500, init_comm = "mac",
+                    criterion = 1e4, criterion_type = "sums", abs_eigen = FALSE)
+
+# Add a promax rotation
+EFA_none_PAF <- EFA(IDS2_R, n_factors = 5, type = "none", N = 1991, method = "PAF",
+                    rotation = "promax", max_iter = 500, init_comm = "mac",
+                    criterion = 1e4, criterion_type = "sums", abs_eigen = FALSE,
+                    k = 3, P_type = "unnorm", precision= 1e-5, order_type =
+                    "eigen")
+
 }

@@ -92,7 +92,8 @@
 }
 
 
-.get_compare_matrix <- function(x, digits = 3, r_red = .001, n_char = 10) {
+.get_compare_matrix <- function(x, digits = 3, r_red = .001, n_char = 10,
+                                var_names = NULL, gof = FALSE) {
 
   # create factor names to display
   factor_names <- colnames(x)
@@ -106,9 +107,14 @@
     factor_names[which(fn_nchar > digits + 2)] , 1, digits + 2)
   factor_names <- stringr::str_pad(factor_names, digits + 2, side = "both")
 
-  var_names <- rownames(x)
-  if (is.null(var_names)) {
-    var_names <- paste0("V", 1:nrow(x))
+  if(gof == FALSE){
+
+  if(is.null(var_names)) {
+    if(is.null(rownames(x))){
+      var_names <- paste0("V", 1:nrow(x))
+    } else {
+    var_names <- rownames(x)
+    }
   }
 
   max_char <- max(sapply(var_names, nchar))
@@ -121,6 +127,8 @@
   }
 
   var_names <- stringr::str_pad(var_names, max_char, side = "right")
+
+  }
 
   n_col <- ncol(x)
 
@@ -148,10 +156,17 @@
                 }, cutoff = r_red, n_col = n_col, digits = digits, x = x,
                 vn = var_names)
 
-  factor_names <- stringr::str_c(factor_names,
-                                 collapse = "\t")
-  factor_names <- crayon::blue(stringr::str_c( stringr::str_pad(" ", max_char),
-                                               "\t", factor_names))
+  factor_names <- stringr::str_c(factor_names, collapse = "\t")
+
+  if(gof == TRUE){
+
+    factor_names <- crayon::blue(stringr::str_c(factor_names))
+
+  } else {
+
+    factor_names <- crayon::blue(stringr::str_c( stringr::str_pad(" ", max_char),
+                                                   "\t", factor_names))
+  }
 
 
   temp <- stringr::str_c(temp, collapse = "\n")
@@ -160,6 +175,7 @@
 
 
   temp <- stringr::str_c(temp, "\n")
+
   # print the results to the console
 
   temp

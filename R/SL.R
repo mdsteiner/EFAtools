@@ -15,7 +15,7 @@
 #' x can also be a pattern matrix from an oblique factor solution (see \code{Phi}).
 #' @param Phi matrix. A matrix of factor intercorrelations from an oblique factor
 #' solution. Only needs to be specified if a pattern matrix is entered directly
-#' into x}.
+#' into \code{x}.
 #' @param type character. One of "EFAtools" (default), "psych", "SPSS", or "none".
 #' This is used to control the procedure of the second order factor analysis. See
 #' \code{\link{EFA}} for details.
