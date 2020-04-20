@@ -304,7 +304,15 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   R_i <- try(solve(R))
 
   if (class(R_i) == "try-error") {
-    stop("Matrix is singular, factor analysis is not possible")
+    stop("Correlation matrix is singular, factor analysis is not possible")
+  }
+
+  # Check if correlation matrix is positive definite, if it is not, give a
+  # warning and smooth the matrix
+  if (any(eigen(R, symmetric = TRUE, only.values = TRUE)$values <= 0)) {
+
+    R <- psych::cor.smooth(R)
+
   }
 
   # run factor analysis with respective fit method

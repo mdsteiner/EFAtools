@@ -1,4 +1,4 @@
-#' Print SLLOADINGS objecgt
+#' Print SLLOADINGS object
 #'
 #' @param x class SLLOADINGS matrix.
 #' @param cutoff numeric. The number above which to print loadings in bold

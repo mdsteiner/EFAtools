@@ -79,12 +79,14 @@ KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
   R_i <- try(solve(R))
 
   if (class(R_i) == "try-error") {
-    stop("Matrix is singular, KMO cannot be computed")
+    stop("Correlation matrix is singular, KMO cannot be computed")
   }
 
   # Check if correlation matrix is positive definite
-  if(any(eigen(R)$values <= 0)){
-    stop("Matrix is not positive definite, KMO cannot be computed")
+  if(any(eigen(R, symmetric = TRUE, only.values = TRUE)$values <= 0)){
+
+    R <- psych::cor.smooth(R)
+
   }
 
   # Start computations
@@ -104,6 +106,10 @@ KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
   } else if(!is.null(rownames(R))) {
 
     names(KMO_i) <- rownames(R)
+
+  } else {
+
+    names(KMO_i) <- paste0("V", 1:ncol(R))
 
   }
 

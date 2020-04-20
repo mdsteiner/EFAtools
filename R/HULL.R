@@ -115,7 +115,14 @@ HULL <- function(x, n_cases = NA, n_factors = NA,
   R_i <- try(solve(R))
 
   if (class(R_i) == "try-error") {
-    stop("Matrix is singular, the HULL method cannot be exectued")
+    stop("Correlation matrix is singular, the HULL method cannot be exectued")
+  }
+
+  # Check if correlation matrix is positive definite
+  if(any(eigen(R)$values <= 0)){
+
+    R <- psych::cor.smooth(R)
+
   }
 
   m <- ncol(R)

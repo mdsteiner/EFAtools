@@ -154,19 +154,29 @@ PARALLEL <- function(x = NULL,
       R_i <- try(solve(R))
 
       if (class(R_i) == "try-error") {
-        stop("Matrix is singular, parallel analysis is not possible")
+        stop("Correlation matrix is singular, parallel analysis is not possible")
       }
+
+      # Check if correlation matrix is positive definite
+      if(any(eigen(R)$values <= 0)){
+
+        R <- psych::cor.smooth(R)
+
+        }
 
 
       if (eigen_type == "PAF") {
         # compute smcs
         diag(R) <- 1 - (1 / diag(solve(R)))
-        eigvals_real <- matrix(eigen(R, symmetric = TRUE)$values, ncol = 1)
+        eigvals_real <- matrix(eigen(R, symmetric = TRUE,
+                                     only.values = TRUE)$values, ncol = 1)
       } else if (eigen_type == "PCA") {
-        eigvals_real <- matrix(eigen(R, symmetric = TRUE)$values, ncol = 1)
+        eigvals_real <- matrix(eigen(R, symmetric = TRUE,
+                                     only.values = TRUE)$values, ncol = 1)
       } else if (eigen_type == "FA") {
-        eigvals_real <- matrix(parallel_paf(R, criterion, ifelse(criterion_type == "sums",
-                                                          2, 1), max_iter), ncol = 1)
+        eigvals_real <- matrix(parallel_paf(R, criterion,
+                                            ifelse(criterion_type == "sums", 2, 1),
+                                            max_iter), ncol = 1)
       }
 
 

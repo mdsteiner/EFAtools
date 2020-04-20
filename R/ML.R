@@ -28,9 +28,14 @@ ML <- function(x, n_factors, N = NA, start_method = c("factanal", "psych")) {
   if (!is.null(colnames(orig_R))) {
     # name the loading matrix so the variables can be identified
     rownames(L) <- colnames(orig_R)
+  } else {
+    varnames <- paste0("V", 1:ncol(orig_R))
+    colnames(orig_R) <- varnames
+    rownames(orig_R) <- varnames
+    rownames(L) <- varnames
   }
 
-  colnames(L) <- paste0("ML", 1:n_factors)
+  colnames(L) <- paste0("F", 1:n_factors)
 
   vars_accounted <- .compute_vars(L_unrot = L, L_rot = L)
 
@@ -47,10 +52,14 @@ ML <- function(x, n_factors, N = NA, start_method = c("factanal", "psych")) {
     start_method = start_method
   )
 
+  # Create and name communalities
+  h2 <-  diag(L %*% t(L))
+  names(h2) <- colnames(orig_R)
 
+  # Create output
   output <- list(
     orig_R = orig_R,
-    h2 = diag(L %*% t(L)),
+    h2 = h2,
     orig_eigen = eigen(orig_R, symmetric = TRUE)$values,
     final_eigen = eigen(R, symmetric = TRUE)$values,
     iter = ml$res$counts[1],
@@ -60,10 +69,6 @@ ML <- function(x, n_factors, N = NA, start_method = c("factanal", "psych")) {
     fit_indices = fit_ind,
     settings = settings
   )
-
-  class(output$h2) <- "COMMUNALITIES"
-  class(output$orig_eigen) <- "EIGEN"
-  class(output$final_eigen) <- "EIGEN"
 
   output
 }

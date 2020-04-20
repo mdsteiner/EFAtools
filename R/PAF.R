@@ -226,6 +226,11 @@ PAF <- function(x, n_factors, N = NA, max_iter = NULL,
   if (!is.null(colnames(orig_R))) {
     # name the loading matrix so the variables can be identified
     rownames(L) <- colnames(orig_R)
+  } else {
+    varnames <- paste0("V", 1:ncol(orig_R))
+    colnames(orig_R) <- varnames
+    rownames(orig_R) <- varnames
+    rownames(L) <- varnames
   }
 
   colnames(L) <- paste0("F", 1:m)
@@ -249,7 +254,11 @@ PAF <- function(x, n_factors, N = NA, max_iter = NULL,
     abs_eigen = abs_eigen
   )
 
+  # Name communalities
+  names(h2) <- colnames(orig_R)
+  names(h2_init) <- colnames(orig_R)
 
+  # Create output
   output <- list(
     orig_R = orig_R,
     h2_init = h2_init,
@@ -263,12 +272,6 @@ PAF <- function(x, n_factors, N = NA, max_iter = NULL,
     fit_indices = fit_ind,
     settings = settings
   )
-
-  class(output$h2_init) <- "COMMUNALITIES"
-  class(output$h2) <- "COMMUNALITIES"
-  class(output$orig_eigen) <- "EIGEN"
-  class(output$init_eigen) <- "EIGEN"
-  class(output$final_eigen) <- "EIGEN"
 
   output
 

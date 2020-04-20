@@ -2,7 +2,7 @@
 % Please edit documentation in R/print.SLLOADINGS.R
 \name{print.SLLOADINGS}
 \alias{print.SLLOADINGS}
-\title{Print SLLOADINGS objecgt}
+\title{Print SLLOADINGS object}
 \usage{
 \method{print}{SLLOADINGS}(x, cutoff = 0.2, digits = 3, ...)
 }
@@ -21,5 +21,5 @@ to round the loadings to (default is 3).}
 A string created using the crayon package
 }
 \description{
-Print SLLOADINGS objecgt
+Print SLLOADINGS object
 }

@@ -72,12 +72,14 @@ BARTLETT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   R_i <- try(solve(R))
 
   if (class(R_i) == "try-error") {
-    stop("Matrix is singular, Bartletts test cannot be executed")
+    stop("Correlation matrix is singular, Bartletts test cannot be executed")
   }
 
   # Check if correlation matrix is positive definite
-  if(any(eigen(R)$values <= 0)){
-    stop("Matrix is not positive definite, Bartletts test cannot be executed")
+  if(any(eigen(R, symmetric = TRUE, only.values = TRUE)$values <= 0)){
+
+    R <- psych::cor.smooth(R)
+
   }
 
   # Calculate test statistic
