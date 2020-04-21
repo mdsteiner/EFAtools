@@ -45,7 +45,7 @@ print.PARALLEL <- function(x, ...) {
   } else {
 
     cat("\n")
-    cat("No data was entered to base number on factors on. Showing simulated eigenvalues:")
+    cat("No data was entered to base number of factors on. Showing simulated eigenvalues:")
     cat("\n")
     cat("\n")
     print(x$eigenvalues)
