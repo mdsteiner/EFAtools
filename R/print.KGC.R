@@ -7,6 +7,8 @@
 #' @method print PARALLEL
 #'
 #' @examples
+#' KGC(IDS2_R)
+#'
 print.KGC <- function(x, ...) {
 
   cat("\n")

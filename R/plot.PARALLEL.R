@@ -1,6 +1,6 @@
 #' Plot PARALLEL object
 #'
-#' Plot Method showing a summarized output of the \link{PARALLEL} function
+#' Plot method showing a summarized output of the \link{PARALLEL} function
 #'
 #' @param x list of class PARALLEL. An output from the \link{PARALLEL} function.
 #' @param ... not used.

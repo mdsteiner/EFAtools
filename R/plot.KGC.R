@@ -1,3 +1,17 @@
+#' Plot KGC object
+#'
+#' Plot method showing a summarized output of the \link{KGC} function
+#'
+#' @param x list of class KGC. An output from the \link{KGC} function.
+#' @param ... not used.
+#'
+#' @export
+#' @method plot KGC
+#'
+#' @examples
+#' x <- KGC(IDS2_R)
+#' plot(x)
+#'
 plot.KGC <- function(x, ...) {
 
   eigvls <- x$eigenvalues
