@@ -44,8 +44,8 @@
 #' @source Cureton, E. E. & DeAugustino, R. B. (1983). Factor analysis: An
 #'  applied approach. Hillsdale, N.J.: Lawrence Erlbaum Associates, Inc.
 #'
-#' @examples
-#' KMO(IDS2_R)
+#' @example
+#' KMO(test_models$baseline$cormat)
 #'
 KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
                            "everything", "na.or.complete")) {

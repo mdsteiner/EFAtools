@@ -200,43 +200,39 @@
 #'
 #' @examples
 #' # A type EFAtools (as presented in Steiner and Grieder, 2020) EFA
-#' EFA_EFAtools_PAF <- EFA(IDS2_R, n_factors = 5, N = 1991, type = "EFAtools",
-#'                         method = "PAF", rotation = "none")
+#' EFAtools_PAF <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
+#'                     type = "EFAtools", method = "PAF", rotation = "none")
 #'
 #' # A type SPSS EFA to mimick the SPSS implementation (this will throw a warning,
 #' # see below)
-#' EFA_SPSS_PAF <- EFA(IDS2_R, n_factors = 5, N = 1991, type = "SPSS", method = "PAF",
-#'                   rotation = "none")
-#'
-#' # The default maximum number of iterations was too small. Set max_iter to 1000
-#' # to reach convergence (this will throw a warning)
-#' EFA_SPSS_PAF <- EFA(IDS2_R, n_factors = 5, N = 1991, type = "SPSS", method = "PAF",
-#'                   rotation = "none", max_iter = 1000)
+#' SPSS_PAF <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
+#'                 type = "SPSS", method = "PAF", rotation = "none")
 #'
 #' # A type psych EFA to mimick the psych::fa() implementation
-#' EFA_psych_PAF <- EFA(IDS2_R, n_factors = 5, N = 1991, type = "psych", method = "PAF",
-#'                    rotation = "none")
+#' psych_PAF <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
+#'                  type = "psych", method = "PAF", rotation = "none")
 #'
 #' # Use ML instead of PAF with type EFAtools
-#' EFA_EFAtools_ML <- EFA(IDS2_R, n_factors = 5, N = 1991, type = "EFAtools",
-#'                        method = "ML", rotation = "none")
+#' EFAtools_ML <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
+#'                    type = "EFAtools", method = "ML", rotation = "none")
 #'
 #' # Use oblimin rotation instead of no rotation with type EFAtools
-#' EFA_EFAtools_Pro <- EFA(IDS2_R, n_factors = 5, N = 1991, type = "EFAtools",
-#'                         method = "PAF", rotation = "oblimin")
+#' EFAtools_oblim <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
+#'                       type = "EFAtools", method = "PAF", rotation = "oblimin")
 #'
 #' # Do a PAF without rotation without specifying a type, so the arguments
 #' # can be flexibly specified (this is only recommended if you know what your doing)
-#' EFA_none_PAF <- EFA(IDS2_R, n_factors = 5, N = 1991, type = "none", method = "PAF",
-#'                     rotation = "none", max_iter = 500, init_comm = "mac",
-#'                     criterion = 1e4, criterion_type = "sums", abs_eigen = FALSE)
+#' PAF_none <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
+#'                 type = "none", method = "PAF", rotation = "none", max_iter = 500,
+#'                 init_comm = "mac", criterion = 1e4, criterion_type = "sums",
+#'                 abs_eigen = FALSE)
 #'
 #' # Add a promax rotation
-#' EFA_none_PAF <- EFA(IDS2_R, n_factors = 5, type = "none", N = 1991, method = "PAF",
-#'                     rotation = "promax", max_iter = 500, init_comm = "mac",
-#'                     criterion = 1e4, criterion_type = "sums", abs_eigen = FALSE,
-#'                     k = 3, P_type = "unnorm", precision= 1e-5, order_type =
-#'                     "eigen")
+#' PAF_pro <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
+#'                type = "none", method = "PAF", rotation = "none", max_iter = 500,
+#'                init_comm = "mac", criterion = 1e4, criterion_type = "sums",
+#'                abs_eigen = FALSE, k = 3, P_type = "unnorm", precision= 1e-5,
+#'                order_type = "eigen")
 #'
 EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                 rotation = c("none", "varimax", "equamax", "quartimax", "geominT",
@@ -251,25 +247,6 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                 k = NULL, kaiser = TRUE, P_type = NULL, precision = NULL,
                 order_type = NULL, start_method = c("factanal", "psych"),
                 ...) {
-
-  # # for testing
-  # x <- IDS2_R
-  # N <- 1991
-  # n_factors <- 5
-  # method <- "PAF"
-  # rotation <- "promax"
-  # type = "EFAtools"
-  # use = "pairwise.complete.obs"
-  # kaiser = TRUE
-  # max_iter = NULL
-  # init_comm = NULL
-  # criterion = NULL
-  # criterion_type = NULL
-  # abs_eigen = NULL
-  # k = NULL
-  # precision = NULL
-  # P_type = NULL
-  # order_type = NULL
 
   method <- match.arg(method)
   rotation <- match.arg(rotation)
@@ -301,11 +278,11 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   }
 
   # Check if correlation matrix is invertable, if it is not, stop with message
-  R_i <- try(solve(R))
-
-  if (class(R_i) == "try-error") {
-    stop("Correlation matrix is singular, factor analysis is not possible")
-  }
+  # R_i <- try(solve(R))
+  #
+  # if (class(R_i) == "try-error") {
+  #   stop("Correlation matrix is singular, factor analysis is not possible")
+  # }
 
   # Check if correlation matrix is positive definite, if it is not, give a
   # warning and smooth the matrix

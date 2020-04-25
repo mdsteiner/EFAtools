@@ -4,10 +4,11 @@
 #' @param ... Further arguments for print.
 #'
 #' @export
-#' @method print PARALLEL
+#' @method print KGC
 #'
 #' @examples
-#' KGC(IDS2_R)
+#' KGC_base <- KGC(test_models$baseline$cormat, eigen_type = "PCA")
+#' KGC_base
 #'
 print.KGC <- function(x, ...) {
 

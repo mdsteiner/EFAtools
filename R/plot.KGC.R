@@ -2,15 +2,15 @@
 #'
 #' Plot method showing a summarized output of the \link{KGC} function
 #'
-#' @param x list of class KGC. An output from the \link{KGC} function.
+#' @param x a list of class KGC. An output from the \link{KGC} function.
 #' @param ... not used.
 #'
 #' @export
 #' @method plot KGC
 #'
 #' @examples
-#' x <- KGC(IDS2_R)
-#' plot(x)
+#' KGC_base <- KGC(test_models$baseline$cormat, eigen_type = "PCA")
+#' plot(KGC_base)
 #'
 plot.KGC <- function(x, ...) {
 
@@ -20,13 +20,14 @@ plot.KGC <- function(x, ...) {
   graphics::plot.new()
   graphics::plot.window(xlim = c(1, x_len),
                         ylim = c(min(eigvls) - .2,
-                                 max(eigvls) + .2))
+                                 max(eigvls) + .5))
   graphics::axis(1, 1:x_len)
   graphics::axis(2, round(seq(min(eigvls) - .2,
                               max(eigvls) + .2,
                               round(diff(c(min(eigvls) - .2,
                                            max(eigvls)) + .2) / 6, 1)), 1),
                  las = 1)
+
   graphics::mtext("Indicators", side = 1, line = 3, cex = 1.5, padj =-.5)
   graphics::mtext("Eigenvalues", side = 2, line = 3, cex = 1.5, padj =.5)
 

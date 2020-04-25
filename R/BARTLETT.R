@@ -37,7 +37,7 @@
 #' @export
 #'
 #' @examples
-#' BARTLETT(IDS2_R, N = 1991)
+#' BARTLETT(test_models$baseline$cormat, N = 500)
 #'
 BARTLETT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
                                         "complete.obs", "everything",

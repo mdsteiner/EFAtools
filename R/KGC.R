@@ -1,5 +1,7 @@
 #' Kaiser-Guttman Criterion
 #'
+#' DESCRIBE
+#'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
 #' correlations.
 #' @param eigen_type character. On what the eigenvalues should be found. Can be
@@ -29,8 +31,8 @@
 #'
 #' @export
 #'
-#' @examples
-#' KGC(IDS2_R, eigen_type = "PCA")
+#' @example
+#' KGC(test_models$baseline$cormat, eigen_type = "PCA")
 #'
 KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
                 use = c("pairwise.complete.obs", "all.obs", "complete.obs",

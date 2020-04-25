@@ -7,6 +7,11 @@
 #' @method print KMO
 #'
 #' @export
+#'
+#' @example
+#' KMO_base <- KMO(test_models$baseline$cormat)
+#' KMO_base
+#'
 print.KMO <- function(x, ...) {
 
   KMO <- x$KMO
