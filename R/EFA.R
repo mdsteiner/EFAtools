@@ -278,14 +278,14 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   }
 
   # Check if correlation matrix is invertable, if it is not, stop with message
-  # R_i <- try(solve(R))
-  #
-  # if (class(R_i) == "try-error") {
-  #   stop("Correlation matrix is singular, factor analysis is not possible")
-  # }
+  R_i <- try(solve(R))
 
-  # Check if correlation matrix is positive definite, if it is not, give a
-  # warning and smooth the matrix
+  if (class(R_i) == "try-error") {
+    stop("Correlation matrix is singular, no further analyses are performed")
+  }
+
+  # Check if correlation matrix is positive definite, if it is not,
+  # smooth the matrix (cor.smooth throws a warning)
   if (any(eigen(R, symmetric = TRUE, only.values = TRUE)$values <= 0)) {
 
     R <- psych::cor.smooth(R)

@@ -10,6 +10,12 @@
 #' @return A string created using the crayon package
 #' @method print SLLOADINGS
 #' @export
+#'
+#' @examples
+#' EFA_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
+#'                type = "EFAtools", method = "PAF", rotation = "promax")
+#' SL(EFA_mod, type = "EFAtools", method = "PAF")
+#'
 print.SLLOADINGS <- function(x, cutoff = .2, digits = 3, ...) {
 
   # create factor names to display

@@ -58,14 +58,14 @@
 #'
 #' @examples
 #' ## Use with an output from the EFAtools::EFA function, both with type EFAtools
-#' EFA_mod <- EFA(IDS2_R, N = 1991, n_factors = 5, type = "EFAtools",
-#'                method = "PAF", rotation = "promax")
+#' EFA_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
+#'                type = "EFAtools", method = "PAF", rotation = "promax")
 #' SL_EFAtools <- SL(EFA_mod, type = "EFAtools", method = "PAF")
 #'
 #' \dontrun{
 #' ## Use with an output from the psych::fa function with type psych in SL
-#' fa_mod <- psych::fa(IDS2_R, nfactors = 5, n.obs = 1991, fm = "pa",
-#'                     rotate = "Promax")
+#' fa_mod <- psych::fa(test_models$baseline$cormat, nfactors = 3, n.obs = 500,
+#'                     fm = "pa", rotate = "Promax")
 #' SL_psych <- SL(fa_mod, type = "psych", method = "PAF")
 #' }
 #'
@@ -75,8 +75,8 @@
 #'
 #' ## For demonstration, take pattern matrix and phi from an EFA output
 #' ## This gives the same solution as the first example
-#' EFA_mod <- EFA(IDS2_R, N = 1991, n_factors = 5, type = "EFAtools",
-#'                method = "PAF", rotation = "promax")
+#' EFA_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
+#'                type = "EFAtools", method = "PAF", rotation = "promax")
 #' SL_flex <- SL(EFA_mod$rot_loadings, Phi = EFA_mod$Phi, type = "EFAtools",
 #'               method = "PAF")
 #'

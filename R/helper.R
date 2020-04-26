@@ -354,7 +354,7 @@
 # Checks if x is a correlation matrix
 .is_cormat <- function(x){
 
-  if(nrow(x) == ncol(x) && as.integer(sum(diag(x))) == nrow(x) &&
+  if(nrow(x) == ncol(x) && round(sum(diag(x))) == nrow(x) &&
      all(x >= (-1 + .Machine$double.eps * 100)) &&
      all(x <= (1 + .Machine$double.eps * 100))){
 
