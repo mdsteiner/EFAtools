@@ -12,13 +12,20 @@
 #'
 print.KGC <- function(x, ...) {
 
+  nfac <- x$n_factors
+
   cat("\n")
   cat("Eigenvalues were found using", crayon::bold(x$settings$eigen_type))
   cat("\n")
   cat("\n")
 
-  cat("Kaiser-Guttmann criterion suggests", crayon::bold(x$n_factors), "factors")
+  if(nfac == 1){
+  cat("Kaiser-Guttmann criterion suggests", crayon::bold(nfac), "factor")
   cat("\n")
+  } else {
+    cat("Kaiser-Guttmann criterion suggests", crayon::bold(nfac), "factors")
+    cat("\n")
+  }
 
   graphics::plot(x)
 
