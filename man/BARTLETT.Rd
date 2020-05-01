@@ -53,6 +53,6 @@ This function was heavily influenced by the
 from the psych package.
 }
 \examples{
-BARTLETT(IDS2_R, N = 1991)
+BARTLETT(test_models$baseline$cormat, N = 500)
 
 }

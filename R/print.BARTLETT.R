@@ -3,7 +3,6 @@
 #' @param x list of class BARTLETT (output from the \link{BARTLETT} function)
 #' @param ... additional arguments passed to print
 #'
-#' @return
 #' @method print BARTLETT
 #'
 #' @export
@@ -11,6 +10,7 @@
 #' @examples
 #' bart <- BARTLETT(test_models$baseline$cormat, N = 500)
 #' bart
+#'
 print.BARTLETT <- function(x, ...) {
 
   pval <- x$p_value

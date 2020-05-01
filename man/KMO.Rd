@@ -60,7 +60,3 @@ function from the psych package.
 See also \code{\link[EFAtools:BARTLETT]{EFAtools:BARTLETT}} for another test
 of suitability for factor analysis.
 }
-\examples{
-KMO(IDS2_R)
-
-}

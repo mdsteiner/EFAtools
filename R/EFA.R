@@ -1,4 +1,4 @@
-#' Function to run PAF and obtain varimax or promax rotated loadings
+#' Function to perform exploratory factor analyses (EFA)
 #'
 #' This is a function does an EFA with either \code{\link{PAF}}, \code{\link{ML}},
 #' or \code{\link{ULS}} with or without subsequent rotation.

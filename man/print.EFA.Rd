@@ -15,7 +15,8 @@
 Print Method showing a summarized output of the EFA procedure.
 }
 \examples{
-EFA_EFAtools_PAF <- EFA(IDS2_R, n_factors = 5, N = 1991, type = "EFAtools",
-                        method = "PAF", rotation = "promax")
-EFA_EFAtools_PAF
+EFAtools_PAF <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
+                    type = "EFAtools", method = "PAF", rotation = "promax")
+EFAtools_PAF
+
 }

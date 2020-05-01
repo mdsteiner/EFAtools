@@ -237,14 +237,14 @@
 
 # Omega function to use with lavaan bifactor output as input-------
 
-.OMEGA_LAVAAN <- function(model = NULL, g_name = NULL, group_names = NULL){
+.OMEGA_LAVAAN <- function(model = NULL, g_name = "g", group_names = NULL){
 
   if(lavaan::lavInspect(model, what = "converged") == FALSE){
     stop("Model did not converge. No omegas are computed.")
   }
 
   std_sol <- lavaan::lavInspect(model, what = "std",
-                             drop.list.single.group = FALSE)
+                                drop.list.single.group = FALSE)
 
   ## Create empty list objects for further processing
   g_load <- list()
@@ -283,8 +283,8 @@
     }
 
     if(any(std_sol[[i]][["lambda"]] == 1)){
-      warning("Perfect relationship (loading equal to 1) was detected.
-            At least one variable is redundant.")
+      warning("Perfect relationship (loading equal to 1) was detected. At least
+              one variable is redundant.")
     }
 
     if(ncol(std_sol[[i]][["lambda"]]) == 1){
@@ -322,8 +322,8 @@
       if(!all(rowSums(bi_check) > 1)){
 
         message("Some variables have less than two loadings. Did you really enter
-              a bifactor model? Either provide a bifactor model or a model with a
-              single factor.")
+        a bifactor model? Either provide a bifactor model or a model with a
+                single factor.")
 
       }
 

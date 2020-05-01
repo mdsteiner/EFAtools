@@ -20,3 +20,11 @@ to round the loadings to (default is 3).}
 \description{
 Print OMEGA object
 }
+\examples{
+efa_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
+               type = "EFAtools", method = "PAF", rotation = "promax")
+sl_mod <- SL(efa_mod, type = "EFAtools", method = "PAF")
+
+OMEGA(sl_mod, type = "EFAtools", factor_corres = rep(c(3, 2, 1), each = 6))
+
+}

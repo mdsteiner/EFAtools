@@ -5,7 +5,6 @@
 #' to round the loadings to (default is 3).
 #' @param ... additional arguments passed to print
 #'
-#' @return
 #' @method print OMEGA
 #'
 #' @export

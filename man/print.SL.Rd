@@ -15,6 +15,8 @@
 Print Method showing a summarized output of the SL procedure.
 }
 \examples{
-EFA_EFAtools_5 <- EFA(IDS2_R, n_factors = 5, type = "EFAtools", rotation = "promax")
-SL(EFA_EFAtools_5)
+EFA_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
+               type = "EFAtools", method = "PAF", rotation = "promax")
+SL(EFA_mod, type = "EFAtools", method = "PAF")
+
 }

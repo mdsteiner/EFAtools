@@ -1,6 +1,8 @@
 #' Kaiser-Guttman Criterion
 #'
-#' DESCRIBE
+#' Probably the most popular factor retention criterion. Kaiser and Guttman suggested
+#' to retain as many factors as there are sample eigenvalues greater than 1.
+#' This is why the criterion is also known as eigenvalues-greater-than-one rule.
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
 #' correlations.
@@ -18,8 +20,24 @@
 #' \code{eigen_type = "EFA"}. Default is 1.
 #' @param ... Additional arguments passed to \code{\link[EFA]{EFA}}.
 #'
-#' @details DETAILS
+#' @details Originally, the Kaiser-Guttman criterion was intended for the use
+#' with prinicpal components, hence with eigenvalues derived from the original
+#' correlation matrix. This can be done here be setting \code{eigen_type} to
+#' "PCA". However, it is well-known that this criterion is often inaccurate and
+#' that it tends to overestimate the number of factors, especially for unidimensional
+#' or orthogonal factor structures (e.g., Zwick & Velicer, 1986).
 #'
+#' The criterion's inaccuracy in these cases is somewhat addressed if it is
+#' applied on the correlation matrix with communalities in the diagonal, either
+#' initial communalities estimated from SMCs (done setting \code{eigen_type} to
+#' "SMC") or final communality estimates from an EFA (done setting \code{eigen_type}
+#' to "EFA"; see Auerswald & Moshagen, 2019). However, although this variant
+#' of the KGC is more accurate in some cases compared to the traditional KGC, it
+#' is at the same time less accurate than the PCA-variant in other cases, and it
+#' is still often less accurate than other factor retention methods, for
+#' example parallel analysis (\link{\code{PARALLEL}}), the Hull method
+#' \link{\code{HULL}}, or sequential \eqn{chi^2} model tests (\link{\code{SMT}};
+#' see Auerswald & Moshagen, 2019).
 #'
 #' @return A list of class KGC containing
 #'
@@ -27,7 +45,21 @@
 #' \item{n_factors}{The number of factors to retain according to the Kaiser-
 #' Guttmann criterion.}
 #'
-#' @source SOURCE
+#' @source Auerswald, M., & Moshagen, M. (2019). How to determine the number of
+#' factors to retain in exploratory factor analysis: A comparison of extraction
+#' methods under realistic conditions. Psychological Methods, 24(4), 468–491.
+#' https://doi.org/10.1037/met0000200
+#'
+#' @source Guttman, L. (1954). Some necessary conditions for common-factor analysis.
+#' Psychometrika, 19, 149 –161. http://dx.doi.org/10.1007/BF02289162
+#'
+#' @source Kaiser, H. F. (1960). The application of electronic computers to factor
+#' analysis. Educational and Psychological Measurement, 20, 141–151.
+#' http://dx.doi.org/10.1177/001316446002000116
+#'
+#' @source Zwick, W. R., & Velicer, W. F. (1986). Comparison of five rules for
+#' determining the number of components to retain. Psychological Bulletin, 99,
+#' 432–442. http://dx.doi.org/10.1037/0033-2909.99.3.432
 #'
 #' @export
 #'

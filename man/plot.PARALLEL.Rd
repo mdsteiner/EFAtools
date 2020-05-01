@@ -12,7 +12,7 @@
 \item{...}{not used.}
 }
 \description{
-Plot Method showing a summarized output of the \link{PARALLEL} function
+Plot method showing a summarized output of the \link{PARALLEL} function
 }
 \examples{
 \dontrun{

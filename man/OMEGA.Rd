@@ -22,7 +22,7 @@ Scales. European Journal of Psychological Assessment, 30, 130-139.
 OMEGA(
   model = NULL,
   type = c("EFAtools", "psych"),
-  g_name = NULL,
+  g_name = "g",
   group_names = NULL,
   factor_corres = NULL,
   var_names = NULL,
@@ -50,7 +50,7 @@ and \code{cormat} need to be specified additionally.}
 
 \item{g_name}{character. The name of the general factor from the lavaan bifactor
 solution. This needs only be specified if \code{model} is a
-\code{\link{lavaan}} bifactor solution.}
+\code{\link{lavaan}} bifactor solution. Default is "g".}
 
 \item{group_names}{character. An optional vector of group names. The length
 must correspond to the number of groups for which the \link{lavaan} model
@@ -181,54 +181,47 @@ general and the variable's allocated group factor).
 \dontrun{
 ## Use with a lavaan output
 
-# Create and fit model in lavaan
-mod <- 'AVR =~ GS + PL + CM + EP
-        PS =~ b*TC + b*CB
-        ASTM =~ c*NL + c*NLM
-        VSSTM =~ d*GF + d*RGF
-        SLTM =~ CA + OP + RS + DP
-        g =~ GS + PL + TC + CB + NL + NLM + GF + RGF + CM + EP + CA + OP +
-             RS + DP'
-SD <- c(3.20, 3.18, 3.13, 3.15, 3.20, 3.11, 3.06, 3.07, 3.14, 3.18, 3.22,
-        3.16, 3.16, 3.08) # Taken from Table A1 in Grieder & Grob (2019)
-IDS2_cov <- lavaan::cor2cov(IDS2_R, sds = SD, names = colnames(IDS2_R))
-fit <- lavaan::cfa(mod, sample.cov = IDS2_cov, sample.nobs = 1991,
-                   estimator = "ml", orthogonal = TRUE)
+# Create and fit model in lavaan (assume all variables have SDs of 1)
+mod <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
+        F2 =~ V7 + V8 + V9 + V10 + V11 + V12
+        F3 =~ V13 + V14 + V15 + V16 + V17 + V18
+        g =~ V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11 + V12 +
+             V13 + V14 + V15 + V16 + V17 + V18'
+fit <- lavaan::cfa(mod, sample.cov = test_models$baseline$cormat,
+                   sample.nobs = 500, estimator = "ml", orthogonal = TRUE)
 
 # Compute omega
 OMEGA(fit, g_name = "g")
 }
 
 ## Use with an output from the SL function, with type EFAtools
-efa_mod <- EFA(IDS2_R, N = 1991, n_factors = 5, type = "EFAtools",
-               method = "PAF", rotation = "promax")
+efa_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
+               type = "EFAtools", method = "PAF", rotation = "promax")
 sl_mod <- SL(efa_mod, type = "EFAtools", method = "PAF")
 
-OMEGA(sl_mod, factor_corres = c(1, 1, 5, 5, 2, 2, 4, 4, 1, 1, 3, 3, 3, 4),
-      type = "EFAtools")
+OMEGA(sl_mod, type = "EFAtools", factor_corres = rep(c(3, 2, 1), each = 6))
 
 ## Use with an output from the psych::schmid function, with type psych for
 ## OMEGA
-schmid_mod <- psych::schmid(IDS2_R, nfactors = 5, n.obs = 1991, fm = "pa",
-                            rotate = "Promax")
-OMEGA(schmid_mod, type = "psych") # Find correlation matrix from phi and
-                                  # pattern matrix from psych::schmid output
-OMEGA(schmid_mod, type = "psych", cormat = IDS2_R) # Use specified correlation
-                                                   # matrix
+schmid_mod <- psych::schmid(test_models$baseline$cormat, nfactors = 3,
+                            n.obs = 500, fm = "pa", rotate = "Promax")
+# Find correlation matrix from phi and pattern matrix from psych::schmid output
+OMEGA(schmid_mod, type = "psych")
+# Use specified correlation matrix
+OMEGA(schmid_mod, type = "psych", cormat = test_models$baseline$cormat)
 
 ## Manually specify components (useful if omegas should be computed for a SL
 ## or bifactor solution found with another program)
 ## As an example, we extract the elements from an SL output here. This gives
 ## the same results as in the second example above.
 
-efa_mod <- EFA(IDS2_R, N = 1991, n_factors = 5, type = "EFAtools",
-               method = "PAF", rotation = "promax")
+efa_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
+               type = "EFAtools", method = "PAF", rotation = "promax")
 sl_mod <- SL(efa_mod, type = "EFAtools", method = "PAF")
 
-OMEGA(model = NULL, type = "EFAtools", factor_corres = c(1, 1, 5, 5, 2, 2, 4,
-      4, 1, 1, 3, 3, 3, 4), var_names = rownames(sl_mod$sl),
-      g_load = sl_mod$sl[, "g"],
-      s_load = sl_mod$sl[, c("F1", "F2", "F3", "F4", "F5")],
-      u2 = sl_mod$sl[, "u2"], cormat = IDS2_R)
+OMEGA(model = NULL, type = "EFAtools", var_names = rownames(sl_mod$sl),
+      g_load = sl_mod$sl[, "g"], s_load = sl_mod$sl[, c("F1", "F2", "F3")],
+      u2 = sl_mod$sl[, "u2"], cormat = test_models$baseline$cormat,
+      factor_corres = rep(c(3, 2, 1), each = 6))
 
 }

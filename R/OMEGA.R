@@ -20,7 +20,7 @@
 #' (see details)
 #' @param g_name character. The name of the general factor from the lavaan bifactor
 #' solution. This needs only be specified if \code{model} is a
-#' \code{\link{lavaan}} bifactor solution.
+#' \code{\link{lavaan}} bifactor solution. Default is "g".
 #' @param group_names character. An optional vector of group names. The length
 #' must correspond to the number of groups for which the \link{lavaan} model
 #' was fitted.
@@ -184,7 +184,7 @@
 #'       u2 = sl_mod$sl[, "u2"], cormat = test_models$baseline$cormat,
 #'       factor_corres = rep(c(3, 2, 1), each = 6))
 #'
-OMEGA <- function(model = NULL, type = c("EFAtools", "psych"), g_name = NULL,
+OMEGA <- function(model = NULL, type = c("EFAtools", "psych"), g_name = "g",
                   group_names = NULL, factor_corres = NULL,
                   var_names = NULL, fac_names = NULL,
                   g_load = NULL, s_load = NULL, u2 = NULL, cormat = NULL,

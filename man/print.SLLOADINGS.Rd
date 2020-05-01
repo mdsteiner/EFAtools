@@ -23,3 +23,9 @@ A string created using the crayon package
 \description{
 Print SLLOADINGS object
 }
+\examples{
+EFA_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
+               type = "EFAtools", method = "PAF", rotation = "promax")
+SL(EFA_mod, type = "EFAtools", method = "PAF")
+
+}

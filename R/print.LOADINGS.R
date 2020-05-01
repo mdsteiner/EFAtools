@@ -10,6 +10,12 @@
 #' @return A string created using the crayon package
 #' @method print LOADINGS
 #' @export
+#'
+#' @examples
+#' EFAtools_PAF <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
+#'                     type = "EFAtools", method = "PAF", rotation = "promax")
+#' EFAtools_PAF
+#'
 print.LOADINGS <- function(x, cutoff = .3, digits = 3, ...) {
 
   # create factor names to display

@@ -6,6 +6,7 @@
 #' @param ...  Further arguments for print.
 #'
 #' @export
+#'
 #' @method print EFA
 #'
 #' @examples
@@ -20,10 +21,7 @@ print.EFA <- function(x, ...) {
   rotation <- x$settings$rotation
   type <- x$settings$type
 
-  # get the variances accounted
-  vrs_acc <- x$vars_accounted
-
-  # Settings Intro message
+  # Settings intro message
   cat(crayon::blue("EFA performed with type = '", crayon::bold(type),
                "', method = '", crayon::bold(method),
                "', and rotation = '", crayon::bold(rotation),
@@ -69,7 +67,7 @@ print.EFA <- function(x, ...) {
   cat("\n")
   cat(crayon::blue$bold("Variances Accounted for:"))
   cat("\n")
-  cat(.get_compare_matrix(vrs_acc, r_red = Inf, n_char = 17))
+  cat(.get_compare_matrix(x$vars_accounted, r_red = Inf, n_char = 17))
 
   if(method == "PAF"){
 

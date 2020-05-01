@@ -3,7 +3,6 @@
 #' @param x list of class KMO (output from the \link{KMO} function)
 #' @param ... additional arguments passed to print
 #'
-#' @return
 #' @method print KMO
 #'
 #' @export
@@ -29,7 +28,7 @@ print.KMO <- function(x, ...) {
     } else if(KMO >= .7){
       label = crayon::green$bold("middling")
     } else if(KMO >= .6){
-      label = crayon::orange$bold("mediocre")
+      label = crayon::yellow$bold("mediocre")
     } else if (KMO >= .5){
       label = crayon::red$bold("miserable")
     } else {

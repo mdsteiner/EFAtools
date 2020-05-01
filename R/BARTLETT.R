@@ -87,7 +87,7 @@ BARTLETT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   detR <- det(R)
   statistic <- -log(detR) * (N - 1 - (2 * p + 5)/6)
   df <- p * (p - 1)/2
-  pval <- pchisq(statistic, df, lower.tail = FALSE)
+  pval <- stats::pchisq(statistic, df, lower.tail = FALSE)
 
   # prepare the output
   output <- list(chisq = statistic, p_value = pval, df = df)

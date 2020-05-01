@@ -122,11 +122,6 @@ PARALLEL <- function(x = NULL,
 
         }
 
-        if (gof != "CAF" && is.na(n_cases)) {
-          stop('n_cases is not specified but is needed for computation of ', gof,
-               ' fit index.')
-        }
-
         # if (data_type == "resample") {
         #   warning("data_type was set to resample, but correlation matrix was
         # entered. Resampling can only be done on raw data. Setting data_type to sim")

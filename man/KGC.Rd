@@ -45,12 +45,8 @@ A list of class KGC containing
 Guttmann criterion.}
 }
 \description{
-Kaiser-Guttman Criterion
+DESCRIBE
 }
 \details{
 DETAILS
-}
-\examples{
-KGC(IDS2_R, eigen_type = "PCA")
-
 }
