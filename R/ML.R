@@ -73,7 +73,7 @@ ML <- function(x, n_factors, N = NA, start_method = c("factanal", "psych")) {
   output
 }
 
-# function to obtain the uls fit; adapted from the psych package
+# function to obtain the ML fit; adapted from the psych package
 .fit_ml <- function(R, n_fac, start_method) {
 
   if (start_method == "psych") {
@@ -86,7 +86,6 @@ ML <- function(x, n_factors, N = NA, start_method = c("factanal", "psych")) {
   } else if (start_method == "factanal") {
     start <- (1 - 0.5 * n_fac / ncol(R)) / diag(solve(R))
   }
-
 
   res <- stats::optim(start, .error_ml, gr = .grad_ml, method = "L-BFGS-B",
                       lower = .005, upper = 1,

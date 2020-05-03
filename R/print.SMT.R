@@ -34,13 +34,13 @@ print.SMT <- function(x, ...) {
 
   if(nfac_RMSEA == 1){
 
-  cat("Sequential Model Tests for RMSEA suggests", nfac_RMSEA, "factor")
+  cat("RMSEA lower bound suggests", nfac_RMSEA, "factor")
   cat("\n")
   cat("\n")
 
   } else {
 
-    cat("Sequential Model Tests for RMSEA suggests", nfac_RMSEA, "factors")
+    cat("RMSEA lower bound suggests", nfac_RMSEA, "factors")
     cat("\n")
     cat("\n")
 

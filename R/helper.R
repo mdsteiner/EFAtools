@@ -331,24 +331,50 @@
     delta_hat_m <- max(0, chi - df)
     CFI <- 1 - delta_hat_m / delta_hat_null
 
-    ### compute RMSEA
-    RMSEA <- 1 - sqrt(max(delta_hat_m / (df * (N - 1)), 0))
+    ### compute RMSEA, incl. 90% confidence intervals
+    RMSEA <- sqrt(max(Fm / df - 1 / N, 0))
+
+    p_chi <- function(x, val, df, goal){goal - pchisq(val, df, ncp = x)}
+
+    if (pchisq(chi, df = df, ncp = 0) >= .95) {
+      lambda_l <- uniroot(f = p_chi, interval = c(1e-10, 10000), val = chi,
+                          df = df, goal = .95, extendInt = "upX",
+                          maxiter = 100L)$root
+    } else {
+      lambda_l <- 0
+    }
+
+    if (pchisq(chi, df = df, ncp = 0) >= .05) {
+      lambda_u <- uniroot(f = p_chi, interval = c(1e-10, 10000),
+                          val = chi, df = df, goal = .05,
+                          extendInt = "upX", maxiter = 100L)$root
+    }
+    else {
+      lambda_u <- 0
+    }
+
+    RMSEA_LB <- sqrt(lambda_l / (df * N))
+    RMSEA_UB <- sqrt(lambda_u / (df * N))
 
   } else {
+    chi <- NA
     CFI <- NA
     RMSEA <- NA
-    chi <- NA
+    RMSEA_LB <- NA
+    RMSEA_UB <- NA
     chi_null <- NA
     df_null <- NA
   }
 
   out <- list(
+    chi = chi,
     df = df,
     CAF = CAF,
     CFI = CFI,
     RMSEA = RMSEA,
+    RMSEA_LB = RMSEA_LB,
+    RMSEA_UB = RMSEA_UB,
     Fm = Fm,
-    chi = chi,
     chi_null = chi_null,
     df_null = df_null
   )

@@ -50,7 +50,7 @@
 #' \item{p_null}{The p-value for the null model (zero factors)}
 #' \item{ps_chi}{The p-values for EFA models with increasing numbers of factors,
 #' starting with 1 factor}
-#' \item{RMSEA.LBs}{The lower bounds of the 90% confidence interval for the RMSEA
+#' \item{RMSEA_LBs}{The lower bounds of the 90% confidence interval for the RMSEA
 #' for EFA models with increasing numbers of factors, starting with 1 factor}
 #'
 #' @source Auerswald, M., & Moshagen, M. (2019). How to determine the number of
@@ -111,7 +111,7 @@ SMT <- function(x, N = NULL, use = c("pairwise.complete.obs", "all.obs",
   # Prepare objects for sequential tests
   max_fac <- min(ncol(x)-2, ncol(x)/2 + 2)
   ps <- vector("double", max_fac)
-  RMSEA.LB <- vector("double", max_fac)
+  RMSEA_LB <- vector("double", max_fac)
 
   # First check if 0 factors already result in nonsignificant chi square
   zeromod <- EFA(x, n_factors = 1, method = "ML", rotation = "none", N = N)
@@ -130,7 +130,7 @@ SMT <- function(x, N = NULL, use = c("pairwise.complete.obs", "all.obs",
       temp <- EFA(x, n_factors = i, method = "ML", rotate ="none", N = N)
       ps[i] <- stats::pchisq(temp$fit_indices$chi, temp$fit_indices$df,
                              lower.tail = FALSE)
-      RMSEA.LB[i] <- temp$fit_indices$RMSEA.LB
+      RMSEA_LB[i] <- temp$fit_indices$RMSEA_LB
 
     }
 
@@ -147,9 +147,9 @@ SMT <- function(x, N = NULL, use = c("pairwise.complete.obs", "all.obs",
     }
 
     # With which number of factors does the RMSEA first fall below .05?
-    if(any(RMSEA.LB < .05, na.rm = TRUE)){
+    if(any(RMSEA_LB < .05, na.rm = TRUE)){
 
-      nfac_RMSEA <- which(RMSEA.LB < .05)[1]
+      nfac_RMSEA <- which(RMSEA_LB < .05)[1]
 
     } else {
 
@@ -164,7 +164,7 @@ SMT <- function(x, N = NULL, use = c("pairwise.complete.obs", "all.obs",
                  nfac_RMSEA = nfac_RMSEA,
                  p_null = p_null,
                  ps_chi = ps,
-                 RMSEA.LBs = RMSEA.LB)
+                 RMSEA_LBs = RMSEA_LB)
 
   class(output) <- "SMT"
 
