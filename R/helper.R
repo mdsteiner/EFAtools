@@ -338,6 +338,8 @@
     CFI <- NA
     RMSEA <- NA
     chi <- NA
+    chi_null <- NA
+    df_null <- NA
   }
 
   out <- list(
@@ -346,7 +348,9 @@
     CFI = CFI,
     RMSEA = RMSEA,
     Fm = Fm,
-    chi = chi
+    chi = chi,
+    chi_null = chi_null,
+    df_null = df_null
   )
 
 }
