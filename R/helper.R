@@ -223,7 +223,7 @@
 
 .decimals <- function(x) {
 
-  if ((is.null(dim(x)) && !(class(x) %in% c("numeric", "COMMUNALITIES", "EIGEN"))) ||
+  if ((is.null(dim(x)) && !(class(x) %in% "numeric")) ||
       (!is.null(dim(x)) && !(class(x) %in% c("matrix", "loadings", "LOADINGS",
                                              "SLLOADINGS")))) {
     stop("x is of class ", class(x), " but must be a numeric vector or matrix")
