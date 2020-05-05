@@ -282,7 +282,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   # Check if correlation matrix is invertable, if it is not, stop with message
   R_i <- try(solve(R))
 
-  if (class(R_i) == "try-error") {
+  if (inherits(R_i, "try-error")) {
     stop("Correlation matrix is singular, no further analyses are performed")
   }
 

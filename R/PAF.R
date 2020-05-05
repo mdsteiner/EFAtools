@@ -199,7 +199,7 @@ PAF <- function(x, n_factors, N = NA, max_iter = NULL,
   crit_type <- ifelse(criterion_type == "max_individual", 1, 2)
 
   # run the iterative PAF procedure using Rcpp
-  L_list <- paf_iter(h2 = h2, criterion = criterion, R = R, n_fac = m,
+  L_list <- .paf_iter(h2 = h2, criterion = criterion, R = R, n_fac = m,
                      abs_eig = abs_eigen, crit_type = crit_type,
                      max_iter = max_iter)
 

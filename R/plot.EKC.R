@@ -1,18 +1,18 @@
-#' Plot KGC object
+#' Plot EKC object
 #'
-#' Plot method showing a summarized output of the \link{KGC} function
+#' Plot method showing a summarized output of the \link{EKC} function
 #'
-#' @param x a list of class KGC. An output from the \link{KGC} function.
+#' @param x a list of class EKC. An output from the \link{EKC} function.
 #' @param ... not used.
 #'
 #' @export
-#' @method plot KGC
+#' @method plot EKC
 #'
 #' @examples
-#' KGC_base <- KGC(test_models$baseline$cormat, eigen_type = "PCA")
-#' plot(KGC_base)
+#' EKC_base <- EKC(test_models$baseline$cormat, N = 500)
+#' plot(EKC_base)
 #'
-plot.KGC <- function(x, ...) {
+plot.EKC <- function(x, ...) {
 
   eigvls <- x$eigenvalues
   x_len <- length(eigvls)
@@ -33,17 +33,19 @@ plot.KGC <- function(x, ...) {
 
   graphics::lines(1:x_len, eigvls)
   graphics::points(1:x_len, eigvls, pch = 16)
-  graphics::abline(h = 1, lty = 2)
+
+  graphics::lines(1:x_len, x$references, lty = 2, lwd = 1.25,
+                  col = "darkgray")
 
   if (!is.na(x$n_factors)) {
-      graphics::points(x$n_factors, eigvls[x$n_factors],
-                       pch = 1, cex = 2, col = "red")
-      graphics::text(x$n_factors, eigvls[x$n_factors],
-                     x$n_factors, pos = 3, cex = 1.5, col = "red",
-                     font = 1, offset = .75)
-    }
+    graphics::points(x$n_factors, eigvls[x$n_factors],
+                     pch = 1, cex = 2, col = "red")
+    graphics::text(x$n_factors, eigvls[x$n_factors],
+                   x$n_factors, pos = 3, cex = 1.5, col = "red",
+                   font = 1, offset = .75)
+  }
 
-  factors_text <- paste0("N factors suggested by Kaiser-Guttman criterion: ",
+  factors_text <- paste0("N factors suggested by EKC: ",
                          x$n_factors)
 
   graphics::title(factors_text, cex.main = 1.3)

@@ -70,17 +70,20 @@ The \link{PARALLEL} function and the principal axis factoring of the
 \examples{
 \dontrun{
 # using PAF
-HULL(IDS2_R, n_cases = 2000)
+HULL(test_models$baseline$cormat,
+     n_cases = test_models$baseline$N)
 
 # using ML with CFI
-HULL(IDS2_R, n_cases = 2000, method = "ML", gof = "CFI")
+HULL(test_models$baseline$cormat, n_cases = test_models$baseline$N,
+     method = "ML", gof = "CFI")
 
 # using ULS with RAMSEA
-HULL(IDS2_R, n_cases = 2000, method = "ULS", gof = "RAMSEA")
+HULL(test_models$baseline$cormat, n_cases = test_models$baseline$N,
+     method = "ULS", gof = "RMSEA")
 
 # using parallel processing (Note: plans can be adapted, see the future
 # package for details)
 future::plan(future::multisession)
-HULL(IDS2_R, n_cases = 2000)
+HULL(test_models$baseline$cormat, n_cases = test_models$baseline$N)
 }
 }

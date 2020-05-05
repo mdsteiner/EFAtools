@@ -4,7 +4,7 @@
                         s_load = NULL, u2 = NULL, cormat = NULL, pattern = NULL,
                         Phi = NULL, variance = c("correlaton", "sums_load")){
 
-  if(all(class(model) == c("psych", "schmid"))){
+  if(inherits(model, c("psych", "schmid"))){
 
     pattern <- model$oblique
     Phi <- model$phi
@@ -50,7 +50,7 @@
 
     }
 
- } else if(all(class(model) == c("SL"))){
+ } else if(inherits(model, "SL")){
 
     cormat <- model$orig_R
 

@@ -11,13 +11,11 @@
 
 \item{...}{additional arguments passed to print}
 }
-\value{
-
-}
 \description{
 Print BARTLETT object
 }
 \examples{
 bart <- BARTLETT(test_models$baseline$cormat, N = 500)
 bart
+
 }

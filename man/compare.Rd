@@ -101,12 +101,12 @@ well as the differences themselves.
 }
 \examples{
 # A type SPSS EFA to mimick the SPSS implementation
-EFA_SPSS_5 <- EFA(IDS2_R, n_factors = 5, type = "SPSS")
+EFA_SPSS_6 <- EFA(test_models$case_11b$cormat, n_factors = 6, type = "SPSS")
 
 # A type psych EFA to mimick the psych::fa() implementation
-EFA_psych_5 <- EFA(IDS2_R, n_factors = 5, type = "psych")
+EFA_psych_6 <- EFA(test_models$case_11b$cormat, n_factors = 6, type = "psych")
 
 # compare the two
-compare(EFA_SPSS_5$unrot_loadings, EFA_psych_5$unrot_loadings,
+compare(EFA_SPSS_6$unrot_loadings, EFA_psych_6$unrot_loadings,
         x_labels = c("SPSS", "psych"))
 }

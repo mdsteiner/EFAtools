@@ -1,0 +1,121 @@
+#' Empirical Kaiser Criterion
+#'
+#' The empirical Kaiser criterion incorporates random sampling variations of the
+#' eigenvalues the Kaiser-Guttman criterion (\code{\link{KGC}}; see Auerswald & Moshagen
+#' , 2019; Braeken & van Assen, 2017). The code is based on Auerswald and Moshagen
+#' (2019).
+#'
+#' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
+#' correlations
+#' @param N numeric. The number of observations. Only needed if x is a correlation
+#'  matrix.
+#' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw
+#'  data is given as input. Default is "pairwise.complete.obs".
+#'
+#' @details The Kaiser-Guttman criterion was defined with the intend that a factor
+#'  should only be extracted if it explains at least as much variance as a single
+#'  factor (see \code{\link{KGC}}). However, this only applies to population-level
+#'  correlation matrices. Due to sampling variation, the KGC strongly overestimates
+#'  the number of factors to retrieve (e.g., Zwick & Velicer, 1986). To account
+#'  for this and to introduce a factor retention method that performs well with
+#'  small number of indicators and correlated factors (cases where the performance
+#'  of parallel analysis, see \code{\link{PARALLEL}}, is known to deteriorate)
+#'  Braeken and van Assen (2017) introduced the empirical Kaiser criterion in
+#'  which a series of reference eigenvalues is created as a function of the
+#'  variables-to-sample-size ratio and the observed eigenvalues.
+#'
+#'  Braeken and van Assen (2017) showed that "(a) EKC performs about as well as
+#'  parallel analysis for data arising from the null, 1-factor, or orthogonal
+#'  factors model; and (b) clearly outperforms parallel analysis for the specific
+#'  case of oblique factors, particularly whenever interfactor correlation is
+#'  moderate to high and the number of variables per factor is small, which is
+#'  characteristic of many applications these days" p.463-464.
+#'
+#' @return A list of class EKC containing
+#'
+#' \item{eigenvalues}{A vector containing the eigenvalues.}
+#' \item{n_factors}{The number of factors to retain according to the empirical Kaiser criterion.}
+#' \item{references}{The reference eigenvalues.}
+#' \item{settings}{A list with the settings (\code{N} and \code{use}) used.}
+#'
+#'
+#' @source Auerswald, M., & Moshagen, M. (2019). How to determine the number of
+#' factors to retain in exploratory factor analysis: A comparison of extraction
+#' methods under realistic conditions. Psychological Methods, 24(4), 468–491.
+#' https://doi.org/10.1037/met0000200
+#'
+#' @source Braeken, J., & van Assen, M. A. (2017). An empirical Kaiser criterion.
+#' Psychological Methods, 22, 450 – 466. http://dx.doi.org/10.1037/ met0000074
+#'
+#' @source Zwick, W. R., & Velicer, W. F. (1986). Comparison of five rules for
+#' determining the number of components to retain. Psychological Bulletin, 99,
+#' 432–442. http://dx.doi.org/10.1037/0033-2909.99.3.432
+#'
+#' @export
+#'
+#' @example
+#' EKC(test_models$baseline$cormat, N = 500)
+EKC <- function(x, N = NA,
+                use = c("pairwise.complete.obs", "all.obs",
+                           "complete.obs", "everything",
+                           "na.or.complete")) {
+
+  # Check if it is a correlation matrix
+  if(.is_cormat(x)){
+
+    if(any(is.na(x))){
+
+      stop("The correlation matrix you entered contains missing values. Factor
+           analysis is not possible.")
+
+    }
+
+    R <- x
+
+    if (is.na(N)) {
+
+      stop("Argument 'N' was NA but correlation matrix was entered. Please either provide N or raw data.")
+
+    }
+
+  } else {
+
+    message("x was not a correlation matrix. Correlations and N are found from entered
+            raw data.")
+
+    use <- match.arg(use)
+
+    R <- stats::cor(x, use = use)
+    colnames(R) <- colnames(x)
+    N <- nrow(x)
+
+  }
+
+  p <- ncol(R)
+
+  # eigenvalues
+  lambda <- eigen(R, symmetric = TRUE, only.values = TRUE)$values
+
+  # reference values
+  refs <- vector("double", p)
+  for (i in seq_len(p)) {
+    refs[i] <- max( ((1 + sqrt(p / N))^2) * (p - sum(refs))/
+                        (p - i + 1), 1)
+
+  }
+
+  out <- list(
+    eigenvalues = lambda,
+    n_factors = which(lambda <= refs)[1] - 1,
+    references = refs,
+    settings = list(
+      use = use,
+      N = N
+    )
+  )
+
+  class(out) <- "EKC"
+
+  return(out)
+
+}

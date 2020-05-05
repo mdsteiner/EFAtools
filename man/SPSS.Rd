@@ -4,7 +4,8 @@
 \name{SPSS}
 \alias{SPSS}
 \title{Various outputs from SPSS FACTOR}
-\format{A list of 9 containing EFA results for each of the data sets mentioned above. Each of these nine entries is a list of 4 or 8 (see details), of the following structure:
+\format{
+A list of 9 containing EFA results for each of the data sets mentioned above. Each of these nine entries is a list of 4 or 8 (see details), of the following structure:
 \describe{
   \item{paf_comm}{(vector) - The final communalities obtained with the FACTOR algorithm with PAF and no rotation. For details, see Grieder and Grob (2019).}
   \item{paf_load}{(matrix) - F1 to FN = unrotated factor loadings obtained with the FACTOR algorithm with PAF. Rownames are the abbreviated subtest names.}
@@ -14,7 +15,8 @@
   \item{pro_phi}{(matrix) - F1 to FN = intercorrelations of the promax rotated loadings.}
   \item{sl}{(matrix) - g = General / second order factor of the Schmid-Leiman solution. F1 to FN  = First order factors of the Schmid-Leiman solution. h2 = Communalities of the Schmid-Leiman solution. This Schmid-Leiman solution was found using the SPSS Syntax provided by Wolff and Preising (2005).}
   \item{L2}{(matrix) - Second order loadings used for the Schmid-Leiman transformation. This Schmid-Leiman solution was found using the SPSS Syntax provided by Wolff and Preising (2005).}
- }}
+ }
+}
 \source{
 Grieder, S., & Steiner, M.D.(2020). Algorithmic Jingle Jungle: Limited Comparability of Implementations of Principal Axis Factoring and Promax Rotation in R psych Versus SPSS. Manuscript in preparation.
 

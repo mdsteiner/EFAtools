@@ -14,9 +14,6 @@ to round the loadings to (default is 3).}
 
 \item{...}{additional arguments passed to print}
 }
-\value{
-
-}
 \description{
 Print OMEGA object
 }

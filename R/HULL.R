@@ -46,18 +46,21 @@
 #' @examples
 #' \dontrun{
 #' # using PAF
-#' HULL(IDS2_R, n_cases = 2000)
+#' HULL(test_models$baseline$cormat,
+#'      n_cases = test_models$baseline$N)
 #'
 #' # using ML with CFI
-#' HULL(IDS2_R, n_cases = 2000, method = "ML", gof = "CFI")
+#' HULL(test_models$baseline$cormat, n_cases = test_models$baseline$N,
+#'      method = "ML", gof = "CFI")
 #'
 #' # using ULS with RAMSEA
-#' HULL(IDS2_R, n_cases = 2000, method = "ULS", gof = "RAMSEA")
+#' HULL(test_models$baseline$cormat, n_cases = test_models$baseline$N,
+#'      method = "ULS", gof = "RMSEA")
 #'
 #' # using parallel processing (Note: plans can be adapted, see the future
 #' # package for details)
 #' future::plan(future::multisession)
-#' HULL(IDS2_R, n_cases = 2000)
+#' HULL(test_models$baseline$cormat, n_cases = test_models$baseline$N)
 #' }
 HULL <- function(x, n_cases = NA, n_factors = NA,
                  method = c("PAF", "ULS", "ML"), gof = c("CAF", "CFI", "RMSEA"),
@@ -114,7 +117,7 @@ HULL <- function(x, n_cases = NA, n_factors = NA,
   # Check if correlation matrix is invertable, if it is not, stop with message
   R_i <- try(solve(R))
 
-  if (class(R_i) == "try-error") {
+  if (inherits(R_i, "try-error")) {
     stop("Correlation matrix is singular, the HULL method cannot be exectued")
   }
 
@@ -176,7 +179,7 @@ HULL <- function(x, n_cases = NA, n_factors = NA,
 
 
   if (method == "PAF") {
-    loadings <- future.apply::future_lapply(1:J, hull_paf, R = R, criterion = .001,
+    loadings <- future.apply::future_lapply(1:J, .hull_paf, R = R, criterion = .001,
                                            max_iter = 1e4)
   } else if (method == "ULS") {
     loadings <- future.apply::future_lapply(1:J, .hull_uls, R = R)

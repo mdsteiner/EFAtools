@@ -19,14 +19,16 @@ print.SMT <- function(x, ...) {
   if(nfac_chi == 1){
 
     cat("\n")
-    cat("Sequential \U1D712\U00B2 Model Tests suggests", nfac_chi, "factor")
+    cat("Sequential \U1D712\U00B2 Model Tests suggests", crayon::bold(nfac_chi),
+        "factor")
     cat("\n")
     cat("\n")
 
   } else {
 
     cat("\n")
-    cat("Sequential \U1D712\U00B2 Model Tests suggests", nfac_chi, "factors")
+    cat("Sequential \U1D712\U00B2 Model Tests suggests", crayon::bold(nfac_chi),
+        "factors")
     cat("\n")
     cat("\n")
 
@@ -34,13 +36,13 @@ print.SMT <- function(x, ...) {
 
   if(nfac_RMSEA == 1){
 
-  cat("RMSEA lower bound suggests", nfac_RMSEA, "factor")
+  cat("RMSEA lower bound suggests", crayon::bold(nfac_RMSEA), "factor")
   cat("\n")
   cat("\n")
 
   } else {
 
-    cat("RMSEA lower bound suggests", nfac_RMSEA, "factors")
+    cat("RMSEA lower bound suggests", crayon::bold(nfac_RMSEA), "factors")
     cat("\n")
     cat("\n")
 

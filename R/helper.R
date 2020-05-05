@@ -223,9 +223,9 @@
 
 .decimals <- function(x) {
 
-  if ((is.null(dim(x)) && !(class(x) %in% "numeric")) ||
-      (!is.null(dim(x)) && !(class(x) %in% c("matrix", "loadings", "LOADINGS",
-                                             "SLLOADINGS")))) {
+  if ((is.null(dim(x)) && !(inherits(x, "numeric"))) ||
+      (!is.null(dim(x)) && !(inherits(x, c("matrix", "loadings", "LOADINGS",
+                                          "SLLOADINGS"))))) {
     stop("x is of class ", class(x), " but must be a numeric vector or matrix")
   }
 
@@ -334,18 +334,18 @@
     ### compute RMSEA, incl. 90% confidence intervals
     RMSEA <- sqrt(max(Fm / df - 1 / N, 0))
 
-    p_chi <- function(x, val, df, goal){goal - pchisq(val, df, ncp = x)}
+    p_chi <- function(x, val, df, goal){goal - stats::pchisq(val, df, ncp = x)}
 
-    if (pchisq(chi, df = df, ncp = 0) >= .95) {
-      lambda_l <- uniroot(f = p_chi, interval = c(1e-10, 10000), val = chi,
+    if (stats::pchisq(chi, df = df, ncp = 0) >= .95) {
+      lambda_l <- stats::uniroot(f = p_chi, interval = c(1e-10, 10000), val = chi,
                           df = df, goal = .95, extendInt = "upX",
                           maxiter = 100L)$root
     } else {
       lambda_l <- 0
     }
 
-    if (pchisq(chi, df = df, ncp = 0) >= .05) {
-      lambda_u <- uniroot(f = p_chi, interval = c(1e-10, 10000),
+    if (stats::pchisq(chi, df = df, ncp = 0) >= .05) {
+      lambda_u <- stats::uniroot(f = p_chi, interval = c(1e-10, 10000),
                           val = chi, df = df, goal = .05,
                           extendInt = "upX", maxiter = 100L)$root
     }

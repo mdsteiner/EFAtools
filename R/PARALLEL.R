@@ -16,10 +16,10 @@
 #' @param percent numeric. A vector of percentiles to take the simulated eigenvalues from.
 #'  Default is 95.
 #' @param eigen_type character. On what the eigenvalues should be found. Can be
-#'  either "PAF", "PCA", or "FA". If using "PAF", the diagonal of the correlation
+#'  either "SMC", "PCA", or "EFA". If using "SMC", the diagonal of the correlation
 #'  matrices is replaced by the squared multiple correlations (SMCs) of the
 #'  indicators. If using "PCA", the diagonal values of the correlation matrices
-#'  are left to be 1. If using "FA", eigenvalues are found on the correlation
+#'  are left to be 1. If using "EFA", eigenvalues are found on the correlation
 #'  matrices with the final communalities of a 1 factor principal axis factoring
 #'  solution as diagonal.
 #' @param data_type character. Currently only "sim" is implemented. Finds eigenvalues
@@ -48,12 +48,47 @@
 #'  perform after which the iterative PAF procedure is halted with a warning.
 #'  Default is \code{1000}.
 #'
+#' @details Parallel analysis (Horn, 1965) compares the eigenvalues obtained from the sample
+#'  correlation matrix against those of null model correlation matrices (i.e.,
+#'  with uncorrelated variables) of the same sample size. This way, it accounts
+#'  for the variation in eigenvalues introduced by sampling error and thus
+#'  eliminates the main problem inherent in the Kaiser-Guttman criterion
+#'  (\code{\link{KGC}}).
+#'
+#'  Three different ways of finding the eigenvalues under the factor model are
+#'  implemented, namely "SMC", "PCA", and "EFA". PCA leaves the diagonal elements
+#'  of the correlation matrix as they are and is thus equivalent to what is done
+#'  in PCA. SMC uses squared multiple correlations as communality estimates with
+#'  which the diagonal of the correlation matrix is replaced. Finally, EFA performes
+#'  an \code{\link{EFA}} with one factor to estimate
+#'  the communalities and based on the correlation matrix with these as diagonal
+#'  elements, finds the eigenvalues.
+#'
+#'  Parallel analysis is often argued to be one of the most accurate factor
+#'  retention criteria. However, for highly correlated
+#'  factor structures it has been shown to underestimate the correct number of
+#'  factors. The reason for this is that a null model (uncorrelated variables)
+#'  is used as reference. However, when factors are highly correlated, the first
+#'  eigenvalue will relatively be much larger than the following ones, as
+#'  later eigenvalues are conditional on the earlier ones in the sequence and thus
+#'  the shared variance is already accounted in the first eigenvalue (e.g.,
+#'  Braeken & van Assen, 2017).
+#'
 #' @return A list of class PARALLEL containing the following objects
 #' \item{eigenvalues}{A matrix containing the eigenvalues of the real and the simulated data.}
 #' \item{n_factors}{The number of factors to retain according to the parallel procedure.}
-#' \item{ctrl}{A list of control settings used in the print function.}
+#' \item{settings}{A list of control settings used in the print function.}
 #'
-#' @source Crawford, A. V., Green, S. B., Levy, R., Lo, W. J., Scott, L., Svetina, D., & Thompson, M. S. (2010). Evaluation of parallel analysis methods for determining the number of factors. Educational and Psychological Measurement, 70(6), 885-901.
+#' @source Braeken, J., & van Assen, M. A. (2017). An empirical Kaiser criterion.
+#' Psychological Methods, 22, 450 – 466. http://dx.doi.org/10.1037/ met0000074
+#'
+#' @source Crawford, A. V., Green, S. B., Levy, R., Lo, W. J., Scott, L.,
+#' Svetina, D., & Thompson, M. S. (2010). Evaluation of parallel analysis methods
+#' for determining the number of factors. Educational and Psychological
+#' Measurement, 70(6), 885-901.
+#'
+#' @source Horn, J. L. (1965). A rationale and test for the number of factors in
+#' factor analysis. Psychometrika, 30(2), 179–185. doi: 10.1007/BF02289447
 #'
 #' @export
 #'
@@ -73,7 +108,7 @@ PARALLEL <- function(x = NULL,
                      n_vars = NA,
                      n_datasets = 1000,
                      percent = 95,
-                     eigen_type = c("PAF", "PCA", "FA"),
+                     eigen_type = c("SMC", "PCA", "EFA"),
                      data_type = c("sim"), # , "resample"
                      replace = TRUE,
                      use = c("pairwise.complete.obs", "all.obs", "complete.obs",
@@ -100,7 +135,7 @@ PARALLEL <- function(x = NULL,
 
   if (!is.null(x)) {
 
-    if (any(apply(x, 2, class) != "numeric")) {
+    if (any(!apply(x, 2, inherits, "numeric"))) {
       warning("Data contained non-numeric columns. Eigenvalues of actual data
               were not computed and no PA was done using resampling.")
     } else {
@@ -148,7 +183,7 @@ PARALLEL <- function(x = NULL,
       # Check if correlation matrix is invertable, if it is not, stop with message
       R_i <- try(solve(R))
 
-      if (class(R_i) == "try-error") {
+      if (inherits(R_i, "try-error")) {
         stop("Correlation matrix is singular, parallel analysis is not possible")
       }
 
@@ -160,7 +195,7 @@ PARALLEL <- function(x = NULL,
         }
 
 
-      if (eigen_type == "PAF") {
+      if (eigen_type == "SMC") {
         # compute smcs
         diag(R) <- 1 - (1 / diag(solve(R)))
         eigvals_real <- matrix(eigen(R, symmetric = TRUE,
@@ -168,7 +203,7 @@ PARALLEL <- function(x = NULL,
       } else if (eigen_type == "PCA") {
         eigvals_real <- matrix(eigen(R, symmetric = TRUE,
                                      only.values = TRUE)$values, ncol = 1)
-      } else if (eigen_type == "FA") {
+      } else if (eigen_type == "EFA") {
         eigvals_real <- matrix(parallel_paf(R, criterion,
                                             ifelse(criterion_type == "sums", 2, 1),
                                             max_iter), ncol = 1)
@@ -188,14 +223,14 @@ PARALLEL <- function(x = NULL,
       #
       #     eigvals <- do.call(rbind, eigvals)
       #
-      #   } else if (eigen_type == "PAF") {
+      #   } else if (eigen_type == "SMC") {
       #
       #     eigvals <- parallel::mclapply(size_vec, parallel_resample, data = x,
       #                                   eigen_type = 2, replace = replace,
       #                                   mc.cores = n_cores)
       #     eigvals <- do.call(rbind, eigvals)
       #
-      #   } else if (eigen_type == "FA") {
+      #   } else if (eigen_type == "EFA") {
       #
       #     eigvals <- parallel::mclapply(size_vec, parallel_paf_resample, data = x,
       #                                   replace = replace, criterion = criterion,
@@ -235,13 +270,13 @@ PARALLEL <- function(x = NULL,
 
       eigvals <- do.call(rbind, eigvals)
 
-    } else if (eigen_type == "PAF") {
+    } else if (eigen_type == "SMC") {
 
       eigvals <- future.apply::future_lapply(size_vec, parallel_sim, n_cases = n_cases,
                                              n_vars = n_vars, eigen_type = 2)
       eigvals <- do.call(rbind, eigvals)
 
-    } else if (eigen_type == "FA") {
+    } else if (eigen_type == "EFA") {
 
       eigvals <- future.apply::future_lapply(size_vec, parallel_paf_sim,
                                              n_cases = n_cases, n_vars = n_vars,
@@ -287,7 +322,7 @@ PARALLEL <- function(x = NULL,
     }
   }
 
-  ctrl <- list(
+  settings <- list(
     x_dat = x_dat,
     n_cases = n_cases,
     n_vars = n_vars,
@@ -305,7 +340,7 @@ PARALLEL <- function(x = NULL,
   out <- list(
     eigenvalues = eigenvalues,
     n_factors = n_factors,
-    ctrl = ctrl
+    settings = settings
   )
 
   class(out) <- "PARALLEL"

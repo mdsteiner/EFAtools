@@ -11,9 +11,11 @@
 
 \item{...}{additional arguments passed to print}
 }
-\value{
-
-}
 \description{
 Print KMO object
+}
+\examples{
+KMO_base <- KMO(test_models$baseline$cormat)
+KMO_base
+
 }

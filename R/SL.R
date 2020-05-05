@@ -85,7 +85,7 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
 
   type <- match.arg(type)
 
-  if(all(class(x) == "EFA")) {
+  if(inherits(x, "EFA")) {
 
     if("Phi" %in% names(x)){
 
@@ -115,7 +115,7 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
     L1 <- L1[, n_order]
     Phi <- Phi[n_order, n_order]
 
-  } else if(all(class(x) == c("psych", "fa"))) {
+  } else if(inherits(x, c("psych", "fa"))) {
 
     if("Phi" %in% names(x)){
 

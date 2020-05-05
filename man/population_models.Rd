@@ -4,7 +4,8 @@
 \name{population_models}
 \alias{population_models}
 \title{population_models}
-\format{A list of 2 lists "loadings" and "phis".
+\format{
+A list of 2 lists "loadings" and "phis".
 \describe{
 \code{loadings} contains the following matrices:
   \item{baseline}{(matrix) - The loadings of the baseline model. Three factors with six indicators each, all with loadings of .6. Same baseline model as used in de Winter and Dodou (2012).}
@@ -59,7 +60,8 @@
   \item{moderate}{(matrix) - Matrix of moderate factor intercorrelations of .3.}
   \item{mixed}{(matrix) - Matrix of mixed (around .3, .5, and .7; smoothing was necessary for the matrix to be positive definite) factor intercorrelations.}
   \item{strong}{(matrix) - Matrix of strong factor intercorrelations of .7. Same intercorrelations as used in de Winter and Dodou (2012).}
- }}
+ }
+}
 \source{
 Grieder, S., & Steiner, M.D.(2019). Algorithmic Jingle Jungle: Comparison of Implementations of an EFA Procedure in R psych Versus SPSS, MacOrtho, and Omega. Submitted Manuscript.
 

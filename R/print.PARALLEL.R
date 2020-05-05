@@ -15,26 +15,26 @@
 #' }
 print.PARALLEL <- function(x, ...) {
 
-  cat(paste("Parallel Analysis performed using", x$ctrl$n_datasets,
+  cat(paste("Parallel Analysis performed using", x$settings$n_datasets,
                "simulated data sets.\n"))
 
-  cat("Eigenvalues were found using", crayon::bold(x$ctrl$eigen_type))
+  cat("Eigenvalues were found using", crayon::bold(x$settings$eigen_type))
   cat("\n")
 
 
-  if (isTRUE(x$ctrl$x_dat)) {
+  if (isTRUE(x$settings$x_dat)) {
 
     tt <- paste("Decision rule used:",
-                       crayon::bold(x$ctrl$decision_rule))
+                       crayon::bold(x$settings$decision_rule))
     cat("\n")
     cat(tt)
     cat("\n")
     cat("\n")
     cat("Number of factors to retain:\n")
 
-    if (x$ctrl$data_type == "sim") {
+    if (x$settings$data_type == "sim") {
       ptt <- "Based on simulated data:"
-    } else if (x$ctrl$data_type == "resample") {
+    } else if (x$settings$data_type == "resample") {
       ptt <- "Based on resampled data:"
     }
     tt <- paste("    ",cli::symbol$bullet, ptt,

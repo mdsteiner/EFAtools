@@ -71,7 +71,7 @@ BARTLETT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   # Check if correlation matrix is invertable, if it is not, stop with message
   R_i <- try(solve(R))
 
-  if (class(R_i) == "try-error") {
+  if (inherits(R_i, "try-error")) {
     stop("Correlation matrix is singular, Bartletts test cannot be executed")
   }
 

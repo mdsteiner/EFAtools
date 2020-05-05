@@ -204,13 +204,13 @@ OMEGA <- function(model = NULL, type = c("EFAtools", "psych"), g_name = "g",
 
   }
 
-  if(all(class(model) == "lavaan")){
+  if(inherits(model, "lavaan")){
 
     .OMEGA_LAVAAN(model = model, g_name = g_name, group_names = group_names)
 
-  } else if(all(class(model) == c("psych", "schmid")) || all(class(model) == "SL")) {
+  } else if(inherits(model, c("psych", "schmid", "SL"))) {
 
-    if(is.null(factor_corres & all(class(model) == c("psych", "schmid")))){
+    if(is.null(factor_corres) && inherits(model, c("psych", "schmid"))){
 
       stop("Please specify the argument 'factor_corres'")
 

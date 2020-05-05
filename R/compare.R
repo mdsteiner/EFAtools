@@ -66,13 +66,13 @@
 #'
 #' @examples
 #' # A type SPSS EFA to mimick the SPSS implementation
-#' EFA_SPSS_5 <- EFA(IDS2_R, n_factors = 5, type = "SPSS")
+#' EFA_SPSS_6 <- EFA(test_models$case_11b$cormat, n_factors = 6, type = "SPSS")
 #'
 #' # A type psych EFA to mimick the psych::fa() implementation
-#' EFA_psych_5 <- EFA(IDS2_R, n_factors = 5, type = "psych")
+#' EFA_psych_6 <- EFA(test_models$case_11b$cormat, n_factors = 6, type = "psych")
 #'
 #' # compare the two
-#' compare(EFA_SPSS_5$unrot_loadings, EFA_psych_5$unrot_loadings,
+#' compare(EFA_SPSS_6$unrot_loadings, EFA_psych_6$unrot_loadings,
 #'         x_labels = c("SPSS", "psych"))
 compare <- function(x,
                     y,
@@ -93,18 +93,18 @@ compare <- function(x,
 
   # reclass data.frames and tibbles to matrices so the stats functions afterwards
   # work
-  if (!(class(x) %in% c("numeric", "COMMUNALITIES", "EIGEN")) &&
-      !(class(y) %in% c("numeric", "COMMUNALITIES", "EIGEN"))) {
+  if (!(inherits(x, c("numeric", "COMMUNALITIES", "EIGEN"))) &&
+      !(inherits(y, c("numeric", "COMMUNALITIES", "EIGEN")))) {
 
-    if (any(class(x) == "data.frame")) {
+    if (inherits(x, "data.frame")) {
       x <- as.matrix(x)
-    } else if (any(class(x) %in% c("loadings", "LOADINGS", "SLLOADINGS"))) {
+    } else if (inherits(x, c("loadings", "LOADINGS", "SLLOADINGS"))) {
       x <- unclass(x)
     }
 
-    if (any(class(y) == "data.frame")) {
+    if (inherits(y, "data.frame")) {
       y <- as.matrix(y)
-    } else if (any(class(y) %in% c("loadings", "LOADINGS", "SLLOADINGS"))) {
+    } else if (inherits(y, c("loadings", "LOADINGS", "SLLOADINGS"))) {
       y <- unclass(y)
     }
 
@@ -115,8 +115,8 @@ compare <- function(x,
 
     }
 
-  } else if (class(x) %in% c("numeric", "COMMUNALITIES", "EIGEN") &&
-             class(y) %in% c("numeric", "COMMUNALITIES", "EIGEN")) {
+  } else if (inherits(x, c("numeric", "COMMUNALITIES", "EIGEN")) &&
+             inherits(y, c("numeric", "COMMUNALITIES", "EIGEN"))) {
 
     x <- unclass(x)
     y <- unclass(y)
@@ -130,7 +130,7 @@ compare <- function(x,
 
   }
 
-  if (class(x) == "matrix") {
+  if (inherits(x, "matrix")) {
 
     n_factors <- ncol(x)
 
@@ -157,7 +157,7 @@ compare <- function(x,
 
     if (n_factors > 1 && isTRUE(corres)) {
       # factor correspondences
-      corres_list <- factor_corres(x, y, thresh = thresh)
+      corres_list <- .factor_corres(x, y, thresh = thresh)
       diff_corres <- corres_list$diff_corres
       diff_corres_cross <- corres_list$diff_corres_cross
     } else {
@@ -166,7 +166,7 @@ compare <- function(x,
     }
 
 
-  } else if (class(x) == "numeric") {
+  } else if (inherits(x, "matrix")) {
 
       if (!isFALSE(reorder) && !is.null(names(x)) && !is.null(names(y))) {
         ind_x <- order(names(x))
@@ -186,7 +186,7 @@ compare <- function(x,
   # compute differences and statistics
   diff <- x - y
 
-  if(class(x) == "matrix") {
+  if(inherits(x, "matrix")) {
     g <- sqrt(sum(diag(t(diff) %*% (diff))) / prod(dim(x)))
   } else {
     g <- sqrt((sum(diff ** 2) / length(diff)))

@@ -10,7 +10,7 @@ using namespace Rcpp;
 //' @param y numeric matrix. The convergence criterion to use.
 //' @param thresh numeric. The threshold to classify a pattern coefficient as substantial.
 //' @export
-// [[Rcpp::export]]
+// [[Rcpp::export(.factor_corres)]]
 Rcpp::List factor_corres(NumericMatrix x,
                          NumericMatrix y,
                          double thresh = 0.3) {

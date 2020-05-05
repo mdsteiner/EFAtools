@@ -46,7 +46,6 @@
 #'
 #' @example
 #' KMO(test_models$baseline$cormat)
-#'
 KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
                            "everything", "na.or.complete")) {
 
@@ -78,7 +77,7 @@ KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
   # Check if correlation matrix is invertable, if it is not, stop with message
   R_i <- try(solve(R))
 
-  if (class(R_i) == "try-error") {
+  if (inherits(R_i, "try-error")) {
     stop("Correlation matrix is singular, KMO cannot be computed")
   }
 

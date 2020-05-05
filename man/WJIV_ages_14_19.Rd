@@ -4,7 +4,8 @@
 \name{WJIV_ages_14_19}
 \alias{WJIV_ages_14_19}
 \title{Woodcock Johnson IV, ages 14 to 19}
-\format{A list of 2 with elements "N" (scalar) and "cormat" (47 x 47 matrix of bivariate correlations). The correlation matrix contains the following variables:
+\format{
+A list of 2 with elements "N" (scalar) and "cormat" (47 x 47 matrix of bivariate correlations). The correlation matrix contains the following variables:
 \describe{
   \item{ORLVOC}{(numeric) - Oral Vocabulary.}
   \item{NUMSER}{(numeric) - Number Series.}
@@ -53,7 +54,8 @@
   \item{SCI}{(numeric) - Science.}
   \item{SOC}{(numeric) - Social Studies.}
   \item{HUM}{(numeric) - Humanities.}
- }}
+ }
+}
 \source{
 McGrew, K. S., LaForte, E. M., & Schrank, F. A. (2014). Technical
  Manual. Woodcock-Johnson IV. Rolling Meadows, IL: Riverside.

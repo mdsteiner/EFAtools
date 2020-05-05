@@ -4,7 +4,8 @@
 \name{WJIV_ages_3_5}
 \alias{WJIV_ages_3_5}
 \title{Woodcock Johnson IV, ages 3 to 5}
-\format{A list of 2 with elements "N" (scalar) and "cormat" (29 x 29 matrix of bivariate correlations). The correlation matrix contains the following variables:
+\format{
+A list of 2 with elements "N" (scalar) and "cormat" (29 x 29 matrix of bivariate correlations). The correlation matrix contains the following variables:
 \describe{
   \item{ORLVOC}{(numeric) - Oral Vocabulary.}
   \item{VRBATN}{(numeric) - Verbal Attention.}
@@ -35,7 +36,8 @@
   \item{SCI}{(numeric) - Science.}
   \item{SOC}{(numeric) - Social Studies.}
   \item{HUM}{(numeric) - Humanities.}
- }}
+ }
+}
 \source{
 McGrew, K. S., LaForte, E. M., & Schrank, F. A. (2014). Technical
  Manual. Woodcock-Johnson IV. Rolling Meadows, IL: Riverside.

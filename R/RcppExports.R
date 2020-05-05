@@ -10,7 +10,7 @@
 #' @param y numeric matrix. The convergence criterion to use.
 #' @param thresh numeric. The threshold to classify a pattern coefficient as substantial.
 #' @export
-factor_corres <- function(x, y, thresh = 0.3) {
+.factor_corres <- function(x, y, thresh = 0.3) {
     .Call(`_EFAtools_factor_corres`, x, y, thresh)
 }
 
@@ -24,7 +24,7 @@ factor_corres <- function(x, y, thresh = 0.3) {
 #' @param criterion double. The convergence criterion to use.
 #' @param max_iter numeric. The number of iterations after which to end the procedure if no convergence has been reached by then.
 #' @export
-hull_paf <- function(n_fac, R, criterion, max_iter) {
+.hull_paf <- function(n_fac, R, criterion, max_iter) {
     .Call(`_EFAtools_hull_paf`, n_fac, R, criterion, max_iter)
 }
 
@@ -49,7 +49,7 @@ hull_paf <- function(n_fac, R, criterion, max_iter) {
 #' @param crit_type numeric. Whether maximum absolute differences (crit_type = 1), or sum of differences (crit_type = 2) should be used
 #' @param max_iter numeric. The number of iterations after which to end the procedure if no convergence has been reached by then.
 #' @export
-paf_iter <- function(h2, criterion, R, n_fac, abs_eig, crit_type, max_iter) {
+.paf_iter <- function(h2, criterion, R, n_fac, abs_eig, crit_type, max_iter) {
     .Call(`_EFAtools_paf_iter`, h2, criterion, R, n_fac, abs_eig, crit_type, max_iter)
 }
 

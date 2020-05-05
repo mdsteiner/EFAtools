@@ -7,7 +7,7 @@
 #'
 #' @export
 #'
-#' @example
+#' @examples
 #' KMO_base <- KMO(test_models$baseline$cormat)
 #' KMO_base
 #'

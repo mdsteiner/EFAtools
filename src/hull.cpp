@@ -14,7 +14,7 @@ using namespace arma;
 //' @param criterion double. The convergence criterion to use.
 //' @param max_iter numeric. The number of iterations after which to end the procedure if no convergence has been reached by then.
 //' @export
-// [[Rcpp::export]]
+// [[Rcpp::export(.hull_paf)]]
 arma::mat hull_paf(const int n_fac, arma::mat R, double criterion, int max_iter) {
 
   int iter = 1;

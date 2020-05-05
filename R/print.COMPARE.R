@@ -87,7 +87,7 @@ print.COMPARE <- function(x, ...) {
   if (isTRUE(print_diff)) {
     cat("\n")
     cat("\n")
-    if (class(diff) == "matrix") {
+    if (inherits(diff, "matrix")) {
 
       out_diff <- .get_compare_matrix(diff, digits = digits, r_red = range_red)
 

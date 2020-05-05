@@ -23,3 +23,9 @@ A string created using the crayon package
 \description{
 Print LOADINGS object
 }
+\examples{
+EFAtools_PAF <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
+                    type = "EFAtools", method = "PAF", rotation = "promax")
+EFAtools_PAF
+
+}
