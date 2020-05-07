@@ -84,14 +84,15 @@ print.EFA <- function(x, ...) {
 
     fitind <- matrix(c(x$fit_indices$chi, x$fit_indices$df, x$fit_indices$CFI,
                        x$fit_indices$RMSEA, x$fit_indices$RMSEA_LB,
-                       x$fit_indices$RMSEA_UB, x$fit_indices$CAF), nrow = 1)
+                       x$fit_indices$RMSEA_UB, x$fit_indices$AIC,
+                       x$fit_indices$BIC, x$fit_indices$CAF), nrow = 1)
     colnames(fitind) <- c("\U1D712\U00B2", "df", "CFI", "RMSEA", "lower",
-                          "upper", "CAF")
+                          "upper", "AIC", "BIC", "CAF")
 
     cat("\n")
     cat(crayon::blue$bold("Model Fit:"))
     cat("\n")
-    cat(.get_compare_matrix(fitind, r_red = Inf, n_char = 20, gof = TRUE))
+    cat(.get_compare_matrix(fitind, r_red = Inf, n_char = 30, gof = TRUE))
 
   }
 

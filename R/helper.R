@@ -356,12 +356,18 @@
     RMSEA_LB <- sqrt(lambda_l / (df * N))
     RMSEA_UB <- sqrt(lambda_u / (df * N))
 
+    ### compute AIC and BIC based on chi square
+    AIC <- chi - 2 * df
+    BIC <- chi - log(N) * df
+
   } else {
     chi <- NA
     CFI <- NA
     RMSEA <- NA
     RMSEA_LB <- NA
     RMSEA_UB <- NA
+    AIC <- NA
+    BIC <- NA
     chi_null <- NA
     df_null <- NA
   }
@@ -374,6 +380,8 @@
     RMSEA = RMSEA,
     RMSEA_LB = RMSEA_LB,
     RMSEA_UB = RMSEA_UB,
+    AIC = AIC,
+    BIC = BIC,
     Fm = Fm,
     chi_null = chi_null,
     df_null = df_null
