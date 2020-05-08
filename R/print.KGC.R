@@ -12,20 +12,45 @@
 #'
 print.KGC <- function(x, ...) {
 
-  nfac <- x$n_factors
+  nfac_PCA <- x$n_fac_PCA
+  nfac_SMC <- x$n_fac_SMC
+  nfac_EFA <- x$n_fac_EFA
+  eigen_type <-x$settings$eigen_type
 
   cat("\n")
-  cat("Eigenvalues were found using", crayon::bold(x$settings$eigen_type))
+  cat("Eigenvalues were found using ", .settings_string(eigen_type), sep = "")
   cat("\n")
   cat("\n")
 
-  if(nfac == 1){
-  cat("Kaiser-Guttmann criterion suggests", crayon::bold(nfac), "factor")
+  cat("Kaiser-Guttmann criterion suggests:")
   cat("\n")
-  } else {
-    cat("Kaiser-Guttmann criterion suggests", crayon::bold(nfac), "factors")
+  cat("\n")
+
+  if(!is.na(nfac_PCA)){
+
+    cat("   ", crayon::bold(nfac_PCA), " factor", ifelse(nfac_PCA > 1, "s", ""),
+      " with PCA-determined eigenvalues", sep = "")
     cat("\n")
+
   }
+
+  if(!is.na(nfac_SMC)){
+
+    cat("   ", crayon::bold(nfac_SMC), " factor", ifelse(nfac_SMC > 1, "s", ""),
+        " with SMC-determined eigenvalues", sep = "")
+    cat("\n")
+
+  }
+
+  if(!is.na(nfac_EFA)){
+
+    cat("   ", crayon::bold(nfac_EFA), " factor", ifelse(nfac_EFA > 1, "s", ""),
+        " with EFA-determined eigenvalues", sep = "")
+    cat("\n")
+
+  }
+
+  cat("\n")
 
   graphics::plot(x)
 

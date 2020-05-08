@@ -15,16 +15,10 @@ print.EKC <- function(x, ...) {
   nfac <- x$n_factors
 
   cat("\n")
-
-  if(nfac == 1){
-    cat("Empirical Kaiser criterion suggests", crayon::bold(nfac), "factor")
-    cat("\n")
-    cat("\n")
-  } else {
-    cat("Empirical Kaiser criterion suggests", crayon::bold(nfac), "factors")
-    cat("\n")
-    cat("\n")
-  }
+  cat("Empirical Kaiser criterion suggests ", crayon::bold(nfac), " factor",
+        ifelse(nfac > 1, "s.", "."), sep = "")
+  cat("\n")
+  cat("\n")
 
   graphics::plot(x)
 

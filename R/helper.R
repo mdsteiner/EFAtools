@@ -405,3 +405,27 @@
   }
 
 }
+
+# Create a string (used to print settings in print functions, to use in cat()
+# with sep = "")
+.settings_string <- function(x){
+
+  n <- length(x)
+
+if(n == 1){
+
+  c(crayon::bold(x), ".")
+
+} else if (n == 2){
+
+  c(crayon::bold(x[1]), " and ", crayon::bold(x[2]), ".")
+
+} else if (n > 2){
+
+  c(paste(crayon::bold(x[1:n-1]), collapse = ", "), ", and ", crayon::bold(x[n]),
+    ".")
+
+}
+
+}
+

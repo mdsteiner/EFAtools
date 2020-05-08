@@ -41,9 +41,15 @@
 #'
 #' @return A list of class KGC containing
 #'
-#' \item{eigenvalues}{A vector containing the eigenvalues.}
-#' \item{n_factors}{The number of factors to retain according to the Kaiser-
-#' Guttmann criterion.}
+#' \item{eigen_PCA}{A vector containing the eigenvalues found with PCA.}
+#' \item{eigen_SMC}{A vector containing the eigenvalues found with SMCs.}
+#' \item{eigen_EFA}{A vector containing the eigenvalues found with EFA.}
+#' \item{n_fac_PCA}{The number of factors to retain according to the Kaiser-
+#' Guttmann criterion with PCA eigenvalues type.}
+#' \item{n_fac_SMC}{The number of factors to retain according to the Kaiser-
+#' Guttmann criterion with SMC eigenvalues type.}
+#' \item{n_fac_EFA}{The number of factors to retain according to the Kaiser-
+#' Guttmann criterion with EFA eigenvalues type.}
 #'
 #' @source Auerswald, M., & Moshagen, M. (2019). How to determine the number of
 #' factors to retain in exploratory factor analysis: A comparison of extraction
@@ -64,13 +70,13 @@
 #' @export
 #'
 #' @example
-#' KGC(test_models$baseline$cormat, eigen_type = "PCA")
+#' KGC(test_models$baseline$cormat, eigen_type = c("PCA", "SMC"))
 #'
 KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
                 use = c("pairwise.complete.obs", "all.obs", "complete.obs",
                         "everything", "na.or.complete"), n_factors = 1, ...){
 
-  eigen_type <- match.arg(eigen_type)
+  eigen_type <- match.arg(eigen_type, several.ok = TRUE)
   use <- match.arg(use)
 
   # Check if it is a correlation matrix
@@ -103,34 +109,64 @@ KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
     stop("Correlation matrix is singular, factor analysis is not possible")
   }
 
-  if(eigen_type == "SMC") {
+  # Store original R for later
+  R_orig <- R
+
+  # Prepare objects
+  n_fac_PCA <- NA
+  n_fac_SMC <- NA
+  n_fac_EFA <- NA
+  eigen_R_PCA <- NA
+  eigen_R_SMC <- NA
+  eigen_R_EFA <- NA
+
+  if("PCA" %in% eigen_type) {
+
+    # Calculate eigenvalues and determine number of factors
+    eigen_R_PCA <- eigen(R, symmetric = TRUE, only.values = TRUE)$values
+    n_fac_PCA <- sum(eigen_R_PCA >= 1)
+
+  }
+
+  if("SMC" %in% eigen_type) {
 
     # Calculate SMCs and replace diagonal of correlation matrix with these
     inverse_R <- solve(R)
     SMCs <- 1 - 1 / diag(inverse_R)
     diag(R) <- SMCs
 
-  } else if(eigen_type == "EFA") {
-
-    # Do an EFA to get final communality estimates and replace diagonal of
-    # correlation matrix with these
-
-    EFA_h2 <- EFA(R, n_factors = n_factors, ...)$h2
-    diag(R) <- EFA_h2
+    # Calculate eigenvalues and determine number of factors
+    eigen_R_SMC <- eigen(R, symmetric = TRUE, only.values = TRUE)$values
+    n_fac_SMC <- sum(eigen_R_SMC >= 1)
 
   }
 
-  # Calculate eigenvalues and determine number of factors
-  eigen_R <- eigen(R, symmetric = TRUE, only.values = TRUE)$values
-  n_fac <- sum(eigen_R >= 1)
+  if("EFA" %in% eigen_type) {
+
+    R <- R_orig
+
+    # Do an EFA to get final communality estimates and replace diagonal of
+    # correlation matrix with these
+    EFA_h2 <- EFA(R, n_factors = n_factors, ...)$h2
+    diag(R) <- EFA_h2
+
+    # Calculate eigenvalues and determine number of factors
+    eigen_R_EFA <- eigen(R, symmetric = TRUE, only.values = TRUE)$values
+    n_fac_EFA <- sum(eigen_R_EFA >= 1)
+
+  }
 
   # prepare settings
   settings <- list(eigen_type = eigen_type)
 
   # Prepare the output
   output <- list(
-    eigenvalues = eigen_R,
-    n_factors = n_fac,
+    eigen_PCA = eigen_R_PCA,
+    eigen_SMC = eigen_R_SMC,
+    eigen_EFA = eigen_R_EFA,
+    n_fac_PCA = n_fac_PCA,
+    n_fac_SMC = n_fac_SMC,
+    n_fac_EFA = n_fac_EFA,
     settings = settings
   )
 
