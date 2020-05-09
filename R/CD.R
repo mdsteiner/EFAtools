@@ -73,9 +73,23 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
                method = c("pearson", "spearman", "kendall"),
                max_iter = 50) {
 
+  # Perform argument checks
+  if(!inherits(x, c("matrix", "data.frame"))){
+
+    stop("x is neither a matrix nor a dataframe. Provide a dataframe or matrix
+         with raw data.")
+
+  }
+
   use <- match.arg(use)
   method <- match.arg(method)
 
+  checkmate::assert_count(N_pop)
+  checkmate::assert_count(N_samples)
+  checkmate::assert_number(alpha, lower = 0, upper = 1)
+  checkmate::assert_count(max_iter)
+
+  # Create correlation matrix
   R <- stats::cor(x, use = use, method = method)
   colnames(R) <- colnames(x)
   n_cases <- nrow(x)

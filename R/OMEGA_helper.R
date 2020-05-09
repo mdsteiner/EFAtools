@@ -4,7 +4,7 @@
                         s_load = NULL, u2 = NULL, cormat = NULL, pattern = NULL,
                         Phi = NULL, variance = c("correlaton", "sums_load")){
 
-  if(inherits(model, c("psych", "schmid"))){
+  if(inherits(model, "schmid")){
 
     pattern <- model$oblique
     Phi <- model$phi
@@ -108,6 +108,9 @@
     }
 
   }
+
+  # Check if input to factor_corres is correct
+  checkmate::assert_numeric(factor_corres, null.ok = TRUE, len = nrow(g_load))
 
   # Create an input dataframe
   input <- data.frame(g_load, s_load)

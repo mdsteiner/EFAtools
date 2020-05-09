@@ -54,9 +54,15 @@ data is given as input. Default is "pairwise.complete.obs".}
 \value{
 A list of class KGC containing
 
-\item{eigenvalues}{A vector containing the eigenvalues.}
-\item{n_factors}{The number of factors to retain according to the Kaiser-
-Guttmann criterion.}
+\item{eigen_PCA}{A vector containing the eigenvalues found with PCA.}
+\item{eigen_SMC}{A vector containing the eigenvalues found with SMCs.}
+\item{eigen_EFA}{A vector containing the eigenvalues found with EFA.}
+\item{n_fac_PCA}{The number of factors to retain according to the Kaiser-
+Guttmann criterion with PCA eigenvalues type.}
+\item{n_fac_SMC}{The number of factors to retain according to the Kaiser-
+Guttmann criterion with SMC eigenvalues type.}
+\item{n_fac_EFA}{The number of factors to retain according to the Kaiser-
+Guttmann criterion with EFA eigenvalues type.}
 }
 \description{
 Probably the most popular factor retention criterion. Kaiser and Guttman suggested

@@ -2,7 +2,7 @@
 % Please edit documentation in R/SMT.R
 \name{SMT}
 \alias{SMT}
-\title{Sequential Model Tests for Chi Square and RMSEA lower bound}
+\title{Sequential Chi Square Model Tests, RMSEA lower bound, and AIC}
 \source{
 Auerswald, M., & Moshagen, M. (2019). How to determine the number of
 factors to retain in exploratory factor analysis: A comparison of extraction
@@ -42,13 +42,16 @@ data is given as input. Default is "pairwise.complete.obs".}
 \value{
 A list of class SMT containing
 \item{nfac_chi}{The number of factors to retain according to the chi square.}
-\item{nfac_RMSEA}{The number of factors to retain according to the RMSEA lowe
+\item{nfac_RMSEA}{The number of factors to retain according to the RMSEA lower
 bound}
+\item{nfac_AIC}{The number of factors to retain according to the AIC}
 \item{p_null}{The p-value for the null model (zero factors)}
 \item{ps_chi}{The p-values for EFA models with increasing numbers of factors,
 starting with 1 factor}
 \item{RMSEA_LBs}{The lower bounds of the 90% confidence interval for the RMSEA
 for EFA models with increasing numbers of factors, starting with 1 factor}
+\item{AICs}{The AICs for EFA models with increasing numbers of factors,
+starting with 1 factor}
 }
 \description{
 Sequential Chi Square Model Tests (SMT) are a factor retention method where
@@ -56,13 +59,17 @@ multiple
 EFAs with increasing numbers of factors are fitted and the number of factors
 for which the Chi Square value first becomes non-significant is taken as the
 suggested number of factors.
-Preacher, Zhang, Kim, & Mels (2013) suggested a similiar approach with the
-lower bound of the 90% confidence interval of the Root Mean Square Error of
-Approximation (RMSEA; Browne & Cudeck, 1992; Steiger & Lind, 1980), where the
-number of factors for which this lower bound first falls below .05 is the
-suggested number of factors to retain.
 }
 \details{
+Preacher, Zhang, Kim, & Mels (2013) suggested a similiar approach with the
+lower bound of the 90% confidence interval of the Root Mean Square Error of
+Approximation (RMSEA; Browne & Cudeck, 1992; Steiger & Lind, 1980), and with
+the Akaike Information Criterion (AIC). For the RMSEA, the
+number of factors for which this lower bound first falls below .05 is the
+suggested number of factors to retain. For the AIC, it is the number of factors
+where the AIC is lowest.
+
+
 As a first step in the procedure, a maximum number of factors to extract is
 determined with min(nvar - 2, nvar / 2 + 2), where nvar is the number of
 variables or indicators.
@@ -82,10 +89,14 @@ Regarding the RMSEA, the suggested number of factors is the number of factors
 for the model where the lower bound of the 90% confidence interval of the
 RMSEA first falls below the .05 threshold.
 
+Regarding the AIC, the suggested number of factors is the number of factors
+for the model where the AIC is lowest.
+
 In comparison with other prominent factor retention criteria, SMT performed
 well at determining the number of factors to extract in EFA (Auerswald &
 Moshagen, 2019). The RMSEA lower bound performed well at determining the true
-number of factors as well (Preacher, Zhang, Kim, & Mels, 2013).
+number of factors as well, while the AIC performed well at determining the
+most generalizable model (Preacher, Zhang, Kim, & Mels, 2013).
 }
 \examples{
 SMT_base <- SMT(test_models$baseline$cormat, N = 500)

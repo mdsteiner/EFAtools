@@ -6,7 +6,7 @@
 #' (2019).
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
-#' correlations
+#' correlations.
 #' @param N numeric. The number of observations. Only needed if x is a correlation
 #'  matrix.
 #' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw
@@ -59,6 +59,17 @@ EKC <- function(x, N = NA,
                 use = c("pairwise.complete.obs", "all.obs",
                            "complete.obs", "everything",
                            "na.or.complete")) {
+
+  # Perform argument checks
+  if(!inherits(x, c("matrix", "data.frame"))){
+
+    stop("x is neither a matrix nor a dataframe. Either provide a correlation
+    matrix or a dataframe or matrix with raw data.")
+
+  }
+
+  checkmate::assert_count(N, na.ok = TRUE)
+  use <- match.arg(use)
 
   # Check if it is a correlation matrix
   if(.is_cormat(x)){

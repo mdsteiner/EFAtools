@@ -28,7 +28,7 @@ implementation.}
 \item{y}{matrix, dataframe, or vector. Loadings or communalities of another
 implementation to compare to x.}
 
-\item{reorder}{logical. Whether elements / columns should be reordered.
+\item{reorder}{character. Whether and how elements / columns should be reordered.
 (loading) matrices are reordered according to Tuckers correspondence coefficient,
 other objects according to the names.}
 

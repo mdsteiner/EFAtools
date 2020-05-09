@@ -28,6 +28,7 @@ Imports:
     parallel,
     future.apply,
     future,
-    GPArotation
+    GPArotation,
+    checkmate
 LinkingTo: 
     Rcpp, RcppArmadillo

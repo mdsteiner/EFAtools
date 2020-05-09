@@ -43,7 +43,16 @@ BARTLETT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
                                         "complete.obs", "everything",
                                         "na.or.complete")){
 
+  # Perform argument checks
+  if(!inherits(x, c("matrix", "data.frame"))){
+
+    stop("x is neither a matrix nor a dataframe. Either provide a correlation
+    matrix or a dataframe or matrix with raw data.")
+
+  }
+
   use <- match.arg(use)
+  checkmate::assert_count(N, na.ok = TRUE)
 
   # Check if it is a correlation matrix
   if(.is_cormat(x)){

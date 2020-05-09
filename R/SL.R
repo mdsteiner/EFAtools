@@ -83,7 +83,10 @@
 SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
                method = c("PAF", "ML", "ULS"), ...) {
 
+  # Perform argument checks
+  checkmate::assert_matrix(Phi, null.ok = TRUE)
   type <- match.arg(type)
+  method <- match.arg(method)
 
   if(inherits(x, "EFA")) {
 
@@ -115,7 +118,7 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
     L1 <- L1[, n_order]
     Phi <- Phi[n_order, n_order]
 
-  } else if(inherits(x, c("psych", "fa"))) {
+  } else if(inherits(x, "fa")) {
 
     if("Phi" %in% names(x)){
 
@@ -151,6 +154,12 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
 
       stop("Phi not provided. Either enter an oblique factor solution from
       EFAtools::EFA or from psych::fa, or provide Phi")
+
+    }
+
+    if(!inherits(x, "matrix")){
+
+      stop("x is neither an object of class EFA or fa nor a matrix.")
 
     }
 

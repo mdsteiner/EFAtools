@@ -250,11 +250,33 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                 order_type = NULL, start_method = c("factanal", "psych"),
                 ...) {
 
+  # Perform argument checks
+  if(!inherits(x, c("matrix", "data.frame"))){
+
+    stop("x is neither a matrix nor a dataframe. Either provide a correlation
+    matrix or a dataframe or matrix with raw data.")
+
+  }
+
   method <- match.arg(method)
   rotation <- match.arg(rotation)
   use <- match.arg(use)
   type <- match.arg(type)
   start_method <- match.arg(start_method)
+
+  checkmate::assert_count(n_factors)
+  checkmate::assert_count(N, na.ok = TRUE)
+  checkmate::assert_count(max_iter, null.ok = TRUE)
+  checkmate::assert_choice(init_comm, c("smc", "mac", "unity"), null.ok = TRUE)
+  checkmate::assert_number(criterion, null.ok = TRUE)
+  checkmate::assert_choice(criterion_type, c("max_individual", "sums"),
+                           null.ok = TRUE)
+  checkmate::assert_flag(abs_eigen, null.ok = TRUE)
+  checkmate::assert_number(k, null.ok = TRUE)
+  checkmate::assert_flag(abs_eigen, kaiser = TRUE)
+  checkmate::assert_choice(criterion_type, c("unnorm", "norm"), null.ok = TRUE)
+  checkmate::assert_number(precision, null.ok = TRUE)
+  checkmate::assert_choice(order_type, c("eigen", "ss_factors"), null.ok = TRUE)
 
   # Check if it is a correlation matrix
   if(.is_cormat(x)){

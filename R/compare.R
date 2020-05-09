@@ -9,11 +9,14 @@
 #'  implementation.
 #' @param y matrix, dataframe, or vector. Loadings or communalities of another
 #'  implementation to compare to x.
-#' @param reorder logical. Whether elements / columns should be reordered.
-#'  (loading) matrices are reordered according to Tuckers correspondence coefficient,
-#'  other objects according to the names.
-#' @param corres logical. Whether factor correspondences should be compared if a matrix
-#'  is entered.
+#' @param reorder character. Whether and how elements / columns should be
+#' reordered. If "congruence" (default), reordering is done according to Tuckers
+#' corresponcence coefficient, if "names", objects according to their names,
+#' if "none", no reordering is done.
+#' OLD: (loading) matrices are reordered according to Tuckers correspondence
+#'  coefficient, other objects according to the names.
+#' @param corres logical. Whether factor correspondences should be compared if a
+#'  matrix is entered.
 #' @param thresh numeric. The threshold to classify a pattern coefficient as substantial. Default is .3.
 #' @param digits numeric. Number of decimals to print in the output (default is 4).
 #' @param m_red numeric. Number above which the mean and median should be printed
@@ -76,7 +79,7 @@
 #'         x_labels = c("SPSS", "psych"))
 compare <- function(x,
                     y,
-                    reorder = c("congruence", "names", FALSE),
+                    reorder = c("congruence", "names", "none"),
                     corres = TRUE,
                     thresh = .3,
                     digits = 4,
@@ -90,11 +93,22 @@ compare <- function(x,
                     plot_red = .001)  {
 
   reorder <- match.arg(reorder)
+  checkmate::assert_flag(corres)
+  checkmate::assert_number(thresh)
+  checkmate::assert_count(digits)
+  checkmate::assert_number(m_red)
+  checkmate::assert_number(range_red)
+  checkmate::assert_number(round_red)
+  checkmate::assert_flag(print_diff)
+  checkmate::assert_flag(na.rm)
+  checkmate::assert_character(x_labels, len = 2)
+  checkmate::assert_flag(plot)
+  checkmate::assert_number(plot_red)
 
   # reclass data.frames and tibbles to matrices so the stats functions afterwards
   # work
-  if (!(inherits(x, c("numeric", "COMMUNALITIES", "EIGEN"))) &&
-      !(inherits(y, c("numeric", "COMMUNALITIES", "EIGEN")))) {
+  if (!(inherits(x, "numeric")) &&
+      !(inherits(y, "numeric"))) {
 
     if (inherits(x, "data.frame")) {
       x <- as.matrix(x)
@@ -111,7 +125,8 @@ compare <- function(x,
     # check if dimensions match:
     if (any(dim(x) != dim(y))) {
 
-      stop("x and y have different dimensions. Compare only works with identical dimensions")
+      stop("x and y have different dimensions. Compare only works with identical
+           dimensions")
 
     }
 

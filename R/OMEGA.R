@@ -191,9 +191,22 @@ OMEGA <- function(model = NULL, type = c("EFAtools", "psych"), g_name = "g",
                   pattern = NULL, Phi = NULL, variance = c("correlation",
                                                            "sums_load")){
 
+  # Perform argument checks
   type <- match.arg(type)
+  checkmate::assert_string(g_name)
+  checkmate::assert_character(group_names, null.ok = TRUE)
+  # Check for factor_corres in OMEGA_helper
+  checkmate::assert_character(var_names, null.ok = TRUE)
+  checkmate::assert_character(fac_names, null.ok = TRUE)
+  checkmate::assert_numeric(g_load, null.ok = TRUE)
+  checkmate::assert_matrix(s_load, null.ok = TRUE)
+  checkmate::assert_numeric(u2, null.ok = TRUE)
+  checkmate::assert_matrix(cormat, null.ok = TRUE)
+  checkmate::assert_matrix(pattern, null.ok = TRUE)
+  checkmate::assert_matrix(Phi, null.ok = TRUE)
   variance <- match.arg(variance)
 
+  # Determine which function to use
   if(!is.null(model) & (!is.null(var_names) || !is.null(g_load) || !is.null(s_load)
      || !is.null(u2))){
 
@@ -208,9 +221,9 @@ OMEGA <- function(model = NULL, type = c("EFAtools", "psych"), g_name = "g",
 
     .OMEGA_LAVAAN(model = model, g_name = g_name, group_names = group_names)
 
-  } else if(inherits(model, c("psych", "schmid", "SL"))) {
+  } else if(inherits(model, c("schmid", "SL"))) {
 
-    if(is.null(factor_corres) && inherits(model, c("psych", "schmid"))){
+    if(is.null(factor_corres) && inherits(model, "schmid")){
 
       stop("Please specify the argument 'factor_corres'")
 
