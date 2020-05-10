@@ -83,10 +83,10 @@ in \code{\link{PAF}}. "smc" will use squared multiple correlations, "mac" will u
 maximum absolute correlations, "unity" will use 1s (see details).
 Default is \code{NULL}.}
 
-\item{criterion}{numeric. The convergence criterion used in \code{\link{PAF}}.
+\item{criterion}{numeric. The convergence criterion used in PAF.
 If the change in communalities from one iteration to the next is smaller than
 this criterion the solution is accepted and the procedure ends. Details
-depend on criterion_type (see \code{\link{PAF}} documentation).
+depend on criterion_type (see PAF documentation).
 Default is \code{NULL}.}
 
 \item{criterion_type}{character. Type of convergence criterion used in
@@ -97,7 +97,7 @@ the sum of all communalities in one iteration and the sum of all communalities
 in the next iteration and tests this against the criterion. This procedure is
 used by the \code{\link[psych:fa]{psych::fa}} function. Default is \code{NULL}.}
 
-\item{abs_eigen}{logical. Which algorithm to use in the \code{\link{PAF}}
+\item{abs_eigen}{logical. Which algorithm to use in the PAF
 iterations. If FALSE, the loadings are computed from the eigenvalues. This is
 also used by the \code{\link[psych:fa]{psych::fa}} function. If TRUE the
 loadings are computed with the absolute eigenvalues as done by SPSS.
@@ -274,16 +274,18 @@ EFAtools_oblim <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
                       type = "EFAtools", method = "PAF", rotation = "oblimin")
 
 # Do a PAF without rotation without specifying a type, so the arguments
-# can be flexibly specified (this is only recommended if you know what your doing)
+# can be flexibly specified (this is only recommended if you know what your
+# doing)
 PAF_none <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
-                type = "none", method = "PAF", rotation = "none", max_iter = 500,
-                init_comm = "mac", criterion = 1e4, criterion_type = "sums",
-                abs_eigen = FALSE)
+                type = "none", method = "PAF", rotation = "none",
+                max_iter = 500, init_comm = "mac", criterion = 1e-4,
+                criterion_type = "sums", abs_eigen = FALSE)
 
 # Add a promax rotation
 PAF_pro <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
-               type = "none", method = "PAF", rotation = "none", max_iter = 500,
-               init_comm = "mac", criterion = 1e4, criterion_type = "sums",
+               type = "none", method = "PAF", rotation = "none",
+               max_iter = 500,
+               init_comm = "mac", criterion = 1e-4, criterion_type = "sums",
                abs_eigen = FALSE, k = 3, P_type = "unnorm", precision= 1e-5,
                order_type = "eigen")
 

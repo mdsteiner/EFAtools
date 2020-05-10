@@ -39,10 +39,10 @@
 #' in \code{\link{PAF}}. "smc" will use squared multiple correlations, "mac" will use
 #' maximum absolute correlations, "unity" will use 1s (see details).
 #' Default is \code{NULL}.
-#' @param criterion numeric. The convergence criterion used in \code{\link{PAF}}.
+#' @param criterion numeric. The convergence criterion used in PAF.
 #' If the change in communalities from one iteration to the next is smaller than
 #' this criterion the solution is accepted and the procedure ends. Details
-#' depend on criterion_type (see \code{\link{PAF}} documentation).
+#' depend on criterion_type (see PAF documentation).
 #' Default is \code{NULL}.
 #' @param criterion_type character. Type of convergence criterion used in
 #' \code{\link{PAF}}. "max_individual" selects the maximum change in any of the
@@ -51,7 +51,7 @@
 #' the sum of all communalities in one iteration and the sum of all communalities
 #' in the next iteration and tests this against the criterion. This procedure is
 #' used by the \code{\link[psych:fa]{psych::fa}} function. Default is \code{NULL}.
-#' @param abs_eigen logical. Which algorithm to use in the \code{\link{PAF}}
+#' @param abs_eigen logical. Which algorithm to use in the PAF
 #' iterations. If FALSE, the loadings are computed from the eigenvalues. This is
 #' also used by the \code{\link[psych:fa]{psych::fa}} function. If TRUE the
 #' loadings are computed with the absolute eigenvalues as done by SPSS.
@@ -223,16 +223,18 @@
 #'                       type = "EFAtools", method = "PAF", rotation = "oblimin")
 #'
 #' # Do a PAF without rotation without specifying a type, so the arguments
-#' # can be flexibly specified (this is only recommended if you know what your doing)
+#' # can be flexibly specified (this is only recommended if you know what your
+#' # doing)
 #' PAF_none <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
-#'                 type = "none", method = "PAF", rotation = "none", max_iter = 500,
-#'                 init_comm = "mac", criterion = 1e4, criterion_type = "sums",
-#'                 abs_eigen = FALSE)
+#'                 type = "none", method = "PAF", rotation = "none",
+#'                 max_iter = 500, init_comm = "mac", criterion = 1e-4,
+#'                 criterion_type = "sums", abs_eigen = FALSE)
 #'
 #' # Add a promax rotation
 #' PAF_pro <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
-#'                type = "none", method = "PAF", rotation = "none", max_iter = 500,
-#'                init_comm = "mac", criterion = 1e4, criterion_type = "sums",
+#'                type = "none", method = "PAF", rotation = "none",
+#'                max_iter = 500,
+#'                init_comm = "mac", criterion = 1e-4, criterion_type = "sums",
 #'                abs_eigen = FALSE, k = 3, P_type = "unnorm", precision= 1e-5,
 #'                order_type = "eigen")
 #'
@@ -268,14 +270,14 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   checkmate::assert_count(N, na.ok = TRUE)
   checkmate::assert_count(max_iter, null.ok = TRUE)
   checkmate::assert_choice(init_comm, c("smc", "mac", "unity"), null.ok = TRUE)
-  checkmate::assert_number(criterion, null.ok = TRUE)
+  checkmate::assert_number(criterion, null.ok = TRUE, lower = 0, upper = 1)
   checkmate::assert_choice(criterion_type, c("max_individual", "sums"),
                            null.ok = TRUE)
   checkmate::assert_flag(abs_eigen, null.ok = TRUE)
   checkmate::assert_number(k, null.ok = TRUE)
   checkmate::assert_flag(kaiser, null.ok = TRUE)
   checkmate::assert_choice(criterion_type, c("unnorm", "norm"), null.ok = TRUE)
-  checkmate::assert_number(precision, null.ok = TRUE)
+  checkmate::assert_number(precision, null.ok = TRUE, lower = 0, upper = 1)
   checkmate::assert_choice(order_type, c("eigen", "ss_factors"), null.ok = TRUE)
 
   # Check if it is a correlation matrix

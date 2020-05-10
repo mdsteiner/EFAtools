@@ -22,6 +22,7 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
                     const int n_fac, bool abs_eig, int crit_type,
                     int max_iter) {
 
+
   int iter = 1;
   double delta = 1.0;
   arma::vec tv(R.n_cols);
