@@ -284,9 +284,8 @@ PAF_none <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
 # Add a promax rotation
 PAF_pro <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
                type = "none", method = "PAF", rotation = "none",
-               max_iter = 500,
-               init_comm = "mac", criterion = 1e-4, criterion_type = "sums",
-               abs_eigen = FALSE, k = 3, P_type = "unnorm", precision= 1e-5,
-               order_type = "eigen")
+               max_iter = 500, init_comm = "mac", criterion = 1e-4,
+               criterion_type = "sums", abs_eigen = FALSE, k = 3,
+               P_type = "unnorm", precision= 1e-5, order_type = "eigen")
 
 }

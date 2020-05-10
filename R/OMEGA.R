@@ -223,7 +223,7 @@ OMEGA <- function(model = NULL, type = c("EFAtools", "psych"), g_name = "g",
 
   } else if(inherits(model, c("schmid", "SL"))) {
 
-    if(is.null(factor_corres) && inherits(model, "schmid")){
+    if(is.null(factor_corres) && !inherits(model, "schmid")){
 
       stop("Please specify the argument 'factor_corres'")
 

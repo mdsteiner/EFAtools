@@ -233,10 +233,9 @@
 #' # Add a promax rotation
 #' PAF_pro <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
 #'                type = "none", method = "PAF", rotation = "none",
-#'                max_iter = 500,
-#'                init_comm = "mac", criterion = 1e-4, criterion_type = "sums",
-#'                abs_eigen = FALSE, k = 3, P_type = "unnorm", precision= 1e-5,
-#'                order_type = "eigen")
+#'                max_iter = 500, init_comm = "mac", criterion = 1e-4,
+#'                criterion_type = "sums", abs_eigen = FALSE, k = 3,
+#'                P_type = "unnorm", precision= 1e-5, order_type = "eigen")
 #'
 EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                 rotation = c("none", "varimax", "equamax", "quartimax", "geominT",
@@ -276,7 +275,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   checkmate::assert_flag(abs_eigen, null.ok = TRUE)
   checkmate::assert_number(k, null.ok = TRUE)
   checkmate::assert_flag(kaiser, null.ok = TRUE)
-  checkmate::assert_choice(criterion_type, c("unnorm", "norm"), null.ok = TRUE)
+  checkmate::assert_choice(P_type, c("unnorm", "norm"), null.ok = TRUE)
   checkmate::assert_number(precision, null.ok = TRUE, lower = 0, upper = 1)
   checkmate::assert_choice(order_type, c("eigen", "ss_factors"), null.ok = TRUE)
 
