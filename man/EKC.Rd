@@ -26,7 +26,7 @@ EKC(
 }
 \arguments{
 \item{x}{data.frame or matrix. Dataframe or matrix of raw data or matrix with
-correlations}
+correlations.}
 
 \item{N}{numeric. The number of observations. Only needed if x is a correlation
 matrix.}

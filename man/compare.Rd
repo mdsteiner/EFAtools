@@ -7,7 +7,7 @@
 compare(
   x,
   y,
-  reorder = c("congruence", "names", FALSE),
+  reorder = c("congruence", "names", "none"),
   corres = TRUE,
   thresh = 0.3,
   digits = 4,
@@ -28,12 +28,15 @@ implementation.}
 \item{y}{matrix, dataframe, or vector. Loadings or communalities of another
 implementation to compare to x.}
 
-\item{reorder}{character. Whether and how elements / columns should be reordered.
-(loading) matrices are reordered according to Tuckers correspondence coefficient,
-other objects according to the names.}
+\item{reorder}{character. Whether and how elements / columns should be
+reordered. If "congruence" (default), reordering is done according to Tuckers
+corresponcence coefficient, if "names", objects according to their names,
+if "none", no reordering is done.
+OLD: (loading) matrices are reordered according to Tuckers correspondence
+ coefficient, other objects according to the names.}
 
-\item{corres}{logical. Whether factor correspondences should be compared if a matrix
-is entered.}
+\item{corres}{logical. Whether factor correspondences should be compared if a
+matrix is entered.}
 
 \item{thresh}{numeric. The threshold to classify a pattern coefficient as substantial. Default is .3.}
 

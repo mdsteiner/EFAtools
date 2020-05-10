@@ -273,7 +273,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                            null.ok = TRUE)
   checkmate::assert_flag(abs_eigen, null.ok = TRUE)
   checkmate::assert_number(k, null.ok = TRUE)
-  checkmate::assert_flag(abs_eigen, kaiser = TRUE)
+  checkmate::assert_flag(kaiser, null.ok = TRUE)
   checkmate::assert_choice(criterion_type, c("unnorm", "norm"), null.ok = TRUE)
   checkmate::assert_number(precision, null.ok = TRUE)
   checkmate::assert_choice(order_type, c("eigen", "ss_factors"), null.ok = TRUE)
