@@ -157,9 +157,10 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
 
     }
 
-    if(!inherits(x, "matrix")){
+    if(!inherits(x, "matrix", "LOADINGS", "loadings")){
 
-      stop("x is neither an object of class EFA or fa nor a matrix.")
+      stop("x is neither an object of class EFA or fa nor a matrix,
+           nor of class LOADINGS or loadings.")
 
     }
 
