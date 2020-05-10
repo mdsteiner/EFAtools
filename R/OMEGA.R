@@ -199,7 +199,7 @@ OMEGA <- function(model = NULL, type = c("EFAtools", "psych"), g_name = "g",
   checkmate::assert_character(var_names, null.ok = TRUE)
   checkmate::assert_character(fac_names, null.ok = TRUE)
   checkmate::assert_numeric(g_load, null.ok = TRUE)
-  if(!is.null(s_load) && !inherits(s_load, "matrix", "SLLOADINGS")){
+  if(!is.null(s_load) && !inherits(s_load, c("matrix", "SLLOADINGS"))){
 
     stop("Specification of s_load was invalid. Please either leave this NULL
     if you enter a model input or specify a matrix of loadings from a Schmid-
@@ -208,7 +208,7 @@ OMEGA <- function(model = NULL, type = c("EFAtools", "psych"), g_name = "g",
   }
   checkmate::assert_numeric(u2, null.ok = TRUE)
   checkmate::assert_matrix(cormat, null.ok = TRUE)
-  if(!is.null(pattern) && !inherits(pattern, "matrix", "loadings", "LOADINGS")){
+  if(!is.null(pattern) && !inherits(pattern, c("matrix", "loadings", "LOADINGS"))){
 
     stop("Specification of pattern was invalid. Please either leave this NULL
     or specify a matrix of pattern coefficients form an oblique factor solution
