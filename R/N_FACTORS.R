@@ -1,4 +1,4 @@
-# - scree just plots the eigenvalues if none of EKC, KGC, or PARALLEL is used.
+
 # - say what only works with raw data (CD, PARALLEL if resampling is implemented)
 # - ... further arguments passed to PARALLEL in HULL or passed to EFA in KGC ->
     # for these functions, methods argument here is also passed to EFA, problem?
@@ -6,7 +6,7 @@
 # arguments set for parallel are also used in HULL parallel (because passed to
 # PARALLEL there), problem?
 N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "MACHINE",
-                                      "PARALLEL", "scree", "SMT"),
+                                      "PARALLEL", "SMT"),
                       suitability = c("KMO", "BARTLETT"), N = NA,
                       use = c("pairwise.complete.obs", "all.obs", "complete.obs",
                                  "everything", "na.or.complete"),
@@ -24,6 +24,8 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "MACHINE",
 
   ## Perform argument checks and prepare input
   criteria <- match.arg(criteria, several.ok = TRUE)
+
+  # WHAT HAPPENS IF YOU ENTER NULL? SHOULD BE POSSIBLE...
   suitability <- match.arg(suitability, several.ok = TRUE)
   # OTHER CHECKS IN RESPECTIVE FUNCTIONS OK? OR BETTER HERE?
 
@@ -101,7 +103,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "MACHINE",
   # Kaiser-Meyer_Olkin criterion
   if("KMO" %in% suitability){
 
-    kmo_out <- KMO(R, N = N)
+    kmo_out <- KMO(R, use = use)
 
   }
 
@@ -213,7 +215,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "MACHINE",
                  nfac_EKC = nfac_EKC,
                  nfac_HULL_CAF = nfac_HULL_CAF,
                  nfac_HULL_CFI = nfac_HULL_CFI,
-                 nfac_HULL_RMSEA = nfac_HULL_RMSE,
+                 nfac_HULL_RMSEA = nfac_HULL_RMSEA,
                  nfac_KGC_PCA = nfac_KGC_PCA,
                  nfac_KGC_SMC = nfac_KGC_SMC,
                  nfac_KGC_EFA = nfac_KGC_EFA,
@@ -224,6 +226,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "MACHINE",
                  nfac_RMSEA = nfac_RMSEA,
                  nfac_AIC = nfac_AIC)
 
+  ## BETTER PUT ALL OUTPUTS IN A LIST FIRST?
   output <- list(bart_out = bart_out,
                  kmo_out = kmo_out,
                  cd_out = cd_out,
@@ -232,7 +235,8 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "MACHINE",
                  kgc_out = kgc_out,
                  parallel_out = parallel_out,
                  smt_out = smt_out,
-                 n_factors = n_factors)
+                 n_factors = n_factors,
+                 settings = settings)
 
   class(output) <- "N_FACTORS"
 

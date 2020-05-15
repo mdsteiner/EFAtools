@@ -23,7 +23,8 @@ print.SMT <- function(x, ...) {
   cat("\n")
   cat("\n")
 
-  cat("RMSEA lower bound suggests ", crayon::bold(nfac_RMSEA), " factor",
+  cat("Lower bound of RMSEA 90% confidence interval suggests ",
+      crayon::bold(nfac_RMSEA), " factor",
       ifelse(nfac_RMSEA > 1, "s.", "."), sep = "")
   cat("\n")
   cat("\n")
