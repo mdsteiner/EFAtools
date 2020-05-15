@@ -17,7 +17,7 @@
 #'  improvement added by an additional factor. Default is .30.
 #' @param use character. Passed to \code{\link[stats:cor]{stats::cor}}. Default
 #'  is "pairwise.complete.obs".
-#' @param method character. Passed to \code{\link[stats:cor]{stats::cor}}.
+#' @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}.
 #' Default is "pearson".
 #' @param max_iter numeric. The maximum number of iterations to perform after which
 #' the iterative PAF procedure is halted. Default is 50.
@@ -62,7 +62,7 @@
 #' # create covariance matrix for multivariate distribution
 #' covmat <- sds %*% t(sds) * cormat
 #' # simulate data
-#' sim_dat <- MASS::mvrnorm(n = N, mu = mus, Sigma = covmat)
+#' sim_dat <- MASS::mvrnorm(mu = mus, Sigma = covmat)
 #'
 #' # run comparison data
 #' CD(sim_dat, 8)
@@ -70,7 +70,7 @@
 CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .30,
                use = c("pairwise.complete.obs", "all.obs", "complete.obs",
                     "everything", "na.or.complete"),
-               method = c("pearson", "spearman", "kendall"),
+               cor_method = c("pearson", "spearman", "kendall"),
                max_iter = 50) {
 
   # Perform argument checks
@@ -82,15 +82,16 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
   }
 
   use <- match.arg(use)
-  method <- match.arg(method)
+  cor_method <- match.arg(cor_method)
 
+  checkmate::assert_count(n_factors_max, na.ok = TRUE)
   checkmate::assert_count(N_pop)
   checkmate::assert_count(N_samples)
   checkmate::assert_number(alpha, lower = 0, upper = 1)
   checkmate::assert_count(max_iter)
 
   # Create correlation matrix
-  R <- stats::cor(x, use = use, method = method)
+  R <- stats::cor(x, use = use, method = cor_method)
   colnames(R) <- colnames(x)
   n_cases <- nrow(x)
   k <- ncol(x)
@@ -101,7 +102,7 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
 
     if (n_factors_max > m_possible) {
       warning("n_factors_max was set to ", n_factors_max, " but maximum possible",
-              "factors to extract is ", m_possible, ". Setting n_factors_max to ",
+              " factors to extract is ", m_possible, ". Setting n_factors_max to ",
               m_possible, ".")
     }
 
@@ -117,11 +118,11 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
 
   while (n_factors <= n_factors_max && isTRUE(sig)) {
 
-    pop <- .gen_data(x, method, use, n_factors, N_pop, max_iter = max_iter)
+    pop <- .gen_data(x, cor_method, use, n_factors, N_pop, max_iter = max_iter)
 
     for (j in 1:N_samples) {
       samp <- pop[sample(1:N_pop, size = n_cases, replace = TRUE),]
-      R_samp <- stats::cor(samp, method = method)
+      R_samp <- stats::cor(samp, method = cor_method)
       eigvals_samp <- eigen(R_samp, symmetric = TRUE, only.values = TRUE)$values
       RMSE_eigvals[j,n_factors] <- sqrt(sum((eigvals_samp - eigvals_real) *
                                          (eigvals_samp - eigvals_real)) / k)
@@ -145,7 +146,7 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
     N_samples = N_samples,
     alpha = alpha,
     use = use,
-    method = method
+    cor_method = cor_method
   )
 
   out <- list(
@@ -186,7 +187,7 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
 
   # Calculate and store a copy of the target correlation matrix (step 3) -----------------------------------------
 
-  R <- stats::cor(x, method = method, use = use)
+  R <- stats::cor(x, method = cor_method, use = use)
   R_inter <- R
 
   # Generate random normal data for shared and unique components, initialize factor loadings (steps 5, 6) --------
@@ -243,7 +244,7 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
 
       # Calculate RMSE correlation, compare to lowest value, take appropriate action (steps 10, 11, 12) --------------
 
-      R_rep <- stats::cor(sim_dat, method = method)
+      R_rep <- stats::cor(sim_dat, method = cor_method)
       R_res <- R - R_rep
       # check whether this also works:
       # sqrt(sum(diag(t(R_res) %*% (R_res))) / prod(dim(R)))

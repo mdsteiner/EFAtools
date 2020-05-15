@@ -1,15 +1,15 @@
 #' Hull method for determining the number of factors to retain
 #'
-#' Implementation of the Hull method suggested by Lorenzo-Seva, Timmereman,
+#' Implementation of the Hull method suggested by Lorenzo-Seva, Timmerman,
 #' and Kiers (2011), but using principal axis factoring. See details for
 #' parallelization.
 #'
 #' @param x matrix or data.frame. Correlation matrix or raw data.
-#' @param n_cases numeric. Number of cases in the data. This is passed to \link{PARALLEL}.
+#' @param N numeric. Number of cases in the data. This is passed to \link{PARALLEL}.
 #'  Only has to be specified if x is a correlation matrix.
-#' @param n_factors numeric. Theoretical number of factors to retain. The maximum
+#' @param n_fac_theor numeric. Theoretical number of factors to retain. The maximum
 #'   of this number and the number of factors suggested by \link{PARALLEL} plus
-#'   onewill be used in the Hull method.
+#'   one will be used in the Hull method.
 #' @param method character. The estimation method to use. One of  \code{"PAF"},
 #'    \code{"ULS"}, or  \code{"ML"}, for principal axis factoring, unweighted
 #'    least squares, and maximum likelihood, respectively.
@@ -34,7 +34,7 @@
 #'
 #' @return A list of class HULL containing the following objects
 #' \item{n_factors}{The number of factors to retain according to the Hull method.}
-#' \item{solutions}{A matrix containing the goodness of fit indices (CAF), degrees of freedom, and for the factors lying on the hull, the st values of the hull solution (see Lorenzo-Seva, Timmereman, and Kiers 2011 for details).}
+#' \item{solutions}{A matrix containing the goodness of fit indices (CAF), degrees of freedom, and for the factors lying on the hull, the st values of the hull solution (see Lorenzo-Seva, Timmerman, and Kiers 2011 for details).}
 #' \item{ctrl}{A list of control settings used in the print and plot methods.}
 #'
 #' @source Lorenzo-Seva, U., Timmerman, M. E., & Kiers, H. A. (2011).
@@ -47,32 +47,32 @@
 #' \dontrun{
 #' # using PAF
 #' HULL(test_models$baseline$cormat,
-#'      n_cases = test_models$baseline$N)
+#'      N = test_models$baseline$N)
 #'
 #' # using ML with CFI
-#' HULL(test_models$baseline$cormat, n_cases = test_models$baseline$N,
+#' HULL(test_models$baseline$cormat, N = test_models$baseline$N,
 #'      method = "ML", gof = "CFI")
 #'
 #' # using ULS with RAMSEA
-#' HULL(test_models$baseline$cormat, n_cases = test_models$baseline$N,
+#' HULL(test_models$baseline$cormat, N = test_models$baseline$N,
 #'      method = "ULS", gof = "RMSEA")
 #'
 #' # using parallel processing (Note: plans can be adapted, see the future
 #' # package for details)
 #' future::plan(future::multisession)
-#' HULL(test_models$baseline$cormat, n_cases = test_models$baseline$N)
+#' HULL(test_models$baseline$cormat, N = test_models$baseline$N)
 #' }
-HULL <- function(x, n_cases = NA, n_factors = NA,
+HULL <- function(x, N = NA, n_fac_theor = NA,
                  method = c("PAF", "ULS", "ML"), gof = c("CAF", "CFI", "RMSEA"),
                  use = c("pairwise.complete.obs", "all.obs", "complete.obs",
                  "everything", "na.or.complete"), ...) {
-  # Perform hull method following Lorenzo-Seva, Timmereman, and Kiers (2011)
+  # Perform hull method following Lorenzo-Seva, Timmerman, and Kiers (2011)
 
   # # for testing
   # x <- IDS2_R
   # cors <- TRUE
-  # n_cases <- 2000
-  # n_factors <- 7
+  # N <- 2000
+  # n_fac_theor <- 7
   # method <- "ML"
   # gof <- "CFI"
 
@@ -105,12 +105,12 @@ HULL <- function(x, n_cases = NA, n_factors = NA,
 
     R <- stats::cor(x, use = use)
     colnames(R) <- colnames(x)
-    n_cases <- nrow(x)
+    N <- nrow(x)
 
   }
 
-  if (gof != "CAF" && is.na(n_cases)) {
-    stop('n_cases is not specified but is needed for computation of ', gof,
+  if (gof != "CAF" && is.na(N)) {
+    stop('N is not specified but is needed for computation of ', gof,
          ' fit index.')
   }
 
@@ -130,20 +130,20 @@ HULL <- function(x, n_cases = NA, n_factors = NA,
 
   m <- ncol(R)
 
-  # 1) perform parallel analysis to find J as n_factors + 1
-  par_res <- PARALLEL(R, n_cases = n_cases, ...)
+  # 1) perform parallel analysis to find J as n_fac_theor + 1
+  par_res <- PARALLEL(R, N = N, ...)
 
-  if (is.na(par_res$n_factor)) {
+  if (is.na(par_res$n_factors)) {
 
-    if (!is.na(n_factors)) {
-      J <- n_factors + 1
+    if (!is.na(n_fac_theor)) {
+      J <- n_fac_theor + 1
     } else {
       J <- floor(ncol(R) / 2)
     }
 
   } else {
 
-    J <- max(c(par_res$n_factor, n_factors), na.rm = TRUE) + 1
+    J <- max(c(par_res$n_factors, n_fac_theor), na.rm = TRUE) + 1
 
   }
 
@@ -160,18 +160,18 @@ HULL <- function(x, n_cases = NA, n_factors = NA,
     s[1, 2] <- 0
 
     # for later use in loop
-    chi_null <- sum(R[upper.tri(R)] ^ 2) * (n_cases - 1)
+    chi_null <- sum(R[upper.tri(R)] ^ 2) * (N - 1)
     df_null <- (m**2 - m) / 2
     delta_hat_null <- max(0, chi_null - df_null)
 
   } else if (gof == "RMSEA") {
 
     Fm <- sum(R[upper.tri(R)] ^ 2)
-    chi <- Fm * (n_cases - 1)
+    chi <- Fm * (N - 1)
     df <- (m**2 - m) / 2
     delta_hat_m <- max(0, chi - df)
     # compute 1 - RMSEA
-    s[1, 2] <- 1 - sqrt(max(delta_hat_m / (df * (n_cases - 1)), 0))
+    s[1, 2] <- 1 - sqrt(max(delta_hat_m / (df * (N - 1)), 0))
   }
 
 
@@ -208,17 +208,17 @@ HULL <- function(x, n_cases = NA, n_factors = NA,
         s[i + 1, 2] <- 1 - KMO(delta_hat)$KMO
       } else if (gof == "CFI") {
         Fm <- loadings[[i]]$fit
-        chi <- Fm * (n_cases - 1)
+        chi <- Fm * (N - 1)
         delta_hat_m <- max(0, chi - df)
         # compute CFI
         s[i + 1, 2] <- 1 - delta_hat_m / delta_hat_null
 
       } else if (gof == "RMSEA") {
         Fm <- loadings[[i]]$fit
-        chi <- Fm * (n_cases -1)
+        chi <- Fm * (N -1)
         delta_hat_m <- max(0, chi - df)
         # compute 1 - RMSEA
-        s[i + 1, 2] <- 1 - sqrt(max(delta_hat_m / (df * (n_cases - 1)), 0))
+        s[i + 1, 2] <- 1 - sqrt(max(delta_hat_m / (df * (N - 1)), 0))
 
       }
 
@@ -308,7 +308,7 @@ HULL <- function(x, n_cases = NA, n_factors = NA,
     solutions = s_complete,
     ctrl = list(method = method,
                 gof = gof,
-                n_factors = n_factors)
+                n_fac_theor = n_fac_theor)
   )
 
   class(out) <- "HULL"

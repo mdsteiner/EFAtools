@@ -11,7 +11,7 @@
 #' @examples
 #' \dontrun{
 #' # example without correlation matrix
-#' x <- HULL(IDS2_R, n_cases = 2000)
+#' x <- HULL(IDS2_R, N = 2000)
 #' plot(x)
 #' }
 plot.HULL <- function(x, ...) {

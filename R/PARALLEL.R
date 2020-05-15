@@ -8,7 +8,7 @@
 #' @param x matrix or data.frame. The real data to compare the simulated eigenvalues
 #'  against. Must not contain variables of classes other than numeric. Can be a
 #'  correlation matrix or raw data.
-#' @param n_cases numeric. The number of cases / observations to simulate. Should only
+#' @param N numeric. The number of cases / observations to simulate. Should only
 #'  be specified if \code{x} is left as \code{NULL} as otherwise the dimensions are taken from \code{x}.
 #' @param n_vars numeric. The number of variables / indicators to simulate. Should only
 #'  be specified if \code{x} is left as \code{NULL} as otherwise the dimensions are taken from \code{x}.
@@ -42,7 +42,8 @@
 #'  and tests it against the specified criterion. This is also used by SPSS.
 #'  "sums" takes difference of the sum of all communalities in one iteration and
 #'  the sum of all communalities in the next iteration and tests it against the
-#'  criterion. This procedure is used by the \code{\link[psych:fa]{psych::fa}} function.
+#'  criterion. This procedure is used by the \code{\link[psych:fa]{psych::fa}}
+#'  function.
 #'  Default is \code{"sums"}.
 #' @param max_iter numeric. The maximum number of iterations to
 #'  perform after which the iterative PAF procedure is halted with a warning.
@@ -95,20 +96,20 @@
 #' @examples
 #' \dontrun{
 #' # example without real data
-#' PARALLEL(n_cases = 500, n_vars = 10)
+#' PARALLEL(N = 500, n_vars = 10)
 #' # example without correlation matrix
-#' PARALLEL(test_models$case_11b$cormat, n_cases = test_models$case_11b$N)
+#' PARALLEL(test_models$case_11b$cormat, N = test_models$case_11b$N)
 #'
 #' # for parallel computation
 #' future::plan(future::multisession)
-#' PARALLEL(test_models$case_11b$cormat, n_cases = test_models$case_11b$N)
+#' PARALLEL(test_models$case_11b$cormat, N = test_models$case_11b$N)
 #' }
 PARALLEL <- function(x = NULL,
-                     n_cases = NA,
+                     N = NA,
                      n_vars = NA,
                      n_datasets = 1000,
                      percent = 95,
-                     eigen_type = c("SMC", "PCA", "EFA"),
+                     eigen_type = c("PCA", "SMC", "EFA"),
                      data_type = c("sim"), # , "resample"
                      replace = TRUE,
                      use = c("pairwise.complete.obs", "all.obs", "complete.obs",
@@ -170,13 +171,13 @@ PARALLEL <- function(x = NULL,
         message("x was not a correlation matrix. Correlations are found from entered
             raw data.")
 
-        if (!is.na(n_cases)) {
-          warning("n_cases was set and data entered. Taking n_cases from data")
+        if (!is.na(N)) {
+          warning("N was set and data entered. Taking N from data")
         }
 
         R <- stats::cor(x, use = use)
         colnames(R) <- colnames(x)
-        n_cases <- nrow(x)
+        N <- nrow(x)
 
       }
 
@@ -255,8 +256,8 @@ PARALLEL <- function(x = NULL,
   }
 
   if (data_type == "sim") {
-    if (is.na(n_cases)) {
-      stop('"n_cases" was not set and could not be taken from data. Please specify n_cases and try again.')
+    if (is.na(N)) {
+      stop('"N" was not set and could not be taken from data. Please specify N and try again.')
     }
 
     if (is.na(n_vars)) {
@@ -265,21 +266,21 @@ PARALLEL <- function(x = NULL,
 
     if (eigen_type == "PCA") {
 
-      eigvals <- future.apply::future_lapply(size_vec, parallel_sim, n_cases = n_cases,
+      eigvals <- future.apply::future_lapply(size_vec, parallel_sim, N = N,
                                              n_vars = n_vars, eigen_type = 1)
 
       eigvals <- do.call(rbind, eigvals)
 
     } else if (eigen_type == "SMC") {
 
-      eigvals <- future.apply::future_lapply(size_vec, parallel_sim, n_cases = n_cases,
+      eigvals <- future.apply::future_lapply(size_vec, parallel_sim, N = N,
                                              n_vars = n_vars, eigen_type = 2)
       eigvals <- do.call(rbind, eigvals)
 
     } else if (eigen_type == "EFA") {
 
       eigvals <- future.apply::future_lapply(size_vec, parallel_paf_sim,
-                                             n_cases = n_cases, n_vars = n_vars,
+                                             N = N, n_vars = n_vars,
                                              criterion = criterion,
                                     crit_type = ifelse(criterion_type == "sums",
                                                        2, 1), max_iter = max_iter)
@@ -324,7 +325,7 @@ PARALLEL <- function(x = NULL,
 
   settings <- list(
     x_dat = x_dat,
-    n_cases = n_cases,
+    N = N,
     n_vars = n_vars,
     n_datasets = n_datasets,
     percent = percent,

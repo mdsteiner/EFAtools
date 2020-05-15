@@ -1,4 +1,4 @@
-#' Bartletts test of spericity
+#' Bartlett's test of spericity
 #'
 #' This function tests whether a correlation matrix is significantly different
 #' from an identity matrix (Bartlett, 1951). If the Bartletts test is not
@@ -13,14 +13,17 @@
 #' is given as input. Default is "pairwise.complete.obs".
 #'
 #' @details Bartlett (1951) proposed this statistic to determine a correlation
-#' matrix' suitability for factor analysis (see also
-#' \code{\link[EFAtools:KMO]{EFAtools:KMO}}). The statistic is approximately
+#' matrix' suitability for factor analysis. The statistic is approximately
 #' chi square distributed with \eqn{df = \fraq{p(p - 1)}} and is given by
 #'
 #' \deqn{chi^2 = -log(det(R)) (N - 1 - (2 * p + 5)/6)}
 #'
 #' where \eqn{det(R)} is the determinant of the correlation matrix, \eqn{N} is
 #' the sample size, and \eqn{p} is the number of variables.
+#'
+#' This tests requires multivariate normality. If this condition is not met,
+#' the Kaiser-Meyer-Olkin criterion (\code{\link[EFAtools:KMO]{EFAtools:KMO}}))
+#' can still be used.
 #'
 #' This function was heavily influenced by the
 #' \code{\link[psych:cortest.bartlett]{cortest.bartlett}} function

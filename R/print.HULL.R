@@ -8,7 +8,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' HULL(IDS2_R, n_cases = 2000)
+#' HULL(IDS2_R, N = 2000)
 #' }
 print.HULL <- function(x, ...) {
 
