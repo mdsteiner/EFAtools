@@ -15,7 +15,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "MACHINE",
                       max_iter = 1000, n_fac_theor = NA,
                       method = c("PAF", "ULS", "ML"),
                       gof = c("CAF", "CFI", "RMSEA"),
-                      eigen_type = c("PCA", "SMC", "EFA"), n_fac_EFA = 1,
+                      eigen_type = c("PCA", "SMC", "EFA"), n_fac_ext = 1,
                       n_vars = NA, n_datasets = 1000, percent = 95,
                       data_type = c("sim"), # , "resample"
                       replace = TRUE, decision_rule = c("Means", "Percentile",
@@ -27,7 +27,8 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "MACHINE",
 
   # WHAT HAPPENS IF YOU ENTER NULL? SHOULD BE POSSIBLE...
   suitability <- match.arg(suitability, several.ok = TRUE)
-  # OTHER CHECKS IN RESPECTIVE FUNCTIONS OK? OR BETTER HERE?
+  # OTHER CHECKS IN RESPECTIVE FUNCTIONS OK? (EXCEPT FOR MATCH.ARG!)
+  # OR BETTER HERE?
 
   # Check if it is a correlation matrix
   if(.is_cormat(x)){
@@ -139,6 +140,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "MACHINE",
     hull_out <- HULL(R, N = N, n_fac_theor = n_fac_theor,
                      method = method, gof = gof, use = use, ...)
 
+    # IF STATEMENTS!!!
     nfac_HULL_CAF <- hull_out$n_fac_CAF
     nfac_HULL_CFI <- hull_out$n_fac_CFI
     nfac_HULL_RMSEA <- hull_out$n_fac_RMSEA
@@ -148,9 +150,10 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "MACHINE",
   # Kaiser-Guttman criterion
   if("KGC" %in% criteria){
 
-    kgc_out <- KGC(R, eigen_type = eigen_type, use = use, n_fac_EFA = n_fac_EFA,
+    kgc_out <- KGC(R, eigen_type = eigen_type, use = use, n_fac_ext = n_fac_ext,
                    ...)
 
+    # IF STATEMENTS!!!
     nfac_KGC_PCA <- kgc_out$n_fac_PCA
     nfac_KGC_SMC <- kgc_out$n_fac_SMC
     nfac_KGC_EFA <- kgc_out$n_fac_EFA
@@ -170,6 +173,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "MACHINE",
                              data_type = data_type, replace = replace, use = use,
                              decision_rule = decision_rule, max_iter = max_iter))
 
+    # IF STATEMENTS!!!
     nfac_PA_PCA <- parallel_out$n_fac_PCA
     nfac_PA_SMC <- parallel_out$n_fac_SMC
     nfac_PA_EFA <- parallel_out$n_fac_EFA
@@ -202,7 +206,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "MACHINE",
                    method = method,
                    gof = gof,
                    eigen_type = eigen_type,
-                   n_fac_EFA = n_fac_EFA,
+                   n_fac_ext = n_fac_ext,
                    n_vars = n_vars,
                    n_datasets = n_datasets,
                    percent = percent,

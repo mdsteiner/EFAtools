@@ -16,7 +16,7 @@
 #'  diagonal.
 #' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw
 #'  data is given as input. Default is "pairwise.complete.obs".
-#' @param n_fac_EFA numeric. Number of factors to extract if
+#' @param n_fac_ext numeric. Number of factors to extract if
 #' \code{eigen_type = "EFA"}. Default is 1.
 #' @param ... Additional arguments passed to \code{\link[EFA]{EFA}}. For example,
 #' to change the extraction method (PAF is default).
@@ -75,7 +75,7 @@
 #'
 KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
                 use = c("pairwise.complete.obs", "all.obs", "complete.obs",
-                        "everything", "na.or.complete"), n_fac_EFA = 1, ...){
+                        "everything", "na.or.complete"), n_fac_ext = 1, ...){
 
   # Perform argument checks
   if(!inherits(x, c("matrix", "data.frame"))){
@@ -87,7 +87,7 @@ KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
 
   eigen_type <- match.arg(eigen_type, several.ok = TRUE)
   use <- match.arg(use)
-  checkmate::assert_count(n_fac_EFA)
+  checkmate::assert_count(n_fac_ext)
 
   # Check if it is a correlation matrix
   if(.is_cormat(x)){
@@ -157,7 +157,7 @@ KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
 
     # Do an EFA to get final communality estimates and replace diagonal of
     # correlation matrix with these
-    EFA_h2 <- EFA(R, n_factors = n_fac_EFA, ...)$h2
+    EFA_h2 <- EFA(R, n_factors = n_fac_ext, ...)$h2
     diag(R) <- EFA_h2
 
     # Calculate eigenvalues and determine number of factors

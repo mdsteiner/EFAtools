@@ -9,26 +9,26 @@ using namespace arma;
 //' Function called from within PARALLEL so usually no call to this is needed by the user.
 //' Provides a C++ implementation of the PARALLEL simulation procedure
 //'
-//' @param n_datasets numeric. Number of datasets with dimensions (n_cases, n_vars) to simulate.
+//' @param n_datasets numeric. Number of datasets with dimensions (N, n_vars) to simulate.
 //' @param n_vars numeric. Number of variables / indicators in dataset.
-//' @param n_cases numeric. Number of cases / observations in dataset.
+//' @param N numeric. Number of cases / observations in dataset.
 //' @param eigen_type numeric. Whether PCA (eigen_type = 1; i.e., leaving diagonal of correlation matrix at 1) or PAF (eigen_type = 2; i.e., setting diagonal of correlation matrix to SMCs).
 //' @export
 // [[Rcpp::export]]
-arma::mat parallel_sim(const int n_datasets, const int n_vars, const int n_cases,
+arma::mat parallel_sim(const int n_datasets, const int n_vars, const int N,
                          const int eigen_type) {
   // initialize needed objects
   arma::vec Lambda(n_vars);
   arma::vec eigval(n_vars);
   arma::mat eig_vals(n_datasets, n_vars);
-  arma::mat x(n_cases, n_vars);
+  arma::mat x(N, n_vars);
   arma::mat R(n_vars, n_vars);
 
   if (eigen_type == 1) { // PCA
 
     // perform simulations for n_datasets time
     for (uword i = 0; i < n_datasets; i++) {
-      x = randn(n_cases, n_vars);
+      x = randn(N, n_vars);
       R = cor(x);
       eig_sym(eigval, R);
       Lambda = flipud(eigval);
@@ -40,7 +40,7 @@ arma::mat parallel_sim(const int n_datasets, const int n_vars, const int n_cases
     arma::mat temp(n_vars, n_vars);
 
     for (uword i = 0; i < n_datasets; i++) {
-      x = randn(n_cases, n_vars);
+      x = randn(N, n_vars);
       R = cor(x);
       temp = inv_sympd(R);
       R.diag() = 1 - (1 / temp.diag());
@@ -192,27 +192,27 @@ arma::vec parallel_paf(arma::mat R, double criterion, int crit_type,
 //' Provides a C++ implementation of the PARALLEL simulation procedure where eigenvalues
 //' are found using the parallel_paf function.
 //'
-//' @param n_datasets numeric. Number of datasets with dimensions (n_cases, n_vars) to simulate.
+//' @param n_datasets numeric. Number of datasets with dimensions (N, n_vars) to simulate.
 //' @param n_vars numeric. Number of variables / indicators in dataset.
-//' @param n_cases numeric. Number of cases / observations in dataset.
+//' @param N numeric. Number of cases / observations in dataset.
 //' @param criterion double. Convergence criterion to use.
 //' @param crit_type integer. Whether max_individual (1) or sums (2).
 //' @param max_iter integer. The maximum number of iterations after which to stop the iterative procedure if no convergence is reached by then.
 //' @export
 // [[Rcpp::export]]
-arma::mat parallel_paf_sim(const int n_datasets, const int n_vars, const int n_cases,
+arma::mat parallel_paf_sim(const int n_datasets, const int n_vars, const int N,
                        double criterion, int crit_type, int max_iter) {
   // initialize needed objects
   arma::vec Lambda(n_vars);
   arma::vec eigval(n_vars);
   arma::mat eig_vals(n_datasets, n_vars);
-  arma::mat x(n_cases, n_vars);
+  arma::mat x(N, n_vars);
   arma::mat R(n_vars, n_vars);
   arma::vec smc(n_vars);
   arma::mat temp(n_vars, n_vars);
 
   for (uword i = 0; i < n_datasets; i++) {
-    x = randn(n_cases, n_vars);
+    x = randn(N, n_vars);
     R = cor(x);
     Lambda = parallel_paf(R,criterion, crit_type, max_iter);
     eig_vals.row(i) = Lambda.t();
@@ -240,11 +240,11 @@ arma::mat parallel_paf_sim(const int n_datasets, const int n_vars, const int n_c
 //                             const bool replace, double criterion, int crit_type,
 //                             int max_iter) {
 //   const int n_vars = data.n_cols;
-//   const int n_cases = data.n_rows;
+//   const int N = data.n_rows;
 //   arma::vec Lambda(n_vars);
 //   arma::vec eigval(n_vars);
 //   arma::mat eig_vals(n_datasets, n_vars);
-//   arma::mat x(n_cases, n_vars);
+//   arma::mat x(N, n_vars);
 //   arma::mat R(n_vars, n_vars);
 //
 //   if (replace == false) { // shuffle within columns
@@ -270,9 +270,9 @@ arma::mat parallel_paf_sim(const int n_datasets, const int n_vars, const int n_c
 //     arma::mat temp(n_vars, n_vars);
 //
 //     for (uword i = 0; i < n_datasets; i++) {
-//       for (uword rr = 0; rr < n_cases; i++) {
+//       for (uword rr = 0; rr < N; i++) {
 //         for (uword cc = 0; cc < n_vars; i++) {
-//           x(rr, cc) = data(randi(distr_param(0, n_cases - 1)), cc);
+//           x(rr, cc) = data(randi(distr_param(0, N - 1)), cc);
 //         }
 //       }
 //       R = cor(x);
@@ -308,11 +308,11 @@ arma::mat parallel_paf_sim(const int n_datasets, const int n_vars, const int n_c
 // arma::mat parallel_resample(const int n_datasets, arma::mat data, const int eigen_type,
 //                             const bool replace) {
 //   const int n_vars = data.n_cols;
-//   const int n_cases = data.n_rows;
+//   const int N = data.n_rows;
 //   arma::vec Lambda(n_vars);
 //   arma::vec eigval(n_vars);
 //   arma::mat eig_vals(n_datasets, n_vars);
-//   arma::mat x(n_cases, n_vars);
+//   arma::mat x(N, n_vars);
 //   arma::mat R(n_vars, n_vars);
 //
 //   if (replace == false) { // shuffle within columns
@@ -355,9 +355,9 @@ arma::mat parallel_paf_sim(const int n_datasets, const int n_vars, const int n_c
 //
 //       for (uword i = 0; i < n_datasets; i++) {
 //
-//         for (uword rr = 0; rr < n_cases; i++) {
+//         for (uword rr = 0; rr < N; i++) {
 //           for (uword cc = 0; cc < n_vars; i++) {
-//             x(rr, cc) = data(randi(distr_param(0, n_cases - 1)), cc);
+//             x(rr, cc) = data(randi(distr_param(0, N - 1)), cc);
 //           }
 //         }
 //         R = cor(x);
@@ -372,9 +372,9 @@ arma::mat parallel_paf_sim(const int n_datasets, const int n_vars, const int n_c
 //       arma::mat temp(n_vars, n_vars);
 //
 //       for (uword i = 0; i < n_datasets; i++) {
-//         for (uword rr = 0; rr < n_cases; i++) {
+//         for (uword rr = 0; rr < N; i++) {
 //           for (uword cc = 0; cc < n_vars; i++) {
-//             x(rr, cc) = data(randi(distr_param(0, n_cases - 1)), cc);
+//             x(rr, cc) = data(randi(distr_param(0, N - 1)), cc);
 //           }
 //         }
 //         R = cor(x);

@@ -58,13 +58,13 @@
 #' Function called from within PARALLEL so usually no call to this is needed by the user.
 #' Provides a C++ implementation of the PARALLEL simulation procedure
 #'
-#' @param n_datasets numeric. Number of datasets with dimensions (n_cases, n_vars) to simulate.
+#' @param n_datasets numeric. Number of datasets with dimensions (N, n_vars) to simulate.
 #' @param n_vars numeric. Number of variables / indicators in dataset.
-#' @param n_cases numeric. Number of cases / observations in dataset.
+#' @param N numeric. Number of cases / observations in dataset.
 #' @param eigen_type numeric. Whether PCA (eigen_type = 1; i.e., leaving diagonal of correlation matrix at 1) or PAF (eigen_type = 2; i.e., setting diagonal of correlation matrix to SMCs).
 #' @export
-parallel_sim <- function(n_datasets, n_vars, n_cases, eigen_type) {
-    .Call(`_EFAtools_parallel_sim`, n_datasets, n_vars, n_cases, eigen_type)
+parallel_sim <- function(n_datasets, n_vars, N, eigen_type) {
+    .Call(`_EFAtools_parallel_sim`, n_datasets, n_vars, N, eigen_type)
 }
 
 #' Principal Axis Factoring to extract eigenvalues from a 1 factor solution
@@ -89,15 +89,15 @@ parallel_paf <- function(R, criterion, crit_type, max_iter) {
 #' Provides a C++ implementation of the PARALLEL simulation procedure where eigenvalues
 #' are found using the parallel_paf function.
 #'
-#' @param n_datasets numeric. Number of datasets with dimensions (n_cases, n_vars) to simulate.
+#' @param n_datasets numeric. Number of datasets with dimensions (N, n_vars) to simulate.
 #' @param n_vars numeric. Number of variables / indicators in dataset.
-#' @param n_cases numeric. Number of cases / observations in dataset.
+#' @param N numeric. Number of cases / observations in dataset.
 #' @param criterion double. Convergence criterion to use.
 #' @param crit_type integer. Whether max_individual (1) or sums (2).
 #' @param max_iter integer. The maximum number of iterations after which to stop the iterative procedure if no convergence is reached by then.
 #' @export
-parallel_paf_sim <- function(n_datasets, n_vars, n_cases, criterion, crit_type, max_iter) {
-    .Call(`_EFAtools_parallel_paf_sim`, n_datasets, n_vars, n_cases, criterion, crit_type, max_iter)
+parallel_paf_sim <- function(n_datasets, n_vars, N, criterion, crit_type, max_iter) {
+    .Call(`_EFAtools_parallel_paf_sim`, n_datasets, n_vars, N, criterion, crit_type, max_iter)
 }
 
 #' Summarise the raw data from the \link{parallel_sim}

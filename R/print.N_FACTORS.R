@@ -1,10 +1,10 @@
-#' Print function for N_FACOTRS objects
+#' Print function for N_FACTORS objects
 #'
-#' @param x a list of class N_FACOTRS Output from \link{N_FACOTRS} function.
+#' @param x a list of class N_FACTORS Output from \link{N_FACTORS} function.
 #' @param ... Further arguments for print.
 #'
 #' @export
-#' @method print N_FACOTRS
+#' @method print N_FACTORS
 #'
 #' @examples
 #'
@@ -19,11 +19,9 @@ print.N_FACTORS <- function(x, ...){
     cat("\n")
     cat(crayon::blue$bold("Tests for the suitability of the data for factor analysis"))
     cat("\n")
-    cat("\n")
 
     if("BARTLETT" %in% suitability){
     print(x$bart_out)
-    cat("\n")
     cat("\n")
     }
 

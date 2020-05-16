@@ -77,16 +77,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // parallel_sim
-arma::mat parallel_sim(const int n_datasets, const int n_vars, const int n_cases, const int eigen_type);
-RcppExport SEXP _EFAtools_parallel_sim(SEXP n_datasetsSEXP, SEXP n_varsSEXP, SEXP n_casesSEXP, SEXP eigen_typeSEXP) {
+arma::mat parallel_sim(const int n_datasets, const int n_vars, const int N, const int eigen_type);
+RcppExport SEXP _EFAtools_parallel_sim(SEXP n_datasetsSEXP, SEXP n_varsSEXP, SEXP NSEXP, SEXP eigen_typeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const int >::type n_datasets(n_datasetsSEXP);
     Rcpp::traits::input_parameter< const int >::type n_vars(n_varsSEXP);
-    Rcpp::traits::input_parameter< const int >::type n_cases(n_casesSEXP);
+    Rcpp::traits::input_parameter< const int >::type N(NSEXP);
     Rcpp::traits::input_parameter< const int >::type eigen_type(eigen_typeSEXP);
-    rcpp_result_gen = Rcpp::wrap(parallel_sim(n_datasets, n_vars, n_cases, eigen_type));
+    rcpp_result_gen = Rcpp::wrap(parallel_sim(n_datasets, n_vars, N, eigen_type));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -105,18 +105,18 @@ BEGIN_RCPP
 END_RCPP
 }
 // parallel_paf_sim
-arma::mat parallel_paf_sim(const int n_datasets, const int n_vars, const int n_cases, double criterion, int crit_type, int max_iter);
-RcppExport SEXP _EFAtools_parallel_paf_sim(SEXP n_datasetsSEXP, SEXP n_varsSEXP, SEXP n_casesSEXP, SEXP criterionSEXP, SEXP crit_typeSEXP, SEXP max_iterSEXP) {
+arma::mat parallel_paf_sim(const int n_datasets, const int n_vars, const int N, double criterion, int crit_type, int max_iter);
+RcppExport SEXP _EFAtools_parallel_paf_sim(SEXP n_datasetsSEXP, SEXP n_varsSEXP, SEXP NSEXP, SEXP criterionSEXP, SEXP crit_typeSEXP, SEXP max_iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const int >::type n_datasets(n_datasetsSEXP);
     Rcpp::traits::input_parameter< const int >::type n_vars(n_varsSEXP);
-    Rcpp::traits::input_parameter< const int >::type n_cases(n_casesSEXP);
+    Rcpp::traits::input_parameter< const int >::type N(NSEXP);
     Rcpp::traits::input_parameter< double >::type criterion(criterionSEXP);
     Rcpp::traits::input_parameter< int >::type crit_type(crit_typeSEXP);
     Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
-    rcpp_result_gen = Rcpp::wrap(parallel_paf_sim(n_datasets, n_vars, n_cases, criterion, crit_type, max_iter));
+    rcpp_result_gen = Rcpp::wrap(parallel_paf_sim(n_datasets, n_vars, N, criterion, crit_type, max_iter));
     return rcpp_result_gen;
 END_RCPP
 }
