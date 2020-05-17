@@ -61,9 +61,9 @@ print.N_FACTORS <- function(x, ...){
     ### ADDITIONAL CHECK FOR WHICH METHOD USED? OR JUST NA IF NOT USED?
     cat("HULL method with CAF: ", crayon::bold(n_fac["nfac_HULL_CAF"]), sep = "")
     cat("\n")
-    cat("HULL method with CFI: ", crayon::bold(n_fac["nfac_HULL_CAF"]), sep = "")
+    cat("HULL method with CFI: ", crayon::bold(n_fac["nfac_HULL_CFI"]), sep = "")
     cat("\n")
-    cat("HULL method with RMSEA: ", crayon::bold(n_fac["nfac_HULL_CAF"]), sep = "")
+    cat("HULL method with RMSEA: ", crayon::bold(n_fac["nfac_HULL_RMSEA"]), sep = "")
     cat("\n")
 
     plot(x$hull_out)

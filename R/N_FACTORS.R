@@ -140,7 +140,6 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "MACHINE",
     hull_out <- HULL(R, N = N, n_fac_theor = n_fac_theor,
                      method = method, gof = gof, use = use, ...)
 
-    # IF STATEMENTS!!!
     nfac_HULL_CAF <- hull_out$n_fac_CAF
     nfac_HULL_CFI <- hull_out$n_fac_CFI
     nfac_HULL_RMSEA <- hull_out$n_fac_RMSEA
@@ -153,7 +152,6 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "MACHINE",
     kgc_out <- KGC(R, eigen_type = eigen_type, use = use, n_fac_ext = n_fac_ext,
                    ...)
 
-    # IF STATEMENTS!!!
     nfac_KGC_PCA <- kgc_out$n_fac_PCA
     nfac_KGC_SMC <- kgc_out$n_fac_SMC
     nfac_KGC_EFA <- kgc_out$n_fac_EFA

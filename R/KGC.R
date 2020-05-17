@@ -7,8 +7,9 @@
 #' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
 #' correlations.
 #' @param eigen_type character. On what the eigenvalues should be found. Can be
-#'  either "PCA", "SMC", or "EFA". If using "PCA", the diagonal values of the
-#'  correlation matrices are left to be 1. If using "SMC", the diagonal of the
+#'  either "PCA", "SMC", or "EFA", or some combination of them. If using "PCA",
+#'  the diagonal values of the correlation matrices are left to be 1. If using
+#'  "SMC", the diagonal of the
 #'  correlation matrices is replaced by the squared multiple correlations (SMCs)
 #'  of the indicators. If using "EFA", eigenvalues are found on the correlation
 #'  matrices with the final communalities of an exploratory factor analysis
