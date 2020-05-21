@@ -15,43 +15,52 @@
 #' }
 print.PARALLEL <- function(x, ...) {
 
-  cat(paste("Parallel Analysis performed using", x$settings$n_datasets,
-               "simulated data sets.\n"))
+  data_type <- x$settings$data_type
+  eigen_type <- x$settings$eigen_type
 
-  cat("Eigenvalues were found using", crayon::bold(x$settings$eigen_type))
+  cat("Parallel Analysis performed using ", x$settings$n_datasets,
+      ifelse(data_type == "sim", " simulated random", " resampled"),
+      " data sets", sep = "")
   cat("\n")
 
+  cat("Eigenvalues were found using ", .settings_string(x$settings$eigen_type),
+      "", sep = "")
+  cat("\n")
 
   if (isTRUE(x$settings$x_dat)) {
 
-    tt <- paste("Decision rule used:",
-                       crayon::bold(x$settings$decision_rule))
     cat("\n")
-    cat(tt)
+    cat("Decision rule used:", crayon::bold(x$settings$decision_rule))
     cat("\n")
     cat("\n")
-    cat("Number of factors to retain:\n")
+    cat("Number of factors to retain according to")
+    cat("\n")
+    cat("\n")
 
-    if (x$settings$data_type == "sim") {
-      ptt <- "Based on simulated data:"
-    } else if (x$settings$data_type == "resample") {
-      ptt <- "Based on resampled data:"
+    if("PCA" %in% eigen_type){
+      cat("PCA-determined eigenvalues: ", crayon::bold(x$n_fac_PCA))
+      cat("\n")
     }
-    tt <- paste("    ",cli::symbol$bullet, ptt,
-                       crayon::bold(x$n_factors))
-    cat(tt)
-    cat("\n")
+
+    if("SMC" %in% eigen_type){
+      cat("SMC-determined eigenvalues: ", crayon::bold(x$n_fac_SMC))
+      cat("\n")
+    }
+
+    if("EFA" %in% eigen_type){
+      cat("EFA-determined eigenvalues: ", crayon::bold(x$n_fac_EFA))
+      cat("\n")
+    }
 
   } else {
 
     cat("\n")
-    cat("No data was entered to base number of factors on. Showing simulated eigenvalues:")
+    cat("No data was entered to base number of factors on. Plotting simulated
+        eigenvalues")
     cat("\n")
-    cat("\n")
-    print(x$eigenvalues)
 
   }
 
-  graphics::plot(x)
+  # graphics::plot(x)
 
 }

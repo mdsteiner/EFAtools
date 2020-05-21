@@ -5,8 +5,8 @@
 # - ok if same eigen_type is used for PARALELL and KGC?
 # arguments set for parallel are also used in HULL parallel (because passed to
 # PARALLEL there), problem?
-N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "MACHINE",
-                                      "PARALLEL", "SMT"),
+N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
+                                      "SMT"),
                       suitability = c("KMO", "BARTLETT"), N = NA,
                       use = c("pairwise.complete.obs", "all.obs",
                               "complete.obs", "everything", "na.or.complete"),
@@ -161,10 +161,6 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "MACHINE",
     nfac_KGC_SMC <- kgc_out$n_fac_SMC
     nfac_KGC_EFA <- kgc_out$n_fac_EFA
 
-  }
-
-  # MACHINE LEARNING ALGORITHM (TO BE DETERMINED AND ADAPTED!!!)
-  if("MACHINE" %in% criteria){
   }
 
   # Parallel analysis

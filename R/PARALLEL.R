@@ -36,7 +36,9 @@
 #'  @param n_factors numeric. Number of factors to extract if "EFA" is included in
 #' \code{eigen_type}. Default is 1.
 #'  @param ... Additional arguments passed to \code{\link[EFA]{EFA}}. For example,
-#'  the extraction method can be changed here (default is PAF).
+#'  the extraction method can be changed here (default is "PAF"). PAF is more
+#'  robust, but it will take longer compared to the other estimation methods
+#'  available ("ML" and "ULS").
 #'
 #' @details Parallel analysis (Horn, 1965) compares the eigenvalues obtained from
 #' the sample
@@ -84,16 +86,20 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
 #' # example without real data
-#' PARALLEL(N = 500, n_vars = 10)
-#' # example without correlation matrix
-#' PARALLEL(test_models$case_11b$cormat, N = test_models$case_11b$N)
+#' pa_unreal <- PARALLEL(N = 500, n_vars = 10)
+#'
+#' # example with correlation matrix with all eigen_types and PAF estimation
+#' pa_paf <- PARALLEL(test_models$case_11b$cormat, N = 500)
+#'
+#' # example with correlation matrix with all eigen_types and ML estimation
+#' # this will be faster than the above with PAF)
+#' pa_ml <- PARALLEL(test_models$case_11b$cormat, N = 500, method = "ML")
 #'
 #' # for parallel computation
 #' future::plan(future::multisession)
-#' PARALLEL(test_models$case_11b$cormat, N = test_models$case_11b$N)
-#' }
+#' pa_fast <- PARALLEL(test_models$case_11b$cormat, N = 500)
+
 PARALLEL <- function(x = NULL,
                      N = NA,
                      n_vars = NA,
@@ -108,7 +114,7 @@ PARALLEL <- function(x = NULL,
                      n_factors = 1,
                      ...) {
 
-  eigen_type <- match.arg(eigen_type) # SEVERAL OK HERE!
+  eigen_type <- match.arg(eigen_type, several.ok = TRUE)
   data_type <- match.arg(data_type)
   use <- match.arg(use)
   decision_rule <- match.arg(decision_rule)
@@ -123,9 +129,15 @@ PARALLEL <- function(x = NULL,
   size_vec <- rep(round(n_datasets / n_cores), n_cores - 1)
   size_vec[n_cores] <- n_datasets - sum(size_vec)
 
-  eigvals_real <- NULL
-  results <- NULL
-  n_fac <- NA
+  eigvals_real_PCA <- NA
+  eigvals_real_SMC <- NA
+  eigvals_real_EFA <- NA
+  results_PCA <- NA
+  results_SMC <- NA
+  results_EFA <- NA
+  n_fac_PCA <- NA
+  n_fac_SMC <- NA
+  n_fac_EFA <- NA
   x_dat <- FALSE
 
   if (!is.null(x)) {
@@ -187,24 +199,30 @@ PARALLEL <- function(x = NULL,
 
         R <- psych::cor.smooth(R)
 
-        }
+      }
 
+      if ("PCA" %in% eigen_type) {
+        eigvals_real_PCA <- matrix(eigen(R, symmetric = TRUE,
+                                     only.values = TRUE)$values, ncol = 1)
+      }
 
-      if (eigen_type == "SMC") {
+      if ("SMC" %in% eigen_type) {
         # compute smcs
-        diag(R) <- 1 - (1 / diag(solve(R)))
-        eigvals_real <- matrix(eigen(R, symmetric = TRUE,
+        R_SMC <- R
+        diag(R_SMC) <- 1 - (1 / diag(solve(R_SMC)))
+        eigvals_real_SMC <- matrix(eigen(R_SMC, symmetric = TRUE,
                                      only.values = TRUE)$values, ncol = 1)
-      } else if (eigen_type == "PCA") {
-        eigvals_real <- matrix(eigen(R, symmetric = TRUE,
-                                     only.values = TRUE)$values, ncol = 1)
-      } else if (eigen_type == "EFA") {
-        eigvals_real <- matrix(EFA(R, n_factors = n_factors, ...)$final_eigen,
-                               ncol = 1)
+      }
+
+      if ("EFA" %in% eigen_type) {
+        eigvals_real_EFA <- matrix(EFA(R, n_factors = n_factors, N = N,
+                                   ...)$final_eigen,  ncol = 1)
       }
 
 
-      colnames(eigvals_real) <- "Real Eigenvalues"
+      colnames(eigvals_real_PCA) <- "Real Eigenvalues"
+      colnames(eigvals_real_SMC) <- "Real Eigenvalues"
+      colnames(eigvals_real_EFA) <- "Real Eigenvalues"
 
       # if (data_type == "resample") {
       #
@@ -259,63 +277,87 @@ PARALLEL <- function(x = NULL,
            n_vars and try again.')
     }
 
-    if (eigen_type == "PCA") {
+    if ("PCA" %in% eigen_type) {
 
-      eigvals <- future.apply::future_lapply(size_vec, parallel_sim, N = N,
+      eigvals_PCA <- future.apply::future_lapply(size_vec, parallel_sim, N = N,
                                              n_vars = n_vars, eigen_type = 1)
+      eigvals_PCA <- do.call(rbind, eigvals_PCA)
 
-      eigvals <- do.call(rbind, eigvals)
+      results_PCA <- parallel_summarise(eigvals_PCA, percent = percent,
+                                        n_datasets = n_datasets, n_vars = n_vars)
 
-    } else if (eigen_type == "SMC") {
+      colnames(results_PCA) <- c("Means", paste(percent, "Percentile"))
 
-      eigvals <- future.apply::future_lapply(size_vec, parallel_sim, N = N,
-                                             n_vars = n_vars, eigen_type = 2)
-      eigvals <- do.call(rbind, eigvals)
+      if (isTRUE(x_dat)) {
+        n_fac_PCA <- .determine_factors(decision_rule = decision_rule,
+                                        eigvals_real = eigvals_real_PCA,
+                                        results = results_PCA)
 
-    } else if (eigen_type == "EFA") {
+        eigenvalues_PCA <- cbind(eigvals_real_PCA, results_PCA)
 
-      eigvals <- future.apply::future_lapply(size_vec, .parallel_EFA_sim,
-                                             n_vars = n_vars, N = N,
-                                             n_factors = n_factors, ...)
-      eigvals <- do.call(rbind, eigvals)
+      } else {
+
+        eigenvalues_PCA <- results_PCA
+
+      }
+
+
 
     }
 
-    results <- parallel_summarise(eigvals, percent = percent,
-                                  n_datasets = n_datasets, n_vars = n_vars)
+    if ("SMC" %in% eigen_type) {
 
-    colnames(results) <- c("Means", paste(percent, "Percentile"))
+      eigvals_SMC <- future.apply::future_lapply(size_vec, parallel_sim, N = N,
+                                             n_vars = n_vars, eigen_type = 2)
+      eigvals_SMC <- do.call(rbind, eigvals_SMC)
 
-  }
+      results_SMC <- parallel_summarise(eigvals_SMC, percent = percent,
+                                        n_datasets = n_datasets, n_vars = n_vars)
 
-  # determine the number of factors to retain
-  if (isTRUE(x_dat)) {
+      colnames(results_SMC) <- c("Means", paste(percent, "Percentile"))
 
-    if (decision_rule == "Crawford") {
-      # n factors from resampling
-        if ("95 Percentile" %in% colnames(results)) {
-          crawford <- c(results[1, "95 Percentile"],
-                        results[-1, "Means"])
-          n_fac <- which(!(eigvals_real > crawford))[1] - 1
-        } else {
-          warning("decision_rule == 'Crawford' is specified, but 95 percentile
-                  was not used. Using Means instead. To use 'Crawford', make sure
-                  to specify percent = 95.")
-          n_fac <- which(!(eigvals_real > results[, "Means"]))[1] - 1
-          decision_rule <- "Means"
-        }
+      if (isTRUE(x_dat)) {
+      n_fac_SMC <- .determine_factors(decision_rule = decision_rule,
+                                      eigvals_real = eigvals_real_SMC,
+                                      results = results_SMC)
 
-    } else if (decision_rule == "Means") {
-      n_fac <- which(!(eigvals_real > results[, "Means"]))[1] - 1
+      eigenvalues_SMC <- cbind(eigvals_real_SMC, results_SMC)
 
-    } else if (decision_rule == "Percentile") {
+      } else {
 
-      for (perc_i in percent) {
-        pp <- paste(perc_i, "Percentile")
-        n_fac[pp] <- which(!(eigvals_real > results[, pp]))[1] - 1
+        eigenvalues_SMC <- results_SMC
+
       }
 
     }
+
+    if ("EFA" %in% eigen_type) {
+
+      eigvals_EFA <- future.apply::future_lapply(size_vec, .parallel_EFA_sim,
+                                             n_vars = n_vars, N = N,
+                                             n_factors = n_factors, ...)
+      eigvals_EFA <- do.call(rbind, eigvals_EFA)
+
+      results_EFA <- parallel_summarise(eigvals_EFA, percent = percent,
+                                        n_datasets = n_datasets, n_vars = n_vars)
+
+      colnames(results_EFA) <- c("Means", paste(percent, "Percentile"))
+
+      if (isTRUE(x_dat)) {
+      n_fac_EFA <- .determine_factors(decision_rule = decision_rule,
+                                      eigvals_real = eigvals_real_EFA,
+                                      results = results_EFA)
+
+      eigenvalues_EFA <- cbind(eigvals_real_EFA, results_EFA)
+
+      } else {
+
+        eigenvalues_EFA <- results_EFA
+
+      }
+
+    }
+
   }
 
   settings <- list(
@@ -328,14 +370,17 @@ PARALLEL <- function(x = NULL,
     data_type = data_type,
     replace = replace,
     use = use,
-    decision_rule = decision_rule
+    decision_rule = decision_rule,
+    n_factors = n_factors
   )
 
-  eigenvalues <- cbind(eigvals_real, results)
-
   out <- list(
-    eigenvalues = eigenvalues,
-    n_fac = n_fac,
+    eigenvalues_PCA = eigenvalues_PCA,
+    eigenvalues_SMC = eigenvalues_SMC,
+    eigenvalues_EFA = eigenvalues_EFA,
+    n_fac_PCA = n_fac_PCA,
+    n_fac_SMC = n_fac_SMC,
+    n_fac_EFA = n_fac_EFA,
     settings = settings
   )
 
@@ -360,4 +405,37 @@ PARALLEL <- function(x = NULL,
   }
 
   return(eigvals)
+}
+
+.determine_factors <- function(decision_rule, eigvals_real, results){
+
+# determine the number of factors to retain
+if (decision_rule == "Crawford") {
+  # n factors from resampling
+  if ("95 Percentile" %in% colnames(results)) {
+    crawford <- c(results[1, "95 Percentile"],
+                  results[-1, "Means"])
+    n_fac <- which(!(eigvals_real > crawford))[1] - 1
+  } else {
+    warning("decision_rule == 'Crawford' is specified, but 95 percentile was not
+            used. Using Means instead. To use 'Crawford', make sure
+            to specify percent = 95.")
+    n_fac <- which(!(eigvals_real > results[, "Means"]))[1] - 1
+    decision_rule <- "Means"
+  }
+
+} else if (decision_rule == "Means") {
+  n_fac <- which(!(eigvals_real > results[, "Means"]))[1] - 1
+
+} else if (decision_rule == "Percentile") {
+
+  for (perc_i in percent) {
+    pp <- paste(perc_i, "Percentile")
+    n_fac[pp] <- which(!(eigvals_real > results[, pp]))[1] - 1
+  }
+
+}
+
+  return(n_fac)
+
 }
