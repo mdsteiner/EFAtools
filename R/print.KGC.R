@@ -7,7 +7,7 @@
 #' @method print KGC
 #'
 #' @examples
-#' KGC_base <- KGC(test_models$baseline$cormat, eigen_type = "PCA")
+#' KGC_base <- KGC(test_models$baseline$cormat)
 #' KGC_base
 #'
 print.KGC <- function(x, ...) {
@@ -18,7 +18,8 @@ print.KGC <- function(x, ...) {
   eigen_type <-x$settings$eigen_type
 
   cat("\n")
-  cat("Eigenvalues were found using ", .settings_string(eigen_type), sep = "")
+  cat("Eigenvalues were found using ", .settings_string(eigen_type), ".",
+      sep = "")
   cat("\n")
   cat("\n")
 
@@ -26,7 +27,7 @@ print.KGC <- function(x, ...) {
   cat("\n")
   cat("\n")
 
-  if(!is.na(nfac_PCA)){
+  if("PCA" %in% eigen_type){
 
     cat("   ", crayon::bold(nfac_PCA), " factor", ifelse(nfac_PCA > 1, "s", ""),
       " with PCA-determined eigenvalues", sep = "")
@@ -34,7 +35,7 @@ print.KGC <- function(x, ...) {
 
   }
 
-  if(!is.na(nfac_SMC)){
+  if("SMC" %in% eigen_type){
 
     cat("   ", crayon::bold(nfac_SMC), " factor", ifelse(nfac_SMC > 1, "s", ""),
         " with SMC-determined eigenvalues", sep = "")
@@ -42,7 +43,7 @@ print.KGC <- function(x, ...) {
 
   }
 
-  if(!is.na(nfac_EFA)){
+  if("EFA" %in% eigen_type){
 
     cat("   ", crayon::bold(nfac_EFA), " factor", ifelse(nfac_EFA > 1, "s", ""),
         " with EFA-determined eigenvalues", sep = "")

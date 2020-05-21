@@ -11,14 +11,16 @@
 #' @examples
 #' \dontrun{
 #' # example without correlation matrix
-#' x <- HULL(IDS2_R, N = 2000)
+#' x <- HULL(test_models$baseline$cormat, N = 500, method = "ML")
 #' plot(x)
 #' }
 plot.HULL <- function(x, ...) {
 
-  gof <- x$ctrl$gof
-  method <- x$ctrl$method
-  sol <- as.data.frame(x$solutions)
+  gof <- x$settings$gof
+  method <- x$settings$method
+  sol_CAF <- as.data.frame(x$solutions_CAF)
+  sol_CFI <- as.data.frame(x$solutions_CFI)
+  sol_RMSEA <- as.data.frame(x$solutions_RMSEA)
 
   graphics::plot.new()
   graphics::plot.window(xlim = c(min(sol$df) - min(sol$df) / 100 * 10,

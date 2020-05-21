@@ -1,31 +1,54 @@
 #' Print function for HULL objects
 #'
-#' @param x a list of class HULL Output from the \link{HULL} function.
+#' @param x a list of class HULL. Output from the \link{HULL} function.
 #' @param ... Further arguments for print.
 #'
 #' @export
 #' @method print HULL
 #'
 #' @examples
-#' \dontrun{
-#' HULL(IDS2_R, N = 2000)
-#' }
+#' HULL(test_models$baseline$cormat, N = 500, method = "ML")
+#'
 print.HULL <- function(x, ...) {
 
-  cat(paste0("Hull Analysis performed, testing ", crayon::bold("0"), " to ",
-             crayon::bold(max(x$solutions[, 1])),
-             " factors."))
+  method <- x$settings$method
+  gof <- x$settings$gof
 
+  cat("Hull Analysis performed testing ", crayon::bold("0"), " to ",
+      crayon::bold(x$n_fac_max), " factors.", sep = "")
+
+  if(length(settings$gof) == 1){
   cat("\n")
-  cat(paste0(crayon::bold(max(x$ctrl$method)), " estimation and the ",
-             crayon::bold(max(x$ctrl$gof)), " fit index was used."))
+  cat(crayon::bold(method), " estimation and the ",
+      .settings_string(gof), " fit index was used.", sep = "")
   cat("\n")
+  } else {
+    cat("\n")
+    cat(crayon::bold(method), " estimation and the ",
+        .settings_string(gof), " fit indices were used.", sep = "")
+    cat("\n")
+  }
+
   cat("\n")
   cat("Number of factors suggested by the Hull method:")
   cat("\n")
 
-  cat(paste("    ",cli::symbol$bullet, crayon::bold(x$n_factors)))
+  if("CAF" %in% gof){
+    cat("\n")
+    cat("With", crayon::bold("CAF:   "), crayon::bold(x$n_fac_CAF))
+    cat("\n")
+  }
 
-  graphics::plot(x)
+  if("CFI" %in% gof){
+    cat("With", crayon::bold("CFI:   "), crayon::bold(x$n_fac_CFI))
+    cat("\n")
+  }
+
+  if("RMSEA" %in% gof){
+    cat("With", crayon::bold("RMSEA: "), crayon::bold(x$n_fac_RMSEA))
+    cat("\n")
+  }
+
+  #graphics::plot(x)
 
 }

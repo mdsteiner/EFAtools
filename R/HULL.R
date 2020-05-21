@@ -53,22 +53,20 @@
 #'
 #' @examples
 #' \dontrun{
-#' # using PAF
-#' HULL(test_models$baseline$cormat,
-#'      N = test_models$baseline$N)
+#' # using PAF (this will throw a warning if gof is not specified manually
+#' # and CAF will be used automatically)
+#' HULL(test_models$baseline$cormat, N = 500, gof = "CAF")
 #'
-#' # using ML with CFI
-#' HULL(test_models$baseline$cormat, N = test_models$baseline$N,
-#'      method = "ML", gof = "CFI")
+#' # using ML with all available fit indices (CAF, CFI, and RMSEA)
+#' HULL(test_models$baseline$cormat, N = 500, method = "ML")
 #'
-#' # using ULS with RAMSEA
-#' HULL(test_models$baseline$cormat, N = test_models$baseline$N,
-#'      method = "ULS", gof = "RMSEA")
+#' # using ULS with only RMSEA
+#' HULL(test_models$baseline$cormat, N = 500, method = "ULS", gof = "RMSEA")
 #'
 #' # using parallel processing (Note: plans can be adapted, see the future
 #' # package for details)
 #' future::plan(future::multisession)
-#' HULL(test_models$baseline$cormat, N = test_models$baseline$N)
+#' HULL(test_models$baseline$cormat, N = 500, gof = "CAF")
 #' }
 HULL <- function(x, N = NA, n_fac_theor = NA,
                  method = c("PAF", "ULS", "ML"), gof = c("CAF", "CFI", "RMSEA"),
@@ -282,6 +280,7 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
     solutions_CAF = out_CAF$s_complete,
     solutions_CFI = out_CFI$s_complete,
     solutions_RMSEA = out_RMSEA$s_complete,
+    n_fac_max = J,
     settings = list(N = N,
                     method = method,
                     gof = gof,

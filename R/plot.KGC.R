@@ -9,7 +9,7 @@
 #' @method plot KGC
 #'
 #' @examples
-#' KGC_base <- KGC(test_models$baseline$cormat, eigen_type = "PCA")
+#' KGC_base <- KGC(test_models$baseline$cormat)
 #' plot(KGC_base)
 #'
 plot.KGC <- function(x, ...) {
@@ -21,110 +21,61 @@ plot.KGC <- function(x, ...) {
   nfac_SMC <- x$n_fac_SMC
   nfac_EFA <- x$n_fac_EFA
 
+  # Create plots
   if(!is.na(nfac_PCA)){
 
-  x_len <- length(eigen_PCA)
-
-  graphics::plot.new()
-  graphics::plot.window(xlim = c(1, x_len),
-                        ylim = c(min(eigen_PCA) - .2,
-                                 max(eigen_PCA) + .5))
-  graphics::axis(1, 1:x_len)
-  graphics::axis(2, round(seq(min(eigen_PCA) - .2,
-                              max(eigen_PCA) + .5,
-                              round(diff(c(min(eigen_PCA) - .2,
-                                           max(eigen_PCA)) + .5) / 6, 1)), 1),
-                 las = 1)
-
-  graphics::mtext("Indicators", side = 1, line = 3, cex = 1.5, padj =-.5)
-  graphics::mtext("Eigenvalues", side = 2, line = 3, cex = 1.5, padj =.5)
-
-  graphics::lines(1:x_len, eigen_PCA)
-  graphics::points(1:x_len, eigen_PCA, pch = 16)
-  graphics::abline(h = 1, lty = 2)
-
-  graphics::points(nfac_PCA, eigen_PCA[nfac_PCA], pch = 1, cex = 2, col = "red")
-
-  graphics::text(nfac_PCA, eigen_PCA[nfac_PCA], nfac_PCA,
-                 pos = 4, cex = 1.2, col = "red",
-                 font = 1, offset = .75)
-
-  title <- paste0("N factors suggested by Kaiser-Guttman criterion with PCA: ",
-                  nfac_PCA)
-
-  graphics::title(title, cex.main = 1.2)
+    .plot_KGC_helper(eigen = eigen_PCA, n_fac = nfac_PCA, eigen_name = "PCA")
 
   }
 
   if (!is.na(nfac_SMC)) {
 
-    x_len <- length(eigen_SMC)
-
-    graphics::plot.new()
-    graphics::plot.window(xlim = c(1, x_len),
-                          ylim = c(min(eigen_SMC) - .2,
-                                   max(eigen_SMC) + .5))
-    graphics::axis(1, 1:x_len)
-    graphics::axis(2, round(seq(min(eigen_SMC) - .2,
-                                max(eigen_SMC) + .5,
-                                round(diff(c(min(eigen_SMC) - .2,
-                                             max(eigen_SMC)) + .5) / 6, 1)), 1),
-                   las = 1)
-
-    graphics::mtext("Indicators", side = 1, line = 3, cex = 1.5, padj =-.5)
-    graphics::mtext("Eigenvalues", side = 2, line = 3, cex = 1.5, padj =.5)
-
-    graphics::lines(1:x_len, eigen_SMC)
-    graphics::points(1:x_len, eigen_SMC, pch = 16)
-    graphics::abline(h = 1, lty = 2)
-
-    graphics::points(nfac_SMC, eigen_SMC[nfac_SMC], pch = 1, cex = 2,
-                     col = "red")
-
-    graphics::text(nfac_SMC, eigen_SMC[nfac_SMC], nfac_SMC, pos = 4, cex = 1.2,
-                   col = "red", font = 1, offset = .75)
-
-    title <- paste0("N factors suggested by Kaiser-Guttman criterion with SMC: ",
-                    nfac_SMC)
-
-    graphics::title(title, cex.main = 1.2)
+    .plot_KGC_helper(eigen = eigen_SMC, n_fac = nfac_SMC, eigen_name = "SMC")
 
   }
 
   if (!is.na(nfac_EFA)) {
 
-    x_len <- length(eigen_EFA)
-
-    graphics::plot.new()
-    graphics::plot.window(xlim = c(1, x_len),
-                          ylim = c(min(eigen_EFA) - .2,
-                                   max(eigen_EFA) + .5))
-    graphics::axis(1, 1:x_len)
-    graphics::axis(2, round(seq(min(eigen_EFA) - .2,
-                                max(eigen_EFA) + .5,
-                                round(diff(c(min(eigen_EFA) - .2,
-                                             max(eigen_EFA)) + .5) / 6, 1)), 1),
-                   las = 1)
-
-    graphics::mtext("Indicators", side = 1, line = 3, cex = 1.5, padj =-.5)
-    graphics::mtext("Eigenvalues", side = 2, line = 3, cex = 1.5, padj =.5)
-
-    graphics::lines(1:x_len, eigen_EFA)
-    graphics::points(1:x_len, eigen_EFA, pch = 16)
-    graphics::abline(h = 1, lty = 2)
-
-
-    graphics::points(nfac_EFA, eigen_EFA[nfac_EFA], pch = 1, cex = 2,
-                         col = "red")
-    graphics::text(nfac_EFA, eigen_EFA[nfac_EFA], nfac_EFA, pos = 4, cex = 1.2,
-                   col = "red", font = 1, offset = .75)
-
-    title <- paste0("N factors suggested by Kaiser-Guttman criterion with EFA: ",
-                    nfac_EFA)
-
-    graphics::title(title, cex.main = 1.2)
+    .plot_KGC_helper(eigen = eigen_EFA, n_fac = nfac_EFA, eigen_name = "EFA")
 
   }
 
+}
+
+.plot_KGC_helper <- function(eigen, n_fac, eigen_name){
+  # eigen = eigenvalues found with specific type (PCA, SMC or EFA)
+  # n_fac = number of factors suggested with this type
+  # eigen_name = name of type (one of "PCA", "SMC", "EFA")
+
+x_len <- length(eigen)
+
+graphics::plot.new()
+graphics::plot.window(xlim = c(1, x_len),
+                      ylim = c(min(eigen) - .2,
+                               max(eigen) + .5))
+graphics::axis(1, 1:x_len)
+graphics::axis(2, round(seq(min(eigen) - .2,
+                            max(eigen) + .5,
+                            round(diff(c(min(eigen) - .2,
+                                         max(eigen)) + .5) / 6, 1)), 1),
+               las = 1)
+
+graphics::mtext("Indicators", side = 1, line = 3, cex = 1)
+graphics::mtext("Eigenvalues", side = 2, line = 3, cex = 1, padj =.5)
+
+graphics::lines(1:x_len, eigen)
+graphics::points(1:x_len, eigen, pch = 16)
+graphics::abline(h = 1, lty = 2)
+
+graphics::points(n_fac, eigen[n_fac], pch = 1, cex = 2, col = "red")
+
+graphics::text(n_fac, eigen[n_fac], n_fac,
+               pos = 4, cex = 1.2, col = "red",
+               font = 1, offset = .75)
+
+title <- paste0("N factors suggested by Kaiser-Guttman criterion with ",
+                eigen_name, ": ", n_fac)
+
+graphics::title(title, cex.main = 1.2)
 
 }

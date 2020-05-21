@@ -414,16 +414,15 @@
 
 if(n == 1){
 
-  c(crayon::bold(x), ".")
+  c(crayon::bold(x))
 
 } else if (n == 2){
 
-  c(crayon::bold(x[1]), " and ", crayon::bold(x[2]), ".")
+  c(crayon::bold(x[1]), " and ", crayon::bold(x[2]))
 
 } else if (n > 2){
 
-  c(paste(crayon::bold(x[1:n-1]), collapse = ", "), ", and ", crayon::bold(x[n]),
-    ".")
+  c(paste(crayon::bold(x[1:n-1]), collapse = ", "), ", and ", crayon::bold(x[n]))
 
 }
 

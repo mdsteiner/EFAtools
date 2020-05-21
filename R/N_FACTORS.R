@@ -8,14 +8,15 @@
 N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "MACHINE",
                                       "PARALLEL", "SMT"),
                       suitability = c("KMO", "BARTLETT"), N = NA,
-                      use = c("pairwise.complete.obs", "all.obs", "complete.obs",
-                                 "everything", "na.or.complete"),
+                      use = c("pairwise.complete.obs", "all.obs",
+                              "complete.obs", "everything", "na.or.complete"),
                       n_factors_max = NA, N_pop = 10000, N_samples = 500,
-                      alpha = .30, cor_method = c("pearson", "spearman", "kendall"),
+                      alpha = .30, cor_method = c("pearson", "spearman",
+                                                  "kendall"),
                       max_iter = 1000, n_fac_theor = NA,
                       method = c("PAF", "ULS", "ML"),
                       gof = c("CAF", "CFI", "RMSEA"),
-                      eigen_type = c("PCA", "SMC", "EFA"), n_fac_ext = 1,
+                      eigen_type = c("PCA", "SMC", "EFA"), n_factors = 1,
                       n_vars = NA, n_datasets = 1000, percent = 95,
                       data_type = c("sim"), # , "resample"
                       replace = TRUE, decision_rule = c("Means", "Percentile",
@@ -113,6 +114,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "MACHINE",
   # Comparison data
   if("CD" %in% criteria){
 
+    # n_factors and method arguments needed?
     cd_out <- try(CD(x, n_factors_max = n_factors_max, N_pop = N_pop,
                      N_samples = N_samples, alpha = alpha, use = use,
                      cor_method = cor_method, max_iter = max_iter))
@@ -137,7 +139,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "MACHINE",
   # HULL method
   if("HULL" %in% criteria){
 
-    hull_out <- HULL(R, N = N, n_fac_theor = n_fac_theor,
+    hull_out <- HULL(R, N = N, n_fac_theor = n_fac_theor, n_factors = n_factors,
                      method = method, gof = gof, use = use, ...)
 
     nfac_HULL_CAF <- hull_out$n_fac_CAF
@@ -149,8 +151,8 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "MACHINE",
   # Kaiser-Guttman criterion
   if("KGC" %in% criteria){
 
-    kgc_out <- KGC(R, eigen_type = eigen_type, use = use, n_fac_ext = n_fac_ext,
-                   ...)
+    kgc_out <- KGC(R, eigen_type = eigen_type, use = use, n_factors = n_factors,
+                   method = method, ...)
 
     nfac_KGC_PCA <- kgc_out$n_fac_PCA
     nfac_KGC_SMC <- kgc_out$n_fac_SMC
@@ -166,12 +168,14 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "MACHINE",
   if("PARALLEL" %in% criteria){
 
     # IF RESAMPLING IS NOT IMPLEMENTED, USE R INSTEAD OF X HERE AND REMOVE TRY
-    parallel_out <- try(PARALLEL(x, N = N, n_vars = n_vars, n_datasets = n_datasets,
-                             percent = percent, eigen_type = eigen_type,
-                             data_type = data_type, replace = replace, use = use,
-                             decision_rule = decision_rule, max_iter = max_iter))
+    parallel_out <- try(PARALLEL(x, N = N, n_vars = n_vars,
+                                 n_datasets = n_datasets, percent = percent,
+                                 eigen_type = eigen_type, data_type = data_type,
+                                 replace = replace, use = use,
+                                 decision_rule = decision_rule,
+                                 n_factors = n_factors, method = method,
+                                 max_iter = max_iter))
 
-    # IF STATEMENTS!!!
     nfac_PA_PCA <- parallel_out$n_fac_PCA
     nfac_PA_SMC <- parallel_out$n_fac_SMC
     nfac_PA_EFA <- parallel_out$n_fac_EFA

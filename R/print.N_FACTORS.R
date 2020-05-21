@@ -1,6 +1,6 @@
 #' Print function for N_FACTORS objects
 #'
-#' @param x a list of class N_FACTORS Output from \link{N_FACTORS} function.
+#' @param x a list of class N_FACTORS. Output from \link{N_FACTORS} function.
 #' @param ... Further arguments for print.
 #'
 #' @export
@@ -40,7 +40,8 @@ print.N_FACTORS <- function(x, ...){
 
   if("CD" %in% criteria){
 
-  cat("Comparison data: ", crayon::bold(n_fac["nfac_CD"]), sep = "")
+  cat("Comparison data: ", crayon::bold(n_fac["nfac_CD"]),
+      sep = "")
   cat("\n")
 
   plot(x$cd_out)
@@ -49,7 +50,8 @@ print.N_FACTORS <- function(x, ...){
 
   if("EKC" %in% criteria){
 
-    cat("Empirical Kaiser criterion: ", crayon::bold(n_fac["nfac_EKC"]), sep = "")
+    cat("Empirical Kaiser criterion: ", crayon::bold(n_fac["nfac_EKC"]),
+        sep = "")
     cat("\n")
 
     plot(x$ekc_out)
@@ -59,11 +61,14 @@ print.N_FACTORS <- function(x, ...){
   if("HULL" %in% criteria){
 
     ### ADDITIONAL CHECK FOR WHICH METHOD USED? OR JUST NA IF NOT USED?
-    cat("HULL method with CAF: ", crayon::bold(n_fac["nfac_HULL_CAF"]), sep = "")
+    cat("HULL method with CAF: ", crayon::bold(n_fac["nfac_HULL_CAF"]),
+        sep = "")
     cat("\n")
-    cat("HULL method with CFI: ", crayon::bold(n_fac["nfac_HULL_CFI"]), sep = "")
+    cat("HULL method with CFI: ", crayon::bold(n_fac["nfac_HULL_CFI"]),
+        sep = "")
     cat("\n")
-    cat("HULL method with RMSEA: ", crayon::bold(n_fac["nfac_HULL_RMSEA"]), sep = "")
+    cat("HULL method with RMSEA: ", crayon::bold(n_fac["nfac_HULL_RMSEA"]),
+        sep = "")
     cat("\n")
 
     plot(x$hull_out)
@@ -90,11 +95,14 @@ print.N_FACTORS <- function(x, ...){
   if("PARALLEL" %in% criteria){
 
     ### ADDITIONAL CHECK FOR WHICH METHOD USED? OR JUST NA IF NOT USED?
-    cat("Parallel analysis with PCA: ", crayon::bold(n_fac["nfac_PA_PCA"]), sep = "")
+    cat("Parallel analysis with PCA: ", crayon::bold(n_fac["nfac_PA_PCA"]),
+        sep = "")
     cat("\n")
-    cat("Parallel analysis with SMC: ", crayon::bold(n_fac["nfac_PA_SMC"]), sep = "")
+    cat("Parallel analysis with SMC: ", crayon::bold(n_fac["nfac_PA_SMC"]),
+        sep = "")
     cat("\n")
-    cat("Parallel analysis with EFA: ", crayon::bold(n_fac["nfac_PA_EFA"]), sep = "")
+    cat("Parallel analysis with EFA: ", crayon::bold(n_fac["nfac_PA_EFA"]),
+        sep = "")
     cat("\n")
 
     plot(x$parallel_out)
@@ -103,13 +111,14 @@ print.N_FACTORS <- function(x, ...){
 
   if("SMT" %in% criteria){
 
-    cat("Sequential \U1D712\U00B2 model tests: ", crayon::bold(n_fac["nfac_SMT_chi"]),
-        sep = "")
+    cat("Sequential \U1D712\U00B2 model tests: ",
+        crayon::bold(n_fac["nfac_SMT_chi"]), sep = "")
     cat("\n")
     cat("Lower bound of RMSEA 90% confidence interval: ",
         crayon::bold(n_fac["nfac_RMSEA"]), sep = "")
     cat("\n")
-    cat("Akaike Information Criterion: ", crayon::bold(n_fac["nfac_AIC"]), sep = "")
+    cat("Akaike Information Criterion: ", crayon::bold(n_fac["nfac_AIC"]),
+        sep = "")
     cat("\n")
 
   }
