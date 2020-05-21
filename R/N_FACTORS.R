@@ -142,7 +142,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "MACHINE",
   # HULL method
   if("HULL" %in% criteria){
 
-    hull_out <- HULL(R, N = N, n_fac_theor = n_fac_theor, n_factors = n_factors,
+    hull_out <- HULL(R, N = N, n_fac_theor = n_fac_theor,
                      method = method, gof = gof, use = use, ...)
 
     nfac_HULL_CAF <- hull_out$n_fac_CAF
@@ -176,9 +176,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "MACHINE",
                                  eigen_type = eigen_type, data_type = data_type,
                                  replace = replace, use = use,
                                  decision_rule = decision_rule,
-                                 n_factors = n_factors, method = method,
-                                 max_iter = max_iter, ... # really needed?
-                                 ))
+                                 n_factors = n_factors, method = method, ...))
 
     nfac_PA_PCA <- parallel_out$n_fac_PCA
     nfac_PA_SMC <- parallel_out$n_fac_SMC

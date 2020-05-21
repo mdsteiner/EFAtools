@@ -17,8 +17,8 @@
 #'  diagonal.
 #' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw
 #'  data is given as input. Default is "pairwise.complete.obs".
-#' @param n_factors numeric. Number of factors to extract if
-#' \code{eigen_type = "EFA"}. Default is 1.
+#' @param n_factors numeric. Number of factors to extract if "EFA" is included in
+#' \code{eigen_type}. Default is 1.
 #' @param ... Additional arguments passed to \code{\link[EFA]{EFA}}. For example,
 #' to change the extraction method (PAF is default).
 #'

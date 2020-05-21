@@ -10,8 +10,9 @@
 #'  correlation matrix or raw data.
 #' @param N numeric. The number of cases / observations to simulate. Should only
 #'  be specified if \code{x} is left as \code{NULL} as otherwise the dimensions are taken from \code{x}.
-#' @param n_vars numeric. The number of variables / indicators to simulate. Should only
-#'  be specified if \code{x} is left as \code{NULL} as otherwise the dimensions are taken from \code{x}.
+#' @param n_vars numeric. The number of variables / indicators to simulate.
+#' Should only be specified if \code{x} is left as \code{NULL} as otherwise the
+#' dimensions are taken from \code{x}.
 #' @param n_datasets numeric. The number of datasets to simulate. Default is 1000.
 #' @param percent numeric. A vector of percentiles to take the simulated eigenvalues from.
 #'  Default is 95.
@@ -20,8 +21,7 @@
 #'  matrices is replaced by the squared multiple correlations (SMCs) of the
 #'  indicators. If using "PCA", the diagonal values of the correlation matrices
 #'  are left to be 1. If using "EFA", eigenvalues are found on the correlation
-#'  matrices with the final communalities of a 1 factor principal axis factoring
-#'  solution as diagonal.
+#'  matrices with the final communalities of an EFA solution as diagonal.
 #' @param data_type character. Currently only "sim" is implemented. Finds eigenvalues
 #'  for parallel analysis on simulated data.
 #' @param replace logical. Currently ignored. Whether, if \code{data_type = "resample"}, the
@@ -33,23 +33,13 @@
 #'  simulated eigenvalues. \code{"Percentile"}, uses the percentiles specified
 #'  in percent. \code{"Crawford"} uses the 95th percentile for the first factor
 #'  and the mean afterwards (based on Crawford et al, 2010).
-#' @param criterion numeric. The convergence criterion.
-#'  If the change in communalities from one iteration to the next is smaller than
-#'  this criterion the solution is accepted and the procedure ends. Details
-#'  depend on criterion_type. Default is \code{.001}.
-#' @param criterion_type character. "max_individual" selects the
-#'  maximum change in any of the communalities from one iteration to the next
-#'  and tests it against the specified criterion. This is also used by SPSS.
-#'  "sums" takes difference of the sum of all communalities in one iteration and
-#'  the sum of all communalities in the next iteration and tests it against the
-#'  criterion. This procedure is used by the \code{\link[psych:fa]{psych::fa}}
-#'  function.
-#'  Default is \code{"sums"}.
-#' @param max_iter numeric. The maximum number of iterations to
-#'  perform after which the iterative PAF procedure is halted with a warning.
-#'  Default is \code{1000}.
+#'  @param n_factors numeric. Number of factors to extract if "EFA" is included in
+#' \code{eigen_type}. Default is 1.
+#'  @param ... Additional arguments passed to \code{\link[EFA]{EFA}}. For example,
+#'  the extraction method can be changed here (default is PAF).
 #'
-#' @details Parallel analysis (Horn, 1965) compares the eigenvalues obtained from the sample
+#' @details Parallel analysis (Horn, 1965) compares the eigenvalues obtained from
+#' the sample
 #'  correlation matrix against those of null model correlation matrices (i.e.,
 #'  with uncorrelated variables) of the same sample size. This way, it accounts
 #'  for the variation in eigenvalues introduced by sampling error and thus
@@ -77,7 +67,7 @@
 #'
 #' @return A list of class PARALLEL containing the following objects
 #' \item{eigenvalues}{A matrix containing the eigenvalues of the real and the simulated data.}
-#' \item{n_factors}{The number of factors to retain according to the parallel procedure.}
+#' \item{n_fac}{The number of factors to retain according to the parallel procedure.}
 #' \item{settings}{A list of control settings used in the print function.}
 #'
 #' @source Braeken, J., & van Assen, M. A. (2017). An empirical Kaiser criterion.
@@ -115,15 +105,19 @@ PARALLEL <- function(x = NULL,
                      use = c("pairwise.complete.obs", "all.obs", "complete.obs",
                              "everything", "na.or.complete"),
                      decision_rule = c("Means", "Percentile", "Crawford"),
-                     criterion = .001,
-                     criterion_type = c("sums", "max_individual"),
-                     max_iter = 1000) {
+                     n_factors = 1,
+                     ...) {
 
-  eigen_type <- match.arg(eigen_type)
+  eigen_type <- match.arg(eigen_type) # SEVERAL OK HERE!
   data_type <- match.arg(data_type)
   use <- match.arg(use)
   decision_rule <- match.arg(decision_rule)
-  criterion_type <- match.arg(criterion_type)
+  checkmate::assert_count(n_factors)
+  checkmate::assert_count(N, na.ok = TRUE)
+  checkmate::assert_count(n_vars, na.ok = TRUE)
+  checkmate::assert_count(n_datasets)
+  checkmate::assert_number(percent, lower = 0, upper = 100)
+  checkmate::assert_flag(replace)
 
   n_cores <- future::nbrOfWorkers()
   size_vec <- rep(round(n_datasets / n_cores), n_cores - 1)
@@ -131,7 +125,7 @@ PARALLEL <- function(x = NULL,
 
   eigvals_real <- NULL
   results <- NULL
-  n_factors <- NA
+  n_fac <- NA
   x_dat <- FALSE
 
   if (!is.null(x)) {
@@ -205,9 +199,8 @@ PARALLEL <- function(x = NULL,
         eigvals_real <- matrix(eigen(R, symmetric = TRUE,
                                      only.values = TRUE)$values, ncol = 1)
       } else if (eigen_type == "EFA") {
-        eigvals_real <- matrix(parallel_paf(R, criterion,
-                                            ifelse(criterion_type == "sums", 2, 1),
-                                            max_iter), ncol = 1)
+        eigvals_real <- matrix(EFA(R, n_factors = n_factors, ...)$final_eigen,
+                               ncol = 1)
       }
 
 
@@ -257,11 +250,13 @@ PARALLEL <- function(x = NULL,
 
   if (data_type == "sim") {
     if (is.na(N)) {
-      stop('"N" was not set and could not be taken from data. Please specify N and try again.')
+      stop('"N" was not set and could not be taken from data. Please specify N
+           and try again.')
     }
 
     if (is.na(n_vars)) {
-      stop('"n_vars" was not set and could not be taken from data. Please specify n_vars and try again.')
+      stop('"n_vars" was not set and could not be taken from data. Please specify
+           n_vars and try again.')
     }
 
     if (eigen_type == "PCA") {
@@ -279,17 +274,15 @@ PARALLEL <- function(x = NULL,
 
     } else if (eigen_type == "EFA") {
 
-      eigvals <- future.apply::future_lapply(size_vec, parallel_paf_sim,
-                                             N = N, n_vars = n_vars,
-                                             criterion = criterion,
-                                    crit_type = ifelse(criterion_type == "sums",
-                                                       2, 1), max_iter = max_iter)
+      eigvals <- future.apply::future_lapply(size_vec, .parallel_EFA_sim,
+                                             n_vars = n_vars, N = N,
+                                             n_factors = n_factors, ...)
       eigvals <- do.call(rbind, eigvals)
 
     }
 
     results <- parallel_summarise(eigvals, percent = percent,
-                                      n_datasets = n_datasets, n_vars = n_vars)
+                                  n_datasets = n_datasets, n_vars = n_vars)
 
     colnames(results) <- c("Means", paste(percent, "Percentile"))
 
@@ -303,21 +296,23 @@ PARALLEL <- function(x = NULL,
         if ("95 Percentile" %in% colnames(results)) {
           crawford <- c(results[1, "95 Percentile"],
                         results[-1, "Means"])
-          n_factors <- which(!(eigvals_real > crawford))[1] - 1
+          n_fac <- which(!(eigvals_real > crawford))[1] - 1
         } else {
-          warning("decision_rule == 'Crawford' is specified, but 95 percentile was not used. Using Means instead. To use 'Crawford', make sure to specify percent = 95.")
-          n_factors <- which(!(eigvals_real > results[, "Means"]))[1] - 1
+          warning("decision_rule == 'Crawford' is specified, but 95 percentile
+                  was not used. Using Means instead. To use 'Crawford', make sure
+                  to specify percent = 95.")
+          n_fac <- which(!(eigvals_real > results[, "Means"]))[1] - 1
           decision_rule <- "Means"
         }
 
     } else if (decision_rule == "Means") {
-      n_factors <- which(!(eigvals_real > results[, "Means"]))[1] - 1
+      n_fac <- which(!(eigvals_real > results[, "Means"]))[1] - 1
 
     } else if (decision_rule == "Percentile") {
 
       for (perc_i in percent) {
         pp <- paste(perc_i, "Percentile")
-        n_factors[pp] <- which(!(eigvals_real > results[, pp]))[1] - 1
+        n_fac[pp] <- which(!(eigvals_real > results[, pp]))[1] - 1
       }
 
     }
@@ -340,7 +335,7 @@ PARALLEL <- function(x = NULL,
 
   out <- list(
     eigenvalues = eigenvalues,
-    n_factors = n_factors,
+    n_fac = n_fac,
     settings = settings
   )
 
@@ -348,4 +343,21 @@ PARALLEL <- function(x = NULL,
 
   return(out)
 
+}
+
+
+.parallel_EFA_sim <- function(n_datasets, n_vars, N, n_factors, ...){
+
+  eigvals <- matrix(nrow = n_vars, ncol = n_datasets)
+
+  for(i in 1:n_datasets){
+
+    x <- matrix(rnorm(N * n_vars), nrow = N, ncol = n_vars)
+    R <- stats::cor(x)
+    eigvals[, i] <- suppressWarnings(EFA(R, n_factors = n_factors,
+                                         ...)$final_eigen)
+
+  }
+
+  return(eigvals)
 }
