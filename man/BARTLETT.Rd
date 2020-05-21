@@ -2,7 +2,7 @@
 % Please edit documentation in R/BARTLETT.R
 \name{BARTLETT}
 \alias{BARTLETT}
-\title{Bartletts test of spericity}
+\title{Bartlett's test of spericity}
 \source{
 Bartlett, M. S. (1951). The effect of standardization on a Chi-square
 approximation in factor analysis. Biometrika, 38, 337-344.
@@ -39,14 +39,17 @@ because the variables show too little covariance.
 }
 \details{
 Bartlett (1951) proposed this statistic to determine a correlation
-matrix' suitability for factor analysis (see also
-\code{\link[EFAtools:KMO]{EFAtools:KMO}}). The statistic is approximately
+matrix' suitability for factor analysis. The statistic is approximately
 chi square distributed with \eqn{df = \fraq{p(p - 1)}} and is given by
 
 \deqn{chi^2 = -log(det(R)) (N - 1 - (2 * p + 5)/6)}
 
 where \eqn{det(R)} is the determinant of the correlation matrix, \eqn{N} is
 the sample size, and \eqn{p} is the number of variables.
+
+This tests requires multivariate normality. If this condition is not met,
+the Kaiser-Meyer-Olkin criterion (\code{\link[EFAtools:KMO]{EFAtools:KMO}}))
+can still be used.
 
 This function was heavily influenced by the
 \code{\link[psych:cortest.bartlett]{cortest.bartlett}} function

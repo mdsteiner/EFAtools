@@ -18,19 +18,18 @@ factor analysis. Psychometrika, 30(2), 179–185. doi: 10.1007/BF02289447
 \usage{
 PARALLEL(
   x = NULL,
-  n_cases = NA,
+  N = NA,
   n_vars = NA,
   n_datasets = 1000,
   percent = 95,
-  eigen_type = c("SMC", "PCA", "EFA"),
+  eigen_type = c("PCA", "SMC", "EFA"),
   data_type = c("sim"),
   replace = TRUE,
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
     "na.or.complete"),
   decision_rule = c("Means", "Percentile", "Crawford"),
-  criterion = 0.001,
-  criterion_type = c("sums", "max_individual"),
-  max_iter = 1000
+  n_factors = 1,
+  ...
 )
 }
 \arguments{
@@ -38,11 +37,12 @@ PARALLEL(
 against. Must not contain variables of classes other than numeric. Can be a
 correlation matrix or raw data.}
 
-\item{n_cases}{numeric. The number of cases / observations to simulate. Should only
+\item{N}{numeric. The number of cases / observations to simulate. Should only
 be specified if \code{x} is left as \code{NULL} as otherwise the dimensions are taken from \code{x}.}
 
-\item{n_vars}{numeric. The number of variables / indicators to simulate. Should only
-be specified if \code{x} is left as \code{NULL} as otherwise the dimensions are taken from \code{x}.}
+\item{n_vars}{numeric. The number of variables / indicators to simulate.
+Should only be specified if \code{x} is left as \code{NULL} as otherwise the
+dimensions are taken from \code{x}.}
 
 \item{n_datasets}{numeric. The number of datasets to simulate. Default is 1000.}
 
@@ -54,8 +54,7 @@ either "SMC", "PCA", or "EFA". If using "SMC", the diagonal of the correlation
 matrices is replaced by the squared multiple correlations (SMCs) of the
 indicators. If using "PCA", the diagonal values of the correlation matrices
 are left to be 1. If using "EFA", eigenvalues are found on the correlation
-matrices with the final communalities of a 1 factor principal axis factoring
-solution as diagonal.}
+matrices with the final communalities of an EFA solution as diagonal.}
 
 \item{data_type}{character. Currently only "sim" is implemented. Finds eigenvalues
 for parallel analysis on simulated data.}
@@ -67,32 +66,19 @@ resampling should be done with replacements or not. Default is \code{TRUE}.}
 is given as input. Default is "pairwise.complete.obs".}
 
 \item{decision_rule}{character. Which rule to use to determine the number of
-factors to retain. Default is \code{"mean"}, which will use the average
-simulated eigenvalues. \code{"Percentile"}, uses the percentiles specified
-in percent. \code{"Crawford"} uses the 95th percentile for the first factor
-and the mean afterwards (based on Crawford et al, 2010).}
-
-\item{criterion}{numeric. The convergence criterion.
-If the change in communalities from one iteration to the next is smaller than
-this criterion the solution is accepted and the procedure ends. Details
-depend on criterion_type. Default is \code{.001}.}
-
-\item{criterion_type}{character. "max_individual" selects the
-maximum change in any of the communalities from one iteration to the next
-and tests it against the specified criterion. This is also used by SPSS.
-"sums" takes difference of the sum of all communalities in one iteration and
-the sum of all communalities in the next iteration and tests it against the
-criterion. This procedure is used by the \code{\link[psych:fa]{psych::fa}} function.
-Default is \code{"sums"}.}
-
-\item{max_iter}{numeric. The maximum number of iterations to
-perform after which the iterative PAF procedure is halted with a warning.
-Default is \code{1000}.}
+ factors to retain. Default is \code{"mean"}, which will use the average
+ simulated eigenvalues. \code{"Percentile"}, uses the percentiles specified
+ in percent. \code{"Crawford"} uses the 95th percentile for the first factor
+ and the mean afterwards (based on Crawford et al, 2010).
+ @param n_factors numeric. Number of factors to extract if "EFA" is included in
+\code{eigen_type}. Default is 1.
+ @param ... Additional arguments passed to \code{\link[EFA]{EFA}}. For example,
+ the extraction method can be changed here (default is PAF).}
 }
 \value{
 A list of class PARALLEL containing the following objects
 \item{eigenvalues}{A matrix containing the eigenvalues of the real and the simulated data.}
-\item{n_factors}{The number of factors to retain according to the parallel procedure.}
+\item{n_fac}{The number of factors to retain according to the parallel procedure.}
 \item{settings}{A list of control settings used in the print function.}
 }
 \description{
@@ -102,7 +88,8 @@ be selected. To do so, call \code{library(future)} and, for example,
  \code{plan(multisession)}; see examples.
 }
 \details{
-Parallel analysis (Horn, 1965) compares the eigenvalues obtained from the sample
+Parallel analysis (Horn, 1965) compares the eigenvalues obtained from
+the sample
  correlation matrix against those of null model correlation matrices (i.e.,
  with uncorrelated variables) of the same sample size. This way, it accounts
  for the variation in eigenvalues introduced by sampling error and thus
@@ -131,12 +118,12 @@ Parallel analysis (Horn, 1965) compares the eigenvalues obtained from the sample
 \examples{
 \dontrun{
 # example without real data
-PARALLEL(n_cases = 500, n_vars = 10)
+PARALLEL(N = 500, n_vars = 10)
 # example without correlation matrix
-PARALLEL(test_models$case_11b$cormat, n_cases = test_models$case_11b$N)
+PARALLEL(test_models$case_11b$cormat, N = test_models$case_11b$N)
 
 # for parallel computation
 future::plan(future::multisession)
-PARALLEL(test_models$case_11b$cormat, n_cases = test_models$case_11b$N)
+PARALLEL(test_models$case_11b$cormat, N = test_models$case_11b$N)
 }
 }

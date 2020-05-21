@@ -4,14 +4,14 @@
 \alias{parallel_paf_sim}
 \title{Parallel analysis on simulated data.}
 \usage{
-parallel_paf_sim(n_datasets, n_vars, n_cases, criterion, crit_type, max_iter)
+parallel_paf_sim(n_datasets, n_vars, N, criterion, crit_type, max_iter)
 }
 \arguments{
-\item{n_datasets}{numeric. Number of datasets with dimensions (n_cases, n_vars) to simulate.}
+\item{n_datasets}{numeric. Number of datasets with dimensions (N, n_vars) to simulate.}
 
 \item{n_vars}{numeric. Number of variables / indicators in dataset.}
 
-\item{n_cases}{numeric. Number of cases / observations in dataset.}
+\item{N}{numeric. Number of cases / observations in dataset.}
 
 \item{criterion}{double. Convergence criterion to use.}
 

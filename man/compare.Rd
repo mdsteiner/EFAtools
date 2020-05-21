@@ -94,7 +94,7 @@ A list of class COMPARE containing summary statistics on the differences
  between x and y when all loadings \code{>= thresh} are considered.}
 \item{diff_corres}{The number of differing variable to factor correspondences
  between x and y.}
-\item{ctrl}{List of control settings needed for the print method print.COMPARE.}
+\item{settings}{List of settings needed for the print method print.COMPARE.}
 }
 \description{
 The functions takes two objects of the same dimensions containing numeric

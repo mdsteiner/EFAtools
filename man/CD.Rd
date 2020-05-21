@@ -23,7 +23,7 @@ CD(
   alpha = 0.3,
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
     "na.or.complete"),
-  method = c("pearson", "spearman", "kendall"),
+  cor_method = c("pearson", "spearman", "kendall"),
   max_iter = 50
 )
 }
@@ -47,7 +47,7 @@ improvement added by an additional factor. Default is .30.}
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}}. Default
 is "pairwise.complete.obs".}
 
-\item{method}{character. Passed to \code{\link[stats:cor]{stats::cor}}.
+\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor}}.
 Default is "pearson".}
 
 \item{max_iter}{numeric. The maximum number of iterations to perform after which
@@ -87,7 +87,7 @@ diag(cormat) <- 1
 # create covariance matrix for multivariate distribution
 covmat <- sds \%*\% t(sds) * cormat
 # simulate data
-sim_dat <- MASS::mvrnorm(n = N, mu = mus, Sigma = covmat)
+sim_dat <- MASS::mvrnorm(mu = mus, Sigma = covmat)
 
 # run comparison data
 CD(sim_dat, 8)

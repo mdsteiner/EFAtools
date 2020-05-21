@@ -11,8 +11,8 @@ behavioral research, 46(2), 340-364.
 \usage{
 HULL(
   x,
-  n_cases = NA,
-  n_factors = NA,
+  N = NA,
+  n_fac_theor = NA,
   method = c("PAF", "ULS", "ML"),
   gof = c("CAF", "CFI", "RMSEA"),
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
@@ -23,19 +23,20 @@ HULL(
 \arguments{
 \item{x}{matrix or data.frame. Correlation matrix or raw data.}
 
-\item{n_cases}{numeric. Number of cases in the data. This is passed to \link{PARALLEL}.
+\item{N}{numeric. Number of cases in the data. This is passed to \link{PARALLEL}.
 Only has to be specified if x is a correlation matrix.}
 
-\item{n_factors}{numeric. Theoretical number of factors to retain. The maximum
+\item{n_fac_theor}{numeric. Theoretical number of factors to retain. The maximum
 of this number and the number of factors suggested by \link{PARALLEL} plus
-onewill be used in the Hull method.}
+one will be used in the Hull method.}
 
 \item{method}{character. The estimation method to use. One of  \code{"PAF"},
 \code{"ULS"}, or  \code{"ML"}, for principal axis factoring, unweighted
 least squares, and maximum likelihood, respectively.}
 
-\item{gof}{character. The goodness of fit index to use. One of \code{"CAF"},
-\code{"CFI"}, or \code{"RMSEA"}. If \code{method = "PAF"} is used, only
+\item{gof}{character. The goodness of fit index to use. Either \code{"CAF"},
+\code{"CFI"}, or \code{"RMSEA"}, or some combination of them.
+If \code{method = "PAF"} is used, only
 the CAF can be used as goodness of fit index. For details on the CAF, see
 Lorenzo-Seva, Timmerman, and Kiers (2011).}
 
@@ -46,12 +47,19 @@ is given as input. Default is "pairwise.complete.obs".}
 }
 \value{
 A list of class HULL containing the following objects
-\item{n_factors}{The number of factors to retain according to the Hull method.}
-\item{solutions}{A matrix containing the goodness of fit indices (CAF), degrees of freedom, and for the factors lying on the hull, the st values of the hull solution (see Lorenzo-Seva, Timmereman, and Kiers 2011 for details).}
-\item{ctrl}{A list of control settings used in the print and plot methods.}
+\item{n_fac_CAF}{The number of factors to retain according to the Hull method
+with the CAF.}
+\item{n_fac_CFI}{The number of factors to retain according to the Hull method
+with the CFI.}
+\item{n_fac_RMSEA}{The number of factors to retain according to the Hull method
+with the RMSEA.}
+\item{solutions_CAF}{A matrix containing the CAFs, degrees of freedom, and for the factors lying on the hull, the st values of the hull solution (see Lorenzo-Seva, Timmerman, and Kiers 2011 for details).}
+#' \item{solutions_CFI}{A matrix containing the CFIs, degrees of freedom, and for the factors lying on the hull, the st values of the hull solution (see Lorenzo-Seva, Timmerman, and Kiers 2011 for details).}
+#' \item{solutions_RMSEA}{A matrix containing the RMSEAs, degrees of freedom, and for the factors lying on the hull, the st values of the hull solution (see Lorenzo-Seva, Timmerman, and Kiers 2011 for details).}
+\item{settings}{A list of the settings used.}
 }
 \description{
-Implementation of the Hull method suggested by Lorenzo-Seva, Timmereman,
+Implementation of the Hull method suggested by Lorenzo-Seva, Timmerman,
 and Kiers (2011), but using principal axis factoring. See details for
 parallelization.
 }
@@ -69,21 +77,19 @@ The \link{PARALLEL} function and the principal axis factoring of the
 }
 \examples{
 \dontrun{
-# using PAF
-HULL(test_models$baseline$cormat,
-     n_cases = test_models$baseline$N)
+# using PAF (this will throw a warning if gof is not specified manually
+# and CAF will be used automatically)
+HULL(test_models$baseline$cormat, N = 500, gof = "CAF")
 
-# using ML with CFI
-HULL(test_models$baseline$cormat, n_cases = test_models$baseline$N,
-     method = "ML", gof = "CFI")
+# using ML with all available fit indices (CAF, CFI, and RMSEA)
+HULL(test_models$baseline$cormat, N = 500, method = "ML")
 
-# using ULS with RAMSEA
-HULL(test_models$baseline$cormat, n_cases = test_models$baseline$N,
-     method = "ULS", gof = "RMSEA")
+# using ULS with only RMSEA
+HULL(test_models$baseline$cormat, N = 500, method = "ULS", gof = "RMSEA")
 
 # using parallel processing (Note: plans can be adapted, see the future
 # package for details)
 future::plan(future::multisession)
-HULL(test_models$baseline$cormat, n_cases = test_models$baseline$N)
+HULL(test_models$baseline$cormat, N = 500, gof = "CAF")
 }
 }

@@ -7,7 +7,7 @@
 \method{print}{HULL}(x, ...)
 }
 \arguments{
-\item{x}{a list of class HULL Output from the \link{HULL} function.}
+\item{x}{a list of class HULL. Output from the \link{HULL} function.}
 
 \item{...}{Further arguments for print.}
 }
@@ -15,7 +15,6 @@
 Print function for HULL objects
 }
 \examples{
-\dontrun{
-HULL(IDS2_R, n_cases = 2000)
-}
+HULL(test_models$baseline$cormat, N = 500, method = "ML")
+
 }

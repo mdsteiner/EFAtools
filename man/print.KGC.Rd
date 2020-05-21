@@ -15,7 +15,7 @@
 Print function for KGC objects
 }
 \examples{
-KGC_base <- KGC(test_models$baseline$cormat, eigen_type = "PCA")
+KGC_base <- KGC(test_models$baseline$cormat)
 KGC_base
 
 }

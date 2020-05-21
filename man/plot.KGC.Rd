@@ -15,7 +15,7 @@
 Plot method showing a summarized output of the \link{KGC} function
 }
 \examples{
-KGC_base <- KGC(test_models$baseline$cormat, eigen_type = "PCA")
+KGC_base <- KGC(test_models$baseline$cormat)
 plot(KGC_base)
 
 }
