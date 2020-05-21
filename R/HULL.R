@@ -160,14 +160,14 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   # first for 0 factors
   if ("CAF" %in% gof) {
     s_CAF <- s
-    colnames(s_CAF) <- c("n factors", "CAF", "df", "st")
+    colnames(s_CAF) <- c("nfactors", "CAF", "df", "st")
     s_CAF[1, 2] <- 1 - KMO(R)$KMO
     s_CAF[1, 3] <- (m**2 - m) / 2
   }
 
   if ("CFI" %in% gof) {
     s_CFI <- s
-    colnames(s_CFI) <- c("n factors", "CFI", "df", "st")
+    colnames(s_CFI) <- c("nfactors", "CFI", "df", "st")
     s_CFI[1, 2] <- 0
     s_CFI[1, 3] <- (m**2 - m) / 2
 
@@ -180,7 +180,7 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
 
   if ("RMSEA" %in% gof) {
     s_RMSEA <- s
-    colnames(s_RMSEA) <- c("n factors", "RMSEA", "df", "st")
+    colnames(s_RMSEA) <- c("nfactors", "RMSEA", "df", "st")
     Fm <- sum(R[upper.tri(R)] ^ 2)
     chi <- Fm * (N - 1)
     df <- (m**2 - m) / 2

@@ -1,5 +1,6 @@
 # Flexible omega function (e.g. to use with loadings obtained by MacOrtho)------
-.OMEGA_FLEX <- function(model = NULL, type = c("EFAtools", "psych"), factor_corres = NULL,
+.OMEGA_FLEX <- function(model = NULL, type = c("EFAtools", "psych"),
+                        factor_corres = NULL,
                         var_names = NULL, fac_names = NULL, g_load = NULL,
                         s_load = NULL, u2 = NULL, cormat = NULL, pattern = NULL,
                         Phi = NULL, variance = c("correlaton", "sums_load")){

@@ -193,7 +193,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "MACHINE",
 
   }
 
-  # Prepare settings here (all settings)
+  # Prepare settings here
   settings <- list(criteria = criteria,
                    suitability = suitability,
                    N = N,

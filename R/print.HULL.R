@@ -49,6 +49,6 @@ print.HULL <- function(x, ...) {
     cat("\n")
   }
 
-  #graphics::plot(x)
+  graphics::plot(x)
 
 }
