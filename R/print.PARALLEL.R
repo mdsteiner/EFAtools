@@ -15,12 +15,10 @@
 #' }
 print.PARALLEL <- function(x, ...) {
 
-  data_type <- x$settings$data_type
   eigen_type <- x$settings$eigen_type
 
   cat("Parallel Analysis performed using ", x$settings$n_datasets,
-      ifelse(data_type == "sim", " simulated random", " resampled"),
-      " data sets", sep = "")
+      " simulated random data sets", sep = "")
   cat("\n")
 
   cat("Eigenvalues were found using ", .settings_string(x$settings$eigen_type),

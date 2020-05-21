@@ -18,9 +18,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
                       gof = c("CAF", "CFI", "RMSEA"),
                       eigen_type = c("PCA", "SMC", "EFA"), n_factors = 1,
                       n_vars = NA, n_datasets = 1000, percent = 95,
-                      data_type = c("sim"), # , "resample"
-                      replace = TRUE, decision_rule = c("Means", "Percentile",
-                                                        "Crawford"),
+                      decision_rule = c("Means", "Percentile", "Crawford"),
                       ...){
 
   ## Perform argument checks and prepare input
@@ -166,11 +164,9 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   # Parallel analysis
   if("PARALLEL" %in% criteria){
 
-    # IF RESAMPLING IS NOT IMPLEMENTED, USE R INSTEAD OF X HERE AND REMOVE TRY
-    parallel_out <- try(PARALLEL(x, N = N, n_vars = n_vars,
+    parallel_out <- try(PARALLEL(R, N = N, n_vars = n_vars,
                                  n_datasets = n_datasets, percent = percent,
-                                 eigen_type = eigen_type, data_type = data_type,
-                                 replace = replace, use = use,
+                                 eigen_type = eigen_type, use = use,
                                  decision_rule = decision_rule,
                                  n_factors = n_factors, method = method, ...))
 
@@ -210,8 +206,6 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
                    n_vars = n_vars,
                    n_datasets = n_datasets,
                    percent = percent,
-                   data_type = data_type, # needed if no resampling?
-                   replace = replace, # needed if no resampling?
                    decision_rule = decision_rule)
 
   # Prepare the output

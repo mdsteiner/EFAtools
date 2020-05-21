@@ -22,10 +22,6 @@
 #'  indicators. If using "PCA", the diagonal values of the correlation matrices
 #'  are left to be 1. If using "EFA", eigenvalues are found on the correlation
 #'  matrices with the final communalities of an EFA solution as diagonal.
-#' @param data_type character. Currently only "sim" is implemented. Finds eigenvalues
-#'  for parallel analysis on simulated data.
-#' @param replace logical. Currently ignored. Whether, if \code{data_type = "resample"}, the
-#'  resampling should be done with replacements or not. Default is \code{TRUE}.
 #' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
 #' is given as input. Default is "pairwise.complete.obs".
 #' @param decision_rule character. Which rule to use to determine the number of
@@ -68,8 +64,12 @@
 #'  Braeken & van Assen, 2017).
 #'
 #' @return A list of class PARALLEL containing the following objects
-#' \item{eigenvalues}{A matrix containing the eigenvalues of the real and the simulated data.}
-#' \item{n_fac}{The number of factors to retain according to the parallel procedure.}
+#' \item{eigenvalues_PCA}{A matrix containing the eigenvalues of the real and the simulated data found with eigen_type = PCA}
+#' \item{eigenvalues_SMC}{A matrix containing the eigenvalues of the real and the simulated data found with eigen_type = SMC}
+#' \item{eigenvalues_EFA}{A matrix containing the eigenvalues of the real and the simulated data found with eigen_type = EFA}
+#' \item{n_fac_PCA}{The number of factors to retain according to the parallel procedurewith eigen_type = PCA.}
+#' \item{n_fac_SMC}{The number of factors to retain according to the parallel procedurewith eigen_type = SMC.}
+#' \item{n_fac_EFA}{The number of factors to retain according to the parallel procedurewith eigen_type = EFA.}
 #' \item{settings}{A list of control settings used in the print function.}
 #'
 #' @source Braeken, J., & van Assen, M. A. (2017). An empirical Kaiser criterion.
@@ -106,8 +106,6 @@ PARALLEL <- function(x = NULL,
                      n_datasets = 1000,
                      percent = 95,
                      eigen_type = c("PCA", "SMC", "EFA"),
-                     data_type = c("sim"), # , "resample"
-                     replace = TRUE,
                      use = c("pairwise.complete.obs", "all.obs", "complete.obs",
                              "everything", "na.or.complete"),
                      decision_rule = c("Means", "Percentile", "Crawford"),
@@ -115,7 +113,6 @@ PARALLEL <- function(x = NULL,
                      ...) {
 
   eigen_type <- match.arg(eigen_type, several.ok = TRUE)
-  data_type <- match.arg(data_type)
   use <- match.arg(use)
   decision_rule <- match.arg(decision_rule)
   checkmate::assert_count(n_factors)
@@ -123,7 +120,6 @@ PARALLEL <- function(x = NULL,
   checkmate::assert_count(n_vars, na.ok = TRUE)
   checkmate::assert_count(n_datasets)
   checkmate::assert_number(percent, lower = 0, upper = 100)
-  checkmate::assert_flag(replace)
 
   n_cores <- future::nbrOfWorkers()
   size_vec <- rep(round(n_datasets / n_cores), n_cores - 1)
@@ -164,12 +160,6 @@ PARALLEL <- function(x = NULL,
 
         }
 
-        # if (data_type == "resample") {
-        #   warning("data_type was set to resample, but correlation matrix was
-        # entered. Resampling can only be done on raw data. Setting data_type to sim")
-        #   data_type <- "sim"
-        # }
-
         R <- x
 
       } else {
@@ -185,6 +175,18 @@ PARALLEL <- function(x = NULL,
         colnames(R) <- colnames(x)
         N <- nrow(x)
 
+      }
+
+      if (is.na(N)) {
+
+        stop('"N" was not set and could not be taken from data. Please specify N
+             and try again.')
+
+      }
+
+      if (is.na(n_vars)) {
+        stop('"n_vars" was not set and could not be taken from data. Please specify
+             n_vars and try again.')
       }
 
       # Check if correlation matrix is invertable, if it is not, stop with message
@@ -224,58 +226,9 @@ PARALLEL <- function(x = NULL,
       colnames(eigvals_real_SMC) <- "Real Eigenvalues"
       colnames(eigvals_real_EFA) <- "Real Eigenvalues"
 
-      # if (data_type == "resample") {
-      #
-      #
-      #   if (eigen_type == "PCA") {
-      #
-      #     eigvals <- parallel::mclapply(size_vec, parallel_resample, data = x,
-      #                                   eigen_type = 1, replace = replace,
-      #                                   mc.cores = n_cores)
-      #
-      #     eigvals <- do.call(rbind, eigvals)
-      #
-      #   } else if (eigen_type == "SMC") {
-      #
-      #     eigvals <- parallel::mclapply(size_vec, parallel_resample, data = x,
-      #                                   eigen_type = 2, replace = replace,
-      #                                   mc.cores = n_cores)
-      #     eigvals <- do.call(rbind, eigvals)
-      #
-      #   } else if (eigen_type == "EFA") {
-      #
-      #     eigvals <- parallel::mclapply(size_vec, parallel_paf_resample, data = x,
-      #                                   replace = replace, criterion = criterion,
-      #                                   crit_type = ifelse(criterion_type == "sums",
-      #                                                      2, 1),
-      #                                   max_iter = max_iter,
-      #                                   mc.cores = n_cores)
-      #     eigvals <- do.call(rbind, eigvals)
-      #
-      #   }
-      #
-      #   results <- parallel_summarise(eigvals, percent = percent,
-      #                                 n_datasets = n_datasets,
-      #                                 n_vars = n_vars)
-      #
-      #   colnames(results) <- c("Means", paste(percent, "Percentile"))
-      #
-      # }
-
     }
 
   }
-
-  if (data_type == "sim") {
-    if (is.na(N)) {
-      stop('"N" was not set and could not be taken from data. Please specify N
-           and try again.')
-    }
-
-    if (is.na(n_vars)) {
-      stop('"n_vars" was not set and could not be taken from data. Please specify
-           n_vars and try again.')
-    }
 
     if ("PCA" %in% eigen_type) {
 
@@ -367,8 +320,6 @@ PARALLEL <- function(x = NULL,
     n_datasets = n_datasets,
     percent = percent,
     eigen_type = eigen_type,
-    data_type = data_type,
-    replace = replace,
     use = use,
     decision_rule = decision_rule,
     n_factors = n_factors
