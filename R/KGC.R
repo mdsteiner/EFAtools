@@ -168,7 +168,9 @@ KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
   }
 
   # prepare settings
-  settings <- list(eigen_type = eigen_type)
+  settings <- list(eigen_type = eigen_type,
+                   use = use,
+                   n_factors = n_factors)
 
   # Prepare the output
   output <- list(

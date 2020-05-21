@@ -102,7 +102,13 @@ BARTLETT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   pval <- stats::pchisq(statistic, df, lower.tail = FALSE)
 
   # prepare the output
-  output <- list(chisq = statistic, p_value = pval, df = df)
+  settings <- list(N = N,
+                   use = use)
+
+  output <- list(chisq = statistic,
+                 p_value = pval,
+                 df = df,
+                 settings = settings)
 
   class(output) <- "BARTLETT"
 

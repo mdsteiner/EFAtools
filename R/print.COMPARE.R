@@ -29,14 +29,14 @@ print.COMPARE <- function(x, ...) {
   are_equal <- x$are_equal
 
   # extract control settings
-  digits <- x$ctrl$digits
-  m_red <- x$ctrl$m_red
-  range_red <- x$ctrl$range_red
-  round_red <- x$ctrl$round_red
-  print_diff <- x$ctrl$print_diff
-  x_labels <- x$ctrl$x_labels
-  plot <- x$ctrl$plot
-  plot_red <- x$ctrl$plot_red
+  digits <- x$settings$digits
+  m_red <- x$settings$m_red
+  range_red <- x$settings$range_red
+  round_red <- x$settings$round_red
+  print_diff <- x$settings$print_diff
+  x_labels <- x$settings$x_labels
+  plot <- x$settings$plot
+  plot_red <- x$settings$plot_red
 
   # prepare to print statistics
 

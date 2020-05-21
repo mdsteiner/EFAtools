@@ -1,6 +1,6 @@
 
 # - say what only works with raw data (CD, PARALLEL if resampling is implemented)
-# - ... further arguments passed to PARALLEL in HULL or passed to EFA in KGC ->
+# - ... further arguments passed to PARALLEL in HULL or passed to EFA in KGC, PARALLEL and HULL ->
     # for these functions, methods argument here is also passed to EFA, problem?
 # - ok if same eigen_type is used for PARALELL and KGC?
 # arguments set for parallel are also used in HULL parallel (because passed to
@@ -28,7 +28,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "MACHINE",
 
   # WHAT HAPPENS IF YOU ENTER NULL? SHOULD BE POSSIBLE...
   suitability <- match.arg(suitability, several.ok = TRUE)
-  # OTHER CHECKS IN RESPECTIVE FUNCTIONS OK? (EXCEPT FOR MATCH.ARG!)
+  # OTHER CHECKS IN RESPECTIVE FUNCTIONS OK?
   # OR BETTER HERE?
 
   # Check if it is a correlation matrix
@@ -117,7 +117,10 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "MACHINE",
     # n_factors and method arguments needed?
     cd_out <- try(CD(x, n_factors_max = n_factors_max, N_pop = N_pop,
                      N_samples = N_samples, alpha = alpha, use = use,
-                     cor_method = cor_method, max_iter = max_iter))
+                     cor_method = cor_method,
+                     max_iter = max_iter, # really needed?
+                     ... #(to pass to EFA?)
+                     ))
 
     if(!inherits(cd_out, "try-error")){
 
@@ -174,7 +177,8 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "MACHINE",
                                  replace = replace, use = use,
                                  decision_rule = decision_rule,
                                  n_factors = n_factors, method = method,
-                                 max_iter = max_iter))
+                                 max_iter = max_iter, ... # really needed?
+                                 ))
 
     nfac_PA_PCA <- parallel_out$n_fac_PCA
     nfac_PA_SMC <- parallel_out$n_fac_SMC
@@ -208,7 +212,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "MACHINE",
                    method = method,
                    gof = gof,
                    eigen_type = eigen_type,
-                   n_fac_ext = n_fac_ext,
+                   n_factors = n_factors,
                    n_vars = n_vars,
                    n_datasets = n_datasets,
                    percent = percent,

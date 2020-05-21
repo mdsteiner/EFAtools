@@ -190,7 +190,9 @@ SMT <- function(x, N = NULL, use = c("pairwise.complete.obs", "all.obs",
                  p_null = p_null,
                  ps_chi = ps,
                  RMSEA_LBs = RMSEA_LB,
-                 AICs = AIC)
+                 AICs = AIC,
+                 settings = list(N = N,
+                                 use = use))
 
   class(output) <- "SMT"
 

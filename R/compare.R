@@ -63,7 +63,7 @@
 #'  between x and y when all loadings \code{>= thresh} are considered.}
 #' \item{diff_corres}{The number of differing variable to factor correspondences
 #'  between x and y.}
-#' \item{ctrl}{List of control settings needed for the print method print.COMPARE.}
+#' \item{settings}{List of settings needed for the print method print.COMPARE.}
 #'
 #' @export
 #'
@@ -234,16 +234,22 @@ compare <- function(x,
      are_equal <- are_equal - 1
   }
 
-  ctrl <- list(
+  settings <- list(
+    reorder = reorder,
+    corres = corres,
     digits = digits,
+    thresh = thresh,
     m_red = m_red,
     range_red = range_red,
     round_red = round_red,
     print_diff = print_diff,
+    na.rm = na.rm,
     x_labels = x_labels,
     plot = plot,
     plot_red = plot_red
   )
+
+
 
   # create output list
   out <- list(
@@ -257,7 +263,7 @@ compare <- function(x,
     diff_corres = diff_corres,
     diff_corres_cross = diff_corres_cross,
     g = g,
-    ctrl = ctrl
+    settings = settings
   )
 
   class(out) <- "COMPARE"

@@ -120,7 +120,8 @@ KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
 
   }
 
-  output <- list(KMO = KMO, KMO_i = KMO_i)
+  output <- list(KMO = KMO,
+                 KMO_i = KMO_i)
 
   class(output) <- "KMO"
 
