@@ -59,6 +59,6 @@ print.PARALLEL <- function(x, ...) {
 
   }
 
-  # graphics::plot(x)
+  graphics::plot(x)
 
 }

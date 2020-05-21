@@ -11,66 +11,98 @@
 #' @examples
 #' \dontrun{
 #' # example without correlation matrix
-#' x <- PARALLEL(test_models$case_11b$cormat, n_cases = test_models$case_11b$N)
+#' x <- PARALLEL(test_models$case_11b$cormat, N = 500)
 #' plot(x)
 #' }
 plot.PARALLEL <- function(x, ...) {
 
+  n_vars <- x$settings$n_vars
+  eigen_type <- x$settings$eigen_type
+  eigen_PCA <- x$eigenvalues_PCA
+  eigen_SMC <- x$eigenvalues_SMC
+  eigen_EFA <- x$eigenvalues_EFA
+  n_fac_PCA <- x$n_fac_PCA
+  n_fac_SMC <- x$n_fac_SMC
+  n_fac_EFA <- x$n_fac_EFA
+  x_dat <- x$settings$x_dat
+  decision_rule <- x$settings$decision_rule
+  percent <- x$settings$percent
+
+  # Create plots depending on eigen_type and if real data were entered or not
+  if("PCA" %in% eigen_type){
+
+    .plot_PA_helper(eigenvalues = eigen_PCA, n_vars = n_vars, n_fac = n_fac_PCA,
+                    x_dat = x_dat, decision_rule = decision_rule,
+                    percent = percent, eigen_type = "PCA")
+
+  }
+
+  if("SMC" %in% eigen_type){
+
+    .plot_PA_helper(eigenvalues = eigen_SMC, n_vars = n_vars, n_fac = n_fac_SMC,
+                    x_dat = x_dat, decision_rule = decision_rule,
+                    percent = percent, eigen_type = "SMC")
+
+  }
+
+  if("EFA" %in% eigen_type){
+
+    .plot_PA_helper(eigenvalues = eigen_EFA, n_vars = n_vars, n_fac = n_fac_EFA,
+                    x_dat = x_dat, decision_rule = decision_rule,
+                    percent = percent, eigen_type = "EFA")
+
+  }
+
+}
+
+.plot_PA_helper <- function(eigenvalues, n_vars, n_fac, x_dat,
+                            decision_rule = decision_rule, percent = percent,
+                            eigen_type){
+
   graphics::plot.new()
-  graphics::plot.window(xlim = c(1, x$settings$n_vars),
-                        ylim = c(min(x$eigenvalues) - .2,
-                                 max(x$eigenvalues) + .2))
-  graphics::axis(1, 1:x$settings$n_vars)
-  graphics::axis(2, round(seq(min(x$eigenvalues) - .2,
-                        max(x$eigenvalues) + .2,
-                        round(diff(c(min(x$eigenvalues) - .2,
-                                     max(x$eigenvalues)) + .2) / 6, 1)), 1),
-       las = 1)
+  graphics::plot.window(xlim = c(1, n_vars),
+                        ylim = c(min(eigenvalues) - .2,
+                                 max(eigenvalues) + .2))
+  graphics::axis(1, 1:n_vars)
+  graphics::axis(2, round(seq(min(eigenvalues) - .2,
+                              max(eigenvalues) + .2,
+                              round(diff(c(min(eigenvalues) - .2,
+                                           max(eigenvalues)) + .2) / 6, 1)), 1),
+                 las = 1)
   graphics::mtext("Indicators", side = 1, line = 3, cex = 1.5, padj =-.5)
   graphics::mtext("Eigenvalues", side = 2, line = 3, cex = 1.5, padj =.5)
 
-  if (isTRUE(x$settings$x_dat)) {
-    graphics::lines(1:x$settings$n_vars, x$eigenvalues[,"Real Eigenvalues"])
-    graphics::points(1:x$settings$n_vars, x$eigenvalues[,"Real Eigenvalues"], pch = 16)
-    if (!is.na(x$n_factors)) {
-      graphics::points(x$n_factors, x$eigenvalues[x$n_factors,"Real Eigenvalues"],
+  if (isTRUE(x_dat)) {
+    graphics::lines(1:n_vars, eigenvalues[,"Real Eigenvalues"])
+    graphics::points(1:n_vars, eigenvalues[,"Real Eigenvalues"], pch = 16)
+    if (!is.na(n_fac)) {
+      graphics::points(n_fac, eigenvalues[n_fac,"Real Eigenvalues"],
                        pch = 1, cex = 2, col = "red")
-      graphics::text(x$n_factors, x$eigenvalues[x$n_factors,"Real Eigenvalues"],
-                     x$n_factors, pos = 3, cex = 1.5, col = "red",
+      graphics::text(n_fac, eigenvalues[n_fac,"Real Eigenvalues"],
+                     n_fac, pos = 3, cex = 1.5, col = "red",
                      font = 1, offset = .75)
     }
 
   }
 
-  cols <- viridisLite::viridis(ncol(x$eigenvalues) - x$settings$x_dat, end = .8)
-  names(cols) <- colnames(x$eigenvalues)[(as.numeric(x$settings$x_dat) + 1):ncol(x$eigenvalues)]
+  cols <- viridisLite::viridis(ncol(eigenvalues) - x_dat, end = .8)
+  names(cols) <- colnames(eigenvalues)[(as.numeric(x_dat) + 1):ncol(eigenvalues)]
 
-    graphics::lines(1:x$settings$n_vars, x$eigenvalues[,"Means"], lty = 2, lwd = 1.25,
-          col = cols[1])
+  graphics::lines(1:n_vars, eigenvalues[,"Means"], lty = 2, lwd = 1.25,
+                  col = cols[1])
 
-    for (perc_i in x$settings$percent) {
-      graphics::lines(1:x$settings$n_vars, x$eigenvalues[,paste(perc_i, "Percentile")],
-            lty = 2, col = cols[paste(perc_i, "Percentile")], lwd = 1.25)
-    }
+  for (perc_i in x$settings$percent) {
+    graphics::lines(1:n_vars, eigenvalues[,paste(perc_i, "Percentile")],
+                    lty = 2, col = cols[paste(perc_i, "Percentile")], lwd = 1.25)
+  }
 
-    if (x$settings$data_type == "sim") {
-      text <- paste0("from simulated data: ", x$n_factors, "; ")
-    } else if (x$settings$data_type == "sim" && isTRUE(x$settings$replace)) {
-      text <- paste0("from resampled data with replacement: ", x$n_factors, "; ")
-    } else if (x$settings$data_type == "sim" && isFALSE(x$settings$replace)) {
-      text <- paste0("from resampled data without replacement: ", x$n_factors, "; ")
-    }
-
-  factors_text <- paste0("N Factors: ", text,
-                         "Decision Rule: ", x$settings$decision_rule)
+  factors_text <- paste0("N Factors with Decision Rule '", decision_rule,
+                         "' and Eigen Type '", eigen_type, "': ", n_fac)
 
   graphics::title(factors_text)
 
-  # graphics::legend(round(x$settings$n_vars / 2), max(x$eigenvalues) - .2,
-  #        colnames(x$eigenvalues), lty = c(1, rep(2, length(cols))),
-  #        col = c("black", cols))
   graphics::legend("topright",
-                   colnames(x$eigenvalues), lty = c(1, rep(2, length(cols))),
+                   colnames(eigenvalues), lty = c(1, rep(2, length(cols))),
                    col = c("black", cols))
 
 

@@ -254,8 +254,6 @@ PARALLEL <- function(x = NULL,
 
       }
 
-
-
     }
 
     if ("SMC" %in% eigen_type) {
@@ -310,8 +308,6 @@ PARALLEL <- function(x = NULL,
       }
 
     }
-
-  }
 
   settings <- list(
     x_dat = x_dat,
