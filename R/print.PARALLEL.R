@@ -18,7 +18,7 @@ print.PARALLEL <- function(x, ...) {
 
   eigen_type <- x$settings$eigen_type
 
-  cat("Parallel Analysis performed using ", x$settings$n_datasets,
+  cat("Parallel Analysis performed using ", crayon::bold(x$settings$n_datasets),
       " simulated random data sets", sep = "")
   cat("\n")
 
@@ -37,25 +37,26 @@ print.PARALLEL <- function(x, ...) {
     cat("\n")
 
     if("PCA" %in% eigen_type){
-      cat("PCA-determined eigenvalues: ", crayon::bold(x$n_fac_PCA))
+      cat("    PCA-determined eigenvalues: ", crayon::bold(x$n_fac_PCA))
       cat("\n")
     }
 
     if("SMC" %in% eigen_type){
-      cat("SMC-determined eigenvalues: ", crayon::bold(x$n_fac_SMC))
+      cat("    SMC-determined eigenvalues: ", crayon::bold(x$n_fac_SMC))
       cat("\n")
     }
 
     if("EFA" %in% eigen_type){
-      cat("EFA-determined eigenvalues: ", crayon::bold(x$n_fac_EFA))
+      cat("    EFA-determined eigenvalues: ",
+          crayon::bold(x$n_fac_EFA))
       cat("\n")
     }
 
   } else {
 
     cat("\n")
-    cat("No data was entered to base number of factors on. Plotting simulated
-        eigenvalues")
+    cat("No data was entered to base number of factors on. Plotting simulated",
+        "eigenvalues")
     cat("\n")
 
   }

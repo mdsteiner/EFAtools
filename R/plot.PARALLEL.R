@@ -91,7 +91,7 @@ plot.PARALLEL <- function(x, ...) {
   graphics::lines(1:n_vars, eigenvalues[,"Means"], lty = 2, lwd = 1.25,
                   col = cols[1])
 
-  for (perc_i in x$settings$percent) {
+  for (perc_i in percent) {
     graphics::lines(1:n_vars, eigenvalues[,paste(perc_i, "Percentile")],
                     lty = 2, col = cols[paste(perc_i, "Percentile")], lwd = 1.25)
   }
