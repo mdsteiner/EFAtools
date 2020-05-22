@@ -98,7 +98,7 @@
 #'
 #' # for parallel computation
 #' future::plan(future::multisession)
-#' pa_fast <- PARALLEL(test_models$case_11b$cormat, N = 500)
+#' pa_faster <- PARALLEL(test_models$case_11b$cormat, N = 500)
 
 PARALLEL <- function(x = NULL,
                      N = NA,

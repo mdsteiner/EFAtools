@@ -9,9 +9,10 @@
 #' @examples
 #' \dontrun{
 #' # example without real data
-#' PARALLEL(n_cases = 500, n_vars = 10)
-#' # example without correlation matrix
-#' PARALLEL(test_models$case_11b$cormat, n_cases = test_models$case_11b$N)
+#' PARALLEL(N = 500, n_vars = 10)
+#'
+#' # example with correlation matrix and "ML" estimation
+#' PARALLEL(test_models$case_11b$cormat, N = 500, method = "ML")
 #' }
 print.PARALLEL <- function(x, ...) {
 

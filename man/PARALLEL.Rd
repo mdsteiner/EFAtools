@@ -23,8 +23,6 @@ PARALLEL(
   n_datasets = 1000,
   percent = 95,
   eigen_type = c("PCA", "SMC", "EFA"),
-  data_type = c("sim"),
-  replace = TRUE,
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
     "na.or.complete"),
   decision_rule = c("Means", "Percentile", "Crawford"),
@@ -56,12 +54,6 @@ indicators. If using "PCA", the diagonal values of the correlation matrices
 are left to be 1. If using "EFA", eigenvalues are found on the correlation
 matrices with the final communalities of an EFA solution as diagonal.}
 
-\item{data_type}{character. Currently only "sim" is implemented. Finds eigenvalues
-for parallel analysis on simulated data.}
-
-\item{replace}{logical. Currently ignored. Whether, if \code{data_type = "resample"}, the
-resampling should be done with replacements or not. Default is \code{TRUE}.}
-
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
 is given as input. Default is "pairwise.complete.obs".}
 
@@ -73,12 +65,18 @@ is given as input. Default is "pairwise.complete.obs".}
  @param n_factors numeric. Number of factors to extract if "EFA" is included in
 \code{eigen_type}. Default is 1.
  @param ... Additional arguments passed to \code{\link[EFA]{EFA}}. For example,
- the extraction method can be changed here (default is PAF).}
+ the extraction method can be changed here (default is "PAF"). PAF is more
+ robust, but it will take longer compared to the other estimation methods
+ available ("ML" and "ULS").}
 }
 \value{
 A list of class PARALLEL containing the following objects
-\item{eigenvalues}{A matrix containing the eigenvalues of the real and the simulated data.}
-\item{n_fac}{The number of factors to retain according to the parallel procedure.}
+\item{eigenvalues_PCA}{A matrix containing the eigenvalues of the real and the simulated data found with eigen_type = PCA}
+\item{eigenvalues_SMC}{A matrix containing the eigenvalues of the real and the simulated data found with eigen_type = SMC}
+\item{eigenvalues_EFA}{A matrix containing the eigenvalues of the real and the simulated data found with eigen_type = EFA}
+\item{n_fac_PCA}{The number of factors to retain according to the parallel procedurewith eigen_type = PCA.}
+\item{n_fac_SMC}{The number of factors to retain according to the parallel procedurewith eigen_type = SMC.}
+\item{n_fac_EFA}{The number of factors to retain according to the parallel procedurewith eigen_type = EFA.}
 \item{settings}{A list of control settings used in the print function.}
 }
 \description{
@@ -116,14 +114,17 @@ the sample
  Braeken & van Assen, 2017).
 }
 \examples{
-\dontrun{
 # example without real data
-PARALLEL(N = 500, n_vars = 10)
-# example without correlation matrix
-PARALLEL(test_models$case_11b$cormat, N = test_models$case_11b$N)
+pa_unreal <- PARALLEL(N = 500, n_vars = 10)
+
+# example with correlation matrix with all eigen_types and PAF estimation
+pa_paf <- PARALLEL(test_models$case_11b$cormat, N = 500)
+
+# example with correlation matrix with all eigen_types and ML estimation
+# this will be faster than the above with PAF)
+pa_ml <- PARALLEL(test_models$case_11b$cormat, N = 500, method = "ML")
 
 # for parallel computation
 future::plan(future::multisession)
-PARALLEL(test_models$case_11b$cormat, N = test_models$case_11b$N)
-}
+pa_faster <- PARALLEL(test_models$case_11b$cormat, N = 500)
 }

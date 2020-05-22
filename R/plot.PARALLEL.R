@@ -10,8 +10,8 @@
 #'
 #' @examples
 #' \dontrun{
-#' # example without correlation matrix
-#' x <- PARALLEL(test_models$case_11b$cormat, N = 500)
+#' # example with correlation matrix and "ML" estimation
+#' x <- PARALLEL(test_models$case_11b$cormat, N = 500, method = "ML")
 #' plot(x)
 #' }
 plot.PARALLEL <- function(x, ...) {
