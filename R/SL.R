@@ -164,6 +164,12 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
 
     }
 
+    if (!is.null(colnames(x))) {
+      n_order <- order(colnames(x))
+      x <- x[, n_order]
+      Phi <- Phi[n_order, n_order]
+    }
+
     L1 <- x
     n_first_fac <- ncol(x)
     orig_R <- NULL
