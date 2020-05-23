@@ -125,12 +125,9 @@ PARALLEL <- function(x = NULL,
   size_vec <- rep(round(n_datasets / n_cores), n_cores - 1)
   size_vec[n_cores] <- n_datasets - sum(size_vec)
 
-  eigvals_real_PCA <- NA
-  eigvals_real_SMC <- NA
-  eigvals_real_EFA <- NA
-  results_PCA <- NA
-  results_SMC <- NA
-  results_EFA <- NA
+  eigenvalues_PCA <- NA
+  eigenvalues_SMC <- NA
+  eigenvalues_EFA <- NA
   n_fac_PCA <- NA
   n_fac_SMC <- NA
   n_fac_EFA <- NA
@@ -206,6 +203,7 @@ PARALLEL <- function(x = NULL,
       if ("PCA" %in% eigen_type) {
         eigvals_real_PCA <- matrix(eigen(R, symmetric = TRUE,
                                      only.values = TRUE)$values, ncol = 1)
+        colnames(eigvals_real_PCA) <- "Real Eigenvalues"
       }
 
       if ("SMC" %in% eigen_type) {
@@ -214,17 +212,14 @@ PARALLEL <- function(x = NULL,
         diag(R_SMC) <- 1 - (1 / diag(solve(R_SMC)))
         eigvals_real_SMC <- matrix(eigen(R_SMC, symmetric = TRUE,
                                      only.values = TRUE)$values, ncol = 1)
+        colnames(eigvals_real_SMC) <- "Real Eigenvalues"
       }
 
       if ("EFA" %in% eigen_type) {
         eigvals_real_EFA <- matrix(EFA(R, n_factors = n_factors, N = N,
                                    ...)$final_eigen,  ncol = 1)
+        colnames(eigvals_real_EFA) <- "Real Eigenvalues"
       }
-
-
-      colnames(eigvals_real_PCA) <- "Real Eigenvalues"
-      colnames(eigvals_real_SMC) <- "Real Eigenvalues"
-      colnames(eigvals_real_EFA) <- "Real Eigenvalues"
 
     }
 
