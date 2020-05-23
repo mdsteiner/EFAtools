@@ -17,7 +17,7 @@ print.HULL <- function(x, ...) {
   cat("Hull Analysis performed testing ", crayon::bold("0"), " to ",
       crayon::bold(x$n_fac_max), " factors.", sep = "")
 
-  if(length(settings$gof) == 1){
+  if(length(gof) == 1){
   cat("\n")
   cat(crayon::bold(method), " estimation and the ",
       .settings_string(gof), " fit index was used.", sep = "")

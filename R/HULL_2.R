@@ -18,9 +18,16 @@
 #'   If \code{method = "PAF"} is used, only
 #'   the CAF can be used as goodness of fit index. For details on the CAF, see
 #'   Lorenzo-Seva, Timmerman, and Kiers (2011).
+#' @param eigen_type character. On what the eigenvalues should be found. Can be
+#'  one of "SMC", "PCA", or "EFA". If using "SMC" (default), the diagonal of the
+#'  correlation matrices is replaced by the squared multiple correlations (SMCs)
+#'  of the indicators. If using "PCA", the diagonal values of the correlation
+#'  matrices are left to be 1. If using "EFA", eigenvalues are found on the
+#'  correlation  matrices with the final communalities of an EFA solution as
+#'  diagonal. This is passed to  \code{\link[PARALLEL]{PARALLEL}}.
 #' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
 #' is given as input. Default is "pairwise.complete.obs".
-#' @param ... Further arguments passed to \link{PARALLEL}.
+#' @param ... Further arguments passed to \link{EFA} or \link{PARALLEL}.
 #'
 #' @details The \link{PARALLEL} function and the principal axis factoring of the
 #'   different number of factors can be parallelized using the future framework,
@@ -38,8 +45,8 @@
 #' with the CAF.}
 #' \item{n_fac_CFI}{The number of factors to retain according to the Hull method
 #' with the CFI.}
-#' \item{n_fac_RMSEA}{The number of factors to retain according to the Hull
-#' method with the RMSEA.}
+#' \item{n_fac_RMSEA}{The number of factors to retain according to the Hull method
+#' with the RMSEA.}
 #' \item{solutions_CAF}{A matrix containing the CAFs, degrees of freedom, and for the factors lying on the hull, the st values of the hull solution (see Lorenzo-Seva, Timmerman, and Kiers 2011 for details).}
 #' #' \item{solutions_CFI}{A matrix containing the CFIs, degrees of freedom, and for the factors lying on the hull, the st values of the hull solution (see Lorenzo-Seva, Timmerman, and Kiers 2011 for details).}
 #' #' \item{solutions_RMSEA}{A matrix containing the RMSEAs, degrees of freedom, and for the factors lying on the hull, the st values of the hull solution (see Lorenzo-Seva, Timmerman, and Kiers 2011 for details).}
@@ -55,24 +62,24 @@
 #' \dontrun{
 #' # using PAF (this will throw a warning if gof is not specified manually
 #' # and CAF will be used automatically)
-#' HULL(test_models$baseline$cormat, N = 500, gof = "CAF")
+#' HULL_2(test_models$baseline$cormat, N = 500, gof = "CAF")
 #'
 #' # using ML with all available fit indices (CAF, CFI, and RMSEA)
-#' HULL(test_models$baseline$cormat, N = 500, method = "ML")
+#' HULL_2(test_models$baseline$cormat, N = 500, method = "ML")
 #'
 #' # using ULS with only RMSEA
-#' HULL(test_models$baseline$cormat, N = 500, method = "ULS", gof = "RMSEA")
+#' HULL_2(test_models$baseline$cormat, N = 500, method = "ULS", gof = "RMSEA")
 #'
 #' # using parallel processing (Note: plans can be adapted, see the future
 #' # package for details)
 #' future::plan(future::multisession)
-#' HULL(test_models$baseline$cormat, N = 500, gof = "CAF")
+#' HULL_2(test_models$baseline$cormat, N = 500, gof = "CAF")
 #' }
-HULL <- function(x, N = NA, n_fac_theor = NA,
+HULL_2 <- function(x, N = NA, n_fac_theor = NA,
                  method = c("PAF", "ULS", "ML"), gof = c("CAF", "CFI", "RMSEA"),
                  eigen_type = c("SMC", "PCA", "EFA"),
                  use = c("pairwise.complete.obs", "all.obs", "complete.obs",
-                 "everything", "na.or.complete"), ...) {
+                         "everything", "na.or.complete"), ...) {
   # Perform hull method following Lorenzo-Seva, Timmerman, and Kiers (2011)
 
   # # for testing
@@ -85,6 +92,7 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   method <- match.arg(method)
   use <- match.arg(use)
   gof <- match.arg(gof, several.ok = TRUE)
+  eigen_type <- match.arg(eigen_type)
 
   if (method == "PAF" && !all(gof == "CAF")) {
     message('Only CAF can be used as gof if method "PAF" is used.',
@@ -200,22 +208,18 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
 
   }
 
-  if (method == "PAF") {
-    loadings <- future.apply::future_lapply(1:J, .hull_paf, R = R, criterion = .001,
-                                           max_iter = 1e4)
-  } else if (method == "ULS") {
-    loadings <- future.apply::future_lapply(1:J, .hull_uls, R = R)
-  } else if (method == "ML") {
-    loadings <- future.apply::future_lapply(1:J, .hull_ml, R = R)
-  }
-
+  # Calculate loadings with EFA function
+  loadings <- suppressWarnings(future.apply::future_lapply(1:J, EFA,
+                                                           x = R,
+                                                           method = method,
+                                                           N = N, ...))
 
   # then for 1 to J factors
   for (i in 1:J) {
     df <- ((m - i)**2 - (m + i)) / 2
     if (method == "PAF") {
       # compute goodness of fit "f" as CAF (common part accounted for; Eq 3)
-      A_i <- loadings[[i]]
+      A_i <- loadings[[i]]$unrot_loadings
       delta_hat <- R - (A_i %*% t(A_i))
       diag(delta_hat) <- 1
       # compute CAF
@@ -227,7 +231,7 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
     } else {
       if ("CAF" %in% gof) {
         # compute goodness of fit "f" as CAF (common part accounted for; Eq 3)
-        A_i <- loadings[[i]]$loadings
+        A_i <- loadings[[i]]$unrot_loadings
         delta_hat <- R - (A_i %*% t(A_i))
         diag(delta_hat) <- 1
         # compute CAF
@@ -239,7 +243,7 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
       }
 
       if ("CFI" %in% gof) {
-        Fm <- loadings[[i]]$fit
+        Fm <- loadings[[i]]$fit_indices$Fm
         chi <- Fm * (N - 1)
         delta_hat_m <- max(0, chi - df)
         # compute CFI
@@ -252,7 +256,7 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
       }
 
       if ("RMSEA" %in% gof) {
-        Fm <- loadings[[i]]$fit
+        Fm <- loadings[[i]]$fit_indices$Fm
         chi <- Fm * (N -1)
         delta_hat_m <- max(0, chi - df)
         # compute 1 - RMSEA
@@ -273,13 +277,13 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   out_RMSEA <- list(s_complete = NA, retain = NA)
 
   if("CAF" %in% gof) {
-  out_CAF <- .hull_calc(s = s_CAF, df = df, J = J)
+    out_CAF <- .hull_calc(s = s_CAF, df = df, J = J)
   }
   if("CFI" %in% gof) {
-  out_CFI <- .hull_calc(s = s_CFI, df = df, J = J)
+    out_CFI <- .hull_calc(s = s_CFI, df = df, J = J)
   }
   if("RMSEA" %in% gof) {
-  out_RMSEA <- .hull_calc(s = s_RMSEA, df = df, J = J)
+    out_RMSEA <- .hull_calc(s = s_RMSEA, df = df, J = J)
   }
 
   out <- list(
@@ -305,92 +309,82 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
 }
 
 
-.hull_uls <- function(n_factors, R) {
-  uls <- .fit_uls(R, n_factors)
-  return(list("loadings" = uls$loadings, "fit" = uls$res$value))
-}
-
-.hull_ml <- function(n_factors, R) {
-  ml <- .fit_ml(R, n_factors, "factanal")
-  return(list("loadings" = ml$loadings, "fit" = ml$res$value))
-}
-
 .hull_calc <- function(s, df, J){
 
-# 3) sort n solutions by their df values and denoted by s (already done)
+  # 3) sort n solutions by their df values and denoted by s (already done)
 
-# 4) all solutions s are excluded for which a solution sj (j<i) exists such
-#    that fj > fi (eliminate solutions not on the boundary of the convex hull)
+  # 4) all solutions s are excluded for which a solution sj (j<i) exists such
+  #    that fj > fi (eliminate solutions not on the boundary of the convex hull)
 
-s_complete <- s
-d_s <- diff(s[, 2])
-while (any(d_s < 0)) {
-  s <- s[c(1, d_s) > 0,]
+  s_complete <- s
   d_s <- diff(s[, 2])
-}
-
-# 5) all triplets of adjacent solutions are considered consecutively.
-#    middle solution is excluded if its point is below or on the line
-#    connecting its neighbors in GOF vs df
-
-# 6) repeat 5) until no solution can be excluded
-
-nr_s <- nrow(s)
-i <- 2
-
-while(i < nr_s - 1) {
-
-  f1 <- s[i - 1, 2]
-  f2 <- s[i, 2]
-  f3 <- s[i + 1, 2]
-  df1 <- s[i - 1, 3]
-  df2 <- s[i, 3]
-  df3 <- s[i + 1, 3]
-
-  # compute f2 if it were on the line between f1 and f3
-  p_f2 <- f1 + (f3 - f1) / (df3 - df1) * (df2 - df1)
-
-  # check if f2 is below or on the predicted line and if so, remove it
-  if (f2 <= p_f2) {
-    s <- s[-i, ]
-    nr_s <- nr_s -1
-    i <- 1
-  }
-  i <- i + 1
-}
-
-
-# 7) the st values of the hull solutions are determined (Eq 5)
-for (i in 2:(nrow(s) - 1)) {
-
-  f_i <- s[i, 2]
-  f_p <- s[i - 1, 2]
-  f_n <- s[i + 1, 2]
-  df_i <- s[i, 3]
-  df_p <- s[i - 1, 3]
-  df_n <- s[i + 1, 3]
-
-  s[i, 4] <- ((f_i - f_p) / (df_i - df_p)) / ((f_n - f_i) / (df_n - df_i))
-
-}
-
-# combine values
-for (row_i in 0:J) {
-
-  if (row_i %in% s[,1]) {
-    s_complete[row_i + 1, 4] <- s[s[,1] == row_i, 4]
-  } else {
-    s_complete[row_i + 1, 4] <- NA
+  while (any(d_s < 0)) {
+    s <- s[c(1, d_s) > 0,]
+    d_s <- diff(s[, 2])
   }
 
-}
+  # 5) all triplets of adjacent solutions are considered consecutively.
+  #    middle solution is excluded if its point is below or on the line
+  #    connecting its neighbors in GOF vs df
 
-# 8) select solution with highest st value
-retain <- s[which.max(s[, 4]), 1]
+  # 6) repeat 5) until no solution can be excluded
 
-out <- list(s_complete = s_complete,
-            retain = retain)
+  nr_s <- nrow(s)
+  i <- 2
 
-return(out)
+  while(i < nr_s - 1) {
+
+    f1 <- s[i - 1, 2]
+    f2 <- s[i, 2]
+    f3 <- s[i + 1, 2]
+    df1 <- s[i - 1, 3]
+    df2 <- s[i, 3]
+    df3 <- s[i + 1, 3]
+
+    # compute f2 if it were on the line between f1 and f3
+    p_f2 <- f1 + (f3 - f1) / (df3 - df1) * (df2 - df1)
+
+    # check if f2 is below or on the predicted line and if so, remove it
+    if (f2 <= p_f2) {
+      s <- s[-i, ]
+      nr_s <- nr_s -1
+      i <- 1
+    }
+    i <- i + 1
+  }
+
+
+  # 7) the st values of the hull solutions are determined (Eq 5)
+  for (i in 2:(nrow(s) - 1)) {
+
+    f_i <- s[i, 2]
+    f_p <- s[i - 1, 2]
+    f_n <- s[i + 1, 2]
+    df_i <- s[i, 3]
+    df_p <- s[i - 1, 3]
+    df_n <- s[i + 1, 3]
+
+    s[i, 4] <- ((f_i - f_p) / (df_i - df_p)) / ((f_n - f_i) / (df_n - df_i))
+
+  }
+
+  # combine values
+  for (row_i in 0:J) {
+
+    if (row_i %in% s[,1]) {
+      s_complete[row_i + 1, 4] <- s[s[,1] == row_i, 4]
+    } else {
+      s_complete[row_i + 1, 4] <- NA
+    }
+
+  }
+
+  # 8) select solution with highest st value
+  retain <- s[which.max(s[, 4]), 1]
+
+  out <- list(s_complete = s_complete,
+              retain = retain)
+
+  return(out)
 
 }
