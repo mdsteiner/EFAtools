@@ -35,7 +35,7 @@ arma::mat parallel_sim(const int n_datasets, const int n_vars, const int N,
       eig_vals.row(i) = Lambda.t();
     }
 
-  } else if (eigen_type == 2) { // PAF
+  } else if (eigen_type == 2) { // SMC
     arma::vec smc(n_vars);
     arma::mat temp(n_vars, n_vars);
 
@@ -59,168 +59,168 @@ arma::mat parallel_sim(const int n_datasets, const int n_vars, const int N,
 // =============================================================================
 
 
-//' Principal Axis Factoring to extract eigenvalues from a 1 factor solution
-//'
-//' Function called from within PARALLEL so usually no call to this is needed by the user.
-//' Provides a C++ implementation of 1 factor PAF. Returns the eigenvalues obtained
-//' from the correlation matrix with the final communality estimates as diagonal of
-//' R.
-//'
-//' @param R numeric matrix. Correlation matrix to perform PAF with 1 factor solution on.
-//' @param criterion double. Convergence criterion to use.
-//' @param crit_type integer. Whether max_individual (1) or sums (2).
-//' @param max_iter integer. The maximum number of iterations after which to stop the iterative procedure if no convergence is reached by then.
-//' @export
-// [[Rcpp::export]]
-arma::vec parallel_paf(arma::mat R, double criterion, int crit_type,
-                       int max_iter) {
+// //' Principal Axis Factoring to extract eigenvalues from a 1 factor solution
+// //'
+// //' Function called from within PARALLEL so usually no call to this is needed by the user.
+// //' Provides a C++ implementation of 1 factor PAF. Returns the eigenvalues obtained
+// //' from the correlation matrix with the final communality estimates as diagonal of
+// //' R.
+// //'
+// //' @param R numeric matrix. Correlation matrix to perform PAF with 1 factor solution on.
+// //' @param criterion double. Convergence criterion to use.
+// //' @param crit_type integer. Whether max_individual (1) or sums (2).
+// //' @param max_iter integer. The maximum number of iterations after which to stop the iterative procedure if no convergence is reached by then.
+// //' @export
+// // [[Rcpp::export]]
+// arma::vec parallel_paf(arma::mat R, double criterion, int crit_type,
+//                        int max_iter) {
+//
+//
+//   int iter = 1;
+//   double delta = 1.0;
+//   arma::vec tv(R.n_cols);
+//   arma::vec Lambda(R.n_cols);
+//   arma::vec Lambda_o(1);
+//   arma::mat V(R.n_cols, R.n_cols);
+//   arma::mat V_o(R.n_cols, 1);
+//   arma::mat L;
+//   arma::vec new_h2;
+//   arma::vec eigval;
+//   arma::mat eigvec;
+//   arma::mat Lt;
+//   arma::vec h2;
+//
+//   // compute smcs
+//   arma::mat temp(R.n_cols, R.n_cols);
+//   temp = inv_sympd(R);
+//   R.diag() = 1 - (1 / temp.diag());
+//   h2 = temp.diag();
+//
+//   if (crit_type == 1) { // "max_individual"
+//
+//     while (delta > criterion & iter <= max_iter) {
+//       //  compute the eigenvalues and eigenvectors
+//       eig_sym(eigval, eigvec, R);
+//       Lambda = flipud(eigval);
+//       Lambda_o = Lambda(0);
+//       V = fliplr(eigvec);
+//       V_o = V.col(0);
+//
+//       if (any(Lambda_o < 0)) {
+//         stop("Negative Eigenvalues detected; cannot compute communality estimates. Try again with init_comm = 'unity' or 'mac'");
+//       }
+//
+//       // compute the loadings from the eigenvector matrix and diagonal
+//       // eigenvalue matrix
+//       Lambda_o = arma::sqrt(Lambda_o);
+//       tv.fill(Lambda_o[0]);
+//       L = V_o % tv;
+//
+//       // get the new communality estimates from the loadings
+//       Lt = L * L.t();
+//       new_h2 = Lt.diag();
+//
+//       // save the maximum change in the communality estimates
+//       delta = arma::abs(h2 - new_h2).max();
+//
+//       // update diagonal of R with the new communality estimates
+//       R.diag() = new_h2;
+//
+//       // update old communality estimates with new ones
+//       h2 = new_h2;
+//
+//       // incerase iterator
+//       iter += 1;
+//
+//     }
+//
+//   } else if (crit_type == 2) { // "sums"
+//
+//     while (delta > criterion & iter <= max_iter) {
+//       //  compute the eigenvalues and eigenvectors
+//       eig_sym(eigval, eigvec, R);
+//       Lambda = flipud(eigval);
+//       Lambda_o = Lambda(0);
+//       V = fliplr(eigvec);
+//       V_o = V.col(0);
+//
+//       if (any(Lambda_o < 0)) {
+//         stop("Negative Eigenvalues detected; cannot compute communality estimates. Try again with init_comm = 'unity' or 'mac'");
+//       }
+//
+//       // compute the loadings from the eigenvector matrix and diagonal
+//       // eigenvalue matrix
+//       Lambda_o = arma::sqrt(Lambda_o);
+//       tv.fill(Lambda_o[0]);
+//       L = V_o % tv;
+//
+//       // get the new communality estimates from the loadings
+//       Lt = L * L.t();
+//       new_h2 = Lt.diag();
+//
+//       // convergence criterion according to the psych package
+//       delta = std::abs(arma::accu(h2) - arma::accu(new_h2));
+//
+//       // update diagonal of R with the new communality estimates
+//       R.diag() = new_h2;
+//
+//       // update old communality estimates with new ones
+//       h2 = new_h2;
+//
+//       // incerase iterator
+//       iter += 1;
+//
+//     }
+//
+//   }
+//
+//   // break if after maximum iterations there was no convergence
+//   if (iter >= max_iter){
+//     warning("Reached maximum number of iterations without convergence. Results may not be interpretable.");
+//   }
+//
+//   eig_sym(eigval, R);
+//   Lambda = flipud(eigval);
+//
+//   return Lambda;
+//
+// }
 
-
-  int iter = 1;
-  double delta = 1.0;
-  arma::vec tv(R.n_cols);
-  arma::vec Lambda(R.n_cols);
-  arma::vec Lambda_o(1);
-  arma::mat V(R.n_cols, R.n_cols);
-  arma::mat V_o(R.n_cols, 1);
-  arma::mat L;
-  arma::vec new_h2;
-  arma::vec eigval;
-  arma::mat eigvec;
-  arma::mat Lt;
-  arma::vec h2;
-
-  // compute smcs
-  arma::mat temp(R.n_cols, R.n_cols);
-  temp = inv_sympd(R);
-  R.diag() = 1 - (1 / temp.diag());
-  h2 = temp.diag();
-
-  if (crit_type == 1) { // "max_individual"
-
-    while (delta > criterion & iter <= max_iter) {
-      //  compute the eigenvalues and eigenvectors
-      eig_sym(eigval, eigvec, R);
-      Lambda = flipud(eigval);
-      Lambda_o = Lambda(0);
-      V = fliplr(eigvec);
-      V_o = V.col(0);
-
-      if (any(Lambda_o < 0)) {
-        stop("Negative Eigenvalues detected; cannot compute communality estimates. Try again with init_comm = 'unity' or 'mac'");
-      }
-
-      // compute the loadings from the eigenvector matrix and diagonal
-      // eigenvalue matrix
-      Lambda_o = arma::sqrt(Lambda_o);
-      tv.fill(Lambda_o[0]);
-      L = V_o % tv;
-
-      // get the new communality estimates from the loadings
-      Lt = L * L.t();
-      new_h2 = Lt.diag();
-
-      // save the maximum change in the communality estimates
-      delta = arma::abs(h2 - new_h2).max();
-
-      // update diagonal of R with the new communality estimates
-      R.diag() = new_h2;
-
-      // update old communality estimates with new ones
-      h2 = new_h2;
-
-      // incerase iterator
-      iter += 1;
-
-    }
-
-  } else if (crit_type == 2) { // "sums"
-
-    while (delta > criterion & iter <= max_iter) {
-      //  compute the eigenvalues and eigenvectors
-      eig_sym(eigval, eigvec, R);
-      Lambda = flipud(eigval);
-      Lambda_o = Lambda(0);
-      V = fliplr(eigvec);
-      V_o = V.col(0);
-
-      if (any(Lambda_o < 0)) {
-        stop("Negative Eigenvalues detected; cannot compute communality estimates. Try again with init_comm = 'unity' or 'mac'");
-      }
-
-      // compute the loadings from the eigenvector matrix and diagonal
-      // eigenvalue matrix
-      Lambda_o = arma::sqrt(Lambda_o);
-      tv.fill(Lambda_o[0]);
-      L = V_o % tv;
-
-      // get the new communality estimates from the loadings
-      Lt = L * L.t();
-      new_h2 = Lt.diag();
-
-      // convergence criterion according to the psych package
-      delta = std::abs(arma::accu(h2) - arma::accu(new_h2));
-
-      // update diagonal of R with the new communality estimates
-      R.diag() = new_h2;
-
-      // update old communality estimates with new ones
-      h2 = new_h2;
-
-      // incerase iterator
-      iter += 1;
-
-    }
-
-  }
-
-  // break if after maximum iterations there was no convergence
-  if (iter >= max_iter){
-    warning("Reached maximum number of iterations without convergence. Results may not be interpretable.");
-  }
-
-  eig_sym(eigval, R);
-  Lambda = flipud(eigval);
-
-  return Lambda;
-
-}
-
-//' Parallel analysis on simulated data.
-//'
-//' Function called from within PARALLEL so usually no call to this is needed by the user.
-//' Provides a C++ implementation of the PARALLEL simulation procedure where eigenvalues
-//' are found using the parallel_paf function.
-//'
-//' @param n_datasets numeric. Number of datasets with dimensions (N, n_vars) to simulate.
-//' @param n_vars numeric. Number of variables / indicators in dataset.
-//' @param N numeric. Number of cases / observations in dataset.
-//' @param criterion double. Convergence criterion to use.
-//' @param crit_type integer. Whether max_individual (1) or sums (2).
-//' @param max_iter integer. The maximum number of iterations after which to stop the iterative procedure if no convergence is reached by then.
-//' @export
-// [[Rcpp::export]]
-arma::mat parallel_paf_sim(const int n_datasets, const int n_vars, const int N,
-                       double criterion, int crit_type, int max_iter) {
-  // initialize needed objects
-  arma::vec Lambda(n_vars);
-  arma::vec eigval(n_vars);
-  arma::mat eig_vals(n_datasets, n_vars);
-  arma::mat x(N, n_vars);
-  arma::mat R(n_vars, n_vars);
-  arma::vec smc(n_vars);
-  arma::mat temp(n_vars, n_vars);
-
-  for (uword i = 0; i < n_datasets; i++) {
-    x = randn(N, n_vars);
-    R = cor(x);
-    Lambda = parallel_paf(R,criterion, crit_type, max_iter);
-    eig_vals.row(i) = Lambda.t();
-  }
-
-  return eig_vals;
-
-}
+// //' Parallel analysis on simulated data.
+// //'
+// //' Function called from within PARALLEL so usually no call to this is needed by the user.
+// //' Provides a C++ implementation of the PARALLEL simulation procedure where eigenvalues
+// //' are found using the parallel_paf function.
+// //'
+// //' @param n_datasets numeric. Number of datasets with dimensions (N, n_vars) to simulate.
+// //' @param n_vars numeric. Number of variables / indicators in dataset.
+// //' @param N numeric. Number of cases / observations in dataset.
+// //' @param criterion double. Convergence criterion to use.
+// //' @param crit_type integer. Whether max_individual (1) or sums (2).
+// //' @param max_iter integer. The maximum number of iterations after which to stop the iterative procedure if no convergence is reached by then.
+// //' @export
+// // [[Rcpp::export]]
+// arma::mat parallel_paf_sim(const int n_datasets, const int n_vars, const int N,
+//                        double criterion, int crit_type, int max_iter) {
+//   // initialize needed objects
+//   arma::vec Lambda(n_vars);
+//   arma::vec eigval(n_vars);
+//   arma::mat eig_vals(n_datasets, n_vars);
+//   arma::mat x(N, n_vars);
+//   arma::mat R(n_vars, n_vars);
+//   arma::vec smc(n_vars);
+//   arma::mat temp(n_vars, n_vars);
+//
+//   for (uword i = 0; i < n_datasets; i++) {
+//     x = randn(N, n_vars);
+//     R = cor(x);
+//     Lambda = parallel_paf(R,criterion, crit_type, max_iter);
+//     eig_vals.row(i) = Lambda.t();
+//   }
+//
+//   return eig_vals;
+//
+// }
 
 // //' Parallel analysis on resampled real data.
 // //'

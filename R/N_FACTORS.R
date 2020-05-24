@@ -157,15 +157,16 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   # Comparison data
   if("CD" %in% criteria){
 
-    # DO ONLY IF RAW DATA!
-    cd_out <- try(CD(x, n_factors_max = n_factors_max, N_pop = N_pop,
-                     N_samples = N_samples, alpha = alpha, use = use,
-                     cor_method = cor_method, max_iter = max_iter))
+    if (!.is_cormat(x)) {
 
-    if(!inherits(cd_out, "try-error")){
+      cd_out <- CD(x, n_factors_max = n_factors_max, N_pop = N_pop,
+                   N_samples = N_samples, alpha = alpha, use = use,
+                   cor_method = cor_method, max_iter = max_iter)
 
       nfac_CD <- cd_out$n_factors
 
+    } else {
+      warning("x was a correlation matrix but CD needs raw data. Skipping CD.")
     }
 
   }

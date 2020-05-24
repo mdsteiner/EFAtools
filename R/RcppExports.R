@@ -14,20 +14,6 @@
     .Call(`_EFAtools_factor_corres`, x, y, thresh)
 }
 
-#' Perform the iterative PAF procedure
-#'
-#' Function called from within PAF so usually no call to this is needed by the user.
-#' Provides a C++ implementation of the PAF procedure
-#'
-#' @param n_fac numeric. The number of factors to extract.
-#' @param R matrix. The correlation matrix.
-#' @param criterion double. The convergence criterion to use.
-#' @param max_iter numeric. The number of iterations after which to end the procedure if no convergence has been reached by then.
-#' @export
-.hull_paf <- function(n_fac, R, criterion, max_iter) {
-    .Call(`_EFAtools_hull_paf`, n_fac, R, criterion, max_iter)
-}
-
 .grad_ml <- function(psi, R, n_fac) {
     .Call(`_EFAtools_grad_ml`, psi, R, n_fac)
 }
@@ -65,39 +51,6 @@
 #' @export
 parallel_sim <- function(n_datasets, n_vars, N, eigen_type) {
     .Call(`_EFAtools_parallel_sim`, n_datasets, n_vars, N, eigen_type)
-}
-
-#' Principal Axis Factoring to extract eigenvalues from a 1 factor solution
-#'
-#' Function called from within PARALLEL so usually no call to this is needed by the user.
-#' Provides a C++ implementation of 1 factor PAF. Returns the eigenvalues obtained
-#' from the correlation matrix with the final communality estimates as diagonal of
-#' R.
-#'
-#' @param R numeric matrix. Correlation matrix to perform PAF with 1 factor solution on.
-#' @param criterion double. Convergence criterion to use.
-#' @param crit_type integer. Whether max_individual (1) or sums (2).
-#' @param max_iter integer. The maximum number of iterations after which to stop the iterative procedure if no convergence is reached by then.
-#' @export
-parallel_paf <- function(R, criterion, crit_type, max_iter) {
-    .Call(`_EFAtools_parallel_paf`, R, criterion, crit_type, max_iter)
-}
-
-#' Parallel analysis on simulated data.
-#'
-#' Function called from within PARALLEL so usually no call to this is needed by the user.
-#' Provides a C++ implementation of the PARALLEL simulation procedure where eigenvalues
-#' are found using the parallel_paf function.
-#'
-#' @param n_datasets numeric. Number of datasets with dimensions (N, n_vars) to simulate.
-#' @param n_vars numeric. Number of variables / indicators in dataset.
-#' @param N numeric. Number of cases / observations in dataset.
-#' @param criterion double. Convergence criterion to use.
-#' @param crit_type integer. Whether max_individual (1) or sums (2).
-#' @param max_iter integer. The maximum number of iterations after which to stop the iterative procedure if no convergence is reached by then.
-#' @export
-parallel_paf_sim <- function(n_datasets, n_vars, N, criterion, crit_type, max_iter) {
-    .Call(`_EFAtools_parallel_paf_sim`, n_datasets, n_vars, N, criterion, crit_type, max_iter)
 }
 
 #' Summarise the raw data from the \link{parallel_sim}

@@ -19,20 +19,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// hull_paf
-arma::mat hull_paf(const int n_fac, arma::mat R, double criterion, int max_iter);
-RcppExport SEXP _EFAtools_hull_paf(SEXP n_facSEXP, SEXP RSEXP, SEXP criterionSEXP, SEXP max_iterSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const int >::type n_fac(n_facSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type R(RSEXP);
-    Rcpp::traits::input_parameter< double >::type criterion(criterionSEXP);
-    Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
-    rcpp_result_gen = Rcpp::wrap(hull_paf(n_fac, R, criterion, max_iter));
-    return rcpp_result_gen;
-END_RCPP
-}
 // grad_ml
 arma::vec grad_ml(arma::vec psi, arma::mat R, const int n_fac);
 RcppExport SEXP _EFAtools_grad_ml(SEXP psiSEXP, SEXP RSEXP, SEXP n_facSEXP) {
@@ -90,36 +76,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// parallel_paf
-arma::vec parallel_paf(arma::mat R, double criterion, int crit_type, int max_iter);
-RcppExport SEXP _EFAtools_parallel_paf(SEXP RSEXP, SEXP criterionSEXP, SEXP crit_typeSEXP, SEXP max_iterSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type R(RSEXP);
-    Rcpp::traits::input_parameter< double >::type criterion(criterionSEXP);
-    Rcpp::traits::input_parameter< int >::type crit_type(crit_typeSEXP);
-    Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
-    rcpp_result_gen = Rcpp::wrap(parallel_paf(R, criterion, crit_type, max_iter));
-    return rcpp_result_gen;
-END_RCPP
-}
-// parallel_paf_sim
-arma::mat parallel_paf_sim(const int n_datasets, const int n_vars, const int N, double criterion, int crit_type, int max_iter);
-RcppExport SEXP _EFAtools_parallel_paf_sim(SEXP n_datasetsSEXP, SEXP n_varsSEXP, SEXP NSEXP, SEXP criterionSEXP, SEXP crit_typeSEXP, SEXP max_iterSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const int >::type n_datasets(n_datasetsSEXP);
-    Rcpp::traits::input_parameter< const int >::type n_vars(n_varsSEXP);
-    Rcpp::traits::input_parameter< const int >::type N(NSEXP);
-    Rcpp::traits::input_parameter< double >::type criterion(criterionSEXP);
-    Rcpp::traits::input_parameter< int >::type crit_type(crit_typeSEXP);
-    Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
-    rcpp_result_gen = Rcpp::wrap(parallel_paf_sim(n_datasets, n_vars, N, criterion, crit_type, max_iter));
-    return rcpp_result_gen;
-END_RCPP
-}
 // parallel_summarise
 NumericMatrix parallel_summarise(NumericMatrix eig_vals, NumericVector percent, const int n_datasets, const int n_vars);
 RcppExport SEXP _EFAtools_parallel_summarise(SEXP eig_valsSEXP, SEXP percentSEXP, SEXP n_datasetsSEXP, SEXP n_varsSEXP) {
@@ -163,13 +119,10 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_EFAtools_factor_corres", (DL_FUNC) &_EFAtools_factor_corres, 3},
-    {"_EFAtools_hull_paf", (DL_FUNC) &_EFAtools_hull_paf, 4},
     {"_EFAtools_grad_ml", (DL_FUNC) &_EFAtools_grad_ml, 3},
     {"_EFAtools_error_ml", (DL_FUNC) &_EFAtools_error_ml, 3},
     {"_EFAtools_paf_iter", (DL_FUNC) &_EFAtools_paf_iter, 7},
     {"_EFAtools_parallel_sim", (DL_FUNC) &_EFAtools_parallel_sim, 4},
-    {"_EFAtools_parallel_paf", (DL_FUNC) &_EFAtools_parallel_paf, 4},
-    {"_EFAtools_parallel_paf_sim", (DL_FUNC) &_EFAtools_parallel_paf_sim, 6},
     {"_EFAtools_parallel_summarise", (DL_FUNC) &_EFAtools_parallel_summarise, 4},
     {"_EFAtools_grad_uls", (DL_FUNC) &_EFAtools_grad_uls, 3},
     {"_EFAtools_uls_residuals", (DL_FUNC) &_EFAtools_uls_residuals, 3},
