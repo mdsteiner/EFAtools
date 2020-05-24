@@ -13,6 +13,8 @@ print.N_FACTORS <- function(x, ...){
   suitability <- x$settings$suitability
   criteria <- x$settings$criteria
   n_fac <- x$n_factors
+  gof <- x$settings$gof
+  eigen_type <- x$settings$eigen_type
 
   if(!is.null(suitability)){
 
@@ -40,8 +42,7 @@ print.N_FACTORS <- function(x, ...){
 
   if("CD" %in% criteria){
 
-  cat("Comparison data: ", crayon::bold(n_fac["nfac_CD"]),
-      sep = "")
+  cat("Comparison data: ", crayon::bold(n_fac["nfac_CD"]), sep = "")
   cat("\n")
 
   plot(x$cd_out)
@@ -60,16 +61,21 @@ print.N_FACTORS <- function(x, ...){
 
   if("HULL" %in% criteria){
 
-    ### ADDITIONAL CHECK FOR WHICH METHOD USED? OR JUST NA IF NOT USED?
+    if("CAF" %in% gof){
     cat("HULL method with CAF: ", crayon::bold(n_fac["nfac_HULL_CAF"]),
         sep = "")
     cat("\n")
+    }
+    if("CFI" %in% gof){
     cat("HULL method with CFI: ", crayon::bold(n_fac["nfac_HULL_CFI"]),
         sep = "")
     cat("\n")
+    }
+    if("RMSEA" %in% gof){
     cat("HULL method with RMSEA: ", crayon::bold(n_fac["nfac_HULL_RMSEA"]),
         sep = "")
     cat("\n")
+    }
 
     plot(x$hull_out)
 
@@ -77,16 +83,21 @@ print.N_FACTORS <- function(x, ...){
 
   if("KGC" %in% criteria){
 
-    ### ADDITIONAL CHECK FOR WHICH METHOD USED? OR JUST NA IF NOT USED?
+    if("PCA" %in% eigen_type){
     cat("Kaiser-Guttman criterion with PCA: ",
         crayon::bold(n_fac["nfac_KGC_PCA"]), sep = "")
     cat("\n")
+    }
+    if("SMC" %in% eigen_type){
     cat("Kaiser-Guttman criterion with SMC: ",
         crayon::bold(n_fac["nfac_KGC_SMC"]), sep = "")
     cat("\n")
+    }
+    if("EFA" %in% eigen_type){
     cat("Kaiser-Guttman criterion with EFA: ",
         crayon::bold(n_fac["nfac_KGC_EFA"]), sep = "")
     cat("\n")
+    }
 
     plot(x$kgc_out)
 
@@ -94,16 +105,21 @@ print.N_FACTORS <- function(x, ...){
 
   if("PARALLEL" %in% criteria){
 
-    ### ADDITIONAL CHECK FOR WHICH METHOD USED? OR JUST NA IF NOT USED?
+    if("PCA" %in% eigen_type){
     cat("Parallel analysis with PCA: ", crayon::bold(n_fac["nfac_PA_PCA"]),
         sep = "")
     cat("\n")
+    }
+    if("SMC" %in% eigen_type){
     cat("Parallel analysis with SMC: ", crayon::bold(n_fac["nfac_PA_SMC"]),
         sep = "")
     cat("\n")
+    }
+    if("EFA" %in% eigen_type){
     cat("Parallel analysis with EFA: ", crayon::bold(n_fac["nfac_PA_EFA"]),
         sep = "")
     cat("\n")
+    }
 
     plot(x$parallel_out)
 

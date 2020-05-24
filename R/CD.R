@@ -119,7 +119,8 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
 
   while (n_factors <= n_factors_max && isTRUE(sig)) {
 
-    pop <- .gen_data(x, cor_method, use, n_factors, N_pop, max_iter = max_iter)
+    pop <- .gen_data(x, method = cor_method, use, n_factors, N_pop,
+                     max_iter = max_iter)
 
     for (j in 1:N_samples) {
       samp <- pop[sample(1:N_pop, size = n_cases, replace = TRUE),]
@@ -194,7 +195,8 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
 
   # Generate random normal data for shared and unique components, initialize factor loadings (steps 5, 6) --------
 
-  shared_comp <- matrix(stats::rnorm(N * n_factors, 0, 1), nrow = N, ncol = n_factors)
+  shared_comp <- matrix(stats::rnorm(N * n_factors, 0, 1), nrow = N,
+                        ncol = n_factors)
   unique_comp <- matrix(stats::rnorm(N * k, 0, 1), nrow = N, ncol = k)
   shared_load <- matrix(0, nrow = k, ncol = n_factors)
   unique_load <- matrix(0, nrow = k, ncol = 1)

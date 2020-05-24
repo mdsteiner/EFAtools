@@ -34,10 +34,10 @@
 #'
 #' @examples
 #' # All criteria, with fit method "ML"
-#' nfac_all <- N_FACTORS(test_models$baseline$cormat, suitability = NULL, N = 500, method = "ML")
+#' nfac_all <- N_FACTORS(test_models$baseline$cormat, N = 500, method = "ML")
 N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
                                       "SMT"),
-                      suitability = c("KMO", "BARTLETT"), N = NA,
+                      suitability = TRUE, N = NA,
                       use = c("pairwise.complete.obs", "all.obs",
                               "complete.obs", "everything", "na.or.complete"),
                       n_factors_max = NA, N_pop = 10000, N_samples = 500,
@@ -51,11 +51,32 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
                       decision_rule = c("Means", "Percentile", "Crawford"),
                       ...){
 
+  # For testing:
+  # x <- test_models$baseline$cormat
+  # criteria <-  c("CD", "EKC", "HULL", "KGC", "PARALLEL", "SMT")
+  # suitability <- TRUE
+  # N <- 500
+  # use <- c("pairwise.complete.obs", "all.obs",
+  #         "complete.obs", "everything", "na.or.complete")
+  # n_factors_max <- NA
+  # N_pop <- 10000
+  # N_samples <- 500
+  # alpha <- .30
+  # cor_method <- c("pearson", "spearman", "kendall")
+  # max_iter <- 1000
+  # n_fac_theor <- NA
+  # method <- c("PAF", "ULS", "ML")
+  # gof <- c("CAF", "CFI", "RMSEA")
+  # eigen_type <- c("PCA", "SMC", "EFA")
+  # n_factors <- 1
+  # n_vars <-  NA
+  # n_datasets <- 1000
+  # percent <- 95
+  # decision_rule <- c("Means", "Percentile", "Crawford")
+
   ## Perform argument checks and prepare input
   criteria <- match.arg(criteria, several.ok = TRUE)
-
-  # WHAT HAPPENS IF YOU ENTER NULL? SHOULD BE POSSIBLE...
-  suitability <- match.arg(suitability, several.ok = TRUE)
+  suitability <- checkmate::assert_flag(suitability)
 
   # Check if it is a correlation matrix
   if(.is_cormat(x)){
@@ -121,17 +142,13 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
 
   ## Tests for suitability of factor analysis
 
+  if(isTRUE(suitability)){
+
   # Bartlett's Test of Sphericity
-  if("BARTLETT" %in% suitability){
-
-    bart_out <- BARTLETT(R, N = N, use = use)
-
-  }
+  bart_out <- BARTLETT(R, N = N, use = use)
 
   # Kaiser-Meyer_Olkin criterion
-  if("KMO" %in% suitability){
-
-    kmo_out <- KMO(R, use = use)
+  kmo_out <- KMO(R, use = use)
 
   }
 
@@ -140,7 +157,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   # Comparison data
   if("CD" %in% criteria){
 
-    # n_factors and method arguments needed?
+    # DO ONLY IF RAW DATA!
     cd_out <- try(CD(x, n_factors_max = n_factors_max, N_pop = N_pop,
                      N_samples = N_samples, alpha = alpha, use = use,
                      cor_method = cor_method, max_iter = max_iter))
@@ -222,7 +239,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
                    N_samples = N_samples,
                    alpha = alpha,
                    cor_method = cor_method,
-                   max_iter = max_iter, ### REALLY NEEDED?
+                   max_iter = max_iter,
                    n_fac_theor = n_fac_theor,
                    method = method,
                    gof = gof,
