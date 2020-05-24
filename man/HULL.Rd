@@ -15,6 +15,7 @@ HULL(
   n_fac_theor = NA,
   method = c("PAF", "ULS", "ML"),
   gof = c("CAF", "CFI", "RMSEA"),
+  eigen_type = c("SMC", "PCA", "EFA"),
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
     "na.or.complete"),
   ...
@@ -40,10 +41,18 @@ If \code{method = "PAF"} is used, only
 the CAF can be used as goodness of fit index. For details on the CAF, see
 Lorenzo-Seva, Timmerman, and Kiers (2011).}
 
+\item{eigen_type}{character. On what the eigenvalues should be found. Can be
+one of "SMC", "PCA", or "EFA". If using "SMC" (default), the diagonal of the
+correlation matrices is replaced by the squared multiple correlations (SMCs)
+of the indicators. If using "PCA", the diagonal values of the correlation
+matrices are left to be 1. If using "EFA", eigenvalues are found on the
+correlation  matrices with the final communalities of an EFA solution as
+diagonal. This is passed to  \code{\link[PARALLEL]{PARALLEL}}.}
+
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
 is given as input. Default is "pairwise.complete.obs".}
 
-\item{...}{Further arguments passed to \link{PARALLEL}.}
+\item{...}{Further arguments passed to \link{EFA} or \link{PARALLEL}.}
 }
 \value{
 A list of class HULL containing the following objects
