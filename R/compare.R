@@ -143,6 +143,9 @@ compare <- function(x,
 
     }
 
+    diff_corres <- NA
+    diff_corres_cross <- NA
+
   }
 
   if (inherits(x, "matrix")) {

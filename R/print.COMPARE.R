@@ -100,7 +100,7 @@ print.COMPARE <- function(x, ...) {
   }
   cat(out_diff)
 
-  if (isTRUE(plot)) {
+  if (isTRUE(plot) && length(c(diff)) > 2) {
 
     if (length(x_labels) < 2) {
       warning("Less than two x_labels specified, using 'x' and 'y'.")
