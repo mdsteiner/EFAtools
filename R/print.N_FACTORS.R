@@ -16,22 +16,18 @@ print.N_FACTORS <- function(x, ...){
   gof <- x$settings$gof
   eigen_type <- x$settings$eigen_type
 
-  if(!is.null(suitability)){
+  if(isTRUE(suitability)){
 
     cat("\n")
     cat(crayon::blue$bold("Tests for the suitability of the data for factor analysis"))
     cat("\n")
 
-    if("BARTLETT" %in% suitability){
     print(x$bart_out)
     cat("\n")
-    }
 
-    if("KMO" %in% suitability){
     print(x$kmo_out)
     cat("\n")
     cat("\n")
-    }
 
   }
 
@@ -45,7 +41,9 @@ print.N_FACTORS <- function(x, ...){
   cat("Comparison data: ", crayon::bold(n_fac["nfac_CD"]), sep = "")
   cat("\n")
 
+  if(!all(is.na(x$cd_out))){
   plot(x$cd_out)
+  }
 
   }
 
@@ -55,7 +53,9 @@ print.N_FACTORS <- function(x, ...){
         sep = "")
     cat("\n")
 
+    if(!all(is.na(x$ekc_out))){
     plot(x$ekc_out)
+    }
 
   }
 
@@ -77,7 +77,9 @@ print.N_FACTORS <- function(x, ...){
     cat("\n")
     }
 
+    if(!all(is.na(x$hull_out))){
     plot(x$hull_out)
+    }
 
   }
 
@@ -99,7 +101,9 @@ print.N_FACTORS <- function(x, ...){
     cat("\n")
     }
 
+    if(!all(is.na(x$kgc_out))){
     plot(x$kgc_out)
+    }
 
   }
 
@@ -121,7 +125,9 @@ print.N_FACTORS <- function(x, ...){
     cat("\n")
     }
 
+    if(!all(is.na(x$parallel_out))){
     plot(x$parallel_out)
+    }
 
   }
 

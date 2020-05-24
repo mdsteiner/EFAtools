@@ -341,7 +341,7 @@ PARALLEL <- function(x = NULL,
 
     x <- matrix(rnorm(N * n_vars), nrow = N, ncol = n_vars)
     R <- stats::cor(x)
-    eigvals[, i] <- suppressWarnings(EFA(R, n_factors = n_factors,
+    eigvals[, i] <- suppressWarnings(EFA(R, n_factors = n_factors, N = N,
                                          ...)$final_eigen)
 
   }

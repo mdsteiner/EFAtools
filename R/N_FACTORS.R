@@ -33,7 +33,8 @@
 #' @export
 #'
 #' @examples
-#' # All criteria, with fit method "ML"
+#' # All criteria with correlation matrix and fit method "ML" (where needed)
+#' # This will throw a warning for CD, as no raw data were specified
 #' nfac_all <- N_FACTORS(test_models$baseline$cormat, N = 500, method = "ML")
 N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
                                       "SMT"),
@@ -46,7 +47,8 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
                       max_iter = 1000, n_fac_theor = NA,
                       method = c("PAF", "ULS", "ML"),
                       gof = c("CAF", "CFI", "RMSEA"),
-                      eigen_type = c("PCA", "SMC", "EFA"), n_factors = 1,
+                      eigen_type_HULL = c("SMC", "PCA", "EFA"),
+                      eigen_type_KGC_PA = c("PCA", "SMC", "EFA"), n_factors = 1,
                       n_vars = NA, n_datasets = 1000, percent = 95,
                       decision_rule = c("Means", "Percentile", "Crawford"),
                       ...){
@@ -77,6 +79,11 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   ## Perform argument checks and prepare input
   criteria <- match.arg(criteria, several.ok = TRUE)
   suitability <- checkmate::assert_flag(suitability)
+  eigen_type_HULL <- match.arg(eigen_type_HULL)
+  cor_method <- match.arg(cor_method)
+  use <- match.arg(use)
+  method <- match.arg(method)
+  decision_rule <- match.arg(decision_rule)
 
   # Check if it is a correlation matrix
   if(.is_cormat(x)){
@@ -184,7 +191,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   if("HULL" %in% criteria){
 
     hull_out <- HULL(R, N = N, n_fac_theor = n_fac_theor, method = method,
-                     eigen_type = eigen_type, gof = gof, use = use, ...)
+                     eigen_type = eigen_type_HULL, gof = gof, use = use, ...)
 
     nfac_HULL_CAF <- hull_out$n_fac_CAF
     nfac_HULL_CFI <- hull_out$n_fac_CFI
@@ -195,8 +202,8 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   # Kaiser-Guttman criterion
   if("KGC" %in% criteria){
 
-    kgc_out <- KGC(R, eigen_type = eigen_type, use = use, n_factors = n_factors,
-                   method = method, ...)
+    kgc_out <- KGC(R, eigen_type = eigen_type_KGC_PA, use = use,
+                   n_factors = n_factors, method = method, ...)
 
     nfac_KGC_PCA <- kgc_out$n_fac_PCA
     nfac_KGC_SMC <- kgc_out$n_fac_SMC
@@ -209,7 +216,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
 
     parallel_out <- try(PARALLEL(R, N = N, n_vars = n_vars,
                                  n_datasets = n_datasets, percent = percent,
-                                 eigen_type = eigen_type, use = use,
+                                 eigen_type = eigen_type_KGC_PA, use = use,
                                  decision_rule = decision_rule,
                                  n_factors = n_factors, method = method, ...))
 
@@ -244,7 +251,8 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
                    n_fac_theor = n_fac_theor,
                    method = method,
                    gof = gof,
-                   eigen_type = eigen_type,
+                   eigen_type_HULL = eigen_type_HULL,
+                   eigen_type_KGC_PA = eigen_type_KGC_PA,
                    n_factors = n_factors,
                    n_vars = n_vars,
                    n_datasets = n_datasets,
