@@ -5,6 +5,36 @@
 # - ok if same eigen_type is used for PARALELL and KGC?
 # arguments set for parallel are also used in HULL parallel (because passed to
 # PARALLEL there), problem?
+#' Title
+#'
+#' @param x
+#' @param criteria
+#' @param suitability
+#' @param N
+#' @param use
+#' @param n_factors_max
+#' @param N_pop
+#' @param N_samples
+#' @param alpha
+#' @param cor_method
+#' @param max_iter
+#' @param n_fac_theor
+#' @param method
+#' @param gof
+#' @param eigen_type
+#' @param n_factors
+#' @param n_vars
+#' @param n_datasets
+#' @param percent
+#' @param decision_rule
+#' @param ...
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' # All criteria, with fit method "ML"
+#' nfac_all <- N_FACTORS(test_models$baseline$cormat, suitability = NULL, N = 500, method = "ML")
 N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
                                       "SMT"),
                       suitability = c("KMO", "BARTLETT"), N = NA,
@@ -26,8 +56,6 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
 
   # WHAT HAPPENS IF YOU ENTER NULL? SHOULD BE POSSIBLE...
   suitability <- match.arg(suitability, several.ok = TRUE)
-  # OTHER CHECKS IN RESPECTIVE FUNCTIONS OK?
-  # OR BETTER HERE?
 
   # Check if it is a correlation matrix
   if(.is_cormat(x)){
@@ -115,10 +143,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
     # n_factors and method arguments needed?
     cd_out <- try(CD(x, n_factors_max = n_factors_max, N_pop = N_pop,
                      N_samples = N_samples, alpha = alpha, use = use,
-                     cor_method = cor_method,
-                     max_iter = max_iter, # really needed?
-                     ... #(to pass to EFA?)
-                     ))
+                     cor_method = cor_method, max_iter = max_iter))
 
     if(!inherits(cd_out, "try-error")){
 
@@ -140,8 +165,8 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   # HULL method
   if("HULL" %in% criteria){
 
-    hull_out <- HULL(R, N = N, n_fac_theor = n_fac_theor,
-                     method = method, gof = gof, use = use, ...)
+    hull_out <- HULL(R, N = N, n_fac_theor = n_fac_theor, method = method,
+                     eigen_type = eigen_type, gof = gof, use = use, ...)
 
     nfac_HULL_CAF <- hull_out$n_fac_CAF
     nfac_HULL_CFI <- hull_out$n_fac_CFI
