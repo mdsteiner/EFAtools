@@ -41,10 +41,6 @@ print.N_FACTORS <- function(x, ...){
   cat("Comparison data: ", crayon::bold(n_fac["nfac_CD"]), sep = "")
   cat("\n")
 
-  if(!all(is.na(x$cd_out))){
-  plot(x$cd_out)
-  }
-
   }
 
   if("EKC" %in% criteria){
@@ -52,10 +48,6 @@ print.N_FACTORS <- function(x, ...){
     cat("Empirical Kaiser criterion: ", crayon::bold(n_fac["nfac_EKC"]),
         sep = "")
     cat("\n")
-
-    if(!all(is.na(x$ekc_out))){
-    plot(x$ekc_out)
-    }
 
   }
 
@@ -75,10 +67,6 @@ print.N_FACTORS <- function(x, ...){
     cat("HULL method with RMSEA: ", crayon::bold(n_fac["nfac_HULL_RMSEA"]),
         sep = "")
     cat("\n")
-    }
-
-    if(!all(is.na(x$hull_out))){
-    plot(x$hull_out)
     }
 
   }
@@ -101,10 +89,6 @@ print.N_FACTORS <- function(x, ...){
     cat("\n")
     }
 
-    if(!all(is.na(x$kgc_out))){
-    plot(x$kgc_out)
-    }
-
   }
 
   if("PARALLEL" %in% criteria){
@@ -123,10 +107,6 @@ print.N_FACTORS <- function(x, ...){
     cat("Parallel analysis with EFA: ", crayon::bold(n_fac["nfac_PA_EFA"]),
         sep = "")
     cat("\n")
-    }
-
-    if(!all(is.na(x$parallel_out))){
-    plot(x$parallel_out)
     }
 
   }

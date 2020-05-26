@@ -93,6 +93,8 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   use <- match.arg(use)
   gof <- match.arg(gof, several.ok = TRUE)
   eigen_type <- match.arg(eigen_type)
+  checkmate::assert_count(n_fac_theor, na.ok = TRUE)
+  checkmate::assert_count(N, na.ok = TRUE)
 
   if (method == "PAF" && !all(gof == "CAF")) {
     message('Only CAF can be used as gof if method "PAF" is used.',
