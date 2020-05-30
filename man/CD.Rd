@@ -101,7 +101,7 @@ CD(sim_dat, 8)
 }
 \seealso{
 Other factor retention criteria: \code{\link[EFAtools]{EKC}},
- \code{\link[HULL]{HULL}}, \code{\link[KGC]{KGC}},
+ \code{\link{HULL}}, \code{\link[KGC]{KGC}},
   \code{\link[PARALLEL]{PARALLEL}}, \code{\link[SMT]{SMT}}
 
   \code{\link[N_FACTORS]{N_FACTORS}} as a wrapper function for this and all
