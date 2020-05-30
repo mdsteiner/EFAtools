@@ -1,5 +1,5 @@
 ## Maximum Likelihood Estimation of Factor Loadings
-ML <- function(x, n_factors, N = NA, start_method = c("factanal", "psych")) {
+.ML <- function(x, n_factors, N = NA, start_method = c("factanal", "psych")) {
 
   # Get correlation matrix entered or created in EFA
   R <- x

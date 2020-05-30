@@ -1,7 +1,7 @@
 #' Function to perform exploratory factor analyses (EFA)
 #'
-#' This function does an EFA with either \code{\link{PAF}}, \code{\link{ML}},
-#' or \code{\link{ULS}} with or without subsequent rotation.
+#' This function does an EFA with either \code{PAF}, \code{ML},
+#' or \code{ULS} with or without subsequent rotation.
 #' All arguments with default value \code{NULL} can be left to default if \code{type}
 #' is set to one of "EFAtools", "SPSS", or "psych". The respective specifications are
 #' then handled according to the specified type (see details). For all rotations
@@ -36,7 +36,7 @@
 #' left to be \code{NULL}, but can be overridden by entering a number. Default is
 #' \code{NULL}.
 #' @param init_comm character. The method to estimate the initial communalities
-#' in \code{\link{PAF}}. "smc" will use squared multiple correlations, "mac" will use
+#' in \code{PAF}. "smc" will use squared multiple correlations, "mac" will use
 #' maximum absolute correlations, "unity" will use 1s (see details).
 #' Default is \code{NULL}.
 #' @param criterion numeric. The convergence criterion used in PAF.
@@ -45,12 +45,12 @@
 #' depend on criterion_type (see PAF documentation).
 #' Default is \code{NULL}.
 #' @param criterion_type character. Type of convergence criterion used in
-#' \code{\link{PAF}}. "max_individual" selects the maximum change in any of the
+#' \code{PAF}. "max_individual" selects the maximum change in any of the
 #' communalities from one iteration to the next and tests it against the
 #' specified criterion. This is also used by SPSS. "sums" takes the difference of
 #' the sum of all communalities in one iteration and the sum of all communalities
 #' in the next iteration and tests this against the criterion. This procedure is
-#' used by the \code{\link[psych::fa]{psych::fa}} function. Default is \code{NULL}.
+#' used by the \code{\link[psych:fa]{psych::fa}} function. Default is \code{NULL}.
 #' @param abs_eigen logical. Which algorithm to use in the PAF
 #' iterations. If FALSE, the loadings are computed from the eigenvalues. This is
 #' also used by the \code{\link[psych:fa]{psych::fa}} function. If TRUE the
@@ -60,7 +60,7 @@
 #' is given as input. Default is "pairwise.complete.obs".
 #' @param k numeric. Either the power used for computing the target matrix P in
 #' the promax rotation or the number of 'close to zero loadings' for the simplimax
-#' rotation (see \code{\link[GPArotation:GPFobl]{GPArotation:GPFobl}}. If left to
+#' rotation (see \code{\link[GPArotation:GPFobl]{GPArotation::GPFobl}}. If left to
 #' \code{NULL} (default), 3 is used for promax and \code{nrow(L)}, where
 #' L is the matrix of unrotated loadings, is used for simplimax.
 #' @param kaiser logical. If \code{TRUE}, kaiser normalization is
@@ -325,7 +325,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
   if (method == "PAF") {
 
-  fit_out <- PAF(R, n_factors = n_factors, N = N, type = type,
+  fit_out <- .PAF(R, n_factors = n_factors, N = N, type = type,
                  max_iter = max_iter, init_comm = init_comm,
                  criterion = criterion, criterion_type = criterion_type,
                  abs_eigen = abs_eigen)
@@ -339,7 +339,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
     }
 
-    fit_out <- ML(R, n_factors = n_factors, N = N, start_method = start_method)
+    fit_out <- .ML(R, n_factors = n_factors, N = N, start_method = start_method)
 
   } else if (method == "ULS") {
 
@@ -350,25 +350,25 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
     }
 
-    fit_out <- ULS(R, n_factors = n_factors, N = N)
+    fit_out <- .ULS(R, n_factors = n_factors, N = N)
   }
 
   # rotate factor analysis results
   if (rotation == "promax") {
 
-    rot_out <- PROMAX(fit_out, type = type, kaiser = kaiser, P_type = P_type,
+    rot_out <- .PROMAX(fit_out, type = type, kaiser = kaiser, P_type = P_type,
                       precision = precision, order_type = order_type, k = k)
 
   } else if (rotation == "varimax") {
 
-    rot_out <- VARIMAX(fit_out, type = type, kaiser = kaiser,
+    rot_out <- .VARIMAX(fit_out, type = type, kaiser = kaiser,
                        precision = precision, order_type = order_type)
 
   } else if (rotation == "quartimax" || rotation == "equamax" ||
              rotation == "bentlerT" || rotation == "geominT" ||
              rotation == "bifactorT") {
 
-    rot_out <- ROTATE_ORTH(fit_out, type = type, rotation = rotation,
+    rot_out <- .ROTATE_ORTH(fit_out, type = type, rotation = rotation,
                            kaiser = kaiser, precision = precision,
                            order_type = order_type, ...)
 
@@ -376,7 +376,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
              rotation == "simplimax" || rotation == "bentlerQ" ||
              rotation == "geominQ" || rotation == "bifactorQ") {
 
-    rot_out <- ROTATE_OBLQ(fit_out, type = type, rotation = rotation,
+    rot_out <- .ROTATE_OBLQ(fit_out, type = type, rotation = rotation,
                            kaiser = kaiser, precision = precision,
                            order_type = order_type, k = k, ...)
 

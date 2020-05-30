@@ -1,5 +1,5 @@
 ## Unweighted Least Squares Estimation of Factor Loadings
-ULS <- function(x, n_factors, N = NA) {
+.ULS <- function(x, n_factors, N = NA) {
 
   # Get correlation matrix entered or created in EFA
   R <- x

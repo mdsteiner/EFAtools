@@ -12,7 +12,7 @@
 \item{...}{Further arguments for print.}
 }
 \description{
-Print Method showing a summarized output of the EFA procedure.
+Print Method showing a summarized output of the \link{EFA} function
 }
 \examples{
 EFAtools_PAF <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,

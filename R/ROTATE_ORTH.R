@@ -1,5 +1,5 @@
 # Orthogonal factor rotations with GPArotation package
-ROTATE_ORTH <- function(x, rotation = c("equamax", "quartimax", "geominT",
+.ROTATE_ORTH <- function(x, rotation = c("equamax", "quartimax", "geominT",
                                         "bentlerT", "bifactorT"),
                         type = c("EFAtools", "psych", "SPSS", "none"),
                         kaiser = TRUE, precision = NULL, order_type = NULL,

@@ -105,9 +105,11 @@
 #' # this will be faster than the above with PAF)
 #' pa_ml <- PARALLEL(test_models$case_11b$cormat, N = 500, method = "ML")
 #'
+#' \dontrun{
 #' # for parallel computation
 #' future::plan(future::multisession)
 #' pa_faster <- PARALLEL(test_models$case_11b$cormat, N = 500)
+#' }
 
 PARALLEL <- function(x = NULL,
                      N = NA,
@@ -348,7 +350,7 @@ PARALLEL <- function(x = NULL,
 
   for(i in 1:n_datasets){
 
-    x <- matrix(rnorm(N * n_vars), nrow = N, ncol = n_vars)
+    x <- matrix(stats::rnorm(N * n_vars), nrow = N, ncol = n_vars)
     R <- stats::cor(x)
     eigvals[, i] <- suppressWarnings(EFA(R, n_factors = n_factors, N = N,
                                          ...)$final_eigen)

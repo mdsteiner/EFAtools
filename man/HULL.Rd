@@ -47,9 +47,9 @@ correlation matrices is replaced by the squared multiple correlations (SMCs)
 of the indicators. If using "PCA", the diagonal values of the correlation
 matrices are left to be 1. If using "EFA", eigenvalues are found on the
 correlation  matrices with the final communalities of an EFA solution as
-diagonal. This is passed to  \code{\link[PARALLEL]{PARALLEL}}.}
+diagonal. This is passed to  \code{\link{PARALLEL}}.}
 
-\item{use}{character. Passed to \code{\link[stats]{cor}} if raw data
+\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
 is given as input. Default is "pairwise.complete.obs".}
 
 \item{...}{Further arguments passed to \link{EFA} or \link{PARALLEL}.}
@@ -75,14 +75,17 @@ parallelization.
 \details{
 The \link{PARALLEL} function and the principal axis factoring of the
   different number of factors can be parallelized using the future framework,
-  by calling the \link{future}{plan} function. The examples provide example code
-  on how to enable parallel processing.
+  by calling the \link[future:plan]{future::plan} function. The examples
+   provide example code on how to enable parallel processing.
 
   Note that if \code{gof = "RMSEA"} is used, 1 - RMSEA is actually used to
   compare the different solutions. Thus, the threshold of .05 is now .95.
 
-  The ML estimation method uses the \link{stats}{factanal} starting values. See
-  also the \link{ML} documentation.
+  The ML estimation method uses the \link[stats:factanal]{stats::factanal}
+   starting values. See also the \link{EFA} documentation.
+
+   The \code{HULL} function can also be called together with other factor
+   retention criteria in the \code{\link{N_FACTORS}} function.
 }
 \examples{
 \dontrun{
@@ -101,4 +104,11 @@ HULL(test_models$baseline$cormat, N = 500, method = "ULS", gof = "RMSEA")
 future::plan(future::multisession)
 HULL(test_models$baseline$cormat, N = 500, gof = "CAF")
 }
+}
+\seealso{
+Other factor retention criteria: \code{\link{CD}}, \code{\link{EKC}},
+\code{\link{KGC}}, \code{\link{PARALLEL}}, \code{\link{SMT}}
+
+\code{\link{N_FACTORS}} as a wrapper function for this and all the
+above-mentioned factor retention criteria.
 }

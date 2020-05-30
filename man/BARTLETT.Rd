@@ -48,14 +48,23 @@ where \eqn{det(R)} is the determinant of the correlation matrix, \eqn{N} is
 the sample size, and \eqn{p} is the number of variables.
 
 This tests requires multivariate normality. If this condition is not met,
-the Kaiser-Meyer-Olkin criterion (\code{\link[EFAtools:KMO]{EFAtools:KMO}}))
+the Kaiser-Meyer-Olkin criterion (\code{\link[EFAtools]{KMO}}))
 can still be used.
 
-This function was heavily influenced by the
-\code{\link[psych:cortest.bartlett]{cortest.bartlett}} function
-from the psych package.
+This function was heavily influenced by the \code{\link[psych:cortest.bartlett]{psych::cortest.bartlett}} function from the psych package.
+
+The \code{BARTLETT} function can also be called together with the
+ \code{\link[EFAtools]{KMO}} function and with factor retention criteria
+ in the \code{\link{N_FACTORS}} function.
 }
 \examples{
 BARTLETT(test_models$baseline$cormat, N = 500)
 
+}
+\seealso{
+\code{\link[EFAtools]{KMO}} for another measure to determine
+ suitability for factor analysis.
+
+ \code{\link{N_FACTORS}} as a wrapper function for this function,
+ \code{\link[EFAtools]{KMO}} and several factor retention criteria.
 }

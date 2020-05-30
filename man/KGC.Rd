@@ -50,7 +50,7 @@ data is given as input. Default is "pairwise.complete.obs".}
 \item{n_factors}{numeric. Number of factors to extract if "EFA" is included in
 \code{eigen_type}. Default is 1.}
 
-\item{...}{Additional arguments passed to \code{\link[EFA]{EFA}}. For example,
+\item{...}{Additional arguments passed to \code{\link{EFA}}. For example,
 to change the extraction method (PAF is default).}
 }
 \value{
@@ -87,7 +87,17 @@ to "EFA"; see Auerswald & Moshagen, 2019). However, although this variant
 of the KGC is more accurate in some cases compared to the traditional KGC, it
 is at the same time less accurate than the PCA-variant in other cases, and it
 is still often less accurate than other factor retention methods, for
-example parallel analysis (\link{\code{PARALLEL}}), the Hull method
-\link{\code{HULL}}, or sequential \eqn{chi^2} model tests (\link{\code{SMT}};
+example parallel analysis (\code{\link{PARALLEL}}), the Hull method
+\code{\link{HULL}}, or sequential \eqn{chi^2} model tests (\code{\link{SMT}};
 see Auerswald & Moshagen, 2019).
+
+The \code{KGC} function can also be called together with other factor
+retention criteria in the \code{\link{N_FACTORS}} function.
+}
+\seealso{
+Other factor retention criteria: \code{\link{CD}}, \code{\link{EKC}},
+\code{\link{HULL}}, \code{\link{PARALLEL}}, \code{\link{SMT}}
+
+\code{\link{N_FACTORS}} as a wrapper function for this and all the
+above-mentioned factor retention criteria.
 }

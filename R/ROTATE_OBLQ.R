@@ -1,5 +1,5 @@
 # Oblique factor rotations with GPArotation package
-ROTATE_OBLQ <- function(x, rotation = c("oblimin", "quartimin", "simplimax",
+.ROTATE_OBLQ <- function(x, rotation = c("oblimin", "quartimin", "simplimax",
                                         "bentlerQ", "geominQ", "bifactorQ"),
                         type = c("EFAtools", "psych", "SPSS", "none"),
                         kaiser = TRUE, precision = NULL, order_type = NULL,

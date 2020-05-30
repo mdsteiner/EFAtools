@@ -1,10 +1,3 @@
-
-# - say what only works with raw data (CD, PARALLEL if resampling is implemented)
-# - ... further arguments passed to PARALLEL in HULL or passed to EFA in KGC, PARALLEL and HULL ->
-    # for these functions, methods argument here is also passed to EFA, problem?
-# - ok if same eigen_type is used for PARALELL and KGC?
-# arguments set for parallel are also used in HULL parallel (because passed to
-# PARALLEL there), problem?
 #' Title
 #'
 #' @param x
@@ -29,13 +22,22 @@
 #' @param decision_rule
 #' @param ...
 #'
+#' @details # - say what only works with raw data (CD, PARALLEL if resampling is implemented)
+# - ... further arguments passed to PARALLEL in HULL or passed to EFA in KGC, PARALLEL and HULL ->
+# for these functions, methods argument here is also passed to EFA, problem?
+# - ok if same eigen_type is used for PARALELL and KGC?
+# arguments set for parallel are also used in HULL parallel (because passed to
+# PARALLEL there), problem?
 #' @return
+#'
 #' @export
 #'
 #' @examples
 #' # All criteria with correlation matrix and fit method "ML" (where needed)
 #' # This will throw a warning for CD, as no raw data were specified
 #' nfac_all <- N_FACTORS(test_models$baseline$cormat, N = 500, method = "ML")
+#'
+#' # MORE EXAMPLES
 N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
                                       "SMT"),
                       suitability = TRUE, N = NA,

@@ -21,8 +21,8 @@ SL(
 )
 }
 \arguments{
-\item{x}{object of class \code{\link{EFA}} or class \code{\link{fa}} or
-matrix. If class \code{\link{EFA}} or class \code{\link{fa}},
+\item{x}{object of class \code{\link{EFA}} or class \code{\link[psych:fa]{psych::fa}} or
+matrix. If class \code{\link{EFA}} or class \code{\link[psych:fa]{psych::fa}},
 pattern coefficients and factor intercorrelations are taken from this object.
 x can also be a pattern matrix from an oblique factor solution (see \code{Phi}).}
 

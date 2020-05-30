@@ -64,7 +64,7 @@ is given as input. Default is "pairwise.complete.obs".}
  and the mean afterwards (based on Crawford et al, 2010).
  @param n_factors numeric. Number of factors to extract if "EFA" is included in
 \code{eigen_type}. Default is 1.
- @param ... Additional arguments passed to \code{\link[EFA]{EFA}}. For example,
+ @param ... Additional arguments passed to \code{\link{EFA}}. For example,
  the extraction method can be changed here (default is "PAF"). PAF is more
  robust, but it will take longer compared to the other estimation methods
  available ("ML" and "ULS").}
@@ -81,7 +81,7 @@ A list of class PARALLEL containing the following objects
 }
 \description{
 Various methods for performing parallel analysis. This function uses
-\link{future.apply}{future_lapply} for which a parallel processing plan can
+\link[future.apply]{future_lapply} for which a parallel processing plan can
 be selected. To do so, call \code{library(future)} and, for example,
  \code{plan(multisession)}; see examples.
 }
@@ -112,6 +112,9 @@ the sample
  later eigenvalues are conditional on the earlier ones in the sequence and thus
  the shared variance is already accounted in the first eigenvalue (e.g.,
  Braeken & van Assen, 2017).
+
+ The \code{PARALLEL} function can also be called together with other factor
+ retention criteria in the \code{\link{N_FACTORS}} function.
 }
 \examples{
 # example without real data
@@ -127,4 +130,11 @@ pa_ml <- PARALLEL(test_models$case_11b$cormat, N = 500, method = "ML")
 # for parallel computation
 future::plan(future::multisession)
 pa_faster <- PARALLEL(test_models$case_11b$cormat, N = 500)
+}
+\seealso{
+Other factor retention criteria: \code{\link{CD}}, \code{\link{EKC}},
+\code{\link{HULL}}, \code{\link{KGC}}, \code{\link{SMT}}
+
+\code{\link{N_FACTORS}} as a wrapper function for this and all the
+above-mentioned factor retention criteria.
 }

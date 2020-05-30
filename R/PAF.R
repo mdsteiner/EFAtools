@@ -1,5 +1,5 @@
 ## Principal Axis Factoring
-PAF <- function(x, n_factors, N = NA, max_iter = NULL,
+.PAF <- function(x, n_factors, N = NA, max_iter = NULL,
                 type = c("EFAtools", "psych", "SPSS", "none"),
                 init_comm = NULL, criterion = NULL,
                 criterion_type = NULL, abs_eigen = NULL) {

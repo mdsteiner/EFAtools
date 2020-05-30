@@ -54,9 +54,20 @@ So KMO varies between 0 and 1, with larger values indicating higher suitability
 for factor analysis. Kaiser and Rice (1974) suggest that KMO should at least
 exceed .50 for a correlation matrix to be suitable for factor analysis.
 
-This function was heavily influenced by the \code{\link[psych:KMO]{KMO}}
+This function was heavily influenced by the \code{\link[psych:KMO]{psych::KMO}}
 function from the psych package.
 
-See also \code{\link[EFAtools:BARTLETT]{EFAtools:BARTLETT}} for another test
-of suitability for factor analysis.
+See also \code{\link{BARTLETT}} for another test of suitability for factor
+analysis.
+
+The \code{KMO} function can also be called together with the
+\code{\link{BARTLETT}} function and with factor retention criteria in the
+ \code{\link{N_FACTORS}} function.
+}
+\seealso{
+\code{\link{BARTLETT}} for another measure to determine
+suitability for factor analysis.
+
+\code{\link{N_FACTORS}} as a wrapper function for this function
+\code{\link{BARTLETT}} and several factor retention criteria.
 }

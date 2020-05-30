@@ -1,5 +1,5 @@
 ## Promax rotation
-PROMAX <- function (x, type = c("EFAtools", "psych", "SPSS", "none"),
+.PROMAX <- function (x, type = c("EFAtools", "psych", "SPSS", "none"),
                     kaiser = TRUE, P_type = NULL, precision = NULL,
                     order_type = NULL, k = NULL) {
 

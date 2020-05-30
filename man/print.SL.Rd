@@ -12,7 +12,7 @@
 \item{...}{Further arguments for print.}
 }
 \description{
-Print Method showing a summarized output of the SL procedure.
+Print Method showing a summarized output of the \link{SL} function.
 }
 \examples{
 EFA_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,

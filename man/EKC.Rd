@@ -67,4 +67,15 @@ The Kaiser-Guttman criterion was defined with the intend that a factor
  case of oblique factors, particularly whenever interfactor correlation is
  moderate to high and the number of variables per factor is small, which is
  characteristic of many applications these days" p.463-464.
+
+ The \code{EKC} function can also be called together with other factor
+  retention criteria in the \code{\link{N_FACTORS}} function.
+}
+\seealso{
+Other factor retention criteria: \code{\link{CD}},
+ \code{\link{HULL}}, \code{\link{KGC}}, \code{\link{PARALLEL}},
+ \code{\link{SMT}}
+
+  \code{\link{N_FACTORS}} as a wrapper function for this and all
+  the above-mentioned factor retention criteria.
 }
