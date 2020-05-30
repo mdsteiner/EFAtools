@@ -79,7 +79,7 @@ left to be \code{NULL}, but can be overridden by entering a number. Default is
 \code{NULL}.}
 
 \item{init_comm}{character. The method to estimate the initial communalities
-in \code{\link{PAF}}. "smc" will use squared multiple correlations, "mac" will use
+in \code{PAF}. "smc" will use squared multiple correlations, "mac" will use
 maximum absolute correlations, "unity" will use 1s (see details).
 Default is \code{NULL}.}
 
@@ -90,12 +90,12 @@ depend on criterion_type (see PAF documentation).
 Default is \code{NULL}.}
 
 \item{criterion_type}{character. Type of convergence criterion used in
-\code{\link{PAF}}. "max_individual" selects the maximum change in any of the
+\code{PAF}. "max_individual" selects the maximum change in any of the
 communalities from one iteration to the next and tests it against the
 specified criterion. This is also used by SPSS. "sums" takes the difference of
 the sum of all communalities in one iteration and the sum of all communalities
 in the next iteration and tests this against the criterion. This procedure is
-used by the \code{\link[psych::fa]{psych::fa}} function. Default is \code{NULL}.}
+used by the \code{\link[psych:fa]{psych::fa}} function. Default is \code{NULL}.}
 
 \item{abs_eigen}{logical. Which algorithm to use in the PAF
 iterations. If FALSE, the loadings are computed from the eigenvalues. This is
@@ -108,7 +108,7 @@ is given as input. Default is "pairwise.complete.obs".}
 
 \item{k}{numeric. Either the power used for computing the target matrix P in
 the promax rotation or the number of 'close to zero loadings' for the simplimax
-rotation (see \code{\link[GPArotation:GPFobl]{GPArotation:GPFobl}}. If left to
+rotation (see \code{\link[GPArotation:GPFobl]{GPArotation::GPFobl}}. If left to
 \code{NULL} (default), 3 is used for promax and \code{nrow(L)}, where
 L is the matrix of unrotated loadings, is used for simplimax.}
 
@@ -174,8 +174,8 @@ intercorrelations.}
 \item{settings}{list. The settings (arguments) used in the EFA.}
 }
 \description{
-This function does an EFA with either \code{\link{PAF}}, \code{\link{ML}},
-or \code{\link{ULS}} with or without subsequent rotation.
+This function does an EFA with either \code{PAF}, \code{ML},
+or \code{ULS} with or without subsequent rotation.
 All arguments with default value \code{NULL} can be left to default if \code{type}
 is set to one of "EFAtools", "SPSS", or "psych". The respective specifications are
 then handled according to the specified type (see details). For all rotations

@@ -5,7 +5,7 @@
 \alias{dospert_raw}
 \title{dospert_raw}
 \format{
-An object of class \code{tbl_df} (inherits from \code{tbl}, \code{data.frame}) with 3123 rows and 30 columns.
+An object of class \code{data.frame} with 3123 rows and 30 columns.
 }
 \source{
 Blais, A.-R., & Weber, E. U. (2002). A domain-specific risk-taking (DOSPERT) scale for adult populations. Judgment and Decision Making, 15(4), 263–290. doi: 10.1002/bdm.414

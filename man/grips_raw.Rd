@@ -5,7 +5,7 @@
 \alias{grips_raw}
 \title{grips_raw}
 \format{
-An object of class \code{tbl_df} (inherits from \code{tbl}, \code{data.frame}) with 810 rows and 8 columns.
+An object of class \code{data.frame} with 810 rows and 8 columns.
 }
 \source{
 Zhang, D. C., Highhouse, S., & Nye, C. D. (2018). Development and validation of the general risk propensity scale (GRiPS).Journal of Behavioral Decision Making, 32, 152–167. doi: 10.1002/bdm.2102
