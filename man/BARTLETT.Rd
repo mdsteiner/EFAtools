@@ -22,7 +22,7 @@ correlations.}
 \item{N}{numeric. The number of observations. Needs only be specified if a
 correlation matrix is used.}
 
-\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
+\item{use}{character. Passed to \code{\link[stats]{cor}} if raw data
 is given as input. Default is "pairwise.complete.obs".}
 }
 \value{

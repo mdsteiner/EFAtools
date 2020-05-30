@@ -45,7 +45,7 @@
 #' doi: 10.1037/a0025697
 #'
 #' @seealso Other factor retention criteria: \code{\link{EKC}},
-#'  \code{\link{HULL}}, \code{\link{KGC}}, \code{\link{PARALLEL}}, code{\link{SMT}}
+#'  \code{\link{HULL}}, \code{\link{KGC}}, \code{\link{PARALLEL}}, \code{\link{SMT}}
 #'
 #'   \code{\link{N_FACTORS}} as a wrapper function for this and all
 #'   the above-mentioned factor retention criteria.
@@ -55,29 +55,11 @@
 #'
 #' @examples
 #' \dontrun{
+#' # determine n factors of the GRiPS
+#' CD(grips_raw)
 #'
-#' # extract the loadings
-#' L <- population_models$loadings$baseline
-#' n_factors <- ncol(L)
-#'
-#' # extract the intercorrelations
-#' phi <- population_models$phis_3$strong
-#'
-#' # set up vectors with means and sds
-#' mus <- rep(0, nrow(L))
-#' sds <- rep(1, nrow(L))
-#'
-#' # get correlation matrix from loadings and factor intercorrelations
-#' cormat <- L %*% phi %*% t(L)
-#' diag(cormat) <- 1
-#'
-#' # create covariance matrix for multivariate distribution
-#' covmat <- sds %*% t(sds) * cormat
-#' # simulate data
-#' sim_dat <- MASS::mvrnorm(mu = mus, Sigma = covmat)
-#'
-#' # run comparison data
-#' CD(sim_dat, 8)
+#' # determine n factors of the DOSPERT risk subscale
+#' CD(dospert_raw)
 #'}
 CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .30,
                use = c("pairwise.complete.obs", "all.obs", "complete.obs",
@@ -131,7 +113,7 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
 
   while (n_factors <= n_factors_max && isTRUE(sig)) {
 
-    pop <- .gen_data(x, method = cor_method, use, n_factors, N_pop,
+    pop <- .gen_data(x, cor_method = cor_method, use, n_factors, N_pop,
                      max_iter = max_iter)
 
     for (j in 1:N_samples) {
@@ -178,7 +160,7 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
 }
 
 
-.gen_data <- function(x, method, use, n_factors, N, max_trials = 5,
+.gen_data <- function(x, cor_method, use, n_factors, N, max_trials = 5,
                       initial_multiplier = 1, max_iter = 100) {
   # Steps refer to description in the following article:
   # Ruscio, J., & Kaczetow, W. (2008). Simulating multivariate nonnormal data using an iterative algorithm.
