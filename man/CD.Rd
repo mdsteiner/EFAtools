@@ -50,8 +50,13 @@ is "pairwise.complete.obs".}
 \item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor}}.
 Default is "pearson".}
 
-\item{max_iter}{numeric. The maximum number of iterations to perform after which
-the iterative PAF procedure is halted. Default is 50.}
+\item{max_iter}{numeric. The maximum number of iterations to perform after
+ which the iterative PAF procedure is halted. Default is 50.
+
+ @details BLABLA (DETAILS HERE)
+
+ The \code{CD} function can also be called together with other factor retention
+ criteria in the \code{\link[N_FACTORS]{N_FACTORS}} function.}
 }
 \value{
 A list of class CD containing
@@ -92,4 +97,12 @@ sim_dat <- MASS::mvrnorm(mu = mus, Sigma = covmat)
 # run comparison data
 CD(sim_dat, 8)
 }
+}
+\seealso{
+Other factor retention criteria: \code{\link[EKC]{EKC}},
+ \code{\link[HULL]{HULL}}, \code{\link[KGC]{KGC}},
+  \code{\link[PARALLEL]{PARALLEL}}, \code{\link[SMT]{SMT}}
+
+  \code{\link[N_FACTORS]{N_FACTORS}} as a wrapper function for this and all
+  the above-mentioned factor retention criteria.
 }

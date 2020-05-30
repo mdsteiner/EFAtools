@@ -96,14 +96,14 @@
 #' deviations from the implementations according to the specified \code{type}.
 #'
 #' The \code{type} argument is evaluated for PAF and for all rotations (mainly
-#' important for the varimax and promax rotations. The type-specific settings
+#' important for the varimax and promax rotations). The type-specific settings
 #' for these functions are detailed below.
 #'
 #' For PAF, the values of \code{init_comm}, \code{criterion}, \code{criterion_type},
 #' \code{abs_eigen} depend on the \code{type} argument.
 #' \code{type = "EFAtools"} will use the following argument specification:
-#' \code{init_comm = "smc", criterion = 1e-9, criterion_type = "max_individual",
-#' abs_eigen = FALSE}.
+#' \code{init_comm = "mac", criterion = .001, criterion_type = "sums",
+#' abs_eigen = TRUE}.
 #' \code{type = "psych"} will use the following argument specification:
 #' \code{init_comm = "smc", criterion = .001, criterion_type = "sums",
 #' abs_eigen = FALSE}.
@@ -112,8 +112,10 @@
 #' abs_eigen = TRUE}.
 #' If SMC's fail, SPSS takes "mac". However, as SPSS takes absolute eigenvalues,
 #' this is hardly ever the case. Psych, on the other hand, takes "unity" if SMCs
-#' fail.
-#' SAY WHAT EFATOOLS TYPE DOES!
+#' fail. The EFAtools type setting combination was the best in terms of accuracy
+#' and number of Heywood cases compared to all the
+#' other setting combinations tested in simulation studies in Grieder & Steiner
+#' (2020), which is why this type is used as a default here.
 #'
 #' For varimax, the values of \code{precision} and \code{order_type} depend on
 #' the \code{type} argument.
@@ -127,7 +129,7 @@
 #' For promax, the values of \code{P_type}, \code{precision},
 #' \code{order_type}, and \code{k} depend on the \code{type} argument.
 #' \code{type = "EFAtools"} will use the following argument specification:
-#' \code{P_type = "unnorm", precision = 1e-10, order_type = "eigen", k = 3}.
+#' \code{P_type = "unnorm", precision = 1e-5, order_type = "eigen", k = 3}.
 #' \code{type = "psych"} will use the following argument specification:
 #' \code{P_type = "unnorm", precision = 1e-5, order_type = "eigen", k = 4}.
 #' \code{type = "SPSS"} will use the following argument specification:
@@ -141,6 +143,9 @@
 #' "SPSS" uses the normalized varimax rotated loadings. Specifically it used the
 #' following formula, which can be found in the SPSS 23 Algorithms manual:
 #' \code{P <- abs(A / sqrt(rowSums(A^2))) ^(k + 1) * (sqrt(rowSums(A^2)) / A)}
+#' As for PAF, the EFAtools type setting combination for promax was the best
+#' compared to the other setting combinations tested in simulation studies in
+#' Grieder & Steiner (2020).
 #'
 #' For all other rotations except varimax and promax, the \code{type} argument
 #' only controls the \link{order_type} argument with the same values as stated

@@ -26,35 +26,35 @@ PAF <- function(x, n_factors, N = NA, max_iter = NULL,
     # results may not exactly match the specified type
 
     if (is.null(init_comm)) {
-      init_comm <- "smc"
+      init_comm <- "mac"
     } else {
       warning("Type and init_comm is specified. init_comm is used with value '",
               init_comm, "'. Results may differ from the specified type")
     }
 
     if (is.null(criterion)) {
-      criterion <- 1e-9
+      criterion <- 1e-3
     } else {
       warning("Type and criterion is specified. criterion is used with value '",
               criterion, "'. Results may differ from the specified type")
     }
 
     if (is.null(criterion_type)) {
-      criterion_type <- "max_individual"
+      criterion_type <- "sums"
     } else {
       warning("Type and criterion_type is specified. criterion_type is used with value '",
               criterion_type, "'. Results may differ from the specified type")
     }
 
     if (is.null(max_iter)) {
-      max_iter <- 1e5
+      max_iter <- 300
     } else {
       warning("Type and max_iter is specified. max_iter is used with value '",
               max_iter, "'. Results may differ from the specified type")
     }
 
     if (is.null(abs_eigen)) {
-      abs_eigen <- FALSE
+      abs_eigen <- TRUE
     } else {
       warning("Type and abs_eigen is specified. abs_eigen is used with value '",
               abs_eigen, "'. Results may differ from the specified type")

@@ -16,11 +16,12 @@ N_FACTORS(
   N_samples = 500,
   alpha = 0.3,
   cor_method = c("pearson", "spearman", "kendall"),
-  max_iter = 1000,
+  max_iter = 300,
   n_fac_theor = NA,
   method = c("PAF", "ULS", "ML"),
   gof = c("CAF", "CFI", "RMSEA"),
-  eigen_type = c("PCA", "SMC", "EFA"),
+  eigen_type_HULL = c("SMC", "PCA", "EFA"),
+  eigen_type_KGC_PA = c("PCA", "SMC", "EFA"),
   n_factors = 1,
   n_vars = NA,
   n_datasets = 1000,
@@ -39,6 +40,7 @@ N_FACTORS(
 Title
 }
 \examples{
-# All criteria, with fit method "ML"
+# All criteria with correlation matrix and fit method "ML" (where needed)
+# This will throw a warning for CD, as no raw data were specified
 nfac_all <- N_FACTORS(test_models$baseline$cormat, N = 500, method = "ML")
 }

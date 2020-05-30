@@ -24,7 +24,7 @@ VARIMAX <- function (x, type = c("EFAtools", "psych", "SPSS", "none"),
       }
 
       if (is.null(precision)) {
-        precision <- 1e-10
+        precision <- 1e-5
       } else {
         warning("Type and precision is specified. precision is used with value '",
                 precision, "'. Results may differ from the specified type")

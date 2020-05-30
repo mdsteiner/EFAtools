@@ -19,8 +19,13 @@
 #'  is "pairwise.complete.obs".
 #' @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}.
 #' Default is "pearson".
-#' @param max_iter numeric. The maximum number of iterations to perform after which
-#' the iterative PAF procedure is halted. Default is 50.
+#' @param max_iter numeric. The maximum number of iterations to perform after
+#'  which the iterative PAF procedure is halted. Default is 50.
+#'
+#'  @details BLABLA (DETAILS HERE)
+#'
+#'  The \code{CD} function can also be called together with other factor retention
+#'  criteria in the \code{\link[N_FACTORS]{N_FACTORS}} function.
 #'
 #' @return A list of class CD containing
 #'
@@ -39,7 +44,15 @@
 #' factorial structure. Psychological Assessment, 24, 282–292.
 #' doi: 10.1037/a0025697
 #'
+#' @seealso Other factor retention criteria: \code{\link[EKC]{EKC}},
+#'  \code{\link[HULL]{HULL}}, \code{\link[KGC]{KGC}},
+#'   \code{\link[PARALLEL]{PARALLEL}}, \code{\link[SMT]{SMT}}
+#'
+#'   \code{\link[N_FACTORS]{N_FACTORS}} as a wrapper function for this and all
+#'   the above-mentioned factor retention criteria.
+#'
 #' @export
+#'
 #'
 #' @examples
 #' \dontrun{
