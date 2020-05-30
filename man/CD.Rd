@@ -51,12 +51,7 @@ is "pairwise.complete.obs".}
 Default is "pearson".}
 
 \item{max_iter}{numeric. The maximum number of iterations to perform after
- which the iterative PAF procedure is halted. Default is 50.
-
- @details BLABLA (DETAILS HERE)
-
- The \code{CD} function can also be called together with other factor retention
- criteria in the \code{\link[N_FACTORS]{N_FACTORS}} function.}
+which the iterative PAF procedure is halted. Default is 50.}
 }
 \value{
 A list of class CD containing
@@ -70,6 +65,12 @@ A list of class CD containing
 Factor retention method introduced by Ruscio and Roche (2012). The code was
 adapted from the CD code by Auerswald and Mooshagen (2017) available at
 https://osf.io/x5cz2/?view_only=d03efba1fd0f4c849a87db82e6705668
+}
+\details{
+BLABLA (DETAILS HERE)
+
+The \code{CD} function can also be called together with other factor retention
+criteria in the \code{\link[N_FACTORS]{N_FACTORS}} function.
 }
 \examples{
 \dontrun{
@@ -99,7 +100,7 @@ CD(sim_dat, 8)
 }
 }
 \seealso{
-Other factor retention criteria: \code{\link[EKC]{EKC}},
+Other factor retention criteria: \code{\link[EFAtools]{EKC}},
  \code{\link[HULL]{HULL}}, \code{\link[KGC]{KGC}},
   \code{\link[PARALLEL]{PARALLEL}}, \code{\link[SMT]{SMT}}
 

@@ -49,7 +49,7 @@ matrices are left to be 1. If using "EFA", eigenvalues are found on the
 correlation  matrices with the final communalities of an EFA solution as
 diagonal. This is passed to  \code{\link[PARALLEL]{PARALLEL}}.}
 
-\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
+\item{use}{character. Passed to \code{\link[stats]{cor}} if raw data
 is given as input. Default is "pairwise.complete.obs".}
 
 \item{...}{Further arguments passed to \link{EFA} or \link{PARALLEL}.}

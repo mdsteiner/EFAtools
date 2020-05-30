@@ -22,10 +22,10 @@
 #' @param max_iter numeric. The maximum number of iterations to perform after
 #'  which the iterative PAF procedure is halted. Default is 50.
 #'
-#'  @details BLABLA (DETAILS HERE)
+#' @details BLABLA (DETAILS HERE)
 #'
-#'  The \code{CD} function can also be called together with other factor retention
-#'  criteria in the \code{\link[N_FACTORS]{N_FACTORS}} function.
+#' The \code{CD} function can also be called together with other factor retention
+#' criteria in the \code{\link[N_FACTORS]{N_FACTORS}} function.
 #'
 #' @return A list of class CD containing
 #'
@@ -44,7 +44,7 @@
 #' factorial structure. Psychological Assessment, 24, 282–292.
 #' doi: 10.1037/a0025697
 #'
-#' @seealso Other factor retention criteria: \code{\link[EKC]{EKC}},
+#' @seealso Other factor retention criteria: \code{\link[EFAtools]{EKC}},
 #'  \code{\link[HULL]{HULL}}, \code{\link[KGC]{KGC}},
 #'   \code{\link[PARALLEL]{PARALLEL}}, \code{\link[SMT]{SMT}}
 #'
