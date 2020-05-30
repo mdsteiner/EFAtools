@@ -24,21 +24,24 @@
 #'  of the indicators. If using "PCA", the diagonal values of the correlation
 #'  matrices are left to be 1. If using "EFA", eigenvalues are found on the
 #'  correlation  matrices with the final communalities of an EFA solution as
-#'  diagonal. This is passed to  \code{\link[PARALLEL]{PARALLEL}}.
-#' @param use character. Passed to \code{\link[stats]{cor}} if raw data
+#'  diagonal. This is passed to  \code{\link{PARALLEL}}.
+#' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
 #' is given as input. Default is "pairwise.complete.obs".
 #' @param ... Further arguments passed to \link{EFA} or \link{PARALLEL}.
 #'
 #' @details The \link{PARALLEL} function and the principal axis factoring of the
 #'   different number of factors can be parallelized using the future framework,
-#'   by calling the \link{future}{plan} function. The examples provide example code
-#'   on how to enable parallel processing.
+#'   by calling the \link[future:plan]{future::plan} function. The examples
+#'    provide example code on how to enable parallel processing.
 #'
 #'   Note that if \code{gof = "RMSEA"} is used, 1 - RMSEA is actually used to
 #'   compare the different solutions. Thus, the threshold of .05 is now .95.
 #'
-#'   The ML estimation method uses the \link{stats}{factanal} starting values. See
-#'   also the \link{ML} documentation.
+#'   The ML estimation method uses the \link[stats:factanal]{stats::factanal}
+#'    starting values. See also the \link{EFA} documentation.
+#'
+#'    The \code{HULL} function can also be called together with other factor
+#'    retention criteria in the \code{\link{N_FACTORS}} function.
 #'
 #' @return A list of class HULL containing the following objects
 #' \item{n_fac_CAF}{The number of factors to retain according to the Hull method
@@ -55,6 +58,12 @@
 #' @source Lorenzo-Seva, U., Timmerman, M. E., & Kiers, H. A. (2011).
 #' The Hull method for selecting the number of common factors. Multivariate
 #' behavioral research, 46(2), 340-364.
+#'
+#' @seealso Other factor retention criteria: \code{\link{CD}}, \code{\link{EKC}},
+#' \code{\link{KGC}}, \code{\link{PARALLEL}}, \code{\link{SMT}}
+#'
+#' \code{\link{N_FACTORS}} as a wrapper function for this and all the
+#' above-mentioned factor retention criteria.
 #'
 #' @export
 #'

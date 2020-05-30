@@ -3,16 +3,16 @@
 #' This function finds omega total, omega hierarchical, and omega subscale
 #' from a Schmid-Leiman (SL) solution or lavaan single factor or bifactor
 #' solution. The SL-based omegas can either be found from a
-#' \code{\link[psych:schmid]{psych::schmid}}, \code{\link{EFAtools::SL}}, or,
-#' \code{\link{lavaan}} output, or, in a more flexible way, by leaving
+#' \code{\link[psych:schmid]{psych::schmid}}, \code{\link{SL}}, or,
+#' \code{lavaan} output, or, in a more flexible way, by leaving
 #' \code{model = NULL} and specifying additional arguments. By setting the
 #' \code{type} argument, results from \code{\link[psych:omega]{psych::omega}}
 #' can be reproduced.
 #'
 #' @param model class \code{\link{SL}}, class \code{\link{schmid}}, or class
-#' \code{\link{lavaan}} object. That is, an output object from \code{\link{SL}},
-#' from \code{\link[psych:schmid]{psych::schmid}}, or from a \code{\link{lavaan}}
-#' single factor or bifactor solution. If of class \code{\link{lavaan}},
+#' \code{lavaan} object. That is, an output object from \code{\link{SL}},
+#' from \code{\link[psych:schmid]{psych::schmid}}, or from a \code{lavaan}
+#' single factor or bifactor solution. If of class \code{lavaan},
 #' only \code{g_name} needs to be specified additionally. If of class
 #' \code{\link{SL}} or \code{\link{schmid}}, only the arguments \code{factor_corres}
 #' and \code{cormat} need to be specified additionally.
@@ -20,9 +20,9 @@
 #' (see details)
 #' @param g_name character. The name of the general factor from the lavaan bifactor
 #' solution. This needs only be specified if \code{model} is a
-#' \code{\link{lavaan}} bifactor solution. Default is "g".
+#' \code{lavaan} bifactor solution. Default is "g".
 #' @param group_names character. An optional vector of group names. The length
-#' must correspond to the number of groups for which the \link{lavaan} model
+#' must correspond to the number of groups for which the \code{lavaan} model
 #' was fitted.
 #' @param factor_corres numeric. A vector that indicates which variable corresponds
 #' to which group factor. Must be in the same order as the SL solution. For example
@@ -67,18 +67,18 @@
 #' squared sums of general factor loadings and group factor loadings and
 #' the sum of uniquenesses (see details).
 #'
-#' @details If \code{model} is a \code{\link{lavaan}} bifactor model, only the name
+#' @details If \code{model} is a \code{lavaan} bifactor model, only the name
 #' of the general factor from the lavaan model needs to be specified additionally
 #' with the \code{g_name} argument. There is also the possibility to enter a
-#' \code{\link{lavaan}} single factor model. In this case, \code{g_name} is not
-#' needed. Finally, if a solution from a \code{\link{lavaan}} multiple group
+#' \code{lavaan} single factor model. In this case, \code{g_name} is not
+#' needed. Finally, if a solution from a \code{lavaan} multiple group
 #' analysis is entered, the omegas are computed for each group. The type argument
-#' is not evaluated if \code{model} is of classe \code{\link{lavaan}}.
+#' is not evaluated if \code{model} is of classe \code{lavaan}.
 #'
-#' If \code{model} is of class \code{\link{SL}} or \code{\link{schmid}} only the
+#' If \code{model} is of class \code{\link{SL}} or \code{\link[psych:schmid]{psych::schmid}} only the
 #' \code{type} and, depending on the type (see below), the \code{factor_corres}
 #' arguments need to be specified additionally. If model is of class
-#' \code{\link{schmid}} and \code{variance = "correlation"} (default), it is
+#' \code{\link[psych:schmid]{psych::schmid}} and \code{variance = "correlation"} (default), it is
 #' recommended to also provide the original correlation matrix in \code{cormat}
 #' to get more accurate results. Otherwise, the correlation matrix will be found
 #' based on the pattern matrix and Phi from the

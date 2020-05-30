@@ -19,7 +19,7 @@
 #'  data is given as input. Default is "pairwise.complete.obs".
 #' @param n_factors numeric. Number of factors to extract if "EFA" is included in
 #' \code{eigen_type}. Default is 1.
-#' @param ... Additional arguments passed to \code{\link[EFA]{EFA}}. For example,
+#' @param ... Additional arguments passed to \code{\link{EFA}}. For example,
 #' to change the extraction method (PAF is default).
 #'
 #' @details Originally, the Kaiser-Guttman criterion was intended for the use
@@ -37,9 +37,12 @@
 #' of the KGC is more accurate in some cases compared to the traditional KGC, it
 #' is at the same time less accurate than the PCA-variant in other cases, and it
 #' is still often less accurate than other factor retention methods, for
-#' example parallel analysis (\link{\code{PARALLEL}}), the Hull method
-#' \link{\code{HULL}}, or sequential \eqn{chi^2} model tests (\link{\code{SMT}};
+#' example parallel analysis (\code{\link{PARALLEL}}), the Hull method
+#' \code{\link{HULL}}, or sequential \eqn{chi^2} model tests (\code{\link{SMT}};
 #' see Auerswald & Moshagen, 2019).
+#'
+#' The \code{KGC} function can also be called together with other factor
+#' retention criteria in the \code{\link{N_FACTORS}} function.
 #'
 #' @return A list of class KGC containing
 #'
@@ -68,6 +71,12 @@
 #' @source Zwick, W. R., & Velicer, W. F. (1986). Comparison of five rules for
 #' determining the number of components to retain. Psychological Bulletin, 99,
 #' 432–442. http://dx.doi.org/10.1037/0033-2909.99.3.432
+#'
+#' @seealso Other factor retention criteria: \code{\link{CD}}, \code{\link{EKC}},
+#' \code{\link{HULL}}, \code{\link{PARALLEL}}, \code{\link{SMT}}
+#'
+#' \code{\link{N_FACTORS}} as a wrapper function for this and all the
+#' above-mentioned factor retention criteria.
 #'
 #' @export
 #'

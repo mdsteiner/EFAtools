@@ -50,6 +50,9 @@
 #' number of factors as well, while the AIC performed well at determining the
 #' most generalizable model (Preacher, Zhang, Kim, & Mels, 2013).
 #'
+#' The \code{SMT} function can also be called together with other factor
+#' retention criteria in the \code{\link{N_FACTORS}} function.
+#'
 #' @return A list of class SMT containing
 #' \item{nfac_chi}{The number of factors to retain according to the chi square.}
 #' \item{nfac_RMSEA}{The number of factors to retain according to the RMSEA lower
@@ -76,6 +79,12 @@
 #' @source Steiger, J. H., & Lind, J. C. (1980, May). Statistically based tests
 #' for the number of common factors. Paper presented at the annual meeting of
 #' the Psychometric Society, Iowa City, IA.
+#'
+#' @seealso Other factor retention criteria: \code{\link{CD}}, \code{\link{EKC}},
+#' \code{\link{HULL}}, \code{\link{KGC}}, \code{\link{PARALLEL}}
+#'
+#' \code{\link{N_FACTORS}} as a wrapper function for this and all the
+#' above-mentioned factor retention criteria.
 #'
 #' @export
 #'
