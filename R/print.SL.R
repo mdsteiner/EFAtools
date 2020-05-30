@@ -1,6 +1,6 @@
 #' Print SL object
 #'
-#' Print Method showing a summarized output of the SL procedure.
+#' Print Method showing a summarized output of the \link{SL} function.
 #'
 #' @param x list. An object of class SL to be printed
 #' @param ...  Further arguments for print.

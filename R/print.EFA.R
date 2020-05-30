@@ -1,6 +1,6 @@
 #' Print EFA object
 #'
-#' Print Method showing a summarized output of the EFA procedure.
+#' Print Method showing a summarized output of the \link{EFA} function
 #'
 #' @param x list. An object of class EFA to be printed
 #' @param ...  Further arguments for print.

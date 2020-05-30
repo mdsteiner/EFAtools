@@ -9,8 +9,8 @@
 #' intercorrelations. Other arguments from \code{\link{EFA}} can be used to control
 #' the procedure to find the second order loadings more flexibly.
 #'
-#' @param x object of class \code{\link{EFA}} or class \code{\link{fa}} or
-#' matrix. If class \code{\link{EFA}} or class \code{\link{fa}},
+#' @param x object of class \code{\link{EFA}} or class \code{\link[psych:fa]{psych::fa}} or
+#' matrix. If class \code{\link{EFA}} or class \code{\link[psych:fa]{psych::fa}},
 #' pattern coefficients and factor intercorrelations are taken from this object.
 #' x can also be a pattern matrix from an oblique factor solution (see \code{Phi}).
 #' @param Phi matrix. A matrix of factor intercorrelations from an oblique factor

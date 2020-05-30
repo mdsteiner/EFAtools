@@ -31,13 +31,15 @@
 #'  moderate to high and the number of variables per factor is small, which is
 #'  characteristic of many applications these days" p.463-464.
 #'
+#'  The \code{EKC} function can also be called together with other factor
+#'   retention criteria in the \code{\link{N_FACTORS}} function.
+#'
 #' @return A list of class EKC containing
 #'
 #' \item{eigenvalues}{A vector containing the eigenvalues.}
 #' \item{n_factors}{The number of factors to retain according to the empirical Kaiser criterion.}
 #' \item{references}{The reference eigenvalues.}
 #' \item{settings}{A list with the settings (\code{N} and \code{use}) used.}
-#'
 #'
 #' @source Auerswald, M., & Moshagen, M. (2019). How to determine the number of
 #' factors to retain in exploratory factor analysis: A comparison of extraction
@@ -51,6 +53,12 @@
 #' determining the number of components to retain. Psychological Bulletin, 99,
 #' 432–442. http://dx.doi.org/10.1037/0033-2909.99.3.432
 #'
+#' @seealso Other factor retention criteria: \code{\link{CD}},
+#'  \code{\link{HULL}}, \code{\link{KGC}}, \code{\link{PARALLEL}},
+#'  \code{\link{SMT}}
+#'
+#'   \code{\link{N_FACTORS}} as a wrapper function for this and all
+#'   the above-mentioned factor retention criteria.
 #' @export
 #'
 #' @example

@@ -1,11 +1,11 @@
 #' Function to perform exploratory factor analyses (EFA)
 #'
-#' This is a function does an EFA with either \code{\link{PAF}}, \code{\link{ML}},
+#' This function does an EFA with either \code{\link{PAF}}, \code{\link{ML}},
 #' or \code{\link{ULS}} with or without subsequent rotation.
 #' All arguments with default value \code{NULL} can be left to default if \code{type}
 #' is set to one of "EFAtools", "SPSS", or "psych". The respective specifications are
 #' then handled according to the specified type (see details). For all rotations
-#' except varimax and promax, the \code{\link{GPArotation}} package is needed.
+#' except varimax and promax, the \code{GPArotation} package is needed.
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
 #' correlations. If raw data is entered, the correlation matrix is found from the
@@ -50,7 +50,7 @@
 #' specified criterion. This is also used by SPSS. "sums" takes the difference of
 #' the sum of all communalities in one iteration and the sum of all communalities
 #' in the next iteration and tests this against the criterion. This procedure is
-#' used by the \code{\link[psych:fa]{psych::fa}} function. Default is \code{NULL}.
+#' used by the \code{\link[psych::fa]{psych::fa}} function. Default is \code{NULL}.
 #' @param abs_eigen logical. Which algorithm to use in the PAF
 #' iterations. If FALSE, the loadings are computed from the eigenvalues. This is
 #' also used by the \code{\link[psych:fa]{psych::fa}} function. If TRUE the
@@ -82,10 +82,9 @@
 #' sum of squared factor loadings per factor. Default is \code{NULL}.
 #' @param start_method character. How to specify the starting values for the
 #' optimization prodedure for ML. Default is "factanal" which takes the starting
-#' values specified in the \link{stats}{factanal} function. "psych" takes the
-#' starting values specified in \link{psych}{fa}. Solutions are very similar.
-#' @param ... Additional arguments passed to rotation functions from GPArotation
-#' package (e.g., \code{maxit} for maximum number of iterations).
+#' values specified in the \link[stats:factanal]{stats::factanal} function. "psych" takes the
+#' starting values specified in \link[psych:fa]{psych::fa}. Solutions are very similar.
+#' @param ... Additional arguments passed to rotation functions from the \code{GPArotation} package (e.g., \code{maxit} for maximum number of iterations).
 #'
 #' @details There are two main ways to use this function. The easiest way is to
 #' use it with a specified \code{type} (see above), which sets most of the other
@@ -148,9 +147,9 @@
 #' Grieder & Steiner (2020).
 #'
 #' For all other rotations except varimax and promax, the \code{type} argument
-#' only controls the \link{order_type} argument with the same values as stated
+#' only controls the \code{order_type} argument with the same values as stated
 #' above for the varimax and promax rotations. For these other rotations, the
-#' \link{GPArotation} package is needed. Additional arguments can also be
+#' \code{GPArotation} package is needed. Additional arguments can also be
 #' specified and will be passed to the GPArotation function (e.g., maxit to
 #' change the maximum number of iterations for the rotation procedure).
 #'
@@ -158,7 +157,7 @@
 #' arguments are needed. For ML, an additional argument
 #' \code{start_method} is needed to determine the starting values for the
 #' optimization prodedure. Default for this argument is "factanal" which takes
-#' the starting values specified in the \link{stats}{factanal} function.
+#' the starting values specified in the \link[stats:factanal]{stats::factanal} function.
 #'
 #'
 #' @return A list of class EFA containing (a subset of) the following:
