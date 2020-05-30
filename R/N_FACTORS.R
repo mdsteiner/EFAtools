@@ -1,4 +1,6 @@
-#' Title
+#' Various Factor Retention Methods
+#'
+#' DESCRIBE HERe
 #'
 #' @param x
 #' @param criteria
@@ -28,12 +30,13 @@
 # - ok if same eigen_type is used for PARALELL and KGC?
 # arguments set for parallel are also used in HULL parallel (because passed to
 # PARALLEL there), problem?
+# For each argument, say in which function it is used.
 #' @return
 #'
 #' @export
 #'
 #' @examples
-#' # All criteria with correlation matrix and fit method "ML" (where needed)
+#' # All criteria, with correlation matrix and fit method "ML" (where needed)
 #' # This will throw a warning for CD, as no raw data were specified
 #' nfac_all <- N_FACTORS(test_models$baseline$cormat, N = 500, method = "ML")
 #'
