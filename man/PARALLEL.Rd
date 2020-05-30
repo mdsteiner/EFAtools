@@ -127,9 +127,11 @@ pa_paf <- PARALLEL(test_models$case_11b$cormat, N = 500)
 # this will be faster than the above with PAF)
 pa_ml <- PARALLEL(test_models$case_11b$cormat, N = 500, method = "ML")
 
+\dontrun{
 # for parallel computation
 future::plan(future::multisession)
 pa_faster <- PARALLEL(test_models$case_11b$cormat, N = 500)
+}
 }
 \seealso{
 Other factor retention criteria: \code{\link{CD}}, \code{\link{EKC}},

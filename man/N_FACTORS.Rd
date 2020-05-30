@@ -39,8 +39,13 @@ N_FACTORS(
 \description{
 Title
 }
+\details{
+# - say what only works with raw data (CD, PARALLEL if resampling is implemented)
+}
 \examples{
 # All criteria with correlation matrix and fit method "ML" (where needed)
 # This will throw a warning for CD, as no raw data were specified
 nfac_all <- N_FACTORS(test_models$baseline$cormat, N = 500, method = "ML")
+
+# MORE EXAMPLES
 }

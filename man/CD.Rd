@@ -44,10 +44,10 @@ Default is 500.}
 \item{alpha}{numeric. The alpha level used to test the significance of the
 improvement added by an additional factor. Default is .30.}
 
-\item{use}{character. Passed to \code{\link[stats]{cor}}. Default
+\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}}. Default
 is "pairwise.complete.obs".}
 
-\item{cor_method}{character. Passed to \code{\link[stats]{cor}}.
+\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor}}.
 Default is "pearson".}
 
 \item{max_iter}{numeric. The maximum number of iterations to perform after
@@ -67,14 +67,30 @@ adapted from the CD code by Auerswald and Mooshagen (2017) available at
 https://osf.io/x5cz2/?view_only=d03efba1fd0f4c849a87db82e6705668
 }
 \details{
-BLABLA (DETAILS HERE)
+"Parallel analysis (PA) is an effective stopping rule that compares
+the eigenvalues of randomly generated data with those for the actual data.
+PA takes into account sampling error, and at present it is widely considered
+the best available method. We introduce a variant of PA that goes even further
+by reproducing the observed correlation matrix rather than generating random
+data. Comparison data (CD) with known factorial structure are first generated
+using 1 factor, and then the number of factors is increased until the
+reproduction of the observed eigenvalues fails to improve significantly"
+(Ruscio & Roche, 2012, p. 282).
+
+The CD implementation here is based on the code by Ruscio and Roche (2012), but
+is slightly adapted to increase speed by performing the principal axis factoring
+using a C++ based function.
 
 The \code{CD} function can also be called together with other factor retention
 criteria in the \code{\link{N_FACTORS}} function.
 }
 \examples{
 \dontrun{
-CD(grips_raw, 4)
+# determine n factors of the GRiPS
+CD(grips_raw)
+
+# determine n factors of the DOSPERT risk subscale
+CD(dospert_raw)
 }
 }
 \seealso{
