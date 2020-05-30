@@ -44,10 +44,10 @@ Default is 500.}
 \item{alpha}{numeric. The alpha level used to test the significance of the
 improvement added by an additional factor. Default is .30.}
 
-\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}}. Default
+\item{use}{character. Passed to \code{\link[stats]{cor}}. Default
 is "pairwise.complete.obs".}
 
-\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor}}.
+\item{cor_method}{character. Passed to \code{\link[stats]{cor}}.
 Default is "pearson".}
 
 \item{max_iter}{numeric. The maximum number of iterations to perform after
@@ -70,40 +70,17 @@ https://osf.io/x5cz2/?view_only=d03efba1fd0f4c849a87db82e6705668
 BLABLA (DETAILS HERE)
 
 The \code{CD} function can also be called together with other factor retention
-criteria in the \code{\link[N_FACTORS]{N_FACTORS}} function.
+criteria in the \code{\link{N_FACTORS}} function.
 }
 \examples{
 \dontrun{
-
-# extract the loadings
-L <- population_models$loadings$baseline
-n_factors <- ncol(L)
-
-# extract the intercorrelations
-phi <- population_models$phis_3$strong
-
-# set up vectors with means and sds
-mus <- rep(0, nrow(L))
-sds <- rep(1, nrow(L))
-
-# get correlation matrix from loadings and factor intercorrelations
-cormat <- L \%*\% phi \%*\% t(L)
-diag(cormat) <- 1
-
-# create covariance matrix for multivariate distribution
-covmat <- sds \%*\% t(sds) * cormat
-# simulate data
-sim_dat <- MASS::mvrnorm(mu = mus, Sigma = covmat)
-
-# run comparison data
-CD(sim_dat, 8)
+CD(grips_raw, 4)
 }
 }
 \seealso{
-Other factor retention criteria: \code{\link[EFAtools]{EKC}},
- \code{\link{HULL}}, \code{\link[KGC]{KGC}},
-  \code{\link[PARALLEL]{PARALLEL}}, \code{\link[SMT]{SMT}}
+Other factor retention criteria: \code{\link{EKC}},
+ \code{\link{HULL}}, \code{\link{KGC}}, \code{\link{PARALLEL}}, \code{\link{SMT}}
 
-  \code{\link[N_FACTORS]{N_FACTORS}} as a wrapper function for this and all
+  \code{\link{N_FACTORS}} as a wrapper function for this and all
   the above-mentioned factor retention criteria.
 }
