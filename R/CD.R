@@ -15,9 +15,9 @@
 #'  Default is 500.
 #' @param alpha numeric. The alpha level used to test the significance of the
 #'  improvement added by an additional factor. Default is .30.
-#' @param use character. Passed to \code{\link[stats:cor]{stats::cor}}. Default
+#' @param use character. Passed to \code{\link[stats]{cor}}. Default
 #'  is "pairwise.complete.obs".
-#' @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}.
+#' @param cor_method character. Passed to \code{\link[stats]{cor}}.
 #' Default is "pearson".
 #' @param max_iter numeric. The maximum number of iterations to perform after
 #'  which the iterative PAF procedure is halted. Default is 50.
@@ -25,7 +25,7 @@
 #' @details BLABLA (DETAILS HERE)
 #'
 #' The \code{CD} function can also be called together with other factor retention
-#' criteria in the \code{\link[N_FACTORS]{N_FACTORS}} function.
+#' criteria in the \code{\link{N_FACTORS}} function.
 #'
 #' @return A list of class CD containing
 #'
@@ -44,11 +44,10 @@
 #' factorial structure. Psychological Assessment, 24, 282–292.
 #' doi: 10.1037/a0025697
 #'
-#' @seealso Other factor retention criteria: \code{\link[EFAtools]{EKC}},
-#'  \code{\link{HULL}}, \code{\link[KGC]{KGC}},
-#'   \code{\link[PARALLEL]{PARALLEL}}, \code{\link[SMT]{SMT}}
+#' @seealso Other factor retention criteria: \code{\link{EKC}},
+#'  \code{\link{HULL}}, \code{\link{KGC}}, \code{\link{PARALLEL}}, code{\link{SMT}}
 #'
-#'   \code{\link[N_FACTORS]{N_FACTORS}} as a wrapper function for this and all
+#'   \code{\link{N_FACTORS}} as a wrapper function for this and all
 #'   the above-mentioned factor retention criteria.
 #'
 #' @export

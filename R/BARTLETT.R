@@ -9,7 +9,7 @@
 #' correlations.
 #' @param N numeric. The number of observations. Needs only be specified if a
 #' correlation matrix is used.
-#' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
+#' @param use character. Passed to \code{\link[stats]{cor}} if raw data
 #' is given as input. Default is "pairwise.complete.obs".
 #'
 #' @details Bartlett (1951) proposed this statistic to determine a correlation
@@ -22,12 +22,10 @@
 #' the sample size, and \eqn{p} is the number of variables.
 #'
 #' This tests requires multivariate normality. If this condition is not met,
-#' the Kaiser-Meyer-Olkin criterion (\code{\link[EFAtools:KMO]{EFAtools:KMO}}))
+#' the Kaiser-Meyer-Olkin criterion (\code{\link[EFAtools]{KMO}}))
 #' can still be used.
 #'
-#' This function was heavily influenced by the
-#' \code{\link[psych:cortest.bartlett]{cortest.bartlett}} function
-#' from the psych package.
+#' This function was heavily influenced by the \code{\link[psych]{cortest.bartlett}} function from the psych package.
 #'
 #' @return A list containing
 #' \item{chisq}{The chi square statistic.}
