@@ -1,8 +1,8 @@
 #' Plot HULL object
 #'
-#' Plot method showing a summarized output of the \link{HULL} function
+#' Plot method showing a summarized output of the \code{\link{HULL}} function
 #'
-#' @param x list of class HULL. An output from the \link{HULL} function.
+#' @param x list of class HULL. An output from the \code{\link{HULL}} function.
 #' @param ... not used.
 #'
 #' @export

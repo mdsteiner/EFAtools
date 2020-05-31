@@ -7,12 +7,12 @@
 \method{plot}{HULL}(x, ...)
 }
 \arguments{
-\item{x}{list of class HULL. An output from the \link{HULL} function.}
+\item{x}{list of class HULL. An output from the \code{\link{HULL}} function.}
 
 \item{...}{not used.}
 }
 \description{
-Plot method showing a summarized output of the \link{HULL} function
+Plot method showing a summarized output of the \code{\link{HULL}} function
 }
 \examples{
 x <- HULL(test_models$baseline$cormat, N = 500, method = "ML")
