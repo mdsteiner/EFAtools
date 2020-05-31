@@ -16,27 +16,33 @@ print.KMO <- function(x, ...) {
   KMO <- x$KMO
 
   cat("\n")
-  cat("Kaiser-Meyer-Olkin criterion (KMO)")
+  cat(cli::rule(left = "Kaiser-Meyer-Olkin criterion (KMO)", col = "blue"))
   cat("\n")
 
   if(!is.na(KMO) && !is.null(KMO)){
 
     if(KMO >= .9){
-      label = crayon::green$bold("marvellous")
+      symb <- crayon::green$bold(cli::symbol$tick)
+      label <- crayon::green$bold("marvellous")
     } else if(KMO >= .8){
-      label = crayon::green$bold("meritorious")
+      symb <- crayon::green$bold(cli::symbol$tick)
+      label <- crayon::green$bold("meritorious")
     } else if(KMO >= .7){
-      label = crayon::green$bold("middling")
+      symb <- crayon::green$bold(cli::symbol$tick)
+      label <- crayon::green$bold("middling")
     } else if(KMO >= .6){
-      label = crayon::yellow$bold("mediocre")
+      symb <- crayon::yellow$bold("!")
+      label <- crayon::yellow$bold("mediocre")
     } else if (KMO >= .5){
-      label = crayon::red$bold("miserable")
+      symb <- crayon::red$bold(cli::symbol$cross)
+      label <- crayon::red$bold("miserable")
     } else {
-      label = crayon::red$bold("unacceptable")
+      symb <- crayon::red$bold(cli::symbol$cross)
+      label <- crayon::red$bold("unacceptable")
     }
 
     cat("\n")
-    cat("The overall KMO value for your data is ", label, ".", sep = "")
+    cat(symb, " The overall KMO value for your data is ", label, ".", sep = "")
     cat("\n")
 
     if(KMO < .5){
@@ -56,11 +62,11 @@ print.KMO <- function(x, ...) {
   }
 
   cat("\n")
-  cat("Overall:", crayon::bold(round(KMO, 3)))
+  cat(crayon::blue("Overall:"), crayon::bold(round(KMO, 3)))
   cat("\n")
   cat("\n")
 
-  cat("For each variable:")
+  cat(crayon::blue("For each variable:"))
   cat("\n")
   print(round(x$KMO_i, 3))
 

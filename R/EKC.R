@@ -88,8 +88,7 @@ EKC <- function(x, N = NA,
 
     if(any(is.na(x))){
 
-      stop("The correlation matrix you entered contains missing values. Factor
-           analysis is not possible.")
+      stop("The correlation matrix you entered contains missing values. Factor analysis is not possible.")
 
     }
 
@@ -103,7 +102,7 @@ EKC <- function(x, N = NA,
 
   } else {
 
-    message("x was not a correlation matrix. Correlations and N are found from entered raw data.")
+    cli::cli_alert_info("x was not a correlation matrix. Correlations and N are found from entered raw data.")
 
     R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)

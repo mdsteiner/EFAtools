@@ -30,22 +30,26 @@ print.HULL <- function(x, ...) {
   }
 
   cat("\n")
-  cat("Number of factors suggested by the Hull method:")
+  cat(cli::rule(left = "Number of factors suggested by the Hull method",
+                col = "blue"))
   cat("\n")
 
   if("CAF" %in% gof){
     cat("\n")
-    cat("With", crayon::bold("CAF:   "), crayon::bold(x$n_fac_CAF))
+    cat(crayon::blue(cli::symbol$circle_dotted, "With", crayon::bold("CAF:   ")),
+        crayon::bold(x$n_fac_CAF))
     cat("\n")
   }
 
   if("CFI" %in% gof){
-    cat("With", crayon::bold("CFI:   "), crayon::bold(x$n_fac_CFI))
+    cat(crayon::blue(cli::symbol$circle_dotted, "With", crayon::bold("CFI:   ")),
+        crayon::bold(x$n_fac_CFI))
     cat("\n")
   }
 
   if("RMSEA" %in% gof){
-    cat("With", crayon::bold("RMSEA: "), crayon::bold(x$n_fac_RMSEA))
+    cat(crayon::blue(cli::symbol$circle_dotted, "With", crayon::bold("RMSEA: ")),
+        crayon::bold(x$n_fac_RMSEA))
     cat("\n")
   }
 

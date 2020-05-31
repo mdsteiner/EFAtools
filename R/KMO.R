@@ -66,8 +66,7 @@ KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
   # Perform argument checks
   if(!inherits(x, c("matrix", "data.frame"))){
 
-    stop("x is neither a matrix nor a dataframe. Either provide a correlation
-    matrix or a dataframe or matrix with raw data.")
+    stop("x is neither a matrix nor a dataframe. Either provide a correlation     matrix or a dataframe or matrix with raw data.")
 
   }
 
@@ -79,8 +78,7 @@ KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
 
     if(any(is.na(x))){
 
-      stop("The correlation matrix you entered contains missing values. KMO
-           cannot be computed.")
+      stop("The correlation matrix you entered contains missing values. KMO cannot be computed.")
 
     }
 
@@ -88,8 +86,7 @@ KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
 
   } else {
 
-    message("x was not a correlation matrix. Correlations are found from entered
-            raw data.")
+    cli::cli_alert_info("x was not a correlation matrix. Correlations are found from entered raw data.")
 
     R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)

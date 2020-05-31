@@ -23,30 +23,33 @@ print.KGC <- function(x, ...) {
   cat("\n")
   cat("\n")
 
-  cat("Kaiser-Guttmann criterion suggests:")
+  cat(cli::rule("Number of factors suggested by Kaiser-Guttmann criterion",
+                col = "blue"))
   cat("\n")
   cat("\n")
 
   if("PCA" %in% eigen_type){
 
-    cat("   ", crayon::bold(nfac_PCA), " factor", ifelse(nfac_PCA > 1, "s", ""),
-      " with PCA-determined eigenvalues", sep = "")
+    cat(crayon::blue(cli::symbol$circle_dotted, "With PCA-determined eigenvalues: "),
+                     crayon::bold(nfac_PCA))
     cat("\n")
 
   }
 
   if("SMC" %in% eigen_type){
 
-    cat("   ", crayon::bold(nfac_SMC), " factor", ifelse(nfac_SMC > 1, "s", ""),
-        " with SMC-determined eigenvalues", sep = "")
+    cat(crayon::blue(cli::symbol$circle_dotted,
+                     "With SMC-determined eigenvalues: "),
+        crayon::bold(nfac_SMC))
     cat("\n")
 
   }
 
   if("EFA" %in% eigen_type){
 
-    cat("   ", crayon::bold(nfac_EFA), " factor", ifelse(nfac_EFA > 1, "s", ""),
-        " with EFA-determined eigenvalues", sep = "")
+    cat(crayon::blue(cli::symbol$circle_dotted,
+                     "With EFA-determined eigenvalues: "),
+        crayon::bold(nfac_EFA))
     cat("\n")
 
   }
