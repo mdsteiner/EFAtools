@@ -87,10 +87,10 @@ criteria in the \code{\link{N_FACTORS}} function.
 \examples{
 \dontrun{
 # determine n factors of the GRiPS
-CD(grips_raw)
+CD(GRiPS_raw)
 
 # determine n factors of the DOSPERT risk subscale
-CD(dospert_raw)
+CD(DOSPERT_raw)
 }
 }
 \seealso{

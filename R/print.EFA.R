@@ -74,24 +74,17 @@ print.EFA <- function(x, ...) {
 
   if(method == "PAF"){
 
-    fitind <- matrix(c(x$fit_indices$CAF, x$fit_indices$df), nrow = 1)
-    rownames(fitind) <- ""
-    colnames(fitind) <- c("CAF", "df")
-
   cat("\n")
   cat(cli::rule(left = crayon::bold("Model Fit"), col = "blue"))
   cat("\n")
   cat("\n")
-  cat(.get_compare_matrix(fitind, r_red = Inf, n_char = 17, gof = TRUE))
+  cat(crayon::blue("CAF:"),
+      .numformat(x$fit_indices$CAF), "\n", sep = "")
+  cat(crayon::blue("df: "),
+      .numformat(x$fit_indices$df, 0, print_zero = TRUE), "\n", sep = "")
+
 
   } else {
-
-    fitind <- matrix(c(x$fit_indices$chi, x$fit_indices$df, x$fit_indices$CFI,
-                       x$fit_indices$RMSEA, x$fit_indices$RMSEA_LB,
-                       x$fit_indices$RMSEA_UB, x$fit_indices$AIC,
-                       x$fit_indices$BIC, x$fit_indices$CAF), nrow = 1)
-    colnames(fitind) <- c("\U1D712\U00B2", "df", "CFI", "RMSEA", "lower",
-                          "upper", "AIC", "BIC", "CAF")
 
     cat("\n")
     cat(crayon::blue$bold("Model Fit:"))
@@ -102,6 +95,3 @@ print.EFA <- function(x, ...) {
   }
 
 }
-
-
-
