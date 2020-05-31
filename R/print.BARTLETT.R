@@ -19,33 +19,35 @@ print.BARTLETT <- function(x, ...) {
   if(pval < .05){
 
     cat("\n")
-    cat("The", crayon::bold("Bartletts test of sphericity"), "was",
+    cat(crayon::green$bold(cli::symbol$tick), "The",
+        crayon::bold("Bartlett's test of sphericity"), "was",
         crayon::green$bold("significant"),
     "at an alpha level of .05.")
     cat("\n")
-    cat("These data are probably suitable for factor analysis.")
+    cat(crayon::bold(" "), "These data are probably suitable for factor analysis.")
 
   } else {
 
     cat("\n")
-    cat("The Bartletts test of sphericity was", crayon::red$bold("not significant"),
+    cat(crayon::red$bold(cli::symbol$cross),
+        "The Bartlett's test of sphericity was", crayon::red$bold("not significant"),
     "at an alpha level of .05.")
     cat("\n")
-    cat("These data are probably not suitable for factor analysis.")
+    cat(crayon::bold(" "), "These data are probably not suitable for factor analysis.")
 
   }
 
 } else {
 
     cat("\n")
-    cat("The Bartletts test of sphericity did not render a result.")
+    cat(crayon::yellow(crayon::bold("!"), "The Bartlett's test of sphericity did not render a result."))
     cat("\n")
 
 }
 
   cat("\n")
   cat("\n")
-  cat("\U1D712\U00B2(", x$df, ") = ", round(x$chisq, 2), ", ", crayon::italic("p"),
+  cat(crayon::bold("  "), "\U1D712\U00B2(", x$df, ") = ", round(x$chisq, 2), ", ", crayon::italic("p"),
       " = ", round(pval, 4), sep = "")
   cat("\n")
 

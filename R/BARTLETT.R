@@ -1,7 +1,7 @@
 #' Bartlett's test of spericity
 #'
 #' This function tests whether a correlation matrix is significantly different
-#' from an identity matrix (Bartlett, 1951). If the Bartletts test is not
+#' from an identity matrix (Bartlett, 1951). If the Bartlett's test is not
 #' significant, the correlation matrix is not suitable for factor analysis
 #' because the variables show too little covariance.
 #'
@@ -76,7 +76,7 @@ BARTLETT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
 
     if (is.na(N)) {
 
-      stop("Argument 'N' was NA, Bartletts test could not be executed.
+      stop("Argument 'N' was NA, Bartlett's test could not be executed.
            Please provide either N or raw data.")
 
     }
@@ -96,7 +96,7 @@ BARTLETT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   R_i <- try(solve(R))
 
   if (inherits(R_i, "try-error")) {
-    stop("Correlation matrix is singular, Bartletts test cannot be executed")
+    stop("Correlation matrix is singular, Bartlett's test cannot be executed")
   }
 
   # Check if correlation matrix is positive definite

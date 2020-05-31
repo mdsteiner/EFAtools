@@ -25,49 +25,53 @@ print.N_FACTORS <- function(x, ...){
   if(isTRUE(suitability)){
 
     cat("\n")
-    cat(cli::rule(left = "Tests for the suitability of the data for factor analysis"))
+    cat(cli::rule(left = crayon::bold("Tests for the suitability of the data for factor analysis"), col = "blue"))
+    cat("\n")
+
+    cat("\n")
+    cat(crayon::blue$bold("Bartlett's test of sphericity"))
     cat("\n")
 
     print(x$output$bart_out)
     cat("\n")
 
-    cat("\n")
-    cat(crayon::bold("Kaiser-Meyer-Olkin criterion (KMO)"))
+    cat(crayon::blue$bold("Kaiser-Meyer-Olkin criterion (KMO)"))
     cat("\n")
 
     if(!is.na(KMO) && !is.null(KMO)){
 
       if(KMO >= .9){
-        label = crayon::green$bold("marvellous")
+        symb <- crayon::green$bold(cli::symbol$tick)
+        label <- crayon::green$bold("marvellous")
       } else if(KMO >= .8){
-        label = crayon::green$bold("meritorious")
+        symb <- crayon::green$bold(cli::symbol$tick)
+        label <- crayon::green$bold("meritorious")
       } else if(KMO >= .7){
-        label = crayon::green$bold("middling")
+        symb <- crayon::green$bold(cli::symbol$tick)
+        label <- crayon::green$bold("middling")
       } else if(KMO >= .6){
-        label = crayon::yellow$bold("mediocre")
+        symb <- crayon::yellow$bold("!")
+        label <- crayon::yellow$bold("mediocre")
       } else if (KMO >= .5){
-        label = crayon::red$bold("miserable")
+        symb <- crayon::red$bold(cli::symbol$cross)
+        label <- crayon::red$bold("miserable")
       } else {
-        label = crayon::red$bold("unacceptable")
+        symb <- crayon::red$bold(cli::symbol$cross)
+        label <- crayon::red$bold("unacceptable")
       }
 
       cat("\n")
-      cat("The overall KMO value for your data is ", label, " with ",
-      crayon::bold(round(KMO, 3)), ".", sep = "")
+      cat(symb, " The overall KMO value for your data is ", label,
+          " with ", crayon::bold(round(KMO, 3)), ".", sep = "")
       cat("\n")
+      cat(crayon::bold(" "), "These data are probably suitable for factor analysis.")
       cat("\n")
 
       if(KMO < .5){
-        cat("These data are not suitable for factor analysis.")
-        cat("\n")
-        cat("\n")
+        cat(crayon::bold(" "), "These data are not suitable for factor analysis.")
         cat("\n")
       } else if(KMO < .6){
-        cat("These data are hardly suitable for factor analysis.")
-        cat("\n")
-        cat("\n")
-        cat("\n")
-      } else {
+        cat(crayon::bold(" "), "These data are hardly suitable for factor analysis.")
         cat("\n")
       }
 
@@ -76,27 +80,29 @@ print.N_FACTORS <- function(x, ...){
       cat("\n")
       cat("The overall KMO value for your data is not available.")
       cat("\n")
-      cat("\n")
 
     }
 
   }
 
-  cat(crayon::blue$bold("Number of factors suggested by the different factor",
-  "retention criteria"))
+  cat("\n")
+  cat(cli::rule(crayon::bold("Number of factors suggested by the different factor",
+  "retention criteria"), col = "blue"))
   cat("\n")
   cat("\n")
 
   if("CD" %in% criteria){
 
-  cat("Comparison data: ", crayon::bold(n_fac["nfac_CD"]), sep = "")
+  cat(crayon::blue(cli::symbol$circle_dotted, "Comparison data: "),
+      crayon::bold(n_fac["nfac_CD"]), sep = "")
   cat("\n")
 
   }
 
   if("EKC" %in% criteria){
 
-    cat("Empirical Kaiser criterion: ", crayon::bold(n_fac["nfac_EKC"]),
+    cat(crayon::blue(cli::symbol$circle_dotted, "Empirical Kaiser criterion: "),
+        crayon::bold(n_fac["nfac_EKC"]),
         sep = "")
     cat("\n")
 
@@ -105,17 +111,20 @@ print.N_FACTORS <- function(x, ...){
   if("HULL" %in% criteria){
 
     if("CAF" %in% gof){
-    cat("HULL method with CAF: ", crayon::bold(n_fac["nfac_HULL_CAF"]),
+    cat(crayon::blue(cli::symbol$circle_dotted, "Hull method with CAF: "),
+        crayon::bold(n_fac["nfac_HULL_CAF"]),
         sep = "")
     cat("\n")
     }
     if("CFI" %in% gof){
-    cat("HULL method with CFI: ", crayon::bold(n_fac["nfac_HULL_CFI"]),
+    cat(crayon::blue(cli::symbol$circle_dotted, "Hull method with CFI: "),
+        crayon::bold(n_fac["nfac_HULL_CFI"]),
         sep = "")
     cat("\n")
     }
     if("RMSEA" %in% gof){
-    cat("HULL method with RMSEA: ", crayon::bold(n_fac["nfac_HULL_RMSEA"]),
+    cat(crayon::blue(cli::symbol$circle_dotted, "Hull method with RMSEA: "),
+        crayon::bold(n_fac["nfac_HULL_RMSEA"]),
         sep = "")
     cat("\n")
     }
@@ -125,17 +134,20 @@ print.N_FACTORS <- function(x, ...){
   if("KGC" %in% criteria){
 
     if("PCA" %in% eigen_type_KGC_PA){
-    cat("Kaiser-Guttman criterion with PCA: ",
+    cat(crayon::blue(cli::symbol$circle_dotted,
+                     "Kaiser-Guttman criterion with PCA: "),
         crayon::bold(n_fac["nfac_KGC_PCA"]), sep = "")
     cat("\n")
     }
     if("SMC" %in% eigen_type_KGC_PA){
-    cat("Kaiser-Guttman criterion with SMC: ",
+    cat(crayon::blue(cli::symbol$circle_dotted,
+                     "Kaiser-Guttman criterion with SMC: "),
         crayon::bold(n_fac["nfac_KGC_SMC"]), sep = "")
     cat("\n")
     }
     if("EFA" %in% eigen_type_KGC_PA){
-    cat("Kaiser-Guttman criterion with EFA: ",
+    cat(crayon::blue(cli::symbol$circle_dotted,
+                     "Kaiser-Guttman criterion with EFA: "),
         crayon::bold(n_fac["nfac_KGC_EFA"]), sep = "")
     cat("\n")
     }
@@ -145,17 +157,23 @@ print.N_FACTORS <- function(x, ...){
   if("PARALLEL" %in% criteria){
 
     if("PCA" %in% eigen_type_KGC_PA){
-    cat("Parallel analysis with PCA: ", crayon::bold(n_fac["nfac_PA_PCA"]),
+    cat(crayon::blue(cli::symbol$circle_dotted,
+                     "Parallel analysis with PCA: "),
+        crayon::bold(n_fac["nfac_PA_PCA"]),
         sep = "")
     cat("\n")
     }
     if("SMC" %in% eigen_type_KGC_PA){
-    cat("Parallel analysis with SMC: ", crayon::bold(n_fac["nfac_PA_SMC"]),
+    cat(crayon::blue(cli::symbol$circle_dotted,
+                     "Parallel analysis with SMC: "),
+        crayon::bold(n_fac["nfac_PA_SMC"]),
         sep = "")
     cat("\n")
     }
     if("EFA" %in% eigen_type_KGC_PA){
-    cat("Parallel analysis with EFA: ", crayon::bold(n_fac["nfac_PA_EFA"]),
+    cat(crayon::blue(cli::symbol$circle_dotted,
+                     "Parallel analysis with EFA: "),
+        crayon::bold(n_fac["nfac_PA_EFA"]),
         sep = "")
     cat("\n")
     }
@@ -164,13 +182,17 @@ print.N_FACTORS <- function(x, ...){
 
   if("SMT" %in% criteria){
 
-    cat("Sequential \U1D712\U00B2 model tests: ",
+    cat(crayon::blue(cli::symbol$circle_dotted,
+                     "Sequential \U1D712\U00B2 model tests: "),
         crayon::bold(n_fac["nfac_SMT_chi"]), sep = "")
     cat("\n")
-    cat("Lower bound of RMSEA 90% confidence interval: ",
+    cat(crayon::blue(cli::symbol$circle_dotted,
+                     "Lower bound of RMSEA 90% confidence interval: "),
         crayon::bold(n_fac["nfac_RMSEA"]), sep = "")
     cat("\n")
-    cat("Akaike Information Criterion: ", crayon::bold(n_fac["nfac_AIC"]),
+    cat(crayon::blue(cli::symbol$circle_dotted,
+                     "Akaike Information Criterion: "),
+        crayon::bold(n_fac["nfac_AIC"]),
         sep = "")
     cat("\n")
 

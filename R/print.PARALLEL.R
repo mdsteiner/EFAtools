@@ -32,22 +32,25 @@ print.PARALLEL <- function(x, ...) {
     cat("Decision rule used:", crayon::bold(x$settings$decision_rule))
     cat("\n")
     cat("\n")
-    cat("Number of factors to retain according to")
+    cat(cli::rule(left = crayon::bold("Number of factors to retain according to"),
+                  col = "blue"))
     cat("\n")
     cat("\n")
 
     if("PCA" %in% eigen_type){
-      cat("    PCA-determined eigenvalues: ", crayon::bold(x$n_fac_PCA))
+      cat(crayon::blue(cli::symbol$circle_dotted, "PCA-determined eigenvalues: "),
+          crayon::bold(x$n_fac_PCA))
       cat("\n")
     }
 
     if("SMC" %in% eigen_type){
-      cat("    SMC-determined eigenvalues: ", crayon::bold(x$n_fac_SMC))
+      cat(crayon::blue(cli::symbol$circle_dotted, "SMC-determined eigenvalues: "),
+          crayon::bold(x$n_fac_SMC))
       cat("\n")
     }
 
     if("EFA" %in% eigen_type){
-      cat("    EFA-determined eigenvalues: ",
+      cat(crayon::blue(cli::symbol$circle_dotted, "EFA-determined eigenvalues: "),
           crayon::bold(x$n_fac_EFA))
       cat("\n")
     }
@@ -55,8 +58,7 @@ print.PARALLEL <- function(x, ...) {
   } else {
 
     cat("\n")
-    cat("No data was entered to base number of factors on. Plotting simulated",
-        "eigenvalues")
+    cat(cli::col_cyan(cli::symbol$info, " No data were entered to base number of factors on. Plotting simulated eigenvalues."))
     cat("\n")
 
   }
