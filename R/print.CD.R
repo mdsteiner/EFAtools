@@ -6,6 +6,12 @@
 #' @export
 #' @method print CD
 #'
+#' @example
+#' \dontrun{
+#' # determine n factors of the GRiPS
+#' CD(GRiPS_raw)
+#' }
+#'
 print.CD <- function(x, ...) {
 
   nfac <- x$n_factors

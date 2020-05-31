@@ -21,11 +21,10 @@ print.EFA <- function(x, ...) {
   rotation <- x$settings$rotation
   type <- x$settings$type
 
-  # Settings intro message
-  cat(crayon::blue("EFA performed with type = '", crayon::bold(type),
-               "', method = '", crayon::bold(method),
-               "', and rotation = '", crayon::bold(rotation),
-               "'.", sep = ""))
+  cat("\n")
+  cat("EFA performed with type = '", crayon::bold(type), "', method = '",
+       crayon::bold(method), "', and rotation = '", crayon::bold(rotation),
+       "'.", sep = "")
   cat("\n")
 
   if (!is.null(x$settings$max_iter) && x$iter > x$settings$max_iter) {
@@ -41,14 +40,16 @@ print.EFA <- function(x, ...) {
   if(rotation == "none"){
 
     cat("\n")
-    cat(crayon::blue$bold("Unrotated Loadings:"))
+    cat(cli::rule(left = crayon::bold("Unrotated Loadings"), col = "blue"))
+    cat("\n")
     cat("\n")
     print(x$unrot_loadings)
 
   } else {
 
     cat("\n")
-    cat(crayon::blue$bold("Rotated Loadings:"))
+    cat(cli::rule(left = crayon::bold("Rotated Loadings"), col = "blue"))
+    cat("\n")
     cat("\n")
     print(x$rot_loadings)
 
@@ -56,7 +57,8 @@ print.EFA <- function(x, ...) {
     if(!is.null(x$Phi)){
 
       cat("\n")
-      cat(crayon::blue$bold("Factor Intercorrelations:"))
+      cat(cli::rule(left = crayon::bold("Factor Intercorrelations"), col = "blue"))
+      cat("\n")
       cat("\n")
       cat(.get_compare_matrix(x$Phi, r_red = Inf, n_char = 17,
                               var_names = paste0("F", 1:ncol(x$Phi))))
@@ -65,7 +67,8 @@ print.EFA <- function(x, ...) {
   }
 
   cat("\n")
-  cat(crayon::blue$bold("Variances Accounted for:"))
+  cat(cli::rule(left = crayon::bold("Variances Accounted for"), col = "blue"))
+  cat("\n")
   cat("\n")
   cat(.get_compare_matrix(x$vars_accounted, r_red = Inf, n_char = 17))
 
@@ -76,7 +79,8 @@ print.EFA <- function(x, ...) {
     colnames(fitind) <- c("CAF", "df")
 
   cat("\n")
-  cat(crayon::blue$bold("Model Fit:"))
+  cat(cli::rule(left = crayon::bold("Model Fit"), col = "blue"))
+  cat("\n")
   cat("\n")
   cat(.get_compare_matrix(fitind, r_red = Inf, n_char = 17, gof = TRUE))
 
@@ -91,6 +95,7 @@ print.EFA <- function(x, ...) {
 
     cat("\n")
     cat(crayon::blue$bold("Model Fit:"))
+    cat("\n")
     cat("\n")
     cat(.get_compare_matrix(fitind, r_red = Inf, n_char = 30, gof = TRUE))
 
