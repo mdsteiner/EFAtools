@@ -22,10 +22,10 @@ print.N_FACTORS <- function(x, ...){
     cat(crayon::blue$bold("Tests for the suitability of the data for factor analysis"))
     cat("\n")
 
-    print(x$bart_out)
+    print(x$output$bart_out)
     cat("\n")
 
-    print(x$kmo_out)
+    print(x$output$kmo_out)
     cat("\n")
     cat("\n")
 

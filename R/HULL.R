@@ -20,17 +20,17 @@
 #'   the CAF can be used as goodness of fit index. For details on the CAF, see
 #'   Lorenzo-Seva, Timmerman, and Kiers (2011).
 #' @param eigen_type character. On what the eigenvalues should be found in the
-#'  parallel analysis.. Can be
-#'  one of "SMC", "PCA", or "EFA". If using "SMC" (default), the diagonal of the
-#'  correlation matrices is replaced by the squared multiple correlations (SMCs)
-#'  of the indicators. If using "PCA", the diagonal values of the correlation
-#'  matrices are left to be 1. If using "EFA", eigenvalues are found on the
+#'  parallel analysis.. Can be one of \code{"SMC"}, \code{"PCA"}, or \code{"EFA"}.
+#'   If using  \code{"SMC"} (default), the diagonal of the correlation matrices is
+#'    replaced by the squared multiple correlations (SMCs) of the indicators. If
+#'     using  \code{"PCA"}, the diagonal values of the correlation
+#'  matrices are left to be 1. If using  \code{"EFA"}, eigenvalues are found on the
 #'  correlation  matrices with the final communalities of an EFA solution as
 #'  diagonal. This is passed to  \code{\link{PARALLEL}}.
 #' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
 #' is given as input. Default is \code{"pairwise.complete.obs"}.
 #' @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}.
-#'  Default is "pearson".
+#'  Default is  \code{"pearson"}.
 #' @param n_datasets numeric. The number of datasets to simulate. Default is 1000.
 #'   This is passed to \code{\link{PARALLEL}}.
 #' @param percent numeric. A vector of percentiles to take the simulated eigenvalues from.
@@ -40,9 +40,11 @@
 #'  simulated eigenvalues. \code{"Percentile"}, uses the percentiles specified
 #'  in percent. \code{"Crawford"} uses the 95th percentile for the first factor
 #'  and the mean afterwards (based on Crawford et al, 2010). This is passed to \code{\link{PARALLEL}}.
-#'  @param n_factors numeric. Number of factors to extract if "EFA" is included in
-#' \code{eigen_type}. Default is 1. This is passed to \code{\link{PARALLEL}}.
-#' @param ... Further arguments passed to \code{\link{EFA}} or \code{\link{PARALLEL}}.
+#'  @param n_factors numeric. Number of factors to extract if  \code{"EFA"} is
+#'   included in \code{eigen_type}. Default is 1. This is passed to
+#'    \code{\link{PARALLEL}}.
+#' @param ... Further arguments passed to \code{\link{EFA}}, also in
+#' \code{\link{PARALLEL}}.
 #'
 #' @details The Hull method aims to find a model with an optimal balance between
 #'  model fit and number of parameters. That is, it aims to retrieve only major
