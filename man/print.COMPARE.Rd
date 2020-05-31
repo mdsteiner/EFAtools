@@ -12,7 +12,7 @@
 \item{...}{Further arguments for print.}
 }
 \description{
-Print Method showing a summarized output of the \link{compare} function
+Print Method showing a summarized output of the \code{\link{compare}} function.
 }
 \examples{
 # A type SPSS EFA to mimick the SPSS implementation

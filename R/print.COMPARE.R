@@ -1,6 +1,6 @@
 #' Print COMPARE object
 #'
-#' Print Method showing a summarized output of the \link{compare} function
+#' Print Method showing a summarized output of the \code{\link{compare}} function.
 #'
 #' @param x  list. An object of class COMPARE to be printed
 #' @param ... Further arguments for print.
