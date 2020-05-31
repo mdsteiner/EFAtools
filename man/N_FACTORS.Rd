@@ -155,7 +155,7 @@ The available factor retention criteria are the following (see respective
 \item{Hull method (see \code{\link{HULL}})}
 \item{Kaiser-Guttman criterion (see \code{\link{KGC}})}
 \item{Parallel analysis (see \code{\link{PARALLEL}})}
-\item{Sequential chi-square model tests, RMSEA, and AIC
+\item{Sequential chi-square model tests, RMSEA lower bound, and AIC
 (see \code{\link{SMT}})}
 }
 }
@@ -164,5 +164,22 @@ The available factor retention criteria are the following (see respective
 # This will throw a warning for CD, as no raw data were specified
 nfac_all <- N_FACTORS(test_models$baseline$cormat, N = 500, method = "ML")
 
-# MORE EXAMPLES
+# The same as above, but without "CD"
+nfac_wo_CD <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC",
+                        "HULL", "KGC", "PARALLEL", "SMT"), N = 500,
+                        method = "ML")
+
+# Use PAF instead of ML (this will take a lot longer). For this, gof has
+to be set to "CAF" for the Hull method.
+nfac_PAF <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC",
+                      "HULL", "KGC", "PARALLEL", "SMT"), N = 500,
+                      gof = "CAF")
+
+# Do KGC and PARALLEL with only "PCA" type of eigenvalues
+nfac_PCA <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC",
+                      "HULL", "KGC", "PARALLEL", "SMT"), N = 500,
+                      method = "ML", eigen_type_KGC_PA = "PCA")
+
+nfac_raw <- N_FACTORS(GRiPS_raw, method = "ML")
+
 }

@@ -181,6 +181,18 @@
   temp
 }
 
+.gof_out <- function(x, headers, digits = 7) {
+
+  # for equal spacing, fill the factor names such that they match the columns
+  headers <- stringr::str_pad(headers, digits + 2, side = "both")
+  headers <- crayon::blue(stringr::str_c(headers, collapse = "\t"))
+
+  temp <- stringr::str_c(x, collapse = "\t")
+  temp <- stringr::str_c(headers, "\n", temp, "\n")
+
+  temp
+}
+
 
 .get_compare_vector <- function(x, digits = 3, r_red = .001) {
 

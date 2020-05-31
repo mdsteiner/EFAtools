@@ -24,7 +24,7 @@ the Psychometric Society, Iowa City, IA.
 \usage{
 SMT(
   x,
-  N = NULL,
+  N = NA,
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
     "na.or.complete"),
   cor_method = c("pearson", "spearman", "kendall")
