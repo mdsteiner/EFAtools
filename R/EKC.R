@@ -103,8 +103,7 @@ EKC <- function(x, N = NA,
 
   } else {
 
-    message("x was not a correlation matrix. Correlations and N are found from entered
-            raw data.")
+    message("x was not a correlation matrix. Correlations and N are found from entered raw data.")
 
     R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)

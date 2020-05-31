@@ -32,3 +32,5 @@ Imports:
     checkmate
 LinkingTo: 
     Rcpp, RcppArmadillo
+Suggests: 
+    testthat
