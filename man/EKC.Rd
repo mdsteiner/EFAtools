@@ -26,22 +26,22 @@ EKC(
 )
 }
 \arguments{
-\item{x}{data.frame or matrix. Dataframe or matrix of raw data or matrix with
+\item{x}{data.frame or matrix. data.frame or matrix of raw data or matrix with
 correlations.}
 
 \item{N}{numeric. The number of observations. Only needed if x is a correlation
 matrix.}
 
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw
-data is given as input. Default is "pairwise.complete.obs".}
+data is given as input. Default is  \code{"pairwise.complete.obs"}.}
 
 \item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor}}.
-Default is "pearson".}
+Default is  \code{"pearson"}.}
 }
 \value{
 A list of class EKC containing
 
-\item{eigenvalues}{A vector containing the eigenvalues.}
+\item{eigenvalues}{A vector containing the eigenvalues found on the correlation matrix of the entered data.}
 \item{n_factors}{The number of factors to retain according to the empirical Kaiser criterion.}
 \item{references}{The reference eigenvalues.}
 \item{settings}{A list with the settings (\code{N} and \code{use}) used.}
@@ -70,7 +70,7 @@ The Kaiser-Guttman criterion was defined with the intend that a factor
  factors model; and (b) clearly outperforms parallel analysis for the specific
  case of oblique factors, particularly whenever interfactor correlation is
  moderate to high and the number of variables per factor is small, which is
- characteristic of many applications these days" p.463-464.
+ characteristic of many applications these days" (p.463-464).
 
  The \code{EKC} function can also be called together with other factor
   retention criteria in the \code{\link{N_FACTORS}} function.
