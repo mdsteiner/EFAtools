@@ -23,7 +23,6 @@ N_FACTORS(
   eigen_type_HULL = c("SMC", "PCA", "EFA"),
   eigen_type_KGC_PA = c("PCA", "SMC", "EFA"),
   n_factors = 1,
-  n_vars = NA,
   n_datasets = 1000,
   percent = 95,
   decision_rule = c("Means", "Percentile", "Crawford"),
@@ -32,22 +31,23 @@ N_FACTORS(
 }
 \arguments{
 \item{x}{data.frame or matrix. Dataframe or matrix of raw data or matrix with
-correlations. If "CD" is included as a criterion, \code(x) must be raw data.}
+correlations. If \code{"CD"} is included as a criterion, \code(x) must be raw
+ data.}
 
 \item{criteria}{character. A vector with the factor retention methods to
-perform. Possible inputs are: "CD", "EKC", "HULL", "KGC", "PARALLEL",
-and "SMT" (see details). By default, all factor retention methods are
-performed.}
+perform. Possible inputs are: \code{"CD"}, \code{"EKC"}, \code{"HULL"},
+\code{"KGC"}, \code{"PARALLEL"}, and \code{"SMT"} (see details). By default,
+all factor retention methods are performed.}
 
 \item{suitability}{logical. Whether the data should be checked for suitability
-for factor analysis using the Kaiser-Guttmann criterion and Bartlett's test
-of sphericity (see details). Default is \code{TRUE}.}
+for factor analysis using the Bartlett's test of sphericity and the
+Kaiser-Guttmann criterion (see details). Default is \code{TRUE}.}
 
 \item{N}{numeric. The number of observations. Only needed if x is a
 correlation matrix.}
 
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw
-data is given as input. Default is "pairwise.complete.obs".}
+data is given as input. Default is \code{"pairwise.complete.obs"}.}
 
 \item{n_factors_max}{numeric. Passed to \code{\link{CD}}.The maximum number
 of factors to test against.
@@ -66,16 +66,72 @@ the significance of the improvement added by an additional factor.
 Default is .30.}
 
 \item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor}}
-Default is "pearson".}
+Default is  \code{"pearson"}.}
 
 \item{max_iter_CD}{numeric. Passed to \code{\link{CD}}. The maximum number of
 iterations to perform after which the iterative PAF procedure is halted.
  Default is 50.}
 
-\item{...}{}
+\item{n_fac_theor}{numeric. Passed to \code{\link{HULL}}. Theoretical number of
+factors to retain. The maximum of this number and the number of factors
+ suggested by \link{PARALLEL} plus one will be used in the Hull method.}
+
+\item{method}{character. Passed to \code{\link{EFA}} in \code{\link{HULL}},
+\code{\link{KGC}}, and \code{\link{PARALLEL}}. The estimation method to use.
+One of  \code{"PAF"}, \code{"ULS"}, or  \code{"ML"}, for principal axis
+factoring, unweighted least squares, and maximum likelihood, respectively.}
+
+\item{gof}{character. Passed to \code{\link{HULL}}. The goodness of fit index
+to use. Either \code{"CAF"}, \code{"CFI"}, or \code{"RMSEA"}, or any
+combination of them. If \code{method = "PAF"} is used, only
+the CAF can be used as goodness of fit index. For details on the CAF, see
+Lorenzo-Seva, Timmerman, and Kiers (2011).}
+
+\item{eigen_type_HULL}{character. Passed to  \code{\link{PARALLEL}} in
+\code{\link{HULL}}. On what the
+eigenvalues should be found in the parallel analysis. Can be one of
+ \code{"SMC"}, \code{"PCA"}, or \code{"EFA"}. If using  \code{"SMC"} (default),
+  the diagonal of the correlation matrices is
+  replaced by the squared multiple correlations (SMCs) of the indicators. If
+   using  \code{"PCA"}, the diagonal values of the correlation
+matrices are left to be 1. If using  \code{"EFA"}, eigenvalues are found on the
+correlation  matrices with the final communalities of an EFA solution as
+diagonal.
+@param eigen_type_KGC_PA character. Passed to \code{\link{KGC}} and
+\code{\link{PARALLEL}}. The same as eigen_type_HULL, but multiple inputs
+are possible here. Default is to use all inputs, that is, \code{c("PCA",
+"SMC", "EFA"})}
+
+\item{n_factors}{numeric. Passed to \code{\link{PARALLEL}} (also within
+\code{\link{HULL}}) and to \code{\link{KGC}}. Number of factors to extract if
+ \code{"EFA"} is included in \code{eigen_type_HULL} or
+ \code{eigen_type_KGC_PA}. Default is 1.}
+
+\item{n_datasets}{numeric. Passed to \code{\link{PARALLEL}} (also within
+\code{\link{HULL}}). The number of datasets to simulate. Default is 1000.}
+
+\item{percent}{numeric. Passed to \code{\link{PARALLEL}} (also within
+\code{\link{HULL}}). A vector of percentiles to take the simulated eigenvalues
+ from. Default is 95.}
+
+\item{decision_rule}{character. Passed to \code{\link{PARALLEL}} (also within
+\code{\link{HULL}}). Which rule to use to determine the number of
+ factors to retain. Default is \code{"mean"}, which will use the average
+ simulated eigenvalues. \code{"Percentile"}, uses the percentiles specified
+ in percent. \code{"Crawford"} uses the 95th percentile for the first factor
+ and the mean afterwards (based on Crawford et al, 2010).}
+
+\item{...}{Further arguments passed to \code{\link{EFA}} in
+\code{\link{PARALLEL}} (also within \code{\link{HULL}}) and \code{\link{KGC}}.}
 }
 \value{
-
+A list of class N_FACTORS containing
+\item{outputs}{A list with the outputs from \code{\link{BARTLETT}} and
+ \code{\link[EFAtools]{KMO}} (if \code{suitability = TRUE}) and of the chosen
+  factor retention criteria.}
+\item{n_factors}{A named vector containing the suggested number of factors for
+all chosen factor retention criteria.}
+\item{settings}{A list of the settings used.}
 }
 \description{
 Among the most important decisions in exploratory factor analysis (EFA) is
@@ -85,7 +141,23 @@ criteria have been developed for this. With this function, various factor
  can be checked for their suitability for factor analysis.
 }
 \details{
-DESCRIBE FIRST KMO AND BARTLETT; THEN LIST FAC RET CRIT WITH LINKS TO FUNCTIONS
+By default, the entered data are checked for suitability for factor analysis
+using the following methods (see respective documentations for details):
+\itemize{
+\item{Bartlett's test of sphericity (see \code{\link{BARTLETT}})}
+\item{Kaiser-Meyer-Olkin criterion (see \code{\link[EFAtools]{KMO}})}}
+
+The available factor retention criteria are the following (see respective
+ documentations for details):
+ \itemize{
+\item{Comparison data (see \code{\link{CD}})}
+\item{Empirical Kaiser criterion (see \code{\link{EKC}})}
+\item{Hull method (see \code{\link{HULL}})}
+\item{Kaiser-Guttman criterion (see \code{\link{KGC}})}
+\item{Parallel analysis (see \code{\link{PARALLEL}})}
+\item{Sequential chi-square model tests, RMSEA, and AIC
+(see \code{\link{SMT}})}
+}
 }
 \examples{
 # All criteria, with correlation matrix and fit method "ML" (where needed)

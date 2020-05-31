@@ -25,6 +25,7 @@ PARALLEL(
   eigen_type = c("PCA", "SMC", "EFA"),
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
     "na.or.complete"),
+  cor_method = c("pearson", "spearman", "kendall"),
   decision_rule = c("Means", "Percentile", "Crawford"),
   n_factors = 1,
   ...
@@ -56,7 +57,9 @@ are left to be 1. If using "EFA", eigenvalues are found on the correlation
 matrices with the final communalities of an EFA solution as diagonal.}
 
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
-is given as input. Default is "pairwise.complete.obs".}
+is given as input. Default is "pairwise.complete.obs".
+ @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}
+ Default is "pearson".}
 
 \item{decision_rule}{character. Which rule to use to determine the number of
  factors to retain. Default is \code{"mean"}, which will use the average
