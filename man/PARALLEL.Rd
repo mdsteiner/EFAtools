@@ -35,11 +35,12 @@ PARALLEL(
 against. Must not contain variables of classes other than numeric. Can be a
 correlation matrix or raw data.}
 
-\item{N}{numeric. The number of cases / observations to simulate. Should only
-be specified if \code{x} is left as \code{NULL} as otherwise the dimensions are taken from \code{x}.}
+\item{N}{numeric. The number of cases / observations to simulate. Only has to
+be specified if \code{x} is either a correlation matrix or \code{NULL}. If
+x contains raw data, \code{N} is found from the dimensions of \code{x}.}
 
 \item{n_vars}{numeric. The number of variables / indicators to simulate.
-Should only be specified if \code{x} is left as \code{NULL} as otherwise the
+Only has to be specified if \code{x} is left as \code{NULL} as otherwise the
 dimensions are taken from \code{x}.}
 
 \item{n_datasets}{numeric. The number of datasets to simulate. Default is 1000.}
@@ -49,7 +50,7 @@ Default is 95.}
 
 \item{eigen_type}{character. On what the eigenvalues should be found. Can be
 either "SMC", "PCA", or "EFA". If using "SMC", the diagonal of the correlation
-matrices is replaced by the squared multiple correlations (SMCs) of the
+matricex is replaced by the squared multiple correlations (SMCs) of the
 indicators. If using "PCA", the diagonal values of the correlation matrices
 are left to be 1. If using "EFA", eigenvalues are found on the correlation
 matrices with the final communalities of an EFA solution as diagonal.}
@@ -98,8 +99,8 @@ the sample
  implemented, namely "SMC", "PCA", and "EFA". PCA leaves the diagonal elements
  of the correlation matrix as they are and is thus equivalent to what is done
  in PCA. SMC uses squared multiple correlations as communality estimates with
- which the diagonal of the correlation matrix is replaced. Finally, EFA performes
- an \code{\link{EFA}} with one factor to estimate
+ which the diagonal of the correlation matrix is replaced. Finally, EFA performs
+ an \code{\link{EFA}} with one factor (can be adapted to more factors) to estimate
  the communalities and based on the correlation matrix with these as diagonal
  elements, finds the eigenvalues.
 
