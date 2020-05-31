@@ -49,7 +49,7 @@
 #' @param N numeric. Number of cases / observations in dataset.
 #' @param eigen_type numeric. Whether PCA (eigen_type = 1; i.e., leaving diagonal of correlation matrix at 1) or PAF (eigen_type = 2; i.e., setting diagonal of correlation matrix to SMCs).
 #' @export
-parallel_sim <- function(n_datasets, n_vars, N, eigen_type) {
+.parallel_sim <- function(n_datasets, n_vars, N, eigen_type) {
     .Call(`_EFAtools_parallel_sim`, n_datasets, n_vars, N, eigen_type)
 }
 
@@ -64,7 +64,7 @@ parallel_sim <- function(n_datasets, n_vars, N, eigen_type) {
 #' @param n_datasets integer. The number of datasets simulated in \link{parallel_sim}.
 #' @param n_vars numeric. The number of variables / indicators per dataset.
 #' @export
-parallel_summarise <- function(eig_vals, percent, n_datasets, n_vars) {
+.parallel_summarise <- function(eig_vals, percent, n_datasets, n_vars) {
     .Call(`_EFAtools_parallel_summarise`, eig_vals, percent, n_datasets, n_vars)
 }
 

@@ -239,11 +239,11 @@ PARALLEL <- function(x = NULL,
 
     if ("PCA" %in% eigen_type) {
 
-      eigvals_PCA <- future.apply::future_lapply(size_vec, parallel_sim, N = N,
+      eigvals_PCA <- future.apply::future_lapply(size_vec, .parallel_sim, N = N,
                                              n_vars = n_vars, eigen_type = 1)
       eigvals_PCA <- do.call(rbind, eigvals_PCA)
 
-      results_PCA <- parallel_summarise(eigvals_PCA, percent = percent,
+      results_PCA <- .parallel_summarise(eigvals_PCA, percent = percent,
                                         n_datasets = n_datasets, n_vars = n_vars)
 
       colnames(results_PCA) <- c("Means", paste(percent, "Percentile"))
@@ -265,11 +265,11 @@ PARALLEL <- function(x = NULL,
 
     if ("SMC" %in% eigen_type) {
 
-      eigvals_SMC <- future.apply::future_lapply(size_vec, parallel_sim, N = N,
+      eigvals_SMC <- future.apply::future_lapply(size_vec, .parallel_sim, N = N,
                                              n_vars = n_vars, eigen_type = 2)
       eigvals_SMC <- do.call(rbind, eigvals_SMC)
 
-      results_SMC <- parallel_summarise(eigvals_SMC, percent = percent,
+      results_SMC <- .parallel_summarise(eigvals_SMC, percent = percent,
                                         n_datasets = n_datasets, n_vars = n_vars)
 
       colnames(results_SMC) <- c("Means", paste(percent, "Percentile"))
@@ -296,7 +296,7 @@ PARALLEL <- function(x = NULL,
                                              n_factors = n_factors, ...)
       eigvals_EFA <- do.call(rbind, eigvals_EFA)
 
-      results_EFA <- parallel_summarise(eigvals_EFA, percent = percent,
+      results_EFA <- .parallel_summarise(eigvals_EFA, percent = percent,
                                         n_datasets = n_datasets, n_vars = n_vars)
 
       colnames(results_EFA) <- c("Means", paste(percent, "Percentile"))

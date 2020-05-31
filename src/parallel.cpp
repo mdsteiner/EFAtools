@@ -14,7 +14,7 @@ using namespace arma;
 //' @param N numeric. Number of cases / observations in dataset.
 //' @param eigen_type numeric. Whether PCA (eigen_type = 1; i.e., leaving diagonal of correlation matrix at 1) or PAF (eigen_type = 2; i.e., setting diagonal of correlation matrix to SMCs).
 //' @export
-// [[Rcpp::export]]
+// [[Rcpp::export(.parallel_sim)]]
 arma::mat parallel_sim(const int n_datasets, const int n_vars, const int N,
                          const int eigen_type) {
   // initialize needed objects
@@ -403,7 +403,7 @@ arma::mat parallel_sim(const int n_datasets, const int n_vars, const int N,
 //' @param n_datasets integer. The number of datasets simulated in \link{parallel_sim}.
 //' @param n_vars numeric. The number of variables / indicators per dataset.
 //' @export
-// [[Rcpp::export]]
+// [[Rcpp::export(.parallel_summarise)]]
 NumericMatrix parallel_summarise(NumericMatrix eig_vals, NumericVector percent,
                                  const int n_datasets, const int n_vars) {
   NumericMatrix results(n_vars, 1 + percent.length());
