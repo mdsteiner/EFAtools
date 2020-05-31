@@ -1,18 +1,41 @@
 #' Various Factor Retention Methods
 #'
-#' DESCRIBE HERe
+#' Among the most important decisions in exploratory factor analysis (EFA) is
+#' the choice of the number of factors to retain. Several factor retention
+#' criteria have been developed for this. With this function, various factor
+#'  retention criteria can be performed simultaneously. Additionally, the data
+#'  can be checked for their suitability for factor analysis.
 #'
-#' @param x
-#' @param criteria
-#' @param suitability
-#' @param N
-#' @param use
-#' @param n_factors_max
-#' @param N_pop
-#' @param N_samples
-#' @param alpha
-#' @param cor_method
-#' @param max_iter
+#' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
+#' correlations. If "CD" is included as a criterion, \code(x) must be raw data.
+#' @param criteria character. A vector with the factor retention methods to
+#' perform. Possible inputs are: "CD", "EKC", "HULL", "KGC", "PARALLEL",
+#' and "SMT" (see details). By default, all factor retention methods are
+#' performed.
+#' @param suitability logical. Whether the data should be checked for suitability
+#' for factor analysis using the Kaiser-Guttmann criterion and Bartlett's test
+#' of sphericity (see details). Default is \code{TRUE}.
+#' @param N  numeric. The number of observations. Only needed if x is a
+#' correlation matrix.
+#' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw
+#' data is given as input. Default is "pairwise.complete.obs".
+#' @param n_factors_max numeric. Passed to \code{\link{CD}}.The maximum number
+#' of factors to test against.
+#' Larger numbers will increase the duration the procedure takes, but test more
+#' possible solutions. Maximum possible is number of variables / 2. Default is
+#' NA. If not specified, number of variables / 2 is used.
+#' @param N_pop numeric. Passed to \code{\link{CD}}. Size of finite populations
+#' of comparison data. Default is 10000.
+#' @param N_samples numeric. Passed to \code{\link{CD}}. Number of samples drawn
+#'  from each population. Default is 500.
+#' @param alpha numeric. Passed to \code{\link{CD}}. The alpha level used to test
+#'  the significance of the improvement added by an additional factor.
+#'  Default is .30.
+#' @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}} in
+#' \code{\link{CD}}. Default is "pearson".
+#' @param max_iter numeric. Passed to \code{\link{CD}}...
+#' The maximum number of iterations to perform after
+#'  which the iterative PAF procedure is halted. Default is 50.
 #' @param n_fac_theor
 #' @param method
 #' @param gof
@@ -24,9 +47,9 @@
 #' @param decision_rule
 #' @param ...
 #'
-#' @details # - say what only works with raw data (CD, PARALLEL if resampling is implemented)
-# - ... further arguments passed to PARALLEL in HULL or passed to EFA in KGC, PARALLEL and HULL ->
-# for these functions, methods argument here is also passed to EFA, problem?
+#' @details
+#' DESCRIBE FIRST KMO AND BARTLETT; THEN LIST FAC RET CRIT WITH LINKS TO FUNCTIONS
+#'
 # - ok if same eigen_type is used for PARALELL and KGC?
 # arguments set for parallel are also used in HULL parallel (because passed to
 # PARALLEL there), problem?
