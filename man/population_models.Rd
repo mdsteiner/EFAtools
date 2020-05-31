@@ -5,46 +5,46 @@
 \alias{population_models}
 \title{population_models}
 \format{
-A list of 2 lists "loadings" and "phis".
+A list of 3 lists "loadings", "phis_3", and "phis_6".
 \describe{
-\code{loadings} contains the following matrices:
-  \item{baseline}{(matrix) - The loadings of the baseline model. Three factors with six indicators each, all with loadings of .6. Same baseline model as used in de Winter and Dodou (2012).}
-  \item{case_1a}{(matrix) - Small number of indicators per factor, in this case 2.}
-  \item{case_1b}{(matrix) - Small number of indicators per factor, in this case 3. Case 5 in de Winter and Dodou (2012).}
-  \item{case_1c}{(matrix) - Small number of indicators per factor, in this case 4.}
-  \item{case_1d}{(matrix) - Small number of indicators per factor, in this case 5.}
-  \item{case_2}{(matrix) - Low factor loadings of .3.}
-  \item{case_3}{(matrix) - High factor loadings of .9.}
-  \item{case_4}{(matrix) - Different loadings between factors (one factor with .9, .6, and .3, respectively). Case 7 in de Winter and Dodou (2012).}
-  \item{case_5}{(matrix) - Different loadings within factors (each factor has two loadings of each .9, .6, and .3). Similar to cases 8/ 9 in de Winter and Dodou (2012).}
-  \item{case_6a}{(matrix) - 1 crossloading of .4. Similar to case 10 in de Winter and Dodou (2012).}
-  \item{case_6b}{(matrix) - 3 crossloading of .4 (One factor with 2 and one with 1 crossloading). Similar to case 10 in de Winter and Dodou (2012).}
-  \item{case_7}{(matrix) - Different number of indicators per factor (2, 4, and 6 respectively). Similar to cases 11/ 12 in de Winter and Dodou (2012).}
-  \item{case_8}{(matrix) - Random variation in loadings added, drawn from a uniform distribution between [-.2, .2]. Case 13 in de Winter and Dodou (2012).}
-  \item{case_9a}{(matrix) - Small number of indicators per factor, in this case 2, with different loadings within one of the factors.}
-  \item{case_9b}{(matrix) - Small number of indicators per factor, in this case 3, with different loadings.}
-  \item{case_9c}{(matrix) - Small number of indicators per factor, in this case 4, with different loadings.}
-  \item{case_9d}{(matrix) - Small number of indicators per factor, in this case 5, with different loadings.}
-  \item{case_10a}{(matrix) - Six factors, all with loadings of .6. Small number of indicators per factor, in this case 2.}
-  \item{case_10b}{(matrix) - Six factors, all with loadings of .6. Small number of indicators per factor, in this case 3.}
-  \item{case_10c}{(matrix) - Six factors, all with loadings of .6. Small number of indicators per factor, in this case 4.}
-  \item{case_10d}{(matrix) - Six factors, all with loadings of .6. Small number of indicators per factor, in this case 5.}
-  \item{case_10e}{(matrix) - Six factors, all with loadings of .6. Each with 6 indicators.}
-  \item{case_11a}{(matrix) - Six factors, with different loadings within and between. Small number of indicators per factor, in this case 2.}
-  \item{case_11b}{(matrix) - Six factors, with different loadings within and between. Small number of indicators per factor, in this case 3.}
-  \item{case_11c}{(matrix) - Six factors, with different loadings within and between. Small number of indicators per factor, in this case 4.}
-  \item{case_11d}{(matrix) - Six factors, with different loadings within and between. Small number of indicators per factor, in this case 5.}
-  \item{case_11e}{(matrix) - Six factors, with different loadings within and between. Each with 6 indicators.}
-  \item{case_12a}{(matrix) - One factor, with 2 equal loadings (.6).}
-  \item{case_12b}{(matrix) - One factor, with 3 equal loadings (.6).}
-  \item{case_12c}{(matrix) - One factor, with 6 equal loadings (.6).}
-  \item{case_12d}{(matrix) - One factor, with 10 equal loadings (.6).}
-  \item{case_12e}{(matrix) - One factor, with 15 equal loadings (.6).}
-  \item{case_13a}{(matrix) - One factor, with 2 different loadings (.3, and .6).}
-  \item{case_13b}{(matrix) - One factor, with 3 different loadings (.3, .6, and .9).}
-  \item{case_13c}{(matrix) - One factor, with 6 different loadings (.3, .6, and .9).}
-  \item{case_13d}{(matrix) - One factor, with 10 different loadings (.3, .6, and .9).}
-  \item{case_13e}{(matrix) - One factor, with 15 different loadings (.3, .6, and .9).}
+\code{loadings} contains the following matrices of pattern coefficients:
+  \item{baseline}{(matrix) - The pattern coefficients of the baseline model. Three factors with six indicators each, all with pattern coefficients of .6. Same baseline model as used in de Winter and Dodou (2012).}
+  \item{case_1a}{(matrix) - Three factors with a small number of indicators per factor, in this case 2.}
+  \item{case_1b}{(matrix) - Three factors with a small number of indicators per factor, in this case 3. Case 5 in de Winter and Dodou (2012).}
+  \item{case_1c}{(matrix) - Three factors with a small number of indicators per factor, in this case 4.}
+  \item{case_1d}{(matrix) - Three factors with a small number of indicators per factor, in this case 5.}
+  \item{case_2}{(matrix) - Same as baseline model but with low pattern coefficients of .3.}
+  \item{case_3}{(matrix) - Same as baseline model but with high pattern coefficients of .9.}
+  \item{case_4}{(matrix) - Three factors with different pattern coefficients \emph{between} factors (one factor with .9, one with .6, and one with .3, respectively). Case 7 in de Winter and Dodou (2012).}
+  \item{case_5}{(matrix) - Three factors with different pattern coefficients \emph{within} factors (each factor has two pattern coefficients of each .9, .6, and .3). Similar to cases 8/ 9 in de Winter and Dodou (2012).}
+  \item{case_6a}{(matrix) - Same as baseline model but with one crossloading of .4. Similar to case 10 in de Winter and Dodou (2012).}
+  \item{case_6b}{(matrix) - Same as baseline model but with three crossloading of .4 (One factor with 2 and one with 1 crossloading). Similar to case 10 in de Winter and Dodou (2012).}
+  \item{case_7}{(matrix) - Three factors with different number of indicators per factor (2, 4, and 6 respectively). Similar to cases 11/ 12 in de Winter and Dodou (2012).}
+  \item{case_8}{(matrix) - Three factors with random variation in pattern coefficients added, drawn from a uniform distribution between [-.2, .2]. Case 13 in de Winter and Dodou (2012).}
+  \item{case_9a}{(matrix) - Three factors with small number of indicators per factor, in this case 2, with different pattern coefficients within one of the factors.}
+  \item{case_9b}{(matrix) - Three factors with small number of indicators per factor, in this case 3, with different pattern coefficients.}
+  \item{case_9c}{(matrix) - Three factors with small number of indicators per factor, in this case 4, with different pattern coefficients.}
+  \item{case_9d}{(matrix) - Three factors with small number of indicators per factor, in this case 5, with different pattern coefficients.}
+  \item{case_10a}{(matrix) - Six factors, all with pattern coefficients of .6. Small number of indicators per factor, in this case 2.}
+  \item{case_10b}{(matrix) - Six factors, all with pattern coefficients of .6. Small number of indicators per factor, in this case 3.}
+  \item{case_10c}{(matrix) - Six factors, all with pattern coefficients of .6. Small number of indicators per factor, in this case 4.}
+  \item{case_10d}{(matrix) - Six factors, all with pattern coefficients of .6. Small number of indicators per factor, in this case 5.}
+  \item{case_10e}{(matrix) - Six factors, all with pattern coefficients of .6. Each with 6 indicators.}
+  \item{case_11a}{(matrix) - Six factors, with different pattern coefficients within and between factors (.3, .6, and .9). Small number of indicators per factor, in this case 2.}
+  \item{case_11b}{(matrix) - Six factors, with different pattern coefficients within and between factors (.3, .6, and .9). Small number of indicators per factor, in this case 3.}
+  \item{case_11c}{(matrix) - Six factors, with different pattern coefficients within and between factors (.3, .6, and .9). Small number of indicators per factor, in this case 4.}
+  \item{case_11d}{(matrix) - Six factors, with different pattern coefficients within and between factors (.3, .6, and .9). Small number of indicators per factor, in this case 5.}
+  \item{case_11e}{(matrix) - Six factors, with different pattern coefficients within and between factors (.3, .6, and .9). Each with 6 indicators.}
+  \item{case_12a}{(matrix) - One factor, with 2 equal pattern coefficients (.6).}
+  \item{case_12b}{(matrix) - One factor, with 3 equal pattern coefficients (.6).}
+  \item{case_12c}{(matrix) - One factor, with 6 equal pattern coefficients (.6).}
+  \item{case_12d}{(matrix) - One factor, with 10 equal pattern coefficients (.6).}
+  \item{case_12e}{(matrix) - One factor, with 15 equal pattern coefficients (.6).}
+  \item{case_13a}{(matrix) - One factor, with 2 different pattern coefficients (.3, and .6).}
+  \item{case_13b}{(matrix) - One factor, with 3 different pattern coefficients (.3, .6, and .9).}
+  \item{case_13c}{(matrix) - One factor, with 6 different pattern coefficients (.3, .6, and .9).}
+  \item{case_13d}{(matrix) - One factor, with 10 different pattern coefficients (.3, .6, and .9).}
+  \item{case_13e}{(matrix) - One factor, with 15 different pattern coefficients (.3, .6, and .9).}
   \item{case_14a}{(matrix) - No factor, 2 variables (0).}
   \item{case_14b}{(matrix) - No factor, 3 variables (0).}
   \item{case_14c}{(matrix) - No factor, 6 variables (0).}
@@ -71,8 +71,9 @@ de Winter, J.C.F., & Dodou, D. (2012). Factor recovery by principal axis factori
 population_models
 }
 \description{
-Pupulation factor models used for the model recovery analyses reported in
-Grieder and Steiner (2019). All combinations of the loadings and the factor
+Pupulation factor models, some of which (baseline to case_11e) used for the
+simulation analyses reported in Grieder and Steiner (2019). All combinations
+of the pattern matrices and the factor
 intercorrelations were used in the simulations. Many models are based on cases
 used in de Winter and Dodou (2012).
 }
