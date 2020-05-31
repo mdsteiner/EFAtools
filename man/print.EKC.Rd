@@ -7,7 +7,7 @@
 \method{print}{EKC}(x, ...)
 }
 \arguments{
-\item{x}{a list of class EKC. Output from \link{EKC} function.}
+\item{x}{a list of class EKC. Output from \code{\link{EKC}} function.}
 
 \item{...}{Further arguments for print.}
 }
