@@ -7,7 +7,7 @@
 \method{print}{HULL}(x, ...)
 }
 \arguments{
-\item{x}{a list of class HULL. Output from the \link{HULL} function.}
+\item{x}{a list of class HULL. Output from the \code{\link{HULL}} function.}
 
 \item{...}{Further arguments for print.}
 }
