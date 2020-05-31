@@ -11,6 +11,8 @@
 #'  matrix.
 #' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw
 #'  data is given as input. Default is "pairwise.complete.obs".
+#' @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}.
+#'  Default is "pearson".
 #'
 #' @details The Kaiser-Guttman criterion was defined with the intend that a factor
 #'  should only be extracted if it explains at least as much variance as a single
@@ -66,7 +68,8 @@
 EKC <- function(x, N = NA,
                 use = c("pairwise.complete.obs", "all.obs",
                            "complete.obs", "everything",
-                           "na.or.complete")) {
+                           "na.or.complete"),
+                cor_method = c("pearson", "spearman", "kendall")) {
 
   # Perform argument checks
   if(!inherits(x, c("matrix", "data.frame"))){
@@ -78,6 +81,7 @@ EKC <- function(x, N = NA,
 
   checkmate::assert_count(N, na.ok = TRUE)
   use <- match.arg(use)
+  cor_method <- match.arg(cor_method)
 
   # Check if it is a correlation matrix
   if(.is_cormat(x)){
@@ -102,9 +106,7 @@ EKC <- function(x, N = NA,
     message("x was not a correlation matrix. Correlations and N are found from entered
             raw data.")
 
-    use <- match.arg(use)
-
-    R <- stats::cor(x, use = use)
+    R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)
     N <- nrow(x)
 
@@ -129,6 +131,7 @@ EKC <- function(x, N = NA,
     references = refs,
     settings = list(
       use = use,
+      cor_method = cor_method,
       N = N
     )
   )

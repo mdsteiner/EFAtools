@@ -20,6 +20,8 @@
 #' correlation matrix is used.
 #' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw
 #' data is given as input. Default is "pairwise.complete.obs".
+#' @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}.
+#'  Default is "pearson".
 #'
 #' @details
 #' As a first step in the procedure, a maximum number of factors to extract is
@@ -94,7 +96,8 @@
 #'
 SMT <- function(x, N = NULL, use = c("pairwise.complete.obs", "all.obs",
                                      "complete.obs", "everything",
-                                     "na.or.complete")){
+                                     "na.or.complete"),
+                cor_method = c("pearson", "spearman", "kendall")){
 
   # Perform argument checks
   if(!inherits(x, c("matrix", "data.frame"))){
@@ -106,6 +109,7 @@ SMT <- function(x, N = NULL, use = c("pairwise.complete.obs", "all.obs",
 
   checkmate::assert_count(N, null.ok = TRUE)
   use <- match.arg(use)
+  cor_method <- match.arg(cor_method)
 
   # Check if it is a correlation matrix
   if(.is_cormat(x)){
@@ -124,7 +128,7 @@ SMT <- function(x, N = NULL, use = c("pairwise.complete.obs", "all.obs",
     message("x was not a correlation matrix. Correlations are found from entered
             raw data.")
 
-    R <- stats::cor(x, use = use)
+    R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)
     N <- nrow(x)
 
@@ -201,7 +205,8 @@ SMT <- function(x, N = NULL, use = c("pairwise.complete.obs", "all.obs",
                  RMSEA_LBs = RMSEA_LB,
                  AICs = AIC,
                  settings = list(N = N,
-                                 use = use))
+                                 use = use,
+                                 cor_method = cor_method))
 
   class(output) <- "SMT"
 

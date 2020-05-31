@@ -9,6 +9,8 @@
 #'  correlations.
 #' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw
 #'  data is given as input. Default is "pairwise.complete.obs".
+#' @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}.
+#' Default is "pearson".
 #'
 #' @details Kaiser (1970) proposed this index, originally called measure of
 #' sampling adequacy (MSA), that indicates how near the inverted correlation
@@ -58,7 +60,8 @@
 #' @example
 #' KMO(test_models$baseline$cormat)
 KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
-                           "everything", "na.or.complete")) {
+                           "everything", "na.or.complete"),
+                cor_method = c("pearson", "spearman", "kendall")) {
 
   # Perform argument checks
   if(!inherits(x, c("matrix", "data.frame"))){
@@ -69,6 +72,7 @@ KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
   }
 
   use <- match.arg(use)
+  cor_method <- match.arg(cor_method)
 
   # Check if it is a correlation matrix
   if(.is_cormat(x)){
@@ -87,7 +91,7 @@ KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
     message("x was not a correlation matrix. Correlations are found from entered
             raw data.")
 
-    R <- stats::cor(x, use = use)
+    R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)
     N <- nrow(x)
 
@@ -131,8 +135,13 @@ KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
 
   }
 
+  # Prepare settings
+  settings <- list(use = use,
+                   cor_method = cor_method)
+
   output <- list(KMO = KMO,
-                 KMO_i = KMO_i)
+                 KMO_i = KMO_i,
+                 settings = settings)
 
   class(output) <- "KMO"
 

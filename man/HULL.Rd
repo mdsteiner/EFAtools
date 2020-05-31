@@ -18,6 +18,7 @@ HULL(
   eigen_type = c("SMC", "PCA", "EFA"),
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
     "na.or.complete"),
+  cor_method = c("pearson", "spearman", "kendall"),
   n_datasets = 1000,
   percent = 95,
   decision_rule = c("Means", "Percentile", "Crawford"),
@@ -57,6 +58,9 @@ diagonal. This is passed to  \code{\link{PARALLEL}}.}
 
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
 is given as input. Default is \code{"pairwise.complete.obs"}.}
+
+\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor}}.
+Default is "pearson".}
 
 \item{n_datasets}{numeric. The number of datasets to simulate. Default is 1000.
 This is passed to \code{\link{PARALLEL}}.}

@@ -29,6 +29,8 @@
 #'  diagonal. This is passed to  \code{\link{PARALLEL}}.
 #' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
 #' is given as input. Default is \code{"pairwise.complete.obs"}.
+#' @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}.
+#'  Default is "pearson".
 #' @param n_datasets numeric. The number of datasets to simulate. Default is 1000.
 #'   This is passed to \code{\link{PARALLEL}}.
 #' @param percent numeric. A vector of percentiles to take the simulated eigenvalues from.
@@ -117,8 +119,9 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
                  method = c("PAF", "ULS", "ML"), gof = c("CAF", "CFI", "RMSEA"),
                  eigen_type = c("SMC", "PCA", "EFA"),
                  use = c("pairwise.complete.obs", "all.obs", "complete.obs",
-                         "everything", "na.or.complete"), n_datasets = 1000,
-                 percent = 95,
+                         "everything", "na.or.complete"),
+                 cor_method = c("pearson", "spearman", "kendall"),
+                 n_datasets = 1000, percent = 95,
                  decision_rule = c("Means", "Percentile", "Crawford"),
                  n_factors = 1, ...) {
   # Perform hull method following Lorenzo-Seva, Timmerman, and Kiers (2011)
@@ -132,6 +135,7 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
 
   method <- match.arg(method)
   use <- match.arg(use)
+  cor_method <- match.arg(cor_method)
   gof <- match.arg(gof, several.ok = TRUE)
   eigen_type <- match.arg(eigen_type)
   checkmate::assert_count(n_fac_theor, na.ok = TRUE)
@@ -164,7 +168,7 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
     message("x was not a correlation matrix. Correlations are found from entered
             raw data.")
 
-    R <- stats::cor(x, use = use)
+    R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)
     N <- nrow(x)
 
@@ -349,7 +353,8 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
                     gof = gof,
                     n_fac_theor = n_fac_theor,
                     eigen_type = eigen_type,
-                    use = use)
+                    use = use,
+                    cor_method = cor_method)
   )
 
   class(out) <- "HULL"

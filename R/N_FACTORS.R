@@ -31,11 +31,11 @@
 #' @param alpha numeric. Passed to \code{\link{CD}}. The alpha level used to test
 #'  the significance of the improvement added by an additional factor.
 #'  Default is .30.
-#' @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}} in
-#' \code{\link{CD}}. Default is "pearson".
-#' @param max_iter numeric. Passed to \code{\link{CD}}...
-#' The maximum number of iterations to perform after
-#'  which the iterative PAF procedure is halted. Default is 50.
+#' @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}
+#'  Default is "pearson".
+#' @param max_iter_CD numeric. Passed to \code{\link{CD}}. The maximum number of
+#'  iterations to perform after which the iterative PAF procedure is halted.
+#'   Default is 50.
 #' @param n_fac_theor
 #' @param method
 #' @param gof
@@ -72,7 +72,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
                       n_factors_max = NA, N_pop = 10000, N_samples = 500,
                       alpha = .30, cor_method = c("pearson", "spearman",
                                                   "kendall"),
-                      max_iter = 300, n_fac_theor = NA,
+                      max_iter_CD = 50, n_fac_theor = NA,
                       method = c("PAF", "ULS", "ML"),
                       gof = c("CAF", "CFI", "RMSEA"),
                       eigen_type_HULL = c("SMC", "PCA", "EFA"),
@@ -93,7 +93,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   # N_samples <- 500
   # alpha <- .30
   # cor_method <- c("pearson", "spearman", "kendall")
-  # max_iter <- 1000
+  # max_iter_CD <- 1000
   # n_fac_theor <- NA
   # method <- c("PAF", "ULS", "ML")
   # gof <- c("CAF", "CFI", "RMSEA")
@@ -130,7 +130,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
     message("x was not a correlation matrix. Correlations are found from entered
             raw data.")
 
-    R <- stats::cor(x, use = use)
+    R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)
     N <- nrow(x)
 
@@ -176,14 +176,13 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   nfac_AIC <- NA
 
   ## Tests for suitability of factor analysis
-
   if(isTRUE(suitability)){
 
   # Bartlett's Test of Sphericity
-  bart_out <- BARTLETT(R, N = N, use = use)
+  bart_out <- BARTLETT(R, N = N, use = use, cor_method = cor_method)
 
   # Kaiser-Meyer_Olkin criterion
-  kmo_out <- KMO(R, use = use)
+  kmo_out <- KMO(R, use = use, cor_method = cor_method)
 
   }
 
@@ -196,7 +195,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
 
       cd_out <- CD(x, n_factors_max = n_factors_max, N_pop = N_pop,
                    N_samples = N_samples, alpha = alpha, use = use,
-                   cor_method = cor_method, max_iter = max_iter)
+                   cor_method = cor_method, max_iter = max_iter_CD)
 
       nfac_CD <- cd_out$n_factors
 
@@ -209,7 +208,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   # Empirical Kaiser Criterion
   if("EKC" %in% criteria){
 
-    ekc_out <- EKC(x, N = N, use = use)
+    ekc_out <- EKC(x, N = N, use = use, cor_method = cor_method)
 
     nfac_EKC <- ekc_out$n_factors
 
@@ -219,7 +218,10 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   if("HULL" %in% criteria){
 
     hull_out <- HULL(R, N = N, n_fac_theor = n_fac_theor, method = method,
-                     eigen_type = eigen_type_HULL, gof = gof, use = use, ...)
+                     eigen_type = eigen_type_HULL, gof = gof, use = use,
+                     cor_method = cor_method, n_datasets = n_datasets,
+                     percent = percents, decision_rule = decision_rule,
+                     n_factors = n_factors, ...)
 
     nfac_HULL_CAF <- hull_out$n_fac_CAF
     nfac_HULL_CFI <- hull_out$n_fac_CFI
@@ -231,7 +233,8 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   if("KGC" %in% criteria){
 
     kgc_out <- KGC(R, eigen_type = eigen_type_KGC_PA, use = use,
-                   n_factors = n_factors, method = method, ...)
+                   cor_method = cor_method, n_factors = n_factors,
+                   method = method, ...)
 
     nfac_KGC_PCA <- kgc_out$n_fac_PCA
     nfac_KGC_SMC <- kgc_out$n_fac_SMC
@@ -245,6 +248,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
     parallel_out <- try(PARALLEL(R, N = N, n_vars = n_vars,
                                  n_datasets = n_datasets, percent = percent,
                                  eigen_type = eigen_type_KGC_PA, use = use,
+                                 cor_method = cor_method,
                                  decision_rule = decision_rule,
                                  n_factors = n_factors, method = method, ...))
 
@@ -257,7 +261,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   # Sequential chi square tests, RMSEA lower bound and AIC
   if("SMT" %in% criteria){
 
-    smt_out <- SMT(R, N = N, use = use)
+    smt_out <- SMT(R, N = N, use = use, cor_method = cor_method)
 
     nfac_SMT_chi <- smt_out$nfac_chi
     nfac_RMSEA <- smt_out$nfac_RMSEA
@@ -275,7 +279,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
                    N_samples = N_samples,
                    alpha = alpha,
                    cor_method = cor_method,
-                   max_iter = max_iter,
+                   max_iter_CD = max_iter_CD,
                    n_fac_theor = n_fac_theor,
                    method = method,
                    gof = gof,

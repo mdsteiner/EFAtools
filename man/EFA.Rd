@@ -39,6 +39,7 @@ EFA(
   precision = NULL,
   order_type = NULL,
   start_method = c("factanal", "psych"),
+  cor_method = c("pearson", "spearman", "kendall"),
   ...
 )
 }
@@ -137,6 +138,9 @@ sum of squared factor loadings per factor. Default is \code{NULL}.}
 optimization prodedure for ML. Default is "factanal" which takes the starting
 values specified in the \link[stats:factanal]{stats::factanal} function. "psych" takes the
 starting values specified in \link[psych:fa]{psych::fa}. Solutions are very similar.}
+
+\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor}}.
+Default is "pearson".}
 
 \item{...}{Additional arguments passed to rotation functions from the \code{GPArotation} package (e.g., \code{maxit} for maximum number of iterations).}
 }

@@ -11,6 +11,8 @@
 #' correlation matrix is used.
 #' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
 #' is given as input. Default is "pairwise.complete.obs".
+#' @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}.
+#' Default is "pearson".
 #'
 #' @details Bartlett (1951) proposed this statistic to determine a correlation
 #' matrix' suitability for factor analysis. The statistic is approximately
@@ -52,7 +54,8 @@
 #'
 BARTLETT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
                                         "complete.obs", "everything",
-                                        "na.or.complete")){
+                                        "na.or.complete"),
+                     cor_method = c("pearson", "spearman", "kendall")){
 
   # Perform argument checks
   if(!inherits(x, c("matrix", "data.frame"))){
@@ -63,6 +66,7 @@ BARTLETT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   }
 
   use <- match.arg(use)
+  cor_method <- match.arg(cor_method)
   checkmate::assert_count(N, na.ok = TRUE)
 
   # Check if it is a correlation matrix
@@ -82,7 +86,7 @@ BARTLETT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
     message("x was not a correlation matrix. Correlations are found from entered
             raw data.")
 
-    R <- stats::cor(x, use = use)
+    R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)
     N <- nrow(x)
 
@@ -111,7 +115,8 @@ BARTLETT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
 
   # prepare the output
   settings <- list(N = N,
-                   use = use)
+                   use = use,
+                   cor_method)
 
   output <- list(chisq = statistic,
                  p_value = pval,

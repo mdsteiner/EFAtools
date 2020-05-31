@@ -12,7 +12,8 @@ BARTLETT(
   x,
   N = NA,
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
-    "na.or.complete")
+    "na.or.complete"),
+  cor_method = c("pearson", "spearman", "kendall")
 )
 }
 \arguments{
@@ -24,6 +25,9 @@ correlation matrix is used.}
 
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
 is given as input. Default is "pairwise.complete.obs".}
+
+\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor}}.
+Default is "pearson".}
 }
 \value{
 A list containing

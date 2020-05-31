@@ -17,6 +17,8 @@
 #'  diagonal.
 #' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw
 #'  data is given as input. Default is "pairwise.complete.obs".
+#' @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}.
+#' Default is "pearson".
 #' @param n_factors numeric. Number of factors to extract if "EFA" is included in
 #' \code{eigen_type}. Default is 1.
 #' @param ... Additional arguments passed to \code{\link{EFA}}. For example,
@@ -85,7 +87,9 @@
 #'
 KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
                 use = c("pairwise.complete.obs", "all.obs", "complete.obs",
-                        "everything", "na.or.complete"), n_factors = 1, ...){
+                        "everything", "na.or.complete"),
+                cor_method = c("pearson", "spearman", "kendall"), n_factors = 1,
+                ...){
 
   # Perform argument checks
   if(!inherits(x, c("matrix", "data.frame"))){
@@ -97,6 +101,7 @@ KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
 
   eigen_type <- match.arg(eigen_type, several.ok = TRUE)
   use <- match.arg(use)
+  cor_method <- match.arg(cor_method)
   checkmate::assert_count(n_factors)
 
   # Check if it is a correlation matrix
@@ -116,7 +121,7 @@ KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
     message("x was not a correlation matrix. Correlations are found from entered
             raw data.")
 
-    R <- stats::cor(x, use = use)
+    R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)
     N <- nrow(x)
 
@@ -179,6 +184,7 @@ KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
   # prepare settings
   settings <- list(eigen_type = eigen_type,
                    use = use,
+                   cor_method = cor_method,
                    n_factors = n_factors)
 
   # Prepare the output

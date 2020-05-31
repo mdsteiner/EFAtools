@@ -16,7 +16,7 @@ N_FACTORS(
   N_samples = 500,
   alpha = 0.3,
   cor_method = c("pearson", "spearman", "kendall"),
-  max_iter = 300,
+  max_iter_CD = 50,
   n_fac_theor = NA,
   method = c("PAF", "ULS", "ML"),
   gof = c("CAF", "CFI", "RMSEA"),
@@ -31,16 +31,61 @@ N_FACTORS(
 )
 }
 \arguments{
+\item{x}{data.frame or matrix. Dataframe or matrix of raw data or matrix with
+correlations. If "CD" is included as a criterion, \code(x) must be raw data.}
+
+\item{criteria}{character. A vector with the factor retention methods to
+perform. Possible inputs are: "CD", "EKC", "HULL", "KGC", "PARALLEL",
+and "SMT" (see details). By default, all factor retention methods are
+performed.}
+
+\item{suitability}{logical. Whether the data should be checked for suitability
+for factor analysis using the Kaiser-Guttmann criterion and Bartlett's test
+of sphericity (see details). Default is \code{TRUE}.}
+
+\item{N}{numeric. The number of observations. Only needed if x is a
+correlation matrix.}
+
+\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw
+data is given as input. Default is "pairwise.complete.obs".}
+
+\item{n_factors_max}{numeric. Passed to \code{\link{CD}}.The maximum number
+of factors to test against.
+Larger numbers will increase the duration the procedure takes, but test more
+possible solutions. Maximum possible is number of variables / 2. Default is
+NA. If not specified, number of variables / 2 is used.}
+
+\item{N_pop}{numeric. Passed to \code{\link{CD}}. Size of finite populations
+of comparison data. Default is 10000.}
+
+\item{N_samples}{numeric. Passed to \code{\link{CD}}. Number of samples drawn
+from each population. Default is 500.}
+
+\item{alpha}{numeric. Passed to \code{\link{CD}}. The alpha level used to test
+the significance of the improvement added by an additional factor.
+Default is .30.}
+
+\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor}}
+Default is "pearson".}
+
+\item{max_iter_CD}{numeric. Passed to \code{\link{CD}}. The maximum number of
+iterations to perform after which the iterative PAF procedure is halted.
+ Default is 50.}
+
 \item{...}{}
 }
 \value{
 
 }
 \description{
-DESCRIBE HERe
+Among the most important decisions in exploratory factor analysis (EFA) is
+the choice of the number of factors to retain. Several factor retention
+criteria have been developed for this. With this function, various factor
+ retention criteria can be performed simultaneously. Additionally, the data
+ can be checked for their suitability for factor analysis.
 }
 \details{
-# - say what only works with raw data (CD, PARALLEL if resampling is implemented)
+DESCRIBE FIRST KMO AND BARTLETT; THEN LIST FAC RET CRIT WITH LINKS TO FUNCTIONS
 }
 \examples{
 # All criteria, with correlation matrix and fit method "ML" (where needed)

@@ -58,6 +58,8 @@
 #' Default is \code{NULL}.
 #' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
 #' is given as input. Default is "pairwise.complete.obs".
+#' @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}.
+#' Default is "pearson".
 #' @param k numeric. Either the power used for computing the target matrix P in
 #' the promax rotation or the number of 'close to zero loadings' for the simplimax
 #' rotation (see \code{\link[GPArotation:GPFobl]{GPArotation::GPFobl}}. If left to
@@ -253,6 +255,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                                           "na.or.complete"),
                 k = NULL, kaiser = TRUE, P_type = NULL, precision = NULL,
                 order_type = NULL, start_method = c("factanal", "psych"),
+                cor_method = c("pearson", "spearman", "kendall"),
                 ...) {
 
   # Perform argument checks
@@ -266,6 +269,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   method <- match.arg(method)
   rotation <- match.arg(rotation)
   use <- match.arg(use)
+  cor_method <- match.arg(cor_method)
   type <- match.arg(type)
   start_method <- match.arg(start_method)
 
@@ -300,7 +304,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
     message("x was not a correlation matrix. Correlations are found from entered
             raw data.")
 
-    R <- stats::cor(x, use = use)
+    R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)
     N <- nrow(x)
 
@@ -413,7 +417,8 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
     type = type,
     n_factors = n_factors,
     N = N,
-    use = use
+    use = use,
+    cor_method = cor_method
   )
 
   if(method == "ULS" & rotation == "none"){
