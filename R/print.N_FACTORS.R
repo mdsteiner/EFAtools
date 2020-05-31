@@ -25,7 +25,7 @@ print.N_FACTORS <- function(x, ...){
   if(isTRUE(suitability)){
 
     cat("\n")
-    cat(crayon::blue$bold("Tests for the suitability of the data for factor analysis"))
+    cat(cli::rule(left = "Tests for the suitability of the data for factor analysis"))
     cat("\n")
 
     print(x$output$bart_out)
