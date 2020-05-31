@@ -2,19 +2,16 @@
 #'
 #' The functions takes two objects of the same dimensions containing numeric
 #' information (loadings or communalities) and returns a list of class COMPARE
-#' containing summary information of the absolute difference of the objects, as
-#' well as the differences themselves.
+#' containing summary information of the differences of the objects.
 #'
-#' @param x matrix, dataframe, or vector. Loadings or communalities of one
-#'  implementation.
-#' @param y matrix, dataframe, or vector. Loadings or communalities of another
-#'  implementation to compare to x.
+#' @param x matrix, data.frame, or vector. Loadings or communalities of a factor
+#'  analysis output.
+#' @param y matrix, data.frame, or vector. Loadings or communalities of another
+#'  factor analysis output to compare to x.
 #' @param reorder character. Whether and how elements / columns should be
 #' reordered. If "congruence" (default), reordering is done according to Tuckers
-#' corresponcence coefficient, if "names", objects according to their names,
+#' correspondence coefficient, if "names", objects according to their names,
 #' if "none", no reordering is done.
-#' OLD: (loading) matrices are reordered according to Tuckers correspondence
-#'  coefficient, other objects according to the names.
 #' @param corres logical. Whether factor correspondences should be compared if a
 #'  matrix is entered.
 #' @param thresh numeric. The threshold to classify a pattern coefficient as substantial. Default is .3.
@@ -37,8 +34,7 @@
 #'  and max functions. Default is FALSE.
 #' @param x_labels character. A vector of length two containing identifying
 #'  labels for the two objects x and y that will be compared. These will be used
-#'  as labels on the x-axis of the plot. If left to NULL, "Var 1" and "Var 2" will
-#'  be used.
+#'  as labels on the x-axis of the plot. Default is "x" and "y".
 #' @param plot logical. If TRUE (default), a plot illustrating the differences
 #'  will be shown.
 #' @param plot_red numeric. Threshold above which to plot the absolute differences
@@ -61,8 +57,7 @@
 #'  between x and y, when only the highest loading is considered.}
 #' \item{diff_corres_cross}{The number of differing variable to factor correspondences
 #'  between x and y when all loadings \code{>= thresh} are considered.}
-#' \item{diff_corres}{The number of differing variable to factor correspondences
-#'  between x and y.}
+#' \item{g}{The root mean squared distance (RMSE) between x and y.}
 #' \item{settings}{List of settings needed for the print method print.COMPARE.}
 #'
 #' @export

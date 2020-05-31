@@ -1,12 +1,13 @@
 #' Hull method for determining the number of factors to retain
 #'
 #' Implementation of the Hull method suggested by Lorenzo-Seva, Timmerman,
-#' and Kiers (2011), but using principal axis factoring. See details for
+#' and Kiers (2011), with an extension to principal axis factoring. See details for
 #' parallelization.
 #'
 #' @param x matrix or data.frame. Correlation matrix or raw data.
 #' @param N numeric. Number of cases in the data. This is passed to \link{PARALLEL}.
-#'  Only has to be specified if x is a correlation matrix.
+#'  Only has to be specified if x is a correlation matrix, otherwise it is determined
+#'  based on the dimensions of x..
 #' @param n_fac_theor numeric. Theoretical number of factors to retain. The maximum
 #'   of this number and the number of factors suggested by \link{PARALLEL} plus
 #'   one will be used in the Hull method.
@@ -14,11 +15,12 @@
 #'    \code{"ULS"}, or  \code{"ML"}, for principal axis factoring, unweighted
 #'    least squares, and maximum likelihood, respectively.
 #' @param gof character. The goodness of fit index to use. Either \code{"CAF"},
-#'   \code{"CFI"}, or \code{"RMSEA"}, or some combination of them.
+#'   \code{"CFI"}, or \code{"RMSEA"}, or any combination of them.
 #'   If \code{method = "PAF"} is used, only
 #'   the CAF can be used as goodness of fit index. For details on the CAF, see
 #'   Lorenzo-Seva, Timmerman, and Kiers (2011).
-#' @param eigen_type character. On what the eigenvalues should be found. Can be
+#' @param eigen_type character. On what the eigenvalues should be found in the
+#'  parallel analysis.. Can be
 #'  one of "SMC", "PCA", or "EFA". If using "SMC" (default), the diagonal of the
 #'  correlation matrices is replaced by the squared multiple correlations (SMCs)
 #'  of the indicators. If using "PCA", the diagonal values of the correlation
@@ -26,23 +28,49 @@
 #'  correlation  matrices with the final communalities of an EFA solution as
 #'  diagonal. This is passed to  \code{\link{PARALLEL}}.
 #' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
-#' is given as input. Default is "pairwise.complete.obs".
-#' @param ... Further arguments passed to \link{EFA} or \link{PARALLEL}.
+#' is given as input. Default is \code{"pairwise.complete.obs"}.
+#' @param n_datasets numeric. The number of datasets to simulate. Default is 1000.
+#'   This is passed to \code{\link{PARALLEL}}.
+#' @param percent numeric. A vector of percentiles to take the simulated eigenvalues from.
+#'  Default is 95. This is passed to \code{\link{PARALLEL}}.
+#'  @param decision_rule character. Which rule to use to determine the number of
+#'  factors to retain. Default is \code{"mean"}, which will use the average
+#'  simulated eigenvalues. \code{"Percentile"}, uses the percentiles specified
+#'  in percent. \code{"Crawford"} uses the 95th percentile for the first factor
+#'  and the mean afterwards (based on Crawford et al, 2010). This is passed to \code{\link{PARALLEL}}.
+#'  @param n_factors numeric. Number of factors to extract if "EFA" is included in
+#' \code{eigen_type}. Default is 1. This is passed to \code{\link{PARALLEL}}.
+#' @param ... Further arguments passed to \code{\link{EFA}} or \code{\link{PARALLEL}}.
 #'
-#' @details The \link{PARALLEL} function and the principal axis factoring of the
+#' @details The Hull method aims to find a model with an optimal balance between
+#'  model fit and number of parameters. That is, it aims to retrieve only major
+#'  factors (Lorenzo-Seva, Timmerman, & Kiers, 2011). To this end, it performs
+#'  the following steps (Lorenzo-Seva, Timmerman, & Kiers, 2011, p.351):
+#'  \enumerate{
+#'    \item It performs parallel analysis and adds one to the identified number of factors (this number is denoted \emph{J}). \emph{J} is taken as an upper bound of the number of factors to retain in the hull method. Alternatively, a theoretical number of factors can be entered. In this case \emph{J} will be set to whichever of these two numbers (from parallel analysis or based on theory) is higher.
+#'    \item For all 0 to \emph{J} factors, the goodness-of-fit (one of \emph{CAF}, \emph{RMSEA}, or \emph{CFI}) and the degrees of freedom (\emph{df}) are computed.
+#'    \item The solutions are ordered according to their \emph{df}.
+#'    \item Solutions that are not on the boundary of the convex hull are eliminated (see Lorenzo-Seva, Timmerman, & Kiers, 2011, for details).
+#'    \item All the triplets of adjacent solutions are considered consecutively. The middle solution is excluded if its point is below or on the line connecting its neighbors in a plot of the goodness-of-fit versus the degrees of freedom.
+#'    \item Step 5 is repeated until no solution can be excluded.
+#'    \item The \emph{st} values of the “hull” solutions are determined.
+#'    \item The solution with the highest \emph{st} value is selected.
+#'  }
+#'
+#' The \link{PARALLEL} function and the principal axis factoring of the
 #'   different number of factors can be parallelized using the future framework,
 #'   by calling the \link[future:plan]{future::plan} function. The examples
 #'    provide example code on how to enable parallel processing.
 #'
 #'   Note that if \code{gof = "RMSEA"} is used, 1 - RMSEA is actually used to
-#'   compare the different solutions. Thus, the threshold of .05 is now .95.
+#'   compare the different solutions. Thus, the threshold of .05 is now .95. This
+#'   is necessary due to how the heuristic to locate the elbow of the hull works.
 #'
 #'   The ML estimation method uses the \link[stats:factanal]{stats::factanal}
 #'    starting values. See also the \link{EFA} documentation.
 #'
 #'    The \code{HULL} function can also be called together with other factor
 #'    retention criteria in the \code{\link{N_FACTORS}} function.
-#'
 #' @return A list of class HULL containing the following objects
 #' \item{n_fac_CAF}{The number of factors to retain according to the Hull method
 #' with the CAF.}
@@ -51,8 +79,9 @@
 #' \item{n_fac_RMSEA}{The number of factors to retain according to the Hull method
 #' with the RMSEA.}
 #' \item{solutions_CAF}{A matrix containing the CAFs, degrees of freedom, and for the factors lying on the hull, the st values of the hull solution (see Lorenzo-Seva, Timmerman, and Kiers 2011 for details).}
-#' #' \item{solutions_CFI}{A matrix containing the CFIs, degrees of freedom, and for the factors lying on the hull, the st values of the hull solution (see Lorenzo-Seva, Timmerman, and Kiers 2011 for details).}
-#' #' \item{solutions_RMSEA}{A matrix containing the RMSEAs, degrees of freedom, and for the factors lying on the hull, the st values of the hull solution (see Lorenzo-Seva, Timmerman, and Kiers 2011 for details).}
+#' \item{solutions_CFI}{A matrix containing the CFIs, degrees of freedom, and for the factors lying on the hull, the st values of the hull solution (see Lorenzo-Seva, Timmerman, and Kiers 2011 for details).}
+#' \item{solutions_RMSEA}{A matrix containing the RMSEAs, degrees of freedom, and for the factors lying on the hull, the st values of the hull solution (see Lorenzo-Seva, Timmerman, and Kiers 2011 for details).}
+#' \item{n_fac_max}{The upper bound \emph{J} of the number of factors to extract (see details).}
 #' \item{settings}{A list of the settings used.}
 #'
 #' @source Lorenzo-Seva, U., Timmerman, M. E., & Kiers, H. A. (2011).
@@ -88,7 +117,10 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
                  method = c("PAF", "ULS", "ML"), gof = c("CAF", "CFI", "RMSEA"),
                  eigen_type = c("SMC", "PCA", "EFA"),
                  use = c("pairwise.complete.obs", "all.obs", "complete.obs",
-                         "everything", "na.or.complete"), ...) {
+                         "everything", "na.or.complete"), n_datasets = 1000,
+                 percent = 95,
+                 decision_rule = c("Means", "Percentile", "Crawford"),
+                 n_factors = 1, ...) {
   # Perform hull method following Lorenzo-Seva, Timmerman, and Kiers (2011)
 
   # # for testing
@@ -104,6 +136,10 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   eigen_type <- match.arg(eigen_type)
   checkmate::assert_count(n_fac_theor, na.ok = TRUE)
   checkmate::assert_count(N, na.ok = TRUE)
+  decision_rule <- match.arg(decision_rule)
+  checkmate::assert_count(n_factors)
+  checkmate::assert_count(n_datasets)
+  checkmate::assert_number(percent, lower = 0, upper = 100)
 
   if (method == "PAF" && !all(gof == "CAF")) {
     message('Only CAF can be used as gof if method "PAF" is used.',
@@ -156,7 +192,10 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   m <- ncol(R)
 
   # 1) perform parallel analysis to find J as n_fac_theor + 1
-  par_res <- PARALLEL(R, N = N, eigen_type = eigen_type, method = method, ...)
+  par_res <- PARALLEL(R, N = N, eigen_type = eigen_type, method = method,
+                      n_datasets = n_datasets, percent = percent,
+                      decision_rule = decision_rule, n_factors = n_factors,
+                      ...)
 
   if(eigen_type == "SMC"){
     n_fac_PA <- par_res$n_fac_SMC

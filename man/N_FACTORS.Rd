@@ -2,7 +2,7 @@
 % Please edit documentation in R/N_FACTORS.R
 \name{N_FACTORS}
 \alias{N_FACTORS}
-\title{Title}
+\title{Various Factor Retention Methods}
 \usage{
 N_FACTORS(
   x,
@@ -37,13 +37,13 @@ N_FACTORS(
 
 }
 \description{
-Title
+DESCRIBE HERe
 }
 \details{
 # - say what only works with raw data (CD, PARALLEL if resampling is implemented)
 }
 \examples{
-# All criteria with correlation matrix and fit method "ML" (where needed)
+# All criteria, with correlation matrix and fit method "ML" (where needed)
 # This will throw a warning for CD, as no raw data were specified
 nfac_all <- N_FACTORS(test_models$baseline$cormat, N = 500, method = "ML")
 
