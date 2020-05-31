@@ -96,7 +96,7 @@
 #' \item{Hull method (see \code{\link{HULL}})}
 #' \item{Kaiser-Guttman criterion (see \code{\link{KGC}})}
 #' \item{Parallel analysis (see \code{\link{PARALLEL}})}
-#' \item{Sequential chi-square model tests, RMSEA, and AIC
+#' \item{Sequential chi-square model tests, RMSEA lower bound, and AIC
 #' (see \code{\link{SMT}})}
 #' }
 #'
@@ -115,7 +115,25 @@
 #' # This will throw a warning for CD, as no raw data were specified
 #' nfac_all <- N_FACTORS(test_models$baseline$cormat, N = 500, method = "ML")
 #'
-#' # MORE EXAMPLES
+#' # The same as above, but without "CD"
+#' nfac_wo_CD <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC",
+#'                         "HULL", "KGC", "PARALLEL", "SMT"), N = 500,
+#'                         method = "ML")
+#'
+#' # Use PAF instead of ML (this will take a lot longer). For this, gof has
+#' to be set to "CAF" for the Hull method.
+#' nfac_PAF <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC",
+#'                       "HULL", "KGC", "PARALLEL", "SMT"), N = 500,
+#'                       gof = "CAF")
+#'
+#' # Do KGC and PARALLEL with only "PCA" type of eigenvalues
+#' nfac_PCA <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC",
+#'                       "HULL", "KGC", "PARALLEL", "SMT"), N = 500,
+#'                       method = "ML", eigen_type_KGC_PA = "PCA")
+#'
+# # Use raw data, such that CD can also be performed
+#' nfac_raw <- N_FACTORS(GRiPS_raw, method = "ML")
+#'
 N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
                                       "SMT"),
                       suitability = TRUE, N = NA,
@@ -137,6 +155,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   criteria <- match.arg(criteria, several.ok = TRUE)
   suitability <- checkmate::assert_flag(suitability)
   eigen_type_HULL <- match.arg(eigen_type_HULL)
+  eigen_type_KGC_PA <- match.arg(eigen_type_KGC_PA, several.ok = TRUE)
   cor_method <- match.arg(cor_method)
   use <- match.arg(use)
   method <- match.arg(method)
@@ -155,9 +174,6 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
     R <- x
 
   } else {
-
-    message("x was not a correlation matrix. Correlations are found from entered
-            raw data.")
 
     R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)
@@ -249,7 +265,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
     hull_out <- HULL(R, N = N, n_fac_theor = n_fac_theor, method = method,
                      eigen_type = eigen_type_HULL, gof = gof, use = use,
                      cor_method = cor_method, n_datasets = n_datasets,
-                     percent = percents, decision_rule = decision_rule,
+                     percent = percent, decision_rule = decision_rule,
                      n_factors = n_factors, ...)
 
     nfac_HULL_CAF <- hull_out$n_fac_CAF

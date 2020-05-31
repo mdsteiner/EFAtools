@@ -8,8 +8,7 @@
 #' @export
 #'
 #' @examples
-#' bart <- BARTLETT(test_models$baseline$cormat, N = 500)
-#' bart
+#' BARTLETT(test_models$baseline$cormat, N = 500)
 #'
 print.BARTLETT <- function(x, ...) {
 
@@ -20,7 +19,8 @@ print.BARTLETT <- function(x, ...) {
   if(pval < .05){
 
     cat("\n")
-    cat("The Bartletts test of sphericity was", crayon::green$bold("significant"),
+    cat("The", crayon::bold("Bartletts test of sphericity"), "was",
+        crayon::green$bold("significant"),
     "at an alpha level of .05.")
     cat("\n")
     cat("These data are probably suitable for factor analysis.")

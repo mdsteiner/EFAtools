@@ -68,10 +68,10 @@
 #' @examples
 #' \dontrun{
 #' # determine n factors of the GRiPS
-#' CD(grips_raw)
+#' CD(GRiPS_raw)
 #'
 #' # determine n factors of the DOSPERT risk subscale
-#' CD(dospert_raw)
+#' CD(DOSPERT_raw)
 #'}
 CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .30,
                use = c("pairwise.complete.obs", "all.obs", "complete.obs",

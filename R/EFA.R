@@ -325,6 +325,14 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
   }
 
+  # Check if number of factors is not too large
+  if(n_factors > floor(ncol(R)/2)){
+
+    stop("The number of factors to extract is too large (more than half the
+          number of indicators). Please enter a lower number and try again.")
+
+  }
+
   # run factor analysis with respective fit method
 
   if (method == "PAF") {

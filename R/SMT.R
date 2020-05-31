@@ -94,7 +94,7 @@
 #' SMT_base <- SMT(test_models$baseline$cormat, N = 500)
 #' SMT_base
 #'
-SMT <- function(x, N = NULL, use = c("pairwise.complete.obs", "all.obs",
+SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
                                      "complete.obs", "everything",
                                      "na.or.complete"),
                 cor_method = c("pearson", "spearman", "kendall")){
@@ -107,7 +107,7 @@ SMT <- function(x, N = NULL, use = c("pairwise.complete.obs", "all.obs",
 
   }
 
-  checkmate::assert_count(N, null.ok = TRUE)
+  checkmate::assert_count(N, na.ok = TRUE)
   use <- match.arg(use)
   cor_method <- match.arg(cor_method)
 
@@ -134,20 +134,22 @@ SMT <- function(x, N = NULL, use = c("pairwise.complete.obs", "all.obs",
 
   }
 
-  if (is.null(N)) {
+  if (is.na(N)) {
 
-    stop("Argument 'N' was NULL. Either provide N or raw data.")
+    stop("Argument 'N' was NA. Either provide N or raw data.")
 
   }
 
   # Prepare objects for sequential tests
-  max_fac <- min(ncol(x)-2, ncol(x)/2 + 2)
+  max_fac <- floor(ncol(x)/2)
   ps <- vector("double", max_fac)
   RMSEA_LB <- vector("double", max_fac)
   AIC <- vector("double", max_fac)
 
   # First check if 0 factors already result in nonsignificant chi square
-  zeromod <- EFA(x, n_factors = 1, method = "ML", rotation = "none", N = N)
+  zeromod <- suppressWarnings(suppressMessages(EFA(x, n_factors = 1,
+                                                   method = "ML",
+                                                   rotation = "none", N = N)))
   p_null <- stats::pchisq(zeromod$fit_indices$chi_null,
                           zeromod$fit_indices$df_null, lower.tail = F)
 
@@ -160,7 +162,9 @@ SMT <- function(x, N = NULL, use = c("pairwise.complete.obs", "all.obs",
     # sequentially perform EFAs with 1 to the maximum number of factors
     for (i in 1:max_fac) {
 
-      temp <- EFA(x, n_factors = i, method = "ML", rotate ="none", N = N)
+      temp <- suppressWarnings(suppressMessages(EFA(x, n_factors = i,
+                                                    method = "ML",
+                                                    rotate ="none", N = N)))
       ps[i] <- stats::pchisq(temp$fit_indices$chi, temp$fit_indices$df,
                              lower.tail = FALSE)
       RMSEA_LB[i] <- temp$fit_indices$RMSEA_LB
