@@ -123,12 +123,15 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
   sig <- TRUE
   n_factors <- 1
 
+
+
   while (n_factors <= n_factors_max && isTRUE(sig)) {
 
     pop <- .gen_data(x, cor_method = cor_method, use, n_factors, N_pop,
                      max_iter = max_iter)
 
     for (j in 1:N_samples) {
+
       samp <- pop[sample(1:N_pop, size = n_cases, replace = TRUE),]
       R_samp <- stats::cor(samp, method = cor_method)
       eigvals_samp <- eigen(R_samp, symmetric = TRUE, only.values = TRUE)$values
@@ -137,6 +140,7 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
     }
 
     if (n_factors > 1) {
+
       sig <- (stats::wilcox.test(RMSE_eigvals[,n_factors],
                           RMSE_eigvals[,(n_factors - 1)], "less")$p.value < alpha)
     }
@@ -166,6 +170,8 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
   )
 
   class(out) <- "CD"
+
+  sp1$finish()
 
   return(out)
 
