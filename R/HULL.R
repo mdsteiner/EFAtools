@@ -438,7 +438,7 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   retain <- s[which.max(s[, 4]), 1]
 
   out <- list(s_complete = s_complete,
-              retain = retain)
+              retain = unname(retain))
 
   return(out)
 
