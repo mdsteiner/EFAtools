@@ -1,5 +1,7 @@
 bart_cor <- BARTLETT(test_models$baseline$cormat, N = 500)
 bart_raw <- BARTLETT(GRiPS_raw)
+
+set.seed(500)
 bart_rand <- BARTLETT(matrix(rnorm(100), ncol = 4))
 
 test_that("output class and dimensions are correct", {
@@ -10,10 +12,33 @@ test_that("output class and dimensions are correct", {
 })
 
 
-test_that("ch-square and p-values are correct", {
-  expect_equal(bart_cor$p_value, 0, tolerance = 1e-10)
-  expect_equal(bart_cor$p_value, 0, tolerance = 1e-10)
-  expect_equal(bart_rand$p_value, 0, tolerance = 1e-10)
+test_that("p-values and df are correct", {
+  expect_lt(bart_cor$p_value, 0.0001)
+  expect_lt(bart_raw$p_value, 0.0001)
+  expect_gt(bart_rand$p_value, 0.05)
+
+  expect_equal(bart_cor$df, 153)
+  expect_equal(bart_raw$df, 28)
+  expect_equal(bart_rand$df, 6)
+
+})
+
+test_that("settings are returned correctly", {
+  expect_named(bart_cor$settings, c("N", "use", "cor_method"))
+  expect_named(bart_raw$settings, c("N", "use", "cor_method"))
+  expect_named(bart_rand$settings, c("N", "use", "cor_method"))
+
+  expect_equal(bart_cor$settings$N, 500)
+  expect_equal(bart_raw$settings$N, 810)
+  expect_equal(bart_rand$settings$N, 25)
+
+  expect_equal(bart_cor$settings$use, "pairwise.complete.obs")
+  expect_equal(bart_raw$settings$use, "pairwise.complete.obs")
+  expect_equal(bart_rand$settings$use, "pairwise.complete.obs")
+
+  expect_equal(bart_cor$settings$cor_method, "pearson")
+  expect_equal(bart_raw$settings$cor_method, "pearson")
+  expect_equal(bart_rand$settings$cor_method, "pearson")
 
 })
 
@@ -32,7 +57,6 @@ test_that("errors are thrown correctly", {
   expect_error(BARTLETT(cor_sing, N = 10), " Correlation matrix is singular, Bartlett's test cannot be executed.")
 })
 
-# REMOVE OBJECTS
-rm(bart_cor, bart_raw, x, y, z, dat_sing, cor_sing)
+rm(bart_cor, bart_raw, bart_rand, x, y, z, dat_sing, cor_sing)
 
 

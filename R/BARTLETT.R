@@ -117,7 +117,7 @@ BARTLETT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   # prepare the output
   settings <- list(N = N,
                    use = use,
-                   cor_method)
+                   cor_method = cor_method)
 
   output <- list(chisq = statistic,
                  p_value = pval,
