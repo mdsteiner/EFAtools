@@ -60,7 +60,7 @@ BARTLETT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   # Perform argument checks
   if(!inherits(x, c("matrix", "data.frame"))){
 
-    stop(crayon::red$bold(cli::symbol$cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data."))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data."))
 
   }
 
@@ -75,7 +75,7 @@ BARTLETT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
 
     if (is.na(N)) {
 
-      stop(crayon::red$bold(cli::symbol$cross), crayon::red(" Argument 'N' was NA, Bartlett's test could not be executed. Please provide either N or raw data."))
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Argument 'N' was NA, Bartlett's test could not be executed. Please provide either N or raw data."))
 
     }
 
@@ -93,7 +93,7 @@ BARTLETT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   R_i <- try(solve(R))
 
   if (inherits(R_i, "try-error")) {
-    stop(crayon::red$bold(cli::symbol$cross), crayon::red(" Correlation matrix is singular, Bartlett's test cannot be executed"))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, Bartlett's test cannot be executed"))
   }
 
   # Check if correlation matrix is positive definite

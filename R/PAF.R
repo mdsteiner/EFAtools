@@ -14,10 +14,7 @@
 
     if (is.null(init_comm) || is.null(criterion) || is.null(criterion_type) ||
         is.null(abs_eigen) || is.null(max_iter)) {
-      stop('One of "init_comm", "criterion", "criterion_type", "abs_eigen",
-           "max_iter" was NULL and no valid
-           "type" was specified. Either use one of "EFAtools", "psych", or "SPSS"
-           for type, or specify all other arguments')
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' One of "init_comm", "criterion", "criterion_type", "abs_eigen", "max_iter" was NULL and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify all other arguments'))
     }
 
   } else if (type == "EFAtools") {
@@ -28,36 +25,31 @@
     if (is.null(init_comm)) {
       init_comm <- "mac"
     } else {
-      warning("Type and init_comm is specified. init_comm is used with value '",
-              init_comm, "'. Results may differ from the specified type")
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and init_comm is specified. init_comm is used with value '", init_comm, "'. Results may differ from the specified type"))
     }
 
     if (is.null(criterion)) {
       criterion <- 1e-3
     } else {
-      warning("Type and criterion is specified. criterion is used with value '",
-              criterion, "'. Results may differ from the specified type")
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and criterion is specified. criterion is used with value '", criterion, "'. Results may differ from the specified type"))
     }
 
     if (is.null(criterion_type)) {
       criterion_type <- "sums"
     } else {
-      warning("Type and criterion_type is specified. criterion_type is used with value '",
-              criterion_type, "'. Results may differ from the specified type")
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and criterion_type is specified. criterion_type is used with value '", criterion_type, "'. Results may differ from the specified type"))
     }
 
     if (is.null(max_iter)) {
       max_iter <- 300
     } else {
-      warning("Type and max_iter is specified. max_iter is used with value '",
-              max_iter, "'. Results may differ from the specified type")
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and max_iter is specified. max_iter is used with value '", max_iter, "'. Results may differ from the specified type"))
     }
 
     if (is.null(abs_eigen)) {
       abs_eigen <- TRUE
     } else {
-      warning("Type and abs_eigen is specified. abs_eigen is used with value '",
-              abs_eigen, "'. Results may differ from the specified type")
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and abs_eigen is specified. abs_eigen is used with value '", abs_eigen, "'. Results may differ from the specified type"))
     }
 
 
@@ -69,36 +61,31 @@
     if (is.null(init_comm)) {
       init_comm <- "smc"
     } else {
-      warning("Type and init_comm is specified. init_comm is used with value '",
-              init_comm, "'. Results may differ from the specified type")
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and init_comm is specified. init_comm is used with value '", init_comm, "'. Results may differ from the specified type"))
     }
 
     if (is.null(criterion)) {
       criterion <- .001
     } else {
-      warning("Type and criterion is specified. criterion is used with value '",
-              criterion, "'. Results may differ from the specified type")
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and criterion is specified. criterion is used with value '", criterion, "'. Results may differ from the specified type"))
     }
 
     if (is.null(criterion_type)) {
       criterion_type <- "sums"
     } else {
-      warning("Type and criterion_type is specified. criterion_type is used with value '",
-              criterion_type, "'. Results may differ from the specified type")
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and criterion_type is specified. criterion_type is used with value '", criterion_type, "'. Results may differ from the specified type"))
     }
 
     if (is.null(max_iter)) {
       max_iter <- 50
     } else {
-      warning("Type and max_iter is specified. max_iter is used with value '",
-              max_iter, "'. Results may differ from the specified type")
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and max_iter is specified. max_iter is used with value '", max_iter, "'. Results may differ from the specified type"))
     }
 
     if (is.null(abs_eigen)) {
       abs_eigen <- FALSE
     } else {
-      warning("Type and abs_eigen is specified. abs_eigen is used with value '",
-              abs_eigen, "'. Results may differ from the specified type")
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and abs_eigen is specified. abs_eigen is used with value '", abs_eigen, "'. Results may differ from the specified type"))
     }
 
 
@@ -110,36 +97,31 @@
     if (is.null(init_comm)) {
       init_comm <- "smc"
     } else {
-      warning("Type and init_comm is specified. init_comm is used with value '",
-              init_comm, "'. Results may differ from the specified type")
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and init_comm is specified. init_comm is used with value '", init_comm, "'. Results may differ from the specified type"))
     }
 
     if (is.null(criterion)) {
       criterion <- .001
     } else {
-      warning("Type and criterion is specified. criterion is used with value '",
-              criterion, "'. Results may differ from the specified type")
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and criterion is specified. criterion is used with value '", criterion, "'. Results may differ from the specified type"))
     }
 
     if (is.null(criterion_type)) {
       criterion_type <- "max_individual"
     } else {
-      warning("Type and criterion_type is specified. criterion_type is used with value '",
-              criterion_type, "'. Results may differ from the specified type")
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and criterion_type is specified. criterion_type is used with value '", criterion_type, "'. Results may differ from the specified type"))
     }
 
     if (is.null(max_iter)) {
       max_iter <- 25
     } else {
-      warning("Type and max_iter is specified. max_iter is used with value '",
-              max_iter, "'. Results may differ from the specified type")
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and max_iter is specified. max_iter is used with value '", max_iter, "'. Results may differ from the specified type"))
     }
 
     if (is.null(abs_eigen)) {
       abs_eigen <- TRUE
     } else {
-      warning("Type and abs_eigen is specified. abs_eigen is used with value '",
-              abs_eigen, "'. Results may differ from the specified type")
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and abs_eigen is specified. abs_eigen is used with value '", abs_eigen, "'. Results may differ from the specified type"))
     }
 
   }

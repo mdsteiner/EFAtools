@@ -238,7 +238,7 @@
   if ((is.null(dim(x)) && !(inherits(x, "numeric"))) ||
       (!is.null(dim(x)) && !(inherits(x, c("matrix", "loadings", "LOADINGS",
                                           "SLLOADINGS"))))) {
-    stop(crayon::red$bold(cli::symbol$cross), crayon::red(" 'x' is of class ", class(x), " but must be a numeric vector or matrix"))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is of class ", class(x), " but must be a numeric vector or matrix"))
   }
 
   if (!is.null(dim(x))) {

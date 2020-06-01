@@ -103,10 +103,10 @@ print.COMPARE <- function(x, ...) {
   if (isTRUE(plot) && length(c(diff)) > 2) {
 
     if (length(x_labels) < 2) {
-      warning("Less than two x_labels specified, using 'x' and 'y'.")
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Less than two x_labels specified, using 'x' and 'y'."))
       x_labels <- c("x", "y")
     } else if (length(x_labels) > 2) {
-      warning("More than two x_labels specified, using only the first two.")
+      warning(crayon::yellow$bold("!"), crayon::yellow(" More than two x_labels specified, using only the first two."))
       x_labels <- x_labels[1:2]
     }
 
