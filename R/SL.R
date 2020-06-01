@@ -124,7 +124,7 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
       orig_R <- unclass(x$r)
 
       if(!is.null(Phi)){
-        warning(crayon::yellow$bold("!"), crayon::yellow(" Phi argument is specified. Specified factor intercorrelations are taken. To take factor intercorrelations from the psych fa output, leave Phi = NULL")
+        warning(crayon::yellow$bold("!"), crayon::yellow(" Phi argument is specified. Specified factor intercorrelations are taken. To take factor intercorrelations from the psych fa output, leave Phi = NULL"))
 
       } else {
 
