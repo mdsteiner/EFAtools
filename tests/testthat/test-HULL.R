@@ -86,6 +86,32 @@ test_that("solution matrices are correctly returned", {
   expect_equal(hull_raw_uls_CFI$solutions_RMSEA, NA)
 })
 
+test_that("n_factors are correctly returned", {
+  expect_equal(hull_cor_paf$n_fac_CAF, 3)
+  expect_equal(hull_cor_paf$n_fac_CFI, NA)
+  expect_equal(hull_cor_paf$n_fac_RMSEA, NA)
+
+  expect_equal(hull_cor_uls$n_fac_CAF, 3)
+  expect_equal(hull_cor_uls$n_fac_CFI, 3)
+  expect_equal(hull_cor_uls$n_fac_RMSEA, 3)
+
+  expect_equal(hull_cor_uls_CFI$n_fac_CAF, NA)
+  expect_equal(hull_cor_uls_CFI$n_fac_CFI, 3)
+  expect_equal(hull_cor_uls_CFI$n_fac_RMSEA, NA)
+
+  expect_equal(hull_raw_paf$n_fac_CAF, "matrix")
+  expect_equal(hull_raw_paf$n_fac_CFI, NA)
+  expect_equal(hull_raw_paf$n_fac_RMSEA, NA)
+
+  expect_equal(hull_raw_uls$n_fac_CAF, "matrix")
+  expect_equal(hull_raw_uls$n_fac_CFI, "matrix")
+  expect_equal(hull_raw_uls$n_fac_RMSEA, "matrix")
+
+  expect_equal(hull_raw_uls_CFI$n_fac_CAF, NA)
+  expect_equal(hull_raw_uls_CFI$n_fac_CFI, "matrix")
+  expect_equal(hull_raw_uls_CFI$n_fac_RMSEA, NA)
+})
+
 
 FURTHER HULL CHECKS -> N_FACTORS, WARNINGS AND ERRORS
 WARNING IF N_FAC MAX IS TOO LARGE
