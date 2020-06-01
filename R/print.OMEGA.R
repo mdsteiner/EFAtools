@@ -25,7 +25,7 @@ print.OMEGA <- function(x, digits = 3, ...) {
 
     if(length(x[[1]]) == 1){
 
-      cat("Omega total for the single factor for each group:")
+      cat(crayon::blue$bold("Omega total for the single factor for each group:"))
       cat("\n")
 
       for(i in 1:length(group_names)){
@@ -38,14 +38,14 @@ print.OMEGA <- function(x, digits = 3, ...) {
 
     } else {
 
-      cat("Omega total, omega hierarchical, and omega subscale for the general",
-          "factor (top row) and the group factors for each group:")
+      cat(crayon::blue$bold("Omega total, omega hierarchical, and omega subscale",
+      "for the general factor (top row) and the group factors for each group:"))
       cat("\n")
 
       for(i in 1:length(group_names)){
 
         cat("\n")
-        cat("Group ", crayon::italic(group_names[i]), ":", sep = "")
+        cat(crayon::blue("Group ", crayon::italic(group_names[i]), ":"), sep = "")
         cat("\n")
         print(round(x[[i]], digits = digits))
 
@@ -57,12 +57,13 @@ print.OMEGA <- function(x, digits = 3, ...) {
 
     if(length(x) == 1){
 
-      cat("Omega total for the single factor:", round(x, digits = digits))
+      cat(crayon::blue$bold("Omega total for the single factor:"),
+                            round(x, digits = digits))
 
     } else {
 
-      cat("Omega total, omega hierarchical, and omega subscale for the general",
-      "factor (top row) and the group factors:")
+      cat(crayon::blue$bold("Omega total, omega hierarchical, and omega subscale",
+      "for the general factor (top row) and the group factors:"))
       cat("\n")
       cat("\n")
       print(round(unclass(x), digits = digits))

@@ -20,9 +20,10 @@ print.SL <- function(x, ...) {
   type <- x$settings$type
 
   # Settings intro message
-  cat(crayon::blue("EFA for second-order loadings performed with type = '",
-                   crayon::bold(type), "' and method = '", crayon::bold(method),
-                   "'", sep = ""))
+  cat("\n")
+  cat("EFA for second-order loadings performed with type = '",
+      crayon::bold(type), "' and method = '", crayon::bold(method),
+      "'", sep = "")
   cat("\n")
 
   if (!is.null(x$settings$max_iter) && x$iter > x$settings$max_iter) {
@@ -35,11 +36,14 @@ print.SL <- function(x, ...) {
 
   # print the loadings and the variances
   cat("\n")
-  cat(crayon::blue$bold("Schmid-Leiman Solution:"))
+  cat(cli::rule(left = crayon::bold("Schmid-Leiman Solution"), col = "blue"))
+  cat("\n")
   cat("\n")
   print(x$sl)
   cat("\n")
-  cat(crayon::blue$bold("Variances Accounted For:"))
+  cat("\n")
+  cat(cli::rule(left = crayon::bold("Variances Accounted for"), col = "blue"))
+  cat("\n")
   cat("\n")
   cat(.get_compare_matrix(x$vars_accounted, r_red = Inf, n_char = 17))
 
