@@ -147,28 +147,25 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   checkmate::assert_count(n_datasets)
   checkmate::assert_number(percent, lower = 0, upper = 100)
 
+  if (ncol(x) < 6) {
+    stop("Data has fewer than 6 indicators. Hull method needs at least 6.")
+  }
+
   if (method == "PAF" && !all(gof == "CAF")) {
-    message('Only CAF can be used as gof if method "PAF" is used.',
-            ' Setting gof to "CAF"')
+    cli::cli_alert_info(col_cyan('Only CAF can be used as gof if method "PAF" is',
+                                 'used. Setting gof to "CAF"'))
     gof <- "CAF"
   }
 
   # Check if it is a correlation matrix
   if(.is_cormat(x)){
 
-    if(any(is.na(x))){
-
-      stop("The correlation matrix you entered contains missing values.
-           Analyses are not possible.")
-
-    }
-
     R <- x
 
   } else {
 
-    message("x was not a correlation matrix. Correlations are found from entered
-            raw data.")
+    cli::cli_alert_info(col_cyan('x was not a correlation matrix. Correlations',
+                                 'are found from entered raw data.'))
 
     R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)
@@ -177,15 +174,14 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   }
 
   if (!all(gof == "CAF") && is.na(N)) {
-    stop('N is not specified but is needed for computation of some of the
-         fit indices.')
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "N" is not specified but is needed for computation of some of the fit indices.'))
   }
 
   # Check if correlation matrix is invertable, if it is not, stop with message
   R_i <- try(solve(R))
 
   if (inherits(R_i, "try-error")) {
-    stop("Correlation matrix is singular, the HULL method cannot be exectued")
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' Correlation matrix is singular, the HULL method cannot be exectued'))
   }
 
   # Check if correlation matrix is positive definite
@@ -224,8 +220,17 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
     J <- max(c(n_fac_PA, n_fac_theor), na.rm = TRUE) + 1
 
     if (J > floor(ncol(R) / 2)) {
-      warning("n_fac_theor was larger than number of variables / 2. Setting maximum number of factors to number of variables / 2.")
+      warning(crayon::yellow$bold("!"), crayon::yellow(" n_fac_theor was larger than number of variables / 2. Setting maximum number of factors to number of variables / 2."))
       J <- floor(ncol(R) / 2)
+    }
+
+    if (J < 3) {
+      warning(crayon::yellow$bold("!"),
+              crayon::yellow(" Suggested maximum number of factors was", J,
+                             "but must be at least 3 for hull method to work.",
+                             "Setting it to 3."))
+        J <- 3
+
     }
 
   }
@@ -338,13 +343,13 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   out_RMSEA <- list(s_complete = NA, retain = NA)
 
   if("CAF" %in% gof) {
-    out_CAF <- .hull_calc(s = s_CAF, df = df, J = J)
+    out_CAF <- .hull_calc(s = s_CAF, J = J, gof_t = "CAF")
   }
   if("CFI" %in% gof) {
-    out_CFI <- .hull_calc(s = s_CFI, df = df, J = J)
+    out_CFI <- .hull_calc(s = s_CFI, J = J, gof_t = "CFI")
   }
   if("RMSEA" %in% gof) {
-    out_RMSEA <- .hull_calc(s = s_RMSEA, df = df, J = J)
+    out_RMSEA <- .hull_calc(s = s_RMSEA, J = J, gof_t = "RMSEA")
   }
 
   out <- list(
@@ -371,7 +376,7 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
 }
 
 
-.hull_calc <- function(s, df, J){
+.hull_calc <- function(s, J, gof_t){
 
   # 3) sort n solutions by their df values and denoted by s (already done)
 
@@ -385,64 +390,94 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
     d_s <- diff(s[, 2])
   }
 
-  # 5) all triplets of adjacent solutions are considered consecutively.
-  #    middle solution is excluded if its point is below or on the line
-  #    connecting its neighbors in GOF vs df
+  if (nrow(s) < 3) {
+    warning(crayon::yellow$bold("!"),
+            crayon::yellow(" Less than three solutions located on the hull have",
+            "been identified when using", gof_t, "as goodness of fit index.",
+                           "Proceeding by taking the value with the maximum",
+                           gof_t, "as heuristic. You may want to consider",
+                           "additional indices or methods as robustness check."))
 
-  # 6) repeat 5) until no solution can be excluded
+    # combine values
+    for (row_i in 0:J) {
 
-  nr_s <- nrow(s)
-  i <- 2
+      if (row_i %in% s[,1]) {
+        s_complete[row_i + 1, 4] <- s[s[,1] == row_i, 4]
+      } else {
+        s_complete[row_i + 1, 4] <- NA
+      }
 
-  while(i < nr_s - 1) {
-
-    f1 <- s[i - 1, 2]
-    f2 <- s[i, 2]
-    f3 <- s[i + 1, 2]
-    df1 <- s[i - 1, 3]
-    df2 <- s[i, 3]
-    df3 <- s[i + 1, 3]
-
-    # compute f2 if it were on the line between f1 and f3
-    p_f2 <- f1 + (f3 - f1) / (df3 - df1) * (df2 - df1)
-
-    # check if f2 is below or on the predicted line and if so, remove it
-    if (f2 <= p_f2) {
-      s <- s[-i, ]
-      nr_s <- nr_s -1
-      i <- 1
     }
-    i <- i + 1
-  }
+    s_complete[, 4] <- rep(NA, nrow(s_complete))
+
+    # 8) select solution with highest gof value
+    retain <- s[which.max(s[, 2]), 1]
 
 
-  # 7) the st values of the hull solutions are determined (Eq 5)
-  for (i in 2:(nrow(s) - 1)) {
+  } else {
 
-    f_i <- s[i, 2]
-    f_p <- s[i - 1, 2]
-    f_n <- s[i + 1, 2]
-    df_i <- s[i, 3]
-    df_p <- s[i - 1, 3]
-    df_n <- s[i + 1, 3]
 
-    s[i, 4] <- ((f_i - f_p) / (df_i - df_p)) / ((f_n - f_i) / (df_n - df_i))
+    # 5) all triplets of adjacent solutions are considered consecutively.
+    #    middle solution is excluded if its point is below or on the line
+    #    connecting its neighbors in GOF vs df
 
-  }
+    # 6) repeat 5) until no solution can be excluded
 
-  # combine values
-  for (row_i in 0:J) {
+    nr_s <- nrow(s)
+    i <- 2
 
-    if (row_i %in% s[,1]) {
-      s_complete[row_i + 1, 4] <- s[s[,1] == row_i, 4]
-    } else {
-      s_complete[row_i + 1, 4] <- NA
+    while(i < nr_s - 1) {
+
+      f1 <- s[i - 1, 2]
+      f2 <- s[i, 2]
+      f3 <- s[i + 1, 2]
+      df1 <- s[i - 1, 3]
+      df2 <- s[i, 3]
+      df3 <- s[i + 1, 3]
+
+      # compute f2 if it were on the line between f1 and f3
+      p_f2 <- f1 + (f3 - f1) / (df3 - df1) * (df2 - df1)
+
+      # check if f2 is below or on the predicted line and if so, remove it
+      if (f2 <= p_f2) {
+        s <- s[-i, ]
+        nr_s <- nr_s -1
+        i <- 1
+      }
+      i <- i + 1
     }
 
+
+    # 7) the st values of the hull solutions are determined (Eq 5)
+    for (i in 2:(nrow(s) - 1)) {
+
+      f_i <- s[i, 2]
+      f_p <- s[i - 1, 2]
+      f_n <- s[i + 1, 2]
+      df_i <- s[i, 3]
+      df_p <- s[i - 1, 3]
+      df_n <- s[i + 1, 3]
+
+      s[i, 4] <- ((f_i - f_p) / (df_i - df_p)) / ((f_n - f_i) / (df_n - df_i))
+
+    }
+
+    # combine values
+    for (row_i in 0:J) {
+
+      if (row_i %in% s[,1]) {
+        s_complete[row_i + 1, 4] <- s[s[,1] == row_i, 4]
+      } else {
+        s_complete[row_i + 1, 4] <- NA
+      }
+
+    }
+
+    # 8) select solution with highest st value
+    retain <- s[which.max(s[, 4]), 1]
+
   }
 
-  # 8) select solution with highest st value
-  retain <- s[which.max(s[, 4]), 1]
 
   out <- list(s_complete = s_complete,
               retain = unname(retain))

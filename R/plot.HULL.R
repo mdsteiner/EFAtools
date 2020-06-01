@@ -23,19 +23,19 @@ plot.HULL <- function(x, ...) {
   n_fac_CFI <- x$n_fac_CFI
   n_fac_RMSEA <- x$n_fac_RMSEA
 
-  if(!all(is.na(sol_CAF))){
+  if(!all(is.na(sol_CAF)) && !all(is.na(sol_CAF[, 4]))){
 
     .plot_HULL_helper(sol_CAF, method = method, gof = "CAF")
 
   }
 
-  if(!all(is.na(sol_CFI))){
+  if(!all(is.na(sol_CFI)) && !all(is.na(sol_CFI[, 4]))){
 
     .plot_HULL_helper(sol_CFI, method = method, gof = "CFI")
 
   }
 
-  if(!all(is.na(sol_RMSEA))){
+  if(!all(is.na(sol_RMSEA)) && !all(is.na(sol_RMSEA[, 4]))){
 
     .plot_HULL_helper(sol_RMSEA, method = method, gof = "RMSEA")
 

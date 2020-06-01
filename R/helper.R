@@ -410,9 +410,9 @@
 
     if (any(is.na(x))) {
 
-      stop("x is likely a correlation matrix but contains missing values. Please check your data.")
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "x" is likely a correlation matrix but contains missing values. Please check the entered data.'))
 
-    } else if(round(sum(diag(x))) == nrow(x)) {
+    } else if (round(sum(diag(x))) == nrow(x)) {
 
       TRUE
 
