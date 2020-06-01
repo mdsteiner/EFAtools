@@ -102,8 +102,7 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   # Perform argument checks
   if(!inherits(x, c("matrix", "data.frame"))){
 
-    stop("x is neither a matrix nor a dataframe. Either provide a correlation
-    matrix or a dataframe or matrix with raw data.")
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data."))
 
   }
 
@@ -116,8 +115,7 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
 
     if(any(is.na(x))){
 
-      stop("The correlation matrix you entered contains missing values.
-           Eigenvalues cannot be computed.")
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" The correlation matrix you entered contains missing values. Eigenvalues cannot be computed."))
 
     }
 
@@ -125,8 +123,7 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
 
   } else {
 
-    message("x was not a correlation matrix. Correlations are found from entered
-            raw data.")
+    cli::cli_alert_info(col_cyan("'x' was not a correlation matrix. Correlations are found from entered raw data."))
 
     R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)
@@ -136,7 +133,7 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
 
   if (is.na(N)) {
 
-    stop("Argument 'N' was NA. Either provide N or raw data.")
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Argument 'N' was NA. Either provide N or raw data."))
 
   }
 
