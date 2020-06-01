@@ -81,7 +81,11 @@ BARTLETT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
 
   } else {
 
-    cli::cli_alert_info(col_cyan("x was not a correlation matrix. Correlations are found from entered raw data."))
+    cli::cli_alert_info(col_cyan("'x' was not a correlation matrix. Correlations are found from entered raw data."))
+
+    if (!is.na(N)) {
+      warning(crayon::yellow$bold("!"), crayon::yellow(" N was set and data entered. Taking N from data."))
+    }
 
     R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)
@@ -90,10 +94,10 @@ BARTLETT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   }
 
   # Check if correlation matrix is invertable, if it is not, stop with message
-  R_i <- try(solve(R))
+  R_i <- try(solve(R), silent = TRUE)
 
   if (inherits(R_i, "try-error")) {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, Bartlett's test cannot be executed"))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, Bartlett's test cannot be executed."))
   }
 
   # Check if correlation matrix is positive definite

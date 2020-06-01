@@ -1,7 +1,7 @@
 
 pa_cor <- PARALLEL(test_models$baseline$cormat, N = 500)
 pa_cor_pca <- PARALLEL(test_models$baseline$cormat, N = 500, eigen_type = "PCA")
-pa_raw <- PARALLEL(GRiPS_raw, N = 500)
+pa_raw <- PARALLEL(GRiPS_raw)
 
 test_that("output class and dimensions are correct", {
   expect_is(pa_cor, "PARALLEL")

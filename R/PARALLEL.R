@@ -127,6 +127,7 @@ PARALLEL <- function(x = NULL,
                      n_factors = 1,
                      ...) {
 
+
   eigen_type <- match.arg(eigen_type, several.ok = TRUE)
   use <- match.arg(use)
   cor_method <- match.arg(cor_method)
