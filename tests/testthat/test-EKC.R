@@ -35,3 +35,5 @@ test_that("identified number of factors is correct", {
 test_that("message on input of raw data", {
   expect_message(EKC(GRiPS_raw), "x was not a correlation matrix. Correlations and N are found from entered raw data.")
 })
+
+rm(ekc_cor, ekc_raw)

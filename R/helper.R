@@ -404,11 +404,24 @@
 # Checks if x is a correlation matrix
 .is_cormat <- function(x){
 
-  if(nrow(x) == ncol(x) && round(sum(diag(x))) == nrow(x) &&
-     all(x >= (-1 + .Machine$double.eps * 100)) &&
-     all(x <= (1 + .Machine$double.eps * 100))){
+  if(nrow(x) == ncol(x) &&
+     all(x >= (-1 + .Machine$double.eps * 100), na.rm = TRUE) &&
+     all(x <= (1 + .Machine$double.eps * 100), na.rm = TRUE)){
 
-    TRUE
+    if (any(is.na(x))) {
+
+      stop("x is likely a correlation matrix but contains missing values. Please check your data.")
+
+    } else if(round(sum(diag(x))) == nrow(x)) {
+
+      TRUE
+
+    } else {
+
+      FALSE
+
+    }
+
 
   } else {
 

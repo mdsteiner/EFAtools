@@ -223,6 +223,11 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
 
     J <- max(c(n_fac_PA, n_fac_theor), na.rm = TRUE) + 1
 
+    if (J > floor(ncol(R) / 2)) {
+      warning("n_fac_theor was larger than number of variables / 2. Setting maximum number of factors to number of variables / 2.")
+      J <- floor(ncol(R) / 2)
+    }
+
   }
 
   # 2) perform factor analysis for the range of dimensions 1:J and compute f and
