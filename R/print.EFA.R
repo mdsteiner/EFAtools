@@ -20,6 +20,7 @@ print.EFA <- function(x, ...) {
   method <- x$settings$method
   rotation <- x$settings$rotation
   type <- x$settings$type
+  N <- x$settings$N
 
   cat("\n")
   cat("EFA performed with type = '", crayon::bold(type), "', method = '",
@@ -72,7 +73,7 @@ print.EFA <- function(x, ...) {
   cat("\n")
   cat(.get_compare_matrix(x$vars_accounted, r_red = Inf, n_char = 17))
 
-  if(method == "PAF"){
+  if(method == "PAF" || is.na(N)){
 
   cat("\n")
   cat(cli::rule(left = crayon::bold("Model Fit"), col = "blue"))
@@ -87,10 +88,25 @@ print.EFA <- function(x, ...) {
   } else {
 
     cat("\n")
-    cat(crayon::blue$bold("Model Fit:"))
+    cat(cli::rule(left = crayon::bold("Model Fit"), col = "blue"))
     cat("\n")
     cat("\n")
-    cat(.get_compare_matrix(fitind, r_red = Inf, n_char = 30, gof = TRUE))
+    cat(crayon::blue("\U1D712\U00B2: "),
+        .numformat(x$fit_indices$chi, print_zero = TRUE), "\n", sep = "")
+    cat(crayon::blue("df: "),
+        .numformat(x$fit_indices$df, 0, print_zero = TRUE), "\n", sep = "")
+    cat(crayon::blue("CFI: "),
+        .numformat(x$fit_indices$CFI), "\n", sep = "")
+    cat(crayon::blue("RMSEA 90% CI:"),
+        paste0(.numformat(x$fit_indices$RMSEA), " [",
+               substr(.numformat(x$fit_indices$RMSEA_LB), 2, 4), ",",
+               .numformat(x$fit_indices$RMSEA_UB), "]"), "\n", sep = "")
+    cat(crayon::blue("AIC: "),
+        .numformat(x$fit_indices$AIC, print_zero = TRUE), "\n", sep = "")
+    cat(crayon::blue("BIC: "),
+        .numformat(x$fit_indices$BIC, print_zero = TRUE), "\n", sep = "")
+    cat(crayon::blue("CAF:"),
+        .numformat(x$fit_indices$CAF), "\n", sep = "")
 
   }
 
