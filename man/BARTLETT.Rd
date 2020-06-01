@@ -37,7 +37,7 @@ A list containing
 }
 \description{
 This function tests whether a correlation matrix is significantly different
-from an identity matrix (Bartlett, 1951). If the Bartletts test is not
+from an identity matrix (Bartlett, 1951). If the Bartlett's test is not
 significant, the correlation matrix is not suitable for factor analysis
 because the variables show too little covariance.
 }

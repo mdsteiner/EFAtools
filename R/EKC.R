@@ -74,8 +74,7 @@ EKC <- function(x, N = NA,
   # Perform argument checks
   if(!inherits(x, c("matrix", "data.frame"))){
 
-    stop("x is neither a matrix nor a dataframe. Either provide a correlation
-    matrix or a dataframe or matrix with raw data.")
+    stop(crayon::red$bold(cli::symbol$cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data."))
 
   }
 
@@ -88,7 +87,7 @@ EKC <- function(x, N = NA,
 
     if(any(is.na(x))){
 
-      stop("The correlation matrix you entered contains missing values. Factor analysis is not possible.")
+      stop(crayon::red$bold(cli::symbol$cross), crayon::red(" The correlation matrix you entered contains missing values. Factor analysis is not possible."))
 
     }
 
@@ -96,13 +95,13 @@ EKC <- function(x, N = NA,
 
     if (is.na(N)) {
 
-      stop("Argument 'N' was NA but correlation matrix was entered. Please either provide N or raw data.")
+      stop(crayon::red$bold(cli::symbol$cross), crayon::red(" Argument 'N' was NA but correlation matrix was entered. Please either provide N or raw data."))
 
     }
 
   } else {
 
-    cli::cli_alert_info("x was not a correlation matrix. Correlations and N are found from entered raw data.")
+    cli::cli_alert_info(col_cyan("'x' was not a correlation matrix. Correlations and N are found from entered raw data."))
 
     R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)

@@ -151,6 +151,13 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
                       decision_rule = c("Means", "Percentile", "Crawford"),
                       ...){
 
+  # Perform argument checks
+  if(!inherits(x, c("matrix", "data.frame"))){
+
+    stop(crayon::red$bold(cli::symbol$cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data."))
+
+  }
+
   ## Perform argument checks and prepare input
   criteria <- match.arg(criteria, several.ok = TRUE)
   suitability <- checkmate::assert_flag(suitability)
@@ -166,8 +173,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
 
     if(any(is.na(x))){
 
-      stop("The correlation matrix you entered contains missing values. No
-           further analyses are possible.")
+      stop(crayon::red$bold(cli::symbol$cross), crayon::red(" The correlation matrix you entered contains missing values. Analyses are not possible."))
 
     }
 
@@ -185,7 +191,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   R_i <- try(solve(R))
 
   if (inherits(R_i, "try-error")) {
-    stop("Correlation matrix is singular, No further analyses are possible")
+    stop(crayon::red$bold(cli::symbol$cross), crayon::red(" Correlation matrix is singular, no further analyses are performed"))
   }
 
   # Check if correlation matrix is positive definite
@@ -245,7 +251,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
       nfac_CD <- cd_out$n_factors
 
     } else {
-      warning("x was a correlation matrix but CD needs raw data. Skipping CD.")
+      warning(crayon::yellow$bold("!"), crayon::yellow(" 'x' was a correlation matrix but CD needs raw data. Skipping CD."))
     }
 
   }

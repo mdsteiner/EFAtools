@@ -94,8 +94,7 @@ KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
   # Perform argument checks
   if(!inherits(x, c("matrix", "data.frame"))){
 
-    stop("x is neither a matrix nor a dataframe. Either provide a correlation
-    matrix or a dataframe or matrix with raw data.")
+    stop(crayon::red$bold(cli::symbol$cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data."))
 
   }
 
@@ -109,8 +108,7 @@ KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
 
     if(any(is.na(x))){
 
-      stop("The correlation matrix you entered contains missing values. Eigenvalues
-           cannot be computed.")
+      stop(crayon::red$bold(cli::symbol$cross), crayon::red(" The correlation matrix you entered contains missing values. KGC cannot be computed."))
 
     }
 
@@ -118,8 +116,7 @@ KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
 
   } else {
 
-    message("x was not a correlation matrix. Correlations are found from entered
-            raw data.")
+    cli::cli_alert_info(col_cyan("'x' was not a correlation matrix. Correlations are found from entered raw data."))
 
     R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)
@@ -131,7 +128,8 @@ KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
   R_i <- try(solve(R))
 
   if (inherits(R_i, "try-error")) {
-    stop("Correlation matrix is singular, factor analysis is not possible")
+    stop(crayon::red$bold(cli::symbol$cross), crayon::red(" Correlation matrix is singular, no further analyses are performed"))
+
   }
 
   # Store original R for later

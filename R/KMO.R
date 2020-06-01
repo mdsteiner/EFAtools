@@ -66,7 +66,7 @@ KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
   # Perform argument checks
   if(!inherits(x, c("matrix", "data.frame"))){
 
-    stop("x is neither a matrix nor a dataframe. Either provide a correlation     matrix or a dataframe or matrix with raw data.")
+    stop(crayon::red$bold(cli::symbol$cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data."))
 
   }
 
@@ -78,7 +78,7 @@ KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
 
     if(any(is.na(x))){
 
-      stop("The correlation matrix you entered contains missing values. KMO cannot be computed.")
+      stop(crayon::red$bold(cli::symbol$cross), crayon::red(" The correlation matrix you entered contains missing values. KMO cannot be computed."))
 
     }
 
@@ -86,7 +86,7 @@ KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
 
   } else {
 
-    cli::cli_alert_info("x was not a correlation matrix. Correlations are found from entered raw data.")
+    cli::cli_alert_info(col_cyan("'x' was not a correlation matrix. Correlations are found from entered raw data."))
 
     R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)
@@ -98,7 +98,7 @@ KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
   R_i <- try(solve(R))
 
   if (inherits(R_i, "try-error")) {
-    stop("Correlation matrix is singular, KMO cannot be computed")
+    stop(crayon::red$bold(cli::symbol$cross), crayon::red(" Correlation matrix is singular, no further analyses are performed"))
   }
 
   # Check if correlation matrix is positive definite

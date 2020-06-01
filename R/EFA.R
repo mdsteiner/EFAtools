@@ -261,8 +261,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   # Perform argument checks
   if(!inherits(x, c("matrix", "data.frame"))){
 
-    stop("x is neither a matrix nor a dataframe. Either provide a correlation
-    matrix or a dataframe or matrix with raw data.")
+    stop(crayon::red$bold(cli::symbol$cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data."))
 
   }
 
@@ -292,8 +291,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
     if(any(is.na(x))){
 
-      stop("The correlation matrix you entered contains missing values. Factor
-           analysis is not possible.")
+      stop(crayon::red$bold(cli::symbol$cross), crayon::red(" The correlation matrix you entered contains missing values. Factor analysis is not possible."))
 
     }
 
@@ -301,8 +299,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
   } else {
 
-    message("x was not a correlation matrix. Correlations are found from entered
-            raw data.")
+    cli::cli_alert_info(col_cyan("'x' was not a correlation matrix. Correlations are found from entered raw data."))
 
     R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)
@@ -314,7 +311,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   R_i <- try(solve(R))
 
   if (inherits(R_i, "try-error")) {
-    stop("Correlation matrix is singular, no further analyses are performed")
+    stop(crayon::red$bold(cli::symbol$cross), crayon::red(" Correlation matrix is singular, no further analyses are performed"))
   }
 
   # Check if correlation matrix is positive definite, if it is not,
@@ -328,8 +325,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   # Check if number of factors is not too large
   if(n_factors > floor(ncol(R)/2)){
 
-    stop("The number of factors to extract is too large (more than half the
-          number of indicators). Please enter a lower number and try again.")
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" The number of factors to extract is too large (more than half the number of indicators). Please enter a lower number and try again."))
 
   }
 
@@ -346,8 +342,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
     if (is.na(N)) {
 
-      warning("Argument 'N' was NA, not all fit indices can be
-             computed. To get all fit indices, either provide N or raw data.")
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Argument 'N' was NA, not all fit indices can be computed. To get all fit indices, either provide N or raw data."))
 
     }
 
@@ -357,8 +352,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
     if (is.na(N)) {
 
-      warning("Argument 'N' was NA, not all fit indices can be
-             computed. To get all fit indices, either provide N or raw data.")
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Argument 'N' was NA, not all fit indices can be computed. To get all fit indices, either provide N or raw data."))
 
     }
 

@@ -82,8 +82,7 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
   # Perform argument checks
   if(!inherits(x, c("matrix", "data.frame"))){
 
-    stop("x is neither a matrix nor a dataframe. Provide a dataframe or matrix
-         with raw data.")
+    stop(crayon::red$bold(cli::symbol$cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Provide a dataframe or matrix with raw data."))
 
   }
 
@@ -107,9 +106,10 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
   if (is.na(n_factors_max) || n_factors_max > m_possible) {
 
     if (!is.na(n_factors_max) & n_factors_max > m_possible) {
-      warning("n_factors_max was set to ", n_factors_max, " but maximum possible",
+      warning(crayon::yellow$bold("!"), crayon::yellow(" n_factors_max was set to ",
+              n_factors_max, " but maximum possible",
               " factors to extract is ", m_possible, ". Setting n_factors_max to ",
-              m_possible, ".")
+              m_possible, "."))
     }
 
     n_factors_max <- m_possible

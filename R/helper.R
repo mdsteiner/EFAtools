@@ -238,7 +238,7 @@
   if ((is.null(dim(x)) && !(inherits(x, "numeric"))) ||
       (!is.null(dim(x)) && !(inherits(x, c("matrix", "loadings", "LOADINGS",
                                           "SLLOADINGS"))))) {
-    stop("x is of class ", class(x), " but must be a numeric vector or matrix")
+    stop(crayon::red$bold(cli::symbol$cross), crayon::red(" 'x' is of class ", class(x), " but must be a numeric vector or matrix"))
   }
 
   if (!is.null(dim(x))) {
@@ -278,9 +278,9 @@
 .factor_congruence <- function(x, y, digits = 3, na.rm = TRUE) {
 
   if (any(is.na(x) | any(is.na(y)))) {
-    warning("Some loadings were missing.")
+    warning(crayon::yellow$bold("!"), crayon::yellow(" Some loadings were missing."))
     if (isTRUE(na.rm)) {
-      message("Analysis is performed on complete cases")
+      cli::cli_alert_info(col_cyan("Analysis is performed on complete cases"))
       if (any(is.na(x))) {
         xc <- x[stats::complete.cases(x), ]
         y <- y[stats::complete.cases(x), ]
@@ -292,7 +292,7 @@
         y <- yc
       }
     } else {
-      warning("Check your data or rerun with na.rm = TRUE")
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Check your data or rerun with na.rm = TRUE"))
     }
   }
 
