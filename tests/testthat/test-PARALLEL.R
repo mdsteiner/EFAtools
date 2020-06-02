@@ -69,6 +69,14 @@ test_that("identified number of factors is correct", {
   expect_equal(c(pa_cor_pca$n_fac_SMC, pa_cor_pca$n_fac_EFA), c(NA, NA))
 })
 
+# Create singular correlation matrix for tests
+x <- rnorm(10)
+y <- rnorm(10)
+z <- x + y
+dat_sing <- matrix(c(x, y, z), ncol = 3)
+cor_sing <- stats::cor(dat_sing)
+
+
 test_that("errors are thrown correctly", {
   expect_message(PARALLEL(GRiPS_raw, eigen_type = "PCA"), "x was not a correlation matrix. Correlations are found from entered raw data.")
   expect_warning(PARALLEL(GRiPS_raw, N = 20, eigen_type = "PCA"), "N was set and data entered. Taking N from data.")
@@ -76,6 +84,8 @@ test_that("errors are thrown correctly", {
   expect_warning(PARALLEL(test_models$baseline$cormat, N = 500,
                           eigen_type = "PCA", decision_rule = "Crawford",
                           percent = 80), "decision_rule == 'Crawford' is specified, but 95 percentile was not used. Using Means instead. To use 'Crawford', make sure to specify percent = 95.")
+  expect_error(PARALLEL(dat_sing), " Correlation matrix is singular, parallel analysis is not possible.")
+  expect_error(PARALLEL(cor_sing, N = 10), " Correlation matrix is singular, parallel analysis is not possible.")
 })
 
 rm(pa_cor, pa_cor_pca, pa_raw, na_cor)
