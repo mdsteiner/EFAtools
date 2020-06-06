@@ -20,7 +20,6 @@ test_that("p-values and df are correct", {
   expect_equal(bart_cor$df, 153)
   expect_equal(bart_raw$df, 28)
   expect_equal(bart_rand$df, 6)
-
 })
 
 test_that("settings are returned correctly", {

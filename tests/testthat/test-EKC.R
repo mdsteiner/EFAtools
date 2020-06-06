@@ -36,7 +36,7 @@ test_that("errors are thrown correctly", {
   expect_error(EKC(1:5), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.")
   expect_error(EKC(test_models$baseline$cormat), " Argument 'N' was NA but correlation matrix was entered. Please either provide N or raw data.")
   expect_message(EKC(GRiPS_raw), " 'x' was not a correlation matrix. Correlations are found from entered raw data.")
-  expect_warning(EKC(GRiPS_raw, N = 20), " N was set and data entered. Taking N from data.")
+  expect_warning(EKC(GRiPS_raw, N = 20), " 'N' was set and data entered. Taking N from data.")
 })
 
 test_that("settings are returned correctly", {

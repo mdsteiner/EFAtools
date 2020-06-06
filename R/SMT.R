@@ -119,6 +119,10 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
 
     message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data."))
 
+    if (!is.na(N)) {
+      warning(crayon::yellow$bold("!"), crayon::yellow(" 'N' was set and data entered. Taking N from data."))
+    }
+
     R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)
     N <- nrow(x)
@@ -131,29 +135,26 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
 
   }
 
+  # Check if correlation matrix is invertable, if it is not, stop with message
+  R_i <- try(solve(R), silent = TRUE)
+
+  if (inherits(R_i, "try-error")) {
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, no further analyses are performed"))
+  }
+
   # Prepare objects for sequential tests
-  max_fac <- floor(ncol(x)/2)
+  max_fac <- ifelse(ncol(x) <= 4, 1, floor(ncol(x)/2))
   ps <- vector("double", max_fac)
   RMSEA_LB <- vector("double", max_fac)
   AIC <- vector("double", max_fac)
-
-  # First check if 0 factors already result in nonsignificant chi square
-  zeromod <- suppressWarnings(suppressMessages(EFA(x, n_factors = 1,
-                                                   method = "ML",
-                                                   rotation = "none", N = N)))
-  p_null <- stats::pchisq(zeromod$fit_indices$chi_null,
-                          zeromod$fit_indices$df_null, lower.tail = F)
-
-  if(p_null > 0.05){
-
-    nfac_chi <- 0
-
-  } else {
+  nfac_chi <- NA
+  nfac_RMSEA <- NA
+  nfac_AIC <- NA
 
     # sequentially perform EFAs with 1 to the maximum number of factors
     for (i in 1:max_fac) {
 
-      temp <- suppressWarnings(suppressMessages(EFA(x, n_factors = i,
+      temp <- suppressWarnings(suppressMessages(EFA(R, n_factors = i,
                                                     method = "ML",
                                                     rotate ="none", N = N)))
       ps[i] <- stats::pchisq(temp$fit_indices$chi, temp$fit_indices$df,
@@ -163,17 +164,33 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
 
     }
 
-    # With which number of factors does the chi square first become
-    # non-significant?
-    if(any(ps > 0.05, na.rm = TRUE)) {
+  # With which number of factors does the chi square first become
+  # non-significant?
+
+  # First check if 0 factors already result in nonsignificant chi square
+  p_null <- stats::pchisq(temp$fit_indices$chi_null,
+                          temp$fit_indices$df_null, lower.tail = F)
+
+    if(p_null > 0.05){
+
+      nfac_chi <- 0
+
+    } else if(any(ps > 0.05, na.rm = TRUE)) {
 
       nfac_chi <- which(ps > 0.05)[1]
 
     } else {
 
-      nfac_chi <- 0
+      nfac_chi <- NA
 
     }
+
+  # Test if RMSEA LB and AIC criteria can be applied
+  if(max_fac == 1){
+
+    warning(crayon::yellow$bold("!"), crayon::yellow(" The maximum number of factors tested was 1. RMSEA lower bound and AIC criteria cannot be applied. nfac_RMSEA and nfac_AIC were set to NA."))
+
+  } else {
 
     # With which number of factors does the RMSEA first fall below .05?
     if(any(RMSEA_LB < .05, na.rm = TRUE)){
@@ -182,12 +199,12 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
 
     } else {
 
-      nfac_RMSEA <- 0
+      nfac_RMSEA <- NA
 
     }
 
-    # With which number of factors is the AIC lowest?
-    nfac_AIC <- which(AIC == min(AIC))
+  # With which number of factors is the AIC lowest?
+  nfac_AIC <- which(AIC == min(AIC))
 
   }
 

@@ -162,7 +162,7 @@ KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
 
     # Do an EFA to get final communality estimates and replace diagonal of
     # correlation matrix with these
-    EFA_h2 <- suppressWarnings(EFA(R, n_factors = n_factors, ...)$h2)
+    EFA_h2 <- suppressMessages(suppressWarnings(EFA(R, n_factors = n_factors, ...)$h2))
     diag(R) <- EFA_h2
 
     # Calculate eigenvalues and determine number of factors

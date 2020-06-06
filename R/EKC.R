@@ -98,7 +98,7 @@ EKC <- function(x, N = NA,
     message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data."))
 
     if (!is.na(N)) {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" N was set and data entered. Taking N from data."))
+      warning(crayon::yellow$bold("!"), crayon::yellow(" 'N' was set and data entered. Taking N from data."))
     }
 
     R <- stats::cor(x, use = use, method = cor_method)
