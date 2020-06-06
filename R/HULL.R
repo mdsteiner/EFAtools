@@ -152,7 +152,7 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   }
 
   if (method == "PAF" && !all(gof == "CAF")) {
-    cli::cli_alert_info(col_cyan('Only CAF can be used as gof if method "PAF" is',
+    cli::cli_alert_info(cli::col_cyan('Only CAF can be used as gof if method "PAF" is',
                                  'used. Setting gof to "CAF"'))
     gof <- "CAF"
   }
@@ -164,7 +164,7 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
 
   } else {
 
-    cli::cli_alert_info(col_cyan('x was not a correlation matrix. Correlations',
+    cli::cli_alert_info(cli::col_cyan('x was not a correlation matrix. Correlations',
                                  'are found from entered raw data.'))
 
     R <- stats::cor(x, use = use, method = cor_method)

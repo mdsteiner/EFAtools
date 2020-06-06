@@ -170,7 +170,7 @@ PARALLEL <- function(x = NULL,
 
       } else {
 
-        cli::cli_alert_info(col_cyan("'x' was not a correlation matrix. Correlations are found from entered raw data."))
+        cli::cli_alert_info(cli::col_cyan("'x' was not a correlation matrix. Correlations are found from entered raw data."))
 
         if (!is.na(N)) {
           warning(crayon::yellow$bold("!"), crayon::yellow(" N was set and data entered. Taking N from data."))
@@ -193,10 +193,10 @@ PARALLEL <- function(x = NULL,
       }
 
       # Check if correlation matrix is invertable, if it is not, stop with message
-      R_i <- try(solve(R), silent = TRUE)
+      R_i <- try(solve(R))
 
       if (inherits(R_i, "try-error")) {
-        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, parallel analysis is not possible."))
+        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, parallel analysis is not possible"))
       }
 
       # Check if correlation matrix is positive definite

@@ -280,7 +280,7 @@
   if (any(is.na(x) | any(is.na(y)))) {
     warning(crayon::yellow$bold("!"), crayon::yellow(" Some loadings were missing."))
     if (isTRUE(na.rm)) {
-      cli::cli_alert_info(col_cyan("Analysis is performed on complete cases"))
+      cli::cli_alert_info(cli::col_cyan("Analysis is performed on complete cases"))
       if (any(is.na(x))) {
         xc <- x[stats::complete.cases(x), ]
         y <- y[stats::complete.cases(x), ]

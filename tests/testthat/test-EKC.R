@@ -36,4 +36,18 @@ test_that("message on input of raw data", {
   expect_message(EKC(GRiPS_raw), "x was not a correlation matrix. Correlations and N are found from entered raw data.")
 })
 
+test_that("settings are returned correctly", {
+  expect_named(ekc_cor$settings, c("N", "use", "cor_method"))
+  expect_named(ekc_raw$settings, c("N", "use", "cor_method"))
+
+  expect_equal(ekc_cor$settings$N, 500)
+  expect_equal(ekc_raw$settings$N, 810)
+
+  expect_equal(ekc_cor$settings$use, "pairwise.complete.obs")
+  expect_equal(ekc_raw$settings$use, "pairwise.complete.obs")
+
+  expect_equal(ekc_cor$settings$cor_method, "pearson")
+  expect_equal(ekc_raw$settings$cor_method, "pearson")
+})
+
 rm(ekc_cor, ekc_raw)

@@ -86,7 +86,7 @@ KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
 
   } else {
 
-    cli::cli_alert_info(col_cyan("'x' was not a correlation matrix. Correlations are found from entered raw data."))
+    cli::cli_alert_info(cli::col_cyan("'x' was not a correlation matrix. Correlations are found from entered raw data."))
 
     R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)

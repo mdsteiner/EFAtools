@@ -279,7 +279,7 @@
 
       if(i == 1){
 
-        cli::cli_alert_info(col_cyan("The model contains a single factor. Only omega total is computed"))
+        cli::cli_alert_info(cli::col_cyan("The model contains a single factor. Only omega total is computed"))
 
       }
 
@@ -308,7 +308,7 @@
 
       if(!all(rowSums(bi_check) > 1)){
 
-        cli::cli_alert_info(col_cyan("Some variables have less than two loadings. Did you really enter a bifactor model? Either provide a bifactor model or a model with a single factor."))
+        cli::cli_alert_info(cli::col_cyan("Some variables have less than two loadings. Did you really enter a bifactor model? Either provide a bifactor model or a model with a single factor."))
 
       }
 
