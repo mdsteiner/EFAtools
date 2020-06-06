@@ -113,12 +113,6 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   # Check if it is a correlation matrix
   if(.is_cormat(x)){
 
-    if(any(is.na(x))){
-
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" The correlation matrix you entered contains missing values. Eigenvalues cannot be computed."))
-
-    }
-
     R <- x
 
   } else {

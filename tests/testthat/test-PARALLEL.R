@@ -78,7 +78,7 @@ cor_sing <- stats::cor(dat_sing)
 
 
 test_that("errors are thrown correctly", {
-  expect_message(PARALLEL(GRiPS_raw, eigen_type = "PCA"), "x was not a correlation matrix. Correlations are found from entered raw data.")
+  expect_equal(PARALLEL(GRiPS_raw), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.")
   expect_warning(PARALLEL(GRiPS_raw, N = 20, eigen_type = "PCA"), "N was set and data entered. Taking N from data.")
   expect_error(PARALLEL(test_models$baseline$cormat, eigen_type = "PCA"), '"N" was not set and could not be taken from data. Please specify N and try again.')
   expect_warning(PARALLEL(test_models$baseline$cormat, N = 500,
@@ -86,6 +86,59 @@ test_that("errors are thrown correctly", {
                           percent = 80), "decision_rule == 'Crawford' is specified, but 95 percentile was not used. Using Means instead. To use 'Crawford', make sure to specify percent = 95.")
   expect_error(PARALLEL(dat_sing), " Correlation matrix is singular, parallel analysis is not possible.")
   expect_error(PARALLEL(cor_sing, N = 10), " Correlation matrix is singular, parallel analysis is not possible.")
+})
+
+test_that("settings are returned correctly", {
+  expect_named(pa_cor$settings, c("x_dat", "N", "n_vars", "n_datasets", "percent",
+                                  "eigen_type", "use", "cor_method", "decision_rule",
+                                  "n_factors"))
+  expect_named(pa_raw$settings, c("x_dat", "N", "n_vars", "n_datasets", "percent",
+                                  "eigen_type", "use", "cor_method", "decision_rule",
+                                  "n_factors"))
+  expect_named(pa_cor_pca$settings, c("x_dat", "N", "n_vars", "n_datasets", "percent",
+                                      "eigen_type", "use", "cor_method",
+                                      "decision_rule", "n_factors"))
+
+  expect_true(pa_cor$settings$x_dat)
+  expect_true(pa_raw$settings$x_dat)
+  expect_true(pa_cor_pca$settings$x_dat)
+
+  expect_equal(pa_cor$settings$N, 500)
+  expect_equal(pa_raw$settings$N, 810)
+  expect_equal(pa_cor_pca$settings$N, 500)
+
+  expect_equal(pa_cor$settings$n_vars, 18)
+  expect_equal(pa_raw$settings$n_vars, 8)
+  expect_equal(pa_cor_pca$settings$n_vars, 18)
+
+  expect_equal(pa_cor$settings$n_datasets, 1000)
+  expect_equal(pa_raw$settings$n_datasets, 1000)
+  expect_equal(pa_cor_pca$settings$n_datasets, 1000)
+
+  expect_equal(pa_cor$settings$percent, 95)
+  expect_equal(pa_raw$settings$percent, 95)
+  expect_equal(pa_cor_pca$settings$percent, 95)
+
+  expect_equal(pa_cor$settings$eigen_type, c("PCA", "SMC", "EFA"))
+  expect_equal(pa_raw$settings$eigen_type, c("PCA", "SMC", "EFA"))
+  expect_equal(pa_cor_pca$settings$eigen_type, "PCA")
+
+  expect_equal(pa_cor$settings$use, "pairwise.complete.obs")
+  expect_equal(pa_raw$settings$use, "pairwise.complete.obs")
+  expect_equal(pa_cor_pca$settings$use, "pairwise.complete.obs")
+
+  expect_equal(pa_cor$settings$cor_method, "pearson")
+  expect_equal(pa_raw$settings$cor_method, "pearson")
+  expect_equal(pa_cor_pca$settings$cor_method, "pearson")
+
+  expect_equal(pa_cor$settings$decision_rule, "Means")
+  expect_equal(pa_raw$settings$decision_rule, "Means")
+  expect_equal(pa_cor_pca$settings$decision_rule, "Means")
+
+  expect_equal(pa_cor$settings$n_factors, 1)
+  expect_equal(pa_raw$settings$n_factors, 1)
+  expect_equal(pa_cor_pca$settings$n_factors, 1)
+
 })
 
 rm(pa_cor, pa_cor_pca, pa_raw, na_cor)

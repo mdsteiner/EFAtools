@@ -289,12 +289,6 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   # Check if it is a correlation matrix
   if(.is_cormat(x)){
 
-    if(any(is.na(x))){
-
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" The correlation matrix you entered contains missing values. Factor analysis is not possible."))
-
-    }
-
       R <- x
 
   } else {

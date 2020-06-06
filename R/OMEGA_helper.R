@@ -31,17 +31,10 @@
       } else {
 
         # Check if it is a correlation matrix
-        if(.is_cormat(cormat)){
 
-          if(any(is.na(cormat))){
+        if(!.is_cormat(cormat)){
 
-            stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" The correlation matrix you entered contains missing values. Check the cormat input, specify the Phi and pattern arguments instead, or set variance to 'sums_load'"))
-
-          }
-
-        } else {
-
-          stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" x was not a correlation matrix. Check the cormat input, specify the Phi and pattern arguments instead, or set variance to 'sums_load'"))
+          stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' was not a correlation matrix. Check the cormat input, specify the Phi and pattern arguments instead, or set variance to 'sums_load'"))
 
         }
 
@@ -80,15 +73,7 @@
       } else {
 
         # Check if it is a correlation matrix
-        if(.is_cormat(cormat)){
-
-          if(any(is.na(cormat))){
-
-            stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" The correlation matrix you entered contains missing values. Check the cormat input, specify the Phi and pattern arguments instead, or set variance to 'sums_load'"))
-
-          }
-
-        } else {
+        if(!.is_cormat(cormat)) {
 
           stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" x was not a correlation matrix. Check the cormat input, specify the Phi and pattern arguments instead, or set variance to 'sums_load'"))
 

@@ -57,6 +57,6 @@ test_that("errors are thrown correctly", {
   expect_error(BARTLETT(cor_sing, N = 10), " Correlation matrix is singular, Bartlett's test cannot be executed.")
 })
 
-rm(bart_cor, bart_raw, bart_rand, x, y, z, dat_sing, cor_sing)
+rm(bart_cor, bart_raw, bart_rand, x, y, z, dat_sing, cor_sing, cor_na)
 
 
