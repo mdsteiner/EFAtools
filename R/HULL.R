@@ -148,7 +148,7 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   checkmate::assert_number(percent, lower = 0, upper = 100)
 
   if (ncol(x) < 6) {
-    stop("Data has fewer than 6 indicators. Hull method needs at least 6.")
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red( "Data has fewer than 6 indicators. Hull method needs at least 6."))
   }
 
   if (method == "PAF" && !all(gof == "CAF")) {
