@@ -344,7 +344,7 @@
     CFI <- 1 - delta_hat_m / delta_hat_null
 
     ### compute RMSEA, incl. 90% confidence intervals
-    RMSEA <- sqrt(max(Fm / df - 1 / N, 0))
+    RMSEA <- sqrt(max((Fm / df - 1 / N), 0))
 
     p_chi <- function(x, val, df, goal){goal - stats::pchisq(val, df, ncp = x)}
 
