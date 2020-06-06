@@ -95,7 +95,7 @@ EKC <- function(x, N = NA,
 
   } else {
 
-    cli::cli_alert_info(cli::col_cyan("'x' was not a correlation matrix. Correlations and N are found from entered raw data."))
+    message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data."))
 
     if (!is.na(N)) {
       warning(crayon::yellow$bold("!"), crayon::yellow(" N was set and data entered. Taking N from data."))

@@ -78,8 +78,8 @@ cor_sing <- stats::cor(dat_sing)
 
 
 test_that("errors are thrown correctly", {
-  expect_equal(PARALLEL(GRiPS_raw), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.")
-  expect_warning(PARALLEL(GRiPS_raw, N = 20, eigen_type = "PCA"), "N was set and data entered. Taking N from data.")
+  expect_warning(PARALLEL(GRiPS_raw, N = 20, eigen_type = "PCA"), " 'N' was set and data entered. Taking N from data.")
+  expect_message(PARALLEL(GRiPS_raw, eigen_type = "PCA"), " 'x' was not a correlation matrix. Correlations are found from entered raw data.")
   expect_error(PARALLEL(test_models$baseline$cormat, eigen_type = "PCA"), '"N" was not set and could not be taken from data. Please specify N and try again.')
   expect_warning(PARALLEL(test_models$baseline$cormat, N = 500,
                           eigen_type = "PCA", decision_rule = "Crawford",
@@ -141,4 +141,4 @@ test_that("settings are returned correctly", {
 
 })
 
-rm(pa_cor, pa_cor_pca, pa_raw, na_cor)
+rm(pa_cor, pa_cor_pca, pa_raw, x, y, z, dat_sing, cor_sing)

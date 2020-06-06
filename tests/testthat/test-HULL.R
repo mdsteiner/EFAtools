@@ -113,8 +113,8 @@ test_that("n_factors are correctly returned", {
 })
 
 
-FURTHER HULL CHECKS -> N_FACTORS, WARNINGS AND ERRORS, SETTINGS
-WARNING IF N_FAC MAX IS TOO LARGE
+#FURTHER HULL CHECKS -> N_FACTORS, WARNINGS, ERRORS, and MESSAGE, SETTINGS
+#WARNING IF N_FAC MAX IS TOO LARGE
 
 rm(hull_cor_paf, hull_cor_ml, hull_cor_uls, hull_cor_uls_CFI, hull_cor_paf,
    hull_cor_ml, hull_cor_uls, hull_cor_uls_CFI)

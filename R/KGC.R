@@ -110,16 +110,14 @@ KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
 
   } else {
 
-    cli::cli_alert_info(cli::col_cyan("'x' was not a correlation matrix. Correlations are found from entered raw data."))
+    message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data."))
 
     R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)
-    N <- nrow(x)
-
   }
 
   # Check if correlation matrix is invertable, if it is not, stop with message
-  R_i <- try(solve(R))
+  R_i <- try(solve(R), silent = TRUE)
 
   if (inherits(R_i, "try-error")) {
     stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, no further analyses are performed"))

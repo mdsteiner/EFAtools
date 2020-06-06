@@ -117,7 +117,7 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
 
   } else {
 
-    cli::cli_alert_info(cli::col_cyan("'x' was not a correlation matrix. Correlations are found from entered raw data."))
+    message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data."))
 
     R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)
