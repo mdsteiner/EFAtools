@@ -16,7 +16,7 @@ print.EKC <- function(x, ...) {
 
   cat("\n")
   cat("Empirical Kaiser criterion suggests ", crayon::bold(nfac), " factor",
-        ifelse(nfac > 1, "s.", "."), sep = "")
+        ifelse(nfac > 1 | nfac == 0 | is.na(nfac), "s.", "."), sep = "")
   cat("\n")
   cat("\n")
 

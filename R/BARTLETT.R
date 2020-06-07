@@ -81,10 +81,10 @@ BARTLETT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
 
   } else {
 
-    cli::cli_alert_info(col_cyan("'x' was not a correlation matrix. Correlations are found from entered raw data."))
+    message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data."))
 
     if (!is.na(N)) {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" N was set and data entered. Taking N from data."))
+      warning(crayon::yellow$bold("!"), crayon::yellow(" 'N' was set and data entered. Taking N from data."))
     }
 
     R <- stats::cor(x, use = use, method = cor_method)

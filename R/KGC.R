@@ -106,26 +106,18 @@ KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
   # Check if it is a correlation matrix
   if(.is_cormat(x)){
 
-    if(any(is.na(x))){
-
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" The correlation matrix you entered contains missing values. KGC cannot be computed."))
-
-    }
-
     R <- x
 
   } else {
 
-    cli::cli_alert_info(col_cyan("'x' was not a correlation matrix. Correlations are found from entered raw data."))
+    message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data."))
 
     R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)
-    N <- nrow(x)
-
   }
 
   # Check if correlation matrix is invertable, if it is not, stop with message
-  R_i <- try(solve(R))
+  R_i <- try(solve(R), silent = TRUE)
 
   if (inherits(R_i, "try-error")) {
     stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, no further analyses are performed"))
@@ -170,7 +162,7 @@ KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
 
     # Do an EFA to get final communality estimates and replace diagonal of
     # correlation matrix with these
-    EFA_h2 <- suppressWarnings(EFA(R, n_factors = n_factors, ...)$h2)
+    EFA_h2 <- suppressMessages(suppressWarnings(EFA(R, n_factors = n_factors, ...)$h2))
     diag(R) <- EFA_h2
 
     # Calculate eigenvalues and determine number of factors

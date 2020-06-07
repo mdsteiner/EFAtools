@@ -76,17 +76,11 @@ KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
   # Check if it is a correlation matrix
   if(.is_cormat(x)){
 
-    if(any(is.na(x))){
-
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" The correlation matrix you entered contains missing values. KMO cannot be computed."))
-
-    }
-
     R <- x
 
   } else {
 
-    cli::cli_alert_info(col_cyan("'x' was not a correlation matrix. Correlations are found from entered raw data."))
+    message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data."))
 
     R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)
@@ -95,7 +89,7 @@ KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
   }
 
   # Check if correlation matrix is invertable, if it is not, stop with message
-  R_i <- try(solve(R))
+  R_i <- try(solve(R), silent = TRUE)
 
   if (inherits(R_i, "try-error")) {
     stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, no further analyses are performed"))

@@ -85,12 +85,6 @@ EKC <- function(x, N = NA,
   # Check if it is a correlation matrix
   if(.is_cormat(x)){
 
-    if(any(is.na(x))){
-
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" The correlation matrix you entered contains missing values. Factor analysis is not possible."))
-
-    }
-
     R <- x
 
     if (is.na(N)) {
@@ -101,7 +95,11 @@ EKC <- function(x, N = NA,
 
   } else {
 
-    cli::cli_alert_info(col_cyan("'x' was not a correlation matrix. Correlations and N are found from entered raw data."))
+    message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data."))
+
+    if (!is.na(N)) {
+      warning(crayon::yellow$bold("!"), crayon::yellow(" 'N' was set and data entered. Taking N from data."))
+    }
 
     R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)

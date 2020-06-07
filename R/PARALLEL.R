@@ -170,10 +170,10 @@ PARALLEL <- function(x = NULL,
 
       } else {
 
-        cli::cli_alert_info(col_cyan("'x' was not a correlation matrix. Correlations are found from entered raw data."))
+        message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data."))
 
         if (!is.na(N)) {
-          warning(crayon::yellow$bold("!"), crayon::yellow(" N was set and data entered. Taking N from data."))
+          warning(crayon::yellow$bold("!"), crayon::yellow(" 'N' was set and data entered. Taking N from data."))
         }
 
         R <- stats::cor(x, use = use, method = cor_method)
@@ -196,7 +196,7 @@ PARALLEL <- function(x = NULL,
       R_i <- try(solve(R), silent = TRUE)
 
       if (inherits(R_i, "try-error")) {
-        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, parallel analysis is not possible."))
+        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, parallel analysis is not possible"))
       }
 
       # Check if correlation matrix is positive definite

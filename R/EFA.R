@@ -289,17 +289,11 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   # Check if it is a correlation matrix
   if(.is_cormat(x)){
 
-    if(any(is.na(x))){
-
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" The correlation matrix you entered contains missing values. Factor analysis is not possible."))
-
-    }
-
       R <- x
 
   } else {
 
-    cli::cli_alert_info(col_cyan("'x' was not a correlation matrix. Correlations are found from entered raw data."))
+    message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data."))
 
     R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)
@@ -323,9 +317,9 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   }
 
   # Check if number of factors is not too large
-  if(n_factors > floor(ncol(R)/2)){
+  if(n_factors > floor(ncol(R)/2) | (n_factors > 1 & ncol(R) <= 4)){
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" The number of factors to extract is too large (more than half the number of indicators). Please enter a lower number and try again."))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" The number of factors to extract is too large (either more than half the number of indicators or larger than one, if there are 4 or less indicators). Please enter a lower number and try again."))
 
   }
 

@@ -31,17 +31,10 @@
       } else {
 
         # Check if it is a correlation matrix
-        if(.is_cormat(cormat)){
 
-          if(any(is.na(cormat))){
+        if(!.is_cormat(cormat)){
 
-            stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" The correlation matrix you entered contains missing values. Check the cormat input, specify the Phi and pattern arguments instead, or set variance to 'sums_load'"))
-
-          }
-
-        } else {
-
-          stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" x was not a correlation matrix. Check the cormat input, specify the Phi and pattern arguments instead, or set variance to 'sums_load'"))
+          stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' was not a correlation matrix. Check the cormat input, specify the Phi and pattern arguments instead, or set variance to 'sums_load'"))
 
         }
 
@@ -80,15 +73,7 @@
       } else {
 
         # Check if it is a correlation matrix
-        if(.is_cormat(cormat)){
-
-          if(any(is.na(cormat))){
-
-            stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" The correlation matrix you entered contains missing values. Check the cormat input, specify the Phi and pattern arguments instead, or set variance to 'sums_load'"))
-
-          }
-
-        } else {
+        if(!.is_cormat(cormat)) {
 
           stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" x was not a correlation matrix. Check the cormat input, specify the Phi and pattern arguments instead, or set variance to 'sums_load'"))
 
@@ -279,7 +264,7 @@
 
       if(i == 1){
 
-        cli::cli_alert_info(col_cyan("The model contains a single factor. Only omega total is computed"))
+        message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data."))
 
       }
 
@@ -308,7 +293,7 @@
 
       if(!all(rowSums(bi_check) > 1)){
 
-        cli::cli_alert_info(col_cyan("Some variables have less than two loadings. Did you really enter a bifactor model? Either provide a bifactor model or a model with a single factor."))
+        message(cli::col_cyan(cli::symbol$info, " Some variables have less than two loadings. Did you really enter a bifactor model? Either provide a bifactor model or a model with a single factor."))
 
       }
 
