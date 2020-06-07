@@ -148,12 +148,12 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   checkmate::assert_number(percent, lower = 0, upper = 100)
 
   if (ncol(x) < 6) {
-    stop("Data has fewer than 6 indicators. Hull method needs at least 6.")
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' Data has fewer than 6 indicators. Hull method needs at least 6.'))
   }
 
   if (method == "PAF" && !all(gof == "CAF")) {
     cli::cli_alert_info(col_cyan('Only CAF can be used as gof if method "PAF" is',
-                                 'used. Setting gof to "CAF"'))
+                                 ' used. Setting gof to "CAF"'))
     gof <- "CAF"
   }
 
@@ -173,15 +173,15 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
 
   }
 
-  if (!all(gof == "CAF") && is.na(N)) {
+  if (is.na(N)) {
     stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "N" is not specified but is needed for computation of some of the fit indices.'))
   }
 
   # Check if correlation matrix is invertable, if it is not, stop with message
-  R_i <- try(solve(R))
+  R_i <- try(solve(R), silent = TRUE)
 
   if (inherits(R_i, "try-error")) {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' Correlation matrix is singular, the HULL method cannot be exectued'))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' Correlation matrix is singular, the HULL method cannot be exectued.'))
   }
 
   # Check if correlation matrix is positive definite
@@ -220,7 +220,7 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
     J <- max(c(n_fac_PA, n_fac_theor), na.rm = TRUE) + 1
 
     if (J > floor(ncol(R) / 2)) {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" n_fac_theor was larger than number of variables / 2. Setting maximum number of factors to number of variables / 2."))
+      warning(crayon::yellow$bold("!"), crayon::yellow(' "n_fac_theor" was larger than number of variables / 2. Setting maximum number of factors to number of variables / 2.'))
       J <- floor(ncol(R) / 2)
     }
 
