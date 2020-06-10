@@ -238,7 +238,7 @@
 #'
 #' # Add a promax rotation
 #' PAF_pro <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
-#'                type = "none", method = "PAF", rotation = "none",
+#'                type = "none", method = "PAF", rotation = "promax",
 #'                max_iter = 500, init_comm = "mac", criterion = 1e-4,
 #'                criterion_type = "sums", abs_eigen = FALSE, k = 3,
 #'                P_type = "unnorm", precision= 1e-5, order_type = "eigen")
@@ -316,10 +316,19 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
   }
 
-  # Check if number of factors is not too large
-  if(n_factors > floor(ncol(R)/2) | (n_factors > 1 & ncol(R) <= 4)){
+  # Check if model is identified
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" The number of factors to extract is too large (either more than half the number of indicators or larger than one, if there are 4 or less indicators). Please enter a lower number and try again."))
+  # calculate degrees of freedom
+  m <- ncol(R)
+  df <- ((m - n_factors)**2 - (m + n_factors)) / 2
+
+  if(df < 0){
+
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" The model is underidentified. Please enter a lower number of factors or use a larger number of indicators and try again."))
+
+  } else if (df == 0){
+
+    warning(crayon::yellow$bold("!"), crayon::yellow(" The model is just identified (df = 0). We suggest to try again with a lower number of factors or a larger number of indicators."))
 
   }
 

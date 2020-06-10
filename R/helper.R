@@ -320,6 +320,7 @@
                  Fm) { # Minimized error
   m <- nrow(L)
   q <- ncol(L)
+
   # dfs
   df <- ((m - q)**2 - (m + q)) / 2
 
@@ -343,8 +344,11 @@
     delta_hat_m <- max(0, chi - df)
     CFI <- 1 - delta_hat_m / delta_hat_null
 
-    ### compute RMSEA, incl. 90% confidence intervals
-    RMSEA <- sqrt(max((Fm / df - 1 / N), 0))
+    ### compute RMSEA, incl. 90% confidence intervals if df are not 0
+
+    if(df != 0){
+
+      RMSEA <- sqrt(max((Fm / df - 1 / N), 0))
 
     p_chi <- function(x, val, df, goal){goal - stats::pchisq(val, df, ncp = x)}
 
@@ -367,6 +371,14 @@
 
     RMSEA_LB <- sqrt(lambda_l / (df * N))
     RMSEA_UB <- sqrt(lambda_u / (df * N))
+
+    } else {
+
+      RMSEA <- 0
+      RMSEA_LB <- 0
+      RMSEA_UB <- 0
+
+    }
 
     ### compute AIC and BIC based on chi square
     AIC <- chi - 2 * df
