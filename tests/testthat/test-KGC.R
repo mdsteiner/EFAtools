@@ -29,7 +29,6 @@ test_that("found eigenvalues are correct", {
 
   expect_lt(sum(kgc_raw$eigen_EFA), ncol(test_models$baseline$cormat))
   expect_equal(c(kgc_efa_ml$eigen_PCA, kgc_efa_ml$eigen_SMC), c(NA, NA))
-
 })
 
 test_that("identified number of factors is correct", {

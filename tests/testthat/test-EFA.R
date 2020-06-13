@@ -1,4 +1,3 @@
-# SEE IF ALL THIS IS NEEDED GIVEN THAT PAF ETC FUNCTIONS ARE TESTED SEPARATELY
 efa_cor <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500)
 efa_raw <- EFA(GRiPS_raw, n_factors = 1)
 
@@ -23,10 +22,276 @@ efa_quart <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
 # PAF with promax rotation without a specified type
 efa_none <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
                 type = "none", method = "PAF", rotation = "promax",
-                max_iter = 500, init_comm = "mac", criterion = 1e-4,
+                max_iter = 500, init_comm = "unity", criterion = 1e-4,
                 criterion_type = "sums", abs_eigen = FALSE, k = 3,
                 P_type = "unnorm", precision= 1e-5, order_type = "eigen")
-    #'
-# with random data
-set.seed(500)
-efa_rand <- EFA(matrix(rnorm(100), ncol = 4), n_factors = 1, max_iter = 1000)
+
+test_that("output class and dimensions are correct", {
+  expect_is(efa_cor, "EFA")
+  expect_is(efa_raw, "EFA")
+  expect_is(efa_psych, "EFA")
+  expect_is(efa_spss, "EFA")
+  expect_is(efa_ml, "EFA")
+  expect_is(efa_uls, "EFA")
+  expect_is(efa_equa, "EFA")
+  expect_is(efa_quart, "EFA")
+  expect_is(efa_none, "EFA")
+
+  expect_is(efa_cor$unrot_loadings, "LOADINGS")
+  expect_is(efa_raw$unrot_loadings, "LOADINGS")
+  expect_is(efa_psych$unrot_loadings, "LOADINGS")
+  expect_is(efa_spss$unrot_loadings, "LOADINGS")
+  expect_is(efa_ml$unrot_loadings, "LOADINGS")
+  expect_is(efa_uls$unrot_loadings, "LOADINGS")
+  expect_is(efa_equa$unrot_loadings, "LOADINGS")
+  expect_is(efa_quart$unrot_loadings, "LOADINGS")
+  expect_is(efa_none$unrot_loadings, "LOADINGS")
+
+  expect_is(efa_psych$rot_loadings, "LOADINGS")
+  expect_is(efa_spss$rot_loadings, "LOADINGS")
+  expect_is(efa_equa$rot_loadings, "LOADINGS")
+  expect_is(efa_quart$rot_loadings, "LOADINGS")
+  expect_is(efa_none$rot_loadings, "LOADINGS")
+
+  expect_named(efa_cor, c("orig_R", "h2_init", "h2", "orig_eigen", "init_eigen",
+                          "final_eigen", "iter", "unrot_loadings",
+                          "vars_accounted", "fit_indices", "settings"))
+  expect_named(efa_raw, c("orig_R", "h2_init", "h2", "orig_eigen", "init_eigen",
+                          "final_eigen", "iter", "unrot_loadings",
+                          "vars_accounted", "fit_indices", "settings"))
+  expect_named(efa_psych, c("orig_R", "h2_init", "h2", "orig_eigen", "init_eigen",
+                            "final_eigen", "iter", "unrot_loadings",
+                            "vars_accounted", "fit_indices", "rot_loadings",
+                            "Phi", "Structure", "rotmat", "vars_accounted_rot",
+                            "settings"))
+  expect_named(efa_spss, c("orig_R", "h2_init", "h2", "orig_eigen", "init_eigen",
+                           "final_eigen", "iter", "unrot_loadings",
+                           "vars_accounted", "fit_indices", "rot_loadings",
+                           "Phi", "Structure", "rotmat", "vars_accounted_rot",
+                           "settings"))
+  expect_named(efa_ml, c("orig_R", "h2", "orig_eigen", "final_eigen", "iter",
+                         "convergence", "unrot_loadings", "vars_accounted",
+                         "fit_indices", "settings"))
+  expect_named(efa_uls, c("orig_R", "h2", "orig_eigen", "final_eigen", "iter",
+                         "convergence", "unrot_loadings", "vars_accounted",
+                         "fit_indices", "settings"))
+  expect_named(efa_equa, c("orig_R", "h2_init", "h2", "orig_eigen", "init_eigen",
+                           "final_eigen", "iter", "unrot_loadings",
+                           "vars_accounted", "fit_indices", "rot_loadings",
+                           "rotmat", "vars_accounted_rot",
+                           "settings"))
+  expect_named(efa_quart, c("orig_R", "h2_init", "h2", "orig_eigen", "init_eigen",
+                            "final_eigen", "iter", "unrot_loadings",
+                            "vars_accounted", "fit_indices", "rot_loadings",
+                            "Phi", "Structure", "rotmat", "vars_accounted_rot",
+                            "settings"))
+  expect_named(efa_none, c("orig_R", "h2_init", "h2", "orig_eigen", "init_eigen",
+                           "final_eigen", "iter", "unrot_loadings",
+                           "vars_accounted", "fit_indices", "rot_loadings",
+                           "Phi", "Structure", "rotmat", "vars_accounted_rot",
+                           "settings"))
+})
+
+test_that("settings are returned correctly", {
+  expect_named(efa_cor$settings, c("method", "rotation", "type", "n_factors",
+                                   "N", "use", "cor_method", "max_iter",
+                                   "init_comm", "criterion", "criterion_type",
+                                   "abs_eigen"))
+  expect_named(efa_raw$settings, c("method", "rotation", "type", "n_factors",
+                                   "N", "use", "cor_method", "max_iter",
+                                   "init_comm", "criterion", "criterion_type",
+                                   "abs_eigen"))
+  expect_named(efa_psych$settings, c("method", "rotation", "type", "n_factors",
+                                     "N", "use", "cor_method", "max_iter",
+                                     "init_comm", "criterion", "criterion_type",
+                                     "abs_eigen", "kaiser", "P_type", "precision",
+                                     "order_type", "k"))
+  expect_named(efa_spss$settings, c("method", "rotation", "type", "n_factors",
+                                    "N", "use", "cor_method", "max_iter",
+                                    "init_comm", "criterion", "criterion_type",
+                                    "abs_eigen", "kaiser", "P_type", "precision",
+                                    "order_type", "k"))
+  expect_named(efa_ml$settings, c("method", "rotation", "type", "n_factors",
+                                    "N", "use", "cor_method", "start_method"))
+  expect_named(efa_uls$settings, c("method", "rotation", "type", "n_factors",
+                                   "N", "use", "cor_method"))
+  expect_named(efa_equa$settings, c("method", "rotation", "type", "n_factors",
+                                   "N", "use", "cor_method", "max_iter",
+                                   "init_comm", "criterion", "criterion_type",
+                                   "abs_eigen", "kaiser", "precision",
+                                   "order_type"))
+  expect_named(efa_quart$settings, c("method", "rotation", "type", "n_factors",
+                                   "N", "use", "cor_method", "max_iter",
+                                   "init_comm", "criterion", "criterion_type",
+                                   "abs_eigen", "kaiser", "precision",
+                                   "order_type", "k"))
+  expect_named(efa_none$settings, c("method", "rotation", "type", "n_factors",
+                                   "N", "use", "cor_method", "max_iter",
+                                   "init_comm", "criterion", "criterion_type",
+                                   "abs_eigen", "kaiser", "P_type", "precision",
+                                   "order_type", "k"))
+
+  expect_equal(efa_cor$settings$method, "PAF")
+  expect_equal(efa_raw$settings$method, "PAF")
+  expect_equal(efa_psych$settings$method, "PAF")
+  expect_equal(efa_spss$settings$method, "PAF")
+  expect_equal(efa_ml$settings$method, "ML")
+  expect_equal(efa_uls$settings$method, "ULS")
+  expect_equal(efa_equa$settings$method, "PAF")
+  expect_equal(efa_quart$settings$method, "PAF")
+  expect_equal(efa_none$settings$method, "PAF")
+
+  expect_equal(efa_cor$settings$rotation, "none")
+  expect_equal(efa_raw$settings$rotation, "none")
+  expect_equal(efa_psych$settings$rotation, "promax")
+  expect_equal(efa_spss$settings$rotation, "promax")
+  expect_equal(efa_ml$settings$rotation, "none")
+  expect_equal(efa_uls$settings$rotation, "none")
+  expect_equal(efa_equa$settings$rotation, "equamax")
+  expect_equal(efa_quart$settings$rotation, "quartimin")
+  expect_equal(efa_none$settings$rotation, "promax")
+
+  expect_equal(efa_cor$settings$type, "EFAtools")
+  expect_equal(efa_raw$settings$type, "EFAtools")
+  expect_equal(efa_psych$settings$type, "psych")
+  expect_equal(efa_spss$settings$type, "SPSS")
+  expect_equal(efa_ml$settings$type, "EFAtools")
+  expect_equal(efa_uls$settings$type, "EFAtools")
+  expect_equal(efa_equa$settings$type, "EFAtools")
+  expect_equal(efa_quart$settings$type, "EFAtools")
+  expect_equal(efa_none$settings$type, "none")
+
+  expect_equal(efa_cor$settings$n_factors, 3)
+  expect_equal(efa_raw$settings$n_factors, 1)
+  expect_equal(efa_psych$settings$n_factors, 3)
+  expect_equal(efa_spss$settings$n_factors, 3)
+  expect_equal(efa_ml$settings$n_factors, 3)
+  expect_equal(efa_uls$settings$n_factors, 3)
+  expect_equal(efa_equa$settings$n_factors, 3)
+  expect_equal(efa_quart$settings$n_factors, 3)
+  expect_equal(efa_none$settings$n_factors, 3)
+
+  expect_equal(efa_cor$settings$N, 500)
+  expect_equal(efa_raw$settings$N, 810)
+  expect_equal(efa_psych$settings$N, 500)
+  expect_equal(efa_spss$settings$N, 500)
+  expect_equal(efa_ml$settings$N, 500)
+  expect_equal(efa_uls$settings$N, 500)
+  expect_equal(efa_equa$settings$N, 500)
+  expect_equal(efa_quart$settings$N, 500)
+  expect_equal(efa_none$settings$N, 500)
+
+  expect_equal(efa_cor$settings$use, "pairwise.complete.obs")
+  expect_equal(efa_raw$settings$use, "pairwise.complete.obs")
+  expect_equal(efa_psych$settings$use, "pairwise.complete.obs")
+  expect_equal(efa_spss$settings$use, "pairwise.complete.obs")
+  expect_equal(efa_ml$settings$use, "pairwise.complete.obs")
+  expect_equal(efa_uls$settings$use, "pairwise.complete.obs")
+  expect_equal(efa_equa$settings$use, "pairwise.complete.obs")
+  expect_equal(efa_quart$settings$use, "pairwise.complete.obs")
+  expect_equal(efa_none$settings$use, "pairwise.complete.obs")
+
+  expect_equal(efa_cor$settings$cor_method, "pearson")
+  expect_equal(efa_raw$settings$cor_method, "pearson")
+  expect_equal(efa_psych$settings$cor_method, "pearson")
+  expect_equal(efa_spss$settings$cor_method, "pearson")
+  expect_equal(efa_ml$settings$cor_method, "pearson")
+  expect_equal(efa_uls$settings$cor_method, "pearson")
+  expect_equal(efa_equa$settings$cor_method, "pearson")
+  expect_equal(efa_quart$settings$cor_method, "pearson")
+  expect_equal(efa_none$settings$cor_method, "pearson")
+
+  expect_equal(efa_cor$settings$max_iter, 300)
+  expect_equal(efa_raw$settings$max_iter, 300)
+  expect_equal(efa_psych$settings$max_iter, 50)
+  expect_equal(efa_spss$settings$max_iter, 25)
+  expect_equal(efa_equa$settings$max_iter, 300)
+  expect_equal(efa_quart$settings$max_iter, 300)
+  expect_equal(efa_none$settings$max_iter, 500)
+
+  expect_equal(efa_cor$settings$init_comm, "mac")
+  expect_equal(efa_raw$settings$init_comm, "mac")
+  expect_equal(efa_psych$settings$init_comm, "smc")
+  expect_equal(efa_spss$settings$init_comm, "smc")
+  expect_equal(efa_equa$settings$init_comm, "mac")
+  expect_equal(efa_quart$settings$init_comm, "mac")
+  expect_equal(efa_none$settings$init_comm, "unity")
+
+  expect_equal(efa_cor$settings$criterion, 0.001)
+  expect_equal(efa_raw$settings$criterion,  0.001)
+  expect_equal(efa_psych$settings$criterion,  0.001)
+  expect_equal(efa_spss$settings$criterion,  0.001)
+  expect_equal(efa_equa$settings$criterion,  0.001)
+  expect_equal(efa_quart$settings$criterion,  0.001)
+  expect_equal(efa_none$settings$criterion,  1e-4)
+
+  expect_equal(efa_cor$settings$criterion_type, "sums")
+  expect_equal(efa_raw$settings$criterion_type, "sums")
+  expect_equal(efa_psych$settings$criterion_type, "sums")
+  expect_equal(efa_spss$settings$criterion_type, "max_individual")
+  expect_equal(efa_equa$settings$criterion_type, "sums")
+  expect_equal(efa_quart$settings$criterion_type, "sums")
+  expect_equal(efa_none$settings$criterion_type, "sums")
+
+  expect_equal(efa_cor$settings$abs_eigen, TRUE)
+  expect_equal(efa_raw$settings$abs_eigen,  TRUE)
+  expect_equal(efa_psych$settings$abs_eigen, FALSE)
+  expect_equal(efa_spss$settings$abs_eigen,  TRUE)
+  expect_equal(efa_equa$settings$abs_eigen, TRUE)
+  expect_equal(efa_quart$settings$abs_eigen,  TRUE)
+  expect_equal(efa_none$settings$abs_eigen, FALSE)
+
+  expect_equal(efa_psych$settings$kaiser, TRUE)
+  expect_equal(efa_spss$settings$kaiser, TRUE)
+  expect_equal(efa_equa$settings$kaiser, TRUE)
+  expect_equal(efa_quart$settings$kaiser, TRUE)
+  expect_equal(efa_none$settings$kaiser, TRUE)
+
+  expect_equal(efa_psych$settings$P_type, "unnorm")
+  expect_equal(efa_spss$settings$P_type, "norm")
+  expect_equal(efa_none$settings$P_type, "unnorm")
+
+  expect_equal(efa_psych$settings$precision, 1e-05)
+  expect_equal(efa_spss$settings$precision, 1e-10)
+  expect_equal(efa_equa$settings$precision, 1e-05)
+  expect_equal(efa_quart$settings$precision, 1e-05)
+  expect_equal(efa_none$settings$precision, 1e-05)
+
+  expect_equal(efa_psych$settings$order_type, "eigen")
+  expect_equal(efa_spss$settings$order_type, "ss_factors")
+  expect_equal(efa_equa$settings$order_type, "eigen")
+  expect_equal(efa_quart$settings$order_type, "eigen")
+  expect_equal(efa_none$settings$order_type, "eigen")
+
+  expect_equal(efa_psych$settings$k, 4)
+  expect_equal(efa_spss$settings$k, 4)
+  expect_equal(efa_equa$settings$k, TRUE)
+  expect_equal(efa_none$settings$k, 3)
+
+  expect_equal(efa_ml$settings$start_method, "factanal")
+})
+
+
+# Create singular correlation matrix for tests
+x <- rnorm(10)
+y <- rnorm(10)
+z <- x + y
+dat_sing <- matrix(c(x, y, z), ncol = 3)
+cor_sing <- stats::cor(dat_sing)
+
+test_that("errors are thrown correctly", {
+  expect_error(EFA(1:5), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.")
+  expect_message(EFA(GRiPS_raw, n_factors = 1), " 'x' was not a correlation matrix. Correlations are found from entered raw data.")
+
+  # PRODUCE WARNING!
+  expect_warning(EFA(GRiPS_raw, N = 20, n_factors = 1), " 'N' was set and data entered. Taking N from data.")
+
+
+  # HIER STEHENGEBLIEBEN
+  expect_error(EFA(dat_sing, n_factors = 1), " Correlation matrix is singular, no further analyses are performed")
+  expect_error(EFA(cor_sing, N = 10, n_factors = 1), " Correlation matrix is singular, no further analyses are performed")
+  expect_error(EFA(test_models$baseline$cormat, N = 10), " Correlation matrix is singular, no further analyses are performed")
+
+  expect_error(EFA(test_models$baseline$cormat), " Argument 'N' was NA. Either provide N or raw data.")
+})
+

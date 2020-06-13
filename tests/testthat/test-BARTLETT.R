@@ -38,7 +38,6 @@ test_that("settings are returned correctly", {
   expect_equal(bart_cor$settings$cor_method, "pearson")
   expect_equal(bart_raw$settings$cor_method, "pearson")
   expect_equal(bart_rand$settings$cor_method, "pearson")
-
 })
 
 # Create singular correlation matrix for tests
