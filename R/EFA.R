@@ -295,6 +295,10 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
     message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data."))
 
+    if (!is.na(N)) {
+      warning(crayon::yellow$bold("!"), crayon::yellow(" 'N' was set and data entered. Taking N from data."))
+    }
+
     R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)
     N <- nrow(x)

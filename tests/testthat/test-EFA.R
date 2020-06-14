@@ -282,14 +282,11 @@ cor_sing <- stats::cor(dat_sing)
 test_that("errors are thrown correctly", {
   expect_error(EFA(1:5), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.")
   expect_message(EFA(GRiPS_raw, n_factors = 1), " 'x' was not a correlation matrix. Correlations are found from entered raw data.")
-
-  # PRODUCE WARNING!
   expect_warning(EFA(GRiPS_raw, N = 20, n_factors = 1), " 'N' was set and data entered. Taking N from data.")
-
-
-  # HIER STEHENGEBLIEBEN
   expect_error(EFA(dat_sing, n_factors = 1), " Correlation matrix is singular, no further analyses are performed")
   expect_error(EFA(cor_sing, N = 10, n_factors = 1), " Correlation matrix is singular, no further analyses are performed")
+
+  # HIER STEHENGEBLIEBEN
   expect_error(EFA(test_models$baseline$cormat, N = 10), " Correlation matrix is singular, no further analyses are performed")
 
   expect_error(EFA(test_models$baseline$cormat), " Argument 'N' was NA. Either provide N or raw data.")

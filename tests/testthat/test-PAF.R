@@ -23,7 +23,7 @@ test_that("output class and dimensions are correct", {
   expect_output(str(paf_none), "List of 11")
 })
 
-test_that("Original correlation matrix and eigenvalues are correct", {
+test_that("original correlation matrix and eigenvalues are correct", {
   expect_equal(paf_efatools$orig_R, test_models$baseline$cormat)
   expect_equal(paf_psych$orig_R, test_models$baseline$cormat)
   expect_equal(paf_spss$orig_R, test_models$baseline$cormat)
@@ -45,14 +45,48 @@ test_that("Original correlation matrix and eigenvalues are correct", {
   expect_lt(sum(paf_none$final_eigen), ncol(test_models$baseline$cormat))
 })
 
-# Test correct loadings with population models
+test_that("fit indices are returned correctly", {
+  expect_output(str(paf_efatools$fit_indices), "List of 12")
+  expect_output(str(paf_psych$fit_indices), "List of 12")
+  expect_output(str(paf_spss$fit_indices), "List of 12")
+  expect_output(str(paf_none$fit_indices), "List of 12")
 
-# Test communalities?
+  expect_equal(paf_efatools$fit_indices[c("chi", "CFI", "RMSEA", "RMSEA_LB",
+                                          "RMSEA_UB", "AIC", "BIC", "Fm",
+                                          "chi_null", "df_null")],
+               list(chi = NA, CFI = NA, RMSEA = NA, RMSEA_LB = NA, RMSEA_UB = NA,
+                    AIC = NA, BIC = NA, Fm = NA, chi_null = NA, df_null = NA))
+  expect_equal(paf_psych$fit_indices[c("chi", "CFI", "RMSEA", "RMSEA_LB",
+                                          "RMSEA_UB", "AIC", "BIC", "Fm",
+                                          "chi_null", "df_null")],
+               list(chi = NA, CFI = NA, RMSEA = NA, RMSEA_LB = NA, RMSEA_UB = NA,
+                    AIC = NA, BIC = NA, Fm = NA, chi_null = NA, df_null = NA))
+  expect_equal(paf_spss$fit_indices[c("chi", "CFI", "RMSEA", "RMSEA_LB",
+                                          "RMSEA_UB", "AIC", "BIC", "Fm",
+                                          "chi_null", "df_null")],
+               list(chi = NA, CFI = NA, RMSEA = NA, RMSEA_LB = NA, RMSEA_UB = NA,
+                    AIC = NA, BIC = NA, Fm = NA, chi_null = NA, df_null = NA))
+  expect_equal(paf_none$fit_indices[c("chi", "CFI", "RMSEA", "RMSEA_LB",
+                                          "RMSEA_UB", "AIC", "BIC", "Fm",
+                                          "chi_null", "df_null")],
+               list(chi = NA, CFI = NA, RMSEA = NA, RMSEA_LB = NA, RMSEA_UB = NA,
+                    AIC = NA, BIC = NA, Fm = NA, chi_null = NA, df_null = NA))
 
-# Test variances accounted for?
+  expect_gte(paf_efatools$fit_indices$df, 0)
+  expect_gte(paf_psych$fit_indices$df, 0)
+  expect_gte(paf_spss$fit_indices$df, 0)
+  expect_gte(paf_none$fit_indices$df, 0)
 
-# Test fit (no, test with gof, right?) Just test that CAF and df are calculated
-# and the others are NA?
+  expect_gte(paf_efatools$fit_indices$CAF, 0)
+  expect_gte(paf_psych$fit_indices$CAF, 0)
+  expect_gte(paf_spss$fit_indices$CAF, 0)
+  expect_gte(paf_none$fit_indices$CAF, 0)
+
+  expect_lte(paf_efatools$fit_indices$CAF, 1)
+  expect_lte(paf_psych$fit_indices$CAF, 1)
+  expect_lte(paf_spss$fit_indices$CAF, 1)
+  expect_lte(paf_none$fit_indices$CAF, 1)
+})
 
 test_that("settings are returned correctly", {
   expect_named(paf_efatools$settings, c("max_iter", "init_comm", "criterion",
