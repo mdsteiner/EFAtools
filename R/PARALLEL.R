@@ -128,6 +128,11 @@ PARALLEL <- function(x = NULL,
                      ...) {
 
 
+  if(!is.null(x) && !inherits(x, c("matrix", "data.frame"))){
+
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither NULL, nor a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data or leave x at NULL."))
+
+  }
   eigen_type <- match.arg(eigen_type, several.ok = TRUE)
   use <- match.arg(use)
   cor_method <- match.arg(cor_method)

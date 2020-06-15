@@ -135,6 +135,12 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   # method <- "ML"
   # gof <- c("CFI", "RMSEA")
 
+  if(!inherits(x, c("matrix", "data.frame"))){
+
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data."))
+
+  }
+
   method <- match.arg(method)
   use <- match.arg(use)
   cor_method <- match.arg(cor_method)
