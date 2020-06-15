@@ -306,7 +306,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   }
 
   # Check if correlation matrix is invertable, if it is not, stop with message
-  R_i <- try(solve(R))
+  R_i <- try(solve(R), silent = TRUE)
 
   if (inherits(R_i, "try-error")) {
     stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, no further analyses are performed"))
@@ -349,7 +349,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
     if (is.na(N)) {
 
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Argument 'N' was NA, not all fit indices can be computed. To get all fit indices, either provide N or raw data."))
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Argument 'N' was NA, not all fit indices could be computed. To get all fit indices, either provide N or raw data."))
 
     }
 
@@ -359,7 +359,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
     if (is.na(N)) {
 
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Argument 'N' was NA, not all fit indices can be computed. To get all fit indices, either provide N or raw data."))
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Argument 'N' was NA, not all fit indices could be computed. To get all fit indices, either provide N or raw data."))
 
     }
 

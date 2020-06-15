@@ -46,6 +46,7 @@
 #' Regarding the AIC, the suggested number of factors is the number of factors
 #' for the model where the AIC is lowest.
 #'
+#'
 #' In comparison with other prominent factor retention criteria, SMT performed
 #' well at determining the number of factors to extract in EFA (Auerswald &
 #' Moshagen, 2019). The RMSEA lower bound performed well at determining the true
@@ -185,14 +186,9 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
 
     }
 
-  # Test if RMSEA LB and AIC criteria can be applied
-  if(max_fac == 1){
+ # SAME AS FOR CHI_NULL ALSO FOR RMSEA_LB_NULL AND AIC_NULL
 
-    warning(crayon::yellow$bold("!"), crayon::yellow(" The maximum number of factors tested was 1. RMSEA lower bound and AIC criteria cannot be applied. nfac_RMSEA and nfac_AIC were set to NA."))
-
-  } else {
-
-    # With which number of factors does the RMSEA first fall below .05?
+    # With which number of factors does the RMSEA lower bound first fall below .05?
     if(any(RMSEA_LB < .05, na.rm = TRUE)){
 
       nfac_RMSEA <- which(RMSEA_LB < .05)[1]
@@ -206,7 +202,6 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   # With which number of factors is the AIC lowest?
   nfac_AIC <- which(AIC == min(AIC))
 
-  }
 
   # Prepare the output
   output <- list(nfac_chi = nfac_chi,

@@ -2,7 +2,7 @@ smt_cor <- SMT(test_models$baseline$cormat, N = 500)
 smt_raw <- SMT(GRiPS_raw)
 
 set.seed(500)
-smt_rand <- SMT(matrix(rnorm(100), ncol = 4))
+smt_rand <- SMT(matrix(rnorm(200), ncol = 8))
 
 test_that("output class and dimensions are correct", {
   expect_is(smt_cor, "SMT")
