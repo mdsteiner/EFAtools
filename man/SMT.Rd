@@ -51,9 +51,12 @@ bound}
 \item{nfac_AIC}{The number of factors to retain according to the AIC}
 \item{p_null}{The p-value for the null model (zero factors)}
 \item{ps_chi}{The p-values for EFA models with increasing numbers of factors,
-starting with 1 factor}
+starting with 1 factor}¨
+\item{RMSEA_LB_null}{The lower bounds of the 90% confidence interval for the RMSEA
+for the null model (zero factors).}
 \item{RMSEA_LBs}{The lower bounds of the 90% confidence interval for the RMSEA
 for EFA models with increasing numbers of factors, starting with 1 factor}
+\item{AIC_null}{The AICs for the null model (zero factors)}
 \item{AICs}{The AICs for EFA models with increasing numbers of factors,
 starting with 1 factor}
 }

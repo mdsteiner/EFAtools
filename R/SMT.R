@@ -46,7 +46,6 @@
 #' Regarding the AIC, the suggested number of factors is the number of factors
 #' for the model where the AIC is lowest.
 #'
-#'
 #' In comparison with other prominent factor retention criteria, SMT performed
 #' well at determining the number of factors to extract in EFA (Auerswald &
 #' Moshagen, 2019). The RMSEA lower bound performed well at determining the true
@@ -63,9 +62,12 @@
 #' \item{nfac_AIC}{The number of factors to retain according to the AIC}
 #' \item{p_null}{The p-value for the null model (zero factors)}
 #' \item{ps_chi}{The p-values for EFA models with increasing numbers of factors,
-#' starting with 1 factor}
+#' starting with 1 factor}¨
+#' \item{RMSEA_LB_null}{The lower bounds of the 90% confidence interval for the RMSEA
+#' for the null model (zero factors).}
 #' \item{RMSEA_LBs}{The lower bounds of the 90% confidence interval for the RMSEA
 #' for EFA models with increasing numbers of factors, starting with 1 factor}
+#' \item{AIC_null}{The AICs for the null model (zero factors)}
 #' \item{AICs}{The AICs for EFA models with increasing numbers of factors,
 #' starting with 1 factor}
 #'
@@ -144,7 +146,7 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   }
 
   # Prepare objects for sequential tests
-  max_fac <- ifelse(ncol(x) <= 4, 1, floor(ncol(x)/2))
+  max_fac <- ifelse(ncol(R) <= 4, 1, floor(ncol(R)/2))
   ps <- vector("double", max_fac)
   RMSEA_LB <- vector("double", max_fac)
   AIC <- vector("double", max_fac)
@@ -186,9 +188,43 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
 
     }
 
- # SAME AS FOR CHI_NULL ALSO FOR RMSEA_LB_NULL AND AIC_NULL
+  # Calculate RMSEA (inkl. 90% CI) and AIC for the null model
+  chi_null <- temp$fit_indices$chi_null
+  df_null <- temp$fit_indices$df_null
 
-    # With which number of factors does the RMSEA lower bound first fall below .05?
+  RMSEA_null <- sqrt(max(0, chi_null - df_null) / (df_null * N - 1))
+
+  p_chi <- function(x, val, df, goal){goal - stats::pchisq(val, df, ncp = x)}
+
+  if (stats::pchisq(chi_null, df = df_null, ncp = 0) >= .95) {
+    lambda_l <- stats::uniroot(f = p_chi, interval = c(1e-10, 10000), val = chi_null,
+                               df = df_null, goal = .95, extendInt = "upX",
+                               maxiter = 100L)$root
+  } else {
+    lambda_l <- 0
+  }
+
+  if (stats::pchisq(chi_null, df = df_null, ncp = 0) >= .05) {
+    lambda_u <- stats::uniroot(f = p_chi, interval = c(1e-10, 10000),
+                               val = chi_null, df = df_null, goal = .05,
+                               extendInt = "upX", maxiter = 100L)$root
+  }
+  else {
+    lambda_u <- 0
+  }
+
+  RMSEA_LB_null <- sqrt(lambda_l / (df_null * N))
+  RMSEA_UB_null <- sqrt(lambda_u / (df_null * N))
+
+  AIC_null <- chi_null - 2 * df_null
+
+  # With which number of factors does the RMSEA lower bound first fall below .05?
+  if(RMSEA_LB_null < .05){
+
+    nfac_RMSEA <- 0
+
+  } else {
+
     if(any(RMSEA_LB < .05, na.rm = TRUE)){
 
       nfac_RMSEA <- which(RMSEA_LB < .05)[1]
@@ -199,9 +235,11 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
 
     }
 
-  # With which number of factors is the AIC lowest?
-  nfac_AIC <- which(AIC == min(AIC))
+  }
 
+  # With which number of factors is the AIC lowest?
+  AIC_all <- c(AIC_null, AIC)
+  nfac_AIC <- which(AIC_all == min(AIC_all)) - 1
 
   # Prepare the output
   output <- list(nfac_chi = nfac_chi,
@@ -209,7 +247,9 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
                  nfac_AIC = nfac_AIC,
                  p_null = p_null,
                  ps_chi = ps,
+                 RMSEA_LB_null = RMSEA_LB_null,
                  RMSEA_LBs = RMSEA_LB,
+                 AIC_null = AIC_null,
                  AICs = AIC,
                  settings = list(N = N,
                                  use = use,
