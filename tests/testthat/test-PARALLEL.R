@@ -63,7 +63,7 @@ test_that("identified number of factors is correct", {
 
   expect_equal(pa_raw$n_fac_PCA, 1)
   expect_equal(pa_raw$n_fac_SMC, 1)
-  expect_equal(pa_raw$n_fac_EFA, 3)
+  expect_equal(pa_raw$n_fac_EFA, 3, tolerance = 1)
 
   expect_equal(pa_cor_pca$n_fac_PCA, 3)
   expect_equal(c(pa_cor_pca$n_fac_SMC, pa_cor_pca$n_fac_EFA), c(NA, NA))
