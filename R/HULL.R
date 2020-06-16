@@ -272,9 +272,8 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
     Fm <- sum(R[upper.tri(R)] ^ 2)
     chi <- Fm * (N - 1)
     df <- (m**2 - m) / 2
-    delta_hat_m <- max(0, chi - df)
     # compute 1 - RMSEA
-    s_RMSEA[1, 2] <- 1 - sqrt(max(delta_hat_m / (df * (N - 1)), 0))
+    s_RMSEA[1, 2] <- 1 - sqrt(max(0, chi - df) / (df * N - 1))
     s_RMSEA[1, 3] <- (m**2 - m) / 2
 
   }
@@ -287,55 +286,42 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
 
   # then for 1 to J factors
   for (i in 1:J) {
-    df <- ((m - i)**2 - (m + i)) / 2
     if (method == "PAF") {
       # compute goodness of fit "f" as CAF (common part accounted for; Eq 3)
-      A_i <- loadings[[i]]$unrot_loadings
-      delta_hat <- R - (A_i %*% t(A_i))
-      diag(delta_hat) <- 1
       # compute CAF
-      s_CAF[i + 1, 2] <- 1 - KMO(delta_hat)$KMO
+      s_CAF[i + 1, 2] <- loadings[[i]]$fit_indices$CAF
       # compute dfs (Eq 4 provides the number of free parameters; using dfs yields
       # th same numbers, as the difference in df equals the difference in free
       # parameters)
-      s_CAF[i + 1, 3] <- df
+      s_CAF[i + 1, 3] <- loadings[[i]]$fit_indices$df
     } else {
       if ("CAF" %in% gof) {
         # compute goodness of fit "f" as CAF (common part accounted for; Eq 3)
-        A_i <- loadings[[i]]$unrot_loadings
-        delta_hat <- R - (A_i %*% t(A_i))
-        diag(delta_hat) <- 1
         # compute CAF
-        s_CAF[i + 1, 2] <- 1 - KMO(delta_hat)$KMO
+        s_CAF[i + 1, 2] <- loadings[[i]]$fit_indices$CAF
         # compute dfs (Eq 4 provides the number of free parameters; using dfs yields
         # th same numbers, as the difference in df equals the difference in free
         # parameters)
-        s_CAF[i + 1, 3] <- df
+        s_CAF[i + 1, 3] <- loadings[[i]]$fit_indices$df
       }
 
       if ("CFI" %in% gof) {
-        Fm <- loadings[[i]]$fit_indices$Fm
-        chi <- Fm * (N - 1)
-        delta_hat_m <- max(0, chi - df)
         # compute CFI
-        s_CFI[i + 1, 2] <- 1 - delta_hat_m / delta_hat_null
+        s_CFI[i + 1, 2] <- loadings[[i]]$fit_indices$CFI
         # compute dfs (Eq 4 provides the number of free parameters; using dfs yields
         # th same numbers, as the difference in df equals the difference in free
         # parameters)
-        s_CFI[i + 1, 3] <- df
+        s_CFI[i + 1, 3] <- loadings[[i]]$fit_indices$df
 
       }
 
       if ("RMSEA" %in% gof) {
-        Fm <- loadings[[i]]$fit_indices$Fm
-        chi <- Fm * (N -1)
-        delta_hat_m <- max(0, chi - df)
         # compute 1 - RMSEA
-        s_RMSEA[i + 1, 2] <- 1 - sqrt(max(delta_hat_m / (df * (N - 1)), 0))
+        s_RMSEA[i + 1, 2] <- 1 - loadings[[i]]$fit_indices$RMSEA
         # compute dfs (Eq 4 provides the number of free parameters; using dfs yields
         # th same numbers, as the difference in df equals the difference in free
         # parameters)
-        s_RMSEA[i + 1, 3] <- df
+        s_RMSEA[i + 1, 3] <- loadings[[i]]$fit_indices$df
 
       }
 

@@ -109,16 +109,16 @@ test_that("n_factors are correctly returned", {
   expect_equal(hull_cor_uls_CFI$n_fac_CFI, 3)
   expect_equal(hull_cor_uls_CFI$n_fac_RMSEA, NA)
 
-  expect_equal(hull_raw_paf$n_fac_CAF, "matrix")
+  expect_equal(hull_raw_paf$n_fac_CAF, 1)
   expect_equal(hull_raw_paf$n_fac_CFI, NA)
   expect_equal(hull_raw_paf$n_fac_RMSEA, NA)
 
-  expect_equal(hull_raw_uls$n_fac_CAF, "matrix")
-  expect_equal(hull_raw_uls$n_fac_CFI, "matrix")
-  expect_equal(hull_raw_uls$n_fac_RMSEA, "matrix")
+  expect_equal(hull_raw_uls$n_fac_CAF, 1)
+  expect_equal(hull_raw_uls$n_fac_CFI, 1)
+  expect_equal(hull_raw_uls$n_fac_RMSEA, 1)
 
   expect_equal(hull_raw_uls_CFI$n_fac_CAF, NA)
-  expect_equal(hull_raw_uls_CFI$n_fac_CFI, "matrix")
+  expect_equal(hull_raw_uls_CFI$n_fac_CFI, 1)
   expect_equal(hull_raw_uls_CFI$n_fac_RMSEA, NA)
 })
 
@@ -136,35 +136,14 @@ test_that("errors etc are thrown correctly", {
   expect_error(HULL(test_models$baseline$cormat, method = "ULS"), ' "N" is not specified but is needed for computation of some of the fit indices.')
 
   expect_error(HULL(dat_sing, method = "ML"), ' Correlation matrix is singular, the HULL method cannot be exectued.')
-  expect_error(HULL(cor_sing, N = 10, method = "ULS"), ' Correlation matrix is singular, the HULL method cannot be exectued.')
 
-  PROCEED HERE
+  expect_error(HULL(matrix(rnorm(50), ncol = 5)), "Data has fewer than 6 indicators. Hull method needs at least 6.")
+
+  expect_warning(HULL(test_models$baseline$cormat, n_fac_theor = 10, N = 500), ' "n_fac_theor" was larger than number of variables / 2. Setting maximum number of factors to number of variables / 2.')
+  expect_warning(HULL(GRiPS_raw), " Less than three solutions located on the hull have been identified when using CAF as goodness of fit index. Proceeding by taking the value with the maximum CAF as heuristic. You may want to consider additional indices or methods as robustness check.")
 
 
-  expect_warning(PARALLEL(GRiPS_raw, N = 20, eigen_type = "PCA"), '"N" is not specified but is needed for computation of some of the fit indices.')
-  expect_error(PARALLEL(test_models$baseline$cormat, eigen_type = "PCA"), '"N" was not set and could not be taken from data. Please specify N and try again.')
-  expect_warning(PARALLEL(test_models$baseline$cormat, N = 500,
-                          eigen_type = "PCA", decision_rule = "Crawford",
-                          percent = 80), "decision_rule == 'Crawford' is specified, but 95 percentile was not used. Using Means instead. To use 'Crawford', make sure to specify percent = 95.")
-  expect_error(PARALLEL(dat_sing), " Correlation matrix is singular, parallel analysis is not possible.")
-  expect_error(PARALLEL(cor_sing, N = 10), " Correlation matrix is singular, parallel analysis is not possible.")
 })
 
-FURTHER HULL CHECKS -> N_FACTORS, WARNINGS AND ERRORS
-WARNING IF N_FAC MAX IS TOO LARGE
-
-ERRORS
-'"N" is not specified but is needed for computation of some of the fit indices.'
-'Correlation matrix is singular, the HULL method cannot be exectued.'
-'Data has fewer than 6 indicators. Hull method needs at least 6.'
-
-WARNINGS
-' "n_fac_theor" was larger than number of variables / 2. Setting maximum number of factors to number of variables / 2.'
-" Suggested maximum number of factors was 2 but must be at least 3 for hull method to work. Setting it to 3."
-" Less than three solutions located on the hull have been identified when using", gof_t, "as goodness of fit index. Proceeding by taking the value with the maximum",
-gof_t, "as heuristic. You may want to consider additional indices or methods as robustness check."
-
-
-
 rm(hull_cor_paf, hull_cor_ml, hull_cor_uls, hull_cor_uls_CFI, hull_cor_paf,
-   hull_cor_ml, hull_cor_uls, hull_cor_uls_CFI)
+   hull_cor_ml, hull_cor_uls, hull_cor_uls_CFI, x, y, z, dat_sing, cor_sing)
