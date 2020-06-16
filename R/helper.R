@@ -337,18 +337,23 @@
     # null model
     chi_null <- sum(R[upper.tri(R)] ^ 2) * (N - 1)
     df_null <- (m**2 - m) / 2
-    delta_hat_null <- max(0, chi_null - df_null)
+    delta_hat_null <- chi_null - df_null
 
     # current model
     chi <- Fm * (N - 1)
-    delta_hat_m <- max(0, chi - df)
-    CFI <- 1 - delta_hat_m / delta_hat_null
+    delta_hat_m <- chi - df
+    CFI <- (delta_hat_null - delta_hat_m) / delta_hat_null
+    if (CFI > 1) CFI <- 1
+    if (CFI < 0) CFI <- 0
+
 
     ### compute RMSEA, incl. 90% confidence intervals if df are not 0
 
     if(df != 0){
 
-      RMSEA <- sqrt(max((Fm / df - 1 / N), 0))
+      # formula 12.6 from Kline 2015; Principles and practices of...
+      RMSEA <- sqrt(max(0, chi - df) / (df * N - 1))
+
 
     p_chi <- function(x, val, df, goal){goal - stats::pchisq(val, df, ncp = x)}
 
@@ -409,6 +414,75 @@
     Fm = Fm,
     chi_null = chi_null,
     df_null = df_null
+  )
+
+}
+
+.gof_null <- function(df, # The loading/ pattern matrix
+                      chi, # The correlation matrix
+                      N, # The number of cases
+                      method) { # The estimation method
+
+
+
+  if (method != "PAF" && !is.na(N)) {
+
+    ### compute RMSEA, incl. 90% confidence intervals if df are not 0
+
+    if(df != 0){
+
+      # formula 12.6 from Kline 2015; Principles and practices of...
+      RMSEA <- sqrt(max(0, chi - df) / (df * N - 1))
+
+
+      p_chi <- function(x, val, df, goal){goal - stats::pchisq(val, df, ncp = x)}
+
+      if (stats::pchisq(chi, df = df, ncp = 0) >= .95) {
+        lambda_l <- stats::uniroot(f = p_chi, interval = c(1e-10, 10000), val = chi,
+                                   df = df, goal = .95, extendInt = "upX",
+                                   maxiter = 100L)$root
+      } else {
+        lambda_l <- 0
+      }
+
+      if (stats::pchisq(chi, df = df, ncp = 0) >= .05) {
+        lambda_u <- stats::uniroot(f = p_chi, interval = c(1e-10, 10000),
+                                   val = chi, df = df, goal = .05,
+                                   extendInt = "upX", maxiter = 100L)$root
+      }
+      else {
+        lambda_u <- 0
+      }
+
+      RMSEA_LB <- sqrt(lambda_l / (df * N))
+      RMSEA_UB <- sqrt(lambda_u / (df * N))
+
+    } else {
+
+      RMSEA <- 0
+      RMSEA_LB <- 0
+      RMSEA_UB <- 0
+
+    }
+
+    ### compute AIC and BIC based on chi square
+    AIC <- chi - 2 * df
+    BIC <- chi - log(N) * df
+
+  } else {
+    RMSEA <- NA
+    RMSEA_LB <- NA
+    RMSEA_UB <- NA
+    AIC <- NA
+    BIC <- NA
+  }
+
+  out <- list(
+    RMSEA_null = RMSEA,
+    RMSEA_null_LB = RMSEA_LB,
+    RMSEA_null_UB = RMSEA_UB,
+    AIC_null = AIC,
+    BIC_null = BIC
   )
 
 }
