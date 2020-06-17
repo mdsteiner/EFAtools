@@ -1,5 +1,5 @@
 ## Varimax rotation
-VARIMAX <- function (x, type = c("EFAtools", "psych", "SPSS", "none"),
+.VARIMAX <- function (x, type = c("EFAtools", "psych", "SPSS", "none"),
                      kaiser = TRUE, precision = NULL, order_type = NULL) {
 
   if (type == "none") {

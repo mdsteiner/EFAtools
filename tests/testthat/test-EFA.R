@@ -26,6 +26,24 @@ efa_none <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
                 criterion_type = "sums", abs_eigen = FALSE, k = 3,
                 P_type = "unnorm", precision= 1e-5, order_type = "eigen")
 
+# create correlation matrices from population models
+cormat_zero <- population_models$loadings$baseline %*% population_models$phis_3$zero %*% t(population_models$loadings$baseline)
+diag(cormat_zero) <- 1
+
+cormat_moderate <- population_models$loadings$baseline %*% population_models$phis_3$moderate %*% t(population_models$loadings$baseline)
+diag(cormat_moderate) <- 1
+
+efa_paf_zero <- EFA(cormat_zero, 3, 500, rotation = "varimax")
+efa_ml_zero <- EFA(cormat_zero, 3, 500, method = "ML", rotation = "varimax")
+efa_uls_zero <- EFA(cormat_zero, 3, 500, method = "ULS", rotation = "varimax")
+
+efa_paf_moderate <- EFA(cormat_moderate, 3, 500, rotation = "oblimin")
+efa_ml_moderate <- EFA(cormat_moderate, 3, 500, method = "ML",
+                       rotation = "oblimin")
+efa_uls_moderate <- EFA(cormat_moderate, 3, 500, method = "ULS",
+                        rotation = "oblimin")
+
+
 test_that("output class and dimensions are correct", {
   expect_is(efa_cor, "EFA")
   expect_is(efa_raw, "EFA")
@@ -271,6 +289,15 @@ test_that("settings are returned correctly", {
   expect_equal(efa_ml$settings$start_method, "factanal")
 })
 
+test_that("factor analyses are performed correctly", {
+  expect_equal(sum(abs(compare(efa_paf_zero$rot_loadings, population_models$loadings$baseline, plot = FALSE)$diff)), 0, tolerance = .01)
+  expect_equal(sum(abs(compare(efa_ml_zero$rot_loadings, population_models$loadings$baseline, plot = FALSE)$diff)), 0, tolerance = .01)
+  expect_equal(sum(abs(compare(efa_uls_zero$rot_loadings, population_models$loadings$baseline, plot = FALSE)$diff)), 0, tolerance = .01)
+
+  expect_equal(sum(abs(compare(efa_paf_moderate$rot_loadings, population_models$loadings$baseline, plot = FALSE)$diff)), 0, tolerance = .01)
+  expect_equal(sum(abs(compare(efa_ml_moderate$rot_loadings, population_models$loadings$baseline, plot = FALSE)$diff)), 0, tolerance = .01)
+  expect_equal(sum(abs(compare(efa_uls_moderate$rot_loadings, population_models$loadings$baseline, plot = FALSE)$diff)), 0, tolerance = .01)
+})
 
 # Create singular correlation matrix for tests
 x <- rnorm(10)

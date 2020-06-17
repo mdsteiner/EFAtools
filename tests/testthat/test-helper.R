@@ -17,7 +17,7 @@ test_that(".compute_vars works", {
 })
 
 x_base <- population_models$loadings$baseline
-y_base <- x_temp[, c(3,2,1)]
+y_base <- x_base[, c(3,2,1)]
 
 test_that(".factor_congruence works", {
   expect_is(.factor_congruence(x_base, y_base), "matrix")

@@ -145,5 +145,6 @@ test_that("errors etc are thrown correctly", {
 
 })
 
-rm(hull_cor_paf, hull_cor_ml, hull_cor_uls, hull_cor_uls_CFI, hull_cor_paf,
-   hull_cor_ml, hull_cor_uls, hull_cor_uls_CFI, x, y, z, dat_sing, cor_sing)
+rm(hull_cor_paf, hull_cor_ml, hull_cor_uls, hull_cor_uls_CFI, hull_raw_paf,
+   hull_raw_ml, hull_raw_uls, hull_raw_uls_CFI, hull_raw_ml_nf, hull_cor_ml_nf,
+   x, y, z, dat_sing, cor_sing)
