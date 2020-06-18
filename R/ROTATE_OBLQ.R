@@ -77,6 +77,7 @@
     output <- list(rot_loadings = L,
                    rotmat = NA,
                    Phi = NA,
+                   Structure = NA,
                    vars_accounted_rot = NA,
                    settings = settings)
 
