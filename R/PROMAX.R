@@ -127,9 +127,9 @@
   if (ncol(L) < 2) {
     # prepare and return output list
     output <- list(rot_loadings = L,
-                   rotmat = NA,
                    Phi = NA,
                    Structure = NA,
+                   rotmat = NA,
                    vars_accounted_rot = NA,
                    settings = settings)
 
