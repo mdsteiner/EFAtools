@@ -33,9 +33,6 @@ if (type == "none") {
 
 } else if (type == "psych") {
 
-  # if not specified, set PAF properties. If specified, throw warning that
-  # results may not exactly match the specified type
-
   if (isFALSE(kaiser)) {
 
     warning(crayon::yellow$bold("!"), crayon::yellow(" Type and kaiser is specified. kaiser is used with value '", kaiser, "'. Results may differ from the specified type"))
