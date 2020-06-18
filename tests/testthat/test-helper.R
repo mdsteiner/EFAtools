@@ -25,12 +25,12 @@ test_that(".factor_congruence works", {
 })
 
 
-(efa_ml <- EFA(cbind(rnorm(100), rnorm(100), rnorm(100), rnorm(100),
+efa_ml <- suppressWarnings(EFA(cbind(rnorm(100), rnorm(100), rnorm(100), rnorm(100),
                     rnorm(100), rnorm(100)), 3, method = "ML"))
-efa_uls <- EFA(cbind(rnorm(100), rnorm(100), rnorm(100), rnorm(100),
-                    rnorm(100), rnorm(100)), 3, method = "ULS")
-efa_paf <- EFA(cbind(rnorm(100), rnorm(100), rnorm(100), rnorm(100),
-                    rnorm(100), rnorm(100)), 3, method = "PAF")
+efa_uls <- suppressWarnings(EFA(cbind(rnorm(100), rnorm(100), rnorm(100), rnorm(100),
+                    rnorm(100), rnorm(100)), 3, method = "ULS"))
+efa_paf <- suppressWarnings(EFA(cbind(rnorm(100), rnorm(100), rnorm(100), rnorm(100),
+                    rnorm(100), rnorm(100)), 3, method = "PAF"))
 
 gof_ml <- .gof(efa_ml$unrot_loadings, efa_ml$orig_R, efa_ml$settings$N,
                "ML", efa_ml$fit_indices$Fm)
