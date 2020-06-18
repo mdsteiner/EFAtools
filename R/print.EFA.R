@@ -73,16 +73,22 @@ print.EFA <- function(x, ...) {
   cat("\n")
   cat(.get_compare_matrix(x$vars_accounted, r_red = Inf, n_char = 17))
 
+  if (x$fit_indices$df == 0) {
+    cat("\n")
+    cat(crayon::yellow$bold("!"), crayon::yellow(" The model is just identified (df = 0). Goodness of fit indices may not be interpretable."))
+    cat("\n")
+  }
+
   if(method == "PAF" || is.na(N)){
 
-  cat("\n")
-  cat(cli::rule(left = crayon::bold("Model Fit"), col = "blue"))
-  cat("\n")
-  cat("\n")
-  cat(crayon::blue("CAF:"),
-      .numformat(x$fit_indices$CAF), "\n", sep = "")
-  cat(crayon::blue("df: "),
-      .numformat(x$fit_indices$df, 0, print_zero = TRUE), "\n", sep = "")
+    cat("\n")
+    cat(cli::rule(left = crayon::bold("Model Fit"), col = "blue"))
+    cat("\n")
+    cat("\n")
+    cat(crayon::blue("CAF:"),
+        .numformat(x$fit_indices$CAF), "\n", sep = "")
+    cat(crayon::blue("df: "),
+        .numformat(x$fit_indices$df, 0, print_zero = TRUE), "\n", sep = "")
 
 
   } else {
