@@ -343,7 +343,7 @@
     chi <- Fm * (N - 1)
     delta_hat_m <- chi - df
     CFI <- (delta_hat_null - delta_hat_m) / delta_hat_null
-    if (CFI > 1) CFI <- 1
+    if (CFI > 1 || df == 0) CFI <- 1
     if (CFI < 0) CFI <- 0
 
 
