@@ -175,6 +175,10 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
 
   } else {
 
+    if (!is.na(N)) {
+      warning(crayon::yellow$bold("!"), crayon::yellow(" 'N' was set and data entered. Taking N from data."))
+    }
+
     R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)
     N <- nrow(x)
@@ -253,7 +257,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   # Empirical Kaiser Criterion
   if("EKC" %in% criteria){
 
-    ekc_out <- EKC(x, N = N, use = use, cor_method = cor_method)
+    ekc_out <- EKC(R, N = N, use = use, cor_method = cor_method)
 
     nfac_EKC <- ekc_out$n_factors
 

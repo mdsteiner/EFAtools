@@ -32,11 +32,20 @@ test_that("identified number of factors is correct", {
   expect_equal(ekc_raw$n_factors, 1)
 })
 
+# Create singular correlation matrix for tests
+x <- rnorm(10)
+y <- rnorm(10)
+z <- x + y
+dat_sing <- matrix(c(x, y, z, rnorm(10), rnorm(10), rnorm(10)), ncol = 6)
+cor_sing <- stats::cor(dat_sing)
+
 test_that("errors are thrown correctly", {
   expect_error(EKC(1:5), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.")
   expect_error(EKC(test_models$baseline$cormat), " Argument 'N' was NA but correlation matrix was entered. Please either provide N or raw data.")
   expect_message(EKC(GRiPS_raw), " 'x' was not a correlation matrix. Correlations are found from entered raw data.")
   expect_warning(EKC(GRiPS_raw, N = 20), " 'N' was set and data entered. Taking N from data.")
+  expect_error(EKC(dat_sing), " Correlation matrix is singular, no further analyses are performed")
+  expect_error(EKC(cor_sing, N = 20), " Correlation matrix is singular, no further analyses are performed")
 })
 
 test_that("settings are returned correctly", {
@@ -53,4 +62,4 @@ test_that("settings are returned correctly", {
   expect_equal(ekc_raw$settings$cor_method, "pearson")
 })
 
-rm(ekc_cor, ekc_raw)
+rm(ekc_cor, ekc_raw, x, y, z, dat_sing, cor_sing)
