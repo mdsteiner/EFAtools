@@ -124,6 +124,15 @@ KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
 
   }
 
+  # Check if correlation matrix is positive definite, if it is not,
+  # smooth the matrix (cor.smooth throws a warning)
+  if (any(eigen(R, symmetric = TRUE, only.values = TRUE)$values <= 0)) {
+
+    R <- psych::cor.smooth(R)
+
+  }
+
+
   # Store original R for later
   R_orig <- R
 

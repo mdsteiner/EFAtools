@@ -114,6 +114,14 @@ EKC <- function(x, N = NA,
     stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, no further analyses are performed"))
   }
 
+  # Check if correlation matrix is positive definite, if it is not,
+  # smooth the matrix (cor.smooth throws a warning)
+  if (any(eigen(R, symmetric = TRUE, only.values = TRUE)$values <= 0)) {
+
+    R <- psych::cor.smooth(R)
+
+  }
+
   p <- ncol(R)
 
   # eigenvalues
