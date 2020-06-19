@@ -318,3 +318,8 @@ test_that("errors are thrown correctly", {
   expect_warning(EFA(test_models$baseline$cormat, n_factors = 3, method = "ULS"), " Argument 'N' was NA, not all fit indices could be computed. To get all fit indices, either provide N or raw data")
 })
 
+rm(efa_cor, efa_raw, efa_psych, efa_spss, efa_ml, efa_uls, efa_equa, efa_quart,
+   efa_none, cormat_zero, cormat_moderate, efa_paf_zero, efa_ml_zero, efa_uls_zero,
+   efa_paf_moderate, efa_ml_moderate, efa_uls_moderate, x, y, z, dat_sing, cor_sing)
+
+

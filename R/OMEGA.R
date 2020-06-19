@@ -228,27 +228,17 @@ OMEGA <- function(model = NULL, type = c("EFAtools", "psych"), g_name = "g",
 
   } else if(inherits(model, c("schmid", "SL"))) {
 
-    if(is.null(factor_corres) && !inherits(model, "schmid")){
-
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Please specify the argument 'factor_corres'"))
-
-    } else {
-
-      .OMEGA_FLEX(model = model, type = type, factor_corres = factor_corres,
-                  var_names = var_names, fac_names = fac_names, g_load = g_load,
-                  s_load = s_load, u2 = u2, cormat = cormat, pattern = pattern,
-                  Phi = Phi, variance = variance)
-    }
-
-    } else {
+     .OMEGA_FLEX(model = model, type = type, factor_corres = factor_corres,
+                 var_names = var_names, fac_names = fac_names, g_load = g_load,
+                 s_load = s_load, u2 = u2, cormat = cormat, pattern = pattern,
+                 Phi = Phi, variance = variance)
+  } else {
 
       if(!is.null(model)){
 
         stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Invalid input for model. Either enter a lavaan, psych::schmid or SL object or specify the arguments 'var_names', 'g_load', and 's_load'."))
 
-      }
-
-      if(is.null(var_names) || is.null(g_load) || is.null(s_load) || is.null(u2)){
+      } else if(is.null(var_names) || is.null(g_load) || is.null(s_load) || is.null(u2)){
 
       stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Please specify all of the following arguments: 'var_names', 'g_load', 's_load', 'u2'"))
 
