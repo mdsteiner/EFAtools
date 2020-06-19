@@ -1,4 +1,4 @@
-## TEST ONLy, WARNINGS, OUTPUT FORMATS HERE; TEST OUTPUT CONTENT AND
+#TEST OUTPUT CONTENT AND
 # SPECIFIC DETAILS ABOUT INPUTS (also: specific variants for model) IN OMEGA_HELPER
 
 # For OMEGA_LAVAAN:
@@ -6,46 +6,41 @@
 # - lavaan bifactor model output
 # - lavaan bifactor model output with multiple groups
 
-## Use with a lavaan output
-lav_mod <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
+## Tests for .OMEGA_LAVAAN --------
+lav_mod_1 <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
         F2 =~ V7 + V8 + V9 + V10 + V11 + V12
         F3 =~ V13 + V14 + V15 + V16 + V17 + V18
         g =~ V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11 + V12 +
              V13 + V14 + V15 + V16 + V17 + V18'
-lav_fit <- lavaan::cfa(lav_mod, sample.cov = test_models$baseline$cormat,
+lav_fit_1 <- lavaan::cfa(lav_mod_1, sample.cov = test_models$baseline$cormat,
                        sample.nobs = 500, estimator = "ml", orthogonal = TRUE)
-om_lav <- OMEGA(lav_fit, g_name = "g")
+om_lav_bi <- .OMEGA_LAVAAN(lav_fit_1, g_name = "g")
 
-## Use with an output from the SL function, with type EFAtools
-efa_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
-               type = "EFAtools", method = "PAF", rotation = "promax")
-sl_mod <- SL(efa_mod, type = "EFAtools", method = "PAF")
-om_sl <- OMEGA(sl_mod, type = "EFAtools", factor_corres = rep(c(3, 2, 1),
-                                                              each = 6))
+lav_mod_2 <- 'g =~ V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11 + V12 +
+                    V13 + V14 + V15 + V16 + V17 + V18'
+lav_fit_2 <- lavaan::cfa(lav_mod_2, sample.cov = test_models$baseline$cormat,
+                       sample.nobs = 500, estimator = "ml", orthogonal = TRUE)
+om_lav_1 <- .OMEGA_LAVAAN(lav_fit_2)
 
-## Use with an output from the psych::schmid function, with type psych
-schmid_mod <- psych::schmid(test_models$baseline$cormat, nfactors = 3,
-                            n.obs = 500, fm = "pa", rotate = "Promax")
-# Find correlation matrix from phi and pattern matrix from psych::schmid outpu
-om_schmid <- OMEGA(schmid_mod, type = "psych")
-
-## Manually specify components
-om_man <- OMEGA(model = NULL, type = "EFAtools", var_names = rownames(sl_mod$sl),
-                g_load = sl_mod$sl[, "g"], s_load = sl_mod$sl[, c("F1", "F2", "F3")],
-                u2 = sl_mod$sl[, "u2"], cormat = test_models$baseline$cormat,
-                factor_corres = rep(c(3, 2, 1), each = 6))
+lav_fit_3 <- lavaan::cfa(lav_mod_1, sample.cov =
+                           list(test_models$baseline$cormat,
+                                test_models$baseline$cormat),
+                         sample.nobs = c(500, 500), estimator = "ml",
+                         orthogonal = TRUE)
+om_lav_gr <- .OMEGA_LAVAAN(lav_fit_3, g_name = "g", group_names = c("Some",
+                                                                    "Others"))
 
 test_that("output class and dimensions are correct", {
-  expect_is(om_lav, "OMEGA")
-  expect_is(om_sl, "OMEGA")
-  expect_is(om_schmid, "OMEGA")
-  expect_is(om_man, "OMEGA")
+  expect_is(om_lav_bi, "OMEGA")
+  expect_is(om_lav_1, "OMEGA")
+  expect_is(om_lav_gr, "OMEGA")
 
-  expect_output(str(om_lav), "List of 2")
-  expect_output(str(om_sl), "List of 2")
-  expect_output(str(om_schmid), "List of 2")
-  expect_output(str(om_man), "List of 2")
+  expect_output(str(om_lav_bi), "List of 2")
+  expect_output(str(om_lav_1), "OMEGA")
+  expect_output(str(om_lav_gr), "List of 2")
 })
+
+# Test output is correct -----
 
 test_that("errors are thrown correctly", {
   expect_error(OMEGA(model = NULL, type = "EFAtools", var_names = rownames(sl_mod$sl),
@@ -66,5 +61,27 @@ test_that("errors are thrown correctly", {
                      s_load = sl_mod$sl[, c("F1", "F2", "F3")],
                      u2 = sl_mod$sl[, "u2"], factor_corres = rep(c(3, 2, 1))), " Please specify all of the following arguments: 'var_names', 'g_load', 's_load', 'u2'")
 })
+
+## Tests for .OMEGA_FLEX -------
+
+## Use with an output from the SL function, with type EFAtools
+efa_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
+               type = "EFAtools", method = "PAF", rotation = "promax")
+sl_mod <- SL(efa_mod, type = "EFAtools", method = "PAF")
+om_sl <- OMEGA(sl_mod, type = "EFAtools", factor_corres = rep(c(3, 2, 1),
+                                                              each = 6))
+
+## Use with an output from the psych::schmid function, with type psych
+schmid_mod <- psych::schmid(test_models$baseline$cormat, nfactors = 3,
+                            n.obs = 500, fm = "pa", rotate = "Promax")
+# Find correlation matrix from phi and pattern matrix from psych::schmid outpu
+om_schmid <- OMEGA(schmid_mod, type = "psych")
+
+## Manually specify components
+om_man <- OMEGA(model = NULL, type = "EFAtools", var_names = rownames(sl_mod$sl),
+                g_load = sl_mod$sl[, "g"], s_load = sl_mod$sl[, c("F1", "F2", "F3")],
+                u2 = sl_mod$sl[, "u2"], cormat = test_models$baseline$cormat,
+                factor_corres = rep(c(3, 2, 1), each = 6))
+
 
 rm(lav_mod, lav_fit, om_lav, efa_mod, sl_mod, om_sl, schmid_mod, om_schmid, om_man)

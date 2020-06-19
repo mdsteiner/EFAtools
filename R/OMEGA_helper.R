@@ -264,7 +264,7 @@
 
       if(i == 1){
 
-        message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data."))
+        message(cli::col_cyan(cli::symbol$info, " Model contained a single factor. Only omega total is returned."))
 
       }
 
