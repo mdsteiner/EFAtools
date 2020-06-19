@@ -100,6 +100,8 @@ test_that("errors are thrown correctly", {
   expect_warning(SMT(GRiPS_raw, N = 20), " 'N' was set and data entered. Taking N from data.")
   expect_error(SMT(dat_sing), " Correlation matrix is singular, no further analyses are performed")
   expect_error(SMT(cor_sing, N = 10), " Correlation matrix is singular, no further analyses are performed")
+  expect_error(SMT(matrix(rnorm(50), ncol = 2)), " The model is either underidentified or just identified with 1 factor already. SMTs cannot be performed. Please provide more indicators.") # underidentified case
+  expect_error(SMT(matrix(rnorm(60), ncol = 3)), " The model is either underidentified or just identified with 1 factor already. SMTs cannot be performed. Please provide more indicators.") # just identified case
 })
 
 rm(smt_cor, smt_raw, smt_rand, x, y, z, dat_sing, cor_sing)

@@ -146,7 +146,12 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   }
 
   # Prepare objects for sequential tests
-  max_fac <- ifelse(ncol(R) <= 4, 1, floor(ncol(R)/2))
+  max_fac <- .det_max_factors(ncol(R))
+
+  if(max_fac <= 0){
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" The model is either underidentified or just identified with 1 factor already. SMTs cannot be performed. Please provide more indicators."))
+  }
+
   ps <- vector("double", max_fac)
   RMSEA_LB <- vector("double", max_fac)
   AIC <- vector("double", max_fac)
