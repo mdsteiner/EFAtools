@@ -81,5 +81,16 @@ test_that(".is_cormat works", {
   expect_error(.is_cormat(matrix(c(1, NA, .3, 1), ncol = 2)), ' "x" is likely a correlation matrix but contains missing values. Please check the entered data.')
 })
 
+q_p <- .det_max_factors(8) + 1
+test_that(".det_max_factors works", {
+  expect_is(.det_max_factors(8), "numeric")
+  expect_lte(((8 - q_p)**2 - (8 + q_p)) / 2, 0)
+  expect_equal(.det_max_factors(0), 0)
+  expect_equal(.det_max_factors(1), 0)
+  expect_equal(.det_max_factors(2), 0)
+  expect_equal(.det_max_factors(3), 0)
+  expect_gt(.det_max_factors(4), 0)
+})
+
 rm(efa_pro, efa_temp, x_base, y_base, efa_ml, efa_uls, efa_paf, gof_ml, gof_uls,
-   gof_paf, m, q)
+   gof_paf, m, q, q_p)

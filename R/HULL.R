@@ -217,16 +217,17 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
     if (!is.na(n_fac_theor)) {
       J <- n_fac_theor + 1
     } else {
-      J <- floor(ncol(R) / 2)
+      J <- .det_max_factors(ncol(R))
     }
 
   } else {
 
     J <- max(c(n_fac_PA, n_fac_theor), na.rm = TRUE) + 1
 
-    if (J > floor(ncol(R) / 2)) {
-      warning(crayon::yellow$bold("!"), crayon::yellow(' "n_fac_theor" was larger than number of variables / 2. Setting maximum number of factors to number of variables / 2.'))
-      J <- floor(ncol(R) / 2)
+    if (J > .det_max_factors(ncol(R))) {
+      J <- .det_max_factors(ncol(R))
+      warning(crayon::yellow$bold("!"), crayon::yellow(' Setting maximum number of factors to',
+                                                       J, 'to ensure overidentified models.'))
     }
 
     if (J < 3) {

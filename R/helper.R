@@ -539,3 +539,9 @@ if(n == 1){
 
 }
 
+.det_max_factors <- function(m) {
+  q <- floor((2*m + 1 - sqrt(8 * m + 9)) / 2)
+  if(q < 0) q <- 0
+  return(q)
+}
+

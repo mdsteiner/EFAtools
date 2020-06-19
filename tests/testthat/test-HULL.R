@@ -139,7 +139,7 @@ test_that("errors etc are thrown correctly", {
 
   expect_error(HULL(matrix(rnorm(50), ncol = 5)), "Data has fewer than 6 indicators. Hull method needs at least 6.")
 
-  expect_warning(HULL(test_models$baseline$cormat, n_fac_theor = 10, N = 500), ' "n_fac_theor" was larger than number of variables / 2. Setting maximum number of factors to number of variables / 2.')
+  expect_warning(HULL(test_models$baseline$cormat, n_fac_theor = 13, N = 500), ' Setting maximum number of factors to 12 to ensure overidentified models.')
   expect_warning(HULL(GRiPS_raw), " Less than three solutions located on the hull have been identified when using CAF as goodness of fit index. Proceeding by taking the value with the maximum CAF as heuristic. You may want to consider additional indices or methods as robustness check.")
 
 
