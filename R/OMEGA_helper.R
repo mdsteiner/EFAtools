@@ -249,15 +249,11 @@
     for(i in 1:length(std_sol)){
 
     if(any(is.na(std_sol[[i]][["lambda"]]))){
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red("Some loadings are NA or NaN. No omegas are computed."))
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Some loadings are NA or NaN. No omegas are computed."))
     }
 
-    if(any(std_sol[[i]][["lambda"]] > 1)){
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red("A Heywood case was detected. No omegas are computed."))
-    }
-
-    if(any(std_sol[[i]][["lambda"]] == 1)){
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Perfect relationship (loading equal to 1) was detected. At least one variable is redundant."))
+    if(any(std_sol[[i]][["lambda"]] >= 1)){
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" A Heywood case was detected (loading equal to or larger than 1). No omegas are computed."))
     }
 
     if(ncol(std_sol[[i]][["lambda"]]) == 1){
