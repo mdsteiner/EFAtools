@@ -4,10 +4,12 @@
 \alias{print.CD}
 \title{Print function for CD objects}
 \usage{
-\method{print}{CD}(x, ...)
+\method{print}{CD}(x, plot = TRUE, ...)
 }
 \arguments{
 \item{x}{a list of class CD. Output from \link{CD} function.}
+
+\item{plot}{logical. Whether to plot the results.}
 
 \item{...}{Further arguments for print.}
 }

@@ -4,10 +4,12 @@
 \alias{print.PARALLEL}
 \title{Print function for PARALLEL objects}
 \usage{
-\method{print}{PARALLEL}(x, ...)
+\method{print}{PARALLEL}(x, plot = TRUE, ...)
 }
 \arguments{
 \item{x}{a list of class PARALLEL. Output from \link{PARALLEL} function.}
+
+\item{plot}{logical. Whether to plot the results.}
 
 \item{...}{Further arguments for print.}
 }

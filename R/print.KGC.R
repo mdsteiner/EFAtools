@@ -1,6 +1,7 @@
 #' Print function for KGC objects
 #'
 #' @param x a list of class KGC. Output from \link{KGC} function.
+#' @param plot logical. Whether to plot the results.
 #' @param ... Further arguments for print.
 #'
 #' @export
@@ -10,7 +11,7 @@
 #' KGC_base <- KGC(test_models$baseline$cormat)
 #' KGC_base
 #'
-print.KGC <- function(x, ...) {
+print.KGC <- function(x, plot = TRUE, ...) {
 
   nfac_PCA <- x$n_fac_PCA
   nfac_SMC <- x$n_fac_SMC
@@ -56,6 +57,8 @@ print.KGC <- function(x, ...) {
 
   cat("\n")
 
-  graphics::plot(x)
+  if (isTRUE(plot)) {
+    graphics::plot(x)
+  }
 
 }

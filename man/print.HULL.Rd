@@ -4,10 +4,12 @@
 \alias{print.HULL}
 \title{Print function for HULL objects}
 \usage{
-\method{print}{HULL}(x, ...)
+\method{print}{HULL}(x, plot = TRUE, ...)
 }
 \arguments{
 \item{x}{a list of class HULL. Output from the \code{\link{HULL}} function.}
+
+\item{plot}{logical. Whether to plot the results.}
 
 \item{...}{Further arguments for print.}
 }

@@ -1,6 +1,7 @@
 #' Print function for PARALLEL objects
 #'
 #' @param x a list of class PARALLEL. Output from \link{PARALLEL} function.
+#' @param plot logical. Whether to plot the results.
 #' @param ... Further arguments for print.
 #'
 #' @export
@@ -14,7 +15,7 @@
 #' # example with correlation matrix and "ML" estimation
 #' PARALLEL(test_models$case_11b$cormat, N = 500, method = "ML")
 #' }
-print.PARALLEL <- function(x, ...) {
+print.PARALLEL <- function(x, plot = TRUE, ...) {
 
   eigen_type <- x$settings$eigen_type
 
@@ -63,6 +64,8 @@ print.PARALLEL <- function(x, ...) {
 
   }
 
-  graphics::plot(x)
+  if (isTRUE(plot)) {
+    graphics::plot(x)
+  }
 
 }

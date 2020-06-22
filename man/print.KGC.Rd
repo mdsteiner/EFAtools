@@ -4,10 +4,12 @@
 \alias{print.KGC}
 \title{Print function for KGC objects}
 \usage{
-\method{print}{KGC}(x, ...)
+\method{print}{KGC}(x, plot = TRUE, ...)
 }
 \arguments{
 \item{x}{a list of class KGC. Output from \link{KGC} function.}
+
+\item{plot}{logical. Whether to plot the results.}
 
 \item{...}{Further arguments for print.}
 }

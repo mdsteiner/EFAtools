@@ -1,6 +1,7 @@
 #' Print function for EKC objects
 #'
 #' @param x a list of class EKC. Output from \code{\link{EKC}} function.
+#' @param plot logical. Whether to plot the results.
 #' @param ... Further arguments for print.
 #'
 #' @export
@@ -10,7 +11,7 @@
 #' EKC_base <- EKC(test_models$baseline$cormat, N = 500)
 #' EKC_base
 #'
-print.EKC <- function(x, ...) {
+print.EKC <- function(x, plot = TRUE, ...) {
 
   nfac <- x$n_factors
 
@@ -20,6 +21,8 @@ print.EKC <- function(x, ...) {
   cat("\n")
   cat("\n")
 
-  graphics::plot(x)
+  if (isTRUE(plot)) {
+    graphics::plot(x)
+  }
 
 }

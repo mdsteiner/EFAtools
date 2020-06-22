@@ -1,6 +1,7 @@
 #' Print function for CD objects
 #'
 #' @param x a list of class CD. Output from \link{CD} function.
+#' @param plot logical. Whether to plot the results.
 #' @param ... Further arguments for print.
 #'
 #' @export
@@ -12,7 +13,7 @@
 #' CD(GRiPS_raw)
 #' }
 #'
-print.CD <- function(x, ...) {
+print.CD <- function(x, plot = TRUE, ...) {
 
   nfac <- x$n_factors
 
@@ -28,6 +29,9 @@ print.CD <- function(x, ...) {
     cat("\n")
   }
 
-  graphics::plot(x)
+  if (isTRUE(plot)) {
+    graphics::plot(x)
+  }
+
 
 }

@@ -4,10 +4,12 @@
 \alias{print.EKC}
 \title{Print function for EKC objects}
 \usage{
-\method{print}{EKC}(x, ...)
+\method{print}{EKC}(x, plot = TRUE, ...)
 }
 \arguments{
 \item{x}{a list of class EKC. Output from \code{\link{EKC}} function.}
+
+\item{plot}{logical. Whether to plot the results.}
 
 \item{...}{Further arguments for print.}
 }

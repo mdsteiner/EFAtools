@@ -1,6 +1,7 @@
 #' Print function for HULL objects
 #'
 #' @param x a list of class HULL. Output from the \code{\link{HULL}} function.
+#' @param plot logical. Whether to plot the results.
 #' @param ... Further arguments for print.
 #'
 #' @export
@@ -9,7 +10,7 @@
 #' @examples
 #' HULL(test_models$baseline$cormat, N = 500, method = "ML")
 #'
-print.HULL <- function(x, ...) {
+print.HULL <- function(x, plot = TRUE, ...) {
 
   method <- x$settings$method
   gof <- x$settings$gof
@@ -53,6 +54,8 @@ print.HULL <- function(x, ...) {
     cat("\n")
   }
 
-  graphics::plot(x)
+  if (isTRUE(plot)) {
+    graphics::plot(x)
+  }
 
 }
