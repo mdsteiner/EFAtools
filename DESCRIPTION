@@ -33,4 +33,7 @@ Imports:
 LinkingTo: 
     Rcpp, RcppArmadillo
 Suggests: 
-    testthat
+    testthat,
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

@@ -1,0 +1,109 @@
+---
+title: "EFAtools"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{EFAtools}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(EFAtools)
+```
+
+
+This vignette provides an overview over the functionalities of the EFAtools package. The general aim of the package is to provide flexible implementations of different algorithms to run exploratory factor analyses (EFA), including factor retention methods, algorithms to perform the EFA and to rotate the found solution, as well as the computation of a Schmid-Leiman solution and omegas.
+
+The package was first designed to enable a comparison of EFA (specifically, principal axis factoring with subsequent promax rotation) performed in R using the [**psych**]() package and EFA performed using SPSS. Because of this, some functions have the possibility to specify a type, such as `"psych"`, or `"SPSS"` such that the respective procedure will be executed to match the output of these implementations (which do not always lead to the same results). This vignette will go through a complete example, that is, we will first show how to determine the number of factors to retain, then perform different EFA procedures, run a Schmid-Leiman transformation and compute omegas.
+
+First, the package can be installed from CRAN using `install.packages("EFAtools")`, or from GitHub using `devtools::install_github("mdsteiner/EFAtools")`. Then load the package using `library(EFAtools)`
+
+In this vignette, we will use the `GRiPS_raw` dataset, which contains responses to the General Risk Propensity Scale (GRiPS) of 810 participants. The dataset is contained in the `EFAtools` package, for details see `?GRiPS_raw`. Note that this vignette is to provide a general overview and would get much too long if we explained all the details. If you want to learn more on the details and methods, please see the respective help functions for explanations and pointers to the literature.
+
+## Test Suitability of Data
+
+The first step is to test whether your data is suitable for exploratory factor analysis. To this end, the `EFAtools` package provides the `BARTLETT()` and the `KMO()` functions. The Bartlett's test of sphericity tests whether a correlation matrix is significantly different from an identity matrix (a correlation matrix with zero correlations between all variables). This test should thus be significant. The Kaiser-Meyer-Olkin criterion (KMO) represents the degree to which each observed variable is predicted by the other variables in the dataset and thus is another indicator for how correlated the different variables are.
+
+We can test whether our `GRiPS_raw` dataset is suitable for factor analysis as follows.
+
+```{r}
+# Bartlett's test of sphericity
+BARTLETT(GRiPS_raw)
+
+# KMO criterion
+KMO(GRiPS_raw)
+```
+
+Note that these tests can also be run in the `N_FACTORS()` function.
+
+## Factor Retention Methods
+
+As the goal of EFA is often to determine the underlying factors from a set of multiple variables, one of the most important decisions is how many factors to extract. There exists a plethora of factor retention methods one can use. The problem is, that there is no method that consistently outperforms all other methods. Rather, which factor retention method to use depends on the structure of the data: are there few or many indicators, are factors strong or weak, are the factor intercorrelations weak or strong. For rules on which methods to use see, for example [Auerswald and Moshagen, (2019)](https://doi.apa.org/doiLanding?doi=10.1037%2Fmet0000200).
+
+There are multiple factor retention methods implemented in the `EFAtools` package. They can either be called with separate functions, or all (or a selection) of them using the `N_FACTORS()` function. 
+
+### Calling Separate Functions
+
+Let's first look at how to determine the number of factors to retain by calling separate functions. For example, if you would like to perform a parallel analysis based on SMC, you can do the following:
+
+```{r}
+# determine the number of factors to retain using parallel analysis
+PARALLEL(GRiPS_raw, eigen_type = "SMC")
+```
+
+Generating the plot can also be suppressed if the output is printed explicitly, like so:
+
+```{r}
+# determine the number of factors to retain using parallel analysis
+print(PARALLEL(GRiPS_raw, eigen_type = "SMC"), plot = FALSE)
+```
+
+
+Other factor retention methods can be used accordingly. For example, to use the empirical Kaiser criterion, use the `EKC` function:
+
+```{r}
+# determine the number of factors to retain using parallel analysis
+print(EKC(GRiPS_raw), plot = FALSE)
+```
+
+The following factor retention methods are currently implemented: comparison data (`CD()`), empirical Kaiser criterion (`EKC()`), the hull method (`HULL()`), the Kaiser-Guttman criterion (`KGC()`), parallel analysis (`PARALLEL()`), and sequential model tests (`SMT()`). Many of these functions have multiple versions of the respective factor retention method implemented, for example, the parallel analysis can be done based on eigenvalues found using PCA, squared multiple correlations (SMC), or on an EFA procedure. Another example is the hull method, which can be used using different fitting methods (principal axis factoring, maximum likelihood, or unweighted least squares), and different goodness of fit indices. Please see the respective function documentations for details.
+
+### Run Multiple Factor Retention Methods With `N_FACTORS()`
+
+If you want to use multiple factor retention methods in order to compare whether different methods suggest the same number of factors, its easier to use the `N_FACTORS()` function. This is a wrapper around all the implemented factor retention methods. Moreover, you can also run the Bartlett's test of sphericity and the compute the KMO criterion using this function.
+
+For example, to test the suitability of the data for factor analysis and to determine the number of factors to retain based on parallel analysis, the EKC, and the sequential model test, we can run the following code:
+
+```{r}
+N_FACTORS(GRiPS_raw, criteria = c("PARALLEL", "EKC", "SMT"))
+```
+
+
+If, for example, the parallel analysis should only be conducted using eigenvalues found using SMCs, this can also be specified with a further argument:
+
+```{r}
+N_FACTORS(GRiPS_raw, criteria = c("PARALLEL", "EKC", "SMT"),
+          eigen_type_KGC_PA = "SMC")
+```
+
+
+If all possible factor retention methods should be used, it is sufficient to provide the data object:
+
+```{r}
+N_FACTORS(GRiPS_raw)
+```
+
+Finally, the all factor retention methods except comparison data (CD), can also be used with correlation matrices. In this case, the sample size has to be specified:
+
+```{r}
+N_FACTORS(test_models$baseline$cormat, N = 500)
+```
+
+
