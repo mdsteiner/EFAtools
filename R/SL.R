@@ -170,8 +170,8 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
 
   # perform a factor analysis on the intercorrelation matrix of the first order
   # factors (N is only specified to avoid a warning)
-  EFA_phi <- EFA(Phi, n_factors = 1, N = 100, type = type, method = method,
-                 rotation = "none", ...)
+  EFA_phi <- suppressWarnings(EFA(Phi, n_factors = 1, N = 100, type = type,
+                                  method = method, rotation = "none", ...))
 
   # extract second order loadings
   L2 <- EFA_phi$unrot_loadings

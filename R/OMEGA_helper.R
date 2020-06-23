@@ -26,8 +26,6 @@
         # intercorrelations
         cormat <- psych::factor.model(f = pattern, Phi = Phi, U2 = FALSE)
 
-      }
-
       } else {
 
         # Check if it is a correlation matrix
@@ -37,6 +35,8 @@
           stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' was not a correlation matrix. Check the cormat input, specify the Phi and pattern arguments instead, or set variance to 'sums_load'\n"))
 
         }
+
+      }
 
     }
 
@@ -75,7 +75,7 @@
         # Check if it is a correlation matrix
         if(!.is_cormat(cormat)) {
 
-          stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" x was not a correlation matrix. Check the cormat input, specify the Phi and pattern arguments instead, or set variance to 'sums_load'\n"))
+          stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' was not a correlation matrix. Check the cormat input, specify the Phi and pattern arguments instead, or set variance to 'sums_load'\n"))
 
         }
 
