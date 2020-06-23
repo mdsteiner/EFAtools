@@ -55,10 +55,10 @@ dat_sing <- matrix(c(x, y, z), ncol = 3)
 cor_sing <- stats::cor(dat_sing)
 
 test_that("errors are thrown correctly", {
-  expect_error(KGC(1:5), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.")
-  expect_message(KGC(GRiPS_raw, eigen_type = "PCA"), " 'x' was not a correlation matrix. Correlations are found from entered raw data.")
-  expect_error(KGC(dat_sing), " Correlation matrix is singular, no further analyses are performed.")
-  expect_error(KGC(cor_sing, N = 10), " Correlation matrix is singular, no further analyses are performed.")
+  expect_error(KGC(1:5), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n")
+  expect_message(KGC(GRiPS_raw, eigen_type = "PCA"), " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n")
+  expect_error(KGC(dat_sing), " Correlation matrix is singular, no further analyses are performed.\n")
+  expect_error(KGC(cor_sing, N = 10), " Correlation matrix is singular, no further analyses are performed.\n")
 })
 
 test_that("settings are returned correctly", {

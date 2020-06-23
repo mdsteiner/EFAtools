@@ -81,11 +81,11 @@ lav_fit_hier2 <- lavaan::cfa(lav_mod_hier2, sample.cov = test_models$baseline$co
                             sample.nobs = 500, estimator = "ml")
 
 test_that("errors are thrown correctly", {
-  expect_error(.OMEGA_LAVAAN(lav_fit_conv, g_name = "g"), " Model did not converge. No omegas are computed.")
-  expect_error(.OMEGA_LAVAAN(lav_fit_NA, g_name = "g"), " Some loadings are NA or NaN. No omegas are computed.")
-  expect_message(.OMEGA_LAVAAN(lav_fit_2), " Model contained a single factor. Only omega total is returned.")
-  expect_error(.OMEGA_LAVAAN(lav_fit_hier, g_name = "g"), " You did not fit a bifactor model. Omegas cannot be computed. Either provide a bifactor model or a model with a single factor.")
-  expect_message(.OMEGA_LAVAAN(lav_fit_hier2, g_name = "g"), " Some variables have less than two loadings. Did you really enter a bifactor model? Either provide a bifactor model or a model with a single factor.")
+  expect_error(.OMEGA_LAVAAN(lav_fit_conv, g_name = "g"), " Model did not converge. No omegas are computed.\n")
+  expect_error(.OMEGA_LAVAAN(lav_fit_NA, g_name = "g"), " Some loadings are NA or NaN. No omegas are computed.\n")
+  expect_message(.OMEGA_LAVAAN(lav_fit_2), " Model contained a single factor. Only omega total is returned.\n")
+  expect_error(.OMEGA_LAVAAN(lav_fit_hier, g_name = "g"), " You did not fit a bifactor model. Omegas cannot be computed. Either provide a bifactor model or a model with a single factor.\n")
+  expect_message(.OMEGA_LAVAAN(lav_fit_hier2, g_name = "g"), " Some variables have less than two loadings. Did you really enter a bifactor model? Either provide a bifactor model or a model with a single factor.\n")
 })
 
 ## Tests for .OMEGA_FLEX -------

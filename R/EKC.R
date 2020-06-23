@@ -74,7 +74,7 @@ EKC <- function(x, N = NA,
   # Perform argument checks
   if(!inherits(x, c("matrix", "data.frame"))){
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data."))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n"))
 
   }
 
@@ -89,16 +89,16 @@ EKC <- function(x, N = NA,
 
     if (is.na(N)) {
 
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Argument 'N' was NA but correlation matrix was entered. Please either provide N or raw data."))
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Argument 'N' was NA but correlation matrix was entered. Please either provide N or raw data.\n"))
 
     }
 
   } else {
 
-    message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data."))
+    message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n"))
 
     if (!is.na(N)) {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" 'N' was set and data entered. Taking N from data."))
+      warning(crayon::yellow$bold("!"), crayon::yellow(" 'N' was set and data entered. Taking N from data.\n"))
     }
 
     R <- stats::cor(x, use = use, method = cor_method)
@@ -111,7 +111,7 @@ EKC <- function(x, N = NA,
   R_i <- try(solve(R), silent = TRUE)
 
   if (inherits(R_i, "try-error")) {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, no further analyses are performed"))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, no further analyses are performed\n"))
   }
 
   # Check if correlation matrix is positive definite, if it is not,

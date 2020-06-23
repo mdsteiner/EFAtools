@@ -97,7 +97,7 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
       orig_R <- x$orig_R
 
       if(!is.null(Phi)){
-        warning(crayon::yellow$bold("!"), crayon::yellow(" Phi argument is specified. Specified factor intercorrelations are taken. To take factor intercorrelations from the EFA output, leave Phi = NULL"))
+        warning(crayon::yellow$bold("!"), crayon::yellow(" Phi argument is specified. Specified factor intercorrelations are taken. To take factor intercorrelations from the EFA output, leave Phi = NULL\n"))
 
       } else {
 
@@ -107,7 +107,7 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
 
     } else {
 
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is either a non-rotated or orthogonal factor solution. SL needs an oblique factor solution"))
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is either a non-rotated or orthogonal factor solution. SL needs an oblique factor solution\n"))
 
     }
 
@@ -124,7 +124,7 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
       orig_R <- unclass(x$r)
 
       if(!is.null(Phi)){
-        warning(crayon::yellow$bold("!"), crayon::yellow(" Phi argument is specified. Specified factor intercorrelations are taken. To take factor intercorrelations from the psych fa output, leave Phi = NULL"))
+        warning(crayon::yellow$bold("!"), crayon::yellow(" Phi argument is specified. Specified factor intercorrelations are taken. To take factor intercorrelations from the psych fa output, leave Phi = NULL\n"))
 
       } else {
 
@@ -134,7 +134,7 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
 
     } else {
 
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is either a non-rotated or orthogonal factor solution. SL needs an oblique factor solution"))
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is either a non-rotated or orthogonal factor solution. SL needs an oblique factor solution\n"))
 
     }
 
@@ -146,13 +146,13 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
 
     if(is.null(Phi)){
 
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Phi not provided. Either enter an oblique factor solution from EFAtools::EFA or from psych::fa, or provide Phi"))
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Phi not provided. Either enter an oblique factor solution from EFAtools::EFA or from psych::fa, or provide Phi\n"))
 
     }
 
     if(!inherits(x, c("matrix", "LOADINGS", "loadings"))){
 
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither an object of class EFA or fa nor a matrix, nor of class LOADINGS or loadings."))
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither an object of class EFA or fa nor a matrix, nor of class LOADINGS or loadings.\n"))
 
     }
 

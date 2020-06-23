@@ -60,7 +60,7 @@ BARTLETT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   # Perform argument checks
   if(!inherits(x, c("matrix", "data.frame"))){
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data."))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n"))
 
   }
 
@@ -75,16 +75,16 @@ BARTLETT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
 
     if (is.na(N)) {
 
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Argument 'N' was NA, Bartlett's test could not be executed. Please provide either N or raw data."))
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Argument 'N' was NA, Bartlett's test could not be executed. Please provide either N or raw data.\n"))
 
     }
 
   } else {
 
-    message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data."))
+    message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n"))
 
     if (!is.na(N)) {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" 'N' was set and data entered. Taking N from data."))
+      warning(crayon::yellow$bold("!"), crayon::yellow(" 'N' was set and data entered. Taking N from data.\n"))
     }
 
     R <- stats::cor(x, use = use, method = cor_method)
@@ -97,7 +97,7 @@ BARTLETT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   R_i <- try(solve(R), silent = TRUE)
 
   if (inherits(R_i, "try-error")) {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, Bartlett's test cannot be executed."))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, Bartlett's test cannot be executed.\n"))
   }
 
   # Check if correlation matrix is positive definite

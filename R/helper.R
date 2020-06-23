@@ -238,7 +238,7 @@
   if ((is.null(dim(x)) && !(inherits(x, "numeric"))) ||
       (!is.null(dim(x)) && !(inherits(x, c("matrix", "loadings", "LOADINGS",
                                           "SLLOADINGS"))))) {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is of class ", class(x), " but must be a numeric vector or matrix"))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is of class ", class(x), " but must be a numeric vector or matrix\n"))
   }
 
   if (!is.null(dim(x))) {
@@ -278,9 +278,9 @@
 .factor_congruence <- function(x, y, digits = 3, na.rm = TRUE) {
 
   if (any(is.na(x) | any(is.na(y)))) {
-    warning(crayon::yellow$bold("!"), crayon::yellow(" Some loadings were missing."))
+    warning(crayon::yellow$bold("!"), crayon::yellow(" Some loadings were missing.\n"))
     if (isTRUE(na.rm)) {
-      cli::cli_alert_info(cli::col_cyan("Analysis is performed on complete cases"))
+      cli::cli_alert_info(cli::col_cyan("Analysis is performed on complete cases\n"))
       if (any(is.na(x))) {
         xc <- x[stats::complete.cases(x), ]
         y <- y[stats::complete.cases(x), ]
@@ -292,7 +292,7 @@
         y <- yc
       }
     } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Check your data or rerun with na.rm = TRUE"))
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Check your data or rerun with na.rm = TRUE\n"))
     }
   }
 
@@ -496,7 +496,7 @@
 
     if (any(is.na(x))) {
 
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "x" is likely a correlation matrix but contains missing values. Please check the entered data.'))
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "x" is likely a correlation matrix but contains missing values. Please check the entered data.\n'))
 
     } else if (round(sum(diag(x))) == nrow(x)) {
 

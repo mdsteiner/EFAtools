@@ -105,7 +105,7 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   # Perform argument checks
   if(!inherits(x, c("matrix", "data.frame"))){
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data."))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n"))
 
   }
 
@@ -120,10 +120,10 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
 
   } else {
 
-    message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data."))
+    message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n"))
 
     if (!is.na(N)) {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" 'N' was set and data entered. Taking N from data."))
+      warning(crayon::yellow$bold("!"), crayon::yellow(" 'N' was set and data entered. Taking N from data.\n"))
     }
 
     R <- stats::cor(x, use = use, method = cor_method)
@@ -134,7 +134,7 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
 
   if (is.na(N)) {
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Argument 'N' was NA. Either provide N or raw data."))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Argument 'N' was NA. Either provide N or raw data.\n"))
 
   }
 
@@ -142,7 +142,7 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   R_i <- try(solve(R), silent = TRUE)
 
   if (inherits(R_i, "try-error")) {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, no further analyses are performed"))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, no further analyses are performed\n"))
   }
 
   # Check if correlation matrix is positive definite, if it is not,
@@ -157,7 +157,7 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   max_fac <- .det_max_factors(ncol(R))
 
   if(max_fac <= 0){
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" The model is either underidentified or just identified with 1 factor already. SMTs cannot be performed. Please provide more indicators."))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" The model is either underidentified or just identified with 1 factor already. SMTs cannot be performed. Please provide more indicators.\n"))
   }
 
   ps <- vector("double", max_fac)

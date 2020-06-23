@@ -130,7 +130,7 @@ PARALLEL <- function(x = NULL,
 
   if(!is.null(x) && !inherits(x, c("matrix", "data.frame"))){
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither NULL, nor a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data or leave x at NULL."))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither NULL, nor a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data or leave x at NULL.\n"))
 
   }
   eigen_type <- match.arg(eigen_type, several.ok = TRUE)
@@ -158,11 +158,11 @@ PARALLEL <- function(x = NULL,
   if (!is.null(x)) {
 
     if (any(!apply(x, 2, inherits, "numeric"))) {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Data contained non-numeric columns. Eigenvalues of actual data were not computed."))
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Data contained non-numeric columns. Eigenvalues of actual data were not computed.\n"))
     } else {
 
       if (!is.na(n_vars)) {
-        warning(crayon::yellow$bold("!"), crayon::yellow(" n_vars was set and data entered. Taking n_vars from data"))
+        warning(crayon::yellow$bold("!"), crayon::yellow(" n_vars was set and data entered. Taking n_vars from data\n"))
       }
       n_vars <- ncol(x)
       x_dat <- TRUE
@@ -175,10 +175,10 @@ PARALLEL <- function(x = NULL,
 
       } else {
 
-        message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data."))
+        message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n"))
 
         if (!is.na(N)) {
-          warning(crayon::yellow$bold("!"), crayon::yellow(" 'N' was set and data entered. Taking N from data."))
+          warning(crayon::yellow$bold("!"), crayon::yellow(" 'N' was set and data entered. Taking N from data.\n"))
         }
 
         R <- stats::cor(x, use = use, method = cor_method)
@@ -189,19 +189,19 @@ PARALLEL <- function(x = NULL,
 
       if (is.na(N)) {
 
-        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "N" was not set and could not be taken from data. Please specify N and try again.'))
+        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "N" was not set and could not be taken from data. Please specify N and try again.\n'))
 
       }
 
       if (is.na(n_vars)) {
-        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "n_vars" was not set and could not be taken from data. Please specify n_vars and try again.'))
+        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "n_vars" was not set and could not be taken from data. Please specify n_vars and try again.\n'))
       }
 
       # Check if correlation matrix is invertable, if it is not, stop with message
       R_i <- try(solve(R), silent = TRUE)
 
       if (inherits(R_i, "try-error")) {
-        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, parallel analysis is not possible"))
+        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, parallel analysis is not possible.\n"))
       }
 
       # Check if correlation matrix is positive definite
@@ -371,7 +371,7 @@ if (decision_rule == "Crawford") {
                   results[-1, "Means"])
     n_fac <- which(!(eigvals_real > crawford))[1] - 1
   } else {
-    warning(crayon::yellow$bold("!"), crayon::yellow(" decision_rule == 'Crawford' is specified, but 95 percentile was not used. Using Means instead. To use 'Crawford', make sure to specify percent = 95."))
+    warning(crayon::yellow$bold("!"), crayon::yellow(" decision_rule == 'Crawford' is specified, but 95 percentile was not used. Using Means instead. To use 'Crawford', make sure to specify percent = 95.\n"))
     n_fac <- which(!(eigvals_real > results[, "Means"]))[1] - 1
     decision_rule <- "Means"
   }

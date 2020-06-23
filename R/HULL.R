@@ -137,7 +137,7 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
 
   if(!inherits(x, c("matrix", "data.frame"))){
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data."))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n"))
 
   }
 
@@ -154,11 +154,11 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   checkmate::assert_number(percent, lower = 0, upper = 100)
 
   if (ncol(x) < 6) {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red( "Data has fewer than 6 indicators. Hull method needs at least 6."))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red( "Data has fewer than 6 indicators. Hull method needs at least 6.\n"))
   }
 
   if (method == "PAF" && !all(gof == "CAF")) {
-    cli::cli_alert_info(cli::col_cyan('Only CAF can be used as gof if method "PAF" is used. Setting gof to "CAF"'))
+    cli::cli_alert_info(cli::col_cyan('Only CAF can be used as gof if method "PAF" is used. Setting gof to "CAF"\n'))
     gof <- "CAF"
   }
 
@@ -169,10 +169,10 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
 
   } else {
 
-    message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data."))
+    message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n"))
 
     if (!is.na(N)) {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" 'N' was set and data entered. Taking N from data."))
+      warning(crayon::yellow$bold("!"), crayon::yellow(" 'N' was set and data entered. Taking N from data.\n"))
     }
 
     R <- stats::cor(x, use = use, method = cor_method)
@@ -182,14 +182,14 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   }
 
   if (is.na(N)) {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "N" is not specified but is needed for computation of some of the fit indices.'))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "N" is not specified but is needed for computation of some of the fit indices.\n'))
   }
 
   # Check if correlation matrix is invertable, if it is not, stop with message
   R_i <- try(solve(R), silent = TRUE)
 
   if (inherits(R_i, "try-error")) {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' Correlation matrix is singular, the HULL method cannot be exectued.'))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' Correlation matrix is singular, the HULL method cannot be exectued.\n'))
   }
 
   # Check if correlation matrix is positive definite
@@ -230,14 +230,14 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
     if (J > .det_max_factors(ncol(R))) {
       J <- .det_max_factors(ncol(R))
       warning(crayon::yellow$bold("!"), crayon::yellow(' Setting maximum number of factors to',
-                                                       J, 'to ensure overidentified models.'))
+                                                       J, 'to ensure overidentified models.\n'))
     }
 
     if (J < 3) {
       warning(crayon::yellow$bold("!"),
               crayon::yellow(" Suggested maximum number of factors was", J,
                              "but must be at least 3 for hull method to work.",
-                             "Setting it to 3."))
+                             "Setting it to 3.\n"))
         J <- 3
 
     }
@@ -391,7 +391,7 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
             "been identified when using", gof_t, "as goodness of fit index.",
                            "Proceeding by taking the value with the maximum",
                            gof_t, "as heuristic. You may want to consider",
-                           "additional indices or methods as robustness check."))
+                           "additional indices or methods as robustness check.\n"))
 
     # combine values
     for (row_i in 0:J) {

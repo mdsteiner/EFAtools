@@ -154,7 +154,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   # Perform argument checks
   if(!inherits(x, c("matrix", "data.frame"))){
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data."))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n"))
 
   }
 
@@ -176,7 +176,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   } else {
 
     if (!is.na(N)) {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" 'N' was set and data entered. Taking N from data."))
+      warning(crayon::yellow$bold("!"), crayon::yellow(" 'N' was set and data entered. Taking N from data.\n"))
     }
 
     R <- stats::cor(x, use = use, method = cor_method)
@@ -189,7 +189,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   R_i <- try(solve(R), silent = TRUE)
 
   if (inherits(R_i, "try-error")) {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, no further analyses are performed"))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, no further analyses are performed\n"))
   }
 
   # Check if correlation matrix is positive definite
@@ -249,7 +249,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
       nfac_CD <- cd_out$n_factors
 
     } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" 'x' was a correlation matrix but CD needs raw data. Skipping CD."))
+      warning(crayon::yellow$bold("!"), crayon::yellow(" 'x' was a correlation matrix but CD needs raw data. Skipping CD.\n"))
     }
 
   }

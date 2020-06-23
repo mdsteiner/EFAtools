@@ -94,14 +94,14 @@ dat_sing <- matrix(c(x, y, z), ncol = 3)
 cor_sing <- stats::cor(dat_sing)
 
 test_that("errors are thrown correctly", {
-  expect_error(SMT(1:5), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.")
-  expect_error(SMT(test_models$baseline$cormat), " Argument 'N' was NA. Either provide N or raw data.")
-  expect_message(SMT(GRiPS_raw), " 'x' was not a correlation matrix. Correlations are found from entered raw data.")
-  expect_warning(SMT(GRiPS_raw, N = 20), " 'N' was set and data entered. Taking N from data.")
-  expect_error(SMT(dat_sing), " Correlation matrix is singular, no further analyses are performed")
-  expect_error(SMT(cor_sing, N = 10), " Correlation matrix is singular, no further analyses are performed")
-  expect_error(SMT(matrix(rnorm(50), ncol = 2)), " The model is either underidentified or just identified with 1 factor already. SMTs cannot be performed. Please provide more indicators.") # underidentified case
-  expect_error(SMT(matrix(rnorm(60), ncol = 3)), " The model is either underidentified or just identified with 1 factor already. SMTs cannot be performed. Please provide more indicators.") # just identified case
+  expect_error(SMT(1:5), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n")
+  expect_error(SMT(test_models$baseline$cormat), " Argument 'N' was NA. Either provide N or raw data.\n")
+  expect_message(SMT(GRiPS_raw), " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n")
+  expect_warning(SMT(GRiPS_raw, N = 20), " 'N' was set and data entered. Taking N from data.\n")
+  expect_error(SMT(dat_sing), " Correlation matrix is singular, no further analyses are performed\n")
+  expect_error(SMT(cor_sing, N = 10), " Correlation matrix is singular, no further analyses are performed\n")
+  expect_error(SMT(matrix(rnorm(50), ncol = 2)), " The model is either underidentified or just identified with 1 factor already. SMTs cannot be performed. Please provide more indicators.\n") # underidentified case
+  expect_error(SMT(matrix(rnorm(60), ncol = 3)), " The model is either underidentified or just identified with 1 factor already. SMTs cannot be performed. Please provide more indicators.\n") # just identified case
 })
 
 rm(smt_cor, smt_raw, smt_rand, x, y, z, dat_sing, cor_sing)

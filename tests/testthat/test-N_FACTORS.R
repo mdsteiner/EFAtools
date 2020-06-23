@@ -28,10 +28,10 @@ y <- rnorm(100)
 z <- x + y
 
 test_that("errors etc. are thrown correctly", {
-  expect_error(N_FACTORS(1:10), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.")
-  expect_warning(N_FACTORS(GRiPS_raw, N = 10), " 'N' was set and data entered. Taking N from data.")
-  expect_error(N_FACTORS(cbind(x, y, z)), " Correlation matrix is singular, no further analyses are performed")
-  expect_warning(N_FACTORS(test_models$baseline$cormat, N = 500), " 'x' was a correlation matrix but CD needs raw data. Skipping CD.")
+  expect_error(N_FACTORS(1:10), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n")
+  expect_warning(N_FACTORS(GRiPS_raw, N = 10), " 'N' was set and data entered. Taking N from data.\n")
+  expect_error(N_FACTORS(cbind(x, y, z)), " Correlation matrix is singular, no further analyses are performed\n")
+  expect_warning(N_FACTORS(test_models$baseline$cormat, N = 500), " 'x' was a correlation matrix but CD needs raw data. Skipping CD.\n")
 })
 
 rm(nf_grips, x, y, z)

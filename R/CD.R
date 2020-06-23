@@ -82,12 +82,12 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
   # Perform argument checks
   if(!inherits(x, c("matrix", "data.frame"))){
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Provide a dataframe or matrix with raw data."))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Provide a dataframe or matrix with raw data.\n"))
 
   }
 
   if (.is_cormat(x)) {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is a correlation matrix, but CD only works with raw data."))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is a correlation matrix, but CD only works with raw data.\n"))
   }
 
   use <- match.arg(use)
@@ -113,7 +113,7 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
       warning(crayon::yellow$bold("!"), crayon::yellow(" n_factors_max was set to",
               n_factors_max, "but maximum possible",
               "factors to extract is", m_possible, ". Setting n_factors_max to",
-              m_possible, "."))
+              m_possible, ".\n"))
     }
 
     n_factors_max <- m_possible

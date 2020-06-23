@@ -78,14 +78,14 @@ cor_sing <- stats::cor(dat_sing)
 
 
 test_that("errors are thrown correctly", {
-  expect_warning(PARALLEL(GRiPS_raw, N = 20, eigen_type = "PCA"), " 'N' was set and data entered. Taking N from data.")
-  expect_message(PARALLEL(GRiPS_raw, eigen_type = "PCA"), " 'x' was not a correlation matrix. Correlations are found from entered raw data.")
-  expect_error(PARALLEL(test_models$baseline$cormat, eigen_type = "PCA"), '"N" was not set and could not be taken from data. Please specify N and try again.')
+  expect_warning(PARALLEL(GRiPS_raw, N = 20, eigen_type = "PCA"), " 'N' was set and data entered. Taking N from data.\n")
+  expect_message(PARALLEL(GRiPS_raw, eigen_type = "PCA"), " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n")
+  expect_error(PARALLEL(test_models$baseline$cormat, eigen_type = "PCA"), '"N" was not set and could not be taken from data. Please specify N and try again.\n')
   expect_warning(PARALLEL(test_models$baseline$cormat, N = 500,
                           eigen_type = "PCA", decision_rule = "Crawford",
-                          percent = 80), "decision_rule == 'Crawford' is specified, but 95 percentile was not used. Using Means instead. To use 'Crawford', make sure to specify percent = 95.")
-  expect_error(PARALLEL(dat_sing), " Correlation matrix is singular, parallel analysis is not possible.")
-  expect_error(PARALLEL(cor_sing, N = 10), " Correlation matrix is singular, parallel analysis is not possible.")
+                          percent = 80), "decision_rule == 'Crawford' is specified, but 95 percentile was not used. Using Means instead. To use 'Crawford', make sure to specify percent = 95.\n")
+  expect_error(PARALLEL(dat_sing), " Correlation matrix is singular, parallel analysis is not possible.\n")
+  expect_error(PARALLEL(cor_sing, N = 10), " Correlation matrix is singular, parallel analysis is not possible.\n")
 })
 
 test_that("settings are returned correctly", {

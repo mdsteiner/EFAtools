@@ -34,7 +34,7 @@
 
         if(!.is_cormat(cormat)){
 
-          stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' was not a correlation matrix. Check the cormat input, specify the Phi and pattern arguments instead, or set variance to 'sums_load'"))
+          stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' was not a correlation matrix. Check the cormat input, specify the Phi and pattern arguments instead, or set variance to 'sums_load'\n"))
 
         }
 
@@ -60,7 +60,7 @@
       if(is.null(cormat)){
 
         if(is.null(Phi) | is.null(pattern)) {
-          stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" If you leave model NULL, either specify the cormat argument or the Phi and pattern arguments, or set variance to 'sums_load'"))
+          stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" If you leave model NULL, either specify the cormat argument or the Phi and pattern arguments, or set variance to 'sums_load'\n"))
 
         } else {
 
@@ -75,7 +75,7 @@
         # Check if it is a correlation matrix
         if(!.is_cormat(cormat)) {
 
-          stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" x was not a correlation matrix. Check the cormat input, specify the Phi and pattern arguments instead, or set variance to 'sums_load'"))
+          stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" x was not a correlation matrix. Check the cormat input, specify the Phi and pattern arguments instead, or set variance to 'sums_load'\n"))
 
         }
 
@@ -95,7 +95,7 @@
 
   if(type == "EFAtools" & is.null(factor_corres)){
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Either specify the factor_corres argument or set type = 'psych' to find variable-to-factor correspondences using the highest group factor loading per variable."))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Either specify the factor_corres argument or set type = 'psych' to find variable-to-factor correspondences using the highest group factor loading per variable.\n"))
 
   }
 
@@ -103,7 +103,7 @@
 
     if(variance != "correlation"){
 
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Variance is specified. Variance is used with value '", variance, "'. Results may differ from the specified type"))
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Variance is specified. Variance is used with value '", variance, "'. Results may differ from the specified type\n"))
       }
 
     if(is.null(factor_corres)){
@@ -112,7 +112,7 @@
 
     } else {
 
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Argument factor_corres is specified. Specified variable-to-factor correspondences are taken. To compute factor correspondences as done in psych, leave factor_corres = NULL."))
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Argument factor_corres is specified. Specified variable-to-factor correspondences are taken. To compute factor correspondences as done in psych, leave factor_corres = NULL.\n"))
     }
   }
 
@@ -214,7 +214,7 @@
 .OMEGA_LAVAAN <- function(model = NULL, g_name = "g", group_names = NULL){
 
   if(lavaan::lavInspect(model, what = "converged") == FALSE){
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Model did not converge. No omegas are computed."))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Model did not converge. No omegas are computed.\n"))
   }
 
   std_sol <- lavaan::lavInspect(model, what = "std",
@@ -249,18 +249,18 @@
     for(i in 1:length(std_sol)){
 
     if(any(is.na(std_sol[[i]][["lambda"]]))){
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Some loadings are NA or NaN. No omegas are computed."))
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Some loadings are NA or NaN. No omegas are computed.\n"))
     }
 
     if(any(std_sol[[i]][["lambda"]] >= 1)){
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" A Heywood case was detected (loading equal to or larger than 1). No omegas are computed."))
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" A Heywood case was detected (loading equal to or larger than 1). No omegas are computed.\n"))
     }
 
     if(ncol(std_sol[[i]][["lambda"]]) == 1){
 
       if(i == 1){
 
-        message(cli::col_cyan(cli::symbol$info, " Model contained a single factor. Only omega total is returned."))
+        message(cli::col_cyan(cli::symbol$info, " Model contained a single factor. Only omega total is returned.\n"))
 
       }
 
@@ -283,13 +283,13 @@
 
       if(all(rowSums(bi_check) < 2)){
 
-        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" You did not fit a bifactor model. Omegas cannot be computed. Either provide a bifactor model or a model with a single factor."))
+        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" You did not fit a bifactor model. Omegas cannot be computed. Either provide a bifactor model or a model with a single factor.\n"))
 
       }
 
       if(!all(rowSums(bi_check) > 1)){
 
-        message(cli::col_cyan(cli::symbol$info, " Some variables have less than two loadings. Did you really enter a bifactor model? Either provide a bifactor model or a model with a single factor."))
+        message(cli::col_cyan(cli::symbol$info, " Some variables have less than two loadings. Did you really enter a bifactor model? Either provide a bifactor model or a model with a single factor.\n"))
 
       }
 

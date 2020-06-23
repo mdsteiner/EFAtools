@@ -124,40 +124,40 @@ test_that("settings are returned correctly", {
 test_that("warnings and errors are thrown correctly", {
   expect_error(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
                     max_iter = 500, type = "none", init_comm = "unity",
-                    criterion = 1e-4, criterion_type = "sums"), ' One of "init_comm", "criterion", "criterion_type", "abs_eigen", "max_iter" was NULL and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify all other arguments')
+                    criterion = 1e-4, criterion_type = "sums"), ' One of "init_comm", "criterion", "criterion_type", "abs_eigen", "max_iter" was NULL and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify all other arguments\n')
 
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
-                    type = "EFAtools", init_comm = "smc"), " Type and init_comm is specified. init_comm is used with value ' smc '. Results may differ from the specified type")
+                    type = "EFAtools", init_comm = "smc"), " Type and init_comm is specified. init_comm is used with value ' smc '. Results may differ from the specified type\n")
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
-                    type = "EFAtools", criterion = 0.001), " Type and criterion is specified. criterion is used with value ' 0.001 '. Results may differ from the specified type")
+                    type = "EFAtools", criterion = 0.001), " Type and criterion is specified. criterion is used with value ' 0.001 '. Results may differ from the specified type\n")
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "EFAtools", criterion_type = "sums"), " Type and criterion_type is specified. criterion_type is used with value ' sums '. Results may differ from the specified type")
+                      type = "EFAtools", criterion_type = "sums"), " Type and criterion_type is specified. criterion_type is used with value ' sums '. Results may differ from the specified type\n")
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "EFAtools", max_iter = 400), " Type and max_iter is specified. max_iter is used with value ' 400 '. Results may differ from the specified type")
+                      type = "EFAtools", max_iter = 400), " Type and max_iter is specified. max_iter is used with value ' 400 '. Results may differ from the specified type\n")
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "EFAtools", abs_eigen = TRUE), " Type and abs_eigen is specified. abs_eigen is used with value ' TRUE '. Results may differ from the specified type")
+                      type = "EFAtools", abs_eigen = TRUE), " Type and abs_eigen is specified. abs_eigen is used with value ' TRUE '. Results may differ from the specified type\n")
 
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "psych", init_comm = "smc"), " Type and init_comm is specified. init_comm is used with value ' smc '. Results may differ from the specified type")
+                      type = "psych", init_comm = "smc"), " Type and init_comm is specified. init_comm is used with value ' smc '. Results may differ from the specified type\n")
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "psych", criterion = 0.001), " Type and criterion is specified. criterion is used with value ' 0.001 '. Results may differ from the specified type")
+                      type = "psych", criterion = 0.001), " Type and criterion is specified. criterion is used with value ' 0.001 '. Results may differ from the specified type\n")
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "psych", criterion_type = "sums"), " Type and criterion_type is specified. criterion_type is used with value ' sums '. Results may differ from the specified type")
+                      type = "psych", criterion_type = "sums"), " Type and criterion_type is specified. criterion_type is used with value ' sums '. Results may differ from the specified type\n")
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "psych", max_iter = 400), " Type and max_iter is specified. max_iter is used with value ' 400 '. Results may differ from the specified type")
+                      type = "psych", max_iter = 400), " Type and max_iter is specified. max_iter is used with value ' 400 '. Results may differ from the specified type\n")
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "psych", abs_eigen = TRUE), " Type and abs_eigen is specified. abs_eigen is used with value ' TRUE '. Results may differ from the specified type")
+                      type = "psych", abs_eigen = TRUE), " Type and abs_eigen is specified. abs_eigen is used with value ' TRUE '. Results may differ from the specified type\n")
 
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "SPSS", init_comm = "smc"), " Type and init_comm is specified. init_comm is used with value ' smc '. Results may differ from the specified type")
+                      type = "SPSS", init_comm = "smc"), " Type and init_comm is specified. init_comm is used with value ' smc '. Results may differ from the specified type\n")
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "SPSS", criterion = 0.001), " Type and criterion is specified. criterion is used with value ' 0.001 '. Results may differ from the specified type")
+                      type = "SPSS", criterion = 0.001), " Type and criterion is specified. criterion is used with value ' 0.001 '. Results may differ from the specified type\n")
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "SPSS", criterion_type = "sums"), " Type and criterion_type is specified. criterion_type is used with value ' sums '. Results may differ from the specified type")
+                      type = "SPSS", criterion_type = "sums"), " Type and criterion_type is specified. criterion_type is used with value ' sums '. Results may differ from the specified type\n")
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "SPSS", max_iter = 400), " Type and max_iter is specified. max_iter is used with value ' 400 '. Results may differ from the specified type")
+                      type = "SPSS", max_iter = 400), " Type and max_iter is specified. max_iter is used with value ' 400 '. Results may differ from the specified type\n")
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "SPSS", abs_eigen = TRUE), " Type and abs_eigen is specified. abs_eigen is used with value ' TRUE '. Results may differ from the specified type")
+                      type = "SPSS", abs_eigen = TRUE), " Type and abs_eigen is specified. abs_eigen is used with value ' TRUE '. Results may differ from the specified type\n")
 })
 
 rm(paf_efatools, paf_psych, paf_spss, paf_none)

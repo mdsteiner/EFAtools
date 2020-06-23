@@ -78,7 +78,7 @@ test_that(".is_cormat works", {
   expect_equal(.is_cormat(cbind(rnorm(2), rnorm(2))), FALSE)
   expect_equal(.is_cormat(cbind(c(1, NA), rnorm(2))), FALSE)
   expect_equal(.is_cormat(matrix(c(1, .1, .3, 1), ncol = 2)), TRUE)
-  expect_error(.is_cormat(matrix(c(1, NA, .3, 1), ncol = 2)), ' "x" is likely a correlation matrix but contains missing values. Please check the entered data.')
+  expect_error(.is_cormat(matrix(c(1, NA, .3, 1), ncol = 2)), ' "x" is likely a correlation matrix but contains missing values. Please check the entered data.\n')
 })
 
 q_p <- .det_max_factors(8) + 1

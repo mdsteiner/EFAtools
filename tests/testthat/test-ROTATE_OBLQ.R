@@ -108,24 +108,24 @@ test_that("settings are returned correctly", {
 })
 
 test_that("errors etc. are thrown correctly", {
-  expect_error(.ROTATE_OBLQ(unrot, rotation = "oblimin", type = "none"), ' "order_type" was NULL and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify the "order_type" argument')
+  expect_error(.ROTATE_OBLQ(unrot, rotation = "oblimin", type = "none"), ' "order_type" was NULL and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify the "order_type" argument\n')
 
   expect_warning(.ROTATE_OBLQ(unrot, rotation = "oblimin", type = "EFAtools",
-                              kaiser = FALSE), " Type and kaiser is specified. kaiser is used with value ' FALSE '. Results may differ from the specified type")
+                              kaiser = FALSE), " Type and kaiser is specified. kaiser is used with value ' FALSE '. Results may differ from the specified type\n")
   expect_warning(.ROTATE_OBLQ(unrot, rotation = "oblimin", type = "EFAtools",
-                              order_type = "ss_factors"), " Type and order_type is specified. order_type is used with value ' ss_factors '. Results may differ from the specified type")
+                              order_type = "ss_factors"), " Type and order_type is specified. order_type is used with value ' ss_factors '. Results may differ from the specified type\n")
 
   expect_warning(.ROTATE_OBLQ(unrot, rotation = "oblimin", type = "psych",
-                              kaiser = FALSE), " Type and kaiser is specified. kaiser is used with value ' FALSE '. Results may differ from the specified type")
+                              kaiser = FALSE), " Type and kaiser is specified. kaiser is used with value ' FALSE '. Results may differ from the specified type\n")
   expect_warning(.ROTATE_OBLQ(unrot, rotation = "oblimin", type = "psych",
-                              order_type = "ss_factors"), " Type and order_type is specified. order_type is used with value ' ss_factors '. Results may differ from the specified type")
+                              order_type = "ss_factors"), " Type and order_type is specified. order_type is used with value ' ss_factors '. Results may differ from the specified type\n")
 
   expect_warning(.ROTATE_OBLQ(unrot, rotation = "oblimin", type = "SPSS",
-                              kaiser = FALSE), " Type and kaiser is specified. kaiser is used with value ' FALSE '. Results may differ from the specified type")
+                              kaiser = FALSE), " Type and kaiser is specified. kaiser is used with value ' FALSE '. Results may differ from the specified type\n")
   expect_warning(.ROTATE_OBLQ(unrot, rotation = "oblimin", type = "SPSS",
-                              order_type = "ss_factors"), " Type and order_type is specified. order_type is used with value ' ss_factors '. Results may differ from the specified type")
+                              order_type = "ss_factors"), " Type and order_type is specified. order_type is used with value ' ss_factors '. Results may differ from the specified type\n")
 
-  expect_warning(.ROTATE_OBLQ(unrot_1, rotation = "oblimin", type = "EFAtools"), " Cannot rotate single factor. Unrotated loadings returned.")
+  expect_warning(.ROTATE_OBLQ(unrot_1, rotation = "oblimin", type = "EFAtools"), " Cannot rotate single factor. Unrotated loadings returned.\n")
 })
 
 rm(unrot, obli, unrot_1, obli_1, quarti, simpli, bentQ, geoQ, bifacQ)

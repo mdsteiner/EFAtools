@@ -15,46 +15,46 @@ if (type == "none") {
 
   if (is.null(order_type)) {
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "order_type" was NULL and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify the "order_type" argument'))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "order_type" was NULL and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify the "order_type" argument\n'))
   }
 
 } else if (type == "EFAtools") {
 
   if (isFALSE(kaiser)) {
 
-    warning(crayon::yellow$bold("!"), crayon::yellow(" Type and kaiser is specified. kaiser is used with value '", kaiser, "'. Results may differ from the specified type"))
+    warning(crayon::yellow$bold("!"), crayon::yellow(" Type and kaiser is specified. kaiser is used with value '", kaiser, "'. Results may differ from the specified type\n"))
   }
 
   if (is.null(order_type)) {
     order_type <- "eigen"
   } else {
-    warning(crayon::yellow$bold("!"), crayon::yellow(" Type and order_type is specified. order_type is used with value '", order_type, "'. Results may differ from the specified type"))
+    warning(crayon::yellow$bold("!"), crayon::yellow(" Type and order_type is specified. order_type is used with value '", order_type, "'. Results may differ from the specified type\n"))
   }
 
 } else if (type == "psych") {
 
   if (isFALSE(kaiser)) {
 
-    warning(crayon::yellow$bold("!"), crayon::yellow(" Type and kaiser is specified. kaiser is used with value '", kaiser, "'. Results may differ from the specified type"))
+    warning(crayon::yellow$bold("!"), crayon::yellow(" Type and kaiser is specified. kaiser is used with value '", kaiser, "'. Results may differ from the specified type\n"))
   }
 
   if (is.null(order_type)) {
     order_type <- "eigen"
   } else {
-    warning(crayon::yellow$bold("!"), crayon::yellow(" Type and order_type is specified. order_type is used with value '", order_type, "'. Results may differ from the specified type"))
+    warning(crayon::yellow$bold("!"), crayon::yellow(" Type and order_type is specified. order_type is used with value '", order_type, "'. Results may differ from the specified type\n"))
   }
 
 } else if (type == "SPSS") {
 
   if (isFALSE(kaiser)) {
 
-    warning(crayon::yellow$bold("!"), crayon::yellow(" Type and kaiser is specified. kaiser is used with value '", kaiser, "'. Results may differ from the specified type"))
+    warning(crayon::yellow$bold("!"), crayon::yellow(" Type and kaiser is specified. kaiser is used with value '", kaiser, "'. Results may differ from the specified type\n"))
   }
 
   if (is.null(order_type)) {
     order_type <- "ss_factors"
   } else {
-    warning(crayon::yellow$bold("!"), crayon::yellow(" Type and order_type is specified. order_type is used with value '", order_type, "'. Results may differ from the specified type"))
+    warning(crayon::yellow$bold("!"), crayon::yellow(" Type and order_type is specified. order_type is used with value '", order_type, "'. Results may differ from the specified type\n"))
   }
 
 }
@@ -75,7 +75,7 @@ if (type == "none") {
                    vars_accounted_rot = NA,
                    settings = settings)
 
-    warning(crayon::yellow$bold("!"), crayon::yellow(" Cannot rotate single factor. Unrotated loadings returned."))
+    warning(crayon::yellow$bold("!"), crayon::yellow(" Cannot rotate single factor. Unrotated loadings returned.\n"))
     return(output)
   }
 

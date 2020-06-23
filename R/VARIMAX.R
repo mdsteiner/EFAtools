@@ -7,7 +7,7 @@
     # all the other necessary arguments are specified.
 
     if (is.null(precision) || is.null(order_type)) {
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' One of "precision", or "order_type" was NULL and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify all other arguments'))
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' One of "precision", or "order_type" was NULL and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify all other arguments\n'))
     }
 
     } else if (type == "EFAtools") {
@@ -17,19 +17,19 @@
 
       if (isFALSE(kaiser)) {
 
-        warning(crayon::yellow$bold("!"), crayon::yellow(" Type and kaiser is specified. kaiser is used with value '", kaiser, "'. Results may differ from the specified type"))
+        warning(crayon::yellow$bold("!"), crayon::yellow(" Type and kaiser is specified. kaiser is used with value '", kaiser, "'. Results may differ from the specified type\n"))
       }
 
       if (is.null(precision)) {
         precision <- 1e-5
       } else {
-        warning(crayon::yellow$bold("!"), crayon::yellow(" Type and precision is specified. precision is used with value '", precision, "'. Results may differ from the specified type"))
+        warning(crayon::yellow$bold("!"), crayon::yellow(" Type and precision is specified. precision is used with value '", precision, "'. Results may differ from the specified type\n"))
       }
 
       if (is.null(order_type)) {
         order_type <- "eigen"
       } else {
-        warning(crayon::yellow$bold("!"), crayon::yellow(" Type and order_type is specified. order_type is used with value '", order_type, "'. Results may differ from the specified type"))
+        warning(crayon::yellow$bold("!"), crayon::yellow(" Type and order_type is specified. order_type is used with value '", order_type, "'. Results may differ from the specified type\n"))
       }
 
 
@@ -40,19 +40,19 @@
 
       if (isFALSE(kaiser)) {
 
-        warning(crayon::yellow$bold("!"), crayon::yellow(" Type and kaiser is specified. kaiser is used with value '", kaiser, "'. Results may differ from the specified type"))
+        warning(crayon::yellow$bold("!"), crayon::yellow(" Type and kaiser is specified. kaiser is used with value '", kaiser, "'. Results may differ from the specified type\n"))
       }
 
       if (is.null(precision)) {
         precision <- 1e-5
       } else {
-        warning(crayon::yellow$bold("!"), crayon::yellow(" Type and precision is specified. precision is used with value '", precision, "'. Results may differ from the specified type"))
+        warning(crayon::yellow$bold("!"), crayon::yellow(" Type and precision is specified. precision is used with value '", precision, "'. Results may differ from the specified type\n"))
       }
 
       if (is.null(order_type)) {
         order_type <- "eigen"
       } else {
-        warning(crayon::yellow$bold("!"), crayon::yellow(" Type and order_type is specified. order_type is used with value '", order_type, "'. Results may differ from the specified type"))
+        warning(crayon::yellow$bold("!"), crayon::yellow(" Type and order_type is specified. order_type is used with value '", order_type, "'. Results may differ from the specified type\n"))
       }
 
     } else if (type == "SPSS") {
@@ -62,19 +62,19 @@
 
       if (isFALSE(kaiser)) {
 
-        warning(crayon::yellow$bold("!"), crayon::yellow(" Type and kaiser is specified. kaiser is used with value '", kaiser, "'. Results may differ from the specified type"))
+        warning(crayon::yellow$bold("!"), crayon::yellow(" Type and kaiser is specified. kaiser is used with value '", kaiser, "'. Results may differ from the specified type\n"))
       }
 
       if (is.null(precision)) {
         precision <- 1e-10
       } else {
-        warning(crayon::yellow$bold("!"), crayon::yellow(" Type and precision is specified. precision is used with value '", precision, "'. Results may differ from the specified type"))
+        warning(crayon::yellow$bold("!"), crayon::yellow(" Type and precision is specified. precision is used with value '", precision, "'. Results may differ from the specified type\n"))
       }
 
       if (is.null(order_type)) {
         order_type <- "ss_factors"
       } else {
-        warning(crayon::yellow$bold("!"), crayon::yellow(" Type and order_type is specified. order_type is used with value '", order_type, "'. Results may differ from the specified type"))
+        warning(crayon::yellow$bold("!"), crayon::yellow(" Type and order_type is specified. order_type is used with value '", order_type, "'. Results may differ from the specified type\n"))
       }
 
     }
@@ -95,7 +95,7 @@
                    vars_accounted_rot = NA,
                    settings = settings)
 
-    warning(crayon::yellow$bold("!"), crayon::yellow(" Cannot rotate single factor. Unrotated loadings returned."))
+    warning(crayon::yellow$bold("!"), crayon::yellow(" Cannot rotate single factor. Unrotated loadings returned.\n"))
     return(output)
   }
 

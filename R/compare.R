@@ -120,7 +120,7 @@ compare <- function(x,
     # check if dimensions match:
     if (any(dim(x) != dim(y))) {
 
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' and 'y' have different dimensions. Compare only works with identical dimensions"))
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' and 'y' have different dimensions. Compare only works with identical dimensions.\n"))
 
     }
 
@@ -132,7 +132,7 @@ compare <- function(x,
 
     if (length(x) != length(y)) {
 
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' and 'y' have different lengths Compare only works with identical dimensions"))
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' and 'y' have different lengths Compare only works with identical dimensions.\n"))
 
     }
 

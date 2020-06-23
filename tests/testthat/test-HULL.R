@@ -47,27 +47,27 @@ test_that("output class and dimensions are correct", {
 
 test_that("n_fac_max is correctly specified", {
   expect_lte(hull_cor_paf$n_fac_max,
-             floor(ncol(test_models$baseline$cormat) / 2))
+             .det_max_factors(ncol(test_models$baseline$cormat)))
   expect_lte(hull_cor_ml$n_fac_max,
-             floor(ncol(test_models$baseline$cormat) / 2))
+             .det_max_factors(ncol(test_models$baseline$cormat)))
   expect_lte(hull_cor_uls$n_fac_max,
-             floor(ncol(test_models$baseline$cormat) / 2))
+             .det_max_factors(ncol(test_models$baseline$cormat)))
   expect_lte(hull_cor_uls_CFI$n_fac_max,
-             floor(ncol(test_models$baseline$cormat) / 2))
+             .det_max_factors(ncol(test_models$baseline$cormat)))
 
   expect_lte(hull_raw_paf$n_fac_max,
-             floor(ncol(GRiPS_raw) / 2))
+             .det_max_factors(ncol(GRiPS_raw)))
   expect_lte(hull_raw_ml$n_fac_max,
-             floor(ncol(GRiPS_raw) / 2))
+             .det_max_factors(ncol(GRiPS_raw)))
   expect_lte(hull_raw_uls$n_fac_max,
-             floor(ncol(GRiPS_raw) / 2))
+             .det_max_factors(ncol(GRiPS_raw)))
   expect_lte(hull_raw_uls_CFI$n_fac_max,
-             floor(ncol(GRiPS_raw) / 2))
+             .det_max_factors(ncol(GRiPS_raw)))
 
   expect_equal(hull_cor_ml_nf$n_fac_max,
-             floor(ncol(test_models$baseline$cormat) / 2))
+             .det_max_factors(ncol(test_models$baseline$cormat)))
   expect_equal(hull_raw_ml_nf$n_fac_max,
-               floor(ncol(GRiPS_raw) / 2))
+               .det_max_factors(ncol(GRiPS_raw)))
 })
 
 test_that("solution matrices are correctly returned", {
@@ -131,21 +131,21 @@ dat_sing <- matrix(c(x, y, z, rnorm(10), rnorm(10), rnorm(10)), ncol = 6)
 cor_sing <- stats::cor(dat_sing)
 
 test_that("errors etc are thrown correctly", {
-  expect_error(HULL(1:5), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.")
-  expect_message(HULL(GRiPS_raw), " 'x' was not a correlation matrix. Correlations are found from entered raw data.")
-  expect_warning(HULL(GRiPS_raw, N = 20), " 'N' was set and data entered. Taking N from data.")
-  expect_error(HULL(test_models$baseline$cormat), ' "N" is not specified but is needed for computation of some of the fit indices.')
-  expect_error(HULL(test_models$baseline$cormat, method = "ML"), ' "N" is not specified but is needed for computation of some of the fit indices.')
-  expect_error(HULL(test_models$baseline$cormat, method = "ULS"), ' "N" is not specified but is needed for computation of some of the fit indices.')
+  expect_error(HULL(1:5), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n")
+  expect_message(HULL(GRiPS_raw), " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n")
+  expect_warning(HULL(GRiPS_raw, N = 20), " 'N' was set and data entered. Taking N from data.\n")
+  expect_error(HULL(test_models$baseline$cormat), ' "N" is not specified but is needed for computation of some of the fit indices.\n')
+  expect_error(HULL(test_models$baseline$cormat, method = "ML"), ' "N" is not specified but is needed for computation of some of the fit indices.\n')
+  expect_error(HULL(test_models$baseline$cormat, method = "ULS"), ' "N" is not specified but is needed for computation of some of the fit indices.\n')
 
-  expect_error(HULL(dat_sing, method = "ML"), ' Correlation matrix is singular, the HULL method cannot be exectued.')
+  expect_error(HULL(dat_sing, method = "ML"), ' Correlation matrix is singular, the HULL method cannot be exectued.\n')
 
-  expect_error(HULL(matrix(rnorm(50), ncol = 5)), "Data has fewer than 6 indicators. Hull method needs at least 6.")
+  expect_error(HULL(matrix(rnorm(50), ncol = 5)), "Data has fewer than 6 indicators. Hull method needs at least 6.\n")
 
-  expect_message(HULL(GRiPS_raw), 'Only CAF can be used as gof if method "PAF" is used. Setting gof to "CAF"')
+  expect_message(HULL(GRiPS_raw), 'Only CAF can be used as gof if method "PAF" is used. Setting gof to "CAF"\n')
 
-  expect_warning(HULL(test_models$baseline$cormat, n_fac_theor = 13, N = 500), ' Setting maximum number of factors to 12 to ensure overidentified models.')
-  expect_warning(HULL(GRiPS_raw), " Less than three solutions located on the hull have been identified when using CAF as goodness of fit index. Proceeding by taking the value with the maximum CAF as heuristic. You may want to consider additional indices or methods as robustness check.")
+  expect_warning(HULL(test_models$baseline$cormat, n_fac_theor = 13, N = 500), ' Setting maximum number of factors to 12 to ensure overidentified models.\n')
+  expect_warning(HULL(GRiPS_raw), " Less than three solutions located on the hull have been identified when using CAF as goodness of fit index. Proceeding by taking the value with the maximum CAF as heuristic. You may want to consider additional indices or methods as robustness check.\n")
 
 
 })
