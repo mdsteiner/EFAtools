@@ -494,11 +494,13 @@
      all(x >= (-1 + .Machine$double.eps * 100), na.rm = TRUE) &&
      all(x <= (1 + .Machine$double.eps * 100), na.rm = TRUE)){
 
-    if (any(is.na(x))) {
+    if (round(sum(diag(x), na.rm = TRUE)) == nrow(x)) {
 
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "x" is likely a correlation matrix but contains missing values. Please check the entered data.\n'))
+      if (any(is.na(x))) {
 
-    } else if (round(sum(diag(x))) == nrow(x)) {
+        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "x" is likely a correlation matrix but contains missing values. Please check the entered data.\n'))
+
+      }
 
       TRUE
 

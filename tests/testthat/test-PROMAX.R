@@ -76,13 +76,13 @@ test_that("errors etc. are thrown correctly", {
   expect_warning(.PROMAX(unrot, type = "EFAtools", order_type = "ss_factors"), " Type and order_type is specified. order_type is used with value ' ss_factors '. Results may differ from the specified type\n")
   expect_warning(.PROMAX(unrot, type = "EFAtools", k = 2), " Type and k is specified. k is used with value ' 2 '. Results may differ from the specified type\n")
 
-  expect_warning(.PROMAX(unrot, type = "psych", kaiser = FALSE), " Type and kaiser is specified. kaiser is used with value ' FALSE '. Results may differ from the specified type\n")
+  expect_warning(.PROMAX(unrot, type = "psych", kaiser = FALSE), " Type and kaiser is specified. kaiser is used with value ' FALSE '. Results may differ from the specified type.\n")
   expect_warning(.PROMAX(unrot, type = "psych", P_type = "norm"), " Type and P_type is specified. P_type is used with value ' norm '. Results may differ from the specified type\n")
   expect_warning(.PROMAX(unrot, type = "psych", precision = 1e-9), " Type and precision is specified. precision is used with value ' 1e-09 '. Results may differ from the specified type\n")
   expect_warning(.PROMAX(unrot, type = "psych", order_type = "ss_factors"), " Type and order_type is specified. order_type is used with value ' ss_factors '. Results may differ from the specified type\n")
   expect_warning(.PROMAX(unrot, type = "psych", k = 2), " Type and k is specified. k is used with value ' 2 '. Results may differ from the specified type\n")
 
-  expect_warning(.PROMAX(unrot, type = "SPSS", kaiser = FALSE), " Type and kaiser is specified. kaiser is used with value ' FALSE '. Results may differ from the specified type\n")
+  expect_warning(.PROMAX(unrot, type = "SPSS", kaiser = FALSE), " Type and kaiser is specified. kaiser is used with value ' FALSE '. Results may differ from the specified type.\n")
   expect_warning(.PROMAX(unrot, type = "SPSS", P_type = "unnorm"), " Type and P_type is specified. P_type is used with value ' unnorm '. Results may differ from the specified type\n")
   expect_warning(.PROMAX(unrot, type = "SPSS", precision = 1e-9), " Type and precision is specified. precision is used with value ' 1e-09 '. Results may differ from the specified type\n")
   expect_warning(.PROMAX(unrot, type = "SPSS", order_type = "eigen"), " Type and order_type is specified. order_type is used with value ' eigen '. Results may differ from the specified type\n")

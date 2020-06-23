@@ -48,7 +48,7 @@ test_that("RMSEA_LB and AIC values are correct", {
   expect_equal(smt_raw$RMSEA_LB_null, 0.662764, tolerance = 1e-4)
   expect_equal(smt_rand$RMSEA_LB_null, 0, tolerance = 1e-4)
 
-  expect_equal(smt_cor$RMSEA_LBs, c(0.05674033, 0.03975791, rep(0, 7)),
+  expect_equal(smt_cor$RMSEA_LBs, c(0.05674033, 0.03975791, rep(0, 10)),
                tolerance = 1e-4)
   expect_equal(smt_raw$RMSEA_LBs, c(0.03547387, 0.02637614, rep(0, 2)),
                tolerance = 1e-4)
@@ -60,7 +60,8 @@ test_that("RMSEA_LB and AIC values are correct", {
 
   expect_equal(smt_cor$AICs, c(139.36142, 17.28713, -78.02180, -77.23762,
                                -74.12983, -66.95662, -56.34764, -45.65766,
-                               -35.95682), tolerance = 0.1)
+                               -35.95682, -25.891317, -16.952594, -5.103373),
+               tolerance = 0.1)
   expect_equal(smt_raw$AICs, c(19.919177, 7.833463, -4.447209, -1.852061),
                tolerance = 0.1)
   expect_equal(smt_rand$AICs, c(-15.856683, -11.780847, -6.821325, -1.330982),

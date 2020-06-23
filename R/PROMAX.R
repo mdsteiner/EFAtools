@@ -52,7 +52,7 @@
 
     if (isFALSE(kaiser)) {
 
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and kaiser is specified. kaiser is used with value '", kaiser, "'. Results may differ from the specified type"))
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and kaiser is specified. kaiser is used with value '", kaiser, "'. Results may differ from the specified type.\n"))
     }
 
     if (is.null(P_type)) {
@@ -87,7 +87,7 @@
 
     if (isFALSE(kaiser)) {
 
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and kaiser is specified. kaiser is used with value '", kaiser, "'. Results may differ from the specified type\n"))
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and kaiser is specified. kaiser is used with value '", kaiser, "'. Results may differ from the specified type.\n"))
     }
 
     if (is.null(P_type)) {
