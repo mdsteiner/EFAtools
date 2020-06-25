@@ -121,7 +121,7 @@
 #'                         method = "ML")
 #'
 #' # Use PAF instead of ML (this will take a lot longer). For this, gof has
-#' to be set to "CAF" for the Hull method.
+#' # to be set to "CAF" for the Hull method.
 #' nfac_PAF <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC",
 #'                       "HULL", "KGC", "PARALLEL", "SMT"), N = 500,
 #'                       gof = "CAF")

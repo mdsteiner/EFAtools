@@ -10,7 +10,9 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  fig.width = 7,
+  fig.align = "center"
 )
 ```
 
@@ -21,7 +23,7 @@ library(EFAtools)
 
 This vignette provides an overview over the functionalities of the EFAtools package. The general aim of the package is to provide flexible implementations of different algorithms to run exploratory factor analyses (EFA), including factor retention methods, algorithms to perform the EFA and to rotate the found solution, as well as the computation of a Schmid-Leiman solution and omegas.
 
-The package was first designed to enable a comparison of EFA (specifically, principal axis factoring with subsequent promax rotation) performed in R using the [**psych**]() package and EFA performed using SPSS. Because of this, some functions have the possibility to specify a type, such as `"psych"`, or `"SPSS"` such that the respective procedure will be executed to match the output of these implementations (which do not always lead to the same results). This vignette will go through a complete example, that is, we will first show how to determine the number of factors to retain, then perform different EFA procedures, run a Schmid-Leiman transformation and compute omegas.
+The package was first designed to enable a comparison of EFA (specifically, principal axis factoring with subsequent promax rotation) performed in R using the [**psych**](https://cran.r-project.org/web/packages/psych/index.html) package and EFA performed using SPSS. Because of this, some functions have the possibility to specify a type, such as `"psych"`, or `"SPSS"` such that the respective procedure will be executed to match the output of these implementations (which do not always lead to the same results). This vignette will go through a complete example, that is, we will first show how to determine the number of factors to retain, then perform different EFA procedures, run a Schmid-Leiman transformation and compute omegas.
 
 First, the package can be installed from CRAN using `install.packages("EFAtools")`, or from GitHub using `devtools::install_github("mdsteiner/EFAtools")`. Then load the package using `library(EFAtools)`
 
@@ -182,11 +184,25 @@ The indicator names in the output (i.e., the rownames of the rotated loadings se
 The SL transformation or orthogonalization transforms an oblique solution into a hierarchical, orthogonalized solution. To this end, the `EFAtools` package provides the `SL()` function.
 
 ```{r}
-SL(efa_dospert)
+sl_dospert <- SL(efa_dospert)
+sl_dospert
 ```
 
 From the output, it can be seen that all, except the social domain indicators substantially load on the general factor. That is, the other domains also covary substantially.
 
 ## Omegas
+
+Finally, we can compute omega reliability estimates for the SL solution. To this end, we can either specify the variable to factor correspondences, or let them be determined automatically (in which case the highest factor loading will be taken, which might lead to a different solution than what is desired, in the presence of cross-loadings). Given that here no cross-loadings are present, here it is easiest to let the function automatically determine the variable to factor correspondence. To this end, we will set the `type` argument to `"psych"`.
+
+```{r}
+OMEGA(sl_dospert, type = "psych")
+```
+
+If we wanted to specify the variable to factor correspondences explicitly, we could do it in the following way:
+
+```{r}
+OMEGA(sl_dospert, factor_corres = c(rep(3, 6), 1, 5, 1, 5, 1, 5, 3, 3, 
+                                    rep(6, 4), rep(4, 6), rep(2, 6)))
+```
 
 
