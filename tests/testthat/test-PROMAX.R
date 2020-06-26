@@ -4,7 +4,7 @@ prom_psych <- .PROMAX(unrot, type = "psych")
 prom_spss <- .PROMAX(unrot, type = "SPSS")
 
 unrot_1 <- EFA(test_models$baseline$cormat, 1, N = 500)
-prom_1 <- .PROMAX(unrot_1, type = "EFAtools")
+prom_1 <- suppressWarnings(.PROMAX(unrot_1, type = "EFAtools"))
 
 test_that("output class and dimensions are correct", {
   expect_is(prom, "list")

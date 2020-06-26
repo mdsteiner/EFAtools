@@ -16,3 +16,10 @@
 \description{
 Print function for CD objects
 }
+\examples{
+\dontrun{
+# determine n factors of the GRiPS
+CD(GRiPS_raw)
+}
+
+}

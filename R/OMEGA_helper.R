@@ -18,28 +18,6 @@
     factor_names <- c("g", 1:ncol(s_load))
     u2 <- model[, "u2"]
 
-    if(variance == "correlation"){
-
-      if(is.null(cormat)){
-
-        # Create the correlation matrix from the pattern coefficients and factor
-        # intercorrelations
-        cormat <- psych::factor.model(f = pattern, Phi = Phi, U2 = FALSE)
-
-      } else {
-
-        # Check if it is a correlation matrix
-
-        if(!.is_cormat(cormat)){
-
-          stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' was not a correlation matrix. Check the cormat input, specify the Phi and pattern arguments instead, or set variance to 'sums_load'\n"))
-
-        }
-
-      }
-
-    }
-
  } else if(inherits(model, "SL")){
 
     cormat <- model$orig_R
@@ -55,12 +33,14 @@
 
     factor_names <- c("g", 1:ncol(s_load))
 
+  }
+
     if(variance == "correlation"){
 
       if(is.null(cormat)){
 
         if(is.null(Phi) | is.null(pattern)) {
-          stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" If you leave model NULL, either specify the cormat argument or the Phi and pattern arguments, or set variance to 'sums_load'\n"))
+          stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Either specify the cormat argument or the Phi and pattern arguments, or set variance to 'sums_load'\n"))
 
         } else {
 
@@ -82,8 +62,6 @@
       }
 
     }
-
-  }
 
   # Check if input to factor_corres is correct
   checkmate::assert_numeric(factor_corres, null.ok = TRUE, len = nrow(g_load))

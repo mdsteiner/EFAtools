@@ -2,7 +2,8 @@ unrot <- EFA(test_models$baseline$cormat, 3, N = 500)
 equa <- .ROTATE_ORTH(unrot, rotation = "equamax", type = "EFAtools")
 
 unrot_1 <- EFA(test_models$baseline$cormat, 1, N = 500)
-equa_1 <- .ROTATE_ORTH(unrot_1, rotation = "equamax", type = "EFAtools")
+equa_1 <- suppressWarnings(.ROTATE_ORTH(unrot_1, rotation = "equamax",
+                                        type = "EFAtools"))
 
 quarti <- .ROTATE_ORTH(unrot, rotation = "quartimax", type = "psych")
 bentT <- .ROTATE_ORTH(unrot, rotation = "bentlerT", type = "none",

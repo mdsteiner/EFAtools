@@ -42,7 +42,7 @@ principal axis factoring, maximum likelihood, or unweighted least squares
 }
 \value{
 A list of class SL containing the following
-\item{orig_R}{Ooriginal correlation matrix.}
+\item{orig_R}{Original correlation matrix.}
 \item{sl}{A matrix with g loadings, group factor loadings, communalities,
 and uniquenesses.}
 \item{L2}{Second-order factor loadings.}

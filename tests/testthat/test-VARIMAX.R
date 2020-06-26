@@ -4,7 +4,7 @@ vari_psych <- .VARIMAX(unrot, type = "psych")
 vari_spss <- .VARIMAX(unrot, type = "SPSS")
 
 unrot_1 <- EFA(test_models$baseline$cormat, 1, N = 500)
-vari_1 <- .VARIMAX(unrot_1, type = "EFAtools")
+vari_1 <- suppressWarnings(.VARIMAX(unrot_1, type = "EFAtools"))
 
 test_that("output class and dimensions are correct", {
   expect_is(vari, "list")

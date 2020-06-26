@@ -39,7 +39,7 @@
 #' calculation of McDonald's Omegas (see \code{\link{OMEGA}}).
 #'
 #' @return A list of class SL containing the following
-#' \item{orig_R}{Ooriginal correlation matrix.}
+#' \item{orig_R}{Original correlation matrix.}
 #' \item{sl}{A matrix with g loadings, group factor loadings, communalities,
 #' and uniquenesses.}
 #' \item{L2}{Second-order factor loadings.}
@@ -87,6 +87,12 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
   checkmate::assert_matrix(Phi, null.ok = TRUE)
   type <- match.arg(type)
   method <- match.arg(method)
+
+  if(!inherits(x, c("EFA", "fa", "matrix", "LOADINGS", "loadings"))){
+
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither an object of class EFA or fa nor a matrix, nor of class LOADINGS or loadings.\n"))
+
+  }
 
   if(inherits(x, "EFA")) {
 
@@ -147,12 +153,6 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
     if(is.null(Phi)){
 
       stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Phi not provided. Either enter an oblique factor solution from EFAtools::EFA or from psych::fa, or provide Phi\n"))
-
-    }
-
-    if(!inherits(x, c("matrix", "LOADINGS", "loadings"))){
-
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither an object of class EFA or fa nor a matrix, nor of class LOADINGS or loadings.\n"))
 
     }
 

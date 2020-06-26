@@ -1,4 +1,4 @@
-nf_grips <- N_FACTORS(GRiPS_raw)
+nf_grips <- suppressMessages(suppressWarnings(N_FACTORS(GRiPS_raw)))
 
 test_that("output class and dimensions are correct", {
   expect_is(nf_grips, "N_FACTORS")

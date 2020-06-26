@@ -1,18 +1,20 @@
-hull_cor_paf <- HULL(test_models$baseline$cormat, N = 500)
+hull_cor_paf <- suppressMessages(HULL(test_models$baseline$cormat, N = 500))
 hull_cor_ml <- HULL(test_models$baseline$cormat, N = 500, method = "ML")
 hull_cor_uls <- HULL(test_models$baseline$cormat, N = 500, method = "ULS")
 hull_cor_uls_CFI <- HULL(test_models$baseline$cormat, N = 500, method = "ULS",
                          gof = "CFI")
-hull_cor_ml_nf <- HULL(test_models$baseline$cormat, N = 500, method = "ML",
-                       n_fac_theor = 12)
+hull_cor_ml_nf <- suppressWarnings(HULL(test_models$baseline$cormat, N = 500,
+                                        method = "ML", n_fac_theor = 12))
 
-hull_raw_paf <- HULL(GRiPS_raw)
-hull_raw_ml <- HULL(GRiPS_raw, method = "ML")
-hull_raw_uls <- HULL(GRiPS_raw, method = "ULS")
-hull_raw_uls_CFI <- HULL(GRiPS_raw, method = "ULS", gof = "CFI")
-hull_raw_ml_nf <- HULL(GRiPS_raw, N = 500, method = "ML",
-                       n_fac_theor = 7)
-
+hull_raw_paf <- suppressMessages(suppressWarnings(HULL(GRiPS_raw)))
+hull_raw_ml <- suppressMessages(suppressWarnings(HULL(GRiPS_raw, method = "ML")))
+hull_raw_uls <- suppressMessages(suppressWarnings(HULL(GRiPS_raw, method = "ULS")))
+hull_raw_uls_CFI <- suppressMessages(suppressWarnings(HULL(GRiPS_raw,
+                                                           method = "ULS",
+                                                           gof = "CFI")))
+hull_raw_ml_nf <- suppressMessages(suppressWarnings(HULL(GRiPS_raw, N = 500,
+                                                         method = "ML",
+                                                         n_fac_theor = 7)))
 
 
 test_that("output class and dimensions are correct", {
@@ -132,7 +134,7 @@ cor_sing <- stats::cor(dat_sing)
 
 test_that("errors etc are thrown correctly", {
   expect_error(HULL(1:5), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n")
-  expect_message(HULL(GRiPS_raw), " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n")
+  expect_message(suppressWarnings(HULL(GRiPS_raw)), " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n")
   expect_warning(HULL(GRiPS_raw, N = 20), " 'N' was set and data entered. Taking N from data.\n")
   expect_error(HULL(test_models$baseline$cormat), ' "N" is not specified but is needed for computation of some of the fit indices.\n')
   expect_error(HULL(test_models$baseline$cormat, method = "ML"), ' "N" is not specified but is needed for computation of some of the fit indices.\n')
@@ -142,7 +144,7 @@ test_that("errors etc are thrown correctly", {
 
   expect_error(HULL(matrix(rnorm(50), ncol = 5)), "Data has fewer than 6 indicators. Hull method needs at least 6.\n")
 
-  expect_message(HULL(GRiPS_raw), 'Only CAF can be used as gof if method "PAF" is used. Setting gof to "CAF"\n')
+  expect_message(suppressWarnings(HULL(GRiPS_raw)), 'Only CAF can be used as gof if method "PAF" is used. Setting gof to "CAF"\n')
 
   expect_warning(HULL(test_models$baseline$cormat, n_fac_theor = 13, N = 500), ' Setting maximum number of factors to 12 to ensure overidentified models.\n')
   expect_warning(HULL(GRiPS_raw), " Less than three solutions located on the hull have been identified when using CAF as goodness of fit index. Proceeding by taking the value with the maximum CAF as heuristic. You may want to consider additional indices or methods as robustness check.\n")

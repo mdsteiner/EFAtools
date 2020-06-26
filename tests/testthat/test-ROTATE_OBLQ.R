@@ -2,7 +2,8 @@ unrot <- EFA(test_models$baseline$cormat, 3, N = 500)
 obli <- .ROTATE_OBLQ(unrot, rotation = "oblimin", type = "EFAtools")
 
 unrot_1 <- EFA(test_models$baseline$cormat, 1, N = 500)
-obli_1 <- .ROTATE_OBLQ(unrot_1, rotation = "oblimin", type = "EFAtools")
+obli_1 <- suppressWarnings(.ROTATE_OBLQ(unrot_1, rotation = "oblimin",
+                                        type = "EFAtools"))
 
 quarti <- .ROTATE_OBLQ(unrot, rotation = "quartimin", type = "psych")
 simpli <- .ROTATE_OBLQ(unrot, rotation = "simplimax", type = "SPSS",

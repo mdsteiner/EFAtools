@@ -5,21 +5,25 @@ lav_mod_1 <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
               F3 =~ V13 + V14 + V15 + V16 + V17 + V18
               g =~ V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11 + V12 +
                    V13 + V14 + V15 + V16 + V17 + V18'
-lav_fit_1 <- lavaan::cfa(lav_mod_1, sample.cov = test_models$baseline$cormat,
-                       sample.nobs = 500, estimator = "ml", orthogonal = TRUE)
+lav_fit_1 <- suppressWarnings(lavaan::cfa(lav_mod_1,
+                                          sample.cov = test_models$baseline$cormat,
+                                          sample.nobs = 500, estimator = "ml",
+                                          orthogonal = TRUE))
 om_lav_bi <- .OMEGA_LAVAAN(lav_fit_1, g_name = "g")
 
 lav_mod_2 <- 'g =~ V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11 + V12 +
                     V13 + V14 + V15 + V16 + V17 + V18'
-lav_fit_2 <- lavaan::cfa(lav_mod_2, sample.cov = test_models$baseline$cormat,
-                       sample.nobs = 500, estimator = "ml", orthogonal = TRUE)
+lav_fit_2 <- suppressWarnings(lavaan::cfa(lav_mod_2,
+                                         sample.cov = test_models$baseline$cormat,
+                                         sample.nobs = 500, estimator = "ml",
+                                         orthogonal = TRUE))
 om_lav_1 <- .OMEGA_LAVAAN(lav_fit_2)
 
-lav_fit_3 <- lavaan::cfa(lav_mod_1, sample.cov =
-                           list(test_models$baseline$cormat,
-                                test_models$baseline$cormat),
-                         sample.nobs = c(500, 500), estimator = "ml",
-                         orthogonal = TRUE)
+lav_fit_3 <- suppressWarnings(lavaan::cfa(lav_mod_1, sample.cov =
+                                            list(test_models$baseline$cormat,
+                                                 test_models$baseline$cormat),
+                                          sample.nobs = c(500, 500),
+                                          estimator = "ml", orthogonal = TRUE))
 om_lav_gr <- .OMEGA_LAVAAN(lav_fit_3, g_name = "g", group_names = c("Some",
                                                                     "Others"))
 
@@ -46,8 +50,9 @@ lav_mod_NA <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6 + V17
                F3 =~ V13 + V14 + V15 + V16 + V17 + V18 + V10
                g =~ V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11 + V12 +
                     V13 + V14 + V15 + V16 + V17 + V18'
-lav_fit_NA <- lavaan::cfa(lav_mod_NA, sample.cov = test_models$baseline$cormat,
-                         sample.nobs = 500, estimator = "ml")
+lav_fit_NA <- suppressWarnings(lavaan::cfa(lav_mod_NA,
+                                           sample.cov = test_models$baseline$cormat,
+                                           sample.nobs = 500, estimator = "ml"))
 
 x <- rnorm(10)
 y <- rnorm(10)
@@ -60,22 +65,24 @@ colnames(cor_sing) <- c("V1", "V2", "V3", "V4")
 lav_mod_conv <- 'F1 =~ V1 + V2
                  F2 =~ V3 + V4
                  g =~ V1 + V2 + V3 + V4'
-lav_fit_conv <- lavaan::cfa(lav_mod_conv, sample.cov = cor_sing,
-                            sample.nobs = 10, estimator = "ml")
+lav_fit_conv <- suppressWarnings(lavaan::cfa(lav_mod_conv, sample.cov = cor_sing,
+                                             sample.nobs = 10, estimator = "ml"))
 
 lav_mod_hier <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
                F2 =~ V7 + V8 + V9 + V10 + V11 + V12
                F3 =~ V13 + V14 + V15 + V16 + V17 + V18
                g =~ F1 + F2 + F3'
-lav_fit_hier <- lavaan::cfa(lav_mod_hier, sample.cov = test_models$baseline$cormat,
-                            sample.nobs = 500, estimator = "ml")
+lav_fit_hier <- suppressWarnings(lavaan::cfa(lav_mod_hier,
+                                             sample.cov = test_models$baseline$cormat,
+                                             sample.nobs = 500, estimator = "ml"))
 
 lav_mod_hier2 <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
                F2 =~ V7 + V8 + V9 + V10 + V11 + V12 + V13
                F3 =~ V13 + V14 + V15 + V16 + V17 + V18
                g =~ F1 + F2 + F3'
-lav_fit_hier2 <- lavaan::cfa(lav_mod_hier2, sample.cov = test_models$baseline$cormat,
-                            sample.nobs = 500, estimator = "ml")
+lav_fit_hier2 <- suppressWarnings(lavaan::cfa(lav_mod_hier2,
+                                              sample.cov = test_models$baseline$cormat,
+                                              sample.nobs = 500, estimator = "ml"))
 
 test_that("errors are thrown correctly", {
   expect_error(.OMEGA_LAVAAN(lav_fit_conv, g_name = "g"), " Model did not converge. No omegas are computed.\n")
@@ -155,7 +162,7 @@ test_that("errors are thrown correctly", {
                            s_load = sl_mod$sl[, c("F1", "F2", "F3")],
                            u2 = sl_mod$sl[, "u2"],
                            factor_corres = rep(c(3, 2, 1), each = 6),
-                           variance = "correlation"), " If you leave model NULL, either specify the cormat argument or the Phi and pattern arguments, or set variance to 'sums_load'\n")
+                           variance = "correlation"), " Either specify the cormat argument or the Phi and pattern arguments, or set variance to 'sums_load'\n")
   expect_error(.OMEGA_FLEX(model = NULL, type = "EFAtools",
                            var_names = rownames(sl_mod$sl),
                            g_load = sl_mod$sl[, "g"],
