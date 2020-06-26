@@ -70,9 +70,9 @@
 #' EFA_psych_6 <- EFA(test_models$case_11b$cormat, n_factors = 6, type = "psych")
 #'
 #' # compare the two
-#' compare(EFA_SPSS_6$unrot_loadings, EFA_psych_6$unrot_loadings,
+#' COMPARE(EFA_SPSS_6$unrot_loadings, EFA_psych_6$unrot_loadings,
 #'         x_labels = c("SPSS", "psych"))
-compare <- function(x,
+COMPARE <- function(x,
                     y,
                     reorder = c("congruence", "names", "none"),
                     corres = TRUE,

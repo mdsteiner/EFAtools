@@ -105,7 +105,7 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
   n_cases <- nrow(x)
   k <- ncol(x)
 
-  m_possible <- floor(k / 2)
+  m_possible <- .det_max_factors(k)
 
   if (is.na(n_factors_max) || n_factors_max > m_possible) {
 

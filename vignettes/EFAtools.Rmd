@@ -138,10 +138,10 @@ If you want to use the *SPSS* implementation, you can set the `type` argument to
 EFA(DOSPERT_raw, n_factors = 6, rotation = "promax", type = "SPSS")
 ```
 
-This renders possible comparisons of different implementations. The `compare()` function provides an easy way to compare how similar the loadings of two pattern matrices are:
+This renders possible comparisons of different implementations. The `COMPARE()` function provides an easy way to compare how similar the loadings of two pattern matrices are:
 
 ```{r}
-compare(
+COMPARE(
   EFA(DOSPERT_raw, n_factors = 6, rotation = "promax", type = "psych")$rot_loadings,
   EFA(DOSPERT_raw, n_factors = 6, rotation = "promax", type = "SPSS")$rot_loadings
 )
@@ -158,10 +158,10 @@ As Indicated previously, it is also possible to use different estimation and rot
 EFA(DOSPERT_raw, n_factors = 6, rotation = "oblimin", method = "ULS")
 ```
 
-Of course, `compare()` can also be used to test the difference between different estimation methods etc., not just between different implementations:
+Of course, `COMPARE()` can also be used to test the difference between different estimation methods etc., not just between different implementations:
 
 ```{r}
-compare(
+COMPARE(
   EFA(DOSPERT_raw, n_factors = 6, rotation = "promax")$rot_loadings,
   EFA(DOSPERT_raw, n_factors = 6, rotation = "oblimin", method = "ULS")$rot_loadings,
   x_labels = c("PAF and promax", "ULS and oblimin")
