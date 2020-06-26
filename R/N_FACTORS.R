@@ -7,7 +7,7 @@
 #'  can be checked for their suitability for factor analysis.
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
-#' correlations. If \code{"CD"} is included as a criterion, \code(x) must be raw
+#' correlations. If \code{"CD"} is included as a criterion, x must be raw
 #'  data.
 #' @param criteria character. A vector with the factor retention methods to
 #' perform. Possible inputs are: \code{"CD"}, \code{"EKC"}, \code{"HULL"},

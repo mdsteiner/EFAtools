@@ -31,7 +31,7 @@ N_FACTORS(
 }
 \arguments{
 \item{x}{data.frame or matrix. Dataframe or matrix of raw data or matrix with
-correlations. If \code{"CD"} is included as a criterion, \code(x) must be raw
+correlations. If \code{"CD"} is included as a criterion, x must be raw
  data.}
 
 \item{criteria}{character. A vector with the factor retention methods to
