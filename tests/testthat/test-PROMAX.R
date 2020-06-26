@@ -88,7 +88,7 @@ test_that("errors etc. are thrown correctly", {
   expect_warning(.PROMAX(unrot, type = "SPSS", order_type = "eigen"), " Type and order_type is specified. order_type is used with value ' eigen '. Results may differ from the specified type\n")
   expect_warning(.PROMAX(unrot, type = "SPSS", k = 2), " Type and k is specified. k is used with value ' 2 '. Results may differ from the specified type\n")
 
-  expect_warning(.PROMAX(unrot_1), " Cannot rotate single factor. Unrotated loadings returned.\n")
+  expect_warning(.PROMAX(unrot_1, type = "EFAtools"), " Cannot rotate single factor. Unrotated loadings returned.\n")
 })
 
 rm(unrot, prom, unrot_1, prom_1, prom_psych, prom_spss)

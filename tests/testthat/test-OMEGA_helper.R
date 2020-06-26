@@ -17,7 +17,7 @@ lav_fit_2 <- suppressWarnings(lavaan::cfa(lav_mod_2,
                                          sample.cov = test_models$baseline$cormat,
                                          sample.nobs = 500, estimator = "ml",
                                          orthogonal = TRUE))
-om_lav_1 <- .OMEGA_LAVAAN(lav_fit_2)
+om_lav_1 <- suppressMessages(.OMEGA_LAVAAN(lav_fit_2))
 
 lav_fit_3 <- suppressWarnings(lavaan::cfa(lav_mod_1, sample.cov =
                                             list(test_models$baseline$cormat,
@@ -54,6 +54,7 @@ lav_fit_NA <- suppressWarnings(lavaan::cfa(lav_mod_NA,
                                            sample.cov = test_models$baseline$cormat,
                                            sample.nobs = 500, estimator = "ml"))
 
+set.seed(500)
 x <- rnorm(10)
 y <- rnorm(10)
 z <- x + y
