@@ -1,6 +1,6 @@
 #' Print COMPARE object
 #'
-#' Print Method showing a summarized output of the \code{\link{compare}} function.
+#' Print Method showing a summarized output of the \code{\link{COMPARE}} function.
 #'
 #' @param x  list. An object of class COMPARE to be printed
 #' @param ... Further arguments for print.
@@ -15,7 +15,7 @@
 #' EFA_psych_5 <- EFA(IDS2_R, n_factors = 5, type = "psych")
 #'
 #' # compare the two
-#' compare(EFA_SPSS_5$unrot_loadings, EFA_psych_5$unrot_loadings,
+#' COMPARE(EFA_SPSS_5$unrot_loadings, EFA_psych_5$unrot_loadings,
 #'         x_labels = c("SPSS", "psych"))
 print.COMPARE <- function(x, ...) {
 

@@ -25,19 +25,19 @@
 #'  matrices with the final communalities of an EFA solution as diagonal.
 #' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
 #' is given as input. Default is "pairwise.complete.obs".
-#'  @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}
-#'  Default is "pearson".
+#' @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}
+#' Default is "pearson".
 #' @param decision_rule character. Which rule to use to determine the number of
 #'  factors to retain. Default is \code{"mean"}, which will use the average
 #'  simulated eigenvalues. \code{"Percentile"}, uses the percentiles specified
 #'  in percent. \code{"Crawford"} uses the 95th percentile for the first factor
 #'  and the mean afterwards (based on Crawford et al, 2010).
-#'  @param n_factors numeric. Number of factors to extract if "EFA" is included in
+#' @param n_factors numeric. Number of factors to extract if "EFA" is included in
 #' \code{eigen_type}. Default is 1.
-#'  @param ... Additional arguments passed to \code{\link{EFA}}. For example,
-#'  the extraction method can be changed here (default is "PAF"). PAF is more
-#'  robust, but it will take longer compared to the other estimation methods
-#'  available ("ML" and "ULS").
+#' @param ... Additional arguments passed to \code{\link{EFA}}. For example,
+#' the extraction method can be changed here (default is "PAF"). PAF is more
+#' robust, but it will take longer compared to the other estimation methods
+#' available ("ML" and "ULS").
 #'
 #' @details Parallel analysis (Horn, 1965) compares the eigenvalues obtained from
 #' the sample
@@ -250,7 +250,8 @@ PARALLEL <- function(x = NULL,
       if (isTRUE(x_dat)) {
         n_fac_PCA <- .determine_factors(decision_rule = decision_rule,
                                         eigvals_real = eigvals_real_PCA,
-                                        results = results_PCA)
+                                        results = results_PCA,
+                                        percent = percent)
 
         eigenvalues_PCA <- cbind(eigvals_real_PCA, results_PCA)
 
@@ -276,7 +277,8 @@ PARALLEL <- function(x = NULL,
       if (isTRUE(x_dat)) {
       n_fac_SMC <- .determine_factors(decision_rule = decision_rule,
                                       eigvals_real = eigvals_real_SMC,
-                                      results = results_SMC)
+                                      results = results_SMC,
+                                      percent = percent)
 
       eigenvalues_SMC <- cbind(eigvals_real_SMC, results_SMC)
 
@@ -303,7 +305,8 @@ PARALLEL <- function(x = NULL,
       if (isTRUE(x_dat)) {
       n_fac_EFA <- .determine_factors(decision_rule = decision_rule,
                                       eigvals_real = eigvals_real_EFA,
-                                      results = results_EFA)
+                                      results = results_EFA,
+                                      percent = percent)
 
       eigenvalues_EFA <- cbind(eigvals_real_EFA, results_EFA)
 
@@ -361,7 +364,7 @@ PARALLEL <- function(x = NULL,
   return(eigvals)
 }
 
-.determine_factors <- function(decision_rule, eigvals_real, results){
+.determine_factors <- function(decision_rule, eigvals_real, results, percent){
 
 # determine the number of factors to retain
 if (decision_rule == "Crawford") {

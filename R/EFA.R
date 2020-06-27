@@ -62,7 +62,7 @@
 #' Default is "pearson".
 #' @param k numeric. Either the power used for computing the target matrix P in
 #' the promax rotation or the number of 'close to zero loadings' for the simplimax
-#' rotation (see \code{\link[GPArotation:GPFobl]{GPArotation::GPFobl}}. If left to
+#' rotation (see \code{\link[GPArotation:GPFoblq]{GPArotation::GPFoblq}}. If left to
 #' \code{NULL} (default), 3 is used for promax and \code{nrow(L)}, where
 #' L is the matrix of unrotated loadings, is used for simplimax.
 #' @param kaiser logical. If \code{TRUE}, kaiser normalization is
