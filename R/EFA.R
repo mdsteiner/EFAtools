@@ -194,9 +194,9 @@
 #' intercorrelations.}
 #' \item{settings}{list. The settings (arguments) used in the EFA.}
 #'
-#' @source Grieder, S., & Steiner, M.D.(2020). Algorithmic Jingle Jungle:
-#' Comparison of Implementations of an EFA Procedure in R psych Versus SPSS,
-#' MacOrtho, and Omega. Submitted Manuscript.
+#' @source Grieder, S., & Steiner, M.D. (2020). Algorithmic Jingle Jungle:
+#' A Comparison of Implementations of Principal Axis Factoring and Promax Rotation
+#'  in R and SPSS. Manuscript in Preparation.
 #' @source Hendrickson, A. E., & White, P. O. (1964). Promax: A quick method for
 #' rotation to oblique simple structure. British Journal of Statistical Psychology,
 #' 17 , 65–70. doi: 10.1111/j.2044-8317.1964.tb00244.x

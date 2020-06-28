@@ -13,7 +13,9 @@ A list of 4 lists "baseline", "case_1a", "case_6b", and"case_11b", each with the
  }
 }
 \source{
-Grieder, S., & Steiner, M.D.(2020). Algorithmic Jingle Jungle: Limited Comparability of Implementations of Principal Axis Factoring and Promax Rotation in R psych Versus SPSS. Manuscript in preparation.
+Grieder, S., & Steiner, M.D. (2020). Algorithmic Jingle Jungle:
+A Comparison of Implementations of Principal Axis Factoring and Promax Rotation
+ in R and SPSS. Manuscript in Preparation.
 }
 \usage{
 test_models

@@ -63,7 +63,9 @@ A list of 3 lists "loadings", "phis_3", and "phis_6".
  }
 }
 \source{
-Grieder, S., & Steiner, M.D.(2019). Algorithmic Jingle Jungle: Comparison of Implementations of an EFA Procedure in R psych Versus SPSS, MacOrtho, and Omega. Submitted Manuscript.
+Grieder, S., & Steiner, M.D. (2020). Algorithmic Jingle Jungle:
+A Comparison of Implementations of Principal Axis Factoring and Promax Rotation
+ in R and SPSS. Manuscript in Preparation.
 
 de Winter, J.C.F., & Dodou, D. (2012). Factor recovery by principal axis factoring and maximum likelihood factor analysis as a function of factor pattern and sample size. Journal of Applied Statistics. 39.
 }
