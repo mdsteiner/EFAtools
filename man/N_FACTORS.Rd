@@ -90,14 +90,15 @@ Lorenzo-Seva, Timmerman, and Kiers (2011).}
 \item{eigen_type_HULL}{character. Passed to  \code{\link{PARALLEL}} in
 \code{\link{HULL}}. On what the
 eigenvalues should be found in the parallel analysis. Can be one of
- \code{"SMC"}, \code{"PCA"}, or \code{"EFA"}. If using  \code{"SMC"} (default),
-  the diagonal of the correlation matrices is
-  replaced by the squared multiple correlations (SMCs) of the indicators. If
-   using  \code{"PCA"}, the diagonal values of the correlation
+\code{"SMC"}, \code{"PCA"}, or \code{"EFA"}. If using  \code{"SMC"} (default),
+the diagonal of the correlation matrices is
+replaced by the squared multiple correlations (SMCs) of the indicators. If
+using  \code{"PCA"}, the diagonal values of the correlation
 matrices are left to be 1. If using  \code{"EFA"}, eigenvalues are found on the
 correlation  matrices with the final communalities of an EFA solution as
-diagonal.
-@param eigen_type_KGC_PA character. Passed to \code{\link{KGC}} and
+diagonal.}
+
+\item{eigen_type_KGC_PA}{character. Passed to \code{\link{KGC}} and
 \code{\link{PARALLEL}}. The same as eigen_type_HULL, but multiple inputs
 are possible here. Default is to use all inputs, that is, \code{c("PCA",
 "SMC", "EFA"})}

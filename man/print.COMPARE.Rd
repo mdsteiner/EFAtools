@@ -12,7 +12,7 @@
 \item{...}{Further arguments for print.}
 }
 \description{
-Print Method showing a summarized output of the \code{\link{compare}} function.
+Print Method showing a summarized output of the \code{\link{COMPARE}} function.
 }
 \examples{
 # A type SPSS EFA to mimick the SPSS implementation
@@ -22,6 +22,6 @@ EFA_SPSS_5 <- EFA(IDS2_R, n_factors = 5, type = "SPSS")
 EFA_psych_5 <- EFA(IDS2_R, n_factors = 5, type = "psych")
 
 # compare the two
-compare(EFA_SPSS_5$unrot_loadings, EFA_psych_5$unrot_loadings,
+COMPARE(EFA_SPSS_5$unrot_loadings, EFA_psych_5$unrot_loadings,
         x_labels = c("SPSS", "psych"))
 }

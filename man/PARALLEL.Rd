@@ -57,21 +57,24 @@ are left to be 1. If using "EFA", eigenvalues are found on the correlation
 matrices with the final communalities of an EFA solution as diagonal.}
 
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
-is given as input. Default is "pairwise.complete.obs".
- @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}
- Default is "pearson".}
+is given as input. Default is "pairwise.complete.obs".}
+
+\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor}}
+Default is "pearson".}
 
 \item{decision_rule}{character. Which rule to use to determine the number of
- factors to retain. Default is \code{"mean"}, which will use the average
- simulated eigenvalues. \code{"Percentile"}, uses the percentiles specified
- in percent. \code{"Crawford"} uses the 95th percentile for the first factor
- and the mean afterwards (based on Crawford et al, 2010).
- @param n_factors numeric. Number of factors to extract if "EFA" is included in
-\code{eigen_type}. Default is 1.
- @param ... Additional arguments passed to \code{\link{EFA}}. For example,
- the extraction method can be changed here (default is "PAF"). PAF is more
- robust, but it will take longer compared to the other estimation methods
- available ("ML" and "ULS").}
+factors to retain. Default is \code{"mean"}, which will use the average
+simulated eigenvalues. \code{"Percentile"}, uses the percentiles specified
+in percent. \code{"Crawford"} uses the 95th percentile for the first factor
+and the mean afterwards (based on Crawford et al, 2010).}
+
+\item{n_factors}{numeric. Number of factors to extract if "EFA" is included in
+\code{eigen_type}. Default is 1.}
+
+\item{...}{Additional arguments passed to \code{\link{EFA}}. For example,
+the extraction method can be changed here (default is "PAF"). PAF is more
+robust, but it will take longer compared to the other estimation methods
+available ("ML" and "ULS").}
 }
 \value{
 A list of class PARALLEL containing the following objects

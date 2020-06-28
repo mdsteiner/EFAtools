@@ -17,7 +17,9 @@
 #'  }
 #' @details The IDS-2, the two WJIV, the DOSPERT, and the NEO-PI-R contain all the above entries, while the four simulated datasets contain only paf_load, var_load, pro_load, and pro_phi.
 #'
-#' @source Grieder, S., & Steiner, M.D.(2020). Algorithmic Jingle Jungle: Limited Comparability of Implementations of Principal Axis Factoring and Promax Rotation in R psych Versus SPSS. Manuscript in preparation.
+#' @source Grieder, S., & Steiner, M.D. (2020). Algorithmic Jingle Jungle:
+#' A Comparison of Implementations of Principal Axis Factoring and Promax Rotation
+#'  in R and SPSS. Manuscript in Preparation.
 #' @source Wolff, H.G., & Preising, K. (2005). Exploring item and higher order factor structure with the schmid-leiman solution: Syntax codes for spss and sas. Behavior Research Methods, 37, 48–58. doi: 10.3758/BF03206397
 #' @source Grieder, S., & Grob, A. (2019). Exploratory factor analyses of the intelligence and development scales–2: Implications for theory and practice. Assessment. Advance online publication. doi:10.1177/10731911198450
 #' @source Grob, A., & Hagmann-von Arx, P. (2018). Intelligence and Development Scales--2 (IDS-2). Intelligenz- und Entwicklungsskalen für Kinder und Jugendliche.
