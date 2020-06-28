@@ -392,15 +392,15 @@ arma::mat parallel_sim(const int n_datasets, const int n_vars, const int N,
 //
 // }
 
-//' Summarise the raw data from the \link{parallel_sim}
+//' Summarise the raw data from the .parallel_sim
 //'
 //' Function called from within PARALLEL so usually no call to this is needed by the user.
 //' Provides a C++ implementation to aggregate the eigenvalues from the simulations
-//' performed using \link{parallel_sim}.
+//' performed using .parallel_sim.
 //'
-//' @param eig_vals matrix. A matrix as returned by \link{parallel_sim}.
+//' @param eig_vals matrix. A matrix as returned by .parallel_sim.
 //' @param percent numeric. A vector of percentiles for which the eigenvalues should be returned.
-//' @param n_datasets integer. The number of datasets simulated in \link{parallel_sim}.
+//' @param n_datasets integer. The number of datasets simulated in .parallel_sim.
 //' @param n_vars numeric. The number of variables / indicators per dataset.
 //' @export
 // [[Rcpp::export(.parallel_summarise)]]
