@@ -15,10 +15,9 @@ plot.CD <- function(x, ...) {
 
   graphics::plot.new()
   graphics::plot.window(xlim = c(1, x_len),
-                        ylim = c(0, max(ys) + max(ys) * .25))
+                        ylim = c(0, max(pretty(ys))))
   graphics::axis(1, 1:x_len)
-  graphics::axis(2, round(seq(0, max(ys) + .25,
-                              round(diff(c(0, max(ys)) + max(ys) * .25) / 6, 2)), 2),
+  graphics::axis(2, pretty(c(0, ys)),
                  las = 1)
 
   graphics::mtext("N Factors", side = 1, line = 3, cex = 1.5, padj =-.5)

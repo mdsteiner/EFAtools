@@ -51,17 +51,19 @@ plot.HULL <- function(x, ...) {
   # nfac_suggested = number of factors suggested by HULL with given fit index
 
   df <- sol$df
+  p_df <- pretty(df)
+
   fit_ind <- sol[[gof]]
+  p_fit_ind <- pretty(c(0, fit_ind, max(fit_ind) * 1.25))
   st <- sol$st
   nfac_tested <- sol$nfactors
 
   graphics::plot.new()
-  graphics::plot.window(xlim = c(min(df) - min(df) / 100 * 10,
-                                 max(df) + max(df) / 100 * 10),
-                        ylim = c(0, round(max(fit_ind), 1) + .2), xaxs = "i")
-  graphics::axis(1, c(0, df, round(max(df) + max(df) / 100 * 10)))
-  graphics::axis(2, seq(0, round(max(fit_ind), 1) + .1,
-                        round((round(max(fit_ind), 1) + .1) / 6, 1)), las = 1)
+  graphics::plot.window(xlim = c(min(p_df), max(p_df)),
+                        ylim = c(min(p_fit_ind), max(p_fit_ind)),
+                        xaxs = "i")
+  graphics::axis(1, p_df)
+  graphics::axis(2, p_fit_ind, las = 1)
   graphics::mtext(expression(italic(df)), side = 1, line = 3, cex = 1.5, padj =-.5)
   graphics::mtext(expression(italic(f)), side = 2, line = 3, cex = 1.5, padj =.5)
   graphics::title(paste("Hull Method with", method, "estimation and", gof))

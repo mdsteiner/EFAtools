@@ -15,18 +15,15 @@
 plot.EKC <- function(x, ...) {
 
   eigvls <- x$eigenvalues
+  p_eigvls <- pretty(eigvls)
   x_len <- length(eigvls)
 
   graphics::plot.new()
   graphics::plot.window(xlim = c(1, x_len),
-                        ylim = c(min(eigvls) - .2,
-                                 max(eigvls) + .5))
+                        ylim = c(min(p_eigvls),
+                                 max(p_eigvls)))
   graphics::axis(1, 1:x_len)
-  graphics::axis(2, round(seq(min(eigvls) - .2,
-                              max(eigvls) + .5,
-                              round(diff(c(min(eigvls) - .2,
-                                           max(eigvls)) + .5) / 6, 1)), 1),
-                 las = 1)
+  graphics::axis(2, p_eigvls, las = 1)
 
   graphics::mtext("Indicators", side = 1, line = 3, cex = 1.5, padj =-.5)
   graphics::mtext("Eigenvalues", side = 2, line = 3, cex = 1.5, padj =.5)

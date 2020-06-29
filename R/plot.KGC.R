@@ -49,16 +49,13 @@ plot.KGC <- function(x, ...) {
 
 x_len <- length(eigen)
 
+p_eigen <- pretty(c(min(eigen) * .9, eigen, max(eigen) * 1.1))
+
 graphics::plot.new()
 graphics::plot.window(xlim = c(1, x_len),
-                      ylim = c(min(eigen) - .2,
-                               max(eigen) + .5))
+                      ylim = c(min(p_eigen), max(p_eigen)))
 graphics::axis(1, 1:x_len)
-graphics::axis(2, round(seq(min(eigen) - .2,
-                            max(eigen) + .5,
-                            round(diff(c(min(eigen) - .2,
-                                         max(eigen)) + .5) / 6, 1)), 1),
-               las = 1)
+graphics::axis(2, p_eigen, las = 1)
 
 graphics::mtext("Indicators", side = 1, line = 3, cex = 1)
 graphics::mtext("Eigenvalues", side = 2, line = 3, cex = 1, padj =.5)

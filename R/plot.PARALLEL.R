@@ -59,16 +59,13 @@ plot.PARALLEL <- function(x, ...) {
                             decision_rule = decision_rule, percent = percent,
                             eigen_type){
 
+  p_eigen <- pretty(c(min(eigenvalues) * .9, eigenvalues,
+                      max(eigenvalues) * 1.15))
   graphics::plot.new()
   graphics::plot.window(xlim = c(1, n_vars),
-                        ylim = c(min(eigenvalues) - .2,
-                                 max(eigenvalues) + .2))
+                        ylim = c(min(p_eigen), max(p_eigen)))
   graphics::axis(1, 1:n_vars)
-  graphics::axis(2, round(seq(min(eigenvalues) - .2,
-                              max(eigenvalues) + .2,
-                              round(diff(c(min(eigenvalues) - .2,
-                                           max(eigenvalues)) + .2) / 6, 1)), 1),
-                 las = 1)
+  graphics::axis(2, p_eigen, las = 1)
   graphics::mtext("Indicators", side = 1, line = 3, cex = 1.5, padj =-.5)
   graphics::mtext("Eigenvalues", side = 2, line = 3, cex = 1.5, padj =.5)
 
