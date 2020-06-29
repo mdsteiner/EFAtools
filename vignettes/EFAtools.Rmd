@@ -168,6 +168,29 @@ COMPARE(
 )
 ```
 
+### Performance
+
+To improve performance of the iterative procedures (currently the parallel analysis, and the PAF, ML, and ULS methods) we implemented some of them in C++. For example, the following code compares the EFAtools parallel analysis with the corresponding one implemented in the psych package:
+
+```{r message=FALSE}
+microbenchmark::microbenchmark(
+  PARALLEL(GRiPS_raw, eigen_type = "SMC", n_datasets = 100),
+  psych::fa.parallel(GRiPS_raw, SMC = TRUE, plot = FALSE, n.iter = 100)
+)
+```
+
+
+Moreover, the following code compares the PAF implementation (of type "psych") of the EFAtools package with the one from the psych package: 
+
+```{r message=FALSE}
+microbenchmark::microbenchmark(
+  EFA(DOSPERT_raw, 6),
+  psych::fa(DOSPERT_raw, 6, rotate = "none", fm = "pa")
+)
+```
+
+While these differences are not large, they grow larger the more iterations the procedures need, which is usually the case if solutions are more tricky to find. Especially for simulations this might come in handy. For example, in one simulation analysis we ran over 10,000,000 EFAs, thus a difference of about 25 milliseconds leads to a difference in runtime of almost three days.
+
 ## Exploratory Factor Analysis: Schmid-Leiman transformation and McDonald's Omegas
 
 For the Schmid-Leiman transformation and computation of omegas, we will use PAF and promax rotation:
