@@ -68,6 +68,9 @@ The \code{KMO} function can also be called together with the
 \code{\link{BARTLETT}} function and with factor retention criteria in the
  \code{\link{N_FACTORS}} function.
 }
+\examples{
+KMO(test_models$baseline$cormat)
+}
 \seealso{
 \code{\link{BARTLETT}} for another measure to determine
 suitability for factor analysis.

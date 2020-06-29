@@ -41,8 +41,11 @@
 
   colnames(vars_accounted) <- colnames(L)
 
+  Fm <- orig_R - (L %*% t(L))
+  Fm <- sum(Fm[upper.tri(Fm)] ^ 2)
+
   # compute fit indices
-  fit_ind <- .gof(L, orig_R, N, "ULS", uls$res$value)
+  fit_ind <- .gof(L, orig_R, N, "ULS", Fm)
 
 
   # create the output object

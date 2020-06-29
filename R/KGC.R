@@ -82,9 +82,8 @@
 #'
 #' @export
 #'
-#' @example
+#' @examples
 #' KGC(test_models$baseline$cormat, eigen_type = c("PCA", "SMC"))
-#'
 KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
                 use = c("pairwise.complete.obs", "all.obs", "complete.obs",
                         "everything", "na.or.complete"),

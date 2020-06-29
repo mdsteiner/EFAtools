@@ -98,6 +98,9 @@ see Auerswald & Moshagen, 2019).
 The \code{KGC} function can also be called together with other factor
 retention criteria in the \code{\link{N_FACTORS}} function.
 }
+\examples{
+KGC(test_models$baseline$cormat, eigen_type = c("PCA", "SMC"))
+}
 \seealso{
 Other factor retention criteria: \code{\link{CD}}, \code{\link{EKC}},
 \code{\link{HULL}}, \code{\link{PARALLEL}}, \code{\link{SMT}}

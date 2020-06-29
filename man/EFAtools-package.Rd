@@ -6,7 +6,7 @@
 \alias{EFAtools-package}
 \title{EFAtools: Fast and flexible implementations of exploratory factor analysis tools}
 \description{
-Has functions to implement an exploratory factor analysis with principal axis factoring, promax rotation, Schmid Leiman transformation and omega calculation. The functions can return results as obtained by R psych and SPSS. This can be used to investigate where the implementations differ.
+The EFAtools package provides functions to perform exploratory factor analysis (EFA) procedures and compare their solutions. The goal is to provide state-of-the-art factor retention methods and a high degree of flexibility in the EFA procedures. This way, implementations from R psych and SPSS can be compared. Moreover, functions for Schmid-Leiman transformation, and computation of omegas are provided. To speed up the analyses, some of the iterative procedures like principal axis factoring (PAF) are implementded in C++.
 }
 \author{
 \strong{Maintainer}: Markus Steiner \email{markus.d.steiner@gmail.com}

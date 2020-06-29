@@ -63,7 +63,7 @@
 #'   the above-mentioned factor retention criteria.
 #' @export
 #'
-#' @example
+#' @examples
 #' EKC(test_models$baseline$cormat, N = 500)
 EKC <- function(x, N = NA,
                 use = c("pairwise.complete.obs", "all.obs",

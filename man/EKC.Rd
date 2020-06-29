@@ -75,6 +75,9 @@ The Kaiser-Guttman criterion was defined with the intend that a factor
  The \code{EKC} function can also be called together with other factor
   retention criteria in the \code{\link{N_FACTORS}} function.
 }
+\examples{
+EKC(test_models$baseline$cormat, N = 500)
+}
 \seealso{
 Other factor retention criteria: \code{\link{CD}},
  \code{\link{HULL}}, \code{\link{KGC}}, \code{\link{PARALLEL}},

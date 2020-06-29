@@ -57,7 +57,7 @@
 #' \code{\link{N_FACTORS}} as a wrapper function for this function
 #' \code{\link{BARTLETT}} and several factor retention criteria.
 #'
-#' @example
+#' @examples
 #' KMO(test_models$baseline$cormat)
 KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
                            "everything", "na.or.complete"),

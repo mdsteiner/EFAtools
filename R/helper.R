@@ -354,7 +354,6 @@
       # formula 12.6 from Kline 2015; Principles and practices of...
       RMSEA <- sqrt(max(0, chi - df) / (df * N - 1))
 
-
     p_chi <- function(x, val, df, goal){goal - stats::pchisq(val, df, ncp = x)}
 
     if (stats::pchisq(chi, df = df, ncp = 0) >= .95) {
