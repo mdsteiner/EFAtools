@@ -1,6 +1,6 @@
 #' Compare two vectors or matrices (communalities or loadings)
 #'
-#' The functions takes two objects of the same dimensions containing numeric
+#' The function takes two objects of the same dimensions containing numeric
 #' information (loadings or communalities) and returns a list of class COMPARE
 #' containing summary information of the differences of the objects.
 #'
@@ -15,10 +15,10 @@
 #' @param corres logical. Whether factor correspondences should be compared if a
 #'  matrix is entered.
 #' @param thresh numeric. The threshold to classify a pattern coefficient as substantial. Default is .3.
-#' @param digits numeric. Number of decimals to print in the output (default is 4).
+#' @param digits numeric. Number of decimals to print in the output. Default is 4.
 #' @param m_red numeric. Number above which the mean and median should be printed
 #'  in red (i.e., if .001 is used, the mean will be in red if it is larger than
-#'  .001, otherwise it will be displayed in green. Default is .001).
+#'  .001, otherwise it will be displayed in green.) Default is .001.
 #' @param range_red numeric. Number above which the min and max should be printed
 #'  in red (i.e., if .001 is used, min and max will be in red if the max is larger
 #'   than .001, otherwise it will be displayed in green. Default is .001). Note that
@@ -27,9 +27,9 @@
 #' @param round_red  numeric. Number above which the max decimals to round to where
 #' all corresponding elements of x and y are still equal are displayed in red
 #' (i.e., if 3 is used, the number will be in red if it is smaller than
-#'  3, otherwise it will be displayed in green. Default is 3).
+#'  3, otherwise it will be displayed in green). Default is 3.
 #' @param print_diff logical. Whether the difference vector or matrix should be
-#'  printed or not (default is TRUE).
+#'  printed or not. Default is TRUE.
 #' @param na.rm logical. Whether NAs should be removed in the mean, median, min,
 #'  and max functions. Default is FALSE.
 #' @param x_labels character. A vector of length two containing identifying
@@ -38,7 +38,7 @@
 #' @param plot logical. If TRUE (default), a plot illustrating the differences
 #'  will be shown.
 #' @param plot_red numeric. Threshold above which to plot the absolute differences
-#'  in red (default is .001).
+#'  in red. Default is .001.
 #'
 #' @return A list of class COMPARE containing summary statistics on the differences
 #'  of x and y.
@@ -53,12 +53,12 @@
 #'  normal double, max_dec will be three.}
 #' \item{are_equal}{The maximal number of decimals to which all elements of x and y
 #'  are equal.}
-#' \item{diff_corres}{The number of differing variable to factor correspondences
+#' \item{diff_corres}{The number of differing variable-to-factor correspondences
 #'  between x and y, when only the highest loading is considered.}
-#' \item{diff_corres_cross}{The number of differing variable to factor correspondences
+#' \item{diff_corres_cross}{The number of differing variable-to-factor correspondences
 #'  between x and y when all loadings \code{>= thresh} are considered.}
 #' \item{g}{The root mean squared distance (RMSE) between x and y.}
-#' \item{settings}{List of settings needed for the print method print.COMPARE.}
+#' \item{settings}{List of the settings used.}
 #'
 #' @export
 #'

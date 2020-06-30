@@ -1,4 +1,4 @@
-#' Function to perform exploratory factor analyses (EFA)
+#' Exploratory factor analysis (EFA)
 #'
 #' This function does an EFA with either \code{PAF}, \code{ML},
 #' or \code{ULS} with or without subsequent rotation.
@@ -39,13 +39,12 @@
 #' in \code{PAF}. "smc" will use squared multiple correlations, "mac" will use
 #' maximum absolute correlations, "unity" will use 1s (see details).
 #' Default is \code{NULL}.
-#' @param criterion numeric. The convergence criterion used in PAF.
+#' @param criterion numeric. The convergence criterion used for PAF.
 #' If the change in communalities from one iteration to the next is smaller than
-#' this criterion the solution is accepted and the procedure ends. Details
-#' depend on criterion_type (see PAF documentation).
+#' this criterion the solution is accepted and the procedure ends.
 #' Default is \code{NULL}.
-#' @param criterion_type character. Type of convergence criterion used in
-#' \code{PAF}. "max_individual" selects the maximum change in any of the
+#' @param criterion_type character. Type of convergence criterion used for
+#' PAF. "max_individual" selects the maximum change in any of the
 #' communalities from one iteration to the next and tests it against the
 #' specified criterion. This is also used by SPSS. "sums" takes the difference of
 #' the sum of all communalities in one iteration and the sum of all communalities
@@ -62,9 +61,10 @@
 #' Default is "pearson".
 #' @param k numeric. Either the power used for computing the target matrix P in
 #' the promax rotation or the number of 'close to zero loadings' for the simplimax
-#' rotation (see \code{\link[GPArotation:GPFoblq]{GPArotation::GPFoblq}}. If left to
-#' \code{NULL} (default), 3 is used for promax and \code{nrow(L)}, where
-#' L is the matrix of unrotated loadings, is used for simplimax.
+#' rotation (see \code{\link[GPArotation:GPFoblq]{GPArotation::GPFoblq}}). If left to
+#' \code{NULL} (default), the value for promax depends on the specified type.
+#' For simplimax, \code{nrow(L)}, where L is the matrix of unrotated loadings,
+#' is used by default.
 #' @param kaiser logical. If \code{TRUE}, kaiser normalization is
 #' performed before the specified rotation. Default is \code{TRUE}.
 #' @param P_type character. This specifies how the target
@@ -74,7 +74,7 @@
 #' normalized target matrix as used in SPSS. Default is \code{NULL}.
 #' @param precision numeric. The tolerance for stopping in the rotation
 #' procecdure. This is passed to the "eps" argument of the
-#' \code{\link[stats:varimax]{stats::varimax}} and the GPArotation functions.
+#' \code{\link[stats:varimax]{stats::varimax}} and the \code{GPArotation} functions.
 #' If left \code{NULL} (default), the precision is set according to the specified
 #' \code{type} for varimax and promax rotation or is set to 10^-5 for all other
 #' rotations.
@@ -101,16 +101,20 @@
 #' for these functions are detailed below.
 #'
 #' For PAF, the values of \code{init_comm}, \code{criterion}, \code{criterion_type},
-#' \code{abs_eigen} depend on the \code{type} argument.
+#' and \code{abs_eigen} depend on the \code{type} argument.
+#'
 #' \code{type = "EFAtools"} will use the following argument specification:
 #' \code{init_comm = "mac", criterion = .001, criterion_type = "sums",
 #' abs_eigen = TRUE}.
+#'
 #' \code{type = "psych"} will use the following argument specification:
 #' \code{init_comm = "smc", criterion = .001, criterion_type = "sums",
 #' abs_eigen = FALSE}.
+#'
 #' \code{type = "SPSS"} will use the following argument specification:
 #' \code{init_comm = "smc", criterion = .001, criterion_type = "max_individual",
 #' abs_eigen = TRUE}.
+#'
 #' If SMC's fail, SPSS takes "mac". However, as SPSS takes absolute eigenvalues,
 #' this is hardly ever the case. Psych, on the other hand, takes "unity" if SMCs
 #' fail. The EFAtools type setting combination was the best in terms of accuracy
@@ -120,30 +124,36 @@
 #'
 #' For varimax, the values of \code{precision} and \code{order_type} depend on
 #' the \code{type} argument.
+#'
 #' \code{type = "EFAtools"} will use the following argument specification:
-#' \code{precision = 1e-10, order_type = "eigen"}.
+#' \code{precision = 1e-5, order_type = "eigen"}.
+#'
 #' \code{type = "psych"} will use the following argument specification:
 #' \code{precision = 1e-5, order_type = "eigen"}.
+#'
 #' \code{type = "SPSS"} will use the following argument specification:
 #' \code{precision = 1e-10, order_type = "ss_factors"}.
 #'
 #' For promax, the values of \code{P_type}, \code{precision},
 #' \code{order_type}, and \code{k} depend on the \code{type} argument.
+#'
 #' \code{type = "EFAtools"} will use the following argument specification:
 #' \code{P_type = "unnorm", precision = 1e-5, order_type = "eigen", k = 3}.
+#'
 #' \code{type = "psych"} will use the following argument specification:
 #' \code{P_type = "unnorm", precision = 1e-5, order_type = "eigen", k = 4}.
+#'
 #' \code{type = "SPSS"} will use the following argument specification:
 #' \code{P_type = "norm", precision = 1e-10, order_type = "ss_factors", k = 4}.
 #'
 #' The \code{P_type} argument can take two values, "unnorm" and "norm". It controls
 #' which formula is used to compute the target matrix P in the promax rotation.
 #' "unnorm" uses the formula from Hendrickson and White (1964), specifically:
-#' \code{P <- abs(A^(k + 1)) / A},
+#' \code{P = abs(A^(k + 1)) / A},
 #' where A is the unnormalized matrix containing varimax rotated loadings.
 #' "SPSS" uses the normalized varimax rotated loadings. Specifically it used the
 #' following formula, which can be found in the SPSS 23 Algorithms manual:
-#' \code{P <- abs(A / sqrt(rowSums(A^2))) ^(k + 1) * (sqrt(rowSums(A^2)) / A)}
+#' \code{P = abs(A / sqrt(rowSums(A^2))) ^(k + 1) * (sqrt(rowSums(A^2)) / A)}.
 #' As for PAF, the EFAtools type setting combination for promax was the best
 #' compared to the other setting combinations tested in simulation studies in
 #' Grieder & Steiner (2020).
@@ -152,8 +162,8 @@
 #' only controls the \code{order_type} argument with the same values as stated
 #' above for the varimax and promax rotations. For these other rotations, the
 #' \code{GPArotation} package is needed. Additional arguments can also be
-#' specified and will be passed to the GPArotation function (e.g., maxit to
-#' change the maximum number of iterations for the rotation procedure).
+#' specified and will be passed to the respective \code{GPArotation} function
+#' (e.g., maxit to change the maximum number of iterations for the rotation procedure).
 #'
 #' The \code{type} argument has no effect on ULS and ML. For ULS, no additional
 #' arguments are needed. For ML, an additional argument
@@ -180,7 +190,7 @@
 #' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings. Based on the unrotated loadings.}
 #' \item{fit_indices}{For ML and ULS: Fit indices derived from the unrotated
 #' factor loadings: Chi Square, degrees of freedom (df), Comparative Fit Index
-#' (CFI), Root Mean Square Error of Approximation (RMSEA), including its 90%
+#' (CFI), Root Mean Square Error of Approximation (RMSEA), including its 90 \%
 #' confidence interval, and the common part accounted for (CAF) index as
 #' proposed by Lorenzo-Seva, Timmerman, & Kiers (2011). For PAF, only the CAF and
 #' dfs are returned.}
@@ -192,7 +202,7 @@
 #' \item{vars_accounted_rot}{Matrix of explained variances and sums of squared
 #' loadings. Based on rotated loadings and, for oblique rotations, the factor
 #' intercorrelations.}
-#' \item{settings}{list. The settings (arguments) used in the EFA.}
+#' \item{settings}{A list of the settings used.}
 #'
 #' @source Grieder, S., & Steiner, M.D. (2020). Algorithmic Jingle Jungle:
 #' A Comparison of Implementations of Principal Axis Factoring and Promax Rotation

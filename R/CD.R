@@ -8,7 +8,8 @@
 #' @param n_factors_max numeric. The maximum number of factors to test against.
 #'  Larger numbers will increase the duration the procedure takes, but test more
 #'  possible solutions. Maximum possible is number of variables / 2. Default is
-#'  NA. If not specified, number of variables / 2 is used.
+#'  NA. If not specified, the maximum number of factors for which the model is
+#'  still over-identified (df > 0) is used.
 #' @param N_pop numeric. Size of finite populations of comparison data. Default
 #'  is 10000.
 #' @param N_samples numeric. Number of samples drawn from each population.
@@ -41,10 +42,10 @@
 #'
 #' @return A list of class CD containing
 #'
-#' \item{n_factors}{The number of factors to retain according to the empirical Kaiser criterion.}
+#' \item{n_factors}{The number of factors to retain according to comparison data results.}
 #' \item{eigenvalues}{A vector containing the eigenvalues of the entered data.}
 #' \item{RMSE_eigenvalues}{A matrix containing the RMSEs between the eigenvalues of the generated data and those of the entered data.}
-#' \item{settings}{A list with the settings used.}
+#' \item{settings}{A list of the settings used.}
 #'
 #' @source Auerswald, M., & Moshagen, M. (2019). How to determine the number of
 #' factors to retain in exploratory factor analysis: A comparison of extraction

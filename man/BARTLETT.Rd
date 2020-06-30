@@ -34,6 +34,7 @@ A list containing
 \item{chisq}{The chi square statistic.}
 \item{p_value}{The p value of the chi square statistic.}
 \item{df}{The degrees of freedom for the chi square statistic.}
+\item{settings}{A list of the settings used.}
 }
 \description{
 This function tests whether a correlation matrix is significantly different
@@ -52,13 +53,13 @@ where \eqn{det(R)} is the determinant of the correlation matrix, \eqn{N} is
 the sample size, and \eqn{p} is the number of variables.
 
 This tests requires multivariate normality. If this condition is not met,
-the Kaiser-Meyer-Olkin criterion (\code{\link[EFAtools]{KMO}}))
+the Kaiser-Meyer-Olkin criterion (\code{\link[EFAtools]{KMO}})
 can still be used.
 
 This function was heavily influenced by the \code{\link[psych:cortest.bartlett]{psych::cortest.bartlett}} function from the psych package.
 
 The \code{BARTLETT} function can also be called together with the
- \code{\link[EFAtools]{KMO}} function and with factor retention criteria
+ (\code{\link[EFAtools]{KMO}}) function and with factor retention criteria
  in the \code{\link{N_FACTORS}} function.
 }
 \examples{

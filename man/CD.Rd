@@ -33,7 +33,8 @@ CD(
 \item{n_factors_max}{numeric. The maximum number of factors to test against.
 Larger numbers will increase the duration the procedure takes, but test more
 possible solutions. Maximum possible is number of variables / 2. Default is
-NA. If not specified, number of variables / 2 is used.}
+NA. If not specified, the maximum number of factors for which the model is
+still over-identified (df > 0) is used.}
 
 \item{N_pop}{numeric. Size of finite populations of comparison data. Default
 is 10000.}
@@ -56,10 +57,10 @@ which the iterative PAF procedure is halted. Default is 50.}
 \value{
 A list of class CD containing
 
-\item{n_factors}{The number of factors to retain according to the empirical Kaiser criterion.}
+\item{n_factors}{The number of factors to retain according to comparison data results.}
 \item{eigenvalues}{A vector containing the eigenvalues of the entered data.}
 \item{RMSE_eigenvalues}{A matrix containing the RMSEs between the eigenvalues of the generated data and those of the entered data.}
-\item{settings}{A list with the settings used.}
+\item{settings}{A list of the settings used.}
 }
 \description{
 Factor retention method introduced by Ruscio and Roche (2012). The code was
