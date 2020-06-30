@@ -13,9 +13,16 @@ install.packages("devtools")
 devtools::install_github("mdsteiner/EFAtools")
 ```
 
+To also build the vignette, use:
+
+``` r
+install.packages("devtools")
+devtools::install_github("mdsteiner/EFAtools", build_vignettes = TRUE)
+```
+
 ## Example
 
-Here are a few examples on how to perform the analyses with the different types and how to compare the results using the `compare` function.
+Here are a few examples on how to perform the analyses with the different types and how to compare the results using the `COMPARE` function.
 
 ``` r
 # Run all possible factor retention methods
@@ -32,7 +39,7 @@ EFA_psych <- EFA(test_models$baseline$cormat, n_factors = 3, type = "psych",
                   rotation = "promax")
 
 # compare the type psych and type SPSS implementations
-compare(EFA_SPSS$rot_loadings, EFA_psych$rot_loadings)
+COMPARE(EFA_SPSS$rot_loadings, EFA_psych$rot_loadings)
 
 # Perform a Schmid-Leiman transformation
 SL <- SL(EFA_psych)
@@ -41,3 +48,10 @@ SL <- SL(EFA_psych)
 OMEGA(SL, factor_corres = rep(c(3, 2, 1), each = 6))
 ```
 
+## Getting Started
+
+Please check out the package vignette by running `vignette("EFAtools", package = "EFAtools")`. The vignette provides a high-level introduction into the functionalities of the package.
+
+## Contribute or Report Bugs
+
+If you want to contribute or find bugs, please open an issue on GitHub or email us...
