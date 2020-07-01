@@ -44,11 +44,11 @@ A list of class EKC containing
 \item{eigenvalues}{A vector containing the eigenvalues found on the correlation matrix of the entered data.}
 \item{n_factors}{The number of factors to retain according to the empirical Kaiser criterion.}
 \item{references}{The reference eigenvalues.}
-\item{settings}{A list with the settings (\code{N} and \code{use}) used.}
+\item{settings}{A list with the settings used.}
 }
 \description{
 The empirical Kaiser criterion incorporates random sampling variations of the
-eigenvalues the Kaiser-Guttman criterion (\code{\link{KGC}}; see Auerswald & Moshagen
+eigenvalues from the Kaiser-Guttman criterion (\code{\link{KGC}}; see Auerswald & Moshagen
 , 2019; Braeken & van Assen, 2017). The code is based on Auerswald and Moshagen
 (2019).
 }
