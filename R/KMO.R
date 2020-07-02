@@ -15,7 +15,7 @@
 #' @details Kaiser (1970) proposed this index, originally called measure of
 #' sampling adequacy (MSA), that indicates how near the inverted correlation
 #' matrix \eqn{R^{-1}} is to a diagonal matrix \eqn{S} to determine a given
-#' correlation matrix \eqn{R}'s suitability for factor analysis.
+#' correlation matrix's (\eqn{R}) suitability for factor analysis.
 #' The index is
 #' \deqn{KMO = \frac{\underset{i<j}{\sum\sum} r_{ij}^2}{\underset{i<j}{\sum\sum} r_{ij}^2 + \underset{i<j}{\sum\sum} q_{ij}^2}
 #' with \eqn{Q = SR^{-1}S} and S = \eqn{(diag R^{-1})^{-1/2}} where
@@ -28,7 +28,7 @@
 #' exceed .50 for a correlation matrix to be suitable for factor analysis.
 #'
 #' This function was heavily influenced by the \code{\link[psych:KMO]{psych::KMO}}
-#' function from the psych package.
+#' function.
 #'
 #' See also \code{\link{BARTLETT}} for another test of suitability for factor
 #' analysis.
@@ -40,7 +40,7 @@
 #' @return A list containing
 #' \item{KMO}{Overall KMO.}
 #' \item{KMO_i}{KMO for each variable.}
-#'
+#' \item{settings}{A list of the settings used.}
 #'
 #' @export
 #'
@@ -54,7 +54,7 @@
 #' @seealso \code{\link{BARTLETT}} for another measure to determine
 #' suitability for factor analysis.
 #'
-#' \code{\link{N_FACTORS}} as a wrapper function for this function
+#' \code{\link{N_FACTORS}} as a wrapper function for this function,
 #' \code{\link{BARTLETT}} and several factor retention criteria.
 #'
 #' @examples

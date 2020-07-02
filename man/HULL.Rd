@@ -21,17 +21,18 @@ HULL(
   cor_method = c("pearson", "spearman", "kendall"),
   n_datasets = 1000,
   percent = 95,
-  decision_rule = c("Means", "Percentile", "Crawford"),
+  decision_rule = c("means", "percentile", "crawford"),
   n_factors = 1,
   ...
 )
 }
 \arguments{
-\item{x}{matrix or data.frame. Correlation matrix or raw data.}
+\item{x}{matrix or data.frame. Dataframe or matrix of raw data or matrix with
+correlations.}
 
 \item{N}{numeric. Number of cases in the data. This is passed to \link{PARALLEL}.
 Only has to be specified if x is a correlation matrix, otherwise it is determined
-based on the dimensions of x..}
+based on the dimensions of x.}
 
 \item{n_fac_theor}{numeric. Theoretical number of factors to retain. The maximum
 of this number and the number of factors suggested by \link{PARALLEL} plus
@@ -69,9 +70,9 @@ This is passed to \code{\link{PARALLEL}}.}
 Default is 95. This is passed to \code{\link{PARALLEL}}.}
 
 \item{decision_rule}{character. Which rule to use to determine the number of
-factors to retain. Default is \code{"mean"}, which will use the average
-simulated eigenvalues. \code{"Percentile"}, uses the percentiles specified
-in percent. \code{"Crawford"} uses the 95th percentile for the first factor
+factors to retain. Default is \code{"means"}, which will use the average
+simulated eigenvalues. \code{"percentile"}, uses the percentiles specified
+in percent. \code{"crawford"} uses the 95th percentile for the first factor
 and the mean afterwards (based on Crawford et al, 2010). This is passed to \code{\link{PARALLEL}}.}
 
 \item{n_factors}{numeric. Number of factors to extract if  \code{"EFA"} is
@@ -122,7 +123,7 @@ The \link{PARALLEL} function and the principal axis factoring of the
    provide example code on how to enable parallel processing.
 
   Note that if \code{gof = "RMSEA"} is used, 1 - RMSEA is actually used to
-  compare the different solutions. Thus, the threshold of .05 is now .95. This
+  compare the different solutions. Thus, the threshold of .05 is then .95. This
   is necessary due to how the heuristic to locate the elbow of the hull works.
 
   The ML estimation method uses the \link[stats:factanal]{stats::factanal}

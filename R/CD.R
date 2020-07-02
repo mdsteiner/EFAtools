@@ -2,7 +2,7 @@
 #'
 #' Factor retention method introduced by Ruscio and Roche (2012). The code was
 #' adapted from the CD code by Auerswald and Mooshagen (2017) available at
-#' https://osf.io/x5cz2/?view_only=d03efba1fd0f4c849a87db82e6705668
+#' \url{https://osf.io/x5cz2/?view_only=d03efba1fd0f4c849a87db82e6705668}
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data.
 #' @param n_factors_max numeric. The maximum number of factors to test against.

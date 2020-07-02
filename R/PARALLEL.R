@@ -28,9 +28,9 @@
 #' @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}
 #' Default is "pearson".
 #' @param decision_rule character. Which rule to use to determine the number of
-#'  factors to retain. Default is \code{"mean"}, which will use the average
-#'  simulated eigenvalues. \code{"Percentile"}, uses the percentiles specified
-#'  in percent. \code{"Crawford"} uses the 95th percentile for the first factor
+#'  factors to retain. Default is \code{"means"}, which will use the average
+#'  simulated eigenvalues. \code{"percentile"}, uses the percentiles specified
+#'  in percent. \code{"crawford"} uses the 95th percentile for the first factor
 #'  and the mean afterwards (based on Crawford et al, 2010).
 #' @param n_factors numeric. Number of factors to extract if "EFA" is included in
 #' \code{eigen_type}. Default is 1.
@@ -61,7 +61,7 @@
 #'  factor structures it has been shown to underestimate the correct number of
 #'  factors. The reason for this is that a null model (uncorrelated variables)
 #'  is used as reference. However, when factors are highly correlated, the first
-#'  eigenvalue will relatively be much larger than the following ones, as
+#'  eigenvalue will be much larger compared to the following ones, as
 #'  later eigenvalues are conditional on the earlier ones in the sequence and thus
 #'  the shared variance is already accounted in the first eigenvalue (e.g.,
 #'  Braeken & van Assen, 2017).
@@ -70,12 +70,12 @@
 #'  retention criteria in the \code{\link{N_FACTORS}} function.
 #'
 #' @return A list of class PARALLEL containing the following objects
-#' \item{eigenvalues_PCA}{A matrix containing the eigenvalues of the real and the simulated data found with eigen_type = PCA}
-#' \item{eigenvalues_SMC}{A matrix containing the eigenvalues of the real and the simulated data found with eigen_type = SMC}
-#' \item{eigenvalues_EFA}{A matrix containing the eigenvalues of the real and the simulated data found with eigen_type = EFA}
-#' \item{n_fac_PCA}{The number of factors to retain according to the parallel procedurewith eigen_type = PCA.}
-#' \item{n_fac_SMC}{The number of factors to retain according to the parallel procedurewith eigen_type = SMC.}
-#' \item{n_fac_EFA}{The number of factors to retain according to the parallel procedurewith eigen_type = EFA.}
+#' \item{eigenvalues_PCA}{A matrix containing the eigenvalues of the real and the simulated data found with eigen_type = "PCA"}
+#' \item{eigenvalues_SMC}{A matrix containing the eigenvalues of the real and the simulated data found with eigen_type = "SMC"}
+#' \item{eigenvalues_EFA}{A matrix containing the eigenvalues of the real and the simulated data found with eigen_type = "EFA"}
+#' \item{n_fac_PCA}{The number of factors to retain according to the parallel procedure with eigen_type = "PCA".}
+#' \item{n_fac_SMC}{The number of factors to retain according to the parallel procedure with eigen_type = "SMC".}
+#' \item{n_fac_EFA}{The number of factors to retain according to the parallel procedure with eigen_type = "EFA".}
 #' \item{settings}{A list of control settings used in the print function.}
 #'
 #' @source Braeken, J., & van Assen, M. A. (2017). An empirical Kaiser criterion.
@@ -123,7 +123,7 @@ PARALLEL <- function(x = NULL,
                      use = c("pairwise.complete.obs", "all.obs", "complete.obs",
                              "everything", "na.or.complete"),
                      cor_method = c("pearson", "spearman", "kendall"),
-                     decision_rule = c("Means", "Percentile", "Crawford"),
+                     decision_rule = c("means", "percentile", "crawford"),
                      n_factors = 1,
                      ...) {
 
@@ -367,22 +367,22 @@ PARALLEL <- function(x = NULL,
 .determine_factors <- function(decision_rule, eigvals_real, results, percent){
 
 # determine the number of factors to retain
-if (decision_rule == "Crawford") {
+if (decision_rule == "crawford") {
   # n factors from resampling
   if ("95 Percentile" %in% colnames(results)) {
     crawford <- c(results[1, "95 Percentile"],
                   results[-1, "Means"])
     n_fac <- which(!(eigvals_real > crawford))[1] - 1
   } else {
-    warning(crayon::yellow$bold("!"), crayon::yellow(" decision_rule == 'Crawford' is specified, but 95 percentile was not used. Using Means instead. To use 'Crawford', make sure to specify percent = 95.\n"))
+    warning(crayon::yellow$bold("!"), crayon::yellow(" decision_rule == 'crawford' is specified, but 95 percentile was not used. Using means instead. To use 'crawford', make sure to specify percent = 95.\n"))
     n_fac <- which(!(eigvals_real > results[, "Means"]))[1] - 1
-    decision_rule <- "Means"
+    decision_rule <- "means"
   }
 
-} else if (decision_rule == "Means") {
+} else if (decision_rule == "means") {
   n_fac <- which(!(eigvals_real > results[, "Means"]))[1] - 1
 
-} else if (decision_rule == "Percentile") {
+} else if (decision_rule == "percentile") {
 
   for (perc_i in percent) {
     pp <- paste(perc_i, "Percentile")

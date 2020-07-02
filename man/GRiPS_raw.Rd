@@ -18,6 +18,6 @@ GRiPS_raw
 \description{
 A data.frame containing responses to the General Risk Propensity Scale (GRiPS, Zhang,
 Highhouse & Nye, 2018) of 810 participants of Study 1 of Steiner and Frey (2020).
-The original data can be accessed via https://osf.io/kxp8t/.
+The original data can be accessed via \url{https://osf.io/kxp8t/}.
 }
 \keyword{datasets}

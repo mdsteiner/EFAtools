@@ -2,7 +2,7 @@
 % Please edit documentation in R/N_FACTORS.R
 \name{N_FACTORS}
 \alias{N_FACTORS}
-\title{Various Factor Retention Methods}
+\title{Various Factor Retention Criteria}
 \usage{
 N_FACTORS(
   x,
@@ -11,11 +11,11 @@ N_FACTORS(
   N = NA,
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
     "na.or.complete"),
+  cor_method = c("pearson", "spearman", "kendall"),
   n_factors_max = NA,
   N_pop = 10000,
   N_samples = 500,
   alpha = 0.3,
-  cor_method = c("pearson", "spearman", "kendall"),
   max_iter_CD = 50,
   n_fac_theor = NA,
   method = c("PAF", "ULS", "ML"),
@@ -25,7 +25,7 @@ N_FACTORS(
   n_factors = 1,
   n_datasets = 1000,
   percent = 95,
-  decision_rule = c("Means", "Percentile", "Crawford"),
+  decision_rule = c("means", "percentile", "crawford"),
   ...
 )
 }
@@ -49,6 +49,9 @@ correlation matrix.}
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw
 data is given as input. Default is \code{"pairwise.complete.obs"}.}
 
+\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor}}
+Default is  \code{"pearson"}.}
+
 \item{n_factors_max}{numeric. Passed to \code{\link{CD}}.The maximum number
 of factors to test against.
 Larger numbers will increase the duration the procedure takes, but test more
@@ -64,9 +67,6 @@ from each population. Default is 500.}
 \item{alpha}{numeric. Passed to \code{\link{CD}}. The alpha level used to test
 the significance of the improvement added by an additional factor.
 Default is .30.}
-
-\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor}}
-Default is  \code{"pearson"}.}
 
 \item{max_iter_CD}{numeric. Passed to \code{\link{CD}}. The maximum number of
 iterations to perform after which the iterative PAF procedure is halted.
@@ -117,9 +117,9 @@ are possible here. Default is to use all inputs, that is, \code{c("PCA",
 
 \item{decision_rule}{character. Passed to \code{\link{PARALLEL}} (also within
 \code{\link{HULL}}). Which rule to use to determine the number of
- factors to retain. Default is \code{"mean"}, which will use the average
- simulated eigenvalues. \code{"Percentile"}, uses the percentiles specified
- in percent. \code{"Crawford"} uses the 95th percentile for the first factor
+ factors to retain. Default is \code{"means"}, which will use the average
+ simulated eigenvalues. \code{"percentile"}, uses the percentiles specified
+ in percent. \code{"crawford"} uses the 95th percentile for the first factor
  and the mean afterwards (based on Crawford et al, 2010).}
 
 \item{...}{Further arguments passed to \code{\link{EFA}} in
@@ -128,14 +128,13 @@ are possible here. Default is to use all inputs, that is, \code{c("PCA",
 \value{
 A list of class N_FACTORS containing
 \item{outputs}{A list with the outputs from \code{\link{BARTLETT}} and
- \code{\link[EFAtools]{KMO}} (if \code{suitability = TRUE}) and of the chosen
-  factor retention criteria.}
-\item{n_factors}{A named vector containing the suggested number of factors for
-all chosen factor retention criteria.}
+ \code{\link[EFAtools]{KMO}} and the factor retention criteria.}
+\item{n_factors}{A named vector containing the suggested number of factors from
+each factor retention criterion.}
 \item{settings}{A list of the settings used.}
 }
 \description{
-Among the most important decisions in exploratory factor analysis (EFA) is
+Among the most important decisions for an exploratory factor analysis (EFA) is
 the choice of the number of factors to retain. Several factor retention
 criteria have been developed for this. With this function, various factor
  retention criteria can be performed simultaneously. Additionally, the data
@@ -181,6 +180,7 @@ nfac_PCA <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC",
                       "HULL", "KGC", "PARALLEL", "SMT"), N = 500,
                       method = "ML", eigen_type_KGC_PA = "PCA")
 
+# Use raw data, such that CD can also be performed
 nfac_raw <- N_FACTORS(GRiPS_raw, method = "ML")
 
 }

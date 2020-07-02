@@ -2,9 +2,9 @@
 % Please edit documentation in R/OMEGA.R
 \name{OMEGA}
 \alias{OMEGA}
-\title{MacDonald's omega}
+\title{McDonald's omega}
 \source{
-McDonald, R. P. (1978). Generalizability in factorable domains:‘‘Domain
+McDonald, R. P. (1978). Generalizability in factorable domains: ‘‘Domain
 validity and generalizability’’. Educational and Psychological Measurement,
 38, 75–79.
 
@@ -38,8 +38,8 @@ OMEGA(
 }
 \arguments{
 \item{model}{class \code{\link{SL}}, class \code{\link{schmid}}, or class
-\code{lavaan} object. That is, an output object from \code{\link{SL}},
-from \code{\link[psych:schmid]{psych::schmid}}, or from a \code{lavaan}
+\code{lavaan} object. That is, an output object from \code{\link{SL}} or
+\code{\link[psych:schmid]{psych::schmid}}, or a \code{lavaan} fit object with a
 single factor or bifactor solution. If of class \code{lavaan},
 only \code{g_name} needs to be specified additionally. If of class
 \code{\link{SL}} or \code{\link{schmid}}, only the arguments \code{factor_corres}
@@ -78,7 +78,7 @@ This needs only be specified if \code{model} is left \code{NULL}.}
 \item{s_load}{matrix. A matrix of group factor loadings from an SL solution.
 This needs only be specified if \code{model} is left \code{NULL}.}
 
-\item{u2}{numeric. A vector of uniquenesses from an S-L solution. This needs
+\item{u2}{numeric. A vector of uniquenesses from an SL solution. This needs
 only be specified if \code{model} is left \code{NULL}.}
 
 \item{cormat}{matrix. A correlation matrix to be used when
@@ -126,19 +126,19 @@ This function finds omega total, omega hierarchical, and omega subscale
 from a Schmid-Leiman (SL) solution or lavaan single factor or bifactor
 solution. The SL-based omegas can either be found from a
 \code{\link[psych:schmid]{psych::schmid}}, \code{\link{SL}}, or,
-\code{lavaan} output, or, in a more flexible way, by leaving
+in a more flexible way, by leaving
 \code{model = NULL} and specifying additional arguments. By setting the
 \code{type} argument, results from \code{\link[psych:omega]{psych::omega}}
 can be reproduced.
 }
 \details{
-If \code{model} is a \code{lavaan} bifactor model, only the name
+If \code{model} is a \code{lavaan} bifactor solution, only the name
 of the general factor from the lavaan model needs to be specified additionally
 with the \code{g_name} argument. There is also the possibility to enter a
-\code{lavaan} single factor model. In this case, \code{g_name} is not
-needed. Finally, if a solution from a \code{lavaan} multiple group
+\code{lavaan} single factor solution In this case, \code{g_name} is not
+needed. Finally, if a solution (bifactor or single factor) from a \code{lavaan} multiple group
 analysis is entered, the omegas are computed for each group. The type argument
-is not evaluated if \code{model} is of classe \code{lavaan}.
+is not evaluated if \code{model} is of class \code{lavaan}.
 
 If \code{model} is of class \code{\link{SL}} or \code{\link[psych:schmid]{psych::schmid}} only the
 \code{type} and, depending on the type (see below), the \code{factor_corres}
@@ -162,7 +162,7 @@ is the determination of variable-to-factor correspondences. \code{type = "psych"
 reproduces the \code{\link[psych:omega]{psych::omega}} results, where
 variable-to-factor correspondences are found by taking the highest
 group factor loading for each variable as the relevant group factor loading.
-To do this, \code{factor_corres} should be left \code{NULL}.
+To do this, \code{factor_corres} must be left \code{NULL}.
 
 The calculation of the total variance (for the whole scale as well as the
 subscale composites) can also be controlled in this function using the
@@ -175,7 +175,7 @@ uniquenesses. This will only get comparable results to
 \code{variance = "correlation"} if no cross-loadings are present and simple
 structure is well-achieved in general with the SL solution (i.e., the
 uniquenesses should capture almost all of the variance not explained by the
-general and the variable's allocated group factor).
+general factor and the variable's allocated group factor).
 }
 \examples{
 \dontrun{

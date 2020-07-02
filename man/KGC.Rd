@@ -60,15 +60,16 @@ to change the extraction method (PAF is default).}
 \value{
 A list of class KGC containing
 
-\item{eigen_PCA}{A vector containing the eigenvalues found with PCA.}
-\item{eigen_SMC}{A vector containing the eigenvalues found with SMCs.}
-\item{eigen_EFA}{A vector containing the eigenvalues found with EFA.}
-\item{n_fac_PCA}{The number of factors to retain according to the Kaiser-
+\item{eigen_PCA}{ A vector containing the eigenvalues found with PCA.}
+\item{eigen_SMC}{ A vector containing the eigenvalues found with SMCs.}
+\item{eigen_EFA}{ A vector containing the eigenvalues found with EFA.}
+\item{n_fac_PCA}{ The number of factors to retain according to the Kaiser-
 Guttmann criterion with PCA eigenvalues type.}
-\item{n_fac_SMC}{The number of factors to retain according to the Kaiser-
+\item{n_fac_SMC}{ The number of factors to retain according to the Kaiser-
 Guttmann criterion with SMC eigenvalues type.}
-\item{n_fac_EFA}{The number of factors to retain according to the Kaiser-
+\item{n_fac_EFA}{ The number of factors to retain according to the Kaiser-
 Guttmann criterion with EFA eigenvalues type.}
+\item{settings}{A list of the settings used.}
 }
 \description{
 Probably the most popular factor retention criterion. Kaiser and Guttman suggested
@@ -78,7 +79,7 @@ This is why the criterion is also known as eigenvalues-greater-than-one rule.
 \details{
 Originally, the Kaiser-Guttman criterion was intended for the use
 with prinicpal components, hence with eigenvalues derived from the original
-correlation matrix. This can be done here be setting \code{eigen_type} to
+correlation matrix. This can be done here by setting \code{eigen_type} to
 "PCA". However, it is well-known that this criterion is often inaccurate and
 that it tends to overestimate the number of factors, especially for unidimensional
 or orthogonal factor structures (e.g., Zwick & Velicer, 1986).

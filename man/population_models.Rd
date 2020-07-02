@@ -73,7 +73,7 @@ de Winter, J.C.F., & Dodou, D. (2012). Factor recovery by principal axis factori
 population_models
 }
 \description{
-Pupulation factor models, some of which (baseline to case_11e) used for the
+Population factor models, some of which (baseline to case_11e) used for the
 simulation analyses reported in Grieder and Steiner (2019). All combinations
 of the pattern matrices and the factor
 intercorrelations were used in the simulations. Many models are based on cases
