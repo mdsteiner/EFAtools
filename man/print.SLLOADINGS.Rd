@@ -10,15 +10,12 @@
 \item{x}{class SLLOADINGS matrix.}
 
 \item{cutoff}{numeric. The number above which to print loadings in bold
-default is .2.}
+(default is .2).}
 
 \item{digits}{numeric. Passed to \code{\link[base]{round}}. Number of digits
 to round the loadings to (default is 3).}
 
 \item{...}{additional arguments passed to print}
-}
-\value{
-A string created using the crayon package
 }
 \description{
 Print SLLOADINGS object

@@ -18,10 +18,10 @@ Steiner, M., & Frey, R. (2020). Representative design in psychological assessmen
 UPPS_raw
 }
 \description{
-A data.frame containing responses to the UPPS personality scale (Whiteside &
+A dataframe containing responses to the UPPS personality scale (Whiteside &
 Lynam, 2005) of 645 participants of Study 2 of Steiner and Frey (2020). Each
 column are the ratings to one of 45 items to assess urgency, premeditation,
 perseverance, and sensation seeking. The original data can be accessed via
-https://osf.io/kxp8t/.
+\url{https://osf.io/kxp8t/}.
 }
 \keyword{datasets}

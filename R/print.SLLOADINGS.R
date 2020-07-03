@@ -2,12 +2,11 @@
 #'
 #' @param x class SLLOADINGS matrix.
 #' @param cutoff numeric. The number above which to print loadings in bold
-#'  default is .2.
+#'  (default is .2).
 #' @param digits numeric. Passed to \code{\link[base]{round}}. Number of digits
 #'  to round the loadings to (default is 3).
 #' @param ... additional arguments passed to print
 #'
-#' @return A string created using the crayon package
 #' @method print SLLOADINGS
 #' @export
 #'

@@ -7,7 +7,6 @@
 #'  to round the loadings to (default is 3).
 #' @param ... additional arguments passed to print
 #'
-#' @return A string created using the crayon package
 #' @method print LOADINGS
 #' @export
 #'

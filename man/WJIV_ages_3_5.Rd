@@ -3,9 +3,10 @@
 \docType{data}
 \name{WJIV_ages_3_5}
 \alias{WJIV_ages_3_5}
-\title{Woodcock Johnson IV, ages 3 to 5}
+\title{Woodcock Johnson IV: ages 3 to 5}
 \format{
-A list of 2 with elements "N" (scalar) and "cormat" (29 x 29 matrix of bivariate correlations). The correlation matrix contains the following variables:
+A list of 2 with elements "cormat" (29 x 29 matrix of bivariate correlations)
+and "N" (scalar). The correlation matrix contains the following variables:
 \describe{
   \item{ORLVOC}{(numeric) - Oral Vocabulary.}
   \item{VRBATN}{(numeric) - Verbal Attention.}
@@ -50,7 +51,7 @@ WJIV_ages_3_5
 }
 \description{
 A list containing the bivariate correlations (N = 435) of the 29
-intelligence subtests from the WJ IV for 20 to 39 years olds obtained from
+intelligence subtests from the WJ IV for 3- to 5-year-olds obtained from
 the WJ IV technical Manual (McGrew, LaForte, & Schrank, 2014).
 Tables are reproduced with permission from the publisher.
 }

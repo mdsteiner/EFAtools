@@ -7,9 +7,8 @@
 #' @param x data.frame or matrix. Dataframe or matrix of raw data.
 #' @param n_factors_max numeric. The maximum number of factors to test against.
 #'  Larger numbers will increase the duration the procedure takes, but test more
-#'  possible solutions. Maximum possible is number of variables / 2. Default is
-#'  NA. If not specified, the maximum number of factors for which the model is
-#'  still over-identified (df > 0) is used.
+#'  possible solutions. If left NA (default) the maximum number of factors for
+#'  which the model is still over-identified (df > 0) is used.
 #' @param N_pop numeric. Size of finite populations of comparison data. Default
 #'  is 10000.
 #' @param N_samples numeric. Number of samples drawn from each population.

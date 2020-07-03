@@ -1,4 +1,4 @@
-#' Woodcock Johnson IV, ages 6 to 8
+#' Woodcock Johnson IV: ages 6 to 8
 #'
 #' A list containing the bivariate correlations (N = 825) of the 47
 #' intelligence subtests from the WJ IV for 6- to 8-year-olds obtained from
@@ -6,7 +6,9 @@
 #' Tables are reproduced with permission from the publisher.
 #'
 #'
-#' @format A list of 2 with elements "N" (scalar) and "cormat" (47 x 47 matrix of bivariate correlations). The correlation matrix contains the following variables:
+#' @format A list of 2 with elements "cormat" (47 x 47 matrix of bivariate
+#' correlations) and "N". The correlation matrix contains the following
+#' variables:
 #' \describe{
 #'   \item{ORLVOC}{(numeric) - Oral Vocabulary.}
 #'   \item{NUMSER}{(numeric) - Number Series.}

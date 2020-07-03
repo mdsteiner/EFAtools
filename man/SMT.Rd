@@ -45,16 +45,17 @@ Default is "pearson".}
 }
 \value{
 A list of class SMT containing
-\item{nfac_chi}{The number of factors to retain according to the chi square.}
+\item{nfac_chi}{The number of factors to retain according to the significance
+of the chi square value.}
 \item{nfac_RMSEA}{The number of factors to retain according to the RMSEA lower
 bound}
 \item{nfac_AIC}{The number of factors to retain according to the AIC}
 \item{p_null}{The p-value for the null model (zero factors)}
 \item{ps_chi}{The p-values for EFA models with increasing numbers of factors,
-starting with 1 factor}¨
-\item{RMSEA_LB_null}{The lower bounds of the 90% confidence interval for the RMSEA
+starting with 1 factor}
+\item{RMSEA_LB_null}{The lower bounds of the 90\% confidence interval for the RMSEA
 for the null model (zero factors).}
-\item{RMSEA_LBs}{The lower bounds of the 90% confidence interval for the RMSEA
+\item{RMSEA_LBs}{The lower bounds of the 90\% confidence interval for the RMSEA
 for EFA models with increasing numbers of factors, starting with 1 factor}
 \item{AIC_null}{The AICs for the null model (zero factors)}
 \item{AICs}{The AICs for EFA models with increasing numbers of factors,
@@ -66,43 +67,40 @@ multiple
 EFAs with increasing numbers of factors are fitted and the number of factors
 for which the Chi Square value first becomes non-significant is taken as the
 suggested number of factors.
-}
-\details{
-Preacher, Zhang, Kim, & Mels (2013) suggested a similiar approach with the
-lower bound of the 90% confidence interval of the Root Mean Square Error of
+Preacher, Zhang, Kim, & Mels (2013) suggested a similar approach with the
+lower bound of the 90\% confidence interval of the Root Mean Square Error of
 Approximation (RMSEA; Browne & Cudeck, 1992; Steiger & Lind, 1980), and with
 the Akaike Information Criterion (AIC). For the RMSEA, the
 number of factors for which this lower bound first falls below .05 is the
 suggested number of factors to retain. For the AIC, it is the number of factors
 where the AIC is lowest.
-
-
+}
+\details{
 As a first step in the procedure, a maximum number of factors to extract is
-determined with min(nvar - 2, nvar / 2 + 2), where nvar is the number of
-variables or indicators.
+determined for which the model is still over-identified (df > 0).
 
 Then, EFAs with increasing numbers of factors from 1 to the maximum number are
 fitted with maximum likelihood estimation.
 
 For the SMT, first the significance of the chi
 square value for a model with 0 factors is determined. If this value is
-not significant, 0 factors are suggested to retain. If it is not significant,
+not significant, 0 factors are suggested to retain. If it is significant,
 a model with 1 factor is estimated and the significance of its chi square value
 is determined, and so on, until a non-significant result is obtained. The
 suggested number of factors is the number of factors for the model where the
 chi square value first becomes non-significant.
 
 Regarding the RMSEA, the suggested number of factors is the number of factors
-for the model where the lower bound of the 90% confidence interval of the
+for the model where the lower bound of the 90\% confidence interval of the
 RMSEA first falls below the .05 threshold.
 
 Regarding the AIC, the suggested number of factors is the number of factors
-for the model where the AIC is lowest.
+for the model with the lowest AIC.
 
 In comparison with other prominent factor retention criteria, SMT performed
 well at determining the number of factors to extract in EFA (Auerswald &
-Moshagen, 2019). The RMSEA lower bound performed well at determining the true
-number of factors as well, while the AIC performed well at determining the
+Moshagen, 2019). The RMSEA lower bound also performed well at determining the true
+number of factors, while the AIC performed well at determining the
 most generalizable model (Preacher, Zhang, Kim, & Mels, 2013).
 
 The \code{SMT} function can also be called together with other factor

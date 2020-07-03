@@ -17,9 +17,6 @@ to round the loadings to (default is 3).}
 
 \item{...}{additional arguments passed to print}
 }
-\value{
-A string created using the crayon package
-}
 \description{
 Print LOADINGS object
 }

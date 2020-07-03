@@ -1,11 +1,10 @@
 #' Four test models used in Grieder and Steiner (2020)
 #'
 #' Correlation matrices created from simulated data from four of the
-#' \code{population_models} cases, each with strong factor intercorrelations.
-#' These are used to compare the psych and SPSS implementations in Grieder and
-#' Steiner (2020) with the actual implementations. For details on the cases, see
-#' \link{population_models}.
-#'
+#' \code{\link{population_models}} cases, each with strong factor intercorrelations.
+#' These are used in Grieder & Steiner (2020) to compare the psych and SPSS
+#' implementations in this package with the actual implementations of the programs.
+#' For details on the cases, see \code{\link{population_models}}.
 #'
 #' @format A list of 4 lists "baseline", "case_1a", "case_6b", and"case_11b", each with the following elements.
 #' \describe{

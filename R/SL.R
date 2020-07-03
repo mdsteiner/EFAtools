@@ -3,11 +3,10 @@
 #' This function implements the Schmid-Leiman (SL) transformation
 #' (Schmid & Leiman, 1957). It takes the pattern coefficients and factor
 #' intercorrelations from an oblique factor solution as
-#' input and can reproduce the results from \code{\link[psych:schmid]{psych::schmid}},
-#' from the SPSS implementation from Wolff & Preising (2005). Only the type and
-#' method arguments have to be specified additional to the loadings and factor
-#' intercorrelations. Other arguments from \code{\link{EFA}} can be used to control
-#' the procedure to find the second order loadings more flexibly.
+#' input and can reproduce the results from \code{\link[psych:schmid]{psych::schmid}}
+#' and from the SPSS implementation from Wolff & Preising (2005). Other arguments
+#' from \code{\link{EFA}} can be used to control
+#' the procedure to find the second-order loadings more flexibly.
 #'
 #' @param x object of class \code{\link{EFA}} or class \code{\link[psych:fa]{psych::fa}} or
 #' matrix. If class \code{\link{EFA}} or class \code{\link[psych:fa]{psych::fa}},
@@ -17,12 +16,13 @@
 #' solution. Only needs to be specified if a pattern matrix is entered directly
 #' into \code{x}.
 #' @param type character. One of "EFAtools" (default), "psych", "SPSS", or "none".
-#' This is used to control the procedure of the second order factor analysis. See
+#' This is used to control the procedure of the second-order factor analysis. See
 #' \code{\link{EFA}} for details.
-#' @param method @param method character. One of "PAF", "ML", or "ULS" to use
+#' @param method character. One of "PAF", "ML", or "ULS" to use
 #' principal axis factoring, maximum likelihood, or unweighted least squares
-#' (also called minres), respectively, to find the second-order loadings.
-#' @param ... Arguments to be passed to \code{EFA}.
+#' (also called minres), respectively, used in \code{\link{EFA}} to find the second-order
+#' loadings.
+#' @param ... Arguments to be passed to \code{\link{EFA}}.
 #'
 #' @details
 #' The SL transformation (also called SL orthogonalization) is a procedure with
@@ -36,20 +36,20 @@
 #' hierarchical data structure based on factor intercorrelations explicit. One
 #' major advantage of SL transformation is that it enables variance
 #' partitioning between higher-order and first-order factors, including the
-#' calculation of McDonald's Omegas (see \code{\link{OMEGA}}).
+#' calculation of McDonald's omegas (see \code{\link{OMEGA}}).
 #'
 #' @return A list of class SL containing the following
 #' \item{orig_R}{Original correlation matrix.}
-#' \item{sl}{A matrix with g loadings, group factor loadings, communalities,
+#' \item{sl}{A matrix with general factor loadings, group factor loadings, communalities,
 #' and uniquenesses.}
 #' \item{L2}{Second-order factor loadings.}
-#' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings.}
+#' \item{vars_accounted}{A matrix of explained variances and sums of squared loadings.}
 #' \item{iter}{The number of iterations needed for convergence in EFA.}
-#' \item{settings}{list. The settings (arguments) used in EFA to get the second-
-#' order loadings.}
+#' \item{settings}{list. The settings (arguments) used in EFA to get the
+#' second-order loadings.}
 #'
 #' @source Schmid, J. & Leiman, J. M. (1957). The development of hierarchical
-#' factor solutions, 22(1), 53–61. doi:10.1007/BF02289209
+#' factor solutions. Psychometrika, 22(1), 53–61. doi:10.1007/BF02289209
 #' @source Wolff, H.-G., & Preising, K. (2005). Exploring item and higher order
 #' factor structure with the schmid-leiman solution: Syntax codes for spss and
 #' sas. Behavior Research Methods, 37 , 48–58. doi:10.3758/BF03206397

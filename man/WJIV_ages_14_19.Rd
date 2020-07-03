@@ -3,9 +3,10 @@
 \docType{data}
 \name{WJIV_ages_14_19}
 \alias{WJIV_ages_14_19}
-\title{Woodcock Johnson IV, ages 14 to 19}
+\title{Woodcock Johnson IV: ages 14 to 19}
 \format{
-A list of 2 with elements "N" (scalar) and "cormat" (47 x 47 matrix of bivariate correlations). The correlation matrix contains the following variables:
+A list of 2 with elements "cormat" (47 x 47 matrix of bivariate correlations)
+and "N" (scalar). The correlation matrix contains the following variables:
 \describe{
   \item{ORLVOC}{(numeric) - Oral Vocabulary.}
   \item{NUMSER}{(numeric) - Number Series.}

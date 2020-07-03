@@ -14,9 +14,10 @@ Fischhoff, B, Slovic, P, Lichtenstein, S, Read, S, and Combs, B. (1978). How saf
 RiskDimensions
 }
 \description{
-A list containing the sample size (N), and the bivariate correlations (cormat)
+A list containing the bivariate correlations (cormat)
 of the 9 dimensions on which participants in Fischhoff et al. (1978) rated
-different activities and technologies. This was then analysed together with ratings
-of the risks and benefits of these activities and technologies.
+different activities and technologies as well as the sample size (N). This was
+then analysed together with ratings of the risks and benefits of these
+activities and technologies.
 }
 \keyword{datasets}

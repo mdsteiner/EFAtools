@@ -32,9 +32,8 @@ CD(
 
 \item{n_factors_max}{numeric. The maximum number of factors to test against.
 Larger numbers will increase the duration the procedure takes, but test more
-possible solutions. Maximum possible is number of variables / 2. Default is
-NA. If not specified, the maximum number of factors for which the model is
-still over-identified (df > 0) is used.}
+possible solutions. If left NA (default) the maximum number of factors for
+which the model is still over-identified (df > 0) is used.}
 
 \item{N_pop}{numeric. Size of finite populations of comparison data. Default
 is 10000.}
