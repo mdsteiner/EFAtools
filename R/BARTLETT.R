@@ -16,7 +16,7 @@
 #'
 #' @details Bartlett (1951) proposed this statistic to determine a correlation
 #' matrix' suitability for factor analysis. The statistic is approximately
-#' chi square distributed with \eqn{df = \fraq{p(p - 1)}} and is given by
+#' chi square distributed with \eqn{df = \frac{p(p - 1)}{2}} and is given by
 #'
 #' \deqn{chi^2 = -log(det(R)) (N - 1 - (2 * p + 5)/6)}
 #'
