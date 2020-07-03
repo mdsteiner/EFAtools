@@ -1,3 +1,5 @@
 ^EFAtools\.Rproj$
 ^\.Rproj\.user$
 ^README\.Rmd$
+^cran-comments\.md$
+^\.travis\.yml$
