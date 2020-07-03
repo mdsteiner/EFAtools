@@ -29,7 +29,8 @@ Imports:
     future.apply,
     future,
     GPArotation,
-    checkmate
+    checkmate,
+    microbenchmark
 LinkingTo: 
     Rcpp, RcppArmadillo
 Suggests: 

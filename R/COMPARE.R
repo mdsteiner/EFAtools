@@ -85,7 +85,7 @@ COMPARE <- function(x,
                     na.rm = FALSE,
                     x_labels = c("x", "y"),
                     plot = TRUE,
-                    plot_red = .001)  {
+                    plot_red = .01)  {
 
   reorder <- match.arg(reorder)
   checkmate::assert_flag(corres)

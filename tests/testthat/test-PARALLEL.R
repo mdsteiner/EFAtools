@@ -82,8 +82,8 @@ test_that("errors are thrown correctly", {
   expect_message(PARALLEL(GRiPS_raw, eigen_type = "PCA"), " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n")
   expect_error(PARALLEL(test_models$baseline$cormat, eigen_type = "PCA"), '"N" was not set and could not be taken from data. Please specify N and try again.\n')
   expect_warning(PARALLEL(test_models$baseline$cormat, N = 500,
-                          eigen_type = "PCA", decision_rule = "Crawford",
-                          percent = 80), "decision_rule == 'Crawford' is specified, but 95 percentile was not used. Using Means instead. To use 'Crawford', make sure to specify percent = 95.\n")
+                          eigen_type = "PCA", decision_rule = "crawford",
+                          percent = 80), "decision_rule == 'crawford' is specified, but 95 percentile was not used. Using means instead. To use 'crawford', make sure to specify percent = 95.\n")
   expect_error(PARALLEL(dat_sing), " Correlation matrix is singular, parallel analysis is not possible.\n")
   expect_error(PARALLEL(cor_sing, N = 10), " Correlation matrix is singular, parallel analysis is not possible.\n")
 })
@@ -131,9 +131,9 @@ test_that("settings are returned correctly", {
   expect_equal(pa_raw$settings$cor_method, "pearson")
   expect_equal(pa_cor_pca$settings$cor_method, "pearson")
 
-  expect_equal(pa_cor$settings$decision_rule, "Means")
-  expect_equal(pa_raw$settings$decision_rule, "Means")
-  expect_equal(pa_cor_pca$settings$decision_rule, "Means")
+  expect_equal(pa_cor$settings$decision_rule, "means")
+  expect_equal(pa_raw$settings$decision_rule, "means")
+  expect_equal(pa_cor_pca$settings$decision_rule, "means")
 
   expect_equal(pa_cor$settings$n_factors, 1)
   expect_equal(pa_raw$settings$n_factors, 1)

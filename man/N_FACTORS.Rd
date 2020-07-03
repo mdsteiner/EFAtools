@@ -160,6 +160,7 @@ The available factor retention criteria are the following (see respective
 }
 }
 \examples{
+\dontrun{
 # All criteria, with correlation matrix and fit method "ML" (where needed)
 # This will throw a warning for CD, as no raw data were specified
 nfac_all <- N_FACTORS(test_models$baseline$cormat, N = 500, method = "ML")
@@ -182,5 +183,5 @@ nfac_PCA <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC",
 
 # Use raw data, such that CD can also be performed
 nfac_raw <- N_FACTORS(GRiPS_raw, method = "ML")
-
+}
 }

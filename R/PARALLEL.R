@@ -98,6 +98,7 @@
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' # example without real data
 #' pa_unreal <- PARALLEL(N = 500, n_vars = 10)
 #'
@@ -108,7 +109,7 @@
 #' # this will be faster than the above with PAF)
 #' pa_ml <- PARALLEL(test_models$case_11b$cormat, N = 500, method = "ML")
 #'
-#' \dontrun{
+#'
 #' # for parallel computation
 #' future::plan(future::multisession)
 #' pa_faster <- PARALLEL(test_models$case_11b$cormat, N = 500)

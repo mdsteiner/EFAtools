@@ -14,18 +14,20 @@ knitr::opts_chunk$set(
   fig.width = 7,
   fig.align = "center"
 )
+
 ```
 
-```{r setup echo=FALSE}
-library(EFAtools)
-```
 
 
 This vignette provides an overview for the functionalities of the EFAtools package. The general aim of the package is to provide flexible implementations of different algorithms for an exploratory factor analyses (EFA) procedure, including factor retention methods, factor extraction and rotation methods, as well as the computation of a Schmid-Leiman solution and McDonald's omega coefficients.
 
 The package was first designed to enable a comparison of EFA (specifically, principal axis factoring with subsequent promax rotation) performed in R using the [**psych**](https://cran.r-project.org/web/packages/psych/index.html) package and EFA performed in SPSS. That is why some functions allow the specification of a type, including`"psych"` and `"SPSS"`, such that the respective procedure will be executed to match the output of these implementations (which do not always lead to the same results). This vignette will go through a complete example, that is, we will first show how to determine the number of factors to retain, then perform different factor extraction methods, run a Schmid-Leiman transformation and compute omegas.
 
-The package can be installed from CRAN using `install.packages("EFAtools")`, or from GitHub using `devtools::install_github("mdsteiner/EFAtools")`, and then loaded using `library(EFAtools)`.
+The package can be installed from CRAN using `install.packages("EFAtools")`, or from GitHub using `devtools::install_github("mdsteiner/EFAtools")`, and then loaded using:
+
+```{r}
+library(EFAtools)
+```
 
 In this vignette, we will use the `DOSPERT_raw` dataset, which contains responses to the Domain Specific Risk Taking Scale (DOSPERT) of 3123 participants. The dataset is contained in the `EFAtools` package, for details, see `?DOSPERT_raw`. Note that this vignette is to provide a general overview and it is beyond its scope to explain all methods and functions in detail. If you want to learn more on the details and methods, please see the respective help functions for explanations and literature references.
 
@@ -189,7 +191,7 @@ microbenchmark::microbenchmark(
 )
 ```
 
-While these differences are not large, they grow larger the more iterations the procedures need, which is usually the case if solutions are more tricky to find. Especially for simulations this might come in handy. For example, in one simulation analysis we ran over 10,000,000 EFAs, thus a difference of about 25 milliseconds leads to a difference in runtime of almost three days.
+While these differences are not large, they grow larger the more iterations the procedures need, which is usually the case if solutions are more tricky to find. Especially for simulations this might come in handy. For example, in one simulation analysis we ran over 10,000,000 EFAs, thus a difference of about 25 milliseconds per EFA leads to a difference in runtime of almost three days.
 
 ## Exploratory Factor Analysis: Schmid-Leiman transformation and McDonald's Omegas
 

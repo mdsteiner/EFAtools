@@ -18,7 +18,7 @@ COMPARE(
   na.rm = FALSE,
   x_labels = c("x", "y"),
   plot = TRUE,
-  plot_red = 0.001
+  plot_red = 0.01
 )
 }
 \arguments{

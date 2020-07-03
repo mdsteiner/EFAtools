@@ -1,0 +1,76 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# EFAtools
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+The EFAtools package provides functions to perform exploratory factor analysis (EFA) procedures and compare their solutions. The goal is to provide state-of-the-art factor retention methods and a high degree of flexibility in the EFA procedures. This way, implementations from R psych and SPSS can be compared. Moreover, functions for Schmid-Leiman transformation, and computation of omegas are provided. To speed up the analyses, some of the iterative procedures like principal axis factoring (PAF) are implementded in C++.
+
+## Installation
+
+You can install the development version from [GitHub](https://github.com/) with:
+
+```{r eval=FALSE}
+install.packages("devtools")
+devtools::install_github("mdsteiner/EFAtools")
+```
+
+To also build the vignette, use:
+
+```{r eval=FALSE}
+install.packages("devtools")
+devtools::install_github("mdsteiner/EFAtools", build_vignettes = TRUE)
+```
+
+## Example
+
+Here are a few examples on how to perform the analyses with the different types and how to compare the results using the `COMPARE` function. For more details, see the vignette by running `vignette("EFAtools", package = "EFAtools")`. The vignette provides a high-level introduction into the functionalities of the package.
+
+```{r fig.height=3}
+# load the package
+library(EFAtools)
+
+# Run all possible factor retention methods
+N_FACTORS(test_models$baseline$cormat, N = 500, method = "ML")
+
+# A type SPSS EFA to mimick the SPSS implementation with
+# promax rotation
+EFA_SPSS <- EFA(test_models$baseline$cormat, n_factors = 3, type = "SPSS",
+                  rotation = "promax")
+
+# look at solution
+EFA_SPSS
+
+# A type psych EFA to mimick the psych::fa() implementation with
+# promax rotation
+EFA_psych <- EFA(test_models$baseline$cormat, n_factors = 3, type = "psych",
+                  rotation = "promax")
+
+# compare the type psych and type SPSS implementations
+COMPARE(EFA_SPSS$rot_loadings, EFA_psych$rot_loadings,
+        x_labels = c("SPSS", "psych"))
+
+# Perform a Schmid-Leiman transformation
+SL <- SL(EFA_psych)
+
+# Compute omegas from the Schmid-Leiman solution
+OMEGA(SL, factor_corres = rep(c(3, 2, 1), each = 6))
+```
+
+## Contribute or Report Bugs
+
+If you want to contribute or report bugs, please open an issue on GitHub or email us...
