@@ -17,7 +17,7 @@ RiskDimensions
 A list containing the bivariate correlations (cormat)
 of the 9 dimensions on which participants in Fischhoff et al. (1978) rated
 different activities and technologies as well as the sample size (N). This was
-then analysed together with ratings of the risks and benefits of these
+then analyzed together with ratings of the risks and benefits of these
 activities and technologies.
 }
 \keyword{datasets}

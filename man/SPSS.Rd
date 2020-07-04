@@ -22,7 +22,7 @@ Grieder, S., & Steiner, M.D. (2020). Algorithmic Jingle Jungle:
 A Comparison of Implementations of Principal Axis Factoring and Promax Rotation
  in R and SPSS. Manuscript in Preparation.
 
-Wolff, H.G., & Preising, K. (2005). Exploring item and higher order factor structure with the schmid-leiman solution: Syntax codes for spss and sas. Behavior Research Methods, 37, 48–58. doi: 10.3758/BF03206397
+Wolff, H.G., & Preising, K. (2005). Exploring item and higher order factor structure with the Schmid-Leiman solution: Syntax codes for SPSS and SAS. Behavior Research Methods, 37, 48–58. doi: 10.3758/BF03206397
 
 Grieder, S., & Grob, A. (2019). Exploratory factor analyses of the intelligence and development scales–2: Implications for theory and practice. Assessment. Advance online publication. doi:10.1177/10731911198450
 

@@ -10,7 +10,7 @@ Kaiser, H. F. (1970). A second generation little jiffy. Psychometrika,
 Kaiser, H. F. & Rice, J. (1974). Little jiffy, mark IV. Educational
 and Psychological Measurement, 34, 111-117.
 
-Cureton, E. E. & DeAugustino, R. B. (1983). Factor analysis: An
+Cureton, E. E. & D'Augustino, R. B. (1983). Factor analysis: An
  applied approach. Hillsdale, N.J.: Lawrence Erlbaum Associates, Inc.
 }
 \usage{
@@ -53,7 +53,7 @@ The index is
 with \eqn{Q = SR^{-1}S} and S = \eqn{(diag R^{-1})^{-1/2}} where
 \eqn{\sum\limits_{i<j}\sum r_{ij}^2} is the sum of squares of the upper
 off-diagonal elements of \eqn{R} and \eqn{\sum\limits_{i<j}\sum q_{ij}^2} is the
-sum of squares of the upper off-diagonal elements of \eqn{Q} (see also Cureton & DeAugustino, 1983).
+sum of squares of the upper off-diagonal elements of \eqn{Q} (see also Cureton & D'Augustino, 1983).
 
 So KMO varies between 0 and 1, with larger values indicating higher suitability
 for factor analysis. Kaiser and Rice (1974) suggest that KMO should at least

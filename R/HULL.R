@@ -91,7 +91,7 @@
 #'
 #' @source Lorenzo-Seva, U., Timmerman, M. E., & Kiers, H. A. (2011).
 #' The Hull method for selecting the number of common factors. Multivariate
-#' behavioral research, 46(2), 340-364.
+#' Behavioral Research, 46(2), 340-364.
 #'
 #' @seealso Other factor retention criteria: \code{\link{CD}}, \code{\link{EKC}},
 #' \code{\link{KGC}}, \code{\link{PARALLEL}}, \code{\link{SMT}}

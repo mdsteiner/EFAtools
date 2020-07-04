@@ -16,7 +16,7 @@ flexibility in the EFA procedures. This way, implementations from R
 psych and SPSS can be compared. Moreover, functions for Schmid-Leiman
 transformation, and computation of omegas are provided. To speed up the
 analyses, some of the iterative procedures like principal axis factoring
-(PAF) are implementded in C++.
+(PAF) are implemented in C++.
 
 ## Installation
 
@@ -77,7 +77,7 @@ N_FACTORS(test_models$baseline$cormat, N = 500, method = "ML")
 #> ◌ Kaiser-Guttman criterion with EFA: 1
 #> ◌ Parallel analysis with PCA: 3
 #> ◌ Parallel analysis with SMC: 3
-#> ◌ Parallel analysis with EFA: 6
+#> ◌ Parallel analysis with EFA: 7
 #> ◌ Sequential 𝜒² model tests: 3
 #> ◌ Lower bound of RMSEA 90% confidence interval: 2
 #> ◌ Akaike Information Criterion: 3

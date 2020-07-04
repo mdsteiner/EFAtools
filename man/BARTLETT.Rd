@@ -2,7 +2,7 @@
 % Please edit documentation in R/BARTLETT.R
 \name{BARTLETT}
 \alias{BARTLETT}
-\title{Bartlett's test of spericity}
+\title{Bartlett's test of sphericity}
 \source{
 Bartlett, M. S. (1951). The effect of standardization on a Chi-square
 approximation in factor analysis. Biometrika, 38, 337-344.

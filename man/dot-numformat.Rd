@@ -7,7 +7,7 @@
 .numformat(x, digits = 2, print_zero = FALSE)
 }
 \arguments{
-\item{x}{numeric. Number to be formated.}
+\item{x}{numeric. Number to be formatted.}
 
 \item{digits}{numeric. Number of digits after the comma to keep.}
 

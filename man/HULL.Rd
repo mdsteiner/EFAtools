@@ -6,7 +6,7 @@
 \source{
 Lorenzo-Seva, U., Timmerman, M. E., & Kiers, H. A. (2011).
 The Hull method for selecting the number of common factors. Multivariate
-behavioral research, 46(2), 340-364.
+Behavioral Research, 46(2), 340-364.
 }
 \usage{
 HULL(

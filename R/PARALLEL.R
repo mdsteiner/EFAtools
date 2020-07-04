@@ -19,7 +19,7 @@
 #'  Default is 95.
 #' @param eigen_type character. On what the eigenvalues should be found. Can be
 #'  either "SMC", "PCA", or "EFA". If using "SMC", the diagonal of the correlation
-#'  matricex is replaced by the squared multiple correlations (SMCs) of the
+#'  matrix is replaced by the squared multiple correlations (SMCs) of the
 #'  indicators. If using "PCA", the diagonal values of the correlation matrices
 #'  are left to be 1. If using "EFA", eigenvalues are found on the correlation
 #'  matrices with the final communalities of an EFA solution as diagonal.

@@ -1,4 +1,4 @@
-#' Bartlett's test of spericity
+#' Bartlett's test of sphericity
 #'
 #' This function tests whether a correlation matrix is significantly different
 #' from an identity matrix (Bartlett, 1951). If the Bartlett's test is not

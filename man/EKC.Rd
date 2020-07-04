@@ -68,7 +68,7 @@ The Kaiser-Guttman criterion was defined with the intend that a factor
  Braeken and van Assen (2017) showed that "(a) EKC performs about as well as
  parallel analysis for data arising from the null, 1-factor, or orthogonal
  factors model; and (b) clearly outperforms parallel analysis for the specific
- case of oblique factors, particularly whenever interfactor correlation is
+ case of oblique factors, particularly whenever factor intercorrelation is
  moderate to high and the number of variables per factor is small, which is
  characteristic of many applications these days" (p.463-464).
 

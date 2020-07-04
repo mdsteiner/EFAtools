@@ -8,8 +8,8 @@ Schmid, J. & Leiman, J. M. (1957). The development of hierarchical
 factor solutions. Psychometrika, 22(1), 53–61. doi:10.1007/BF02289209
 
 Wolff, H.-G., & Preising, K. (2005). Exploring item and higher order
-factor structure with the schmid-leiman solution: Syntax codes for spss and
-sas. Behavior Research Methods, 37 , 48–58. doi:10.3758/BF03206397
+factor structure with the Schmid-Leiman solution: Syntax codes for SPSS and
+SAS. Behavior Research Methods, 37 , 48–58. doi:10.3758/BF03206397
 }
 \usage{
 SL(
@@ -69,7 +69,7 @@ again factor analyzed to find second-order factor loadings. If there is only
 one higher-order factor, this step of the procedure stops there, resulting in
 a second-order factor structure. The first-order factor and the second-order
 factor are then orthogonalized, resulting in an orthogonalized factor solution
-with proportionaliy constraints. The procedure thus makes a suggested
+with proportionality constraints. The procedure thus makes a suggested
 hierarchical data structure based on factor intercorrelations explicit. One
 major advantage of SL transformation is that it enables variance
 partitioning between higher-order and first-order factors, including the

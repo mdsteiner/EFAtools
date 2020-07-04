@@ -19,8 +19,8 @@
 #'   \item{case_3}{(matrix) - Same as baseline model but with high pattern coefficients of .9.}
 #'   \item{case_4}{(matrix) - Three factors with different pattern coefficients \emph{between} factors (one factor with .9, one with .6, and one with .3, respectively). Case 7 in de Winter and Dodou (2012).}
 #'   \item{case_5}{(matrix) - Three factors with different pattern coefficients \emph{within} factors (each factor has two pattern coefficients of each .9, .6, and .3). Similar to cases 8/ 9 in de Winter and Dodou (2012).}
-#'   \item{case_6a}{(matrix) - Same as baseline model but with one crossloading of .4. Similar to case 10 in de Winter and Dodou (2012).}
-#'   \item{case_6b}{(matrix) - Same as baseline model but with three crossloading of .4 (One factor with 2 and one with 1 crossloading). Similar to case 10 in de Winter and Dodou (2012).}
+#'   \item{case_6a}{(matrix) - Same as baseline model but with one cross loading of .4. Similar to case 10 in de Winter and Dodou (2012).}
+#'   \item{case_6b}{(matrix) - Same as baseline model but with three cross loading of .4 (One factor with 2 and one with 1 crossloading). Similar to case 10 in de Winter and Dodou (2012).}
 #'   \item{case_7}{(matrix) - Three factors with different number of indicators per factor (2, 4, and 6 respectively). Similar to cases 11/ 12 in de Winter and Dodou (2012).}
 #'   \item{case_8}{(matrix) - Three factors with random variation in pattern coefficients added, drawn from a uniform distribution between [-.2, .2]. Case 13 in de Winter and Dodou (2012).}
 #'   \item{case_9a}{(matrix) - Three factors with 2 indicators per factor, with different pattern coefficients within one of the factors.}

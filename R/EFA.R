@@ -83,7 +83,7 @@
 #' rotated loadings. "ss_factors" will reorder the factors according to descending
 #' sum of squared factor loadings per factor. Default is \code{NULL}.
 #' @param start_method character. How to specify the starting values for the
-#' optimization prodedure for ML. Default is "factanal" which takes the starting
+#' optimization procedure for ML. Default is "factanal" which takes the starting
 #' values specified in the \link[stats:factanal]{stats::factanal} function. "psych" takes the
 #' starting values specified in \link[psych:fa]{psych::fa}. Solutions are very similar.
 #' @param ... Additional arguments passed to rotation functions from the \code{GPArotation} package (e.g., \code{maxit} for maximum number of iterations).
@@ -92,7 +92,7 @@
 #' use it with a specified \code{type} (see above), which sets most of the other
 #' arguments accordingly. Another way is to use it more flexibly by explicitly
 #' specifying all arguments used and set \code{type} to "none" (see examples).
-#' A mix of the two can also be done by specifing a \code{type} as well as
+#' A mix of the two can also be done by specifying a \code{type} as well as
 #' additional arguments. However, this will throw warnings to avoid unintentional
 #' deviations from the implementations according to the specified \code{type}.
 #'
@@ -115,7 +115,7 @@
 #' \code{init_comm = "smc", criterion = .001, criterion_type = "max_individual",
 #' abs_eigen = TRUE}.
 #'
-#' If SMC's fail, SPSS takes "mac". However, as SPSS takes absolute eigenvalues,
+#' If SMCs fail, SPSS takes "mac". However, as SPSS takes absolute eigenvalues,
 #' this is hardly ever the case. Psych, on the other hand, takes "unity" if SMCs
 #' fail. The EFAtools type setting combination was the best in terms of accuracy
 #' and number of Heywood cases compared to all the
@@ -168,7 +168,7 @@
 #' The \code{type} argument has no effect on ULS and ML. For ULS, no additional
 #' arguments are needed. For ML, an additional argument
 #' \code{start_method} is needed to determine the starting values for the
-#' optimization prodedure. Default for this argument is "factanal" which takes
+#' optimization procedure. Default for this argument is "factanal" which takes
 #' the starting values specified in the \link[stats:factanal]{stats::factanal} function.
 #'
 #'
