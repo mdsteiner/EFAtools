@@ -42,7 +42,7 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
 
       if (crit_type == 1) {
 
-        while (delta > criterion & iter <= max_iter) {
+        while ((delta > criterion) & (iter <= max_iter)) {
           //  compute the eigenvalues and eigenvectors
           eig_sym(eigval, eigvec, R);
           Lambda = flipud(eigval);
@@ -78,7 +78,7 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
 
       } else if (crit_type == 2) {
 
-        while (delta > criterion & iter <= max_iter) {
+        while ((delta > criterion) & (iter <= max_iter)) {
           //  compute the eigenvalues and eigenvectors
           eig_sym(eigval, eigvec, R);
           Lambda = flipud(eigval);
@@ -120,7 +120,7 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
 
       if (crit_type == 1) {
 
-        while (delta > criterion & iter <= max_iter) {
+        while ((delta > criterion) & (iter <= max_iter)) {
           //  compute the eigenvalues and eigenvectors
           eig_sym(eigval, eigvec, R);
           Lambda = flipud(eigval);
@@ -158,7 +158,7 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
 
       } else if (crit_type == 2) {
 
-        while (delta > criterion & iter <= max_iter) {
+        while ((delta > criterion) & (iter <= max_iter)) {
           //  compute the eigenvalues and eigenvectors
           eig_sym(eigval, eigvec, R);
           Lambda = flipud(eigval);
@@ -204,7 +204,7 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
 
       if (crit_type == 1) {
 
-        while (delta > criterion & iter <= max_iter) {
+        while ((delta > criterion) & (iter <= max_iter)) {
           //  compute the eigenvalues and eigenvectors
           eig_sym(eigval, eigvec, R);
           Lambda = arma::abs(flipud(eigval));
@@ -236,7 +236,7 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
 
       } else if (crit_type == 2) {
 
-        while (delta > criterion & iter <= max_iter) {
+        while ((delta > criterion) & (iter <= max_iter)) {
           //  compute the eigenvalues and eigenvectors
           eig_sym(eigval, eigvec, R);
           Lambda = arma::abs(flipud(eigval));
@@ -274,7 +274,7 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
 
       if (crit_type == 1) {
 
-        while (delta > criterion & iter <= max_iter) {
+        while ((delta > criterion) & (iter <= max_iter)) {
           //  compute the eigenvalues and eigenvectors
           eig_sym(eigval, eigvec, R);
           Lambda = arma::abs(flipud(eigval));
@@ -308,7 +308,7 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
 
       } else if (crit_type == 2) {
 
-        while (delta > criterion & iter <= max_iter) {
+        while ((delta > criterion) & (iter <= max_iter)) {
           //  compute the eigenvalues and eigenvectors
           eig_sym(eigval, eigvec, R);
           Lambda = arma::abs(flipud(eigval));

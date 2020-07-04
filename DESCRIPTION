@@ -1,5 +1,5 @@
 Package: EFAtools
-Title: Fast and flexible implementations of exploratory factor analysis tools
+Title: Fast and Flexible Implementations of Exploratory Factor Analysis Tools
 Version: 0.1.0
 Authors@R: 
     c(person(given = "Markus",
@@ -10,7 +10,7 @@ Authors@R:
              family = "Grieder",
              role = "aut",
              email = "silvia.grieder@gmail.com"))
-Description: The EFAtools package provides functions to perform exploratory factor analysis (EFA) procedures and compare their solutions. The goal is to provide state-of-the-art factor retention methods and a high degree of flexibility in the EFA procedures. This way, for example, implementations from R psych and SPSS can be compared. Moreover, functions for Schmid-Leiman transformation and the computation of omegas are provided. To speed up the analyses, some of the iterative procedures, like principal axis factoring (PAF), are implementded in C++.
+Description: The EFAtools package provides functions to perform exploratory factor analysis (EFA) procedures and compare their solutions. The goal is to provide state-of-the-art factor retention methods and a high degree of flexibility in the EFA procedures. This way, for example, implementations from R psych and SPSS can be compared. Moreover, functions for Schmid-Leiman transformation and the computation of omegas are provided. To speed up the analyses, some of the iterative procedures, like principal axis factoring (PAF), are implemented in C++.
 Depends: R (>= 3.6.0)
 License: GPL-3
 Encoding: UTF-8
@@ -29,7 +29,6 @@ Imports:
     dplyr,
     cli,
     Rcpp,
-    RcppArmadillo,
     viridisLite,
     graphics,
     parallel,

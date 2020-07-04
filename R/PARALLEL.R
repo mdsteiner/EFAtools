@@ -239,8 +239,19 @@ PARALLEL <- function(x = NULL,
 
     if ("PCA" %in% eigen_type) {
 
-      eigvals_PCA <- future.apply::future_lapply(size_vec, .parallel_sim, N = N,
-                                             n_vars = n_vars, eigen_type = 1)
+      eigvals_PCA <- try(future.apply::future_lapply(size_vec, .parallel_sim, N = N,
+                                             n_vars = n_vars, eigen_type = 1),
+                         silent = TRUE)
+
+      it_i <- 1
+      while (inherits(eigvals_PCA, "try-error") && it_i < 25) {
+        eigvals_PCA <- try(future.apply::future_lapply(size_vec, .parallel_sim,
+                                                       N = N,
+                                                       n_vars = n_vars,
+                                                       eigen_type = 1),
+                           silent = TRUE)
+        it_i <- it_i + 1
+      }
       eigvals_PCA <- do.call(rbind, eigvals_PCA)
 
       results_PCA <- .parallel_summarise(eigvals_PCA, percent = percent,
@@ -266,8 +277,19 @@ PARALLEL <- function(x = NULL,
 
     if ("SMC" %in% eigen_type) {
 
-      eigvals_SMC <- future.apply::future_lapply(size_vec, .parallel_sim, N = N,
-                                             n_vars = n_vars, eigen_type = 2)
+      eigvals_SMC <- try(future.apply::future_lapply(size_vec, .parallel_sim,
+                                                     N = N, n_vars = n_vars,
+                                                     eigen_type = 2),
+                         silent = TRUE)
+      it_i <- 1
+      while (inherits(eigvals_SMC, "try-error") && it_i < 25) {
+        eigvals_SMC <- try(future.apply::future_lapply(size_vec, .parallel_sim,
+                                                       N = N,
+                                                       n_vars = n_vars,
+                                                       eigen_type = 2),
+                           silent = TRUE)
+        it_i <- it_i + 1
+      }
       eigvals_SMC <- do.call(rbind, eigvals_SMC)
 
       results_SMC <- .parallel_summarise(eigvals_SMC, percent = percent,
@@ -357,8 +379,18 @@ PARALLEL <- function(x = NULL,
 
     x <- matrix(stats::rnorm(N * n_vars), nrow = N, ncol = n_vars)
     R <- stats::cor(x)
-    eigvals[, i] <- suppressWarnings(EFA(R, n_factors = n_factors, N = N,
-                                         ...)$final_eigen)
+    eigvals_i <- try(suppressWarnings(EFA(R, n_factors = n_factors, N = N,
+                                          ...)$final_eigen), silent = TRUE)
+    it_i <- 1
+    while (inherits(eigvals_i, "try-error") && it_i < 25) {
+      x <- matrix(stats::rnorm(N * n_vars), nrow = N, ncol = n_vars)
+      R <- stats::cor(x)
+      eigvals_i <- try(suppressWarnings(EFA(R, n_factors = n_factors, N = N,
+                                            ...)$final_eigen), silent = TRUE)
+      it_i <- it_i + 1
+    }
+
+    eigvals[, i] <- eigvals_i
 
   }
 
