@@ -8,8 +8,9 @@
 #' @method print HULL
 #'
 #' @examples
+#' \dontrun{
 #' HULL(test_models$baseline$cormat, N = 500, method = "ML")
-#'
+#' }
 print.HULL <- function(x, plot = TRUE, ...) {
 
   method <- x$settings$method

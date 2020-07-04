@@ -4,3 +4,4 @@
 ^cran-comments\.md$
 ^\.travis\.yml$
 ^EFAtools-manual\.tex$
+^CRAN-RELEASE$

@@ -9,9 +9,10 @@
 #' @method plot HULL
 #'
 #' @examples
+#' \dontrun{
 #' x <- HULL(test_models$baseline$cormat, N = 500, method = "ML")
 #' plot(x)
-#'
+#'}
 plot.HULL <- function(x, ...) {
 
   gof <- x$settings$gof
