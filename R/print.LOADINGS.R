@@ -3,7 +3,7 @@
 #' @param x class LOADINGS matrix.
 #' @param cutoff numeric. The number above which to print loadings in bold
 #'  default is .3.
-#' @param digits numeric. Passed to \code{\link[base]{round}}. Number of digits
+#' @param digits numeric. Passed to \code{\link[base:Round]{round}}. Number of digits
 #'  to round the loadings to (default is 3).
 #' @param ... additional arguments passed to print
 #'

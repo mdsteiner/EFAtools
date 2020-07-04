@@ -1,7 +1,7 @@
 #' Print OMEGA object
 #'
 #' @param x output of class OMEGA (output from the \link{OMEGA} function)
-#' @param digits numeric. Passed to \code{\link[base]{round}}. Number of digits
+#' @param digits numeric. Passed to \code{\link[base:Round]{round}}. Number of digits
 #' to round to (default is 3).
 #' @param ... additional arguments passed to print
 #'

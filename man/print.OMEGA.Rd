@@ -9,7 +9,7 @@
 \arguments{
 \item{x}{output of class OMEGA (output from the \link{OMEGA} function)}
 
-\item{digits}{numeric. Passed to \code{\link[base]{round}}. Number of digits
+\item{digits}{numeric. Passed to \code{\link[base:Round]{round}}. Number of digits
 to round to (default is 3).}
 
 \item{...}{additional arguments passed to print}
