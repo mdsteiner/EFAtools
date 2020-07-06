@@ -112,7 +112,9 @@
 #'
 #' # using ULS with only RMSEA
 #' HULL(test_models$baseline$cormat, N = 500, method = "ULS", gof = "RMSEA")
+#'}
 #'
+#'\dontrun{
 #' # using parallel processing (Note: plans can be adapted, see the future
 #' # package for details)
 #' future::plan(future::multisession)
