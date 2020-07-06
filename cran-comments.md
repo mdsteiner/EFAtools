@@ -1,9 +1,11 @@
 ## Resubmission
-This is a resubmission. In this version I have:
+This is a resubmission. In this version we have:
 
-* Added quotes to the "Possibly mis-spelled words in DESCRIPTION" to avoid the note.
+* Added quotes to API and package names in the Title and Description fields of DESCRIPTION.
 
-* Added dontrun around the examples of "HULL()" as they sometimes needed over 2.5 seconds of runtime.
+* Replaced \dontrun{} with \donttest{}, except for two examples in HULL and PARALLEL, where parallel processing is used and would result in errors if tested.
+
+* Explicitly added authors on whose code some of ours is based/ that inspired some of our code as contributors ("ctb") in the DESCRIPTION instead of just citing them.
 
 ## Test environments
 * local OS X R installation (Mojave 10.14.6), R 4.0.2
