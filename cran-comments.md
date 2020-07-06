@@ -1,7 +1,7 @@
 ## Resubmission
 This is a resubmission. In this version we have:
 
-* Added quotes to API and package names in the Title and Description fields of DESCRIPTION.
+* Added quotes to API and package names in the Title and Description fields of DESCRIPTION ('EFAtools', 'psych', and 'SPSS').
 
 * Removed quotes from names (Schmid-Leiman) and abbreviations of procedures (EFA, PAF).
 
