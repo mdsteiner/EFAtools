@@ -3,9 +3,11 @@ This is a resubmission. In this version we have:
 
 * Added quotes to API and package names in the Title and Description fields of DESCRIPTION.
 
+* Removed quotes from names (Schmid-Leiman) and abbreviations of procedures (EFA, PAF).
+
 * Replaced \dontrun{} with \donttest{}, except for two examples in HULL and PARALLEL, where parallel processing is used and would result in errors if tested.
 
-* Explicitly added authors on whose code some of ours is based/ that inspired some of our code as contributors ("ctb") in the DESCRIPTION instead of just citing them in the respective help files.
+* Explicitly added authors on whose code some of ours is based as contributors ("ctb") in the DESCRIPTION instead of just citing them in the respective help files.
 
 ## Test environments
 * local OS X R installation (Mojave 10.14.6), R 4.0.2
@@ -18,3 +20,8 @@ This is a resubmission. In this version we have:
 0 errors | 0 warnings | 1 note
 
 * This is a new release.
+Possibly mis-spelled words in DESCRIPTION:
+    EFA (35:96, 35:246)
+    Leiman (35:375)
+    PAF (35:532)
+    Schmid (35:368)
