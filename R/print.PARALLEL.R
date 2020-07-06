@@ -8,7 +8,7 @@
 #' @method print PARALLEL
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # example without real data
 #' PARALLEL(N = 500, n_vars = 10)
 #'

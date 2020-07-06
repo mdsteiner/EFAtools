@@ -9,7 +9,7 @@
 #' @method plot HULL
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' x <- HULL(test_models$baseline$cormat, N = 500, method = "ML")
 #' plot(x)
 #'}

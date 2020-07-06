@@ -15,7 +15,7 @@
 Plot method showing a summarized output of the \code{\link{HULL}} function
 }
 \examples{
-\dontrun{
+\donttest{
 x <- HULL(test_models$baseline$cormat, N = 500, method = "ML")
 plot(x)
 }

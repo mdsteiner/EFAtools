@@ -110,7 +110,7 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # All criteria, with correlation matrix and fit method "ML" (where needed)
 #' # This will throw a warning for CD, as no raw data were specified
 #' nfac_all <- N_FACTORS(test_models$baseline$cormat, N = 500, method = "ML")

@@ -102,7 +102,7 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # using PAF (this will throw a warning if gof is not specified manually
 #' # and CAF will be used automatically)
 #' HULL(test_models$baseline$cormat, N = 500, gof = "CAF")

@@ -98,7 +98,7 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # example without real data
 #' pa_unreal <- PARALLEL(N = 500, n_vars = 10)
 #'

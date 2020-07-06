@@ -124,7 +124,7 @@ the sample
  retention criteria in the \code{\link{N_FACTORS}} function.
 }
 \examples{
-\dontrun{
+\donttest{
 # example without real data
 pa_unreal <- PARALLEL(N = 500, n_vars = 10)
 

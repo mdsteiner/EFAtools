@@ -17,7 +17,7 @@
 Print function for HULL objects
 }
 \examples{
-\dontrun{
+\donttest{
 HULL(test_models$baseline$cormat, N = 500, method = "ML")
 }
 }

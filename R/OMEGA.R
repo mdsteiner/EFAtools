@@ -138,7 +138,7 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' ## Use with a lavaan output
 #'
 #' # Create and fit model in lavaan (assume all variables have SDs of 1)

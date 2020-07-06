@@ -9,7 +9,7 @@
 #' @method plot PARALLEL
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # example with correlation matrix and "ML" estimation
 #' x <- PARALLEL(test_models$case_11b$cormat, N = 500, method = "ML")
 #' plot(x)

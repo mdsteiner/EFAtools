@@ -81,7 +81,7 @@ EFA_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
                type = "EFAtools", method = "PAF", rotation = "promax")
 SL_EFAtools <- SL(EFA_mod, type = "EFAtools", method = "PAF")
 
-\dontrun{
+\donttest{
 ## Use with an output from the psych::fa function with type psych in SL
 fa_mod <- psych::fa(test_models$baseline$cormat, nfactors = 3, n.obs = 500,
                     fm = "pa", rotate = "Promax")

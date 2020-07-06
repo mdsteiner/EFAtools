@@ -85,7 +85,7 @@ The \code{CD} function can also be called together with other factor retention
 criteria in the \code{\link{N_FACTORS}} function.
 }
 \examples{
-\dontrun{
+\donttest{
 # determine n factors of the GRiPS
 CD(GRiPS_raw)
 

@@ -17,7 +17,7 @@
 Print function for PARALLEL objects
 }
 \examples{
-\dontrun{
+\donttest{
 # example without real data
 PARALLEL(N = 500, n_vars = 10)
 

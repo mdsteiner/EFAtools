@@ -178,7 +178,7 @@ uniquenesses should capture almost all of the variance not explained by the
 general factor and the variable's allocated group factor).
 }
 \examples{
-\dontrun{
+\donttest{
 ## Use with a lavaan output
 
 # Create and fit model in lavaan (assume all variables have SDs of 1)

@@ -8,7 +8,7 @@
 #' @method print CD
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # determine n factors of the GRiPS
 #' CD(GRiPS_raw)
 #' }

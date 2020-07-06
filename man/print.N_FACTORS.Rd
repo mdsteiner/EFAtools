@@ -15,7 +15,7 @@
 Print function for N_FACTORS objects
 }
 \examples{
-\dontrun{
+\donttest{
 # All criteria except "CD", with correlation matrix and fit method "ML"
 # (where needed)
 N_FACTORS(test_models$baseline$cormat, criteria = c("EKC", "HULL", "KGC",
