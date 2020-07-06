@@ -9,8 +9,29 @@ Authors@R:
       person(given = "Silvia",
              family = "Grieder",
              role = "aut",
-             email = "silvia.grieder@gmail.com"))
-Description: The 'EFAtools' package provides functions to perform exploratory factor analysis ('EFA') procedures and compare their solutions. The goal is to provide state-of-the-art factor retention methods and a high degree of flexibility in the 'EFA' procedures. This way, for example, implementations from R psych and SPSS can be compared. Moreover, functions for 'Schmid-Leiman transformation' and the computation of omegas are provided. To speed up the analyses, some of the iterative procedures, like principal axis factoring ('PAF'), are implemented in C++.
+             email = "silvia.grieder@gmail.com"),
+      person(given = "William",
+             family = "Revelle",
+             role = "ctb"),
+      person(given = "Max",
+             family = "Auerswald",
+             role = "ctb"),
+      person(given = "Morten",
+             family = "Moshagen",
+             role = "ctb"),
+      person(given = "John",
+             family = "Ruscio",
+             role = "ctb"),
+      person(given = "Brendan",
+             family = "Roche",
+             role = "ctb"),
+      person(given = "Urbano",
+             family = "Lorenzo-Seva",
+             role = "ctb"),
+      person(given = "David",
+             family = "Navarro-Gonzalez",
+             role = "ctb"))
+Description: The 'EFAtools' package provides functions to perform exploratory factor analysis (EFA) procedures and compare their solutions. The goal is to provide state-of-the-art factor retention methods and a high degree of flexibility in the EFA procedures. This way, for example, implementations from R 'psych' and 'SPSS' can be compared. Moreover, functions for Schmid-Leiman transformation and the computation of omegas are provided. To speed up the analyses, some of the iterative procedures, like principal axis factoring (PAF), are implemented in C++.
 Depends: R (>= 3.6.0)
 License: GPL-3
 Encoding: UTF-8
