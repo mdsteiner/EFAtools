@@ -37,11 +37,11 @@ efa_paf_zero <- EFA(cormat_zero, 3, 500, rotation = "varimax")
 efa_ml_zero <- EFA(cormat_zero, 3, 500, method = "ML", rotation = "varimax")
 efa_uls_zero <- EFA(cormat_zero, 3, 500, method = "ULS", rotation = "varimax")
 
-efa_paf_moderate <- EFA(cormat_moderate, 3, 500, rotation = "oblimin")
+efa_paf_moderate <- EFA(cormat_moderate, 3, 500, rotation = "promax")
 efa_ml_moderate <- EFA(cormat_moderate, 3, 500, method = "ML",
-                       rotation = "oblimin")
+                       rotation = "promax")
 efa_uls_moderate <- EFA(cormat_moderate, 3, 500, method = "ULS",
-                        rotation = "oblimin")
+                        rotation = "promax")
 
 
 test_that("output class and dimensions are correct", {
@@ -290,22 +290,22 @@ test_that("settings are returned correctly", {
 })
 
 test_that("factor analyses are performed correctly", {
-  expect_equal(sum(abs(COMPARE(efa_paf_zero$rot_loadings,
+  expect_equal(mean(abs(COMPARE(efa_paf_zero$rot_loadings,
                                population_models$loadings$baseline,
                                plot = FALSE)$diff)), 0, tolerance = .01)
-  expect_equal(sum(abs(COMPARE(efa_ml_zero$rot_loadings,
+  expect_equal(mean(abs(COMPARE(efa_ml_zero$rot_loadings,
                                population_models$loadings$baseline,
                                plot = FALSE)$diff)), 0, tolerance = .01)
-  expect_equal(sum(abs(COMPARE(efa_uls_zero$rot_loadings,
+  expect_equal(mean(abs(COMPARE(efa_uls_zero$rot_loadings,
                                population_models$loadings$baseline,
                                plot = FALSE)$diff)), 0, tolerance = .01)
-  expect_equal(sum(abs(COMPARE(efa_paf_moderate$rot_loadings,
+  expect_equal(mean(abs(COMPARE(efa_paf_moderate$rot_loadings,
                                population_models$loadings$baseline,
                                plot = FALSE)$diff)), 0, tolerance = .01)
-  expect_equal(sum(abs(COMPARE(efa_ml_moderate$rot_loadings,
+  expect_equal(mean(abs(COMPARE(efa_ml_moderate$rot_loadings,
                                population_models$loadings$baseline,
                                plot = FALSE)$diff)), 0, tolerance = .01)
-  expect_equal(sum(abs(COMPARE(efa_uls_moderate$rot_loadings,
+  expect_equal(mean(abs(COMPARE(efa_uls_moderate$rot_loadings,
                                population_models$loadings$baseline,
                                plot = FALSE)$diff)), 0, tolerance = .01)
 })
