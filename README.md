@@ -7,6 +7,8 @@
 
 [![Travis build
 status](https://travis-ci.com/mdsteiner/EFAtools.svg?branch=master)](https://travis-ci.com/mdsteiner/EFAtools)
+[![CRAN
+status](https://www.r-pkg.org/badges/version/EFAtools)](https://CRAN.R-project.org/package=EFAtools)
 <!-- badges: end -->
 
 The EFAtools package provides functions to perform exploratory factor
@@ -20,6 +22,13 @@ analyses, some of the iterative procedures like principal axis factoring
 
 ## Installation
 
+You can install the release version from
+[CRAN](https://cran.r-project.org/) with:
+
+``` r
+install.packages("EFAtools")
+```
+
 You can install the development version from
 [GitHub](https://github.com/) with:
 
@@ -28,7 +37,7 @@ install.packages("devtools")
 devtools::install_github("mdsteiner/EFAtools")
 ```
 
-To also build the vignette, use:
+To also build the vignette when installing the development version, use:
 
 ``` r
 install.packages("devtools")
@@ -51,7 +60,7 @@ library(EFAtools)
 N_FACTORS(test_models$baseline$cormat, N = 500, method = "ML")
 #> Warning in N_FACTORS(test_models$baseline$cormat, N = 500, method = "ML"): ! 'x' was a correlation matrix but CD needs raw data. Skipping CD.
 #> 
-#> ── Tests for the suitability of the data for factor an
+#> ── Tests for the suitability of the data for factor a
 #> 
 #> Bartlett's test of sphericity
 #> 
@@ -65,7 +74,7 @@ N_FACTORS(test_models$baseline$cormat, N = 500, method = "ML")
 #> ✓ The overall KMO value for your data is marvellous with 0.916.
 #>   These data are probably suitable for factor analysis.
 #> 
-#> ── Number of factors suggested by the different factor
+#> ── Number of factors suggested by the different facto
 #> 
 #> ◌ Comparison data: NA
 #> ◌ Empirical Kaiser criterion: 2
@@ -77,7 +86,7 @@ N_FACTORS(test_models$baseline$cormat, N = 500, method = "ML")
 #> ◌ Kaiser-Guttman criterion with EFA: 1
 #> ◌ Parallel analysis with PCA: 3
 #> ◌ Parallel analysis with SMC: 3
-#> ◌ Parallel analysis with EFA: 7
+#> ◌ Parallel analysis with EFA: 6
 #> ◌ Sequential 𝜒² model tests: 3
 #> ◌ Lower bound of RMSEA 90% confidence interval: 2
 #> ◌ Akaike Information Criterion: 3
@@ -92,7 +101,7 @@ EFA_SPSS
 #> 
 #> EFA performed with type = 'SPSS', method = 'PAF', and rotation = 'promax'.
 #> 
-#> ── Rotated Loadings ──────────────────────────────────
+#> ── Rotated Loadings ─────────────────────────────────
 #> 
 #>       F1      F2      F3  
 #> V1   -.048    .035    .613
@@ -114,14 +123,14 @@ EFA_SPSS
 #> V17   .664   -.037   -.027
 #> V18   .555    .004    .050
 #> 
-#> ── Factor Intercorrelations ──────────────────────────
+#> ── Factor Intercorrelations ─────────────────────────
 #> 
 #>       F1      F2      F3  
 #> F1    1.000   0.617   0.648
 #> F2    0.617   1.000   0.632
 #> F3    0.648   0.632   1.000
 #> 
-#> ── Variances Accounted for ───────────────────────────
+#> ── Variances Accounted for ──────────────────────────
 #> 
 #>                       F1      F2      F3  
 #> SS loadings           4.907   0.757   0.643
@@ -130,7 +139,7 @@ EFA_SPSS
 #> Prop Comm Var         0.778   0.120   0.102
 #> Cum Prop Comm Var     0.778   0.898   1.000
 #> 
-#> ── Model Fit ─────────────────────────────────────────
+#> ── Model Fit ────────────────────────────────────────
 #> 
 #> CAF: .50
 #> df: 102
@@ -169,7 +178,7 @@ COMPARE(EFA_SPSS$rot_loadings, EFA_psych$rot_loadings,
 #> V18  -0.0066  0.0014  0.0098
 ```
 
-<img src="man/figures/README-unnamed-chunk-4-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" />
 
 ``` r
 

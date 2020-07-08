@@ -17,11 +17,17 @@ knitr::opts_chunk$set(
 
 <!-- badges: start -->
 [![Travis build status](https://travis-ci.com/mdsteiner/EFAtools.svg?branch=master)](https://travis-ci.com/mdsteiner/EFAtools)
+[![CRAN status](https://www.r-pkg.org/badges/version/EFAtools)](https://CRAN.R-project.org/package=EFAtools)
 <!-- badges: end -->
 
 The EFAtools package provides functions to perform exploratory factor analysis (EFA) procedures and compare their solutions. The goal is to provide state-of-the-art factor retention methods and a high degree of flexibility in the EFA procedures. This way, implementations from R psych and SPSS can be compared. Moreover, functions for Schmid-Leiman transformation, and computation of omegas are provided. To speed up the analyses, some of the iterative procedures like principal axis factoring (PAF) are implemented in C++.
 
 ## Installation
+
+You can install the release version from [CRAN](https://cran.r-project.org/) with:
+```{r eval=FALSE}
+install.packages("EFAtools")
+```
 
 You can install the development version from [GitHub](https://github.com/) with:
 
@@ -30,7 +36,7 @@ install.packages("devtools")
 devtools::install_github("mdsteiner/EFAtools")
 ```
 
-To also build the vignette, use:
+To also build the vignette when installing the development version, use:
 
 ```{r eval=FALSE}
 install.packages("devtools")
