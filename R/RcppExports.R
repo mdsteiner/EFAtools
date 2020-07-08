@@ -53,21 +53,6 @@
     .Call(`_EFAtools_parallel_sim`, n_datasets, n_vars, N, eigen_type)
 }
 
-#' Summarise the raw data from the .parallel_sim
-#'
-#' Function called from within PARALLEL so usually no call to this is needed by the user.
-#' Provides a C++ implementation to aggregate the eigenvalues from the simulations
-#' performed using .parallel_sim.
-#'
-#' @param eig_vals matrix. A matrix as returned by .parallel_sim.
-#' @param percent numeric. A vector of percentiles for which the eigenvalues should be returned.
-#' @param n_datasets integer. The number of datasets simulated in .parallel_sim.
-#' @param n_vars numeric. The number of variables / indicators per dataset.
-#' @export
-.parallel_summarise <- function(eig_vals, percent, n_datasets, n_vars) {
-    .Call(`_EFAtools_parallel_summarise`, eig_vals, percent, n_datasets, n_vars)
-}
-
 .grad_uls <- function(psi, R, n_fac) {
     .Call(`_EFAtools_grad_uls`, psi, R, n_fac)
 }

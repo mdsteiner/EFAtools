@@ -76,20 +76,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// parallel_summarise
-NumericMatrix parallel_summarise(NumericMatrix eig_vals, NumericVector percent, const int n_datasets, const int n_vars);
-RcppExport SEXP _EFAtools_parallel_summarise(SEXP eig_valsSEXP, SEXP percentSEXP, SEXP n_datasetsSEXP, SEXP n_varsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type eig_vals(eig_valsSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type percent(percentSEXP);
-    Rcpp::traits::input_parameter< const int >::type n_datasets(n_datasetsSEXP);
-    Rcpp::traits::input_parameter< const int >::type n_vars(n_varsSEXP);
-    rcpp_result_gen = Rcpp::wrap(parallel_summarise(eig_vals, percent, n_datasets, n_vars));
-    return rcpp_result_gen;
-END_RCPP
-}
 // grad_uls
 arma::vec grad_uls(arma::vec psi, arma::mat R, const int n_fac);
 RcppExport SEXP _EFAtools_grad_uls(SEXP psiSEXP, SEXP RSEXP, SEXP n_facSEXP) {
@@ -123,7 +109,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EFAtools_error_ml", (DL_FUNC) &_EFAtools_error_ml, 3},
     {"_EFAtools_paf_iter", (DL_FUNC) &_EFAtools_paf_iter, 7},
     {"_EFAtools_parallel_sim", (DL_FUNC) &_EFAtools_parallel_sim, 4},
-    {"_EFAtools_parallel_summarise", (DL_FUNC) &_EFAtools_parallel_summarise, 4},
     {"_EFAtools_grad_uls", (DL_FUNC) &_EFAtools_grad_uls, 3},
     {"_EFAtools_uls_residuals", (DL_FUNC) &_EFAtools_uls_residuals, 3},
     {NULL, NULL, 0}

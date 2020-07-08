@@ -392,33 +392,33 @@ arma::mat parallel_sim(const int n_datasets, const int n_vars, const int N,
 //
 // }
 
-//' Summarise the raw data from the .parallel_sim
-//'
-//' Function called from within PARALLEL so usually no call to this is needed by the user.
-//' Provides a C++ implementation to aggregate the eigenvalues from the simulations
-//' performed using .parallel_sim.
-//'
-//' @param eig_vals matrix. A matrix as returned by .parallel_sim.
-//' @param percent numeric. A vector of percentiles for which the eigenvalues should be returned.
-//' @param n_datasets integer. The number of datasets simulated in .parallel_sim.
-//' @param n_vars numeric. The number of variables / indicators per dataset.
-//' @export
-// [[Rcpp::export(.parallel_summarise)]]
-NumericMatrix parallel_summarise(NumericMatrix eig_vals, NumericVector percent,
-                                 const int n_datasets, const int n_vars) {
-  NumericMatrix results(n_vars, 1 + percent.length());
-  int ind;
-  NumericVector temp;
-  results(_, 0) = colMeans(eig_vals);
-
-  for (int root = 0; root < n_vars; root++) {
-    for (int perc_i = 0; perc_i < percent.length(); perc_i++) {
-      ind = round((percent(perc_i) * n_datasets) / 100) - 1;
-      temp = eig_vals.column(root);
-      results(root, 1 + perc_i) = temp.sort().operator[](ind);
-    }
-  }
-
-  return results;
-
-}
+// //' Summarise the raw data from the .parallel_sim
+// //'
+// //' Function called from within PARALLEL so usually no call to this is needed by the user.
+// //' Provides a C++ implementation to aggregate the eigenvalues from the simulations
+// //' performed using .parallel_sim.
+// //'
+// //' @param eig_vals matrix. A matrix as returned by .parallel_sim.
+// //' @param percent numeric. A vector of percentiles for which the eigenvalues should be returned.
+// //' @param n_datasets integer. The number of datasets simulated in .parallel_sim.
+// //' @param n_vars numeric. The number of variables / indicators per dataset.
+// //' @export
+// // [[Rcpp::export(.parallel_summarise)]]
+// NumericMatrix parallel_summarise(NumericMatrix eig_vals, NumericVector percent,
+//                                  const int n_datasets, const int n_vars) {
+//   NumericMatrix results(n_vars, 1 + percent.length());
+//   int ind;
+//   NumericVector temp(eig_vals.nrow());
+//   results(_, 0) = colMeans(eig_vals);
+//
+//   for (int root = 0; root < n_vars; root++) {
+//     for (int perc_i = 0; perc_i < percent.length(); perc_i++) {
+//       ind = round((percent(perc_i) * n_datasets) / 100) - 1;
+//       temp = eig_vals.column(root);
+//       results(root, 1 + perc_i) = temp.sort()[ind];
+//     }
+//   }
+//
+//   return results;
+//
+// }

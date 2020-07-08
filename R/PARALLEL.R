@@ -253,6 +253,11 @@ PARALLEL <- function(x = NULL,
                            silent = TRUE)
         it_i <- it_i + 1
       }
+
+      if (inherits(eigvals_PCA, "try-error")) {
+        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Eigenvalues based on simulated data and PCA could not be found in 25 tries; likely due to occurrences of singular matrices. Aborting.\n"))
+      }
+
       eigvals_PCA <- do.call(rbind, eigvals_PCA)
 
       results_PCA <- .parallel_summarise(eigvals_PCA, percent = percent,
@@ -290,6 +295,10 @@ PARALLEL <- function(x = NULL,
                                                        eigen_type = 2),
                            silent = TRUE)
         it_i <- it_i + 1
+      }
+
+      if (inherits(eigvals_SMC, "try-error")) {
+        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Eigenvalues based on simulated data and SMCs could not be found in 25 tries; likely due to occurrences of singular matrices. Aborting.\n"))
       }
       eigvals_SMC <- do.call(rbind, eigvals_SMC)
 
@@ -374,7 +383,7 @@ PARALLEL <- function(x = NULL,
 
 .parallel_EFA_sim <- function(n_datasets, n_vars, N, n_factors, ...){
 
-  eigvals <- matrix(nrow = n_vars, ncol = n_datasets)
+  eigvals <- matrix(nrow = n_datasets, ncol = n_vars)
 
   for(i in 1:n_datasets){
 
@@ -391,7 +400,11 @@ PARALLEL <- function(x = NULL,
       it_i <- it_i + 1
     }
 
-    eigvals[, i] <- eigvals_i
+    if (inherits(eigvals_i, "try-error")) {
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Eigenvalues based on simulated data and EFA could not be found in 25 tries; likely due to occurrences of singular matrices. Aborting.\n"))
+    }
+
+    eigvals[i,] <- eigvals_i
 
   }
 
@@ -427,4 +440,19 @@ if (decision_rule == "crawford") {
 
   return(n_fac)
 
+}
+
+.parallel_summarise <- function(eig_vals, percent, n_datasets, n_vars) {
+
+  results <- matrix(NA, nrow = n_vars, ncol = length(percent) + 1)
+  results[, 1] <- colMeans(eig_vals)
+
+  for (root in 1:n_vars) {
+    for (perc_i in 1:length(percent)) {
+      ind <- round((percent[perc_i] * n_datasets) / 100)
+      results[root, 1 + perc_i] <- sort(eig_vals[, root])[ind]
+    }
+  }
+
+  return(results)
 }
