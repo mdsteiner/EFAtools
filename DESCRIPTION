@@ -44,7 +44,6 @@ Imports:
     stringr,
     stats,
     ggplot2,
-    plotly,
     tibble,
     magrittr,
     dplyr,
@@ -52,16 +51,15 @@ Imports:
     Rcpp,
     viridisLite,
     graphics,
-    parallel,
     future.apply,
     future,
     GPArotation,
-    checkmate,
-    microbenchmark
+    checkmate
 LinkingTo: 
     Rcpp, RcppArmadillo
 Suggests: 
     testthat,
     knitr,
-    rmarkdown
+    rmarkdown,
+    microbenchmark
 VignetteBuilder: knitr
