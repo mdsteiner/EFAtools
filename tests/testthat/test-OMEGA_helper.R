@@ -54,21 +54,6 @@ lav_fit_NA <- suppressWarnings(lavaan::cfa(lav_mod_NA,
                                            sample.cov = test_models$baseline$cormat,
                                            sample.nobs = 500, estimator = "ml"))
 
-set.seed(500)
-x <- rnorm(10)
-y <- rnorm(10)
-z <- x + y
-a <- rnorm(10)
-dat_sing <- matrix(c(a, x, y, z), ncol = 4)
-cor_sing <- stats::cor(dat_sing)
-colnames(cor_sing) <- c("V1", "V2", "V3", "V4")
-
-lav_mod_conv <- 'F1 =~ V1 + V2
-                 F2 =~ V3 + V4
-                 g =~ V1 + V2 + V3 + V4'
-lav_fit_conv <- suppressWarnings(lavaan::cfa(lav_mod_conv, sample.cov = cor_sing,
-                                             sample.nobs = 10, estimator = "ml"))
-
 lav_mod_hier <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
                F2 =~ V7 + V8 + V9 + V10 + V11 + V12
                F3 =~ V13 + V14 + V15 + V16 + V17 + V18
@@ -86,7 +71,6 @@ lav_fit_hier2 <- suppressWarnings(lavaan::cfa(lav_mod_hier2,
                                               sample.nobs = 500, estimator = "ml"))
 
 test_that("errors are thrown correctly", {
-  expect_error(.OMEGA_LAVAAN(lav_fit_conv, g_name = "g"), " Model did not converge. No omegas are computed.\n")
   expect_error(.OMEGA_LAVAAN(lav_fit_NA, g_name = "g"), " Some loadings are NA or NaN. No omegas are computed.\n")
   expect_message(.OMEGA_LAVAAN(lav_fit_2), " Model contained a single factor. Only omega total is returned.\n")
   expect_error(.OMEGA_LAVAAN(lav_fit_hier, g_name = "g"), " You did not fit a bifactor model. Omegas cannot be computed. Either provide a bifactor model or a model with a single factor.\n")
@@ -181,7 +165,6 @@ test_that("errors are thrown correctly", {
 })
 
 rm(lav_mod_1, lav_fit_1, om_lav_bi, lav_mod_2, lav_fit_2, om_lav_1, lav_fit_3,
-   om_lav_gr, lav_mod_NA, lav_fit_NA, x, y, z, a, dat_sing, cor_sing,
-   lav_mod_conv, lav_fit_conv, lav_mod_hier, lav_fit_hier, lav_mod_hier2,
-   lav_fit_hier2, efa_mod, sl_mod, om_sl, schmid_mod, om_schmid_1, om_schmid_2,
-   om_man_1, om_man_2)
+   om_lav_gr, lav_mod_NA, lav_fit_NA, lav_mod_hier, lav_fit_hier,
+   lav_mod_hier2, lav_fit_hier2, efa_mod, sl_mod, om_sl, schmid_mod, om_schmid_1,
+   om_schmid_2, om_man_1, om_man_2)
