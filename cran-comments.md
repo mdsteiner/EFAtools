@@ -1,7 +1,27 @@
 ## Resubmission
 This is a resubmission. In this version we have:
 
-* Changed start of description field in DESCRIPTION from "The EFAtools package provides" to "Provides...", thus omitting the package name in the beginning.
+* Deleted the packages "parallel" and "plotly" from Imports as they are no
+  longer used.  Moreover, we relocated the package "microbenchmark" from Imports
+  to Suggest, as it is only used in the vignette.
+
+* fixed a bug in parallel_summarise to fix the 'clang-ASAN', 'gcc-ASAN', 'noLD', and 
+  'valgrind' issues.
+  
+* Added an error message in PARALLEL if no solution has been found after 25 tries.
+
+* Fixed a bug in PARALLEL in method "EFA" 
+
+* Updated the readme with CRAN installation instructions
+
+* Updated the EFA-test that threw an error on some systems, fixing 'OpenBLAS' issue.
+
+* Updated input to an N_FACTORS-test to ensure an exactly singular matrix is
+  entered and the expected error is thrown, fixing 'noLD' issue.
+  
+* Updated an OMEGA-helper-test to avoid 'MKL' issue.
+
+
 
 ## Test environments
 * local OS X R installation (Mojave 10.14.6), R 4.0.2
@@ -13,9 +33,5 @@ This is a resubmission. In this version we have:
 
 0 errors | 0 warnings | 1 note
 
-* This is a new release.
-Possibly mis-spelled words in DESCRIPTION:
-    EFA (35:96, 35:246)
-    Leiman (35:375)
-    PAF (35:532)
-    Schmid (35:368)
+* Days since last update: 3 -> this is a patch fixing issues that were only
+  discovered in the extended CRAN Package Checks after the initial submission.
