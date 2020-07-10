@@ -34,4 +34,4 @@ This is a resubmission. In this version we have:
 0 errors | 0 warnings | 1 note
 
 * Days since last update: 3 -> this is a patch fixing issues that were only
-  discovered in the extended CRAN Package Checks after the initial submission.
+  discovered in the extended CRAN Package Checks after the initial release.
