@@ -1,3 +1,10 @@
+# EFAtools 0.1.1.9000
+
+## Minor Changes
+
+* `EFA()`: Updated the EFAtools type in PAF and Pomax.
+
+
 # EFAtools 0.1.1
 
 ## Minor Changes

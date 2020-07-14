@@ -133,7 +133,7 @@ test_that("settings are returned correctly", {
   expect_equal(SL_EFAtools$settings$max_iter, 300)
   expect_equal(SL_psych$settings$max_iter, 50)
 
-  expect_equal(SL_EFAtools$settings$init_comm, "mac")
+  expect_equal(SL_EFAtools$settings$init_comm, "smc")
   expect_equal(SL_psych$settings$init_comm, "smc")
 
   expect_equal(SL_EFAtools$settings$criterion, 0.001)

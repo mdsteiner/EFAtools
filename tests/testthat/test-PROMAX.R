@@ -44,10 +44,10 @@ test_that("settings are returned correctly", {
   expect_equal(prom_spss$settings$kaiser, TRUE)
   expect_equal(prom_1$settings$kaiser, TRUE)
 
-  expect_equal(prom$settings$P_type, "unnorm")
+  expect_equal(prom$settings$P_type, "norm")
   expect_equal(prom_psych$settings$P_type, "unnorm")
   expect_equal(prom_spss$settings$P_type, "norm")
-  expect_equal(prom_1$settings$P_type, "unnorm")
+  expect_equal(prom_1$settings$P_type, "norm")
 
   expect_equal(prom$settings$precision, 1e-05)
   expect_equal(prom_psych$settings$precision, 1e-05)
@@ -59,10 +59,10 @@ test_that("settings are returned correctly", {
   expect_equal(prom_spss$settings$order_type, "ss_factors")
   expect_equal(prom_1$settings$order_type, "eigen")
 
-  expect_equal(prom$settings$k, 3)
+  expect_equal(prom$settings$k, 4)
   expect_equal(prom_psych$settings$k, 4)
   expect_equal(prom_spss$settings$k, 4)
-  expect_equal(prom_1$settings$k, 3)
+  expect_equal(prom_1$settings$k, 4)
 
 })
 

@@ -21,7 +21,7 @@
     }
 
     if (is.null(P_type)) {
-      P_type <- "unnorm"
+      P_type <- "norm"
     } else {
       warning(crayon::yellow$bold("!"), crayon::yellow(" Type and P_type is specified. P_type is used with value '", P_type, "'. Results may differ from the specified type\n"))
     }
@@ -39,7 +39,7 @@
     }
 
     if (is.null(k)) {
-      k <- 3
+      k <- 4
     } else {
       warning(crayon::yellow$bold("!"), crayon::yellow(" Type and k is specified. k is used with value '", k, "'. Results may differ from the specified type\n"))
     }

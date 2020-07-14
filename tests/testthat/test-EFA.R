@@ -227,12 +227,12 @@ test_that("settings are returned correctly", {
   expect_equal(efa_quart$settings$max_iter, 300)
   expect_equal(efa_none$settings$max_iter, 500)
 
-  expect_equal(efa_cor$settings$init_comm, "mac")
-  expect_equal(efa_raw$settings$init_comm, "mac")
+  expect_equal(efa_cor$settings$init_comm, "smc")
+  expect_equal(efa_raw$settings$init_comm, "smc")
   expect_equal(efa_psych$settings$init_comm, "smc")
   expect_equal(efa_spss$settings$init_comm, "smc")
-  expect_equal(efa_equa$settings$init_comm, "mac")
-  expect_equal(efa_quart$settings$init_comm, "mac")
+  expect_equal(efa_equa$settings$init_comm, "smc")
+  expect_equal(efa_quart$settings$init_comm, "smc")
   expect_equal(efa_none$settings$init_comm, "unity")
 
   expect_equal(efa_cor$settings$criterion, 0.001)

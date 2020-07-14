@@ -202,7 +202,7 @@ For PAF, the values of \code{init_comm}, \code{criterion}, \code{criterion_type}
 and \code{abs_eigen} depend on the \code{type} argument.
 
 \code{type = "EFAtools"} will use the following argument specification:
-\code{init_comm = "mac", criterion = .001, criterion_type = "sums",
+\code{init_comm = "smc", criterion = .001, criterion_type = "sums",
 abs_eigen = TRUE}.
 
 \code{type = "psych"} will use the following argument specification:
@@ -236,7 +236,7 @@ For promax, the values of \code{P_type}, \code{precision},
 \code{order_type}, and \code{k} depend on the \code{type} argument.
 
 \code{type = "EFAtools"} will use the following argument specification:
-\code{P_type = "unnorm", precision = 1e-5, order_type = "eigen", k = 3}.
+\code{P_type = "norm", precision = 1e-5, order_type = "eigen", k = 4}.
 
 \code{type = "psych"} will use the following argument specification:
 \code{P_type = "unnorm", precision = 1e-5, order_type = "eigen", k = 4}.

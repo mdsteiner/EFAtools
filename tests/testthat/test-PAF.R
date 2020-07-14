@@ -99,7 +99,7 @@ test_that("settings are returned correctly", {
   expect_equal(paf_spss$settings$max_iter, 25)
   expect_equal(paf_none$settings$max_iter, 500)
 
-  expect_equal(paf_efatools$settings$init_comm, "mac")
+  expect_equal(paf_efatools$settings$init_comm, "smc")
   expect_equal(paf_psych$settings$init_comm, "smc")
   expect_equal(paf_spss$settings$init_comm, "smc")
   expect_equal(paf_none$settings$init_comm, "unity")
