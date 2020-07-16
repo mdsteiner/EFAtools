@@ -46,7 +46,7 @@ dimensions are taken from \code{x}.}
 
 \item{n_datasets}{numeric. The number of datasets to simulate. Default is 1000.}
 
-\item{percent}{numeric. A vector of percentiles to take the simulated eigenvalues from.
+\item{percent}{numeric. The percentile to take from the simulated eigenvalues.
 Default is 95.}
 
 \item{eigen_type}{character. On what the eigenvalues should be found. Can be

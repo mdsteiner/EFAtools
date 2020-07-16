@@ -4,6 +4,10 @@
 
 * `EFA()`: Updated the EFAtools type in PAF and Pomax.
 
+## Bug Fixes
+
+* `PARALLEL()`: Fixed a bug that occurred when using `decision_rule = "percentile"`
+
 
 # EFAtools 0.1.1
 

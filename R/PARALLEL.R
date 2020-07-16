@@ -15,7 +15,7 @@
 #' Only has to be specified if \code{x} is left as \code{NULL} as otherwise the
 #' dimensions are taken from \code{x}.
 #' @param n_datasets numeric. The number of datasets to simulate. Default is 1000.
-#' @param percent numeric. A vector of percentiles to take the simulated eigenvalues from.
+#' @param percent numeric. The percentile to take from the simulated eigenvalues.
 #'  Default is 95.
 #' @param eigen_type character. On what the eigenvalues should be found. Can be
 #'  either "SMC", "PCA", or "EFA". If using "SMC", the diagonal of the correlation
@@ -431,10 +431,8 @@ if (decision_rule == "crawford") {
 
 } else if (decision_rule == "percentile") {
 
-  for (perc_i in percent) {
-    pp <- paste(perc_i, "Percentile")
-    n_fac[pp] <- which(!(eigvals_real > results[, pp]))[1] - 1
-  }
+  pp <- paste(percent, "Percentile")
+  n_fac <- which(!(eigvals_real > results[, pp]))[1] - 1
 
 }
 
