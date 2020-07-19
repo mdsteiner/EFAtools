@@ -1,15 +1,13 @@
 ---
-title: 'EFAtools: An R package with fast and flexible implementations of exploratory
-  factor analysis tools'
+title: 'EFAtools: An R package with fast and flexible implementations of exploratory factor analysis tools'
 tags:
 - R
 - exploratory factor analysis
 - factor retention methods
 - hierarchical factor analysis
-- easy comparison of implementations
+- comparison of implementations
 authors:
-- name: Markus D. Steiner^[Correspondence concerning this article should be addressed
-    to markus.d.steiner@gmail.com]
+- name: Markus D. Steiner^[Correspondence concerning this article should be addressed to <markus.d.steiner@gmail.com>]
   orcid: 0000-0002-8126-0757
   affiliation: 1
 - name: Silvia Grieder
