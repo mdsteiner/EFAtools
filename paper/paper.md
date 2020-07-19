@@ -7,7 +7,7 @@ tags:
 - hierarchical factor analysis
 - comparison of implementations
 authors:
-- name: Markus D. Steiner^[Correspondence concerning this article should be addressed to <markus.d.steiner@gmail.com>]
+- name: Markus D. Steiner
   orcid: 0000-0002-8126-0757
   affiliation: 1
 - name: Silvia Grieder
