@@ -11,13 +11,14 @@ authors:
 - name: Markus D. Steiner^[Correspondence concerning this article should be addressed
     to markus.d.steiner@gmail.com]
   orcid: 0000-0002-8126-0757
-  affiliation: '1'
+  affiliation: 1
 - name: Silvia Grieder
   orcid: 0000-0002-0118-7722
-  affiliation: '1'
-affiliation:
+  affiliation: 1
+affiliations:
 - name: Department of Psychology, University of Basel
   index: 1
+date: 19 July 2020
 bibliography: paper.bib
 ---
 
