@@ -5,3 +5,4 @@
 ^\.travis\.yml$
 ^EFAtools-manual\.tex$
 ^CRAN-RELEASE$
+^paper.*$
