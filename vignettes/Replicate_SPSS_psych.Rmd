@@ -1,0 +1,138 @@
+---
+title: "Replicate SPSS and R psych results with EFAtools"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Replicate_SPSS_psych}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+
+
+if (!requireNamespace("psych", quietly = TRUE)) {
+      stop("Package \"psych\" needed for this vignette to work. Please install it.",
+      call. = FALSE)
+}
+
+```
+
+This vignette demonstrates the replication of exploratory factor analysis (EFA) results (specifically, principal axis factoring [PAF] with subsequent promax rotation) from the SPSS `FACTOR` algorithm and from the `fa` function from the `psych` R package.
+For a general introduction to the `EFAtools` package, please see the [EFAtools](EFAtools.html "EFAtools") vignette. Same as in the EFAtools vignette, we will use the DOSPERT data set for this demonstration as well (see `?DOSPERT` for details).
+
+First load the needed packages EFAtools and psych (original SPSS results for some data sets are available in the EFAtools package).
+
+```{r setup}
+library(psych)
+library(EFAtools)
+```
+
+## Principal Axis Factoring
+
+First, we will fit an EFA with PAF and without rotation using the `EFA` function from `EFAtools` using `type = "psych"` and `type = "SPSS"`. These types are intended to mimic the R psych and SPSS results, respectively.
+
+```{r}
+# EFAtools::EFA with type = "psych" without rotation
+EFA_psych_paf <- EFA(DOSPERT$cormat, n_factors = 10, N = DOSPERT$N, type = "psych")
+# EFAtools::EFA with type = "SPSS" without rotation
+EFA_SPSS_paf <- EFA(DOSPERT$cormat, n_factors = 10, N = DOSPERT$N, type = "SPSS")
+```
+
+As a next step, we fit an EFA with the same configurations (PAF and no rotation) using the `fa` function from `psych` with the same data set.
+
+```{r}
+# psych::fa without rotation
+psych_paf <- psych::fa(DOSPERT$cormat, nfactors = 10, n.obs = DOSPERT$N,
+                       fm = "pa", rotate = "none")
+```
+
+Now we can compare results from `EFA` with the respective types to the original R `psych` and `SPSS` results using the same data set. This is easily done using the `COMPARE` function available in the `EFAtools` package.
+
+```{r}
+# Compare loadings from psych::fa and EFAtools::EFA with type = "psych"
+COMPARE(EFA_psych_paf$unrot_loadings, psych_paf$loadings)
+
+# Compare loadings from SPSS and EFAtools::EFA with type = "SPSS"
+COMPARE(EFA_SPSS_paf$unrot_loadings, SPSS$DOSPERT$paf_load)
+
+COMPARE(psych_paf$loadings, SPSS$DOSPERT$paf_load)
+```
+
+To see that this close match was not trivial, we can look at the match between the original R `psych` and `SPSS` solutions.
+
+```{r}
+# Compare loadings from psych::fa and SPSS
+COMPARE(psych_paf$loadings, SPSS$DOSPERT$paf_load)
+```
+
+We can see that the solutions are slightly different, especially for the 9th and 10th factor. Although the differences are very small here, they can get quite large for other data sets, or get larger after rotation (see below).
+
+## Varimax Rotation
+
+Now we confirmed the replication of PAF results without rotation, we can continue to compare rotated factor solutions. We start by comparing varimax rotated PAF solutions.
+
+
+```{r}
+## Fit the models
+
+# EFAtools::EFA with type = "psych" with varimax rotation
+EFA_psych_var <- EFA(DOSPERT$cormat, n_factors = 10, N = DOSPERT$N, type = "psych", 
+                     rotation = "varimax")
+# EFAtools::EFA with type = "SPSS" with varimax rotation
+EFA_SPSS_var <- EFA(DOSPERT$cormat, n_factors = 10, N = DOSPERT$N, type = "SPSS", 
+                    rotation = "varimax")
+# psych::fa with varimax rotation
+psych_var <- psych::fa(DOSPERT$cormat, nfactors = 10, n.obs = DOSPERT$N,
+                       fm = "pa", rotate = "varimax")
+
+## Check replication of results
+
+# Compare loadings from psych::fa and EFAtools::EFA with type = "psych"
+COMPARE(EFA_psych_var$rot_loadings, psych_var$loadings)
+
+# Compare loadings from SPSS and EFAtools::EFA with type = "SPSS"
+COMPARE(EFA_SPSS_var$rot_loadings, SPSS$DOSPERT$var_load)
+
+## Compare original results (just to see the difference)
+
+# Compare loadings from psych::fa and SPSS
+COMPARE(psych_var$loadings, SPSS$DOSPERT$var_load)
+
+```
+
+## Promax Rotation
+
+Finally, we can do the same for promax rotated results as well.
+
+```{r}
+## Fit the models
+
+# EFAtools::EFA with type = "psych" with promax rotation
+EFA_psych_pro <- EFA(DOSPERT$cormat, n_factors = 10, N = DOSPERT$N, type = "psych", 
+                     rotation = "promax")
+# EFAtools::EFA with type = "SPSS" with promax rotation
+EFA_SPSS_pro <- EFA(DOSPERT$cormat, n_factors = 10, N = DOSPERT$N, type = "SPSS", 
+                    rotation = "promax")
+# psych::fa with promax rotation
+psych_pro <- psych::fa(DOSPERT$cormat, nfactors = 10, n.obs = DOSPERT$N,
+                       fm = "pa", rotate = "Promax")
+
+## Check replication of results
+
+# Compare loadings from psych::fa and EFAtools::EFA with type = "psych"
+COMPARE(EFA_psych_pro$rot_loadings, psych_pro$loadings)
+
+# Compare loadings from SPSS and EFAtools::EFA with type = "SPSS"
+COMPARE(EFA_SPSS_pro$rot_loadings, SPSS$DOSPERT$pro_load)
+
+## Compare original results (just to see the difference)
+
+# Compare loadings from psych::fa and SPSS
+COMPARE(psych_pro$loadings, SPSS$DOSPERT$pro_load)
+
+```
+
