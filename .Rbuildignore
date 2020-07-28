@@ -6,3 +6,4 @@
 ^EFAtools-manual\.tex$
 ^CRAN-RELEASE$
 ^paper.*$
+^LICENSE
