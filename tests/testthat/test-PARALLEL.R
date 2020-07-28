@@ -76,6 +76,7 @@ z <- x + y
 dat_sing <- matrix(c(x, y, z), ncol = 3)
 cor_sing <- stats::cor(dat_sing)
 
+cor_nposdef <- matrix(c(1, 1, 0, 1, 1, 1, 0, 1, 1), ncol = 3)
 
 test_that("errors are thrown correctly", {
   expect_warning(PARALLEL(GRiPS_raw, N = 20, eigen_type = "PCA"), " 'N' was set and data entered. Taking N from data.\n")
@@ -86,6 +87,7 @@ test_that("errors are thrown correctly", {
                           percent = 80), "decision_rule == 'crawford' is specified, but 95 percentile was not used. Using means instead. To use 'crawford', make sure to specify percent = 95.\n")
   expect_error(PARALLEL(dat_sing), " Correlation matrix is singular, parallel analysis is not possible.\n")
   expect_error(PARALLEL(cor_sing, N = 10), " Correlation matrix is singular, parallel analysis is not possible.\n")
+  expect_warning(PARALLEL(cor_nposdef, N = 10), "Matrix was not positive definite, smoothing was done")
 })
 
 test_that("settings are returned correctly", {
@@ -141,4 +143,4 @@ test_that("settings are returned correctly", {
 
 })
 
-rm(pa_cor, pa_cor_pca, pa_raw, x, y, z, dat_sing, cor_sing)
+rm(pa_cor, pa_cor_pca, pa_raw, x, y, z, dat_sing, cor_sing, cor_nposdef)

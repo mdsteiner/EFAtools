@@ -94,6 +94,15 @@ z <- x + y
 dat_sing <- matrix(c(x, y, z), ncol = 3)
 cor_sing <- stats::cor(dat_sing)
 
+# Example from nearPD function from Matrix package
+cor_nposdef <- matrix(c(1,     0.477, 0.644, 0.578, 0.651, 0.826,
+                        0.477, 1,     0.516, 0.233, 0.682, 0.75,
+                        0.644, 0.516, 1,     0.599, 0.581, 0.742,
+                        0.478, 0.233, 0.599, 1,     0.741, 0.8,
+                        0.651, 0.682, 0.581, 0.741, 1,     0.798,
+                        0.826, 0.75,  0.742, 0.8,   0.798, 1),
+                      nrow = 6, ncol = 6)
+
 test_that("errors are thrown correctly", {
   expect_error(SMT(1:5), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n")
   expect_error(SMT(test_models$baseline$cormat), " Argument 'N' was NA. Either provide N or raw data.\n")
@@ -103,6 +112,7 @@ test_that("errors are thrown correctly", {
   expect_error(SMT(cor_sing, N = 10), " Correlation matrix is singular, no further analyses are performed\n")
   expect_error(SMT(matrix(rnorm(50), ncol = 2)), " The model is either underidentified or just identified with 1 factor already. SMTs cannot be performed. Please provide more indicators.\n") # underidentified case
   expect_error(SMT(matrix(rnorm(60), ncol = 3)), " The model is either underidentified or just identified with 1 factor already. SMTs cannot be performed. Please provide more indicators.\n") # just identified case
+  expect_warning(SMT(cor_nposdef, N = 10), "Matrix was not positive definite, smoothing was done")
 })
 
-rm(smt_cor, smt_raw, smt_rand, x, y, z, dat_sing, cor_sing)
+rm(smt_cor, smt_raw, smt_rand, x, y, z, dat_sing, cor_sing, cor_nposdef)

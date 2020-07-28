@@ -132,6 +132,15 @@ z <- x + y
 dat_sing <- matrix(c(x, y, z, rnorm(10), rnorm(10), rnorm(10)), ncol = 6)
 cor_sing <- stats::cor(dat_sing)
 
+# Example from nearPD function from Matrix package
+cor_nposdef <- matrix(c(1,     0.477, 0.644, 0.578, 0.651, 0.826,
+                        0.477, 1,     0.516, 0.233, 0.682, 0.75,
+                        0.644, 0.516, 1,     0.599, 0.581, 0.742,
+                        0.478, 0.233, 0.599, 1,     0.741, 0.8,
+                        0.651, 0.682, 0.581, 0.741, 1,     0.798,
+                        0.826, 0.75,  0.742, 0.8,   0.798, 1),
+                      nrow = 6, ncol = 6)
+
 test_that("errors etc are thrown correctly", {
   expect_error(HULL(1:5), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n")
   expect_message(suppressWarnings(HULL(GRiPS_raw)), " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n")
@@ -141,15 +150,17 @@ test_that("errors etc are thrown correctly", {
   expect_error(HULL(test_models$baseline$cormat, method = "ULS"), ' "N" is not specified but is needed for computation of some of the fit indices.\n')
 
   expect_error(HULL(dat_sing, method = "ML"), ' Correlation matrix is singular, the HULL method cannot be exectued.\n')
+  expect_error(HULL(cor_sing, N = 20, method = "ML"), ' Correlation matrix is singular, the HULL method cannot be exectued.\n')
 
   expect_error(HULL(matrix(rnorm(50), ncol = 5)), "Data has fewer than 6 indicators. Hull method needs at least 6.\n")
 
   expect_message(suppressWarnings(HULL(GRiPS_raw)), 'Only CAF can be used as gof if method "PAF" is used. Setting gof to "CAF"\n')
 
   expect_warning(HULL(test_models$baseline$cormat, n_fac_theor = 13, N = 500), ' Setting maximum number of factors to 12 to ensure overidentified models.\n')
+  #expect_warning(HULL(cor_nposdef, N = 20, method = "ML"), "Matrix was not positive definite, smoothing was done")
 
 })
 
 rm(hull_cor_paf, hull_cor_ml, hull_cor_uls, hull_cor_uls_CFI, hull_raw_paf,
    hull_raw_ml, hull_raw_uls, hull_raw_uls_CFI, hull_raw_ml_nf, hull_cor_ml_nf,
-   x, y, z, dat_sing, cor_sing)
+   x, y, z, dat_sing, cor_sing, cor_nposdef)

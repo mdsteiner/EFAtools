@@ -44,8 +44,11 @@ test_that("settings are returned correctly", {
 x <- rnorm(10)
 y <- rnorm(10)
 z <- x + y
+
 dat_sing <- matrix(c(x, y, z), ncol = 3)
 cor_sing <- stats::cor(dat_sing)
+
+cor_nposdef <- matrix(c(1, 1, 0, 1, 1, 1, 0, 1, 1), ncol = 3)
 
 test_that("errors are thrown correctly", {
   expect_error(BARTLETT(1:5), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n")
@@ -54,8 +57,9 @@ test_that("errors are thrown correctly", {
   expect_warning(BARTLETT(GRiPS_raw, N = 20), " 'N' was set and data entered. Taking N from data.\n")
   expect_error(BARTLETT(dat_sing), " Correlation matrix is singular, Bartlett's test cannot be executed.\n")
   expect_error(BARTLETT(cor_sing, N = 10), " Correlation matrix is singular, Bartlett's test cannot be executed.\n")
+  expect_warning(BARTLETT(cor_nposdef, N = 10), "Matrix was not positive definite, smoothing was done")
 })
 
-rm(bart_cor, bart_raw, bart_rand, x, y, z, dat_sing, cor_sing)
+rm(bart_cor, bart_raw, bart_rand, x, y, z, dat_sing, cor_sing, cor_nposdef)
 
 

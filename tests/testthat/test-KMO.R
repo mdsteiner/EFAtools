@@ -34,11 +34,14 @@ z <- x + y
 dat_sing <- matrix(c(x, y, z), ncol = 3)
 cor_sing <- stats::cor(dat_sing)
 
+cor_nposdef <- matrix(c(1, 1, 0, 1, 1, 1, 0, 1, 1), ncol = 3)
+
 test_that("errors are thrown correctly", {
   expect_error(KMO(1:5), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n")
   expect_message(KMO(GRiPS_raw), " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n")
   expect_error(KMO(dat_sing), " Correlation matrix is singular, no further analyses are performed.\n")
   expect_error(KMO(cor_sing), " Correlation matrix is singular, no further analyses are performed.\n")
+  expect_warning(KMO(cor_nposdef), "Matrix was not positive definite, smoothing was done")
 })
 
-rm(kmo_cor, kmo_raw, x, y, z, dat_sing, cor_sing)
+rm(kmo_cor, kmo_raw, x, y, z, dat_sing, cor_sing, cor_nposdef)

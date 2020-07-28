@@ -317,6 +317,8 @@ z <- x + y
 dat_sing <- matrix(c(x, y, z), ncol = 3)
 cor_sing <- stats::cor(dat_sing)
 
+cor_nposdef <- matrix(c(1, 1, 0, 1, 1, 1, 0, 1, 1), ncol = 3)
+
 test_that("errors are thrown correctly", {
   expect_error(EFA(1:5), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n")
   expect_message(EFA(GRiPS_raw, n_factors = 1), " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n")
@@ -327,10 +329,12 @@ test_that("errors are thrown correctly", {
   expect_warning(EFA(matrix(rnorm(30), ncol = 3), n_factors = 1), " The model is just identified (df = 0). We suggest to try again with a lower number of factors or a larger number of indicators.\n", fixed = TRUE)
   expect_warning(EFA(test_models$baseline$cormat, n_factors = 3, method = "ML"), " Argument 'N' was NA, not all fit indices could be computed. To get all fit indices, either provide N or raw data.\n")
   expect_warning(EFA(test_models$baseline$cormat, n_factors = 3, method = "ULS"), " Argument 'N' was NA, not all fit indices could be computed. To get all fit indices, either provide N or raw data.\n")
+  expect_warning(EFA(cor_nposdef, n_factors = 1, N = 10), "Matrix was not positive definite, smoothing was done")
 })
 
 rm(efa_cor, efa_raw, efa_psych, efa_spss, efa_ml, efa_uls, efa_equa, efa_quart,
    efa_none, cormat_zero, cormat_moderate, efa_paf_zero, efa_ml_zero, efa_uls_zero,
-   efa_paf_moderate, efa_ml_moderate, efa_uls_moderate, x, y, z, dat_sing, cor_sing)
+   efa_paf_moderate, efa_ml_moderate, efa_uls_moderate, x, y, z, dat_sing, cor_sing,
+   cor_nposdef)
 
 

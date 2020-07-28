@@ -1,11 +1,16 @@
 ---
-title: 'EFAtools: An R package with fast and flexible implementations of exploratory factor analysis tools'
+title: 'EFAtools: An R package with fast and flexible implementations of exploratory
+  factor analysis tools'
 tags:
 - R
 - exploratory factor analysis
 - factor retention methods
 - hierarchical factor analysis
 - comparison of implementations
+date: "19 July 2020"
+output:
+  html_document:
+    df_print: paged
 authors:
 - name: Markus D. Steiner
   orcid: 0000-0002-8126-0757
@@ -13,13 +18,14 @@ authors:
 - name: Silvia Grieder
   orcid: 0000-0002-0118-7722
   affiliation: 2
-affiliations:
-- name: Center for Cognitive and Decision Sciences, Department of Psychology, University of Basel, Switzerland
-  index: 1
-- name: Division of Developmental and Personality Psychology, Department of Psychology, University of Basel, Switzerland
-  index: 2
-date: 19 July 2020
 bibliography: paper.bib
+affiliations:
+- name: Center for Cognitive and Decision Sciences, Department of Psychology, University
+    of Basel, Switzerland
+  index: 1
+- name: Division of Developmental and Personality Psychology, Department of Psychology,
+    University of Basel, Switzerland
+  index: 2
 ---
 
 # Summary
@@ -48,6 +54,7 @@ Table: Core functionalities of *EFAtools*.
 |                          | Hull method                        | `HULL()` |
 |                          | Kaiser-Guttman criterion           | `KGC()` |
 |                          | Parallel analysis                  | `PARALLEL()` |
+|                          | Scree plot                         | `SCREE()` |
 |                          | Sequential model tests             | `SMT()` |
 |                          | RMSEA lower bound criterion        | `SMT()` |
 |                          | AIC criterion                      | `SMT()` |
@@ -58,6 +65,8 @@ Table: Core functionalities of *EFAtools*.
 |                 | Oblique: Promax, oblimin, quartimin, simplimax, bentlerQ, geominQ, bifactorQ | `EFA()` |
 |Hierarchical factor analysis | Schmid-Leiman transformation   | `SL()` |
 |                          | McDonald's omegas                 | `OMEGA()` |
+*Note*. All functions for suitability for factor analysis and factor retention criteria can be called in any desired combination using the `N_FACTORS()` function.
+
 
 # Installation
 
