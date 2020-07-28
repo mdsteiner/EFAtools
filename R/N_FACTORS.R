@@ -210,6 +210,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   hull_out <- NA
   kgc_out <- NA
   parallel_out <- NA
+  scree_out <- NA
   smt_out <- NA
 
   nfac_CD <- NA
