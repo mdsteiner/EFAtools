@@ -37,13 +37,14 @@
 #' @param max_iter_CD numeric. Passed to \code{\link{CD}}. The maximum number of
 #'  iterations to perform after which the iterative PAF procedure is halted.
 #'   Default is 50.
-#' @param n_fac_theor numeric. Passed to \code{\link{HULL}}. Theoretical number of
-#'  factors to retain. The maximum of this number and the number of factors
-#'   suggested by \link{PARALLEL} plus one will be used in the Hull method.
+#' @param n_fac_theor numeric. Passed to \code{\link{HULL}}. Theoretical number
+#'  of factors to retain. The maximum of this number and the number of factors
+#'  suggested by \link{PARALLEL} plus one will be used in the Hull method.
 #' @param method character. Passed to \code{\link{EFA}} in \code{\link{HULL}},
-#' \code{\link{KGC}}, and \code{\link{PARALLEL}}. The estimation method to use.
-#' One of  \code{"PAF"}, \code{"ULS"}, or  \code{"ML"}, for principal axis
-#' factoring, unweighted least squares, and maximum likelihood, respectively.
+#' \code{\link{KGC}}, \code{\link{SCREE}}, and \code{\link{PARALLEL}}. The
+#' estimation method to use. One of  \code{"PAF"}, \code{"ULS"}, or  \code{"ML"},
+#' for principal axis factoring, unweighted least squares, and maximum
+#' likelihood, respectively.
 #' @param gof character. Passed to \code{\link{HULL}}. The goodness of fit index
 #' to use. Either \code{"CAF"}, \code{"CFI"}, or \code{"RMSEA"}, or any
 #' combination of them. If \code{method = "PAF"} is used, only
@@ -65,8 +66,8 @@
 #' are possible here. Default is to use all inputs, that is, \code{c("PCA",
 #' "SMC", "EFA"})
 #' @param n_factors numeric. Passed to \code{\link{PARALLEL}} (also within
-#' \code{\link{HULL}}) and to \code{\link{KGC}}. Number of factors to extract if
-#'  \code{"EFA"} is included in \code{eigen_type_HULL} or
+#' \code{\link{HULL}}), \code{\link{KGC}}, and \code{\link{SCREE}}. Number of
+#' factors to extract if \code{"EFA"} is included in \code{eigen_type_HULL} or
 #'  \code{eigen_type_other}. Default is 1.
 #' @param n_datasets numeric. Passed to \code{\link{PARALLEL}} (also within
 #' \code{\link{HULL}}). The number of datasets to simulate. Default is 1000.
@@ -105,8 +106,8 @@
 #' @return A list of class N_FACTORS containing
 #' \item{outputs}{A list with the outputs from \code{\link{BARTLETT}} and
 #'  \code{\link[EFAtools]{KMO}} and the factor retention criteria.}
-#' \item{n_factors}{A named vector containing the suggested number of factors from
-#' each factor retention criterion.}
+#' \item{n_factors}{A named vector containing the suggested number of factors
+#' from each factor retention criterion.}
 #' \item{settings}{A list of the settings used.}
 #'
 #' @export
