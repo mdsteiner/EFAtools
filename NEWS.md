@@ -1,12 +1,21 @@
 # EFAtools 0.1.1.9000
 
-## Minor Changes
+## General
+
+* Created new vignette *Replicate_SPSS_psych* to show replication of original `psych` and `SPSS` EFA solutions with `EFAtools`.
+
+## Changes to Functions
 
 * `EFA()`: Updated the EFAtools type in PAF and Pomax.
+* `N_FACTORS()`: Added option to do a scree plot if "SCREE" is included in the `criteria` argument.
 
 ## Bug Fixes
 
 * `PARALLEL()`: Fixed a bug that occurred when using `decision_rule = "percentile"`
+
+## New Functions
+
+* Added function `SCREE()` that does a scree plot.
 
 
 # EFAtools 0.1.1
