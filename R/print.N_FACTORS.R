@@ -11,7 +11,7 @@
 #' # All criteria except "CD", with correlation matrix and fit method "ML"
 #' # (where needed)
 #' N_FACTORS(test_models$baseline$cormat, criteria = c("EKC", "HULL", "KGC",
-#'           "PARALLEL", "SMT"), N = 500, method = "ML")
+#'           "PARALLEL", "SCREE", "SMT"), N = 500, method = "ML")
 #'}
 print.N_FACTORS <- function(x, ...){
 
@@ -19,7 +19,7 @@ print.N_FACTORS <- function(x, ...){
   criteria <- x$settings$criteria
   n_fac <- x$n_factors
   gof <- x$settings$gof
-  eigen_type_KGC_PA <- x$settings$eigen_type_KGC_PA
+  eigen_type_other <- x$settings$eigen_type_other
   kmo_out <- x$outputs$kmo_out
   KMO <- kmo_out$KMO
 
@@ -134,19 +134,19 @@ print.N_FACTORS <- function(x, ...){
 
   if("KGC" %in% criteria){
 
-    if("PCA" %in% eigen_type_KGC_PA){
+    if("PCA" %in% eigen_type_other){
     cat(crayon::blue(cli::symbol$circle_dotted,
                      "Kaiser-Guttman criterion with PCA: "),
         crayon::bold(n_fac["nfac_KGC_PCA"]), sep = "")
     cat("\n")
     }
-    if("SMC" %in% eigen_type_KGC_PA){
+    if("SMC" %in% eigen_type_other){
     cat(crayon::blue(cli::symbol$circle_dotted,
                      "Kaiser-Guttman criterion with SMC: "),
         crayon::bold(n_fac["nfac_KGC_SMC"]), sep = "")
     cat("\n")
     }
-    if("EFA" %in% eigen_type_KGC_PA){
+    if("EFA" %in% eigen_type_other){
     cat(crayon::blue(cli::symbol$circle_dotted,
                      "Kaiser-Guttman criterion with EFA: "),
         crayon::bold(n_fac["nfac_KGC_EFA"]), sep = "")
@@ -157,21 +157,21 @@ print.N_FACTORS <- function(x, ...){
 
   if("PARALLEL" %in% criteria){
 
-    if("PCA" %in% eigen_type_KGC_PA){
+    if("PCA" %in% eigen_type_other){
     cat(crayon::blue(cli::symbol$circle_dotted,
                      "Parallel analysis with PCA: "),
         crayon::bold(n_fac["nfac_PA_PCA"]),
         sep = "")
     cat("\n")
     }
-    if("SMC" %in% eigen_type_KGC_PA){
+    if("SMC" %in% eigen_type_other){
     cat(crayon::blue(cli::symbol$circle_dotted,
                      "Parallel analysis with SMC: "),
         crayon::bold(n_fac["nfac_PA_SMC"]),
         sep = "")
     cat("\n")
     }
-    if("EFA" %in% eigen_type_KGC_PA){
+    if("EFA" %in% eigen_type_other){
     cat(crayon::blue(cli::symbol$circle_dotted,
                      "Parallel analysis with EFA: "),
         crayon::bold(n_fac["nfac_PA_EFA"]),
@@ -196,6 +196,12 @@ print.N_FACTORS <- function(x, ...){
         crayon::bold(n_fac["nfac_AIC"]),
         sep = "")
     cat("\n")
+
+  }
+
+  if("SCREE" %in% criteria){
+
+    plot(x$output$scree_out)
 
   }
 

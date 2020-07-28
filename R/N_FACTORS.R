@@ -11,8 +11,8 @@
 #'  data.
 #' @param criteria character. A vector with the factor retention methods to
 #' perform. Possible inputs are: \code{"CD"}, \code{"EKC"}, \code{"HULL"},
-#' \code{"KGC"}, \code{"PARALLEL"}, and \code{"SMT"} (see details). By default,
-#' all factor retention methods are performed.
+#' \code{"KGC"}, \code{"PARALLEL"}, \code{"SCREE"}, and \code{"SMT"}
+#' (see details). By default, all factor retention methods are performed.
 #' @param suitability logical. Whether the data should be checked for suitability
 #' for factor analysis using the Bartlett's test of sphericity and the
 #' Kaiser-Guttmann criterion (see details). Default is \code{TRUE}.
@@ -59,14 +59,15 @@
 #' matrices are left to be 1. If using  \code{"EFA"}, eigenvalues are found on the
 #' correlation  matrices with the final communalities of an EFA solution as
 #' diagonal.
-#' @param eigen_type_KGC_PA character. Passed to \code{\link{KGC}} and
-#' \code{\link{PARALLEL}}. The same as eigen_type_HULL, but multiple inputs
+#' @param eigen_type_other character. Passed to \code{\link{KGC}},
+#' \code{\link{SCREE}}, and \code{\link{PARALLEL}}. The same as eigen_type_HULL,
+#' but multiple inputs
 #' are possible here. Default is to use all inputs, that is, \code{c("PCA",
 #' "SMC", "EFA"})
 #' @param n_factors numeric. Passed to \code{\link{PARALLEL}} (also within
 #' \code{\link{HULL}}) and to \code{\link{KGC}}. Number of factors to extract if
 #'  \code{"EFA"} is included in \code{eigen_type_HULL} or
-#'  \code{eigen_type_KGC_PA}. Default is 1.
+#'  \code{eigen_type_other}. Default is 1.
 #' @param n_datasets numeric. Passed to \code{\link{PARALLEL}} (also within
 #' \code{\link{HULL}}). The number of datasets to simulate. Default is 1000.
 #' @param percent numeric. Passed to \code{\link{PARALLEL}} (also within
@@ -96,6 +97,7 @@
 #' \item{Hull method (see \code{\link{HULL}})}
 #' \item{Kaiser-Guttman criterion (see \code{\link{KGC}})}
 #' \item{Parallel analysis (see \code{\link{PARALLEL}})}
+#' \item{Scree plot (see \code{\link{SCREE}})}
 #' \item{Sequential chi-square model tests, RMSEA lower bound, and AIC
 #' (see \code{\link{SMT}})}
 #' }
@@ -117,25 +119,25 @@
 #'
 #' # The same as above, but without "CD"
 #' nfac_wo_CD <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC",
-#'                         "HULL", "KGC", "PARALLEL", "SMT"), N = 500,
+#'                         "HULL", "KGC", "PARALLEL", "SCREE", "SMT"), N = 500,
 #'                         method = "ML")
 #'
 #' # Use PAF instead of ML (this will take a lot longer). For this, gof has
 #' # to be set to "CAF" for the Hull method.
 #' nfac_PAF <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC",
-#'                       "HULL", "KGC", "PARALLEL", "SMT"), N = 500,
+#'                       "HULL", "KGC", "PARALLEL", "SCREE", "SMT"), N = 500,
 #'                       gof = "CAF")
 #'
 #' # Do KGC and PARALLEL with only "PCA" type of eigenvalues
 #' nfac_PCA <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC",
-#'                       "HULL", "KGC", "PARALLEL", "SMT"), N = 500,
-#'                       method = "ML", eigen_type_KGC_PA = "PCA")
+#'                       "HULL", "KGC", "PARALLEL", "SCREE", "SMT"), N = 500,
+#'                       method = "ML", eigen_type_other = "PCA")
 #'
 #' # Use raw data, such that CD can also be performed
 #' nfac_raw <- N_FACTORS(GRiPS_raw, method = "ML")
 #'}
 N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
-                                      "SMT"),
+                                      "SCREE", "SMT"),
                       suitability = TRUE, N = NA,
                       use = c("pairwise.complete.obs", "all.obs",
                               "complete.obs", "everything", "na.or.complete"),
@@ -145,8 +147,9 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
                       method = c("PAF", "ULS", "ML"),
                       gof = c("CAF", "CFI", "RMSEA"),
                       eigen_type_HULL = c("SMC", "PCA", "EFA"),
-                      eigen_type_KGC_PA = c("PCA", "SMC", "EFA"), n_factors = 1,
-                      n_datasets = 1000, percent = 95,
+                      eigen_type_other = c("PCA", "SMC", "EFA"),
+                      n_factors = 1, n_datasets = 1000,
+                      percent = 95,
                       decision_rule = c("means", "percentile", "crawford"),
                       ...){
 
@@ -161,7 +164,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   criteria <- match.arg(criteria, several.ok = TRUE)
   suitability <- checkmate::assert_flag(suitability)
   eigen_type_HULL <- match.arg(eigen_type_HULL)
-  eigen_type_KGC_PA <- match.arg(eigen_type_KGC_PA, several.ok = TRUE)
+  eigen_type_other <- match.arg(eigen_type_other, several.ok = TRUE)
   cor_method <- match.arg(cor_method)
   use <- match.arg(use)
   method <- match.arg(method)
@@ -280,7 +283,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   # Kaiser-Guttman criterion
   if("KGC" %in% criteria){
 
-    kgc_out <- KGC(R, eigen_type = eigen_type_KGC_PA, use = use,
+    kgc_out <- KGC(R, eigen_type = eigen_type_other, use = use,
                    cor_method = cor_method, n_factors = n_factors,
                    method = method, ...)
 
@@ -295,7 +298,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
 
     parallel_out <- try(PARALLEL(R, N = N,
                                  n_datasets = n_datasets, percent = percent,
-                                 eigen_type = eigen_type_KGC_PA, use = use,
+                                 eigen_type = eigen_type_other, use = use,
                                  cor_method = cor_method,
                                  decision_rule = decision_rule,
                                  n_factors = n_factors, method = method, ...))
@@ -304,6 +307,14 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
     nfac_PA_SMC <- parallel_out$n_fac_SMC
     nfac_PA_EFA <- parallel_out$n_fac_EFA
 
+  }
+
+  # Scree plot
+  if("SCREE" %in% criteria){
+
+    scree_out <- SCREE(R, eigen_type = eigen_type_other, use = use,
+                     cor_method = cor_method, n_factors = n_factors,
+                     method = method, ...)
   }
 
   # Sequential chi square tests, RMSEA lower bound and AIC
@@ -332,7 +343,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
                    method = method,
                    gof = gof,
                    eigen_type_HULL = eigen_type_HULL,
-                   eigen_type_KGC_PA = eigen_type_KGC_PA,
+                   eigen_type_other = eigen_type_other,
                    n_factors = n_factors,
                    n_datasets = n_datasets,
                    percent = percent,
@@ -361,6 +372,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
                   hull_out = hull_out,
                   kgc_out = kgc_out,
                   parallel_out = parallel_out,
+                  scree_out = scree_out,
                   smt_out = smt_out)
 
   output <- list(outputs = outputs,

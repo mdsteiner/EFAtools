@@ -6,7 +6,7 @@
 \usage{
 N_FACTORS(
   x,
-  criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL", "SMT"),
+  criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL", "SCREE", "SMT"),
   suitability = TRUE,
   N = NA,
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
@@ -21,7 +21,7 @@ N_FACTORS(
   method = c("PAF", "ULS", "ML"),
   gof = c("CAF", "CFI", "RMSEA"),
   eigen_type_HULL = c("SMC", "PCA", "EFA"),
-  eigen_type_KGC_PA = c("PCA", "SMC", "EFA"),
+  eigen_type_other = c("PCA", "SMC", "EFA"),
   n_factors = 1,
   n_datasets = 1000,
   percent = 95,
@@ -36,8 +36,8 @@ correlations. If \code{"CD"} is included as a criterion, x must be raw
 
 \item{criteria}{character. A vector with the factor retention methods to
 perform. Possible inputs are: \code{"CD"}, \code{"EKC"}, \code{"HULL"},
-\code{"KGC"}, \code{"PARALLEL"}, and \code{"SMT"} (see details). By default,
-all factor retention methods are performed.}
+\code{"KGC"}, \code{"PARALLEL"}, \code{"SCREE"}, and \code{"SMT"}
+(see details). By default, all factor retention methods are performed.}
 
 \item{suitability}{logical. Whether the data should be checked for suitability
 for factor analysis using the Bartlett's test of sphericity and the
@@ -98,15 +98,16 @@ matrices are left to be 1. If using  \code{"EFA"}, eigenvalues are found on the
 correlation  matrices with the final communalities of an EFA solution as
 diagonal.}
 
-\item{eigen_type_KGC_PA}{character. Passed to \code{\link{KGC}} and
-\code{\link{PARALLEL}}. The same as eigen_type_HULL, but multiple inputs
+\item{eigen_type_other}{character. Passed to \code{\link{KGC}},
+\code{\link{SCREE}}, and \code{\link{PARALLEL}}. The same as eigen_type_HULL,
+but multiple inputs
 are possible here. Default is to use all inputs, that is, \code{c("PCA",
 "SMC", "EFA"})}
 
 \item{n_factors}{numeric. Passed to \code{\link{PARALLEL}} (also within
 \code{\link{HULL}}) and to \code{\link{KGC}}. Number of factors to extract if
  \code{"EFA"} is included in \code{eigen_type_HULL} or
- \code{eigen_type_KGC_PA}. Default is 1.}
+ \code{eigen_type_other}. Default is 1.}
 
 \item{n_datasets}{numeric. Passed to \code{\link{PARALLEL}} (also within
 \code{\link{HULL}}). The number of datasets to simulate. Default is 1000.}
@@ -155,6 +156,7 @@ The available factor retention criteria are the following (see respective
 \item{Hull method (see \code{\link{HULL}})}
 \item{Kaiser-Guttman criterion (see \code{\link{KGC}})}
 \item{Parallel analysis (see \code{\link{PARALLEL}})}
+\item{Scree plot (see \code{\link{SCREE}})}
 \item{Sequential chi-square model tests, RMSEA lower bound, and AIC
 (see \code{\link{SMT}})}
 }
@@ -167,19 +169,19 @@ nfac_all <- N_FACTORS(test_models$baseline$cormat, N = 500, method = "ML")
 
 # The same as above, but without "CD"
 nfac_wo_CD <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC",
-                        "HULL", "KGC", "PARALLEL", "SMT"), N = 500,
+                        "HULL", "KGC", "PARALLEL", "SCREE", "SMT"), N = 500,
                         method = "ML")
 
 # Use PAF instead of ML (this will take a lot longer). For this, gof has
 # to be set to "CAF" for the Hull method.
 nfac_PAF <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC",
-                      "HULL", "KGC", "PARALLEL", "SMT"), N = 500,
+                      "HULL", "KGC", "PARALLEL", "SCREE", "SMT"), N = 500,
                       gof = "CAF")
 
 # Do KGC and PARALLEL with only "PCA" type of eigenvalues
 nfac_PCA <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC",
-                      "HULL", "KGC", "PARALLEL", "SMT"), N = 500,
-                      method = "ML", eigen_type_KGC_PA = "PCA")
+                      "HULL", "KGC", "PARALLEL", "SCREE", "SMT"), N = 500,
+                      method = "ML", eigen_type_other = "PCA")
 
 # Use raw data, such that CD can also be performed
 nfac_raw <- N_FACTORS(GRiPS_raw, method = "ML")
