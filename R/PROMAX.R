@@ -155,11 +155,7 @@
 
     AV$rotmat <- AV$rotmat[ss_order, ss_order]
 
-    if (!is.null(dim_names[[2]])) {
-      dim_names[[2]] <- dim_names[[2]][ss_order]
-    } else {
-      dim_names[[2]] <- paste0("F", seq_len(ncol(AV$loadings)))[ss_order]
-    }
+    dim_names[[2]] <- dim_names[[2]][ss_order]
 
   }
 
@@ -207,11 +203,7 @@
     Phi <- diag(signs) %*% Phi %*% diag(signs)
     Phi <- Phi[eig_order, eig_order]
 
-    if (!is.null(dim_names[[2]])) {
-      dim_names[[2]] <- dim_names[[2]][eig_order]
-    } else {
-      dim_names[[2]] <- paste0("F", seq_len(ncol(AV$loadings)))[eig_order]
-    }
+    dim_names[[2]] <- dim_names[[2]][eig_order]
 
   }
 

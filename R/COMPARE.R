@@ -146,8 +146,8 @@ COMPARE <- function(x,
 
     n_factors <- ncol(x)
 
-    if (!isFALSE(reorder) && n_factors > 1) {
-      # get Tucker's conguence coefficients
+    if (reorder == "congruence" && n_factors > 1) {
+      # get Tucker's congruence coefficients
       congruence <- .factor_congruence(x, y)
 
       # factor order for y
@@ -180,7 +180,7 @@ COMPARE <- function(x,
 
   } else if (inherits(x, "matrix")) {
 
-      if (!isFALSE(reorder) && !is.null(names(x)) && !is.null(names(y))) {
+      if (reorder == "congruence" && !is.null(names(x)) && !is.null(names(y))) {
         ind_x <- order(names(x))
         x <- x[ind_x]
 

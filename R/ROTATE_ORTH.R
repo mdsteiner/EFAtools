@@ -118,11 +118,7 @@ if (type == "none") {
 
     rotmat <- rotmat[ss_order, ss_order]
 
-    if (!is.null(dim_names[[2]])) {
-      dim_names[[2]] <- dim_names[[2]][ss_order]
-    } else {
-      dim_names[[2]] <- paste0("F", seq_len(ncol(load_mat)))[ss_order]
-    }
+    dim_names[[2]] <- dim_names[[2]][ss_order]
 
   } else if (order_type == "eigen") {
 
@@ -132,11 +128,7 @@ if (type == "none") {
     load_mat <- load_mat[, eig_order]
     rotmat <- rotmat[eig_order, eig_order]
 
-    if (!is.null(dim_names[[2]])) {
-      dim_names[[2]] <- dim_names[[2]][eig_order]
-    } else {
-      dim_names[[2]] <- paste0("F", seq_len(ncol(load_mat)))[eig_order]
-    }
+    dim_names[[2]] <- dim_names[[2]][eig_order]
 
   }
 

@@ -220,8 +220,7 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
     lambda_u <- stats::uniroot(f = p_chi, interval = c(1e-10, 10000),
                                val = chi_null, df = df_null, goal = .05,
                                extendInt = "upX", maxiter = 100L)$root
-  }
-  else {
+  } else {
     lambda_u <- 0
   }
 

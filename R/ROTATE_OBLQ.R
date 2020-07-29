@@ -137,11 +137,7 @@
 
     rotmat <- rotmat[ss_order, ss_order]
 
-    if (!is.null(dim_names[[2]])) {
-      dim_names[[2]] <- dim_names[[2]][ss_order]
-    } else {
-      dim_names[[2]] <- paste0("F", seq_len(ncol(patt_mat)))[ss_order]
-    }
+    dim_names[[2]] <- dim_names[[2]][ss_order]
 
   }
 
@@ -159,11 +155,7 @@
       Phi <- diag(signs) %*% Phi %*% diag(signs)
       Phi <- Phi[eig_order, eig_order]
 
-      if (!is.null(dim_names[[2]])) {
-        dim_names[[2]] <- dim_names[[2]][eig_order]
-      } else {
-        dim_names[[2]] <- paste0("F", seq_len(ncol(patt_mat)))[eig_order]
-      }
+      dim_names[[2]] <- dim_names[[2]][eig_order]
 
     }
 
