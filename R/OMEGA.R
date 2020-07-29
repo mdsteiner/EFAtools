@@ -1,8 +1,8 @@
 #' McDonald's omega
 #'
 #' This function finds omega total, omega hierarchical, and omega subscale
-#' from a Schmid-Leiman (SL) solution or lavaan single factor or bifactor
-#' solution. The SL-based omegas can either be found from a
+#' from a Schmid-Leiman (SL) solution or lavaan single factor, second-order (see below),
+#' or bifactor solution. The SL-based omegas can either be found from a
 #' \code{\link[psych:schmid]{psych::schmid}}, \code{\link{SL}}, or,
 #' in a more flexible way, by leaving
 #' \code{model = NULL} and specifying additional arguments. By setting the
@@ -12,15 +12,15 @@
 #' @param model class \code{\link{SL}}, class \code{\link{schmid}}, or class
 #' \code{lavaan} object. That is, an output object from \code{\link{SL}} or
 #' \code{\link[psych:schmid]{psych::schmid}}, or a \code{lavaan} fit object with a
-#' single factor or bifactor solution. If of class \code{lavaan},
+#' single factor, second-order, or bifactor solution. If of class \code{lavaan},
 #' only \code{g_name} needs to be specified additionally. If of class
 #' \code{\link{SL}} or \code{\link{schmid}}, only the arguments \code{factor_corres}
 #' and \code{cormat} need to be specified additionally.
 #' @param type character. Either \code{"EFAtools"} (default) or \code{"psych"}
 #' (see details)
-#' @param g_name character. The name of the general factor from the lavaan bifactor
-#' solution. This needs only be specified if \code{model} is a
-#' \code{lavaan} bifactor solution. Default is "g".
+#' @param g_name character. The name of the general factor from the lavaan solution.
+#' This needs only be specified if \code{model} is a \code{lavaan} second-order
+#' or bifactor solution. Default is "g".
 #' @param group_names character. An optional vector of group names. The length
 #' must correspond to the number of groups for which the \code{lavaan} model
 #' was fitted.
@@ -67,18 +67,27 @@
 #' squared sums of general factor loadings and group factor loadings and
 #' the sum of uniquenesses (see details).
 #'
-#' @details If \code{model} is a \code{lavaan} bifactor solution, only the name
-#' of the general factor from the lavaan model needs to be specified additionally
-#' with the \code{g_name} argument. There is also the possibility to enter a
-#' \code{lavaan} single factor solution In this case, \code{g_name} is not
-#' needed. Finally, if a solution (bifactor or single factor) from a \code{lavaan} multiple group
-#' analysis is entered, the omegas are computed for each group. The type argument
-#' is not evaluated if \code{model} is of class \code{lavaan}.
+#' @details If \code{model} is a \code{lavaan} second-order or bifactor solution,
+#' only the name of the general factor from the lavaan model needs to be specified
+#' additionally with the \code{g_name} argument. It is then determined whether this
+#' general factor is a second-order factor (second-order model assumed) or a breadth
+#' factor (bifactor model assumed). In case of a second-order solution, a
+#' Schmid-Leiman transformation is performed on the first- and second-order loadings
+#' and omega coefficents are obtained from the transformed (orthogonalized) solution
+#' (see \code{\link{SL}} for more information on Schmid-Leiman transformation).
+#' There is also the possibility to enter a \code{lavaan} single factor solution.
+#' In this case, \code{g_name} is not needed. Finally, if a solution from a
+#' \code{lavaan} multiple group analysis is entered, the omegas are computed for
+#' each group.
+#' The type argument is not evaluated if \code{model} is of class
+#' \code{lavaan}.
 #'
-#' If \code{model} is of class \code{\link{SL}} or \code{\link[psych:schmid]{psych::schmid}} only the
+#' If \code{model} is of class \code{\link{SL}} or
+#' \code{\link[psych:schmid]{psych::schmid}} only the
 #' \code{type} and, depending on the type (see below), the \code{factor_corres}
 #' arguments need to be specified additionally. If model is of class
-#' \code{\link[psych:schmid]{psych::schmid}} and \code{variance = "correlation"} (default), it is
+#' \code{\link[psych:schmid]{psych::schmid}} and \code{variance = "correlation"}
+#' (default), it is
 #' recommended to also provide the original correlation matrix in \code{cormat}
 #' to get more accurate results. Otherwise, the correlation matrix will be found
 #' based on the pattern matrix and Phi from the
@@ -112,13 +121,14 @@
 #' uniquenesses should capture almost all of the variance not explained by the
 #' general factor and the variable's allocated group factor).
 #'
-#' @return If found for an SL or \code{lavaan} bifactor solution for one group:
+#' @return If found for an SL or \code{lavaan} second-order of bifactor solution
+#' without multiple groups:
 #' A matrix with omegas for the whole scale and for the subscales.
 #' \item{tot}{Omega total.}
 #' \item{hier}{Omega hierarchical.}
 #' \item{sub}{Omega subscale.}
 #'
-#' If found for a \code{lavaan} single factor solution for one group:
+#' If found for a \code{lavaan} single factor solution without multiple groups:
 #' A vector with omega total for the single factor.
 #'
 #' If found for a \code{lavaan} output from a multiple group analysis: A list
@@ -139,19 +149,30 @@
 #'
 #' @examples
 #' \donttest{
-#' ## Use with a lavaan output
+#' ## Use with lavaan outputs
 #'
-#' # Create and fit model in lavaan (assume all variables have SDs of 1)
+#' # Create and fit bifactor model in lavaan (assume all variables have SDs of 1)
 #' mod <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
 #'         F2 =~ V7 + V8 + V9 + V10 + V11 + V12
 #'         F3 =~ V13 + V14 + V15 + V16 + V17 + V18
 #'         g =~ V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11 + V12 +
 #'              V13 + V14 + V15 + V16 + V17 + V18'
-#' fit <- lavaan::cfa(mod, sample.cov = test_models$baseline$cormat,
-#'                    sample.nobs = 500, estimator = "ml", orthogonal = TRUE)
+#' fit_bi <- lavaan::cfa(mod, sample.cov = test_models$baseline$cormat,
+#'                       sample.nobs = 500, estimator = "ml", orthogonal = TRUE)
 #'
-#' # Compute omega
-#' OMEGA(fit, g_name = "g")
+#' # Compute omega for bifactor solution
+#' OMEGA(fit_bi, g_name = "g")
+#'
+#' # Create and fit second-order model in lavaan (assume all variables have SDs of 1)
+#' mod <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
+#'         F2 =~ V7 + V8 + V9 + V10 + V11 + V12
+#'         F3 =~ V13 + V14 + V15 + V16 + V17 + V18
+#'         g =~ F1 + F2 + F3'
+#' fit_ho <- lavaan::cfa(mod, sample.cov = test_models$baseline$cormat,
+#'                       sample.nobs = 500, estimator = "ml")
+#'
+#' # Compute omega for second-order solution
+#' OMEGA(fit_ho, g_name = "g")
 #' }
 #'
 #' ## Use with an output from the SL function, with type EFAtools

@@ -17,14 +17,21 @@ SL(
   Phi = NULL,
   type = c("EFAtools", "psych", "SPSS", "none"),
   method = c("PAF", "ML", "ULS"),
+  g_name = "g",
   ...
 )
 }
 \arguments{
-\item{x}{object of class \code{\link{EFA}} or class \code{\link[psych:fa]{psych::fa}} or
-matrix. If class \code{\link{EFA}} or class \code{\link[psych:fa]{psych::fa}},
-pattern coefficients and factor intercorrelations are taken from this object.
-x can also be a pattern matrix from an oblique factor solution (see \code{Phi}).}
+\item{x}{object of class \code{\link{EFA}}, class \code{\link[psych:fa]{psych::fa}},
+class \code{\link[lavaan]{lavaan}} or matrix. If class \code{\link{EFA}} or
+class \code{\link[psych:fa]{psych::fa}}, pattern coefficients and factor
+intercorrelations are taken from this object. If class \code{\link[lavaan]{lavaan}},
+it must be a second-order CFA solution. In this case first-order and second-order
+ factor loadings are taken from this object and the \code{g_name} argument has
+ to be specified.
+x can also be a pattern matrix from an oblique factor solution (see \code{Phi})
+or a matrix of first-order factor loadings from a higher-order confirmatory factor
+analysis (see \code{L2}).}
 
 \item{Phi}{matrix. A matrix of factor intercorrelations from an oblique factor
 solution. Only needs to be specified if a pattern matrix is entered directly
@@ -38,6 +45,9 @@ This is used to control the procedure of the second-order factor analysis. See
 principal axis factoring, maximum likelihood, or unweighted least squares
 (also called minres), respectively, used in \code{\link{EFA}} to find the second-order
 loadings.}
+
+\item{g_name}{character. The name of the general factor. This needs only be
+specified if \code{x} is a \code{lavaan} second-order solution. Default is "g".}
 
 \item{...}{Arguments to be passed to \code{\link{EFA}}.}
 }
@@ -58,8 +68,9 @@ This function implements the Schmid-Leiman (SL) transformation
 intercorrelations from an oblique factor solution as
 input and can reproduce the results from \code{\link[psych:schmid]{psych::schmid}}
 and from the SPSS implementation from Wolff & Preising (2005). Other arguments
-from \code{\link{EFA}} can be used to control
-the procedure to find the second-order loadings more flexibly.
+from \code{\link{EFA}} can be used to control the procedure to find the
+second-order loadings more flexibly. The function can also be used on a
+second-order confirmatory factor analysis (CFA) solution from lavaan.
 }
 \details{
 The SL transformation (also called SL orthogonalization) is a procedure with
@@ -99,4 +110,18 @@ EFA_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
 SL_flex <- SL(EFA_mod$rot_loadings, Phi = EFA_mod$Phi, type = "EFAtools",
               method = "PAF")
 
+\donttest{
+## Use with a lavaan second-order CFA output
+
+# Create and fit model in lavaan (assume all variables have SDs of 1)
+mod <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
+        F2 =~ V7 + V8 + V9 + V10 + V11 + V12
+        F3 =~ V13 + V14 + V15 + V16 + V17 + V18
+        g =~ F1 + F2 + F3'
+fit <- lavaan::cfa(mod, sample.cov = test_models$baseline$cormat,
+                   sample.nobs = 500, estimator = "ml")
+
+SL_lav <- SL(fit, g_name = "g")
+
+}
 }

@@ -15,6 +15,7 @@
 #'
 print.SL <- function(x, ...) {
 
+  if(!all(is.na(x$settings))){
   # extract the settings for EFA not depending on the method
   method <- x$settings$method
   type <- x$settings$type
@@ -32,6 +33,8 @@ print.SL <- function(x, ...) {
                          "Maximum number of iterations reached",
                          "without convergence"))
     cat("\n")
+  }
+
   }
 
   # print the loadings and the variances

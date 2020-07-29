@@ -5,13 +5,20 @@
 #' intercorrelations from an oblique factor solution as
 #' input and can reproduce the results from \code{\link[psych:schmid]{psych::schmid}}
 #' and from the SPSS implementation from Wolff & Preising (2005). Other arguments
-#' from \code{\link{EFA}} can be used to control
-#' the procedure to find the second-order loadings more flexibly.
+#' from \code{\link{EFA}} can be used to control the procedure to find the
+#' second-order loadings more flexibly. The function can also be used on a
+#' second-order confirmatory factor analysis (CFA) solution from lavaan.
 #'
-#' @param x object of class \code{\link{EFA}} or class \code{\link[psych:fa]{psych::fa}} or
-#' matrix. If class \code{\link{EFA}} or class \code{\link[psych:fa]{psych::fa}},
-#' pattern coefficients and factor intercorrelations are taken from this object.
-#' x can also be a pattern matrix from an oblique factor solution (see \code{Phi}).
+#' @param x object of class \code{\link{EFA}}, class \code{\link[psych:fa]{psych::fa}},
+#' class \code{\link[lavaan]{lavaan}} or matrix. If class \code{\link{EFA}} or
+#' class \code{\link[psych:fa]{psych::fa}}, pattern coefficients and factor
+#' intercorrelations are taken from this object. If class \code{\link[lavaan]{lavaan}},
+#' it must be a second-order CFA solution. In this case first-order and second-order
+#'  factor loadings are taken from this object and the \code{g_name} argument has
+#'  to be specified.
+#' x can also be a pattern matrix from an oblique factor solution (see \code{Phi})
+#' or a matrix of first-order factor loadings from a higher-order confirmatory factor
+#' analysis (see \code{L2}).
 #' @param Phi matrix. A matrix of factor intercorrelations from an oblique factor
 #' solution. Only needs to be specified if a pattern matrix is entered directly
 #' into \code{x}.
@@ -22,6 +29,8 @@
 #' principal axis factoring, maximum likelihood, or unweighted least squares
 #' (also called minres), respectively, used in \code{\link{EFA}} to find the second-order
 #' loadings.
+#' @param g_name character. The name of the general factor. This needs only be
+#' specified if \code{x} is a \code{lavaan} second-order solution. Default is "g".
 #' @param ... Arguments to be passed to \code{\link{EFA}}.
 #'
 #' @details
@@ -80,17 +89,32 @@
 #' SL_flex <- SL(EFA_mod$rot_loadings, Phi = EFA_mod$Phi, type = "EFAtools",
 #'               method = "PAF")
 #'
+#' \donttest{
+#' ## Use with a lavaan second-order CFA output
+#'
+#' # Create and fit model in lavaan (assume all variables have SDs of 1)
+#' mod <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
+#'         F2 =~ V7 + V8 + V9 + V10 + V11 + V12
+#'         F3 =~ V13 + V14 + V15 + V16 + V17 + V18
+#'         g =~ F1 + F2 + F3'
+#' fit <- lavaan::cfa(mod, sample.cov = test_models$baseline$cormat,
+#'                    sample.nobs = 500, estimator = "ml")
+#'
+#' SL_lav <- SL(fit, g_name = "g")
+#'
+#' }
 SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
-               method = c("PAF", "ML", "ULS"), ...) {
+               method = c("PAF", "ML", "ULS"), g_name = "g", ...) {
 
   # Perform argument checks
   checkmate::assert_matrix(Phi, null.ok = TRUE)
   type <- match.arg(type)
   method <- match.arg(method)
+  checkmate::assert_string(g_name)
 
-  if(!inherits(x, c("EFA", "fa", "matrix", "LOADINGS", "loadings"))){
+  if(!inherits(x, c("EFA", "fa", "lavaan", "matrix", "LOADINGS", "loadings"))){
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither an object of class EFA or fa nor a matrix, nor of class LOADINGS or loadings.\n"))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither an object of class EFA, fa, or lavaan, nor a matrix, nor of class LOADINGS or loadings.\n"))
 
   }
 
@@ -148,42 +172,102 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
     L1 <- L1[, n_order]
     Phi <- Phi[n_order, n_order]
 
+  } else if(inherits(x, "lavaan")){
+
+    if(lavaan::lavInspect(x, what = "converged") == FALSE){
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Model did not converge. No omegas are computed.\n"))
+    }
+
+    std_sol <- suppressWarnings(lavaan::lavInspect(x, what = "std"))
+
+    if(any(is.na(std_sol$lambda))){
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Some loadings are NA or NaN. No omegas are computed.\n"))
+    }
+
+    if(any(std_sol$lambda >= 1)){
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" A Heywood case was detected (loading equal to or larger than 1). No omegas are computed.\n"))
+    }
+
+    # Create list with factor and corresponding subtest names
+    col_names <- colnames(std_sol$lambda)
+
+    if(!any(col_names %in% g_name)){
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Could not find the specified name of the general factor in the entered lavaan solution. Please check the spelling.\n"))
+    }
+
+    if(!all(std_sol$lambda[, g_name] == 0)){
+
+      warning(crayon::yellow$bold("!"), crayon::yellow(" The second-order factor you specified contains first-order loadings. Did you really enter a second-order CFA solution? Or did you enter the wrong factor name in g_name?\n"))
+
+    }
+
+    col_names <- col_names[!col_names %in% g_name]
+    fac_names <- c(g_name, col_names)
+
+    n_first_fac <- length(col_names)
+
   } else {
 
     if(is.null(Phi)){
 
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Phi not provided. Either enter an oblique factor solution from EFAtools::EFA or from psych::fa, or provide Phi\n"))
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Phi not provided. Either enter an oblique factor solution from EFAtools::EFA or from psych::fa, or a second-order CFA solution from lavaan, or provide Phi\n"))
 
     }
 
     if (!is.null(colnames(x))) {
       n_order <- order(colnames(x))
       x <- x[, n_order]
+
+      if(!is.null(Phi)){
       Phi <- Phi[n_order, n_order]
+      }
+
     }
 
     L1 <- x
     n_first_fac <- ncol(x)
-    orig_R <- NULL
+    orig_R <- NA
 
   }
 
-  # perform a factor analysis on the intercorrelation matrix of the first order
-  # factors (N is only specified to avoid a warning)
-  EFA_phi <- suppressWarnings(EFA(Phi, n_factors = 1, N = 100, type = type,
-                                  method = method, rotation = "none", ...))
+  if(inherits(x, "lavaan")){
 
-  # extract second order loadings
-  L2 <- EFA_phi$unrot_loadings
+    # Calculate direct g loadings
+    L1 <- std_sol$lambda[, col_names]
+    L2 <- std_sol$beta[col_names, g_name]
 
-  # Schmid-Leiman solution, direct loadings of second order factor
-  L_sls_2 <- L1 %*% L2
+    L_sls_2 <- L1 %*% L2
 
-  # compute uniqueness of higher order factor
-  u2_h <- sqrt(1 - diag(L2 %*% t(L2)))
+    # Calculate direct group factor loadings
+    L_sls_1 <- L1 %*% sqrt(std_sol$psi[col_names, col_names])
 
-  # Schmid-Leiman solution, residualized first order factor loadings
-  L_sls_1 <- L1 %*% diag(u2_h)
+    orig_R <- NA
+    iter <- NA
+    settings <- NA
+
+  } else {
+
+    # perform a factor analysis on the intercorrelation matrix of the first order
+    # factors (N is only specified to avoid a warning)
+    EFA_phi <- suppressWarnings(EFA(Phi, n_factors = 1, N = 100, type = type,
+                                    method = method, rotation = "none", ...))
+
+    iter <- EFA_phi$iter
+    settings <- EFA_phi$settings
+
+    # extract second order loadings
+    L2 <- EFA_phi$unrot_loadings
+
+    # Schmid-Leiman solution, direct loadings of second order factor
+    L_sls_2 <- L1 %*% L2
+
+    # compute uniqueness of higher order factor
+    u2_h <- sqrt(1 - diag(L2 %*% t(L2)))
+
+    # Schmid-Leiman solution, residualized first order factor loadings
+    L_sls_1 <- L1 %*% diag(u2_h)
+
+  }
 
   # Combine the Schmid-Leiman loadings in a data frame
   sl_load <- cbind(L_sls_2, L_sls_1)
@@ -194,11 +278,11 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
 
   vars_accounted <- .compute_vars(L_unrot = sl_load, L_rot = sl_load)
 
-  colnames(vars_accounted) <-c("g", paste0("F", 1:n_first_fac))
+  colnames(vars_accounted) <-c(g_name, paste0("F", 1:n_first_fac))
 
   # Finalize output object
   sl <- cbind(sl_load, h2_sl, u2_sl)
-  colnames(sl) <- c("g", paste0("F", 1:n_first_fac), "h2", "u2")
+  colnames(sl) <- c(g_name, paste0("F", 1:n_first_fac), "h2", "u2")
   class(sl) <- "SLLOADINGS"
 
   output <- list(
@@ -206,8 +290,8 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
     sl = sl,
     L2 = L2,
     vars_accounted = vars_accounted,
-    iter = EFA_phi$iter,
-    settings = EFA_phi$settings
+    iter = iter,
+    settings = settings
     )
 
   class(output) <- "SL"

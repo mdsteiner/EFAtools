@@ -3,7 +3,7 @@
                         factor_corres = NULL,
                         var_names = NULL, fac_names = NULL, g_load = NULL,
                         s_load = NULL, u2 = NULL, cormat = NULL, pattern = NULL,
-                        Phi = NULL, variance = c("correlaton", "sums_load")){
+                        Phi = NULL, variance = c("correlation", "sums_load")){
 
   if(inherits(model, "schmid")){
 
@@ -191,12 +191,14 @@
 
 .OMEGA_LAVAAN <- function(model = NULL, g_name = "g", group_names = NULL){
 
+  higherorder <- FALSE
+
   if(lavaan::lavInspect(model, what = "converged") == FALSE){
     stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Model did not converge. No omegas are computed.\n"))
   }
 
-  std_sol <- lavaan::lavInspect(model, what = "std",
-                                drop.list.single.group = FALSE)
+  std_sol <- suppressWarnings(lavaan::lavInspect(model, what = "std",
+                                drop.list.single.group = FALSE))
 
   ## Create empty list objects for further processing
   g_load <- list()
@@ -254,27 +256,43 @@
 
     } else {
 
+      # Extract colnames to see if g_name is in there
+      col_names <- colnames(std_sol[[1]][["lambda"]])
+
+      if(!any(col_names %in% g_name)){
+        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Could not find the specified name of the general factor in the entered lavaan solution. Please check the spelling.\n"))
+      }
+
       if(i == 1){
+
+        if(all(std_sol[[1]][["lambda"]][, g_name] == 0)){
+
+          higherorder <- TRUE
+
+          message(cli::col_cyan(cli::symbol$info, " The general factor you specified is a second-order factor. Omegas are found on the Schmid-Leiman transformed second-order solution.\n"))
+
+        } else {
 
       bi_check <- std_sol[[1]][["lambda"]]
       bi_check[abs(bi_check) > 0 + .Machine$double.eps * 100] <- 1
 
       if(all(rowSums(bi_check) < 2)){
 
-        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" You did not fit a bifactor model. Omegas cannot be computed. Either provide a bifactor model or a model with a single factor.\n"))
+        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Your lavaan input is invalid, no omegas are computed. Either provide a bifactor model, a second-order model, or a model with a single factor.\n"))
 
       }
 
       if(!all(rowSums(bi_check) > 1)){
 
-        message(cli::col_cyan(cli::symbol$info, " Some variables have less than two loadings. Did you really enter a bifactor model? Either provide a bifactor model or a model with a single factor.\n"))
+        message(cli::col_cyan(cli::symbol$info, " Some variables have less than two loadings. Did you really enter a bifactor model? Either provide a bifactor model, a second-order model, or a model with a single factor.\n"))
 
       }
 
-      }
+    }
+
+  }
 
       # Create list with factor and corresponding subtest names
-      col_names <- colnames(std_sol[[1]][["lambda"]])
       col_names <- col_names[!col_names %in% g_name]
       fac_names <- c(g_name, col_names)
 
@@ -282,6 +300,17 @@
       for(j in 1:(length(fac_names)-1)){
         temp0 <- abs(std_sol[[1]][["lambda"]][, j]) > 0 + .Machine$double.eps * 100
         var_names[[j]] <- names(temp0)[temp0]
+      }
+
+      # Do SL-transformation if the model is a higher-order model
+      if(isTRUE(higherorder)){
+
+        # Calculate direct g loadings
+        std_sol[[i]][["lambda"]][, g_name] <- std_sol[[i]][["lambda"]][, col_names] %*% std_sol[[i]][["beta"]][col_names, g_name]
+
+        # Calculate direct group factor loadings
+        std_sol[[i]][["lambda"]][, col_names] <- std_sol[[i]][["lambda"]][, col_names] %*% sqrt(std_sol[[i]][["psi"]][col_names, col_names])
+
       }
 
       # Create all sums of factor loadings for each factor
