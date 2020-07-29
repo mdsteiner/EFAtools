@@ -1,12 +1,31 @@
-
 int <- COMPARE(1:10, 1:10)
 dec <- COMPARE(c(.1, .2), c(.1, .1))
 matr <- COMPARE(matrix(c(1,1,1,2), ncol = 2), matrix(c(1,1,1,1), ncol = 2))
+
+SPSS_PAF <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
+                type = "SPSS", method = "PAF", rotation = "none")
+psych_PAF <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
+                 type = "psych", method = "PAF", rotation = "none")
+load <- COMPARE(SPSS_PAF$unrot_loadings, SPSS_PAF$unrot_loadings)
+load_ro1 <- COMPARE(SPSS_PAF$unrot_loadings, SPSS_PAF$unrot_loadings,
+                    reorder = "names")
+load_ro2 <- COMPARE(SPSS_PAF$unrot_loadings, SPSS_PAF$unrot_loadings,
+                    reorder = "none")
+
+SPSS_PAF_1 <- EFA(test_models$baseline$cormat, n_factors = 1, N = 500,
+                type = "SPSS", method = "PAF", rotation = "none")
+psych_PAF_1 <- EFA(test_models$baseline$cormat, n_factors = 1, N = 500,
+                 type = "psych", method = "PAF", rotation = "none")
+load_F1 <- COMPARE(SPSS_PAF_1$unrot_loadings, psych_PAF_1$unrot_loadings)
 
 test_that("output class and dimensions are correct", {
   expect_is(int, "COMPARE")
   expect_is(dec, "COMPARE")
   expect_is(matr, "COMPARE")
+  expect_is(load, "COMPARE")
+  expect_is(load_ro1, "COMPARE")
+  expect_is(load_ro2, "COMPARE")
+  expect_is(load_F1, "COMPARE")
 
   expect_named(int, c("diff", "mean_abs_diff", "median_abs_diff", "min_abs_diff",
                       "max_abs_diff", "max_dec", "are_equal", "diff_corres",
@@ -17,6 +36,18 @@ test_that("output class and dimensions are correct", {
   expect_named(matr, c("diff", "mean_abs_diff", "median_abs_diff", "min_abs_diff",
                       "max_abs_diff", "max_dec", "are_equal", "diff_corres",
                       "diff_corres_cross", "g", "settings"))
+  expect_named(load, c("diff", "mean_abs_diff", "median_abs_diff", "min_abs_diff",
+                       "max_abs_diff", "max_dec", "are_equal", "diff_corres",
+                       "diff_corres_cross", "g", "settings"))
+  expect_named(load_ro1, c("diff", "mean_abs_diff", "median_abs_diff", "min_abs_diff",
+                       "max_abs_diff", "max_dec", "are_equal", "diff_corres",
+                       "diff_corres_cross", "g", "settings"))
+  expect_named(load_ro2, c("diff", "mean_abs_diff", "median_abs_diff", "min_abs_diff",
+                       "max_abs_diff", "max_dec", "are_equal", "diff_corres",
+                       "diff_corres_cross", "g", "settings"))
+  expect_named(load_F1, c("diff", "mean_abs_diff", "median_abs_diff", "min_abs_diff",
+                       "max_abs_diff", "max_dec", "are_equal", "diff_corres",
+                       "diff_corres_cross", "g", "settings"))
 
   expect_is(int$diff, "integer")
   expect_is(int$mean_abs_diff, "numeric")
@@ -54,6 +85,54 @@ test_that("output class and dimensions are correct", {
   expect_is(matr$g, "numeric")
   expect_is(matr$settings, "list")
 
+  expect_is(load$diff, "matrix")
+  expect_is(load$mean_abs_diff, "numeric")
+  expect_is(load$median_abs_diff, "numeric")
+  expect_is(load$min_abs_diff, "numeric")
+  expect_is(load$max_abs_diff, "numeric")
+  expect_is(load$max_dec, "integer")
+  expect_is(load$are_equal, "numeric")
+  expect_is(load$diff_corres, "integer")
+  expect_is(load$diff_corres_cross, "integer")
+  expect_is(load$g, "numeric")
+  expect_is(load$settings, "list")
+
+  expect_is(load_ro1$diff, "matrix")
+  expect_is(load_ro1$mean_abs_diff, "numeric")
+  expect_is(load_ro1$median_abs_diff, "numeric")
+  expect_is(load_ro1$min_abs_diff, "numeric")
+  expect_is(load_ro1$max_abs_diff, "numeric")
+  expect_is(load_ro1$max_dec, "integer")
+  expect_is(load_ro1$are_equal, "numeric")
+  expect_is(load_ro1$diff_corres, "integer")
+  expect_is(load_ro1$diff_corres_cross, "integer")
+  expect_is(load_ro1$g, "numeric")
+  expect_is(load_ro1$settings, "list")
+
+  expect_is(load_ro2$diff, "matrix")
+  expect_is(load_ro2$mean_abs_diff, "numeric")
+  expect_is(load_ro2$median_abs_diff, "numeric")
+  expect_is(load_ro2$min_abs_diff, "numeric")
+  expect_is(load_ro2$max_abs_diff, "numeric")
+  expect_is(load_ro2$max_dec, "integer")
+  expect_is(load_ro2$are_equal, "numeric")
+  expect_is(load_ro2$diff_corres, "integer")
+  expect_is(load_ro2$diff_corres_cross, "integer")
+  expect_is(load_ro2$g, "numeric")
+  expect_is(load_ro2$settings, "list")
+
+  expect_is(load_F1$diff, "matrix")
+  expect_is(load_F1$mean_abs_diff, "numeric")
+  expect_is(load_F1$median_abs_diff, "numeric")
+  expect_is(load_F1$min_abs_diff, "numeric")
+  expect_is(load_F1$max_abs_diff, "numeric")
+  expect_is(load_F1$max_dec, "integer")
+  expect_is(load_F1$are_equal, "numeric")
+  expect_is(load_F1$diff_corres, "numeric")
+  expect_is(load_F1$diff_corres_cross, "numeric")
+  expect_is(load_F1$g, "numeric")
+  expect_is(load_F1$settings, "list")
+
 })
 
 test_that("COMPARE returns the correct values", {
@@ -85,6 +164,53 @@ test_that("COMPARE returns the correct values", {
   expect_equal(matr$g, 0.5, tolerance = .01)
   expect_equal(matr$diff_corres, 1)
   expect_equal(matr$diff_corres_cross, 0)
+
+  expect_equal(load$diff, matrix(rep(0, 54), ncol = 3,
+                                 dimnames = list(c(paste0("V", seq_len(18))),
+                                                 c(paste0("F", seq_len(3))))))
+  expect_equal(load$mean_abs_diff, 0)
+  expect_equal(load$median_abs_diff, 0)
+  expect_equal(load$min_abs_diff, 0)
+  expect_equal(load$max_abs_diff, 0)
+  expect_equal(load$max_dec, 17)
+  expect_equal(load$are_equal, 17)
+  expect_equal(load$g, 0)
+  expect_equal(load$diff_corres, 0)
+  expect_equal(load$diff_corres_cross, 0)
+
+  expect_equal(load_ro1$mean_abs_diff, 0)
+  expect_equal(load_ro1$median_abs_diff, 0)
+  expect_equal(load_ro1$min_abs_diff, 0)
+  expect_equal(load_ro1$max_abs_diff, 0)
+  expect_equal(load_ro1$max_dec, 17)
+  expect_equal(load_ro1$are_equal, 17)
+  expect_equal(load_ro1$g, 0)
+  expect_equal(load_ro1$diff_corres, 0)
+  expect_equal(load_ro1$diff_corres_cross, 0)
+
+  expect_equal(load_ro2$mean_abs_diff, 0)
+  expect_equal(load_ro2$median_abs_diff, 0)
+  expect_equal(load_ro2$min_abs_diff, 0)
+  expect_equal(load_ro2$max_abs_diff, 0)
+  expect_equal(load_ro2$max_dec, 17)
+  expect_equal(load_ro2$are_equal, 17)
+  expect_equal(load_ro2$g, 0)
+  expect_equal(load_ro2$diff_corres, 0)
+  expect_equal(load_ro2$diff_corres_cross, 0)
+
+  expect_equal(round(load_F1$diff, 4), matrix(rep(0, 18), ncol = 1,
+                                              dimnames = list(c(paste0("V",
+                                                                       seq_len(18))),
+                                                              "F1")))
+  expect_equal(round(load_F1$mean_abs_diff, 4), 0)
+  expect_equal(round(load_F1$median_abs_diff, 4), 0)
+  expect_equal(round(load_F1$min_abs_diff, 4), 0)
+  expect_equal(round(load_F1$max_abs_diff, 4), 0)
+  expect_equal(load_F1$max_dec, 15)
+  expect_equal(load_F1$are_equal, 2)
+  expect_equal(round(load_F1$g, 4), 0)
+  expect_equal(load_F1$diff_corres, 0)
+  expect_equal(load_F1$diff_corres_cross, 0)
 })
 
 
@@ -99,4 +225,5 @@ test_that("errors etc. are thrown correctly", {
 
 })
 
-rm(int, dec, matr)
+rm(int, dec, matr, SPSS_PAF, psych_PAF, load, load_ro1, load_ro2, SPSS_PAF_1,
+   psych_PAF_1, load_F1)
