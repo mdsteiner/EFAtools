@@ -102,6 +102,12 @@ om_sl <- .OMEGA_FLEX(sl_mod, type = "EFAtools", factor_corres = rep(c(3, 2, 1),
                                                               each = 6),
                      variance = "correlation")
 
+# Explicit factor names
+om_sl_named <- .OMEGA_FLEX(sl_mod, type = "EFAtools",
+                           fac_names = c("Fa1", "Fa2", "Fa3"),
+                           factor_corres = rep(c(3, 2, 1), each = 6),
+                           variance = "correlation")
+
 ## Use with an output from the psych::schmid function, with type psych
 schmid_mod <- psych::schmid(test_models$baseline$cormat, nfactors = 3,
                             n.obs = 500, fm = "pa", rotate = "Promax")
@@ -126,12 +132,14 @@ om_man_2 <- .OMEGA_FLEX(model = NULL, type = "EFAtools", var_names = rownames(sl
 
 test_that("output class and dimensions are correct", {
   expect_is(om_sl, "OMEGA")
+  expect_is(om_sl_named, "OMEGA")
   expect_is(om_schmid_1, "OMEGA")
   expect_is(om_schmid_2, "OMEGA")
   expect_is(om_man_1, "OMEGA")
   expect_is(om_man_2, "OMEGA")
 
   expect_output(str(om_sl), "List of 2")
+  expect_output(str(om_sl_named), "List of 2")
   expect_output(str(om_schmid_1), "List of 2")
   expect_output(str(om_schmid_2), "List of 2")
   expect_output(str(om_man_1), "List of 2")
@@ -140,12 +148,14 @@ test_that("output class and dimensions are correct", {
 
 test_that("output is correct", {
   expect_equal(rowSums(om_sl[2:4, 2:3]), om_sl[2:4, 1], tolerance = 1e-3)
+  expect_equal(rowSums(om_sl_named[2:4, 2:3]), om_sl_named[2:4, 1], tolerance = 1e-3)
   expect_equal(rowSums(om_schmid_1[2:4, 2:3]), om_schmid_1[2:4, 1], tolerance = 1e-3)
   expect_equal(rowSums(om_schmid_2[2:4, 2:3]), om_schmid_2[2:4, 1], tolerance = 1e-3)
   expect_equal(rowSums(om_man_1[2:4, 2:3]), om_man_1[2:4, 1], tolerance = 1e-3)
   expect_equal(rowSums(om_man_2[2:4, 2:3]), om_man_2[2:4, 1], tolerance = 1e-3)
 
   expect_gte(om_sl[1, 1], sum(om_sl[1, 2:3]))
+  expect_gte(om_sl_named[1, 1], sum(om_sl_named[1, 2:3]))
   expect_gte(om_schmid_1[1, 1], sum(om_schmid_1[1, 2:3]))
   expect_gte(om_schmid_2[1, 1], sum(om_schmid_2[1, 2:3]))
   expect_gte(om_man_1[1, 1], sum(om_man_1[1, 2:3]))
@@ -182,4 +192,4 @@ test_that("errors are thrown correctly", {
 rm(lav_mod_1, lav_fit_1, om_lav_bi, lav_mod_2, lav_fit_2, om_lav_1, lav_fit_3,
    om_lav_gr, lav_mod_ho, lav_fit_ho, om_lav_ho, lav_mod_NA, lav_fit_NA,
    lav_mod_inv, lav_fit_inv, lav_mod_bi_red, lav_fit_bi_red, efa_mod, sl_mod,
-   om_sl, schmid_mod, om_schmid_1, om_schmid_2, om_man_1, om_man_2)
+   om_sl, om_sl_named, schmid_mod, om_schmid_1, om_schmid_2, om_man_1, om_man_2)
