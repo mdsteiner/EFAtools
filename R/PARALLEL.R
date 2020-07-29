@@ -385,7 +385,7 @@ PARALLEL <- function(x = NULL,
 
   eigvals <- matrix(nrow = n_datasets, ncol = n_vars)
 
-  for(i in 1:n_datasets){
+  for(i in seq_len(n_datasets)){
 
     x <- matrix(stats::rnorm(N * n_vars), nrow = N, ncol = n_vars)
     R <- stats::cor(x)
@@ -445,8 +445,8 @@ if (decision_rule == "crawford") {
   results <- matrix(NA, nrow = n_vars, ncol = length(percent) + 1)
   results[, 1] <- colMeans(eig_vals)
 
-  for (root in 1:n_vars) {
-    for (perc_i in 1:length(percent)) {
+  for (root in seq_len(n_vars)) {
+    for (perc_i in seq_along(percent)) {
       ind <- round((percent[perc_i] * n_datasets) / 100)
       results[root, 1 + perc_i] <- sort(eig_vals[, root])[ind]
     }

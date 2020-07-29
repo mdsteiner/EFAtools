@@ -8,6 +8,14 @@
 \description{
 Provides functions to perform exploratory factor analysis (EFA) procedures and compare their solutions. The goal is to provide state-of-the-art factor retention methods and a high degree of flexibility in the EFA procedures. This way, for example, implementations from R 'psych' and 'SPSS' can be compared. Moreover, functions for Schmid-Leiman transformation and the computation of omegas are provided. To speed up the analyses, some of the iterative procedures, like principal axis factoring (PAF), are implemented in C++.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/mdsteiner/EFAtools}
+  \item Report bugs at \url{https://github.com/mdsteiner/EFAtools/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: Markus Steiner \email{markus.d.steiner@gmail.com}
 

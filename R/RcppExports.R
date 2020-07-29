@@ -9,7 +9,6 @@
 #' @param x numeric matrix. The initial communality estimates.
 #' @param y numeric matrix. The convergence criterion to use.
 #' @param thresh numeric. The threshold to classify a pattern coefficient as substantial.
-#' @export
 .factor_corres <- function(x, y, thresh = 0.3) {
     .Call(`_EFAtools_factor_corres`, x, y, thresh)
 }
@@ -34,7 +33,6 @@
 #' @param abs_eig logical. Whether absolute eigenvalues should be used to compute the loadings.
 #' @param crit_type numeric. Whether maximum absolute differences (crit_type = 1), or sum of differences (crit_type = 2) should be used
 #' @param max_iter numeric. The number of iterations after which to end the procedure if no convergence has been reached by then.
-#' @export
 .paf_iter <- function(h2, criterion, R, n_fac, abs_eig, crit_type, max_iter) {
     .Call(`_EFAtools_paf_iter`, h2, criterion, R, n_fac, abs_eig, crit_type, max_iter)
 }
@@ -48,7 +46,6 @@
 #' @param n_vars numeric. Number of variables / indicators in dataset.
 #' @param N numeric. Number of cases / observations in dataset.
 #' @param eigen_type numeric. Whether PCA (eigen_type = 1; i.e., leaving diagonal of correlation matrix at 1) or PAF (eigen_type = 2; i.e., setting diagonal of correlation matrix to SMCs).
-#' @export
 .parallel_sim <- function(n_datasets, n_vars, N, eigen_type) {
     .Call(`_EFAtools_parallel_sim`, n_datasets, n_vars, N, eigen_type)
 }

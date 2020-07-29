@@ -167,7 +167,7 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   nfac_AIC <- NA
 
     # sequentially perform EFAs with 1 to the maximum number of factors
-    for (i in 1:max_fac) {
+    for (i in seq_len(max_fac)) {
 
       temp <- suppressWarnings(suppressMessages(EFA(R, n_factors = i,
                                                     method = "ML",

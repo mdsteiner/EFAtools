@@ -22,16 +22,16 @@ plot.EKC <- function(x, ...) {
   graphics::plot.window(xlim = c(1, x_len),
                         ylim = c(min(p_eigvls),
                                  max(p_eigvls)))
-  graphics::axis(1, 1:x_len)
+  graphics::axis(1, seq_len(x_len))
   graphics::axis(2, p_eigvls, las = 1)
 
   graphics::mtext("Indicators", side = 1, line = 3, cex = 1.5, padj =-.5)
   graphics::mtext("Eigenvalues", side = 2, line = 3, cex = 1.5, padj =.5)
 
-  graphics::lines(1:x_len, eigvls)
-  graphics::points(1:x_len, eigvls, pch = 16)
+  graphics::lines(seq_len(x_len), eigvls)
+  graphics::points(seq_len(x_len), eigvls, pch = 16)
 
-  graphics::lines(1:x_len, x$references, lty = 2, lwd = 1.25,
+  graphics::lines(seq_len(x_len), x$references, lty = 2, lwd = 1.25,
                   col = "darkgray")
 
   if (!is.na(x$n_factors)) {

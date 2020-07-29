@@ -62,7 +62,7 @@ print.EFA <- function(x, ...) {
       cat("\n")
       cat("\n")
       cat(.get_compare_matrix(x$Phi, r_red = Inf, n_char = 17,
-                              var_names = paste0("F", 1:ncol(x$Phi))))
+                              var_names = paste0("F", seq_len(ncol(x$Phi)))))
 
     }
   }

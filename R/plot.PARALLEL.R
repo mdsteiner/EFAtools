@@ -64,14 +64,14 @@ plot.PARALLEL <- function(x, ...) {
   graphics::plot.new()
   graphics::plot.window(xlim = c(1, n_vars),
                         ylim = c(min(p_eigen), max(p_eigen)))
-  graphics::axis(1, 1:n_vars)
+  graphics::axis(1, seq_len(n_vars))
   graphics::axis(2, p_eigen, las = 1)
   graphics::mtext("Indicators", side = 1, line = 3, cex = 1.5, padj =-.5)
   graphics::mtext("Eigenvalues", side = 2, line = 3, cex = 1.5, padj =.5)
 
   if (isTRUE(x_dat)) {
-    graphics::lines(1:n_vars, eigenvalues[,"Real Eigenvalues"])
-    graphics::points(1:n_vars, eigenvalues[,"Real Eigenvalues"], pch = 16)
+    graphics::lines(seq_len(n_vars), eigenvalues[,"Real Eigenvalues"])
+    graphics::points(seq_len(n_vars), eigenvalues[,"Real Eigenvalues"], pch = 16)
     if (!is.na(n_fac)) {
       graphics::points(n_fac, eigenvalues[n_fac,"Real Eigenvalues"],
                        pch = 1, cex = 2, col = "red")
@@ -85,11 +85,11 @@ plot.PARALLEL <- function(x, ...) {
   cols <- viridisLite::viridis(ncol(eigenvalues) - x_dat, end = .8)
   names(cols) <- colnames(eigenvalues)[(as.numeric(x_dat) + 1):ncol(eigenvalues)]
 
-  graphics::lines(1:n_vars, eigenvalues[,"Means"], lty = 2, lwd = 1.25,
+  graphics::lines(seq_len(n_vars), eigenvalues[,"Means"], lty = 2, lwd = 1.25,
                   col = cols[1])
 
   for (perc_i in percent) {
-    graphics::lines(1:n_vars, eigenvalues[,paste(perc_i, "Percentile")],
+    graphics::lines(seq_len(n_vars), eigenvalues[,paste(perc_i, "Percentile")],
                     lty = 2, col = cols[paste(perc_i, "Percentile")], lwd = 1.25)
   }
 
