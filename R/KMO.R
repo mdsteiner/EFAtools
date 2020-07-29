@@ -122,7 +122,7 @@ KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
 
   } else {
 
-    names(KMO_i) <- paste0("V", 1:ncol(R))
+    names(KMO_i) <- paste0("V", seq_len(ncol(R)))
 
   }
 

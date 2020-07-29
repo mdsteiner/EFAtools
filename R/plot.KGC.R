@@ -54,14 +54,14 @@ p_eigen <- pretty(c(min(eigen) * .9, eigen, max(eigen) * 1.1))
 graphics::plot.new()
 graphics::plot.window(xlim = c(1, x_len),
                       ylim = c(min(p_eigen), max(p_eigen)))
-graphics::axis(1, 1:x_len)
+graphics::axis(1, seq_len(x_len))
 graphics::axis(2, p_eigen, las = 1)
 
 graphics::mtext("Indicators", side = 1, line = 3, cex = 1)
 graphics::mtext("Eigenvalues", side = 2, line = 3, cex = 1, padj =.5)
 
-graphics::lines(1:x_len, eigen)
-graphics::points(1:x_len, eigen, pch = 16)
+graphics::lines(seq_len(x_len), eigen)
+graphics::points(seq_len(x_len), eigen, pch = 16)
 graphics::abline(h = 1, lty = 2)
 
 graphics::points(n_fac, eigen[n_fac], pch = 1, cex = 2, col = "red")

@@ -28,7 +28,7 @@ print.OMEGA <- function(x, digits = 3, ...) {
       cat(crayon::blue$bold("Omega total for the single factor for each group:"))
       cat("\n")
 
-      for(i in 1:length(group_names)){
+      for(i in seq_along(group_names)){
 
         cat("\n")
         cat("Group ", crayon::italic(group_names[i]), ": ",
@@ -42,7 +42,7 @@ print.OMEGA <- function(x, digits = 3, ...) {
       "for the general factor (top row) and the group factors for each group:"))
       cat("\n")
 
-      for(i in 1:length(group_names)){
+      for(i in seq_along(group_names)){
 
         cat("\n")
         cat(crayon::blue("Group ", crayon::italic(group_names[i]), ":"), sep = "")

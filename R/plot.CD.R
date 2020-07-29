@@ -11,20 +11,20 @@ plot.CD <- function(x, ...) {
 
   x_len <- x$n_factors
 
-  ys <- colMeans(x$RMSE_eigenvalues)[1:x$n_factors]
+  ys <- colMeans(x$RMSE_eigenvalues)[seq_len(x$n_factors)]
 
   graphics::plot.new()
   graphics::plot.window(xlim = c(1, x_len),
                         ylim = c(0, max(pretty(ys))))
-  graphics::axis(1, 1:x_len)
+  graphics::axis(1, seq_len(x_len))
   graphics::axis(2, pretty(c(0, ys)),
                  las = 1)
 
   graphics::mtext("N Factors", side = 1, line = 3, cex = 1.5, padj =-.5)
   graphics::mtext("RMSE eigenvalues", side = 2, line = 3, cex = 1.5, padj =.25)
 
-  graphics::lines(1:x_len, ys)
-  graphics::points(1:x_len, ys, pch = 16)
+  graphics::lines(seq_len(x_len), ys)
+  graphics::points(seq_len(x_len), ys, pch = 16)
 
   if (!is.na(x$n_factors)) {
     graphics::points(x$n_factors, ys[x$n_factors],

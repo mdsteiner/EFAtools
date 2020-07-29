@@ -98,7 +98,7 @@
   # create factor names to display
   factor_names <- colnames(x)
   if (is.null(factor_names)) {
-    factor_names <- paste0("F", 1:ncol(x))
+    factor_names <- paste0("F", seq_len(ncol(x)))
   }
 
   # for equal spacing, fill the factor names such that they match the columns
@@ -111,7 +111,7 @@
 
   if(is.null(var_names)) {
     if(is.null(rownames(x))){
-      var_names <- paste0("V", 1:nrow(x))
+      var_names <- paste0("V", seq_len(nrow(x)))
     } else {
     var_names <- rownames(x)
     }
@@ -133,13 +133,13 @@
   n_col <- ncol(x)
 
   # create the string to paste using the crayon package
-  temp <- apply(matrix(1:nrow(x), ncol = 1), 1,
+  temp <- apply(matrix(seq_len(nrow(x)), ncol = 1), 1,
                 function(ind, x, cutoff, n_col, vn, digits){
                   i <- x[ind,]
 
                   tt <- crayon::blue(vn[ind])
 
-                  for (kk in 1:n_col) {
+                  for (kk in seq_len(n_col)) {
                     if (abs(i[kk]) <= cutoff) {
                       tt <- c(tt, .numformat(round(i[kk], digits = digits),
                                                           digits = digits,
@@ -235,7 +235,7 @@
 
 .decimals <- function(x) {
 
-  if ((is.null(dim(x)) && !(inherits(x, "numeric"))) ||
+  if ((is.null(dim(x)) && !(inherits(x, c("numeric", "integer")))) ||
       (!is.null(dim(x)) && !(inherits(x, c("matrix", "loadings", "LOADINGS",
                                           "SLLOADINGS"))))) {
     stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is of class ", class(x), " but must be a numeric vector or matrix\n"))
@@ -245,7 +245,8 @@
 
     max(apply(x, 1:2, function(ll) {
       if (abs(ll - round(ll)) > .Machine$double.eps^0.5) {
-        nchar(strsplit(sub('0+$', '', as.character(ll)), ".", fixed = TRUE)[[1]][[2]])
+        nchar(strsplit(sub('0+$', '', as.character(ll)), ".",
+                       fixed = TRUE)[[1]][[2]])
       } else {
         return(0)
       }
@@ -534,7 +535,7 @@ if(n == 1){
 
 } else if (n > 2){
 
-  c(paste(crayon::bold(x[1:n-1]), collapse = ", "), ", and ", crayon::bold(x[n]))
+  c(paste(crayon::bold(x[seq_len(n-1)]), collapse = ", "), ", and ", crayon::bold(x[n]))
 
 }
 

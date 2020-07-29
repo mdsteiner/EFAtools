@@ -15,7 +15,7 @@
     var_names <- rownames(model)
     g_load <- model[, 1]
     s_load <- model[, 2:(ncol(model) - 3)]
-    factor_names <- c("g", 1:ncol(s_load))
+    factor_names <- c("g", seq_len(ncol(s_load)))
     u2 <- model[, "u2"]
 
  } else if(inherits(model, "SL")){
@@ -26,12 +26,12 @@
     var_names <- rownames(model)
     g_load <- model[, 1]
     s_load <- model[, 2:(ncol(model) - 2)]
-    factor_names <- c("g", 1:ncol(s_load))
+    factor_names <- c("g", seq_len(ncol(s_load)))
     u2 <- model[, "u2"]
 
   } else {
 
-    factor_names <- c("g", 1:ncol(s_load))
+    factor_names <- c("g", seq_len(ncol(s_load)))
 
   }
 
@@ -114,7 +114,7 @@
   sums_g_s <- NULL
   sums_s_s <- NULL
 
-  for (i in 1:ncol(s_load)){
+  for (i in seq_len(ncol(s_load))){
     sums_e_s[i] <- sum(input[input$factor == i, "u2"])
     sums_g_s[i] <- sum(input[input$factor == i, "g"])
     sums_s_s[i] <- sum(input[input$factor == i, i + 2])
@@ -132,7 +132,7 @@
     omega_h_sub <- NULL
     omega_sub_sub <- NULL
 
-    for (i in 1:ncol(s_load)) {
+    for (i in seq_len(ncol(s_load))) {
       subf <- which(factor_corres == i)
       Vgr <- sum(cormat[subf, subf])
       omega_sub_sub[i] <- sums_s_s[i]^2 / Vgr
@@ -171,7 +171,7 @@
 
     if(is.null(model)){
 
-      rownames(omegas) <- c("g", 1:ncol(s_load))
+      rownames(omegas) <- c("g", seq_len(ncol(s_load)))
 
     } else {
 
@@ -224,7 +224,7 @@
 
   }
 
-    for(i in 1:length(std_sol)){
+    for(i in seq_along(std_sol)){
 
     if(any(is.na(std_sol[[i]][["lambda"]]))){
       stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Some loadings are NA or NaN. No omegas are computed.\n"))
@@ -279,14 +279,14 @@
       fac_names <- c(g_name, col_names)
 
       var_names <- list()
-      for(j in 1:(length(fac_names)-1)){
+      for(j in seq_len(length(fac_names)-1)){
         temp0 <- abs(std_sol[[1]][["lambda"]][, j]) > 0 + .Machine$double.eps * 100
         var_names[[j]] <- names(temp0)[temp0]
       }
 
       # Create all sums of factor loadings for each factor
       sums_all[[i]] <- vector("double", length(fac_names))
-      for (j in 1:length(fac_names)){
+      for (j in seq_along(fac_names)){
         sums_all[[i]][j] <- sum(std_sol[[i]][["lambda"]][, fac_names[j]])
       }
 
@@ -302,7 +302,7 @@
       sums_e_s[[i]] <- vector("double", length(var_names))
       sums_g_s[[i]] <- vector("double", length(var_names))
 
-      for (j in 1:length(var_names)){
+      for (j in seq_along(var_names)){
         sums_e_s[[i]][j] <- sum(e_load[[i]][var_names[[j]]])
         sums_g_s[[i]][j] <- sum(g_load[[i]][var_names[[j]]])
       }

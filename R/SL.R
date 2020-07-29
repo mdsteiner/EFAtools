@@ -194,11 +194,11 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
 
   vars_accounted <- .compute_vars(L_unrot = sl_load, L_rot = sl_load)
 
-  colnames(vars_accounted) <-c("g", paste0("F", 1:n_first_fac))
+  colnames(vars_accounted) <-c("g", paste0("F", seq_len(n_first_fac)))
 
   # Finalize output object
   sl <- cbind(sl_load, h2_sl, u2_sl)
-  colnames(sl) <- c("g", paste0("F", 1:n_first_fac), "h2", "u2")
+  colnames(sl) <- c("g", paste0("F", seq_len(n_first_fac)), "h2", "u2")
   class(sl) <- "SLLOADINGS"
 
   output <- list(

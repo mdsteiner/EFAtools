@@ -286,13 +286,13 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   }
 
   # Calculate loadings with EFA function
-  loadings <- suppressWarnings(future.apply::future_lapply(1:J, EFA,
+  loadings <- suppressWarnings(future.apply::future_lapply(seq_len(J), EFA,
                                                            x = R,
                                                            method = method,
                                                            N = N, ...))
 
   # then for 1 to J factors
-  for (i in 1:J) {
+  for (i in seq_len(J)) {
     if (method == "PAF") {
       # compute goodness of fit "f" as CAF (common part accounted for; Eq 3)
       # compute CAF

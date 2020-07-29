@@ -13,7 +13,6 @@ using namespace arma;
 //' @param n_vars numeric. Number of variables / indicators in dataset.
 //' @param N numeric. Number of cases / observations in dataset.
 //' @param eigen_type numeric. Whether PCA (eigen_type = 1; i.e., leaving diagonal of correlation matrix at 1) or PAF (eigen_type = 2; i.e., setting diagonal of correlation matrix to SMCs).
-//' @export
 // [[Rcpp::export(.parallel_sim)]]
 arma::mat parallel_sim(const int n_datasets, const int n_vars, const int N,
                          const int eigen_type) {

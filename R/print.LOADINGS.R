@@ -20,7 +20,7 @@ print.LOADINGS <- function(x, cutoff = .3, digits = 3, ...) {
   # create factor names to display
   factor_names <- colnames(x)
   if (is.null(factor_names)) {
-    factor_names <- paste0("F", 1:ncol(x))
+    factor_names <- paste0("F", seq_len(ncol(x)))
   }
 
   # for equal spacing, fill the factor names such that they match the columns
@@ -31,7 +31,7 @@ print.LOADINGS <- function(x, cutoff = .3, digits = 3, ...) {
 
   var_names <- rownames(x)
   if (is.null(var_names)) {
-    var_names <- paste0("V", 1:nrow(x))
+    var_names <- paste0("V", seq_len(nrow(x)))
   }
 
   max_char <- max(sapply(var_names, nchar))
@@ -48,13 +48,13 @@ print.LOADINGS <- function(x, cutoff = .3, digits = 3, ...) {
   n_col <- ncol(x)
 
   # create the string to paste using the crayon package
-  temp <- apply(matrix(1:nrow(x), ncol = 1), 1,
+  temp <- apply(matrix(seq_len(nrow(x)), ncol = 1), 1,
                 function(ind, x, cutoff, n_col, vn, digits){
     i <- x[ind,]
 
     tt <- crayon::blue(vn[ind])
 
-    for (kk in 1:n_col) {
+    for (kk in seq_len(n_col)) {
       if (abs(i[kk]) < cutoff) {
         tt <- c(tt, crayon::silver(.numformat(round(i[kk], digits = digits),
                                               digits = digits)))

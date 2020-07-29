@@ -209,13 +209,13 @@
     # name the loading matrix so the variables can be identified
     rownames(L) <- colnames(orig_R)
   } else {
-    varnames <- paste0("V", 1:ncol(orig_R))
+    varnames <- paste0("V", seq_len(ncol(orig_R)))
     colnames(orig_R) <- varnames
     rownames(orig_R) <- varnames
     rownames(L) <- varnames
   }
 
-  colnames(L) <- paste0("F", 1:m)
+  colnames(L) <- paste0("F", seq_len(m))
 
   vars_accounted <- .compute_vars(L_unrot = L, L_rot = L)
 

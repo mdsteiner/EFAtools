@@ -236,7 +236,7 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
       shared_load <- shared_load * -1
     }
 
-    for (i in 1:k) {
+    for (i in seq_len(k)) {
       if (sum(shared_load[i,] * shared_load[i,]) < 1) {
         unique_load[i, 1] <-
           (1 - sum(shared_load[i,] * shared_load[i,]))
@@ -247,7 +247,7 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
 
     unique_load <- sqrt(unique_load)
 
-    for (i in 1:k) {
+    for (i in seq_len(k)) {
       sim_dat[, i] <- (shared_comp %*% t(shared_load))[, i] +
         unique_comp[, i] * unique_load[i, 1]
     }
@@ -255,7 +255,7 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
 
       # Replace normal with nonnormal distributions (step 9) ---------------------------------------------------------
 
-      for (i in 1:k) {
+      for (i in seq_len(k)) {
         sim_dat <- sim_dat[sort.list(sim_dat[, i]),]
         sim_dat[,i] <- dists[, i]
       }
@@ -287,7 +287,7 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
   L <- suppressWarnings(.paf_iter(rep(1, k), criterion = .001, R = R_best,
                 n_fac = n_factors, abs_eig = TRUE, crit_type = 2,
                 max_iter = max_iter)$L)
-  shared_load[, 1:n_factors] <- L
+  shared_load[, seq_len(n_factors)] <- L
 
   shared_load[shared_load > 1] <- 1
   shared_load[shared_load < -1] <- -1
@@ -295,7 +295,7 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
     shared_load <- shared_load * -1
   }
 
-  for (i in 1:k) {
+  for (i in seq_len(k)) {
     if (sum(shared_load[i,] * shared_load[i,]) < 1) {
       unique_load[i, 1] <-
         (1 - sum(shared_load[i,] * shared_load[i,]))
@@ -306,13 +306,13 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
 
   unique_load <- sqrt(unique_load)
 
-  for (i in 1:k) {
+  for (i in seq_len(k)) {
     sim_dat[, i] <- (shared_comp %*% t(shared_load))[, i] +
       unique_comp[, i] * unique_load[i, 1]
   }
 
   sim_dat <- apply(sim_dat, 2, scale) # standardizes each variable in the matrix
-  for (i in 1:k) {
+  for (i in seq_len(k)) {
     sim_dat <- sim_dat[sort.list(sim_dat[, i]),]
     sim_dat[,i] <- dists[, i]
   }
