@@ -22,10 +22,10 @@ COMPARE(
 )
 }
 \arguments{
-\item{x}{matrix, data.frame, or vector. Loadings or communalities of a factor
+\item{x}{matrix, or vector. Loadings or communalities of a factor
 analysis output.}
 
-\item{y}{matrix, data.frame, or vector. Loadings or communalities of another
+\item{y}{matrix, or vector. Loadings or communalities of another
 factor analysis output to compare to x.}
 
 \item{reorder}{character. Whether and how elements / columns should be

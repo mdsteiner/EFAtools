@@ -4,9 +4,9 @@
 #' information (loadings or communalities) and returns a list of class COMPARE
 #' containing summary information of the differences of the objects.
 #'
-#' @param x matrix, data.frame, or vector. Loadings or communalities of a factor
+#' @param x matrix, or vector. Loadings or communalities of a factor
 #'  analysis output.
-#' @param y matrix, data.frame, or vector. Loadings or communalities of another
+#' @param y matrix, or vector. Loadings or communalities of another
 #'  factor analysis output to compare to x.
 #' @param reorder character. Whether and how elements / columns should be
 #' reordered. If "congruence" (default), reordering is done according to Tuckers
@@ -102,42 +102,43 @@ COMPARE <- function(x,
 
   # reclass data.frames and tibbles to matrices so the stats functions afterwards
   # work
-  if (!(inherits(x, "numeric")) &&
-      !(inherits(y, "numeric"))) {
+  if ((inherits(x, c("loadings", "LOADINGS", "SLLOADINGS", "matrix"))) &&
+      (inherits(y, c("loadings", "LOADINGS", "SLLOADINGS", "matrix")))) {
 
-    if (inherits(x, "data.frame")) {
-      x <- as.matrix(x)
-    } else if (inherits(x, c("loadings", "LOADINGS", "SLLOADINGS"))) {
+    if (inherits(x, c("loadings", "LOADINGS", "SLLOADINGS"))) {
       x <- unclass(x)
     }
 
-    if (inherits(y, "data.frame")) {
-      y <- as.matrix(y)
-    } else if (inherits(y, c("loadings", "LOADINGS", "SLLOADINGS"))) {
+    if (inherits(y, c("loadings", "LOADINGS", "SLLOADINGS"))) {
       y <- unclass(y)
     }
 
     # check if dimensions match:
     if (any(dim(x) != dim(y))) {
 
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' and 'y' have different dimensions. Compare only works with identical dimensions.\n"))
+      stop(crayon::red$bold(cli::symbol$circle_cross),
+           crayon::red(" 'x' and 'y' have different dimensions. Can only compare matrices with identical dimensions.\n"))
 
     }
 
-  } else if (inherits(x, c("numeric", "COMMUNALITIES", "EIGEN")) &&
-             inherits(y, c("numeric", "COMMUNALITIES", "EIGEN"))) {
-
-    x <- unclass(x)
-    y <- unclass(y)
+  } else if (inherits(x, c("numeric", "integer")) &&
+             inherits(y, c("numeric", "integer"))) {
 
     if (length(x) != length(y)) {
 
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' and 'y' have different lengths Compare only works with identical dimensions.\n"))
+      stop(crayon::red$bold(cli::symbol$circle_cross),
+           crayon::red(" 'x' and 'y' have different lengths Compare only works with identical dimensions.\n"))
 
     }
 
     diff_corres <- NA
     diff_corres_cross <- NA
+
+  } else {
+
+    stop(crayon::red$bold(cli::symbol$circle_cross),
+         crayon::red(" 'x' is of class", class(x), "and 'y' is of class",
+                     class(y), "but must be numeric vectors or matrices\n"))
 
   }
 
@@ -153,7 +154,7 @@ COMPARE <- function(x,
       factor_order <- apply(abs(congruence), 1, which.max)
 
       # obtain signs to reflect signs of y if necessary
-      factor_sign <- sapply(1:n_factors, function(ll, congruence, factor_order){
+      factor_sign <- sapply(seq_len(n_factors), function(ll, congruence, factor_order){
         sign(congruence[ll, factor_order[ll]])
       }, congruence = congruence, factor_order = factor_order)
 
@@ -218,7 +219,7 @@ COMPARE <- function(x,
   class(y) <- "character"
   x <- gsub("-|\\.", "", x)
   y <- gsub("-|\\.", "", y)
-  for (ii in 1:(max_dec + 1)) {
+  for (ii in seq_len((max_dec + 1))) {
     are_equal_v[ii] <- all(substr(x, 1, ii) == substr(y, 1, ii))
   }
 
