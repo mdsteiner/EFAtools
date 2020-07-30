@@ -131,13 +131,6 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
                  n_factors = 1, ...) {
   # Perform hull method following Lorenzo-Seva, Timmerman, and Kiers (2011)
 
-  # # for testing
-  # x <- IDS2_R
-  # N <- 2000
-  # n_fac_theor <- 7
-  # method <- "ML"
-  # gof <- c("CFI", "RMSEA")
-
   if(!inherits(x, c("matrix", "data.frame"))){
 
     stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n"))
@@ -230,21 +223,20 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
 
     J <- max(c(n_fac_PA, n_fac_theor), na.rm = TRUE) + 1
 
-    if (J > .det_max_factors(ncol(R))) {
-      J <- .det_max_factors(ncol(R))
-      warning(crayon::yellow$bold("!"), crayon::yellow(' Setting maximum number of factors to',
-                                                       J, 'to ensure overidentified models.\n'))
-    }
+  }
 
+  if (J > .det_max_factors(ncol(R))) {
+    J <- .det_max_factors(ncol(R))
+    warning(crayon::yellow$bold("!"), crayon::yellow(' Setting maximum number of factors to',
+                                                     J, 'to ensure overidentified models.\n'))
+  }
 
-    if (J < 3) {
-      warning(crayon::yellow$bold("!"),
-              crayon::yellow(" Suggested maximum number of factors was", J,
-                             "but must be at least 3 for hull method to work.",
-                             "Setting it to 3.\n"))
-        J <- 3
-
-    }
+  if (J < 3) {
+    warning(crayon::yellow$bold("!"),
+            crayon::yellow(" Suggested maximum number of factors was", J,
+                           "but must be at least 3 for hull method to work.",
+                           "Setting it to 3.\n"))
+    J <- 3
 
   }
 
@@ -385,7 +377,10 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   s_complete <- s
   d_s <- diff(s[, 2])
   while (any(d_s < 0)) {
-    s <- s[c(1, d_s) > 0,]
+    s <- s[c(1, d_s) > 0, , drop = FALSE]
+    if(nrow(s) == 1){
+      break
+    }
     d_s <- diff(s[, 2])
   }
 
