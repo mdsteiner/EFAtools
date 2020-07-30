@@ -178,7 +178,7 @@ COMPARE <- function(x,
     }
 
 
-  } else if (inherits(x, "matrix")) {
+  } else if (inherits(x, c("numeric", "integer"))) {
 
       if (reorder == "congruence" && !is.null(names(x)) && !is.null(names(y))) {
         ind_x <- order(names(x))

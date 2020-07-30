@@ -20,12 +20,14 @@ x_base <- population_models$loadings$baseline
 x_NA <- population_models$loadings$baseline
 x_NA[1, 3] <- NA
 y_base <- x_base[, c(3,2,1)]
+y_NA <- y_base
+y_NA[2, 2] <- NA
 
 test_that(".factor_congruence works", {
   expect_is(.factor_congruence(x_base, y_base), "matrix")
   expect_equal(sum(.factor_congruence(x_base, y_base)), 3)
-  expect_warning(.factor_congruence(x_NA, y_base, na.rm = FALSE), " Input contained missing values. Check your data or rerun with na.rm = TRUE.\n")
-  expect_warning(.factor_congruence(x_NA, y_base), " Input contained missing values. Analysis is performed on complete cases.\n")
+  expect_warning(.factor_congruence(x_NA, y_NA, na.rm = FALSE), " Input contained missing values. Check your data or rerun with na.rm = TRUE.\n")
+  expect_warning(.factor_congruence(x_NA, y_NA), " Input contained missing values. Analysis is performed on complete cases.\n")
 })
 
 efa_ml <- suppressWarnings(EFA(cbind(rnorm(100), rnorm(100), rnorm(100), rnorm(100),

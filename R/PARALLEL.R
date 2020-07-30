@@ -157,18 +157,13 @@ PARALLEL <- function(x = NULL,
   n_fac_EFA <- NA
   x_dat <- FALSE
 
-  if (!is.null(x)) {
-
-    if (any(!apply(x, 2, inherits, "numeric"))) {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Data contained non-numeric columns. Eigenvalues of actual data were not computed.\n"))
-    } else {
+  if (!is.null(x)){
 
       if (!is.na(n_vars)) {
         warning(crayon::yellow$bold("!"), crayon::yellow(" n_vars was set and data entered. Taking n_vars from data\n"))
       }
       n_vars <- ncol(x)
       x_dat <- TRUE
-
 
       # Check if it is a correlation matrix
       if(.is_cormat(x)){
@@ -223,8 +218,6 @@ PARALLEL <- function(x = NULL,
                                    ...)$final_eigen,  ncol = 1)
         colnames(eigvals_real_EFA) <- "Real Eigenvalues"
       }
-
-    }
 
   }
 

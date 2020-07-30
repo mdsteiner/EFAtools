@@ -181,6 +181,7 @@ test_that("errors etc are thrown correctly", {
 
   expect_warning(HULL(test_models$baseline$cormat, n_fac_theor = 13, N = 500), ' Setting maximum number of factors to 12 to ensure overidentified models.\n')
   expect_warning(HULL(cor_nposdef, N = 20, method = "ML"), "Matrix was not positive definite, smoothing was done")
+  expect_warning(HULL(cor_nposdef, N = 20, method = "ML", n_fac_theor = 1), "Matrix was not positive definite, smoothing was done")
 })
 
 rm(hull_cor_paf, hull_cor_ml, hull_cor_uls, hull_cor_uls_CFI, hull_raw_paf,
