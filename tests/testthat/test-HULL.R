@@ -6,6 +6,11 @@ hull_cor_uls_CFI <- HULL(test_models$baseline$cormat, N = 500, method = "ULS",
 hull_cor_ml_nf <- suppressWarnings(HULL(test_models$baseline$cormat, N = 500,
                                         method = "ML", n_fac_theor = 12))
 
+hull_PCA <- HULL(test_models$baseline$cormat, N = 500, method = "ML",
+                 eigen_type = "PCA")
+hull_EFA <- HULL(test_models$baseline$cormat, N = 500, method = "ML",
+                 eigen_type = "EFA")
+
 hull_raw_paf <- suppressMessages(suppressWarnings(HULL(GRiPS_raw)))
 hull_raw_ml <- suppressMessages(suppressWarnings(HULL(GRiPS_raw, method = "ML")))
 hull_raw_uls <- suppressMessages(suppressWarnings(HULL(GRiPS_raw, method = "ULS")))
@@ -26,6 +31,10 @@ test_that("output class and dimensions are correct", {
   expect_output(str(hull_cor_uls), "List of 8")
   expect_is(hull_cor_uls_CFI, "HULL")
   expect_output(str(hull_cor_uls_CFI), "List of 8")
+  expect_is(hull_PCA, "HULL")
+  expect_output(str(hull_PCA), "List of 8")
+  expect_is(hull_EFA, "HULL")
+  expect_output(str(hull_EFA), "List of 8")
 
   expect_is(hull_raw_paf, "HULL")
   expect_output(str(hull_raw_paf), "List of 8")
@@ -35,16 +44,24 @@ test_that("output class and dimensions are correct", {
   expect_output(str(hull_raw_uls), "List of 8")
   expect_is(hull_raw_uls_CFI, "HULL")
   expect_output(str(hull_raw_uls_CFI), "List of 8")
+  expect_is(hull_PCA, "HULL")
+  expect_output(str(hull_PCA), "List of 8")
+  expect_is(hull_EFA, "HULL")
+  expect_output(str(hull_EFA), "List of 8")
 
   expect_output(str(hull_cor_paf$settings), "List of 7")
   expect_output(str(hull_cor_ml$settings), "List of 7")
   expect_output(str(hull_cor_uls$settings), "List of 7")
   expect_output(str(hull_cor_uls_CFI$settings), "List of 7")
+  expect_output(str(hull_PCA$settings), "List of 7")
+  expect_output(str(hull_EFA$settings), "List of 7")
 
   expect_output(str(hull_raw_paf$settings), "List of 7")
   expect_output(str(hull_raw_ml$settings), "List of 7")
   expect_output(str(hull_raw_uls$settings), "List of 7")
   expect_output(str(hull_raw_uls_CFI$settings), "List of 7")
+  expect_output(str(hull_PCA$settings), "List of 7")
+  expect_output(str(hull_EFA$settings), "List of 7")
 })
 
 test_that("n_fac_max is correctly specified", {
@@ -55,6 +72,10 @@ test_that("n_fac_max is correctly specified", {
   expect_lte(hull_cor_uls$n_fac_max,
              .det_max_factors(ncol(test_models$baseline$cormat)))
   expect_lte(hull_cor_uls_CFI$n_fac_max,
+             .det_max_factors(ncol(test_models$baseline$cormat)))
+  expect_lte(hull_PCA$n_fac_max,
+             .det_max_factors(ncol(test_models$baseline$cormat)))
+  expect_lte(hull_EFA$n_fac_max,
              .det_max_factors(ncol(test_models$baseline$cormat)))
 
   expect_lte(hull_raw_paf$n_fac_max,
@@ -144,7 +165,9 @@ cor_nposdef <- matrix(c(1,     0.477, 0.644, 0.578, 0.651, 0.826,
 test_that("errors etc are thrown correctly", {
   expect_error(HULL(1:5), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n")
   expect_message(suppressWarnings(HULL(GRiPS_raw)), " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n")
-  expect_warning(HULL(GRiPS_raw, N = 20), " 'N' was set and data entered. Taking N from data.\n")
+  expect_warning(suppressMessages(HULL(GRiPS_raw)), " Suggested maximum number of factors was 2 but must be at least 3 for hull method to work. Setting it to 3.\n")
+  expect_warning(suppressMessages(HULL(IDS2_R, N = 20)), " Less than three solutions located on the hull have been identified when using CAF as goodness of fit index. Proceeding by taking the value with the maximum CAF as heuristic. You may want to consider additional indices or methods as robustness check.\n")
+  expect_warning(suppressMessages(HULL(GRiPS_raw, N = 20)), " 'N' was set and data entered. Taking N from data.\n")
   expect_error(HULL(test_models$baseline$cormat), ' "N" is not specified but is needed for computation of some of the fit indices.\n')
   expect_error(HULL(test_models$baseline$cormat, method = "ML"), ' "N" is not specified but is needed for computation of some of the fit indices.\n')
   expect_error(HULL(test_models$baseline$cormat, method = "ULS"), ' "N" is not specified but is needed for computation of some of the fit indices.\n')
@@ -157,10 +180,10 @@ test_that("errors etc are thrown correctly", {
   expect_message(suppressWarnings(HULL(GRiPS_raw)), 'Only CAF can be used as gof if method "PAF" is used. Setting gof to "CAF"\n')
 
   expect_warning(HULL(test_models$baseline$cormat, n_fac_theor = 13, N = 500), ' Setting maximum number of factors to 12 to ensure overidentified models.\n')
-  #expect_warning(HULL(cor_nposdef, N = 20, method = "ML"), "Matrix was not positive definite, smoothing was done")
+  #expect_warning(HULL(cor_nposdef, N = 20, method = "PAF"), "Matrix was not positive definite, smoothing was done")
 
 })
 
 rm(hull_cor_paf, hull_cor_ml, hull_cor_uls, hull_cor_uls_CFI, hull_raw_paf,
    hull_raw_ml, hull_raw_uls, hull_raw_uls_CFI, hull_raw_ml_nf, hull_cor_ml_nf,
-   x, y, z, dat_sing, cor_sing, cor_nposdef)
+   hull_PCA, hull_EFA, x, y, z, dat_sing, cor_sing, cor_nposdef)

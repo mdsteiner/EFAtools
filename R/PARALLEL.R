@@ -189,16 +189,6 @@ PARALLEL <- function(x = NULL,
 
       }
 
-      if (is.na(N)) {
-
-        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "N" was not set and could not be taken from data. Please specify N and try again.\n'))
-
-      }
-
-      if (is.na(n_vars)) {
-        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "n_vars" was not set and could not be taken from data. Please specify n_vars and try again.\n'))
-      }
-
       # Check if correlation matrix is invertable, if it is not, stop with message
       R_i <- try(solve(R), silent = TRUE)
 
@@ -235,6 +225,16 @@ PARALLEL <- function(x = NULL,
       }
 
     }
+
+  }
+
+  if (is.na(n_vars)) {
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "n_vars" was not set and could not be taken from data. Please specify n_vars and try again.\n'))
+  }
+
+  if (is.na(N)) {
+
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "N" was not set and could not be taken from data. Please specify N and try again.\n'))
 
   }
 
@@ -389,14 +389,14 @@ PARALLEL <- function(x = NULL,
 
     x <- matrix(stats::rnorm(N * n_vars), nrow = N, ncol = n_vars)
     R <- stats::cor(x)
-    eigvals_i <- try(suppressWarnings(EFA(R, n_factors = n_factors, N = N,
-                                          ...)$final_eigen), silent = TRUE)
+    eigvals_i <- try(suppressWarnings(suppressMessages(EFA(R, n_factors = n_factors, N = N,
+                                          ...)$final_eigen)), silent = TRUE)
     it_i <- 1
     while (inherits(eigvals_i, "try-error") && it_i < 25) {
       x <- matrix(stats::rnorm(N * n_vars), nrow = N, ncol = n_vars)
       R <- stats::cor(x)
-      eigvals_i <- try(suppressWarnings(EFA(R, n_factors = n_factors, N = N,
-                                            ...)$final_eigen), silent = TRUE)
+      eigvals_i <- try(suppressWarnings(suppressMessages(EFA(R, n_factors = n_factors, N = N,
+                                            ...)$final_eigen)), silent = TRUE)
       it_i <- it_i + 1
     }
 

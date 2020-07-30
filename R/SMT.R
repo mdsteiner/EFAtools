@@ -200,7 +200,7 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
 
     }
 
-  # Calculate RMSEA (inkl. 90% CI) and AIC for the null model
+  # Calculate RMSEA (incl. lower bound of 90% CI) and AIC for the null model
   chi_null <- temp$fit_indices$chi_null
   df_null <- temp$fit_indices$df_null
 
@@ -216,16 +216,7 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
     lambda_l <- 0
   }
 
-  if (stats::pchisq(chi_null, df = df_null, ncp = 0) >= .05) {
-    lambda_u <- stats::uniroot(f = p_chi, interval = c(1e-10, 10000),
-                               val = chi_null, df = df_null, goal = .05,
-                               extendInt = "upX", maxiter = 100L)$root
-  } else {
-    lambda_u <- 0
-  }
-
   RMSEA_LB_null <- sqrt(lambda_l / (df_null * N))
-  RMSEA_UB_null <- sqrt(lambda_u / (df_null * N))
 
   AIC_null <- chi_null - 2 * df_null
 

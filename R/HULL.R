@@ -21,7 +21,7 @@
 #'   the CAF can be used as goodness of fit index. For details on the CAF, see
 #'   Lorenzo-Seva, Timmerman, and Kiers (2011).
 #' @param eigen_type character. On what the eigenvalues should be found in the
-#'  parallel analysis.. Can be one of \code{"SMC"}, \code{"PCA"}, or \code{"EFA"}.
+#'  parallel analysis. Can be one of \code{"SMC"}, \code{"PCA"}, or \code{"EFA"}.
 #'   If using  \code{"SMC"} (default), the diagonal of the correlation matrices is
 #'    replaced by the squared multiple correlations (SMCs) of the indicators. If
 #'     using  \code{"PCA"}, the diagonal values of the correlation
@@ -235,6 +235,7 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
       warning(crayon::yellow$bold("!"), crayon::yellow(' Setting maximum number of factors to',
                                                        J, 'to ensure overidentified models.\n'))
     }
+
 
     if (J < 3) {
       warning(crayon::yellow$bold("!"),

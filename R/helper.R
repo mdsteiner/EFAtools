@@ -81,17 +81,6 @@
   vars_explained
 }
 
-
-
-.SV <- function(lambda) {
-
-  n <- nrow(lambda)
-
-  sum((n * colSums(lambda ** 4) - colSums(lambda ** 2) ** 2)/ n ** 2)
-
-}
-
-
 .get_compare_matrix <- function(x, digits = 3, r_red = .001, n_char = 10,
                                 var_names = NULL, gof = FALSE) {
 
@@ -121,7 +110,7 @@
 
   if (max_char > n_char) {
     vn_nchar <- sapply(var_names, nchar)
-    var_names[which(vn_nchar > n_char)] <- substr(var_names[which(n_char)] ,
+    var_names[which(vn_nchar > n_char)] <- substr(var_names[which(vn_nchar > n_char)],
                                               1, n_char)
     max_char <- n_char
   }
@@ -181,19 +170,6 @@
   temp
 }
 
-.gof_out <- function(x, headers, digits = 7) {
-
-  # for equal spacing, fill the factor names such that they match the columns
-  headers <- stringr::str_pad(headers, digits + 2, side = "both")
-  headers <- crayon::blue(stringr::str_c(headers, collapse = "\t"))
-
-  temp <- stringr::str_c(x, collapse = "\t")
-  temp <- stringr::str_c(headers, "\n", temp, "\n")
-
-  temp
-}
-
-
 .get_compare_vector <- function(x, digits = 3, r_red = .001) {
 
   temp_i <- NULL
@@ -238,7 +214,7 @@
   if ((is.null(dim(x)) && !(inherits(x, c("numeric", "integer")))) ||
       (!is.null(dim(x)) && !(inherits(x, c("matrix", "loadings", "LOADINGS",
                                           "SLLOADINGS"))))) {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is of class ", class(x), " but must be a numeric vector or matrix\n"))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is of class '", class(x), "' but must be a numeric vector or matrix\n", sep = ""))
   }
 
   if (!is.null(dim(x))) {
@@ -279,9 +255,8 @@
 .factor_congruence <- function(x, y, digits = 3, na.rm = TRUE) {
 
   if (any(is.na(x) | any(is.na(y)))) {
-    warning(crayon::yellow$bold("!"), crayon::yellow(" Some loadings were missing.\n"))
     if (isTRUE(na.rm)) {
-      cli::cli_alert_info(cli::col_cyan("Analysis is performed on complete cases\n"))
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Input contained missing values. Analysis is performed on complete cases.\n"))
       if (any(is.na(x))) {
         xc <- x[stats::complete.cases(x), ]
         y <- y[stats::complete.cases(x), ]
@@ -293,7 +268,7 @@
         y <- yc
       }
     } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Check your data or rerun with na.rm = TRUE\n"))
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Input contained missing values. Check your data or rerun with na.rm = TRUE.\n"))
     }
   }
 
@@ -418,74 +393,6 @@
 
 }
 
-.gof_null <- function(df, # The loading/ pattern matrix
-                      chi, # The correlation matrix
-                      N, # The number of cases
-                      method) { # The estimation method
-
-
-
-  if (method != "PAF" && !is.na(N)) {
-
-    ### compute RMSEA, incl. 90% confidence intervals if df are not 0
-
-    if(df != 0){
-
-      # formula 12.6 from Kline 2015; Principles and practices of...
-      RMSEA <- sqrt(max(0, chi - df) / (df * N - 1))
-
-
-      p_chi <- function(x, val, df, goal){goal - stats::pchisq(val, df, ncp = x)}
-
-      if (stats::pchisq(chi, df = df, ncp = 0) >= .95) {
-        lambda_l <- stats::uniroot(f = p_chi, interval = c(1e-10, 10000), val = chi,
-                                   df = df, goal = .95, extendInt = "upX",
-                                   maxiter = 100L)$root
-      } else {
-        lambda_l <- 0
-      }
-
-      if (stats::pchisq(chi, df = df, ncp = 0) >= .05) {
-        lambda_u <- stats::uniroot(f = p_chi, interval = c(1e-10, 10000),
-                                   val = chi, df = df, goal = .05,
-                                   extendInt = "upX", maxiter = 100L)$root
-      }
-      else {
-        lambda_u <- 0
-      }
-
-      RMSEA_LB <- sqrt(lambda_l / (df * N))
-      RMSEA_UB <- sqrt(lambda_u / (df * N))
-
-    } else {
-
-      RMSEA <- 0
-      RMSEA_LB <- 0
-      RMSEA_UB <- 0
-
-    }
-
-    ### compute AIC and BIC based on chi square
-    AIC <- chi - 2 * df
-    BIC <- chi - log(N) * df
-
-  } else {
-    RMSEA <- NA
-    RMSEA_LB <- NA
-    RMSEA_UB <- NA
-    AIC <- NA
-    BIC <- NA
-  }
-
-  out <- list(
-    RMSEA_null = RMSEA,
-    RMSEA_null_LB = RMSEA_LB,
-    RMSEA_null_UB = RMSEA_UB,
-    AIC_null = AIC,
-    BIC_null = BIC
-  )
-
-}
 
 # Checks if x is a correlation matrix
 .is_cormat <- function(x){
@@ -535,7 +442,8 @@ if(n == 1){
 
 } else if (n > 2){
 
-  c(paste(crayon::bold(x[seq_len(n-1)]), collapse = ", "), ", and ", crayon::bold(x[n]))
+  c(paste(crayon::bold(x[seq_len(n-1)]), collapse = ", "), ", and ",
+    crayon::bold(x[n]))
 
 }
 
