@@ -14,10 +14,17 @@
 * `N_FACTORS()`: Added option to do a scree plot if "SCREE" is included in the `criteria` argument.
 * `SL()`: Now also works with a lavaan second-order solution as input (first- and second-order loadings taken directly from lavaan output).
 * `OMEGA()`: Now also works with a lavaan second-order solution as input. In this case, it does a Schmid-Leiman transformation based on the first- and second-order loadings first and computes omegas based on this Schmid-Leiman solution.
+* `ML()`: Changed default start method to "psych".
+* `EFA()`: Added p value for chi square value in output (calculated for ML and ULS fitting methods).
 
 ## Bug Fixes
 
-* `PARALLEL()`: Fixed a bug that occurred when using `decision_rule = "percentile"`
+* `PARALLEL()`: Fixed a bug that occurred when using `decision_rule = "percentile"
+* `.get_compare_matrix()`: Fixed a bug that occurred when names of data were longer than n_char
+* `HULL()`: Fixed a bug that occurred when no factors lied on the HULL
+* `PARALLEL()`: Relocated error messages that were not evaluated if no data were entered (and should be)
+* `EFA()`: RMSEA is now set to 1 if it is > 1.
+* `KMO()`: Fixed a bug that the inverse of the correlation matrix was not taken anew after smoothing was necessary.
 
 ## Minor Changes
 * `OMEGA()` and `SL()`: Added an error message if the entered term in `g_name` is invalid (i.e., it cannnot be found among the factor names of the entered lavaan solution).
