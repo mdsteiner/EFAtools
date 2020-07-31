@@ -286,7 +286,7 @@ test_that("settings are returned correctly", {
   expect_equal(efa_equa$settings$k, TRUE)
   expect_equal(efa_none$settings$k, 3)
 
-  expect_equal(efa_ml$settings$start_method, "factanal")
+  expect_equal(efa_ml$settings$start_method, "psych")
 })
 
 test_that("factor analyses are performed correctly", {

@@ -83,9 +83,10 @@
 #' rotated loadings. "ss_factors" will reorder the factors according to descending
 #' sum of squared factor loadings per factor. Default is \code{NULL}.
 #' @param start_method character. How to specify the starting values for the
-#' optimization procedure for ML. Default is "factanal" which takes the starting
-#' values specified in the \link[stats:factanal]{stats::factanal} function. "psych" takes the
-#' starting values specified in \link[psych:fa]{psych::fa}. Solutions are very similar.
+#' optimization procedure for ML. Default is "psych" which takes the
+#' starting values specified in \link[psych:fa]{psych::fa}. "factanal" takes the
+#' starting values specified in the \link[stats:factanal]{stats::factanal} function.
+#' Solutions are very similar.
 #' @param ... Additional arguments passed to rotation functions from the \code{GPArotation} package (e.g., \code{maxit} for maximum number of iterations).
 #'
 #' @details There are two main ways to use this function. The easiest way is to
@@ -264,7 +265,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                                           "complete.obs", "everything",
                                           "na.or.complete"),
                 k = NULL, kaiser = TRUE, P_type = NULL, precision = NULL,
-                order_type = NULL, start_method = c("factanal", "psych"),
+                order_type = NULL, start_method = c("psych", "factanal"),
                 cor_method = c("pearson", "spearman", "kendall"),
                 ...) {
 

@@ -168,7 +168,7 @@ test_that("settings are returned correctly", {
   expect_equal(SL_EFAtools$settings$abs_eigen, TRUE)
   expect_equal(SL_psych$settings$abs_eigen, FALSE)
 
-  expect_equal(SL_flex$settings$start_method, "factanal")
+  expect_equal(SL_flex$settings$start_method, "psych")
 })
 
 
