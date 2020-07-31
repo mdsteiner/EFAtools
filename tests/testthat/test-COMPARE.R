@@ -39,9 +39,9 @@ test_that("output class and dimensions are correct", {
   expect_named(load, c("diff", "mean_abs_diff", "median_abs_diff", "min_abs_diff",
                        "max_abs_diff", "max_dec", "are_equal", "diff_corres",
                        "diff_corres_cross", "g", "settings"))
-  expect_named(load_ro1, c("diff", "mean_abs_diff", "median_abs_diff", "min_abs_diff",
-                       "max_abs_diff", "max_dec", "are_equal", "diff_corres",
-                       "diff_corres_cross", "g", "settings"))
+  expect_named(load_ro1, c("diff", "mean_abs_diff", "median_abs_diff",
+                           "min_abs_diff", "max_abs_diff", "max_dec", "are_equal",
+                           "diff_corres", "diff_corres_cross", "g", "settings"))
   expect_named(load_ro2, c("diff", "mean_abs_diff", "median_abs_diff", "min_abs_diff",
                        "max_abs_diff", "max_dec", "are_equal", "diff_corres",
                        "diff_corres_cross", "g", "settings"))

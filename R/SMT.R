@@ -146,7 +146,7 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
 
   # Check if correlation matrix is positive definite, if it is not,
   # smooth the matrix (cor.smooth throws a warning)
-  if (any(eigen(R, symmetric = TRUE, only.values = TRUE)$values <= 0)) {
+  if(any(eigen(R, symmetric = TRUE, only.values = TRUE)$values <= 0)) {
 
     R <- psych::cor.smooth(R)
 
@@ -206,10 +206,10 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
 
   RMSEA_null <- sqrt(max(0, chi_null - df_null) / (df_null * N - 1))
 
-  p_chi <- function(x, val, df, goal){goal - stats::pchisq(val, df, ncp = x)}
+  p_chi_fun <- function(x, val, df, goal){goal - stats::pchisq(val, df, ncp = x)}
 
   if (stats::pchisq(chi_null, df = df_null, ncp = 0) >= .95) {
-    lambda_l <- stats::uniroot(f = p_chi, interval = c(1e-10, 10000), val = chi_null,
+    lambda_l <- stats::uniroot(f = p_chi_fun, interval = c(1e-10, 10000), val = chi_null,
                                df = df_null, goal = .95, extendInt = "upX",
                                maxiter = 100L)$root
   } else {

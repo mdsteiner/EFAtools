@@ -22,11 +22,12 @@ test_that("outputs are correct", {
 })
 
 test_that("fit indices are returned correctly", {
-  expect_output(str(ULS_test$fit_indices), "List of 12")
-  expect_output(str(ULS_test_1$fit_indices), "List of 12")
+  expect_output(str(ULS_test$fit_indices), "List of 14")
+  expect_output(str(ULS_test_1$fit_indices), "List of 14")
 
   expect_is(ULS_test$fit_indices$chi, "numeric")
   expect_is(ULS_test$fit_indices$df, "numeric")
+  expect_is(ULS_test$fit_indices$p_chi, "numeric")
   expect_is(ULS_test$fit_indices$CAF, "numeric")
   expect_is(ULS_test$fit_indices$CFI, "numeric")
   expect_is(ULS_test$fit_indices$RMSEA, "numeric")
@@ -37,9 +38,11 @@ test_that("fit indices are returned correctly", {
   expect_is(ULS_test$fit_indices$Fm, "numeric")
   expect_is(ULS_test$fit_indices$chi_null, "numeric")
   expect_is(ULS_test$fit_indices$df_null, "numeric")
+  expect_is(ULS_test$fit_indices$p_null, "numeric")
 
   expect_is(ULS_test_1$fit_indices$chi, "numeric")
   expect_is(ULS_test_1$fit_indices$df, "numeric")
+  expect_is(ULS_test_1$fit_indices$p_chi, "numeric")
   expect_is(ULS_test_1$fit_indices$CAF, "numeric")
   expect_is(ULS_test_1$fit_indices$CFI, "numeric")
   expect_is(ULS_test_1$fit_indices$RMSEA, "numeric")
@@ -50,6 +53,7 @@ test_that("fit indices are returned correctly", {
   expect_is(ULS_test_1$fit_indices$Fm, "numeric")
   expect_is(ULS_test_1$fit_indices$chi_null, "numeric")
   expect_is(ULS_test_1$fit_indices$df_null, "numeric")
+  expect_is(ULS_test_1$fit_indices$p_null, "numeric")
 })
 
 rm(ULS_test, ULS_test_1)

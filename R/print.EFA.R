@@ -21,6 +21,7 @@ print.EFA <- function(x, ...) {
   rotation <- x$settings$rotation
   type <- x$settings$type
   N <- x$settings$N
+  fit <- x$fit_indices
 
   cat("\n")
   cat("EFA performed with type = '", crayon::bold(type), "', method = '",
@@ -73,7 +74,7 @@ print.EFA <- function(x, ...) {
   cat("\n")
   cat(.get_compare_matrix(x$vars_accounted, r_red = Inf, n_char = 17))
 
-  if (x$fit_indices$df == 0) {
+  if (fit$df == 0) {
     cat("\n")
     cat(crayon::yellow$bold("!"), crayon::yellow(" The model is just identified (df = 0). Goodness of fit indices may not be interpretable."))
     cat("\n")
@@ -86,9 +87,9 @@ print.EFA <- function(x, ...) {
     cat("\n")
     cat("\n")
     cat(crayon::blue("CAF:"),
-        .numformat(x$fit_indices$CAF), "\n", sep = "")
+        .numformat(fit$CAF), "\n", sep = "")
     cat(crayon::blue("df: "),
-        .numformat(x$fit_indices$df, 0, print_zero = TRUE), "\n", sep = "")
+        .numformat(fit$df, 0, print_zero = TRUE), "\n", sep = "")
 
 
   } else {
@@ -97,22 +98,29 @@ print.EFA <- function(x, ...) {
     cat(cli::rule(left = crayon::bold("Model Fit"), col = "blue"))
     cat("\n")
     cat("\n")
-    cat(crayon::blue("\U1D712\U00B2: "),
-        .numformat(x$fit_indices$chi, print_zero = TRUE), "\n", sep = "")
-    cat(crayon::blue("df: "),
-        .numformat(x$fit_indices$df, 0, print_zero = TRUE), "\n", sep = "")
-    cat(crayon::blue("CFI: "),
-        .numformat(x$fit_indices$CFI), "\n", sep = "")
-    cat(crayon::blue("RMSEA 90% CI:"),
-        paste0(.numformat(x$fit_indices$RMSEA), " [",
-               substr(.numformat(x$fit_indices$RMSEA_LB), 2, 4), ",",
-               .numformat(x$fit_indices$RMSEA_UB), "]"), "\n", sep = "")
-    cat(crayon::blue("AIC: "),
-        .numformat(x$fit_indices$AIC, print_zero = TRUE), "\n", sep = "")
-    cat(crayon::blue("BIC: "),
-        .numformat(x$fit_indices$BIC, print_zero = TRUE), "\n", sep = "")
-    cat(crayon::blue("CAF:"),
-        .numformat(x$fit_indices$CAF), "\n", sep = "")
+    cat(crayon::blue("\U1D712\U00B2(", sep = ""), fit$df,
+        crayon::blue(") = ", sep = ""),
+        .numformat(fit$chi, 2, print_zero = TRUE), ", ",
+        crayon::blue(crayon::italic("p")),
+        ifelse(fit$p_chi < .001, " < .001",
+               paste(crayon::blue(ifelse(fit$p_chi < 1, " =", " = ")),
+                     .numformat(fit$p_chi, 3), sep = "")),
+               "\n", sep = "")
+    cat(crayon::blue(ifelse(fit$CFI < 1, "CFI =", "CFI = ")),
+        .numformat(fit$CFI), "\n", sep = "")
+    cat(crayon::blue(ifelse(fit$RMSEA < 1, "RMSEA [90% CI] =",
+                            "RMSEA [90% CI] = ")),
+        paste0(.numformat(fit$RMSEA), " [",
+               ifelse(fit$RMSEA_LB < 1, substr(.numformat(fit$RMSEA_LB), 2, 4),
+                      .numformat(fit$RMSEA_LB)),
+               ifelse(fit$RMSEA_UB < 1, ";", "; "),
+               .numformat(fit$RMSEA_UB), "]", sep = ""), "\n", sep = "")
+    cat(crayon::blue("AIC = "),
+        .numformat(fit$AIC, print_zero = TRUE), "\n", sep = "")
+    cat(crayon::blue("BIC = "),
+        .numformat(fit$BIC, print_zero = TRUE), "\n", sep = "")
+    cat(crayon::blue("CAF ="),
+        .numformat(fit$CAF), "\n", sep = "")
 
   }
 

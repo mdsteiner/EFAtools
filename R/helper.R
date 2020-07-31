@@ -314,9 +314,11 @@
     chi_null <- sum(R[upper.tri(R)] ^ 2) * (N - 1)
     df_null <- (m**2 - m) / 2
     delta_hat_null <- chi_null - df_null
+    p_null <- stats::pchisq(chi_null, df_null, lower.tail = F)
 
     # current model
     chi <- Fm * (N - 1)
+    p_chi <- stats::pchisq(chi, df, lower.tail = F)
     delta_hat_m <- chi - df
     CFI <- (delta_hat_null - delta_hat_m) / delta_hat_null
     if (CFI > 1 || df == 0) CFI <- 1
@@ -324,16 +326,15 @@
 
 
     ### compute RMSEA, incl. 90% confidence intervals if df are not 0
-
     if(df != 0){
 
       # formula 12.6 from Kline 2015; Principles and practices of...
       RMSEA <- sqrt(max(0, chi - df) / (df * N - 1))
 
-    p_chi <- function(x, val, df, goal){goal - stats::pchisq(val, df, ncp = x)}
+    p_chi_fun <- function(x, val, df, goal){goal - stats::pchisq(val, df, ncp = x)}
 
     if (stats::pchisq(chi, df = df, ncp = 0) >= .95) {
-      lambda_l <- stats::uniroot(f = p_chi, interval = c(1e-10, 10000), val = chi,
+      lambda_l <- stats::uniroot(f = p_chi_fun, interval = c(1e-10, 10000), val = chi,
                           df = df, goal = .95, extendInt = "upX",
                           maxiter = 100L)$root
     } else {
@@ -341,7 +342,7 @@
     }
 
     if (stats::pchisq(chi, df = df, ncp = 0) >= .05) {
-      lambda_u <- stats::uniroot(f = p_chi, interval = c(1e-10, 10000),
+      lambda_u <- stats::uniroot(f = p_chi_fun, interval = c(1e-10, 10000),
                           val = chi, df = df, goal = .05,
                           extendInt = "upX", maxiter = 100L)$root
     }
@@ -351,6 +352,10 @@
 
     RMSEA_LB <- sqrt(lambda_l / (df * N))
     RMSEA_UB <- sqrt(lambda_u / (df * N))
+
+    if(RMSEA > 1) RMSEA <- 1
+    if(RMSEA_LB > 1) RMSEA_LB <- 1
+    if(RMSEA_UB > 1) RMSEA_UB <- 1
 
     } else {
 
@@ -366,6 +371,7 @@
 
   } else {
     chi <- NA
+    p_chi <- NA
     CFI <- NA
     RMSEA <- NA
     RMSEA_LB <- NA
@@ -374,11 +380,13 @@
     BIC <- NA
     chi_null <- NA
     df_null <- NA
+    p_null <- NA
   }
 
   out <- list(
     chi = chi,
     df = df,
+    p_chi = p_chi,
     CAF = CAF,
     CFI = CFI,
     RMSEA = RMSEA,
@@ -388,7 +396,8 @@
     BIC = BIC,
     Fm = Fm,
     chi_null = chi_null,
-    df_null = df_null
+    df_null = df_null,
+    p_null = p_null
   )
 
 }

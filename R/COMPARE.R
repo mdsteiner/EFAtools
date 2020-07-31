@@ -131,9 +131,6 @@ COMPARE <- function(x,
 
     }
 
-    diff_corres <- NA
-    diff_corres_cross <- NA
-
   } else {
 
     stop(crayon::red$bold(cli::symbol$circle_cross),
@@ -188,8 +185,8 @@ COMPARE <- function(x,
         y <- y[ind_y]
       }
 
-      diff_corres <- 0
-      diff_corres_cross <- 0
+      diff_corres <- NA
+      diff_corres_cross <- NA
 
       g <- NA
 

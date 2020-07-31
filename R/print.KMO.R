@@ -55,21 +55,21 @@ print.KMO <- function(x, ...) {
       cat("\n")
     }
 
+    cat("\n")
+    cat(crayon::bold(" "), crayon::blue("Overall:"), crayon::bold(round(KMO, 3)))
+    cat("\n")
+    cat("\n")
+
+    cat(crayon::bold(" "), crayon::blue("For each variable:"))
+    cat("\n")
+    print(round(x$KMO_i, 3))
+
   } else {
 
     cat("\n")
-    cat(crayon::yellow(crayon::bold("!"), "The overall KMO value for your data is not available."))
+    cat(crayon::yellow(crayon::bold("!"), "Sorry, the KMO value for your data is not available."))
     cat("\n")
 
   }
-
-  cat("\n")
-  cat(crayon::bold(" "), crayon::blue("Overall:"), crayon::bold(round(KMO, 3)))
-  cat("\n")
-  cat("\n")
-
-  cat(crayon::bold(" "), crayon::blue("For each variable:"))
-  cat("\n")
-  print(round(x$KMO_i, 3))
 
 }

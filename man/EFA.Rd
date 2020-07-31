@@ -163,11 +163,11 @@ A list of class EFA containing (a subset of) the following:
 \item{unrot_loadings}{Loading matrix containing the final unrotated loadings.}
 \item{vars_accounted}{Matrix of explained variances and sums of squared loadings. Based on the unrotated loadings.}
 \item{fit_indices}{For ML and ULS: Fit indices derived from the unrotated
-factor loadings: Chi Square, degrees of freedom (df), Comparative Fit Index
-(CFI), Root Mean Square Error of Approximation (RMSEA), including its 90\%
-confidence interval, and the common part accounted for (CAF) index as
-proposed by Lorenzo-Seva, Timmerman, & Kiers (2011). For PAF, only the CAF and
-dfs are returned.}
+factor loadings: Chi Square, including signfificance level, degrees of freedom
+(df), Comparative Fit Index (CFI), Root Mean Square Error of Approximation
+(RMSEA), including its 90\% confidence interval, and the common part accounted
+for (CAF) index as proposed by Lorenzo-Seva, Timmerman, & Kiers (2011).
+For PAF, only the CAF and dfs are returned.}
 \item{rot_loadings}{Loading matrix containing the final rotated loadings
 (pattern matrix).}
 \item{Phi}{The factor intercorrelations (only for oblique rotations).}

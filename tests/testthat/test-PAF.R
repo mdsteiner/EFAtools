@@ -85,55 +85,63 @@ test_that("original correlation matrix and eigenvalues are correct", {
 })
 
 test_that("fit indices are returned correctly", {
-  expect_output(str(paf_efatools$fit_indices), "List of 12")
-  expect_output(str(paf_psych$fit_indices), "List of 12")
-  expect_output(str(paf_spss$fit_indices), "List of 12")
-  expect_output(str(paf_none$fit_indices), "List of 12")
-  expect_output(str(paf_mac_t$fit_indices), "List of 12")
-  expect_output(str(paf_mac_f$fit_indices), "List of 12")
-  expect_output(str(paf_F1_t$fit_indices), "List of 12")
-  expect_output(str(paf_F1_f$fit_indices), "List of 12")
+  expect_output(str(paf_efatools$fit_indices), "List of 14")
+  expect_output(str(paf_psych$fit_indices), "List of 14")
+  expect_output(str(paf_spss$fit_indices), "List of 14")
+  expect_output(str(paf_none$fit_indices), "List of 14")
+  expect_output(str(paf_mac_t$fit_indices), "List of 14")
+  expect_output(str(paf_mac_f$fit_indices), "List of 14")
+  expect_output(str(paf_F1_t$fit_indices), "List of 14")
+  expect_output(str(paf_F1_f$fit_indices), "List of 14")
 
-  expect_equal(paf_efatools$fit_indices[c("chi", "CFI", "RMSEA", "RMSEA_LB",
-                                          "RMSEA_UB", "AIC", "BIC", "Fm",
-                                          "chi_null", "df_null")],
-               list(chi = NA, CFI = NA, RMSEA = NA, RMSEA_LB = NA, RMSEA_UB = NA,
-                    AIC = NA, BIC = NA, Fm = NA, chi_null = NA, df_null = NA))
-  expect_equal(paf_psych$fit_indices[c("chi", "CFI", "RMSEA", "RMSEA_LB",
-                                          "RMSEA_UB", "AIC", "BIC", "Fm",
-                                          "chi_null", "df_null")],
-               list(chi = NA, CFI = NA, RMSEA = NA, RMSEA_LB = NA, RMSEA_UB = NA,
-                    AIC = NA, BIC = NA, Fm = NA, chi_null = NA, df_null = NA))
-  expect_equal(paf_spss$fit_indices[c("chi", "CFI", "RMSEA", "RMSEA_LB",
-                                          "RMSEA_UB", "AIC", "BIC", "Fm",
-                                          "chi_null", "df_null")],
-               list(chi = NA, CFI = NA, RMSEA = NA, RMSEA_LB = NA, RMSEA_UB = NA,
-                    AIC = NA, BIC = NA, Fm = NA, chi_null = NA, df_null = NA))
-  expect_equal(paf_none$fit_indices[c("chi", "CFI", "RMSEA", "RMSEA_LB",
-                                          "RMSEA_UB", "AIC", "BIC", "Fm",
-                                          "chi_null", "df_null")],
-               list(chi = NA, CFI = NA, RMSEA = NA, RMSEA_LB = NA, RMSEA_UB = NA,
-                    AIC = NA, BIC = NA, Fm = NA, chi_null = NA, df_null = NA))
-  expect_equal(paf_mac_t$fit_indices[c("chi", "CFI", "RMSEA", "RMSEA_LB",
-                                      "RMSEA_UB", "AIC", "BIC", "Fm",
-                                      "chi_null", "df_null")],
-               list(chi = NA, CFI = NA, RMSEA = NA, RMSEA_LB = NA, RMSEA_UB = NA,
-                    AIC = NA, BIC = NA, Fm = NA, chi_null = NA, df_null = NA))
-  expect_equal(paf_mac_f$fit_indices[c("chi", "CFI", "RMSEA", "RMSEA_LB",
-                                       "RMSEA_UB", "AIC", "BIC", "Fm",
-                                       "chi_null", "df_null")],
-               list(chi = NA, CFI = NA, RMSEA = NA, RMSEA_LB = NA, RMSEA_UB = NA,
-                    AIC = NA, BIC = NA, Fm = NA, chi_null = NA, df_null = NA))
-  expect_equal(paf_F1_t$fit_indices[c("chi", "CFI", "RMSEA", "RMSEA_LB",
-                                       "RMSEA_UB", "AIC", "BIC", "Fm",
-                                       "chi_null", "df_null")],
-               list(chi = NA, CFI = NA, RMSEA = NA, RMSEA_LB = NA, RMSEA_UB = NA,
-                    AIC = NA, BIC = NA, Fm = NA, chi_null = NA, df_null = NA))
-  expect_equal(paf_F1_f$fit_indices[c("chi", "CFI", "RMSEA", "RMSEA_LB",
-                                       "RMSEA_UB", "AIC", "BIC", "Fm",
-                                       "chi_null", "df_null")],
-               list(chi = NA, CFI = NA, RMSEA = NA, RMSEA_LB = NA, RMSEA_UB = NA,
-                    AIC = NA, BIC = NA, Fm = NA, chi_null = NA, df_null = NA))
+  expect_equal(paf_efatools$fit_indices[c("chi", "p_chi", "CFI", "RMSEA",
+                                          "RMSEA_LB", "RMSEA_UB", "AIC", "BIC",
+                                          "Fm", "chi_null", "df_null", "p_null")],
+               list(chi = NA, p_chi = NA, CFI = NA, RMSEA = NA, RMSEA_LB = NA,
+                    RMSEA_UB = NA, AIC = NA, BIC = NA, Fm = NA, chi_null = NA,
+                    df_null = NA, p_null = NA))
+  expect_equal(paf_psych$fit_indices[c("chi", "p_chi", "CFI", "RMSEA",
+                                       "RMSEA_LB", "RMSEA_UB", "AIC", "BIC",
+                                       "Fm", "chi_null", "df_null", "p_null")],
+               list(chi = NA, p_chi = NA, CFI = NA, RMSEA = NA, RMSEA_LB = NA,
+                    RMSEA_UB = NA, AIC = NA, BIC = NA, Fm = NA, chi_null = NA,
+                    df_null = NA, p_null = NA))
+  expect_equal(paf_spss$fit_indices[c("chi", "p_chi", "CFI", "RMSEA",
+                                      "RMSEA_LB", "RMSEA_UB", "AIC", "BIC",
+                                      "Fm", "chi_null", "df_null", "p_null")],
+               list(chi = NA, p_chi = NA, CFI = NA, RMSEA = NA, RMSEA_LB = NA,
+                    RMSEA_UB = NA, AIC = NA, BIC = NA, Fm = NA, chi_null = NA,
+                    df_null = NA, p_null = NA))
+  expect_equal(paf_none$fit_indices[c("chi", "p_chi", "CFI", "RMSEA",
+                                      "RMSEA_LB", "RMSEA_UB", "AIC", "BIC",
+                                      "Fm", "chi_null", "df_null", "p_null")],
+               list(chi = NA, p_chi = NA, CFI = NA, RMSEA = NA, RMSEA_LB = NA,
+                    RMSEA_UB = NA, AIC = NA, BIC = NA, Fm = NA, chi_null = NA,
+                    df_null = NA, p_null = NA))
+  expect_equal(paf_mac_t$fit_indices[c("chi", "p_chi", "CFI", "RMSEA",
+                                       "RMSEA_LB", "RMSEA_UB", "AIC", "BIC",
+                                       "Fm", "chi_null", "df_null", "p_null")],
+               list(chi = NA, p_chi = NA, CFI = NA, RMSEA = NA, RMSEA_LB = NA,
+                    RMSEA_UB = NA, AIC = NA, BIC = NA, Fm = NA, chi_null = NA,
+                    df_null = NA, p_null = NA))
+  expect_equal(paf_mac_f$fit_indices[c("chi", "p_chi", "CFI", "RMSEA",
+                                       "RMSEA_LB", "RMSEA_UB", "AIC", "BIC",
+                                       "Fm", "chi_null", "df_null", "p_null")],
+               list(chi = NA, p_chi = NA, CFI = NA, RMSEA = NA, RMSEA_LB = NA,
+                    RMSEA_UB = NA, AIC = NA, BIC = NA, Fm = NA, chi_null = NA,
+                    df_null = NA, p_null = NA))
+  expect_equal(paf_F1_t$fit_indices[c("chi", "p_chi", "CFI", "RMSEA",
+                                      "RMSEA_LB", "RMSEA_UB", "AIC", "BIC",
+                                      "Fm", "chi_null", "df_null", "p_null")],
+               list(chi = NA, p_chi = NA, CFI = NA, RMSEA = NA, RMSEA_LB = NA,
+                    RMSEA_UB = NA, AIC = NA, BIC = NA, Fm = NA, chi_null = NA,
+                    df_null = NA, p_null = NA))
+  expect_equal(paf_F1_f$fit_indices[c("chi", "p_chi", "CFI", "RMSEA",
+                                      "RMSEA_LB", "RMSEA_UB", "AIC", "BIC",
+                                      "Fm", "chi_null", "df_null", "p_null")],
+               list(chi = NA, p_chi = NA, CFI = NA, RMSEA = NA, RMSEA_LB = NA,
+                    RMSEA_UB = NA, AIC = NA, BIC = NA, Fm = NA, chi_null = NA,
+                    df_null = NA, p_null = NA))
 
   expect_is(paf_efatools$fit_indices$df, "numeric")
   expect_is(paf_psych$fit_indices$df, "numeric")

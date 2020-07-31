@@ -47,8 +47,10 @@ print.BARTLETT <- function(x, ...) {
 
   cat("\n")
   cat("\n")
-  cat(crayon::bold("  "), "\U1D712\U00B2(", x$df, ") = ", round(x$chisq, 2), ", ", crayon::italic("p"),
-      " = ", round(pval, 4), sep = "")
+  cat(crayon::bold("  "), "\U1D712\U00B2(", x$df, ") = ", round(x$chisq, 2), ", ",
+      crayon::italic("p"), ifelse(pval < .001, " < .001",
+                                  paste(" = ", round(pval, 3), sep = "")),
+      sep = "")
   cat("\n")
 
 }

@@ -49,8 +49,10 @@ q <- 3 # n factors
 test_that(".gof works", {
   expect_is(gof_ml, "list")
   expect_named(gof_ml,
-               c("chi", "df", "CAF", "CFI", "RMSEA", "RMSEA_LB", "RMSEA_UB",
-                 "AIC", "BIC", "Fm", "chi_null", "df_null"))
+               c("chi", "df", "p_chi", "CAF", "CFI", "RMSEA", "RMSEA_LB",
+                 "RMSEA_UB", "AIC", "BIC", "Fm", "chi_null", "df_null",
+                 "p_null"))
+  expect_lt(gof_ml$p_chi, .05)
   expect_equal(gof_ml$CFI, 1)
   expect_equal(gof_ml$RMSEA, 0)
   expect_equal(gof_ml$CAF, .5, tolerance = .1)
@@ -58,8 +60,10 @@ test_that(".gof works", {
 
   expect_is(gof_uls, "list")
   expect_named(gof_uls,
-               c("chi", "df", "CAF", "CFI", "RMSEA", "RMSEA_LB", "RMSEA_UB",
-                 "AIC", "BIC", "Fm", "chi_null", "df_null"))
+               c("chi", "df", "p_chi", "CAF", "CFI", "RMSEA", "RMSEA_LB",
+                 "RMSEA_UB", "AIC", "BIC", "Fm", "chi_null", "df_null",
+                 "p_null"))
+  expect_lt(gof_uls$p_chi, .05)
   expect_equal(gof_uls$CFI, 1)
   expect_equal(gof_uls$RMSEA, 0)
   expect_equal(gof_uls$CAF, .5, tolerance = .1)
@@ -67,12 +71,18 @@ test_that(".gof works", {
 
   expect_is(gof_paf, "list")
   expect_named(gof_paf,
-               c("chi", "df", "CAF", "CFI", "RMSEA", "RMSEA_LB", "RMSEA_UB",
-                 "AIC", "BIC", "Fm", "chi_null", "df_null"))
+               c("chi", "df", "p_chi", "CAF", "CFI", "RMSEA", "RMSEA_LB",
+                 "RMSEA_UB", "AIC", "BIC", "Fm", "chi_null", "df_null",
+                 "p_null"))
+  expect_equal(gof_paf$chi, NA)
+  expect_equal(gof_paf$p_chi, NA)
   expect_equal(gof_paf$CFI, NA)
   expect_equal(gof_paf$RMSEA, NA)
   expect_equal(gof_paf$CAF, .5, tolerance = .1)
   expect_equal(gof_paf$df, ((m - q)**2 - (m + q)) / 2)
+  expect_equal(gof_paf$chi_null, NA)
+  expect_equal(gof_paf$df_null, NA)
+  expect_equal(gof_paf$p_null, NA)
 })
 
 
@@ -125,7 +135,7 @@ test_that(".decimals works", {
 })
 
 test_that(".settings_string works", {
-  expect_equal(capture_output(cat(.settings_string(efa_ml$settings), sep = "")), "ML, none, EFAtools, 3, 100, pairwise.complete.obs, pearson, and factanal")
+  expect_equal(capture_output(cat(.settings_string(efa_ml$settings), sep = "")), "ML, none, EFAtools, 3, 100, pairwise.complete.obs, pearson, and psych")
   expect_equal(capture_output(cat(.settings_string(c("a", "b")), sep = "")), "a and b")
   expect_equal(capture_output(cat(.settings_string(c("a")), sep = "")), "a")
 })

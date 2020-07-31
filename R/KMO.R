@@ -99,6 +99,7 @@ KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
   if(any(eigen(R, symmetric = TRUE, only.values = TRUE)$values <= 0)){
 
     R <- psych::cor.smooth(R)
+    R_i <- try(solve(R), silent = TRUE)
 
   }
 

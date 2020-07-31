@@ -23,10 +23,11 @@ test_that("outputs are correct", {
 })
 
 test_that("fit indices are returned correctly", {
-  expect_output(str(ML_test$fit_indices), "List of 12")
+  expect_output(str(ML_test$fit_indices), "List of 14")
 
   expect_is(ML_test$fit_indices$chi, "numeric")
   expect_is(ML_test$fit_indices$df, "numeric")
+  expect_is(ML_test$fit_indices$p_chi, "numeric")
   expect_is(ML_test$fit_indices$CAF, "numeric")
   expect_is(ML_test$fit_indices$CFI, "numeric")
   expect_is(ML_test$fit_indices$RMSEA, "numeric")
@@ -37,9 +38,11 @@ test_that("fit indices are returned correctly", {
   expect_is(ML_test$fit_indices$Fm, "numeric")
   expect_is(ML_test$fit_indices$chi_null, "numeric")
   expect_is(ML_test$fit_indices$df_null, "numeric")
+  expect_is(ML_test$fit_indices$p_null, "numeric")
 
   expect_is(ML_test_2$fit_indices$chi, "numeric")
   expect_is(ML_test_2$fit_indices$df, "numeric")
+  expect_is(ML_test_2$fit_indices$p_chi, "numeric")
   expect_is(ML_test_2$fit_indices$CAF, "numeric")
   expect_is(ML_test_2$fit_indices$CFI, "numeric")
   expect_is(ML_test_2$fit_indices$RMSEA, "numeric")
@@ -50,6 +53,7 @@ test_that("fit indices are returned correctly", {
   expect_is(ML_test_2$fit_indices$Fm, "numeric")
   expect_is(ML_test_2$fit_indices$chi_null, "numeric")
   expect_is(ML_test_2$fit_indices$df_null, "numeric")
+  expect_is(ML_test_2$fit_indices$p_null, "numeric")
 })
 
 test_that("settings are returned correctly", {
