@@ -175,6 +175,14 @@ COMPARE(
 )
 ```
 
+Finally, if you are interested in factor scores from the EFA solution, these can be obtained with `FACTOR_SCORES()`, a wrapper for `psych::factor.scores()` to be used directly with an output from `EFA()`:
+
+```{r}
+EFA_mod <- EFA(DOSPERT_sub, n_factors = 6, rotation = "promax")
+fac_scores <- FACTOR_SCORES(DOSPERT_sub, f = EFA_mod)
+```
+
+
 ### Performance
 
 To improve performance of the iterative procedures (currently the parallel analysis, and the PAF, ML, and ULS methods) we implemented some of them in C++. For example, the following code compares the EFAtools parallel analysis with the corresponding one implemented in the psych package (the default of `PARALLEL()` is to use 1000 datasets, but 25 is enough to show the difference):

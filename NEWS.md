@@ -6,7 +6,10 @@
 
 ## New Functions
 
-* Added function `SCREE()` that does a scree plot. Also added respective print and plot methods.
+* Added function `FACTOR_SCORES()` to calculate factor scores from a solution from `EFA()`. This is just a wrapper for the `psych::factor.scores` function.
+* Added function `SCREE()` that does a scree plot. Also added respective print and plot
+methods.
+
 
 ## Changes to Functions
 

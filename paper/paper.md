@@ -63,6 +63,7 @@ Table: Core functionalities of *EFAtools*.
 |                          | Unweighted least squares           | `EFA()` |
 |Rotation methods | Orthogonal: Varimax, equamax, quartimax, geominT, bentlerT, bifactorT | `EFA()` |
 |                 | Oblique: Promax, oblimin, quartimin, simplimax, bentlerQ, geominQ, bifactorQ | `EFA()` |
+|Factor scores             | Different methods for calculating factor scores           | `FACTOR_SCORES()` |
 |Hierarchical factor analysis | Schmid-Leiman transformation   | `SL()` |
 |                          | McDonald's omegas                 | `OMEGA()` |
 *Note*. All functions for suitability for factor analysis and factor retention criteria can be called in any desired combination using the `N_FACTORS()` function.
