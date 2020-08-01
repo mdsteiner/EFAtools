@@ -69,7 +69,7 @@ Rcpp::List factor_corres(NumericMatrix x,
       y_corres.push_back(which_max(abs(y.row(i))));
 
       for (int jj = 0; jj<y_log.size(); jj++) {
-        if (x_log[jj]) {
+        if (y_log[jj]) {
           temp = (i + 1);
           y_pos.push_back((char)temp);
         }
