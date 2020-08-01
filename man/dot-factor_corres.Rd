@@ -2,18 +2,17 @@
 % Please edit documentation in R/RcppExports.R
 \name{.factor_corres}
 \alias{.factor_corres}
-\title{Perform the iterative PAF procedure}
+\title{Compute number of non-matching indicator-to-factor correspondences}
 \usage{
 .factor_corres(x, y, thresh = 0.3)
 }
 \arguments{
-\item{x}{numeric matrix. The initial communality estimates.}
+\item{x}{numeric matrix. A matrix of pattern coefficients.}
 
-\item{y}{numeric matrix. The convergence criterion to use.}
+\item{y}{numeric matrix. A second matrix of coefficients.}
 
 \item{thresh}{numeric. The threshold to classify a pattern coefficient as substantial.}
 }
 \description{
-Function called from within PAF so usually no call to this is needed by the user.
-Provides a C++ implementation of the PAF procedure
+Compute number of non-matching indicator-to-factor correspondences
 }

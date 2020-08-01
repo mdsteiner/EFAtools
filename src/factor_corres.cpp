@@ -1,13 +1,10 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
-//' Perform the iterative PAF procedure
+//' Compute number of non-matching indicator-to-factor correspondences
 //'
-//' Function called from within PAF so usually no call to this is needed by the user.
-//' Provides a C++ implementation of the PAF procedure
-//'
-//' @param x numeric matrix. The initial communality estimates.
-//' @param y numeric matrix. The convergence criterion to use.
+//' @param x numeric matrix. A matrix of pattern coefficients.
+//' @param y numeric matrix. A second matrix of coefficients.
 //' @param thresh numeric. The threshold to classify a pattern coefficient as substantial.
 // [[Rcpp::export(.factor_corres)]]
 Rcpp::List factor_corres(NumericMatrix x,
