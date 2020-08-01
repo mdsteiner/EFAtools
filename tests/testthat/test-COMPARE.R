@@ -1,3 +1,13 @@
+
+
+vec_s <- c("a" = 1, "b" = 2, "c" = 4)
+vec_L <- c("A" = 1, "B" = 2, "C" = 4)
+
+mat_s <- matrix(c(0, 0, 0, 1), ncol = 2)
+colnames(mat_s) <- c("a", "b")
+mat_L <- matrix(c(0, 0, 0, 1), ncol = 2)
+colnames(mat_L) <- c("A", "B")
+
 int <- COMPARE(1:10, 1:10)
 dec <- COMPARE(c(.1, .2), c(.1, .1))
 matr <- COMPARE(matrix(c(1,1,1,2), ncol = 2), matrix(c(1,1,1,1), ncol = 2))
@@ -211,6 +221,13 @@ test_that("COMPARE returns the correct values", {
   expect_equal(round(load_F1$g, 4), 0)
   expect_equal(load_F1$diff_corres, 0)
   expect_equal(load_F1$diff_corres_cross, 0)
+
+  expect_equal(COMPARE(vec_s, vec_s[c(3, 1, 2)],
+                       reorder = "names")$mean_abs_diff, 0)
+  expect_equal(COMPARE(mat_s, mat_s[, c(2, 1)],
+                       reorder = "names")$mean_abs_diff, 0)
+  expect_equal(COMPARE(psych_PAF$unrot_loadings,
+                       psych_PAF$unrot_loadings[, c(3, 1, 2)])$mean_abs_diff, 0)
 })
 
 
@@ -223,7 +240,22 @@ test_that("errors etc. are thrown correctly", {
   expect_error(COMPARE(matrix(c(0, 0, 0, 1), ncol = 2),
                        matrix(c(0, 0, 0, 1), ncol = 1)), " 'x' and 'y' have different dimensions. Can only compare matrices with identical dimensions.\n")
 
+  expect_warning(COMPARE(vec_s, vec_s), " reorder was set to 'congruence', but this only works for matrices. To reorder vectors, set reorder = 'names'. Proceeding without reordering.\n")
+  expect_warning(COMPARE(vec_s, vec_L, reorder = "names"),
+                 " reorder = 'names' was used but names of x and y were not identical. Results might be inaccurate.\n")
+  expect_warning(COMPARE(vec_s, 1:3, reorder = "names"), " reorder was set to 'names' but at least one of 'x' and 'y' was not named. Proceeding without reordering.\n")
+  expect_warning(COMPARE(1:3, 1:3, reorder = "names"), " reorder was set to 'names' but at least one of 'x' and 'y' was not named. Proceeding without reordering.\n")
+
+  expect_warning(COMPARE(matrix(c(0, 0, 0, 1), ncol = 2),
+                         matrix(c(0, 0, 0, 1), ncol = 2),
+                         reorder = "names"), " reorder was set to 'names' but at least one of 'x' and 'y' was not named. Proceeding without reordering.\n")
+  expect_warning(COMPARE(mat_s, mat_L, reorder = "names"),
+                 " reorder = 'names' was used but colnames of x and y were not identical. Results might be inaccurate.\n")
+
+  expect_error(COMPARE(mat_s, mat_s),
+               " Tucker's congruence coefficients contained NAs, cannot reorder columns based on congruence. Try another reordering method.\n")
+
 })
 
 rm(int, dec, matr, SPSS_PAF, psych_PAF, load, load_ro1, load_ro2, SPSS_PAF_1,
-   psych_PAF_1, load_F1)
+   psych_PAF_1, load_F1, vec_s, vec_L, mat_s, mat_L)

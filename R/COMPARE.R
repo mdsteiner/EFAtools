@@ -147,13 +147,20 @@ COMPARE <- function(x,
       # get Tucker's congruence coefficients
       congruence <- .factor_congruence(x, y)
 
+      if (any(is.na(congruence))) {
+        stop(crayon::red$bold(cli::symbol$circle_cross),
+             crayon::red(" Tucker's congruence coefficients contained NAs, cannot reorder columns based on congruence. Try another reordering method.\n"))
+      }
+
       # factor order for y
       factor_order <- apply(abs(congruence), 1, which.max)
 
       # obtain signs to reflect signs of y if necessary
-      factor_sign <- sapply(seq_len(n_factors), function(ll, congruence, factor_order){
-        sign(congruence[ll, factor_order[ll]])
-      }, congruence = congruence, factor_order = factor_order)
+      factor_sign <- sapply(seq_len(n_factors),
+                            function(ll, congruence, factor_order){
+                              sign(congruence[ll, factor_order[ll]])
+                              }, congruence = congruence,
+                            factor_order = factor_order)
 
       factor_sign <- rep(factor_sign, each = nrow(x))
 
@@ -162,6 +169,19 @@ COMPARE <- function(x,
 
       # reflect signs if necessary
       y <- y * factor_sign
+    } else if (reorder == "names" && n_factors > 1) {
+
+      if (!is.null(colnames(x)) && !is.null(colnames(y))) {
+        x <- x[, order(colnames(x))]
+        y <- y[, order(colnames(y))]
+
+        if(!all(colnames(x) == colnames(y))) {
+          warning(crayon::yellow$bold("!"), crayon::yellow(" reorder = 'names' was used but colnames of x and y were not identical. Results might be inaccurate.\n"))
+        }
+      } else if (is.null(colnames(x)) || is.null(colnames(y))) {
+        warning(crayon::yellow$bold("!"), crayon::yellow(" reorder was set to 'names' but at least one of 'x' and 'y' was not named. Proceeding without reordering.\n"))
+      }
+
     }
 
     if (n_factors > 1 && isTRUE(corres)) {
@@ -177,12 +197,27 @@ COMPARE <- function(x,
 
   } else if (inherits(x, c("numeric", "integer"))) {
 
-      if (reorder == "congruence" && !is.null(names(x)) && !is.null(names(y))) {
-        ind_x <- order(names(x))
-        x <- x[ind_x]
+    if (reorder == "congruence" && !is.null(names(x)) && !is.null(names(y))){
 
-        ind_y <- order(names(y))
-        y <- y[ind_y]
+      warning(crayon::yellow$bold("!"), crayon::yellow(" reorder was set to 'congruence', but this only works for matrices. To reorder vectors, set reorder = 'names'. Proceeding without reordering.\n"))
+
+    } else if (reorder == "names") {
+
+      if (!is.null(names(x)) && !is.null(names(y))) {
+
+        x <- x[order(names(x))]
+        y <- y[order(names(y))]
+
+        if (!all(names(x) == names(y))) {
+          warning(crayon::yellow$bold("!"), crayon::yellow(" reorder = 'names' was used but names of x and y were not identical. Results might be inaccurate.\n"))
+        }
+
+
+
+      } else if (is.null(names(x)) || is.null(names(y))) {
+        warning(crayon::yellow$bold("!"), crayon::yellow(" reorder was set to 'names' but at least one of 'x' and 'y' was not named. Proceeding without reordering.\n"))
+      }
+
       }
 
       diff_corres <- NA
