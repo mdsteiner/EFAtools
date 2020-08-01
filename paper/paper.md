@@ -40,7 +40,7 @@ Compared to other R packages with which EFA can be performed, *EFAtools* has sev
 
 # Development and Purpose
 
-*EFAtools* was designed for use in the social sciences in general and is especially suitable for research on cognitive abilities or other hierarchically organized constructs as well as for more time-consuming applications such as in simulation analyses. Its development arose from the need for a tool for easy replication and comparison of EFA solutions from different programs, namely R and SPSS (pending publication), and has already been used in another publication [@grieder_exploratory_2019]. The package was then expanded for a broader, easy, fast, and flexible use of EFA tools such that it is now suitable for most projects within the EFA framework.
+*EFAtools* was designed for use in the social sciences in general and is especially suitable for research on cognitive abilities or other hierarchically organized constructs as well as for more time-consuming applications such as in simulation analyses. Its development arose from the need for a tool for easy replication and comparison of EFA solutions from different programs, namely R and SPSS (pending publication by the authors), and has already been used in another publication [@grieder_exploratory_2019]. The package was then expanded for a broader, easy, fast, and flexible use of EFA tools such that it is now suitable for most projects within the EFA framework.
 
 
 Table: Core functionalities of *EFAtools*.
