@@ -10,7 +10,9 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  fig.width = 7,
+  fig.align = "center"
 )
 
 
@@ -22,7 +24,7 @@ if (!requireNamespace("psych", quietly = TRUE)) {
 ```
 
 This vignette demonstrates the replication of exploratory factor analysis (EFA) results (specifically, principal axis factoring [PAF] with subsequent promax rotation) from the SPSS `FACTOR` algorithm and from the `fa()` function from the `psych` R package.
-For a general introduction to the `EFAtools` package, please see the [EFAtools](EFAtools.html "EFAtools") vignette. Same as in the EFAtools vignette, we will use the DOSPERT data set for this demonstration as well (see `?DOSPERT` for details).
+For a general introduction to the `EFAtools` package, please see the [**EFAtools**](EFAtools.html "EFAtools") vignette. Same as in the EFAtools vignette, we will use the DOSPERT data set for this demonstration as well (see `?DOSPERT` for details).
 
 First load the needed packages EFAtools and psych (original SPSS results for some data sets are available in the EFAtools package).
 
