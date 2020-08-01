@@ -61,5 +61,5 @@ test_that("warnings and errors are thrown correctly", {
 })
 
 
-rm(EFA_raw, fac_scores_raw, EFA_cor, fac_scores_cor, EFA_unrot, fac_scores_cor,
+rm(EFA_raw, fac_scores_raw, EFA_cor, fac_scores_cor, EFA_unrot, fac_scores_unrot,
    fac_scores_man)
