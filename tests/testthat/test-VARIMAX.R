@@ -36,7 +36,7 @@ test_that("settings are returned correctly", {
 
   expect_equal(vari$settings$precision, 1e-05)
   expect_equal(vari_psych$settings$precision, 1e-05)
-  expect_equal(vari_spss$settings$precision, 1e-10)
+  expect_equal(vari_spss$settings$precision, 1e-5)
   expect_equal(vari_1$settings$precision, 1e-05)
 
   expect_equal(vari$settings$order_type, "eigen")

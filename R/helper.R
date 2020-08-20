@@ -81,6 +81,19 @@
   vars_explained
 }
 
+# varimax criterion for SPSS varimax implementation
+.SV <- function(lambda) {
+
+  n <- nrow(lambda)
+
+  # the SPSS manual (ftp://public.dhe.ibm.com/software/analytics/spss/documentation/statistics/23.0/en/client/Manuals/IBM_SPSS_Statistics_Algorithms.pdf)
+  # suggests the following formula:
+  # sum(n*colSums(lambda**4) - colSums(lambda ** 2) ** 2) / n**2
+  # however, the formula below produces results more in line with SPSS
+  sum(n*colSums(abs(lambda)) - colSums(lambda ** 4) ** 2) / n**2
+
+}
+
 .get_compare_matrix <- function(x, digits = 3, r_red = .001, n_char = 10,
                                 var_names = NULL, gof = FALSE) {
 
