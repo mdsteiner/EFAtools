@@ -97,8 +97,10 @@ print.COMPARE <- function(x, ...) {
 
     }
 
+    cat(out_diff)
+
   }
-  cat(out_diff)
+
 
   if (isTRUE(plot) && length(c(diff)) > 2) {
 
