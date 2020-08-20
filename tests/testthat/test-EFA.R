@@ -270,7 +270,7 @@ test_that("settings are returned correctly", {
   expect_equal(efa_none$settings$P_type, "unnorm")
 
   expect_equal(efa_psych$settings$precision, 1e-05)
-  expect_equal(efa_spss$settings$precision, 1e-10)
+  expect_equal(efa_spss$settings$precision, 1e-05)
   expect_equal(efa_equa$settings$precision, 1e-05)
   expect_equal(efa_quart$settings$precision, 1e-05)
   expect_equal(efa_none$settings$precision, 1e-05)

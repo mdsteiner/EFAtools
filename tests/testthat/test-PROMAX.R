@@ -51,7 +51,7 @@ test_that("settings are returned correctly", {
 
   expect_equal(prom$settings$precision, 1e-05)
   expect_equal(prom_psych$settings$precision, 1e-05)
-  expect_equal(prom_spss$settings$precision, 1e-10)
+  expect_equal(prom_spss$settings$precision, 1e-05)
   expect_equal(prom_1$settings$precision, 1e-05)
 
   expect_equal(prom$settings$order_type, "eigen")

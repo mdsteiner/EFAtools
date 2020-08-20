@@ -133,7 +133,7 @@
 #' \code{precision = 1e-5, order_type = "eigen"}.
 #'
 #' \code{type = "SPSS"} will use the following argument specification:
-#' \code{precision = 1e-10, order_type = "ss_factors"}.
+#' \code{precision = 1e-5, order_type = "ss_factors"}.
 #'
 #' For promax, the values of \code{P_type}, \code{precision},
 #' \code{order_type}, and \code{k} depend on the \code{type} argument.
@@ -145,7 +145,7 @@
 #' \code{P_type = "unnorm", precision = 1e-5, order_type = "eigen", k = 4}.
 #'
 #' \code{type = "SPSS"} will use the following argument specification:
-#' \code{P_type = "norm", precision = 1e-10, order_type = "ss_factors", k = 4}.
+#' \code{P_type = "norm", precision = 1e-5, order_type = "ss_factors", k = 4}.
 #'
 #' The \code{P_type} argument can take two values, "unnorm" and "norm". It controls
 #' which formula is used to compute the target matrix P in the promax rotation.
@@ -190,7 +190,7 @@
 #' \item{unrot_loadings}{Loading matrix containing the final unrotated loadings.}
 #' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings. Based on the unrotated loadings.}
 #' \item{fit_indices}{For ML and ULS: Fit indices derived from the unrotated
-#' factor loadings: Chi Square, including signfificance level, degrees of freedom
+#' factor loadings: Chi Square, including significance level, degrees of freedom
 #' (df), Comparative Fit Index (CFI), Root Mean Square Error of Approximation
 #' (RMSEA), including its 90\% confidence interval, and the common part accounted
 #' for (CAF) index as proposed by Lorenzo-Seva, Timmerman, & Kiers (2011).

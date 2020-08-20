@@ -97,7 +97,7 @@
     }
 
     if (is.null(precision)) {
-      precision <- 1e-10
+      precision <- 1e-5
     } else {
       warning(crayon::yellow$bold("!"), crayon::yellow(" Type and precision is specified. precision is used with value '", precision, "'. Results may differ from the specified type\n"))
     }
@@ -138,7 +138,11 @@
   }
 
   # perform the varimax rotation
-  AV <- stats::varimax(L, normalize = kaiser, eps = precision)
+  if (type %in% c("psych", "EFAtools", "none")) {
+    AV <- stats::varimax(L, normalize = kaiser, eps = precision)
+  } else if (type == "SPSS") {
+    AV <- .VARIMAX_SPSS(L, kaiser = kaiser, precision = precision)
+  }
 
   if (order_type == "ss_factors") {
 

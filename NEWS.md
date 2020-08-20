@@ -16,6 +16,7 @@ methods.
 * `EFA()`: 
     * Updated the EFAtools type in PAF and Pomax.
     * Added p value for chi square value in output (calculated for ML and ULS fitting methods).
+    * Updated the SPSS varimax implementation to fit SPSS results more closesly.
 * `ML()`: Changed default start method to "psych".
 * `N_FACTORS()`: Added option to do a scree plot if "SCREE" is included in the `criteria` argument.
 * `OMEGA()`: Now also works with a lavaan second-order solution as input. In this case, it does a Schmid-Leiman transformation based on the first- and second-order loadings first and computes omegas based on this Schmid-Leiman solution.
