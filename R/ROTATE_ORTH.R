@@ -2,14 +2,8 @@
 .ROTATE_ORTH <- function(x, rotation = c("equamax", "quartimax", "geominT",
                                         "bentlerT", "bifactorT"),
                         type = c("EFAtools", "psych", "SPSS", "none"),
-                        kaiser = TRUE, precision = NULL, order_type = NULL,
+                        normalize = TRUE, precision = 1e-5, order_type = NULL,
                         ...){
-
-  if(is.null(precision)){
-
-    precision <- 1e-5
-
-  }
 
 if (type == "none") {
 
@@ -20,9 +14,9 @@ if (type == "none") {
 
 } else if (type == "EFAtools") {
 
-  if (isFALSE(kaiser)) {
+  if (isFALSE(normalize)) {
 
-    warning(crayon::yellow$bold("!"), crayon::yellow(" Type and kaiser is specified. kaiser is used with value '", kaiser, "'. Results may differ from the specified type\n"))
+    warning(crayon::yellow$bold("!"), crayon::yellow(" Type and normalize is specified. normalize is used with value '", normalize, "'. Results may differ from the specified type\n"))
   }
 
   if (is.null(order_type)) {
@@ -33,9 +27,9 @@ if (type == "none") {
 
 } else if (type == "psych") {
 
-  if (isFALSE(kaiser)) {
+  if (isFALSE(normalize)) {
 
-    warning(crayon::yellow$bold("!"), crayon::yellow(" Type and kaiser is specified. kaiser is used with value '", kaiser, "'. Results may differ from the specified type\n"))
+    warning(crayon::yellow$bold("!"), crayon::yellow(" Type and normalize is specified. normalize is used with value '", normalize, "'. Results may differ from the specified type\n"))
   }
 
   if (is.null(order_type)) {
@@ -46,9 +40,9 @@ if (type == "none") {
 
 } else if (type == "SPSS") {
 
-  if (isFALSE(kaiser)) {
+  if (isFALSE(normalize)) {
 
-    warning(crayon::yellow$bold("!"), crayon::yellow(" Type and kaiser is specified. kaiser is used with value '", kaiser, "'. Results may differ from the specified type\n"))
+    warning(crayon::yellow$bold("!"), crayon::yellow(" Type and normalize is specified. normalize is used with value '", normalize, "'. Results may differ from the specified type\n"))
   }
 
   if (is.null(order_type)) {
@@ -64,7 +58,7 @@ if (type == "none") {
   dim_names <- dimnames(L)
 
   # prepare settings
-  settings <- list(kaiser = kaiser, precision = precision,
+  settings <- list(normalize = normalize, precision = precision,
                    order_type = order_type)
 
   if (ncol(L) < 2) {
@@ -82,19 +76,19 @@ if (type == "none") {
   # perform the requested rotation
   if(rotation == "equamax"){
   AV <- GPArotation::cfT(L, eps = precision, kappa = ncol(L)/(2 * nrow(L)),
-                         normalize = kaiser, ...)
+                         normalize = normalize, ...)
 
   } else if (rotation == "bentlerT"){
-    AV <- GPArotation::bentlerT(L, eps = precision, normalize = kaiser, ...)
+    AV <- GPArotation::bentlerT(L, eps = precision, normalize = normalize, ...)
 
   } else if (rotation == "quartimax"){
-    AV <- GPArotation::bentlerT(L, eps = precision, normalize = kaiser, ...)
+    AV <- GPArotation::bentlerT(L, eps = precision, normalize = normalize, ...)
 
   } else if (rotation == "geominT"){
-    AV <- GPArotation::geominT(L, eps = precision, normalize = kaiser, ...)
+    AV <- GPArotation::geominT(L, eps = precision, normalize = normalize, ...)
 
   } else if (rotation == "bifactorT"){
-    AV <- GPArotation::bifactorT(L, eps = precision, normalize = kaiser, ...)
+    AV <- GPArotation::bifactorT(L, eps = precision, normalize = normalize, ...)
 
   }
 

@@ -24,15 +24,18 @@ test_that("output class and dimensions are correct", {
 })
 
 test_that("settings are returned correctly", {
-  expect_named(vari$settings, c("kaiser", "precision", "order_type"))
-  expect_named(vari_psych$settings, c("kaiser", "precision", "order_type"))
-  expect_named(vari_spss$settings, c("kaiser", "precision", "order_type"))
-  expect_named(vari_1$settings, c("kaiser", "precision", "order_type"))
+  expect_named(vari$settings, c("normalize", "precision", "order_type"))
+  expect_named(vari_psych$settings, c("normalize", "precision", "order_type",
+                                      "varimax_type"))
+  expect_named(vari_spss$settings, c("normalize", "precision", "order_type",
+                                     "varimax_type"))
+  expect_named(vari_1$settings, c("normalize", "precision", "order_type",
+                                  "varimax_type"))
 
-  expect_equal(vari$settings$kaiser, TRUE)
-  expect_equal(vari_psych$settings$kaiser, TRUE)
-  expect_equal(vari_spss$settings$kaiser, TRUE)
-  expect_equal(vari_1$settings$kaiser, TRUE)
+  expect_equal(vari$settings$normalize, TRUE)
+  expect_equal(vari_psych$settings$normalize, TRUE)
+  expect_equal(vari_spss$settings$normalize, TRUE)
+  expect_equal(vari_1$settings$normalize, TRUE)
 
   expect_equal(vari$settings$precision, 1e-05)
   expect_equal(vari_psych$settings$precision, 1e-05)
@@ -44,24 +47,29 @@ test_that("settings are returned correctly", {
   expect_equal(vari_spss$settings$order_type, "ss_factors")
   expect_equal(vari_1$settings$order_type, "eigen")
 
+  expect_equal(vari$settings$varimax_type, "svd")
+  expect_equal(vari_psych$settings$varimax_type, "svd")
+  expect_equal(vari_spss$settings$varimax_type, "kaiser")
+  expect_equal(vari_1$settings$varimax_type, "svd")
+
 })
 
 test_that("errors etc. are thrown correctly", {
 
   expect_error(.VARIMAX(unrot, type = "none"), ' One of "precision", or "order_type" was NULL and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify all other arguments\n')
 
-  expect_warning(.VARIMAX(unrot, type = "EFAtools", kaiser = FALSE), " Type and kaiser is specified. kaiser is used with value ' FALSE '. Results may differ from the specified type\n")
+  expect_warning(.VARIMAX(unrot, type = "EFAtools", normalize = FALSE), " Type and normalize is specified. normalize is used with value ' FALSE '. Results may differ from the specified type\n")
   expect_warning(.VARIMAX(unrot, type = "EFAtools", precision = 1e-9), " Type and precision is specified. precision is used with value ' 1e-09 '. Results may differ from the specified type\n")
   expect_warning(.VARIMAX(unrot, type = "EFAtools", order_type = "ss_factors"), " Type and order_type is specified. order_type is used with value ' ss_factors '. Results may differ from the specified type\n")
 
-  expect_warning(.VARIMAX(unrot, type = "psych", kaiser = FALSE), " Type and kaiser is specified. kaiser is used with value ' FALSE '. Results may differ from the specified type\n")
+  expect_warning(.VARIMAX(unrot, type = "psych", normalize = FALSE), " Type and normalize is specified. normalize is used with value ' FALSE '. Results may differ from the specified type\n")
   expect_warning(.VARIMAX(unrot, type = "psych", precision = 1e-9), " Type and precision is specified. precision is used with value ' 1e-09 '. Results may differ from the specified type\n")
   expect_warning(.VARIMAX(unrot, type = "psych", order_type = "ss_factors"), " Type and order_type is specified. order_type is used with value ' ss_factors '. Results may differ from the specified type\n")
 
-  expect_warning(.VARIMAX(unrot, type = "SPSS", kaiser = FALSE), " Type and kaiser is specified. kaiser is used with value ' FALSE '. Results may differ from the specified type\n")
+  expect_warning(.VARIMAX(unrot, type = "SPSS", normalize = FALSE), " Type and normalize is specified. normalize is used with value ' FALSE '. Results may differ from the specified type\n")
   expect_warning(.VARIMAX(unrot, type = "SPSS", precision = 1e-9), " Type and precision is specified. precision is used with value ' 1e-09 '. Results may differ from the specified type\n")
   expect_warning(.VARIMAX(unrot, type = "SPSS", order_type = "eigen"), " Type and order_type is specified. order_type is used with value ' eigen '. Results may differ from the specified type\n")
-
+  expect_warning(.VARIMAX(unrot, type = "SPSS", varimax_type = "svd"), " Type and varimax_type is specified. varimax_type is used with value ' svd '. Results may differ from the specified type\n")
   expect_warning(.VARIMAX(unrot_1, type = "EFAtools"), " Cannot rotate single factor. Unrotated loadings returned.\n")
 })
 

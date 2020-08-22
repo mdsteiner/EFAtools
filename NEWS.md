@@ -17,6 +17,8 @@ methods.
     * Updated the EFAtools type in PAF and Pomax.
     * Added p value for chi square value in output (calculated for ML and ULS fitting methods).
     * Updated the SPSS varimax implementation to fit SPSS results more closesly.
+    * Created an argument "varimax_type" that is set according to the specified type, but that can also be specified individually. With type R psych and EFAtools, the stats::varimax is called by default (`varimax_type = "svd"`), with type SPSS, the reproduced SPSS varimax implementation is used (`varimax_type = "kaiser"`).
+    * Renamed the `kaiser` argument (controls if a Kaiser normalization is done or not) into `normalize` to avoid confusion with the `varimax_type` argument specifications.
 * `ML()`: Changed default start method to "psych".
 * `N_FACTORS()`: Added option to do a scree plot if "SCREE" is included in the `criteria` argument.
 * `OMEGA()`: Now also works with a lavaan second-order solution as input. In this case, it does a Schmid-Leiman transformation based on the first- and second-order loadings first and computes omegas based on this Schmid-Leiman solution.

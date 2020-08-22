@@ -24,7 +24,8 @@ efa_none <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
                 type = "none", method = "PAF", rotation = "promax",
                 max_iter = 500, init_comm = "unity", criterion = 1e-4,
                 criterion_type = "sums", abs_eigen = FALSE, k = 3,
-                P_type = "unnorm", precision= 1e-5, order_type = "eigen")
+                P_type = "unnorm", precision= 1e-5, order_type = "eigen",
+                varimax_type = "svd")
 
 # create correlation matrices from population models
 cormat_zero <- population_models$loadings$baseline %*% population_models$phis_3$zero %*% t(population_models$loadings$baseline)
@@ -122,13 +123,13 @@ test_that("settings are returned correctly", {
   expect_named(efa_psych$settings, c("method", "rotation", "type", "n_factors",
                                      "N", "use", "cor_method", "max_iter",
                                      "init_comm", "criterion", "criterion_type",
-                                     "abs_eigen", "kaiser", "P_type", "precision",
-                                     "order_type", "k"))
+                                     "abs_eigen", "normalize", "P_type", "precision",
+                                     "order_type", "varimax_type", "k"))
   expect_named(efa_spss$settings, c("method", "rotation", "type", "n_factors",
                                     "N", "use", "cor_method", "max_iter",
                                     "init_comm", "criterion", "criterion_type",
-                                    "abs_eigen", "kaiser", "P_type", "precision",
-                                    "order_type", "k"))
+                                    "abs_eigen", "normalize", "P_type", "precision",
+                                    "order_type", "varimax_type", "k"))
   expect_named(efa_ml$settings, c("method", "rotation", "type", "n_factors",
                                     "N", "use", "cor_method", "start_method"))
   expect_named(efa_uls$settings, c("method", "rotation", "type", "n_factors",
@@ -136,18 +137,18 @@ test_that("settings are returned correctly", {
   expect_named(efa_equa$settings, c("method", "rotation", "type", "n_factors",
                                    "N", "use", "cor_method", "max_iter",
                                    "init_comm", "criterion", "criterion_type",
-                                   "abs_eigen", "kaiser", "precision",
+                                   "abs_eigen", "normalize", "precision",
                                    "order_type"))
   expect_named(efa_quart$settings, c("method", "rotation", "type", "n_factors",
                                    "N", "use", "cor_method", "max_iter",
                                    "init_comm", "criterion", "criterion_type",
-                                   "abs_eigen", "kaiser", "precision",
+                                   "abs_eigen", "normalize", "precision",
                                    "order_type", "k"))
   expect_named(efa_none$settings, c("method", "rotation", "type", "n_factors",
                                    "N", "use", "cor_method", "max_iter",
                                    "init_comm", "criterion", "criterion_type",
-                                   "abs_eigen", "kaiser", "P_type", "precision",
-                                   "order_type", "k"))
+                                   "abs_eigen", "normalize", "P_type", "precision",
+                                   "order_type", "varimax_type", "k"))
 
   expect_equal(efa_cor$settings$method, "PAF")
   expect_equal(efa_raw$settings$method, "PAF")
@@ -259,11 +260,11 @@ test_that("settings are returned correctly", {
   expect_equal(efa_quart$settings$abs_eigen,  TRUE)
   expect_equal(efa_none$settings$abs_eigen, FALSE)
 
-  expect_equal(efa_psych$settings$kaiser, TRUE)
-  expect_equal(efa_spss$settings$kaiser, TRUE)
-  expect_equal(efa_equa$settings$kaiser, TRUE)
-  expect_equal(efa_quart$settings$kaiser, TRUE)
-  expect_equal(efa_none$settings$kaiser, TRUE)
+  expect_equal(efa_psych$settings$normalize, TRUE)
+  expect_equal(efa_spss$settings$normalize, TRUE)
+  expect_equal(efa_equa$settings$normalize, TRUE)
+  expect_equal(efa_quart$settings$normalize, TRUE)
+  expect_equal(efa_none$settings$normalize, TRUE)
 
   expect_equal(efa_psych$settings$P_type, "unnorm")
   expect_equal(efa_spss$settings$P_type, "norm")
@@ -280,6 +281,10 @@ test_that("settings are returned correctly", {
   expect_equal(efa_equa$settings$order_type, "eigen")
   expect_equal(efa_quart$settings$order_type, "eigen")
   expect_equal(efa_none$settings$order_type, "eigen")
+
+  expect_equal(efa_psych$settings$varimax_type, "svd")
+  expect_equal(efa_spss$settings$varimax_type, "kaiser")
+  expect_equal(efa_none$settings$varimax_type, "svd")
 
   expect_equal(efa_psych$settings$k, 4)
   expect_equal(efa_spss$settings$k, 4)

@@ -67,21 +67,21 @@ test_that("output class and dimensions are correct", {
 })
 
 test_that("settings are returned correctly", {
-  expect_named(obli$settings, c("kaiser", "precision", "order_type", "k"))
-  expect_named(obli_1$settings, c("kaiser", "precision", "order_type", "k"))
-  expect_named(quarti$settings, c("kaiser", "precision", "order_type", "k"))
-  expect_named(simpli$settings, c("kaiser", "precision", "order_type", "k"))
-  expect_named(bentQ$settings, c("kaiser", "precision", "order_type", "k"))
-  expect_named(geoQ$settings, c("kaiser", "precision", "order_type", "k"))
-  expect_named(bifacQ$settings, c("kaiser", "precision", "order_type", "k"))
+  expect_named(obli$settings, c("normalize", "precision", "order_type", "k"))
+  expect_named(obli_1$settings, c("normalize", "precision", "order_type", "k"))
+  expect_named(quarti$settings, c("normalize", "precision", "order_type", "k"))
+  expect_named(simpli$settings, c("normalize", "precision", "order_type", "k"))
+  expect_named(bentQ$settings, c("normalize", "precision", "order_type", "k"))
+  expect_named(geoQ$settings, c("normalize", "precision", "order_type", "k"))
+  expect_named(bifacQ$settings, c("normalize", "precision", "order_type", "k"))
 
-  expect_equal(obli$settings$kaiser, TRUE)
-  expect_equal(obli_1$settings$kaiser, TRUE)
-  expect_equal(quarti$settings$kaiser, TRUE)
-  expect_equal(simpli$settings$kaiser, TRUE)
-  expect_equal(bentQ$settings$kaiser, TRUE)
-  expect_equal(geoQ$settings$kaiser, TRUE)
-  expect_equal(bifacQ$settings$kaiser, TRUE)
+  expect_equal(obli$settings$normalize, TRUE)
+  expect_equal(obli_1$settings$normalize, TRUE)
+  expect_equal(quarti$settings$normalize, TRUE)
+  expect_equal(simpli$settings$normalize, TRUE)
+  expect_equal(bentQ$settings$normalize, TRUE)
+  expect_equal(geoQ$settings$normalize, TRUE)
+  expect_equal(bifacQ$settings$normalize, TRUE)
 
   expect_equal(obli$settings$precision, 1e-5)
   expect_equal(obli_1$settings$precision, 1e-5)
@@ -112,17 +112,17 @@ test_that("errors etc. are thrown correctly", {
   expect_error(.ROTATE_OBLQ(unrot, rotation = "oblimin", type = "none"), ' "order_type" was NULL and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify the "order_type" argument\n')
 
   expect_warning(.ROTATE_OBLQ(unrot, rotation = "oblimin", type = "EFAtools",
-                              kaiser = FALSE), " Type and kaiser is specified. kaiser is used with value ' FALSE '. Results may differ from the specified type\n")
+                              normalize = FALSE), " Type and normalize is specified. normalize is used with value ' FALSE '. Results may differ from the specified type\n")
   expect_warning(.ROTATE_OBLQ(unrot, rotation = "oblimin", type = "EFAtools",
                               order_type = "ss_factors"), " Type and order_type is specified. order_type is used with value ' ss_factors '. Results may differ from the specified type\n")
 
   expect_warning(.ROTATE_OBLQ(unrot, rotation = "oblimin", type = "psych",
-                              kaiser = FALSE), " Type and kaiser is specified. kaiser is used with value ' FALSE '. Results may differ from the specified type\n")
+                              normalize = FALSE), " Type and normalize is specified. normalize is used with value ' FALSE '. Results may differ from the specified type\n")
   expect_warning(.ROTATE_OBLQ(unrot, rotation = "oblimin", type = "psych",
                               order_type = "ss_factors"), " Type and order_type is specified. order_type is used with value ' ss_factors '. Results may differ from the specified type\n")
 
   expect_warning(.ROTATE_OBLQ(unrot, rotation = "oblimin", type = "SPSS",
-                              kaiser = FALSE), " Type and kaiser is specified. kaiser is used with value ' FALSE '. Results may differ from the specified type\n")
+                              normalize = FALSE), " Type and normalize is specified. normalize is used with value ' FALSE '. Results may differ from the specified type\n")
   expect_warning(.ROTATE_OBLQ(unrot, rotation = "oblimin", type = "SPSS",
                               order_type = "ss_factors"), " Type and order_type is specified. order_type is used with value ' ss_factors '. Results may differ from the specified type\n")
 
