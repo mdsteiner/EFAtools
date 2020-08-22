@@ -268,7 +268,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                                           "complete.obs", "everything",
                                           "na.or.complete"),
                 varimax_type = NULL,
-                k = NULL, normalize = TRUE, P_type = NULL, precision = NULL,
+                k = NULL, normalize = TRUE, P_type = NULL, precision = 1e-5,
                 order_type = NULL, start_method = c("psych", "factanal"),
                 cor_method = c("pearson", "spearman", "kendall"),
                 ...) {
@@ -299,7 +299,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   checkmate::assert_choice(varimax_type, c("svd", "kaiser"), null.ok = TRUE)
   checkmate::assert_flag(normalize, null.ok = TRUE)
   checkmate::assert_choice(P_type, c("unnorm", "norm"), null.ok = TRUE)
-  checkmate::assert_number(precision, null.ok = TRUE, lower = 0, upper = 1)
+  checkmate::assert_number(precision, lower = 0, upper = 1)
   checkmate::assert_choice(order_type, c("eigen", "ss_factors"), null.ok = TRUE)
 
   # Check if it is a correlation matrix
@@ -401,7 +401,6 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
     rot_out <- .ROTATE_ORTH(fit_out, type = type, rotation = rotation,
                            normalize = normalize, precision = precision,
-                           varimax_type = varimax_type,
                            order_type = order_type, ...)
 
   } else if (rotation == "oblimin" || rotation == "quartimin" ||
@@ -410,7 +409,6 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
     rot_out <- .ROTATE_OBLQ(fit_out, type = type, rotation = rotation,
                            normalize = normalize, precision = precision,
-                           varimax_type = varimax_type,
                            order_type = order_type, k = k, ...)
 
   } else {

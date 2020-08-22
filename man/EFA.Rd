@@ -15,6 +15,9 @@ rotation to oblique simple structure. British Journal of Statistical Psychology,
 Lorenzo-Seva, U., Timmerman, M. E., & Kiers, H. A. L. (2011). The
 Hull Method for Selecting the Number of Common Factors, Multivariate Behavioral
 Research, 46, 340-364, doi: 10.1080/00273171.2011.564527
+
+Kaiser, H. F. (1958). The varimax criterion for analytic rotation in
+factor analysis. Psychometrika, 23, 187–200. doi: 10.1007/BF02289233
 }
 \usage{
 EFA(
@@ -33,10 +36,11 @@ EFA(
   abs_eigen = NULL,
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
     "na.or.complete"),
+  varimax_type = NULL,
   k = NULL,
-  kaiser = TRUE,
+  normalize = TRUE,
   P_type = NULL,
-  precision = NULL,
+  precision = 1e-05,
   order_type = NULL,
   start_method = c("psych", "factanal"),
   cor_method = c("pearson", "spearman", "kendall"),
@@ -106,6 +110,11 @@ Default is \code{NULL}.}
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
 is given as input. Default is "pairwise.complete.obs".}
 
+\item{varimax_type}{character. The type of the varimax rotation performed.
+If "svd", singular value decomposition is used, as \link[stats:varimax]{stats::varimax} does. If "kaiser", the varimax procedure performed in SPSS is used.
+This is the original procedure from Kaiser (1958), but with slight alterations
+in the varimax criterion (see Grieder & Steiner, 2020). Default is \code{NULL}.}
+
 \item{k}{numeric. Either the power used for computing the target matrix P in
 the promax rotation or the number of 'close to zero loadings' for the simplimax
 rotation (see \code{\link[GPArotation:GPA]{GPArotation::GPFoblq}}). If left to
@@ -113,7 +122,7 @@ rotation (see \code{\link[GPArotation:GPA]{GPArotation::GPFoblq}}). If left to
 For simplimax, \code{nrow(L)}, where L is the matrix of unrotated loadings,
 is used by default.}
 
-\item{kaiser}{logical. If \code{TRUE}, kaiser normalization is
+\item{normalize}{logical. If \code{TRUE}, a kaiser normalization is
 performed before the specified rotation. Default is \code{TRUE}.}
 
 \item{P_type}{character. This specifies how the target
@@ -123,11 +132,7 @@ This is also used in the psych and stats packages. If "norm" it will use the
 normalized target matrix as used in SPSS. Default is \code{NULL}.}
 
 \item{precision}{numeric. The tolerance for stopping in the rotation
-procecdure. This is passed to the "eps" argument of the
-\code{\link[stats:varimax]{stats::varimax}} and the \code{GPArotation} functions.
-If left \code{NULL} (default), the precision is set according to the specified
-\code{type} for varimax and promax rotation or is set to 10^-5 for all other
-rotations.}
+procedure. Defaul is 10^-5 for all rotation methods.}
 
 \item{order_type}{character. How to order the factors. "eigen" will reorder
 the factors according to the largest to lowest eigenvalues of the matrix of
@@ -163,7 +168,7 @@ A list of class EFA containing (a subset of) the following:
 \item{unrot_loadings}{Loading matrix containing the final unrotated loadings.}
 \item{vars_accounted}{Matrix of explained variances and sums of squared loadings. Based on the unrotated loadings.}
 \item{fit_indices}{For ML and ULS: Fit indices derived from the unrotated
-factor loadings: Chi Square, including signfificance level, degrees of freedom
+factor loadings: Chi Square, including significance level, degrees of freedom
 (df), Comparative Fit Index (CFI), Root Mean Square Error of Approximation
 (RMSEA), including its 90\% confidence interval, and the common part accounted
 for (CAF) index as proposed by Lorenzo-Seva, Timmerman, & Kiers (2011).
@@ -221,29 +226,29 @@ and number of Heywood cases compared to all the
 other setting combinations tested in simulation studies in Grieder & Steiner
 (2020), which is why this type is used as a default here.
 
-For varimax, the values of \code{precision} and \code{order_type} depend on
+For varimax, the values of \code{varimax_type} and \code{order_type} depend on
 the \code{type} argument.
 
 \code{type = "EFAtools"} will use the following argument specification:
-\code{precision = 1e-5, order_type = "eigen"}.
+\code{varimax_type = "svd", order_type = "eigen"}.
 
 \code{type = "psych"} will use the following argument specification:
-\code{precision = 1e-5, order_type = "eigen"}.
+\code{varimax_type = "svd", order_type = "eigen"}.
 
 \code{type = "SPSS"} will use the following argument specification:
-\code{precision = 1e-10, order_type = "ss_factors"}.
+\code{varimax_type = "kaiser", order_type = "ss_factors"}.
 
-For promax, the values of \code{P_type}, \code{precision},
+For promax, the values of \code{P_type},
 \code{order_type}, and \code{k} depend on the \code{type} argument.
 
 \code{type = "EFAtools"} will use the following argument specification:
-\code{P_type = "norm", precision = 1e-5, order_type = "eigen", k = 4}.
+\code{P_type = "norm", order_type = "eigen", k = 4}.
 
 \code{type = "psych"} will use the following argument specification:
-\code{P_type = "unnorm", precision = 1e-5, order_type = "eigen", k = 4}.
+\code{P_type = "unnorm", order_type = "eigen", k = 4}.
 
 \code{type = "SPSS"} will use the following argument specification:
-\code{P_type = "norm", precision = 1e-10, order_type = "ss_factors", k = 4}.
+\code{P_type = "norm", order_type = "ss_factors", k = 4}.
 
 The \code{P_type} argument can take two values, "unnorm" and "norm". It controls
 which formula is used to compute the target matrix P in the promax rotation.
@@ -305,6 +310,7 @@ PAF_pro <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
                type = "none", method = "PAF", rotation = "promax",
                max_iter = 500, init_comm = "mac", criterion = 1e-4,
                criterion_type = "sums", abs_eigen = FALSE, k = 3,
-               P_type = "unnorm", precision= 1e-5, order_type = "eigen")
+               P_type = "unnorm", precision= 1e-5, order_type = "eigen",
+               varimax_type = "svd")
 
 }

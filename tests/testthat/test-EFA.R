@@ -288,7 +288,6 @@ test_that("settings are returned correctly", {
 
   expect_equal(efa_psych$settings$k, 4)
   expect_equal(efa_spss$settings$k, 4)
-  expect_equal(efa_equa$settings$k, TRUE)
   expect_equal(efa_none$settings$k, 3)
 
   expect_equal(efa_ml$settings$start_method, "psych")
