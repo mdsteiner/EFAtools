@@ -80,6 +80,8 @@
 #'  simulated eigenvalues. \code{"percentile"}, uses the percentiles specified
 #'  in percent. \code{"crawford"} uses the 95th percentile for the first factor
 #'  and the mean afterwards (based on Crawford et al, 2010).
+#'  @param show_progress logical. Whether a progress bar should be shown in the
+#'   console. Default is TRUE.
 #' @param ... Further arguments passed to \code{\link{EFA}} in
 #' \code{\link{PARALLEL}} (also within \code{\link{HULL}}) and \code{\link{KGC}}.
 #'
@@ -152,6 +154,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
                       n_factors = 1, n_datasets = 1000,
                       percent = 95,
                       decision_rule = c("means", "percentile", "crawford"),
+                      show_progress = TRUE,
                       ...){
 
   # Perform argument checks
@@ -170,6 +173,10 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   use <- match.arg(use)
   method <- match.arg(method)
   decision_rule <- match.arg(decision_rule)
+
+  if (isTRUE(show_progress)) {
+    criteria <- sort(criteria)
+  }
 
   # Check if it is a correlation matrix
   if(.is_cormat(x)){
@@ -246,6 +253,10 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
 
     if (!.is_cormat(x)) {
 
+      if (isTRUE(show_progress)) {
+        .show_progress(criteria, "CD")
+      }
+
       cd_out <- CD(x, n_factors_max = n_factors_max, N_pop = N_pop,
                    N_samples = N_samples, alpha = alpha, use = use,
                    cor_method = cor_method, max_iter = max_iter_CD)
@@ -261,6 +272,10 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   # Empirical Kaiser Criterion
   if("EKC" %in% criteria){
 
+    if (isTRUE(show_progress)) {
+      .show_progress(criteria, "EKC")
+    }
+
     ekc_out <- EKC(R, N = N, use = use, cor_method = cor_method)
 
     nfac_EKC <- ekc_out$n_factors
@@ -269,6 +284,10 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
 
   # HULL method
   if("HULL" %in% criteria){
+
+    if (isTRUE(show_progress)) {
+      .show_progress(criteria, "HULL")
+    }
 
     hull_out <- HULL(R, N = N, n_fac_theor = n_fac_theor, method = method,
                      eigen_type = eigen_type_HULL, gof = gof, use = use,
@@ -285,6 +304,10 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   # Kaiser-Guttman criterion
   if("KGC" %in% criteria){
 
+    if (isTRUE(show_progress)) {
+      .show_progress(criteria, "KGC")
+    }
+
     kgc_out <- KGC(R, eigen_type = eigen_type_other, use = use,
                    cor_method = cor_method, n_factors = n_factors,
                    method = method, ...)
@@ -297,6 +320,10 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
 
   # Parallel analysis
   if("PARALLEL" %in% criteria){
+
+    if (isTRUE(show_progress)) {
+      .show_progress(criteria, "PARALLEL")
+    }
 
     parallel_out <- try(PARALLEL(R, N = N,
                                  n_datasets = n_datasets, percent = percent,
@@ -314,6 +341,10 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   # Scree plot
   if("SCREE" %in% criteria){
 
+    if (isTRUE(show_progress)) {
+      .show_progress(criteria, "SCREE")
+    }
+
     scree_out <- SCREE(R, eigen_type = eigen_type_other, use = use,
                      cor_method = cor_method, n_factors = n_factors,
                      method = method, ...)
@@ -321,6 +352,10 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
 
   # Sequential chi square tests, RMSEA lower bound and AIC
   if("SMT" %in% criteria){
+
+    if (isTRUE(show_progress)) {
+      .show_progress(criteria, "SMT")
+    }
 
     smt_out <- SMT(R, N = N, use = use, cor_method = cor_method)
 
@@ -382,6 +417,10 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
                  settings = settings)
 
   class(output) <- "N_FACTORS"
+
+  if (isTRUE(show_progress)) {
+    .show_progress(criteria, "done", TRUE)
+  }
 
   return(output)
 

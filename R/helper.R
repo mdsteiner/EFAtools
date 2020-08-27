@@ -477,3 +477,22 @@ if(n == 1){
   return(q)
 }
 
+# for progress bar in N_FACTORS
+.show_progress <- function(x, what, done = FALSE) {
+
+  cat("\r", rep(" ", 30))
+  to <- length(x)
+  if (isFALSE(done)) {
+    curr <- which(x == what)
+
+    #cat("\r", paste0(curr, "/", to, ":"), "Running", what)
+    cat("\r", rep(cli::symbol$circle_filled, curr - 1),
+        "\U1F3C3", rep(cli::symbol$circle, to - (curr)),
+        "Running", what)
+  } else {
+    cat("\r", rep(cli::symbol$circle_filled, to),
+        "Done!\n")
+  }
+
+}
+
