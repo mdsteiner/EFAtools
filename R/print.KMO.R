@@ -44,14 +44,15 @@ print.KMO <- function(x, ...) {
     cat("\n")
     cat(symb, " The overall KMO value for your data is ", label, ".", sep = "")
     cat("\n")
-    cat(crayon::bold(" "), "These data are probably suitable for factor analysis.")
-    cat("\n")
 
     if(KMO < .5){
       cat(crayon::bold(" "), "These data are not suitable for factor analysis.")
       cat("\n")
     } else if(KMO < .6){
       cat(crayon::bold(" "), "These data are hardly suitable for factor analysis.")
+      cat("\n")
+    } else {
+      cat(crayon::bold(" "), "These data are probably suitable for factor analysis.")
       cat("\n")
     }
 

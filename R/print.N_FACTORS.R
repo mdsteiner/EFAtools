@@ -65,14 +65,16 @@ print.N_FACTORS <- function(x, ...){
       cat(symb, " The overall KMO value for your data is ", label,
           " with ", crayon::bold(round(KMO, 3)), ".", sep = "")
       cat("\n")
-      cat(crayon::bold(" "), "These data are probably suitable for factor analysis.")
-      cat("\n")
+
 
       if(KMO < .5){
         cat(crayon::bold(" "), "These data are not suitable for factor analysis.")
         cat("\n")
       } else if(KMO < .6){
         cat(crayon::bold(" "), "These data are hardly suitable for factor analysis.")
+        cat("\n")
+      } else {
+        cat(crayon::bold(" "), "These data are probably suitable for factor analysis.")
         cat("\n")
       }
 

@@ -36,6 +36,7 @@ methods.
     * Fixed a bug that occurred when using `decision_rule = "percentile"`
     * Relocated error messages that were not evaluated if no data were entered (and should be)
 * `print.COMPARE()`: Fixed a bug that occurred when using `print_diff = FALSE` in `COMPARE()`.
+* `print.KMO()`: Fixed a bug that printed two statements instead of one, when the KMO value was < .6.
 
 ## Minor Changes
 * `OMEGA()` and `SL()`: Added an error message if the entered term in `g_name` is invalid (i.e., it cannnot be found among the factor names of the entered lavaan solution).
