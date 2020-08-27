@@ -13,6 +13,7 @@ methods.
 
 ## Changes to Functions
 
+* `CD()`: Added check for whether entered data is a tibble, and if so, convert to vanilla data.frame to avoid breaking the procedure.
 * `EFA()`: 
     * Updated the EFAtools type in PAF and Pomax.
     * Added p value for chi square value in output (calculated for ML and ULS fitting methods).

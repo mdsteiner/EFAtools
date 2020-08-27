@@ -90,6 +90,10 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
     stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is a correlation matrix, but CD only works with raw data.\n"))
   }
 
+  if (inherits(x, c("tbl_df", "tbl"))) {
+    x <- as.data.frame(x)
+  }
+
   use <- match.arg(use)
   cor_method <- match.arg(cor_method)
 
