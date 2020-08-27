@@ -80,7 +80,7 @@
 #'  simulated eigenvalues. \code{"percentile"}, uses the percentiles specified
 #'  in percent. \code{"crawford"} uses the 95th percentile for the first factor
 #'  and the mean afterwards (based on Crawford et al, 2010).
-#'  @param show_progress logical. Whether a progress bar should be shown in the
+#' @param show_progress logical. Whether a progress bar should be shown in the
 #'   console. Default is TRUE.
 #' @param ... Further arguments passed to \code{\link{EFA}} in
 #' \code{\link{PARALLEL}} (also within \code{\link{HULL}}) and \code{\link{KGC}}.
