@@ -26,6 +26,7 @@ N_FACTORS(
   n_datasets = 1000,
   percent = 95,
   decision_rule = c("means", "percentile", "crawford"),
+  show_progress = TRUE,
   ...
 )
 }
@@ -122,7 +123,9 @@ factors to extract if \code{"EFA"} is included in \code{eigen_type_HULL} or
  factors to retain. Default is \code{"means"}, which will use the average
  simulated eigenvalues. \code{"percentile"}, uses the percentiles specified
  in percent. \code{"crawford"} uses the 95th percentile for the first factor
- and the mean afterwards (based on Crawford et al, 2010).}
+ and the mean afterwards (based on Crawford et al, 2010).
+ @param show_progress logical. Whether a progress bar should be shown in the
+  console. Default is TRUE.}
 
 \item{...}{Further arguments passed to \code{\link{EFA}} in
 \code{\link{PARALLEL}} (also within \code{\link{HULL}}) and \code{\link{KGC}}.}
