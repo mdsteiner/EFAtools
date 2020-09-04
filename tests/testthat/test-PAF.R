@@ -9,7 +9,7 @@ paf_spss <- .PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
                   criterion = NULL, criterion_type = NULL, abs_eigen = NULL)
 paf_none <- .PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
                  max_iter = 500, type = "none", init_comm = "unity",
-                 criterion = 1e-4, criterion_type = "sums", abs_eigen = TRUE)
+                 criterion = 1e-4, criterion_type = "sum", abs_eigen = TRUE)
 paf_mac_t <- .PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
                  max_iter = 500, type = "none", init_comm = "mac",
                  criterion = 1e-4, criterion_type = "max_individual", abs_eigen = TRUE)
@@ -208,10 +208,10 @@ test_that("settings are returned correctly", {
   expect_equal(paf_F1_t$settings$criterion, 1e-4)
   expect_equal(paf_F1_f$settings$criterion, 1e-4)
 
-  expect_equal(paf_efatools$settings$criterion_type, "sums")
-  expect_equal(paf_psych$settings$criterion_type, "sums")
+  expect_equal(paf_efatools$settings$criterion_type, "sum")
+  expect_equal(paf_psych$settings$criterion_type, "sum")
   expect_equal(paf_spss$settings$criterion_type, "max_individual")
-  expect_equal(paf_none$settings$criterion_type, "sums")
+  expect_equal(paf_none$settings$criterion_type, "sum")
   expect_equal(paf_mac_t$settings$criterion_type, "max_individual")
   expect_equal(paf_mac_f$settings$criterion_type, "max_individual")
   expect_equal(paf_F1_t$settings$criterion_type, "max_individual")
@@ -231,14 +231,14 @@ test_that("settings are returned correctly", {
 test_that("warnings and errors are thrown correctly", {
   expect_error(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
                     max_iter = 500, type = "none", init_comm = "unity",
-                    criterion = 1e-4, criterion_type = "sums"), ' One of "init_comm", "criterion", "criterion_type", "abs_eigen", "max_iter" was NULL and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify all other arguments\n')
+                    criterion = 1e-4, criterion_type = "sum"), ' One of "init_comm", "criterion", "criterion_type", "abs_eigen", "max_iter" was NULL and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify all other arguments\n')
 
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
                     type = "EFAtools", init_comm = "smc"), " Type and init_comm is specified. init_comm is used with value ' smc '. Results may differ from the specified type\n")
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
                     type = "EFAtools", criterion = 0.001), " Type and criterion is specified. criterion is used with value ' 0.001 '. Results may differ from the specified type\n")
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "EFAtools", criterion_type = "sums"), " Type and criterion_type is specified. criterion_type is used with value ' sums '. Results may differ from the specified type\n")
+                      type = "EFAtools", criterion_type = "sum"), " Type and criterion_type is specified. criterion_type is used with value ' sum '. Results may differ from the specified type\n")
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
                       type = "EFAtools", max_iter = 400), " Type and max_iter is specified. max_iter is used with value ' 400 '. Results may differ from the specified type\n")
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
@@ -249,7 +249,7 @@ test_that("warnings and errors are thrown correctly", {
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
                       type = "psych", criterion = 0.001), " Type and criterion is specified. criterion is used with value ' 0.001 '. Results may differ from the specified type\n")
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "psych", criterion_type = "sums"), " Type and criterion_type is specified. criterion_type is used with value ' sums '. Results may differ from the specified type\n")
+                      type = "psych", criterion_type = "sum"), " Type and criterion_type is specified. criterion_type is used with value ' sum '. Results may differ from the specified type\n")
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
                       type = "psych", max_iter = 400), " Type and max_iter is specified. max_iter is used with value ' 400 '. Results may differ from the specified type\n")
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
@@ -260,13 +260,13 @@ test_that("warnings and errors are thrown correctly", {
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
                       type = "SPSS", criterion = 0.001), " Type and criterion is specified. criterion is used with value ' 0.001 '. Results may differ from the specified type\n")
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "SPSS", criterion_type = "sums"), " Type and criterion_type is specified. criterion_type is used with value ' sums '. Results may differ from the specified type\n")
+                      type = "SPSS", criterion_type = "sum"), " Type and criterion_type is specified. criterion_type is used with value ' sum '. Results may differ from the specified type\n")
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
                       type = "SPSS", max_iter = 400), " Type and max_iter is specified. max_iter is used with value ' 400 '. Results may differ from the specified type\n")
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
                       type = "SPSS", abs_eigen = TRUE), " Type and abs_eigen is specified. abs_eigen is used with value ' TRUE '. Results may differ from the specified type\n")
   expect_error(.PAF(IDS2_R, n_factors = 7, N = 1991, max_iter = 500, type = "none",
-                    init_comm = "smc", criterion = 1e-4, criterion_type = "sums",
+                    init_comm = "smc", criterion = 1e-4, criterion_type = "sum",
                     abs_eigen = FALSE), "Negative Eigenvalues detected; cannot compute communality estimates. Try again with init_comm = 'unity' or 'mac'")
   expect_error(.PAF(IDS2_R, n_factors = 7, N = 1991, max_iter = 500, type = "none",
                     init_comm = "smc", criterion = 1e-4,

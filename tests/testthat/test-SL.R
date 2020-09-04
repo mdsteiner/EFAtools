@@ -162,8 +162,8 @@ test_that("settings are returned correctly", {
   expect_equal(SL_EFAtools$settings$criterion, 0.001)
   expect_equal(SL_psych$settings$criterion,  0.001)
 
-  expect_equal(SL_EFAtools$settings$criterion_type, "sums")
-  expect_equal(SL_psych$settings$criterion_type, "sums")
+  expect_equal(SL_EFAtools$settings$criterion_type, "sum")
+  expect_equal(SL_psych$settings$criterion_type, "sum")
 
   expect_equal(SL_EFAtools$settings$abs_eigen, TRUE)
   expect_equal(SL_psych$settings$abs_eigen, FALSE)

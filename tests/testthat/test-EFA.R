@@ -23,7 +23,7 @@ efa_quart <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
 efa_none <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
                 type = "none", method = "PAF", rotation = "promax",
                 max_iter = 500, init_comm = "unity", criterion = 1e-4,
-                criterion_type = "sums", abs_eigen = FALSE, k = 3,
+                criterion_type = "sum", abs_eigen = FALSE, k = 3,
                 P_type = "unnorm", precision= 1e-5, order_type = "eigen",
                 varimax_type = "svd")
 
@@ -244,13 +244,13 @@ test_that("settings are returned correctly", {
   expect_equal(efa_quart$settings$criterion,  0.001)
   expect_equal(efa_none$settings$criterion,  1e-4)
 
-  expect_equal(efa_cor$settings$criterion_type, "sums")
-  expect_equal(efa_raw$settings$criterion_type, "sums")
-  expect_equal(efa_psych$settings$criterion_type, "sums")
+  expect_equal(efa_cor$settings$criterion_type, "sum")
+  expect_equal(efa_raw$settings$criterion_type, "sum")
+  expect_equal(efa_psych$settings$criterion_type, "sum")
   expect_equal(efa_spss$settings$criterion_type, "max_individual")
-  expect_equal(efa_equa$settings$criterion_type, "sums")
-  expect_equal(efa_quart$settings$criterion_type, "sums")
-  expect_equal(efa_none$settings$criterion_type, "sums")
+  expect_equal(efa_equa$settings$criterion_type, "sum")
+  expect_equal(efa_quart$settings$criterion_type, "sum")
+  expect_equal(efa_none$settings$criterion_type, "sum")
 
   expect_equal(efa_cor$settings$abs_eigen, TRUE)
   expect_equal(efa_raw$settings$abs_eigen,  TRUE)
