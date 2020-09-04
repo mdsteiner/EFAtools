@@ -35,7 +35,7 @@
     }
 
     if (is.null(criterion_type)) {
-      criterion_type <- "sums"
+      criterion_type <- "sum"
     } else {
       warning(crayon::yellow$bold("!"), crayon::yellow(" Type and criterion_type is specified. criterion_type is used with value '", criterion_type, "'. Results may differ from the specified type\n"))
     }
@@ -71,7 +71,7 @@
     }
 
     if (is.null(criterion_type)) {
-      criterion_type <- "sums"
+      criterion_type <- "sum"
     } else {
       warning(crayon::yellow$bold("!"), crayon::yellow(" Type and criterion_type is specified. criterion_type is used with value '", criterion_type, "'. Results may differ from the specified type\n"))
     }

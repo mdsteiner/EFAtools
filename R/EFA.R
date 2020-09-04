@@ -46,7 +46,7 @@
 #' @param criterion_type character. Type of convergence criterion used for
 #' PAF. "max_individual" selects the maximum change in any of the
 #' communalities from one iteration to the next and tests it against the
-#' specified criterion. This is also used by SPSS. "sums" takes the difference of
+#' specified criterion. This is also used by SPSS. "sum" takes the difference of
 #' the sum of all communalities in one iteration and the sum of all communalities
 #' in the next iteration and tests this against the criterion. This procedure is
 #' used by the \code{\link[psych:fa]{psych::fa}} function. Default is \code{NULL}.
@@ -105,11 +105,11 @@
 #' and \code{abs_eigen} depend on the \code{type} argument.
 #'
 #' \code{type = "EFAtools"} will use the following argument specification:
-#' \code{init_comm = "smc", criterion = .001, criterion_type = "sums",
+#' \code{init_comm = "smc", criterion = .001, criterion_type = "sum",
 #' abs_eigen = TRUE}.
 #'
 #' \code{type = "psych"} will use the following argument specification:
-#' \code{init_comm = "smc", criterion = .001, criterion_type = "sums",
+#' \code{init_comm = "smc", criterion = .001, criterion_type = "sum",
 #' abs_eigen = FALSE}.
 #'
 #' \code{type = "SPSS"} will use the following argument specification:
@@ -247,13 +247,13 @@
 #' PAF_none <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
 #'                 type = "none", method = "PAF", rotation = "none",
 #'                 max_iter = 500, init_comm = "mac", criterion = 1e-4,
-#'                 criterion_type = "sums", abs_eigen = FALSE)
+#'                 criterion_type = "sum", abs_eigen = FALSE)
 #'
 #' # Add a promax rotation
 #' PAF_pro <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
 #'                type = "none", method = "PAF", rotation = "promax",
 #'                max_iter = 500, init_comm = "mac", criterion = 1e-4,
-#'                criterion_type = "sums", abs_eigen = FALSE, k = 3,
+#'                criterion_type = "sum", abs_eigen = FALSE, k = 3,
 #'                P_type = "unnorm", precision= 1e-5, order_type = "eigen",
 #'                varimax_type = "svd")
 #'
@@ -292,7 +292,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   checkmate::assert_count(max_iter, null.ok = TRUE)
   checkmate::assert_choice(init_comm, c("smc", "mac", "unity"), null.ok = TRUE)
   checkmate::assert_number(criterion, null.ok = TRUE, lower = 0, upper = 1)
-  checkmate::assert_choice(criterion_type, c("max_individual", "sums"),
+  checkmate::assert_choice(criterion_type, c("max_individual", "sums", "sum"),
                            null.ok = TRUE)
   checkmate::assert_flag(abs_eigen, null.ok = TRUE)
   checkmate::assert_number(k, null.ok = TRUE)
