@@ -80,4 +80,4 @@ OMEGA(SL, factor_corres = rep(c(3, 2, 1), each = 6))
 
 ## Contribute or Report Bugs
 
-If you want to contribute or report bugs, please open an issue on GitHub or email us... 
+If you want to contribute or report bugs, please open an issue on GitHub or email us at markus.d.steiner@gmail.com or silvia.grieder@gmail.com.
