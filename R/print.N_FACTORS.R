@@ -203,7 +203,7 @@ print.N_FACTORS <- function(x, ...){
 
   if("SCREE" %in% criteria){
 
-    plot(x$output$scree_out)
+    graphics::plot(x$output$scree_out)
 
   }
 
