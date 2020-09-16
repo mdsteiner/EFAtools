@@ -1,0 +1,19 @@
+citHeader("To cite EFAtools in publications use:")
+
+citEntry(
+  entry    = "Article",
+  title    = "EFAtools: An R package with fast and flexible implementations of exploratory factor analysis tools",
+  author   = c(person("Markus D.", "Steiner"),
+                    person("Silvia", "Grieder")),
+  journal  = "Journal of Open Source Software",
+  year     = "2020",
+  volume   = "5",
+  number   = "53",
+  pages    = "2521",
+  url      = "https://doi.org/10.21105/joss.02521",
+  doi      = "10.21105/joss.02521",
+  textVersion = paste("Steiner, M.D., & Grieder, S.G. (2020). EFAtools: An R package with fast and flexible implementations of exploratory factor analysis tools. Journal of Open Source Software, 5(53), 2521. https://doi.org/10.21105/joss.02521"
+
+  )
+)
+
