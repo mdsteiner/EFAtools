@@ -9,6 +9,7 @@
 status](https://travis-ci.com/mdsteiner/EFAtools.svg?branch=master)](https://travis-ci.com/mdsteiner/EFAtools)
 [![CRAN
 status](https://www.r-pkg.org/badges/version/EFAtools)](https://CRAN.R-project.org/package=EFAtools)
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.02521/status.svg)](https://doi.org/10.21105/joss.02521)
 <!-- badges: end -->
 
 The EFAtools package provides functions to perform exploratory factor
@@ -203,6 +204,16 @@ OMEGA(SL, factor_corres = rep(c(3, 2, 1), each = 6))
 #> F2 0.764 0.494 0.270
 #> F3 0.745 0.543 0.202
 ```
+
+## Citation
+
+If you use this package in your research, please acknowledge it by
+citing:
+
+Steiner, M.D., & Grieder, S.G. (2020). EFAtools: An R package with fast
+and flexible implementations of exploratory factor analysis tools.
+*Journal of Open Source Software*, 5(53), 2521.
+<https://doi.org/10.21105/joss.02521>
 
 ## Contribute or Report Bugs
 
