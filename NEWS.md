@@ -1,4 +1,4 @@
-# EFAtools 0.1.1.9000
+# EFAtools 0.2.0
 
 ## General
 
