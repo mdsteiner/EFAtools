@@ -1,14 +1,14 @@
 ## Varimax rotation
 .VARIMAX <- function (x, type = c("EFAtools", "psych", "SPSS", "none"),
-                     normalize = TRUE, precision = 1e-5, order_type = NULL,
-                     varimax_type = NULL) {
+                     normalize = TRUE, precision = 1e-5, order_type = NA,
+                     varimax_type = NA) {
 
   if (type == "none") {
     # if type is none, throw an error if not
     # all the other necessary arguments are specified.
 
-    if (is.null(order_type) || is.null(varimax_type)) {
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "order_type" or "varimax_type" was NULL and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify all other arguments\n'))
+    if (is.na(order_type) || is.na(varimax_type)) {
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "order_type" or "varimax_type" was NA and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify all other arguments\n'))
     }
 
     } else if (type == "EFAtools") {
@@ -21,13 +21,13 @@
         warning(crayon::yellow$bold("!"), crayon::yellow(" Type and normalize is specified. normalize is used with value '", normalize, "'. Results may differ from the specified type\n"))
       }
 
-      if (is.null(order_type)) {
+      if (is.na(order_type)) {
         order_type <- "eigen"
       } else {
         warning(crayon::yellow$bold("!"), crayon::yellow(" Type and order_type is specified. order_type is used with value '", order_type, "'. Results may differ from the specified type\n"))
       }
 
-      if (is.null(varimax_type)) {
+      if (is.na(varimax_type)) {
         varimax_type <- "svd"
       } else {
         warning(crayon::yellow$bold("!"), crayon::yellow(" Type and varimax_type is specified. varimax_type is used with value '", varimax_type, "'. Results may differ from the specified type\n"))
@@ -44,13 +44,13 @@
         warning(crayon::yellow$bold("!"), crayon::yellow(" Type and normalize is specified. normalize is used with value '", normalize, "'. Results may differ from the specified type\n"))
       }
 
-      if (is.null(order_type)) {
+      if (is.na(order_type)) {
         order_type <- "eigen"
       } else {
         warning(crayon::yellow$bold("!"), crayon::yellow(" Type and order_type is specified. order_type is used with value '", order_type, "'. Results may differ from the specified type\n"))
       }
 
-      if (is.null(varimax_type)) {
+      if (is.na(varimax_type)) {
         varimax_type <- "svd"
       } else {
         warning(crayon::yellow$bold("!"), crayon::yellow(" Type and varimax_type is specified. varimax_type is used with value '", varimax_type, "'. Results may differ from the specified type\n"))
@@ -66,13 +66,13 @@
         warning(crayon::yellow$bold("!"), crayon::yellow(" Type and normalize is specified. normalize is used with value '", normalize, "'. Results may differ from the specified type\n"))
       }
 
-      if (is.null(order_type)) {
+      if (is.na(order_type)) {
         order_type <- "ss_factors"
       } else {
         warning(crayon::yellow$bold("!"), crayon::yellow(" Type and order_type is specified. order_type is used with value '", order_type, "'. Results may differ from the specified type\n"))
       }
 
-      if (is.null(varimax_type)) {
+      if (is.na(varimax_type)) {
         varimax_type <- "kaiser"
       } else {
         warning(crayon::yellow$bold("!"), crayon::yellow(" Type and varimax_type is specified. varimax_type is used with value '", varimax_type, "'. Results may differ from the specified type\n"))
