@@ -69,7 +69,8 @@ WJIV_ages_14_19
 }
 \description{
 A list containing the bivariate correlations (N = 1,685) of the 47
-intelligence subtests from the WJ IV for 14- to 19-year-olds obtained from
+cognitive and achievement subtests from the WJ IV for 14- to 19-year-olds
+from the standardization sample obtained from
 the WJ-IV technical manual (McGrew, LaForte, & Schrank, 2014).
 Tables are reproduced with permission from the publisher.
 }
