@@ -269,7 +269,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                                           "na.or.complete"),
                 varimax_type = NA,
                 k = NA, normalize = TRUE, P_type = NA, precision = 1e-5,
-                order_type = NA, start_method = c("psych", "factanal"),
+                order_type = NA, start_method = "psych",
                 cor_method = c("pearson", "spearman", "kendall"),
                 ...) {
 
@@ -285,7 +285,11 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   use <- match.arg(use)
   cor_method <- match.arg(cor_method)
   type <- match.arg(type)
-  start_method <- match.arg(start_method)
+  start_method <- checkmate::matchArg(start_method, c("psych", "factanal", NA))
+
+  if (is.na(start_method) && method == "ML") {
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" method is 'ML' but no start method is defined. Please set start_method to 'psych' or 'factanal'.\n"))
+  }
 
   checkmate::assert_count(n_factors)
   checkmate::assert_count(N, na.ok = TRUE)

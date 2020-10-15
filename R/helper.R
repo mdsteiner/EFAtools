@@ -501,12 +501,12 @@ if(n == 1){
 
 
 # for progress bar in AGGREGATE_EFA
-.show_agg_progress <- function(what, done = FALSE) {
+.show_agg_progress <- function(emoji, what, done = FALSE) {
 
   cat("\r", rep(" ", 30))
   if (isFALSE(done)) {
     #cat("\r", paste0(curr, "/", to, ":"), "Running", what)
-    cat("\r", "\U1F3C3", what)
+    cat("\r", emoji, what)
   } else {
     cat("\r", "Done!\n")
   }
@@ -585,7 +585,7 @@ if(n == 1){
     }
 
   # remove data from nonconverged EFAs
-  excl <- which(converged != 0 | errors)
+  excl <- which(converged != 0 | errors | heywood)
   if (length(excl) > 0) {
     L <- L[,, -excl]
     L_corres <- L_corres[,, -excl]
@@ -621,7 +621,7 @@ if(n == 1){
 
 ### aggregate arrays
 .aggregate_values <- function(L, L_corres, h2, phi, extract_phi, aggregation,
-                              trim, for_grid, df) {
+                              trim, for_grid, df, ind_names) {
 
   if (aggregation == "mean") {
 
@@ -654,24 +654,62 @@ if(n == 1){
     }
   }
 
+  nf <- ncol(L_agg)
+
   L_corres_agg <- rowMeans(L_corres, na.rm = TRUE, dims = 2)
+  row.names(L_corres_agg) <- ind_names
+  colnames(L_corres_agg) <- paste0("F", 1:nf)
 
   L_min <- apply(L, 1:2, min, na.rm = TRUE)
   L_max <- apply(L, 1:2, max, na.rm = TRUE)
+  L_range <- L_max - L_min
   L_sd <- apply(L, 1:2, sd, na.rm = TRUE)
+  rownames(L_agg) <- ind_names
+  colnames(L_agg) <- paste0("F", 1:nf)
+  class(L_agg) <- "LOADINGS"
+  rownames(L_min) <- ind_names
+  colnames(L_min) <- paste0("F", 1:nf)
+  class(L_min) <- "LOADINGS"
+  rownames(L_max) <- ind_names
+  colnames(L_max) <- paste0("F", 1:nf)
+  class(L_max) <- "LOADINGS"
+  rownames(L_range) <- ind_names
+  colnames(L_range) <- paste0("F", 1:nf)
+  rownames(L_sd) <- ind_names
+  colnames(L_sd) <- paste0("F", 1:nf)
+
 
   h2_min <- apply(h2, 2, min, na.rm = TRUE)
   h2_max <- apply(h2, 2, max, na.rm = TRUE)
+  h2_range <- h2_max - h2_min
   h2_sd <- apply(h2, 2, sd, na.rm = TRUE)
+  names(h2_agg) <- ind_names
+  names(h2_min) <- ind_names
+  names(h2_max) <- ind_names
+  names(h2_range) <- ind_names
+  names(h2_sd) <- ind_names
+
 
   fit_min <- apply(for_grid, 2, min, na.rm = TRUE)
   fit_max <- apply(for_grid, 2, max, na.rm = TRUE)
+  fit_range <- fit_max - fit_min
   fit_sd <- apply(for_grid, 2, sd, na.rm = TRUE)
 
   if (isTRUE(extract_phi)) {
     phi_min <- apply(phi, 1:2, min, na.rm = TRUE)
     phi_max <- apply(phi, 1:2, max, na.rm = TRUE)
+    phi_range <- phi_max - phi_min
     phi_sd <- apply(phi, 1:2, sd, na.rm = TRUE)
+    colnames(phi_agg) <- paste0("F", 1:nf)
+    rownames(phi_agg) <- paste0("F", 1:nf)
+    colnames(phi_min) <- paste0("F", 1:nf)
+    rownames(phi_min) <- paste0("F", 1:nf)
+    colnames(phi_max) <- paste0("F", 1:nf)
+    rownames(phi_max) <- paste0("F", 1:nf)
+    colnames(phi_range) <- paste0("F", 1:nf)
+    rownames(phi_range) <- paste0("F", 1:nf)
+    colnames(phi_sd) <- paste0("F", 1:nf)
+    rownames(phi_sd) <- paste0("F", 1:nf)
   }
 
 
@@ -680,7 +718,8 @@ if(n == 1){
       aggregate = phi_agg,
       sd = phi_sd,
       min = phi_min,
-      max = phi_max
+      max = phi_max,
+      range = phi_range
     )
   } else {
     phi_list <- NA
@@ -691,13 +730,15 @@ if(n == 1){
       aggregate = h2_agg,
       sd = h2_sd,
       min = h2_min,
-      max = h2_max
+      max = h2_max,
+      range = h2_range
     ),
     loadings = list(
       aggregate = L_agg,
       sd = L_sd,
       min = L_min,
-      max = L_max
+      max = L_max,
+      range = L_range
     ),
     phi = phi_list,
     ind_fac_corres = L_corres_agg,
@@ -706,44 +747,51 @@ if(n == 1){
         aggregate = unname(fit_agg["chisq"]),
         sd = unname(fit_sd["chisq"]),
         min = unname(fit_min["chisq"]),
-        max = unname(fit_max["chisq"])
+        max = unname(fit_max["chisq"]),
+        range = unname(fit_range["chisq"])
       ),
       df = df,
       p_chi = list(
         aggregate = unname(fit_agg["p_chi"]),
         sd = unname(fit_sd["p_chi"]),
         min = unname(fit_min["p_chi"]),
-        max = unname(fit_max["p_chi"])
+        max = unname(fit_max["p_chi"]),
+        range = unname(fit_range["p_chi"])
       ),
       CAF = list(
         aggregate = unname(fit_agg["caf"]),
         sd = unname(fit_sd["caf"]),
         min = unname(fit_min["caf"]),
-        max = unname(fit_max["caf"])
+        max = unname(fit_max["caf"]),
+        range = unname(fit_range["caf"])
       ),
       CFI = list(
         aggregate = unname(fit_agg["cfi"]),
         sd = unname(fit_sd["cfi"]),
         min = unname(fit_min["cfi"]),
-        max = unname(fit_max["cfi"])
+        max = unname(fit_max["cfi"]),
+        range = unname(fit_range["cfi"])
       ),
       RMSEA = list(
         aggregate = unname(fit_agg["rmsea"]),
         sd = unname(fit_sd["rmsea"]),
         min = unname(fit_min["rmsea"]),
-        max = unname(fit_max["rmsea"])
+        max = unname(fit_max["rmsea"]),
+        range = unname(fit_range["rmsea"])
       ),
       AIC = list(
         aggregate = unname(fit_agg["aic"]),
         sd = unname(fit_sd["aic"]),
         min = unname(fit_min["aic"]),
-        max = unname(fit_max["aic"])
+        max = unname(fit_max["aic"]),
+        range = unname(fit_range["aic"])
       ),
       BIC = list(
         aggregate = unname(fit_agg["bic"]),
         sd = unname(fit_sd["bic"]),
         min = unname(fit_min["bic"]),
-        max = unname(fit_max["bic"])
+        max = unname(fit_max["bic"]),
+        range = unname(fit_range["bic"])
       )
     ))
 
@@ -758,35 +806,35 @@ if(n == 1){
   if (dim(L)[3] > 1) {
   	L1 <- L[,, 1]
     for (efa_i in 2:dim(L)[3]) {
-  
+
       Ln <- L[,, efa_i]
-  
+
       # reorder factors according to tuckers congruence coefficient
       # get Tucker's congruence coefficients
       congruence <- .factor_congruence(L1, Ln, skip_checks = TRUE)
-  
+
       # factor order for Ln
       factor_order <- apply(abs(congruence), 1, which.max)
-  
+
       # obtain signs to reflect signs of Ln if necessary
       factor_sign <- sapply(seq_len(n_factors),
                             function(ll, congruence, factor_order){
                               sign(congruence[ll, factor_order[ll]])
                             }, congruence = congruence,
                             factor_order = factor_order)
-  
+
       factor_sign <- rep(factor_sign, each = nrow(L1))
-  
+
       # reorder
       L[,, efa_i] <- Ln[, factor_order] * factor_sign
       L_corres[,, efa_i] <- L_corres[,, efa_i][, factor_order]
       if (isTRUE(extract_phi)) {
         phi[,, efa_i] <- phi[,, efa_i][factor_order, factor_order]
       }
-  
+
     }
   }
-  
+
 
   return(list(L=L, L_corres = L_corres, phi = phi))
 
@@ -823,7 +871,7 @@ if(n == 1){
 
   }
 
-  rotation_temp <- rotation[-(rotation %in% c("promax", "simplimax"))]
+  rotation_temp <- rotation[!(rotation %in% c("promax", "simplimax"))]
 
   if (length(rotation_temp) > 0) {
     g_list[["oblq"]] <- expand.grid(method = method, init_comm = init_comm,
@@ -841,7 +889,7 @@ if(n == 1){
 
 ### create grid for orthogonal rotations in AGGREGATE_EFA
 .orth_grid <- function(method, init_comm, criterion, criterion_type,
-                       abs_eigen, start_method = start_method, rotation, normalize,
+                       abs_eigen, start_method, rotation, normalize,
                        precision, varimax_type){
 
   g_list <- list()
@@ -858,7 +906,7 @@ if(n == 1){
 
   }
 
-  rotation_temp <- rotation[-(rotation %in% c("varimax"))]
+  rotation_temp <- rotation[!(rotation %in% c("varimax"))]
 
   if (length(rotation_temp) > 0) {
     g_list[["orth"]] <- expand.grid(method = method, init_comm = init_comm,
@@ -928,7 +976,7 @@ if(n == 1){
 
     } else {
 
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" rotation = 'oblique' is used but rotation is of length > 1. Can only aggregate EFAs with rotations of the same type ('none', 'orthogonal', or 'oblique').\n"))
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" rotation = 'orthogonal' is used but rotation is of length > 1. Can only aggregate EFAs with rotations of the same type ('none', 'orthogonal', or 'oblique').\n"))
 
     }
 
@@ -949,8 +997,7 @@ if(n == 1){
     t_grid_list[["rth2"]] <- .orth_grid(method = method, init_comm = init_comm,
                                         criterion = criterion, criterion_type = criterion_type,
                                         abs_eigen = abs_eigen, start_method = start_method,
-                                        rotation = c("varimax", "quartimax", "equamax",
-                                                     "bentlerT", "geominT", "bifactorT"),
+                                        rotation = rotation,
                                         normalize = normalize, precision = precision,
                                         varimax_type = varimax_type)
 
