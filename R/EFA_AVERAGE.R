@@ -13,7 +13,7 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
                         start_method = c("psych", "factanal"),
                         use = c("pairwise.complete.obs", "all.obs",
                                   "complete.obs", "everything", "na.or.complete"),
-                          cor_method = c("pearson", "spearman", "kendall"),
+                        cor_method = c("pearson", "spearman", "kendall"),
                         show_progress = TRUE) {
 
 
@@ -457,21 +457,33 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
     type = type,
     n_factors = n_factors,
     N = N,
+    init_comm = init_comm,
+    criterion = criterion,
+    criterion_type = criterion_type,
+    abs_eigen = abs_eigen,
+    varimax_type = varimax_type,
+    normalize = normalize,
+    k_promax = k_promax,
+    k_simplimax = k_simplimax,
+    P_type = P_type,
+    precision = precision,
+    start_method = start_method,
     use = use,
     cor_method = cor_method,
     max_iter = max_iter,
-    precision = precision,
     aggregation = aggregation,
     trim = trim,
     salience_threshold = salience_threshold
   )
+
+  class(agg_list$ind_fac_corres) <- "LOADINGS"
 
   # Create output
   output <- list(
     orig_R = R,
     h2 = agg_list$h2,
     loadings = agg_list$loadings,
-    phi = agg_list$phi_list,
+    Phi = agg_list$phi_list,
     ind_fac_corres = agg_list$ind_fac_corres,
     fit_indices = agg_list$fit_indices,
     implementations_grid = arg_grid,

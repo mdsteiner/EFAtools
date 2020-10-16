@@ -42,7 +42,7 @@ EFA(
   P_type = NA,
   precision = 1e-05,
   order_type = NA,
-  start_method = c("psych", "factanal"),
+  start_method = "psych",
   cor_method = c("pearson", "spearman", "kendall"),
   ...
 )
