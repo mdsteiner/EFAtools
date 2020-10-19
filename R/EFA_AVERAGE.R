@@ -476,14 +476,12 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
     salience_threshold = salience_threshold
   )
 
-  class(agg_list$ind_fac_corres) <- "LOADINGS"
-
   # Create output
   output <- list(
     orig_R = R,
     h2 = agg_list$h2,
     loadings = agg_list$loadings,
-    Phi = agg_list$phi_list,
+    Phi = agg_list$phi,
     ind_fac_corres = agg_list$ind_fac_corres,
     fit_indices = agg_list$fit_indices,
     implementations_grid = arg_grid,
