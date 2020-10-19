@@ -58,9 +58,11 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"), ...) {
                    ". Of the solutions that did not result in an error, ",
       crayon::bold(round(mean(grid$converged == 0, na.rm = TRUE) * 100), "%",
                    sep = ""),
-      " converged and ",
+      " converged, ",
       crayon::bold(round(mean(grid$heywood, na.rm = TRUE) * 100), "%", sep = ""),
-      " contained Heywood cases.", sep = "")
+      " contained Heywood cases, and ",
+      crayon::bold(round(mean(grid$admissible, na.rm = TRUE) * 100), "%", sep = ""),
+      " were admissible.", sep = "")
   cat("\n")
   cat("\n")
 
@@ -83,7 +85,7 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"), ...) {
     cat("\n")
     cat(cli::rule(left = crayon::bold("Loadings"), col = "blue", line = 2))
     cat("\n")
-    print_average(x, what = c("loadings"), stat = stat, aggregation = aggregation)
+    .print_average(x, what = c("loadings"), stat = stat, aggregation = aggregation)
     cat("\n")
 
   ## Print Phi for oblique solutions
@@ -92,7 +94,7 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"), ...) {
     cat("\n")
     cat(cli::rule(left = crayon::bold("Factor Intercorrelations from Oblique Solutions"), col = "blue", line = 2))
     cat("\n")
-    print_average(x, what = c("Phi"), stat = stat, aggregation = aggregation)
+    .print_average(x, what = c("Phi"), stat = stat, aggregation = aggregation)
     cat("\n")
   }
 
@@ -102,7 +104,7 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"), ...) {
                   line = 2))
     cat("\n")
     # # ADAPT HERE:
-    # print_average(x, what = c("vars_accounted"), stat = stat,
+    # .print_average(x, what = c("vars_accounted"), stat = stat,
     # aggregation = aggregation)
     # cat("\n")
 
@@ -157,7 +159,7 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"), ...) {
 
 }
 
-print_average <- function(x, what, stat, aggregation){
+.print_average <- function(x, what, stat, aggregation){
 
   if("aggregate" %in% stat){
 

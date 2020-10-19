@@ -483,7 +483,7 @@ if(n == 1){
 # for progress bar in N_FACTORS
 .show_progress <- function(x, what, done = FALSE) {
 
-  cat("\r", rep(" ", 30))
+  cat("\r", rep(" ", ifelse(options("width") > 30, options("width"), 30)))
   to <- length(x)
   if (isFALSE(done)) {
     curr <- which(x == what)
@@ -503,7 +503,7 @@ if(n == 1){
 # for progress bar in AGGREGATE_EFA
 .show_agg_progress <- function(emoji, what, done = FALSE) {
 
-  cat("\r", rep(" ", 30))
+  cat("\r", rep(" ", ifelse(options("width") > 30, options("width"), 30)))
   if (isFALSE(done)) {
     #cat("\r", paste0(curr, "/", to, ":"), "Running", what)
     cat("\r", emoji, what)
@@ -521,6 +521,7 @@ if(n == 1){
   L <- array(NA_real_, c(ncol(R), n_factors, n_efa))
   L_corres <- array(NA, c(ncol(R), n_factors, n_efa))
   h2 <- matrix(NA_real_, nrow = n_efa, ncol = ncol(R))
+  vars_accounted <- array(NA_real_, c(3, n_factors, n_efa))
 
 
   if (any(rotation %in% c("promax", "oblimin", "quartimin", "simplimax",
@@ -536,6 +537,7 @@ if(n == 1){
   errors <- rep(FALSE, n_efa)
   error_m <- rep(NA_character_, n_efa)
   heywood <- rep(NA, n_efa)
+  admissible <- rep(NA, n_efa)
   aic <- rep(NA_real_, n_efa)
   bic <- rep(NA_real_, n_efa)
   chisq <- rep(NA_real_, n_efa)
@@ -546,8 +548,10 @@ if(n == 1){
 
   if (all(rotation == "none")) {
     load_ind <- "unrot_loadings"
+    var_ind <- "vars_accounted"
   } else {
     load_ind <- "rot_loadings"
+    var_ind <- "vars_accounted_rot"
   }
 
     for (row_i in seq_len(n_efa)) {
@@ -563,8 +567,8 @@ if(n == 1){
         converged[row_i] <- efa_temp$convergence
 
         if (efa_temp$convergence == 0) {
-
-          heywood[row_i] <- any(efa_temp$h2 >= .998)
+          has_heywood <- any(efa_temp$h2 >= .998)
+          heywood[row_i] <- has_heywood
           aic[row_i] <- efa_temp$fit_indices$AIC
           bic[row_i] <- efa_temp$fit_indices$BIC
           chisq[row_i] <- efa_temp$fit_indices$chi
@@ -575,7 +579,13 @@ if(n == 1){
 
           h2[row_i, ] <- efa_temp$h2
           L[,, row_i] <- efa_temp[[load_ind]]
-          L_corres[,, row_i] <- abs(efa_temp[[load_ind]]) >= salience_threshold
+          vars_accounted[,, row_i] <- efa_temp[[var_ind]][c(1, 2, 4),]
+          temp_corres <- abs(efa_temp[[load_ind]]) >= salience_threshold
+          L_corres[,, row_i] <-temp_corres
+
+          admissible[row_i] <- ifelse(has_heywood || any(colSums(temp_corres) < 2),
+                                      FALSE, TRUE)
+
 
           if (isTRUE(extract_phi)) {
             phi[,, row_i] <- efa_temp$Phi
@@ -600,11 +610,13 @@ if(n == 1){
     phi = phi,
     extract_phi = extract_phi,
     h2 = h2,
+    vars_accounted = vars_accounted,
     for_grid = data.frame(
       errors = errors,
       error_m = error_m,
       converged = converged,
       heywood = heywood,
+      admissible = admissible,
       chisq = chisq,
       p_chi = p_chi,
       caf = caf,
@@ -620,8 +632,8 @@ if(n == 1){
 }
 
 ### aggregate arrays
-.aggregate_values <- function(L, L_corres, h2, phi, extract_phi, aggregation,
-                              trim, for_grid, df, ind_names) {
+.aggregate_values <- function(vars_accounted, L, L_corres, h2, phi, extract_phi,
+                              aggregation, trim, for_grid, df, ind_names) {
 
   if (aggregation == "mean") {
 
@@ -630,6 +642,7 @@ if(n == 1){
       L_agg <- rowMeans(L, na.rm = TRUE, dims = 2)
       h2_agg <- colMeans(h2, na.rm = TRUE)
       fit_agg <- colMeans(for_grid, na.rm = TRUE)
+      vars_accounted_agg <- rowMeans(vars_accounted, na.rm = TRUE, dims = 2)
 
 
       if (isTRUE(extract_phi)) {
@@ -639,6 +652,8 @@ if(n == 1){
       L_agg <- apply(L, 1:2, mean, na.rm = TRUE, trim = trim)
       h2_agg <- apply(L, 2, mean, na.rm = TRUE, trim = trim)
       fit_agg <- apply(for_grid, 2, mean, na.rm = TRUE, trim = trim)
+      vars_accounted_agg <- apply(vars_accounted, 1:2, mean, na.rm = TRUE,
+                                  trim = trim)
 
       if (isTRUE(extract_phi)) {
         phi_agg <- apply(phi, 1:2, mean, na.rm = TRUE, trim = trim)
@@ -649,10 +664,12 @@ if(n == 1){
     L_agg <- apply(L, 1:2, median, na.rm = TRUE)
     h2_agg <- apply(L, 2, median, na.rm = TRUE)
     fit_agg <- apply(for_grid, 2, median, na.rm = TRUE)
+    vars_accounted_agg <- apply(vars_accounted, 1:2, median, na.rm = TRUE)
     if (isTRUE(extract_phi)) {
       phi_agg <- apply(phi, 1:2, median, na.rm = TRUE)
     }
   }
+
 
   nf <- ncol(L_agg)
 
@@ -679,6 +696,26 @@ if(n == 1){
   colnames(L_sd) <- paste0("F", 1:nf)
 
 
+
+  vars_accounted_min <- apply(vars_accounted, 1:2, min, na.rm = TRUE)
+  vars_accounted_max <- apply(vars_accounted, 1:2, max, na.rm = TRUE)
+  vars_accounted_range <- vars_accounted_max - vars_accounted_min
+  vars_accounted_sd <- apply(vars_accounted, 1:2, sd, na.rm = TRUE)
+
+
+  var_names <- c("SS loadings", "Prop Tot Var", "Prop Comm Var")
+  rownames(vars_accounted_agg) <- var_names
+  colnames(vars_accounted_agg) <- paste0("F", 1:nf)
+  rownames(vars_accounted_min) <- var_names
+  colnames(vars_accounted_min) <- paste0("F", 1:nf)
+  rownames(vars_accounted_max) <- var_names
+  colnames(vars_accounted_max) <- paste0("F", 1:nf)
+  rownames(vars_accounted_range) <- var_names
+  colnames(vars_accounted_range) <- paste0("F", 1:nf)
+  rownames(vars_accounted_sd) <- var_names
+  colnames(vars_accounted_sd) <- paste0("F", 1:nf)
+
+
   h2_min <- apply(h2, 2, min, na.rm = TRUE)
   h2_max <- apply(h2, 2, max, na.rm = TRUE)
   h2_range <- h2_max - h2_min
@@ -694,6 +731,12 @@ if(n == 1){
   fit_max <- apply(for_grid, 2, max, na.rm = TRUE)
   fit_range <- fit_max - fit_min
   fit_sd <- apply(for_grid, 2, sd, na.rm = TRUE)
+
+  fit_agg[is.infinite(fit_agg)] <- NA
+  fit_min[is.infinite(fit_min)] <- NA
+  fit_max[is.infinite(fit_max)] <- NA
+  fit_range[is.infinite(fit_range)] <- NA
+  fit_sd[is.infinite(fit_sd)] <- NA
 
   if (isTRUE(extract_phi)) {
     phi_min <- apply(phi, 1:2, min, na.rm = TRUE)
@@ -741,6 +784,13 @@ if(n == 1){
       range = L_range
     ),
     phi = phi_list,
+    vars_accounted = list(
+      aggregate = vars_accounted_agg,
+      sd = vars_accounted_sd,
+      min = vars_accounted_min,
+      max = vars_accounted_max,
+      range = vars_accounted_range
+    ),
     ind_fac_corres = L_corres_agg,
     fit_indices = list(
       chi = list(
@@ -801,7 +851,7 @@ if(n == 1){
 
 
 ### reorder arrays according to factor congruence
-.array_reorder <- function(L, L_corres, phi, extract_phi, n_factors) {
+.array_reorder <- function(vars_accounted, L, L_corres, phi, extract_phi, n_factors) {
 
   if (dim(L)[3] > 1) {
   	L1 <- L[,, 1]
@@ -828,6 +878,7 @@ if(n == 1){
       # reorder
       L[,, efa_i] <- Ln[, factor_order] * factor_sign
       L_corres[,, efa_i] <- L_corres[,, efa_i][, factor_order]
+      vars_accounted[,, efa_i] <- vars_accounted[,, efa_i][, factor_order]
       if (isTRUE(extract_phi)) {
         phi[,, efa_i] <- phi[,, efa_i][factor_order, factor_order]
       }
@@ -836,7 +887,7 @@ if(n == 1){
   }
 
 
-  return(list(L=L, L_corres = L_corres, phi = phi))
+  return(list(L=L, L_corres = L_corres, phi = phi, vars_accounted = vars_accounted))
 
 }
 

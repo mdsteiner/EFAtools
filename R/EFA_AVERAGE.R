@@ -3,16 +3,16 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
                         salience_threshold = .3,
                         max_iter = 1e4,
                         init_comm = c("smc", "mac", "unity"),
-                        criterion = c(1e-3, 1e-6),
-                        criterion_type = c("sum", "max_individual"),
-                        abs_eigen = c(TRUE, FALSE),
+                        criterion = c(1e-3),
+                        criterion_type = c("sum"),
+                        abs_eigen = c(TRUE),
                         varimax_type = c("svd", "kaiser"),
                         normalize = TRUE,
                         k_promax = 2:4, k_simplimax = ncol(x),
                         P_type = c("norm", "unnorm"), precision = 1e-5,
                         start_method = c("psych", "factanal"),
                         use = c("pairwise.complete.obs", "all.obs",
-                                  "complete.obs", "everything", "na.or.complete"),
+                                "complete.obs", "everything", "na.or.complete"),
                         cor_method = c("pearson", "spearman", "kendall"),
                         show_progress = TRUE) {
 
@@ -424,6 +424,10 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
     varimax_types = arg_grid$varimax_type, k_ps = arg_grid$k_promax,
     k_ss = arg_grid$k_simplimax, normalizes = arg_grid$normalize,
     P_types = arg_grid$P_type, start_methods = arg_grid$start_method)
+
+    if (n_efa %% 10 != 0){
+      efa_progress_bar(message = "Done Running EFAs ")
+    }
   })
 
   ### Extract relevant information from EFA outputs
@@ -436,14 +440,14 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
     .show_agg_progress("\U0001f6b6", "Reordering factors...")
   }
 
-  re_list <- .array_reorder(ext_list$L, ext_list$L_corres, ext_list$phi,
-                            ext_list$extract_phi, n_factors)
+  re_list <- .array_reorder(ext_list$vars_accounted, ext_list$L, ext_list$L_corres,
+                            ext_list$phi, ext_list$extract_phi, n_factors)
 
   if (isTRUE(show_progress)) {
     .show_agg_progress("\U0001f3c3", "Aggregating data...")
   }
   agg_list <- suppressWarnings(
-    .aggregate_values(re_list$L, re_list$L_corres, ext_list$h2, re_list$phi,
+    .aggregate_values(re_list$vars_accounted, re_list$L, re_list$L_corres, ext_list$h2, re_list$phi,
                       ext_list$extract_phi, aggregation, trim,
                       ext_list$for_grid[,c("chisq", "p_chi", "caf", "cfi",
                                            "rmsea", "aic", "bic")], df, colnames(R)))
@@ -483,6 +487,7 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
     loadings = agg_list$loadings,
     Phi = agg_list$phi,
     ind_fac_corres = agg_list$ind_fac_corres,
+    vars_accounted = agg_list$vars_accounted,
     fit_indices = agg_list$fit_indices,
     implementations_grid = arg_grid,
     efa_list = efa_list,
