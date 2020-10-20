@@ -738,6 +738,15 @@ if(n == 1){
   fit_range[is.infinite(fit_range)] <- NA
   fit_sd[is.infinite(fit_sd)] <- NA
 
+  fit_indices <- data.frame(
+    index = names(fit_agg),
+    aggregate = fit_agg,
+    sd = fit_sd,
+    range = fit_range,
+    min = fit_min,
+    max = fit_max
+  )
+
   if (isTRUE(extract_phi)) {
     phi_min <- apply(phi, 1:2, min, na.rm = TRUE)
     phi_max <- apply(phi, 1:2, max, na.rm = TRUE)
@@ -792,58 +801,7 @@ if(n == 1){
       range = vars_accounted_range
     ),
     ind_fac_corres = L_corres_agg,
-    fit_indices = list(
-      chi = list(
-        aggregate = unname(fit_agg["chisq"]),
-        sd = unname(fit_sd["chisq"]),
-        min = unname(fit_min["chisq"]),
-        max = unname(fit_max["chisq"]),
-        range = unname(fit_range["chisq"])
-      ),
-      df = df,
-      p_chi = list(
-        aggregate = unname(fit_agg["p_chi"]),
-        sd = unname(fit_sd["p_chi"]),
-        min = unname(fit_min["p_chi"]),
-        max = unname(fit_max["p_chi"]),
-        range = unname(fit_range["p_chi"])
-      ),
-      CAF = list(
-        aggregate = unname(fit_agg["caf"]),
-        sd = unname(fit_sd["caf"]),
-        min = unname(fit_min["caf"]),
-        max = unname(fit_max["caf"]),
-        range = unname(fit_range["caf"])
-      ),
-      CFI = list(
-        aggregate = unname(fit_agg["cfi"]),
-        sd = unname(fit_sd["cfi"]),
-        min = unname(fit_min["cfi"]),
-        max = unname(fit_max["cfi"]),
-        range = unname(fit_range["cfi"])
-      ),
-      RMSEA = list(
-        aggregate = unname(fit_agg["rmsea"]),
-        sd = unname(fit_sd["rmsea"]),
-        min = unname(fit_min["rmsea"]),
-        max = unname(fit_max["rmsea"]),
-        range = unname(fit_range["rmsea"])
-      ),
-      AIC = list(
-        aggregate = unname(fit_agg["aic"]),
-        sd = unname(fit_sd["aic"]),
-        min = unname(fit_min["aic"]),
-        max = unname(fit_max["aic"]),
-        range = unname(fit_range["aic"])
-      ),
-      BIC = list(
-        aggregate = unname(fit_agg["bic"]),
-        sd = unname(fit_sd["bic"]),
-        min = unname(fit_min["bic"]),
-        max = unname(fit_max["bic"]),
-        range = unname(fit_range["bic"])
-      )
-    ))
+    fit_indices = fit_indices)
 
   return(out)
 }
