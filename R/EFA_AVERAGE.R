@@ -449,7 +449,7 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
   agg_list <- suppressWarnings(
     .aggregate_values(re_list$vars_accounted, re_list$L, re_list$L_corres, ext_list$h2, re_list$phi,
                       ext_list$extract_phi, aggregation, trim,
-                      ext_list$for_grid[,c("chisq", "p_chi", "caf", "cfi",
+                      ext_list$for_grid[, c("chisq", "p_chi", "caf", "cfi",
                                            "rmsea", "aic", "bic")], df, colnames(R)))
 
   arg_grid <- cbind(arg_grid, ext_list$for_grid)
