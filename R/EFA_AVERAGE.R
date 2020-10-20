@@ -4,7 +4,7 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
                         max_iter = 1e4,
                         init_comm = c("smc", "mac", "unity"),
                         criterion = c(1e-3),
-                        criterion_type = c("sum"),
+                        criterion_type = c("sum", "max_individual"),
                         abs_eigen = c(TRUE),
                         varimax_type = c("svd", "kaiser"),
                         normalize = TRUE,

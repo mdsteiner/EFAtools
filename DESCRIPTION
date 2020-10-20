@@ -56,7 +56,8 @@ Imports:
     future.apply,
     future,
     GPArotation,
-    checkmate
+    checkmate,
+    tidyr
 LinkingTo: 
     Rcpp, RcppArmadillo
 Suggests: 

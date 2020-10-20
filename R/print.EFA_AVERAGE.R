@@ -3,6 +3,9 @@
 #' Print Method showing a summarized output of the \link{EFA_AVERAGE} function
 #'
 #' @param x list. An object of class EFA_AVERAGE to be printed
+#' @param stat. character. A vector with the statistics to print. Possible inputs
+#' are "aggregate", "sd", "range", "min", and "max". Default is "aggregate" and
+#' "range".
 #' @param ...  Further arguments for print.
 #'
 #' @export
@@ -16,7 +19,7 @@
 #'
 print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"), ...) {
 
-  checkmate::assert_subset(stat, c("aggregate", "sd", "min", "max", "range"),
+  checkmate::assert_subset(stat, c("aggregate", "sd", "range", "min", "max"),
                            empty.ok = FALSE)
 
   # extract settings
@@ -38,9 +41,6 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"), ...) {
   # extract other stuff
   no_efas <- nrow(grid)
   fit <- x$fit_indices
-  loadings <- x$loadings
-  Phi <- x$Phi
-  #vars_accounted <- x$vars_accounted
 
   cat("\n")
   cat("Averaging performed with aggregation method ",
@@ -51,7 +51,6 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"), ...) {
       .settings_string(varied_settings), ".", sep = "")
   cat("\n")
 
-  # ADD ADMISSIBLE SOLUTIONS
   cat("\n")
   cat("The error rate is at ",
       crayon::bold(round(mean(grid$errors, na.rm = TRUE) * 100), "%", sep = ""),
@@ -103,10 +102,9 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"), ...) {
     cat(cli::rule(left = crayon::bold("Variances Accounted for"), col = "blue",
                   line = 2))
     cat("\n")
-    # # ADAPT HERE:
-    # .print_average(x, what = c("vars_accounted"), stat = stat,
-    # aggregation = aggregation)
-    # cat("\n")
+    .print_average(x, what = c("vars_accounted"), stat = stat,
+                   aggregation = aggregation)
+    cat("\n")
 
 
   # Print fit indices
@@ -181,17 +179,17 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"), ...) {
 
     if(what == "loadings"){
 
-      print(loadings$aggregate)
+      print(x$loadings$aggregate)
 
       } else if(what == "Phi"){
 
-        cat(.get_compare_matrix(Phi$aggregate, r_red = Inf, n_char = 17,
+        cat(.get_compare_matrix(x$Phi$aggregate, r_red = Inf, n_char = 17,
                                 var_names = paste0("F",
-                                                   seq_len(ncol(Phi$aggregate)))))
+                                                   seq_len(ncol(x$Phi$aggregate)))))
 
       } else {
 
-        cat(.get_compare_matrix(vars_accounted$aggregate, r_red = Inf,
+        cat(.get_compare_matrix(x$vars_accounted$aggregate, r_red = Inf,
                                 n_char = 17))
 
       }
@@ -207,17 +205,17 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"), ...) {
 
       if(what == "loadings"){
 
-        cat(.get_compare_matrix(loadings$sd, r_red = Inf, n_char = 17))
+        cat(.get_compare_matrix(x$loadings$sd, r_red = Inf, n_char = 17))
 
       } else if(what == "Phi"){
 
-        cat(.get_compare_matrix(Phi$sd, r_red = Inf, n_char = 17,
+        cat(.get_compare_matrix(x$Phi$sd, r_red = Inf, n_char = 17,
                                 var_names = paste0("F",
-                                                   seq_len(ncol(Phi$sd)))))
+                                                   seq_len(ncol(x$Phi$sd)))))
 
       } else {
 
-        cat(.get_compare_matrix(vars_accounted$sd, r_red = Inf,
+        cat(.get_compare_matrix(x$vars_accounted$sd, r_red = Inf,
                                 n_char = 17))
 
       }
@@ -233,17 +231,17 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"), ...) {
 
     if(what == "loadings"){
 
-      cat(.get_compare_matrix(loadings$range, r_red = Inf, n_char = 17))
+      cat(.get_compare_matrix(x$loadings$range, r_red = Inf, n_char = 17))
 
     } else if(what == "Phi"){
 
-      cat(.get_compare_matrix(Phi$range, r_red = Inf, n_char = 17,
+      cat(.get_compare_matrix(x$Phi$range, r_red = Inf, n_char = 17,
                               var_names = paste0("F",
-                                                 seq_len(ncol(Phi$range)))))
+                                                 seq_len(ncol(x$Phi$range)))))
 
     } else {
 
-      cat(.get_compare_matrix(vars_accounted$range, r_red = Inf,
+      cat(.get_compare_matrix(x$vars_accounted$range, r_red = Inf,
                               n_char = 17))
 
     }
@@ -259,17 +257,17 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"), ...) {
 
     if(what == "loadings"){
 
-      print(loadings$min)
+      print(x$loadings$min)
 
     } else if(what == "Phi"){
 
-      cat(.get_compare_matrix(Phi$min, r_red = Inf, n_char = 17,
+      cat(.get_compare_matrix(x$Phi$min, r_red = Inf, n_char = 17,
                               var_names = paste0("F",
-                                                 seq_len(ncol(Phi$min)))))
+                                                 seq_len(ncol(x$Phi$min)))))
 
     } else {
 
-      cat(.get_compare_matrix(vars_accounted$min, r_red = Inf,
+      cat(.get_compare_matrix(x$vars_accounted$min, r_red = Inf,
                               n_char = 17))
 
     }
@@ -285,17 +283,17 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"), ...) {
 
     if(what == "loadings"){
 
-      print(loadings$max)
+      print(x$loadings$max)
 
     } else if(what == "Phi"){
 
-      cat(.get_compare_matrix(Phi$max, r_red = Inf, n_char = 17,
+      cat(.get_compare_matrix(x$Phi$max, r_red = Inf, n_char = 17,
                               var_names = paste0("F",
                                                  seq_len(ncol(x$Phi$max)))))
 
     } else {
 
-      cat(.get_compare_matrix(vars_accounted$max, r_red = Inf,
+      cat(.get_compare_matrix(x$vars_accounted$max, r_red = Inf,
                               n_char = 17))
 
     }
