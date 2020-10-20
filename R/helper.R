@@ -599,6 +599,7 @@ if(n == 1){
   if (length(excl) > 0) {
     L <- L[,, -excl]
     L_corres <- L_corres[,, -excl]
+    vars_accounted <- vars_accounted[,, -excl]
     if (isTRUE(extract_phi)) {
       phi <- phi[,, -excl]
     }
@@ -672,28 +673,29 @@ if(n == 1){
 
 
   nf <- ncol(L_agg)
+  f_names <- paste0("F", 1:nf)
 
   L_corres_agg <- rowMeans(L_corres, na.rm = TRUE, dims = 2)
   row.names(L_corres_agg) <- ind_names
-  colnames(L_corres_agg) <- paste0("F", 1:nf)
+  colnames(L_corres_agg) <- f_names
 
   L_min <- apply(L, 1:2, min, na.rm = TRUE)
   L_max <- apply(L, 1:2, max, na.rm = TRUE)
   L_range <- L_max - L_min
   L_sd <- apply(L, 1:2, sd, na.rm = TRUE)
   rownames(L_agg) <- ind_names
-  colnames(L_agg) <- paste0("F", 1:nf)
+  colnames(L_agg) <- f_names
   class(L_agg) <- "LOADINGS"
   rownames(L_min) <- ind_names
-  colnames(L_min) <- paste0("F", 1:nf)
+  colnames(L_min) <- f_names
   class(L_min) <- "LOADINGS"
   rownames(L_max) <- ind_names
-  colnames(L_max) <- paste0("F", 1:nf)
+  colnames(L_max) <- f_names
   class(L_max) <- "LOADINGS"
   rownames(L_range) <- ind_names
-  colnames(L_range) <- paste0("F", 1:nf)
+  colnames(L_range) <- f_names
   rownames(L_sd) <- ind_names
-  colnames(L_sd) <- paste0("F", 1:nf)
+  colnames(L_sd) <- f_names
 
 
 
@@ -705,15 +707,15 @@ if(n == 1){
 
   var_names <- c("SS loadings", "Prop Tot Var", "Prop Comm Var")
   rownames(vars_accounted_agg) <- var_names
-  colnames(vars_accounted_agg) <- paste0("F", 1:nf)
+  colnames(vars_accounted_agg) <- f_names
   rownames(vars_accounted_min) <- var_names
-  colnames(vars_accounted_min) <- paste0("F", 1:nf)
+  colnames(vars_accounted_min) <- f_names
   rownames(vars_accounted_max) <- var_names
-  colnames(vars_accounted_max) <- paste0("F", 1:nf)
+  colnames(vars_accounted_max) <- f_names
   rownames(vars_accounted_range) <- var_names
-  colnames(vars_accounted_range) <- paste0("F", 1:nf)
+  colnames(vars_accounted_range) <- f_names
   rownames(vars_accounted_sd) <- var_names
-  colnames(vars_accounted_sd) <- paste0("F", 1:nf)
+  colnames(vars_accounted_sd) <- f_names
 
 
   h2_min <- apply(h2, 2, min, na.rm = TRUE)

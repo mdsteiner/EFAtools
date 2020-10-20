@@ -174,10 +174,11 @@ ext_rot <- .extract_data(efa_list_rot, test_models$baseline$cormat, 3, 3, "proma
 test_that(".extract_data works", {
   ### tests for ext_a with one non-convergence; no rotation; no error
   expect_is(ext_a, "list")
-  expect_named(ext_a, c("L", "L_corres", "phi", "extract_phi", "h2", "for_grid"))
+  expect_named(ext_a, c("L", "L_corres", "phi", "extract_phi", "h2",
+                        "vars_accounted", "for_grid"))
   expect_named(ext_a$for_grid, c("errors", "error_m", "converged", "heywood",
-                                 "chisq", "p_chi", "caf", "cfi", "rmsea", "aic",
-                                 "bic"))
+                                 "admissible", "chisq", "p_chi", "caf", "cfi",
+                                 "rmsea", "aic", "bic"))
   expect_is(ext_a$L, "array")
   expect_equal(dim(ext_a$L), c(ncol(test_models$baseline$cormat), 3, 3))
   expect_is(ext_a$L_corres, "array")
@@ -199,13 +200,16 @@ test_that(".extract_data works", {
   expect_equal(ext_a$for_grid$rmsea < .05, c(NA, TRUE, TRUE, NA))
   expect_equal(sign(ext_a$for_grid$aic), c(NA, -1, -1, NA))
   expect_equal(sign(ext_a$for_grid$bic), c(NA, -1, -1, NA))
+  expect_is(ext_a$vars_accounted, "array")
+  expect_equal(dim(ext_a$vars_accounted), c(3, 3, 3))
 
   ### tests for ext_er with one error; no rotation
   expect_is(ext_er, "list")
-  expect_named(ext_er, c("L", "L_corres", "phi", "extract_phi", "h2", "for_grid"))
+  expect_named(ext_er, c("L", "L_corres", "phi", "extract_phi", "h2",
+                         "vars_accounted", "for_grid"))
   expect_named(ext_er$for_grid, c("errors", "error_m", "converged", "heywood",
-                                 "chisq", "p_chi", "caf", "cfi", "rmsea", "aic",
-                                 "bic"))
+                                  "admissible", "chisq", "p_chi", "caf", "cfi",
+                                  "rmsea", "aic", "bic"))
   expect_is(ext_er$L, "array")
   expect_equal(dim(ext_er$L), c(ncol(test_models$baseline$cormat), 3, 3))
   expect_is(ext_er$L_corres, "array")
@@ -227,14 +231,17 @@ test_that(".extract_data works", {
   expect_equal(ext_er$for_grid$rmsea < .05, c(NA, TRUE, TRUE, NA))
   expect_equal(sign(ext_er$for_grid$aic), c(NA, -1, -1, NA))
   expect_equal(sign(ext_er$for_grid$bic), c(NA, -1, -1, NA))
+  expect_is(ext_er$vars_accounted, "array")
+  expect_equal(dim(ext_er$vars_accounted), c(3, 3, 3))
 
 
   ### tests for ext_rot with no errors; promax rotation
   expect_is(ext_rot, "list")
-  expect_named(ext_rot, c("L", "L_corres", "phi", "extract_phi", "h2", "for_grid"))
+  expect_named(ext_rot, c("L", "L_corres", "phi", "extract_phi", "h2",
+                          "vars_accounted", "for_grid"))
   expect_named(ext_rot$for_grid, c("errors", "error_m", "converged", "heywood",
-                                  "chisq", "p_chi", "caf", "cfi", "rmsea", "aic",
-                                  "bic"))
+                                   "admissible", "chisq", "p_chi", "caf", "cfi",
+                                   "rmsea", "aic", "bic"))
   expect_is(ext_rot$L, "array")
   expect_equal(dim(ext_rot$L), c(ncol(test_models$baseline$cormat), 3, 3))
   expect_is(ext_rot$L_corres, "array")
@@ -255,6 +262,8 @@ test_that(".extract_data works", {
   expect_equal(ext_rot$for_grid$rmsea < .05, c(NA, TRUE, TRUE))
   expect_equal(sign(ext_rot$for_grid$aic), c(NA, -1, -1))
   expect_equal(sign(ext_rot$for_grid$bic), c(NA, -1, -1))
+  expect_is(ext_rot$vars_accounted, "array")
+  expect_equal(dim(ext_rot$vars_accounted), c(3, 3, 3))
 })
 
 
@@ -264,16 +273,14 @@ agg_mean_NA <- .aggregate_values(L = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
                                                    1, 0, 0, 0, 0, 1, 0, 1, 0,
                                                    1, 0, 0, 0, 1, 0, 0, 0, 1),
                                                  c(3, 3, 3)),
+                                vars_accounted = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
+                                                       c(3, 3, 3)),
                                 h2 = matrix(rep(c(1, 3, 4), each = 3), ncol = 3, byrow = TRUE),
                                 phi = NA,
                                 extract_phi = FALSE,
                                 aggregation = "mean",
                                 trim = 0,
-                                for_grid = data.frame(errors = c(1, 3, 4),
-                                                      error_m = c(1, 3, 4),
-                                                      converged = c(1, 3, 4),
-                                                      heywood = c(1, 3, 4),
-                                                      chisq = c(1, 3, 4),
+                                for_grid = data.frame(chisq = c(1, 3, 4),
                                                       p_chi = c(1, 3, 4),
                                                       caf = c(1, 3, 4),
                                                       cfi = c(1, 3, 4),
@@ -288,16 +295,14 @@ agg_mean_NA_t01 <- .aggregate_values(L = array(c(rep(1, 9), rep(3, 9), rep(4, 9)
                                                     1, 0, 0, 0, 0, 1, 0, 1, 0,
                                                     1, 0, 0, 0, 1, 0, 0, 0, 1),
                                                   c(3, 3, 3)),
+                                 vars_accounted = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
+                                                        c(3, 3, 3)),
                                  h2 = matrix(rep(c(1, 3, 4), each = 3), ncol = 3, byrow = TRUE),
                                  phi = NA,
                                  extract_phi = FALSE,
                                  aggregation = "mean",
                                  trim = .5,
-                                 for_grid = data.frame(errors = c(1, 3, 4),
-                                                       error_m = c(1, 3, 4),
-                                                       converged = c(1, 3, 4),
-                                                       heywood = c(1, 3, 4),
-                                                       chisq = c(1, 3, 4),
+                                 for_grid = data.frame(chisq = c(1, 3, 4),
                                                        p_chi = c(1, 3, 4),
                                                        caf = c(1, 3, 4),
                                                        cfi = c(1, 3, 4),
@@ -312,17 +317,15 @@ agg_mean <- .aggregate_values(L = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
                                                     1, 0, 0, 0, 0, 1, 0, 1, 0,
                                                     1, 0, 0, 0, 1, 0, 0, 0, 1),
                                                   c(3, 3, 3)),
+                              vars_accounted = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
+                                                     c(3, 3, 3)),
                                  h2 = matrix(rep(c(1, 3, 4), each = 3), ncol = 3, byrow = TRUE),
                                  phi = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
                                              c(3, 3, 3)),
                                  extract_phi = TRUE,
                                  aggregation = "mean",
                                  trim = 0,
-                                 for_grid = data.frame(errors = c(1, 3, 4),
-                                                       error_m = c(1, 3, 4),
-                                                       converged = c(1, 3, 4),
-                                                       heywood = c(1, 3, 4),
-                                                       chisq = c(1, 3, 4),
+                                 for_grid = data.frame(chisq = c(1, 3, 4),
                                                        p_chi = c(1, 3, 4),
                                                        caf = c(1, 3, 4),
                                                        cfi = c(1, 3, 4),
@@ -336,17 +339,15 @@ agg_median <- .aggregate_values(L = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
                                                  1, 0, 0, 0, 0, 1, 0, 1, 0,
                                                  1, 0, 0, 0, 1, 0, 0, 0, 1),
                                                c(3, 3, 3)),
+                              vars_accounted = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
+                                                     c(3, 3, 3)),
                               h2 = matrix(rep(c(1, 3, 4), each = 3), ncol = 3, byrow = TRUE),
                               phi = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
                                           c(3, 3, 3)),
                               extract_phi = TRUE,
                               aggregation = "median",
                               trim = 0,
-                              for_grid = data.frame(errors = c(1, 3, 4),
-                                                    error_m = c(1, 3, 4),
-                                                    converged = c(1, 3, 4),
-                                                    heywood = c(1, 3, 4),
-                                                    chisq = c(1, 3, 4),
+                              for_grid = data.frame(chisq = c(1, 3, 4),
                                                     p_chi = c(1, 3, 4),
                                                     caf = c(1, 3, 4),
                                                     cfi = c(1, 3, 4),
@@ -361,16 +362,14 @@ agg_median_NA <- .aggregate_values(L = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
                                                     1, 0, 0, 0, 0, 1, 0, 1, 0,
                                                     1, 0, 0, 0, 1, 0, 0, 0, 1),
                                                   c(3, 3, 3)),
+                                 vars_accounted = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
+                                                        c(3, 3, 3)),
                                  h2 = matrix(rep(c(1, 3, 4), each = 3), ncol = 3, byrow = TRUE),
                                  phi = NA,
                                  extract_phi = FALSE,
                                  aggregation = "median",
                                  trim = 0.1,
-                                 for_grid = data.frame(errors = c(1, 3, 4),
-                                                       error_m = c(1, 3, 4),
-                                                       converged = c(1, 3, 4),
-                                                       heywood = c(1, 3, 4),
-                                                       chisq = c(1, 3, 4),
+                                 for_grid = data.frame(chisq = c(1, 3, 4),
                                                        p_chi = c(1, 3, 4),
                                                        caf = c(1, 3, 4),
                                                        cfi = c(1, 3, 4),
@@ -382,7 +381,8 @@ agg_median_NA <- .aggregate_values(L = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
 test_that(".aggregate_values works", {
   ### tests for agg_mean_NA with extract_phi = FALSE and trim = 0
   expect_is(agg_mean_NA, "list")
-  expect_named(agg_mean_NA, c("h2", "loadings", "phi", "ind_fac_corres", "fit_indices"))
+  expect_named(agg_mean_NA, c("h2", "loadings", "phi", "vars_accounted",
+                              "ind_fac_corres", "fit_indices"))
   expect_is(agg_mean_NA$h2, "list")
   expect_named(agg_mean_NA$h2, c("aggregate", "sd", "min", "max", "range"))
   expect_is(agg_mean_NA$h2$aggregate, "numeric")
@@ -399,100 +399,40 @@ test_that(".aggregate_values works", {
   expect_equal(unclass(agg_mean_NA$loadings$min), matrix(rep(1, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
   expect_equal(unclass(agg_mean_NA$loadings$max), matrix(rep(4, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
   expect_equal(agg_mean_NA$loadings$range, matrix(rep(3, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))), tolerance = .01)
+  expect_is(agg_mean_NA$vars_accounted, "list")
+  expect_named(agg_mean_NA$vars_accounted, c("aggregate", "sd", "min", "max", "range"))
+  expect_is(agg_mean_NA$vars_accounted$aggregate, "matrix")
+  expect_equal(round(agg_mean_NA$vars_accounted$aggregate, 2), matrix(rep(2.67, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
+  expect_equal(agg_mean_NA$vars_accounted$sd, matrix(rep(1.527525, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))), tolerance = .01)
+  expect_equal(agg_mean_NA$vars_accounted$min, matrix(rep(1, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
+  expect_equal(agg_mean_NA$vars_accounted$max, matrix(rep(4, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
+  expect_equal(agg_mean_NA$vars_accounted$range, matrix(rep(3, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))), tolerance = .01)
   expect_equal(agg_mean_NA$phi, NA)
   expect_is(agg_mean_NA$ind_fac_corres, "matrix")
   expect_equal(round(agg_mean_NA$ind_fac_corres, 2),
                matrix(c(1, 0, 0, 0, .67, .33, 0, .33, .67), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
-  expect_is(agg_mean_NA$fit_indices, "list")
-  expect_named(agg_mean_NA$fit_indices, c("chi", "df", "p_chi", "CAF", "CFI",
-                                          "RMSEA", "AIC", "BIC"))
-  expect_is(agg_mean_NA$fit_indices$chi, "list")
-  expect_is(agg_mean_NA$fit_indices$chi$aggregate, "numeric")
-  expect_equal(round(agg_mean_NA$fit_indices$chi$aggregate, 2), 2.67)
-  expect_is(agg_mean_NA$fit_indices$chi$sd, "numeric")
-  expect_equal(round(agg_mean_NA$fit_indices$chi$sd, 2), 1.53)
-  expect_is(agg_mean_NA$fit_indices$chi$min, "numeric")
-  expect_equal(agg_mean_NA$fit_indices$chi$min, 1)
-  expect_is(agg_mean_NA$fit_indices$chi$max, "numeric")
-  expect_equal(agg_mean_NA$fit_indices$chi$max, 4)
-  expect_is(agg_mean_NA$fit_indices$chi$range, "numeric")
-  expect_equal(agg_mean_NA$fit_indices$chi$range, 3)
-  expect_equal(agg_mean_NA$fit_indices$df, 5)
-  expect_is(agg_mean_NA$fit_indices$p_chi, "list")
-  expect_is(agg_mean_NA$fit_indices$p_chi$aggregate, "numeric")
-  expect_equal(round(agg_mean_NA$fit_indices$p_chi$aggregate, 2), 2.67)
-  expect_is(agg_mean_NA$fit_indices$p_chi$sd, "numeric")
-  expect_equal(round(agg_mean_NA$fit_indices$p_chi$sd, 2), 1.53)
-  expect_is(agg_mean_NA$fit_indices$p_chi$min, "numeric")
-  expect_equal(agg_mean_NA$fit_indices$p_chi$min, 1)
-  expect_is(agg_mean_NA$fit_indices$p_chi$max, "numeric")
-  expect_equal(agg_mean_NA$fit_indices$p_chi$max, 4)
-  expect_is(agg_mean_NA$fit_indices$p_chi$range, "numeric")
-  expect_equal(agg_mean_NA$fit_indices$p_chi$range, 3)
+  expect_is(agg_mean_NA$fit_indices, "data.frame")
+  expect_named(agg_mean_NA$fit_indices, c("index", "aggregate", "sd", "range",
+                                          "min", "max"))
+  expect_is(agg_mean_NA$fit_indices$index, "character")
+  expect_equal(agg_mean_NA$fit_indices$index, c("chisq", "p_chi", "caf", "cfi",
+                                             "rmsea", "aic", "bic"))
+  expect_is(agg_mean_NA$fit_indices$aggregate, "numeric")
+  expect_equal(round(agg_mean_NA$fit_indices$aggregate, 2), rep(2.67, 7))
+  expect_is(agg_mean_NA$fit_indices$sd, "numeric")
+  expect_equal(round(agg_mean_NA$fit_indices$sd, 2), rep(1.53, 7))
+  expect_is(agg_mean_NA$fit_indices$range, "numeric")
+  expect_equal(agg_mean_NA$fit_indices$range, rep(3, 7))
+  expect_is(agg_mean_NA$fit_indices$min, "numeric")
+  expect_equal(agg_mean_NA$fit_indices$min, rep(1, 7))
+  expect_is(agg_mean_NA$fit_indices$max, "numeric")
+  expect_equal(agg_mean_NA$fit_indices$max, rep(4, 7))
 
-  expect_is(agg_mean_NA$fit_indices$CAF, "list")
-  expect_is(agg_mean_NA$fit_indices$CAF$aggregate, "numeric")
-  expect_equal(round(agg_mean_NA$fit_indices$CAF$aggregate, 2), 2.67)
-  expect_is(agg_mean_NA$fit_indices$CAF$sd, "numeric")
-  expect_equal(round(agg_mean_NA$fit_indices$CAF$sd, 2), 1.53)
-  expect_is(agg_mean_NA$fit_indices$CAF$min, "numeric")
-  expect_equal(agg_mean_NA$fit_indices$CAF$min, 1)
-  expect_is(agg_mean_NA$fit_indices$CAF$max, "numeric")
-  expect_equal(agg_mean_NA$fit_indices$CAF$max, 4)
-  expect_is(agg_mean_NA$fit_indices$CAF$range, "numeric")
-  expect_equal(agg_mean_NA$fit_indices$CAF$range, 3)
-
-  expect_is(agg_mean_NA$fit_indices$CFI, "list")
-  expect_is(agg_mean_NA$fit_indices$CFI$aggregate, "numeric")
-  expect_equal(round(agg_mean_NA$fit_indices$CFI$aggregate, 2), 2.67)
-  expect_is(agg_mean_NA$fit_indices$CFI$sd, "numeric")
-  expect_equal(round(agg_mean_NA$fit_indices$CFI$sd, 2), 1.53)
-  expect_is(agg_mean_NA$fit_indices$CFI$min, "numeric")
-  expect_equal(agg_mean_NA$fit_indices$CFI$min, 1)
-  expect_is(agg_mean_NA$fit_indices$CFI$max, "numeric")
-  expect_equal(agg_mean_NA$fit_indices$CFI$max, 4)
-  expect_is(agg_mean_NA$fit_indices$CFI$range, "numeric")
-  expect_equal(agg_mean_NA$fit_indices$CFI$range, 3)
-
-  expect_is(agg_mean_NA$fit_indices$RMSEA, "list")
-  expect_is(agg_mean_NA$fit_indices$RMSEA$aggregate, "numeric")
-  expect_equal(round(agg_mean_NA$fit_indices$RMSEA$aggregate, 2), 2.67)
-  expect_is(agg_mean_NA$fit_indices$RMSEA$sd, "numeric")
-  expect_equal(round(agg_mean_NA$fit_indices$RMSEA$sd, 2), 1.53)
-  expect_is(agg_mean_NA$fit_indices$RMSEA$min, "numeric")
-  expect_equal(agg_mean_NA$fit_indices$RMSEA$min, 1)
-  expect_is(agg_mean_NA$fit_indices$RMSEA$max, "numeric")
-  expect_equal(agg_mean_NA$fit_indices$RMSEA$max, 4)
-  expect_is(agg_mean_NA$fit_indices$RMSEA$range, "numeric")
-  expect_equal(agg_mean_NA$fit_indices$RMSEA$range, 3)
-
-  expect_is(agg_mean_NA$fit_indices$AIC, "list")
-  expect_is(agg_mean_NA$fit_indices$AIC$aggregate, "numeric")
-  expect_equal(round(agg_mean_NA$fit_indices$AIC$aggregate, 2), 2.67)
-  expect_is(agg_mean_NA$fit_indices$AIC$sd, "numeric")
-  expect_equal(round(agg_mean_NA$fit_indices$AIC$sd, 2), 1.53)
-  expect_is(agg_mean_NA$fit_indices$AIC$min, "numeric")
-  expect_equal(agg_mean_NA$fit_indices$AIC$min, 1)
-  expect_is(agg_mean_NA$fit_indices$AIC$max, "numeric")
-  expect_equal(agg_mean_NA$fit_indices$AIC$max, 4)
-  expect_is(agg_mean_NA$fit_indices$AIC$range, "numeric")
-  expect_equal(agg_mean_NA$fit_indices$AIC$range, 3)
-
-  expect_is(agg_mean_NA$fit_indices$BIC, "list")
-  expect_is(agg_mean_NA$fit_indices$BIC$aggregate, "numeric")
-  expect_equal(round(agg_mean_NA$fit_indices$BIC$aggregate, 2), 2.67)
-  expect_is(agg_mean_NA$fit_indices$BIC$sd, "numeric")
-  expect_equal(round(agg_mean_NA$fit_indices$BIC$sd, 2), 1.53)
-  expect_is(agg_mean_NA$fit_indices$BIC$min, "numeric")
-  expect_equal(agg_mean_NA$fit_indices$BIC$min, 1)
-  expect_is(agg_mean_NA$fit_indices$BIC$max, "numeric")
-  expect_equal(agg_mean_NA$fit_indices$BIC$max, 4)
-  expect_is(agg_mean_NA$fit_indices$BIC$range, "numeric")
-  expect_equal(agg_mean_NA$fit_indices$BIC$range, 3)
 
   ### tests for agg_mean_NA_t01 with extract_phi = FALSE and trim = .10
   expect_is(agg_mean_NA_t01, "list")
-  expect_named(agg_mean_NA_t01, c("h2", "loadings", "phi", "ind_fac_corres", "fit_indices"))
+  expect_named(agg_mean_NA_t01, c("h2", "loadings", "phi", "vars_accounted",
+                                  "ind_fac_corres", "fit_indices"))
   expect_is(agg_mean_NA_t01$h2, "list")
   expect_named(agg_mean_NA_t01$h2, c("aggregate", "sd", "min", "max", "range"))
   expect_is(agg_mean_NA_t01$h2$aggregate, "numeric")
@@ -508,96 +448,35 @@ test_that(".aggregate_values works", {
   expect_equal(agg_mean_NA_t01$loadings$sd, matrix(rep(1.527525, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))), tolerance = .01)
   expect_equal(unclass(agg_mean_NA_t01$loadings$min), matrix(rep(1, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
   expect_equal(unclass(agg_mean_NA_t01$loadings$max), matrix(rep(4, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
+  expect_is(agg_mean_NA_t01$vars_accounted, "list")
+  expect_named(agg_mean_NA_t01$vars_accounted, c("aggregate", "sd", "min", "max", "range"))
+  expect_is(agg_mean_NA_t01$vars_accounted$aggregate, "matrix")
+  expect_equal(round(agg_mean_NA_t01$vars_accounted$aggregate, 2), matrix(rep(3, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
+  expect_equal(agg_mean_NA_t01$vars_accounted$sd, matrix(rep(1.527525, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))), tolerance = .01)
+  expect_equal(agg_mean_NA_t01$vars_accounted$min, matrix(rep(1, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
+  expect_equal(agg_mean_NA_t01$vars_accounted$max, matrix(rep(4, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
+  expect_equal(agg_mean_NA_t01$vars_accounted$range, matrix(rep(3, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))), tolerance = .01)
   expect_equal(agg_mean_NA_t01$phi, NA)
   expect_is(agg_mean_NA_t01$ind_fac_corres, "matrix")
   expect_equal(round(agg_mean_NA_t01$ind_fac_corres, 2),
                matrix(c(1, 0, 0, 0, .67, .33, 0, .33, .67), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
-  expect_is(agg_mean_NA_t01$fit_indices, "list")
-  expect_named(agg_mean_NA_t01$fit_indices, c("chi", "df", "p_chi", "CAF", "CFI",
-                                          "RMSEA", "AIC", "BIC"))
-  expect_is(agg_mean_NA_t01$fit_indices$chi, "list")
-  expect_is(agg_mean_NA_t01$fit_indices$chi$aggregate, "numeric")
-  expect_equal(round(agg_mean_NA_t01$fit_indices$chi$aggregate, 2), 3)
-  expect_is(agg_mean_NA_t01$fit_indices$chi$sd, "numeric")
-  expect_equal(round(agg_mean_NA_t01$fit_indices$chi$sd, 2), 1.53)
-  expect_is(agg_mean_NA_t01$fit_indices$chi$min, "numeric")
-  expect_equal(agg_mean_NA_t01$fit_indices$chi$min, 1)
-  expect_is(agg_mean_NA_t01$fit_indices$chi$max, "numeric")
-  expect_equal(agg_mean_NA_t01$fit_indices$chi$max, 4)
-  expect_is(agg_mean_NA_t01$fit_indices$chi$range, "numeric")
-  expect_equal(agg_mean_NA_t01$fit_indices$chi$range, 3)
-  expect_equal(agg_mean_NA_t01$fit_indices$df, 5)
-  expect_is(agg_mean_NA_t01$fit_indices$p_chi, "list")
-  expect_is(agg_mean_NA_t01$fit_indices$p_chi$aggregate, "numeric")
-  expect_equal(round(agg_mean_NA_t01$fit_indices$p_chi$aggregate, 2), 3)
-  expect_is(agg_mean_NA_t01$fit_indices$p_chi$sd, "numeric")
-  expect_equal(round(agg_mean_NA_t01$fit_indices$p_chi$sd, 2), 1.53)
-  expect_is(agg_mean_NA_t01$fit_indices$p_chi$min, "numeric")
-  expect_equal(agg_mean_NA_t01$fit_indices$p_chi$min, 1)
-  expect_is(agg_mean_NA_t01$fit_indices$p_chi$max, "numeric")
-  expect_equal(agg_mean_NA_t01$fit_indices$p_chi$max, 4)
-  expect_is(agg_mean_NA_t01$fit_indices$p_chi$range, "numeric")
-  expect_equal(agg_mean_NA_t01$fit_indices$p_chi$range, 3)
+  expect_is(agg_mean_NA_t01$fit_indices, "data.frame")
+  expect_named(agg_mean_NA_t01$fit_indices, c("index", "aggregate", "sd", "range",
+                                          "min", "max"))
+  expect_is(agg_mean_NA_t01$fit_indices$index, "character")
+  expect_equal(agg_mean_NA_t01$fit_indices$index, c("chisq", "p_chi", "caf", "cfi",
+                                                "rmsea", "aic", "bic"))
+  expect_is(agg_mean_NA_t01$fit_indices$aggregate, "numeric")
+  expect_equal(round(agg_mean_NA_t01$fit_indices$aggregate, 2), rep(3, 7))
+  expect_is(agg_mean_NA_t01$fit_indices$sd, "numeric")
+  expect_equal(round(agg_mean_NA_t01$fit_indices$sd, 2), rep(1.53, 7))
+  expect_is(agg_mean_NA_t01$fit_indices$range, "numeric")
+  expect_equal(agg_mean_NA_t01$fit_indices$range, rep(3, 7))
+  expect_is(agg_mean_NA_t01$fit_indices$min, "numeric")
+  expect_equal(agg_mean_NA_t01$fit_indices$min, rep(1, 7))
+  expect_is(agg_mean_NA_t01$fit_indices$max, "numeric")
+  expect_equal(agg_mean_NA_t01$fit_indices$max, rep(4, 7))
 
-  expect_is(agg_mean_NA_t01$fit_indices$CAF, "list")
-  expect_is(agg_mean_NA_t01$fit_indices$CAF$aggregate, "numeric")
-  expect_equal(round(agg_mean_NA_t01$fit_indices$CAF$aggregate, 2), 3)
-  expect_is(agg_mean_NA_t01$fit_indices$CAF$sd, "numeric")
-  expect_equal(round(agg_mean_NA_t01$fit_indices$CAF$sd, 2), 1.53)
-  expect_is(agg_mean_NA_t01$fit_indices$CAF$min, "numeric")
-  expect_equal(agg_mean_NA_t01$fit_indices$CAF$min, 1)
-  expect_is(agg_mean_NA_t01$fit_indices$CAF$max, "numeric")
-  expect_equal(agg_mean_NA_t01$fit_indices$CAF$max, 4)
-  expect_is(agg_mean_NA_t01$fit_indices$CAF$range, "numeric")
-  expect_equal(agg_mean_NA_t01$fit_indices$CAF$range, 3)
-
-  expect_is(agg_mean_NA_t01$fit_indices$CFI, "list")
-  expect_is(agg_mean_NA_t01$fit_indices$CFI$aggregate, "numeric")
-  expect_equal(round(agg_mean_NA_t01$fit_indices$CFI$aggregate, 2), 3)
-  expect_is(agg_mean_NA_t01$fit_indices$CFI$sd, "numeric")
-  expect_equal(round(agg_mean_NA_t01$fit_indices$CFI$sd, 2), 1.53)
-  expect_is(agg_mean_NA_t01$fit_indices$CFI$min, "numeric")
-  expect_equal(agg_mean_NA_t01$fit_indices$CFI$min, 1)
-  expect_is(agg_mean_NA_t01$fit_indices$CFI$max, "numeric")
-  expect_equal(agg_mean_NA_t01$fit_indices$CFI$max, 4)
-  expect_is(agg_mean_NA_t01$fit_indices$CFI$range, "numeric")
-  expect_equal(agg_mean_NA_t01$fit_indices$CFI$range, 3)
-
-  expect_is(agg_mean_NA_t01$fit_indices$RMSEA, "list")
-  expect_is(agg_mean_NA_t01$fit_indices$RMSEA$aggregate, "numeric")
-  expect_equal(round(agg_mean_NA_t01$fit_indices$RMSEA$aggregate, 2), 3)
-  expect_is(agg_mean_NA_t01$fit_indices$RMSEA$sd, "numeric")
-  expect_equal(round(agg_mean_NA_t01$fit_indices$RMSEA$sd, 2), 1.53)
-  expect_is(agg_mean_NA_t01$fit_indices$RMSEA$min, "numeric")
-  expect_equal(agg_mean_NA_t01$fit_indices$RMSEA$min, 1)
-  expect_is(agg_mean_NA_t01$fit_indices$RMSEA$max, "numeric")
-  expect_equal(agg_mean_NA_t01$fit_indices$RMSEA$max, 4)
-  expect_is(agg_mean_NA_t01$fit_indices$RMSEA$range, "numeric")
-  expect_equal(agg_mean_NA_t01$fit_indices$RMSEA$range, 3)
-
-  expect_is(agg_mean_NA_t01$fit_indices$AIC, "list")
-  expect_is(agg_mean_NA_t01$fit_indices$AIC$aggregate, "numeric")
-  expect_equal(round(agg_mean_NA_t01$fit_indices$AIC$aggregate, 2), 3)
-  expect_is(agg_mean_NA_t01$fit_indices$AIC$sd, "numeric")
-  expect_equal(round(agg_mean_NA_t01$fit_indices$AIC$sd, 2), 1.53)
-  expect_is(agg_mean_NA_t01$fit_indices$AIC$min, "numeric")
-  expect_equal(agg_mean_NA_t01$fit_indices$AIC$min, 1)
-  expect_is(agg_mean_NA_t01$fit_indices$AIC$max, "numeric")
-  expect_equal(agg_mean_NA_t01$fit_indices$AIC$max, 4)
-  expect_is(agg_mean_NA_t01$fit_indices$AIC$range, "numeric")
-  expect_equal(agg_mean_NA_t01$fit_indices$AIC$range, 3)
-
-  expect_is(agg_mean_NA_t01$fit_indices$BIC, "list")
-  expect_is(agg_mean_NA_t01$fit_indices$BIC$aggregate, "numeric")
-  expect_equal(round(agg_mean_NA_t01$fit_indices$BIC$aggregate, 2), 3)
-  expect_is(agg_mean_NA_t01$fit_indices$BIC$sd, "numeric")
-  expect_equal(round(agg_mean_NA_t01$fit_indices$BIC$sd, 2), 1.53)
-  expect_is(agg_mean_NA_t01$fit_indices$BIC$min, "numeric")
-  expect_equal(agg_mean_NA_t01$fit_indices$BIC$min, 1)
-  expect_is(agg_mean_NA_t01$fit_indices$BIC$max, "numeric")
-  expect_equal(agg_mean_NA_t01$fit_indices$BIC$max, 4)
-  expect_is(agg_mean_NA_t01$fit_indices$BIC$range, "numeric")
-  expect_equal(agg_mean_NA_t01$fit_indices$BIC$range, 3)
 
   ### tests for agg_mean with extract_phi = TRUE (only affected output tested)
   expect_is(agg_mean$phi, "list")
@@ -613,7 +492,8 @@ test_that(".aggregate_values works", {
 
   ### tests for agg_median_NA with extract_phi = FALSE
   expect_is(agg_median_NA, "list")
-  expect_named(agg_median_NA, c("h2", "loadings", "phi", "ind_fac_corres", "fit_indices"))
+  expect_named(agg_median_NA, c("h2", "loadings", "phi", "vars_accounted",
+                                "ind_fac_corres", "fit_indices"))
   expect_is(agg_median_NA$h2, "list")
   expect_named(agg_median_NA$h2, c("aggregate", "sd", "min", "max", "range"))
   expect_is(agg_median_NA$h2$aggregate, "numeric")
@@ -629,96 +509,35 @@ test_that(".aggregate_values works", {
   expect_equal(agg_median_NA$loadings$sd, matrix(rep(1.527525, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))), tolerance = .01)
   expect_equal(unclass(agg_median_NA$loadings$min), matrix(rep(1, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
   expect_equal(unclass(agg_median_NA$loadings$max), matrix(rep(4, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
+  expect_is(agg_median_NA$vars_accounted, "list")
+  expect_named(agg_median_NA$vars_accounted, c("aggregate", "sd", "min", "max", "range"))
+  expect_is(agg_median_NA$vars_accounted$aggregate, "matrix")
+  expect_equal(round(agg_median_NA$vars_accounted$aggregate, 2), matrix(rep(3, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
+  expect_equal(agg_median_NA$vars_accounted$sd, matrix(rep(1.527525, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))), tolerance = .01)
+  expect_equal(agg_median_NA$vars_accounted$min, matrix(rep(1, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
+  expect_equal(agg_median_NA$vars_accounted$max, matrix(rep(4, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
+  expect_equal(agg_median_NA$vars_accounted$range, matrix(rep(3, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))), tolerance = .01)
   expect_equal(agg_median_NA$phi, NA)
   expect_is(agg_median_NA$ind_fac_corres, "matrix")
   expect_equal(round(agg_median_NA$ind_fac_corres, 2),
                matrix(c(1, 0, 0, 0, .67, .33, 0, .33, .67), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
-  expect_is(agg_median_NA$fit_indices, "list")
-  expect_named(agg_median_NA$fit_indices, c("chi", "df", "p_chi", "CAF", "CFI",
-                                          "RMSEA", "AIC", "BIC"))
-  expect_is(agg_median_NA$fit_indices$chi, "list")
-  expect_is(agg_median_NA$fit_indices$chi$aggregate, "numeric")
-  expect_equal(round(agg_median_NA$fit_indices$chi$aggregate, 2), 3)
-  expect_is(agg_median_NA$fit_indices$chi$sd, "numeric")
-  expect_equal(round(agg_median_NA$fit_indices$chi$sd, 2), 1.53)
-  expect_is(agg_median_NA$fit_indices$chi$min, "numeric")
-  expect_equal(agg_median_NA$fit_indices$chi$min, 1)
-  expect_is(agg_median_NA$fit_indices$chi$max, "numeric")
-  expect_equal(agg_median_NA$fit_indices$chi$max, 4)
-  expect_is(agg_median_NA$fit_indices$chi$range, "numeric")
-  expect_equal(agg_median_NA$fit_indices$chi$range, 3)
-  expect_equal(agg_median_NA$fit_indices$df, 5)
-  expect_is(agg_median_NA$fit_indices$p_chi, "list")
-  expect_is(agg_median_NA$fit_indices$p_chi$aggregate, "numeric")
-  expect_equal(round(agg_median_NA$fit_indices$p_chi$aggregate, 2), 3)
-  expect_is(agg_median_NA$fit_indices$p_chi$sd, "numeric")
-  expect_equal(round(agg_median_NA$fit_indices$p_chi$sd, 2), 1.53)
-  expect_is(agg_median_NA$fit_indices$p_chi$min, "numeric")
-  expect_equal(agg_median_NA$fit_indices$p_chi$min, 1)
-  expect_is(agg_median_NA$fit_indices$p_chi$max, "numeric")
-  expect_equal(agg_median_NA$fit_indices$p_chi$max, 4)
-  expect_is(agg_median_NA$fit_indices$p_chi$range, "numeric")
-  expect_equal(agg_median_NA$fit_indices$p_chi$range, 3)
+  expect_is(agg_median_NA$fit_indices, "data.frame")
+  expect_named(agg_median_NA$fit_indices, c("index", "aggregate", "sd", "range",
+                                              "min", "max"))
+  expect_is(agg_median_NA$fit_indices$index, "character")
+  expect_equal(agg_median_NA$fit_indices$index, c("chisq", "p_chi", "caf", "cfi",
+                                                    "rmsea", "aic", "bic"))
+  expect_is(agg_median_NA$fit_indices$aggregate, "numeric")
+  expect_equal(round(agg_median_NA$fit_indices$aggregate, 2), rep(3, 7))
+  expect_is(agg_median_NA$fit_indices$sd, "numeric")
+  expect_equal(round(agg_median_NA$fit_indices$sd, 2), rep(1.53, 7))
+  expect_is(agg_median_NA$fit_indices$range, "numeric")
+  expect_equal(agg_median_NA$fit_indices$range, rep(3, 7))
+  expect_is(agg_median_NA$fit_indices$min, "numeric")
+  expect_equal(agg_median_NA$fit_indices$min, rep(1, 7))
+  expect_is(agg_median_NA$fit_indices$max, "numeric")
+  expect_equal(agg_median_NA$fit_indices$max, rep(4, 7))
 
-  expect_is(agg_median_NA$fit_indices$CAF, "list")
-  expect_is(agg_median_NA$fit_indices$CAF$aggregate, "numeric")
-  expect_equal(round(agg_median_NA$fit_indices$CAF$aggregate, 2), 3)
-  expect_is(agg_median_NA$fit_indices$CAF$sd, "numeric")
-  expect_equal(round(agg_median_NA$fit_indices$CAF$sd, 2), 1.53)
-  expect_is(agg_median_NA$fit_indices$CAF$min, "numeric")
-  expect_equal(agg_median_NA$fit_indices$CAF$min, 1)
-  expect_is(agg_median_NA$fit_indices$CAF$max, "numeric")
-  expect_equal(agg_median_NA$fit_indices$CAF$max, 4)
-  expect_is(agg_median_NA$fit_indices$CAF$range, "numeric")
-  expect_equal(agg_median_NA$fit_indices$CAF$range, 3)
-
-  expect_is(agg_median_NA$fit_indices$CFI, "list")
-  expect_is(agg_median_NA$fit_indices$CFI$aggregate, "numeric")
-  expect_equal(round(agg_median_NA$fit_indices$CFI$aggregate, 2), 3)
-  expect_is(agg_median_NA$fit_indices$CFI$sd, "numeric")
-  expect_equal(round(agg_median_NA$fit_indices$CFI$sd, 2), 1.53)
-  expect_is(agg_median_NA$fit_indices$CFI$min, "numeric")
-  expect_equal(agg_median_NA$fit_indices$CFI$min, 1)
-  expect_is(agg_median_NA$fit_indices$CFI$max, "numeric")
-  expect_equal(agg_median_NA$fit_indices$CFI$max, 4)
-  expect_is(agg_median_NA$fit_indices$CFI$range, "numeric")
-  expect_equal(agg_median_NA$fit_indices$CFI$range, 3)
-
-  expect_is(agg_median_NA$fit_indices$RMSEA, "list")
-  expect_is(agg_median_NA$fit_indices$RMSEA$aggregate, "numeric")
-  expect_equal(round(agg_median_NA$fit_indices$RMSEA$aggregate, 2), 3)
-  expect_is(agg_median_NA$fit_indices$RMSEA$sd, "numeric")
-  expect_equal(round(agg_median_NA$fit_indices$RMSEA$sd, 2), 1.53)
-  expect_is(agg_median_NA$fit_indices$RMSEA$min, "numeric")
-  expect_equal(agg_median_NA$fit_indices$RMSEA$min, 1)
-  expect_is(agg_median_NA$fit_indices$RMSEA$max, "numeric")
-  expect_equal(agg_median_NA$fit_indices$RMSEA$max, 4)
-  expect_is(agg_median_NA$fit_indices$RMSEA$range, "numeric")
-  expect_equal(agg_median_NA$fit_indices$RMSEA$range, 3)
-
-  expect_is(agg_median_NA$fit_indices$AIC, "list")
-  expect_is(agg_median_NA$fit_indices$AIC$aggregate, "numeric")
-  expect_equal(round(agg_median_NA$fit_indices$AIC$aggregate, 2), 3)
-  expect_is(agg_median_NA$fit_indices$AIC$sd, "numeric")
-  expect_equal(round(agg_median_NA$fit_indices$AIC$sd, 2), 1.53)
-  expect_is(agg_median_NA$fit_indices$AIC$min, "numeric")
-  expect_equal(agg_median_NA$fit_indices$AIC$min, 1)
-  expect_is(agg_median_NA$fit_indices$AIC$max, "numeric")
-  expect_equal(agg_median_NA$fit_indices$AIC$max, 4)
-  expect_is(agg_median_NA$fit_indices$AIC$range, "numeric")
-  expect_equal(agg_median_NA$fit_indices$AIC$range, 3)
-
-  expect_is(agg_median_NA$fit_indices$BIC, "list")
-  expect_is(agg_median_NA$fit_indices$BIC$aggregate, "numeric")
-  expect_equal(round(agg_median_NA$fit_indices$BIC$aggregate, 2), 3)
-  expect_is(agg_median_NA$fit_indices$BIC$sd, "numeric")
-  expect_equal(round(agg_median_NA$fit_indices$BIC$sd, 2), 1.53)
-  expect_is(agg_median_NA$fit_indices$BIC$min, "numeric")
-  expect_equal(agg_median_NA$fit_indices$BIC$min, 1)
-  expect_is(agg_median_NA$fit_indices$BIC$max, "numeric")
-  expect_equal(agg_median_NA$fit_indices$BIC$max, 4)
-  expect_is(agg_median_NA$fit_indices$BIC$range, "numeric")
-  expect_equal(agg_median_NA$fit_indices$BIC$range, 3)
 
   ### tests for agg_median with extract_phi = TRUE (only affected output tested)
   expect_is(agg_median$phi, "list")
@@ -744,6 +563,16 @@ arr_re_NA <- .array_reorder(L = array(c(rep(.6, 6), rep(0, 12),
                                      rep(-.6, 6), rep(0, 12),
                                      rep(0, 6), rep(0, 6), rep(.6, 6)),
                                    c(18, 3, 3)),
+                            vars_accounted = array(c(rep(.2, 3),
+                                                     rep(.3, 3),
+                                                     rep(.4, 3),
+                                                     rep(.2, 3),
+                                                     rep(.3, 3),
+                                                     rep(.4, 3),
+                                                     rep(.3, 3),
+                                                     rep(.2, 3),
+                                                     rep(.4, 3)),
+                                                   c(3, 3, 3)),
                          L_corres = array(as.numeric(abs(c(rep(.6, 6), rep(0, 12),
                                             rep(0, 6), rep(.6, 6), rep(0, 6),
                                             rep(0, 6), rep(0, 6), rep(.6, 6),
@@ -766,6 +595,16 @@ arr_re <- .array_reorder(L = array(c(rep(.6, 6), rep(0, 12),
                                         rep(-.6, 6), rep(0, 12),
                                         rep(0, 6), rep(0, 6), rep(.6, 6)),
                                       c(18, 3, 3)),
+                         vars_accounted = array(c(rep(.2, 3),
+                                                  rep(.3, 3),
+                                                  rep(.4, 3),
+                                                  rep(.2, 3),
+                                                  rep(.3, 3),
+                                                  rep(.4, 3),
+                                                  rep(.3, 3),
+                                                  rep(.2, 3),
+                                                  rep(.4, 3)),
+                                                c(3, 3, 3)),
                             L_corres = array(as.numeric(abs(c(rep(.6, 6), rep(0, 12),
                                                               rep(0, 6), rep(.6, 6), rep(0, 6),
                                                               rep(0, 6), rep(0, 6), rep(.6, 6),
@@ -781,7 +620,7 @@ arr_re <- .array_reorder(L = array(c(rep(.6, 6), rep(0, 12),
 test_that(".array_reorder works", {
   ### tests for arr_re_NA with phi = NA and extract_phi = FALSE
   expect_is(arr_re_NA, "list")
-  expect_named(arr_re_NA, c("L", "L_corres", "phi"))
+  expect_named(arr_re_NA, c("L", "L_corres", "phi", "vars_accounted"))
   expect_is(arr_re_NA$L, "array")
   expect_equal(dim(arr_re_NA$L), c(18, 3, 3))
   expect_equal(arr_re_NA$L,
@@ -809,10 +648,22 @@ test_that(".array_reorder works", {
                        rep(0, 6), rep(0, 6), rep(.6, 6)) > .3),
                      c(18, 3, 3)))
   expect_equal(arr_re_NA$phi, NA)
+  expect_is(arr_re_NA$vars_accounted, "array")
+  expect_equal(arr_re_NA$vars_accounted,
+               array(c(rep(.2, 3),
+                       rep(.3, 3),
+                       rep(.4, 3),
+                       rep(.2, 3),
+                       rep(.3, 3),
+                       rep(.4, 3),
+                       rep(.2, 3),
+                       rep(.3, 3),
+                       rep(.4, 3)),
+                     c(3, 3, 3)))
 
   ### tests for arr_re with phi = array() and extract_phi = TRUE
   expect_is(arr_re, "list")
-  expect_named(arr_re, c("L", "L_corres", "phi"))
+  expect_named(arr_re, c("L", "L_corres", "phi", "vars_accounted"))
   expect_is(arr_re$L, "array")
   expect_equal(dim(arr_re$L), c(18, 3, 3))
   expect_equal(arr_re$L,
@@ -845,6 +696,18 @@ test_that(".array_reorder works", {
                array(c(1, .3, .4, .3, 1, .2, .4, .2, 1,
                        1, .3, .4, .3, 1, .2, .4, .2, 1,
                        1, .3, .2, .3, 1, .4, .2, .4, 1), c(3, 3, 3)))
+  expect_is(arr_re$vars_accounted, "array")
+  expect_equal(arr_re$vars_accounted,
+               array(c(rep(.2, 3),
+                       rep(.3, 3),
+                       rep(.4, 3),
+                       rep(.2, 3),
+                       rep(.3, 3),
+                       rep(.4, 3),
+                       rep(.2, 3),
+                       rep(.3, 3),
+                       rep(.4, 3)),
+                     c(3, 3, 3)))
 
 })
 
