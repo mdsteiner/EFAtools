@@ -17,7 +17,8 @@
 #' EFA_aver <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500)
 #' EFA_aver
 #'
-print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"), ...) {
+print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"),
+                              plot = TRUE, ...) {
 
   checkmate::assert_subset(stat, c("aggregate", "sd", "range", "min", "max"),
                            empty.ok = FALSE)
@@ -88,7 +89,7 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"), ...) {
     cat("\n")
 
   ## Print Phi for oblique solutions
-  if(!all(is.na(Phi))){
+  if(!all(is.na(x$Phi))){
 
     cat("\n")
     cat(cli::rule(left = crayon::bold("Factor Intercorrelations from Oblique Solutions"), col = "blue", line = 2))
@@ -154,6 +155,21 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"), ...) {
 #         .numformat(fit$CAF$aggregate), "\n", sep = "")
 #
   }
+
+    # Plot loadings
+    if(isTRUE(plot)){
+
+    if(ncol(x$loadings$aggregate) <= 10){
+
+      plot(x)
+
+    } else {
+
+      message(cli::col_cyan(cli::symbol$info, " The factor solution contained more than 10 factors, no plot was generated. If you still want to create the plot, use 'plot(", substitute(x) ,")'.\n"))
+
+    }
+
+    }
 
 }
 
