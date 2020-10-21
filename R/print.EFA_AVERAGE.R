@@ -42,6 +42,7 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"),
   # extract other stuff
   no_efas <- nrow(grid)
   fit <- x$fit_indices
+  rownames(fit) <- fit$index
 
   cat("\n")
   cat("Averaging performed with aggregation method ",
@@ -65,6 +66,14 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"),
       " were admissible.", sep = "")
   cat("\n")
   cat("\n")
+
+  # If no solutions were achieved across which averaging could be performed,
+  # stop here with a message. Else, continue printing loadings etc.
+  if(all(grid$converged == 1) || all(grid$errors) || all(grid$heywood)){
+
+    warning(crayon::yellow$bold("!"), crayon::yellow(" No solutions were achieved across which averaging was possible. Best try again with a different number of factors.\n"))
+
+  } else {
 
   # Indicator-to-factor correspondences
   cat("\n")
@@ -114,51 +123,32 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"),
     cat("\n")
   }
 
+    cat("\n")
+    cat(cli::rule(left = crayon::bold("Model Fit"), col = "blue", line = 2))
+    cat("\n")
+    cat("\n")
+    cat(crayon::blue("    ", ifelse(aggregation == "mean", "M", "Md"),
+                     " (SD) [Min; Max]", sep = ""))
+    cat("\n")
+
   if(all(method == "PAF") || is.na(N)){
 
-    cat("\n")
-    cat(cli::rule(left = crayon::bold("Model Fit"), col = "blue", line = 2))
-    cat("\n")
-    cat("\n")
-    cat(.get_compare_matrix(fit[c("caf"), c("aggregate", "sd", "range",
-                                                  "min", "max")],
-                            r_red = Inf, n_char = 17, digits = 3,
-                            var_names = c("CAF"),
-                            factor_names = c(ifelse(aggregation == "mean", "M",
-                                                    "Md"), "SD", "Range", "Min",
-                                             "Max")))
+    .print_gof(fit, ind = "caf", ind_name = "CAF:  ", print_zero = FALSE, digits = 2)
+    cat(crayon::blue("df: "),
+        .numformat(fit["df", "aggregate"], 0, print_zero = TRUE), "\n", sep = "")
 
-#     cat(crayon::blue("CAF:"),
-#         .numformat(fit$CAF$aggregate), "\n", sep = "")
-#     cat(crayon::blue("df: "),
-#         .numformat(fit$df, 0, print_zero = TRUE), "\n", sep = "")
-#
-#
   } else {
 
-    cat("\n")
-    cat(cli::rule(left = crayon::bold("Model Fit"), col = "blue", line = 2))
-    cat("\n")
-    cat("\n")
-#     cat(crayon::blue("\U1D712\U00B2(", sep = ""), fit$df,
-#         crayon::blue(") = ", sep = ""),
-#         .numformat(fit$chi$aggregate, 2, print_zero = TRUE), ", ",
-#         crayon::blue(crayon::italic("p")),
-#         ifelse(fit$p_chi$aggregate < .001, " < .001",
-#                paste(crayon::blue(ifelse(fit$p_chi$aggregate < 1, " =", " = ")),
-#                      .numformat(fit$p_chi$aggregate, 3), sep = "")),
-#                "\n", sep = "")
-#     cat(crayon::blue(ifelse(fit$CFI$aggregate < 1, "CFI =", "CFI = ")),
-#         .numformat(fit$CFI$aggregate), "\n", sep = "")
-#     cat(crayon::blue(ifelse(fit$RMSEA$aggregate < 1, "RMSEA =", "RMSEA  = ")),
-#         .numformat(fit$RMSEA$aggregate), "\n", sep = "")
-#     cat(crayon::blue("AIC = "),
-#         .numformat(fit$AIC$aggregate, print_zero = TRUE), "\n", sep = "")
-#     cat(crayon::blue("BIC = "),
-#         .numformat(fit$BIC$aggregate, print_zero = TRUE), "\n", sep = "")
-#     cat(crayon::blue("CAF ="),
-#         .numformat(fit$CAF$aggregate), "\n", sep = "")
-#
+    .print_gof(fit, ind = c("chisq"), ind_name = "\U1D712\U00B2: ",
+               print_zero = TRUE, digits = 2)
+    cat(crayon::blue("df: "),
+        .numformat(fit["df", "aggregate"], 0, print_zero = TRUE), "\n", sep = "")
+    .print_gof(fit, ind = c("p_chi", "cfi", "rmsea", "aic", "bic", "caf"),
+               ind_name = c(crayon::italic("p: "), "CFI: ", "RMSEA: ",
+                            "AIC: ", "BIC: ", "CAF: "),
+               print_zero = c(FALSE, FALSE, FALSE, TRUE, TRUE, FALSE),
+               digits = c(3, 2, 2, 2, 2, 2))
+
   }
 
     # Plot loadings
@@ -175,6 +165,8 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"),
     }
 
     }
+
+  }
 
 }
 
@@ -321,5 +313,61 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"),
 
   }
 
+.print_gof <- function(fit, ind, ind_name, print_zero, digits){
+
+    for(i in seq_along(ind)){
+
+      if(ind[i] %in% c("p_chi", "cfi", "rmsea", "caf")){
+
+  cat(crayon::blue(ind_name[i], sep = ""),
+      ifelse(fit[ind[i], "aggregate"] < 1,
+             substr(.numformat(fit[ind[i], "aggregate"], digits = digits[i],
+                               print_zero = print_zero[i]),
+                    2, digits + 2),
+             .numformat(fit[ind[i], "aggregate"], digits = digits[i],
+                        print_zero = print_zero[i])), "(",
+      ifelse(fit[ind[i], "sd"] < 1,
+             substr(.numformat(fit[ind[i], "sd"], digits = digits[i],
+                               print_zero = print_zero[i]),
+                    2, digits + 2),
+             .numformat(fit[ind[i], "sd"], digits = digits[i],
+                        print_zero = print_zero[i])),
+      ") [",
+      ifelse(fit[ind[i], "min"] < 1,
+             substr(.numformat(fit[ind[i], "min"], digits = digits[i],
+                               print_zero = print_zero[i]),
+                    2, digits + 2),
+             .numformat(fit["ind", "min"], digits = digits[i],
+                        print_zero = print_zero[i])), "; ",
+      ifelse(fit[ind[i], "max"] < 1,
+             substr(.numformat(fit[ind[i], "max"], digits = digits[i],
+                               print_zero = print_zero[i]),
+                    2, digits + 2),
+             .numformat(fit[ind[i], "max"], digits = digits[i],
+                        print_zero = print_zero[i])),
+      "]\n", sep = "")
+
+      } else {
+
+        cat(crayon::blue(ind_name[i], sep = ""),
+            .numformat(fit[ind[i], "aggregate"], digits = digits[i],
+                                     print_zero = print_zero[i]), " (",
+            .numformat(fit[ind[i], "sd"], digits = digits[i],
+                       print_zero = print_zero[i]),
+            ") [",
+            .numformat(fit[ind[i], "min"], digits = digits[i],
+                       print_zero = print_zero[i]),
+            "; ",
+            .numformat(fit[ind[i], "max"], digits = digits[i],
+                       print_zero = print_zero[i]),
+            "]\n", sep = "")
+
+
+      }
+
+    }
+
   }
+
+}
 

@@ -40,10 +40,13 @@ plot.EFA_AVERAGE <- function(x, ...) {
 
   # Create plot faceted for variables and factors
 
-  ggplot2::ggplot(dat) +
+  plot_load <- ggplot2::ggplot(dat) +
     ggplot2::geom_segment(ggplot2::aes(x = min, xend = max, y = 0, yend = 0)) +
     ggplot2::geom_segment(ggplot2::aes(x = min, xend = min, y = -0.5, yend = 0.5)) +
     ggplot2::geom_segment(ggplot2::aes(x = max, xend = max, y = -0.5, yend = 0.5)) +
+    ggplot2::geom_rect(xmin = -x$settings$salience_threshold,
+                       xmax = x$settings$salience_threshold,
+                       ymin = -2, ymax = 2, fill = ggplot2::alpha("grey", 0.3)) +
     ggplot2::scale_y_continuous(limits = c(-1, 1)) +
     ggplot2::geom_point(ggplot2::aes(aggregate, 0), color = "darkred") +
     ggplot2::facet_grid(rows = ggplot2::vars(row_ind),
@@ -68,5 +71,7 @@ plot.EFA_AVERAGE <- function(x, ...) {
           panel.border = ggplot2::element_rect(color = "gray", fill = NA,
                                                size = 0.2)
           )
+
+  print(plot_load)
 
 }
