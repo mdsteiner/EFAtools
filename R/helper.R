@@ -745,12 +745,12 @@ if(n == 1){
   fit_sd[is.infinite(fit_sd)] <- NA
 
   fit_indices <- data.frame(
-    index = names(fit_agg),
-    aggregate = fit_agg,
-    sd = fit_sd,
-    range = fit_range,
-    min = fit_min,
-    max = fit_max
+    index = c(names(fit_agg), "df"),
+    aggregate = c(fit_agg, df),
+    sd = c(fit_sd, df),
+    range = c(fit_range, df),
+    min = c(fit_min, df),
+    max = c(fit_max, df)
   )
 
   if (isTRUE(extract_phi)) {
