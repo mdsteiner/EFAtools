@@ -81,7 +81,6 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"),
   cat("\n")
 
   # Print the loadings
-
     cat("\n")
     cat(cli::rule(left = crayon::bold("Loadings"), col = "blue", line = 2))
     cat("\n")
@@ -109,8 +108,7 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"),
 
 
   # Print fit indices
-
-  if (fit$df == 0) {
+  if (fit["df", "aggregate"] == 0) {
     cat("\n")
     cat(crayon::yellow$bold("!"), crayon::yellow(" The model is just identified (df = 0). Goodness of fit indices may not be interpretable."))
     cat("\n")
@@ -122,6 +120,13 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"),
     cat(cli::rule(left = crayon::bold("Model Fit"), col = "blue", line = 2))
     cat("\n")
     cat("\n")
+    cat(.get_compare_matrix(fit[c("caf"), c("aggregate", "sd", "range",
+                                                  "min", "max")],
+                            r_red = Inf, n_char = 17, digits = 3,
+                            var_names = c("CAF"),
+                            factor_names = c(ifelse(aggregation == "mean", "M",
+                                                    "Md"), "SD", "Range", "Min",
+                                             "Max")))
 
 #     cat(crayon::blue("CAF:"),
 #         .numformat(fit$CAF$aggregate), "\n", sep = "")

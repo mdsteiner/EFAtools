@@ -95,12 +95,16 @@
 }
 
 .get_compare_matrix <- function(x, digits = 3, r_red = .001, n_char = 10,
-                                var_names = NULL, gof = FALSE) {
+                                var_names = NULL, factor_names = NULL,
+                                gof = FALSE) {
 
   # create factor names to display
-  factor_names <- colnames(x)
   if (is.null(factor_names)) {
-    factor_names <- paste0("F", seq_len(ncol(x)))
+    if(is.null(colnames(x))){
+      factor_names <- paste0("F", seq_len(ncol(x)))
+    } else {
+      factor_names <- colnames(x)
+    }
   }
 
   # for equal spacing, fill the factor names such that they match the columns
