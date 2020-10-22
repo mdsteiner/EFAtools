@@ -525,7 +525,12 @@ if(n == 1){
   L <- array(NA_real_, c(ncol(R), n_factors, n_efa))
   L_corres <- array(NA, c(ncol(R), n_factors, n_efa))
   h2 <- matrix(NA_real_, nrow = n_efa, ncol = ncol(R))
-  vars_accounted <- array(NA_real_, c(3, n_factors, n_efa))
+  if (n_factors > 1) {
+    vars_accounted <- array(NA_real_, c(3, n_factors, n_efa))
+  } else {
+    vars_accounted <- array(NA_real_, c(2, n_factors, n_efa))
+  }
+
 
 
   if (any(rotation %in% c("promax", "oblimin", "quartimin", "simplimax",
@@ -550,7 +555,7 @@ if(n == 1){
   rmsea <- rep(NA_real_, n_efa)
   cfi <- rep(NA_real_, n_efa)
 
-  if (all(rotation == "none")) {
+  if (all(rotation == "none") || n_factors == 1) {
     load_ind <- "unrot_loadings"
     var_ind <- "vars_accounted"
   } else {
@@ -583,7 +588,12 @@ if(n == 1){
 
           h2[row_i, ] <- efa_temp$h2
           L[,, row_i] <- efa_temp[[load_ind]]
-          vars_accounted[,, row_i] <- efa_temp[[var_ind]][c(1, 2, 4),]
+          if (n_factors > 1) {
+            vars_accounted[,, row_i] <- efa_temp[[var_ind]][c(1, 2, 4),]
+          } else {
+            vars_accounted[,, row_i] <- efa_temp[[var_ind]]
+          }
+
           temp_corres <- abs(efa_temp[[load_ind]]) >= salience_threshold
           L_corres[,, row_i] <-temp_corres
 
@@ -655,7 +665,7 @@ if(n == 1){
       }
     } else {
       L_agg <- apply(L, 1:2, mean, na.rm = TRUE, trim = trim)
-      h2_agg <- apply(L, 2, mean, na.rm = TRUE, trim = trim)
+      h2_agg <- apply(h2, 2, mean, na.rm = TRUE, trim = trim)
       fit_agg <- apply(for_grid, 2, mean, na.rm = TRUE, trim = trim)
       vars_accounted_agg <- apply(vars_accounted, 1:2, mean, na.rm = TRUE,
                                   trim = trim)
@@ -667,7 +677,7 @@ if(n == 1){
 
   } else if (aggregation == "median") {
     L_agg <- apply(L, 1:2, median, na.rm = TRUE)
-    h2_agg <- apply(L, 2, median, na.rm = TRUE)
+    h2_agg <- apply(h2, 2, median, na.rm = TRUE)
     fit_agg <- apply(for_grid, 2, median, na.rm = TRUE)
     vars_accounted_agg <- apply(vars_accounted, 1:2, median, na.rm = TRUE)
     if (isTRUE(extract_phi)) {
@@ -709,7 +719,11 @@ if(n == 1){
   vars_accounted_sd <- apply(vars_accounted, 1:2, sd, na.rm = TRUE)
 
 
-  var_names <- c("SS loadings", "Prop Tot Var", "Prop Comm Var")
+  if (nrow(vars_accounted_agg) == 2) {
+    var_names <- c("SS loadings", "Prop Tot Var")
+  } else {
+    var_names <- c("SS loadings", "Prop Tot Var", "Prop Comm Var")
+  }
   rownames(vars_accounted_agg) <- var_names
   colnames(vars_accounted_agg) <- f_names
   rownames(vars_accounted_min) <- var_names

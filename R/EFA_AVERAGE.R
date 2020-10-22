@@ -393,6 +393,8 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
 
   if (isTRUE(show_progress)) {
     progressr::handlers("progress")
+  } else {
+    progressr::handlers("void")
   }
 
   progressr::with_progress({
@@ -416,7 +418,7 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
               abs_eigen = abs_eigens[i], varimax_type = varimax_types[i],
               k = ifelse(rotations[i] == "promax",k_ps[i], k_ss[i]),
               normalize = normalizes[i], P_type = P_types[i], precision = precision,
-              order_type = "eigen", start_method = start_methods[i]),
+              order_type = "eigen", start_method = start_methods[i], maxit = 5e4),
           silent = TRUE)
     }, methods = arg_grid$method, rotations = arg_grid$rotation,
     init_comms = arg_grid$init_comm, criteria = arg_grid$criterion,
@@ -436,12 +438,17 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
   }
   ext_list <- .extract_data(efa_list, R, n_factors, n_efa, rotation, salience_threshold)
 
-  if (isTRUE(show_progress)) {
-    .show_agg_progress("\U0001f6b6", "Reordering factors...")
+  if (n_factors > 1) {
+    if (isTRUE(show_progress)) {
+      .show_agg_progress("\U0001f6b6", "Reordering factors...")
+    }
+
+    re_list <- .array_reorder(ext_list$vars_accounted, ext_list$L, ext_list$L_corres,
+                              ext_list$phi, ext_list$extract_phi, n_factors)
+  } else {
+    re_list <- ext_list
   }
 
-  re_list <- .array_reorder(ext_list$vars_accounted, ext_list$L, ext_list$L_corres,
-                            ext_list$phi, ext_list$extract_phi, n_factors)
 
   if (isTRUE(show_progress)) {
     .show_agg_progress("\U0001f3c3", "Aggregating data...")
