@@ -312,6 +312,7 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"),
     }
 
   }
+}
 
 .print_gof <- function(fit, ind, ind_name, print_zero, digits){
 
@@ -325,7 +326,7 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"),
                                print_zero = print_zero[i]),
                     2, digits + 2),
              .numformat(fit[ind[i], "aggregate"], digits = digits[i],
-                        print_zero = print_zero[i])), "(",
+                        print_zero = print_zero[i])), " (",
       ifelse(fit[ind[i], "sd"] < 1,
              substr(.numformat(fit[ind[i], "sd"], digits = digits[i],
                                print_zero = print_zero[i]),
@@ -369,5 +370,4 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"),
 
   }
 
-}
 
