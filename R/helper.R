@@ -611,11 +611,11 @@ if(n == 1){
   # remove data from nonconverged EFAs
   excl <- which(converged != 0 | errors | heywood)
   if (length(excl) > 0) {
-    L <- L[,, -excl]
-    L_corres <- L_corres[,, -excl]
-    vars_accounted <- vars_accounted[,, -excl]
+    L <- L[,, -excl, drop = FALSE]
+    L_corres <- L_corres[,, -excl, drop = FALSE]
+    vars_accounted <- vars_accounted[,, -excl, drop = FALSE]
     if (isTRUE(extract_phi)) {
-      phi <- phi[,, -excl]
+      phi <- phi[,, -excl, drop = FALSE]
     }
   }
 

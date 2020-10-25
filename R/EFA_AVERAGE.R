@@ -144,6 +144,11 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
 
   }
 
+  if (n_factors == 1 && !all(rotation == "none")) {
+    message(cli::col_cyan(cli::symbol$info, " 'n_factors' is 1, but rotation != 'none'. Setting rotation to 'none' to avoid many warnings, as 1-factor solutions cannot be rotated.\n"))
+    rotation <- "none"
+  }
+
   ### create the grid with all combinations of the input arguments
 
   grid_list <- list()
@@ -185,33 +190,7 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
     }
 
     if ("none" %in% type) {
-      if(any(is.na(init_comm), is.na(criterion), is.na(criterion_type),
-             is.na(abs_eigen))) {
 
-        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" type = 'none' and method = 'PAF' is used but at least one of init_comm, criterion, criterion_type, and abs_eigen is not specified. Please specify all these arguments or use 'EFAtools', 'psych', or 'SPSS' as type.\n"))
-
-      } else if (any(c("promax", "oblique") %in% rotation) &&
-                 any(is.na(k_promax), is.na(normalize), is.na(P_type),
-                     is.na(precision), is.na(varimax_type))) {
-
-        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" type = 'none' and rotation = 'promax' or rotation = 'oblique' is used but at least one of k_promax, normalize, P_type, precision, and varimax_type is not specified. Please specify all these arguments or use 'EFAtools', 'psych', or 'SPSS' as type.\n"))
-
-
-      } else if (any(c("simplimax", "oblique") %in% rotation) &&
-                  any(is.na(k_simplimax), is.na(normalize),
-                      is.na(precision))) {
-
-        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" type = 'none' and rotation = 'simplimax' or rotation = 'oblique' is used but at least one of k_simplimax, normalize, and precision is not specified. Please specify all these arguments or use 'EFAtools', 'psych', or 'SPSS' as type.\n"))
-
-
-      } else if (any(c("varimax", "orthogonal") %in% rotation) &&
-                  any(is.na(varimax_type), is.na(normalize),
-                      is.na(precision))) {
-
-        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" type = 'none' and rotation = 'varimax' or rotation = 'orthogonal' is used but at least one of varimax_type, normalize, and precision is not specified. Please specify all these arguments or use 'EFAtools', 'psych', or 'SPSS' as type.\n"))
-
-
-      } else {
         grid_list[["nn_pf"]] <- .type_grid(method = "PAF", init_comm = init_comm,
                                            criterion = criterion, criterion_type = criterion_type,
                                            abs_eigen = abs_eigen, start_method = NA,
@@ -220,8 +199,6 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
                                            precision = precision,
                                            varimax_type = varimax_type,
                                            k_simplimax = k_simplimax)
-      }
-
     }
   }
 
@@ -261,32 +238,6 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
       }
 
       if ("none" %in% type) {
-        if(any(is.na(start_method))) {
-
-          stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" type = 'none' and method = 'ML' is used, but  start_method is not specified. Please specify all these arguments or use 'EFAtools', 'psych', or 'SPSS' as type.\n"))
-
-        } else if (any(c("promax", "oblique") %in% rotation) &&
-                   any(is.na(k_promax), is.na(normalize), is.na(P_type),
-                       is.na(precision), is.na(varimax_type))) {
-
-          stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" type = 'none' and rotation = 'promax' or rotation = 'oblique' is used but at least one of k_promax, normalize, P_type, precision, and varimax_type is not specified. Please specify all these arguments or use 'EFAtools', 'psych', or 'SPSS' as type.\n"))
-
-
-        } else if (any(c("simplimax", "oblique") %in% rotation) &&
-                   any(is.na(k_simplimax), is.na(normalize),
-                       is.na(precision))) {
-
-          stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" type = 'none' and rotation = 'simplimax' or rotation = 'oblique' is used but at least one of k_simplimax, normalize, and precision is not specified. Please specify all these arguments or use 'EFAtools', 'psych', or 'SPSS' as type.\n"))
-
-
-        } else if (any(c("varimax", "orthogonal") %in% rotation) &&
-                   any(is.na(varimax_type), is.na(normalize),
-                       is.na(precision))) {
-
-          stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" type = 'none' and rotation = 'varimax' or rotation = 'orthogonal' is used but at least one of varimax_type, normalize, and precision is not specified. Please specify all these arguments or use 'EFAtools', 'psych', or 'SPSS' as type.\n"))
-
-
-        } else {
           grid_list[["nn_ml"]] <- .type_grid(method = "ML", init_comm = NA,
                                              criterion = NA, criterion_type = NA,
                                              abs_eigen = NA, start_method = start_method,
@@ -295,7 +246,6 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
                                              precision = precision,
                                              varimax_type = varimax_type,
                                              k_simplimax = k_simplimax)
-        }
 
       }
     }
@@ -314,7 +264,7 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
         }
 
         if ("psych" %in% type) {
-          grid_list[["psch_ls"]] <- .type_grid(method = "ML", init_comm = NA,
+          grid_list[["psch_ls"]] <- .type_grid(method = "ULS", init_comm = NA,
                                                criterion = NA, criterion_type = NA,
                                                abs_eigen = NA, start_method = NA,
                                                rotation = rotation, k_promax = 4,
@@ -325,7 +275,7 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
         }
 
         if ("SPSS" %in% type) {
-          grid_list[["spss_ls"]] <- .type_grid(method = "ML", init_comm = NA,
+          grid_list[["spss_ls"]] <- .type_grid(method = "ULS", init_comm = NA,
                                                criterion = NA, criterion_type = NA,
                                                abs_eigen = NA, start_method = NA,
                                                rotation = rotation, k_promax = 4,
@@ -336,29 +286,8 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
         }
 
         if ("none" %in% type) {
-          if (any(c("promax", "oblique") %in% rotation) &&
-                     any(is.na(k_promax), is.na(normalize), is.na(P_type),
-                         is.na(precision), is.na(varimax_type))) {
 
-            stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" type = 'none' and rotation = 'promax' or rotation = 'oblique' is used but at least one of k_promax, normalize, P_type, precision, and varimax_type is not specified. Please specify all these arguments or use 'EFAtools', 'psych', or 'SPSS' as type.\n"))
-
-
-          } else if (any(c("simplimax", "oblique") %in% rotation) &&
-                     any(is.na(k_simplimax), is.na(normalize),
-                         is.na(precision))) {
-
-            stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" type = 'none' and rotation = 'simplimax' or rotation = 'oblique' is used but at least one of k_simplimax, normalize, and precision is not specified. Please specify all these arguments or use 'EFAtools', 'psych', or 'SPSS' as type.\n"))
-
-
-          } else if (any(c("varimax", "orthogonal") %in% rotation) &&
-                     any(is.na(varimax_type), is.na(normalize),
-                         is.na(precision))) {
-
-            stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" type = 'none' and rotation = 'varimax' or rotation = 'orthogonal' is used but at least one of varimax_type, normalize, and precision is not specified. Please specify all these arguments or use 'EFAtools', 'psych', or 'SPSS' as type.\n"))
-
-
-          } else {
-            grid_list[["nn_ls"]] <- .type_grid(method = "ML", init_comm = NA,
+            grid_list[["nn_ls"]] <- .type_grid(method = "ULS", init_comm = NA,
                                                criterion = NA, criterion_type = NA,
                                                abs_eigen = NA, start_method = NA,
                                                rotation = rotation, k_promax = k_promax,
@@ -366,7 +295,6 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
                                                precision = precision,
                                                varimax_type = varimax_type,
                                                k_simplimax = k_simplimax)
-          }
 
         }
       }
@@ -377,7 +305,7 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
 
   if (nrow(arg_grid) == 1) {
 
-    warning(crayon::yellow$bold("!"), crayon::yellow(" There was only one combination of arguments, returning normal EFA() output.\n"))
+    warning(crayon::yellow$bold("!"), crayon::yellow(" There was only one combination of arguments, returning normal EFA output.\n"))
 
     return(EFA(R, n_factors, N = N, method = arg_grid$method, rotation = arg_grid$rotation,
         type = "none", max_iter = max_iter, init_comm = arg_grid$init_comm,
@@ -399,7 +327,12 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
 
   progressr::with_progress({
     n_efa <- nrow(arg_grid)
-    stepsize <- round(n_efa / 100 * 10)
+    if (n_efa <= 10) {
+      stepsize <- 1
+    } else {
+      stepsize <- round(n_efa / 100 * 10)
+    }
+
     efa_progress_bar <- progressr::progressor(steps = n_efa / stepsize)
     efa_progress_bar("Running EFAs:", class = "sticky", amount = 0)
     efa_list <- future.apply::future_lapply(1:n_efa,
