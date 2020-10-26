@@ -34,10 +34,10 @@
 #' psych package, and in SPSS. A specific psych implementation exists for PAF, ML, varimax,
 #' and promax. The SPSS implementation exists for PAF, varimax, and promax. For
 #' details, see \code{\link{EFA}}.
-#' @param aggregation character. One of "mean" (default), and "median". Controls
-#' whether the different results should be aggregated using the (trimmed) mean,
+#' @param averaging character. One of "mean" (default), and "median". Controls
+#' whether the different results should be averaged using the (trimmed) mean,
 #' or the median.
-#' @param trim numeric. If aggregation is set to "mean", this argument controls
+#' @param trim numeric. If averaging is set to "mean", this argument controls
 #' the trimming of extremes (for details see \code{\link[base:mean]{base::mean}}).
 #' By default no trimming is done (i.e., trim = 0).
 #' @param salience_threshold numeric. The threshold to use to classify a pattern
@@ -47,7 +47,7 @@
 #' and n_factors > 1 are used, as no simple structure is present there.
 #' @param max_iter numeric. The maximum number of iterations to perform after which
 #' the iterative PAF procedure is halted with a warning. Default is 10,000. Note
-#' that non-converged procedures are excluded from the aggregation procedure.
+#' that non-converged procedures are excluded from the averaging procedure.
 #' @param init_comm character vector. Any combination of "smc", "mac", and "unity".
 #' Controls the methods to estimate the initial communalities in \code{PAF} if
 #' "none" is among the specified types. "smc" will use squared multiple
@@ -167,7 +167,7 @@
 #' @examples
 #' TBD
 EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax",
-                        type = "none", aggregation = c("mean", "median"), trim = 0,
+                        type = "none", averaging = c("mean", "median"), trim = 0,
                         salience_threshold = .3,
                         max_iter = 1e4,
                         init_comm = c("smc", "mac", "unity"),
@@ -191,7 +191,7 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
   # method = "PAF"
   # rotation = "promax"
   # type = "none"
-  # aggregation = "mean"
+  # averaging = "mean"
   # trim = 0
   # salience_threshold = .3
   # max_iter = 1e4
@@ -228,7 +228,7 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
                            empty.ok = FALSE)
   checkmate::assert_subset(type, c("none", "EFAtools", "psych", "SPSS"),
                            empty.ok = FALSE)
-  aggregation <- match.arg(aggregation)
+  averaging <- match.arg(averaging)
   checkmate::assert_number(trim, lower = 0, upper = 0.5)
   checkmate::assert_number(salience_threshold, lower = 0, upper = 1)
   checkmate::assert_count(max_iter)
@@ -535,13 +535,13 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
 
   ### Extract relevant information from EFA outputs
   if (isTRUE(show_progress)) {
-    .show_agg_progress("\U0001f3c3", "Extracting data...")
+    .show_av_progress("\U0001f3c3", "Extracting data...")
   }
   ext_list <- .extract_data(efa_list, R, n_factors, n_efa, rotation, salience_threshold)
 
   if (n_factors > 1) {
     if (isTRUE(show_progress)) {
-      .show_agg_progress("\U0001f6b6", "Reordering factors...")
+      .show_av_progress("\U0001f6b6", "Reordering factors...")
     }
 
     re_list <- .array_reorder(ext_list$vars_accounted, ext_list$L, ext_list$L_corres,
@@ -552,11 +552,11 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
 
 
   if (isTRUE(show_progress)) {
-    .show_agg_progress("\U0001f3c3", "Aggregating data...")
+    .show_av_progress("\U0001f3c3", "Averaging data...")
   }
-  agg_list <- suppressWarnings(
-    .aggregate_values(re_list$vars_accounted, re_list$L, re_list$L_corres, ext_list$h2, re_list$phi,
-                      ext_list$extract_phi, aggregation, trim,
+  av_list <- suppressWarnings(
+    .average_values(re_list$vars_accounted, re_list$L, re_list$L_corres, ext_list$h2, re_list$phi,
+                      ext_list$extract_phi, averaging, trim,
                       ext_list$for_grid[, c("chisq", "p_chi", "caf", "cfi",
                                            "rmsea", "aic", "bic")], df, colnames(R)))
 
@@ -583,7 +583,7 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
     use = use,
     cor_method = cor_method,
     max_iter = max_iter,
-    aggregation = aggregation,
+    averaging = averaging,
     trim = trim,
     salience_threshold = salience_threshold
   )
@@ -591,12 +591,12 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
   # Create output
   output <- list(
     orig_R = R,
-    h2 = agg_list$h2,
-    loadings = agg_list$loadings,
-    Phi = agg_list$phi,
-    ind_fac_corres = agg_list$ind_fac_corres,
-    vars_accounted = agg_list$vars_accounted,
-    fit_indices = agg_list$fit_indices,
+    h2 = av_list$h2,
+    loadings = av_list$loadings,
+    Phi = av_list$phi,
+    ind_fac_corres = av_list$ind_fac_corres,
+    vars_accounted = av_list$vars_accounted,
+    fit_indices = av_list$fit_indices,
     implementations_grid = arg_grid,
     efa_list = efa_list,
     settings = settings
@@ -605,7 +605,7 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
   class(output) <- "EFA_AVERAGE"
 
   if (isTRUE(show_progress)) {
-    .show_agg_progress("", "", done = TRUE)
+    .show_av_progress("", "", done = TRUE)
   }
 
   return(output)

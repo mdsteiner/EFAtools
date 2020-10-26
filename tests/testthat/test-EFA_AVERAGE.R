@@ -29,11 +29,11 @@ efa_all_none <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
 efa_all_md <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
                             method = c("PAF", "ML", "ULS"),
                             type = c("none", "EFAtools", "psych", "SPSS"),
-                            rotation = "oblique", aggregation = "median")
+                            rotation = "oblique", averaging = "median")
 efa_all_tm <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
                           method = c("PAF", "ML", "ULS"),
                           type = c("none", "EFAtools", "psych", "SPSS"),
-                          rotation = "oblique", aggregation = "mean",
+                          rotation = "oblique", averaging = "mean",
                           trim = .2)
 efa_raw <- EFA_AVERAGE(GRiPS_raw, n_factors = 1, rotation = "none")
 efa_raw_p <- EFA_AVERAGE(GRiPS_raw, n_factors = 2, rotation = "promax")
@@ -51,17 +51,17 @@ test_that("output class and dimensions are correct", {
   expect_is(efa_raw, "EFA_AVERAGE")
   expect_is(efa_raw_p, "EFA_AVERAGE")
 
-  expect_is(efa_def$loadings$aggregate, "LOADINGS")
-  expect_is(efa_ml$loadings$aggregate, "LOADINGS")
-  expect_is(efa_uls$loadings$aggregate, "LOADINGS")
-  expect_is(efa_all$loadings$aggregate, "LOADINGS")
-  expect_is(efa_all_oblq$loadings$aggregate, "LOADINGS")
-  expect_is(efa_all_orth$loadings$aggregate, "LOADINGS")
-  expect_is(efa_all_none$loadings$aggregate, "LOADINGS")
-  expect_is(efa_all_md$loadings$aggregate, "LOADINGS")
-  expect_is(efa_all_tm$loadings$aggregate, "LOADINGS")
-  expect_is(efa_raw$loadings$aggregate, "LOADINGS")
-  expect_is(efa_raw_p$loadings$aggregate, "LOADINGS")
+  expect_is(efa_def$loadings$average, "LOADINGS")
+  expect_is(efa_ml$loadings$average, "LOADINGS")
+  expect_is(efa_uls$loadings$average, "LOADINGS")
+  expect_is(efa_all$loadings$average, "LOADINGS")
+  expect_is(efa_all_oblq$loadings$average, "LOADINGS")
+  expect_is(efa_all_orth$loadings$average, "LOADINGS")
+  expect_is(efa_all_none$loadings$average, "LOADINGS")
+  expect_is(efa_all_md$loadings$average, "LOADINGS")
+  expect_is(efa_all_tm$loadings$average, "LOADINGS")
+  expect_is(efa_raw$loadings$average, "LOADINGS")
+  expect_is(efa_raw_p$loadings$average, "LOADINGS")
 
   expect_named(efa_def, c("orig_R", "h2", "loadings", "Phi", "ind_fac_corres",
                           "vars_accounted", "fit_indices", "implementations_grid",
@@ -104,77 +104,77 @@ test_that("settings are returned correctly", {
                                    "abs_eigen", "varimax_type", "normalize",
                                    "k_promax", "k_simplimax", "P_type",
                                    "precision", "start_method", "use",
-                                   "cor_method", "max_iter", "aggregation",
+                                   "cor_method", "max_iter", "averaging",
                                    "trim", "salience_threshold"))
   expect_named(efa_ml$settings, c("method", "rotation", "type", "n_factors", "N",
                                   "init_comm", "criterion", "criterion_type",
                                   "abs_eigen", "varimax_type", "normalize",
                                   "k_promax", "k_simplimax", "P_type",
                                   "precision", "start_method", "use",
-                                  "cor_method", "max_iter", "aggregation",
+                                  "cor_method", "max_iter", "averaging",
                                   "trim", "salience_threshold"))
   expect_named(efa_uls$settings, c("method", "rotation", "type", "n_factors", "N",
                                    "init_comm", "criterion", "criterion_type",
                                    "abs_eigen", "varimax_type", "normalize",
                                    "k_promax", "k_simplimax", "P_type",
                                    "precision", "start_method", "use",
-                                   "cor_method", "max_iter", "aggregation",
+                                   "cor_method", "max_iter", "averaging",
                                    "trim", "salience_threshold"))
   expect_named(efa_all$settings, c("method", "rotation", "type", "n_factors", "N",
                                    "init_comm", "criterion", "criterion_type",
                                    "abs_eigen", "varimax_type", "normalize",
                                    "k_promax", "k_simplimax", "P_type",
                                    "precision", "start_method", "use",
-                                   "cor_method", "max_iter", "aggregation",
+                                   "cor_method", "max_iter", "averaging",
                                    "trim", "salience_threshold"))
   expect_named(efa_all_oblq$settings, c("method", "rotation", "type", "n_factors", "N",
                                         "init_comm", "criterion", "criterion_type",
                                         "abs_eigen", "varimax_type", "normalize",
                                         "k_promax", "k_simplimax", "P_type",
                                         "precision", "start_method", "use",
-                                        "cor_method", "max_iter", "aggregation",
+                                        "cor_method", "max_iter", "averaging",
                                         "trim", "salience_threshold"))
   expect_named(efa_all_orth$settings, c("method", "rotation", "type", "n_factors", "N",
                                         "init_comm", "criterion", "criterion_type",
                                         "abs_eigen", "varimax_type", "normalize",
                                         "k_promax", "k_simplimax", "P_type",
                                         "precision", "start_method", "use",
-                                        "cor_method", "max_iter", "aggregation",
+                                        "cor_method", "max_iter", "averaging",
                                         "trim", "salience_threshold"))
   expect_named(efa_all_none$settings, c("method", "rotation", "type", "n_factors", "N",
                                         "init_comm", "criterion", "criterion_type",
                                         "abs_eigen", "varimax_type", "normalize",
                                         "k_promax", "k_simplimax", "P_type",
                                         "precision", "start_method", "use",
-                                        "cor_method", "max_iter", "aggregation",
+                                        "cor_method", "max_iter", "averaging",
                                         "trim", "salience_threshold"))
   expect_named(efa_all_md$settings, c("method", "rotation", "type", "n_factors", "N",
                                       "init_comm", "criterion", "criterion_type",
                                       "abs_eigen", "varimax_type", "normalize",
                                       "k_promax", "k_simplimax", "P_type",
                                       "precision", "start_method", "use",
-                                      "cor_method", "max_iter", "aggregation",
+                                      "cor_method", "max_iter", "averaging",
                                       "trim", "salience_threshold"))
   expect_named(efa_all_tm$settings, c("method", "rotation", "type", "n_factors", "N",
                                       "init_comm", "criterion", "criterion_type",
                                       "abs_eigen", "varimax_type", "normalize",
                                       "k_promax", "k_simplimax", "P_type",
                                       "precision", "start_method", "use",
-                                      "cor_method", "max_iter", "aggregation",
+                                      "cor_method", "max_iter", "averaging",
                                       "trim", "salience_threshold"))
   expect_named(efa_raw$settings, c("method", "rotation", "type", "n_factors", "N",
                                    "init_comm", "criterion", "criterion_type",
                                    "abs_eigen", "varimax_type", "normalize",
                                    "k_promax", "k_simplimax", "P_type",
                                    "precision", "start_method", "use",
-                                   "cor_method", "max_iter", "aggregation",
+                                   "cor_method", "max_iter", "averaging",
                                    "trim", "salience_threshold"))
   expect_named(efa_raw_p$settings, c("method", "rotation", "type", "n_factors", "N",
                                      "init_comm", "criterion", "criterion_type",
                                      "abs_eigen", "varimax_type", "normalize",
                                      "k_promax", "k_simplimax", "P_type",
                                      "precision", "start_method", "use",
-                                     "cor_method", "max_iter", "aggregation",
+                                     "cor_method", "max_iter", "averaging",
                                      "trim", "salience_threshold"))
 
 
@@ -418,17 +418,17 @@ test_that("settings are returned correctly", {
   expect_equal(efa_raw$settings$max_iter, 10000)
   expect_equal(efa_raw_p$settings$max_iter, 10000)
 
-  expect_equal(efa_def$settings$aggregation, "mean")
-  expect_equal(efa_ml$settings$aggregation, "mean")
-  expect_equal(efa_uls$settings$aggregation, "mean")
-  expect_equal(efa_all$settings$aggregation, "mean")
-  expect_equal(efa_all_oblq$settings$aggregation, "mean")
-  expect_equal(efa_all_orth$settings$aggregation, "mean")
-  expect_equal(efa_all_none$settings$aggregation, "mean")
-  expect_equal(efa_all_md$settings$aggregation, "median")
-  expect_equal(efa_all_tm$settings$aggregation, "mean")
-  expect_equal(efa_raw$settings$aggregation, "mean")
-  expect_equal(efa_raw_p$settings$aggregation, "mean")
+  expect_equal(efa_def$settings$averaging, "mean")
+  expect_equal(efa_ml$settings$averaging, "mean")
+  expect_equal(efa_uls$settings$averaging, "mean")
+  expect_equal(efa_all$settings$averaging, "mean")
+  expect_equal(efa_all_oblq$settings$averaging, "mean")
+  expect_equal(efa_all_orth$settings$averaging, "mean")
+  expect_equal(efa_all_none$settings$averaging, "mean")
+  expect_equal(efa_all_md$settings$averaging, "median")
+  expect_equal(efa_all_tm$settings$averaging, "mean")
+  expect_equal(efa_raw$settings$averaging, "mean")
+  expect_equal(efa_raw_p$settings$averaging, "mean")
 
   expect_equal(efa_def$settings$trim, 0)
   expect_equal(efa_ml$settings$trim, 0)

@@ -267,7 +267,7 @@ test_that(".extract_data works", {
 })
 
 
-agg_mean_NA <- .aggregate_values(L = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
+av_mean_NA <- .average_values(L = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
                                           c(3, 3, 3)),
                                 L_corres = array(c(1, 0, 0, 0, 1, 0, 0, 0, 1,
                                                    1, 0, 0, 0, 0, 1, 0, 1, 0,
@@ -278,7 +278,7 @@ agg_mean_NA <- .aggregate_values(L = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
                                 h2 = matrix(rep(c(1, 3, 4), each = 3), ncol = 3, byrow = TRUE),
                                 phi = NA,
                                 extract_phi = FALSE,
-                                aggregation = "mean",
+                                averaging = "mean",
                                 trim = 0,
                                 for_grid = data.frame(chisq = c(1, 3, 4),
                                                       p_chi = c(1, 3, 4),
@@ -289,7 +289,7 @@ agg_mean_NA <- .aggregate_values(L = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
                                                       bic= c(1, 3, 4)),
                                 df = 5, ind_names = paste0("Ind", 1:3))
 
-agg_mean_NA_t01 <- .aggregate_values(L = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
+av_mean_NA_t01 <- .average_values(L = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
                                            c(3, 3, 3)),
                                  L_corres = array(c(1, 0, 0, 0, 1, 0, 0, 0, 1,
                                                     1, 0, 0, 0, 0, 1, 0, 1, 0,
@@ -300,7 +300,7 @@ agg_mean_NA_t01 <- .aggregate_values(L = array(c(rep(1, 9), rep(3, 9), rep(4, 9)
                                  h2 = matrix(rep(c(1, 3, 4), each = 3), ncol = 3, byrow = TRUE),
                                  phi = NA,
                                  extract_phi = FALSE,
-                                 aggregation = "mean",
+                                 averaging = "mean",
                                  trim = .5,
                                  for_grid = data.frame(chisq = c(1, 3, 4),
                                                        p_chi = c(1, 3, 4),
@@ -311,7 +311,7 @@ agg_mean_NA_t01 <- .aggregate_values(L = array(c(rep(1, 9), rep(3, 9), rep(4, 9)
                                                        bic= c(1, 3, 4)),
                                  df = 5, ind_names = paste0("Ind", 1:3))
 
-agg_mean <- .aggregate_values(L = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
+av_mean <- .average_values(L = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
                                            c(3, 3, 3)),
                                  L_corres = array(c(1, 0, 0, 0, 1, 0, 0, 0, 1,
                                                     1, 0, 0, 0, 0, 1, 0, 1, 0,
@@ -323,7 +323,7 @@ agg_mean <- .aggregate_values(L = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
                                  phi = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
                                              c(3, 3, 3)),
                                  extract_phi = TRUE,
-                                 aggregation = "mean",
+                                 averaging = "mean",
                                  trim = 0,
                                  for_grid = data.frame(chisq = c(1, 3, 4),
                                                        p_chi = c(1, 3, 4),
@@ -333,7 +333,7 @@ agg_mean <- .aggregate_values(L = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
                                                        aic = c(1, 3, 4),
                                                        bic= c(1, 3, 4)),
                                  df = 5, ind_names = paste0("Ind", 1:3))
-agg_median <- .aggregate_values(L = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
+av_median <- .average_values(L = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
                                         c(3, 3, 3)),
                               L_corres = array(c(1, 0, 0, 0, 1, 0, 0, 0, 1,
                                                  1, 0, 0, 0, 0, 1, 0, 1, 0,
@@ -345,7 +345,7 @@ agg_median <- .aggregate_values(L = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
                               phi = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
                                           c(3, 3, 3)),
                               extract_phi = TRUE,
-                              aggregation = "median",
+                              averaging = "median",
                               trim = 0,
                               for_grid = data.frame(chisq = c(1, 3, 4),
                                                     p_chi = c(1, 3, 4),
@@ -356,7 +356,7 @@ agg_median <- .aggregate_values(L = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
                                                     bic= c(1, 3, 4)),
                               df = 5, ind_names = paste0("Ind", 1:3))
 
-agg_median_NA <- .aggregate_values(L = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
+av_median_NA <- .average_values(L = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
                                            c(3, 3, 3)),
                                  L_corres = array(c(1, 0, 0, 0, 1, 0, 0, 0, 1,
                                                     1, 0, 0, 0, 0, 1, 0, 1, 0,
@@ -367,7 +367,7 @@ agg_median_NA <- .aggregate_values(L = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
                                  h2 = matrix(rep(c(1, 3, 4), each = 3), ncol = 3, byrow = TRUE),
                                  phi = NA,
                                  extract_phi = FALSE,
-                                 aggregation = "median",
+                                 averaging = "median",
                                  trim = 0.1,
                                  for_grid = data.frame(chisq = c(1, 3, 4),
                                                        p_chi = c(1, 3, 4),
@@ -378,177 +378,177 @@ agg_median_NA <- .aggregate_values(L = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
                                                        bic= c(1, 3, 4)),
                                  df = 5, ind_names = paste0("Ind", 1:3))
 
-test_that(".aggregate_values works", {
-  ### tests for agg_mean_NA with extract_phi = FALSE and trim = 0
-  expect_is(agg_mean_NA, "list")
-  expect_named(agg_mean_NA, c("h2", "loadings", "phi", "vars_accounted",
+test_that(".average_values works", {
+  ### tests for av_mean_NA with extract_phi = FALSE and trim = 0
+  expect_is(av_mean_NA, "list")
+  expect_named(av_mean_NA, c("h2", "loadings", "phi", "vars_accounted",
                               "ind_fac_corres", "fit_indices"))
-  expect_is(agg_mean_NA$h2, "list")
-  expect_named(agg_mean_NA$h2, c("aggregate", "sd", "min", "max", "range"))
-  expect_is(agg_mean_NA$h2$aggregate, "numeric")
-  expect_equal(unname(round(agg_mean_NA$h2$aggregate, 2)), rep(2.67, 3))
-  expect_named(agg_mean_NA$h2$aggregate, paste0("Ind", 1:3))
-  expect_equal(unname(agg_mean_NA$h2$sd), rep(1.527525, 3), tolerance = .01)
-  expect_equal(unname(agg_mean_NA$h2$min), rep(1, 3))
-  expect_equal(unname(agg_mean_NA$h2$max), rep(4, 3))
-  expect_is(agg_mean_NA$loadings, "list")
-  expect_named(agg_mean_NA$loadings, c("aggregate", "sd", "min", "max", "range"))
-  expect_is(agg_mean_NA$loadings$aggregate, "LOADINGS")
-  expect_equal(unclass(round(agg_mean_NA$loadings$aggregate, 2)), matrix(rep(2.67, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
-  expect_equal(agg_mean_NA$loadings$sd, matrix(rep(1.527525, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))), tolerance = .01)
-  expect_equal(unclass(agg_mean_NA$loadings$min), matrix(rep(1, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
-  expect_equal(unclass(agg_mean_NA$loadings$max), matrix(rep(4, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
-  expect_equal(agg_mean_NA$loadings$range, matrix(rep(3, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))), tolerance = .01)
-  expect_is(agg_mean_NA$vars_accounted, "list")
-  expect_named(agg_mean_NA$vars_accounted, c("aggregate", "sd", "min", "max", "range"))
-  expect_is(agg_mean_NA$vars_accounted$aggregate, "matrix")
-  expect_equal(round(agg_mean_NA$vars_accounted$aggregate, 2), matrix(rep(2.67, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
-  expect_equal(agg_mean_NA$vars_accounted$sd, matrix(rep(1.527525, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))), tolerance = .01)
-  expect_equal(agg_mean_NA$vars_accounted$min, matrix(rep(1, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
-  expect_equal(agg_mean_NA$vars_accounted$max, matrix(rep(4, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
-  expect_equal(agg_mean_NA$vars_accounted$range, matrix(rep(3, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))), tolerance = .01)
-  expect_equal(agg_mean_NA$phi, NA)
-  expect_is(agg_mean_NA$ind_fac_corres, "matrix")
-  expect_equal(round(agg_mean_NA$ind_fac_corres, 2),
+  expect_is(av_mean_NA$h2, "list")
+  expect_named(av_mean_NA$h2, c("average", "sd", "min", "max", "range"))
+  expect_is(av_mean_NA$h2$average, "numeric")
+  expect_equal(unname(round(av_mean_NA$h2$average, 2)), rep(2.67, 3))
+  expect_named(av_mean_NA$h2$average, paste0("Ind", 1:3))
+  expect_equal(unname(av_mean_NA$h2$sd), rep(1.527525, 3), tolerance = .01)
+  expect_equal(unname(av_mean_NA$h2$min), rep(1, 3))
+  expect_equal(unname(av_mean_NA$h2$max), rep(4, 3))
+  expect_is(av_mean_NA$loadings, "list")
+  expect_named(av_mean_NA$loadings, c("average", "sd", "min", "max", "range"))
+  expect_is(av_mean_NA$loadings$average, "LOADINGS")
+  expect_equal(unclass(round(av_mean_NA$loadings$average, 2)), matrix(rep(2.67, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
+  expect_equal(av_mean_NA$loadings$sd, matrix(rep(1.527525, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))), tolerance = .01)
+  expect_equal(unclass(av_mean_NA$loadings$min), matrix(rep(1, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
+  expect_equal(unclass(av_mean_NA$loadings$max), matrix(rep(4, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
+  expect_equal(av_mean_NA$loadings$range, matrix(rep(3, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))), tolerance = .01)
+  expect_is(av_mean_NA$vars_accounted, "list")
+  expect_named(av_mean_NA$vars_accounted, c("average", "sd", "min", "max", "range"))
+  expect_is(av_mean_NA$vars_accounted$average, "matrix")
+  expect_equal(round(av_mean_NA$vars_accounted$average, 2), matrix(rep(2.67, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
+  expect_equal(av_mean_NA$vars_accounted$sd, matrix(rep(1.527525, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))), tolerance = .01)
+  expect_equal(av_mean_NA$vars_accounted$min, matrix(rep(1, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
+  expect_equal(av_mean_NA$vars_accounted$max, matrix(rep(4, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
+  expect_equal(av_mean_NA$vars_accounted$range, matrix(rep(3, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))), tolerance = .01)
+  expect_equal(av_mean_NA$phi, NA)
+  expect_is(av_mean_NA$ind_fac_corres, "matrix")
+  expect_equal(round(av_mean_NA$ind_fac_corres, 2),
                matrix(c(1, 0, 0, 0, .67, .33, 0, .33, .67), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
-  expect_is(agg_mean_NA$fit_indices, "data.frame")
-  expect_named(agg_mean_NA$fit_indices, c("index", "aggregate", "sd", "range",
+  expect_is(av_mean_NA$fit_indices, "data.frame")
+  expect_named(av_mean_NA$fit_indices, c("index", "average", "sd", "range",
                                           "min", "max"))
-  expect_is(agg_mean_NA$fit_indices$index, "character")
-  expect_equal(agg_mean_NA$fit_indices$index, c("chisq", "p_chi", "caf", "cfi",
+  expect_is(av_mean_NA$fit_indices$index, "character")
+  expect_equal(av_mean_NA$fit_indices$index, c("chisq", "p_chi", "caf", "cfi",
                                              "rmsea", "aic", "bic", "df"))
-  expect_is(agg_mean_NA$fit_indices$aggregate, "numeric")
-  expect_equal(round(agg_mean_NA$fit_indices$aggregate, 2), c(rep(2.67, 7), 5))
-  expect_is(agg_mean_NA$fit_indices$sd, "numeric")
-  expect_equal(round(agg_mean_NA$fit_indices$sd, 2), c(rep(1.53, 7), 5))
-  expect_is(agg_mean_NA$fit_indices$range, "numeric")
-  expect_equal(agg_mean_NA$fit_indices$range, c(rep(3, 7), 5))
-  expect_is(agg_mean_NA$fit_indices$min, "numeric")
-  expect_equal(agg_mean_NA$fit_indices$min, c(rep(1, 7), 5))
-  expect_is(agg_mean_NA$fit_indices$max, "numeric")
-  expect_equal(agg_mean_NA$fit_indices$max, c(rep(4, 7), 5))
+  expect_is(av_mean_NA$fit_indices$average, "numeric")
+  expect_equal(round(av_mean_NA$fit_indices$average, 2), c(rep(2.67, 7), 5))
+  expect_is(av_mean_NA$fit_indices$sd, "numeric")
+  expect_equal(round(av_mean_NA$fit_indices$sd, 2), c(rep(1.53, 7), 5))
+  expect_is(av_mean_NA$fit_indices$range, "numeric")
+  expect_equal(av_mean_NA$fit_indices$range, c(rep(3, 7), 5))
+  expect_is(av_mean_NA$fit_indices$min, "numeric")
+  expect_equal(av_mean_NA$fit_indices$min, c(rep(1, 7), 5))
+  expect_is(av_mean_NA$fit_indices$max, "numeric")
+  expect_equal(av_mean_NA$fit_indices$max, c(rep(4, 7), 5))
 
 
-  ### tests for agg_mean_NA_t01 with extract_phi = FALSE and trim = .10
-  expect_is(agg_mean_NA_t01, "list")
-  expect_named(agg_mean_NA_t01, c("h2", "loadings", "phi", "vars_accounted",
+  ### tests for av_mean_NA_t01 with extract_phi = FALSE and trim = .10
+  expect_is(av_mean_NA_t01, "list")
+  expect_named(av_mean_NA_t01, c("h2", "loadings", "phi", "vars_accounted",
                                   "ind_fac_corres", "fit_indices"))
-  expect_is(agg_mean_NA_t01$h2, "list")
-  expect_named(agg_mean_NA_t01$h2, c("aggregate", "sd", "min", "max", "range"))
-  expect_is(agg_mean_NA_t01$h2$aggregate, "numeric")
-  expect_equal(unname(round(agg_mean_NA_t01$h2$aggregate, 2)), rep(3, 3))
-  expect_named(agg_mean_NA_t01$h2$aggregate, paste0("Ind", 1:3))
-  expect_equal(unname(agg_mean_NA_t01$h2$sd), rep(1.527525, 3), tolerance = .01)
-  expect_equal(unname(agg_mean_NA_t01$h2$min), rep(1, 3))
-  expect_equal(unname(agg_mean_NA_t01$h2$max), rep(4, 3))
-  expect_is(agg_mean_NA_t01$loadings, "list")
-  expect_named(agg_mean_NA_t01$loadings, c("aggregate", "sd", "min", "max", "range"))
-  expect_is(agg_mean_NA_t01$loadings$aggregate, "LOADINGS")
-  expect_equal(unclass(round(agg_mean_NA_t01$loadings$aggregate, 2)), matrix(rep(3, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
-  expect_equal(agg_mean_NA_t01$loadings$sd, matrix(rep(1.527525, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))), tolerance = .01)
-  expect_equal(unclass(agg_mean_NA_t01$loadings$min), matrix(rep(1, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
-  expect_equal(unclass(agg_mean_NA_t01$loadings$max), matrix(rep(4, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
-  expect_is(agg_mean_NA_t01$vars_accounted, "list")
-  expect_named(agg_mean_NA_t01$vars_accounted, c("aggregate", "sd", "min", "max", "range"))
-  expect_is(agg_mean_NA_t01$vars_accounted$aggregate, "matrix")
-  expect_equal(round(agg_mean_NA_t01$vars_accounted$aggregate, 2), matrix(rep(3, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
-  expect_equal(agg_mean_NA_t01$vars_accounted$sd, matrix(rep(1.527525, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))), tolerance = .01)
-  expect_equal(agg_mean_NA_t01$vars_accounted$min, matrix(rep(1, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
-  expect_equal(agg_mean_NA_t01$vars_accounted$max, matrix(rep(4, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
-  expect_equal(agg_mean_NA_t01$vars_accounted$range, matrix(rep(3, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))), tolerance = .01)
-  expect_equal(agg_mean_NA_t01$phi, NA)
-  expect_is(agg_mean_NA_t01$ind_fac_corres, "matrix")
-  expect_equal(round(agg_mean_NA_t01$ind_fac_corres, 2),
+  expect_is(av_mean_NA_t01$h2, "list")
+  expect_named(av_mean_NA_t01$h2, c("average", "sd", "min", "max", "range"))
+  expect_is(av_mean_NA_t01$h2$average, "numeric")
+  expect_equal(unname(round(av_mean_NA_t01$h2$average, 2)), rep(3, 3))
+  expect_named(av_mean_NA_t01$h2$average, paste0("Ind", 1:3))
+  expect_equal(unname(av_mean_NA_t01$h2$sd), rep(1.527525, 3), tolerance = .01)
+  expect_equal(unname(av_mean_NA_t01$h2$min), rep(1, 3))
+  expect_equal(unname(av_mean_NA_t01$h2$max), rep(4, 3))
+  expect_is(av_mean_NA_t01$loadings, "list")
+  expect_named(av_mean_NA_t01$loadings, c("average", "sd", "min", "max", "range"))
+  expect_is(av_mean_NA_t01$loadings$average, "LOADINGS")
+  expect_equal(unclass(round(av_mean_NA_t01$loadings$average, 2)), matrix(rep(3, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
+  expect_equal(av_mean_NA_t01$loadings$sd, matrix(rep(1.527525, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))), tolerance = .01)
+  expect_equal(unclass(av_mean_NA_t01$loadings$min), matrix(rep(1, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
+  expect_equal(unclass(av_mean_NA_t01$loadings$max), matrix(rep(4, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
+  expect_is(av_mean_NA_t01$vars_accounted, "list")
+  expect_named(av_mean_NA_t01$vars_accounted, c("average", "sd", "min", "max", "range"))
+  expect_is(av_mean_NA_t01$vars_accounted$average, "matrix")
+  expect_equal(round(av_mean_NA_t01$vars_accounted$average, 2), matrix(rep(3, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
+  expect_equal(av_mean_NA_t01$vars_accounted$sd, matrix(rep(1.527525, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))), tolerance = .01)
+  expect_equal(av_mean_NA_t01$vars_accounted$min, matrix(rep(1, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
+  expect_equal(av_mean_NA_t01$vars_accounted$max, matrix(rep(4, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
+  expect_equal(av_mean_NA_t01$vars_accounted$range, matrix(rep(3, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))), tolerance = .01)
+  expect_equal(av_mean_NA_t01$phi, NA)
+  expect_is(av_mean_NA_t01$ind_fac_corres, "matrix")
+  expect_equal(round(av_mean_NA_t01$ind_fac_corres, 2),
                matrix(c(1, 0, 0, 0, .67, .33, 0, .33, .67), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
-  expect_is(agg_mean_NA_t01$fit_indices, "data.frame")
-  expect_named(agg_mean_NA_t01$fit_indices, c("index", "aggregate", "sd", "range",
+  expect_is(av_mean_NA_t01$fit_indices, "data.frame")
+  expect_named(av_mean_NA_t01$fit_indices, c("index", "average", "sd", "range",
                                           "min", "max"))
-  expect_is(agg_mean_NA_t01$fit_indices$index, "character")
-  expect_equal(agg_mean_NA_t01$fit_indices$index, c("chisq", "p_chi", "caf", "cfi",
+  expect_is(av_mean_NA_t01$fit_indices$index, "character")
+  expect_equal(av_mean_NA_t01$fit_indices$index, c("chisq", "p_chi", "caf", "cfi",
                                                 "rmsea", "aic", "bic", "df"))
-  expect_is(agg_mean_NA_t01$fit_indices$aggregate, "numeric")
-  expect_equal(round(agg_mean_NA_t01$fit_indices$aggregate, 2), c(rep(3, 7), 5))
-  expect_is(agg_mean_NA_t01$fit_indices$sd, "numeric")
-  expect_equal(round(agg_mean_NA_t01$fit_indices$sd, 2), c(rep(1.53, 7), 5))
-  expect_is(agg_mean_NA_t01$fit_indices$range, "numeric")
-  expect_equal(agg_mean_NA_t01$fit_indices$range, c(rep(3, 7), 5))
-  expect_is(agg_mean_NA_t01$fit_indices$min, "numeric")
-  expect_equal(agg_mean_NA_t01$fit_indices$min, c(rep(1, 7), 5))
-  expect_is(agg_mean_NA_t01$fit_indices$max, "numeric")
-  expect_equal(agg_mean_NA_t01$fit_indices$max, c(rep(4, 7), 5))
+  expect_is(av_mean_NA_t01$fit_indices$average, "numeric")
+  expect_equal(round(av_mean_NA_t01$fit_indices$average, 2), c(rep(3, 7), 5))
+  expect_is(av_mean_NA_t01$fit_indices$sd, "numeric")
+  expect_equal(round(av_mean_NA_t01$fit_indices$sd, 2), c(rep(1.53, 7), 5))
+  expect_is(av_mean_NA_t01$fit_indices$range, "numeric")
+  expect_equal(av_mean_NA_t01$fit_indices$range, c(rep(3, 7), 5))
+  expect_is(av_mean_NA_t01$fit_indices$min, "numeric")
+  expect_equal(av_mean_NA_t01$fit_indices$min, c(rep(1, 7), 5))
+  expect_is(av_mean_NA_t01$fit_indices$max, "numeric")
+  expect_equal(av_mean_NA_t01$fit_indices$max, c(rep(4, 7), 5))
 
 
-  ### tests for agg_mean with extract_phi = TRUE (only affected output tested)
-  expect_is(agg_mean$phi, "list")
-  expect_is(agg_mean$phi$aggregate, "matrix")
-  expect_equal(round(agg_mean$phi$aggregate, 2), matrix(rep(2.67, 9), ncol = 3, dimnames = list(paste0("F", 1:3), paste0("F", 1:3))))
-  expect_is(agg_mean$phi$sd, "matrix")
-  expect_equal(round(agg_mean$phi$sd, 2), matrix(rep(1.53, 9), ncol = 3, dimnames = list(paste0("F", 1:3), paste0("F", 1:3))))
-  expect_is(agg_mean$phi$min, "matrix")
-  expect_equal(agg_mean$phi$min, matrix(rep(1, 9), ncol = 3, dimnames = list(paste0("F", 1:3), paste0("F", 1:3))))
-  expect_is(agg_mean$phi$max, "matrix")
-  expect_equal(agg_mean$phi$max, matrix(rep(4, 9), ncol = 3, dimnames = list(paste0("F", 1:3), paste0("F", 1:3))))
+  ### tests for av_mean with extract_phi = TRUE (only affected output tested)
+  expect_is(av_mean$phi, "list")
+  expect_is(av_mean$phi$average, "matrix")
+  expect_equal(round(av_mean$phi$average, 2), matrix(rep(2.67, 9), ncol = 3, dimnames = list(paste0("F", 1:3), paste0("F", 1:3))))
+  expect_is(av_mean$phi$sd, "matrix")
+  expect_equal(round(av_mean$phi$sd, 2), matrix(rep(1.53, 9), ncol = 3, dimnames = list(paste0("F", 1:3), paste0("F", 1:3))))
+  expect_is(av_mean$phi$min, "matrix")
+  expect_equal(av_mean$phi$min, matrix(rep(1, 9), ncol = 3, dimnames = list(paste0("F", 1:3), paste0("F", 1:3))))
+  expect_is(av_mean$phi$max, "matrix")
+  expect_equal(av_mean$phi$max, matrix(rep(4, 9), ncol = 3, dimnames = list(paste0("F", 1:3), paste0("F", 1:3))))
 
 
-  ### tests for agg_median_NA with extract_phi = FALSE
-  expect_is(agg_median_NA, "list")
-  expect_named(agg_median_NA, c("h2", "loadings", "phi", "vars_accounted",
+  ### tests for av_median_NA with extract_phi = FALSE
+  expect_is(av_median_NA, "list")
+  expect_named(av_median_NA, c("h2", "loadings", "phi", "vars_accounted",
                                 "ind_fac_corres", "fit_indices"))
-  expect_is(agg_median_NA$h2, "list")
-  expect_named(agg_median_NA$h2, c("aggregate", "sd", "min", "max", "range"))
-  expect_is(agg_median_NA$h2$aggregate, "numeric")
-  expect_equal(unname(round(agg_median_NA$h2$aggregate, 2)), rep(3, 3))
-  expect_named(agg_median_NA$h2$aggregate, paste0("Ind", 1:3))
-  expect_equal(unname(agg_median_NA$h2$sd), rep(1.527525, 3), tolerance = .01)
-  expect_equal(unname(agg_median_NA$h2$min), rep(1, 3))
-  expect_equal(unname(agg_median_NA$h2$max), rep(4, 3))
-  expect_is(agg_median_NA$loadings, "list")
-  expect_named(agg_median_NA$loadings, c("aggregate", "sd", "min", "max", "range"))
-  expect_is(agg_median_NA$loadings$aggregate, "LOADINGS")
-  expect_equal(unclass(round(agg_median_NA$loadings$aggregate, 2)), matrix(rep(3, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
-  expect_equal(agg_median_NA$loadings$sd, matrix(rep(1.527525, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))), tolerance = .01)
-  expect_equal(unclass(agg_median_NA$loadings$min), matrix(rep(1, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
-  expect_equal(unclass(agg_median_NA$loadings$max), matrix(rep(4, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
-  expect_is(agg_median_NA$vars_accounted, "list")
-  expect_named(agg_median_NA$vars_accounted, c("aggregate", "sd", "min", "max", "range"))
-  expect_is(agg_median_NA$vars_accounted$aggregate, "matrix")
-  expect_equal(round(agg_median_NA$vars_accounted$aggregate, 2), matrix(rep(3, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
-  expect_equal(agg_median_NA$vars_accounted$sd, matrix(rep(1.527525, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))), tolerance = .01)
-  expect_equal(agg_median_NA$vars_accounted$min, matrix(rep(1, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
-  expect_equal(agg_median_NA$vars_accounted$max, matrix(rep(4, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
-  expect_equal(agg_median_NA$vars_accounted$range, matrix(rep(3, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))), tolerance = .01)
-  expect_equal(agg_median_NA$phi, NA)
-  expect_is(agg_median_NA$ind_fac_corres, "matrix")
-  expect_equal(round(agg_median_NA$ind_fac_corres, 2),
+  expect_is(av_median_NA$h2, "list")
+  expect_named(av_median_NA$h2, c("average", "sd", "min", "max", "range"))
+  expect_is(av_median_NA$h2$average, "numeric")
+  expect_equal(unname(round(av_median_NA$h2$average, 2)), rep(3, 3))
+  expect_named(av_median_NA$h2$average, paste0("Ind", 1:3))
+  expect_equal(unname(av_median_NA$h2$sd), rep(1.527525, 3), tolerance = .01)
+  expect_equal(unname(av_median_NA$h2$min), rep(1, 3))
+  expect_equal(unname(av_median_NA$h2$max), rep(4, 3))
+  expect_is(av_median_NA$loadings, "list")
+  expect_named(av_median_NA$loadings, c("average", "sd", "min", "max", "range"))
+  expect_is(av_median_NA$loadings$average, "LOADINGS")
+  expect_equal(unclass(round(av_median_NA$loadings$average, 2)), matrix(rep(3, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
+  expect_equal(av_median_NA$loadings$sd, matrix(rep(1.527525, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))), tolerance = .01)
+  expect_equal(unclass(av_median_NA$loadings$min), matrix(rep(1, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
+  expect_equal(unclass(av_median_NA$loadings$max), matrix(rep(4, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
+  expect_is(av_median_NA$vars_accounted, "list")
+  expect_named(av_median_NA$vars_accounted, c("average", "sd", "min", "max", "range"))
+  expect_is(av_median_NA$vars_accounted$average, "matrix")
+  expect_equal(round(av_median_NA$vars_accounted$average, 2), matrix(rep(3, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
+  expect_equal(av_median_NA$vars_accounted$sd, matrix(rep(1.527525, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))), tolerance = .01)
+  expect_equal(av_median_NA$vars_accounted$min, matrix(rep(1, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
+  expect_equal(av_median_NA$vars_accounted$max, matrix(rep(4, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
+  expect_equal(av_median_NA$vars_accounted$range, matrix(rep(3, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))), tolerance = .01)
+  expect_equal(av_median_NA$phi, NA)
+  expect_is(av_median_NA$ind_fac_corres, "matrix")
+  expect_equal(round(av_median_NA$ind_fac_corres, 2),
                matrix(c(1, 0, 0, 0, .67, .33, 0, .33, .67), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
-  expect_is(agg_median_NA$fit_indices, "data.frame")
-  expect_named(agg_median_NA$fit_indices, c("index", "aggregate", "sd", "range",
+  expect_is(av_median_NA$fit_indices, "data.frame")
+  expect_named(av_median_NA$fit_indices, c("index", "average", "sd", "range",
                                               "min", "max"))
-  expect_is(agg_median_NA$fit_indices$index, "character")
-  expect_equal(agg_median_NA$fit_indices$index, c("chisq", "p_chi", "caf", "cfi",
+  expect_is(av_median_NA$fit_indices$index, "character")
+  expect_equal(av_median_NA$fit_indices$index, c("chisq", "p_chi", "caf", "cfi",
                                                     "rmsea", "aic", "bic", "df"))
-  expect_is(agg_median_NA$fit_indices$aggregate, "numeric")
-  expect_equal(round(agg_median_NA$fit_indices$aggregate, 2), c(rep(3, 7), 5))
-  expect_is(agg_median_NA$fit_indices$sd, "numeric")
-  expect_equal(round(agg_median_NA$fit_indices$sd, 2), c(rep(1.53, 7), 5))
-  expect_is(agg_median_NA$fit_indices$range, "numeric")
-  expect_equal(agg_median_NA$fit_indices$range, c(rep(3, 7), 5))
-  expect_is(agg_median_NA$fit_indices$min, "numeric")
-  expect_equal(agg_median_NA$fit_indices$min, c(rep(1, 7), 5))
-  expect_is(agg_median_NA$fit_indices$max, "numeric")
-  expect_equal(agg_median_NA$fit_indices$max, c(rep(4, 7), 5))
+  expect_is(av_median_NA$fit_indices$average, "numeric")
+  expect_equal(round(av_median_NA$fit_indices$average, 2), c(rep(3, 7), 5))
+  expect_is(av_median_NA$fit_indices$sd, "numeric")
+  expect_equal(round(av_median_NA$fit_indices$sd, 2), c(rep(1.53, 7), 5))
+  expect_is(av_median_NA$fit_indices$range, "numeric")
+  expect_equal(av_median_NA$fit_indices$range, c(rep(3, 7), 5))
+  expect_is(av_median_NA$fit_indices$min, "numeric")
+  expect_equal(av_median_NA$fit_indices$min, c(rep(1, 7), 5))
+  expect_is(av_median_NA$fit_indices$max, "numeric")
+  expect_equal(av_median_NA$fit_indices$max, c(rep(4, 7), 5))
 
 
-  ### tests for agg_median with extract_phi = TRUE (only affected output tested)
-  expect_is(agg_median$phi, "list")
-  expect_is(agg_median$phi$aggregate, "matrix")
-  expect_equal(round(agg_median$phi$aggregate, 2), matrix(rep(3, 9), ncol = 3, dimnames = list(paste0("F", 1:3), paste0("F", 1:3))))
-  expect_is(agg_median$phi$sd, "matrix")
-  expect_equal(round(agg_median$phi$sd, 2), matrix(rep(1.53, 9), ncol = 3, dimnames = list(paste0("F", 1:3), paste0("F", 1:3))))
-  expect_is(agg_median$phi$min, "matrix")
-  expect_equal(agg_median$phi$min, matrix(rep(1, 9), ncol = 3, dimnames = list(paste0("F", 1:3), paste0("F", 1:3))))
-  expect_is(agg_median$phi$max, "matrix")
-  expect_equal(agg_median$phi$max, matrix(rep(4, 9), ncol = 3, dimnames = list(paste0("F", 1:3), paste0("F", 1:3))))
+  ### tests for av_median with extract_phi = TRUE (only affected output tested)
+  expect_is(av_median$phi, "list")
+  expect_is(av_median$phi$average, "matrix")
+  expect_equal(round(av_median$phi$average, 2), matrix(rep(3, 9), ncol = 3, dimnames = list(paste0("F", 1:3), paste0("F", 1:3))))
+  expect_is(av_median$phi$sd, "matrix")
+  expect_equal(round(av_median$phi$sd, 2), matrix(rep(1.53, 9), ncol = 3, dimnames = list(paste0("F", 1:3), paste0("F", 1:3))))
+  expect_is(av_median$phi$min, "matrix")
+  expect_equal(av_median$phi$min, matrix(rep(1, 9), ncol = 3, dimnames = list(paste0("F", 1:3), paste0("F", 1:3))))
+  expect_is(av_median$phi$max, "matrix")
+  expect_equal(av_median$phi$max, matrix(rep(4, 9), ncol = 3, dimnames = list(paste0("F", 1:3), paste0("F", 1:3))))
 
 
 })
@@ -857,7 +857,7 @@ test_that(".type_grid works", {
                           NA, NA, NA, NA, NA, NA))
   expect_error(.type_grid("PAF", NA, NA, NA, NA, NA, c("promax", "varimax"),
                           NA, NA, NA, NA, NA, NA),
-               " 'rotation' contains both oblique rotations and orthogonal rotations, but can only aggregate rotations of the same kind. Oblique rotations are 'promax', 'oblimin', 'quartimin', 'simplimax', 'bentlerQ', 'geominQ', and 'bifactorQ'. Orthogonal rotations are 'varimax', 'quartimax', 'equamax', 'bentlerT', 'geominT', and 'bifactorT'.\n")
+               " 'rotation' contains both oblique rotations and orthogonal rotations, but can only average rotations of the same kind. Oblique rotations are 'promax', 'oblimin', 'quartimin', 'simplimax', 'bentlerQ', 'geominQ', and 'bifactorQ'. Orthogonal rotations are 'varimax', 'quartimax', 'equamax', 'bentlerT', 'geominT', and 'bifactorT'.\n")
 
   expect_is(tg_ob, "data.frame")
   expect_named(tg_ob, c("method", "init_comm", "criterion", "criterion_type",
@@ -938,7 +938,7 @@ test_that(".type_grid works", {
 
 rm(efa_pro, efa_temp, x_base, y_base, efa_ml, efa_uls, efa_paf, gof_ml, gof_uls,
    gof_paf, m, q, q_p, dat_unname, dat_unname_2, efa_list, ext_a, efa_list_er,
-   ext_er, efa_list_rot, ext_rot, agg_mean_NA, agg_mean_NA_t01, agg_mean,
-   agg_median, agg_median_NA, arr_re_NA, arr_re, obl_grid_1, obl_grid_2,
+   ext_er, efa_list_rot, ext_rot, av_mean_NA, av_mean_NA_t01, av_mean,
+   av_median, av_median_NA, arr_re_NA, arr_re, obl_grid_1, obl_grid_2,
    obl_grid_3, obl_grid_4, orth_grid_1, orth_grid_2, orth_grid_3, orth_grid_4,
    tg_ob, tg_ob2, tg_orth, tg_orth2, tg_nn)

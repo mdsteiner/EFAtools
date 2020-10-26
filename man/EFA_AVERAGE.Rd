@@ -27,7 +27,7 @@ EFA_AVERAGE(
   method = "PAF",
   rotation = "promax",
   type = "none",
-  aggregation = c("mean", "median"),
+  averaging = c("mean", "median"),
   trim = 0,
   salience_threshold = 0.3,
   max_iter = 10000,
@@ -81,11 +81,11 @@ psych package, and in SPSS. A specific psych implementation exists for PAF, ML, 
 and promax. The SPSS implementation exists for PAF, varimax, and promax. For
 details, see \code{\link{EFA}}.}
 
-\item{aggregation}{character. One of "mean" (default), and "median". Controls
-whether the different results should be aggregated using the (trimmed) mean,
+\item{averaging}{character. One of "mean" (default), and "median". Controls
+whether the different results should be averaged using the (trimmed) mean,
 or the median.}
 
-\item{trim}{numeric. If aggregation is set to "mean", this argument controls
+\item{trim}{numeric. If averaging is set to "mean", this argument controls
 the trimming of extremes (for details see \code{\link[base:mean]{base::mean}}).
 By default no trimming is done (i.e., trim = 0).}
 
@@ -97,7 +97,7 @@ and n_factors > 1 are used, as no simple structure is present there.}
 
 \item{max_iter}{numeric. The maximum number of iterations to perform after which
 the iterative PAF procedure is halted with a warning. Default is 10,000. Note
-that non-converged procedures are excluded from the aggregation procedure.}
+that non-converged procedures are excluded from the averaging procedure.}
 
 \item{init_comm}{character vector. Any combination of "smc", "mac", and "unity".
 Controls the methods to estimate the initial communalities in \code{PAF} if

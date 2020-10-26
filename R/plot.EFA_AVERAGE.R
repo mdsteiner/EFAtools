@@ -14,7 +14,7 @@
 #'
 plot.EFA_AVERAGE <- function(x, ...) {
 
-  aggregation <- x$settings$aggregation
+  averaging <- x$settings$averaging
 
   # Prepare data
   dat <- lapply(x$loadings, function(x){
@@ -30,13 +30,13 @@ plot.EFA_AVERAGE <- function(x, ...) {
   dat <- do.call(cbind, dat)
 
   dat <- dat %>%
-    dplyr::select(row_ind = aggregate.rowname,
-           col_ind = aggregate.colname,
-           aggregate = aggregate.loadings,
+    dplyr::select(row_ind = average.rowname,
+           col_ind = average.colname,
+           average = average.loadings,
            min = min.loadings,
            max = max.loadings) %>%
-    dplyr::mutate(row_ind = factor(row_ind, levels = rownames(x$loadings$aggregate)),
-           col_ind = factor(col_ind, levels = colnames(x$loadings$aggregate)))
+    dplyr::mutate(row_ind = factor(row_ind, levels = rownames(x$loadings$average)),
+           col_ind = factor(col_ind, levels = colnames(x$loadings$average)))
 
   # Create plot faceted for variables and factors
 
@@ -48,13 +48,13 @@ plot.EFA_AVERAGE <- function(x, ...) {
                        xmax = x$settings$salience_threshold,
                        ymin = -2, ymax = 2, fill = ggplot2::alpha("grey", 0.3)) +
     ggplot2::scale_y_continuous(limits = c(-1, 1)) +
-    ggplot2::geom_point(ggplot2::aes(aggregate, 0), color = "darkred") +
+    ggplot2::geom_point(ggplot2::aes(average, 0), color = "darkred") +
     ggplot2::facet_grid(rows = ggplot2::vars(row_ind),
                         cols = ggplot2::vars(col_ind),
                         switch = "y") +
     ggplot2::theme_minimal() +
     ggplot2::ggtitle(paste0("Minimum, Maximum, and ",
-                                ifelse(aggregation == "mean", "Mean", "Median"),
+                                ifelse(averaging == "mean", "Mean", "Median"),
                                 " Loadings"), ) +
     ggplot2::theme(axis.title.y = ggplot2::element_blank(),
           axis.title.x = ggplot2::element_blank(),

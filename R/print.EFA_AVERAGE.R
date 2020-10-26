@@ -4,7 +4,7 @@
 #'
 #' @param x list. An object of class EFA_AVERAGE to be printed
 #' @param stat. character. A vector with the statistics to print. Possible inputs
-#' are "aggregate", "sd", "range", "min", and "max". Default is "aggregate" and
+#' are "average", "sd", "range", "min", and "max". Default is "average" and
 #' "range".
 #' @param ...  Further arguments for print.
 #'
@@ -17,10 +17,10 @@
 #' EFA_aver <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500)
 #' EFA_aver
 #'
-print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"),
+print.EFA_AVERAGE <- function(x, stat = c("average", "range"),
                               plot = TRUE, ...) {
 
-  checkmate::assert_subset(stat, c("aggregate", "sd", "range", "min", "max"),
+  checkmate::assert_subset(stat, c("average", "sd", "range", "min", "max"),
                            empty.ok = FALSE)
 
   # extract settings
@@ -29,7 +29,7 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"),
   rotation <- settings$rotation
   N <- settings$N
   grid <- x$implementations_grid
-  aggregation <- settings$aggregation
+  averaging <- settings$averaging
 
   # settings that were varied
   varied_settings <- grid
@@ -45,8 +45,8 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"),
   rownames(fit) <- fit$index
 
   cat("\n")
-  cat("Averaging performed with aggregation method ",
-      crayon::bold(ifelse(aggregation == "median", "median",
+  cat("Averaging performed with averaging method ",
+      crayon::bold(ifelse(averaging == "median", "median",
                           paste0("mean (trim = ", settings$trim, ")", sep = ""))),
       " across ", crayon::bold(no_efas), " EFAs, ",
       "varying the following settings: ",
@@ -93,7 +93,7 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"),
     cat("\n")
     cat(cli::rule(left = crayon::bold("Loadings"), col = "blue", line = 2))
     cat("\n")
-    .print_average(x, what = c("loadings"), stat = stat, aggregation = aggregation)
+    .print_average(x, what = c("loadings"), stat = stat, averaging = averaging)
     cat("\n")
 
   ## Print Phi for oblique solutions
@@ -102,7 +102,7 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"),
     cat("\n")
     cat(cli::rule(left = crayon::bold("Factor Intercorrelations from Oblique Solutions"), col = "blue", line = 2))
     cat("\n")
-    .print_average(x, what = c("Phi"), stat = stat, aggregation = aggregation)
+    .print_average(x, what = c("Phi"), stat = stat, averaging = averaging)
     cat("\n")
   }
 
@@ -112,12 +112,12 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"),
                   line = 2))
     cat("\n")
     .print_average(x, what = c("vars_accounted"), stat = stat,
-                   aggregation = aggregation)
+                   averaging = averaging)
     cat("\n")
 
 
   # Print fit indices
-  if (fit["df", "aggregate"] == 0) {
+  if (fit["df", "average"] == 0) {
     cat("\n")
     cat(crayon::yellow$bold("!"), crayon::yellow(" The model is just identified (df = 0). Goodness of fit indices may not be interpretable."))
     cat("\n")
@@ -127,7 +127,7 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"),
     cat(cli::rule(left = crayon::bold("Model Fit"), col = "blue", line = 2))
     cat("\n")
     cat("\n")
-    cat(crayon::blue("       ", ifelse(aggregation == "mean", "M", "Md"),
+    cat(crayon::blue("       ", ifelse(averaging == "mean", "M", "Md"),
                      " (SD) [Min; Max]", sep = ""))
     cat("\n")
 
@@ -135,14 +135,14 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"),
 
     .print_gof(fit, ind = "caf", ind_name = "CAF:  ", print_zero = FALSE, digits = 2)
     cat(crayon::blue("df: "),
-        .numformat(fit["df", "aggregate"], 0, print_zero = TRUE), "\n", sep = "")
+        .numformat(fit["df", "average"], 0, print_zero = TRUE), "\n", sep = "")
 
   } else {
 
     .print_gof(fit, ind = c("chisq"), ind_name = "\U1D712\U00B2: ",
                print_zero = TRUE, digits = 2)
     cat(crayon::blue("df: "),
-        .numformat(fit["df", "aggregate"], 0, print_zero = TRUE), "\n", sep = "")
+        .numformat(fit["df", "average"], 0, print_zero = TRUE), "\n", sep = "")
     .print_gof(fit, ind = c("p_chi", "cfi", "rmsea", "aic", "bic", "caf"),
                ind_name = c(crayon::italic("p: "), "CFI: ", "RMSEA: ",
                             "AIC: ", "BIC: ", "CAF: "),
@@ -154,7 +154,7 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"),
     # Plot loadings
     if(isTRUE(plot)){
 
-    if(ncol(x$loadings$aggregate) <= 10){
+    if(ncol(x$loadings$average) <= 10){
 
       plot(x)
 
@@ -170,11 +170,11 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"),
 
 }
 
-.print_average <- function(x, what, stat, aggregation){
+.print_average <- function(x, what, stat, averaging){
 
-  if("aggregate" %in% stat){
+  if("average" %in% stat){
 
-    if(aggregation == "mean"){
+    if(averaging == "mean"){
 
       cat("\n")
       cat(cli::rule(left = crayon::bold("Mean"), col = "blue"))
@@ -192,17 +192,17 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"),
 
     if(what == "loadings"){
 
-      print(x$loadings$aggregate)
+      print(x$loadings$average)
 
       } else if(what == "Phi"){
 
-        cat(.get_compare_matrix(x$Phi$aggregate, r_red = Inf, n_char = 17,
+        cat(.get_compare_matrix(x$Phi$average, r_red = Inf, n_char = 17,
                                 var_names = paste0("F",
-                                                   seq_len(ncol(x$Phi$aggregate)))))
+                                                   seq_len(ncol(x$Phi$average)))))
 
       } else {
 
-        cat(.get_compare_matrix(x$vars_accounted$aggregate, r_red = Inf,
+        cat(.get_compare_matrix(x$vars_accounted$average, r_red = Inf,
                                 n_char = 17))
 
       }
@@ -321,11 +321,11 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"),
       if(ind[i] %in% c("p_chi", "cfi", "rmsea", "caf")){
 
   cat(crayon::blue(ind_name[i], sep = ""),
-      ifelse(round(fit[ind[i], "aggregate"], digits[i]) < 1,
-             substr(.numformat(fit[ind[i], "aggregate"], digits = digits[i],
+      ifelse(round(fit[ind[i], "average"], digits[i]) < 1,
+             substr(.numformat(fit[ind[i], "average"], digits = digits[i],
                                print_zero = print_zero[i]),
                     2, digits + 2),
-             .numformat(fit[ind[i], "aggregate"], digits = digits[i],
+             .numformat(fit[ind[i], "average"], digits = digits[i],
                         print_zero = print_zero[i])), " (",
       ifelse(round(fit[ind[i], "sd"], digits[i]) < 1,
              substr(.numformat(fit[ind[i], "sd"], digits = digits[i],
@@ -351,7 +351,7 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"),
       } else {
 
         cat(crayon::blue(ind_name[i], sep = ""),
-            .numformat(fit[ind[i], "aggregate"], digits = digits[i],
+            .numformat(fit[ind[i], "average"], digits = digits[i],
                                      print_zero = print_zero[i]), " (",
             .numformat(fit[ind[i], "sd"], digits = digits[i],
                        print_zero = print_zero[i]),

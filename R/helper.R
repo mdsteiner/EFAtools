@@ -504,8 +504,8 @@ if(n == 1){
 }
 
 
-# for progress bar in AGGREGATE_EFA
-.show_agg_progress <- function(emoji, what, done = FALSE) {
+# for progress bar in EFA_AVERAGE
+.show_av_progress <- function(emoji, what, done = FALSE) {
 
   cat("\r", rep(" ", ifelse(options("width") > 30, options("width"), 30)))
   if (isFALSE(done)) {
@@ -646,60 +646,60 @@ if(n == 1){
 
 }
 
-### aggregate arrays
-.aggregate_values <- function(vars_accounted, L, L_corres, h2, phi, extract_phi,
-                              aggregation, trim, for_grid, df, ind_names) {
+### average arrays
+.average_values <- function(vars_accounted, L, L_corres, h2, phi, extract_phi,
+                              averaging, trim, for_grid, df, ind_names) {
 
-  if (aggregation == "mean") {
+  if (averaging == "mean") {
 
     if (trim == 0) {
       # faster, but only works without trimming
-      L_agg <- rowMeans(L, na.rm = TRUE, dims = 2)
-      h2_agg <- colMeans(h2, na.rm = TRUE)
-      fit_agg <- colMeans(for_grid, na.rm = TRUE)
-      vars_accounted_agg <- rowMeans(vars_accounted, na.rm = TRUE, dims = 2)
+      L_av <- rowMeans(L, na.rm = TRUE, dims = 2)
+      h2_av <- colMeans(h2, na.rm = TRUE)
+      fit_av <- colMeans(for_grid, na.rm = TRUE)
+      vars_accounted_av <- rowMeans(vars_accounted, na.rm = TRUE, dims = 2)
 
 
       if (isTRUE(extract_phi)) {
-        phi_agg <- rowMeans(phi, na.rm = TRUE, dims = 2)
+        phi_av <- rowMeans(phi, na.rm = TRUE, dims = 2)
       }
     } else {
-      L_agg <- apply(L, 1:2, mean, na.rm = TRUE, trim = trim)
-      h2_agg <- apply(h2, 2, mean, na.rm = TRUE, trim = trim)
-      fit_agg <- apply(for_grid, 2, mean, na.rm = TRUE, trim = trim)
-      vars_accounted_agg <- apply(vars_accounted, 1:2, mean, na.rm = TRUE,
+      L_av <- apply(L, 1:2, mean, na.rm = TRUE, trim = trim)
+      h2_av <- apply(h2, 2, mean, na.rm = TRUE, trim = trim)
+      fit_av <- apply(for_grid, 2, mean, na.rm = TRUE, trim = trim)
+      vars_accounted_av <- apply(vars_accounted, 1:2, mean, na.rm = TRUE,
                                   trim = trim)
 
       if (isTRUE(extract_phi)) {
-        phi_agg <- apply(phi, 1:2, mean, na.rm = TRUE, trim = trim)
+        phi_av <- apply(phi, 1:2, mean, na.rm = TRUE, trim = trim)
       }
     }
 
-  } else if (aggregation == "median") {
-    L_agg <- apply(L, 1:2, median, na.rm = TRUE)
-    h2_agg <- apply(h2, 2, median, na.rm = TRUE)
-    fit_agg <- apply(for_grid, 2, median, na.rm = TRUE)
-    vars_accounted_agg <- apply(vars_accounted, 1:2, median, na.rm = TRUE)
+  } else if (averaging == "median") {
+    L_av <- apply(L, 1:2, median, na.rm = TRUE)
+    h2_av <- apply(h2, 2, median, na.rm = TRUE)
+    fit_av <- apply(for_grid, 2, median, na.rm = TRUE)
+    vars_accounted_av <- apply(vars_accounted, 1:2, median, na.rm = TRUE)
     if (isTRUE(extract_phi)) {
-      phi_agg <- apply(phi, 1:2, median, na.rm = TRUE)
+      phi_av <- apply(phi, 1:2, median, na.rm = TRUE)
     }
   }
 
 
-  nf <- ncol(L_agg)
+  nf <- ncol(L_av)
   f_names <- paste0("F", 1:nf)
 
-  L_corres_agg <- rowMeans(L_corres, na.rm = TRUE, dims = 2)
-  row.names(L_corres_agg) <- ind_names
-  colnames(L_corres_agg) <- f_names
+  L_corres_av <- rowMeans(L_corres, na.rm = TRUE, dims = 2)
+  row.names(L_corres_av) <- ind_names
+  colnames(L_corres_av) <- f_names
 
   L_min <- apply(L, 1:2, min, na.rm = TRUE)
   L_max <- apply(L, 1:2, max, na.rm = TRUE)
   L_range <- L_max - L_min
   L_sd <- apply(L, 1:2, sd, na.rm = TRUE)
-  rownames(L_agg) <- ind_names
-  colnames(L_agg) <- f_names
-  class(L_agg) <- "LOADINGS"
+  rownames(L_av) <- ind_names
+  colnames(L_av) <- f_names
+  class(L_av) <- "LOADINGS"
   rownames(L_min) <- ind_names
   colnames(L_min) <- f_names
   class(L_min) <- "LOADINGS"
@@ -719,13 +719,13 @@ if(n == 1){
   vars_accounted_sd <- apply(vars_accounted, 1:2, sd, na.rm = TRUE)
 
 
-  if (nrow(vars_accounted_agg) == 2) {
+  if (nrow(vars_accounted_av) == 2) {
     var_names <- c("SS loadings", "Prop Tot Var")
   } else {
     var_names <- c("SS loadings", "Prop Tot Var", "Prop Comm Var")
   }
-  rownames(vars_accounted_agg) <- var_names
-  colnames(vars_accounted_agg) <- f_names
+  rownames(vars_accounted_av) <- var_names
+  colnames(vars_accounted_av) <- f_names
   rownames(vars_accounted_min) <- var_names
   colnames(vars_accounted_min) <- f_names
   rownames(vars_accounted_max) <- var_names
@@ -740,7 +740,7 @@ if(n == 1){
   h2_max <- apply(h2, 2, max, na.rm = TRUE)
   h2_range <- h2_max - h2_min
   h2_sd <- apply(h2, 2, sd, na.rm = TRUE)
-  names(h2_agg) <- ind_names
+  names(h2_av) <- ind_names
   names(h2_min) <- ind_names
   names(h2_max) <- ind_names
   names(h2_range) <- ind_names
@@ -752,15 +752,15 @@ if(n == 1){
   fit_range <- fit_max - fit_min
   fit_sd <- apply(for_grid, 2, sd, na.rm = TRUE)
 
-  fit_agg[is.infinite(fit_agg)] <- NA
+  fit_av[is.infinite(fit_av)] <- NA
   fit_min[is.infinite(fit_min)] <- NA
   fit_max[is.infinite(fit_max)] <- NA
   fit_range[is.infinite(fit_range)] <- NA
   fit_sd[is.infinite(fit_sd)] <- NA
 
   fit_indices <- data.frame(
-    index = c(names(fit_agg), "df"),
-    aggregate = c(fit_agg, df),
+    index = c(names(fit_av), "df"),
+    average = c(fit_av, df),
     sd = c(fit_sd, df),
     range = c(fit_range, df),
     min = c(fit_min, df),
@@ -772,8 +772,8 @@ if(n == 1){
     phi_max <- apply(phi, 1:2, max, na.rm = TRUE)
     phi_range <- phi_max - phi_min
     phi_sd <- apply(phi, 1:2, sd, na.rm = TRUE)
-    colnames(phi_agg) <- paste0("F", 1:nf)
-    rownames(phi_agg) <- paste0("F", 1:nf)
+    colnames(phi_av) <- paste0("F", 1:nf)
+    rownames(phi_av) <- paste0("F", 1:nf)
     colnames(phi_min) <- paste0("F", 1:nf)
     rownames(phi_min) <- paste0("F", 1:nf)
     colnames(phi_max) <- paste0("F", 1:nf)
@@ -787,7 +787,7 @@ if(n == 1){
 
   if (isTRUE(extract_phi)) {
     phi_list <- list(
-      aggregate = phi_agg,
+      average = phi_av,
       sd = phi_sd,
       min = phi_min,
       max = phi_max,
@@ -799,14 +799,14 @@ if(n == 1){
 
   out <- list(
     h2 = list(
-      aggregate = h2_agg,
+      average = h2_av,
       sd = h2_sd,
       min = h2_min,
       max = h2_max,
       range = h2_range
     ),
     loadings = list(
-      aggregate = L_agg,
+      average = L_av,
       sd = L_sd,
       min = L_min,
       max = L_max,
@@ -814,13 +814,13 @@ if(n == 1){
     ),
     phi = phi_list,
     vars_accounted = list(
-      aggregate = vars_accounted_agg,
+      average = vars_accounted_av,
       sd = vars_accounted_sd,
       min = vars_accounted_min,
       max = vars_accounted_max,
       range = vars_accounted_range
     ),
-    ind_fac_corres = L_corres_agg,
+    ind_fac_corres = L_corres_av,
     fit_indices = fit_indices)
 
   return(out)
@@ -869,7 +869,7 @@ if(n == 1){
 
 }
 
-### create grid for oblique rotations in AGGREGATE_EFA
+### create grid for oblique rotations in EFA_AVERAGE
 .oblq_grid <- function(method, init_comm, criterion, criterion_type,
                        abs_eigen, start_method, rotation, k_promax, normalize, P_type,
                        precision, varimax_type, k_simplimax){
@@ -916,7 +916,7 @@ if(n == 1){
 
 }
 
-### create grid for orthogonal rotations in AGGREGATE_EFA
+### create grid for orthogonal rotations in EFA_AVERAGE
 .orth_grid <- function(method, init_comm, criterion, criterion_type,
                        abs_eigen, start_method, rotation, normalize,
                        precision, varimax_type){
@@ -969,7 +969,7 @@ if(n == 1){
 
     } else {
 
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" rotation = 'none' is used but rotation is of length > 1. Can only aggregate EFAs with rotations of the same type ('none', 'orthogonal', or 'oblique').\n"))
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" rotation = 'none' is used but rotation is of length > 1. Can only average EFAs with rotations of the same type ('none', 'orthogonal', or 'oblique').\n"))
 
     }
   } else if ("oblique" %in% rotation) {
@@ -987,7 +987,7 @@ if(n == 1){
 
     } else {
 
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" rotation = 'oblique' is used but rotation is of length > 1. Can only aggregate EFAs with rotations of the same type ('none', 'orthogonal', or 'oblique').\n"))
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" rotation = 'oblique' is used but rotation is of length > 1. Can only average EFAs with rotations of the same type ('none', 'orthogonal', or 'oblique').\n"))
 
     }
 
@@ -1005,7 +1005,7 @@ if(n == 1){
 
     } else {
 
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" rotation = 'orthogonal' is used but rotation is of length > 1. Can only aggregate EFAs with rotations of the same type ('none', 'orthogonal', or 'oblique').\n"))
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" rotation = 'orthogonal' is used but rotation is of length > 1. Can only average EFAs with rotations of the same type ('none', 'orthogonal', or 'oblique').\n"))
 
     }
 
@@ -1034,7 +1034,7 @@ if(n == 1){
                                  "bentlerQ", "geominQ", "bifactorQ")) &&
              any(rotation %in% c("varimax", "quartimax", "equamax",
                                  "bentlerT", "geominT", "bifactorT"))) {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'rotation' contains both oblique rotations and orthogonal rotations, but can only aggregate rotations of the same kind. Oblique rotations are 'promax', 'oblimin', 'quartimin', 'simplimax', 'bentlerQ', 'geominQ', and 'bifactorQ'. Orthogonal rotations are 'varimax', 'quartimax', 'equamax', 'bentlerT', 'geominT', and 'bifactorT'.\n"))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'rotation' contains both oblique rotations and orthogonal rotations, but can only average rotations of the same kind. Oblique rotations are 'promax', 'oblimin', 'quartimin', 'simplimax', 'bentlerQ', 'geominQ', and 'bifactorQ'. Orthogonal rotations are 'varimax', 'quartimax', 'equamax', 'bentlerT', 'geominT', and 'bifactorT'.\n"))
   }
 
   return(do.call(rbind, t_grid_list))
