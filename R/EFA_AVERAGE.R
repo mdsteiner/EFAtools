@@ -114,40 +114,51 @@
 #' console. Default is TRUE.
 #'
 #' @details
-#' TBD
+#' PROCEED HERE:
+#'
+#' INFO ON HOW GRID IS PRODUCED (UNIQUE ENTRIES, E.G. IF TYPE = C("NONE", "SPSS") AND SPECIFIC SETTINGS FOR PAF / VARIMAX / PROMAX ARE ENTERED, IT TAKES THE SETTING COMBINATION CORRESPONDING SPSS ONLY ONCE)
+#' INCLUDE INFO WHICH SOLUTIONS WERE EXCLUDED FROM AVERAGING (ERRORS, NON-CONVERGENCE, HEYWOOD CASES)
+#' MAKE CLEAR THAT THE AVERAGE, MIN AND MAX SOLUTIONS ARE NOT WHOLE SOLUTIONS, BUT INCLUDE AVERAGE, MIN AND MAX VALUE FOR EACH CELL (JUST AS FOR SD AND RANGE AS WELL)
+#' FIT INDICES: MAKE CLEAR THAT IF PAF AND ML OR ULS ARE ENTERED IN METHODS, ALL FIT INDICES APART FROM CAF ARE AVERAGED ACROSS THE ML / ULS SOLUTIONS ONLY, JUST THE CAF IS AVERAGED ACROSS ALL SOLUTIONS.
+#' DEFINE HEYWOOD CASE AND ADMISSIBLE SOLUTION
 #'
 #' @return A list of class EFA_AVERAGE containing
 #' \item{orig_R}{Original correlation matrix.}
-#' \item{h2}{A list with the average, standard deviation, minimum, and maximum
-#' final communality estimates.}
-#'
-#' HERE
-#'
-#' \item{orig_eigen}{Eigen values of the original correlation matrix.}
-#' \item{init_eigen}{Initial eigenvalues, obtained from the correlation matrix
-#'  with the initial communality estimates as diagonal in PAF.}
-#' \item{final_eigen}{Eigenvalues obtained from the correlation matrix
-#'  with the final communality estimates as diagonal.}
-#' \item{iter}{The number of iterations needed for convergence.}
-#' \item{convergence}{Integer code for convergence as returned by
-#' \code{\link[stats:optim]{stats:optim}} (only for ML and ULS).
-#' 0 indicates successful completion.}
-#' \item{unrot_loadings}{Loading matrix containing the final unrotated loadings.}
-#' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings. Based on the unrotated loadings.}
-#' \item{fit_indices}{For ML and ULS: Fit indices derived from the unrotated
-#' factor loadings: Chi Square, including significance level, degrees of freedom
-#' (df), Comparative Fit Index (CFI), Root Mean Square Error of Approximation
-#' (RMSEA), including its 90\% confidence interval, and the common part accounted
-#' for (CAF) index as proposed by Lorenzo-Seva, Timmerman, & Kiers (2011).
-#' For PAF, only the CAF and dfs are returned.}
-#' \item{rot_loadings}{Loading matrix containing the final rotated loadings
-#' (pattern matrix).}
-#' \item{Phi}{The factor intercorrelations (only for oblique rotations).}
-#' \item{Structure}{The structure matrix (only for oblique rotations).}
-#' \item{rotmat}{The rotation matrix.}
-#' \item{vars_accounted_rot}{Matrix of explained variances and sums of squared
-#' loadings. Based on rotated loadings and, for oblique rotations, the factor
-#' intercorrelations.}
+#' \item{h2}{A list with the average, standard deviation, minimum, maximum, and
+#' range of the final communality estimates across the factor solutions.}
+#' \item{loadings}{A list with the average, standard deviation, minimum, maximum,
+#' and range of the final loadings across the factor solutions. If rotation was
+#' "none", the unrotated loadings, otherwise the rotated loadings (pattern
+#' coefficients).}
+#' \item{Phi}{A list with the average, standard deviation, minimum, maximum, and
+#' range of the factor intercorrelations across factor solutions obtained with
+#' oblique rotations.}
+#' \item{ind_fac_corres}{A matrix with each cell containing the proportion of
+#' the factor solutions in which the respective indicator-to-factor correspondence
+#' occurred, i.e., in which the loading exceeded the specified salience threshold.
+#' Note: Rowsums can exceed 1 due to cross-loadings.}
+#' \item{vars_accounted}{A list with the average, standard deviation, minimum,
+#' maximum, and range of explained variances and sums of squared loadings across
+#' the factor solutions. Based on the unrotated loadings.}
+#' \item{fit_indices}{A matrix containing the average, standard deviation,
+#' minimum, maximum, and range for all applicable fit indices across the respective
+#' factor solutions, and the degrees of freedom (df). If the method argument
+#' contains ML or ULS: Fit indices derived
+#' from the unrotated factor loadings: Chi Square (chisq), including significance
+#' level, Comparative Fit Index (CFI), Root Mean Square Error of Approximation
+#' (RMSEA), Akaike Information Criterion (AIC), Bayesian Information Criterion
+#' (BIC)and the common part accounted for (CAF) index as proposed by
+#' Lorenzo-Seva, Timmerman, & Kiers (2011). For PAF, only the CAF can be
+#' calculated (see details).}
+#' \item{implementations_grid}{A matrix containing, for each performed EFA,
+#' the setting combination, if an error occurred (logical), the error message
+#' (character), an integer code for convergence as returned by
+#' \code{\link[stats:optim]{stats:optim}} (0 indicates successful completion.),
+#' if heywood cases occurred (logical, see details for definition), if the
+#' solution was admissible (logical, see details for definition), and the fit
+#' indices.}
+#' \item{efa_list}{A list containing the outputs of all performed EFAs. The names
+#' correspond to the rownames from the implementations_grid.}
 #' \item{settings}{A list of the settings used.}
 #'
 #' @source Grieder, S., & Steiner, M.D. (2020). Algorithmic Jingle Jungle:
@@ -165,7 +176,31 @@
 #' @export
 #'
 #' @examples
-#' TBD
+#' # Averaging across different implementations of PAF and promax rotation (72 EFAs)
+#' Aver_PAF <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500)
+#'
+#' # Use median instead of mean for averaging (72 EFAs)
+#' Aver_PAF_md <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
+#'                            averaging = "median")
+#'
+#' # Averaging across different implementations of PAF and promax rotation,
+#' # and across ULS and different versions of ML (108 EFAs)
+#' Aver_meth_ext <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
+#'                          method = c("PAF", "ULS", "ML"))
+#'
+#' # Averaging across one implementation each of PAF (EFAtools type), ULS, and
+#' # ML with one implementation of promax (EFAtools type) (3 EFAs)
+#' Aver_meth <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
+#'                          method = c("PAF", "ULS", "ML"), type = "EFAtools",
+#'                          start_method = "psych")
+#'
+#' # Averaging across different oblique rotation methods, using one implementation
+#' of ML and one implementation of promax (EFAtools type) (7 EFAs)
+#' Aver_rot <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
+#'                          method = "ML", rotation = "oblique", type = "EFAtools",
+#'                          start_method = "psych")
+#'
+#'
 EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax",
                         type = "none", averaging = c("mean", "median"), trim = 0,
                         salience_threshold = .3,
@@ -183,7 +218,6 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
                                 "complete.obs", "everything", "na.or.complete"),
                         cor_method = c("pearson", "spearman", "kendall"),
                         show_progress = TRUE) {
-
 
   # x= IDS2_R
   # n_factors = 6

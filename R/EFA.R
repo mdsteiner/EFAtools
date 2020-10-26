@@ -202,7 +202,8 @@
 #' \item{fit_indices}{For ML and ULS: Fit indices derived from the unrotated
 #' factor loadings: Chi Square, including significance level, degrees of freedom
 #' (df), Comparative Fit Index (CFI), Root Mean Square Error of Approximation
-#' (RMSEA), including its 90\% confidence interval, and the common part accounted
+#' (RMSEA), including its 90\% confidence interval, Akaike Information Criterion
+#' (AIC), Bayesian Information Criterion (BIC), and the common part accounted
 #' for (CAF) index as proposed by Lorenzo-Seva, Timmerman, & Kiers (2011).
 #' For PAF, only the CAF and dfs are returned.}
 #' \item{rot_loadings}{Loading matrix containing the final rotated loadings
