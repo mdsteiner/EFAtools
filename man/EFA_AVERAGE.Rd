@@ -3,6 +3,22 @@
 \name{EFA_AVERAGE}
 \alias{EFA_AVERAGE}
 \title{Model averaging across different EFA methods and types}
+\source{
+Grieder, S., & Steiner, M.D. (2020). Algorithmic Jingle Jungle:
+A Comparison of Implementations of Principal Axis Factoring and Promax Rotation
+ in R and SPSS. Manuscript in Preparation.
+
+Hendrickson, A. E., & White, P. O. (1964). Promax: A quick method for
+rotation to oblique simple structure. British Journal of Statistical Psychology,
+17 , 65–70. doi: 10.1111/j.2044-8317.1964.tb00244.x
+
+Lorenzo-Seva, U., Timmerman, M. E., & Kiers, H. A. L. (2011). The
+Hull Method for Selecting the Number of Common Factors, Multivariate Behavioral
+Research, 46, 340-364, doi: 10.1080/00273171.2011.564527
+
+Kaiser, H. F. (1958). The varimax criterion for analytic rotation in
+factor analysis. Psychometrika, 23, 187–200. doi: 10.1007/BF02289233
+}
 \usage{
 EFA_AVERAGE(
   x,
@@ -85,10 +101,9 @@ that non-converged procedures are excluded from the aggregation procedure.}
 
 \item{init_comm}{character vector. Any combination of "smc", "mac", and "unity".
 Controls the methods to estimate the initial communalities in \code{PAF} if
-"none" is among the specified types.
-"smc" will use squared multiple correlations, "mac" will use
-maximum absolute correlations, "unity" will use 1s (for details see \code{\link{EFA}}).
-Default is \code{c("smc", "mac", "unity")}.}
+"none" is among the specified types. "smc" will use squared multiple
+correlations, "mac" will use maximum absolute correlations, "unity" will use
+1s (for details see \code{\link{EFA}}). Default is \code{c("smc", "mac", "unity")}.}
 
 \item{criterion}{numeric vector. The convergence criterion used for PAF if
 "none" is among the specified types.
@@ -103,45 +118,45 @@ communalities from one iteration to the next and tests it against the
 specified criterion. "sum" takes the difference of
 the sum of all communalities in one iteration and the sum of all communalities
 in the next iteration and tests this against the criterion
-(for details see \code{\link{EFA}}). Default is \code{c("sum", "max_individual")}.
+(for details see \code{\link{EFA}}). Default is \code{c("sum", "max_individual")}.}
 
-PROCEED HERE ===============================================}
+\item{abs_eigen}{logical vector. Any combination of TRUE and FALSE.
+Which algorithm to use in the PAF iterations if "none" is among the specified
+types. If FALSE, the loadings are computed from the eigenvalues. This is also
+used by the \code{\link[psych:fa]{psych::fa}} function. If TRUE the
+loadings are computed with the absolute eigenvalues as done by SPSS
+(for details see \code{\link{EFA}}). Default is \code{TRUE}.}
 
-\item{abs_eigen}{logical. Which algorithm to use in the PAF
-iterations. If FALSE, the loadings are computed from the eigenvalues. This is
-also used by the \code{\link[psych:fa]{psych::fa}} function. If TRUE the
-loadings are computed with the absolute eigenvalues as done by SPSS.
-Default is \code{NA}.}
+\item{normalize}{logical vector. Any combination of TRUE and FALSE.
+\code{TRUE} performs a kaiser normalization before the specified rotation(s).
+Default is \code{TRUE}.}
 
-\item{varimax_type}{character. The type of the varimax rotation performed.
-If "svd", singular value decomposition is used, as \link[stats:varimax]{stats::varimax} does. If "kaiser", the varimax procedure performed in SPSS is used.
-This is the original procedure from Kaiser (1958), but with slight alterations
-in the varimax criterion (see Grieder & Steiner, 2020). Default is \code{NA}.}
+\item{k_promax}{numeric vector. The power used for computing the target matrix
+P in the promax rotation if "none" is among the specified types and "promax"
+or "oblique" is among the specified rotations. Default is \code{2:4}.}
 
-\item{normalize}{logical. If \code{TRUE}, a kaiser normalization is
-performed before the specified rotation. Default is \code{TRUE}.}
+\item{k_simplimax}{numeric. The number of 'close to zero loadings' for the
+simplimax rotation (see \code{\link[GPArotation:GPA]{GPArotation::GPFoblq}})
+if "simplimax" or "oblique" is among the specified rotations. Default
+is \code{nrow(L)}, where L is the matrix of unrotated loadings.}
 
-\item{k_promax}{numeric. Either the power used for computing the target matrix P in
-the promax rotation or the number of 'close to zero loadings' for the simplimax
-rotation (see \code{\link[GPArotation:GPA]{GPArotation::GPFoblq}}). If left to
-\code{NA} (default), the value for promax depends on the specified type.
-For simplimax, \code{nrow(L)}, where L is the matrix of unrotated loadings,
-is used by default.}
+\item{P_type}{character vector. Any combination of "norm" and "unnorm".
+This specifies how the target matrix P is computed in promax rotation if
+"none" is among the specified types and "promax" or "oblique" is among the
+specified rotations. "unnorm" will use the unnormalized target matrix as
+originally done in Hendrickson and White (1964). "norm" will use a
+normalized target matrix (for details see \code{\link{EFA}}).
+Default is \code{c("norm", "unnorm")}.}
 
-\item{P_type}{character. This specifies how the target
-matrix P is computed in promax rotation. If "unnorm" it will use the
-unnormalized target matrix as originally done in Hendrickson and White (1964).
-This is also used in the psych and stats packages. If "norm" it will use the
-normalized target matrix as used in SPSS. Default is \code{NA}.}
+\item{precision}{numeric vector. The tolerance for stopping in the rotation
+procedure(s). Default is 10^-5.}
 
-\item{precision}{numeric. The tolerance for stopping in the rotation
-procedure. Defaul is 10^-5 for all rotation methods.}
-
-\item{start_method}{character. How to specify the starting values for the
-optimization procedure for ML. Default is "psych" which takes the
-starting values specified in \link[psych:fa]{psych::fa}. "factanal" takes the
-starting values specified in the \link[stats:factanal]{stats::factanal} function.
-Solutions are very similar.}
+\item{start_method}{character vector. Any combination of "psych" and "factanal".
+How to specify the starting values for the optimization procedure for ML.
+"psych" takes the starting values specified in \link[psych:fa]{psych::fa}.
+"factanal" takes the starting values specified in the
+\link[stats:factanal]{stats::factanal} function. Default is
+\code{c("psych", "factanal")}.}
 
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
 is given as input. Default is "pairwise.complete.obs".}
@@ -149,10 +164,43 @@ is given as input. Default is "pairwise.complete.obs".}
 \item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor}}.
 Default is "pearson".}
 
-\item{show_progress}{}
+\item{show_progress}{logical. Whether a progress bar should be shown in the
+console. Default is TRUE.}
 }
 \value{
+A list of class EFA_AVERAGE containing
+\item{orig_R}{Original correlation matrix.}
+\item{h2}{A list with the average, standard deviation, minimum, and maximum
+final communality estimates.}
 
+HERE
+
+\item{orig_eigen}{Eigen values of the original correlation matrix.}
+\item{init_eigen}{Initial eigenvalues, obtained from the correlation matrix
+ with the initial communality estimates as diagonal in PAF.}
+\item{final_eigen}{Eigenvalues obtained from the correlation matrix
+ with the final communality estimates as diagonal.}
+\item{iter}{The number of iterations needed for convergence.}
+\item{convergence}{Integer code for convergence as returned by
+\code{\link[stats:optim]{stats:optim}} (only for ML and ULS).
+0 indicates successful completion.}
+\item{unrot_loadings}{Loading matrix containing the final unrotated loadings.}
+\item{vars_accounted}{Matrix of explained variances and sums of squared loadings. Based on the unrotated loadings.}
+\item{fit_indices}{For ML and ULS: Fit indices derived from the unrotated
+factor loadings: Chi Square, including significance level, degrees of freedom
+(df), Comparative Fit Index (CFI), Root Mean Square Error of Approximation
+(RMSEA), including its 90\% confidence interval, and the common part accounted
+for (CAF) index as proposed by Lorenzo-Seva, Timmerman, & Kiers (2011).
+For PAF, only the CAF and dfs are returned.}
+\item{rot_loadings}{Loading matrix containing the final rotated loadings
+(pattern matrix).}
+\item{Phi}{The factor intercorrelations (only for oblique rotations).}
+\item{Structure}{The structure matrix (only for oblique rotations).}
+\item{rotmat}{The rotation matrix.}
+\item{vars_accounted_rot}{Matrix of explained variances and sums of squared
+loadings. Based on rotated loadings and, for oblique rotations, the factor
+intercorrelations.}
+\item{settings}{A list of the settings used.}
 }
 \description{
 Not all EFA procedures always arrive at the same solution. This function allows
@@ -164,5 +212,8 @@ oblimin). EFA_AVERAGE will then run all these EFAs and provide a summary across
 the different solutions.
 }
 \details{
-
+TBD
+}
+\examples{
+TBD
 }

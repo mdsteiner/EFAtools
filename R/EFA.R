@@ -72,7 +72,7 @@
 #' This is also used in the psych and stats packages. If "norm" it will use the
 #' normalized target matrix as used in SPSS. Default is \code{NA}.
 #' @param precision numeric. The tolerance for stopping in the rotation
-#' procedure. Defaul is 10^-5 for all rotation methods.
+#' procedure. Default is 10^-5 for all rotation methods.
 #' @param varimax_type character. The type of the varimax rotation performed.
 #' If "svd", singular value decomposition is used, as \link[stats:varimax]{stats::varimax} does. If "kaiser", the varimax procedure performed in SPSS is used.
 #' This is the original procedure from Kaiser (1958), but with slight alterations
@@ -159,12 +159,12 @@
 #' Grieder & Steiner (2020).
 #'
 #' The \code{varimax_type} argument can take two values, "svd", and "kaiser". "svd" uses
-#' singular value decomposition, by calling \link[stats:varimax]{stats::varimax}. "kaiser" 
+#' singular value decomposition, by calling \link[stats:varimax]{stats::varimax}. "kaiser"
 #' performs the varimax procedure as described in the SPSS 23 Algorithms manual and as described
 #' by Kaiser (1958). However, there is a slight alteration in computing the varimax criterion, which
 #' we found to better align with the results obtain from SPSS. Specifically, the original varimax
 #' criterion as described in the SPSS 23 Algorithms manual is
-#' \code{sum(n*colSums(lambda ^ 4) - colSums(lambda ^ 2) ^ 2) / n ^ 2}, where n is the 
+#' \code{sum(n*colSums(lambda ^ 4) - colSums(lambda ^ 2) ^ 2) / n ^ 2}, where n is the
 #' number of indicators, and lambda is the rotated loadings matrix. However, we found the following
 #' to produce results more similar to those of SPSS:
 #' \code{sum(n*colSums(abs(lambda)) - colSums(lambda ^ 4) ^ 2) / n^2}.
