@@ -4,12 +4,16 @@
 \alias{print.EFA_AVERAGE}
 \title{Print EFA_AVERAGE object}
 \usage{
-\method{print}{EFA_AVERAGE}(x, ...)
+\method{print}{EFA_AVERAGE}(x, stat = c("aggregate", "range"), plot = TRUE, ...)
 }
 \arguments{
 \item{x}{list. An object of class EFA_AVERAGE to be printed}
 
 \item{...}{Further arguments for print.}
+
+\item{stat.}{character. A vector with the statistics to print. Possible inputs
+are "aggregate", "sd", "range", "min", and "max". Default is "aggregate" and
+"range".}
 }
 \description{
 Print Method showing a summarized output of the \link{EFA_AVERAGE} function

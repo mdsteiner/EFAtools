@@ -13,8 +13,7 @@
 #' @param n_factors numeric. Number of factors to extract.
 #' @param N numeric. The number of observations. Needs only be specified if a
 #' correlation matrix is used. If input is a correlation matrix and \code{N} = NA
-#' (default), not all fit indices can be computed. See
-#'  \code{\link[psych:factor.stats]{psych::factor.stats}} for details.
+#' (default), not all fit indices can be computed.
 #' @param method character. One of "PAF", "ML", or "ULS" to use principal axis
 #' factoring, maximum likelihood, or unweighted least squares (also called minres),
 #' respectively, to fit the EFA.
@@ -77,7 +76,7 @@
 #' @param varimax_type character. The type of the varimax rotation performed.
 #' If "svd", singular value decomposition is used, as \link[stats:varimax]{stats::varimax} does. If "kaiser", the varimax procedure performed in SPSS is used.
 #' This is the original procedure from Kaiser (1958), but with slight alterations
-#' in the varimax criterion (see Grieder & Steiner, 2020). Default is \code{NA}.
+#' in the varimax criterion (see details, and Grieder & Steiner, 2020). Default is \code{NA}.
 #' @param order_type character. How to order the factors. "eigen" will reorder
 #' the factors according to the largest to lowest eigenvalues of the matrix of
 #' rotated loadings. "ss_factors" will reorder the factors according to descending
@@ -158,6 +157,17 @@
 #' As for PAF, the EFAtools type setting combination for promax was the best
 #' compared to the other setting combinations tested in simulation studies in
 #' Grieder & Steiner (2020).
+#'
+#' The \code{varimax_type} argument can take two values, "svd", and "kaiser". "svd" uses
+#' singular value decomposition, by calling \link[stats:varimax]{stats::varimax}. "kaiser" 
+#' performs the varimax procedure as described in the SPSS 23 Algorithms manual and as described
+#' by Kaiser (1958). However, there is a slight alteration in computing the varimax criterion, which
+#' we found to better align with the results obtain from SPSS. Specifically, the original varimax
+#' criterion as described in the SPSS 23 Algorithms manual is
+#' \code{sum(n*colSums(lambda ^ 4) - colSums(lambda ^ 2) ^ 2) / n ^ 2}, where n is the 
+#' number of indicators, and lambda is the rotated loadings matrix. However, we found the following
+#' to produce results more similar to those of SPSS:
+#' \code{sum(n*colSums(abs(lambda)) - colSums(lambda ^ 4) ^ 2) / n^2}.
 #'
 #' For all other rotations except varimax and promax, the \code{type} argument
 #' only controls the \code{order_type} argument with the same values as stated
