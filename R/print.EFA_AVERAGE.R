@@ -127,7 +127,7 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"),
     cat(cli::rule(left = crayon::bold("Model Fit"), col = "blue", line = 2))
     cat("\n")
     cat("\n")
-    cat(crayon::blue("    ", ifelse(aggregation == "mean", "M", "Md"),
+    cat(crayon::blue("       ", ifelse(aggregation == "mean", "M", "Md"),
                      " (SD) [Min; Max]", sep = ""))
     cat("\n")
 
@@ -321,26 +321,26 @@ print.EFA_AVERAGE <- function(x, stat = c("aggregate", "range"),
       if(ind[i] %in% c("p_chi", "cfi", "rmsea", "caf")){
 
   cat(crayon::blue(ind_name[i], sep = ""),
-      ifelse(fit[ind[i], "aggregate"] < 1,
+      ifelse(round(fit[ind[i], "aggregate"], digits[i]) < 1,
              substr(.numformat(fit[ind[i], "aggregate"], digits = digits[i],
                                print_zero = print_zero[i]),
                     2, digits + 2),
              .numformat(fit[ind[i], "aggregate"], digits = digits[i],
                         print_zero = print_zero[i])), " (",
-      ifelse(fit[ind[i], "sd"] < 1,
+      ifelse(round(fit[ind[i], "sd"], digits[i]) < 1,
              substr(.numformat(fit[ind[i], "sd"], digits = digits[i],
                                print_zero = print_zero[i]),
                     2, digits + 2),
              .numformat(fit[ind[i], "sd"], digits = digits[i],
                         print_zero = print_zero[i])),
       ") [",
-      ifelse(fit[ind[i], "min"] < 1,
+      ifelse(round(fit[ind[i], "min"], digits[i]) < 1,
              substr(.numformat(fit[ind[i], "min"], digits = digits[i],
                                print_zero = print_zero[i]),
                     2, digits + 2),
-             .numformat(fit["ind", "min"], digits = digits[i],
+             .numformat(fit[ind[i], "min"], digits = digits[i],
                         print_zero = print_zero[i])), "; ",
-      ifelse(fit[ind[i], "max"] < 1,
+      ifelse(round(fit[ind[i], "max"], digits[i]) < 1,
              substr(.numformat(fit[ind[i], "max"], digits = digits[i],
                                print_zero = print_zero[i]),
                     2, digits + 2),
