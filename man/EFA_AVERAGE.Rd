@@ -213,17 +213,89 @@ you perform a number of EFAs from different methods (e.g., Maximum Likelihood
 and Principal Axis Factoring), with different implementations (e.g., the SPSS
 and psych implementations of Principal Axis Factoring), and across different
 rotations of the same type (e.g., multiple oblique rotations, like promax and
-oblimin). EFA_AVERAGE will then run all these EFAs and provide a summary across
-the different solutions.
+oblimin). EFA_AVERAGE will then run all these EFAs (using the \code{\link{EFA}}
+function) and provide a summary across the different solutions.
 }
 \details{
-PROCEED HERE:
+As a first step in this function, a grid is produced containing the setting
+combinations for the to-be-performed EFAs. These settings are then entered as
+arguments to the \code{\link{EFA}} function and the EFAs are fitted in a second
+step. After all EFAs are fitted, the factor solutions are averaged and their
+variability determined in a third step.
 
-INFO ON HOW GRID IS PRODUCED (UNIQUE ENTRIES, E.G. IF TYPE = C("NONE", "SPSS") AND SPECIFIC SETTINGS FOR PAF / VARIMAX / PROMAX ARE ENTERED, IT TAKES THE SETTING COMBINATION CORRESPONDING SPSS ONLY ONCE)
-INCLUDE INFO WHICH SOLUTIONS WERE EXCLUDED FROM AVERAGING (ERRORS, NON-CONVERGENCE, HEYWOOD CASES)
-MAKE CLEAR THAT THE AVERAGE, MIN AND MAX SOLUTIONS ARE NOT WHOLE SOLUTIONS, BUT INCLUDE AVERAGE, MIN AND MAX VALUE FOR EACH CELL (JUST AS FOR SD AND RANGE AS WELL)
-FIT INDICES: MAKE CLEAR THAT IF PAF AND ML OR ULS ARE ENTERED IN METHODS, ALL FIT INDICES APART FROM CAF ARE AVERAGED ACROSS THE ML / ULS SOLUTIONS ONLY, JUST THE CAF IS AVERAGED ACROSS ALL SOLUTIONS.
-DEFINE HEYWOOD CASE AND ADMISSIBLE SOLUTION
+The grid containing the setting combinations is produced based on the entries
+to the respective arguments. To this end, all possible combinations resulting
+in unique EFA models are considered. That is, if, for example, the \code{type}
+argument was set to \code{c("none", "SPSS")} and one combination of the specific
+settings entered was identical to the SPSS combination, this combination
+would be included in the grid and fitted only once. We include here a list
+of arguments that are only evaluated under specific conditions:
+
+The arguments \code{init_comm}, \code{criterion}, \code{criterion_type},
+\code{abs_eigen} are only evaluated if "PAF" is included in \code{method}
+and "none" is included in \code{type}.
+
+The argument \code{varimax_type} is only evaluated if "varimax", "promax",
+"oblique", or "orthogonal" is included in \code{rotation} and "none" is
+included in \code{type}.
+
+The argument \code{normalize} is only evaluated if \code{rotation} is not
+set to "none".
+
+The argument \code{k_simplimax} is only evaluated if "simplimax" or "oblique"
+is included in \code{rotation}.
+
+The arguments \code{k_promax} and \code{P_type} are only evaluated if
+"promax" or "oblique" is included in \code{rotation} and "none" is included
+in \code{type}.
+
+The argument \code{start_method} is only evaluated if "ML" is included in
+\code{method}.
+
+To avoid a bias in the averaged factor solutions from problematic solutions,
+these are excluded prior to averaging. A solution is deemed problematic if
+at least one of the following is true: an error occurred, the model did not
+converge, or there is at least one Heywood case (defined as a loading of >= .998).
+Information on errors, convergence, and Heywood cases are returned in the
+implementations_grid and a summary of these is given when printing the output.
+In addition to these, information on the admissibility of the factor solutions
+is also included. A solution was deemed admissible if (1) no error occurred,
+(2) the model converged, (3) no Heywood cases are present, and (4) there are
+at least two salient loadings (i.e., loadings exceeding the specified
+\code{salience_threshold}) for each factor. So, solutions failing one of the
+first three of these criteria of admissibility were also deemed problematic and
+therefore excluded for averaging. However, solutions failing only
+the fourth criterion of admissibility were still included for averaging.
+Finally, if all solutions are problematic (e.g., all solutions contain
+Heywood cases), no averaging is performed and the respective outputs are NA.
+In this case, the implementations_grid should be inspected to see if there
+are any error messages, and the separate EFA solutions that are also included
+in the output can be inspected as well, for example, to see where Heywood
+cases occurred.
+
+A core output of this function includes the average, minimum, and maximum
+loadings derived from all non-problematic (see above) factor solutions. Please
+note that these are not whole solutions, but the matrices include the average,
+minimum, or maximum value for each cell (i.e., each loading separately). This
+means that, for example, the matrix with the minimum loadings will contain
+the minimum value in any of the factor solutions for each specific loading,
+and therefore most likely contains loadings from different factor solutions.
+The matrices containing the minimum and maximum factor solutions can
+therefore not be interpreted as whole factor solutions.
+
+The output also includes information on the average, minimum, maximum, and
+variability of the fit indices across the non-problematic factor solutions.
+It is important to note that not all fit indices are computed for all fit
+methods: For ML and ULS, all fit indices can be computed, while for PAF, only
+the common part accounted for (CAF) index (Lorenzo-Seva, Timmerman, & Kiers, 2011)
+can be computed. As a consequence, if only "PAF" is included in the
+\code{method} argument, averaging can only be performed for the CAF, and the
+other fit indices are NA. If a combination of "PAF" and "ML" and/or "ULS" are
+included in the \code{method} argument, the CAF is averaged across all non-
+problematic factor solutions, while all other fit indices are only averaged
+across the ML and ULS solutions. The user should therefore keep in mind that
+the number of EFAs across which the fit indices are averaged can diverge for
+the CAF compared to all other fit indices.
 }
 \examples{
 # Averaging across different implementations of PAF and promax rotation (72 EFAs)
