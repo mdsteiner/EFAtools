@@ -18,7 +18,7 @@
 #' @param method character vector. Any combination of  "PAF", "ML", and "ULS",
 #' to use principal axis factoring, maximum likelihood, or unweighted least
 #' squares (also called minres), respectively, to fit the EFAs. Default is "PAF".
-#' @param rotation character vector. Either perform no rotation ("none"; default),
+#' @param rotation character vector. Either perform no rotation ("none"),
 #' any combination of orthogonal rotations ("varimax", "equamax", "quartimax", "geominT",
 #' "bentlerT", and "bifactorT"; using "orthogonal" runs all of these), or of
 #' oblique rotations ("promax", "oblimin", "quartimin", "simplimax", "bentlerQ",
@@ -26,7 +26,7 @@
 #' (no rotation, orthogonal rotations, and oblique rotations) cannot be mixed.
 #' Default is "promax".
 #' @param type character vector. Any combination of "none" (default), "EFAtools",
-#' "psych", and "SPSS" can be entered. "none" allows the specification of of various
+#' "psych", and "SPSS" can be entered. "none" allows the specification of various
 #' combinations of the arguments controlling both factor extraction methods and
 #' the rotations. The others ("EFAtools", "psych", and "SPSS"), control the execution
 #' of the respective factor extraction method and rotation to be in line with how
@@ -79,7 +79,7 @@
 #' \link[stats:varimax]{stats::varimax} does, and "kaiser" uses the varimax
 #' procedure performed in SPSS. This is the original procedure from Kaiser (1958),
 #' but with slight alterations in the varimax criterion (for details, see
-#' \code{\link{EFA} and Grieder & Steiner, 2020).
+#' \code{\link{EFA}} and Grieder & Steiner, 2020).
 #' Default is \code{c("svd", "kaiser")}.
 #' @param normalize logical vector. Any combination of TRUE and FALSE.
 #' \code{TRUE} performs a kaiser normalization before the specified rotation(s).

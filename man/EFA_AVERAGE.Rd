@@ -127,6 +127,16 @@ used by the \code{\link[psych:fa]{psych::fa}} function. If TRUE the
 loadings are computed with the absolute eigenvalues as done by SPSS
 (for details see \code{\link{EFA}}). Default is \code{TRUE}.}
 
+\item{varimax_type}{character vector. Any combination of "svd" and "kaiser".
+The type of the varimax rotation performed if "none" is among the specified
+types and "varimax", "promax", "orthogonal", or "oblique" is among the specified
+rotations. "svd" uses singular value decomposition, as
+\link[stats:varimax]{stats::varimax} does, and "kaiser" uses the varimax
+procedure performed in SPSS. This is the original procedure from Kaiser (1958),
+but with slight alterations in the varimax criterion (for details, see
+\code{\link{EFA}} and Grieder & Steiner, 2020).
+Default is \code{c("svd", "kaiser")}.}
+
 \item{normalize}{logical vector. Any combination of TRUE and FALSE.
 \code{TRUE} performs a kaiser normalization before the specified rotation(s).
 Default is \code{TRUE}.}

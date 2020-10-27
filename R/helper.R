@@ -758,11 +758,10 @@ if(n == 1){
   fit_range <- fit_max - fit_min
   fit_sd <- apply(for_grid, 2, sd, na.rm = TRUE)
 
-  fit_av[is.infinite(fit_av)] <- NA
+  fit_av[is.nan(fit_av)] <- NA
   fit_min[is.infinite(fit_min)] <- NA
   fit_max[is.infinite(fit_max)] <- NA
   fit_range[is.infinite(fit_range)] <- NA
-  fit_sd[is.infinite(fit_sd)] <- NA
 
   fit_indices <- data.frame(
     index = c(names(fit_av), "df"),
