@@ -57,7 +57,8 @@ Imports:
     future,
     GPArotation,
     checkmate,
-    tidyr
+    tidyr,
+    progressr
 LinkingTo: 
     Rcpp, RcppArmadillo
 Suggests: 

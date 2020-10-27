@@ -63,7 +63,7 @@ correlation matrix is used. If input is a correlation matrix and \code{N} = NA
 to use principal axis factoring, maximum likelihood, or unweighted least
 squares (also called minres), respectively, to fit the EFAs. Default is "PAF".}
 
-\item{rotation}{character vector. Either perform no rotation ("none"; default),
+\item{rotation}{character vector. Either perform no rotation ("none"),
 any combination of orthogonal rotations ("varimax", "equamax", "quartimax", "geominT",
 "bentlerT", and "bifactorT"; using "orthogonal" runs all of these), or of
 oblique rotations ("promax", "oblimin", "quartimin", "simplimax", "bentlerQ",
@@ -72,7 +72,7 @@ oblique rotations ("promax", "oblimin", "quartimin", "simplimax", "bentlerQ",
 Default is "promax".}
 
 \item{type}{character vector. Any combination of "none" (default), "EFAtools",
-"psych", and "SPSS" can be entered. "none" allows the specification of of various
+"psych", and "SPSS" can be entered. "none" allows the specification of various
 combinations of the arguments controlling both factor extraction methods and
 the rotations. The others ("EFAtools", "psych", and "SPSS"), control the execution
 of the respective factor extraction method and rotation to be in line with how
@@ -148,7 +148,7 @@ or "oblique" is among the specified rotations. Default is \code{2:4}.}
 \item{k_simplimax}{numeric. The number of 'close to zero loadings' for the
 simplimax rotation (see \code{\link[GPArotation:GPA]{GPArotation::GPFoblq}})
 if "simplimax" or "oblique" is among the specified rotations. Default
-is \code{nrow(L)}, where L is the matrix of unrotated loadings.}
+is \code{ncol(x)}, where x is the entered data.}
 
 \item{P_type}{character vector. Any combination of "norm" and "unnorm".
 This specifies how the target matrix P is computed in promax rotation if
@@ -229,8 +229,8 @@ function) and provide a summary across the different solutions.
 \details{
 As a first step in this function, a grid is produced containing the setting
 combinations for the to-be-performed EFAs. These settings are then entered as
-arguments to the \code{\link{EFA}} function and the EFAs are fitted in a second
-step. After all EFAs are fitted, the factor solutions are averaged and their
+arguments to the \code{\link{EFA}} function and the EFAs are run in a second
+step. After all EFAs are run, the factor solutions are averaged and their
 variability determined in a third step.
 
 The grid containing the setting combinations is produced based on the entries
@@ -238,7 +238,7 @@ to the respective arguments. To this end, all possible combinations resulting
 in unique EFA models are considered. That is, if, for example, the \code{type}
 argument was set to \code{c("none", "SPSS")} and one combination of the specific
 settings entered was identical to the SPSS combination, this combination
-would be included in the grid and fitted only once. We include here a list
+would be included in the grid and run only once. We include here a list
 of arguments that are only evaluated under specific conditions:
 
 The arguments \code{init_comm}, \code{criterion}, \code{criterion_type},
@@ -250,7 +250,7 @@ The argument \code{varimax_type} is only evaluated if "varimax", "promax",
 included in \code{type}.
 
 The argument \code{normalize} is only evaluated if \code{rotation} is not
-set to "none".
+set to "none" and "none" is included in \code{type}.
 
 The argument \code{k_simplimax} is only evaluated if "simplimax" or "oblique"
 is included in \code{rotation}.
@@ -265,7 +265,7 @@ The argument \code{start_method} is only evaluated if "ML" is included in
 To avoid a bias in the averaged factor solutions from problematic solutions,
 these are excluded prior to averaging. A solution is deemed problematic if
 at least one of the following is true: an error occurred, the model did not
-converge, or there is at least one Heywood case (defined as a loading of >= .998).
+converge, or there is at least one Heywood case (defined as a loading or communality of >= .998).
 Information on errors, convergence, and Heywood cases are returned in the
 implementations_grid and a summary of these is given when printing the output.
 In addition to these, information on the admissibility of the factor solutions
@@ -273,9 +273,9 @@ is also included. A solution was deemed admissible if (1) no error occurred,
 (2) the model converged, (3) no Heywood cases are present, and (4) there are
 at least two salient loadings (i.e., loadings exceeding the specified
 \code{salience_threshold}) for each factor. So, solutions failing one of the
-first three of these criteria of admissibility were also deemed problematic and
-therefore excluded for averaging. However, solutions failing only
-the fourth criterion of admissibility were still included for averaging.
+first three of these criteria of admissibility are also deemed problematic and
+therefore excluded from averaging. However, solutions failing only
+the fourth criterion of admissibility are still included for averaging.
 Finally, if all solutions are problematic (e.g., all solutions contain
 Heywood cases), no averaging is performed and the respective outputs are NA.
 In this case, the implementations_grid should be inspected to see if there
