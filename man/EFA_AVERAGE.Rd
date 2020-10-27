@@ -285,7 +285,7 @@ cases occurred.
 
 A core output of this function includes the average, minimum, and maximum
 loadings derived from all non-problematic (see above) factor solutions. Please
-note that these are not whole solutions, but the matrices include the average,
+note that these are not entire solutions, but the matrices include the average,
 minimum, or maximum value for each cell (i.e., each loading separately). This
 means that, for example, the matrix with the minimum loadings will contain
 the minimum value in any of the factor solutions for each specific loading,
@@ -318,7 +318,7 @@ Aver_PAF_md <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
 # Averaging across different implementations of PAF and promax rotation,
 # and across ULS and different versions of ML (108 EFAs)
 Aver_meth_ext <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
-                         method = c("PAF", "ULS", "ML"))
+                             method = c("PAF", "ULS", "ML"))
 
 # Averaging across one implementation each of PAF (EFAtools type), ULS, and
 # ML with one implementation of promax (EFAtools type) (3 EFAs)
@@ -327,7 +327,7 @@ Aver_meth <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
                          start_method = "psych")
 
 # Averaging across different oblique rotation methods, using one implementation
-of ML and one implementation of promax (EFAtools type) (7 EFAs)
+# of ML and one implementation of promax (EFAtools type) (7 EFAs)
 Aver_rot <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
                          method = "ML", rotation = "oblique", type = "EFAtools",
                          start_method = "psych")

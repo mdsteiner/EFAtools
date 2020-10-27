@@ -17,26 +17,23 @@ plot.EFA_AVERAGE <- function(x, ...) {
   averaging <- x$settings$averaging
 
   # Prepare data
-  dat <- lapply(x$loadings, function(x){
-    x <- as.data.frame(unclass(x))
+  dat <- lapply(x$loadings, function(temp){
+    temp <- as.data.frame(unclass(temp))
 
-    x <- x  %>%
+    temp <- temp  %>%
       tibble::rownames_to_column() %>%
       tidyr::pivot_longer(-rowname, names_to = "colname", values_to = "loadings")
 
-    return(x)
+    return(temp)
   })
 
   dat <- do.call(cbind, dat)
 
-  dat <- dat %>%
-    dplyr::select(row_ind = average.rowname,
-           col_ind = average.colname,
-           average = average.loadings,
-           min = min.loadings,
-           max = max.loadings) %>%
-    dplyr::mutate(row_ind = factor(row_ind, levels = rownames(x$loadings$average)),
-           col_ind = factor(col_ind, levels = colnames(x$loadings$average)))
+  dat <- dat[, c("average.rowname", "average.colname", "average.loadings",
+                 "min.loadings", "max.loadings")]
+  names(dat) <- c("row_ind", "col_ind", "average", "min", "max")
+  dat$row_ind <- factor(dat$row_ind, levels = rownames(x$loadings$average))
+  dat$col_ind <- factor(dat$col_ind, levels = colnames(x$loadings$average))
 
   # Create plot faceted for variables and factors
 

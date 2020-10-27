@@ -682,12 +682,12 @@ if(n == 1){
     }
 
   } else if (averaging == "median") {
-    L_av <- apply(L, 1:2, median, na.rm = TRUE)
-    h2_av <- apply(h2, 2, median, na.rm = TRUE)
-    fit_av <- apply(for_grid, 2, median, na.rm = TRUE)
-    vars_accounted_av <- apply(vars_accounted, 1:2, median, na.rm = TRUE)
+    L_av <- apply(L, 1:2, stats::median, na.rm = TRUE)
+    h2_av <- apply(h2, 2, stats::median, na.rm = TRUE)
+    fit_av <- apply(for_grid, 2, stats::median, na.rm = TRUE)
+    vars_accounted_av <- apply(vars_accounted, 1:2, stats::median, na.rm = TRUE)
     if (isTRUE(extract_phi)) {
-      phi_av <- apply(phi, 1:2, median, na.rm = TRUE)
+      phi_av <- apply(phi, 1:2, stats::median, na.rm = TRUE)
     }
   }
 
@@ -702,7 +702,7 @@ if(n == 1){
   L_min <- apply(L, 1:2, min, na.rm = TRUE)
   L_max <- apply(L, 1:2, max, na.rm = TRUE)
   L_range <- L_max - L_min
-  L_sd <- apply(L, 1:2, sd, na.rm = TRUE)
+  L_sd <- apply(L, 1:2, stats::sd, na.rm = TRUE)
   rownames(L_av) <- ind_names
   colnames(L_av) <- f_names
   class(L_av) <- "LOADINGS"
@@ -722,7 +722,7 @@ if(n == 1){
   vars_accounted_min <- apply(vars_accounted, 1:2, min, na.rm = TRUE)
   vars_accounted_max <- apply(vars_accounted, 1:2, max, na.rm = TRUE)
   vars_accounted_range <- vars_accounted_max - vars_accounted_min
-  vars_accounted_sd <- apply(vars_accounted, 1:2, sd, na.rm = TRUE)
+  vars_accounted_sd <- apply(vars_accounted, 1:2, stats::sd, na.rm = TRUE)
 
 
   if (nrow(vars_accounted_av) == 2) {
@@ -745,7 +745,7 @@ if(n == 1){
   h2_min <- apply(h2, 2, min, na.rm = TRUE)
   h2_max <- apply(h2, 2, max, na.rm = TRUE)
   h2_range <- h2_max - h2_min
-  h2_sd <- apply(h2, 2, sd, na.rm = TRUE)
+  h2_sd <- apply(h2, 2, stats::sd, na.rm = TRUE)
   names(h2_av) <- ind_names
   names(h2_min) <- ind_names
   names(h2_max) <- ind_names
@@ -756,7 +756,7 @@ if(n == 1){
   fit_min <- apply(for_grid, 2, min, na.rm = TRUE)
   fit_max <- apply(for_grid, 2, max, na.rm = TRUE)
   fit_range <- fit_max - fit_min
-  fit_sd <- apply(for_grid, 2, sd, na.rm = TRUE)
+  fit_sd <- apply(for_grid, 2, stats::sd, na.rm = TRUE)
 
   fit_av[is.nan(fit_av)] <- NA
   fit_min[is.infinite(fit_min)] <- NA
@@ -776,7 +776,7 @@ if(n == 1){
     phi_min <- apply(phi, 1:2, min, na.rm = TRUE)
     phi_max <- apply(phi, 1:2, max, na.rm = TRUE)
     phi_range <- phi_max - phi_min
-    phi_sd <- apply(phi, 1:2, sd, na.rm = TRUE)
+    phi_sd <- apply(phi, 1:2, stats::sd, na.rm = TRUE)
     colnames(phi_av) <- paste0("F", 1:nf)
     rownames(phi_av) <- paste0("F", 1:nf)
     colnames(phi_min) <- paste0("F", 1:nf)

@@ -9,11 +9,15 @@
 \arguments{
 \item{x}{list. An object of class EFA_AVERAGE to be printed}
 
-\item{...}{Further arguments for print.}
-
-\item{stat.}{character. A vector with the statistics to print. Possible inputs
+\item{stat}{character. A vector with the statistics to print. Possible inputs
 are "average", "sd", "range", "min", and "max". Default is "average" and
 "range".}
+
+\item{plot}{logical. Whether a plot of the average and min- max loadings should
+be created. Default is TRUE. If more than 10 factors are extracted, no plot is
+created.}
+
+\item{...}{Further arguments for print.}
 }
 \description{
 Print Method showing a summarized output of the \link{EFA_AVERAGE} function
