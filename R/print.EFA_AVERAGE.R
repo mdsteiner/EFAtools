@@ -41,8 +41,6 @@ print.EFA_AVERAGE <- function(x, stat = c("average", "range"),
 
   # extract other stuff
   no_efas <- nrow(grid)
-  fit <- x$fit_indices
-  rownames(fit) <- fit$index
 
   cat("\n")
   cat("Averaging performed with averaging method ",
@@ -69,11 +67,14 @@ print.EFA_AVERAGE <- function(x, stat = c("average", "range"),
 
   # If no solutions were achieved across which averaging could be performed,
   # stop here with a message. Else, continue printing loadings etc.
-  if(all(grid$converged == 1) || all(grid$errors) || all(grid$heywood)){
+  if(all(grid$converged != 0 | grid$errors | grid$heywood)){
 
     warning(crayon::yellow$bold("!"), crayon::yellow(" No solutions were achieved across which averaging was possible. Best try again with a different number of factors.\n"))
 
   } else {
+
+    fit <- x$fit_indices
+    rownames(fit) <- fit$index
 
   # Indicator-to-factor correspondences
   cat("\n")

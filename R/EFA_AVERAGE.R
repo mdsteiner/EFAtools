@@ -567,32 +567,50 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
     }
   })
 
+  names(efa_list) <- rownames(arg_grid)
+
   ### Extract relevant information from EFA outputs
   if (isTRUE(show_progress)) {
     .show_av_progress("\U0001f3c3", "Extracting data...")
   }
   ext_list <- .extract_data(efa_list, R, n_factors, n_efa, rotation, salience_threshold)
 
-  if (n_factors > 1) {
-    if (isTRUE(show_progress)) {
-      .show_av_progress("\U0001f6b6", "Reordering factors...")
+  if (all(isTRUE(ext_list$for_grid$errors) | ext_list$for_grid$converged == 0 |
+          isTRUE(ext_list$for_grid$heywood))) {
+
+    av_list <- list(
+      h2 = NA,
+      loadings = NA,
+      phi = NA,
+      ind_fac_corres = NA,
+      vars_accounted = NA,
+      fit_indices = NA)
+
+  } else {
+
+    if (n_factors > 1) {
+      if (isTRUE(show_progress)) {
+        .show_av_progress("\U0001f6b6", "Reordering factors...")
+      }
+
+      re_list <- .array_reorder(ext_list$vars_accounted, ext_list$L, ext_list$L_corres,
+                                ext_list$phi, ext_list$extract_phi, n_factors)
+    } else {
+      re_list <- ext_list
     }
 
-    re_list <- .array_reorder(ext_list$vars_accounted, ext_list$L, ext_list$L_corres,
-                              ext_list$phi, ext_list$extract_phi, n_factors)
-  } else {
-    re_list <- ext_list
-  }
 
-
-  if (isTRUE(show_progress)) {
-    .show_av_progress("\U0001f3c3", "Averaging data...")
-  }
-  av_list <- suppressWarnings(
-    .average_values(re_list$vars_accounted, re_list$L, re_list$L_corres, ext_list$h2, re_list$phi,
+    if (isTRUE(show_progress)) {
+      .show_av_progress("\U0001f3c3", "Averaging data...")
+    }
+    av_list <- suppressWarnings(
+      .average_values(re_list$vars_accounted, re_list$L, re_list$L_corres, ext_list$h2, re_list$phi,
                       ext_list$extract_phi, averaging, trim,
                       ext_list$for_grid[, c("chisq", "p_chi", "caf", "cfi",
-                                           "rmsea", "aic", "bic")], df, colnames(R)))
+                                            "rmsea", "aic", "bic")], df, colnames(R)))
+
+  }
+
 
   arg_grid <- cbind(arg_grid, ext_list$for_grid)
 

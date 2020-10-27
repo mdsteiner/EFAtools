@@ -578,24 +578,30 @@ if(n == 1){
         if (efa_temp$convergence == 0) {
           has_heywood <- any(efa_temp$h2 >= .998)
           heywood[row_i] <- has_heywood
-          aic[row_i] <- efa_temp$fit_indices$AIC
-          bic[row_i] <- efa_temp$fit_indices$BIC
-          chisq[row_i] <- efa_temp$fit_indices$chi
-          p_chi[row_i] <- efa_temp$fit_indices$p_chi
-          caf[row_i] <- efa_temp$fit_indices$CAF
-          rmsea[row_i] <- efa_temp$fit_indices$RMSEA
-          cfi[row_i] <- efa_temp$fit_indices$CFI
 
-          h2[row_i, ] <- efa_temp$h2
-          L[,, row_i] <- efa_temp[[load_ind]]
-          if (n_factors > 1) {
-            vars_accounted[,, row_i] <- efa_temp[[var_ind]][c(1, 2, 4),]
-          } else {
-            vars_accounted[,, row_i] <- efa_temp[[var_ind]]
+          if (!has_heywood) {
+
+            aic[row_i] <- efa_temp$fit_indices$AIC
+            bic[row_i] <- efa_temp$fit_indices$BIC
+            chisq[row_i] <- efa_temp$fit_indices$chi
+            p_chi[row_i] <- efa_temp$fit_indices$p_chi
+            caf[row_i] <- efa_temp$fit_indices$CAF
+            rmsea[row_i] <- efa_temp$fit_indices$RMSEA
+            cfi[row_i] <- efa_temp$fit_indices$CFI
+
+            h2[row_i, ] <- efa_temp$h2
+            L[,, row_i] <- efa_temp[[load_ind]]
+            if (n_factors > 1) {
+              vars_accounted[,, row_i] <- efa_temp[[var_ind]][c(1, 2, 4),]
+            } else {
+              vars_accounted[,, row_i] <- efa_temp[[var_ind]]
+            }
+
+            temp_corres <- abs(efa_temp[[load_ind]]) >= salience_threshold
+            L_corres[,, row_i] <-temp_corres
+
           }
 
-          temp_corres <- abs(efa_temp[[load_ind]]) >= salience_threshold
-          L_corres[,, row_i] <-temp_corres
 
           admissible[row_i] <- ifelse(has_heywood || any(colSums(temp_corres) < 2),
                                       FALSE, TRUE)
