@@ -23,7 +23,7 @@ plot.EFA_AVERAGE <- function(x, ...) {
 
     temp <- temp  %>%
       tibble::rownames_to_column() %>%
-      tidyr::pivot_longer(-rowname, names_to = "colname", values_to = "loadings")
+      tidyr::pivot_longer(-.data$rowname, names_to = "colname", values_to = "loadings")
 
     return(temp)
   })
