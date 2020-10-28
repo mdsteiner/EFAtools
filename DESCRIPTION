@@ -58,7 +58,9 @@ Imports:
     GPArotation,
     checkmate,
     tidyr,
-    progressr
+    progressr,
+    progress,
+    rlang
 LinkingTo: 
     Rcpp, RcppArmadillo
 Suggests: 

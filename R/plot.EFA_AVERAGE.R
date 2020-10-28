@@ -5,6 +5,7 @@
 #' @param x list. An output from the \link{EFA_AVERAGE} function.
 #' @param ... not used.
 #'
+#' @importFrom rlang .data
 #' @export
 #' @method plot EFA_AVERAGE
 #'
@@ -45,9 +46,9 @@ plot.EFA_AVERAGE <- function(x, ...) {
                        xmax = x$settings$salience_threshold,
                        ymin = -2, ymax = 2, fill = ggplot2::alpha("grey", 0.3)) +
     ggplot2::scale_y_continuous(limits = c(-1, 1)) +
-    ggplot2::geom_point(ggplot2::aes(average, 0), color = "darkred") +
-    ggplot2::facet_grid(rows = ggplot2::vars(row_ind),
-                        cols = ggplot2::vars(col_ind),
+    ggplot2::geom_point(ggplot2::aes(.data$average, 0), color = "darkred") +
+    ggplot2::facet_grid(rows = ggplot2::vars(.data$row_ind),
+                        cols = ggplot2::vars(.data$col_ind),
                         switch = "y") +
     ggplot2::theme_minimal() +
     ggplot2::ggtitle(paste0("Minimum, Maximum, and ",
