@@ -34,11 +34,11 @@ The package can be installed from CRAN using `install.packages("EFAtools")`, or 
 library(EFAtools)
 ```
 
-In this vignette, we will use the `DOSPERT_raw` dataset, which contains responses to the Domain Specific Risk Taking Scale (DOSPERT) of 3123 participants. The dataset is contained in the `EFAtools` package, for details, see `?DOSPERT_raw`. Note that this vignette is to provide a general overview and it is beyond its scope to explain all methods and functions in detail. If you want to learn more on the details and methods, please see the respective help functions for explanations and literature references. However, the dataset is rather large, so, just to save time when building the vignette, we will only use the first 250 observations. When you normally do your analyses, you use the full dataset.
+In this vignette, we will use the `DOSPERT_raw` dataset, which contains responses to the Domain Specific Risk Taking Scale (DOSPERT) of 3123 participants. The dataset is contained in the `EFAtools` package, for details, see `?DOSPERT_raw`. Note that this vignette is to provide a general overview and it is beyond its scope to explain all methods and functions in detail. If you want to learn more on the details and methods, please see the respective help functions for explanations and literature references. However, the dataset is rather large, so, just to save time when building the vignette, we will only use the first 500 observations. When you normally do your analyses, you use the full dataset.
 
 ```{r}
 # only use a subset to make analyses faster
-DOSPERT_sub <- DOSPERT_raw[1:250,]
+DOSPERT_sub <- DOSPERT_raw[1:500,]
 ```
 
 

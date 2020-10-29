@@ -1,8 +1,8 @@
 ## Principal Axis Factoring
-.PAF <- function(x, n_factors, N = NA, max_iter = NULL,
+.PAF <- function(x, n_factors, N = NA, max_iter = NA,
                 type = c("EFAtools", "psych", "SPSS", "none"),
-                init_comm = NULL, criterion = NULL,
-                criterion_type = NULL, abs_eigen = NULL) {
+                init_comm = NA, criterion = NA,
+                criterion_type = NA, abs_eigen = NA) {
 
   # Get correlation matrix entered or created in EFA
   R <- x
@@ -12,9 +12,9 @@
     # if type is none, throw an error if not
     # all the other necessary arguments are specified.
 
-    if (is.null(init_comm) || is.null(criterion) || is.null(criterion_type) ||
-        is.null(abs_eigen) || is.null(max_iter)) {
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' One of "init_comm", "criterion", "criterion_type", "abs_eigen", "max_iter" was NULL and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify all other arguments\n'))
+    if (is.na(init_comm) || is.na(criterion) || is.na(criterion_type) ||
+        is.na(abs_eigen) || is.na(max_iter)) {
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' One of "init_comm", "criterion", "criterion_type", "abs_eigen", "max_iter" was NA and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify all other arguments\n'))
     }
 
   } else if (type == "EFAtools") {
@@ -22,31 +22,31 @@
     # if not specified, set PAF properties. If specified, throw warning that
     # results may not exactly match the specified type
 
-    if (is.null(init_comm)) {
+    if (is.na(init_comm)) {
       init_comm <- "smc"
     } else {
       warning(crayon::yellow$bold("!"), crayon::yellow(" Type and init_comm is specified. init_comm is used with value '", init_comm, "'. Results may differ from the specified type\n"))
     }
 
-    if (is.null(criterion)) {
+    if (is.na(criterion)) {
       criterion <- 1e-3
     } else {
       warning(crayon::yellow$bold("!"), crayon::yellow(" Type and criterion is specified. criterion is used with value '", criterion, "'. Results may differ from the specified type\n"))
     }
 
-    if (is.null(criterion_type)) {
+    if (is.na(criterion_type)) {
       criterion_type <- "sum"
     } else {
       warning(crayon::yellow$bold("!"), crayon::yellow(" Type and criterion_type is specified. criterion_type is used with value '", criterion_type, "'. Results may differ from the specified type\n"))
     }
 
-    if (is.null(max_iter)) {
+    if (is.na(max_iter)) {
       max_iter <- 300
     } else {
       warning(crayon::yellow$bold("!"), crayon::yellow(" Type and max_iter is specified. max_iter is used with value '", max_iter, "'. Results may differ from the specified type\n"))
     }
 
-    if (is.null(abs_eigen)) {
+    if (is.na(abs_eigen)) {
       abs_eigen <- TRUE
     } else {
       warning(crayon::yellow$bold("!"), crayon::yellow(" Type and abs_eigen is specified. abs_eigen is used with value '", abs_eigen, "'. Results may differ from the specified type\n"))
@@ -58,31 +58,31 @@
     # if not specified, set PAF properties. If specified, throw warning that
     # results may not exactly match the specified type
 
-    if (is.null(init_comm)) {
+    if (is.na(init_comm)) {
       init_comm <- "smc"
     } else {
       warning(crayon::yellow$bold("!"), crayon::yellow(" Type and init_comm is specified. init_comm is used with value '", init_comm, "'. Results may differ from the specified type\n"))
     }
 
-    if (is.null(criterion)) {
+    if (is.na(criterion)) {
       criterion <- .001
     } else {
       warning(crayon::yellow$bold("!"), crayon::yellow(" Type and criterion is specified. criterion is used with value '", criterion, "'. Results may differ from the specified type\n"))
     }
 
-    if (is.null(criterion_type)) {
+    if (is.na(criterion_type)) {
       criterion_type <- "sum"
     } else {
       warning(crayon::yellow$bold("!"), crayon::yellow(" Type and criterion_type is specified. criterion_type is used with value '", criterion_type, "'. Results may differ from the specified type\n"))
     }
 
-    if (is.null(max_iter)) {
+    if (is.na(max_iter)) {
       max_iter <- 50
     } else {
       warning(crayon::yellow$bold("!"), crayon::yellow(" Type and max_iter is specified. max_iter is used with value '", max_iter, "'. Results may differ from the specified type\n"))
     }
 
-    if (is.null(abs_eigen)) {
+    if (is.na(abs_eigen)) {
       abs_eigen <- FALSE
     } else {
       warning(crayon::yellow$bold("!"), crayon::yellow(" Type and abs_eigen is specified. abs_eigen is used with value '", abs_eigen, "'. Results may differ from the specified type\n"))
@@ -94,31 +94,31 @@
     # if not specified, set PAF properties. If specified, throw warning that
     # results may not exactly match the specified type
 
-    if (is.null(init_comm)) {
+    if (is.na(init_comm)) {
       init_comm <- "smc"
     } else {
       warning(crayon::yellow$bold("!"), crayon::yellow(" Type and init_comm is specified. init_comm is used with value '", init_comm, "'. Results may differ from the specified type\n"))
     }
 
-    if (is.null(criterion)) {
+    if (is.na(criterion)) {
       criterion <- .001
     } else {
       warning(crayon::yellow$bold("!"), crayon::yellow(" Type and criterion is specified. criterion is used with value '", criterion, "'. Results may differ from the specified type\n"))
     }
 
-    if (is.null(criterion_type)) {
+    if (is.na(criterion_type)) {
       criterion_type <- "max_individual"
     } else {
       warning(crayon::yellow$bold("!"), crayon::yellow(" Type and criterion_type is specified. criterion_type is used with value '", criterion_type, "'. Results may differ from the specified type\n"))
     }
 
-    if (is.null(max_iter)) {
+    if (is.na(max_iter)) {
       max_iter <- 25
     } else {
       warning(crayon::yellow$bold("!"), crayon::yellow(" Type and max_iter is specified. max_iter is used with value '", max_iter, "'. Results may differ from the specified type\n"))
     }
 
-    if (is.null(abs_eigen)) {
+    if (is.na(abs_eigen)) {
       abs_eigen <- TRUE
     } else {
       warning(crayon::yellow$bold("!"), crayon::yellow(" Type and abs_eigen is specified. abs_eigen is used with value '", abs_eigen, "'. Results may differ from the specified type\n"))
@@ -190,6 +190,14 @@
   iter <- L_list$iter
   L <- L_list$L
 
+  # save convergence status (0 = converged, 1 = not converged (maximum number of
+  # iterations reached))
+  if (iter >= max_iter){
+    convergence <- 1
+  } else {
+    convergence <- 0
+  }
+
   # reverse the sign of loadings as done in the psych package,
   # and spss
     if (m > 1) {
@@ -249,6 +257,7 @@
     init_eigen = init_eigen,
     final_eigen = eigen(R, symmetric = TRUE)$values,
     iter = iter,
+    convergence = convergence,
     unrot_loadings = L,
     vars_accounted = vars_accounted,
     fit_indices = fit_ind,

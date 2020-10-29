@@ -11,7 +11,7 @@
 
 \item{digits}{numeric. Number of digits after the comma to keep.}
 
-\item{print_zero}{logical. Whether, if a number is between ]-1, 1[, the
+\item{print_zero}{logical. Whether, if a number is between [-1, 1], the
 zero should be omitted or printed (default is FALSE, i.e. omit zeros).}
 }
 \value{

@@ -4,7 +4,7 @@
 \alias{.parallel_sim}
 \title{Parallel analysis on simulated data.}
 \usage{
-.parallel_sim(n_datasets, n_vars, N, eigen_type)
+.parallel_sim(n_datasets, n_vars, N, eigen_type, maxit = 10000L)
 }
 \arguments{
 \item{n_datasets}{numeric. Number of datasets with dimensions (N, n_vars) to simulate.}
@@ -14,6 +14,8 @@
 \item{N}{numeric. Number of cases / observations in dataset.}
 
 \item{eigen_type}{numeric. Whether PCA (eigen_type = 1; i.e., leaving diagonal of correlation matrix at 1) or PAF (eigen_type = 2; i.e., setting diagonal of correlation matrix to SMCs).}
+
+\item{maxit}{numeric. Maximum iterations to perform after which to abort.}
 }
 \description{
 Function called from within PARALLEL so usually no call to this is needed by the user.

@@ -73,18 +73,18 @@ test_that("output class and dimensions are correct", {
   expect_is(efa_none$rot_loadings, "LOADINGS")
 
   expect_named(efa_cor, c("orig_R", "h2_init", "h2", "orig_eigen", "init_eigen",
-                          "final_eigen", "iter", "unrot_loadings",
+                          "final_eigen", "iter", "convergence", "unrot_loadings",
                           "vars_accounted", "fit_indices", "settings"))
   expect_named(efa_raw, c("orig_R", "h2_init", "h2", "orig_eigen", "init_eigen",
-                          "final_eigen", "iter", "unrot_loadings",
+                          "final_eigen", "iter", "convergence", "unrot_loadings",
                           "vars_accounted", "fit_indices", "settings"))
   expect_named(efa_psych, c("orig_R", "h2_init", "h2", "orig_eigen", "init_eigen",
-                            "final_eigen", "iter", "unrot_loadings",
+                            "final_eigen", "iter", "convergence", "unrot_loadings",
                             "vars_accounted", "fit_indices", "rot_loadings",
                             "Phi", "Structure", "rotmat", "vars_accounted_rot",
                             "settings"))
   expect_named(efa_spss, c("orig_R", "h2_init", "h2", "orig_eigen", "init_eigen",
-                           "final_eigen", "iter", "unrot_loadings",
+                           "final_eigen", "iter", "convergence", "unrot_loadings",
                            "vars_accounted", "fit_indices", "rot_loadings",
                            "Phi", "Structure", "rotmat", "vars_accounted_rot",
                            "settings"))
@@ -95,17 +95,17 @@ test_that("output class and dimensions are correct", {
                          "convergence", "unrot_loadings", "vars_accounted",
                          "fit_indices", "settings"))
   expect_named(efa_equa, c("orig_R", "h2_init", "h2", "orig_eigen", "init_eigen",
-                           "final_eigen", "iter", "unrot_loadings",
+                           "final_eigen", "iter", "convergence", "unrot_loadings",
                            "vars_accounted", "fit_indices", "rot_loadings",
                            "rotmat", "vars_accounted_rot",
                            "settings"))
   expect_named(efa_quart, c("orig_R", "h2_init", "h2", "orig_eigen", "init_eigen",
-                            "final_eigen", "iter", "unrot_loadings",
+                            "final_eigen", "iter", "convergence", "unrot_loadings",
                             "vars_accounted", "fit_indices", "rot_loadings",
                             "Phi", "Structure", "rotmat", "vars_accounted_rot",
                             "settings"))
   expect_named(efa_none, c("orig_R", "h2_init", "h2", "orig_eigen", "init_eigen",
-                           "final_eigen", "iter", "unrot_loadings",
+                           "final_eigen", "iter", "convergence", "unrot_loadings",
                            "vars_accounted", "fit_indices", "rot_loadings",
                            "Phi", "Structure", "rotmat", "vars_accounted_rot",
                            "settings"))

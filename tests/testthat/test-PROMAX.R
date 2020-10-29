@@ -73,7 +73,7 @@ test_that("settings are returned correctly", {
 
 test_that("errors etc. are thrown correctly", {
 
-  expect_error(.PROMAX(unrot, type = "none"), ' One of "P_type", "order_type", "varimax_type", or "k" was NULL and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify all other arguments\n')
+  expect_error(.PROMAX(unrot, type = "none"), ' One of "P_type", "order_type", "varimax_type", or "k" was NA and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify all other arguments\n')
 
   expect_warning(.PROMAX(unrot, type = "EFAtools", normalize = FALSE), " Type and normalize is specified. normalize is used with value ' FALSE '. Results may differ from the specified type\n")
   expect_warning(.PROMAX(unrot, type = "EFAtools", P_type = "norm"), " Type and P_type is specified. P_type is used with value ' norm '. Results may differ from the specified type\n")

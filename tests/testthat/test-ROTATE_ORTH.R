@@ -76,7 +76,7 @@ test_that("settings are returned correctly", {
 })
 
 test_that("errors etc. are thrown correctly", {
-  expect_error(.ROTATE_ORTH(unrot, rotation = "equamax", type = "none"), ' "order_type" was NULL and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify the "order_type" argument\n')
+  expect_error(.ROTATE_ORTH(unrot, rotation = "equamax", type = "none"), ' "order_type" was NA and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify the "order_type" argument\n')
 
   expect_warning(.ROTATE_ORTH(unrot, rotation = "equamax", type = "EFAtools",
                               normalize = FALSE), " Type and normalize is specified. normalize is used with value ' FALSE '. Results may differ from the specified type\n")

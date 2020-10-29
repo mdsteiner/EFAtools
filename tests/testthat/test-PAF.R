@@ -1,12 +1,12 @@
 paf_efatools <- .PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
-                     max_iter = NULL, type = "EFAtools", init_comm = NULL,
-                     criterion = NULL, criterion_type = NULL, abs_eigen = NULL)
+                     max_iter = NA, type = "EFAtools", init_comm = NA,
+                     criterion = NA, criterion_type = NA, abs_eigen = NA)
 paf_psych <- .PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
-                     max_iter = NULL, type = "psych", init_comm = NULL,
-                     criterion = NULL, criterion_type = NULL, abs_eigen = NULL)
+                     max_iter = NA, type = "psych", init_comm = NA,
+                     criterion = NA, criterion_type = NA, abs_eigen = NA)
 paf_spss <- .PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
-                  max_iter = NULL, type = "SPSS", init_comm = NULL,
-                  criterion = NULL, criterion_type = NULL, abs_eigen = NULL)
+                  max_iter = NA, type = "SPSS", init_comm = NA,
+                  criterion = NA, criterion_type = NA, abs_eigen = NA)
 paf_none <- .PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
                  max_iter = 500, type = "none", init_comm = "unity",
                  criterion = 1e-4, criterion_type = "sum", abs_eigen = TRUE)
@@ -36,14 +36,14 @@ test_that("output class and dimensions are correct", {
   expect_is(paf_F1_f$unrot_loadings, "LOADINGS")
 
 
-  expect_output(str(paf_efatools), "List of 11")
-  expect_output(str(paf_psych), "List of 11")
-  expect_output(str(paf_spss), "List of 11")
-  expect_output(str(paf_none), "List of 11")
-  expect_output(str(paf_mac_t), "List of 11")
-  expect_output(str(paf_mac_f), "List of 11")
-  expect_output(str(paf_F1_t), "List of 11")
-  expect_output(str(paf_F1_f), "List of 11")
+  expect_output(str(paf_efatools), "List of 12")
+  expect_output(str(paf_psych), "List of 12")
+  expect_output(str(paf_spss), "List of 12")
+  expect_output(str(paf_none), "List of 12")
+  expect_output(str(paf_mac_t), "List of 12")
+  expect_output(str(paf_mac_f), "List of 12")
+  expect_output(str(paf_F1_t), "List of 12")
+  expect_output(str(paf_F1_f), "List of 12")
 })
 
 test_that("original correlation matrix and eigenvalues are correct", {
@@ -231,7 +231,7 @@ test_that("settings are returned correctly", {
 test_that("warnings and errors are thrown correctly", {
   expect_error(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
                     max_iter = 500, type = "none", init_comm = "unity",
-                    criterion = 1e-4, criterion_type = "sum"), ' One of "init_comm", "criterion", "criterion_type", "abs_eigen", "max_iter" was NULL and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify all other arguments\n')
+                    criterion = 1e-4, criterion_type = "sum"), ' One of "init_comm", "criterion", "criterion_type", "abs_eigen", "max_iter" was NA and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify all other arguments\n')
 
   expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
                     type = "EFAtools", init_comm = "smc"), " Type and init_comm is specified. init_comm is used with value ' smc '. Results may differ from the specified type\n")

@@ -7,3 +7,5 @@
 ^CRAN-RELEASE$
 ^paper.*$
 ^LICENSE
+^doc$
+^Meta$
