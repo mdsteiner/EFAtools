@@ -7,6 +7,7 @@
 ## Changes to Functions
 
 * `EFA()`: Defaults that were previously set to `NULL` are now mostly set to `NA`. This was necessary for `EFA_AVERAGE()` to work correctly.
+* `PARALLEL()`: Rewrote the generation of random data based eigenvalues to be more stable when SMCs are used.
 
 # EFAtools 0.2.0
 

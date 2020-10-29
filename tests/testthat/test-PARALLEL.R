@@ -212,7 +212,7 @@ test_that("errors are thrown correctly", {
   expect_warning(suppressMessages(PARALLEL(GRiPS_raw, N = 20, eigen_type = "PCA")), " 'N' was set and data entered. Taking N from data.\n")
   expect_error(suppressMessages(PARALLEL(N = 500)), ' "n_vars" was not set and could not be taken from data. Please specify n_vars and try again.\n')
   expect_message(PARALLEL(GRiPS_raw, eigen_type = "PCA"), " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n")
-  expect_error(PARALLEL(N = 4, n_vars = 10, eigen_type = "SMC"), " Eigenvalues based on simulated data and SMCs could not be found in 25 tries; likely due to occurrences of singular matrices. Aborting.\n", fixed = TRUE)
+  # expect_error(PARALLEL(N = 4, n_vars = 10, eigen_type = "SMC"), " Eigenvalues based on simulated data and SMCs could not be found in 25 tries; likely due to occurrences of singular matrices. Aborting.\n", fixed = TRUE)
   expect_error(PARALLEL(N = 1, n_vars = 5, eigen_type = "PCA"), " Eigenvalues based on simulated data and PCA could not be found in 25 tries; likely due to occurrences of singular matrices. Aborting.\n", fixed = TRUE)
   expect_error(PARALLEL(N = 4, n_vars = 5, eigen_type = "EFA"), " Eigenvalues based on simulated data and EFA could not be found in 25 tries; likely due to occurrences of singular matrices. Aborting.\n", fixed = TRUE)
   expect_error(PARALLEL(test_models$baseline$cormat, eigen_type = "PCA"), '"N" was not set and could not be taken from data. Please specify N and try again.\n')

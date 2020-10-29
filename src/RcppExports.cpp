@@ -63,8 +63,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // parallel_sim
-arma::mat parallel_sim(const int n_datasets, const int n_vars, const int N, const int eigen_type);
-RcppExport SEXP _EFAtools_parallel_sim(SEXP n_datasetsSEXP, SEXP n_varsSEXP, SEXP NSEXP, SEXP eigen_typeSEXP) {
+arma::mat parallel_sim(const int n_datasets, const int n_vars, const int N, const int eigen_type, const int maxit);
+RcppExport SEXP _EFAtools_parallel_sim(SEXP n_datasetsSEXP, SEXP n_varsSEXP, SEXP NSEXP, SEXP eigen_typeSEXP, SEXP maxitSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -72,7 +72,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int >::type n_vars(n_varsSEXP);
     Rcpp::traits::input_parameter< const int >::type N(NSEXP);
     Rcpp::traits::input_parameter< const int >::type eigen_type(eigen_typeSEXP);
-    rcpp_result_gen = Rcpp::wrap(parallel_sim(n_datasets, n_vars, N, eigen_type));
+    Rcpp::traits::input_parameter< const int >::type maxit(maxitSEXP);
+    rcpp_result_gen = Rcpp::wrap(parallel_sim(n_datasets, n_vars, N, eigen_type, maxit));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -108,7 +109,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EFAtools_grad_ml", (DL_FUNC) &_EFAtools_grad_ml, 3},
     {"_EFAtools_error_ml", (DL_FUNC) &_EFAtools_error_ml, 3},
     {"_EFAtools_paf_iter", (DL_FUNC) &_EFAtools_paf_iter, 7},
-    {"_EFAtools_parallel_sim", (DL_FUNC) &_EFAtools_parallel_sim, 4},
+    {"_EFAtools_parallel_sim", (DL_FUNC) &_EFAtools_parallel_sim, 5},
     {"_EFAtools_grad_uls", (DL_FUNC) &_EFAtools_grad_uls, 3},
     {"_EFAtools_uls_residuals", (DL_FUNC) &_EFAtools_uls_residuals, 3},
     {NULL, NULL, 0}

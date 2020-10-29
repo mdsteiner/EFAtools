@@ -43,8 +43,9 @@
 #' @param n_vars numeric. Number of variables / indicators in dataset.
 #' @param N numeric. Number of cases / observations in dataset.
 #' @param eigen_type numeric. Whether PCA (eigen_type = 1; i.e., leaving diagonal of correlation matrix at 1) or PAF (eigen_type = 2; i.e., setting diagonal of correlation matrix to SMCs).
-.parallel_sim <- function(n_datasets, n_vars, N, eigen_type) {
-    .Call(`_EFAtools_parallel_sim`, n_datasets, n_vars, N, eigen_type)
+#' @param maxit numeric. Maximum iterations to perform after which to abort.
+.parallel_sim <- function(n_datasets, n_vars, N, eigen_type, maxit = 10000L) {
+    .Call(`_EFAtools_parallel_sim`, n_datasets, n_vars, N, eigen_type, maxit)
 }
 
 .grad_uls <- function(psi, R, n_fac) {

@@ -281,6 +281,7 @@ PARALLEL <- function(x = NULL,
       eigvals_SMC <- try(future.apply::future_lapply(size_vec, .parallel_sim,
                                                      N = N, n_vars = n_vars,
                                                      eigen_type = 2,
+                                                     maxit = n_datasets * 10,
                                                      future.seed = TRUE),
                          silent = TRUE)
       it_i <- 1
@@ -289,6 +290,7 @@ PARALLEL <- function(x = NULL,
                                                        N = N,
                                                        n_vars = n_vars,
                                                        eigen_type = 2,
+                                                       maxit = n_datasets * 10,
                                                        future.seed = TRUE),
                            silent = TRUE)
         it_i <- it_i + 1
