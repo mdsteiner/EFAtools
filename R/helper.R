@@ -769,7 +769,8 @@ if(n == 1){
     sd = c(fit_sd, df),
     range = c(fit_range, df),
     min = c(fit_min, df),
-    max = c(fit_max, df)
+    max = c(fit_max, df),
+    stringsAsFactors = FALSE
   )
 
   if (isTRUE(extract_phi)) {
