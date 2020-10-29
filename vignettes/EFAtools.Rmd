@@ -236,11 +236,14 @@ Finally, we can compute omega reliability estimates based on the SL solution. To
 OMEGA(sl_dospert, type = "psych")
 ```
 
-If we wanted to specify the variable to factor correspondences explicitly, we could do it in the following way:
+If we wanted to specify the variable to factor correspondences explicitly (for example, according to theoretical expectations), we could do it in the following way:
 
 ```{r}
-OMEGA(sl_dospert, factor_corres = c(rep(3, 6), 1, 5, 1, 5, 1, 5, 3, 3, 
-                                    rep(6, 4), rep(4, 6), rep(2, 6)))
+OMEGA(sl_dospert, factor_corres = matrix(c(rep(0, 18), rep(1, 6), rep(0, 30), 
+                                         rep(1, 6), rep(0, 6), 1, 0, 1, 0, 1,
+                                         rep(0, 19), rep(1, 6), rep(0, 31), 1, 0,
+                                         1, 0, 1, rep(0, 30), rep(1, 6), 
+                                         rep(0, 12)), ncol = 6, byrow = FALSE))
 ```
 
 

@@ -56,13 +56,10 @@ or bifactor solution. Default is "g".}
 must correspond to the number of groups for which the \code{lavaan} model
 was fitted.}
 
-\item{factor_corres}{numeric. A vector that indicates which variable corresponds
-to which group factor. Must be in the same order as the SL solution. For example
-c(3, 3, 3, 1, 1, 2, 2) if the first three variables load on the third group
-factor of the SL solution, the next two on the first group factor and the
-last two on the second group factor. If a variable should not be assigned to
-any group factor, insert a zero at its position (e.g. c(3, 3, 0, 1, 1, 2, 2),
-the third variable has no corresponding group factor).}
+\item{factor_corres}{matrix. A logical matrix or a numeric matrix containing
+0's and 1's that indicates which variable corresponds to which group factor.
+Must have the same dimensions as the matrix of group factor loadings from the
+SL solution. Cross-loadings are allowed here. See examples for use.}
 
 \item{var_names}{character. A vector with subtest names in the order
 of the rows from the SL solution. This needs only be specified if \code{model}
@@ -220,7 +217,17 @@ efa_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
                type = "EFAtools", method = "PAF", rotation = "promax")
 sl_mod <- SL(efa_mod, type = "EFAtools", method = "PAF")
 
-OMEGA(sl_mod, type = "EFAtools", factor_corres = rep(c(3, 2, 1), each = 6))
+# Two examples how to specify the indicator-to-factor correspondences:
+
+# Based on a specific salience threshold for the loadings (here: .20):
+factor_corres_1 <- sl_mod$sl[, c("F1", "F2", "F3")] >= .2
+
+# Or more flexibly (could also be TRUE and FALSE instead of 0 and 1):
+factor_corres_2 <- matrix(c(rep(0, 12), rep(1, 6), rep(0, 6), rep(1, 6),
+                         rep(0, 6), rep(1, 6), rep(0, 12)), ncol = 3,
+                         byrow = FALSE)
+
+OMEGA(sl_mod, type = "EFAtools", factor_corres = factor_corres_1)
 
 ## Use with an output from the psych::schmid function, with type psych for
 ## OMEGA
@@ -240,9 +247,13 @@ efa_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
                type = "EFAtools", method = "PAF", rotation = "promax")
 sl_mod <- SL(efa_mod, type = "EFAtools", method = "PAF")
 
+factor_corres <- matrix(c(rep(0, 12), rep(1, 6), rep(0, 6), rep(1, 6),
+                        rep(0, 6), rep(1, 6), rep(0, 12)), ncol = 3,
+                        byrow = FALSE)
+
 OMEGA(model = NULL, type = "EFAtools", var_names = rownames(sl_mod$sl),
       g_load = sl_mod$sl[, "g"], s_load = sl_mod$sl[, c("F1", "F2", "F3")],
       u2 = sl_mod$sl[, "u2"], cormat = test_models$baseline$cormat,
-      factor_corres = rep(c(3, 2, 1), each = 6))
+      factor_corres = factor_corres)
 
 }

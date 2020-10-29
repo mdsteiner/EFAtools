@@ -98,14 +98,14 @@ test_that("errors are thrown correctly", {
 efa_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
                type = "EFAtools", method = "PAF", rotation = "promax")
 sl_mod <- SL(efa_mod, type = "EFAtools", method = "PAF")
-om_sl <- .OMEGA_FLEX(sl_mod, type = "EFAtools", factor_corres = rep(c(3, 2, 1),
-                                                              each = 6),
+om_sl <- .OMEGA_FLEX(sl_mod, type = "EFAtools",
+                     factor_corres = sl_mod$sl[, c("F1", "F2", "F3")] >= .2,
                      variance = "correlation")
 
 # Explicit factor names
 om_sl_named <- .OMEGA_FLEX(sl_mod, type = "EFAtools",
                            fac_names = c("Fa1", "Fa2", "Fa3"),
-                           factor_corres = rep(c(3, 2, 1), each = 6),
+                           factor_corres = sl_mod$sl[, c("F1", "F2", "F3")] >= .2,
                            variance = "correlation")
 
 ## Use with an output from the psych::schmid function, with type psych
@@ -123,12 +123,14 @@ om_schmid_2 <- .OMEGA_FLEX(schmid_mod, type = "psych",
 om_man_1 <- .OMEGA_FLEX(model = NULL, type = "EFAtools", var_names = rownames(sl_mod$sl),
                   g_load = sl_mod$sl[, "g"], s_load = sl_mod$sl[, c("F1", "F2", "F3")],
                   u2 = sl_mod$sl[, "u2"], cormat = test_models$baseline$cormat,
-                  factor_corres = rep(c(3, 2, 1), each = 6), variance = "correlation")
+                  factor_corres = sl_mod$sl[, c("F1", "F2", "F3")] >= .2,
+                  variance = "correlation")
 # Now with other type of variance (model-based instead of based on corrmat)
 om_man_2 <- .OMEGA_FLEX(model = NULL, type = "EFAtools", var_names = rownames(sl_mod$sl),
                   g_load = sl_mod$sl[, "g"], s_load = sl_mod$sl[, c("F1", "F2", "F3")],
                   u2 = sl_mod$sl[, "u2"], cormat = test_models$baseline$cormat,
-                  factor_corres = rep(c(3, 2, 1), each = 6), variance = "sums_load")
+                  factor_corres = sl_mod$sl[, c("F1", "F2", "F3")] >= .2,
+                  variance = "sums_load")
 
 test_that("output class and dimensions are correct", {
   expect_is(om_sl, "OMEGA")
@@ -171,21 +173,21 @@ test_that("errors are thrown correctly", {
                            g_load = sl_mod$sl[, "g"],
                            s_load = sl_mod$sl[, c("F1", "F2", "F3")],
                            u2 = sl_mod$sl[, "u2"],
-                           factor_corres = rep(c(3, 2, 1), each = 6),
+                           factor_corres = sl_mod$sl[, c("F1", "F2", "F3")] >= .2,
                            variance = "correlation"), " Either specify the cormat argument or the Phi and pattern arguments, or set variance to 'sums_load'\n")
   expect_error(.OMEGA_FLEX(model = NULL, type = "EFAtools",
                            var_names = rownames(sl_mod$sl),
                            g_load = sl_mod$sl[, "g"],
                            s_load = sl_mod$sl[, c("F1", "F2", "F3")],
                            u2 = sl_mod$sl[, "u2"], cormat = matrix(rnorm(50), ncol = 5),
-                           factor_corres = rep(c(3, 2, 1), each = 6),
+                           factor_corres = sl_mod$sl[, c("F1", "F2", "F3")] >= .2,
                            variance = "correlation"), " 'x' was not a correlation matrix. Check the cormat input, specify the Phi and pattern arguments instead, or set variance to 'sums_load'\n")
   expect_error(.OMEGA_FLEX(schmid_mod, type = "EFAtools",
                            variance = "correlation"), " Either specify the factor_corres argument or set type = 'psych' to find variable-to-factor correspondences using the highest group factor loading per variable.\n")
   expect_warning(.OMEGA_FLEX(schmid_mod, type = "psych",
                              variance = "sums_load"), " Variance is specified. Variance is used with value ' sums_load '. Results may differ from the specified type\n")
-  expect_warning(.OMEGA_FLEX(schmid_mod, type = "psych", factor_corres = rep(c(3, 2, 1),
-                                                                             each = 6),
+  expect_warning(.OMEGA_FLEX(schmid_mod, type = "psych",
+                             factor_corres = sl_mod$sl[, c("F1", "F2", "F3")] >= .2,
                              variance = "correlation"), " Argument factor_corres is specified. Specified variable-to-factor correspondences are taken. To compute factor correspondences as done in psych, leave factor_corres = NULL.\n")
 })
 
