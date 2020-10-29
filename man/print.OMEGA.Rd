@@ -22,6 +22,7 @@ efa_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
                type = "EFAtools", method = "PAF", rotation = "promax")
 sl_mod <- SL(efa_mod, type = "EFAtools", method = "PAF")
 
-OMEGA(sl_mod, type = "EFAtools", factor_corres = rep(c(3, 2, 1), each = 6))
+OMEGA(sl_mod, type = "EFAtools",
+factor_corres = sl_mod$sl[, c("F1", "F2", "F3")] >= .2)
 
 }
