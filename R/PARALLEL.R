@@ -235,7 +235,7 @@ PARALLEL <- function(x = NULL,
 
       eigvals_PCA <- try(future.apply::future_lapply(size_vec, .parallel_sim, N = N,
                                              n_vars = n_vars, eigen_type = 1,
-                                             future.seed = NA),
+                                             future.seed = TRUE),
                          silent = TRUE)
 
       it_i <- 1
@@ -244,7 +244,7 @@ PARALLEL <- function(x = NULL,
                                                        N = N,
                                                        n_vars = n_vars,
                                                        eigen_type = 1,
-                                                       future.seed = NA),
+                                                       future.seed = TRUE),
                            silent = TRUE)
         it_i <- it_i + 1
       }
@@ -281,7 +281,7 @@ PARALLEL <- function(x = NULL,
       eigvals_SMC <- try(future.apply::future_lapply(size_vec, .parallel_sim,
                                                      N = N, n_vars = n_vars,
                                                      eigen_type = 2,
-                                                     future.seed = NA),
+                                                     future.seed = TRUE),
                          silent = TRUE)
       it_i <- 1
       while (inherits(eigvals_SMC, "try-error") && it_i < 25) {
@@ -289,7 +289,7 @@ PARALLEL <- function(x = NULL,
                                                        N = N,
                                                        n_vars = n_vars,
                                                        eigen_type = 2,
-                                                       future.seed = NA),
+                                                       future.seed = TRUE),
                            silent = TRUE)
         it_i <- it_i + 1
       }
@@ -325,7 +325,7 @@ PARALLEL <- function(x = NULL,
       eigvals_EFA <- future.apply::future_lapply(size_vec, .parallel_EFA_sim,
                                              n_vars = n_vars, N = N,
                                              n_factors = n_factors, ...,
-                                             future.seed = NA)
+                                             future.seed = TRUE)
       eigvals_EFA <- do.call(rbind, eigvals_EFA)
 
       results_EFA <- .parallel_summarise(eigvals_EFA, percent = percent,
