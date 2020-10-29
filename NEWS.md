@@ -8,6 +8,7 @@
 
 * `EFA()`: Defaults that were previously set to `NULL` are now mostly set to `NA`. This was necessary for `EFA_AVERAGE()` to work correctly.
 * `PARALLEL()`: Rewrote the generation of random data based eigenvalues to be more stable when SMCs are used.
+* `OMEGA()`: Changed expected input for argument `factor_corres` from vector to matrix. Can now be a logical matrix or a numeric matrix with 0's and 1's of the same dimensions as the matrix of group factor loadings. This is more flexible and allows for cross-loadings.
 
 # EFAtools 0.2.0
 
