@@ -282,7 +282,8 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   loadings <- suppressWarnings(future.apply::future_lapply(seq_len(J), EFA,
                                                            x = R,
                                                            method = method,
-                                                           N = N, ...))
+                                                           N = N, ...,
+                                                           future.seed = FALSE))
 
   # then for 1 to J factors
   for (i in seq_len(J)) {

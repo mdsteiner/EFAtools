@@ -57,7 +57,7 @@ test_that("settings are returned correctly", {
 
 test_that("errors etc. are thrown correctly", {
 
-  expect_error(.VARIMAX(unrot, type = "none"), ' "order_type" or "varimax_type" was NULL and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify all other arguments\n')
+  expect_error(.VARIMAX(unrot, type = "none"), ' "order_type" or "varimax_type" was NA and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify all other arguments\n')
 
   expect_warning(.VARIMAX(unrot, type = "EFAtools", normalize = FALSE), " Type and normalize is specified. normalize is used with value ' FALSE '. Results may differ from the specified type\n")
   expect_warning(.VARIMAX(unrot, type = "EFAtools", order_type = "ss_factors"), " Type and order_type is specified. order_type is used with value ' ss_factors '. Results may differ from the specified type\n")

@@ -29,20 +29,20 @@ EFA(
     "bifactorT", "promax", "oblimin", "quartimin", "simplimax", "bentlerQ", "geominQ",
     "bifactorQ"),
   type = c("EFAtools", "psych", "SPSS", "none"),
-  max_iter = NULL,
-  init_comm = NULL,
-  criterion = NULL,
-  criterion_type = NULL,
-  abs_eigen = NULL,
+  max_iter = NA,
+  init_comm = NA,
+  criterion = NA,
+  criterion_type = NA,
+  abs_eigen = NA,
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
     "na.or.complete"),
-  varimax_type = NULL,
-  k = NULL,
+  varimax_type = NA,
+  k = NA,
   normalize = TRUE,
-  P_type = NULL,
+  P_type = NA,
   precision = 1e-05,
-  order_type = NULL,
-  start_method = c("psych", "factanal"),
+  order_type = NA,
+  start_method = "psych",
   cor_method = c("pearson", "spearman", "kendall"),
   ...
 )
@@ -56,8 +56,7 @@ data.}
 
 \item{N}{numeric. The number of observations. Needs only be specified if a
 correlation matrix is used. If input is a correlation matrix and \code{N} = NA
-(default), not all fit indices can be computed. See
- \code{\link[psych:factor.stats]{psych::factor.stats}} for details.}
+(default), not all fit indices can be computed.}
 
 \item{method}{character. One of "PAF", "ML", or "ULS" to use principal axis
 factoring, maximum likelihood, or unweighted least squares (also called minres),
@@ -69,8 +68,8 @@ an orthogonal rotation ("varimax", "equamax", "quartimax", "geominT",
 "quartimin", "simplimax", "bentlerQ", "geominQ", or "bifactorQ").}
 
 \item{type}{character. If one of "EFAtools" (default), "psych", or "SPSS" is
-used, and the following arguments with default NULL are left with
-NULL, these implementations are executed according to the respective program
+used, and the following arguments with default NA are left with
+NA, these implementations are executed according to the respective program
 ("psych" and "SPSS") or according to the best solution found in Grieder &
 Steiner (2020; "EFAtools"). Individual properties can be adapted using one of
 the three types and specifying some of the following arguments. If set to
@@ -80,18 +79,18 @@ and \code{rotation} used (see details).}
 \item{max_iter}{numeric. The maximum number of iterations to perform after which
 the iterative PAF procedure is halted with a warning. If \code{type} is one of
 "EFAtools", "SPSS", or "psych", this is automatically specified if \code{max_iter} is
-left to be \code{NULL}, but can be overridden by entering a number. Default is
-\code{NULL}.}
+left to be \code{NA}, but can be overridden by entering a number. Default is
+\code{NA}.}
 
 \item{init_comm}{character. The method to estimate the initial communalities
 in \code{PAF}. "smc" will use squared multiple correlations, "mac" will use
 maximum absolute correlations, "unity" will use 1s (see details).
-Default is \code{NULL}.}
+Default is \code{NA}.}
 
 \item{criterion}{numeric. The convergence criterion used for PAF.
 If the change in communalities from one iteration to the next is smaller than
 this criterion the solution is accepted and the procedure ends.
-Default is \code{NULL}.}
+Default is \code{NA}.}
 
 \item{criterion_type}{character. Type of convergence criterion used for
 PAF. "max_individual" selects the maximum change in any of the
@@ -99,13 +98,13 @@ communalities from one iteration to the next and tests it against the
 specified criterion. This is also used by SPSS. "sum" takes the difference of
 the sum of all communalities in one iteration and the sum of all communalities
 in the next iteration and tests this against the criterion. This procedure is
-used by the \code{\link[psych:fa]{psych::fa}} function. Default is \code{NULL}.}
+used by the \code{\link[psych:fa]{psych::fa}} function. Default is \code{NA}.}
 
 \item{abs_eigen}{logical. Which algorithm to use in the PAF
 iterations. If FALSE, the loadings are computed from the eigenvalues. This is
 also used by the \code{\link[psych:fa]{psych::fa}} function. If TRUE the
 loadings are computed with the absolute eigenvalues as done by SPSS.
-Default is \code{NULL}.}
+Default is \code{NA}.}
 
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
 is given as input. Default is "pairwise.complete.obs".}
@@ -113,12 +112,12 @@ is given as input. Default is "pairwise.complete.obs".}
 \item{varimax_type}{character. The type of the varimax rotation performed.
 If "svd", singular value decomposition is used, as \link[stats:varimax]{stats::varimax} does. If "kaiser", the varimax procedure performed in SPSS is used.
 This is the original procedure from Kaiser (1958), but with slight alterations
-in the varimax criterion (see Grieder & Steiner, 2020). Default is \code{NULL}.}
+in the varimax criterion (see details, and Grieder & Steiner, 2020). Default is \code{NA}.}
 
 \item{k}{numeric. Either the power used for computing the target matrix P in
 the promax rotation or the number of 'close to zero loadings' for the simplimax
 rotation (see \code{\link[GPArotation:GPA]{GPArotation::GPFoblq}}). If left to
-\code{NULL} (default), the value for promax depends on the specified type.
+\code{NA} (default), the value for promax depends on the specified type.
 For simplimax, \code{nrow(L)}, where L is the matrix of unrotated loadings,
 is used by default.}
 
@@ -129,15 +128,15 @@ performed before the specified rotation. Default is \code{TRUE}.}
 matrix P is computed in promax rotation. If "unnorm" it will use the
 unnormalized target matrix as originally done in Hendrickson and White (1964).
 This is also used in the psych and stats packages. If "norm" it will use the
-normalized target matrix as used in SPSS. Default is \code{NULL}.}
+normalized target matrix as used in SPSS. Default is \code{NA}.}
 
 \item{precision}{numeric. The tolerance for stopping in the rotation
-procedure. Defaul is 10^-5 for all rotation methods.}
+procedure. Default is 10^-5 for all rotation methods.}
 
 \item{order_type}{character. How to order the factors. "eigen" will reorder
 the factors according to the largest to lowest eigenvalues of the matrix of
 rotated loadings. "ss_factors" will reorder the factors according to descending
-sum of squared factor loadings per factor. Default is \code{NULL}.}
+sum of squared factor loadings per factor. Default is \code{NA}.}
 
 \item{start_method}{character. How to specify the starting values for the
 optimization procedure for ML. Default is "psych" which takes the
@@ -170,7 +169,8 @@ A list of class EFA containing (a subset of) the following:
 \item{fit_indices}{For ML and ULS: Fit indices derived from the unrotated
 factor loadings: Chi Square, including significance level, degrees of freedom
 (df), Comparative Fit Index (CFI), Root Mean Square Error of Approximation
-(RMSEA), including its 90\% confidence interval, and the common part accounted
+(RMSEA), including its 90\% confidence interval, Akaike Information Criterion
+(AIC), Bayesian Information Criterion (BIC), and the common part accounted
 for (CAF) index as proposed by Lorenzo-Seva, Timmerman, & Kiers (2011).
 For PAF, only the CAF and dfs are returned.}
 \item{rot_loadings}{Loading matrix containing the final rotated loadings
@@ -186,7 +186,7 @@ intercorrelations.}
 \description{
 This function does an EFA with either \code{PAF}, \code{ML},
 or \code{ULS} with or without subsequent rotation.
-All arguments with default value \code{NULL} can be left to default if \code{type}
+All arguments with default value \code{NA} can be left to default if \code{type}
 is set to one of "EFAtools", "SPSS", or "psych". The respective specifications are
 then handled according to the specified type (see details). For all rotations
 except varimax and promax, the \code{GPArotation} package is needed.
@@ -261,6 +261,17 @@ following formula, which can be found in the SPSS 23 Algorithms manual:
 As for PAF, the EFAtools type setting combination for promax was the best
 compared to the other setting combinations tested in simulation studies in
 Grieder & Steiner (2020).
+
+The \code{varimax_type} argument can take two values, "svd", and "kaiser". "svd" uses
+singular value decomposition, by calling \link[stats:varimax]{stats::varimax}. "kaiser"
+performs the varimax procedure as described in the SPSS 23 Algorithms manual and as described
+by Kaiser (1958). However, there is a slight alteration in computing the varimax criterion, which
+we found to better align with the results obtain from SPSS. Specifically, the original varimax
+criterion as described in the SPSS 23 Algorithms manual is
+\code{sum(n*colSums(lambda ^ 4) - colSums(lambda ^ 2) ^ 2) / n ^ 2}, where n is the
+number of indicators, and lambda is the rotated loadings matrix. However, we found the following
+to produce results more similar to those of SPSS:
+\code{sum(n*colSums(abs(lambda)) - colSums(lambda ^ 4) ^ 2) / n^2}.
 
 For all other rotations except varimax and promax, the \code{type} argument
 only controls the \code{order_type} argument with the same values as stated

@@ -99,17 +99,17 @@ test_that("settings are returned correctly", {
   expect_equal(geoQ$settings$order_type, "eigen")
   expect_equal(bifacQ$settings$order_type, "eigen")
 
-  expect_null(obli$settings$k)
-  expect_null(obli_1$settings$k)
-  expect_null(quarti$settings$k)
+  expect_equal(obli$settings$k, NA)
+  expect_equal(obli_1$settings$k, NA)
+  expect_equal(quarti$settings$k, NA)
   expect_equal(simpli$settings$k, 18)
-  expect_null(bentQ$settings$k)
-  expect_null(geoQ$settings$k)
-  expect_null(bifacQ$settings$k)
+  expect_equal(bentQ$settings$k, NA)
+  expect_equal(geoQ$settings$k, NA)
+  expect_equal(bifacQ$settings$k, NA)
 })
 
 test_that("errors etc. are thrown correctly", {
-  expect_error(.ROTATE_OBLQ(unrot, rotation = "oblimin", type = "none"), ' "order_type" was NULL and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify the "order_type" argument\n')
+  expect_error(.ROTATE_OBLQ(unrot, rotation = "oblimin", type = "none"), ' "order_type" was NA and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify the "order_type" argument\n')
 
   expect_warning(.ROTATE_OBLQ(unrot, rotation = "oblimin", type = "EFAtools",
                               normalize = FALSE), " Type and normalize is specified. normalize is used with value ' FALSE '. Results may differ from the specified type\n")

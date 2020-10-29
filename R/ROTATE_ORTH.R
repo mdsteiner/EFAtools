@@ -2,14 +2,14 @@
 .ROTATE_ORTH <- function(x, rotation = c("equamax", "quartimax", "geominT",
                                         "bentlerT", "bifactorT"),
                         type = c("EFAtools", "psych", "SPSS", "none"),
-                        normalize = TRUE, precision = 1e-5, order_type = NULL,
+                        normalize = TRUE, precision = 1e-5, order_type = NA,
                         ...){
 
 if (type == "none") {
 
-  if (is.null(order_type)) {
+  if (is.na(order_type)) {
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "order_type" was NULL and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify the "order_type" argument\n'))
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "order_type" was NA and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify the "order_type" argument\n'))
   }
 
 } else if (type == "EFAtools") {
@@ -19,7 +19,7 @@ if (type == "none") {
     warning(crayon::yellow$bold("!"), crayon::yellow(" Type and normalize is specified. normalize is used with value '", normalize, "'. Results may differ from the specified type\n"))
   }
 
-  if (is.null(order_type)) {
+  if (is.na(order_type)) {
     order_type <- "eigen"
   } else {
     warning(crayon::yellow$bold("!"), crayon::yellow(" Type and order_type is specified. order_type is used with value '", order_type, "'. Results may differ from the specified type\n"))
@@ -32,7 +32,7 @@ if (type == "none") {
     warning(crayon::yellow$bold("!"), crayon::yellow(" Type and normalize is specified. normalize is used with value '", normalize, "'. Results may differ from the specified type\n"))
   }
 
-  if (is.null(order_type)) {
+  if (is.na(order_type)) {
     order_type <- "eigen"
   } else {
     warning(crayon::yellow$bold("!"), crayon::yellow(" Type and order_type is specified. order_type is used with value '", order_type, "'. Results may differ from the specified type\n"))
@@ -45,7 +45,7 @@ if (type == "none") {
     warning(crayon::yellow$bold("!"), crayon::yellow(" Type and normalize is specified. normalize is used with value '", normalize, "'. Results may differ from the specified type\n"))
   }
 
-  if (is.null(order_type)) {
+  if (is.na(order_type)) {
     order_type <- "ss_factors"
   } else {
     warning(crayon::yellow$bold("!"), crayon::yellow(" Type and order_type is specified. order_type is used with value '", order_type, "'. Results may differ from the specified type\n"))

@@ -51,7 +51,8 @@ WJIV_ages_3_5
 }
 \description{
 A list containing the bivariate correlations (N = 435) of the 29
-intelligence subtests from the WJ IV for 3- to 5-year-olds obtained from
+cognitive and achievement subtests from the WJ IV for 3- to 5-year-olds from
+the standardization sample obtained from
 the WJ IV technical Manual (McGrew, LaForte, & Schrank, 2014).
 Tables are reproduced with permission from the publisher.
 }

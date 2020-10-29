@@ -2,14 +2,14 @@
 .ROTATE_OBLQ <- function(x, rotation = c("oblimin", "quartimin", "simplimax",
                                         "bentlerQ", "geominQ", "bifactorQ"),
                         type = c("EFAtools", "psych", "SPSS", "none"),
-                        normalize = TRUE, precision = 1e-5, order_type = NULL,
-                        k = NULL, ...){
+                        normalize = TRUE, precision = 1e-5, order_type = NA,
+                        k = NA, ...){
 
   if (type == "none") {
 
-    if (is.null(order_type)) {
+    if (is.na(order_type)) {
 
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "order_type" was NULL and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify the "order_type" argument\n'))
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "order_type" was NA and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify the "order_type" argument\n'))
 
     }
 
@@ -20,7 +20,7 @@
       warning(crayon::yellow$bold("!"), crayon::yellow(" Type and normalize is specified. normalize is used with value '", normalize, "'. Results may differ from the specified type\n"))
     }
 
-    if (is.null(order_type)) {
+    if (is.na(order_type)) {
       order_type <- "eigen"
     } else {
       warning(crayon::yellow$bold("!"), crayon::yellow(" Type and order_type is specified. order_type is used with value '", order_type, "'. Results may differ from the specified type\n"))
@@ -36,7 +36,7 @@
       warning(crayon::yellow$bold("!"), crayon::yellow(" Type and normalize is specified. normalize is used with value '", normalize, "'. Results may differ from the specified type\n"))
     }
 
-    if (is.null(order_type)) {
+    if (is.na(order_type)) {
       order_type <- "eigen"
     } else {
       warning(crayon::yellow$bold("!"), crayon::yellow(" Type and order_type is specified. order_type is used with value '", order_type, "'. Results may differ from the specified type\n"))
@@ -49,7 +49,7 @@
       warning(crayon::yellow$bold("!"), crayon::yellow(" Type and normalize is specified. normalize is used with value '", normalize, "'. Results may differ from the specified type\n"))
     }
 
-    if (is.null(order_type)) {
+    if (is.na(order_type)) {
       order_type <- "ss_factors"
     } else {
       warning(crayon::yellow$bold("!"), crayon::yellow(" Type and order_type is specified. order_type is used with value '", order_type, "'. Results may differ from the specified type\n"))
@@ -97,7 +97,7 @@
 
   } else if (rotation == "simplimax"){
 
-    if(is.null(k)){
+    if(is.na(k)){
 
       k <- nrow(L)
       # update settings
