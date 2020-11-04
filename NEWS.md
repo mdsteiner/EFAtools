@@ -1,5 +1,9 @@
 # EFAtools 0.2.0.9000
 
+## General
+* Added examples for `EFA_AVERAGE()` to readme and the EFAtools vignette
+* Updated examples in readme and vignettes according to the updated `OMEGA` function
+
 ## New Functions
 
 * Added function `EFA_AVERAGE()` and respective print and plot methods, to allow running many EFAs across different implementations to obtain an average solution and test the stability of the results.

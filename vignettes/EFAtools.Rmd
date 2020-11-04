@@ -206,6 +206,25 @@ microbenchmark::microbenchmark(
 
 While these differences are not large, they grow larger the more iterations the procedures need, which is usually the case if solutions are more tricky to find. Especially for simulations this might come in handy. For example, in one simulation analysis we ran over 10,000,000 EFAs, thus a difference of about 25 milliseconds per EFA leads to a difference in runtime of almost three days.
 
+### Model Averaging
+
+Instead of relying on one of the many possible implementations of, for example, PAF, and of using just one rotation (e.g., promax), it may be desirable to average different solutions to potentially arrive at a more robust, average solution. The `EFA_AVERAGE()` function provides this possibility. In addition to the average solution it provides the variation across solutions, a matrix indicating the robustness of indicator-to-factor correspondences, and a visualisation of the average solution and the variability across solutions. For example, to average across all available factor extraction methods and across all available oblique rotations, the following code can be run:
+
+```{r}
+# Average solution across many different EFAs with oblique rotations
+EFA_AV <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
+                      method = c("PAF", "ML", "ULS"), rotation = "oblique",
+                      show_progress = FALSE)
+
+# look at solution
+EFA_AV
+```
+
+
+The first matrix of the output tells us that the indicators are mostly allocated to the same factors. However, that some rowsums are larger than one also tells as that there likely are some cross loadings present in some solutions. Moreover, the relatively high percentages of salient pattern coefficients all loading on the first factor may indicate that some rotation methods failed to achieve simple structure and it might be desirable to exclude these from the model averaging procedure. The rest of the output is similar to the normal `EFA()` outputs shown above, only that in addition to the average coefficients their range is also shown. Finally, the plot shows the average pattern coefficients and their ranges. 
+
+**Important disclaimer:** While it is possible that this approach provides more robust results, we are unaware of simulation studies that have investigated and shown this. Therefore, it might make sense to for now use this approach mainly to test the robustness of the results obtained with one single EFA implementation.
+
 ## Exploratory Factor Analysis: Schmid-Leiman transformation and McDonald's Omegas
 
 For the Schmid-Leiman transformation and computation of omegas, we will use PAF and promax rotation:

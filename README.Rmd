@@ -72,11 +72,22 @@ EFA_psych <- EFA(test_models$baseline$cormat, n_factors = 3, type = "psych",
 COMPARE(EFA_SPSS$rot_loadings, EFA_psych$rot_loadings,
         x_labels = c("SPSS", "psych"))
 
+# Average solution across many different EFAs with oblique rotations
+EFA_AV <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
+                      method = c("PAF", "ML", "ULS"), rotation = "oblique",
+                      show_progress = FALSE)
+
+# look at solution
+EFA_AV
+
 # Perform a Schmid-Leiman transformation
 SL <- SL(EFA_psych)
 
+# Based on a specific salience threshold for the loadings (here: .20):
+factor_corres <- SL$sl[, c("F1", "F2", "F3")] >= .2
+
 # Compute omegas from the Schmid-Leiman solution
-OMEGA(SL, factor_corres = rep(c(3, 2, 1), each = 6))
+OMEGA(SL, factor_corres = factor_corres)
 ```
 
 ## Citation
