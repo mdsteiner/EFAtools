@@ -1,4 +1,4 @@
-# EFAtools 0.2.0.9000
+# EFAtools 0.3.0
 
 ## General
 * Added examples for `EFA_AVERAGE()` to readme and the EFAtools vignette
