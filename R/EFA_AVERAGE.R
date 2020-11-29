@@ -292,31 +292,6 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
                         cor_method = c("pearson", "spearman", "kendall"),
                         show_progress = TRUE) {
 
-  # x= IDS2_R
-  # n_factors = 6
-  # N = 1991
-  # method = "PAF"
-  # rotation = "promax"
-  # type = "none"
-  # averaging = "mean"
-  # trim = 0
-  # salience_threshold = .3
-  # max_iter = 1e4
-  # init_comm = c("smc", "mac", "unity")
-  # criterion = c(1e-3, 1e-6)
-  # criterion_type = c("sum", "max_individual")
-  # abs_eigen = c(TRUE, FALSE)
-  # varimax_type = c("svd", "kaiser")
-  # normalize = TRUE
-  # k_promax = 2:4
-  # k_simplimax = ncol(x)
-  # P_type = c("norm", "unnorm")
-  # precision = 1e-5
-  # start_method = c("psych", "factanal")
-  # use = "pairwise.complete.obs"
-  # cor_method = "pearson"
-  # show_progress = TRUE
-
   # Perform argument checks
   if(!inherits(x, c("matrix", "data.frame"))){
 
@@ -633,7 +608,8 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
     criterion_types = arg_grid$criterion_type, abs_eigens = arg_grid$abs_eigen,
     varimax_types = arg_grid$varimax_type, k_ps = arg_grid$k_promax,
     k_ss = arg_grid$k_simplimax, normalizes = arg_grid$normalize,
-    P_types = arg_grid$P_type, start_methods = arg_grid$start_method)
+    P_types = arg_grid$P_type, start_methods = arg_grid$start_method,
+    future.seed = TRUE)
 
     if (n_efa %% 10 != 0){
       efa_progress_bar(message = "Done Running EFAs ")

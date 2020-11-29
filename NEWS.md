@@ -1,3 +1,9 @@
+# EFAtools 0.3.0.9000
+
+## Bug Fixes
+* `EFA_AVERAGE()`: Added `future.seed = TRUE` to call to `future.apply::future_lapply()` to prevent warnings.
+
+
 # EFAtools 0.3.0
 
 ## General
