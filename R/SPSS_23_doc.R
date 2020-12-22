@@ -1,6 +1,6 @@
-#' Various outputs from SPSS FACTOR
+#' Various outputs from SPSS (version 23) FACTOR
 #'
-#' Various outputs from SPSS FACTOR for the IDS-2 (Grob & Hagmann-von Arx, 2018), the WJIV (3 to 5 and 20 to 39 years; McGrew, LaForte, & Schrank, 2014), the DOSPERT (Frey et al., 2017; Weber,
+#' Various outputs from SPSS (version 23) FACTOR for the IDS-2 (Grob & Hagmann-von Arx, 2018), the WJIV (3 to 5 and 20 to 39 years; McGrew, LaForte, & Schrank, 2014), the DOSPERT (Frey et al., 2017; Weber,
 #' Blais, & Betz, 2002), the NEO-PI-R (Costa, & McCrae, 1992), and four simulated datasets (baseline, case_1a, case_6b, and case_11b, see \link{test_models} and \link{population_models}) used in Grieder and Steiner (2020).
 #'
 #'
