@@ -221,7 +221,9 @@ abs_eigen = TRUE}.
 
 If SMCs fail, SPSS takes "mac". However, as SPSS takes absolute eigenvalues,
 this is hardly ever the case. Psych, on the other hand, takes "unity" if SMCs
-fail. The EFAtools type setting combination was the best in terms of accuracy
+fail, but uses the Moore-Penrose Psudo Inverse of a matrix, thus, taking "unity"
+is only necessary if negative eigenvalues occur afterwards in the iterative
+PAF procedure. The EFAtools type setting combination was the best in terms of accuracy
 and number of Heywood cases compared to all the
 other setting combinations tested in simulation studies in Grieder & Steiner
 (2020), which is why this type is used as a default here.
@@ -256,7 +258,7 @@ which formula is used to compute the target matrix P in the promax rotation.
 \code{P = abs(A^(k + 1)) / A},
 where A is the unnormalized matrix containing varimax rotated loadings.
 "SPSS" uses the normalized varimax rotated loadings. Specifically it used the
-following formula, which can be found in the SPSS 23 Algorithms manual:
+following formula, which can be found in the SPSS 23 and SPSS 27 Algorithms manuals:
 \code{P = abs(A / sqrt(rowSums(A^2))) ^(k + 1) * (sqrt(rowSums(A^2)) / A)}.
 As for PAF, the EFAtools type setting combination for promax was the best
 compared to the other setting combinations tested in simulation studies in

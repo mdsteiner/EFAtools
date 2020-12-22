@@ -325,6 +325,7 @@ cor_nposdef <- matrix(c(1, 1, 0, 1, 1, 1, 0, 1, 1), ncol = 3)
 
 test_that("errors are thrown correctly", {
   expect_error(EFA(1:5), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n")
+  expect_error(EFA(cor_nposdef, n_factors = 1, N = 10, type = "SPSS"), " Correlation matrix is not positive definite, no further analyses are performed.\n")
   expect_message(EFA(GRiPS_raw, n_factors = 1), " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n")
   expect_warning(EFA(GRiPS_raw, N = 20, n_factors = 1), " 'N' was set and data entered. Taking N from data.\n")
   expect_error(EFA(dat_sing, n_factors = 1), " Correlation matrix is singular, no further analyses are performed\n")
@@ -334,6 +335,10 @@ test_that("errors are thrown correctly", {
   expect_warning(EFA(test_models$baseline$cormat, n_factors = 3, method = "ML"), " Argument 'N' was NA, not all fit indices could be computed. To get all fit indices, either provide N or raw data.\n")
   expect_warning(EFA(test_models$baseline$cormat, n_factors = 3, method = "ULS"), " Argument 'N' was NA, not all fit indices could be computed. To get all fit indices, either provide N or raw data.\n")
   expect_warning(EFA(cor_nposdef, n_factors = 1, N = 10), "Matrix was not positive definite, smoothing was done")
+  expect_warning(EFA(test_models$baseline$cormat, n_factors = 3, method = "ML", N = 500, type = "SPSS"), " 'ML' is used as method with type 'SPSS'. Note that only the 'PAF' method is tested to provide the SPSS implementation and results may therefore differ from those returned by SPSS.\n")
+  expect_warning(EFA(test_models$baseline$cormat, n_factors = 3, method = "ULS", N = 500, type = "SPSS"), " 'ULS' is used as method with type 'SPSS'. Note that only the 'PAF' method is tested to provide the SPSS implementation and results may therefore differ from those returned by SPSS.\n")
+  expect_warning(EFA(test_models$baseline$cormat, n_factors = 3, rotation = "oblimin", N = 500, type = "SPSS"), " Note that only the 'promax' and 'varimax' rotations are tested to match the SPSS implementation and results may therefore differ from those returned by SPSS.\n")
+  expect_warning(EFA(test_models$baseline$cormat, n_factors = 3, rotation = "quartimax", N = 500, type = "SPSS"), " Note that only the 'promax' and 'varimax' rotations are tested to match the SPSS implementation and results may therefore differ from those returned by SPSS.\n")
 })
 
 rm(efa_cor, efa_raw, efa_psych, efa_spss, efa_ml, efa_uls, efa_equa, efa_quart,

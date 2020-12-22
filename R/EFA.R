@@ -117,7 +117,9 @@
 #'
 #' If SMCs fail, SPSS takes "mac". However, as SPSS takes absolute eigenvalues,
 #' this is hardly ever the case. Psych, on the other hand, takes "unity" if SMCs
-#' fail. The EFAtools type setting combination was the best in terms of accuracy
+#' fail, but uses the Moore-Penrose Psudo Inverse of a matrix, thus, taking "unity"
+#' is only necessary if negative eigenvalues occur afterwards in the iterative
+#' PAF procedure. The EFAtools type setting combination was the best in terms of accuracy
 #' and number of Heywood cases compared to all the
 #' other setting combinations tested in simulation studies in Grieder & Steiner
 #' (2020), which is why this type is used as a default here.
@@ -152,7 +154,7 @@
 #' \code{P = abs(A^(k + 1)) / A},
 #' where A is the unnormalized matrix containing varimax rotated loadings.
 #' "SPSS" uses the normalized varimax rotated loadings. Specifically it used the
-#' following formula, which can be found in the SPSS 23 Algorithms manual:
+#' following formula, which can be found in the SPSS 23 and SPSS 27 Algorithms manuals:
 #' \code{P = abs(A / sqrt(rowSums(A^2))) ^(k + 1) * (sqrt(rowSums(A^2)) / A)}.
 #' As for PAF, the EFAtools type setting combination for promax was the best
 #' compared to the other setting combinations tested in simulation studies in
@@ -335,16 +337,19 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
   }
 
-  # Check if correlation matrix is invertable, if it is not, stop with message
+  # Check if correlation matrix is invertible, if it is not, stop with message
   R_i <- try(solve(R), silent = TRUE)
 
-  if (inherits(R_i, "try-error")) {
+  if (inherits(R_i, "try-error") && type != "psych") {
     stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, no further analyses are performed\n"))
   }
 
   # Check if correlation matrix is positive definite, if it is not,
   # smooth the matrix (cor.smooth throws a warning)
   if (any(eigen(R, symmetric = TRUE, only.values = TRUE)$values <= 0)) {
+    if (type == "SPSS") {
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is not positive definite, no further analyses are performed.\n"))
+    }
 
     R <- psych::cor.smooth(R)
 
@@ -377,6 +382,12 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
   } else if (method == "ML") {
 
+    if (type == "SPSS") {
+
+      warning(crayon::yellow$bold("!"), crayon::yellow(" 'ML' is used as method with type 'SPSS'. Note that only the 'PAF' method is tested to provide the SPSS implementation and results may therefore differ from those returned by SPSS.\n"))
+
+    }
+
     if (is.na(N)) {
 
       warning(crayon::yellow$bold("!"), crayon::yellow(" Argument 'N' was NA, not all fit indices could be computed. To get all fit indices, either provide N or raw data.\n"))
@@ -386,6 +397,12 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
     fit_out <- .ML(R, n_factors = n_factors, N = N, start_method = start_method)
 
   } else if (method == "ULS") {
+
+    if (type == "SPSS") {
+
+      warning(crayon::yellow$bold("!"), crayon::yellow(" 'ULS' is used as method with type 'SPSS'. Note that only the 'PAF' method is tested to provide the SPSS implementation and results may therefore differ from those returned by SPSS.\n"))
+
+    }
 
     if (is.na(N)) {
 
@@ -413,6 +430,12 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
              rotation == "bentlerT" || rotation == "geominT" ||
              rotation == "bifactorT") {
 
+    if (type == "SPSS") {
+
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Note that only the 'promax' and 'varimax' rotations are tested to match the SPSS implementation and results may therefore differ from those returned by SPSS.\n"))
+
+    }
+
     rot_out <- .ROTATE_ORTH(fit_out, type = type, rotation = rotation,
                            normalize = normalize, precision = precision,
                            order_type = order_type, ...)
@@ -420,6 +443,12 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   } else if (rotation == "oblimin" || rotation == "quartimin" ||
              rotation == "simplimax" || rotation == "bentlerQ" ||
              rotation == "geominQ" || rotation == "bifactorQ") {
+
+    if (type == "SPSS") {
+
+      warning(crayon::yellow$bold("!"), crayon::yellow(" Note that only the 'promax' and 'varimax' rotations are tested to match the SPSS implementation and results may therefore differ from those returned by SPSS.\n"))
+
+    }
 
     rot_out <- .ROTATE_OBLQ(fit_out, type = type, rotation = rotation,
                            normalize = normalize, precision = precision,
