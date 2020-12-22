@@ -132,17 +132,23 @@
   #  init_comm == "mac": uses Maximum Absolute Correlations
   if (init_comm == "smc") {
 
-    # compute the inverse of R
-    inverse_R <- solve(R)
-
-    # compute and print the initial communality estimates
-    h2_init <- 1 - 1 / diag(inverse_R)
-
     # save original correlation matrix
     orig_R <- R
 
+    # compute smcs
+    if (type == "psych") {
+
+      h2_init <- psych::smc(R)
+
+    } else {
+
+      h2_init <- 1 - 1 / diag(solve(R))
+
+    }
+
     # set diagonal of R to the initial communality estimates
     diag(R) <- h2_init
+
 
   } else if (init_comm == "unity") {
     # create h2_init object with a vector of 1s
@@ -170,7 +176,7 @@
   }
 
   # save initial eigenvalues
-  init_eigen <- eigen(R, symmetric = TRUE)$values
+  init_eigen <- eigen(R, symmetric = TRUE, only.values = TRUE)$values
 
   # define the number of factors m
   m <- n_factors

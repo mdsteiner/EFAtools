@@ -1,5 +1,13 @@
 # EFAtools 0.3.0.9000
 
+
+## Changes to Functions
+
+* `EFA()`: 
+    * Added warnings if `type = "SPSS"` was used with `method = "ML"` or `method = "ULS"`, or with a rotation other than `none`, `varimax` or `promax`.
+    * Avoided smoothing of non-positive definite correlation matrices if `type = "SPSS"` is used.
+    * Use Moore-Penrose Pseudo Inverse in computation of SMCs if `type = "psych"` is used, by calling `psych::smc()`.
+
 ## Bug Fixes
 * `EFA_AVERAGE()`: Added `future.seed = TRUE` to call to `future.apply::future_lapply()` to prevent warnings.
 
