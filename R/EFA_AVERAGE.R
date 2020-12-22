@@ -567,8 +567,6 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
 
   }
 
-  n_cores <- future::nbrOfWorkers()
-
   if (isTRUE(show_progress)) {
     progressr::handlers("progress")
   } else {
@@ -653,10 +651,11 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
       .show_av_progress("\U0001f3c3", "Averaging data...")
     }
     av_list <- suppressWarnings(
-      .average_values(re_list$vars_accounted, re_list$L, re_list$L_corres, ext_list$h2, re_list$phi,
-                      ext_list$extract_phi, averaging, trim,
-                      ext_list$for_grid[, c("chisq", "p_chi", "caf", "cfi",
-                                            "rmsea", "aic", "bic")], df, colnames(R)))
+      .average_values(re_list$vars_accounted, re_list$L, re_list$L_corres,
+                      ext_list$h2, re_list$phi, ext_list$extract_phi, averaging,
+                      trim, ext_list$for_grid[, c("chisq", "p_chi", "caf", "cfi",
+                                                  "rmsea", "aic", "bic")], df,
+                      colnames(R)))
 
   }
 
