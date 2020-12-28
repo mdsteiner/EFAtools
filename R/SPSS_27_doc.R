@@ -30,4 +30,4 @@
 #' @source Schrank, F. A., McGrew, K. S., & Mather, N. (2014). Woodcock-Johnson IV.
 #' Rolling Meadows, IL: Riverside.
 #' @source Costa, P. T., & McCrae, R. R. (1992). NEO PI-R professional manual. Odessa, FL: Psychological Assessment Resources, Inc.
-"SPSS"
+"SPSS_27"
