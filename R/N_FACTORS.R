@@ -203,7 +203,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   }
 
   # Check if correlation matrix is positive definite
-  if(any(eigen(R, symmetric = TRUE, only.values = TRUE)$values <= 0)){
+  if(any(eigen(R, symmetric = TRUE, only.values = TRUE)$values <= .Machine$double.eps^.6)){
 
     R <- psych::cor.smooth(R)
 

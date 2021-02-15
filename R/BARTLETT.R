@@ -102,7 +102,7 @@ BARTLETT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   }
 
   # Check if correlation matrix is positive definite
-  if(any(eigen(R, symmetric = TRUE, only.values = TRUE)$values <= 0)){
+  if(any(eigen(R, symmetric = TRUE, only.values = TRUE)$values <= .Machine$double.eps^.6)){
 
     R <- psych::cor.smooth(R)
 

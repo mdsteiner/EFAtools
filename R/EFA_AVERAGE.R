@@ -372,7 +372,7 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
 
   # Check if correlation matrix is positive definite, if it is not,
   # smooth the matrix (cor.smooth throws a warning)
-  if (any(eigen(R, symmetric = TRUE, only.values = TRUE)$values <= 0)) {
+  if (any(eigen(R, symmetric = TRUE, only.values = TRUE)$values <= .Machine$double.eps^.6)) {
 
     R <- psych::cor.smooth(R)
 

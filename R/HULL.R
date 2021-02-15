@@ -189,7 +189,7 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   }
 
   # Check if correlation matrix is positive definite
-  if(any(eigen(R)$values <= 0)){
+  if(any(eigen(R)$values <= .Machine$double.eps^.6)){
 
     R <- psych::cor.smooth(R)
 
