@@ -108,36 +108,12 @@ test_that(".det_max_factors works", {
   expect_gt(.det_max_factors(4), 0)
 })
 
-dat_unname <- population_models$loadings$case_1a
-dimnames(dat_unname) <- NULL
-
-dat_unname_2 <- population_models$loadings$case_1a
-colnames(dat_unname_2) <- NULL
-
-test_that(".get_compare_matrix works", {
-  expect_equal(capture_output(cat(.get_compare_matrix(population_models$loadings$case_1a))), "  \t F1  \t F2  \t F3  \nV1\t 0.600\t 0.000\t 0.000\nV2\t 0.600\t 0.000\t 0.000\nV3\t 0.000\t 0.600\t 0.000\nV4\t 0.000\t 0.600\t 0.000\nV5\t 0.000\t 0.000\t 0.600\nV6\t 0.000\t 0.000\t 0.600")
-  expect_equal(capture_output(cat(.get_compare_matrix(dat_unname))), "  \t F1  \t F2  \t F3  \nV1\t 0.600\t 0.000\t 0.000\nV2\t 0.600\t 0.000\t 0.000\nV3\t 0.000\t 0.600\t 0.000\nV4\t 0.000\t 0.600\t 0.000\nV5\t 0.000\t 0.000\t 0.600\nV6\t 0.000\t 0.000\t 0.600")
-  expect_equal(capture_output(cat(.get_compare_matrix(dat_unname_2))), "  \t F1  \t F2  \t F3  \nV1\t 0.600\t 0.000\t 0.000\nV2\t 0.600\t 0.000\t 0.000\nV3\t 0.000\t 0.600\t 0.000\nV4\t 0.000\t 0.600\t 0.000\nV5\t 0.000\t 0.000\t 0.600\nV6\t 0.000\t 0.000\t 0.600")
-  expect_equal(capture_output(cat(.get_compare_matrix(population_models$loadings$case_1a, gof = TRUE))), " F1  \t F2  \t F3  \n 0.600\t 0.000\t 0.000\n 0.600\t 0.000\t 0.000\n 0.000\t 0.600\t 0.000\n 0.000\t 0.600\t 0.000\n 0.000\t 0.000\t 0.600\n 0.000\t 0.000\t 0.600")
-  expect_equal(capture_output(cat(.get_compare_matrix(population_models$loadings$case_1a,
-                                                      n_char = 1, gof = FALSE))), " \t F1  \t F2  \t F3  \nV\t 0.600\t 0.000\t 0.000\nV\t 0.600\t 0.000\t 0.000\nV\t 0.000\t 0.600\t 0.000\nV\t 0.000\t 0.600\t 0.000\nV\t 0.000\t 0.000\t 0.600\nV\t 0.000\t 0.000\t 0.600")
-})
-
-test_that(".get_compare_vector works", {
-  expect_equal(capture_output(cat(.get_compare_vector(population_models$loadings$case_1a))), " 0.600   0.600   0.000   0.000   0.000   0.000   0.000\n 0.000   0.600   0.600   0.000   0.000   0.000   0.000\n 0.000   0.000   0.600   0.600")
-})
 
 test_that(".decimals works", {
   expect_is(.decimals(8), "numeric")
   expect_equal(.decimals(8), 0)
   expect_is(.decimals(8), "numeric")
   expect_error(.decimals("a"), " 'x' is of class 'character' but must be a numeric vector or matrix\n")
-})
-
-test_that(".settings_string works", {
-  expect_equal(capture_output(cat(.settings_string(efa_ml$settings), sep = "")), "ML, none, EFAtools, 3, 100, pairwise.complete.obs, pearson, and psych")
-  expect_equal(capture_output(cat(.settings_string(c("a", "b")), sep = "")), "a and b")
-  expect_equal(capture_output(cat(.settings_string(c("a")), sep = "")), "a")
 })
 
 efa_list <- list(EFA(test_models$baseline$cormat, n_factors = 3, N = 500),
@@ -937,7 +913,7 @@ test_that(".type_grid works", {
 
 
 rm(efa_pro, efa_temp, x_base, y_base, efa_ml, efa_uls, efa_paf, gof_ml, gof_uls,
-   gof_paf, m, q, q_p, dat_unname, dat_unname_2, efa_list, ext_a, efa_list_er,
+   gof_paf, m, q, q_p, efa_list, ext_a, efa_list_er,
    ext_er, efa_list_rot, ext_rot, av_mean_NA, av_mean_NA_t01, av_mean,
    av_median, av_median_NA, arr_re_NA, arr_re, obl_grid_1, obl_grid_2,
    obl_grid_3, obl_grid_4, orth_grid_1, orth_grid_2, orth_grid_3, orth_grid_4,

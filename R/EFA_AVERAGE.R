@@ -413,7 +413,7 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
                                            rotation = rotation, k_promax = 4,
                                            normalize = TRUE, P_type = "norm",
                                            precision = 1e-5,
-                                           varimax_type = "svd",
+                                           varimax_type = "kaiser",
                                            k_simplimax = k_simplimax)
     }
 
@@ -461,7 +461,7 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
                                              rotation = rotation, k_promax = 4,
                                              normalize = TRUE, P_type = "norm",
                                              precision = 1e-5,
-                                             varimax_type = "svd",
+                                             varimax_type = "kaiser",
                                              k_simplimax = k_simplimax)
       }
 
@@ -509,7 +509,7 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
                                                rotation = rotation, k_promax = 4,
                                                normalize = TRUE, P_type = "norm",
                                                precision = 1e-5,
-                                               varimax_type = "svd",
+                                               varimax_type = "kaiser",
                                                k_simplimax = k_simplimax)
         }
 

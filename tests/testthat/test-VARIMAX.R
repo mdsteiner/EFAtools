@@ -48,10 +48,10 @@ test_that("settings are returned correctly", {
   expect_equal(vari_spss$settings$order_type, "ss_factors")
   expect_equal(vari_1$settings$order_type, "eigen")
 
-  expect_equal(vari$settings$varimax_type, "svd")
+  expect_equal(vari$settings$varimax_type, "kaiser")
   expect_equal(vari_psych$settings$varimax_type, "svd")
   expect_equal(vari_spss$settings$varimax_type, "kaiser")
-  expect_equal(vari_1$settings$varimax_type, "svd")
+  expect_equal(vari_1$settings$varimax_type, "kaiser")
 
 })
 

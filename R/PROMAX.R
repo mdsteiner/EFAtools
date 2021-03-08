@@ -33,7 +33,7 @@
     }
 
     if (is.na(varimax_type)) {
-      varimax_type <- "svd"
+      varimax_type <- "kaiser"
     } else {
       warning(crayon::yellow$bold("!"), crayon::yellow(" Type and varimax_type is specified. varimax_type is used with value '", varimax_type, "'. Results may differ from the specified type\n"))
     }

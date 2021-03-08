@@ -128,7 +128,7 @@
 #' the \code{type} argument.
 #'
 #' \code{type = "EFAtools"} will use the following argument specification:
-#' \code{varimax_type = "svd", order_type = "eigen"}.
+#' \code{varimax_type = "kaiser", order_type = "eigen"}.
 #'
 #' \code{type = "psych"} will use the following argument specification:
 #' \code{varimax_type = "svd", order_type = "eigen"}.

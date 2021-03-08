@@ -58,12 +58,9 @@ print.LOADINGS <- function(x, cutoff = .3, digits = 3, ...) {
       if (abs(i[kk]) < cutoff) {
         tt <- c(tt, crayon::silver(.numformat(round(i[kk], digits = digits),
                                               digits = digits)))
-      } else if (abs(i[kk]) <= 1) {
+      } else {
         tt <- c(tt, crayon::bold(.numformat(round(i[kk], digits = digits),
                                             digits = digits)))
-      } else {
-        tt <- c(tt, crayon::red$bold(.numformat(round(i[kk], digits = digits),
-                                                digits = digits)))
       }
     }
     stringr::str_c(tt, collapse = "\t")
@@ -77,17 +74,6 @@ print.LOADINGS <- function(x, cutoff = .3, digits = 3, ...) {
   temp <- stringr::str_c(temp, collapse = "\n")
 
   temp <- stringr::str_c(factor_names, "\n", temp)
-
-  # add header
-
-  # warn from Heywood cases
-  if (sum(abs(x) > 1) == 1) {
-    temp <- stringr::str_c(temp,
-                           crayon::red$bold("\nWarning: A Heywood case was detected!"))
-  } else if (sum(abs(x) > 1) > 1) {
-    temp <- stringr::str_c(temp, crayon::red$bold("\nWarning:", sum(abs(x) > 1),
-                                         "Heywood cases were detected!"))
-  }
 
   temp <- stringr::str_c(temp, "\n")
   # print the results to the console

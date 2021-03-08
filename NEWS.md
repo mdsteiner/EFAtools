@@ -9,9 +9,13 @@
     * Added warnings if `type = "SPSS"` was used with `method = "ML"` or `method = "ULS"`, or with a rotation other than `none`, `varimax` or `promax`.
     * Avoided smoothing of non-positive definite correlation matrices if `type = "SPSS"` is used.
     * Use Moore-Penrose Pseudo Inverse in computation of SMCs if `type = "psych"` is used, by calling `psych::smc()`.
+    * Use `varimax_type = "kaiser"` if `type = "EFAtools"` is used with `varimax` or `promax`.
 
 ## Bug Fixes
-* `EFA_AVERAGE()`: Added `future.seed = TRUE` to call to `future.apply::future_lapply()` to prevent warnings.
+* `EFA_AVERAGE()`:
+    * Added `future.seed = TRUE` to call to `future.apply::future_lapply()` to prevent warnings.
+    * Fixed test for Heywood cases from testing whether a communality or loading is greater than .998, to only test whether communalities exceed 1 + .Machine$double.eps
+* `print.EFA()`: Fixed test for Heywood cases from testing whether a communality or loading is greater than .998, to only test whether communalities exceed 1 + .Machine$double.eps
 
 
 # EFAtools 0.3.0

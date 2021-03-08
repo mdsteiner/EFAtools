@@ -22,6 +22,7 @@ print.EFA <- function(x, ...) {
   type <- x$settings$type
   N <- x$settings$N
   fit <- x$fit_indices
+  h2 <- x$h2
 
   cat("\n")
   cat("EFA performed with type = '", crayon::bold(type), "', method = '",
@@ -47,6 +48,16 @@ print.EFA <- function(x, ...) {
     cat("\n")
     print(x$unrot_loadings)
 
+    # warn from Heywood cases
+    if (sum(h2 > 1 + .Machine$double.eps) == 1) {
+      cat(crayon::red$bold("\nWarning: A Heywood case was detected!"))
+      cat("\n")
+    } else if (sum(h2 > 1 + .Machine$double.eps) > 1) {
+      cat(crayon::red$bold("\nWarning:", sum(h2 > 1 + .Machine$double.eps),
+                           "Heywood cases were detected!"))
+      cat("\n")
+    }
+
   } else {
 
     cat("\n")
@@ -54,6 +65,15 @@ print.EFA <- function(x, ...) {
     cat("\n")
     cat("\n")
     print(x$rot_loadings)
+    # warn from Heywood cases
+    if (sum(h2 > 1 + .Machine$double.eps) == 1) {
+      cat(crayon::red$bold("\nWarning: A Heywood case was detected!"))
+      cat("\n")
+    } else if (sum(h2 > 1 + .Machine$double.eps) > 1) {
+      cat(crayon::red$bold("\nWarning:", sum(h2 > 1 + .Machine$double.eps),
+                           "Heywood cases were detected!"))
+      cat("\n")
+    }
 
     ## Print Phi for oblique solutions
     if(!is.null(x$Phi)){

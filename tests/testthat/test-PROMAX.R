@@ -59,10 +59,10 @@ test_that("settings are returned correctly", {
   expect_equal(prom_spss$settings$order_type, "ss_factors")
   expect_equal(prom_1$settings$order_type, "eigen")
 
-  expect_equal(prom$settings$varimax_type, "svd")
+  expect_equal(prom$settings$varimax_type, "kaiser")
   expect_equal(prom_psych$settings$varimax_type, "svd")
   expect_equal(prom_spss$settings$varimax_type, "kaiser")
-  expect_equal(prom_1$settings$varimax_type, "svd")
+  expect_equal(prom_1$settings$varimax_type, "kaiser")
 
   expect_equal(prom$settings$k, 4)
   expect_equal(prom_psych$settings$k, 4)
