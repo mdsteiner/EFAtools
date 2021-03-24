@@ -154,38 +154,39 @@ EFA_SPSS
 # promax rotation
 EFA_psych <- EFA(test_models$baseline$cormat, n_factors = 3, type = "psych",
                   rotation = "promax")
-
-# compare the type psych and type SPSS implementations
-COMPARE(EFA_SPSS$rot_loadings, EFA_psych$rot_loadings,
-        x_labels = c("SPSS", "psych"))
 ```
 
 <img src="man/figures/README-unnamed-chunk-5-3.png" width="100%" />
 
-    #> Mean [min, max] absolute difference:  0.0090 [ 0.0001,  0.0245]
-    #> Median absolute difference:  0.0095
-    #> Max decimals where all numbers are equal: 0
-    #> Minimum number of decimals provided: 17
-    #> 
-    #>        F1      F2      F3  
-    #> V1    0.0150  0.0142 -0.0195
-    #> V2    0.0109  0.0109 -0.0138
-    #> V3    0.0095  0.0103 -0.0119
-    #> V4    0.0118  0.0131 -0.0154
-    #> V5    0.0084  0.0105 -0.0109
-    #> V6    0.0183  0.0169 -0.0245
-    #> V7   -0.0026 -0.0017  0.0076
-    #> V8   -0.0043 -0.0035  0.0102
-    #> V9   -0.0055 -0.0040  0.0117
-    #> V10  -0.0075 -0.0066  0.0151
-    #> V11   0.0021  0.0029  0.0001
-    #> V12  -0.0064 -0.0050  0.0136
-    #> V13  -0.0109 -0.0019  0.0163
-    #> V14  -0.0049  0.0028  0.0070
-    #> V15  -0.0107 -0.0023  0.0161
-    #> V16  -0.0051  0.0028  0.0074
-    #> V17  -0.0096 -0.0001  0.0136
-    #> V18  -0.0066  0.0014  0.0098
+``` r
+# compare the type psych and type SPSS implementations
+COMPARE(EFA_SPSS$rot_loadings, EFA_psych$rot_loadings,
+        x_labels = c("SPSS", "psych"))
+#> Mean [min, max] absolute difference:  0.0090 [ 0.0001,  0.0245]
+#> Median absolute difference:  0.0095
+#> Max decimals where all numbers are equal: 0
+#> Minimum number of decimals provided: 17
+#> 
+#>        F1      F2      F3  
+#> V1    0.0150  0.0142 -0.0195
+#> V2    0.0109  0.0109 -0.0138
+#> V3    0.0095  0.0103 -0.0119
+#> V4    0.0118  0.0131 -0.0154
+#> V5    0.0084  0.0105 -0.0109
+#> V6    0.0183  0.0169 -0.0245
+#> V7   -0.0026 -0.0017  0.0076
+#> V8   -0.0043 -0.0035  0.0102
+#> V9   -0.0055 -0.0040  0.0117
+#> V10  -0.0075 -0.0066  0.0151
+#> V11   0.0021  0.0029  0.0001
+#> V12  -0.0064 -0.0050  0.0136
+#> V13  -0.0109 -0.0019  0.0163
+#> V14  -0.0049  0.0028  0.0070
+#> V15  -0.0107 -0.0023  0.0161
+#> V16  -0.0051  0.0028  0.0074
+#> V17  -0.0096 -0.0001  0.0136
+#> V18  -0.0066  0.0014  0.0098
+```
 
 <img src="man/figures/README-unnamed-chunk-5-4.png" width="100%" />
 
@@ -349,7 +350,7 @@ citing:
 
 Steiner, M.D., & Grieder, S.G. (2020). EFAtools: An R package with fast
 and flexible implementations of exploratory factor analysis tools.
-*Journal of Open Source Software*, 5(53), 2521.
+*Journal of Open Source Software*, *5*(53), 2521.
 <https://doi.org/10.21105/joss.02521>
 
 ## Contribute or Report Bugs

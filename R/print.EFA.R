@@ -49,11 +49,11 @@ print.EFA <- function(x, ...) {
     print(x$unrot_loadings)
 
     # warn from Heywood cases
-    if (sum(h2 > 1 + .Machine$double.eps) == 1) {
+    if (sum(h2 >= 1 + .Machine$double.eps) == 1) {
       cat(crayon::red$bold("\nWarning: A Heywood case was detected!"))
       cat("\n")
-    } else if (sum(h2 > 1 + .Machine$double.eps) > 1) {
-      cat(crayon::red$bold("\nWarning:", sum(h2 > 1 + .Machine$double.eps),
+    } else if (sum(h2 >= 1 + .Machine$double.eps) > 1) {
+      cat(crayon::red$bold("\nWarning:", sum(h2 >= 1 + .Machine$double.eps),
                            "Heywood cases were detected!"))
       cat("\n")
     }
@@ -66,11 +66,11 @@ print.EFA <- function(x, ...) {
     cat("\n")
     print(x$rot_loadings)
     # warn from Heywood cases
-    if (sum(h2 > 1 + .Machine$double.eps) == 1) {
+    if (sum(h2 >= 1 + .Machine$double.eps) == 1) {
       cat(crayon::red$bold("\nWarning: A Heywood case was detected!"))
       cat("\n")
-    } else if (sum(h2 > 1 + .Machine$double.eps) > 1) {
-      cat(crayon::red$bold("\nWarning:", sum(h2 > 1 + .Machine$double.eps),
+    } else if (sum(h2 >= 1 + .Machine$double.eps) > 1) {
+      cat(crayon::red$bold("\nWarning:", sum(h2 >= 1 + .Machine$double.eps),
                            "Heywood cases were detected!"))
       cat("\n")
     }

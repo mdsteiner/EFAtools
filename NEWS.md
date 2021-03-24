@@ -16,6 +16,7 @@
     * Added `future.seed = TRUE` to call to `future.apply::future_lapply()` to prevent warnings.
     * Fixed test for Heywood cases from testing whether a communality or loading is greater than .998, to only test whether communalities exceed 1 + .Machine$double.eps
 * `print.EFA()`: Fixed test for Heywood cases from testing whether a communality or loading is greater than .998, to only test whether communalities exceed 1 + .Machine$double.eps
+* `OMEGA()`: Small bugfix when `lavaan` second-order model is given as input
 
 
 # EFAtools 0.3.0

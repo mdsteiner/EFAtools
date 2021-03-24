@@ -576,7 +576,7 @@ if(n == 1){
         converged[row_i] <- efa_temp$convergence
 
         if (efa_temp$convergence == 0) {
-          has_heywood <- any(efa_temp$h2 > 1 + .Machine$double.eps)
+          has_heywood <- any(efa_temp$h2 >= 1 + .Machine$double.eps)
           heywood[row_i] <- has_heywood
 
           if (!has_heywood) {
