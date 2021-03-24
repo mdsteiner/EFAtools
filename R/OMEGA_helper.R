@@ -239,8 +239,8 @@
       stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Some loadings are NA or NaN. No omegas are computed.\n"))
     }
 
-    if(any(std_sol[[i]][["lambda"]] >= 1)){
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" A Heywood case was detected (loading equal to or larger than 1). No omegas are computed.\n"))
+    if(any(diag(std_sol[[i]][["theta"]]) <= 0) || any(diag(std_sol[[i]][["psi"]]) <= 0)){
+      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" A Heywood case was detected (variance equal to 0 or negative). No omegas are computed.\n"))
     }
 
     if(ncol(std_sol[[i]][["lambda"]]) == 1){
@@ -275,6 +275,10 @@
         if(all(std_sol[[1]][["lambda"]][, g_name] == 0)){
 
           higherorder <- TRUE
+
+          if(sum(colSums(std_sol[[1]][["beta"]]) > 0) > 1){
+            stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Your higher-order model had either more than two latent strata or more than 1 second-order factor. This function only works for second-order models with 1 second-order factor.\n"))
+          }
 
           message(cli::col_cyan(cli::symbol$info, " The general factor you specified is a second-order factor. Omegas are found on the Schmid-Leiman transformed second-order solution.\n"))
 

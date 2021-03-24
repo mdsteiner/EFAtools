@@ -67,8 +67,10 @@
 #' @details If \code{model} is a \code{lavaan} second-order or bifactor solution,
 #' only the name of the general factor from the lavaan model needs to be specified
 #' additionally with the \code{g_name} argument. It is then determined whether this
-#' general factor is a second-order factor (second-order model assumed) or a breadth
-#' factor (bifactor model assumed). In case of a second-order solution, a
+#' general factor is a second-order factor (second-order model with one second-order
+#' factor assumed) or a breadth factor (bifactor model assumed). Please note that
+#' this function only works for second-order models if they contain no more than
+#' one second-order factor. In case of a second-order solution, a
 #' Schmid-Leiman transformation is performed on the first- and second-order loadings
 #' and omega coefficents are obtained from the transformed (orthogonalized) solution
 #' (see \code{\link{SL}} for more information on Schmid-Leiman transformation).

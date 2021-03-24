@@ -27,31 +27,31 @@ lav_fit_3 <- suppressWarnings(lavaan::cfa(lav_mod_1, sample.cov =
 om_lav_gr <- .OMEGA_LAVAAN(lav_fit_3, g_name = "g", group_names = c("Some",
                                                                     "Others"))
 
-lav_mod_ho <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
+lav_mod_ho_1 <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
                F2 =~ V7 + V8 + V9 + V10 + V11 + V12
                F3 =~ V13 + V14 + V15 + V16 + V17 + V18
                g =~ F1 + F2 + F3'
-lav_fit_ho <- suppressWarnings(lavaan::cfa(lav_mod_ho,
+lav_fit_ho_1 <- suppressWarnings(lavaan::cfa(lav_mod_ho_1,
                                            sample.cov = test_models$baseline$cormat,
                                            sample.nobs = 500, estimator = "ml"))
-om_lav_ho <- suppressMessages(.OMEGA_LAVAAN(lav_fit_ho, g_name = "g"))
+om_lav_ho_1 <- suppressMessages(.OMEGA_LAVAAN(lav_fit_ho_1, g_name = "g"))
 
 test_that("output class and dimensions are correct", {
   expect_is(om_lav_bi, "OMEGA")
   expect_is(om_lav_1, "OMEGA")
-  expect_is(om_lav_ho, "OMEGA")
+  expect_is(om_lav_ho_1, "OMEGA")
   expect_is(om_lav_gr, "OMEGA")
 
   expect_output(str(om_lav_bi), "List of 2")
   expect_output(str(om_lav_1), "OMEGA")
-  expect_output(str(om_lav_ho), "List of 2")
+  expect_output(str(om_lav_ho_1), "List of 2")
   expect_output(str(om_lav_gr), "List of 2")
 })
 
 test_that("output is correct (including group names for multiple groups)", {
   expect_equal(rowSums(om_lav_bi[, 2:3]), om_lav_bi[, 1], tolerance = 1e-3)
   expect_equal(om_lav_1[1], 0.868, tolerance = 1e-3)
-  expect_equal(rowSums(om_lav_ho[, 2:3]), om_lav_ho[, 1], tolerance = 1e-3)
+  expect_equal(rowSums(om_lav_ho_1[, 2:3]), om_lav_ho_1[, 1], tolerance = 1e-3)
   expect_equal(rowSums(om_lav_gr$Some[, 2:3]), om_lav_gr$Some[, 1], tolerance = 1e-3)
   expect_equal(rowSums(om_lav_gr$Others[, 2:3]), om_lav_gr$Others[, 1], tolerance = 1e-3)
 })
@@ -83,14 +83,26 @@ lav_fit_bi_red <- suppressWarnings(lavaan::cfa(lav_mod_bi_red,
                                               sample.nobs = 500, estimator = "ml",
                                               orthogonal = TRUE))
 
+lav_mod_ho_2 <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
+               F2 =~ V7 + V8 + V9
+               F3 =~ V10 + V11 + V12
+               F4 =~ V13 + V14 + V15 + V16 + V17 + V18
+               g =~ F1 + F2
+               h =~ F3 + F4'
+lav_fit_ho_2 <- suppressWarnings(lavaan::cfa(lav_mod_ho_2,
+                                           sample.cov = test_models$baseline$cormat,
+                                           sample.nobs = 500, estimator = "ml"))
+
 test_that("errors are thrown correctly", {
   expect_error(.OMEGA_LAVAAN(lav_fit_NA, g_name = "g"), " Some loadings are NA or NaN. No omegas are computed.\n")
   expect_error(.OMEGA_LAVAAN(lav_fit_1, g_name = "fu"), " Could not find the specified name of the general factor in the entered lavaan solution. Please check the spelling.\n")
   expect_message(.OMEGA_LAVAAN(lav_fit_2), " Model contained a single factor. Only omega total is returned.\n")
-  expect_message(.OMEGA_LAVAAN(lav_fit_ho, g_name = "g"), " The general factor you specified is a second-order factor. Omegas are found on the Schmid-Leiman transformed second-order solution.\n")
+  expect_message(.OMEGA_LAVAAN(lav_fit_ho_1, g_name = "g"), " The general factor you specified is a second-order factor. Omegas are found on the Schmid-Leiman transformed second-order solution.\n")
   expect_error(.OMEGA_LAVAAN(lav_fit_inv, g_name = "F3"), " Your lavaan input is invalid, no omegas are computed. Either provide a bifactor model, a second-order model, or a model with a single factor.\n")
   expect_message(.OMEGA_LAVAAN(lav_fit_bi_red, g_name = "g"), " Some variables have less than two loadings. Did you really enter a bifactor model? Either provide a bifactor model, a second-order model, or a model with a single factor.\n", fixed = TRUE)
+  expect_error(.OMEGA_LAVAAN(lav_fit_ho_2, g_name = "g"), " Your higher-order model had either more than two latent strata or more than 1 second-order factor. This function only works for second-order models with 1 second-order factor.\n")
 })
+
 
 ## Tests for .OMEGA_FLEX -------
 
@@ -192,6 +204,7 @@ test_that("errors are thrown correctly", {
 })
 
 rm(lav_mod_1, lav_fit_1, om_lav_bi, lav_mod_2, lav_fit_2, om_lav_1, lav_fit_3,
-   om_lav_gr, lav_mod_ho, lav_fit_ho, om_lav_ho, lav_mod_NA, lav_fit_NA,
+   om_lav_gr, lav_mod_ho_1, lav_mod_ho_2, lav_fit_ho_1, lav_fit_ho_2, om_lav_ho_1,
+   lav_mod_NA, lav_fit_NA,
    lav_mod_inv, lav_fit_inv, lav_mod_bi_red, lav_fit_bi_red, efa_mod, sl_mod,
    om_sl, om_sl_named, schmid_mod, om_schmid_1, om_schmid_2, om_man_1, om_man_2)
