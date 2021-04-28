@@ -1,4 +1,4 @@
-# EFAtools 0.3.0.9000
+# EFAtools 0.3.1
 
 ## General
 * When testing for whether a matrix is singular and thus smoothing should be done, test against .Machine$double.eps^.6 instead of 0, as suggested by Florian Scharf. 

@@ -1,12 +1,9 @@
 ## Resubmission
 This is a resubmission. In this version we have:
 
-* Added the EFA_AVERAGE() function
-* Extended the readme and EFAtools vignette with the new function
-* Updated PARALLEL() to be more stable
-* Updated OMEGA() to provide possibility for cross loading in factors 
+* Updated the type "psych" in the EFA() and EFA_AVERAGE() function according to recent changes in the psych package
+* Updated the default type "EFAtools" in the EFA() and EFA_AVERAGE() functions
 * Small bug fixes
-
 
 ## Test environments
 * local OS X R installation (Mojave 10.14.6), R 4.0.3
@@ -16,4 +13,3 @@ This is a resubmission. In this version we have:
 ## R CMD check results
 
 0 errors | 0 warnings | 0 notes
-

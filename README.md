@@ -5,11 +5,10 @@
 
 <!-- badges: start -->
 
-[![Travis build
-status](https://travis-ci.com/mdsteiner/EFAtools.svg?branch=master)](https://travis-ci.com/mdsteiner/EFAtools)
 [![CRAN
 status](https://www.r-pkg.org/badges/version/EFAtools)](https://CRAN.R-project.org/package=EFAtools)
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.02521/status.svg)](https://doi.org/10.21105/joss.02521)
+[![R-CMD-check](https://github.com/mdsteiner/EFAdiff/workflows/R-CMD-check/badge.svg)](https://github.com/mdsteiner/EFAdiff/actions)
 <!-- badges: end -->
 
 The EFAtools package provides functions to perform exploratory factor
