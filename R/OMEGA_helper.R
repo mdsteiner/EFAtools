@@ -3,7 +3,8 @@
                         factor_corres = NULL,
                         var_names = NULL, fac_names = NULL, g_load = NULL,
                         s_load = NULL, u2 = NULL, cormat = NULL, pattern = NULL,
-                        Phi = NULL, variance = c("correlation", "sums_load")){
+                        Phi = NULL, variance = c("correlation", "sums_load"),
+                        add_ind = TRUE){
 
   if(inherits(model, "schmid")){
 
@@ -167,8 +168,47 @@
   omega_h <- c(omega_h_g, omega_h_sub)
   omega_sub <- c(omega_sub_g, omega_sub_sub)
 
-  omegas <- cbind(omega_tot, omega_h, omega_sub)
-  colnames(omegas) <- c("tot", "hier", "sub")
+  if(isTRUE(add_ind)){
+
+    # Compute H index, ECV, and PUC
+    sum_s_load_sq <- vector("double", ncol(omega_mat))
+    h_s_load <- vector("double", ncol(omega_mat))
+
+    # Calculate denominators for H for group factors and for ECV
+    for (j in seq_along(omega_mat)){
+      sum_s_load_sq[j] <- sum(omega_mat[, j]^2 / (1 - omega_mat[, j]^2))
+      h_s_load[j] <- sum(omega_mat[ , j]^2)
+    }
+
+    h_g <- 1 / (1 + (1 / sum(input$g^2 / (1 - input$g^2))))
+    h_s <- 1 / (1 + (1 / sum_s_load_sq))
+
+    ECV <- sum(input$g^2) / sum(sum(input$g^2), sum(h_s_load))
+
+    # Calculate number of items per factor
+    item_on_fac <- colSums(omega_mat != 0)
+
+    # Calculate number of contaminated correlations
+    cont_corrs <- sum(sapply(item_on_fac, function (x) {x*(x - 1) / 2}))
+
+    # Calculate proportion of uncontaminated correlations (PUC)
+    PUC <- 1 - cont_corrs/(nrow(omega_mat)*(nrow(omega_mat) - 1) / 2)
+
+    # Create output
+    h <- c(h_g, h_s)
+
+    omegas <- cbind(omega_tot, omega_h, omega_sub, h, NA, NA)
+    omegas[1, 5] <- ECV
+    omegas[1, 6] <- PUC
+    colnames(omegas) <- c("tot", "hier", "sub", "H", "ECV", "PUC")
+
+  } else {
+
+    omegas <- cbind(omega_tot, omega_h, omega_sub)
+    colnames(omegas) <- c("tot", "hier", "sub")
+
+  }
+
 
   if(!is.null(fac_names)){
 
@@ -196,7 +236,8 @@
 
 # Omega function to use with lavaan bifactor output as input-------
 
-.OMEGA_LAVAAN <- function(model = NULL, g_name = "g", group_names = NULL){
+.OMEGA_LAVAAN <- function(model = NULL, g_name = "g", group_names = NULL,
+                          add_ind = TRUE){
 
   higherorder <- FALSE
 
@@ -207,32 +248,17 @@
   std_sol <- suppressWarnings(lavaan::lavInspect(model, what = "std",
                                 drop.list.single.group = FALSE))
 
-  ## Create empty list objects for further processing
-  g_load <- list()
-  e_load <- list()
-  sums_all <- list()
-  sum_g <- list()
-  sum_e <- list()
-  sums_s <- list()
-  sums_e_s <- list()
-  sums_g_s <- list()
-  omega_tot_g <- list()
-  omega_h_g <- list()
-  omega_sub_g <- list()
-  omega_tot_sub <- list()
-  omega_h_sub <- list()
-  omega_sub_sub <- list()
-  omega_tot <- list()
-  omega_h <- list()
-  omega_sub <- list()
+  ## Create empty list for output
   omegas <- list()
 
+  # Get group names from lavaan output, if necessary
   if(is.null(group_names)){
 
     group_names <- names(std_sol)
 
   }
 
+  # Some checks
     for(i in seq_along(std_sol)){
 
     if(any(is.na(std_sol[[i]][["lambda"]]))){
@@ -245,21 +271,40 @@
 
     if(ncol(std_sol[[i]][["lambda"]]) == 1){
 
-      if(i == 1){
-
-        message(cli::col_cyan(cli::symbol$info, " Model contained a single factor. Only omega total is returned.\n"))
-
-      }
-
       fac_names <- colnames(std_sol[[1]][["lambda"]])
       var_names <- rownames(std_sol[[1]][["lambda"]])
 
       # Extract sum of factor loadings and error variances
-      sum_g[[i]] <- sum(std_sol[[i]][["lambda"]][, fac_names])
-      sum_e[[i]] <- sum(diag(std_sol[[i]][["theta"]]))
+      sum_g <- sum(std_sol[[i]][["lambda"]][, fac_names])
+      sum_e <- sum(diag(std_sol[[i]][["theta"]]))
 
-      # Compute omega
-      omegas[[i]] <- (sum_g[[i]]^2) / (sum_g[[i]]^2 + sum_e[[i]])
+      if(isTRUE(add_ind)){
+
+        if(i == 1){
+
+        message(cli::col_cyan(cli::symbol$info, " Model contained a single factor. Only omega total and H index are returned.\n"))
+
+      }
+
+      # Compute omega and H index
+        omega_g <- (sum_g^2) / (sum_g^2 + sum_e)
+        h_g <- 1 / (1 + (1 / sum(std_sol[[i]][["lambda"]][, fac_names]^2 /
+                                   (1 - std_sol[[i]][["lambda"]][, fac_names]^2))))
+        omegas[[i]] <- c(omega_g, h_g)
+        names(omegas[[i]]) <- c("Omega", "H")
+
+      } else {
+
+        if(i == 1){
+
+          message(cli::col_cyan(cli::symbol$info, " Model contained a single factor. Only omega total is returned.\n"))
+
+        }
+
+        # Compute omega
+        omegas[[i]] <- (sum_g^2) / (sum_g^2 + sum_e)
+
+      }
 
     } else {
 
@@ -325,51 +370,92 @@
       }
 
       # Create all sums of factor loadings for each factor
-      sums_all[[i]] <- vector("double", length(fac_names))
+      sums_all <- vector("double", length(fac_names))
       for (j in seq_along(fac_names)){
-        sums_all[[i]][j] <- sum(std_sol[[i]][["lambda"]][, fac_names[j]])
+        sums_all[j] <- sum(std_sol[[i]][["lambda"]][, fac_names[j]])
       }
 
       # Extract g-loadings and error variances, sum of g-loadings for g and sum of
       # respective loadings for every factor
-      g_load[[i]] <- std_sol[[i]][["lambda"]][, g_name]
-      e_load[[i]] <- diag(std_sol[[i]][["theta"]])
-      sum_e[[i]] <- sum(e_load[[i]])
-      sum_g[[i]] <- sums_all[[i]][1]
-      sums_s[[i]] <- sums_all[[i]][2:length(fac_names)]
+      g_load <- std_sol[[i]][["lambda"]][, g_name]
+      e_load <- diag(std_sol[[i]][["theta"]])
+      sum_e <- sum(e_load)
+      sum_g <- sums_all[1]
+      sums_s <- sums_all[2:length(fac_names)]
 
       # Compute sums of error variances and g-loadings for group factors
-      sums_e_s[[i]] <- vector("double", length(var_names))
-      sums_g_s[[i]] <- vector("double", length(var_names))
+      sums_e_s <- vector("double", length(var_names))
+      sums_g_s <- vector("double", length(var_names))
 
       for (j in seq_along(var_names)){
-        sums_e_s[[i]][j] <- sum(e_load[[i]][var_names[[j]]])
-        sums_g_s[[i]][j] <- sum(g_load[[i]][var_names[[j]]])
+        sums_e_s[j] <- sum(e_load[var_names[[j]]])
+        sums_g_s[j] <- sum(g_load[var_names[[j]]])
       }
 
       # Compute omega total, hierarchical, and subscale for g-factor
-      omega_tot_g[[i]] <- (sum_g[[i]]^2 + sum(sums_s[[i]]^2)) /
-        (sum_g[[i]]^2 + sum(sums_s[[i]]^2) + sum_e[[i]])
-      omega_h_g[[i]] <- sum_g[[i]]^2 / (sum_g[[i]]^2 + sum(sums_s[[i]]^2) +
-                                          sum_e[[i]])
-      omega_sub_g[[i]] <- sum(sums_s[[i]]^2) / (sum_g[[i]]^2 +
-                                                  sum(sums_s[[i]]^2) + sum_e[[i]])
+      omega_tot_g <- (sum_g^2 + sum(sums_s^2)) / (sum_g^2 + sum(sums_s^2) + sum_e)
+      omega_h_g <- sum_g^2 / (sum_g^2 + sum(sums_s^2) +
+                                          sum_e)
+      omega_sub_g <- sum(sums_s^2) / (sum_g^2 + sum(sums_s^2) + sum_e)
 
       # Compute omega total, hierarchical, and subscale for group factors
-      omega_tot_sub[[i]] <- (sums_s[[i]]^2 + sums_g_s[[i]]^2) /
-        (sums_g_s[[i]]^2 + sums_s[[i]]^2 + sums_e_s[[i]])
-      omega_h_sub[[i]] <- sums_g_s[[i]]^2 / (sums_g_s[[i]]^2 + sums_s[[i]]^2 +
-                                               sums_e_s[[i]])
-      omega_sub_sub[[i]] <- sums_s[[i]]^2 / (sums_g_s[[i]]^2 + sums_s[[i]]^2 +
-                                               sums_e_s[[i]])
+      omega_tot_sub <- (sums_s^2 + sums_g_s^2) / (sums_g_s^2 + sums_s^2 +
+                                                         sums_e_s)
+      omega_h_sub <- sums_g_s^2 / (sums_g_s^2 + sums_s^2 + sums_e_s)
+      omega_sub_sub <- sums_s^2 / (sums_g_s^2 + sums_s^2 + sums_e_s)
 
       # Combine and display results in a table
-      omega_tot[[i]] <- c(omega_tot_g[[i]], omega_tot_sub[[i]])
-      omega_h[[i]] <- c(omega_h_g[[i]], omega_h_sub[[i]])
-      omega_sub[[i]] <- c(omega_sub_g[[i]], omega_sub_sub[[i]])
+      omega_tot <- c(omega_tot_g, omega_tot_sub)
+      omega_h <- c(omega_h_g, omega_h_sub)
+      omega_sub <- c(omega_sub_g, omega_sub_sub)
 
-      omegas[[i]] <- cbind(omega_tot[[i]], omega_h[[i]], omega_sub[[i]])
-      colnames(omegas[[i]]) <- c("tot", "hier", "sub")
+      if(isTRUE(add_ind)){
+
+        # Compute H index, ECV, and PUC
+        sum_s_load_sq <- vector("double", length(var_names))
+        h_s_load <- vector("double", length(var_names))
+
+        # Calculate denominators for H for group factors and for ECV
+        for (j in seq_along(var_names)){
+          sum_s_load_sq[j] <- sum(std_sol[[i]][["lambda"]][var_names[[j]],
+                                                                fac_names[j+1]]^2 /
+                                         (1 - std_sol[[i]][["lambda"]][var_names[[j]],
+                                                                       fac_names[j+1]]^2))
+          h_s_load[j] <- sum(std_sol[[i]][["lambda"]][var_names[[j]],
+                                                           fac_names[j+1]]^2)
+        }
+
+        h_g <- 1 / (1 + (1 / sum(g_load^2 / (1 - g_load^2))))
+        h_s <- 1 / (1 + (1 / sum_s_load_sq))
+
+        ECV <- sum(g_load^2) / sum(sum(g_load^2), sum(h_s_load))
+
+        # Calculate number of items per factor
+        item_on_fac <- colSums(std_sol[[i]][["lambda"]] != 0)
+
+        # Calculate number of contaminated correlations
+        cont_corrs <- sum(sapply(item_on_fac, function (x) {x*(x - 1) / 2})) -
+          (nrow(std_sol[[i]][["lambda"]])*(nrow(std_sol[[i]][["lambda"]]) - 1) / 2)
+
+        # Calculate proportion of uncontaminated correlations (PUC)
+        PUC <- 1 - cont_corrs /
+          (nrow(std_sol[[i]][["lambda"]])*(nrow(std_sol[[i]][["lambda"]]) - 1) / 2)
+
+        # Create output
+        h <- c(h_g, h_s)
+
+        omegas[[i]] <- cbind(omega_tot, omega_h, omega_sub, h, NA, NA)
+        omegas[[i]][1, 5] <- ECV
+        omegas[[i]][1, 6] <- PUC
+        colnames(omegas[[i]]) <- c("tot", "hier", "sub", "H", "ECV", "PUC")
+
+      } else {
+
+        # Create output
+        omegas[[i]] <- cbind(omega_tot, omega_h, omega_sub)
+        colnames(omegas[[i]]) <- c("tot", "hier", "sub")
+
+      }
 
       rownames(omegas[[i]]) <- fac_names
 

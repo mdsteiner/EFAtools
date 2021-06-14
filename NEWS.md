@@ -1,3 +1,11 @@
+# EFAtools 0.3.1.9000
+
+## Changes to Functions
+
+* `OMEGA()`: 
+    * Added calculation of additional indices of interpretive relevance (H index, explained common variance [ECV], and percent of uncontaminated correlations [PUC]). This is optional and can be avoided by setting `add_ind = FALSE`.
+    
+    
 # EFAtools 0.3.1
 
 ## General

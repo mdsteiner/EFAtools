@@ -14,6 +14,32 @@ NJ: Erlbaum.
 McDonald, R. P. (1999). Test theory: A unified treatment. Mahwah,
 NJ: Erlbaum.
 
+Rodriguez, A., Reise, S. P., & Haviland, M. G. (2016a). Applying bifactor
+statistical indices in the evaluation of psychological measures. Journal of
+Personality Assessment, 98, 223-237.
+
+Rodriguez, A., Reise, S. P., & Haviland, M. G. (2016b). Evaluating
+bifactor models: Calculating and interpreting statistical indices.
+Psychological Methods, 21, 137-150.
+
+Hancock, G. R., & Mueller, R. O. (2001). Rethinking construct reliability
+within latent variable systems. In R. Cudeck, S. du Toit, & D. Sörbom (Eds.),
+Structural equation modeling: Present and future—A Festschrift in honor of Karl
+Jöreskog (pp. 195–216). Lincolnwood, IL: Scientific Software International.
+
+Sijtsma, K. (2009). On the use, the misuse, and the very limited usefulness
+of Cronbach’s alpha. Psychometrika, 74, 107–120.
+
+Reise, S. P., Scheines, R., Widaman, K. F., & Haviland, M. G. (2013).
+Multidimensionality and structural coefficient bias in structural equation
+modeling: A bifactor perspective. Educational and Psychological Measurement,
+73, 5–26.
+
+Bonifay, W. E., Reise, S. P., Scheines, R., & Meijer, R. R. (2015).
+When are multidimensional data unidimensional enough for structural equation
+modeling?: An evaluation of the DETECT multidimensionality index. Structural
+Equation Modeling, 22, 504—516.
+
 Gignac, G. E. (2014). On the Inappropriateness of Using Items to
 Calculate Total Scale Score Reliability via Coefficient Alpha for Multidimensional
 Scales. European Journal of Psychological Assessment, 30, 130-139.
@@ -24,6 +50,7 @@ OMEGA(
   type = c("EFAtools", "psych"),
   g_name = "g",
   group_names = NULL,
+  add_ind = TRUE,
   factor_corres = NULL,
   var_names = NULL,
   fac_names = NULL,
@@ -55,6 +82,10 @@ or bifactor solution. Default is "g".}
 \item{group_names}{character. An optional vector of group names. The length
 must correspond to the number of groups for which the \code{lavaan} model
 was fitted.}
+
+\item{add_ind}{logical. Whether additional indices (H index, ECV, PUC) should
+be calculated or not (see details for these indices). If FALSE, only omegas
+are returned. Default is \code{TRUE}.}
 
 \item{factor_corres}{matrix. A logical matrix or a numeric matrix containing
 0's and 1's that indicates which variable corresponds to which group factor.
@@ -108,19 +139,25 @@ the sum of uniquenesses (see details).}
 \value{
 If found for an SL or \code{lavaan} second-order of bifactor solution
 without multiple groups:
-A matrix with omegas for the whole scale and for the subscales.
+A matrix with omegas for the whole scale and for the subscales and (only if
+\code{add_ind = TRUE}) with the H index, ECV, and PUC.
 \item{tot}{Omega total.}
 \item{hier}{Omega hierarchical.}
 \item{sub}{Omega subscale.}
+\item{H}{H index.}
+\item{ECV}{Explained common variance.}
+\item{PUC}{Percent of uncontaminated correlations.}
 
 If found for a \code{lavaan} single factor solution without multiple groups:
-A vector with omega total for the single factor.
+A (named) vector with omega total and (if \code{add_ind = TRUE}) the H index
+for the single factor.
 
 If found for a \code{lavaan} output from a multiple group analysis: A list
 containing the output described above for each group.
 }
 \description{
-This function finds omega total, omega hierarchical, and omega subscale
+This function finds omega total, hierarchical, and subscale, as well as additional
+model-based indices of interpretive relevance (H index, ECV, PUC)
 from a Schmid-Leiman (SL) solution or lavaan single factor, second-order (see below),
 or bifactor solution. The SL-based omegas can either be found from a
 \code{\link[psych:schmid]{psych::schmid}}, \code{\link{SL}}, or,
@@ -130,6 +167,46 @@ in a more flexible way, by leaving
 can be reproduced.
 }
 \details{
+## What this function does
+
+This function calculates McDonald's omegas (McDonald, 1978, 1985, 1999),
+the H index (Hancock & Mueller, 2001), the explained common variance (ECV;
+Sijtsma, 2009), and the percent of uncontaminated correlations (PUC; Bonifay
+et al., 2015; Reise et al., 2013).
+
+All types of omegas (total, hierarchical, and subscale) are calculated for
+the general factor as well as for the subscales / group factors (see, e.g.,
+Gignac, 2014; Rodriguez et al., 2016a, 2016b). Omegas refer to the correlation
+between a factor and a unit-weighted composite score and thus the
+true score variance in a unit-weighted composite based on the respective
+indicators. Omega total is the total true score variance in a composite.
+Omega hierarchical is the true score variance in a composite that is attributable
+to the general factor, and omega subscale is the true score variance in a
+composite attributable to all subscales / group factors (for the whole scale)
+or to the specific subscale / group factor (for subscale composites).
+
+The H index (also construct reliability or replicability index) is the
+correlation between an optimally-weighted composite score
+and a factor (Hancock & Mueller, 2001; Rodriguez et al., 2016a, 2016b). It, too,
+can be calculated for the whole scale / general factor as well as for the
+subscales / grouup factors. Low values indicate that a latent variable is not well
+defined by its indicators.
+
+The ECV (Sijtsma, 2009, Rodriguez et al., 2016a, 2016b) is the ratio of the
+variance explained by the general factor and the variance explained by the
+general factor and the group factors.
+
+The PUC (Bonifay et al., 2015; Reise et al., 2013, Rodriguez et al., 2016a,
+2016b) refers to the proportion
+of correlations in the underlying correlation matrix that is not contaminated
+by variance of both the general factor and the group factors (i.e., correlations
+between indicators from different group factors, which reflect only general
+factor variance). The higher the PUC, the more similar a general factor from
+a multidimensional model will be to the single factor from a unidimensional
+model.
+
+## How to use this function
+
 If \code{model} is a \code{lavaan} second-order or bifactor solution,
 only the name of the general factor from the lavaan model needs to be specified
 additionally with the \code{g_name} argument. It is then determined whether this
@@ -142,7 +219,7 @@ and omega coefficents are obtained from the transformed (orthogonalized) solutio
 (see \code{\link{SL}} for more information on Schmid-Leiman transformation).
 There is also the possibility to enter a \code{lavaan} single factor solution.
 In this case, \code{g_name} is not needed. Finally, if a solution from a
-\code{lavaan} multiple group analysis is entered, the omegas are computed for
+\code{lavaan} multiple group analysis is entered, the indices are computed for
 each group.
 The type argument is not evaluated if \code{model} is of class
 \code{lavaan}.
@@ -199,8 +276,11 @@ mod <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
 fit_bi <- lavaan::cfa(mod, sample.cov = test_models$baseline$cormat,
                       sample.nobs = 500, estimator = "ml", orthogonal = TRUE)
 
-# Compute omega for bifactor solution
+# Compute omegas and additional indices for bifactor solution
 OMEGA(fit_bi, g_name = "g")
+
+# Compute only omegas
+OMEGA(fit_bi, g_name = "g", add_ind = FALSE)
 
 # Create and fit second-order model in lavaan (assume all variables have SDs of 1)
 mod <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
@@ -210,7 +290,7 @@ mod <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
 fit_ho <- lavaan::cfa(mod, sample.cov = test_models$baseline$cormat,
                       sample.nobs = 500, estimator = "ml")
 
-# Compute omega for second-order solution
+# Compute omegas and additional indices for second-order solution
 OMEGA(fit_ho, g_name = "g")
 }
 

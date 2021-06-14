@@ -249,7 +249,7 @@ From the output, it can be seen that all, except the social domain indicators su
 
 ## McDonald's Omegas
 
-Finally, we can compute omega reliability estimates based on the SL solution. To this end, we can either specify the variable-to-factor correspondences, or let them be determined automatically (in which case the highest factor loading will be taken, which might lead to a different solution than what is desired, in the presence of cross-loadings). Given that no cross-loadings are present here, it is easiest to let the function automatically determine the variable-to-factor correspondence. To this end, we will set the `type` argument to `"psych"`.
+Finally, we can compute omega estimates and additional indices of interpretive relevance based on the SL solution. To this end, we can either specify the variable-to-factor correspondences, or let them be determined automatically (in which case the highest factor loading will be taken, which might lead to a different solution than what is desired, in the presence of cross-loadings). Given that no cross-loadings are present here, it is easiest to let the function automatically determine the variable-to-factor correspondence. To this end, we will set the `type` argument to `"psych"`.
 
 ```{r}
 OMEGA(sl_dospert, type = "psych")
