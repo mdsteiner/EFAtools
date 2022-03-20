@@ -16,7 +16,10 @@
 #' @param alpha numeric. The alpha level used to test the significance of the
 #'  improvement added by an additional factor. Default is .30.
 #' @param use character. Passed to \code{\link[stats:cor]{stats::cor}}. Default
-#'  is "pairwise.complete.obs".
+#'  is "pairwise.complete.obs". However, for the comparison data procedure,
+#'  \code{NA} values will be excluded using na.omit(). If missing data should
+#'  be handled differently (e.g., imputation), do this before passing the data to
+#'  \code{CD()}.
 #' @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}.
 #' Default is "pearson".
 #' @param max_iter numeric. The maximum number of iterations to perform after
@@ -35,6 +38,11 @@
 #' The CD implementation here is based on the code by Ruscio and Roche (2012), but
 #' is slightly adapted to increase speed by performing the principal axis factoring
 #' using a C++ based function.
+#'
+#' Note that if the data contains missing values, these will be removed for the
+#' comparison data procedure using \code{\link[stats:na.fail]{stats::na.omit}}. If
+#' missing data should be treated differently, e.g., by imputation, do this outside
+#' \code{CD} and then pass the complete data.
 #'
 #' The \code{CD} function can also be called together with other factor retention
 #' criteria in the \code{\link{N_FACTORS}} function.
@@ -106,6 +114,16 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
   # Create correlation matrix
   R <- stats::cor(x, use = use, method = cor_method)
   colnames(R) <- colnames(x)
+
+  if (any(is.na(x))) {
+    n_row_complete <- nrow(x)
+    x <- stats::na.omit(x)
+    n_row_new <- nrow(x)
+    n_rows_removed <- n_row_complete - n_row_new
+
+    warning(crayon::yellow$bold("!"),
+            crayon::yellow(" The data contained missing values that were removed using stats::na.omit().", n_rows_removed, "row(s) were removed.\n"))
+  }
   n_cases <- nrow(x)
   k <- ncol(x)
 

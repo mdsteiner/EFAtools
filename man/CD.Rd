@@ -45,7 +45,10 @@ Default is 500.}
 improvement added by an additional factor. Default is .30.}
 
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}}. Default
-is "pairwise.complete.obs".}
+is "pairwise.complete.obs". However, for the comparison data procedure,
+\code{NA} values will be excluded using na.omit(). If missing data should
+be handled differently (e.g., imputation), do this before passing the data to
+\code{CD()}.}
 
 \item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor}}.
 Default is "pearson".}
@@ -80,6 +83,11 @@ reproduction of the observed eigenvalues fails to improve significantly"
 The CD implementation here is based on the code by Ruscio and Roche (2012), but
 is slightly adapted to increase speed by performing the principal axis factoring
 using a C++ based function.
+
+Note that if the data contains missing values, these will be removed for the
+comparison data procedure using \code{\link[stats:na.fail]{stats::na.omit}}. If
+missing data should be treated differently, e.g., by imputation, do this outside
+\code{CD} and then pass the complete data.
 
 The \code{CD} function can also be called together with other factor retention
 criteria in the \code{\link{N_FACTORS}} function.
