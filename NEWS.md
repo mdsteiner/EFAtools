@@ -1,11 +1,15 @@
-# EFAtools 0.3.1.9000
+# EFAtools 0.4.0
 
 ## Changes to Functions
 
-* `OMEGA()`: 
-    * Added calculation of additional indices of interpretive relevance (H index, explained common variance [ECV], and percent of uncontaminated correlations [PUC]). This is optional and can be avoided by setting `add_ind = FALSE`.
-    
-    
+* `EFA()`: Changed error to warning when model is underidentified. This allows the Schmid-Leiman transformation to be performed on a two-factor solution.
+* `OMEGA()`: Added calculation of additional indices of interpretive relevance (H index, explained common variance [ECV], and percent of uncontaminated correlations [PUC]). This is optional and can be avoided by setting `add_ind = FALSE`.
+
+
+## Bug Fixes
+
+* `CD()`: Added `na.omit()` to remove missing values from raw data to avoid an error in the comparison-data procedure.
+
 # EFAtools 0.3.1
 
 ## General
