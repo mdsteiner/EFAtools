@@ -326,7 +326,7 @@
   CAF <- 1 - KMO(delta_hat)$KMO
 
 
-  if (method != "PAF" && !is.na(N)) {
+  if (method != "PAF" && !is.na(N) && df >=0) {
 
     ### compute CFI
 
@@ -337,6 +337,10 @@
     p_null <- stats::pchisq(chi_null, df_null, lower.tail = F)
 
     # current model
+    # formula 12.1 from Kline 2016; Principles and practices of...
+    # This should also hold for ULS solutions -> Bentler & Bonett (1980)
+    # Significance Tests  and Goodness  of Fit in the Analysis of Covariance
+    # Structures. Psychological Bulletin, 88(3), 588-606
     chi <- Fm * (N - 1)
     p_chi <- stats::pchisq(chi, df, lower.tail = F)
     delta_hat_m <- chi - df
@@ -348,7 +352,7 @@
     ### compute RMSEA, incl. 90% confidence intervals if df are not 0
     if(df != 0){
 
-      # formula 12.6 from Kline 2015; Principles and practices of...
+      # formula 12.6 from Kline 2016; Principles and practices of...
       RMSEA <- sqrt(max(0, chi - df) / (df * N - 1))
 
     p_chi_fun <- function(x, val, df, goal){goal - stats::pchisq(val, df, ncp = x)}
