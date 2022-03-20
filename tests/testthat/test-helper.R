@@ -92,9 +92,10 @@ test_that(".is_cormat works", {
   expect_equal(.is_cormat(cor(cbind(rnorm(100), rnorm(100)))), TRUE)
   expect_equal(.is_cormat(cbind(rnorm(100), rnorm(100))), FALSE)
   expect_equal(.is_cormat(cbind(rnorm(2), rnorm(2))), FALSE)
-  expect_equal(.is_cormat(cbind(c(1, NA), rnorm(2))), FALSE)
+  expect_equal(.is_cormat(cbind(c(1, NA, .57, .85))), FALSE)
   expect_equal(.is_cormat(matrix(c(1, .1, .3, 1), ncol = 2)), TRUE)
-  expect_error(.is_cormat(matrix(c(1, NA, .3, 1), ncol = 2)), ' "x" is likely a correlation matrix but contains missing values. Please check the entered data.\n')
+  expect_error(.is_cormat(matrix(c(1, NA, .3, 1), ncol = 2)),
+               ' "x" is likely a correlation matrix but contains missing values. Please check the entered data.\n')
 })
 
 q_p <- .det_max_factors(8) + 1
@@ -132,7 +133,8 @@ efa_list_er <- list(EFA(test_models$baseline$cormat, n_factors = 3, N = 500),
                      method = "ML"),
                  EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
                      method = "ULS"),
-                 try(EFA(test_models$baseline$cormat, n_factors = 15, N = 500),
+                 try(suppressWarnings(EFA(test_models$baseline$cormat, n_factors = 15, N = 500,
+                         type = "psych")),
                      silent = TRUE))
 
 ext_er <- .extract_data(efa_list_er, test_models$baseline$cormat, 3, 4, "none", .3)

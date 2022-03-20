@@ -330,7 +330,7 @@ test_that("errors are thrown correctly", {
   expect_warning(EFA(GRiPS_raw, N = 20, n_factors = 1), " 'N' was set and data entered. Taking N from data.\n")
   expect_error(EFA(dat_sing, n_factors = 1), " Correlation matrix is singular, no further analyses are performed\n")
   expect_error(EFA(cor_sing, N = 10, n_factors = 1), " Correlation matrix is singular, no further analyses are performed\n")
-  expect_error(EFA(matrix(rnorm(30), ncol = 3), n_factors = 2), " The model is underidentified. Please enter a lower number of factors or use a larger number of indicators and try again.\n")
+  expect_warning(EFA(matrix(rnorm(30), ncol = 3), n_factors = 2), " The model is underidentified. No fit indices were calculated. Please enter a lower number of factors or use a larger number of indicators.\n")
   expect_warning(EFA(matrix(rnorm(30), ncol = 3), n_factors = 1), " The model is just identified (df = 0). We suggest to try again with a lower number of factors or a larger number of indicators.\n", fixed = TRUE)
   expect_warning(EFA(test_models$baseline$cormat, n_factors = 3, method = "ML"), " Argument 'N' was NA, not all fit indices could be computed. To get all fit indices, either provide N or raw data.\n")
   expect_warning(EFA(test_models$baseline$cormat, n_factors = 3, method = "ULS"), " Argument 'N' was NA, not all fit indices could be computed. To get all fit indices, either provide N or raw data.\n")

@@ -363,7 +363,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
   if(df < 0){
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" The model is underidentified. Please enter a lower number of factors or use a larger number of indicators and try again.\n"))
+    warning(crayon::yellow$bold("!"), crayon::yellow(" The model is underidentified. No fit indices were calculated. Please enter a lower number of factors or use a larger number of indicators.\n"))
 
   } else if (df == 0){
 

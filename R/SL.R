@@ -252,6 +252,10 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
     EFA_phi <- suppressWarnings(EFA(Phi, n_factors = 1, N = 100, type = type,
                                     method = method, rotation = "none", ...))
 
+    if (ncol(Phi) <= 2) {
+      warning(crayon::yellow$bold("!"), crayon::yellow(" The second-order EFA is underidentified.\n"))
+    }
+
     iter <- EFA_phi$iter
     settings <- EFA_phi$settings
 

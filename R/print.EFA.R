@@ -95,9 +95,19 @@ print.EFA <- function(x, ...) {
   cat(.get_compare_matrix(x$vars_accounted, r_red = Inf, n_char = 17))
 
   if (fit$df == 0) {
+
     cat("\n")
     cat(crayon::yellow$bold("!"), crayon::yellow(" The model is just identified (df = 0). Goodness of fit indices may not be interpretable."))
     cat("\n")
+
+  } else if(fit$df < 0){
+
+    cat("\n")
+    cat(crayon::yellow$bold("!"), crayon::yellow(" The model is underidentified (df < 0). No goodness of fit indices were calculated."))
+    cat("\n")
+
+    return()
+
   }
 
   if(method == "PAF" || is.na(N)){
