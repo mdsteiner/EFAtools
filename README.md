@@ -8,7 +8,7 @@
 [![CRAN
 status](https://www.r-pkg.org/badges/version/EFAtools)](https://CRAN.R-project.org/package=EFAtools)
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.02521/status.svg)](https://doi.org/10.21105/joss.02521)
-[![R-CMD-check](https://github.com/mdsteiner/EFAdiff/workflows/R-CMD-check/badge.svg)](https://github.com/mdsteiner/EFAdiff/actions)
+[![R-CMD-check](https://github.com/mdsteiner/EFAtools/workflows/R-CMD-check/badge.svg)](https://github.com/mdsteiner/EFAtools/actions)
 <!-- badges: end -->
 
 The EFAtools package provides functions to perform exploratory factor
@@ -59,38 +59,38 @@ library(EFAtools)
 # Run all possible factor retention methods
 N_FACTORS(test_models$baseline$cormat, N = 500, method = "ML")
 #> Warning in N_FACTORS(test_models$baseline$cormat, N = 500, method = "ML"): ! 'x' was a correlation matrix but CD needs raw data. Skipping CD.
-#>                                                                                                                                                                  ◉ 🏃 ◯ ◯ ◯ ◯ ◯ Running EKC                                                                                                                                                                 ◉ ◉ 🏃 ◯ ◯ ◯ ◯ Running HULL                                                                                                                                                                 ◉ ◉ ◉ 🏃 ◯ ◯ ◯ Running KGC                                                                                                                                                                 ◉ ◉ ◉ ◉ 🏃 ◯ ◯ Running PARALLEL                                                                                                                                                                 ◉ ◉ ◉ ◉ ◉ 🏃 ◯ Running SCREE                                                                                                                                                                 ◉ ◉ ◉ ◉ ◉ ◉ 🏃  Running SMT                                                                                                                                                                 ◉ ◉ ◉ ◉ ◉ ◉ ◉ Done!
+#>                                                                                                                                                                  (*) <U+0001F3C3> ( ) ( ) ( ) ( ) ( ) Running EKC                                                                                                                                                                 (*) (*) <U+0001F3C3> ( ) ( ) ( ) ( ) Running HULL                                                                                                                                                                 (*) (*) (*) <U+0001F3C3> ( ) ( ) ( ) Running KGC                                                                                                                                                                 (*) (*) (*) (*) <U+0001F3C3> ( ) ( ) Running PARALLEL                                                                                                                                                                 (*) (*) (*) (*) (*) <U+0001F3C3> ( ) Running SCREE                                                                                                                                                                 (*) (*) (*) (*) (*) (*) <U+0001F3C3>  Running SMT                                                                                                                                                                 (*) (*) (*) (*) (*) (*) (*) Done!
 #> 
-#> ── Tests for the suitability of the data for factor analysis ───────────────────
+#> -- Tests for the suitability of the data for factor analysis -------------------
 #> 
 #> Bartlett's test of sphericity
 #> 
-#> ✓ The Bartlett's test of sphericity was significant at an alpha level of .05.
+#> v The Bartlett's test of sphericity was significant at an alpha level of .05.
 #>   These data are probably suitable for factor analysis.
 #> 
-#>   𝜒²(153) = 2173.28, p < .001
+#>   <U+0001D712>²(153) = 2173.28, p < .001
 #> 
 #> Kaiser-Meyer-Olkin criterion (KMO)
 #> 
-#> ✓ The overall KMO value for your data is marvellous with 0.916.
+#> v The overall KMO value for your data is marvellous with 0.916.
 #>   These data are probably suitable for factor analysis.
 #> 
-#> ── Number of factors suggested by the different factor retention criteria ──────
+#> -- Number of factors suggested by the different factor retention criteria ------
 #> 
-#> ◌ Comparison data: NA
-#> ◌ Empirical Kaiser criterion: 2
-#> ◌ Hull method with CAF: 3
-#> ◌ Hull method with CFI: 1
-#> ◌ Hull method with RMSEA: 1
-#> ◌ Kaiser-Guttman criterion with PCA: 3
-#> ◌ Kaiser-Guttman criterion with SMC: 1
-#> ◌ Kaiser-Guttman criterion with EFA: 1
-#> ◌ Parallel analysis with PCA: 3
-#> ◌ Parallel analysis with SMC: 3
-#> ◌ Parallel analysis with EFA: 3
-#> ◌ Sequential 𝜒² model tests: 3
-#> ◌ Lower bound of RMSEA 90% confidence interval: 2
-#> ◌ Akaike Information Criterion: 3
+#> ( ) Comparison data: NA
+#> ( ) Empirical Kaiser criterion: 2
+#> ( ) Hull method with CAF: 3
+#> ( ) Hull method with CFI: 1
+#> ( ) Hull method with RMSEA: 1
+#> ( ) Kaiser-Guttman criterion with PCA: 3
+#> ( ) Kaiser-Guttman criterion with SMC: 1
+#> ( ) Kaiser-Guttman criterion with EFA: 1
+#> ( ) Parallel analysis with PCA: 3
+#> ( ) Parallel analysis with SMC: 3
+#> ( ) Parallel analysis with EFA: 3
+#> ( ) Sequential <U+0001D712>² model tests: 3
+#> ( ) Lower bound of RMSEA 90% confidence interval: 2
+#> ( ) Akaike Information Criterion: 3
 ```
 
 <img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" /><img src="man/figures/README-unnamed-chunk-5-2.png" width="100%" />
@@ -106,7 +106,7 @@ EFA_SPSS
 #> 
 #> EFA performed with type = 'SPSS', method = 'PAF', and rotation = 'promax'.
 #> 
-#> ── Rotated Loadings ────────────────────────────────────────────────────────────
+#> -- Rotated Loadings ------------------------------------------------------------
 #> 
 #>       F1      F2      F3  
 #> V1   -.048    .035    .613
@@ -128,14 +128,14 @@ EFA_SPSS
 #> V17   .664   -.037   -.027
 #> V18   .555    .004    .050
 #> 
-#> ── Factor Intercorrelations ────────────────────────────────────────────────────
+#> -- Factor Intercorrelations ----------------------------------------------------
 #> 
 #>       F1      F2      F3  
 #> F1    1.000   0.617   0.648
 #> F2    0.617   1.000   0.632
 #> F3    0.648   0.632   1.000
 #> 
-#> ── Variances Accounted for ─────────────────────────────────────────────────────
+#> -- Variances Accounted for -----------------------------------------------------
 #> 
 #>                       F1      F2      F3  
 #> SS loadings           4.907   0.757   0.643
@@ -144,7 +144,7 @@ EFA_SPSS
 #> Prop Comm Var         0.778   0.120   0.102
 #> Cum Prop Comm Var     0.778   0.898   1.000
 #> 
-#> ── Model Fit ───────────────────────────────────────────────────────────────────
+#> -- Model Fit -------------------------------------------------------------------
 #> 
 #> CAF: .50
 #> df: 102
@@ -203,7 +203,7 @@ EFA_AV
 #> The error rate is at 0%. Of the solutions that did not result in an error, 100% converged, 0% contained Heywood cases, and 100% were admissible.
 #> 
 #> 
-#> ══ Indicator-to-Factor Correspondences ═════════════════════════════════════════
+#> == Indicator-to-Factor Correspondences =========================================
 #> 
 #> For each cell, the proportion of solutions including the respective indicator-to-factor correspondence. A salience threshold of 0.3 was used to determine indicator-to-factor correspondences.
 #> 
@@ -228,9 +228,9 @@ EFA_AV
 #> V18  1.00     .00     .00
 #> 
 #> 
-#> ══ Loadings ════════════════════════════════════════════════════════════════════
+#> == Loadings ====================================================================
 #> 
-#> ── Mean ────────────────────────────────────────────────────────────────────────
+#> -- Mean ------------------------------------------------------------------------
 #> 
 #>       F1      F2      F3  
 #> V1    .025    .048    .576
@@ -252,7 +252,7 @@ EFA_AV
 #> V17   .633   -.033   -.009
 #> V18   .542    .009    .060
 #> 
-#> ── Range ───────────────────────────────────────────────────────────────────────
+#> -- Range -----------------------------------------------------------------------
 #> 
 #>       F1      F2      F3  
 #> V1    0.513   0.086   0.239
@@ -275,16 +275,16 @@ EFA_AV
 #> V18   0.081   0.246   0.118
 #> 
 #> 
-#> ══ Factor Intercorrelations from Oblique Solutions ═════════════════════════════
+#> == Factor Intercorrelations from Oblique Solutions =============================
 #> 
-#> ── Mean ────────────────────────────────────────────────────────────────────────
+#> -- Mean ------------------------------------------------------------------------
 #> 
 #>       F1      F2      F3  
 #> F1    1.000   0.431   0.518
 #> F2    0.431   1.000   0.454
 #> F3    0.518   0.454   1.000
 #> 
-#> ── Range ───────────────────────────────────────────────────────────────────────
+#> -- Range -----------------------------------------------------------------------
 #> 
 #>       F1      F2      F3  
 #> F1    0.000   1.276   0.679
@@ -292,16 +292,16 @@ EFA_AV
 #> F3    0.679   1.316   0.000
 #> 
 #> 
-#> ══ Variances Accounted for ═════════════════════════════════════════════════════
+#> == Variances Accounted for =====================================================
 #> 
-#> ── Mean ────────────────────────────────────────────────────────────────────────
+#> -- Mean ------------------------------------------------------------------------
 #> 
 #>                   F1      F2      F3  
 #> SS loadings       2.443   1.929   1.904
 #> Prop Tot Var      0.136   0.107   0.106
 #> Prop Comm Var     0.389   0.307   0.303
 #> 
-#> ── Range ───────────────────────────────────────────────────────────────────────
+#> -- Range -----------------------------------------------------------------------
 #> 
 #>                   F1      F2      F3  
 #> SS loadings       2.831   1.356   1.291
@@ -309,10 +309,10 @@ EFA_AV
 #> Prop Comm Var     0.419   0.215   0.215
 #> 
 #> 
-#> ══ Model Fit ═══════════════════════════════════════════════════════════════════
+#> == Model Fit ===================================================================
 #> 
 #>        M (SD) [Min; Max]
-#> 𝜒²: 101.73 (34.62) [53.23; 125.98]
+#> <U+0001D712>²: 101.73 (34.62) [53.23; 125.98]
 #> df: 102
 #> p: .369 (.450) [.054; 1.000]
 #> CFI: 1.00 (.00) [1.00; 1.00]
