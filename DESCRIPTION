@@ -59,6 +59,7 @@ Imports:
     checkmate,
     tidyr,
     progressr,
+    progress,
     rlang
 LinkingTo: 
     Rcpp, RcppArmadillo
