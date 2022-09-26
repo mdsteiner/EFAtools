@@ -1,6 +1,6 @@
 Package: EFAtools
 Title: Fast and Flexible Implementations of Exploratory Factor Analysis Tools
-Version: 0.4.1
+Version: 0.4.2
 Authors@R: 
     c(person(given = "Markus",
              family = "Steiner",
@@ -38,7 +38,7 @@ Encoding: UTF-8
 LazyData: true
 URL: https://github.com/mdsteiner/EFAtools
 BugReports: https://github.com/mdsteiner/EFAtools/issues
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.1
 Imports: 
     lavaan,
     psych,

@@ -1,4 +1,18 @@
+# EFAtools 0.4.1
+
+## Changes to Functions
+
+* `.is_cormat()`: Changed the helper function to better detect wheter a matrix is a correlation matrix.
+* `PARALLEL()`: Added a check, testing whether N > n_vars and throw an error if this is not the case.
+
+## Bug Fixes
+
+* Fixed some tests due to upcoming changes in the psych package which EFAtools depends on.
+
 # EFAtools 0.4.0
+
+## Bug Fixes
+* Fixed an issue in the tests occurring on mac M1
 
 ## Changes to Functions
 
