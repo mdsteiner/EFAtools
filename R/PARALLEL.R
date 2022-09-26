@@ -184,6 +184,7 @@ PARALLEL <- function(x = NULL,
 
       }
 
+
       # Check if correlation matrix is invertable, if it is not, stop with message
       R_i <- try(solve(R), silent = TRUE)
 
@@ -229,6 +230,10 @@ PARALLEL <- function(x = NULL,
 
     stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "N" was not set and could not be taken from data. Please specify N and try again.\n'))
 
+  }
+
+  if (N <= n_vars) {
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "N" was smaller than or equal to the number of variables but must be larger.\n'))
   }
 
     if ("PCA" %in% eigen_type) {
