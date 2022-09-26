@@ -28,21 +28,27 @@ x <- rnorm(100)
 y <- rnorm(100)
 z <- x + y
 
-# Example from nearPD function from Matrix package
-cor_nposdef <- matrix(c(1,     0.477, 0.644, 0.578, 0.651, 0.826,
-                        0.477, 1,     0.516, 0.233, 0.682, 0.75,
-                        0.644, 0.516, 1,     0.599, 0.581, 0.742,
-                        0.478, 0.233, 0.599, 1,     0.741, 0.8,
-                        0.651, 0.682, 0.581, 0.741, 1,     0.798,
-                        0.826, 0.75,  0.742, 0.8,   0.798, 1),
-                      nrow = 6, ncol = 6)
+
+
+burt <- matrix(c(1.00,  0.83,  0.81,  0.80,   0.71, 0.70, 0.54, 0.53,  0.59,  0.24, 0.13,
+                 0.83,  1.00,  0.87,  0.62,   0.59, 0.44, 0.58, 0.44,  0.23,  0.45,  0.21,
+                 0.81,  0.87,  1.00,  0.63,   0.37, 0.31, 0.30, 0.12,  0.33,  0.33,  0.36,
+                 0.80,  0.62,  0.63,  1.00,   0.49, 0.54, 0.30, 0.28,  0.42,  0.29, -0.06,
+                 0.71,  0.59,  0.37,  0.49,   1.00, 0.54, 0.34, 0.55,  0.40,  0.19, -0.10,
+                 0.70,  0.44,  0.31,  0.54,   0.54, 1.00, 0.50, 0.51,  0.31,  0.11,  0.10,
+                 0.54,  0.58,  0.30,  0.30,   0.34, 0.50, 1.00, 0.38,  0.29,  0.21,  0.08,
+                 0.53,  0.44,  0.12,  0.28,   0.55, 0.51, 0.38, 1.00,  0.53,  0.10, -0.16,
+                 0.59,  0.23,  0.33,  0.42,   0.40, 0.31, 0.29, 0.53,  1.00, -0.09, -0.10,
+                 0.24,  0.45,  0.33,  0.29,   0.19, 0.11, 0.21, 0.10, -0.09,  1.00,  0.41,
+                 0.13,  0.21,  0.36, -0.06,  -0.10, 0.10, 0.08, -0.16, -0.10, 0.41,  1.00),
+               nrow = 11, ncol = 11)
 
 test_that("errors etc. are thrown correctly", {
   expect_error(N_FACTORS(1:10), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n")
   expect_warning(N_FACTORS(GRiPS_raw, N = 10), " 'N' was set and data entered. Taking N from data.\n")
   expect_error(N_FACTORS(cbind(x, y, z, z + 1, y + 1, x + 1)), " Correlation matrix is singular, no further analyses are performed\n")
   expect_warning(N_FACTORS(test_models$baseline$cormat, N = 500), " 'x' was a correlation matrix but CD needs raw data. Skipping CD.\n")
-  expect_warning(N_FACTORS(cor_nposdef, N = 20), "Matrix was not positive definite, smoothing was done")
+  expect_warning(N_FACTORS(burt, N = 20), "Matrix was not positive definite, smoothing was done")
 })
 
-rm(nf_grips, x, y, z, cor_nposdef)
+rm(nf_grips, x, y, z, burt)

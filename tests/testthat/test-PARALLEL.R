@@ -201,28 +201,38 @@ z <- x + y
 dat_sing <- matrix(c(x, y, z), ncol = 3)
 cor_sing <- stats::cor(dat_sing)
 
-cor_nposdef <- matrix(c(1, 1, 0, 1, 1, 1, 0, 1, 1), ncol = 3)
+burt <- matrix(c(1.00,  0.83,  0.81,  0.80,   0.71, 0.70, 0.54, 0.53,  0.59,  0.24, 0.13,
+                 0.83,  1.00,  0.87,  0.62,   0.59, 0.44, 0.58, 0.44,  0.23,  0.45,  0.21,
+                 0.81,  0.87,  1.00,  0.63,   0.37, 0.31, 0.30, 0.12,  0.33,  0.33,  0.36,
+                 0.80,  0.62,  0.63,  1.00,   0.49, 0.54, 0.30, 0.28,  0.42,  0.29, -0.06,
+                 0.71,  0.59,  0.37,  0.49,   1.00, 0.54, 0.34, 0.55,  0.40,  0.19, -0.10,
+                 0.70,  0.44,  0.31,  0.54,   0.54, 1.00, 0.50, 0.51,  0.31,  0.11,  0.10,
+                 0.54,  0.58,  0.30,  0.30,   0.34, 0.50, 1.00, 0.38,  0.29,  0.21,  0.08,
+                 0.53,  0.44,  0.12,  0.28,   0.55, 0.51, 0.38, 1.00,  0.53,  0.10, -0.16,
+                 0.59,  0.23,  0.33,  0.42,   0.40, 0.31, 0.29, 0.53,  1.00, -0.09, -0.10,
+                 0.24,  0.45,  0.33,  0.29,   0.19, 0.11, 0.21, 0.10, -0.09,  1.00,  0.41,
+                 0.13,  0.21,  0.36, -0.06,  -0.10, 0.10, 0.08, -0.16, -0.10, 0.41,  1.00),
+               nrow = 11, ncol = 11)
+
 
 #sim_NA <- data.frame(rnorm(30), rnorm(30), rnorm(30), rep("a", 30))
 
 test_that("errors are thrown correctly", {
   expect_error(PARALLEL(1:5), " 'x' is neither NULL, nor a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data or leave x at NULL.\n")
-  #  expect_warning(PARALLEL(sim_NA), " Data contained non-numeric columns. Eigenvalues of actual data were not computed.\n")
   expect_warning(suppressMessages(PARALLEL(GRiPS_raw, n_vars = 5)), " n_vars was set and data entered. Taking n_vars from data\n")
   expect_warning(suppressMessages(PARALLEL(GRiPS_raw, N = 20, eigen_type = "PCA")), " 'N' was set and data entered. Taking N from data.\n")
   expect_error(suppressMessages(PARALLEL(N = 500)), ' "n_vars" was not set and could not be taken from data. Please specify n_vars and try again.\n')
   expect_message(PARALLEL(GRiPS_raw, eigen_type = "PCA"), " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n")
-  # expect_error(PARALLEL(N = 4, n_vars = 10, eigen_type = "SMC"), " Eigenvalues based on simulated data and SMCs could not be found in 25 tries; likely due to occurrences of singular matrices. Aborting.\n", fixed = TRUE)
-  expect_error(PARALLEL(N = 1, n_vars = 5, eigen_type = "PCA"), " Eigenvalues based on simulated data and PCA could not be found in 25 tries; likely due to occurrences of singular matrices. Aborting.\n", fixed = TRUE)
-  expect_error(PARALLEL(N = 4, n_vars = 5, eigen_type = "EFA"), " Eigenvalues based on simulated data and EFA could not be found in 25 tries; likely due to occurrences of singular matrices. Aborting.\n", fixed = TRUE)
   expect_error(PARALLEL(test_models$baseline$cormat, eigen_type = "PCA"), '"N" was not set and could not be taken from data. Please specify N and try again.\n')
   expect_warning(PARALLEL(test_models$baseline$cormat, N = 500,
                           eigen_type = "PCA", decision_rule = "crawford",
                           percent = 80), "decision_rule == 'crawford' is specified, but 95 percentile was not used. Using means instead. To use 'crawford', make sure to specify percent = 95.\n")
   expect_error(PARALLEL(dat_sing), " Correlation matrix is singular, parallel analysis is not possible.\n")
   expect_error(PARALLEL(cor_sing, N = 10), " Correlation matrix is singular, parallel analysis is not possible.\n")
-  expect_warning(PARALLEL(cor_nposdef, N = 10), "Matrix was not positive definite, smoothing was done")
+  expect_warning(PARALLEL(burt, N = 100), "Matrix was not positive definite, smoothing was done")
+  expect_error(PARALLEL(test_models$baseline$cormat, N = 15), ' "N" was smaller than or equal to the number of variables but must be larger.\n')
+  expect_error(PARALLEL(test_models$baseline$cormat, N = 18), ' "N" was smaller than or equal to the number of variables but must be larger.\n')
 })
 
 rm(pa_cor, pa_cor_pca, pa_raw, pa_nodat, pa_craw, pa_perc, x, y, z, dat_sing,
-   cor_sing, cor_nposdef)
+   cor_sing, burt)

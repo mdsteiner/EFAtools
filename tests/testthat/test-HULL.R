@@ -153,14 +153,18 @@ z <- x + y
 dat_sing <- matrix(c(x, y, z, rnorm(10), rnorm(10), rnorm(10)), ncol = 6)
 cor_sing <- stats::cor(dat_sing)
 
-# Example from nearPD function from Matrix package
-cor_nposdef <- matrix(c(1,     0.477, 0.644, 0.578, 0.651, 0.826,
-                        0.477, 1,     0.516, 0.233, 0.682, 0.75,
-                        0.644, 0.516, 1,     0.599, 0.581, 0.742,
-                        0.478, 0.233, 0.599, 1,     0.741, 0.8,
-                        0.651, 0.682, 0.581, 0.741, 1,     0.798,
-                        0.826, 0.75,  0.742, 0.8,   0.798, 1),
-                      nrow = 6, ncol = 6)
+burt <- matrix(c(1.00,  0.83,  0.81,  0.80,   0.71, 0.70, 0.54, 0.53,  0.59,  0.24, 0.13,
+                 0.83,  1.00,  0.87,  0.62,   0.59, 0.44, 0.58, 0.44,  0.23,  0.45,  0.21,
+                 0.81,  0.87,  1.00,  0.63,   0.37, 0.31, 0.30, 0.12,  0.33,  0.33,  0.36,
+                 0.80,  0.62,  0.63,  1.00,   0.49, 0.54, 0.30, 0.28,  0.42,  0.29, -0.06,
+                 0.71,  0.59,  0.37,  0.49,   1.00, 0.54, 0.34, 0.55,  0.40,  0.19, -0.10,
+                 0.70,  0.44,  0.31,  0.54,   0.54, 1.00, 0.50, 0.51,  0.31,  0.11,  0.10,
+                 0.54,  0.58,  0.30,  0.30,   0.34, 0.50, 1.00, 0.38,  0.29,  0.21,  0.08,
+                 0.53,  0.44,  0.12,  0.28,   0.55, 0.51, 0.38, 1.00,  0.53,  0.10, -0.16,
+                 0.59,  0.23,  0.33,  0.42,   0.40, 0.31, 0.29, 0.53,  1.00, -0.09, -0.10,
+                 0.24,  0.45,  0.33,  0.29,   0.19, 0.11, 0.21, 0.10, -0.09,  1.00,  0.41,
+                 0.13,  0.21,  0.36, -0.06,  -0.10, 0.10, 0.08, -0.16, -0.10, 0.41,  1.00),
+               nrow = 11, ncol = 11)
 
 test_that("errors etc are thrown correctly", {
   expect_error(HULL(1:5), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n")
@@ -180,10 +184,10 @@ test_that("errors etc are thrown correctly", {
   expect_message(suppressWarnings(HULL(GRiPS_raw)), 'Only CAF can be used as gof if method "PAF" is used. Setting gof to "CAF"\n')
 
   expect_warning(HULL(test_models$baseline$cormat, n_fac_theor = 13, N = 500), ' Setting maximum number of factors to 12 to ensure overidentified models.\n')
-  expect_warning(HULL(cor_nposdef, N = 20, method = "ML"), "Matrix was not positive definite, smoothing was done")
-  expect_warning(HULL(cor_nposdef, N = 20, method = "ML", n_fac_theor = 1), "Matrix was not positive definite, smoothing was done")
+  expect_warning(HULL(burt, N = 20, method = "ML"), "Matrix was not positive definite, smoothing was done")
+  expect_warning(HULL(burt, N = 20, method = "ML", n_fac_theor = 1), "Matrix was not positive definite, smoothing was done")
 })
 
 rm(hull_cor_paf, hull_cor_ml, hull_cor_uls, hull_cor_uls_CFI, hull_raw_paf,
    hull_raw_ml, hull_raw_uls, hull_raw_uls_CFI, hull_raw_ml_nf, hull_cor_ml_nf,
-   hull_PCA, hull_EFA, x, y, z, dat_sing, cor_sing, cor_nposdef)
+   hull_PCA, hull_EFA, x, y, z, dat_sing, cor_sing, burt)

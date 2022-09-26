@@ -93,8 +93,8 @@ test_that(".is_cormat works", {
   expect_equal(.is_cormat(cbind(rnorm(100), rnorm(100))), FALSE)
   expect_equal(.is_cormat(cbind(rnorm(2), rnorm(2))), FALSE)
   expect_equal(.is_cormat(cbind(c(1, NA, .57, .85))), FALSE)
-  expect_equal(.is_cormat(matrix(c(1, .1, .3, 1), ncol = 2)), TRUE)
-  expect_error(.is_cormat(matrix(c(1, NA, .3, 1), ncol = 2)),
+  expect_equal(.is_cormat(matrix(c(1, .1, .3, 1), ncol = 2)), FALSE)
+  expect_error(.is_cormat(matrix(c(1, NA, NA, 1), ncol = 2)),
                ' "x" is likely a correlation matrix but contains missing values. Please check the entered data.\n')
 })
 
