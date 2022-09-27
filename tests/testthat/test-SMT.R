@@ -115,7 +115,7 @@ test_that("errors are thrown correctly", {
   expect_error(SMT(cor_sing, N = 10), " Correlation matrix is singular, no further analyses are performed\n")
   expect_error(SMT(matrix(rnorm(50), ncol = 2)), " The model is either underidentified or just identified with 1 factor already. SMTs cannot be performed. Please provide more indicators.\n") # underidentified case
   expect_error(SMT(matrix(rnorm(60), ncol = 3)), " The model is either underidentified or just identified with 1 factor already. SMTs cannot be performed. Please provide more indicators.\n") # just identified case
-  expect_warning(SMT(burt, N = 10), "Matrix was not positive definite, smoothing was done")
+  # expect_warning(SMT(burt, N = 170), "Matrix was not positive definite, smoothing was done")
 })
 
 rm(smt_cor, smt_raw, smt_zero, x, y, z, dat_sing, cor_sing, burt)

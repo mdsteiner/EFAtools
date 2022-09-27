@@ -434,7 +434,7 @@
      all(x >= (-1 + .Machine$double.eps * 100), na.rm = TRUE) &&
      all(x <= (1 + .Machine$double.eps * 100), na.rm = TRUE)){
 
-    if (round(sum(diag(x), na.rm = TRUE)) == nrow(x) && isSymmetric(unname(x))) {
+    if (round(sum(diag(x), na.rm = TRUE)) == nrow(x) && isSymmetric(unclass(unname(x)))) {
 
       if (any(is.na(x))) {
 
