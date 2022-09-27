@@ -5,11 +5,11 @@ This is a resubmission. In this version we have:
 * Fixed some function tests due to upcoming changes in the psych package which this package depends on.
 
 ## Test environments
-* mac OS 11.6.4 (via GitHub Actions), R 4.2.0
-* mac-builder m1, R 4.2.0
-* ubuntu 20.04 (via GitHub Actions), R 4.2.0
-* Microsoft Windows Server 2022 (via GitHub Actions), R 4.2.0
-* local Windows 10 installation, R 4.1.2
+* mac OS 11.7 (via GitHub Actions), R 4.2.1
+* mac-builder m1, R 4.2.1
+* ubuntu 20.04 (via GitHub Actions), R 4.2.1
+* Microsoft Windows Server 2022 (via GitHub Actions), R 4.2.1
+* local Windows 10 installation, R 4.2.1
 * win-builder (release, devel, and oldrelease)
 
 ## R CMD check results
