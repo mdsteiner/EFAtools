@@ -1,8 +1,7 @@
 ## Resubmission
 This is a resubmission. In this version we have:
 
-* Added some input checks to functions
-* Fixed some function tests due to upcoming changes in the psych package which this package depends on.
+* Added a small adaptation to .gof() that should take care of the MKL issue when using R-devel on x86_64 Fedora 34 Linux with alternative BLAS/LAPACK.
 
 ## Test environments
 * mac OS 11.7 (via GitHub Actions), R 4.2.1

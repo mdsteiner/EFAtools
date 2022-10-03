@@ -1,4 +1,11 @@
-# EFAtools 0.4.1
+# EFAtools 0.4.3
+
+## Changes to Functions
+
+* `.gof()`: Changed the helper function to take care of the MKL issue when using R-devel on x86_64 Fedora 34 Linux with alternative BLAS/LAPACK.
+
+
+# EFAtools 0.4.2
 
 ## Changes to Functions
 
@@ -9,20 +16,25 @@
 
 * Fixed some tests due to upcoming changes in the psych package which EFAtools depends on.
 
-# EFAtools 0.4.0
+
+# EFAtools 0.4.1
 
 ## Bug Fixes
-* Fixed an issue in the tests occurring on mac M1
+
+* Minor fixes in tests to solve problems on macOS m1.
+
+
+# EFAtools 0.4.0
 
 ## Changes to Functions
 
 * `EFA()`: Changed error to warning when model is underidentified. This allows the Schmid-Leiman transformation to be performed on a two-factor solution.
 * `OMEGA()`: Added calculation of additional indices of interpretive relevance (H index, explained common variance [ECV], and percent of uncontaminated correlations [PUC]). This is optional and can be avoided by setting `add_ind = FALSE`.
 
-
 ## Bug Fixes
 
 * `CD()`: Added `na.omit()` to remove missing values from raw data to avoid an error in the comparison-data procedure.
+
 
 # EFAtools 0.3.1
 
@@ -61,6 +73,7 @@
 * `PARALLEL()`: Rewrote the generation of random data based eigenvalues to be more stable when SMCs are used.
 * `OMEGA()`: Changed expected input for argument `factor_corres` from vector to matrix. Can now be a logical matrix or a numeric matrix with 0's and 1's of the same dimensions as the matrix of group factor loadings. This is more flexible and allows for cross-loadings.
 
+
 # EFAtools 0.2.0
 
 ## General
@@ -72,7 +85,6 @@
 * Added function `FACTOR_SCORES()` to calculate factor scores from a solution from `EFA()`. This is just a wrapper for the `psych::factor.scores` function.
 * Added function `SCREE()` that does a scree plot. Also added respective print and plot
 methods.
-
 
 ## Changes to Functions
 
@@ -89,7 +101,6 @@ methods.
     * Added a progress bar.
 * `OMEGA()`: Now also works with a lavaan second-order solution as input. In this case, it does a Schmid-Leiman transformation based on the first- and second-order loadings first and computes omegas based on this Schmid-Leiman solution.
 * `SL()`: Now also works with a lavaan second-order solution as input (first- and second-order loadings taken directly from lavaan output).
-
 
 ## Bug Fixes
 

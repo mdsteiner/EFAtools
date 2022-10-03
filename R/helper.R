@@ -323,7 +323,17 @@
   ### compute CAF
   delta_hat <- R - (L %*% t(L))
   diag(delta_hat) <- 1
-  CAF <- 1 - KMO(delta_hat)$KMO
+
+  # try statement needed to fix CRAN issue MKL (R-devel on x86_64 Fedora 34 Linux
+  # with alternative BLAS/LAPACK implementations) where delta_hat cannot be inverted
+  # for R = test_models$baseline$cormat
+  delta_hat_KMO <- try(KMO(delta_hat)$KMO, silent = TRUE)
+  if (inherits(delta_hat_KMO, "try-error")) {
+    CAF <- 0
+    warning(crayon::yellow$bold("!"), crayon::yellow(" Problems calculating CAF, CAF set to 0 (worst value). Inspect results carefully.\n"))
+  } else {
+    CAF <- 1 - delta_hat_KMO
+  }
 
 
   if (method != "PAF" && !is.na(N) && df >=0) {

@@ -1,6 +1,6 @@
 Package: EFAtools
 Title: Fast and Flexible Implementations of Exploratory Factor Analysis Tools
-Version: 0.4.2
+Version: 0.4.3
 Authors@R: 
     c(person(given = "Markus",
              family = "Steiner",
