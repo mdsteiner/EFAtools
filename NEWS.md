@@ -1,3 +1,11 @@
+# EFAtools 0.4.3.9000
+
+## Changes to Functions
+
+* `print.EFA()`: Added arguments `cutoff`, `digits` and `max_name_length` that are passed to `print.LOADINGS()`.
+* `print.LOADINGS()`: New Argument `max_name_length` to control the maximum length of the displayed variable names (names longer than this will be cut on the right side). Previously, this was fixed to 10 (which is now the default).
+
+
 # EFAtools 0.4.3
 
 ## Changes to Functions

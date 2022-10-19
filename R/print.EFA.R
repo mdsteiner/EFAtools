@@ -3,6 +3,13 @@
 #' Print Method showing a summarized output of the \link{EFA} function
 #'
 #' @param x list. An object of class EFA to be printed
+#' @param cutoff numeric. Passed to \code{\link[EFAtools:print.LOADINGS]{print.LOADINGS}}.
+#'  The number above which to print loadings in bold. Default is .3.
+#' @param digits numeric. Passed to \code{\link[EFAtools:print.LOADINGS]{print.LOADINGS}}
+#'  Number of digits to round the loadings to (default is 3).
+#' @param max_name_length numeric. Passed to \code{\link[EFAtools:print.LOADINGS]{print.LOADINGS}}.
+#'  The maximum length of the variable names to display. Everything beyond this
+#'  will be cut from the right.
 #' @param ...  Further arguments for print.
 #'
 #' @export
@@ -14,7 +21,7 @@
 #'                     type = "EFAtools", method = "PAF", rotation = "promax")
 #' EFAtools_PAF
 #'
-print.EFA <- function(x, ...) {
+print.EFA <- function(x, cutoff = .3, digits = 3, max_name_length = 10, ...) {
 
   # extract the settings not depending on the method or rotation
   method <- x$settings$method
@@ -46,7 +53,8 @@ print.EFA <- function(x, ...) {
     cat(cli::rule(left = crayon::bold("Unrotated Loadings"), col = "blue"))
     cat("\n")
     cat("\n")
-    print(x$unrot_loadings)
+    print(x$unrot_loadings, cutoff = cutoff, digits = digits,
+          max_name_length = max_name_length)
 
     # warn from Heywood cases
     if (sum(h2 >= 1 + .Machine$double.eps) == 1) {
@@ -64,7 +72,8 @@ print.EFA <- function(x, ...) {
     cat(cli::rule(left = crayon::bold("Rotated Loadings"), col = "blue"))
     cat("\n")
     cat("\n")
-    print(x$rot_loadings)
+    print(x$rot_loadings, cutoff = cutoff, digits = digits,
+          max_name_length = max_name_length)
     # warn from Heywood cases
     if (sum(h2 >= 1 + .Machine$double.eps) == 1) {
       cat(crayon::red$bold("\nWarning: A Heywood case was detected!"))

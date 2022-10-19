@@ -4,10 +4,20 @@
 \alias{print.EFA}
 \title{Print EFA object}
 \usage{
-\method{print}{EFA}(x, ...)
+\method{print}{EFA}(x, cutoff = 0.3, digits = 3, max_name_length = 10, ...)
 }
 \arguments{
 \item{x}{list. An object of class EFA to be printed}
+
+\item{cutoff}{numeric. Passed to \code{\link[EFAtools:print.LOADINGS]{print.LOADINGS}}.
+The number above which to print loadings in bold. Default is .3.}
+
+\item{digits}{numeric. Passed to \code{\link[EFAtools:print.LOADINGS]{print.LOADINGS}}
+Number of digits to round the loadings to (default is 3).}
+
+\item{max_name_length}{numeric. Passed to \code{\link[EFAtools:print.LOADINGS]{print.LOADINGS}}.
+The maximum length of the variable names to display. Everything beyond this
+will be cut from the right.}
 
 \item{...}{Further arguments for print.}
 }

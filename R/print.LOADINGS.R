@@ -5,6 +5,8 @@
 #'  default is .3.
 #' @param digits numeric. Passed to \code{\link[base:Round]{round}}. Number of digits
 #'  to round the loadings to (default is 3).
+#' @param max_name_length numeric. The maximum length of the variable names to
+#'  display. Everything beyond this will be cut from the right.
 #' @param ... additional arguments passed to print
 #'
 #' @method print LOADINGS
@@ -15,7 +17,8 @@
 #'                     type = "EFAtools", method = "PAF", rotation = "promax")
 #' EFAtools_PAF
 #'
-print.LOADINGS <- function(x, cutoff = .3, digits = 3, ...) {
+print.LOADINGS <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
+                           ...) {
 
   # create factor names to display
   factor_names <- colnames(x)
@@ -36,11 +39,11 @@ print.LOADINGS <- function(x, cutoff = .3, digits = 3, ...) {
 
   max_char <- max(sapply(var_names, nchar))
 
-  if (max_char > 10) {
+  if (max_char > max_name_length) {
     vn_nchar <- sapply(var_names, nchar)
-    var_names[which(vn_nchar > 10)] <- substr(var_names[which(vn_nchar > 10)] ,
-                                                         1, 10)
-    max_char <- 10
+    ind <- which(vn_nchar > max_name_length)
+    var_names[ind] <- substr(var_names[ind] , 1, max_name_length)
+    max_char <- max_name_length
   }
 
   var_names <- stringr::str_pad(var_names, max_char, side = "right")

@@ -4,7 +4,7 @@
 \alias{print.LOADINGS}
 \title{Print LOADINGS object}
 \usage{
-\method{print}{LOADINGS}(x, cutoff = 0.3, digits = 3, ...)
+\method{print}{LOADINGS}(x, cutoff = 0.3, digits = 3, max_name_length = 10, ...)
 }
 \arguments{
 \item{x}{class LOADINGS matrix.}
@@ -14,6 +14,9 @@ default is .3.}
 
 \item{digits}{numeric. Passed to \code{\link[base:Round]{round}}. Number of digits
 to round the loadings to (default is 3).}
+
+\item{max_name_length}{numeric. The maximum length of the variable names to
+display. Everything beyond this will be cut from the right.}
 
 \item{...}{additional arguments passed to print}
 }
