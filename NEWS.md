@@ -1,10 +1,14 @@
-# EFAtools 0.4.3.9000
+# EFAtools 0.4.4
 
 ## Changes to Functions
 
 * `print.EFA()`: Added arguments `cutoff`, `digits` and `max_name_length` that are passed to `print.LOADINGS()`.
 * `print.LOADINGS()`: New Argument `max_name_length` to control the maximum length of the displayed variable names (names longer than this will be cut on the right side). Previously, this was fixed to 10 (which is now the default).
 
+## Misc
+
+* Updated a test of a helper function (`.gof()`) that threw an error when using R-devel on x86_64 Fedora 36 Linux with alternative BLAS/LAPACK.
+* added `dontrun` to examples of `EFA_AVERAGE()` and its print and plot methods as these were causing issues on R-oldrel which were not directly related to EFAtools and thus could not be fixed from within the package.
 
 # EFAtools 0.4.3
 
