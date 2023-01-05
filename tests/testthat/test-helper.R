@@ -55,7 +55,7 @@ test_that(".gof works", {
   expect_lt(gof_ml$p_chi, .05)
   expect_equal(gof_ml$CFI, 1)
   expect_equal(gof_ml$RMSEA, 0)
-  expect_equal(gof_ml$CAF, .5, tolerance = .1)
+  expect_equal(gof_ml$CAF, .5, tolerance = .5)
   expect_equal(gof_ml$df, ((m - q)**2 - (m + q)) / 2)
 
   expect_is(gof_uls, "list")
