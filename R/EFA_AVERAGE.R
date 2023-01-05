@@ -249,6 +249,7 @@
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' # Averaging across different implementations of PAF and promax rotation (72 EFAs)
 #' Aver_PAF <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500)
 #'
@@ -272,7 +273,7 @@
 #' Aver_rot <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
 #'                          method = "ML", rotation = "oblique", type = "EFAtools",
 #'                          start_method = "psych")
-#'
+#'}
 #'
 EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax",
                         type = "none", averaging = c("mean", "median"), trim = 0,

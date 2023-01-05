@@ -308,6 +308,7 @@ the number of EFAs across which the fit indices are averaged can diverge for
 the CAF compared to all other fit indices.
 }
 \examples{
+\dontrun{
 # Averaging across different implementations of PAF and promax rotation (72 EFAs)
 Aver_PAF <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500)
 
@@ -331,6 +332,6 @@ Aver_meth <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
 Aver_rot <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
                          method = "ML", rotation = "oblique", type = "EFAtools",
                          start_method = "psych")
-
+}
 
 }

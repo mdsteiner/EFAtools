@@ -10,8 +10,10 @@
 #' @method plot EFA_AVERAGE
 #'
 #' @examples
+#' \dontrun{
 #' EFA_aver <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500)
 #' EFA_aver
+#' }
 #'
 plot.EFA_AVERAGE <- function(x, ...) {
 

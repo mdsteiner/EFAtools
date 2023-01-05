@@ -23,8 +23,8 @@ created.}
 Print Method showing a summarized output of the \link{EFA_AVERAGE} function
 }
 \examples{
-
+\dontrun{
 EFA_aver <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500)
 EFA_aver
-
+}
 }
