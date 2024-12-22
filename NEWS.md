@@ -1,3 +1,9 @@
+# EFAtools 0.4.5
+
+## Bug Fixes
+
+* Updated `OMEGA()` to accommodate changes in the upcoming version of `psych::schmid()`
+
 # EFAtools 0.4.4
 
 ## Changes to Functions
