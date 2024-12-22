@@ -12,10 +12,12 @@
     Phi <- model$phi
 
     model <-  model$sl
+    s_load_names <- setdiff(colnames(model[, -1]),
+                            c("h2", "u2", "p2", "com"))
 
     var_names <- rownames(model)
     g_load <- model[, 1]
-    s_load <- model[, 2:(ncol(model) - 3)]
+    s_load <- model[, s_load_names]
     factor_names <- c("g", seq_len(ncol(s_load)))
     u2 <- model[, "u2"]
 

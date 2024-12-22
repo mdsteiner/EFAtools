@@ -64,12 +64,12 @@ OMEGA(
 )
 }
 \arguments{
-\item{model}{class \code{\link{SL}}, class \code{\link{schmid}}, or class
+\item{model}{class \code{\link{SL}}, class \code{schmid}, or class
 \code{lavaan} object. That is, an output object from \code{\link{SL}} or
 \code{\link[psych:schmid]{psych::schmid}}, or a \code{lavaan} fit object with a
 single factor, second-order, or bifactor solution. If of class \code{lavaan},
 only \code{g_name} needs to be specified additionally. If of class
-\code{\link{SL}} or \code{\link{schmid}}, only the arguments \code{factor_corres}
+\code{\link{SL}} or \code{schmid}, only the arguments \code{factor_corres}
 and \code{cormat} need to be specified additionally.}
 
 \item{type}{character. Either \code{"EFAtools"} (default) or \code{"psych"}
