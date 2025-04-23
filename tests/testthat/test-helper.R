@@ -40,10 +40,23 @@ efa_paf <- suppressWarnings(EFA(cbind(rnorm(100), rnorm(100), rnorm(100), rnorm(
 
 gof_ml <- .gof(efa_ml$unrot_loadings, efa_ml$orig_R, efa_ml$settings$N,
                "ML", efa_ml$fit_indices$Fm)
+w_ml <- tryCatch(.gof(efa_ml$unrot_loadings, efa_ml$orig_R, efa_ml$settings$N,
+                      "ML", efa_ml$fit_indices$Fm),
+                  error=function(e) e,
+                  warning=function(w) w)
 gof_uls <- .gof(efa_uls$unrot_loadings, efa_uls$orig_R, efa_uls$settings$N,
                "ULS", efa_uls$fit_indices$Fm)
+w_uls <- tryCatch(.gof(efa_uls$unrot_loadings, efa_uls$orig_R, efa_uls$settings$N,
+                    "ULS", efa_uls$fit_indices$Fm),
+               error=function(e) e,
+               warning=function(w) w)
+
 gof_paf <- .gof(efa_paf$unrot_loadings, efa_paf$orig_R, efa_paf$settings$N,
                "PAF", NA)
+w_paf <- tryCatch(.gof(efa_paf$unrot_loadings, efa_paf$orig_R, efa_paf$settings$N,
+                       "PAF", NA),
+                  error=function(e) e,
+                  warning=function(w) w)
 m <- 6 # n variables
 q <- 3 # n factors
 test_that(".gof works", {
@@ -55,7 +68,11 @@ test_that(".gof works", {
   expect_lt(gof_ml$p_chi, .05)
   expect_equal(gof_ml$CFI, 1)
   expect_equal(gof_ml$RMSEA, 0)
-  expect_equal(gof_ml$CAF, .5, tolerance = .5)
+  if (inherits(w_ml, "warning")) {
+    expect_equal(gof_ml$CAF, 0, tolerance = .01)
+  } else {
+    expect_equal(gof_ml$CAF, .5, tolerance = .1)
+  }
   expect_equal(gof_ml$df, ((m - q)**2 - (m + q)) / 2)
 
   expect_is(gof_uls, "list")
@@ -66,7 +83,12 @@ test_that(".gof works", {
   expect_lt(gof_uls$p_chi, .05)
   expect_equal(gof_uls$CFI, 1)
   expect_equal(gof_uls$RMSEA, 0)
-  expect_equal(gof_uls$CAF, .5, tolerance = .1)
+  if (inherits(w_uls, "warning")) {
+    expect_equal(gof_uls$CAF, 0, tolerance = .01)
+  } else {
+    expect_equal(gof_uls$CAF, .5, tolerance = .1)
+  }
+
   expect_equal(gof_uls$df, ((m - q)**2 - (m + q)) / 2)
 
   expect_is(gof_paf, "list")
@@ -78,7 +100,11 @@ test_that(".gof works", {
   expect_equal(gof_paf$p_chi, NA)
   expect_equal(gof_paf$CFI, NA)
   expect_equal(gof_paf$RMSEA, NA)
-  expect_equal(gof_paf$CAF, .5, tolerance = .1)
+  if (inherits(w_paf, "warning")) {
+    expect_equal(gof_paf$CAF, 0, tolerance = .01)
+  } else {
+    expect_equal(gof_paf$CAF, .5, tolerance = .1)
+  }
   expect_equal(gof_paf$df, ((m - q)**2 - (m + q)) / 2)
   expect_equal(gof_paf$chi_null, NA)
   expect_equal(gof_paf$df_null, NA)

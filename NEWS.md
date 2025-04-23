@@ -1,3 +1,9 @@
+# EFAtools 0.4.6
+
+## General
+
+* Small change in test of `.gof()`: Changed some tests to take care of the ATLAS issue when using R-devel on x86_64 Fedora 34 Linux with alternative BLAS/LAPACK.
+
 # EFAtools 0.4.5
 
 ## Bug Fixes
