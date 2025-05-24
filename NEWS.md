@@ -1,3 +1,12 @@
+# EFAtools 0.5.0
+
+## Changes to Functions
+
+* `print.EFA()`: 
+  * Now returns explained variance from rotated, rather than unrotated solution, if a rotation was performed.
+  * Now prints communalities and uniquenesses in loading/pattern matrix
+* `EFA()`: Calculate and return model implied correlation matrix.
+
 # EFAtools 0.4.6
 
 ## General

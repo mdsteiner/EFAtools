@@ -237,6 +237,9 @@
 
   fit_ind <- .gof(L, orig_R, N, "PAF", NA)
 
+  # calculate model implied R
+  model_implied_R <- L %*% t(L) + diag(1 - h2)
+
   # create the output object
   class(L) <- "LOADINGS"
 
@@ -267,6 +270,7 @@
     unrot_loadings = L,
     vars_accounted = vars_accounted,
     fit_indices = fit_ind,
+    model_implied_R = model_implied_R,
     settings = settings
   )
 

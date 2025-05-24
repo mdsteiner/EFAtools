@@ -53,8 +53,9 @@ print.EFA <- function(x, cutoff = .3, digits = 3, max_name_length = 10, ...) {
     cat(cli::rule(left = crayon::bold("Unrotated Loadings"), col = "blue"))
     cat("\n")
     cat("\n")
-    print(x$unrot_loadings, cutoff = cutoff, digits = digits,
-          max_name_length = max_name_length)
+    print(x$unrot_loadings, cutoff = cutoff,
+          digits = digits, max_name_length = max_name_length,
+          h2 = x$h2)
 
     # warn from Heywood cases
     if (sum(h2 >= 1 + .Machine$double.eps) == 1) {
@@ -72,8 +73,9 @@ print.EFA <- function(x, cutoff = .3, digits = 3, max_name_length = 10, ...) {
     cat(cli::rule(left = crayon::bold("Rotated Loadings"), col = "blue"))
     cat("\n")
     cat("\n")
-    print(x$rot_loadings, cutoff = cutoff, digits = digits,
-          max_name_length = max_name_length)
+    print(x$rot_loadings, cutoff = cutoff,
+          digits = digits, max_name_length = max_name_length,
+          h2 = x$h2)
     # warn from Heywood cases
     if (sum(h2 >= 1 + .Machine$double.eps) == 1) {
       cat(crayon::red$bold("\nWarning: A Heywood case was detected!"))
@@ -97,11 +99,17 @@ print.EFA <- function(x, cutoff = .3, digits = 3, max_name_length = 10, ...) {
     }
   }
 
+
   cat("\n")
   cat(cli::rule(left = crayon::bold("Variances Accounted for"), col = "blue"))
   cat("\n")
   cat("\n")
-  cat(.get_compare_matrix(x$vars_accounted, r_red = Inf, n_char = 17))
+  if(rotation == "none") {
+    vars_accounted <- x$vars_accounted
+  } else {
+    vars_accounted <- x$vars_accounted_rot
+  }
+  cat(.get_compare_matrix(vars_accounted, r_red = Inf, n_char = 17))
 
   if (fit$df == 0) {
 

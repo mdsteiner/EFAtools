@@ -173,6 +173,8 @@ factor loadings: Chi Square, including significance level, degrees of freedom
 (AIC), Bayesian Information Criterion (BIC), and the common part accounted
 for (CAF) index as proposed by Lorenzo-Seva, Timmerman, & Kiers (2011).
 For PAF, only the CAF and dfs are returned.}
+\item{model_implied_R}{The model implied correlation
+matrix.}
 \item{rot_loadings}{Loading matrix containing the final rotated loadings
 (pattern matrix).}
 \item{Phi}{The factor intercorrelations (only for oblique rotations).}

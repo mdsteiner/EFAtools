@@ -5,9 +5,9 @@ ML_test_2 <- .ML(test_models$baseline$cormat, n_factors = 3, N = 500,
 
 test_that("output class and dimensions are correct", {
   expect_is(ML_test$unrot_loadings, "LOADINGS")
-  expect_output(str(ML_test), "List of 10")
+  expect_output(str(ML_test), "List of 11")
   expect_is(ML_test_2$unrot_loadings, "LOADINGS")
-  expect_output(str(ML_test_2), "List of 10")
+  expect_output(str(ML_test_2), "List of 11")
 
 })
 

@@ -55,6 +55,9 @@
   h2 <-  diag(L %*% t(L))
   names(h2) <- colnames(orig_R)
 
+  # calculate model implied R
+  model_implied_R <- L %*% t(L) + diag(1 - h2)
+
   # Create output
   output <- list(
     orig_R = orig_R,
@@ -65,7 +68,8 @@
     convergence = uls$res$convergence,
     unrot_loadings = L,
     vars_accounted = vars_accounted,
-    fit_indices = fit_ind
+    fit_indices = fit_ind,
+    model_implied_R = model_implied_R
   )
 
   output

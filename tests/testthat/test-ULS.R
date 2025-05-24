@@ -3,9 +3,9 @@ ULS_test_1 <- .ULS(test_models$baseline$cormat, n_factors = 1, N = 500)
 
 test_that("output class and dimensions are correct", {
   expect_is(ULS_test$unrot_loadings, "LOADINGS")
-  expect_output(str(ULS_test), "List of 9")
+  expect_output(str(ULS_test), "List of 10")
   expect_is(ULS_test_1$unrot_loadings, "LOADINGS")
-  expect_output(str(ULS_test_1), "List of 9")
+  expect_output(str(ULS_test_1), "List of 10")
 
 })
 

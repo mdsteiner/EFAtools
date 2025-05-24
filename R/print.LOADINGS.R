@@ -7,6 +7,7 @@
 #'  to round the loadings to (default is 3).
 #' @param max_name_length numeric. The maximum length of the variable names to
 #'  display. Everything beyond this will be cut from the right.
+#' @param h2 numeric. Vector of communalities to print.
 #' @param ... additional arguments passed to print
 #'
 #' @method print LOADINGS
@@ -17,13 +18,18 @@
 #'                     type = "EFAtools", method = "PAF", rotation = "promax")
 #' EFAtools_PAF
 #'
-print.LOADINGS <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
+print.LOADINGS <- function(x, cutoff = .3, digits = 3, max_name_length = 10, h2 = NULL,
                            ...) {
 
   # create factor names to display
   factor_names <- colnames(x)
   if (is.null(factor_names)) {
     factor_names <- paste0("F", seq_len(ncol(x)))
+  }
+
+  if(!is.null(h2)) {
+    factor_names <- c(factor_names, "h2", "u2")
+    x <- cbind(x, "h2" = h2, "u2" = 1 - h2)
   }
 
   # for equal spacing, fill the factor names such that they match the columns
@@ -58,7 +64,10 @@ print.LOADINGS <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     tt <- crayon::blue(vn[ind])
 
     for (kk in seq_len(n_col)) {
-      if (abs(i[kk]) < cutoff) {
+      if (!is.null(x) && kk >= (n_col - 1)) {
+        tt <- c(tt, .numformat(round(i[kk], digits = digits),
+                                            digits = digits))
+      } else if (abs(i[kk]) < cutoff) {
         tt <- c(tt, crayon::silver(.numformat(round(i[kk], digits = digits),
                                               digits = digits)))
       } else {

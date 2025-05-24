@@ -4,7 +4,7 @@
 \alias{print.LOADINGS}
 \title{Print LOADINGS object}
 \usage{
-\method{print}{LOADINGS}(x, cutoff = 0.3, digits = 3, max_name_length = 10, ...)
+\method{print}{LOADINGS}(x, cutoff = 0.3, digits = 3, max_name_length = 10, h2 = NULL, ...)
 }
 \arguments{
 \item{x}{class LOADINGS matrix.}
@@ -17,6 +17,8 @@ to round the loadings to (default is 3).}
 
 \item{max_name_length}{numeric. The maximum length of the variable names to
 display. Everything beyond this will be cut from the right.}
+
+\item{h2}{numeric. Vector of communalities to print.}
 
 \item{...}{additional arguments passed to print}
 }

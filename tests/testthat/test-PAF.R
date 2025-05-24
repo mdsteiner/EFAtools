@@ -36,14 +36,14 @@ test_that("output class and dimensions are correct", {
   expect_is(paf_F1_f$unrot_loadings, "LOADINGS")
 
 
-  expect_output(str(paf_efatools), "List of 12")
-  expect_output(str(paf_psych), "List of 12")
-  expect_output(str(paf_spss), "List of 12")
-  expect_output(str(paf_none), "List of 12")
-  expect_output(str(paf_mac_t), "List of 12")
-  expect_output(str(paf_mac_f), "List of 12")
-  expect_output(str(paf_F1_t), "List of 12")
-  expect_output(str(paf_F1_f), "List of 12")
+  expect_output(str(paf_efatools), "List of 13")
+  expect_output(str(paf_psych), "List of 13")
+  expect_output(str(paf_spss), "List of 13")
+  expect_output(str(paf_none), "List of 13")
+  expect_output(str(paf_mac_t), "List of 13")
+  expect_output(str(paf_mac_f), "List of 13")
+  expect_output(str(paf_F1_t), "List of 13")
+  expect_output(str(paf_F1_f), "List of 13")
 })
 
 test_that("original correlation matrix and eigenvalues are correct", {
