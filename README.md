@@ -8,7 +8,7 @@
 [![CRAN
 status](https://www.r-pkg.org/badges/version/EFAtools)](https://CRAN.R-project.org/package=EFAtools)
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.02521/status.svg)](https://doi.org/10.21105/joss.02521)
-[![R-CMD-check](https://github.com/mdsteiner/EFAtools/workflows/R-CMD-check/badge.svg)](https://github.com/mdsteiner/EFAtools/actions)
+
 <!-- badges: end -->
 
 The EFAtools package provides functions to perform exploratory factor
@@ -93,7 +93,7 @@ N_FACTORS(test_models$baseline$cormat, N = 500, method = "ML")
 #> ◌ Akaike Information Criterion: 3
 ```
 
-<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" /><img src="man/figures/README-unnamed-chunk-5-2.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" /><img src="man/figures/README-unnamed-chunk-5-2.png" width="100%" /><img src="man/figures/README-unnamed-chunk-5-3.png" width="100%" />
 
 ``` r
 
@@ -109,25 +109,25 @@ EFA_SPSS
 #> 
 #> ── Rotated Loadings ────────────────────────────────────────────────────────────
 #> 
-#>       F1      F2      F3  
-#> V1   -.048    .035    .613
-#> V2   -.001    .067    .482
-#> V3    .060    .056    .453
-#> V4    .101   -.009    .551
-#> V5    .157   -.018    .438
-#> V6   -.072   -.049    .704
-#> V7    .001    .533    .093
-#> V8   -.016    .581    .030
-#> V9    .038    .550   -.001
-#> V10  -.022    .674   -.071
-#> V11   .015    .356    .232
-#> V12   .020    .651   -.010
-#> V13   .614    .086   -.067
-#> V14   .548   -.068    .088
-#> V15   .561    .128   -.070
-#> V16   .555   -.050    .091
-#> V17   .664   -.037   -.027
-#> V18   .555    .004    .050
+#>       F1      F2      F3      h2      u2  
+#> V1   -.048    .035    .613    .367    .633
+#> V2   -.001    .067    .482    .277    .723
+#> V3    .060    .056    .453    .283    .717
+#> V4    .101   -.009    .551    .378    .622
+#> V5    .157   -.018    .438    .293    .707
+#> V6   -.072   -.049    .704    .399    .601
+#> V7    .001    .533    .093    .357    .643
+#> V8   -.016    .581    .030    .349    .651
+#> V9    .038    .550   -.001    .330    .670
+#> V10  -.022    .674   -.071    .383    .617
+#> V11   .015    .356    .232    .297    .703
+#> V12   .020    .651   -.010    .432    .568
+#> V13   .614    .086   -.067    .394    .606
+#> V14   .548   -.068    .088    .322    .678
+#> V15   .561    .128   -.070    .363    .637
+#> V16   .555   -.050    .091    .344    .656
+#> V17   .664   -.037   -.027    .390    .610
+#> V18   .555    .004    .050    .350    .650
 #> 
 #> ── Factor Intercorrelations ────────────────────────────────────────────────────
 #> 
@@ -139,11 +139,11 @@ EFA_SPSS
 #> ── Variances Accounted for ─────────────────────────────────────────────────────
 #> 
 #>                       F1      F2      F3  
-#> SS loadings           4.907   0.757   0.643
-#> Prop Tot Var          0.273   0.042   0.036
-#> Cum Prop Tot Var      0.273   0.315   0.350
-#> Prop Comm Var         0.778   0.120   0.102
-#> Cum Prop Comm Var     0.778   0.898   1.000
+#> SS loadings           2.198   2.074   2.034
+#> Prop Tot Var          0.122   0.115   0.113
+#> Cum Prop Tot Var      0.122   0.237   0.350
+#> Prop Comm Var         0.349   0.329   0.323
+#> Cum Prop Comm Var     0.349   0.677   1.000
 #> 
 #> ── Model Fit ───────────────────────────────────────────────────────────────────
 #> 
@@ -154,11 +154,6 @@ EFA_SPSS
 # promax rotation
 EFA_psych <- EFA(test_models$baseline$cormat, n_factors = 3, type = "psych",
                   rotation = "promax")
-```
-
-<img src="man/figures/README-unnamed-chunk-5-3.png" width="100%" />
-
-``` r
 
 # compare the type psych and type SPSS implementations
 COMPARE(EFA_SPSS$rot_loadings, EFA_psych$rot_loadings,
