@@ -192,7 +192,12 @@ EKC <- function(x, N = NA,
     l_EKC[l_REF < 1] <- 1
 
     # number of factors to retain
-    n_factors_BvA2017 <- sum(lambda > l_EKC)
+    temp <- cumsum(lambda > l_EKC) * cumprod(lambda > l_EKC)
+    if (sum(temp) == 0) {
+      n_factors_BvA2017 <- 0
+    } else {
+      n_factors_BvA2017 <- which.max(temp)
+    }
     refs_BvA2017 <- l_EKC
 
   }
