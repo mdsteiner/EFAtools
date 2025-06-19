@@ -1,9 +1,12 @@
 ## Resubmission
 This is a resubmission. In this version we have:
 
-* Fixed the `print.EFA()` function to return explained variances and sum of squared loadings based on the rotated rather than unrotated factor solution, if a rotation was performed.
-* Added communalities and uniquenesses to the print function `print.EFA()`.
-* Calculate and return the model implied correlation matrix in `EFA()`.
+* Added `NEST()` to perform the Next Eigenvalue Sufficiency Test (Achim, 2017).
+* Updated `EKC()` to include both circulating implementation of the empirical Kaiser criterion.
+* `N_FACTORS()`: 
+  * Updated default settings to more sensible values.
+  * Added NEST as additional factor retention method.
+  * Added arguments to control NEST and to reflect changes in EKC.
 
 ## Test environments
 * mac-builder m1, R 4.4.2

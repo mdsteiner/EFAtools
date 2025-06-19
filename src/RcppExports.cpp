@@ -50,6 +50,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// nest_sym
+arma::vec nest_sym(const int nf, const int N, arma::mat M, const int nreps);
+RcppExport SEXP _EFAtools_nest_sym(SEXP nfSEXP, SEXP NSEXP, SEXP MSEXP, SEXP nrepsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const int >::type nf(nfSEXP);
+    Rcpp::traits::input_parameter< const int >::type N(NSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type M(MSEXP);
+    Rcpp::traits::input_parameter< const int >::type nreps(nrepsSEXP);
+    rcpp_result_gen = Rcpp::wrap(nest_sym(nf, N, M, nreps));
+    return rcpp_result_gen;
+END_RCPP
+}
 // paf_iter
 Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R, const int n_fac, bool abs_eig, int crit_type, int max_iter);
 RcppExport SEXP _EFAtools_paf_iter(SEXP h2SEXP, SEXP criterionSEXP, SEXP RSEXP, SEXP n_facSEXP, SEXP abs_eigSEXP, SEXP crit_typeSEXP, SEXP max_iterSEXP) {
@@ -113,6 +127,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EFAtools_factor_corres", (DL_FUNC) &_EFAtools_factor_corres, 3},
     {"_EFAtools_grad_ml", (DL_FUNC) &_EFAtools_grad_ml, 3},
     {"_EFAtools_error_ml", (DL_FUNC) &_EFAtools_error_ml, 3},
+    {"_EFAtools_nest_sym", (DL_FUNC) &_EFAtools_nest_sym, 4},
     {"_EFAtools_paf_iter", (DL_FUNC) &_EFAtools_paf_iter, 7},
     {"_EFAtools_parallel_sim", (DL_FUNC) &_EFAtools_parallel_sim, 5},
     {"_EFAtools_grad_uls", (DL_FUNC) &_EFAtools_grad_uls, 3},

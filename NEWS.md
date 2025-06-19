@@ -1,3 +1,18 @@
+# EFAtools 0.6.0
+
+## New Functions
+
+* Added `NEST()` to perform the Next Eigenvalue Sufficiency Test (Achim, 2017).
+
+## Changes to Functions
+
+* `EKC()`: The implementation based on Auerswald and Moshagen (2019) used in previous versions differed from the original implementation by Braeken and van Assen (2017). Now both versions are implemented and can be selected with the new `type` argument. Thanks to Luis Eduardo Garrido for pointing this out and to Johan Braeken for sharing sample code, based on which the original version is now implemented.
+* `N_FACTORS()`: 
+  * Updated default settings to only use often used and well performing factor retention methods (others, like the Kaiser Guttman criterion can still be used).
+  * Added NEST as additional factor retention method.
+  * New arguments: `ekc_type`, `alpha_nest`, and `n_datasets_nest` to account for the changes in `EKC()` and to control `NEST()`.
+
+
 # EFAtools 0.5.0
 
 ## Changes to Functions

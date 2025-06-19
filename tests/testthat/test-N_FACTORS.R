@@ -9,19 +9,24 @@ test_that("output class and dimensions are correct", {
   expect_named(nf_grips, c("outputs", "n_factors", "settings"))
   expect_named(nf_grips$outputs, c("bart_out", "kmo_out", "cd_out", "ekc_out",
                                    "hull_out", "kgc_out", "parallel_out",
-                                   "scree_out", "smt_out"))
-  expect_named(nf_grips$n_factors, c("nfac_CD", "nfac_EKC", "nfac_HULL_CAF",
+                                  "nest_out", "scree_out", "smt_out"))
+  expect_named(nf_grips$n_factors, c("nfac_CD",
+                                     "nfac_EKC_BvA2017", "nfac_EKC_AM2019",
+                                     "nfac_HULL_CAF",
                                      "nfac_HULL_CFI", "nfac_HULL_RMSEA",
                                      "nfac_KGC_PCA", "nfac_KGC_SMC",
                                      "nfac_KGC_EFA",
                                      "nfac_PA_PCA", "nfac_PA_SMC", "nfac_PA_EFA",
+                                     "nfac_NEST",
                                      "nfac_SMT_chi", "nfac_RMSEA", "nfac_AIC"))
   expect_named(nf_grips$settings, c("criteria", "suitability", "N", "use",
                                     "n_factors_max", "N_pop", "N_samples", "alpha",
                                     "cor_method", "max_iter_CD", "n_fac_theor",
                                     "method", "gof", "eigen_type_HULL",
                                     "eigen_type_other", "n_factors", "n_datasets",
-                                    "percent", "decision_rule"))
+                                    "percent", "decision_rule",
+                                    "ekc_type", "n_datasets_nest",
+                                    "alpha_nest"))
 })
 
 x <- rnorm(100)

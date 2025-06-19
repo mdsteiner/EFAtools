@@ -56,10 +56,10 @@ high-level introduction into the functionalities of the package.
 # load the package
 library(EFAtools)
 
-# Run all possible factor retention methods
-N_FACTORS(test_models$baseline$cormat, N = 500, method = "ML")
-#> Warning in N_FACTORS(test_models$baseline$cormat, N = 500, method = "ML"): ! 'x' was a correlation matrix but CD needs raw data. Skipping CD.
-#>                                                                                                                                                                  ◉ 🏃 ◯ ◯ ◯ ◯ ◯ Running EKC                                                                                                                                                                 ◉ ◉ 🏃 ◯ ◯ ◯ ◯ Running HULL                                                                                                                                                                 ◉ ◉ ◉ 🏃 ◯ ◯ ◯ Running KGC                                                                                                                                                                 ◉ ◉ ◉ ◉ 🏃 ◯ ◯ Running PARALLEL                                                                                                                                                                 ◉ ◉ ◉ ◉ ◉ 🏃 ◯ Running SCREE                                                                                                                                                                 ◉ ◉ ◉ ◉ ◉ ◉ 🏃  Running SMT                                                                                                                                                                 ◉ ◉ ◉ ◉ ◉ ◉ ◉ Done!
+# Run multiple factor retention methods
+N_FACTORS(test_models$baseline$cormat, N = 500)
+#> Warning in N_FACTORS(test_models$baseline$cormat, N = 500): ! 'x' was a correlation matrix but CD needs raw data. Skipping CD.
+#> ℹ The default implementation of EKC has changed compared to EFAtools version <= 0.5.0 to reflect the original version by Braeken and van Assen (2017). The previous version (which often yields different results from the original) is available with type = 'AM2019'. See details in the help page.
 #> 
 #> ── Tests for the suitability of the data for factor analysis ───────────────────
 #> 
@@ -77,25 +77,13 @@ N_FACTORS(test_models$baseline$cormat, N = 500, method = "ML")
 #> 
 #> ── Number of factors suggested by the different factor retention criteria ──────
 #> 
-#> ◌ Comparison data: NA
-#> ◌ Empirical Kaiser criterion: 2
-#> ◌ Hull method with CAF: 3
-#> ◌ Hull method with CFI: 1
-#> ◌ Hull method with RMSEA: 1
-#> ◌ Kaiser-Guttman criterion with PCA: 3
-#> ◌ Kaiser-Guttman criterion with SMC: 1
-#> ◌ Kaiser-Guttman criterion with EFA: 1
-#> ◌ Parallel analysis with PCA: 3
-#> ◌ Parallel analysis with SMC: 3
-#> ◌ Parallel analysis with EFA: 3
-#> ◌ Sequential 𝜒² model tests: 3
-#> ◌ Lower bound of RMSEA 90% confidence interval: 2
-#> ◌ Akaike Information Criterion: 3
-```
-
-<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" /><img src="man/figures/README-unnamed-chunk-5-2.png" width="100%" /><img src="man/figures/README-unnamed-chunk-5-3.png" width="100%" />
-
-``` r
+#> • Comparison data: NA
+#> • EKC (original implementation, type 'BvA2017'): 3
+#> • Hull method with CAF: 3
+#> • Hull method with CFI: 1
+#> • Hull method with RMSEA: 1
+#> • Parallel analysis with SMC: 3
+#> • NEST: 3
 
 # A type SPSS EFA to mimick the SPSS implementation with
 # promax rotation
@@ -184,7 +172,7 @@ COMPARE(EFA_SPSS$rot_loadings, EFA_psych$rot_loadings,
 #> V18  -0.0066  0.0014  0.0098
 ```
 
-<img src="man/figures/README-unnamed-chunk-5-4.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" />
 
 ``` r
 
@@ -320,7 +308,7 @@ EFA_AV
 #> CAF: .50 (.00) [.50; .50]
 ```
 
-<img src="man/figures/README-unnamed-chunk-5-5.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-5-2.png" width="100%" />
 
 ``` r
 

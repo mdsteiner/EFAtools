@@ -96,7 +96,7 @@ print.N_FACTORS <- function(x, ...){
 
   if("CD" %in% criteria){
 
-  cat(crayon::blue(cli::symbol$circle_dotted, "Comparison data: "),
+  cat(crayon::blue(cli::symbol$bullet, "Comparison data: "),
       crayon::bold(n_fac["nfac_CD"]), sep = "")
   cat("\n")
 
@@ -104,29 +104,44 @@ print.N_FACTORS <- function(x, ...){
 
   if("EKC" %in% criteria){
 
-    cat(crayon::blue(cli::symbol$circle_dotted, "Empirical Kaiser criterion: "),
-        crayon::bold(n_fac["nfac_EKC"]),
-        sep = "")
-    cat("\n")
+    ekc_type <- x$settings$ekc_type
+
+    if("BvA2017" %in% ekc_type){
+
+      cat(crayon::blue(cli::symbol$bullet, "EKC (original implementation, type 'BvA2017'): "),
+          crayon::bold(n_fac["nfac_EKC_BvA2017"]),
+          sep = "")
+      cat("\n")
+
+    }
+
+    if("AM2019" %in% ekc_type){
+
+      cat(crayon::blue(cli::symbol$bullet, "EKC (adapted implementation, type 'AM2019'): "),
+          crayon::bold(n_fac["nfac_EKC_AM2019"]),
+          sep = "")
+      cat("\n")
+
+    }
 
   }
 
   if("HULL" %in% criteria){
 
     if("CAF" %in% gof){
-    cat(crayon::blue(cli::symbol$circle_dotted, "Hull method with CAF: "),
+    cat(crayon::blue(cli::symbol$bullet, "Hull method with CAF: "),
         crayon::bold(n_fac["nfac_HULL_CAF"]),
         sep = "")
     cat("\n")
     }
     if("CFI" %in% gof){
-    cat(crayon::blue(cli::symbol$circle_dotted, "Hull method with CFI: "),
+    cat(crayon::blue(cli::symbol$bullet, "Hull method with CFI: "),
         crayon::bold(n_fac["nfac_HULL_CFI"]),
         sep = "")
     cat("\n")
     }
     if("RMSEA" %in% gof){
-    cat(crayon::blue(cli::symbol$circle_dotted, "Hull method with RMSEA: "),
+    cat(crayon::blue(cli::symbol$bullet, "Hull method with RMSEA: "),
         crayon::bold(n_fac["nfac_HULL_RMSEA"]),
         sep = "")
     cat("\n")
@@ -137,19 +152,19 @@ print.N_FACTORS <- function(x, ...){
   if("KGC" %in% criteria){
 
     if("PCA" %in% eigen_type_other){
-    cat(crayon::blue(cli::symbol$circle_dotted,
+    cat(crayon::blue(cli::symbol$bullet,
                      "Kaiser-Guttman criterion with PCA: "),
         crayon::bold(n_fac["nfac_KGC_PCA"]), sep = "")
     cat("\n")
     }
     if("SMC" %in% eigen_type_other){
-    cat(crayon::blue(cli::symbol$circle_dotted,
+    cat(crayon::blue(cli::symbol$bullet,
                      "Kaiser-Guttman criterion with SMC: "),
         crayon::bold(n_fac["nfac_KGC_SMC"]), sep = "")
     cat("\n")
     }
     if("EFA" %in% eigen_type_other){
-    cat(crayon::blue(cli::symbol$circle_dotted,
+    cat(crayon::blue(cli::symbol$bullet,
                      "Kaiser-Guttman criterion with EFA: "),
         crayon::bold(n_fac["nfac_KGC_EFA"]), sep = "")
     cat("\n")
@@ -160,21 +175,21 @@ print.N_FACTORS <- function(x, ...){
   if("PARALLEL" %in% criteria){
 
     if("PCA" %in% eigen_type_other){
-    cat(crayon::blue(cli::symbol$circle_dotted,
+    cat(crayon::blue(cli::symbol$bullet,
                      "Parallel analysis with PCA: "),
         crayon::bold(n_fac["nfac_PA_PCA"]),
         sep = "")
     cat("\n")
     }
     if("SMC" %in% eigen_type_other){
-    cat(crayon::blue(cli::symbol$circle_dotted,
+    cat(crayon::blue(cli::symbol$bullet,
                      "Parallel analysis with SMC: "),
         crayon::bold(n_fac["nfac_PA_SMC"]),
         sep = "")
     cat("\n")
     }
     if("EFA" %in% eigen_type_other){
-    cat(crayon::blue(cli::symbol$circle_dotted,
+    cat(crayon::blue(cli::symbol$bullet,
                      "Parallel analysis with EFA: "),
         crayon::bold(n_fac["nfac_PA_EFA"]),
         sep = "")
@@ -183,17 +198,27 @@ print.N_FACTORS <- function(x, ...){
 
   }
 
+  if("NEST" %in% criteria){
+
+      cat(crayon::blue(cli::symbol$bullet,
+                       "NEST: "),
+          crayon::bold(n_fac["nfac_NEST"]),
+          sep = "")
+      cat("\n")
+
+  }
+
   if("SMT" %in% criteria){
 
-    cat(crayon::blue(cli::symbol$circle_dotted,
+    cat(crayon::blue(cli::symbol$bullet,
                      "Sequential \U1D712\U00B2 model tests: "),
         crayon::bold(n_fac["nfac_SMT_chi"]), sep = "")
     cat("\n")
-    cat(crayon::blue(cli::symbol$circle_dotted,
+    cat(crayon::blue(cli::symbol$bullet,
                      "Lower bound of RMSEA 90% confidence interval: "),
         crayon::bold(n_fac["nfac_RMSEA"]), sep = "")
     cat("\n")
-    cat(crayon::blue(cli::symbol$circle_dotted,
+    cat(crayon::blue(cli::symbol$bullet,
                      "Akaike Information Criterion: "),
         crayon::bold(n_fac["nfac_AIC"]),
         sep = "")

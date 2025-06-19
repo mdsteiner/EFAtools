@@ -11,8 +11,8 @@
 #'  data.
 #' @param criteria character. A vector with the factor retention methods to
 #' perform. Possible inputs are: \code{"CD"}, \code{"EKC"}, \code{"HULL"},
-#' \code{"KGC"}, \code{"PARALLEL"}, \code{"SCREE"}, and \code{"SMT"}
-#' (see details). By default, all factor retention methods are performed.
+#' \code{"KGC"}, \code{"PARALLEL"}, \code{"NEST"}, \code{"SCREE"}, and \code{"SMT"}
+#' (see details). By default, a subset of often used, well-performing methods are performed.
 #' @param suitability logical. Whether the data should be checked for suitability
 #' for factor analysis using the Bartlett's test of sphericity and the
 #' Kaiser-Guttmann criterion (see details). Default is \code{TRUE}.
@@ -41,7 +41,7 @@
 #'  of factors to retain. The maximum of this number and the number of factors
 #'  suggested by \link{PARALLEL} plus one will be used in the Hull method.
 #' @param method character. Passed to \code{\link{EFA}} in \code{\link{HULL}},
-#' \code{\link{KGC}}, \code{\link{SCREE}}, and \code{\link{PARALLEL}}. The
+#' \code{\link{KGC}}, \code{\link{SCREE}}, \code{\link{PARALLEL}}, and \code{\link{NEST}}. The
 #' estimation method to use. One of  \code{"PAF"}, \code{"ULS"}, or  \code{"ML"},
 #' for principal axis factoring, unweighted least squares, and maximum
 #' likelihood, respectively.
@@ -75,13 +75,19 @@
 #' \code{\link{HULL}}). A vector of percentiles to take the simulated eigenvalues
 #'  from. Default is 95.
 #' @param decision_rule character. Passed to \code{\link{PARALLEL}} (also within
-#' \code{\link{HULL}}). Which rule to use to determine the number of
+#'  \code{\link{HULL}}). Which rule to use to determine the number of
 #'  factors to retain. Default is \code{"means"}, which will use the average
 #'  simulated eigenvalues. \code{"percentile"}, uses the percentiles specified
 #'  in percent. \code{"crawford"} uses the 95th percentile for the first factor
 #'  and the mean afterwards (based on Crawford et al, 2010).
+#' @param ekc_type character. Passed to the \code{type} argument of \code{\link{EKC}}.
+#'   Either \code{"BvA2017"} for the original implementation by Braeken and van Assen
+#'   (2017), or \code{"AM2019"} for the adapted implementation by Auerswald and Moshagen
+#'   (2019).
+#' @param n_datasets_nest numeric. The number of datasets to simulate in \code{\link{NEST}}. Default is 1000.
+#' @param alpha_nest numeric. The alpha level to use in \code{\link{NEST}} (i.e., 1-alpha percentile of eigenvalues is used for reference values).
 #' @param show_progress logical. Whether a progress bar should be shown in the
-#'   console. Default is TRUE.
+#'   console. Default is FALSE.
 #' @param ... Further arguments passed to \code{\link{EFA}} in
 #' \code{\link{PARALLEL}} (also within \code{\link{HULL}}) and \code{\link{KGC}}.
 #'
@@ -100,6 +106,7 @@
 #' \item{Hull method (see \code{\link{HULL}})}
 #' \item{Kaiser-Guttman criterion (see \code{\link{KGC}})}
 #' \item{Parallel analysis (see \code{\link{PARALLEL}})}
+#' \item{Next Eigenvalue Sufficiency Test, NEST (see \code{\link{NEST}})}
 #' \item{Scree plot (see \code{\link{SCREE}})}
 #' \item{Sequential chi-square model tests, RMSEA lower bound, and AIC
 #' (see \code{\link{SMT}})}
@@ -116,45 +123,47 @@
 #'
 #' @examples
 #' \donttest{
-#' # All criteria, with correlation matrix and fit method "ML" (where needed)
+#' # Default criteria, with correlation matrix and fit method "ML" (where needed)
 #' # This will throw a warning for CD, as no raw data were specified
 #' nfac_all <- N_FACTORS(test_models$baseline$cormat, N = 500, method = "ML")
 #'
 #' # The same as above, but without "CD"
 #' nfac_wo_CD <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC",
-#'                         "HULL", "KGC", "PARALLEL", "SCREE", "SMT"), N = 500,
+#'                         "HULL", "PARALLEL", "NEST"), N = 500,
 #'                         method = "ML")
 #'
-#' # Use PAF instead of ML (this will take a lot longer). For this, gof has
+#' # Use PAF instead of ML (this will take longer). For this, gof has
 #' # to be set to "CAF" for the Hull method.
 #' nfac_PAF <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC",
-#'                       "HULL", "KGC", "PARALLEL", "SCREE", "SMT"), N = 500,
+#'                         "HULL", "PARALLEL", "NEST"), N = 500,
 #'                       gof = "CAF")
 #'
 #' # Do KGC and PARALLEL with only "PCA" type of eigenvalues
 #' nfac_PCA <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC",
-#'                       "HULL", "KGC", "PARALLEL", "SCREE", "SMT"), N = 500,
+#'                       "HULL", "PARALLEL", "NEST"), N = 500,
 #'                       method = "ML", eigen_type_other = "PCA")
 #'
 #' # Use raw data, such that CD can also be performed
 #' nfac_raw <- N_FACTORS(GRiPS_raw, method = "ML")
 #'}
-N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
-                                      "SCREE", "SMT"),
+N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "PARALLEL",
+                                      "NEST"),
                       suitability = TRUE, N = NA,
                       use = c("pairwise.complete.obs", "all.obs",
                               "complete.obs", "everything", "na.or.complete"),
                       cor_method = c("pearson", "spearman", "kendall"),
                       n_factors_max = NA, N_pop = 10000, N_samples = 500,
                       alpha = .30, max_iter_CD = 50, n_fac_theor = NA,
-                      method = c("PAF", "ULS", "ML"),
+                      method = c("ML", "PAF", "ULS"),
                       gof = c("CAF", "CFI", "RMSEA"),
                       eigen_type_HULL = c("SMC", "PCA", "EFA"),
-                      eigen_type_other = c("PCA", "SMC", "EFA"),
+                      eigen_type_other = c("SMC"),
                       n_factors = 1, n_datasets = 1000,
                       percent = 95,
                       decision_rule = c("means", "percentile", "crawford"),
-                      show_progress = TRUE,
+                      ekc_type = c("BvA2017"),
+                      n_datasets_nest = 1000, alpha_nest = .05,
+                      show_progress = FALSE,
                       ...){
 
   # Perform argument checks
@@ -165,14 +174,21 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   }
 
   ## Perform argument checks and prepare input
-  criteria <- match.arg(criteria, several.ok = TRUE)
+  criteria <- match.arg(criteria, several.ok = TRUE,
+                        choices = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
+                                    "SCREE", "SMT", "NEST"))
   suitability <- checkmate::assert_flag(suitability)
   eigen_type_HULL <- match.arg(eigen_type_HULL)
-  eigen_type_other <- match.arg(eigen_type_other, several.ok = TRUE)
+  eigen_type_other <- match.arg(eigen_type_other, several.ok = TRUE,
+                                choices = c("PCA", "SMC", "EFA"))
+  gof <- match.arg(gof, several.ok = TRUE, choices = c("CAF", "CFI", "RMSEA"))
   cor_method <- match.arg(cor_method)
   use <- match.arg(use)
   method <- match.arg(method)
   decision_rule <- match.arg(decision_rule)
+  ekc_type <- match.arg(ekc_type, c("BvA2017", "AM2019"), several.ok = TRUE)
+  checkmate::assert_number(alpha_nest, lower = 0, upper = 1)
+  checkmate::assert_count(n_datasets_nest, na.ok = FALSE, positive = TRUE)
 
   if (isTRUE(show_progress)) {
     criteria <- sort(criteria)
@@ -217,11 +233,13 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   hull_out <- NA
   kgc_out <- NA
   parallel_out <- NA
+  nest_out <- NA
   scree_out <- NA
   smt_out <- NA
 
   nfac_CD <- NA
-  nfac_EKC <- NA
+  nfac_EKC_BvA2017 <- NA
+  nfac_EKC_AM2019 <- NA
   nfac_HULL_CAF <- NA
   nfac_HULL_CFI <- NA
   nfac_HULL_RMSEA <- NA
@@ -231,6 +249,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
   nfac_PA_PCA <- NA
   nfac_PA_SMC <- NA
   nfac_PA_EFA <- NA
+  nfac_NEST <- NA
   nfac_SMT_chi <- NA
   nfac_RMSEA <- NA
   nfac_AIC <- NA
@@ -276,9 +295,12 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
       .show_progress(criteria, "EKC")
     }
 
-    ekc_out <- EKC(R, N = N, use = use, cor_method = cor_method)
+    ekc_out <- EKC(R, N = N, use = use, cor_method = cor_method,
+                   type = ekc_type)
 
-    nfac_EKC <- ekc_out$n_factors
+    nfac_EKC_BvA2017 <- ekc_out$n_factors_BvA2017
+    nfac_EKC_AM2019 <- ekc_out$n_factors_AM2019
+
 
   }
 
@@ -338,6 +360,22 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
 
   }
 
+  # Next Eigenvalue Sufficiency Test
+  if("NEST" %in% criteria){
+
+    if (isTRUE(show_progress)) {
+      .show_progress(criteria, "NEST")
+    }
+
+    nest_out <- NEST(R, N = N, use = use, cor_method = cor_method,
+                     alpha = alpha_nest, n_datasets = n_datasets_nest,
+                     method = method)
+
+    nfac_NEST <- nest_out$n_factors
+
+
+  }
+
   # Scree plot
   if("SCREE" %in% criteria){
 
@@ -384,11 +422,15 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
                    n_factors = n_factors,
                    n_datasets = n_datasets,
                    percent = percent,
-                   decision_rule = decision_rule)
+                   decision_rule = decision_rule,
+                   ekc_type = ekc_type,
+                   n_datasets_nest = n_datasets_nest,
+                   alpha_nest = alpha_nest)
 
   # Prepare the output
   n_factors <- c(nfac_CD = nfac_CD,
-                 nfac_EKC = nfac_EKC,
+                 nfac_EKC_BvA2017 = nfac_EKC_BvA2017,
+                 nfac_EKC_AM2019 = nfac_EKC_AM2019,
                  nfac_HULL_CAF = nfac_HULL_CAF,
                  nfac_HULL_CFI = nfac_HULL_CFI,
                  nfac_HULL_RMSEA = nfac_HULL_RMSEA,
@@ -398,6 +440,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
                  nfac_PA_PCA = nfac_PA_PCA,
                  nfac_PA_SMC = nfac_PA_SMC,
                  nfac_PA_EFA = nfac_PA_EFA,
+                 nfac_NEST = nfac_NEST,
                  nfac_SMT_chi = nfac_SMT_chi,
                  nfac_RMSEA = nfac_RMSEA,
                  nfac_AIC = nfac_AIC)
@@ -409,6 +452,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
                   hull_out = hull_out,
                   kgc_out = kgc_out,
                   parallel_out = parallel_out,
+                  nest_out = nest_out,
                   scree_out = scree_out,
                   smt_out = smt_out)
 

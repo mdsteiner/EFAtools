@@ -31,7 +31,7 @@ print.KGC <- function(x, plot = TRUE, ...) {
 
   if("PCA" %in% eigen_type){
 
-    cat(crayon::blue(cli::symbol$circle_dotted, "With PCA-determined eigenvalues: "),
+    cat(crayon::blue(cli::symbol$bullet, "With PCA-determined eigenvalues: "),
                      crayon::bold(nfac_PCA))
     cat("\n")
 
@@ -39,7 +39,7 @@ print.KGC <- function(x, plot = TRUE, ...) {
 
   if("SMC" %in% eigen_type){
 
-    cat(crayon::blue(cli::symbol$circle_dotted,
+    cat(crayon::blue(cli::symbol$bullet,
                      "With SMC-determined eigenvalues: "),
         crayon::bold(nfac_SMC))
     cat("\n")
@@ -48,7 +48,7 @@ print.KGC <- function(x, plot = TRUE, ...) {
 
   if("EFA" %in% eigen_type){
 
-    cat(crayon::blue(cli::symbol$circle_dotted,
+    cat(crayon::blue(cli::symbol$bullet,
                      "With EFA-determined eigenvalues: "),
         crayon::bold(nfac_EFA))
     cat("\n")

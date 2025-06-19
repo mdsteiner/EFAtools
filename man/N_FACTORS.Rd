@@ -6,7 +6,7 @@
 \usage{
 N_FACTORS(
   x,
-  criteria = c("CD", "EKC", "HULL", "KGC", "PARALLEL", "SCREE", "SMT"),
+  criteria = c("CD", "EKC", "HULL", "PARALLEL", "NEST"),
   suitability = TRUE,
   N = NA,
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
@@ -18,15 +18,18 @@ N_FACTORS(
   alpha = 0.3,
   max_iter_CD = 50,
   n_fac_theor = NA,
-  method = c("PAF", "ULS", "ML"),
+  method = c("ML", "PAF", "ULS"),
   gof = c("CAF", "CFI", "RMSEA"),
   eigen_type_HULL = c("SMC", "PCA", "EFA"),
-  eigen_type_other = c("PCA", "SMC", "EFA"),
+  eigen_type_other = c("SMC"),
   n_factors = 1,
   n_datasets = 1000,
   percent = 95,
   decision_rule = c("means", "percentile", "crawford"),
-  show_progress = TRUE,
+  ekc_type = c("BvA2017"),
+  n_datasets_nest = 1000,
+  alpha_nest = 0.05,
+  show_progress = FALSE,
   ...
 )
 }
@@ -37,8 +40,8 @@ correlations. If \code{"CD"} is included as a criterion, x must be raw
 
 \item{criteria}{character. A vector with the factor retention methods to
 perform. Possible inputs are: \code{"CD"}, \code{"EKC"}, \code{"HULL"},
-\code{"KGC"}, \code{"PARALLEL"}, \code{"SCREE"}, and \code{"SMT"}
-(see details). By default, all factor retention methods are performed.}
+\code{"KGC"}, \code{"PARALLEL"}, \code{"NEST"}, \code{"SCREE"}, and \code{"SMT"}
+(see details). By default, a subset of often used, well-performing methods are performed.}
 
 \item{suitability}{logical. Whether the data should be checked for suitability
 for factor analysis using the Bartlett's test of sphericity and the
@@ -78,7 +81,7 @@ of factors to retain. The maximum of this number and the number of factors
 suggested by \link{PARALLEL} plus one will be used in the Hull method.}
 
 \item{method}{character. Passed to \code{\link{EFA}} in \code{\link{HULL}},
-\code{\link{KGC}}, \code{\link{SCREE}}, and \code{\link{PARALLEL}}. The
+\code{\link{KGC}}, \code{\link{SCREE}}, \code{\link{PARALLEL}}, and \code{\link{NEST}}. The
 estimation method to use. One of  \code{"PAF"}, \code{"ULS"}, or  \code{"ML"},
 for principal axis factoring, unweighted least squares, and maximum
 likelihood, respectively.}
@@ -120,13 +123,22 @@ factors to extract if \code{"EFA"} is included in \code{eigen_type_HULL} or
 
 \item{decision_rule}{character. Passed to \code{\link{PARALLEL}} (also within
 \code{\link{HULL}}). Which rule to use to determine the number of
- factors to retain. Default is \code{"means"}, which will use the average
- simulated eigenvalues. \code{"percentile"}, uses the percentiles specified
- in percent. \code{"crawford"} uses the 95th percentile for the first factor
- and the mean afterwards (based on Crawford et al, 2010).}
+factors to retain. Default is \code{"means"}, which will use the average
+simulated eigenvalues. \code{"percentile"}, uses the percentiles specified
+in percent. \code{"crawford"} uses the 95th percentile for the first factor
+and the mean afterwards (based on Crawford et al, 2010).}
+
+\item{ekc_type}{character. Passed to the \code{type} argument of \code{\link{EKC}}.
+Either \code{"BvA2017"} for the original implementation by Braeken and van Assen
+(2017), or \code{"AM2019"} for the adapted implementation by Auerswald and Moshagen
+(2019).}
+
+\item{n_datasets_nest}{numeric. The number of datasets to simulate in \code{\link{NEST}}. Default is 1000.}
+
+\item{alpha_nest}{numeric. The alpha level to use in \code{\link{NEST}} (i.e., 1-alpha percentile of eigenvalues is used for reference values).}
 
 \item{show_progress}{logical. Whether a progress bar should be shown in the
-console. Default is TRUE.}
+console. Default is FALSE.}
 
 \item{...}{Further arguments passed to \code{\link{EFA}} in
 \code{\link{PARALLEL}} (also within \code{\link{HULL}}) and \code{\link{KGC}}.}
@@ -161,6 +173,7 @@ The available factor retention criteria are the following (see respective
 \item{Hull method (see \code{\link{HULL}})}
 \item{Kaiser-Guttman criterion (see \code{\link{KGC}})}
 \item{Parallel analysis (see \code{\link{PARALLEL}})}
+\item{Next Eigenvalue Sufficiency Test, NEST (see \code{\link{NEST}})}
 \item{Scree plot (see \code{\link{SCREE}})}
 \item{Sequential chi-square model tests, RMSEA lower bound, and AIC
 (see \code{\link{SMT}})}
@@ -168,24 +181,24 @@ The available factor retention criteria are the following (see respective
 }
 \examples{
 \donttest{
-# All criteria, with correlation matrix and fit method "ML" (where needed)
+# Default criteria, with correlation matrix and fit method "ML" (where needed)
 # This will throw a warning for CD, as no raw data were specified
 nfac_all <- N_FACTORS(test_models$baseline$cormat, N = 500, method = "ML")
 
 # The same as above, but without "CD"
 nfac_wo_CD <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC",
-                        "HULL", "KGC", "PARALLEL", "SCREE", "SMT"), N = 500,
+                        "HULL", "PARALLEL", "NEST"), N = 500,
                         method = "ML")
 
-# Use PAF instead of ML (this will take a lot longer). For this, gof has
+# Use PAF instead of ML (this will take longer). For this, gof has
 # to be set to "CAF" for the Hull method.
 nfac_PAF <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC",
-                      "HULL", "KGC", "PARALLEL", "SCREE", "SMT"), N = 500,
+                        "HULL", "PARALLEL", "NEST"), N = 500,
                       gof = "CAF")
 
 # Do KGC and PARALLEL with only "PCA" type of eigenvalues
 nfac_PCA <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC",
-                      "HULL", "KGC", "PARALLEL", "SCREE", "SMT"), N = 500,
+                      "HULL", "PARALLEL", "NEST"), N = 500,
                       method = "ML", eigen_type_other = "PCA")
 
 # Use raw data, such that CD can also be performed

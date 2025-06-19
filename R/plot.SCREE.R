@@ -53,7 +53,7 @@ plot.SCREE <- function(x, ...) {
   graphics::axis(1, seq_len(x_len))
   graphics::axis(2, p_eigen, las = 1)
 
-  graphics::mtext("Indicators", side = 1, line = 3, cex = 1)
+  graphics::mtext("Factor", side = 1, line = 3, cex = 1)
   graphics::mtext("Eigenvalues", side = 2, line = 3, cex = 1, padj =.5)
 
   graphics::lines(seq_len(x_len), eigen)

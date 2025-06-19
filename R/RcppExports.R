@@ -18,6 +18,19 @@
     .Call(`_EFAtools_error_ml`, psi, R, n_fac)
 }
 
+#' Get reference values for nest.
+#'
+#' Function called from within NEST so usually no call to this is needed by the user.
+#' Provides a C++ implementation of the NEST simulation procedure
+#'
+#' @param nf numeric. Current number of factors.
+#' @param N numeric. Number of cases / observations in dataset.
+#' @param M numeric matrix. A transposed matrix of cbind(loadings, diag(sqrt(uniquenesses))).
+#' @param nreps numeric. Number of datasets to create.
+.nest_sym <- function(nf, N, M, nreps = 1000L) {
+    .Call(`_EFAtools_nest_sym`, nf, N, M, nreps)
+}
+
 #' Perform the iterative PAF procedure
 #'
 #' Function called from within PAF so usually no call to this is needed by the user.

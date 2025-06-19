@@ -33,6 +33,7 @@ Other contributors:
   \item Brendan Roche [contributor]
   \item Urbano Lorenzo-Seva [contributor]
   \item David Navarro-Gonzalez [contributor]
+  \item Johan Braeken [contributor]
 }
 
 }

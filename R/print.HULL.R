@@ -38,19 +38,19 @@ print.HULL <- function(x, plot = TRUE, ...) {
 
   if("CAF" %in% gof){
     cat("\n")
-    cat(crayon::blue(cli::symbol$circle_dotted, "With", crayon::bold("CAF:   ")),
+    cat(crayon::blue(cli::symbol$bullet, "With", crayon::bold("CAF:   ")),
         crayon::bold(x$n_fac_CAF))
     cat("\n")
   }
 
   if("CFI" %in% gof){
-    cat(crayon::blue(cli::symbol$circle_dotted, "With", crayon::bold("CFI:   ")),
+    cat(crayon::blue(cli::symbol$bullet, "With", crayon::bold("CFI:   ")),
         crayon::bold(x$n_fac_CFI))
     cat("\n")
   }
 
   if("RMSEA" %in% gof){
-    cat(crayon::blue(cli::symbol$circle_dotted, "With", crayon::bold("RMSEA: ")),
+    cat(crayon::blue(cli::symbol$bullet, "With", crayon::bold("RMSEA: ")),
         crayon::bold(x$n_fac_RMSEA))
     cat("\n")
   }

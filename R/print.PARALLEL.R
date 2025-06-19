@@ -39,19 +39,19 @@ print.PARALLEL <- function(x, plot = TRUE, ...) {
     cat("\n")
 
     if("PCA" %in% eigen_type){
-      cat(crayon::blue(cli::symbol$circle_dotted, "PCA-determined eigenvalues: "),
+      cat(crayon::blue(cli::symbol$bullet, "PCA-determined eigenvalues: "),
           crayon::bold(x$n_fac_PCA))
       cat("\n")
     }
 
     if("SMC" %in% eigen_type){
-      cat(crayon::blue(cli::symbol$circle_dotted, "SMC-determined eigenvalues: "),
+      cat(crayon::blue(cli::symbol$bullet, "SMC-determined eigenvalues: "),
           crayon::bold(x$n_fac_SMC))
       cat("\n")
     }
 
     if("EFA" %in% eigen_type){
-      cat(crayon::blue(cli::symbol$circle_dotted, "EFA-determined eigenvalues: "),
+      cat(crayon::blue(cli::symbol$bullet, "EFA-determined eigenvalues: "),
           crayon::bold(x$n_fac_EFA))
       cat("\n")
     }

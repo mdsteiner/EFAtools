@@ -52,8 +52,8 @@ Here are a few examples on how to perform the analyses with the different types 
 # load the package
 library(EFAtools)
 
-# Run all possible factor retention methods
-N_FACTORS(test_models$baseline$cormat, N = 500, method = "ML")
+# Run multiple factor retention methods
+N_FACTORS(test_models$baseline$cormat, N = 500)
 
 # A type SPSS EFA to mimick the SPSS implementation with
 # promax rotation

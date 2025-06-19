@@ -66,7 +66,7 @@ plot.PARALLEL <- function(x, ...) {
                         ylim = c(min(p_eigen), max(p_eigen)))
   graphics::axis(1, seq_len(n_vars))
   graphics::axis(2, p_eigen, las = 1)
-  graphics::mtext("Indicators", side = 1, line = 3, cex = 1.5, padj =-.5)
+  graphics::mtext("Factor", side = 1, line = 3, cex = 1.5, padj =-.5)
   graphics::mtext("Eigenvalues", side = 2, line = 3, cex = 1.5, padj =.5)
 
   if (isTRUE(x_dat)) {
