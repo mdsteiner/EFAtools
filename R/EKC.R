@@ -93,9 +93,6 @@
 #' @examples
 #' # original implementation
 #' EKC(test_models$baseline$cormat, N = 500)
-#'
-#' # original and adapted implementation
-#' EKC(test_models$baseline$cormat, N = 500, type = c("BvA2017", "AM2019"))
 EKC <- function(x, N = NA,
                 use = c("pairwise.complete.obs", "all.obs",
                            "complete.obs", "everything",
@@ -155,7 +152,7 @@ EKC <- function(x, N = NA,
 
   }
 
-  message(cli::col_cyan(cli::symbol$info, " The default implementation of EKC has changed compared to EFAtools version <= 0.5.0 to reflect the original version by Braeken and van Assen (2017). The previous version (which often yields different results from the original) is available with type = 'AM2019'. See details in the help page.\n"))
+  message(cli::col_cyan(cli::symbol$info, " The default implementation of EKC has changed compared to EFAtools version <= 0.5.0 to reflect the original version by Braeken and van Assen (2017). The previous version (which often yields different results from the original) is available with type = 'AM2019' for comparison purposes. See details in the help page.\n"))
 
   n_factors_BvA2017 <- NA
   refs_BvA2017 <- NA

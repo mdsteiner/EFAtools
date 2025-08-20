@@ -107,9 +107,6 @@ The Kaiser-Guttman criterion was defined with the intend that a factor
 \examples{
 # original implementation
 EKC(test_models$baseline$cormat, N = 500)
-
-# original and adapted implementation
-EKC(test_models$baseline$cormat, N = 500, type = c("BvA2017", "AM2019"))
 }
 \seealso{
 Other factor retention criteria: \code{\link{CD}},

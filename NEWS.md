@@ -1,3 +1,9 @@
+# EFAtools 0.6.1
+
+## Changes to Functions
+
+* `EKC()`: Now correctly returns the number of factors based on the first time the eigenvalues drop below the references values.
+
 # EFAtools 0.6.0
 
 ## New Functions
