@@ -172,6 +172,32 @@ print.N_FACTORS <- function(x, ...){
 
   }
 
+  if("MAP" %in% criteria){
+
+      cat(crayon::blue(cli::symbol$bullet,
+                       "MAP original (TR2):: "),
+          crayon::bold(n_fac["nfac_MAP_TR2"]),
+          sep = "")
+      cat("\n")
+      cat(crayon::blue(cli::symbol$bullet,
+                       "MAP revised (TR4): "),
+          crayon::bold(n_fac["nfac_MAP_TR4"]),
+          sep = "")
+      cat("\n")
+
+
+  }
+
+  if("NEST" %in% criteria){
+
+    cat(crayon::blue(cli::symbol$bullet,
+                     "NEST: "),
+        crayon::bold(n_fac["nfac_NEST"]),
+        sep = "")
+    cat("\n")
+
+  }
+
   if("PARALLEL" %in% criteria){
 
     if("PCA" %in% eigen_type_other){
@@ -198,15 +224,7 @@ print.N_FACTORS <- function(x, ...){
 
   }
 
-  if("NEST" %in% criteria){
 
-      cat(crayon::blue(cli::symbol$bullet,
-                       "NEST: "),
-          crayon::bold(n_fac["nfac_NEST"]),
-          sep = "")
-      cat("\n")
-
-  }
 
   if("SMT" %in% criteria){
 

@@ -11,7 +11,7 @@
 #'  data.
 #' @param criteria character. A vector with the factor retention methods to
 #' perform. Possible inputs are: \code{"CD"}, \code{"EKC"}, \code{"HULL"},
-#' \code{"KGC"}, \code{"PARALLEL"}, \code{"NEST"}, \code{"SCREE"}, and \code{"SMT"}
+#' \code{"KGC"}, \code{"MAP"}, \code{"NEST"},\code{"PARALLEL"}, \code{"SCREE"}, and \code{"SMT"}
 #' (see details). By default, a subset of often used, well-performing methods are performed.
 #' @param suitability logical. Whether the data should be checked for suitability
 #' for factor analysis using the Bartlett's test of sphericity and the
@@ -146,8 +146,7 @@
 #' # Use raw data, such that CD can also be performed
 #' nfac_raw <- N_FACTORS(GRiPS_raw, method = "ML")
 #'}
-N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "PARALLEL",
-                                      "NEST"),
+N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARALLEL"),
                       suitability = TRUE, N = NA,
                       use = c("pairwise.complete.obs", "all.obs",
                               "complete.obs", "everything", "na.or.complete"),
@@ -176,7 +175,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "PARALLEL",
   ## Perform argument checks and prepare input
   criteria <- match.arg(criteria, several.ok = TRUE,
                         choices = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
-                                    "SCREE", "SMT", "NEST"))
+                                    "SCREE", "SMT", "NEST", "MAP"))
   suitability <- checkmate::assert_flag(suitability)
   eigen_type_HULL <- match.arg(eigen_type_HULL)
   eigen_type_other <- match.arg(eigen_type_other, several.ok = TRUE,
@@ -232,6 +231,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "PARALLEL",
   ekc_out <- NA
   hull_out <- NA
   kgc_out <- NA
+  map_out <- NA
   parallel_out <- NA
   nest_out <- NA
   scree_out <- NA
@@ -246,6 +246,8 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "PARALLEL",
   nfac_KGC_PCA <- NA
   nfac_KGC_SMC <- NA
   nfac_KGC_EFA <- NA
+  nfac_MAP_TR2 <- NA
+  nfac_MAP_TR4 <- NA
   nfac_PA_PCA <- NA
   nfac_PA_SMC <- NA
   nfac_PA_EFA <- NA
@@ -337,6 +339,22 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "PARALLEL",
     nfac_KGC_PCA <- kgc_out$n_fac_PCA
     nfac_KGC_SMC <- kgc_out$n_fac_SMC
     nfac_KGC_EFA <- kgc_out$n_fac_EFA
+
+  }
+
+  # MAP criterion
+  if("MAP" %in% criteria){
+
+    if (isTRUE(show_progress)) {
+      .show_progress(criteria, "MAP")
+    }
+
+    map_out <- MAP(R, use = use,
+                   cor_method = cor_method)
+
+    nfac_MAP_TR2 <- map_out$n_factors_TR2
+    nfac_MAP_TR4 <- map_out$n_factors_TR4
+
 
   }
 
@@ -437,6 +455,8 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "PARALLEL",
                  nfac_KGC_PCA = nfac_KGC_PCA,
                  nfac_KGC_SMC = nfac_KGC_SMC,
                  nfac_KGC_EFA = nfac_KGC_EFA,
+                 nfac_MAP_TR2 = nfac_MAP_TR2,
+                 nfac_MAP_TR4 = nfac_MAP_TR4,
                  nfac_PA_PCA = nfac_PA_PCA,
                  nfac_PA_SMC = nfac_PA_SMC,
                  nfac_PA_EFA = nfac_PA_EFA,
@@ -451,6 +471,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "PARALLEL",
                   ekc_out = ekc_out,
                   hull_out = hull_out,
                   kgc_out = kgc_out,
+                  map_out = map_out,
                   parallel_out = parallel_out,
                   nest_out = nest_out,
                   scree_out = scree_out,

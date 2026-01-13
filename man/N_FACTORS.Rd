@@ -6,7 +6,7 @@
 \usage{
 N_FACTORS(
   x,
-  criteria = c("CD", "EKC", "HULL", "PARALLEL", "NEST"),
+  criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARALLEL"),
   suitability = TRUE,
   N = NA,
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
@@ -40,7 +40,7 @@ correlations. If \code{"CD"} is included as a criterion, x must be raw
 
 \item{criteria}{character. A vector with the factor retention methods to
 perform. Possible inputs are: \code{"CD"}, \code{"EKC"}, \code{"HULL"},
-\code{"KGC"}, \code{"PARALLEL"}, \code{"NEST"}, \code{"SCREE"}, and \code{"SMT"}
+\code{"KGC"}, \code{"MAP"}, \code{"NEST"},\code{"PARALLEL"}, \code{"SCREE"}, and \code{"SMT"}
 (see details). By default, a subset of often used, well-performing methods are performed.}
 
 \item{suitability}{logical. Whether the data should be checked for suitability
