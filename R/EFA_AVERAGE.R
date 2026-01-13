@@ -153,7 +153,7 @@
 #' To avoid a bias in the averaged factor solutions from problematic solutions,
 #' these are excluded prior to averaging. A solution is deemed problematic if
 #' at least one of the following is true: an error occurred, the model did not
-#' converge, or there is at least one Heywood case (defined as a loading or communality of >= .998).
+#' converge, or there is at least one Heywood case (defined as a communality of >= 1 + .Machine$double.eps).
 #' Information on errors, convergence, and Heywood cases are returned in the
 #' implementations_grid and a summary of these is given when printing the output.
 #' In addition to these, information on the admissibility of the factor solutions
