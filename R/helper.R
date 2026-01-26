@@ -1,3 +1,113 @@
+#' Extract a list object by its name
+#'
+#' Consider a list of named sub-lists. This function extracts, for each sub-list,
+#' the sub-list element that is specified by the user. This function is useful
+#' for extracting results from \code{\link{EFA}} for each permutation run in
+#' \code{\link{EFA_POOLED}}.
+#'
+#' @param alist A list of sub-lists, typically a list of \eqn{m} objects of class
+#' \code{"EFA"}, where \eqn{m} is the number of imputations passed to
+#' \code{\link{EFA_POOLED}}.
+#' @param object String of length 1. The name of the object to extract e.g.
+#' \code{"h2"} or \code{"vars_accounted"}.
+#'
+#' @return A list of length \eqn{m}, with each element containing the extracted
+#' \code{object} for the \eqn{k}th element (\eqn{k = 1,..., m}).
+.extract_list_object <- function(alist, object) {
+  lapply(
+    alist,
+    function(x) {
+      x[[object]]
+    }
+  )
+}
+
+#' Calculate statistics for a list of matrices
+#'
+#' Given a list of matrices, this function calculates user-supplied statistics
+#' (e.g. mean, median) over the matrices. This function is useful for averaging
+#' results from \code{\link{EFA}} (e.g. loadings) over all permutation runs in
+#' \code{\link{EFA_POOLED}}.
+#'
+#' @param alist A list of sub-lists, typically a list of \eqn{m} matrices from
+#' \code{"EFA"}, where \eqn{m} is the number of imputations passed to
+#' \code{\link{EFA_POOLED}}.
+#' @param stat A function, e.g. \code{mean} or \code{sd}.
+#'
+#' @return A matrix with the aggregated results
+#' @examples
+#' alist <- list(
+#'   matrix(1:10, 2),
+#'   matrix(11:20, 2)
+#'   )
+#'
+#' # Have a look at list
+#' alist
+#'
+#' # Mean matrix
+#' .stat_over_list(alist, mean)
+#'
+#' # Same as averaging the two matrices in the list
+#' identical(
+#'   .stat_over_list(alist, mean),
+#'   (alist[[1]] + alist[[2]]) / 2
+#' )
+.stat_over_list <- function(alist, stat) {
+  apply(
+    simplify2array(alist),
+    seq_along(alist),
+    stat
+  )
+}
+
+#' Covert a \code{"LOADINGS"} table to matrix or a matrix to \code{"LOADINGS"}
+#'
+#' The loadings tables returned by \code{\link{EFA}} are of class
+#' \code{"LOADINGS"}, which prevents applying functions on them. This function
+#' allows to change their class to \code{"matrix"}, and to change back to
+#' \code{"LOADINGS"} when done.
+#'
+#' @param x A table of class \code{"matrix"} or \code{"LOADINGS"}.
+#' @param cl A string with the class to change the table to. Should be
+#' \code{"LOADINGS"} or \code{"matrix"}.
+#'
+#' @return A table with the loadings, of class either \code{"LOADINGS"} or
+#' \code{"matrix"}.
+.change_class <- function(x, cl = 'matrix') {
+  class(x) <- cl
+  return(x)
+}
+
+#' Confidence intervals around mean
+#'
+#' This function is used internally by \code{\link{EFA_POOLED}} to calculates
+#' confidence intervals (CIs) around the pooled loadings and pooled interfactor
+#' correlations.
+#'
+#' @param means A matrix with the pooled loadings or pooled interfactor
+#' correlations
+#' @param sds A matrix with the standard deviations for the loadings or
+#' interfactor correlations
+#' @param p Numeric. One minus the confidence level of the CIs. Defaults to 0.05
+#' for 95\% CIs.
+#' @param n Numeric. Typically, the number of permutations \eqn{m}. See
+#' \code{\link{EFA_POOLED}}
+#'
+#' @return A list with the lower and upper CIs.
+.calc_cis <- function(means, sds, p = 0.05, n) {
+  error <- qnorm(1 - p / 2) * sds / sqrt(n)
+
+  lower_ci <- means - error
+  upper_ci <-  means + error
+
+  cis <- list(
+    lower = lower_ci,
+    upper = upper_ci
+  )
+
+  return(cis)
+}
+
 #' Format numbers for print method
 #'
 #' Helper function used in the print method for class LOADINGS and SLLOADINGS.
@@ -1059,5 +1169,4 @@ if(n == 1){
 
   return(do.call(rbind, t_grid_list))
 }
-
 
