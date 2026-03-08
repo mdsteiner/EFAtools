@@ -355,8 +355,8 @@
       fac_names <- c(g_name, col_names)
 
       var_names <- list()
-      for(j in seq_len(length(fac_names)-1)){
-        temp0 <- abs(std_sol[[1]][["lambda"]][, j]) > 0 + .Machine$double.eps * 100
+      for(j in seq_along(col_names)){
+        temp0 <- abs(std_sol[[1]][["lambda"]][, col_names[j]]) > 0 + .Machine$double.eps * 100
         var_names[[j]] <- names(temp0)[temp0]
       }
 

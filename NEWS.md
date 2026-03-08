@@ -1,3 +1,19 @@
+# EFAtools 0.6.1.9000
+
+## New Functions
+
+* `MAP()` computes the Velicer MAP criterion (both TR2 and TR4).
+
+## Changes to Functions
+
+* `N_FACTORS()` can also compute the MAP criterion.
+
+## Bug Fixes
+
+* Fixed a bug in `OMEGA()` that led to incorrect omega, H, and ECV values for `lavaan` bifactor models. Tnanks to Christopher D. King for bug report and suggested fix.
+* Small fix in the documentation of `EFA_AVERAGE()
+
+
 # EFAtools 0.6.1
 
 ## Changes to Functions
