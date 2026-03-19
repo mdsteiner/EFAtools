@@ -53,9 +53,26 @@
 #'   (alist[[1]] + alist[[2]]) / 2
 #' )
 .stat_over_list <- function(alist, stat) {
+  # In what follows:
+  # n: length(alist)
+  # n_row: nrow(alist[[i]]), where i is any list element
+  # n_col: ncol(alist[[i]]), where i is any list element
+
+  # Convert list to array
+  list_to_array <- simplify2array(alist)
+
+  # Apply stat over the array. The 1:2 will apply stat on an array with n_col
+  # elements (run apply(list_to_array, 1:2, function(x) x) to see said array).
+  # Each element is a n x n_row matrix (run
+  # dim(apply(list_to_array, 1:2, function(x) x)) to confirm said array's
+  # dimensions are n x n_row x n_col, i.e. n_col matrices with dimensions
+  # n x n_row). In each matrix, the i-th row is the i-th column of the matrix in
+  # the j-th element of list_to_array.
+  # The apply() operation takes the column sum in each element of this new array
+  # that has n_col elements, and returns the means in a n_row x n_col matrix.
   apply(
-    simplify2array(alist),
-    seq_along(alist),
+    list_to_array,
+    1:2,
     stat
   )
 }
