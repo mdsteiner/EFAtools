@@ -1,5 +1,7 @@
 #' Extract a list object by its name
 #'
+#' @author Andreas Soteriades
+#'
 #' Consider a list of named sub-lists. This function extracts, for each sub-list,
 #' the sub-list element that is specified by the user. This function is useful
 #' for extracting results from \code{\link{EFA}} for each permutation run in
@@ -23,6 +25,8 @@
 }
 
 #' Calculate statistics for a list of matrices
+#'
+#' @author Andreas Soteriades
 #'
 #' Given a list of matrices, this function calculates user-supplied statistics
 #' (e.g. mean, median) over the matrices. This function is useful for averaging
@@ -79,6 +83,8 @@
 
 #' Covert a \code{"LOADINGS"} table to matrix or a matrix to \code{"LOADINGS"}
 #'
+#' @author Andreas Soteriades
+#'
 #' The loadings tables returned by \code{\link{EFA}} are of class
 #' \code{"LOADINGS"}, which prevents applying functions on them. This function
 #' allows to change their class to \code{"matrix"}, and to change back to
@@ -96,6 +102,8 @@
 }
 
 #' Confidence intervals around mean
+#'
+#' @author Andreas Soteriades
 #'
 #' This function is used internally by \code{\link{EFA_POOLED}} to calculate
 #' confidence intervals (CIs) around the pooled loadings and pooled interfactor
