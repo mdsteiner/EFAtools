@@ -83,7 +83,7 @@ res <- MAP(GRiPS_raw)
 res
 
 ## Example with a correlation matrix
-res2 <- MAP(test_models$baseline$cormat, N = 500)
+res2 <- MAP(test_models$baseline$cormat)
 res2
 
 }
@@ -91,6 +91,6 @@ res2
 Velicer, W. F. (1976). Determining the number of components from the matrix of partial correlations.
 \emph{Psychometrika, 41}, 321--327.
 
-Velicer, W. F., Eaton, C. A., \& Fava, J. L. (2000). Construct explication through factor or component analysis: A review and evaluation of alternative procedures for determining the number of factors or components. In R. D. Goffin \& E. Helmes (Eds.), \emph{Problems and Solutions in
+Velicer, W. F., Eaton, C. A., \& Fava, J. L. (2000). Construct explication through factor or component analysis: A review and evaluation of alternative procedures for determining the number of factors or components. In Goffin, R. D. \& Helmes, E. (Eds.), \emph{Problems and Solutions in
 Human Assessment: Honoring Douglas N. Jackson at Seventy} (pp. 41--71). Boston: Kluwer.
 }

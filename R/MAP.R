@@ -77,7 +77,7 @@
 #' res
 #'
 #' ## Example with a correlation matrix
-#' res2 <- MAP(test_models$baseline$cormat, N = 500)
+#' res2 <- MAP(test_models$baseline$cormat)
 #' res2
 #'
 #' @export
