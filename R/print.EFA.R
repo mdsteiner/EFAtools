@@ -171,4 +171,33 @@ print.EFA <- function(x, cutoff = .3, digits = 3, max_name_length = 10, ...) {
 
   }
 
+  cat("\n")
+  cat(cli::rule(left = crayon::bold("|Residuals| > .1"), col = "blue"))
+  cat("\n\n")
+  cat("Inspect the residual matrix for details.")
+  cat("\n\n")
+
+  if (any(abs(x$residuals) > .1)) {
+    # get large residuals with positions
+    idx <- which(upper.tri(x$residuals) & abs(x$residuals) > 0.1, arr.ind = TRUE)
+    large_residuals <- stats::setNames(x$residuals[idx],
+                                paste("[", idx[,1], ", ", idx[,2], "], ",
+                                      colnames(x$residuals)[idx[,1]], "~~",
+                                      colnames(x$residuals)[idx[,2]], sep = ""))
+
+
+
+    for (i in seq_along(large_residuals)) {
+      cat(cli::symbol$bullet, " ", names(large_residuals[i]), ": ",
+          round(large_residuals[i], 3), "\n", sep = "")
+      }
+
+
+
+  } else {
+
+    cat("No absolute residuals > .1 occured.")
+  }
+  cat("\n")
+
 }

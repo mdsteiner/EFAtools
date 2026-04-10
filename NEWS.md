@@ -7,6 +7,7 @@
 ## Changes to Functions
 
 * `N_FACTORS()` can also compute the MAP criterion.
+* `EFA()` returns and prints residuals.
 
 ## Bug Fixes
 

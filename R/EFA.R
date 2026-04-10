@@ -210,6 +210,7 @@
 #' For PAF, only the CAF and dfs are returned.}
 #' \item{model_implied_R}{The model implied correlation
 #' matrix.}
+#' \item{residuals}{Residual correlations, i.e., orig_R - model_implied_R}
 #' \item{rot_loadings}{Loading matrix containing the final rotated loadings
 #' (pattern matrix).}
 #' \item{Phi}{The factor intercorrelations (only for oblique rotations).}
@@ -311,7 +312,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   checkmate::assert_count(max_iter, na.ok = TRUE)
   checkmate::assert_choice(init_comm, c("smc", "mac", "unity", NA))
   checkmate::assert_number(criterion, lower = 0, upper = 1, na.ok = TRUE)
-  checkmate::assert_choice(criterion_type, c("max_individual", "sums", "sum", NA))
+  checkmate::assert_choice(criterion_type, c("max_individual", "sum", NA))
   checkmate::assert_flag(abs_eigen, na.ok = TRUE)
   checkmate::assert_number(k, na.ok = TRUE)
   checkmate::assert_choice(varimax_type, c("svd", "kaiser", NA))

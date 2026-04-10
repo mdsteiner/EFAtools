@@ -69,7 +69,8 @@
     unrot_loadings = L,
     vars_accounted = vars_accounted,
     fit_indices = fit_ind,
-    model_implied_R = model_implied_R
+    model_implied_R = model_implied_R,
+    residuals = orig_R - model_implied_R
   )
 
   output
