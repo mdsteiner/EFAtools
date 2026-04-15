@@ -7,12 +7,15 @@
 ## Changes to Functions
 
 * `N_FACTORS()` can also compute the MAP criterion.
-* `EFA()` returns and prints residuals.
+* `EFA()`:
+  * Now returns and prints residuals.
+  * Calculates and prints RMSR.
+  * Can calculate bootstrap standard errors and CIs of parameters and fit indices.
 
 ## Bug Fixes
 
 * Fixed a bug in `OMEGA()` that led to incorrect omega, H, and ECV values for `lavaan` bifactor models. Tnanks to Christopher D. King for bug report and suggested fix.
-* Small fix in the documentation of `EFA_AVERAGE()
+* Small fix in the documentation of `EFA_AVERAGE()`
 
 
 # EFAtools 0.6.1

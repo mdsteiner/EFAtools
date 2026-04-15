@@ -200,23 +200,33 @@
 #' @param digits numeric. Number of digits after the comma to keep.
 #' @param print_zero logical. Whether, if a number is between [-1, 1], the
 #'  zero should be omitted or printed (default is FALSE, i.e. omit zeros).
+#' @param pad logical. Whether, if a number starts with a 0 and the 0 is not printed
+#'  a white-space should be added.
 #'
 #' @return A formated number
-.numformat <- function(x, digits = 2, print_zero = FALSE) {
+.numformat <- function(x, digits = 2, print_zero = FALSE,
+                       pad = TRUE) {
 
   if (isFALSE(print_zero)) {
 
     ncode <- paste0("%.", digits, "f")
     x <- sub("^(-?)0.", "\\1.", sprintf(ncode, x))
-    x <- stringr::str_pad(x, digits + 2, "left")
+    if (isTRUE(pad)) {
+      x <- stringr::str_pad(x, digits + 2, "left")
+    }
+
 
   } else {
 
     ncode <- paste0("%.", digits, "f")
     x <- sprintf(ncode, x)
-    x <- stringr::str_pad(x, digits + 3, "left")
+
+    if (isTRUE(pad)) {
+      x <- stringr::str_pad(x, digits + 3, "left")
+    }
 
   }
+  x
 
 }
 
@@ -524,6 +534,9 @@
     CAF <- 1 - delta_hat_KMO
   }
 
+  ### compute RMSR
+  off <- delta_hat[lower.tri(delta_hat, diag = FALSE)]
+  RMSR <- sqrt(mean(off^2, na.rm = TRUE))
 
   if (method != "PAF" && !is.na(N) && df >=0) {
 
@@ -611,6 +624,7 @@
     df = df,
     p_chi = p_chi,
     CAF = CAF,
+    RMSR = RMSR,
     CFI = CFI,
     RMSEA = RMSEA,
     RMSEA_LB = RMSEA_LB,
@@ -1036,7 +1050,6 @@ if(n == 1){
 }
 
 
-
 ### reorder arrays according to factor congruence
 .array_reorder <- function(vars_accounted, L, L_corres, phi, extract_phi, n_factors) {
 
@@ -1053,21 +1066,20 @@ if(n == 1){
       # factor order for Ln
       factor_order <- apply(abs(congruence), 1, which.max)
 
-      # obtain signs to reflect signs of Ln if necessary
-      factor_sign <- sapply(seq_len(n_factors),
-                            function(ll, congruence, factor_order){
-                              sign(congruence[ll, factor_order[ll]])
-                            }, congruence = congruence,
-                            factor_order = factor_order)
-
-      factor_sign <- rep(factor_sign, each = nrow(L1))
-
       # reorder
-      L[,, efa_i] <- Ln[, factor_order] * factor_sign
+      Ln <- Ln[, factor_order]
       L_corres[,, efa_i] <- L_corres[,, efa_i][, factor_order]
       vars_accounted[,, efa_i] <- vars_accounted[,, efa_i][, factor_order]
+
+      # get signs
+      factor_sign <- diag(sign(diag(crossprod(L1, Ln))))
+
+      # switch signs where necessary
+      L[,, efa_i] <- Ln %*% factor_sign
+
       if (isTRUE(extract_phi)) {
-        phi[,, efa_i] <- phi[,, efa_i][factor_order, factor_order]
+        phi[,, efa_i] <- factor_sign %*% phi[,, efa_i][factor_order, factor_order] %*% factor_sign
+
       }
 
     }
@@ -1248,4 +1260,60 @@ if(n == 1){
 
   return(do.call(rbind, t_grid_list))
 }
+
+
+### Align solution according to factor congruence
+
+.align_solution <- function(L_target, L, Phi = NULL) {
+
+  m <- ncol(L_target)
+
+  # reorder factors according to tuckers congruence coefficient
+  # get Tucker's congruence coefficients
+  congruence <- .factor_congruence(L_target, L, skip_checks = TRUE)
+
+  if (m > 1) {
+
+    # factor order for L
+    factor_order <- apply(abs(congruence), 1, which.max)
+
+    # reorder
+    L <- L[, factor_order, drop = FALSE]
+
+    # get signs
+    factor_sign <- diag(sign(diag(crossprod(L, L_target))), nrow = m, ncol = m)
+
+    # switch signs where necessary
+    L <- L %*% factor_sign
+
+    if (!is.null(Phi)) {
+
+      Phi <- factor_sign %*% Phi[factor_order, factor_order, drop = FALSE] %*% factor_sign
+    }
+
+  } else {
+    # switch signs where necessary
+    factor_sign <- sign(congruence)
+    L <- L %*% factor_sign
+  }
+
+
+  list(
+    loadings = L,
+    Phi = Phi
+  )
+
+}
+
+
+.paste_gof_ci <- function(indices, index) {
+  paste0(" [",
+         paste0(.numformat(indices[, index],
+                           pad = FALSE),
+                collapse = ", "),
+         "]")
+}
+
+
+
 

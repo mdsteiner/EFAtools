@@ -30,6 +30,9 @@ print.EFA <- function(x, cutoff = .3, digits = 3, max_name_length = 10, ...) {
   N <- x$settings$N
   fit <- x$fit_indices
   h2 <- x$h2
+  se <- x$settings$se
+  np_boot <- se == "np-boot"
+  ci <- x$settings$ci
 
   cat("\n")
   cat("EFA performed with type = '", crayon::bold(type), "', method = '",
@@ -127,19 +130,46 @@ print.EFA <- function(x, cutoff = .3, digits = 3, max_name_length = 10, ...) {
 
   }
 
+
+  if (isTRUE(np_boot)) {
+    ci <- paste0(" [", ci * 100, "% bootstrap-CI]")
+    fitind_ci <- x$boot.CI$fit_indices
+    b_boot <- x$settings$b_boot
+    caf_ci <- .paste_gof_ci(fitind_ci, "CAF")
+    rmsr_ci <- .paste_gof_ci(fitind_ci, "RMSR")
+  } else {
+    ci <- ""
+    caf_ci <- ""
+    rmsr_ci <- ""
+  }
+
   if(method == "PAF" || is.na(N)){
 
     cat("\n")
     cat(cli::rule(left = crayon::bold("Model Fit"), col = "blue"))
     cat("\n")
     cat("\n")
-    cat(crayon::blue("CAF:"),
-        .numformat(fit$CAF), "\n", sep = "")
+    cat(crayon::blue("CAF", ci, ":"),
+        .numformat(fit$CAF), caf_ci, "\n", sep = "")
+    cat(crayon::blue("RMSR", ci, ":"),
+        .numformat(fit$RMSR), rmsr_ci, "\n", sep = "")
     cat(crayon::blue("df: "),
         .numformat(fit$df, 0, print_zero = TRUE), "\n", sep = "")
 
 
   } else {
+
+    if (isTRUE(np_boot)) {
+      cfi_ci <- .paste_gof_ci(fitind_ci, "CFI")
+      rmsea_ci <- .paste_gof_ci(fitind_ci, "RMSEA")
+      aic_ci <- .paste_gof_ci(fitind_ci, "AIC")
+      bic_ci <- .paste_gof_ci(fitind_ci, "BIC")
+    } else {
+      cfi_ci <- ""
+      rmsea_ci <- ""
+      aic_ci <- ""
+      bic_ci <- ""
+    }
 
     cat("\n")
     cat(cli::rule(left = crayon::bold("Model Fit"), col = "blue"))
@@ -153,28 +183,33 @@ print.EFA <- function(x, cutoff = .3, digits = 3, max_name_length = 10, ...) {
                paste(crayon::blue(ifelse(fit$p_chi < 1, " =", " = ")),
                      .numformat(fit$p_chi, 3), sep = "")),
                "\n", sep = "")
-    cat(crayon::blue(ifelse(fit$CFI < 1, "CFI =", "CFI = ")),
-        .numformat(fit$CFI), "\n", sep = "")
-    cat(crayon::blue(ifelse(fit$RMSEA < 1, "RMSEA [90% CI] =",
-                            "RMSEA [90% CI] = ")),
+    cat(crayon::blue("CFI", ci, ": "),
+        .numformat(fit$CFI, pad = FALSE), cfi_ci, "\n", sep = "")
+    cat(crayon::blue("RMSEA [90% CI]", ci, ": "),
         paste0(.numformat(fit$RMSEA), " [",
                ifelse(fit$RMSEA_LB < 1, substr(.numformat(fit$RMSEA_LB), 2, 4),
                       .numformat(fit$RMSEA_LB)),
                ifelse(fit$RMSEA_UB < 1, ";", "; "),
-               .numformat(fit$RMSEA_UB), "]", sep = ""), "\n", sep = "")
-    cat(crayon::blue("AIC = "),
-        .numformat(fit$AIC, print_zero = TRUE), "\n", sep = "")
-    cat(crayon::blue("BIC = "),
-        .numformat(fit$BIC, print_zero = TRUE), "\n", sep = "")
-    cat(crayon::blue("CAF ="),
-        .numformat(fit$CAF), "\n", sep = "")
+               .numformat(fit$RMSEA_UB), "]", sep = ""), rmsea_ci, "\n", sep = "")
+    cat(crayon::blue("AIC", ci, ": "),
+        .numformat(fit$AIC, print_zero = TRUE), aic_ci, "\n", sep = "")
+    cat(crayon::blue("BIC", ci, ": "),
+        .numformat(fit$BIC, print_zero = TRUE), bic_ci, "\n", sep = "")
+    cat(crayon::blue("CAF", ci, ":"),
+        .numformat(fit$CAF), caf_ci, "\n", sep = "")
+    cat(crayon::blue("RMSR", ci, ":"),
+        .numformat(fit$RMSR), rmsr_ci, "\n", sep = "")
 
+
+  }
+
+  if (isTRUE(np_boot)) {
+    cat("\n", crayon::italic("Note: "), "Bootstrap CIs based on ",
+        b_boot, " Bootstrap samples.\n", sep = "")
   }
 
   cat("\n")
   cat(cli::rule(left = crayon::bold("|Residuals| > .1"), col = "blue"))
-  cat("\n\n")
-  cat("Inspect the residual matrix for details.")
   cat("\n\n")
 
   if (any(abs(x$residuals) > .1)) {
@@ -198,6 +233,8 @@ print.EFA <- function(x, cutoff = .3, digits = 3, max_name_length = 10, ...) {
 
     cat("No absolute residuals > .1 occured.")
   }
+  cat("\n\n")
+  cat("Inspect the residual matrix for details.")
   cat("\n")
 
 }

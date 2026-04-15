@@ -28,6 +28,7 @@ EFA(
   rotation = c("none", "varimax", "equamax", "quartimax", "geominT", "bentlerT",
     "bifactorT", "promax", "oblimin", "quartimin", "simplimax", "bentlerQ", "geominQ",
     "bifactorQ"),
+  se = c("none", "np-boot"),
   type = c("EFAtools", "psych", "SPSS", "none"),
   max_iter = NA,
   init_comm = NA,
@@ -44,6 +45,8 @@ EFA(
   order_type = NA,
   start_method = "psych",
   cor_method = c("pearson", "spearman", "kendall"),
+  b_boot = 1000,
+  ci = 0.95,
   ...
 )
 }
@@ -66,6 +69,10 @@ respectively, to fit the EFA.}
 an orthogonal rotation ("varimax", "equamax", "quartimax", "geominT",
 "bentlerT", or "bifactorT"), or an oblique rotation ("promax", "oblimin",
 "quartimin", "simplimax", "bentlerQ", "geominQ", or "bifactorQ").}
+
+\item{se}{character. Whether and how standard errors should be computed.
+Currently, only "np-boot" for non-parametric bootstrap is available
+and needs raw data to work. Default is "none".}
 
 \item{type}{character. If one of "EFAtools" (default), "psych", or "SPSS" is
 used, and the following arguments with default NA are left with
@@ -147,6 +154,11 @@ Solutions are very similar.}
 \item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor}}.
 Default is "pearson".}
 
+\item{b_boot}{numeric. The number of bootstrap samples to draw. Default is 500.}
+
+\item{ci}{numeric. The confidence interval to create from the bootstrap samples.
+Must be between 0 and 1. Default ist .95 for 95\% CIs.}
+
 \item{...}{Additional arguments passed to rotation functions from the \code{GPArotation} package (e.g., \code{maxit} for maximum number of iterations).}
 }
 \value{
@@ -185,6 +197,8 @@ matrix.}
 loadings. Based on rotated loadings and, for oblique rotations, the factor
 intercorrelations.}
 \item{settings}{A list of the settings used.}
+\item{boot.SE}{A list bootstrap standard errors for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, only if rotated), and fit indices. Only returned, if \code{se = "np-boot"}.}
+\item{boot.CI}{A list bootstrap confidence intervals of width \code{ci} for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, if obliquely rotated), and fit indices. Only returned, if \code{se = "np-boot"}.}
 }
 \description{
 This function does an EFA with either \code{PAF}, \code{ML},

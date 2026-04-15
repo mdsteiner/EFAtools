@@ -21,6 +21,9 @@
 #' an orthogonal rotation ("varimax", "equamax", "quartimax", "geominT",
 #' "bentlerT", or "bifactorT"), or an oblique rotation ("promax", "oblimin",
 #' "quartimin", "simplimax", "bentlerQ", "geominQ", or "bifactorQ").
+#' @param se character. Whether and how standard errors should be computed.
+#'  Currently, only "np-boot" for non-parametric bootstrap is available
+#'  and needs raw data to work. Default is "none".
 #' @param type character. If one of "EFAtools" (default), "psych", or "SPSS" is
 #'  used, and the following arguments with default NA are left with
 #'  NA, these implementations are executed according to the respective program
@@ -86,6 +89,9 @@
 #' starting values specified in \link[psych:fa]{psych::fa}. "factanal" takes the
 #' starting values specified in the \link[stats:factanal]{stats::factanal} function.
 #' Solutions are very similar.
+#' @param b_boot numeric. The number of bootstrap samples to draw. Default is 500.
+#' @param ci numeric. The confidence interval to create from the bootstrap samples.
+#'  Must be between 0 and 1. Default ist .95 for 95\% CIs.
 #' @param ... Additional arguments passed to rotation functions from the \code{GPArotation} package (e.g., \code{maxit} for maximum number of iterations).
 #'
 #' @details There are two main ways to use this function. The easiest way is to
@@ -220,6 +226,8 @@
 #' loadings. Based on rotated loadings and, for oblique rotations, the factor
 #' intercorrelations.}
 #' \item{settings}{A list of the settings used.}
+#' \item{boot.SE}{A list bootstrap standard errors for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, only if rotated), and fit indices. Only returned, if \code{se = "np-boot"}.}
+#' \item{boot.CI}{A list bootstrap confidence intervals of width \code{ci} for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, if obliquely rotated), and fit indices. Only returned, if \code{se = "np-boot"}.}
 #'
 #' @source Grieder, S., & Steiner, M.D. (2020). Algorithmic Jingle Jungle:
 #' A Comparison of Implementations of Principal Axis Factoring and Promax Rotation
@@ -278,6 +286,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                              "bentlerT", "bifactorT", "promax", "oblimin",
                              "quartimin", "simplimax", "bentlerQ", "geominQ",
                              "bifactorQ"),
+                se = c("none", "np-boot"),
                 type = c("EFAtools", "psych", "SPSS", "none"), max_iter = NA,
                 init_comm = NA, criterion = NA, criterion_type = NA,
                 abs_eigen = NA, use = c("pairwise.complete.obs", "all.obs",
@@ -287,6 +296,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                 k = NA, normalize = TRUE, P_type = NA, precision = 1e-5,
                 order_type = NA, start_method = "psych",
                 cor_method = c("pearson", "spearman", "kendall"),
+                b_boot = 1000, ci = .95,
                 ...) {
 
   # Perform argument checks
@@ -298,6 +308,8 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
   method <- match.arg(method)
   rotation <- match.arg(rotation)
+  se <- match.arg(se)
+  np_boot <- se == "np-boot"
   use <- match.arg(use)
   cor_method <- match.arg(cor_method)
   type <- match.arg(type)
@@ -320,11 +332,24 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   checkmate::assert_choice(P_type, c("unnorm", "norm", NA))
   checkmate::assert_number(precision, lower = 0, upper = 1)
   checkmate::assert_choice(order_type, c("eigen", "ss_factors", NA))
+  checkmate::assert_integerish(b_boot, len = 1, any.missing = FALSE)
+  checkmate::assert_number(ci, lower = 0, upper = 1)
 
   # Check if it is a correlation matrix
   if(.is_cormat(x)){
 
       R <- x
+
+      if (isTRUE(np_boot)) {
+        cli::cli_warn(
+          c("Cannot compute bootstrap standard errors from correlation matrix.",
+          "x" = "You've supplied {.var se} = {.val {se}}, but {.var x} is a correlation matrix.",
+          "i" = "Setting {.var se} to {.val none}. Rerun with raw data to calculate bootstrap SEs.")
+        )
+      }
+
+      np_boot <- FALSE
+      se <- "none"
 
   } else {
 
@@ -337,6 +362,22 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
     R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)
     N <- nrow(x)
+
+    if (isTRUE(np_boot)) {
+      m <- ncol(R)
+      rows <- 1:N
+
+      # create bootstrap samples and from these, correlation matrices
+      R_boot_array <- array(NA_real_, c(m, m, b_boot), dimnames = list(colnames(x),
+                                                                 colnames(x),
+                                                                 NULL))
+
+      for (boot_i in seq_len(b_boot)) {
+        ind <- sample(rows, size = b_boot, replace = TRUE)
+        R_boot_array[,, boot_i] <- stats::cor(x[ind,], use = use, method = cor_method)
+      }
+
+    }
 
   }
 
@@ -383,6 +424,18 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                  criterion = criterion, criterion_type = criterion_type,
                  abs_eigen = abs_eigen)
 
+
+  if (isTRUE(np_boot)) {
+
+    boot_fits <- .boot_fun(R_boot_array, b_boot, .PAF,
+                           # .PAF arguments:
+                           n_factors = n_factors, N = N, type = type,
+                           max_iter = max_iter, init_comm = init_comm,
+                           criterion = criterion, criterion_type = criterion_type,
+                           abs_eigen = abs_eigen)
+
+  }
+
   } else if (method == "ML") {
 
     if (type == "SPSS") {
@@ -399,6 +452,15 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
     fit_out <- .ML(R, n_factors = n_factors, N = N, start_method = start_method)
 
+    if (isTRUE(np_boot)) {
+
+      boot_fits <- .boot_fun(R_boot_array, b_boot, .ML,
+                             # .ML arguments:
+                             n_factors = n_factors, N = N,
+                             start_method = start_method)
+
+    }
+
   } else if (method == "ULS") {
 
     if (type == "SPSS") {
@@ -414,6 +476,14 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
     }
 
     fit_out <- .ULS(R, n_factors = n_factors, N = N)
+
+    if (isTRUE(np_boot)) {
+
+      boot_fits <- .boot_fun(R_boot_array, b_boot, .ULS,
+                             # .ULS arguments:
+                             n_factors = n_factors, N = N)
+
+    }
   }
 
   # rotate factor analysis results
@@ -423,11 +493,31 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                       precision = precision, order_type = order_type,
                       varimax_type = varimax_type, k = k)
 
+    if (isTRUE(np_boot)) {
+
+      boot_rot <- .boot_fun(boot_fits, b_boot, .PROMAX,
+                             # .PROMAX arguments:
+                            type = type, normalize = normalize, P_type = P_type,
+                            precision = precision, order_type = order_type,
+                            varimax_type = varimax_type, k = k)
+
+    }
+
   } else if (rotation == "varimax") {
 
     rot_out <- .VARIMAX(fit_out, type = type, normalize = normalize,
                        precision = precision, varimax_type = varimax_type,
                        order_type = order_type)
+
+    if (isTRUE(np_boot)) {
+
+      boot_rot <- .boot_fun(boot_fits, b_boot, .VARIMAX,
+                            # .VARIMAX arguments:
+                            type = type, normalize = normalize,
+                            precision = precision, varimax_type = varimax_type,
+                            order_type = order_type)
+
+    }
 
   } else if (rotation == "quartimax" || rotation == "equamax" ||
              rotation == "bentlerT" || rotation == "geominT" ||
@@ -443,6 +533,16 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                            normalize = normalize, precision = precision,
                            order_type = order_type, ...)
 
+    if (isTRUE(np_boot)) {
+
+      boot_rot <- .boot_fun(boot_fits, b_boot, .ROTATE_ORTH,
+                            # .ROTATE_ORTH arguments:
+                            type = type, rotation = rotation,
+                            normalize = normalize, precision = precision,
+                            order_type = order_type, ...)
+
+    }
+
   } else if (rotation == "oblimin" || rotation == "quartimin" ||
              rotation == "simplimax" || rotation == "bentlerQ" ||
              rotation == "geominQ" || rotation == "bifactorQ") {
@@ -457,9 +557,26 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                            normalize = normalize, precision = precision,
                            order_type = order_type, k = k, ...)
 
+    if (isTRUE(np_boot)) {
+
+      boot_rot <- .boot_fun(boot_fits, b_boot, .ROTATE_OBLQ,
+                            # .ROTATE_ORTH arguments:
+                            type = type, rotation = rotation,
+                            normalize = normalize, precision = precision,
+                            order_type = order_type, k = k, ...)
+
+    }
+
   } else {
 
     output <- fit_out
+
+    if (isTRUE(np_boot)) {
+
+      boot_rot <- NULL
+      rot_out <- NULL
+
+    }
 
   }
 
@@ -479,8 +596,6 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
     }
 
-
-
   }
 
   # Add settings used to output
@@ -491,7 +606,10 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
     n_factors = n_factors,
     N = N,
     use = use,
-    cor_method = cor_method
+    cor_method = cor_method,
+    se = se,
+    b_boot = b_boot,
+    ci = ci
   )
 
   if(method == "ULS" & rotation == "none"){
@@ -507,8 +625,179 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
   }
 
+  if (isTRUE(np_boot)) {
+    boot_out <- .boot_se_ci(fit_out, boot_fits, rot_out, boot_rot, ci, b_boot)
+    output <- c(output, boot = boot_out)
+  }
+
   class(output) <- "EFA"
 
   return(output)
 
+}
+
+
+
+.boot_fun <- function(x, b, call_fun, ...) {
+
+  boot_list <- list()
+  if (inherits(x, "array")) {
+    for (boot_i in seq_len(b)) {
+
+      # save complete output, as this has to be passed to rotation method
+      boot_list[[boot_i]] <- call_fun(x[,, boot_i], ...)
+    }
+  } else if (inherits(x, "list")) {
+    for (boot_i in seq_len(b)) {
+
+      # save complete output, as this has to be passed to rotation method
+      boot_list[[boot_i]] <- call_fun(x[[boot_i]], ...)
+    }
+  }
+
+  boot_list
+
+}
+
+.boot_se_ci <- function(fit, boot_fit, rot, boot_rot, ci, b) {
+
+  l_ci <- (1 - ci) / 2
+  ps <- c(l_ci, ci + l_ci)
+
+
+  ### calculate stats for unrot loadings and gof measures
+  L_unrot <- fit$unrot_loadings
+  L_unrot_boot <- array(NA_real_, c(nrow(L_unrot), ncol(L_unrot), b),
+                        dimnames = list(rownames(L_unrot), colnames(L_unrot),
+                                        NULL))
+  gof_boot <- matrix(NA_real_, ncol = length(fit$fit_indices), nrow = b)
+
+  for (boot_i in seq_len(b)) {
+
+    # save aligned loading matrix
+    L_unrot_boot[,, boot_i] <- .align_solution(L_unrot, boot_fit[[boot_i]]$unrot_loadings)$loadings
+    gof_boot[boot_i, ] <- unlist(boot_fit[[boot_i]]$fit_indices)
+
+  }
+
+  # se = sd of bootstrap replications (Zhang, 2014, Estimating Standard Errors
+  # in Exploratory Factor Analysis)
+  L_unrot_se_ci <- .array_se_ci(L_unrot_boot, ps)
+  gof_se_ci <- .array_se_ci(gof_boot, ps, M = 2)
+  names(gof_se_ci$se) <- names(fit$fit_indices)
+  colnames(gof_se_ci$ci) <- names(fit$fit_indices)
+
+  if (!is.null(rot) && !is.null(boot_rot)) {
+
+    if ("Phi" %in% names(rot)){
+      # only oblique rotations have Phi and Structure matrices
+      L_rot <- rot$rot_loadings
+      Phi_rot <- rot$Phi
+      Structure_rot <- rot$Structure
+
+      L_rot_boot <- array(NA_real_, c(nrow(L_rot), ncol(L_rot), b),
+                          dimnames = list(rownames(L_rot), colnames(L_rot),
+                                          NULL))
+      Phi_rot_boot <- array(NA_real_, c(nrow(Phi_rot), ncol(Phi_rot), b),
+                            dimnames = list(rownames(Phi_rot), colnames(Phi_rot),
+                                            NULL))
+      Structure_boot <- array(NA_real_, c(nrow(Structure_rot), ncol(Structure_rot), b),
+                              dimnames = list(rownames(Structure_rot), colnames(Structure_rot),
+                                              NULL))
+
+
+      for (boot_i in seq_len(b)) {
+
+        rot_i <- boot_rot[[boot_i]]
+        # save aligned loading matrix
+        aligned_i <- .align_solution(L_rot, rot_i$rot_loadings, rot_i$Phi)
+        L_rot_boot[,, boot_i] <- aligned_i$loadings
+        Phi_rot_boot[,, boot_i] <- aligned_i$Phi
+        Structure_boot[,, boot_i] <- .align_solution(Structure_rot, rot_i$Structure)$loadings
+
+      }
+
+      L_rot_se_ci <- .array_se_ci(L_rot_boot, ps)
+      Phi_rot_se_ci <- .array_se_ci(Phi_rot_boot, ps)
+      Structure_se_ci <- .array_se_ci(Structure_boot, ps)
+
+      out <- list(
+        SE = list(
+          unrot_loadings = L_unrot_se_ci$se,
+          rot_loadings = L_rot_se_ci$se,
+          Phi = Phi_rot_se_ci$se,
+          Structure = Structure_se_ci$se,
+          fit_indices = gof_se_ci$se
+        ),
+        CI = list(
+          unrot_loadings = L_unrot_se_ci$ci,
+          rot_loadings = L_rot_se_ci$ci,
+          Phi = Phi_rot_se_ci$ci,
+          Structure = Structure_se_ci$ci,
+          fit_indices = gof_se_ci$ci
+        )
+      )
+
+    } else {
+
+      # orthogonal rotations have only rot_loadings matrix
+      L_rot <- rot$rot_loadings
+
+      L_rot_boot <- array(NA_real_, c(nrow(L_rot), ncol(L_rot), b),
+                          dimnames = list(rownames(L_rot), colnames(L_rot),
+                                          NULL))
+
+
+      for (boot_i in seq_len(b)) {
+
+        rot_i <- boot_rot[[boot_i]]
+        # save aligned loading matrix
+        aligned_i <- .align_solution(L_rot, rot_i$rot_loadings)
+        L_rot_boot[,, boot_i] <- aligned_i$loadings
+
+      }
+
+      L_rot_se_ci <- .array_se_ci(L_rot_boot, ps)
+
+      out <- list(
+        SE = list(
+          unrot_loadings = L_unrot_se_ci$se,
+          rot_loadings = L_rot_se_ci$se,
+          fit_indices = gof_se_ci$se
+        ),
+        CI = list(
+          unrot_loadings = L_unrot_se_ci$ci,
+          rot_loadings = L_rot_se_ci$ci,
+          fit_indices = gof_se_ci$ci
+        )
+      )
+
+    }
+
+
+  } else {
+    out <- list(
+      SE = list(
+        unrot_loadings = L_unrot_se_ci$se,
+        fit_indices = gof_se_ci$se
+      ),
+      CI = list(
+        unrot_loadings = L_unrot_se_ci$ci,
+        fit_indices = gof_se_ci$ci
+      )
+    )
+  }
+
+  out
+
+}
+
+.array_se_ci <- function(x, probs, M = c(1, 2)) {
+  se <- apply(x, M, stats::sd, na.rm = TRUE)
+  ci <- apply(x, M, stats::quantile, probs = probs, na.rm = TRUE)
+
+  list(
+    se = se,
+    ci = ci
+  )
 }

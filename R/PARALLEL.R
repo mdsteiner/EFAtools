@@ -193,22 +193,26 @@ PARALLEL <- function(x = NULL,
       }
 
       # Check if correlation matrix is positive definite
-      if(any(eigen(R)$values <= .Machine$double.eps^.6)){
+      eigvals_R <- eigen(R, symmetric = TRUE,
+                         only.values = TRUE)$values
+      if(any(eigvals_R <= .Machine$double.eps^.6)){
 
         R <- psych::cor.smooth(R)
+        R_i <- solve(R)
+        eigvals_R <- eigen(R, symmetric = TRUE,
+                           only.values = TRUE)$values
 
       }
 
       if ("PCA" %in% eigen_type) {
-        eigvals_real_PCA <- matrix(eigen(R, symmetric = TRUE,
-                                     only.values = TRUE)$values, ncol = 1)
+        eigvals_real_PCA <- matrix(eigvals_R, ncol = 1)
         colnames(eigvals_real_PCA) <- "Real Eigenvalues"
       }
 
       if ("SMC" %in% eigen_type) {
         # compute smcs
         R_SMC <- R
-        diag(R_SMC) <- 1 - (1 / diag(solve(R_SMC)))
+        diag(R_SMC) <- 1 - (1 / diag(R_i))
         eigvals_real_SMC <- matrix(eigen(R_SMC, symmetric = TRUE,
                                      only.values = TRUE)$values, ncol = 1)
         colnames(eigvals_real_SMC) <- "Real Eigenvalues"

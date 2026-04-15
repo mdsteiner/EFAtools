@@ -85,14 +85,14 @@ test_that("original correlation matrix and eigenvalues are correct", {
 })
 
 test_that("fit indices are returned correctly", {
-  expect_output(str(paf_efatools$fit_indices), "List of 14")
-  expect_output(str(paf_psych$fit_indices), "List of 14")
-  expect_output(str(paf_spss$fit_indices), "List of 14")
-  expect_output(str(paf_none$fit_indices), "List of 14")
-  expect_output(str(paf_mac_t$fit_indices), "List of 14")
-  expect_output(str(paf_mac_f$fit_indices), "List of 14")
-  expect_output(str(paf_F1_t$fit_indices), "List of 14")
-  expect_output(str(paf_F1_f$fit_indices), "List of 14")
+  expect_output(str(paf_efatools$fit_indices), "List of 15")
+  expect_output(str(paf_psych$fit_indices), "List of 15")
+  expect_output(str(paf_spss$fit_indices), "List of 15")
+  expect_output(str(paf_none$fit_indices), "List of 15")
+  expect_output(str(paf_mac_t$fit_indices), "List of 15")
+  expect_output(str(paf_mac_f$fit_indices), "List of 15")
+  expect_output(str(paf_F1_t$fit_indices), "List of 15")
+  expect_output(str(paf_F1_f$fit_indices), "List of 15")
 
   expect_equal(paf_efatools$fit_indices[c("chi", "p_chi", "CFI", "RMSEA",
                                           "RMSEA_LB", "RMSEA_UB", "AIC", "BIC",

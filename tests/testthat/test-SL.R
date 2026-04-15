@@ -105,17 +105,17 @@ test_that("sl solution is correct", {
 
 test_that("settings are returned correctly", {
   expect_named(SL_EFAtools$settings, c("method", "rotation", "type", "n_factors",
-                                   "N", "use", "cor_method", "max_iter",
+                                   "N", "use", "cor_method", "se", "b_boot", "ci", "max_iter",
                                    "init_comm", "criterion", "criterion_type",
                                    "abs_eigen"))
   expect_named(SL_SPSS$settings, c("method", "rotation", "type", "n_factors",
-                                   "N", "use", "cor_method"))
+                                   "N", "use", "cor_method", "se", "b_boot", "ci"))
   expect_named(SL_psych$settings, c("method", "rotation", "type", "n_factors",
-                                       "N", "use", "cor_method", "max_iter",
+                                       "N", "use", "cor_method", "se", "b_boot", "ci", "max_iter",
                                        "init_comm", "criterion", "criterion_type",
                                        "abs_eigen"))
   expect_named(SL_flex$settings, c("method", "rotation", "type", "n_factors",
-                                  "N", "use", "cor_method", "start_method"))
+                                  "N", "use", "cor_method", "se", "b_boot", "ci", "start_method"))
   expect_equal(SL_lav$settings, NA)
 
   expect_equal(SL_EFAtools$settings$method, "PAF")

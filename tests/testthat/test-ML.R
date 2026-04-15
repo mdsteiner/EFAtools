@@ -23,7 +23,7 @@ test_that("outputs are correct", {
 })
 
 test_that("fit indices are returned correctly", {
-  expect_output(str(ML_test$fit_indices), "List of 14")
+  expect_output(str(ML_test$fit_indices), "List of 15")
 
   expect_is(ML_test$fit_indices$chi, "numeric")
   expect_is(ML_test$fit_indices$df, "numeric")

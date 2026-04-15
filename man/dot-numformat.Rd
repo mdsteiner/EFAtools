@@ -4,7 +4,7 @@
 \alias{.numformat}
 \title{Format numbers for print method}
 \usage{
-.numformat(x, digits = 2, print_zero = FALSE)
+.numformat(x, digits = 2, print_zero = FALSE, pad = TRUE)
 }
 \arguments{
 \item{x}{numeric. Number to be formatted.}
@@ -13,6 +13,9 @@
 
 \item{print_zero}{logical. Whether, if a number is between [-1, 1], the
 zero should be omitted or printed (default is FALSE, i.e. omit zeros).}
+
+\item{pad}{logical. Whether, if a number starts with a 0 and the 0 is not printed
+a white-space should be added.}
 }
 \value{
 A formated number

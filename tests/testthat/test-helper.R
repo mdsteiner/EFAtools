@@ -62,7 +62,7 @@ q <- 3 # n factors
 test_that(".gof works", {
   expect_is(gof_ml, "list")
   expect_named(gof_ml,
-               c("chi", "df", "p_chi", "CAF", "CFI", "RMSEA", "RMSEA_LB",
+               c("chi", "df", "p_chi", "CAF", "RMSR", "CFI", "RMSEA", "RMSEA_LB",
                  "RMSEA_UB", "AIC", "BIC", "Fm", "chi_null", "df_null",
                  "p_null"))
   expect_lt(gof_ml$p_chi, .05)
@@ -77,7 +77,7 @@ test_that(".gof works", {
 
   expect_is(gof_uls, "list")
   expect_named(gof_uls,
-               c("chi", "df", "p_chi", "CAF", "CFI", "RMSEA", "RMSEA_LB",
+               c("chi", "df", "p_chi", "CAF", "RMSR", "CFI", "RMSEA", "RMSEA_LB",
                  "RMSEA_UB", "AIC", "BIC", "Fm", "chi_null", "df_null",
                  "p_null"))
   expect_lt(gof_uls$p_chi, .05)
@@ -93,7 +93,7 @@ test_that(".gof works", {
 
   expect_is(gof_paf, "list")
   expect_named(gof_paf,
-               c("chi", "df", "p_chi", "CAF", "CFI", "RMSEA", "RMSEA_LB",
+               c("chi", "df", "p_chi", "CAF", "RMSR", "CFI", "RMSEA", "RMSEA_LB",
                  "RMSEA_UB", "AIC", "BIC", "Fm", "chi_null", "df_null",
                  "p_null"))
   expect_equal(gof_paf$chi, NA)
@@ -699,7 +699,7 @@ test_that(".array_reorder works", {
   expect_equal(arr_re$phi,
                array(c(1, .3, .4, .3, 1, .2, .4, .2, 1,
                        1, .3, .4, .3, 1, .2, .4, .2, 1,
-                       1, .3, .2, .3, 1, .4, .2, .4, 1), c(3, 3, 3)))
+                       1, -.3, -.2, -.3, 1, .4, -.2, .4, 1), c(3, 3, 3)))
   expect_is(arr_re$vars_accounted, "array")
   expect_equal(arr_re$vars_accounted,
                array(c(rep(.2, 3),
