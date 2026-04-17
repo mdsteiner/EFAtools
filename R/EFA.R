@@ -89,7 +89,7 @@
 #' starting values specified in \link[psych:fa]{psych::fa}. "factanal" takes the
 #' starting values specified in the \link[stats:factanal]{stats::factanal} function.
 #' Solutions are very similar.
-#' @param b_boot numeric. The number of bootstrap samples to draw. Default is 500.
+#' @param b_boot numeric. The number of bootstrap samples to draw. Default is 1000.
 #' @param ci numeric. The confidence interval to create from the bootstrap samples.
 #'  Must be between 0 and 1. Default ist .95 for 95\% CIs.
 #' @param ... Additional arguments passed to rotation functions from the \code{GPArotation} package (e.g., \code{maxit} for maximum number of iterations).
@@ -493,15 +493,8 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                       precision = precision, order_type = order_type,
                       varimax_type = varimax_type, k = k)
 
-    if (isTRUE(np_boot)) {
+    boot_rot <- "oblique"
 
-      boot_rot <- .boot_fun(boot_fits, b_boot, .PROMAX,
-                             # .PROMAX arguments:
-                            type = type, normalize = normalize, P_type = P_type,
-                            precision = precision, order_type = order_type,
-                            varimax_type = varimax_type, k = k)
-
-    }
 
   } else if (rotation == "varimax") {
 
@@ -509,15 +502,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                        precision = precision, varimax_type = varimax_type,
                        order_type = order_type)
 
-    if (isTRUE(np_boot)) {
-
-      boot_rot <- .boot_fun(boot_fits, b_boot, .VARIMAX,
-                            # .VARIMAX arguments:
-                            type = type, normalize = normalize,
-                            precision = precision, varimax_type = varimax_type,
-                            order_type = order_type)
-
-    }
+    boot_rot <- "orthogonal"
 
   } else if (rotation == "quartimax" || rotation == "equamax" ||
              rotation == "bentlerT" || rotation == "geominT" ||
@@ -533,15 +518,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                            normalize = normalize, precision = precision,
                            order_type = order_type, ...)
 
-    if (isTRUE(np_boot)) {
-
-      boot_rot <- .boot_fun(boot_fits, b_boot, .ROTATE_ORTH,
-                            # .ROTATE_ORTH arguments:
-                            type = type, rotation = rotation,
-                            normalize = normalize, precision = precision,
-                            order_type = order_type, ...)
-
-    }
+    boot_rot <- "orthogonal"
 
   } else if (rotation == "oblimin" || rotation == "quartimin" ||
              rotation == "simplimax" || rotation == "bentlerQ" ||
@@ -557,26 +534,13 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                            normalize = normalize, precision = precision,
                            order_type = order_type, k = k, ...)
 
-    if (isTRUE(np_boot)) {
-
-      boot_rot <- .boot_fun(boot_fits, b_boot, .ROTATE_OBLQ,
-                            # .ROTATE_ORTH arguments:
-                            type = type, rotation = rotation,
-                            normalize = normalize, precision = precision,
-                            order_type = order_type, k = k, ...)
-
-    }
+    boot_rot <- "oblique"
 
   } else {
 
     output <- fit_out
 
-    if (isTRUE(np_boot)) {
-
-      boot_rot <- NULL
-      rot_out <- NULL
-
-    }
+    boot_rot <- "none"
 
   }
 
@@ -626,7 +590,13 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   }
 
   if (isTRUE(np_boot)) {
-    boot_out <- .boot_se_ci(fit_out, boot_fits, rot_out, boot_rot, ci, b_boot)
+    if (rotation == "none") {
+      L_rot <- NULL
+    } else {
+      L_rot <- rot_out$rot_loadings
+    }
+    boot_out <- .boot_se_ci(fit_out, L_rot,
+                            boot_fits, boot_rot, ci, b_boot)
     output <- c(output, boot = boot_out)
   }
 
@@ -641,42 +611,44 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 .boot_fun <- function(x, b, call_fun, ...) {
 
   boot_list <- list()
-  if (inherits(x, "array")) {
-    for (boot_i in seq_len(b)) {
 
-      # save complete output, as this has to be passed to rotation method
-      boot_list[[boot_i]] <- call_fun(x[,, boot_i], ...)
-    }
-  } else if (inherits(x, "list")) {
-    for (boot_i in seq_len(b)) {
+  for (boot_i in seq_len(b)) {
 
-      # save complete output, as this has to be passed to rotation method
-      boot_list[[boot_i]] <- call_fun(x[[boot_i]], ...)
-    }
+    # save complete output, as this has to be passed to rotation method
+    boot_list[[boot_i]] <- call_fun(x[,, boot_i], ...)
   }
 
   boot_list
 
 }
 
-.boot_se_ci <- function(fit, boot_fit, rot, boot_rot, ci, b) {
+.boot_se_ci <- function(fit_target, L_rot, boot_fit, boot_rot, ci, b) {
 
   l_ci <- (1 - ci) / 2
   ps <- c(l_ci, ci + l_ci)
 
-
   ### calculate stats for unrot loadings and gof measures
-  L_unrot <- fit$unrot_loadings
-  L_unrot_boot <- array(NA_real_, c(nrow(L_unrot), ncol(L_unrot), b),
-                        dimnames = list(rownames(L_unrot), colnames(L_unrot),
+  L_unrot <- fit_target$unrot_loadings
+
+  ncol_L <- ncol(L_unrot)
+  nrow_L <- nrow(L_unrot)
+  colnam_L <- colnames(L_unrot)
+  rownam_L <- rownames(L_unrot)
+
+  L_unrot_boot <- array(NA_real_, c(nrow_L, ncol_L, b),
+                        dimnames = list(rownam_L, colnam_L,
                                         NULL))
-  gof_boot <- matrix(NA_real_, ncol = length(fit$fit_indices), nrow = b)
+  gof_boot <- matrix(NA_real_, ncol = length(fit_target$fit_indices), nrow = b)
+  residuals_boot <- array(NA_real_, c(nrow_L, nrow_L, b),
+                          dimnames = list(rownam_L, rownam_L,
+                                          NULL))
 
   for (boot_i in seq_len(b)) {
 
     # save aligned loading matrix
     L_unrot_boot[,, boot_i] <- .align_solution(L_unrot, boot_fit[[boot_i]]$unrot_loadings)$loadings
     gof_boot[boot_i, ] <- unlist(boot_fit[[boot_i]]$fit_indices)
+    residuals_boot[,, boot_i] <- boot_fit[[boot_i]]$residuals
 
   }
 
@@ -684,98 +656,80 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   # in Exploratory Factor Analysis)
   L_unrot_se_ci <- .array_se_ci(L_unrot_boot, ps)
   gof_se_ci <- .array_se_ci(gof_boot, ps, M = 2)
-  names(gof_se_ci$se) <- names(fit$fit_indices)
-  colnames(gof_se_ci$ci) <- names(fit$fit_indices)
+  residuals_se_ci <- .array_se_ci(residuals_boot, ps)
+  names(gof_se_ci$se) <- names(fit_target$fit_indices)
+  colnames(gof_se_ci$ci) <- names(fit_target$fit_indices)
 
-  if (!is.null(rot) && !is.null(boot_rot)) {
+  if(boot_rot == "oblique") {
 
-    if ("Phi" %in% names(rot)){
-      # only oblique rotations have Phi and Structure matrices
-      L_rot <- rot$rot_loadings
-      Phi_rot <- rot$Phi
-      Structure_rot <- rot$Structure
-
-      L_rot_boot <- array(NA_real_, c(nrow(L_rot), ncol(L_rot), b),
-                          dimnames = list(rownames(L_rot), colnames(L_rot),
-                                          NULL))
-      Phi_rot_boot <- array(NA_real_, c(nrow(Phi_rot), ncol(Phi_rot), b),
-                            dimnames = list(rownames(Phi_rot), colnames(Phi_rot),
-                                            NULL))
-      Structure_boot <- array(NA_real_, c(nrow(Structure_rot), ncol(Structure_rot), b),
-                              dimnames = list(rownames(Structure_rot), colnames(Structure_rot),
-                                              NULL))
-
-
-      for (boot_i in seq_len(b)) {
-
-        rot_i <- boot_rot[[boot_i]]
-        # save aligned loading matrix
-        aligned_i <- .align_solution(L_rot, rot_i$rot_loadings, rot_i$Phi)
-        L_rot_boot[,, boot_i] <- aligned_i$loadings
-        Phi_rot_boot[,, boot_i] <- aligned_i$Phi
-        Structure_boot[,, boot_i] <- .align_solution(Structure_rot, rot_i$Structure)$loadings
-
-      }
-
-      L_rot_se_ci <- .array_se_ci(L_rot_boot, ps)
-      Phi_rot_se_ci <- .array_se_ci(Phi_rot_boot, ps)
-      Structure_se_ci <- .array_se_ci(Structure_boot, ps)
-
-      out <- list(
-        SE = list(
-          unrot_loadings = L_unrot_se_ci$se,
-          rot_loadings = L_rot_se_ci$se,
-          Phi = Phi_rot_se_ci$se,
-          Structure = Structure_se_ci$se,
-          fit_indices = gof_se_ci$se
-        ),
-        CI = list(
-          unrot_loadings = L_unrot_se_ci$ci,
-          rot_loadings = L_rot_se_ci$ci,
-          Phi = Phi_rot_se_ci$ci,
-          Structure = Structure_se_ci$ci,
-          fit_indices = gof_se_ci$ci
-        )
-      )
-
-    } else {
-
-      # orthogonal rotations have only rot_loadings matrix
-      L_rot <- rot$rot_loadings
-
-      L_rot_boot <- array(NA_real_, c(nrow(L_rot), ncol(L_rot), b),
-                          dimnames = list(rownames(L_rot), colnames(L_rot),
+    L_rot_boot <- array(NA_real_, c(nrow_L, ncol_L, b),
+                        dimnames = list(rownam_L, colnam_L,
+                                        NULL))
+    Phi_rot_boot <- array(NA_real_, c(ncol_L, ncol_L, b),
+                          dimnames = list(colnam_L, colnam_L,
                                           NULL))
 
+    for (boot_i in seq_len(b)) {
 
-      for (boot_i in seq_len(b)) {
-
-        rot_i <- boot_rot[[boot_i]]
-        # save aligned loading matrix
-        aligned_i <- .align_solution(L_rot, rot_i$rot_loadings)
-        L_rot_boot[,, boot_i] <- aligned_i$loadings
-
-      }
-
-      L_rot_se_ci <- .array_se_ci(L_rot_boot, ps)
-
-      out <- list(
-        SE = list(
-          unrot_loadings = L_unrot_se_ci$se,
-          rot_loadings = L_rot_se_ci$se,
-          fit_indices = gof_se_ci$se
-        ),
-        CI = list(
-          unrot_loadings = L_unrot_se_ci$ci,
-          rot_loadings = L_rot_se_ci$ci,
-          fit_indices = gof_se_ci$ci
-        )
-      )
-
+      rot_i <- boot_fit[[boot_i]]
+      # save target-rotated loading matrix
+      aligned_i <- GPArotation::targetQ(boot_fit[[boot_i]]$unrot_loadings,
+                                        Target = L_rot)
+      L_rot_boot[,, boot_i] <- aligned_i$loadings
+      Phi_rot_boot[,, boot_i] <- aligned_i$Phi
     }
+
+    L_rot_se_ci <- .array_se_ci(L_rot_boot, ps)
+    Phi_rot_se_ci <- .array_se_ci(Phi_rot_boot, ps)
+
+    out <- list(
+      SE = list(
+        unrot_loadings = L_unrot_se_ci$se,
+        rot_loadings = L_rot_se_ci$se,
+        Phi = Phi_rot_se_ci$se,
+        fit_indices = gof_se_ci$se
+      ),
+      CI = list(
+        unrot_loadings = L_unrot_se_ci$ci,
+        rot_loadings = L_rot_se_ci$ci,
+        Phi = Phi_rot_se_ci$ci,
+        fit_indices = gof_se_ci$ci
+      )
+    )
+
+  } else if (boot_rot == "orthogonal") {
+
+    L_rot_boot <- array(NA_real_, c(nrow_L, ncol_L, b),
+                        dimnames = list(rownam_L, colnam_L,
+                                        NULL))
+
+    for (boot_i in seq_len(b)) {
+
+      rot_i <- boot_fit[[boot_i]]
+      # save target-rotated loading matrix
+      aligned_i <- GPArotation::targetT(boot_fit[[boot_i]]$unrot_loadings,
+                                        Target = L_rot)
+      L_rot_boot[,, boot_i] <- aligned_i$loadings
+    }
+
+    L_rot_se_ci <- .array_se_ci(L_rot_boot, ps)
+
+    out <- list(
+      SE = list(
+        unrot_loadings = L_unrot_se_ci$se,
+        rot_loadings = L_rot_se_ci$se,
+        fit_indices = gof_se_ci$se
+      ),
+      CI = list(
+        unrot_loadings = L_unrot_se_ci$ci,
+        rot_loadings = L_rot_se_ci$ci,
+        fit_indices = gof_se_ci$ci
+      )
+    )
 
 
   } else {
+
     out <- list(
       SE = list(
         unrot_loadings = L_unrot_se_ci$se,
@@ -786,7 +740,9 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
         fit_indices = gof_se_ci$ci
       )
     )
+
   }
+
 
   out
 

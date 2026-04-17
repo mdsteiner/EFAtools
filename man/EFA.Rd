@@ -154,7 +154,7 @@ Solutions are very similar.}
 \item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor}}.
 Default is "pearson".}
 
-\item{b_boot}{numeric. The number of bootstrap samples to draw. Default is 500.}
+\item{b_boot}{numeric. The number of bootstrap samples to draw. Default is 1000.}
 
 \item{ci}{numeric. The confidence interval to create from the bootstrap samples.
 Must be between 0 and 1. Default ist .95 for 95\% CIs.}
