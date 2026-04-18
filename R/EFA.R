@@ -266,7 +266,7 @@
 #'                       type = "EFAtools", method = "PAF", rotation = "oblimin")
 #'
 #' # Do a PAF without rotation without specifying a type, so the arguments
-#' # can be flexibly specified (this is only recommended if you know what your
+#' # can be flexibly specified (this is only recommended if you know what you're
 #' # doing)
 #' PAF_none <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
 #'                 type = "none", method = "PAF", rotation = "none",
@@ -668,32 +668,52 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
     Phi_rot_boot <- array(NA_real_, c(ncol_L, ncol_L, b),
                           dimnames = list(colnam_L, colnam_L,
                                           NULL))
+    Structure_boot <- array(NA_real_, c(nrow_L, ncol_L, b),
+                        dimnames = list(rownam_L, colnam_L,
+                                        NULL))
 
+    nonconv_counter <- 0
     for (boot_i in seq_len(b)) {
 
       rot_i <- boot_fit[[boot_i]]
       # save target-rotated loading matrix
-      aligned_i <- GPArotation::targetQ(boot_fit[[boot_i]]$unrot_loadings,
-                                        Target = L_rot)
+      aligned_i <- suppressWarnings(GPArotation::targetQ(boot_fit[[boot_i]]$unrot_loadings,
+                                        Target = L_rot))
+      if (isFALSE(aligned_i$convergence)) {
+        nonconv_counter <- nonconv_counter + 1
+        next
+      }
       L_rot_boot[,, boot_i] <- aligned_i$loadings
       Phi_rot_boot[,, boot_i] <- aligned_i$Phi
+      Structure_boot[,, boot_i] <- aligned_i$loadings %*% aligned_i$Phi
+    }
+
+    if (nonconv_counter > 0) {
+      cli::cli_warn(c("{nonconv_counter} target rotations in bootstrap procedure did not converge.",
+                    "i" = "Bootstrap SE and CI of rotated loadings, factor correlations and structure coefficients are based on {b - nonconv_counter} bootstrap samples."))
     }
 
     L_rot_se_ci <- .array_se_ci(L_rot_boot, ps)
     Phi_rot_se_ci <- .array_se_ci(Phi_rot_boot, ps)
+    Structure_se_ci <- .array_se_ci(Structure_boot, ps)
 
     out <- list(
       SE = list(
         unrot_loadings = L_unrot_se_ci$se,
         rot_loadings = L_rot_se_ci$se,
         Phi = Phi_rot_se_ci$se,
-        fit_indices = gof_se_ci$se
+        Structure = Structure_se_ci$se,
+        fit_indices = gof_se_ci$se,
+        residuals = residuals_se_ci$se,
+        valid_target_rotations <- b - nonconv_counter
       ),
       CI = list(
         unrot_loadings = L_unrot_se_ci$ci,
         rot_loadings = L_rot_se_ci$ci,
         Phi = Phi_rot_se_ci$ci,
-        fit_indices = gof_se_ci$ci
+        Structure = Structure_se_ci$ci,
+        fit_indices = gof_se_ci$ci,
+        residuals = residuals_se_ci$ci
       )
     )
 
@@ -703,13 +723,24 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                         dimnames = list(rownam_L, colnam_L,
                                         NULL))
 
+    nonconv_counter <- 0
+
     for (boot_i in seq_len(b)) {
 
       rot_i <- boot_fit[[boot_i]]
       # save target-rotated loading matrix
-      aligned_i <- GPArotation::targetT(boot_fit[[boot_i]]$unrot_loadings,
-                                        Target = L_rot)
+      aligned_i <- suppressWarnings(GPArotation::targetT(boot_fit[[boot_i]]$unrot_loadings,
+                                        Target = L_rot))
+      if (isFALSE(aligned_i$convergence)) {
+        nonconv_counter <- nonconv_counter + 1
+        next
+      }
       L_rot_boot[,, boot_i] <- aligned_i$loadings
+    }
+
+    if (nonconv_counter > 0) {
+      cli::cli_warn(c("{nonconv_counter} target rotations in bootstrap procedure did not converge.",
+                    "i" = "Bootstrap SE and CI of rotated loadings are based on {b - nonconv_counter} bootstrap samples."))
     }
 
     L_rot_se_ci <- .array_se_ci(L_rot_boot, ps)
@@ -718,12 +749,15 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
       SE = list(
         unrot_loadings = L_unrot_se_ci$se,
         rot_loadings = L_rot_se_ci$se,
-        fit_indices = gof_se_ci$se
+        fit_indices = gof_se_ci$se,
+        residuals = residuals_se_ci$se,
+        valid_target_rotations <- b - nonconv_counter
       ),
       CI = list(
         unrot_loadings = L_unrot_se_ci$ci,
         rot_loadings = L_rot_se_ci$ci,
-        fit_indices = gof_se_ci$ci
+        fit_indices = gof_se_ci$ci,
+        residuals = residuals_se_ci$ci
       )
     )
 
@@ -733,11 +767,13 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
     out <- list(
       SE = list(
         unrot_loadings = L_unrot_se_ci$se,
-        fit_indices = gof_se_ci$se
+        fit_indices = gof_se_ci$se,
+        residuals = residuals_se_ci$se
       ),
       CI = list(
         unrot_loadings = L_unrot_se_ci$ci,
-        fit_indices = gof_se_ci$ci
+        fit_indices = gof_se_ci$ci,
+        residuals = residuals_se_ci$ci
       )
     )
 

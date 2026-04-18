@@ -328,7 +328,7 @@ EFAtools_oblim <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
                       type = "EFAtools", method = "PAF", rotation = "oblimin")
 
 # Do a PAF without rotation without specifying a type, so the arguments
-# can be flexibly specified (this is only recommended if you know what your
+# can be flexibly specified (this is only recommended if you know what you're
 # doing)
 PAF_none <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
                 type = "none", method = "PAF", rotation = "none",
