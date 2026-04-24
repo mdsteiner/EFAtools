@@ -1315,5 +1315,418 @@ if(n == 1){
 }
 
 
+#' Average a list of matrices elementwise
+#'
+#' @param x List of conformable matrices.
+#'
+#' @returns A matrix with the same dimensions as the inputs.
+#'
+.average_matrices <- function(x) {
+  Reduce(`+`, x) / length(x)
+}
 
 
+#' Tucker congruence between factors
+#'
+#' Compute the Tucker congruence matrix between the columns of two loading
+#' matrices.
+#'
+#' @param L1 Numeric matrix.
+#' @param L2 Numeric matrix with the same dimensions as `L1`.
+#'
+#' @returns A square matrix whose `(i, j)` entry is the Tucker congruence
+#'   between column `i` of `L1` and column `j` of `L2`.
+#'
+#' @references
+#' Lorenzo-Seva, U., and ten Berge, J. M. F. (2006). Tucker's congruence
+#' coefficient as a meaningful index of factor similarity. *Methodology*, 2,
+#' 57-64.
+.tucker_congruence <- function(L1, L2) {
+  checkmate::assert_matrix(L1)
+  checkmate::assert_matrix(L2)
+
+  stopifnot(all(dim(L1) == dim(L2)))
+
+  # Column Euclidean norms
+  n1 <- sqrt(colSums(L1 * L1))
+  n2 <- sqrt(colSums(L2 * L2))
+
+  if (any(n1 == 0)) stop("L1 contains at least one zero column.")
+  if (any(n2 == 0)) stop("L2 contains at least one zero column.")
+
+
+  # Full pairwise congruence matrix
+  cong <- crossprod(L1, L2) / tcrossprod(n1, n2)
+
+  rownames(cong) <- colnames(L1)
+  colnames(cong) <- colnames(L2)
+  cong
+}
+
+#' Count near-zero loadings
+#'
+#' Hyperplane count is the number of loadings with absolute value smaller than a
+#' user-specified cutoff.
+#'
+#' @param L Numeric loading matrix.
+#' @param cutoff Numeric scalar. Loadings with `abs(L) < cutoff` are counted as
+#'   being in the hyperplane.
+#'
+#' @returns A list with the total hyperplane count and counts by factor and item.
+.hyperplane_count <- function(L, cutoff = 0.15) {
+
+  list(
+    total = sum(abs(L) < cutoff),
+    by_factor = colSums(abs(L) < cutoff),
+    by_item = rowSums(abs(L) < cutoff),
+    cutoff = cutoff
+  )
+}
+
+#' Mean squared discrepancy to a consensus target
+#'
+#' @param aligned_loadings List of aligned loading matrices.
+#' @param target Consensus target matrix.
+#'
+#' @returns Mean sum of squared deviations from the target across matrices.
+#'
+.consensus_loss <- function(aligned_loadings, target) {
+  mean(vapply(aligned_loadings, function(L) {
+    sum((L - target)^2, na.rm = TRUE)
+  }, numeric(1)))
+}
+
+
+#' Closed-form orthogonal Procrustes rotation
+#'
+#' Rotate `A` to the orthogonal target `B` by minimizing
+#' `||A %*% T - B||_F^2` subject to `t(T) %*% T = I`.
+#'
+#' @param A Numeric matrix to be rotated.
+#' @param B Numeric target matrix with the same dimensions as `A`.
+#'
+#' @returns A list with the rotated loadings, orthogonal transformation matrix,
+#'   target criterion value, and basic diagnostics.
+#'
+#' @references
+#' Schönemann, P. H. (1966). A generalized solution of the orthogonal
+#' Procrustes problem. *Psychometrika*, 31, 1-10.
+.orthogonal_procrustes <- function(A, B) {
+
+  if (!all(dim(A) == dim(B))) {
+    stop("A and B must have identical dimensions.")
+  }
+
+  M <- crossprod(A, B)
+  s <- svd(M)
+  Tmat <- s$u %*% t(s$v)
+
+  Lrot <- A %*% Tmat
+  value <- 0.5 * sum((Lrot - B)^2)
+
+  list(
+    loadings = Lrot,
+    T = Tmat,
+    Phi = diag(ncol(A)),
+    value = value,
+    convergence = TRUE,
+    iterations = 1L,
+    kappa_T = 1,
+    Table = cbind(iter = 0, f = value, log10_s = NA_real_, step = NA_real_),
+    method = "orthogonal_procrustes",
+    best_start_index = 1L,
+    all_values = value,
+    all_converged = TRUE,
+    all_iterations = 1L
+  )
+}
+
+
+#' Internal single-start consensus engine
+#'
+#' This internal helper performs a single consensus-target run from one starting
+#' target. Users should normally call [CONSENSUS_PROCRUSTES()] instead.
+#'
+#' @inheritParams CONSENSUS_PROCRUSTES
+#'
+.consensus_target_procrustes_single <- function(unrotated_list,
+                                                init_targets = NULL,
+                                                rotation = c("orthogonal", "oblique"),
+                                                start = 1,
+                                                tol = 1e-3,
+                                                loss_tol = 1e-7,
+                                                loss_patience = 5,
+                                                convergence = c("either", "target", "loss", "both"),
+                                                min_iter = 2,
+                                                max_iter = 200,
+                                                alpha = 1,
+                                                match_target = TRUE,
+                                                hyper_cutoff = 0.15,
+                                                oblique_maxit = 300,
+                                                oblique_eps = 1e-5,
+                                                oblique_max_line_search = 10,
+                                                oblique_step0 = 1,
+                                                oblique_normalize = FALSE,
+                                                oblique_random_starts = 0,
+                                                oblique_random_starts_stage = c("final", "none", "outer", "both"),
+                                                oblique_screen_keep = 2,
+                                                oblique_triage_maxit = 25,
+                                                oblique_triage_improve_tol = 0,
+                                                verbose = FALSE) {
+  rotation <- match.arg(rotation)
+  convergence <- match.arg(convergence)
+  oblique_random_starts_stage <- match.arg(oblique_random_starts_stage)
+
+  if (!is.numeric(alpha) || length(alpha) != 1L || alpha <= 0 || alpha > 1) {
+    stop("alpha must be a numeric scalar in (0, 1].")
+  }
+  if (!is.numeric(tol) || length(tol) != 1L || tol <= 0) {
+    stop("tol must be a positive numeric scalar.")
+  }
+  if (!is.null(loss_tol) && (!is.numeric(loss_tol) || length(loss_tol) != 1L || loss_tol <= 0)) {
+    stop("loss_tol must be NULL or a positive numeric scalar.")
+  }
+
+  stopifnot(is.list(unrotated_list), length(unrotated_list) >= 2)
+  unrotated_list <- lapply(unrotated_list, function(x) as.matrix(unclass(x)))
+
+  m <- length(unrotated_list)
+  p <- nrow(unrotated_list[[1]])
+  k <- ncol(unrotated_list[[1]])
+
+  ok_dims <- vapply(unrotated_list, function(L) {
+    nrow(L) == p && ncol(L) == k
+  }, logical(1))
+  if (!all(ok_dims)) {
+    stop("All matrices in unrotated_list must have the same dimensions.")
+  }
+
+  if (is.null(init_targets)) {
+    init_targets <- unrotated_list
+  } else {
+    stopifnot(is.list(init_targets), length(init_targets) >= 1)
+    init_targets <- lapply(init_targets, function(x) as.matrix(unclass(x)))
+    ok_target_dims <- vapply(init_targets, function(L) {
+      nrow(L) == p && ncol(L) == k
+    }, logical(1))
+    if (!all(ok_target_dims)) {
+      stop("All init_targets must match the dimensions of the loading matrices.")
+    }
+  }
+
+  if (is.numeric(start) && length(start) == 1) {
+    target <- init_targets[[start]]
+  } else if (is.matrix(start)) {
+    if (!all(dim(start) == c(p, k))) {
+      stop("If 'start' is a matrix, it must have the same dimensions as the loadings.")
+    }
+    target <- start
+  } else {
+    stop("'start' must be either an index or a target matrix.")
+  }
+
+  S_list <- lapply(unrotated_list, crossprod)
+  T_starts <- vector("list", m)
+  if (rotation == "oblique") {
+    T_starts <- lapply(unrotated_list, function(A) .orthogonal_procrustes(A, target)$T)
+  }
+
+  outer_random_starts <- if (oblique_random_starts_stage %in% c("outer", "both")) {
+    oblique_random_starts
+  } else {
+    0L
+  }
+
+  final_random_starts <- if (oblique_random_starts_stage %in% c("final", "both")) {
+    oblique_random_starts
+  } else {
+    0L
+  }
+
+  history <- data.frame(
+    iter = integer(0),
+    rel_change = numeric(0),
+    loss = numeric(0),
+    rel_loss_change = numeric(0),
+    inner_mean_value = numeric(0),
+    loss_stable_count = integer(0),
+    target_ok = logical(0),
+    loss_ok = logical(0),
+    stop_rule_met = logical(0)
+  )
+
+  converged <- FALSE
+  convergence_reason <- NA_character_
+  prev_loss <- NA_real_
+  loss_stable_count <- 0L
+  final_aligned_from_loop <- NULL
+
+  for (iter in seq_len(max_iter)) {
+    aligned <- vector("list", m)
+
+    for (d in seq_len(m)) {
+      aligned[[d]] <- PROCRUSTES(
+        A = unrotated_list[[d]],
+        Target = target,
+        rotation = rotation,
+        S = S_list[[d]],
+        T_init = T_starts[[d]],
+        oblique_eps = oblique_eps,
+        oblique_maxit = oblique_maxit,
+        oblique_max_line_search = oblique_max_line_search,
+        oblique_step0 = oblique_step0,
+        oblique_normalize = oblique_normalize,
+        oblique_random_starts = outer_random_starts,
+        oblique_screen_keep = oblique_screen_keep,
+        oblique_triage_maxit = oblique_triage_maxit,
+        oblique_triage_improve_tol = oblique_triage_improve_tol
+      )
+      if (rotation == "oblique") {
+        T_starts[[d]] <- aligned[[d]]$T
+      }
+    }
+
+    aligned_loadings <- lapply(aligned, `[[`, "loadings")
+    inner_values <- vapply(aligned, `[[`, numeric(1), "value")
+
+    centroid <- .average_matrices(aligned_loadings)
+    if (isTRUE(match_target)) {
+      centroid <- .align_solution(L = centroid, L_target = target)$loadings
+    }
+
+    new_target <- (1 - alpha) * target + alpha * centroid
+
+    rel_change <- norm(new_target - target, type = "F") /
+      (norm(target, type = "F") + 1e-12)
+
+    current_loss <- .consensus_loss(aligned_loadings, new_target)
+
+    rel_loss_change <- if (is.na(prev_loss)) {
+      NA_real_
+    } else {
+      abs(prev_loss - current_loss) / (abs(prev_loss) + 1e-12)
+    }
+
+    if (!is.null(loss_tol) && !is.na(rel_loss_change) && rel_loss_change < loss_tol) {
+      loss_stable_count <- loss_stable_count + 1L
+    } else {
+      loss_stable_count <- 0L
+    }
+
+    target_ok <- rel_change < tol
+    loss_ok <- !is.null(loss_tol) && loss_stable_count >= loss_patience
+
+    stop_rule_met <- switch(
+      convergence,
+      target = target_ok,
+      loss = loss_ok,
+      either = target_ok || loss_ok,
+      both = target_ok && loss_ok
+    )
+
+    history <- rbind(
+      history,
+      data.frame(
+        iter = iter,
+        rel_change = rel_change,
+        loss = current_loss,
+        rel_loss_change = rel_loss_change,
+        inner_mean_value = mean(inner_values),
+        loss_stable_count = loss_stable_count,
+        target_ok = target_ok,
+        loss_ok = loss_ok,
+        stop_rule_met = stop_rule_met
+      )
+    )
+
+    if (verbose) {
+      message(sprintf(
+        paste0(
+          "iter %d | rel_change = %.3e | loss = %.8f | ",
+          "rel_loss_change = %s | stable = %d"
+        ),
+        iter,
+        rel_change,
+        current_loss,
+        ifelse(is.na(rel_loss_change), "NA", sprintf("%.3e", rel_loss_change)),
+        loss_stable_count
+      ))
+    }
+
+    target <- new_target
+    prev_loss <- current_loss
+    final_aligned_from_loop <- aligned
+
+    if (iter >= min_iter && isTRUE(stop_rule_met)) {
+      converged <- TRUE
+      convergence_reason <- if (target_ok && loss_ok) {
+        "target_and_loss"
+      } else if (target_ok) {
+        "target"
+      } else if (loss_ok) {
+        "loss"
+      } else {
+        convergence
+      }
+      break
+    }
+  }
+
+  final_aligned <- vector("list", m)
+  for (d in seq_len(m)) {
+    final_aligned[[d]] <- PROCRUSTES(
+      A = unrotated_list[[d]],
+      Target = target,
+      rotation = rotation,
+      S = S_list[[d]],
+      T_init = T_starts[[d]],
+      oblique_eps = oblique_eps,
+      oblique_maxit = oblique_maxit,
+      oblique_max_line_search = oblique_max_line_search,
+      oblique_step0 = oblique_step0,
+      oblique_normalize = oblique_normalize,
+      oblique_random_starts = final_random_starts,
+      oblique_screen_keep = oblique_screen_keep,
+      oblique_triage_maxit = oblique_triage_maxit,
+      oblique_triage_improve_tol = oblique_triage_improve_tol
+    )
+  }
+
+  final_aligned_loadings <- lapply(final_aligned, `[[`, "loadings")
+  final_T <- lapply(final_aligned, `[[`, "T")
+  final_Phi <- lapply(final_aligned, `[[`, "Phi")
+
+  pooled_loadings <- .average_matrices(final_aligned_loadings)
+  pooled_phi <- if (rotation == "orthogonal") diag(k) else .average_matrices(final_Phi)
+
+  final_loss <- .consensus_loss(final_aligned_loadings, target)
+
+
+  list(
+    converged = converged,
+    convergence_reason = convergence_reason,
+    iterations = nrow(history),
+    tol = tol,
+    loss_tol = loss_tol,
+    loss_patience = loss_patience,
+    convergence = convergence,
+    min_iter = min_iter,
+    alpha = alpha,
+    match_target = match_target,
+    rotation = rotation,
+    start = start,
+    target = target,
+    history = history,
+    aligned_loadings = final_aligned_loadings,
+    aligned_phi = final_Phi,
+    transformations = final_T,
+    pooled_loadings = pooled_loadings,
+    pooled_phi = pooled_phi,
+    mean_loss = final_loss,
+    hyperplane_target = .hyperplane_count(target, cutoff = hyper_cutoff),
+    hyperplane_pooled = .hyperplane_count(pooled_loadings, cutoff = hyper_cutoff),
+    oblique_random_starts_stage = oblique_random_starts_stage,
+    oblique_random_starts_outer = outer_random_starts,
+    oblique_random_starts_final = final_random_starts
+  )
+}

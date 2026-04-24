@@ -31,6 +31,68 @@
     .Call(`_EFAtools_nest_sym`, nf, N, M, nreps)
 }
 
+#' Oblique Procrustes target rotation using a k x k inner objective
+#'
+#' Compute an oblique target rotation for a loading matrix using a
+#' `targetQ`-compatible parameterization and a `k x k` objective.
+#'
+#' The rotated loading matrix is defined as
+#' `L = A %*% solve(t(T))`, and the corresponding factor correlation matrix is
+#' `Phi = t(T) %*% T`. The optimization is carried out over the transformation
+#' matrix `T` under the oblique normalization constraint `diag(t(T) %*% T) = 1`.
+#'
+#' Additional random starts may be requested. To reduce runtime, the solver uses
+#' a two-stage strategy for extra starts: cheap objective screening, followed by
+#' short triage optimization, followed by full optimization only for starts that
+#' improve on the current incumbent by at least `triage_improve_tol`.
+#'
+#' @param A Numeric matrix. Loading matrix to be rotated.
+#' @param B Numeric matrix. Target loading matrix with the same dimensions as
+#'   `A`.
+#' @param S_r Optional numeric `k x k` matrix containing `crossprod(A)`.
+#'   Supplying this is useful when the same `A` is rotated repeatedly.
+#' @param T_init_r Optional numeric `k x k` starting transformation matrix.
+#'   If `NULL`, the identity matrix is used for the primary start.
+#' @param eps Numeric scalar. Convergence tolerance for the projected gradient
+#'   norm.
+#' @param maxit Integer scalar. Maximum number of full projected-gradient
+#'   iterations.
+#' @param max_line_search Integer scalar. Maximum number of step-halving
+#'   attempts in each line-search phase.
+#' @param step0 Numeric scalar. Initial step size used in the projected-gradient
+#'   update.
+#' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before
+#'   rotation and reverse it after rotation.
+#' @param random_starts Integer scalar. Number of additional random starts.
+#' @param screen_keep Integer scalar. Number of screened random starts retained
+#'   for triage optimization.
+#' @param triage_maxit Integer scalar. Number of short optimization iterations
+#'   used in the triage stage.
+#' @param triage_improve_tol Numeric scalar. Relative improvement required for a
+#'   triaged start to be promoted to full optimization.
+#'
+#' @returns A named list containing the rotated loadings, transformation matrix,
+#'   factor correlation matrix, target criterion value, convergence diagnostics,
+#'   and multi-start summaries.
+#'
+#' @details
+#' The routine is intended for repeated oblique target rotations in workflows
+#' such as bootstrap alignment or consensus alignment of exploratory factor
+#' solutions across multiply imputed datasets. It follows the same oblique
+#' transformation convention as `GPArotation::targetQ()`.
+#'
+#' @references
+#' Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms
+#' and software for arbitrary rotation criteria in factor analysis.
+#' *Educational and Psychological Measurement*, 65, 676-696.
+#'
+#' Gower, J. C. (1975). Generalized Procrustes analysis. *Psychometrika*, 40,
+#' 33-51.
+#'
+.oblique_procrustes <- function(A, B, S_r = NULL, T_init_r = NULL, eps = 1e-5, maxit = 1000L, max_line_search = 10L, step0 = 1.0, normalize = FALSE, random_starts = 0L, screen_keep = 2L, triage_maxit = 25L, triage_improve_tol = 0.0) {
+    .Call(`_EFAtools_oblique_procrustes`, A, B, S_r, T_init_r, eps, maxit, max_line_search, step0, normalize, random_starts, screen_keep, triage_maxit, triage_improve_tol)
+}
+
 #' Perform the iterative PAF procedure
 #'
 #' Function called from within PAF so usually no call to this is needed by the user.

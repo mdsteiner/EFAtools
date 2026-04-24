@@ -3,6 +3,8 @@
 ## New Functions
 
 * `MAP()` computes the Velicer MAP criterion (both TR2 and TR4).
+* `PROCRUSTES()` to perform orthogonal and oblique Procrustes / target rotation.
+* `CONSENSUS_PROCRUSTES()` to perform Procrustes on a list of targets to obtain a common target.
 
 ## Changes to Functions
 

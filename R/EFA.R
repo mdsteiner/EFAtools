@@ -677,8 +677,9 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
       rot_i <- boot_fit[[boot_i]]
       # save target-rotated loading matrix
-      aligned_i <- suppressWarnings(GPArotation::targetQ(boot_fit[[boot_i]]$unrot_loadings,
-                                        Target = L_rot))
+      aligned_i <- PROCRUSTES(boot_fit[[boot_i]]$unrot_loadings,
+                              Target = L_rot, rotation = "oblique",
+                              oblique_random_starts = 5)
       if (isFALSE(aligned_i$convergence)) {
         nonconv_counter <- nonconv_counter + 1
         next
@@ -729,12 +730,8 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
       rot_i <- boot_fit[[boot_i]]
       # save target-rotated loading matrix
-      aligned_i <- suppressWarnings(GPArotation::targetT(boot_fit[[boot_i]]$unrot_loadings,
-                                        Target = L_rot))
-      if (isFALSE(aligned_i$convergence)) {
-        nonconv_counter <- nonconv_counter + 1
-        next
-      }
+      aligned_i <- PROCRUSTES(boot_fit[[boot_i]]$unrot_loadings,
+                              Target = L_rot, rotation = "orthogonal")
       L_rot_boot[,, boot_i] <- aligned_i$loadings
     }
 
