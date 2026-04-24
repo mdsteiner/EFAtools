@@ -228,6 +228,7 @@
 #' \item{settings}{A list of the settings used.}
 #' \item{boot.SE}{A list bootstrap standard errors for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, only if rotated), and fit indices. Only returned, if \code{se = "np-boot"}.}
 #' \item{boot.CI}{A list bootstrap confidence intervals of width \code{ci} for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, if obliquely rotated), and fit indices. Only returned, if \code{se = "np-boot"}.}
+#' \item{boot.arrays}{A list of arrays with the bootstrapped loadings (aligned rotated and unrotated), aligned structure coefficients (if rotated obliquely), aligned factor correlations (Phi, if obliquely rotated), and fit indices. Only returned, if \code{se = "np-boot"}.}
 #'
 #' @source Grieder, S., & Steiner, M.D. (2020). Algorithmic Jingle Jungle:
 #' A Comparison of Implementations of Principal Axis Factoring and Promax Rotation
@@ -658,7 +659,8 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   gof_se_ci <- .array_se_ci(gof_boot, ps, M = 2)
   residuals_se_ci <- .array_se_ci(residuals_boot, ps)
   names(gof_se_ci$se) <- names(fit_target$fit_indices)
-  colnames(gof_se_ci$ci) <- names(fit_target$fit_indices)
+  names(gof_se_ci$ci$lower) <- names(fit_target$fit_indices)
+  names(gof_se_ci$ci$upper) <- names(fit_target$fit_indices)
 
   if(boot_rot == "oblique") {
 
@@ -706,7 +708,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
         Structure = Structure_se_ci$se,
         fit_indices = gof_se_ci$se,
         residuals = residuals_se_ci$se,
-        valid_target_rotations <- b - nonconv_counter
+        valid_target_rotations = b - nonconv_counter
       ),
       CI = list(
         unrot_loadings = L_unrot_se_ci$ci,
@@ -715,6 +717,14 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
         Structure = Structure_se_ci$ci,
         fit_indices = gof_se_ci$ci,
         residuals = residuals_se_ci$ci
+      ),
+      arrays = list(
+        unrot_loadings = L_unrot_boot,
+        rot_loadings = L_rot_boot,
+        Phi = Phi_rot_boot,
+        Structure = Structure_boot,
+        fit_indices = gof_boot,
+        residuals = residuals_boot
       )
     )
 
@@ -748,13 +758,19 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
         rot_loadings = L_rot_se_ci$se,
         fit_indices = gof_se_ci$se,
         residuals = residuals_se_ci$se,
-        valid_target_rotations <- b - nonconv_counter
+        valid_target_rotations = b - nonconv_counter
       ),
       CI = list(
         unrot_loadings = L_unrot_se_ci$ci,
         rot_loadings = L_rot_se_ci$ci,
         fit_indices = gof_se_ci$ci,
         residuals = residuals_se_ci$ci
+      ),
+      arrays = list(
+        unrot_loadings = L_unrot_boot,
+        rot_loadings = L_rot_boot,
+        fit_indices = gof_boot,
+        residuals = residuals_boot
       )
     )
 
@@ -771,6 +787,11 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
         unrot_loadings = L_unrot_se_ci$ci,
         fit_indices = gof_se_ci$ci,
         residuals = residuals_se_ci$ci
+      ),
+      arrays = list(
+        unrot_loadings = L_unrot_boot,
+        fit_indices = gof_boot,
+        residuals = residuals_boot
       )
     )
 
@@ -783,7 +804,10 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
 .array_se_ci <- function(x, probs, M = c(1, 2)) {
   se <- apply(x, M, stats::sd, na.rm = TRUE)
-  ci <- apply(x, M, stats::quantile, probs = probs, na.rm = TRUE)
+  ci <- lapply(probs, function(p) {
+    apply(x, M, quantile, probs = p, na.rm = TRUE)
+  })
+  names(ci) <- c("lower", "upper")
 
   list(
     se = se,

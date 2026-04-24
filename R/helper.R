@@ -1307,10 +1307,10 @@ if(n == 1){
 
 
 .paste_gof_ci <- function(indices, index) {
-  paste0(" [",
-         paste0(.numformat(indices[, index],
+  paste0(" [", .numformat(indices$lower[index],
+                         pad = FALSE), ", ",
+         .numformat(indices$upper[index],
                            pad = FALSE),
-                collapse = ", "),
          "]")
 }
 

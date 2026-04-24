@@ -1,13 +1,14 @@
-efa_def <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500)
+efa_def <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
+                       show_progress = FALSE)
 efa_ml <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
-                      method = "ML")
+                      method = "ML", show_progress = FALSE)
 efa_uls <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
-                      method = "ULS")
+                      method = "ULS", show_progress = FALSE)
 
 efa_all <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
                        method = c("PAF", "ML", "ULS"),
                        type = c("none", "EFAtools", "psych", "SPSS"),
-                       salience_threshold = .2)
+                       salience_threshold = .2, show_progress = FALSE)
 efa_all_np <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
                        method = c("PAF", "ML", "ULS"),
                        type = c("none", "EFAtools", "psych", "SPSS"),
@@ -16,27 +17,27 @@ efa_all_np <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
 efa_all_oblq <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
                             method = c("PAF", "ML", "ULS"),
                             type = c("none", "EFAtools", "psych", "SPSS"),
-                            rotation = "oblique")
+                            rotation = "oblique", show_progress = FALSE)
 efa_all_orth <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
                             method = c("PAF", "ML", "ULS"),
                             type = c("none", "EFAtools", "psych", "SPSS"),
-                            rotation = "orthogonal")
+                            rotation = "orthogonal", show_progress = FALSE)
 efa_all_none <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
                             method = c("PAF", "ML", "ULS"),
                             type = c("none", "EFAtools", "psych", "SPSS"),
-                            rotation = "none")
+                            rotation = "none", show_progress = FALSE)
 
 efa_all_md <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
                             method = c("PAF", "ML", "ULS"),
                             type = c("none", "EFAtools", "psych", "SPSS"),
-                            rotation = "oblique", averaging = "median")
+                            rotation = "oblique", averaging = "median", show_progress = FALSE)
 efa_all_tm <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
                           method = c("PAF", "ML", "ULS"),
                           type = c("none", "EFAtools", "psych", "SPSS"),
                           rotation = "oblique", averaging = "mean",
-                          trim = .2)
-efa_raw <- EFA_AVERAGE(GRiPS_raw, n_factors = 1, rotation = "none")
-efa_raw_p <- EFA_AVERAGE(GRiPS_raw, n_factors = 2, rotation = "promax")
+                          trim = .2, show_progress = FALSE)
+efa_raw <- EFA_AVERAGE(GRiPS_raw, n_factors = 1, rotation = "none", show_progress = FALSE)
+efa_raw_p <- EFA_AVERAGE(GRiPS_raw, n_factors = 2, rotation = "promax", show_progress = FALSE)
 
 test_that("output class and dimensions are correct", {
   expect_is(efa_def, "EFA_AVERAGE")
@@ -468,27 +469,27 @@ cor_sing <- stats::cor(dat_sing)
 cor_nposdef <- matrix(c(1, 1, 0, 1, 1, 1, 0, 1, 1), ncol = 3)
 
 test_that("errors are thrown correctly", {
-  expect_error(EFA_AVERAGE(1:5), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n")
-  expect_message(EFA_AVERAGE(GRiPS_raw, n_factors = 2, method = "PAF", type = c("EFAtools", "psych")),
+  expect_error(EFA_AVERAGE(1:5, show_progress = FALSE), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n")
+  expect_message(EFA_AVERAGE(GRiPS_raw, n_factors = 2, method = "PAF", type = c("EFAtools", "psych"), show_progress = FALSE),
                  " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n")
   expect_warning(EFA_AVERAGE(GRiPS_raw, n_factors = 2, method = "PAF", type = c("EFAtools", "psych"),
-                             N = 20),
+                             N = 20, show_progress = FALSE),
                  " 'N' was set and data entered. Taking N from data.\n")
-  expect_error(EFA_AVERAGE(dat_sing, n_factors = 1),
+  expect_error(EFA_AVERAGE(dat_sing, n_factors = 1, show_progress = FALSE),
                " Correlation matrix is singular, no further analyses are performed\n")
-  expect_error(EFA_AVERAGE(cor_sing, N = 10, n_factors = 1),
+  expect_error(EFA_AVERAGE(cor_sing, N = 10, n_factors = 1, show_progress = FALSE),
                " Correlation matrix is singular, no further analyses are performed\n")
-  expect_error(EFA_AVERAGE(matrix(rnorm(30), ncol = 3), n_factors = 2),
+  expect_error(EFA_AVERAGE(matrix(rnorm(30), ncol = 3), n_factors = 2, show_progress = FALSE),
                " The model is underidentified. Please enter a lower number of factors or use a larger number of indicators and try again.\n")
   expect_warning(EFA_AVERAGE(matrix(rnorm(30), ncol = 3), n_factors = 1,
-                             method = "PAF", type = c("EFAtools", "psych")),
+                             method = "PAF", type = c("EFAtools", "psych"), show_progress = FALSE),
                  " The model is just identified (df = 0). We suggest to try again with a lower number of factors or a larger number of indicators.\n", fixed = TRUE)
   expect_warning(EFA_AVERAGE(cor_nposdef, n_factors = 1, N = 10, method = "PAF",
-                     type = c("EFAtools", "psych")), "Matrix was not positive definite, smoothing was done")
-  expect_message(EFA_AVERAGE(GRiPS_raw, n_factors = 1, method = "PAF", type = c("EFAtools", "psych")),
+                     type = c("EFAtools", "psych"), show_progress = FALSE), "Matrix was not positive definite, smoothing was done")
+  expect_message(EFA_AVERAGE(GRiPS_raw, n_factors = 1, method = "PAF", type = c("EFAtools", "psych"), show_progress = FALSE),
                  " 'n_factors' is 1, but rotation != 'none'. Setting rotation to 'none' to avoid many warnings, as 1-factor solutions cannot be rotated.\n")
   expect_warning(EFA_AVERAGE(GRiPS_raw, n_factors = 1, method = "PAF", type = c("EFAtools"),
-                             rotation = "none"),
+                             rotation = "none", show_progress = FALSE),
                  " There was only one combination of arguments, returning normal EFA output.\n")
 })
 

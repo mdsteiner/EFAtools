@@ -199,6 +199,7 @@ intercorrelations.}
 \item{settings}{A list of the settings used.}
 \item{boot.SE}{A list bootstrap standard errors for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, only if rotated), and fit indices. Only returned, if \code{se = "np-boot"}.}
 \item{boot.CI}{A list bootstrap confidence intervals of width \code{ci} for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, if obliquely rotated), and fit indices. Only returned, if \code{se = "np-boot"}.}
+\item{boot.arrays}{A list of arrays with the bootstrapped loadings (aligned rotated and unrotated), aligned structure coefficients (if rotated obliquely), aligned factor correlations (Phi, if obliquely rotated), and fit indices. Only returned, if \code{se = "np-boot"}.}
 }
 \description{
 This function does an EFA with either \code{PAF}, \code{ML},
