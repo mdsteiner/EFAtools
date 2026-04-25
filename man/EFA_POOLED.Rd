@@ -3,126 +3,113 @@
 \name{EFA_POOLED}
 \alias{EFA_POOLED}
 \title{Exploratory factor analysis on multiple data imputations}
-\source{
-Rubin, D.B. (1976). Inference and Missing Data. Biometrika 63 (3):
-  581–90.
-
-van Buuren, S. (2018). Flexible Imputation of Missing Data. Second
-  Edition. CRC Press. \url{https://stefvanbuuren.name/fimd/}
-}
 \usage{
-EFA_POOLED(data_list, p = 0.05, ...)
+EFA_POOLED(
+  data_list,
+  p = 0.05,
+  target_method = c("consensus", "first_target"),
+  align_unrotated = c("signed_tucker_congruence", "none", "procrustes"),
+  fit_pool_method = c("D2"),
+  consensus_args = list(),
+  procrustes_args = list(),
+  rmsea_ci_level = 0.9,
+  rmsr_upper = TRUE,
+  ...
+)
 }
 \arguments{
 \item{data_list}{A list of length \eqn{m}, where \eqn{m} is the number of
-imputations. Each list element \eqn{k} is a data frame or matrix of raw data
-or a matrix with correlations for data imputation \eqn{k}. See argument
-\code{x} in \code{\link{EFA}}.}
+imputations. Each list element is a data frame or matrix of raw data, or a
+correlation matrix. See argument \code{x} in \code{\link{EFA}}.}
 
-\item{p}{Numeric. One minus the confidence level of the CIs. Defaults to 0.05
-for 95\% CIs.}
+\item{p}{Numeric. One minus the confidence level used for pooled Wald-type
+bootstrap/MI confidence intervals when bootstrap arrays are available.}
+
+\item{target_method}{Character. \code{"consensus"} aligns all solutions to an
+iteratively updated consensus target. \code{"first_target"} aligns all
+solutions to the first imputation's rotated solution.}
+
+\item{align_unrotated}{Character. How to align unrotated loadings before
+pooling. \code{"signed_tucker_congruence"} preserves the unrotated axes up
+to factor reordering and sign changes using Tucker congruence.
+\code{"procrustes"} aligns the unrotated matrices to the first imputation by
+orthogonal Procrustes rotation. \code{"none"} averages unrotated loadings as
+returned by \code{EFA}.}
+
+\item{fit_pool_method}{Character. Currently only \code{"D2"} is implemented
+for chi-square-type fit. If no chi-square is available, only residual-based
+fit and descriptive quantities are returned.}
+
+\item{consensus_args}{List of additional arguments passed to
+\code{CONSENSUS_PROCRUSTES}.}
+
+\item{procrustes_args}{List of additional arguments passed to \code{PROCRUSTES}
+for fixed-target alignment.}
+
+\item{rmsea_ci_level}{Numeric. Confidence level for the RMSEA CI.}
+
+\item{rmsr_upper}{Logical. If \code{TRUE}, compute RMSR from the unique
+off-diagonal residual correlations. If \code{FALSE}, use the full off-diagonal
+matrix.}
 
 \item{...}{Additional arguments passed to \code{\link{EFA}}.}
 }
 \value{
-A list of class EFA containing (a subset of) the following:
-
-\item{h2}{Final communality estimates from the unrotated solution. This is
-based on the squared pooled unrotated loadings, \code{unrot_loadings}.}
-\item{unrot_loadings}{Loading matrix containing the final, pooled unrotated
-loadings.}
-\item{vars_accounted}{Matrix of explained variances and sums of squared
-loadings. Based on the pooled unrotated loadings.}
-\item{fit_indices}{For ML and ULS: Pooled fit indices derived from the unrotated
-factor loadings: Chi Square, including significance level, degrees of freedom
-(df), Comparative Fit Index (CFI), Root Mean Square Error of Approximation
-(RMSEA), including its 90\% confidence interval, Akaike Information Criterion
-(AIC), Bayesian Information Criterion (BIC), and the common part accounted
-for (CAF) index as proposed by Lorenzo-Seva, Timmerman, & Kiers (2011).
-For PAF, only the CAF and dfs are returned.}
-\item{rot_loadings}{Loading matrix containing the final pooled rotated
-loadings (pattern matrix).}
-\item{Phi}{The pooled factor intercorrelations (only for oblique rotations).}
-\item{Structure}{The pooled structure matrix (only for oblique rotations).}
-\item{vars_accounted_rot}{Matrix of explained variances and sums of squared
-loadings. Based on pooled rotated loadings and, for oblique rotations, the
-pooled factor intercorrelations.}
-\item{settings}{A list of the settings used.}
-\item{ci_unrot_loadings}{CIs for the pooled unrotated loadings.}
-\item{ci_rot_loadings}{CIs for the pooled rotated loadings.}
-\item{ci_structure_loadings}{CIs for the pooled structure loadings (only for
-oblique rotations).}
-\item{ci_phis}{CIs for the pooled factor intercorrelations (only for oblique
-rotations).}
-\item{fits}{List of length \eqn{m} with the results from the \code{\link{EFA}}
-runs for each imputed dataset.}
+A list of class \code{"EFA_POOLED"} containing pooled estimates,
+residuals, fit indices, the individual fits, and MI diagnostics.
 }
 \description{
-Consider a dataset with missing values that has been imputed \eqn{m} times.
-This function runs \code{\link{EFA}} on each imputed dataset, averages the
-estimated parameters (loadings) and calculates confidence intervals (CIs) on
-the pooled (mean) loadings.
+Fits \code{\link{EFA}} to each of several imputed datasets, aligns the
+factor solutions to a common factor space, and pools the resulting estimates
+and selected fit quantities across imputations.
 }
 \details{
-Multiple imputation (van Buuren, 2018) was developed by Rubin (1976). The
-idea stems from the fact that that imputing one value (single imputation) for
-the missing value could not be correct in general. Instead, impute the data
-\eqn{m} times, i.e. generate multiple versions of the data table, where each
-version has been imputed. Then, fit \eqn{m} models (e.g. \eqn{m} regressions
-or \eqn{m} EFA models) and average (pool) the \eqn{m} estimated parameters
-(e.g. the \eqn{m} regression coefficients of a given predictor or the \eqn{m}
-loadings of a given variable and factor). This average is your estimate.
+The function first fits the same \code{\link{EFA}} model to each imputed
+dataset. Unrotated loading matrices can optionally be put into a common
+signed/permuted factor order before averaging. Rotated loading matrices are
+aligned with either a consensus Procrustes target or with the first
+imputation's rotated solution as a fixed target. For oblique solutions,
+factor intercorrelations are transformed/aligned together with the loading
+matrices so that the factor model remains internally consistent.
 
-In \code{\link{EFA_POOLED}}, the pooled loading \eqn{\bar{\lambda_{ij}}}for
-the \eqn{i}th variable and \eqn{j}th factor is calculated as
-\eqn{\frac{1}{m}\sum_{k=1}^{m}{\lambda_{ij}^k}}, where \eqn{m} is the number
-of imputations
+Point estimates are pooled by arithmetic averaging after alignment. For
+oblique rotations, the returned structure matrix is computed from the pooled
+aligned pattern matrix and the pooled factor correlation matrix,
+\eqn{Structure = Lambda Phi}. Communalities are always computed as the
+diagonal of the common-factor reproduced correlation matrix,
+\eqn{diag(Lambda Phi Lambda')} for oblique rotations and
+\eqn{diag(Lambda Lambda')} otherwise.
 
-Similarly, for the \eqn{i}th variable, the communality \code{h2} returned by
-\code{\link{EFA_POOLED}} is calculated from the pooled loadings as
-\eqn{\sum_{j=1}^{p}{\bar{\lambda_{ij}}^2}}, where \eqn{p} is the number of
-factors.
-}
-\examples{
-dataset <- psych::bfi[1:500, 1:25] # Create dataset
-apply(dataset, 2, function(x) sum(is.na(x))) # Any NAs in the columns?
+Residuals are not averaged from the per-imputation residual matrices. Instead,
+the observed correlation matrices are averaged across imputations and residuals
+are calculated from the pooled observed correlation matrix minus the
+model-implied correlation matrix of the pooled solution. Consequently,
+residual-based fit indices such as RMSR/SRMR are based on pooled residuals.
 
-# Function to impute columns
-impute_vector <- function(x, func = mean) {
-  replace(
-    x,
-    is.na(x),
-    func(x, na.rm = TRUE)
-  )
-}
+Fit indices based on the model chi-square are not arithmetic means of the
+per-imputation fit indices. If possible, chi-square-type fit is pooled with
+the D2 rule. The asymptotic chi-square approximation to D2 is then used for
+RMSEA and CFI. AIC and BIC, if returned, are chi-square-derived descriptive
+quantities based on this D2 approximation and should not be interpreted as
+likelihood-based MI information criteria. D3/D4 pooling is not implemented
+here because the current \code{EFA} objects do not expose the likelihood
+quantities needed for those methods.
 
-# Impute data using mean
-dataset_imp_mean <- apply(
-  dataset,
-  2,
-  impute_vector,
-  func = mean
-)
-
-# Impute data using mean
-dataset_imp_median <- apply(
-  dataset,
-  2,
-  impute_vector,
-  func = median
-)
-
-# List of imputed datasets, one using the mean, the other using the median
-data_list <- list(
-  dataset_imp_mean,
-  dataset_imp_median
-)
-
-# Run EFA on each imputed dataset, pool the results
-efa_pooled <- EFA_POOLED(data_list, p = 0.05, n_factors = 3,
-                         type = "EFAtools", method = "ML", rotation = "oblimin")
-
+If each component \code{EFA} call was run with \code{se = "np-boot"} and
+returned \code{boot.arrays}, pooled bootstrap SEs and Wald-type MI confidence
+intervals are computed for loadings, communalities, residuals, and, when
+applicable, factor correlations and structure coefficients. Importantly, the
+rotated bootstrap loading matrices stored by the component \code{EFA} calls
+are not reused directly, because they were aligned to imputation-specific
+targets. Instead, the unrotated bootstrap loading matrices are re-aligned to
+the final MI target before estimating within-imputation bootstrap covariance
+matrices. Rubin-type MI pooling is then applied with
+\eqn{T = Ubar + (1 + 1 / m) B}. Confidence intervals for loadings, Phi,
+communalities, residuals, and structure coefficients are Wald-type MI
+intervals; \code{boot.CI$fit_indices_pooled_algorithm}, when available, is a
+percentile-style summary obtained by re-running the pooled-fit algorithm over
+matched bootstrap replicate indices.
 }
 \author{
-Andreas Soteriades
+Andreas Soteriades, Markus Steiner
 }

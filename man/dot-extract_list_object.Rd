@@ -19,6 +19,11 @@ A list of length \eqn{m}, with each element containing the extracted
 \code{object} for the \eqn{k}th element (\eqn{k = 1,..., m}).
 }
 \description{
+Extract a list object by its name
+}
+\author{
+Andreas Soteriades
+
 Consider a list of named sub-lists. This function extracts, for each sub-list,
 the sub-list element that is specified by the user. This function is useful
 for extracting results from \code{\link{EFA}} for each permutation run in

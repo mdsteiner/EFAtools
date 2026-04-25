@@ -17,6 +17,11 @@ A table with the loadings, of class either \code{"LOADINGS"} or
 \code{"matrix"}.
 }
 \description{
+Covert a \code{"LOADINGS"} table to matrix or a matrix to \code{"LOADINGS"}
+}
+\author{
+Andreas Soteriades
+
 The loadings tables returned by \code{\link{EFA}} are of class
 \code{"LOADINGS"}, which prevents applying functions on them. This function
 allows to change their class to \code{"matrix"}, and to change back to

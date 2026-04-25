@@ -34,6 +34,7 @@ Other contributors:
   \item Urbano Lorenzo-Seva [contributor]
   \item David Navarro-Gonzalez [contributor]
   \item Johan Braeken [contributor]
+  \item Andreas Soteriades [contributor]
 }
 
 }

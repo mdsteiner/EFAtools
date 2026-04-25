@@ -17,26 +17,13 @@
 A matrix with the aggregated results
 }
 \description{
+Calculate statistics for a list of matrices
+}
+\author{
+Andreas Soteriades
+
 Given a list of matrices, this function calculates user-supplied statistics
 (e.g. mean, median) over the matrices. This function is useful for averaging
 results from \code{\link{EFA}} (e.g. loadings) over all permutation runs in
 \code{\link{EFA_POOLED}}.
-}
-\examples{
-alist <- list(
-  matrix(1:10, 2),
-  matrix(11:20, 2)
-  )
-
-# Have a look at list
-alist
-
-# Mean matrix
-.stat_over_list(alist, mean)
-
-# Same as averaging the two matrices in the list
-identical(
-  .stat_over_list(alist, mean),
-  (alist[[1]] + alist[[2]]) / 2
-)
 }

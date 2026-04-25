@@ -17,13 +17,65 @@ interfactor correlations}
 for 95\% CIs.}
 
 \item{n}{Numeric. Typically, the number of permutations \eqn{m}. See
-\code{\link{EFA_POOLED}}}
+\code{\link{EFA_POOLED}}.}
 }
 \value{
 A list with the lower and upper CIs.
 }
 \description{
-This function is used internally by \code{\link{EFA_POOLED}} to calculates
+Confidence intervals around mean
+}
+\details{
+The standard error (SE) to use in the creation of the CIs is calculated
+according to Rubin's (1987) formula (eq. 11 in Hayes & Enders, 2023):
+
+\eqn{\sqrt{mean(SE^2) + var(\hat{\theta_{m}}) + var(\hat{\theta_{m}}) / M}}
+
+According to Hayes & Enders (2023) p. 42:
+
+\emph{[T]he first term under the radical represents the average squared
+standard error (the within imputation sampling variance [...]), the second
+term depends on the variance of the \emph{M} parameter estimates around their
+average (the between imputation variance [...]), and the final term
+represents the squared standard error of the pooled estimate [...].
+Conceptually, the first term estimates the sampling error of a complete-data
+analysis, and the next two terms are essentially correction factors that
+inflate the standard error to compensate for uncertainty due to the
+imputations–that is, additional uncertainty (sampling variability) in the
+parameter estimates caused by missing data.}
+
+Currently, it is not possible to calculate the first term, because
+\code{\link{EFA}} does not calculate SEs for the loadings. Only the second
+and third terms are used in the calculation of SE for the CIs.
+
+The CI is generally calculated as:
+
+CI = Point estimate ± Margin of error,
+
+where
+
+Margin of error = Critical value × SE of point estimate.
+
+To account for situations where the sample size is small, instead of using
+z-values, the critical value is derived from the \emph{t} distribution with
+\code{n - 1} degrees of freedom (Hazra, 2017).
+}
+\references{
+Hayes, T. & Enders, C. K. (2023). Maximum likelihood and multiple imputation
+missing data handling: how they work, and how to make them work in practice.
+In \emph{APA Handbook of Research Methods in Psychology, Second Edition} Vol.
+3. Data Analysis and Research Publication, H. Cooper (Editor-in-Chief).
+
+Hazra, A. (2017). Using the confidence interval confidently. \emph{Journal of
+Thoracic Disease} 9(10), 4125--4130.
+
+Rubin, D. B. (1987). Multiple imputation for nonresponse in surveys. Wiley.
+\url{https://doi.org/10.1002/9780470316696}
+}
+\author{
+Andreas Soteriades
+
+This function is used internally by \code{\link{EFA_POOLED}} to calculate
 confidence intervals (CIs) around the pooled loadings and pooled interfactor
 correlations.
 }

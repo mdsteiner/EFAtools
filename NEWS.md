@@ -6,6 +6,7 @@
 * `PROCRUSTES()` to perform orthogonal and oblique Procrustes / target rotation.
 * `CONSENSUS_PROCRUSTES()` to perform Procrustes on a list of targets to obtain a common target.
 * `residuals.EFA()` to extract and print residuals and, if computed, standardized residuals.
+* `EFA_POOLED()` to run EFA on a list of multiple imputated datasets and pool the results.
 
 ## Changes to Functions
 
