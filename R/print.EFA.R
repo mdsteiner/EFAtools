@@ -234,7 +234,7 @@ print.EFA <- function(x, cutoff = .3, digits = 3, max_name_length = 10, ...) {
     cat("No absolute residuals > .1 occured.")
   }
   cat("\n\n")
-  cat("Inspect the residual matrix for details.")
+  cat("Inspect the residual matrix for details (e.g., with residuals()).")
   cat("\n")
 
 }

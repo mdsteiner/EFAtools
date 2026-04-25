@@ -599,6 +599,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
     boot_out <- .boot_se_ci(fit_out, L_rot,
                             boot_fits, boot_rot, ci, b_boot)
     output <- c(output, boot = boot_out)
+    output$standardized_residuals <- output$residuals / boot_out$SE$residuals
   }
 
   class(output) <- "EFA"
@@ -805,7 +806,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 .array_se_ci <- function(x, probs, M = c(1, 2)) {
   se <- apply(x, M, stats::sd, na.rm = TRUE)
   ci <- lapply(probs, function(p) {
-    apply(x, M, quantile, probs = p, na.rm = TRUE)
+    apply(x, M, stats::quantile, probs = p, na.rm = TRUE)
   })
   names(ci) <- c("lower", "upper")
 

@@ -17,7 +17,7 @@
 Print function for MAP objects
 }
 \examples{
-MAP_base <- MAP(test_models$baseline$cormat, N = 500)
+MAP_base <- MAP(test_models$baseline$cormat)
 MAP_base
 
 }

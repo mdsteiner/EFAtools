@@ -39,23 +39,7 @@
 #' @param stat A function, e.g. \code{mean} or \code{sd}.
 #'
 #' @return A matrix with the aggregated results
-#' @examples
-#' alist <- list(
-#'   matrix(1:10, 2),
-#'   matrix(11:20, 2)
-#'   )
 #'
-#' # Have a look at list
-#' alist
-#'
-#' # Mean matrix
-#' .stat_over_list(alist, mean)
-#'
-#' # Same as averaging the two matrices in the list
-#' identical(
-#'   .stat_over_list(alist, mean),
-#'   (alist[[1]] + alist[[2]]) / 2
-#' )
 .stat_over_list <- function(alist, stat) {
   # In what follows:
   # n: length(alist)
@@ -174,7 +158,7 @@
   rubin_term_3 <- rubin_term_2 / n
   se <- sqrt(rubin_term_1 + rubin_term_2 + rubin_term_3)
 
-  error <- qt(1 - p / 2, n - 1) * se
+  error <- stats::qt(1 - p / 2, n - 1) * se
 
   lower_ci <- means - error
   upper_ci <-  means + error
@@ -508,6 +492,16 @@
   library.dynam.unload("EFAtools", libpath)
 }
 
+.rmsr <- function(residuals, upper = TRUE) {
+  E <- as.matrix(residuals)
+  if (isTRUE(upper)) {
+    vals <- E[upper.tri(E, diag = FALSE)]
+  } else {
+    vals <- E[row(E) != col(E)]
+  }
+  sqrt(mean(vals^2, na.rm = TRUE))
+}
+
 .gof <- function(L, # The loading/ pattern matrix
                  R, # The correlation matrix
                  N, # The number of cases
@@ -535,8 +529,7 @@
   }
 
   ### compute RMSR
-  off <- delta_hat[lower.tri(delta_hat, diag = FALSE)]
-  RMSR <- sqrt(mean(off^2, na.rm = TRUE))
+  RMSR <- .rmsr(delta_hat)
 
   if (method != "PAF" && !is.na(N) && df >=0) {
 
@@ -1268,41 +1261,50 @@ if(n == 1){
 
   m <- ncol(L_target)
 
-  # reorder factors according to tuckers congruence coefficient
-  # get Tucker's congruence coefficients
-  congruence <- .factor_congruence(L_target, L, skip_checks = TRUE)
+  congruence <- .tucker_congruence(L_target, L)
 
   if (m > 1) {
 
-    # factor order for L
-    factor_order <- apply(abs(congruence), 1, which.max)
+    cost <- max(abs(congruence), na.rm = TRUE) - abs(congruence)
 
-    # reorder
+    factor_order <- as.integer(clue::solve_LSAP(cost))
+
+    # reorder columns of L
     L <- L[, factor_order, drop = FALSE]
 
-    # get signs
-    factor_sign <- diag(sign(diag(crossprod(L, L_target))), nrow = m, ncol = m)
+    if (!is.null(Phi)) {
+      Phi <- Phi[factor_order, factor_order, drop = FALSE]
+    }
 
-    # switch signs where necessary
+    # get signs after reordering
+    factor_sign <- sign(diag(crossprod(L, L_target)))
+
+    # avoid accidental zero columns if exact dot product is zero
+    factor_sign[factor_sign == 0] <- 1
+
+    factor_sign <- diag(factor_sign, nrow = m, ncol = m)
+
+    # apply signs
     L <- L %*% factor_sign
 
     if (!is.null(Phi)) {
-
-      Phi <- factor_sign %*% Phi[factor_order, factor_order, drop = FALSE] %*% factor_sign
+      Phi <- factor_sign %*% Phi %*% factor_sign
     }
 
   } else {
-    # switch signs where necessary
-    factor_sign <- sign(congruence)
-    L <- L %*% factor_sign
-  }
 
+    factor_sign <- sign(congruence)
+    if (factor_sign == 0) factor_sign <- 1
+
+    L <- L %*% factor_sign
+
+    # Phi unchanged for one factor, because sign^2 = 1
+  }
 
   list(
     loadings = L,
     Phi = Phi
   )
-
 }
 
 

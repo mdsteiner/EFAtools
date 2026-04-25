@@ -8,7 +8,7 @@
 #' @method print MAP
 #'
 #' @examples
-#' MAP_base <- MAP(test_models$baseline$cormat, N = 500)
+#' MAP_base <- MAP(test_models$baseline$cormat)
 #' MAP_base
 #'
 print.MAP <- function(x, plot = TRUE, ...) {

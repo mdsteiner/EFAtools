@@ -5,12 +5,13 @@
 * `MAP()` computes the Velicer MAP criterion (both TR2 and TR4).
 * `PROCRUSTES()` to perform orthogonal and oblique Procrustes / target rotation.
 * `CONSENSUS_PROCRUSTES()` to perform Procrustes on a list of targets to obtain a common target.
+* `residuals.EFA()` to extract and print residuals and, if computed, standardized residuals.
 
 ## Changes to Functions
 
 * `N_FACTORS()` can also compute the MAP criterion.
 * `EFA()`:
-  * Now returns and prints residuals.
+  * Now returns and prints residuals and, if SEs are computed, standardized residuals.
   * Calculates and prints RMSR.
   * Can calculate bootstrap standard errors and CIs of parameters and fit indices.
 
