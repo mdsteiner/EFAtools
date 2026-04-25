@@ -270,7 +270,7 @@ format.LOADINGS <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   }
 
   if (identical(name_style, "abbreviate")) {
-    return(as.character(utils::abbreviate(
+    return(as.character(abbreviate(
       x,
       minlength = max_length,
       strict = TRUE,

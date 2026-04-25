@@ -10,3 +10,5 @@
 ^Meta$
 ^\.github$
 ^CRAN-SUBMISSION$
+^\.positai$
+^\.claude$

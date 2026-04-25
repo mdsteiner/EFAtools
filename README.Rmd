@@ -72,6 +72,11 @@ EFA_psych <- EFA(test_models$baseline$cormat, n_factors = 3, type = "psych",
 COMPARE(EFA_SPSS$rot_loadings, EFA_psych$rot_loadings,
         x_labels = c("SPSS", "psych"))
 
+# Run EFA and compute standard errors and confidence intervals based
+# on non-parametric bootstrap:
+EFA(GRiPS_raw, n_factors = 1, method = "ML", se = "np-boot")
+
+
 # Average solution across many different EFAs with oblique rotations
 EFA_AV <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
                       method = c("PAF", "ML", "ULS"), rotation = "oblique",

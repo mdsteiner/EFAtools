@@ -176,6 +176,41 @@ COMPARE(EFA_SPSS$rot_loadings, EFA_psych$rot_loadings,
 
 ``` r
 
+# Run EFA and compute standard errors and confidence intervals based
+# on non-parametric bootstrap:
+EFA(GRiPS_raw, n_factors = 1, method = "ML", se = "np-boot")
+#> ℹ 'x' was not a correlation matrix. Correlations are found from entered raw data.
+#> 
+#> EFA performed with type = 'EFAtools', method = 'ML', and rotation = 'none'.
+#> 
+#> ── Unrotated Loadings ──────────────────────────────────────────────────────────
+#> 
+#>               F1      h2      u2  
+#> fun           .796    .634    .366
+#> friends       .851    .725    .275
+#> enjoy         .872    .760    .240
+#> hurt          .767    .588    .412
+#> part          .817    .667    .333
+#> commonly      .832    .692    .308
+#> chances       .788    .621    .379
+#> attracted     .845    .715    .285
+#> 
+#> ── Variances Accounted for ─────────────────────────────────────────────────────
+#> 
+#>               F1  
+#> SS loadings   5.401
+#> Prop Tot Var  0.675
+#> 
+#> ── Model Fit ───────────────────────────────────────────────────────────────────
+#> 
+#> 𝜒²(20) = 59.92, p < .001
+#> CFI =1.00
+#> RMSEA [90% CI] = .05 [.04; .06]
+#> AIC = 19.92
+#> BIC = -74.02
+#> CAF = .50
+
+
 # Average solution across many different EFAs with oblique rotations
 EFA_AV <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
                       method = c("PAF", "ML", "ULS"), rotation = "oblique",

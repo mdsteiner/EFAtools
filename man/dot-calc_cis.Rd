@@ -35,7 +35,7 @@ According to Hayes & Enders (2023) p. 42:
 
 \emph{[T]he first term under the radical represents the average squared
 standard error (the within imputation sampling variance [...]), the second
-term depends on the variance of the \emph{M} parameter estimates around their
+term depends on the variance of the M parameter estimates around their
 average (the between imputation variance [...]), and the final term
 represents the squared standard error of the pooled estimate [...].
 Conceptually, the first term estimates the sampling error of a complete-data
@@ -70,7 +70,7 @@ Hazra, A. (2017). Using the confidence interval confidently. \emph{Journal of
 Thoracic Disease} 9(10), 4125--4130.
 
 Rubin, D. B. (1987). Multiple imputation for nonresponse in surveys. Wiley.
-\url{https://doi.org/10.1002/9780470316696}
+https://doi.org/10.1002/9780470316696
 }
 \author{
 Andreas Soteriades

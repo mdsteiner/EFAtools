@@ -44,7 +44,7 @@ Encoding: UTF-8
 LazyData: true
 URL: https://github.com/mdsteiner/EFAtools
 BugReports: https://github.com/mdsteiner/EFAtools/issues
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Imports: 
     lavaan,
     psych,
@@ -67,8 +67,7 @@ Imports:
     progressr,
     progress,
     rlang,
-    clue,
-    utils
+    clue
 LinkingTo: 
     Rcpp, RcppArmadillo
 Suggests: 
