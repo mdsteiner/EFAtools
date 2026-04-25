@@ -67,7 +67,8 @@ Imports:
     progressr,
     progress,
     rlang,
-    clue
+    clue,
+    utils
 LinkingTo: 
     Rcpp, RcppArmadillo
 Suggests: 

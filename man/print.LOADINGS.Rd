@@ -2,9 +2,38 @@
 % Please edit documentation in R/print.LOADINGS.R
 \name{print.LOADINGS}
 \alias{print.LOADINGS}
+\alias{format.LOADINGS}
 \title{Print LOADINGS object}
 \usage{
-\method{print}{LOADINGS}(x, cutoff = 0.3, digits = 3, max_name_length = 10, h2 = NULL, ...)
+\method{print}{LOADINGS}(
+  x,
+  cutoff = 0.3,
+  digits = 3,
+  max_name_length = 10,
+  h2 = NULL,
+  color = TRUE,
+  name_style = c("truncate", "abbreviate", "full"),
+  max_factor_name_length = NULL,
+  max_factors_per_block = NULL,
+  sort_loadings = c("none", "primary", "clustered"),
+  legend = FALSE,
+  ...
+)
+
+\method{format}{LOADINGS}(
+  x,
+  cutoff = 0.3,
+  digits = 3,
+  max_name_length = 10,
+  h2 = NULL,
+  color = TRUE,
+  name_style = c("truncate", "abbreviate", "full"),
+  max_factor_name_length = NULL,
+  max_factors_per_block = NULL,
+  sort_loadings = c("none", "primary", "clustered"),
+  legend = FALSE,
+  ...
+)
 }
 \arguments{
 \item{x}{class LOADINGS matrix.}
@@ -16,11 +45,36 @@ default is .3.}
 to round the loadings to (default is 3).}
 
 \item{max_name_length}{numeric. The maximum length of the variable names to
-display. Everything beyond this will be cut from the right.}
+display. Everything beyond this will be cut from the right unless
+\code{name_style = "abbreviate"} or \code{name_style = "full"} is used.}
 
-\item{h2}{numeric. Vector of communalities to print.}
+\item{h2}{numeric. Vector of communalities to print. If named and \code{x}
+has row names, names are used to align communalities to rows.}
 
-\item{...}{additional arguments passed to print}
+\item{color}{logical. Whether to apply console styling using \pkg{crayon}.
+Default is \code{TRUE}.}
+
+\item{name_style}{character. How to shorten variable names longer than
+\code{max_name_length}. \code{"truncate"} cuts names from the right,
+\code{"abbreviate"} uses \code{\link[base:abbreviate]{abbreviate}}, and
+\code{"full"} prints full names.}
+
+\item{max_factor_name_length}{numeric or \code{NULL}. Optional maximum length
+of factor names. If \code{NULL}, factor names are not shortened.}
+
+\item{max_factors_per_block}{numeric or \code{NULL}. Maximum number of factor
+columns to print per block. If \code{NULL}, the number is chosen from the
+console width.}
+
+\item{sort_loadings}{character. Optional row sorting. \code{"none"} preserves
+the input order, \code{"primary"} groups rows by the factor with the largest
+absolute loading, and \code{"clustered"} additionally sorts within each
+factor by the size of the primary loading.}
+
+\item{legend}{logical. Whether to append a short explanation of the styling.
+Default is \code{FALSE} for standalone loading matrices.}
+
+\item{...}{additional arguments passed to print or format}
 }
 \description{
 Print LOADINGS object

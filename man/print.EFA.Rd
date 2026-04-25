@@ -2,9 +2,102 @@
 % Please edit documentation in R/print.EFA.R
 \name{print.EFA}
 \alias{print.EFA}
+\alias{print.EFA_POOLED}
+\alias{format.EFA}
+\alias{format.EFA_POOLED}
 \title{Print EFA object}
 \usage{
-\method{print}{EFA}(x, cutoff = 0.3, digits = 3, max_name_length = 10, ...)
+\method{print}{EFA}(
+  x,
+  cutoff = 0.3,
+  digits = 3,
+  max_name_length = 10,
+  ci = c("auto", "none", "separate"),
+  ci_filter = c("salient", "all", "nonzero"),
+  details = c("standard", "compact", "full"),
+  diagnostics = TRUE,
+  diagnostics_top_n = 10,
+  residual_cutoff = 0.1,
+  residual_top_n = 10,
+  show_structure = FALSE,
+  sort_loadings = c("none", "primary", "clustered"),
+  show_loading_legend = TRUE,
+  cross_loading_cutoff = cutoff,
+  min_primary_gap = 0.2,
+  min_salient_per_factor = 3,
+  max_factors_per_block = NULL,
+  show_mi_diagnostics = NULL,
+  ...
+)
+
+\method{print}{EFA_POOLED}(
+  x,
+  cutoff = 0.3,
+  digits = 3,
+  max_name_length = 10,
+  ci = c("auto", "none", "separate"),
+  ci_filter = c("salient", "all", "nonzero"),
+  details = c("standard", "compact", "full"),
+  diagnostics = TRUE,
+  diagnostics_top_n = 10,
+  residual_cutoff = 0.1,
+  residual_top_n = 10,
+  show_structure = FALSE,
+  sort_loadings = c("none", "primary", "clustered"),
+  show_loading_legend = TRUE,
+  cross_loading_cutoff = cutoff,
+  min_primary_gap = 0.2,
+  min_salient_per_factor = 3,
+  max_factors_per_block = NULL,
+  show_mi_diagnostics = NULL,
+  ...
+)
+
+\method{format}{EFA}(
+  x,
+  cutoff = 0.3,
+  digits = 3,
+  max_name_length = 10,
+  ci = c("auto", "none", "separate"),
+  ci_filter = c("salient", "all", "nonzero"),
+  details = c("standard", "compact", "full"),
+  diagnostics = TRUE,
+  diagnostics_top_n = 10,
+  residual_cutoff = 0.1,
+  residual_top_n = 10,
+  show_structure = FALSE,
+  sort_loadings = c("none", "primary", "clustered"),
+  show_loading_legend = TRUE,
+  cross_loading_cutoff = cutoff,
+  min_primary_gap = 0.2,
+  min_salient_per_factor = 3,
+  max_factors_per_block = NULL,
+  show_mi_diagnostics = NULL,
+  ...
+)
+
+\method{format}{EFA_POOLED}(
+  x,
+  cutoff = 0.3,
+  digits = 3,
+  max_name_length = 10,
+  ci = c("auto", "none", "separate"),
+  ci_filter = c("salient", "all", "nonzero"),
+  details = c("standard", "compact", "full"),
+  diagnostics = TRUE,
+  diagnostics_top_n = 10,
+  residual_cutoff = 0.1,
+  residual_top_n = 10,
+  show_structure = FALSE,
+  sort_loadings = c("none", "primary", "clustered"),
+  show_loading_legend = TRUE,
+  cross_loading_cutoff = cutoff,
+  min_primary_gap = 0.2,
+  min_salient_per_factor = 3,
+  max_factors_per_block = NULL,
+  show_mi_diagnostics = NULL,
+  ...
+)
 }
 \arguments{
 \item{x}{list. An object of class EFA to be printed}
@@ -19,14 +112,75 @@ Number of digits to round the loadings to (default is 3).}
 The maximum length of the variable names to display. Everything beyond this
 will be cut from the right.}
 
-\item{...}{Further arguments for print.}
+\item{ci}{character. Whether to print confidence intervals for loadings and
+factor intercorrelations, if available. \code{"auto"} and \code{"separate"}
+print separate CI sections when CIs were computed; \code{"none"} suppresses
+these sections. Default is \code{"auto"}.}
+
+\item{ci_filter}{character. Which loading CIs to print. \code{"salient"}
+prints CIs for loadings with absolute values greater than or equal to
+\code{cutoff}; \code{"all"} prints all loading CIs; \code{"nonzero"} prints
+loading CIs that exclude zero. Default is \code{"salient"}.}
+
+\item{details}{character. Amount of information to print. \code{"standard"}
+prints the regular output, \code{"compact"} suppresses longer diagnostic
+sections, and \code{"full"} additionally prints available optional sections.}
+
+\item{diagnostics}{logical. Whether to print model and simple-structure
+diagnostics. Default is \code{TRUE}.}
+
+\item{diagnostics_top_n}{numeric. Maximum number of item-level diagnostic
+entries to print per diagnostic type.}
+
+\item{residual_cutoff}{numeric. Absolute residual cutoff used in the residual
+diagnostics section. Default is .1.}
+
+\item{residual_top_n}{numeric. Maximum number of residuals to print. Use
+\code{Inf} to print all residuals above \code{residual_cutoff}.}
+
+\item{show_structure}{logical. Whether to print the structure matrix for
+oblique solutions when available. Default is \code{FALSE}.}
+
+\item{sort_loadings}{character. Optional row sorting for loading tables.
+See \code{\link[EFAtools:print.LOADINGS]{print.LOADINGS}}.}
+
+\item{show_loading_legend}{logical. Whether to print a compact legend for
+loading-table styling. Default is \code{TRUE}.}
+
+\item{cross_loading_cutoff}{numeric. Cutoff for counting cross-loadings in
+the diagnostics. Defaults to \code{cutoff}.}
+
+\item{min_primary_gap}{numeric. Minimum desired absolute difference between
+the largest and second-largest absolute loading of an item. Used only for
+descriptive diagnostics.}
+
+\item{min_salient_per_factor}{numeric. Minimum number of salient indicators
+per factor used in the diagnostics. Default is 3.}
+
+\item{max_factors_per_block}{numeric or \code{NULL}. Maximum number of factor
+columns per loading-table block. If \code{NULL}, this is chosen from the
+console width.}
+
+\item{show_mi_diagnostics}{logical or \code{NULL}. Whether to print a compact
+MI uncertainty summary for pooled EFAs when available. \code{NULL} prints it
+only for \code{details = "full"}.}
+
+\item{...}{Further arguments passed to \code{\link[EFAtools:print.LOADINGS]{print.LOADINGS}}.}
 }
 \description{
 Print Method showing a summarized output of the \link{EFA} function
 }
 \examples{
-EFAtools_PAF <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
-                    type = "EFAtools", method = "PAF", rotation = "promax")
-EFAtools_PAF
+mod <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
+           method = "PAF", rotation = "promax")
+mod
+
+# With SEs and CIs, needs raw-data
+mod <- EFA(GRiPS_raw, n_factors = 1, method = "ML", se = "np-boot")
+mod
+# with additional infos
+print(mod, details = "full")
+# omit some diagnostic parts
+print(mod, details = "compact")
 
 }

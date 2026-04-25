@@ -75,10 +75,10 @@ matrices so that the factor model remains internally consistent.
 Point estimates are pooled by arithmetic averaging after alignment. For
 oblique rotations, the returned structure matrix is computed from the pooled
 aligned pattern matrix and the pooled factor correlation matrix,
-\eqn{Structure = Lambda Phi}. Communalities are always computed as the
+\eqn{Structure = \Lambda \Phi}. Communalities are always computed as the
 diagonal of the common-factor reproduced correlation matrix,
-\eqn{diag(Lambda Phi Lambda')} for oblique rotations and
-\eqn{diag(Lambda Lambda')} otherwise.
+\eqn{diag(\Lambda \Phi \Lambda')} for oblique rotations and
+\eqn{diag(\Lambda \Lambda')} otherwise.
 
 Residuals are not averaged from the per-imputation residual matrices. Instead,
 the observed correlation matrices are averaged across imputations and residuals
@@ -109,6 +109,20 @@ communalities, residuals, and structure coefficients are Wald-type MI
 intervals; \code{boot.CI$fit_indices_pooled_algorithm}, when available, is a
 percentile-style summary obtained by re-running the pooled-fit algorithm over
 matched bootstrap replicate indices.
+}
+\examples{
+
+# create a list of three datasets, mimicking a list you would obtain from
+# e.g. mice.
+dat_list <- lapply(1:3, function(x) GRiPS_raw[sample(1:nrow(GRiPS_raw), replace = TRUE),])
+mod <- EFA_POOLED(dat_list, n_factors = 1, method = "ML")
+mod
+
+\donttest{
+# add computation of standard errors and CIs
+mod <- EFA_POOLED(dat_list, n_factors = 1, method = "ML", se = "np-boot")
+mod
+}
 }
 \author{
 Andreas Soteriades, Markus Steiner
