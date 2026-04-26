@@ -374,7 +374,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                                                                  NULL))
 
       for (boot_i in seq_len(b_boot)) {
-        ind <- sample(rows, size = b_boot, replace = TRUE)
+        ind <- sample(rows, size = N, replace = TRUE)
         R_boot_array[,, boot_i] <- stats::cor(x[ind,], use = use, method = cor_method)
       }
 

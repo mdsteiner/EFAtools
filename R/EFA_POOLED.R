@@ -32,12 +32,14 @@
 #'
 #' Fit indices based on the model chi-square are not arithmetic means of the
 #' per-imputation fit indices. If possible, chi-square-type fit is pooled with
-#' the D2 rule. The asymptotic chi-square approximation to D2 is then used for
-#' RMSEA and CFI. AIC and BIC, if returned, are chi-square-derived descriptive
-#' quantities based on this D2 approximation and should not be interpreted as
-#' likelihood-based MI information criteria. D3/D4 pooling is not implemented
-#' here because the current \code{EFA} objects do not expose the likelihood
-#' quantities needed for those methods.
+#' the D2 rule. For CFI, the null-model chi-square is D2-pooled as well when
+#' complete-data null-model chi-squares are available. The asymptotic
+#' chi-square approximation to D2 is then used for RMSEA and CFI. AIC and BIC,
+#' if returned, are chi-square-derived descriptive quantities based on this D2
+#' approximation and should not be interpreted as likelihood-based MI
+#' information criteria. D3/D4 pooling is not implemented here because the
+#' current \code{EFA} objects do not expose the likelihood quantities needed
+#' for those methods.
 #'
 #' If each component \code{EFA} call was run with \code{se = "np-boot"} and
 #' returned \code{boot.arrays}, pooled bootstrap SEs and Wald-type MI confidence
@@ -50,15 +52,19 @@
 #' matrices. Rubin-type MI pooling is then applied with
 #' \eqn{T = Ubar + (1 + 1 / m) B}. Confidence intervals for loadings, Phi,
 #' communalities, residuals, and structure coefficients are Wald-type MI
-#' intervals; \code{boot.CI$fit_indices_pooled_algorithm}, when available, is a
+#' intervals. The confidence level of these pooled intervals is controlled by
+#' \code{p}; the \code{ci} argument passed through \code{...} to the component
+#' \code{EFA} calls is not used for the pooled intervals.
+#' \code{boot.CI$fit_indices_pooled_algorithm}, when available, is a
 #' percentile-style summary obtained by re-running the pooled-fit algorithm over
 #' matched bootstrap replicate indices.
 #'
 #' @param data_list A list of length \eqn{m}, where \eqn{m} is the number of
 #' imputations. Each list element is a data frame or matrix of raw data, or a
 #' correlation matrix. See argument \code{x} in \code{\link{EFA}}.
-#' @param p Numeric. One minus the confidence level used for pooled Wald-type
-#' bootstrap/MI confidence intervals when bootstrap arrays are available.
+#' @param p Numeric in \eqn{(0, 1)}. One minus the confidence level used for
+#' pooled Wald-type bootstrap/MI confidence intervals when bootstrap arrays are
+#' available. For example, \code{p = .05} gives 95\% intervals.
 #' @param target_method Character. \code{"consensus"} aligns all solutions to an
 #' iteratively updated consensus target. \code{"first_target"} aligns all
 #' solutions to the first imputation's rotated solution.
@@ -119,6 +125,22 @@ EFA_POOLED <- function(data_list,
   checkmate::assert_list(procrustes_args, null.ok = FALSE)
   checkmate::assert_number(rmsea_ci_level, na.ok = FALSE, lower = 0, upper = 1)
   checkmate::assert_flag(rmsr_upper)
+
+  if (p <= 0 || p >= 1) {
+    stop("`p` must be strictly between 0 and 1.", call. = FALSE)
+  }
+  if (rmsea_ci_level <= 0 || rmsea_ci_level >= 1) {
+    stop("`rmsea_ci_level` must be strictly between 0 and 1.", call. = FALSE)
+  }
+  if (!is.null(efa_args$ci) && length(efa_args$ci) == 1L &&
+      is.finite(efa_args$ci) &&
+      abs(as.numeric(efa_args$ci) - (1 - p)) > sqrt(.Machine$double.eps)) {
+    warning(
+      "`EFA_POOLED()` uses `p`, not the component `EFA()` argument `ci`, ",
+      "to set pooled bootstrap/MI confidence intervals.",
+      call. = FALSE
+    )
+  }
 
   target_method <- match.arg(target_method)
   align_unrotated <- match.arg(align_unrotated)
@@ -191,6 +213,7 @@ EFA_POOLED <- function(data_list,
         phis[[1]] <- fits[[1]]$Phi
       }
 
+      point_rotation_failures <- logical(m_imp)
       for (d in 2:m_imp) {
         target_rotations[[d]] <- do.call(
           PROCRUSTES,
@@ -199,16 +222,28 @@ EFA_POOLED <- function(data_list,
                  rotation = rotation_type),
             procrustes_args)
         )
+        point_rotation_failures[d] <- !is.null(target_rotations[[d]]$convergence) &&
+          isFALSE(target_rotations[[d]]$convergence)
         rot_loadings[[d]] <- target_rotations[[d]]$loadings
         if (rotation_type == "oblique") {
           phis[[d]] <- target_rotations[[d]]$Phi
         }
       }
 
+      if (any(point_rotation_failures)) {
+        warning(
+          "At least one fixed-target Procrustes alignment did not converge. ",
+          "The returned pooled point estimates still use the best available ",
+          "alignment from PROCRUSTES(). Inspect `alignment$point_rotation_failures`.",
+          call. = FALSE
+        )
+      }
+
       final_target <- rot_loadings_initial[[1]]
       alignment <- list(method = "first_target",
                         target = final_target,
-                        target_rotations = target_rotations)
+                        target_rotations = target_rotations,
+                        point_rotation_failures = which(point_rotation_failures))
 
     } else if (target_method == "consensus") {
       consensus <- do.call(
@@ -218,6 +253,15 @@ EFA_POOLED <- function(data_list,
                rotation = rotation_type),
           consensus_args)
       )
+
+      if (!isTRUE(consensus$converged)) {
+        warning(
+          "Consensus Procrustes alignment did not meet its convergence criterion. ",
+          "Inspect `alignment$history` and consider stricter or multi-start ",
+          "`consensus_args`.",
+          call. = FALSE
+        )
+      }
 
       rot_loadings <- consensus$aligned_loadings
       phis <- consensus$aligned_phi
@@ -311,11 +355,32 @@ EFA_POOLED <- function(data_list,
 
   Ns <- .efa_pooled_get_Ns(data_list, fits, efa_args)
   Ns_ok <- Ns[is.finite(Ns)]
-  if (length(unique(Ns_ok)) > 1L) {
-    warning("The imputed datasets appear to have different N. Fit indices use the mean N across imputations.",
-            call. = FALSE)
+  if (length(Ns_ok) == 0L) {
+    N_pool <- NA_real_
+    if (!identical(method, "PAF")) {
+      warning(
+        "N could not be recovered for any imputation. ",
+        "Chi-square-based fit indices cannot be computed.",
+        call. = FALSE
+      )
+    }
+  } else {
+    if (length(Ns_ok) < length(Ns)) {
+      warning(
+        "N could not be recovered for every imputation. ",
+        "Fit indices use the mean of the available Ns.",
+        call. = FALSE
+      )
+    }
+    if (length(unique(Ns_ok)) > 1L) {
+      warning(
+        "The imputed datasets appear to have different N. ",
+        "Fit indices use the mean N across imputations.",
+        call. = FALSE
+      )
+    }
+    N_pool <- mean(Ns_ok)
   }
-  N_pool <- mean(Ns, na.rm = TRUE)
 
   fit_indices <- .efa_pooled_fit_indices(
     fits = fits,
@@ -369,6 +434,27 @@ EFA_POOLED <- function(data_list,
     mean_structure_loadings <- .change_class(mean_structure_loadings, "LOADINGS")
   }
 
+  settings_pooled <- settings
+  settings_pooled$N <- N_pool
+  settings_pooled$pooled_N <- N_pool
+  settings_pooled$pooled <- TRUE
+  settings_pooled$component_se <- settings$se
+  if (is.null(boot_pooled)) {
+    # Avoid a misleading bootstrap note in print.EFA_POOLED() when component EFA
+    # calls requested bootstrap SEs but pooled bootstrap/MI SEs could not be
+    # computed (e.g., missing arrays or too few bootstrap replicates).
+    settings_pooled$se <- "none"
+  }
+  settings_pooled$n_imputations <- m_imp
+  settings_pooled$target_method <- target_method
+  settings_pooled$align_unrotated <- align_unrotated
+  settings_pooled$fit_pool_method <- fit_pool_method
+  settings_pooled$p <- p
+  settings_pooled$ci <- 1 - p
+  if (!is.null(boot_pooled) && !is.null(boot_pooled$n_boot)) {
+    settings_pooled$b_boot <- boot_pooled$n_boot
+  }
+
   results <- list(
     h2 = h2,
     unrot_loadings = mean_unrot_loadings,
@@ -377,13 +463,7 @@ EFA_POOLED <- function(data_list,
     model_implied_R = model_implied_R,
     residuals = residuals,
     orig_R = pooled_orig_R,
-    settings = c(settings, list(
-      pooled = TRUE,
-      n_imputations = m_imp,
-      target_method = target_method,
-      align_unrotated = align_unrotated,
-      fit_pool_method = fit_pool_method
-    )),
+    settings = settings_pooled,
     fits = fits,
     alignment = alignment,
     mi_diagnostics = fit_indices$mi_diagnostics
@@ -539,7 +619,12 @@ EFA_POOLED <- function(data_list,
     )
   }
 
-  denom <- df * (N - 1)
+  # Keep the denominator convention used by EFAtools::.gof(): the point
+  # RMSEA uses df * N - 1 and the noncentrality CI uses df * N.
+  denom <- df * N
+  if (!is.finite(denom) || denom <= 0) {
+    return(c(lower = NA_real_, upper = NA_real_))
+  }
   c(lower = sqrt(lambda_l / denom), upper = sqrt(lambda_u / denom))
 }
 
@@ -613,16 +698,27 @@ EFA_POOLED <- function(data_list,
   p_vars <- nrow(pooled_R)
   df <- NA_real_
   chis <- numeric(0)
+  chis_null <- numeric(0)
 
   if (length(fit_list) > 0L) {
-    dfs <- vapply(fit_list, function(x) if (!is.null(x$df)) x$df else NA_real_, numeric(1))
+    dfs <- vapply(fit_list, function(x) {
+      if (!is.null(x$df)) x$df else NA_real_
+    }, numeric(1))
     finite_dfs <- unique(stats::na.omit(dfs))
     if (length(finite_dfs) > 1L) {
       stop("Cannot D2-pool chi-square fit because the imputation-specific dfs differ.",
            call. = FALSE)
     }
-    df <- finite_dfs[1]
-    chis <- vapply(fit_list, function(x) if (!is.null(x$chi)) x$chi else NA_real_, numeric(1))
+    if (length(finite_dfs) == 1L) {
+      df <- finite_dfs[[1L]]
+    }
+
+    chis <- vapply(fit_list, function(x) {
+      if (!is.null(x$chi)) x$chi else NA_real_
+    }, numeric(1))
+    chis_null <- vapply(fit_list, function(x) {
+      if (!is.null(x$chi_null)) x$chi_null else NA_real_
+    }, numeric(1))
   }
 
   D2 <- NULL
@@ -641,24 +737,41 @@ EFA_POOLED <- function(data_list,
   }
 
   df_null <- p_vars * (p_vars - 1) / 2
-  chi_null <- if (is.finite(N) && N > 1) {
-    sum(pooled_R[upper.tri(pooled_R)]^2) * (N - 1)
-  } else {
-    NA_real_
+  D2_null <- NULL
+  if (identical(pool_method, "D2") && length(chis_null) > 0L &&
+      is.finite(df_null) && df_null > 0) {
+    D2_null <- .efa_pooled_D2(chis_null, df_null)
   }
-  p_null <- if (is.finite(chi_null)) stats::pchisq(chi_null, df_null, lower.tail = FALSE) else NA_real_
 
-  if (is.finite(chi) && is.finite(chi_null) && is.finite(df) && df >= 0) {
+  if (!is.null(D2_null)) {
+    chi_null <- D2_null$chi
+    p_null <- D2_null$p
+  } else if (is.finite(N) && N > 1) {
+    chi_null <- sum(pooled_R[upper.tri(pooled_R)]^2) * (N - 1)
+    p_null <- stats::pchisq(chi_null, df_null, lower.tail = FALSE)
+  } else {
+    chi_null <- NA_real_
+    p_null <- NA_real_
+  }
+
+  if (is.finite(chi) && is.finite(chi_null) &&
+      is.finite(df) && is.finite(df_null) && df >= 0) {
     delta_null <- chi_null - df_null
     delta_model <- chi - df
-    CFI <- (delta_null - delta_model) / delta_null
-    CFI <- max(0, min(1, CFI))
+    if (is.finite(delta_null) && delta_null > 0) {
+      CFI <- (delta_null - delta_model) / delta_null
+      CFI <- max(0, min(1, CFI))
+    } else {
+      CFI <- NA_real_
+    }
   } else {
     CFI <- NA_real_
   }
 
-  if (is.finite(chi) && is.finite(df) && is.finite(N) && df > 0 && N > 1) {
-    RMSEA <- sqrt(max((chi - df) / (df * (N - 1)), 0))
+  rmsea_denom <- df * N - 1
+  if (is.finite(chi) && is.finite(df) && is.finite(N) &&
+      df > 0 && N > 1 && is.finite(rmsea_denom) && rmsea_denom > 0) {
+    RMSEA <- sqrt(max((chi - df) / rmsea_denom, 0))
     rmsea_ci <- .efa_pooled_rmsea_ci(chi, df, N, level = rmsea_ci_level)
   } else {
     RMSEA <- NA_real_
@@ -700,8 +813,15 @@ EFA_POOLED <- function(data_list,
       D2_df2 = if (!is.null(D2)) D2$df2 else NA_real_,
       D2_chi_asymptotic = if (!is.null(D2)) D2$chi else NA_real_,
       chi_bar_naive = if (!is.null(D2)) D2$Tbar else if (length(chis) > 0L) mean(chis, na.rm = TRUE) else NA_real_,
+      D2_null_F = if (!is.null(D2_null)) D2_null$F else NA_real_,
+      D2_null_df1 = if (!is.null(D2_null)) D2_null$df1 else NA_real_,
+      D2_null_df2 = if (!is.null(D2_null)) D2_null$df2 else NA_real_,
+      D2_null_chi_asymptotic = if (!is.null(D2_null)) D2_null$chi else NA_real_,
+      chi_null_bar_naive = if (!is.null(D2_null)) D2_null$Tbar else if (length(chis_null) > 0L) mean(chis_null, na.rm = TRUE) else NA_real_,
       ARIV = if (!is.null(D2)) D2$ARIV else NA_real_,
       FMI = if (!is.null(D2)) D2$FMI else NA_real_,
+      ARIV_null = if (!is.null(D2_null)) D2_null$ARIV else NA_real_,
+      FMI_null = if (!is.null(D2_null)) D2_null$FMI else NA_real_,
       m = if (!is.null(D2)) D2$M else length(fits)
     )
   )
@@ -787,46 +907,86 @@ EFA_POOLED <- function(data_list,
   )
 }
 
+
+.efa_pooled_col_means <- function(x) {
+  # Column means that return NA for columns without finite values.
+  x <- as.matrix(x)
+  if (ncol(x) < 1L) {
+    return(numeric(0))
+  }
+  vapply(seq_len(ncol(x)), function(j) {
+    vals <- x[, j]
+    vals <- vals[is.finite(vals)]
+    if (length(vals) < 1L) {
+      NA_real_
+    } else {
+      mean(vals)
+    }
+  }, numeric(1))
+}
+
+.efa_pooled_col_vars <- function(x) {
+  # Column variances that return NA for columns with fewer than two finite values.
+  # Rubin pooling only needs diagonal within- and between-imputation variances,
+  # so computing full covariance matrices is unnecessary and can be prohibitively
+  # memory-intensive for residual matrices.
+  x <- as.matrix(x)
+  if (ncol(x) < 1L) {
+    return(numeric(0))
+  }
+  if (nrow(x) < 2L) {
+    return(rep(NA_real_, ncol(x)))
+  }
+  vapply(seq_len(ncol(x)), function(j) {
+    vals <- x[, j]
+    vals <- vals[is.finite(vals)]
+    if (length(vals) < 2L) {
+      NA_real_
+    } else {
+      stats::var(vals)
+    }
+  }, numeric(1))
+}
+
 .efa_pooled_rubin_pool <- function(q_list, boot_mat_list, alpha = 0.05,
                                    est_override = NULL) {
-  # q_list contains one aligned point-estimate vector per imputation.
-  # boot_mat_list contains aligned bootstrap replicates for estimating U_d.
+  # Rubin-style pooling for one parameter family.
+  #
+  # q_list contains one aligned point-estimate vector per imputation. boot_mat_list
+  # contains aligned bootstrap replicates for estimating the within-imputation
+  # variances U_d. Only diagonal variances are required for the returned SEs, CIs,
+  # RIV, FMI, and df, so the implementation intentionally avoids building full
+  # p x p covariance matrices for each parameter vector.
   m <- length(q_list)
   q_mat <- do.call(rbind, q_list)
-  q_bar <- colMeans(q_mat, na.rm = TRUE)
+  q_bar <- .efa_pooled_col_means(q_mat)
 
-  U_list <- lapply(boot_mat_list, function(Bmat) {
-    Bmat <- as.matrix(Bmat)
-    if (nrow(Bmat) < 2L) {
-      return(matrix(NA_real_, ncol(Bmat), ncol(Bmat)))
-    }
-    stats::cov(Bmat, use = "pairwise.complete.obs")
-  })
-
-  U_bar <- Reduce("+", U_list) / m
+  U_diag_mat <- do.call(rbind, lapply(boot_mat_list, .efa_pooled_col_vars))
+  U_bar <- colMeans(U_diag_mat)
   B_mi <- if (m > 1L) {
-    stats::cov(q_mat, use = "pairwise.complete.obs")
+    .efa_pooled_col_vars(q_mat)
   } else {
-    matrix(0, ncol(q_mat), ncol(q_mat))
+    rep(0, ncol(q_mat))
   }
 
   T_mi <- U_bar + (1 + 1 / m) * B_mi
-  se <- sqrt(diag(T_mi))
+  T_mi[is.finite(T_mi) & T_mi < 0 & abs(T_mi) < sqrt(.Machine$double.eps)] <- 0
+  se <- sqrt(T_mi)
 
-  U_diag <- diag(U_bar)
-  B_diag <- diag(B_mi)
   r <- rep(0, length(se))
-
-  has_U <- is.finite(U_diag) & U_diag > 0
-  r[has_U] <- ((1 + 1 / m) * B_diag[has_U]) / U_diag[has_U]
-  r[!has_U & is.finite(B_diag) & B_diag > 0] <- Inf
+  has_U <- is.finite(U_bar) & U_bar > 0
+  r[has_U] <- ((1 + 1 / m) * B_mi[has_U]) / U_bar[has_U]
+  r[!has_U & is.finite(B_mi) & B_mi > 0] <- Inf
+  r[!is.finite(B_mi) & !is.infinite(r)] <- NA_real_
 
   df <- rep(Inf, length(se))
   finite_pos_r <- is.finite(r) & r > 0
   df[finite_pos_r] <- (m - 1) * (1 + 1 / r[finite_pos_r])^2
   df[is.infinite(r)] <- m - 1
+  df[is.na(r)] <- NA_real_
 
   fmi <- r / (1 + r)
+  fmi[is.infinite(r)] <- 1
   fmi[is.nan(fmi)] <- 0
 
   est <- if (is.null(est_override)) q_bar else est_override
@@ -845,6 +1005,7 @@ EFA_POOLED <- function(data_list,
     df = df
   )
 }
+
 
 .efa_pooled_align_unrot_boot <- function(L_boot, target, align_unrotated) {
   # Align one bootstrap unrotated loading matrix to the pooled unrotated target.
@@ -929,13 +1090,32 @@ EFA_POOLED <- function(data_list,
 
 .efa_pooled_scalar_boot_summary <- function(x, alpha = 0.05) {
   # Percentile-style summaries for scalar quantities generated by the full
-  # pooled bootstrap algorithm.
+  # pooled bootstrap algorithm. Columns with no finite bootstrap values return
+  # NA instead of failing inside quantile().
   x <- as.matrix(x)
-  se <- apply(x, 2L, stats::sd, na.rm = TRUE)
+  nms <- colnames(x)
+
+  se <- sqrt(.efa_pooled_col_vars(x))
+  qfun <- function(vals, prob) {
+    vals <- vals[is.finite(vals)]
+    if (length(vals) < 1L) {
+      NA_real_
+    } else {
+      stats::quantile(vals, probs = prob, names = FALSE, type = 7)
+    }
+  }
+
   ci <- list(
-    lower = apply(x, 2L, stats::quantile, probs = alpha / 2, na.rm = TRUE),
-    upper = apply(x, 2L, stats::quantile, probs = 1 - alpha / 2, na.rm = TRUE)
+    lower = vapply(seq_len(ncol(x)), function(j) qfun(x[, j], alpha / 2), numeric(1)),
+    upper = vapply(seq_len(ncol(x)), function(j) qfun(x[, j], 1 - alpha / 2), numeric(1))
   )
+
+  if (!is.null(nms)) {
+    names(se) <- nms
+    names(ci$lower) <- nms
+    names(ci$upper) <- nms
+  }
+
   list(se = se, ci = ci)
 }
 
@@ -993,6 +1173,14 @@ EFA_POOLED <- function(data_list,
     B_use <- B_vec[[1]]
   }
 
+  if (!is.finite(B_use) || B_use < 2L) {
+    warning(
+      "At least two bootstrap replicates per imputation are required for pooled bootstrap SEs/CIs.",
+      call. = FALSE
+    )
+    return(NULL)
+  }
+
   q_unrot <- lapply(unrot_loadings_aligned, .efa_pooled_vec)
   boot_unrot <- vector("list", m)
 
@@ -1020,7 +1208,11 @@ EFA_POOLED <- function(data_list,
   }, logical(1))]
   can_boot_fit_algorithm <- length(scalar_fit_names) > 0L &&
     all(vapply(fits, function(x) {
-      !is.null(x$boot.arrays$fit_indices) && !is.null(x$boot.arrays$residuals)
+      fit_arr <- x$boot.arrays$fit_indices
+      res_arr <- x$boot.arrays$residuals
+      !is.null(fit_arr) && !is.null(res_arr) &&
+        nrow(as.matrix(fit_arr)) >= B_use &&
+        length(dim(res_arr)) == 3L && dim(res_arr)[3L] >= B_use
     }, logical(1)))
   pooled_fit_boot <- NULL
   if (can_boot_fit_algorithm) {
@@ -1206,9 +1398,15 @@ EFA_POOLED <- function(data_list,
     is.numeric(x) && length(x) == 1L
   }, logical(1))]
 
-  if (length(fit_q_names) > 0L && all(vapply(fits, function(x) {
-    !is.null(x$boot.arrays$fit_indices)
-  }, logical(1)))) {
+  can_describe_fit_boot <- length(fit_q_names) > 0L &&
+    all(vapply(fits, function(x) {
+      fit_arr <- x$boot.arrays$fit_indices
+      !is.null(fit_arr) &&
+        nrow(as.matrix(fit_arr)) >= B_use &&
+        ncol(as.matrix(fit_arr)) >= length(fit_q_names)
+    }, logical(1)))
+
+  if (can_describe_fit_boot) {
     q_fit <- lapply(fits, function(x) unlist(x$fit_indices[fit_q_names]))
     boot_fit <- vector("list", m)
 
@@ -1346,6 +1544,7 @@ EFA_POOLED <- function(data_list,
     SE = SE,
     CI = CI,
     arrays = arrays,
-    MI = MI
+    MI = MI,
+    n_boot = B_use
   )
 }

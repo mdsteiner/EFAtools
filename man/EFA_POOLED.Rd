@@ -22,8 +22,9 @@ EFA_POOLED(
 imputations. Each list element is a data frame or matrix of raw data, or a
 correlation matrix. See argument \code{x} in \code{\link{EFA}}.}
 
-\item{p}{Numeric. One minus the confidence level used for pooled Wald-type
-bootstrap/MI confidence intervals when bootstrap arrays are available.}
+\item{p}{Numeric in \eqn{(0, 1)}. One minus the confidence level used for
+pooled Wald-type bootstrap/MI confidence intervals when bootstrap arrays are
+available. For example, \code{p = .05} gives 95\% intervals.}
 
 \item{target_method}{Character. \code{"consensus"} aligns all solutions to an
 iteratively updated consensus target. \code{"first_target"} aligns all
@@ -88,12 +89,14 @@ residual-based fit indices such as RMSR/SRMR are based on pooled residuals.
 
 Fit indices based on the model chi-square are not arithmetic means of the
 per-imputation fit indices. If possible, chi-square-type fit is pooled with
-the D2 rule. The asymptotic chi-square approximation to D2 is then used for
-RMSEA and CFI. AIC and BIC, if returned, are chi-square-derived descriptive
-quantities based on this D2 approximation and should not be interpreted as
-likelihood-based MI information criteria. D3/D4 pooling is not implemented
-here because the current \code{EFA} objects do not expose the likelihood
-quantities needed for those methods.
+the D2 rule. For CFI, the null-model chi-square is D2-pooled as well when
+complete-data null-model chi-squares are available. The asymptotic
+chi-square approximation to D2 is then used for RMSEA and CFI. AIC and BIC,
+if returned, are chi-square-derived descriptive quantities based on this D2
+approximation and should not be interpreted as likelihood-based MI
+information criteria. D3/D4 pooling is not implemented here because the
+current \code{EFA} objects do not expose the likelihood quantities needed
+for those methods.
 
 If each component \code{EFA} call was run with \code{se = "np-boot"} and
 returned \code{boot.arrays}, pooled bootstrap SEs and Wald-type MI confidence
@@ -106,7 +109,10 @@ the final MI target before estimating within-imputation bootstrap covariance
 matrices. Rubin-type MI pooling is then applied with
 \eqn{T = Ubar + (1 + 1 / m) B}. Confidence intervals for loadings, Phi,
 communalities, residuals, and structure coefficients are Wald-type MI
-intervals; \code{boot.CI$fit_indices_pooled_algorithm}, when available, is a
+intervals. The confidence level of these pooled intervals is controlled by
+\code{p}; the \code{ci} argument passed through \code{...} to the component
+\code{EFA} calls is not used for the pooled intervals.
+\code{boot.CI$fit_indices_pooled_algorithm}, when available, is a
 percentile-style summary obtained by re-running the pooled-fit algorithm over
 matched bootstrap replicate indices.
 }
