@@ -1,5 +1,6 @@
 #include <RcppArmadillo.h>
 #include <algorithm>
+#include <cmath>
 #include <limits>
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::plugins(cpp14)]]
@@ -7,19 +8,55 @@
 using namespace Rcpp;
 using namespace arma;
 
-static arma::mat normalize_cols_cpp(const arma::mat& X, double eps = 1e-15) {
-  arma::rowvec norms = sqrt(sum(square(X), 0));
-  norms.transform([&](double val) { return (val < eps) ? eps : val; });
-  return X * diagmat(1.0 / norms.t());
+static bool all_finite_cpp(const arma::mat& X) {
+  for (arma::uword i = 0; i < X.n_elem; ++i) {
+    if (!std::isfinite(X[i])) {
+      return false;
+    }
+  }
+  return true;
 }
 
-static inline arma::mat safe_inv(const arma::mat& X) {
-  arma::mat Y;
-  bool ok = arma::solve(Y, X, arma::eye<arma::mat>(X.n_rows, X.n_cols), arma::solve_opts::fast);
-  if (!ok) {
-    Y = arma::pinv(X);
+static bool is_valid_scalar_cpp(const double x) {
+  return std::isfinite(x);
+}
+
+static arma::mat normalize_cols_cpp(const arma::mat& X, double eps = 1e-15) {
+  arma::mat Y = X;
+
+  for (arma::uword j = 0; j < Y.n_cols; ++j) {
+    double nrm = arma::norm(Y.col(j), 2);
+
+    if (!std::isfinite(nrm) || nrm < eps) {
+      // A zero column violates diag(t(T) %*% T) = 1. This fallback keeps the
+      // candidate on the constraint set; singular candidates are subsequently
+      // rejected by the inverse check in compute_state_kxk().
+      Y.col(j).zeros();
+      Y(std::min(j, Y.n_rows - 1), j) = 1.0;
+    } else {
+      Y.col(j) /= nrm;
+    }
   }
+
   return Y;
+}
+
+static bool inverse_checked_cpp(const arma::mat& X, arma::mat& invX) {
+  if (X.n_rows != X.n_cols || !all_finite_cpp(X)) {
+    return false;
+  }
+
+  try {
+    bool ok = arma::solve(
+      invX,
+      X,
+      arma::eye<arma::mat>(X.n_rows, X.n_cols),
+      arma::solve_opts::fast
+    );
+    return ok && all_finite_cpp(invX);
+  } catch (...) {
+    return false;
+  }
 }
 
 struct State {
@@ -28,6 +65,7 @@ struct State {
   arma::mat U;
   arma::mat G;
   arma::mat Gp;
+  bool valid;
 };
 
 struct FitResult {
@@ -36,6 +74,8 @@ struct FitResult {
   arma::mat Table;
   double value;
   bool convergence;
+  bool valid;
+  bool line_search_failed;
   int iterations;
   double kappa_T;
 };
@@ -46,17 +86,33 @@ struct Candidate {
   double screen_value;
 };
 
+static State invalid_state_cpp(const unsigned int k) {
+  State out;
+  out.f = std::numeric_limits<double>::infinity();
+  out.s = std::numeric_limits<double>::infinity();
+  out.U.zeros(k, k);
+  out.G.zeros(k, k);
+  out.Gp.zeros(k, k);
+  out.valid = false;
+  return out;
+}
+
 static State compute_state_kxk(const arma::mat& Tmat,
                                const arma::mat& S,
                                const arma::mat& C,
                                double BtB) {
-  arma::mat invT = safe_inv(Tmat);
+  const unsigned int k = Tmat.n_cols;
+  arma::mat invT;
+  if (!inverse_checked_cpp(Tmat, invT)) {
+    return invalid_state_cpp(k);
+  }
+
   arma::mat U = invT.t();
   arma::mat SU = S * U;
   arma::mat GU = SU - C;
 
   double f = 0.5 * (accu(U % SU) - 2.0 * accu(U % C) + BtB);
-  arma::mat G = - U * GU.t() * U;
+  arma::mat G = -U * GU.t() * U;
 
   arma::rowvec proj = sum(Tmat % G, 0);
   arma::mat Gp = G - Tmat * diagmat(proj.t());
@@ -68,7 +124,26 @@ static State compute_state_kxk(const arma::mat& Tmat,
   out.U = U;
   out.G = G;
   out.Gp = Gp;
+  out.valid = std::isfinite(f) && std::isfinite(s) && all_finite_cpp(U) &&
+    all_finite_cpp(G) && all_finite_cpp(Gp);
+
+  if (!out.valid) {
+    return invalid_state_cpp(k);
+  }
+
   return out;
+}
+
+static double cond_checked_cpp(const arma::mat& X) {
+  if (!all_finite_cpp(X)) {
+    return NA_REAL;
+  }
+  try {
+    double out = arma::cond(X);
+    return std::isfinite(out) ? out : NA_REAL;
+  } catch (...) {
+    return NA_REAL;
+  }
 }
 
 static arma::mat random_orthogonal_start_cpp(const unsigned int k) {
@@ -103,11 +178,14 @@ static FitResult run_single_oblique_fit(const arma::mat& S,
                                         int maxit,
                                         int max_line_search,
                                         double step0) {
+  const unsigned int k = Tmat.n_cols;
   Tmat = normalize_cols_cpp(Tmat);
 
-  arma::mat table(maxit + 1, 4, fill::none);
+  arma::mat table(maxit + 1, 4);
+  table.fill(NA_REAL);
   int filled = 0;
   bool convergence = false;
+  bool line_search_failed = false;
   double al = step0;
 
   State state = compute_state_kxk(Tmat, S, C, BtB);
@@ -119,33 +197,68 @@ static FitResult run_single_oblique_fit(const arma::mat& S,
     table(filled, 3) = al;
     ++filled;
 
-    if (state.s < eps) {
+    if (state.valid && state.s < eps) {
       convergence = true;
       break;
     }
 
-    al = 2.0 * al;
-    bool improved = false;
-    arma::mat T_candidate;
-    State cand;
-
-    for (int i = 0; i <= max_line_search; ++i) {
-      arma::mat X = Tmat - al * state.Gp;
-      T_candidate = normalize_cols_cpp(X);
-      cand = compute_state_kxk(T_candidate, S, C, BtB);
-
-      if ((state.f - cand.f) > 0.5 * state.s * state.s * al) {
-        Tmat = T_candidate;
-        state = cand;
-        improved = true;
-        break;
-      }
-      al = al / 2.0;
+    if (!state.valid) {
+      line_search_failed = true;
+      break;
     }
 
-    if (!improved) {
-      Tmat = T_candidate;
-      state = cand;
+    if (iter == maxit) {
+      break;
+    }
+
+    al = 2.0 * al;
+    if (!std::isfinite(al) || al <= 0.0) {
+      al = step0;
+    }
+
+    bool armijo_improved = false;
+    bool any_decrease = false;
+    double best_decrease_value = state.f;
+    double best_decrease_step = al;
+    arma::mat best_decrease_T = Tmat;
+    State best_decrease_state = state;
+
+    double trial_step = al;
+    for (int i = 0; i <= max_line_search; ++i) {
+      arma::mat X = Tmat - trial_step * state.Gp;
+      arma::mat T_candidate = normalize_cols_cpp(X);
+      State cand = compute_state_kxk(T_candidate, S, C, BtB);
+
+      if (cand.valid && cand.f < best_decrease_value) {
+        any_decrease = true;
+        best_decrease_value = cand.f;
+        best_decrease_step = trial_step;
+        best_decrease_T = T_candidate;
+        best_decrease_state = cand;
+      }
+
+      if (cand.valid && (state.f - cand.f) > 0.5 * state.s * state.s * trial_step) {
+        Tmat = T_candidate;
+        state = cand;
+        al = trial_step;
+        armijo_improved = true;
+        break;
+      }
+
+      trial_step = trial_step / 2.0;
+    }
+
+    if (!armijo_improved) {
+      if (any_decrease) {
+        // Preserve monotone descent even when the sufficient-decrease test is
+        // too strict because of numerical noise near convergence.
+        Tmat = best_decrease_T;
+        state = best_decrease_state;
+        al = best_decrease_step;
+      } else {
+        line_search_failed = true;
+        break;
+      }
     }
   }
 
@@ -155,9 +268,28 @@ static FitResult run_single_oblique_fit(const arma::mat& S,
   out.Table = table.rows(0, filled - 1);
   out.value = state.f;
   out.convergence = convergence;
-  out.iterations = filled;
-  out.kappa_T = arma::cond(Tmat);
+  out.valid = state.valid;
+  out.line_search_failed = line_search_failed;
+  out.iterations = filled - 1;
+  out.kappa_T = cond_checked_cpp(Tmat);
   return out;
+}
+
+static bool fit_is_better_cpp(const FitResult& candidate,
+                              const FitResult& incumbent) {
+  if (candidate.valid && !incumbent.valid) {
+    return true;
+  }
+  if (!candidate.valid) {
+    return false;
+  }
+  if (candidate.convergence && !incumbent.convergence) {
+    return true;
+  }
+  if (candidate.convergence == incumbent.convergence && candidate.value < incumbent.value) {
+    return true;
+  }
+  return false;
 }
 
 //' Oblique Procrustes target rotation using a k x k inner objective
@@ -170,6 +302,12 @@ static FitResult run_single_oblique_fit(const arma::mat& S,
 //' `Phi = t(T) %*% T`. The optimization is carried out over the transformation
 //' matrix `T` under the oblique normalization constraint `diag(t(T) %*% T) = 1`.
 //'
+//' The line search is monotone: a candidate is accepted only if it satisfies the
+//' sufficient-decrease condition, or, as a numerical fallback, if it at least
+//' decreases the objective after all step halvings are exhausted. Non-invertible
+//' candidate transformations are rejected rather than evaluated through a
+//' pseudo-inverse.
+//'
 //' Additional random starts may be requested. To reduce runtime, the solver uses
 //' a two-stage strategy for extra starts: cheap objective screening, followed by
 //' short triage optimization, followed by full optimization only for starts that
@@ -179,15 +317,16 @@ static FitResult run_single_oblique_fit(const arma::mat& S,
 //' @param B Numeric matrix. Target loading matrix with the same dimensions as
 //'   `A`.
 //' @param S_r Optional numeric `k x k` matrix containing `crossprod(A)`.
-//'   Supplying this is useful when the same `A` is rotated repeatedly.
+//'   Supplying this is useful when the same `A` is rotated repeatedly. Ignored
+//'   when `normalize = TRUE` because the normalized cross-product is different.
 //' @param T_init_r Optional numeric `k x k` starting transformation matrix.
 //'   If `NULL`, the identity matrix is used for the primary start.
-//' @param eps Numeric scalar. Convergence tolerance for the projected gradient
+//' @param eps Numeric scalar. Convergence tolerance for the projected-gradient
 //'   norm.
 //' @param maxit Integer scalar. Maximum number of full projected-gradient
-//'   iterations.
+//'   updates.
 //' @param max_line_search Integer scalar. Maximum number of step-halving
-//'   attempts in each line-search phase.
+//'   attempts after the initial trial step in each line-search phase.
 //' @param step0 Numeric scalar. Initial step size used in the projected-gradient
 //'   update.
 //' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before
@@ -202,7 +341,7 @@ static FitResult run_single_oblique_fit(const arma::mat& S,
 //'
 //' @returns A named list containing the rotated loadings, transformation matrix,
 //'   factor correlation matrix, target criterion value, convergence diagnostics,
-//'   and multi-start summaries.
+//'   line-search diagnostics, and multi-start summaries.
 //'
 //' @details
 //' The routine is intended for repeated oblique target rotations in workflows
@@ -235,8 +374,38 @@ Rcpp::List oblique_procrustes(const arma::mat& A,
   if (A.n_rows != B.n_rows || A.n_cols != B.n_cols) {
     Rcpp::stop("A and B must have identical dimensions.");
   }
+  if (A.n_rows == 0 || A.n_cols == 0) {
+    Rcpp::stop("A and B must be non-empty matrices.");
+  }
   if (A.n_cols <= 1) {
-    Rcpp::stop("Oblique rotation does not make sense for single-factor models.");
+    Rcpp::stop("Use the R wrapper for one-factor Procrustes alignment; oblique optimization is not needed.");
+  }
+  if (!all_finite_cpp(A) || !all_finite_cpp(B)) {
+    Rcpp::stop("A and B must contain only finite values.");
+  }
+  if (!is_valid_scalar_cpp(eps) || eps <= 0.0) {
+    Rcpp::stop("eps must be a positive finite scalar.");
+  }
+  if (maxit < 0) {
+    Rcpp::stop("maxit must be non-negative.");
+  }
+  if (max_line_search < 0) {
+    Rcpp::stop("max_line_search must be non-negative.");
+  }
+  if (!is_valid_scalar_cpp(step0) || step0 <= 0.0) {
+    Rcpp::stop("step0 must be a positive finite scalar.");
+  }
+  if (random_starts < 0) {
+    Rcpp::stop("random_starts must be non-negative.");
+  }
+  if (screen_keep < 0) {
+    Rcpp::stop("screen_keep must be non-negative.");
+  }
+  if (triage_maxit < 0) {
+    Rcpp::stop("triage_maxit must be non-negative.");
+  }
+  if (!is_valid_scalar_cpp(triage_improve_tol) || triage_improve_tol < 0.0) {
+    Rcpp::stop("triage_improve_tol must be a non-negative finite scalar.");
   }
 
   const unsigned int k = A.n_cols;
@@ -248,7 +417,7 @@ Rcpp::List oblique_procrustes(const arma::mat& A,
   if (normalize) {
     W = sqrt(sum(square(A_work), 1));
     for (unsigned int i = 0; i < W.n_elem; ++i) {
-      if (W(i) < 1e-15) {
+      if (!std::isfinite(W(i)) || W(i) < 1e-15) {
         W(i) = 1.0;
       }
     }
@@ -264,20 +433,32 @@ Rcpp::List oblique_procrustes(const arma::mat& A,
     if (S.n_rows != k || S.n_cols != k) {
       Rcpp::stop("S must be a k x k matrix.");
     }
+    if (!all_finite_cpp(S)) {
+      Rcpp::stop("S must contain only finite values.");
+    }
   }
 
   arma::mat C = A_work.t() * B_work;
   double BtB = accu(B_work % B_work);
+  if (!all_finite_cpp(S) || !all_finite_cpp(C) || !std::isfinite(BtB)) {
+    Rcpp::stop("The Procrustes objective could not be formed from finite values.");
+  }
 
-  arma::mat T_primary;
-  if (T_init_r.isNull()) {
-    T_primary.eye(k, k);
-  } else {
+  arma::mat T_primary(k, k, fill::eye);
+  if (!T_init_r.isNull()) {
     T_primary = Rcpp::as<arma::mat>(T_init_r);
     if (T_primary.n_rows != k || T_primary.n_cols != k) {
       Rcpp::stop("T_init must be a k x k matrix.");
     }
+    if (!all_finite_cpp(T_primary)) {
+      Rcpp::stop("T_init must contain only finite values.");
+    }
     T_primary = normalize_cols_cpp(T_primary);
+
+    arma::mat tmp_inv;
+    if (!inverse_checked_cpp(T_primary, tmp_inv)) {
+      Rcpp::stop("T_init must be nonsingular after column normalization.");
+    }
   }
 
   FitResult best_fit = run_single_oblique_fit(S, C, BtB, T_primary, eps, maxit, max_line_search, step0);
@@ -286,15 +467,25 @@ Rcpp::List oblique_procrustes(const arma::mat& A,
   std::vector<double> all_values;
   std::vector<int> all_converged;
   std::vector<int> all_iterations;
+  std::vector<int> all_start_indices;
+  std::vector<double> screen_values;
+  std::vector<int> screen_start_indices;
+
   all_values.reserve(static_cast<std::size_t>(1 + std::max(0, random_starts)));
   all_converged.reserve(static_cast<std::size_t>(1 + std::max(0, random_starts)));
   all_iterations.reserve(static_cast<std::size_t>(1 + std::max(0, random_starts)));
+  all_start_indices.reserve(static_cast<std::size_t>(1 + std::max(0, random_starts)));
+  screen_values.reserve(static_cast<std::size_t>(std::max(0, random_starts)));
+  screen_start_indices.reserve(static_cast<std::size_t>(std::max(0, random_starts)));
 
   all_values.push_back(best_fit.value);
   all_converged.push_back(best_fit.convergence ? 1 : 0);
   all_iterations.push_back(best_fit.iterations);
+  all_start_indices.push_back(1);
 
   int best_start_index = 1;
+  int n_triaged = 0;
+  int n_fully_optimized = 1;
 
   if (random_starts > 0) {
     std::vector<Candidate> candidates;
@@ -315,6 +506,11 @@ Rcpp::List oblique_procrustes(const arma::mat& A,
                 return a.screen_value < b.screen_value;
               });
 
+    for (const Candidate& cand : candidates) {
+      screen_values.push_back(cand.screen_value);
+      screen_start_indices.push_back(cand.start_index);
+    }
+
     int keep = std::min(screen_keep, random_starts);
     keep = std::max(keep, 0);
 
@@ -324,32 +520,33 @@ Rcpp::List oblique_procrustes(const arma::mat& A,
       FitResult triage_fit = run_single_oblique_fit(
         S, C, BtB, cand.Tstart, eps, triage_maxit, max_line_search, step0
       );
+      ++n_triaged;
 
       all_values.push_back(triage_fit.value);
       all_converged.push_back(triage_fit.convergence ? 1 : 0);
       all_iterations.push_back(triage_fit.iterations);
+      all_start_indices.push_back(cand.start_index);
 
-      double rel_improve = (incumbent_value - triage_fit.value) /
-        (std::abs(incumbent_value) + 1e-12);
+      double rel_improve;
+      if (std::isfinite(incumbent_value)) {
+        rel_improve = (incumbent_value - triage_fit.value) /
+          (std::abs(incumbent_value) + 1e-12);
+      } else {
+        rel_improve = triage_fit.valid ? std::numeric_limits<double>::infinity() :
+          -std::numeric_limits<double>::infinity();
+      }
 
-      if (rel_improve >= triage_improve_tol) {
+      if (triage_fit.valid && rel_improve >= triage_improve_tol) {
         FitResult full_fit = run_single_oblique_fit(
           S, C, BtB, triage_fit.T, eps, maxit, max_line_search, step0
         );
+        ++n_fully_optimized;
 
         all_values.back() = full_fit.value;
         all_converged.back() = full_fit.convergence ? 1 : 0;
         all_iterations.back() = full_fit.iterations;
 
-        bool better = false;
-        if (full_fit.convergence && !best_fit.convergence) {
-          better = true;
-        } else if ((full_fit.convergence == best_fit.convergence) &&
-                   (full_fit.value < best_fit.value)) {
-          better = true;
-        }
-
-        if (better) {
+        if (fit_is_better_cpp(full_fit, best_fit)) {
           best_fit = full_fit;
           incumbent_value = full_fit.value;
           best_start_index = cand.start_index;
@@ -364,6 +561,8 @@ Rcpp::List oblique_procrustes(const arma::mat& A,
   }
 
   arma::mat Phi = best_fit.T.t() * best_fit.T;
+  Phi = (Phi + Phi.t()) / 2.0;
+  Phi.diag().fill(1.0);
 
   Rcpp::NumericMatrix table_r = Rcpp::wrap(best_fit.Table);
   colnames(table_r) = Rcpp::CharacterVector::create("iter", "f", "log10_s", "step");
@@ -374,12 +573,22 @@ Rcpp::List oblique_procrustes(const arma::mat& A,
     Rcpp::Named("Phi") = Phi,
     Rcpp::Named("value") = best_fit.value,
     Rcpp::Named("convergence") = best_fit.convergence,
+    Rcpp::Named("valid") = best_fit.valid,
     Rcpp::Named("iterations") = best_fit.iterations,
     Rcpp::Named("kappa_T") = best_fit.kappa_T,
     Rcpp::Named("Table") = table_r,
+    Rcpp::Named("line_search_failed") = best_fit.line_search_failed,
+    Rcpp::Named("method") = "oblique_procrustes",
     Rcpp::Named("best_start_index") = best_start_index,
+    Rcpp::Named("all_start_indices") = Rcpp::wrap(all_start_indices),
     Rcpp::Named("all_values") = Rcpp::wrap(all_values),
     Rcpp::Named("all_converged") = Rcpp::wrap(all_converged),
-    Rcpp::Named("all_iterations") = Rcpp::wrap(all_iterations)
+    Rcpp::Named("all_iterations") = Rcpp::wrap(all_iterations),
+    Rcpp::Named("screen_start_indices") = Rcpp::wrap(screen_start_indices),
+    Rcpp::Named("screen_values") = Rcpp::wrap(screen_values),
+    Rcpp::Named("n_random_starts") = random_starts,
+    Rcpp::Named("n_screened") = static_cast<int>(screen_values.size()),
+    Rcpp::Named("n_triaged") = n_triaged,
+    Rcpp::Named("n_fully_optimized") = n_fully_optimized
   );
 }

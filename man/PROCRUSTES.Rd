@@ -24,53 +24,71 @@ PROCRUSTES(
 \arguments{
 \item{A}{Numeric loading matrix to be aligned.}
 
-\item{Target}{Numeric target matrix with the same dimensions as \code{A}.}
+\item{Target}{Numeric target matrix with the same dimensions as `A`.}
 
-\item{rotation}{Character string, either \code{"orthogonal"} or \code{"oblique"}.}
+\item{rotation}{Character string, either `"orthogonal"` or `"oblique"`.}
 
-\item{S}{Optional \code{k x k} cross-product matrix \code{crossprod(A)}. Supplying this
-is useful when the same \code{A} is rotated repeatedly.}
+\item{S}{Optional `k x k` cross-product matrix `crossprod(A)`. Supplying this
+is useful when the same `A` is rotated repeatedly. `S` is used only when
+`oblique_normalize = FALSE`; if Kaiser normalization is requested, the
+cross-product must be recomputed on the normalized matrix.}
 
-\item{T_init}{Optional \code{k x k} starting transformation matrix for the oblique
-solver.}
+\item{T_init}{Optional `k x k` nonsingular starting transformation matrix for
+the oblique solver. Its columns are normalized internally.}
 
-\item{oblique_eps}{Convergence tolerance for the oblique solver.}
+\item{oblique_eps}{Positive convergence tolerance for the projected-gradient
+norm in the oblique solver.}
 
-\item{oblique_maxit}{Maximum number of full projected-gradient iterations for
-the oblique solver.}
+\item{oblique_maxit}{Non-negative integer. Maximum number of projected-gradient
+updates in the full oblique solver.}
 
-\item{oblique_max_line_search}{Maximum number of step-halving attempts in each
-oblique line-search step.}
+\item{oblique_max_line_search}{Non-negative integer. Maximum number of
+step-halving attempts after the initial line-search step.}
 
-\item{oblique_step0}{Initial step size for the oblique solver.}
+\item{oblique_step0}{Positive initial step size for the oblique solver.}
 
-\item{oblique_normalize}{Logical; if \code{TRUE}, apply Kaiser normalization in the
-oblique solver.}
+\item{oblique_normalize}{Logical; if `TRUE`, apply Kaiser row normalization in
+the oblique solver and back-transform the aligned loadings afterwards.}
 
-\item{oblique_random_starts}{Number of additional random starts used by the
-oblique solver.}
+\item{oblique_random_starts}{Non-negative integer. Number of additional random
+starts used by the oblique solver.}
 
-\item{oblique_screen_keep}{Number of random starts retained after cheap
-screening and sent to triage optimization.}
+\item{oblique_screen_keep}{Non-negative integer. Number of random starts
+retained after cheap objective screening and sent to triage optimization.}
 
-\item{oblique_triage_maxit}{Number of short optimization iterations used in
-the triage stage.}
+\item{oblique_triage_maxit}{Non-negative integer. Number of short optimization
+iterations used in the triage stage.}
 
-\item{oblique_triage_improve_tol}{Relative improvement required for a triaged
-start to be promoted to full optimization.}
+\item{oblique_triage_improve_tol}{Non-negative scalar. Relative improvement
+required for a triaged start to be promoted to full optimization.}
 }
 \value{
-A list containing the rotated loadings, transformation matrix,
-  \code{Phi}, target criterion value, convergence diagnostics, and multi-start
-  summaries.
+A list containing aligned `loadings`, transformation matrix `T`,
+  factor intercorrelation matrix `Phi`, target criterion `value`, convergence
+  diagnostics, line-search diagnostics, and multi-start summaries. Row and
+  column names are preserved where possible.
 }
 \description{
-Matrix alignment function. For orthogonal rotation it
-uses the closed-form orthogonal Procrustes solution. For oblique rotation it
-calls \link{.oblique_procrustes}, which uses the same oblique
-transformation convention as \code{\link[GPArotation:rotations]{GPArotation::targetQ}}:
-\code{L = A \%*\% solve(t(T))} and \code{Phi = t(T) \%*\% T}.
+`PROCRUSTES()` aligns one loading matrix to a target loading matrix with the
+same dimensions. It is used internally by `EFA_POOLED()`, but can also be used
+directly when factor columns must be brought into a common orientation before
+averaging or comparing solutions.
 }
 \details{
-Random starts are only used in the oblique case.
+For `rotation = "orthogonal"`, the function solves the closed-form orthogonal
+Procrustes problem
+
+\deqn{\min_T \frac{1}{2}\|A T - B\|_F^2 \quad \textrm{subject to}\quad T'T = I,}
+
+where `A` is the loading matrix and `B` is `Target`.
+
+For `rotation = "oblique"`, the function calls the compiled
+`.oblique_procrustes()` optimizer. The oblique convention is the same as in
+`GPArotation::targetQ()`:
+
+\deqn{L = A T^{-T}, \qquad \Phi = T'T, \qquad diag(\Phi) = 1.}
+
+Random starts are only used for oblique alignment. For one-factor models,
+oblique and orthogonal alignment are equivalent, so the function uses the
+stable one-factor orthogonal solution instead of calling the oblique optimizer.
 }

@@ -32,63 +32,64 @@
 )
 }
 \arguments{
-\item{unrotated_list}{List of unrotated loading matrices to be aligned.}
+\item{unrotated_list}{List of unrotated loading matrices to be aligned. All
+matrices must be numeric, finite, and have identical dimensions.}
 
 \item{init_targets}{Optional list of starting target matrices. These are
 typically rotated loading matrices from the corresponding analyses. If
-\code{NULL}, \code{unrotated_list} is used.}
+`NULL`, `unrotated_list` is used.}
 
-\item{rotation}{Character string, either \code{"orthogonal"} or \code{"oblique"}.}
+\item{rotation}{Character string, either `"orthogonal"` or `"oblique"`.}
 
-\item{start}{Either a single integer selecting an element of \code{init_targets},
-or an explicit target matrix. Used when \code{multi_start = FALSE}.}
+\item{start}{Either a single integer selecting an element of `init_targets`,
+or an explicit target matrix. Used when `multi_start = FALSE`.}
 
-\item{tol}{Relative Frobenius-norm convergence tolerance for the outer target
-update. The default \code{1e-3} is intended as a practical outer-loop tolerance;
-the inner oblique optimizer has its own tolerance \code{oblique_eps}.}
+\item{tol}{Positive relative Frobenius-norm convergence tolerance for the
+outer target update.}
 
-\item{loss_tol}{Optional tolerance for the relative change in the outer
-consensus loss. If \code{NULL}, loss-based convergence is disabled.}
+\item{loss_tol}{Positive tolerance for the relative change in the outer
+consensus loss. If `NULL`, loss-based convergence is disabled. It cannot be
+`NULL` when `convergence` is `"loss"` or `"both"`.}
 
-\item{loss_patience}{Number of consecutive iterations with relative loss
-change below \code{loss_tol} required for loss-based convergence.}
+\item{loss_patience}{Positive integer. Number of consecutive iterations with
+relative loss change below `loss_tol` required for loss-based convergence.}
 
-\item{convergence}{Character string controlling the stopping rule. \code{"either"}
-stops when either \code{tol} or \code{loss_tol} is satisfied; \code{"target"} uses only
-the target-change criterion; \code{"loss"} uses only the loss criterion; \code{"both"}
-requires both.}
+\item{convergence}{Character string controlling the stopping rule. `"either"`
+stops when either target or loss convergence is satisfied; `"target"` uses
+only target change; `"loss"` uses only loss change; `"both"` requires both.}
 
-\item{min_iter}{Minimum number of outer iterations before convergence can be
-declared.}
+\item{min_iter}{Non-negative integer. Minimum number of outer iterations
+before convergence can be declared.}
 
-\item{max_iter}{Maximum number of outer consensus iterations.}
+\item{max_iter}{Positive integer. Maximum number of outer consensus
+iterations.}
 
-\item{alpha}{Damping factor for the target update. \code{alpha = 1} uses the full
-centroid update. Smaller values, such as \code{0.5}, can reduce oscillation.}
+\item{alpha}{Damping factor for the target update. `alpha = 1` uses the full
+centroid update. Smaller values, such as `0.5`, can reduce oscillation.}
 
-\item{match_target}{Logical. If \code{TRUE}, the updated centroid is signed and
+\item{match_target}{Logical. If `TRUE`, the updated centroid is signed and
 column-matched to the previous target before convergence is evaluated.}
 
-\item{hyper_cutoff}{Cutoff used by \link{.hyperplane_count} for summary output.}
+\item{hyper_cutoff}{Non-negative cutoff used by `.hyperplane_count()` for
+summary output.}
 
 \item{oblique_maxit, oblique_eps, oblique_max_line_search, oblique_step0, oblique_normalize}{Parameters
-passed to \link{PROCRUSTES} when
-  \code{rotation = "oblique"}.}
+passed to `PROCRUSTES()` when `rotation = "oblique"`.}
 
 \item{oblique_random_starts}{Number of random starts used by the inner oblique
-solver. See \code{oblique_random_starts_stage} for when these are used.}
+solver. See `oblique_random_starts_stage` for when these are used.}
 
 \item{oblique_random_starts_stage}{Character string controlling whether random
 starts are used during the outer consensus loop, the final alignment pass,
-both, or neither. The default \code{"final"} keeps the outer loop smooth by using
+both, or neither. The default `"final"` keeps the outer loop smooth by using
 warm starts during iteration and applies random-start protection only in the
 final pass.}
 
 \item{oblique_screen_keep, oblique_triage_maxit, oblique_triage_improve_tol}{Screening and triage parameters passed to the compiled oblique solver when
 random starts are used.}
 
-\item{verbose}{Logical; if \code{TRUE}, print simple convergence messages for the
-outer loop.}
+\item{verbose}{Logical; if `TRUE`, print convergence messages for the outer
+loop.}
 }
 \description{
 This internal helper performs a single consensus-target run from one starting

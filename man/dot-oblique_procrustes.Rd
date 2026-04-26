@@ -27,19 +27,20 @@
 `A`.}
 
 \item{S_r}{Optional numeric `k x k` matrix containing `crossprod(A)`.
-Supplying this is useful when the same `A` is rotated repeatedly.}
+Supplying this is useful when the same `A` is rotated repeatedly. Ignored
+when `normalize = TRUE` because the normalized cross-product is different.}
 
 \item{T_init_r}{Optional numeric `k x k` starting transformation matrix.
 If `NULL`, the identity matrix is used for the primary start.}
 
-\item{eps}{Numeric scalar. Convergence tolerance for the projected gradient
+\item{eps}{Numeric scalar. Convergence tolerance for the projected-gradient
 norm.}
 
 \item{maxit}{Integer scalar. Maximum number of full projected-gradient
-iterations.}
+updates.}
 
 \item{max_line_search}{Integer scalar. Maximum number of step-halving
-attempts in each line-search phase.}
+attempts after the initial trial step in each line-search phase.}
 
 \item{step0}{Numeric scalar. Initial step size used in the projected-gradient
 update.}
@@ -61,7 +62,7 @@ triaged start to be promoted to full optimization.}
 \value{
 A named list containing the rotated loadings, transformation matrix,
   factor correlation matrix, target criterion value, convergence diagnostics,
-  and multi-start summaries.
+  line-search diagnostics, and multi-start summaries.
 }
 \description{
 Compute an oblique target rotation for a loading matrix using a
@@ -72,6 +73,12 @@ The rotated loading matrix is defined as
 `L = A %*% solve(t(T))`, and the corresponding factor correlation matrix is
 `Phi = t(T) %*% T`. The optimization is carried out over the transformation
 matrix `T` under the oblique normalization constraint `diag(t(T) %*% T) = 1`.
+
+The line search is monotone: a candidate is accepted only if it satisfies the
+sufficient-decrease condition, or, as a numerical fallback, if it at least
+decreases the objective after all step halvings are exhausted. Non-invertible
+candidate transformations are rejected rather than evaluated through a
+pseudo-inverse.
 
 Additional random starts may be requested. To reduce runtime, the solver uses
 a two-stage strategy for extra starts: cheap objective screening, followed by

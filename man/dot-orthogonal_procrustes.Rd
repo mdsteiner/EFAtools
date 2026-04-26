@@ -20,6 +20,6 @@ Rotate `A` to the orthogonal target `B` by minimizing
 `||A %*% T - B||_F^2` subject to `t(T) %*% T = I`.
 }
 \references{
-Schönemann, P. H. (1966). A generalized solution of the orthogonal
+Schoenemann, P. H. (1966). A generalized solution of the orthogonal
 Procrustes problem. *Psychometrika*, 31, 1-10.
 }
