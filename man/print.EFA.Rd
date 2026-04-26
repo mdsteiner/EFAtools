@@ -168,7 +168,25 @@ only for \code{details = "full"}.}
 \item{...}{Further arguments passed to \code{\link[EFAtools:print.LOADINGS]{print.LOADINGS}}.}
 }
 \description{
-Print Method showing a summarized output of the \link{EFA} function
+Print Method showing a summarized output of the \link{EFA} function.
+}
+\details{
+The method is shared by single-imputation `EFA` objects and pooled
+`EFA_POOLED` objects. It prints, in order, a compact model header, optional
+diagnostics, the loading table, optional confidence-interval tables, variance
+accounted for, model fit, bootstrap notes, optional multiple-imputation
+uncertainty diagnostics, and residual diagnostics.
+
+For `EFA_POOLED` objects, the header and diagnostics report the number of
+imputations and the alignment/pooling settings stored in the object. Loading
+and factor-correlation confidence intervals are printed only when `boot.CI`
+is present. Pooled intervals created by `EFA_POOLED()` are labelled as
+bootstrap/MI intervals.
+
+`ci_filter` controls which loading intervals are shown. `salient` reports
+intervals for loadings whose absolute point estimate is at least `cutoff`;
+`nonzero` reports intervals excluding zero; and `all` reports every finite
+interval.
 }
 \examples{
 mod <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,

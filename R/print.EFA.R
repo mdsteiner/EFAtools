@@ -1,6 +1,24 @@
 #' Print EFA object
 #'
-#' Print Method showing a summarized output of the \link{EFA} function
+#' Print Method showing a summarized output of the \link{EFA} function.
+#'
+#' @details
+#' The method is shared by single-imputation `EFA` objects and pooled
+#' `EFA_POOLED` objects. It prints, in order, a compact model header, optional
+#' diagnostics, the loading table, optional confidence-interval tables, variance
+#' accounted for, model fit, bootstrap notes, optional multiple-imputation
+#' uncertainty diagnostics, and residual diagnostics.
+#'
+#' For `EFA_POOLED` objects, the header and diagnostics report the number of
+#' imputations and the alignment/pooling settings stored in the object. Loading
+#' and factor-correlation confidence intervals are printed only when `boot.CI`
+#' is present. Pooled intervals created by `EFA_POOLED()` are labelled as
+#' bootstrap/MI intervals.
+#'
+#' `ci_filter` controls which loading intervals are shown. `salient` reports
+#' intervals for loadings whose absolute point estimate is at least `cutoff`;
+#' `nonzero` reports intervals excluding zero; and `all` reports every finite
+#' interval.
 #'
 #' @param x list. An object of class EFA to be printed
 #' @param cutoff numeric. Passed to \code{\link[EFAtools:print.LOADINGS]{print.LOADINGS}}.
@@ -282,6 +300,9 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   sort_loadings <- match.arg(sort_loadings)
 
   .efa_validate_print_options(
+    cutoff = cutoff,
+    digits = digits,
+    max_name_length = max_name_length,
     diagnostics = diagnostics,
     diagnostics_top_n = diagnostics_top_n,
     residual_cutoff = residual_cutoff,
@@ -368,26 +389,33 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
 }
 
 .efa_print_spec <- function(x) {
-  se <- x$settings$se
-  is_pooled <- inherits(x, "EFA_POOLED") || isTRUE(x$settings$pooled)
+  settings <- x$settings
+  if (is.null(settings)) {
+    settings <- list()
+  }
+
+  se <- settings$se
+  is_pooled <- inherits(x, "EFA_POOLED") || isTRUE(settings$pooled)
 
   list(
-    method = x$settings$method,
-    rotation = x$settings$rotation,
-    type = x$settings$type,
-    N = x$settings$N,
+    method = settings$method,
+    rotation = settings$rotation,
+    type = settings$type,
+    N = settings$N,
     fit = x$fit_indices,
     h2 = x$h2,
-    np_boot = isTRUE(se == "np-boot"),
+    np_boot = identical(.efa_setting_text(se), "np-boot"),
     ci = .efa_ci_level(x),
-    b_boot = x$settings$b_boot,
-    max_iter = x$settings$max_iter,
+    rmsea_ci_level = .efa_rmsea_ci_level(x),
+    b_boot = settings$b_boot,
+    max_iter = settings$max_iter,
     iter = x$iter,
     is_pooled = is_pooled,
     n_imputations = .efa_n_imputations(x),
-    target_method = x$settings$target_method,
-    align_unrotated = x$settings$align_unrotated,
-    fit_pool_method = x$settings$fit_pool_method,
+    target_method = settings$target_method,
+    align_unrotated = settings$align_unrotated,
+    fit_pool_method = settings$fit_pool_method,
+    component_se = settings$component_se,
     has_boot_ci = !is.null(x$boot.CI)
   )
 }
@@ -406,7 +434,7 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     cat("\n")
   }
 
-  if (!is.null(spec$max_iter) && spec$iter > spec$max_iter) {
+  if (.efa_iteration_nonconvergence(spec)) {
     cat("\n")
     cat(crayon::red$bold(
       cli::symbol$cross,
@@ -460,6 +488,11 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     out <- c(out, paste0("fit_pool_method = '", fit_pool_method, "'"))
   }
 
+  if (is.finite(spec$rmsea_ci_level) &&
+      abs(spec$rmsea_ci_level - .90) > sqrt(.Machine$double.eps)) {
+    out <- c(out, paste0("rmsea_ci_level = ", .efa_ci_level_text(spec$rmsea_ci_level)))
+  }
+
   out
 }
 
@@ -469,6 +502,12 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
                                         max_factors_per_block, ...) {
   if (identical(spec$rotation, "none")) {
     .print_efa_rule("Unrotated Loadings")
+
+    if (is.null(x$unrot_loadings)) {
+      cat("No unrotated loading matrix available.\n")
+      return(invisible(NULL))
+    }
+
     print(x$unrot_loadings,
       cutoff = cutoff,
       digits = digits,
@@ -495,6 +534,12 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   }
 
   .print_efa_rule("Rotated Loadings")
+
+  if (is.null(x$rot_loadings)) {
+    cat("No rotated loading matrix available.\n")
+    return(invisible(NULL))
+  }
+
   print(x$rot_loadings,
     cutoff = cutoff,
     digits = digits,
@@ -519,11 +564,15 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   )
 
   if (!is.null(x$Phi)) {
+    phi <- as.matrix(x$Phi)
+    factor_names <- .efa_factor_names(phi)
+
     .print_efa_rule("Factor Intercorrelations")
-    cat(.get_compare_matrix(x$Phi,
+    cat(.get_compare_matrix(phi,
       r_red = Inf,
       n_char = 17,
-      var_names = paste0("F", seq_len(ncol(x$Phi)))
+      var_names = factor_names,
+      factor_names = factor_names
     ))
     .print_efa_phi_ci_section(x, spec, digits, ci)
   }
@@ -556,15 +605,24 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     vars_accounted <- x$vars_accounted_rot
   }
 
+  if (is.null(vars_accounted)) {
+    cat("No variance-accounted table available.\n")
+    return(invisible(NULL))
+  }
+
   cat(.get_compare_matrix(vars_accounted, r_red = Inf, n_char = 17))
 
   invisible(NULL)
 }
 
 .print_efa_identification_warning <- function(spec) {
-  fit <- spec$fit
+  df <- .efa_fit_scalar(spec$fit, "df")
 
-  if (fit$df == 0) {
+  if (!is.finite(df)) {
+    return(TRUE)
+  }
+
+  if (df == 0) {
     cat("\n")
     cat(
       crayon::yellow$bold("!"),
@@ -576,7 +634,7 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     return(TRUE)
   }
 
-  if (fit$df < 0) {
+  if (df < 0) {
     cat("\n")
     cat(
       crayon::yellow$bold("!"),
@@ -597,70 +655,81 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
 
   .print_efa_rule("Model Fit")
 
-  if (identical(spec$method, "PAF") || is.na(spec$N)) {
+  if (is.null(fit) || length(fit) < 1L) {
+    cat("No model-fit indices available.\n")
+    return(invisible(NULL))
+  }
+
+  method <- .efa_setting_text(spec$method)
+  df <- .efa_fit_scalar(fit, "df")
+  chi <- .efa_fit_scalar(fit, "chi")
+  p_chi <- .efa_fit_scalar(fit, "p_chi")
+
+  if (identical(method, "PAF") || .efa_is_missing_number(spec$N) ||
+      !is.finite(chi) || !is.finite(df)) {
     cat(crayon::blue("CAF", fit_ci$label, ":"),
-      .numformat(fit$CAF), fit_ci$CAF, "\n",
+      .efa_format_fit_value(fit, "CAF"), fit_ci$CAF, "\n",
       sep = ""
     )
     cat(crayon::blue("RMSR", fit_ci$label, ":"),
-      .numformat(fit$RMSR), fit_ci$RMSR, "\n",
+      .efa_format_fit_value(fit, "RMSR"), fit_ci$RMSR, "\n",
       sep = ""
     )
     cat(crayon::blue("df: "),
-      .numformat(fit$df, 0, print_zero = TRUE), "\n",
+      .efa_format_fit_value(fit, "df", digits = 0, print_zero = TRUE, pad = FALSE), "\n",
       sep = ""
     )
     return(invisible(NULL))
   }
 
-  cat(crayon::blue("\U1D712\U00B2(", sep = ""), fit$df,
+  p_text <- if (!is.finite(p_chi)) {
+    " = NA"
+  } else if (p_chi < .001) {
+    " < .001"
+  } else {
+    paste0(" = ", .efa_format_number(p_chi, digits = 3, pad = FALSE))
+  }
+
+  cat(crayon::blue("\u03c7\u00b2(", sep = ""),
+    .efa_format_fit_value(fit, "df", digits = 0, print_zero = TRUE, pad = FALSE),
     crayon::blue(") = ", sep = ""),
-    .numformat(fit$chi, 2, print_zero = TRUE), ", ",
+    .efa_format_fit_value(fit, "chi", digits = 2, print_zero = TRUE), ", ",
     crayon::blue(crayon::italic("p")),
-    ifelse(
-      fit$p_chi < .001,
-      " < .001",
-      paste(
-        crayon::blue(ifelse(fit$p_chi < 1, " =", " = ")),
-        .numformat(fit$p_chi, 3),
-        sep = ""
-      )
-    ),
+    p_text,
     "\n",
     sep = ""
   )
 
   cat(crayon::blue("CFI", fit_ci$label, ": "),
-    .numformat(fit$CFI, pad = FALSE), fit_ci$CFI, "\n",
+    .efa_format_fit_value(fit, "CFI", pad = FALSE), fit_ci$CFI, "\n",
     sep = ""
   )
-  cat(crayon::blue("RMSEA [90% CI]", fit_ci$label, ": "),
+
+  rmsea_label <- paste0("RMSEA [", .efa_ci_level_text(spec$rmsea_ci_level), " CI]")
+  cat(crayon::blue(rmsea_label, fit_ci$label, ": "),
     paste0(
-      .numformat(fit$RMSEA), " [",
-      ifelse(fit$RMSEA_LB < 1, substr(.numformat(fit$RMSEA_LB), 2, 4),
-        .numformat(fit$RMSEA_LB)
-      ),
-      ifelse(fit$RMSEA_UB < 1, ";", "; "),
-      .numformat(fit$RMSEA_UB), "]",
-      sep = ""
+      .efa_format_fit_value(fit, "RMSEA", pad = FALSE), " [",
+      .efa_format_fit_value(fit, "RMSEA_LB", pad = FALSE), "; ",
+      .efa_format_fit_value(fit, "RMSEA_UB", pad = FALSE), "]"
     ),
     fit_ci$RMSEA, "\n",
     sep = ""
   )
+
   cat(crayon::blue("AIC", fit_ci$label, ": "),
-    .numformat(fit$AIC, print_zero = TRUE), fit_ci$AIC, "\n",
+    .efa_format_fit_value(fit, "AIC", print_zero = TRUE), fit_ci$AIC, "\n",
     sep = ""
   )
   cat(crayon::blue("BIC", fit_ci$label, ": "),
-    .numformat(fit$BIC, print_zero = TRUE), fit_ci$BIC, "\n",
+    .efa_format_fit_value(fit, "BIC", print_zero = TRUE), fit_ci$BIC, "\n",
     sep = ""
   )
   cat(crayon::blue("CAF", fit_ci$label, ":"),
-    .numformat(fit$CAF), fit_ci$CAF, "\n",
+    .efa_format_fit_value(fit, "CAF"), fit_ci$CAF, "\n",
     sep = ""
   )
   cat(crayon::blue("RMSR", fit_ci$label, ":"),
-    .numformat(fit$RMSR), fit_ci$RMSR, "\n",
+    .efa_format_fit_value(fit, "RMSR"), fit_ci$RMSR, "\n",
     sep = ""
   )
 
@@ -678,11 +747,11 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     BIC = ""
   )
 
-  if (!isTRUE(spec$np_boot)) {
+  if (!isTRUE(spec$has_boot_ci)) {
     return(out)
   }
 
-  fitind_ci <- .efa_get_fit_ci(x)
+  fitind_ci <- .efa_get_fit_ci(x, spec)
   if (is.null(fitind_ci)) {
     return(out)
   }
@@ -699,7 +768,7 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
 }
 
 .print_efa_bootstrap_note <- function(x, spec) {
-  if (!isTRUE(spec$np_boot)) {
+  if (!isTRUE(spec$has_boot_ci)) {
     return(invisible(NULL))
   }
 
@@ -709,10 +778,12 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     "Bootstrap CIs"
   }
 
-  cat("\n", crayon::italic("Note: "), note_label, " based on ",
-    spec$b_boot, " Bootstrap samples",
-    sep = ""
-  )
+  cat("\n", crayon::italic("Note: "), note_label, sep = "")
+
+  b_text <- .efa_bootstrap_sample_text(spec)
+  if (nzchar(b_text)) {
+    cat(" based on ", b_text, sep = "")
+  }
 
   target_rotation_note <- .efa_target_rotation_note(x, spec)
   if (nzchar(target_rotation_note)) {
@@ -782,6 +853,9 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   large_values <- large_values[seq_len(n_print)]
 
   var_names <- colnames(residuals)
+  if (is.null(var_names)) {
+    var_names <- rownames(residuals)
+  }
   if (is.null(var_names)) {
     var_names <- paste0("V", seq_len(ncol(residuals)))
   }
@@ -917,7 +991,11 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
 }
 
 .print_efa_heywood_warning <- function(h2) {
-  n_heywood <- sum(h2 >= 1 + .Machine$double.eps)
+  if (is.null(h2)) {
+    return(invisible(NULL))
+  }
+
+  n_heywood <- sum(h2 >= 1 + .Machine$double.eps, na.rm = TRUE)
 
   if (n_heywood == 1) {
     cat(crayon::red$bold("\nWarning: A Heywood case was detected!"))
@@ -956,12 +1034,18 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   NULL
 }
 
-.efa_get_fit_ci <- function(x) {
+.efa_get_fit_ci <- function(x, spec = .efa_print_spec(x)) {
   if (is.null(x$boot.CI)) {
     return(NULL)
   }
 
-  for (component in c("fit_indices", "fit_indices_pooled_algorithm", "fit_indices_descriptive")) {
+  components <- if (isTRUE(spec$is_pooled)) {
+    c("fit_indices_pooled_algorithm", "fit_indices_descriptive", "fit_indices")
+  } else {
+    c("fit_indices", "fit_indices_pooled_algorithm", "fit_indices_descriptive")
+  }
+
+  for (component in components) {
     ci <- x$boot.CI[[component]]
     if (.efa_is_ci_pair(ci)) {
       return(ci)
@@ -1018,7 +1102,26 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     return(NA_real_)
   }
 
-  as.numeric(val[1])
+  out <- suppressWarnings(as.numeric(val[1]))
+  if (length(out) < 1L || is.na(out)) {
+    return(NA_real_)
+  }
+
+  out
+}
+
+.efa_rmsea_ci_level <- function(x) {
+  val <- x$settings$rmsea_ci_level
+  if (is.null(val) || length(val) < 1L || is.na(val[1])) {
+    return(.90)
+  }
+
+  out <- suppressWarnings(as.numeric(val[1]))
+  if (length(out) < 1L || !is.finite(out) || out <= 0 || out >= 1) {
+    return(.90)
+  }
+
+  out
 }
 
 .efa_ci_level_text <- function(level) {
@@ -1224,13 +1327,30 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
 }
 
 
-.efa_validate_print_options <- function(diagnostics, diagnostics_top_n,
+.efa_validate_print_options <- function(cutoff, digits, max_name_length,
+                                        diagnostics, diagnostics_top_n,
                                         residual_cutoff, residual_top_n,
                                         show_structure, show_loading_legend,
                                         cross_loading_cutoff, min_primary_gap,
                                         min_salient_per_factor,
                                         max_factors_per_block,
                                         show_mi_diagnostics) {
+  if (!is.numeric(cutoff) || length(cutoff) != 1L ||
+      !is.finite(cutoff) || cutoff < 0) {
+    stop("`cutoff` must be a single finite non-negative number.", call. = FALSE)
+  }
+
+  if (!is.numeric(digits) || length(digits) != 1L || !is.finite(digits) ||
+      digits < 0 || digits != as.integer(digits)) {
+    stop("`digits` must be a single finite non-negative integer.", call. = FALSE)
+  }
+
+  if (!is.numeric(max_name_length) || length(max_name_length) != 1L ||
+      !is.finite(max_name_length) || max_name_length < 1 ||
+      max_name_length != as.integer(max_name_length)) {
+    stop("`max_name_length` must be a single finite positive integer.", call. = FALSE)
+  }
+
   if (!is.logical(diagnostics) || length(diagnostics) != 1L || is.na(diagnostics)) {
     stop("`diagnostics` must be TRUE or FALSE.", call. = FALSE)
   }
@@ -1240,8 +1360,8 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   }
 
   if (!is.numeric(residual_cutoff) || length(residual_cutoff) != 1L ||
-      is.na(residual_cutoff) || residual_cutoff < 0) {
-    stop("`residual_cutoff` must be a single non-negative number.", call. = FALSE)
+      !is.finite(residual_cutoff) || residual_cutoff < 0) {
+    stop("`residual_cutoff` must be a single finite non-negative number.", call. = FALSE)
   }
 
   if (!.efa_is_top_n(residual_top_n)) {
@@ -1259,26 +1379,26 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   }
 
   if (!is.numeric(cross_loading_cutoff) || length(cross_loading_cutoff) != 1L ||
-      is.na(cross_loading_cutoff) || cross_loading_cutoff < 0) {
-    stop("`cross_loading_cutoff` must be a single non-negative number.", call. = FALSE)
+      !is.finite(cross_loading_cutoff) || cross_loading_cutoff < 0) {
+    stop("`cross_loading_cutoff` must be a single finite non-negative number.", call. = FALSE)
   }
 
   if (!is.numeric(min_primary_gap) || length(min_primary_gap) != 1L ||
-      is.na(min_primary_gap) || min_primary_gap < 0) {
-    stop("`min_primary_gap` must be a single non-negative number.", call. = FALSE)
+      !is.finite(min_primary_gap) || min_primary_gap < 0) {
+    stop("`min_primary_gap` must be a single finite non-negative number.", call. = FALSE)
   }
 
   if (!is.numeric(min_salient_per_factor) || length(min_salient_per_factor) != 1L ||
-      is.na(min_salient_per_factor) || min_salient_per_factor < 1 ||
+      !is.finite(min_salient_per_factor) || min_salient_per_factor < 1 ||
       min_salient_per_factor != as.integer(min_salient_per_factor)) {
-    stop("`min_salient_per_factor` must be a single positive integer.", call. = FALSE)
+    stop("`min_salient_per_factor` must be a single finite positive integer.", call. = FALSE)
   }
 
   if (!is.null(max_factors_per_block) &&
       (!is.numeric(max_factors_per_block) || length(max_factors_per_block) != 1L ||
-       is.na(max_factors_per_block) || max_factors_per_block < 1 ||
+       !is.finite(max_factors_per_block) || max_factors_per_block < 1 ||
        max_factors_per_block != as.integer(max_factors_per_block))) {
-    stop("`max_factors_per_block` must be NULL or a single positive integer.", call. = FALSE)
+    stop("`max_factors_per_block` must be NULL or a single finite positive integer.", call. = FALSE)
   }
 
   if (!is.null(show_mi_diagnostics) &&
@@ -1288,6 +1408,116 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   }
 
   invisible(TRUE)
+}
+
+.efa_iteration_nonconvergence <- function(spec) {
+  iter <- .efa_as_scalar_number(spec$iter)
+  max_iter <- .efa_as_scalar_number(spec$max_iter)
+
+  is.finite(iter) && is.finite(max_iter) && iter > max_iter
+}
+
+.efa_as_scalar_number <- function(x) {
+  if (is.null(x) || length(x) < 1L) {
+    return(NA_real_)
+  }
+
+  out <- tryCatch(
+    suppressWarnings(as.numeric(x[1])),
+    error = function(e) NA_real_
+  )
+  if (length(out) < 1L) {
+    return(NA_real_)
+  }
+
+  out
+}
+
+.efa_is_missing_number <- function(x) {
+  val <- .efa_as_scalar_number(x)
+  !is.finite(val)
+}
+
+.efa_fit_scalar <- function(fit, name) {
+  if (is.null(fit) || is.null(fit[[name]]) || length(fit[[name]]) < 1L) {
+    return(NA_real_)
+  }
+
+  out <- tryCatch(
+    suppressWarnings(as.numeric(fit[[name]][1])),
+    error = function(e) NA_real_
+  )
+  if (length(out) < 1L) {
+    return(NA_real_)
+  }
+
+  out
+}
+
+.efa_format_number <- function(x, digits = 2, print_zero = FALSE, pad = TRUE) {
+  if (length(x) != 1L || !is.finite(x)) {
+    return("NA")
+  }
+
+  .numformat(round(x, digits = digits), digits = digits,
+             print_zero = print_zero, pad = pad)
+}
+
+.efa_format_fit_value <- function(fit, name, digits = 2,
+                                  print_zero = FALSE, pad = TRUE) {
+  .efa_format_number(
+    .efa_fit_scalar(fit, name),
+    digits = digits,
+    print_zero = print_zero,
+    pad = pad
+  )
+}
+
+.efa_bootstrap_sample_text <- function(spec) {
+  b_boot <- .efa_as_scalar_number(spec$b_boot)
+  if (!is.finite(b_boot)) {
+    return("")
+  }
+
+  label <- if (isTRUE(spec$is_pooled)) {
+    "bootstrap samples per imputation"
+  } else {
+    "bootstrap samples"
+  }
+
+  paste(as.integer(b_boot), label)
+}
+
+.efa_alignment_summary <- function(x) {
+  alignment <- x$alignment
+  if (is.null(alignment)) {
+    return("")
+  }
+
+  out <- character(0)
+
+  method <- .efa_setting_text(alignment$method)
+  if (!nzchar(method)) {
+    method <- .efa_setting_text(x$settings$target_method)
+  }
+  if (nzchar(method)) {
+    out <- c(out, paste0("method = '", method, "'"))
+  }
+
+  if (!is.null(alignment$converged)) {
+    converged <- isTRUE(alignment$converged)
+    out <- c(out, if (converged) "converged" else "not converged")
+  }
+
+  failures <- alignment$point_rotation_failures
+  if (!is.null(failures) && length(failures) > 0L) {
+    failures <- failures[!is.na(failures)]
+    if (length(failures) > 0L) {
+      out <- c(out, paste0("point-alignment failures = ", length(failures)))
+    }
+  }
+
+  paste(out, collapse = ", ")
 }
 
 .efa_is_top_n <- function(x) {
@@ -1309,7 +1539,14 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
 
 .efa_main_loadings <- function(x, spec) {
   if (identical(spec$rotation, "none")) {
+    if (is.null(x$unrot_loadings)) {
+      return(NULL)
+    }
     return(as.matrix(x$unrot_loadings))
+  }
+
+  if (is.null(x$rot_loadings)) {
+    return(NULL)
   }
 
   as.matrix(x$rot_loadings)
@@ -1344,6 +1581,11 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   }
   .print_efa_rule(title)
 
+  if (is.null(loadings)) {
+    cat("No loading matrix available for diagnostics.\n")
+    return(invisible(NULL))
+  }
+
   .efa_print_key_value("Factors", ncol(loadings))
   .efa_print_key_value("Variables", nrow(loadings))
 
@@ -1360,6 +1602,11 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     pooling <- .efa_pooled_settings_text(spec)
     if (length(pooling) > 0L) {
       .efa_print_key_value("Pooling", paste(pooling, collapse = ", "))
+    }
+
+    alignment_text <- .efa_alignment_summary(x)
+    if (nzchar(alignment_text)) {
+      .efa_print_key_value("Alignment", alignment_text)
     }
   }
 
@@ -1385,11 +1632,13 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   }
   .efa_print_key_value("Heywood cases", heywood)
 
-  sal <- abs(loadings) >= cross_loading_cutoff
-  sal[is.na(sal)] <- FALSE
-  salient_per_item <- rowSums(sal)
-  cross_loading_items <- sum(salient_per_item > 1L)
-  no_salient_items <- sum(salient_per_item < 1L)
+  cross_salient <- abs(loadings) >= cross_loading_cutoff
+  cross_salient[is.na(cross_salient)] <- FALSE
+  cross_loading_items <- sum(rowSums(cross_salient) > 1L)
+
+  salient <- abs(loadings) >= cutoff
+  salient[is.na(salient)] <- FALSE
+  no_salient_items <- sum(rowSums(salient) < 1L)
   .efa_print_key_value(
     paste0("Cross-loading items (|loading| >= ",
            .efa_format_plain_number(cross_loading_cutoff, digits), ")"),
@@ -1762,28 +2011,35 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
 }
 
 .efa_collect_mi_values <- function(x, pattern, path = "") {
-  out <- numeric(0)
+  pieces <- .efa_collect_mi_values_impl(x, pattern = pattern, path = path)
+  if (length(pieces) < 1L) {
+    return(numeric(0))
+  }
 
+  values <- unlist(pieces, use.names = FALSE)
+  values[is.finite(values)]
+}
+
+.efa_collect_mi_values_impl <- function(x, pattern, path = "") {
   if (is.list(x)) {
     nm <- names(x)
     if (is.null(nm)) {
       nm <- rep("", length(x))
     }
 
+    pieces <- vector("list", length(x))
     for (i in seq_along(x)) {
       child_path <- paste(c(path, nm[i]), collapse = "/")
-      out <- c(out, .efa_collect_mi_values(x[[i]], pattern, child_path))
+      pieces[[i]] <- .efa_collect_mi_values_impl(x[[i]], pattern, child_path)
     }
-    return(out)
+    return(unlist(pieces, recursive = FALSE, use.names = FALSE))
   }
 
   if (!is.numeric(x) || !grepl(pattern, path, ignore.case = TRUE)) {
-    return(out)
+    return(list())
   }
 
-  values <- as.numeric(x)
-  values <- values[is.finite(values)]
-  values
+  list(as.numeric(x))
 }
 
 .efa_loading_row_order <- function(x, sort_loadings = c("none", "primary", "clustered")) {

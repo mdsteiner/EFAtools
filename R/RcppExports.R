@@ -41,6 +41,12 @@
 #' `Phi = t(T) %*% T`. The optimization is carried out over the transformation
 #' matrix `T` under the oblique normalization constraint `diag(t(T) %*% T) = 1`.
 #'
+#' The line search is monotone: a candidate is accepted only if it satisfies the
+#' sufficient-decrease condition, or, as a numerical fallback, if it at least
+#' decreases the objective after all step halvings are exhausted. Non-invertible
+#' candidate transformations are rejected rather than evaluated through a
+#' pseudo-inverse.
+#'
 #' Additional random starts may be requested. To reduce runtime, the solver uses
 #' a two-stage strategy for extra starts: cheap objective screening, followed by
 #' short triage optimization, followed by full optimization only for starts that
@@ -50,15 +56,16 @@
 #' @param B Numeric matrix. Target loading matrix with the same dimensions as
 #'   `A`.
 #' @param S_r Optional numeric `k x k` matrix containing `crossprod(A)`.
-#'   Supplying this is useful when the same `A` is rotated repeatedly.
+#'   Supplying this is useful when the same `A` is rotated repeatedly. Ignored
+#'   when `normalize = TRUE` because the normalized cross-product is different.
 #' @param T_init_r Optional numeric `k x k` starting transformation matrix.
 #'   If `NULL`, the identity matrix is used for the primary start.
-#' @param eps Numeric scalar. Convergence tolerance for the projected gradient
+#' @param eps Numeric scalar. Convergence tolerance for the projected-gradient
 #'   norm.
 #' @param maxit Integer scalar. Maximum number of full projected-gradient
-#'   iterations.
+#'   updates.
 #' @param max_line_search Integer scalar. Maximum number of step-halving
-#'   attempts in each line-search phase.
+#'   attempts after the initial trial step in each line-search phase.
 #' @param step0 Numeric scalar. Initial step size used in the projected-gradient
 #'   update.
 #' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before
@@ -73,7 +80,7 @@
 #'
 #' @returns A named list containing the rotated loadings, transformation matrix,
 #'   factor correlation matrix, target criterion value, convergence diagnostics,
-#'   and multi-start summaries.
+#'   line-search diagnostics, and multi-start summaries.
 #'
 #' @details
 #' The routine is intended for repeated oblique target rotations in workflows

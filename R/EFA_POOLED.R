@@ -451,6 +451,8 @@ EFA_POOLED <- function(data_list,
   settings_pooled$fit_pool_method <- fit_pool_method
   settings_pooled$p <- p
   settings_pooled$ci <- 1 - p
+  settings_pooled$rmsea_ci_level <- rmsea_ci_level
+  settings_pooled$rmsr_upper <- rmsr_upper
   if (!is.null(boot_pooled) && !is.null(boot_pooled$n_boot)) {
     settings_pooled$b_boot <- boot_pooled$n_boot
   }

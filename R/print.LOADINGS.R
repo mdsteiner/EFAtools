@@ -1,5 +1,18 @@
 #' Print LOADINGS object
 #'
+#' @details
+#' The method prints a loading matrix in a compact, console-oriented table.
+#' Loadings with absolute value greater than or equal to `cutoff` are emphasized,
+#' smaller loadings are de-emphasized, and Heywood-relevant communality/
+#' uniqueness values are marked when `h2` is supplied. Long variable names can
+#' be truncated, abbreviated, or printed in full. If the matrix has many factor
+#' columns, the table is split into column blocks so that the output remains
+#' readable in narrower consoles.
+#'
+#' If `h2` is named and `x` has row names, `h2` is matched to the row names of
+#' `x` before any optional row sorting is applied. If `x` has no row names, a
+#' named `h2` vector is used in the supplied order.
+#'
 #' @param x class LOADINGS matrix.
 #' @param cutoff numeric. The number above which to print loadings in bold
 #'  default is .3.
@@ -117,33 +130,38 @@ format.LOADINGS <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     stop("`x` must be a numeric matrix.", call. = FALSE)
   }
 
-  if (!is.numeric(cutoff) || length(cutoff) != 1L || is.na(cutoff) || cutoff < 0) {
-    stop("`cutoff` must be a single non-negative number.", call. = FALSE)
+  if (nrow(x) < 1L || ncol(x) < 1L) {
+    stop("`x` must have at least one row and one column.", call. = FALSE)
   }
 
-  if (!is.numeric(digits) || length(digits) != 1L || is.na(digits) ||
+  if (!is.numeric(cutoff) || length(cutoff) != 1L ||
+      !is.finite(cutoff) || cutoff < 0) {
+    stop("`cutoff` must be a single finite non-negative number.", call. = FALSE)
+  }
+
+  if (!is.numeric(digits) || length(digits) != 1L || !is.finite(digits) ||
       digits < 0 || digits != as.integer(digits)) {
-    stop("`digits` must be a single non-negative integer.", call. = FALSE)
+    stop("`digits` must be a single finite non-negative integer.", call. = FALSE)
   }
 
   if (!is.numeric(max_name_length) || length(max_name_length) != 1L ||
-      is.na(max_name_length) || max_name_length < 1 ||
+      !is.finite(max_name_length) || max_name_length < 1 ||
       max_name_length != as.integer(max_name_length)) {
-    stop("`max_name_length` must be a single positive integer.", call. = FALSE)
+    stop("`max_name_length` must be a single finite positive integer.", call. = FALSE)
   }
 
   if (!is.null(max_factor_name_length) &&
       (!is.numeric(max_factor_name_length) || length(max_factor_name_length) != 1L ||
-       is.na(max_factor_name_length) || max_factor_name_length < 1 ||
+       !is.finite(max_factor_name_length) || max_factor_name_length < 1 ||
        max_factor_name_length != as.integer(max_factor_name_length))) {
-    stop("`max_factor_name_length` must be NULL or a single positive integer.", call. = FALSE)
+    stop("`max_factor_name_length` must be NULL or a single finite positive integer.", call. = FALSE)
   }
 
   if (!is.null(max_factors_per_block) &&
       (!is.numeric(max_factors_per_block) || length(max_factors_per_block) != 1L ||
-       is.na(max_factors_per_block) || max_factors_per_block < 1 ||
+       !is.finite(max_factors_per_block) || max_factors_per_block < 1 ||
        max_factors_per_block != as.integer(max_factors_per_block))) {
-    stop("`max_factors_per_block` must be NULL or a single positive integer.", call. = FALSE)
+    stop("`max_factors_per_block` must be NULL or a single finite positive integer.", call. = FALSE)
   }
 
   if (!is.logical(color) || length(color) != 1L || is.na(color)) {
@@ -174,14 +192,20 @@ format.LOADINGS <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     factor_names <- paste0("F", seq_len(n_factors))
   }
 
-  var_names <- rownames(x)
-  if (is.null(var_names)) {
+  original_var_names <- rownames(x)
+  has_row_names <- !is.null(original_var_names)
+  var_names <- original_var_names
+  if (!has_row_names) {
     var_names <- paste0("V", seq_len(nrow(x)))
   }
 
   has_h2 <- !is.null(h2)
   if (has_h2) {
-    h2 <- .align_loadings_h2(h2, var_names)
+    h2 <- .align_loadings_h2(
+      h2 = h2,
+      var_names = var_names,
+      has_row_names = has_row_names
+    )
   }
 
   row_order <- .loadings_row_order(x, sort_loadings)
@@ -246,9 +270,14 @@ format.LOADINGS <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   order(primary_factor, -primary_loading, seq_along(primary_factor))
 }
 
-.align_loadings_h2 <- function(h2, var_names) {
-  if (!is.null(names(h2)) && !is.null(var_names) && all(nzchar(names(h2)))) {
-    if (!all(var_names %in% names(h2))) {
+.align_loadings_h2 <- function(h2, var_names, has_row_names = TRUE) {
+  # Only align by name when the loading matrix itself has row names. Generated
+  # fallback names (V1, V2, ...) should not be used to reorder a named h2 vector.
+  h2_names <- names(h2)
+  has_complete_h2_names <- !is.null(h2_names) && all(nzchar(h2_names))
+
+  if (isTRUE(has_row_names) && has_complete_h2_names) {
+    if (!all(var_names %in% h2_names)) {
       stop(
         "If `h2` is named and `x` has row names, names(h2) must include all row names of `x`.",
         call. = FALSE
@@ -261,6 +290,8 @@ format.LOADINGS <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
 }
 
 .shorten_loadings_names <- function(x, max_length, name_style) {
+  x <- as.character(x)
+
   if (identical(name_style, "full")) {
     return(x)
   }
@@ -282,6 +313,8 @@ format.LOADINGS <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
 }
 
 .shorten_loadings_factor_names <- function(x, max_length = NULL) {
+  x <- as.character(x)
+
   if (is.null(max_length) || all(nchar(x) <= max_length)) {
     return(x)
   }
@@ -290,15 +323,11 @@ format.LOADINGS <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
 }
 
 .format_loadings_values <- function(x, digits) {
-  out <- matrix("", nrow = nrow(x), ncol = ncol(x))
+  values <- as.numeric(x)
+  out <- .numformat(round(values, digits = digits), digits = digits)
+  out[is.na(values)] <- "NA"
 
-  for (jj in seq_len(ncol(x))) {
-    for (ii in seq_len(nrow(x))) {
-      out[ii, jj] <- .format_loadings_number(x[ii, jj], digits = digits)
-    }
-  }
-
-  out
+  matrix(out, nrow = nrow(x), ncol = ncol(x), dimnames = dimnames(x))
 }
 
 .format_loadings_number <- function(x, digits) {
@@ -312,7 +341,7 @@ format.LOADINGS <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
 .format_loadings_table <- function(spec, color = TRUE,
                                    max_factors_per_block = NULL,
                                    legend = FALSE) {
-  row_width <- max(nchar(spec$var_names))
+  row_width <- max(nchar(spec$var_names), 1L)
   col_widths <- pmax(
     nchar(spec$factor_names),
     apply(spec$value_strings, 2L, function(z) max(nchar(z)))
@@ -505,7 +534,7 @@ format.LOADINGS <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     return(text)
   }
 
-  text <- paste0(crayon::italic("Legend: "), "salient loadings use cutoff |loading| >= ", cutoff)
+  text <- paste0("Legend: salient loadings use cutoff |loading| >= ", cutoff)
   if (isTRUE(spec$has_h2)) {
     text <- paste0(text, "; h2 > 1 or u2 < 0 indicates a Heywood-relevant value")
   }

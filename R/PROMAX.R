@@ -221,9 +221,11 @@
 
   # get structure matrix
   Structure <- AP %*% Phi
+  dimnames(Structure) <- list(rownames(AP), colnames(AP))
 
   # prepare and return output list
   class(AP) <- "LOADINGS"
+  class(Structure) <- "LOADINGS"
 
   output <- list(rot_loadings = AP,
                  Phi = Phi,

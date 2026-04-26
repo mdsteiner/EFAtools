@@ -155,6 +155,7 @@
 
   # get structure matrix
   Structure <- patt_mat %*% Phi
+  dimnames(Structure) <- list(rownames(patt_mat), colnames(patt_mat))
 
   # compute explained variances
   vars_accounted_rot <- .compute_vars(L_unrot = L, L_rot = patt_mat, Phi = Phi)
@@ -162,6 +163,7 @@
 
   # prepare and return output list
   class(patt_mat) <- "LOADINGS"
+  class(Structure) <- "LOADINGS"
 
   output <- list(rot_loadings = patt_mat,
                  Phi = Phi,

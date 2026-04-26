@@ -79,6 +79,19 @@ Default is \code{FALSE} for standalone loading matrices.}
 \description{
 Print LOADINGS object
 }
+\details{
+The method prints a loading matrix in a compact, console-oriented table.
+Loadings with absolute value greater than or equal to `cutoff` are emphasized,
+smaller loadings are de-emphasized, and Heywood-relevant communality/
+uniqueness values are marked when `h2` is supplied. Long variable names can
+be truncated, abbreviated, or printed in full. If the matrix has many factor
+columns, the table is split into column blocks so that the output remains
+readable in narrower consoles.
+
+If `h2` is named and `x` has row names, `h2` is matched to the row names of
+`x` before any optional row sorting is applied. If `x` has no row names, a
+named `h2` vector is used in the supplied order.
+}
 \examples{
 EFAtools_PAF <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
                     type = "EFAtools", method = "PAF", rotation = "promax")
