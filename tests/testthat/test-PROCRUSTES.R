@@ -24,3 +24,5 @@ test_that("PROCRUSTES matches psych::Procrustes and GPArotation::targetQ outputs
   )
 })
 
+
+rm(efa_list, unrot_loadings, rot_loadings)

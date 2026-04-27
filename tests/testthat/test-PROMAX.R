@@ -16,7 +16,7 @@ test_that("output class and dimensions are correct", {
 
   expect_is(prom$rot_loadings, "LOADINGS")
   expect_is(prom$Phi, "matrix")
-  expect_is(prom$Structure, "matrix")
+  expect_is(prom$Structure, "LOADINGS")
   expect_is(prom$rotmat, "matrix")
   expect_is(prom$vars_accounted_rot, "matrix")
   expect_is(prom$settings, "list")

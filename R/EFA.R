@@ -665,6 +665,8 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
   if(boot_rot == "oblique") {
 
+    colnam_L <- colnames(L_rot)
+
     L_rot_boot <- array(NA_real_, c(nrow_L, ncol_L, b),
                         dimnames = list(rownam_L, colnam_L,
                                         NULL))
@@ -730,6 +732,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
     )
 
   } else if (boot_rot == "orthogonal") {
+    colnam_L <- colnames(L_rot)
 
     L_rot_boot <- array(NA_real_, c(nrow_L, ncol_L, b),
                         dimnames = list(rownam_L, colnam_L,

@@ -31,32 +31,32 @@ test_that("output class and dimensions are correct", {
   expect_output(str(bifacQ), "List of 6")
 
   expect_is(obli$Phi, "matrix")
-  expect_is(obli$Structure, "matrix")
+  expect_is(obli$Structure, "LOADINGS")
   expect_is(obli$rotmat, "matrix")
   expect_is(obli$vars_accounted_rot, "matrix")
 
   expect_is(quarti$Phi, "matrix")
-  expect_is(quarti$Structure, "matrix")
+  expect_is(quarti$Structure, "LOADINGS")
   expect_is(quarti$rotmat, "matrix")
   expect_is(quarti$vars_accounted_rot, "matrix")
 
   expect_is(simpli$Phi, "matrix")
-  expect_is(simpli$Structure, "matrix")
+  expect_is(simpli$Structure, "LOADINGS")
   expect_is(simpli$rotmat, "matrix")
   expect_is(simpli$vars_accounted_rot, "matrix")
 
   expect_is(bentQ$Phi, "matrix")
-  expect_is(bentQ$Structure, "matrix")
+  expect_is(bentQ$Structure, "LOADINGS")
   expect_is(bentQ$rotmat, "matrix")
   expect_is(bentQ$vars_accounted_rot, "matrix")
 
   expect_is(geoQ$Phi, "matrix")
-  expect_is(geoQ$Structure, "matrix")
+  expect_is(geoQ$Structure, "LOADINGS")
   expect_is(geoQ$rotmat, "matrix")
   expect_is(geoQ$vars_accounted_rot, "matrix")
 
   expect_is(bifacQ$Phi, "matrix")
-  expect_is(bifacQ$Structure, "matrix")
+  expect_is(bifacQ$Structure, "LOADINGS")
   expect_is(bifacQ$rotmat, "matrix")
   expect_is(bifacQ$vars_accounted_rot, "matrix")
 
