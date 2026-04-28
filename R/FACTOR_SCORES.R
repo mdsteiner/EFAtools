@@ -13,6 +13,11 @@
 #' @param Phi matrix. A matrix of factor intercorrelations. Only needs to be
 #' specified if a factor loadings matrix is entered directly into \code{f}.
 #' Default is \code{NULL}, in which case all intercorrelations are assumed to be zero.
+#' @param rho matrix. Used when \code{x} is a matrix of raw data and the user
+#' wishes to get factor scores for a correlation matrix other than Pearson's
+#' (e.g. polychoric). Defaults to \code{NULL}, in which case
+#' \code{\link[psych:factor.scores]{psych::factor.scores}} uses
+#' \code{cor(x, use = "pairwise")}.
 #' @param method character. The method used to calculate factor scores. One of
 #' "Thurstone" (regression-based; default), "tenBerge", "Anderson", "Bartlett",
 #' "Harman", or "components".
@@ -45,7 +50,7 @@
 #'                type = "EFAtools", method = "PAF", rotation = "oblimin")
 #' fac_scores_cor <- FACTOR_SCORES(test_models$baseline$cormat, f = EFA_cor)
 #'
-FACTOR_SCORES <- function(x, f, Phi = NULL,
+FACTOR_SCORES <- function(x, f, Phi = NULL, rho = NULL,
                           method = c("Thurstone", "tenBerge", "Anderson",
                                      "Bartlett", "Harman", "components"),
                           impute = c("none", "means", "median")){
@@ -96,7 +101,7 @@ if(inherits(f, c("EFA"))){
 }
 
 out_fac_scores <- psych::factor.scores(x = x, f = f, Phi = Phi, method = method,
-                                       rho = NULL, impute = impute)
+                                       rho, impute = impute)
 
 settings <- list(method = method,
                  impute = impute)
