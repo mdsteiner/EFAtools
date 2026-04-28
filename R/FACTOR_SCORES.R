@@ -101,7 +101,7 @@ if(inherits(f, c("EFA"))){
 }
 
 out_fac_scores <- psych::factor.scores(x = x, f = f, Phi = Phi, method = method,
-                                       rho, impute = impute)
+                                       rho = rho, impute = impute)
 
 settings <- list(method = method,
                  impute = impute)
