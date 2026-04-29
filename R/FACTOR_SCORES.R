@@ -45,7 +45,19 @@
 #' fac_scores_raw <- FACTOR_SCORES(DOSPERT_raw, f = EFA_raw, method = "Bartlett",
 #'                                 impute = "none")
 #'
-#' # Example with a correlation matrix (does not return factor scores)
+#' # Same as above, but with raw data AND a correlation matrix
+#' cor_pearson <- cor(DOSPERT_raw)
+#' EFA_cor_pearson <- EFA(cor_pearson, n_factors = 10, N = nrow(DOSPERT_raw),
+#'                        type = "EFAtools", method = "PAF",
+#'                        rotation = "oblimin")
+#' fac_scores_cor_pearson <- FACTOR_SCORES(DOSPERT_raw, f = EFA_cor_pearson,
+#'                                         rho = cor_pearson,
+#'                                         method = "Bartlett", impute = "none")
+#'
+#' # Scores between two alternatives above are identical
+#' all(dplyr::near(fac_scores_raw$scores, fac_scores_cor_pearson$scores))
+#'
+#' # Example with a correlation matrix only (does not return factor scores)
 #' EFA_cor <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
 #'                type = "EFAtools", method = "PAF", rotation = "oblimin")
 #' fac_scores_cor <- FACTOR_SCORES(test_models$baseline$cormat, f = EFA_cor)
