@@ -558,7 +558,7 @@
     if(df != 0){
 
       # formula 12.6 from Kline 2016; Principles and practices of...
-      RMSEA <- sqrt(max(0, chi - df) / (df * N - 1))
+      RMSEA <- sqrt(max(0, chi - df) / (df * (N - 1)))
 
     p_chi_fun <- function(x, val, df, goal){goal - stats::pchisq(val, df, ncp = x)}
 
@@ -579,8 +579,8 @@
       lambda_u <- 0
     }
 
-    RMSEA_LB <- sqrt(lambda_l / (df * N))
-    RMSEA_UB <- sqrt(lambda_u / (df * N))
+    RMSEA_LB <- sqrt(lambda_l / (df * (N - 1)))
+    RMSEA_UB <- sqrt(lambda_u / (df * (N - 1)))
 
     if(RMSEA > 1) RMSEA <- 1
     if(RMSEA_LB > 1) RMSEA_LB <- 1

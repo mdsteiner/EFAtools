@@ -6,7 +6,8 @@
 * `PROCRUSTES()` to perform orthogonal and oblique Procrustes / target rotation.
 * `CONSENSUS_PROCRUSTES()` to perform Procrustes on a list of targets to obtain a common target.
 * `residuals.EFA()` to extract and print residuals and, if computed, standardized residuals.
-* `EFA_POOLED()` to run EFA on a list of multiple imputated datasets and pool the results.
+* `EFA_POOLED()` to run EFA on a list of multiple imputated datasets and pool the results. Thanks to Andreas Soteriades for the suggestion and first implementation.
+* `print.EFA_POOLED()`, print method adapted from `print.EFA()`
 
 ## Changes to Functions
 
@@ -15,11 +16,13 @@
   * Now returns and prints residuals and, if SEs are computed, standardized residuals.
   * Calculates and prints RMSR.
   * Can calculate bootstrap standard errors and CIs of parameters and fit indices.
+* `print.EFA()` now prints more information.
 
 ## Bug Fixes
 
 * Fixed a bug in `OMEGA()` that led to incorrect omega, H, and ECV values for `lavaan` bifactor models. Tnanks to Christopher D. King for bug report and suggested fix.
-* Small fix in the documentation of `EFA_AVERAGE()`
+* Small fix in the documentation of `EFA_AVERAGE()`.
+* Fixed incorrect calculation of RMSEA in `EFA()`.
 
 
 # EFAtools 0.6.1

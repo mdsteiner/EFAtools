@@ -621,9 +621,7 @@ EFA_POOLED <- function(data_list,
     )
   }
 
-  # Keep the denominator convention used by EFAtools::.gof(): the point
-  # RMSEA uses df * N - 1 and the noncentrality CI uses df * N.
-  denom <- df * N
+  denom <- df * (N - 1)
   if (!is.finite(denom) || denom <= 0) {
     return(c(lower = NA_real_, upper = NA_real_))
   }
@@ -770,7 +768,7 @@ EFA_POOLED <- function(data_list,
     CFI <- NA_real_
   }
 
-  rmsea_denom <- df * N - 1
+  rmsea_denom <- df * (N - 1)
   if (is.finite(chi) && is.finite(df) && is.finite(N) &&
       df > 0 && N > 1 && is.finite(rmsea_denom) && rmsea_denom > 0) {
     RMSEA <- sqrt(max((chi - df) / rmsea_denom, 0))

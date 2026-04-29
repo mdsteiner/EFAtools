@@ -4,7 +4,7 @@ x_mat <- matrix(c(.1, .1, .3,
                    0,  0,  0), ncol = 3, byrow = TRUE)
 y_mat <- matrix(c(.1, .1, .3,
                   .4, .29, .1,
-                   0,  .3,  0), ncol = 3, byrow = TRUE)
+                   0,  0,  0), ncol = 3, byrow = TRUE)
 test_that(".factor_corres works", {
   expect_equal(.factor_corres(x_mat, y_mat)$diff_corres, 1)
   expect_equal(.factor_corres(y_mat, x_mat)$diff_corres_cross, 1)
