@@ -22,8 +22,8 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - {os: windows-latest, r: 'release'}
-          - {os: macOS-latest, r: 'release'}
+          - {os: windows-latest, r: 'release', rspm: "https://packagemanager.posit.co/cran/latest"}
+          - {os: macOS-latest, r: 'release', rspm: "https://packagemanager.posit.co/cran/latest"}
           - {os: ubuntu-20.04, r: 'release', rspm: "https://packagemanager.posit.co/cran/latest"}
           - {os: ubuntu-20.04, r: 'devel', rspm: "https://packagemanager.posit.co/cran/latest"}
 
