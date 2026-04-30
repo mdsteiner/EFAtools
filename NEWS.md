@@ -1,4 +1,7 @@
-# EFAtools 0.6.1.9000
+EFAtools 0.7.0.9000
+
+
+# EFAtools 0.7.0
 
 ## New Functions
 
