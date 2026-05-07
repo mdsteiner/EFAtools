@@ -147,12 +147,12 @@ test_that("settings are returned correctly", {
                                    "N", "use", "cor_method", "se", "b_boot", "ci", "max_iter",
                                    "init_comm", "criterion", "criterion_type",
                                    "abs_eigen", "normalize", "precision",
-                                   "order_type"))
+                                   "order_type", "randomStarts"))
   expect_named(efa_quart$settings, c("method", "rotation", "type", "n_factors",
                                    "N", "use", "cor_method", "se", "b_boot", "ci", "max_iter",
                                    "init_comm", "criterion", "criterion_type",
                                    "abs_eigen", "normalize", "precision",
-                                   "order_type", "k"))
+                                   "order_type", "k", "randomStarts"))
   expect_named(efa_none$settings, c("method", "rotation", "type", "n_factors",
                                    "N", "use", "cor_method", "se", "b_boot", "ci", "max_iter",
                                    "init_comm", "criterion", "criterion_type",

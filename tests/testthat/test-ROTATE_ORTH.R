@@ -46,12 +46,12 @@ test_that("output class and dimensions are correct", {
 })
 
 test_that("settings are returned correctly", {
-  expect_named(equa$settings, c("normalize", "precision", "order_type"))
-  expect_named(equa_1$settings,c("normalize", "precision", "order_type"))
-  expect_named(quarti$settings, c("normalize", "precision", "order_type"))
-  expect_named(bentT$settings, c("normalize", "precision", "order_type"))
-  expect_named(geoT$settings, c("normalize", "precision", "order_type"))
-  expect_named(bifacT$settings, c("normalize", "precision", "order_type"))
+  expect_named(equa$settings, c("normalize", "precision", "order_type", "randomStarts"))
+  expect_named(equa_1$settings,c("normalize", "precision", "order_type", "randomStarts"))
+  expect_named(quarti$settings, c("normalize", "precision", "order_type", "randomStarts"))
+  expect_named(bentT$settings, c("normalize", "precision", "order_type", "randomStarts"))
+  expect_named(geoT$settings, c("normalize", "precision", "order_type", "randomStarts"))
+  expect_named(bifacT$settings, c("normalize", "precision", "order_type", "randomStarts"))
 
   expect_equal(equa$settings$normalize, TRUE)
   expect_equal(equa_1$settings$normalize, TRUE)

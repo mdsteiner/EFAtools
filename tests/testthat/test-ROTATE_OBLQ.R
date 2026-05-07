@@ -5,13 +5,13 @@ unrot_1 <- EFA(test_models$baseline$cormat, 1, N = 500)
 obli_1 <- suppressWarnings(.ROTATE_OBLQ(unrot_1, rotation = "oblimin",
                                         type = "EFAtools"))
 
-quarti <- .ROTATE_OBLQ(unrot, rotation = "quartimin", type = "psych")
-simpli <- .ROTATE_OBLQ(unrot, rotation = "simplimax", type = "SPSS",
-                       maxit = 2000)
-bentQ <- .ROTATE_OBLQ(unrot, rotation = "bentlerQ", type = "none",
-                       order_type = "eigen")
-geoQ <- .ROTATE_OBLQ(unrot, rotation = "geominQ", type = "EFAtools")
-bifacQ <- .ROTATE_OBLQ(unrot, rotation = "bifactorQ", type = "EFAtools")
+quarti <- suppressWarnings(.ROTATE_OBLQ(unrot, rotation = "quartimin", type = "psych"))
+simpli <- suppressWarnings(.ROTATE_OBLQ(unrot, rotation = "simplimax", type = "SPSS",
+                       maxit = 2000))
+bentQ <- suppressWarnings(.ROTATE_OBLQ(unrot, rotation = "bentlerQ", type = "none",
+                       order_type = "eigen"))
+geoQ <- suppressWarnings(.ROTATE_OBLQ(unrot, rotation = "geominQ", type = "EFAtools"))
+bifacQ <- suppressWarnings(.ROTATE_OBLQ(unrot, rotation = "bifactorQ", type = "EFAtools"))
 
 test_that("output class and dimensions are correct", {
   expect_is(obli$rot_loadings, "LOADINGS")
@@ -67,13 +67,13 @@ test_that("output class and dimensions are correct", {
 })
 
 test_that("settings are returned correctly", {
-  expect_named(obli$settings, c("normalize", "precision", "order_type", "k"))
-  expect_named(obli_1$settings, c("normalize", "precision", "order_type", "k"))
-  expect_named(quarti$settings, c("normalize", "precision", "order_type", "k"))
-  expect_named(simpli$settings, c("normalize", "precision", "order_type", "k"))
-  expect_named(bentQ$settings, c("normalize", "precision", "order_type", "k"))
-  expect_named(geoQ$settings, c("normalize", "precision", "order_type", "k"))
-  expect_named(bifacQ$settings, c("normalize", "precision", "order_type", "k"))
+  expect_named(obli$settings, c("normalize", "precision", "order_type", "k", "randomStarts"))
+  expect_named(obli_1$settings, c("normalize", "precision", "order_type", "k", "randomStarts"))
+  expect_named(quarti$settings, c("normalize", "precision", "order_type", "k", "randomStarts"))
+  expect_named(simpli$settings, c("normalize", "precision", "order_type", "k", "randomStarts"))
+  expect_named(bentQ$settings, c("normalize", "precision", "order_type", "k", "randomStarts"))
+  expect_named(geoQ$settings, c("normalize", "precision", "order_type", "k", "randomStarts"))
+  expect_named(bifacQ$settings, c("normalize", "precision", "order_type", "k", "randomStarts"))
 
   expect_equal(obli$settings$normalize, TRUE)
   expect_equal(obli_1$settings$normalize, TRUE)

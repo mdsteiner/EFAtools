@@ -3,7 +3,7 @@
                                         "bentlerT", "bifactorT"),
                         type = c("EFAtools", "psych", "SPSS", "none"),
                         normalize = TRUE, precision = 1e-5, order_type = NA,
-                        ...){
+                        randomStarts = 100, ...){
 
 if (type == "none") {
 
@@ -59,7 +59,7 @@ if (type == "none") {
 
   # prepare settings
   settings <- list(normalize = normalize, precision = precision,
-                   order_type = order_type)
+                   order_type = order_type, randomStarts = randomStarts)
 
   if (ncol(L) < 2) {
 
@@ -76,19 +76,23 @@ if (type == "none") {
   # perform the requested rotation
   if(rotation == "equamax"){
   AV <- GPArotation::cfT(L, eps = precision, kappa = ncol(L)/(2 * nrow(L)),
-                         normalize = normalize, ...)
+                         normalize = normalize, randomStarts = randomStarts, ...)
 
   } else if (rotation == "bentlerT"){
-    AV <- GPArotation::bentlerT(L, eps = precision, normalize = normalize, ...)
+    AV <- GPArotation::bentlerT(L, eps = precision, normalize = normalize,
+                                randomStarts = randomStarts, ...)
 
   } else if (rotation == "quartimax"){
-    AV <- GPArotation::bentlerT(L, eps = precision, normalize = normalize, ...)
+    AV <- GPArotation::bentlerT(L, eps = precision, normalize = normalize,
+                                randomStarts = randomStarts, ...)
 
   } else if (rotation == "geominT"){
-    AV <- GPArotation::geominT(L, eps = precision, normalize = normalize, ...)
+    AV <- GPArotation::geominT(L, eps = precision, normalize = normalize,
+                               randomStarts = randomStarts, ...)
 
   } else if (rotation == "bifactorT"){
-    AV <- GPArotation::bifactorT(L, eps = precision, normalize = normalize, ...)
+    AV <- GPArotation::bifactorT(L, eps = precision, normalize = normalize,
+                                 randomStarts = randomStarts, ...)
 
   }
 

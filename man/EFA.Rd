@@ -47,6 +47,7 @@ EFA(
   cor_method = c("pearson", "spearman", "kendall"),
   b_boot = 1000,
   ci = 0.95,
+  randomStarts = 10,
   ...
 )
 }
@@ -158,6 +159,11 @@ Default is "pearson".}
 
 \item{ci}{numeric. The confidence interval to create from the bootstrap samples.
 Must be between 0 and 1. Default ist .95 for 95\% CIs.}
+
+\item{randomStarts}{numeric. The number of random starts to use in rotations
+that use the \code{GPArotation} package. Some rotations are prone to produce
+local minima and sometimes many random starts are needed (see the GPArotation
+package documentation for details).}
 
 \item{...}{Additional arguments passed to rotation functions from the \code{GPArotation} package (e.g., \code{maxit} for maximum number of iterations).}
 }

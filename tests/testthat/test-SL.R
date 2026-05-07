@@ -8,7 +8,7 @@ SL_SPSS <- SL(EFA_mod, type = "SPSS", method = "ULS")
 
 ## Use with an output from the psych::fa function with type psych in SL
 fa_mod <- psych::fa(test_models$baseline$cormat, nfactors = 3, n.obs = 500,
-                    fm = "pa", rotate = "Promax")
+                    fm = "pa", rotate = "Promax", n.rotations = 1)
 SL_psych <- SL(fa_mod, type = "psych", method = "PAF")
 
 ## Use more flexibly by entering a pattern matrix and phi directly, with method
@@ -179,7 +179,7 @@ EFA_mod_orth <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
 fa_mod_unrot <- psych::fa(test_models$baseline$cormat, nfactors = 3, n.obs = 500,
                           fm = "pa", rotate = "none")
 fa_mod_orth <- psych::fa(test_models$baseline$cormat, nfactors = 3, n.obs = 500,
-                         fm = "pa", rotate = "varimax")
+                         fm = "pa", rotate = "Varimax", n.rotations = 1)
 
 lav_mod_NA <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6 + V17
                F2 =~ V7 + V8 + V9 + V10 + V11 + V12 + V2

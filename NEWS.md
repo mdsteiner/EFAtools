@@ -1,5 +1,8 @@
-EFAtools 0.7.0.9000
+# EFAtools 0.7.0.9000
 
+## Changes to Functions
+
+* `EFA()`: Added `randomStarts` argument passed to GPArotation functions, as suggested by Coen Bernaards.
 
 # EFAtools 0.7.0
 

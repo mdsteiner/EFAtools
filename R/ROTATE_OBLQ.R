@@ -3,7 +3,7 @@
                                         "bentlerQ", "geominQ", "bifactorQ"),
                         type = c("EFAtools", "psych", "SPSS", "none"),
                         normalize = TRUE, precision = 1e-5, order_type = NA,
-                        k = NA, ...){
+                        k = NA, randomStarts = 100, ...){
 
   if (type == "none") {
 
@@ -63,7 +63,8 @@
 
   # prepare settings
   settings <- list(normalize = normalize, precision = precision,
-                   order_type = order_type, k = k)
+                   order_type = order_type, k = k,
+                   randomStarts = randomStarts)
 
   if (ncol(L) < 2) {
 
@@ -81,19 +82,24 @@
 
   # perform the requested rotation
   if(rotation == "bentlerQ"){
-    AV <- GPArotation::bentlerQ(L, eps = precision, normalize = normalize, ...)
+    AV <- GPArotation::bentlerQ(L, eps = precision, normalize = normalize,
+                                randomStarts = randomStarts, ...)
 
   } else if (rotation == "oblimin"){
-    AV <- GPArotation::oblimin(L, eps = precision, normalize = normalize, ...)
+    AV <- GPArotation::oblimin(L, eps = precision, normalize = normalize,
+                               randomStarts = randomStarts, ...)
 
   } else if (rotation == "quartimin"){
-    AV <- GPArotation::quartimin(L, eps = precision, normalize = normalize, ...)
+    AV <- GPArotation::quartimin(L, eps = precision, normalize = normalize,
+                                 randomStarts = randomStarts, ...)
 
   } else if (rotation == "geominQ"){
-    AV <- GPArotation::geominQ(L, eps = precision, normalize = normalize, ...)
+    AV <- GPArotation::geominQ(L, eps = precision, normalize = normalize,
+                               randomStarts = randomStarts, ...)
 
   } else if (rotation == "bifactorQ"){
-    AV <- GPArotation::bifactorQ(L, eps = precision, normalize = normalize, ...)
+    AV <- GPArotation::bifactorQ(L, eps = precision, normalize = normalize,
+                                 randomStarts = randomStarts, ...)
 
   } else if (rotation == "simplimax"){
 
@@ -106,7 +112,7 @@
     }
 
     AV <- GPArotation::simplimax(L, eps = precision, normalize = normalize,
-                                 k = k, ...)
+                                 k = k, randomStarts = randomStarts, ...)
 
   }
 

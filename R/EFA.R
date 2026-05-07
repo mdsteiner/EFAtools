@@ -92,6 +92,10 @@
 #' @param b_boot numeric. The number of bootstrap samples to draw. Default is 1000.
 #' @param ci numeric. The confidence interval to create from the bootstrap samples.
 #'  Must be between 0 and 1. Default ist .95 for 95\% CIs.
+#' @param randomStarts numeric. The number of random starts to use in rotations
+#'  that use the \code{GPArotation} package. Some rotations are prone to produce
+#'  local minima and sometimes many random starts are needed (see the GPArotation
+#'  package documentation for details).
 #' @param ... Additional arguments passed to rotation functions from the \code{GPArotation} package (e.g., \code{maxit} for maximum number of iterations).
 #'
 #' @details There are two main ways to use this function. The easiest way is to
@@ -298,6 +302,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                 order_type = NA, start_method = "psych",
                 cor_method = c("pearson", "spearman", "kendall"),
                 b_boot = 1000, ci = .95,
+                randomStarts = 10,
                 ...) {
 
   # Perform argument checks
@@ -517,7 +522,8 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
     rot_out <- .ROTATE_ORTH(fit_out, type = type, rotation = rotation,
                            normalize = normalize, precision = precision,
-                           order_type = order_type, ...)
+                           order_type = order_type,
+                           randomStarts = randomStarts, ...)
 
     boot_rot <- "orthogonal"
 
@@ -533,7 +539,8 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
     rot_out <- .ROTATE_OBLQ(fit_out, type = type, rotation = rotation,
                            normalize = normalize, precision = precision,
-                           order_type = order_type, k = k, ...)
+                           order_type = order_type, k = k,
+                           randomStarts = randomStarts, ...)
 
     boot_rot <- "oblique"
 
