@@ -8,6 +8,7 @@ FACTOR_SCORES(
   x,
   f,
   Phi = NULL,
+  rho = NULL,
   method = c("Thurstone", "tenBerge", "Anderson", "Bartlett", "Harman", "components"),
   impute = c("none", "means", "median")
 )
@@ -21,6 +22,12 @@ factor scores) or matrix with correlations.}
 \item{Phi}{matrix. A matrix of factor intercorrelations. Only needs to be
 specified if a factor loadings matrix is entered directly into \code{f}.
 Default is \code{NULL}, in which case all intercorrelations are assumed to be zero.}
+
+\item{rho}{matrix. Used when \code{x} is a matrix of raw data and the user
+wishes to get factor scores for a correlation matrix other than Pearson's
+(e.g. polychoric). Defaults to \code{NULL}, in which case
+\code{\link[psych:factor.scores]{psych::factor.scores}} uses
+\code{cor(x, use = "pairwise")}.}
 
 \item{method}{character. The method used to calculate factor scores. One of
 "Thurstone" (regression-based; default), "tenBerge", "Anderson", "Bartlett",
@@ -53,11 +60,23 @@ correlation matrix is provided.
 \examples{
 # Example with raw data with method "Bartlett" and no imputation
 EFA_raw <- EFA(DOSPERT_raw, n_factors = 10, type = "EFAtools", method = "PAF",
-               rotation = "oblimin")
+               rotation = "oblimin", randomStarts = 0)
 fac_scores_raw <- FACTOR_SCORES(DOSPERT_raw, f = EFA_raw, method = "Bartlett",
                                 impute = "none")
 
-# Example with a correlation matrix (does not return factor scores)
+# Same as above, but with raw data AND a correlation matrix
+cor_pearson <- cor(DOSPERT_raw)
+EFA_cor_pearson <- EFA(cor_pearson, n_factors = 10, N = nrow(DOSPERT_raw),
+                       type = "EFAtools", method = "PAF",
+                       rotation = "oblimin", randomStarts = 0)
+fac_scores_cor_pearson <- FACTOR_SCORES(DOSPERT_raw, f = EFA_cor_pearson,
+                                        rho = cor_pearson,
+                                        method = "Bartlett", impute = "none")
+
+# Scores between two alternatives above are identical
+all(dplyr::near(fac_scores_raw$scores, fac_scores_cor_pearson$scores))
+
+# Example with a correlation matrix only (does not return factor scores)
 EFA_cor <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
                type = "EFAtools", method = "PAF", rotation = "oblimin")
 fac_scores_cor <- FACTOR_SCORES(test_models$baseline$cormat, f = EFA_cor)

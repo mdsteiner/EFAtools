@@ -41,7 +41,7 @@
 #' @examples
 #' # Example with raw data with method "Bartlett" and no imputation
 #' EFA_raw <- EFA(DOSPERT_raw, n_factors = 10, type = "EFAtools", method = "PAF",
-#'                rotation = "oblimin")
+#'                rotation = "oblimin", randomStarts = 0)
 #' fac_scores_raw <- FACTOR_SCORES(DOSPERT_raw, f = EFA_raw, method = "Bartlett",
 #'                                 impute = "none")
 #'
@@ -49,12 +49,12 @@
 #' cor_pearson <- cor(DOSPERT_raw)
 #' EFA_cor_pearson <- EFA(cor_pearson, n_factors = 10, N = nrow(DOSPERT_raw),
 #'                        type = "EFAtools", method = "PAF",
-#'                        rotation = "oblimin")
+#'                        rotation = "oblimin", randomStarts = 0)
 #' fac_scores_cor_pearson <- FACTOR_SCORES(DOSPERT_raw, f = EFA_cor_pearson,
 #'                                         rho = cor_pearson,
 #'                                         method = "Bartlett", impute = "none")
 #'
-#' # Scores between two alternatives above are identical
+#' # Scores between two alternatives above are identical
 #' all(dplyr::near(fac_scores_raw$scores, fac_scores_cor_pearson$scores))
 #'
 #' # Example with a correlation matrix only (does not return factor scores)
