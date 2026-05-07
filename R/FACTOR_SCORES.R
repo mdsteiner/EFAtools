@@ -13,6 +13,11 @@
 #' @param Phi matrix. A matrix of factor intercorrelations. Only needs to be
 #' specified if a factor loadings matrix is entered directly into \code{f}.
 #' Default is \code{NULL}, in which case all intercorrelations are assumed to be zero.
+#' @param rho matrix. Used when \code{x} is a matrix of raw data and the user
+#' wishes to get factor scores for a correlation matrix other than Pearson's
+#' (e.g. polychoric). Defaults to \code{NULL}, in which case
+#' \code{\link[psych:factor.scores]{psych::factor.scores}} uses
+#' \code{cor(x, use = "pairwise")}.
 #' @param method character. The method used to calculate factor scores. One of
 #' "Thurstone" (regression-based; default), "tenBerge", "Anderson", "Bartlett",
 #' "Harman", or "components".
@@ -40,12 +45,24 @@
 #' fac_scores_raw <- FACTOR_SCORES(DOSPERT_raw, f = EFA_raw, method = "Bartlett",
 #'                                 impute = "none")
 #'
-#' # Example with a correlation matrix (does not return factor scores)
+#' # Same as above, but with raw data AND a correlation matrix
+#' cor_pearson <- cor(DOSPERT_raw)
+#' EFA_cor_pearson <- EFA(cor_pearson, n_factors = 10, N = nrow(DOSPERT_raw),
+#'                        type = "EFAtools", method = "PAF",
+#'                        rotation = "oblimin")
+#' fac_scores_cor_pearson <- FACTOR_SCORES(DOSPERT_raw, f = EFA_cor_pearson,
+#'                                         rho = cor_pearson,
+#'                                         method = "Bartlett", impute = "none")
+#'
+#' # Scores between two alternatives above are identical
+#' all(dplyr::near(fac_scores_raw$scores, fac_scores_cor_pearson$scores))
+#'
+#' # Example with a correlation matrix only (does not return factor scores)
 #' EFA_cor <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
 #'                type = "EFAtools", method = "PAF", rotation = "oblimin")
 #' fac_scores_cor <- FACTOR_SCORES(test_models$baseline$cormat, f = EFA_cor)
 #'
-FACTOR_SCORES <- function(x, f, Phi = NULL,
+FACTOR_SCORES <- function(x, f, Phi = NULL, rho = NULL,
                           method = c("Thurstone", "tenBerge", "Anderson",
                                      "Bartlett", "Harman", "components"),
                           impute = c("none", "means", "median")){
@@ -96,7 +113,7 @@ if(inherits(f, c("EFA"))){
 }
 
 out_fac_scores <- psych::factor.scores(x = x, f = f, Phi = Phi, method = method,
-                                       rho = NULL, impute = impute)
+                                       rho = rho, impute = impute)
 
 settings <- list(method = method,
                  impute = impute)
