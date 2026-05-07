@@ -3,6 +3,7 @@
 ## Changes to Functions
 
 * `EFA()`: Added `randomStarts` argument passed to GPArotation functions, as suggested by Coen Bernaards.
+* `FACTOR_SCORES()`: Added `rho` argument, thanks to Andreas Soteriades.
 
 # EFAtools 0.7.0
 
