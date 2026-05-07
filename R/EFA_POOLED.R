@@ -274,6 +274,7 @@ EFA_POOLED <- function(data_list,
 
     if (rotation_type == "oblique") {
       mean_phis <- .average_matrices(phis)
+      mean_phis <- (mean_phis + t(mean_phis)) / 2
       structure_loadings <- Map(function(L, Phi) L %*% Phi, rot_loadings, phis)
       # Keep Structure parallel to the returned pooled pattern matrix and Phi:
       # it is the plug-in structure of the pooled solution, not the arithmetic
@@ -784,7 +785,7 @@ EFA_POOLED <- function(data_list,
   BIC <- if (is.finite(chi) && is.finite(df) && is.finite(N)) chi - log(N) * df else NA_real_
 
   ## CAF in EFAtools is 1 - KMO(delta_hat), with diagonal set to 1.
-  delta_hat <- residuals
+  delta_hat <- (residuals + t(residuals)) / 2
   diag(delta_hat) <- 1
   CAF <- tryCatch(1 - KMO(delta_hat)$KMO,
                   error = function(e) NA_real_)
