@@ -786,7 +786,7 @@ EFA_POOLED <- function(data_list,
   ## CAF in EFAtools is 1 - KMO(delta_hat), with diagonal set to 1.
   delta_hat <- residuals
   diag(delta_hat) <- 1
-  CAF <- tryCatch(1 - KMO(delta_hat)$KMO,
+  CAF <- tryCatch(1 - KMO(cor(delta_hat))$KMO,
                   error = function(e) NA_real_)
 
   out <- list(
