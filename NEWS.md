@@ -1,9 +1,10 @@
-# EFAtools 0.7.0.9000
+# EFAtools 0.7.1
 
 ## Changes to Functions
 
 * `EFA()`: Added `randomStarts` argument passed to GPArotation functions, as suggested by Coen Bernaards.
 * `FACTOR_SCORES()`: Added `rho` argument, thanks to Andreas Soteriades.
+* `EFA_POOLED()`: Fixed issue that could lead to averaged Phi not being symmetric.
 
 # EFAtools 0.7.0
 

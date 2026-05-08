@@ -274,6 +274,9 @@ EFA_POOLED <- function(data_list,
 
     if (rotation_type == "oblique") {
       mean_phis <- .average_matrices(phis)
+      # Ensure mean_phis is symmetric (needed, as due to floating point imprecision,
+      # the averaged matrix can be asymmetric, leading to issues in downstream checks
+      # of matrix symmetry)
       mean_phis <- (mean_phis + t(mean_phis)) / 2
       structure_loadings <- Map(function(L, Phi) L %*% Phi, rot_loadings, phis)
       # Keep Structure parallel to the returned pooled pattern matrix and Phi:
@@ -785,6 +788,8 @@ EFA_POOLED <- function(data_list,
   BIC <- if (is.finite(chi) && is.finite(df) && is.finite(N)) chi - log(N) * df else NA_real_
 
   ## CAF in EFAtools is 1 - KMO(delta_hat), with diagonal set to 1.
+  # Ensure symmetry of residuals by (residuals + t(residuals)) / 2. Asymmetry
+  # can arise due to floating point imprecision from averaging the matrices.
   delta_hat <- (residuals + t(residuals)) / 2
   diag(delta_hat) <- 1
   CAF <- tryCatch(1 - KMO(delta_hat)$KMO,
