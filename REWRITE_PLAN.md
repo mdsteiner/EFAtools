@@ -1,0 +1,610 @@
+# EFAtools — Rewrite & Expansion Plan
+
+> Status: **planning** (no code changes yet).
+> Prepared from a full review of the current package (v0.7.1.9000) plus a structured
+> best-practice research pass. This document is the single source of truth for the
+> rewrite; it is meant to be edited as decisions are made and phases completed.
+>
+> This file is a development artefact, **not** part of the shipped package. Before the
+> first build, add `^REWRITE_PLAN\.md$` (and a `^dev$` folder if used) to
+> `.Rbuildignore` so it does not trigger an `R CMD check` NOTE.
+
+---
+
+## 0. How to read this
+
+- **Section 1** records the decisions the maintainer has already locked.
+- **Section 2** lists the decisions still needed before / during specific phases, each
+  with a recommendation. *These are deliberately not pre-decided.*
+- **Section 3** states the guiding principles that make a rewrite of this size safe.
+- **Section 4** describes the target end-state architecture.
+- **Section 5** is the phased, step-by-step roadmap (the operational core).
+- **Sections 6–11** are cross-cutting registers: bugs, tests, CI, naming/deprecation,
+  dependencies, risks.
+
+Throughout, file:line references point at the **current** code so each task is grounded.
+
+---
+
+## 1. Decisions locked
+
+| # | Decision | Choice |
+|---|----------|--------|
+| D1 | Release strategy | **Phased**: a sequence of shippable dev releases. `0.8.x` = infra + safety net + internal refactor + bug fixes (no user-visible behaviour change beyond documented fixes); `0.9.x` = C++ engine, new estimators, polychoric, SEs; `1.0.0` = `efa_*` rename + new user functions. |
+| D2 | Renaming scope | **All exports** get lowercase `efa_*` names; the old UPPERCASE names are retained as **throttled deprecated wrappers** (`lifecycle::deprecate_warn`). |
+| D3 | Argument API | **Split control objects**: keep ~5 primary args top-level; move tuning knobs into `estimate_control()` / `rotate_control()` (mirroring `estimate_model()` / `rotate_model()`). |
+| D4 | New-feature scope for the rewrite | **All four** heavy areas are in scope: (a) polychoric + ordinal/DWLS, (b) analytic/robust SEs, (c) `efa_group` multigroup, (d) `efa_simulate` / `efa_power` / `efa_screen`. |
+| D5 | R version floor | **`Depends: R (>= 4.1.0)`** — enables the native pipe `\|>` and `\(x)` lambdas, allowing `magrittr` (and the tidyverse cluster) to be dropped. May bump to `4.2.0` later *only* if the `_` pipe placeholder is wanted. Do not use features newer than 4.1 (e.g. base `%\|\|%` is 4.4 — define it internally). |
+
+Implication of D4: this is an ambitious 1.0. Phasing (D1) is what keeps it tractable —
+the heavy features land across `0.9.x` and `1.0.0`, each behind its own milestone with
+its own validation gate.
+
+---
+
+## 2. Open decisions still needed (recommendations, not commitments)
+
+Please confirm/adjust these. Each is flagged at the phase where it first bites.
+
+| # | Decision | Recommendation | Bites at |
+|---|----------|----------------|----------|
+| ~~O1~~ | **RESOLVED → see D5.** R floor set to `R (>= 4.1.0)`. May bump to 4.2.0 later if the `_` pipe placeholder is wanted. | Locked | Phase 0/1 |
+| O2 | Accept new compiled deps? `LinkingTo: roptim` (phase-1 optimizer), `pbv` (bivariate-normal CDF), `dqrng` (+`sitmo`,`BH`) (parallel RNG); `Imports: lifecycle`, `robustbase` (MCD). | **Yes** to all; revisit `RcppEnsmallen` later (O3). | Phases 3,5,7,8 |
+| O3 | Optimizer backend: `roptim` (byte-identical to current `optim`) first, then evaluate `RcppEnsmallen` once a regression suite exists? | **Yes** — `roptim` for phase 3, reassess `RcppEnsmallen` in a later minor. | Phase 3 |
+| O4 | GPArotation: fully replace with a native C++ GPF engine, or keep it as a fallback during transition? | **Keep as a `Suggests`/fallback**, port criteria to C++ one-by-one with 1e-6 cross-checks, drop only after full parity. | Phase 4 |
+| O5 | Move `lavaan` and (eventually) `psych` from `Imports` to `Suggests` (gated with `requireNamespace`)? | **Yes** for `lavaan` now; `psych` once `cor.smooth`/`factor.scores` are reimplemented. | Phase 1/3 |
+| O6 | Behaviour-changing bug fixes (quartimax→quartimax, Bartlett χ² correction, ULS objective). Fix outright (NEWS entry), or keep current numbers behind a legacy/`type` flag for continuity? | **Fix outright** with prominent NEWS entries; only the SPSS/psych *compatibility presets* need to preserve their documented behaviour. | Phase 2 |
+| O7 | χ² multiplier convention: standardise on lavaan/factanal (Bartlett-corrected ML; `N` vs `N-1`)? | **Yes**, with explicit parity tests vs lavaan and a documented choice. | Phase 2/6 |
+| O8 | EFA object schema: introduce `new_efa()`/`validate_efa()` and standardise fields (keeping current names where possible, NA-filling inapplicable ones)? | **Yes** — stable, documented contract; additive where possible to avoid breaking `$`-indexing users. | Phase 1 |
+| O9 | Deprecation timeline for the UPPERCASE wrappers. | `1.0.0` warn (once/session) → ~`1.x` (12–18 mo / 2–3 minors) `always=TRUE` → `2.0.0` `deprecate_stop`. | Phase 8 |
+| O10 | FIML scope. Research rates full casewise FIML *very-high* effort. | **Two-stage EM-Σ** (`missing = "two.stage"`) in scope for `0.9.x`; **direct casewise FIML** deferred to post-1.0. | Phase 6 |
+| O11 | WLS: full WLS vs DWLS only for v1. | **DWLS** for v1 (diagonal weights from the polychoric ACOV); full WLS post-1.0. | Phase 5/6 |
+| O12 | EGA / network dimensionality as a retention method. | **Defer**; optionally add an `EGAnet` bridge in `Suggests` post-1.0 (avoids a heavy dep). | Post-1.0 |
+| O13 | Reproducibility: adopt `dqrng` per-replicate streams (and `future.seed=TRUE` at R level). This **changes** exact seed→result reproducibility vs current versions. | **Yes** — document the break; guarantee thread-count-independent reproducibility going forward. | Phase 3/7 |
+| O14 | Simulation model-error default method (`CB` exact-RMSEA vs `TKL` RMSEA+CFI). Depend on / vendor `noisemaker`? | Default **CB**; offer `TKL`,`WB`; validate against `noisemaker`/`fungible` (cross-check tests only, not a hard dep). | Phase 7 |
+| O15 | `efa_group` defaults: common-`k` vs per-group-`k`; consensus target vs reference group. | Default **common-`k`** + **consensus** target (symmetric); expose `reference_group`. | Phase 7 |
+| O16 | Analytic bifactor rotation (Jennrich-Bentler) alongside Schmid-Leiman; analytic-SE coverage for promax (which has no GPA Jacobian → bootstrap only). | Add bi-geomin/bi-quartimin when the GPF engine lands; **promax SEs via bootstrap only**, documented. | Phase 4/6 |
+
+---
+
+## 3. Guiding principles
+
+1. **Safety net before surgery.** The package currently has **no snapshot tests** and
+   only a couple of cross-package comparisons. Before any refactor: migrate to
+   testthat 3e, capture `expect_snapshot()` baselines for every print/format method,
+   and add `lavaan`/`psych` regression tests with explicit tolerances. These become the
+   contract every later phase must preserve (or intentionally update via snapshot review).
+2. **Separate "no behaviour change" from "behaviour change".** Internal refactors
+   (Phase 1) must reproduce current numbers bit-for-bit (snapshots green). Behaviour
+   changes (Phase 2 bug fixes, new χ² conventions) are isolated, each with a NEWS entry
+   and a deliberate snapshot update.
+3. **Cross-validate every numerical port.** New C++ estimators/rotations/polychorics are
+   validated against `psych`, `stats::factanal`, `GPArotation`, `lavaan`, `polycor`,
+   `pbv`, `EFAutilities` to documented tolerances *before* the old path is removed.
+4. **One source of truth per concept.** Type presets, rotation-family classification,
+   fit indices, factor reflection/ordering, congruence, number formatting, and input
+   preparation each get exactly one implementation, consumed everywhere.
+5. **Keep the slow/optional out of the hot path.** Bootstrap and simulation re-use a
+   lean, allocation-light, fully-compiled estimate→rotate→align path; expensive
+   diagnostics (KMO-based CAF, `uniroot` RMSEA CIs, naming, residual matrices) are
+   computed only for the point estimate.
+6. **Reproducibility is a feature.** One `seed` argument; results identical across
+   sequential/parallel/backends/thread-counts (L'Ecuyer / `dqrng` streams bound to the
+   replicate index, never to the thread).
+7. **Non-breaking-in-practice rename.** Ship deprecated wrappers so no existing user
+   script errors on upgrade; migrate **all** internal usages (examples/vignettes/tests/
+   README) to `efa_*` in the same release the wrappers land, so the package never emits
+   its own deprecation warnings during `R CMD check`.
+
+---
+
+## 4. Target architecture (end state)
+
+### 4.1 The EFA object (`new_efa()` / `validate_efa()`)
+A documented S3 constructor that always populates a stable field set (NA where
+inapplicable), used by **all** producers (`efa_fit`, `efa_mi`, `efa_group`,
+`efa_average`). Fields: `orig_R`, `R` (analysis matrix, e.g. polychoric), `h2`,
+`h2_init`, `uniquenesses`, `*_eigen`, `iter`, `convergence`, `heywood` (flag + which),
+`unrot_loadings`, `rot_loadings`, `Phi`, `Structure`, `rotmat`, `vars_accounted[_rot]`,
+`fit_indices`, `model_implied_R`, `residuals`, `se`/`ci` blocks, `settings`, `call`.
+Keep existing names where possible (additive) to avoid breaking `$`-indexing users (O8).
+
+### 4.2 `estimate_model()` — one estimation core
+Resolves settings once from a **declarative preset table** (EFAtools/psych/SPSS/none),
+calls a method-specific fitter that returns *only* `L`, `psi`, objective `Fm`, `iter`,
+`convergence`, `heywood`, and converged eigenpairs, then runs **one** shared
+post-processor (sign reflection, naming with `V`-fallback, `.compute_vars`, fit indices,
+`model_implied_R`, residuals, communalities). This removes ~80% of `PAF.R`/`ML.R`/`ULS.R`
+and is the single seam for moving estimation into C++. Methods: `PAF`, `ML`,
+`ULS`/`MINRES` (same fit_type, documented as identical), `GLS`, `DWLS`, (`WLS` post-1.0).
+
+### 4.3 `rotate_model()` — one rotation dispatcher
+Resolves rotation settings once; selects the engine **by name from a lookup table**
+(native C++ GPF, plus `stats::varimax`/promax special cases, plus a `GPArotation`
+fallback during transition); runs **one** shared post-processor
+(`.reflect_and_order(loadings, Phi, rotmat, order_type)` producing consistent
+loadings/Phi/Structure/colnames). Selecting the engine by name structurally prevents the
+quartimax→bentlerT class of bug (Bug B1).
+
+### 4.4 Unified `efa_retention` result class
+Every retention criterion returns one shape:
+`list(criterion = c(id, label), n_factors = <named numeric>, results = list(<record>...),
+settings, status)` where each record has `{label, n_factors, plot_type ("eigen"|"hull"),
+x, y, reference?, threshold?, highlight}`. Then:
+- **one** `print.efa_retention()` iterates records generically (cli);
+- **two** ggplot helpers (`.gg_eigen_plot`, `.gg_hull_plot`) cover all six current plots;
+- `efa_retain()` holds a list of these objects and prints/plots via `lapply`;
+- a **criterion registry** (`id → {fun, control_slice, label, sub_variants}`) drives the
+  orchestrator, progress (cli), docs (`@family`), and the rename — adding a criterion
+  becomes one registry entry.
+
+### 4.5 `efa_reliability()` — coefficients over a normalized model spec
+Decouple reliability from Schmid-Leiman. Internal spec:
+`(g_load?, s_load, u2, map, Phi?, cormat?)`. Front-end **adapters** normalize SL/`schmid`/
+lavaan/EFA-correlated-factors/raw-bifactor/manual inputs to that spec; **one**
+`.reliability_core()` computes the menu (fixing the two divergent omega-total formulas,
+Bug B5b):
+- ω_total, ω_hierarchical, ω_subscale (existing);
+- Cronbach α (total + per subscale);
+- composite/construct reliability (CR / congeneric ω) — generalise the lavaan
+  single-factor formula;
+- AVE (per factor);
+- H index (guarded `1/(1-L²)`, fixing Bug B5a), ECV, PUC (existing bifactor diagnostics);
+- GLB and Revelle β: **confirm scope** (O-note: β model-based g-saturation surrogate vs
+  true split-half; GLB needs an SDP/optimizer — propose β-surrogate + GLB optional).
+Output: one tidy (long) tibble (`coefficient, level, factor, group, value`) + settings;
+**one** `print.efa_reliability` (kills the `ncol` typo class, Bug B4).
+
+### 4.6 C++ layout (`src/`)
+- `estimate.cpp` — single bounded optimizer loop (`roptim` phase 1) for ML/ULS/GLS/DWLS;
+  value+gradient from **one** eigendecomposition per `psi`; `const arma::mat&` (no
+  by-value copies); returns loadings/psi/Fm/iter/convergence/heywood/eigenpairs.
+- `paf.cpp` — `paf_iter` collapsed from 8 loops to **one** parameterized loop; returns
+  status codes (no `stop()`/`warning()` in the hot path); fixes the off-by-one (Bug B10).
+- `rotate.cpp` — one templated GPF engine (GPForth + GPFoblq) parameterized by a
+  criterion functor returning `(f, Gq)`; random starts, line search, projection,
+  Kaiser normalization written once. Built on the proven scaffolding already in
+  `oblique_procrustes.cpp` (manifold projection, backtracking line search, random
+  orthonormal starts, screen→triage→optimize, robust inverse guards).
+- `procrustes.cpp` — keep + add a **batched** entry point (loop over the 3rd array dim in
+  C++) for bootstrap/MI alignment, removing per-replicate R `PROCRUSTES()` overhead.
+- `polychoric.cpp` — thresholds-once + two-step ρ via a fresh in-house **Brent 1-D
+  minimiser** (not root-finding, not vendored `zeroin2`); bivariate-normal CDF via
+  **`pbv` (LinkingTo)**, GL-5 (not GL-48); OpenMP over the `n(n-1)/2` pairs; returns the
+  matrix **and** the ACOV (Γ) for DWLS/robust SEs; explicit empty-cell/zero-variance/
+  near-singular handling + nearest-PD projection.
+- `sim.cpp` — one `simulate_cfm()` kernel (MVN + Vale-Maurelli/Fleishman + IG +
+  Ruscio-Kaczetow rank-matching + thresholding); used by `efa_simulate`, and refactored
+  `CD`/`PARALLEL`/`NEST` to call it. `dqrng` per-stream RNG.
+- `se.cpp` — information matrix, rotation Jacobian, sandwich (Γ-based) SEs.
+- Delete the large commented-out dead blocks in `parallel.cpp`.
+
+### 4.7 Split `helper.R` (2111 lines, ~50 funcs) into focused files
+`fit-indices.R` (`.gof`, RMSEA-CI, SRMR/TLI/ECVI), `averaging.R` (EFA_AVERAGE helpers),
+`procrustes-consensus.R` (the ~400-line Procrustes/consensus block), `alignment.R`
+(`.align_solution`, congruence — merge the duplicate `.factor_congruence` /
+`.tucker_congruence`), `format-helpers.R` (number formatting — consolidate the ~6
+duplicated formatters into one `.efa_num()`), `cor-input.R`
+(`.prepare_cor_input()` shared by every public function), `presets.R` (the declarative
+type tables), `rotation-family.R` (one `.rotation_family()` + canonical name vectors).
+
+### 4.8 Messaging / printing / plotting
+- All `stop()/warning()/message()` → `cli_abort/cli_warn/cli_inform` with classed
+  conditions (`class=`), bullet vectors, `call=`/`.envir=`. (~280 base calls; ~430
+  crayon calls across 43 files.)
+- One `.efa_style(x, style)` shim mapping logical styles → cli primitives; route **all**
+  coloring through it, then drop `crayon`.
+- `format.<class>()` via `cli::cli_format_method()` returning a styled character vector;
+  `print` = `cat(format(...), sep="\n")`. `format()` guaranteed plain (no ANSI) for
+  clean embedding (fix `format.EFA` returning colored `capture.output`, Bug-adjacent).
+- Colored loading **matrix**: keep the existing pad-then-style renderer (there is no
+  native cli per-cell-threshold table), but pad with `cli::ansi_align`/`ansi_nchar` so
+  width math is correct once cells carry ANSI; generalise the `format.LOADINGS` engine
+  into one `.efa_format_matrix()` used for loadings, SL loadings, Phi, variances, COMPARE
+  (kills the `\t`-misalignment in SLLOADINGS/`.get_compare_matrix`).
+- Trim `print.EFA()` (already a `compact/standard/full` engine) to a `standard` default;
+  add `summary.EFA()` returning a `summary.EFA` object rendered by `print.summary.EFA`
+  with the full diagnostics/CIs.
+- All six base-graphics plots → ggplot2 returning ggplot objects; `print` no longer
+  auto-plots; `viridisLite`/`graphics` dropped.
+
+### 4.9 Dependency target
+Drop `crayon`, `progress`, `viridisLite`, `graphics`, `magrittr`, `dplyr`, `tidyr`,
+`tibble`, `stringr` (replace with base/cli). Move `lavaan` (and eventually `psych`) to
+`Suggests` (gated). Add `Imports: lifecycle`, `robustbase`; `LinkingTo: roptim`, `pbv`,
+`dqrng`, `sitmo`, `BH`; `Suggests: vdiffr`, and (optional) `covsim`/`noisemaker`/`MVN`/
+`energy`/`EGAnet` only for cross-checks/bridges. Target: ~21 Imports → ~8–10.
+
+---
+
+## 5. Phased roadmap
+
+Each phase lists **goal**, **steps** (checklist), **validation**, **exit criteria**.
+Releases: Phases 0–2 → **0.8.0**; Phases 3–7 → **0.9.x** (one minor per major chunk is
+fine); Phase 8–9 → **1.0.0**.
+
+### Phase 0 — Safety net & infrastructure → `0.8.0`
+**Goal:** a green, modern CI and a regression net, with zero behaviour change.
+- [ ] Replace `.github/workflows/R-CMD-check.yaml` with r-lib/actions **v2**
+      (`checkout@v4`, `setup-r@v2`, `setup-r-dependencies@v2`, `check-r-package@v2`),
+      matrix `{ubuntu-latest release/devel/oldrel-1, macos-latest, windows-latest}`.
+      Remove the manual depends/cache/sysreq steps and `options(crayon.enabled=TRUE)`.
+- [ ] Add `test-coverage.yaml` (covr + Codecov) and `pkgdown.yaml` (gh-pages).
+- [ ] `Config/testthat/edition: 3` in DESCRIPTION; replace `expect_is()` →
+      `expect_s3_class()`/`expect_type()`; fix 3e fallout.
+- [ ] Capture `expect_snapshot()` baselines for **every** `print.*`/`format.*` against
+      bundled objects (`test_models`, `GRiPS_raw`, …), wrapped in
+      `local_reproducible_output()` (`cli.num_colors=1`).
+- [ ] Convert `expect_error`/`expect_warning` literal-string matches → class/snapshot.
+- [ ] Add `tests/testthat/test-regression-*` comparing current estimators/rotations to
+      `psych::fa`, `stats::factanal`, `GPArotation`, with tolerances; gate with
+      `skip_if_not_installed`/`skip_on_cran`. **These capture current numbers as the
+      pre-refactor contract.**
+- [ ] Enable `Roxygen: list(markdown = TRUE)`; run `roxygen2md::roxygen2md()`; fix
+      `\eqn`/`\deqn` by hand; re-document; verify man-page count and `\link` targets.
+- [ ] Add `README` badges (CRAN, R-CMD-check, Codecov, lifecycle); ORCIDs in `Authors@R`.
+- [ ] Add `lifecycle` to Imports; `usethis::use_lifecycle()`.
+- [ ] (O1) Decide R-version floor; if `>=4.1`, plan the `\|>` switch.
+
+**Exit:** CI green on all platforms; full snapshot + regression suite passing on the
+**unchanged** code.
+
+### Phase 1 — Internal refactor, **no behaviour change** → `0.8.x`
+**Goal:** collapse duplication behind the snapshot/regression net; numbers unchanged.
+- [ ] `presets.R`: declarative type tables (EFAtools/psych/SPSS) + one
+      `.resolve_settings(type, user, preset)` emitting a single consolidated `cli_warn`.
+      Replace the ~25 copy-pasted "type and X specified" blocks in
+      `PAF/PROMAX/VARIMAX/ROTATE_OBLQ/ROTATE_ORTH`.
+- [ ] `estimate_model()` + shared `.finalize_fit()` (sign/naming/vars/gof/residuals);
+      `.PAF/.ML/.ULS` become thin fitters. (Engine still R/optim here.)
+- [ ] `rotate_model()` + `.reflect_and_order()`; rotation engine selected by name table.
+- [ ] `.rotation_family()` + canonical orth/oblique name vectors; replace the 4 duplicated
+      classifications (EFA, EFA_POOLED, `.extract_data`, `.type_grid`).
+- [ ] `.prepare_cor_input()` shared by EFA + all retention criteria + KMO/BARTLETT/
+      FACTOR_SCORES (one PD check + one smoothing + one `cli_warn`; fix double-smoothing).
+- [ ] Unified `efa_retention` class + criterion registry; refit all 9 criteria to the
+      shape; **one** `print.efa_retention()`; two ggplot helpers; `N_FACTORS` orchestrator
+      shrinks dramatically.
+- [ ] `new_efa()`/`validate_efa()` (O8); route all producers through it.
+- [ ] Split `helper.R` per §4.7; merge duplicate congruence funcs; consolidate number
+      formatters into `.efa_num()`; delete dead code (commented `.error_ml2`, cat-based
+      progress bars, trivial `.boot_fun` wrapper).
+- [ ] cli migration of messages + the `.efa_style()` shim + `cli_format_method` formats;
+      remove `crayon` from Imports.
+- [ ] Rewrite `print.EFA()` to cli (it is the largest crayon site): trim it to a
+      `standard` default and add `summary.EFA()` for the full view. Done here, with the
+      crayon→cli migration, because both touch the same styled output in `print.EFA.R`;
+      the existing `compact/standard/full` engine makes this low-risk and `summary.EFA`
+      is additive. Likewise migrate `print.LOADINGS`/`print.SLLOADINGS` and the shared
+      matrix renderer (`.efa_format_matrix`).
+- [ ] ggplot2 migration of the six base plots; `viridisLite`/`graphics` removed.
+- [ ] Dependency slimming (drop tidyverse cluster/`stringr`/`progress`; O1 base pipe);
+      `lavaan` → Suggests (gate `OMEGA`/`SL` lavaan paths; `skip_if_not_installed`).
+
+**Validation:** snapshots may change **only** where output formatting intentionally moved
+to cli/ggplot (review each diff); the **regression** suite (numeric) must stay green.
+**Exit:** `EFA.R`, `PAF/ML/ULS.R`, the rotation files, and `N_FACTORS.R` substantially
+smaller; numbers identical to `0.8.0`.
+
+### Phase 2 — Correctness fixes (behaviour-changing) → `0.8.x`
+**Goal:** fix the verified bugs (§6), each with a NEWS entry and snapshot update (O6/O7).
+- [ ] Bugs B1–B14 (see register). Behaviour-changing ones (quartimax, Bartlett χ²,
+      ULS objective, ss_factors Phi reorder) get explicit NEWS notes; compatibility
+      presets preserve their documented behaviour where that is the point.
+- [ ] Add **SRMR, TLI/NNFI, ECVI** to the fit-index module; reconcile the χ² multiplier
+      with lavaan (O7) + parity tests.
+- [ ] Centralise a Heywood detector in `estimate_model()` post-processing; surface in
+      `settings`/`summary` via `cli_warn` (consistent across PAF/ML/ULS).
+
+**Exit:** regression suite re-baselined against `psych`/`lavaan`/`factanal` with the
+corrected conventions; NEWS documents every changed number.
+
+### Phase 3 — C++ estimation engine → `0.9.0`
+**Goal:** full estimation in C++; fast, allocation-light bootstrap.
+- [ ] `src/estimate.cpp`: single bounded L-BFGS-B loop via **`roptim`** (O2/O3),
+      `const arma::mat&`, fused value+gradient from one eigendecomposition, returns
+      loadings/psi/Fm/iter/convergence/heywood/eigenpairs. Keep box constraints on `psi`
+      (no log/logit reparam).
+- [ ] Collapse `paf_iter` to one loop; return status codes; fix off-by-one (B10).
+- [ ] Lean bootstrap path (loadings+psi+Fm only; skip naming/vars/gof/residuals/uniroot);
+      compute full fit indices only for the point estimate.
+- [ ] Batched C++ Procrustes alignment for the bootstrap/MI arrays.
+- [ ] `dqrng` per-replicate streams; one `seed` arg; thread-count-independent results
+      (O13). Threading model: parallelise across replicates, keep linear algebra serial
+      per thread, set BLAS threads to 1 in parallel regions (prefer `RcppParallel`-style
+      safety; default ≤2 threads in examples/tests).
+- [ ] Expose `minres` as an alias of `uls` (documented identical).
+
+**Validation:** loadings byte-identical to the R-optim path (`roptim` uses R's lbfgsb);
+bootstrap benchmark on `DOSPERT_raw` shows the target speedup.
+**Exit:** ML/ULS/PAF run a single R→C++ call per fit; bootstrap is fast.
+
+### Phase 4 — C++ rotation (GPF) engine → `0.9.x`
+**Goal:** native, fast rotations; reduce/remove the GPArotation dependency.
+- [ ] `src/rotate.cpp`: one templated GPForth+GPFoblq engine + criterion functors.
+      Port order: (1) CF family (covers varimax/quartimax/equamax), (2) oblimin/
+      quartimin, (3) geominQ/T, (4) bentler/bifactor, (5) simplimax, (6) infomax,
+      (7) **target & pst** (new — §4/research gap).
+- [ ] Reimplement promax on top of C++ varimax; retire the bespoke `.VARIMAX_SPSS`
+      Jacobi loop + the mismatched `.SV` monitor (keep an SPSS-compat shim/fixtures if
+      `type="SPSS"` parity must be exact — O6).
+- [ ] Report local-minima count across random starts (cheap once C++).
+- [ ] Keep `GPArotation` as a `Suggests` fallback per criterion until 1e-6 parity is
+      proven across random-start/normalization settings (O4); then drop.
+
+**Validation:** each criterion vs `GPArotation` to 1e-6 on `test_models`;
+Structure = pattern·Phi invariant to reflection/ordering.
+**Exit:** oblique bootstrap re-rotation runs entirely in C++.
+
+### Phase 5 — Polychoric + ordinal/DWLS → `0.9.x`
+**Goal:** ordinal EFA with a bootstrap-fast polychoric matrix and a DWLS estimator.
+- [ ] `src/polychoric.cpp`: thresholds-once; two-step ρ via fresh Brent **minimiser**;
+      BVN CDF via **`pbv`** (GL-5); OpenMP over pairs; returns matrix **+ ACOV (Γ)**
+      (O11). Documented empty-cell correction arg + zero-variance detection (`cli_abort`)
+      + nearest-PD projection (`cli_warn`).
+- [ ] Polyserial/biserial + Pearson fallback so mixed-type matrices are possible
+      (confirm scope — research open question).
+- [ ] `cor_method` gains `"poly"`/`"tet"`/`"auto"` across `efa_fit`, `efa_kmo`,
+      `efa_bartlett`, retention criteria.
+- [ ] `DWLS` fit_type in `estimate_model()` using diagonal weights from Γ; (full `WLS`
+      post-1.0, O11).
+
+**Validation:** BVN CDF vs `pbv`/`mnormt` ~1e-7; matrix vs `polycor` two-step / `lavaan`
+`lavCor(ordered=TRUE)` / `psych::polychoric(correct=FALSE,global=FALSE)` per the
+documented reference ladder; determinism + PD under bootstrap resampling.
+**Exit:** ordinal EFA + DWLS validated; ordinal bootstrap fast on `DOSPERT_raw`.
+
+### Phase 6 — Standard errors, fit, missing data → `0.9.x`
+**Goal:** analytic SEs that make bootstrap optional; principled missing-data handling.
+- [ ] `se.cpp` **Phase A**: information-matrix SEs for unrotated ML loadings/uniquenesses.
+- [ ] **Phase B**: rotation Jacobian (Jennrich) → SEs/CIs for rotated loadings, Phi,
+      structure coefficients, communalities (oblique CF family first).
+- [ ] **Phase C**: sandwich / Satorra-Bentler robust SEs (bread = augmented info; meat =
+      Γ, reusing the polychoric/4th-moment Γ) + scaled χ² for the categorical path.
+- [ ] `se = c("none","information","sandwich","np-boot")`; bootstrap stays the
+      always-available ground-truth fallback (and the only path for promax — O16).
+- [ ] Two-stage EM-Σ missing-data path `missing = "two.stage"` (O10); SEs under
+      missingness use Γ estimated under the missingness pattern. Direct FIML deferred.
+
+**Validation:** analytic SEs vs `np-boot` and vs `EFAutilities::efa` / `lavaan`
+(`se="robust.sem"`, `test="satorra.bentler"`) to documented tolerances.
+**Exit:** rotated-loading SEs available analytically and validated.
+
+### Phase 7 — New user functions → `0.9.x` → `1.0.0`
+**Goal:** reliability expansion + the four new functions, on the now-fast engine.
+- [ ] **`efa_reliability`** per §4.5 (normalized spec + adapters + tidy output + one
+      print). Confirm β/GLB scope (O-note in §4.5).
+- [ ] **`efa_scores`**: implement regression / Bartlett / Anderson-Rubin / ten Berge
+      weights natively in Armadillo (drop the `psych::factor.scores` pass-through);
+      report **determinacy** coefficients; add a real print/summary.
+- [ ] **`efa_group`**: per-group `efa_fit` → consensus/target alignment (shared
+      alignment module with `efa_mi`) → Tucker φ with bootstrap CIs → pairwise
+      COMPARE-style diffs (refactor `COMPARE` core into a printless `.compare_loadings`)
+      → per-item loading-difference flags → optional approximate-invariance summary.
+      Defaults O15. De Roover MGFR (`rotation="multigroup"`) and a lavaan-ESEM bridge are
+      **post-1.0** stretch.
+- [ ] **`efa_screen`**: KMO (overall+item, reuse `.compute_kmo`), Bartlett, determinant/
+      condition number, per-item SMC/variance/%missing, multivariate normality
+      (Mardia/Doornik-Hansen/Henze-Zirkler/Royston — self-implement), robust-Mahalanobis
+      outliers (`robustbase::covMcd`), sparse/empty-category flags; actionable verdicts
+      ("non-normal → use ML-robust or polychoric"); one cli print.
+- [ ] **`efa_simulate`**: `simulate_cfm()` kernel (input `(Lambda,Phi,Psi)` or population
+      R); marginals `normal`/`VM`(Fleishman)/`IG`/`empirical`(Ruscio-Kaczetow);
+      thresholding for ordinal (+ optional `match="polychoric"`); missingness MCAR/MAR/
+      MNAR; model error `none/CB/TKL/WB` returning achieved RMSEA/CFI (O14). Refactor
+      `CD`/`PARALLEL`/`NEST` to call the shared kernel. Return raw data as plain
+      matrix/df; allow returning only the population model.
+- [ ] **`efa_power`**: `mode="rmsea"` (closed-form non-central-χ² close/not-close fit +
+      required-N, MacCallum-Browne-Sugawara; verify vs `semTools`) and `mode="simulation"`
+      (retention hit-rate + structure recovery via congruence, reusing `efa_simulate` +
+      the C++ engine, parallel + reproducible).
+
+**Validation:** each new function gets unit tests, snapshot prints, and (where an oracle
+exists) cross-checks (`semTools`, `fungible`/`noisemaker`, `psych::factor.scores`,
+`lavaan` multigroup).
+**Exit:** all four feature areas implemented and validated under their current
+(UPPERCASE-free internally) names.
+
+### Phase 8 — Rename + control API + deprecation → `1.0.0`
+**Goal:** the public `efa_*` API; non-breaking-in-practice.
+- [ ] Make `efa_*` the canonical, exported implementations (full mapping in §9).
+- [ ] `estimate_control()` / `rotate_control()` (+ any function-specific controls)
+      returning validated classed lists; ~5 primary args stay top-level; old top-level
+      tuning args become **deprecated arguments** (`lifecycle::deprecated()`), accepted
+      during the transition, one home per knob (D3).
+- [ ] `R/EFAtools-deprecated.R`: every UPPERCASE name as a one-line
+      `lifecycle::deprecate_warn("1.0.0", "OLD()", "new()")` wrapper forwarding to the new
+      function; shared `id=` per rename family; documented under one
+      `@keywords internal` topic with `@aliases` redirects.
+- [ ] Migrate **all** internal usages (examples, vignettes, tests, README) to `efa_*` so
+      `R CMD check` emits no self-deprecation warnings.
+- [ ] `_pkgdown.yml` reference grouped by `@family` (Fitting, Retention, Rotation,
+      Reliability, Scores & comparison, Screening & simulation, Power, Datasets,
+      Deprecated).
+
+**Exit:** both old and new names exported; upgrading breaks no user script (only throttled
+warnings).
+
+### Phase 9 — Docs, vignettes, site, release → `1.0.0`
+- [ ] `@inheritParams` params-dummy to cut doc duplication; `@returns`/`@family` everywhere.
+- [ ] Update the two existing vignettes; add new ones: workflow overview, ordinal/
+      polychoric EFA, multigroup (`efa_group`), reliability, simulation & power, and a
+      **"Migrating to efa_*"** vignette with an old→new mapping table.
+- [ ] Build/deploy pkgdown; `codemeta.json` (+ sync GHA); CITATION/ORCIDs.
+- [ ] Prominent NEWS "breaking change" + rename section; CRAN submission;
+      announce (R-pkg-devel / social).
+
+### Post-1.0 stretch (tracked, not scheduled)
+Direct casewise FIML; full WLS; De Roover MGFR; analytic bifactor (bi-geomin/bi-quartimin)
+exposure; EGA retention (Suggests bridge) + Unique Variable Analysis; lavaan-ESEM
+syntax bridge; `RcppEnsmallen` backend; GLB via SDP; consensus "recommended n_factors".
+
+---
+
+## 6. Bug-fix register
+
+| ID | Severity | Bug | Location | Fix / phase |
+|----|----------|-----|----------|-------------|
+| B1 | high | `quartimax` calls `GPArotation::bentlerT` | `R/ROTATE_ORTH.R:85-87` | Route by name table; add numeric test. **Ph2** (behaviour change). |
+| B2 | high | ML/ULS χ² omits Bartlett correction; ULS χ² uses LS residual SS as if Wishart | `R/helper.R:554` | Bartlett-corrected ML; proper residual-based ULS statistic. **Ph2/6** (O7). |
+| B3 | med | ULS objective includes diagonal (`trimatl`) & differs from reported `Fm`; grad/obj eigenvalue floors inconsistent | `src/uls_helper.cpp:61-79` | Strictly off-diagonal; one shared floor. **Ph3** (also fixes minres parity). |
+| B4 | high | `print.OMEGA` `ncol(x[[1]] == 3)` paren typo | `R/print.OMEGA.R:60` | Subsumed by tidy `efa_reliability` output. **Ph1/7**. |
+| B5a | med | H index unguarded `1/(1-L²)` → Inf/NaN on Heywood | `R/OMEGA_helper.R:181,…` | Guard in `.reliability_core`. **Ph7** (snapshot now). |
+| B5b | high | Two divergent ω_total formulas (`.OMEGA_FLEX` vs `.OMEGA_LAVAAN`) | `R/OMEGA_helper.R:130/397` | One core. **Ph7**. |
+| B6 | med | `factor_corres` dimension check is a no-op (`nrow()` of a vector) | `R/OMEGA_helper.R:70` | `length(g_load)`/`nrow(s_load)`. **Ph1/7**. |
+| B7 | high | `temp_corres` undefined/stale on Heywood; `isTRUE()` on length>1 vectors | `R/helper.R:797`; `R/EFA_AVERAGE.R:626` | Guard; elementwise NA-safe. **Ph1**. |
+| B8 | med | `print.N_FACTORS` reads `x$output$…` (field is `x$outputs`) → Bartlett print + scree silently no-op | `R/print.N_FACTORS.R:36,249` | Subsumed by `print.efa_retention`. **Ph1**. |
+| B9 | med | Oblique `ss_factors` branch doesn't reorder Phi | `R/ROTATE_OBLQ.R:130-142` | `.reflect_and_order` reorders Phi consistently + invariance test. **Ph1**. |
+| B10 | med | PAF `stop()` on neg-eigenvalues aborts whole bootstrap; max-iter off-by-one convergence flag | `src/paf_iter.cpp` | Status codes; track convergence by Δ at exit. **Ph3** (interim tryCatch **Ph0**). |
+| B11 | med | `print.COMPARE` `aes_string()` + `size=` (deprecated) | `R/print.COMPARE.R:121-138` | `aes(.data$…)` + `linewidth`; move to `plot.efa_compare`. **Ph1**. |
+| B12 | med | `GPArotation` `randomStarts` used with no min-version floor | `DESCRIPTION`; `ROTATE_*` | Pin `GPArotation (>= 2022.4-1)` while it remains a dep; reconcile `randomStarts` defaults (10 vs 100). **Ph0/1**. |
+| B13 | low | NEST `prob` comparator `<` vs decision `<=` mismatch (+ docstring) | `R/NEST.R:163-164` | One convention + boundary test. **Ph1/2**. |
+| B14 | low | PARALLEL `size_vec` partition can go negative; percentile off-by-one vs `stats::quantile` | `R/PARALLEL.R:148-150,459` | Exact integer partition; standardise on `stats::quantile` (matches `psych::fa.parallel`). **Ph1**. |
+| B15 | low | KMO/BARTLETT silently smooth non-PD matrices (changes reported statistic) | `R/KMO.R:93`; `R/BARTLETT.R:105` | `cli_warn` on smoothing; PD/smooth before invert/det. **Ph1/2**. |
+| B16 | low | `format.EFA` returns ANSI-laden `capture.output` | `R/print.EFA.R:207` | `format()` = plain; `print()` = styled. **Ph1**. |
+| B17 | low | `residuals.EFA` names a logical arg `print` and prints as a side effect | `R/residuals.EFA.R:11-40` | Pure extractor with `type=`; formatting in `summary.EFA`. **Ph1**. |
+
+---
+
+## 7. Testing strategy
+
+- **testthat 3e** + `_snaps/` for every print/summary/format and for deprecation warnings
+  (`expect_snapshot`), under `local_reproducible_output()`.
+- **vdiffr** doppelganger SVGs for every ggplot (do **not** `expect_snapshot` plots).
+- **Regression/oracle tests** (gated `skip_if_not_installed` + `skip_on_cran`,
+  `tolerance=`): estimators vs `psych::fa`/`stats::factanal`/`lavaan`; rotations vs
+  `GPArotation`; polychoric vs `polycor`/`lavaan`/`pbv`/`psych(correct=FALSE)`; SEs vs
+  `EFAutilities`/`lavaan`; simulation vs `fungible`/`noisemaker`; power vs `semTools`.
+- **Reproducibility test**: bit-identical output for a fixed seed at 1 vs N workers.
+- **Determinism/PD test** on bootstrap polychoric replicates.
+- Edge cases: Heywood/ultra-Heywood, non-PD inputs, empty/sparse cells, single factor,
+  underidentified/just-identified models, named non-PD cormat (B-list).
+
+---
+
+## 8. CI/CD
+
+- `check-standard.yaml` (r-lib v2 matrix), `test-coverage.yaml` (Codecov),
+  `pkgdown.yaml` (gh-pages), optional `lint.yaml`.
+- Examples/tests/vignettes default to ≤2 threads (CRAN).
+- OpenMP gated behind `SHLIB_OPENMP_CXXFLAGS` with a serial fallback.
+- Never `git add` `src/*.o`/`*.dll` (already gitignored — keep it that way).
+
+---
+
+## 9. Naming & deprecation
+
+**Mechanism:** `lifecycle::deprecate_warn("1.0.0", "OLD()", "new()")` in one-line wrappers
+in `R/EFAtools-deprecated.R`, one `@keywords internal` topic, shared `id=` per family.
+Timeline O9: `1.0.0` warn → `1.x` `always=TRUE` → `2.0.0` `deprecate_stop`.
+
+**Mapping (D2 = all exports):**
+
+| Old | New |
+|-----|-----|
+| `EFA` | `efa_fit` |
+| `N_FACTORS` | `efa_retain` |
+| `OMEGA` | `efa_reliability` |
+| `SL` | `efa_schmid_leiman` |
+| `FACTOR_SCORES` | `efa_scores` |
+| `EFA_POOLED` | `efa_mi` |
+| `COMPARE` | `efa_compare` |
+| `KMO` | `efa_kmo` |
+| `EFA_AVERAGE` | `efa_average` |
+| `BARTLETT` | `efa_bartlett` |
+| `PARALLEL` | `efa_parallel` |
+| `EKC` | `efa_ekc` |
+| `KGC` | `efa_kgc` |
+| `HULL` | `efa_hull` |
+| `SCREE` | `efa_scree` |
+| `MAP` | `efa_map` |
+| `NEST` | `efa_nest` |
+| `SMT` | `efa_smt` |
+| `CD` | `efa_cd` |
+| `VARIMAX` | `efa_varimax` |
+| `PROMAX` | `efa_promax` |
+| `PROCRUSTES` | `efa_procrustes` |
+| `CONSENSUS_PROCRUSTES` | `efa_consensus_procrustes` |
+| — (new) | `efa_group`, `efa_screen`, `efa_simulate`, `efa_power` |
+| — (new control) | `estimate_control`, `rotate_control` |
+
+Also rename the result **classes** (and S3 methods) to match (e.g. `EFA`→`efa`,
+retention criteria → `efa_retention`), keeping old class strings on objects during the
+deprecation window so existing `inherits(x, "EFA")` / method dispatch keeps working.
+*(Confirm class-rename appetite — it is a second back-compat surface beyond function
+names; the safe default is to keep the old class string alongside the new one.)*
+
+---
+
+## 10. Dependency migration
+
+| Package | Now | Target | Note |
+|---------|-----|--------|------|
+| crayon | Imports | **drop** | after cli migration (Ph1) |
+| stringr | Imports | **drop** | cli `ansi_*` / base |
+| graphics, viridisLite | Imports | **drop** | after ggplot migration |
+| magrittr, dplyr, tidyr, tibble | Imports | **drop** | base + `\|>` (O1) |
+| progress | Imports | **drop** | unused direct dep |
+| lavaan | Imports | **Suggests** (gated) | OMEGA/SL lavaan paths |
+| psych | Imports | **Suggests** (later) | after `cor.smooth`/`factor.scores` reimplemented |
+| GPArotation | Imports | **Suggests/fallback → drop** | after C++ GPF parity (O4); pin `>=2022.4-1` meanwhile (B12) |
+| future, future.apply, progressr | Imports | **keep (consolidate)** | drop redundant `progress`; revisit once C++ threading lands |
+| Rcpp, RcppArmadillo, checkmate, rlang, clue, stats | Imports/LinkingTo | **keep** | |
+| lifecycle, robustbase | — | **add Imports** | deprecation; MCD outliers |
+| roptim, pbv, dqrng, sitmo, BH | — | **add LinkingTo** | optimizer, BVN CDF, parallel RNG (O2) |
+| vdiffr | — | **add Suggests** | ggplot snapshots |
+| covsim, noisemaker, MVN, energy, EGAnet, semTools, EFAutilities, polycor | — | **Suggests (cross-checks/bridges only)** | never hard deps |
+
+Target Imports: **~8–10** (from 21).
+
+---
+
+## 11. Risks & mitigations
+
+1. **Numerical drift from the C++ optimizer** → start with `roptim` (R's lbfgsb,
+   byte-identical); switch backends only behind the regression suite.
+2. **Rotation-Jacobian / sandwich SEs are subtle** (multiple criteria, oblique vs orth,
+   Kaiser/CF normalization; promax has no GPA Jacobian) → validate against
+   `EFAutilities`/`lavaan`; keep `np-boot` as the always-available fallback; ship SEs in
+   phases A→B→C.
+3. **Polychoric ACOV (Γ) correctness** (harder than the point estimate) → bootstrap is
+   the primary uncertainty path; Γ validated vs `lavaan` NACOV before WLS/robust SEs use
+   it; explicit empty-cell handling + nearest-PD projection.
+4. **Thread safety** (Armadillo LA / R RNG inside parallel regions) → parallelise across
+   replicates only, serial LA per thread, BLAS threads=1 in regions, `dqrng` per-stream.
+5. **Snapshot fragility** (ANSI/width/locale) → `local_reproducible_output()`,
+   `cli.num_colors=1` everywhere.
+6. **Self-inflicted deprecation warnings** → migrate all internal usages to `efa_*` in
+   the rename release.
+7. **Scope (all four feature areas + rename in one rewrite)** → phasing (D1) keeps each
+   release shippable; must-haves first, stretch goals explicitly deferred (§5 post-1.0).
+8. **Reproducibility break** from new RNG → documented; new guarantee is thread-count
+   independence (O13).
+9. **De Roover MGFR has no canonical R oracle** → deferred to post-1.0; validate against
+   the authors' reference if/when implemented.
+
+---
+
+## 12. Appendix — key current-code anchors
+
+- Orchestration & bootstrap: `R/EFA.R` (dispatch `:426-553`; output assembly `:555-598`;
+  `.boot_*` `:620-827`).
+- Estimators: `R/PAF.R`, `R/ML.R` (`.fit_ml` `:82`, `.FAout` `:129`), `R/ULS.R`;
+  C++ `src/paf_iter.cpp` (8× loop), `src/ml_helper.cpp`, `src/uls_helper.cpp`
+  (by-value `R`, dual eigendecomp).
+- Rotations: `R/VARIMAX.R`/`PROMAX.R`/`ROTATE_ORTH.R`/`ROTATE_OBLQ.R`;
+  `src/oblique_procrustes.cpp` (GPF scaffolding), `src/factor_corres.cpp`.
+- Retention: `R/N_FACTORS.R` + 9 criteria + `src/parallel.cpp`/`nest_sym.cpp`
+  (single-threaded; dead commented blocks).
+- Fit indices: `R/helper.R:.gof` (`:520-638`), `.rmsr`, `.compute_caf`.
+- Post-EFA: `R/OMEGA.R`/`OMEGA_helper.R` (two ω paths), `R/SL.R`, `R/FACTOR_SCORES.R`
+  (psych pass-through), `R/COMPARE.R`, `R/KMO.R`, `R/BARTLETT.R`.
+- Printing: `R/print.EFA.R` (factored `compact/standard/full` engine — easy
+  `summary.EFA` split), `R/print.LOADINGS.R` (best table engine — generalise),
+  the ~10 retention prints (collapse), `R/print.N_FACTORS.R`.
+- `helper.R` (2111 lines, ~50 funcs) — split per §4.7.
+
+---
+
+*End of plan. Edit Section 2 as decisions are confirmed; check off Section 5 as phases
+complete.*

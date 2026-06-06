@@ -502,6 +502,21 @@
   sqrt(mean(vals^2, na.rm = TRUE))
 }
 
+.compute_caf <- function(delta_hat) {
+
+  delta_hat_KMO <- try(.compute_kmo(delta_hat)$KMO, silent = TRUE)
+
+  if (inherits(delta_hat_KMO, "try-error")) {
+    CAF <- 0
+    warning(crayon::yellow$bold("!"), crayon::yellow(" Problems calculating CAF, CAF set to 0 (worst value). Inspect results carefully.\n"))
+  } else {
+    CAF <- 1 - delta_hat_KMO
+  }
+
+  CAF
+
+}
+
 .gof <- function(L, # The loading/ pattern matrix
                  R, # The correlation matrix
                  N, # The number of cases
@@ -515,18 +530,8 @@
 
   ### compute CAF
   delta_hat <- R - (L %*% t(L))
-  diag(delta_hat) <- 1
-
-  # try statement needed to fix CRAN issue MKL (R-devel on x86_64 Fedora 34 Linux
-  # with alternative BLAS/LAPACK implementations) where delta_hat cannot be inverted
-  # for R = test_models$baseline$cormat
-  delta_hat_KMO <- try(KMO(delta_hat)$KMO, silent = TRUE)
-  if (inherits(delta_hat_KMO, "try-error")) {
-    CAF <- 0
-    warning(crayon::yellow$bold("!"), crayon::yellow(" Problems calculating CAF, CAF set to 0 (worst value). Inspect results carefully.\n"))
-  } else {
-    CAF <- 1 - delta_hat_KMO
-  }
+  diag(delta_hat) <- 0
+  CAF <- .compute_caf(delta_hat)
 
   ### compute RMSR
   RMSR <- .rmsr(delta_hat)

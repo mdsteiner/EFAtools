@@ -88,30 +88,17 @@ KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
 
   }
 
-  # Check if correlation matrix is invertable, if it is not, stop with message
-  R_i <- try(solve(R), silent = TRUE)
-
-  if (inherits(R_i, "try-error")) {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, no further analyses are performed.\n"))
-  }
 
   # Check if correlation matrix is positive definite
   if(any(eigen(R, symmetric = TRUE, only.values = TRUE)$values <= .Machine$double.eps^.6)){
 
     R <- psych::cor.smooth(R)
-    R_i <- try(solve(R), silent = TRUE)
 
   }
 
-  # Start computations
-  S <- diag(diag(R_i)^(-1/2))
-  Q <- S %*% R_i %*% S
-  diag(Q) <- 0
-  diag(R) <- 0
-  sumQ2 <- sum(Q^2)
-  sumR2 <- sum(R^2)
-  KMO <- sumR2/(sumR2 + sumQ2)
-  KMO_i <- colSums(R^2)/(colSums(R^2) + colSums(Q^2))
+  KMO_list <- .compute_kmo(R)
+  KMO <- KMO_list$KMO
+  KMO_i <- KMO_list$KMO_i
 
   if(!is.null(colnames(R))){
 
@@ -139,4 +126,31 @@ KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
 
   return(output)
 
+}
+
+# outsourced computation of KMO to
+# use it when computing CAF which needs
+# different input checks
+.compute_kmo <- function(R) {
+
+  # Check if correlation matrix is invertable, if it is not, stop with message
+  R_i <- try(solve(R), silent = TRUE)
+
+  if (inherits(R_i, "try-error")) {
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Matrix is singular, cannot compute KMO.\n"))
+  }
+
+  # Start computations
+  S <- diag(diag(R_i)^(-0.5))
+  Q <- S %*% R_i %*% S
+  diag(Q) <- 0
+  diag(R) <- 0
+  sumQ2 <- sum(Q^2)
+  sumR2 <- sum(R^2)
+  KMO <- sumR2/(sumR2 + sumQ2)
+  KMO_i <- colSums(R^2)/(colSums(R^2) + colSums(Q^2))
+  list(
+    KMO = KMO,
+    KMO_i = KMO_i
+  )
 }

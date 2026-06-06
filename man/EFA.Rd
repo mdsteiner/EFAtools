@@ -188,9 +188,9 @@ A list of class EFA containing (a subset of) the following:
 factor loadings: Chi Square, including significance level, degrees of freedom
 (df), Comparative Fit Index (CFI), Root Mean Square Error of Approximation
 (RMSEA), including its 90\% confidence interval, Akaike Information Criterion
-(AIC), Bayesian Information Criterion (BIC), and the common part accounted
+(AIC), Bayesian Information Criterion (BIC), Root Mean Squared Residual (RMSR), and the common part accounted
 for (CAF) index as proposed by Lorenzo-Seva, Timmerman, & Kiers (2011).
-For PAF, only the CAF and dfs are returned.}
+For PAF, only the CAF and dfs are returned. Note that while in Lorenzo-Seva, Timmerman, & Kiers (2011) the CAF is introduced as ranging between 0 and 1, with values close to 1 indicating close fit, this does not match the formula they introduce for calculating CAF: \code{1 - KMO(residuals)}, which only works if the diagonal of the residual matrix is set to 1s and will then approximate 0.5 with close fit.}
 \item{model_implied_R}{The model implied correlation
 matrix.}
 \item{residuals}{Residual correlations, i.e., orig_R - model_implied_R}
