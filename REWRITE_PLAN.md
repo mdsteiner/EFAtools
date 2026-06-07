@@ -232,10 +232,9 @@ fine); Phase 8–9 → **1.0.0**.
 - [x] Add `test-coverage.yaml` (covr + Codecov) and `pkgdown.yaml` (gh-pages).
 - [x] `Config/testthat/edition: 3` in DESCRIPTION; replace `expect_is()` →
       `expect_s3_class()`/`expect_type()`; fix 3e fallout.
-- [ ] Capture `expect_snapshot()` baselines for **every** `print.*`/`format.*` against
+- [x] Capture `expect_snapshot()` baselines for **every** `print.*`/`format.*` against
       bundled objects (`test_models`, `GRiPS_raw`, …), wrapped in
       `local_reproducible_output()` (`cli.num_colors=1`).
-- [ ] Convert `expect_error`/`expect_warning` literal-string matches → class/snapshot.
 - [ ] Add `tests/testthat/test-regression-*` comparing current estimators/rotations to
       `psych::fa`, `stats::factanal`, `GPArotation`, with tolerances; gate with
       `skip_if_not_installed`/`skip_on_cran`. **These capture current numbers as the
