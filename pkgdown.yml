@@ -1,0 +1,7 @@
+pandoc: 3.8.3
+pkgdown: 2.2.0
+pkgdown_sha: ~
+articles:
+  EFAtools: EFAtools.html
+  Replicate_SPSS_psych: Replicate_SPSS_psych.html
+last_built: 2026-06-07T09:03Z
