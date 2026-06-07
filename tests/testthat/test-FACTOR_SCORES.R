@@ -18,10 +18,10 @@ fac_scores_man <- suppressMessages(FACTOR_SCORES(test_models$baseline$cormat,
 
 
 test_that("output is correct", {
-  expect_is(fac_scores_raw, "FACTOR_SCORES")
-  expect_is(fac_scores_cor, "FACTOR_SCORES")
-  expect_is(fac_scores_unrot, "FACTOR_SCORES")
-  expect_is(fac_scores_man, "FACTOR_SCORES")
+  expect_s3_class(fac_scores_raw, "FACTOR_SCORES")
+  expect_s3_class(fac_scores_cor, "FACTOR_SCORES")
+  expect_s3_class(fac_scores_unrot, "FACTOR_SCORES")
+  expect_s3_class(fac_scores_man, "FACTOR_SCORES")
 
   expect_named(fac_scores_raw, c("scores", "weights", "r.scores", "missing",
                                  "R2", "settings"))

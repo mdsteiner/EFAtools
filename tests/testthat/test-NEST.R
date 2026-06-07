@@ -3,9 +3,9 @@ nest_cor <- NEST(test_models$baseline$cormat, N = 500)
 nest_raw <- NEST(GRiPS_raw)
 
 test_that("output class and dimensions are correct", {
-  expect_is(nest_cor, "NEST")
+  expect_s3_class(nest_cor, "NEST")
   expect_output(str(nest_cor), "List of 5")
-  expect_is(nest_raw, "NEST")
+  expect_s3_class(nest_raw, "NEST")
   expect_output(str(nest_raw), "List of 5")
 })
 

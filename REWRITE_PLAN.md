@@ -225,12 +225,12 @@ fine); Phase 8–9 → **1.0.0**.
 
 ### Phase 0 — Safety net & infrastructure → `0.8.0`
 **Goal:** a green, modern CI and a regression net, with zero behaviour change.
-- [ ] Replace `.github/workflows/R-CMD-check.yaml` with r-lib/actions **v2**
+- [x] Replace `.github/workflows/R-CMD-check.yaml` with r-lib/actions **v2**
       (`checkout@v4`, `setup-r@v2`, `setup-r-dependencies@v2`, `check-r-package@v2`),
       matrix `{ubuntu-latest release/devel/oldrel-1, macos-latest, windows-latest}`.
       Remove the manual depends/cache/sysreq steps and `options(crayon.enabled=TRUE)`.
-- [ ] Add `test-coverage.yaml` (covr + Codecov) and `pkgdown.yaml` (gh-pages).
-- [ ] `Config/testthat/edition: 3` in DESCRIPTION; replace `expect_is()` →
+- [x] Add `test-coverage.yaml` (covr + Codecov) and `pkgdown.yaml` (gh-pages).
+- [x] `Config/testthat/edition: 3` in DESCRIPTION; replace `expect_is()` →
       `expect_s3_class()`/`expect_type()`; fix 3e fallout.
 - [ ] Capture `expect_snapshot()` baselines for **every** `print.*`/`format.*` against
       bundled objects (`test_models`, `GRiPS_raw`, …), wrapped in

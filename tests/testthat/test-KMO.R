@@ -5,11 +5,11 @@ colnames(dat_nonames) <- NULL
 kmo_nona <- KMO(dat_nonames)
 
 test_that("output class and dimensions are correct", {
-  expect_is(kmo_cor, "KMO")
+  expect_s3_class(kmo_cor, "KMO")
   expect_output(str(kmo_cor), "List of 3")
-  expect_is(kmo_raw, "KMO")
+  expect_s3_class(kmo_raw, "KMO")
   expect_output(str(kmo_raw), "List of 3")
-  expect_is(kmo_nona, "KMO")
+  expect_s3_class(kmo_nona, "KMO")
   expect_output(str(kmo_nona), "List of 3")
 })
 

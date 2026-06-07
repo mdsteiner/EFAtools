@@ -26,14 +26,14 @@ paf_F1_f <- .PAF(test_models$baseline$cormat, n_factors = 1, N = 500,
 
 
 test_that("output class and dimensions are correct", {
-  expect_is(paf_efatools$unrot_loadings, "LOADINGS")
-  expect_is(paf_psych$unrot_loadings, "LOADINGS")
-  expect_is(paf_spss$unrot_loadings, "LOADINGS")
-  expect_is(paf_none$unrot_loadings, "LOADINGS")
-  expect_is(paf_mac_t$unrot_loadings, "LOADINGS")
-  expect_is(paf_mac_f$unrot_loadings, "LOADINGS")
-  expect_is(paf_F1_t$unrot_loadings, "LOADINGS")
-  expect_is(paf_F1_f$unrot_loadings, "LOADINGS")
+  expect_s3_class(paf_efatools$unrot_loadings, "LOADINGS")
+  expect_s3_class(paf_psych$unrot_loadings, "LOADINGS")
+  expect_s3_class(paf_spss$unrot_loadings, "LOADINGS")
+  expect_s3_class(paf_none$unrot_loadings, "LOADINGS")
+  expect_s3_class(paf_mac_t$unrot_loadings, "LOADINGS")
+  expect_s3_class(paf_mac_f$unrot_loadings, "LOADINGS")
+  expect_s3_class(paf_F1_t$unrot_loadings, "LOADINGS")
+  expect_s3_class(paf_F1_f$unrot_loadings, "LOADINGS")
 
 
   expect_output(str(paf_efatools), "List of 14")
@@ -143,23 +143,23 @@ test_that("fit indices are returned correctly", {
                     RMSEA_UB = NA, AIC = NA, BIC = NA, Fm = NA, chi_null = NA,
                     df_null = NA, p_null = NA))
 
-  expect_is(paf_efatools$fit_indices$df, "numeric")
-  expect_is(paf_psych$fit_indices$df, "numeric")
-  expect_is(paf_spss$fit_indices$df, "numeric")
-  expect_is(paf_none$fit_indices$df, "numeric")
-  expect_is(paf_mac_t$fit_indices$df, "numeric")
-  expect_is(paf_mac_f$fit_indices$df, "numeric")
-  expect_is(paf_F1_t$fit_indices$df, "numeric")
-  expect_is(paf_F1_f$fit_indices$df, "numeric")
+  expect_type(paf_efatools$fit_indices$df, "double")
+  expect_type(paf_psych$fit_indices$df, "double")
+  expect_type(paf_spss$fit_indices$df, "double")
+  expect_type(paf_none$fit_indices$df, "double")
+  expect_type(paf_mac_t$fit_indices$df, "double")
+  expect_type(paf_mac_f$fit_indices$df, "double")
+  expect_type(paf_F1_t$fit_indices$df, "double")
+  expect_type(paf_F1_f$fit_indices$df, "double")
 
-  expect_is(paf_efatools$fit_indices$CAF, "numeric")
-  expect_is(paf_psych$fit_indices$CAF, "numeric")
-  expect_is(paf_spss$fit_indices$CAF, "numeric")
-  expect_is(paf_none$fit_indices$CAF, "numeric")
-  expect_is(paf_mac_t$fit_indices$CAF, "numeric")
-  expect_is(paf_mac_f$fit_indices$CAF, "numeric")
-  expect_is(paf_F1_t$fit_indices$CAF, "numeric")
-  expect_is(paf_F1_f$fit_indices$CAF, "numeric")
+  expect_type(paf_efatools$fit_indices$CAF, "double")
+  expect_type(paf_psych$fit_indices$CAF, "double")
+  expect_type(paf_spss$fit_indices$CAF, "double")
+  expect_type(paf_none$fit_indices$CAF, "double")
+  expect_type(paf_mac_t$fit_indices$CAF, "double")
+  expect_type(paf_mac_f$fit_indices$CAF, "double")
+  expect_type(paf_F1_t$fit_indices$CAF, "double")
+  expect_type(paf_F1_f$fit_indices$CAF, "double")
 
 })
 

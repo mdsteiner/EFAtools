@@ -9,17 +9,17 @@ pa_perc <- PARALLEL(test_models$baseline$cormat, N = 500, eigen_type = "PCA",
                     decision_rule = "percentile")
 
 test_that("output class and dimensions are correct", {
-  expect_is(pa_cor, "PARALLEL")
+  expect_s3_class(pa_cor, "PARALLEL")
   expect_output(str(pa_cor), "List of 7")
-  expect_is(pa_raw, "PARALLEL")
+  expect_s3_class(pa_raw, "PARALLEL")
   expect_output(str(pa_raw), "List of 7")
-  expect_is(pa_cor_pca, "PARALLEL")
+  expect_s3_class(pa_cor_pca, "PARALLEL")
   expect_output(str(pa_cor_pca), "List of 7")
-  expect_is(pa_nodat, "PARALLEL")
+  expect_s3_class(pa_nodat, "PARALLEL")
   expect_output(str(pa_nodat), "List of 7")
-  expect_is(pa_craw, "PARALLEL")
+  expect_s3_class(pa_craw, "PARALLEL")
   expect_output(str(pa_craw), "List of 7")
-  expect_is(pa_perc, "PARALLEL")
+  expect_s3_class(pa_perc, "PARALLEL")
   expect_output(str(pa_perc), "List of 7")
 })
 
@@ -55,25 +55,25 @@ test_that("found eigenvalues are correct", {
   expect_lt(sum(pa_raw$eigenvalues_EFA[, 2]),
             ncol(GRiPS_raw))
 
-  expect_is(pa_cor$eigenvalues_PCA, "matrix")
-  expect_is(pa_cor$eigenvalues_SMC, "matrix")
-  expect_is(pa_cor$eigenvalues_EFA, "matrix")
+  checkmate::expect_matrix(pa_cor$eigenvalues_PCA)
+  checkmate::expect_matrix(pa_cor$eigenvalues_SMC)
+  checkmate::expect_matrix(pa_cor$eigenvalues_EFA)
 
-  expect_is(pa_raw$eigenvalues_PCA, "matrix")
-  expect_is(pa_raw$eigenvalues_SMC, "matrix")
-  expect_is(pa_raw$eigenvalues_EFA, "matrix")
+  checkmate::expect_matrix(pa_raw$eigenvalues_PCA)
+  checkmate::expect_matrix(pa_raw$eigenvalues_SMC)
+  checkmate::expect_matrix(pa_raw$eigenvalues_EFA)
 
-  expect_is(pa_nodat$eigenvalues_PCA, "matrix")
-  expect_is(pa_nodat$eigenvalues_SMC, "matrix")
-  expect_is(pa_nodat$eigenvalues_EFA, "matrix")
+  checkmate::expect_matrix(pa_nodat$eigenvalues_PCA)
+  checkmate::expect_matrix(pa_nodat$eigenvalues_SMC)
+  checkmate::expect_matrix(pa_nodat$eigenvalues_EFA)
 
-  expect_is(pa_cor_pca$eigenvalues_PCA, "matrix")
+  checkmate::expect_matrix(pa_cor_pca$eigenvalues_PCA)
   expect_equal(c(pa_cor_pca$eigenvalues_SMC, pa_cor_pca$eigenvalues_EFA), c(NA, NA))
 
-  expect_is(pa_craw$eigenvalues_PCA, "matrix")
+  checkmate::expect_matrix(pa_craw$eigenvalues_PCA)
   expect_equal(c(pa_craw$eigenvalues_SMC, pa_craw$eigenvalues_EFA), c(NA, NA))
 
-  expect_is(pa_perc$eigenvalues_PCA, "matrix")
+  checkmate::expect_matrix(pa_perc$eigenvalues_PCA)
   expect_equal(c(pa_perc$eigenvalues_SMC, pa_perc$eigenvalues_EFA), c(NA, NA))
 
 })

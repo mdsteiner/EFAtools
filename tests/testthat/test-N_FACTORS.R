@@ -1,10 +1,10 @@
 nf_grips <- suppressMessages(suppressWarnings(N_FACTORS(GRiPS_raw)))
 
 test_that("output class and dimensions are correct", {
-  expect_is(nf_grips, "N_FACTORS")
-  expect_is(nf_grips$outputs, "list")
-  expect_is(nf_grips$settings, "list")
-  expect_is(nf_grips$n_factors, "numeric")
+  expect_s3_class(nf_grips, "N_FACTORS")
+  expect_type(nf_grips$outputs, "list")
+  expect_type(nf_grips$settings, "list")
+  expect_type(nf_grips$n_factors, "double")
 
   expect_named(nf_grips, c("outputs", "n_factors", "settings"))
   expect_named(nf_grips$outputs, c("bart_out", "kmo_out", "cd_out", "ekc_out",

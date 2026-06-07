@@ -28,10 +28,10 @@ om_man <- OMEGA(model = NULL, type = "EFAtools", var_names = rownames(sl_mod$sl)
                 factor_corres = sl_mod$sl[, c("F1", "F2", "F3")] >= .2)
 
 test_that("output class and dimensions are correct", {
-  expect_is(om_lav, "OMEGA")
-  expect_is(om_sl, "OMEGA")
-  expect_is(om_schmid, "OMEGA")
-  expect_is(om_man, "OMEGA")
+  expect_s3_class(om_lav, "OMEGA")
+  expect_s3_class(om_sl, "OMEGA")
+  expect_s3_class(om_schmid, "OMEGA")
+  expect_s3_class(om_man, "OMEGA")
 
   expect_output(str(om_lav), "List of 2")
   expect_output(str(om_sl), "List of 2")

@@ -5,13 +5,13 @@ kgc_raw <- KGC(GRiPS_raw)
 kgc_efa_ml<- KGC(test_models$baseline$cormat, eigen_type = "EFA", method = "ML")
 
 test_that("output class and dimensions are correct", {
-  expect_is(kgc_cor, "KGC")
+  expect_s3_class(kgc_cor, "KGC")
   expect_output(str(kgc_cor), "List of 7")
-  expect_is(kgc_cor_smc, "KGC")
+  expect_s3_class(kgc_cor_smc, "KGC")
   expect_output(str(kgc_cor_smc), "List of 7")
-  expect_is(kgc_raw, "KGC")
+  expect_s3_class(kgc_raw, "KGC")
   expect_output(str(kgc_raw), "List of 7")
-  expect_is(kgc_efa_ml, "KGC")
+  expect_s3_class(kgc_efa_ml, "KGC")
   expect_output(str(kgc_efa_ml), "List of 7")
 })
 

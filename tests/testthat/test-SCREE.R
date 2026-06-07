@@ -5,13 +5,13 @@ scree_raw <- SCREE(GRiPS_raw)
 scree_efa_ml<- SCREE(test_models$baseline$cormat, eigen_type = "EFA", method = "ML")
 
 test_that("output class and dimensions are correct", {
-  expect_is(scree_cor, "SCREE")
+  expect_s3_class(scree_cor, "SCREE")
   expect_output(str(scree_cor), "List of 4")
-  expect_is(scree_cor_smc, "SCREE")
+  expect_s3_class(scree_cor_smc, "SCREE")
   expect_output(str(scree_cor_smc), "List of 4")
-  expect_is(scree_raw, "SCREE")
+  expect_s3_class(scree_raw, "SCREE")
   expect_output(str(scree_raw), "List of 4")
-  expect_is(scree_efa_ml, "SCREE")
+  expect_s3_class(scree_efa_ml, "SCREE")
   expect_output(str(scree_efa_ml), "List of 4")
 })
 

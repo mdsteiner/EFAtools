@@ -27,11 +27,11 @@ lav_fit_ho <- suppressWarnings(lavaan::cfa(lav_mod_ho,
 SL_lav <- SL(lav_fit_ho, g_name = "g")
 
 test_that("output class and dimensions are correct", {
-  expect_is(SL_EFAtools, "SL")
-  expect_is(SL_SPSS, "SL")
-  expect_is(SL_psych, "SL")
-  expect_is(SL_flex, "SL")
-  expect_is(SL_lav, "SL")
+  expect_s3_class(SL_EFAtools, "SL")
+  expect_s3_class(SL_SPSS, "SL")
+  expect_s3_class(SL_psych, "SL")
+  expect_s3_class(SL_flex, "SL")
+  expect_s3_class(SL_lav, "SL")
 
   expect_output(str(SL_EFAtools), "List of 6")
   expect_output(str(SL_SPSS), "List of 6")

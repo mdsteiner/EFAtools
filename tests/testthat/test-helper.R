@@ -9,11 +9,12 @@ efa_temp <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500)
 efa_pro <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
                 rotation = "promax")
 test_that(".compute_vars works", {
-  expect_is(.compute_vars(efa_temp$unrot_loadings,
-                             efa_temp$unrot_loadings), "matrix")
-  expect_is(.compute_vars(efa_pro$rot_loadings,
-                             efa_pro$unrot_loadings,
-                             efa_pro$Phi), "matrix")
+  checkmate::expect_matrix(
+    .compute_vars(efa_temp$unrot_loadings, efa_temp$unrot_loadings)
+  )
+  checkmate::expect_matrix(
+    .compute_vars(efa_pro$rot_loadings, efa_pro$unrot_loadings, efa_pro$Phi)
+  )
 })
 
 x_base <- population_models$loadings$baseline
@@ -24,7 +25,7 @@ y_NA <- y_base
 y_NA[2, 2] <- NA
 
 test_that(".factor_congruence works", {
-  expect_is(.factor_congruence(x_base, y_base), "matrix")
+  checkmate::expect_matrix(.factor_congruence(x_base, y_base))
   expect_equal(sum(.factor_congruence(x_base, y_base)), 3)
   expect_warning(.factor_congruence(x_NA, y_NA, na.rm = FALSE), " Input contained missing values. Check your data or rerun with na.rm = TRUE.\n")
   expect_warning(.factor_congruence(x_NA, y_NA), " Input contained missing values. Analysis is performed on complete cases.\n")
@@ -61,7 +62,7 @@ w_paf <- tryCatch(.gof(efa_paf$unrot_loadings, efa_paf$orig_R, efa_paf$settings$
 m <- 6 # n variables
 q <- 3 # n factors
 test_that(".gof works", {
-  expect_is(gof_ml, "list")
+  expect_type(gof_ml, "list")
   expect_named(gof_ml,
                c("chi", "df", "p_chi", "CAF", "RMSR", "CFI", "RMSEA", "RMSEA_LB",
                  "RMSEA_UB", "AIC", "BIC", "Fm", "chi_null", "df_null",
@@ -76,7 +77,7 @@ test_that(".gof works", {
   }
   expect_equal(gof_ml$df, ((m - q)**2 - (m + q)) / 2)
 
-  expect_is(gof_uls, "list")
+  expect_type(gof_uls, "list")
   expect_named(gof_uls,
                c("chi", "df", "p_chi", "CAF", "RMSR", "CFI", "RMSEA", "RMSEA_LB",
                  "RMSEA_UB", "AIC", "BIC", "Fm", "chi_null", "df_null",
@@ -92,7 +93,7 @@ test_that(".gof works", {
 
   expect_equal(gof_uls$df, ((m - q)**2 - (m + q)) / 2)
 
-  expect_is(gof_paf, "list")
+  expect_type(gof_paf, "list")
   expect_named(gof_paf,
                c("chi", "df", "p_chi", "CAF", "RMSR", "CFI", "RMSEA", "RMSEA_LB",
                  "RMSEA_UB", "AIC", "BIC", "Fm", "chi_null", "df_null",
@@ -136,7 +137,7 @@ test_that(".is_cormat works", {
 
 q_p <- .det_max_factors(8) + 1
 test_that(".det_max_factors works", {
-  expect_is(.det_max_factors(8), "numeric")
+  expect_type(.det_max_factors(8), "double")
   expect_lte(((8 - q_p)**2 - (8 + q_p)) / 2, 0)
   expect_equal(.det_max_factors(0), 0)
   expect_equal(.det_max_factors(1), 0)
@@ -147,9 +148,9 @@ test_that(".det_max_factors works", {
 
 
 test_that(".decimals works", {
-  expect_is(.decimals(8), "numeric")
+  expect_type(.decimals(8), "double")
   expect_equal(.decimals(8), 0)
-  expect_is(.decimals(8), "numeric")
+  expect_type(.decimals(8), "double")
   expect_error(.decimals("a"), " 'x' is of class 'character' but must be a numeric vector or matrix\n")
 })
 
@@ -187,96 +188,96 @@ ext_rot <- .extract_data(efa_list_rot, test_models$baseline$cormat, 3, 3, "proma
 
 test_that(".extract_data works", {
   ### tests for ext_a with one non-convergence; no rotation; no error
-  expect_is(ext_a, "list")
+  expect_type(ext_a, "list")
   expect_named(ext_a, c("L", "L_corres", "phi", "extract_phi", "h2",
                         "vars_accounted", "for_grid"))
   expect_named(ext_a$for_grid, c("errors", "error_m", "converged", "heywood",
                                  "admissible", "chisq", "p_chi", "caf", "cfi",
                                  "rmsea", "aic", "bic"))
-  expect_is(ext_a$L, "array")
+  checkmate::expect_array(ext_a$L)
   expect_equal(dim(ext_a$L), c(ncol(test_models$baseline$cormat), 3, 3))
-  expect_is(ext_a$L_corres, "array")
+  checkmate::expect_array(ext_a$L_corres)
   expect_equal(dim(ext_a$L_corres), c(ncol(test_models$baseline$cormat), 3, 3))
   expect_equal(ext_a$phi, NA)
   expect_equal(ext_a$extract_phi, FALSE)
-  expect_is(ext_a$h2, "matrix")
+  checkmate::expect_matrix(ext_a$h2)
   expect_equal(dim(ext_a$h2), c(4, ncol(test_models$baseline$cormat)))
   expect_equal(ext_a$for_grid$errors, rep(FALSE, 4))
   expect_true(all(is.na(ext_a$for_grid$error_m)))
   expect_equal(ext_a$for_grid$converged, c(0, 0, 0, 1))
   expect_equal(ext_a$for_grid$heywood, c(FALSE, FALSE, FALSE, NA))
   expect_equal(sum(is.na(ext_a$for_grid$chisq)), 2)
-  expect_is(ext_a$for_grid$chisq, "numeric")
+  expect_type(ext_a$for_grid$chisq, "double")
   expect_equal(sum(is.na(ext_a$for_grid$p_chi)), 2)
-  expect_is(ext_a$for_grid$p_chi, "numeric")
+  expect_type(ext_a$for_grid$p_chi, "double")
   expect_equal(round(ext_a$for_grid$caf, 2), c(0.5, 0.5, 0.5, NA))
   expect_equal(ext_a$for_grid$cfi > .95, c(NA, TRUE, TRUE, NA))
   expect_equal(ext_a$for_grid$rmsea < .05, c(NA, TRUE, TRUE, NA))
   expect_equal(sign(ext_a$for_grid$aic), c(NA, -1, -1, NA))
   expect_equal(sign(ext_a$for_grid$bic), c(NA, -1, -1, NA))
-  expect_is(ext_a$vars_accounted, "array")
+  checkmate::expect_array(ext_a$vars_accounted)
   expect_equal(dim(ext_a$vars_accounted), c(3, 3, 3))
 
   ### tests for ext_er with one error; no rotation
-  expect_is(ext_er, "list")
+  expect_type(ext_er, "list")
   expect_named(ext_er, c("L", "L_corres", "phi", "extract_phi", "h2",
                          "vars_accounted", "for_grid"))
   expect_named(ext_er$for_grid, c("errors", "error_m", "converged", "heywood",
                                   "admissible", "chisq", "p_chi", "caf", "cfi",
                                   "rmsea", "aic", "bic"))
-  expect_is(ext_er$L, "array")
+  checkmate::expect_array(ext_er$L)
   expect_equal(dim(ext_er$L), c(ncol(test_models$baseline$cormat), 3, 3))
-  expect_is(ext_er$L_corres, "array")
+  checkmate::expect_array(ext_er$L_corres)
   expect_equal(dim(ext_er$L_corres), c(ncol(test_models$baseline$cormat), 3, 3))
   expect_equal(ext_er$phi, NA)
   expect_equal(ext_er$extract_phi, FALSE)
-  expect_is(ext_er$h2, "matrix")
+  checkmate::expect_matrix(ext_er$h2)
   expect_equal(dim(ext_er$h2), c(4, ncol(test_models$baseline$cormat)))
   expect_equal(ext_er$for_grid$errors, c(rep(FALSE, 3), TRUE))
   expect_equal(sum(is.na(ext_er$for_grid$error_m)), 3)
   expect_equal(ext_er$for_grid$converged, c(0, 0, 0, NA))
   expect_equal(ext_er$for_grid$heywood, c(FALSE, FALSE, FALSE, NA))
   expect_equal(sum(is.na(ext_er$for_grid$chisq)), 2)
-  expect_is(ext_er$for_grid$chisq, "numeric")
+  expect_type(ext_er$for_grid$chisq, "double")
   expect_equal(sum(is.na(ext_er$for_grid$p_chi)), 2)
-  expect_is(ext_er$for_grid$p_chi, "numeric")
+  expect_type(ext_er$for_grid$p_chi, "double")
   expect_equal(round(ext_er$for_grid$caf, 2), c(0.5, 0.5, 0.5, NA))
   expect_equal(ext_er$for_grid$cfi > .95, c(NA, TRUE, TRUE, NA))
   expect_equal(ext_er$for_grid$rmsea < .05, c(NA, TRUE, TRUE, NA))
   expect_equal(sign(ext_er$for_grid$aic), c(NA, -1, -1, NA))
   expect_equal(sign(ext_er$for_grid$bic), c(NA, -1, -1, NA))
-  expect_is(ext_er$vars_accounted, "array")
+  checkmate::expect_array(ext_er$vars_accounted)
   expect_equal(dim(ext_er$vars_accounted), c(3, 3, 3))
 
 
   ### tests for ext_rot with no errors; promax rotation
-  expect_is(ext_rot, "list")
+  expect_type(ext_rot, "list")
   expect_named(ext_rot, c("L", "L_corres", "phi", "extract_phi", "h2",
                           "vars_accounted", "for_grid"))
   expect_named(ext_rot$for_grid, c("errors", "error_m", "converged", "heywood",
                                    "admissible", "chisq", "p_chi", "caf", "cfi",
                                    "rmsea", "aic", "bic"))
-  expect_is(ext_rot$L, "array")
+  checkmate::expect_array(ext_rot$L)
   expect_equal(dim(ext_rot$L), c(ncol(test_models$baseline$cormat), 3, 3))
-  expect_is(ext_rot$L_corres, "array")
+  checkmate::expect_array(ext_rot$L_corres)
   expect_equal(dim(ext_rot$L_corres), c(ncol(test_models$baseline$cormat), 3, 3))
-  expect_is(ext_rot$phi, "array")
+  checkmate::expect_array(ext_rot$phi)
   expect_equal(dim(ext_rot$phi), c(3, 3, 3))
-  expect_is(ext_rot$h2, "matrix")
+  checkmate::expect_matrix(ext_rot$h2)
   expect_equal(dim(ext_rot$h2), c(3, ncol(test_models$baseline$cormat)))
   expect_equal(ext_rot$for_grid$errors, rep(FALSE, 3))
   expect_equal(ext_rot$for_grid$converged, c(0, 0, 0))
   expect_equal(ext_rot$for_grid$heywood, c(FALSE, FALSE, FALSE))
   expect_equal(sum(is.na(ext_rot$for_grid$chisq)), 1)
-  expect_is(ext_rot$for_grid$chisq, "numeric")
+  expect_type(ext_rot$for_grid$chisq, "double")
   expect_equal(sum(is.na(ext_rot$for_grid$p_chi)), 1)
-  expect_is(ext_rot$for_grid$p_chi, "numeric")
+  expect_type(ext_rot$for_grid$p_chi, "double")
   expect_equal(round(ext_rot$for_grid$caf, 2), c(0.5, 0.5, 0.5))
   expect_equal(ext_rot$for_grid$cfi > .95, c(NA, TRUE, TRUE))
   expect_equal(ext_rot$for_grid$rmsea < .05, c(NA, TRUE, TRUE))
   expect_equal(sign(ext_rot$for_grid$aic), c(NA, -1, -1))
   expect_equal(sign(ext_rot$for_grid$bic), c(NA, -1, -1))
-  expect_is(ext_rot$vars_accounted, "array")
+  checkmate::expect_array(ext_rot$vars_accounted)
   expect_equal(dim(ext_rot$vars_accounted), c(3, 3, 3))
 })
 
@@ -394,174 +395,174 @@ av_median_NA <- .average_values(L = array(c(rep(1, 9), rep(3, 9), rep(4, 9)),
 
 test_that(".average_values works", {
   ### tests for av_mean_NA with extract_phi = FALSE and trim = 0
-  expect_is(av_mean_NA, "list")
+  expect_type(av_mean_NA, "list")
   expect_named(av_mean_NA, c("h2", "loadings", "phi", "vars_accounted",
                               "ind_fac_corres", "fit_indices"))
-  expect_is(av_mean_NA$h2, "list")
+  expect_type(av_mean_NA$h2, "list")
   expect_named(av_mean_NA$h2, c("average", "sd", "min", "max", "range"))
-  expect_is(av_mean_NA$h2$average, "numeric")
+  expect_type(av_mean_NA$h2$average, "double")
   expect_equal(unname(round(av_mean_NA$h2$average, 2)), rep(2.67, 3))
   expect_named(av_mean_NA$h2$average, paste0("Ind", 1:3))
   expect_equal(unname(av_mean_NA$h2$sd), rep(1.527525, 3), tolerance = .01)
   expect_equal(unname(av_mean_NA$h2$min), rep(1, 3))
   expect_equal(unname(av_mean_NA$h2$max), rep(4, 3))
-  expect_is(av_mean_NA$loadings, "list")
+  expect_type(av_mean_NA$loadings, "list")
   expect_named(av_mean_NA$loadings, c("average", "sd", "min", "max", "range"))
-  expect_is(av_mean_NA$loadings$average, "LOADINGS")
+  expect_s3_class(av_mean_NA$loadings$average, "LOADINGS")
   expect_equal(unclass(round(av_mean_NA$loadings$average, 2)), matrix(rep(2.67, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
   expect_equal(av_mean_NA$loadings$sd, matrix(rep(1.527525, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))), tolerance = .01)
   expect_equal(unclass(av_mean_NA$loadings$min), matrix(rep(1, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
   expect_equal(unclass(av_mean_NA$loadings$max), matrix(rep(4, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
   expect_equal(av_mean_NA$loadings$range, matrix(rep(3, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))), tolerance = .01)
-  expect_is(av_mean_NA$vars_accounted, "list")
+  expect_type(av_mean_NA$vars_accounted, "list")
   expect_named(av_mean_NA$vars_accounted, c("average", "sd", "min", "max", "range"))
-  expect_is(av_mean_NA$vars_accounted$average, "matrix")
+  checkmate::expect_matrix(av_mean_NA$vars_accounted$average)
   expect_equal(round(av_mean_NA$vars_accounted$average, 2), matrix(rep(2.67, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
   expect_equal(av_mean_NA$vars_accounted$sd, matrix(rep(1.527525, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))), tolerance = .01)
   expect_equal(av_mean_NA$vars_accounted$min, matrix(rep(1, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
   expect_equal(av_mean_NA$vars_accounted$max, matrix(rep(4, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
   expect_equal(av_mean_NA$vars_accounted$range, matrix(rep(3, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))), tolerance = .01)
   expect_equal(av_mean_NA$phi, NA)
-  expect_is(av_mean_NA$ind_fac_corres, "matrix")
+  checkmate::expect_matrix(av_mean_NA$ind_fac_corres)
   expect_equal(round(av_mean_NA$ind_fac_corres, 2),
                matrix(c(1, 0, 0, 0, .67, .33, 0, .33, .67), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
-  expect_is(av_mean_NA$fit_indices, "data.frame")
+  expect_s3_class(av_mean_NA$fit_indices, "data.frame")
   expect_named(av_mean_NA$fit_indices, c("index", "average", "sd", "range",
                                           "min", "max"))
-  expect_is(av_mean_NA$fit_indices$index, "character")
+  expect_type(av_mean_NA$fit_indices$index, "character")
   expect_equal(av_mean_NA$fit_indices$index, c("chisq", "p_chi", "caf", "cfi",
                                              "rmsea", "aic", "bic", "df"))
-  expect_is(av_mean_NA$fit_indices$average, "numeric")
+  expect_type(av_mean_NA$fit_indices$average, "double")
   expect_equal(round(av_mean_NA$fit_indices$average, 2), c(rep(2.67, 7), 5))
-  expect_is(av_mean_NA$fit_indices$sd, "numeric")
+  expect_type(av_mean_NA$fit_indices$sd, "double")
   expect_equal(round(av_mean_NA$fit_indices$sd, 2), c(rep(1.53, 7), 5))
-  expect_is(av_mean_NA$fit_indices$range, "numeric")
+  expect_type(av_mean_NA$fit_indices$range, "double")
   expect_equal(av_mean_NA$fit_indices$range, c(rep(3, 7), 5))
-  expect_is(av_mean_NA$fit_indices$min, "numeric")
+  expect_type(av_mean_NA$fit_indices$min, "double")
   expect_equal(av_mean_NA$fit_indices$min, c(rep(1, 7), 5))
-  expect_is(av_mean_NA$fit_indices$max, "numeric")
+  expect_type(av_mean_NA$fit_indices$max, "double")
   expect_equal(av_mean_NA$fit_indices$max, c(rep(4, 7), 5))
 
 
   ### tests for av_mean_NA_t01 with extract_phi = FALSE and trim = .10
-  expect_is(av_mean_NA_t01, "list")
+  expect_type(av_mean_NA_t01, "list")
   expect_named(av_mean_NA_t01, c("h2", "loadings", "phi", "vars_accounted",
                                   "ind_fac_corres", "fit_indices"))
-  expect_is(av_mean_NA_t01$h2, "list")
+  expect_type(av_mean_NA_t01$h2, "list")
   expect_named(av_mean_NA_t01$h2, c("average", "sd", "min", "max", "range"))
-  expect_is(av_mean_NA_t01$h2$average, "numeric")
+  expect_type(av_mean_NA_t01$h2$average, "double")
   expect_equal(unname(round(av_mean_NA_t01$h2$average, 2)), rep(3, 3))
   expect_named(av_mean_NA_t01$h2$average, paste0("Ind", 1:3))
   expect_equal(unname(av_mean_NA_t01$h2$sd), rep(1.527525, 3), tolerance = .01)
   expect_equal(unname(av_mean_NA_t01$h2$min), rep(1, 3))
   expect_equal(unname(av_mean_NA_t01$h2$max), rep(4, 3))
-  expect_is(av_mean_NA_t01$loadings, "list")
+  expect_type(av_mean_NA_t01$loadings, "list")
   expect_named(av_mean_NA_t01$loadings, c("average", "sd", "min", "max", "range"))
-  expect_is(av_mean_NA_t01$loadings$average, "LOADINGS")
+  expect_s3_class(av_mean_NA_t01$loadings$average, "LOADINGS")
   expect_equal(unclass(round(av_mean_NA_t01$loadings$average, 2)), matrix(rep(3, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
   expect_equal(av_mean_NA_t01$loadings$sd, matrix(rep(1.527525, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))), tolerance = .01)
   expect_equal(unclass(av_mean_NA_t01$loadings$min), matrix(rep(1, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
   expect_equal(unclass(av_mean_NA_t01$loadings$max), matrix(rep(4, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
-  expect_is(av_mean_NA_t01$vars_accounted, "list")
+  expect_type(av_mean_NA_t01$vars_accounted, "list")
   expect_named(av_mean_NA_t01$vars_accounted, c("average", "sd", "min", "max", "range"))
-  expect_is(av_mean_NA_t01$vars_accounted$average, "matrix")
+  checkmate::expect_matrix(av_mean_NA_t01$vars_accounted$average)
   expect_equal(round(av_mean_NA_t01$vars_accounted$average, 2), matrix(rep(3, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
   expect_equal(av_mean_NA_t01$vars_accounted$sd, matrix(rep(1.527525, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))), tolerance = .01)
   expect_equal(av_mean_NA_t01$vars_accounted$min, matrix(rep(1, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
   expect_equal(av_mean_NA_t01$vars_accounted$max, matrix(rep(4, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
   expect_equal(av_mean_NA_t01$vars_accounted$range, matrix(rep(3, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))), tolerance = .01)
   expect_equal(av_mean_NA_t01$phi, NA)
-  expect_is(av_mean_NA_t01$ind_fac_corres, "matrix")
+  checkmate::expect_matrix(av_mean_NA_t01$ind_fac_corres)
   expect_equal(round(av_mean_NA_t01$ind_fac_corres, 2),
                matrix(c(1, 0, 0, 0, .67, .33, 0, .33, .67), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
-  expect_is(av_mean_NA_t01$fit_indices, "data.frame")
+  expect_s3_class(av_mean_NA_t01$fit_indices, "data.frame")
   expect_named(av_mean_NA_t01$fit_indices, c("index", "average", "sd", "range",
                                           "min", "max"))
-  expect_is(av_mean_NA_t01$fit_indices$index, "character")
+  expect_type(av_mean_NA_t01$fit_indices$index, "character")
   expect_equal(av_mean_NA_t01$fit_indices$index, c("chisq", "p_chi", "caf", "cfi",
                                                 "rmsea", "aic", "bic", "df"))
-  expect_is(av_mean_NA_t01$fit_indices$average, "numeric")
+  expect_type(av_mean_NA_t01$fit_indices$average, "double")
   expect_equal(round(av_mean_NA_t01$fit_indices$average, 2), c(rep(3, 7), 5))
-  expect_is(av_mean_NA_t01$fit_indices$sd, "numeric")
+  expect_type(av_mean_NA_t01$fit_indices$sd, "double")
   expect_equal(round(av_mean_NA_t01$fit_indices$sd, 2), c(rep(1.53, 7), 5))
-  expect_is(av_mean_NA_t01$fit_indices$range, "numeric")
+  expect_type(av_mean_NA_t01$fit_indices$range, "double")
   expect_equal(av_mean_NA_t01$fit_indices$range, c(rep(3, 7), 5))
-  expect_is(av_mean_NA_t01$fit_indices$min, "numeric")
+  expect_type(av_mean_NA_t01$fit_indices$min, "double")
   expect_equal(av_mean_NA_t01$fit_indices$min, c(rep(1, 7), 5))
-  expect_is(av_mean_NA_t01$fit_indices$max, "numeric")
+  expect_type(av_mean_NA_t01$fit_indices$max, "double")
   expect_equal(av_mean_NA_t01$fit_indices$max, c(rep(4, 7), 5))
 
 
   ### tests for av_mean with extract_phi = TRUE (only affected output tested)
-  expect_is(av_mean$phi, "list")
-  expect_is(av_mean$phi$average, "matrix")
+  expect_type(av_mean$phi, "list")
+  checkmate::expect_matrix(av_mean$phi$average)
   expect_equal(round(av_mean$phi$average, 2), matrix(rep(2.67, 9), ncol = 3, dimnames = list(paste0("F", 1:3), paste0("F", 1:3))))
-  expect_is(av_mean$phi$sd, "matrix")
+  checkmate::expect_matrix(av_mean$phi$sd)
   expect_equal(round(av_mean$phi$sd, 2), matrix(rep(1.53, 9), ncol = 3, dimnames = list(paste0("F", 1:3), paste0("F", 1:3))))
-  expect_is(av_mean$phi$min, "matrix")
+  checkmate::expect_matrix(av_mean$phi$min)
   expect_equal(av_mean$phi$min, matrix(rep(1, 9), ncol = 3, dimnames = list(paste0("F", 1:3), paste0("F", 1:3))))
-  expect_is(av_mean$phi$max, "matrix")
+  checkmate::expect_matrix(av_mean$phi$max)
   expect_equal(av_mean$phi$max, matrix(rep(4, 9), ncol = 3, dimnames = list(paste0("F", 1:3), paste0("F", 1:3))))
 
 
   ### tests for av_median_NA with extract_phi = FALSE
-  expect_is(av_median_NA, "list")
+  expect_type(av_median_NA, "list")
   expect_named(av_median_NA, c("h2", "loadings", "phi", "vars_accounted",
                                 "ind_fac_corres", "fit_indices"))
-  expect_is(av_median_NA$h2, "list")
+  expect_type(av_median_NA$h2, "list")
   expect_named(av_median_NA$h2, c("average", "sd", "min", "max", "range"))
-  expect_is(av_median_NA$h2$average, "numeric")
+  expect_type(av_median_NA$h2$average, "double")
   expect_equal(unname(round(av_median_NA$h2$average, 2)), rep(3, 3))
   expect_named(av_median_NA$h2$average, paste0("Ind", 1:3))
   expect_equal(unname(av_median_NA$h2$sd), rep(1.527525, 3), tolerance = .01)
   expect_equal(unname(av_median_NA$h2$min), rep(1, 3))
   expect_equal(unname(av_median_NA$h2$max), rep(4, 3))
-  expect_is(av_median_NA$loadings, "list")
+  expect_type(av_median_NA$loadings, "list")
   expect_named(av_median_NA$loadings, c("average", "sd", "min", "max", "range"))
-  expect_is(av_median_NA$loadings$average, "LOADINGS")
+  expect_s3_class(av_median_NA$loadings$average, "LOADINGS")
   expect_equal(unclass(round(av_median_NA$loadings$average, 2)), matrix(rep(3, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
   expect_equal(av_median_NA$loadings$sd, matrix(rep(1.527525, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))), tolerance = .01)
   expect_equal(unclass(av_median_NA$loadings$min), matrix(rep(1, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
   expect_equal(unclass(av_median_NA$loadings$max), matrix(rep(4, 9), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
-  expect_is(av_median_NA$vars_accounted, "list")
+  expect_type(av_median_NA$vars_accounted, "list")
   expect_named(av_median_NA$vars_accounted, c("average", "sd", "min", "max", "range"))
-  expect_is(av_median_NA$vars_accounted$average, "matrix")
+  checkmate::expect_matrix(av_median_NA$vars_accounted$average)
   expect_equal(round(av_median_NA$vars_accounted$average, 2), matrix(rep(3, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
   expect_equal(av_median_NA$vars_accounted$sd, matrix(rep(1.527525, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))), tolerance = .01)
   expect_equal(av_median_NA$vars_accounted$min, matrix(rep(1, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
   expect_equal(av_median_NA$vars_accounted$max, matrix(rep(4, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))))
   expect_equal(av_median_NA$vars_accounted$range, matrix(rep(3, 9), ncol = 3, dimnames = list(c("SS loadings", "Prop Tot Var", "Prop Comm Var"), paste0("F", 1:3))), tolerance = .01)
   expect_equal(av_median_NA$phi, NA)
-  expect_is(av_median_NA$ind_fac_corres, "matrix")
+  checkmate::expect_matrix(av_median_NA$ind_fac_corres)
   expect_equal(round(av_median_NA$ind_fac_corres, 2),
                matrix(c(1, 0, 0, 0, .67, .33, 0, .33, .67), ncol = 3, dimnames = list(paste0("Ind", 1:3), paste0("F", 1:3))))
-  expect_is(av_median_NA$fit_indices, "data.frame")
+  expect_s3_class(av_median_NA$fit_indices, "data.frame")
   expect_named(av_median_NA$fit_indices, c("index", "average", "sd", "range",
                                               "min", "max"))
-  expect_is(av_median_NA$fit_indices$index, "character")
+  expect_type(av_median_NA$fit_indices$index, "character")
   expect_equal(av_median_NA$fit_indices$index, c("chisq", "p_chi", "caf", "cfi",
                                                     "rmsea", "aic", "bic", "df"))
-  expect_is(av_median_NA$fit_indices$average, "numeric")
+  expect_type(av_median_NA$fit_indices$average, "double")
   expect_equal(round(av_median_NA$fit_indices$average, 2), c(rep(3, 7), 5))
-  expect_is(av_median_NA$fit_indices$sd, "numeric")
+  expect_type(av_median_NA$fit_indices$sd, "double")
   expect_equal(round(av_median_NA$fit_indices$sd, 2), c(rep(1.53, 7), 5))
-  expect_is(av_median_NA$fit_indices$range, "numeric")
+  expect_type(av_median_NA$fit_indices$range, "double")
   expect_equal(av_median_NA$fit_indices$range, c(rep(3, 7), 5))
-  expect_is(av_median_NA$fit_indices$min, "numeric")
+  expect_type(av_median_NA$fit_indices$min, "double")
   expect_equal(av_median_NA$fit_indices$min, c(rep(1, 7), 5))
-  expect_is(av_median_NA$fit_indices$max, "numeric")
+  expect_type(av_median_NA$fit_indices$max, "double")
   expect_equal(av_median_NA$fit_indices$max, c(rep(4, 7), 5))
 
 
   ### tests for av_median with extract_phi = TRUE (only affected output tested)
-  expect_is(av_median$phi, "list")
-  expect_is(av_median$phi$average, "matrix")
+  expect_type(av_median$phi, "list")
+  checkmate::expect_matrix(av_median$phi$average)
   expect_equal(round(av_median$phi$average, 2), matrix(rep(3, 9), ncol = 3, dimnames = list(paste0("F", 1:3), paste0("F", 1:3))))
-  expect_is(av_median$phi$sd, "matrix")
+  checkmate::expect_matrix(av_median$phi$sd)
   expect_equal(round(av_median$phi$sd, 2), matrix(rep(1.53, 9), ncol = 3, dimnames = list(paste0("F", 1:3), paste0("F", 1:3))))
-  expect_is(av_median$phi$min, "matrix")
+  checkmate::expect_matrix(av_median$phi$min)
   expect_equal(av_median$phi$min, matrix(rep(1, 9), ncol = 3, dimnames = list(paste0("F", 1:3), paste0("F", 1:3))))
-  expect_is(av_median$phi$max, "matrix")
+  checkmate::expect_matrix(av_median$phi$max)
   expect_equal(av_median$phi$max, matrix(rep(4, 9), ncol = 3, dimnames = list(paste0("F", 1:3), paste0("F", 1:3))))
 
 
@@ -633,9 +634,9 @@ arr_re <- .array_reorder(L = array(c(rep(.6, 6), rep(0, 12),
                          extract_phi = TRUE, n_factors = 3)
 test_that(".array_reorder works", {
   ### tests for arr_re_NA with phi = NA and extract_phi = FALSE
-  expect_is(arr_re_NA, "list")
+  expect_type(arr_re_NA, "list")
   expect_named(arr_re_NA, c("L", "L_corres", "phi", "vars_accounted"))
-  expect_is(arr_re_NA$L, "array")
+  checkmate::expect_array(arr_re_NA$L)
   expect_equal(dim(arr_re_NA$L), c(18, 3, 3))
   expect_equal(arr_re_NA$L,
                array(c(rep(.6, 6), rep(0, 12),
@@ -648,7 +649,7 @@ test_that(".array_reorder works", {
                        rep(0, 6), rep(.6, 6), rep(0, 6),
                        rep(0, 6), rep(0, 6), rep(.6, 6)),
                       c(18, 3, 3)))
-  expect_is(arr_re_NA$L_corres, "array")
+  checkmate::expect_array(arr_re_NA$L_corres)
   expect_equal(dim(arr_re_NA$L_corres), c(18, 3, 3))
   expect_equal(arr_re_NA$L_corres,
                array(as.numeric(c(rep(.6, 6), rep(0, 12),
@@ -662,7 +663,7 @@ test_that(".array_reorder works", {
                        rep(0, 6), rep(0, 6), rep(.6, 6)) > .3),
                      c(18, 3, 3)))
   expect_equal(arr_re_NA$phi, NA)
-  expect_is(arr_re_NA$vars_accounted, "array")
+  checkmate::expect_array(arr_re_NA$vars_accounted)
   expect_equal(arr_re_NA$vars_accounted,
                array(c(rep(.2, 3),
                        rep(.3, 3),
@@ -676,9 +677,9 @@ test_that(".array_reorder works", {
                      c(3, 3, 3)))
 
   ### tests for arr_re with phi = array() and extract_phi = TRUE
-  expect_is(arr_re, "list")
+  expect_type(arr_re, "list")
   expect_named(arr_re, c("L", "L_corres", "phi", "vars_accounted"))
-  expect_is(arr_re$L, "array")
+  checkmate::expect_array(arr_re$L)
   expect_equal(dim(arr_re$L), c(18, 3, 3))
   expect_equal(arr_re$L,
                array(c(rep(.6, 6), rep(0, 12),
@@ -691,7 +692,7 @@ test_that(".array_reorder works", {
                        rep(0, 6), rep(.6, 6), rep(0, 6),
                        rep(0, 6), rep(0, 6), rep(.6, 6)),
                      c(18, 3, 3)))
-  expect_is(arr_re$L_corres, "array")
+  checkmate::expect_array(arr_re$L_corres)
   expect_equal(dim(arr_re$L_corres), c(18, 3, 3))
   expect_equal(arr_re$L_corres,
                array(as.numeric(c(rep(.6, 6), rep(0, 12),
@@ -704,13 +705,13 @@ test_that(".array_reorder works", {
                                   rep(0, 6), rep(.6, 6), rep(0, 6),
                                   rep(0, 6), rep(0, 6), rep(.6, 6)) > .3),
                      c(18, 3, 3)))
-  expect_is(arr_re$phi, "array")
+  checkmate::expect_array(arr_re$phi)
   expect_equal(dim(arr_re$phi), c(3, 3, 3))
   expect_equal(arr_re$phi,
                array(c(1, .3, .4, .3, 1, .2, .4, .2, 1,
                        1, .3, .4, .3, 1, .2, .4, .2, 1,
                        1, -.3, -.2, -.3, 1, .4, -.2, .4, 1), c(3, 3, 3)))
-  expect_is(arr_re$vars_accounted, "array")
+  checkmate::expect_array(arr_re$vars_accounted)
   expect_equal(arr_re$vars_accounted,
                array(c(rep(.2, 3),
                        rep(.3, 3),
@@ -746,7 +747,7 @@ obl_grid_4 <- .oblq_grid("ML", NA, NA, NA, NA, c("psych", "factanal"),
 
 test_that(".oblq_grid works", {
   ### tests for arr_re_NA with phi = NA and extract_phi = FALSE
-  expect_is(obl_grid_1, "data.frame")
+  expect_s3_class(obl_grid_1, "data.frame")
   expect_named(obl_grid_1, c("method", "init_comm", "criterion", "criterion_type",
                             "abs_eigen", "start_method", "rotation", "k_promax",
                             "normalize", "P_type", "precision", "varimax_type",
@@ -757,7 +758,7 @@ test_that(".oblq_grid works", {
   expect_equal(sum(is.na(obl_grid_1$varimax_type)), 16)
   expect_equal(unique(obl_grid_1$rotation), c("promax", "simplimax", "oblimin"))
 
-  expect_is(obl_grid_2, "data.frame")
+  expect_s3_class(obl_grid_2, "data.frame")
   expect_named(obl_grid_2, c("method", "init_comm", "criterion", "criterion_type",
                              "abs_eigen", "start_method", "rotation", "k_promax",
                              "normalize", "P_type", "precision", "varimax_type",
@@ -769,7 +770,7 @@ test_that(".oblq_grid works", {
 
   expect_equal(obl_grid_2, obl_grid_3)
 
-  expect_is(obl_grid_4, "data.frame")
+  expect_s3_class(obl_grid_4, "data.frame")
   expect_named(obl_grid_4, c("method", "init_comm", "criterion", "criterion_type",
                              "abs_eigen", "start_method", "rotation", "k_promax",
                              "normalize", "P_type", "precision", "varimax_type",
@@ -801,7 +802,7 @@ orth_grid_4 <- .orth_grid("ML", NA, NA, NA, NA, c("psych", "factanal"),
 
 test_that(".orth_grid works", {
   ### tests for arr_re_NA with phi = NA and extract_phi = FALSE
-  expect_is(orth_grid_1, "data.frame")
+  expect_s3_class(orth_grid_1, "data.frame")
   expect_named(orth_grid_1, c("method", "init_comm", "criterion", "criterion_type",
                              "abs_eigen", "start_method", "rotation", "k_promax",
                              "normalize", "P_type", "precision", "varimax_type",
@@ -811,7 +812,7 @@ test_that(".orth_grid works", {
   expect_equal(sum(is.na(orth_grid_1$k_promax)), 24)
   expect_equal(unique(orth_grid_1$rotation), c("varimax", "quartimax"))
 
-  expect_is(orth_grid_2, "data.frame")
+  expect_s3_class(orth_grid_2, "data.frame")
   expect_named(orth_grid_2, c("method", "init_comm", "criterion", "criterion_type",
                              "abs_eigen", "start_method", "rotation", "k_promax",
                              "normalize", "P_type", "precision", "varimax_type",
@@ -823,7 +824,7 @@ test_that(".orth_grid works", {
 
   expect_equal(orth_grid_2, orth_grid_3)
 
-  expect_is(orth_grid_4, "data.frame")
+  expect_s3_class(orth_grid_4, "data.frame")
   expect_named(orth_grid_4, c("method", "init_comm", "criterion", "criterion_type",
                              "abs_eigen", "start_method", "rotation", "k_promax",
                              "normalize", "P_type", "precision", "varimax_type",
@@ -873,7 +874,7 @@ test_that(".type_grid works", {
                           NA, NA, NA, NA, NA, NA),
                " 'rotation' contains both oblique rotations and orthogonal rotations, but can only average rotations of the same kind. Oblique rotations are 'promax', 'oblimin', 'quartimin', 'simplimax', 'bentlerQ', 'geominQ', and 'bifactorQ'. Orthogonal rotations are 'varimax', 'quartimax', 'equamax', 'bentlerT', 'geominT', and 'bifactorT'.\n")
 
-  expect_is(tg_ob, "data.frame")
+  expect_s3_class(tg_ob, "data.frame")
   expect_named(tg_ob, c("method", "init_comm", "criterion", "criterion_type",
                               "abs_eigen", "start_method", "rotation", "k_promax",
                               "normalize", "P_type", "precision", "varimax_type",
@@ -891,7 +892,7 @@ test_that(".type_grid works", {
                sort(c("promax", "oblimin", "quartimin", "simplimax",
                  "bentlerQ", "geominQ", "bifactorQ")))
 
-  expect_is(tg_ob2, "data.frame")
+  expect_s3_class(tg_ob2, "data.frame")
   expect_named(tg_ob2, c("method", "init_comm", "criterion", "criterion_type",
                         "abs_eigen", "start_method", "rotation", "k_promax",
                         "normalize", "P_type", "precision", "varimax_type",
@@ -908,7 +909,7 @@ test_that(".type_grid works", {
   expect_equal(unique(tg_ob2$rotation),
                c("promax", "oblimin"))
 
-  expect_is(tg_orth, "data.frame")
+  expect_s3_class(tg_orth, "data.frame")
   expect_named(tg_orth, c("method", "init_comm", "criterion", "criterion_type",
                         "abs_eigen", "start_method", "rotation", "k_promax",
                         "normalize", "P_type", "precision", "varimax_type",
@@ -920,7 +921,7 @@ test_that(".type_grid works", {
                sort(c("varimax", "quartimax", "equamax",
                       "bentlerT", "geominT", "bifactorT")))
 
-  expect_is(tg_orth2, "data.frame")
+  expect_s3_class(tg_orth2, "data.frame")
   expect_named(tg_orth2, c("method", "init_comm", "criterion", "criterion_type",
                          "abs_eigen", "start_method", "rotation", "k_promax",
                          "normalize", "P_type", "precision", "varimax_type",
@@ -932,7 +933,7 @@ test_that(".type_grid works", {
                c("varimax", "quartimax"))
 
 
-  expect_is(tg_nn, "data.frame")
+  expect_s3_class(tg_nn, "data.frame")
   expect_named(tg_nn, c("method", "init_comm", "criterion", "criterion_type",
                            "abs_eigen", "start_method", "rotation", "k_promax",
                            "normalize", "P_type", "precision", "varimax_type",

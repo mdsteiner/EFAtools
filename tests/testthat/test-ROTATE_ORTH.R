@@ -12,12 +12,12 @@ geoT <- .ROTATE_ORTH(unrot, rotation = "geominT", type = "SPSS")
 bifacT <- .ROTATE_ORTH(unrot, rotation = "bifactorT", type = "EFAtools")
 
 test_that("output class and dimensions are correct", {
-  expect_is(equa$rot_loadings, "LOADINGS")
-  expect_is(equa_1$rot_loadings, "LOADINGS") # The unrotated loadings here!
-  expect_is(quarti$rot_loadings, "LOADINGS")
-  expect_is(bentT$rot_loadings, "LOADINGS")
-  expect_is(geoT$rot_loadings, "LOADINGS")
-  expect_is(bifacT$rot_loadings, "LOADINGS")
+  expect_s3_class(equa$rot_loadings, "LOADINGS")
+  expect_s3_class(equa_1$rot_loadings, "LOADINGS") # The unrotated loadings here!
+  expect_s3_class(quarti$rot_loadings, "LOADINGS")
+  expect_s3_class(bentT$rot_loadings, "LOADINGS")
+  expect_s3_class(geoT$rot_loadings, "LOADINGS")
+  expect_s3_class(bifacT$rot_loadings, "LOADINGS")
 
   expect_output(str(equa), "List of 4")
   expect_output(str(equa_1), "List of 4")
@@ -26,20 +26,20 @@ test_that("output class and dimensions are correct", {
   expect_output(str(geoT), "List of 4")
   expect_output(str(bifacT), "List of 4")
 
-  expect_is(equa$rotmat, "matrix")
-  expect_is(equa$vars_accounted_rot, "matrix")
+  checkmate::expect_matrix(equa$rotmat)
+  checkmate::expect_matrix(equa$vars_accounted_rot)
 
-  expect_is(quarti$rotmat, "matrix")
-  expect_is(quarti$vars_accounted_rot, "matrix")
+  checkmate::expect_matrix(quarti$rotmat)
+  checkmate::expect_matrix(quarti$vars_accounted_rot)
 
-  expect_is(bentT$rotmat, "matrix")
-  expect_is(bentT$vars_accounted_rot, "matrix")
+  checkmate::expect_matrix(bentT$rotmat)
+  checkmate::expect_matrix(bentT$vars_accounted_rot)
 
-  expect_is(geoT$rotmat, "matrix")
-  expect_is(geoT$vars_accounted_rot, "matrix")
+  checkmate::expect_matrix(geoT$rotmat)
+  checkmate::expect_matrix(geoT$vars_accounted_rot)
 
-  expect_is(bifacT$rotmat, "matrix")
-  expect_is(bifacT$vars_accounted_rot, "matrix")
+  checkmate::expect_matrix(bifacT$rotmat)
+  checkmate::expect_matrix(bifacT$vars_accounted_rot)
 
   expect_equal(equa_1$rotmat, NA)
   expect_equal(equa_1$vars_accounted_rot, NA)

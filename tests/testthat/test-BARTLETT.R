@@ -5,9 +5,9 @@ set.seed(500)
 bart_rand <- BARTLETT(matrix(rnorm(100), ncol = 4))
 
 test_that("output class and dimensions are correct", {
-  expect_is(bart_cor, "BARTLETT")
+  expect_s3_class(bart_cor, "BARTLETT")
   expect_output(str(bart_cor), "List of 4")
-  expect_is(bart_raw, "BARTLETT")
+  expect_s3_class(bart_raw, "BARTLETT")
   expect_output(str(bart_raw), "List of 4")
 })
 

@@ -1,10 +1,10 @@
 cd_grips <- CD(GRiPS_raw)
 
 test_that("output class and dimensions are correct", {
-  expect_is(cd_grips, "CD")
+  expect_s3_class(cd_grips, "CD")
   expect_named(cd_grips, c("n_factors", "eigenvalues", "RMSE_eigenvalues",
                            "settings"))
-  expect_is(cd_grips$RMSE_eigenvalues, "matrix")
+  checkmate::expect_matrix(cd_grips$RMSE_eigenvalues)
 })
 
 test_that("CD returns the correct values", {

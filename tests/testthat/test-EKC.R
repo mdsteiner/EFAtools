@@ -3,9 +3,9 @@ ekc_cor <- EKC(test_models$baseline$cormat, N = 500)
 ekc_raw <- EKC(GRiPS_raw)
 
 test_that("output class and dimensions are correct", {
-  expect_is(ekc_cor, "EKC")
+  expect_s3_class(ekc_cor, "EKC")
   expect_output(str(ekc_cor), "List of 4")
-  expect_is(ekc_raw, "EKC")
+  expect_s3_class(ekc_raw, "EKC")
   expect_output(str(ekc_raw), "List of 4")
 })
 

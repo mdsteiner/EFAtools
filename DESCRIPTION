@@ -71,8 +71,9 @@ Imports:
 LinkingTo: 
     Rcpp, RcppArmadillo
 Suggests: 
-    testthat,
+    testthat (>= 3.0.0),
     knitr,
     rmarkdown,
     microbenchmark
 VignetteBuilder: knitr
+Config/testthat/edition: 3

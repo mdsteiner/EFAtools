@@ -13,14 +13,16 @@ rot_loadings <- lapply(efa_list, `[[`, "rot_loadings")
 
 
 test_that("PROCRUSTES matches psych::Procrustes and GPArotation::targetQ outputs", {
-  expect_equivalent(
+  expect_equal(
     psych::Procrustes(unrot_loadings[[2]], rot_loadings[[1]])$loadings,
-    PROCRUSTES(unrot_loadings[[2]], rot_loadings[[1]])$loadings
+    PROCRUSTES(unrot_loadings[[2]], rot_loadings[[1]])$loadings,
+    ignore_attr = TRUE
     )
-  expect_equivalent(
+  expect_equal(
     GPArotation::targetQ(unrot_loadings[[2]], Target = rot_loadings[[1]])$loadings,
     PROCRUSTES(unrot_loadings[[2]], rot_loadings[[1]], rotation = "oblique")$loadings,
-    tolerance = 1e-3
+    tolerance = 1e-3,
+    ignore_attr = TRUE
   )
 })
 

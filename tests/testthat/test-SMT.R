@@ -3,11 +3,11 @@ smt_zero <- SMT(diag(nrow = 5, ncol = 5), N = 500)
 smt_raw <- SMT(GRiPS_raw)
 
 test_that("output class and dimensions are correct", {
-  expect_is(smt_cor, "SMT")
+  expect_s3_class(smt_cor, "SMT")
   expect_output(str(smt_cor), "List of 10")
-  expect_is(smt_raw, "SMT")
+  expect_s3_class(smt_raw, "SMT")
   expect_output(str(smt_raw), "List of 10")
-  expect_is(smt_zero, "SMT")
+  expect_s3_class(smt_zero, "SMT")
   expect_output(str(smt_zero), "List of 10")
 })
 
