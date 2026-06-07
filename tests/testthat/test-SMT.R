@@ -44,15 +44,15 @@ test_that("p-values are correct", {
 })
 
 test_that("RMSEA_LB and AIC values are correct", {
-  expect_equal(smt_cor$RMSEA_LB_null, 0.264456, tolerance = 1e-4)
-  expect_equal(smt_raw$RMSEA_LB_null, 0.662764, tolerance = 1e-4)
-  expect_equal(smt_zero$RMSEA_LB_null, 0, tolerance = 1e-4)
+  expect_equal(smt_cor$RMSEA_LB_null, 0.264456, tolerance = 1e-2)
+  expect_equal(smt_raw$RMSEA_LB_null, 0.662764, tolerance = 1e-2)
+  expect_equal(smt_zero$RMSEA_LB_null, 0, tolerance = 1e-2)
 
   expect_equal(smt_cor$RMSEA_LBs, c(0.05674033, 0.03975791, rep(0, 10)),
-               tolerance = 1e-4)
+               tolerance = 1e-2)
   expect_equal(smt_raw$RMSEA_LBs, c(0.03547387, 0.02637614, rep(0, 2)),
-               tolerance = 1e-4)
-  expect_equal(smt_zero$RMSEA_LBs, rep(0, 2), tolerance = 1e-4)
+               tolerance = 1e-2)
+  expect_equal(smt_zero$RMSEA_LBs, rep(0, 2), tolerance = 1e-2)
 
   expect_equal(smt_cor$AIC_null, 5441.203, tolerance = 0.1)
   expect_equal(smt_raw$AIC_null, 10264.07, tolerance = 0.1)

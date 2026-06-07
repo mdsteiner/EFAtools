@@ -204,8 +204,6 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   chi_null <- temp$fit_indices$chi_null
   df_null <- temp$fit_indices$df_null
 
-  RMSEA_null <- sqrt(max(0, chi_null - df_null) / (df_null * N - 1))
-
   p_chi_fun <- function(x, val, df, goal){goal - stats::pchisq(val, df, ncp = x)}
 
   if (stats::pchisq(chi_null, df = df_null, ncp = 0) >= .95) {
@@ -216,7 +214,7 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
     lambda_l <- 0
   }
 
-  RMSEA_LB_null <- sqrt(lambda_l / (df_null * N))
+  RMSEA_LB_null <- sqrt(lambda_l / (df_null * (N - 1)))
 
   AIC_null <- chi_null - 2 * df_null
 
