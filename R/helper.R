@@ -506,7 +506,7 @@
 
   delta_hat_KMO <- try(.compute_kmo(delta_hat)$KMO, silent = TRUE)
 
-  if (inherits(delta_hat_KMO, "try-error")) {
+  if (inherits(delta_hat_KMO, "try-error") || is.na(delta_hat_KMO)) {
     CAF <- 0
     warning(crayon::yellow$bold("!"), crayon::yellow(" Problems calculating CAF, CAF set to 0 (worst value). Inspect results carefully.\n"))
   } else {

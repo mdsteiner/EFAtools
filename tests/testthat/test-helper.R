@@ -112,6 +112,15 @@ test_that(".gof works", {
 })
 
 
+test_that(".compute_caf returns 0 (with warning) when KMO is not computable", {
+  # Hollow residual matrix: solve() succeeds (not a try-error) but the inverse
+  # has a negative diagonal, so KMO is NaN. CAF must fall back to 0, not NaN.
+  delta_hat <- matrix(c(0, .5, .5, .5, 0, .5, .5, .5, 0), 3)
+  expect_warning(caf <- .compute_caf(delta_hat), "Problems calculating CAF")
+  expect_equal(caf, 0)
+})
+
+
 
 
 test_that(".is_cormat works", {
