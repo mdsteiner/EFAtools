@@ -2,7 +2,6 @@
 
 ## Bug Fixes
 
-* `N_FACTORS()` and `HULL()` no longer error when the CAF goodness-of-fit index cannot be computed for a factor solution; CAF now falls back to its worst value (0) with a warning, consistent with other non-computable cases.
 
 # EFAtools 0.7.1
 

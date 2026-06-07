@@ -89,6 +89,11 @@ KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
   }
 
 
+  # Check if correlation matrix is invertible; if not, stop with message
+  if (inherits(try(solve(R), silent = TRUE), "try-error")) {
+    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, no further analyses are performed.\n"))
+  }
+
   # Check if correlation matrix is positive definite
   if(any(eigen(R, symmetric = TRUE, only.values = TRUE)$values <= .Machine$double.eps^.6)){
 

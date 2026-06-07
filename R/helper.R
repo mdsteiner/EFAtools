@@ -530,7 +530,7 @@
 
   ### compute CAF
   delta_hat <- R - (L %*% t(L))
-  diag(delta_hat) <- 0
+  diag(delta_hat) <- 1
   CAF <- .compute_caf(delta_hat)
 
   ### compute RMSR

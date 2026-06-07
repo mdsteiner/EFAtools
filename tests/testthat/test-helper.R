@@ -30,6 +30,7 @@ test_that(".factor_congruence works", {
   expect_warning(.factor_congruence(x_NA, y_NA), " Input contained missing values. Analysis is performed on complete cases.\n")
 })
 
+set.seed(42)
 efa_ml <- suppressWarnings(EFA(cbind(rnorm(100), rnorm(100), rnorm(100), rnorm(100),
                                      rnorm(100), rnorm(100)), 3, N = 500,
                                method = "ML"))

@@ -38,6 +38,7 @@ test_that("settings are returned correctly", {
 })
 
 # Create singular correlation matrix for tests
+set.seed(42)
 x <- rnorm(10)
 y <- rnorm(10)
 z <- x + y
