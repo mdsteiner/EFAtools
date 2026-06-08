@@ -625,12 +625,19 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
 .boot_fun <- function(x, b, call_fun, ...) {
 
-  boot_list <- list()
+  boot_list <- vector("list", b)
 
   for (boot_i in seq_len(b)) {
 
-    # save complete output, as this has to be passed to rotation method
-    boot_list[[boot_i]] <- call_fun(x[,, boot_i], ...)
+    # save complete output, as this has to be passed to rotation method. A
+    # replicate whose (possibly degenerate) resampled correlation matrix cannot
+    # be fit is left as its pre-allocated NULL and skipped later, rather than
+    # aborting the whole call. Note `boot_list[[boot_i]] <- NULL` would *delete*
+    # the element, so only assign on success.
+    fit_i <- tryCatch(call_fun(x[,, boot_i], ...), error = function(e) NULL)
+    if (!is.null(fit_i)) {
+      boot_list[[boot_i]] <- fit_i
+    }
   }
 
   boot_list
@@ -658,13 +665,44 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                           dimnames = list(rownam_L, rownam_L,
                                           NULL))
 
+  # Track replicates that could not be fit (NULL) or aligned, so they are
+  # excluded from the bootstrap statistics rather than aborting the whole call.
+  failed <- vapply(boot_fit, is.null, logical(1))
+
   for (boot_i in seq_len(b)) {
 
+    if (failed[boot_i]) next
+
     # save aligned loading matrix
-    L_unrot_boot[,, boot_i] <- .align_solution(L_unrot, boot_fit[[boot_i]]$unrot_loadings)$loadings
+    aligned <- tryCatch(
+      .align_solution(L_unrot, boot_fit[[boot_i]]$unrot_loadings),
+      error = function(e) NULL
+    )
+    if (is.null(aligned)) {
+      failed[boot_i] <- TRUE
+      next
+    }
+
+    L_unrot_boot[,, boot_i] <- aligned$loadings
     gof_boot[boot_i, ] <- unlist(boot_fit[[boot_i]]$fit_indices)
     residuals_boot[,, boot_i] <- boot_fit[[boot_i]]$residuals
 
+  }
+
+  n_failed <- sum(failed)
+  if (n_failed == b) {
+    cli::cli_abort(
+      c("All {b} bootstrap replicates failed; no bootstrap standard errors could be computed.",
+        "i" = "The resampled correlation matrices may be degenerate; try more observations or fewer factors."),
+      class = "efa_boot_all_failed"
+    )
+  }
+  if (n_failed > 0) {
+    cli::cli_warn(
+      c("{n_failed} bootstrap replicate{?s} failed and {?was/were} excluded.",
+        "i" = "Bootstrap standard errors and confidence intervals are based on {b - n_failed} replicate{?s}."),
+      class = "efa_boot_replicate_failed"
+    )
   }
 
   # se = sd of bootstrap replications (Zhang, 2014, Estimating Standard Errors
@@ -693,12 +731,16 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
     nonconv_counter <- 0
     for (boot_i in seq_len(b)) {
 
-      rot_i <- boot_fit[[boot_i]]
+      if (failed[boot_i]) next
+
       # save target-rotated loading matrix
-      aligned_i <- PROCRUSTES(boot_fit[[boot_i]]$unrot_loadings,
-                              Target = L_rot, rotation = "oblique",
-                              oblique_random_starts = 5)
-      if (isFALSE(aligned_i$convergence)) {
+      aligned_i <- tryCatch(
+        PROCRUSTES(boot_fit[[boot_i]]$unrot_loadings,
+                   Target = L_rot, rotation = "oblique",
+                   oblique_random_starts = 5),
+        error = function(e) NULL
+      )
+      if (is.null(aligned_i) || isFALSE(aligned_i$convergence)) {
         nonconv_counter <- nonconv_counter + 1
         next
       }
@@ -707,9 +749,10 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
       Structure_boot[,, boot_i] <- aligned_i$loadings %*% aligned_i$Phi
     }
 
+    valid_rot <- b - n_failed - nonconv_counter
     if (nonconv_counter > 0) {
-      cli::cli_warn(c("{nonconv_counter} target rotations in bootstrap procedure did not converge.",
-                    "i" = "Bootstrap SE and CI of rotated loadings, factor correlations and structure coefficients are based on {b - nonconv_counter} bootstrap samples."))
+      cli::cli_warn(c("{nonconv_counter} target rotation{?s} in the bootstrap procedure did not converge.",
+                    "i" = "Bootstrap SE and CI of rotated loadings, factor correlations and structure coefficients are based on {valid_rot} bootstrap sample{?s}."))
     }
 
     L_rot_se_ci <- .array_se_ci(L_rot_boot, ps)
@@ -724,7 +767,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
         Structure = Structure_se_ci$se,
         fit_indices = gof_se_ci$se,
         residuals = residuals_se_ci$se,
-        valid_target_rotations = b - nonconv_counter
+        valid_target_rotations = valid_rot
       ),
       CI = list(
         unrot_loadings = L_unrot_se_ci$ci,
@@ -755,16 +798,25 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
     for (boot_i in seq_len(b)) {
 
-      rot_i <- boot_fit[[boot_i]]
+      if (failed[boot_i]) next
+
       # save target-rotated loading matrix
-      aligned_i <- PROCRUSTES(boot_fit[[boot_i]]$unrot_loadings,
-                              Target = L_rot, rotation = "orthogonal")
+      aligned_i <- tryCatch(
+        PROCRUSTES(boot_fit[[boot_i]]$unrot_loadings,
+                   Target = L_rot, rotation = "orthogonal"),
+        error = function(e) NULL
+      )
+      if (is.null(aligned_i)) {
+        nonconv_counter <- nonconv_counter + 1
+        next
+      }
       L_rot_boot[,, boot_i] <- aligned_i$loadings
     }
 
+    valid_rot <- b - n_failed - nonconv_counter
     if (nonconv_counter > 0) {
-      cli::cli_warn(c("{nonconv_counter} target rotations in bootstrap procedure did not converge.",
-                    "i" = "Bootstrap SE and CI of rotated loadings are based on {b - nonconv_counter} bootstrap samples."))
+      cli::cli_warn(c("{nonconv_counter} target rotation{?s} in the bootstrap procedure did not converge.",
+                    "i" = "Bootstrap SE and CI of rotated loadings are based on {valid_rot} bootstrap sample{?s}."))
     }
 
     L_rot_se_ci <- .array_se_ci(L_rot_boot, ps)
@@ -775,7 +827,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
         rot_loadings = L_rot_se_ci$se,
         fit_indices = gof_se_ci$se,
         residuals = residuals_se_ci$se,
-        valid_target_rotations = b - nonconv_counter
+        valid_target_rotations = valid_rot
       ),
       CI = list(
         unrot_loadings = L_unrot_se_ci$ci,

@@ -4,6 +4,19 @@
 using namespace Rcpp;
 using namespace arma;
 
+// Symmetric eigendecomposition that fails loudly instead of silently leaving
+// eigval/eigvec empty (which the callers would then index out of bounds). During
+// ULS optimization the decomposition is taken on R - diag(psi), which can go
+// non-finite or non-symmetric for some psi, so turn a failed arma::eig_sym into
+// a catchable R error rather than undefined behaviour.
+static void eig_sym_checked(arma::vec& eigval, arma::mat& eigvec,
+                            const arma::mat& X) {
+  if (!arma::eig_sym(eigval, eigvec, X)) {
+    Rcpp::stop("Eigendecomposition failed during factor extraction; the "
+               "correlation matrix is not finite or not symmetric.");
+  }
+}
+
 // [[Rcpp::export(.grad_uls)]]
 arma::vec grad_uls(arma::vec psi, arma::mat R, const int n_fac) {
 
@@ -18,7 +31,7 @@ arma::vec grad_uls(arma::vec psi, arma::mat R, const int n_fac) {
   arma::mat V;
 
   Rs = R - arma::diagmat(psi);
-  eig_sym(eigval, eigvec, Rs);
+  eig_sym_checked(eigval, eigvec, Rs);
   Lambda = flipud(eigval);
   Lambda = Lambda.elem(arma::find(idx));
   // replace values smaller than 0
@@ -54,7 +67,7 @@ double uls_residuals(arma::vec psi, arma::mat R, const int n_fac) {
 
 
   R.diag() = 1 - psi;
-  eig_sym(eigval, eigvec, R);
+  eig_sym_checked(eigval, eigvec, R);
   Lambda = flipud(eigval);
   Lambda = Lambda.elem(arma::find(idx));
   // replace values smaller than 0

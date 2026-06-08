@@ -1,0 +1,221 @@
+# Tests for the non-parametric bootstrap standard error path of EFA()
+# (se = "np-boot"): end-to-end coverage, output structure and validity,
+# reproducibility, and graceful handling of degenerate bootstrap replicates.
+
+# A clean oblique (promax) bootstrap fit reused by several structure/validity
+# tests. GRiPS_raw is well conditioned, so all replicates should succeed.
+set.seed(42)
+boot_promax <- suppressWarnings(suppressMessages(
+  EFA(GRiPS_raw, n_factors = 2, method = "PAF", rotation = "promax",
+      se = "np-boot", b_boot = 12)
+))
+
+test_that("np-boot runs end to end for all methods and rotation families", {
+  skip_on_cran()
+
+  combos <- expand.grid(
+    method = c("PAF", "ML", "ULS"),
+    rotation = c("none", "varimax", "promax", "oblimin"),
+    stringsAsFactors = FALSE
+  )
+
+  for (i in seq_len(nrow(combos))) {
+    method <- combos$method[i]
+    rotation <- combos$rotation[i]
+    label <- paste(method, rotation)
+
+    set.seed(100 + i)
+    res <- suppressWarnings(suppressMessages(
+      EFA(GRiPS_raw, n_factors = 2, method = method, rotation = rotation,
+          se = "np-boot", b_boot = 8)
+    ))
+
+    expect_s3_class(res, "EFA")
+    expect_false(is.null(res$boot.SE), info = label)
+    expect_false(is.null(res$boot.CI), info = label)
+    expect_false(is.null(res$boot.arrays), info = label)
+    # the third array dimension is the number of bootstrap replicates
+    expect_identical(dim(res$boot.arrays$unrot_loadings)[3], 8L, info = label)
+  }
+})
+
+test_that("oblique np-boot output has the expected structure", {
+  se <- boot_promax$boot.SE
+  ci <- boot_promax$boot.CI
+  arr <- boot_promax$boot.arrays
+
+  expect_named(se, c("unrot_loadings", "rot_loadings", "Phi", "Structure",
+                     "fit_indices", "residuals", "valid_target_rotations"))
+  expect_named(ci, c("unrot_loadings", "rot_loadings", "Phi", "Structure",
+                     "fit_indices", "residuals"))
+  expect_named(arr, c("unrot_loadings", "rot_loadings", "Phi", "Structure",
+                      "fit_indices", "residuals"))
+
+  L <- boot_promax$rot_loadings
+  expect_equal(dim(se$rot_loadings), dim(L))
+  expect_equal(dim(se$unrot_loadings), dim(L))
+  expect_equal(dim(se$Phi), c(ncol(L), ncol(L)))
+  expect_identical(dim(arr$rot_loadings)[3], 12L)
+
+  # the number of usable target rotations is reported and within bounds
+  expect_true(se$valid_target_rotations >= 1 &&
+                se$valid_target_rotations <= 12)
+})
+
+test_that("np-boot standard errors and confidence intervals are valid", {
+  se <- boot_promax$boot.SE
+  ci <- boot_promax$boot.CI
+
+  for (nm in c("unrot_loadings", "rot_loadings", "Phi", "Structure")) {
+    expect_true(all(se[[nm]] >= 0), info = nm)            # SEs are non-negative
+    expect_true(all(is.finite(se[[nm]])), info = nm)
+    expect_true(all(ci[[nm]]$lower <= ci[[nm]]$upper), info = nm)  # ordered CIs
+  }
+
+  # standardized residuals are added from the bootstrap residual SEs; the
+  # off-diagonal entries (the ones of interest) are finite
+  sr <- boot_promax$standardized_residuals
+  expect_equal(dim(sr), dim(boot_promax$residuals))
+  expect_true(all(is.finite(sr[upper.tri(sr)])))
+})
+
+test_that("np-boot is reproducible with a fixed seed", {
+  skip_on_cran()
+
+  run <- function() suppressWarnings(suppressMessages(
+    EFA(GRiPS_raw, n_factors = 2, method = "PAF", rotation = "promax",
+        se = "np-boot", b_boot = 8)
+  ))
+
+  set.seed(7); a <- run()
+  set.seed(7); b <- run()
+
+  expect_equal(a$boot.SE$unrot_loadings, b$boot.SE$unrot_loadings)
+  expect_equal(a$boot.SE$rot_loadings, b$boot.SE$rot_loadings)
+  expect_equal(a$boot.SE$Phi, b$boot.SE$Phi)
+})
+
+test_that("np-boot on a correlation matrix warns and disables the bootstrap", {
+  expect_warning(
+    res <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
+               method = "PAF", rotation = "promax", se = "np-boot"),
+    "Cannot compute bootstrap standard errors"
+  )
+  expect_s3_class(res, "EFA")
+  expect_identical(res$settings$se, "none")
+  expect_null(res$boot.SE)
+})
+
+test_that("a failed bootstrap replicate is skipped with a warning", {
+  set.seed(11)
+  x <- GRiPS_raw
+  R <- stats::cor(x)
+  N <- nrow(x)
+  m <- ncol(R)
+  b <- 6
+
+  R_boot <- array(NA_real_, c(m, m, b))
+  for (i in seq_len(b)) {
+    ind <- sample(N, size = N, replace = TRUE)
+    R_boot[, , i] <- stats::cor(x[ind, ])
+  }
+
+  fit_target <- suppressWarnings(
+    .estimate_model(R, method = "PAF", n_factors = 2, N = N, type = "EFAtools"))
+  boot_fit <- suppressWarnings(
+    .boot_fun(R_boot, b, .estimate_model, method = "PAF", n_factors = 2,
+              N = N, type = "EFAtools"))
+
+  # inject a failed replicate without dropping the list element
+  boot_fit[2] <- list(NULL)
+
+  expect_warning(
+    res <- .boot_se_ci(fit_target, L_rot = NULL, boot_fit,
+                       boot_rot = "none", ci = 0.95, b = b),
+    class = "efa_boot_replicate_failed"
+  )
+
+  # the failed replicate's slice stays NA; SEs from the rest are finite
+  expect_true(all(is.na(res$arrays$unrot_loadings[, , 2])))
+  expect_true(all(is.finite(res$SE$unrot_loadings)))
+})
+
+test_that(".boot_fun records a real failed replicate as NULL without dropping it", {
+  # drive an actual fit failure (degenerate, non-finite correlation matrix)
+  # through .boot_fun: a failed replicate must be recorded as a length-preserving
+  # NULL, including when it is the LAST replicate, so .boot_se_ci can skip it.
+  set.seed(13)
+  x <- GRiPS_raw[1:200, ]
+  R <- stats::cor(x)
+  N <- nrow(x)
+  m <- ncol(R)
+  b <- 5
+
+  bad <- R
+  bad[1, ] <- NaN
+  bad[, 1] <- NaN
+  diag(bad) <- 1
+
+  for (fail_at in c(2L, b)) {            # mid replicate and the last replicate
+    R_boot <- array(NA_real_, c(m, m, b))
+    for (i in seq_len(b)) {
+      ind <- sample(N, size = N, replace = TRUE)
+      R_boot[, , i] <- stats::cor(x[ind, ])
+    }
+    R_boot[, , fail_at] <- bad
+
+    boot_fit <- suppressWarnings(
+      .boot_fun(R_boot, b, .estimate_model, method = "PAF", n_factors = 2,
+                N = N, type = "EFAtools"))
+
+    # length preserved and exactly the degenerate replicate is NULL
+    expect_length(boot_fit, b)
+    expect_true(is.null(boot_fit[[fail_at]]))
+    expect_equal(sum(vapply(boot_fit, is.null, logical(1))), 1L)
+
+    # .boot_se_ci skips it gracefully (warns, does not error)
+    fit_target <- suppressWarnings(
+      .estimate_model(R, method = "PAF", n_factors = 2, N = N, type = "EFAtools"))
+    expect_warning(
+      res <- .boot_se_ci(fit_target, L_rot = NULL, boot_fit,
+                         boot_rot = "none", ci = 0.95, b = b),
+      class = "efa_boot_replicate_failed"
+    )
+    expect_true(all(is.finite(res$SE$unrot_loadings)))
+  }
+})
+
+test_that("np-boot aborts when every replicate fails", {
+  x <- GRiPS_raw[1:100, ]
+  R <- stats::cor(x)
+  b <- 4
+
+  fit_target <- suppressWarnings(
+    .estimate_model(R, method = "PAF", n_factors = 2, N = nrow(x),
+                    type = "EFAtools"))
+  boot_fit <- rep(list(NULL), b)
+
+  expect_error(
+    .boot_se_ci(fit_target, L_rot = NULL, boot_fit, boot_rot = "none",
+                ci = 0.95, b = b),
+    class = "efa_boot_all_failed"
+  )
+})
+
+test_that("eigendecomposition guards turn degenerate matrices into errors", {
+  # a non-finite (constant-column-style) correlation matrix makes the symmetric
+  # eigendecomposition fail; the guarded fitters must error, not crash R
+  m <- 6
+  R_bad <- diag(m)
+  R_bad[1, ] <- NaN
+  R_bad[, 1] <- NaN
+  diag(R_bad) <- 1
+  psi <- rep(0.5, m)
+
+  expect_error(.paf_iter(psi, 0.001, R_bad, 2L, TRUE, 2L, 100L),
+               "Eigendecomposition failed")
+  expect_error(.grad_ml(psi, R_bad, 2L), "Eigendecomposition failed")
+  expect_error(.error_ml(psi, R_bad, 2L), "Eigendecomposition failed")
+  expect_error(.grad_uls(psi, R_bad, 2L), "Eigendecomposition failed")
+  expect_error(.uls_residuals(psi, R_bad, 2L), "Eigendecomposition failed")
+})
