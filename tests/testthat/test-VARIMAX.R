@@ -68,7 +68,7 @@ test_that("errors etc. are thrown correctly", {
   expect_warning(.VARIMAX(unrot, type = "SPSS", normalize = FALSE), class = "efa_type_override")
   expect_warning(.VARIMAX(unrot, type = "SPSS", order_type = "eigen"), class = "efa_type_override")
   expect_warning(.VARIMAX(unrot, type = "SPSS", varimax_type = "svd"), class = "efa_type_override")
-  expect_warning(.VARIMAX(unrot_1, type = "EFAtools"), " Cannot rotate single factor. Unrotated loadings returned.\n")
+  expect_warning(.VARIMAX(unrot_1, type = "EFAtools"), class = "efa_single_factor")
 })
 
 rm(unrot, vari, unrot_1, vari_1, vari_psych, vari_spss)

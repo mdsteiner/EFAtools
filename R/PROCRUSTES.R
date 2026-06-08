@@ -306,7 +306,8 @@ CONSENSUS_PROCRUSTES <- function(unrotated_list,
 
   finite_losses <- is.finite(losses)
   if (!any(finite_losses)) {
-    stop("No multi-start consensus run produced a finite final loss.", call. = FALSE)
+    cli::cli_abort("No multi-start consensus run produced a finite final loss.",
+                   class = "efa_consensus_no_finite_loss")
   }
   best_idx <- which.min(ifelse(finite_losses, losses, Inf))
   best <- runs[[best_idx]]

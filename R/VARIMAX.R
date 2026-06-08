@@ -30,7 +30,8 @@
                    vars_accounted_rot = NA,
                    settings = settings)
 
-    warning(crayon::yellow$bold("!"), crayon::yellow(" Cannot rotate single factor. Unrotated loadings returned.\n"))
+    cli::cli_warn("A single factor cannot be rotated; returning the unrotated loadings.",
+                  class = "efa_single_factor")
     return(output)
   }
 

@@ -93,7 +93,7 @@ test_that("errors etc. are thrown correctly", {
   expect_warning(.ROTATE_ORTH(unrot, rotation = "equamax", type = "SPSS",
                               order_type = "ss_factors"), class = "efa_type_override")
 
-  expect_warning(.ROTATE_ORTH(unrot_1, rotation = "equamax", type = "EFAtools"), " Cannot rotate single factor. Unrotated loadings returned.\n")
+  expect_warning(.ROTATE_ORTH(unrot_1, rotation = "equamax", type = "EFAtools"), class = "efa_single_factor")
 })
 
 rm(unrot, equa, unrot_1, equa_1, quarti, bentT, geoT, bifacT)

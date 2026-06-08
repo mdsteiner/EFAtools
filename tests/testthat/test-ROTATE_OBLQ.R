@@ -126,7 +126,7 @@ test_that("errors etc. are thrown correctly", {
   expect_warning(.ROTATE_OBLQ(unrot, rotation = "oblimin", type = "SPSS",
                               order_type = "ss_factors"), class = "efa_type_override")
 
-  expect_warning(.ROTATE_OBLQ(unrot_1, rotation = "oblimin", type = "EFAtools"), " Cannot rotate single factor. Unrotated loadings returned.\n")
+  expect_warning(.ROTATE_OBLQ(unrot_1, rotation = "oblimin", type = "EFAtools"), class = "efa_single_factor")
 })
 
 rm(unrot, obli, unrot_1, obli_1, quarti, simpli, bentQ, geoQ, bifacQ)

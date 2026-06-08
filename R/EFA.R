@@ -308,7 +308,11 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   # Perform argument checks
   if(!inherits(x, c("matrix", "data.frame"))){
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n"))
+    cli::cli_abort(
+      c("{.arg x} must be a correlation matrix or a data frame/matrix of raw data.",
+        "x" = "You supplied {.obj_type_friendly {x}}."),
+      class = "efa_input_not_matrix"
+    )
 
   }
 
@@ -322,7 +326,11 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   start_method <- checkmate::matchArg(start_method, c("psych", "factanal", NA))
 
   if (is.na(start_method) && method == "ML") {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" method is 'ML' but no start method is defined. Please set start_method to 'psych' or 'factanal'.\n"))
+    cli::cli_abort(
+      c("{.arg start_method} must be set when {.code method = \"ML\"}.",
+        "i" = "Set {.arg start_method} to {.val psych} or {.val factanal}."),
+      class = "efa_ml_start_missing"
+    )
   }
 
   checkmate::assert_count(n_factors)
@@ -359,10 +367,17 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
   } else {
 
-    message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n"))
+    cli::cli_inform(
+      c("i" = "{.arg x} is not a correlation matrix; computing correlations from the raw data."),
+      class = "efa_cor_from_data"
+    )
 
     if (!is.na(N)) {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" 'N' was set and data entered. Taking N from data.\n"))
+      cli::cli_warn(
+        c("Both {.arg N} and raw data were supplied.",
+          "i" = "Taking {.arg N} from the data."),
+        class = "efa_n_from_data"
+      )
     }
 
     R <- stats::cor(x, use = use, method = cor_method)
@@ -391,14 +406,16 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   R_i <- try(solve(R), silent = TRUE)
 
   if (inherits(R_i, "try-error") && type != "psych") {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, no further analyses are performed\n"))
+    cli::cli_abort("The correlation matrix is singular; no further analyses are performed.",
+                   class = "efa_cor_singular")
   }
 
   # Check if correlation matrix is positive definite, if it is not,
   # smooth the matrix (cor.smooth throws a warning)
   if (any(eigen(R, symmetric = TRUE, only.values = TRUE)$values <= .Machine$double.eps^.6)) {
     if (type == "SPSS") {
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is not positive definite, no further analyses are performed.\n"))
+      cli::cli_abort("The correlation matrix is not positive definite; no further analyses are performed.",
+                     class = "efa_cor_not_posdef")
     }
 
     R <- psych::cor.smooth(R)
@@ -413,11 +430,19 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
   if(df < 0){
 
-    warning(crayon::yellow$bold("!"), crayon::yellow(" The model is underidentified. No fit indices were calculated. Please enter a lower number of factors or use a larger number of indicators.\n"))
+    cli::cli_warn(
+      c("The model is underidentified; no fit indices were computed.",
+        "i" = "Use fewer factors or more indicators."),
+      class = "efa_underidentified"
+    )
 
   } else if (df == 0){
 
-    warning(crayon::yellow$bold("!"), crayon::yellow(" The model is just identified (df = 0). We suggest to try again with a lower number of factors or a larger number of indicators.\n"))
+    cli::cli_warn(
+      c("The model is just identified ({.code df = 0}).",
+        "i" = "Consider fewer factors or more indicators."),
+      class = "efa_just_identified"
+    )
 
   }
 
@@ -446,13 +471,21 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
     if (type == "SPSS") {
 
-      warning(crayon::yellow$bold("!"), crayon::yellow(" 'ML' is used as method with type 'SPSS'. Note that only the 'PAF' method is tested to provide the SPSS implementation and results may therefore differ from those returned by SPSS.\n"))
+      cli::cli_warn(
+        c("Only {.val PAF} is validated against the SPSS implementation.",
+          "i" = "{.val {method}} results may differ from those returned by SPSS."),
+        class = "efa_spss_method_untested"
+      )
 
     }
 
     if (is.na(N)) {
 
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Argument 'N' was NA, not all fit indices could be computed. To get all fit indices, either provide N or raw data.\n"))
+      cli::cli_warn(
+        c("{.arg N} is {.val NA}; not all fit indices could be computed.",
+          "i" = "Provide {.arg N} or raw data to compute all fit indices."),
+        class = "efa_fit_na_n"
+      )
 
     }
 
@@ -471,13 +504,21 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
     if (type == "SPSS") {
 
-      warning(crayon::yellow$bold("!"), crayon::yellow(" 'ULS' is used as method with type 'SPSS'. Note that only the 'PAF' method is tested to provide the SPSS implementation and results may therefore differ from those returned by SPSS.\n"))
+      cli::cli_warn(
+        c("Only {.val PAF} is validated against the SPSS implementation.",
+          "i" = "{.val {method}} results may differ from those returned by SPSS."),
+        class = "efa_spss_method_untested"
+      )
 
     }
 
     if (is.na(N)) {
 
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Argument 'N' was NA, not all fit indices could be computed. To get all fit indices, either provide N or raw data.\n"))
+      cli::cli_warn(
+        c("{.arg N} is {.val NA}; not all fit indices could be computed.",
+          "i" = "Provide {.arg N} or raw data to compute all fit indices."),
+        class = "efa_fit_na_n"
+      )
 
     }
 
@@ -516,7 +557,11 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
     if (type == "SPSS") {
 
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Note that only the 'promax' and 'varimax' rotations are tested to match the SPSS implementation and results may therefore differ from those returned by SPSS.\n"))
+      cli::cli_warn(
+        c("Only the {.val promax} and {.val varimax} rotations are validated against the SPSS implementation.",
+          "i" = "{.val {rotation}} results may differ from those returned by SPSS."),
+        class = "efa_spss_rotation_untested"
+      )
 
     }
 
@@ -533,7 +578,11 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
     if (type == "SPSS") {
 
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Note that only the 'promax' and 'varimax' rotations are tested to match the SPSS implementation and results may therefore differ from those returned by SPSS.\n"))
+      cli::cli_warn(
+        c("Only the {.val promax} and {.val varimax} rotations are validated against the SPSS implementation.",
+          "i" = "{.val {rotation}} results may differ from those returned by SPSS."),
+        class = "efa_spss_rotation_untested"
+      )
 
     }
 
