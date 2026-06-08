@@ -7,6 +7,11 @@
 
 [![CRAN
 status](https://www.r-pkg.org/badges/version/EFAtools)](https://CRAN.R-project.org/package=EFAtools)
+[![R-CMD-check](https://github.com/mdsteiner/EFAtools/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/mdsteiner/EFAtools/actions/workflows/R-CMD-check.yaml)
+[![Codecov test
+coverage](https://codecov.io/gh/mdsteiner/EFAtools/graph/badge.svg)](https://app.codecov.io/gh/mdsteiner/EFAtools)
+[![Lifecycle:
+stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.02521/status.svg)](https://doi.org/10.21105/joss.02521)
 
 <!-- badges: end -->

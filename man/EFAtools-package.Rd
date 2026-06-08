@@ -17,12 +17,12 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Markus Steiner \email{markus.d.steiner@gmail.com}
+\strong{Maintainer}: Markus Steiner \email{markus.d.steiner@gmail.com} (\href{https://orcid.org/0000-0002-8126-0757}{ORCID})
 
 Authors:
 \itemize{
-  \item Markus Steiner \email{markus.d.steiner@gmail.com}
-  \item Silvia Steiner \email{silvia.steiner.grieder@gmail.com}
+  \item Markus Steiner \email{markus.d.steiner@gmail.com} (\href{https://orcid.org/0000-0002-8126-0757}{ORCID})
+  \item Silvia Steiner \email{silvia.steiner.grieder@gmail.com} (\href{https://orcid.org/0000-0002-0118-7722}{ORCID})
 }
 
 Other contributors:

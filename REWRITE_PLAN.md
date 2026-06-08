@@ -235,15 +235,15 @@ fine); Phase 8–9 → **1.0.0**.
 - [x] Capture `expect_snapshot()` baselines for **every** `print.*`/`format.*` against
       bundled objects (`test_models`, `GRiPS_raw`, …), wrapped in
       `local_reproducible_output()` (`cli.num_colors=1`).
-- [ ] Add `tests/testthat/test-regression-*` comparing current estimators/rotations to
+- [x] Add `tests/testthat/test-regression-*` comparing current estimators/rotations to
       `psych::fa`, `stats::factanal`, `GPArotation`, with tolerances; gate with
       `skip_if_not_installed`/`skip_on_cran`. **These capture current numbers as the
       pre-refactor contract.**
-- [ ] Enable `Roxygen: list(markdown = TRUE)`; run `roxygen2md::roxygen2md()`; fix
+- [x] Enable `Roxygen: list(markdown = TRUE)`; run `roxygen2md::roxygen2md()`; fix
       `\eqn`/`\deqn` by hand; re-document; verify man-page count and `\link` targets.
-- [ ] Add `README` badges (CRAN, R-CMD-check, Codecov, lifecycle); ORCIDs in `Authors@R`.
-- [ ] Add `lifecycle` to Imports; `usethis::use_lifecycle()`.
-- [ ] (O1) Decide R-version floor; if `>=4.1`, plan the `\|>` switch.
+- [x] Add `README` badges (CRAN, R-CMD-check, Codecov, lifecycle); ORCIDs in `Authors@R`.
+- [x] Add `lifecycle` to Imports; `usethis::use_lifecycle()`.
+- [x] Switch to R-version `>=4.1`, plan the `\|>` switch.
 
 **Exit:** CI green on all platforms; full snapshot + regression suite passing on the
 **unchanged** code.
@@ -254,6 +254,9 @@ fine); Phase 8–9 → **1.0.0**.
       `.resolve_settings(type, user, preset)` emitting a single consolidated `cli_warn`.
       Replace the ~25 copy-pasted "type and X specified" blocks in
       `PAF/PROMAX/VARIMAX/ROTATE_OBLQ/ROTATE_ORTH`.
+- [ ] Move messages, warnings, and errors from current base versions to `cli_inform`,
+      `cli_warn` and `cli_abort`. Strip all crayon aspects and use `cli` conform
+      messaging.
 - [ ] `estimate_model()` + shared `.finalize_fit()` (sign/naming/vars/gof/residuals);
       `.PAF/.ML/.ULS` become thin fitters. (Engine still R/optim here.)
 - [ ] `rotate_model()` + `.reflect_and_order()`; rotation engine selected by name table.
