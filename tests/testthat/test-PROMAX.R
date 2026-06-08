@@ -73,23 +73,23 @@ test_that("settings are returned correctly", {
 
 test_that("errors etc. are thrown correctly", {
 
-  expect_error(.PROMAX(unrot, type = "none"), ' One of "P_type", "order_type", "varimax_type", or "k" was NA and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify all other arguments\n')
+  expect_error(.PROMAX(unrot, type = "none"), class = "efa_type_none")
 
-  expect_warning(.PROMAX(unrot, type = "EFAtools", normalize = FALSE), " Type and normalize is specified. normalize is used with value ' FALSE '. Results may differ from the specified type\n")
-  expect_warning(.PROMAX(unrot, type = "EFAtools", P_type = "norm"), " Type and P_type is specified. P_type is used with value ' norm '. Results may differ from the specified type\n")
-  expect_warning(.PROMAX(unrot, type = "EFAtools", order_type = "ss_factors"), " Type and order_type is specified. order_type is used with value ' ss_factors '. Results may differ from the specified type\n")
-  expect_warning(.PROMAX(unrot, type = "EFAtools", k = 2), " Type and k is specified. k is used with value ' 2 '. Results may differ from the specified type\n")
+  expect_warning(.PROMAX(unrot, type = "EFAtools", normalize = FALSE), class = "efa_type_override")
+  expect_warning(.PROMAX(unrot, type = "EFAtools", P_type = "norm"), class = "efa_type_override")
+  expect_warning(.PROMAX(unrot, type = "EFAtools", order_type = "ss_factors"), class = "efa_type_override")
+  expect_warning(.PROMAX(unrot, type = "EFAtools", k = 2), class = "efa_type_override")
 
-  expect_warning(.PROMAX(unrot, type = "psych", normalize = FALSE), " Type and normalize is specified. normalize is used with value ' FALSE '. Results may differ from the specified type.\n")
-  expect_warning(.PROMAX(unrot, type = "psych", P_type = "norm"), " Type and P_type is specified. P_type is used with value ' norm '. Results may differ from the specified type\n")
-  expect_warning(.PROMAX(unrot, type = "psych", order_type = "ss_factors"), " Type and order_type is specified. order_type is used with value ' ss_factors '. Results may differ from the specified type\n")
-  expect_warning(.PROMAX(unrot, type = "psych", k = 2), " Type and k is specified. k is used with value ' 2 '. Results may differ from the specified type\n")
+  expect_warning(.PROMAX(unrot, type = "psych", normalize = FALSE), class = "efa_type_override")
+  expect_warning(.PROMAX(unrot, type = "psych", P_type = "norm"), class = "efa_type_override")
+  expect_warning(.PROMAX(unrot, type = "psych", order_type = "ss_factors"), class = "efa_type_override")
+  expect_warning(.PROMAX(unrot, type = "psych", k = 2), class = "efa_type_override")
 
-  expect_warning(.PROMAX(unrot, type = "SPSS", normalize = FALSE), " Type and normalize is specified. normalize is used with value ' FALSE '. Results may differ from the specified type.\n")
-  expect_warning(.PROMAX(unrot, type = "SPSS", P_type = "unnorm"), " Type and P_type is specified. P_type is used with value ' unnorm '. Results may differ from the specified type\n")
-  expect_warning(.PROMAX(unrot, type = "SPSS", order_type = "eigen"), " Type and order_type is specified. order_type is used with value ' eigen '. Results may differ from the specified type\n")
-  expect_warning(.PROMAX(unrot, type = "SPSS", k = 2), " Type and k is specified. k is used with value ' 2 '. Results may differ from the specified type\n")
-  expect_warning(.PROMAX(unrot, type = "SPSS", varimax_type = "svd"), " Type and varimax_type is specified. varimax_type is used with value ' svd '. Results may differ from the specified type\n")
+  expect_warning(.PROMAX(unrot, type = "SPSS", normalize = FALSE), class = "efa_type_override")
+  expect_warning(.PROMAX(unrot, type = "SPSS", P_type = "unnorm"), class = "efa_type_override")
+  expect_warning(.PROMAX(unrot, type = "SPSS", order_type = "eigen"), class = "efa_type_override")
+  expect_warning(.PROMAX(unrot, type = "SPSS", k = 2), class = "efa_type_override")
+  expect_warning(.PROMAX(unrot, type = "SPSS", varimax_type = "svd"), class = "efa_type_override")
   expect_warning(.PROMAX(unrot_1, type = "EFAtools"), " Cannot rotate single factor. Unrotated loadings returned.\n")
 })
 

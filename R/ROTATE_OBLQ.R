@@ -5,57 +5,14 @@
                         normalize = TRUE, precision = 1e-5, order_type = NA,
                         k = NA, randomStarts = 100, ...){
 
-  if (type == "none") {
-
-    if (is.na(order_type)) {
-
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "order_type" was NA and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify the "order_type" argument\n'))
-
-    }
-
-  } else if (type == "EFAtools") {
-
-    if (isFALSE(normalize)) {
-
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and normalize is specified. normalize is used with value '", normalize, "'. Results may differ from the specified type\n"))
-    }
-
-    if (is.na(order_type)) {
-      order_type <- "eigen"
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and order_type is specified. order_type is used with value '", order_type, "'. Results may differ from the specified type\n"))
-    }
-
-  } else if (type == "psych") {
-
-    # if not specified, set PAF properties. If specified, throw warning that
-    # results may not exactly match the specified type
-
-    if (isFALSE(normalize)) {
-
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and normalize is specified. normalize is used with value '", normalize, "'. Results may differ from the specified type\n"))
-    }
-
-    if (is.na(order_type)) {
-      order_type <- "eigen"
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and order_type is specified. order_type is used with value '", order_type, "'. Results may differ from the specified type\n"))
-    }
-
-  } else if (type == "SPSS") {
-
-    if (isFALSE(normalize)) {
-
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and normalize is specified. normalize is used with value '", normalize, "'. Results may differ from the specified type\n"))
-    }
-
-    if (is.na(order_type)) {
-      order_type <- "ss_factors"
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and order_type is specified. order_type is used with value '", order_type, "'. Results may differ from the specified type\n"))
-    }
-
-  }
+  # Fill the type preset defaults and warn about any pinned rotation arguments.
+  resolved <- .resolve_settings(
+    type = type,
+    user = list(normalize = normalize, order_type = order_type),
+    preset = .efa_presets$ROTATE_OBLQ
+  )
+  normalize <- resolved$normalize
+  order_type <- resolved$order_type
 
   # extract loadings and dim names
   L <- x$unrot_loadings

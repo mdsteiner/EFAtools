@@ -57,17 +57,17 @@ test_that("settings are returned correctly", {
 
 test_that("errors etc. are thrown correctly", {
 
-  expect_error(.VARIMAX(unrot, type = "none"), ' "order_type" or "varimax_type" was NA and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify all other arguments\n')
+  expect_error(.VARIMAX(unrot, type = "none"), class = "efa_type_none")
 
-  expect_warning(.VARIMAX(unrot, type = "EFAtools", normalize = FALSE), " Type and normalize is specified. normalize is used with value ' FALSE '. Results may differ from the specified type\n")
-  expect_warning(.VARIMAX(unrot, type = "EFAtools", order_type = "ss_factors"), " Type and order_type is specified. order_type is used with value ' ss_factors '. Results may differ from the specified type\n")
+  expect_warning(.VARIMAX(unrot, type = "EFAtools", normalize = FALSE), class = "efa_type_override")
+  expect_warning(.VARIMAX(unrot, type = "EFAtools", order_type = "ss_factors"), class = "efa_type_override")
 
-  expect_warning(.VARIMAX(unrot, type = "psych", normalize = FALSE), " Type and normalize is specified. normalize is used with value ' FALSE '. Results may differ from the specified type\n")
-  expect_warning(.VARIMAX(unrot, type = "psych", order_type = "ss_factors"), " Type and order_type is specified. order_type is used with value ' ss_factors '. Results may differ from the specified type\n")
+  expect_warning(.VARIMAX(unrot, type = "psych", normalize = FALSE), class = "efa_type_override")
+  expect_warning(.VARIMAX(unrot, type = "psych", order_type = "ss_factors"), class = "efa_type_override")
 
-  expect_warning(.VARIMAX(unrot, type = "SPSS", normalize = FALSE), " Type and normalize is specified. normalize is used with value ' FALSE '. Results may differ from the specified type\n")
-  expect_warning(.VARIMAX(unrot, type = "SPSS", order_type = "eigen"), " Type and order_type is specified. order_type is used with value ' eigen '. Results may differ from the specified type\n")
-  expect_warning(.VARIMAX(unrot, type = "SPSS", varimax_type = "svd"), " Type and varimax_type is specified. varimax_type is used with value ' svd '. Results may differ from the specified type\n")
+  expect_warning(.VARIMAX(unrot, type = "SPSS", normalize = FALSE), class = "efa_type_override")
+  expect_warning(.VARIMAX(unrot, type = "SPSS", order_type = "eigen"), class = "efa_type_override")
+  expect_warning(.VARIMAX(unrot, type = "SPSS", varimax_type = "svd"), class = "efa_type_override")
   expect_warning(.VARIMAX(unrot_1, type = "EFAtools"), " Cannot rotate single factor. Unrotated loadings returned.\n")
 })
 

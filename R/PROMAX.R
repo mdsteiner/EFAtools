@@ -3,118 +3,18 @@
                     normalize = TRUE, P_type = NA, precision = 1e-5,
                     order_type = NA,  varimax_type = NA, k = NA) {
 
-  if (type == "none") {
-    # if type is none, throw an error if not
-    # all the other necessary arguments are specified.
-
-    if (is.na(P_type) || is.na(order_type) || is.na(varimax_type) || is.na(k)) {
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' One of "P_type", "order_type", "varimax_type", or "k" was NA and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify all other arguments\n'))
-    }
-  } else if (type == "EFAtools") {
-
-    # if not specified, set PAF properties. If specified, throw warning that
-    # results may not exactly match the specified type
-
-    if (isFALSE(normalize)) {
-
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and normalize is specified. normalize is used with value '", normalize, "'. Results may differ from the specified type\n"))
-    }
-
-    if (is.na(P_type)) {
-      P_type <- "norm"
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and P_type is specified. P_type is used with value '", P_type, "'. Results may differ from the specified type\n"))
-    }
-
-    if (is.na(order_type)) {
-      order_type <- "eigen"
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and order_type is specified. order_type is used with value '", order_type, "'. Results may differ from the specified type\n"))
-    }
-
-    if (is.na(varimax_type)) {
-      varimax_type <- "kaiser"
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and varimax_type is specified. varimax_type is used with value '", varimax_type, "'. Results may differ from the specified type\n"))
-    }
-
-    if (is.na(k)) {
-      k <- 4
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and k is specified. k is used with value '", k, "'. Results may differ from the specified type\n"))
-    }
-
-
-  } else if (type == "psych") {
-
-    # if not specified, set PAF properties. If specified, throw warning that
-    # results may not exactly match the specified type
-
-    if (isFALSE(normalize)) {
-
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and normalize is specified. normalize is used with value '", normalize, "'. Results may differ from the specified type.\n"))
-    }
-
-    if (is.na(P_type)) {
-      P_type <- "unnorm"
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and P_type is specified. P_type is used with value '", P_type, "'. Results may differ from the specified type\n"))
-    }
-
-    if (is.na(order_type)) {
-      order_type <- "eigen"
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and order_type is specified. order_type is used with value '", order_type, "'. Results may differ from the specified type\n"))
-    }
-
-    if (is.na(varimax_type)) {
-      varimax_type <- "svd"
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and varimax_type is specified. varimax_type is used with value '", varimax_type, "'. Results may differ from the specified type\n"))
-    }
-
-    if (is.na(k)) {
-      k <- 4
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and k is specified. k is used with value '", k, "'. Results may differ from the specified type\n"))
-    }
-
-
-  } else if (type == "SPSS") {
-
-    # if not specified, set PAF properties. If specified, throw warning that
-    # results may not exactly match the specified type
-
-    if (isFALSE(normalize)) {
-
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and normalize is specified. normalize is used with value '", normalize, "'. Results may differ from the specified type.\n"))
-    }
-
-    if (is.na(P_type)) {
-      P_type <- "norm"
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and P_type is specified. P_type is used with value '", P_type, "'. Results may differ from the specified type\n"))
-    }
-
-    if (is.na(order_type)) {
-      order_type <- "ss_factors"
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and order_type is specified. order_type is used with value '", order_type, "'. Results may differ from the specified type\n"))
-    }
-
-    if (is.na(varimax_type)) {
-      varimax_type <- "kaiser"
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and varimax_type is specified. varimax_type is used with value '", varimax_type, "'. Results may differ from the specified type\n"))
-    }
-
-    if (is.na(k)) {
-      k <- 4
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and k is specified. k is used with value '", k, "'. Results may differ from the specified type\n"))
-    }
-
-  }
+  # Fill the type preset defaults and warn about any pinned rotation arguments.
+  resolved <- .resolve_settings(
+    type = type,
+    user = list(normalize = normalize, P_type = P_type, order_type = order_type,
+                varimax_type = varimax_type, k = k),
+    preset = .efa_presets$PROMAX
+  )
+  normalize <- resolved$normalize
+  P_type <- resolved$P_type
+  order_type <- resolved$order_type
+  varimax_type <- resolved$varimax_type
+  k <- resolved$k
 
   # extract loadings and dim names
     L <- x$unrot_loadings

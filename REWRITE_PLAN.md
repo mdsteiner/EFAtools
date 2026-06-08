@@ -250,7 +250,7 @@ fine); Phase 8–9 → **1.0.0**.
 
 ### Phase 1 — Internal refactor, **no behaviour change** → `0.8.x`
 **Goal:** collapse duplication behind the snapshot/regression net; numbers unchanged.
-- [ ] `presets.R`: declarative type tables (EFAtools/psych/SPSS) + one
+- [x] `presets.R`: declarative type tables (EFAtools/psych/SPSS) + one
       `.resolve_settings(type, user, preset)` emitting a single consolidated `cli_warn`.
       Replace the ~25 copy-pasted "type and X specified" blocks in
       `PAF/PROMAX/VARIMAX/ROTATE_OBLQ/ROTATE_ORTH`.

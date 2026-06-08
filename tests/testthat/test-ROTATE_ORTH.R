@@ -76,22 +76,22 @@ test_that("settings are returned correctly", {
 })
 
 test_that("errors etc. are thrown correctly", {
-  expect_error(.ROTATE_ORTH(unrot, rotation = "equamax", type = "none"), ' "order_type" was NA and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify the "order_type" argument\n')
+  expect_error(.ROTATE_ORTH(unrot, rotation = "equamax", type = "none"), class = "efa_type_none")
 
   expect_warning(.ROTATE_ORTH(unrot, rotation = "equamax", type = "EFAtools",
-                              normalize = FALSE), " Type and normalize is specified. normalize is used with value ' FALSE '. Results may differ from the specified type\n")
+                              normalize = FALSE), class = "efa_type_override")
   expect_warning(.ROTATE_ORTH(unrot, rotation = "equamax", type = "EFAtools",
-                              order_type = "ss_factors"), " Type and order_type is specified. order_type is used with value ' ss_factors '. Results may differ from the specified type\n")
+                              order_type = "ss_factors"), class = "efa_type_override")
 
   expect_warning(.ROTATE_ORTH(unrot, rotation = "equamax", type = "psych",
-                              normalize = FALSE), " Type and normalize is specified. normalize is used with value ' FALSE '. Results may differ from the specified type\n")
+                              normalize = FALSE), class = "efa_type_override")
   expect_warning(.ROTATE_ORTH(unrot, rotation = "equamax", type = "psych",
-                              order_type = "ss_factors"), " Type and order_type is specified. order_type is used with value ' ss_factors '. Results may differ from the specified type\n")
+                              order_type = "ss_factors"), class = "efa_type_override")
 
   expect_warning(.ROTATE_ORTH(unrot, rotation = "equamax", type = "SPSS",
-                              normalize = FALSE), " Type and normalize is specified. normalize is used with value ' FALSE '. Results may differ from the specified type\n")
+                              normalize = FALSE), class = "efa_type_override")
   expect_warning(.ROTATE_ORTH(unrot, rotation = "equamax", type = "SPSS",
-                              order_type = "ss_factors"), " Type and order_type is specified. order_type is used with value ' ss_factors '. Results may differ from the specified type\n")
+                              order_type = "ss_factors"), class = "efa_type_override")
 
   expect_warning(.ROTATE_ORTH(unrot_1, rotation = "equamax", type = "EFAtools"), " Cannot rotate single factor. Unrotated loadings returned.\n")
 })

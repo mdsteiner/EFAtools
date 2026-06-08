@@ -7,124 +7,19 @@
   # Get correlation matrix entered or created in EFA
   R <- x
 
-  if (type == "none") {
-
-    # if type is none, throw an error if not
-    # all the other necessary arguments are specified.
-
-    if (is.na(init_comm) || is.na(criterion) || is.na(criterion_type) ||
-        is.na(abs_eigen) || is.na(max_iter)) {
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' One of "init_comm", "criterion", "criterion_type", "abs_eigen", "max_iter" was NA and no valid "type" was specified. Either use one of "EFAtools", "psych", or "SPSS" for type, or specify all other arguments\n'))
-    }
-
-  } else if (type == "EFAtools") {
-
-    # if not specified, set PAF properties. If specified, throw warning that
-    # results may not exactly match the specified type
-
-    if (is.na(init_comm)) {
-      init_comm <- "smc"
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and init_comm is specified. init_comm is used with value '", init_comm, "'. Results may differ from the specified type\n"))
-    }
-
-    if (is.na(criterion)) {
-      criterion <- 1e-3
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and criterion is specified. criterion is used with value '", criterion, "'. Results may differ from the specified type\n"))
-    }
-
-    if (is.na(criterion_type)) {
-      criterion_type <- "sum"
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and criterion_type is specified. criterion_type is used with value '", criterion_type, "'. Results may differ from the specified type\n"))
-    }
-
-    if (is.na(max_iter)) {
-      max_iter <- 300
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and max_iter is specified. max_iter is used with value '", max_iter, "'. Results may differ from the specified type\n"))
-    }
-
-    if (is.na(abs_eigen)) {
-      abs_eigen <- TRUE
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and abs_eigen is specified. abs_eigen is used with value '", abs_eigen, "'. Results may differ from the specified type\n"))
-    }
-
-
-  } else if (type == "psych") {
-
-    # if not specified, set PAF properties. If specified, throw warning that
-    # results may not exactly match the specified type
-
-    if (is.na(init_comm)) {
-      init_comm <- "smc"
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and init_comm is specified. init_comm is used with value '", init_comm, "'. Results may differ from the specified type\n"))
-    }
-
-    if (is.na(criterion)) {
-      criterion <- .001
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and criterion is specified. criterion is used with value '", criterion, "'. Results may differ from the specified type\n"))
-    }
-
-    if (is.na(criterion_type)) {
-      criterion_type <- "sum"
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and criterion_type is specified. criterion_type is used with value '", criterion_type, "'. Results may differ from the specified type\n"))
-    }
-
-    if (is.na(max_iter)) {
-      max_iter <- 50
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and max_iter is specified. max_iter is used with value '", max_iter, "'. Results may differ from the specified type\n"))
-    }
-
-    if (is.na(abs_eigen)) {
-      abs_eigen <- FALSE
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and abs_eigen is specified. abs_eigen is used with value '", abs_eigen, "'. Results may differ from the specified type\n"))
-    }
-
-
-  } else if (type == "SPSS") {
-
-    # if not specified, set PAF properties. If specified, throw warning that
-    # results may not exactly match the specified type
-
-    if (is.na(init_comm)) {
-      init_comm <- "smc"
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and init_comm is specified. init_comm is used with value '", init_comm, "'. Results may differ from the specified type\n"))
-    }
-
-    if (is.na(criterion)) {
-      criterion <- .001
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and criterion is specified. criterion is used with value '", criterion, "'. Results may differ from the specified type\n"))
-    }
-
-    if (is.na(criterion_type)) {
-      criterion_type <- "max_individual"
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and criterion_type is specified. criterion_type is used with value '", criterion_type, "'. Results may differ from the specified type\n"))
-    }
-
-    if (is.na(max_iter)) {
-      max_iter <- 25
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and max_iter is specified. max_iter is used with value '", max_iter, "'. Results may differ from the specified type\n"))
-    }
-
-    if (is.na(abs_eigen)) {
-      abs_eigen <- TRUE
-    } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Type and abs_eigen is specified. abs_eigen is used with value '", abs_eigen, "'. Results may differ from the specified type\n"))
-    }
-
-  }
+  # Fill the type preset defaults and warn about any pinned tuning arguments.
+  resolved <- .resolve_settings(
+    type = type,
+    user = list(init_comm = init_comm, criterion = criterion,
+                criterion_type = criterion_type, max_iter = max_iter,
+                abs_eigen = abs_eigen),
+    preset = .efa_presets$PAF
+  )
+  init_comm <- resolved$init_comm
+  criterion <- resolved$criterion
+  criterion_type <- resolved$criterion_type
+  max_iter <- resolved$max_iter
+  abs_eigen <- resolved$abs_eigen
 
   # set initial communality estimates. This can be done in three ways:
   #  init_comm == "smc": uses the Squared Multiple Correlation
