@@ -414,7 +414,8 @@
   if ((is.null(dim(x)) && !(inherits(x, c("numeric", "integer")))) ||
       (!is.null(dim(x)) && !(inherits(x, c("matrix", "loadings", "LOADINGS",
                                           "SLLOADINGS"))))) {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is of class '", class(x), "' but must be a numeric vector or matrix\n", sep = ""))
+    cli::cli_abort("{.arg x} must be a numeric vector or matrix, not {.cls {class(x)}}.",
+                   class = "efa_not_numeric")
   }
 
   if (!is.null(dim(x))) {
@@ -458,7 +459,11 @@
 
     if (any(is.na(x) | any(is.na(y)))) {
       if (isTRUE(na.rm)) {
-        warning(crayon::yellow$bold("!"), crayon::yellow(" Input contained missing values. Analysis is performed on complete cases.\n"))
+        cli::cli_warn(
+          c("The input contained missing values.",
+            "i" = "The analysis is performed on complete cases."),
+          class = "efa_missing_complete"
+        )
         if (any(is.na(x))) {
           xc <- x[stats::complete.cases(x), ]
           y <- y[stats::complete.cases(x), ]
@@ -470,7 +475,11 @@
           y <- yc
         }
       } else {
-        warning(crayon::yellow$bold("!"), crayon::yellow(" Input contained missing values. Check your data or rerun with na.rm = TRUE.\n"))
+        cli::cli_warn(
+          c("The input contained missing values.",
+            "i" = "Check your data or rerun with {.code na.rm = TRUE}."),
+          class = "efa_missing_check"
+        )
       }
     }
 
@@ -508,7 +517,11 @@
 
   if (inherits(delta_hat_KMO, "try-error") || is.na(delta_hat_KMO)) {
     CAF <- 0
-    warning(crayon::yellow$bold("!"), crayon::yellow(" Problems calculating CAF, CAF set to 0 (worst value). Inspect results carefully.\n"))
+    cli::cli_warn(
+      c("CAF could not be computed; it was set to {.val 0} (the worst value).",
+        "i" = "Inspect the results carefully."),
+      class = "efa_caf_failed"
+    )
   } else {
     CAF <- 1 - delta_hat_KMO
   }
@@ -649,7 +662,11 @@
 
       if (any(is.na(x))) {
 
-        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "x" is likely a correlation matrix but contains missing values. Please check the entered data.\n'))
+        cli::cli_abort(
+          c("{.arg x} looks like a correlation matrix but contains missing values.",
+            "i" = "Please check the entered data."),
+          class = "efa_cormat_has_na"
+        )
 
       }
 
@@ -1188,7 +1205,11 @@ if(n == 1){
 
     } else {
 
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" rotation = 'none' is used but rotation is of length > 1. Can only average EFAs with rotations of the same type ('none', 'orthogonal', or 'oblique').\n"))
+      cli::cli_abort(
+        c("{.code rotation = \"none\"} was used but {.arg rotation} has length > 1.",
+          "i" = "Can only average EFAs with rotations of the same type: {.val none}, {.val orthogonal}, or {.val oblique}."),
+        class = "efa_rotation_length"
+      )
 
     }
   } else if ("oblique" %in% rotation) {
@@ -1206,7 +1227,11 @@ if(n == 1){
 
     } else {
 
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" rotation = 'oblique' is used but rotation is of length > 1. Can only average EFAs with rotations of the same type ('none', 'orthogonal', or 'oblique').\n"))
+      cli::cli_abort(
+        c("{.code rotation = \"oblique\"} was used but {.arg rotation} has length > 1.",
+          "i" = "Can only average EFAs with rotations of the same type: {.val none}, {.val orthogonal}, or {.val oblique}."),
+        class = "efa_rotation_length"
+      )
 
     }
 
@@ -1224,7 +1249,11 @@ if(n == 1){
 
     } else {
 
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" rotation = 'orthogonal' is used but rotation is of length > 1. Can only average EFAs with rotations of the same type ('none', 'orthogonal', or 'oblique').\n"))
+      cli::cli_abort(
+        c("{.code rotation = \"orthogonal\"} was used but {.arg rotation} has length > 1.",
+          "i" = "Can only average EFAs with rotations of the same type: {.val none}, {.val orthogonal}, or {.val oblique}."),
+        class = "efa_rotation_length"
+      )
 
     }
 
@@ -1253,7 +1282,12 @@ if(n == 1){
                                  "bentlerQ", "geominQ", "bifactorQ")) &&
              any(rotation %in% c("varimax", "quartimax", "equamax",
                                  "bentlerT", "geominT", "bifactorT"))) {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'rotation' contains both oblique rotations and orthogonal rotations, but can only average rotations of the same kind. Oblique rotations are 'promax', 'oblimin', 'quartimin', 'simplimax', 'bentlerQ', 'geominQ', and 'bifactorQ'. Orthogonal rotations are 'varimax', 'quartimax', 'equamax', 'bentlerT', 'geominT', and 'bifactorT'.\n"))
+    cli::cli_abort(
+      c("{.arg rotation} mixes oblique and orthogonal rotations, but only rotations of the same kind can be averaged.",
+        "*" = "Oblique rotations: {.val {c('promax', 'oblimin', 'quartimin', 'simplimax', 'bentlerQ', 'geominQ', 'bifactorQ')}}.",
+        "*" = "Orthogonal rotations: {.val {c('varimax', 'quartimax', 'equamax', 'bentlerT', 'geominT', 'bifactorT')}}."),
+      class = "efa_rotation_mismatch"
+    )
   }
 
   return(do.call(rbind, t_grid_list))
@@ -1267,7 +1301,8 @@ if(n == 1){
   L_target <- as.matrix(L_target)
   L <- as.matrix(L)
   if (!identical(dim(L_target), dim(L))) {
-    stop("'L_target' and 'L' must have identical dimensions.", call. = FALSE)
+    cli::cli_abort("{.arg L_target} and {.arg L} must have identical dimensions.",
+                   class = "efa_dim_mismatch")
   }
 
   m <- ncol(L_target)
@@ -1346,7 +1381,8 @@ if(n == 1){
 #'
 .average_matrices <- function(x) {
   if (!is.list(x) || length(x) < 1L) {
-    stop("'x' must be a non-empty list of conformable matrices.", call. = FALSE)
+    cli::cli_abort("{.arg x} must be a non-empty list of conformable matrices.",
+                   class = "efa_not_matrix_list")
   }
   out <- Reduce(`+`, x) / length(x)
   dimnames(out) <- dimnames(x[[1L]])
@@ -1368,7 +1404,8 @@ if(n == 1){
                                              lower_closed = TRUE,
                                              upper_closed = TRUE) {
   if (!.procrustes_is_scalar(x)) {
-    stop("'", name, "' must be a finite numeric scalar.", call. = FALSE)
+    cli::cli_abort("{.arg {name}} must be a finite numeric scalar.",
+                   class = "efa_not_scalar")
   }
 
   lower_ok <- if (lower_closed) x >= lower else x > lower
@@ -1377,10 +1414,8 @@ if(n == 1){
   if (!lower_ok || !upper_ok) {
     left <- if (lower_closed) "[" else "("
     right <- if (upper_closed) "]" else ")"
-    stop(
-      "'", name, "' must be in ", left, lower, ", ", upper, right, ".",
-      call. = FALSE
-    )
+    cli::cli_abort("{.arg {name}} must be in {left}{lower}, {upper}{right}.",
+                   class = "efa_out_of_range")
   }
 
   x
@@ -1388,21 +1423,21 @@ if(n == 1){
 
 .procrustes_check_integer_scalar <- function(x, name, lower = -Inf, upper = Inf) {
   if (!.procrustes_is_scalar(x) || abs(x - round(x)) > sqrt(.Machine$double.eps)) {
-    stop("'", name, "' must be a finite integer-like scalar.", call. = FALSE)
+    cli::cli_abort("{.arg {name}} must be a finite integer-like scalar.",
+                   class = "efa_not_integer")
   }
   x <- as.integer(round(x))
   if (x < lower || x > upper) {
-    stop(
-      "'", name, "' must be an integer in [", lower, ", ", upper, "].",
-      call. = FALSE
-    )
+    cli::cli_abort("{.arg {name}} must be an integer in [{lower}, {upper}].",
+                   class = "efa_out_of_range")
   }
   x
 }
 
 .procrustes_check_flag <- function(x, name) {
   if (!is.logical(x) || length(x) != 1L || is.na(x)) {
-    stop("'", name, "' must be TRUE or FALSE.", call. = FALSE)
+    cli::cli_abort("{.arg {name}} must be {.code TRUE} or {.code FALSE}.",
+                   class = "efa_not_flag")
   }
   x
 }
@@ -1414,15 +1449,17 @@ if(n == 1){
 
   x <- as.matrix(x)
   if (!is.numeric(x)) {
-    stop("'", name, "' must be a numeric matrix.", call. = FALSE)
+    cli::cli_abort("{.arg {name}} must be a numeric matrix.", class = "efa_not_matrix")
   }
   storage.mode(x) <- "double"
 
   if (length(dim(x)) != 2L || any(dim(x) < 1L)) {
-    stop("'", name, "' must have at least one row and one column.", call. = FALSE)
+    cli::cli_abort("{.arg {name}} must have at least one row and one column.",
+                   class = "efa_empty_matrix")
   }
   if (any(!is.finite(x))) {
-    stop("'", name, "' must contain only finite values.", call. = FALSE)
+    cli::cli_abort("{.arg {name}} must contain only finite values.",
+                   class = "efa_nonfinite")
   }
 
   x
@@ -1433,7 +1470,8 @@ if(n == 1){
   B <- .procrustes_as_matrix(B, "Target")
 
   if (!identical(dim(A), dim(B))) {
-    stop("'A' and 'Target' must have identical dimensions.", call. = FALSE)
+    cli::cli_abort("{.arg A} and {.arg Target} must have identical dimensions.",
+                   class = "efa_dim_mismatch")
   }
 
   list(A = A, B = B)
@@ -1442,10 +1480,8 @@ if(n == 1){
 .procrustes_validate_matrix_list <- function(x, name, min_length = 1L,
                                              expected_dim = NULL) {
   if (!is.list(x) || length(x) < min_length) {
-    stop(
-      "'", name, "' must be a list with at least ", min_length, " matrix/matrices.",
-      call. = FALSE
-    )
+    cli::cli_abort("{.arg {name}} must be a list with at least {min_length} matri{?x/ces}.",
+                   class = "efa_not_matrix_list")
   }
 
   out <- lapply(seq_along(x), function(i) {
@@ -1456,10 +1492,10 @@ if(n == 1){
   ok_dims <- vapply(out, function(z) identical(dim(z), ref_dim), logical(1L))
   if (!all(ok_dims)) {
     bad <- paste(which(!ok_dims), collapse = ", ")
-    stop(
-      "All matrices in '", name, "' must have dimensions ",
-      paste(ref_dim, collapse = " x "), ". Offending element(s): ", bad, ".",
-      call. = FALSE
+    cli::cli_abort(
+      c("All matrices in {.arg {name}} must have dimensions {paste(ref_dim, collapse = ' x ')}.",
+        "x" = "Offending element(s): {bad}."),
+      class = "efa_dim_mismatch"
     )
   }
 
@@ -1528,10 +1564,11 @@ if(n == 1){
 .procrustes_validate_crossprod <- function(S, k) {
   S <- .procrustes_as_matrix(S, "S")
   if (!identical(dim(S), c(k, k))) {
-    stop("'S' must be a ", k, " x ", k, " matrix.", call. = FALSE)
+    cli::cli_abort("{.arg S} must be a {k} x {k} matrix.", class = "efa_dim_mismatch")
   }
   if (max(abs(S - t(S))) > 1e-8 * max(1, max(abs(S)))) {
-    warning("'S' is not symmetric; it should normally be crossprod(A).", call. = FALSE)
+    cli::cli_warn("{.arg S} is not symmetric; it should normally be {.code crossprod(A)}.",
+                  class = "efa_not_symmetric")
   }
   S
 }
@@ -1539,13 +1576,14 @@ if(n == 1){
 .procrustes_validate_t_init <- function(T_init, k) {
   T_init <- .procrustes_as_matrix(T_init, "T_init")
   if (!identical(dim(T_init), c(k, k))) {
-    stop("'T_init' must be a ", k, " x ", k, " matrix.", call. = FALSE)
+    cli::cli_abort("{.arg T_init} must be a {k} x {k} matrix.", class = "efa_dim_mismatch")
   }
   if (any(sqrt(colSums(T_init * T_init)) <= sqrt(.Machine$double.eps))) {
-    stop("'T_init' must not contain zero or near-zero columns.", call. = FALSE)
+    cli::cli_abort("{.arg T_init} must not contain zero or near-zero columns.",
+                   class = "efa_zero_column")
   }
   if (qr(T_init)$rank < k) {
-    stop("'T_init' must be nonsingular.", call. = FALSE)
+    cli::cli_abort("{.arg T_init} must be nonsingular.", class = "efa_singular")
   }
   T_init
 }
@@ -1590,11 +1628,13 @@ if(n == 1){
 
 .procrustes_validate_start_index <- function(start, n_targets) {
   if (!.procrustes_is_scalar(start) || abs(start - round(start)) > sqrt(.Machine$double.eps)) {
-    stop("'start' must be either an integer index or a target matrix.", call. = FALSE)
+    cli::cli_abort("{.arg start} must be either an integer index or a target matrix.",
+                   class = "efa_bad_start")
   }
   start <- as.integer(round(start))
   if (start < 1L || start > n_targets) {
-    stop("'start' must be between 1 and length(init_targets).", call. = FALSE)
+    cli::cli_abort("{.arg start} must be between 1 and {n_targets}.",
+                   class = "efa_out_of_range")
   }
   start
 }
@@ -1605,14 +1645,17 @@ if(n == 1){
   }
   if (!is.numeric(starts) || length(starts) < 1L || anyNA(starts) ||
       any(!is.finite(starts)) || any(abs(starts - round(starts)) > sqrt(.Machine$double.eps))) {
-    stop("'starts' must be a non-empty integer vector.", call. = FALSE)
+    cli::cli_abort("{.arg starts} must be a non-empty integer vector.",
+                   class = "efa_bad_start")
   }
   starts <- as.integer(round(starts))
   if (any(starts < 1L | starts > n_targets)) {
-    stop("All entries in 'starts' must be between 1 and length(init_targets).", call. = FALSE)
+    cli::cli_abort("All entries in {.arg starts} must be between 1 and {n_targets}.",
+                   class = "efa_out_of_range")
   }
   if (anyDuplicated(starts)) {
-    warning("Duplicate entries in 'starts' were removed.", call. = FALSE)
+    cli::cli_warn("Duplicate entries in {.arg starts} were removed.",
+                  class = "efa_duplicate_starts")
     starts <- unique(starts)
   }
   starts
@@ -1638,7 +1681,8 @@ if(n == 1){
   L2 <- .procrustes_as_matrix(L2, "L2")
 
   if (!identical(dim(L1), dim(L2))) {
-    stop("'L1' and 'L2' must have identical dimensions.", call. = FALSE)
+    cli::cli_abort("{.arg L1} and {.arg L2} must have identical dimensions.",
+                   class = "efa_dim_mismatch")
   }
 
   # Column Euclidean norms.
@@ -1646,10 +1690,12 @@ if(n == 1){
   n2 <- sqrt(colSums(L2 * L2))
 
   if (any(n1 <= sqrt(.Machine$double.eps))) {
-    stop("L1 contains at least one zero or near-zero column.", call. = FALSE)
+    cli::cli_abort("{.arg L1} contains at least one zero or near-zero column.",
+                   class = "efa_zero_column")
   }
   if (any(n2 <= sqrt(.Machine$double.eps))) {
-    stop("L2 contains at least one zero or near-zero column.", call. = FALSE)
+    cli::cli_abort("{.arg L2} contains at least one zero or near-zero column.",
+                   class = "efa_zero_column")
   }
 
   # Full pairwise congruence matrix.
@@ -1794,10 +1840,12 @@ if(n == 1){
   min_iter <- .procrustes_check_integer_scalar(min_iter, "min_iter", lower = 0L)
   max_iter <- .procrustes_check_integer_scalar(max_iter, "max_iter", lower = 1L)
   if (min_iter > max_iter) {
-    stop("'min_iter' must not exceed 'max_iter'.", call. = FALSE)
+    cli::cli_abort("{.arg min_iter} must not exceed {.arg max_iter}.",
+                   class = "efa_out_of_range")
   }
   if (is.null(loss_tol) && convergence %in% c("loss", "both")) {
-    stop("'loss_tol' must not be NULL when convergence is 'loss' or 'both'.", call. = FALSE)
+    cli::cli_abort("{.arg loss_tol} must not be {.code NULL} when {.arg convergence} is {.val loss} or {.val both}.",
+                   class = "efa_bad_loss_tol")
   }
 
   match_target <- .procrustes_check_flag(match_target, "match_target")
@@ -1839,7 +1887,8 @@ if(n == 1){
   } else {
     target <- .procrustes_as_matrix(start, "start")
     if (!identical(dim(target), c(p, k))) {
-      stop("If 'start' is a matrix, it must have the same dimensions as the loadings.", call. = FALSE)
+      cli::cli_abort("If {.arg start} is a matrix, it must have the same dimensions as the loadings.",
+                     class = "efa_dim_mismatch")
     }
     start_index <- NA_integer_
     start_label <- "matrix"
@@ -1972,7 +2021,7 @@ if(n == 1){
     hist_stop_rule_met[iter] <- stop_rule_met
 
     if (verbose) {
-      message(sprintf(
+      cli::cli_inform(sprintf(
         paste0(
           "iter %d | rel_change = %.3e | loss = %.8f | ",
           "rel_loss_change = %s | stable = %d | inner_failures = %d"

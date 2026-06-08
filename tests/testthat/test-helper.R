@@ -27,8 +27,8 @@ y_NA[2, 2] <- NA
 test_that(".factor_congruence works", {
   checkmate::expect_matrix(.factor_congruence(x_base, y_base))
   expect_equal(sum(.factor_congruence(x_base, y_base)), 3)
-  expect_warning(.factor_congruence(x_NA, y_NA, na.rm = FALSE), " Input contained missing values. Check your data or rerun with na.rm = TRUE.\n")
-  expect_warning(.factor_congruence(x_NA, y_NA), " Input contained missing values. Analysis is performed on complete cases.\n")
+  expect_warning(.factor_congruence(x_NA, y_NA, na.rm = FALSE), class = "efa_missing_check")
+  expect_warning(.factor_congruence(x_NA, y_NA), class = "efa_missing_complete")
 })
 
 set.seed(42)
@@ -118,7 +118,7 @@ test_that(".compute_caf returns 0 (with warning) when KMO is not computable", {
   # Hollow residual matrix: solve() succeeds (not a try-error) but the inverse
   # has a negative diagonal, so KMO is NaN. CAF must fall back to 0, not NaN.
   delta_hat <- matrix(c(0, .5, .5, .5, 0, .5, .5, .5, 0), 3)
-  expect_warning(caf <- .compute_caf(delta_hat), "Problems calculating CAF")
+  expect_warning(caf <- .compute_caf(delta_hat), class = "efa_caf_failed")
   expect_equal(caf, 0)
 })
 
@@ -132,7 +132,7 @@ test_that(".is_cormat works", {
   expect_equal(.is_cormat(cbind(c(1, NA, .57, .85))), FALSE)
   expect_equal(.is_cormat(matrix(c(1, .1, .3, 1), ncol = 2)), FALSE)
   expect_error(.is_cormat(matrix(c(1, NA, NA, 1), ncol = 2)),
-               ' "x" is likely a correlation matrix but contains missing values. Please check the entered data.\n')
+               class = "efa_cormat_has_na")
 })
 
 q_p <- .det_max_factors(8) + 1
@@ -151,7 +151,7 @@ test_that(".decimals works", {
   expect_type(.decimals(8), "double")
   expect_equal(.decimals(8), 0)
   expect_type(.decimals(8), "double")
-  expect_error(.decimals("a"), " 'x' is of class 'character' but must be a numeric vector or matrix\n")
+  expect_error(.decimals("a"), class = "efa_not_numeric")
 })
 
 efa_list <- list(EFA(test_models$baseline$cormat, n_factors = 3, N = 500),
@@ -872,7 +872,7 @@ test_that(".type_grid works", {
                           NA, NA, NA, NA, NA, NA))
   expect_error(.type_grid("PAF", NA, NA, NA, NA, NA, c("promax", "varimax"),
                           NA, NA, NA, NA, NA, NA),
-               " 'rotation' contains both oblique rotations and orthogonal rotations, but can only average rotations of the same kind. Oblique rotations are 'promax', 'oblimin', 'quartimin', 'simplimax', 'bentlerQ', 'geominQ', and 'bifactorQ'. Orthogonal rotations are 'varimax', 'quartimax', 'equamax', 'bentlerT', 'geominT', and 'bifactorT'.\n")
+               class = "efa_rotation_mismatch")
 
   expect_s3_class(tg_ob, "data.frame")
   expect_named(tg_ob, c("method", "init_comm", "criterion", "criterion_type",
