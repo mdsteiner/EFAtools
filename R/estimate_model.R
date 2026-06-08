@@ -1,0 +1,126 @@
+# Single estimation core: dispatch to a method fitter, then post-process once.
+#
+# `.PAF()`, `.ML()`, and `.ULS()` are thin fitters that return only their raw
+# results (`L`, `h2`, objective `Fm`, `iter`, `convergence`, the original
+# correlation matrix `orig_R`, and the matrix `R_final` whose eigenvalues are the
+# final eigenvalues), plus any method-specific extras. `.finalize_fit()` performs
+# the shared post-processing common to all methods, and `.estimate_model()`
+# assembles the method-specific output object.
+
+# Shared post-processing for an unrotated solution. Reflects the loadings to a
+# consistent sign, names them (with a V-fallback when the input is unnamed),
+# computes the explained variances, fit indices, communalities, model-implied
+# correlation matrix, residuals, and the original/final eigenvalues.
+.finalize_fit <- function(fit, N, method) {
+
+  L <- fit$L
+  orig_R <- fit$orig_R
+  h2 <- fit$h2
+  n_factors <- ncol(L)
+
+  # reverse the sign of loadings as done in the psych package and SPSS
+  if (n_factors > 1) {
+    signs <- sign(colSums(L))
+    signs[signs == 0] <- 1
+    L <- L %*% diag(signs)
+  } else {
+    if (sum(L) < 0) {
+      L <- -as.matrix(L)
+    } else {
+      L <- as.matrix(L)
+    }
+  }
+
+  if (!is.null(colnames(orig_R))) {
+    # name the loading matrix so the variables can be identified
+    rownames(L) <- colnames(orig_R)
+  } else {
+    varnames <- paste0("V", seq_len(ncol(orig_R)))
+    colnames(orig_R) <- varnames
+    rownames(orig_R) <- varnames
+    rownames(L) <- varnames
+  }
+
+  colnames(L) <- paste0("F", seq_len(n_factors))
+
+  vars_accounted <- .compute_vars(L_unrot = L, L_rot = L)
+  colnames(vars_accounted) <- colnames(L)
+
+  fit_ind <- .gof(L, orig_R, N, method, fit$Fm)
+
+  # calculate model implied R
+  model_implied_R <- L %*% t(L) + diag(1 - h2)
+
+  # create the output object
+  class(L) <- "LOADINGS"
+
+  # Name communalities
+  names(h2) <- colnames(orig_R)
+
+  list(
+    orig_R = orig_R,
+    h2 = h2,
+    orig_eigen = eigen(orig_R, symmetric = TRUE)$values,
+    final_eigen = eigen(fit$R_final, symmetric = TRUE)$values,
+    iter = fit$iter,
+    convergence = fit$convergence,
+    unrot_loadings = L,
+    vars_accounted = vars_accounted,
+    fit_indices = fit_ind,
+    model_implied_R = model_implied_R,
+    residuals = orig_R - model_implied_R
+  )
+}
+
+# Dispatch to the requested fitter, run the shared post-processor, and assemble
+# the method-specific output object (field set and order differ per method).
+.estimate_model <- function(R, method, n_factors, N = NA,
+                            type = "none", max_iter = NA, init_comm = NA,
+                            criterion = NA, criterion_type = NA, abs_eigen = NA,
+                            start_method = NA) {
+
+  fit <- switch(
+    method,
+    PAF = .PAF(R, n_factors = n_factors, type = type, max_iter = max_iter,
+               init_comm = init_comm, criterion = criterion,
+               criterion_type = criterion_type, abs_eigen = abs_eigen),
+    ML = .ML(R, n_factors = n_factors, start_method = start_method),
+    ULS = .ULS(R, n_factors = n_factors)
+  )
+
+  common <- .finalize_fit(fit, N = N, method = method)
+
+  if (method == "PAF") {
+
+    h2_init <- fit$h2_init
+    names(h2_init) <- colnames(common$orig_R)
+
+    output <- list(
+      orig_R = common$orig_R,
+      h2_init = h2_init,
+      h2 = common$h2,
+      orig_eigen = common$orig_eigen,
+      init_eigen = fit$init_eigen,
+      final_eigen = common$final_eigen,
+      iter = common$iter,
+      convergence = common$convergence,
+      unrot_loadings = common$unrot_loadings,
+      vars_accounted = common$vars_accounted,
+      fit_indices = common$fit_indices,
+      model_implied_R = common$model_implied_R,
+      residuals = common$residuals,
+      settings = fit$settings
+    )
+
+  } else if (method == "ML") {
+
+    output <- c(common, list(settings = fit$settings))
+
+  } else {
+
+    output <- common
+
+  }
+
+  output
+}

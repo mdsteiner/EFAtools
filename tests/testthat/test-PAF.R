@@ -1,26 +1,26 @@
-paf_efatools <- .PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
+paf_efatools <- .estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
                      max_iter = NA, type = "EFAtools", init_comm = NA,
                      criterion = NA, criterion_type = NA, abs_eigen = NA)
-paf_psych <- .PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
+paf_psych <- .estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
                      max_iter = NA, type = "psych", init_comm = NA,
                      criterion = NA, criterion_type = NA, abs_eigen = NA)
-paf_spss <- .PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
+paf_spss <- .estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
                   max_iter = NA, type = "SPSS", init_comm = NA,
                   criterion = NA, criterion_type = NA, abs_eigen = NA)
-paf_none <- .PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
+paf_none <- .estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
                  max_iter = 500, type = "none", init_comm = "unity",
                  criterion = 1e-4, criterion_type = "sum", abs_eigen = TRUE)
-paf_mac_t <- .PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
+paf_mac_t <- .estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
                  max_iter = 500, type = "none", init_comm = "mac",
                  criterion = 1e-4, criterion_type = "max_individual", abs_eigen = TRUE)
-paf_mac_f <- .PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
+paf_mac_f <- .estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
                   max_iter = 500, type = "none", init_comm = "mac",
                   criterion = 1e-4, criterion_type = "max_individual",
                   abs_eigen = FALSE)
-paf_F1_t <- .PAF(test_models$baseline$cormat, n_factors = 1, N = 500,
+paf_F1_t <- .estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 1, N = 500,
                 max_iter = 500, type = "none", init_comm = "mac",
                 criterion = 1e-4, criterion_type = "max_individual", abs_eigen = TRUE)
-paf_F1_f <- .PAF(test_models$baseline$cormat, n_factors = 1, N = 500,
+paf_F1_f <- .estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 1, N = 500,
                max_iter = 500, type = "none", init_comm = "mac",
                criterion = 1e-4, criterion_type = "max_individual", abs_eigen = FALSE)
 
@@ -229,46 +229,46 @@ test_that("settings are returned correctly", {
 
 
 test_that("warnings and errors are thrown correctly", {
-  expect_error(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
+  expect_error(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
                     max_iter = 500, type = "none", init_comm = "unity",
                     criterion = 1e-4, criterion_type = "sum"), class = "efa_type_none")
 
-  expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
+  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
                     type = "EFAtools", init_comm = "smc"), class = "efa_type_override")
-  expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
+  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
                     type = "EFAtools", criterion = 0.001), class = "efa_type_override")
-  expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
+  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
                       type = "EFAtools", criterion_type = "sum"), class = "efa_type_override")
-  expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
+  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
                       type = "EFAtools", max_iter = 400), class = "efa_type_override")
-  expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
+  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
                       type = "EFAtools", abs_eigen = TRUE), class = "efa_type_override")
 
-  expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
+  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
                       type = "psych", init_comm = "smc"), class = "efa_type_override")
-  expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
+  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
                       type = "psych", criterion = 0.001), class = "efa_type_override")
-  expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
+  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
                       type = "psych", criterion_type = "sum"), class = "efa_type_override")
-  expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
+  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
                       type = "psych", max_iter = 400), class = "efa_type_override")
-  expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
+  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
                       type = "psych", abs_eigen = TRUE), class = "efa_type_override")
 
-  expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
+  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
                       type = "SPSS", init_comm = "smc"), class = "efa_type_override")
-  expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
+  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
                       type = "SPSS", criterion = 0.001), class = "efa_type_override")
-  expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
+  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
                       type = "SPSS", criterion_type = "sum"), class = "efa_type_override")
-  expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
+  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
                       type = "SPSS", max_iter = 400), class = "efa_type_override")
-  expect_warning(.PAF(test_models$baseline$cormat, n_factors = 3, N = 500,
+  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
                       type = "SPSS", abs_eigen = TRUE), class = "efa_type_override")
-  expect_error(.PAF(IDS2_R, n_factors = 7, N = 1991, max_iter = 500, type = "none",
+  expect_error(.estimate_model(method = "PAF",IDS2_R, n_factors = 7, N = 1991, max_iter = 500, type = "none",
                     init_comm = "smc", criterion = 1e-4, criterion_type = "sum",
                     abs_eigen = FALSE), "Negative Eigenvalues detected; cannot compute communality estimates. Try again with init_comm = 'unity' or 'mac'")
-  expect_error(.PAF(IDS2_R, n_factors = 7, N = 1991, max_iter = 500, type = "none",
+  expect_error(.estimate_model(method = "PAF",IDS2_R, n_factors = 7, N = 1991, max_iter = 500, type = "none",
                     init_comm = "smc", criterion = 1e-4,
                     criterion_type = "max_individual",
                     abs_eigen = FALSE), "Negative Eigenvalues detected; cannot compute communality estimates. Try again with init_comm = 'unity' or 'mac'")

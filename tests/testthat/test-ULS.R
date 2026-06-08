@@ -1,5 +1,5 @@
-ULS_test <- .ULS(test_models$baseline$cormat, n_factors = 3, N = 500)
-ULS_test_1 <- .ULS(test_models$baseline$cormat, n_factors = 1, N = 500)
+ULS_test <- .estimate_model(method = "ULS",test_models$baseline$cormat, n_factors = 3, N = 500)
+ULS_test_1 <- .estimate_model(method = "ULS",test_models$baseline$cormat, n_factors = 1, N = 500)
 
 test_that("output class and dimensions are correct", {
   expect_s3_class(ULS_test$unrot_loadings, "LOADINGS")

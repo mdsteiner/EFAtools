@@ -1,6 +1,6 @@
-ML_test <- .ML(test_models$baseline$cormat, n_factors = 3, N = 500,
+ML_test <- .estimate_model(method = "ML",test_models$baseline$cormat, n_factors = 3, N = 500,
                start_method = "factanal")
-ML_test_2 <- .ML(test_models$baseline$cormat, n_factors = 3, N = 500,
+ML_test_2 <- .estimate_model(method = "ML",test_models$baseline$cormat, n_factors = 3, N = 500,
                start_method = "psych")
 
 test_that("output class and dimensions are correct", {

@@ -448,89 +448,46 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 
   # run factor analysis with respective fit method
 
-  if (method == "PAF") {
+  if (method %in% c("ML", "ULS")) {
 
-  fit_out <- .PAF(R, n_factors = n_factors, N = N, type = type,
-                 max_iter = max_iter, init_comm = init_comm,
-                 criterion = criterion, criterion_type = criterion_type,
-                 abs_eigen = abs_eigen)
+    if (type == "SPSS") {
 
+      cli::cli_warn(
+        c("Only {.val PAF} is validated against the SPSS implementation.",
+          "i" = "{.val {method}} results may differ from those returned by SPSS."),
+        class = "efa_spss_method_untested"
+      )
 
-  if (isTRUE(np_boot)) {
+    }
 
-    boot_fits <- .boot_fun(R_boot_array, b_boot, .PAF,
-                           # .PAF arguments:
-                           n_factors = n_factors, N = N, type = type,
-                           max_iter = max_iter, init_comm = init_comm,
-                           criterion = criterion, criterion_type = criterion_type,
-                           abs_eigen = abs_eigen)
+    if (is.na(N)) {
+
+      cli::cli_warn(
+        c("{.arg N} is {.val NA}; not all fit indices could be computed.",
+          "i" = "Provide {.arg N} or raw data to compute all fit indices."),
+        class = "efa_fit_na_n"
+      )
+
+    }
 
   }
 
-  } else if (method == "ML") {
+  fit_out <- .estimate_model(R, method = method, n_factors = n_factors, N = N,
+                             type = type, max_iter = max_iter,
+                             init_comm = init_comm, criterion = criterion,
+                             criterion_type = criterion_type,
+                             abs_eigen = abs_eigen, start_method = start_method)
 
-    if (type == "SPSS") {
+  if (isTRUE(np_boot)) {
 
-      cli::cli_warn(
-        c("Only {.val PAF} is validated against the SPSS implementation.",
-          "i" = "{.val {method}} results may differ from those returned by SPSS."),
-        class = "efa_spss_method_untested"
-      )
+    boot_fits <- .boot_fun(R_boot_array, b_boot, .estimate_model,
+                           # .estimate_model arguments:
+                           method = method, n_factors = n_factors, N = N,
+                           type = type, max_iter = max_iter,
+                           init_comm = init_comm, criterion = criterion,
+                           criterion_type = criterion_type,
+                           abs_eigen = abs_eigen, start_method = start_method)
 
-    }
-
-    if (is.na(N)) {
-
-      cli::cli_warn(
-        c("{.arg N} is {.val NA}; not all fit indices could be computed.",
-          "i" = "Provide {.arg N} or raw data to compute all fit indices."),
-        class = "efa_fit_na_n"
-      )
-
-    }
-
-    fit_out <- .ML(R, n_factors = n_factors, N = N, start_method = start_method)
-
-    if (isTRUE(np_boot)) {
-
-      boot_fits <- .boot_fun(R_boot_array, b_boot, .ML,
-                             # .ML arguments:
-                             n_factors = n_factors, N = N,
-                             start_method = start_method)
-
-    }
-
-  } else if (method == "ULS") {
-
-    if (type == "SPSS") {
-
-      cli::cli_warn(
-        c("Only {.val PAF} is validated against the SPSS implementation.",
-          "i" = "{.val {method}} results may differ from those returned by SPSS."),
-        class = "efa_spss_method_untested"
-      )
-
-    }
-
-    if (is.na(N)) {
-
-      cli::cli_warn(
-        c("{.arg N} is {.val NA}; not all fit indices could be computed.",
-          "i" = "Provide {.arg N} or raw data to compute all fit indices."),
-        class = "efa_fit_na_n"
-      )
-
-    }
-
-    fit_out <- .ULS(R, n_factors = n_factors, N = N)
-
-    if (isTRUE(np_boot)) {
-
-      boot_fits <- .boot_fun(R_boot_array, b_boot, .ULS,
-                             # .ULS arguments:
-                             n_factors = n_factors, N = N)
-
-    }
   }
 
   # rotate factor analysis results

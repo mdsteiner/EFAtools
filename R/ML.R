@@ -1,5 +1,7 @@
 ## Maximum Likelihood Estimation of Factor Loadings
-.ML <- function(x, n_factors, N = NA, start_method = c("psych", "factanal")) {
+## Thin fitter: returns the raw ML results; shared post-processing happens in
+## .finalize_fit() / .estimate_model().
+.ML <- function(x, n_factors, start_method = c("psych", "factanal")) {
 
   # Get correlation matrix entered or created in EFA
   R <- x
@@ -11,71 +13,17 @@
   h2 <- diag(L %*% t(L))
   diag(R) <- h2
 
-  # reverse the sign of loadings
-  if (n_factors > 1) {
-    signs <- sign(colSums(L))
-    signs[signs == 0] <- 1
-    L <- L %*% diag(signs)
-  } else {
-    if (sum(L) < 0) {
-      L <- -as.matrix(L)
-    } else {
-      L <- as.matrix(L)
-    }
-
-  }
-
-  if (!is.null(colnames(orig_R))) {
-    # name the loading matrix so the variables can be identified
-    rownames(L) <- colnames(orig_R)
-  } else {
-    varnames <- paste0("V", seq_len(ncol(orig_R)))
-    colnames(orig_R) <- varnames
-    rownames(orig_R) <- varnames
-    rownames(L) <- varnames
-  }
-
-  colnames(L) <- paste0("F", seq_len(n_factors))
-
-  vars_accounted <- .compute_vars(L_unrot = L, L_rot = L)
-
-  colnames(vars_accounted) <- colnames(L)
-
-  # compute fit indices
-  fit_ind <- .gof(L, orig_R, N, "ML", ml$res$value)
-
-  # calculate model implied R
-  model_implied_R <- L %*% t(L) + diag(1 - h2)
-
-  # create the output object
-  class(L) <- "LOADINGS"
-
-  # store the settings used:
-  settings <- list(
-    start_method = start_method
-  )
-
-  # Create and name communalities
-  h2 <-  diag(L %*% t(L))
-  names(h2) <- colnames(orig_R)
-
-  # Create output
-  output <- list(
-    orig_R = orig_R,
+  # raw fit, finalized by .estimate_model()
+  list(
+    L = L,
     h2 = h2,
-    orig_eigen = eigen(orig_R, symmetric = TRUE)$values,
-    final_eigen = eigen(R, symmetric = TRUE)$values,
+    Fm = ml$res$value,
     iter = ml$res$counts[1],
     convergence = ml$res$convergence,
-    unrot_loadings = L,
-    vars_accounted = vars_accounted,
-    fit_indices = fit_ind,
-    model_implied_R = model_implied_R,
-    residuals = orig_R - model_implied_R,
-    settings = settings
+    orig_R = orig_R,
+    R_final = R,
+    settings = list(start_method = start_method)
   )
-
-  output
 }
 
 # function to obtain the ML fit; adapted from the psych package
