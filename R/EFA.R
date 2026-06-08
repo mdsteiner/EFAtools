@@ -349,6 +349,20 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   checkmate::assert_integerish(b_boot, len = 1, any.missing = FALSE)
   checkmate::assert_number(ci, lower = 0, upper = 1)
 
+  # The common-factor model requires fewer factors than variables; with
+  # n_factors >= n_variables it is not identified and the eigenvalue-based
+  # extraction in the ML, ULS, and PAF fitters reads past the available
+  # eigenvalues (undefined behaviour in an unchecked build).
+  n_vars <- ncol(x)
+  if (n_factors >= n_vars) {
+    cli::cli_abort(
+      c("{.arg n_factors} must be smaller than the number of variables.",
+        "x" = "You requested {n_factors} factor{?s} for {n_vars} variable{?s}.",
+        "i" = "Extract fewer factors."),
+      class = "efa_too_many_factors"
+    )
+  }
+
   # Check if it is a correlation matrix
   if(.is_cormat(x)){
 

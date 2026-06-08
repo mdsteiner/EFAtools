@@ -350,6 +350,22 @@ test_that("errors are thrown correctly", {
   expect_warning(EFA(test_models$baseline$cormat, n_factors = 3, rotation = "quartimax", N = 500, type = "SPSS"), class = "efa_spss_rotation_untested")
 })
 
+test_that("EFA rejects n_factors >= number of variables", {
+  dat <- matrix(rnorm(30), ncol = 3)  # 3 variables
+
+  # n_factors == n_variables: out of bounds for ML, degenerate for ULS/PAF
+  expect_error(EFA(dat, n_factors = 3, method = "ML"),  class = "efa_too_many_factors")
+  expect_error(EFA(dat, n_factors = 3, method = "ULS"), class = "efa_too_many_factors")
+  expect_error(EFA(dat, n_factors = 3, method = "PAF"), class = "efa_too_many_factors")
+
+  # n_factors > n_variables
+  expect_error(EFA(dat, n_factors = 4, method = "ML"),  class = "efa_too_many_factors")
+
+  # the bootstrap path reuses n_factors and is guarded before any resampling runs
+  expect_error(EFA(dat, n_factors = 3, method = "ML", se = "np-boot"),
+               class = "efa_too_many_factors")
+})
+
 rm(efa_cor, efa_raw, efa_psych, efa_spss, efa_ml, efa_uls, efa_equa, efa_quart,
    efa_none, cormat_zero, cormat_moderate, efa_paf_zero, efa_ml_zero, efa_uls_zero,
    efa_paf_moderate, efa_ml_moderate, efa_uls_moderate, x, y, z, dat_sing, cor_sing,
