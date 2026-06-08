@@ -127,19 +127,16 @@ EFA_POOLED <- function(data_list,
   checkmate::assert_flag(rmsr_upper)
 
   if (p <= 0 || p >= 1) {
-    stop("`p` must be strictly between 0 and 1.", call. = FALSE)
+    cli::cli_abort("{.arg p} must be strictly between 0 and 1.", class = "efa_pooled_bad_p")
   }
   if (rmsea_ci_level <= 0 || rmsea_ci_level >= 1) {
-    stop("`rmsea_ci_level` must be strictly between 0 and 1.", call. = FALSE)
+    cli::cli_abort("{.arg rmsea_ci_level} must be strictly between 0 and 1.", class = "efa_pooled_bad_ci_level")
   }
   if (!is.null(efa_args$ci) && length(efa_args$ci) == 1L &&
       is.finite(efa_args$ci) &&
       abs(as.numeric(efa_args$ci) - (1 - p)) > sqrt(.Machine$double.eps)) {
-    warning(
-      "`EFA_POOLED()` uses `p`, not the component `EFA()` argument `ci`, ",
-      "to set pooled bootstrap/MI confidence intervals.",
-      call. = FALSE
-    )
+    cli::cli_warn("{.fn EFA_POOLED} uses {.arg p}, not the component {.fn EFA} argument {.arg ci}, to set pooled bootstrap/MI confidence intervals.",
+                  class = "efa_pooled_ci_ignored")
   }
 
   target_method <- match.arg(target_method)
@@ -175,7 +172,7 @@ EFA_POOLED <- function(data_list,
                              "bentlerQ", "geominQ", "bifactorQ")) {
     rotation_type <- "oblique"
   } else {
-    stop("Unknown rotation type: ", rotation, call. = FALSE)
+    cli::cli_abort("Unknown rotation type: {.val {rotation}}.", class = "efa_pooled_unknown_rotation")
   }
 
   ## -------------------------------------------------------------------------
@@ -231,11 +228,10 @@ EFA_POOLED <- function(data_list,
       }
 
       if (any(point_rotation_failures)) {
-        warning(
-          "At least one fixed-target Procrustes alignment did not converge. ",
-          "The returned pooled point estimates still use the best available ",
-          "alignment from PROCRUSTES(). Inspect `alignment$point_rotation_failures`.",
-          call. = FALSE
+        cli::cli_warn(
+          c("At least one fixed-target Procrustes alignment did not converge.",
+            "i" = "The pooled point estimates still use the best available {.fn PROCRUSTES} alignment; inspect {.code alignment$point_rotation_failures}."),
+          class = "efa_pooled_align_failed"
         )
       }
 
@@ -255,11 +251,10 @@ EFA_POOLED <- function(data_list,
       )
 
       if (!isTRUE(consensus$converged)) {
-        warning(
-          "Consensus Procrustes alignment did not meet its convergence criterion. ",
-          "Inspect `alignment$history` and consider stricter or multi-start ",
-          "`consensus_args`.",
-          call. = FALSE
+        cli::cli_warn(
+          c("Consensus Procrustes alignment did not meet its convergence criterion.",
+            "i" = "Inspect {.code alignment$history} and consider stricter or multi-start {.arg consensus_args}."),
+          class = "efa_pooled_align_failed"
         )
       }
 
@@ -362,25 +357,25 @@ EFA_POOLED <- function(data_list,
   if (length(Ns_ok) == 0L) {
     N_pool <- NA_real_
     if (!identical(method, "PAF")) {
-      warning(
-        "N could not be recovered for any imputation. ",
-        "Chi-square-based fit indices cannot be computed.",
-        call. = FALSE
+      cli::cli_warn(
+        c("N could not be recovered for any imputation.",
+          "i" = "Chi-square-based fit indices cannot be computed."),
+        class = "efa_pooled_no_n"
       )
     }
   } else {
     if (length(Ns_ok) < length(Ns)) {
-      warning(
-        "N could not be recovered for every imputation. ",
-        "Fit indices use the mean of the available Ns.",
-        call. = FALSE
+      cli::cli_warn(
+        c("N could not be recovered for every imputation.",
+          "i" = "Fit indices use the mean of the available Ns."),
+        class = "efa_pooled_partial_n"
       )
     }
     if (length(unique(Ns_ok)) > 1L) {
-      warning(
-        "The imputed datasets appear to have different N. ",
-        "Fit indices use the mean N across imputations.",
-        call. = FALSE
+      cli::cli_warn(
+        c("The imputed datasets appear to have different N.",
+          "i" = "Fit indices use the mean N across imputations."),
+        class = "efa_pooled_unequal_n"
       )
     }
     N_pool <- mean(Ns_ok)
@@ -522,19 +517,19 @@ EFA_POOLED <- function(data_list,
   # Fail early if the fitted EFA objects are not conformable. Pooling only makes
   # sense when all imputations estimate the same model on the same variables.
   if (length(fits) < 2L) {
-    stop("At least two EFA fits are required for MI pooling.", call. = FALSE)
+    cli::cli_abort("At least two EFA fits are required for MI pooling.", class = "efa_pooled_min_fits")
   }
 
   dims <- vapply(fits, function(x) {
     paste(dim(as.matrix(x$unrot_loadings)), collapse = "x")
   }, character(1))
   if (length(unique(dims)) != 1L) {
-    stop("All unrotated loading matrices must have the same dimensions.", call. = FALSE)
+    cli::cli_abort("All unrotated loading matrices must have the same dimensions.", class = "efa_pooled_dim_mismatch")
   }
 
   var_names <- lapply(fits, function(x) rownames(as.matrix(x$orig_R)))
   if (!all(vapply(var_names[-1], identical, logical(1), var_names[[1]]))) {
-    stop("All imputations must contain the same variables in the same order.", call. = FALSE)
+    cli::cli_abort("All imputations must contain the same variables in the same order.", class = "efa_pooled_var_mismatch")
   }
 
   setting_value <- function(x, name) {
@@ -546,7 +541,7 @@ EFA_POOLED <- function(data_list,
     vals <- vapply(fits, setting_value, character(1), name = nm)
     vals <- vals[!is.na(vals)]
     if (length(unique(vals)) > 1L) {
-      stop("All imputations must use the same ", nm, ".", call. = FALSE)
+      cli::cli_abort("All imputations must use the same {.arg {nm}}.", class = "efa_pooled_setting_mismatch")
     }
   }
 
@@ -710,8 +705,8 @@ EFA_POOLED <- function(data_list,
     }, numeric(1))
     finite_dfs <- unique(stats::na.omit(dfs))
     if (length(finite_dfs) > 1L) {
-      stop("Cannot D2-pool chi-square fit because the imputation-specific dfs differ.",
-           call. = FALSE)
+      cli::cli_abort("Cannot D2-pool chi-square fit because the imputation-specific dfs differ.",
+                     class = "efa_pooled_chisq_df")
     }
     if (length(finite_dfs) == 1L) {
       df <- finite_dfs[[1L]]
@@ -1154,10 +1149,8 @@ EFA_POOLED <- function(data_list,
   has_boot <- .efa_pooled_has_boot_arrays(fits)
   if (!all(has_boot)) {
     if (any(has_boot)) {
-      warning(
-        "Bootstrap arrays were found for only some imputations. Pooled bootstrap SEs/CIs were not computed.",
-        call. = FALSE
-      )
+      cli::cli_warn("Bootstrap arrays were found for only some imputations; pooled bootstrap SEs/CIs were not computed.",
+                    class = "efa_pooled_partial_boot")
     }
     return(NULL)
   }
@@ -1170,19 +1163,15 @@ EFA_POOLED <- function(data_list,
   B_vec <- vapply(fits, function(x) dim(x$boot.arrays$unrot_loadings)[3], integer(1))
   if (length(unique(B_vec)) > 1L) {
     B_use <- min(B_vec)
-    warning(
-      "The number of bootstrap replicates differs across imputations. Using the minimum number available in all imputations.",
-      call. = FALSE
-    )
+    cli::cli_warn("The number of bootstrap replicates differs across imputations; using the minimum number available in all imputations.",
+                  class = "efa_pooled_unequal_boot")
   } else {
     B_use <- B_vec[[1]]
   }
 
   if (!is.finite(B_use) || B_use < 2L) {
-    warning(
-      "At least two bootstrap replicates per imputation are required for pooled bootstrap SEs/CIs.",
-      call. = FALSE
-    )
+    cli::cli_warn("At least two bootstrap replicates per imputation are required for pooled bootstrap SEs/CIs.",
+                  class = "efa_pooled_min_boot")
     return(NULL)
   }
 
@@ -1307,11 +1296,8 @@ EFA_POOLED <- function(data_list,
   }
 
   if (any(nonconv_procrustes > 0L)) {
-    warning(
-      "Some bootstrap Procrustes rotations did not converge. ",
-      "Pooled bootstrap SEs/CIs are based on the valid aligned replicates.",
-      call. = FALSE
-    )
+    cli::cli_warn("Some bootstrap Procrustes rotations did not converge; pooled bootstrap SEs/CIs are based on the valid aligned replicates.",
+                  class = "efa_pooled_boot_nonconv")
   }
 
   pool_unrot <- .efa_pooled_rubin_pool(q_unrot, boot_unrot, alpha = alpha)

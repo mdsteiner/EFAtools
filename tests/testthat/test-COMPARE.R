@@ -232,28 +232,24 @@ test_that("COMPARE returns the correct values", {
 
 
 test_that("errors etc. are thrown correctly", {
-  expect_error(COMPARE(c(1, 2), 1), " 'x' and 'y' have different lengths Compare only works with identical dimensions.\n")
-  expect_error(COMPARE(c(1, 2), c("1", "2")), " 'x' is of class numeric and 'y' is of class character but must be numeric vectors or matrices\n")
-  expect_error(COMPARE(c(1, 2), data.frame(x = "1", y = "2")),
-               " 'x' is of class numeric and 'y' is of class data.frame but must be numeric vectors or matrices\n")
+  expect_error(COMPARE(c(1, 2), 1), class = "efa_compare_dim_mismatch")
+  expect_error(COMPARE(c(1, 2), c("1", "2")), class = "efa_compare_bad_input")
+  expect_error(COMPARE(c(1, 2), data.frame(x = "1", y = "2")), class = "efa_compare_bad_input")
 
   expect_error(COMPARE(matrix(c(0, 0, 0, 1), ncol = 2),
-                       matrix(c(0, 0, 0, 1), ncol = 1)), " 'x' and 'y' have different dimensions. Can only compare matrices with identical dimensions.\n")
+                       matrix(c(0, 0, 0, 1), ncol = 1)), class = "efa_compare_dim_mismatch")
 
-  expect_warning(COMPARE(vec_s, vec_s), " reorder was set to 'congruence', but this only works for matrices. To reorder vectors, set reorder = 'names'. Proceeding without reordering.\n")
-  expect_warning(COMPARE(vec_s, vec_L, reorder = "names"),
-                 " reorder = 'names' was used but names of x and y were not identical. Results might be inaccurate.\n")
-  expect_warning(COMPARE(vec_s, 1:3, reorder = "names"), " reorder was set to 'names' but at least one of 'x' and 'y' was not named. Proceeding without reordering.\n")
-  expect_warning(COMPARE(1:3, 1:3, reorder = "names"), " reorder was set to 'names' but at least one of 'x' and 'y' was not named. Proceeding without reordering.\n")
+  expect_warning(COMPARE(vec_s, vec_s), class = "efa_compare_reorder_vectors")
+  expect_warning(COMPARE(vec_s, vec_L, reorder = "names"), class = "efa_compare_reorder_mismatch")
+  expect_warning(COMPARE(vec_s, 1:3, reorder = "names"), class = "efa_compare_reorder_unnamed")
+  expect_warning(COMPARE(1:3, 1:3, reorder = "names"), class = "efa_compare_reorder_unnamed")
 
   expect_warning(COMPARE(matrix(c(0, 0, 0, 1), ncol = 2),
                          matrix(c(0, 0, 0, 1), ncol = 2),
-                         reorder = "names"), " reorder was set to 'names' but at least one of 'x' and 'y' was not named. Proceeding without reordering.\n")
-  expect_warning(COMPARE(mat_s, mat_L, reorder = "names"),
-                 " reorder = 'names' was used but colnames of x and y were not identical. Results might be inaccurate.\n")
+                         reorder = "names"), class = "efa_compare_reorder_unnamed")
+  expect_warning(COMPARE(mat_s, mat_L, reorder = "names"), class = "efa_compare_reorder_mismatch")
 
-  expect_error(COMPARE(mat_s, mat_s),
-               " Tucker's congruence coefficients contained NAs, cannot reorder columns based on congruence. Try another reordering method.\n")
+  expect_error(COMPARE(mat_s, mat_s), class = "efa_compare_congruence_na")
 
 })
 

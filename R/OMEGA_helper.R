@@ -43,7 +43,11 @@
       if(is.null(cormat)){
 
         if(is.null(Phi) | is.null(pattern)) {
-          stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Either specify the cormat argument or the Phi and pattern arguments, or set variance to 'sums_load'\n"))
+          cli::cli_abort(
+            c("Specify either {.arg cormat}, or {.arg Phi} and {.arg pattern}.",
+              "i" = "Alternatively, set {.code variance = \"sums_load\"}."),
+            class = "efa_omega_need_cormat"
+          )
 
         } else {
 
@@ -58,7 +62,11 @@
         # Check if it is a correlation matrix
         if(!.is_cormat(cormat)) {
 
-          stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' was not a correlation matrix. Check the cormat input, specify the Phi and pattern arguments instead, or set variance to 'sums_load'\n"))
+          cli::cli_abort(
+            c("{.arg cormat} is not a correlation matrix.",
+              "i" = "Check the {.arg cormat} input, supply {.arg Phi} and {.arg pattern} instead, or set {.code variance = \"sums_load\"}."),
+            class = "efa_omega_not_cormat"
+          )
 
         }
 
@@ -77,7 +85,8 @@
 
   if(type == "EFAtools" & is.null(factor_corres)){
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Either specify the factor_corres argument or set type = 'psych' to find variable-to-factor correspondences using the highest group factor loading per variable.\n"))
+    cli::cli_abort("Specify {.arg factor_corres}, or set {.code type = \"psych\"} to derive variable-to-factor correspondences from the highest group-factor loading per variable.",
+                   class = "efa_omega_need_corres")
 
   }
 
@@ -85,7 +94,11 @@
 
     if(variance != "correlation"){
 
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Variance is specified. Variance is used with value '", variance, "'. Results may differ from the specified type\n"))
+      cli::cli_warn(
+        c("{.arg variance} is specified; the value {.val {variance}} is used.",
+          "i" = "Results may differ from the specified {.arg type}."),
+        class = "efa_omega_variance_override"
+      )
       }
 
     if(is.null(factor_corres)){
@@ -102,7 +115,11 @@
 
     } else {
 
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Argument factor_corres is specified. Specified variable-to-factor correspondences are taken. To compute factor correspondences as done in psych, leave factor_corres = NULL.\n"))
+      cli::cli_warn(
+        c("{.arg factor_corres} is specified; the supplied variable-to-factor correspondences are used.",
+          "i" = "To compute correspondences as in psych, leave {.code factor_corres = NULL}."),
+        class = "efa_omega_corres_override"
+      )
     }
   }
 
@@ -244,7 +261,8 @@
   higherorder <- FALSE
 
   if(lavaan::lavInspect(model, what = "converged") == FALSE){
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Model did not converge. No omegas are computed.\n"))
+    cli::cli_abort("The model did not converge; no omegas are computed.",
+                   class = "efa_omega_no_converge")
   }
 
   std_sol <- suppressWarnings(lavaan::lavInspect(model, what = "std",
@@ -264,11 +282,13 @@
     for(i in seq_along(std_sol)){
 
     if(any(is.na(std_sol[[i]][["lambda"]]))){
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Some loadings are NA or NaN. No omegas are computed.\n"))
+      cli::cli_abort("Some loadings are {.val NA} or {.val NaN}; no omegas are computed.",
+                     class = "efa_omega_na_loadings")
     }
 
     if(any(diag(std_sol[[i]][["theta"]]) <= 0) || any(diag(std_sol[[i]][["psi"]]) <= 0)){
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" A Heywood case was detected (variance equal to 0 or negative). No omegas are computed.\n"))
+      cli::cli_abort("A Heywood case was detected (a variance of 0 or negative); no omegas are computed.",
+                     class = "efa_omega_heywood")
     }
 
     if(ncol(std_sol[[i]][["lambda"]]) == 1){
@@ -284,7 +304,10 @@
 
         if(i == 1){
 
-        message(cli::col_cyan(cli::symbol$info, " Model contained a single factor. Only omega total and H index are returned.\n"))
+        cli::cli_inform(
+          c("i" = "The model contained a single factor; only omega total and the H index are returned."),
+          class = "efa_omega_single_factor"
+        )
 
       }
 
@@ -299,7 +322,10 @@
 
         if(i == 1){
 
-          message(cli::col_cyan(cli::symbol$info, " Model contained a single factor. Only omega total is returned.\n"))
+          cli::cli_inform(
+            c("i" = "The model contained a single factor; only omega total is returned."),
+            class = "efa_omega_single_factor"
+          )
 
         }
 
@@ -314,7 +340,11 @@
       col_names <- colnames(std_sol[[1]][["lambda"]])
 
       if(!any(col_names %in% g_name)){
-        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Could not find the specified name of the general factor in the entered lavaan solution. Please check the spelling.\n"))
+        cli::cli_abort(
+          c("Could not find the specified general-factor name in the lavaan solution.",
+            "i" = "Please check the spelling."),
+          class = "efa_omega_g_name"
+        )
       }
 
       if(i == 1){
@@ -324,10 +354,14 @@
           higherorder <- TRUE
 
           if(sum(colSums(std_sol[[1]][["beta"]]) > 0) > 1){
-            stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Your higher-order model had either more than two latent strata or more than 1 second-order factor. This function only works for second-order models with 1 second-order factor.\n"))
+            cli::cli_abort("The higher-order model has more than two latent strata or more than one second-order factor; only second-order models with one second-order factor are supported.",
+                           class = "efa_omega_higher_order")
           }
 
-          message(cli::col_cyan(cli::symbol$info, " The general factor you specified is a second-order factor. Omegas are found on the Schmid-Leiman transformed second-order solution.\n"))
+          cli::cli_inform(
+            c("i" = "The specified general factor is a second-order factor; omegas are computed on the Schmid-Leiman transformed second-order solution."),
+            class = "efa_omega_g_second_order"
+          )
 
         } else {
 
@@ -336,13 +370,20 @@
 
       if(all(rowSums(bi_check) < 2)){
 
-        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Your lavaan input is invalid, no omegas are computed. Either provide a bifactor model, a second-order model, or a model with a single factor.\n"))
+        cli::cli_abort(
+          c("The lavaan input is invalid; no omegas are computed.",
+            "i" = "Provide a bifactor model, a second-order model, or a single-factor model."),
+          class = "efa_omega_invalid_lavaan"
+        )
 
       }
 
       if(!all(rowSums(bi_check) > 1)){
 
-        message(cli::col_cyan(cli::symbol$info, " Some variables have less than two loadings. Did you really enter a bifactor model? Either provide a bifactor model, a second-order model, or a model with a single factor.\n"))
+        cli::cli_inform(
+          c("i" = "Some variables have fewer than two loadings; did you enter a bifactor model? Provide a bifactor model, a second-order model, or a single-factor model."),
+          class = "efa_omega_few_loadings"
+        )
 
       }
 

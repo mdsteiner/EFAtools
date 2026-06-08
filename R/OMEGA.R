@@ -309,14 +309,22 @@ OMEGA <- function(model = NULL, type = c("EFAtools", "psych"), g_name = "g",
   checkmate::assert_numeric(g_load, null.ok = TRUE)
   if(!is.null(s_load) && !inherits(s_load, c("matrix", "SLLOADINGS"))){
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Specification of 's_load' was invalid. Please either leave this 'NULL' if you enter a model input or specify a matrix of loadings from a Schmid-Leiman solution of class matrix or SLLOADINGS.\n"))
+    cli::cli_abort(
+      c("Invalid {.arg s_load}.",
+        "i" = "Leave it {.code NULL} for a model input, or supply a Schmid-Leiman loading matrix of class {.cls matrix} or {.cls SLLOADINGS}."),
+      class = "efa_omega_bad_s_load"
+    )
 
   }
   checkmate::assert_numeric(u2, null.ok = TRUE)
   checkmate::assert_matrix(cormat, null.ok = TRUE)
   if(!is.null(pattern) && !inherits(pattern, c("matrix", "loadings", "LOADINGS"))){
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Specification of 'pattern' was invalid. Please either leave this NULL or specify a matrix of pattern coefficients form an oblique factor solution of class matrix, loadings, or LOADINGS.\n"))
+    cli::cli_abort(
+      c("Invalid {.arg pattern}.",
+        "i" = "Leave it {.code NULL}, or supply a pattern matrix from an oblique solution of class {.cls matrix}, {.cls loadings}, or {.cls LOADINGS}."),
+      class = "efa_omega_bad_pattern"
+    )
 
   }
   checkmate::assert_matrix(Phi, null.ok = TRUE)
@@ -326,7 +334,11 @@ OMEGA <- function(model = NULL, type = c("EFAtools", "psych"), g_name = "g",
   if(!is.null(model) & (!is.null(var_names) || !is.null(g_load) || !is.null(s_load)
      || !is.null(u2))){
 
-    warning(crayon::yellow$bold("!"), crayon::yellow(" You entered a model and specified at least one of the arguments 'var_names', 'g_load', 's_load', or 'u2'. These arguments are ignored. To use specific values for these, leave model = NULL and specify all arguments separately.\n"))
+    cli::cli_warn(
+      c("You entered a {.arg model} and also specified {.arg var_names}, {.arg g_load}, {.arg s_load}, or {.arg u2}; these are ignored.",
+        "i" = "To use specific values, leave {.code model = NULL} and specify all arguments separately."),
+      class = "efa_omega_model_args_ignored"
+    )
 
   }
 
@@ -345,11 +357,16 @@ OMEGA <- function(model = NULL, type = c("EFAtools", "psych"), g_name = "g",
 
       if(!is.null(model)){
 
-        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Invalid input for model. Either enter a lavaan, psych::schmid or SL object or specify the arguments 'var_names', 'g_load', and 's_load'.\n"))
+        cli::cli_abort(
+          c("Invalid {.arg model}.",
+            "i" = "Enter a lavaan, {.fn psych::schmid}, or SL object, or specify {.arg var_names}, {.arg g_load}, and {.arg s_load}."),
+          class = "efa_omega_invalid_model"
+        )
 
       } else if(is.null(var_names) || is.null(g_load) || is.null(s_load) || is.null(u2)){
 
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Please specify all of the following arguments: 'var_names', 'g_load', 's_load', 'u2'\n"))
+      cli::cli_abort("Specify all of {.arg var_names}, {.arg g_load}, {.arg s_load}, and {.arg u2}.",
+                     class = "efa_omega_missing_args")
 
         } else {
 

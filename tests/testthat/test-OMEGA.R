@@ -43,22 +43,22 @@ test_that("errors are thrown correctly", {
   expect_error(OMEGA(model = NULL, type = "EFAtools", var_names = rownames(sl_mod$sl),
                      g_load = sl_mod$sl[, "g"], s_load = 1:7,
                      u2 = sl_mod$sl[, "u2"], cormat = test_models$baseline$cormat,
-                     factor_corres = sl_mod$sl[, c("F1", "F2", "F3")] >= .2), " Specification of 's_load' was invalid. Please either leave this 'NULL' if you enter a model input or specify a matrix of loadings from a Schmid-Leiman solution of class matrix or SLLOADINGS.\n")
+                     factor_corres = sl_mod$sl[, c("F1", "F2", "F3")] >= .2), class = "efa_omega_bad_s_load")
   expect_error(OMEGA(model = NULL, type = "EFAtools", var_names = rownames(sl_mod$sl),
                      g_load = sl_mod$sl[, "g"],
                      s_load = sl_mod$sl[, c("F1", "F2", "F3")],
                      u2 = sl_mod$sl[, "u2"],
                      factor_corres = sl_mod$sl[, c("F1", "F2", "F3")] >= .2,
-                     pattern = 1:5), " Specification of 'pattern' was invalid. Please either leave this NULL or specify a matrix of pattern coefficients form an oblique factor solution of class matrix, loadings, or LOADINGS.\n")
+                     pattern = 1:5), class = "efa_omega_bad_pattern")
   expect_warning(OMEGA(sl_mod, type = "EFAtools", g_load = sl_mod$sl[, "g"],
                        s_load = sl_mod$sl[, c("F1", "F2", "F3")],
                        u2 = sl_mod$sl[, "u2"],
-                       factor_corres = sl_mod$sl[, c("F1", "F2", "F3")] >= .2), " You entered a model and specified at least one of the arguments 'var_names', 'g_load', 's_load', or 'u2'. These arguments are ignored. To use specific values for these, leave model = NULL and specify all arguments separately.\n")
-  expect_error(OMEGA(model = 1:4), " Invalid input for model. Either enter a lavaan, psych::schmid or SL object or specify the arguments 'var_names', 'g_load', and 's_load'.\n")
+                       factor_corres = sl_mod$sl[, c("F1", "F2", "F3")] >= .2), class = "efa_omega_model_args_ignored")
+  expect_error(OMEGA(model = 1:4), class = "efa_omega_invalid_model")
   expect_error(OMEGA(model = NULL, type = "EFAtools", var_names = rownames(sl_mod$sl),
                      s_load = sl_mod$sl[, c("F1", "F2", "F3")],
                      u2 = sl_mod$sl[, "u2"],
-                     factor_corres = sl_mod$sl[, c("F1", "F2", "F3")] >= .2), " Please specify all of the following arguments: 'var_names', 'g_load', 's_load', 'u2'\n")
+                     factor_corres = sl_mod$sl[, c("F1", "F2", "F3")] >= .2), class = "efa_omega_missing_args")
 })
 
 rm(lav_mod, lav_fit, om_lav, efa_mod, sl_mod, om_sl, schmid_mod, om_schmid, om_man)

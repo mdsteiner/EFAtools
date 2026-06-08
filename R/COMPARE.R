@@ -116,8 +116,8 @@ COMPARE <- function(x,
     # check if dimensions match:
     if (any(dim(x) != dim(y))) {
 
-      stop(crayon::red$bold(cli::symbol$circle_cross),
-           crayon::red(" 'x' and 'y' have different dimensions. Can only compare matrices with identical dimensions.\n"))
+      cli::cli_abort("{.arg x} and {.arg y} have different dimensions; COMPARE only works with identical dimensions.",
+                     class = "efa_compare_dim_mismatch")
 
     }
 
@@ -126,16 +126,15 @@ COMPARE <- function(x,
 
     if (length(x) != length(y)) {
 
-      stop(crayon::red$bold(cli::symbol$circle_cross),
-           crayon::red(" 'x' and 'y' have different lengths Compare only works with identical dimensions.\n"))
+      cli::cli_abort("{.arg x} and {.arg y} have different lengths; COMPARE only works with identical dimensions.",
+                     class = "efa_compare_dim_mismatch")
 
     }
 
   } else {
 
-    stop(crayon::red$bold(cli::symbol$circle_cross),
-         crayon::red(" 'x' is of class", class(x), "and 'y' is of class",
-                     class(y), "but must be numeric vectors or matrices\n"))
+    cli::cli_abort("{.arg x} ({.cls {class(x)}}) and {.arg y} ({.cls {class(y)}}) must be numeric vectors or matrices.",
+                   class = "efa_compare_bad_input")
 
   }
 
@@ -148,8 +147,11 @@ COMPARE <- function(x,
       congruence <- .factor_congruence(x, y)
 
       if (any(is.na(congruence))) {
-        stop(crayon::red$bold(cli::symbol$circle_cross),
-             crayon::red(" Tucker's congruence coefficients contained NAs, cannot reorder columns based on congruence. Try another reordering method.\n"))
+        cli::cli_abort(
+          c("Tucker's congruence coefficients contained {.val NA}s; cannot reorder columns by congruence.",
+            "i" = "Try another reordering method."),
+          class = "efa_compare_congruence_na"
+        )
       }
 
       # factor order for y
@@ -176,10 +178,12 @@ COMPARE <- function(x,
         y <- y[, order(colnames(y))]
 
         if(!all(colnames(x) == colnames(y))) {
-          warning(crayon::yellow$bold("!"), crayon::yellow(" reorder = 'names' was used but colnames of x and y were not identical. Results might be inaccurate.\n"))
+          cli::cli_warn("{.code reorder = \"names\"} was used but the colnames of {.arg x} and {.arg y} differ; results might be inaccurate.",
+                        class = "efa_compare_reorder_mismatch")
         }
       } else if (is.null(colnames(x)) || is.null(colnames(y))) {
-        warning(crayon::yellow$bold("!"), crayon::yellow(" reorder was set to 'names' but at least one of 'x' and 'y' was not named. Proceeding without reordering.\n"))
+        cli::cli_warn("{.arg reorder} was {.val names} but at least one of {.arg x} and {.arg y} is unnamed; proceeding without reordering.",
+                      class = "efa_compare_reorder_unnamed")
       }
 
     }
@@ -199,7 +203,11 @@ COMPARE <- function(x,
 
     if (reorder == "congruence" && !is.null(names(x)) && !is.null(names(y))){
 
-      warning(crayon::yellow$bold("!"), crayon::yellow(" reorder was set to 'congruence', but this only works for matrices. To reorder vectors, set reorder = 'names'. Proceeding without reordering.\n"))
+      cli::cli_warn(
+        c("{.arg reorder} was {.val congruence}, which only works for matrices; proceeding without reordering.",
+          "i" = "To reorder vectors, set {.code reorder = \"names\"}."),
+        class = "efa_compare_reorder_vectors"
+      )
 
     } else if (reorder == "names") {
 
@@ -209,13 +217,15 @@ COMPARE <- function(x,
         y <- y[order(names(y))]
 
         if (!all(names(x) == names(y))) {
-          warning(crayon::yellow$bold("!"), crayon::yellow(" reorder = 'names' was used but names of x and y were not identical. Results might be inaccurate.\n"))
+          cli::cli_warn("{.code reorder = \"names\"} was used but the names of {.arg x} and {.arg y} differ; results might be inaccurate.",
+                        class = "efa_compare_reorder_mismatch")
         }
 
 
 
       } else if (is.null(names(x)) || is.null(names(y))) {
-        warning(crayon::yellow$bold("!"), crayon::yellow(" reorder was set to 'names' but at least one of 'x' and 'y' was not named. Proceeding without reordering.\n"))
+        cli::cli_warn("{.arg reorder} was {.val names} but at least one of {.arg x} and {.arg y} is unnamed; proceeding without reordering.",
+                      class = "efa_compare_reorder_unnamed")
       }
 
       }

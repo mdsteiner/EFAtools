@@ -52,11 +52,11 @@ test_that("settings are returned correctly", {
 
 
 test_that("warnings and errors are thrown correctly", {
-  expect_error(FACTOR_SCORES(1:5), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n")
-  expect_error(FACTOR_SCORES(DOSPERT_raw, f = 1:5), " 'f' is neither an object of class EFA nor a matrix, nor of class LOADINGS.\n")
-  expect_message(FACTOR_SCORES(test_models$baseline$cormat, f = EFA_cor), " 'x' is a correlation matrix, factor scores cannot be computed. Enter raw data to get factor scores.\n")
+  expect_error(FACTOR_SCORES(1:5), class = "efa_input_not_matrix")
+  expect_error(FACTOR_SCORES(DOSPERT_raw, f = 1:5), class = "efa_scores_bad_f")
+  expect_message(FACTOR_SCORES(test_models$baseline$cormat, f = EFA_cor), class = "efa_scores_needs_raw")
   expect_message(FACTOR_SCORES(test_models$baseline$cormat,
-                               f = unclass(EFA_unrot$unrot_loadings)), " Phi argument was left NULL and factor loadings were entered directly in f. Assuming uncorrelated factors.\n")
+                               f = unclass(EFA_unrot$unrot_loadings)), class = "efa_scores_phi_null")
 
 })
 

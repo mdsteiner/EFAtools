@@ -69,14 +69,21 @@ FACTOR_SCORES <- function(x, f, Phi = NULL, rho = NULL,
 
   if(!inherits(x, c("matrix", "data.frame"))){
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n"))
+    cli::cli_abort(
+      c("{.arg x} must be a correlation matrix or a data frame/matrix of raw data.",
+        "x" = "You supplied {.obj_type_friendly {x}}."),
+      class = "efa_input_not_matrix"
+    )
 
   }
 
   # Check if it is a correlation matrix
   if(.is_cormat(x)){
 
-    message(cli::col_cyan(cli::symbol$info, " 'x' is a correlation matrix, factor scores cannot be computed. Enter raw data to get factor scores.\n"))
+    cli::cli_inform(
+      c("i" = "{.arg x} is a correlation matrix; factor scores cannot be computed. Enter raw data to get factor scores."),
+      class = "efa_scores_needs_raw"
+    )
 
   }
 
@@ -86,7 +93,8 @@ checkmate::assert_matrix(Phi, null.ok = TRUE)
 
 if(!inherits(f, c("EFA", "matrix", "LOADINGS"))){
 
-  stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'f' is neither an object of class EFA nor a matrix, nor of class LOADINGS.\n"))
+  cli::cli_abort("{.arg f} must be an {.cls EFA} object, a matrix, or a {.cls LOADINGS} object.",
+                 class = "efa_scores_bad_f")
 
 }
 
@@ -106,7 +114,10 @@ if(inherits(f, c("EFA"))){
 
   if(is.null(Phi)){
 
-    message(cli::col_cyan(cli::symbol$info, " Phi argument was left NULL and factor loadings were entered directly in f. Assuming uncorrelated factors.\n"))
+    cli::cli_inform(
+      c("i" = "{.arg Phi} was left {.code NULL} and loadings were entered directly in {.arg f}; assuming uncorrelated factors."),
+      class = "efa_scores_phi_null"
+    )
 
   }
 

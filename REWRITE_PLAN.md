@@ -254,7 +254,7 @@ fine); Phase 8–9 → **1.0.0**.
       `.resolve_settings(type, user, preset)` emitting a single consolidated `cli_warn`.
       Replace the ~25 copy-pasted "type and X specified" blocks in
       `PAF/PROMAX/VARIMAX/ROTATE_OBLQ/ROTATE_ORTH`.
-- [ ] Move messages, warnings, and errors from current base versions to `cli_inform`,
+- [x] Move messages, warnings, and errors from current base versions to `cli_inform`,
       `cli_warn` and `cli_abort`. Strip all crayon aspects and use `cli` conform
       messaging.
 - [ ] `estimate_model()` + shared `.finalize_fit()` (sign/naming/vars/gof/residuals);

@@ -130,14 +130,14 @@ lav_fit_ho_2 <- suppressWarnings(lavaan::cfa(lav_mod_ho_2,
                                            sample.nobs = 500, estimator = "ml"))
 
 test_that("errors are thrown correctly", {
-  expect_error(.OMEGA_LAVAAN(lav_fit_NA, g_name = "g"), " Some loadings are NA or NaN. No omegas are computed.\n")
-  expect_error(.OMEGA_LAVAAN(lav_fit_1, g_name = "fu"), " Could not find the specified name of the general factor in the entered lavaan solution. Please check the spelling.\n")
-  expect_message(.OMEGA_LAVAAN(lav_fit_2, add_ind = FALSE), " Model contained a single factor. Only omega total is returned.\n")
-  expect_message(.OMEGA_LAVAAN(lav_fit_2), " Model contained a single factor. Only omega total and H index are returned.\n")
-  expect_message(.OMEGA_LAVAAN(lav_fit_ho_1, g_name = "g"), " The general factor you specified is a second-order factor. Omegas are found on the Schmid-Leiman transformed second-order solution.\n")
-  expect_error(.OMEGA_LAVAAN(lav_fit_inv, g_name = "F3"), " Your lavaan input is invalid, no omegas are computed. Either provide a bifactor model, a second-order model, or a model with a single factor.\n")
-  expect_message(.OMEGA_LAVAAN(lav_fit_bi_red, g_name = "g"), " Some variables have less than two loadings. Did you really enter a bifactor model? Either provide a bifactor model, a second-order model, or a model with a single factor.\n", fixed = TRUE)
-  expect_error(.OMEGA_LAVAAN(lav_fit_ho_2, g_name = "g"), " Your higher-order model had either more than two latent strata or more than 1 second-order factor. This function only works for second-order models with 1 second-order factor.\n")
+  expect_error(.OMEGA_LAVAAN(lav_fit_NA, g_name = "g"), class = "efa_omega_na_loadings")
+  expect_error(.OMEGA_LAVAAN(lav_fit_1, g_name = "fu"), class = "efa_omega_g_name")
+  expect_message(.OMEGA_LAVAAN(lav_fit_2, add_ind = FALSE), class = "efa_omega_single_factor")
+  expect_message(.OMEGA_LAVAAN(lav_fit_2), class = "efa_omega_single_factor")
+  expect_message(.OMEGA_LAVAAN(lav_fit_ho_1, g_name = "g"), class = "efa_omega_g_second_order")
+  expect_error(.OMEGA_LAVAAN(lav_fit_inv, g_name = "F3"), class = "efa_omega_invalid_lavaan")
+  expect_message(.OMEGA_LAVAAN(lav_fit_bi_red, g_name = "g"), class = "efa_omega_few_loadings")
+  expect_error(.OMEGA_LAVAAN(lav_fit_ho_2, g_name = "g"), class = "efa_omega_higher_order")
 })
 
 
@@ -265,28 +265,28 @@ test_that("output is correct", {
 test_that("errors are thrown correctly", {
   expect_error(.OMEGA_FLEX(schmid_mod, type = "psych",
                            cormat = matrix(rnorm(50), ncol = 5),
-                           variance = "correlation"), " 'x' was not a correlation matrix. Check the cormat input, specify the Phi and pattern arguments instead, or set variance to 'sums_load'\n")
+                           variance = "correlation"), class = "efa_omega_not_cormat")
   expect_error(.OMEGA_FLEX(model = NULL, type = "EFAtools",
                            var_names = rownames(sl_mod$sl),
                            g_load = sl_mod$sl[, "g"],
                            s_load = sl_mod$sl[, c("F1", "F2", "F3")],
                            u2 = sl_mod$sl[, "u2"],
                            factor_corres = sl_mod$sl[, c("F1", "F2", "F3")] >= .2,
-                           variance = "correlation"), " Either specify the cormat argument or the Phi and pattern arguments, or set variance to 'sums_load'\n")
+                           variance = "correlation"), class = "efa_omega_need_cormat")
   expect_error(.OMEGA_FLEX(model = NULL, type = "EFAtools",
                            var_names = rownames(sl_mod$sl),
                            g_load = sl_mod$sl[, "g"],
                            s_load = sl_mod$sl[, c("F1", "F2", "F3")],
                            u2 = sl_mod$sl[, "u2"], cormat = matrix(rnorm(50), ncol = 5),
                            factor_corres = sl_mod$sl[, c("F1", "F2", "F3")] >= .2,
-                           variance = "correlation"), " 'x' was not a correlation matrix. Check the cormat input, specify the Phi and pattern arguments instead, or set variance to 'sums_load'\n")
+                           variance = "correlation"), class = "efa_omega_not_cormat")
   expect_error(.OMEGA_FLEX(schmid_mod, type = "EFAtools",
-                           variance = "correlation"), " Either specify the factor_corres argument or set type = 'psych' to find variable-to-factor correspondences using the highest group factor loading per variable.\n")
+                           variance = "correlation"), class = "efa_omega_need_corres")
   expect_warning(.OMEGA_FLEX(schmid_mod, type = "psych",
-                             variance = "sums_load"), " Variance is specified. Variance is used with value ' sums_load '. Results may differ from the specified type\n")
+                             variance = "sums_load"), class = "efa_omega_variance_override")
   expect_warning(.OMEGA_FLEX(schmid_mod, type = "psych",
                              factor_corres = sl_mod$sl[, c("F1", "F2", "F3")] >= .2,
-                             variance = "correlation"), " Argument factor_corres is specified. Specified variable-to-factor correspondences are taken. To compute factor correspondences as done in psych, leave factor_corres = NULL.\n")
+                             variance = "correlation"), class = "efa_omega_corres_override")
 })
 
 rm(lav_mod_1, lav_fit_1, om_lav_bi_add, om_lav_bi_noadd, lav_mod_2, lav_fit_2,

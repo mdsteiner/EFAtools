@@ -469,28 +469,28 @@ cor_sing <- stats::cor(dat_sing)
 cor_nposdef <- matrix(c(1, 1, 0, 1, 1, 1, 0, 1, 1), ncol = 3)
 
 test_that("errors are thrown correctly", {
-  expect_error(EFA_AVERAGE(1:5, show_progress = FALSE), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n")
+  expect_error(EFA_AVERAGE(1:5, show_progress = FALSE), class = "efa_input_not_matrix")
   expect_message(EFA_AVERAGE(GRiPS_raw, n_factors = 2, method = "PAF", type = c("EFAtools", "psych"), show_progress = FALSE),
-                 " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n")
+                 class = "efa_cor_from_data")
   expect_warning(EFA_AVERAGE(GRiPS_raw, n_factors = 2, method = "PAF", type = c("EFAtools", "psych"),
                              N = 20, show_progress = FALSE),
-                 " 'N' was set and data entered. Taking N from data.\n")
+                 class = "efa_n_from_data")
   expect_error(EFA_AVERAGE(dat_sing, n_factors = 1, show_progress = FALSE),
-               " Correlation matrix is singular, no further analyses are performed\n")
+               class = "efa_cor_singular")
   expect_error(EFA_AVERAGE(cor_sing, N = 10, n_factors = 1, show_progress = FALSE),
-               " Correlation matrix is singular, no further analyses are performed\n")
+               class = "efa_cor_singular")
   expect_error(EFA_AVERAGE(matrix(rnorm(30), ncol = 3), n_factors = 2, show_progress = FALSE),
-               " The model is underidentified. Please enter a lower number of factors or use a larger number of indicators and try again.\n")
+               class = "efa_underidentified")
   expect_warning(EFA_AVERAGE(matrix(rnorm(30), ncol = 3), n_factors = 1,
                              method = "PAF", type = c("EFAtools", "psych"), show_progress = FALSE),
-                 " The model is just identified (df = 0). We suggest to try again with a lower number of factors or a larger number of indicators.\n", fixed = TRUE)
+                 class = "efa_just_identified")
   expect_warning(EFA_AVERAGE(cor_nposdef, n_factors = 1, N = 10, method = "PAF",
                      type = c("EFAtools", "psych"), show_progress = FALSE), "Matrix was not positive definite, smoothing was done")
   expect_message(EFA_AVERAGE(GRiPS_raw, n_factors = 1, method = "PAF", type = c("EFAtools", "psych"), show_progress = FALSE),
-                 " 'n_factors' is 1, but rotation != 'none'. Setting rotation to 'none' to avoid many warnings, as 1-factor solutions cannot be rotated.\n")
+                 class = "efa_avg_single_factor_rotation")
   expect_warning(EFA_AVERAGE(GRiPS_raw, n_factors = 1, method = "PAF", type = c("EFAtools"),
                              rotation = "none", show_progress = FALSE),
-                 " There was only one combination of arguments, returning normal EFA output.\n")
+                 class = "efa_avg_single_combination")
 })
 
 rm(efa_def, efa_ml, efa_uls, efa_all, efa_all_oblq, efa_all_orth, efa_all_none,

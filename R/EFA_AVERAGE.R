@@ -296,7 +296,11 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
   # Perform argument checks
   if(!inherits(x, c("matrix", "data.frame"))){
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n"))
+    cli::cli_abort(
+      c("{.arg x} must be a correlation matrix or a data frame/matrix of raw data.",
+        "x" = "You supplied {.obj_type_friendly {x}}."),
+      class = "efa_input_not_matrix"
+    )
 
   }
 
@@ -352,10 +356,17 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
 
   } else {
 
-    message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n"))
+    cli::cli_inform(
+      c("i" = "{.arg x} is not a correlation matrix; computing correlations from the raw data."),
+      class = "efa_cor_from_data"
+    )
 
     if (!is.na(N)) {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" 'N' was set and data entered. Taking N from data.\n"))
+      cli::cli_warn(
+        c("Both {.arg N} and raw data were supplied.",
+          "i" = "Taking {.arg N} from the data."),
+        class = "efa_n_from_data"
+      )
     }
 
     R <- stats::cor(x, use = use, method = cor_method)
@@ -368,7 +379,8 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
   R_i <- try(solve(R), silent = TRUE)
 
   if (inherits(R_i, "try-error")) {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, no further analyses are performed\n"))
+    cli::cli_abort("The correlation matrix is singular; no further analyses are performed.",
+                   class = "efa_cor_singular")
   }
 
   # Check if correlation matrix is positive definite, if it is not,
@@ -387,16 +399,27 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
 
   if(df < 0){
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" The model is underidentified. Please enter a lower number of factors or use a larger number of indicators and try again.\n"))
+    cli::cli_abort(
+      c("The model is underidentified.",
+        "i" = "Use fewer factors or more indicators, then try again."),
+      class = "efa_underidentified"
+    )
 
   } else if (df == 0){
 
-    warning(crayon::yellow$bold("!"), crayon::yellow(" The model is just identified (df = 0). We suggest to try again with a lower number of factors or a larger number of indicators.\n"))
+    cli::cli_warn(
+      c("The model is just identified ({.code df = 0}).",
+        "i" = "Consider fewer factors or more indicators."),
+      class = "efa_just_identified"
+    )
 
   }
 
   if (n_factors == 1 && !all(rotation == "none")) {
-    message(cli::col_cyan(cli::symbol$info, " 'n_factors' is 1, but rotation != 'none'. Setting rotation to 'none' to avoid many warnings, as 1-factor solutions cannot be rotated.\n"))
+    cli::cli_inform(
+      c("i" = "{.arg n_factors} is 1 but {.arg rotation} is not {.val none}; setting {.arg rotation} to {.val none}, as single-factor solutions cannot be rotated."),
+      class = "efa_avg_single_factor_rotation"
+    )
     rotation <- "none"
   }
 
@@ -556,7 +579,8 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
 
   if (nrow(arg_grid) == 1) {
 
-    warning(crayon::yellow$bold("!"), crayon::yellow(" There was only one combination of arguments, returning normal EFA output.\n"))
+    cli::cli_warn("There was only one combination of arguments; returning a normal EFA output.",
+                  class = "efa_avg_single_combination")
 
     return(EFA(R, n_factors, N = N, method = arg_grid$method, rotation = arg_grid$rotation,
         type = "none", max_iter = max_iter, init_comm = arg_grid$init_comm,

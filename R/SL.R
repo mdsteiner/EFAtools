@@ -114,7 +114,8 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
 
   if(!inherits(x, c("EFA", "fa", "lavaan", "matrix", "LOADINGS", "loadings"))){
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither an object of class EFA, fa, or lavaan, nor a matrix, nor of class LOADINGS or loadings.\n"))
+    cli::cli_abort("{.arg x} must be an {.cls EFA}, {.cls fa}, or {.cls lavaan} object, a matrix, or a {.cls LOADINGS}/{.cls loadings} object.",
+                   class = "efa_sl_bad_input")
 
   }
 
@@ -127,7 +128,11 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
       orig_R <- x$orig_R
 
       if(!is.null(Phi)){
-        warning(crayon::yellow$bold("!"), crayon::yellow(" Phi argument is specified. Specified factor intercorrelations are taken. To take factor intercorrelations from the EFA output, leave Phi = NULL\n"))
+        cli::cli_warn(
+          c("{.arg Phi} is specified; the supplied factor intercorrelations are used.",
+            "i" = "To use the intercorrelations from the EFA output, leave {.code Phi = NULL}."),
+          class = "efa_sl_phi_specified"
+        )
 
       } else {
 
@@ -137,7 +142,8 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
 
     } else {
 
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is either a non-rotated or orthogonal factor solution. SL needs an oblique factor solution\n"))
+      cli::cli_abort("{.arg x} is a non-rotated or orthogonal factor solution, but SL needs an oblique solution.",
+                     class = "efa_sl_not_oblique")
 
     }
 
@@ -154,7 +160,11 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
       orig_R <- unclass(x$r)
 
       if(!is.null(Phi)){
-        warning(crayon::yellow$bold("!"), crayon::yellow(" Phi argument is specified. Specified factor intercorrelations are taken. To take factor intercorrelations from the psych fa output, leave Phi = NULL\n"))
+        cli::cli_warn(
+          c("{.arg Phi} is specified; the supplied factor intercorrelations are used.",
+            "i" = "To use the intercorrelations from the {.fn psych::fa} output, leave {.code Phi = NULL}."),
+          class = "efa_sl_phi_specified"
+        )
 
       } else {
 
@@ -164,7 +174,8 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
 
     } else {
 
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is either a non-rotated or orthogonal factor solution. SL needs an oblique factor solution\n"))
+      cli::cli_abort("{.arg x} is a non-rotated or orthogonal factor solution, but SL needs an oblique solution.",
+                     class = "efa_sl_not_oblique")
 
     }
 
@@ -175,29 +186,40 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
   } else if(inherits(x, "lavaan")){
 
     if(lavaan::lavInspect(x, what = "converged") == FALSE){
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Model did not converge. No omegas are computed.\n"))
+      cli::cli_abort("The model did not converge; no omegas are computed.",
+                     class = "efa_omega_no_converge")
     }
 
     std_sol <- suppressWarnings(lavaan::lavInspect(x, what = "std"))
 
     if(any(is.na(std_sol$lambda))){
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Some loadings are NA or NaN. No omegas are computed.\n"))
+      cli::cli_abort("Some loadings are {.val NA} or {.val NaN}; no omegas are computed.",
+                     class = "efa_omega_na_loadings")
     }
 
     if(any(std_sol$lambda >= 1)){
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" A Heywood case was detected (loading equal to or larger than 1). No omegas are computed.\n"))
+      cli::cli_abort("A Heywood case was detected (a loading of 1 or larger); no omegas are computed.",
+                     class = "efa_omega_heywood")
     }
 
     # Create list with factor and corresponding subtest names
     col_names <- colnames(std_sol$lambda)
 
     if(!any(col_names %in% g_name)){
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Could not find the specified name of the general factor in the entered lavaan solution. Please check the spelling.\n"))
+      cli::cli_abort(
+        c("Could not find the specified general-factor name in the lavaan solution.",
+          "i" = "Please check the spelling."),
+        class = "efa_omega_g_name"
+      )
     }
 
     if(!all(std_sol$lambda[, g_name] == 0)){
 
-      warning(crayon::yellow$bold("!"), crayon::yellow(" The second-order factor you specified contains first-order loadings. Did you really enter a second-order CFA solution? Or did you enter the wrong factor name in g_name?\n"))
+      cli::cli_warn(
+        c("The specified second-order factor contains first-order loadings.",
+          "i" = "Did you enter a second-order CFA solution, or the wrong factor name in {.arg g_name}?"),
+        class = "efa_sl_second_order_loadings"
+      )
 
     }
 
@@ -210,7 +232,11 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
 
     if(is.null(Phi)){
 
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Phi not provided. Either enter an oblique factor solution from EFAtools::EFA or from psych::fa, or a second-order CFA solution from lavaan, or provide Phi\n"))
+      cli::cli_abort(
+        c("{.arg Phi} was not provided.",
+          "i" = "Enter an oblique solution from {.fn EFAtools::EFA} or {.fn psych::fa}, a second-order CFA from lavaan, or provide {.arg Phi}."),
+        class = "efa_sl_phi_missing"
+      )
 
     }
 
@@ -253,7 +279,8 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
                                     method = method, rotation = "none", ...))
 
     if (ncol(Phi) <= 2) {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" The second-order EFA is underidentified.\n"))
+      cli::cli_warn("The second-order EFA is underidentified.",
+                    class = "efa_sl_underidentified")
     }
 
     iter <- EFA_phi$iter

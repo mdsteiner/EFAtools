@@ -198,18 +198,18 @@ lav_fit_ho_inv <- suppressWarnings(lavaan::cfa(lav_mod_ho_inv,
                                            sample.nobs = 500, estimator = "ml"))
 
 test_that("errors are thrown correctly", {
-  expect_error(SL(1:5), " 'x' is neither an object of class EFA, fa, or lavaan, nor a matrix, nor of class LOADINGS or loadings.\n")
+  expect_error(SL(1:5), class = "efa_sl_bad_input")
   expect_warning(SL(EFA_mod, type = "EFAtools", method = "PAF", Phi = EFA_mod$Phi),
-                 " Phi argument is specified. Specified factor intercorrelations are taken. To take factor intercorrelations from the EFA output, leave Phi = NULL\n")
-  expect_error(SL(EFA_mod_unrot, type = "EFAtools", method = "PAF"), " 'x' is either a non-rotated or orthogonal factor solution. SL needs an oblique factor solution\n")
-  expect_error(SL(EFA_mod_orth, type = "EFAtools", method = "PAF"), " 'x' is either a non-rotated or orthogonal factor solution. SL needs an oblique factor solution\n")
-  expect_warning(SL(fa_mod, type = "EFAtools", method = "PAF", Phi = fa_mod$Phi), " Phi argument is specified. Specified factor intercorrelations are taken. To take factor intercorrelations from the psych fa output, leave Phi = NULL\n")
-  expect_error(SL(fa_mod_unrot, type = "EFAtools", method = "PAF"), " 'x' is either a non-rotated or orthogonal factor solution. SL needs an oblique factor solution\n")
-  expect_error(SL(fa_mod_orth, type = "EFAtools", method = "PAF"), " 'x' is either a non-rotated or orthogonal factor solution. SL needs an oblique factor solution\n")
-  expect_error(SL(lav_fit_NA, g_name = "g"), " Some loadings are NA or NaN. No omegas are computed.\n")
-  expect_error(SL(lav_fit_ho, g_name = "fu"), " Could not find the specified name of the general factor in the entered lavaan solution. Please check the spelling.\n")
-  expect_warning(SL(lav_fit_ho_inv, g_name = "g"), " The second-order factor you specified contains first-order loadings. Did you really enter a second-order CFA solution? Or did you enter the wrong factor name in g_name?\n", fixed = TRUE)
-  expect_error(SL(EFA_mod$rot_loadings, type = "EFAtools", method = "ML"), " Phi not provided. Either enter an oblique factor solution from EFAtools::EFA or from psych::fa, or a second-order CFA solution from lavaan, or provide Phi\n")
+                 class = "efa_sl_phi_specified")
+  expect_error(SL(EFA_mod_unrot, type = "EFAtools", method = "PAF"), class = "efa_sl_not_oblique")
+  expect_error(SL(EFA_mod_orth, type = "EFAtools", method = "PAF"), class = "efa_sl_not_oblique")
+  expect_warning(SL(fa_mod, type = "EFAtools", method = "PAF", Phi = fa_mod$Phi), class = "efa_sl_phi_specified")
+  expect_error(SL(fa_mod_unrot, type = "EFAtools", method = "PAF"), class = "efa_sl_not_oblique")
+  expect_error(SL(fa_mod_orth, type = "EFAtools", method = "PAF"), class = "efa_sl_not_oblique")
+  expect_error(SL(lav_fit_NA, g_name = "g"), class = "efa_omega_na_loadings")
+  expect_error(SL(lav_fit_ho, g_name = "fu"), class = "efa_omega_g_name")
+  expect_warning(SL(lav_fit_ho_inv, g_name = "g"), class = "efa_sl_second_order_loadings")
+  expect_error(SL(EFA_mod$rot_loadings, type = "EFAtools", method = "ML"), class = "efa_sl_phi_missing")
 })
 
 rm(EFA_mod, SL_EFAtools, SL_SPSS, fa_mod, SL_psych, SL_flex, lav_mod_ho,
