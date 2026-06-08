@@ -167,23 +167,23 @@ burt <- matrix(c(1.00,  0.83,  0.81,  0.80,   0.71, 0.70, 0.54, 0.53,  0.59,  0.
                nrow = 11, ncol = 11)
 
 test_that("errors etc are thrown correctly", {
-  expect_error(HULL(1:5), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n")
-  expect_message(suppressWarnings(HULL(GRiPS_raw)), " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n")
-  expect_warning(suppressMessages(HULL(GRiPS_raw)), " Suggested maximum number of factors was 2 but must be at least 3 for hull method to work. Setting it to 3.\n")
-  expect_warning(suppressMessages(HULL(IDS2_R, N = 20)), " Less than three solutions located on the hull have been identified when using CAF as goodness of fit index. Proceeding by taking the value with the maximum CAF as heuristic. You may want to consider additional indices or methods as robustness check.\n")
-  expect_warning(suppressMessages(HULL(GRiPS_raw, N = 20)), " 'N' was set and data entered. Taking N from data.\n")
-  expect_error(HULL(test_models$baseline$cormat), ' "N" is not specified but is needed for computation of some of the fit indices.\n')
-  expect_error(HULL(test_models$baseline$cormat, method = "ML"), ' "N" is not specified but is needed for computation of some of the fit indices.\n')
-  expect_error(HULL(test_models$baseline$cormat, method = "ULS"), ' "N" is not specified but is needed for computation of some of the fit indices.\n')
+  expect_error(HULL(1:5), class = "efa_input_not_matrix")
+  expect_message(suppressWarnings(HULL(GRiPS_raw)), class = "efa_cor_from_data")
+  expect_warning(suppressMessages(HULL(GRiPS_raw)), class = "efa_hull_min_factors")
+  expect_warning(suppressMessages(HULL(IDS2_R, N = 20)), class = "efa_hull_few_solutions")
+  expect_warning(suppressMessages(HULL(GRiPS_raw, N = 20)), class = "efa_n_from_data")
+  expect_error(HULL(test_models$baseline$cormat), class = "efa_n_required")
+  expect_error(HULL(test_models$baseline$cormat, method = "ML"), class = "efa_n_required")
+  expect_error(HULL(test_models$baseline$cormat, method = "ULS"), class = "efa_n_required")
 
-  expect_error(HULL(dat_sing, method = "ML"), ' Correlation matrix is singular, the HULL method cannot be exectued.\n')
-  expect_error(HULL(cor_sing, N = 20, method = "ML"), ' Correlation matrix is singular, the HULL method cannot be exectued.\n')
+  expect_error(HULL(dat_sing, method = "ML"), class = "efa_cor_singular")
+  expect_error(HULL(cor_sing, N = 20, method = "ML"), class = "efa_cor_singular")
 
-  expect_error(HULL(matrix(rnorm(50), ncol = 5)), "Data has fewer than 6 indicators. Hull method needs at least 6.\n")
+  expect_error(HULL(matrix(rnorm(50), ncol = 5)), class = "efa_hull_min_indicators")
 
   expect_message(suppressWarnings(HULL(GRiPS_raw)), 'Only CAF can be used as gof if method "PAF" is used. Setting gof to "CAF"\n')
 
-  expect_warning(HULL(test_models$baseline$cormat, n_fac_theor = 13, N = 500), ' Setting maximum number of factors to 12 to ensure overidentified models.\n')
+  expect_warning(HULL(test_models$baseline$cormat, n_fac_theor = 13, N = 500), class = "efa_hull_max_factors")
   expect_warning(HULL(burt, N = 20, method = "ML"), "Matrix was not positive definite, smoothing was done")
   expect_warning(HULL(burt, N = 20, method = "ML", n_fac_theor = 1), "Matrix was not positive definite, smoothing was done")
 })

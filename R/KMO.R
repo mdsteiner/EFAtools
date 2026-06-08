@@ -66,7 +66,11 @@ KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
   # Perform argument checks
   if(!inherits(x, c("matrix", "data.frame"))){
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n"))
+    cli::cli_abort(
+      c("{.arg x} must be a correlation matrix or a data frame/matrix of raw data.",
+        "x" = "You supplied {.obj_type_friendly {x}}."),
+      class = "efa_input_not_matrix"
+    )
 
   }
 
@@ -80,7 +84,10 @@ KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
 
   } else {
 
-    message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n"))
+    cli::cli_inform(
+      c("i" = "{.arg x} is not a correlation matrix; computing correlations from the raw data."),
+      class = "efa_cor_from_data"
+    )
 
     R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)
@@ -91,7 +98,8 @@ KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
 
   # Check if correlation matrix is invertible; if not, stop with message
   if (inherits(try(solve(R), silent = TRUE), "try-error")) {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, no further analyses are performed.\n"))
+    cli::cli_abort("The correlation matrix is singular; no further analyses are performed.",
+                   class = "efa_cor_singular")
   }
 
   # Check if correlation matrix is positive definite
@@ -142,7 +150,8 @@ KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
   R_i <- try(solve(R), silent = TRUE)
 
   if (inherits(R_i, "try-error")) {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Matrix is singular, cannot compute KMO.\n"))
+    cli::cli_abort("The matrix is singular; KMO cannot be computed.",
+                   class = "efa_cor_singular")
   }
 
   # Start computations

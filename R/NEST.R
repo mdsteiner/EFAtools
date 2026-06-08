@@ -73,7 +73,11 @@ NEST <- function(x, N = NA,
   # Perform argument checks
   if(!inherits(x, c("matrix", "data.frame"))){
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n"))
+    cli::cli_abort(
+      c("{.arg x} must be a correlation matrix or a data frame/matrix of raw data.",
+        "x" = "You supplied {.obj_type_friendly {x}}."),
+      class = "efa_input_not_matrix"
+    )
 
   }
 
@@ -91,16 +95,27 @@ NEST <- function(x, N = NA,
 
     if (is.na(N)) {
 
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Argument 'N' was NA but correlation matrix was entered. Please either provide N or raw data.\n"))
+      cli::cli_abort(
+        c("{.arg N} is {.val NA} but a correlation matrix was entered.",
+          "i" = "Provide {.arg N} or raw data."),
+        class = "efa_n_required"
+      )
 
     }
 
   } else {
 
-    message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n"))
+    cli::cli_inform(
+      c("i" = "{.arg x} is not a correlation matrix; computing correlations from the raw data."),
+      class = "efa_cor_from_data"
+    )
 
     if (!is.na(N)) {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" 'N' was set and data entered. Taking N from data.\n"))
+      cli::cli_warn(
+        c("Both {.arg N} and raw data were supplied.",
+          "i" = "Taking {.arg N} from the data."),
+        class = "efa_n_from_data"
+      )
     }
 
     R <- stats::cor(x, use = use, method = cor_method)
@@ -113,7 +128,8 @@ NEST <- function(x, N = NA,
   R_i <- try(solve(R), silent = TRUE)
 
   if (inherits(R_i, "try-error")) {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, no further analyses are performed\n"))
+    cli::cli_abort("The correlation matrix is singular; no further analyses are performed.",
+                   class = "efa_cor_singular")
   }
 
   # Check if correlation matrix is positive definite, if it is not,

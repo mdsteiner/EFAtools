@@ -57,10 +57,10 @@ cor_sing <- stats::cor(dat_sing)
 cor_nposdef <- matrix(c(1, 1, 0, 1, 1, 1, 0, 1, 1), ncol = 3)
 
 test_that("errors are thrown correctly", {
-  expect_error(KGC(1:5), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n")
-  expect_message(KGC(GRiPS_raw, eigen_type = "PCA"), " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n")
-  expect_error(KGC(dat_sing), " Correlation matrix is singular, no further analyses are performed.\n")
-  expect_error(KGC(cor_sing, N = 10), " Correlation matrix is singular, no further analyses are performed.\n")
+  expect_error(KGC(1:5), class = "efa_input_not_matrix")
+  expect_message(KGC(GRiPS_raw, eigen_type = "PCA"), class = "efa_cor_from_data")
+  expect_error(KGC(dat_sing), class = "efa_cor_singular")
+  expect_error(KGC(cor_sing, N = 10), class = "efa_cor_singular")
   expect_warning(KGC(cor_nposdef, N = 10), "Matrix was not positive definite, smoothing was done")
 })
 

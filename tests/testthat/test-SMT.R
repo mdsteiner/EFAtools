@@ -107,14 +107,14 @@ burt <- matrix(c(1.00,  0.83,  0.81,  0.80,   0.71, 0.70, 0.54, 0.53,  0.59,  0.
                nrow = 11, ncol = 11)
 
 test_that("errors are thrown correctly", {
-  expect_error(SMT(1:5), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n")
-  expect_error(SMT(test_models$baseline$cormat), " Argument 'N' was NA. Either provide N or raw data.\n")
-  expect_message(SMT(GRiPS_raw), " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n")
-  expect_warning(SMT(GRiPS_raw, N = 20), " 'N' was set and data entered. Taking N from data.\n")
-  expect_error(SMT(dat_sing), " Correlation matrix is singular, no further analyses are performed\n")
-  expect_error(SMT(cor_sing, N = 10), " Correlation matrix is singular, no further analyses are performed\n")
-  expect_error(SMT(matrix(rnorm(50), ncol = 2)), " The model is either underidentified or just identified with 1 factor already. SMTs cannot be performed. Please provide more indicators.\n") # underidentified case
-  expect_error(SMT(matrix(rnorm(60), ncol = 3)), " The model is either underidentified or just identified with 1 factor already. SMTs cannot be performed. Please provide more indicators.\n") # just identified case
+  expect_error(SMT(1:5), class = "efa_input_not_matrix")
+  expect_error(SMT(test_models$baseline$cormat), class = "efa_n_required")
+  expect_message(SMT(GRiPS_raw), class = "efa_cor_from_data")
+  expect_warning(SMT(GRiPS_raw, N = 20), class = "efa_n_from_data")
+  expect_error(SMT(dat_sing), class = "efa_cor_singular")
+  expect_error(SMT(cor_sing, N = 10), class = "efa_cor_singular")
+  expect_error(SMT(matrix(rnorm(50), ncol = 2)), class = "efa_smt_underidentified") # underidentified case
+  expect_error(SMT(matrix(rnorm(60), ncol = 3)), class = "efa_smt_underidentified") # just identified case
   # expect_warning(SMT(burt, N = 170), "Matrix was not positive definite, smoothing was done")
 })
 

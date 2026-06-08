@@ -132,7 +132,11 @@ PARALLEL <- function(x = NULL,
 
   if(!is.null(x) && !inherits(x, c("matrix", "data.frame"))){
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither NULL, nor a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data or leave x at NULL.\n"))
+    cli::cli_abort(
+      c("{.arg x} must be {.code NULL}, a correlation matrix, or a data frame/matrix of raw data.",
+        "x" = "You supplied {.obj_type_friendly {x}}."),
+      class = "efa_input_not_matrix"
+    )
 
   }
   eigen_type <- match.arg(eigen_type, several.ok = TRUE)
@@ -160,7 +164,11 @@ PARALLEL <- function(x = NULL,
   if (!is.null(x)){
 
       if (!is.na(n_vars)) {
-        warning(crayon::yellow$bold("!"), crayon::yellow(" n_vars was set and data entered. Taking n_vars from data\n"))
+        cli::cli_warn(
+          c("Both {.arg n_vars} and raw data were supplied.",
+            "i" = "Taking {.arg n_vars} from the data."),
+          class = "efa_nvars_from_data"
+        )
       }
       n_vars <- ncol(x)
       x_dat <- TRUE
@@ -172,10 +180,17 @@ PARALLEL <- function(x = NULL,
 
       } else {
 
-        message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n"))
+        cli::cli_inform(
+          c("i" = "{.arg x} is not a correlation matrix; computing correlations from the raw data."),
+          class = "efa_cor_from_data"
+        )
 
         if (!is.na(N)) {
-          warning(crayon::yellow$bold("!"), crayon::yellow(" 'N' was set and data entered. Taking N from data.\n"))
+          cli::cli_warn(
+            c("Both {.arg N} and raw data were supplied.",
+              "i" = "Taking {.arg N} from the data."),
+            class = "efa_n_from_data"
+          )
         }
 
         R <- stats::cor(x, use = use, method = cor_method)
@@ -189,7 +204,8 @@ PARALLEL <- function(x = NULL,
       R_i <- try(solve(R), silent = TRUE)
 
       if (inherits(R_i, "try-error")) {
-        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, parallel analysis is not possible.\n"))
+        cli::cli_abort("The correlation matrix is singular; parallel analysis is not possible.",
+                       class = "efa_cor_singular")
       }
 
       # Check if correlation matrix is positive definite
@@ -227,17 +243,26 @@ PARALLEL <- function(x = NULL,
   }
 
   if (is.na(n_vars)) {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "n_vars" was not set and could not be taken from data. Please specify n_vars and try again.\n'))
+    cli::cli_abort(
+      c("{.arg n_vars} was not set and could not be taken from the data.",
+        "i" = "Specify {.arg n_vars} and try again."),
+      class = "efa_nvars_required"
+    )
   }
 
   if (is.na(N)) {
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "N" was not set and could not be taken from data. Please specify N and try again.\n'))
+    cli::cli_abort(
+      c("{.arg N} was not set and could not be taken from the data.",
+        "i" = "Specify {.arg N} and try again."),
+      class = "efa_n_required"
+    )
 
   }
 
   if (N <= n_vars) {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "N" was smaller than or equal to the number of variables but must be larger.\n'))
+    cli::cli_abort("{.arg N} must be larger than the number of variables.",
+                   class = "efa_n_too_small")
   }
 
     if ("PCA" %in% eigen_type) {
@@ -259,7 +284,11 @@ PARALLEL <- function(x = NULL,
       }
 
       if (inherits(eigvals_PCA, "try-error")) {
-        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Eigenvalues based on simulated data and PCA could not be found in 25 tries; likely due to occurrences of singular matrices. Aborting.\n"))
+        cli::cli_abort(
+          c("Eigenvalues from simulated data via {.val PCA} could not be found in 25 tries.",
+            "i" = "This is likely due to singular matrices."),
+          class = "efa_parallel_sim_failed"
+        )
       }
 
       eigvals_PCA <- do.call(rbind, eigvals_PCA)
@@ -306,7 +335,11 @@ PARALLEL <- function(x = NULL,
       }
 
       if (inherits(eigvals_SMC, "try-error")) {
-        stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Eigenvalues based on simulated data and SMCs could not be found in 25 tries; likely due to occurrences of singular matrices. Aborting.\n"))
+        cli::cli_abort(
+          c("Eigenvalues from simulated data via {.val SMCs} could not be found in 25 tries.",
+            "i" = "This is likely due to singular matrices."),
+          class = "efa_parallel_sim_failed"
+        )
       }
       eigvals_SMC <- do.call(rbind, eigvals_SMC)
 
@@ -410,7 +443,11 @@ PARALLEL <- function(x = NULL,
     }
 
     if (inherits(eigvals_i, "try-error")) {
-      stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Eigenvalues based on simulated data and EFA could not be found in 25 tries; likely due to occurrences of singular matrices. Aborting.\n"))
+      cli::cli_abort(
+        c("Eigenvalues from simulated data via {.val EFA} could not be found in 25 tries.",
+          "i" = "This is likely due to singular matrices."),
+        class = "efa_parallel_sim_failed"
+      )
     }
 
     eigvals[i,] <- eigvals_i
@@ -430,7 +467,11 @@ if (decision_rule == "crawford") {
                   results[-1, "Means"])
     n_fac <- which(!(eigvals_real > crawford))[1] - 1
   } else {
-    warning(crayon::yellow$bold("!"), crayon::yellow(" decision_rule == 'crawford' is specified, but 95 percentile was not used. Using means instead. To use 'crawford', make sure to specify percent = 95.\n"))
+    cli::cli_warn(
+      c("{.code decision_rule = \"crawford\"} was specified, but the 95th percentile was not used; using means instead.",
+        "i" = "To use {.val crawford}, set {.code percent = 95}."),
+      class = "efa_parallel_crawford"
+    )
     n_fac <- which(!(eigvals_real > results[, "Means"]))[1] - 1
     decision_rule <- "means"
   }

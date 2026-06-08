@@ -133,7 +133,11 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
 
   if(!inherits(x, c("matrix", "data.frame"))){
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n"))
+    cli::cli_abort(
+      c("{.arg x} must be a correlation matrix or a data frame/matrix of raw data.",
+        "x" = "You supplied {.obj_type_friendly {x}}."),
+      class = "efa_input_not_matrix"
+    )
 
   }
 
@@ -150,7 +154,11 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   checkmate::assert_number(percent, lower = 0, upper = 100)
 
   if (ncol(x) < 6) {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red( "Data has fewer than 6 indicators. Hull method needs at least 6.\n"))
+    cli::cli_abort(
+      c("The data has fewer than 6 indicators.",
+        "i" = "The Hull method needs at least 6."),
+      class = "efa_hull_min_indicators"
+    )
   }
 
   if (method == "PAF" && !all(gof == "CAF")) {
@@ -165,10 +173,17 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
 
   } else {
 
-    message(cli::col_cyan(cli::symbol$info, " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n"))
+    cli::cli_inform(
+      c("i" = "{.arg x} is not a correlation matrix; computing correlations from the raw data."),
+      class = "efa_cor_from_data"
+    )
 
     if (!is.na(N)) {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" 'N' was set and data entered. Taking N from data.\n"))
+      cli::cli_warn(
+        c("Both {.arg N} and raw data were supplied.",
+          "i" = "Taking {.arg N} from the data."),
+        class = "efa_n_from_data"
+      )
     }
 
     R <- stats::cor(x, use = use, method = cor_method)
@@ -178,14 +193,16 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   }
 
   if (is.na(N)) {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' "N" is not specified but is needed for computation of some of the fit indices.\n'))
+    cli::cli_abort("{.arg N} is not specified but is needed to compute some fit indices.",
+                   class = "efa_n_required")
   }
 
   # Check if correlation matrix is invertable, if it is not, stop with message
   R_i <- try(solve(R), silent = TRUE)
 
   if (inherits(R_i, "try-error")) {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(' Correlation matrix is singular, the HULL method cannot be exectued.\n'))
+    cli::cli_abort("The correlation matrix is singular; the Hull method cannot be executed.",
+                   class = "efa_cor_singular")
   }
 
   # Check if correlation matrix is positive definite
@@ -227,15 +244,16 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
 
   if (J > .det_max_factors(ncol(R))) {
     J <- .det_max_factors(ncol(R))
-    warning(crayon::yellow$bold("!"), crayon::yellow(' Setting maximum number of factors to',
-                                                     J, 'to ensure overidentified models.\n'))
+    cli::cli_warn("Setting the maximum number of factors to {J} to ensure overidentified models.",
+                  class = "efa_hull_max_factors")
   }
 
   if (J < 3) {
-    warning(crayon::yellow$bold("!"),
-            crayon::yellow(" Suggested maximum number of factors was", J,
-                           "but must be at least 3 for hull method to work.",
-                           "Setting it to 3.\n"))
+    cli::cli_warn(
+      c("The suggested maximum number of factors was {J}, but must be at least 3 for the Hull method.",
+        "i" = "Setting it to 3."),
+      class = "efa_hull_min_factors"
+    )
     J <- 3
 
   }
@@ -386,12 +404,11 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   }
 
   if (nrow(s) < 3) {
-    warning(crayon::yellow$bold("!"),
-            crayon::yellow(" Less than three solutions located on the hull have",
-            "been identified when using", gof_t, "as goodness of fit index.",
-                           "Proceeding by taking the value with the maximum",
-                           gof_t, "as heuristic. You may want to consider",
-                           "additional indices or methods as robustness check.\n"))
+    cli::cli_warn(
+      c("Fewer than three solutions were located on the hull using {gof_t} as goodness-of-fit index.",
+        "i" = "Proceeding with the maximum-{gof_t} value as a heuristic; consider additional indices or methods as a robustness check."),
+      class = "efa_hull_few_solutions"
+    )
 
     # combine values
     for (row_i in 0:J) {

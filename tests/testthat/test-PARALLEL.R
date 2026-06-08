@@ -218,20 +218,20 @@ burt <- matrix(c(1.00,  0.83,  0.81,  0.80,   0.71, 0.70, 0.54, 0.53,  0.59,  0.
 #sim_NA <- data.frame(rnorm(30), rnorm(30), rnorm(30), rep("a", 30))
 
 test_that("errors are thrown correctly", {
-  expect_error(PARALLEL(1:5), " 'x' is neither NULL, nor a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data or leave x at NULL.\n")
-  expect_warning(suppressMessages(PARALLEL(GRiPS_raw, n_vars = 5)), " n_vars was set and data entered. Taking n_vars from data\n")
-  expect_warning(suppressMessages(PARALLEL(GRiPS_raw, N = 20, eigen_type = "PCA")), " 'N' was set and data entered. Taking N from data.\n")
-  expect_error(suppressMessages(PARALLEL(N = 500)), ' "n_vars" was not set and could not be taken from data. Please specify n_vars and try again.\n')
-  expect_message(PARALLEL(GRiPS_raw, eigen_type = "PCA"), " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n")
-  expect_error(PARALLEL(test_models$baseline$cormat, eigen_type = "PCA"), '"N" was not set and could not be taken from data. Please specify N and try again.\n')
+  expect_error(PARALLEL(1:5), class = "efa_input_not_matrix")
+  expect_warning(suppressMessages(PARALLEL(GRiPS_raw, n_vars = 5)), class = "efa_nvars_from_data")
+  expect_warning(suppressMessages(PARALLEL(GRiPS_raw, N = 20, eigen_type = "PCA")), class = "efa_n_from_data")
+  expect_error(suppressMessages(PARALLEL(N = 500)), class = "efa_nvars_required")
+  expect_message(PARALLEL(GRiPS_raw, eigen_type = "PCA"), class = "efa_cor_from_data")
+  expect_error(PARALLEL(test_models$baseline$cormat, eigen_type = "PCA"), class = "efa_n_required")
   expect_warning(PARALLEL(test_models$baseline$cormat, N = 500,
                           eigen_type = "PCA", decision_rule = "crawford",
-                          percent = 80), "decision_rule == 'crawford' is specified, but 95 percentile was not used. Using means instead. To use 'crawford', make sure to specify percent = 95.\n")
-  expect_error(PARALLEL(dat_sing), " Correlation matrix is singular, parallel analysis is not possible.\n")
-  expect_error(PARALLEL(cor_sing, N = 10), " Correlation matrix is singular, parallel analysis is not possible.\n")
+                          percent = 80), class = "efa_parallel_crawford")
+  expect_error(PARALLEL(dat_sing), class = "efa_cor_singular")
+  expect_error(PARALLEL(cor_sing, N = 10), class = "efa_cor_singular")
   expect_warning(PARALLEL(burt, N = 100), "Matrix was not positive definite, smoothing was done")
-  expect_error(PARALLEL(test_models$baseline$cormat, N = 15), ' "N" was smaller than or equal to the number of variables but must be larger.\n')
-  expect_error(PARALLEL(test_models$baseline$cormat, N = 18), ' "N" was smaller than or equal to the number of variables but must be larger.\n')
+  expect_error(PARALLEL(test_models$baseline$cormat, N = 15), class = "efa_n_too_small")
+  expect_error(PARALLEL(test_models$baseline$cormat, N = 18), class = "efa_n_too_small")
 })
 
 rm(pa_cor, pa_cor_pca, pa_raw, pa_nodat, pa_craw, pa_perc, x, y, z, dat_sing,

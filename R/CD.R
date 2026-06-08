@@ -90,12 +90,17 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
   # Perform argument checks
   if(!inherits(x, c("matrix", "data.frame"))){
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Provide a dataframe or matrix with raw data.\n"))
+    cli::cli_abort(
+      c("{.arg x} must be a data frame/matrix of raw data.",
+        "x" = "You supplied {.obj_type_friendly {x}}."),
+      class = "efa_input_not_matrix"
+    )
 
   }
 
   if (.is_cormat(x)) {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is a correlation matrix, but CD only works with raw data.\n"))
+    cli::cli_abort("{.arg x} is a correlation matrix, but CD only works with raw data.",
+                   class = "efa_cd_needs_raw")
   }
 
   if (inherits(x, c("tbl_df", "tbl"))) {
@@ -121,8 +126,11 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
     n_row_new <- nrow(x)
     n_rows_removed <- n_row_complete - n_row_new
 
-    warning(crayon::yellow$bold("!"),
-            crayon::yellow(" The data contained missing values that were removed using stats::na.omit().", n_rows_removed, "row(s) were removed.\n"))
+    cli::cli_warn(
+      c("The data contained missing values, removed with {.fn stats::na.omit}.",
+        "i" = "{n_rows_removed} row{?s} removed."),
+      class = "efa_cd_missing_removed"
+    )
   }
   n_cases <- nrow(x)
   k <- ncol(x)
@@ -132,10 +140,11 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
   if (is.na(n_factors_max) || n_factors_max > m_possible) {
 
     if (!is.na(n_factors_max) & n_factors_max > m_possible) {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" n_factors_max was set to",
-              n_factors_max, "but maximum possible",
-              "factors to extract is", m_possible, ". Setting n_factors_max to",
-              m_possible, ".\n"))
+      cli::cli_warn(
+        c("{.arg n_factors_max} was set to {n_factors_max}, but at most {m_possible} factor{?s} can be extracted.",
+          "i" = "Setting {.arg n_factors_max} to {m_possible}."),
+        class = "efa_cd_max_factors"
+      )
     }
 
     n_factors_max <- m_possible

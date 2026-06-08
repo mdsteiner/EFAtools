@@ -51,12 +51,12 @@ cor_sing <- stats::cor(dat_sing)
 cor_nposdef <- matrix(c(1, 1, 0, 1, 1, 1, 0, 1, 1), ncol = 3)
 
 test_that("errors are thrown correctly", {
-  expect_error(BARTLETT(1:5), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n")
-  expect_error(BARTLETT(test_models$baseline$cormat), " Argument 'N' was NA, Bartlett's test could not be executed. Please provide either N or raw data.\n")
-  expect_message(BARTLETT(GRiPS_raw), " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n")
-  expect_warning(BARTLETT(GRiPS_raw, N = 20), " 'N' was set and data entered. Taking N from data.\n")
-  expect_error(BARTLETT(dat_sing), " Correlation matrix is singular, Bartlett's test cannot be executed.\n")
-  expect_error(BARTLETT(cor_sing, N = 10), " Correlation matrix is singular, Bartlett's test cannot be executed.\n")
+  expect_error(BARTLETT(1:5), class = "efa_input_not_matrix")
+  expect_error(BARTLETT(test_models$baseline$cormat), class = "efa_n_required")
+  expect_message(BARTLETT(GRiPS_raw), class = "efa_cor_from_data")
+  expect_warning(BARTLETT(GRiPS_raw, N = 20), class = "efa_n_from_data")
+  expect_error(BARTLETT(dat_sing), class = "efa_cor_singular")
+  expect_error(BARTLETT(cor_sing, N = 10), class = "efa_cor_singular")
   expect_warning(BARTLETT(cor_nposdef, N = 10), "Matrix was not positive definite, smoothing was done")
 })
 

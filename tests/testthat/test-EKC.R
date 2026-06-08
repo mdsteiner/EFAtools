@@ -42,12 +42,12 @@ cor_sing <- stats::cor(dat_sing)
 cor_nposdef <- matrix(c(1, 1, 0, 1, 1, 1, 0, 1, 1), ncol = 3)
 
 test_that("errors are thrown correctly", {
-  expect_error(EKC(1:5), " 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n")
-  expect_error(EKC(test_models$baseline$cormat), " Argument 'N' was NA but correlation matrix was entered. Please either provide N or raw data.\n")
-  expect_message(EKC(GRiPS_raw), " 'x' was not a correlation matrix. Correlations are found from entered raw data.\n")
-  expect_warning(EKC(GRiPS_raw, N = 20), " 'N' was set and data entered. Taking N from data.\n")
-  expect_error(EKC(dat_sing), " Correlation matrix is singular, no further analyses are performed\n")
-  expect_error(EKC(cor_sing, N = 20), " Correlation matrix is singular, no further analyses are performed\n")
+  expect_error(EKC(1:5), class = "efa_input_not_matrix")
+  expect_error(EKC(test_models$baseline$cormat), class = "efa_n_required")
+  expect_message(EKC(GRiPS_raw), class = "efa_cor_from_data")
+  expect_warning(EKC(GRiPS_raw, N = 20), class = "efa_n_from_data")
+  expect_error(EKC(dat_sing), class = "efa_cor_singular")
+  expect_error(EKC(cor_sing, N = 20), class = "efa_cor_singular")
   expect_warning(EKC(cor_nposdef, N = 20), "Matrix was not positive definite, smoothing was done")
 })
 

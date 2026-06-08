@@ -168,7 +168,11 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
   # Perform argument checks
   if(!inherits(x, c("matrix", "data.frame"))){
 
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" 'x' is neither a matrix nor a dataframe. Either provide a correlation matrix or a dataframe or matrix with raw data.\n"))
+    cli::cli_abort(
+      c("{.arg x} must be a correlation matrix or a data frame/matrix of raw data.",
+        "x" = "You supplied {.obj_type_friendly {x}}."),
+      class = "efa_input_not_matrix"
+    )
 
   }
 
@@ -201,7 +205,11 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
   } else {
 
     if (!is.na(N)) {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" 'N' was set and data entered. Taking N from data.\n"))
+      cli::cli_warn(
+        c("Both {.arg N} and raw data were supplied.",
+          "i" = "Taking {.arg N} from the data."),
+        class = "efa_n_from_data"
+      )
     }
 
     R <- stats::cor(x, use = use, method = cor_method)
@@ -214,7 +222,8 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
   R_i <- try(solve(R), silent = TRUE)
 
   if (inherits(R_i, "try-error")) {
-    stop(crayon::red$bold(cli::symbol$circle_cross), crayon::red(" Correlation matrix is singular, no further analyses are performed\n"))
+    cli::cli_abort("The correlation matrix is singular; no further analyses are performed.",
+                   class = "efa_cor_singular")
   }
 
   # Check if correlation matrix is positive definite
@@ -285,7 +294,11 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
       nfac_CD <- cd_out$n_factors
 
     } else {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" 'x' was a correlation matrix but CD needs raw data. Skipping CD.\n"))
+      cli::cli_warn(
+        c("{.arg x} is a correlation matrix, but CD needs raw data.",
+          "i" = "Skipping CD."),
+        class = "efa_cd_skipped"
+      )
     }
 
   }
