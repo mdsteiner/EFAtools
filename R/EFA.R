@@ -1,18 +1,18 @@
 #' Exploratory factor analysis (EFA)
 #'
-#' This function does an EFA with either \code{PAF}, \code{ML},
-#' or \code{ULS} with or without subsequent rotation.
-#' All arguments with default value \code{NA} can be left to default if \code{type}
+#' This function does an EFA with either `PAF`, `ML`,
+#' or `ULS` with or without subsequent rotation.
+#' All arguments with default value `NA` can be left to default if `type`
 #' is set to one of "EFAtools", "SPSS", or "psych". The respective specifications are
 #' then handled according to the specified type (see details). For all rotations
-#' except varimax and promax, the \code{GPArotation} package is needed.
+#' except varimax and promax, the `GPArotation` package is needed.
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
 #' correlations. If raw data is entered, the correlation matrix is found from the
 #' data.
 #' @param n_factors numeric. Number of factors to extract.
 #' @param N numeric. The number of observations. Needs only be specified if a
-#' correlation matrix is used. If input is a correlation matrix and \code{N} = NA
+#' correlation matrix is used. If input is a correlation matrix and `N` = NA
 #' (default), not all fit indices can be computed.
 #' @param method character. One of "PAF", "ML", or "ULS" to use principal axis
 #' factoring, maximum likelihood, or unweighted least squares (also called minres),
@@ -30,100 +30,100 @@
 #'  ("psych" and "SPSS") or according to the best solution found in Grieder &
 #'  Steiner (2020; "EFAtools"). Individual properties can be adapted using one of
 #'  the three types and specifying some of the following arguments. If set to
-#'  "none" additional arguments must be specified depending on the \code{method}
-#'  and \code{rotation} used (see details).
+#'  "none" additional arguments must be specified depending on the `method`
+#'  and `rotation` used (see details).
 #' @param max_iter numeric. The maximum number of iterations to perform after which
-#' the iterative PAF procedure is halted with a warning. If \code{type} is one of
-#' "EFAtools", "SPSS", or "psych", this is automatically specified if \code{max_iter} is
-#' left to be \code{NA}, but can be overridden by entering a number. Default is
-#' \code{NA}.
+#' the iterative PAF procedure is halted with a warning. If `type` is one of
+#' "EFAtools", "SPSS", or "psych", this is automatically specified if `max_iter` is
+#' left to be `NA`, but can be overridden by entering a number. Default is
+#' `NA`.
 #' @param init_comm character. The method to estimate the initial communalities
-#' in \code{PAF}. "smc" will use squared multiple correlations, "mac" will use
+#' in `PAF`. "smc" will use squared multiple correlations, "mac" will use
 #' maximum absolute correlations, "unity" will use 1s (see details).
-#' Default is \code{NA}.
+#' Default is `NA`.
 #' @param criterion numeric. The convergence criterion used for PAF.
 #' If the change in communalities from one iteration to the next is smaller than
 #' this criterion the solution is accepted and the procedure ends.
-#' Default is \code{NA}.
+#' Default is `NA`.
 #' @param criterion_type character. Type of convergence criterion used for
 #' PAF. "max_individual" selects the maximum change in any of the
 #' communalities from one iteration to the next and tests it against the
 #' specified criterion. This is also used by SPSS. "sum" takes the difference of
 #' the sum of all communalities in one iteration and the sum of all communalities
 #' in the next iteration and tests this against the criterion. This procedure is
-#' used by the \code{\link[psych:fa]{psych::fa}} function. Default is \code{NA}.
+#' used by the [psych::fa()] function. Default is `NA`.
 #' @param abs_eigen logical. Which algorithm to use in the PAF
 #' iterations. If FALSE, the loadings are computed from the eigenvalues. This is
-#' also used by the \code{\link[psych:fa]{psych::fa}} function. If TRUE the
+#' also used by the [psych::fa()] function. If TRUE the
 #' loadings are computed with the absolute eigenvalues as done by SPSS.
-#' Default is \code{NA}.
-#' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
+#' Default is `NA`.
+#' @param use character. Passed to [stats::cor()] if raw data
 #' is given as input. Default is "pairwise.complete.obs".
-#' @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}.
+#' @param cor_method character. Passed to [stats::cor()].
 #' Default is "pearson".
 #' @param k numeric. Either the power used for computing the target matrix P in
 #' the promax rotation or the number of 'close to zero loadings' for the simplimax
 #' rotation (see \code{\link[GPArotation:GPA]{GPArotation::GPFoblq}}). If left to
-#' \code{NA} (default), the value for promax depends on the specified type.
-#' For simplimax, \code{nrow(L)}, where L is the matrix of unrotated loadings,
+#' `NA` (default), the value for promax depends on the specified type.
+#' For simplimax, `nrow(L)`, where L is the matrix of unrotated loadings,
 #' is used by default.
-#' @param normalize logical. If \code{TRUE}, a kaiser normalization is
-#' performed before the specified rotation. Default is \code{TRUE}.
+#' @param normalize logical. If `TRUE`, a kaiser normalization is
+#' performed before the specified rotation. Default is `TRUE`.
 #' @param P_type character. This specifies how the target
 #' matrix P is computed in promax rotation. If "unnorm" it will use the
 #' unnormalized target matrix as originally done in Hendrickson and White (1964).
 #' This is also used in the psych and stats packages. If "norm" it will use the
-#' normalized target matrix as used in SPSS. Default is \code{NA}.
+#' normalized target matrix as used in SPSS. Default is `NA`.
 #' @param precision numeric. The tolerance for stopping in the rotation
 #' procedure. Default is 10^-5 for all rotation methods.
 #' @param varimax_type character. The type of the varimax rotation performed.
-#' If "svd", singular value decomposition is used, as \link[stats:varimax]{stats::varimax} does. If "kaiser", the varimax procedure performed in SPSS is used.
+#' If "svd", singular value decomposition is used, as [stats::varimax()] does. If "kaiser", the varimax procedure performed in SPSS is used.
 #' This is the original procedure from Kaiser (1958), but with slight alterations
-#' in the varimax criterion (see details, and Grieder & Steiner, 2020). Default is \code{NA}.
+#' in the varimax criterion (see details, and Grieder & Steiner, 2020). Default is `NA`.
 #' @param order_type character. How to order the factors. "eigen" will reorder
 #' the factors according to the largest to lowest eigenvalues of the matrix of
 #' rotated loadings. "ss_factors" will reorder the factors according to descending
-#' sum of squared factor loadings per factor. Default is \code{NA}.
+#' sum of squared factor loadings per factor. Default is `NA`.
 #' @param start_method character. How to specify the starting values for the
 #' optimization procedure for ML. Default is "psych" which takes the
-#' starting values specified in \link[psych:fa]{psych::fa}. "factanal" takes the
-#' starting values specified in the \link[stats:factanal]{stats::factanal} function.
+#' starting values specified in [psych::fa()]. "factanal" takes the
+#' starting values specified in the [stats::factanal()] function.
 #' Solutions are very similar.
 #' @param b_boot numeric. The number of bootstrap samples to draw. Default is 1000.
 #' @param ci numeric. The confidence interval to create from the bootstrap samples.
-#'  Must be between 0 and 1. Default ist .95 for 95\% CIs.
+#'  Must be between 0 and 1. Default ist .95 for 95% CIs.
 #' @param randomStarts numeric. The number of random starts to use in rotations
-#'  that use the \code{GPArotation} package. Some rotations are prone to produce
+#'  that use the `GPArotation` package. Some rotations are prone to produce
 #'  local minima and sometimes many random starts are needed (see the GPArotation
 #'  package documentation for details).
-#' @param ... Additional arguments passed to rotation functions from the \code{GPArotation} package (e.g., \code{maxit} for maximum number of iterations).
+#' @param ... Additional arguments passed to rotation functions from the `GPArotation` package (e.g., `maxit` for maximum number of iterations).
 #'
 #' @details There are two main ways to use this function. The easiest way is to
-#' use it with a specified \code{type} (see above), which sets most of the other
+#' use it with a specified `type` (see above), which sets most of the other
 #' arguments accordingly. Another way is to use it more flexibly by explicitly
-#' specifying all arguments used and set \code{type} to "none" (see examples).
-#' A mix of the two can also be done by specifying a \code{type} as well as
+#' specifying all arguments used and set `type` to "none" (see examples).
+#' A mix of the two can also be done by specifying a `type` as well as
 #' additional arguments. However, this will throw warnings to avoid unintentional
-#' deviations from the implementations according to the specified \code{type}.
+#' deviations from the implementations according to the specified `type`.
 #'
-#' The \code{type} argument is evaluated for PAF and for all rotations (mainly
+#' The `type` argument is evaluated for PAF and for all rotations (mainly
 #' important for the varimax and promax rotations). The type-specific settings
 #' for these functions are detailed below.
 #'
-#' For PAF, the values of \code{init_comm}, \code{criterion}, \code{criterion_type},
-#' and \code{abs_eigen} depend on the \code{type} argument.
+#' For PAF, the values of `init_comm`, `criterion`, `criterion_type`,
+#' and `abs_eigen` depend on the `type` argument.
 #'
-#' \code{type = "EFAtools"} will use the following argument specification:
-#' \code{init_comm = "smc", criterion = .001, criterion_type = "sum",
-#' abs_eigen = TRUE}.
+#' `type = "EFAtools"` will use the following argument specification:
+#' `init_comm = "smc", criterion = .001, criterion_type = "sum",
+#' abs_eigen = TRUE`.
 #'
-#' \code{type = "psych"} will use the following argument specification:
-#' \code{init_comm = "smc", criterion = .001, criterion_type = "sum",
-#' abs_eigen = FALSE}.
+#' `type = "psych"` will use the following argument specification:
+#' `init_comm = "smc", criterion = .001, criterion_type = "sum",
+#' abs_eigen = FALSE`.
 #'
-#' \code{type = "SPSS"} will use the following argument specification:
-#' \code{init_comm = "smc", criterion = .001, criterion_type = "max_individual",
-#' abs_eigen = TRUE}.
+#' `type = "SPSS"` will use the following argument specification:
+#' `init_comm = "smc", criterion = .001, criterion_type = "max_individual",
+#' abs_eigen = TRUE`.
 #'
 #' If SMCs fail, SPSS takes "mac". However, as SPSS takes absolute eigenvalues,
 #' this is hardly ever the case. Psych, on the other hand, takes "unity" if SMCs
@@ -134,65 +134,65 @@
 #' other setting combinations tested in simulation studies in Grieder & Steiner
 #' (2020), which is why this type is used as a default here.
 #'
-#' For varimax, the values of \code{varimax_type} and \code{order_type} depend on
-#' the \code{type} argument.
+#' For varimax, the values of `varimax_type` and `order_type` depend on
+#' the `type` argument.
 #'
-#' \code{type = "EFAtools"} will use the following argument specification:
-#' \code{varimax_type = "kaiser", order_type = "eigen"}.
+#' `type = "EFAtools"` will use the following argument specification:
+#' `varimax_type = "kaiser", order_type = "eigen"`.
 #'
-#' \code{type = "psych"} will use the following argument specification:
-#' \code{varimax_type = "svd", order_type = "eigen"}.
+#' `type = "psych"` will use the following argument specification:
+#' `varimax_type = "svd", order_type = "eigen"`.
 #'
-#' \code{type = "SPSS"} will use the following argument specification:
-#' \code{varimax_type = "kaiser", order_type = "ss_factors"}.
+#' `type = "SPSS"` will use the following argument specification:
+#' `varimax_type = "kaiser", order_type = "ss_factors"`.
 #'
-#' For promax, the values of \code{P_type},
-#' \code{order_type}, and \code{k} depend on the \code{type} argument.
+#' For promax, the values of `P_type`,
+#' `order_type`, and `k` depend on the `type` argument.
 #'
-#' \code{type = "EFAtools"} will use the following argument specification:
-#' \code{P_type = "norm", order_type = "eigen", k = 4}.
+#' `type = "EFAtools"` will use the following argument specification:
+#' `P_type = "norm", order_type = "eigen", k = 4`.
 #'
-#' \code{type = "psych"} will use the following argument specification:
-#' \code{P_type = "unnorm", order_type = "eigen", k = 4}.
+#' `type = "psych"` will use the following argument specification:
+#' `P_type = "unnorm", order_type = "eigen", k = 4`.
 #'
-#' \code{type = "SPSS"} will use the following argument specification:
-#' \code{P_type = "norm", order_type = "ss_factors", k = 4}.
+#' `type = "SPSS"` will use the following argument specification:
+#' `P_type = "norm", order_type = "ss_factors", k = 4`.
 #'
-#' The \code{P_type} argument can take two values, "unnorm" and "norm". It controls
+#' The `P_type` argument can take two values, "unnorm" and "norm". It controls
 #' which formula is used to compute the target matrix P in the promax rotation.
 #' "unnorm" uses the formula from Hendrickson and White (1964), specifically:
-#' \code{P = abs(A^(k + 1)) / A},
+#' `P = abs(A^(k + 1)) / A`,
 #' where A is the unnormalized matrix containing varimax rotated loadings.
 #' "SPSS" uses the normalized varimax rotated loadings. Specifically it used the
 #' following formula, which can be found in the SPSS 23 and SPSS 27 Algorithms manuals:
-#' \code{P = abs(A / sqrt(rowSums(A^2))) ^(k + 1) * (sqrt(rowSums(A^2)) / A)}.
+#' `P = abs(A / sqrt(rowSums(A^2))) ^(k + 1) * (sqrt(rowSums(A^2)) / A)`.
 #' As for PAF, the EFAtools type setting combination for promax was the best
 #' compared to the other setting combinations tested in simulation studies in
 #' Grieder & Steiner (2020).
 #'
-#' The \code{varimax_type} argument can take two values, "svd", and "kaiser". "svd" uses
-#' singular value decomposition, by calling \link[stats:varimax]{stats::varimax}. "kaiser"
+#' The `varimax_type` argument can take two values, "svd", and "kaiser". "svd" uses
+#' singular value decomposition, by calling [stats::varimax()]. "kaiser"
 #' performs the varimax procedure as described in the SPSS 23 Algorithms manual and as described
 #' by Kaiser (1958). However, there is a slight alteration in computing the varimax criterion, which
 #' we found to better align with the results obtain from SPSS. Specifically, the original varimax
 #' criterion as described in the SPSS 23 Algorithms manual is
-#' \code{sum(n*colSums(lambda ^ 4) - colSums(lambda ^ 2) ^ 2) / n ^ 2}, where n is the
+#' `sum(n*colSums(lambda ^ 4) - colSums(lambda ^ 2) ^ 2) / n ^ 2`, where n is the
 #' number of indicators, and lambda is the rotated loadings matrix. However, we found the following
 #' to produce results more similar to those of SPSS:
-#' \code{sum(n*colSums(abs(lambda)) - colSums(lambda ^ 4) ^ 2) / n^2}.
+#' `sum(n*colSums(abs(lambda)) - colSums(lambda ^ 4) ^ 2) / n^2`.
 #'
-#' For all other rotations except varimax and promax, the \code{type} argument
-#' only controls the \code{order_type} argument with the same values as stated
+#' For all other rotations except varimax and promax, the `type` argument
+#' only controls the `order_type` argument with the same values as stated
 #' above for the varimax and promax rotations. For these other rotations, the
-#' \code{GPArotation} package is needed. Additional arguments can also be
-#' specified and will be passed to the respective \code{GPArotation} function
+#' `GPArotation` package is needed. Additional arguments can also be
+#' specified and will be passed to the respective `GPArotation` function
 #' (e.g., maxit to change the maximum number of iterations for the rotation procedure).
 #'
-#' The \code{type} argument has no effect on ULS and ML. For ULS, no additional
+#' The `type` argument has no effect on ULS and ML. For ULS, no additional
 #' arguments are needed. For ML, an additional argument
-#' \code{start_method} is needed to determine the starting values for the
+#' `start_method` is needed to determine the starting values for the
 #' optimization procedure. Default for this argument is "factanal" which takes
-#' the starting values specified in the \link[stats:factanal]{stats::factanal} function.
+#' the starting values specified in the [stats::factanal()] function.
 #'
 #'
 #' @return A list of class EFA containing (a subset of) the following:
@@ -207,17 +207,17 @@
 #'  with the final communality estimates as diagonal.}
 #' \item{iter}{The number of iterations needed for convergence.}
 #' \item{convergence}{Integer code for convergence as returned by
-#' \code{\link[stats:optim]{stats:optim}} (only for ML and ULS).
+#' [`stats::optim()`][stats::optim] (only for ML and ULS).
 #' 0 indicates successful completion.}
 #' \item{unrot_loadings}{Loading matrix containing the final unrotated loadings.}
 #' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings. Based on the unrotated loadings.}
 #' \item{fit_indices}{For ML and ULS: Fit indices derived from the unrotated
 #' factor loadings: Chi Square, including significance level, degrees of freedom
 #' (df), Comparative Fit Index (CFI), Root Mean Square Error of Approximation
-#' (RMSEA), including its 90\% confidence interval, Akaike Information Criterion
+#' (RMSEA), including its 90% confidence interval, Akaike Information Criterion
 #' (AIC), Bayesian Information Criterion (BIC), Root Mean Squared Residual (RMSR), and the common part accounted
 #' for (CAF) index as proposed by Lorenzo-Seva, Timmerman, & Kiers (2011).
-#' For PAF, only the CAF and dfs are returned. Note that while in Lorenzo-Seva, Timmerman, & Kiers (2011) the CAF is introduced as ranging between 0 and 1, with values close to 1 indicating close fit, this does not match the formula they introduce for calculating CAF: \code{1 - KMO(residuals)}, which only works if the diagonal of the residual matrix is set to 1s and will then approximate 0.5 with close fit.}
+#' For PAF, only the CAF and dfs are returned. Note that while in Lorenzo-Seva, Timmerman, & Kiers (2011) the CAF is introduced as ranging between 0 and 1, with values close to 1 indicating close fit, this does not match the formula they introduce for calculating CAF: `1 - KMO(residuals)`, which only works if the diagonal of the residual matrix is set to 1s and will then approximate 0.5 with close fit.}
 #' \item{model_implied_R}{The model implied correlation
 #' matrix.}
 #' \item{residuals}{Residual correlations, i.e., orig_R - model_implied_R}
@@ -230,9 +230,9 @@
 #' loadings. Based on rotated loadings and, for oblique rotations, the factor
 #' intercorrelations.}
 #' \item{settings}{A list of the settings used.}
-#' \item{boot.SE}{A list bootstrap standard errors for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, only if rotated), and fit indices. Only returned, if \code{se = "np-boot"}.}
-#' \item{boot.CI}{A list bootstrap confidence intervals of width \code{ci} for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, if obliquely rotated), and fit indices. Only returned, if \code{se = "np-boot"}.}
-#' \item{boot.arrays}{A list of arrays with the bootstrapped loadings (aligned rotated and unrotated), aligned structure coefficients (if rotated obliquely), aligned factor correlations (Phi, if obliquely rotated), and fit indices. Only returned, if \code{se = "np-boot"}.}
+#' \item{boot.SE}{A list bootstrap standard errors for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, only if rotated), and fit indices. Only returned, if `se = "np-boot"`.}
+#' \item{boot.CI}{A list bootstrap confidence intervals of width `ci` for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, if obliquely rotated), and fit indices. Only returned, if `se = "np-boot"`.}
+#' \item{boot.arrays}{A list of arrays with the bootstrapped loadings (aligned rotated and unrotated), aligned structure coefficients (if rotated obliquely), aligned factor correlations (Phi, if obliquely rotated), and fit indices. Only returned, if `se = "np-boot"`.}
 #'
 #' @source Grieder, S., & Steiner, M.D. (2020). Algorithmic Jingle Jungle:
 #' A Comparison of Implementations of Principal Axis Factoring and Promax Rotation

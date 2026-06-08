@@ -22,13 +22,13 @@ SL(
 )
 }
 \arguments{
-\item{x}{object of class \code{\link{EFA}}, class \code{\link[psych:fa]{psych::fa}},
-class \code{\link[lavaan]{lavaan}} or matrix. If class \code{\link{EFA}} or
-class \code{\link[psych:fa]{psych::fa}}, pattern coefficients and factor
-intercorrelations are taken from this object. If class \code{\link[lavaan]{lavaan}},
+\item{x}{object of class \code{\link[=EFA]{EFA()}}, class \code{\link[psych:fa]{psych::fa()}},
+class \code{\link[lavaan:lavaan]{lavaan::lavaan()}} or matrix. If class \code{\link[=EFA]{EFA()}} or
+class \code{\link[psych:fa]{psych::fa()}}, pattern coefficients and factor
+intercorrelations are taken from this object. If class \code{\link[lavaan:lavaan]{lavaan::lavaan()}},
 it must be a second-order CFA solution. In this case first-order and second-order
- factor loadings are taken from this object and the \code{g_name} argument has
- to be specified.
+factor loadings are taken from this object and the \code{g_name} argument has
+to be specified.
 x can also be a pattern matrix from an oblique factor solution (see \code{Phi})
 or a matrix of first-order factor loadings from a higher-order confirmatory factor
 analysis (see \code{L2}).}
@@ -39,17 +39,17 @@ into \code{x}.}
 
 \item{type}{character. One of "EFAtools" (default), "psych", "SPSS", or "none".
 This is used to control the procedure of the second-order factor analysis. See
-\code{\link{EFA}} for details.}
+\code{\link[=EFA]{EFA()}} for details.}
 
 \item{method}{character. One of "PAF", "ML", or "ULS" to use
 principal axis factoring, maximum likelihood, or unweighted least squares
-(also called minres), respectively, used in \code{\link{EFA}} to find the second-order
+(also called minres), respectively, used in \code{\link[=EFA]{EFA()}} to find the second-order
 loadings.}
 
 \item{g_name}{character. The name of the general factor. This needs only be
 specified if \code{x} is a \code{lavaan} second-order solution. Default is "g".}
 
-\item{...}{Arguments to be passed to \code{\link{EFA}}.}
+\item{...}{Arguments to be passed to \code{\link[=EFA]{EFA()}}.}
 }
 \value{
 A list of class SL containing the following
@@ -66,9 +66,9 @@ second-order loadings.}
 This function implements the Schmid-Leiman (SL) transformation
 (Schmid & Leiman, 1957). It takes the pattern coefficients and factor
 intercorrelations from an oblique factor solution as
-input and can reproduce the results from \code{\link[psych:schmid]{psych::schmid}}
+input and can reproduce the results from \code{\link[psych:schmid]{psych::schmid()}}
 and from the SPSS implementation from Wolff & Preising (2005). Other arguments
-from \code{\link{EFA}} can be used to control the procedure to find the
+from \code{\link[=EFA]{EFA()}} can be used to control the procedure to find the
 second-order loadings more flexibly. The function can also be used on a
 second-order confirmatory factor analysis (CFA) solution from lavaan.
 }
@@ -84,7 +84,7 @@ with proportionality constraints. The procedure thus makes a suggested
 hierarchical data structure based on factor intercorrelations explicit. One
 major advantage of SL transformation is that it enables variance
 partitioning between higher-order and first-order factors, including the
-calculation of McDonald's omegas (see \code{\link{OMEGA}}).
+calculation of McDonald's omegas (see \code{\link[=OMEGA]{OMEGA()}}).
 }
 \examples{
 ## Use with an output from the EFAtools::EFA function, both with type EFAtools

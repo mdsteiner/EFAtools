@@ -102,13 +102,13 @@
 \arguments{
 \item{x}{list. An object of class EFA to be printed}
 
-\item{cutoff}{numeric. Passed to \code{\link[EFAtools:print.LOADINGS]{print.LOADINGS}}.
+\item{cutoff}{numeric. Passed to \code{\link[=print.LOADINGS]{print.LOADINGS()}}.
 The number above which to print loadings in bold. Default is .3.}
 
-\item{digits}{numeric. Passed to \code{\link[EFAtools:print.LOADINGS]{print.LOADINGS}}
+\item{digits}{numeric. Passed to \code{\link[=print.LOADINGS]{print.LOADINGS()}}
 Number of digits to round the loadings to (default is 3).}
 
-\item{max_name_length}{numeric. Passed to \code{\link[EFAtools:print.LOADINGS]{print.LOADINGS}}.
+\item{max_name_length}{numeric. Passed to \code{\link[=print.LOADINGS]{print.LOADINGS()}}.
 The maximum length of the variable names to display. Everything beyond this
 will be cut from the right.}
 
@@ -142,7 +142,7 @@ diagnostics section. Default is .1.}
 oblique solutions when available. Default is \code{FALSE}.}
 
 \item{sort_loadings}{character. Optional row sorting for loading tables.
-See \code{\link[EFAtools:print.LOADINGS]{print.LOADINGS}}.}
+See \code{\link[=print.LOADINGS]{print.LOADINGS()}}.}
 
 \item{show_loading_legend}{logical. Whether to print a compact legend for
 loading-table styling. Default is \code{TRUE}.}
@@ -165,27 +165,27 @@ console width.}
 MI uncertainty summary for pooled EFAs when available. \code{NULL} prints it
 only for \code{details = "full"}.}
 
-\item{...}{Further arguments passed to \code{\link[EFAtools:print.LOADINGS]{print.LOADINGS}}.}
+\item{...}{Further arguments passed to \code{\link[=print.LOADINGS]{print.LOADINGS()}}.}
 }
 \description{
 Print Method showing a summarized output of the \link{EFA} function.
 }
 \details{
-The method is shared by single-imputation `EFA` objects and pooled
-`EFA_POOLED` objects. It prints, in order, a compact model header, optional
+The method is shared by single-imputation \code{EFA} objects and pooled
+\code{EFA_POOLED} objects. It prints, in order, a compact model header, optional
 diagnostics, the loading table, optional confidence-interval tables, variance
 accounted for, model fit, bootstrap notes, optional multiple-imputation
 uncertainty diagnostics, and residual diagnostics.
 
-For `EFA_POOLED` objects, the header and diagnostics report the number of
+For \code{EFA_POOLED} objects, the header and diagnostics report the number of
 imputations and the alignment/pooling settings stored in the object. Loading
-and factor-correlation confidence intervals are printed only when `boot.CI`
-is present. Pooled intervals created by `EFA_POOLED()` are labelled as
+and factor-correlation confidence intervals are printed only when \code{boot.CI}
+is present. Pooled intervals created by \code{EFA_POOLED()} are labelled as
 bootstrap/MI intervals.
 
-`ci_filter` controls which loading intervals are shown. `salient` reports
-intervals for loadings whose absolute point estimate is at least `cutoff`;
-`nonzero` reports intervals excluding zero; and `all` reports every finite
+\code{ci_filter} controls which loading intervals are shown. \code{salient} reports
+intervals for loadings whose absolute point estimate is at least \code{cutoff};
+\code{nonzero} reports intervals excluding zero; and \code{all} reports every finite
 interval.
 }
 \examples{

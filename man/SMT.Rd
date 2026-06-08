@@ -37,10 +37,10 @@ correlations.}
 \item{N}{numeric. The number of observations. Needs only be specified if a
 correlation matrix is used.}
 
-\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw
+\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}} if raw
 data is given as input. Default is "pairwise.complete.obs".}
 
-\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor}}.
+\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor()}}.
 Default is "pearson".}
 }
 \value{
@@ -104,7 +104,7 @@ number of factors, while the AIC performed well at determining the
 most generalizable model (Preacher, Zhang, Kim, & Mels, 2013).
 
 The \code{SMT} function can also be called together with other factor
-retention criteria in the \code{\link{N_FACTORS}} function.
+retention criteria in the \code{\link[=N_FACTORS]{N_FACTORS()}} function.
 }
 \examples{
 SMT_base <- SMT(test_models$baseline$cormat, N = 500)
@@ -112,9 +112,9 @@ SMT_base
 
 }
 \seealso{
-Other factor retention criteria: \code{\link{CD}}, \code{\link{EKC}},
-\code{\link{HULL}}, \code{\link{KGC}}, \code{\link{PARALLEL}}
+Other factor retention criteria: \code{\link[=CD]{CD()}}, \code{\link[=EKC]{EKC()}},
+\code{\link[=HULL]{HULL()}}, \code{\link[=KGC]{KGC()}}, \code{\link[=PARALLEL]{PARALLEL()}}
 
-\code{\link{N_FACTORS}} as a wrapper function for this and all the
+\code{\link[=N_FACTORS]{N_FACTORS()}} as a wrapper function for this and all the
 above-mentioned factor retention criteria.
 }

@@ -1,6 +1,6 @@
 #' Print function for PARALLEL objects
 #'
-#' @param x a list of class PARALLEL. Output from \link{PARALLEL} function.
+#' @param x a list of class PARALLEL. Output from [PARALLEL] function.
 #' @param plot logical. Whether to plot the results.
 #' @param ... Further arguments for print.
 #'

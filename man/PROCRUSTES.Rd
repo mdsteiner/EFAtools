@@ -24,16 +24,16 @@ PROCRUSTES(
 \arguments{
 \item{A}{Numeric loading matrix to be aligned.}
 
-\item{Target}{Numeric target matrix with the same dimensions as `A`.}
+\item{Target}{Numeric target matrix with the same dimensions as \code{A}.}
 
-\item{rotation}{Character string, either `"orthogonal"` or `"oblique"`.}
+\item{rotation}{Character string, either \code{"orthogonal"} or \code{"oblique"}.}
 
-\item{S}{Optional `k x k` cross-product matrix `crossprod(A)`. Supplying this
-is useful when the same `A` is rotated repeatedly. `S` is used only when
-`oblique_normalize = FALSE`; if Kaiser normalization is requested, the
+\item{S}{Optional \verb{k x k} cross-product matrix \code{crossprod(A)}. Supplying this
+is useful when the same \code{A} is rotated repeatedly. \code{S} is used only when
+\code{oblique_normalize = FALSE}; if Kaiser normalization is requested, the
 cross-product must be recomputed on the normalized matrix.}
 
-\item{T_init}{Optional `k x k` nonsingular starting transformation matrix for
+\item{T_init}{Optional \verb{k x k} nonsingular starting transformation matrix for
 the oblique solver. Its columns are normalized internally.}
 
 \item{oblique_eps}{Positive convergence tolerance for the projected-gradient
@@ -47,7 +47,7 @@ step-halving attempts after the initial line-search step.}
 
 \item{oblique_step0}{Positive initial step size for the oblique solver.}
 
-\item{oblique_normalize}{Logical; if `TRUE`, apply Kaiser row normalization in
+\item{oblique_normalize}{Logical; if \code{TRUE}, apply Kaiser row normalization in
 the oblique solver and back-transform the aligned loadings afterwards.}
 
 \item{oblique_random_starts}{Non-negative integer. Number of additional random
@@ -63,28 +63,28 @@ iterations used in the triage stage.}
 required for a triaged start to be promoted to full optimization.}
 }
 \value{
-A list containing aligned `loadings`, transformation matrix `T`,
-  factor intercorrelation matrix `Phi`, target criterion `value`, convergence
-  diagnostics, line-search diagnostics, and multi-start summaries. Row and
-  column names are preserved where possible.
+A list containing aligned \code{loadings}, transformation matrix \code{T},
+factor intercorrelation matrix \code{Phi}, target criterion \code{value}, convergence
+diagnostics, line-search diagnostics, and multi-start summaries. Row and
+column names are preserved where possible.
 }
 \description{
-`PROCRUSTES()` aligns one loading matrix to a target loading matrix with the
-same dimensions. It is used internally by `EFA_POOLED()`, but can also be used
+\code{PROCRUSTES()} aligns one loading matrix to a target loading matrix with the
+same dimensions. It is used internally by \code{EFA_POOLED()}, but can also be used
 directly when factor columns must be brought into a common orientation before
 averaging or comparing solutions.
 }
 \details{
-For `rotation = "orthogonal"`, the function solves the closed-form orthogonal
+For \code{rotation = "orthogonal"}, the function solves the closed-form orthogonal
 Procrustes problem
 
 \deqn{\min_T \frac{1}{2}\|A T - B\|_F^2 \quad \textrm{subject to}\quad T'T = I,}
 
-where `A` is the loading matrix and `B` is `Target`.
+where \code{A} is the loading matrix and \code{B} is \code{Target}.
 
-For `rotation = "oblique"`, the function calls the compiled
-`.oblique_procrustes()` optimizer. The oblique convention is the same as in
-`GPArotation::targetQ()`:
+For \code{rotation = "oblique"}, the function calls the compiled
+\code{.oblique_procrustes()} optimizer. The oblique convention is the same as in
+\code{GPArotation::targetQ()}:
 
 \deqn{L = A T^{-T}, \qquad \Phi = T'T, \qquad diag(\Phi) = 1.}
 

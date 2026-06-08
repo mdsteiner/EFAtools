@@ -12,31 +12,31 @@
 #' @param N numeric. The number of observations. Only needed if x is a correlation
 #'  matrix.
 #' @param alpha numeric. The alpha level to use (i.e., 1-alpha percentile of eigenvalues is used for reference values).
-#' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw
-#'  data is given as input. Default is  \code{"pairwise.complete.obs"}.
-#' @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}.
-#'  Default is  \code{"pearson"}.
+#' @param use character. Passed to [stats::cor()] if raw
+#'  data is given as input. Default is  `"pairwise.complete.obs"`.
+#' @param cor_method character. Passed to [stats::cor()].
+#'  Default is  `"pearson"`.
 #' @param n_datasets numeric. The number of datasets to simulate. Default is 1000.
-#' @param ... Additional arguments passed to \code{\link{EFA}}. For example,
+#' @param ... Additional arguments passed to [EFA()]. For example,
 #' the extraction method can be changed here (default is "PAF"). PAF is more
 #' robust, but it will take longer compared to the other estimation methods
 #' available ("ML" and "ULS").
 #'
 #' @details NEST compares the first empirical eigenvalue against the first eigenvalues
-#' of \code{n_dataset} synthetic datasets based on a null model  (i.e.,
-#'  with uncorrelated variables; same as in parallel analysis, see \code{\link{PARALLEL}}).
+#' of `n_dataset` synthetic datasets based on a null model  (i.e.,
+#'  with uncorrelated variables; same as in parallel analysis, see [PARALLEL()]).
 #'  The following eigenvalues are compared against synthetic datasets based on an EFA-model with one fewer factors
 #'  than the position of the respective empirical eigenvalue. E.g, the second
 #'  empirical eigenvalue is compared against synthetic data based on a one-factor
-#'  model. The \code{alpha}-level defines against which percentile of the synthetic
+#'  model. The `alpha`-level defines against which percentile of the synthetic
 #'  eigenvalue distribution to compare the empirical eigenvalues against, i.e., an
 #'  alpha of .05 (the default) uses the 95th percentile as reference value.
 #'
 #'  For details on the method, including simulation studies, see Achim (2017),
 #'  Brandenburg and Papenberg (2024), and Caron (2025).
 #'
-#'  The \code{NEST} function can also be called together with other factor
-#'   retention criteria in the \code{\link{N_FACTORS}} function.
+#'  The `NEST` function can also be called together with other factor
+#'   retention criteria in the [N_FACTORS()] function.
 #'
 #'
 #' @return A list of class NEST containing the following objects

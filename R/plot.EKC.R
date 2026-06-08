@@ -1,8 +1,8 @@
 #' Plot EKC object
 #'
-#' Plot method showing a summarized output of the \link{EKC} function
+#' Plot method showing a summarized output of the [EKC] function
 #'
-#' @param x a list of class EKC. An output from the \link{EKC} function.
+#' @param x a list of class EKC. An output from the [EKC] function.
 #' @param ... not used.
 #'
 #' @export

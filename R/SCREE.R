@@ -19,13 +19,13 @@
 #'  matrices with the final communalities of an exploratory factor analysis
 #'  solution (default is principal axis factoring extracting 1 factor) as
 #'  diagonal.
-#' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw
+#' @param use character. Passed to [stats::cor()] if raw
 #'  data is given as input. Default is "pairwise.complete.obs".
-#' @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}.
+#' @param cor_method character. Passed to [stats::cor()].
 #' Default is "pearson".
 #' @param n_factors numeric. Number of factors to extract if "EFA" is included in
-#' \code{eigen_type}. Default is 1.
-#' @param ... Additional arguments passed to \code{\link{EFA}}. For example,
+#' `eigen_type`. Default is 1.
+#' @param ... Additional arguments passed to [EFA()]. For example,
 #' to change the extraction method (PAF is default).
 #'
 #' @details As the scree test requires visual examination, the test has been
@@ -37,8 +37,8 @@
 #' the scree test has been recommended against, at least for exclusive use as a
 #' factor retention criterion (Zwick & Velicer, 1986)
 #'
-#' The \code{SCREE} function can also be called together with other factor
-#' retention criteria in the \code{\link{N_FACTORS}} function.
+#' The `SCREE` function can also be called together with other factor
+#' retention criteria in the [N_FACTORS()] function.
 #'
 #' @return A list of class SCREE containing
 #'
@@ -55,10 +55,10 @@
 #' determining the number of components to retain. Psychological Bulletin, 99,
 #' 432–442. http://dx.doi.org/10.1037/0033-2909.99.3.432
 #'
-#' @seealso Other factor retention criteria: \code{\link{CD}}, \code{\link{EKC}},
-#' \code{\link{HULL}}, \code{\link{PARALLEL}}, \code{\link{SMT}}
+#' @seealso Other factor retention criteria: [CD()], [EKC()],
+#' [HULL()], [PARALLEL()], [SMT()]
 #'
-#' \code{\link{N_FACTORS}} as a wrapper function for this and all the
+#' [N_FACTORS()] as a wrapper function for this and all the
 #' above-mentioned factor retention criteria.
 #'
 #' @export

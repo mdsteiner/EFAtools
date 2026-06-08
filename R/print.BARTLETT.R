@@ -1,6 +1,6 @@
 #' Print BARTLETT object
 #'
-#' @param x list of class BARTLETT (output from the \link{BARTLETT} function)
+#' @param x list of class BARTLETT (output from the [BARTLETT] function)
 #' @param ... additional arguments passed to print
 #'
 #' @method print BARTLETT

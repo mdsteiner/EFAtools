@@ -1,6 +1,6 @@
 #' Print function for NEST objects
 #'
-#' @param x a list of class NEST Output from \code{\link{NEST}} function.
+#' @param x a list of class NEST. Output from [NEST()] function.
 #' @param ... Further arguments for print.
 #'
 #' @export

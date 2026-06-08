@@ -56,10 +56,10 @@ indicators. If using "PCA", the diagonal values of the correlation matrices
 are left to be 1. If using "EFA", eigenvalues are found on the correlation
 matrices with the final communalities of an EFA solution as diagonal.}
 
-\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
+\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}} if raw data
 is given as input. Default is "pairwise.complete.obs".}
 
-\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor}}
+\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor()}}
 Default is "pearson".}
 
 \item{decision_rule}{character. Which rule to use to determine the number of
@@ -71,7 +71,7 @@ and the mean afterwards (based on Crawford et al, 2010).}
 \item{n_factors}{numeric. Number of factors to extract if "EFA" is included in
 \code{eigen_type}. Default is 1.}
 
-\item{...}{Additional arguments passed to \code{\link{EFA}}. For example,
+\item{...}{Additional arguments passed to \code{\link[=EFA]{EFA()}}. For example,
 the extraction method can be changed here (default is "PAF"). PAF is more
 robust, but it will take longer compared to the other estimation methods
 available ("ML" and "ULS").}
@@ -88,40 +88,40 @@ A list of class PARALLEL containing the following objects
 }
 \description{
 Various methods for performing parallel analysis. This function uses
-\link[future.apply]{future_lapply} for which a parallel processing plan can
+\link[future.apply:future_lapply]{future_lapply()} for which a parallel processing plan can
 be selected. To do so, call \code{library(future)} and, for example,
- \code{plan(multisession)}; see examples.
+\code{plan(multisession)}; see examples.
 }
 \details{
 Parallel analysis (Horn, 1965) compares the eigenvalues obtained from
 the sample
- correlation matrix against those of null model correlation matrices (i.e.,
- with uncorrelated variables) of the same sample size. This way, it accounts
- for the variation in eigenvalues introduced by sampling error and thus
- eliminates the main problem inherent in the Kaiser-Guttman criterion
- (\code{\link{KGC}}).
+correlation matrix against those of null model correlation matrices (i.e.,
+with uncorrelated variables) of the same sample size. This way, it accounts
+for the variation in eigenvalues introduced by sampling error and thus
+eliminates the main problem inherent in the Kaiser-Guttman criterion
+(\code{\link[=KGC]{KGC()}}).
 
- Three different ways of finding the eigenvalues under the factor model are
- implemented, namely "SMC", "PCA", and "EFA". PCA leaves the diagonal elements
- of the correlation matrix as they are and is thus equivalent to what is done
- in PCA. SMC uses squared multiple correlations as communality estimates with
- which the diagonal of the correlation matrix is replaced. Finally, EFA performs
- an \code{\link{EFA}} with one factor (can be adapted to more factors) to estimate
- the communalities and based on the correlation matrix with these as diagonal
- elements, finds the eigenvalues.
+Three different ways of finding the eigenvalues under the factor model are
+implemented, namely "SMC", "PCA", and "EFA". PCA leaves the diagonal elements
+of the correlation matrix as they are and is thus equivalent to what is done
+in PCA. SMC uses squared multiple correlations as communality estimates with
+which the diagonal of the correlation matrix is replaced. Finally, EFA performs
+an \code{\link[=EFA]{EFA()}} with one factor (can be adapted to more factors) to estimate
+the communalities and based on the correlation matrix with these as diagonal
+elements, finds the eigenvalues.
 
- Parallel analysis is often argued to be one of the most accurate factor
- retention criteria. However, for highly correlated
- factor structures it has been shown to underestimate the correct number of
- factors. The reason for this is that a null model (uncorrelated variables)
- is used as reference. However, when factors are highly correlated, the first
- eigenvalue will be much larger compared to the following ones, as
- later eigenvalues are conditional on the earlier ones in the sequence and thus
- the shared variance is already accounted in the first eigenvalue (e.g.,
- Braeken & van Assen, 2017).
+Parallel analysis is often argued to be one of the most accurate factor
+retention criteria. However, for highly correlated
+factor structures it has been shown to underestimate the correct number of
+factors. The reason for this is that a null model (uncorrelated variables)
+is used as reference. However, when factors are highly correlated, the first
+eigenvalue will be much larger compared to the following ones, as
+later eigenvalues are conditional on the earlier ones in the sequence and thus
+the shared variance is already accounted in the first eigenvalue (e.g.,
+Braeken & van Assen, 2017).
 
- The \code{PARALLEL} function can also be called together with other factor
- retention criteria in the \code{\link{N_FACTORS}} function.
+The \code{PARALLEL} function can also be called together with other factor
+retention criteria in the \code{\link[=N_FACTORS]{N_FACTORS()}} function.
 }
 \examples{
 \donttest{
@@ -143,9 +143,9 @@ pa_faster <- PARALLEL(test_models$case_11b$cormat, N = 500)
 }
 }
 \seealso{
-Other factor retention criteria: \code{\link{CD}}, \code{\link{EKC}},
-\code{\link{HULL}}, \code{\link{KGC}}, \code{\link{SMT}}
+Other factor retention criteria: \code{\link[=CD]{CD()}}, \code{\link[=EKC]{EKC()}},
+\code{\link[=HULL]{HULL()}}, \code{\link[=KGC]{KGC()}}, \code{\link[=SMT]{SMT()}}
 
-\code{\link{N_FACTORS}} as a wrapper function for this and all the
+\code{\link[=N_FACTORS]{N_FACTORS()}} as a wrapper function for this and all the
 above-mentioned factor retention criteria.
 }

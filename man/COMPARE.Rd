@@ -46,14 +46,14 @@ in red (i.e., if .001 is used, the mean will be in red if it is larger than
 
 \item{range_red}{numeric. Number above which the min and max should be printed
 in red (i.e., if .001 is used, min and max will be in red if the max is larger
- than .001, otherwise it will be displayed in green. Default is .001). Note that
- the color of min also depends on max, that is min will be displayed in the
- same color as max.}
+than .001, otherwise it will be displayed in green. Default is .001). Note that
+the color of min also depends on max, that is min will be displayed in the
+same color as max.}
 
 \item{round_red}{numeric. Number above which the max decimals to round to where
 all corresponding elements of x and y are still equal are displayed in red
 (i.e., if 3 is used, the number will be in red if it is smaller than
- 3, otherwise it will be displayed in green). Default is 3.}
+3, otherwise it will be displayed in green). Default is 3.}
 
 \item{print_diff}{logical. Whether the difference vector or matrix should be
 printed or not. Default is TRUE.}
@@ -73,7 +73,7 @@ in red. Default is .001.}
 }
 \value{
 A list of class COMPARE containing summary statistics on the differences
- of x and y.
+of x and y.
 
 \item{diff}{The vector or matrix containing the differences between x and y.}
 \item{mean_abs_diff}{The mean absolute difference between x and y.}
@@ -81,14 +81,14 @@ A list of class COMPARE containing summary statistics on the differences
 \item{min_abs_diff}{The minimum absolute difference between x and y.}
 \item{max_abs_diff}{The maximum absolute difference between x and y.}
 \item{max_dec}{The maximum number of decimals to which a comparison makes sense.
- For example, if x contains only values up to the third decimals, and y is a
- normal double, max_dec will be three.}
+For example, if x contains only values up to the third decimals, and y is a
+normal double, max_dec will be three.}
 \item{are_equal}{The maximal number of decimals to which all elements of x and y
- are equal.}
+are equal.}
 \item{diff_corres}{The number of differing variable-to-factor correspondences
- between x and y, when only the highest loading is considered.}
+between x and y, when only the highest loading is considered.}
 \item{diff_corres_cross}{The number of differing variable-to-factor correspondences
- between x and y when all loadings \code{>= thresh} are considered.}
+between x and y when all loadings \verb{>= thresh} are considered.}
 \item{g}{The root mean squared distance (RMSE) between x and y.}
 \item{settings}{List of the settings used.}
 }

@@ -1,6 +1,6 @@
 #' Print function for KGC objects
 #'
-#' @param x a list of class KGC. Output from \link{KGC} function.
+#' @param x a list of class KGC. Output from [KGC] function.
 #' @param plot logical. Whether to plot the results.
 #' @param ... Further arguments for print.
 #'

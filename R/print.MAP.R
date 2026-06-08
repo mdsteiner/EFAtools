@@ -1,6 +1,6 @@
 #' Print function for MAP objects
 #'
-#' @param x a list of class MAP. Output from \code{\link{MAP}} function.
+#' @param x a list of class MAP. Output from [MAP()] function.
 #' @param plot logical. Whether to plot the results.
 #' @param ... Further arguments for print.
 #'

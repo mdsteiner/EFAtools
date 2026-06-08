@@ -3,12 +3,12 @@
 #' @author Andreas Soteriades, Markus Steiner
 #'
 #' @description
-#' Fits \code{\link{EFA}} to each of several imputed datasets, aligns the
+#' Fits [EFA()] to each of several imputed datasets, aligns the
 #' factor solutions to a common factor space, and pools the resulting estimates
 #' and selected fit quantities across imputations.
 #'
 #' @details
-#' The function first fits the same \code{\link{EFA}} model to each imputed
+#' The function first fits the same [EFA()] model to each imputed
 #' dataset. Unrotated loading matrices can optionally be put into a common
 #' signed/permuted factor order before averaging. Rotated loading matrices are
 #' aligned with either a consensus Procrustes target or with the first
@@ -38,14 +38,14 @@
 #' if returned, are chi-square-derived descriptive quantities based on this D2
 #' approximation and should not be interpreted as likelihood-based MI
 #' information criteria. D3/D4 pooling is not implemented here because the
-#' current \code{EFA} objects do not expose the likelihood quantities needed
+#' current `EFA` objects do not expose the likelihood quantities needed
 #' for those methods.
 #'
-#' If each component \code{EFA} call was run with \code{se = "np-boot"} and
-#' returned \code{boot.arrays}, pooled bootstrap SEs and Wald-type MI confidence
+#' If each component `EFA` call was run with `se = "np-boot"` and
+#' returned `boot.arrays`, pooled bootstrap SEs and Wald-type MI confidence
 #' intervals are computed for loadings, communalities, residuals, and, when
 #' applicable, factor correlations and structure coefficients. Importantly, the
-#' rotated bootstrap loading matrices stored by the component \code{EFA} calls
+#' rotated bootstrap loading matrices stored by the component `EFA` calls
 #' are not reused directly, because they were aligned to imputation-specific
 #' targets. Instead, the unrotated bootstrap loading matrices are re-aligned to
 #' the final MI target before estimating within-imputation bootstrap covariance
@@ -53,41 +53,41 @@
 #' \eqn{T = Ubar + (1 + 1 / m) B}. Confidence intervals for loadings, Phi,
 #' communalities, residuals, and structure coefficients are Wald-type MI
 #' intervals. The confidence level of these pooled intervals is controlled by
-#' \code{p}; the \code{ci} argument passed through \code{...} to the component
-#' \code{EFA} calls is not used for the pooled intervals.
-#' \code{boot.CI$fit_indices_pooled_algorithm}, when available, is a
+#' `p`; the `ci` argument passed through `...` to the component
+#' `EFA` calls is not used for the pooled intervals.
+#' `boot.CI$fit_indices_pooled_algorithm`, when available, is a
 #' percentile-style summary obtained by re-running the pooled-fit algorithm over
 #' matched bootstrap replicate indices.
 #'
 #' @param data_list A list of length \eqn{m}, where \eqn{m} is the number of
 #' imputations. Each list element is a data frame or matrix of raw data, or a
-#' correlation matrix. See argument \code{x} in \code{\link{EFA}}.
+#' correlation matrix. See argument `x` in [EFA()].
 #' @param p Numeric in \eqn{(0, 1)}. One minus the confidence level used for
 #' pooled Wald-type bootstrap/MI confidence intervals when bootstrap arrays are
-#' available. For example, \code{p = .05} gives 95\% intervals.
-#' @param target_method Character. \code{"consensus"} aligns all solutions to an
-#' iteratively updated consensus target. \code{"first_target"} aligns all
+#' available. For example, `p = .05` gives 95% intervals.
+#' @param target_method Character. `"consensus"` aligns all solutions to an
+#' iteratively updated consensus target. `"first_target"` aligns all
 #' solutions to the first imputation's rotated solution.
 #' @param align_unrotated Character. How to align unrotated loadings before
-#' pooling. \code{"signed_tucker_congruence"} preserves the unrotated axes up
+#' pooling. `"signed_tucker_congruence"` preserves the unrotated axes up
 #' to factor reordering and sign changes using Tucker congruence.
-#' \code{"procrustes"} aligns the unrotated matrices to the first imputation by
-#' orthogonal Procrustes rotation. \code{"none"} averages unrotated loadings as
-#' returned by \code{EFA}.
-#' @param fit_pool_method Character. Currently only \code{"D2"} is implemented
+#' `"procrustes"` aligns the unrotated matrices to the first imputation by
+#' orthogonal Procrustes rotation. `"none"` averages unrotated loadings as
+#' returned by `EFA`.
+#' @param fit_pool_method Character. Currently only `"D2"` is implemented
 #' for chi-square-type fit. If no chi-square is available, only residual-based
 #' fit and descriptive quantities are returned.
 #' @param consensus_args List of additional arguments passed to
-#' \code{CONSENSUS_PROCRUSTES}.
-#' @param procrustes_args List of additional arguments passed to \code{PROCRUSTES}
+#' `CONSENSUS_PROCRUSTES`.
+#' @param procrustes_args List of additional arguments passed to `PROCRUSTES`
 #' for fixed-target alignment.
 #' @param rmsea_ci_level Numeric. Confidence level for the RMSEA CI.
-#' @param rmsr_upper Logical. If \code{TRUE}, compute RMSR from the unique
-#' off-diagonal residual correlations. If \code{FALSE}, use the full off-diagonal
+#' @param rmsr_upper Logical. If `TRUE`, compute RMSR from the unique
+#' off-diagonal residual correlations. If `FALSE`, use the full off-diagonal
 #' matrix.
-#' @param ... Additional arguments passed to \code{\link{EFA}}.
+#' @param ... Additional arguments passed to [EFA()].
 #'
-#' @return A list of class \code{"EFA_POOLED"} containing pooled estimates,
+#' @return A list of class `"EFA_POOLED"` containing pooled estimates,
 #' residuals, fit indices, the individual fits, and MI diagnostics.
 #'
 #' @export

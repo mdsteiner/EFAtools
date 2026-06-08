@@ -1,28 +1,28 @@
 #' Estimate factor scores for an EFA model
 #'
 #' This is a wrapper function for
-#' \code{\link[psych:factor.scores]{psych::factor.scores}} to be used directly
-#' with an output from \code{\link{EFA}} or by manually specifying the factor
+#' [psych::factor.scores()] to be used directly
+#' with an output from [EFA()] or by manually specifying the factor
 #' loadings and intercorrelations. Calculates factor scores according to the
 #' specified methods if raw data are provided, and only factor weights if a
 #' correlation matrix is provided.
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data (needed to get
 #' factor scores) or matrix with correlations.
-#' @param f object of class \code{\link{EFA}} or matrix.
+#' @param f object of class [EFA()] or matrix.
 #' @param Phi matrix. A matrix of factor intercorrelations. Only needs to be
-#' specified if a factor loadings matrix is entered directly into \code{f}.
-#' Default is \code{NULL}, in which case all intercorrelations are assumed to be zero.
-#' @param rho matrix. Used when \code{x} is a matrix of raw data and the user
+#' specified if a factor loadings matrix is entered directly into `f`.
+#' Default is `NULL`, in which case all intercorrelations are assumed to be zero.
+#' @param rho matrix. Used when `x` is a matrix of raw data and the user
 #' wishes to get factor scores for a correlation matrix other than Pearson's
-#' (e.g. polychoric). Defaults to \code{NULL}, in which case
-#' \code{\link[psych:factor.scores]{psych::factor.scores}} uses
-#' \code{cor(x, use = "pairwise")}.
+#' (e.g. polychoric). Defaults to `NULL`, in which case
+#' [psych::factor.scores()] uses
+#' `cor(x, use = "pairwise")`.
 #' @param method character. The method used to calculate factor scores. One of
 #' "Thurstone" (regression-based; default), "tenBerge", "Anderson", "Bartlett",
 #' "Harman", or "components".
-#' See \code{\link[psych:factor.scores]{psych::factor.scores}} for details.
-#' @param impute character. Whether and how missing values in \code{x} should
+#' See [psych::factor.scores()] for details.
+#' @param impute character. Whether and how missing values in `x` should
 #' be imputed. One of "none" (default, only complete cases are scored), "median",
 #' or "mean".
 #'

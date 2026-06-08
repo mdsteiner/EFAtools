@@ -23,10 +23,10 @@ correlations.}
 \item{N}{numeric. The number of observations. Needs only be specified if a
 correlation matrix is used.}
 
-\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
+\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}} if raw data
 is given as input. Default is "pairwise.complete.obs".}
 
-\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor}}.
+\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor()}}.
 Default is "pearson".}
 }
 \value{
@@ -53,23 +53,23 @@ where \eqn{det(R)} is the determinant of the correlation matrix, \eqn{N} is
 the sample size, and \eqn{p} is the number of variables.
 
 This tests requires multivariate normality. If this condition is not met,
-the Kaiser-Meyer-Olkin criterion (\code{\link[EFAtools]{KMO}})
+the Kaiser-Meyer-Olkin criterion (\code{\link[=KMO]{KMO()}})
 can still be used.
 
-This function was heavily influenced by the \code{\link[psych:cortest.bartlett]{psych::cortest.bartlett}} function from the psych package.
+This function was heavily influenced by the \code{\link[psych:cortest.bartlett]{psych::cortest.bartlett()}} function from the psych package.
 
 The \code{BARTLETT} function can also be called together with the
- (\code{\link[EFAtools]{KMO}}) function and with factor retention criteria
- in the \code{\link{N_FACTORS}} function.
+(\code{\link[=KMO]{KMO()}}) function and with factor retention criteria
+in the \code{\link[=N_FACTORS]{N_FACTORS()}} function.
 }
 \examples{
 BARTLETT(test_models$baseline$cormat, N = 500)
 
 }
 \seealso{
-\code{\link[EFAtools]{KMO}} for another measure to determine
- suitability for factor analysis.
+\code{\link[=KMO]{KMO()}} for another measure to determine
+suitability for factor analysis.
 
- \code{\link{N_FACTORS}} as a wrapper function for this function,
- \code{\link[EFAtools]{KMO}} and several factor retention criteria.
+\code{\link[=N_FACTORS]{N_FACTORS()}} as a wrapper function for this function,
+\code{\link[=KMO]{KMO()}} and several factor retention criteria.
 }

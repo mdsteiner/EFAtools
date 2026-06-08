@@ -4,17 +4,17 @@
 #'
 #' Consider a list of named sub-lists. This function extracts, for each sub-list,
 #' the sub-list element that is specified by the user. This function is useful
-#' for extracting results from \code{\link{EFA}} for each permutation run in
-#' \code{\link{EFA_POOLED}}.
+#' for extracting results from [EFA()] for each permutation run in
+#' [EFA_POOLED()].
 #'
 #' @param alist A list of sub-lists, typically a list of \eqn{m} objects of class
-#' \code{"EFA"}, where \eqn{m} is the number of imputations passed to
-#' \code{\link{EFA_POOLED}}.
+#' `"EFA"`, where \eqn{m} is the number of imputations passed to
+#' [EFA_POOLED()].
 #' @param object String of length 1. The name of the object to extract e.g.
-#' \code{"h2"} or \code{"vars_accounted"}.
+#' `"h2"` or `"vars_accounted"`.
 #'
 #' @return A list of length \eqn{m}, with each element containing the extracted
-#' \code{object} for the \eqn{k}th element (\eqn{k = 1,..., m}).
+#' `object` for the \eqn{k}th element (\eqn{k = 1,..., m}).
 .extract_list_object <- function(alist, object) {
   lapply(
     alist,
@@ -30,13 +30,13 @@
 #'
 #' Given a list of matrices, this function calculates user-supplied statistics
 #' (e.g. mean, median) over the matrices. This function is useful for averaging
-#' results from \code{\link{EFA}} (e.g. loadings) over all permutation runs in
-#' \code{\link{EFA_POOLED}}.
+#' results from [EFA()] (e.g. loadings) over all permutation runs in
+#' [EFA_POOLED()].
 #'
 #' @param alist A list of sub-lists, typically a list of \eqn{m} matrices from
-#' \code{"EFA"}, where \eqn{m} is the number of imputations passed to
-#' \code{\link{EFA_POOLED}}.
-#' @param stat A function, e.g. \code{mean} or \code{sd}.
+#' `"EFA"`, where \eqn{m} is the number of imputations passed to
+#' [EFA_POOLED()].
+#' @param stat A function, e.g. `mean` or `sd`.
 #'
 #' @return A matrix with the aggregated results
 #'
@@ -65,21 +65,21 @@
   )
 }
 
-#' Covert a \code{"LOADINGS"} table to matrix or a matrix to \code{"LOADINGS"}
+#' Covert a `"LOADINGS"` table to matrix or a matrix to `"LOADINGS"`
 #'
 #' @author Andreas Soteriades
 #'
-#' The loadings tables returned by \code{\link{EFA}} are of class
-#' \code{"LOADINGS"}, which prevents applying functions on them. This function
-#' allows to change their class to \code{"matrix"}, and to change back to
-#' \code{"LOADINGS"} when done.
+#' The loadings tables returned by [EFA()] are of class
+#' `"LOADINGS"`, which prevents applying functions on them. This function
+#' allows to change their class to `"matrix"`, and to change back to
+#' `"LOADINGS"` when done.
 #'
-#' @param x A table of class \code{"matrix"} or \code{"LOADINGS"}.
+#' @param x A table of class `"matrix"` or `"LOADINGS"`.
 #' @param cl A string with the class to change the table to. Should be
-#' \code{"LOADINGS"} or \code{"matrix"}.
+#' `"LOADINGS"` or `"matrix"`.
 #'
-#' @return A table with the loadings, of class either \code{"LOADINGS"} or
-#' \code{"matrix"}.
+#' @return A table with the loadings, of class either `"LOADINGS"` or
+#' `"matrix"`.
 .change_class <- function(x, cl = 'matrix') {
   class(x) <- cl
   return(x)
@@ -89,7 +89,7 @@
 #'
 #' @author Andreas Soteriades
 #'
-#' This function is used internally by \code{\link{EFA_POOLED}} to calculate
+#' This function is used internally by [EFA_POOLED()] to calculate
 #' confidence intervals (CIs) around the pooled loadings and pooled interfactor
 #' correlations.
 #'
@@ -101,19 +101,19 @@
 #'
 #' According to Hayes & Enders (2023) p. 42:
 #'
-#' \emph{[T]he first term under the radical represents the average squared
-#' standard error (the within imputation sampling variance [...]), the second
+#' *\[T\]he first term under the radical represents the average squared
+#' standard error (the within imputation sampling variance \[...\]), the second
 #' term depends on the variance of the M parameter estimates around their
-#' average (the between imputation variance [...]), and the final term
-#' represents the squared standard error of the pooled estimate [...].
+#' average (the between imputation variance \[...\]), and the final term
+#' represents the squared standard error of the pooled estimate \[...\].
 #' Conceptually, the first term estimates the sampling error of a complete-data
 #' analysis, and the next two terms are essentially correction factors that
 #' inflate the standard error to compensate for uncertainty due to the
 #' imputations–that is, additional uncertainty (sampling variability) in the
-#' parameter estimates caused by missing data.}
+#' parameter estimates caused by missing data.*
 #'
 #' Currently, it is not possible to calculate the first term, because
-#' \code{\link{EFA}} does not calculate SEs for the loadings. Only the second
+#' [EFA()] does not calculate SEs for the loadings. Only the second
 #' and third terms are used in the calculation of SE for the CIs.
 #'
 #' The CI is generally calculated as:
@@ -125,28 +125,28 @@
 #' Margin of error = Critical value × SE of point estimate.
 #'
 #' To account for situations where the sample size is small, instead of using
-#' z-values, the critical value is derived from the \emph{t} distribution with
-#' \code{n - 1} degrees of freedom (Hazra, 2017).
+#' z-values, the critical value is derived from the *t* distribution with
+#' `n - 1` degrees of freedom (Hazra, 2017).
 #
 #' @param means A matrix with the pooled loadings or pooled interfactor
 #' correlations
 #' @param sds A matrix with the standard deviations for the loadings or
 #' interfactor correlations
 #' @param p Numeric. One minus the confidence level of the CIs. Defaults to 0.05
-#' for 95\% CIs.
+#' for 95% CIs.
 #' @param n Numeric. Typically, the number of permutations \eqn{m}. See
-#' \code{\link{EFA_POOLED}}.
+#' [EFA_POOLED()].
 #'
 #' @return A list with the lower and upper CIs.
 #'
 #' @references
 #' Hayes, T. & Enders, C. K. (2023). Maximum likelihood and multiple imputation
 #' missing data handling: how they work, and how to make them work in practice.
-#' In \emph{APA Handbook of Research Methods in Psychology, Second Edition} Vol.
+#' In *APA Handbook of Research Methods in Psychology, Second Edition* Vol.
 #' 3. Data Analysis and Research Publication, H. Cooper (Editor-in-Chief).
 #'
-#' Hazra, A. (2017). Using the confidence interval confidently. \emph{Journal of
-#' Thoracic Disease} 9(10), 4125--4130.
+#' Hazra, A. (2017). Using the confidence interval confidently. *Journal of
+#' Thoracic Disease* 9(10), 4125--4130.
 #'
 #' Rubin, D. B. (1987). Multiple imputation for nonresponse in surveys. Wiley.
 #' https://doi.org/10.1002/9780470316696
@@ -175,14 +175,14 @@
 #'
 #' Helper function used in the print method for class LOADINGS and SLLOADINGS.
 #' Strips the 0 in front of the decimal point of a number if number < 1, only
-#' keeps the first \code{digits} number of digits, and adds an empty space in
+#' keeps the first `digits` number of digits, and adds an empty space in
 #' front of the number if the number is positive. This way all returned strings
 #' (except for those > 1, which are exceptions in LOADINGS) have the same number
 #' of characters.
 #'
 #' @param x numeric. Number to be formatted.
 #' @param digits numeric. Number of digits after the comma to keep.
-#' @param print_zero logical. Whether, if a number is between [-1, 1], the
+#' @param print_zero logical. Whether, if a number is between \[-1, 1\], the
 #'  zero should be omitted or printed (default is FALSE, i.e. omit zeros).
 #' @param pad logical. Whether, if a number starts with a 0 and the 0 is not printed
 #'  a white-space should be added.

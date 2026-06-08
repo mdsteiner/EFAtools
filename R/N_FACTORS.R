@@ -7,114 +7,114 @@
 #'  can be checked for their suitability for factor analysis.
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
-#' correlations. If \code{"CD"} is included as a criterion, x must be raw
+#' correlations. If `"CD"` is included as a criterion, x must be raw
 #'  data.
 #' @param criteria character. A vector with the factor retention methods to
-#' perform. Possible inputs are: \code{"CD"}, \code{"EKC"}, \code{"HULL"},
-#' \code{"KGC"}, \code{"MAP"}, \code{"NEST"},\code{"PARALLEL"}, \code{"SCREE"}, and \code{"SMT"}
+#' perform. Possible inputs are: `"CD"`, `"EKC"`, `"HULL"`,
+#' `"KGC"`, `"MAP"`, `"NEST"`,`"PARALLEL"`, `"SCREE"`, and `"SMT"`
 #' (see details). By default, a subset of often used, well-performing methods are performed.
 #' @param suitability logical. Whether the data should be checked for suitability
 #' for factor analysis using the Bartlett's test of sphericity and the
-#' Kaiser-Guttmann criterion (see details). Default is \code{TRUE}.
+#' Kaiser-Guttmann criterion (see details). Default is `TRUE`.
 #' @param N  numeric. The number of observations. Only needed if x is a
 #' correlation matrix.
-#' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw
-#' data is given as input. Default is \code{"pairwise.complete.obs"}.
-#' @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}
-#' Default is  \code{"pearson"}.
-#' @param n_factors_max numeric. Passed to \code{\link{CD}}.The maximum number
+#' @param use character. Passed to [stats::cor()] if raw
+#' data is given as input. Default is `"pairwise.complete.obs"`.
+#' @param cor_method character. Passed to [stats::cor()]
+#' Default is  `"pearson"`.
+#' @param n_factors_max numeric. Passed to [CD()]. The maximum number
 #' of factors to test against.
 #' Larger numbers will increase the duration the procedure takes, but test more
 #' possible solutions. Maximum possible is number of variables / 2. Default is
 #' NA. If not specified, number of variables / 2 is used.
-#' @param N_pop numeric. Passed to \code{\link{CD}}. Size of finite populations
+#' @param N_pop numeric. Passed to [CD()]. Size of finite populations
 #' of comparison data. Default is 10000.
-#' @param N_samples numeric. Passed to \code{\link{CD}}. Number of samples drawn
+#' @param N_samples numeric. Passed to [CD()]. Number of samples drawn
 #'  from each population. Default is 500.
-#' @param alpha numeric. Passed to \code{\link{CD}}. The alpha level used to test
+#' @param alpha numeric. Passed to [CD()]. The alpha level used to test
 #'  the significance of the improvement added by an additional factor.
 #'  Default is .30.
-#' @param max_iter_CD numeric. Passed to \code{\link{CD}}. The maximum number of
+#' @param max_iter_CD numeric. Passed to [CD()]. The maximum number of
 #'  iterations to perform after which the iterative PAF procedure is halted.
 #'   Default is 50.
-#' @param n_fac_theor numeric. Passed to \code{\link{HULL}}. Theoretical number
+#' @param n_fac_theor numeric. Passed to [HULL()]. Theoretical number
 #'  of factors to retain. The maximum of this number and the number of factors
-#'  suggested by \link{PARALLEL} plus one will be used in the Hull method.
-#' @param method character. Passed to \code{\link{EFA}} in \code{\link{HULL}},
-#' \code{\link{KGC}}, \code{\link{SCREE}}, \code{\link{PARALLEL}}, and \code{\link{NEST}}. The
-#' estimation method to use. One of  \code{"PAF"}, \code{"ULS"}, or  \code{"ML"},
+#'  suggested by [PARALLEL] plus one will be used in the Hull method.
+#' @param method character. Passed to [EFA()] in [HULL()],
+#' [KGC()], [SCREE()], [PARALLEL()], and [NEST()]. The
+#' estimation method to use. One of  `"PAF"`, `"ULS"`, or  `"ML"`,
 #' for principal axis factoring, unweighted least squares, and maximum
 #' likelihood, respectively.
-#' @param gof character. Passed to \code{\link{HULL}}. The goodness of fit index
-#' to use. Either \code{"CAF"}, \code{"CFI"}, or \code{"RMSEA"}, or any
-#' combination of them. If \code{method = "PAF"} is used, only
+#' @param gof character. Passed to [HULL()]. The goodness of fit index
+#' to use. Either `"CAF"`, `"CFI"`, or `"RMSEA"`, or any
+#' combination of them. If `method = "PAF"` is used, only
 #' the CAF can be used as goodness of fit index. For details on the CAF, see
 #' Lorenzo-Seva, Timmerman, and Kiers (2011).
-#' @param eigen_type_HULL character. Passed to  \code{\link{PARALLEL}} in
-#' \code{\link{HULL}}. On what the
+#' @param eigen_type_HULL character. Passed to  [PARALLEL()] in
+#' [HULL()]. On what the
 #' eigenvalues should be found in the parallel analysis. Can be one of
-#' \code{"SMC"}, \code{"PCA"}, or \code{"EFA"}. If using  \code{"SMC"} (default),
+#' `"SMC"`, `"PCA"`, or `"EFA"`. If using  `"SMC"` (default),
 #' the diagonal of the correlation matrices is
 #' replaced by the squared multiple correlations (SMCs) of the indicators. If
-#' using  \code{"PCA"}, the diagonal values of the correlation
-#' matrices are left to be 1. If using  \code{"EFA"}, eigenvalues are found on the
+#' using  `"PCA"`, the diagonal values of the correlation
+#' matrices are left to be 1. If using  `"EFA"`, eigenvalues are found on the
 #' correlation  matrices with the final communalities of an EFA solution as
 #' diagonal.
-#' @param eigen_type_other character. Passed to \code{\link{KGC}},
-#' \code{\link{SCREE}}, and \code{\link{PARALLEL}}. The same as eigen_type_HULL,
+#' @param eigen_type_other character. Passed to [KGC()],
+#' [SCREE()], and [PARALLEL()]. The same as eigen_type_HULL,
 #' but multiple inputs
-#' are possible here. Default is to use all inputs, that is, \code{c("PCA",
-#' "SMC", "EFA"})
-#' @param n_factors numeric. Passed to \code{\link{PARALLEL}} (also within
-#' \code{\link{HULL}}), \code{\link{KGC}}, and \code{\link{SCREE}}. Number of
-#' factors to extract if \code{"EFA"} is included in \code{eigen_type_HULL} or
-#'  \code{eigen_type_other}. Default is 1.
-#' @param n_datasets numeric. Passed to \code{\link{PARALLEL}} (also within
-#' \code{\link{HULL}}). The number of datasets to simulate. Default is 1000.
-#' @param percent numeric. Passed to \code{\link{PARALLEL}} (also within
-#' \code{\link{HULL}}). A vector of percentiles to take the simulated eigenvalues
+#' are possible here. Default is to use all inputs, that is, `c("PCA",
+#' "SMC", "EFA"`)
+#' @param n_factors numeric. Passed to [PARALLEL()] (also within
+#' [HULL()]), [KGC()], and [SCREE()]. Number of
+#' factors to extract if `"EFA"` is included in `eigen_type_HULL` or
+#'  `eigen_type_other`. Default is 1.
+#' @param n_datasets numeric. Passed to [PARALLEL()] (also within
+#' [HULL()]). The number of datasets to simulate. Default is 1000.
+#' @param percent numeric. Passed to [PARALLEL()] (also within
+#' [HULL()]). A vector of percentiles to take the simulated eigenvalues
 #'  from. Default is 95.
-#' @param decision_rule character. Passed to \code{\link{PARALLEL}} (also within
-#'  \code{\link{HULL}}). Which rule to use to determine the number of
-#'  factors to retain. Default is \code{"means"}, which will use the average
-#'  simulated eigenvalues. \code{"percentile"}, uses the percentiles specified
-#'  in percent. \code{"crawford"} uses the 95th percentile for the first factor
+#' @param decision_rule character. Passed to [PARALLEL()] (also within
+#'  [HULL()]). Which rule to use to determine the number of
+#'  factors to retain. Default is `"means"`, which will use the average
+#'  simulated eigenvalues. `"percentile"`, uses the percentiles specified
+#'  in percent. `"crawford"` uses the 95th percentile for the first factor
 #'  and the mean afterwards (based on Crawford et al, 2010).
-#' @param ekc_type character. Passed to the \code{type} argument of \code{\link{EKC}}.
-#'   Either \code{"BvA2017"} for the original implementation by Braeken and van Assen
-#'   (2017), or \code{"AM2019"} for the adapted implementation by Auerswald and Moshagen
+#' @param ekc_type character. Passed to the `type` argument of [EKC()].
+#'   Either `"BvA2017"` for the original implementation by Braeken and van Assen
+#'   (2017), or `"AM2019"` for the adapted implementation by Auerswald and Moshagen
 #'   (2019).
-#' @param n_datasets_nest numeric. The number of datasets to simulate in \code{\link{NEST}}. Default is 1000.
-#' @param alpha_nest numeric. The alpha level to use in \code{\link{NEST}} (i.e., 1-alpha percentile of eigenvalues is used for reference values).
+#' @param n_datasets_nest numeric. The number of datasets to simulate in [NEST()]. Default is 1000.
+#' @param alpha_nest numeric. The alpha level to use in [NEST()] (i.e., 1-alpha percentile of eigenvalues is used for reference values).
 #' @param show_progress logical. Whether a progress bar should be shown in the
 #'   console. Default is FALSE.
-#' @param ... Further arguments passed to \code{\link{EFA}} in
-#' \code{\link{PARALLEL}} (also within \code{\link{HULL}}) and \code{\link{KGC}}.
+#' @param ... Further arguments passed to [EFA()] in
+#' [PARALLEL()] (also within [HULL()]) and [KGC()].
 #'
 #' @details
 #' By default, the entered data are checked for suitability for factor analysis
 #' using the following methods (see respective documentations for details):
 #' \itemize{
-#' \item{Bartlett's test of sphericity (see \code{\link{BARTLETT}})}
-#' \item{Kaiser-Meyer-Olkin criterion (see \code{\link[EFAtools]{KMO}})}}
+#' \item{Bartlett's test of sphericity (see [BARTLETT()])}
+#' \item{Kaiser-Meyer-Olkin criterion (see [EFAtools::KMO()])}}
 #'
 #' The available factor retention criteria are the following (see respective
 #'  documentations for details):
 #'  \itemize{
-#' \item{Comparison data (see \code{\link{CD}})}
-#' \item{Empirical Kaiser criterion (see \code{\link{EKC}})}
-#' \item{Hull method (see \code{\link{HULL}})}
-#' \item{Kaiser-Guttman criterion (see \code{\link{KGC}})}
-#' \item{Parallel analysis (see \code{\link{PARALLEL}})}
-#' \item{Next Eigenvalue Sufficiency Test, NEST (see \code{\link{NEST}})}
-#' \item{Scree plot (see \code{\link{SCREE}})}
+#' \item{Comparison data (see [CD()])}
+#' \item{Empirical Kaiser criterion (see [EKC()])}
+#' \item{Hull method (see [HULL()])}
+#' \item{Kaiser-Guttman criterion (see [KGC()])}
+#' \item{Parallel analysis (see [PARALLEL()])}
+#' \item{Next Eigenvalue Sufficiency Test, NEST (see [NEST()])}
+#' \item{Scree plot (see [SCREE()])}
 #' \item{Sequential chi-square model tests, RMSEA lower bound, and AIC
-#' (see \code{\link{SMT}})}
+#' (see [SMT()])}
 #' }
 #'
 #' @return A list of class N_FACTORS containing
-#' \item{outputs}{A list with the outputs from \code{\link{BARTLETT}} and
-#'  \code{\link[EFAtools]{KMO}} and the factor retention criteria.}
+#' \item{outputs}{A list with the outputs from [BARTLETT()] and
+#'  [EFAtools::KMO()] and the factor retention criteria.}
 #' \item{n_factors}{A named vector containing the suggested number of factors
 #' from each factor retention criterion.}
 #' \item{settings}{A list of the settings used.}

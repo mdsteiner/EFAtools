@@ -2,7 +2,7 @@
 #'
 #' Factor retention method introduced by Ruscio and Roche (2012). The code was
 #' adapted from the CD code by Auerswald and Moshagen (2017) available at
-#' \url{https://osf.io/x5cz2/?view_only=d03efba1fd0f4c849a87db82e6705668}
+#' <https://osf.io/x5cz2/?view_only=d03efba1fd0f4c849a87db82e6705668>
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data.
 #' @param n_factors_max numeric. The maximum number of factors to test against.
@@ -15,12 +15,12 @@
 #'  Default is 500.
 #' @param alpha numeric. The alpha level used to test the significance of the
 #'  improvement added by an additional factor. Default is .30.
-#' @param use character. Passed to \code{\link[stats:cor]{stats::cor}}. Default
+#' @param use character. Passed to [stats::cor()]. Default
 #'  is "pairwise.complete.obs". However, for the comparison data procedure,
-#'  \code{NA} values will be excluded using na.omit(). If missing data should
+#'  `NA` values will be excluded using na.omit(). If missing data should
 #'  be handled differently (e.g., imputation), do this before passing the data to
-#'  \code{CD()}.
-#' @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}.
+#'  `CD()`.
+#' @param cor_method character. Passed to [stats::cor()].
 #' Default is "pearson".
 #' @param max_iter numeric. The maximum number of iterations to perform after
 #'  which the iterative PAF procedure is halted. Default is 50.
@@ -40,12 +40,12 @@
 #' using a C++ based function.
 #'
 #' Note that if the data contains missing values, these will be removed for the
-#' comparison data procedure using \code{\link[stats:na.fail]{stats::na.omit}}. If
+#' comparison data procedure using [`stats::na.omit()`][stats::na.fail]. If
 #' missing data should be treated differently, e.g., by imputation, do this outside
-#' \code{CD} and then pass the complete data.
+#' `CD` and then pass the complete data.
 #'
-#' The \code{CD} function can also be called together with other factor retention
-#' criteria in the \code{\link{N_FACTORS}} function.
+#' The `CD` function can also be called together with other factor retention
+#' criteria in the [N_FACTORS()] function.
 #'
 #' @return A list of class CD containing
 #'
@@ -64,10 +64,10 @@
 #' factorial structure. Psychological Assessment, 24, 282–292.
 #' doi: 10.1037/a0025697
 #'
-#' @seealso Other factor retention criteria: \code{\link{EKC}},
-#'  \code{\link{HULL}}, \code{\link{KGC}}, \code{\link{PARALLEL}}, \code{\link{SMT}}
+#' @seealso Other factor retention criteria: [EKC()],
+#'  [HULL()], [KGC()], [PARALLEL()], [SMT()]
 #'
-#'   \code{\link{N_FACTORS}} as a wrapper function for this and all
+#'   [N_FACTORS()] as a wrapper function for this and all
 #'   the above-mentioned factor retention criteria.
 #'
 #' @export

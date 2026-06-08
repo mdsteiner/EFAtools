@@ -22,5 +22,5 @@
 #'  }
 #' @source Grieder, S., & Grob, A. (2019). Exploratory factor analyses of the intelligence and development scales--2: Implications for theory and practice. Assessment. Advance online publication. doi:10.1177/10731911198450
 #' @source Grob, A., & Hagmann-von Arx, P. (2018). Intelligence and Development Scales--2 (IDS-2). Intelligenz- und Entwicklungsskalen für Kinder und Jugendliche.
-#' [Intelligence and Development Scales for Children and Adolescents.]. Bern, Switzerland: Hogrefe.
+#' \[Intelligence and Development Scales for Children and Adolescents.\]. Bern, Switzerland: Hogrefe.
 "IDS2_R"

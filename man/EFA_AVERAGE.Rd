@@ -6,7 +6,7 @@
 \source{
 Grieder, S., & Steiner, M.D. (2020). Algorithmic Jingle Jungle:
 A Comparison of Implementations of Principal Axis Factoring and Promax Rotation
- in R and SPSS. Manuscript in Preparation.
+in R and SPSS. Manuscript in Preparation.
 
 Hendrickson, A. E., & White, P. O. (1964). Promax: A quick method for
 rotation to oblique simple structure. British Journal of Statistical Psychology,
@@ -79,14 +79,14 @@ of the respective factor extraction method and rotation to be in line with how
 it is executed in this package (i.e., the respective default procedure), in the
 psych package, and in SPSS. A specific psych implementation exists for PAF, ML, varimax,
 and promax. The SPSS implementation exists for PAF, varimax, and promax. For
-details, see \code{\link{EFA}}.}
+details, see \code{\link[=EFA]{EFA()}}.}
 
 \item{averaging}{character. One of "mean" (default), and "median". Controls
 whether the different results should be averaged using the (trimmed) mean,
 or the median.}
 
 \item{trim}{numeric. If averaging is set to "mean", this argument controls
-the trimming of extremes (for details see \code{\link[base:mean]{base::mean}}).
+the trimming of extremes (for details see \code{\link[base:mean]{base::mean()}}).
 By default no trimming is done (i.e., trim = 0).}
 
 \item{salience_threshold}{numeric. The threshold to use to classify a pattern
@@ -103,7 +103,7 @@ that non-converged procedures are excluded from the averaging procedure.}
 Controls the methods to estimate the initial communalities in \code{PAF} if
 "none" is among the specified types. "smc" will use squared multiple
 correlations, "mac" will use maximum absolute correlations, "unity" will use
-1s (for details see \code{\link{EFA}}). Default is \code{c("smc", "mac", "unity")}.}
+1s (for details see \code{\link[=EFA]{EFA()}}). Default is \code{c("smc", "mac", "unity")}.}
 
 \item{criterion}{numeric vector. The convergence criterion used for PAF if
 "none" is among the specified types.
@@ -118,23 +118,23 @@ communalities from one iteration to the next and tests it against the
 specified criterion. "sum" takes the difference of
 the sum of all communalities in one iteration and the sum of all communalities
 in the next iteration and tests this against the criterion
-(for details see \code{\link{EFA}}). Default is \code{c("sum", "max_individual")}.}
+(for details see \code{\link[=EFA]{EFA()}}). Default is \code{c("sum", "max_individual")}.}
 
 \item{abs_eigen}{logical vector. Any combination of TRUE and FALSE.
 Which algorithm to use in the PAF iterations if "none" is among the specified
 types. If FALSE, the loadings are computed from the eigenvalues. This is also
-used by the \code{\link[psych:fa]{psych::fa}} function. If TRUE the
+used by the \code{\link[psych:fa]{psych::fa()}} function. If TRUE the
 loadings are computed with the absolute eigenvalues as done by SPSS
-(for details see \code{\link{EFA}}). Default is \code{TRUE}.}
+(for details see \code{\link[=EFA]{EFA()}}). Default is \code{TRUE}.}
 
 \item{varimax_type}{character vector. Any combination of "svd" and "kaiser".
 The type of the varimax rotation performed if "none" is among the specified
 types and "varimax", "promax", "orthogonal", or "oblique" is among the specified
 rotations. "svd" uses singular value decomposition, as
-\link[stats:varimax]{stats::varimax} does, and "kaiser" uses the varimax
+\code{\link[stats:varimax]{stats::varimax()}} does, and "kaiser" uses the varimax
 procedure performed in SPSS. This is the original procedure from Kaiser (1958),
 but with slight alterations in the varimax criterion (for details, see
-\code{\link{EFA}} and Grieder & Steiner, 2020).
+\code{\link[=EFA]{EFA()}} and Grieder & Steiner, 2020).
 Default is \code{c("svd", "kaiser")}.}
 
 \item{normalize}{logical vector. Any combination of TRUE and FALSE.
@@ -155,7 +155,7 @@ This specifies how the target matrix P is computed in promax rotation if
 "none" is among the specified types and "promax" or "oblique" is among the
 specified rotations. "unnorm" will use the unnormalized target matrix as
 originally done in Hendrickson and White (1964). "norm" will use a
-normalized target matrix (for details see \code{\link{EFA}}).
+normalized target matrix (for details see \code{\link[=EFA]{EFA()}}).
 Default is \code{c("norm", "unnorm")}.}
 
 \item{precision}{numeric vector. The tolerance for stopping in the rotation
@@ -163,15 +163,15 @@ procedure(s). Default is 10^-5.}
 
 \item{start_method}{character vector. Any combination of "psych" and "factanal".
 How to specify the starting values for the optimization procedure for ML.
-"psych" takes the starting values specified in \link[psych:fa]{psych::fa}.
+"psych" takes the starting values specified in \code{\link[psych:fa]{psych::fa()}}.
 "factanal" takes the starting values specified in the
-\link[stats:factanal]{stats::factanal} function. Default is
+\code{\link[stats:factanal]{stats::factanal()}} function. Default is
 \code{c("psych", "factanal")}.}
 
-\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
+\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}} if raw data
 is given as input. Default is "pairwise.complete.obs".}
 
-\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor}}.
+\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor()}}.
 Default is "pearson".}
 
 \item{show_progress}{logical. Whether a progress bar should be shown in the
@@ -209,7 +209,7 @@ calculated (see details).}
 \item{implementations_grid}{A matrix containing, for each performed EFA,
 the setting combination, if an error occurred (logical), the error message
 (character), an integer code for convergence as returned by
-\code{\link[stats:optim]{stats:optim}} (0 indicates successful completion.),
+\code{\link[stats:optim]{stats::optim()}} (0 indicates successful completion.),
 if heywood cases occurred (logical, see details for definition), if the
 solution was admissible (logical, see details for definition), and the fit
 indices.}
@@ -223,13 +223,13 @@ you perform a number of EFAs from different methods (e.g., Maximum Likelihood
 and Principal Axis Factoring), with different implementations (e.g., the SPSS
 and psych implementations of Principal Axis Factoring), and across different
 rotations of the same type (e.g., multiple oblique rotations, like promax and
-oblimin). EFA_AVERAGE will then run all these EFAs (using the \code{\link{EFA}}
+oblimin). EFA_AVERAGE will then run all these EFAs (using the \code{\link[=EFA]{EFA()}}
 function) and provide a summary across the different solutions.
 }
 \details{
 As a first step in this function, a grid is produced containing the setting
 combinations for the to-be-performed EFAs. These settings are then entered as
-arguments to the \code{\link{EFA}} function and the EFAs are run in a second
+arguments to the \code{\link[=EFA]{EFA()}} function and the EFAs are run in a second
 step. After all EFAs are run, the factor solutions are averaged and their
 variability determined in a third step.
 

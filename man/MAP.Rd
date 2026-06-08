@@ -16,20 +16,20 @@ MAP(
 (b) raw data (rows = observations, columns = variables) from which correlations are computed.}
 
 \item{use}{Character string specifying the treatment of missing values when computing correlations.
-Passed to \code{\link[stats]{cor}}. Defaults to \code{"pairwise.complete.obs"}.}
+Passed to \code{\link[stats:cor]{stats::cor()}}. Defaults to \code{"pairwise.complete.obs"}.}
 
 \item{cor_method}{Character string specifying the correlation coefficient to be computed if raw
-data are supplied. Passed to \code{\link[stats]{cor}}. Defaults to \code{"pearson"}.}
+data are supplied. Passed to \code{\link[stats:cor]{stats::cor()}}. Defaults to \code{"pearson"}.}
 }
 \value{
 An object of class \code{"MAP"} with the following elements:
 \itemize{
-  \item \code{eigenvalues}: Eigenvalues of the (possibly smoothed) correlation matrix.
-  \item \code{n_factors_TR2}: Index \eqn{m} that minimizes the TR2 (original MAP) criterion.
-  \item \code{n_factors_TR4}: Index \eqn{m} that minimizes the TR4 (revised MAP) criterion.
-  \item \code{criteria}: A \code{matrix} with columns \code{m}, \code{TR2 (orig. MAP)}, and
-  \code{TR4 (revised MAP)}.
-  \item \code{settings}: A list containing \code{use}, \code{cor_method}, and \code{N}.
+\item \code{eigenvalues}: Eigenvalues of the (possibly smoothed) correlation matrix.
+\item \code{n_factors_TR2}: Index \eqn{m} that minimizes the TR2 (original MAP) criterion.
+\item \code{n_factors_TR4}: Index \eqn{m} that minimizes the TR4 (revised MAP) criterion.
+\item \code{criteria}: A \code{matrix} with columns \code{m}, \verb{TR2 (orig. MAP)}, and
+\verb{TR4 (revised MAP)}.
+\item \code{settings}: A list containing \code{use}, \code{cor_method}, and \code{N}.
 }
 }
 \description{
@@ -52,21 +52,21 @@ minimizes the chosen criterion.
 
 This function returns two MAP criteria:
 \itemize{
-  \item \strong{TR2 (original MAP):} \deqn{\mathrm{MAP}_m = \frac{\mathrm{Trace}(R^{*2}_m) - p}{p(p-1)}}
-  which is algebraically equivalent to the mean squared off-diagonal partial correlations and
-  corresponds to Velicer's original MAP procedure.
-  \item \strong{TR4 (revised MAP):} \deqn{\mathrm{MAP4}_m = \frac{\mathrm{Trace}(R^{*4}_m) - p}{p(p-1)}}
-  a higher-order variant that places more weight on dominant residual association structure.
+\item \strong{TR2 (original MAP):} \deqn{\mathrm{MAP}_m = \frac{\mathrm{Trace}(R^{*2}_m) - p}{p(p-1)}}
+which is algebraically equivalent to the mean squared off-diagonal partial correlations and
+corresponds to Velicer's original MAP procedure.
+\item \strong{TR4 (revised MAP):} \deqn{\mathrm{MAP4}_m = \frac{\mathrm{Trace}(R^{*4}_m) - p}{p(p-1)}}
+a higher-order variant that places more weight on dominant residual association structure.
 }
 
 \strong{Input handling.} \code{x} can be a correlation matrix or raw data. If \code{x} is not a
-correlation matrix, correlations are computed using \code{\link[stats]{cor}} with the requested
+correlation matrix, correlations are computed using \code{\link[stats:cor]{stats::cor()}} with the requested
 missing-data handling (\code{use}) and association measure (\code{cor_method}). If a correlation
 matrix is supplied, \code{N} must be provided.
 
 \strong{Matrix conditioning.} The function stops if the correlation matrix is singular (non-invertible),
 because subsequent computations rely on stable matrix operations. If the correlation matrix is not
-positive definite (e.g., due to sampling error), it is smoothed using \code{\link[psych]{cor.smooth}}.
+positive definite (e.g., due to sampling error), it is smoothed using \code{\link[psych:cor.smooth]{psych::cor.smooth()}}.
 
 \strong{PCA-based partialing.} The PCA loading matrix \eqn{A} is obtained from the eigen-decomposition
 of \eqn{R} as \eqn{A = V \Lambda^{1/2}}. For each \eqn{m = 0, \dots, p-1}, the first \eqn{m} columns

@@ -36,7 +36,7 @@ N_FACTORS(
 \arguments{
 \item{x}{data.frame or matrix. Dataframe or matrix of raw data or matrix with
 correlations. If \code{"CD"} is included as a criterion, x must be raw
- data.}
+data.}
 
 \item{criteria}{character. A vector with the factor retention methods to
 perform. Possible inputs are: \code{"CD"}, \code{"EKC"}, \code{"HULL"},
@@ -50,50 +50,50 @@ Kaiser-Guttmann criterion (see details). Default is \code{TRUE}.}
 \item{N}{numeric. The number of observations. Only needed if x is a
 correlation matrix.}
 
-\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw
+\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}} if raw
 data is given as input. Default is \code{"pairwise.complete.obs"}.}
 
-\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor}}
+\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor()}}
 Default is  \code{"pearson"}.}
 
-\item{n_factors_max}{numeric. Passed to \code{\link{CD}}.The maximum number
+\item{n_factors_max}{numeric. Passed to \code{\link[=CD]{CD()}}. The maximum number
 of factors to test against.
 Larger numbers will increase the duration the procedure takes, but test more
 possible solutions. Maximum possible is number of variables / 2. Default is
 NA. If not specified, number of variables / 2 is used.}
 
-\item{N_pop}{numeric. Passed to \code{\link{CD}}. Size of finite populations
+\item{N_pop}{numeric. Passed to \code{\link[=CD]{CD()}}. Size of finite populations
 of comparison data. Default is 10000.}
 
-\item{N_samples}{numeric. Passed to \code{\link{CD}}. Number of samples drawn
+\item{N_samples}{numeric. Passed to \code{\link[=CD]{CD()}}. Number of samples drawn
 from each population. Default is 500.}
 
-\item{alpha}{numeric. Passed to \code{\link{CD}}. The alpha level used to test
+\item{alpha}{numeric. Passed to \code{\link[=CD]{CD()}}. The alpha level used to test
 the significance of the improvement added by an additional factor.
 Default is .30.}
 
-\item{max_iter_CD}{numeric. Passed to \code{\link{CD}}. The maximum number of
+\item{max_iter_CD}{numeric. Passed to \code{\link[=CD]{CD()}}. The maximum number of
 iterations to perform after which the iterative PAF procedure is halted.
- Default is 50.}
+Default is 50.}
 
-\item{n_fac_theor}{numeric. Passed to \code{\link{HULL}}. Theoretical number
+\item{n_fac_theor}{numeric. Passed to \code{\link[=HULL]{HULL()}}. Theoretical number
 of factors to retain. The maximum of this number and the number of factors
 suggested by \link{PARALLEL} plus one will be used in the Hull method.}
 
-\item{method}{character. Passed to \code{\link{EFA}} in \code{\link{HULL}},
-\code{\link{KGC}}, \code{\link{SCREE}}, \code{\link{PARALLEL}}, and \code{\link{NEST}}. The
+\item{method}{character. Passed to \code{\link[=EFA]{EFA()}} in \code{\link[=HULL]{HULL()}},
+\code{\link[=KGC]{KGC()}}, \code{\link[=SCREE]{SCREE()}}, \code{\link[=PARALLEL]{PARALLEL()}}, and \code{\link[=NEST]{NEST()}}. The
 estimation method to use. One of  \code{"PAF"}, \code{"ULS"}, or  \code{"ML"},
 for principal axis factoring, unweighted least squares, and maximum
 likelihood, respectively.}
 
-\item{gof}{character. Passed to \code{\link{HULL}}. The goodness of fit index
+\item{gof}{character. Passed to \code{\link[=HULL]{HULL()}}. The goodness of fit index
 to use. Either \code{"CAF"}, \code{"CFI"}, or \code{"RMSEA"}, or any
 combination of them. If \code{method = "PAF"} is used, only
 the CAF can be used as goodness of fit index. For details on the CAF, see
 Lorenzo-Seva, Timmerman, and Kiers (2011).}
 
-\item{eigen_type_HULL}{character. Passed to  \code{\link{PARALLEL}} in
-\code{\link{HULL}}. On what the
+\item{eigen_type_HULL}{character. Passed to  \code{\link[=PARALLEL]{PARALLEL()}} in
+\code{\link[=HULL]{HULL()}}. On what the
 eigenvalues should be found in the parallel analysis. Can be one of
 \code{"SMC"}, \code{"PCA"}, or \code{"EFA"}. If using  \code{"SMC"} (default),
 the diagonal of the correlation matrices is
@@ -103,50 +103,49 @@ matrices are left to be 1. If using  \code{"EFA"}, eigenvalues are found on the
 correlation  matrices with the final communalities of an EFA solution as
 diagonal.}
 
-\item{eigen_type_other}{character. Passed to \code{\link{KGC}},
-\code{\link{SCREE}}, and \code{\link{PARALLEL}}. The same as eigen_type_HULL,
+\item{eigen_type_other}{character. Passed to \code{\link[=KGC]{KGC()}},
+\code{\link[=SCREE]{SCREE()}}, and \code{\link[=PARALLEL]{PARALLEL()}}. The same as eigen_type_HULL,
 but multiple inputs
-are possible here. Default is to use all inputs, that is, \code{c("PCA",
-"SMC", "EFA"})}
+are possible here. Default is to use all inputs, that is, \verb{c("PCA", "SMC", "EFA"})}
 
-\item{n_factors}{numeric. Passed to \code{\link{PARALLEL}} (also within
-\code{\link{HULL}}), \code{\link{KGC}}, and \code{\link{SCREE}}. Number of
+\item{n_factors}{numeric. Passed to \code{\link[=PARALLEL]{PARALLEL()}} (also within
+\code{\link[=HULL]{HULL()}}), \code{\link[=KGC]{KGC()}}, and \code{\link[=SCREE]{SCREE()}}. Number of
 factors to extract if \code{"EFA"} is included in \code{eigen_type_HULL} or
- \code{eigen_type_other}. Default is 1.}
+\code{eigen_type_other}. Default is 1.}
 
-\item{n_datasets}{numeric. Passed to \code{\link{PARALLEL}} (also within
-\code{\link{HULL}}). The number of datasets to simulate. Default is 1000.}
+\item{n_datasets}{numeric. Passed to \code{\link[=PARALLEL]{PARALLEL()}} (also within
+\code{\link[=HULL]{HULL()}}). The number of datasets to simulate. Default is 1000.}
 
-\item{percent}{numeric. Passed to \code{\link{PARALLEL}} (also within
-\code{\link{HULL}}). A vector of percentiles to take the simulated eigenvalues
- from. Default is 95.}
+\item{percent}{numeric. Passed to \code{\link[=PARALLEL]{PARALLEL()}} (also within
+\code{\link[=HULL]{HULL()}}). A vector of percentiles to take the simulated eigenvalues
+from. Default is 95.}
 
-\item{decision_rule}{character. Passed to \code{\link{PARALLEL}} (also within
-\code{\link{HULL}}). Which rule to use to determine the number of
+\item{decision_rule}{character. Passed to \code{\link[=PARALLEL]{PARALLEL()}} (also within
+\code{\link[=HULL]{HULL()}}). Which rule to use to determine the number of
 factors to retain. Default is \code{"means"}, which will use the average
 simulated eigenvalues. \code{"percentile"}, uses the percentiles specified
 in percent. \code{"crawford"} uses the 95th percentile for the first factor
 and the mean afterwards (based on Crawford et al, 2010).}
 
-\item{ekc_type}{character. Passed to the \code{type} argument of \code{\link{EKC}}.
+\item{ekc_type}{character. Passed to the \code{type} argument of \code{\link[=EKC]{EKC()}}.
 Either \code{"BvA2017"} for the original implementation by Braeken and van Assen
 (2017), or \code{"AM2019"} for the adapted implementation by Auerswald and Moshagen
 (2019).}
 
-\item{n_datasets_nest}{numeric. The number of datasets to simulate in \code{\link{NEST}}. Default is 1000.}
+\item{n_datasets_nest}{numeric. The number of datasets to simulate in \code{\link[=NEST]{NEST()}}. Default is 1000.}
 
-\item{alpha_nest}{numeric. The alpha level to use in \code{\link{NEST}} (i.e., 1-alpha percentile of eigenvalues is used for reference values).}
+\item{alpha_nest}{numeric. The alpha level to use in \code{\link[=NEST]{NEST()}} (i.e., 1-alpha percentile of eigenvalues is used for reference values).}
 
 \item{show_progress}{logical. Whether a progress bar should be shown in the
 console. Default is FALSE.}
 
-\item{...}{Further arguments passed to \code{\link{EFA}} in
-\code{\link{PARALLEL}} (also within \code{\link{HULL}}) and \code{\link{KGC}}.}
+\item{...}{Further arguments passed to \code{\link[=EFA]{EFA()}} in
+\code{\link[=PARALLEL]{PARALLEL()}} (also within \code{\link[=HULL]{HULL()}}) and \code{\link[=KGC]{KGC()}}.}
 }
 \value{
 A list of class N_FACTORS containing
-\item{outputs}{A list with the outputs from \code{\link{BARTLETT}} and
- \code{\link[EFAtools]{KMO}} and the factor retention criteria.}
+\item{outputs}{A list with the outputs from \code{\link[=BARTLETT]{BARTLETT()}} and
+\code{\link[=KMO]{KMO()}} and the factor retention criteria.}
 \item{n_factors}{A named vector containing the suggested number of factors
 from each factor retention criterion.}
 \item{settings}{A list of the settings used.}
@@ -155,28 +154,28 @@ from each factor retention criterion.}
 Among the most important decisions for an exploratory factor analysis (EFA) is
 the choice of the number of factors to retain. Several factor retention
 criteria have been developed for this. With this function, various factor
- retention criteria can be performed simultaneously. Additionally, the data
- can be checked for their suitability for factor analysis.
+retention criteria can be performed simultaneously. Additionally, the data
+can be checked for their suitability for factor analysis.
 }
 \details{
 By default, the entered data are checked for suitability for factor analysis
 using the following methods (see respective documentations for details):
 \itemize{
-\item{Bartlett's test of sphericity (see \code{\link{BARTLETT}})}
-\item{Kaiser-Meyer-Olkin criterion (see \code{\link[EFAtools]{KMO}})}}
+\item{Bartlett's test of sphericity (see \code{\link[=BARTLETT]{BARTLETT()}})}
+\item{Kaiser-Meyer-Olkin criterion (see \code{\link[=KMO]{KMO()}})}}
 
 The available factor retention criteria are the following (see respective
- documentations for details):
- \itemize{
-\item{Comparison data (see \code{\link{CD}})}
-\item{Empirical Kaiser criterion (see \code{\link{EKC}})}
-\item{Hull method (see \code{\link{HULL}})}
-\item{Kaiser-Guttman criterion (see \code{\link{KGC}})}
-\item{Parallel analysis (see \code{\link{PARALLEL}})}
-\item{Next Eigenvalue Sufficiency Test, NEST (see \code{\link{NEST}})}
-\item{Scree plot (see \code{\link{SCREE}})}
+documentations for details):
+\itemize{
+\item{Comparison data (see \code{\link[=CD]{CD()}})}
+\item{Empirical Kaiser criterion (see \code{\link[=EKC]{EKC()}})}
+\item{Hull method (see \code{\link[=HULL]{HULL()}})}
+\item{Kaiser-Guttman criterion (see \code{\link[=KGC]{KGC()}})}
+\item{Parallel analysis (see \code{\link[=PARALLEL]{PARALLEL()}})}
+\item{Next Eigenvalue Sufficiency Test, NEST (see \code{\link[=NEST]{NEST()}})}
+\item{Scree plot (see \code{\link[=SCREE]{SCREE()}})}
 \item{Sequential chi-square model tests, RMSEA lower bound, and AIC
-(see \code{\link{SMT}})}
+(see \code{\link[=SMT]{SMT()}})}
 }
 }
 \examples{

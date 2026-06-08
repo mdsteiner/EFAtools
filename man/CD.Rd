@@ -44,13 +44,13 @@ Default is 500.}
 \item{alpha}{numeric. The alpha level used to test the significance of the
 improvement added by an additional factor. Default is .30.}
 
-\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}}. Default
+\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}}. Default
 is "pairwise.complete.obs". However, for the comparison data procedure,
 \code{NA} values will be excluded using na.omit(). If missing data should
 be handled differently (e.g., imputation), do this before passing the data to
 \code{CD()}.}
 
-\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor}}.
+\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor()}}.
 Default is "pearson".}
 
 \item{max_iter}{numeric. The maximum number of iterations to perform after
@@ -85,12 +85,12 @@ is slightly adapted to increase speed by performing the principal axis factoring
 using a C++ based function.
 
 Note that if the data contains missing values, these will be removed for the
-comparison data procedure using \code{\link[stats:na.fail]{stats::na.omit}}. If
+comparison data procedure using \code{\link[stats:na.fail]{stats::na.omit()}}. If
 missing data should be treated differently, e.g., by imputation, do this outside
 \code{CD} and then pass the complete data.
 
 The \code{CD} function can also be called together with other factor retention
-criteria in the \code{\link{N_FACTORS}} function.
+criteria in the \code{\link[=N_FACTORS]{N_FACTORS()}} function.
 }
 \examples{
 \donttest{
@@ -102,9 +102,9 @@ CD(DOSPERT_raw)
 }
 }
 \seealso{
-Other factor retention criteria: \code{\link{EKC}},
- \code{\link{HULL}}, \code{\link{KGC}}, \code{\link{PARALLEL}}, \code{\link{SMT}}
+Other factor retention criteria: \code{\link[=EKC]{EKC()}},
+\code{\link[=HULL]{HULL()}}, \code{\link[=KGC]{KGC()}}, \code{\link[=PARALLEL]{PARALLEL()}}, \code{\link[=SMT]{SMT()}}
 
-  \code{\link{N_FACTORS}} as a wrapper function for this and all
-  the above-mentioned factor retention criteria.
+\code{\link[=N_FACTORS]{N_FACTORS()}} as a wrapper function for this and all
+the above-mentioned factor retention criteria.
 }

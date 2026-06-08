@@ -9,7 +9,7 @@
 \arguments{
 \item{L}{Numeric loading matrix.}
 
-\item{cutoff}{Numeric scalar. Loadings with `abs(L) < cutoff` are counted as
+\item{cutoff}{Numeric scalar. Loadings with \code{abs(L) < cutoff} are counted as
 being in the hyperplane.}
 }
 \value{

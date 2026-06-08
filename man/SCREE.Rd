@@ -37,16 +37,16 @@ matrices with the final communalities of an exploratory factor analysis
 solution (default is principal axis factoring extracting 1 factor) as
 diagonal.}
 
-\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw
+\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}} if raw
 data is given as input. Default is "pairwise.complete.obs".}
 
-\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor}}.
+\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor()}}.
 Default is "pearson".}
 
 \item{n_factors}{numeric. Number of factors to extract if "EFA" is included in
 \code{eigen_type}. Default is 1.}
 
-\item{...}{Additional arguments passed to \code{\link{EFA}}. For example,
+\item{...}{Additional arguments passed to \code{\link[=EFA]{EFA()}}. For example,
 to change the extraction method (PAF is default).}
 }
 \value{
@@ -77,15 +77,15 @@ the scree test has been recommended against, at least for exclusive use as a
 factor retention criterion (Zwick & Velicer, 1986)
 
 The \code{SCREE} function can also be called together with other factor
-retention criteria in the \code{\link{N_FACTORS}} function.
+retention criteria in the \code{\link[=N_FACTORS]{N_FACTORS()}} function.
 }
 \examples{
 SCREE(test_models$baseline$cormat, eigen_type = c("PCA", "SMC"))
 }
 \seealso{
-Other factor retention criteria: \code{\link{CD}}, \code{\link{EKC}},
-\code{\link{HULL}}, \code{\link{PARALLEL}}, \code{\link{SMT}}
+Other factor retention criteria: \code{\link[=CD]{CD()}}, \code{\link[=EKC]{EKC()}},
+\code{\link[=HULL]{HULL()}}, \code{\link[=PARALLEL]{PARALLEL()}}, \code{\link[=SMT]{SMT()}}
 
-\code{\link{N_FACTORS}} as a wrapper function for this and all the
+\code{\link[=N_FACTORS]{N_FACTORS()}} as a wrapper function for this and all the
 above-mentioned factor retention criteria.
 }

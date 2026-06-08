@@ -1,6 +1,6 @@
 #' Print function for EKC objects
 #'
-#' @param x a list of class EKC. Output from \code{\link{EKC}} function.
+#' @param x a list of class EKC. Output from [EKC()] function.
 #' @param plot logical. Whether to plot the results.
 #' @param ... Further arguments for print.
 #'

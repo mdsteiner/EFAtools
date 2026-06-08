@@ -1,8 +1,8 @@
 #' Plot EFA_AVERAGE object
 #'
-#' Plot method showing a summarized output of the \link{EFA_AVERAGE} function
+#' Plot method showing a summarized output of the [EFA_AVERAGE] function
 #'
-#' @param x list. An output from the \link{EFA_AVERAGE} function.
+#' @param x list. An output from the [EFA_AVERAGE] function.
 #' @param ... not used.
 #'
 #' @importFrom rlang .data

@@ -56,7 +56,7 @@
 #' \item{diff_corres}{The number of differing variable-to-factor correspondences
 #'  between x and y, when only the highest loading is considered.}
 #' \item{diff_corres_cross}{The number of differing variable-to-factor correspondences
-#'  between x and y when all loadings \code{>= thresh} are considered.}
+#'  between x and y when all loadings `>= thresh` are considered.}
 #' \item{g}{The root mean squared distance (RMSE) between x and y.}
 #' \item{settings}{List of the settings used.}
 #'

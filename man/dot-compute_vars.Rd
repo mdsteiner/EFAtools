@@ -16,9 +16,9 @@ is used.}
 }
 \value{
 A matrix with sum of squared loadings, proportion explained variance
- from total variance per factor, same as previous but cumulative, Proportion
- of explained variance from total explained variance, and same as previous but
- cumulative.
+from total variance per factor, same as previous but cumulative, Proportion
+of explained variance from total explained variance, and same as previous but
+cumulative.
 }
 \description{
 From unrotated loadings compute the communalities and uniquenesses for total

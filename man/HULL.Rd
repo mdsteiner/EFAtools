@@ -50,37 +50,37 @@ Lorenzo-Seva, Timmerman, and Kiers (2011).}
 
 \item{eigen_type}{character. On what the eigenvalues should be found in the
 parallel analysis. Can be one of \code{"SMC"}, \code{"PCA"}, or \code{"EFA"}.
- If using  \code{"SMC"} (default), the diagonal of the correlation matrices is
-  replaced by the squared multiple correlations (SMCs) of the indicators. If
-   using  \code{"PCA"}, the diagonal values of the correlation
+If using  \code{"SMC"} (default), the diagonal of the correlation matrices is
+replaced by the squared multiple correlations (SMCs) of the indicators. If
+using  \code{"PCA"}, the diagonal values of the correlation
 matrices are left to be 1. If using  \code{"EFA"}, eigenvalues are found on the
 correlation  matrices with the final communalities of an EFA solution as
-diagonal. This is passed to  \code{\link{PARALLEL}}.}
+diagonal. This is passed to  \code{\link[=PARALLEL]{PARALLEL()}}.}
 
-\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
+\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}} if raw data
 is given as input. Default is \code{"pairwise.complete.obs"}.}
 
-\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor}}.
+\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor()}}.
 Default is  \code{"pearson"}.}
 
 \item{n_datasets}{numeric. The number of datasets to simulate. Default is 1000.
-This is passed to \code{\link{PARALLEL}}.}
+This is passed to \code{\link[=PARALLEL]{PARALLEL()}}.}
 
 \item{percent}{numeric. A vector of percentiles to take the simulated eigenvalues from.
-Default is 95. This is passed to \code{\link{PARALLEL}}.}
+Default is 95. This is passed to \code{\link[=PARALLEL]{PARALLEL()}}.}
 
 \item{decision_rule}{character. Which rule to use to determine the number of
 factors to retain. Default is \code{"means"}, which will use the average
 simulated eigenvalues. \code{"percentile"}, uses the percentiles specified
 in percent. \code{"crawford"} uses the 95th percentile for the first factor
-and the mean afterwards (based on Crawford et al, 2010). This is passed to \code{\link{PARALLEL}}.}
+and the mean afterwards (based on Crawford et al, 2010). This is passed to \code{\link[=PARALLEL]{PARALLEL()}}.}
 
 \item{n_factors}{numeric. Number of factors to extract if  \code{"EFA"} is
 included in \code{eigen_type}. Default is 1. This is passed to
-\code{\link{PARALLEL}}.}
+\code{\link[=PARALLEL]{PARALLEL()}}.}
 
-\item{...}{Further arguments passed to \code{\link{EFA}}, also in
-\code{\link{PARALLEL}}.}
+\item{...}{Further arguments passed to \code{\link[=EFA]{EFA()}}, also in
+\code{\link[=PARALLEL]{PARALLEL()}}.}
 }
 \value{
 A list of class HULL containing the following objects
@@ -103,34 +103,34 @@ parallelization.
 }
 \details{
 The Hull method aims to find a model with an optimal balance between
- model fit and number of parameters. That is, it aims to retrieve only major
- factors (Lorenzo-Seva, Timmerman, & Kiers, 2011). To this end, it performs
- the following steps (Lorenzo-Seva, Timmerman, & Kiers, 2011, p.351):
- \enumerate{
-   \item It performs parallel analysis and adds one to the identified number of factors (this number is denoted \emph{J}). \emph{J} is taken as an upper bound of the number of factors to retain in the hull method. Alternatively, a theoretical number of factors can be entered. In this case \emph{J} will be set to whichever of these two numbers (from parallel analysis or based on theory) is higher.
-   \item For all 0 to \emph{J} factors, the goodness-of-fit (one of \emph{CAF}, \emph{RMSEA}, or \emph{CFI}) and the degrees of freedom (\emph{df}) are computed.
-   \item The solutions are ordered according to their \emph{df}.
-   \item Solutions that are not on the boundary of the convex hull are eliminated (see Lorenzo-Seva, Timmerman, & Kiers, 2011, for details).
-   \item All the triplets of adjacent solutions are considered consecutively. The middle solution is excluded if its point is below or on the line connecting its neighbors in a plot of the goodness-of-fit versus the degrees of freedom.
-   \item Step 5 is repeated until no solution can be excluded.
-   \item The \emph{st} values of the “hull” solutions are determined.
-   \item The solution with the highest \emph{st} value is selected.
- }
+model fit and number of parameters. That is, it aims to retrieve only major
+factors (Lorenzo-Seva, Timmerman, & Kiers, 2011). To this end, it performs
+the following steps (Lorenzo-Seva, Timmerman, & Kiers, 2011, p.351):
+\enumerate{
+\item It performs parallel analysis and adds one to the identified number of factors (this number is denoted \emph{J}). \emph{J} is taken as an upper bound of the number of factors to retain in the hull method. Alternatively, a theoretical number of factors can be entered. In this case \emph{J} will be set to whichever of these two numbers (from parallel analysis or based on theory) is higher.
+\item For all 0 to \emph{J} factors, the goodness-of-fit (one of \emph{CAF}, \emph{RMSEA}, or \emph{CFI}) and the degrees of freedom (\emph{df}) are computed.
+\item The solutions are ordered according to their \emph{df}.
+\item Solutions that are not on the boundary of the convex hull are eliminated (see Lorenzo-Seva, Timmerman, & Kiers, 2011, for details).
+\item All the triplets of adjacent solutions are considered consecutively. The middle solution is excluded if its point is below or on the line connecting its neighbors in a plot of the goodness-of-fit versus the degrees of freedom.
+\item Step 5 is repeated until no solution can be excluded.
+\item The \emph{st} values of the “hull” solutions are determined.
+\item The solution with the highest \emph{st} value is selected.
+}
 
 The \link{PARALLEL} function and the principal axis factoring of the
-  different number of factors can be parallelized using the future framework,
-  by calling the \link[future:plan]{future::plan} function. The examples
-   provide example code on how to enable parallel processing.
+different number of factors can be parallelized using the future framework,
+by calling the \code{\link[future:plan]{future::plan()}} function. The examples
+provide example code on how to enable parallel processing.
 
-  Note that if \code{gof = "RMSEA"} is used, 1 - RMSEA is actually used to
-  compare the different solutions. Thus, the threshold of .05 is then .95. This
-  is necessary due to how the heuristic to locate the elbow of the hull works.
+Note that if \code{gof = "RMSEA"} is used, 1 - RMSEA is actually used to
+compare the different solutions. Thus, the threshold of .05 is then .95. This
+is necessary due to how the heuristic to locate the elbow of the hull works.
 
-  The ML estimation method uses the \link[stats:factanal]{stats::factanal}
-   starting values. See also the \link{EFA} documentation.
+The ML estimation method uses the \code{\link[stats:factanal]{stats::factanal()}}
+starting values. See also the \link{EFA} documentation.
 
-   The \code{HULL} function can also be called together with other factor
-   retention criteria in the \code{\link{N_FACTORS}} function.
+The \code{HULL} function can also be called together with other factor
+retention criteria in the \code{\link[=N_FACTORS]{N_FACTORS()}} function.
 }
 \examples{
 \donttest{
@@ -153,9 +153,9 @@ HULL(test_models$baseline$cormat, N = 500, gof = "CAF")
 }
 }
 \seealso{
-Other factor retention criteria: \code{\link{CD}}, \code{\link{EKC}},
-\code{\link{KGC}}, \code{\link{PARALLEL}}, \code{\link{SMT}}
+Other factor retention criteria: \code{\link[=CD]{CD()}}, \code{\link[=EKC]{EKC()}},
+\code{\link[=KGC]{KGC()}}, \code{\link[=PARALLEL]{PARALLEL()}}, \code{\link[=SMT]{SMT()}}
 
-\code{\link{N_FACTORS}} as a wrapper function for this and all the
+\code{\link[=N_FACTORS]{N_FACTORS()}} as a wrapper function for this and all the
 above-mentioned factor retention criteria.
 }

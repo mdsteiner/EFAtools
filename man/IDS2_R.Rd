@@ -7,21 +7,21 @@
 \format{
 A 14 x 14 matrix of bivariate correlations
 \describe{
-  \item{GS}{(numeric) - Geometric shapes.}
-  \item{PL}{(numeric) - Plates.}
-  \item{TC}{(numeric) - Two characteristics.}
-  \item{CB}{(numeric) - Crossing out boxes.}
-  \item{NL}{(numeric) - Numbers / letters.}
-  \item{NLM}{(numeric) - Numbers / letter mixed.}
-  \item{GF}{(numeric) - Geometric figures.}
-  \item{RGF}{(numeric) - Rotated geometric figures.}
-  \item{CM}{(numeric) - Completing matrices.}
-  \item{EP}{(numeric) - Excluding pictures.}
-  \item{CA}{(numeric) - Categories.}
-  \item{OP}{(numeric) - Opposites.}
-  \item{RS}{(numeric) - Retelling a story.}
-  \item{DP}{(numeric) - Describing pictures.}
- }
+\item{GS}{(numeric) - Geometric shapes.}
+\item{PL}{(numeric) - Plates.}
+\item{TC}{(numeric) - Two characteristics.}
+\item{CB}{(numeric) - Crossing out boxes.}
+\item{NL}{(numeric) - Numbers / letters.}
+\item{NLM}{(numeric) - Numbers / letter mixed.}
+\item{GF}{(numeric) - Geometric figures.}
+\item{RGF}{(numeric) - Rotated geometric figures.}
+\item{CM}{(numeric) - Completing matrices.}
+\item{EP}{(numeric) - Excluding pictures.}
+\item{CA}{(numeric) - Categories.}
+\item{OP}{(numeric) - Opposites.}
+\item{RS}{(numeric) - Retelling a story.}
+\item{DP}{(numeric) - Describing pictures.}
+}
 }
 \source{
 Grieder, S., & Grob, A. (2019). Exploratory factor analyses of the intelligence and development scales--2: Implications for theory and practice. Assessment. Advance online publication. doi:10.1177/10731911198450

@@ -9,8 +9,8 @@ An object of class \code{data.frame} with 645 rows and 45 columns.
 }
 \source{
 Whiteside, S. P., Lynam, D. R., Miller, J. D., & Reynolds, S. K. (2005).
- Validation of the UPPS impulsive behaviour scale: A four-factor model of
- impulsivity. European Journal of Personality, 19 (7), 559–574.
+Validation of the UPPS impulsive behaviour scale: A four-factor model of
+impulsivity. European Journal of Personality, 19 (7), 559–574.
 
 Steiner, M., & Frey, R. (2020). Representative design in psychological assessment: A case study using the Balloon Analogue Risk Task (BART). PsyArXiv Preprint. doi:10.31234/osf.io/dg4ks
 }

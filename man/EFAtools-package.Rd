@@ -21,7 +21,8 @@ Useful links:
 
 Authors:
 \itemize{
-  \item Silvia Grieder \email{silvia.grieder@gmail.com}
+  \item Markus Steiner \email{markus.d.steiner@gmail.com}
+  \item Silvia Steiner \email{silvia.steiner.grieder@gmail.com}
 }
 
 Other contributors:

@@ -1,6 +1,6 @@
 #' Print function for N_FACTORS objects
 #'
-#' @param x a list of class N_FACTORS. Output from \link{N_FACTORS} function.
+#' @param x a list of class N_FACTORS. Output from [N_FACTORS] function.
 #' @param ... Further arguments for print.
 #'
 #' @export

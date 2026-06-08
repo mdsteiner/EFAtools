@@ -1,6 +1,6 @@
 #' Print function for HULL objects
 #'
-#' @param x a list of class HULL. Output from the \code{\link{HULL}} function.
+#' @param x a list of class HULL. Output from the [HULL()] function.
 #' @param plot logical. Whether to plot the results.
 #' @param ... Further arguments for print.
 #'

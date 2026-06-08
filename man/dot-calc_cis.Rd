@@ -17,7 +17,7 @@ interfactor correlations}
 for 95\% CIs.}
 
 \item{n}{Numeric. Typically, the number of permutations \eqn{m}. See
-\code{\link{EFA_POOLED}}.}
+\code{\link[=EFA_POOLED]{EFA_POOLED()}}.}
 }
 \value{
 A list with the lower and upper CIs.
@@ -45,7 +45,7 @@ imputations–that is, additional uncertainty (sampling variability) in the
 parameter estimates caused by missing data.}
 
 Currently, it is not possible to calculate the first term, because
-\code{\link{EFA}} does not calculate SEs for the loadings. Only the second
+\code{\link[=EFA]{EFA()}} does not calculate SEs for the loadings. Only the second
 and third terms are used in the calculation of SE for the CIs.
 
 The CI is generally calculated as:
@@ -75,7 +75,7 @@ https://doi.org/10.1002/9780470316696
 \author{
 Andreas Soteriades
 
-This function is used internally by \code{\link{EFA_POOLED}} to calculate
+This function is used internally by \code{\link[=EFA_POOLED]{EFA_POOLED()}} to calculate
 confidence intervals (CIs) around the pooled loadings and pooled interfactor
 correlations.
 }

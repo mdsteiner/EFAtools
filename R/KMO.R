@@ -7,9 +7,9 @@
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
 #'  correlations.
-#' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw
+#' @param use character. Passed to [stats::cor()] if raw
 #'  data is given as input. Default is "pairwise.complete.obs".
-#' @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}.
+#' @param cor_method character. Passed to [stats::cor()].
 #' Default is "pearson".
 #'
 #' @details Kaiser (1970) proposed this index, originally called measure of
@@ -27,15 +27,15 @@
 #' for factor analysis. Kaiser and Rice (1974) suggest that KMO should at least
 #' exceed .50 for a correlation matrix to be suitable for factor analysis.
 #'
-#' This function was heavily influenced by the \code{\link[psych:KMO]{psych::KMO}}
+#' This function was heavily influenced by the [psych::KMO()]
 #' function.
 #'
-#' See also \code{\link{BARTLETT}} for another test of suitability for factor
+#' See also [BARTLETT()] for another test of suitability for factor
 #' analysis.
 #'
-#' The \code{KMO} function can also be called together with the
-#' \code{\link{BARTLETT}} function and with factor retention criteria in the
-#'  \code{\link{N_FACTORS}} function.
+#' The `KMO` function can also be called together with the
+#' [BARTLETT()] function and with factor retention criteria in the
+#'  [N_FACTORS()] function.
 #'
 #' @return A list containing
 #' \item{KMO}{Overall KMO.}
@@ -51,11 +51,11 @@
 #' @source Cureton, E. E. & D'Augustino, R. B. (1983). Factor analysis: An
 #'  applied approach. Hillsdale, N.J.: Lawrence Erlbaum Associates, Inc.
 #'
-#' @seealso \code{\link{BARTLETT}} for another measure to determine
+#' @seealso [BARTLETT()] for another measure to determine
 #' suitability for factor analysis.
 #'
-#' \code{\link{N_FACTORS}} as a wrapper function for this function,
-#' \code{\link{BARTLETT}} and several factor retention criteria.
+#' [N_FACTORS()] as a wrapper function for this function,
+#' [BARTLETT()] and several factor retention criteria.
 #'
 #' @examples
 #' KMO(test_models$baseline$cormat)

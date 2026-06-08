@@ -9,9 +9,9 @@
 #' correlations.
 #' @param N numeric. The number of observations. Needs only be specified if a
 #' correlation matrix is used.
-#' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
+#' @param use character. Passed to [stats::cor()] if raw data
 #' is given as input. Default is "pairwise.complete.obs".
-#' @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}.
+#' @param cor_method character. Passed to [stats::cor()].
 #' Default is "pearson".
 #'
 #' @details Bartlett (1951) proposed this statistic to determine a correlation
@@ -24,14 +24,14 @@
 #' the sample size, and \eqn{p} is the number of variables.
 #'
 #' This tests requires multivariate normality. If this condition is not met,
-#' the Kaiser-Meyer-Olkin criterion (\code{\link[EFAtools]{KMO}})
+#' the Kaiser-Meyer-Olkin criterion ([EFAtools::KMO()])
 #' can still be used.
 #'
-#' This function was heavily influenced by the \code{\link[psych:cortest.bartlett]{psych::cortest.bartlett}} function from the psych package.
+#' This function was heavily influenced by the [psych::cortest.bartlett()] function from the psych package.
 #'
-#' The \code{BARTLETT} function can also be called together with the
-#'  (\code{\link[EFAtools]{KMO}}) function and with factor retention criteria
-#'  in the \code{\link{N_FACTORS}} function.
+#' The `BARTLETT` function can also be called together with the
+#'  ([EFAtools::KMO()]) function and with factor retention criteria
+#'  in the [N_FACTORS()] function.
 #'
 #' @return A list containing
 #' \item{chisq}{The chi square statistic.}
@@ -42,11 +42,11 @@
 #' @source Bartlett, M. S. (1951). The effect of standardization on a Chi-square
 #' approximation in factor analysis. Biometrika, 38, 337-344.
 #'
-#' @seealso \code{\link[EFAtools]{KMO}} for another measure to determine
+#' @seealso [EFAtools::KMO()] for another measure to determine
 #'  suitability for factor analysis.
 #'
-#'  \code{\link{N_FACTORS}} as a wrapper function for this function,
-#'  \code{\link[EFAtools]{KMO}} and several factor retention criteria.
+#'  [N_FACTORS()] as a wrapper function for this function,
+#'  [EFAtools::KMO()] and several factor retention criteria.
 #'
 #' @export
 #'

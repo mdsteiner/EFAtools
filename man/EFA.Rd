@@ -6,7 +6,7 @@
 \source{
 Grieder, S., & Steiner, M.D. (2020). Algorithmic Jingle Jungle:
 A Comparison of Implementations of Principal Axis Factoring and Promax Rotation
- in R and SPSS. Manuscript in Preparation.
+in R and SPSS. Manuscript in Preparation.
 
 Hendrickson, A. E., & White, P. O. (1964). Promax: A quick method for
 rotation to oblique simple structure. British Journal of Statistical Psychology,
@@ -106,19 +106,19 @@ communalities from one iteration to the next and tests it against the
 specified criterion. This is also used by SPSS. "sum" takes the difference of
 the sum of all communalities in one iteration and the sum of all communalities
 in the next iteration and tests this against the criterion. This procedure is
-used by the \code{\link[psych:fa]{psych::fa}} function. Default is \code{NA}.}
+used by the \code{\link[psych:fa]{psych::fa()}} function. Default is \code{NA}.}
 
 \item{abs_eigen}{logical. Which algorithm to use in the PAF
 iterations. If FALSE, the loadings are computed from the eigenvalues. This is
-also used by the \code{\link[psych:fa]{psych::fa}} function. If TRUE the
+also used by the \code{\link[psych:fa]{psych::fa()}} function. If TRUE the
 loadings are computed with the absolute eigenvalues as done by SPSS.
 Default is \code{NA}.}
 
-\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
+\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}} if raw data
 is given as input. Default is "pairwise.complete.obs".}
 
 \item{varimax_type}{character. The type of the varimax rotation performed.
-If "svd", singular value decomposition is used, as \link[stats:varimax]{stats::varimax} does. If "kaiser", the varimax procedure performed in SPSS is used.
+If "svd", singular value decomposition is used, as \code{\link[stats:varimax]{stats::varimax()}} does. If "kaiser", the varimax procedure performed in SPSS is used.
 This is the original procedure from Kaiser (1958), but with slight alterations
 in the varimax criterion (see details, and Grieder & Steiner, 2020). Default is \code{NA}.}
 
@@ -148,11 +148,11 @@ sum of squared factor loadings per factor. Default is \code{NA}.}
 
 \item{start_method}{character. How to specify the starting values for the
 optimization procedure for ML. Default is "psych" which takes the
-starting values specified in \link[psych:fa]{psych::fa}. "factanal" takes the
-starting values specified in the \link[stats:factanal]{stats::factanal} function.
+starting values specified in \code{\link[psych:fa]{psych::fa()}}. "factanal" takes the
+starting values specified in the \code{\link[stats:factanal]{stats::factanal()}} function.
 Solutions are very similar.}
 
-\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor}}.
+\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor()}}.
 Default is "pearson".}
 
 \item{b_boot}{numeric. The number of bootstrap samples to draw. Default is 1000.}
@@ -175,12 +175,12 @@ A list of class EFA containing (a subset of) the following:
 \item{h2}{Final communality estimates from the unrotated solution.}
 \item{orig_eigen}{Eigen values of the original correlation matrix.}
 \item{init_eigen}{Initial eigenvalues, obtained from the correlation matrix
- with the initial communality estimates as diagonal in PAF.}
+with the initial communality estimates as diagonal in PAF.}
 \item{final_eigen}{Eigenvalues obtained from the correlation matrix
- with the final communality estimates as diagonal.}
+with the final communality estimates as diagonal.}
 \item{iter}{The number of iterations needed for convergence.}
 \item{convergence}{Integer code for convergence as returned by
-\code{\link[stats:optim]{stats:optim}} (only for ML and ULS).
+\code{\link[stats:optim]{stats::optim()}} (only for ML and ULS).
 0 indicates successful completion.}
 \item{unrot_loadings}{Loading matrix containing the final unrotated loadings.}
 \item{vars_accounted}{Matrix of explained variances and sums of squared loadings. Based on the unrotated loadings.}
@@ -232,16 +232,13 @@ For PAF, the values of \code{init_comm}, \code{criterion}, \code{criterion_type}
 and \code{abs_eigen} depend on the \code{type} argument.
 
 \code{type = "EFAtools"} will use the following argument specification:
-\code{init_comm = "smc", criterion = .001, criterion_type = "sum",
-abs_eigen = TRUE}.
+\verb{init_comm = "smc", criterion = .001, criterion_type = "sum", abs_eigen = TRUE}.
 
 \code{type = "psych"} will use the following argument specification:
-\code{init_comm = "smc", criterion = .001, criterion_type = "sum",
-abs_eigen = FALSE}.
+\verb{init_comm = "smc", criterion = .001, criterion_type = "sum", abs_eigen = FALSE}.
 
 \code{type = "SPSS"} will use the following argument specification:
-\code{init_comm = "smc", criterion = .001, criterion_type = "max_individual",
-abs_eigen = TRUE}.
+\verb{init_comm = "smc", criterion = .001, criterion_type = "max_individual", abs_eigen = TRUE}.
 
 If SMCs fail, SPSS takes "mac". However, as SPSS takes absolute eigenvalues,
 this is hardly ever the case. Psych, on the other hand, takes "unity" if SMCs
@@ -256,25 +253,25 @@ For varimax, the values of \code{varimax_type} and \code{order_type} depend on
 the \code{type} argument.
 
 \code{type = "EFAtools"} will use the following argument specification:
-\code{varimax_type = "kaiser", order_type = "eigen"}.
+\verb{varimax_type = "kaiser", order_type = "eigen"}.
 
 \code{type = "psych"} will use the following argument specification:
-\code{varimax_type = "svd", order_type = "eigen"}.
+\verb{varimax_type = "svd", order_type = "eigen"}.
 
 \code{type = "SPSS"} will use the following argument specification:
-\code{varimax_type = "kaiser", order_type = "ss_factors"}.
+\verb{varimax_type = "kaiser", order_type = "ss_factors"}.
 
 For promax, the values of \code{P_type},
 \code{order_type}, and \code{k} depend on the \code{type} argument.
 
 \code{type = "EFAtools"} will use the following argument specification:
-\code{P_type = "norm", order_type = "eigen", k = 4}.
+\verb{P_type = "norm", order_type = "eigen", k = 4}.
 
 \code{type = "psych"} will use the following argument specification:
-\code{P_type = "unnorm", order_type = "eigen", k = 4}.
+\verb{P_type = "unnorm", order_type = "eigen", k = 4}.
 
 \code{type = "SPSS"} will use the following argument specification:
-\code{P_type = "norm", order_type = "ss_factors", k = 4}.
+\verb{P_type = "norm", order_type = "ss_factors", k = 4}.
 
 The \code{P_type} argument can take two values, "unnorm" and "norm". It controls
 which formula is used to compute the target matrix P in the promax rotation.
@@ -289,7 +286,7 @@ compared to the other setting combinations tested in simulation studies in
 Grieder & Steiner (2020).
 
 The \code{varimax_type} argument can take two values, "svd", and "kaiser". "svd" uses
-singular value decomposition, by calling \link[stats:varimax]{stats::varimax}. "kaiser"
+singular value decomposition, by calling \code{\link[stats:varimax]{stats::varimax()}}. "kaiser"
 performs the varimax procedure as described in the SPSS 23 Algorithms manual and as described
 by Kaiser (1958). However, there is a slight alteration in computing the varimax criterion, which
 we found to better align with the results obtain from SPSS. Specifically, the original varimax
@@ -310,7 +307,7 @@ The \code{type} argument has no effect on ULS and ML. For ULS, no additional
 arguments are needed. For ML, an additional argument
 \code{start_method} is needed to determine the starting values for the
 optimization procedure. Default for this argument is "factanal" which takes
-the starting values specified in the \link[stats:factanal]{stats::factanal} function.
+the starting values specified in the \code{\link[stats:factanal]{stats::factanal()}} function.
 }
 \examples{
 # A type EFAtools (as presented in Steiner and Grieder, 2020) EFA

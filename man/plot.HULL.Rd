@@ -7,12 +7,12 @@
 \method{plot}{HULL}(x, ...)
 }
 \arguments{
-\item{x}{list of class HULL. An output from the \code{\link{HULL}} function.}
+\item{x}{list of class HULL. An output from the \code{\link[=HULL]{HULL()}} function.}
 
 \item{...}{not used.}
 }
 \description{
-Plot method showing a summarized output of the \code{\link{HULL}} function
+Plot method showing a summarized output of the \code{\link[=HULL]{HULL()}} function
 }
 \examples{
 \donttest{

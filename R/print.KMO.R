@@ -1,6 +1,6 @@
 #' Print KMO object
 #'
-#' @param x list of class KMO (output from the \link{KMO} function)
+#' @param x list of class KMO (output from the [KMO] function)
 #' @param ... additional arguments passed to print
 #'
 #' @method print KMO

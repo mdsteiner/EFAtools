@@ -7,8 +7,8 @@
 \method{residuals}{EFA}(object, print = TRUE, digits = 3, ...)
 }
 \arguments{
-\item{object}{a list of class EFA. Output from \code{\link{EFA}} or
-\code{\link{EFA_POOLED}}.}
+\item{object}{a list of class EFA. Output from \code{\link[=EFA]{EFA()}} or
+\code{\link[=EFA_POOLED]{EFA_POOLED()}}.}
 
 \item{print}{logical. Whether to print residuals. If FALSE, they are just returned.}
 

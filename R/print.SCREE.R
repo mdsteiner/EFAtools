@@ -1,6 +1,6 @@
 #' Print function for SCREE objects
 #'
-#' @param x a list of class SCREE Output from \link{SCREE} function.
+#' @param x a list of class SCREE Output from [SCREE] function.
 #' @param plot logical. Whether to plot the results.
 #' @param ... Further arguments for print.
 #'

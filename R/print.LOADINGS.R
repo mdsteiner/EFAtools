@@ -20,26 +20,26 @@
 #'  to round the loadings to (default is 3).
 #' @param max_name_length numeric. The maximum length of the variable names to
 #'  display. Everything beyond this will be cut from the right unless
-#'  \code{name_style = "abbreviate"} or \code{name_style = "full"} is used.
-#' @param h2 numeric. Vector of communalities to print. If named and \code{x}
+#'  `name_style = "abbreviate"` or `name_style = "full"` is used.
+#' @param h2 numeric. Vector of communalities to print. If named and `x`
 #'  has row names, names are used to align communalities to rows.
 #' @param color logical. Whether to apply console styling using \pkg{crayon}.
-#'  Default is \code{TRUE}.
+#'  Default is `TRUE`.
 #' @param name_style character. How to shorten variable names longer than
-#'  \code{max_name_length}. \code{"truncate"} cuts names from the right,
-#'  \code{"abbreviate"} uses \code{\link[base:abbreviate]{abbreviate}}, and
-#'  \code{"full"} prints full names.
-#' @param max_factor_name_length numeric or \code{NULL}. Optional maximum length
-#'  of factor names. If \code{NULL}, factor names are not shortened.
-#' @param max_factors_per_block numeric or \code{NULL}. Maximum number of factor
-#'  columns to print per block. If \code{NULL}, the number is chosen from the
+#'  `max_name_length`. `"truncate"` cuts names from the right,
+#'  `"abbreviate"` uses [base::abbreviate()], and
+#'  `"full"` prints full names.
+#' @param max_factor_name_length numeric or `NULL`. Optional maximum length
+#'  of factor names. If `NULL`, factor names are not shortened.
+#' @param max_factors_per_block numeric or `NULL`. Maximum number of factor
+#'  columns to print per block. If `NULL`, the number is chosen from the
 #'  console width.
-#' @param sort_loadings character. Optional row sorting. \code{"none"} preserves
-#'  the input order, \code{"primary"} groups rows by the factor with the largest
-#'  absolute loading, and \code{"clustered"} additionally sorts within each
+#' @param sort_loadings character. Optional row sorting. `"none"` preserves
+#'  the input order, `"primary"` groups rows by the factor with the largest
+#'  absolute loading, and `"clustered"` additionally sorts within each
 #'  factor by the size of the primary loading.
 #' @param legend logical. Whether to append a short explanation of the styling.
-#'  Default is \code{FALSE} for standalone loading matrices.
+#'  Default is `FALSE` for standalone loading matrices.
 #' @param ... additional arguments passed to print or format
 #'
 #' @method print LOADINGS

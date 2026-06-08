@@ -9,17 +9,17 @@
 \arguments{
 \item{A}{Numeric matrix to be rotated.}
 
-\item{B}{Numeric target matrix with the same dimensions as `A`.}
+\item{B}{Numeric target matrix with the same dimensions as \code{A}.}
 }
 \value{
 A list with the rotated loadings, orthogonal transformation matrix,
-  target criterion value, and basic diagnostics.
+target criterion value, and basic diagnostics.
 }
 \description{
-Rotate `A` to the orthogonal target `B` by minimizing
-`||A %*% T - B||_F^2` subject to `t(T) %*% T = I`.
+Rotate \code{A} to the orthogonal target \code{B} by minimizing
+\verb{||A \%*\% T - B||_F^2} subject to \code{t(T) \%*\% T = I}.
 }
 \references{
 Schoenemann, P. H. (1966). A generalized solution of the orthogonal
-Procrustes problem. *Psychometrika*, 31, 1-10.
+Procrustes problem. \emph{Psychometrika}, 31, 1-10.
 }

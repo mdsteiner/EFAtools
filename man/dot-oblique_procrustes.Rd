@@ -24,14 +24,14 @@
 \item{A}{Numeric matrix. Loading matrix to be rotated.}
 
 \item{B}{Numeric matrix. Target loading matrix with the same dimensions as
-`A`.}
+\code{A}.}
 
-\item{S_r}{Optional numeric `k x k` matrix containing `crossprod(A)`.
-Supplying this is useful when the same `A` is rotated repeatedly. Ignored
-when `normalize = TRUE` because the normalized cross-product is different.}
+\item{S_r}{Optional numeric \verb{k x k} matrix containing \code{crossprod(A)}.
+Supplying this is useful when the same \code{A} is rotated repeatedly. Ignored
+when \code{normalize = TRUE} because the normalized cross-product is different.}
 
-\item{T_init_r}{Optional numeric `k x k` starting transformation matrix.
-If `NULL`, the identity matrix is used for the primary start.}
+\item{T_init_r}{Optional numeric \verb{k x k} starting transformation matrix.
+If \code{NULL}, the identity matrix is used for the primary start.}
 
 \item{eps}{Numeric scalar. Convergence tolerance for the projected-gradient
 norm.}
@@ -45,7 +45,7 @@ attempts after the initial trial step in each line-search phase.}
 \item{step0}{Numeric scalar. Initial step size used in the projected-gradient
 update.}
 
-\item{normalize}{Logical scalar. If `TRUE`, apply Kaiser normalization before
+\item{normalize}{Logical scalar. If \code{TRUE}, apply Kaiser normalization before
 rotation and reverse it after rotation.}
 
 \item{random_starts}{Integer scalar. Number of additional random starts.}
@@ -61,18 +61,18 @@ triaged start to be promoted to full optimization.}
 }
 \value{
 A named list containing the rotated loadings, transformation matrix,
-  factor correlation matrix, target criterion value, convergence diagnostics,
-  line-search diagnostics, and multi-start summaries.
+factor correlation matrix, target criterion value, convergence diagnostics,
+line-search diagnostics, and multi-start summaries.
 }
 \description{
 Compute an oblique target rotation for a loading matrix using a
-`targetQ`-compatible parameterization and a `k x k` objective.
+\code{targetQ}-compatible parameterization and a \verb{k x k} objective.
 }
 \details{
 The rotated loading matrix is defined as
-`L = A %*% solve(t(T))`, and the corresponding factor correlation matrix is
-`Phi = t(T) %*% T`. The optimization is carried out over the transformation
-matrix `T` under the oblique normalization constraint `diag(t(T) %*% T) = 1`.
+\code{L = A \%*\% solve(t(T))}, and the corresponding factor correlation matrix is
+\code{Phi = t(T) \%*\% T}. The optimization is carried out over the transformation
+matrix \code{T} under the oblique normalization constraint \code{diag(t(T) \%*\% T) = 1}.
 
 The line search is monotone: a candidate is accepted only if it satisfies the
 sufficient-decrease condition, or, as a numerical fallback, if it at least
@@ -83,19 +83,18 @@ pseudo-inverse.
 Additional random starts may be requested. To reduce runtime, the solver uses
 a two-stage strategy for extra starts: cheap objective screening, followed by
 short triage optimization, followed by full optimization only for starts that
-improve on the current incumbent by at least `triage_improve_tol`.
-
+improve on the current incumbent by at least \code{triage_improve_tol}.
 
 The routine is intended for repeated oblique target rotations in workflows
 such as bootstrap alignment or consensus alignment of exploratory factor
 solutions across multiply imputed datasets. It follows the same oblique
-transformation convention as `GPArotation::targetQ()`.
+transformation convention as \code{GPArotation::targetQ()}.
 }
 \references{
 Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms
 and software for arbitrary rotation criteria in factor analysis.
-*Educational and Psychological Measurement*, 65, 676-696.
+\emph{Educational and Psychological Measurement}, 65, 676-696.
 
-Gower, J. C. (1975). Generalized Procrustes analysis. *Psychometrika*, 40,
+Gower, J. C. (1975). Generalized Procrustes analysis. \emph{Psychometrika}, 40,
 33-51.
 }

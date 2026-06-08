@@ -7,7 +7,7 @@
 \method{print}{MAP}(x, plot = TRUE, ...)
 }
 \arguments{
-\item{x}{a list of class MAP. Output from \code{\link{MAP}} function.}
+\item{x}{a list of class MAP. Output from \code{\link[=MAP]{MAP()}} function.}
 
 \item{plot}{logical. Whether to plot the results.}
 

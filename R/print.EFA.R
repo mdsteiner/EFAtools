@@ -1,6 +1,6 @@
 #' Print EFA object
 #'
-#' Print Method showing a summarized output of the \link{EFA} function.
+#' Print Method showing a summarized output of the [EFA] function.
 #'
 #' @details
 #' The method is shared by single-imputation `EFA` objects and pooled
@@ -21,52 +21,52 @@
 #' interval.
 #'
 #' @param x list. An object of class EFA to be printed
-#' @param cutoff numeric. Passed to \code{\link[EFAtools:print.LOADINGS]{print.LOADINGS}}.
+#' @param cutoff numeric. Passed to [EFAtools::print.LOADINGS()].
 #' The number above which to print loadings in bold. Default is .3.
-#' @param digits numeric. Passed to \code{\link[EFAtools:print.LOADINGS]{print.LOADINGS}}
+#' @param digits numeric. Passed to [EFAtools::print.LOADINGS()]
 #' Number of digits to round the loadings to (default is 3).
-#' @param max_name_length numeric. Passed to \code{\link[EFAtools:print.LOADINGS]{print.LOADINGS}}.
+#' @param max_name_length numeric. Passed to [EFAtools::print.LOADINGS()].
 #' The maximum length of the variable names to display. Everything beyond this
 #' will be cut from the right.
 #' @param ci character. Whether to print confidence intervals for loadings and
-#' factor intercorrelations, if available. \code{"auto"} and \code{"separate"}
-#' print separate CI sections when CIs were computed; \code{"none"} suppresses
-#' these sections. Default is \code{"auto"}.
-#' @param ci_filter character. Which loading CIs to print. \code{"salient"}
+#' factor intercorrelations, if available. `"auto"` and `"separate"`
+#' print separate CI sections when CIs were computed; `"none"` suppresses
+#' these sections. Default is `"auto"`.
+#' @param ci_filter character. Which loading CIs to print. `"salient"`
 #' prints CIs for loadings with absolute values greater than or equal to
-#' \code{cutoff}; \code{"all"} prints all loading CIs; \code{"nonzero"} prints
-#' loading CIs that exclude zero. Default is \code{"salient"}.
-#' @param details character. Amount of information to print. \code{"standard"}
-#' prints the regular output, \code{"compact"} suppresses longer diagnostic
-#' sections, and \code{"full"} additionally prints available optional sections.
+#' `cutoff`; `"all"` prints all loading CIs; `"nonzero"` prints
+#' loading CIs that exclude zero. Default is `"salient"`.
+#' @param details character. Amount of information to print. `"standard"`
+#' prints the regular output, `"compact"` suppresses longer diagnostic
+#' sections, and `"full"` additionally prints available optional sections.
 #' @param diagnostics logical. Whether to print model and simple-structure
-#' diagnostics. Default is \code{TRUE}.
+#' diagnostics. Default is `TRUE`.
 #' @param diagnostics_top_n numeric. Maximum number of item-level diagnostic
 #' entries to print per diagnostic type.
 #' @param residual_cutoff numeric. Absolute residual cutoff used in the residual
 #' diagnostics section. Default is .1.
 #' @param residual_top_n numeric. Maximum number of residuals to print. Use
-#' \code{Inf} to print all residuals above \code{residual_cutoff}.
+#' `Inf` to print all residuals above `residual_cutoff`.
 #' @param show_structure logical. Whether to print the structure matrix for
-#' oblique solutions when available. Default is \code{FALSE}.
+#' oblique solutions when available. Default is `FALSE`.
 #' @param sort_loadings character. Optional row sorting for loading tables.
-#' See \code{\link[EFAtools:print.LOADINGS]{print.LOADINGS}}.
+#' See [EFAtools::print.LOADINGS()].
 #' @param show_loading_legend logical. Whether to print a compact legend for
-#' loading-table styling. Default is \code{TRUE}.
+#' loading-table styling. Default is `TRUE`.
 #' @param cross_loading_cutoff numeric. Cutoff for counting cross-loadings in
-#' the diagnostics. Defaults to \code{cutoff}.
+#' the diagnostics. Defaults to `cutoff`.
 #' @param min_primary_gap numeric. Minimum desired absolute difference between
 #' the largest and second-largest absolute loading of an item. Used only for
 #' descriptive diagnostics.
 #' @param min_salient_per_factor numeric. Minimum number of salient indicators
 #' per factor used in the diagnostics. Default is 3.
-#' @param max_factors_per_block numeric or \code{NULL}. Maximum number of factor
-#' columns per loading-table block. If \code{NULL}, this is chosen from the
+#' @param max_factors_per_block numeric or `NULL`. Maximum number of factor
+#' columns per loading-table block. If `NULL`, this is chosen from the
 #' console width.
-#' @param show_mi_diagnostics logical or \code{NULL}. Whether to print a compact
-#' MI uncertainty summary for pooled EFAs when available. \code{NULL} prints it
-#' only for \code{details = "full"}.
-#' @param ... Further arguments passed to \code{\link[EFAtools:print.LOADINGS]{print.LOADINGS}}.
+#' @param show_mi_diagnostics logical or `NULL`. Whether to print a compact
+#' MI uncertainty summary for pooled EFAs when available. `NULL` prints it
+#' only for `details = "full"`.
+#' @param ... Further arguments passed to [EFAtools::print.LOADINGS()].
 #'
 #' @export
 #'

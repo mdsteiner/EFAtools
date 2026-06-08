@@ -64,12 +64,12 @@ OMEGA(
 )
 }
 \arguments{
-\item{model}{class \code{\link{SL}}, class \code{schmid}, or class
-\code{lavaan} object. That is, an output object from \code{\link{SL}} or
-\code{\link[psych:schmid]{psych::schmid}}, or a \code{lavaan} fit object with a
+\item{model}{class \code{\link[=SL]{SL()}}, class \code{schmid}, or class
+\code{lavaan} object. That is, an output object from \code{\link[=SL]{SL()}} or
+\code{\link[psych:schmid]{psych::schmid()}}, or a \code{lavaan} fit object with a
 single factor, second-order, or bifactor solution. If of class \code{lavaan},
 only \code{g_name} needs to be specified additionally. If of class
-\code{\link{SL}} or \code{schmid}, only the arguments \code{factor_corres}
+\code{\link[=SL]{SL()}} or \code{schmid}, only the arguments \code{factor_corres}
 and \code{cormat} need to be specified additionally.}
 
 \item{type}{character. Either \code{"EFAtools"} (default) or \code{"psych"}
@@ -110,12 +110,12 @@ This needs only be specified if \code{model} is left \code{NULL}.}
 only be specified if \code{model} is left \code{NULL}.}
 
 \item{cormat}{matrix. A correlation matrix to be used when
-\code{variance = "correlation"}. If left \code{NULL} and an \code{\link{SL}}
+\code{variance = "correlation"}. If left \code{NULL} and an \code{\link[=SL]{SL()}}
 output is entered in \code{model}, the correlation matrix is taken from the
-output. If left \code{NULL} and a \code{\link[psych:schmid]{psych::schmid}}
+output. If left \code{NULL} and a \code{\link[psych:schmid]{psych::schmid()}}
 output is entered, the correlation matrix will be found based on the pattern
-matrix and Phi from the \code{\link[psych:schmid]{psych::schmid}} output
-using \code{\link[psych:factor.model]{psych::factor.model}}.
+matrix and Phi from the \code{\link[psych:schmid]{psych::schmid()}} output
+using \code{\link[psych:factor.model]{psych::factor.model()}}.
 If left \code{NULL} and model is also left \code{NULL}, the correlation matrix
 is found based on the pattern matrix and Phi entered. However, if the
 correlation matrix is available, \code{cormat} should be specified instead
@@ -160,14 +160,14 @@ This function finds omega total, hierarchical, and subscale, as well as addition
 model-based indices of interpretive relevance (H index, ECV, PUC)
 from a Schmid-Leiman (SL) solution or lavaan single factor, second-order (see below),
 or bifactor solution. The SL-based omegas can either be found from a
-\code{\link[psych:schmid]{psych::schmid}}, \code{\link{SL}}, or,
+\code{\link[psych:schmid]{psych::schmid()}}, \code{\link[=SL]{SL()}}, or,
 in a more flexible way, by leaving
 \code{model = NULL} and specifying additional arguments. By setting the
-\code{type} argument, results from \code{\link[psych:omega]{psych::omega}}
+\code{type} argument, results from \code{\link[psych:omega]{psych::omega()}}
 can be reproduced.
 }
 \details{
-## What this function does
+\subsection{What this function does}{
 
 This function calculates McDonald's omegas (McDonald, 1978, 1985, 1999),
 the H index (Hancock & Mueller, 2001), the explained common variance (ECV;
@@ -204,8 +204,9 @@ between indicators from different group factors, which reflect only general
 factor variance). The higher the PUC, the more similar a general factor from
 a multidimensional model will be to the single factor from a unidimensional
 model.
+}
 
-## How to use this function
+\subsection{How to use this function}{
 
 If \code{model} is a \code{lavaan} second-order or bifactor solution,
 only the name of the general factor from the lavaan model needs to be specified
@@ -216,7 +217,7 @@ this function only works for second-order models if they contain no more than
 one second-order factor. In case of a second-order solution, a
 Schmid-Leiman transformation is performed on the first- and second-order loadings
 and omega coefficents are obtained from the transformed (orthogonalized) solution
-(see \code{\link{SL}} for more information on Schmid-Leiman transformation).
+(see \code{\link[=SL]{SL()}} for more information on Schmid-Leiman transformation).
 There is also the possibility to enter a \code{lavaan} single factor solution.
 In this case, \code{g_name} is not needed. Finally, if a solution from a
 \code{lavaan} multiple group analysis is entered, the indices are computed for
@@ -224,28 +225,28 @@ each group.
 The type argument is not evaluated if \code{model} is of class
 \code{lavaan}.
 
-If \code{model} is of class \code{\link{SL}} or
-\code{\link[psych:schmid]{psych::schmid}} only the
+If \code{model} is of class \code{\link[=SL]{SL()}} or
+\code{\link[psych:schmid]{psych::schmid()}} only the
 \code{type} and, depending on the type (see below), the \code{factor_corres}
 arguments need to be specified additionally. If model is of class
-\code{\link[psych:schmid]{psych::schmid}} and \code{variance = "correlation"}
+\code{\link[psych:schmid]{psych::schmid()}} and \code{variance = "correlation"}
 (default), it is
 recommended to also provide the original correlation matrix in \code{cormat}
 to get more accurate results. Otherwise, the correlation matrix will be found
 based on the pattern matrix and Phi from the
-\code{\link[psych:schmid]{psych::schmid}} output
-using the \code{\link[psych:factor.model]{psych::factor.model}} function.
+\code{\link[psych:schmid]{psych::schmid()}} output
+using the \code{\link[psych:factor.model]{psych::factor.model()}} function.
 
 If \code{model = NULL}, the arguments \code{type}, \code{factor_corres}
 (depending on the type, see below), \code{var_names}, \code{g_load}, \code{s_load},
 and \code{u2} and either \code{cormat} (recommended) or \code{Phi} and
 \code{pattern} need to be specified. If \code{Phi} and \code{pattern} are
 specified instead of \code{cormat}, the correlation matrix is found using
-the \code{\link[psych:factor.model]{psych::factor.model}} function.
+the \code{\link[psych:factor.model]{psych::factor.model()}} function.
 
 The only difference between \code{type = "EFAtools"} and \code{type = "psych"}
 is the determination of variable-to-factor correspondences. \code{type = "psych"}
-reproduces the \code{\link[psych:omega]{psych::omega}} results, where
+reproduces the \code{\link[psych:omega]{psych::omega()}} results, where
 variable-to-factor correspondences are found by taking the highest
 group factor loading for each variable as the relevant group factor loading.
 To do this, \code{factor_corres} must be left \code{NULL}.
@@ -262,6 +263,7 @@ uniquenesses. This will only get comparable results to
 structure is well-achieved in general with the SL solution (i.e., the
 uniquenesses should capture almost all of the variance not explained by the
 general factor and the variable's allocated group factor).
+}
 }
 \examples{
 \donttest{

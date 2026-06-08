@@ -5,7 +5,7 @@
 #' and Principal Axis Factoring), with different implementations (e.g., the SPSS
 #' and psych implementations of Principal Axis Factoring), and across different
 #' rotations of the same type (e.g., multiple oblique rotations, like promax and
-#' oblimin). EFA_AVERAGE will then run all these EFAs (using the \code{\link{EFA}}
+#' oblimin). EFA_AVERAGE will then run all these EFAs (using the [EFA()]
 #' function) and provide a summary across the different solutions.
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
@@ -13,7 +13,7 @@
 #' data.
 #' @param n_factors numeric. Number of factors to extract.
 #' @param N numeric. The number of observations. Needs only be specified if a
-#' correlation matrix is used. If input is a correlation matrix and \code{N} = NA
+#' correlation matrix is used. If input is a correlation matrix and `N` = NA
 #' (default), not all fit indices can be computed.
 #' @param method character vector. Any combination of  "PAF", "ML", and "ULS",
 #' to use principal axis factoring, maximum likelihood, or unweighted least
@@ -33,12 +33,12 @@
 #' it is executed in this package (i.e., the respective default procedure), in the
 #' psych package, and in SPSS. A specific psych implementation exists for PAF, ML, varimax,
 #' and promax. The SPSS implementation exists for PAF, varimax, and promax. For
-#' details, see \code{\link{EFA}}.
+#' details, see [EFA()].
 #' @param averaging character. One of "mean" (default), and "median". Controls
 #' whether the different results should be averaged using the (trimmed) mean,
 #' or the median.
 #' @param trim numeric. If averaging is set to "mean", this argument controls
-#' the trimming of extremes (for details see \code{\link[base:mean]{base::mean}}).
+#' the trimming of extremes (for details see [base::mean()]).
 #' By default no trimming is done (i.e., trim = 0).
 #' @param salience_threshold numeric. The threshold to use to classify a pattern
 #' coefficient or loading as salient (i.e., substantial enough to assign it to
@@ -49,15 +49,15 @@
 #' the iterative PAF procedure is halted with a warning. Default is 10,000. Note
 #' that non-converged procedures are excluded from the averaging procedure.
 #' @param init_comm character vector. Any combination of "smc", "mac", and "unity".
-#' Controls the methods to estimate the initial communalities in \code{PAF} if
+#' Controls the methods to estimate the initial communalities in `PAF` if
 #' "none" is among the specified types. "smc" will use squared multiple
 #' correlations, "mac" will use maximum absolute correlations, "unity" will use
-#' 1s (for details see \code{\link{EFA}}). Default is \code{c("smc", "mac", "unity")}.
+#' 1s (for details see [EFA()]). Default is `c("smc", "mac", "unity")`.
 #' @param criterion numeric vector. The convergence criterion used for PAF if
 #' "none" is among the specified types.
 #' If the change in communalities from one iteration to the next is smaller than
 #' this criterion the solution is accepted and the procedure ends.
-#' Default is \code{0.001}.
+#' Default is `0.001`.
 #' @param criterion_type character vector. Any combination of "max_individual" and
 #' "sum". Type of convergence criterion used for PAF if "none" is among the
 #' specified types. "max_individual" selects the maximum change in any of the
@@ -65,50 +65,50 @@
 #' specified criterion. "sum" takes the difference of
 #' the sum of all communalities in one iteration and the sum of all communalities
 #' in the next iteration and tests this against the criterion
-#' (for details see \code{\link{EFA}}). Default is \code{c("sum", "max_individual")}.
+#' (for details see [EFA()]). Default is `c("sum", "max_individual")`.
 #' @param abs_eigen logical vector. Any combination of TRUE and FALSE.
 #' Which algorithm to use in the PAF iterations if "none" is among the specified
 #' types. If FALSE, the loadings are computed from the eigenvalues. This is also
-#' used by the \code{\link[psych:fa]{psych::fa}} function. If TRUE the
+#' used by the [psych::fa()] function. If TRUE the
 #' loadings are computed with the absolute eigenvalues as done by SPSS
-#' (for details see \code{\link{EFA}}). Default is \code{TRUE}.
+#' (for details see [EFA()]). Default is `TRUE`.
 #' @param varimax_type character vector. Any combination of "svd" and "kaiser".
 #' The type of the varimax rotation performed if "none" is among the specified
 #' types and "varimax", "promax", "orthogonal", or "oblique" is among the specified
 #' rotations. "svd" uses singular value decomposition, as
-#' \link[stats:varimax]{stats::varimax} does, and "kaiser" uses the varimax
+#' [stats::varimax()] does, and "kaiser" uses the varimax
 #' procedure performed in SPSS. This is the original procedure from Kaiser (1958),
 #' but with slight alterations in the varimax criterion (for details, see
-#' \code{\link{EFA}} and Grieder & Steiner, 2020).
-#' Default is \code{c("svd", "kaiser")}.
+#' [EFA()] and Grieder & Steiner, 2020).
+#' Default is `c("svd", "kaiser")`.
 #' @param normalize logical vector. Any combination of TRUE and FALSE.
-#' \code{TRUE} performs a kaiser normalization before the specified rotation(s).
-#' Default is \code{TRUE}.
+#' `TRUE` performs a kaiser normalization before the specified rotation(s).
+#' Default is `TRUE`.
 #' @param k_promax numeric vector. The power used for computing the target matrix
 #' P in the promax rotation if "none" is among the specified types and "promax"
-#' or "oblique" is among the specified rotations. Default is \code{2:4}.
+#' or "oblique" is among the specified rotations. Default is `2:4`.
 #' @param k_simplimax numeric. The number of 'close to zero loadings' for the
 #' simplimax rotation (see \code{\link[GPArotation:GPA]{GPArotation::GPFoblq}})
 #' if "simplimax" or "oblique" is among the specified rotations. Default
-#' is \code{ncol(x)}, where x is the entered data.
+#' is `ncol(x)`, where x is the entered data.
 #' @param P_type character vector. Any combination of "norm" and "unnorm".
 #' This specifies how the target matrix P is computed in promax rotation if
 #' "none" is among the specified types and "promax" or "oblique" is among the
 #' specified rotations. "unnorm" will use the unnormalized target matrix as
 #' originally done in Hendrickson and White (1964). "norm" will use a
-#' normalized target matrix (for details see \code{\link{EFA}}).
-#' Default is \code{c("norm", "unnorm")}.
+#' normalized target matrix (for details see [EFA()]).
+#' Default is `c("norm", "unnorm")`.
 #' @param precision numeric vector. The tolerance for stopping in the rotation
 #' procedure(s). Default is 10^-5.
 #' @param start_method character vector. Any combination of "psych" and "factanal".
 #' How to specify the starting values for the optimization procedure for ML.
-#' "psych" takes the starting values specified in \link[psych:fa]{psych::fa}.
+#' "psych" takes the starting values specified in [psych::fa()].
 #' "factanal" takes the starting values specified in the
-#' \link[stats:factanal]{stats::factanal} function. Default is
-#' \code{c("psych", "factanal")}.
-#' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
+#' [stats::factanal()] function. Default is
+#' `c("psych", "factanal")`.
+#' @param use character. Passed to [stats::cor()] if raw data
 #' is given as input. Default is "pairwise.complete.obs".
-#' @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}.
+#' @param cor_method character. Passed to [stats::cor()].
 #' Default is "pearson".
 #' @param show_progress logical. Whether a progress bar should be shown in the
 #' console. Default is TRUE.
@@ -117,38 +117,38 @@
 #'
 #' As a first step in this function, a grid is produced containing the setting
 #' combinations for the to-be-performed EFAs. These settings are then entered as
-#' arguments to the \code{\link{EFA}} function and the EFAs are run in a second
+#' arguments to the [EFA()] function and the EFAs are run in a second
 #' step. After all EFAs are run, the factor solutions are averaged and their
 #' variability determined in a third step.
 #'
 #' The grid containing the setting combinations is produced based on the entries
 #' to the respective arguments. To this end, all possible combinations resulting
-#' in unique EFA models are considered. That is, if, for example, the \code{type}
-#' argument was set to \code{c("none", "SPSS")} and one combination of the specific
+#' in unique EFA models are considered. That is, if, for example, the `type`
+#' argument was set to `c("none", "SPSS")` and one combination of the specific
 #' settings entered was identical to the SPSS combination, this combination
 #' would be included in the grid and run only once. We include here a list
 #' of arguments that are only evaluated under specific conditions:
 #'
-#' The arguments \code{init_comm}, \code{criterion}, \code{criterion_type},
-#' \code{abs_eigen} are only evaluated if "PAF" is included in \code{method}
-#' and "none" is included in \code{type}.
+#' The arguments `init_comm`, `criterion`, `criterion_type`,
+#' `abs_eigen` are only evaluated if "PAF" is included in `method`
+#' and "none" is included in `type`.
 #'
-#' The argument \code{varimax_type} is only evaluated if "varimax", "promax",
-#' "oblique", or "orthogonal" is included in \code{rotation} and "none" is
-#' included in \code{type}.
+#' The argument `varimax_type` is only evaluated if "varimax", "promax",
+#' "oblique", or "orthogonal" is included in `rotation` and "none" is
+#' included in `type`.
 #'
-#' The argument \code{normalize} is only evaluated if \code{rotation} is not
-#' set to "none" and "none" is included in \code{type}.
+#' The argument `normalize` is only evaluated if `rotation` is not
+#' set to "none" and "none" is included in `type`.
 #'
-#' The argument \code{k_simplimax} is only evaluated if "simplimax" or "oblique"
-#' is included in \code{rotation}.
+#' The argument `k_simplimax` is only evaluated if "simplimax" or "oblique"
+#' is included in `rotation`.
 #'
-#' The arguments \code{k_promax} and \code{P_type} are only evaluated if
-#' "promax" or "oblique" is included in \code{rotation} and "none" is included
-#' in \code{type}.
+#' The arguments `k_promax` and `P_type` are only evaluated if
+#' "promax" or "oblique" is included in `rotation` and "none" is included
+#' in `type`.
 #'
-#' The argument \code{start_method} is only evaluated if "ML" is included in
-#' \code{method}.
+#' The argument `start_method` is only evaluated if "ML" is included in
+#' `method`.
 #'
 #' To avoid a bias in the averaged factor solutions from problematic solutions,
 #' these are excluded prior to averaging. A solution is deemed problematic if
@@ -160,7 +160,7 @@
 #' is also included. A solution was deemed admissible if (1) no error occurred,
 #' (2) the model converged, (3) no Heywood cases are present, and (4) there are
 #' at least two salient loadings (i.e., loadings exceeding the specified
-#' \code{salience_threshold}) for each factor. So, solutions failing one of the
+#' `salience_threshold`) for each factor. So, solutions failing one of the
 #' first three of these criteria of admissibility are also deemed problematic and
 #' therefore excluded from averaging. However, solutions failing only
 #' the fourth criterion of admissibility are still included for averaging.
@@ -187,9 +187,9 @@
 #' methods: For ML and ULS, all fit indices can be computed, while for PAF, only
 #' the common part accounted for (CAF) index (Lorenzo-Seva, Timmerman, & Kiers, 2011)
 #' can be computed. As a consequence, if only "PAF" is included in the
-#' \code{method} argument, averaging can only be performed for the CAF, and the
+#' `method` argument, averaging can only be performed for the CAF, and the
 #' other fit indices are NA. If a combination of "PAF" and "ML" and/or "ULS" are
-#' included in the \code{method} argument, the CAF is averaged across all non-
+#' included in the `method` argument, the CAF is averaged across all non-
 #' problematic factor solutions, while all other fit indices are only averaged
 #' across the ML and ULS solutions. The user should therefore keep in mind that
 #' the number of EFAs across which the fit indices are averaged can diverge for
@@ -226,7 +226,7 @@
 #' \item{implementations_grid}{A matrix containing, for each performed EFA,
 #' the setting combination, if an error occurred (logical), the error message
 #' (character), an integer code for convergence as returned by
-#' \code{\link[stats:optim]{stats:optim}} (0 indicates successful completion.),
+#' [`stats::optim()`][stats::optim] (0 indicates successful completion.),
 #' if heywood cases occurred (logical, see details for definition), if the
 #' solution was admissible (logical, see details for definition), and the fit
 #' indices.}

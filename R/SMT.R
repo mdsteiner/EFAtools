@@ -6,7 +6,7 @@
 #' for which the Chi Square value first becomes non-significant is taken as the
 #' suggested number of factors.
 #' Preacher, Zhang, Kim, & Mels (2013) suggested a similar approach with the
-#' lower bound of the 90\% confidence interval of the Root Mean Square Error of
+#' lower bound of the 90% confidence interval of the Root Mean Square Error of
 #' Approximation (RMSEA; Browne & Cudeck, 1992; Steiger & Lind, 1980), and with
 #' the Akaike Information Criterion (AIC). For the RMSEA, the
 #' number of factors for which this lower bound first falls below .05 is the
@@ -17,9 +17,9 @@
 #' correlations.
 #' @param N numeric. The number of observations. Needs only be specified if a
 #' correlation matrix is used.
-#' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw
+#' @param use character. Passed to [stats::cor()] if raw
 #' data is given as input. Default is "pairwise.complete.obs".
-#' @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}.
+#' @param cor_method character. Passed to [stats::cor()].
 #'  Default is "pearson".
 #'
 #' @details
@@ -38,7 +38,7 @@
 #' chi square value first becomes non-significant.
 #'
 #' Regarding the RMSEA, the suggested number of factors is the number of factors
-#' for the model where the lower bound of the 90\% confidence interval of the
+#' for the model where the lower bound of the 90% confidence interval of the
 #' RMSEA first falls below the .05 threshold.
 #'
 #' Regarding the AIC, the suggested number of factors is the number of factors
@@ -50,8 +50,8 @@
 #' number of factors, while the AIC performed well at determining the
 #' most generalizable model (Preacher, Zhang, Kim, & Mels, 2013).
 #'
-#' The \code{SMT} function can also be called together with other factor
-#' retention criteria in the \code{\link{N_FACTORS}} function.
+#' The `SMT` function can also be called together with other factor
+#' retention criteria in the [N_FACTORS()] function.
 #'
 #' @return A list of class SMT containing
 #' \item{nfac_chi}{The number of factors to retain according to the significance
@@ -62,9 +62,9 @@
 #' \item{p_null}{The p-value for the null model (zero factors)}
 #' \item{ps_chi}{The p-values for EFA models with increasing numbers of factors,
 #' starting with 1 factor}
-#' \item{RMSEA_LB_null}{The lower bounds of the 90\% confidence interval for the RMSEA
+#' \item{RMSEA_LB_null}{The lower bounds of the 90% confidence interval for the RMSEA
 #' for the null model (zero factors).}
-#' \item{RMSEA_LBs}{The lower bounds of the 90\% confidence interval for the RMSEA
+#' \item{RMSEA_LBs}{The lower bounds of the 90% confidence interval for the RMSEA
 #' for EFA models with increasing numbers of factors, starting with 1 factor}
 #' \item{AIC_null}{The AICs for the null model (zero factors)}
 #' \item{AICs}{The AICs for EFA models with increasing numbers of factors,
@@ -84,10 +84,10 @@
 #' for the number of common factors. Paper presented at the annual meeting of
 #' the Psychometric Society, Iowa City, IA.
 #'
-#' @seealso Other factor retention criteria: \code{\link{CD}}, \code{\link{EKC}},
-#' \code{\link{HULL}}, \code{\link{KGC}}, \code{\link{PARALLEL}}
+#' @seealso Other factor retention criteria: [CD()], [EKC()],
+#' [HULL()], [KGC()], [PARALLEL()]
 #'
-#' \code{\link{N_FACTORS}} as a wrapper function for this and all the
+#' [N_FACTORS()] as a wrapper function for this and all the
 #' above-mentioned factor retention criteria.
 #'
 #' @export

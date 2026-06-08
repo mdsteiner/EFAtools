@@ -1,19 +1,19 @@
 #' Parallel analysis
 #'
 #' Various methods for performing parallel analysis. This function uses
-#' \link[future.apply]{future_lapply} for which a parallel processing plan can
-#' be selected. To do so, call \code{library(future)} and, for example,
-#'  \code{plan(multisession)}; see examples.
+#' [future_lapply()][future.apply::future_lapply] for which a parallel processing plan can
+#' be selected. To do so, call `library(future)` and, for example,
+#'  `plan(multisession)`; see examples.
 #'
 #' @param x matrix or data.frame. The real data to compare the simulated eigenvalues
 #'  against. Must not contain variables of classes other than numeric. Can be a
 #'  correlation matrix or raw data.
 #' @param N numeric. The number of cases / observations to simulate. Only has to
-#'  be specified if \code{x} is either a correlation matrix or \code{NULL}. If
-#'  x contains raw data, \code{N} is found from the dimensions of \code{x}.
+#'  be specified if `x` is either a correlation matrix or `NULL`. If
+#'  x contains raw data, `N` is found from the dimensions of `x`.
 #' @param n_vars numeric. The number of variables / indicators to simulate.
-#' Only has to be specified if \code{x} is left as \code{NULL} as otherwise the
-#' dimensions are taken from \code{x}.
+#' Only has to be specified if `x` is left as `NULL` as otherwise the
+#' dimensions are taken from `x`.
 #' @param n_datasets numeric. The number of datasets to simulate. Default is 1000.
 #' @param percent numeric. The percentile to take from the simulated eigenvalues.
 #'  Default is 95.
@@ -23,18 +23,18 @@
 #'  indicators. If using "PCA", the diagonal values of the correlation matrices
 #'  are left to be 1. If using "EFA", eigenvalues are found on the correlation
 #'  matrices with the final communalities of an EFA solution as diagonal.
-#' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw data
+#' @param use character. Passed to [stats::cor()] if raw data
 #' is given as input. Default is "pairwise.complete.obs".
-#' @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}
+#' @param cor_method character. Passed to [stats::cor()]
 #' Default is "pearson".
 #' @param decision_rule character. Which rule to use to determine the number of
-#'  factors to retain. Default is \code{"means"}, which will use the average
-#'  simulated eigenvalues. \code{"percentile"}, uses the percentiles specified
-#'  in percent. \code{"crawford"} uses the 95th percentile for the first factor
+#'  factors to retain. Default is `"means"`, which will use the average
+#'  simulated eigenvalues. `"percentile"`, uses the percentiles specified
+#'  in percent. `"crawford"` uses the 95th percentile for the first factor
 #'  and the mean afterwards (based on Crawford et al, 2010).
 #' @param n_factors numeric. Number of factors to extract if "EFA" is included in
-#' \code{eigen_type}. Default is 1.
-#' @param ... Additional arguments passed to \code{\link{EFA}}. For example,
+#' `eigen_type`. Default is 1.
+#' @param ... Additional arguments passed to [EFA()]. For example,
 #' the extraction method can be changed here (default is "PAF"). PAF is more
 #' robust, but it will take longer compared to the other estimation methods
 #' available ("ML" and "ULS").
@@ -45,14 +45,14 @@
 #'  with uncorrelated variables) of the same sample size. This way, it accounts
 #'  for the variation in eigenvalues introduced by sampling error and thus
 #'  eliminates the main problem inherent in the Kaiser-Guttman criterion
-#'  (\code{\link{KGC}}).
+#'  ([KGC()]).
 #'
 #'  Three different ways of finding the eigenvalues under the factor model are
 #'  implemented, namely "SMC", "PCA", and "EFA". PCA leaves the diagonal elements
 #'  of the correlation matrix as they are and is thus equivalent to what is done
 #'  in PCA. SMC uses squared multiple correlations as communality estimates with
 #'  which the diagonal of the correlation matrix is replaced. Finally, EFA performs
-#'  an \code{\link{EFA}} with one factor (can be adapted to more factors) to estimate
+#'  an [EFA()] with one factor (can be adapted to more factors) to estimate
 #'  the communalities and based on the correlation matrix with these as diagonal
 #'  elements, finds the eigenvalues.
 #'
@@ -66,8 +66,8 @@
 #'  the shared variance is already accounted in the first eigenvalue (e.g.,
 #'  Braeken & van Assen, 2017).
 #'
-#'  The \code{PARALLEL} function can also be called together with other factor
-#'  retention criteria in the \code{\link{N_FACTORS}} function.
+#'  The `PARALLEL` function can also be called together with other factor
+#'  retention criteria in the [N_FACTORS()] function.
 #'
 #' @return A list of class PARALLEL containing the following objects
 #' \item{eigenvalues_PCA}{A matrix containing the eigenvalues of the real and the simulated data found with eigen_type = "PCA"}
@@ -89,10 +89,10 @@
 #' @source Horn, J. L. (1965). A rationale and test for the number of factors in
 #' factor analysis. Psychometrika, 30(2), 179–185. doi: 10.1007/BF02289447
 #'
-#' @seealso Other factor retention criteria: \code{\link{CD}}, \code{\link{EKC}},
-#' \code{\link{HULL}}, \code{\link{KGC}}, \code{\link{SMT}}
+#' @seealso Other factor retention criteria: [CD()], [EKC()],
+#' [HULL()], [KGC()], [SMT()]
 #'
-#' \code{\link{N_FACTORS}} as a wrapper function for this and all the
+#' [N_FACTORS()] as a wrapper function for this and all the
 #' above-mentioned factor retention criteria.
 #'
 #' @export

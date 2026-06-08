@@ -1,7 +1,7 @@
 #' Residuals function for EFA objects
 #'
-#' @param object a list of class EFA. Output from \code{\link{EFA}} or
-#'   \code{\link{EFA_POOLED}}.
+#' @param object a list of class EFA. Output from [EFA()] or
+#'   [EFA_POOLED()].
 #' @param print logical. Whether to print residuals. If FALSE, they are just returned.
 #' @param digits numeric. The number of digits to round printed residuals.
 #' @param ... Further arguments.

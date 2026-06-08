@@ -15,36 +15,36 @@
 #'  matrices with the final communalities of an exploratory factor analysis
 #'  solution (default is principal axis factoring extracting 1 factor) as
 #'  diagonal.
-#' @param use character. Passed to \code{\link[stats:cor]{stats::cor}} if raw
+#' @param use character. Passed to [stats::cor()] if raw
 #'  data is given as input. Default is "pairwise.complete.obs".
-#' @param cor_method character. Passed to \code{\link[stats:cor]{stats::cor}}.
+#' @param cor_method character. Passed to [stats::cor()].
 #' Default is "pearson".
 #' @param n_factors numeric. Number of factors to extract if "EFA" is included in
-#' \code{eigen_type}. Default is 1.
-#' @param ... Additional arguments passed to \code{\link{EFA}}. For example,
+#' `eigen_type`. Default is 1.
+#' @param ... Additional arguments passed to [EFA()]. For example,
 #' to change the extraction method (PAF is default).
 #'
 #' @details Originally, the Kaiser-Guttman criterion was intended for the use
 #' with prinicpal components, hence with eigenvalues derived from the original
-#' correlation matrix. This can be done here by setting \code{eigen_type} to
+#' correlation matrix. This can be done here by setting `eigen_type` to
 #' "PCA". However, it is well-known that this criterion is often inaccurate and
 #' that it tends to overestimate the number of factors, especially for unidimensional
 #' or orthogonal factor structures (e.g., Zwick & Velicer, 1986).
 #'
 #' The criterion's inaccuracy in these cases is somewhat addressed if it is
 #' applied on the correlation matrix with communalities in the diagonal, either
-#' initial communalities estimated from SMCs (done setting \code{eigen_type} to
-#' "SMC") or final communality estimates from an EFA (done setting \code{eigen_type}
+#' initial communalities estimated from SMCs (done setting `eigen_type` to
+#' "SMC") or final communality estimates from an EFA (done setting `eigen_type`
 #' to "EFA"; see Auerswald & Moshagen, 2019). However, although this variant
 #' of the KGC is more accurate in some cases compared to the traditional KGC, it
 #' is at the same time less accurate than the PCA-variant in other cases, and it
 #' is still often less accurate than other factor retention methods, for
-#' example parallel analysis (\code{\link{PARALLEL}}), the Hull method
-#' \code{\link{HULL}}, or sequential \eqn{chi^2} model tests (\code{\link{SMT}};
+#' example parallel analysis ([PARALLEL()]), the Hull method
+#' [HULL()], or sequential \eqn{chi^2} model tests ([SMT()];
 #' see Auerswald & Moshagen, 2019).
 #'
-#' The \code{KGC} function can also be called together with other factor
-#' retention criteria in the \code{\link{N_FACTORS}} function.
+#' The `KGC` function can also be called together with other factor
+#' retention criteria in the [N_FACTORS()] function.
 #'
 #' @return A list of class KGC containing
 #'
@@ -75,10 +75,10 @@
 #' determining the number of components to retain. Psychological Bulletin, 99,
 #' 432–442. http://dx.doi.org/10.1037/0033-2909.99.3.432
 #'
-#' @seealso Other factor retention criteria: \code{\link{CD}}, \code{\link{EKC}},
-#' \code{\link{HULL}}, \code{\link{PARALLEL}}, \code{\link{SMT}}
+#' @seealso Other factor retention criteria: [CD()], [EKC()],
+#' [HULL()], [PARALLEL()], [SMT()]
 #'
-#' \code{\link{N_FACTORS}} as a wrapper function for this and all the
+#' [N_FACTORS()] as a wrapper function for this and all the
 #' above-mentioned factor retention criteria.
 #'
 #' @export

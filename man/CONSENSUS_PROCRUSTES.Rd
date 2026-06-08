@@ -39,33 +39,33 @@ matrices must be numeric, finite, and have identical dimensions.}
 
 \item{init_targets}{Optional list of starting target matrices. These are
 typically rotated loading matrices from the corresponding analyses. If
-`NULL`, `unrotated_list` is used.}
+\code{NULL}, \code{unrotated_list} is used.}
 
-\item{rotation}{Character string, either `"orthogonal"` or `"oblique"`.}
+\item{rotation}{Character string, either \code{"orthogonal"} or \code{"oblique"}.}
 
-\item{start}{Either a single integer selecting an element of `init_targets`,
-or an explicit target matrix. Used when `multi_start = FALSE`.}
+\item{start}{Either a single integer selecting an element of \code{init_targets},
+or an explicit target matrix. Used when \code{multi_start = FALSE}.}
 
-\item{multi_start}{Logical. If `FALSE`, perform one consensus-target run. If
-`TRUE`, repeat the single-start algorithm for each element of `starts`.}
+\item{multi_start}{Logical. If \code{FALSE}, perform one consensus-target run. If
+\code{TRUE}, repeat the single-start algorithm for each element of \code{starts}.}
 
-\item{starts}{Integer vector selecting elements of `init_targets` used as
-starting targets when `multi_start = TRUE`. If `NULL`, all elements of
-`init_targets` are used. Duplicate entries are removed.}
+\item{starts}{Integer vector selecting elements of \code{init_targets} used as
+starting targets when \code{multi_start = TRUE}. If \code{NULL}, all elements of
+\code{init_targets} are used. Duplicate entries are removed.}
 
 \item{tol}{Positive relative Frobenius-norm convergence tolerance for the
 outer target update.}
 
 \item{loss_tol}{Positive tolerance for the relative change in the outer
-consensus loss. If `NULL`, loss-based convergence is disabled. It cannot be
-`NULL` when `convergence` is `"loss"` or `"both"`.}
+consensus loss. If \code{NULL}, loss-based convergence is disabled. It cannot be
+\code{NULL} when \code{convergence} is \code{"loss"} or \code{"both"}.}
 
 \item{loss_patience}{Positive integer. Number of consecutive iterations with
-relative loss change below `loss_tol` required for loss-based convergence.}
+relative loss change below \code{loss_tol} required for loss-based convergence.}
 
-\item{convergence}{Character string controlling the stopping rule. `"either"`
-stops when either target or loss convergence is satisfied; `"target"` uses
-only target change; `"loss"` uses only loss change; `"both"` requires both.}
+\item{convergence}{Character string controlling the stopping rule. \code{"either"}
+stops when either target or loss convergence is satisfied; \code{"target"} uses
+only target change; \code{"loss"} uses only loss change; \code{"both"} requires both.}
 
 \item{min_iter}{Non-negative integer. Minimum number of outer iterations
 before convergence can be declared.}
@@ -73,63 +73,64 @@ before convergence can be declared.}
 \item{max_iter}{Positive integer. Maximum number of outer consensus
 iterations.}
 
-\item{alpha}{Damping factor for the target update. `alpha = 1` uses the full
-centroid update. Smaller values, such as `0.5`, can reduce oscillation.}
+\item{alpha}{Damping factor for the target update. \code{alpha = 1} uses the full
+centroid update. Smaller values, such as \code{0.5}, can reduce oscillation.}
 
-\item{match_target}{Logical. If `TRUE`, the updated centroid is signed and
+\item{match_target}{Logical. If \code{TRUE}, the updated centroid is signed and
 column-matched to the previous target before convergence is evaluated.}
 
-\item{hyper_cutoff}{Non-negative cutoff used by `.hyperplane_count()` for
+\item{hyper_cutoff}{Non-negative cutoff used by \code{.hyperplane_count()} for
 summary output.}
 
 \item{oblique_maxit, oblique_eps, oblique_max_line_search, oblique_step0, oblique_normalize}{Parameters
-passed to `PROCRUSTES()` when `rotation = "oblique"`.}
+passed to \code{PROCRUSTES()} when \code{rotation = "oblique"}.}
 
 \item{oblique_random_starts}{Number of random starts used by the inner oblique
-solver. See `oblique_random_starts_stage` for when these are used.}
+solver. See \code{oblique_random_starts_stage} for when these are used.}
 
 \item{oblique_random_starts_stage}{Character string controlling whether random
 starts are used during the outer consensus loop, the final alignment pass,
-both, or neither. The default `"final"` keeps the outer loop smooth by using
+both, or neither. The default \code{"final"} keeps the outer loop smooth by using
 warm starts during iteration and applies random-start protection only in the
 final pass.}
 
 \item{oblique_screen_keep, oblique_triage_maxit, oblique_triage_improve_tol}{Screening and triage parameters passed to the compiled oblique solver when
 random starts are used.}
 
-\item{verbose}{Logical; if `TRUE`, print convergence messages for the outer
+\item{verbose}{Logical; if \code{TRUE}, print convergence messages for the outer
 loop.}
 }
 \value{
 A list with the converged target, aligned matrices, pooled loadings,
-  pooled `Phi`, convergence history, inner-alignment diagnostics, and
-  hyperplane summaries. If `multi_start = TRUE`, the `multi_start` element also
-  contains the per-start losses, convergence indicators, run summaries, all
-  run objects, and between-run Tucker congruence matrices.
+pooled \code{Phi}, convergence history, inner-alignment diagnostics, and
+hyperplane summaries. If \code{multi_start = TRUE}, the \code{multi_start} element also
+contains the per-start losses, convergence indicators, run summaries, all
+run objects, and between-run Tucker congruence matrices.
 }
 \description{
 Align several loading matrices to a common Procrustes consensus target.
 }
 \details{
 The function iterates between two steps:
-
-1. each loading matrix is independently aligned to the current target with
-   `PROCRUSTES()`; and
-2. the target is updated to the centroid, i.e., the elementwise average of the
-   aligned matrices.
+\enumerate{
+\item each loading matrix is independently aligned to the current target with
+\code{PROCRUSTES()}; and
+\item the target is updated to the centroid, i.e., the elementwise average of the
+aligned matrices.
+}
 
 This makes the target symmetric across imputations or samples: no single
 solution is permanently privileged as the reference. The outer loop can stop
 when the target stabilizes, when the consensus loss stabilizes, or when both
 criteria are satisfied.
 
-If `multi_start = FALSE`, one consensus run is performed. If
-`multi_start = TRUE`, the same single-start engine is repeated for the
+If \code{multi_start = FALSE}, one consensus run is performed. If
+\code{multi_start = TRUE}, the same single-start engine is repeated for the
 selected starting targets, and the run with the smallest final mean loss is
 returned as the main result. All runs and a between-run congruence summary are
-retained in the `multi_start` component.
+retained in the \code{multi_start} component.
 }
 \references{
-Gower, J. C. (1975). Generalized Procrustes analysis. *Psychometrika*, 40,
+Gower, J. C. (1975). Generalized Procrustes analysis. \emph{Psychometrika}, 40,
 33-51.
 }

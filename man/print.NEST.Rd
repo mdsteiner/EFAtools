@@ -7,7 +7,7 @@
 \method{print}{NEST}(x, ...)
 }
 \arguments{
-\item{x}{a list of class NEST Output from \code{\link{NEST}} function.}
+\item{x}{a list of class NEST. Output from \code{\link[=NEST]{NEST()}} function.}
 
 \item{...}{Further arguments for print.}
 }

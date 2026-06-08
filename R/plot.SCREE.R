@@ -1,8 +1,8 @@
 #' Plot SCREE object
 #'
-#' Plot method showing a summarized output of the \link{SCREE} function
+#' Plot method showing a summarized output of the [SCREE] function
 #'
-#' @param x a list of class SCREE An output from the \link{SCREE} function.
+#' @param x a list of class SCREE An output from the [SCREE] function.
 #' @param ... not used.
 #'
 #' @export

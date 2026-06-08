@@ -2,7 +2,7 @@
 #'
 #' A data.frame containing responses to the risk subscale of the Domain Specific
 #' Risk Taking Scale (DOSPERT; Weber, Blais, & Betz, 2002) based on the publicly
-#' available dataset (at \url{https://osf.io/pjt57/}) by Frey, Duncan, and Weber (2020).
+#' available dataset (at <https://osf.io/pjt57/>) by Frey, Duncan, and Weber (2020).
 #' The items measure risk-taking propensity on six different domains: social,
 #' recreational, gambling, health/ safety, investment, and ethical.
 #'

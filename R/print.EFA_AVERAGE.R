@@ -1,6 +1,6 @@
 #' Print EFA_AVERAGE object
 #'
-#' Print Method showing a summarized output of the \link{EFA_AVERAGE} function
+#' Print Method showing a summarized output of the [EFA_AVERAGE] function
 #'
 #' @param x list. An object of class EFA_AVERAGE to be printed
 #' @param stat character. A vector with the statistics to print. Possible inputs

@@ -4,7 +4,7 @@
 #' Lynam, 2005) of 645 participants of Study 2 of Steiner and Frey (2020). Each
 #' column are the ratings to one of 45 items to assess urgency, premeditation,
 #' perseverance, and sensation seeking. The original data can be accessed via
-#' \url{https://osf.io/kxp8t/}.
+#' <https://osf.io/kxp8t/>.
 #'
 #' @source Whiteside, S. P., Lynam, D. R., Miller, J. D., & Reynolds, S. K. (2005).
 #'  Validation of the UPPS impulsive behaviour scale: A four-factor model of

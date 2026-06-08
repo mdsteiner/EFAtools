@@ -1,6 +1,6 @@
 #' Print SMT object
 #'
-#' @param x list of class SMT (output from the \link{SMT} function)
+#' @param x list of class SMT (output from the [SMT] function)
 #' @param ... additional arguments passed to print
 #'
 #' @method print SMT

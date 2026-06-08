@@ -20,7 +20,7 @@ EFA_POOLED(
 \arguments{
 \item{data_list}{A list of length \eqn{m}, where \eqn{m} is the number of
 imputations. Each list element is a data frame or matrix of raw data, or a
-correlation matrix. See argument \code{x} in \code{\link{EFA}}.}
+correlation matrix. See argument \code{x} in \code{\link[=EFA]{EFA()}}.}
 
 \item{p}{Numeric in \eqn{(0, 1)}. One minus the confidence level used for
 pooled Wald-type bootstrap/MI confidence intervals when bootstrap arrays are
@@ -53,19 +53,19 @@ for fixed-target alignment.}
 off-diagonal residual correlations. If \code{FALSE}, use the full off-diagonal
 matrix.}
 
-\item{...}{Additional arguments passed to \code{\link{EFA}}.}
+\item{...}{Additional arguments passed to \code{\link[=EFA]{EFA()}}.}
 }
 \value{
 A list of class \code{"EFA_POOLED"} containing pooled estimates,
 residuals, fit indices, the individual fits, and MI diagnostics.
 }
 \description{
-Fits \code{\link{EFA}} to each of several imputed datasets, aligns the
+Fits \code{\link[=EFA]{EFA()}} to each of several imputed datasets, aligns the
 factor solutions to a common factor space, and pools the resulting estimates
 and selected fit quantities across imputations.
 }
 \details{
-The function first fits the same \code{\link{EFA}} model to each imputed
+The function first fits the same \code{\link[=EFA]{EFA()}} model to each imputed
 dataset. Unrotated loading matrices can optionally be put into a common
 signed/permuted factor order before averaging. Rotated loading matrices are
 aligned with either a consensus Procrustes target or with the first

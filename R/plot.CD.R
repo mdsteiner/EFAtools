@@ -1,8 +1,8 @@
 #' Plot CD object
 #'
-#' Plot method showing a summarized output of the \link{CD} function
+#' Plot method showing a summarized output of the [CD] function
 #'
-#' @param x a list of class CD. An output from the \link{CD} function.
+#' @param x a list of class CD. An output from the [CD] function.
 #' @param ... not used.
 #'
 #' @export

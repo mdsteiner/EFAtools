@@ -9,7 +9,7 @@
 \arguments{
 \item{alist}{A list of sub-lists, typically a list of \eqn{m} matrices from
 \code{"EFA"}, where \eqn{m} is the number of imputations passed to
-\code{\link{EFA_POOLED}}.}
+\code{\link[=EFA_POOLED]{EFA_POOLED()}}.}
 
 \item{stat}{A function, e.g. \code{mean} or \code{sd}.}
 }
@@ -24,6 +24,6 @@ Andreas Soteriades
 
 Given a list of matrices, this function calculates user-supplied statistics
 (e.g. mean, median) over the matrices. This function is useful for averaging
-results from \code{\link{EFA}} (e.g. loadings) over all permutation runs in
-\code{\link{EFA_POOLED}}.
+results from \code{\link[=EFA]{EFA()}} (e.g. loadings) over all permutation runs in
+\code{\link[=EFA_POOLED]{EFA_POOLED()}}.
 }

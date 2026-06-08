@@ -44,7 +44,6 @@ Encoding: UTF-8
 LazyData: true
 URL: https://github.com/mdsteiner/EFAtools
 BugReports: https://github.com/mdsteiner/EFAtools/issues
-RoxygenNote: 7.3.3
 Imports: 
     lavaan,
     psych,
@@ -77,3 +76,5 @@ Suggests:
     microbenchmark
 VignetteBuilder: knitr
 Config/testthat/edition: 3
+Config/roxygen2/version: 8.0.0
+Roxygen: list(markdown = TRUE)

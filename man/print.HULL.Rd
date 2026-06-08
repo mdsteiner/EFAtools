@@ -7,7 +7,7 @@
 \method{print}{HULL}(x, plot = TRUE, ...)
 }
 \arguments{
-\item{x}{a list of class HULL. Output from the \code{\link{HULL}} function.}
+\item{x}{a list of class HULL. Output from the \code{\link[=HULL]{HULL()}} function.}
 
 \item{plot}{logical. Whether to plot the results.}
 

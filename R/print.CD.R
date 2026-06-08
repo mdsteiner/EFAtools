@@ -1,6 +1,6 @@
 #' Print function for CD objects
 #'
-#' @param x a list of class CD. Output from \link{CD} function.
+#' @param x a list of class CD. Output from [CD] function.
 #' @param plot logical. Whether to plot the results.
 #' @param ... Further arguments for print.
 #'

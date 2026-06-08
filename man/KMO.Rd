@@ -11,7 +11,7 @@ Kaiser, H. F. & Rice, J. (1974). Little jiffy, mark IV. Educational
 and Psychological Measurement, 34, 111-117.
 
 Cureton, E. E. & D'Augustino, R. B. (1983). Factor analysis: An
- applied approach. Hillsdale, N.J.: Lawrence Erlbaum Associates, Inc.
+applied approach. Hillsdale, N.J.: Lawrence Erlbaum Associates, Inc.
 }
 \usage{
 KMO(
@@ -25,10 +25,10 @@ KMO(
 \item{x}{data.frame or matrix. Dataframe or matrix of raw data or matrix with
 correlations.}
 
-\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor}} if raw
+\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}} if raw
 data is given as input. Default is "pairwise.complete.obs".}
 
-\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor}}.
+\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor()}}.
 Default is "pearson".}
 }
 \value{
@@ -59,23 +59,23 @@ So KMO varies between 0 and 1, with larger values indicating higher suitability
 for factor analysis. Kaiser and Rice (1974) suggest that KMO should at least
 exceed .50 for a correlation matrix to be suitable for factor analysis.
 
-This function was heavily influenced by the \code{\link[psych:KMO]{psych::KMO}}
+This function was heavily influenced by the \code{\link[psych:KMO]{psych::KMO()}}
 function.
 
-See also \code{\link{BARTLETT}} for another test of suitability for factor
+See also \code{\link[=BARTLETT]{BARTLETT()}} for another test of suitability for factor
 analysis.
 
 The \code{KMO} function can also be called together with the
-\code{\link{BARTLETT}} function and with factor retention criteria in the
- \code{\link{N_FACTORS}} function.
+\code{\link[=BARTLETT]{BARTLETT()}} function and with factor retention criteria in the
+\code{\link[=N_FACTORS]{N_FACTORS()}} function.
 }
 \examples{
 KMO(test_models$baseline$cormat)
 }
 \seealso{
-\code{\link{BARTLETT}} for another measure to determine
+\code{\link[=BARTLETT]{BARTLETT()}} for another measure to determine
 suitability for factor analysis.
 
-\code{\link{N_FACTORS}} as a wrapper function for this function,
-\code{\link{BARTLETT}} and several factor retention criteria.
+\code{\link[=N_FACTORS]{N_FACTORS()}} as a wrapper function for this function,
+\code{\link[=BARTLETT]{BARTLETT()}} and several factor retention criteria.
 }

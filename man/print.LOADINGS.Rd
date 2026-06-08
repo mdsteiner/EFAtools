@@ -56,7 +56,7 @@ Default is \code{TRUE}.}
 
 \item{name_style}{character. How to shorten variable names longer than
 \code{max_name_length}. \code{"truncate"} cuts names from the right,
-\code{"abbreviate"} uses \code{\link[base:abbreviate]{abbreviate}}, and
+\code{"abbreviate"} uses \code{\link[base:abbreviate]{base::abbreviate()}}, and
 \code{"full"} prints full names.}
 
 \item{max_factor_name_length}{numeric or \code{NULL}. Optional maximum length
@@ -81,16 +81,16 @@ Print LOADINGS object
 }
 \details{
 The method prints a loading matrix in a compact, console-oriented table.
-Loadings with absolute value greater than or equal to `cutoff` are emphasized,
+Loadings with absolute value greater than or equal to \code{cutoff} are emphasized,
 smaller loadings are de-emphasized, and Heywood-relevant communality/
-uniqueness values are marked when `h2` is supplied. Long variable names can
+uniqueness values are marked when \code{h2} is supplied. Long variable names can
 be truncated, abbreviated, or printed in full. If the matrix has many factor
 columns, the table is split into column blocks so that the output remains
 readable in narrower consoles.
 
-If `h2` is named and `x` has row names, `h2` is matched to the row names of
-`x` before any optional row sorting is applied. If `x` has no row names, a
-named `h2` vector is used in the supplied order.
+If \code{h2} is named and \code{x} has row names, \code{h2} is matched to the row names of
+\code{x} before any optional row sorting is applied. If \code{x} has no row names, a
+named \code{h2} vector is used in the supplied order.
 }
 \examples{
 EFAtools_PAF <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,

@@ -21,54 +21,54 @@
 #'
 #' This function returns two MAP criteria:
 #' \itemize{
-#'   \item \strong{TR2 (original MAP):} \deqn{\mathrm{MAP}_m = \frac{\mathrm{Trace}(R^{*2}_m) - p}{p(p-1)}}
+#'   \item **TR2 (original MAP):** \deqn{\mathrm{MAP}_m = \frac{\mathrm{Trace}(R^{*2}_m) - p}{p(p-1)}}
 #'   which is algebraically equivalent to the mean squared off-diagonal partial correlations and
 #'   corresponds to Velicer's original MAP procedure.
-#'   \item \strong{TR4 (revised MAP):} \deqn{\mathrm{MAP4}_m = \frac{\mathrm{Trace}(R^{*4}_m) - p}{p(p-1)}}
+#'   \item **TR4 (revised MAP):** \deqn{\mathrm{MAP4}_m = \frac{\mathrm{Trace}(R^{*4}_m) - p}{p(p-1)}}
 #'   a higher-order variant that places more weight on dominant residual association structure.
 #' }
 #'
-#' \strong{Input handling.} \code{x} can be a correlation matrix or raw data. If \code{x} is not a
-#' correlation matrix, correlations are computed using \code{\link[stats]{cor}} with the requested
-#' missing-data handling (\code{use}) and association measure (\code{cor_method}). If a correlation
-#' matrix is supplied, \code{N} must be provided.
+#' **Input handling.** `x` can be a correlation matrix or raw data. If `x` is not a
+#' correlation matrix, correlations are computed using [stats::cor()] with the requested
+#' missing-data handling (`use`) and association measure (`cor_method`). If a correlation
+#' matrix is supplied, `N` must be provided.
 #'
-#' \strong{Matrix conditioning.} The function stops if the correlation matrix is singular (non-invertible),
+#' **Matrix conditioning.** The function stops if the correlation matrix is singular (non-invertible),
 #' because subsequent computations rely on stable matrix operations. If the correlation matrix is not
-#' positive definite (e.g., due to sampling error), it is smoothed using \code{\link[psych]{cor.smooth}}.
+#' positive definite (e.g., due to sampling error), it is smoothed using [psych::cor.smooth()].
 #'
-#' \strong{PCA-based partialing.} The PCA loading matrix \eqn{A} is obtained from the eigen-decomposition
+#' **PCA-based partialing.** The PCA loading matrix \eqn{A} is obtained from the eigen-decomposition
 #' of \eqn{R} as \eqn{A = V \Lambda^{1/2}}. For each \eqn{m = 0, \dots, p-1}, the first \eqn{m} columns
 #' of \eqn{A} are used to compute \eqn{C_m = R - A_m A_m'}. The residual is re-standardized to the
 #' partial correlation matrix \eqn{R^*_m} using \eqn{D_m^{-1/2}} (i.e., dividing by the square roots of
 #' residual variances).
 #'
-#' \strong{Termination.} If residual variances (the diagonal of \eqn{C_m}) become non-positive or
+#' **Termination.** If residual variances (the diagonal of \eqn{C_m}) become non-positive or
 #' numerically unstable, the loop terminates early because \eqn{R^*_m} cannot be formed reliably.
 #'
-#' @param x A numeric \code{matrix} or \code{data.frame}. Can be either (a) a correlation matrix, or
+#' @param x A numeric `matrix` or `data.frame`. Can be either (a) a correlation matrix, or
 #'   (b) raw data (rows = observations, columns = variables) from which correlations are computed.
 #' @param use Character string specifying the treatment of missing values when computing correlations.
-#'   Passed to \code{\link[stats]{cor}}. Defaults to \code{"pairwise.complete.obs"}.
+#'   Passed to [stats::cor()]. Defaults to `"pairwise.complete.obs"`.
 #' @param cor_method Character string specifying the correlation coefficient to be computed if raw
-#'   data are supplied. Passed to \code{\link[stats]{cor}}. Defaults to \code{"pearson"}.
+#'   data are supplied. Passed to [stats::cor()]. Defaults to `"pearson"`.
 #'
-#' @return An object of class \code{"MAP"} with the following elements:
+#' @return An object of class `"MAP"` with the following elements:
 #' \itemize{
-#'   \item \code{eigenvalues}: Eigenvalues of the (possibly smoothed) correlation matrix.
-#'   \item \code{n_factors_TR2}: Index \eqn{m} that minimizes the TR2 (original MAP) criterion.
-#'   \item \code{n_factors_TR4}: Index \eqn{m} that minimizes the TR4 (revised MAP) criterion.
-#'   \item \code{criteria}: A \code{matrix} with columns \code{m}, \code{TR2 (orig. MAP)}, and
-#'   \code{TR4 (revised MAP)}.
-#'   \item \code{settings}: A list containing \code{use}, \code{cor_method}, and \code{N}.
+#'   \item `eigenvalues`: Eigenvalues of the (possibly smoothed) correlation matrix.
+#'   \item `n_factors_TR2`: Index \eqn{m} that minimizes the TR2 (original MAP) criterion.
+#'   \item `n_factors_TR4`: Index \eqn{m} that minimizes the TR4 (revised MAP) criterion.
+#'   \item `criteria`: A `matrix` with columns `m`, `TR2 (orig. MAP)`, and
+#'   `TR4 (revised MAP)`.
+#'   \item `settings`: A list containing `use`, `cor_method`, and `N`.
 #' }
 #'
 #' @references
 #' Velicer, W. F. (1976). Determining the number of components from the matrix of partial correlations.
-#' \emph{Psychometrika, 41}, 321--327.
+#' *Psychometrika, 41*, 321--327.
 #'
-#' Velicer, W. F., Eaton, C. A., & Fava, J. L. (2000). Construct explication through factor or component analysis: A review and evaluation of alternative procedures for determining the number of factors or components. In Goffin, R. D. & Helmes, E. (Eds.), \emph{Problems and Solutions in
-#' Human Assessment: Honoring Douglas N. Jackson at Seventy} (pp. 41--71). Boston: Kluwer.
+#' Velicer, W. F., Eaton, C. A., & Fava, J. L. (2000). Construct explication through factor or component analysis: A review and evaluation of alternative procedures for determining the number of factors or components. In Goffin, R. D. & Helmes, E. (Eds.), *Problems and Solutions in
+#' Human Assessment: Honoring Douglas N. Jackson at Seventy* (pp. 41--71). Boston: Kluwer.
 #'
 #'
 #' @examples

@@ -1,8 +1,8 @@
 #' Plot KGC object
 #'
-#' Plot method showing a summarized output of the \link{KGC} function
+#' Plot method showing a summarized output of the [KGC] function
 #'
-#' @param x a list of class KGC. An output from the \link{KGC} function.
+#' @param x a list of class KGC. An output from the [KGC] function.
 #' @param ... not used.
 #'
 #' @export

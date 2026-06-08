@@ -9,7 +9,7 @@
 \arguments{
 \item{alist}{A list of sub-lists, typically a list of \eqn{m} objects of class
 \code{"EFA"}, where \eqn{m} is the number of imputations passed to
-\code{\link{EFA_POOLED}}.}
+\code{\link[=EFA_POOLED]{EFA_POOLED()}}.}
 
 \item{object}{String of length 1. The name of the object to extract e.g.
 \code{"h2"} or \code{"vars_accounted"}.}
@@ -26,6 +26,6 @@ Andreas Soteriades
 
 Consider a list of named sub-lists. This function extracts, for each sub-list,
 the sub-list element that is specified by the user. This function is useful
-for extracting results from \code{\link{EFA}} for each permutation run in
-\code{\link{EFA_POOLED}}.
+for extracting results from \code{\link[=EFA]{EFA()}} for each permutation run in
+\code{\link[=EFA_POOLED]{EFA_POOLED()}}.
 }
