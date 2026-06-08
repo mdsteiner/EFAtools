@@ -1,15 +1,15 @@
 unrot <- EFA(test_models$baseline$cormat, 3, N = 500)
-equa <- .ROTATE_ORTH(unrot, rotation = "equamax", type = "EFAtools")
+equa <- .rotate_model(unrot, rotation = "equamax", type = "EFAtools")
 
 unrot_1 <- EFA(test_models$baseline$cormat, 1, N = 500)
-equa_1 <- suppressWarnings(.ROTATE_ORTH(unrot_1, rotation = "equamax",
+equa_1 <- suppressWarnings(.rotate_model(unrot_1, rotation = "equamax",
                                         type = "EFAtools"))
 
-quarti <- .ROTATE_ORTH(unrot, rotation = "quartimax", type = "psych")
-bentT <- .ROTATE_ORTH(unrot, rotation = "bentlerT", type = "none",
+quarti <- .rotate_model(unrot, rotation = "quartimax", type = "psych")
+bentT <- .rotate_model(unrot, rotation = "bentlerT", type = "none",
                       order_type = "eigen")
-geoT <- .ROTATE_ORTH(unrot, rotation = "geominT", type = "SPSS")
-bifacT <- .ROTATE_ORTH(unrot, rotation = "bifactorT", type = "EFAtools")
+geoT <- .rotate_model(unrot, rotation = "geominT", type = "SPSS")
+bifacT <- .rotate_model(unrot, rotation = "bifactorT", type = "EFAtools")
 
 test_that("output class and dimensions are correct", {
   expect_s3_class(equa$rot_loadings, "LOADINGS")
@@ -76,24 +76,24 @@ test_that("settings are returned correctly", {
 })
 
 test_that("errors etc. are thrown correctly", {
-  expect_error(.ROTATE_ORTH(unrot, rotation = "equamax", type = "none"), class = "efa_type_none")
+  expect_error(.rotate_model(unrot, rotation = "equamax", type = "none"), class = "efa_type_none")
 
-  expect_warning(.ROTATE_ORTH(unrot, rotation = "equamax", type = "EFAtools",
+  expect_warning(.rotate_model(unrot, rotation = "equamax", type = "EFAtools",
                               normalize = FALSE), class = "efa_type_override")
-  expect_warning(.ROTATE_ORTH(unrot, rotation = "equamax", type = "EFAtools",
+  expect_warning(.rotate_model(unrot, rotation = "equamax", type = "EFAtools",
                               order_type = "ss_factors"), class = "efa_type_override")
 
-  expect_warning(.ROTATE_ORTH(unrot, rotation = "equamax", type = "psych",
+  expect_warning(.rotate_model(unrot, rotation = "equamax", type = "psych",
                               normalize = FALSE), class = "efa_type_override")
-  expect_warning(.ROTATE_ORTH(unrot, rotation = "equamax", type = "psych",
+  expect_warning(.rotate_model(unrot, rotation = "equamax", type = "psych",
                               order_type = "ss_factors"), class = "efa_type_override")
 
-  expect_warning(.ROTATE_ORTH(unrot, rotation = "equamax", type = "SPSS",
+  expect_warning(.rotate_model(unrot, rotation = "equamax", type = "SPSS",
                               normalize = FALSE), class = "efa_type_override")
-  expect_warning(.ROTATE_ORTH(unrot, rotation = "equamax", type = "SPSS",
+  expect_warning(.rotate_model(unrot, rotation = "equamax", type = "SPSS",
                               order_type = "ss_factors"), class = "efa_type_override")
 
-  expect_warning(.ROTATE_ORTH(unrot_1, rotation = "equamax", type = "EFAtools"), class = "efa_single_factor")
+  expect_warning(.rotate_model(unrot_1, rotation = "equamax", type = "EFAtools"), class = "efa_single_factor")
 })
 
 rm(unrot, equa, unrot_1, equa_1, quarti, bentT, geoT, bifacT)

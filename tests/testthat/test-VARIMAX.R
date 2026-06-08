@@ -1,10 +1,10 @@
 unrot <- EFA(test_models$baseline$cormat, 3, N = 500)
-vari <- .VARIMAX(unrot, type = "EFAtools")
-vari_psych <- .VARIMAX(unrot, type = "psych")
-vari_spss <- .VARIMAX(unrot, type = "SPSS")
+vari <- .rotate_model(unrot, rotation = "varimax", type = "EFAtools")
+vari_psych <- .rotate_model(unrot, rotation = "varimax", type = "psych")
+vari_spss <- .rotate_model(unrot, rotation = "varimax", type = "SPSS")
 
 unrot_1 <- EFA(test_models$baseline$cormat, 1, N = 500)
-vari_1 <- suppressWarnings(.VARIMAX(unrot_1, type = "EFAtools"))
+vari_1 <- suppressWarnings(.rotate_model(unrot_1, rotation = "varimax", type = "EFAtools"))
 
 test_that("output class and dimensions are correct", {
   expect_type(vari, "list")
@@ -57,18 +57,18 @@ test_that("settings are returned correctly", {
 
 test_that("errors etc. are thrown correctly", {
 
-  expect_error(.VARIMAX(unrot, type = "none"), class = "efa_type_none")
+  expect_error(.rotate_model(unrot, rotation = "varimax", type = "none"), class = "efa_type_none")
 
-  expect_warning(.VARIMAX(unrot, type = "EFAtools", normalize = FALSE), class = "efa_type_override")
-  expect_warning(.VARIMAX(unrot, type = "EFAtools", order_type = "ss_factors"), class = "efa_type_override")
+  expect_warning(.rotate_model(unrot, rotation = "varimax", type = "EFAtools", normalize = FALSE), class = "efa_type_override")
+  expect_warning(.rotate_model(unrot, rotation = "varimax", type = "EFAtools", order_type = "ss_factors"), class = "efa_type_override")
 
-  expect_warning(.VARIMAX(unrot, type = "psych", normalize = FALSE), class = "efa_type_override")
-  expect_warning(.VARIMAX(unrot, type = "psych", order_type = "ss_factors"), class = "efa_type_override")
+  expect_warning(.rotate_model(unrot, rotation = "varimax", type = "psych", normalize = FALSE), class = "efa_type_override")
+  expect_warning(.rotate_model(unrot, rotation = "varimax", type = "psych", order_type = "ss_factors"), class = "efa_type_override")
 
-  expect_warning(.VARIMAX(unrot, type = "SPSS", normalize = FALSE), class = "efa_type_override")
-  expect_warning(.VARIMAX(unrot, type = "SPSS", order_type = "eigen"), class = "efa_type_override")
-  expect_warning(.VARIMAX(unrot, type = "SPSS", varimax_type = "svd"), class = "efa_type_override")
-  expect_warning(.VARIMAX(unrot_1, type = "EFAtools"), class = "efa_single_factor")
+  expect_warning(.rotate_model(unrot, rotation = "varimax", type = "SPSS", normalize = FALSE), class = "efa_type_override")
+  expect_warning(.rotate_model(unrot, rotation = "varimax", type = "SPSS", order_type = "eigen"), class = "efa_type_override")
+  expect_warning(.rotate_model(unrot, rotation = "varimax", type = "SPSS", varimax_type = "svd"), class = "efa_type_override")
+  expect_warning(.rotate_model(unrot_1, rotation = "varimax", type = "EFAtools"), class = "efa_single_factor")
 })
 
 rm(unrot, vari, unrot_1, vari_1, vari_psych, vari_spss)

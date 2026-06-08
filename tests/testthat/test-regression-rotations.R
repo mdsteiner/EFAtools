@@ -46,7 +46,7 @@ test_that("orthogonal rotations reproduce their GPArotation engine", {
 
   for (rn in names(engines)) {
     set.seed(seed)
-    efa <- suppressWarnings(.ROTATE_ORTH(unrot, rotation = rn, type = "EFAtools"))
+    efa <- suppressWarnings(.rotate_model(unrot, rotation = rn, type = "EFAtools"))
     set.seed(seed)
     ref <- suppressWarnings(engines[[rn]]())
     expect_lt(aligned_max_diff(efa$rot_loadings, ref$loadings), 1e-4)
@@ -74,7 +74,7 @@ test_that("oblique rotations reproduce their GPArotation engine", {
 
   for (rn in names(engines)) {
     set.seed(seed)
-    efa <- suppressWarnings(.ROTATE_OBLQ(unrot, rotation = rn, type = "EFAtools"))
+    efa <- suppressWarnings(.rotate_model(unrot, rotation = rn, type = "EFAtools"))
     set.seed(seed)
     ref <- suppressWarnings(engines[[rn]]())
     expect_lt(aligned_max_diff(efa$rot_loadings, ref$loadings), 1e-4)
@@ -85,7 +85,7 @@ test_that("oblique rotations reproduce their GPArotation engine", {
 test_that("varimax reproduces stats::varimax", {
   skip_on_cran()
 
-  efa <- suppressWarnings(.VARIMAX(unrot, type = "psych"))   # varimax_type 'svd'
+  efa <- suppressWarnings(.rotate_model(unrot, rotation = "varimax", type = "psych"))   # varimax_type 'svd'
   ref <- stats::varimax(L, normalize = TRUE, eps = 1e-5)
   expect_lt(aligned_max_diff(efa$rot_loadings, ref$loadings), 1e-4)
 })
@@ -95,7 +95,7 @@ test_that("promax reproduces stats::promax", {
 
   # type 'psych' uses the unnormalized Hendrickson-White target (k = 4) on an svd varimax
   # base, which is what stats::promax(m = 4) computes.
-  efa <- suppressWarnings(.PROMAX(unrot, type = "psych"))
+  efa <- suppressWarnings(.rotate_model(unrot, rotation = "promax", type = "psych"))
   ref <- stats::promax(L, m = 4)
   expect_lt(aligned_max_diff(efa$rot_loadings, ref$loadings), 1e-4)
 })

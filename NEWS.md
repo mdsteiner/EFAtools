@@ -2,6 +2,14 @@
 
 ## Bug Fixes
 
+* `EFA()`: For oblique rotations, the factor intercorrelations (`Phi`), the structure
+  matrix, the explained variances, and the rotation matrix are now reflected and
+  reordered consistently with the rotated loadings. Previously, when a factor was
+  reflected to a positive orientation the factor intercorrelations were not sign-adjusted
+  (so the structure matrix and reported correlations did not match the loadings), the
+  rotation matrix was left in the unordered factor order, and with
+  `order_type = "ss_factors"` the factor intercorrelations were not reordered at all.
+
 
 # EFAtools 0.7.1
 

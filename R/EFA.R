@@ -505,70 +505,35 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   }
 
   # rotate factor analysis results
-  if (rotation == "promax") {
+  if (rotation == "none") {
 
-    rot_out <- .PROMAX(fit_out, type = type, normalize = normalize, P_type = P_type,
-                      precision = precision, order_type = order_type,
-                      varimax_type = varimax_type, k = k)
-
-    boot_rot <- "oblique"
-
-
-  } else if (rotation == "varimax") {
-
-    rot_out <- .VARIMAX(fit_out, type = type, normalize = normalize,
-                       precision = precision, varimax_type = varimax_type,
-                       order_type = order_type)
-
-    boot_rot <- "orthogonal"
-
-  } else if (rotation == "quartimax" || rotation == "equamax" ||
-             rotation == "bentlerT" || rotation == "geominT" ||
-             rotation == "bifactorT") {
-
-    if (type == "SPSS") {
-
-      cli::cli_warn(
-        c("Only the {.val promax} and {.val varimax} rotations are validated against the SPSS implementation.",
-          "i" = "{.val {rotation}} results may differ from those returned by SPSS."),
-        class = "efa_spss_rotation_untested"
-      )
-
-    }
-
-    rot_out <- .ROTATE_ORTH(fit_out, type = type, rotation = rotation,
-                           normalize = normalize, precision = precision,
-                           order_type = order_type,
-                           randomStarts = randomStarts, ...)
-
-    boot_rot <- "orthogonal"
-
-  } else if (rotation == "oblimin" || rotation == "quartimin" ||
-             rotation == "simplimax" || rotation == "bentlerQ" ||
-             rotation == "geominQ" || rotation == "bifactorQ") {
-
-    if (type == "SPSS") {
-
-      cli::cli_warn(
-        c("Only the {.val promax} and {.val varimax} rotations are validated against the SPSS implementation.",
-          "i" = "{.val {rotation}} results may differ from those returned by SPSS."),
-        class = "efa_spss_rotation_untested"
-      )
-
-    }
-
-    rot_out <- .ROTATE_OBLQ(fit_out, type = type, rotation = rotation,
-                           normalize = normalize, precision = precision,
-                           order_type = order_type, k = k,
-                           randomStarts = randomStarts, ...)
-
-    boot_rot <- "oblique"
+    output <- fit_out
+    boot_rot <- "none"
 
   } else {
 
-    output <- fit_out
+    # Only promax and varimax are validated against the SPSS implementation.
+    if (type == "SPSS" && !rotation %in% c("promax", "varimax")) {
 
-    boot_rot <- "none"
+      cli::cli_warn(
+        c("Only the {.val promax} and {.val varimax} rotations are validated against the SPSS implementation.",
+          "i" = "{.val {rotation}} results may differ from those returned by SPSS."),
+        class = "efa_spss_rotation_untested"
+      )
+
+    }
+
+    rot_out <- .rotate_model(fit_out, rotation = rotation, type = type,
+                             normalize = normalize, precision = precision,
+                             order_type = order_type, varimax_type = varimax_type,
+                             P_type = P_type, k = k, randomStarts = randomStarts,
+                             ...)
+
+    boot_rot <- if (rotation == "promax" || rotation %in% names(.oblq_engines)) {
+      "oblique"
+    } else {
+      "orthogonal"
+    }
 
   }
 

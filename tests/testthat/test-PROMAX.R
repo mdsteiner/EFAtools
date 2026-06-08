@@ -1,10 +1,10 @@
 unrot <- EFA(test_models$baseline$cormat, 3, N = 500)
-prom <- .PROMAX(unrot, type = "EFAtools")
-prom_psych <- .PROMAX(unrot, type = "psych")
-prom_spss <- .PROMAX(unrot, type = "SPSS")
+prom <- .rotate_model(unrot, rotation = "promax", type = "EFAtools")
+prom_psych <- .rotate_model(unrot, rotation = "promax", type = "psych")
+prom_spss <- .rotate_model(unrot, rotation = "promax", type = "SPSS")
 
 unrot_1 <- EFA(test_models$baseline$cormat, 1, N = 500)
-prom_1 <- suppressWarnings(.PROMAX(unrot_1, type = "EFAtools"))
+prom_1 <- suppressWarnings(.rotate_model(unrot_1, rotation = "promax", type = "EFAtools"))
 
 test_that("output class and dimensions are correct", {
   expect_type(prom, "list")
@@ -73,24 +73,24 @@ test_that("settings are returned correctly", {
 
 test_that("errors etc. are thrown correctly", {
 
-  expect_error(.PROMAX(unrot, type = "none"), class = "efa_type_none")
+  expect_error(.rotate_model(unrot, rotation = "promax", type = "none"), class = "efa_type_none")
 
-  expect_warning(.PROMAX(unrot, type = "EFAtools", normalize = FALSE), class = "efa_type_override")
-  expect_warning(.PROMAX(unrot, type = "EFAtools", P_type = "norm"), class = "efa_type_override")
-  expect_warning(.PROMAX(unrot, type = "EFAtools", order_type = "ss_factors"), class = "efa_type_override")
-  expect_warning(.PROMAX(unrot, type = "EFAtools", k = 2), class = "efa_type_override")
+  expect_warning(.rotate_model(unrot, rotation = "promax", type = "EFAtools", normalize = FALSE), class = "efa_type_override")
+  expect_warning(.rotate_model(unrot, rotation = "promax", type = "EFAtools", P_type = "norm"), class = "efa_type_override")
+  expect_warning(.rotate_model(unrot, rotation = "promax", type = "EFAtools", order_type = "ss_factors"), class = "efa_type_override")
+  expect_warning(.rotate_model(unrot, rotation = "promax", type = "EFAtools", k = 2), class = "efa_type_override")
 
-  expect_warning(.PROMAX(unrot, type = "psych", normalize = FALSE), class = "efa_type_override")
-  expect_warning(.PROMAX(unrot, type = "psych", P_type = "norm"), class = "efa_type_override")
-  expect_warning(.PROMAX(unrot, type = "psych", order_type = "ss_factors"), class = "efa_type_override")
-  expect_warning(.PROMAX(unrot, type = "psych", k = 2), class = "efa_type_override")
+  expect_warning(.rotate_model(unrot, rotation = "promax", type = "psych", normalize = FALSE), class = "efa_type_override")
+  expect_warning(.rotate_model(unrot, rotation = "promax", type = "psych", P_type = "norm"), class = "efa_type_override")
+  expect_warning(.rotate_model(unrot, rotation = "promax", type = "psych", order_type = "ss_factors"), class = "efa_type_override")
+  expect_warning(.rotate_model(unrot, rotation = "promax", type = "psych", k = 2), class = "efa_type_override")
 
-  expect_warning(.PROMAX(unrot, type = "SPSS", normalize = FALSE), class = "efa_type_override")
-  expect_warning(.PROMAX(unrot, type = "SPSS", P_type = "unnorm"), class = "efa_type_override")
-  expect_warning(.PROMAX(unrot, type = "SPSS", order_type = "eigen"), class = "efa_type_override")
-  expect_warning(.PROMAX(unrot, type = "SPSS", k = 2), class = "efa_type_override")
-  expect_warning(.PROMAX(unrot, type = "SPSS", varimax_type = "svd"), class = "efa_type_override")
-  expect_warning(.PROMAX(unrot_1, type = "EFAtools"), class = "efa_single_factor")
+  expect_warning(.rotate_model(unrot, rotation = "promax", type = "SPSS", normalize = FALSE), class = "efa_type_override")
+  expect_warning(.rotate_model(unrot, rotation = "promax", type = "SPSS", P_type = "unnorm"), class = "efa_type_override")
+  expect_warning(.rotate_model(unrot, rotation = "promax", type = "SPSS", order_type = "eigen"), class = "efa_type_override")
+  expect_warning(.rotate_model(unrot, rotation = "promax", type = "SPSS", k = 2), class = "efa_type_override")
+  expect_warning(.rotate_model(unrot, rotation = "promax", type = "SPSS", varimax_type = "svd"), class = "efa_type_override")
+  expect_warning(.rotate_model(unrot_1, rotation = "promax", type = "EFAtools"), class = "efa_single_factor")
 })
 
 rm(unrot, prom, unrot_1, prom_1, prom_psych, prom_spss)

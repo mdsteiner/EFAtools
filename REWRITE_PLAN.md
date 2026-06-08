@@ -257,9 +257,9 @@ fine); Phase 8–9 → **1.0.0**.
 - [x] Move messages, warnings, and errors from current base versions to `cli_inform`,
       `cli_warn` and `cli_abort`. Strip all crayon aspects and use `cli` conform
       messaging.
-- [ ] `estimate_model()` + shared `.finalize_fit()` (sign/naming/vars/gof/residuals);
+- [x] `estimate_model()` + shared `.finalize_fit()` (sign/naming/vars/gof/residuals);
       `.PAF/.ML/.ULS` become thin fitters. (Engine still R/optim here.)
-- [ ] `rotate_model()` + `.reflect_and_order()`; rotation engine selected by name table.
+- [x] `rotate_model()` + `.reflect_and_order()`; rotation engine selected by name table.
 - [ ] `.rotation_family()` + canonical orth/oblique name vectors; replace the 4 duplicated
       classifications (EFA, EFA_POOLED, `.extract_data`, `.type_grid`).
 - [ ] `.prepare_cor_input()` shared by EFA + all retention criteria + KMO/BARTLETT/

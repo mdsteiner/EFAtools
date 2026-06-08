@@ -1,50 +1,19 @@
-## Promax rotation
-.PROMAX <- function (x, type = c("EFAtools", "psych", "SPSS", "none"),
-                    normalize = TRUE, P_type = NA, precision = 1e-5,
-                    order_type = NA,  varimax_type = NA, k = NA) {
+## Promax rotation engine: build a varimax base, fit the oblique promax target,
+## and reflect/order the solution. Dispatched from .rotate_model(), which resolves
+## the `type` preset and guards the single-factor case. Promax reflects and orders
+## its varimax base before the fit (ss_factors) or its pattern after the fit
+## (eigen), so it finalizes its own solution rather than using .reflect_and_order().
+.rotate_promax <- function(L, normalize, P_type, precision, order_type,
+                           varimax_type, k) {
 
-  # Fill the type preset defaults and warn about any pinned rotation arguments.
-  resolved <- .resolve_settings(
-    type = type,
-    user = list(normalize = normalize, P_type = P_type, order_type = order_type,
-                varimax_type = varimax_type, k = k),
-    preset = .efa_presets$PROMAX
-  )
-  normalize <- resolved$normalize
-  P_type <- resolved$P_type
-  order_type <- resolved$order_type
-  varimax_type <- resolved$varimax_type
-  k <- resolved$k
-
-  # extract loadings and dim names
-    L <- x$unrot_loadings
-    dim_names <- dimnames(L)
-
-  # store settings used
-    settings <- list(normalize = normalize, P_type = P_type,
-                     precision = precision, order_type = order_type,
-                     varimax_type = varimax_type, k = k)
-
-  if (ncol(L) < 2) {
-    # prepare and return output list
-    output <- list(rot_loadings = L,
-                   Phi = NA,
-                   Structure = NA,
-                   rotmat = NA,
-                   vars_accounted_rot = NA,
-                   settings = settings)
-
-    cli::cli_warn("A single factor cannot be rotated; returning the unrotated loadings.",
-                  class = "efa_single_factor")
-    return(output)
-  }
+  dim_names <- dimnames(L)
 
   # perform the varimax rotation
-    if (varimax_type == "svd") {
-      AV <- stats::varimax(L, normalize = normalize, eps = precision)
-    } else if (varimax_type == "kaiser") {
-      AV <- .VARIMAX_SPSS(L, normalize = normalize, precision = precision)
-    }
+  if (varimax_type == "svd") {
+    AV <- stats::varimax(L, normalize = normalize, eps = precision)
+  } else if (varimax_type == "kaiser") {
+    AV <- .VARIMAX_SPSS(L, normalize = normalize, precision = precision)
+  }
 
 
   if (order_type == "ss_factors") {
@@ -110,6 +79,10 @@
     Phi <- diag(signs) %*% Phi %*% diag(signs)
     Phi <- Phi[eig_order, eig_order]
 
+    # the rotation matrix follows the factor ordering (the ss_factors branch
+    # reorders its varimax base before the fit, so U is already in order there)
+    U <- U[eig_order, eig_order]
+
     dim_names[[2]] <- dim_names[[2]][eig_order]
 
   }
@@ -128,11 +101,9 @@
   class(AP) <- "LOADINGS"
   class(Structure) <- "LOADINGS"
 
-  output <- list(rot_loadings = AP,
-                 Phi = Phi,
-                 Structure = Structure,
-                 rotmat = U,
-                 vars_accounted_rot = vars_accounted_rot,
-                 settings = settings)
-  output
+  list(rot_loadings = AP,
+       Phi = Phi,
+       Structure = Structure,
+       rotmat = U,
+       vars_accounted_rot = vars_accounted_rot)
 }

@@ -7,7 +7,7 @@
 # settings, warning once about any argument pinned alongside a preset.
 
 # Per-function argument defaults for each preset. One source of truth, consumed
-# by .PAF(), .PROMAX(), .VARIMAX(), .ROTATE_OBLQ(), and .ROTATE_ORTH().
+# by .PAF() (via .estimate_model()) and by .rotate_model() for every rotation.
 .efa_presets <- list(
   PAF = list(
     EFAtools = list(init_comm = "smc", criterion = 1e-3,

@@ -1,17 +1,17 @@
 unrot <- EFA(test_models$baseline$cormat, 3, N = 500)
-obli <- .ROTATE_OBLQ(unrot, rotation = "oblimin", type = "EFAtools")
+obli <- .rotate_model(unrot, rotation = "oblimin", type = "EFAtools")
 
 unrot_1 <- EFA(test_models$baseline$cormat, 1, N = 500)
-obli_1 <- suppressWarnings(.ROTATE_OBLQ(unrot_1, rotation = "oblimin",
+obli_1 <- suppressWarnings(.rotate_model(unrot_1, rotation = "oblimin",
                                         type = "EFAtools"))
 
-quarti <- suppressWarnings(.ROTATE_OBLQ(unrot, rotation = "quartimin", type = "psych"))
-simpli <- suppressWarnings(.ROTATE_OBLQ(unrot, rotation = "simplimax", type = "SPSS",
+quarti <- suppressWarnings(.rotate_model(unrot, rotation = "quartimin", type = "psych"))
+simpli <- suppressWarnings(.rotate_model(unrot, rotation = "simplimax", type = "SPSS",
                        maxit = 2000))
-bentQ <- suppressWarnings(.ROTATE_OBLQ(unrot, rotation = "bentlerQ", type = "none",
+bentQ <- suppressWarnings(.rotate_model(unrot, rotation = "bentlerQ", type = "none",
                        order_type = "eigen"))
-geoQ <- suppressWarnings(.ROTATE_OBLQ(unrot, rotation = "geominQ", type = "EFAtools"))
-bifacQ <- suppressWarnings(.ROTATE_OBLQ(unrot, rotation = "bifactorQ", type = "EFAtools"))
+geoQ <- suppressWarnings(.rotate_model(unrot, rotation = "geominQ", type = "EFAtools"))
+bifacQ <- suppressWarnings(.rotate_model(unrot, rotation = "bifactorQ", type = "EFAtools"))
 
 test_that("output class and dimensions are correct", {
   expect_s3_class(obli$rot_loadings, "LOADINGS")
@@ -109,24 +109,71 @@ test_that("settings are returned correctly", {
 })
 
 test_that("errors etc. are thrown correctly", {
-  expect_error(.ROTATE_OBLQ(unrot, rotation = "oblimin", type = "none"), class = "efa_type_none")
+  expect_error(.rotate_model(unrot, rotation = "oblimin", type = "none"), class = "efa_type_none")
 
-  expect_warning(.ROTATE_OBLQ(unrot, rotation = "oblimin", type = "EFAtools",
+  expect_warning(.rotate_model(unrot, rotation = "oblimin", type = "EFAtools",
                               normalize = FALSE), class = "efa_type_override")
-  expect_warning(.ROTATE_OBLQ(unrot, rotation = "oblimin", type = "EFAtools",
+  expect_warning(.rotate_model(unrot, rotation = "oblimin", type = "EFAtools",
                               order_type = "ss_factors"), class = "efa_type_override")
 
-  expect_warning(.ROTATE_OBLQ(unrot, rotation = "oblimin", type = "psych",
+  expect_warning(.rotate_model(unrot, rotation = "oblimin", type = "psych",
                               normalize = FALSE), class = "efa_type_override")
-  expect_warning(.ROTATE_OBLQ(unrot, rotation = "oblimin", type = "psych",
+  expect_warning(.rotate_model(unrot, rotation = "oblimin", type = "psych",
                               order_type = "ss_factors"), class = "efa_type_override")
 
-  expect_warning(.ROTATE_OBLQ(unrot, rotation = "oblimin", type = "SPSS",
+  expect_warning(.rotate_model(unrot, rotation = "oblimin", type = "SPSS",
                               normalize = FALSE), class = "efa_type_override")
-  expect_warning(.ROTATE_OBLQ(unrot, rotation = "oblimin", type = "SPSS",
+  expect_warning(.rotate_model(unrot, rotation = "oblimin", type = "SPSS",
                               order_type = "ss_factors"), class = "efa_type_override")
 
-  expect_warning(.ROTATE_OBLQ(unrot_1, rotation = "oblimin", type = "EFAtools"), class = "efa_single_factor")
+  expect_warning(.rotate_model(unrot_1, rotation = "oblimin", type = "EFAtools"), class = "efa_single_factor")
+})
+
+test_that("factors, Phi, structure, and rotmat are reordered consistently", {
+  # ss_factors and eigen use the same ordering criterion, so the oblique solution
+  # (loadings, Phi, structure, and rotation matrix) is identical, and the structure
+  # matrix equals pattern %*% Phi.
+  set.seed(42)
+  eig <- suppressWarnings(.rotate_model(unrot, rotation = "oblimin", type = "EFAtools"))
+  set.seed(42)
+  ss <- suppressWarnings(.rotate_model(unrot, rotation = "oblimin", type = "SPSS"))
+
+  expect_equal(unclass(eig$Structure), unclass(eig$rot_loadings) %*% eig$Phi,
+               ignore_attr = TRUE)
+  expect_equal(unclass(ss$rot_loadings), unclass(eig$rot_loadings), ignore_attr = TRUE)
+  expect_equal(ss$Phi, eig$Phi, ignore_attr = TRUE)
+  expect_equal(unclass(ss$Structure), unclass(eig$Structure), ignore_attr = TRUE)
+  expect_equal(ss$rotmat, eig$rotmat, ignore_attr = TRUE)
+})
+
+test_that("oblique Phi, structure, and rotmat are reflected/reordered with the loadings", {
+  skip_on_cran()
+  skip_if_not_installed("GPArotation")
+
+  # Reflect and reorder the engine's own solution the documented way, then check the
+  # rotated output matches it exactly. This pins the sign reflection of Phi (a factor
+  # in this solution has a negative column sum) and the consistent reordering of Phi
+  # and the rotation matrix, which a structure == pattern %*% Phi check alone misses.
+  L <- unrot$unrot_loadings
+  set.seed(11)
+  ref <- suppressWarnings(GPArotation::oblimin(L, eps = 1e-5, normalize = TRUE,
+                                               randomStarts = 100))
+  signs <- sign(colSums(ref$loadings))
+  signs[signs == 0] <- 1
+  ord <- order(colSums((ref$loadings %*% diag(signs))^2), decreasing = TRUE)
+  exp_load <- (ref$loadings %*% diag(signs))[, ord]
+  exp_phi <- (diag(signs) %*% ref$Phi %*% diag(signs))[ord, ord]
+  exp_rotmat <- ref$Th[ord, ord]
+
+  set.seed(11)
+  o <- suppressWarnings(.rotate_model(unrot, rotation = "oblimin", type = "EFAtools"))
+
+  expect_false(all(signs == 1))  # the reflection path is exercised
+  expect_equal(unclass(o$rot_loadings), exp_load, ignore_attr = TRUE, tolerance = 1e-6)
+  expect_equal(o$Phi, exp_phi, ignore_attr = TRUE, tolerance = 1e-6)
+  expect_equal(o$rotmat, exp_rotmat, ignore_attr = TRUE, tolerance = 1e-6)
+  expect_equal(unclass(o$Structure), exp_load %*% exp_phi, ignore_attr = TRUE,
+               tolerance = 1e-6)
 })
 
 rm(unrot, obli, unrot_1, obli_1, quarti, simpli, bentQ, geoQ, bifacQ)
