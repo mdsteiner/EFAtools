@@ -3,38 +3,42 @@ nest_cor <- NEST(test_models$baseline$cormat, N = 500)
 nest_raw <- NEST(GRiPS_raw)
 
 test_that("output class and dimensions are correct", {
-  expect_s3_class(nest_cor, "NEST")
-  expect_output(str(nest_cor), "List of 5")
-  expect_s3_class(nest_raw, "NEST")
-  expect_output(str(nest_raw), "List of 5")
+  expect_s3_class(nest_cor, "efa_retention")
+  expect_length(nest_cor, 7)
+  expect_s3_class(nest_raw, "efa_retention")
+  expect_length(nest_raw, 7)
+  expect_equal(.retention_record(nest_cor, "NEST")$plot_type, "none")
 })
 
 
 test_that("found eigenvalues are correct", {
-  expect_equal(sum(nest_cor$eigenvalues),
+  expect_equal(sum(.retention_record(nest_cor, "NEST")$y),
                ncol(test_models$baseline$cormat))
-  expect_equal(sum(nest_raw$eigenvalues), ncol(GRiPS_raw))
-  expect_length(nest_cor$eigenvalues,
+  expect_equal(sum(.retention_record(nest_raw, "NEST")$y), ncol(GRiPS_raw))
+  expect_length(.retention_record(nest_cor, "NEST")$y,
                 ncol(test_models$baseline$cormat))
-  expect_length(nest_raw$eigenvalues, ncol(GRiPS_raw))
+  expect_length(.retention_record(nest_raw, "NEST")$y, ncol(GRiPS_raw))
 })
 
 test_that("reference eigenvalues are correct", {
-  expect_length(nest_cor$references, nest_cor$n_factors + 1)
-  expect_length(nest_raw$references, nest_raw$n_factors + 1)
-  expect_lte(nest_cor$eigenvalues[nest_cor$n_factors + 1],
-             nest_cor$references[nest_cor$n_factors + 1])
-  expect_true(all(nest_cor$eigenvalues[1:nest_cor$n_factors] >
-            nest_cor$references[1:nest_cor$n_factors]))
-  expect_lte(nest_raw$eigenvalues[nest_raw$n_factors + 1],
-             nest_raw$references[nest_raw$n_factors + 1])
-  expect_true(all(nest_raw$eigenvalues[1:nest_raw$n_factors] >
-            nest_raw$references[1:nest_raw$n_factors]))
+  nf_cor <- nest_cor$n_factors[["NEST"]]
+  eig_cor <- .retention_record(nest_cor, "NEST")$y
+  ref_cor <- .retention_record(nest_cor, "NEST")$reference
+  nf_raw <- nest_raw$n_factors[["NEST"]]
+  eig_raw <- .retention_record(nest_raw, "NEST")$y
+  ref_raw <- .retention_record(nest_raw, "NEST")$reference
+
+  expect_length(ref_cor, nf_cor + 1)
+  expect_length(ref_raw, nf_raw + 1)
+  expect_lte(eig_cor[nf_cor + 1], ref_cor[nf_cor + 1])
+  expect_true(all(eig_cor[1:nf_cor] > ref_cor[1:nf_cor]))
+  expect_lte(eig_raw[nf_raw + 1], ref_raw[nf_raw + 1])
+  expect_true(all(eig_raw[1:nf_raw] > ref_raw[1:nf_raw]))
 })
 
 test_that("identified number of factors is correct", {
-  expect_equal(nest_cor$n_factors, 3)
-  expect_equal(nest_raw$n_factors, 1)
+  expect_equal(nest_cor$n_factors[["NEST"]], 3)
+  expect_equal(nest_raw$n_factors[["NEST"]], 1)
 })
 
 # Create singular correlation matrix for tests

@@ -1,28 +1,24 @@
-# print.SMT output is stable
+# print.efa_retention output is stable for SMT
 
     Code
       print(smt)
     Output
+      -- Sequential model tests ------------------------------------------------------
       
-      Sequential 𝜒² Model Tests suggest 3 factors.
-      
-      Lower bound of RMSEA 90% confidence interval suggests 2 factors.
-      
-      AIC suggests 3 factors.
-      
+      * Sequential chi-square model tests: 3
+      * Lower bound of RMSEA 90% CI: 2
+      * Akaike Information Criterion: 3
 
 ---
 
     Code
       print(smt_id)
     Output
+      -- Sequential model tests ------------------------------------------------------
       
-      Sequential 𝜒² Model Tests suggest 0 factors.
-      
-      Lower bound of RMSEA 90% confidence interval suggests 0 factors.
-      
-      AIC suggests 0 factors.
-      
+      * Sequential chi-square model tests: 0
+      * Lower bound of RMSEA 90% CI: 0
+      * Akaike Information Criterion: 0
 
 # print.SCREE output is stable
 
@@ -44,33 +40,34 @@
       
       
 
-# print.KGC output is stable
+# print.efa_retention output is stable for KGC
 
     Code
-      print(kgc, plot = FALSE)
+      print(kgc)
     Output
+      -- Kaiser-Guttman criterion ----------------------------------------------------
       
-      Eigenvalues were found using PCA, SMC, and EFA.
-      
-      -- Number of factors suggested by Kaiser-Guttmann criterion --------------------
-      
-      * With PCA-determined eigenvalues:  3
-      * With SMC-determined eigenvalues:  1
-      * With EFA-determined eigenvalues:  1
-      
+      * PCA eigenvalues: 3
+      * SMC eigenvalues: 1
+      * EFA eigenvalues: 1
 
 ---
 
     Code
-      print(kgc_smc, plot = FALSE)
+      print(kgc_smc)
     Output
+      -- Kaiser-Guttman criterion ----------------------------------------------------
       
-      Eigenvalues were found using SMC.
+      * SMC eigenvalues: 1
+
+# print.efa_retention output is stable for NEST
+
+    Code
+      print(nest)
+    Output
+      -- Next Eigenvalue Sufficiency Test --------------------------------------------
       
-      -- Number of factors suggested by Kaiser-Guttmann criterion --------------------
-      
-      * With SMC-determined eigenvalues:  1
-      
+      * Suggested number of factors: 3
 
 # print.efa_retention output is stable for EKC
 
@@ -117,13 +114,13 @@
       
       * CAF: 3
 
-# print.MAP output is stable
+# print.efa_retention output is stable for MAP
 
     Code
-      print(map, plot = FALSE)
+      print(map)
     Output
-      -- Number of factors suggested by MAP ------------------------------------------
+      -- Minimum average partial -----------------------------------------------------
       
-      * Original implementation (TR2):  1
-      * Revised implementation (TR4):  3
+      * Original implementation (TR2): 1
+      * Revised implementation (TR4): 3
 

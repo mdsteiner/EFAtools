@@ -46,12 +46,13 @@ robust, but it will take longer compared to the other estimation methods
 available ("ML" and "ULS").}
 }
 \value{
-A list of class NEST containing the following objects
-\item{eigenvalues}{A vector containing the empirical eigenvalues of the entered data.}
-\item{n_factors}{The number of factors to retain according to the NEST procedure.}
-\item{references}{A vector containing the reference eigenvalues.}
-\item{prob}{For the first n_factors + 1 empirical eigenvalues, the proportion <= the set of n_datasets  reference eigenvalues.}
-\item{settings}{A list of control settings used in the print function.}
+An object of class \code{efa_retention} (see \code{\link[=print.efa_retention]{print.efa_retention()}} for
+the print method). Its main fields are:
+\item{n_factors}{A named numeric vector (\code{"NEST"}) with the suggested number of
+factors according to the NEST procedure.}
+\item{results}{A list with a single record holding the empirical eigenvalues
+and the reference eigenvalues.}
+\item{settings}{A list of control settings used.}
 }
 \description{
 NEST uses many synthetic datasets to generate reference eigenvalues against

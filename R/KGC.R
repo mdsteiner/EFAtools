@@ -46,17 +46,12 @@
 #' The `KGC` function can also be called together with other factor
 #' retention criteria in the [N_FACTORS()] function.
 #'
-#' @return A list of class KGC containing
-#'
-#' \item{eigen_PCA}{ A vector containing the eigenvalues found with PCA.}
-#' \item{eigen_SMC}{ A vector containing the eigenvalues found with SMCs.}
-#' \item{eigen_EFA}{ A vector containing the eigenvalues found with EFA.}
-#' \item{n_fac_PCA}{ The number of factors to retain according to the Kaiser-
-#' Guttmann criterion with PCA eigenvalues type.}
-#' \item{n_fac_SMC}{ The number of factors to retain according to the Kaiser-
-#' Guttmann criterion with SMC eigenvalues type.}
-#' \item{n_fac_EFA}{ The number of factors to retain according to the Kaiser-
-#' Guttmann criterion with EFA eigenvalues type.}
+#' @returns An object of class `efa_retention` (see [print.efa_retention()] and
+#'   [plot.efa_retention()] for the print and plot methods). Its main fields are:
+#' \item{n_factors}{A named numeric vector with the suggested number of factors
+#'   for each requested eigenvalue type (`"PCA"`, `"SMC"`, and/or `"EFA"`).}
+#' \item{results}{A list with one record per eigenvalue type, each holding the
+#'   eigenvalues and the retained solution used for printing and plotting.}
 #' \item{settings}{A list of the settings used.}
 #'
 #' @source Auerswald, M., & Moshagen, M. (2019). How to determine the number of
@@ -152,24 +147,34 @@ KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
 
   }
 
-  # prepare settings
-  settings <- list(eigen_type = eigen_type,
-                   use = use,
-                   cor_method = cor_method,
-                   n_factors = n_factors)
+  eigen_list <- list(PCA = eigen_R_PCA, SMC = eigen_R_SMC, EFA = eigen_R_EFA)
+  nfac_list <- list(PCA = n_fac_PCA, SMC = n_fac_SMC, EFA = n_fac_EFA)
 
-  # Prepare the output
-  output <- list(
-    eigen_PCA = eigen_R_PCA,
-    eigen_SMC = eigen_R_SMC,
-    eigen_EFA = eigen_R_EFA,
-    n_fac_PCA = n_fac_PCA,
-    n_fac_SMC = n_fac_SMC,
-    n_fac_EFA = n_fac_EFA,
-    settings = settings
+  # one record per requested eigenvalue type (eigenvalues with the >= 1 rule)
+  results <- list()
+  for (et in c("PCA", "SMC", "EFA")) {
+    if (!(et %in% eigen_type)) next
+    eig <- eigen_list[[et]]
+    n_fac <- nfac_list[[et]]
+    results[[et]] <- list(
+      name = et,
+      label = paste0(et, " eigenvalues"),
+      n_factors = n_fac,
+      plot_type = "eigen",
+      x = seq_along(eig),
+      y = eig,
+      reference = NULL,
+      threshold = 1,
+      highlight = if (!is.na(n_fac) && n_fac >= 1) n_fac else NULL
+    )
+  }
+
+  output <- .new_efa_retention(
+    "KGC",
+    results = unname(results),
+    settings = list(eigen_type = eigen_type, use = use,
+                    cor_method = cor_method, n_factors = n_factors)
   )
-
-  class(output) <- "KGC"
 
   return(output)
 

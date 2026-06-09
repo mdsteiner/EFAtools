@@ -5,7 +5,7 @@
 # Bartlett's chi-square) are omitted, since those digits can drift across BLAS
 # and platforms and would make the baselines flaky.
 
-test_that("print.SMT output is stable", {
+test_that("print.efa_retention output is stable for SMT", {
   local_reproducible_output()
 
   smt <- SMT(test_models$baseline$cormat, N = 500)
@@ -26,14 +26,21 @@ test_that("print.SCREE output is stable", {
   expect_snapshot(print(scree_smc, plot = FALSE))
 })
 
-test_that("print.KGC output is stable", {
+test_that("print.efa_retention output is stable for KGC", {
   local_reproducible_output()
 
   kgc <- KGC(test_models$baseline$cormat)
-  expect_snapshot(print(kgc, plot = FALSE))
+  expect_snapshot(print(kgc))
 
   kgc_smc <- KGC(test_models$baseline$cormat, eigen_type = "SMC")
-  expect_snapshot(print(kgc_smc, plot = FALSE))
+  expect_snapshot(print(kgc_smc))
+})
+
+test_that("print.efa_retention output is stable for NEST", {
+  local_reproducible_output()
+
+  nest <- NEST(test_models$baseline$cormat, N = 500)
+  expect_snapshot(print(nest))
 })
 
 test_that("print.efa_retention output is stable for EKC", {
@@ -57,9 +64,9 @@ test_that("print.efa_retention output is stable for HULL", {
   expect_snapshot(print(hull_paf))
 })
 
-test_that("print.MAP output is stable", {
+test_that("print.efa_retention output is stable for MAP", {
   local_reproducible_output()
 
   map <- MAP(test_models$baseline$cormat)
-  expect_snapshot(print(map, plot = FALSE))
+  expect_snapshot(print(map))
 })

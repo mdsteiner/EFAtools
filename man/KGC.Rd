@@ -58,17 +58,12 @@ Default is "pearson".}
 to change the extraction method (PAF is default).}
 }
 \value{
-A list of class KGC containing
-
-\item{eigen_PCA}{ A vector containing the eigenvalues found with PCA.}
-\item{eigen_SMC}{ A vector containing the eigenvalues found with SMCs.}
-\item{eigen_EFA}{ A vector containing the eigenvalues found with EFA.}
-\item{n_fac_PCA}{ The number of factors to retain according to the Kaiser-
-Guttmann criterion with PCA eigenvalues type.}
-\item{n_fac_SMC}{ The number of factors to retain according to the Kaiser-
-Guttmann criterion with SMC eigenvalues type.}
-\item{n_fac_EFA}{ The number of factors to retain according to the Kaiser-
-Guttmann criterion with EFA eigenvalues type.}
+An object of class \code{efa_retention} (see \code{\link[=print.efa_retention]{print.efa_retention()}} and
+\code{\link[=plot.efa_retention]{plot.efa_retention()}} for the print and plot methods). Its main fields are:
+\item{n_factors}{A named numeric vector with the suggested number of factors
+for each requested eigenvalue type (\code{"PCA"}, \code{"SMC"}, and/or \code{"EFA"}).}
+\item{results}{A list with one record per eigenvalue type, each holding the
+eigenvalues and the retained solution used for printing and plotting.}
 \item{settings}{A list of the settings used.}
 }
 \description{

@@ -53,14 +53,14 @@
 #' @param cor_method Character string specifying the correlation coefficient to be computed if raw
 #'   data are supplied. Passed to [stats::cor()]. Defaults to `"pearson"`.
 #'
-#' @return An object of class `"MAP"` with the following elements:
+#' @return An object of class `efa_retention` (see [print.efa_retention()] for the
+#'   print method) with the following main elements:
 #' \itemize{
-#'   \item `eigenvalues`: Eigenvalues of the (possibly smoothed) correlation matrix.
-#'   \item `n_factors_TR2`: Index \eqn{m} that minimizes the TR2 (original MAP) criterion.
-#'   \item `n_factors_TR4`: Index \eqn{m} that minimizes the TR4 (revised MAP) criterion.
-#'   \item `criteria`: A `matrix` with columns `m`, `TR2 (orig. MAP)`, and
-#'   `TR4 (revised MAP)`.
-#'   \item `settings`: A list containing `use`, `cor_method`, and `N`.
+#'   \item `n_factors`: A named numeric vector (`"TR2"`, `"TR4"`) with the index
+#'   \eqn{m} that minimizes the original (TR2) and revised (TR4) MAP criterion.
+#'   \item `results`: A list with one record per criterion, each holding the
+#'   criterion values over \eqn{m}.
+#'   \item `settings`: A list containing `use` and `cor_method`.
 #' }
 #'
 #' @references
@@ -150,18 +150,25 @@ MAP <- function(x,
   }
 
 
-  out <- list(
-    eigenvalues = vals,
-    n_factors_TR2 = ms[which.min(criteria[, 2])],
-    n_factors_TR4 = ms[which.min(criteria[, 3])],
-    criteria = criteria,
-    settings = list(
-      use = use,
-      cor_method = cor_method
-    )
+  n_factors_TR2 <- ms[which.min(criteria[, 2])]
+  n_factors_TR4 <- ms[which.min(criteria[, 3])]
+
+  # one record per MAP criterion (criterion values over the number of partialled
+  # components m)
+  results <- list(
+    list(name = "TR2", label = "Original implementation (TR2)",
+         n_factors = n_factors_TR2, plot_type = "none",
+         x = ms, y = criteria[, "TR2 (orig. MAP)"]),
+    list(name = "TR4", label = "Revised implementation (TR4)",
+         n_factors = n_factors_TR4, plot_type = "none",
+         x = ms, y = criteria[, "TR4 (revised MAP)"])
   )
 
-  class(out) <- "MAP"
+  out <- .new_efa_retention(
+    "MAP",
+    results = results,
+    settings = list(use = use, cor_method = cor_method)
+  )
 
   return(out)
 

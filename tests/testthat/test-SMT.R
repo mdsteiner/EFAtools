@@ -3,68 +3,82 @@ smt_zero <- SMT(diag(nrow = 5, ncol = 5), N = 500)
 smt_raw <- SMT(GRiPS_raw)
 
 test_that("output class and dimensions are correct", {
-  expect_s3_class(smt_cor, "SMT")
-  expect_output(str(smt_cor), "List of 10")
-  expect_s3_class(smt_raw, "SMT")
-  expect_output(str(smt_raw), "List of 10")
-  expect_s3_class(smt_zero, "SMT")
-  expect_output(str(smt_zero), "List of 10")
+  expect_s3_class(smt_cor, "efa_retention")
+  expect_length(smt_cor, 7)
+  expect_s3_class(smt_raw, "efa_retention")
+  expect_length(smt_raw, 7)
+  expect_s3_class(smt_zero, "efa_retention")
+  expect_length(smt_zero, 7)
+
+  expect_named(smt_cor$n_factors, c("chi", "RMSEA", "AIC"))
+  expect_equal(.retention_record(smt_cor, "chi")$plot_type, "none")
 })
 
 test_that("number of factors are correct", {
-  expect_equal(smt_cor$nfac_chi, 3)
-  expect_equal(smt_cor$nfac_RMSEA, 2)
-  expect_equal(smt_cor$nfac_AIC, 3)
+  expect_equal(smt_cor$n_factors[["chi"]], 3)
+  expect_equal(smt_cor$n_factors[["RMSEA"]], 2)
+  expect_equal(smt_cor$n_factors[["AIC"]], 3)
 
-  expect_equal(smt_raw$nfac_chi, 3)
-  expect_equal(smt_raw$nfac_RMSEA, 1)
-  expect_equal(smt_raw$nfac_AIC, 3)
+  expect_equal(smt_raw$n_factors[["chi"]], 3)
+  expect_equal(smt_raw$n_factors[["RMSEA"]], 1)
+  expect_equal(smt_raw$n_factors[["AIC"]], 3)
 
-  expect_equal(smt_zero$nfac_chi, 0)
-  expect_equal(smt_zero$nfac_RMSEA, 0)
-  expect_equal(smt_zero$nfac_AIC, 0)
+  expect_equal(smt_zero$n_factors[["chi"]], 0)
+  expect_equal(smt_zero$n_factors[["RMSEA"]], 0)
+  expect_equal(smt_zero$n_factors[["AIC"]], 0)
 })
 
 test_that("p-values are correct", {
-  expect_lt(smt_cor$p_null, 0.05)
-  expect_lt(smt_raw$p_null, 0.05)
-  expect_gte(smt_zero$p_null, 0.05)
+  # the chi record's y is c(p_null, ps_chi)
+  chi_cor <- .retention_record(smt_cor, "chi")$y
+  expect_lt(chi_cor[1], 0.05)
+  expect_lt(chi_cor[2], 0.05)
+  expect_lt(chi_cor[3], 0.05)
+  expect_gte(chi_cor[4], 0.05)
+  expect_gte(chi_cor[5], 0.05)
 
-  expect_lt(smt_cor$ps_chi[1],  0.05)
-  expect_lt(smt_cor$ps_chi[2],  0.05)
-  expect_gte(smt_cor$ps_chi[3],  0.05)
-  expect_gte(smt_cor$ps_chi[4],  0.05)
+  chi_raw <- .retention_record(smt_raw, "chi")$y
+  expect_lt(chi_raw[1], 0.05)
+  expect_lt(chi_raw[2], 0.05)
+  expect_lt(chi_raw[3], 0.05)
+  expect_gte(chi_raw[4], 0.05)
+  expect_gte(chi_raw[5], 0.05)
 
-  expect_lt(smt_raw$ps_chi[1],  0.05)
-  expect_lt(smt_raw$ps_chi[2],  0.05)
-  expect_gte(smt_raw$ps_chi[3],  0.05)
-  expect_gte(smt_raw$ps_chi[4],  0.05)
-
-  expect_gte(smt_zero$ps_chi[1], 0.05)
+  chi_zero <- .retention_record(smt_zero, "chi")$y
+  expect_gte(chi_zero[1], 0.05)
+  expect_gte(chi_zero[2], 0.05)
 })
 
 test_that("RMSEA_LB and AIC values are correct", {
-  expect_equal(smt_cor$RMSEA_LB_null, 0.264456, tolerance = 1e-2)
-  expect_equal(smt_raw$RMSEA_LB_null, 0.662764, tolerance = 1e-2)
-  expect_equal(smt_zero$RMSEA_LB_null, 0, tolerance = 1e-2)
+  rmsea_cor <- .retention_record(smt_cor, "RMSEA")$y
+  rmsea_raw <- .retention_record(smt_raw, "RMSEA")$y
+  rmsea_zero <- .retention_record(smt_zero, "RMSEA")$y
 
-  expect_equal(smt_cor$RMSEA_LBs, c(0.05674033, 0.03975791, rep(0, 10)),
+  expect_equal(rmsea_cor[1], 0.264456, tolerance = 1e-2)
+  expect_equal(rmsea_raw[1], 0.662764, tolerance = 1e-2)
+  expect_equal(rmsea_zero[1], 0, tolerance = 1e-2)
+
+  expect_equal(rmsea_cor[-1], c(0.05674033, 0.03975791, rep(0, 10)),
                tolerance = 1e-2)
-  expect_equal(smt_raw$RMSEA_LBs, c(0.03547387, 0.02637614, rep(0, 2)),
+  expect_equal(rmsea_raw[-1], c(0.03547387, 0.02637614, rep(0, 2)),
                tolerance = 1e-2)
-  expect_equal(smt_zero$RMSEA_LBs, rep(0, 2), tolerance = 1e-2)
+  expect_equal(rmsea_zero[-1], rep(0, 2), tolerance = 1e-2)
 
-  expect_equal(smt_cor$AIC_null, 5441.203, tolerance = 0.1)
-  expect_equal(smt_raw$AIC_null, 10264.07, tolerance = 0.1)
-  expect_equal(smt_zero$AIC_null, -20, tolerance = 0.1)
+  aic_cor <- .retention_record(smt_cor, "AIC")$y
+  aic_raw <- .retention_record(smt_raw, "AIC")$y
+  aic_zero <- .retention_record(smt_zero, "AIC")$y
 
-  expect_equal(smt_cor$AICs, c(139.36142, 17.28713, -78.02180, -77.23762,
-                               -74.12983, -66.95662, -56.34764, -45.65766,
-                               -35.95682, -25.891317, -16.952594, -5.103373),
+  expect_equal(aic_cor[1], 5441.203, tolerance = 0.1)
+  expect_equal(aic_raw[1], 10264.07, tolerance = 0.1)
+  expect_equal(aic_zero[1], -20, tolerance = 0.1)
+
+  expect_equal(aic_cor[-1], c(139.36142, 17.28713, -78.02180, -77.23762,
+                              -74.12983, -66.95662, -56.34764, -45.65766,
+                              -35.95682, -25.891317, -16.952594, -5.103373),
                tolerance = 0.1)
-  expect_equal(smt_raw$AICs, c(19.919177, 7.833463, -4.447209, -1.852061),
+  expect_equal(aic_raw[-1], c(19.919177, 7.833463, -4.447209, -1.852061),
                tolerance = 0.1)
-  expect_equal(smt_zero$AICs, c(-10, -2), tolerance = 0.1)
+  expect_equal(aic_zero[-1], c(-10, -2), tolerance = 0.1)
 })
 
 test_that("settings are returned correctly", {

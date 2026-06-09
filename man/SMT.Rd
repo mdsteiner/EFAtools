@@ -44,22 +44,15 @@ data is given as input. Default is "pairwise.complete.obs".}
 Default is "pearson".}
 }
 \value{
-A list of class SMT containing
-\item{nfac_chi}{The number of factors to retain according to the significance
-of the chi square value.}
-\item{nfac_RMSEA}{The number of factors to retain according to the RMSEA lower
-bound}
-\item{nfac_AIC}{The number of factors to retain according to the AIC}
-\item{p_null}{The p-value for the null model (zero factors)}
-\item{ps_chi}{The p-values for EFA models with increasing numbers of factors,
-starting with 1 factor}
-\item{RMSEA_LB_null}{The lower bounds of the 90\% confidence interval for the RMSEA
-for the null model (zero factors).}
-\item{RMSEA_LBs}{The lower bounds of the 90\% confidence interval for the RMSEA
-for EFA models with increasing numbers of factors, starting with 1 factor}
-\item{AIC_null}{The AICs for the null model (zero factors)}
-\item{AICs}{The AICs for EFA models with increasing numbers of factors,
-starting with 1 factor}
+An object of class \code{efa_retention} (see \code{\link[=print.efa_retention]{print.efa_retention()}} for
+the print method). Its main fields are:
+\item{n_factors}{A named numeric vector (\code{"chi"}, \code{"RMSEA"}, \code{"AIC"}) with the
+suggested number of factors from the sequential chi-square model tests, the
+RMSEA lower bound, and the AIC.}
+\item{results}{A list with one record per criterion, each holding the criterion
+values for the null model (zero factors) through the maximum number of
+factors.}
+\item{settings}{A list of the settings used.}
 }
 \description{
 Sequential Chi Square Model Tests (SMT) are a factor retention method where

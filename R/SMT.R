@@ -53,22 +53,15 @@
 #' The `SMT` function can also be called together with other factor
 #' retention criteria in the [N_FACTORS()] function.
 #'
-#' @return A list of class SMT containing
-#' \item{nfac_chi}{The number of factors to retain according to the significance
-#' of the chi square value.}
-#' \item{nfac_RMSEA}{The number of factors to retain according to the RMSEA lower
-#' bound}
-#' \item{nfac_AIC}{The number of factors to retain according to the AIC}
-#' \item{p_null}{The p-value for the null model (zero factors)}
-#' \item{ps_chi}{The p-values for EFA models with increasing numbers of factors,
-#' starting with 1 factor}
-#' \item{RMSEA_LB_null}{The lower bounds of the 90% confidence interval for the RMSEA
-#' for the null model (zero factors).}
-#' \item{RMSEA_LBs}{The lower bounds of the 90% confidence interval for the RMSEA
-#' for EFA models with increasing numbers of factors, starting with 1 factor}
-#' \item{AIC_null}{The AICs for the null model (zero factors)}
-#' \item{AICs}{The AICs for EFA models with increasing numbers of factors,
-#' starting with 1 factor}
+#' @returns An object of class `efa_retention` (see [print.efa_retention()] for
+#'   the print method). Its main fields are:
+#' \item{n_factors}{A named numeric vector (`"chi"`, `"RMSEA"`, `"AIC"`) with the
+#'   suggested number of factors from the sequential chi-square model tests, the
+#'   RMSEA lower bound, and the AIC.}
+#' \item{results}{A list with one record per criterion, each holding the criterion
+#'   values for the null model (zero factors) through the maximum number of
+#'   factors.}
+#' \item{settings}{A list of the settings used.}
 #'
 #' @source Auerswald, M., & Moshagen, M. (2019). How to determine the number of
 #' factors to retain in exploratory factor analysis: A comparison of extraction
@@ -205,25 +198,29 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
 
   }
 
-  # With which number of factors is the AIC lowest?
+  # With which number of factors is the AIC lowest? (which.min returns the first
+  # minimum, so ties yield a single, well-defined suggestion)
   AIC_all <- c(AIC_null, AIC)
-  nfac_AIC <- which(AIC_all == min(AIC_all)) - 1
+  nfac_AIC <- which.min(AIC_all) - 1
 
-  # Prepare the output
-  output <- list(nfac_chi = nfac_chi,
-                 nfac_RMSEA = nfac_RMSEA,
-                 nfac_AIC = nfac_AIC,
-                 p_null = p_null,
-                 ps_chi = ps,
-                 RMSEA_LB_null = RMSEA_LB_null,
-                 RMSEA_LBs = RMSEA_LB,
-                 AIC_null = AIC_null,
-                 AICs = AIC,
-                 settings = list(N = N,
-                                 use = use,
-                                 cor_method = cor_method))
+  # one record per criterion (values for the null model through max_fac factors)
+  results <- list(
+    list(name = "chi", label = "Sequential chi-square model tests",
+         n_factors = nfac_chi, plot_type = "none",
+         x = 0:max_fac, y = c(p_null, ps)),
+    list(name = "RMSEA", label = "Lower bound of RMSEA 90% CI",
+         n_factors = nfac_RMSEA, plot_type = "none",
+         x = 0:max_fac, y = c(RMSEA_LB_null, RMSEA_LB)),
+    list(name = "AIC", label = "Akaike Information Criterion",
+         n_factors = nfac_AIC, plot_type = "none",
+         x = 0:max_fac, y = AIC_all)
+  )
 
-  class(output) <- "SMT"
+  output <- .new_efa_retention(
+    "SMT",
+    results = results,
+    settings = list(N = N, use = use, cor_method = cor_method)
+  )
 
   return(output)
 

@@ -5,46 +5,53 @@ kgc_raw <- KGC(GRiPS_raw)
 kgc_efa_ml<- KGC(test_models$baseline$cormat, eigen_type = "EFA", method = "ML")
 
 test_that("output class and dimensions are correct", {
-  expect_s3_class(kgc_cor, "KGC")
-  expect_output(str(kgc_cor), "List of 7")
-  expect_s3_class(kgc_cor_smc, "KGC")
-  expect_output(str(kgc_cor_smc), "List of 7")
-  expect_s3_class(kgc_raw, "KGC")
-  expect_output(str(kgc_raw), "List of 7")
-  expect_s3_class(kgc_efa_ml, "KGC")
-  expect_output(str(kgc_efa_ml), "List of 7")
+  expect_s3_class(kgc_cor, "efa_retention")
+  expect_length(kgc_cor, 7)
+  expect_s3_class(kgc_cor_smc, "efa_retention")
+  expect_length(kgc_cor_smc, 7)
+  expect_s3_class(kgc_raw, "efa_retention")
+  expect_s3_class(kgc_efa_ml, "efa_retention")
+
+  expect_named(kgc_cor$n_factors, c("PCA", "SMC", "EFA"))
+  expect_named(kgc_cor_smc$n_factors, "SMC")
+  expect_named(kgc_efa_ml$n_factors, "EFA")
+  expect_equal(.retention_record(kgc_cor, "PCA")$plot_type, "eigen")
+  expect_equal(.retention_record(kgc_cor, "PCA")$threshold, 1)
 })
 
 test_that("found eigenvalues are correct", {
-  expect_equal(sum(kgc_cor$eigen_PCA), ncol(test_models$baseline$cormat))
-  expect_lt(sum(kgc_cor$eigen_SMC), ncol(test_models$baseline$cormat))
-  expect_lt(sum(kgc_cor$eigen_EFA), ncol(test_models$baseline$cormat))
+  expect_equal(sum(.retention_record(kgc_cor, "PCA")$y),
+               ncol(test_models$baseline$cormat))
+  expect_lt(sum(.retention_record(kgc_cor, "SMC")$y),
+            ncol(test_models$baseline$cormat))
+  expect_lt(sum(.retention_record(kgc_cor, "EFA")$y),
+            ncol(test_models$baseline$cormat))
 
-  expect_equal(sum(kgc_raw$eigen_PCA), ncol(GRiPS_raw))
-  expect_lt(sum(kgc_raw$eigen_SMC), ncol(GRiPS_raw))
-  expect_lt(sum(kgc_raw$eigen_EFA), ncol(GRiPS_raw))
+  expect_equal(sum(.retention_record(kgc_raw, "PCA")$y), ncol(GRiPS_raw))
+  expect_lt(sum(.retention_record(kgc_raw, "SMC")$y), ncol(GRiPS_raw))
+  expect_lt(sum(.retention_record(kgc_raw, "EFA")$y), ncol(GRiPS_raw))
 
-  expect_lt(sum(kgc_raw$eigen_SMC), ncol(test_models$baseline$cormat))
-  expect_equal(c(kgc_cor_smc$eigen_PCA, kgc_cor_smc$eigen_EFA), c(NA, NA))
-
-  expect_lt(sum(kgc_raw$eigen_EFA), ncol(test_models$baseline$cormat))
-  expect_equal(c(kgc_efa_ml$eigen_PCA, kgc_efa_ml$eigen_SMC), c(NA, NA))
+  # Only the requested eigenvalue type produces a record
+  expect_null(.retention_record(kgc_cor_smc, "PCA"))
+  expect_null(.retention_record(kgc_cor_smc, "EFA"))
+  expect_null(.retention_record(kgc_efa_ml, "PCA"))
+  expect_null(.retention_record(kgc_efa_ml, "SMC"))
 })
 
 test_that("identified number of factors is correct", {
-  expect_equal(kgc_cor$n_fac_PCA, 3)
-  expect_equal(kgc_cor$n_fac_SMC, 1)
-  expect_equal(kgc_cor$n_fac_EFA, 1)
+  expect_equal(kgc_cor$n_factors[["PCA"]], 3)
+  expect_equal(kgc_cor$n_factors[["SMC"]], 1)
+  expect_equal(kgc_cor$n_factors[["EFA"]], 1)
 
-  expect_equal(kgc_raw$n_fac_PCA, 1)
-  expect_equal(kgc_raw$n_fac_SMC, 1)
-  expect_equal(kgc_raw$n_fac_EFA, 1)
+  expect_equal(kgc_raw$n_factors[["PCA"]], 1)
+  expect_equal(kgc_raw$n_factors[["SMC"]], 1)
+  expect_equal(kgc_raw$n_factors[["EFA"]], 1)
 
-  expect_equal(kgc_cor_smc$n_fac_SMC, 1)
-  expect_equal(c(kgc_cor_smc$n_fac_PCA, kgc_cor_smc$n_fac_EFA), c(NA, NA))
+  expect_equal(kgc_cor_smc$n_factors[["SMC"]], 1)
+  expect_false(any(c("PCA", "EFA") %in% names(kgc_cor_smc$n_factors)))
 
-  expect_equal(kgc_efa_ml$n_fac_EFA, 1)
-  expect_equal(c(kgc_efa_ml$n_fac_PCA, kgc_efa_ml$n_fac_SMC), c(NA, NA))
+  expect_equal(kgc_efa_ml$n_factors[["EFA"]], 1)
+  expect_false(any(c("PCA", "SMC") %in% names(kgc_efa_ml$n_factors)))
 })
 
 # Create singular correlation matrix for tests

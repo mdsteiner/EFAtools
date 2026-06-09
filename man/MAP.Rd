@@ -22,14 +22,14 @@ Passed to \code{\link[stats:cor]{stats::cor()}}. Defaults to \code{"pairwise.com
 data are supplied. Passed to \code{\link[stats:cor]{stats::cor()}}. Defaults to \code{"pearson"}.}
 }
 \value{
-An object of class \code{"MAP"} with the following elements:
+An object of class \code{efa_retention} (see \code{\link[=print.efa_retention]{print.efa_retention()}} for the
+print method) with the following main elements:
 \itemize{
-\item \code{eigenvalues}: Eigenvalues of the (possibly smoothed) correlation matrix.
-\item \code{n_factors_TR2}: Index \eqn{m} that minimizes the TR2 (original MAP) criterion.
-\item \code{n_factors_TR4}: Index \eqn{m} that minimizes the TR4 (revised MAP) criterion.
-\item \code{criteria}: A \code{matrix} with columns \code{m}, \verb{TR2 (orig. MAP)}, and
-\verb{TR4 (revised MAP)}.
-\item \code{settings}: A list containing \code{use}, \code{cor_method}, and \code{N}.
+\item \code{n_factors}: A named numeric vector (\code{"TR2"}, \code{"TR4"}) with the index
+\eqn{m} that minimizes the original (TR2) and revised (TR4) MAP criterion.
+\item \code{results}: A list with one record per criterion, each holding the
+criterion values over \eqn{m}.
+\item \code{settings}: A list containing \code{use} and \code{cor_method}.
 }
 }
 \description{

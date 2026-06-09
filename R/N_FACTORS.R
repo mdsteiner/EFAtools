@@ -311,9 +311,9 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
                    cor_method = cor_method, n_factors = n_factors,
                    method = method, ...)
 
-    nfac_KGC_PCA <- kgc_out$n_fac_PCA
-    nfac_KGC_SMC <- kgc_out$n_fac_SMC
-    nfac_KGC_EFA <- kgc_out$n_fac_EFA
+    nfac_KGC_PCA <- unname(kgc_out$n_factors["PCA"])
+    nfac_KGC_SMC <- unname(kgc_out$n_factors["SMC"])
+    nfac_KGC_EFA <- unname(kgc_out$n_factors["EFA"])
 
   }
 
@@ -327,8 +327,8 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
     map_out <- MAP(R, use = use,
                    cor_method = cor_method)
 
-    nfac_MAP_TR2 <- map_out$n_factors_TR2
-    nfac_MAP_TR4 <- map_out$n_factors_TR4
+    nfac_MAP_TR2 <- unname(map_out$n_factors["TR2"])
+    nfac_MAP_TR4 <- unname(map_out$n_factors["TR4"])
 
 
   }
@@ -364,7 +364,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
                      alpha = alpha_nest, n_datasets = n_datasets_nest,
                      method = method)
 
-    nfac_NEST <- nest_out$n_factors
+    nfac_NEST <- unname(nest_out$n_factors["NEST"])
 
 
   }
@@ -390,9 +390,9 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
 
     smt_out <- SMT(R, N = N, use = use, cor_method = cor_method)
 
-    nfac_SMT_chi <- smt_out$nfac_chi
-    nfac_RMSEA <- smt_out$nfac_RMSEA
-    nfac_AIC <- smt_out$nfac_AIC
+    nfac_SMT_chi <- unname(smt_out$n_factors["chi"])
+    nfac_RMSEA <- unname(smt_out$n_factors["RMSEA"])
+    nfac_AIC <- unname(smt_out$n_factors["AIC"])
 
   }
 

@@ -39,12 +39,13 @@
 #'   retention criteria in the [N_FACTORS()] function.
 #'
 #'
-#' @return A list of class NEST containing the following objects
-#' \item{eigenvalues}{A vector containing the empirical eigenvalues of the entered data.}
-#' \item{n_factors}{The number of factors to retain according to the NEST procedure.}
-#' \item{references}{A vector containing the reference eigenvalues.}
-#' \item{prob}{For the first n_factors + 1 empirical eigenvalues, the proportion <= the set of n_datasets  reference eigenvalues.}
-#' \item{settings}{A list of control settings used in the print function.}
+#' @returns An object of class `efa_retention` (see [print.efa_retention()] for
+#'   the print method). Its main fields are:
+#' \item{n_factors}{A named numeric vector (`"NEST"`) with the suggested number of
+#'   factors according to the NEST procedure.}
+#' \item{results}{A list with a single record holding the empirical eigenvalues
+#'   and the reference eigenvalues.}
+#' \item{settings}{A list of control settings used.}
 #'
 #' @source Achim, A. (2017). Testing the number of required dimensions in exploratory factor analysis. The Quantitative Methods for Psychology, 13(1), 64–74. https://doi.org/10.20982/tqmp.13.1.p064
 #' @source Brandenburg, N., & Papenberg, M. (2024). Reassessment of innovative methods to determine the number of factors: A simulation-based comparison of exploratory graph analysis and Next Eigenvalue Sufficiency Test. Psychological Methods, 29(1), 21–47. https://doi.org/10.1037/met0000527
@@ -93,7 +94,6 @@ NEST <- function(x, N = NA,
   max_fac <- floor(.8 * nvar)
 
   references <- vector(mode = "double", length = max_fac)
-  prob <- vector(mode = "double", length = max_fac)
 
   for (nf in 1:max_fac) {
 
@@ -122,7 +122,6 @@ NEST <- function(x, N = NA,
     ref_values <- .nest_sym(nf, N, t(M), n_datasets)
 
     references[nf] <- stats::quantile(ref_values, probs = 1 - alpha)
-    prob[nf] <- mean(emp_eigen[nf] < ref_values)
     if (emp_eigen[nf] <= references[nf]) {
       break
     }
@@ -132,23 +131,23 @@ NEST <- function(x, N = NA,
 
   n_factors <- nf - 1
   references <- references[1:nf]
-  prob <- prob[1:nf]
 
-  out <- list(
-    eigenvalues = emp_eigen,
+  results <- list(list(
+    name = "NEST",
+    label = "Suggested number of factors",
     n_factors = n_factors,
-    references = references,
-    prob = prob,
-    settings = list(
-      alpha = alpha,
-      N = N,
-      n_datasets = n_datasets,
-      use = use,
-      cor_method = cor_method
-    )
-  )
+    plot_type = "none",
+    x = seq_along(emp_eigen),
+    y = emp_eigen,
+    reference = references
+  ))
 
-  class(out) <- "NEST"
+  out <- .new_efa_retention(
+    "NEST",
+    results = results,
+    settings = list(alpha = alpha, N = N, n_datasets = n_datasets,
+                    use = use, cor_method = cor_method)
+  )
 
   out
 
