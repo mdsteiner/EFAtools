@@ -76,8 +76,12 @@ format.efa_retention <- function(x, ...) {
     if (!is.null(x$subtitle)) {
       cli::cli_text("{x$subtitle}")
     }
-    cli::cli_text("")
-    cli::cli_ul(.retention_bullets(x$results))
+    # criteria with no numeric suggestion (e.g. the visual scree plot) skip the
+    # bullets and rely on their subtitle/note
+    if (any(!is.na(x$n_factors))) {
+      cli::cli_text("")
+      cli::cli_ul(.retention_bullets(x$results))
+    }
     if (!is.null(x$note)) {
       cli::cli_text("")
       for (msg in x$note) {
@@ -148,9 +152,16 @@ plot.efa_retention <- function(x, ...) {
 #' @importFrom rlang .data
 .gg_eigen_plot <- function(x) {
 
-  variant_levels <- vapply(x$results, function(r) r$label, character(1))
+  # drop records with no plottable points (e.g. CD when it suggests 0 factors)
+  records <- Filter(function(r) length(r$x) > 0, x$results)
+  if (length(records) == 0) {
+    cli::cli_inform("No plot is available for {x$criterion[['label']]}.")
+    return(invisible(NULL))
+  }
 
-  dat <- do.call(rbind, lapply(x$results, function(r) {
+  variant_levels <- vapply(records, function(r) r$label, character(1))
+
+  dat <- do.call(rbind, lapply(records, function(r) {
     data.frame(
       variant = r$label,
       factor = r$x,
@@ -161,13 +172,13 @@ plot.efa_retention <- function(x, ...) {
   }))
   dat$variant <- factor(dat$variant, levels = variant_levels)
 
-  highlights <- do.call(rbind, lapply(x$results, function(r) {
+  highlights <- do.call(rbind, lapply(records, function(r) {
     if (is.null(r$highlight) || is.na(r$highlight) || r$highlight < 1) return(NULL)
     data.frame(variant = r$label, factor = r$highlight,
                value = r$y[r$highlight], stringsAsFactors = FALSE)
   }))
 
-  thresholds <- do.call(rbind, lapply(x$results, function(r) {
+  thresholds <- do.call(rbind, lapply(records, function(r) {
     if (is.null(r$threshold)) return(NULL)
     data.frame(variant = r$label, yintercept = r$threshold,
                stringsAsFactors = FALSE)
@@ -201,9 +212,14 @@ plot.efa_retention <- function(x, ...) {
     p <- p + ggplot2::facet_wrap(ggplot2::vars(.data$variant), scales = "free_y")
   }
 
+  # y-axis label defaults to "Eigenvalues" but a criterion can override it (e.g.
+  # CD plots mean RMSE of the eigenvalues)
+  y_label <- records[[1]]$y_label
+  if (is.null(y_label)) y_label <- "Eigenvalues"
+
   p +
     ggplot2::scale_x_continuous(breaks = seq_len(max(dat$factor))) +
-    ggplot2::labs(x = "Factor", y = "Eigenvalues", title = x$criterion[["label"]]) +
+    ggplot2::labs(x = "Factor", y = y_label, title = x$criterion[["label"]]) +
     ggplot2::theme_minimal() +
     ggplot2::theme(plot.title = ggplot2::element_text(face = "bold", hjust = 0.5))
 

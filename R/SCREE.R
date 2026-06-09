@@ -40,11 +40,11 @@
 #' The `SCREE` function can also be called together with other factor
 #' retention criteria in the [N_FACTORS()] function.
 #'
-#' @return A list of class SCREE containing
-#'
-#' \item{eigen_PCA}{ A vector containing the eigenvalues found with PCA.}
-#' \item{eigen_SMC}{ A vector containing the eigenvalues found with SMCs.}
-#' \item{eigen_EFA}{ A vector containing the eigenvalues found with EFA.}
+#' @returns An object of class `efa_retention` (see [print.efa_retention()] and
+#'   [plot.efa_retention()] for the print and plot methods). The scree plot is a
+#'   visual criterion, so it returns no numeric suggestion. Its main fields are:
+#' \item{results}{A list with one record per requested eigenvalue type, each
+#'   holding the eigenvalues used for the scree plot.}
 #' \item{settings}{A list of the settings used.}
 #'
 #' @source Cattell, R. B. (1966). The scree test for the number of factors.
@@ -126,21 +126,33 @@ SCREE <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
 
   }
 
-  # prepare settings
-  settings <- list(eigen_type = eigen_type,
-                   use = use,
-                   cor_method = cor_method,
-                   n_factors = n_factors)
+  eigen_list <- list(PCA = eigen_R_PCA, SMC = eigen_R_SMC, EFA = eigen_R_EFA)
 
-  # Prepare the output
-  output <- list(
-    eigen_PCA = eigen_R_PCA,
-    eigen_SMC = eigen_R_SMC,
-    eigen_EFA = eigen_R_EFA,
-    settings = settings
+  # one eigenvalue record per requested type; the scree plot is purely visual, so
+  # there is no numeric suggestion (n_factors is NA)
+  results <- list()
+  for (et in c("PCA", "SMC", "EFA")) {
+    if (!(et %in% eigen_type)) next
+    eig <- eigen_list[[et]]
+    results[[et]] <- list(
+      name = et,
+      label = paste0(et, " eigenvalues"),
+      n_factors = NA_real_,
+      plot_type = "eigen",
+      x = seq_along(eig),
+      y = eig
+    )
+  }
+
+  output <- .new_efa_retention(
+    "SCREE",
+    results = unname(results),
+    settings = list(eigen_type = eigen_type, use = use,
+                    cor_method = cor_method, n_factors = n_factors),
+    subtitle = paste0("Eigenvalues found using ",
+                      cli::ansi_collapse(eigen_type), "."),
+    note = "Scree plot is a visual criterion; inspect the plot to identify the elbow."
   )
-
-  class(output) <- "SCREE"
 
   return(output)
 

@@ -13,6 +13,18 @@ test_that("efa_retention plot methods return ggplot objects", {
   p_kgc <- plot(kgc)
   expect_s3_class(p_kgc, "ggplot")
   expect_equal(.retention_record(kgc, "PCA")$plot_type, "eigen")
+
+  # CD is stochastic, so only smoke-test that the plot builds with its custom
+  # y-axis label (no vdiffr baseline)
+  set.seed(123)
+  cd <- CD(GRiPS_raw, N_pop = 1000, N_samples = 100)
+  p_cd <- plot(cd)
+  expect_s3_class(p_cd, "ggplot")
+  expect_equal(.retention_record(cd, "CD")$y_label, "RMSE eigenvalues")
+
+  scree <- SCREE(test_models$baseline$cormat)
+  p_scree <- plot(scree)
+  expect_s3_class(p_scree, "ggplot")
 })
 
 test_that("plot-less criteria return NULL with a message", {
@@ -22,6 +34,19 @@ test_that("plot-less criteria return NULL with a message", {
     expect_message(p <- plot(obj), "No plot is available")
     expect_null(p)
   }
+})
+
+test_that("eigen plot of an empty record returns NULL with a message", {
+  # e.g. CD on a tiny dataset that suggests 0 factors -> empty x/y record
+  obj <- .new_efa_retention(
+    "CD",
+    results = list(list(name = "CD", label = "Suggested number of factors",
+                        n_factors = 0, plot_type = "eigen",
+                        x = integer(0), y = numeric(0))),
+    settings = list()
+  )
+  expect_message(p <- plot(obj), "No plot is available")
+  expect_null(p)
 })
 
 test_that("EKC eigen plot is visually stable", {
@@ -47,4 +72,11 @@ test_that("KGC eigen plot is visually stable", {
 
   kgc <- KGC(test_models$baseline$cormat)
   vdiffr::expect_doppelganger("KGC eigen plot", plot(kgc))
+})
+
+test_that("SCREE eigen plot is visually stable", {
+  skip_if_not_installed("vdiffr")
+
+  scree <- SCREE(test_models$baseline$cormat)
+  vdiffr::expect_doppelganger("SCREE eigen plot", plot(scree))
 })

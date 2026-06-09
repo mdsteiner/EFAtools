@@ -47,11 +47,13 @@
 #' The `CD` function can also be called together with other factor retention
 #' criteria in the [N_FACTORS()] function.
 #'
-#' @return A list of class CD containing
-#'
-#' \item{n_factors}{The number of factors to retain according to comparison data results.}
-#' \item{eigenvalues}{A vector containing the eigenvalues of the entered data.}
-#' \item{RMSE_eigenvalues}{A matrix containing the RMSEs between the eigenvalues of the generated data and those of the entered data.}
+#' @returns An object of class `efa_retention` (see [print.efa_retention()] and
+#'   [plot.efa_retention()] for the print and plot methods). Its main fields are:
+#' \item{n_factors}{A named numeric vector (`"CD"`) with the suggested number of
+#'   factors according to comparison data results.}
+#' \item{results}{A list with a single record holding the mean RMSE between the
+#'   eigenvalues of the generated and the entered data per number of factors
+#'   (used for the plot) and, in `rmse_eigenvalues`, the full matrix of RMSEs.}
 #' \item{settings}{A list of the settings used.}
 #'
 #' @source Auerswald, M., & Moshagen, M. (2019). How to determine the number of
@@ -189,14 +191,25 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
     max_iter = max_iter
   )
 
-  out <- list(
+  # single record: the mean RMSE curve over candidate factor counts (the full
+  # per-sample RMSE matrix is kept in rmse_eigenvalues)
+  results <- list(list(
+    name = "CD",
+    label = "Suggested number of factors",
     n_factors = n_factors,
-    eigenvalues = eigvals_real,
-    RMSE_eigenvalues = RMSE_eigvals,
+    plot_type = "eigen",
+    x = seq_len(n_factors),
+    y = colMeans(RMSE_eigvals)[seq_len(n_factors)],
+    highlight = if (n_factors >= 1) n_factors else NULL,
+    y_label = "RMSE eigenvalues",
+    rmse_eigenvalues = RMSE_eigvals
+  ))
+
+  out <- .new_efa_retention(
+    "CD",
+    results = results,
     settings = settings
   )
-
-  class(out) <- "CD"
 
   return(out)
 

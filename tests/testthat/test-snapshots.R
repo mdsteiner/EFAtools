@@ -16,14 +16,23 @@ test_that("print.efa_retention output is stable for SMT", {
   expect_snapshot(print(smt_id))
 })
 
-test_that("print.SCREE output is stable", {
+test_that("print.efa_retention output is stable for SCREE", {
   local_reproducible_output()
 
   scree <- SCREE(test_models$baseline$cormat)
-  expect_snapshot(print(scree, plot = FALSE))
+  expect_snapshot(print(scree))
 
   scree_smc <- SCREE(test_models$baseline$cormat, eigen_type = "SMC")
-  expect_snapshot(print(scree_smc, plot = FALSE))
+  expect_snapshot(print(scree_smc))
+})
+
+test_that("print.efa_retention output is stable for CD", {
+  local_reproducible_output()
+
+  # CD is stochastic; seed and use a small simulation for a stable, fast snapshot
+  set.seed(123)
+  cd <- CD(GRiPS_raw, N_pop = 1000, N_samples = 100)
+  expect_snapshot(print(cd))
 })
 
 test_that("print.efa_retention output is stable for KGC", {

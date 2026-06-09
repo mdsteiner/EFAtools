@@ -57,11 +57,13 @@ Default is "pearson".}
 which the iterative PAF procedure is halted. Default is 50.}
 }
 \value{
-A list of class CD containing
-
-\item{n_factors}{The number of factors to retain according to comparison data results.}
-\item{eigenvalues}{A vector containing the eigenvalues of the entered data.}
-\item{RMSE_eigenvalues}{A matrix containing the RMSEs between the eigenvalues of the generated data and those of the entered data.}
+An object of class \code{efa_retention} (see \code{\link[=print.efa_retention]{print.efa_retention()}} and
+\code{\link[=plot.efa_retention]{plot.efa_retention()}} for the print and plot methods). Its main fields are:
+\item{n_factors}{A named numeric vector (\code{"CD"}) with the suggested number of
+factors according to comparison data results.}
+\item{results}{A list with a single record holding the mean RMSE between the
+eigenvalues of the generated and the entered data per number of factors
+(used for the plot) and, in \code{rmse_eigenvalues}, the full matrix of RMSEs.}
 \item{settings}{A list of the settings used.}
 }
 \description{

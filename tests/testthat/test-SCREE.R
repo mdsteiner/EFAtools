@@ -5,30 +5,38 @@ scree_raw <- SCREE(GRiPS_raw)
 scree_efa_ml<- SCREE(test_models$baseline$cormat, eigen_type = "EFA", method = "ML")
 
 test_that("output class and dimensions are correct", {
-  expect_s3_class(scree_cor, "SCREE")
-  expect_output(str(scree_cor), "List of 4")
-  expect_s3_class(scree_cor_smc, "SCREE")
-  expect_output(str(scree_cor_smc), "List of 4")
-  expect_s3_class(scree_raw, "SCREE")
-  expect_output(str(scree_raw), "List of 4")
-  expect_s3_class(scree_efa_ml, "SCREE")
-  expect_output(str(scree_efa_ml), "List of 4")
+  expect_s3_class(scree_cor, "efa_retention")
+  expect_length(scree_cor, 7)
+  expect_s3_class(scree_cor_smc, "efa_retention")
+  expect_length(scree_cor_smc, 7)
+  expect_s3_class(scree_raw, "efa_retention")
+  expect_s3_class(scree_efa_ml, "efa_retention")
+
+  expect_named(scree_cor$n_factors, c("PCA", "SMC", "EFA"))
+  expect_named(scree_cor_smc$n_factors, "SMC")
+  expect_named(scree_efa_ml$n_factors, "EFA")
+  # the scree plot is purely visual: no numeric suggestion
+  expect_true(all(is.na(scree_cor$n_factors)))
+  expect_equal(.retention_record(scree_cor, "PCA")$plot_type, "eigen")
 })
 
 test_that("found eigenvalues are correct", {
-  expect_equal(sum(scree_cor$eigen_PCA), ncol(test_models$baseline$cormat))
-  expect_lt(sum(scree_cor$eigen_SMC), ncol(test_models$baseline$cormat))
-  expect_lt(sum(scree_cor$eigen_EFA), ncol(test_models$baseline$cormat))
+  expect_equal(sum(.retention_record(scree_cor, "PCA")$y),
+               ncol(test_models$baseline$cormat))
+  expect_lt(sum(.retention_record(scree_cor, "SMC")$y),
+            ncol(test_models$baseline$cormat))
+  expect_lt(sum(.retention_record(scree_cor, "EFA")$y),
+            ncol(test_models$baseline$cormat))
 
-  expect_equal(sum(scree_raw$eigen_PCA), ncol(GRiPS_raw))
-  expect_lt(sum(scree_raw$eigen_SMC), ncol(GRiPS_raw))
-  expect_lt(sum(scree_raw$eigen_EFA), ncol(GRiPS_raw))
+  expect_equal(sum(.retention_record(scree_raw, "PCA")$y), ncol(GRiPS_raw))
+  expect_lt(sum(.retention_record(scree_raw, "SMC")$y), ncol(GRiPS_raw))
+  expect_lt(sum(.retention_record(scree_raw, "EFA")$y), ncol(GRiPS_raw))
 
-  expect_lt(sum(scree_raw$eigen_SMC), ncol(test_models$baseline$cormat))
-  expect_equal(c(scree_cor_smc$eigen_PCA, scree_cor_smc$eigen_EFA), c(NA, NA))
-
-  expect_lt(sum(scree_raw$eigen_EFA), ncol(test_models$baseline$cormat))
-  expect_equal(c(scree_efa_ml$eigen_PCA, scree_efa_ml$eigen_SMC), c(NA, NA))
+  # Only the requested eigenvalue type produces a record
+  expect_null(.retention_record(scree_cor_smc, "PCA"))
+  expect_null(.retention_record(scree_cor_smc, "EFA"))
+  expect_null(.retention_record(scree_efa_ml, "PCA"))
+  expect_null(.retention_record(scree_efa_ml, "SMC"))
 })
 
 

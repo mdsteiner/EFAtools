@@ -50,11 +50,11 @@ Default is "pearson".}
 to change the extraction method (PAF is default).}
 }
 \value{
-A list of class SCREE containing
-
-\item{eigen_PCA}{ A vector containing the eigenvalues found with PCA.}
-\item{eigen_SMC}{ A vector containing the eigenvalues found with SMCs.}
-\item{eigen_EFA}{ A vector containing the eigenvalues found with EFA.}
+An object of class \code{efa_retention} (see \code{\link[=print.efa_retention]{print.efa_retention()}} and
+\code{\link[=plot.efa_retention]{plot.efa_retention()}} for the print and plot methods). The scree plot is a
+visual criterion, so it returns no numeric suggestion. Its main fields are:
+\item{results}{A list with one record per requested eigenvalue type, each
+holding the eigenvalues used for the scree plot.}
 \item{settings}{A list of the settings used.}
 }
 \description{

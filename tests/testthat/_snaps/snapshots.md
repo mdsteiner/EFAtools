@@ -20,25 +20,34 @@
       * Lower bound of RMSEA 90% CI: 0
       * Akaike Information Criterion: 0
 
-# print.SCREE output is stable
+# print.efa_retention output is stable for SCREE
 
     Code
-      print(scree, plot = FALSE)
+      print(scree)
     Output
+      -- Scree plot ------------------------------------------------------------------
+      Eigenvalues found using PCA, SMC, and EFA.
       
-      Eigenvalues were found using PCA, SMC, and EFA.
-      
-      
+      i Scree plot is a visual criterion; inspect the plot to identify the elbow.
 
 ---
 
     Code
-      print(scree_smc, plot = FALSE)
+      print(scree_smc)
     Output
+      -- Scree plot ------------------------------------------------------------------
+      Eigenvalues found using SMC.
       
-      Eigenvalues were found using SMC.
+      i Scree plot is a visual criterion; inspect the plot to identify the elbow.
+
+# print.efa_retention output is stable for CD
+
+    Code
+      print(cd)
+    Output
+      -- Comparison data -------------------------------------------------------------
       
-      
+      * Suggested number of factors: 1
 
 # print.efa_retention output is stable for KGC
 

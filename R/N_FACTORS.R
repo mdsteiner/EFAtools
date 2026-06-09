@@ -253,7 +253,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
                    N_samples = N_samples, alpha = alpha, use = use,
                    cor_method = cor_method, max_iter = max_iter_CD)
 
-      nfac_CD <- cd_out$n_factors
+      nfac_CD <- unname(cd_out$n_factors["CD"])
 
     } else {
       cli::cli_warn(
