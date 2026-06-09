@@ -83,18 +83,16 @@ included in \code{eigen_type}. Default is 1. This is passed to
 \code{\link[=PARALLEL]{PARALLEL()}}.}
 }
 \value{
-A list of class HULL containing the following objects
-\item{n_fac_CAF}{The number of factors to retain according to the Hull method
-with the CAF.}
-\item{n_fac_CFI}{The number of factors to retain according to the Hull method
-with the CFI.}
-\item{n_fac_RMSEA}{The number of factors to retain according to the Hull method
-with the RMSEA.}
-\item{solutions_CAF}{A matrix containing the CAFs, degrees of freedom, and for the factors lying on the hull, the st values of the hull solution (see Lorenzo-Seva, Timmerman, and Kiers 2011 for details).}
-\item{solutions_CFI}{A matrix containing the CFIs, degrees of freedom, and for the factors lying on the hull, the st values of the hull solution (see Lorenzo-Seva, Timmerman, and Kiers 2011 for details).}
-\item{solutions_RMSEA}{A matrix containing the RMSEAs, degrees of freedom, and for the factors lying on the hull, the st values of the hull solution (see Lorenzo-Seva, Timmerman, and Kiers 2011 for details).}
-\item{n_fac_max}{The upper bound \emph{J} of the number of factors to extract (see details).}
-\item{settings}{A list of the settings used.}
+An object of class \code{efa_retention} (see \code{\link[=print.efa_retention]{print.efa_retention()}} and
+\code{\link[=plot.efa_retention]{plot.efa_retention()}} for the print and plot methods). Its main fields are:
+\item{n_factors}{A named numeric vector with the suggested number of factors
+for each requested goodness-of-fit index (\code{"CAF"}, \code{"CFI"}, and/or
+\code{"RMSEA"}).}
+\item{results}{A list with one record per goodness-of-fit index, each holding
+the goodness-of-fit values, the degrees of freedom, the hull membership, and
+the retained solution used for printing and plotting.}
+\item{settings}{A list of the settings used, including \code{n_fac_max}, the upper
+bound \emph{J} of the number of factors to extract (see details).}
 }
 \description{
 Implementation of the Hull method suggested by Lorenzo-Seva, Timmerman,

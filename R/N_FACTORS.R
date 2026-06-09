@@ -275,8 +275,8 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
     ekc_out <- EKC(R, N = N, use = use, cor_method = cor_method,
                    type = ekc_type)
 
-    nfac_EKC_BvA2017 <- ekc_out$n_factors_BvA2017
-    nfac_EKC_AM2019 <- ekc_out$n_factors_AM2019
+    nfac_EKC_BvA2017 <- unname(ekc_out$n_factors["BvA2017"])
+    nfac_EKC_AM2019 <- unname(ekc_out$n_factors["AM2019"])
 
 
   }
@@ -294,9 +294,9 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
                      percent = percent, decision_rule = decision_rule,
                      n_factors = n_factors, ...)
 
-    nfac_HULL_CAF <- hull_out$n_fac_CAF
-    nfac_HULL_CFI <- hull_out$n_fac_CFI
-    nfac_HULL_RMSEA <- hull_out$n_fac_RMSEA
+    nfac_HULL_CAF <- unname(hull_out$n_factors["CAF"])
+    nfac_HULL_CFI <- unname(hull_out$n_factors["CFI"])
+    nfac_HULL_RMSEA <- unname(hull_out$n_factors["RMSEA"])
 
   }
 

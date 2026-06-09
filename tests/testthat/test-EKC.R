@@ -1,35 +1,43 @@
 
 ekc_cor <- EKC(test_models$baseline$cormat, N = 500)
 ekc_raw <- EKC(GRiPS_raw)
+ekc_both <- EKC(test_models$baseline$cormat, N = 500,
+                type = c("BvA2017", "AM2019"))
 
 test_that("output class and dimensions are correct", {
-  expect_s3_class(ekc_cor, "EKC")
-  expect_output(str(ekc_cor), "List of 4")
-  expect_s3_class(ekc_raw, "EKC")
-  expect_output(str(ekc_raw), "List of 4")
+  expect_s3_class(ekc_cor, "efa_retention")
+  expect_length(ekc_cor, 7)
+  expect_s3_class(ekc_raw, "efa_retention")
+  expect_length(ekc_raw, 7)
+
+  expect_equal(unname(ekc_cor$criterion["id"]), "EKC")
+  expect_length(ekc_cor$results, 1)
+  expect_length(ekc_both$results, 2)
+  expect_named(ekc_both$n_factors, c("BvA2017", "AM2019"))
+  expect_equal(ekc_cor$results[[1]]$plot_type, "eigen")
 })
 
 
 test_that("found eigenvalues are correct", {
-  expect_equal(sum(ekc_cor$eigenvalues),
+  expect_equal(sum(ekc_cor$results[[1]]$y),
                ncol(test_models$baseline$cormat))
-  expect_equal(sum(ekc_raw$eigenvalues), ncol(GRiPS_raw))
-  expect_length(ekc_cor$eigenvalues,
+  expect_equal(sum(ekc_raw$results[[1]]$y), ncol(GRiPS_raw))
+  expect_length(ekc_cor$results[[1]]$y,
                 ncol(test_models$baseline$cormat))
-  expect_length(ekc_raw$eigenvalues, ncol(GRiPS_raw))
+  expect_length(ekc_raw$results[[1]]$y, ncol(GRiPS_raw))
 })
 
 test_that("reference eigenvalues are correct", {
-  expect_equal(ekc_cor$references$BvA2017[floor(ncol(test_models$baseline$cormat) / 2)], 1)
-  expect_equal(ekc_raw$references$BvA2017[floor(ncol(GRiPS_raw) / 2)], 1)
-  expect_length(ekc_cor$references$BvA2017,
-                length(ekc_cor$eigenvalues))
-  expect_length(ekc_raw$references$BvA2017, length(ekc_raw$eigenvalues))
+  expect_equal(ekc_cor$results[[1]]$reference[floor(ncol(test_models$baseline$cormat) / 2)], 1)
+  expect_equal(ekc_raw$results[[1]]$reference[floor(ncol(GRiPS_raw) / 2)], 1)
+  expect_length(ekc_cor$results[[1]]$reference,
+                length(ekc_cor$results[[1]]$y))
+  expect_length(ekc_raw$results[[1]]$reference, length(ekc_raw$results[[1]]$y))
 })
 
 test_that("identified number of factors is correct", {
-  expect_equal(ekc_cor$n_factors_BvA2017, 3)
-  expect_equal(ekc_raw$n_factors_BvA2017, 1)
+  expect_equal(ekc_cor$n_factors[["BvA2017"]], 3)
+  expect_equal(ekc_raw$n_factors[["BvA2017"]], 1)
 })
 
 # Create singular correlation matrix for tests
@@ -65,4 +73,4 @@ test_that("settings are returned correctly", {
   expect_equal(ekc_raw$settings$cor_method, "pearson")
 })
 
-rm(ekc_cor, ekc_raw, x, y, z, dat_sing, cor_sing, cor_nposdef)
+rm(ekc_cor, ekc_raw, ekc_both, x, y, z, dat_sing, cor_sing, cor_nposdef)

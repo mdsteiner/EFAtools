@@ -36,15 +36,25 @@ test_that("print.KGC output is stable", {
   expect_snapshot(print(kgc_smc, plot = FALSE))
 })
 
-test_that("print.EKC output is stable", {
+test_that("print.efa_retention output is stable for EKC", {
   local_reproducible_output()
 
   ekc <- EKC(test_models$baseline$cormat, N = 500)
-  expect_snapshot(print(ekc, plot = FALSE))
+  expect_snapshot(print(ekc))
 
   ekc_both <- EKC(test_models$baseline$cormat, N = 500,
                   type = c("BvA2017", "AM2019"))
-  expect_snapshot(print(ekc_both, plot = FALSE))
+  expect_snapshot(print(ekc_both))
+})
+
+test_that("print.efa_retention output is stable for HULL", {
+  local_reproducible_output()
+
+  hull <- HULL(test_models$baseline$cormat, N = 500, method = "ML")
+  expect_snapshot(print(hull))
+
+  hull_paf <- suppressMessages(HULL(test_models$baseline$cormat, N = 500))
+  expect_snapshot(print(hull_paf))
 })
 
 test_that("print.MAP output is stable", {

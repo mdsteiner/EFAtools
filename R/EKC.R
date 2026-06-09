@@ -59,12 +59,13 @@
 #'  The `EKC` function can also be called together with other factor
 #'   retention criteria in the [N_FACTORS()] function.
 #'
-#' @return A list of class EKC containing
-#'
-#' \item{eigenvalues}{A vector containing the eigenvalues found on the correlation matrix of the entered data.}
-#' \item{n_factors_BvA2017}{The number of factors to retain according to the original empirical Kaiser criterion by Braeken and van Assen (2017).}
-#' \item{n_factors_AM2019}{The number of factors to retain according to the adapted empirical Kaiser criterion by Auerswald and Moshagen (2019).}
-#' \item{references}{The reference eigenvalues.}
+#' @returns An object of class `efa_retention` (see [print.efa_retention()] and
+#'   [plot.efa_retention()] for the print and plot methods). Its main fields are:
+#' \item{n_factors}{A named numeric vector with the suggested number of factors
+#'   for each requested implementation (`"BvA2017"` and/or `"AM2019"`).}
+#' \item{results}{A list with one record per implementation, each holding the
+#'   eigenvalues, the reference eigenvalues, and the retained solution used for
+#'   printing and plotting.}
 #' \item{settings}{A list with the settings used.}
 #'
 #' @source Auerswald, M., & Moshagen, M. (2019). How to determine the number of
@@ -114,37 +115,27 @@ EKC <- function(x, N = NA,
   R <- prep$R
   N <- prep$N
 
-  # message(cli::col_cyan(cli::symbol$info, " The default implementation of EKC has changed compared to EFAtools version <= 0.5.0 to reflect the original version by Braeken and van Assen (2017). The previous version (which often yields different results from the original) is available with type = 'AM2019' for comparison purposes. See details in the help page.\n"))
+  # eigenvalues of the correlation matrix (shared by both implementations)
+  lambda <- eigen(R, symmetric = TRUE, only.values = TRUE)$values
+  J <- ncol(R)
 
-  n_factors_BvA2017 <- NA
-  refs_BvA2017 <- NA
-  n_factors_AM2019 <- NA
-  refs_AM2019 <- NA
-
+  results <- list()
 
   if ("BvA2017" %in% type) {
-
-
 
     ### implementation in Braeken & van Assen, 2017. An Empirical Kaiser
     ### Criterion. Psychological Methods, 22(3). pp. 450-466
     ### Calculation based on p. 454 and adapted code by Johan Braeken
 
-    # n variables
-    J <- ncol(R)
-
-    # eigenvalues
-    lambda <- eigen(R, symmetric = TRUE, only.values = TRUE)$values
-
-    # lup: asymptortic max sample eigen value under null model
-    #      used as first reference eigenvalue ()
-    lup <- (1 + sqrt(J/N))^2
+    # lup: asymptotic max sample eigenvalue under the null model, used as the
+    #      first reference eigenvalue
+    lup <- (1 + sqrt(J / N))^2
 
     # correction factor
-    correction_factor <- c(J,(J-cumsum(lambda))[-J])/(J:1)
+    correction_factor <- c(J, (J - cumsum(lambda))[-J]) / (J:1)
 
     # Unrestricted EKC reference values
-    l_REF <- lup* correction_factor
+    l_REF <- lup * correction_factor
 
     # Restricted EKC reference values
     l_EKC <- l_REF
@@ -157,7 +148,18 @@ EKC <- function(x, N = NA,
     } else {
       n_factors_BvA2017 <- which.max(temp)
     }
-    refs_BvA2017 <- l_EKC
+
+    results[["BvA2017"]] <- list(
+      name = "BvA2017",
+      label = "Original implementation (Braeken & van Assen, 2017)",
+      n_factors = n_factors_BvA2017,
+      plot_type = "eigen",
+      x = seq_along(lambda),
+      y = lambda,
+      reference = l_EKC,
+      threshold = NULL,
+      highlight = if (n_factors_BvA2017 >= 1) n_factors_BvA2017 else NULL
+    )
 
   }
 
@@ -166,43 +168,41 @@ EKC <- function(x, N = NA,
     # implementation based on Auerswald and Moshagen 2019:
     # https://osf.io/fnc86?view_only=d03efba1fd0f4c849a87db82e6705668
 
-
     p <- ncol(R)
-
-    # eigenvalues
-    lambda <- eigen(R, symmetric = TRUE, only.values = TRUE)$values
 
     # reference values
     refs <- vector("double", p)
     for (i in seq_len(p)) {
-      refs[i] <- max( ((1 + sqrt(p / N))^2) * (p - sum(refs))/
-                        (p - i + 1), 1)
-
+      refs[i] <- max(((1 + sqrt(p / N))^2) * (p - sum(refs)) / (p - i + 1), 1)
     }
 
     n_factors_AM2019 <- which(lambda <= refs)[1] - 1
-    refs_AM2019 <- refs
+
+    results[["AM2019"]] <- list(
+      name = "AM2019",
+      label = "Adapted implementation (Auerswald & Moshagen, 2019)",
+      n_factors = n_factors_AM2019,
+      plot_type = "eigen",
+      x = seq_along(lambda),
+      y = lambda,
+      reference = refs,
+      threshold = NULL,
+      highlight = if (!is.na(n_factors_AM2019) && n_factors_AM2019 >= 1) {
+        n_factors_AM2019
+      } else {
+        NULL
+      }
+    )
 
   }
 
-
-  out <- list(
-    eigenvalues = lambda,
-    n_factors_BvA2017 = n_factors_BvA2017,
-    n_factors_AM2019 = n_factors_AM2019,
-    references = data.frame(
-      BvA2017 = refs_BvA2017,
-      AM2019 = refs_AM2019
-    ),
-    settings = list(
-      use = use,
-      cor_method = cor_method,
-      N = N,
-      type = type
-    )
+  out <- .new_efa_retention(
+    "EKC",
+    results = unname(results),
+    settings = list(use = use, cor_method = cor_method, N = N, type = type),
+    note = paste0("Multiple implementations of EKC exist; make sure to report ",
+                  "which one you used (see the EKC help page for details).")
   )
-
-  class(out) <- "EKC"
 
   return(out)
 

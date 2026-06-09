@@ -76,18 +76,16 @@
 #'
 #'    The `HULL` function can also be called together with other factor
 #'    retention criteria in the [N_FACTORS()] function.
-#' @return A list of class HULL containing the following objects
-#' \item{n_fac_CAF}{The number of factors to retain according to the Hull method
-#' with the CAF.}
-#' \item{n_fac_CFI}{The number of factors to retain according to the Hull method
-#' with the CFI.}
-#' \item{n_fac_RMSEA}{The number of factors to retain according to the Hull method
-#' with the RMSEA.}
-#' \item{solutions_CAF}{A matrix containing the CAFs, degrees of freedom, and for the factors lying on the hull, the st values of the hull solution (see Lorenzo-Seva, Timmerman, and Kiers 2011 for details).}
-#' \item{solutions_CFI}{A matrix containing the CFIs, degrees of freedom, and for the factors lying on the hull, the st values of the hull solution (see Lorenzo-Seva, Timmerman, and Kiers 2011 for details).}
-#' \item{solutions_RMSEA}{A matrix containing the RMSEAs, degrees of freedom, and for the factors lying on the hull, the st values of the hull solution (see Lorenzo-Seva, Timmerman, and Kiers 2011 for details).}
-#' \item{n_fac_max}{The upper bound *J* of the number of factors to extract (see details).}
-#' \item{settings}{A list of the settings used.}
+#' @returns An object of class `efa_retention` (see [print.efa_retention()] and
+#'   [plot.efa_retention()] for the print and plot methods). Its main fields are:
+#' \item{n_factors}{A named numeric vector with the suggested number of factors
+#'   for each requested goodness-of-fit index (`"CAF"`, `"CFI"`, and/or
+#'   `"RMSEA"`).}
+#' \item{results}{A list with one record per goodness-of-fit index, each holding
+#'   the goodness-of-fit values, the degrees of freedom, the hull membership, and
+#'   the retained solution used for printing and plotting.}
+#' \item{settings}{A list of the settings used, including `n_fac_max`, the upper
+#'   bound *J* of the number of factors to extract (see details).}
 #'
 #' @source Lorenzo-Seva, U., Timmerman, M. E., & Kiers, H. A. (2011).
 #' The Hull method for selecting the number of common factors. Multivariate
@@ -316,24 +314,43 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
     out_RMSEA <- .hull_calc(s = s_RMSEA, J = J, gof_t = "RMSEA")
   }
 
-  out <- list(
-    n_fac_CAF = out_CAF$retain,
-    n_fac_CFI = out_CFI$retain,
-    n_fac_RMSEA = out_RMSEA$retain,
-    solutions_CAF = out_CAF$s_complete,
-    solutions_CFI = out_CFI$s_complete,
-    solutions_RMSEA = out_RMSEA$s_complete,
-    n_fac_max = J,
+  gof_results <- list(CAF = out_CAF, CFI = out_CFI, RMSEA = out_RMSEA)
+
+  # one record per requested goodness-of-fit index (df vs. fit, with the hull
+  # membership and the retained solution used for printing and plotting)
+  results <- list()
+  for (g in c("CAF", "CFI", "RMSEA")) {
+    if (!(g %in% gof)) next
+    sol <- gof_results[[g]]$s_complete
+    retain <- gof_results[[g]]$retain
+    results[[g]] <- list(
+      name = g,
+      label = g,
+      n_factors = retain,
+      plot_type = "hull",
+      x = unname(sol[, "df"]),
+      y = unname(sol[, g]),
+      reference = NULL,
+      threshold = NULL,
+      highlight = retain,
+      point_labels = unname(sol[, "nfactors"]),
+      on_hull = !is.na(sol[, "st"])
+    )
+  }
+
+  out <- .new_efa_retention(
+    "HULL",
+    results = unname(results),
     settings = list(N = N,
                     method = method,
                     gof = gof,
                     n_fac_theor = n_fac_theor,
                     eigen_type = eigen_type,
                     use = use,
-                    cor_method = cor_method)
+                    cor_method = cor_method,
+                    n_fac_max = J),
+    subtitle = paste0("Estimation method: ", method)
   )
-
-  class(out) <- "HULL"
 
   return(out)
 
@@ -406,7 +423,7 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
 
       # check if f2 is below or on the predicted line and if so, remove it
       if (f2 <= p_f2) {
-        s <- s[-i, ]
+        s <- s[-i, , drop = FALSE]
         nr_s <- nr_s -1
         i <- 1
       }

@@ -23,126 +23,84 @@ hull_raw_ml_nf <- suppressMessages(suppressWarnings(HULL(GRiPS_raw, N = 500,
 
 
 test_that("output class and dimensions are correct", {
-  expect_s3_class(hull_cor_paf, "HULL")
-  expect_output(str(hull_cor_paf), "List of 8")
-  expect_s3_class(hull_cor_ml, "HULL")
-  expect_output(str(hull_cor_ml), "List of 8")
-  expect_s3_class(hull_cor_uls, "HULL")
-  expect_output(str(hull_cor_uls), "List of 8")
-  expect_s3_class(hull_cor_uls_CFI, "HULL")
-  expect_output(str(hull_cor_uls_CFI), "List of 8")
-  expect_s3_class(hull_PCA, "HULL")
-  expect_output(str(hull_PCA), "List of 8")
-  expect_s3_class(hull_EFA, "HULL")
-  expect_output(str(hull_EFA), "List of 8")
-
-  expect_s3_class(hull_raw_paf, "HULL")
-  expect_output(str(hull_raw_paf), "List of 8")
-  expect_s3_class(hull_raw_ml, "HULL")
-  expect_output(str(hull_raw_ml), "List of 8")
-  expect_s3_class(hull_raw_uls, "HULL")
-  expect_output(str(hull_raw_uls), "List of 8")
-  expect_s3_class(hull_raw_uls_CFI, "HULL")
-  expect_output(str(hull_raw_uls_CFI), "List of 8")
-  expect_s3_class(hull_PCA, "HULL")
-  expect_output(str(hull_PCA), "List of 8")
-  expect_s3_class(hull_EFA, "HULL")
-  expect_output(str(hull_EFA), "List of 8")
-
-  expect_output(str(hull_cor_paf$settings), "List of 7")
-  expect_output(str(hull_cor_ml$settings), "List of 7")
-  expect_output(str(hull_cor_uls$settings), "List of 7")
-  expect_output(str(hull_cor_uls_CFI$settings), "List of 7")
-  expect_output(str(hull_PCA$settings), "List of 7")
-  expect_output(str(hull_EFA$settings), "List of 7")
-
-  expect_output(str(hull_raw_paf$settings), "List of 7")
-  expect_output(str(hull_raw_ml$settings), "List of 7")
-  expect_output(str(hull_raw_uls$settings), "List of 7")
-  expect_output(str(hull_raw_uls_CFI$settings), "List of 7")
-  expect_output(str(hull_PCA$settings), "List of 7")
-  expect_output(str(hull_EFA$settings), "List of 7")
+  objs <- list(hull_cor_paf, hull_cor_ml, hull_cor_uls, hull_cor_uls_CFI,
+               hull_PCA, hull_EFA, hull_raw_paf, hull_raw_ml, hull_raw_uls,
+               hull_raw_uls_CFI)
+  for (obj in objs) {
+    expect_s3_class(obj, "efa_retention")
+    expect_length(obj, 7)
+    expect_length(obj$settings, 8)
+  }
 })
 
 test_that("n_fac_max is correctly specified", {
-  expect_lte(hull_cor_paf$n_fac_max,
+  expect_lte(hull_cor_paf$settings$n_fac_max,
              .det_max_factors(ncol(test_models$baseline$cormat)))
-  expect_lte(hull_cor_ml$n_fac_max,
+  expect_lte(hull_cor_ml$settings$n_fac_max,
              .det_max_factors(ncol(test_models$baseline$cormat)))
-  expect_lte(hull_cor_uls$n_fac_max,
+  expect_lte(hull_cor_uls$settings$n_fac_max,
              .det_max_factors(ncol(test_models$baseline$cormat)))
-  expect_lte(hull_cor_uls_CFI$n_fac_max,
+  expect_lte(hull_cor_uls_CFI$settings$n_fac_max,
              .det_max_factors(ncol(test_models$baseline$cormat)))
-  expect_lte(hull_PCA$n_fac_max,
+  expect_lte(hull_PCA$settings$n_fac_max,
              .det_max_factors(ncol(test_models$baseline$cormat)))
-  expect_lte(hull_EFA$n_fac_max,
+  expect_lte(hull_EFA$settings$n_fac_max,
              .det_max_factors(ncol(test_models$baseline$cormat)))
 
-  expect_lte(hull_raw_paf$n_fac_max,
+  expect_lte(hull_raw_paf$settings$n_fac_max,
              .det_max_factors(ncol(GRiPS_raw)))
-  expect_lte(hull_raw_ml$n_fac_max,
+  expect_lte(hull_raw_ml$settings$n_fac_max,
              .det_max_factors(ncol(GRiPS_raw)))
-  expect_lte(hull_raw_uls$n_fac_max,
+  expect_lte(hull_raw_uls$settings$n_fac_max,
              .det_max_factors(ncol(GRiPS_raw)))
-  expect_lte(hull_raw_uls_CFI$n_fac_max,
+  expect_lte(hull_raw_uls_CFI$settings$n_fac_max,
              .det_max_factors(ncol(GRiPS_raw)))
 
-  expect_equal(hull_cor_ml_nf$n_fac_max,
+  expect_equal(hull_cor_ml_nf$settings$n_fac_max,
              .det_max_factors(ncol(test_models$baseline$cormat)))
-  expect_equal(hull_raw_ml_nf$n_fac_max,
+  expect_equal(hull_raw_ml_nf$settings$n_fac_max,
                .det_max_factors(ncol(GRiPS_raw)))
 })
 
-test_that("solution matrices are correctly returned", {
-  checkmate::expect_matrix(hull_cor_paf$solutions_CAF)
-  expect_equal(hull_cor_paf$solutions_CFI, NA)
-  expect_equal(hull_cor_paf$solutions_RMSEA, NA)
+test_that("records are correctly returned", {
+  expect_named(hull_cor_paf$n_factors, "CAF")
+  expect_equal(hull_cor_paf$results[[1]]$plot_type, "hull")
+  checkmate::expect_numeric(hull_cor_paf$results[[1]]$y)
+  checkmate::expect_numeric(hull_cor_paf$results[[1]]$x)
+  checkmate::expect_logical(hull_cor_paf$results[[1]]$on_hull)
 
-  checkmate::expect_matrix(hull_cor_uls$solutions_CAF)
-  checkmate::expect_matrix(hull_cor_uls$solutions_CFI)
-  checkmate::expect_matrix(hull_cor_uls$solutions_RMSEA)
+  expect_named(hull_cor_uls$n_factors, c("CAF", "CFI", "RMSEA"))
+  expect_named(hull_cor_uls_CFI$n_factors, "CFI")
 
-  checkmate::expect_matrix(hull_cor_uls_CFI$solutions_CFI)
-  expect_equal(hull_cor_uls_CFI$solutions_CAF, NA)
-  expect_equal(hull_cor_uls_CFI$solutions_RMSEA, NA)
-
-  checkmate::expect_matrix(hull_raw_paf$solutions_CAF)
-  expect_equal(hull_raw_paf$solutions_CFI, NA)
-  expect_equal(hull_raw_paf$solutions_RMSEA, NA)
-
-  checkmate::expect_matrix(hull_raw_uls$solutions_CAF)
-  checkmate::expect_matrix(hull_raw_uls$solutions_CFI)
-  checkmate::expect_matrix(hull_raw_uls$solutions_RMSEA)
-
-  checkmate::expect_matrix(hull_raw_uls_CFI$solutions_CFI)
-  expect_equal(hull_raw_uls_CFI$solutions_CAF, NA)
-  expect_equal(hull_raw_uls_CFI$solutions_RMSEA, NA)
+  expect_named(hull_raw_paf$n_factors, "CAF")
+  expect_named(hull_raw_uls$n_factors, c("CAF", "CFI", "RMSEA"))
+  expect_named(hull_raw_uls_CFI$n_factors, "CFI")
 })
 
 test_that("n_factors are correctly returned", {
-  expect_equal(hull_cor_paf$n_fac_CAF, 3)
-  expect_equal(hull_cor_paf$n_fac_CFI, NA)
-  expect_equal(hull_cor_paf$n_fac_RMSEA, NA)
+  expect_equal(hull_cor_paf$n_factors[["CAF"]], 3)
+  expect_false("CFI" %in% names(hull_cor_paf$n_factors))
+  expect_false("RMSEA" %in% names(hull_cor_paf$n_factors))
 
-  expect_equal(hull_cor_uls$n_fac_CAF, 3)
-  expect_equal(hull_cor_uls$n_fac_CFI, 3)
-  expect_equal(hull_cor_uls$n_fac_RMSEA, 3)
+  expect_equal(hull_cor_uls$n_factors[["CAF"]], 3)
+  expect_equal(hull_cor_uls$n_factors[["CFI"]], 3)
+  expect_equal(hull_cor_uls$n_factors[["RMSEA"]], 3)
 
-  expect_equal(hull_cor_uls_CFI$n_fac_CAF, NA)
-  expect_equal(hull_cor_uls_CFI$n_fac_CFI, 3)
-  expect_equal(hull_cor_uls_CFI$n_fac_RMSEA, NA)
+  expect_equal(hull_cor_uls_CFI$n_factors[["CFI"]], 3)
+  expect_false("CAF" %in% names(hull_cor_uls_CFI$n_factors))
+  expect_false("RMSEA" %in% names(hull_cor_uls_CFI$n_factors))
 
-  expect_equal(hull_raw_paf$n_fac_CAF, 1)
-  expect_equal(hull_raw_paf$n_fac_CFI, NA)
-  expect_equal(hull_raw_paf$n_fac_RMSEA, NA)
+  expect_equal(hull_raw_paf$n_factors[["CAF"]], 1)
+  expect_false("CFI" %in% names(hull_raw_paf$n_factors))
+  expect_false("RMSEA" %in% names(hull_raw_paf$n_factors))
 
-  expect_equal(hull_raw_uls$n_fac_CAF, 1)
-  expect_equal(hull_raw_uls$n_fac_CFI, 1)
-  expect_equal(hull_raw_uls$n_fac_RMSEA, 1)
+  expect_equal(hull_raw_uls$n_factors[["CAF"]], 1)
+  expect_equal(hull_raw_uls$n_factors[["CFI"]], 1)
+  expect_equal(hull_raw_uls$n_factors[["RMSEA"]], 1)
 
-  expect_equal(hull_raw_uls_CFI$n_fac_CAF, NA)
-  expect_equal(hull_raw_uls_CFI$n_fac_CFI, 1)
-  expect_equal(hull_raw_uls_CFI$n_fac_RMSEA, NA)
+  expect_equal(hull_raw_uls_CFI$n_factors[["CFI"]], 1)
+  expect_false("CAF" %in% names(hull_raw_uls_CFI$n_factors))
+  expect_false("RMSEA" %in% names(hull_raw_uls_CFI$n_factors))
 })
 
 

@@ -47,12 +47,13 @@ Use \code{type = c("BvA2017", "AM2019")} for both implementations. Make sure
 to report which version you used.}
 }
 \value{
-A list of class EKC containing
-
-\item{eigenvalues}{A vector containing the eigenvalues found on the correlation matrix of the entered data.}
-\item{n_factors_BvA2017}{The number of factors to retain according to the original empirical Kaiser criterion by Braeken and van Assen (2017).}
-\item{n_factors_AM2019}{The number of factors to retain according to the adapted empirical Kaiser criterion by Auerswald and Moshagen (2019).}
-\item{references}{The reference eigenvalues.}
+An object of class \code{efa_retention} (see \code{\link[=print.efa_retention]{print.efa_retention()}} and
+\code{\link[=plot.efa_retention]{plot.efa_retention()}} for the print and plot methods). Its main fields are:
+\item{n_factors}{A named numeric vector with the suggested number of factors
+for each requested implementation (\code{"BvA2017"} and/or \code{"AM2019"}).}
+\item{results}{A list with one record per implementation, each holding the
+eigenvalues, the reference eigenvalues, and the retained solution used for
+printing and plotting.}
 \item{settings}{A list with the settings used.}
 }
 \description{

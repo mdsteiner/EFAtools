@@ -72,28 +72,50 @@
       * With SMC-determined eigenvalues:  1
       
 
-# print.EKC output is stable
+# print.efa_retention output is stable for EKC
 
     Code
-      print(ekc, plot = FALSE)
+      print(ekc)
     Output
-      -- Number of factors suggested by EKC ------------------------------------------
+      -- Empirical Kaiser Criterion --------------------------------------------------
       
-      * Original implementation (Braeken & van Assen, 2017):  3
-    Message
-      i Different implementations of EKC exist. Make sure to report which one you relied on (see EKC help page for details)
+      * Original implementation (Braeken & van Assen, 2017): 3
+      
+      i Multiple implementations of EKC exist; make sure to report which one you used (see the EKC help page for details).
 
 ---
 
     Code
-      print(ekc_both, plot = FALSE)
+      print(ekc_both)
     Output
-      -- Number of factors suggested by EKC ------------------------------------------
+      -- Empirical Kaiser Criterion --------------------------------------------------
       
-      * Original implementation (Braeken & van Assen, 2017):  3
-      * Adapted implementation (Auerswald & Moshagen, 2019):  2
-    Message
-      i Different implementations of EKC exist. Make sure to report which one you relied on (see EKC help page for details)
+      * Original implementation (Braeken & van Assen, 2017): 3
+      * Adapted implementation (Auerswald & Moshagen, 2019): 2
+      
+      i Multiple implementations of EKC exist; make sure to report which one you used (see the EKC help page for details).
+
+# print.efa_retention output is stable for HULL
+
+    Code
+      print(hull)
+    Output
+      -- Hull method -----------------------------------------------------------------
+      Estimation method: ML
+      
+      * CAF: 3
+      * CFI: 1
+      * RMSEA: 1
+
+---
+
+    Code
+      print(hull_paf)
+    Output
+      -- Hull method -----------------------------------------------------------------
+      Estimation method: PAF
+      
+      * CAF: 3
 
 # print.MAP output is stable
 
