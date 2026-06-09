@@ -33,6 +33,21 @@
   bifactorQ = function(L, k, ...) GPArotation::bifactorQ(L, ...)
 )
 
+# Canonical rotation names by family. The engine tables above key the GPArotation
+# engines and exclude the special-cased `varimax`/`promax`; these vectors are the
+# *full* family memberships used to classify a rotation name. `.rotation_family()`
+# maps a single rotation name to "none", "orthogonal", or "oblique".
+.orth_rotations <- c("varimax", "quartimax", "equamax", "bentlerT", "geominT", "bifactorT")
+.oblq_rotations <- c("promax", "oblimin", "quartimin", "simplimax",
+                     "bentlerQ", "geominQ", "bifactorQ")
+
+.rotation_family <- function(rotation) {
+  if (identical(rotation, "none")) return("none")
+  if (rotation %in% .orth_rotations) return("orthogonal")
+  if (rotation %in% .oblq_rotations) return("oblique")
+  cli::cli_abort("Unknown rotation: {.val {rotation}}.", class = "efa_unknown_rotation")
+}
+
 # Shared post-processing for a rotated solution. Reflects each factor to a
 # consistent (positive) orientation, orders the factors by their sum of squared
 # loadings, and assembles the rotated loadings, factor correlations, structure

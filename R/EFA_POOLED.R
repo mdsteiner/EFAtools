@@ -163,17 +163,7 @@ EFA_POOLED <- function(data_list,
     var_names <- colnames(data_list[[1]])
   }
 
-  if (is.null(rotation) || identical(rotation, "none")) {
-    rotation_type <- "none"
-  } else if (rotation %in% c("varimax", "quartimax", "equamax", "bentlerT",
-                             "geominT", "bifactorT")) {
-    rotation_type <- "orthogonal"
-  } else if (rotation %in% c("promax", "oblimin", "quartimin", "simplimax",
-                             "bentlerQ", "geominQ", "bifactorQ")) {
-    rotation_type <- "oblique"
-  } else {
-    cli::cli_abort("Unknown rotation type: {.val {rotation}}.", class = "efa_pooled_unknown_rotation")
-  }
+  rotation_type <- if (is.null(rotation)) "none" else .rotation_family(rotation)
 
   ## -------------------------------------------------------------------------
   ## Extract and align unrotated loadings

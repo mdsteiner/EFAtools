@@ -529,11 +529,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                              P_type = P_type, k = k, randomStarts = randomStarts,
                              ...)
 
-    boot_rot <- if (rotation == "promax" || rotation %in% names(.oblq_engines)) {
-      "oblique"
-    } else {
-      "orthogonal"
-    }
+    boot_rot <- .rotation_family(rotation)
 
   }
 

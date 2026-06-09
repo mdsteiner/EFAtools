@@ -950,6 +950,34 @@ test_that(".type_grid works", {
 })
 
 
+### test .rotation_family
+
+test_that(".rotation_family works", {
+  expect_identical(.rotation_family("none"), "none")
+
+  # representative names hardcoded so the test catches a rotation placed in the
+  # wrong family vector (including the special-cased varimax/promax and the
+  # geomin/bentler/bifactor T-vs-Q pairs)
+  expect_identical(.rotation_family("varimax"), "orthogonal")
+  expect_identical(.rotation_family("geominT"), "orthogonal")
+  expect_identical(.rotation_family("bifactorT"), "orthogonal")
+  expect_identical(.rotation_family("promax"), "oblique")
+  expect_identical(.rotation_family("geominQ"), "oblique")
+  expect_identical(.rotation_family("bifactorQ"), "oblique")
+
+  # and every canonical name dispatches to its family
+  for (rot in .orth_rotations) {
+    expect_identical(.rotation_family(rot), "orthogonal")
+  }
+
+  for (rot in .oblq_rotations) {
+    expect_identical(.rotation_family(rot), "oblique")
+  }
+
+  expect_error(.rotation_family("bogus"), class = "efa_unknown_rotation")
+})
+
+
 
 rm(efa_pro, efa_temp, x_base, y_base, efa_ml, efa_uls, efa_paf, gof_ml, gof_uls,
    gof_paf, m, q, q_p, efa_list, ext_a, efa_list_er,

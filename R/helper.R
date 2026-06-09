@@ -765,8 +765,7 @@ if(n == 1){
 
 
 
-  if (any(rotation %in% c("promax", "oblimin", "quartimin", "simplimax",
-                          "bentlerQ", "geominQ", "bifactorQ", "oblique"))) {
+  if (any(rotation %in% c(.oblq_rotations, "oblique"))) {
     extract_phi <- TRUE
     phi <- array(NA_real_, c(n_factors, n_factors, n_efa))
   } else {
@@ -1218,9 +1217,7 @@ if(n == 1){
       t_grid_list[["blq"]] <- .oblq_grid(method = method, init_comm = init_comm,
                                          criterion = criterion, criterion_type = criterion_type,
                                          abs_eigen = abs_eigen, start_method = start_method,
-                                         rotation = c("promax", "oblimin", "quartimin",
-                                                      "bentlerQ", "geominQ",
-                                                      "bifactorQ", "simplimax"),
+                                         rotation = .oblq_rotations,
                                          k_promax = k_promax, normalize = normalize,
                                          P_type = P_type, precision = precision,
                                          varimax_type = varimax_type, k_simplimax = k_simplimax)
@@ -1242,8 +1239,7 @@ if(n == 1){
       t_grid_list[["rth"]] <- .orth_grid(method = method, init_comm = init_comm,
                                          criterion = criterion, criterion_type = criterion_type,
                                          abs_eigen = abs_eigen, start_method = start_method,
-                                         rotation = c("varimax", "quartimax", "equamax",
-                                                      "bentlerT", "geominT", "bifactorT"),
+                                         rotation = .orth_rotations,
                                          normalize = normalize, precision = precision,
                                          varimax_type = varimax_type)
 
@@ -1257,8 +1253,7 @@ if(n == 1){
 
     }
 
-  } else if (all(rotation %in% c("promax", "oblimin", "quartimin", "simplimax",
-                                 "bentlerQ", "geominQ", "bifactorQ"))) {
+  } else if (all(rotation %in% .oblq_rotations)) {
 
     t_grid_list[["blq2"]] <- .oblq_grid(method = method, init_comm = init_comm,
                                         criterion = criterion, criterion_type = criterion_type,
@@ -1268,8 +1263,7 @@ if(n == 1){
                                         P_type = P_type, precision = precision,
                                         varimax_type = varimax_type, k_simplimax = k_simplimax)
 
-  } else if (all(rotation %in% c("varimax", "quartimax", "equamax",
-                                 "bentlerT", "geominT", "bifactorT"))) {
+  } else if (all(rotation %in% .orth_rotations)) {
 
     t_grid_list[["rth2"]] <- .orth_grid(method = method, init_comm = init_comm,
                                         criterion = criterion, criterion_type = criterion_type,
@@ -1278,14 +1272,12 @@ if(n == 1){
                                         normalize = normalize, precision = precision,
                                         varimax_type = varimax_type)
 
-  } else if (any(rotation %in% c("promax", "oblimin", "quartimin", "simplimax",
-                                 "bentlerQ", "geominQ", "bifactorQ")) &&
-             any(rotation %in% c("varimax", "quartimax", "equamax",
-                                 "bentlerT", "geominT", "bifactorT"))) {
+  } else if (any(rotation %in% .oblq_rotations) &&
+             any(rotation %in% .orth_rotations)) {
     cli::cli_abort(
       c("{.arg rotation} mixes oblique and orthogonal rotations, but only rotations of the same kind can be averaged.",
-        "*" = "Oblique rotations: {.val {c('promax', 'oblimin', 'quartimin', 'simplimax', 'bentlerQ', 'geominQ', 'bifactorQ')}}.",
-        "*" = "Orthogonal rotations: {.val {c('varimax', 'quartimax', 'equamax', 'bentlerT', 'geominT', 'bifactorT')}}."),
+        "*" = "Oblique rotations: {.val {(.oblq_rotations)}}.",
+        "*" = "Orthogonal rotations: {.val {(.orth_rotations)}}."),
       class = "efa_rotation_mismatch"
     )
   }
