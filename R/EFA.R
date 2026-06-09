@@ -306,15 +306,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                 ...) {
 
   # Perform argument checks
-  if(!inherits(x, c("matrix", "data.frame"))){
-
-    cli::cli_abort(
-      c("{.arg x} must be a correlation matrix or a data frame/matrix of raw data.",
-        "x" = "You supplied {.obj_type_friendly {x}}."),
-      class = "efa_input_not_matrix"
-    )
-
-  }
+  .assert_cor_input(x)
 
   method <- match.arg(method)
   rotation <- match.arg(rotation)
@@ -363,76 +355,48 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
     )
   }
 
-  # Check if it is a correlation matrix
-  if(.is_cormat(x)){
+  # A correlation matrix cannot yield bootstrap SEs; resolve this before
+  # validating/smoothing R so the warning is not pre-empted by a singular or
+  # non-positive-definite matrix.
+  is_cormat <- .is_cormat(x)
 
-      R <- x
+  if (is_cormat) {
 
-      if (isTRUE(np_boot)) {
-        cli::cli_warn(
-          c("Cannot compute bootstrap standard errors from correlation matrix.",
-          "x" = "You've supplied {.var se} = {.val {se}}, but {.var x} is a correlation matrix.",
-          "i" = "Setting {.var se} to {.val none}. Rerun with raw data to calculate bootstrap SEs.")
-        )
-      }
-
-      np_boot <- FALSE
-      se <- "none"
-
-  } else {
-
-    cli::cli_inform(
-      c("i" = "{.arg x} is not a correlation matrix; computing correlations from the raw data."),
-      class = "efa_cor_from_data"
-    )
-
-    if (!is.na(N)) {
+    if (isTRUE(np_boot)) {
       cli::cli_warn(
-        c("Both {.arg N} and raw data were supplied.",
-          "i" = "Taking {.arg N} from the data."),
-        class = "efa_n_from_data"
+        c("Cannot compute bootstrap standard errors from correlation matrix.",
+        "x" = "You've supplied {.var se} = {.val {se}}, but {.var x} is a correlation matrix.",
+        "i" = "Setting {.var se} to {.val none}. Rerun with raw data to calculate bootstrap SEs.")
       )
     }
 
-    R <- stats::cor(x, use = use, method = cor_method)
-    colnames(R) <- colnames(x)
-    N <- nrow(x)
-
-    if (isTRUE(np_boot)) {
-      m <- ncol(R)
-      rows <- 1:N
-
-      # create bootstrap samples and from these, correlation matrices
-      R_boot_array <- array(NA_real_, c(m, m, b_boot), dimnames = list(colnames(x),
-                                                                 colnames(x),
-                                                                 NULL))
-
-      for (boot_i in seq_len(b_boot)) {
-        ind <- sample(rows, size = N, replace = TRUE)
-        R_boot_array[,, boot_i] <- stats::cor(x[ind,], use = use, method = cor_method)
-      }
-
-    }
+    np_boot <- FALSE
+    se <- "none"
 
   }
 
-  # Check if correlation matrix is invertible, if it is not, stop with message
-  R_i <- try(solve(R), silent = TRUE)
+  # Detect or compute the correlation matrix, check it, and smooth it if needed
+  prep <- .prepare_cor_input(x, N = N, use = use, cor_method = cor_method,
+                             N_policy = "optional",
+                             check_singular = type != "psych",
+                             posdef_abort = type == "SPSS")
+  R <- prep$R
+  N <- prep$N
 
-  if (inherits(R_i, "try-error") && type != "psych") {
-    cli::cli_abort("The correlation matrix is singular; no further analyses are performed.",
-                   class = "efa_cor_singular")
-  }
+  if (!is_cormat && isTRUE(np_boot)) {
 
-  # Check if correlation matrix is positive definite, if it is not,
-  # smooth the matrix (cor.smooth throws a warning)
-  if (any(eigen(R, symmetric = TRUE, only.values = TRUE)$values <= .Machine$double.eps^.6)) {
-    if (type == "SPSS") {
-      cli::cli_abort("The correlation matrix is not positive definite; no further analyses are performed.",
-                     class = "efa_cor_not_posdef")
+    m <- ncol(R)
+    rows <- 1:N
+
+    # create bootstrap samples and from these, correlation matrices
+    R_boot_array <- array(NA_real_, c(m, m, b_boot), dimnames = list(colnames(x),
+                                                               colnames(x),
+                                                               NULL))
+
+    for (boot_i in seq_len(b_boot)) {
+      ind <- sample(rows, size = N, replace = TRUE)
+      R_boot_array[,, boot_i] <- stats::cor(x[ind,], use = use, method = cor_method)
     }
-
-    R <- psych::cor.smooth(R)
 
   }
 

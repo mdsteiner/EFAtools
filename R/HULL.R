@@ -131,15 +131,7 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
                  n_factors = 1, ...) {
   # Perform hull method following Lorenzo-Seva, Timmerman, and Kiers (2011)
 
-  if(!inherits(x, c("matrix", "data.frame"))){
-
-    cli::cli_abort(
-      c("{.arg x} must be a correlation matrix or a data frame/matrix of raw data.",
-        "x" = "You supplied {.obj_type_friendly {x}}."),
-      class = "efa_input_not_matrix"
-    )
-
-  }
+  .assert_cor_input(x)
 
   method <- match.arg(method)
   use <- match.arg(use)
@@ -166,51 +158,13 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
     gof <- "CAF"
   }
 
-  # Check if it is a correlation matrix
-  if(.is_cormat(x)){
-
-    R <- x
-
-  } else {
-
-    cli::cli_inform(
-      c("i" = "{.arg x} is not a correlation matrix; computing correlations from the raw data."),
-      class = "efa_cor_from_data"
-    )
-
-    if (!is.na(N)) {
-      cli::cli_warn(
-        c("Both {.arg N} and raw data were supplied.",
-          "i" = "Taking {.arg N} from the data."),
-        class = "efa_n_from_data"
-      )
-    }
-
-    R <- stats::cor(x, use = use, method = cor_method)
-    colnames(R) <- colnames(x)
-    N <- nrow(x)
-
-  }
-
-  if (is.na(N)) {
-    cli::cli_abort("{.arg N} is not specified but is needed to compute some fit indices.",
-                   class = "efa_n_required")
-  }
-
-  # Check if correlation matrix is invertable, if it is not, stop with message
-  R_i <- try(solve(R), silent = TRUE)
-
-  if (inherits(R_i, "try-error")) {
-    cli::cli_abort("The correlation matrix is singular; the Hull method cannot be executed.",
-                   class = "efa_cor_singular")
-  }
-
-  # Check if correlation matrix is positive definite
-  if(any(eigen(R)$values <= .Machine$double.eps^.6)){
-
-    R <- psych::cor.smooth(R)
-
-  }
+  # Detect or compute the correlation matrix, check it, and smooth it if needed
+  prep <- .prepare_cor_input(
+    x, N = N, use = use, cor_method = cor_method, N_policy = "required",
+    singular_tail = "the Hull method cannot be executed",
+    N_required_msg = "{.arg N} is not specified but is needed to compute some fit indices.")
+  R <- prep$R
+  N <- prep$N
 
   m <- ncol(R)
 

@@ -88,15 +88,7 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
                max_iter = 50) {
 
   # Perform argument checks
-  if(!inherits(x, c("matrix", "data.frame"))){
-
-    cli::cli_abort(
-      c("{.arg x} must be a data frame/matrix of raw data.",
-        "x" = "You supplied {.obj_type_friendly {x}}."),
-      class = "efa_input_not_matrix"
-    )
-
-  }
+  .assert_cor_input(x, raw_only = TRUE)
 
   if (.is_cormat(x)) {
     cli::cli_abort("{.arg x} is a correlation matrix, but CD only works with raw data.",

@@ -166,15 +166,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
                       ...){
 
   # Perform argument checks
-  if(!inherits(x, c("matrix", "data.frame"))){
-
-    cli::cli_abort(
-      c("{.arg x} must be a correlation matrix or a data frame/matrix of raw data.",
-        "x" = "You supplied {.obj_type_friendly {x}}."),
-      class = "efa_input_not_matrix"
-    )
-
-  }
+  .assert_cor_input(x)
 
   ## Perform argument checks and prepare input
   criteria <- match.arg(criteria, several.ok = TRUE,
@@ -197,41 +189,11 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
     criteria <- sort(criteria)
   }
 
-  # Check if it is a correlation matrix
-  if(.is_cormat(x)){
-
-    R <- x
-
-  } else {
-
-    if (!is.na(N)) {
-      cli::cli_warn(
-        c("Both {.arg N} and raw data were supplied.",
-          "i" = "Taking {.arg N} from the data."),
-        class = "efa_n_from_data"
-      )
-    }
-
-    R <- stats::cor(x, use = use, method = cor_method)
-    colnames(R) <- colnames(x)
-    N <- nrow(x)
-
-  }
-
-  # Check if correlation matrix is invertable, if it is not, stop with message
-  R_i <- try(solve(R), silent = TRUE)
-
-  if (inherits(R_i, "try-error")) {
-    cli::cli_abort("The correlation matrix is singular; no further analyses are performed.",
-                   class = "efa_cor_singular")
-  }
-
-  # Check if correlation matrix is positive definite
-  if(any(eigen(R, symmetric = TRUE, only.values = TRUE)$values <= .Machine$double.eps^.6)){
-
-    R <- psych::cor.smooth(R)
-
-  }
+  # Detect or compute the correlation matrix, check it, and smooth it if needed
+  prep <- .prepare_cor_input(x, N = N, use = use, cor_method = cor_method,
+                             N_policy = "optional", inform_from_data = FALSE)
+  R <- prep$R
+  N <- prep$N
 
   # Set all outputs to NA for a start
   bart_out <- NA

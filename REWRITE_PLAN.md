@@ -260,9 +260,9 @@ fine); Phase 8–9 → **1.0.0**.
 - [x] `estimate_model()` + shared `.finalize_fit()` (sign/naming/vars/gof/residuals);
       `.PAF/.ML/.ULS` become thin fitters. (Engine still R/optim here.)
 - [x] `rotate_model()` + `.reflect_and_order()`; rotation engine selected by name table.
-- [ ] `.rotation_family()` + canonical orth/oblique name vectors; replace the 4 duplicated
+- [x] `.rotation_family()` + canonical orth/oblique name vectors; replace the 4 duplicated
       classifications (EFA, EFA_POOLED, `.extract_data`, `.type_grid`).
-- [ ] `.prepare_cor_input()` shared by EFA + all retention criteria + KMO/BARTLETT/
+- [x] `.prepare_cor_input()` shared by EFA + all retention criteria + KMO/BARTLETT/
       FACTOR_SCORES (one PD check + one smoothing + one `cli_warn`; fix double-smoothing).
 - [ ] Unified `efa_retention` class + criterion registry; refit all 9 criteria to the
       shape; **one** `print.efa_retention()`; two ggplot helpers; `N_FACTORS` orchestrator

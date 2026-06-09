@@ -64,50 +64,15 @@ KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
                 cor_method = c("pearson", "spearman", "kendall")) {
 
   # Perform argument checks
-  if(!inherits(x, c("matrix", "data.frame"))){
-
-    cli::cli_abort(
-      c("{.arg x} must be a correlation matrix or a data frame/matrix of raw data.",
-        "x" = "You supplied {.obj_type_friendly {x}}."),
-      class = "efa_input_not_matrix"
-    )
-
-  }
+  .assert_cor_input(x)
 
   use <- match.arg(use)
   cor_method <- match.arg(cor_method)
 
-  # Check if it is a correlation matrix
-  if(.is_cormat(x)){
-
-    R <- x
-
-  } else {
-
-    cli::cli_inform(
-      c("i" = "{.arg x} is not a correlation matrix; computing correlations from the raw data."),
-      class = "efa_cor_from_data"
-    )
-
-    R <- stats::cor(x, use = use, method = cor_method)
-    colnames(R) <- colnames(x)
-    N <- nrow(x)
-
-  }
-
-
-  # Check if correlation matrix is invertible; if not, stop with message
-  if (inherits(try(solve(R), silent = TRUE), "try-error")) {
-    cli::cli_abort("The correlation matrix is singular; no further analyses are performed.",
-                   class = "efa_cor_singular")
-  }
-
-  # Check if correlation matrix is positive definite
-  if(any(eigen(R, symmetric = TRUE, only.values = TRUE)$values <= .Machine$double.eps^.6)){
-
-    R <- psych::cor.smooth(R)
-
-  }
+  # Detect or compute the correlation matrix, check it, and smooth it if needed
+  prep <- .prepare_cor_input(x, use = use, cor_method = cor_method,
+                             N_policy = "none")
+  R <- prep$R
 
   KMO_list <- .compute_kmo(R)
   KMO <- KMO_list$KMO

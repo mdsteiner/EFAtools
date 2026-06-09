@@ -101,72 +101,18 @@ EKC <- function(x, N = NA,
                 type = "BvA2017") {
 
   # Perform argument checks
-  if(!inherits(x, c("matrix", "data.frame"))){
-
-    cli::cli_abort(
-      c("{.arg x} must be a correlation matrix or a data frame/matrix of raw data.",
-        "x" = "You supplied {.obj_type_friendly {x}}."),
-      class = "efa_input_not_matrix"
-    )
-
-  }
+  .assert_cor_input(x)
 
   checkmate::assert_count(N, na.ok = TRUE)
   use <- match.arg(use)
   cor_method <- match.arg(cor_method)
   type <- match.arg(type, choices = c("BvA2017", "AM2019"), several.ok = TRUE)
 
-  # Check if it is a correlation matrix
-  if(.is_cormat(x)){
-
-    R <- x
-
-    if (is.na(N)) {
-
-      cli::cli_abort(
-        c("{.arg N} is {.val NA} but a correlation matrix was entered.",
-          "i" = "Provide {.arg N} or raw data."),
-        class = "efa_n_required"
-      )
-
-    }
-
-  } else {
-
-    cli::cli_inform(
-      c("i" = "{.arg x} is not a correlation matrix; computing correlations from the raw data."),
-      class = "efa_cor_from_data"
-    )
-
-    if (!is.na(N)) {
-      cli::cli_warn(
-        c("Both {.arg N} and raw data were supplied.",
-          "i" = "Taking {.arg N} from the data."),
-        class = "efa_n_from_data"
-      )
-    }
-
-    R <- stats::cor(x, use = use, method = cor_method)
-    colnames(R) <- colnames(x)
-    N <- nrow(x)
-
-  }
-
-  # Check if correlation matrix is invertable, if it is not, stop with message
-  R_i <- try(solve(R), silent = TRUE)
-
-  if (inherits(R_i, "try-error")) {
-    cli::cli_abort("The correlation matrix is singular; no further analyses are performed.",
-                   class = "efa_cor_singular")
-  }
-
-  # Check if correlation matrix is positive definite, if it is not,
-  # smooth the matrix (cor.smooth throws a warning)
-  if (any(eigen(R, symmetric = TRUE, only.values = TRUE)$values <= .Machine$double.eps^.6)) {
-
-    R <- psych::cor.smooth(R)
-
-  }
+  # Detect or compute the correlation matrix, check it, and smooth it if needed
+  prep <- .prepare_cor_input(x, N = N, use = use, cor_method = cor_method,
+                             N_policy = "required")
+  R <- prep$R
+  N <- prep$N
 
   # message(cli::col_cyan(cli::symbol$info, " The default implementation of EKC has changed compared to EFAtools version <= 0.5.0 to reflect the original version by Braeken and van Assen (2017). The previous version (which often yields different results from the original) is available with type = 'AM2019' for comparison purposes. See details in the help page.\n"))
 

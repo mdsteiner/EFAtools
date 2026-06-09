@@ -173,52 +173,14 @@ PARALLEL <- function(x = NULL,
       n_vars <- ncol(x)
       x_dat <- TRUE
 
-      # Check if it is a correlation matrix
-      if(.is_cormat(x)){
-
-        R <- x
-
-      } else {
-
-        cli::cli_inform(
-          c("i" = "{.arg x} is not a correlation matrix; computing correlations from the raw data."),
-          class = "efa_cor_from_data"
-        )
-
-        if (!is.na(N)) {
-          cli::cli_warn(
-            c("Both {.arg N} and raw data were supplied.",
-              "i" = "Taking {.arg N} from the data."),
-            class = "efa_n_from_data"
-          )
-        }
-
-        R <- stats::cor(x, use = use, method = cor_method)
-        colnames(R) <- colnames(x)
-        N <- nrow(x)
-
-      }
-
-
-      # Check if correlation matrix is invertable, if it is not, stop with message
-      R_i <- try(solve(R), silent = TRUE)
-
-      if (inherits(R_i, "try-error")) {
-        cli::cli_abort("The correlation matrix is singular; parallel analysis is not possible.",
-                       class = "efa_cor_singular")
-      }
-
-      # Check if correlation matrix is positive definite
-      eigvals_R <- eigen(R, symmetric = TRUE,
-                         only.values = TRUE)$values
-      if(any(eigvals_R <= .Machine$double.eps^.6)){
-
-        R <- psych::cor.smooth(R)
-        R_i <- solve(R)
-        eigvals_R <- eigen(R, symmetric = TRUE,
-                           only.values = TRUE)$values
-
-      }
+      # Detect or compute the correlation matrix, check it, and smooth it if needed
+      prep <- .prepare_cor_input(x, N = N, use = use, cor_method = cor_method,
+                                 N_policy = "optional",
+                                 singular_tail = "parallel analysis is not possible")
+      R <- prep$R
+      N <- prep$N
+      R_i <- solve(R)
+      eigvals_R <- eigen(R, symmetric = TRUE, only.values = TRUE)$values
 
       if ("PCA" %in% eigen_type) {
         eigvals_real_PCA <- matrix(eigvals_R, ncol = 1)
