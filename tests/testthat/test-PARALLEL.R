@@ -9,96 +9,81 @@ pa_perc <- PARALLEL(test_models$baseline$cormat, N = 500, eigen_type = "PCA",
                     decision_rule = "percentile")
 
 test_that("output class and dimensions are correct", {
-  expect_s3_class(pa_cor, "PARALLEL")
-  expect_output(str(pa_cor), "List of 7")
-  expect_s3_class(pa_raw, "PARALLEL")
-  expect_output(str(pa_raw), "List of 7")
-  expect_s3_class(pa_cor_pca, "PARALLEL")
-  expect_output(str(pa_cor_pca), "List of 7")
-  expect_s3_class(pa_nodat, "PARALLEL")
-  expect_output(str(pa_nodat), "List of 7")
-  expect_s3_class(pa_craw, "PARALLEL")
-  expect_output(str(pa_craw), "List of 7")
-  expect_s3_class(pa_perc, "PARALLEL")
-  expect_output(str(pa_perc), "List of 7")
+  expect_s3_class(pa_cor, "efa_retention")
+  expect_length(pa_cor, 7)
+  expect_s3_class(pa_raw, "efa_retention")
+  expect_length(pa_raw, 7)
+  expect_s3_class(pa_cor_pca, "efa_retention")
+  expect_s3_class(pa_nodat, "efa_retention")
+  expect_s3_class(pa_craw, "efa_retention")
+  expect_s3_class(pa_perc, "efa_retention")
+
+  expect_named(pa_cor$n_factors, c("PCA", "SMC", "EFA"))
+  expect_named(pa_cor_pca$n_factors, "PCA")
+  expect_named(pa_nodat$n_factors, c("PCA", "SMC", "EFA"))
+  expect_equal(.retention_record(pa_cor, "PCA")$plot_type, "eigen")
 })
 
 
 test_that("found eigenvalues are correct", {
-  expect_equal(sum(pa_cor$eigenvalues_PCA[, 1]),
+  # real eigenvalues form the solid line (record $y)
+  expect_equal(sum(.retention_record(pa_cor, "PCA")$y),
                ncol(test_models$baseline$cormat))
-  expect_equal(sum(pa_cor$eigenvalues_PCA[, 2]),
-               ncol(test_models$baseline$cormat))
-  expect_gt(sum(pa_cor$eigenvalues_PCA[, 3]),
-               ncol(test_models$baseline$cormat))
-  expect_lt(sum(pa_cor$eigenvalues_SMC[, 1]),
+  expect_lt(sum(.retention_record(pa_cor, "SMC")$y),
             ncol(test_models$baseline$cormat))
-  expect_lt(sum(pa_cor$eigenvalues_SMC[, 2]),
+  expect_lt(sum(.retention_record(pa_cor, "EFA")$y),
             ncol(test_models$baseline$cormat))
-  expect_lt(sum(pa_cor$eigenvalues_EFA[, 1]),
+
+  # simulated eigenvalues form the dashed reference series (record $references)
+  expect_equal(sum(.retention_record(pa_cor, "PCA")$references$Means),
                ncol(test_models$baseline$cormat))
-  expect_lt(sum(pa_cor$eigenvalues_EFA[, 2]),
-               ncol(test_models$baseline$cormat))
+  expect_gt(sum(.retention_record(pa_cor, "PCA")$references[["95 Percentile"]]),
+            ncol(test_models$baseline$cormat))
+  expect_lt(sum(.retention_record(pa_cor, "SMC")$references$Means),
+            ncol(test_models$baseline$cormat))
+  expect_lt(sum(.retention_record(pa_cor, "EFA")$references$Means),
+            ncol(test_models$baseline$cormat))
 
-  expect_equal(sum(pa_raw$eigenvalues_PCA[, 1]),
+  expect_equal(sum(.retention_record(pa_raw, "PCA")$y), ncol(GRiPS_raw))
+  expect_named(.retention_record(pa_raw, "PCA")$references,
+               c("Means", "95 Percentile"))
+  expect_equal(sum(.retention_record(pa_raw, "PCA")$references$Means),
                ncol(GRiPS_raw))
-  expect_equal(sum(pa_raw$eigenvalues_PCA[, 2]),
-               ncol(GRiPS_raw))
-  expect_gt(sum(pa_raw$eigenvalues_PCA[, 3]),
+  expect_gt(sum(.retention_record(pa_raw, "PCA")$references[["95 Percentile"]]),
             ncol(GRiPS_raw))
-  expect_lt(sum(pa_raw$eigenvalues_SMC[, 1]),
-            ncol(GRiPS_raw))
-  expect_lt(sum(pa_raw$eigenvalues_SMC[, 2]),
-            ncol(GRiPS_raw))
-  expect_lt(sum(pa_raw$eigenvalues_EFA[, 1]),
-            ncol(GRiPS_raw))
-  expect_lt(sum(pa_raw$eigenvalues_EFA[, 2]),
-            ncol(GRiPS_raw))
+  expect_lt(sum(.retention_record(pa_raw, "SMC")$y), ncol(GRiPS_raw))
+  expect_lt(sum(.retention_record(pa_raw, "EFA")$y), ncol(GRiPS_raw))
 
-  checkmate::expect_matrix(pa_cor$eigenvalues_PCA)
-  checkmate::expect_matrix(pa_cor$eigenvalues_SMC)
-  checkmate::expect_matrix(pa_cor$eigenvalues_EFA)
+  # references is a named two-series list (means + percentile)
+  refs <- .retention_record(pa_cor, "PCA")$references
+  checkmate::expect_list(refs, len = 2)
+  expect_named(refs, c("Means", "95 Percentile"))
 
-  checkmate::expect_matrix(pa_raw$eigenvalues_PCA)
-  checkmate::expect_matrix(pa_raw$eigenvalues_SMC)
-  checkmate::expect_matrix(pa_raw$eigenvalues_EFA)
+  # only the requested eigenvalue type produces a record
+  expect_null(.retention_record(pa_cor_pca, "SMC"))
+  expect_null(.retention_record(pa_cor_pca, "EFA"))
 
-  checkmate::expect_matrix(pa_nodat$eigenvalues_PCA)
-  checkmate::expect_matrix(pa_nodat$eigenvalues_SMC)
-  checkmate::expect_matrix(pa_nodat$eigenvalues_EFA)
-
-  checkmate::expect_matrix(pa_cor_pca$eigenvalues_PCA)
-  expect_equal(c(pa_cor_pca$eigenvalues_SMC, pa_cor_pca$eigenvalues_EFA), c(NA, NA))
-
-  checkmate::expect_matrix(pa_craw$eigenvalues_PCA)
-  expect_equal(c(pa_craw$eigenvalues_SMC, pa_craw$eigenvalues_EFA), c(NA, NA))
-
-  checkmate::expect_matrix(pa_perc$eigenvalues_PCA)
-  expect_equal(c(pa_perc$eigenvalues_SMC, pa_perc$eigenvalues_EFA), c(NA, NA))
-
+  # no real data: no real-eigenvalue series, but the simulated references remain
+  expect_null(.retention_record(pa_nodat, "PCA")$y)
+  expect_named(.retention_record(pa_nodat, "PCA")$references,
+               c("Means", "95 Percentile"))
 })
 
 
 test_that("identified number of factors is correct", {
-  expect_equal(pa_cor$n_fac_PCA, 3)
-  expect_equal(pa_cor$n_fac_SMC, 3)
-  expect_equal(pa_cor$n_fac_EFA, 7, tolerance = 2)
+  expect_equal(pa_cor$n_factors[["PCA"]], 3)
+  expect_equal(pa_cor$n_factors[["SMC"]], 3)
+  expect_equal(pa_cor$n_factors[["EFA"]], 7, tolerance = 2)
 
-  expect_equal(pa_raw$n_fac_PCA, 1)
-  expect_equal(pa_raw$n_fac_SMC, 1)
-  expect_equal(pa_raw$n_fac_EFA, 3, tolerance = 2)
+  expect_equal(pa_raw$n_factors[["PCA"]], 1)
+  expect_equal(pa_raw$n_factors[["SMC"]], 1)
+  expect_equal(pa_raw$n_factors[["EFA"]], 3, tolerance = 2)
 
-  expect_equal(c(pa_nodat$n_fac_PCA, pa_nodat$n_fac_SMC, pa_nodat$n_fac_EFA),
-               rep(NA, 3))
+  expect_true(all(is.na(pa_nodat$n_factors)))
 
-  expect_equal(pa_cor_pca$n_fac_PCA, 3)
-  expect_equal(c(pa_cor_pca$n_fac_SMC, pa_cor_pca$n_fac_EFA), c(NA, NA))
-
-  expect_equal(pa_craw$n_fac_PCA, 3)
-  expect_equal(c(pa_craw$n_fac_SMC, pa_craw$n_fac_EFA), c(NA, NA))
-
-  expect_equal(pa_perc$n_fac_PCA, 3)
-  expect_equal(c(pa_perc$n_fac_SMC, pa_perc$n_fac_EFA), c(NA, NA))
+  expect_equal(pa_cor_pca$n_factors[["PCA"]], 3)
+  expect_equal(pa_craw$n_factors[["PCA"]], 3)
+  expect_equal(pa_perc$n_factors[["PCA"]], 3)
 })
 
 

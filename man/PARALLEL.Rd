@@ -77,14 +77,15 @@ robust, but it will take longer compared to the other estimation methods
 available ("ML" and "ULS").}
 }
 \value{
-A list of class PARALLEL containing the following objects
-\item{eigenvalues_PCA}{A matrix containing the eigenvalues of the real and the simulated data found with eigen_type = "PCA"}
-\item{eigenvalues_SMC}{A matrix containing the eigenvalues of the real and the simulated data found with eigen_type = "SMC"}
-\item{eigenvalues_EFA}{A matrix containing the eigenvalues of the real and the simulated data found with eigen_type = "EFA"}
-\item{n_fac_PCA}{The number of factors to retain according to the parallel procedure with eigen_type = "PCA".}
-\item{n_fac_SMC}{The number of factors to retain according to the parallel procedure with eigen_type = "SMC".}
-\item{n_fac_EFA}{The number of factors to retain according to the parallel procedure with eigen_type = "EFA".}
-\item{settings}{A list of control settings used in the print function.}
+An object of class \code{efa_retention} (see \code{\link[=print.efa_retention]{print.efa_retention()}} and
+\code{\link[=plot.efa_retention]{plot.efa_retention()}} for the print and plot methods). Its main fields are:
+\item{n_factors}{A named numeric vector with the suggested number of factors for
+each requested eigenvalue type (\code{"PCA"}, \code{"SMC"}, and/or \code{"EFA"}). These are
+\code{NA} when no real data are supplied (i.e. only \code{N} and \code{n_vars} are given).}
+\item{results}{A list with one record per eigenvalue type, each holding the real
+eigenvalues (when real data were supplied) and the simulated reference
+eigenvalues (means and percentiles) used for printing and plotting.}
+\item{settings}{A list of the settings used.}
 }
 \description{
 Various methods for performing parallel analysis. This function uses

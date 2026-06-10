@@ -35,6 +35,19 @@ test_that("print.efa_retention output is stable for CD", {
   expect_snapshot(print(cd))
 })
 
+test_that("print.efa_retention output is stable for PARALLEL", {
+  local_reproducible_output()
+
+  # seed the simulated eigenvalues so the printed suggestion cannot drift
+  set.seed(123)
+  pa <- PARALLEL(test_models$baseline$cormat, N = 500, eigen_type = "PCA")
+  expect_snapshot(print(pa))
+
+  # without real data there is no numeric suggestion (visual output only)
+  pa_nodat <- PARALLEL(N = 20, n_vars = 5)
+  expect_snapshot(print(pa_nodat))
+})
+
 test_that("print.efa_retention output is stable for KGC", {
   local_reproducible_output()
 

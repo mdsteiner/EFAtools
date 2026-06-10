@@ -172,13 +172,7 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
                       decision_rule = decision_rule, n_factors = n_factors,
                       ...)
 
-  if(eigen_type == "SMC"){
-    n_fac_PA <- par_res$n_fac_SMC
-  } else if(eigen_type == "PCA"){
-    n_fac_PA <- par_res$n_fac_PCA
-  } else if(eigen_type == "EFA"){
-    n_fac_PA <- par_res$n_fac_EFA
-  }
+  n_fac_PA <- unname(par_res$n_factors[eigen_type])
 
   if (is.na(n_fac_PA)) {
 

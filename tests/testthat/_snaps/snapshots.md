@@ -49,6 +49,28 @@
       
       * Suggested number of factors: 1
 
+# print.efa_retention output is stable for PARALLEL
+
+    Code
+      print(pa)
+    Output
+      -- Parallel analysis -----------------------------------------------------------
+      Eigenvalues found using PCA; 1000 simulated datasets.
+      
+      * PCA eigenvalues: 3
+      
+      i Number of factors retained using the "means" decision rule.
+
+---
+
+    Code
+      print(pa_nodat)
+    Output
+      -- Parallel analysis -----------------------------------------------------------
+      Eigenvalues found using PCA, SMC, and EFA; 1000 simulated datasets.
+      
+      i No data were entered; showing the simulated eigenvalues only. No number of factors is suggested.
+
 # print.efa_retention output is stable for KGC
 
     Code

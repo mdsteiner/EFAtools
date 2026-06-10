@@ -347,9 +347,12 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
                                  decision_rule = decision_rule,
                                  n_factors = n_factors, method = method, ...))
 
-    nfac_PA_PCA <- parallel_out$n_fac_PCA
-    nfac_PA_SMC <- parallel_out$n_fac_SMC
-    nfac_PA_EFA <- parallel_out$n_fac_EFA
+    # if PARALLEL failed, keep the NA placeholders so the other criteria still run
+    if (!inherits(parallel_out, "try-error")) {
+      nfac_PA_PCA <- unname(parallel_out$n_factors["PCA"])
+      nfac_PA_SMC <- unname(parallel_out$n_factors["SMC"])
+      nfac_PA_EFA <- unname(parallel_out$n_factors["EFA"])
+    }
 
   }
 

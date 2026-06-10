@@ -69,14 +69,15 @@
 #'  The `PARALLEL` function can also be called together with other factor
 #'  retention criteria in the [N_FACTORS()] function.
 #'
-#' @return A list of class PARALLEL containing the following objects
-#' \item{eigenvalues_PCA}{A matrix containing the eigenvalues of the real and the simulated data found with eigen_type = "PCA"}
-#' \item{eigenvalues_SMC}{A matrix containing the eigenvalues of the real and the simulated data found with eigen_type = "SMC"}
-#' \item{eigenvalues_EFA}{A matrix containing the eigenvalues of the real and the simulated data found with eigen_type = "EFA"}
-#' \item{n_fac_PCA}{The number of factors to retain according to the parallel procedure with eigen_type = "PCA".}
-#' \item{n_fac_SMC}{The number of factors to retain according to the parallel procedure with eigen_type = "SMC".}
-#' \item{n_fac_EFA}{The number of factors to retain according to the parallel procedure with eigen_type = "EFA".}
-#' \item{settings}{A list of control settings used in the print function.}
+#' @returns An object of class `efa_retention` (see [print.efa_retention()] and
+#'   [plot.efa_retention()] for the print and plot methods). Its main fields are:
+#' \item{n_factors}{A named numeric vector with the suggested number of factors for
+#'   each requested eigenvalue type (`"PCA"`, `"SMC"`, and/or `"EFA"`). These are
+#'   `NA` when no real data are supplied (i.e. only `N` and `n_vars` are given).}
+#' \item{results}{A list with one record per eigenvalue type, each holding the real
+#'   eigenvalues (when real data were supplied) and the simulated reference
+#'   eigenvalues (means and percentiles) used for printing and plotting.}
+#' \item{settings}{A list of the settings used.}
 #'
 #' @source Braeken, J., & van Assen, M. A. (2017). An empirical Kaiser criterion.
 #' Psychological Methods, 22, 450 – 466. http://dx.doi.org/10.1037/ met0000074
@@ -153,9 +154,13 @@ PARALLEL <- function(x = NULL,
   size_vec <- rep(round(n_datasets / n_cores), n_cores - 1)
   size_vec[n_cores] <- n_datasets - sum(size_vec)
 
-  eigenvalues_PCA <- NA
-  eigenvalues_SMC <- NA
-  eigenvalues_EFA <- NA
+  # Prepare objects
+  results_PCA <- NA
+  results_SMC <- NA
+  results_EFA <- NA
+  eigvals_real_PCA <- NA
+  eigvals_real_SMC <- NA
+  eigvals_real_EFA <- NA
   n_fac_PCA <- NA
   n_fac_SMC <- NA
   n_fac_EFA <- NA
@@ -265,13 +270,6 @@ PARALLEL <- function(x = NULL,
                                         eigvals_real = eigvals_real_PCA,
                                         results = results_PCA,
                                         percent = percent)
-
-        eigenvalues_PCA <- cbind(eigvals_real_PCA, results_PCA)
-
-      } else {
-
-        eigenvalues_PCA <- results_PCA
-
       }
 
     }
@@ -315,13 +313,6 @@ PARALLEL <- function(x = NULL,
                                       eigvals_real = eigvals_real_SMC,
                                       results = results_SMC,
                                       percent = percent)
-
-      eigenvalues_SMC <- cbind(eigvals_real_SMC, results_SMC)
-
-      } else {
-
-        eigenvalues_SMC <- results_SMC
-
       }
 
     }
@@ -344,13 +335,6 @@ PARALLEL <- function(x = NULL,
                                       eigvals_real = eigvals_real_EFA,
                                       results = results_EFA,
                                       percent = percent)
-
-      eigenvalues_EFA <- cbind(eigvals_real_EFA, results_EFA)
-
-      } else {
-
-        eigenvalues_EFA <- results_EFA
-
       }
 
     }
@@ -368,17 +352,55 @@ PARALLEL <- function(x = NULL,
     n_factors = n_factors
   )
 
-  out <- list(
-    eigenvalues_PCA = eigenvalues_PCA,
-    eigenvalues_SMC = eigenvalues_SMC,
-    eigenvalues_EFA = eigenvalues_EFA,
-    n_fac_PCA = n_fac_PCA,
-    n_fac_SMC = n_fac_SMC,
-    n_fac_EFA = n_fac_EFA,
-    settings = settings
-  )
+  # one record per requested eigenvalue type: the real eigenvalues (the solid
+  # line, absent when no real data are given) plus the simulated reference series
+  # (means and percentile) drawn as dashed lines
+  sim_list <- list(PCA = results_PCA, SMC = results_SMC, EFA = results_EFA)
+  real_list <- list(PCA = eigvals_real_PCA, SMC = eigvals_real_SMC,
+                    EFA = eigvals_real_EFA)
+  nfac_list <- list(PCA = n_fac_PCA, SMC = n_fac_SMC, EFA = n_fac_EFA)
 
-  class(out) <- "PARALLEL"
+  results <- list()
+  for (et in c("PCA", "SMC", "EFA")) {
+    if (!(et %in% eigen_type)) next
+    sim <- sim_list[[et]]
+    refs <- stats::setNames(lapply(seq_len(ncol(sim)), function(j) sim[, j]),
+                            colnames(sim))
+    if (isTRUE(x_dat)) {
+      n_fac <- nfac_list[[et]]
+      y <- as.numeric(real_list[[et]])
+      highlight <- if (!is.na(n_fac) && n_fac >= 1) n_fac else NULL
+    } else {
+      # no real data: no real-eigenvalue series and no suggestion
+      n_fac <- NA_real_
+      y <- NULL
+      highlight <- NULL
+    }
+    results[[et]] <- list(
+      name = et,
+      label = paste0(et, " eigenvalues"),
+      n_factors = n_fac,
+      plot_type = "eigen",
+      x = seq_len(n_vars),
+      y = y,
+      references = refs,
+      highlight = highlight
+    )
+  }
+
+  out <- .new_efa_retention(
+    "PARALLEL",
+    results = unname(results),
+    settings = settings,
+    subtitle = paste0("Eigenvalues found using ", cli::ansi_collapse(eigen_type),
+                      "; ", n_datasets, " simulated datasets."),
+    note = if (isTRUE(x_dat)) {
+      paste0("Number of factors retained using the \"", decision_rule,
+             "\" decision rule.")
+    } else {
+      "No data were entered; showing the simulated eigenvalues only. No number of factors is suggested."
+    }
+  )
 
   return(out)
 

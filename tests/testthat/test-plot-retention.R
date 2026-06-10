@@ -25,6 +25,17 @@ test_that("efa_retention plot methods return ggplot objects", {
   scree <- SCREE(test_models$baseline$cormat)
   p_scree <- plot(scree)
   expect_s3_class(p_scree, "ggplot")
+
+  # PARALLEL: smoke-test only (no vdiffr baseline) because the simulated
+  # reference lines vary with the RNG state and the future plan's chunking,
+  # so an SVG baseline would not be portable
+  pa <- PARALLEL(test_models$baseline$cormat, N = 500, eigen_type = c("PCA", "SMC"))
+  p_pa <- plot(pa)
+  expect_s3_class(p_pa, "ggplot")
+
+  # no real data: the plot shows only the dashed reference series
+  pa_nodat <- PARALLEL(N = 20, n_vars = 5, eigen_type = "PCA")
+  expect_s3_class(plot(pa_nodat), "ggplot")
 })
 
 test_that("plot-less criteria return NULL with a message", {

@@ -165,7 +165,9 @@ plot.efa_retention <- function(x, ...) {
     data.frame(
       variant = r$label,
       factor = r$x,
-      value = r$y,
+      # a record may have no primary series (e.g. PARALLEL without real data
+      # plots only its reference series)
+      value = if (is.null(r$y)) NA_real_ else r$y,
       reference = if (is.null(r$reference)) NA_real_ else r$reference,
       stringsAsFactors = FALSE
     )
@@ -185,8 +187,8 @@ plot.efa_retention <- function(x, ...) {
   }))
 
   p <- ggplot2::ggplot(dat, ggplot2::aes(.data$factor, .data$value)) +
-    ggplot2::geom_line() +
-    ggplot2::geom_point()
+    ggplot2::geom_line(na.rm = TRUE) +
+    ggplot2::geom_point(na.rm = TRUE)
 
   if (any(!is.na(dat$reference))) {
     p <- p + ggplot2::geom_line(ggplot2::aes(y = .data$reference),
@@ -198,6 +200,40 @@ plot.efa_retention <- function(x, ...) {
     p <- p + ggplot2::geom_hline(data = thresholds,
                                  ggplot2::aes(yintercept = .data$yintercept),
                                  linetype = 2, colour = "darkgray")
+  }
+
+  # records can carry several named reference series (e.g. PARALLEL's simulated
+  # means and percentile eigenvalues), each drawn as a dashed coloured line with
+  # a shared legend; criteria without `references` are unaffected
+  ref_records <- Filter(function(r) !is.null(r$references), records)
+  if (length(ref_records) > 0) {
+    ref_dat <- do.call(rbind, lapply(ref_records, function(r) {
+      data.frame(variant = r$label,
+                 factor = rep(r$x, length(r$references)),
+                 series = rep(names(r$references), each = length(r$x)),
+                 value = unlist(r$references, use.names = FALSE),
+                 stringsAsFactors = FALSE)
+    }))
+    ref_dat$variant <- factor(ref_dat$variant, levels = variant_levels)
+    ref_dat$series <- factor(ref_dat$series, levels = unique(ref_dat$series))
+    # label the primary series in the legend alongside the reference series
+    # (drawn over the identical primary line, so only the legend key is added)
+    ref_labels <- vapply(ref_records, function(r) r$label, character(1))
+    real_dat <- dat[dat$variant %in% ref_labels & !is.na(dat$value), ,
+                    drop = FALSE]
+    if (nrow(real_dat) > 0) {
+      p <- p +
+        ggplot2::geom_line(data = real_dat,
+                           ggplot2::aes(linetype = "Real Eigenvalues")) +
+        ggplot2::scale_linetype_manual(values = c(`Real Eigenvalues` = 1))
+    }
+    p <- p +
+      ggplot2::geom_line(data = ref_dat,
+                         ggplot2::aes(.data$factor, .data$value,
+                                      colour = .data$series),
+                         linetype = 2, na.rm = TRUE) +
+      ggplot2::scale_colour_viridis_d(end = 0.8) +
+      ggplot2::labs(colour = NULL, linetype = NULL)
   }
 
   if (!is.null(highlights)) {
