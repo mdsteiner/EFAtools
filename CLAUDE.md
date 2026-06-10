@@ -47,7 +47,9 @@ unrelated changes.
 - Tests: testthat 3rd edition. `expect_snapshot()` for printed output (wrap in
   `testthat::local_reproducible_output()`); `vdiffr` for plots; cross-check numerics
   against reference packages (psych, lavaan, GPArotation, …) with explicit `tolerance=`,
-  gated by `skip_if_not_installed()` / `skip_on_cran()`.
+  gated by `skip_if_not_installed()` / `skip_on_cran()`. Condition tests assert classes
+  (`expect_error(..., class = "efa_*")`, same for warnings), never message text via
+  regexp.
 - C++: RcppArmadillo; pass large matrices by `const&`; keep hot/bootstrap paths
   allocation-light.
 - Minimum R is **4.1.0**: the native pipe `|>` and `\(x)` lambdas are fine; do **not** use

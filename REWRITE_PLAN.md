@@ -1,13 +1,14 @@
 # EFAtools — Rewrite & Expansion Plan
 
-> Status: **planning** (no code changes yet).
-> Prepared from a full review of the current package (v0.7.1.9000) plus a structured
-> best-practice research pass. This document is the single source of truth for the
-> rewrite; it is meant to be edited as decisions are made and phases completed.
+> Status: **in progress** — Phase 0 complete; Phase 1 partially complete (see the
+> checklists and the unit queue in §5a). Originally prepared from a full review of the
+> package (v0.7.1.9000) plus a structured best-practice research pass; last synced
+> against the code at commit 660ca34 (2026-06). This document is the single source of
+> truth for the rewrite; it is meant to be edited as decisions are made and phases
+> completed.
 >
-> This file is a development artefact, **not** part of the shipped package. Before the
-> first build, add `^REWRITE_PLAN\.md$` (and a `^dev$` folder if used) to
-> `.Rbuildignore` so it does not trigger an `R CMD check` NOTE.
+> This file is a development artefact, **not** part of the shipped package (it is
+> listed in `.Rbuildignore`).
 
 ---
 
@@ -18,11 +19,19 @@
   with a recommendation. *These are deliberately not pre-decided.*
 - **Section 3** states the guiding principles that make a rewrite of this size safe.
 - **Section 4** describes the target end-state architecture.
-- **Section 5** is the phased, step-by-step roadmap (the operational core).
+- **Section 5** is the phased, step-by-step roadmap (the strategic map); **§5a** is the
+  operational unit queue for the current release — commit-sized units of work, each
+  with its own definition of done.
 - **Sections 6–11** are cross-cutting registers: bugs, tests, CI, naming/deprecation,
   dependencies, risks.
 
-Throughout, file:line references point at the **current** code so each task is grounded.
+Throughout, code anchors use `file: function()` form — function names are greppable
+and do not rot the way line numbers do.
+
+**Plan maintenance:** when a unit of work lands, tick its box (in §5a and, where it
+completes a phase bullet, in §5) and record the commit hash in the same step. When a
+new phase opens, its **first unit** is to expand that phase into a §5a-style unit
+queue — later phases stay at their current altitude until then.
 
 ---
 
@@ -64,6 +73,7 @@ Please confirm/adjust these. Each is flagged at the phase where it first bites.
 | O14 | Simulation model-error default method (`CB` exact-RMSEA vs `TKL` RMSEA+CFI). Depend on / vendor `noisemaker`? | Default **CB**; offer `TKL`,`WB`; validate against `noisemaker`/`fungible` (cross-check tests only, not a hard dep). | Phase 7 |
 | O15 | `efa_group` defaults: common-`k` vs per-group-`k`; consensus target vs reference group. | Default **common-`k`** + **consensus** target (symmetric); expose `reference_group`. | Phase 7 |
 | O16 | Analytic bifactor rotation (Jennrich-Bentler) alongside Schmid-Leiman; analytic-SE coverage for promax (which has no GPA Jacobian → bootstrap only). | Add bi-geomin/bi-quartimin when the GPF engine lands; **promax SEs via bootstrap only**, documented. | Phase 4/6 |
+| O17 | `efa_screen` MVN-test scope: §5 Phase 7 lists four self-implemented tests (Mardia, Doornik-Hansen, Henze-Zirkler, Royston). | **Trim to Mardia + Henze-Zirkler** for 1.0; defer Doornik-Hansen/Royston to post-1.0 (each is its own validation burden). | Phase 7 |
 
 ---
 
@@ -234,7 +244,9 @@ fine); Phase 8–9 → **1.0.0**.
       `expect_s3_class()`/`expect_type()`; fix 3e fallout.
 - [x] Capture `expect_snapshot()` baselines for **every** `print.*`/`format.*` against
       bundled objects (`test_models`, `GRiPS_raw`, …), wrapped in
-      `local_reproducible_output()` (`cli.num_colors=1`).
+      `local_reproducible_output()` (`cli.num_colors=1`). *(Gap found in the 2026-06
+      review: `EFA_POOLED` print/format was missed and has no tests at all — closed by
+      unit **U1**.)*
 - [x] Add `tests/testthat/test-regression-*` comparing current estimators/rotations to
       `psych::fa`, `stats::factanal`, `GPArotation`, with tolerances; gate with
       `skip_if_not_installed`/`skip_on_cran`. **These capture current numbers as the
@@ -253,35 +265,45 @@ fine); Phase 8–9 → **1.0.0**.
 - [x] `presets.R`: declarative type tables (EFAtools/psych/SPSS) + one
       `.resolve_settings(type, user, preset)` emitting a single consolidated `cli_warn`.
       Replace the ~25 copy-pasted "type and X specified" blocks in
-      `PAF/PROMAX/VARIMAX/ROTATE_OBLQ/ROTATE_ORTH`.
+      `PAF/PROMAX/VARIMAX/ROTATE_OBLQ/ROTATE_ORTH`. *(b0ffa61)*
 - [x] Move messages, warnings, and errors from current base versions to `cli_inform`,
       `cli_warn` and `cli_abort`. Strip all crayon aspects and use `cli` conform
-      messaging.
+      messaging. *(5782836, 34d3d35, 05b5bc3, 9cd73c6 — conditions only; styled
+      printing is units U4–U6.)*
 - [x] `estimate_model()` + shared `.finalize_fit()` (sign/naming/vars/gof/residuals);
-      `.PAF/.ML/.ULS` become thin fitters. (Engine still R/optim here.)
+      `.PAF/.ML/.ULS` become thin fitters. (Engine still R/optim here.) *(40132f2)*
 - [x] `rotate_model()` + `.reflect_and_order()`; rotation engine selected by name table.
+      *(7af40bf — also fixed B1 and B9.)*
 - [x] `.rotation_family()` + canonical orth/oblique name vectors; replace the 4 duplicated
-      classifications (EFA, EFA_POOLED, `.extract_data`, `.type_grid`).
+      classifications (EFA, EFA_POOLED, `.extract_data`, `.type_grid`). *(e7761e2)*
 - [x] `.prepare_cor_input()` shared by EFA + all retention criteria + KMO/BARTLETT/
-      FACTOR_SCORES (one PD check + one smoothing + one `cli_warn`; fix double-smoothing).
-- [ ] Unified `efa_retention` class + criterion registry; refit all 9 criteria to the
+      FACTOR_SCORES (one PD check + one smoothing; fix double-smoothing). *(b12df62 —
+      note: smoothing still surfaces only `psych::cor.smooth`'s own warning, not a
+      classed `cli_warn`; tracked as B15 → unit U9a.)*
+- [x] Unified `efa_retention` class + criterion registry; refit all 9 criteria to the
       shape; **one** `print.efa_retention()`; two ggplot helpers; `N_FACTORS` orchestrator
-      shrinks dramatically.
-- [ ] `new_efa()`/`validate_efa()` (O8); route all producers through it.
+      shrinks dramatically. *(245967e, 6c3b616, da1c592, 18cd89a, 660ca34 — snapshot +
+      vdiffr coverage in place; B8 and B13 resolved along the way.)*
+- [ ] `new_efa()`/`validate_efa()` (O8); route all producers through it. → unit **U7**
 - [ ] Split `helper.R` per §4.7; merge duplicate congruence funcs; consolidate number
       formatters into `.efa_num()`; delete dead code (commented `.error_ml2`, cat-based
-      progress bars, trivial `.boot_fun` wrapper).
-- [ ] cli migration of messages + the `.efa_style()` shim + `cli_format_method` formats;
-      remove `crayon` from Imports.
+      progress bars, trivial `.boot_fun` wrapper). → unit **U3**
+- [ ] cli migration of styled output: the `.efa_style()` shim + `cli_format_method`
+      formats; remove `crayon` from Imports (148 crayon calls across 10 print files
+      remain). → units **U4–U6**
 - [ ] Rewrite `print.EFA()` to cli (it is the largest crayon site): trim it to a
       `standard` default and add `summary.EFA()` for the full view. Done here, with the
       crayon→cli migration, because both touch the same styled output in `print.EFA.R`;
       the existing `compact/standard/full` engine makes this low-risk and `summary.EFA`
       is additive. Likewise migrate `print.LOADINGS`/`print.SLLOADINGS` and the shared
-      matrix renderer (`.efa_format_matrix`).
-- [ ] ggplot2 migration of the six base plots; `viridisLite`/`graphics` removed.
+      matrix renderer (`.efa_format_matrix`). → units **U4, U5**
+- [x] ggplot2 migration of the six base plots; `viridisLite`/`graphics` removed.
+      *(Done via the retention-class refactor — no base-graphics calls remain in `R/`,
+      and neither package is in Imports. Remaining related work: extract the plot from
+      `print.COMPARE` into a `plot.COMPARE` ggplot method and fix B11 → unit U6.)*
 - [ ] Dependency slimming (drop tidyverse cluster/`stringr`/`progress`; O1 base pipe);
       `lavaan` → Suggests (gate `OMEGA`/`SL` lavaan paths; `skip_if_not_installed`).
+      → unit **U8**
 
 **Validation:** snapshots may change **only** where output formatting intentionally moved
 to cli/ggplot (review each diff); the **regression** suite (numeric) must stay green.
@@ -290,16 +312,67 @@ smaller; numbers identical to `0.8.0`.
 
 ### Phase 2 — Correctness fixes (behaviour-changing) → `0.8.x`
 **Goal:** fix the verified bugs (§6), each with a NEWS entry and snapshot update (O6/O7).
-- [ ] Bugs B1–B14 (see register). Behaviour-changing ones (quartimax, Bartlett χ²,
-      ULS objective, ss_factors Phi reorder) get explicit NEWS notes; compatibility
-      presets preserve their documented behaviour where that is the point.
+- [ ] Work through the **open** bugs in §6 via their assigned units (see the register's
+      Status column — several were already fixed by the Phase 1 refactors).
+      Behaviour-changing fixes get explicit NEWS notes; compatibility presets preserve
+      their documented behaviour where that is the point. → units **U9a–U9b** (and the
+      bugs folded into U5/U6/U8 per the register)
 - [ ] Add **SRMR, TLI/NNFI, ECVI** to the fit-index module; reconcile the χ² multiplier
-      with lavaan (O7) + parity tests.
+      with lavaan (O7) + parity tests. → units **U9c/U9d**
 - [ ] Centralise a Heywood detector in `estimate_model()` post-processing; surface in
-      `settings`/`summary` via `cli_warn` (consistent across PAF/ML/ULS).
+      `settings`/`summary` via `cli_warn` (consistent across PAF/ML/ULS). → unit **U9d**
 
 **Exit:** regression suite re-baselined against `psych`/`lavaan`/`factanal` with the
 corrected conventions; NEWS documents every changed number.
+
+### §5a — Unit queue for the remainder of `0.8.x` (operational)
+
+One unit = one reviewable, committable change (the per-change workflow). Definition of
+done for **every** unit: only the listed files change; `devtools::test()` green;
+snapshots change only as stated; **numeric results may change only where the unit says
+so** (and then with a NEWS entry). Tick + commit hash on completion. The order below is
+dependency order; U1/U2 come first because they extend the safety net the later units
+rely on.
+
+- [ ] **U1 — EFA_POOLED safety net.** `EFA_POOLED` currently has **no tests at all**:
+      add print/format snapshots + basic structure/pooling unit tests before anything
+      touches it. Files: `tests/testthat/` only. Numbers: n/a (tests only).
+- [ ] **U2 — Direct unit tests for the new internals.** Boundary-case tests for
+      `.estimate_model()` / `rotate_model()` (single factor, `k = p`, invalid preset
+      combinations) and `.prepare_cor_input()` (raw vs cormat, `N_policy`, smoothing
+      path). Files: tests only. Numbers: n/a.
+- [ ] **U3 — Split `helper.R`** per §4.7; merge `.factor_congruence`/
+      `.tucker_congruence`; consolidate the ~6 number formatters into `.efa_num()`;
+      delete dead code (commented `.error_ml2`, cat-based progress bars, trivial
+      `.boot_fun` wrapper). Pure file moves + dedup. Numbers: no; snapshots: no.
+- [ ] **U4 — `.efa_format_matrix()`** + migrate `print.LOADINGS`/`print.SLLOADINGS` to
+      cli (pad with `cli::ansi_align`/`ansi_nchar` so width math survives ANSI).
+      Numbers: no; snapshots: formatting diffs only (review each).
+- [ ] **U5 — `print.EFA` → cli + `summary.EFA`.** Trim `print.EFA` to a `standard`
+      default; add `summary.EFA`/`print.summary.EFA`; fix **B16** (`format()` returns
+      plain text) and **B17** (`residuals.EFA` becomes a pure extractor). Numbers: no;
+      snapshots: formatting diffs only.
+- [ ] **U6 — Remaining prints → cli; drop `crayon`.** OMEGA (incl. **B4**), COMPARE
+      (incl. **B11**; move the plot into a `plot.COMPARE` ggplot method — `print` no
+      longer auto-plots), KMO, BARTLETT, SL, EFA_AVERAGE, EFA_POOLED; add the
+      `.efa_style()` shim; remove `crayon` from Imports. Numbers: no; snapshots:
+      formatting diffs only.
+- [ ] **U7 — `new_efa()`/`validate_efa()`** (O8); route all producers through it.
+      Additive fields only. Numbers: no; snapshots: no.
+- [ ] **U8 — Dependency slimming.** Drop `stringr`/`dplyr`/`tidyr`/`tibble`/`magrittr`
+      (base + `|>`)/`progress`; `lavaan` → Suggests (gate the OMEGA/SL lavaan paths;
+      `skip_if_not_installed`); pin `GPArotation (>= 2022.4-1)` (**B12**). Numbers: no.
+- [ ] **U9 — Phase 2 behaviour-changing fixes**, one sub-unit per family, each with
+      NEWS + deliberate snapshot updates. Numbers: **yes**, as documented per sub-unit.
+      - [ ] **U9a:** **B14** (PARALLEL partition/percentile) + **B15** (classed
+            `cli_warn` on smoothing in `.prepare_cor_input()`).
+      - [ ] **U9b:** small guards — **B7** (`isTRUE()` on length>1 in EFA_AVERAGE),
+            **B18** (guard `eig_sym` in `nest_sym.cpp`), **B19** (EKC `AM2019` NA
+            convention).
+      - [ ] **U9c:** **B2**/O7 — Bartlett-corrected ML χ², proper residual-based ULS
+            statistic, lavaan parity tests.
+      - [ ] **U9d:** SRMR/TLI/ECVI fit indices + centralised Heywood detector in
+            `.estimate_model()` post-processing.
 
 ### Phase 3 — C++ estimation engine → `0.9.0`
 **Goal:** full estimation in C++; fast, allocation-light bootstrap.
@@ -316,6 +389,9 @@ corrected conventions; NEWS documents every changed number.
       per thread, set BLAS threads to 1 in parallel regions (prefer `RcppParallel`-style
       safety; default ≤2 threads in examples/tests).
 - [ ] Expose `minres` as an alias of `uls` (documented identical).
+- [ ] Fold the psych-inherited start-value heuristics into the new optimizer entry
+      (the `.fit_uls` start vector; the exact float-equality SMC fallback in `ML.R`) —
+      do **not** patch these ad hoc before this phase.
 
 **Validation:** loadings byte-identical to the R-optim path (`roptim` uses R's lbfgsb);
 bootstrap benchmark on `DOSPERT_raw` shows the target speedup.
@@ -331,6 +407,9 @@ bootstrap benchmark on `DOSPERT_raw` shows the target speedup.
       Jacobi loop + the mismatched `.SV` monitor (keep an SPSS-compat shim/fixtures if
       `type="SPSS"` parity must be exact — O6).
 - [ ] Report local-minima count across random starts (cheap once C++).
+- [ ] Replace the `R::rnorm` element loops in the random-start generators
+      (`oblique_procrustes.cpp` / the new `rotate.cpp`) with thread-safe draws
+      (`arma::randn` or `dqrng` streams) **before** any OpenMP region touches them.
 - [ ] Keep `GPArotation` as a `Suggests` fallback per criterion until 1e-6 parity is
       proven across random-start/normalization settings (O4); then drop.
 
@@ -387,7 +466,8 @@ documented reference ladder; determinism + PD under bootstrap resampling.
       **post-1.0** stretch.
 - [ ] **`efa_screen`**: KMO (overall+item, reuse `.compute_kmo`), Bartlett, determinant/
       condition number, per-item SMC/variance/%missing, multivariate normality
-      (Mardia/Doornik-Hansen/Henze-Zirkler/Royston — self-implement), robust-Mahalanobis
+      (self-implement; scope per **O17** — recommended: Mardia + Henze-Zirkler for 1.0,
+      Doornik-Hansen/Royston post-1.0), robust-Mahalanobis
       outliers (`robustbase::covMcd`), sparse/empty-category flags; actionable verdicts
       ("non-normal → use ML-robust or polychoric"); one cli print.
 - [ ] **`efa_simulate`**: `simulate_cfm()` kernel (input `(Lambda,Phi,Psi)` or population
@@ -445,26 +525,32 @@ syntax bridge; `RcppEnsmallen` backend; GLB via SDP; consensus "recommended n_fa
 
 ## 6. Bug-fix register
 
-| ID | Severity | Bug | Location | Fix / phase |
-|----|----------|-----|----------|-------------|
-| B1 | high | `quartimax` calls `GPArotation::bentlerT` | `R/ROTATE_ORTH.R:85-87` | Route by name table; add numeric test. **Ph2** (behaviour change). |
-| B2 | high | ML/ULS χ² omits Bartlett correction; ULS χ² uses LS residual SS as if Wishart | `R/helper.R:554` | Bartlett-corrected ML; proper residual-based ULS statistic. **Ph2/6** (O7). |
-| B3 | med | ULS objective includes diagonal (`trimatl`) & differs from reported `Fm`; grad/obj eigenvalue floors inconsistent | `src/uls_helper.cpp:61-79` | Strictly off-diagonal; one shared floor. **Ph3** (also fixes minres parity). |
-| B4 | high | `print.OMEGA` `ncol(x[[1]] == 3)` paren typo | `R/print.OMEGA.R:60` | Subsumed by tidy `efa_reliability` output. **Ph1/7**. |
-| B5a | med | H index unguarded `1/(1-L²)` → Inf/NaN on Heywood | `R/OMEGA_helper.R:181,…` | Guard in `.reliability_core`. **Ph7** (snapshot now). |
-| B5b | high | Two divergent ω_total formulas (`.OMEGA_FLEX` vs `.OMEGA_LAVAAN`) | `R/OMEGA_helper.R:130/397` | One core. **Ph7**. |
-| B6 | med | `factor_corres` dimension check is a no-op (`nrow()` of a vector) | `R/OMEGA_helper.R:70` | `length(g_load)`/`nrow(s_load)`. **Ph1/7**. |
-| B7 | high | `temp_corres` undefined/stale on Heywood; `isTRUE()` on length>1 vectors | `R/helper.R:797`; `R/EFA_AVERAGE.R:626` | Guard; elementwise NA-safe. **Ph1**. |
-| B8 | med | `print.N_FACTORS` reads `x$output$…` (field is `x$outputs`) → Bartlett print + scree silently no-op | `R/print.N_FACTORS.R:36,249` | Subsumed by `print.efa_retention`. **Ph1**. |
-| B9 | med | Oblique `ss_factors` branch doesn't reorder Phi | `R/ROTATE_OBLQ.R:130-142` | `.reflect_and_order` reorders Phi consistently + invariance test. **Ph1**. |
-| B10 | med | PAF `stop()` on neg-eigenvalues aborts whole bootstrap; max-iter off-by-one convergence flag | `src/paf_iter.cpp` | Status codes; track convergence by Δ at exit. **Ph3** (interim tryCatch **Ph0**). |
-| B11 | med | `print.COMPARE` `aes_string()` + `size=` (deprecated) | `R/print.COMPARE.R:121-138` | `aes(.data$…)` + `linewidth`; move to `plot.efa_compare`. **Ph1**. |
-| B12 | med | `GPArotation` `randomStarts` used with no min-version floor | `DESCRIPTION`; `ROTATE_*` | Pin `GPArotation (>= 2022.4-1)` while it remains a dep; reconcile `randomStarts` defaults (10 vs 100). **Ph0/1**. |
-| B13 | low | NEST `prob` comparator `<` vs decision `<=` mismatch (+ docstring) | `R/NEST.R:163-164` | One convention + boundary test. **Ph1/2**. |
-| B14 | low | PARALLEL `size_vec` partition can go negative; percentile off-by-one vs `stats::quantile` | `R/PARALLEL.R:148-150,459` | Exact integer partition; standardise on `stats::quantile` (matches `psych::fa.parallel`). **Ph1**. |
-| B15 | low | KMO/BARTLETT silently smooth non-PD matrices (changes reported statistic) | `R/KMO.R:93`; `R/BARTLETT.R:105` | `cli_warn` on smoothing; PD/smooth before invert/det. **Ph1/2**. |
-| B16 | low | `format.EFA` returns ANSI-laden `capture.output` | `R/print.EFA.R:207` | `format()` = plain; `print()` = styled. **Ph1**. |
-| B17 | low | `residuals.EFA` names a logical arg `print` and prints as a side effect | `R/residuals.EFA.R:11-40` | Pure extractor with `type=`; formatting in `summary.EFA`. **Ph1**. |
+Status legend: **open** (assigned to a unit/phase), **fixed** (commit), **superseded**
+(the buggy code no longer exists), **mitigated** (workaround in place, real fix
+scheduled).
+
+| ID | Severity | Bug | Anchor | Status | Fix → where |
+|----|----------|-----|--------|--------|-------------|
+| B1 | high | `quartimax` called `GPArotation::bentlerT` | was `R/ROTATE_ORTH.R` (deleted) | **fixed** (7af40bf) | Engine-by-name table in `rotate_model.R`; covered by `test-regression-rotations.R`. |
+| B2 | high | ML/ULS χ² omits Bartlett correction; ULS χ² uses LS residual SS as if Wishart | `R/helper.R: .gof()` | **open** | Bartlett-corrected ML; proper residual-based ULS statistic. → **U9c** (O7; SE side in Ph6). |
+| B3 | med | ULS objective sums lower triangle incl. diagonal (`trimatl`) & differs from reported `Fm`; obj/grad eigenvalue floors inconsistent (`0` vs `eps*100`). *(The earlier "two eigendecompositions" claim is outdated — one each now, but `R` is still passed by value.)* | `src/uls_helper.cpp: uls_residuals()` / `grad_uls()` | **open** | Strictly off-diagonal; one shared floor; `const&`. → **Ph3** (also fixes minres parity). |
+| B4 | high | `print.OMEGA` `ncol(x[[1]] == 3)` paren typo | `R/print.OMEGA.R: print.OMEGA()` | **open** | Fixed by the cli rewrite of the OMEGA print. → **U6** (long term: tidy `efa_reliability`, Ph7). |
+| B5a | med | H index unguarded `1/(1-L²)` → Inf/NaN on Heywood | `R/OMEGA_helper.R` | **open** | Guard in `.reliability_core`. → **Ph7** (snapshot now). |
+| B5b | high | Two divergent ω_total formulas (`.OMEGA_FLEX` vs `.OMEGA_LAVAAN`) | `R/OMEGA_helper.R` | **open** | One core. → **Ph7**. |
+| B6 | med | `factor_corres` dimension check is a no-op (`nrow()` of a vector) | `R/OMEGA_helper.R` | **open** | `length(g_load)`/`nrow(s_load)`. → **Ph7**. |
+| B7 | high | `isTRUE()` on length>1 vectors in the error-aggregation condition. *(The `temp_corres` half of the original report appears addressed in `helper.R` — re-verify when picked up.)* | `R/EFA_AVERAGE.R` (error aggregation, ~`:606`) | **open** | Elementwise NA-safe condition. → **U9b**. |
+| B8 | med | `print.N_FACTORS` read `x$output$…` (field is `x$outputs`) → Bartlett print + scree silently no-op | was `R/print.N_FACTORS.R` (deleted) | **fixed** (660ca34) | Unified `format.N_FACTORS` reads `x$outputs`. |
+| B9 | med | Oblique reflection/reorder didn't propagate to Phi/structure/rotmat (`ss_factors` worst) | was `R/ROTATE_OBLQ.R` (deleted) | **fixed** (7af40bf; NEWS entry) | `.reflect_and_order()` in `rotate_model.R` + invariance test. |
+| B10 | med | PAF `stop()` on neg-eigenvalues aborted whole bootstrap; max-iter off-by-one convergence flag | `src/paf_iter.cpp` | **mitigated** (77da514: replicates tryCatch-guarded in `.boot_fun`) | C++ still `stop()`s; status codes + off-by-one fix land with the engine rewrite. → **Ph3**. |
+| B11 | med | `print.COMPARE` `aes_string()` + `size=` (deprecated); plot drawn inside `print` | `R/print.COMPARE.R: print.COMPARE()` | **open** | `aes(.data$…)` + `linewidth`; move into a `plot.COMPARE` method. → **U6**. |
+| B12 | med | `GPArotation` `randomStarts` used with no min-version floor | `DESCRIPTION` | **open** | Pin `GPArotation (>= 2022.4-1)`; reconcile `randomStarts` defaults (10 vs 100). → **U8**. |
+| B13 | low | NEST `prob` comparator `<` vs decision `<=` mismatch (+ docstring) | was the old `R/NEST.R` (rewritten) | **superseded** (6c3b616) | Refactored NEST uses one quantile-reference rule (`stats::quantile(…, 1 - alpha)` then `<=`), documented in the help page. |
+| B14 | low | PARALLEL `size_vec` partition can go negative (verified: 11 datasets / 7 workers → chunk of −1); percentile off-by-one vs `stats::quantile` | `R/PARALLEL.R` (chunking; percentile) | **open** | Exact integer partition; standardise on `stats::quantile` (matches `psych::fa.parallel`). → **U9a**. |
+| B15 | low | Non-PD smoothing not surfaced as a classed condition — relies on `psych::cor.smooth`'s own warning | `R/helper.R: .prepare_cor_input()` | **half-done** (b12df62 centralised the PD check + smoothing) | Add a classed `cli_warn` on smoothing. → **U9a**. |
+| B16 | low | `format.EFA` returns ANSI-laden `capture.output` | `R/print.EFA.R: format.EFA()` | **open** | `format()` = plain; `print()` = styled. → **U5**. |
+| B17 | low | `residuals.EFA` names a logical arg `print` and prints as a side effect | `R/residuals.EFA.R` | **open** | Pure extractor with `type=`; formatting in `summary.EFA`. → **U5**. |
+| B18 | med | `arma::eig_sym` called unguarded — the only C++ entry point without the checked-eigen pattern added in 77da514; a degenerate replicate matrix is undefined behaviour, not a caught error | `src/nest_sym.cpp` (`eig_sym` call) | **open** | Apply the same guarded-eigen pattern as the other C++ helpers. → **U9b**. |
+| B19 | low | EKC `AM2019`: `which(lambda <= refs)[1] - 1` yields `NA` when no eigenvalue crosses the reference; `NA` flows into `N_FACTORS` aggregation (downstream highlight guard anticipates it) | `R/EKC.R` (`AM2019` branch) | **open** | Decide the convention (`NA` vs `J`) + guard + boundary test. → **U9b**. |
 
 ---
 
@@ -481,6 +567,10 @@ syntax bridge; `RcppEnsmallen` backend; GLB via SDP; consensus "recommended n_fa
 - **Determinism/PD test** on bootstrap polychoric replicates.
 - Edge cases: Heywood/ultra-Heywood, non-PD inputs, empty/sparse cells, single factor,
   underidentified/just-identified models, named non-PD cormat (B-list).
+- **Known gaps to close first** (→ units U1/U2): `EFA_POOLED` has **no tests at all**
+  (no unit tests, no print/format snapshots — the Phase 0 "every print/format" baseline
+  missed it); `.estimate_model()`, `rotate_model()` and `.prepare_cor_input()` are
+  exercised only indirectly through `EFA()`.
 
 ---
 
@@ -589,24 +679,32 @@ Target Imports: **~8–10** (from 21).
 
 ## 12. Appendix — key current-code anchors
 
-- Orchestration & bootstrap: `R/EFA.R` (dispatch `:426-553`; output assembly `:555-598`;
-  `.boot_*` `:620-827`).
-- Estimators: `R/PAF.R`, `R/ML.R` (`.fit_ml` `:82`, `.FAout` `:129`), `R/ULS.R`;
-  C++ `src/paf_iter.cpp` (8× loop), `src/ml_helper.cpp`, `src/uls_helper.cpp`
-  (by-value `R`, dual eigendecomp).
-- Rotations: `R/VARIMAX.R`/`PROMAX.R`/`ROTATE_ORTH.R`/`ROTATE_OBLQ.R`;
-  `src/oblique_procrustes.cpp` (GPF scaffolding), `src/factor_corres.cpp`.
-- Retention: `R/N_FACTORS.R` + 9 criteria + `src/parallel.cpp`/`nest_sym.cpp`
-  (single-threaded; dead commented blocks).
-- Fit indices: `R/helper.R:.gof` (`:520-638`), `.rmsr`, `.compute_caf`.
+- Orchestration & bootstrap: `R/EFA.R` (method/rotation dispatch now via
+  `.estimate_model()` / `rotate_model()`; output assembly; `.boot_*` helpers — boot
+  replicates tryCatch-guarded since 77da514).
+- Estimators: `R/estimate_model.R` (dispatcher + `.finalize_fit()`); thin fitters in
+  `R/PAF.R`, `R/ML.R` (`.fit_ml()`, `.FAout()`), `R/ULS.R` (`.fit_uls()`,
+  `.FAout_wls()`); C++ `src/paf_iter.cpp` (8× near-duplicate loop),
+  `src/ml_helper.cpp`, `src/uls_helper.cpp` (by-value `R`; one eigendecomposition each
+  in objective and gradient, but inconsistent floors + trimatl asymmetry — B3).
+- Rotations: `R/rotate_model.R` (engine-by-name tables + `.reflect_and_order()`),
+  `R/VARIMAX.R`, `R/PROMAX.R`; `src/oblique_procrustes.cpp` (GPF scaffolding),
+  `src/factor_corres.cpp`. (`ROTATE_ORTH.R`/`ROTATE_OBLQ.R` deleted in 7af40bf.)
+- Retention: `R/efa_retention.R` (class, criterion registry, `print.efa_retention`,
+  `.gg_eigen_plot()`/`.gg_hull_plot()`) + `R/N_FACTORS.R` (registry-driven
+  orchestrator) + the 9 criterion files + `src/parallel.cpp`/`nest_sym.cpp`
+  (single-threaded; dead commented blocks in `parallel.cpp`; unguarded `eig_sym` in
+  `nest_sym.cpp` — B18).
+- Fit indices: `R/helper.R: .gof()`, `.rmsr()`, `.compute_caf()`.
+- Input preparation: `R/helper.R: .prepare_cor_input()` (shared PD check + smoothing).
 - Post-EFA: `R/OMEGA.R`/`OMEGA_helper.R` (two ω paths), `R/SL.R`, `R/FACTOR_SCORES.R`
   (psych pass-through), `R/COMPARE.R`, `R/KMO.R`, `R/BARTLETT.R`.
 - Printing: `R/print.EFA.R` (factored `compact/standard/full` engine — easy
-  `summary.EFA` split), `R/print.LOADINGS.R` (best table engine — generalise),
-  the ~10 retention prints (collapse), `R/print.N_FACTORS.R`.
-- `helper.R` (2111 lines, ~50 funcs) — split per §4.7.
+  `summary.EFA` split), `R/print.LOADINGS.R` (best table engine — generalise). The
+  retention prints are already collapsed into `print.efa_retention`.
+- `helper.R` (~2,230 lines, ~50 funcs) — split per §4.7 (unit U3).
 
 ---
 
-*End of plan. Edit Section 2 as decisions are confirmed; check off Section 5 as phases
-complete.*
+*End of plan. Edit Section 2 as decisions are confirmed; tick §5/§5a items (with commit
+hashes) as units land; update the §6 Status column when a bug is fixed or superseded.*
