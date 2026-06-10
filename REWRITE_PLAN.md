@@ -334,10 +334,10 @@ so** (and then with a NEWS entry). Tick + commit hash on completion. The order b
 dependency order; U1/U2 come first because they extend the safety net the later units
 rely on.
 
-- [ ] **U1 — EFA_POOLED safety net.** `EFA_POOLED` currently has **no tests at all**:
+- [x] **U1 — EFA_POOLED safety net.** `EFA_POOLED` currently has **no tests at all**:
       add print/format snapshots + basic structure/pooling unit tests before anything
       touches it. Files: `tests/testthat/` only. Numbers: n/a (tests only).
-- [ ] **U2 — Direct unit tests for the new internals.** Boundary-case tests for
+- [x] **U2 — Direct unit tests for the new internals.** Boundary-case tests for
       `.estimate_model()` / `rotate_model()` (single factor, `k = p`, invalid preset
       combinations) and `.prepare_cor_input()` (raw vs cormat, `N_policy`, smoothing
       path). Files: tests only. Numbers: n/a.
