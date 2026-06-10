@@ -23,7 +23,7 @@
 #'  `name_style = "abbreviate"` or `name_style = "full"` is used.
 #' @param h2 numeric. Vector of communalities to print. If named and `x`
 #'  has row names, names are used to align communalities to rows.
-#' @param color logical. Whether to apply console styling using \pkg{crayon}.
+#' @param color logical. Whether to apply console styling using \pkg{cli}.
 #'  Default is `TRUE`.
 #' @param name_style character. How to shorten variable names longer than
 #'  `max_name_length`. `"truncate"` cuts names from the right,
@@ -107,20 +107,29 @@ format.LOADINGS <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   spec <- .loadings_print_spec(
     x = x,
     h2 = h2,
-    cutoff = cutoff,
-    digits = digits,
     max_name_length = max_name_length,
     name_style = name_style,
     max_factor_name_length = max_factor_name_length,
     sort_loadings = sort_loadings
   )
 
-  .format_loadings_table(
-    spec,
-    color = color,
-    max_factors_per_block = max_factors_per_block,
-    legend = legend
-  )
+  cli::cli_format_method({
+    cli::cli_verbatim(.efa_format_matrix(
+      values = spec$values,
+      row_labels = spec$var_names,
+      col_labels = spec$factor_names,
+      col_roles = spec$col_type,
+      cutoff = cutoff,
+      digits = digits,
+      color = color,
+      max_factors_per_block = max_factors_per_block
+    ))
+
+    if (isTRUE(legend)) {
+      cli::cli_verbatim("")
+      cli::cli_verbatim(.efa_loadings_legend(cutoff, spec$has_h2, digits, color))
+    }
+  })
 }
 
 .validate_loadings_print_args <- function(x, cutoff, digits, max_name_length,
@@ -181,7 +190,7 @@ format.LOADINGS <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   invisible(TRUE)
 }
 
-.loadings_print_spec <- function(x, h2, cutoff, digits, max_name_length,
+.loadings_print_spec <- function(x, h2, max_name_length,
                                  name_style, max_factor_name_length,
                                  sort_loadings) {
   x <- as.matrix(x)
@@ -235,17 +244,11 @@ format.LOADINGS <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     max_length = max_factor_name_length
   )
 
-  value_strings <- .format_loadings_values(values, digits = digits)
-
   list(
     values = values,
-    value_strings = value_strings,
     var_names = display_var_names,
     factor_names = display_factor_names,
     col_type = col_type,
-    cutoff = cutoff,
-    digits = digits,
-    n_factors = n_factors,
     has_h2 = has_h2
   )
 }
@@ -322,237 +325,28 @@ format.LOADINGS <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   substr(x, 1L, max_length)
 }
 
-.format_loadings_values <- function(x, digits) {
-  values <- as.numeric(x)
-  out <- .numformat(round(values, digits = digits), digits = digits)
-  out[is.na(values)] <- "NA"
+# Build the cli legend lines describing the loading-matrix styling. Styling is dropped when
+# `color = FALSE` or colours are off, so the lines embed cleanly in plain output.
+.efa_loadings_legend <- function(cutoff, has_h2, digits, color = TRUE) {
+  cutoff_str <- .efa_num(cutoff, digits = digits, pad = FALSE)
 
-  matrix(out, nrow = nrow(x), ncol = ncol(x), dimnames = dimnames(x))
-}
+  bold_word <- if (isTRUE(color)) cli::style_bold("bold") else "bold"
+  grey_word <- if (isTRUE(color)) cli::col_grey("grey") else "grey"
 
-.format_loadings_number <- function(x, digits) {
-  if (is.na(x)) {
-    return("NA")
-  }
-
-  .numformat(round(x, digits = digits), digits = digits)
-}
-
-.format_loadings_table <- function(spec, color = TRUE,
-                                   max_factors_per_block = NULL,
-                                   legend = FALSE) {
-  row_width <- max(nchar(spec$var_names), 1L)
-  col_widths <- pmax(
-    nchar(spec$factor_names),
-    apply(spec$value_strings, 2L, function(z) max(nchar(z)))
+  lines <- c(
+    "Legend:",
+    paste0("  ", bold_word, " = |loading| >= ", cutoff_str),
+    paste0("  ", grey_word, " = below cutoff")
   )
 
-  blocks <- .loadings_column_blocks(
-    spec = spec,
-    row_width = row_width,
-    col_widths = col_widths,
-    max_factors_per_block = max_factors_per_block
-  )
-
-  out <- character(0)
-  multi_block <- length(blocks) > 1L
-
-  for (bb in seq_along(blocks)) {
-    cols <- blocks[[bb]]
-
-    if (multi_block) {
-      if (bb > 1L) {
-        out <- c(out, "")
-      }
-      out <- c(out, .loadings_block_label(spec, cols, bb, length(blocks), color))
-    }
-
-    out <- c(out, .format_loadings_block(
-      spec = spec,
-      cols = cols,
-      row_width = row_width,
-      col_widths = col_widths,
-      color = color
-    ))
-  }
-
-  if (isTRUE(legend)) {
-    out <- c(out, "", .loadings_legend(spec, color = color))
-  }
-
-  out
-}
-
-.loadings_column_blocks <- function(spec, row_width, col_widths,
-                                    max_factors_per_block = NULL) {
-  factor_cols <- seq_len(spec$n_factors)
-  aux_cols <- if (isTRUE(spec$has_h2)) {
-    (spec$n_factors + 1L):length(spec$col_type)
-  } else {
-    integer(0)
-  }
-
-  if (length(factor_cols) <= 1L) {
-    return(list(c(factor_cols, aux_cols)))
-  }
-
-  if (!is.null(max_factors_per_block)) {
-    split_points <- ceiling(seq_along(factor_cols) / max_factors_per_block)
-    return(lapply(split(factor_cols, split_points), function(cols) c(cols, aux_cols)))
-  }
-
-  console_width <- .loadings_console_width()
-  full_width <- .loadings_table_width(c(factor_cols, aux_cols), row_width, col_widths)
-  if (full_width <= console_width) {
-    return(list(c(factor_cols, aux_cols)))
-  }
-
-  blocks <- list()
-  current <- integer(0)
-
-  for (col in factor_cols) {
-    candidate <- c(current, col, aux_cols)
-    if (length(current) > 0L &&
-        .loadings_table_width(candidate, row_width, col_widths) > console_width) {
-      blocks[[length(blocks) + 1L]] <- c(current, aux_cols)
-      current <- col
+  if (isTRUE(has_h2)) {
+    red_word <- if (isTRUE(color)) {
+      cli::style_bold(cli::col_red("red h2/u2"))
     } else {
-      current <- c(current, col)
+      "red h2/u2"
     }
+    lines <- c(lines, paste0("  ", red_word, " = Heywood-relevant value"))
   }
 
-  if (length(current) > 0L) {
-    blocks[[length(blocks) + 1L]] <- c(current, aux_cols)
-  }
-
-  blocks
-}
-
-.loadings_console_width <- function() {
-  width <- tryCatch(cli::console_width(), error = function(e) NA_integer_)
-  if (!is.finite(width) || width < 40L) {
-    return(80L)
-  }
-  as.integer(width)
-}
-
-.loadings_table_width <- function(cols, row_width, col_widths) {
-  # Two spaces between the row-label column and every value column.
-  row_width + 2L + sum(col_widths[cols]) + 2L * (length(cols) - 1L)
-}
-
-.loadings_block_label <- function(spec, cols, block, n_blocks, color) {
-  factor_cols <- cols[cols <= spec$n_factors]
-  first <- spec$factor_names[min(factor_cols)]
-  last <- spec$factor_names[max(factor_cols)]
-
-  label <- if (identical(first, last)) {
-    paste0("Factors ", first, " (block ", block, "/", n_blocks, ")")
-  } else {
-    paste0("Factors ", first, "-", last, " (block ", block, "/", n_blocks, ")")
-  }
-
-  .loadings_style(label, style = "label", color = color)
-}
-
-.format_loadings_block <- function(spec, cols, row_width, col_widths, color = TRUE) {
-  header <- .loadings_style(
-    stringr::str_c(
-      stringr::str_pad("", row_width),
-      "  ",
-      stringr::str_c(
-        stringr::str_pad(spec$factor_names[cols], col_widths[cols], side = "both"),
-        collapse = "  "
-      )
-    ),
-    style = "label",
-    color = color
-  )
-
-  rows <- vapply(seq_len(nrow(spec$values)), function(ii) {
-    cells <- vapply(cols, function(jj) {
-      cell <- stringr::str_pad(spec$value_strings[ii, jj], col_widths[jj], side = "left")
-      .style_loadings_cell(
-        cell = cell,
-        value = spec$values[ii, jj],
-        col_type = spec$col_type[jj],
-        cutoff = spec$cutoff,
-        color = color
-      )
-    }, character(1L))
-
-    stringr::str_c(
-      .loadings_style(
-        stringr::str_pad(spec$var_names[ii], row_width, side = "right"),
-        style = "label",
-        color = color
-      ),
-      "  ",
-      stringr::str_c(cells, collapse = "  ")
-    )
-  }, character(1L))
-
-  c(header, rows)
-}
-
-.style_loadings_cell <- function(cell, value, col_type, cutoff, color) {
-  if (identical(col_type, "loading")) {
-    if (is.na(value)) {
-      return(cell)
-    }
-
-    if (abs(value) < cutoff) {
-      return(.loadings_style(cell, style = "weak", color = color))
-    }
-
-    return(.loadings_style(cell, style = "salient", color = color))
-  }
-
-  if (identical(col_type, "h2") && is.finite(value) && value > 1) {
-    return(.loadings_style(cell, style = "heywood", color = color))
-  }
-
-  if (identical(col_type, "u2") && is.finite(value) && value < 0) {
-    return(.loadings_style(cell, style = "heywood", color = color))
-  }
-
-  cell
-}
-
-.loadings_legend <- function(spec, color = TRUE) {
-  cutoff <- .format_loadings_number(spec$cutoff, digits = spec$digits)
-
-  if (isTRUE(color)) {
-    text <- paste0(
-      crayon::italic("Legend: \n"),
-      crayon::bold("  bold"), " = |loading| >= ", cutoff,
-      "\n", crayon::silver("  grey"), " = below cutoff"
-    )
-    if (isTRUE(spec$has_h2)) {
-      text <- paste0(text, "\n", crayon::red$bold("  red h2/u2"), " = Heywood-relevant value")
-    }
-    return(text)
-  }
-
-  text <- paste0("Legend: salient loadings use cutoff |loading| >= ", cutoff)
-  if (isTRUE(spec$has_h2)) {
-    text <- paste0(text, "; h2 > 1 or u2 < 0 indicates a Heywood-relevant value")
-  }
-  text
-}
-
-.loadings_style <- function(x, style = c("label", "weak", "salient", "heywood"),
-                            color = TRUE) {
-  style <- match.arg(style)
-
-  if (!isTRUE(color)) {
-    return(x)
-  }
-
-  switch(style,
-    label = crayon::blue(x),
-    weak = crayon::silver(x),
-    salient = crayon::bold(x),
-    heywood = crayon::red$bold(x)
-  )
+  lines
 }

@@ -25,7 +25,7 @@
       
       -- Unrotated Loadings ----------------------------------------------------------
       
-                  F1     h2     u2  
+                  F1    h2    u2 
       fun <num> <num> <num>
       friends <num> <num> <num>
       enjoy <num> <num> <num>
@@ -35,7 +35,7 @@
       chances <num> <num> <num>
       attracted <num> <num> <num>
       
-      Legend: 
+      Legend:
         bold = |loading| >= <num>
         grey = below cutoff
         red h2/u2 = Heywood-relevant value
@@ -115,7 +115,7 @@
       
       -- Rotated Loadings ------------------------------------------------------------
       
-            F1     F2     F3     h2     u2  
+             F1     F2     F3    h2    u2 
       V1 <num> <num> <num> <num> <num>
       V2 <num> <num> <num> <num> <num>
       V3 <num> <num> <num> <num> <num>
@@ -135,7 +135,7 @@
       V17 <num> <num> <num> <num> <num>
       V18 <num> <num> <num> <num> <num>
       
-      Legend: 
+      Legend:
         bold = |loading| >= <num>
         grey = below cutoff
         red h2/u2 = Heywood-relevant value
@@ -204,7 +204,7 @@
       
       -- Unrotated Loadings ----------------------------------------------------------
       
-                  F1     h2     u2  
+                  F1    h2    u2 
       fun <num> <num> <num>
       friends <num> <num> <num>
       enjoy <num> <num> <num>
@@ -214,7 +214,7 @@
       chances <num> <num> <num>
       attracted <num> <num> <num>
       
-      Legend: 
+      Legend:
         bold = |loading| >= <num>
         grey = below cutoff
         red h2/u2 = Heywood-relevant value

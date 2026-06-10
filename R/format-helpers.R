@@ -44,6 +44,212 @@
 
 }
 
+# Canonical number formatter for printed output: rounds to `digits`, drops the leading 0 of
+# values in (-1, 1) unless `print_zero`, optionally left-pads to a common width, and renders
+# non-finite values as "NA". Accepts a scalar, vector, or matrix and returns the same shape
+# (dimnames preserved). Produces the same strings as the older `.numformat`-style helpers.
+.efa_num <- function(x, digits = 3, print_zero = FALSE, pad = TRUE) {
+
+  dims <- dim(x)
+  dn <- dimnames(x)
+  v <- as.numeric(x)
+  finite <- is.finite(v)
+
+  out <- sprintf(paste0("%.", digits, "f"), v)
+  if (isFALSE(print_zero)) {
+    out <- sub("^(-?)0.", "\\1.", out)
+  }
+  out[!finite] <- "NA"
+
+  if (isTRUE(pad)) {
+    width <- if (isFALSE(print_zero)) digits + 2L else digits + 3L
+    out <- cli::ansi_align(out, width = width, align = "right")
+  }
+
+  if (!is.null(dims)) {
+    out <- matrix(out, nrow = dims[1L], ncol = dims[2L], dimnames = dn)
+  }
+  out
+}
+
+# Render a loading matrix as styled, decimal-aligned console lines. `col_roles` tags each
+# column "loading", "h2", or "u2"; "loading" columns are split into vertically stacked blocks
+# when the table is wider than the console (or `max_factors_per_block` is set), with the
+# h2/u2 columns repeated in every block. Individual rows are never wrapped. Salient loadings
+# (|x| >= cutoff) are bold, weaker ones grey, and Heywood-relevant cells (|loading| > 1,
+# h2 > 1, u2 < 0) red; styling is dropped when `color = FALSE` or colours are off.
+.efa_format_matrix <- function(values, row_labels, col_labels, col_roles,
+                               cutoff = 0, digits = 3, color = TRUE,
+                               max_factors_per_block = NULL) {
+
+  values <- as.matrix(values)
+  n_col <- ncol(values)
+  loading_cols <- which(col_roles == "loading")
+  aux_cols <- which(col_roles != "loading")
+
+  cell_str <- .efa_num(values, digits = digits, print_zero = FALSE, pad = FALSE)
+
+  # Display width (not code-point count) so the column maths matches cli::ansi_align below.
+  row_width <- max(cli::ansi_nchar(row_labels, type = "width"), 1L)
+  col_widths <- vapply(seq_len(n_col), function(j) {
+    max(cli::ansi_nchar(col_labels[j], type = "width"),
+        max(cli::ansi_nchar(cell_str[, j], type = "width")))
+  }, integer(1L))
+
+  blocks <- .efa_matrix_blocks(loading_cols, aux_cols, row_width, col_widths,
+                               max_factors_per_block)
+
+  out <- character(0)
+  multi_block <- length(blocks) > 1L
+
+  for (bb in seq_along(blocks)) {
+    cols <- blocks[[bb]]
+
+    if (multi_block) {
+      if (bb > 1L) {
+        out <- c(out, "")
+      }
+      out <- c(out, .efa_matrix_block_label(col_labels, loading_cols, cols,
+                                            bb, length(blocks)))
+    }
+
+    out <- c(out, .efa_matrix_block(
+      cell_str = cell_str,
+      values = values,
+      col_roles = col_roles,
+      col_labels = col_labels,
+      row_labels = row_labels,
+      cols = cols,
+      row_width = row_width,
+      col_widths = col_widths,
+      cutoff = cutoff,
+      color = color
+    ))
+  }
+
+  out
+}
+
+# Assemble the header and body lines for one column block of `.efa_format_matrix()`.
+.efa_matrix_block <- function(cell_str, values, col_roles, col_labels, row_labels,
+                              cols, row_width, col_widths, cutoff, color) {
+
+  header_cells <- vapply(cols, function(j) {
+    cell <- cli::ansi_align(col_labels[j], width = col_widths[j], align = "center")
+    if (isTRUE(color)) cli::style_bold(cell) else cell
+  }, character(1L))
+  header <- paste0(strrep(" ", row_width), "  ",
+                   paste(header_cells, collapse = "  "))
+
+  rows <- vapply(seq_len(nrow(cell_str)), function(ii) {
+    cells <- vapply(cols, function(jj) {
+      plain <- cli::ansi_align(cell_str[ii, jj], width = col_widths[jj],
+                               align = "right")
+      .efa_style_cell(plain, values[ii, jj], col_roles[jj], cutoff, color)
+    }, character(1L))
+    label <- cli::ansi_align(row_labels[ii], width = row_width, align = "left")
+    paste0(label, "  ", paste(cells, collapse = "  "))
+  }, character(1L))
+
+  c(header, rows)
+}
+
+# Style a single padded cell by column role (no-op when colour is off).
+.efa_style_cell <- function(cell, value, role, cutoff, color) {
+  if (!isTRUE(color)) {
+    return(cell)
+  }
+
+  if (identical(role, "loading")) {
+    if (is.na(value)) {
+      return(cell)
+    }
+    if (abs(value) > 1) {
+      return(cli::style_bold(cli::col_red(cell)))
+    }
+    if (abs(value) < cutoff) {
+      return(cli::col_grey(cell))
+    }
+    return(cli::style_bold(cell))
+  }
+
+  if (identical(role, "h2") && is.finite(value) && value > 1) {
+    return(cli::col_red(cell))
+  }
+  if (identical(role, "u2") && is.finite(value) && value < 0) {
+    return(cli::col_red(cell))
+  }
+
+  cell
+}
+
+# Split the loading columns into console-fitting blocks; the h2/u2 (aux) columns repeat in
+# every block. With `max_factors_per_block` the split is fixed; otherwise it follows the
+# console width.
+.efa_matrix_blocks <- function(loading_cols, aux_cols, row_width, col_widths,
+                               max_factors_per_block = NULL) {
+  if (length(loading_cols) <= 1L) {
+    return(list(c(loading_cols, aux_cols)))
+  }
+
+  if (!is.null(max_factors_per_block)) {
+    split_points <- ceiling(seq_along(loading_cols) / max_factors_per_block)
+    return(lapply(split(loading_cols, split_points),
+                  function(cols) c(cols, aux_cols)))
+  }
+
+  console_width <- .efa_console_width()
+  full_width <- .efa_table_width(c(loading_cols, aux_cols), row_width, col_widths)
+  if (full_width <= console_width) {
+    return(list(c(loading_cols, aux_cols)))
+  }
+
+  blocks <- list()
+  current <- integer(0)
+
+  for (col in loading_cols) {
+    candidate <- c(current, col, aux_cols)
+    if (length(current) > 0L &&
+        .efa_table_width(candidate, row_width, col_widths) > console_width) {
+      blocks[[length(blocks) + 1L]] <- c(current, aux_cols)
+      current <- col
+    } else {
+      current <- c(current, col)
+    }
+  }
+
+  if (length(current) > 0L) {
+    blocks[[length(blocks) + 1L]] <- c(current, aux_cols)
+  }
+
+  blocks
+}
+
+.efa_console_width <- function() {
+  width <- tryCatch(cli::console_width(), error = function(e) NA_integer_)
+  if (!is.finite(width) || width < 40L) {
+    return(80L)
+  }
+  as.integer(width)
+}
+
+# Printed width of a block: row label + two spaces + value columns + inter-column gaps.
+.efa_table_width <- function(cols, row_width, col_widths) {
+  row_width + 2L + sum(col_widths[cols]) + 2L * (length(cols) - 1L)
+}
+
+.efa_matrix_block_label <- function(col_labels, loading_cols, cols, block, n_blocks) {
+  factor_cols <- intersect(cols, loading_cols)
+  first <- col_labels[min(factor_cols)]
+  last <- col_labels[max(factor_cols)]
+
+  if (identical(first, last)) {
+    paste0("Factors ", first, " (block ", block, "/", n_blocks, ")")
+  } else {
+    paste0("Factors ", first, "-", last, " (block ", block, "/", n_blocks, ")")
+  }
+}
+
 .get_compare_matrix <- function(x, digits = 3, r_red = .001, n_char = 10,
                                 var_names = NULL, factor_names = NULL,
                                 gof = FALSE) {

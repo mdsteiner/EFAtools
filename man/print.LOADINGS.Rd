@@ -51,7 +51,7 @@ display. Everything beyond this will be cut from the right unless
 \item{h2}{numeric. Vector of communalities to print. If named and \code{x}
 has row names, names are used to align communalities to rows.}
 
-\item{color}{logical. Whether to apply console styling using \pkg{crayon}.
+\item{color}{logical. Whether to apply console styling using \pkg{cli}.
 Default is \code{TRUE}.}
 
 \item{name_style}{character. How to shorten variable names longer than

@@ -285,7 +285,7 @@ fine); Phase 8–9 → **1.0.0**.
       shrinks dramatically. *(245967e, 6c3b616, da1c592, 18cd89a, 660ca34 — snapshot +
       vdiffr coverage in place; B8 and B13 resolved along the way.)*
 - [ ] `new_efa()`/`validate_efa()` (O8); route all producers through it. → unit **U7**
-- [ ] Split `helper.R` per §4.7; merge duplicate congruence funcs; consolidate number
+- [x] Split `helper.R` per §4.7; merge duplicate congruence funcs; consolidate number
       formatters into `.efa_num()`; delete dead code (commented `.error_ml2`, cat-based
       progress bars, trivial `.boot_fun` wrapper). → unit **U3**
 - [ ] cli migration of styled output: the `.efa_style()` shim + `cli_format_method`
@@ -341,11 +341,11 @@ rely on.
       `.estimate_model()` / `rotate_model()` (single factor, `k = p`, invalid preset
       combinations) and `.prepare_cor_input()` (raw vs cormat, `N_policy`, smoothing
       path). Files: tests only. Numbers: n/a.
-- [ ] **U3 — Split `helper.R`** per §4.7; merge `.factor_congruence`/
+- [x] **U3 — Split `helper.R`** per §4.7; merge `.factor_congruence`/
       `.tucker_congruence`; consolidate the ~6 number formatters into `.efa_num()`;
       delete dead code (commented `.error_ml2`, cat-based progress bars, trivial
       `.boot_fun` wrapper). Pure file moves + dedup. Numbers: no; snapshots: no.
-- [ ] **U4 — `.efa_format_matrix()`** + migrate `print.LOADINGS`/`print.SLLOADINGS` to
+- [x] **U4 — `.efa_format_matrix()`** + migrate `print.LOADINGS`/`print.SLLOADINGS` to
       cli (pad with `cli::ansi_align`/`ansi_nchar` so width math survives ANSI).
       Numbers: no; snapshots: formatting diffs only (review each).
 - [ ] **U5 — `print.EFA` → cli + `summary.EFA`.** Trim `print.EFA` to a `standard`

@@ -2,9 +2,12 @@
 % Please edit documentation in R/print.SLLOADINGS.R
 \name{print.SLLOADINGS}
 \alias{print.SLLOADINGS}
+\alias{format.SLLOADINGS}
 \title{Print SLLOADINGS object}
 \usage{
-\method{print}{SLLOADINGS}(x, cutoff = 0.2, digits = 3, ...)
+\method{print}{SLLOADINGS}(x, cutoff = 0.2, digits = 3, color = TRUE, ...)
+
+\method{format}{SLLOADINGS}(x, cutoff = 0.2, digits = 3, color = TRUE, ...)
 }
 \arguments{
 \item{x}{class SLLOADINGS matrix.}
@@ -15,10 +18,21 @@
 \item{digits}{numeric. Passed to \code{\link[base:Round]{round}}. Number of digits
 to round the loadings to (default is 3).}
 
-\item{...}{additional arguments passed to print}
+\item{color}{logical. Whether to apply console styling using \pkg{cli}.
+Default is \code{TRUE}.}
+
+\item{...}{additional arguments passed to print or format.}
 }
 \description{
 Print SLLOADINGS object
+}
+\details{
+Prints a Schmid-Leiman loading matrix (general factor, group factors, and the
+communality/uniqueness columns) as a styled, decimal-aligned table. Loadings with
+absolute value greater than or equal to \code{cutoff} are emphasised, smaller loadings are
+de-emphasised, and Heywood-relevant cells (a loading or communality above 1, or a
+negative uniqueness) are highlighted. If the matrix has many columns or the console is
+narrow, the table is split into stacked column blocks so the output stays readable.
 }
 \examples{
 EFA_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,

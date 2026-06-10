@@ -1,11 +1,21 @@
 #' Print SLLOADINGS object
 #'
+#' @details
+#' Prints a Schmid-Leiman loading matrix (general factor, group factors, and the
+#' communality/uniqueness columns) as a styled, decimal-aligned table. Loadings with
+#' absolute value greater than or equal to `cutoff` are emphasised, smaller loadings are
+#' de-emphasised, and Heywood-relevant cells (a loading or communality above 1, or a
+#' negative uniqueness) are highlighted. If the matrix has many columns or the console is
+#' narrow, the table is split into stacked column blocks so the output stays readable.
+#'
 #' @param x class SLLOADINGS matrix.
 #' @param cutoff numeric. The number above which to print loadings in bold
 #'  (default is .2).
 #' @param digits numeric. Passed to \code{\link[base:Round]{round}}. Number of digits
 #'  to round the loadings to (default is 3).
-#' @param ... additional arguments passed to print
+#' @param color logical. Whether to apply console styling using \pkg{cli}.
+#'  Default is `TRUE`.
+#' @param ... additional arguments passed to print or format.
 #'
 #' @method print SLLOADINGS
 #' @export
@@ -15,90 +25,61 @@
 #'                type = "EFAtools", method = "PAF", rotation = "promax")
 #' SL(EFA_mod, type = "EFAtools", method = "PAF")
 #'
-print.SLLOADINGS <- function(x, cutoff = .2, digits = 3, ...) {
+print.SLLOADINGS <- function(x, cutoff = .2, digits = 3, color = TRUE, ...) {
 
-  # create factor names to display
-  factor_names <- colnames(x)
+  cat(format.SLLOADINGS(x, cutoff = cutoff, digits = digits, color = color, ...),
+      sep = "\n")
+  cat("\n")
+
+  invisible(x)
+}
+
+#' @rdname print.SLLOADINGS
+#' @method format SLLOADINGS
+#' @export
+format.SLLOADINGS <- function(x, cutoff = .2, digits = 3, color = TRUE, ...) {
+
+  mat <- unclass(x)
+  n_col <- ncol(mat)
+
+  factor_names <- colnames(mat)
   if (is.null(factor_names)) {
-    factor_names <- paste0("F", seq_len(ncol(x)))
+    factor_names <- paste0("F", seq_len(n_col))
   }
 
-  # for equal spacing, fill the factor names such that they match the columns
-  fn_nchar <- sapply(factor_names, nchar)
-  factor_names[which(fn_nchar > digits + 2)] <- substr(
-    factor_names[which(fn_nchar > digits + 2)] , 1, digits + 2)
-  factor_names <- stringr::str_pad(factor_names, digits + 2, side = "both")
-
-  var_names <- rownames(x)
+  var_names <- rownames(mat)
   if (is.null(var_names)) {
-    var_names <- paste0("V", seq_len(nrow(x)))
+    var_names <- paste0("V", seq_len(nrow(mat)))
   }
+  var_names <- .shorten_loadings_names(var_names, max_length = 10,
+                                       name_style = "truncate")
 
-  max_char <- max(sapply(var_names, nchar))
+  # SLLOADINGS columns are [g, F1..Fn, h2, u2]; the last two are communality/uniqueness.
+  col_roles <- rep("loading", n_col)
+  col_roles[n_col - 1L] <- "h2"
+  col_roles[n_col] <- "u2"
 
-  if (max_char > 10) {
-    vn_nchar <- sapply(var_names, nchar)
-    var_names[which(vn_nchar > 10)] <- substr(var_names[which(vn_nchar > 10)] ,
-                                                      1, 10)
-    max_char <- 10
-  }
+  loading_cols <- seq_len(n_col - 2L)
+  n_heywood <- sum(mat[, loading_cols, drop = FALSE] > 1, na.rm = TRUE)
 
-  var_names <- stringr::str_pad(var_names, max_char, side = "right")
+  cli::cli_format_method({
+    cli::cli_verbatim(.efa_format_matrix(
+      values = mat,
+      row_labels = var_names,
+      col_labels = factor_names,
+      col_roles = col_roles,
+      cutoff = cutoff,
+      digits = digits,
+      color = color
+    ))
 
-  n_col <- ncol(x)
-
-  # create the string to paste using the crayon package
-  temp <- apply(matrix(seq_len(nrow(x)), ncol = 1), 1,
-                function(ind, x, cutoff, n_col, vn, digits){
-    i <- x[ind,]
-
-    tt <- crayon::blue(vn[ind])
-    for (kk in seq_len(n_col)) {
-      if (kk <= n_col - 2) {
-        if (abs(i[kk]) < cutoff) {
-          tt <- c(tt, crayon::silver(.numformat(round(i[kk], digits = digits),
-                                                digits = digits)))
-        } else if (abs(i[kk]) <= 1) {
-          tt <- c(tt, crayon::bold(.numformat(round(i[kk], digits = digits),
-                                              digits = digits)))
-        } else {
-          tt <- c(tt, crayon::red$bold(.numformat(round(i[kk], digits = digits),
-                                                  digits = digits)))
-        }
+    if (n_heywood >= 1L) {
+      cli::cli_verbatim("")
+      if (n_heywood == 1L) {
+        cli::cli_alert_warning("Results contain a Heywood case!")
       } else {
-        if (i[kk] <= 1 & i[kk] >= 0) {
-          tt <- c(tt, .numformat(round(i[kk], digits = digits), digits = digits))
-        } else {
-          tt <- c(tt, crayon::red$bold(.numformat(round(i[kk], digits = digits),
-                                                  digits = digits)))
-        }
+        cli::cli_alert_warning("Results contain {n_heywood} Heywood cases!")
       }
     }
-    stringr::str_c(tt, collapse = "\t")
-  }, cutoff = cutoff, n_col = n_col, digits = digits, x = x, vn = var_names)
-
-  # add header
-  factor_names <- stringr::str_c(factor_names,
-                                 collapse = "\t")
-  factor_names <- crayon::blue(stringr::str_c( stringr::str_pad(" ", max_char),
-                                               "\t", factor_names))
-
-  temp <- stringr::str_c(temp, collapse = "\n")
-  temp <- stringr::str_c(factor_names, "\n", temp)
-
-  # warn from Heywood cases
-  if (sum(x[, -n_col] > 1) == 1) {
-    temp <- paste(temp,
-                  crayon::red$bold("\nWarning: Results contain a Heywood case!"),
-                  collapse = "\n")
-  } else if (sum(x[, -(n_col-1):-n_col] > 1) > 1) {
-    temp <- paste(temp, crayon::red$bold("\nWarning: Results contain",
-                                         sum(x[, -(n_col-1):-n_col] > 1),
-                                         "Heywood cases!"),
-                  collapse = "\n")
-  }
-
-  temp <- stringr::str_c(temp, "\n")
-  # print the results to the console
-  cat(temp)
+  })
 }
