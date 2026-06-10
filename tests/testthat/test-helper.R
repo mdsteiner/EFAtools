@@ -31,6 +31,35 @@ test_that(".factor_congruence works", {
   expect_warning(.factor_congruence(x_NA, y_NA), class = "efa_missing_complete")
 })
 
+test_that(".factor_congruence has (i, j) = cos(x_i, y_j) orientation", {
+  # Asymmetric inputs so the congruence matrix differs from its transpose; this
+  # pins the orientation the COMPARE / averaging reordering depends on.
+  A <- matrix(c(2, 0, 1,
+                0, 1, 0,
+                0, 0, 3,
+                1, 2, 0), nrow = 4, byrow = TRUE)
+  B <- matrix(c(0, 1, 0,
+                3, 0, 1,
+                0, 0, 2,
+                1, 1, 0), nrow = 4, byrow = TRUE)
+  # Reference computed entrywise from column dot products, independent of the
+  # matrix-algebra implementation.
+  ref <- sapply(seq_len(ncol(B)), function(j)
+    sapply(seq_len(ncol(A)), function(i)
+      sum(A[, i] * B[, j]) / sqrt(sum(A[, i]^2) * sum(B[, j]^2))))
+  expect_false(isTRUE(all.equal(ref, t(ref))))
+  expect_equal(unname(.factor_congruence(A, B)), ref)
+})
+
+test_that(".factor_congruence aborts when too few complete cases remain", {
+  x_few <- population_models$loadings$baseline
+  x_few[-1, 1] <- NA   # only the first row has complete data
+  expect_error(
+    suppressWarnings(.factor_congruence(x_few, x_base)),
+    class = "efa_too_few_complete"
+  )
+})
+
 set.seed(42)
 efa_ml <- suppressWarnings(EFA(cbind(rnorm(100), rnorm(100), rnorm(100), rnorm(100),
                                      rnorm(100), rnorm(100)), 3, N = 500,

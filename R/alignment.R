@@ -1,6 +1,17 @@
 # Factor congruence metrics and solution alignment: Tucker congruence between two loading
 # matrices, and reordering/sign-matching a solution to a target.
 
+# Pairwise Tucker congruence between the columns of two loading matrices: entry
+# (i, j) is the cosine <L1_i, L2_j> / (||L1_i|| ||L2_j||). No validation and
+# NA-tolerant, so the wrappers below add their own checks (`.tucker_congruence`)
+# or missing-value handling (`.factor_congruence`) around this shared core. A
+# caller that already has the column norms can pass them in to avoid recomputing.
+.congruence_matrix <- function(L1, L2,
+                               n1 = sqrt(colSums(L1 * L1)),
+                               n2 = sqrt(colSums(L2 * L2))) {
+  crossprod(L1, L2) / tcrossprod(n1, n2)
+}
+
 .factor_congruence <- function(x, y, na.rm = TRUE, skip_checks = FALSE) {
 
   if (isFALSE(skip_checks)) {
@@ -13,14 +24,21 @@
           class = "efa_missing_complete"
         )
         if (any(is.na(x))) {
-          xc <- x[stats::complete.cases(x), ]
-          y <- y[stats::complete.cases(x), ]
+          xc <- x[stats::complete.cases(x), , drop = FALSE]
+          y <- y[stats::complete.cases(x), , drop = FALSE]
           x <- xc
         }
         if (any(is.na(y))) {
-          yc <- y[stats::complete.cases(y), ]
-          x <- x[stats::complete.cases(y), ]
+          yc <- y[stats::complete.cases(y), , drop = FALSE]
+          x <- x[stats::complete.cases(y), , drop = FALSE]
           y <- yc
+        }
+        if (nrow(x) < 2L) {
+          cli::cli_abort(
+            c("Fewer than two complete cases remain after removing missing values.",
+              "i" = "Cannot compute factor congruence; check the missing-value pattern."),
+            class = "efa_too_few_complete"
+          )
         }
       } else {
         cli::cli_warn(
@@ -34,13 +52,7 @@
   }
 
 
-  nx <- dim(x)[2]
-  ny <- dim(y)[2]
-  cross <- t(y) %*% x
-  sumsx <- sqrt(1/diag(t(x) %*% x))
-  sumsy <- sqrt(1/diag(t(y) %*% y))
-  result <- sumsy * (cross * rep(sumsx, each = ny))
-  return(t(result))
+  .congruence_matrix(x, y)
 
 }
 
@@ -151,8 +163,8 @@
                    class = "efa_zero_column")
   }
 
-  # Full pairwise congruence matrix.
-  cong <- crossprod(L1, L2) / tcrossprod(n1, n2)
+  # Full pairwise congruence matrix (shared core; reuse the validated norms).
+  cong <- .congruence_matrix(L1, L2, n1, n2)
 
   rownames(cong) <- colnames(L1)
   colnames(cong) <- colnames(L2)
