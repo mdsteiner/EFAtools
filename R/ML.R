@@ -53,26 +53,6 @@
   result
 }
 
-# .error_ml2 <- function(psi, R, n_fac)
-# {
-#   sc <- diag(1/sqrt(psi))
-#   Rs <- sc %*% R %*% sc
-#   E <- eigen(Rs, symmetric = TRUE, only.values = TRUE)
-#   e <- E$values[-(1:n_fac)]
-#   e <- sum(log(e) - e) - n_fac + nrow(R)
-#   -e
-# }
-# .grad_ml2 <- function(psi, R, n_fac) {
-#   sc <- diag(1 / sqrt(psi))
-#   Rs <- sc %*% R %*% sc
-#   E <- eigen(Rs, symmetric = TRUE)
-#   L <- E$vectors[, 1:n_fac, drop = FALSE]
-#   load <- L %*% diag(sqrt(pmax(E$values[1:n_fac] - 1, 0)), n_fac)
-#   load <- diag(sqrt(psi)) %*% load
-#   g <- load %*% t(load) + diag(psi) - R     # g <- model - data
-#   diag(g) / psi^2                             #normalized
-# }
-
 # taken from factanal
 .FAout <- function(psi, R, n_fac) {
   sc <- diag(1 / sqrt(psi))
