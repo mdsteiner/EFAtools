@@ -92,3 +92,14 @@ test_that("print.efa_retention output is stable for MAP", {
   map <- MAP(test_models$baseline$cormat)
   expect_snapshot(print(map))
 })
+
+test_that("print.N_FACTORS output is stable", {
+  local_reproducible_output()
+
+  # deterministic criteria only (no simulations); suitability = FALSE keeps
+  # BLAS-sensitive decimals (chi-square, KMO) out of the snapshot
+  nf <- N_FACTORS(test_models$baseline$cormat, N = 500, suitability = FALSE,
+                  criteria = c("EKC", "KGC", "MAP", "SMT"),
+                  eigen_type_other = c("PCA", "SMC"))
+  expect_snapshot(print(nf))
+})

@@ -15,7 +15,7 @@
 #' (see details). By default, a subset of often used, well-performing methods are performed.
 #' @param suitability logical. Whether the data should be checked for suitability
 #' for factor analysis using the Bartlett's test of sphericity and the
-#' Kaiser-Guttmann criterion (see details). Default is `TRUE`.
+#' Kaiser-Meyer-Olkin criterion (see details). Default is `TRUE`.
 #' @param N  numeric. The number of observations. Only needed if x is a
 #' correlation matrix.
 #' @param use character. Passed to [stats::cor()] if raw
@@ -62,9 +62,8 @@
 #' diagonal.
 #' @param eigen_type_other character. Passed to [KGC()],
 #' [SCREE()], and [PARALLEL()]. The same as eigen_type_HULL,
-#' but multiple inputs
-#' are possible here. Default is to use all inputs, that is, `c("PCA",
-#' "SMC", "EFA"`)
+#' but multiple inputs are possible here (any combination of `"PCA"`, `"SMC"`,
+#' and `"EFA"`). Default is `"SMC"`.
 #' @param n_factors numeric. Passed to [PARALLEL()] (also within
 #' [HULL()]), [KGC()], and [SCREE()]. Number of
 #' factors to extract if `"EFA"` is included in `eigen_type_HULL` or
@@ -112,11 +111,18 @@
 #' (see [SMT()])}
 #' }
 #'
-#' @return A list of class N_FACTORS containing
-#' \item{outputs}{A list with the outputs from [BARTLETT()] and
-#'  [EFAtools::KMO()] and the factor retention criteria.}
-#' \item{n_factors}{A named vector containing the suggested number of factors
-#' from each factor retention criterion.}
+#' @returns A list of class N_FACTORS containing
+#' \item{suitability}{A list with the results from [BARTLETT()] and
+#'   [EFAtools::KMO()] (`bartlett` and `kmo`), or `NULL` if
+#'   `suitability = FALSE`.}
+#' \item{outputs}{A named list with one `efa_retention` object per factor
+#'   retention criterion that was run (see, e.g., [EKC()]).}
+#' \item{n_factors}{A named numeric vector with the suggested number of factors
+#'   per criterion and, where a criterion has several variants, per variant
+#'   (e.g. `EKC_BvA2017` or `PARALLEL_SMC`). Criteria without a numeric
+#'   suggestion (the scree plot) are not included.}
+#' \item{not_run}{A named character vector with the criteria that were skipped
+#'   or failed and the reason, or `NULL` if all requested criteria ran.}
 #' \item{settings}{A list of the settings used.}
 #'
 #' @export
@@ -136,7 +142,7 @@
 #' # to be set to "CAF" for the Hull method.
 #' nfac_PAF <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC",
 #'                         "HULL", "PARALLEL", "NEST"), N = 500,
-#'                       gof = "CAF")
+#'                       method = "PAF", gof = "CAF")
 #'
 #' # Do KGC and PARALLEL with only "PCA" type of eigenvalues
 #' nfac_PCA <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC",
@@ -185,218 +191,88 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
   checkmate::assert_number(alpha_nest, lower = 0, upper = 1)
   checkmate::assert_count(n_datasets_nest, na.ok = FALSE, positive = TRUE)
 
-  if (isTRUE(show_progress)) {
-    criteria <- sort(criteria)
-  }
-
   # Detect or compute the correlation matrix, check it, and smooth it if needed
   prep <- .prepare_cor_input(x, N = N, use = use, cor_method = cor_method,
                              N_policy = "optional", inform_from_data = FALSE)
   R <- prep$R
   N <- prep$N
 
-  # Set all outputs to NA for a start
-  bart_out <- NA
-  kmo_out <- NA
-  cd_out <- NA
-  ekc_out <- NA
-  hull_out <- NA
-  kgc_out <- NA
-  map_out <- NA
-  parallel_out <- NA
-  nest_out <- NA
-  scree_out <- NA
-  smt_out <- NA
-
-  nfac_CD <- NA
-  nfac_EKC_BvA2017 <- NA
-  nfac_EKC_AM2019 <- NA
-  nfac_HULL_CAF <- NA
-  nfac_HULL_CFI <- NA
-  nfac_HULL_RMSEA <- NA
-  nfac_KGC_PCA <- NA
-  nfac_KGC_SMC <- NA
-  nfac_KGC_EFA <- NA
-  nfac_MAP_TR2 <- NA
-  nfac_MAP_TR4 <- NA
-  nfac_PA_PCA <- NA
-  nfac_PA_SMC <- NA
-  nfac_PA_EFA <- NA
-  nfac_NEST <- NA
-  nfac_SMT_chi <- NA
-  nfac_RMSEA <- NA
-  nfac_AIC <- NA
-
   ## Tests for suitability of factor analysis
-  if(isTRUE(suitability)){
-
-  # Bartlett's Test of Sphericity
-  bart_out <- BARTLETT(R, N = N, use = use, cor_method = cor_method)
-
-  # Kaiser-Meyer_Olkin criterion
-  kmo_out <- KMO(R, use = use, cor_method = cor_method)
-
+  suitability_out <- NULL
+  if (isTRUE(suitability)) {
+    suitability_out <- list(
+      bartlett = BARTLETT(R, N = N, use = use, cor_method = cor_method),
+      kmo = KMO(R, use = use, cor_method = cor_method)
+    )
   }
 
-  ## Factor retention criteria
+  ## Factor retention criteria, driven by the registry (run in registry order)
+  ctl <- list(N = N, use = use, cor_method = cor_method,
+              n_factors_max = n_factors_max, N_pop = N_pop,
+              N_samples = N_samples, alpha = alpha, max_iter_CD = max_iter_CD,
+              n_fac_theor = n_fac_theor, method = method, gof = gof,
+              eigen_type_HULL = eigen_type_HULL,
+              eigen_type_other = eigen_type_other, n_factors = n_factors,
+              n_datasets = n_datasets, percent = percent,
+              decision_rule = decision_rule, ekc_type = ekc_type,
+              n_datasets_nest = n_datasets_nest, alpha_nest = alpha_nest,
+              dots = list(...))
 
-  # Comparison data
-  if("CD" %in% criteria){
+  run <- intersect(names(.retention_registry), criteria)
+  outputs <- list()
+  not_run <- character(0)   # id -> reason it was skipped or failed
 
-    if (!.is_cormat(x)) {
+  for (id in run) {
 
-      if (isTRUE(show_progress)) {
-        .show_progress(criteria, "CD")
-      }
+    if (isTRUE(show_progress)) {
+      cli::cli_progress_step("Running {id}")
+    }
 
-      cd_out <- CD(x, n_factors_max = n_factors_max, N_pop = N_pop,
-                   N_samples = N_samples, alpha = alpha, use = use,
-                   cor_method = cor_method, max_iter = max_iter_CD)
+    entry <- .retention_registry[[id]]
 
-      nfac_CD <- unname(cd_out$n_factors["CD"])
-
-    } else {
+    if (isTRUE(entry$needs_raw) && .is_cormat(x)) {
       cli::cli_warn(
-        c("{.arg x} is a correlation matrix, but CD needs raw data.",
-          "i" = "Skipping CD."),
-        class = "efa_cd_skipped"
+        c("{.arg x} is a correlation matrix, but {.val {id}} needs raw data.",
+          "i" = "Skipping {.val {id}}."),
+        class = "efa_criterion_skipped"
       )
+      not_run[[id]] <- "needs raw data, but a correlation matrix was supplied"
+      next
     }
+
+    # a failing criterion is excluded with a warning; the others still run
+    out_id <- try(entry$fun(if (isTRUE(entry$needs_raw)) x else R, ctl),
+                  silent = TRUE)
+
+    if (inherits(out_id, "try-error")) {
+      reason <- conditionMessage(attr(out_id, "condition"))
+      # keep the headline only; cli error bodies span several lines
+      reason <- strsplit(reason, "\n", fixed = TRUE)[[1]][1]
+      cli::cli_warn(
+        c("{.val {id}} could not be run and is excluded from the results.",
+          "i" = "Error: {reason}"),
+        class = "efa_criterion_failed"
+      )
+      not_run[[id]] <- reason
+      next
+    }
+
+    outputs[[id]] <- out_id
 
   }
 
-  # Empirical Kaiser Criterion
-  if("EKC" %in% criteria){
-
-    if (isTRUE(show_progress)) {
-      .show_progress(criteria, "EKC")
-    }
-
-    ekc_out <- EKC(R, N = N, use = use, cor_method = cor_method,
-                   type = ekc_type)
-
-    nfac_EKC_BvA2017 <- unname(ekc_out$n_factors["BvA2017"])
-    nfac_EKC_AM2019 <- unname(ekc_out$n_factors["AM2019"])
-
-
+  if (isTRUE(show_progress)) {
+    cli::cli_progress_done()
   }
 
-  # HULL method
-  if("HULL" %in% criteria){
-
-    if (isTRUE(show_progress)) {
-      .show_progress(criteria, "HULL")
-    }
-
-    hull_out <- HULL(R, N = N, n_fac_theor = n_fac_theor, method = method,
-                     eigen_type = eigen_type_HULL, gof = gof, use = use,
-                     cor_method = cor_method, n_datasets = n_datasets,
-                     percent = percent, decision_rule = decision_rule,
-                     n_factors = n_factors, ...)
-
-    nfac_HULL_CAF <- unname(hull_out$n_factors["CAF"])
-    nfac_HULL_CFI <- unname(hull_out$n_factors["CFI"])
-    nfac_HULL_RMSEA <- unname(hull_out$n_factors["RMSEA"])
-
-  }
-
-  # Kaiser-Guttman criterion
-  if("KGC" %in% criteria){
-
-    if (isTRUE(show_progress)) {
-      .show_progress(criteria, "KGC")
-    }
-
-    kgc_out <- KGC(R, eigen_type = eigen_type_other, use = use,
-                   cor_method = cor_method, n_factors = n_factors,
-                   method = method, ...)
-
-    nfac_KGC_PCA <- unname(kgc_out$n_factors["PCA"])
-    nfac_KGC_SMC <- unname(kgc_out$n_factors["SMC"])
-    nfac_KGC_EFA <- unname(kgc_out$n_factors["EFA"])
-
-  }
-
-  # MAP criterion
-  if("MAP" %in% criteria){
-
-    if (isTRUE(show_progress)) {
-      .show_progress(criteria, "MAP")
-    }
-
-    map_out <- MAP(R, use = use,
-                   cor_method = cor_method)
-
-    nfac_MAP_TR2 <- unname(map_out$n_factors["TR2"])
-    nfac_MAP_TR4 <- unname(map_out$n_factors["TR4"])
-
-
-  }
-
-  # Parallel analysis
-  if("PARALLEL" %in% criteria){
-
-    if (isTRUE(show_progress)) {
-      .show_progress(criteria, "PARALLEL")
-    }
-
-    parallel_out <- try(PARALLEL(R, N = N,
-                                 n_datasets = n_datasets, percent = percent,
-                                 eigen_type = eigen_type_other, use = use,
-                                 cor_method = cor_method,
-                                 decision_rule = decision_rule,
-                                 n_factors = n_factors, method = method, ...))
-
-    # if PARALLEL failed, keep the NA placeholders so the other criteria still run
-    if (!inherits(parallel_out, "try-error")) {
-      nfac_PA_PCA <- unname(parallel_out$n_factors["PCA"])
-      nfac_PA_SMC <- unname(parallel_out$n_factors["SMC"])
-      nfac_PA_EFA <- unname(parallel_out$n_factors["EFA"])
-    }
-
-  }
-
-  # Next Eigenvalue Sufficiency Test
-  if("NEST" %in% criteria){
-
-    if (isTRUE(show_progress)) {
-      .show_progress(criteria, "NEST")
-    }
-
-    nest_out <- NEST(R, N = N, use = use, cor_method = cor_method,
-                     alpha = alpha_nest, n_datasets = n_datasets_nest,
-                     method = method)
-
-    nfac_NEST <- unname(nest_out$n_factors["NEST"])
-
-
-  }
-
-  # Scree plot
-  if("SCREE" %in% criteria){
-
-    if (isTRUE(show_progress)) {
-      .show_progress(criteria, "SCREE")
-    }
-
-    scree_out <- SCREE(R, eigen_type = eigen_type_other, use = use,
-                     cor_method = cor_method, n_factors = n_factors,
-                     method = method, ...)
-  }
-
-  # Sequential chi square tests, RMSEA lower bound and AIC
-  if("SMT" %in% criteria){
-
-    if (isTRUE(show_progress)) {
-      .show_progress(criteria, "SMT")
-    }
-
-    smt_out <- SMT(R, N = N, use = use, cor_method = cor_method)
-
-    nfac_SMT_chi <- unname(smt_out$n_factors["chi"])
-    nfac_RMSEA <- unname(smt_out$n_factors["RMSEA"])
-    nfac_AIC <- unname(smt_out$n_factors["AIC"])
-
+  # nothing ran: a result with no criteria is not meaningful
+  if (length(outputs) == 0) {
+    cli::cli_abort(
+      c("None of the requested factor retention criteria could be run.",
+        "x" = "Could not run: {.val {names(not_run)}}.",
+        "i" = "See the warnings above for the reason in each case."),
+      class = "efa_no_criteria"
+    )
   }
 
   # Prepare settings here
@@ -423,48 +299,201 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
                    n_datasets_nest = n_datasets_nest,
                    alpha_nest = alpha_nest)
 
-  # Prepare the output
-  n_factors <- c(nfac_CD = nfac_CD,
-                 nfac_EKC_BvA2017 = nfac_EKC_BvA2017,
-                 nfac_EKC_AM2019 = nfac_EKC_AM2019,
-                 nfac_HULL_CAF = nfac_HULL_CAF,
-                 nfac_HULL_CFI = nfac_HULL_CFI,
-                 nfac_HULL_RMSEA = nfac_HULL_RMSEA,
-                 nfac_KGC_PCA = nfac_KGC_PCA,
-                 nfac_KGC_SMC = nfac_KGC_SMC,
-                 nfac_KGC_EFA = nfac_KGC_EFA,
-                 nfac_MAP_TR2 = nfac_MAP_TR2,
-                 nfac_MAP_TR4 = nfac_MAP_TR4,
-                 nfac_PA_PCA = nfac_PA_PCA,
-                 nfac_PA_SMC = nfac_PA_SMC,
-                 nfac_PA_EFA = nfac_PA_EFA,
-                 nfac_NEST = nfac_NEST,
-                 nfac_SMT_chi = nfac_SMT_chi,
-                 nfac_RMSEA = nfac_RMSEA,
-                 nfac_AIC = nfac_AIC)
+  # Aggregate the suggested numbers of factors as "<id>" or "<id>_<variant>".
+  # Visual criteria (the scree plot) make no numeric suggestion and are omitted;
+  # for the others NA suggestions are kept (named), so a criterion that ran but
+  # could not determine a number stays visible.
+  n_factors <- unlist(lapply(names(outputs), function(id) {
+    if (isTRUE(.retention_registry[[id]]$visual)) return(NULL)
+    nf <- outputs[[id]]$n_factors
+    names(nf) <- ifelse(names(nf) == id, id, paste(id, names(nf), sep = "_"))
+    nf
+  }))
+  if (is.null(n_factors)) n_factors <- numeric(0)
 
-  outputs <- list(bart_out = bart_out,
-                  kmo_out = kmo_out,
-                  cd_out = cd_out,
-                  ekc_out = ekc_out,
-                  hull_out = hull_out,
-                  kgc_out = kgc_out,
-                  map_out = map_out,
-                  parallel_out = parallel_out,
-                  nest_out = nest_out,
-                  scree_out = scree_out,
-                  smt_out = smt_out)
-
-  output <- list(outputs = outputs,
+  output <- list(suitability = suitability_out,
+                 outputs = outputs,
                  n_factors = n_factors,
+                 not_run = if (length(not_run) > 0) not_run else NULL,
                  settings = settings)
 
   class(output) <- "N_FACTORS"
 
-  if (isTRUE(show_progress)) {
-    .show_progress(criteria, "done", TRUE)
+  return(output)
+
+}
+
+#' Format method for N_FACTORS objects
+#'
+#' @param x an object of class N_FACTORS, returned by [N_FACTORS()].
+#' @param ... not used.
+#'
+#' @returns A character vector with the formatted (plain, un-styled) output.
+#'
+#' @export
+#' @method format N_FACTORS
+#'
+#' @examples
+#' \donttest{
+#' nf <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC", "SMT"),
+#'                 N = 500)
+#' format(nf)
+#' }
+format.N_FACTORS <- function(x, ...) {
+  cli::cli_format_method({
+
+    if (!is.null(x$suitability)) {
+
+      cli::cli_rule(left = "Tests for the suitability of the data for factor analysis")
+      cli::cli_text("")
+
+      bart <- x$suitability$bartlett
+      pval <- bart$p_value
+      if (!is.null(pval) && !is.na(pval)) {
+        p_text <- if (pval < .001) "p < .001" else paste0("p = ", round(pval, 3))
+        stats_text <- paste0("\u03c7\u00b2(", bart$df, ") = ",
+                             round(bart$chisq, 2), ", ", p_text, ".")
+        if (pval < .05) {
+          cli::cli_bullets(c("v" = paste0(
+            "The Bartlett's test of sphericity was significant at an alpha level of .05: ",
+            stats_text,
+            " These data are probably suitable for factor analysis.")))
+        } else {
+          cli::cli_bullets(c("x" = paste0(
+            "The Bartlett's test of sphericity was not significant at an alpha level of .05: ",
+            stats_text,
+            " These data are probably not suitable for factor analysis.")))
+        }
+      } else {
+        cli::cli_bullets(c("!" =
+          "The Bartlett's test of sphericity did not render a result."))
+      }
+
+      kmo <- x$suitability$kmo$KMO
+      if (!is.null(kmo) && !is.na(kmo)) {
+        # Kaiser's verbal labels for the KMO ranges
+        kmo_label <- if (kmo >= .9) {
+          "marvellous"
+        } else if (kmo >= .8) {
+          "meritorious"
+        } else if (kmo >= .7) {
+          "middling"
+        } else if (kmo >= .6) {
+          "mediocre"
+        } else if (kmo >= .5) {
+          "miserable"
+        } else {
+          "unacceptable"
+        }
+        verdict <- if (kmo < .5) {
+          "These data are not suitable for factor analysis."
+        } else if (kmo < .6) {
+          "These data are hardly suitable for factor analysis."
+        } else {
+          "These data are probably suitable for factor analysis."
+        }
+        kmo_text <- paste0("The Kaiser-Meyer-Olkin criterion is ", kmo_label,
+                           " (KMO = ", round(kmo, 3), "). ", verdict)
+        kmo_symbol <- if (kmo >= .7) "v" else if (kmo >= .6) "!" else "x"
+        cli::cli_bullets(stats::setNames(kmo_text, kmo_symbol))
+      } else {
+        cli::cli_bullets(c("!" =
+          "The overall KMO value for your data is not available."))
+      }
+
+      cli::cli_text("")
+    }
+
+    cli::cli_rule(left = "Number of factors suggested by the factor retention criteria")
+
+    is_visual <- vapply(names(x$outputs),
+                        function(id) isTRUE(.retention_registry[[id]]$visual),
+                        logical(1))
+
+    # criteria with a numeric suggestion: one group with one bullet per variant
+    # (a variant the criterion could not determine shows as "not applicable"),
+    # separated by a blank line for readability
+    for (out in x$outputs[!is_visual]) {
+      cli::cli_text("")
+      cli::cli_text("{out$criterion[['label']]}")
+      cli::cli_ul(.retention_bullets(out$results))
+    }
+
+    # visual criteria (e.g. the scree plot) are pointed to the plot
+    for (out in x$outputs[is_visual]) {
+      cli::cli_text("")
+      label <- out$criterion[["label"]]
+      cli::cli_bullets(c("i" =
+        "{label} provides no numeric suggestion; inspect the plot."))
+    }
+
+    # criteria that were skipped or failed
+    if (!is.null(x$not_run)) {
+      cli::cli_text("")
+      cli::cli_rule(left = "Criteria that could not be run")
+      cli::cli_text("")
+      for (id in names(x$not_run)) {
+        reason <- x$not_run[[id]]
+        cli::cli_bullets(c("!" = "{id}: {reason}"))
+      }
+    }
+
+  })
+}
+
+#' Print method for N_FACTORS objects
+#'
+#' @param x an object of class N_FACTORS, returned by [N_FACTORS()].
+#' @param ... not used.
+#'
+#' @returns Invisibly returns `x`. Called for the side effect of printing the
+#'   suitability results and the suggested numbers of factors.
+#'
+#' @export
+#' @method print N_FACTORS
+#'
+#' @examples
+#' \donttest{
+#' N_FACTORS(test_models$baseline$cormat, criteria = c("EKC", "SMT"), N = 500)
+#' }
+print.N_FACTORS <- function(x, ...) {
+  cat(format(x, ...), sep = "\n")
+  invisible(x)
+}
+
+#' Plot method for N_FACTORS objects
+#'
+#' Plots every factor-retention criterion in the [N_FACTORS()] result that has
+#' a plottable outcome (see [plot.efa_retention()]); criteria without a plot
+#' (e.g. [MAP()] or [SMT()]) are skipped.
+#'
+#' @param x an object of class N_FACTORS, returned by [N_FACTORS()].
+#' @param ... not used.
+#'
+#' @returns A named list of [ggplot2::ggplot] objects, one per criterion with a
+#'   plottable result, or invisibly `NULL` if there is none.
+#'
+#' @export
+#' @method plot N_FACTORS
+#'
+#' @examples
+#' \donttest{
+#' nf <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC", "SMT"),
+#'                 N = 500)
+#' plot(nf)
+#' }
+plot.N_FACTORS <- function(x, ...) {
+
+  # plot.efa_retention returns NULL (with a message) for criteria with no plot
+  # (e.g. MAP/SMT) or a degenerate one (e.g. CD suggesting 0 factors); drop those
+  plots <- lapply(x$outputs, function(o) suppressMessages(plot(o)))
+  plots <- Filter(Negate(is.null), plots)
+
+  if (length(plots) == 0) {
+    cli::cli_inform("No plot is available for the criteria that were run.")
+    return(invisible(NULL))
   }
 
-  return(output)
+  plots
 
 }

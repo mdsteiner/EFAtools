@@ -155,3 +155,26 @@
       * Original implementation (TR2): 1
       * Revised implementation (TR4): 3
 
+# print.N_FACTORS output is stable
+
+    Code
+      print(nf)
+    Output
+      -- Number of factors suggested by the factor retention criteria ----------------
+      
+      Empirical Kaiser Criterion
+      * Original implementation (Braeken & van Assen, 2017): 3
+      
+      Kaiser-Guttman criterion
+      * PCA eigenvalues: 3
+      * SMC eigenvalues: 1
+      
+      Minimum average partial
+      * Original implementation (TR2): 1
+      * Revised implementation (TR4): 3
+      
+      Sequential model tests
+      * Sequential chi-square model tests: 3
+      * Lower bound of RMSEA 90% CI: 2
+      * Akaike Information Criterion: 3
+

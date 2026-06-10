@@ -45,7 +45,7 @@ perform. Possible inputs are: \code{"CD"}, \code{"EKC"}, \code{"HULL"},
 
 \item{suitability}{logical. Whether the data should be checked for suitability
 for factor analysis using the Bartlett's test of sphericity and the
-Kaiser-Guttmann criterion (see details). Default is \code{TRUE}.}
+Kaiser-Meyer-Olkin criterion (see details). Default is \code{TRUE}.}
 
 \item{N}{numeric. The number of observations. Only needed if x is a
 correlation matrix.}
@@ -105,8 +105,8 @@ diagonal.}
 
 \item{eigen_type_other}{character. Passed to \code{\link[=KGC]{KGC()}},
 \code{\link[=SCREE]{SCREE()}}, and \code{\link[=PARALLEL]{PARALLEL()}}. The same as eigen_type_HULL,
-but multiple inputs
-are possible here. Default is to use all inputs, that is, \verb{c("PCA", "SMC", "EFA"})}
+but multiple inputs are possible here (any combination of \code{"PCA"}, \code{"SMC"},
+and \code{"EFA"}). Default is \code{"SMC"}.}
 
 \item{n_factors}{numeric. Passed to \code{\link[=PARALLEL]{PARALLEL()}} (also within
 \code{\link[=HULL]{HULL()}}), \code{\link[=KGC]{KGC()}}, and \code{\link[=SCREE]{SCREE()}}. Number of
@@ -144,10 +144,17 @@ console. Default is FALSE.}
 }
 \value{
 A list of class N_FACTORS containing
-\item{outputs}{A list with the outputs from \code{\link[=BARTLETT]{BARTLETT()}} and
-\code{\link[=KMO]{KMO()}} and the factor retention criteria.}
-\item{n_factors}{A named vector containing the suggested number of factors
-from each factor retention criterion.}
+\item{suitability}{A list with the results from \code{\link[=BARTLETT]{BARTLETT()}} and
+\code{\link[=KMO]{KMO()}} (\code{bartlett} and \code{kmo}), or \code{NULL} if
+\code{suitability = FALSE}.}
+\item{outputs}{A named list with one \code{efa_retention} object per factor
+retention criterion that was run (see, e.g., \code{\link[=EKC]{EKC()}}).}
+\item{n_factors}{A named numeric vector with the suggested number of factors
+per criterion and, where a criterion has several variants, per variant
+(e.g. \code{EKC_BvA2017} or \code{PARALLEL_SMC}). Criteria without a numeric
+suggestion (the scree plot) are not included.}
+\item{not_run}{A named character vector with the criteria that were skipped
+or failed and the reason, or \code{NULL} if all requested criteria ran.}
 \item{settings}{A list of the settings used.}
 }
 \description{
@@ -193,7 +200,7 @@ nfac_wo_CD <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC",
 # to be set to "CAF" for the Hull method.
 nfac_PAF <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC",
                         "HULL", "PARALLEL", "NEST"), N = 500,
-                      gof = "CAF")
+                      method = "PAF", gof = "CAF")
 
 # Do KGC and PARALLEL with only "PCA" type of eigenvalues
 nfac_PCA <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC",

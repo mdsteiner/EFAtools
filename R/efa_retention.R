@@ -4,17 +4,80 @@
 # dispatches to the two ggplot helpers below. The registry is the single source
 # of truth mapping each criterion id to its display label.
 
-# Registry of the factor-retention criteria (id -> metadata).
+# Registry of the factor-retention criteria (id -> metadata). Each `fun` runs
+# its criterion from the N_FACTORS() control list `ctl`; `x` is the raw data
+# when `needs_raw`, the prepared correlation matrix otherwise. Criteria that
+# forward additional arguments to EFA() receive them via `ctl$dots`.
 .retention_registry <- list(
-  CD       = list(label = "Comparison data",                  needs_raw = TRUE),
-  EKC      = list(label = "Empirical Kaiser Criterion",       needs_raw = FALSE),
-  HULL     = list(label = "Hull method",                      needs_raw = FALSE),
-  KGC      = list(label = "Kaiser-Guttman criterion",         needs_raw = FALSE),
-  MAP      = list(label = "Minimum average partial",          needs_raw = FALSE),
-  NEST     = list(label = "Next Eigenvalue Sufficiency Test", needs_raw = FALSE),
-  PARALLEL = list(label = "Parallel analysis",                needs_raw = FALSE),
-  SCREE    = list(label = "Scree plot",                       needs_raw = FALSE),
-  SMT      = list(label = "Sequential model tests",           needs_raw = FALSE)
+  CD = list(
+    label = "Comparison data", needs_raw = TRUE,
+    fun = function(x, ctl) {
+      CD(x, n_factors_max = ctl$n_factors_max, N_pop = ctl$N_pop,
+         N_samples = ctl$N_samples, alpha = ctl$alpha, use = ctl$use,
+         cor_method = ctl$cor_method, max_iter = ctl$max_iter_CD)
+    }),
+  EKC = list(
+    label = "Empirical Kaiser Criterion", needs_raw = FALSE,
+    fun = function(x, ctl) {
+      EKC(x, N = ctl$N, use = ctl$use, cor_method = ctl$cor_method,
+          type = ctl$ekc_type)
+    }),
+  HULL = list(
+    label = "Hull method", needs_raw = FALSE,
+    fun = function(x, ctl) {
+      do.call(HULL, c(list(x, N = ctl$N, n_fac_theor = ctl$n_fac_theor,
+                           method = ctl$method, gof = ctl$gof,
+                           eigen_type = ctl$eigen_type_HULL, use = ctl$use,
+                           cor_method = ctl$cor_method,
+                           n_datasets = ctl$n_datasets, percent = ctl$percent,
+                           decision_rule = ctl$decision_rule,
+                           n_factors = ctl$n_factors),
+                      ctl$dots))
+    }),
+  KGC = list(
+    label = "Kaiser-Guttman criterion", needs_raw = FALSE,
+    fun = function(x, ctl) {
+      do.call(KGC, c(list(x, eigen_type = ctl$eigen_type_other, use = ctl$use,
+                          cor_method = ctl$cor_method,
+                          n_factors = ctl$n_factors, method = ctl$method),
+                     ctl$dots))
+    }),
+  MAP = list(
+    label = "Minimum average partial", needs_raw = FALSE,
+    fun = function(x, ctl) {
+      MAP(x, use = ctl$use, cor_method = ctl$cor_method)
+    }),
+  NEST = list(
+    label = "Next Eigenvalue Sufficiency Test", needs_raw = FALSE,
+    fun = function(x, ctl) {
+      NEST(x, N = ctl$N, use = ctl$use, cor_method = ctl$cor_method,
+           alpha = ctl$alpha_nest, n_datasets = ctl$n_datasets_nest,
+           method = ctl$method)
+    }),
+  PARALLEL = list(
+    label = "Parallel analysis", needs_raw = FALSE,
+    fun = function(x, ctl) {
+      do.call(PARALLEL, c(list(x, N = ctl$N, n_datasets = ctl$n_datasets,
+                               percent = ctl$percent,
+                               eigen_type = ctl$eigen_type_other, use = ctl$use,
+                               cor_method = ctl$cor_method,
+                               decision_rule = ctl$decision_rule,
+                               n_factors = ctl$n_factors, method = ctl$method),
+                          ctl$dots))
+    }),
+  SCREE = list(
+    label = "Scree plot", needs_raw = FALSE, visual = TRUE,
+    fun = function(x, ctl) {
+      do.call(SCREE, c(list(x, eigen_type = ctl$eigen_type_other, use = ctl$use,
+                            cor_method = ctl$cor_method,
+                            n_factors = ctl$n_factors, method = ctl$method),
+                       ctl$dots))
+    }),
+  SMT = list(
+    label = "Sequential model tests", needs_raw = FALSE,
+    fun = function(x, ctl) {
+      SMT(x, N = ctl$N, use = ctl$use, cor_method = ctl$cor_method)
+    })
 )
 
 # Construct an efa_retention object from a list of per-sub-variant records. The
@@ -48,8 +111,8 @@
   )
 }
 
-# Bullet lines (one per record) shared by print.efa_retention and, later, the
-# N_FACTORS aggregate print.
+# Bullet lines (one per record) shared by format.efa_retention and
+# format.N_FACTORS.
 .retention_bullets <- function(results) {
   vapply(results, function(r) {
     value <- if (is.na(r$n_factors)) "not applicable" else as.character(r$n_factors)

@@ -1,25 +1,31 @@
+set.seed(42)
 nf_grips <- suppressMessages(suppressWarnings(N_FACTORS(GRiPS_raw)))
 
 test_that("output class and dimensions are correct", {
   expect_s3_class(nf_grips, "N_FACTORS")
+  expect_named(nf_grips, c("suitability", "outputs", "n_factors", "not_run",
+                           "settings"))
   expect_type(nf_grips$outputs, "list")
   expect_type(nf_grips$settings, "list")
   expect_type(nf_grips$n_factors, "double")
 
-  expect_named(nf_grips, c("outputs", "n_factors", "settings"))
-  expect_named(nf_grips$outputs, c("bart_out", "kmo_out", "cd_out", "ekc_out",
-                                   "hull_out", "kgc_out", "map_out", "parallel_out",
-                                  "nest_out", "scree_out", "smt_out"))
-  expect_named(nf_grips$n_factors, c("nfac_CD",
-                                     "nfac_EKC_BvA2017", "nfac_EKC_AM2019",
-                                     "nfac_HULL_CAF",
-                                     "nfac_HULL_CFI", "nfac_HULL_RMSEA",
-                                     "nfac_KGC_PCA", "nfac_KGC_SMC",
-                                     "nfac_KGC_EFA",
-                                     "nfac_MAP_TR2", "nfac_MAP_TR4",
-                                     "nfac_PA_PCA", "nfac_PA_SMC", "nfac_PA_EFA",
-                                     "nfac_NEST",
-                                     "nfac_SMT_chi", "nfac_RMSEA", "nfac_AIC"))
+  # default criteria, in registry order, each a unified retention object
+  expect_named(nf_grips$outputs, c("CD", "EKC", "HULL", "MAP", "NEST",
+                                   "PARALLEL"))
+  for (out in nf_grips$outputs) {
+    expect_s3_class(out, "efa_retention")
+  }
+
+  # all requested criteria ran (GRiPS is raw data, so CD is not skipped)
+  expect_null(nf_grips$not_run)
+
+  expect_s3_class(nf_grips$suitability$bartlett, "BARTLETT")
+  expect_s3_class(nf_grips$suitability$kmo, "KMO")
+
+  expect_named(nf_grips$n_factors,
+               c("CD", "EKC_BvA2017", "HULL_CAF", "HULL_CFI", "HULL_RMSEA",
+                 "MAP_TR2", "MAP_TR4", "NEST", "PARALLEL_SMC"))
+
   expect_named(nf_grips$settings, c("criteria", "suitability", "N", "use",
                                     "n_factors_max", "N_pop", "N_samples", "alpha",
                                     "cor_method", "max_iter_CD", "n_fac_theor",
@@ -28,6 +34,70 @@ test_that("output class and dimensions are correct", {
                                     "percent", "decision_rule",
                                     "ekc_type", "n_datasets_nest",
                                     "alpha_nest"))
+})
+
+test_that("print and plot work on the aggregate object", {
+  # the suitability block is rendered, including the Bartlett verdict and the
+  # KMO label ladder (GRiPS has a marvellous KMO and a significant Bartlett test)
+  txt <- paste(format(nf_grips), collapse = "\n")
+  expect_match(txt, "Bartlett", fixed = TRUE)
+  expect_match(txt, "significant", fixed = TRUE)
+  expect_match(txt, "Kaiser-Meyer-Olkin", fixed = TRUE)
+  expect_match(txt, "marvellous", fixed = TRUE)
+
+  # one ggplot per plottable criterion that was run (MAP/NEST have no plot)
+  p <- plot(nf_grips)
+  expect_named(p, c("CD", "EKC", "HULL", "PARALLEL"))
+  for (p_i in p) {
+    expect_s3_class(p_i, "ggplot")
+  }
+})
+
+test_that("visual criteria and suitability = FALSE are handled", {
+  nf_scree <- N_FACTORS(test_models$baseline$cormat, suitability = FALSE,
+                        criteria = c("MAP", "SCREE"))
+
+  expect_null(nf_scree$suitability)
+  expect_named(nf_scree$outputs, c("MAP", "SCREE"))
+  # the visual scree plot contributes no numeric suggestion
+  expect_named(nf_scree$n_factors, c("MAP_TR2", "MAP_TR4"))
+
+  txt <- paste(format(nf_scree), collapse = "\n")
+  expect_match(txt, "no numeric suggestion", fixed = TRUE)
+  expect_false(grepl("suitability of the data", txt, fixed = TRUE))
+})
+
+test_that("a failing criterion warns, is reported, and the others still run", {
+  # EKC needs N, which is missing for a correlation matrix; MAP still runs
+  expect_warning(
+    nf_fail <- N_FACTORS(test_models$baseline$cormat, suitability = FALSE,
+                         criteria = c("EKC", "MAP")),
+    class = "efa_criterion_failed"
+  )
+  expect_named(nf_fail$outputs, "MAP")
+  expect_named(nf_fail$n_factors, c("MAP_TR2", "MAP_TR4"))
+  expect_named(nf_fail$not_run, "EKC")
+  expect_match(paste(format(nf_fail), collapse = "\n"), "could not be run",
+               fixed = TRUE)
+})
+
+test_that("a skipped criterion is reported in not_run", {
+  expect_warning(
+    nf_skip <- N_FACTORS(test_models$baseline$cormat, N = 500),
+    class = "efa_criterion_skipped"
+  )
+  # CD needs raw data and is skipped on a correlation matrix
+  expect_named(nf_skip$not_run, "CD")
+  expect_false("CD" %in% names(nf_skip$outputs))
+})
+
+test_that("an all-failed run is a hard error", {
+  # CD is the only requested criterion and is skipped on a correlation matrix
+  expect_error(
+    suppressWarnings(N_FACTORS(test_models$baseline$cormat, suitability = FALSE,
+                               criteria = "CD")),
+    class = "efa_no_criteria"
+  )
 })
 
 x <- rnorm(100)
@@ -51,9 +121,10 @@ burt <- matrix(c(1.00,  0.83,  0.81,  0.80,   0.71, 0.70, 0.54, 0.53,  0.59,  0.
 
 test_that("errors etc. are thrown correctly", {
   expect_error(N_FACTORS(1:10), class = "efa_input_not_matrix")
-  expect_warning(N_FACTORS(GRiPS_raw, N = 10), class = "efa_n_from_data")
+  expect_warning(N_FACTORS(GRiPS_raw, N = 10, criteria = "MAP",
+                           suitability = FALSE), class = "efa_n_from_data")
   expect_error(N_FACTORS(cbind(x, y, z, z + 1, y + 1, x + 1)), class = "efa_cor_singular")
-  expect_warning(N_FACTORS(test_models$baseline$cormat, N = 500), class = "efa_cd_skipped")
+  expect_warning(N_FACTORS(test_models$baseline$cormat, N = 500), class = "efa_criterion_skipped")
   expect_warning(N_FACTORS(burt, N = 170, criteria = c("PARALLEL", "EKC")), "Matrix was not positive definite, smoothing was done")
 })
 

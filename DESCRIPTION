@@ -59,7 +59,6 @@ Imports:
     cli,
     lifecycle,
     Rcpp,
-    graphics,
     future.apply,
     future,
     GPArotation,
