@@ -16,29 +16,29 @@ print.KMO <- function(x, ...) {
   KMO <- x$KMO
 
   cat("\n")
-  cat(cli::rule(left = "Kaiser-Meyer-Olkin criterion (KMO)", col = "blue"))
+  cat(cli::rule(left = "Kaiser-Meyer-Olkin criterion (KMO)"))
   cat("\n")
 
   if(!is.na(KMO) && !is.null(KMO)){
 
     if(KMO >= .9){
-      symb <- crayon::green$bold(cli::symbol$tick)
-      label <- crayon::green$bold("marvellous")
+      symb <- .efa_style(cli::symbol$tick, c("green", "bold"))
+      label <- .efa_style("marvellous", c("green", "bold"))
     } else if(KMO >= .8){
-      symb <- crayon::green$bold(cli::symbol$tick)
-      label <- crayon::green$bold("meritorious")
+      symb <- .efa_style(cli::symbol$tick, c("green", "bold"))
+      label <- .efa_style("meritorious", c("green", "bold"))
     } else if(KMO >= .7){
-      symb <- crayon::green$bold(cli::symbol$tick)
-      label <- crayon::green$bold("middling")
+      symb <- .efa_style(cli::symbol$tick, c("green", "bold"))
+      label <- .efa_style("middling", c("green", "bold"))
     } else if(KMO >= .6){
-      symb <- crayon::yellow$bold("!")
-      label <- crayon::yellow$bold("mediocre")
+      symb <- .efa_style("!", c("yellow", "bold"))
+      label <- .efa_style("mediocre", c("yellow", "bold"))
     } else if (KMO >= .5){
-      symb <- crayon::red$bold(cli::symbol$cross)
-      label <- crayon::red$bold("miserable")
+      symb <- .efa_style(cli::symbol$cross, c("red", "bold"))
+      label <- .efa_style("miserable", c("red", "bold"))
     } else {
-      symb <- crayon::red$bold(cli::symbol$cross)
-      label <- crayon::red$bold("unacceptable")
+      symb <- .efa_style(cli::symbol$cross, c("red", "bold"))
+      label <- .efa_style("unacceptable", c("red", "bold"))
     }
 
     cat("\n")
@@ -46,29 +46,31 @@ print.KMO <- function(x, ...) {
     cat("\n")
 
     if(KMO < .5){
-      cat(crayon::bold(" "), "These data are not suitable for factor analysis.")
+      cat(.efa_style(" ", "bold"), "These data are not suitable for factor analysis.")
       cat("\n")
     } else if(KMO < .6){
-      cat(crayon::bold(" "), "These data are hardly suitable for factor analysis.")
+      cat(.efa_style(" ", "bold"), "These data are hardly suitable for factor analysis.")
       cat("\n")
     } else {
-      cat(crayon::bold(" "), "These data are probably suitable for factor analysis.")
+      cat(.efa_style(" ", "bold"), "These data are probably suitable for factor analysis.")
       cat("\n")
     }
 
     cat("\n")
-    cat(crayon::bold(" "), crayon::blue("Overall:"), crayon::bold(round(KMO, 3)))
+    cat(.efa_style(" ", "bold"), "Overall:", .efa_style(round(KMO, 3), "bold"))
     cat("\n")
     cat("\n")
 
-    cat(crayon::bold(" "), crayon::blue("For each variable:"))
+    cat(.efa_style(" ", "bold"), "For each variable:")
     cat("\n")
     print(round(x$KMO_i, 3))
 
   } else {
 
     cat("\n")
-    cat(crayon::yellow(crayon::bold("!"), "Sorry, the KMO value for your data is not available."))
+    cat(.efa_style(paste(.efa_style("!", "bold"),
+                         "Sorry, the KMO value for your data is not available."),
+                   "yellow"))
     cat("\n")
 
   }

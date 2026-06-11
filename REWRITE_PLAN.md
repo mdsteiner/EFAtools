@@ -348,11 +348,11 @@ rely on.
 - [x] **U4 — `.efa_format_matrix()`** + migrate `print.LOADINGS`/`print.SLLOADINGS` to
       cli (pad with `cli::ansi_align`/`ansi_nchar` so width math survives ANSI).
       Numbers: no; snapshots: formatting diffs only (review each).
-- [ ] **U5 — `print.EFA` → cli + `summary.EFA`.** Trim `print.EFA` to a `standard`
+- [x] **U5 — `print.EFA` → cli + `summary.EFA`.** Trim `print.EFA` to a `standard`
       default; add `summary.EFA`/`print.summary.EFA`; fix **B16** (`format()` returns
       plain text) and **B17** (`residuals.EFA` becomes a pure extractor). Numbers: no;
       snapshots: formatting diffs only.
-- [ ] **U6 — Remaining prints → cli; drop `crayon`.** OMEGA (incl. **B4**), COMPARE
+- [x] **U6 — Remaining prints → cli; drop `crayon`.** OMEGA (incl. **B4**), COMPARE
       (incl. **B11**; move the plot into a `plot.COMPARE` ggplot method — `print` no
       longer auto-plots), KMO, BARTLETT, SL, EFA_AVERAGE, EFA_POOLED; add the
       `.efa_style()` shim; remove `crayon` from Imports. Numbers: no; snapshots:

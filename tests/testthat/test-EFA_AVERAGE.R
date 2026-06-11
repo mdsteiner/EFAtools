@@ -493,6 +493,26 @@ test_that("errors are thrown correctly", {
                  class = "efa_avg_single_combination")
 })
 
+test_that("print output is stable", {
+  skip_on_cran()
+  local_reproducible_output()
+
+  # default view (oblique -> Phi section, average + range)
+  expect_snapshot(print(efa_def, plot = FALSE), transform = scrub_num_pct)
+
+  # all statistics, no Phi (orthogonal-free rotation = "none")
+  expect_snapshot(print(efa_all_none, stat = c("average", "sd", "min", "max"),
+                        plot = FALSE), transform = scrub_num_pct)
+
+  # median averaging (Md / Median labels)
+  expect_snapshot(print(efa_all_md, plot = FALSE), transform = scrub_num_pct)
+})
+
+test_that("plot returns a ggplot", {
+  skip_on_cran()
+  expect_s3_class(plot(efa_def), "ggplot")
+})
+
 rm(efa_def, efa_ml, efa_uls, efa_all, efa_all_oblq, efa_all_orth, efa_all_none,
    efa_all_md, efa_all_tm, efa_raw, efa_raw_p)
 

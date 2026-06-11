@@ -11,13 +11,17 @@
 
 \item{...}{not used.}
 }
+\value{
+A ggplot object showing, for each indicator and factor, the minimum,
+maximum, and average (mean or median) loading across the averaged solutions.
+}
 \description{
 Plot method showing a summarized output of the \link{EFA_AVERAGE} function
 }
 \examples{
 \dontrun{
 EFA_aver <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500)
-EFA_aver
+plot(EFA_aver)
 }
 
 }

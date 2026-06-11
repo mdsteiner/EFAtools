@@ -49,10 +49,9 @@ BugReports: https://github.com/mdsteiner/EFAtools/issues
 Imports: 
     lavaan,
     psych,
-    crayon,
     stringr,
     stats,
-    ggplot2,
+    ggplot2 (>= 3.4.0),
     tibble,
     magrittr,
     dplyr,

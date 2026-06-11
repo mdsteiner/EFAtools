@@ -7,3 +7,9 @@
 # drift across BLAS implementations and platforms. Integer output (factor counts,
 # df, N, residual counts) is kept verbatim.
 scrub_num <- function(lines) gsub("\\s*-?(\\d+)?\\.\\d+", " <num>", lines)
+
+# Like scrub_num, but also masks integer percentages. The EFA_AVERAGE print reports
+# error/convergence/Heywood/admissibility rates as `round(mean(...) * 100)` over many inner
+# solutions; those percentages can flip across BLAS implementations, so the snapshot pins the
+# wording but not the rate. (The deterministic "N EFAs" grid size is left verbatim.)
+scrub_num_pct <- function(lines) scrub_num(gsub("[0-9]+%", "<pct>", lines))

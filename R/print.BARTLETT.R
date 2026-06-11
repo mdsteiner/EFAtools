@@ -19,36 +19,39 @@ print.BARTLETT <- function(x, ...) {
   if(pval < .05){
 
     cat("\n")
-    cat(crayon::green$bold(cli::symbol$tick), "The",
-        crayon::bold("Bartlett's test of sphericity"), "was",
-        crayon::green$bold("significant"),
+    cat(.efa_style(cli::symbol$tick, c("green", "bold")), "The",
+        .efa_style("Bartlett's test of sphericity", "bold"), "was",
+        .efa_style("significant", c("green", "bold")),
     "at an alpha level of .05.")
     cat("\n")
-    cat(crayon::bold(" "), "These data are probably suitable for factor analysis.")
+    cat(.efa_style(" ", "bold"), "These data are probably suitable for factor analysis.")
 
   } else {
 
     cat("\n")
-    cat(crayon::red$bold(cli::symbol$cross),
-        "The Bartlett's test of sphericity was", crayon::red$bold("not significant"),
+    cat(.efa_style(cli::symbol$cross, c("red", "bold")),
+        "The Bartlett's test of sphericity was",
+        .efa_style("not significant", c("red", "bold")),
     "at an alpha level of .05.")
     cat("\n")
-    cat(crayon::bold(" "), "These data are probably not suitable for factor analysis.")
+    cat(.efa_style(" ", "bold"), "These data are probably not suitable for factor analysis.")
 
   }
 
 } else {
 
     cat("\n")
-    cat(crayon::yellow(crayon::bold("!"), "The Bartlett's test of sphericity did not render a result."))
+    cat(.efa_style(paste(.efa_style("!", "bold"),
+                         "The Bartlett's test of sphericity did not render a result."),
+                   "yellow"))
     cat("\n")
 
 }
 
   cat("\n")
   cat("\n")
-  cat(crayon::bold("  "), "\U1D712\U00B2(", x$df, ") = ", round(x$chisq, 2), ", ",
-      crayon::italic("p"), ifelse(pval < .001, " < .001",
+  cat(.efa_style("  ", "bold"), "\U1D712\U00B2(", x$df, ") = ", round(x$chisq, 2), ", ",
+      .efa_style("p", "italic"), ifelse(pval < .001, " < .001",
                                   paste(" = ", round(pval, 3), sep = "")),
       sep = "")
   cat("\n")

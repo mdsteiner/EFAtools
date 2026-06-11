@@ -1,6 +1,19 @@
 # Number formatting and styled-table builders shared by the print methods: padded decimal
 # formatting, the LOADINGS/COMPARE cell renderers, and small settings/CI string helpers.
 
+# Apply named logical styles to a pre-assembled string, mapping each to its cli primitive
+# (in order). A no-op when `style` is empty or when colours are off (the cli primitives are
+# themselves no-ops then). One home for all print colouring. Blue is
+# intentionally absent: rules and labels use cli's default colour.
+.efa_style <- function(x, style = NULL) {
+  styles <- list(red = cli::col_red, green = cli::col_green, yellow = cli::col_yellow,
+                 bold = cli::style_bold, italic = cli::style_italic)
+  for (s in style) {
+    x <- styles[[s]](x)
+  }
+  x
+}
+
 #' Format numbers for print method
 #'
 #' Helper function used in the print method for class LOADINGS and SLLOADINGS.
@@ -75,11 +88,12 @@
 # Render a numeric matrix as decimal-aligned console lines. `col_roles` tags each column:
 # "loading" columns are split into vertically stacked blocks when the table is wider than the
 # console (or `max_factors_per_block` is set), with the h2/u2 columns repeated in every block;
-# any other role (e.g. "corr", used for factor-correlation and variance tables) is treated as
-# auxiliary and rendered without per-cell styling. Individual rows are never wrapped. Salient
-# loadings (|x| >= cutoff) are bold, weaker ones grey, and Heywood-relevant cells
-# (|loading| > 1, h2 > 1, u2 < 0) red; styling is dropped when `color = FALSE` or colours are
-# off. With `lower_only = TRUE` the strictly-upper triangle is left blank (for symmetric
+# non-loading roles are auxiliary (kept together in one block, never split): "corr"
+# (factor-correlation and variance tables) is rendered plain, and "compare" (COMPARE
+# difference tables) colours cells whose |x| exceeds `cutoff` red. Individual rows are never
+# wrapped. Salient loadings (|x| >= cutoff) are bold, weaker ones grey, and Heywood-relevant
+# cells (|loading| > 1, h2 > 1, u2 < 0) red; styling is dropped when `color = FALSE` or colours
+# are off. With `lower_only = TRUE` the strictly-upper triangle is left blank (for symmetric
 # matrices such as factor intercorrelations).
 .efa_format_matrix <- function(values, row_labels, col_labels, col_roles,
                                cutoff = 0, digits = 3, color = TRUE,
@@ -190,6 +204,11 @@
   if (identical(role, "u2") && is.finite(value) && value < 0) {
     return(cli::col_red(cell))
   }
+  # "compare" columns (COMPARE difference tables) flag salient differences: cells whose
+  # absolute value exceeds `cutoff` (the COMPARE `range_red` threshold) are coloured red.
+  if (identical(role, "compare") && is.finite(value) && abs(value) > cutoff) {
+    return(cli::col_red(cell))
+  }
 
   cell
 }
@@ -261,137 +280,36 @@
   }
 }
 
-.get_compare_matrix <- function(x, digits = 3, r_red = .001, n_char = 10,
-                                var_names = NULL, factor_names = NULL,
-                                gof = FALSE) {
+# Render a numeric matrix through the shared renderer and print it (with a trailing blank
+# line), deriving row/column labels from its dimnames. `role` fills every column: "corr"
+# (factor-correlation/variance tables) is plain; "compare" (COMPARE difference tables)
+# colours cells with |x| > `cutoff` red. `lower_only` blanks the strictly-upper triangle
+# (symmetric matrices); `header = FALSE` drops the column-header row (e.g. an unlabelled
+# single-column vector difference). This is the one consumer-facing wrapper around
+# `.efa_format_matrix()` for non-loading tables.
+.print_efa_matrix <- function(values, role = "corr", digits = 3, cutoff = 0,
+                              lower_only = FALSE, header = TRUE) {
+  values <- as.matrix(values)
 
-  # create factor names to display
-  if (is.null(factor_names)) {
-    if(is.null(colnames(x))){
-      factor_names <- paste0("F", seq_len(ncol(x)))
-    } else {
-      factor_names <- colnames(x)
-    }
+  lines <- .efa_format_matrix(
+    values = values,
+    row_labels = .efa_variable_names(values),
+    col_labels = .efa_factor_names(values),
+    col_roles = rep(role, ncol(values)),
+    cutoff = cutoff,
+    digits = digits,
+    lower_only = lower_only
+  )
+
+  if (isFALSE(header)) {
+    lines <- lines[-1L]
   }
 
-  # for equal spacing, fill the factor names such that they match the columns
-  fn_nchar <- sapply(factor_names, nchar)
-  factor_names[which(fn_nchar > digits + 2)] <- substr(
-    factor_names[which(fn_nchar > digits + 2)] , 1, digits + 2)
-  factor_names <- stringr::str_pad(factor_names, digits + 2, side = "both")
+  cat(lines, sep = "\n")
+  cat("\n")
 
-  if(gof == FALSE){
-
-  if(is.null(var_names)) {
-    if(is.null(rownames(x))){
-      var_names <- paste0("V", seq_len(nrow(x)))
-    } else {
-    var_names <- rownames(x)
-    }
-  }
-
-  max_char <- max(sapply(var_names, nchar))
-
-  if (max_char > n_char) {
-    vn_nchar <- sapply(var_names, nchar)
-    var_names[which(vn_nchar > n_char)] <- substr(var_names[which(vn_nchar > n_char)],
-                                              1, n_char)
-    max_char <- n_char
-  }
-
-  var_names <- stringr::str_pad(var_names, max_char, side = "right")
-
-  }
-
-  n_col <- ncol(x)
-
-  # create the string to paste using the crayon package
-  temp <- apply(matrix(seq_len(nrow(x)), ncol = 1), 1,
-                function(ind, x, cutoff, n_col, vn, digits){
-                  i <- x[ind,]
-
-                  tt <- crayon::blue(vn[ind])
-
-                  for (kk in seq_len(n_col)) {
-                    if (abs(i[kk]) <= cutoff) {
-                      tt <- c(tt, .numformat(round(i[kk], digits = digits),
-                                                          digits = digits,
-                                             print_zero = TRUE))
-                    } else {
-                      tt <- c(tt,
-                              crayon::red(.numformat(round(i[kk],
-                                                                digits = digits),
-                                                              digits = digits,
-                                                              print_zero = TRUE)))
-                    }
-                  }
-                  stringr::str_c(tt, collapse = "\t")
-                }, cutoff = r_red, n_col = n_col, digits = digits, x = x,
-                vn = var_names)
-
-  factor_names <- stringr::str_c(factor_names, collapse = "\t")
-
-  if(gof == TRUE){
-
-    factor_names <- crayon::blue(stringr::str_c(factor_names))
-
-  } else {
-
-    factor_names <- crayon::blue(stringr::str_c( stringr::str_pad(" ", max_char),
-                                                   "\t", factor_names))
-  }
-
-
-  temp <- stringr::str_c(temp, collapse = "\n")
-
-  temp <- stringr::str_c(factor_names, "\n", temp)
-
-
-  temp <- stringr::str_c(temp, "\n")
-
-  # print the results to the console
-
-  temp
+  invisible(NULL)
 }
-
-.get_compare_vector <- function(x, digits = 3, r_red = .001) {
-
-  temp_i <- NULL
-
-  for (ii in seq_along(x)) {
-    if (abs(x[ii]) > r_red) {
-      temp_i <- c(temp_i, crayon::red(.numformat(round(x[ii], digits = digits),
-                                                      digits = digits,
-                                                      print_zero = TRUE)))
-    } else {
-      temp_i <- c(temp_i, .numformat(round(x[ii], digits = digits),
-                                     digits = digits,
-                                     print_zero = TRUE))
-    }
-  }
-
-  for (ss in seq(1, length(x), 7)) {
-    if (length(x) > ss + 6) {
-      tt <- ss + 6
-    } else {
-      tt <- length(x)
-    }
-    if (ss == 1) {
-      temp <- stringr::str_c(temp_i[ss:tt], collapse = "  ")
-    } else {
-      temp <- stringr::str_c(temp, "\n", stringr::str_c(temp_i[ss:tt],
-                                                        collapse = "  "))
-    }
-
-  }
-
-  temp <- stringr::str_c(temp, "\n")
-
-  # print the results to the console
-  return(temp)
-}
-
-
 
 .decimals <- function(x) {
 
@@ -444,16 +362,16 @@
 
 if(n == 1){
 
-  c(crayon::bold(x))
+  c(.efa_style(x, "bold"))
 
 } else if (n == 2){
 
-  c(crayon::bold(x[1]), " and ", crayon::bold(x[2]))
+  c(.efa_style(x[1], "bold"), " and ", .efa_style(x[2], "bold"))
 
 } else if (n > 2){
 
-  c(paste(crayon::bold(x[seq_len(n-1)]), collapse = ", "), ", and ",
-    crayon::bold(x[n]))
+  c(paste(.efa_style(x[seq_len(n-1)], "bold"), collapse = ", "), ", and ",
+    .efa_style(x[n], "bold"))
 
 }
 

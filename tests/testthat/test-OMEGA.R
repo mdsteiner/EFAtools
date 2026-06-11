@@ -61,4 +61,31 @@ test_that("errors are thrown correctly", {
                      factor_corres = sl_mod$sl[, c("F1", "F2", "F3")] >= .2), class = "efa_omega_missing_args")
 })
 
+test_that("print output is stable", {
+  local_reproducible_output()
+
+  # single group, full coefficient matrix (general factor plus group factors)
+  expect_snapshot(print(om_sl), transform = scrub_num)
+
+  # single group, single factor
+  expect_snapshot(print(structure(0.85, class = "OMEGA")), transform = scrub_num)
+  expect_snapshot(print(structure(c(0.85, 2.10), class = "OMEGA")), transform = scrub_num)
+
+  # multiple groups, full coefficient matrix (long header with ECV and PUC)
+  om_mg6 <- structure(list(GroupA = unclass(om_sl), GroupB = unclass(om_sl)),
+                      class = "OMEGA")
+  expect_snapshot(print(om_mg6), transform = scrub_num)
+
+  # multiple groups, three-column matrix (omega total, hierarchical, subscale)
+  om_mg3 <- structure(list(GroupA = unclass(om_sl)[, 1:3],
+                           GroupB = unclass(om_sl)[, 1:3]), class = "OMEGA")
+  expect_snapshot(print(om_mg3), transform = scrub_num)
+
+  # multiple groups, single factor
+  expect_snapshot(print(structure(list(GroupA = 0.85, GroupB = 0.80), class = "OMEGA")),
+                  transform = scrub_num)
+  expect_snapshot(print(structure(list(GroupA = c(0.85, 2.10), GroupB = c(0.80, 1.90)),
+                                  class = "OMEGA")), transform = scrub_num)
+})
+
 rm(lav_mod, lav_fit, om_lav, efa_mod, sl_mod, om_sl, schmid_mod, om_schmid, om_man)

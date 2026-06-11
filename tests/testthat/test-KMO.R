@@ -55,4 +55,20 @@ test_that("errors are thrown correctly", {
   expect_warning(KMO(cor_nposdef), "Matrix was not positive definite, smoothing was done")
 })
 
+test_that("print output is stable", {
+  local_reproducible_output()
+
+  # high KMO: tick, verdict, and the per-variable values
+  expect_snapshot(print(kmo_cor), transform = scrub_num)
+
+  # low KMO: cross and the "not suitable" verdict
+  kmo_low <- structure(list(KMO = 0.45, KMO_i = c(V1 = 0.40, V2 = 0.50, V3 = 0.45)),
+                       class = "KMO")
+  expect_snapshot(print(kmo_low), transform = scrub_num)
+
+  # KMO value not available
+  kmo_na <- structure(list(KMO = NA_real_, KMO_i = NA_real_), class = "KMO")
+  expect_snapshot(print(kmo_na), transform = scrub_num)
+})
+
 rm(kmo_cor, kmo_raw, dat_nonames, kmo_nona, x, y, z, dat_sing, cor_sing, cor_nposdef)

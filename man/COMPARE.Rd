@@ -65,8 +65,8 @@ and max functions. Default is FALSE.}
 labels for the two objects x and y that will be compared. These will be used
 as labels on the x-axis of the plot. Default is "x" and "y".}
 
-\item{plot}{logical. If TRUE (default), a plot illustrating the differences
-will be shown.}
+\item{plot}{logical. Retained for backwards compatibility; the difference plot
+is now drawn with \code{\link[=plot.COMPARE]{plot.COMPARE()}} rather than when printing. Default is TRUE.}
 
 \item{plot_red}{numeric. Threshold above which to plot the absolute differences
 in red. Default is .001.}

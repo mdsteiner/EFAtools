@@ -23,15 +23,15 @@ print.SL <- function(x, ...) {
   # Settings intro message
   cat("\n")
   cat("EFA for second-order loadings performed with type = '",
-      crayon::bold(type), "' and method = '", crayon::bold(method),
+      .efa_style(type, "bold"), "' and method = '", .efa_style(method, "bold"),
       "'", sep = "")
   cat("\n")
 
   if (!is.null(x$settings$max_iter) && x$iter > x$settings$max_iter) {
     cat("\n")
-    cat(crayon::red$bold(cli::symbol$cross,
+    cat(.efa_style(paste(cli::symbol$cross,
                          "Maximum number of iterations reached",
-                         "without convergence"))
+                         "without convergence"), c("red", "bold")))
     cat("\n")
   }
 
@@ -39,15 +39,15 @@ print.SL <- function(x, ...) {
 
   # print the loadings and the variances
   cat("\n")
-  cat(cli::rule(left = crayon::bold("Schmid-Leiman Solution"), col = "blue"))
+  cat(cli::rule(left = .efa_style("Schmid-Leiman Solution", "bold")))
   cat("\n")
   cat("\n")
   print(x$sl)
   cat("\n")
   cat("\n")
-  cat(cli::rule(left = crayon::bold("Variances Accounted for"), col = "blue"))
+  cat(cli::rule(left = .efa_style("Variances Accounted for", "bold")))
   cat("\n")
   cat("\n")
-  cat(.get_compare_matrix(x$vars_accounted, r_red = Inf, n_char = 17))
+  .print_efa_corr_matrix(x$vars_accounted, digits = 3)
 
 }

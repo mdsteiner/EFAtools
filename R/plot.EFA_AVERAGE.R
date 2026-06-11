@@ -5,6 +5,9 @@
 #' @param x list. An output from the [EFA_AVERAGE] function.
 #' @param ... not used.
 #'
+#' @returns A ggplot object showing, for each indicator and factor, the minimum,
+#'  maximum, and average (mean or median) loading across the averaged solutions.
+#'
 #' @importFrom rlang .data
 #' @export
 #' @method plot EFA_AVERAGE
@@ -12,7 +15,7 @@
 #' @examples
 #' \dontrun{
 #' EFA_aver <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500)
-#' EFA_aver
+#' plot(EFA_aver)
 #' }
 #'
 plot.EFA_AVERAGE <- function(x, ...) {
@@ -25,7 +28,7 @@ plot.EFA_AVERAGE <- function(x, ...) {
 
     temp <- temp  %>%
       tibble::rownames_to_column() %>%
-      tidyr::pivot_longer(-.data$rowname, names_to = "colname", values_to = "loadings")
+      tidyr::pivot_longer(-"rowname", names_to = "colname", values_to = "loadings")
 
     return(temp)
   })
@@ -59,19 +62,19 @@ plot.EFA_AVERAGE <- function(x, ...) {
     ggplot2::theme(axis.title.y = ggplot2::element_blank(),
           axis.title.x = ggplot2::element_blank(),
           axis.text.y = ggplot2::element_blank(),
-          axis.line.x = ggplot2::element_line(color = "black", size = 0.2),
-          axis.ticks.x = ggplot2::element_line(color = "black", size = 0.2),
+          axis.line.x = ggplot2::element_line(color = "black", linewidth = 0.2),
+          axis.ticks.x = ggplot2::element_line(color = "black", linewidth = 0.2),
           plot.title = ggplot2::element_text(face = "bold", hjust = 0.5),
           panel.grid.minor.y = ggplot2::element_blank(),
           panel.grid.major.y = ggplot2::element_blank(),
           panel.spacing.y = ggplot2::unit(0, "mm"),
           strip.text.y.left = ggplot2::element_text(angle = 0, hjust = 0),
           strip.text.x = ggplot2::element_text(face = "bold"),
-          strip.background.x = ggplot2::element_rect(color = "black", size = 0.2),
+          strip.background.x = ggplot2::element_rect(color = "black", linewidth = 0.2),
           panel.border = ggplot2::element_rect(color = "gray", fill = NA,
-                                               size = 0.2)
+                                               linewidth = 0.2)
           )
 
-  print(plot_load)
+  plot_load
 
 }

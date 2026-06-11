@@ -34,41 +34,35 @@ print.COMPARE <- function(x, ...) {
   range_red <- x$settings$range_red
   round_red <- x$settings$round_red
   print_diff <- x$settings$print_diff
-  x_labels <- x$settings$x_labels
-  plot <- x$settings$plot
-  plot_red <- x$settings$plot_red
 
   # prepare to print statistics
 
   if (mean_abs_diff <= m_red) {
-    mean_out <- crayon::green$bold(.numformat(mean_abs_diff, digits,
-                                              TRUE))
+    mean_out <- .efa_style(.numformat(mean_abs_diff, digits, TRUE), c("green", "bold"))
   } else {
-    mean_out <- crayon::red$bold(.numformat(mean_abs_diff, digits, TRUE))
+    mean_out <- .efa_style(.numformat(mean_abs_diff, digits, TRUE), c("red", "bold"))
   }
 
   if (median_abs_diff <= m_red) {
-    median_out <- crayon::green$bold(.numformat(median_abs_diff, digits,
-                                                TRUE))
+    median_out <- .efa_style(.numformat(median_abs_diff, digits, TRUE), c("green", "bold"))
   } else {
-    median_out <- crayon::red$bold(.numformat(median_abs_diff, digits,
-                                              TRUE))
+    median_out <- .efa_style(.numformat(median_abs_diff, digits, TRUE), c("red", "bold"))
   }
 
   if (max_abs_diff <= range_red) {
-    max_out <- crayon::green$bold(.numformat(max_abs_diff, digits, TRUE))
-    min_out <- crayon::green$bold(.numformat(min_abs_diff, digits, TRUE))
+    max_out <- .efa_style(.numformat(max_abs_diff, digits, TRUE), c("green", "bold"))
+    min_out <- .efa_style(.numformat(min_abs_diff, digits, TRUE), c("green", "bold"))
   } else {
-    max_out <- crayon::red$bold(.numformat(max_abs_diff, digits, TRUE))
-    min_out <- crayon::red$bold(.numformat(min_abs_diff, digits, TRUE))
+    max_out <- .efa_style(.numformat(max_abs_diff, digits, TRUE), c("red", "bold"))
+    min_out <- .efa_style(.numformat(min_abs_diff, digits, TRUE), c("red", "bold"))
   }
 
   if (is.na(are_equal)) {
-    equal_out <- crayon::red$bold("none")
+    equal_out <- .efa_style("none", c("red", "bold"))
   } else if (are_equal < round_red) {
-    equal_out <- crayon::red$bold(are_equal)
+    equal_out <- .efa_style(are_equal, c("red", "bold"))
   } else {
-    equal_out <- crayon::green$bold(are_equal)
+    equal_out <- .efa_style(are_equal, c("green", "bold"))
   }
 
 
@@ -81,66 +75,27 @@ print.COMPARE <- function(x, ...) {
   cat(paste0("Max decimals where all numbers are equal: ",
              equal_out))
   cat("\n")
-  cat(paste0("Minimum number of decimals provided: ", crayon::blue$bold(max_dec)))
+  cat(paste0("Minimum number of decimals provided: ", .efa_style(max_dec, "bold")))
 
   # create the difference object
   if (isTRUE(print_diff)) {
     cat("\n")
     cat("\n")
-    if (inherits(diff, "matrix")) {
-
-      out_diff <- .get_compare_matrix(diff, digits = digits, r_red = range_red)
-
-    } else {
-
-      out_diff <- .get_compare_vector(diff, digits = digits, r_red = range_red)
-
-    }
-
-    cat(out_diff)
-
+    .print_compare_diff(diff, digits = digits, r_red = range_red)
   }
 
+}
 
-  if (isTRUE(plot) && length(c(diff)) > 2) {
-
-    if (length(x_labels) < 2) {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" Less than two x_labels specified, using 'x' and 'y'."))
-      x_labels <- c("x", "y")
-    } else if (length(x_labels) > 2) {
-      warning(crayon::yellow$bold("!"), crayon::yellow(" More than two x_labels specified, using only the first two."))
-      x_labels <- x_labels[1:2]
-    }
-
-    # prepare variable for plot
-    diff_dat <- tibble::tibble(diffs = as.vector(abs(diff))) %>%
-      dplyr::mutate(color = dplyr::case_when(diffs >= plot_red ~ "large difference",
-                                             TRUE ~ "acceptable difference"),
-                    comp = paste(x_labels, collapse = " vs. "))
-
-    diff_plot <- ggplot2::ggplot(diff_dat, ggplot2::aes_string("comp", "diffs",
-                                                               col = "color")) +
-      ggplot2::geom_violin(col = "grey20", width = .7, size = .7) +
-      ggplot2::geom_hline(yintercept = plot_red, lty = 2, alpha = .5,
-                          size = 1.25) +
-      ggplot2::geom_jitter(alpha = .5, width = 0.05, height = 0, size = 2) +
-      ggplot2::scale_color_manual(values = c("black", "red")) +
-      ggplot2::theme_bw() +
-      ggplot2::labs(
-        subtitle = paste("Threshold for difference coloring:", plot_red),
-        x = "Compared Variables",
-        y = "Absolute Difference"
-      ) +
-      ggplot2::theme(
-        legend.position = "none",
-        strip.text = ggplot2::element_text(size = 11, face = "bold"),
-        axis.text = ggplot2::element_text(size = 11),
-        axis.title = ggplot2::element_text(size = 13,face = "bold")
-      )
-
-    print(diff_plot)
-
+# Render a COMPARE difference object through the shared matrix renderer, colouring cells
+# whose absolute difference exceeds `r_red` (the COMPARE `range_red` threshold). A matrix is
+# shown with its variable rows and factor columns; a vector becomes a single column (one
+# value per row), with no column header.
+.print_compare_diff <- function(diff, digits, r_red) {
+  is_vector <- !inherits(diff, "matrix")
+  if (is_vector) {
+    diff <- matrix(diff, ncol = 1, dimnames = list(names(diff), NULL))
   }
 
-
+  .print_efa_matrix(diff, role = "compare", digits = digits, cutoff = r_red,
+                    header = !is_vector)
 }

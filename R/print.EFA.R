@@ -519,27 +519,12 @@ format.summary.EFA <- function(x, ...) {
   invisible(NULL)
 }
 
-# Render a numeric matrix (factor intercorrelations or variances accounted for) through the
-# shared matrix renderer with a neutral "corr" role, so these tables align consistently with
-# the loading table. Row/column labels come from the matrix dimnames (callers set them);
-# `lower_only = TRUE` blanks the strictly-upper triangle (for Phi).
+# Render a numeric matrix (factor intercorrelations or variances accounted for) with a
+# neutral "corr" role, so these tables align consistently with the loading table. Thin
+# wrapper around the shared `.print_efa_matrix()`; `lower_only = TRUE` blanks the
+# strictly-upper triangle (for Phi).
 .print_efa_corr_matrix <- function(values, digits = 3, lower_only = FALSE) {
-  values <- as.matrix(values)
-
-  cat(
-    .efa_format_matrix(
-      values = values,
-      row_labels = .efa_variable_names(values),
-      col_labels = .efa_factor_names(values),
-      col_roles = rep("corr", ncol(values)),
-      digits = digits,
-      lower_only = lower_only
-    ),
-    sep = "\n"
-  )
-  cat("\n")
-
-  invisible(NULL)
+  .print_efa_matrix(values, role = "corr", digits = digits, lower_only = lower_only)
 }
 
 .print_efa_identification_warning <- function(spec) {

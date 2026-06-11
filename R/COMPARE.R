@@ -35,8 +35,8 @@
 #' @param x_labels character. A vector of length two containing identifying
 #'  labels for the two objects x and y that will be compared. These will be used
 #'  as labels on the x-axis of the plot. Default is "x" and "y".
-#' @param plot logical. If TRUE (default), a plot illustrating the differences
-#'  will be shown.
+#' @param plot logical. Retained for backwards compatibility; the difference plot
+#'  is now drawn with [plot.COMPARE()] rather than when printing. Default is TRUE.
 #' @param plot_red numeric. Threshold above which to plot the absolute differences
 #'  in red. Default is .001.
 #'

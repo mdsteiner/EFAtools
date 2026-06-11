@@ -60,6 +60,21 @@ test_that("errors are thrown correctly", {
   expect_warning(BARTLETT(cor_nposdef, N = 10), "Matrix was not positive definite, smoothing was done")
 })
 
+test_that("print output is stable", {
+  local_reproducible_output()
+
+  # significant
+  expect_snapshot(print(bart_cor), transform = scrub_num)
+
+  # not significant
+  expect_snapshot(print(bart_rand), transform = scrub_num)
+
+  # test did not render a result
+  bart_na <- structure(list(chisq = NA_real_, df = NA_integer_, p_value = NA_real_,
+                            settings = list()), class = "BARTLETT")
+  expect_snapshot(print(bart_na), transform = scrub_num)
+})
+
 rm(bart_cor, bart_raw, bart_rand, x, y, z, dat_sing, cor_sing, cor_nposdef)
 
 

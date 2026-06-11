@@ -27,13 +27,13 @@ print.OMEGA <- function(x, digits = 3, ...) {
     # If there is only a single factor and only omega was computed
     if(length(x[[1]]) == 1){
 
-      cat(crayon::blue$bold("Omega total for the single factor for each group:"))
+      cat(.efa_style("Omega total for the single factor for each group:", "bold"))
       cat("\n")
 
       for(i in seq_along(group_names)){
 
         cat("\n")
-        cat(crayon::blue("Group ", crayon::italic(group_names[i]), ": ", sep = ""),
+        cat(paste0("Group ", .efa_style(group_names[i], "italic"), ": "),
             round(x[[i]], digits = digits))
 
     }
@@ -41,13 +41,13 @@ print.OMEGA <- function(x, digits = 3, ...) {
       # If there is only a single factor and omega and H index were computed
     } else if(length(x[[1]]) == 2){
 
-      cat(crayon::blue$bold("Omega total and H index for the single factor for each group:"))
+      cat(.efa_style("Omega total and H index for the single factor for each group:", "bold"))
 
       for(i in seq_along(group_names)){
 
         cat("\n")
         cat("\n")
-        cat(crayon::blue("Group ", crayon::italic(group_names[i]), ": ", sep = ""))
+        cat(paste0("Group ", .efa_style(group_names[i], "italic"), ": "))
         cat("\n")
         cat("Omega: ", round(x[[i]][1], digits = digits), sep = "")
         cat("\n")
@@ -57,18 +57,19 @@ print.OMEGA <- function(x, digits = 3, ...) {
 
     } else {
 
-      if(ncol(x[[1]] == 3)){
+      if(ncol(x[[1]]) == 3){
 
-      cat(crayon::blue$bold("Omega total, omega hierarchical, and omega subscale",
-      "for the general factor (top row) and the group factors for each group:"))
+      cat(.efa_style(paste("Omega total, omega hierarchical, and omega subscale",
+      "for the general factor (top row) and the group factors for each group:"),
+      "bold"))
       cat("\n")
 
       } else {
 
-        cat(crayon::blue$bold("Omega total, omega hierarchical, omega subscale,",
+        cat(.efa_style(paste("Omega total, omega hierarchical, omega subscale,",
         "H index, explained common variance (ECV), and percent of uncontaminated",
         "correlations (PUC) for the general factor (top row) and omegas and",
-        "H index for the group factors for each group:"))
+        "H index for the group factors for each group:"), "bold"))
         cat("\n")
 
       }
@@ -76,7 +77,7 @@ print.OMEGA <- function(x, digits = 3, ...) {
       for(i in seq_along(group_names)){
 
         cat("\n")
-        cat(crayon::blue("Group ", crayon::italic(group_names[i]), ":", sep = ""))
+        cat(paste0("Group ", .efa_style(group_names[i], "italic"), ":"))
         cat("\n")
         print(round(unclass(x[[i]]), digits = digits), na.print = "")
 
@@ -88,12 +89,12 @@ print.OMEGA <- function(x, digits = 3, ...) {
 
     if(length(x) == 1){
 
-      cat(crayon::blue$bold("Omega total for the single factor:"),
+      cat(.efa_style("Omega total for the single factor:", "bold"),
                             round(x, digits = digits))
 
     } else if(length(x) == 2){
 
-      cat(crayon::blue$bold("Omega total and H index for the single factor:"))
+      cat(.efa_style("Omega total and H index for the single factor:", "bold"))
       cat("\n")
       cat("\n")
       cat("Omega: ", round(x[1], digits = digits), sep = "")
@@ -104,18 +105,18 @@ print.OMEGA <- function(x, digits = 3, ...) {
 
         if(ncol(x) == 3){
 
-      cat(crayon::blue$bold("Omega total, omega hierarchical, and omega subscale",
-      "for the general factor (top row) and the group factors:"))
+      cat(.efa_style(paste("Omega total, omega hierarchical, and omega subscale",
+      "for the general factor (top row) and the group factors:"), "bold"))
       cat("\n")
       cat("\n")
 
         } else {
 
-          cat(crayon::blue$bold("Omega total, omega hierarchical, omega subscale,",
+          cat(.efa_style(paste("Omega total, omega hierarchical, omega subscale,",
                                 "H index, explained common variance (ECV), and",
                                 "percent of uncontaminated correlations (PUC)",
                                 "for the general factor (top row) and omegas",
-                                "and H index for the group factors:"))
+                                "and H index for the group factors:"), "bold"))
           cat("\n")
           cat("\n")
 

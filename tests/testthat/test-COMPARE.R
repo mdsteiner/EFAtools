@@ -253,5 +253,26 @@ test_that("errors etc. are thrown correctly", {
 
 })
 
+test_that("print output is stable", {
+  local_reproducible_output()
+
+  # matrix difference (variables x factors). matr/int hold exact 0/1 differences, so the
+  # snapshots are recorded literally (no scrub) to pin the column alignment.
+  expect_snapshot(print(matr))
+
+  # vector difference (rendered as a single column, one value per row)
+  expect_snapshot(print(int))
+})
+
+test_that("plot returns a ggplot and guards too-few differences", {
+  # Smoke-test only (no vdiffr baseline) because geom_jitter draws random positions,
+  # so the rendered plot is not reproducible across runs.
+  p <- plot(matr)
+  expect_s3_class(p, "ggplot")
+
+  # too few differences to plot
+  expect_error(plot(dec), class = "efa_compare_too_few_to_plot")
+})
+
 rm(int, dec, matr, SPSS_PAF, psych_PAF, load, load_ro1, load_ro2, SPSS_PAF_1,
    psych_PAF_1, load_F1, vec_s, vec_L, mat_s, mat_L)

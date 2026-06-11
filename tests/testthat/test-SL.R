@@ -212,6 +212,12 @@ test_that("errors are thrown correctly", {
   expect_error(SL(EFA_mod$rot_loadings, type = "EFAtools", method = "ML"), class = "efa_sl_phi_missing")
 })
 
+test_that("print output is stable", {
+  local_reproducible_output()
+
+  expect_snapshot(print(SL_EFAtools), transform = scrub_num)
+})
+
 rm(EFA_mod, SL_EFAtools, SL_SPSS, fa_mod, SL_psych, SL_flex, lav_mod_ho,
    lav_fit_ho, SL_lav, EFA_mod_unrot, EFA_mod_orth, fa_mod_unrot, fa_mod_orth,
    lav_mod_NA, lav_fit_NA, lav_mod_ho_inv, lav_fit_ho_inv)

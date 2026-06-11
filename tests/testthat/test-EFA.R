@@ -380,7 +380,7 @@ test_that("print.EFA output is stable (ML, promax)", {
 
 test_that("format.EFA returns plain text even when styling is enabled", {
   # Force colours on so a styled print() embeds ANSI; format() must not.
-  old <- options(cli.num_colors = 256, crayon.enabled = TRUE, crayon.colors = 256)
+  old <- options(cli.num_colors = 256)
   on.exit(options(old), add = TRUE)
 
   styled <- utils::capture.output(print(efa_psych))
@@ -405,7 +405,7 @@ test_that("summary.EFA output is stable (ML, promax)", {
 })
 
 test_that("format.summary.EFA returns plain text even when styling is enabled", {
-  old <- options(cli.num_colors = 256, crayon.enabled = TRUE, crayon.colors = 256)
+  old <- options(cli.num_colors = 256)
   on.exit(options(old), add = TRUE)
 
   styled <- utils::capture.output(print(summary(efa_psych)))
