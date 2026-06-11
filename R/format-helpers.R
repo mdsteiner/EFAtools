@@ -72,15 +72,18 @@
   out
 }
 
-# Render a loading matrix as styled, decimal-aligned console lines. `col_roles` tags each
-# column "loading", "h2", or "u2"; "loading" columns are split into vertically stacked blocks
-# when the table is wider than the console (or `max_factors_per_block` is set), with the
-# h2/u2 columns repeated in every block. Individual rows are never wrapped. Salient loadings
-# (|x| >= cutoff) are bold, weaker ones grey, and Heywood-relevant cells (|loading| > 1,
-# h2 > 1, u2 < 0) red; styling is dropped when `color = FALSE` or colours are off.
+# Render a numeric matrix as decimal-aligned console lines. `col_roles` tags each column:
+# "loading" columns are split into vertically stacked blocks when the table is wider than the
+# console (or `max_factors_per_block` is set), with the h2/u2 columns repeated in every block;
+# any other role (e.g. "corr", used for factor-correlation and variance tables) is treated as
+# auxiliary and rendered without per-cell styling. Individual rows are never wrapped. Salient
+# loadings (|x| >= cutoff) are bold, weaker ones grey, and Heywood-relevant cells
+# (|loading| > 1, h2 > 1, u2 < 0) red; styling is dropped when `color = FALSE` or colours are
+# off. With `lower_only = TRUE` the strictly-upper triangle is left blank (for symmetric
+# matrices such as factor intercorrelations).
 .efa_format_matrix <- function(values, row_labels, col_labels, col_roles,
                                cutoff = 0, digits = 3, color = TRUE,
-                               max_factors_per_block = NULL) {
+                               max_factors_per_block = NULL, lower_only = FALSE) {
 
   values <- as.matrix(values)
   n_col <- ncol(values)
@@ -88,6 +91,9 @@
   aux_cols <- which(col_roles != "loading")
 
   cell_str <- .efa_num(values, digits = digits, print_zero = FALSE, pad = FALSE)
+  if (isTRUE(lower_only)) {
+    cell_str[upper.tri(cell_str)] <- ""
+  }
 
   # Display width (not code-point count) so the column maths matches cli::ansi_align below.
   row_width <- max(cli::ansi_nchar(row_labels, type = "width"), 1L)
@@ -127,7 +133,10 @@
     ))
   }
 
-  out
+  # Drop trailing blank padding (e.g. the upper triangle under `lower_only`, or a centred
+  # last header cell) so the lines carry no trailing whitespace. Styled cells end in an ANSI
+  # reset, so this only ever trims plain padding.
+  sub("[ ]+$", "", out)
 }
 
 # Assemble the header and body lines for one column block of `.efa_format_matrix()`.
@@ -135,8 +144,10 @@
                               cols, row_width, col_widths, cutoff, color) {
 
   header_cells <- vapply(cols, function(j) {
-    cell <- cli::ansi_align(col_labels[j], width = col_widths[j], align = "center")
-    if (isTRUE(color)) cli::style_bold(cell) else cell
+    # Style the label first, then centre it, so the alignment padding stays outside the
+    # ANSI wrap and the trailing-whitespace trim in `.efa_format_matrix()` can reach it.
+    label <- if (isTRUE(color)) cli::style_bold(col_labels[j]) else col_labels[j]
+    cli::ansi_align(label, width = col_widths[j], align = "center")
   }, character(1L))
   header <- paste0(strrep(" ", row_width), "  ",
                    paste(header_cells, collapse = "  "))

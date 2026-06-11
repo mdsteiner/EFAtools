@@ -1,7 +1,7 @@
 # bootstrap arrays are pooled into MI SEs and CIs
 
     Code
-      print(pooled_boot, details = "full")
+      print(summary(pooled_boot))
     Output
       
       Pooled EFA across 2 imputations performed with type = 'EFAtools', method = 'ML', and rotation = 'none'.
@@ -25,7 +25,7 @@
       
       -- Unrotated Loadings ----------------------------------------------------------
       
-                  F1    h2    u2 
+                  F1    h2    u2
       fun <num> <num> <num>
       friends <num> <num> <num>
       enjoy <num> <num> <num>
@@ -55,9 +55,10 @@
       
       -- Variances Accounted for -----------------------------------------------------
       
-                  	 F1  
+                      F1
       SS loadings <num>
       Prop Tot Var <num>
+      
       
       -- Model Fit -------------------------------------------------------------------
       
@@ -97,25 +98,9 @@
       Pooled EFA across 3 imputations performed with type = 'EFAtools', method = 'PAF', and rotation = 'promax'.
       Pooling settings: target_method = 'consensus', align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.
       
-      -- Pooled Model Diagnostics ----------------------------------------------------
-      
-      Factors: 3
-      Variables: 18
-      N: 500
-      Imputations: 3
-      Pooling: target_method = 'consensus', align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'
-      Alignment: method = 'consensus', converged
-      Heywood cases: 0
-      Cross-loading items (|loading| >= <num>): 0
-      Items without salient loading (|loading| >= <num>): 0
-      Factors with fewer than 3 salient indicators: 0
-      Items with primary-loading gap < <num>: 1
-      Largest |residual|: <num>
-      Factor intercorrelations > <num>: none
-      
       -- Rotated Loadings ------------------------------------------------------------
       
-             F1     F2     F3    h2    u2 
+             F1     F2     F3    h2    u2
       V1 <num> <num> <num> <num> <num>
       V2 <num> <num> <num> <num> <num>
       V3 <num> <num> <num> <num> <num>
@@ -143,10 +128,155 @@
       
       -- Factor Intercorrelations ----------------------------------------------------
       
-        	 F1  	 F2  	 F3  
-      F1 <num> <num> <num>
-      F2 <num> <num> <num>
+            F1     F2     F3
+      F1 <num>
+      F2 <num> <num>
       F3 <num> <num> <num>
+      
+      
+      -- Variances Accounted for -----------------------------------------------------
+      
+                           F1     F2     F3
+      SS loadings <num> <num> <num>
+      Prop Tot Var <num> <num> <num>
+      Cum Prop Tot Var <num> <num> <num>
+      Prop Comm Var <num> <num> <num>
+      Cum Prop Comm Var <num> <num> <num>
+      
+      
+      -- Model Fit -------------------------------------------------------------------
+      
+      CAF  : <num>
+      RMSR  : <num>
+      df: 102
+
+# print.EFA_POOLED output is stable (ML, unrotated)
+
+    Code
+      print(pooled_none)
+    Output
+      
+      Pooled EFA across 3 imputations performed with type = 'EFAtools', method = 'ML', and rotation = 'none'.
+      Pooling settings: align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.
+      
+      -- Unrotated Loadings ----------------------------------------------------------
+      
+                  F1    h2    u2
+      fun <num> <num> <num>
+      friends <num> <num> <num>
+      enjoy <num> <num> <num>
+      hurt <num> <num> <num>
+      part <num> <num> <num>
+      commonly <num> <num> <num>
+      chances <num> <num> <num>
+      attracted <num> <num> <num>
+      
+      Legend:
+        bold = |loading| >= <num>
+        grey = below cutoff
+        red h2/u2 = Heywood-relevant value
+      
+      
+      -- Variances Accounted for -----------------------------------------------------
+      
+                      F1
+      SS loadings <num>
+      Prop Tot Var <num>
+      
+      
+      -- Model Fit -------------------------------------------------------------------
+      
+      χ²(20) = <num>, p = <num>
+      CFI  : <num>
+      RMSEA [90% CI]  : <num> [ <num>; <num>]
+      AIC  : <num>
+      BIC  : <num>
+      CAF  :NA
+      RMSR  : <num>
+
+# summary.EFA_POOLED output is stable (PAF, promax)
+
+    Code
+      print(summary(pooled_obl))
+    Output
+      
+      Pooled EFA across 3 imputations performed with type = 'EFAtools', method = 'PAF', and rotation = 'promax'.
+      Pooling settings: target_method = 'consensus', align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.
+      
+      -- Pooled Model Diagnostics ----------------------------------------------------
+      
+      Factors: 3
+      Variables: 18
+      N: 500
+      Imputations: 3
+      Pooling: target_method = 'consensus', align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'
+      Alignment: method = 'consensus', converged
+      Heywood cases: 0
+      Cross-loading items (|loading| >= <num>): 0
+      Items without salient loading (|loading| >= <num>): 0
+      Factors with fewer than 3 salient indicators: 0
+      Items with primary-loading gap < <num>: 1
+      Largest |residual|: <num>
+      Factor intercorrelations > <num>: none
+      
+      -- Rotated Loadings ------------------------------------------------------------
+      
+             F1     F2     F3    h2    u2
+      V1 <num> <num> <num> <num> <num>
+      V2 <num> <num> <num> <num> <num>
+      V3 <num> <num> <num> <num> <num>
+      V4 <num> <num> <num> <num> <num>
+      V5 <num> <num> <num> <num> <num>
+      V6 <num> <num> <num> <num> <num>
+      V7 <num> <num> <num> <num> <num>
+      V8 <num> <num> <num> <num> <num>
+      V9 <num> <num> <num> <num> <num>
+      V10 <num> <num> <num> <num> <num>
+      V11 <num> <num> <num> <num> <num>
+      V12 <num> <num> <num> <num> <num>
+      V13 <num> <num> <num> <num> <num>
+      V14 <num> <num> <num> <num> <num>
+      V15 <num> <num> <num> <num> <num>
+      V16 <num> <num> <num> <num> <num>
+      V17 <num> <num> <num> <num> <num>
+      V18 <num> <num> <num> <num> <num>
+      
+      Legend:
+        bold = |loading| >= <num>
+        grey = below cutoff
+        red h2/u2 = Heywood-relevant value
+      
+      
+      -- Factor Intercorrelations ----------------------------------------------------
+      
+            F1     F2     F3
+      F1 <num>
+      F2 <num> <num>
+      F3 <num> <num> <num>
+      
+      
+      -- Structure Matrix ------------------------------------------------------------
+      
+            F1    F2    F3
+      V1 <num> <num> <num>
+      V2 <num> <num> <num>
+      V3 <num> <num> <num>
+      V4 <num> <num> <num>
+      V5 <num> <num> <num>
+      V6 <num> <num> <num>
+      V7 <num> <num> <num>
+      V8 <num> <num> <num>
+      V9 <num> <num> <num>
+      V10 <num> <num> <num>
+      V11 <num> <num> <num>
+      V12 <num> <num> <num>
+      V13 <num> <num> <num>
+      V14 <num> <num> <num>
+      V15 <num> <num> <num>
+      V16 <num> <num> <num>
+      V17 <num> <num> <num>
+      V18 <num> <num> <num>
+      
       
       -- Simple Structure Diagnostics ------------------------------------------------
       
@@ -156,12 +286,13 @@
       
       -- Variances Accounted for -----------------------------------------------------
       
-                       	 F1  	 F2  	 F3  
+                           F1     F2     F3
       SS loadings <num> <num> <num>
       Prop Tot Var <num> <num> <num>
       Cum Prop Tot Var <num> <num> <num>
       Prop Comm Var <num> <num> <num>
       Cum Prop Comm Var <num> <num> <num>
+      
       
       -- Model Fit -------------------------------------------------------------------
       
@@ -179,10 +310,10 @@
       
       Inspect the residual matrix for details (e.g., with residuals()).
 
-# print.EFA_POOLED output is stable (ML, unrotated)
+# summary.EFA_POOLED output is stable (ML, unrotated)
 
     Code
-      print(pooled_none)
+      print(summary(pooled_none))
     Output
       
       Pooled EFA across 3 imputations performed with type = 'EFAtools', method = 'ML', and rotation = 'none'.
@@ -204,7 +335,7 @@
       
       -- Unrotated Loadings ----------------------------------------------------------
       
-                  F1    h2    u2 
+                  F1    h2    u2
       fun <num> <num> <num>
       friends <num> <num> <num>
       enjoy <num> <num> <num>
@@ -222,9 +353,10 @@
       
       -- Variances Accounted for -----------------------------------------------------
       
-                  	 F1  
+                      F1
       SS loadings <num>
       Prop Tot Var <num>
+      
       
       -- Model Fit -------------------------------------------------------------------
       

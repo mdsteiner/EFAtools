@@ -272,8 +272,8 @@ test_that("bootstrap arrays are pooled into MI SEs and CIs", {
   expect_identical(dim(pooled_boot$standardized_residuals),
                    dim(pooled_boot$residuals))
 
-  # details = "full" additionally prints the MI uncertainty summary
-  expect_snapshot(print(pooled_boot, details = "full"), transform = scrub_num)
+  # summary() additionally shows the MI uncertainty summary
+  expect_snapshot(print(summary(pooled_boot)), transform = scrub_num)
 })
 
 test_that("oblique bootstrap pooling produces rotated SEs, CIs, and Phi", {
@@ -319,6 +319,18 @@ test_that("print.EFA_POOLED output is stable (ML, unrotated)", {
   local_reproducible_output()
 
   expect_snapshot(print(pooled_none), transform = scrub_num)
+})
+
+test_that("summary.EFA_POOLED output is stable (PAF, promax)", {
+  local_reproducible_output()
+
+  expect_snapshot(print(summary(pooled_obl)), transform = scrub_num)
+})
+
+test_that("summary.EFA_POOLED output is stable (ML, unrotated)", {
+  local_reproducible_output()
+
+  expect_snapshot(print(summary(pooled_none)), transform = scrub_num)
 })
 
 test_that("format.EFA_POOLED matches the printed output", {

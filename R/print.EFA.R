@@ -1,72 +1,68 @@
-#' Print EFA object
+#' Print and summarise an EFA object
 #'
-#' Print Method showing a summarized output of the [EFA] function.
+#' `print()` shows a concise overview of an [EFA()] or [EFA_POOLED()] solution:
+#' a model header, the loading matrix (with the factor intercorrelations for
+#' oblique solutions), the variances accounted for, and the model fit.
+#' [summary()] returns a `summary.EFA` object whose print method adds the full
+#' diagnostics: model and simple-structure diagnostics, confidence-interval
+#' tables, the structure matrix, multiple-imputation uncertainty (for pooled
+#' objects), and residual diagnostics. `format()` returns the same lines as a
+#' plain, un-styled character vector.
 #'
 #' @details
-#' The method is shared by single-imputation `EFA` objects and pooled
-#' `EFA_POOLED` objects. It prints, in order, a compact model header, optional
-#' diagnostics, the loading table, optional confidence-interval tables, variance
-#' accounted for, model fit, bootstrap notes, optional multiple-imputation
-#' uncertainty diagnostics, and residual diagnostics.
+#' The methods are shared by single-imputation `EFA` objects and pooled
+#' `EFA_POOLED` objects. For `EFA_POOLED` objects the header reports the number
+#' of imputations and the alignment/pooling settings; confidence intervals and a
+#' multiple-imputation uncertainty summary are shown by [summary()] when the
+#' pooled object carries bootstrap/MI quantities.
 #'
-#' For `EFA_POOLED` objects, the header and diagnostics report the number of
-#' imputations and the alignment/pooling settings stored in the object. Loading
-#' and factor-correlation confidence intervals are printed only when `boot.CI`
-#' is present. Pooled intervals created by `EFA_POOLED()` are labelled as
-#' bootstrap/MI intervals.
+#' In [summary()], `ci_filter` controls which loading intervals are shown:
+#' `"salient"` reports intervals for loadings whose absolute point estimate is at
+#' least `cutoff`, `"nonzero"` reports intervals excluding zero, and `"all"`
+#' reports every finite interval.
 #'
-#' `ci_filter` controls which loading intervals are shown. `salient` reports
-#' intervals for loadings whose absolute point estimate is at least `cutoff`;
-#' `nonzero` reports intervals excluding zero; and `all` reports every finite
-#' interval.
-#'
-#' @param x list. An object of class EFA to be printed
-#' @param cutoff numeric. Passed to [EFAtools::print.LOADINGS()].
-#' The number above which to print loadings in bold. Default is .3.
-#' @param digits numeric. Passed to [EFAtools::print.LOADINGS()]
-#' Number of digits to round the loadings to (default is 3).
-#' @param max_name_length numeric. Passed to [EFAtools::print.LOADINGS()].
-#' The maximum length of the variable names to display. Everything beyond this
-#' will be cut from the right.
-#' @param ci character. Whether to print confidence intervals for loadings and
-#' factor intercorrelations, if available. `"auto"` and `"separate"`
-#' print separate CI sections when CIs were computed; `"none"` suppresses
-#' these sections. Default is `"auto"`.
-#' @param ci_filter character. Which loading CIs to print. `"salient"`
-#' prints CIs for loadings with absolute values greater than or equal to
-#' `cutoff`; `"all"` prints all loading CIs; `"nonzero"` prints
-#' loading CIs that exclude zero. Default is `"salient"`.
-#' @param details character. Amount of information to print. `"standard"`
-#' prints the regular output, `"compact"` suppresses longer diagnostic
-#' sections, and `"full"` additionally prints available optional sections.
-#' @param diagnostics logical. Whether to print model and simple-structure
-#' diagnostics. Default is `TRUE`.
-#' @param diagnostics_top_n numeric. Maximum number of item-level diagnostic
-#' entries to print per diagnostic type.
-#' @param residual_cutoff numeric. Absolute residual cutoff used in the residual
-#' diagnostics section. Default is .1.
-#' @param residual_top_n numeric. Maximum number of residuals to print. Use
-#' `Inf` to print all residuals above `residual_cutoff`.
-#' @param show_structure logical. Whether to print the structure matrix for
-#' oblique solutions when available. Default is `FALSE`.
-#' @param sort_loadings character. Optional row sorting for loading tables.
-#' See [EFAtools::print.LOADINGS()].
-#' @param show_loading_legend logical. Whether to print a compact legend for
-#' loading-table styling. Default is `TRUE`.
-#' @param cross_loading_cutoff numeric. Cutoff for counting cross-loadings in
-#' the diagnostics. Defaults to `cutoff`.
-#' @param min_primary_gap numeric. Minimum desired absolute difference between
-#' the largest and second-largest absolute loading of an item. Used only for
-#' descriptive diagnostics.
-#' @param min_salient_per_factor numeric. Minimum number of salient indicators
-#' per factor used in the diagnostics. Default is 3.
+#' @param x,object An object of class `EFA` or `EFA_POOLED`; for the
+#'   `summary.EFA` methods, the object returned by [summary()].
+#' @param cutoff numeric. The absolute value at or above which loadings are
+#'   emphasised in the loading table. Default is .3.
+#' @param digits numeric. Number of decimal places for the printed tables.
+#'   Default is 3.
+#' @param max_name_length numeric. Maximum length of the variable names to
+#'   display; longer names are cut from the right.
+#' @param sort_loadings character. Optional row sorting for the loading table.
+#'   See [print.LOADINGS()].
+#' @param show_loading_legend logical. Whether to print a short legend for the
+#'   loading-table styling. Default is `TRUE`.
 #' @param max_factors_per_block numeric or `NULL`. Maximum number of factor
-#' columns per loading-table block. If `NULL`, this is chosen from the
-#' console width.
-#' @param show_mi_diagnostics logical or `NULL`. Whether to print a compact
-#' MI uncertainty summary for pooled EFAs when available. `NULL` prints it
-#' only for `details = "full"`.
-#' @param ... Further arguments passed to [EFAtools::print.LOADINGS()].
+#'   columns per loading-table block. If `NULL`, chosen from the console width.
+#' @param ci character. Which confidence intervals [summary()] shows, if
+#'   available. `"auto"` and `"separate"` print CI sections when CIs were
+#'   computed; `"none"` suppresses them. Default is `"auto"`.
+#' @param ci_filter character. Which loading CIs [summary()] prints: `"salient"`
+#'   (default), `"all"`, or `"nonzero"`; see Details.
+#' @param diagnostics_top_n numeric. Maximum number of item-level entries
+#'   [summary()] prints per simple-structure diagnostic.
+#' @param residual_cutoff numeric. Absolute residual cutoff for the residual
+#'   diagnostics in [summary()]. Default is .1.
+#' @param residual_top_n numeric. Maximum number of residuals [summary()] prints.
+#'   Use `Inf` to print all residuals above `residual_cutoff`.
+#' @param show_structure logical. Whether [summary()] prints the structure matrix
+#'   for oblique solutions when available. Default is `TRUE`.
+#' @param cross_loading_cutoff numeric. Cutoff for counting cross-loadings in the
+#'   [summary()] diagnostics. Defaults to `cutoff`.
+#' @param min_primary_gap numeric. Minimum desired absolute difference between the
+#'   largest and second-largest absolute loading of an item, used in the
+#'   [summary()] diagnostics.
+#' @param min_salient_per_factor numeric. Minimum number of salient indicators per
+#'   factor used in the [summary()] diagnostics. Default is 3.
+#' @param show_mi_diagnostics logical or `NULL`. Whether [summary()] prints a
+#'   multiple-imputation uncertainty summary for pooled EFAs. `NULL` shows it for
+#'   pooled objects.
+#' @param ... Further arguments passed to [print.LOADINGS()].
+#'
+#' @returns `print()` and the print method for `summary.EFA` objects return their
+#'   argument invisibly. `format()` returns a character vector of plain-text
+#'   lines. `summary()` returns an object of class `summary.EFA`.
 #'
 #' @export
 #'
@@ -77,54 +73,26 @@
 #'            method = "PAF", rotation = "promax")
 #' mod
 #'
-#' # With SEs and CIs, needs raw-data
-#' mod <- EFA(GRiPS_raw, n_factors = 1, method = "ML", se = "np-boot")
-#' mod
-#' # with additional infos
-#' print(mod, details = "full")
-#' # omit some diagnostic parts
-#' print(mod, details = "compact")
+#' # The full diagnostics, CI tables, and residual diagnostics:
+#' summary(mod)
+#'
+#' # format() returns plain text, e.g. for embedding in a report:
+#' writeLines(format(mod))
 #'
 print.EFA <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
-                      ci = c("auto", "none", "separate"),
-                      ci_filter = c("salient", "all", "nonzero"),
-                      details = c("standard", "compact", "full"),
-                      diagnostics = TRUE,
-                      diagnostics_top_n = 10,
-                      residual_cutoff = .1,
-                      residual_top_n = 10,
-                      show_structure = FALSE,
                       sort_loadings = c("none", "primary", "clustered"),
                       show_loading_legend = TRUE,
-                      cross_loading_cutoff = cutoff,
-                      min_primary_gap = .20,
-                      min_salient_per_factor = 3,
-                      max_factors_per_block = NULL,
-                      show_mi_diagnostics = NULL, ...) {
-  ci <- match.arg(ci)
-  ci_filter <- match.arg(ci_filter)
-  details <- match.arg(details)
+                      max_factors_per_block = NULL, ...) {
   sort_loadings <- match.arg(sort_loadings)
 
-  .print_EFA(x,
+  .render_efa(x,
+    view = "brief",
     cutoff = cutoff,
     digits = digits,
     max_name_length = max_name_length,
-    ci = ci,
-    ci_filter = ci_filter,
-    details = details,
-    diagnostics = diagnostics,
-    diagnostics_top_n = diagnostics_top_n,
-    residual_cutoff = residual_cutoff,
-    residual_top_n = residual_top_n,
-    show_structure = show_structure,
     sort_loadings = sort_loadings,
     show_loading_legend = show_loading_legend,
-    cross_loading_cutoff = cross_loading_cutoff,
-    min_primary_gap = min_primary_gap,
-    min_salient_per_factor = min_salient_per_factor,
     max_factors_per_block = max_factors_per_block,
-    show_mi_diagnostics = show_mi_diagnostics,
     ...
   )
 
@@ -134,35 +102,51 @@ print.EFA <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
 #' @rdname print.EFA
 #' @export
 #' @method print EFA_POOLED
-print.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
-                             ci = c("auto", "none", "separate"),
-                             ci_filter = c("salient", "all", "nonzero"),
-                             details = c("standard", "compact", "full"),
-                             diagnostics = TRUE,
-                             diagnostics_top_n = 10,
-                             residual_cutoff = .1,
-                             residual_top_n = 10,
-                             show_structure = FALSE,
-                             sort_loadings = c("none", "primary", "clustered"),
-                             show_loading_legend = TRUE,
-                             cross_loading_cutoff = cutoff,
-                             min_primary_gap = .20,
-                             min_salient_per_factor = 3,
-                             max_factors_per_block = NULL,
-                             show_mi_diagnostics = NULL, ...) {
+print.EFA_POOLED <- function(x, ...) {
+  print.EFA(x, ...)
+}
+
+#' @rdname print.EFA
+#' @export
+#' @method format EFA
+format.EFA <- function(x, ...) {
+  cli::ansi_strip(utils::capture.output(print(x, ...)))
+}
+
+#' @rdname print.EFA
+#' @export
+#' @method format EFA_POOLED
+format.EFA_POOLED <- function(x, ...) {
+  cli::ansi_strip(utils::capture.output(print(x, ...)))
+}
+
+#' @rdname print.EFA
+#' @export
+#' @method summary EFA
+summary.EFA <- function(object, cutoff = .3, digits = 3, max_name_length = 10,
+                        ci = c("auto", "none", "separate"),
+                        ci_filter = c("salient", "all", "nonzero"),
+                        diagnostics_top_n = 10,
+                        residual_cutoff = .1,
+                        residual_top_n = 10,
+                        show_structure = TRUE,
+                        sort_loadings = c("none", "primary", "clustered"),
+                        show_loading_legend = TRUE,
+                        cross_loading_cutoff = cutoff,
+                        min_primary_gap = .20,
+                        min_salient_per_factor = 3,
+                        max_factors_per_block = NULL,
+                        show_mi_diagnostics = NULL, ...) {
   ci <- match.arg(ci)
   ci_filter <- match.arg(ci_filter)
-  details <- match.arg(details)
   sort_loadings <- match.arg(sort_loadings)
 
-  .print_EFA(x,
+  opts <- list(
     cutoff = cutoff,
     digits = digits,
     max_name_length = max_name_length,
     ci = ci,
     ci_filter = ci_filter,
-    details = details,
-    diagnostics = diagnostics,
     diagnostics_top_n = diagnostics_top_n,
     residual_cutoff = residual_cutoff,
     residual_top_n = residual_top_n,
@@ -173,137 +157,64 @@ print.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     min_primary_gap = min_primary_gap,
     min_salient_per_factor = min_salient_per_factor,
     max_factors_per_block = max_factors_per_block,
-    show_mi_diagnostics = show_mi_diagnostics,
-    ...
+    show_mi_diagnostics = show_mi_diagnostics
   )
 
+  structure(list(efa = object, opts = opts), class = "summary.EFA")
+}
+
+#' @rdname print.EFA
+#' @export
+#' @method summary EFA_POOLED
+summary.EFA_POOLED <- function(object, ...) {
+  summary.EFA(object, ...)
+}
+
+#' @rdname print.EFA
+#' @export
+#' @method print summary.EFA
+print.summary.EFA <- function(x, ...) {
+  opts <- utils::modifyList(x$opts, list(...))
+  do.call(.render_efa, c(list(x$efa, view = "full"), opts))
   invisible(x)
 }
 
 #' @rdname print.EFA
 #' @export
-#' @method format EFA
-format.EFA <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
-                       ci = c("auto", "none", "separate"),
-                       ci_filter = c("salient", "all", "nonzero"),
-                       details = c("standard", "compact", "full"),
-                       diagnostics = TRUE,
-                       diagnostics_top_n = 10,
-                       residual_cutoff = .1,
-                       residual_top_n = 10,
-                       show_structure = FALSE,
-                       sort_loadings = c("none", "primary", "clustered"),
-                       show_loading_legend = TRUE,
-                       cross_loading_cutoff = cutoff,
-                       min_primary_gap = .20,
-                       min_salient_per_factor = 3,
-                       max_factors_per_block = NULL,
-                       show_mi_diagnostics = NULL, ...) {
-  ci <- match.arg(ci)
-  ci_filter <- match.arg(ci_filter)
-  details <- match.arg(details)
-  sort_loadings <- match.arg(sort_loadings)
-
-  cli::ansi_strip(utils::capture.output(
-    .print_EFA(x,
-      cutoff = cutoff,
-      digits = digits,
-      max_name_length = max_name_length,
-      ci = ci,
-      ci_filter = ci_filter,
-      details = details,
-      diagnostics = diagnostics,
-      diagnostics_top_n = diagnostics_top_n,
-      residual_cutoff = residual_cutoff,
-      residual_top_n = residual_top_n,
-      show_structure = show_structure,
-      sort_loadings = sort_loadings,
-      show_loading_legend = show_loading_legend,
-      cross_loading_cutoff = cross_loading_cutoff,
-      min_primary_gap = min_primary_gap,
-      min_salient_per_factor = min_salient_per_factor,
-      max_factors_per_block = max_factors_per_block,
-      show_mi_diagnostics = show_mi_diagnostics,
-      ...
-    )
-  ))
+#' @method format summary.EFA
+format.summary.EFA <- function(x, ...) {
+  cli::ansi_strip(utils::capture.output(print(x, ...)))
 }
 
-#' @rdname print.EFA
-#' @export
-#' @method format EFA_POOLED
-format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
-                              ci = c("auto", "none", "separate"),
-                              ci_filter = c("salient", "all", "nonzero"),
-                              details = c("standard", "compact", "full"),
-                              diagnostics = TRUE,
-                              diagnostics_top_n = 10,
-                              residual_cutoff = .1,
-                              residual_top_n = 10,
-                              show_structure = FALSE,
-                              sort_loadings = c("none", "primary", "clustered"),
-                              show_loading_legend = TRUE,
-                              cross_loading_cutoff = cutoff,
-                              min_primary_gap = .20,
-                              min_salient_per_factor = 3,
-                              max_factors_per_block = NULL,
-                              show_mi_diagnostics = NULL, ...) {
+# Render the EFA report at the requested depth: "brief" (print) shows the header,
+# loadings (with factor intercorrelations), variances accounted for, and model fit;
+# "full" (summary) additionally shows model and simple-structure diagnostics, the
+# CI tables, the structure matrix, MI uncertainty, and residual diagnostics.
+.render_efa <- function(x, view = c("brief", "full"),
+                        cutoff = .3, digits = 3, max_name_length = 10,
+                        ci = c("auto", "none", "separate"),
+                        ci_filter = c("salient", "all", "nonzero"),
+                        diagnostics_top_n = 10,
+                        residual_cutoff = .1,
+                        residual_top_n = 10,
+                        show_structure = TRUE,
+                        sort_loadings = c("none", "primary", "clustered"),
+                        show_loading_legend = TRUE,
+                        cross_loading_cutoff = cutoff,
+                        min_primary_gap = .20,
+                        min_salient_per_factor = 3,
+                        max_factors_per_block = NULL,
+                        show_mi_diagnostics = NULL, ...) {
+  view <- match.arg(view)
   ci <- match.arg(ci)
   ci_filter <- match.arg(ci_filter)
-  details <- match.arg(details)
   sort_loadings <- match.arg(sort_loadings)
-
-  cli::ansi_strip(utils::capture.output(
-    .print_EFA(x,
-      cutoff = cutoff,
-      digits = digits,
-      max_name_length = max_name_length,
-      ci = ci,
-      ci_filter = ci_filter,
-      details = details,
-      diagnostics = diagnostics,
-      diagnostics_top_n = diagnostics_top_n,
-      residual_cutoff = residual_cutoff,
-      residual_top_n = residual_top_n,
-      show_structure = show_structure,
-      sort_loadings = sort_loadings,
-      show_loading_legend = show_loading_legend,
-      cross_loading_cutoff = cross_loading_cutoff,
-      min_primary_gap = min_primary_gap,
-      min_salient_per_factor = min_salient_per_factor,
-      max_factors_per_block = max_factors_per_block,
-      show_mi_diagnostics = show_mi_diagnostics,
-      ...
-    )
-  ))
-}
-
-.print_EFA <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
-                       ci = c("auto", "none", "separate"),
-                       ci_filter = c("salient", "all", "nonzero"),
-                       details = c("standard", "compact", "full"),
-                       diagnostics = TRUE,
-                       diagnostics_top_n = 10,
-                       residual_cutoff = .1,
-                       residual_top_n = 10,
-                       show_structure = FALSE,
-                       sort_loadings = c("none", "primary", "clustered"),
-                       show_loading_legend = TRUE,
-                       cross_loading_cutoff = cutoff,
-                       min_primary_gap = .20,
-                       min_salient_per_factor = 3,
-                       max_factors_per_block = NULL,
-                       show_mi_diagnostics = NULL, ...) {
-  ci <- match.arg(ci)
-  ci_filter <- match.arg(ci_filter)
-  details <- match.arg(details)
-  sort_loadings <- match.arg(sort_loadings)
+  full <- identical(view, "full")
 
   .efa_validate_print_options(
     cutoff = cutoff,
     digits = digits,
     max_name_length = max_name_length,
-    diagnostics = diagnostics,
     diagnostics_top_n = diagnostics_top_n,
     residual_cutoff = residual_cutoff,
     residual_top_n = residual_top_n,
@@ -317,16 +228,15 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   )
 
   spec <- .efa_print_spec(x)
-  show_structure <- .efa_resolve_show_structure(show_structure, details)
-  show_mi_diagnostics <- .efa_resolve_show_mi_diagnostics(
-    show_mi_diagnostics,
-    details = details,
-    spec = spec
-  )
+  show_mi <- if (!is.null(show_mi_diagnostics)) {
+    isTRUE(show_mi_diagnostics)
+  } else {
+    isTRUE(spec$is_pooled)
+  }
 
   .print_efa_header(spec)
 
-  if (isTRUE(diagnostics) && !identical(details, "compact")) {
+  if (full) {
     .print_efa_diagnostics_section(x, spec,
       cutoff = cutoff,
       digits = digits,
@@ -340,16 +250,16 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     cutoff = cutoff,
     digits = digits,
     max_name_length = max_name_length,
-    ci = ci,
+    ci = if (full) ci else "none",
     ci_filter = ci_filter,
-    show_structure = show_structure,
+    show_structure = isTRUE(show_structure) && full,
     sort_loadings = sort_loadings,
     show_loading_legend = show_loading_legend,
     max_factors_per_block = max_factors_per_block,
     ...
   )
 
-  if (isTRUE(diagnostics) && !identical(details, "compact")) {
+  if (full) {
     .print_efa_simple_structure_section(x, spec,
       cutoff = cutoff,
       digits = digits,
@@ -362,9 +272,7 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     )
   }
 
-  if (!identical(details, "compact")) {
-    .print_efa_variances_section(x, spec)
-  }
+  .print_efa_variances_section(x, spec, digits = digits)
 
   if (!.print_efa_identification_warning(spec)) {
     return(invisible(x))
@@ -373,11 +281,11 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   .print_efa_model_fit_section(x, spec)
   .print_efa_bootstrap_note(x, spec)
 
-  if (isTRUE(show_mi_diagnostics)) {
+  if (full && isTRUE(show_mi)) {
     .print_efa_mi_diagnostics_section(x, spec, digits = digits)
   }
 
-  if (!identical(details, "compact")) {
+  if (full) {
     .print_efa_residuals_section(x,
       residual_cutoff = residual_cutoff,
       residual_top_n = residual_top_n,
@@ -566,14 +474,10 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   if (!is.null(x$Phi)) {
     phi <- as.matrix(x$Phi)
     factor_names <- .efa_factor_names(phi)
+    dimnames(phi) <- list(factor_names, factor_names)
 
     .print_efa_rule("Factor Intercorrelations")
-    cat(.get_compare_matrix(phi,
-      r_red = Inf,
-      n_char = 17,
-      var_names = factor_names,
-      factor_names = factor_names
-    ))
+    .print_efa_corr_matrix(phi, digits = digits, lower_only = TRUE)
     .print_efa_phi_ci_section(x, spec, digits, ci)
   }
 
@@ -596,7 +500,7 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   invisible(NULL)
 }
 
-.print_efa_variances_section <- function(x, spec) {
+.print_efa_variances_section <- function(x, spec, digits = 3) {
   .print_efa_rule("Variances Accounted for")
 
   if (identical(spec$rotation, "none")) {
@@ -610,7 +514,30 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     return(invisible(NULL))
   }
 
-  cat(.get_compare_matrix(vars_accounted, r_red = Inf, n_char = 17))
+  .print_efa_corr_matrix(vars_accounted, digits = digits)
+
+  invisible(NULL)
+}
+
+# Render a numeric matrix (factor intercorrelations or variances accounted for) through the
+# shared matrix renderer with a neutral "corr" role, so these tables align consistently with
+# the loading table. Row/column labels come from the matrix dimnames (callers set them);
+# `lower_only = TRUE` blanks the strictly-upper triangle (for Phi).
+.print_efa_corr_matrix <- function(values, digits = 3, lower_only = FALSE) {
+  values <- as.matrix(values)
+
+  cat(
+    .efa_format_matrix(
+      values = values,
+      row_labels = .efa_variable_names(values),
+      col_labels = .efa_factor_names(values),
+      col_roles = rep("corr", ncol(values)),
+      digits = digits,
+      lower_only = lower_only
+    ),
+    sep = "\n"
+  )
+  cat("\n")
 
   invisible(NULL)
 }
@@ -667,15 +594,15 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
 
   if (identical(method, "PAF") || .efa_is_missing_number(spec$N) ||
       !is.finite(chi) || !is.finite(df)) {
-    cat(cli::col_blue(paste("CAF", fit_ci$label, ":")),
+    cat(paste("CAF", fit_ci$label, ":"),
       .efa_format_fit_value(fit, "CAF"), fit_ci$CAF, "\n",
       sep = ""
     )
-    cat(cli::col_blue(paste("RMSR", fit_ci$label, ":")),
+    cat(paste("RMSR", fit_ci$label, ":"),
       .efa_format_fit_value(fit, "RMSR"), fit_ci$RMSR, "\n",
       sep = ""
     )
-    cat(cli::col_blue("df: "),
+    cat("df: ",
       .efa_format_fit_value(fit, "df", digits = 0, print_zero = TRUE, pad = FALSE), "\n",
       sep = ""
     )
@@ -690,23 +617,23 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     paste0(" = ", .efa_format_number(p_chi, digits = 3, pad = FALSE))
   }
 
-  cat(cli::col_blue("\u03c7\u00b2("),
+  cat("\u03c7\u00b2(",
     .efa_format_fit_value(fit, "df", digits = 0, print_zero = TRUE, pad = FALSE),
-    cli::col_blue(") = "),
+    ") = ",
     .efa_format_fit_value(fit, "chi", digits = 2, print_zero = TRUE), ", ",
-    cli::col_blue(cli::style_italic("p")),
+    cli::style_italic("p"),
     p_text,
     "\n",
     sep = ""
   )
 
-  cat(cli::col_blue(paste("CFI", fit_ci$label, ": ")),
+  cat(paste("CFI", fit_ci$label, ": "),
     .efa_format_fit_value(fit, "CFI", pad = FALSE), fit_ci$CFI, "\n",
     sep = ""
   )
 
   rmsea_label <- paste0("RMSEA [", .efa_ci_level_text(spec$rmsea_ci_level), " CI]")
-  cat(cli::col_blue(paste(rmsea_label, fit_ci$label, ": ")),
+  cat(paste(rmsea_label, fit_ci$label, ": "),
     paste0(
       .efa_format_fit_value(fit, "RMSEA", pad = FALSE), " [",
       .efa_format_fit_value(fit, "RMSEA_LB", pad = FALSE), "; ",
@@ -716,19 +643,19 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     sep = ""
   )
 
-  cat(cli::col_blue(paste("AIC", fit_ci$label, ": ")),
+  cat(paste("AIC", fit_ci$label, ": "),
     .efa_format_fit_value(fit, "AIC", print_zero = TRUE), fit_ci$AIC, "\n",
     sep = ""
   )
-  cat(cli::col_blue(paste("BIC", fit_ci$label, ": ")),
+  cat(paste("BIC", fit_ci$label, ": "),
     .efa_format_fit_value(fit, "BIC", print_zero = TRUE), fit_ci$BIC, "\n",
     sep = ""
   )
-  cat(cli::col_blue(paste("CAF", fit_ci$label, ":")),
+  cat(paste("CAF", fit_ci$label, ":"),
     .efa_format_fit_value(fit, "CAF"), fit_ci$CAF, "\n",
     sep = ""
   )
-  cat(cli::col_blue(paste("RMSR", fit_ci$label, ":")),
+  cat(paste("RMSR", fit_ci$label, ":"),
     .efa_format_fit_value(fit, "RMSR"), fit_ci$RMSR, "\n",
     sep = ""
   )
@@ -817,12 +744,12 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   n_large <- sum(keep, na.rm = TRUE)
   largest_abs <- max(abs(values), na.rm = TRUE)
 
-  cat(cli::col_blue("Residual cutoff: "), "|r| > ",
+  cat("Residual cutoff: ", "|r| > ",
     .efa_format_plain_number(residual_cutoff, digits), "\n",
     sep = ""
   )
-  cat(cli::col_blue("Number of large residuals: "), n_large, "\n", sep = "")
-  cat(cli::col_blue("Largest absolute residual: "),
+  cat("Number of large residuals: ", n_large, "\n", sep = "")
+  cat("Largest absolute residual: ",
     .efa_format_plain_number(largest_abs, digits), "\n",
     sep = ""
   )
@@ -866,7 +793,7 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   } else {
     "Largest residuals:"
   }
-  cat(cli::col_blue(heading), "\n", sep = "")
+  cat(heading, "\n", sep = "")
 
   for (i in seq_along(large_values)) {
     cat(cli::symbol$bullet, " ",
@@ -1010,7 +937,7 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
 
 .print_efa_rule <- function(title) {
   cat("\n")
-  cat(cli::rule(left = cli::style_bold(title), col = "blue"))
+  cat(cli::rule(left = cli::style_bold(title)))
   cat("\n")
   cat("\n")
 
@@ -1304,20 +1231,14 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     stringr::str_pad(headers, widths, side = "right"),
     collapse = "  "
   )
-  cat(cli::col_blue(header), "\n", sep = "")
+  cat(header, "\n", sep = "")
 
   for (i in seq_len(nrow(plain_rows))) {
     cells <- as.character(unlist(plain_rows[i, , drop = FALSE], use.names = FALSE))
     padded <- stringr::str_pad(cells, widths, side = "right")
 
-    if (has_second_key) {
-      padded[1] <- cli::col_blue(padded[1])
-      padded[2] <- cli::col_blue(padded[2])
-      if (!is.null(highlight) && isTRUE(highlight[i])) {
-        padded[3] <- cli::style_bold(padded[3])
-      }
-    } else {
-      padded[1] <- cli::col_blue(padded[1])
+    if (has_second_key && !is.null(highlight) && isTRUE(highlight[i])) {
+      padded[3] <- cli::style_bold(padded[3])
     }
 
     cat(paste(padded, collapse = "  "), "\n", sep = "")
@@ -1328,7 +1249,7 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
 
 
 .efa_validate_print_options <- function(cutoff, digits, max_name_length,
-                                        diagnostics, diagnostics_top_n,
+                                        diagnostics_top_n,
                                         residual_cutoff, residual_top_n,
                                         show_structure, show_loading_legend,
                                         cross_loading_cutoff, min_primary_gap,
@@ -1349,10 +1270,6 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
       !is.finite(max_name_length) || max_name_length < 1 ||
       max_name_length != as.integer(max_name_length)) {
     stop("`max_name_length` must be a single finite positive integer.", call. = FALSE)
-  }
-
-  if (!is.logical(diagnostics) || length(diagnostics) != 1L || is.na(diagnostics)) {
-    stop("`diagnostics` must be TRUE or FALSE.", call. = FALSE)
   }
 
   if (!.efa_is_top_n(diagnostics_top_n)) {
@@ -1525,18 +1442,6 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     (is.infinite(x) || (x >= 1 && x == as.integer(x)))
 }
 
-.efa_resolve_show_structure <- function(show_structure, details) {
-  isTRUE(show_structure) || identical(details, "full")
-}
-
-.efa_resolve_show_mi_diagnostics <- function(show_mi_diagnostics, details, spec) {
-  if (!is.null(show_mi_diagnostics)) {
-    return(isTRUE(show_mi_diagnostics))
-  }
-
-  isTRUE(spec$is_pooled) && identical(details, "full")
-}
-
 .efa_main_loadings <- function(x, spec) {
   if (identical(spec$rotation, "none")) {
     if (is.null(x$unrot_loadings)) {
@@ -1694,7 +1599,7 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
 }
 
 .efa_print_key_value <- function(key, value) {
-  cat(cli::col_blue(paste0(key, ": ")), value, "\n", sep = "")
+  cat(paste0(key, ": "), value, "\n", sep = "")
   invisible(NULL)
 }
 
@@ -1921,7 +1826,7 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
 }
 
 .efa_print_limited_bullets <- function(heading, values, top_n) {
-  cat(cli::col_blue(heading), "\n", sep = "")
+  cat(heading, "\n", sep = "")
 
   if (length(values) < 1L) {
     return(invisible(NULL))

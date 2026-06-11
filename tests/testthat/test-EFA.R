@@ -392,6 +392,43 @@ test_that("format.EFA returns plain text even when styling is enabled", {
   expect_false(any(grepl("\033", plain, fixed = TRUE)))
 })
 
+test_that("summary.EFA output is stable (PAF, promax)", {
+  local_reproducible_output()
+
+  expect_snapshot(print(summary(efa_psych)), transform = scrub_num)
+})
+
+test_that("summary.EFA output is stable (ML, promax)", {
+  local_reproducible_output()
+
+  expect_snapshot(print(summary(efa_ml_moderate)), transform = scrub_num)
+})
+
+test_that("format.summary.EFA returns plain text even when styling is enabled", {
+  old <- options(cli.num_colors = 256, crayon.enabled = TRUE, crayon.colors = 256)
+  on.exit(options(old), add = TRUE)
+
+  styled <- utils::capture.output(print(summary(efa_psych)))
+  plain <- format(summary(efa_psych))
+
+  expect_true(any(grepl("\033", styled, fixed = TRUE)))
+  expect_false(any(grepl("\033", plain, fixed = TRUE)))
+})
+
+test_that("residuals.EFA is a pure extractor", {
+  # returns the residual matrix with no printing side effect
+  expect_output(residuals(efa_psych), NA)
+  expect_identical(residuals(efa_psych), efa_psych$residuals)
+  expect_identical(residuals(efa_psych, "raw"), efa_psych$residuals)
+
+  # standardized residuals need bootstrap SEs, which efa_psych does not have
+  expect_error(residuals(efa_psych, "standardized"),
+               class = "efa_no_standardized_residuals")
+
+  # an unknown type is rejected
+  expect_error(residuals(efa_psych, "bogus"))
+})
+
 rm(efa_cor, efa_raw, efa_psych, efa_spss, efa_ml, efa_uls, efa_equa, efa_quart,
    efa_none, cormat_zero, cormat_moderate, efa_paf_zero, efa_ml_zero, efa_uls_zero,
    efa_paf_moderate, efa_ml_moderate, efa_uls_moderate, x, y, z, dat_sing, cor_sing,

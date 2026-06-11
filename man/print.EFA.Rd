@@ -5,21 +5,40 @@
 \alias{print.EFA_POOLED}
 \alias{format.EFA}
 \alias{format.EFA_POOLED}
-\title{Print EFA object}
+\alias{summary.EFA}
+\alias{summary.EFA_POOLED}
+\alias{print.summary.EFA}
+\alias{format.summary.EFA}
+\title{Print and summarise an EFA object}
 \usage{
 \method{print}{EFA}(
   x,
   cutoff = 0.3,
   digits = 3,
   max_name_length = 10,
+  sort_loadings = c("none", "primary", "clustered"),
+  show_loading_legend = TRUE,
+  max_factors_per_block = NULL,
+  ...
+)
+
+\method{print}{EFA_POOLED}(x, ...)
+
+\method{format}{EFA}(x, ...)
+
+\method{format}{EFA_POOLED}(x, ...)
+
+\method{summary}{EFA}(
+  object,
+  cutoff = 0.3,
+  digits = 3,
+  max_name_length = 10,
   ci = c("auto", "none", "separate"),
   ci_filter = c("salient", "all", "nonzero"),
-  details = c("standard", "compact", "full"),
-  diagnostics = TRUE,
   diagnostics_top_n = 10,
   residual_cutoff = 0.1,
   residual_top_n = 10,
-  show_structure = FALSE,
+  show_structure = TRUE,
   sort_loadings = c("none", "primary", "clustered"),
   show_loading_legend = TRUE,
   cross_loading_cutoff = cutoff,
@@ -30,175 +49,105 @@
   ...
 )
 
-\method{print}{EFA_POOLED}(
-  x,
-  cutoff = 0.3,
-  digits = 3,
-  max_name_length = 10,
-  ci = c("auto", "none", "separate"),
-  ci_filter = c("salient", "all", "nonzero"),
-  details = c("standard", "compact", "full"),
-  diagnostics = TRUE,
-  diagnostics_top_n = 10,
-  residual_cutoff = 0.1,
-  residual_top_n = 10,
-  show_structure = FALSE,
-  sort_loadings = c("none", "primary", "clustered"),
-  show_loading_legend = TRUE,
-  cross_loading_cutoff = cutoff,
-  min_primary_gap = 0.2,
-  min_salient_per_factor = 3,
-  max_factors_per_block = NULL,
-  show_mi_diagnostics = NULL,
-  ...
-)
+\method{summary}{EFA_POOLED}(object, ...)
 
-\method{format}{EFA}(
-  x,
-  cutoff = 0.3,
-  digits = 3,
-  max_name_length = 10,
-  ci = c("auto", "none", "separate"),
-  ci_filter = c("salient", "all", "nonzero"),
-  details = c("standard", "compact", "full"),
-  diagnostics = TRUE,
-  diagnostics_top_n = 10,
-  residual_cutoff = 0.1,
-  residual_top_n = 10,
-  show_structure = FALSE,
-  sort_loadings = c("none", "primary", "clustered"),
-  show_loading_legend = TRUE,
-  cross_loading_cutoff = cutoff,
-  min_primary_gap = 0.2,
-  min_salient_per_factor = 3,
-  max_factors_per_block = NULL,
-  show_mi_diagnostics = NULL,
-  ...
-)
+\method{print}{summary.EFA}(x, ...)
 
-\method{format}{EFA_POOLED}(
-  x,
-  cutoff = 0.3,
-  digits = 3,
-  max_name_length = 10,
-  ci = c("auto", "none", "separate"),
-  ci_filter = c("salient", "all", "nonzero"),
-  details = c("standard", "compact", "full"),
-  diagnostics = TRUE,
-  diagnostics_top_n = 10,
-  residual_cutoff = 0.1,
-  residual_top_n = 10,
-  show_structure = FALSE,
-  sort_loadings = c("none", "primary", "clustered"),
-  show_loading_legend = TRUE,
-  cross_loading_cutoff = cutoff,
-  min_primary_gap = 0.2,
-  min_salient_per_factor = 3,
-  max_factors_per_block = NULL,
-  show_mi_diagnostics = NULL,
-  ...
-)
+\method{format}{summary.EFA}(x, ...)
 }
 \arguments{
-\item{x}{list. An object of class EFA to be printed}
+\item{x, object}{An object of class \code{EFA} or \code{EFA_POOLED}; for the
+\code{summary.EFA} methods, the object returned by \code{\link[=summary]{summary()}}.}
 
-\item{cutoff}{numeric. Passed to \code{\link[=print.LOADINGS]{print.LOADINGS()}}.
-The number above which to print loadings in bold. Default is .3.}
+\item{cutoff}{numeric. The absolute value at or above which loadings are
+emphasised in the loading table. Default is .3.}
 
-\item{digits}{numeric. Passed to \code{\link[=print.LOADINGS]{print.LOADINGS()}}
-Number of digits to round the loadings to (default is 3).}
+\item{digits}{numeric. Number of decimal places for the printed tables.
+Default is 3.}
 
-\item{max_name_length}{numeric. Passed to \code{\link[=print.LOADINGS]{print.LOADINGS()}}.
-The maximum length of the variable names to display. Everything beyond this
-will be cut from the right.}
+\item{max_name_length}{numeric. Maximum length of the variable names to
+display; longer names are cut from the right.}
 
-\item{ci}{character. Whether to print confidence intervals for loadings and
-factor intercorrelations, if available. \code{"auto"} and \code{"separate"}
-print separate CI sections when CIs were computed; \code{"none"} suppresses
-these sections. Default is \code{"auto"}.}
-
-\item{ci_filter}{character. Which loading CIs to print. \code{"salient"}
-prints CIs for loadings with absolute values greater than or equal to
-\code{cutoff}; \code{"all"} prints all loading CIs; \code{"nonzero"} prints
-loading CIs that exclude zero. Default is \code{"salient"}.}
-
-\item{details}{character. Amount of information to print. \code{"standard"}
-prints the regular output, \code{"compact"} suppresses longer diagnostic
-sections, and \code{"full"} additionally prints available optional sections.}
-
-\item{diagnostics}{logical. Whether to print model and simple-structure
-diagnostics. Default is \code{TRUE}.}
-
-\item{diagnostics_top_n}{numeric. Maximum number of item-level diagnostic
-entries to print per diagnostic type.}
-
-\item{residual_cutoff}{numeric. Absolute residual cutoff used in the residual
-diagnostics section. Default is .1.}
-
-\item{residual_top_n}{numeric. Maximum number of residuals to print. Use
-\code{Inf} to print all residuals above \code{residual_cutoff}.}
-
-\item{show_structure}{logical. Whether to print the structure matrix for
-oblique solutions when available. Default is \code{FALSE}.}
-
-\item{sort_loadings}{character. Optional row sorting for loading tables.
+\item{sort_loadings}{character. Optional row sorting for the loading table.
 See \code{\link[=print.LOADINGS]{print.LOADINGS()}}.}
 
-\item{show_loading_legend}{logical. Whether to print a compact legend for
+\item{show_loading_legend}{logical. Whether to print a short legend for the
 loading-table styling. Default is \code{TRUE}.}
 
-\item{cross_loading_cutoff}{numeric. Cutoff for counting cross-loadings in
-the diagnostics. Defaults to \code{cutoff}.}
-
-\item{min_primary_gap}{numeric. Minimum desired absolute difference between
-the largest and second-largest absolute loading of an item. Used only for
-descriptive diagnostics.}
-
-\item{min_salient_per_factor}{numeric. Minimum number of salient indicators
-per factor used in the diagnostics. Default is 3.}
-
 \item{max_factors_per_block}{numeric or \code{NULL}. Maximum number of factor
-columns per loading-table block. If \code{NULL}, this is chosen from the
-console width.}
-
-\item{show_mi_diagnostics}{logical or \code{NULL}. Whether to print a compact
-MI uncertainty summary for pooled EFAs when available. \code{NULL} prints it
-only for \code{details = "full"}.}
+columns per loading-table block. If \code{NULL}, chosen from the console width.}
 
 \item{...}{Further arguments passed to \code{\link[=print.LOADINGS]{print.LOADINGS()}}.}
+
+\item{ci}{character. Which confidence intervals \code{\link[=summary]{summary()}} shows, if
+available. \code{"auto"} and \code{"separate"} print CI sections when CIs were
+computed; \code{"none"} suppresses them. Default is \code{"auto"}.}
+
+\item{ci_filter}{character. Which loading CIs \code{\link[=summary]{summary()}} prints: \code{"salient"}
+(default), \code{"all"}, or \code{"nonzero"}; see Details.}
+
+\item{diagnostics_top_n}{numeric. Maximum number of item-level entries
+\code{\link[=summary]{summary()}} prints per simple-structure diagnostic.}
+
+\item{residual_cutoff}{numeric. Absolute residual cutoff for the residual
+diagnostics in \code{\link[=summary]{summary()}}. Default is .1.}
+
+\item{residual_top_n}{numeric. Maximum number of residuals \code{\link[=summary]{summary()}} prints.
+Use \code{Inf} to print all residuals above \code{residual_cutoff}.}
+
+\item{show_structure}{logical. Whether \code{\link[=summary]{summary()}} prints the structure matrix
+for oblique solutions when available. Default is \code{TRUE}.}
+
+\item{cross_loading_cutoff}{numeric. Cutoff for counting cross-loadings in the
+\code{\link[=summary]{summary()}} diagnostics. Defaults to \code{cutoff}.}
+
+\item{min_primary_gap}{numeric. Minimum desired absolute difference between the
+largest and second-largest absolute loading of an item, used in the
+\code{\link[=summary]{summary()}} diagnostics.}
+
+\item{min_salient_per_factor}{numeric. Minimum number of salient indicators per
+factor used in the \code{\link[=summary]{summary()}} diagnostics. Default is 3.}
+
+\item{show_mi_diagnostics}{logical or \code{NULL}. Whether \code{\link[=summary]{summary()}} prints a
+multiple-imputation uncertainty summary for pooled EFAs. \code{NULL} shows it for
+pooled objects.}
+}
+\value{
+\code{print()} and the print method for \code{summary.EFA} objects return their
+argument invisibly. \code{format()} returns a character vector of plain-text
+lines. \code{summary()} returns an object of class \code{summary.EFA}.
 }
 \description{
-Print Method showing a summarized output of the \link{EFA} function.
+\code{print()} shows a concise overview of an \code{\link[=EFA]{EFA()}} or \code{\link[=EFA_POOLED]{EFA_POOLED()}} solution:
+a model header, the loading matrix (with the factor intercorrelations for
+oblique solutions), the variances accounted for, and the model fit.
+\code{\link[=summary]{summary()}} returns a \code{summary.EFA} object whose print method adds the full
+diagnostics: model and simple-structure diagnostics, confidence-interval
+tables, the structure matrix, multiple-imputation uncertainty (for pooled
+objects), and residual diagnostics. \code{format()} returns the same lines as a
+plain, un-styled character vector.
 }
 \details{
-The method is shared by single-imputation \code{EFA} objects and pooled
-\code{EFA_POOLED} objects. It prints, in order, a compact model header, optional
-diagnostics, the loading table, optional confidence-interval tables, variance
-accounted for, model fit, bootstrap notes, optional multiple-imputation
-uncertainty diagnostics, and residual diagnostics.
+The methods are shared by single-imputation \code{EFA} objects and pooled
+\code{EFA_POOLED} objects. For \code{EFA_POOLED} objects the header reports the number
+of imputations and the alignment/pooling settings; confidence intervals and a
+multiple-imputation uncertainty summary are shown by \code{\link[=summary]{summary()}} when the
+pooled object carries bootstrap/MI quantities.
 
-For \code{EFA_POOLED} objects, the header and diagnostics report the number of
-imputations and the alignment/pooling settings stored in the object. Loading
-and factor-correlation confidence intervals are printed only when \code{boot.CI}
-is present. Pooled intervals created by \code{EFA_POOLED()} are labelled as
-bootstrap/MI intervals.
-
-\code{ci_filter} controls which loading intervals are shown. \code{salient} reports
-intervals for loadings whose absolute point estimate is at least \code{cutoff};
-\code{nonzero} reports intervals excluding zero; and \code{all} reports every finite
-interval.
+In \code{\link[=summary]{summary()}}, \code{ci_filter} controls which loading intervals are shown:
+\code{"salient"} reports intervals for loadings whose absolute point estimate is at
+least \code{cutoff}, \code{"nonzero"} reports intervals excluding zero, and \code{"all"}
+reports every finite interval.
 }
 \examples{
 mod <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
            method = "PAF", rotation = "promax")
 mod
 
-# With SEs and CIs, needs raw-data
-mod <- EFA(GRiPS_raw, n_factors = 1, method = "ML", se = "np-boot")
-mod
-# with additional infos
-print(mod, details = "full")
-# omit some diagnostic parts
-print(mod, details = "compact")
+# The full diagnostics, CI tables, and residual diagnostics:
+summary(mod)
+
+# format() returns plain text, e.g. for embedding in a report:
+writeLines(format(mod))
 
 }

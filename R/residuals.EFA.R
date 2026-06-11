@@ -1,41 +1,39 @@
-#' Residuals function for EFA objects
+#' Extract residuals from an EFA object
 #'
-#' @param object a list of class EFA. Output from [EFA()] or
-#'   [EFA_POOLED()].
-#' @param print logical. Whether to print residuals. If FALSE, they are just returned.
-#' @param digits numeric. The number of digits to round printed residuals.
-#' @param ... Further arguments.
+#' Returns the residual correlation matrix of an [EFA()] or [EFA_POOLED()]
+#' solution. Residuals are a pure extractor here; their diagnostics and a
+#' formatted display are part of [summary()] of the EFA object.
+#'
+#' @param object a list of class EFA. Output from [EFA()] or [EFA_POOLED()].
+#' @param type character. Which residuals to return. `"raw"` (default) returns
+#'   `orig_R - model_implied_R`; `"standardized"` returns the standardized
+#'   residuals (residuals divided by their standard errors), available only when
+#'   the object was fitted with bootstrap standard errors.
+#' @param ... Further arguments (currently unused).
+#'
+#' @returns A numeric matrix of residual correlations.
 #'
 #' @export
 #' @method residuals EFA
-residuals.EFA <- function(object, print = TRUE, digits = 3, ...) {
+#'
+#' @examples
+#' efa <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500)
+#' residuals(efa)
+residuals.EFA <- function(object, type = c("raw", "standardized"), ...) {
+  type <- match.arg(type)
 
-  out <- list(
-    residuals = object$residuals
-  )
-
-  if ("standardized_residuals" %in% names(object)) {
-    out$standardized_residuals <- object$standardized_residuals
+  if (identical(type, "standardized")) {
+    if (is.null(object$standardized_residuals)) {
+      cli::cli_abort(
+        c(
+          "Standardized residuals are not available for this object.",
+          "i" = "They require bootstrap standard errors ({.code se = \"np-boot\"})."
+        ),
+        class = "efa_no_standardized_residuals"
+      )
+    }
+    return(object$standardized_residuals)
   }
 
-  if (isFALSE(print)) {
-
-    return(out)
-  }
-
-  cli::cli_h2("Raw residuals, based on {.code orig_R - model_implied_R}")
-
-  print(round(object$residuals, digits = digits))
-
-
-
-  if ("standardized_residuals" %in% names(object)) {
-
-    cli::cli_h2("Standardized residuals, based on {.code residuals / SE}")
-
-    print(round(object$standardized_residuals, digits = digits))
-
-  }
-
-  invisible(out)
+  object$residuals
 }

@@ -2,20 +2,29 @@
 % Please edit documentation in R/residuals.EFA.R
 \name{residuals.EFA}
 \alias{residuals.EFA}
-\title{Residuals function for EFA objects}
+\title{Extract residuals from an EFA object}
 \usage{
-\method{residuals}{EFA}(object, print = TRUE, digits = 3, ...)
+\method{residuals}{EFA}(object, type = c("raw", "standardized"), ...)
 }
 \arguments{
-\item{object}{a list of class EFA. Output from \code{\link[=EFA]{EFA()}} or
-\code{\link[=EFA_POOLED]{EFA_POOLED()}}.}
+\item{object}{a list of class EFA. Output from \code{\link[=EFA]{EFA()}} or \code{\link[=EFA_POOLED]{EFA_POOLED()}}.}
 
-\item{print}{logical. Whether to print residuals. If FALSE, they are just returned.}
+\item{type}{character. Which residuals to return. \code{"raw"} (default) returns
+\code{orig_R - model_implied_R}; \code{"standardized"} returns the standardized
+residuals (residuals divided by their standard errors), available only when
+the object was fitted with bootstrap standard errors.}
 
-\item{digits}{numeric. The number of digits to round printed residuals.}
-
-\item{...}{Further arguments.}
+\item{...}{Further arguments (currently unused).}
+}
+\value{
+A numeric matrix of residual correlations.
 }
 \description{
-Residuals function for EFA objects
+Returns the residual correlation matrix of an \code{\link[=EFA]{EFA()}} or \code{\link[=EFA_POOLED]{EFA_POOLED()}}
+solution. Residuals are a pure extractor here; their diagnostics and a
+formatted display are part of \code{\link[=summary]{summary()}} of the EFA object.
+}
+\examples{
+efa <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500)
+residuals(efa)
 }
