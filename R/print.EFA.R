@@ -204,7 +204,7 @@ format.EFA <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   details <- match.arg(details)
   sort_loadings <- match.arg(sort_loadings)
 
-  utils::capture.output(
+  cli::ansi_strip(utils::capture.output(
     .print_EFA(x,
       cutoff = cutoff,
       digits = digits,
@@ -226,7 +226,7 @@ format.EFA <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
       show_mi_diagnostics = show_mi_diagnostics,
       ...
     )
-  )
+  ))
 }
 
 #' @rdname print.EFA
@@ -253,7 +253,7 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   details <- match.arg(details)
   sort_loadings <- match.arg(sort_loadings)
 
-  utils::capture.output(
+  cli::ansi_strip(utils::capture.output(
     .print_EFA(x,
       cutoff = cutoff,
       digits = digits,
@@ -275,7 +275,7 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
       show_mi_diagnostics = show_mi_diagnostics,
       ...
     )
-  )
+  ))
 }
 
 .print_EFA <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
@@ -426,9 +426,9 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   if (isTRUE(spec$is_pooled)) {
     .print_efa_pooled_header(spec)
   } else {
-    cat("EFA performed with type = '", crayon::bold(spec$type),
-      "', method = '", crayon::bold(spec$method),
-      "', and rotation = '", crayon::bold(spec$rotation), "'.",
+    cat("EFA performed with type = '", cli::style_bold(spec$type),
+      "', method = '", cli::style_bold(spec$method),
+      "', and rotation = '", cli::style_bold(spec$rotation), "'.",
       sep = ""
     )
     cat("\n")
@@ -436,11 +436,11 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
 
   if (.efa_iteration_nonconvergence(spec)) {
     cat("\n")
-    cat(crayon::red$bold(
+    cat(cli::col_red(cli::style_bold(paste(
       cli::symbol$cross,
       "Maximum number of iterations reached",
       "without convergence"
-    ))
+    ))))
     cat("\n")
   }
 }
@@ -451,12 +451,12 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
 
   n_imputations <- .efa_setting_text(spec$n_imputations)
   if (nzchar(n_imputations)) {
-    cat(" across ", crayon::bold(n_imputations), " imputations", sep = "")
+    cat(" across ", cli::style_bold(n_imputations), " imputations", sep = "")
   }
 
-  cat(" performed with type = '", crayon::bold(spec$type),
-    "', method = '", crayon::bold(spec$method),
-    "', and rotation = '", crayon::bold(spec$rotation), "'.",
+  cat(" performed with type = '", cli::style_bold(spec$type),
+    "', method = '", cli::style_bold(spec$method),
+    "', and rotation = '", cli::style_bold(spec$rotation), "'.",
     sep = ""
   )
   cat("\n")
@@ -625,8 +625,8 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   if (df == 0) {
     cat("\n")
     cat(
-      crayon::yellow$bold("!"),
-      crayon::yellow(
+      cli::col_yellow(cli::style_bold("!")),
+      cli::col_yellow(
         " The model is just identified (df = 0). Goodness of fit indices may not be interpretable."
       )
     )
@@ -637,8 +637,8 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   if (df < 0) {
     cat("\n")
     cat(
-      crayon::yellow$bold("!"),
-      crayon::yellow(
+      cli::col_yellow(cli::style_bold("!")),
+      cli::col_yellow(
         " The model is underidentified (df < 0). No goodness of fit indices were calculated."
       )
     )
@@ -667,15 +667,15 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
 
   if (identical(method, "PAF") || .efa_is_missing_number(spec$N) ||
       !is.finite(chi) || !is.finite(df)) {
-    cat(crayon::blue("CAF", fit_ci$label, ":"),
+    cat(cli::col_blue(paste("CAF", fit_ci$label, ":")),
       .efa_format_fit_value(fit, "CAF"), fit_ci$CAF, "\n",
       sep = ""
     )
-    cat(crayon::blue("RMSR", fit_ci$label, ":"),
+    cat(cli::col_blue(paste("RMSR", fit_ci$label, ":")),
       .efa_format_fit_value(fit, "RMSR"), fit_ci$RMSR, "\n",
       sep = ""
     )
-    cat(crayon::blue("df: "),
+    cat(cli::col_blue("df: "),
       .efa_format_fit_value(fit, "df", digits = 0, print_zero = TRUE, pad = FALSE), "\n",
       sep = ""
     )
@@ -690,23 +690,23 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     paste0(" = ", .efa_format_number(p_chi, digits = 3, pad = FALSE))
   }
 
-  cat(crayon::blue("\u03c7\u00b2(", sep = ""),
+  cat(cli::col_blue("\u03c7\u00b2("),
     .efa_format_fit_value(fit, "df", digits = 0, print_zero = TRUE, pad = FALSE),
-    crayon::blue(") = ", sep = ""),
+    cli::col_blue(") = "),
     .efa_format_fit_value(fit, "chi", digits = 2, print_zero = TRUE), ", ",
-    crayon::blue(crayon::italic("p")),
+    cli::col_blue(cli::style_italic("p")),
     p_text,
     "\n",
     sep = ""
   )
 
-  cat(crayon::blue("CFI", fit_ci$label, ": "),
+  cat(cli::col_blue(paste("CFI", fit_ci$label, ": ")),
     .efa_format_fit_value(fit, "CFI", pad = FALSE), fit_ci$CFI, "\n",
     sep = ""
   )
 
   rmsea_label <- paste0("RMSEA [", .efa_ci_level_text(spec$rmsea_ci_level), " CI]")
-  cat(crayon::blue(rmsea_label, fit_ci$label, ": "),
+  cat(cli::col_blue(paste(rmsea_label, fit_ci$label, ": ")),
     paste0(
       .efa_format_fit_value(fit, "RMSEA", pad = FALSE), " [",
       .efa_format_fit_value(fit, "RMSEA_LB", pad = FALSE), "; ",
@@ -716,19 +716,19 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     sep = ""
   )
 
-  cat(crayon::blue("AIC", fit_ci$label, ": "),
+  cat(cli::col_blue(paste("AIC", fit_ci$label, ": ")),
     .efa_format_fit_value(fit, "AIC", print_zero = TRUE), fit_ci$AIC, "\n",
     sep = ""
   )
-  cat(crayon::blue("BIC", fit_ci$label, ": "),
+  cat(cli::col_blue(paste("BIC", fit_ci$label, ": ")),
     .efa_format_fit_value(fit, "BIC", print_zero = TRUE), fit_ci$BIC, "\n",
     sep = ""
   )
-  cat(crayon::blue("CAF", fit_ci$label, ":"),
+  cat(cli::col_blue(paste("CAF", fit_ci$label, ":")),
     .efa_format_fit_value(fit, "CAF"), fit_ci$CAF, "\n",
     sep = ""
   )
-  cat(crayon::blue("RMSR", fit_ci$label, ":"),
+  cat(cli::col_blue(paste("RMSR", fit_ci$label, ":")),
     .efa_format_fit_value(fit, "RMSR"), fit_ci$RMSR, "\n",
     sep = ""
   )
@@ -778,7 +778,7 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     "Bootstrap CIs"
   }
 
-  cat("\n", crayon::italic("Note: "), note_label, sep = "")
+  cat("\n", cli::style_italic("Note: "), note_label, sep = "")
 
   b_text <- .efa_bootstrap_sample_text(spec)
   if (nzchar(b_text)) {
@@ -817,12 +817,12 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   n_large <- sum(keep, na.rm = TRUE)
   largest_abs <- max(abs(values), na.rm = TRUE)
 
-  cat(crayon::blue("Residual cutoff: "), "|r| > ",
+  cat(cli::col_blue("Residual cutoff: "), "|r| > ",
     .efa_format_plain_number(residual_cutoff, digits), "\n",
     sep = ""
   )
-  cat(crayon::blue("Number of large residuals: "), n_large, "\n", sep = "")
-  cat(crayon::blue("Largest absolute residual: "),
+  cat(cli::col_blue("Number of large residuals: "), n_large, "\n", sep = "")
+  cat(cli::col_blue("Largest absolute residual: "),
     .efa_format_plain_number(largest_abs, digits), "\n",
     sep = ""
   )
@@ -866,7 +866,7 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   } else {
     "Largest residuals:"
   }
-  cat(crayon::blue(heading), "\n", sep = "")
+  cat(cli::col_blue(heading), "\n", sep = "")
 
   for (i in seq_along(large_values)) {
     cat(cli::symbol$bullet, " ",
@@ -998,10 +998,10 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
   n_heywood <- sum(h2 >= 1 + .Machine$double.eps, na.rm = TRUE)
 
   if (n_heywood == 1) {
-    cat(crayon::red$bold("\nWarning: A Heywood case was detected!"))
+    cat(cli::col_red(cli::style_bold("\nWarning: A Heywood case was detected!")))
     cat("\n")
   } else if (n_heywood > 1) {
-    cat(crayon::red$bold("\nWarning:", n_heywood, "Heywood cases were detected!"))
+    cat(cli::col_red(cli::style_bold(paste("\nWarning:", n_heywood, "Heywood cases were detected!"))))
     cat("\n")
   }
 
@@ -1010,7 +1010,7 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
 
 .print_efa_rule <- function(title) {
   cat("\n")
-  cat(cli::rule(left = crayon::bold(title), col = "blue"))
+  cat(cli::rule(left = cli::style_bold(title), col = "blue"))
   cat("\n")
   cat("\n")
 
@@ -1304,20 +1304,20 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     stringr::str_pad(headers, widths, side = "right"),
     collapse = "  "
   )
-  cat(crayon::blue(header), "\n", sep = "")
+  cat(cli::col_blue(header), "\n", sep = "")
 
   for (i in seq_len(nrow(plain_rows))) {
     cells <- as.character(unlist(plain_rows[i, , drop = FALSE], use.names = FALSE))
     padded <- stringr::str_pad(cells, widths, side = "right")
 
     if (has_second_key) {
-      padded[1] <- crayon::blue(padded[1])
-      padded[2] <- crayon::blue(padded[2])
+      padded[1] <- cli::col_blue(padded[1])
+      padded[2] <- cli::col_blue(padded[2])
       if (!is.null(highlight) && isTRUE(highlight[i])) {
-        padded[3] <- crayon::bold(padded[3])
+        padded[3] <- cli::style_bold(padded[3])
       }
     } else {
-      padded[1] <- crayon::blue(padded[1])
+      padded[1] <- cli::col_blue(padded[1])
     }
 
     cat(paste(padded, collapse = "  "), "\n", sep = "")
@@ -1694,7 +1694,7 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
 }
 
 .efa_print_key_value <- function(key, value) {
-  cat(crayon::blue(paste0(key, ": ")), value, "\n", sep = "")
+  cat(cli::col_blue(paste0(key, ": ")), value, "\n", sep = "")
   invisible(NULL)
 }
 
@@ -1921,7 +1921,7 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
 }
 
 .efa_print_limited_bullets <- function(heading, values, top_n) {
-  cat(crayon::blue(heading), "\n", sep = "")
+  cat(cli::col_blue(heading), "\n", sep = "")
 
   if (length(values) < 1L) {
     return(invisible(NULL))
@@ -1967,7 +1967,7 @@ format.EFA_POOLED <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
 
 .print_efa_structure_note <- function() {
   cat("\n")
-  cat(crayon::italic("Note: "),
+  cat(cli::style_italic("Note: "),
     "Structure coefficients are available; use show_structure = TRUE to print them.",
     "\n",
     sep = ""

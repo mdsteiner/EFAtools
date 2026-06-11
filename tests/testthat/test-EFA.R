@@ -366,6 +366,32 @@ test_that("EFA rejects n_factors >= number of variables", {
                class = "efa_too_many_factors")
 })
 
+test_that("print.EFA output is stable (PAF, promax)", {
+  local_reproducible_output()
+
+  expect_snapshot(print(efa_psych), transform = scrub_num)
+})
+
+test_that("print.EFA output is stable (ML, promax)", {
+  local_reproducible_output()
+
+  expect_snapshot(print(efa_ml_moderate), transform = scrub_num)
+})
+
+test_that("format.EFA returns plain text even when styling is enabled", {
+  # Force colours on so a styled print() embeds ANSI; format() must not.
+  old <- options(cli.num_colors = 256, crayon.enabled = TRUE, crayon.colors = 256)
+  on.exit(options(old), add = TRUE)
+
+  styled <- utils::capture.output(print(efa_psych))
+  plain <- format(efa_psych)
+
+  # sanity check: with colours forced on, print() really does emit ANSI ...
+  expect_true(any(grepl("\033", styled, fixed = TRUE)))
+  # ... whereas format() is guaranteed plain regardless of the colour state.
+  expect_false(any(grepl("\033", plain, fixed = TRUE)))
+})
+
 rm(efa_cor, efa_raw, efa_psych, efa_spss, efa_ml, efa_uls, efa_equa, efa_quart,
    efa_none, cormat_zero, cormat_moderate, efa_paf_zero, efa_ml_zero, efa_uls_zero,
    efa_paf_moderate, efa_ml_moderate, efa_uls_moderate, x, y, z, dat_sing, cor_sing,

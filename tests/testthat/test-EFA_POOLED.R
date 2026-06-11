@@ -1,14 +1,5 @@
 # Tests for EFA_POOLED(): structure of the returned object, pooling math,
 # classed conditions, bootstrap/MI pooling, and the print/format methods.
-#
-# Print snapshots are recorded with local_reproducible_output() and a scrub
-# transform that masks every decimal number (together with the sign and
-# padding in front of it, so a sign flip of a near-zero value cannot change
-# the masked line). The snapshots therefore pin down layout, section order,
-# headers, and wording, but no computed decimals, whose digits can drift
-# across BLAS implementations and platforms. Integer output (factor counts,
-# df, N, residual counts) is kept verbatim.
-scrub_num <- function(lines) gsub("\\s*-?(\\d+)?\\.\\d+", " <num>", lines)
 
 cormat <- test_models$baseline$cormat
 p_vars <- ncol(cormat)
