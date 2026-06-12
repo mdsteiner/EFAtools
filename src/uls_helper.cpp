@@ -20,6 +20,15 @@ static void eig_sym_checked(arma::vec& eigval, arma::mat& eigvec,
 // [[Rcpp::export(.grad_uls)]]
 arma::vec grad_uls(arma::vec psi, arma::mat R, const int n_fac) {
 
+  // Guard the eigen-extraction below: it reads the largest n_fac eigenpairs and
+  // would index past the available eigenvalues if n_fac >= ncol(R) (undefined
+  // behaviour / crash in an unchecked build). Convert that into a catchable error.
+  if (n_fac < 1 || static_cast<arma::uword>(n_fac) >= R.n_cols) {
+    Rcpp::stop("n_fac must be at least 1 and smaller than the number of "
+               "variables (got n_fac = %d for %d variables).",
+               n_fac, static_cast<int>(R.n_cols));
+  }
+
   arma::mat Rs(R.n_rows, R.n_cols);
   arma::vec eigval;
   arma::mat eigvec;
@@ -52,6 +61,15 @@ arma::vec grad_uls(arma::vec psi, arma::mat R, const int n_fac) {
 
 // [[Rcpp::export(.uls_residuals)]]
 double uls_residuals(arma::vec psi, arma::mat R, const int n_fac) {
+
+  // Guard the eigen-extraction below: it reads the largest n_fac eigenpairs and
+  // would index past the available eigenvalues if n_fac >= ncol(R) (undefined
+  // behaviour / crash in an unchecked build). Convert that into a catchable error.
+  if (n_fac < 1 || static_cast<arma::uword>(n_fac) >= R.n_cols) {
+    Rcpp::stop("n_fac must be at least 1 and smaller than the number of "
+               "variables (got n_fac = %d for %d variables).",
+               n_fac, static_cast<int>(R.n_cols));
+  }
 
   arma::vec eigval;
   arma::mat eigvec;

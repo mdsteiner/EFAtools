@@ -34,6 +34,21 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
                     const int n_fac, bool abs_eig, int crit_type,
                     int max_iter) {
 
+  // Guard the eigen-extraction below: it reads the largest n_fac eigenpairs and
+  // would index past the available eigenvalues if n_fac >= ncol(R) (undefined
+  // behaviour / crash in an unchecked build). Convert that into a catchable error.
+  if (n_fac < 1 || static_cast<arma::uword>(n_fac) >= R.n_cols) {
+    Rcpp::stop("n_fac must be at least 1 and smaller than the number of "
+               "variables (got n_fac = %d for %d variables).",
+               n_fac, static_cast<int>(R.n_cols));
+  }
+
+  // Only crit_type 1 and 2 have an iteration loop below; any other value would
+  // skip every branch and return an uninitialised (empty) loading matrix.
+  if (crit_type != 1 && crit_type != 2) {
+    Rcpp::stop("crit_type must be 1 (maximum individual change) or 2 (sum of "
+               "changes).");
+  }
 
   int iter = 1;
   double delta = 1.0;

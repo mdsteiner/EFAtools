@@ -70,7 +70,7 @@ print.EFA_AVERAGE <- function(x, stat = c("average", "range"),
 
   # If no solutions were achieved across which averaging could be performed,
   # stop here with a message. Else, continue printing loadings etc.
-  if(all(grid$converged != 0 | grid$errors | grid$heywood)){
+  if(all((grid$converged != 0 | grid$errors | grid$heywood) %in% TRUE)){
 
     cli::cli_warn("No solutions were achieved across which averaging was possible. Best try again with a different number of factors.",
                   class = "efa_average_no_solutions")

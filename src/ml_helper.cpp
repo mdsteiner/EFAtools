@@ -28,6 +28,15 @@ static void eig_sym_checked(arma::vec& eigval, const arma::mat& X) {
 arma::vec grad_ml(arma::vec psi, arma::mat R, const int n_fac) {
   // gradient function for maximum likelihood estimation, adapted from stats::factanal()
 
+  // Guard the eigen-extraction below: it reads the largest n_fac eigenpairs and
+  // would index past the available eigenvalues if n_fac >= ncol(R) (undefined
+  // behaviour / crash in an unchecked build). Convert that into a catchable error.
+  if (n_fac < 1 || static_cast<arma::uword>(n_fac) >= R.n_cols) {
+    Rcpp::stop("n_fac must be at least 1 and smaller than the number of "
+               "variables (got n_fac = %d for %d variables).",
+               n_fac, static_cast<int>(R.n_cols));
+  }
+
   arma::vec eigval;
   arma::mat eigvec;
   arma::uvec idx(n_fac);
@@ -59,6 +68,15 @@ arma::vec grad_ml(arma::vec psi, arma::mat R, const int n_fac) {
 // [[Rcpp::export(.error_ml)]]
 double error_ml(arma::vec psi, arma::mat R, const int n_fac) {
   // loss function for maximum likelihood fitting; adapted from stats::factanal()
+
+  // Guard the eigen-extraction below: it reads the largest n_fac eigenpairs and
+  // would index past the available eigenvalues if n_fac >= ncol(R) (undefined
+  // behaviour / crash in an unchecked build). Convert that into a catchable error.
+  if (n_fac < 1 || static_cast<arma::uword>(n_fac) >= R.n_cols) {
+    Rcpp::stop("n_fac must be at least 1 and smaller than the number of "
+               "variables (got n_fac = %d for %d variables).",
+               n_fac, static_cast<int>(R.n_cols));
+  }
 
   arma::vec eigval;
   arma::vec Lambda;

@@ -603,8 +603,9 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
   }
   ext_list <- .extract_data(efa_list, R, n_factors, n_efa, rotation, salience_threshold)
 
-  if (all(isTRUE(ext_list$for_grid$errors) | ext_list$for_grid$converged != 0 |
-          isTRUE(ext_list$for_grid$heywood))) {
+  bad <- ext_list$for_grid$converged != 0 | ext_list$for_grid$errors |
+         ext_list$for_grid$heywood
+  if (all(bad %in% TRUE)) {
 
     av_list <- list(
       h2 = NA,

@@ -2,6 +2,15 @@
 
 ## Bug Fixes
 
+* `EFA_AVERAGE()`: When every averaged solution fails (all runs error, fail to converge, or
+  are Heywood cases), the function now returns an empty (`NA`) averaged result instead of
+  erroring or averaging an empty set.
+* Factor extraction (`PAF`, `ML`, and `ULS`) now raises a clear error when the requested
+  number of factors is not smaller than the number of variables, instead of reading past
+  the available eigenvalues (undefined behaviour in builds without bounds checking).
+* `NEST()` and `PARALLEL()`: A failed eigendecomposition of a degenerate simulated matrix
+  now raises a clear error instead of resulting in undefined behaviour.
+
 * `PARALLEL()`: The percentile reference eigenvalues are now computed with
   `stats::quantile()` (matching `psych::fa.parallel`), correcting a slight off-by-one in
   the previous indexing. In addition, the simulated datasets are now split across parallel

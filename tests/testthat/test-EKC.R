@@ -40,6 +40,23 @@ test_that("identified number of factors is correct", {
   expect_equal(ekc_raw$n_factors[["BvA2017"]], 1)
 })
 
+test_that("AM2019 yields a well-defined (non-NA) number of factors", {
+  # The no-crossing case is mapped to p (retain all). For any valid correlation
+  # matrix the smallest eigenvalue is <= 1 <= the floored last reference, so a
+  # crossing always exists and the AM2019 count is never NA.
+  for (cmat in list(test_models$baseline$cormat, test_models$case_11b$cormat)) {
+    nf <- EKC(cmat, N = 500, type = "AM2019")$n_factors[["AM2019"]]
+    expect_false(is.na(nf))
+    expect_gte(nf, 0)
+    expect_lte(nf, ncol(cmat))
+  }
+
+  nf_raw <- suppressMessages(EKC(GRiPS_raw, type = "AM2019"))$n_factors[["AM2019"]]
+  expect_false(is.na(nf_raw))
+  expect_gte(nf_raw, 0)
+  expect_lte(nf_raw, ncol(GRiPS_raw))
+})
+
 # Create singular correlation matrix for tests
 x <- rnorm(10)
 y <- rnorm(10)

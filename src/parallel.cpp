@@ -5,6 +5,16 @@
 using namespace Rcpp;
 using namespace arma;
 
+// Symmetric eigendecomposition that fails loudly instead of leaving the output
+// empty (which the caller would then index out of bounds). A degenerate simulated
+// matrix can make arma::eig_sym return false, so turn that into a catchable R error.
+static void eig_sym_checked(arma::vec& eigval, const arma::mat& X) {
+  if (!arma::eig_sym(eigval, X)) {
+    Rcpp::stop("Eigendecomposition failed during the parallel-analysis simulation; "
+               "the simulated correlation matrix is not finite or not symmetric.");
+  }
+}
+
 //' Parallel analysis on simulated data.
 //'
 //' Function called from within PARALLEL so usually no call to this is needed by the user.
@@ -31,7 +41,7 @@ arma::mat parallel_sim(const int n_datasets, const int n_vars, const int N,
     for (uword i = 0; i < n_datasets; i++) {
       x = randn(N, n_vars);
       R = cor(x);
-      eig_sym(eigval, R);
+      eig_sym_checked(eigval, R);
       Lambda = flipud(eigval);
       eig_vals.row(i) = Lambda.t();
     }
@@ -51,7 +61,7 @@ arma::mat parallel_sim(const int n_datasets, const int n_vars, const int N,
         continue;
       }
       R.diag() = 1 - (1 / temp.diag());
-      eig_sym(eigval, R);
+      eig_sym_checked(eigval, R);
       Lambda = flipud(eigval);
       eig_vals.row(success) = Lambda.t();
       iter++;
@@ -348,7 +358,7 @@ arma::mat parallel_sim(const int n_datasets, const int n_vars, const int N,
 //           x.col(i) = shuffle(data.col(i));
 //         }
 //         R = cor(x);
-//         eig_sym(eigval, R);
+//         eig_sym_checked(eigval, R);
 //         Lambda = flipud(eigval);
 //         eig_vals.row(i) = Lambda.t();
 //       }
@@ -365,7 +375,7 @@ arma::mat parallel_sim(const int n_datasets, const int n_vars, const int N,
 //         R = cor(x);
 //         temp = inv_sympd(R);
 //         R.diag() = 1 - (1 / temp.diag());
-//         eig_sym(eigval, R);
+//         eig_sym_checked(eigval, R);
 //         Lambda = flipud(eigval);
 //         eig_vals.row(i) = Lambda.t();
 //       }
@@ -384,7 +394,7 @@ arma::mat parallel_sim(const int n_datasets, const int n_vars, const int N,
 //           }
 //         }
 //         R = cor(x);
-//         eig_sym(eigval, R);
+//         eig_sym_checked(eigval, R);
 //         Lambda = flipud(eigval);
 //         eig_vals.row(i) = Lambda.t();
 //       }
@@ -403,7 +413,7 @@ arma::mat parallel_sim(const int n_datasets, const int n_vars, const int N,
 //         R = cor(x);
 //         temp = inv_sympd(R);
 //         R.diag() = 1 - (1 / temp.diag());
-//         eig_sym(eigval, R);
+//         eig_sym_checked(eigval, R);
 //         Lambda = flipud(eigval);
 //         eig_vals.row(i) = Lambda.t();
 //       }

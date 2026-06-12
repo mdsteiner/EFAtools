@@ -176,7 +176,11 @@ EKC <- function(x, N = NA,
       refs[i] <- max(((1 + sqrt(p / N))^2) * (p - sum(refs)) / (p - i + 1), 1)
     }
 
-    n_factors_AM2019 <- which(lambda <= refs)[1] - 1
+    # index of the first eigenvalue at/below its reference; retain those before
+    # it. If none crosses (all eigenvalues exceed their reference) retain all p
+    # factors, matching the BvA2017 "all-exceed" convention.
+    crossing <- which(lambda <= refs)[1]
+    n_factors_AM2019 <- if (is.na(crossing)) p else crossing - 1
 
     results[["AM2019"]] <- list(
       name = "AM2019",

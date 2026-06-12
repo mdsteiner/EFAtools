@@ -219,3 +219,19 @@ test_that("eigendecomposition guards turn degenerate matrices into errors", {
   expect_error(.grad_uls(psi, R_bad, 2L), "Eigendecomposition failed")
   expect_error(.uls_residuals(psi, R_bad, 2L), "Eigendecomposition failed")
 })
+
+test_that("over-extraction guards turn n_fac >= ncol into errors", {
+  # the eigenvalue-based extraction reads the largest n_fac eigenpairs; with
+  # n_fac >= ncol(R) it would index past the available eigenvalues (undefined
+  # behaviour in an unchecked build). The guarded fitters must error, not crash R
+  m <- 6L
+  R <- diag(m)
+  psi <- rep(0.5, m)
+
+  expect_error(.paf_iter(rep(1, m), 0.001, R, m, TRUE, 2L, 10L),
+               "smaller than the number of variables")
+  expect_error(.grad_ml(psi, R, m), "smaller than the number of variables")
+  expect_error(.error_ml(psi, R, m), "smaller than the number of variables")
+  expect_error(.grad_uls(psi, R, m), "smaller than the number of variables")
+  expect_error(.uls_residuals(psi, R, m), "smaller than the number of variables")
+})

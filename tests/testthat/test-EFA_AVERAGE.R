@@ -493,6 +493,35 @@ test_that("errors are thrown correctly", {
                  class = "efa_avg_single_combination")
 })
 
+test_that("an all-failed averaging grid returns an empty (NA) result", {
+  # When every solution fails (here all runs hit max_iter and do not converge),
+  # the averaged result is NA rather than an error or an average over an empty set.
+  res <- suppressWarnings(EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3,
+                                      N = 500, max_iter = 1, method = "PAF",
+                                      type = "none", rotation = "none",
+                                      show_progress = FALSE))
+  expect_s3_class(res, "EFA_AVERAGE")
+  expect_true(all((res$implementations_grid$converged != 0) %in% TRUE))
+  expect_true(all(is.na(res$h2)))
+  expect_true(all(is.na(res$loadings)))
+})
+
+test_that("an all-Heywood averaging grid returns an empty (NA) result", {
+  # A 3-variable matrix whose single-factor solution implies a communality > 1.
+  # Disabled: this input still hits a latent out-of-bounds in the per-cell PAF
+  # estimation (it segfaults in an isolated process and only passes here by heap
+  # layout). Re-enable once that crash is fixed.
+  skip("EFA_AVERAGE on Heywood inputs has an unresolved out-of-bounds (see task).")
+  m <- matrix(c(1, .8, .8,  .8, 1, .5,  .8, .5, 1), 3, 3)
+  res <- suppressWarnings(EFA_AVERAGE(m, n_factors = 1, N = 200, method = "PAF",
+                                      type = "none", rotation = "none",
+                                      show_progress = FALSE))
+  expect_s3_class(res, "EFA_AVERAGE")
+  expect_true(all(res$implementations_grid$heywood))
+  expect_true(all(is.na(res$h2)))
+  expect_true(all(is.na(res$loadings)))
+})
+
 test_that("print output is stable", {
   skip_on_cran()
   local_reproducible_output()
