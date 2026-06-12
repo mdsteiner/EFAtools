@@ -39,10 +39,13 @@ plot.COMPARE <- function(x, ...) {
   }
 
   # prepare variable for plot
-  diff_dat <- tibble::tibble(diffs = as.vector(abs(diff))) %>%
-    dplyr::mutate(color = dplyr::case_when(diffs >= plot_red ~ "large difference",
-                                           TRUE ~ "acceptable difference"),
-                  comp = paste(x_labels, collapse = " vs. "))
+  diffs <- as.vector(abs(diff))
+  diff_dat <- data.frame(
+    diffs = diffs,
+    color = ifelse(diffs >= plot_red, "large difference", "acceptable difference"),
+    comp = paste(x_labels, collapse = " vs. "),
+    stringsAsFactors = FALSE
+  )
 
   ggplot2::ggplot(diff_dat, ggplot2::aes(.data$comp, .data$diffs,
                                          col = .data$color)) +

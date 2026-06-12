@@ -288,10 +288,10 @@ fine); Phase 8–9 → **1.0.0**.
 - [x] Split `helper.R` per §4.7; merge duplicate congruence funcs; consolidate number
       formatters into `.efa_num()`; delete dead code (commented `.error_ml2`, cat-based
       progress bars, trivial `.boot_fun` wrapper). → unit **U3**
-- [ ] cli migration of styled output: the `.efa_style()` shim + `cli_format_method`
+- [x] cli migration of styled output: the `.efa_style()` shim + `cli_format_method`
       formats; remove `crayon` from Imports (148 crayon calls across 10 print files
       remain). → units **U4–U6**
-- [ ] Rewrite `print.EFA()` to cli (it is the largest crayon site): trim it to a
+- [x] Rewrite `print.EFA()` to cli (it is the largest crayon site): trim it to a
       `standard` default and add `summary.EFA()` for the full view. Done here, with the
       crayon→cli migration, because both touch the same styled output in `print.EFA.R`;
       the existing `compact/standard/full` engine makes this low-risk and `summary.EFA`
@@ -358,7 +358,7 @@ rely on.
       `.efa_style()` shim; remove `crayon` from Imports. Numbers: no; snapshots:
       formatting diffs only.
 - [ ] **U7 — `new_efa()`/`validate_efa()`** (O8); route all producers through it.
-      Additive fields only. Numbers: no; snapshots: no.
+      Additive fields only. Numbers: no; snapshots: no. -> **deferred**
 - [ ] **U8 — Dependency slimming.** Drop `stringr`/`dplyr`/`tidyr`/`tibble`/`magrittr`
       (base + `|>`)/`progress`; `lavaan` → Suggests (gate the OMEGA/SL lavaan paths;
       `skip_if_not_installed`); pin `GPArotation (>= 2022.4-1)` (**B12**). Numbers: no.
@@ -373,9 +373,12 @@ rely on.
             statistic, lavaan parity tests.
       - [ ] **U9d:** SRMR/TLI/ECVI fit indices + centralised Heywood detector in
             `.estimate_model()` post-processing.
+- [ ] **U10 - fix line wrapping in all print methods** e.g., print.KMO or print.BARTLETT
+      wrap badly. 
 
 ### Phase 3 — C++ estimation engine → `0.9.0`
 **Goal:** full estimation in C++; fast, allocation-light bootstrap.
+- [ ] Consider doing **U7** constructor and validators
 - [ ] `src/estimate.cpp`: single bounded L-BFGS-B loop via **`roptim`** (O2/O3),
       `const arma::mat&`, fused value+gradient from one eigendecomposition, returns
       loadings/psi/Fm/iter/convergence/heywood/eigenpairs. Keep box constraints on `psi`

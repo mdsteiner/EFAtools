@@ -39,7 +39,7 @@
     ncode <- paste0("%.", digits, "f")
     x <- sub("^(-?)0.", "\\1.", sprintf(ncode, x))
     if (isTRUE(pad)) {
-      x <- stringr::str_pad(x, digits + 2, "left")
+      x <- formatC(x, width = digits + 2)
     }
 
 
@@ -49,7 +49,7 @@
     x <- sprintf(ncode, x)
 
     if (isTRUE(pad)) {
-      x <- stringr::str_pad(x, digits + 3, "left")
+      x <- formatC(x, width = digits + 3)
     }
 
   }

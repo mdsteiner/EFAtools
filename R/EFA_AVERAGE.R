@@ -549,7 +549,7 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
   }
 
   if (isTRUE(show_progress)) {
-    progressr::handlers("progress")
+    progressr::handlers("cli")
   } else {
     progressr::handlers("void")
   }

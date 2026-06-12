@@ -55,7 +55,8 @@
 #'                                         method = "Bartlett", impute = "none")
 #'
 #' # Scores between two alternatives above are identical
-#' all(dplyr::near(fac_scores_raw$scores, fac_scores_cor_pearson$scores))
+#' isTRUE(all.equal(fac_scores_raw$scores, fac_scores_cor_pearson$scores,
+#'                  check.attributes = FALSE))
 #'
 #' # Example with a correlation matrix only (does not return factor scores)
 #' EFA_cor <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,

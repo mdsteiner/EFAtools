@@ -1183,6 +1183,9 @@ format.summary.EFA <- function(x, ...) {
                                 highlight = NULL) {
   has_second_key <- !is.null(second_key)
 
+  # Right-pad each cell to its column width (base equivalent of str_pad side = "right").
+  pad <- function(s, w) formatC(s, width = w, flag = "-")
+
   estimate_chr <- .efa_format_ci_num(estimate, digits)
   lower_chr <- .efa_format_ci_num(lower, digits)
   upper_chr <- .efa_format_ci_num(upper, digits)
@@ -1213,14 +1216,14 @@ format.summary.EFA <- function(x, ...) {
   }, numeric(1))
 
   header <- paste(
-    stringr::str_pad(headers, widths, side = "right"),
+    mapply(pad, headers, widths, USE.NAMES = FALSE),
     collapse = "  "
   )
   cat(header, "\n", sep = "")
 
   for (i in seq_len(nrow(plain_rows))) {
     cells <- as.character(unlist(plain_rows[i, , drop = FALSE], use.names = FALSE))
-    padded <- stringr::str_pad(cells, widths, side = "right")
+    padded <- mapply(pad, cells, widths, USE.NAMES = FALSE)
 
     if (has_second_key && !is.null(highlight) && isTRUE(highlight[i])) {
       padded[3] <- cli::style_bold(padded[3])

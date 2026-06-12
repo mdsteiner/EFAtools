@@ -46,15 +46,11 @@ Encoding: UTF-8
 LazyData: true
 URL: https://github.com/mdsteiner/EFAtools
 BugReports: https://github.com/mdsteiner/EFAtools/issues
-Imports: 
+Imports:
     lavaan,
     psych,
-    stringr,
     stats,
     ggplot2 (>= 3.4.0),
-    tibble,
-    magrittr,
-    dplyr,
     cli,
     lifecycle,
     Rcpp,
@@ -62,9 +58,7 @@ Imports:
     future,
     GPArotation,
     checkmate,
-    tidyr,
     progressr,
-    progress,
     rlang,
     clue
 LinkingTo: 

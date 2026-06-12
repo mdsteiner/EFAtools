@@ -24,13 +24,14 @@ plot.EFA_AVERAGE <- function(x, ...) {
 
   # Prepare data
   dat <- lapply(x$loadings, function(temp){
-    temp <- as.data.frame(unclass(temp))
+    df <- as.data.frame(unclass(temp))
 
-    temp <- temp  %>%
-      tibble::rownames_to_column() %>%
-      tidyr::pivot_longer(-"rowname", names_to = "colname", values_to = "loadings")
-
-    return(temp)
+    data.frame(
+      rowname  = rep(rownames(df), each = ncol(df)),
+      colname  = rep(colnames(df), times = nrow(df)),
+      loadings = as.vector(t(as.matrix(df))),
+      stringsAsFactors = FALSE
+    )
   })
 
   dat <- do.call(cbind, dat)
