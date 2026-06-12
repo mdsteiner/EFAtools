@@ -1,4 +1,5 @@
 ## Use with a lavaan output
+if (requireNamespace("lavaan", quietly = TRUE)) {
 lav_mod <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
         F2 =~ V7 + V8 + V9 + V10 + V11 + V12
         F3 =~ V13 + V14 + V15 + V16 + V17 + V18
@@ -7,6 +8,7 @@ lav_mod <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
 lav_fit <- lavaan::cfa(lav_mod, sample.cov = test_models$baseline$cormat,
                    sample.nobs = 500, estimator = "ml", orthogonal = TRUE)
 om_lav <- OMEGA(lav_fit, g_name = "g")
+}
 
 ## Use with an output from the SL function, with type EFAtools
 efa_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
@@ -28,6 +30,7 @@ om_man <- OMEGA(model = NULL, type = "EFAtools", var_names = rownames(sl_mod$sl)
                 factor_corres = sl_mod$sl[, c("F1", "F2", "F3")] >= .2)
 
 test_that("output class and dimensions are correct", {
+  skip_if_not_installed("lavaan")
   expect_s3_class(om_lav, "OMEGA")
   expect_s3_class(om_sl, "OMEGA")
   expect_s3_class(om_schmid, "OMEGA")
@@ -88,4 +91,7 @@ test_that("print output is stable", {
                                   class = "OMEGA")), transform = scrub_num)
 })
 
-rm(lav_mod, lav_fit, om_lav, efa_mod, sl_mod, om_sl, schmid_mod, om_schmid, om_man)
+rm(efa_mod, sl_mod, om_sl, schmid_mod, om_schmid, om_man)
+if (requireNamespace("lavaan", quietly = TRUE)) {
+  rm(lav_mod, lav_fit, om_lav)
+}

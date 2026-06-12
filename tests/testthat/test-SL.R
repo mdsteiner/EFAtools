@@ -17,6 +17,7 @@ SL_flex <- SL(EFA_mod$rot_loadings, Phi = EFA_mod$Phi, type = "EFAtools",
               method = "ML")
 
 ## Use with a second-order lavaan solution
+if (requireNamespace("lavaan", quietly = TRUE)) {
 lav_mod_ho <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
                F2 =~ V7 + V8 + V9 + V10 + V11 + V12
                F3 =~ V13 + V14 + V15 + V16 + V17 + V18
@@ -25,8 +26,10 @@ lav_fit_ho <- suppressWarnings(lavaan::cfa(lav_mod_ho,
                                            sample.cov = test_models$baseline$cormat,
                                            sample.nobs = 500, estimator = "ml"))
 SL_lav <- SL(lav_fit_ho, g_name = "g")
+}
 
 test_that("output class and dimensions are correct", {
+  skip_if_not_installed("lavaan")
   expect_s3_class(SL_EFAtools, "SL")
   expect_s3_class(SL_SPSS, "SL")
   expect_s3_class(SL_psych, "SL")
@@ -41,6 +44,7 @@ test_that("output class and dimensions are correct", {
 })
 
 test_that("original correlation is correct", {
+  skip_if_not_installed("lavaan")
   expect_equal(SL_EFAtools$orig_R, test_models$baseline$cormat)
   expect_equal(SL_SPSS$orig_R, test_models$baseline$cormat)
   expect_equal(SL_psych$orig_R, test_models$baseline$cormat)
@@ -49,6 +53,7 @@ test_that("original correlation is correct", {
 })
 
 test_that("sl solution is correct", {
+  skip_if_not_installed("lavaan")
   expect_equal(unname(SL_EFAtools$sl[, "h2"]) + unname(SL_EFAtools$sl[, "u2"]),
                rep(1, 18))
   expect_equal(unname(SL_SPSS$sl[, "h2"]) + unname(SL_SPSS$sl[, "u2"]),
@@ -104,6 +109,7 @@ test_that("sl solution is correct", {
 })
 
 test_that("settings are returned correctly", {
+  skip_if_not_installed("lavaan")
   expect_named(SL_EFAtools$settings, c("method", "rotation", "type", "n_factors",
                                    "N", "use", "cor_method", "se", "b_boot", "ci", "max_iter",
                                    "init_comm", "criterion", "criterion_type",
@@ -181,6 +187,7 @@ fa_mod_unrot <- psych::fa(test_models$baseline$cormat, nfactors = 3, n.obs = 500
 fa_mod_orth <- psych::fa(test_models$baseline$cormat, nfactors = 3, n.obs = 500,
                          fm = "pa", rotate = "Varimax", n.rotations = 1)
 
+if (requireNamespace("lavaan", quietly = TRUE)) {
 lav_mod_NA <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6 + V17
                F2 =~ V7 + V8 + V9 + V10 + V11 + V12 + V2
                F3 =~ V13 + V14 + V15 + V16 + V17 + V18 + V10
@@ -196,8 +203,10 @@ lav_mod_ho_inv <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
 lav_fit_ho_inv <- suppressWarnings(lavaan::cfa(lav_mod_ho_inv,
                                            sample.cov = test_models$baseline$cormat,
                                            sample.nobs = 500, estimator = "ml"))
+}
 
 test_that("errors are thrown correctly", {
+  skip_if_not_installed("lavaan")
   expect_error(SL(1:5), class = "efa_sl_bad_input")
   expect_warning(SL(EFA_mod, type = "EFAtools", method = "PAF", Phi = EFA_mod$Phi),
                  class = "efa_sl_phi_specified")
@@ -218,7 +227,10 @@ test_that("print output is stable", {
   expect_snapshot(print(SL_EFAtools), transform = scrub_num)
 })
 
-rm(EFA_mod, SL_EFAtools, SL_SPSS, fa_mod, SL_psych, SL_flex, lav_mod_ho,
-   lav_fit_ho, SL_lav, EFA_mod_unrot, EFA_mod_orth, fa_mod_unrot, fa_mod_orth,
-   lav_mod_NA, lav_fit_NA, lav_mod_ho_inv, lav_fit_ho_inv)
+rm(EFA_mod, SL_EFAtools, SL_SPSS, fa_mod, SL_psych, SL_flex, EFA_mod_unrot,
+   EFA_mod_orth, fa_mod_unrot, fa_mod_orth)
+if (requireNamespace("lavaan", quietly = TRUE)) {
+  rm(lav_mod_ho, lav_fit_ho, SL_lav, lav_mod_NA, lav_fit_NA, lav_mod_ho_inv,
+     lav_fit_ho_inv)
+}
 

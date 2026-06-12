@@ -23,9 +23,9 @@ SL(
 }
 \arguments{
 \item{x}{object of class \code{\link[=EFA]{EFA()}}, class \code{\link[psych:fa]{psych::fa()}},
-class \code{\link[lavaan:lavaan]{lavaan::lavaan()}} or matrix. If class \code{\link[=EFA]{EFA()}} or
+class \code{lavaan::lavaan()} or matrix. If class \code{\link[=EFA]{EFA()}} or
 class \code{\link[psych:fa]{psych::fa()}}, pattern coefficients and factor
-intercorrelations are taken from this object. If class \code{\link[lavaan:lavaan]{lavaan::lavaan()}},
+intercorrelations are taken from this object. If class \code{lavaan::lavaan()},
 it must be a second-order CFA solution. In this case first-order and second-order
 factor loadings are taken from this object and the \code{g_name} argument has
 to be specified.
@@ -112,6 +112,7 @@ SL_flex <- SL(EFA_mod$rot_loadings, Phi = EFA_mod$Phi, type = "EFAtools",
 
 \donttest{
 ## Use with a lavaan second-order CFA output
+if (requireNamespace("lavaan", quietly = TRUE)) {
 
 # Create and fit model in lavaan (assume all variables have SDs of 1)
 mod <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
@@ -123,5 +124,6 @@ fit <- lavaan::cfa(mod, sample.cov = test_models$baseline$cormat,
 
 SL_lav <- SL(fit, g_name = "g")
 
+}
 }
 }

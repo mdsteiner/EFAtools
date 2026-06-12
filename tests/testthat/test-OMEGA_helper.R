@@ -1,5 +1,6 @@
 ## Tests for .OMEGA_LAVAAN --------
 
+if (requireNamespace("lavaan", quietly = TRUE)) {
 lav_mod_1 <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
               F2 =~ V7 + V8 + V9 + V10 + V11 + V12
               F3 =~ V13 + V14 + V15 + V16 + V17 + V18
@@ -51,8 +52,10 @@ lav_fit_ho_1 <- suppressWarnings(lavaan::cfa(lav_mod_ho_1,
                                            sample.cov = test_models$baseline$cormat,
                                            sample.nobs = 500, estimator = "ml"))
 om_lav_ho_1 <- suppressMessages(.OMEGA_LAVAAN(lav_fit_ho_1, g_name = "g"))
+}
 
 test_that("output class and dimensions are correct", {
+  skip_if_not_installed("lavaan")
   expect_s3_class(om_lav_bi_add, "OMEGA")
   expect_s3_class(om_lav_1_add, "OMEGA")
   expect_s3_class(om_lav_ho_1, "OMEGA")
@@ -76,6 +79,7 @@ test_that("output class and dimensions are correct", {
 })
 
 test_that("output is correct (including group names for multiple groups)", {
+  skip_if_not_installed("lavaan")
   expect_equal(rowSums(om_lav_bi_add[, 2:3]), om_lav_bi_add[, 1], tolerance = 1e-3)
   expect_equal(om_lav_bi_add[1, 4], 0.849, tolerance = 1e-3)
   expect_equal(om_lav_bi_add[1, 5], 0.672, tolerance = 1e-3)
@@ -93,6 +97,7 @@ test_that("output is correct (including group names for multiple groups)", {
 })
 
 # Preparations for error tests
+if (requireNamespace("lavaan", quietly = TRUE)) {
 lav_mod_NA <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6 + V17
                F2 =~ V7 + V8 + V9 + V10 + V11 + V12 + V2
                F3 =~ V13 + V14 + V15 + V16 + V17 + V18 + V10
@@ -128,8 +133,10 @@ lav_mod_ho_2 <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
 lav_fit_ho_2 <- suppressWarnings(lavaan::cfa(lav_mod_ho_2,
                                            sample.cov = test_models$baseline$cormat,
                                            sample.nobs = 500, estimator = "ml"))
+}
 
 test_that("errors are thrown correctly", {
+  skip_if_not_installed("lavaan")
   expect_error(.OMEGA_LAVAAN(lav_fit_NA, g_name = "g"), class = "efa_omega_na_loadings")
   expect_error(.OMEGA_LAVAAN(lav_fit_1, g_name = "fu"), class = "efa_omega_g_name")
   expect_message(.OMEGA_LAVAAN(lav_fit_2, add_ind = FALSE), class = "efa_omega_single_factor")
@@ -289,11 +296,14 @@ test_that("errors are thrown correctly", {
                              variance = "correlation"), class = "efa_omega_corres_override")
 })
 
-rm(lav_mod_1, lav_fit_1, om_lav_bi_add, om_lav_bi_noadd, lav_mod_2, lav_fit_2,
-   om_lav_1_add, om_lav_1_noadd, lav_fit_3, lav_fit_4, om_lav_gr_add, om_lav_gr_noadd,
-   om_lav_1_gr_add, om_lav_1_gr_noadd, lav_mod_ho_1, lav_mod_ho_2, lav_fit_ho_1,
-   lav_fit_ho_2, om_lav_ho_1, lav_mod_NA, lav_fit_NA,
-   lav_mod_inv, lav_fit_inv, lav_mod_bi_red, lav_fit_bi_red, efa_mod, sl_mod,
+rm(efa_mod, sl_mod,
    om_sl_add, om_sl_noadd, om_sl_named_add, om_sl_named_noadd, schmid_mod,
    om_schmid_1_add, om_schmid_1_noadd, om_schmid_2, om_man_1_add, om_man_1_noadd,
    om_man_2)
+if (requireNamespace("lavaan", quietly = TRUE)) {
+  rm(lav_mod_1, lav_fit_1, om_lav_bi_add, om_lav_bi_noadd, lav_mod_2, lav_fit_2,
+     om_lav_1_add, om_lav_1_noadd, lav_fit_3, lav_fit_4, om_lav_gr_add, om_lav_gr_noadd,
+     om_lav_1_gr_add, om_lav_1_gr_noadd, lav_mod_ho_1, lav_mod_ho_2, lav_fit_ho_1,
+     lav_fit_ho_2, om_lav_ho_1, lav_mod_NA, lav_fit_NA,
+     lav_mod_inv, lav_fit_inv, lav_mod_bi_red, lav_fit_bi_red)
+}

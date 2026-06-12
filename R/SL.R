@@ -10,9 +10,9 @@
 #' second-order confirmatory factor analysis (CFA) solution from lavaan.
 #'
 #' @param x object of class [EFA()], class [psych::fa()],
-#' class [lavaan::lavaan()] or matrix. If class [EFA()] or
+#' class `lavaan::lavaan()` or matrix. If class [EFA()] or
 #' class [psych::fa()], pattern coefficients and factor
-#' intercorrelations are taken from this object. If class [lavaan::lavaan()],
+#' intercorrelations are taken from this object. If class `lavaan::lavaan()`,
 #' it must be a second-order CFA solution. In this case first-order and second-order
 #'  factor loadings are taken from this object and the `g_name` argument has
 #'  to be specified.
@@ -91,6 +91,7 @@
 #'
 #' \donttest{
 #' ## Use with a lavaan second-order CFA output
+#' if (requireNamespace("lavaan", quietly = TRUE)) {
 #'
 #' # Create and fit model in lavaan (assume all variables have SDs of 1)
 #' mod <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
@@ -102,6 +103,7 @@
 #'
 #' SL_lav <- SL(fit, g_name = "g")
 #'
+#' }
 #' }
 SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
                method = c("PAF", "ML", "ULS"), g_name = "g", ...) {
@@ -184,6 +186,8 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
     Phi <- Phi[n_order, n_order]
 
   } else if(inherits(x, "lavaan")){
+
+    .require_lavaan()
 
     if(lavaan::lavInspect(x, what = "converged") == FALSE){
       cli::cli_abort("The model did not converge; no omegas are computed.",

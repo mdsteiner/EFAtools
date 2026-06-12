@@ -24,6 +24,19 @@
   )
 }
 
+# Abort (classed) when the suggested lavaan package is unavailable; guards the lavaan
+# input paths of OMEGA() and SL(). `call` is forwarded so the error points at the caller.
+.require_lavaan <- function(call = rlang::caller_env()) {
+  if (!requireNamespace("lavaan", quietly = TRUE)) {
+    cli::cli_abort(
+      c("The {.pkg lavaan} package must be installed to use a {.cls lavaan} object as input.",
+        "i" = 'Install it with {.code install.packages("lavaan")}.'),
+      class = "efa_lavaan_not_installed",
+      call = call
+    )
+  }
+}
+
 #' Calculate statistics for a list of matrices
 #'
 #' @author Andreas Soteriades

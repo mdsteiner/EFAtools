@@ -268,6 +268,7 @@ general factor and the variable's allocated group factor).
 \examples{
 \donttest{
 ## Use with lavaan outputs
+if (requireNamespace("lavaan", quietly = TRUE)) {
 
 # Create and fit bifactor model in lavaan (assume all variables have SDs of 1)
 mod <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
@@ -294,6 +295,7 @@ fit_ho <- lavaan::cfa(mod, sample.cov = test_models$baseline$cormat,
 
 # Compute omegas and additional indices for second-order solution
 OMEGA(fit_ho, g_name = "g")
+}
 }
 
 ## Use with an output from the SL function, with type EFAtools
