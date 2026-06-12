@@ -213,11 +213,17 @@
 #' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings. Based on the unrotated loadings.}
 #' \item{fit_indices}{For ML and ULS: Fit indices derived from the unrotated
 #' factor loadings: Chi Square, including significance level, degrees of freedom
-#' (df), Comparative Fit Index (CFI), Root Mean Square Error of Approximation
-#' (RMSEA), including its 90% confidence interval, Akaike Information Criterion
-#' (AIC), Bayesian Information Criterion (BIC), Root Mean Squared Residual (RMSR), and the common part accounted
-#' for (CAF) index as proposed by Lorenzo-Seva, Timmerman, & Kiers (2011).
-#' For PAF, only the CAF and dfs are returned. Note that while in Lorenzo-Seva, Timmerman, & Kiers (2011) the CAF is introduced as ranging between 0 and 1, with values close to 1 indicating close fit, this does not match the formula they introduce for calculating CAF: `1 - KMO(residuals)`, which only works if the diagonal of the residual matrix is set to 1s and will then approximate 0.5 with close fit.}
+#' (df), Comparative Fit Index (CFI), Tucker-Lewis Index (TLI, also called the
+#' non-normed fit index; Tucker & Lewis, 1973), Root Mean Square Error of
+#' Approximation (RMSEA), including its 90% confidence interval, Akaike
+#' Information Criterion (AIC), Bayesian Information Criterion (BIC), Expected
+#' Cross-Validation Index (ECVI; Browne & Cudeck, 1989), Root Mean Squared
+#' Residual (RMSR), Standardized Root Mean Squared Residual (SRMR; Bentler,
+#' 1995), and the common part accounted for (CAF) index as proposed by
+#' Lorenzo-Seva, Timmerman, & Kiers (2011). The Chi Square, CFI, TLI, RMSEA,
+#' AIC, BIC, and ECVI are based on the Bartlett-corrected Chi Square (matching
+#' [stats::factanal()] for ML). For PAF, only the CAF, RMSR, SRMR, and dfs are
+#' returned. Note that while in Lorenzo-Seva, Timmerman, & Kiers (2011) the CAF is introduced as ranging between 0 and 1, with values close to 1 indicating close fit, this does not match the formula they introduce for calculating CAF: `1 - KMO(residuals)`, which only works if the diagonal of the residual matrix is set to 1s and will then approximate 0.5 with close fit.}
 #' \item{model_implied_R}{The model implied correlation
 #' matrix.}
 #' \item{residuals}{Residual correlations, i.e., orig_R - model_implied_R}
@@ -455,6 +461,19 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                              init_comm = init_comm, criterion = criterion,
                              criterion_type = criterion_type,
                              abs_eigen = abs_eigen, start_method = start_method)
+
+  # Surface Heywood cases from the point-estimate solution (the detector runs in
+  # .finalize_fit for every fit; the warning fires once here and is suppressed when
+  # EFA() is called inside the retention/averaging/bootstrap routines).
+  if (length(fit_out$heywood) > 0) {
+    heywood_vars <- names(fit_out$heywood)
+    cli::cli_warn(
+      c(paste("{cli::qty(heywood_vars)}Heywood case{?s} detected: the communalit{?y/ies}",
+              "of {.val {heywood_vars}} {?is/are} {.val {1}} or larger."),
+        "i" = "The solution is improper; interpret the affected loadings and uniquenesses with caution."),
+      class = "efa_heywood"
+    )
+  }
 
   if (isTRUE(np_boot)) {
 

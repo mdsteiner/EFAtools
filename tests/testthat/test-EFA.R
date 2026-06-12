@@ -73,47 +73,47 @@ test_that("output class and dimensions are correct", {
   expect_s3_class(efa_none$rot_loadings, "LOADINGS")
 
   expect_named(efa_cor, c("orig_R", "h2_init", "h2", "orig_eigen", "init_eigen",
-                          "final_eigen", "iter", "convergence", "unrot_loadings",
+                          "final_eigen", "iter", "convergence", "heywood", "unrot_loadings",
                           "vars_accounted", "fit_indices", "model_implied_R",
                           "residuals", "settings"))
   expect_named(efa_raw, c("orig_R", "h2_init", "h2", "orig_eigen", "init_eigen",
-                          "final_eigen", "iter", "convergence", "unrot_loadings",
+                          "final_eigen", "iter", "convergence", "heywood", "unrot_loadings",
                           "vars_accounted", "fit_indices", "model_implied_R",
                           "residuals", "settings"))
   expect_named(efa_psych, c("orig_R", "h2_init", "h2", "orig_eigen", "init_eigen",
-                            "final_eigen", "iter", "convergence", "unrot_loadings",
+                            "final_eigen", "iter", "convergence", "heywood", "unrot_loadings",
                             "vars_accounted", "fit_indices", "model_implied_R",
                             "residuals", "rot_loadings",
                             "Phi", "Structure", "rotmat", "vars_accounted_rot",
                             "settings"))
   expect_named(efa_spss, c("orig_R", "h2_init", "h2", "orig_eigen", "init_eigen",
-                           "final_eigen", "iter", "convergence", "unrot_loadings",
+                           "final_eigen", "iter", "convergence", "heywood", "unrot_loadings",
                            "vars_accounted", "fit_indices", "model_implied_R",
                            "residuals", "rot_loadings",
                            "Phi", "Structure", "rotmat", "vars_accounted_rot",
                            "settings"))
   expect_named(efa_ml, c("orig_R", "h2", "orig_eigen", "final_eigen", "iter",
-                         "convergence", "unrot_loadings", "vars_accounted",
+                         "convergence", "heywood", "unrot_loadings", "vars_accounted",
                          "fit_indices", "model_implied_R",
                          "residuals", "settings"))
   expect_named(efa_uls, c("orig_R", "h2", "orig_eigen", "final_eigen", "iter",
-                         "convergence", "unrot_loadings", "vars_accounted",
+                         "convergence", "heywood", "unrot_loadings", "vars_accounted",
                          "fit_indices", "model_implied_R",
                          "residuals", "settings"))
   expect_named(efa_equa, c("orig_R", "h2_init", "h2", "orig_eigen", "init_eigen",
-                           "final_eigen", "iter", "convergence", "unrot_loadings",
+                           "final_eigen", "iter", "convergence", "heywood", "unrot_loadings",
                            "vars_accounted", "fit_indices", "model_implied_R",
                            "residuals", "rot_loadings",
                            "rotmat", "vars_accounted_rot",
                            "settings"))
   expect_named(efa_quart, c("orig_R", "h2_init", "h2", "orig_eigen", "init_eigen",
-                            "final_eigen", "iter", "convergence", "unrot_loadings",
+                            "final_eigen", "iter", "convergence", "heywood", "unrot_loadings",
                             "vars_accounted", "fit_indices", "model_implied_R",
                             "residuals", "rot_loadings",
                             "Phi", "Structure", "rotmat", "vars_accounted_rot",
                             "settings"))
   expect_named(efa_none, c("orig_R", "h2_init", "h2", "orig_eigen", "init_eigen",
-                           "final_eigen", "iter", "convergence", "unrot_loadings",
+                           "final_eigen", "iter", "convergence", "heywood", "unrot_loadings",
                            "vars_accounted", "fit_indices", "model_implied_R",
                            "residuals", "rot_loadings",
                            "Phi", "Structure", "rotmat", "vars_accounted_rot",
@@ -427,6 +427,24 @@ test_that("residuals.EFA is a pure extractor", {
 
   # an unknown type is rejected
   expect_error(residuals(efa_psych, "bogus"))
+})
+
+test_that("Heywood cases are detected, warned, and recorded", {
+  # Over-extracting the baseline model with PAF yields a Heywood case (V14).
+  expect_warning(
+    EFA(test_models$baseline$cormat, 6, N = 500, method = "PAF"),
+    class = "efa_heywood"
+  )
+
+  efa_hey <- suppressWarnings(EFA(test_models$baseline$cormat, 6, N = 500,
+                                  method = "PAF"))
+  expect_gt(length(efa_hey$heywood), 0)
+  expect_true(all(efa_hey$h2[efa_hey$heywood] >= 1))
+
+  # A proper solution records no Heywood cases and emits no Heywood warning.
+  efa_clean <- suppressWarnings(EFA(test_models$baseline$cormat, 3, N = 500,
+                                    method = "ML"))
+  expect_length(efa_clean$heywood, 0)
 })
 
 rm(efa_cor, efa_raw, efa_psych, efa_spss, efa_ml, efa_uls, efa_equa, efa_quart,

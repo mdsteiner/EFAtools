@@ -108,6 +108,11 @@
   ### compute RMSR
   RMSR <- .rmsr(delta_hat)
 
+  ### compute SRMR (standardized root mean square residual; Bentler, 1995). The
+  ### model-implied diagonal is 1, so only the off-diagonal residuals contribute; the
+  ### denominator is the count of non-redundant elements p(p + 1)/2.
+  SRMR <- sqrt(sum(delta_hat[upper.tri(delta_hat)] ^ 2) / (m * (m + 1) / 2))
+
   # Model chi-square: the Bartlett-corrected (Bartlett, 1951) ML discrepancy
   # F = tr(Sigma^-1 R) - log|Sigma^-1 R| - p, evaluated at the model-implied correlation
   # matrix Sigma = LL' (unit diagonal), times (N - 1 - (2p + 5)/6 - (2q)/3). For ML this
@@ -156,6 +161,14 @@
     if (CFI > 1 || df == 0) CFI <- 1
     if (CFI < 0) CFI <- 0
 
+    ### compute TLI (Tucker-Lewis index / NNFI; Tucker & Lewis, 1973)
+    if (df == 0) {
+      TLI <- 1
+    } else {
+      ratio_null <- chi_null / df_null
+      TLI <- (ratio_null - chi / df) / (ratio_null - 1)
+    }
+
 
     ### compute RMSEA, incl. 90% confidence intervals if df are not 0
     if(df != 0){
@@ -201,15 +214,21 @@
     AIC <- chi - 2 * df
     BIC <- chi - log(N) * df
 
+    ### compute ECVI (expected cross-validation index; Browne & Cudeck, 1989)
+    n_params <- m * (m + 1) / 2 - df
+    ECVI <- (chi + 2 * n_params) / (N - 1)
+
   } else {
     chi <- NA
     p_chi <- NA
     CFI <- NA
+    TLI <- NA
     RMSEA <- NA
     RMSEA_LB <- NA
     RMSEA_UB <- NA
     AIC <- NA
     BIC <- NA
+    ECVI <- NA
     chi_null <- NA
     df_null <- NA
     p_null <- NA
@@ -221,12 +240,15 @@
     p_chi = p_chi,
     CAF = CAF,
     RMSR = RMSR,
+    SRMR = SRMR,
     CFI = CFI,
+    TLI = TLI,
     RMSEA = RMSEA,
     RMSEA_LB = RMSEA_LB,
     RMSEA_UB = RMSEA_UB,
     AIC = AIC,
     BIC = BIC,
+    ECVI = ECVI,
     Fm = Fm,
     chi_null = chi_null,
     df_null = df_null,

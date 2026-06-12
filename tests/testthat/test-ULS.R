@@ -3,9 +3,9 @@ ULS_test_1 <- .estimate_model(method = "ULS",test_models$baseline$cormat, n_fact
 
 test_that("output class and dimensions are correct", {
   expect_s3_class(ULS_test$unrot_loadings, "LOADINGS")
-  expect_output(str(ULS_test), "List of 11")
+  expect_output(str(ULS_test), "List of 12")
   expect_s3_class(ULS_test_1$unrot_loadings, "LOADINGS")
-  expect_output(str(ULS_test_1), "List of 11")
+  expect_output(str(ULS_test_1), "List of 12")
 
 })
 
@@ -22,8 +22,8 @@ test_that("outputs are correct", {
 })
 
 test_that("fit indices are returned correctly", {
-  expect_output(str(ULS_test$fit_indices), "List of 15")
-  expect_output(str(ULS_test_1$fit_indices), "List of 15")
+  expect_output(str(ULS_test$fit_indices), "List of 18")
+  expect_output(str(ULS_test_1$fit_indices), "List of 18")
 
   expect_type(ULS_test$fit_indices$chi, "double")
   expect_type(ULS_test$fit_indices$df, "double")

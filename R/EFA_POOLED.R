@@ -779,6 +779,13 @@ EFA_POOLED <- function(data_list,
   CAF <- tryCatch(1 - .compute_kmo(delta_hat)$KMO,
                   error = function(e) NA_real_)
 
+  ## SRMR (standardized RMR; Bentler, 1995) over the pooled residuals: the
+  ## model-implied diagonal is 1, so only the off-diagonal residuals contribute,
+  ## divided by the count of non-redundant elements p(p + 1)/2. Distinct from RMSR
+  ## (off-diagonal mean), which uses the p(p - 1)/2 denominator.
+  SRMR <- sqrt(sum(residuals[upper.tri(residuals)]^2) /
+                 (nrow(residuals) * (nrow(residuals) + 1) / 2))
+
   out <- list(
     chi = chi,
     df = df,
@@ -792,7 +799,7 @@ EFA_POOLED <- function(data_list,
     BIC = BIC,
     Fm = Fm,
     RMSR = RMSR,
-    SRMR = RMSR,
+    SRMR = SRMR,
     chi_null = chi_null,
     df_null = df_null,
     p_null = p_null,

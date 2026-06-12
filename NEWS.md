@@ -1,5 +1,17 @@
 # EFAtools 0.7.1.9000
 
+## Changes to Functions
+
+* `EFA()` now additionally reports the Tucker-Lewis index (TLI, also called the
+  non-normed fit index), the expected cross-validation index (ECVI), and the
+  standardized root mean square residual (SRMR) among its `fit_indices` for `ML` and
+  `ULS` estimation (SRMR is also reported for `PAF`). The SRMR matches `lavaan`; the TLI
+  and ECVI are based on the Bartlett-corrected chi square. The new indices are shown in
+  `print()` and `summary()`.
+* `EFA()` now detects Heywood cases (a communality at or above 1) in the fitted solution,
+  records the affected variables in a new `heywood` element of the returned object, and
+  emits a classed warning. Detection is consistent across `PAF`, `ML`, and `ULS`.
+
 ## Bug Fixes
 
 * `EFA_AVERAGE()`: When every averaged solution fails (all runs error, fail to converge, or

@@ -312,14 +312,14 @@ smaller; numbers identical to `0.8.0`.
 
 ### Phase 2 — Correctness fixes (behaviour-changing) → `0.8.x`
 **Goal:** fix the verified bugs (§6), each with a NEWS entry and snapshot update (O6/O7).
-- [ ] Work through the **open** bugs in §6 via their assigned units (see the register's
+- [x] Work through the **open** bugs in §6 via their assigned units (see the register's
       Status column — several were already fixed by the Phase 1 refactors).
       Behaviour-changing fixes get explicit NEWS notes; compatibility presets preserve
       their documented behaviour where that is the point. → units **U9a–U9b** (and the
       bugs folded into U5/U6/U8 per the register)
-- [ ] Add **SRMR, TLI/NNFI, ECVI** to the fit-index module; reconcile the χ² multiplier
+- [x] Add **SRMR, TLI/NNFI, ECVI** to the fit-index module; reconcile the χ² multiplier
       with lavaan (O7) + parity tests. → units **U9c/U9d**
-- [ ] Centralise a Heywood detector in `estimate_model()` post-processing; surface in
+- [x] Centralise a Heywood detector in `estimate_model()` post-processing; surface in
       `settings`/`summary` via `cli_warn` (consistent across PAF/ML/ULS). → unit **U9d**
 
 **Exit:** regression suite re-baselined against `psych`/`lavaan`/`factanal` with the
@@ -362,16 +362,16 @@ rely on.
 - [x] **U8 — Dependency slimming.** Drop `stringr`/`dplyr`/`tidyr`/`tibble`/`magrittr`
       (base + `|>`)/`progress`; `lavaan` → Suggests (gate the OMEGA/SL lavaan paths;
       `skip_if_not_installed`); pin `GPArotation (>= 2022.4-1)` (**B12**). Numbers: no.
-- [ ] **U9 — Phase 2 behaviour-changing fixes**, one sub-unit per family, each with
+- [x] **U9 — Phase 2 behaviour-changing fixes**, one sub-unit per family, each with
       NEWS + deliberate snapshot updates. Numbers: **yes**, as documented per sub-unit.
-      - [ ] **U9a:** **B14** (PARALLEL partition/percentile) + **B15** (classed
+      - [x] **U9a:** **B14** (PARALLEL partition/percentile) + **B15** (classed
             `cli_warn` on smoothing in `.prepare_cor_input()`).
-      - [ ] **U9b:** small guards — **B7** (`isTRUE()` on length>1 in EFA_AVERAGE),
+      - [x] **U9b:** small guards — **B7** (`isTRUE()` on length>1 in EFA_AVERAGE),
             **B18** (guard `eig_sym` in `nest_sym.cpp`), **B19** (EKC `AM2019` NA
             convention).
-      - [ ] **U9c:** **B2**/O7 — Bartlett-corrected ML χ², proper residual-based ULS
+      - [x] **U9c:** **B2**/O7 — Bartlett-corrected ML χ², proper residual-based ULS
             statistic, lavaan parity tests.
-      - [ ] **U9d:** SRMR/TLI/ECVI fit indices + centralised Heywood detector in
+      - [x] **U9d:** SRMR/TLI/ECVI fit indices + centralised Heywood detector in
             `.estimate_model()` post-processing.
 - [ ] **U10 - fix line wrapping in all print methods** e.g., print.KMO or print.BARTLETT
       wrap badly. 

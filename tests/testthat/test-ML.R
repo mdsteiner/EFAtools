@@ -5,9 +5,9 @@ ML_test_2 <- .estimate_model(method = "ML",test_models$baseline$cormat, n_factor
 
 test_that("output class and dimensions are correct", {
   expect_s3_class(ML_test$unrot_loadings, "LOADINGS")
-  expect_output(str(ML_test), "List of 12")
+  expect_output(str(ML_test), "List of 13")
   expect_s3_class(ML_test_2$unrot_loadings, "LOADINGS")
-  expect_output(str(ML_test_2), "List of 12")
+  expect_output(str(ML_test_2), "List of 13")
 
 })
 
@@ -23,7 +23,7 @@ test_that("outputs are correct", {
 })
 
 test_that("fit indices are returned correctly", {
-  expect_output(str(ML_test$fit_indices), "List of 15")
+  expect_output(str(ML_test$fit_indices), "List of 18")
 
   expect_type(ML_test$fit_indices$chi, "double")
   expect_type(ML_test$fit_indices$df, "double")

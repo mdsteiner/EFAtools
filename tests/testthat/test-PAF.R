@@ -36,14 +36,14 @@ test_that("output class and dimensions are correct", {
   expect_s3_class(paf_F1_f$unrot_loadings, "LOADINGS")
 
 
-  expect_output(str(paf_efatools), "List of 14")
-  expect_output(str(paf_psych), "List of 14")
-  expect_output(str(paf_spss), "List of 14")
-  expect_output(str(paf_none), "List of 14")
-  expect_output(str(paf_mac_t), "List of 14")
-  expect_output(str(paf_mac_f), "List of 14")
-  expect_output(str(paf_F1_t), "List of 14")
-  expect_output(str(paf_F1_f), "List of 14")
+  expect_output(str(paf_efatools), "List of 15")
+  expect_output(str(paf_psych), "List of 15")
+  expect_output(str(paf_spss), "List of 15")
+  expect_output(str(paf_none), "List of 15")
+  expect_output(str(paf_mac_t), "List of 15")
+  expect_output(str(paf_mac_f), "List of 15")
+  expect_output(str(paf_F1_t), "List of 15")
+  expect_output(str(paf_F1_f), "List of 15")
 })
 
 test_that("original correlation matrix and eigenvalues are correct", {
@@ -85,14 +85,14 @@ test_that("original correlation matrix and eigenvalues are correct", {
 })
 
 test_that("fit indices are returned correctly", {
-  expect_output(str(paf_efatools$fit_indices), "List of 15")
-  expect_output(str(paf_psych$fit_indices), "List of 15")
-  expect_output(str(paf_spss$fit_indices), "List of 15")
-  expect_output(str(paf_none$fit_indices), "List of 15")
-  expect_output(str(paf_mac_t$fit_indices), "List of 15")
-  expect_output(str(paf_mac_f$fit_indices), "List of 15")
-  expect_output(str(paf_F1_t$fit_indices), "List of 15")
-  expect_output(str(paf_F1_f$fit_indices), "List of 15")
+  expect_output(str(paf_efatools$fit_indices), "List of 18")
+  expect_output(str(paf_psych$fit_indices), "List of 18")
+  expect_output(str(paf_spss$fit_indices), "List of 18")
+  expect_output(str(paf_none$fit_indices), "List of 18")
+  expect_output(str(paf_mac_t$fit_indices), "List of 18")
+  expect_output(str(paf_mac_f$fit_indices), "List of 18")
+  expect_output(str(paf_F1_t$fit_indices), "List of 18")
+  expect_output(str(paf_F1_f$fit_indices), "List of 18")
 
   expect_equal(paf_efatools$fit_indices[c("chi", "p_chi", "CFI", "RMSEA",
                                           "RMSEA_LB", "RMSEA_UB", "AIC", "BIC",

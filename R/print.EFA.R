@@ -587,6 +587,9 @@ format.summary.EFA <- function(x, ...) {
       .efa_format_fit_value(fit, "RMSR"), fit_ci$RMSR, "\n",
       sep = ""
     )
+    if (is.finite(.efa_fit_scalar(fit, "SRMR"))) {
+      cat("SRMR  :", .efa_format_fit_value(fit, "SRMR"), "\n", sep = "")
+    }
     cat("df: ",
       .efa_format_fit_value(fit, "df", digits = 0, print_zero = TRUE, pad = FALSE), "\n",
       sep = ""
@@ -617,6 +620,10 @@ format.summary.EFA <- function(x, ...) {
     sep = ""
   )
 
+  if (is.finite(.efa_fit_scalar(fit, "TLI"))) {
+    cat("TLI  : ", .efa_format_fit_value(fit, "TLI", pad = FALSE), "\n", sep = "")
+  }
+
   rmsea_label <- paste0("RMSEA [", .efa_ci_level_text(spec$rmsea_ci_level), " CI]")
   cat(paste(rmsea_label, fit_ci$label, ": "),
     paste0(
@@ -636,6 +643,9 @@ format.summary.EFA <- function(x, ...) {
     .efa_format_fit_value(fit, "BIC", print_zero = TRUE), fit_ci$BIC, "\n",
     sep = ""
   )
+  if (is.finite(.efa_fit_scalar(fit, "ECVI"))) {
+    cat("ECVI  :", .efa_format_fit_value(fit, "ECVI", print_zero = TRUE), "\n", sep = "")
+  }
   cat(paste("CAF", fit_ci$label, ":"),
     .efa_format_fit_value(fit, "CAF"), fit_ci$CAF, "\n",
     sep = ""
@@ -644,6 +654,9 @@ format.summary.EFA <- function(x, ...) {
     .efa_format_fit_value(fit, "RMSR"), fit_ci$RMSR, "\n",
     sep = ""
   )
+  if (is.finite(.efa_fit_scalar(fit, "SRMR"))) {
+    cat("SRMR  :", .efa_format_fit_value(fit, "SRMR"), "\n", sep = "")
+  }
 
   invisible(NULL)
 }

@@ -57,6 +57,11 @@
   # Name communalities
   names(h2) <- colnames(orig_R)
 
+  # Detect Heywood cases (an improper solution where a variable's communality is
+  # at or above 1). Named integer vector of the affected variables (empty if none);
+  # surfaced to the user by EFA() and shown in summary().
+  heywood <- which(h2 >= 1 + .Machine$double.eps)
+
   list(
     orig_R = orig_R,
     h2 = h2,
@@ -64,6 +69,7 @@
     final_eigen = eigen(fit$R_final, symmetric = TRUE)$values,
     iter = fit$iter,
     convergence = fit$convergence,
+    heywood = heywood,
     unrot_loadings = L,
     vars_accounted = vars_accounted,
     fit_indices = fit_ind,
@@ -104,6 +110,7 @@
       final_eigen = common$final_eigen,
       iter = common$iter,
       convergence = common$convergence,
+      heywood = common$heywood,
       unrot_loadings = common$unrot_loadings,
       vars_accounted = common$vars_accounted,
       fit_indices = common$fit_indices,

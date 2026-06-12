@@ -93,9 +93,9 @@ q <- 3 # n factors
 test_that(".gof works", {
   expect_type(gof_ml, "list")
   expect_named(gof_ml,
-               c("chi", "df", "p_chi", "CAF", "RMSR", "CFI", "RMSEA", "RMSEA_LB",
-                 "RMSEA_UB", "AIC", "BIC", "Fm", "chi_null", "df_null",
-                 "p_null"))
+               c("chi", "df", "p_chi", "CAF", "RMSR", "SRMR", "CFI", "TLI",
+                 "RMSEA", "RMSEA_LB", "RMSEA_UB", "AIC", "BIC", "ECVI", "Fm",
+                 "chi_null", "df_null", "p_null"))
   expect_lt(gof_ml$p_chi, .05)
   expect_equal(gof_ml$CFI, 1)
   expect_equal(gof_ml$RMSEA, 0)
@@ -108,9 +108,9 @@ test_that(".gof works", {
 
   expect_type(gof_uls, "list")
   expect_named(gof_uls,
-               c("chi", "df", "p_chi", "CAF", "RMSR", "CFI", "RMSEA", "RMSEA_LB",
-                 "RMSEA_UB", "AIC", "BIC", "Fm", "chi_null", "df_null",
-                 "p_null"))
+               c("chi", "df", "p_chi", "CAF", "RMSR", "SRMR", "CFI", "TLI",
+                 "RMSEA", "RMSEA_LB", "RMSEA_UB", "AIC", "BIC", "ECVI", "Fm",
+                 "chi_null", "df_null", "p_null"))
   expect_lt(gof_uls$p_chi, .05)
   expect_equal(gof_uls$CFI, 1)
   expect_equal(gof_uls$RMSEA, 0)
@@ -124,9 +124,9 @@ test_that(".gof works", {
 
   expect_type(gof_paf, "list")
   expect_named(gof_paf,
-               c("chi", "df", "p_chi", "CAF", "RMSR", "CFI", "RMSEA", "RMSEA_LB",
-                 "RMSEA_UB", "AIC", "BIC", "Fm", "chi_null", "df_null",
-                 "p_null"))
+               c("chi", "df", "p_chi", "CAF", "RMSR", "SRMR", "CFI", "TLI",
+                 "RMSEA", "RMSEA_LB", "RMSEA_UB", "AIC", "BIC", "ECVI", "Fm",
+                 "chi_null", "df_null", "p_null"))
   expect_equal(gof_paf$chi, NA)
   expect_equal(gof_paf$p_chi, NA)
   expect_equal(gof_paf$CFI, NA)

@@ -56,6 +56,7 @@
       
       CAF  : <num>
       RMSR  : <num>
+      SRMR  : <num>
       df: 102
 
 # print.EFA output is stable (ML, promax)
@@ -116,11 +117,14 @@
       
       χ²(102) = <num>, p = <num>
       CFI  : <num>
+      TLI  : <num>
       RMSEA [90% CI]  : <num> [ <num>; <num>]
       AIC  : <num>
       BIC  : <num>
+      ECVI  : <num>
       CAF  : <num>
       RMSR  : <num>
+      SRMR  : <num>
 
 # summary.EFA output is stable (PAF, promax)
 
@@ -222,6 +226,7 @@
       
       CAF  : <num>
       RMSR  : <num>
+      SRMR  : <num>
       df: 102
       
       -- Residual Diagnostics --------------------------------------------------------
@@ -328,11 +333,14 @@
       
       χ²(102) = <num>, p = <num>
       CFI  : <num>
+      TLI  : <num>
       RMSEA [90% CI]  : <num> [ <num>; <num>]
       AIC  : <num>
       BIC  : <num>
+      ECVI  : <num>
       CAF  : <num>
       RMSR  : <num>
+      SRMR  : <num>
       
       -- Residual Diagnostics --------------------------------------------------------
       

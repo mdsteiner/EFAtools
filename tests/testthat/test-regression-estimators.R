@@ -129,4 +129,41 @@ test_that("ML chi-square relates to lavaan's via the documented Bartlett factor"
   }
 })
 
+test_that("SRMR reproduces lavaan", {
+  skip_on_cran()
+  skip_if_not_installed("lavaan")
+
+  for (fx in reg_fixtures) {
+    efa <- suppressWarnings(EFA(fx$R, n_factors = fx$k, N = fx$N, method = "ML"))
+
+    lav_srmr <- tryCatch({
+      fit <- lavaan::efa(sample.cov = fx$R, sample.nobs = fx$N, nfactors = fx$k,
+                         rotation = "none", estimator = "ML", se = "none")[[1]]
+      unname(lavaan::fitMeasures(fit, "srmr"))
+    }, error = function(e) NA_real_)
+    skip_if(is.na(lav_srmr), "lavaan::efa() did not return SRMR")
+
+    # SRMR is convention-free, so it matches lavaan exactly
+    expect_equal(efa$fit_indices$SRMR, lav_srmr, tolerance = 1e-5)
+  }
+})
+
+test_that("TLI and ECVI equal their closed forms over the Bartlett-corrected chi square", {
+  for (fx in reg_fixtures) {
+    p <- ncol(fx$R)
+    for (mth in c("ML", "ULS")) {
+      fi <- suppressWarnings(EFA(fx$R, n_factors = fx$k, N = fx$N,
+                                 method = mth))$fit_indices
+
+      expect_equal(fi$TLI,
+                   ((fi$chi_null / fi$df_null) - (fi$chi / fi$df)) /
+                     ((fi$chi_null / fi$df_null) - 1),
+                   tolerance = 1e-8)
+
+      n_params <- p * (p + 1) / 2 - fi$df
+      expect_equal(fi$ECVI, (fi$chi + 2 * n_params) / (fx$N - 1), tolerance = 1e-8)
+    }
+  }
+})
+
 rm(repro_offdiag, reg_fixtures)

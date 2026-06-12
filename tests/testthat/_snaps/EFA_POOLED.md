@@ -69,6 +69,7 @@
       BIC  [95% bootstrap/MI-CI] : <num> [ <num>, <num>]
       CAF  [95% bootstrap/MI-CI] :NA [ <num>, <num>]
       RMSR  [95% bootstrap/MI-CI] : <num> [ <num>, <num>]
+      SRMR  : <num>
       
       Note: Bootstrap/MI CIs based on 16 bootstrap samples per imputation.
       
@@ -148,6 +149,7 @@
       
       CAF  : <num>
       RMSR  : <num>
+      SRMR  : <num>
       df: 102
 
 # print.EFA_POOLED output is stable (ML, unrotated)
@@ -193,6 +195,7 @@
       BIC  : <num>
       CAF  :NA
       RMSR  : <num>
+      SRMR  : <num>
 
 # summary.EFA_POOLED output is stable (PAF, promax)
 
@@ -298,6 +301,7 @@
       
       CAF  : <num>
       RMSR  : <num>
+      SRMR  : <num>
       df: 102
       
       -- Residual Diagnostics --------------------------------------------------------
@@ -367,6 +371,7 @@
       BIC  : <num>
       CAF  :NA
       RMSR  : <num>
+      SRMR  : <num>
       
       -- Residual Diagnostics --------------------------------------------------------
       

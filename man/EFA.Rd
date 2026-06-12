@@ -186,11 +186,17 @@ with the final communality estimates as diagonal.}
 \item{vars_accounted}{Matrix of explained variances and sums of squared loadings. Based on the unrotated loadings.}
 \item{fit_indices}{For ML and ULS: Fit indices derived from the unrotated
 factor loadings: Chi Square, including significance level, degrees of freedom
-(df), Comparative Fit Index (CFI), Root Mean Square Error of Approximation
-(RMSEA), including its 90\% confidence interval, Akaike Information Criterion
-(AIC), Bayesian Information Criterion (BIC), Root Mean Squared Residual (RMSR), and the common part accounted
-for (CAF) index as proposed by Lorenzo-Seva, Timmerman, & Kiers (2011).
-For PAF, only the CAF and dfs are returned. Note that while in Lorenzo-Seva, Timmerman, & Kiers (2011) the CAF is introduced as ranging between 0 and 1, with values close to 1 indicating close fit, this does not match the formula they introduce for calculating CAF: \code{1 - KMO(residuals)}, which only works if the diagonal of the residual matrix is set to 1s and will then approximate 0.5 with close fit.}
+(df), Comparative Fit Index (CFI), Tucker-Lewis Index (TLI, also called the
+non-normed fit index; Tucker & Lewis, 1973), Root Mean Square Error of
+Approximation (RMSEA), including its 90\% confidence interval, Akaike
+Information Criterion (AIC), Bayesian Information Criterion (BIC), Expected
+Cross-Validation Index (ECVI; Browne & Cudeck, 1989), Root Mean Squared
+Residual (RMSR), Standardized Root Mean Squared Residual (SRMR; Bentler,
+1995), and the common part accounted for (CAF) index as proposed by
+Lorenzo-Seva, Timmerman, & Kiers (2011). The Chi Square, CFI, TLI, RMSEA,
+AIC, BIC, and ECVI are based on the Bartlett-corrected Chi Square (matching
+\code{\link[stats:factanal]{stats::factanal()}} for ML). For PAF, only the CAF, RMSR, SRMR, and dfs are
+returned. Note that while in Lorenzo-Seva, Timmerman, & Kiers (2011) the CAF is introduced as ranging between 0 and 1, with values close to 1 indicating close fit, this does not match the formula they introduce for calculating CAF: \code{1 - KMO(residuals)}, which only works if the diagonal of the residual matrix is set to 1s and will then approximate 0.5 with close fit.}
 \item{model_implied_R}{The model implied correlation
 matrix.}
 \item{residuals}{Residual correlations, i.e., orig_R - model_implied_R}
