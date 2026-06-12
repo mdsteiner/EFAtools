@@ -54,13 +54,13 @@ test_that("RMSEA_LB and AIC values are correct", {
   rmsea_raw <- .retention_record(smt_raw, "RMSEA")$y
   rmsea_zero <- .retention_record(smt_zero, "RMSEA")$y
 
-  expect_equal(rmsea_cor[1], 0.264456, tolerance = 1e-2)
-  expect_equal(rmsea_raw[1], 0.662764, tolerance = 1e-2)
+  expect_equal(rmsea_cor[1], 0.156644, tolerance = 1e-2)
+  expect_equal(rmsea_raw[1], 0.460146, tolerance = 1e-2)
   expect_equal(rmsea_zero[1], 0, tolerance = 1e-2)
 
-  expect_equal(rmsea_cor[-1], c(0.05674033, 0.03975791, rep(0, 10)),
+  expect_equal(rmsea_cor[-1], c(0.0560604, 0.0390112, rep(0, 10)),
                tolerance = 1e-2)
-  expect_equal(rmsea_raw[-1], c(0.03547387, 0.02637614, rep(0, 2)),
+  expect_equal(rmsea_raw[-1], c(0.0352895, 0.0261428, rep(0, 2)),
                tolerance = 1e-2)
   expect_equal(rmsea_zero[-1], rep(0, 2), tolerance = 1e-2)
 
@@ -68,15 +68,15 @@ test_that("RMSEA_LB and AIC values are correct", {
   aic_raw <- .retention_record(smt_raw, "AIC")$y
   aic_zero <- .retention_record(smt_zero, "AIC")$y
 
-  expect_equal(aic_cor[1], 5441.203, tolerance = 0.1)
-  expect_equal(aic_raw[1], 10264.07, tolerance = 0.1)
+  expect_equal(aic_cor[1], 1867.28, tolerance = 0.1)
+  expect_equal(aic_raw[1], 4998.06, tolerance = 0.1)
   expect_equal(aic_zero[1], -20, tolerance = 0.1)
 
-  expect_equal(aic_cor[-1], c(139.36142, 17.28713, -78.02180, -77.23762,
-                              -74.12983, -66.95662, -56.34764, -45.65766,
-                              -35.95682, -25.891317, -16.952594, -5.103373),
+  expect_equal(aic_cor[-1], c(133.20917, 13.14179, -80.25186, -79.07978,
+                              -75.59415, -68.10822, -57.26154, -46.34868,
+                              -36.42090, -26.76733, -17.03907, -5.13003),
                tolerance = 0.1)
-  expect_equal(aic_raw[-1], c(19.919177, 7.833463, -4.447209, -1.852061),
+  expect_equal(aic_raw[-1], c(19.610600, 7.631330, -4.512150, -1.868430),
                tolerance = 0.1)
   expect_equal(aic_zero[-1], c(-10, -2), tolerance = 0.1)
 })

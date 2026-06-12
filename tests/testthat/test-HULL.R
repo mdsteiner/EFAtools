@@ -83,10 +83,10 @@ test_that("n_factors are correctly returned", {
   expect_false("RMSEA" %in% names(hull_cor_paf$n_factors))
 
   expect_equal(hull_cor_uls$n_factors[["CAF"]], 3)
-  expect_equal(hull_cor_uls$n_factors[["CFI"]], 3)
-  expect_equal(hull_cor_uls$n_factors[["RMSEA"]], 3)
+  expect_equal(hull_cor_uls$n_factors[["CFI"]], 1)
+  expect_equal(hull_cor_uls$n_factors[["RMSEA"]], 1)
 
-  expect_equal(hull_cor_uls_CFI$n_factors[["CFI"]], 3)
+  expect_equal(hull_cor_uls_CFI$n_factors[["CFI"]], 1)
   expect_false("CAF" %in% names(hull_cor_uls_CFI$n_factors))
   expect_false("RMSEA" %in% names(hull_cor_uls_CFI$n_factors))
 

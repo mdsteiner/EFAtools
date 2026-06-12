@@ -222,22 +222,17 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
     colnames(s_CFI) <- c("nfactors", "CFI", "df", "st")
     s_CFI[1, 2] <- 0
     s_CFI[1, 3] <- (m**2 - m) / 2
-
-    # for later use in loop
-    chi_null <- sum(R[upper.tri(R)] ^ 2) * (N - 1)
-    df_null <- (m**2 - m) / 2
-    delta_hat_null <- max(0, chi_null - df_null)
-
   }
 
   if ("RMSEA" %in% gof) {
     s_RMSEA <- s
     colnames(s_RMSEA) <- c("nfactors", "RMSEA", "df", "st")
-    Fm <- sum(R[upper.tri(R)] ^ 2)
-    chi <- Fm * (N - 1)
+    # 0-factor (independence model) reference, on the same Bartlett-corrected
+    # ML-discrepancy scale as the 1:J solutions returned by .gof()
+    chi <- .null_chisq(R, N)
     df <- (m**2 - m) / 2
     # compute 1 - RMSEA
-    s_RMSEA[1, 2] <- 1 - sqrt(max(0, chi - df) / (df * N - 1))
+    s_RMSEA[1, 2] <- 1 - sqrt(max(0, chi - df) / (df * (N - 1)))
     s_RMSEA[1, 3] <- (m**2 - m) / 2
 
   }

@@ -79,6 +79,16 @@
 
 }
 
+# Independence-model (baseline) chi-square: the Bartlett-corrected ML discrepancy of the
+# null model (model-implied matrix = identity), -log|R| * (N - 1 - (2p + 5)/6). Shared by
+# .gof() and HULL so the model and baseline chi-square sit on the same scale.
+.null_chisq <- function(R, N) {
+  p <- ncol(R)
+  detR <- det(R)
+  if (!is.finite(detR) || detR <= 0) return(NA_real_)
+  -log(detR) * (N - 1 - (2 * p + 5) / 6)
+}
+
 .gof <- function(L, # The loading/ pattern matrix
                  R, # The correlation matrix
                  N, # The number of cases
@@ -98,22 +108,48 @@
   ### compute RMSR
   RMSR <- .rmsr(delta_hat)
 
-  if (method != "PAF" && !is.na(N) && df >=0) {
+  # Model chi-square: the Bartlett-corrected (Bartlett, 1951) ML discrepancy
+  # F = tr(Sigma^-1 R) - log|Sigma^-1 R| - p, evaluated at the model-implied correlation
+  # matrix Sigma = LL' (unit diagonal), times (N - 1 - (2p + 5)/6 - (2q)/3). For ML this
+  # equals the ML objective times the Bartlett multiplier (matching stats::factanal); for
+  # ULS it is the proper chi-square-distributed statistic (matching psych::fa(fm =
+  # "minres")), not the raw least-squares residual sum of squares treated as Wishart. NA
+  # for PAF, missing N, underidentified df, or a non-PD model-implied matrix (e.g. Heywood
+  # cases), where the discrepancy is undefined.
+  if (method != "PAF" && !is.na(N) && df >= 0) {
+    Sigma <- L %*% t(L)
+    diag(Sigma) <- 1
+    chi <- tryCatch({
+      # F = tr(Sigma^-1 R) - log|Sigma^-1 R| - p, computed via a determinant split
+      # (log|Sigma^-1 R| = log|R| - log|Sigma|) to avoid forming the explicit inverse
+      # and to stay stable for ill-conditioned Sigma.
+      ldSigma <- determinant(Sigma, logarithm = TRUE)
+      ldR <- determinant(R, logarithm = TRUE)
+      Fchi <- sum(diag(solve(Sigma, R))) +
+        as.numeric(ldSigma$modulus) - as.numeric(ldR$modulus) - m
+      if (!is.finite(Fchi) || ldSigma$sign <= 0 || ldR$sign <= 0) {
+        NA_real_
+      } else {
+        # clamp the floating-point dust of a (near-)perfect fit to 0
+        max(0, Fchi) * (N - 1 - (2 * m + 5) / 6 - (2 * q) / 3)
+      }
+    }, error = function(e) NA_real_)
+  } else {
+    chi <- NA_real_
+  }
+
+  if (!is.na(chi)) {
 
     ### compute CFI
 
     # null model
-    chi_null <- sum(R[upper.tri(R)] ^ 2) * (N - 1)
+    chi_null <- .null_chisq(R, N)
     df_null <- (m**2 - m) / 2
     delta_hat_null <- chi_null - df_null
     p_null <- stats::pchisq(chi_null, df_null, lower.tail = F)
 
     # current model
     # formula 12.1 from Kline 2016; Principles and practices of...
-    # This should also hold for ULS solutions -> Bentler & Bonett (1980)
-    # Significance Tests  and Goodness  of Fit in the Analysis of Covariance
-    # Structures. Psychological Bulletin, 88(3), 588-606
-    chi <- Fm * (N - 1)
     p_chi <- stats::pchisq(chi, df, lower.tail = F)
     delta_hat_m <- chi - df
     CFI <- (delta_hat_null - delta_hat_m) / delta_hat_null

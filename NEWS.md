@@ -10,6 +10,17 @@
   the available eigenvalues (undefined behaviour in builds without bounds checking).
 * `NEST()` and `PARALLEL()`: A failed eigendecomposition of a degenerate simulated matrix
   now raises a clear error instead of resulting in undefined behaviour.
+* The chi-square model-fit statistic is now the Bartlett-corrected maximum likelihood
+  discrepancy evaluated at the model-implied correlation matrix, for both `ML` and `ULS`
+  extraction. For `method = "ML"` this matches `stats::factanal()` and `psych::fa()`; the
+  small-sample Bartlett correction was previously omitted. For `method = "ULS"` it is now
+  a proper chi-square-distributed statistic matching `psych::fa(fm = "minres")`;
+  previously the least-squares residual sum of squares was multiplied by `N - 1` and read
+  as if it were Wishart-distributed, which produced an invalid p-value. The independence
+  (baseline) model used for the CFI is rescaled onto the same discrepancy scale.
+  Consequently the p-value, CFI, RMSEA (and its confidence interval), AIC, and BIC change
+  for ML and ULS solutions, and the number of factors suggested by `SMT()` and `HULL()`
+  may change for these methods.
 
 * `PARALLEL()`: The percentile reference eigenvalues are now computed with
   `stats::quantile()` (matching `psych::fa.parallel`), correcting a slight off-by-one in

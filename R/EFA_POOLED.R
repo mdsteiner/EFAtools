@@ -736,7 +736,7 @@ EFA_POOLED <- function(data_list,
     chi_null <- D2_null$chi
     p_null <- D2_null$p
   } else if (is.finite(N) && N > 1) {
-    chi_null <- sum(pooled_R[upper.tri(pooled_R)]^2) * (N - 1)
+    chi_null <- .null_chisq(pooled_R, N)
     p_null <- stats::pchisq(chi_null, df_null, lower.tail = FALSE)
   } else {
     chi_null <- NA_real_

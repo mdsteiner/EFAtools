@@ -74,10 +74,11 @@ BARTLETT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   R <- prep$R
   N <- prep$N
 
-  # Calculate test statistic
+  # Calculate test statistic. Bartlett's test of sphericity is the likelihood-ratio
+  # test of the independence model, i.e. the null-model chi-square shared with the
+  # CFI baseline in .gof().
   p <- nrow(R)
-  detR <- det(R)
-  statistic <- -log(detR) * (N - 1 - (2 * p + 5)/6)
+  statistic <- .null_chisq(R, N)
   df <- p * (p - 1)/2
   pval <- stats::pchisq(statistic, df, lower.tail = FALSE)
 
