@@ -301,7 +301,7 @@ fine); Phase 8–9 → **1.0.0**.
       *(Done via the retention-class refactor — no base-graphics calls remain in `R/`,
       and neither package is in Imports. Remaining related work: extract the plot from
       `print.COMPARE` into a `plot.COMPARE` ggplot method and fix B11 → unit U6.)*
-- [ ] Dependency slimming (drop tidyverse cluster/`stringr`/`progress`; O1 base pipe);
+- [x] Dependency slimming (drop tidyverse cluster/`stringr`/`progress`; O1 base pipe);
       `lavaan` → Suggests (gate `OMEGA`/`SL` lavaan paths; `skip_if_not_installed`).
       → unit **U8**
 
@@ -359,7 +359,7 @@ rely on.
       formatting diffs only.
 - [ ] **U7 — `new_efa()`/`validate_efa()`** (O8); route all producers through it.
       Additive fields only. Numbers: no; snapshots: no. -> **deferred**
-- [ ] **U8 — Dependency slimming.** Drop `stringr`/`dplyr`/`tidyr`/`tibble`/`magrittr`
+- [x] **U8 — Dependency slimming.** Drop `stringr`/`dplyr`/`tidyr`/`tibble`/`magrittr`
       (base + `|>`)/`progress`; `lavaan` → Suggests (gate the OMEGA/SL lavaan paths;
       `skip_if_not_installed`); pin `GPArotation (>= 2022.4-1)` (**B12**). Numbers: no.
 - [ ] **U9 — Phase 2 behaviour-changing fixes**, one sub-unit per family, each with
@@ -410,6 +410,15 @@ bootstrap benchmark on `DOSPERT_raw` shows the target speedup.
       Jacobi loop + the mismatched `.SV` monitor (keep an SPSS-compat shim/fixtures if
       `type="SPSS"` parity must be exact — O6).
 - [ ] Report local-minima count across random starts (cheap once C++).
+- [ ] **Reassess the default `randomStarts` (B12).** The R/GPArotation engine makes 100
+      random starts — the value local-minima research recommends as sufficient (Hattori,
+      Zhang & Preacher, 2017, *Multivariate Behavioral Research*, for geomin) — far too slow
+      for a default: a single `EFA()` is fine, but `EFA_AVERAGE` (grid × starts) and
+      bootstrap-heavy uses become unusably slow (the full test suite went from a few minutes
+      to ~30). So `EFA()`'s default is kept at **10** for now. Once rotation runs in fast C++,
+      re-evaluate whether 100 (or another higher value) is feasible as the default, and whether
+      `EFA()`'s default and `.rotate_model()`'s internal default (currently 10 vs 100) should
+      be unified at it.
 - [ ] Replace the `R::rnorm` element loops in the random-start generators
       (`oblique_procrustes.cpp` / the new `rotate.cpp`) with thread-safe draws
       (`arma::randn` or `dqrng` streams) **before** any OpenMP region touches them.
@@ -546,7 +555,7 @@ scheduled).
 | B9 | med | Oblique reflection/reorder didn't propagate to Phi/structure/rotmat (`ss_factors` worst) | was `R/ROTATE_OBLQ.R` (deleted) | **fixed** (7af40bf; NEWS entry) | `.reflect_and_order()` in `rotate_model.R` + invariance test. |
 | B10 | med | PAF `stop()` on neg-eigenvalues aborted whole bootstrap; max-iter off-by-one convergence flag | `src/paf_iter.cpp` | **mitigated** (77da514: replicates tryCatch-guarded in `.boot_fun`) | C++ still `stop()`s; status codes + off-by-one fix land with the engine rewrite. → **Ph3**. |
 | B11 | med | `print.COMPARE` `aes_string()` + `size=` (deprecated); plot drawn inside `print` | `R/print.COMPARE.R: print.COMPARE()` | **open** | `aes(.data$…)` + `linewidth`; move into a `plot.COMPARE` method. → **U6**. |
-| B12 | med | `GPArotation` `randomStarts` used with no min-version floor | `DESCRIPTION` | **open** | Pin `GPArotation (>= 2022.4-1)`; reconcile `randomStarts` defaults (10 vs 100). → **U8**. |
+| B12 | med | `GPArotation` `randomStarts` used with no min-version floor | `DESCRIPTION` | **open** | Pin `GPArotation (>= 2022.4-1)` (U8c). `randomStarts` default kept at **10** — raising `EFA()` to the research-recommended 100 is too slow under the R engine; revisit (and unify the 10-vs-100 `EFA()`/`.rotate_model()` defaults) once rotation is fast in C++. → **U8c + Phase 4**. |
 | B13 | low | NEST `prob` comparator `<` vs decision `<=` mismatch (+ docstring) | was the old `R/NEST.R` (rewritten) | **superseded** (6c3b616) | Refactored NEST uses one quantile-reference rule (`stats::quantile(…, 1 - alpha)` then `<=`), documented in the help page. |
 | B14 | low | PARALLEL `size_vec` partition can go negative (verified: 11 datasets / 7 workers → chunk of −1); percentile off-by-one vs `stats::quantile` | `R/PARALLEL.R` (chunking; percentile) | **open** | Exact integer partition; standardise on `stats::quantile` (matches `psych::fa.parallel`). → **U9a**. |
 | B15 | low | Non-PD smoothing not surfaced as a classed condition — relies on `psych::cor.smooth`'s own warning | `R/helper.R: .prepare_cor_input()` | **half-done** (b12df62 centralised the PD check + smoothing) | Add a classed `cli_warn` on smoothing. → **U9a**. |
