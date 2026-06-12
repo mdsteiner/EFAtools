@@ -214,9 +214,62 @@ test_that("errors are thrown correctly", {
                           percent = 80), class = "efa_parallel_crawford")
   expect_error(PARALLEL(dat_sing), class = "efa_cor_singular")
   expect_error(PARALLEL(cor_sing, N = 10), class = "efa_cor_singular")
-  expect_warning(PARALLEL(burt, N = 100), "Matrix was not positive definite, smoothing was done")
+  expect_warning(PARALLEL(burt, N = 100, eigen_type = "PCA"), class = "efa_cor_smoothed")
   expect_error(PARALLEL(test_models$baseline$cormat, N = 15), class = "efa_n_too_small")
   expect_error(PARALLEL(test_models$baseline$cormat, N = 18), class = "efa_n_too_small")
+})
+
+test_that(".parallel_chunks splits exactly into non-negative integer chunks", {
+  # the documented degenerate case: 11 datasets across 7 workers must not yield a
+  # negative chunk (the old round-and-backfill produced c(2, 2, 2, 2, 2, 2, -1))
+  chunks_11_7 <- .parallel_chunks(11, 7)
+  expect_length(chunks_11_7, 7)
+  expect_equal(sum(chunks_11_7), 11)
+  expect_true(all(chunks_11_7 >= 0))
+
+  # a range of awkward (n_datasets, n_cores) pairs: always exact, never negative
+  for (n_cores in 1:8) {
+    for (n_datasets in c(1, 3, 11, 100, 1000)) {
+      chunks <- .parallel_chunks(n_datasets, n_cores)
+      expect_length(chunks, n_cores)
+      expect_equal(sum(chunks), n_datasets)
+      expect_true(all(chunks >= 0))
+    }
+  }
+
+  # a single worker (the sequential default) takes all datasets
+  expect_equal(.parallel_chunks(1000, 1), 1000)
+})
+
+
+test_that(".parallel_summarise uses stats::quantile for the percentile series", {
+  set.seed(42)
+  eig_vals <- matrix(stats::rnorm(1000 * 4), nrow = 1000, ncol = 4)
+
+  res <- .parallel_summarise(eig_vals, percent = 95, n_vars = 4)
+  expect_equal(dim(res), c(4, 2))
+  expect_equal(res[, 1], colMeans(eig_vals))
+  for (root in 1:4) {
+    expect_equal(res[root, 2],
+                 stats::quantile(eig_vals[, root], probs = 0.95, names = FALSE))
+  }
+
+  # multiple percentiles produce one column each
+  res2 <- .parallel_summarise(eig_vals, percent = c(50, 95), n_vars = 4)
+  expect_equal(dim(res2), c(4, 3))
+  for (root in 1:4) {
+    expect_equal(res2[root, 2:3],
+                 stats::quantile(eig_vals[, root], probs = c(0.5, 0.95),
+                                 names = FALSE))
+  }
+
+  # a NA/NaN simulated eigenvalue is tolerated, not turned into a hard error
+  eig_na <- eig_vals
+  eig_na[1, 1] <- NA
+  expect_no_error(res_na <- .parallel_summarise(eig_na, percent = 95, n_vars = 4))
+  expect_equal(res_na[1, 2],
+               stats::quantile(eig_na[, 1], probs = 0.95, names = FALSE,
+                               na.rm = TRUE))
 })
 
 rm(pa_cor, pa_cor_pca, pa_raw, pa_nodat, pa_craw, pa_perc, x, y, z, dat_sing,

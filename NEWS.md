@@ -2,6 +2,15 @@
 
 ## Bug Fixes
 
+* `PARALLEL()`: The percentile reference eigenvalues are now computed with
+  `stats::quantile()` (matching `psych::fa.parallel`), correcting a slight off-by-one in
+  the previous indexing. In addition, the simulated datasets are now split across parallel
+  workers with an exact integer partition, fixing an invalid negative chunk that could
+  occur when the number of simulated datasets was close to the number of workers.
+* Non-positive-definite correlation matrices are now reported with a single classed warning
+  (`efa_cor_smoothed`) when they are smoothed, consistently across `EFA()`, `KMO()`,
+  `BARTLETT()`, and the factor-retention functions.
+
 * `EFA()`: For oblique rotations, the factor intercorrelations (`Phi`), the structure
   matrix, the explained variances, and the rotation matrix are now reflected and
   reordered consistently with the rotated loadings. Previously, when a factor was

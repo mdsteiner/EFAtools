@@ -123,7 +123,7 @@
   }
 
   # Check if correlation matrix is positive definite, if it is not, either stop
-  # (SPSS type) or smooth the matrix (cor.smooth throws a warning)
+  # (SPSS type) or smooth the matrix and surface a single classed warning
   if (any(eigen(R, symmetric = TRUE, only.values = TRUE)$values <=
           .Machine$double.eps^.6)) {
 
@@ -133,7 +133,22 @@
         class = "efa_cor_not_posdef", call = error_call)
     }
 
-    R <- psych::cor.smooth(R)
+    # Muffle only cor.smooth's routine "smoothing was done" note (re-surfaced
+    # below as a classed warning); let its serious "eigen values are NA" failure
+    # warning propagate so an unrepairable matrix is not silently accepted.
+    R <- withCallingHandlers(
+      psych::cor.smooth(R),
+      warning = function(w) {
+        if (grepl("smoothing was done", conditionMessage(w), fixed = TRUE)) {
+          invokeRestart("muffleWarning")
+        }
+      }
+    )
+    cli::cli_warn(
+      c("The correlation matrix was not positive definite; it has been smoothed.",
+        "i" = "Smoothing was applied via {.fun psych::cor.smooth}; inspect the results carefully."),
+      class = "efa_cor_smoothed"
+    )
 
   }
 

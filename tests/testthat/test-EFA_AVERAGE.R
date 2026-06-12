@@ -485,7 +485,7 @@ test_that("errors are thrown correctly", {
                              method = "PAF", type = c("EFAtools", "psych"), show_progress = FALSE),
                  class = "efa_just_identified")
   expect_warning(EFA_AVERAGE(cor_nposdef, n_factors = 1, N = 10, method = "PAF",
-                     type = c("EFAtools", "psych"), show_progress = FALSE), "Matrix was not positive definite, smoothing was done")
+                     type = c("EFAtools", "psych"), show_progress = FALSE), class = "efa_cor_smoothed")
   expect_message(EFA_AVERAGE(GRiPS_raw, n_factors = 1, method = "PAF", type = c("EFAtools", "psych"), show_progress = FALSE),
                  class = "efa_avg_single_factor_rotation")
   expect_warning(EFA_AVERAGE(GRiPS_raw, n_factors = 1, method = "PAF", type = c("EFAtools"),

@@ -68,7 +68,7 @@ test_that("errors are thrown correctly", {
   expect_message(KGC(GRiPS_raw, eigen_type = "PCA"), class = "efa_cor_from_data")
   expect_error(KGC(dat_sing), class = "efa_cor_singular")
   expect_error(KGC(cor_sing, N = 10), class = "efa_cor_singular")
-  expect_warning(KGC(cor_nposdef, N = 10), "Matrix was not positive definite, smoothing was done")
+  expect_warning(KGC(cor_nposdef, N = 10), class = "efa_cor_smoothed")
 })
 
 test_that("settings are returned correctly", {

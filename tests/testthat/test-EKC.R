@@ -56,7 +56,7 @@ test_that("errors are thrown correctly", {
   expect_warning(EKC(GRiPS_raw, N = 20), class = "efa_n_from_data")
   expect_error(EKC(dat_sing), class = "efa_cor_singular")
   expect_error(EKC(cor_sing, N = 20), class = "efa_cor_singular")
-  expect_warning(EKC(cor_nposdef, N = 20), "Matrix was not positive definite, smoothing was done")
+  expect_warning(EKC(cor_nposdef, N = 20), class = "efa_cor_smoothed")
 })
 
 test_that("settings are returned correctly", {

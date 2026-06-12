@@ -343,7 +343,7 @@ test_that("errors are thrown correctly", {
   expect_warning(EFA(matrix(rnorm(30), ncol = 3), n_factors = 1), class = "efa_just_identified")
   expect_warning(EFA(test_models$baseline$cormat, n_factors = 3, method = "ML"), class = "efa_fit_na_n")
   expect_warning(EFA(test_models$baseline$cormat, n_factors = 3, method = "ULS"), class = "efa_fit_na_n")
-  expect_warning(EFA(cor_nposdef, n_factors = 1, N = 10), "Matrix was not positive definite, smoothing was done")
+  expect_warning(EFA(cor_nposdef, n_factors = 1, N = 10), class = "efa_cor_smoothed")
   expect_warning(EFA(test_models$baseline$cormat, n_factors = 3, method = "ML", N = 500, type = "SPSS"), class = "efa_spss_method_untested")
   expect_warning(EFA(test_models$baseline$cormat, n_factors = 3, method = "ULS", N = 500, type = "SPSS"), class = "efa_spss_method_untested")
   expect_warning(EFA(test_models$baseline$cormat, n_factors = 3, rotation = "oblimin", N = 500, type = "SPSS"), class = "efa_spss_rotation_untested")

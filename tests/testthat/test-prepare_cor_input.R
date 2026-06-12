@@ -57,8 +57,9 @@ test_that("N_policy governs how N is handled", {
 })
 
 test_that("a non-positive-definite matrix is smoothed, or aborts under posdef_abort", {
-  # default: the matrix is smoothed to positive-definiteness (psych warns)
-  prep_sm <- suppressWarnings(.prepare_cor_input(cor_nposdef, N = 10))
+  # default: the matrix is smoothed to positive-definiteness with a classed warning
+  expect_warning(prep_sm <- .prepare_cor_input(cor_nposdef, N = 10),
+                 class = "efa_cor_smoothed")
   expect_true(prep_sm$is_cormat)
   expect_true(all(eigen(prep_sm$R, symmetric = TRUE, only.values = TRUE)$values > 0))
 

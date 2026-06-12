@@ -52,7 +52,7 @@ test_that("errors are thrown correctly", {
   expect_message(KMO(GRiPS_raw), class = "efa_cor_from_data")
   expect_error(KMO(dat_sing), class = "efa_cor_singular")
   expect_error(KMO(cor_sing), class = "efa_cor_singular")
-  expect_warning(KMO(cor_nposdef), "Matrix was not positive definite, smoothing was done")
+  expect_warning(KMO(cor_nposdef), class = "efa_cor_smoothed")
 })
 
 test_that("print output is stable", {

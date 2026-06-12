@@ -151,8 +151,7 @@ PARALLEL <- function(x = NULL,
   checkmate::assert_number(percent, lower = 0, upper = 100)
 
   n_cores <- future::nbrOfWorkers()
-  size_vec <- rep(round(n_datasets / n_cores), n_cores - 1)
-  size_vec[n_cores] <- n_datasets - sum(size_vec)
+  size_vec <- .parallel_chunks(n_datasets, n_cores)
 
   # Prepare objects
   results_PCA <- NA
@@ -261,7 +260,7 @@ PARALLEL <- function(x = NULL,
       eigvals_PCA <- do.call(rbind, eigvals_PCA)
 
       results_PCA <- .parallel_summarise(eigvals_PCA, percent = percent,
-                                        n_datasets = n_datasets, n_vars = n_vars)
+                                        n_vars = n_vars)
 
       colnames(results_PCA) <- c("Means", paste(percent, "Percentile"))
 
@@ -304,7 +303,7 @@ PARALLEL <- function(x = NULL,
       eigvals_SMC <- do.call(rbind, eigvals_SMC)
 
       results_SMC <- .parallel_summarise(eigvals_SMC, percent = percent,
-                                        n_datasets = n_datasets, n_vars = n_vars)
+                                        n_vars = n_vars)
 
       colnames(results_SMC) <- c("Means", paste(percent, "Percentile"))
 
@@ -326,7 +325,7 @@ PARALLEL <- function(x = NULL,
       eigvals_EFA <- do.call(rbind, eigvals_EFA)
 
       results_EFA <- .parallel_summarise(eigvals_EFA, percent = percent,
-                                        n_datasets = n_datasets, n_vars = n_vars)
+                                        n_vars = n_vars)
 
       colnames(results_EFA) <- c("Means", paste(percent, "Percentile"))
 
@@ -474,17 +473,27 @@ if (decision_rule == "crawford") {
 
 }
 
-.parallel_summarise <- function(eig_vals, percent, n_datasets, n_vars) {
+.parallel_summarise <- function(eig_vals, percent, n_vars) {
 
   results <- matrix(NA, nrow = n_vars, ncol = length(percent) + 1)
   results[, 1] <- colMeans(eig_vals)
 
+  # percentile reference series via stats::quantile (type 7, matching
+  # psych::fa.parallel) rather than a manual order statistic
   for (root in seq_len(n_vars)) {
-    for (perc_i in seq_along(percent)) {
-      ind <- round((percent[perc_i] * n_datasets) / 100)
-      results[root, 1 + perc_i] <- sort(eig_vals[, root])[ind]
-    }
+    results[root, -1] <- stats::quantile(eig_vals[, root], probs = percent / 100,
+                                         names = FALSE, na.rm = TRUE)
   }
 
   return(results)
+}
+
+# Split n_datasets into n_cores non-negative integer chunks that sum to n_datasets,
+# distributing the remainder one per chunk. Avoids a negative final chunk when
+# n_datasets is not much larger than the number of workers.
+.parallel_chunks <- function(n_datasets, n_cores) {
+  size_vec <- rep(n_datasets %/% n_cores, n_cores)
+  rem <- n_datasets %% n_cores
+  if (rem > 0) size_vec[seq_len(rem)] <- size_vec[seq_len(rem)] + 1
+  size_vec
 }

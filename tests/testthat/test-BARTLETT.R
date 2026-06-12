@@ -57,7 +57,7 @@ test_that("errors are thrown correctly", {
   expect_warning(BARTLETT(GRiPS_raw, N = 20), class = "efa_n_from_data")
   expect_error(BARTLETT(dat_sing), class = "efa_cor_singular")
   expect_error(BARTLETT(cor_sing, N = 10), class = "efa_cor_singular")
-  expect_warning(BARTLETT(cor_nposdef, N = 10), "Matrix was not positive definite, smoothing was done")
+  expect_warning(BARTLETT(cor_nposdef, N = 10), class = "efa_cor_smoothed")
 })
 
 test_that("print output is stable", {

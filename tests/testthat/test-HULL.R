@@ -142,8 +142,8 @@ test_that("errors etc are thrown correctly", {
   expect_message(suppressWarnings(HULL(GRiPS_raw)), 'Only CAF can be used as gof if method "PAF" is used. Setting gof to "CAF"\n')
 
   expect_warning(HULL(test_models$baseline$cormat, n_fac_theor = 13, N = 500), class = "efa_hull_max_factors")
-  expect_warning(HULL(burt, N = 20, method = "ML"), "Matrix was not positive definite, smoothing was done")
-  expect_warning(HULL(burt, N = 20, method = "ML", n_fac_theor = 1), "Matrix was not positive definite, smoothing was done")
+  expect_warning(HULL(burt, N = 20, method = "ML"), class = "efa_cor_smoothed")
+  expect_warning(HULL(burt, N = 20, method = "ML", n_fac_theor = 1), class = "efa_cor_smoothed")
 })
 
 rm(hull_cor_paf, hull_cor_ml, hull_cor_uls, hull_cor_uls_CFI, hull_raw_paf,
