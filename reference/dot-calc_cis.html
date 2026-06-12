@@ -90,7 +90,7 @@ for 95% CIs.</p></dd>
 
 <dt id="arg-n">n<a class="anchor" aria-label="anchor" href="#arg-n"></a></dt>
 <dd><p>Numeric. Typically, the number of permutations \(m\). See
-<code><a href="EFA_POOLED.html">EFA_POOLED</a></code>.</p></dd>
+<code><a href="EFA_POOLED.html">EFA_POOLED()</a></code>.</p></dd>
 
 </dl></div>
     <div id="value">
@@ -114,7 +114,7 @@ inflate the standard error to compensate for uncertainty due to the
 imputations–that is, additional uncertainty (sampling variability) in the
 parameter estimates caused by missing data.</em></p>
 <p>Currently, it is not possible to calculate the first term, because
-<code><a href="EFA.html">EFA</a></code> does not calculate SEs for the loadings. Only the second
+<code><a href="EFA.html">EFA()</a></code> does not calculate SEs for the loadings. Only the second
 and third terms are used in the calculation of SE for the CIs.</p>
 <p>The CI is generally calculated as:</p>
 <p>CI = Point estimate ± Margin of error,</p>
@@ -138,7 +138,7 @@ https://doi.org/10.1002/9780470316696</p>
     <div id="author">
     <h2>Author</h2>
     <p>Andreas Soteriades</p>
-<p>This function is used internally by <code><a href="EFA_POOLED.html">EFA_POOLED</a></code> to calculate
+<p>This function is used internally by <code><a href="EFA_POOLED.html">EFA_POOLED()</a></code> to calculate
 confidence intervals (CIs) around the pooled loadings and pooled interfactor
 correlations.</p>
     </div>

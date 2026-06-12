@@ -125,7 +125,7 @@ improvement added by an additional factor. Default is .30.</p></dd>
 
 
 <dt id="arg-use">use<a class="anchor" aria-label="anchor" href="#arg-use"></a></dt>
-<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor</a></code>. Default
+<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>. Default
 is "pairwise.complete.obs". However, for the comparison data procedure,
 <code>NA</code> values will be excluded using na.omit(). If missing data should
 be handled differently (e.g., imputation), do this before passing the data to
@@ -133,7 +133,7 @@ be handled differently (e.g., imputation), do this before passing the data to
 
 
 <dt id="arg-cor-method">cor_method<a class="anchor" aria-label="anchor" href="#arg-cor-method"></a></dt>
-<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor</a></code>.
+<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>.
 Default is "pearson".</p></dd>
 
 
@@ -144,15 +144,16 @@ which the iterative PAF procedure is halted. Default is 50.</p></dd>
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A list of class CD containing</p>
+    <p>An object of class <code>efa_retention</code> (see <code><a href="print.efa_retention.html">print.efa_retention()</a></code> and
+<code><a href="plot.efa_retention.html">plot.efa_retention()</a></code> for the print and plot methods). Its main fields are:</p>
 <dl><dt>n_factors</dt>
-<dd><p>The number of factors to retain according to comparison data results.</p></dd>
+<dd><p>A named numeric vector (<code>"CD"</code>) with the suggested number of
+factors according to comparison data results.</p></dd>
 
-<dt>eigenvalues</dt>
-<dd><p>A vector containing the eigenvalues of the entered data.</p></dd>
-
-<dt>RMSE_eigenvalues</dt>
-<dd><p>A matrix containing the RMSEs between the eigenvalues of the generated data and those of the entered data.</p></dd>
+<dt>results</dt>
+<dd><p>A list with a single record holding the mean RMSE between the
+eigenvalues of the generated and the entered data per number of factors
+(used for the plot) and, in <code>rmse_eigenvalues</code>, the full matrix of RMSEs.</p></dd>
 
 <dt>settings</dt>
 <dd><p>A list of the settings used.</p></dd>
@@ -173,18 +174,18 @@ reproduction of the observed eigenvalues fails to improve significantly"
 is slightly adapted to increase speed by performing the principal axis factoring
 using a C++ based function.</p>
 <p>Note that if the data contains missing values, these will be removed for the
-comparison data procedure using <code><a href="https://rdrr.io/r/stats/na.fail.html" class="external-link">stats::na.omit</a></code>. If
+comparison data procedure using <code><a href="https://rdrr.io/r/stats/na.fail.html" class="external-link">stats::na.omit()</a></code>. If
 missing data should be treated differently, e.g., by imputation, do this outside
 <code>CD</code> and then pass the complete data.</p>
 <p>The <code>CD</code> function can also be called together with other factor retention
-criteria in the <code><a href="N_FACTORS.html">N_FACTORS</a></code> function.</p>
+criteria in the <code><a href="N_FACTORS.html">N_FACTORS()</a></code> function.</p>
     </div>
     <div id="see-also">
     <h2>See also</h2>
-    <div class="dont-index"><p>Other factor retention criteria: <code><a href="EKC.html">EKC</a></code>,
- <code><a href="HULL.html">HULL</a></code>, <code><a href="KGC.html">KGC</a></code>, <code><a href="PARALLEL.html">PARALLEL</a></code>, <code><a href="SMT.html">SMT</a></code></p>
-<p><code><a href="N_FACTORS.html">N_FACTORS</a></code> as a wrapper function for this and all
-  the above-mentioned factor retention criteria.</p></div>
+    <div class="dont-index"><p>Other factor retention criteria: <code><a href="EKC.html">EKC()</a></code>,
+<code><a href="HULL.html">HULL()</a></code>, <code><a href="KGC.html">KGC()</a></code>, <code><a href="PARALLEL.html">PARALLEL()</a></code>, <code><a href="SMT.html">SMT()</a></code></p>
+<p><code><a href="N_FACTORS.html">N_FACTORS()</a></code> as a wrapper function for this and all
+the above-mentioned factor retention criteria.</p></div>
     </div>
 
     <div id="ref-examples">
@@ -192,17 +193,15 @@ criteria in the <code><a href="N_FACTORS.html">N_FACTORS</a></code> function.</p
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="co"># determine n factors of the GRiPS</span></span></span>
 <span class="r-in"><span><span class="fu">CD</span><span class="op">(</span><span class="va">GRiPS_raw</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Comparison data ─────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Comparison Data analysis suggests <span style="font-weight: bold;">1</span> factor</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-plt img"><img src="CD-1.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Suggested number of factors: 1</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># determine n factors of the DOSPERT risk subscale</span></span></span>
 <span class="r-in"><span><span class="fu">CD</span><span class="op">(</span><span class="va">DOSPERT_raw</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Comparison data ─────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Comparison Data analysis suggests <span style="font-weight: bold;">10</span> factors</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-plt img"><img src="CD-2.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Suggested number of factors: 10</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

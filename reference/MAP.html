@@ -91,22 +91,22 @@ factors/components to retain. The function implements the original MAP criterion
 
 <dt id="arg-use">use<a class="anchor" aria-label="anchor" href="#arg-use"></a></dt>
 <dd><p>Character string specifying the treatment of missing values when computing correlations.
-Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></code>. Defaults to <code>"pairwise.complete.obs"</code>.</p></dd>
+Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>. Defaults to <code>"pairwise.complete.obs"</code>.</p></dd>
 
 
 <dt id="arg-cor-method">cor_method<a class="anchor" aria-label="anchor" href="#arg-cor-method"></a></dt>
 <dd><p>Character string specifying the correlation coefficient to be computed if raw
-data are supplied. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></code>. Defaults to <code>"pearson"</code>.</p></dd>
+data are supplied. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>. Defaults to <code>"pearson"</code>.</p></dd>
 
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>An object of class <code>"MAP"</code> with the following elements:</p><ul><li><p><code>eigenvalues</code>: Eigenvalues of the (possibly smoothed) correlation matrix.</p></li>
-<li><p><code>n_factors_TR2</code>: Index \(m\) that minimizes the TR2 (original MAP) criterion.</p></li>
-<li><p><code>n_factors_TR4</code>: Index \(m\) that minimizes the TR4 (revised MAP) criterion.</p></li>
-<li><p><code>criteria</code>: A <code>matrix</code> with columns <code>m</code>, <code>TR2 (orig. MAP)</code>, and
-  <code>TR4 (revised MAP)</code>.</p></li>
-<li><p><code>settings</code>: A list containing <code>use</code>, <code>cor_method</code>, and <code>N</code>.</p></li>
+    <p>An object of class <code>efa_retention</code> (see <code><a href="print.efa_retention.html">print.efa_retention()</a></code> for the
+print method) with the following main elements:</p><ul><li><p><code>n_factors</code>: A named numeric vector (<code>"TR2"</code>, <code>"TR4"</code>) with the index
+\(m\) that minimizes the original (TR2) and revised (TR4) MAP criterion.</p></li>
+<li><p><code>results</code>: A list with one record per criterion, each holding the
+criterion values over \(m\).</p></li>
+<li><p><code>settings</code>: A list containing <code>use</code> and <code>cor_method</code>.</p></li>
 </ul></div>
     <div id="details">
     <h2>Details</h2>
@@ -121,17 +121,17 @@ with \(D_m = \mathrm{diag}(C_m)\). The MAP criteria summarize the off-diagonal a
 remaining in \(R^*_m\). The recommended number of factors/components is the \(m\) that
 minimizes the chosen criterion.</p>
 <p>This function returns two MAP criteria:</p><ul><li><p><strong>TR2 (original MAP):</strong> $$\mathrm{MAP}_m = \frac{\mathrm{Trace}(R^{*2}_m) - p}{p(p-1)}$$
-  which is algebraically equivalent to the mean squared off-diagonal partial correlations and
-  corresponds to Velicer's original MAP procedure.</p></li>
+which is algebraically equivalent to the mean squared off-diagonal partial correlations and
+corresponds to Velicer's original MAP procedure.</p></li>
 <li><p><strong>TR4 (revised MAP):</strong> $$\mathrm{MAP4}_m = \frac{\mathrm{Trace}(R^{*4}_m) - p}{p(p-1)}$$
-  a higher-order variant that places more weight on dominant residual association structure.</p></li>
+a higher-order variant that places more weight on dominant residual association structure.</p></li>
 </ul><p><strong>Input handling.</strong> <code>x</code> can be a correlation matrix or raw data. If <code>x</code> is not a
-correlation matrix, correlations are computed using <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></code> with the requested
+correlation matrix, correlations are computed using <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code> with the requested
 missing-data handling (<code>use</code>) and association measure (<code>cor_method</code>). If a correlation
 matrix is supplied, <code>N</code> must be provided.</p>
 <p><strong>Matrix conditioning.</strong> The function stops if the correlation matrix is singular (non-invertible),
 because subsequent computations rely on stable matrix operations. If the correlation matrix is not
-positive definite (e.g., due to sampling error), it is smoothed using <code><a href="https://rdrr.io/pkg/psych/man/cor.smooth.html" class="external-link">cor.smooth</a></code>.</p>
+positive definite (e.g., due to sampling error), it is smoothed using <code><a href="https://rdrr.io/pkg/psych/man/cor.smooth.html" class="external-link">psych::cor.smooth()</a></code>.</p>
 <p><strong>PCA-based partialing.</strong> The PCA loading matrix \(A\) is obtained from the eigen-decomposition
 of \(R\) as \(A = V \Lambda^{1/2}\). For each \(m = 0, \dots, p-1\), the first \(m\) columns
 of \(A\) are used to compute \(C_m = R - A_m A_m'\). The residual is re-standardized to the
@@ -152,21 +152,20 @@ Human Assessment: Honoring Douglas N. Jackson at Seventy</em> (pp. 41–71). Bos
     <h2>Examples</h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co">## Example with raw data</span></span></span>
 <span class="r-in"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu">MAP</span><span class="op">(</span><span class="va">GRiPS_raw</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ 'x' was not a correlation matrix. Correlations are found from entered raw data.</span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from the raw data.</span>
 <span class="r-in"><span><span class="va">res</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">──</span> <span style="color: #0000BB;">Number of factors suggested by MAP</span> <span style="color: #0000BB;">──────────────────────────────────────────</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Minimum average partial ─────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">• Original implementation (TR2): </span> <span style="font-weight: bold;">1</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">• Revised implementation (TR4): </span> <span style="font-weight: bold;">1</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Original implementation (TR2): 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Revised implementation (TR4): 1</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## Example with a correlation matrix</span></span></span>
 <span class="r-in"><span><span class="va">res2</span> <span class="op">&lt;-</span> <span class="fu">MAP</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">res2</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">──</span> <span style="color: #0000BB;">Number of factors suggested by MAP</span> <span style="color: #0000BB;">──────────────────────────────────────────</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Minimum average partial ─────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">• Original implementation (TR2): </span> <span style="font-weight: bold;">1</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">• Revised implementation (TR4): </span> <span style="font-weight: bold;">3</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Original implementation (TR2): 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Revised implementation (TR4): 3</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

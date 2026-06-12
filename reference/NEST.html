@@ -114,12 +114,12 @@ matrix.</p></dd>
 
 
 <dt id="arg-use">use<a class="anchor" aria-label="anchor" href="#arg-use"></a></dt>
-<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor</a></code> if raw
+<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code> if raw
 data is given as input. Default is  <code>"pairwise.complete.obs"</code>.</p></dd>
 
 
 <dt id="arg-cor-method">cor_method<a class="anchor" aria-label="anchor" href="#arg-cor-method"></a></dt>
-<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor</a></code>.
+<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>.
 Default is  <code>"pearson"</code>.</p></dd>
 
 
@@ -128,7 +128,7 @@ Default is  <code>"pearson"</code>.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Additional arguments passed to <code><a href="EFA.html">EFA</a></code>. For example,
+<dd><p>Additional arguments passed to <code><a href="EFA.html">EFA()</a></code>. For example,
 the extraction method can be changed here (default is "PAF"). PAF is more
 robust, but it will take longer compared to the other estimation methods
 available ("ML" and "ULS").</p></dd>
@@ -136,38 +136,35 @@ available ("ML" and "ULS").</p></dd>
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A list of class NEST containing the following objects</p>
-<dl><dt>eigenvalues</dt>
-<dd><p>A vector containing the empirical eigenvalues of the entered data.</p></dd>
+    <p>An object of class <code>efa_retention</code> (see <code><a href="print.efa_retention.html">print.efa_retention()</a></code> for
+the print method). Its main fields are:</p>
+<dl><dt>n_factors</dt>
+<dd><p>A named numeric vector (<code>"NEST"</code>) with the suggested number of
+factors according to the NEST procedure.</p></dd>
 
-<dt>n_factors</dt>
-<dd><p>The number of factors to retain according to the NEST procedure.</p></dd>
-
-<dt>references</dt>
-<dd><p>A vector containing the reference eigenvalues.</p></dd>
-
-<dt>prob</dt>
-<dd><p>For the first n_factors + 1 empirical eigenvalues, the proportion &lt;= the set of n_datasets  reference eigenvalues.</p></dd>
+<dt>results</dt>
+<dd><p>A list with a single record holding the empirical eigenvalues
+and the reference eigenvalues.</p></dd>
 
 <dt>settings</dt>
-<dd><p>A list of control settings used in the print function.</p></dd>
+<dd><p>A list of control settings used.</p></dd>
 
 </dl></div>
     <div id="details">
     <h2>Details</h2>
     <p>NEST compares the first empirical eigenvalue against the first eigenvalues
 of <code>n_dataset</code> synthetic datasets based on a null model  (i.e.,
- with uncorrelated variables; same as in parallel analysis, see <code><a href="PARALLEL.html">PARALLEL</a></code>).
- The following eigenvalues are compared against synthetic datasets based on an EFA-model with one fewer factors
- than the position of the respective empirical eigenvalue. E.g, the second
- empirical eigenvalue is compared against synthetic data based on a one-factor
- model. The <code>alpha</code>-level defines against which percentile of the synthetic
- eigenvalue distribution to compare the empirical eigenvalues against, i.e., an
- alpha of .05 (the default) uses the 95th percentile as reference value.</p>
+with uncorrelated variables; same as in parallel analysis, see <code><a href="PARALLEL.html">PARALLEL()</a></code>).
+The following eigenvalues are compared against synthetic datasets based on an EFA-model with one fewer factors
+than the position of the respective empirical eigenvalue. E.g, the second
+empirical eigenvalue is compared against synthetic data based on a one-factor
+model. The <code>alpha</code>-level defines against which percentile of the synthetic
+eigenvalue distribution to compare the empirical eigenvalues against, i.e., an
+alpha of .05 (the default) uses the 95th percentile as reference value.</p>
 <p>For details on the method, including simulation studies, see Achim (2017),
- Brandenburg and Papenberg (2024), and Caron (2025).</p>
+Brandenburg and Papenberg (2024), and Caron (2025).</p>
 <p>The <code>NEST</code> function can also be called together with other factor
-  retention criteria in the <code><a href="N_FACTORS.html">N_FACTORS</a></code> function.</p>
+retention criteria in the <code><a href="N_FACTORS.html">N_FACTORS()</a></code> function.</p>
     </div>
 
     <div id="ref-examples">
@@ -175,17 +172,16 @@ of <code>n_dataset</code> synthetic datasets based on a null model  (i.e.,
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># with correlation matrix</span></span></span>
 <span class="r-in"><span><span class="fu">NEST</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Next Eigenvalue Sufficiency Test ────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> NEST suggests <span style="font-weight: bold;">3</span> factors</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Suggested number of factors: 3</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># with raw data</span></span></span>
 <span class="r-in"><span><span class="fu">NEST</span><span class="op">(</span><span class="va">GRiPS_raw</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ 'x' was not a correlation matrix. Correlations are found from entered raw data.</span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from the raw data.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Next Eigenvalue Sufficiency Test ────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> NEST suggests <span style="font-weight: bold;">1</span> factor</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Suggested number of factors: 1</span>
 </code></pre></div>
     </div>
   </div>

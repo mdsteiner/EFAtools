@@ -87,7 +87,7 @@ dataset and with this indicates the suitability for factor analysis.</p>
 <p>Kaiser, H. F. &amp; Rice, J. (1974). Little jiffy, mark IV. Educational
 and Psychological Measurement, 34, 111-117.</p>
 <p>Cureton, E. E. &amp; D'Augustino, R. B. (1983). Factor analysis: An
- applied approach. Hillsdale, N.J.: Lawrence Erlbaum Associates, Inc.</p>
+applied approach. Hillsdale, N.J.: Lawrence Erlbaum Associates, Inc.</p>
     </div>
     <div id="arguments">
     <h2>Arguments</h2>
@@ -99,12 +99,12 @@ correlations.</p></dd>
 
 
 <dt id="arg-use">use<a class="anchor" aria-label="anchor" href="#arg-use"></a></dt>
-<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor</a></code> if raw
+<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code> if raw
 data is given as input. Default is "pairwise.complete.obs".</p></dd>
 
 
 <dt id="arg-cor-method">cor_method<a class="anchor" aria-label="anchor" href="#arg-cor-method"></a></dt>
-<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor</a></code>.
+<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>.
 Default is "pearson".</p></dd>
 
 </dl></div>
@@ -136,34 +136,34 @@ sum of squares of the upper off-diagonal elements of \(Q\) (see also Cureton &am
 <p>So KMO varies between 0 and 1, with larger values indicating higher suitability
 for factor analysis. Kaiser and Rice (1974) suggest that KMO should at least
 exceed .50 for a correlation matrix to be suitable for factor analysis.</p>
-<p>This function was heavily influenced by the <code><a href="https://rdrr.io/pkg/psych/man/KMO.html" class="external-link">psych::KMO</a></code>
+<p>This function was heavily influenced by the <code><a href="https://rdrr.io/pkg/psych/man/KMO.html" class="external-link">psych::KMO()</a></code>
 function.</p>
-<p>See also <code><a href="BARTLETT.html">BARTLETT</a></code> for another test of suitability for factor
+<p>See also <code><a href="BARTLETT.html">BARTLETT()</a></code> for another test of suitability for factor
 analysis.</p>
 <p>The <code>KMO</code> function can also be called together with the
-<code><a href="BARTLETT.html">BARTLETT</a></code> function and with factor retention criteria in the
- <code><a href="N_FACTORS.html">N_FACTORS</a></code> function.</p>
+<code><a href="BARTLETT.html">BARTLETT()</a></code> function and with factor retention criteria in the
+<code><a href="N_FACTORS.html">N_FACTORS()</a></code> function.</p>
     </div>
     <div id="see-also">
     <h2>See also</h2>
-    <div class="dont-index"><p><code><a href="BARTLETT.html">BARTLETT</a></code> for another measure to determine
+    <div class="dont-index"><p><code><a href="BARTLETT.html">BARTLETT()</a></code> for another measure to determine
 suitability for factor analysis.</p>
-<p><code><a href="N_FACTORS.html">N_FACTORS</a></code> as a wrapper function for this function,
-<code><a href="BARTLETT.html">BARTLETT</a></code> and several factor retention criteria.</p></div>
+<p><code><a href="N_FACTORS.html">N_FACTORS()</a></code> as a wrapper function for this function,
+<code><a href="BARTLETT.html">BARTLETT()</a></code> and several factor retention criteria.</p></div>
     </div>
 
     <div id="ref-examples">
     <h2>Examples</h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">KMO</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">──</span> <span style="color: #0000BB;">Kaiser-Meyer-Olkin criterion (KMO)</span> <span style="color: #0000BB;">──────────────────────────────────────────</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Kaiser-Meyer-Olkin criterion (KMO) ──────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00; font-weight: bold;">✔</span> The overall KMO value for your data is <span style="color: #00BB00; font-weight: bold;">marvellous</span>.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;"> </span> These data are probably suitable for factor analysis.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;"> </span> <span style="color: #0000BB;">Overall:</span> <span style="font-weight: bold;">0.916</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;"> </span> Overall: <span style="font-weight: bold;">0.916</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;"> </span> <span style="color: #0000BB;">For each variable:</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;"> </span> For each variable:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    V1    V2    V3    V4    V5    V6    V7    V8    V9   V10   V11   V12   V13 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 0.900 0.914 0.924 0.932 0.923 0.891 0.928 0.919 0.916 0.892 0.928 0.908 0.922 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   V14   V15   V16   V17   V18 </span>

@@ -112,7 +112,7 @@ except varimax and promax, the <code>GPArotation</code> package is needed.</p>
     <h2>Source</h2>
     <p>Grieder, S., &amp; Steiner, M.D. (2020). Algorithmic Jingle Jungle:
 A Comparison of Implementations of Principal Axis Factoring and Promax Rotation
- in R and SPSS. Manuscript in Preparation.</p>
+in R and SPSS. Manuscript in Preparation.</p>
 <p>Hendrickson, A. E., &amp; White, P. O. (1964). Promax: A quick method for
 rotation to oblique simple structure. British Journal of Statistical Psychology,
 17 , 65–70. doi: 10.1111/j.2044-8317.1964.tb00244.x</p>
@@ -201,25 +201,25 @@ communalities from one iteration to the next and tests it against the
 specified criterion. This is also used by SPSS. "sum" takes the difference of
 the sum of all communalities in one iteration and the sum of all communalities
 in the next iteration and tests this against the criterion. This procedure is
-used by the <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa</a></code> function. Default is <code>NA</code>.</p></dd>
+used by the <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code> function. Default is <code>NA</code>.</p></dd>
 
 
 <dt id="arg-abs-eigen">abs_eigen<a class="anchor" aria-label="anchor" href="#arg-abs-eigen"></a></dt>
 <dd><p>logical. Which algorithm to use in the PAF
 iterations. If FALSE, the loadings are computed from the eigenvalues. This is
-also used by the <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa</a></code> function. If TRUE the
+also used by the <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code> function. If TRUE the
 loadings are computed with the absolute eigenvalues as done by SPSS.
 Default is <code>NA</code>.</p></dd>
 
 
 <dt id="arg-use">use<a class="anchor" aria-label="anchor" href="#arg-use"></a></dt>
-<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor</a></code> if raw data
+<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code> if raw data
 is given as input. Default is "pairwise.complete.obs".</p></dd>
 
 
 <dt id="arg-varimax-type">varimax_type<a class="anchor" aria-label="anchor" href="#arg-varimax-type"></a></dt>
 <dd><p>character. The type of the varimax rotation performed.
-If "svd", singular value decomposition is used, as <a href="https://rdrr.io/r/stats/varimax.html" class="external-link">stats::varimax</a> does. If "kaiser", the varimax procedure performed in SPSS is used.
+If "svd", singular value decomposition is used, as <code><a href="https://rdrr.io/r/stats/varimax.html" class="external-link">stats::varimax()</a></code> does. If "kaiser", the varimax procedure performed in SPSS is used.
 This is the original procedure from Kaiser (1958), but with slight alterations
 in the varimax criterion (see details, and Grieder &amp; Steiner, 2020). Default is <code>NA</code>.</p></dd>
 
@@ -261,13 +261,13 @@ sum of squared factor loadings per factor. Default is <code>NA</code>.</p></dd>
 <dt id="arg-start-method">start_method<a class="anchor" aria-label="anchor" href="#arg-start-method"></a></dt>
 <dd><p>character. How to specify the starting values for the
 optimization procedure for ML. Default is "psych" which takes the
-starting values specified in <a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa</a>. "factanal" takes the
-starting values specified in the <a href="https://rdrr.io/r/stats/factanal.html" class="external-link">stats::factanal</a> function.
+starting values specified in <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code>. "factanal" takes the
+starting values specified in the <code><a href="https://rdrr.io/r/stats/factanal.html" class="external-link">stats::factanal()</a></code> function.
 Solutions are very similar.</p></dd>
 
 
 <dt id="arg-cor-method">cor_method<a class="anchor" aria-label="anchor" href="#arg-cor-method"></a></dt>
-<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor</a></code>.
+<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>.
 Default is "pearson".</p></dd>
 
 
@@ -308,18 +308,18 @@ package documentation for details).</p></dd>
 
 <dt>init_eigen</dt>
 <dd><p>Initial eigenvalues, obtained from the correlation matrix
- with the initial communality estimates as diagonal in PAF.</p></dd>
+with the initial communality estimates as diagonal in PAF.</p></dd>
 
 <dt>final_eigen</dt>
 <dd><p>Eigenvalues obtained from the correlation matrix
- with the final communality estimates as diagonal.</p></dd>
+with the final communality estimates as diagonal.</p></dd>
 
 <dt>iter</dt>
 <dd><p>The number of iterations needed for convergence.</p></dd>
 
 <dt>convergence</dt>
 <dd><p>Integer code for convergence as returned by
-<code><a href="https://rdrr.io/r/stats/optim.html" class="external-link">stats:optim</a></code> (only for ML and ULS).
+<code><a href="https://rdrr.io/r/stats/optim.html" class="external-link">stats::optim()</a></code> (only for ML and ULS).
 0 indicates successful completion.</p></dd>
 
 <dt>unrot_loadings</dt>
@@ -331,11 +331,17 @@ package documentation for details).</p></dd>
 <dt>fit_indices</dt>
 <dd><p>For ML and ULS: Fit indices derived from the unrotated
 factor loadings: Chi Square, including significance level, degrees of freedom
-(df), Comparative Fit Index (CFI), Root Mean Square Error of Approximation
-(RMSEA), including its 90% confidence interval, Akaike Information Criterion
-(AIC), Bayesian Information Criterion (BIC), Root Mean Squared Residual (RMSR), and the common part accounted
-for (CAF) index as proposed by Lorenzo-Seva, Timmerman, &amp; Kiers (2011).
-For PAF, only the CAF and dfs are returned. Note that while in Lorenzo-Seva, Timmerman, &amp; Kiers (2011) the CAF is introduced as ranging between 0 and 1, with values close to 1 indicating close fit, this does not match the formula they introduce for calculating CAF: <code>1 - KMO(residuals)</code>, which only works if the diagonal of the residual matrix is set to 1s and will then approximate 0.5 with close fit.</p></dd>
+(df), Comparative Fit Index (CFI), Tucker-Lewis Index (TLI, also called the
+non-normed fit index; Tucker &amp; Lewis, 1973), Root Mean Square Error of
+Approximation (RMSEA), including its 90% confidence interval, Akaike
+Information Criterion (AIC), Bayesian Information Criterion (BIC), Expected
+Cross-Validation Index (ECVI; Browne &amp; Cudeck, 1989), Root Mean Squared
+Residual (RMSR), Standardized Root Mean Squared Residual (SRMR; Bentler,
+1995), and the common part accounted for (CAF) index as proposed by
+Lorenzo-Seva, Timmerman, &amp; Kiers (2011). The Chi Square, CFI, TLI, RMSEA,
+AIC, BIC, and ECVI are based on the Bartlett-corrected Chi Square (matching
+<code><a href="https://rdrr.io/r/stats/factanal.html" class="external-link">stats::factanal()</a></code> for ML). For PAF, only the CAF, RMSR, SRMR, and dfs are
+returned. Note that while in Lorenzo-Seva, Timmerman, &amp; Kiers (2011) the CAF is introduced as ranging between 0 and 1, with values close to 1 indicating close fit, this does not match the formula they introduce for calculating CAF: <code>1 - KMO(residuals)</code>, which only works if the diagonal of the residual matrix is set to 1s and will then approximate 0.5 with close fit.</p></dd>
 
 <dt>model_implied_R</dt>
 <dd><p>The model implied correlation
@@ -390,14 +396,11 @@ for these functions are detailed below.</p>
 <p>For PAF, the values of <code>init_comm</code>, <code>criterion</code>, <code>criterion_type</code>,
 and <code>abs_eigen</code> depend on the <code>type</code> argument.</p>
 <p><code>type = "EFAtools"</code> will use the following argument specification:
-<code>init_comm = "smc", criterion = .001, criterion_type = "sum",
-abs_eigen = TRUE</code>.</p>
+<code>init_comm = "smc", criterion = .001, criterion_type = "sum", abs_eigen = TRUE</code>.</p>
 <p><code>type = "psych"</code> will use the following argument specification:
-<code>init_comm = "smc", criterion = .001, criterion_type = "sum",
-abs_eigen = FALSE</code>.</p>
+<code>init_comm = "smc", criterion = .001, criterion_type = "sum", abs_eigen = FALSE</code>.</p>
 <p><code>type = "SPSS"</code> will use the following argument specification:
-<code>init_comm = "smc", criterion = .001, criterion_type = "max_individual",
-abs_eigen = TRUE</code>.</p>
+<code>init_comm = "smc", criterion = .001, criterion_type = "max_individual", abs_eigen = TRUE</code>.</p>
 <p>If SMCs fail, SPSS takes "mac". However, as SPSS takes absolute eigenvalues,
 this is hardly ever the case. Psych, on the other hand, takes "unity" if SMCs
 fail, but uses the Moore-Penrose Psudo Inverse of a matrix, thus, taking "unity"
@@ -434,7 +437,7 @@ As for PAF, the EFAtools type setting combination for promax was the best
 compared to the other setting combinations tested in simulation studies in
 Grieder &amp; Steiner (2020).</p>
 <p>The <code>varimax_type</code> argument can take two values, "svd", and "kaiser". "svd" uses
-singular value decomposition, by calling <a href="https://rdrr.io/r/stats/varimax.html" class="external-link">stats::varimax</a>. "kaiser"
+singular value decomposition, by calling <code><a href="https://rdrr.io/r/stats/varimax.html" class="external-link">stats::varimax()</a></code>. "kaiser"
 performs the varimax procedure as described in the SPSS 23 Algorithms manual and as described
 by Kaiser (1958). However, there is a slight alteration in computing the varimax criterion, which
 we found to better align with the results obtain from SPSS. Specifically, the original varimax
@@ -453,7 +456,7 @@ specified and will be passed to the respective <code>GPArotation</code> function
 arguments are needed. For ML, an additional argument
 <code>start_method</code> is needed to determine the starting values for the
 optimization procedure. Default for this argument is "factanal" which takes
-the starting values specified in the <a href="https://rdrr.io/r/stats/factanal.html" class="external-link">stats::factanal</a> function.</p>
+the starting values specified in the <code><a href="https://rdrr.io/r/stats/factanal.html" class="external-link">stats::factanal()</a></code> function.</p>
     </div>
 
     <div id="ref-examples">

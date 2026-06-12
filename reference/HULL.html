@@ -132,32 +132,32 @@ Lorenzo-Seva, Timmerman, and Kiers (2011).</p></dd>
 <dt id="arg-eigen-type">eigen_type<a class="anchor" aria-label="anchor" href="#arg-eigen-type"></a></dt>
 <dd><p>character. On what the eigenvalues should be found in the
 parallel analysis. Can be one of <code>"SMC"</code>, <code>"PCA"</code>, or <code>"EFA"</code>.
- If using  <code>"SMC"</code> (default), the diagonal of the correlation matrices is
-  replaced by the squared multiple correlations (SMCs) of the indicators. If
-   using  <code>"PCA"</code>, the diagonal values of the correlation
+If using  <code>"SMC"</code> (default), the diagonal of the correlation matrices is
+replaced by the squared multiple correlations (SMCs) of the indicators. If
+using  <code>"PCA"</code>, the diagonal values of the correlation
 matrices are left to be 1. If using  <code>"EFA"</code>, eigenvalues are found on the
 correlation  matrices with the final communalities of an EFA solution as
-diagonal. This is passed to  <code><a href="PARALLEL.html">PARALLEL</a></code>.</p></dd>
+diagonal. This is passed to  <code><a href="PARALLEL.html">PARALLEL()</a></code>.</p></dd>
 
 
 <dt id="arg-use">use<a class="anchor" aria-label="anchor" href="#arg-use"></a></dt>
-<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor</a></code> if raw data
+<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code> if raw data
 is given as input. Default is <code>"pairwise.complete.obs"</code>.</p></dd>
 
 
 <dt id="arg-cor-method">cor_method<a class="anchor" aria-label="anchor" href="#arg-cor-method"></a></dt>
-<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor</a></code>.
+<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>.
 Default is  <code>"pearson"</code>.</p></dd>
 
 
 <dt id="arg-n-datasets">n_datasets<a class="anchor" aria-label="anchor" href="#arg-n-datasets"></a></dt>
 <dd><p>numeric. The number of datasets to simulate. Default is 1000.
-This is passed to <code><a href="PARALLEL.html">PARALLEL</a></code>.</p></dd>
+This is passed to <code><a href="PARALLEL.html">PARALLEL()</a></code>.</p></dd>
 
 
 <dt id="arg-percent">percent<a class="anchor" aria-label="anchor" href="#arg-percent"></a></dt>
 <dd><p>numeric. A vector of percentiles to take the simulated eigenvalues from.
-Default is 95. This is passed to <code><a href="PARALLEL.html">PARALLEL</a></code>.</p></dd>
+Default is 95. This is passed to <code><a href="PARALLEL.html">PARALLEL()</a></code>.</p></dd>
 
 
 <dt id="arg-decision-rule">decision_rule<a class="anchor" aria-label="anchor" href="#arg-decision-rule"></a></dt>
@@ -165,57 +165,45 @@ Default is 95. This is passed to <code><a href="PARALLEL.html">PARALLEL</a></cod
 factors to retain. Default is <code>"means"</code>, which will use the average
 simulated eigenvalues. <code>"percentile"</code>, uses the percentiles specified
 in percent. <code>"crawford"</code> uses the 95th percentile for the first factor
-and the mean afterwards (based on Crawford et al, 2010). This is passed to <code><a href="PARALLEL.html">PARALLEL</a></code>.</p></dd>
+and the mean afterwards (based on Crawford et al, 2010). This is passed to <code><a href="PARALLEL.html">PARALLEL()</a></code>.</p></dd>
 
 
 <dt id="arg-n-factors">n_factors<a class="anchor" aria-label="anchor" href="#arg-n-factors"></a></dt>
 <dd><p>numeric. Number of factors to extract if  <code>"EFA"</code> is
 included in <code>eigen_type</code>. Default is 1. This is passed to
-<code><a href="PARALLEL.html">PARALLEL</a></code>.</p></dd>
+<code><a href="PARALLEL.html">PARALLEL()</a></code>.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Further arguments passed to <code><a href="EFA.html">EFA</a></code>, also in
-<code><a href="PARALLEL.html">PARALLEL</a></code>.</p></dd>
+<dd><p>Further arguments passed to <code><a href="EFA.html">EFA()</a></code>, also in
+<code><a href="PARALLEL.html">PARALLEL()</a></code>.</p></dd>
 
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A list of class HULL containing the following objects</p>
-<dl><dt>n_fac_CAF</dt>
-<dd><p>The number of factors to retain according to the Hull method
-with the CAF.</p></dd>
+    <p>An object of class <code>efa_retention</code> (see <code><a href="print.efa_retention.html">print.efa_retention()</a></code> and
+<code><a href="plot.efa_retention.html">plot.efa_retention()</a></code> for the print and plot methods). Its main fields are:</p>
+<dl><dt>n_factors</dt>
+<dd><p>A named numeric vector with the suggested number of factors
+for each requested goodness-of-fit index (<code>"CAF"</code>, <code>"CFI"</code>, and/or
+<code>"RMSEA"</code>).</p></dd>
 
-<dt>n_fac_CFI</dt>
-<dd><p>The number of factors to retain according to the Hull method
-with the CFI.</p></dd>
-
-<dt>n_fac_RMSEA</dt>
-<dd><p>The number of factors to retain according to the Hull method
-with the RMSEA.</p></dd>
-
-<dt>solutions_CAF</dt>
-<dd><p>A matrix containing the CAFs, degrees of freedom, and for the factors lying on the hull, the st values of the hull solution (see Lorenzo-Seva, Timmerman, and Kiers 2011 for details).</p></dd>
-
-<dt>solutions_CFI</dt>
-<dd><p>A matrix containing the CFIs, degrees of freedom, and for the factors lying on the hull, the st values of the hull solution (see Lorenzo-Seva, Timmerman, and Kiers 2011 for details).</p></dd>
-
-<dt>solutions_RMSEA</dt>
-<dd><p>A matrix containing the RMSEAs, degrees of freedom, and for the factors lying on the hull, the st values of the hull solution (see Lorenzo-Seva, Timmerman, and Kiers 2011 for details).</p></dd>
-
-<dt>n_fac_max</dt>
-<dd><p>The upper bound <em>J</em> of the number of factors to extract (see details).</p></dd>
+<dt>results</dt>
+<dd><p>A list with one record per goodness-of-fit index, each holding
+the goodness-of-fit values, the degrees of freedom, the hull membership, and
+the retained solution used for printing and plotting.</p></dd>
 
 <dt>settings</dt>
-<dd><p>A list of the settings used.</p></dd>
+<dd><p>A list of the settings used, including <code>n_fac_max</code>, the upper
+bound <em>J</em> of the number of factors to extract (see details).</p></dd>
 
 </dl></div>
     <div id="details">
     <h2>Details</h2>
     <p>The Hull method aims to find a model with an optimal balance between
- model fit and number of parameters. That is, it aims to retrieve only major
- factors (Lorenzo-Seva, Timmerman, &amp; Kiers, 2011). To this end, it performs
- the following steps (Lorenzo-Seva, Timmerman, &amp; Kiers, 2011, p.351):</p><ol><li><p>It performs parallel analysis and adds one to the identified number of factors (this number is denoted <em>J</em>). <em>J</em> is taken as an upper bound of the number of factors to retain in the hull method. Alternatively, a theoretical number of factors can be entered. In this case <em>J</em> will be set to whichever of these two numbers (from parallel analysis or based on theory) is higher.</p></li>
+model fit and number of parameters. That is, it aims to retrieve only major
+factors (Lorenzo-Seva, Timmerman, &amp; Kiers, 2011). To this end, it performs
+the following steps (Lorenzo-Seva, Timmerman, &amp; Kiers, 2011, p.351):</p><ol><li><p>It performs parallel analysis and adds one to the identified number of factors (this number is denoted <em>J</em>). <em>J</em> is taken as an upper bound of the number of factors to retain in the hull method. Alternatively, a theoretical number of factors can be entered. In this case <em>J</em> will be set to whichever of these two numbers (from parallel analysis or based on theory) is higher.</p></li>
 <li><p>For all 0 to <em>J</em> factors, the goodness-of-fit (one of <em>CAF</em>, <em>RMSEA</em>, or <em>CFI</em>) and the degrees of freedom (<em>df</em>) are computed.</p></li>
 <li><p>The solutions are ordered according to their <em>df</em>.</p></li>
 <li><p>Solutions that are not on the boundary of the convex hull are eliminated (see Lorenzo-Seva, Timmerman, &amp; Kiers, 2011, for details).</p></li>
@@ -224,22 +212,22 @@ with the RMSEA.</p></dd>
 <li><p>The <em>st</em> values of the “hull” solutions are determined.</p></li>
 <li><p>The solution with the highest <em>st</em> value is selected.</p></li>
 </ol><p>The <a href="PARALLEL.html">PARALLEL</a> function and the principal axis factoring of the
-  different number of factors can be parallelized using the future framework,
-  by calling the <a href="https://future.futureverse.org/reference/plan.html" class="external-link">future::plan</a> function. The examples
-   provide example code on how to enable parallel processing.</p>
+different number of factors can be parallelized using the future framework,
+by calling the <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future::plan()</a></code> function. The examples
+provide example code on how to enable parallel processing.</p>
 <p>Note that if <code>gof = "RMSEA"</code> is used, 1 - RMSEA is actually used to
-  compare the different solutions. Thus, the threshold of .05 is then .95. This
-  is necessary due to how the heuristic to locate the elbow of the hull works.</p>
-<p>The ML estimation method uses the <a href="https://rdrr.io/r/stats/factanal.html" class="external-link">stats::factanal</a>
-   starting values. See also the <a href="EFA.html">EFA</a> documentation.</p>
+compare the different solutions. Thus, the threshold of .05 is then .95. This
+is necessary due to how the heuristic to locate the elbow of the hull works.</p>
+<p>The ML estimation method uses the <code><a href="https://rdrr.io/r/stats/factanal.html" class="external-link">stats::factanal()</a></code>
+starting values. See also the <a href="EFA.html">EFA</a> documentation.</p>
 <p>The <code>HULL</code> function can also be called together with other factor
-   retention criteria in the <code><a href="N_FACTORS.html">N_FACTORS</a></code> function.</p>
+retention criteria in the <code><a href="N_FACTORS.html">N_FACTORS()</a></code> function.</p>
     </div>
     <div id="see-also">
     <h2>See also</h2>
-    <div class="dont-index"><p>Other factor retention criteria: <code><a href="CD.html">CD</a></code>, <code><a href="EKC.html">EKC</a></code>,
-<code><a href="KGC.html">KGC</a></code>, <code><a href="PARALLEL.html">PARALLEL</a></code>, <code><a href="SMT.html">SMT</a></code></p>
-<p><code><a href="N_FACTORS.html">N_FACTORS</a></code> as a wrapper function for this and all the
+    <div class="dont-index"><p>Other factor retention criteria: <code><a href="CD.html">CD()</a></code>, <code><a href="EKC.html">EKC()</a></code>,
+<code><a href="KGC.html">KGC()</a></code>, <code><a href="PARALLEL.html">PARALLEL()</a></code>, <code><a href="SMT.html">SMT()</a></code></p>
+<p><code><a href="N_FACTORS.html">N_FACTORS()</a></code> as a wrapper function for this and all the
 above-mentioned factor retention criteria.</p></div>
     </div>
 
@@ -249,36 +237,26 @@ above-mentioned factor retention criteria.</p></div>
 <span class="r-in"><span><span class="co"># using PAF (this will throw a warning if gof is not specified manually</span></span></span>
 <span class="r-in"><span><span class="co"># and CAF will be used automatically)</span></span></span>
 <span class="r-in"><span><span class="fu">HULL</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, gof <span class="op">=</span> <span class="st">"CAF"</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Hull Analysis performed testing <span style="font-weight: bold;">0</span> to <span style="font-weight: bold;">4</span> factors.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">PAF</span> estimation and the <span style="font-weight: bold;">CAF</span> fit index was used.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Hull method ─────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Estimation method: PAF</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">──</span> <span style="color: #0000BB;">Number of factors suggested by the Hull method</span> <span style="color: #0000BB;">──────────────────────────────</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">• With </span><span style="color: #0000BB; font-weight: bold;">CAF:   </span> <span style="font-weight: bold;">3</span></span>
-<span class="r-plt img"><img src="HULL-1.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • CAF: 3</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># using ML with all available fit indices (CAF, CFI, and RMSEA)</span></span></span>
 <span class="r-in"><span><span class="fu">HULL</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, method <span class="op">=</span> <span class="st">"ML"</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Hull Analysis performed testing <span style="font-weight: bold;">0</span> to <span style="font-weight: bold;">4</span> factors.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">ML</span> estimation and the <span style="font-weight: bold;">CAF</span>, <span style="font-weight: bold;">CFI</span>, and <span style="font-weight: bold;">RMSEA</span> fit indices were used.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Hull method ─────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Estimation method: ML</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">──</span> <span style="color: #0000BB;">Number of factors suggested by the Hull method</span> <span style="color: #0000BB;">──────────────────────────────</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">• With </span><span style="color: #0000BB; font-weight: bold;">CAF:   </span> <span style="font-weight: bold;">3</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">• With </span><span style="color: #0000BB; font-weight: bold;">CFI:   </span> <span style="font-weight: bold;">1</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">• With </span><span style="color: #0000BB; font-weight: bold;">RMSEA: </span> <span style="font-weight: bold;">1</span></span>
-<span class="r-plt img"><img src="HULL-2.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="HULL-3.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="HULL-4.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • CAF: 3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • CFI: 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • RMSEA: 1</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># using ULS with only RMSEA</span></span></span>
 <span class="r-in"><span><span class="fu">HULL</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, method <span class="op">=</span> <span class="st">"ULS"</span>, gof <span class="op">=</span> <span class="st">"RMSEA"</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Hull Analysis performed testing <span style="font-weight: bold;">0</span> to <span style="font-weight: bold;">4</span> factors.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">ULS</span> estimation and the <span style="font-weight: bold;">RMSEA</span> fit index was used.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Hull method ─────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Estimation method: ULS</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">──</span> <span style="color: #0000BB;">Number of factors suggested by the Hull method</span> <span style="color: #0000BB;">──────────────────────────────</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">• With </span><span style="color: #0000BB; font-weight: bold;">RMSEA: </span> <span style="font-weight: bold;">3</span></span>
-<span class="r-plt img"><img src="HULL-5.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • RMSEA: 1</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>

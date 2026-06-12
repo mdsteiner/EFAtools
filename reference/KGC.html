@@ -118,12 +118,12 @@ diagonal.</p></dd>
 
 
 <dt id="arg-use">use<a class="anchor" aria-label="anchor" href="#arg-use"></a></dt>
-<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor</a></code> if raw
+<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code> if raw
 data is given as input. Default is "pairwise.complete.obs".</p></dd>
 
 
 <dt id="arg-cor-method">cor_method<a class="anchor" aria-label="anchor" href="#arg-cor-method"></a></dt>
-<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor</a></code>.
+<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>.
 Default is "pearson".</p></dd>
 
 
@@ -133,33 +133,21 @@ Default is "pearson".</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Additional arguments passed to <code><a href="EFA.html">EFA</a></code>. For example,
+<dd><p>Additional arguments passed to <code><a href="EFA.html">EFA()</a></code>. For example,
 to change the extraction method (PAF is default).</p></dd>
 
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A list of class KGC containing</p>
-<dl><dt>eigen_PCA</dt>
-<dd><p>A vector containing the eigenvalues found with PCA.</p></dd>
+    <p>An object of class <code>efa_retention</code> (see <code><a href="print.efa_retention.html">print.efa_retention()</a></code> and
+<code><a href="plot.efa_retention.html">plot.efa_retention()</a></code> for the print and plot methods). Its main fields are:</p>
+<dl><dt>n_factors</dt>
+<dd><p>A named numeric vector with the suggested number of factors
+for each requested eigenvalue type (<code>"PCA"</code>, <code>"SMC"</code>, and/or <code>"EFA"</code>).</p></dd>
 
-<dt>eigen_SMC</dt>
-<dd><p>A vector containing the eigenvalues found with SMCs.</p></dd>
-
-<dt>eigen_EFA</dt>
-<dd><p>A vector containing the eigenvalues found with EFA.</p></dd>
-
-<dt>n_fac_PCA</dt>
-<dd><p>The number of factors to retain according to the Kaiser-
-Guttmann criterion with PCA eigenvalues type.</p></dd>
-
-<dt>n_fac_SMC</dt>
-<dd><p>The number of factors to retain according to the Kaiser-
-Guttmann criterion with SMC eigenvalues type.</p></dd>
-
-<dt>n_fac_EFA</dt>
-<dd><p>The number of factors to retain according to the Kaiser-
-Guttmann criterion with EFA eigenvalues type.</p></dd>
+<dt>results</dt>
+<dd><p>A list with one record per eigenvalue type, each holding the
+eigenvalues and the retained solution used for printing and plotting.</p></dd>
 
 <dt>settings</dt>
 <dd><p>A list of the settings used.</p></dd>
@@ -181,33 +169,27 @@ to "EFA"; see Auerswald &amp; Moshagen, 2019). However, although this variant
 of the KGC is more accurate in some cases compared to the traditional KGC, it
 is at the same time less accurate than the PCA-variant in other cases, and it
 is still often less accurate than other factor retention methods, for
-example parallel analysis (<code><a href="PARALLEL.html">PARALLEL</a></code>), the Hull method
-<code><a href="HULL.html">HULL</a></code>, or sequential \(chi^2\) model tests (<code><a href="SMT.html">SMT</a></code>;
+example parallel analysis (<code><a href="PARALLEL.html">PARALLEL()</a></code>), the Hull method
+<code><a href="HULL.html">HULL()</a></code>, or sequential \(chi^2\) model tests (<code><a href="SMT.html">SMT()</a></code>;
 see Auerswald &amp; Moshagen, 2019).</p>
 <p>The <code>KGC</code> function can also be called together with other factor
-retention criteria in the <code><a href="N_FACTORS.html">N_FACTORS</a></code> function.</p>
+retention criteria in the <code><a href="N_FACTORS.html">N_FACTORS()</a></code> function.</p>
     </div>
     <div id="see-also">
     <h2>See also</h2>
-    <div class="dont-index"><p>Other factor retention criteria: <code><a href="CD.html">CD</a></code>, <code><a href="EKC.html">EKC</a></code>,
-<code><a href="HULL.html">HULL</a></code>, <code><a href="PARALLEL.html">PARALLEL</a></code>, <code><a href="SMT.html">SMT</a></code></p>
-<p><code><a href="N_FACTORS.html">N_FACTORS</a></code> as a wrapper function for this and all the
+    <div class="dont-index"><p>Other factor retention criteria: <code><a href="CD.html">CD()</a></code>, <code><a href="EKC.html">EKC()</a></code>,
+<code><a href="HULL.html">HULL()</a></code>, <code><a href="PARALLEL.html">PARALLEL()</a></code>, <code><a href="SMT.html">SMT()</a></code></p>
+<p><code><a href="N_FACTORS.html">N_FACTORS()</a></code> as a wrapper function for this and all the
 above-mentioned factor retention criteria.</p></div>
     </div>
 
     <div id="ref-examples">
     <h2>Examples</h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">KGC</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, eigen_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PCA"</span>, <span class="st">"SMC"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Kaiser-Guttman criterion ────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Eigenvalues were found using <span style="font-weight: bold;">PCA</span> and <span style="font-weight: bold;">SMC</span>.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">──</span> <span style="color: #0000BB;">Number of factors suggested by Kaiser-Guttmann criterion</span> <span style="color: #0000BB;">────────────────────</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">• With PCA-determined eigenvalues: </span> <span style="font-weight: bold;">3</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">• With SMC-determined eigenvalues: </span> <span style="font-weight: bold;">1</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-plt img"><img src="KGC-1.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="KGC-2.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • PCA eigenvalues: 3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • SMC eigenvalues: 1</span>
 </code></pre></div>
     </div>
   </div>

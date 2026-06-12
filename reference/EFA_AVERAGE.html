@@ -4,7 +4,7 @@ you perform a number of EFAs from different methods (e.g., Maximum Likelihood
 and Principal Axis Factoring), with different implementations (e.g., the SPSS
 and psych implementations of Principal Axis Factoring), and across different
 rotations of the same type (e.g., multiple oblique rotations, like promax and
-oblimin). EFA_AVERAGE will then run all these EFAs (using the EFA
+oblimin). EFA_AVERAGE will then run all these EFAs (using the EFA()
 function) and provide a summary across the different solutions."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
@@ -73,7 +73,7 @@ you perform a number of EFAs from different methods (e.g., Maximum Likelihood
 and Principal Axis Factoring), with different implementations (e.g., the SPSS
 and psych implementations of Principal Axis Factoring), and across different
 rotations of the same type (e.g., multiple oblique rotations, like promax and
-oblimin). EFA_AVERAGE will then run all these EFAs (using the <code><a href="EFA.html">EFA</a></code>
+oblimin). EFA_AVERAGE will then run all these EFAs (using the <code><a href="EFA.html">EFA()</a></code>
 function) and provide a summary across the different solutions.</p>
     </div>
 
@@ -111,7 +111,7 @@ function) and provide a summary across the different solutions.</p>
     <h2>Source</h2>
     <p>Grieder, S., &amp; Steiner, M.D. (2020). Algorithmic Jingle Jungle:
 A Comparison of Implementations of Principal Axis Factoring and Promax Rotation
- in R and SPSS. Manuscript in Preparation.</p>
+in R and SPSS. Manuscript in Preparation.</p>
 <p>Hendrickson, A. E., &amp; White, P. O. (1964). Promax: A quick method for
 rotation to oblique simple structure. British Journal of Statistical Psychology,
 17 , 65–70. doi: 10.1111/j.2044-8317.1964.tb00244.x</p>
@@ -166,7 +166,7 @@ of the respective factor extraction method and rotation to be in line with how
 it is executed in this package (i.e., the respective default procedure), in the
 psych package, and in SPSS. A specific psych implementation exists for PAF, ML, varimax,
 and promax. The SPSS implementation exists for PAF, varimax, and promax. For
-details, see <code><a href="EFA.html">EFA</a></code>.</p></dd>
+details, see <code><a href="EFA.html">EFA()</a></code>.</p></dd>
 
 
 <dt id="arg-averaging">averaging<a class="anchor" aria-label="anchor" href="#arg-averaging"></a></dt>
@@ -177,7 +177,7 @@ or the median.</p></dd>
 
 <dt id="arg-trim">trim<a class="anchor" aria-label="anchor" href="#arg-trim"></a></dt>
 <dd><p>numeric. If averaging is set to "mean", this argument controls
-the trimming of extremes (for details see <code><a href="https://rdrr.io/r/base/mean.html" class="external-link">base::mean</a></code>).
+the trimming of extremes (for details see <code><a href="https://rdrr.io/r/base/mean.html" class="external-link">base::mean()</a></code>).
 By default no trimming is done (i.e., trim = 0).</p></dd>
 
 
@@ -200,7 +200,7 @@ that non-converged procedures are excluded from the averaging procedure.</p></dd
 Controls the methods to estimate the initial communalities in <code>PAF</code> if
 "none" is among the specified types. "smc" will use squared multiple
 correlations, "mac" will use maximum absolute correlations, "unity" will use
-1s (for details see <code><a href="EFA.html">EFA</a></code>). Default is <code>c("smc", "mac", "unity")</code>.</p></dd>
+1s (for details see <code><a href="EFA.html">EFA()</a></code>). Default is <code>c("smc", "mac", "unity")</code>.</p></dd>
 
 
 <dt id="arg-criterion">criterion<a class="anchor" aria-label="anchor" href="#arg-criterion"></a></dt>
@@ -219,16 +219,16 @@ communalities from one iteration to the next and tests it against the
 specified criterion. "sum" takes the difference of
 the sum of all communalities in one iteration and the sum of all communalities
 in the next iteration and tests this against the criterion
-(for details see <code><a href="EFA.html">EFA</a></code>). Default is <code>c("sum", "max_individual")</code>.</p></dd>
+(for details see <code><a href="EFA.html">EFA()</a></code>). Default is <code>c("sum", "max_individual")</code>.</p></dd>
 
 
 <dt id="arg-abs-eigen">abs_eigen<a class="anchor" aria-label="anchor" href="#arg-abs-eigen"></a></dt>
 <dd><p>logical vector. Any combination of TRUE and FALSE.
 Which algorithm to use in the PAF iterations if "none" is among the specified
 types. If FALSE, the loadings are computed from the eigenvalues. This is also
-used by the <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa</a></code> function. If TRUE the
+used by the <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code> function. If TRUE the
 loadings are computed with the absolute eigenvalues as done by SPSS
-(for details see <code><a href="EFA.html">EFA</a></code>). Default is <code>TRUE</code>.</p></dd>
+(for details see <code><a href="EFA.html">EFA()</a></code>). Default is <code>TRUE</code>.</p></dd>
 
 
 <dt id="arg-varimax-type">varimax_type<a class="anchor" aria-label="anchor" href="#arg-varimax-type"></a></dt>
@@ -236,10 +236,10 @@ loadings are computed with the absolute eigenvalues as done by SPSS
 The type of the varimax rotation performed if "none" is among the specified
 types and "varimax", "promax", "orthogonal", or "oblique" is among the specified
 rotations. "svd" uses singular value decomposition, as
-<a href="https://rdrr.io/r/stats/varimax.html" class="external-link">stats::varimax</a> does, and "kaiser" uses the varimax
+<code><a href="https://rdrr.io/r/stats/varimax.html" class="external-link">stats::varimax()</a></code> does, and "kaiser" uses the varimax
 procedure performed in SPSS. This is the original procedure from Kaiser (1958),
 but with slight alterations in the varimax criterion (for details, see
-<code><a href="EFA.html">EFA</a></code> and Grieder &amp; Steiner, 2020).
+<code><a href="EFA.html">EFA()</a></code> and Grieder &amp; Steiner, 2020).
 Default is <code>c("svd", "kaiser")</code>.</p></dd>
 
 
@@ -268,7 +268,7 @@ This specifies how the target matrix P is computed in promax rotation if
 "none" is among the specified types and "promax" or "oblique" is among the
 specified rotations. "unnorm" will use the unnormalized target matrix as
 originally done in Hendrickson and White (1964). "norm" will use a
-normalized target matrix (for details see <code><a href="EFA.html">EFA</a></code>).
+normalized target matrix (for details see <code><a href="EFA.html">EFA()</a></code>).
 Default is <code>c("norm", "unnorm")</code>.</p></dd>
 
 
@@ -280,19 +280,19 @@ procedure(s). Default is 10^-5.</p></dd>
 <dt id="arg-start-method">start_method<a class="anchor" aria-label="anchor" href="#arg-start-method"></a></dt>
 <dd><p>character vector. Any combination of "psych" and "factanal".
 How to specify the starting values for the optimization procedure for ML.
-"psych" takes the starting values specified in <a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa</a>.
+"psych" takes the starting values specified in <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code>.
 "factanal" takes the starting values specified in the
-<a href="https://rdrr.io/r/stats/factanal.html" class="external-link">stats::factanal</a> function. Default is
+<code><a href="https://rdrr.io/r/stats/factanal.html" class="external-link">stats::factanal()</a></code> function. Default is
 <code>c("psych", "factanal")</code>.</p></dd>
 
 
 <dt id="arg-use">use<a class="anchor" aria-label="anchor" href="#arg-use"></a></dt>
-<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor</a></code> if raw data
+<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code> if raw data
 is given as input. Default is "pairwise.complete.obs".</p></dd>
 
 
 <dt id="arg-cor-method">cor_method<a class="anchor" aria-label="anchor" href="#arg-cor-method"></a></dt>
-<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor</a></code>.
+<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>.
 Default is "pearson".</p></dd>
 
 
@@ -349,7 +349,7 @@ calculated (see details).</p></dd>
 <dd><p>A matrix containing, for each performed EFA,
 the setting combination, if an error occurred (logical), the error message
 (character), an integer code for convergence as returned by
-<code><a href="https://rdrr.io/r/stats/optim.html" class="external-link">stats:optim</a></code> (0 indicates successful completion.),
+<code><a href="https://rdrr.io/r/stats/optim.html" class="external-link">stats::optim()</a></code> (0 indicates successful completion.),
 if heywood cases occurred (logical, see details for definition), if the
 solution was admissible (logical, see details for definition), and the fit
 indices.</p></dd>
@@ -366,7 +366,7 @@ correspond to the rownames from the implementations_grid.</p></dd>
     <h2>Details</h2>
     <p>As a first step in this function, a grid is produced containing the setting
 combinations for the to-be-performed EFAs. These settings are then entered as
-arguments to the <code><a href="EFA.html">EFA</a></code> function and the EFAs are run in a second
+arguments to the <code><a href="EFA.html">EFA()</a></code> function and the EFAs are run in a second
 step. After all EFAs are run, the factor solutions are averaged and their
 variability determined in a third step.</p>
 <p>The grid containing the setting combinations is produced based on the entries

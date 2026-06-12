@@ -62,8 +62,8 @@
 <div id="efatools--rewrite--expansion-plan" class="section level1">
 
 <blockquote>
-<p>Status: <strong>planning</strong> (no code changes yet). Prepared from a full review of the current package (v0.7.1.9000) plus a structured best-practice research pass. This document is the single source of truth for the rewrite; it is meant to be edited as decisions are made and phases completed.</p>
-<p>This file is a development artefact, <strong>not</strong> part of the shipped package. Before the first build, add <code>^REWRITE_PLAN\.md$</code> (and a <code>^dev$</code> folder if used) to <code>.Rbuildignore</code> so it does not trigger an <code>R CMD check</code> NOTE.</p>
+<p>Status: <strong>in progress</strong> — Phase 0 complete; Phase 1 partially complete (see the checklists and the unit queue in §5a). Originally prepared from a full review of the package (v0.7.1.9000) plus a structured best-practice research pass; last synced against the code at commit 660ca34 (2026-06). This document is the single source of truth for the rewrite; it is meant to be edited as decisions are made and phases completed.</p>
+<p>This file is a development artefact, <strong>not</strong> part of the shipped package (it is listed in <code>.Rbuildignore</code>).</p>
 </blockquote>
 <hr><div class="section level2">
 <h2 id="id_0-how-to-read-this">0. How to read this<a class="anchor" aria-label="anchor" href="#id_0-how-to-read-this"></a></h2>
@@ -77,10 +77,11 @@
 <li>
 <strong>Section 4</strong> describes the target end-state architecture.</li>
 <li>
-<strong>Section 5</strong> is the phased, step-by-step roadmap (the operational core).</li>
+<strong>Section 5</strong> is the phased, step-by-step roadmap (the strategic map); <strong>§5a</strong> is the operational unit queue for the current release — commit-sized units of work, each with its own definition of done.</li>
 <li>
 <strong>Sections 6–11</strong> are cross-cutting registers: bugs, tests, CI, naming/deprecation, dependencies, risks.</li>
-</ul><p>Throughout, <a href="file:line" class="uri">file:line</a> references point at the <strong>current</strong> code so each task is grounded.</p>
+</ul><p>Throughout, code anchors use <code>file: function()</code> form — function names are greppable and do not rot the way line numbers do.</p>
+<p><strong>Plan maintenance:</strong> when a unit of work lands, tick its box (in §5a and, where it completes a phase bullet, in §5) and record the commit hash in the same step. When a new phase opens, its <strong>first unit</strong> is to expand that phase into a §5a-style unit queue — later phases stay at their current altitude until then.</p>
 <hr></div>
 <div class="section level2">
 <h2 id="id_1-decisions-locked">1. Decisions locked<a class="anchor" aria-label="anchor" href="#id_1-decisions-locked"></a></h2>
@@ -194,6 +195,12 @@
 <td>Analytic bifactor rotation (Jennrich-Bentler) alongside Schmid-Leiman; analytic-SE coverage for promax (which has no GPA Jacobian → bootstrap only).</td>
 <td>Add bi-geomin/bi-quartimin when the GPF engine lands; <strong>promax SEs via bootstrap only</strong>, documented.</td>
 <td>Phase 4/6</td>
+</tr><tr><td>O17</td>
+<td>
+<code>efa_screen</code> MVN-test scope: §5 Phase 7 lists four self-implemented tests (Mardia, Doornik-Hansen, Henze-Zirkler, Royston).</td>
+<td>
+<strong>Trim to Mardia + Henze-Zirkler</strong> for 1.0; defer Doornik-Hansen/Royston to post-1.0 (each is its own validation burden).</td>
+<td>Phase 7</td>
 </tr></tbody></table><hr></div>
 <div class="section level2">
 <h2 id="id_3-guiding-principles">3. Guiding principles<a class="anchor" aria-label="anchor" href="#id_3-guiding-principles"></a></h2>
@@ -228,7 +235,7 @@
 </div>
 <div class="section level3">
 <h3 id="id_44-unified-efa_retention-result-class">4.4 Unified <code>efa_retention</code> result class<a class="anchor" aria-label="anchor" href="#id_44-unified-efa_retention-result-class"></a></h3>
-<p>Every retention criterion returns one shape: <code>list(criterion = c(id, label), n_factors = &lt;named numeric&gt;, results = list(&lt;record&gt;...), settings, status)</code> where each record has <code>{label, n_factors, plot_type ("eigen"|"hull"), x, y, reference?, threshold?, highlight}</code>. Then: - <strong>one</strong> <code>print.efa_retention()</code> iterates records generically (cli); - <strong>two</strong> ggplot helpers (<code>.gg_eigen_plot</code>, <code>.gg_hull_plot</code>) cover all six current plots; - <code>efa_retain()</code> holds a list of these objects and prints/plots via <code>lapply</code>; - a <strong>criterion registry</strong> (<code>id → {fun, control_slice, label, sub_variants}</code>) drives the orchestrator, progress (cli), docs (<code>@family</code>), and the rename — adding a criterion becomes one registry entry.</p>
+<p>Every retention criterion returns one shape: <code>list(criterion = c(id, label), n_factors = &lt;named numeric&gt;, results = list(&lt;record&gt;...), settings, status)</code> where each record has <code>{label, n_factors, plot_type ("eigen"|"hull"), x, y, reference?, threshold?, highlight}</code>. Then: - <strong>one</strong> <code><a href="reference/print.efa_retention.html">print.efa_retention()</a></code> iterates records generically (cli); - <strong>two</strong> ggplot helpers (<code>.gg_eigen_plot</code>, <code>.gg_hull_plot</code>) cover all six current plots; - <code>efa_retain()</code> holds a list of these objects and prints/plots via <code>lapply</code>; - a <strong>criterion registry</strong> (<code>id → {fun, control_slice, label, sub_variants}</code>) drives the orchestrator, progress (cli), docs (<code>@family</code>), and the rename — adding a criterion becomes one registry entry.</p>
 </div>
 <div class="section level3">
 <h3 id="id_45-efa_reliability--coefficients-over-a-normalized-model-spec">4.5 <code>efa_reliability()</code> — coefficients over a normalized model spec<a class="anchor" aria-label="anchor" href="#id_45-efa_reliability--coefficients-over-a-normalized-model-spec"></a></h3>
@@ -263,7 +270,7 @@
 <li>
 <code>format.&lt;class&gt;()</code> via <code><a href="https://cli.r-lib.org/reference/cli_format_method.html" class="external-link">cli::cli_format_method()</a></code> returning a styled character vector; <code>print</code> = <code>cat(format(...), sep="\n")</code>. <code><a href="https://rdrr.io/r/base/format.html" class="external-link">format()</a></code> guaranteed plain (no ANSI) for clean embedding (fix <code>format.EFA</code> returning colored <code>capture.output</code>, Bug-adjacent).</li>
 <li>Colored loading <strong>matrix</strong>: keep the existing pad-then-style renderer (there is no native cli per-cell-threshold table), but pad with <code><a href="https://cli.r-lib.org/reference/ansi_align.html" class="external-link">cli::ansi_align</a></code>/<code>ansi_nchar</code> so width math is correct once cells carry ANSI; generalise the <code>format.LOADINGS</code> engine into one <code>.efa_format_matrix()</code> used for loadings, SL loadings, Phi, variances, COMPARE (kills the <code>\t</code>-misalignment in SLLOADINGS/<code>.get_compare_matrix</code>).</li>
-<li>Trim <code><a href="reference/print.EFA.html">print.EFA()</a></code> (already a <code>compact/standard/full</code> engine) to a <code>standard</code> default; add <code>summary.EFA()</code> returning a <code>summary.EFA</code> object rendered by <code>print.summary.EFA</code> with the full diagnostics/CIs.</li>
+<li>Trim <code><a href="reference/print.EFA.html">print.EFA()</a></code> (already a <code>compact/standard/full</code> engine) to a <code>standard</code> default; add <code><a href="reference/print.EFA.html">summary.EFA()</a></code> returning a <code>summary.EFA</code> object rendered by <code>print.summary.EFA</code> with the full diagnostics/CIs.</li>
 <li>All six base-graphics plots → ggplot2 returning ggplot objects; <code>print</code> no longer auto-plots; <code>viridisLite</code>/<code>graphics</code> dropped.</li>
 </ul></div>
 <div class="section level3">
@@ -277,31 +284,45 @@
 <div class="section level3">
 <h3 id="phase-0--safety-net--infrastructure--080">Phase 0 — Safety net &amp; infrastructure → <code>0.8.0</code>
 <a class="anchor" aria-label="anchor" href="#phase-0--safety-net--infrastructure--080"></a></h3>
-<p><strong>Goal:</strong> a green, modern CI and a regression net, with zero behaviour change. - [ ] Replace <code>.github/workflows/R-CMD-check.yaml</code> with r-lib/actions <strong>v2</strong> (<code>checkout@v4</code>, <code>setup-r@v2</code>, <code>setup-r-dependencies@v2</code>, <code>check-r-package@v2</code>), matrix <code>{ubuntu-latest release/devel/oldrel-1, macos-latest, windows-latest}</code>. Remove the manual depends/cache/sysreq steps and <code>options(crayon.enabled=TRUE)</code>. - [ ] Add <code>test-coverage.yaml</code> (covr + Codecov) and <code>pkgdown.yaml</code> (gh-pages). - [ ] <code>Config/testthat/edition: 3</code> in DESCRIPTION; replace <code>expect_is()</code> → <code>expect_s3_class()</code>/<code>expect_type()</code>; fix 3e fallout. - [ ] Capture <code>expect_snapshot()</code> baselines for <strong>every</strong> <code>print.*</code>/<code>format.*</code> against bundled objects (<code>test_models</code>, <code>GRiPS_raw</code>, …), wrapped in <code>local_reproducible_output()</code> (<code>cli.num_colors=1</code>). - [ ] Convert <code>expect_error</code>/<code>expect_warning</code> literal-string matches → class/snapshot. - [ ] Add <code>tests/testthat/test-regression-*</code> comparing current estimators/rotations to <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa</a></code>, <code><a href="https://rdrr.io/r/stats/factanal.html" class="external-link">stats::factanal</a></code>, <code>GPArotation</code>, with tolerances; gate with <code>skip_if_not_installed</code>/<code>skip_on_cran</code>. <strong>These capture current numbers as the pre-refactor contract.</strong> - [ ] Enable <code>Roxygen: list(markdown = TRUE)</code>; run <code>roxygen2md::roxygen2md()</code>; fix <code>\eqn</code>/<code>\deqn</code> by hand; re-document; verify man-page count and <code>\link</code> targets. - [ ] Add <code>README</code> badges (CRAN, R-CMD-check, Codecov, lifecycle); ORCIDs in <code>Authors@R</code>. - [ ] Add <code>lifecycle</code> to Imports; <code>usethis::use_lifecycle()</code>. - [ ] (O1) Decide R-version floor; if <code>&gt;=4.1</code>, plan the <code>\|&gt;</code> switch.</p>
+<p><strong>Goal:</strong> a green, modern CI and a regression net, with zero behaviour change. - [x] Replace <code>.github/workflows/R-CMD-check.yaml</code> with r-lib/actions <strong>v2</strong> (<code>checkout@v4</code>, <code>setup-r@v2</code>, <code>setup-r-dependencies@v2</code>, <code>check-r-package@v2</code>), matrix <code>{ubuntu-latest release/devel/oldrel-1, macos-latest, windows-latest}</code>. Remove the manual depends/cache/sysreq steps and <code>options(crayon.enabled=TRUE)</code>. - [x] Add <code>test-coverage.yaml</code> (covr + Codecov) and <code>pkgdown.yaml</code> (gh-pages). - [x] <code>Config/testthat/edition: 3</code> in DESCRIPTION; replace <code>expect_is()</code> → <code>expect_s3_class()</code>/<code>expect_type()</code>; fix 3e fallout. - [x] Capture <code>expect_snapshot()</code> baselines for <strong>every</strong> <code>print.*</code>/<code>format.*</code> against bundled objects (<code>test_models</code>, <code>GRiPS_raw</code>, …), wrapped in <code>local_reproducible_output()</code> (<code>cli.num_colors=1</code>). <em>(Gap found in the 2026-06 review: <code>EFA_POOLED</code> print/format was missed and has no tests at all — closed by unit <strong>U1</strong>.)</em> - [x] Add <code>tests/testthat/test-regression-*</code> comparing current estimators/rotations to <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa</a></code>, <code><a href="https://rdrr.io/r/stats/factanal.html" class="external-link">stats::factanal</a></code>, <code>GPArotation</code>, with tolerances; gate with <code>skip_if_not_installed</code>/<code>skip_on_cran</code>. <strong>These capture current numbers as the pre-refactor contract.</strong> - [x] Enable <code>Roxygen: list(markdown = TRUE)</code>; run <code>roxygen2md::roxygen2md()</code>; fix <code>\eqn</code>/<code>\deqn</code> by hand; re-document; verify man-page count and <code>\link</code> targets. - [x] Add <code>README</code> badges (CRAN, R-CMD-check, Codecov, lifecycle); ORCIDs in <code>Authors@R</code>. - [x] Add <code>lifecycle</code> to Imports; <code>usethis::use_lifecycle()</code>. - [x] Switch to R-version <code>&gt;=4.1</code>, plan the <code>\|&gt;</code> switch.</p>
 <p><strong>Exit:</strong> CI green on all platforms; full snapshot + regression suite passing on the <strong>unchanged</strong> code.</p>
 </div>
 <div class="section level3">
 <h3 id="phase-1--internal-refactor-no-behaviour-change--08x">Phase 1 — Internal refactor, <strong>no behaviour change</strong> → <code>0.8.x</code>
 <a class="anchor" aria-label="anchor" href="#phase-1--internal-refactor-no-behaviour-change--08x"></a></h3>
-<p><strong>Goal:</strong> collapse duplication behind the snapshot/regression net; numbers unchanged. - [ ] <code>presets.R</code>: declarative type tables (EFAtools/psych/SPSS) + one <code>.resolve_settings(type, user, preset)</code> emitting a single consolidated <code>cli_warn</code>. Replace the ~25 copy-pasted “type and X specified” blocks in <code>PAF/PROMAX/VARIMAX/ROTATE_OBLQ/ROTATE_ORTH</code>. - [ ] <code>estimate_model()</code> + shared <code>.finalize_fit()</code> (sign/naming/vars/gof/residuals); <code>.PAF/.ML/.ULS</code> become thin fitters. (Engine still R/optim here.) - [ ] <code>rotate_model()</code> + <code>.reflect_and_order()</code>; rotation engine selected by name table. - [ ] <code>.rotation_family()</code> + canonical orth/oblique name vectors; replace the 4 duplicated classifications (EFA, EFA_POOLED, <code>.extract_data</code>, <code>.type_grid</code>). - [ ] <code>.prepare_cor_input()</code> shared by EFA + all retention criteria + KMO/BARTLETT/ FACTOR_SCORES (one PD check + one smoothing + one <code>cli_warn</code>; fix double-smoothing). - [ ] Unified <code>efa_retention</code> class + criterion registry; refit all 9 criteria to the shape; <strong>one</strong> <code>print.efa_retention()</code>; two ggplot helpers; <code>N_FACTORS</code> orchestrator shrinks dramatically. - [ ] <code>new_efa()</code>/<code>validate_efa()</code> (O8); route all producers through it. - [ ] Split <code>helper.R</code> per §4.7; merge duplicate congruence funcs; consolidate number formatters into <code>.efa_num()</code>; delete dead code (commented <code>.error_ml2</code>, cat-based progress bars, trivial <code>.boot_fun</code> wrapper). - [ ] cli migration of messages + the <code>.efa_style()</code> shim + <code>cli_format_method</code> formats; remove <code>crayon</code> from Imports. - [ ] Rewrite <code><a href="reference/print.EFA.html">print.EFA()</a></code> to cli (it is the largest crayon site): trim it to a <code>standard</code> default and add <code>summary.EFA()</code> for the full view. Done here, with the crayon→cli migration, because both touch the same styled output in <code>print.EFA.R</code>; the existing <code>compact/standard/full</code> engine makes this low-risk and <code>summary.EFA</code> is additive. Likewise migrate <code>print.LOADINGS</code>/<code>print.SLLOADINGS</code> and the shared matrix renderer (<code>.efa_format_matrix</code>). - [ ] ggplot2 migration of the six base plots; <code>viridisLite</code>/<code>graphics</code> removed. - [ ] Dependency slimming (drop tidyverse cluster/<code>stringr</code>/<code>progress</code>; O1 base pipe); <code>lavaan</code> → Suggests (gate <code>OMEGA</code>/<code>SL</code> lavaan paths; <code>skip_if_not_installed</code>).</p>
+<p><strong>Goal:</strong> collapse duplication behind the snapshot/regression net; numbers unchanged. - [x] <code>presets.R</code>: declarative type tables (EFAtools/psych/SPSS) + one <code>.resolve_settings(type, user, preset)</code> emitting a single consolidated <code>cli_warn</code>. Replace the ~25 copy-pasted “type and X specified” blocks in <code>PAF/PROMAX/VARIMAX/ROTATE_OBLQ/ROTATE_ORTH</code>. <em>(b0ffa61)</em> - [x] Move messages, warnings, and errors from current base versions to <code>cli_inform</code>, <code>cli_warn</code> and <code>cli_abort</code>. Strip all crayon aspects and use <code>cli</code> conform messaging. <em>(5782836, 34d3d35, 05b5bc3, 9cd73c6 — conditions only; styled printing is units U4–U6.)</em> - [x] <code>estimate_model()</code> + shared <code>.finalize_fit()</code> (sign/naming/vars/gof/residuals); <code>.PAF/.ML/.ULS</code> become thin fitters. (Engine still R/optim here.) <em>(40132f2)</em> - [x] <code>rotate_model()</code> + <code>.reflect_and_order()</code>; rotation engine selected by name table. <em>(7af40bf — also fixed B1 and B9.)</em> - [x] <code>.rotation_family()</code> + canonical orth/oblique name vectors; replace the 4 duplicated classifications (EFA, EFA_POOLED, <code>.extract_data</code>, <code>.type_grid</code>). <em>(e7761e2)</em> - [x] <code>.prepare_cor_input()</code> shared by EFA + all retention criteria + KMO/BARTLETT/ FACTOR_SCORES (one PD check + one smoothing; fix double-smoothing). <em>(b12df62 — note: smoothing still surfaces only <code><a href="https://rdrr.io/pkg/psych/man/cor.smooth.html" class="external-link">psych::cor.smooth</a></code>’s own warning, not a classed <code>cli_warn</code>; tracked as B15 → unit U9a.)</em> - [x] Unified <code>efa_retention</code> class + criterion registry; refit all 9 criteria to the shape; <strong>one</strong> <code><a href="reference/print.efa_retention.html">print.efa_retention()</a></code>; two ggplot helpers; <code>N_FACTORS</code> orchestrator shrinks dramatically. <em>(245967e, 6c3b616, da1c592, 18cd89a, 660ca34 — snapshot + vdiffr coverage in place; B8 and B13 resolved along the way.)</em> - [ ] <code>new_efa()</code>/<code>validate_efa()</code> (O8); route all producers through it. → unit <strong>U7</strong> - [x] Split <code>helper.R</code> per §4.7; merge duplicate congruence funcs; consolidate number formatters into <code>.efa_num()</code>; delete dead code (commented <code>.error_ml2</code>, cat-based progress bars, trivial <code>.boot_fun</code> wrapper). → unit <strong>U3</strong> - [x] cli migration of styled output: the <code>.efa_style()</code> shim + <code>cli_format_method</code> formats; remove <code>crayon</code> from Imports (148 crayon calls across 10 print files remain). → units <strong>U4–U6</strong> - [x] Rewrite <code><a href="reference/print.EFA.html">print.EFA()</a></code> to cli (it is the largest crayon site): trim it to a <code>standard</code> default and add <code><a href="reference/print.EFA.html">summary.EFA()</a></code> for the full view. Done here, with the crayon→cli migration, because both touch the same styled output in <code>print.EFA.R</code>; the existing <code>compact/standard/full</code> engine makes this low-risk and <code>summary.EFA</code> is additive. Likewise migrate <code>print.LOADINGS</code>/<code>print.SLLOADINGS</code> and the shared matrix renderer (<code>.efa_format_matrix</code>). → units <strong>U4, U5</strong> - [x] ggplot2 migration of the six base plots; <code>viridisLite</code>/<code>graphics</code> removed. <em>(Done via the retention-class refactor — no base-graphics calls remain in <code>R/</code>, and neither package is in Imports. Remaining related work: extract the plot from <code>print.COMPARE</code> into a <code>plot.COMPARE</code> ggplot method and fix B11 → unit U6.)</em> - [x] Dependency slimming (drop tidyverse cluster/<code>stringr</code>/<code>progress</code>; O1 base pipe); <code>lavaan</code> → Suggests (gate <code>OMEGA</code>/<code>SL</code> lavaan paths; <code>skip_if_not_installed</code>). → unit <strong>U8</strong></p>
 <p><strong>Validation:</strong> snapshots may change <strong>only</strong> where output formatting intentionally moved to cli/ggplot (review each diff); the <strong>regression</strong> suite (numeric) must stay green. <strong>Exit:</strong> <code>EFA.R</code>, <code>PAF/ML/ULS.R</code>, the rotation files, and <code>N_FACTORS.R</code> substantially smaller; numbers identical to <code>0.8.0</code>.</p>
 </div>
 <div class="section level3">
 <h3 id="phase-2--correctness-fixes-behaviour-changing--08x">Phase 2 — Correctness fixes (behaviour-changing) → <code>0.8.x</code>
 <a class="anchor" aria-label="anchor" href="#phase-2--correctness-fixes-behaviour-changing--08x"></a></h3>
-<p><strong>Goal:</strong> fix the verified bugs (§6), each with a NEWS entry and snapshot update (O6/O7). - [ ] Bugs B1–B14 (see register). Behaviour-changing ones (quartimax, Bartlett χ², ULS objective, ss_factors Phi reorder) get explicit NEWS notes; compatibility presets preserve their documented behaviour where that is the point. - [ ] Add <strong>SRMR, TLI/NNFI, ECVI</strong> to the fit-index module; reconcile the χ² multiplier with lavaan (O7) + parity tests. - [ ] Centralise a Heywood detector in <code>estimate_model()</code> post-processing; surface in <code>settings</code>/<code>summary</code> via <code>cli_warn</code> (consistent across PAF/ML/ULS).</p>
+<p><strong>Goal:</strong> fix the verified bugs (§6), each with a NEWS entry and snapshot update (O6/O7). - [x] Work through the <strong>open</strong> bugs in §6 via their assigned units (see the register’s Status column — several were already fixed by the Phase 1 refactors). Behaviour-changing fixes get explicit NEWS notes; compatibility presets preserve their documented behaviour where that is the point. → units <strong>U9a–U9b</strong> (and the bugs folded into U5/U6/U8 per the register) - [x] Add <strong>SRMR, TLI/NNFI, ECVI</strong> to the fit-index module; reconcile the χ² multiplier with lavaan (O7) + parity tests. → units <strong>U9c/U9d</strong> - [x] Centralise a Heywood detector in <code>estimate_model()</code> post-processing; surface in <code>settings</code>/<code>summary</code> via <code>cli_warn</code> (consistent across PAF/ML/ULS). → unit <strong>U9d</strong></p>
 <p><strong>Exit:</strong> regression suite re-baselined against <code>psych</code>/<code>lavaan</code>/<code>factanal</code> with the corrected conventions; NEWS documents every changed number.</p>
 </div>
 <div class="section level3">
+<h3 id="id_5a--unit-queue-for-the-remainder-of-08x-operational">§5a — Unit queue for the remainder of <code>0.8.x</code> (operational)<a class="anchor" aria-label="anchor" href="#id_5a--unit-queue-for-the-remainder-of-08x-operational"></a></h3>
+<p>One unit = one reviewable, committable change (the per-change workflow). Definition of done for <strong>every</strong> unit: only the listed files change; <code>devtools::test()</code> green; snapshots change only as stated; <strong>numeric results may change only where the unit says so</strong> (and then with a NEWS entry). Tick + commit hash on completion. The order below is dependency order; U1/U2 come first because they extend the safety net the later units rely on.</p>
+<ul class="task-list"><li><label><input type="checkbox" checked><strong>U1 — EFA_POOLED safety net.</strong> <code>EFA_POOLED</code> currently has <strong>no tests at all</strong>: add print/format snapshots + basic structure/pooling unit tests before anything touches it. Files: <code>tests/testthat/</code> only. Numbers: n/a (tests only).</label></li>
+<li><label><input type="checkbox" checked><strong>U2 — Direct unit tests for the new internals.</strong> Boundary-case tests for <code>.estimate_model()</code> / <code>rotate_model()</code> (single factor, <code>k = p</code>, invalid preset combinations) and <code>.prepare_cor_input()</code> (raw vs cormat, <code>N_policy</code>, smoothing path). Files: tests only. Numbers: n/a.</label></li>
+<li><label><input type="checkbox" checked><strong>U3 — Split <code>helper.R</code></strong> per §4.7; merge <code>.factor_congruence</code>/ <code>.tucker_congruence</code>; consolidate the ~6 number formatters into <code>.efa_num()</code>; delete dead code (commented <code>.error_ml2</code>, cat-based progress bars, trivial <code>.boot_fun</code> wrapper). Pure file moves + dedup. Numbers: no; snapshots: no.</label></li>
+<li><label><input type="checkbox" checked><strong>U4 — <code>.efa_format_matrix()</code></strong> + migrate <code>print.LOADINGS</code>/<code>print.SLLOADINGS</code> to cli (pad with <code><a href="https://cli.r-lib.org/reference/ansi_align.html" class="external-link">cli::ansi_align</a></code>/<code>ansi_nchar</code> so width math survives ANSI). Numbers: no; snapshots: formatting diffs only (review each).</label></li>
+<li><label><input type="checkbox" checked><strong>U5 — <code>print.EFA</code> → cli + <code>summary.EFA</code>.</strong> Trim <code>print.EFA</code> to a <code>standard</code> default; add <code>summary.EFA</code>/<code>print.summary.EFA</code>; fix <strong>B16</strong> (<code><a href="https://rdrr.io/r/base/format.html" class="external-link">format()</a></code> returns plain text) and <strong>B17</strong> (<code>residuals.EFA</code> becomes a pure extractor). Numbers: no; snapshots: formatting diffs only.</label></li>
+<li><label><input type="checkbox" checked><strong>U6 — Remaining prints → cli; drop <code>crayon</code>.</strong> OMEGA (incl. <strong>B4</strong>), COMPARE (incl. <strong>B11</strong>; move the plot into a <code>plot.COMPARE</code> ggplot method — <code>print</code> no longer auto-plots), KMO, BARTLETT, SL, EFA_AVERAGE, EFA_POOLED; add the <code>.efa_style()</code> shim; remove <code>crayon</code> from Imports. Numbers: no; snapshots: formatting diffs only.</label></li>
+<li><label><input type="checkbox"><strong>U7 — <code>new_efa()</code>/<code>validate_efa()</code></strong> (O8); route all producers through it. Additive fields only. Numbers: no; snapshots: no. -&gt; <strong>deferred</strong></label></li>
+<li><label><input type="checkbox" checked><strong>U8 — Dependency slimming.</strong> Drop <code>stringr</code>/<code>dplyr</code>/<code>tidyr</code>/<code>tibble</code>/<code>magrittr</code> (base + <code>|&gt;</code>)/<code>progress</code>; <code>lavaan</code> → Suggests (gate the OMEGA/SL lavaan paths; <code>skip_if_not_installed</code>); pin <code>GPArotation (&gt;= 2022.4-1)</code> (<strong>B12</strong>). Numbers: no.</label></li>
+<li><label><input type="checkbox" checked><strong>U9 — Phase 2 behaviour-changing fixes</strong>, one sub-unit per family, each with NEWS + deliberate snapshot updates. Numbers: <strong>yes</strong>, as documented per sub-unit. - [x] <strong>U9a:</strong> <strong>B14</strong> (PARALLEL partition/percentile) + <strong>B15</strong> (classed <code>cli_warn</code> on smoothing in <code>.prepare_cor_input()</code>). - [x] <strong>U9b:</strong> small guards — <strong>B7</strong> (<code><a href="https://rdrr.io/r/base/Logic.html" class="external-link">isTRUE()</a></code> on length&gt;1 in EFA_AVERAGE), <strong>B18</strong> (guard <code>eig_sym</code> in <code>nest_sym.cpp</code>), <strong>B19</strong> (EKC <code>AM2019</code> NA convention). - [x] <strong>U9c:</strong> <strong>B2</strong>/O7 — Bartlett-corrected ML χ², proper residual-based ULS statistic, lavaan parity tests. - [x] <strong>U9d:</strong> SRMR/TLI/ECVI fit indices + centralised Heywood detector in <code>.estimate_model()</code> post-processing.</label></li>
+<li><label><input type="checkbox"><strong>U10 - fix line wrapping in all print methods</strong> e.g., print.KMO or print.BARTLETT wrap badly.</label></li>
+</ul></div>
+<div class="section level3">
 <h3 id="phase-3--c-estimation-engine--090">Phase 3 — C++ estimation engine → <code>0.9.0</code>
 <a class="anchor" aria-label="anchor" href="#phase-3--c-estimation-engine--090"></a></h3>
-<p><strong>Goal:</strong> full estimation in C++; fast, allocation-light bootstrap. - [ ] <code>src/estimate.cpp</code>: single bounded L-BFGS-B loop via <strong><code>roptim</code></strong> (O2/O3), <code>const arma::mat&amp;</code>, fused value+gradient from one eigendecomposition, returns loadings/psi/Fm/iter/convergence/heywood/eigenpairs. Keep box constraints on <code>psi</code> (no log/logit reparam). - [ ] Collapse <code>paf_iter</code> to one loop; return status codes; fix off-by-one (B10). - [ ] Lean bootstrap path (loadings+psi+Fm only; skip naming/vars/gof/residuals/uniroot); compute full fit indices only for the point estimate. - [ ] Batched C++ Procrustes alignment for the bootstrap/MI arrays. - [ ] <code>dqrng</code> per-replicate streams; one <code>seed</code> arg; thread-count-independent results (O13). Threading model: parallelise across replicates, keep linear algebra serial per thread, set BLAS threads to 1 in parallel regions (prefer <code>RcppParallel</code>-style safety; default ≤2 threads in examples/tests). - [ ] Expose <code>minres</code> as an alias of <code>uls</code> (documented identical).</p>
+<p><strong>Goal:</strong> full estimation in C++; fast, allocation-light bootstrap. - [ ] Consider doing <strong>U7</strong> constructor and validators - [ ] <code>src/estimate.cpp</code>: single bounded L-BFGS-B loop via <strong><code>roptim</code></strong> (O2/O3), <code>const arma::mat&amp;</code>, fused value+gradient from one eigendecomposition, returns loadings/psi/Fm/iter/convergence/heywood/eigenpairs. Keep box constraints on <code>psi</code> (no log/logit reparam). - [ ] Collapse <code>paf_iter</code> to one loop; return status codes; fix off-by-one (B10). - [ ] Lean bootstrap path (loadings+psi+Fm only; skip naming/vars/gof/residuals/uniroot); compute full fit indices only for the point estimate. - [ ] Batched C++ Procrustes alignment for the bootstrap/MI arrays. - [ ] <code>dqrng</code> per-replicate streams; one <code>seed</code> arg; thread-count-independent results (O13). Threading model: parallelise across replicates, keep linear algebra serial per thread, set BLAS threads to 1 in parallel regions (prefer <code>RcppParallel</code>-style safety; default ≤2 threads in examples/tests). - [ ] Expose <code>minres</code> as an alias of <code>uls</code> (documented identical). - [ ] Fold the psych-inherited start-value heuristics into the new optimizer entry (the <code>.fit_uls</code> start vector; the exact float-equality SMC fallback in <code>ML.R</code>) — do <strong>not</strong> patch these ad hoc before this phase.</p>
 <p><strong>Validation:</strong> loadings byte-identical to the R-optim path (<code>roptim</code> uses R’s lbfgsb); bootstrap benchmark on <code>DOSPERT_raw</code> shows the target speedup. <strong>Exit:</strong> ML/ULS/PAF run a single R→C++ call per fit; bootstrap is fast.</p>
 </div>
 <div class="section level3">
 <h3 id="phase-4--c-rotation-gpf-engine--09x">Phase 4 — C++ rotation (GPF) engine → <code>0.9.x</code>
 <a class="anchor" aria-label="anchor" href="#phase-4--c-rotation-gpf-engine--09x"></a></h3>
-<p><strong>Goal:</strong> native, fast rotations; reduce/remove the GPArotation dependency. - [ ] <code>src/rotate.cpp</code>: one templated GPForth+GPFoblq engine + criterion functors. Port order: (1) CF family (covers varimax/quartimax/equamax), (2) oblimin/ quartimin, (3) geominQ/T, (4) bentler/bifactor, (5) simplimax, (6) infomax, (7) <strong>target &amp; pst</strong> (new — §4/research gap). - [ ] Reimplement promax on top of C++ varimax; retire the bespoke <code>.VARIMAX_SPSS</code> Jacobi loop + the mismatched <code>.SV</code> monitor (keep an SPSS-compat shim/fixtures if <code>type="SPSS"</code> parity must be exact — O6). - [ ] Report local-minima count across random starts (cheap once C++). - [ ] Keep <code>GPArotation</code> as a <code>Suggests</code> fallback per criterion until 1e-6 parity is proven across random-start/normalization settings (O4); then drop.</p>
+<p><strong>Goal:</strong> native, fast rotations; reduce/remove the GPArotation dependency. - [ ] <code>src/rotate.cpp</code>: one templated GPForth+GPFoblq engine + criterion functors. Port order: (1) CF family (covers varimax/quartimax/equamax), (2) oblimin/ quartimin, (3) geominQ/T, (4) bentler/bifactor, (5) simplimax, (6) infomax, (7) <strong>target &amp; pst</strong> (new — §4/research gap). - [ ] Reimplement promax on top of C++ varimax; retire the bespoke <code>.VARIMAX_SPSS</code> Jacobi loop + the mismatched <code>.SV</code> monitor (keep an SPSS-compat shim/fixtures if <code>type="SPSS"</code> parity must be exact — O6). - [ ] Report local-minima count across random starts (cheap once C++). - [ ] <strong>Reassess the default <code>randomStarts</code> (B12).</strong> The R/GPArotation engine makes 100 random starts — the value local-minima research recommends as sufficient (Hattori, Zhang &amp; Preacher, 2017, <em>Multivariate Behavioral Research</em>, for geomin) — far too slow for a default: a single <code><a href="reference/EFA.html">EFA()</a></code> is fine, but <code>EFA_AVERAGE</code> (grid × starts) and bootstrap-heavy uses become unusably slow (the full test suite went from a few minutes to ~30). So <code><a href="reference/EFA.html">EFA()</a></code>’s default is kept at <strong>10</strong> for now. Once rotation runs in fast C++, re-evaluate whether 100 (or another higher value) is feasible as the default, and whether <code><a href="reference/EFA.html">EFA()</a></code>’s default and <code>.rotate_model()</code>’s internal default (currently 10 vs 100) should be unified at it. - [ ] Replace the <code>R::rnorm</code> element loops in the random-start generators (<code>oblique_procrustes.cpp</code> / the new <code>rotate.cpp</code>) with thread-safe draws (<code>arma::randn</code> or <code>dqrng</code> streams) <strong>before</strong> any OpenMP region touches them. - [ ] Keep <code>GPArotation</code> as a <code>Suggests</code> fallback per criterion until 1e-6 parity is proven across random-start/normalization settings (O4); then drop.</p>
 <p><strong>Validation:</strong> each criterion vs <code>GPArotation</code> to 1e-6 on <code>test_models</code>; Structure = pattern·Phi invariant to reflection/ordering. <strong>Exit:</strong> oblique bootstrap re-rotation runs entirely in C++.</p>
 </div>
 <div class="section level3">
@@ -319,7 +340,7 @@
 <div class="section level3">
 <h3 id="phase-7--new-user-functions--09x--100">Phase 7 — New user functions → <code>0.9.x</code> → <code>1.0.0</code>
 <a class="anchor" aria-label="anchor" href="#phase-7--new-user-functions--09x--100"></a></h3>
-<p><strong>Goal:</strong> reliability expansion + the four new functions, on the now-fast engine. - [ ] <strong><code>efa_reliability</code></strong> per §4.5 (normalized spec + adapters + tidy output + one print). Confirm β/GLB scope (O-note in §4.5). - [ ] <strong><code>efa_scores</code></strong>: implement regression / Bartlett / Anderson-Rubin / ten Berge weights natively in Armadillo (drop the <code><a href="https://rdrr.io/pkg/psych/man/factor.scores.html" class="external-link">psych::factor.scores</a></code> pass-through); report <strong>determinacy</strong> coefficients; add a real print/summary. - [ ] <strong><code>efa_group</code></strong>: per-group <code>efa_fit</code> → consensus/target alignment (shared alignment module with <code>efa_mi</code>) → Tucker φ with bootstrap CIs → pairwise COMPARE-style diffs (refactor <code>COMPARE</code> core into a printless <code>.compare_loadings</code>) → per-item loading-difference flags → optional approximate-invariance summary. Defaults O15. De Roover MGFR (<code>rotation="multigroup"</code>) and a lavaan-ESEM bridge are <strong>post-1.0</strong> stretch. - [ ] <strong><code>efa_screen</code></strong>: KMO (overall+item, reuse <code>.compute_kmo</code>), Bartlett, determinant/ condition number, per-item SMC/variance/%missing, multivariate normality (Mardia/Doornik-Hansen/Henze-Zirkler/Royston — self-implement), robust-Mahalanobis outliers (<code>robustbase::covMcd</code>), sparse/empty-category flags; actionable verdicts (“non-normal → use ML-robust or polychoric”); one cli print. - [ ] <strong><code>efa_simulate</code></strong>: <code>simulate_cfm()</code> kernel (input <code>(Lambda,Phi,Psi)</code> or population R); marginals <code>normal</code>/<code>VM</code>(Fleishman)/<code>IG</code>/<code>empirical</code>(Ruscio-Kaczetow); thresholding for ordinal (+ optional <code>match="polychoric"</code>); missingness MCAR/MAR/ MNAR; model error <code>none/CB/TKL/WB</code> returning achieved RMSEA/CFI (O14). Refactor <code>CD</code>/<code>PARALLEL</code>/<code>NEST</code> to call the shared kernel. Return raw data as plain matrix/df; allow returning only the population model. - [ ] <strong><code>efa_power</code></strong>: <code>mode="rmsea"</code> (closed-form non-central-χ² close/not-close fit + required-N, MacCallum-Browne-Sugawara; verify vs <code>semTools</code>) and <code>mode="simulation"</code> (retention hit-rate + structure recovery via congruence, reusing <code>efa_simulate</code> + the C++ engine, parallel + reproducible).</p>
+<p><strong>Goal:</strong> reliability expansion + the four new functions, on the now-fast engine. - [ ] <strong><code>efa_reliability</code></strong> per §4.5 (normalized spec + adapters + tidy output + one print). Confirm β/GLB scope (O-note in §4.5). - [ ] <strong><code>efa_scores</code></strong>: implement regression / Bartlett / Anderson-Rubin / ten Berge weights natively in Armadillo (drop the <code><a href="https://rdrr.io/pkg/psych/man/factor.scores.html" class="external-link">psych::factor.scores</a></code> pass-through); report <strong>determinacy</strong> coefficients; add a real print/summary. - [ ] <strong><code>efa_group</code></strong>: per-group <code>efa_fit</code> → consensus/target alignment (shared alignment module with <code>efa_mi</code>) → Tucker φ with bootstrap CIs → pairwise COMPARE-style diffs (refactor <code>COMPARE</code> core into a printless <code>.compare_loadings</code>) → per-item loading-difference flags → optional approximate-invariance summary. Defaults O15. De Roover MGFR (<code>rotation="multigroup"</code>) and a lavaan-ESEM bridge are <strong>post-1.0</strong> stretch. - [ ] <strong><code>efa_screen</code></strong>: KMO (overall+item, reuse <code>.compute_kmo</code>), Bartlett, determinant/ condition number, per-item SMC/variance/%missing, multivariate normality (self-implement; scope per <strong>O17</strong> — recommended: Mardia + Henze-Zirkler for 1.0, Doornik-Hansen/Royston post-1.0), robust-Mahalanobis outliers (<code>robustbase::covMcd</code>), sparse/empty-category flags; actionable verdicts (“non-normal → use ML-robust or polychoric”); one cli print. - [ ] <strong><code>efa_simulate</code></strong>: <code>simulate_cfm()</code> kernel (input <code>(Lambda,Phi,Psi)</code> or population R); marginals <code>normal</code>/<code>VM</code>(Fleishman)/<code>IG</code>/<code>empirical</code>(Ruscio-Kaczetow); thresholding for ordinal (+ optional <code>match="polychoric"</code>); missingness MCAR/MAR/ MNAR; model error <code>none/CB/TKL/WB</code> returning achieved RMSEA/CFI (O14). Refactor <code>CD</code>/<code>PARALLEL</code>/<code>NEST</code> to call the shared kernel. Return raw data as plain matrix/df; allow returning only the population model. - [ ] <strong><code>efa_power</code></strong>: <code>mode="rmsea"</code> (closed-form non-central-χ² close/not-close fit + required-N, MacCallum-Browne-Sugawara; verify vs <code>semTools</code>) and <code>mode="simulation"</code> (retention hit-rate + structure recovery via congruence, reusing <code>efa_simulate</code> + the C++ engine, parallel + reproducible).</p>
 <p><strong>Validation:</strong> each new function gets unit tests, snapshot prints, and (where an oracle exists) cross-checks (<code>semTools</code>, <code>fungible</code>/<code>noisemaker</code>, <code><a href="https://rdrr.io/pkg/psych/man/factor.scores.html" class="external-link">psych::factor.scores</a></code>, <code>lavaan</code> multigroup). <strong>Exit:</strong> all four feature areas implemented and validated under their current (UPPERCASE-free internally) names.</p>
 </div>
 <div class="section level3">
@@ -343,124 +364,165 @@
 </div>
 <div class="section level2">
 <h2 id="id_6-bug-fix-register">6. Bug-fix register<a class="anchor" aria-label="anchor" href="#id_6-bug-fix-register"></a></h2>
-<table class="table"><colgroup><col width="9%"><col width="23%"><col width="11%"><col width="23%"><col width="30%"></colgroup><thead><tr><th>ID</th>
+<p>Status legend: <strong>open</strong> (assigned to a unit/phase), <strong>fixed</strong> (commit), <strong>superseded</strong> (the buggy code no longer exists), <strong>mitigated</strong> (workaround in place, real fix scheduled).</p>
+<table class="table"><colgroup><col width="8%"><col width="20%"><col width="10%"><col width="16%"><col width="16%"><col width="27%"></colgroup><thead><tr><th>ID</th>
 <th>Severity</th>
 <th>Bug</th>
-<th>Location</th>
-<th>Fix / phase</th>
+<th>Anchor</th>
+<th>Status</th>
+<th>Fix → where</th>
 </tr></thead><tbody><tr><td>B1</td>
 <td>high</td>
 <td>
-<code>quartimax</code> calls <code><a href="https://rdrr.io/pkg/GPArotation/man/rotations.html" class="external-link">GPArotation::bentlerT</a></code>
+<code>quartimax</code> called <code><a href="https://rdrr.io/pkg/GPArotation/man/rotations.html" class="external-link">GPArotation::bentlerT</a></code>
 </td>
-<td><code>R/ROTATE_ORTH.R:85-87</code></td>
-<td>Route by name table; add numeric test. <strong>Ph2</strong> (behaviour change).</td>
+<td>was <code>R/ROTATE_ORTH.R</code> (deleted)</td>
+<td>
+<strong>fixed</strong> (7af40bf)</td>
+<td>Engine-by-name table in <code>rotate_model.R</code>; covered by <code>test-regression-rotations.R</code>.</td>
 </tr><tr><td>B2</td>
 <td>high</td>
 <td>ML/ULS χ² omits Bartlett correction; ULS χ² uses LS residual SS as if Wishart</td>
-<td><code>R/helper.R:554</code></td>
-<td>Bartlett-corrected ML; proper residual-based ULS statistic. <strong>Ph2/6</strong> (O7).</td>
+<td><code>R/helper.R: .gof()</code></td>
+<td><strong>open</strong></td>
+<td>Bartlett-corrected ML; proper residual-based ULS statistic. → <strong>U9c</strong> (O7; SE side in Ph6).</td>
 </tr><tr><td>B3</td>
 <td>med</td>
-<td>ULS objective includes diagonal (<code>trimatl</code>) &amp; differs from reported <code>Fm</code>; grad/obj eigenvalue floors inconsistent</td>
-<td><code>src/uls_helper.cpp:61-79</code></td>
-<td>Strictly off-diagonal; one shared floor. <strong>Ph3</strong> (also fixes minres parity).</td>
+<td>ULS objective sums lower triangle incl. diagonal (<code>trimatl</code>) &amp; differs from reported <code>Fm</code>; obj/grad eigenvalue floors inconsistent (<code>0</code> vs <code>eps*100</code>). <em>(The earlier “two eigendecompositions” claim is outdated — one each now, but <code>R</code> is still passed by value.)</em>
+</td>
+<td>
+<code>src/uls_helper.cpp: uls_residuals()</code> / <code>grad_uls()</code>
+</td>
+<td><strong>open</strong></td>
+<td>Strictly off-diagonal; one shared floor; <code>const&amp;</code>. → <strong>Ph3</strong> (also fixes minres parity).</td>
 </tr><tr><td>B4</td>
 <td>high</td>
 <td>
 <code>print.OMEGA</code> <code>ncol(x[[1]] == 3)</code> paren typo</td>
-<td><code>R/print.OMEGA.R:60</code></td>
-<td>Subsumed by tidy <code>efa_reliability</code> output. <strong>Ph1/7</strong>.</td>
+<td><code>R/print.OMEGA.R: print.OMEGA()</code></td>
+<td><strong>open</strong></td>
+<td>Fixed by the cli rewrite of the OMEGA print. → <strong>U6</strong> (long term: tidy <code>efa_reliability</code>, Ph7).</td>
 </tr><tr><td>B5a</td>
 <td>med</td>
 <td>H index unguarded <code>1/(1-L²)</code> → Inf/NaN on Heywood</td>
-<td><code>R/OMEGA_helper.R:181,…</code></td>
-<td>Guard in <code>.reliability_core</code>. <strong>Ph7</strong> (snapshot now).</td>
+<td><code>R/OMEGA_helper.R</code></td>
+<td><strong>open</strong></td>
+<td>Guard in <code>.reliability_core</code>. → <strong>Ph7</strong> (snapshot now).</td>
 </tr><tr><td>B5b</td>
 <td>high</td>
 <td>Two divergent ω_total formulas (<code>.OMEGA_FLEX</code> vs <code>.OMEGA_LAVAAN</code>)</td>
-<td><code>R/OMEGA_helper.R:130/397</code></td>
-<td>One core. <strong>Ph7</strong>.</td>
+<td><code>R/OMEGA_helper.R</code></td>
+<td><strong>open</strong></td>
+<td>One core. → <strong>Ph7</strong>.</td>
 </tr><tr><td>B6</td>
 <td>med</td>
 <td>
 <code>factor_corres</code> dimension check is a no-op (<code><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow()</a></code> of a vector)</td>
-<td><code>R/OMEGA_helper.R:70</code></td>
+<td><code>R/OMEGA_helper.R</code></td>
+<td><strong>open</strong></td>
 <td>
-<code>length(g_load)</code>/<code>nrow(s_load)</code>. <strong>Ph1/7</strong>.</td>
+<code>length(g_load)</code>/<code>nrow(s_load)</code>. → <strong>Ph7</strong>.</td>
 </tr><tr><td>B7</td>
 <td>high</td>
 <td>
-<code>temp_corres</code> undefined/stale on Heywood; <code><a href="https://rdrr.io/r/base/Logic.html" class="external-link">isTRUE()</a></code> on length&gt;1 vectors</td>
-<td>
-<code>R/helper.R:797</code>; <code>R/EFA_AVERAGE.R:626</code>
+<code><a href="https://rdrr.io/r/base/Logic.html" class="external-link">isTRUE()</a></code> on length&gt;1 vectors in the error-aggregation condition. <em>(The <code>temp_corres</code> half of the original report appears addressed in <code>helper.R</code> — re-verify when picked up.)</em>
 </td>
-<td>Guard; elementwise NA-safe. <strong>Ph1</strong>.</td>
+<td>
+<code>R/EFA_AVERAGE.R</code> (error aggregation, ~<code>:606</code>)</td>
+<td><strong>open</strong></td>
+<td>Elementwise NA-safe condition. → <strong>U9b</strong>.</td>
 </tr><tr><td>B8</td>
 <td>med</td>
 <td>
-<code>print.N_FACTORS</code> reads <code>x$output$…</code> (field is <code>x$outputs</code>) → Bartlett print + scree silently no-op</td>
-<td><code>R/print.N_FACTORS.R:36,249</code></td>
-<td>Subsumed by <code>print.efa_retention</code>. <strong>Ph1</strong>.</td>
+<code>print.N_FACTORS</code> read <code>x$output$…</code> (field is <code>x$outputs</code>) → Bartlett print + scree silently no-op</td>
+<td>was <code>R/print.N_FACTORS.R</code> (deleted)</td>
+<td>
+<strong>fixed</strong> (660ca34)</td>
+<td>Unified <code>format.N_FACTORS</code> reads <code>x$outputs</code>.</td>
 </tr><tr><td>B9</td>
 <td>med</td>
-<td>Oblique <code>ss_factors</code> branch doesn’t reorder Phi</td>
-<td><code>R/ROTATE_OBLQ.R:130-142</code></td>
+<td>Oblique reflection/reorder didn’t propagate to Phi/structure/rotmat (<code>ss_factors</code> worst)</td>
+<td>was <code>R/ROTATE_OBLQ.R</code> (deleted)</td>
 <td>
-<code>.reflect_and_order</code> reorders Phi consistently + invariance test. <strong>Ph1</strong>.</td>
+<strong>fixed</strong> (7af40bf; NEWS entry)</td>
+<td>
+<code>.reflect_and_order()</code> in <code>rotate_model.R</code> + invariance test.</td>
 </tr><tr><td>B10</td>
 <td>med</td>
-<td>PAF <code><a href="https://rdrr.io/r/base/stop.html" class="external-link">stop()</a></code> on neg-eigenvalues aborts whole bootstrap; max-iter off-by-one convergence flag</td>
+<td>PAF <code><a href="https://rdrr.io/r/base/stop.html" class="external-link">stop()</a></code> on neg-eigenvalues aborted whole bootstrap; max-iter off-by-one convergence flag</td>
 <td><code>src/paf_iter.cpp</code></td>
-<td>Status codes; track convergence by Δ at exit. <strong>Ph3</strong> (interim tryCatch <strong>Ph0</strong>).</td>
+<td>
+<strong>mitigated</strong> (77da514: replicates tryCatch-guarded in <code>.boot_fun</code>)</td>
+<td>C++ still <code><a href="https://rdrr.io/r/base/stop.html" class="external-link">stop()</a></code>s; status codes + off-by-one fix land with the engine rewrite. → <strong>Ph3</strong>.</td>
 </tr><tr><td>B11</td>
 <td>med</td>
 <td>
-<code>print.COMPARE</code> <code>aes_string()</code> + <code>size=</code> (deprecated)</td>
-<td><code>R/print.COMPARE.R:121-138</code></td>
+<code>print.COMPARE</code> <code>aes_string()</code> + <code>size=</code> (deprecated); plot drawn inside <code>print</code>
+</td>
+<td><code>R/print.COMPARE.R: print.COMPARE()</code></td>
+<td><strong>open</strong></td>
 <td>
-<code>aes(.data$…)</code> + <code>linewidth</code>; move to <code>plot.efa_compare</code>. <strong>Ph1</strong>.</td>
+<code>aes(.data$…)</code> + <code>linewidth</code>; move into a <code>plot.COMPARE</code> method. → <strong>U6</strong>.</td>
 </tr><tr><td>B12</td>
 <td>med</td>
 <td>
 <code>GPArotation</code> <code>randomStarts</code> used with no min-version floor</td>
-<td>
-<code>DESCRIPTION</code>; <code>ROTATE_*</code>
-</td>
-<td>Pin <code>GPArotation (&gt;= 2022.4-1)</code> while it remains a dep; reconcile <code>randomStarts</code> defaults (10 vs 100). <strong>Ph0/1</strong>.</td>
+<td><code>DESCRIPTION</code></td>
+<td><strong>open</strong></td>
+<td>Pin <code>GPArotation (&gt;= 2022.4-1)</code> (U8c). <code>randomStarts</code> default kept at <strong>10</strong> — raising <code><a href="reference/EFA.html">EFA()</a></code> to the research-recommended 100 is too slow under the R engine; revisit (and unify the 10-vs-100 <code><a href="reference/EFA.html">EFA()</a></code>/<code>.rotate_model()</code> defaults) once rotation is fast in C++. → <strong>U8c + Phase 4</strong>.</td>
 </tr><tr><td>B13</td>
 <td>low</td>
 <td>NEST <code>prob</code> comparator <code>&lt;</code> vs decision <code>&lt;=</code> mismatch (+ docstring)</td>
-<td><code>R/NEST.R:163-164</code></td>
-<td>One convention + boundary test. <strong>Ph1/2</strong>.</td>
+<td>was the old <code>R/NEST.R</code> (rewritten)</td>
+<td>
+<strong>superseded</strong> (6c3b616)</td>
+<td>Refactored NEST uses one quantile-reference rule (<code>stats::quantile(…, 1 - alpha)</code> then <code>&lt;=</code>), documented in the help page.</td>
 </tr><tr><td>B14</td>
 <td>low</td>
-<td>PARALLEL <code>size_vec</code> partition can go negative; percentile off-by-one vs <code><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">stats::quantile</a></code>
+<td>PARALLEL <code>size_vec</code> partition can go negative (verified: 11 datasets / 7 workers → chunk of −1); percentile off-by-one vs <code><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">stats::quantile</a></code>
 </td>
-<td><code>R/PARALLEL.R:148-150,459</code></td>
-<td>Exact integer partition; standardise on <code><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">stats::quantile</a></code> (matches <code><a href="https://rdrr.io/pkg/psych/man/fa.parallel.html" class="external-link">psych::fa.parallel</a></code>). <strong>Ph1</strong>.</td>
+<td>
+<code>R/PARALLEL.R</code> (chunking; percentile)</td>
+<td><strong>open</strong></td>
+<td>Exact integer partition; standardise on <code><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">stats::quantile</a></code> (matches <code><a href="https://rdrr.io/pkg/psych/man/fa.parallel.html" class="external-link">psych::fa.parallel</a></code>). → <strong>U9a</strong>.</td>
 </tr><tr><td>B15</td>
 <td>low</td>
-<td>KMO/BARTLETT silently smooth non-PD matrices (changes reported statistic)</td>
+<td>Non-PD smoothing not surfaced as a classed condition — relies on <code><a href="https://rdrr.io/pkg/psych/man/cor.smooth.html" class="external-link">psych::cor.smooth</a></code>’s own warning</td>
+<td><code>R/helper.R: .prepare_cor_input()</code></td>
 <td>
-<code>R/KMO.R:93</code>; <code>R/BARTLETT.R:105</code>
-</td>
-<td>
-<code>cli_warn</code> on smoothing; PD/smooth before invert/det. <strong>Ph1/2</strong>.</td>
+<strong>half-done</strong> (b12df62 centralised the PD check + smoothing)</td>
+<td>Add a classed <code>cli_warn</code> on smoothing. → <strong>U9a</strong>.</td>
 </tr><tr><td>B16</td>
 <td>low</td>
 <td>
 <code>format.EFA</code> returns ANSI-laden <code>capture.output</code>
 </td>
-<td><code>R/print.EFA.R:207</code></td>
+<td><code>R/print.EFA.R: format.EFA()</code></td>
+<td><strong>open</strong></td>
 <td>
-<code><a href="https://rdrr.io/r/base/format.html" class="external-link">format()</a></code> = plain; <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> = styled. <strong>Ph1</strong>.</td>
+<code><a href="https://rdrr.io/r/base/format.html" class="external-link">format()</a></code> = plain; <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> = styled. → <strong>U5</strong>.</td>
 </tr><tr><td>B17</td>
 <td>low</td>
 <td>
 <code>residuals.EFA</code> names a logical arg <code>print</code> and prints as a side effect</td>
-<td><code>R/residuals.EFA.R:11-40</code></td>
-<td>Pure extractor with <code>type=</code>; formatting in <code>summary.EFA</code>. <strong>Ph1</strong>.</td>
+<td><code>R/residuals.EFA.R</code></td>
+<td><strong>open</strong></td>
+<td>Pure extractor with <code>type=</code>; formatting in <code>summary.EFA</code>. → <strong>U5</strong>.</td>
+</tr><tr><td>B18</td>
+<td>med</td>
+<td>
+<code>arma::eig_sym</code> called unguarded — the only C++ entry point without the checked-eigen pattern added in 77da514; a degenerate replicate matrix is undefined behaviour, not a caught error</td>
+<td>
+<code>src/nest_sym.cpp</code> (<code>eig_sym</code> call)</td>
+<td><strong>open</strong></td>
+<td>Apply the same guarded-eigen pattern as the other C++ helpers. → <strong>U9b</strong>.</td>
+</tr><tr><td>B19</td>
+<td>low</td>
+<td>EKC <code>AM2019</code>: <code>which(lambda &lt;= refs)[1] - 1</code> yields <code>NA</code> when no eigenvalue crosses the reference; <code>NA</code> flows into <code>N_FACTORS</code> aggregation (downstream highlight guard anticipates it)</td>
+<td>
+<code>R/EKC.R</code> (<code>AM2019</code> branch)</td>
+<td><strong>open</strong></td>
+<td>Decide the convention (<code>NA</code> vs <code>J</code>) + guard + boundary test. → <strong>U9b</strong>.</td>
 </tr></tbody></table><hr></div>
 <div class="section level2">
 <h2 id="id_7-testing-strategy">7. Testing strategy<a class="anchor" aria-label="anchor" href="#id_7-testing-strategy"></a></h2>
@@ -475,6 +537,8 @@
 <li>
 <strong>Determinism/PD test</strong> on bootstrap polychoric replicates.</li>
 <li>Edge cases: Heywood/ultra-Heywood, non-PD inputs, empty/sparse cells, single factor, underidentified/just-identified models, named non-PD cormat (B-list).</li>
+<li>
+<strong>Known gaps to close first</strong> (→ units U1/U2): <code>EFA_POOLED</code> has <strong>no tests at all</strong> (no unit tests, no print/format snapshots — the Phase 0 “every print/format” baseline missed it); <code>.estimate_model()</code>, <code>rotate_model()</code> and <code>.prepare_cor_input()</code> are exercised only indirectly through <code><a href="reference/EFA.html">EFA()</a></code>.</li>
 </ul><hr></div>
 <div class="section level2">
 <h2 id="id_8-cicd">8. CI/CD<a class="anchor" aria-label="anchor" href="#id_8-cicd"></a></h2>
@@ -635,16 +699,17 @@
 </ol><hr></div>
 <div class="section level2">
 <h2 id="id_12-appendix--key-current-code-anchors">12. Appendix — key current-code anchors<a class="anchor" aria-label="anchor" href="#id_12-appendix--key-current-code-anchors"></a></h2>
-<ul><li>Orchestration &amp; bootstrap: <code>R/EFA.R</code> (dispatch <code>:426-553</code>; output assembly <code>:555-598</code>; <code>.boot_*</code> <code>:620-827</code>).</li>
-<li>Estimators: <code>R/PAF.R</code>, <code>R/ML.R</code> (<code>.fit_ml</code> <code>:82</code>, <code>.FAout</code> <code>:129</code>), <code>R/ULS.R</code>; C++ <code>src/paf_iter.cpp</code> (8× loop), <code>src/ml_helper.cpp</code>, <code>src/uls_helper.cpp</code> (by-value <code>R</code>, dual eigendecomp).</li>
-<li>Rotations: <code>R/VARIMAX.R</code>/<code>PROMAX.R</code>/<code>ROTATE_ORTH.R</code>/<code>ROTATE_OBLQ.R</code>; <code>src/oblique_procrustes.cpp</code> (GPF scaffolding), <code>src/factor_corres.cpp</code>.</li>
-<li>Retention: <code>R/N_FACTORS.R</code> + 9 criteria + <code>src/parallel.cpp</code>/<code>nest_sym.cpp</code> (single-threaded; dead commented blocks).</li>
-<li>Fit indices: <code>R/helper.R:.gof</code> (<code>:520-638</code>), <code>.rmsr</code>, <code>.compute_caf</code>.</li>
+<ul><li>Orchestration &amp; bootstrap: <code>R/EFA.R</code> (method/rotation dispatch now via <code>.estimate_model()</code> / <code>rotate_model()</code>; output assembly; <code>.boot_*</code> helpers — boot replicates tryCatch-guarded since 77da514).</li>
+<li>Estimators: <code>R/estimate_model.R</code> (dispatcher + <code>.finalize_fit()</code>); thin fitters in <code>R/PAF.R</code>, <code>R/ML.R</code> (<code>.fit_ml()</code>, <code>.FAout()</code>), <code>R/ULS.R</code> (<code>.fit_uls()</code>, <code>.FAout_wls()</code>); C++ <code>src/paf_iter.cpp</code> (8× near-duplicate loop), <code>src/ml_helper.cpp</code>, <code>src/uls_helper.cpp</code> (by-value <code>R</code>; one eigendecomposition each in objective and gradient, but inconsistent floors + trimatl asymmetry — B3).</li>
+<li>Rotations: <code>R/rotate_model.R</code> (engine-by-name tables + <code>.reflect_and_order()</code>), <code>R/VARIMAX.R</code>, <code>R/PROMAX.R</code>; <code>src/oblique_procrustes.cpp</code> (GPF scaffolding), <code>src/factor_corres.cpp</code>. (<code>ROTATE_ORTH.R</code>/<code>ROTATE_OBLQ.R</code> deleted in 7af40bf.)</li>
+<li>Retention: <code>R/efa_retention.R</code> (class, criterion registry, <code>print.efa_retention</code>, <code>.gg_eigen_plot()</code>/<code>.gg_hull_plot()</code>) + <code>R/N_FACTORS.R</code> (registry-driven orchestrator) + the 9 criterion files + <code>src/parallel.cpp</code>/<code>nest_sym.cpp</code> (single-threaded; dead commented blocks in <code>parallel.cpp</code>; unguarded <code>eig_sym</code> in <code>nest_sym.cpp</code> — B18).</li>
+<li>Fit indices: <code>R/helper.R: .gof()</code>, <code>.rmsr()</code>, <code>.compute_caf()</code>.</li>
+<li>Input preparation: <code>R/helper.R: .prepare_cor_input()</code> (shared PD check + smoothing).</li>
 <li>Post-EFA: <code>R/OMEGA.R</code>/<code>OMEGA_helper.R</code> (two ω paths), <code>R/SL.R</code>, <code>R/FACTOR_SCORES.R</code> (psych pass-through), <code>R/COMPARE.R</code>, <code>R/KMO.R</code>, <code>R/BARTLETT.R</code>.</li>
-<li>Printing: <code>R/print.EFA.R</code> (factored <code>compact/standard/full</code> engine — easy <code>summary.EFA</code> split), <code>R/print.LOADINGS.R</code> (best table engine — generalise), the ~10 retention prints (collapse), <code>R/print.N_FACTORS.R</code>.</li>
+<li>Printing: <code>R/print.EFA.R</code> (factored <code>compact/standard/full</code> engine — easy <code>summary.EFA</code> split), <code>R/print.LOADINGS.R</code> (best table engine — generalise). The retention prints are already collapsed into <code>print.efa_retention</code>.</li>
 <li>
-<code>helper.R</code> (2111 lines, ~50 funcs) — split per §4.7.</li>
-</ul><hr><p><em>End of plan. Edit Section 2 as decisions are confirmed; check off Section 5 as phases complete.</em></p>
+<code>helper.R</code> (~2,230 lines, ~50 funcs) — split per §4.7 (unit U3).</li>
+</ul><hr><p><em>End of plan. Edit Section 2 as decisions are confirmed; tick §5/§5a items (with commit hashes) as units land; update the §6 Status column when a bug is fixed or superseded.</em></p>
 </div>
 </div>
 

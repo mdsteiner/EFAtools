@@ -82,12 +82,17 @@
 <dd><p>not used.</p></dd>
 
 </dl></div>
+    <div id="value">
+    <h2>Value</h2>
+    <p>A ggplot object showing, for each indicator and factor, the minimum,
+maximum, and average (mean or median) loading across the averaged solutions.</p>
+    </div>
 
     <div id="ref-examples">
     <h2>Examples</h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="va">EFA_aver</span> <span class="op">&lt;-</span> <span class="fu"><a href="EFA_AVERAGE.html">EFA_AVERAGE</a></span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, N <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">EFA_aver</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">EFA_aver</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

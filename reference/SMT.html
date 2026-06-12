@@ -128,50 +128,31 @@ correlation matrix is used.</p></dd>
 
 
 <dt id="arg-use">use<a class="anchor" aria-label="anchor" href="#arg-use"></a></dt>
-<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor</a></code> if raw
+<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code> if raw
 data is given as input. Default is "pairwise.complete.obs".</p></dd>
 
 
 <dt id="arg-cor-method">cor_method<a class="anchor" aria-label="anchor" href="#arg-cor-method"></a></dt>
-<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor</a></code>.
+<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>.
 Default is "pearson".</p></dd>
 
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A list of class SMT containing</p>
-<dl><dt>nfac_chi</dt>
-<dd><p>The number of factors to retain according to the significance
-of the chi square value.</p></dd>
+    <p>An object of class <code>efa_retention</code> (see <code><a href="print.efa_retention.html">print.efa_retention()</a></code> for
+the print method). Its main fields are:</p>
+<dl><dt>n_factors</dt>
+<dd><p>A named numeric vector (<code>"chi"</code>, <code>"RMSEA"</code>, <code>"AIC"</code>) with the
+suggested number of factors from the sequential chi-square model tests, the
+RMSEA lower bound, and the AIC.</p></dd>
 
-<dt>nfac_RMSEA</dt>
-<dd><p>The number of factors to retain according to the RMSEA lower
-bound</p></dd>
+<dt>results</dt>
+<dd><p>A list with one record per criterion, each holding the criterion
+values for the null model (zero factors) through the maximum number of
+factors.</p></dd>
 
-<dt>nfac_AIC</dt>
-<dd><p>The number of factors to retain according to the AIC</p></dd>
-
-<dt>p_null</dt>
-<dd><p>The p-value for the null model (zero factors)</p></dd>
-
-<dt>ps_chi</dt>
-<dd><p>The p-values for EFA models with increasing numbers of factors,
-starting with 1 factor</p></dd>
-
-<dt>RMSEA_LB_null</dt>
-<dd><p>The lower bounds of the 90% confidence interval for the RMSEA
-for the null model (zero factors).</p></dd>
-
-<dt>RMSEA_LBs</dt>
-<dd><p>The lower bounds of the 90% confidence interval for the RMSEA
-for EFA models with increasing numbers of factors, starting with 1 factor</p></dd>
-
-<dt>AIC_null</dt>
-<dd><p>The AICs for the null model (zero factors)</p></dd>
-
-<dt>AICs</dt>
-<dd><p>The AICs for EFA models with increasing numbers of factors,
-starting with 1 factor</p></dd>
+<dt>settings</dt>
+<dd><p>A list of the settings used.</p></dd>
 
 </dl></div>
     <div id="details">
@@ -198,13 +179,13 @@ Moshagen, 2019). The RMSEA lower bound also performed well at determining the tr
 number of factors, while the AIC performed well at determining the
 most generalizable model (Preacher, Zhang, Kim, &amp; Mels, 2013).</p>
 <p>The <code>SMT</code> function can also be called together with other factor
-retention criteria in the <code><a href="N_FACTORS.html">N_FACTORS</a></code> function.</p>
+retention criteria in the <code><a href="N_FACTORS.html">N_FACTORS()</a></code> function.</p>
     </div>
     <div id="see-also">
     <h2>See also</h2>
-    <div class="dont-index"><p>Other factor retention criteria: <code><a href="CD.html">CD</a></code>, <code><a href="EKC.html">EKC</a></code>,
-<code><a href="HULL.html">HULL</a></code>, <code><a href="KGC.html">KGC</a></code>, <code><a href="PARALLEL.html">PARALLEL</a></code></p>
-<p><code><a href="N_FACTORS.html">N_FACTORS</a></code> as a wrapper function for this and all the
+    <div class="dont-index"><p>Other factor retention criteria: <code><a href="CD.html">CD()</a></code>, <code><a href="EKC.html">EKC()</a></code>,
+<code><a href="HULL.html">HULL()</a></code>, <code><a href="KGC.html">KGC()</a></code>, <code><a href="PARALLEL.html">PARALLEL()</a></code></p>
+<p><code><a href="N_FACTORS.html">N_FACTORS()</a></code> as a wrapper function for this and all the
 above-mentioned factor retention criteria.</p></div>
     </div>
 
@@ -212,13 +193,11 @@ above-mentioned factor retention criteria.</p></div>
     <h2>Examples</h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">SMT_base</span> <span class="op">&lt;-</span> <span class="fu">SMT</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">SMT_base</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Sequential model tests ──────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Sequential 𝜒² Model Tests suggest <span style="font-weight: bold;">3</span> factors.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Lower bound of RMSEA 90% confidence interval suggests <span style="font-weight: bold;">2</span> factors.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AIC suggests <span style="font-weight: bold;">3</span> factors.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Sequential chi-square model tests: 3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Lower bound of RMSEA 90% CI: 2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Akaike Information Criterion: 3</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

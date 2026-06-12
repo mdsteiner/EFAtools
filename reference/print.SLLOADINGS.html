@@ -67,7 +67,10 @@
 
     <div id="ref-usage">
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># S3 method for class 'SLLOADINGS'</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">x</span>, cutoff <span class="op">=</span> <span class="fl">0.2</span>, digits <span class="op">=</span> <span class="fl">3</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">x</span>, cutoff <span class="op">=</span> <span class="fl">0.2</span>, digits <span class="op">=</span> <span class="fl">3</span>, color <span class="op">=</span> <span class="cn">TRUE</span>, <span class="va">...</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'SLLOADINGS'</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="va">x</span>, cutoff <span class="op">=</span> <span class="fl">0.2</span>, digits <span class="op">=</span> <span class="fl">3</span>, color <span class="op">=</span> <span class="cn">TRUE</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -88,10 +91,24 @@
 to round the loadings to (default is 3).</p></dd>
 
 
+<dt id="arg-color">color<a class="anchor" aria-label="anchor" href="#arg-color"></a></dt>
+<dd><p>logical. Whether to apply console styling using <span class="pkg">cli</span>.
+Default is <code>TRUE</code>.</p></dd>
+
+
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>additional arguments passed to print</p></dd>
+<dd><p>additional arguments passed to print or format.</p></dd>
 
 </dl></div>
+    <div id="details">
+    <h2>Details</h2>
+    <p>Prints a Schmid-Leiman loading matrix (general factor, group factors, and the
+communality/uniqueness columns) as a styled, decimal-aligned table. Loadings with
+absolute value greater than or equal to <code>cutoff</code> are emphasised, smaller loadings are
+de-emphasised, and Heywood-relevant cells (a loading or communality above 1, or a
+negative uniqueness) are highlighted. If the matrix has many columns or the console is
+narrow, the table is split into stacked column blocks so the output stays readable.</p>
+    </div>
 
     <div id="ref-examples">
     <h2>Examples</h2>
@@ -101,37 +118,39 @@ to round the loadings to (default is 3).</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> EFA for second-order loadings performed with type = '<span style="font-weight: bold;">EFAtools</span>' and method = '<span style="font-weight: bold;">PAF</span>'</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">──</span> <span style="color: #0000BB; font-weight: bold;">Schmid-Leiman Solution</span> <span style="color: #0000BB;">──────────────────────────────────────────────────────</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Schmid-Leiman Solution</span> ──────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">   	  g  	 F1  	 F2  	 F3  	 h2  	 u2  </span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V1 </span>	<span style="font-weight: bold;"> .489</span>	<span style="color: #555555;">-.029</span>	<span style="color: #555555;"> .022</span>	<span style="font-weight: bold;"> .356</span>	 .367	 .633</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V2 </span>	<span style="font-weight: bold;"> .444</span>	<span style="color: #555555;">-.001</span>	<span style="color: #555555;"> .042</span>	<span style="font-weight: bold;"> .280</span>	 .277	 .723</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V3 </span>	<span style="font-weight: bold;"> .459</span>	<span style="color: #555555;"> .036</span>	<span style="color: #555555;"> .035</span>	<span style="font-weight: bold;"> .263</span>	 .283	 .717</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V4 </span>	<span style="font-weight: bold;"> .522</span>	<span style="color: #555555;"> .061</span>	<span style="color: #555555;">-.005</span>	<span style="font-weight: bold;"> .320</span>	 .378	 .622</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V5 </span>	<span style="font-weight: bold;"> .468</span>	<span style="color: #555555;"> .095</span>	<span style="color: #555555;">-.011</span>	<span style="font-weight: bold;"> .254</span>	 .293	 .707</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V6 </span>	<span style="font-weight: bold;"> .478</span>	<span style="color: #555555;">-.044</span>	<span style="color: #555555;">-.031</span>	<span style="font-weight: bold;"> .409</span>	 .399	 .601</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V7 </span>	<span style="font-weight: bold;"> .491</span>	<span style="color: #555555;"> .001</span>	<span style="font-weight: bold;"> .336</span>	<span style="color: #555555;"> .054</span>	 .357	 .643</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V8 </span>	<span style="font-weight: bold;"> .463</span>	<span style="color: #555555;">-.010</span>	<span style="font-weight: bold;"> .366</span>	<span style="color: #555555;"> .018</span>	 .349	 .651</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V9 </span>	<span style="font-weight: bold;"> .457</span>	<span style="color: #555555;"> .023</span>	<span style="font-weight: bold;"> .347</span>	<span style="color: #555555;">-.000</span>	 .330	 .670</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V10</span>	<span style="font-weight: bold;"> .449</span>	<span style="color: #555555;">-.013</span>	<span style="font-weight: bold;"> .425</span>	<span style="color: #555555;">-.041</span>	 .383	 .617</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V11</span>	<span style="font-weight: bold;"> .477</span>	<span style="color: #555555;"> .009</span>	<span style="font-weight: bold;"> .224</span>	<span style="color: #555555;"> .135</span>	 .297	 .703</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V12</span>	<span style="font-weight: bold;"> .513</span>	<span style="color: #555555;"> .012</span>	<span style="font-weight: bold;"> .410</span>	<span style="color: #555555;">-.006</span>	 .432	 .568</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V13</span>	<span style="font-weight: bold;"> .502</span>	<span style="font-weight: bold;"> .372</span>	<span style="color: #555555;"> .054</span>	<span style="color: #555555;">-.039</span>	 .395	 .605</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V14</span>	<span style="font-weight: bold;"> .455</span>	<span style="font-weight: bold;"> .332</span>	<span style="color: #555555;">-.043</span>	<span style="color: #555555;"> .051</span>	 .322	 .678</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V15</span>	<span style="font-weight: bold;"> .489</span>	<span style="font-weight: bold;"> .340</span>	<span style="color: #555555;"> .081</span>	<span style="color: #555555;">-.041</span>	 .363	 .637</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V16</span>	<span style="font-weight: bold;"> .476</span>	<span style="font-weight: bold;"> .336</span>	<span style="color: #555555;">-.032</span>	<span style="color: #555555;"> .053</span>	 .343	 .657</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V17</span>	<span style="font-weight: bold;"> .477</span>	<span style="font-weight: bold;"> .402</span>	<span style="color: #555555;">-.023</span>	<span style="color: #555555;">-.016</span>	 .390	 .610</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V18</span>	<span style="font-weight: bold;"> .485</span>	<span style="font-weight: bold;"> .336</span>	<span style="color: #555555;"> .003</span>	<span style="color: #555555;"> .029</span>	 .350	 .650</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        <span style="font-weight: bold;">g</span>     <span style="font-weight: bold;">F1</span>     <span style="font-weight: bold;">F2</span>     <span style="font-weight: bold;">F3</span>    <span style="font-weight: bold;">h2</span>    <span style="font-weight: bold;">u2</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V1   <span style="font-weight: bold;">.489</span>  <span style="color: #555555;">-.029</span>  <span style="color: #555555;"> .022</span>  <span style="font-weight: bold;"> .356</span>  .367  .633</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V2   <span style="font-weight: bold;">.444</span>  <span style="color: #555555;">-.001</span>  <span style="color: #555555;"> .042</span>  <span style="font-weight: bold;"> .280</span>  .277  .723</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V3   <span style="font-weight: bold;">.459</span>  <span style="color: #555555;"> .036</span>  <span style="color: #555555;"> .035</span>  <span style="font-weight: bold;"> .263</span>  .283  .717</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V4   <span style="font-weight: bold;">.522</span>  <span style="color: #555555;"> .061</span>  <span style="color: #555555;">-.005</span>  <span style="font-weight: bold;"> .320</span>  .378  .622</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V5   <span style="font-weight: bold;">.468</span>  <span style="color: #555555;"> .095</span>  <span style="color: #555555;">-.011</span>  <span style="font-weight: bold;"> .254</span>  .293  .707</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V6   <span style="font-weight: bold;">.478</span>  <span style="color: #555555;">-.044</span>  <span style="color: #555555;">-.031</span>  <span style="font-weight: bold;"> .409</span>  .399  .601</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V7   <span style="font-weight: bold;">.491</span>  <span style="color: #555555;"> .001</span>  <span style="font-weight: bold;"> .336</span>  <span style="color: #555555;"> .054</span>  .357  .643</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V8   <span style="font-weight: bold;">.463</span>  <span style="color: #555555;">-.010</span>  <span style="font-weight: bold;"> .366</span>  <span style="color: #555555;"> .018</span>  .349  .651</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V9   <span style="font-weight: bold;">.457</span>  <span style="color: #555555;"> .023</span>  <span style="font-weight: bold;"> .347</span>  <span style="color: #555555;">-.000</span>  .330  .670</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V10  <span style="font-weight: bold;">.449</span>  <span style="color: #555555;">-.013</span>  <span style="font-weight: bold;"> .425</span>  <span style="color: #555555;">-.041</span>  .383  .617</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V11  <span style="font-weight: bold;">.477</span>  <span style="color: #555555;"> .009</span>  <span style="font-weight: bold;"> .224</span>  <span style="color: #555555;"> .135</span>  .297  .703</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V12  <span style="font-weight: bold;">.513</span>  <span style="color: #555555;"> .012</span>  <span style="font-weight: bold;"> .410</span>  <span style="color: #555555;">-.006</span>  .432  .568</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V13  <span style="font-weight: bold;">.502</span>  <span style="font-weight: bold;"> .372</span>  <span style="color: #555555;"> .054</span>  <span style="color: #555555;">-.039</span>  .395  .605</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V14  <span style="font-weight: bold;">.455</span>  <span style="font-weight: bold;"> .332</span>  <span style="color: #555555;">-.043</span>  <span style="color: #555555;"> .051</span>  .322  .678</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V15  <span style="font-weight: bold;">.489</span>  <span style="font-weight: bold;"> .340</span>  <span style="color: #555555;"> .081</span>  <span style="color: #555555;">-.041</span>  .363  .637</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V16  <span style="font-weight: bold;">.476</span>  <span style="font-weight: bold;"> .336</span>  <span style="color: #555555;">-.032</span>  <span style="color: #555555;"> .053</span>  .343  .657</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V17  <span style="font-weight: bold;">.477</span>  <span style="font-weight: bold;"> .402</span>  <span style="color: #555555;">-.023</span>  <span style="color: #555555;">-.016</span>  .390  .610</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V18  <span style="font-weight: bold;">.485</span>  <span style="font-weight: bold;"> .336</span>  <span style="color: #555555;"> .003</span>  <span style="color: #555555;"> .029</span>  .350  .650</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">──</span> <span style="color: #0000BB; font-weight: bold;">Variances Accounted for</span> <span style="color: #0000BB;">─────────────────────────────────────────────────────</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">                 	  g  	 F1  	 F2  	 F3  </span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">SS loadings      </span>	 4.111	 0.770	 0.783	 0.642</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">Prop Tot Var     </span>	 0.228	 0.043	 0.044	 0.036</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">Cum Prop Tot Var </span>	 0.228	 0.271	 0.315	 0.350</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">Prop Comm Var    </span>	 0.652	 0.122	 0.124	 0.102</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">Cum Prop Comm Var</span>	 0.652	 0.774	 0.898	 1.000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Variances Accounted for</span> ─────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                      <span style="font-weight: bold;">g</span>     <span style="font-weight: bold;">F1</span>    <span style="font-weight: bold;">F2</span>     <span style="font-weight: bold;">F3</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> SS loadings        4.111  .770  .783   .642</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Prop Tot Var        .228  .043  .044   .036</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Cum Prop Tot Var    .228  .271  .315   .350</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Prop Comm Var       .652  .122  .124   .102</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Cum Prop Comm Var   .652  .774  .898  1.000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

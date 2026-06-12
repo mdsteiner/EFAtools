@@ -131,16 +131,16 @@ in red (i.e., if .001 is used, the mean will be in red if it is larger than
 <dt id="arg-range-red">range_red<a class="anchor" aria-label="anchor" href="#arg-range-red"></a></dt>
 <dd><p>numeric. Number above which the min and max should be printed
 in red (i.e., if .001 is used, min and max will be in red if the max is larger
- than .001, otherwise it will be displayed in green. Default is .001). Note that
- the color of min also depends on max, that is min will be displayed in the
- same color as max.</p></dd>
+than .001, otherwise it will be displayed in green. Default is .001). Note that
+the color of min also depends on max, that is min will be displayed in the
+same color as max.</p></dd>
 
 
 <dt id="arg-round-red">round_red<a class="anchor" aria-label="anchor" href="#arg-round-red"></a></dt>
 <dd><p>numeric. Number above which the max decimals to round to where
 all corresponding elements of x and y are still equal are displayed in red
 (i.e., if 3 is used, the number will be in red if it is smaller than
- 3, otherwise it will be displayed in green). Default is 3.</p></dd>
+3, otherwise it will be displayed in green). Default is 3.</p></dd>
 
 
 <dt id="arg-print-diff">print_diff<a class="anchor" aria-label="anchor" href="#arg-print-diff"></a></dt>
@@ -160,8 +160,8 @@ as labels on the x-axis of the plot. Default is "x" and "y".</p></dd>
 
 
 <dt id="arg-plot">plot<a class="anchor" aria-label="anchor" href="#arg-plot"></a></dt>
-<dd><p>logical. If TRUE (default), a plot illustrating the differences
-will be shown.</p></dd>
+<dd><p>logical. Retained for backwards compatibility; the difference plot
+is now drawn with <code><a href="plot.COMPARE.html">plot.COMPARE()</a></code> rather than when printing. Default is TRUE.</p></dd>
 
 
 <dt id="arg-plot-red">plot_red<a class="anchor" aria-label="anchor" href="#arg-plot-red"></a></dt>
@@ -172,7 +172,7 @@ in red. Default is .001.</p></dd>
     <div id="value">
     <h2>Value</h2>
     <p>A list of class COMPARE containing summary statistics on the differences
- of x and y.</p>
+of x and y.</p>
 <dl><dt>diff</dt>
 <dd><p>The vector or matrix containing the differences between x and y.</p></dd>
 
@@ -190,20 +190,20 @@ in red. Default is .001.</p></dd>
 
 <dt>max_dec</dt>
 <dd><p>The maximum number of decimals to which a comparison makes sense.
- For example, if x contains only values up to the third decimals, and y is a
- normal double, max_dec will be three.</p></dd>
+For example, if x contains only values up to the third decimals, and y is a
+normal double, max_dec will be three.</p></dd>
 
 <dt>are_equal</dt>
 <dd><p>The maximal number of decimals to which all elements of x and y
- are equal.</p></dd>
+are equal.</p></dd>
 
 <dt>diff_corres</dt>
 <dd><p>The number of differing variable-to-factor correspondences
- between x and y, when only the highest loading is considered.</p></dd>
+between x and y, when only the highest loading is considered.</p></dd>
 
 <dt>diff_corres_cross</dt>
 <dd><p>The number of differing variable-to-factor correspondences
- between x and y when all loadings <code>&gt;= thresh</code> are considered.</p></dd>
+between x and y when all loadings <code>&gt;= thresh</code> are considered.</p></dd>
 
 <dt>g</dt>
 <dd><p>The root mean squared distance (RMSE) between x and y.</p></dd>
@@ -228,37 +228,28 @@ in red. Default is .001.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Mean [min, max] absolute difference: <span style="color: #BB0000; font-weight: bold;"> 0.0025</span> [<span style="color: #BB0000; font-weight: bold;"> 0.0000</span>, <span style="color: #BB0000; font-weight: bold;"> 0.0215</span>]</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Median absolute difference: <span style="color: #00BB00; font-weight: bold;"> 0.0008</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Max decimals where all numbers are equal: <span style="color: #BB0000; font-weight: bold;">0</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Minimum number of decimals provided: <span style="color: #0000BB; font-weight: bold;">17</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Minimum number of decimals provided: <span style="font-weight: bold;">17</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">   	  F1  	  F2  	  F3  	  F4  	  F5  	  F6  </span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V1 </span>	 0.0000	-0.0001	-0.0003	<span style="color: #BB0000;">-0.0053</span>	<span style="color: #BB0000;">-0.0015</span>	<span style="color: #BB0000;">-0.0012</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V2 </span>	 0.0001	 0.0005	 0.0008	<span style="color: #BB0000;">-0.0080</span>	<span style="color: #BB0000;">-0.0048</span>	<span style="color: #BB0000;">-0.0019</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V3 </span>	-0.0005	-0.0002	<span style="color: #BB0000;">-0.0015</span>	<span style="color: #BB0000;">-0.0097</span>	<span style="color: #BB0000;">-0.0131</span>	 0.0000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V4 </span>	 0.0001	-0.0001	<span style="color: #BB0000;">-0.0011</span>	<span style="color: #BB0000;"> 0.0049</span>	<span style="color: #BB0000;"> 0.0128</span>	<span style="color: #BB0000;"> 0.0020</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V5 </span>	 0.0001	-0.0001	-0.0007	<span style="color: #BB0000;"> 0.0027</span>	<span style="color: #BB0000;"> 0.0131</span>	 0.0007</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V6 </span>	-0.0008	<span style="color: #BB0000;">-0.0030</span>	<span style="color: #BB0000;">-0.0053</span>	<span style="color: #BB0000;">-0.0178</span>	<span style="color: #BB0000;"> 0.0215</span>	 0.0008</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V7 </span>	 0.0000	-0.0005	-0.0009	<span style="color: #BB0000;">-0.0047</span>	<span style="color: #BB0000;"> 0.0041</span>	-0.0001</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V8 </span>	-0.0000	 0.0002	-0.0000	<span style="color: #BB0000;">-0.0085</span>	<span style="color: #BB0000;">-0.0027</span>	<span style="color: #BB0000;">-0.0018</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V9 </span>	 0.0002	 0.0005	 0.0006	<span style="color: #BB0000;">-0.0067</span>	<span style="color: #BB0000;">-0.0063</span>	-0.0002</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V10</span>	 0.0000	-0.0002	-0.0007	 0.0005	 0.0008	 0.0006</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V11</span>	 0.0003	 0.0007	<span style="color: #BB0000;">-0.0012</span>	<span style="color: #BB0000;"> 0.0025</span>	<span style="color: #BB0000;">-0.0024</span>	-0.0006</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V12</span>	-0.0004	<span style="color: #BB0000;">-0.0018</span>	<span style="color: #BB0000;"> 0.0020</span>	<span style="color: #BB0000;">-0.0014</span>	<span style="color: #BB0000;">-0.0021</span>	-0.0001</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V13</span>	 0.0001	<span style="color: #BB0000;"> 0.0018</span>	<span style="color: #BB0000;"> 0.0018</span>	<span style="color: #BB0000;"> 0.0137</span>	<span style="color: #BB0000;">-0.0031</span>	 0.0002</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V14</span>	 0.0000	 0.0006	 0.0004	<span style="color: #BB0000;"> 0.0093</span>	<span style="color: #BB0000;"> 0.0035</span>	 0.0001</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V15</span>	-0.0001	<span style="color: #BB0000;"> 0.0011</span>	 0.0006	<span style="color: #BB0000;"> 0.0171</span>	<span style="color: #BB0000;"> 0.0025</span>	 0.0004</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V16</span>	 0.0001	 0.0002	<span style="color: #BB0000;"> 0.0011</span>	<span style="color: #BB0000;"> 0.0042</span>	<span style="color: #BB0000;">-0.0027</span>	 0.0001</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V17</span>	 0.0001	-0.0000	 0.0008	<span style="color: #BB0000;"> 0.0021</span>	 0.0008	 0.0006</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">V18</span>	 0.0001	 0.0001	 0.0007	 0.0003	<span style="color: #BB0000;"> 0.0016</span>	 0.0006</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>`aes_string()` was deprecated in ggplot2 3.0.0.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Please use tidy evaluation idioms with `aes()`.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> See also `vignette("ggplot2-in-packages")` for more information.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> The deprecated feature was likely used in the <span style="color: #0000BB;">EFAtools</span> package.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span>   Please report the issue at <span style="color: #0000BB; font-style: italic;">&lt;https://github.com/mdsteiner/EFAtools/issues&gt;</span>.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Please use `linewidth` instead.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> The deprecated feature was likely used in the <span style="color: #0000BB;">EFAtools</span> package.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span>   Please report the issue at <span style="color: #0000BB; font-style: italic;">&lt;https://github.com/mdsteiner/EFAtools/issues&gt;</span>.</span>
-<span class="r-plt img"><img src="COMPARE-1.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        <span style="font-weight: bold;">F1</span>      <span style="font-weight: bold;">F2</span>      <span style="font-weight: bold;">F3</span>      <span style="font-weight: bold;">F4</span>      <span style="font-weight: bold;">F5</span>      <span style="font-weight: bold;">F6</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V1    .0000  -.0001  -.0003  <span style="color: #BB0000;">-.0053</span>  <span style="color: #BB0000;">-.0015</span>  <span style="color: #BB0000;">-.0012</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V2    .0001   .0005   .0008  <span style="color: #BB0000;">-.0080</span>  <span style="color: #BB0000;">-.0048</span>  <span style="color: #BB0000;">-.0019</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V3   -.0005  -.0002  <span style="color: #BB0000;">-.0015</span>  <span style="color: #BB0000;">-.0097</span>  <span style="color: #BB0000;">-.0131</span>   .0000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V4    .0001  -.0001  <span style="color: #BB0000;">-.0011</span>  <span style="color: #BB0000;"> .0049</span>  <span style="color: #BB0000;"> .0128</span>  <span style="color: #BB0000;"> .0020</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V5    .0001  -.0001  -.0007  <span style="color: #BB0000;"> .0027</span>  <span style="color: #BB0000;"> .0131</span>   .0007</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V6   -.0008  <span style="color: #BB0000;">-.0030</span>  <span style="color: #BB0000;">-.0053</span>  <span style="color: #BB0000;">-.0178</span>  <span style="color: #BB0000;"> .0215</span>   .0008</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V7    .0000  -.0005  -.0009  <span style="color: #BB0000;">-.0047</span>  <span style="color: #BB0000;"> .0041</span>  -.0001</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V8   -.0000   .0002  -.0000  <span style="color: #BB0000;">-.0085</span>  <span style="color: #BB0000;">-.0027</span>  <span style="color: #BB0000;">-.0018</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V9    .0002   .0005   .0006  <span style="color: #BB0000;">-.0067</span>  <span style="color: #BB0000;">-.0063</span>  -.0002</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V10   .0000  -.0002  -.0007   .0005   .0008   .0006</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V11   .0003   .0007  <span style="color: #BB0000;">-.0012</span>  <span style="color: #BB0000;"> .0025</span>  <span style="color: #BB0000;">-.0024</span>  -.0006</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V12  -.0004  <span style="color: #BB0000;">-.0018</span>  <span style="color: #BB0000;"> .0020</span>  <span style="color: #BB0000;">-.0014</span>  <span style="color: #BB0000;">-.0021</span>  -.0001</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V13   .0001  <span style="color: #BB0000;"> .0018</span>  <span style="color: #BB0000;"> .0018</span>  <span style="color: #BB0000;"> .0137</span>  <span style="color: #BB0000;">-.0031</span>   .0002</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V14   .0000   .0006   .0004  <span style="color: #BB0000;"> .0093</span>  <span style="color: #BB0000;"> .0035</span>   .0001</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V15  -.0001  <span style="color: #BB0000;"> .0011</span>   .0006  <span style="color: #BB0000;"> .0171</span>  <span style="color: #BB0000;"> .0025</span>   .0004</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V16   .0001   .0002  <span style="color: #BB0000;"> .0011</span>  <span style="color: #BB0000;"> .0042</span>  <span style="color: #BB0000;">-.0027</span>   .0001</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V17   .0001  -.0000   .0008  <span style="color: #BB0000;"> .0021</span>   .0008   .0006</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V18   .0001   .0001   .0007   .0003  <span style="color: #BB0000;"> .0016</span>   .0006</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 </code></pre></div>
     </div>
   </div>

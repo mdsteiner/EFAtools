@@ -101,12 +101,12 @@ correlation matrix is used.</p></dd>
 
 
 <dt id="arg-use">use<a class="anchor" aria-label="anchor" href="#arg-use"></a></dt>
-<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor</a></code> if raw data
+<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code> if raw data
 is given as input. Default is "pairwise.complete.obs".</p></dd>
 
 
 <dt id="arg-cor-method">cor_method<a class="anchor" aria-label="anchor" href="#arg-cor-method"></a></dt>
-<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor</a></code>.
+<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>.
 Default is "pearson".</p></dd>
 
 </dl></div>
@@ -135,19 +135,19 @@ chi square distributed with \(df = \frac{p(p - 1)}{2}\) and is given by</p>
 <p>where \(det(R)\) is the determinant of the correlation matrix, \(N\) is
 the sample size, and \(p\) is the number of variables.</p>
 <p>This tests requires multivariate normality. If this condition is not met,
-the Kaiser-Meyer-Olkin criterion (<code><a href="KMO.html">KMO</a></code>)
+the Kaiser-Meyer-Olkin criterion (<code><a href="KMO.html">KMO()</a></code>)
 can still be used.</p>
-<p>This function was heavily influenced by the <code><a href="https://rdrr.io/pkg/psych/man/cortest.bartlett.html" class="external-link">psych::cortest.bartlett</a></code> function from the psych package.</p>
+<p>This function was heavily influenced by the <code><a href="https://rdrr.io/pkg/psych/man/cortest.bartlett.html" class="external-link">psych::cortest.bartlett()</a></code> function from the psych package.</p>
 <p>The <code>BARTLETT</code> function can also be called together with the
- (<code><a href="KMO.html">KMO</a></code>) function and with factor retention criteria
- in the <code><a href="N_FACTORS.html">N_FACTORS</a></code> function.</p>
+(<code><a href="KMO.html">KMO()</a></code>) function and with factor retention criteria
+in the <code><a href="N_FACTORS.html">N_FACTORS()</a></code> function.</p>
     </div>
     <div id="see-also">
     <h2>See also</h2>
-    <div class="dont-index"><p><code><a href="KMO.html">KMO</a></code> for another measure to determine
- suitability for factor analysis.</p>
-<p><code><a href="N_FACTORS.html">N_FACTORS</a></code> as a wrapper function for this function,
- <code><a href="KMO.html">KMO</a></code> and several factor retention criteria.</p></div>
+    <div class="dont-index"><p><code><a href="KMO.html">KMO()</a></code> for another measure to determine
+suitability for factor analysis.</p>
+<p><code><a href="N_FACTORS.html">N_FACTORS()</a></code> as a wrapper function for this function,
+<code><a href="KMO.html">KMO()</a></code> and several factor retention criteria.</p></div>
     </div>
 
     <div id="ref-examples">
