@@ -537,9 +537,9 @@ Each is atomic and independently committable. Recommended order — correctness 
 behaviour-changing items grouped with NEWS + deliberate snapshot updates:
 
 1. **U-rev-a (critical, no behaviour debate):** B20 Hull off-by-one + geometry test;
-   B21 pooled CAF diagonal + re-baseline. — done (pending commit)
+   B21 pooled CAF diagonal + re-baseline. — done (commit 20f1315)
 2. **U-rev-b (rotation contract):** B22 rotmat sign propagation + invariant test;
-   decide & resolve B1 quartimax (NEWS if pointed at true quartimax).
+   decide & resolve B1 quartimax (NEWS if pointed at true quartimax). — done (pending commit)
 3. **U-rev-c (EFA_AVERAGE):** B31 precision recycling, B30 LSAP alignment, B48 new fit
    indices, B49 print default, B46/B47 progressr/warning hygiene, B59 `admissible` print +
    numeric/alignment tests.

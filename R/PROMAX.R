@@ -29,7 +29,7 @@
 
     AV$loadings <- AV$loadings[, ss_order]
 
-    AV$rotmat <- AV$rotmat[ss_order, ss_order]
+    AV$rotmat <- (AV$rotmat %*% diag(signs))[, ss_order, drop = FALSE]
 
     dim_names[[2]] <- dim_names[[2]][ss_order]
 
@@ -79,9 +79,11 @@
     Phi <- diag(signs) %*% Phi %*% diag(signs)
     Phi <- Phi[eig_order, eig_order]
 
-    # the rotation matrix follows the factor ordering (the ss_factors branch
-    # reorders its varimax base before the fit, so U is already in order there)
-    U <- U[eig_order, eig_order]
+    # the rotation matrix follows the same sign reflection and factor ordering as
+    # the pattern, so L_unrot %*% rotmat reproduces the rotated loadings (the
+    # ss_factors branch reorders its varimax base before the fit, so U is already
+    # in order there)
+    U <- (U %*% diag(signs))[, eig_order, drop = FALSE]
 
     dim_names[[2]] <- dim_names[[2]][eig_order]
 

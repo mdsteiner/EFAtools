@@ -96,4 +96,31 @@ test_that("errors etc. are thrown correctly", {
   expect_warning(.rotate_model(unrot_1, rotation = "equamax", type = "EFAtools"), class = "efa_single_factor")
 })
 
+test_that("orthogonal rotation matrix reproduces the rotated loadings", {
+  skip_on_cran()
+  skip_if_not_installed("GPArotation")
+
+  # the engine reflects two factors on this solution, so the rotation matrix must carry
+  # both the sign reflection and the factor reordering. Reflect and reorder the engine's
+  # own solution the documented way, check the package's rotation matrix matches that
+  # (signed, reordered) target, then confirm the self-contained reproduction identity
+  # L_unrot %*% rotmat == rot_loadings.
+  L <- unrot$unrot_loadings
+  set.seed(11)
+  ref <- suppressWarnings(GPArotation::bentlerT(unclass(L), eps = 1e-5,
+                                                normalize = TRUE, randomStarts = 100))
+  signs <- sign(colSums(ref$loadings))
+  signs[signs == 0] <- 1
+  ord <- order(colSums((ref$loadings %*% diag(signs))^2), decreasing = TRUE)
+  exp_rotmat <- (ref$Th %*% diag(signs))[, ord]
+
+  set.seed(11)
+  o <- suppressWarnings(.rotate_model(unrot, rotation = "bentlerT", type = "psych"))
+
+  expect_false(all(signs == 1))  # this fixture exercises the reflection path
+  expect_equal(o$rotmat, exp_rotmat, ignore_attr = TRUE, tolerance = 1e-6)
+  expect_equal(unclass(L) %*% o$rotmat, unclass(o$rot_loadings),
+               ignore_attr = TRUE, tolerance = 1e-6)
+})
+
 rm(unrot, equa, unrot_1, equa_1, quarti, bentT, geoT, bifacT)

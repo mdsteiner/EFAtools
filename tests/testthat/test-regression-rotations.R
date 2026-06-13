@@ -27,17 +27,16 @@ test_that("orthogonal rotations reproduce their GPArotation engine", {
   skip_on_cran()
   skip_if_not_installed("GPArotation")
 
-  # rotation name -> the GPArotation engine EFAtools currently dispatches to. quartimax
-  # intentionally maps to bentlerT: that is the engine EFAtools calls for orthogonal
-  # quartimax today, so the regression net pins the current behaviour.
+  # rotation name -> the GPArotation engine EFAtools dispatches to for each orthogonal
+  # rotation.
   engines <- list(
     equamax   = function() GPArotation::cfT(L, kappa = ncol(L) / (2 * nrow(L)),
                                             normalize = TRUE, eps = 1e-5,
                                             randomStarts = 100),
     bentlerT  = function() GPArotation::bentlerT(L, normalize = TRUE, eps = 1e-5,
                                                  randomStarts = 100),
-    quartimax = function() GPArotation::bentlerT(L, normalize = TRUE, eps = 1e-5,
-                                                 randomStarts = 100),
+    quartimax = function() GPArotation::quartimax(L, normalize = TRUE, eps = 1e-5,
+                                                  randomStarts = 100),
     geominT   = function() GPArotation::geominT(L, normalize = TRUE, eps = 1e-5,
                                                 randomStarts = 100),
     bifactorT = function() GPArotation::bifactorT(L, normalize = TRUE, eps = 1e-5,

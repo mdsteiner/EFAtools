@@ -93,4 +93,15 @@ test_that("errors etc. are thrown correctly", {
   expect_warning(.rotate_model(unrot_1, rotation = "promax", type = "EFAtools"), class = "efa_single_factor")
 })
 
+test_that("promax rotation matrix reproduces the rotated loadings", {
+  # the rotation matrix must carry the sign reflection and factor reordering so that
+  # L_unrot %*% rotmat == rot_loadings, for both ordering branches (eigen reorders the
+  # pattern after the fit; ss_factors reorders the varimax base before it)
+  L <- unclass(unrot$unrot_loadings)
+  expect_equal(L %*% prom$rotmat, unclass(prom$rot_loadings),       # order_type "eigen"
+               ignore_attr = TRUE, tolerance = 1e-6)
+  expect_equal(L %*% prom_spss$rotmat, unclass(prom_spss$rot_loadings),  # "ss_factors"
+               ignore_attr = TRUE, tolerance = 1e-6)
+})
+
 rm(unrot, prom, unrot_1, prom_1, prom_psych, prom_spss)

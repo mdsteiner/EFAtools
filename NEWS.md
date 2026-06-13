@@ -44,12 +44,21 @@
   `BARTLETT()`, and the factor-retention functions.
 
 * `EFA()`: For oblique rotations, the factor intercorrelations (`Phi`), the structure
-  matrix, the explained variances, and the rotation matrix are now reflected and
-  reordered consistently with the rotated loadings. Previously, when a factor was
-  reflected to a positive orientation the factor intercorrelations were not sign-adjusted
-  (so the structure matrix and reported correlations did not match the loadings), the
-  rotation matrix was left in the unordered factor order, and with
-  `order_type = "ss_factors"` the factor intercorrelations were not reordered at all.
+  matrix, and the explained variances are now reflected and reordered consistently with
+  the rotated loadings. Previously, when a factor was reflected to a positive orientation
+  the factor intercorrelations were not sign-adjusted (so the structure matrix and
+  reported correlations did not match the loadings), and with `order_type = "ss_factors"`
+  the factor intercorrelations were not reordered at all.
+* `EFA()`: The returned rotation matrix (`rotmat`) is now reflected and reordered
+  consistently with the rotated loadings, for both orthogonal and oblique rotations, so
+  that the rotated loadings can be reconstructed from the unrotated loadings and `rotmat`.
+  Previously the sign reflection was not applied to it and its factors were left in a
+  different order, so this reconstruction did not hold whenever a factor was reflected or
+  reordered.
+* `EFA()` and `EFA_AVERAGE()`: The orthogonal `"quartimax"` rotation now optimizes the
+  quartimax criterion. Previously it optimized the Bentler invariant pattern simplicity
+  criterion, so the quartimax-rotated loadings change. `EFA(rotation = "quartimax")` now
+  agrees with `psych::fa(rotate = "quartimax")` and `GPArotation::quartimax()`.
 * `HULL()`: The convex-hull elimination now tests every triplet of adjacent solutions,
   including the one formed by the last interior solution. Previously this final triplet
   was skipped, so a solution lying below the line connecting its neighbours could remain

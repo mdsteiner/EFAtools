@@ -152,8 +152,9 @@ test_that("oblique Phi, structure, and rotmat are reflected/reordered with the l
 
   # Reflect and reorder the engine's own solution the documented way, then check the
   # rotated output matches it exactly. This pins the sign reflection of Phi (a factor
-  # in this solution has a negative column sum) and the consistent reordering of Phi
-  # and the rotation matrix, which a structure == pattern %*% Phi check alone misses.
+  # in this solution has a negative column sum) and the consistent reflection and
+  # reordering of Phi and the rotation matrix, which a structure == pattern %*% Phi
+  # check alone misses.
   L <- unrot$unrot_loadings
   set.seed(11)
   ref <- suppressWarnings(GPArotation::oblimin(L, eps = 1e-5, normalize = TRUE,
@@ -163,7 +164,7 @@ test_that("oblique Phi, structure, and rotmat are reflected/reordered with the l
   ord <- order(colSums((ref$loadings %*% diag(signs))^2), decreasing = TRUE)
   exp_load <- (ref$loadings %*% diag(signs))[, ord]
   exp_phi <- (diag(signs) %*% ref$Phi %*% diag(signs))[ord, ord]
-  exp_rotmat <- ref$Th[ord, ord]
+  exp_rotmat <- (ref$Th %*% diag(signs))[, ord]
 
   set.seed(11)
   o <- suppressWarnings(.rotate_model(unrot, rotation = "oblimin", type = "EFAtools"))
@@ -174,6 +175,9 @@ test_that("oblique Phi, structure, and rotmat are reflected/reordered with the l
   expect_equal(o$rotmat, exp_rotmat, ignore_attr = TRUE, tolerance = 1e-6)
   expect_equal(unclass(o$Structure), exp_load %*% exp_phi, ignore_attr = TRUE,
                tolerance = 1e-6)
+  # the rotation matrix reproduces the rotated pattern: L_unrot %*% t(solve(rotmat))
+  expect_equal(unclass(L) %*% t(solve(o$rotmat)), unclass(o$rot_loadings),
+               ignore_attr = TRUE, tolerance = 1e-6)
 })
 
 rm(unrot, obli, unrot_1, obli_1, quarti, simpli, bentQ, geoQ, bifacQ)

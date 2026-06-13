@@ -11,11 +11,10 @@
 
 # Orthogonal GPArotation engines, keyed by rotation name. Each returns the raw
 # rotated solution ($loadings, $Th); `eps`, `normalize`, `randomStarts`, and any
-# extra arguments are forwarded through `...`. `quartimax` uses the bentlerT
-# criterion, as in the established implementation.
+# extra arguments are forwarded through `...`.
 .orth_engines <- list(
   equamax   = function(L, ...) GPArotation::cfT(L, kappa = ncol(L) / (2 * nrow(L)), ...),
-  quartimax = function(L, ...) GPArotation::bentlerT(L, ...),
+  quartimax = function(L, ...) GPArotation::quartimax(L, ...),
   bentlerT  = function(L, ...) GPArotation::bentlerT(L, ...),
   geominT   = function(L, ...) GPArotation::geominT(L, ...),
   bifactorT = function(L, ...) GPArotation::bifactorT(L, ...)
@@ -75,8 +74,10 @@
   fac_names <- if (isTRUE(name_factors)) colnames(L_unrot)[ord] else NULL
   dimnames(loadings) <- list(var_names, fac_names)
 
-  # the rotation matrix follows the factor ordering
-  rotmat <- rotmat[ord, ord]
+  # the rotation matrix follows the same sign reflection and factor ordering as
+  # the loadings, so the documented reproduction identity holds (orthogonal:
+  # L_unrot %*% rotmat; oblique: L_unrot %*% t(solve(rotmat)))
+  rotmat <- (rotmat %*% diag(signs))[, ord, drop = FALSE]
 
   if (oblique) {
     # reflect and reorder the factor intercorrelations the same way as the
