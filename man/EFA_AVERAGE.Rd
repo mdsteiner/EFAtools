@@ -201,11 +201,14 @@ minimum, maximum, and range for all applicable fit indices across the respective
 factor solutions, and the degrees of freedom (df). If the method argument
 contains ML or ULS: Fit indices derived
 from the unrotated factor loadings: Chi Square (chisq), including significance
-level, Comparative Fit Index (CFI), Root Mean Square Error of Approximation
-(RMSEA), Akaike Information Criterion (AIC), Bayesian Information Criterion
-(BIC)and the common part accounted for (CAF) index as proposed by
-Lorenzo-Seva, Timmerman, & Kiers (2011). For PAF, only the CAF can be
-calculated (see details).}
+level, Comparative Fit Index (CFI), Tucker-Lewis Index (TLI), Root Mean Square
+Error of Approximation (RMSEA), Akaike Information Criterion (AIC), Bayesian
+Information Criterion (BIC), Expected Cross-Validation Index (ECVI), and the
+common part accounted for (CAF) index as proposed by Lorenzo-Seva, Timmerman,
+& Kiers (2011). The residual-based Standardized Root Mean Square Residual
+(SRMR) and Root Mean Square Residual (RMSR) and the CAF are also computed for
+PAF; for PAF the remaining (chi-square-based) indices are not available (see
+details).}
 \item{implementations_grid}{A matrix containing, for each performed EFA,
 the setting combination, if an error occurred (logical), the error message
 (character), an integer code for convergence as returned by

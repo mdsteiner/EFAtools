@@ -4,7 +4,7 @@
 \alias{print.EFA_AVERAGE}
 \title{Print EFA_AVERAGE object}
 \usage{
-\method{print}{EFA_AVERAGE}(x, stat = c("average", "range"), plot = TRUE, ...)
+\method{print}{EFA_AVERAGE}(x, stat = c("average", "range"), plot = FALSE, ...)
 }
 \arguments{
 \item{x}{list. An object of class EFA_AVERAGE to be printed}
@@ -14,7 +14,7 @@ are "average", "sd", "range", "min", and "max". Default is "average" and
 "range".}
 
 \item{plot}{logical. Whether a plot of the average and min- max loadings should
-be created. Default is TRUE. If more than 10 factors are extracted, no plot is
+be created. Default is FALSE. If more than 10 factors are extracted, no plot is
 created.}
 
 \item{...}{Further arguments for print.}

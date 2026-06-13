@@ -125,6 +125,8 @@
       
              M (SD) [Min; Max]
       CAF: <num> ( <num>) [ <num>; <num>]
+      RMSR: <num> ( <num>) [ <num>; <num>]
+      SRMR: <num> ( <num>) [ <num>; <num>]
       df: 102
 
 ---
@@ -300,10 +302,14 @@
       df: 102
       p: <num> ( <num>) [ <num>; <num>]
       CFI: <num> ( <num>) [ <num>; <num>]
+      TLI: <num> ( <num>) [ <num>; <num>]
       RMSEA: <num> ( <num>) [ <num>; <num>]
       AIC: <num> ( <num>) [ <num>; <num>]
       BIC: <num> ( <num>) [ <num>; <num>]
+      ECVI: <num> ( <num>) [ <num>; <num>]
       CAF: <num> ( <num>) [ <num>; <num>]
+      RMSR: <num> ( <num>) [ <num>; <num>]
+      SRMR: <num> ( <num>) [ <num>; <num>]
 
 ---
 
@@ -435,8 +441,12 @@
       df: 102
       p: <num> ( <num>) [ <num>; <num>]
       CFI: <num> ( <num>) [ <num>; <num>]
+      TLI: <num> ( <num>) [ <num>; <num>]
       RMSEA: <num> ( <num>) [ <num>; <num>]
       AIC: <num> ( <num>) [ <num>; <num>]
       BIC: <num> ( <num>) [ <num>; <num>]
+      ECVI: <num> ( <num>) [ <num>; <num>]
       CAF: <num> ( <num>) [ <num>; <num>]
+      RMSR: <num> ( <num>) [ <num>; <num>]
+      SRMR: <num> ( <num>) [ <num>; <num>]
 

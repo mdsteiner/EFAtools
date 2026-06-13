@@ -463,8 +463,9 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                              abs_eigen = abs_eigen, start_method = start_method)
 
   # Surface Heywood cases from the point-estimate solution (the detector runs in
-  # .finalize_fit for every fit; the warning fires once here and is suppressed when
-  # EFA() is called inside the retention/averaging/bootstrap routines).
+  # .finalize_fit for every fit). This fires once per EFA() call; routines that run
+  # many EFAs (such as model averaging) suppress the per-run warnings and report a
+  # single summary instead.
   if (length(fit_out$heywood) > 0) {
     heywood_vars <- names(fit_out$heywood)
     cli::cli_warn(

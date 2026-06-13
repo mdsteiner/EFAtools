@@ -542,6 +542,58 @@ test_that("plot returns a ggplot", {
   expect_s3_class(plot(efa_def), "ggplot")
 })
 
+test_that("a vector-valued precision is recycled across the grid", {
+  # A vector precision is expanded into the grid; each EFA must receive its own
+  # scalar value rather than the whole vector (which would fail every fit and
+  # return an all-NA result).
+  res <- suppressWarnings(
+    EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
+                method = "ML", rotation = "promax", type = "none",
+                precision = c(1e-5, 1e-3), show_progress = FALSE))
+  expect_s3_class(res, "EFA_AVERAGE")
+  expect_setequal(unique(res$implementations_grid$precision), c(1e-5, 1e-3))
+  expect_false(any(res$implementations_grid$errors))
+  expect_false(all(is.na(res$loadings$average)))
+  expect_true(all(is.finite(res$loadings$average)))
+})
+
+test_that("problematic solutions are summarised in a single warning", {
+  # All runs hit max_iter and are excluded, so one summary warning is raised
+  # rather than one per model.
+  expect_warning(
+    EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
+                max_iter = 1, method = "PAF", type = "none", rotation = "none",
+                show_progress = FALSE),
+    class = "efa_avg_excluded_solutions"
+  )
+})
+
+test_that("printing does not plot by default", {
+  expect_false(formals(getS3method("print", "EFA_AVERAGE"))$plot)
+})
+
+test_that("admissibility is reported as an outcome, not a varied setting", {
+  skip_on_cran()
+  local_reproducible_output()
+  obj <- efa_def
+  # Force mixed admissibility so the column would surface in the varied-settings
+  # list if it were (incorrectly) treated as a setting.
+  obj$implementations_grid$admissible[1] <- !obj$implementations_grid$admissible[1]
+  out <- paste(cli::ansi_strip(utils::capture.output(print(obj, plot = FALSE))),
+               collapse = " ")
+  # "admissible" appears only in the convergence summary, never in the settings list.
+  expect_equal(unname(lengths(gregexpr("admissible", out, fixed = TRUE))), 1L)
+})
+
+test_that("averaged fit indices match the per-model grid means", {
+  # efa_def uses the untrimmed mean, so each averaged index equals the column
+  # mean over the included models (and the new residual indices are averaged too).
+  fi <- efa_def$fit_indices
+  grid <- efa_def$implementations_grid
+  expect_equal(fi$average[fi$index == "caf"], mean(grid$caf, na.rm = TRUE))
+  expect_equal(fi$average[fi$index == "srmr"], mean(grid$srmr, na.rm = TRUE))
+})
+
 rm(efa_def, efa_ml, efa_uls, efa_all, efa_all_oblq, efa_all_orth, efa_all_none,
    efa_all_md, efa_all_tm, efa_raw, efa_raw_p)
 

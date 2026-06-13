@@ -7,7 +7,7 @@
 #' are "average", "sd", "range", "min", and "max". Default is "average" and
 #' "range".
 #' @param plot logical. Whether a plot of the average and min- max loadings should
-#' be created. Default is TRUE. If more than 10 factors are extracted, no plot is
+#' be created. Default is FALSE. If more than 10 factors are extracted, no plot is
 #' created.
 #' @param ...  Further arguments for print.
 #'
@@ -21,7 +21,7 @@
 #' EFA_aver
 #' }
 print.EFA_AVERAGE <- function(x, stat = c("average", "range"),
-                              plot = TRUE, ...) {
+                              plot = FALSE, ...) {
 
   checkmate::assert_subset(stat, c("average", "sd", "range", "min", "max"),
                            empty.ok = FALSE)
@@ -34,10 +34,11 @@ print.EFA_AVERAGE <- function(x, stat = c("average", "range"),
   grid <- x$implementations_grid
   averaging <- settings$averaging
 
-  # settings that were varied
-  varied_settings <- grid
-  varied_settings[, c("errors", "error_m", "converged", "heywood", "chisq",
-                      "p_chi", "cfi", "caf", "rmsea", "aic", "bic")] <- NULL
+  # settings that were varied: keep only the grid columns that correspond to EFA
+  # settings. The per-model outcome columns appended to the grid (errors,
+  # convergence, Heywood/admissibility flags, fit indices) are never part of the
+  # settings list, so this excludes them without a column to maintain.
+  varied_settings <- grid[, intersect(names(grid), names(settings)), drop = FALSE]
   varied_settings <- apply(varied_settings, 2, function(x)unique(x[!is.na(x)]))
   varied_settings <- sapply(varied_settings, length)
   varied_settings <- names(varied_settings[varied_settings > 1])
@@ -140,7 +141,9 @@ print.EFA_AVERAGE <- function(x, stat = c("average", "range"),
 
   if(all(method == "PAF") || is.na(N)){
 
-    .print_gof(fit, ind = "caf", ind_name = "CAF:  ", print_zero = FALSE, digits = 2)
+    .print_gof(fit, ind = c("caf", "rmsr", "srmr"),
+               ind_name = c("CAF:  ", "RMSR: ", "SRMR: "),
+               print_zero = c(FALSE, FALSE, FALSE), digits = c(2, 2, 2))
     cat("df: ",
         .numformat(fit["df", "average"], 0, print_zero = TRUE), "\n", sep = "")
 
@@ -150,11 +153,14 @@ print.EFA_AVERAGE <- function(x, stat = c("average", "range"),
                print_zero = TRUE, digits = 2)
     cat("df: ",
         .numformat(fit["df", "average"], 0, print_zero = TRUE), "\n", sep = "")
-    .print_gof(fit, ind = c("p_chi", "cfi", "rmsea", "aic", "bic", "caf"),
-               ind_name = c(.efa_style("p: ", "italic"), "CFI: ", "RMSEA: ",
-                            "AIC: ", "BIC: ", "CAF: "),
-               print_zero = c(FALSE, FALSE, FALSE, TRUE, TRUE, FALSE),
-               digits = c(3, 2, 2, 2, 2, 2))
+    .print_gof(fit, ind = c("p_chi", "cfi", "tli", "rmsea", "aic", "bic",
+                            "ecvi", "caf", "rmsr", "srmr"),
+               ind_name = c(.efa_style("p: ", "italic"), "CFI: ", "TLI: ",
+                            "RMSEA: ", "AIC: ", "BIC: ", "ECVI: ", "CAF: ",
+                            "RMSR: ", "SRMR: "),
+               print_zero = c(FALSE, FALSE, FALSE, FALSE, TRUE, TRUE,
+                              TRUE, FALSE, FALSE, FALSE),
+               digits = c(3, 2, 2, 2, 2, 2, 2, 2, 2, 2))
 
   }
 
@@ -252,58 +258,22 @@ print.EFA_AVERAGE <- function(x, stat = c("average", "range"),
 
 .print_gof <- function(fit, ind, ind_name, print_zero, digits){
 
-    for(i in seq_along(ind)){
-
-      if(ind[i] %in% c("p_chi", "cfi", "rmsea", "caf")){
-
-  cat(ind_name[i],
-      ifelse(round(fit[ind[i], "average"], digits[i]) < 1,
-             substr(.numformat(fit[ind[i], "average"], digits = digits[i],
-                               print_zero = print_zero[i]),
-                    2, digits + 2),
-             .numformat(fit[ind[i], "average"], digits = digits[i],
-                        print_zero = print_zero[i])), " (",
-      ifelse(round(fit[ind[i], "sd"], digits[i]) < 1,
-             substr(.numformat(fit[ind[i], "sd"], digits = digits[i],
-                               print_zero = print_zero[i]),
-                    2, digits + 2),
-             .numformat(fit[ind[i], "sd"], digits = digits[i],
-                        print_zero = print_zero[i])),
-      ") [",
-      ifelse(round(fit[ind[i], "min"], digits[i]) < 1,
-             substr(.numformat(fit[ind[i], "min"], digits = digits[i],
-                               print_zero = print_zero[i]),
-                    2, digits + 2),
-             .numformat(fit[ind[i], "min"], digits = digits[i],
-                        print_zero = print_zero[i])), "; ",
-      ifelse(round(fit[ind[i], "max"], digits[i]) < 1,
-             substr(.numformat(fit[ind[i], "max"], digits = digits[i],
-                               print_zero = print_zero[i]),
-                    2, digits + 2),
-             .numformat(fit[ind[i], "max"], digits = digits[i],
-                        print_zero = print_zero[i])),
-      "]\n", sep = "")
-
-      } else {
-
-        cat(ind_name[i],
-            .numformat(fit[ind[i], "average"], digits = digits[i],
-                                     print_zero = print_zero[i]), " (",
-            .numformat(fit[ind[i], "sd"], digits = digits[i],
-                       print_zero = print_zero[i]),
-            ") [",
-            .numformat(fit[ind[i], "min"], digits = digits[i],
-                       print_zero = print_zero[i]),
-            "; ",
-            .numformat(fit[ind[i], "max"], digits = digits[i],
-                       print_zero = print_zero[i]),
-            "]\n", sep = "")
-
-
-      }
-
-    }
-
+  # Render "M (SD) [Min; Max]" for each index. .numformat drops the leading zero
+  # of values in (-1, 1) when print_zero is FALSE (and keeps it otherwise) and
+  # preserves the sign, so it already produces the stripped/unstripped form each
+  # index needs. The integer-valued indices (print_zero = TRUE, e.g. AIC/BIC) are
+  # left-padded to align the bracketed range; the decimal-only ones are not.
+  fmt <- function(stat, i) {
+    .numformat(fit[ind[i], stat], digits = digits[i],
+               print_zero = print_zero[i], pad = print_zero[i])
   }
+
+  for (i in seq_along(ind)) {
+    cat(ind_name[i],
+        fmt("average", i), " (", fmt("sd", i), ") [",
+        fmt("min", i), "; ", fmt("max", i), "]\n", sep = "")
+  }
+
+}
 
 

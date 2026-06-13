@@ -51,6 +51,10 @@
   caf <- rep(NA_real_, n_efa)
   rmsea <- rep(NA_real_, n_efa)
   cfi <- rep(NA_real_, n_efa)
+  srmr <- rep(NA_real_, n_efa)
+  tli <- rep(NA_real_, n_efa)
+  ecvi <- rep(NA_real_, n_efa)
+  rmsr <- rep(NA_real_, n_efa)
 
   if (all(rotation == "none") || n_factors == 1) {
     load_ind <- "unrot_loadings"
@@ -85,6 +89,10 @@
             caf[row_i] <- efa_temp$fit_indices$CAF
             rmsea[row_i] <- efa_temp$fit_indices$RMSEA
             cfi[row_i] <- efa_temp$fit_indices$CFI
+            srmr[row_i] <- efa_temp$fit_indices$SRMR
+            tli[row_i] <- efa_temp$fit_indices$TLI
+            ecvi[row_i] <- efa_temp$fit_indices$ECVI
+            rmsr[row_i] <- efa_temp$fit_indices$RMSR
 
             h2[row_i, ] <- efa_temp$h2
             L[,, row_i] <- efa_temp[[load_ind]]
@@ -141,7 +149,11 @@
       cfi = cfi,
       rmsea = rmsea,
       aic = aic,
-      bic= bic
+      bic= bic,
+      srmr = srmr,
+      tli = tli,
+      ecvi = ecvi,
+      rmsr = rmsr
     )
   )
 
@@ -337,29 +349,23 @@
   	L1 <- L[,, 1]
     for (efa_i in 2:dim(L)[3]) {
 
-      Ln <- L[,, efa_i]
+      # Match each later solution's factors to the first via the optimal
+      # (linear-sum-assignment) congruence alignment, which guarantees a true
+      # permutation and applies sign flips consistently to loadings and Phi.
+      aligned <- .align_solution(
+        L_target = L1, L = L[,, efa_i],
+        Phi = if (isTRUE(extract_phi)) phi[,, efa_i] else NULL)
 
-      # reorder factors according to tuckers congruence coefficient
-      # get Tucker's congruence coefficients
-      congruence <- .factor_congruence(L1, Ln, skip_checks = TRUE)
+      factor_order <- aligned$factor_order
 
-      # factor order for Ln
-      factor_order <- apply(abs(congruence), 1, which.max)
-
-      # reorder
-      Ln <- Ln[, factor_order]
+      # The correspondence indicators and variances are sign-invariant, so they
+      # only need the same column reordering.
+      L[,, efa_i] <- aligned$loadings
       L_corres[,, efa_i] <- L_corres[,, efa_i][, factor_order]
       vars_accounted[,, efa_i] <- vars_accounted[,, efa_i][, factor_order]
 
-      # get signs
-      factor_sign <- diag(sign(diag(crossprod(L1, Ln))))
-
-      # switch signs where necessary
-      L[,, efa_i] <- Ln %*% factor_sign
-
       if (isTRUE(extract_phi)) {
-        phi[,, efa_i] <- factor_sign %*% phi[,, efa_i][factor_order, factor_order] %*% factor_sign
-
+        phi[,, efa_i] <- aligned$Phi
       }
 
     }

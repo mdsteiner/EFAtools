@@ -218,11 +218,14 @@
 #' factor solutions, and the degrees of freedom (df). If the method argument
 #' contains ML or ULS: Fit indices derived
 #' from the unrotated factor loadings: Chi Square (chisq), including significance
-#' level, Comparative Fit Index (CFI), Root Mean Square Error of Approximation
-#' (RMSEA), Akaike Information Criterion (AIC), Bayesian Information Criterion
-#' (BIC)and the common part accounted for (CAF) index as proposed by
-#' Lorenzo-Seva, Timmerman, & Kiers (2011). For PAF, only the CAF can be
-#' calculated (see details).}
+#' level, Comparative Fit Index (CFI), Tucker-Lewis Index (TLI), Root Mean Square
+#' Error of Approximation (RMSEA), Akaike Information Criterion (AIC), Bayesian
+#' Information Criterion (BIC), Expected Cross-Validation Index (ECVI), and the
+#' common part accounted for (CAF) index as proposed by Lorenzo-Seva, Timmerman,
+#' & Kiers (2011). The residual-based Standardized Root Mean Square Residual
+#' (SRMR) and Root Mean Square Residual (RMSR) and the CAF are also computed for
+#' PAF; for PAF the remaining (chi-square-based) indices are not available (see
+#' details).}
 #' \item{implementations_grid}{A matrix containing, for each performed EFA,
 #' the setting combination, if an error occurred (logical), the error message
 #' (character), an integer code for convergence as returned by
@@ -531,6 +534,11 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
 
   arg_grid <- unique(do.call(rbind, grid_list))
 
+  # The grid leaves precision NA for unrotated rows, where it is not applicable;
+  # those rows still need a valid tolerance to pass to EFA(), so fall back to its
+  # default. Kept as one constant so both the single- and multi-EFA paths agree.
+  default_precision <- 1e-5
+
   ### Run all efas
 
   if (nrow(arg_grid) == 1) {
@@ -543,16 +551,18 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
         criterion = arg_grid$criterion, criterion_type = arg_grid$criterion_type,
         abs_eigen = arg_grid$abs_eigen, varimax_type = arg_grid$varimax_type,
         k = ifelse(arg_grid$rotation == "promax", arg_grid$k_promax, arg_grid$k_simplimax),
-        normalize = arg_grid$normalize, P_type = arg_grid$P_type, precision = precision,
+        normalize = arg_grid$normalize, P_type = arg_grid$P_type,
+        precision = if (is.na(arg_grid$precision)) default_precision else arg_grid$precision,
         order_type = "eigen", start_method = arg_grid$start_method))
 
   }
 
-  if (isTRUE(show_progress)) {
-    progressr::handlers("cli")
-  } else {
-    progressr::handlers("void")
-  }
+  # Set the progress handler only for the duration of this call, restoring the
+  # user's original setting on exit (capturing the raw option restores an unset
+  # state to NULL rather than to an explicit empty handler list).
+  old_handlers <- getOption("progressr.handlers")
+  progressr::handlers(if (isTRUE(show_progress)) "cli" else "void")
+  on.exit(options(progressr.handlers = old_handlers), add = TRUE)
 
   progressr::with_progress({
     n_efa <- nrow(arg_grid)
@@ -569,25 +579,34 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
                                                      init_comms, criteria,
                                                      criterion_types, abs_eigens,
                                                      varimax_types, k_ps, k_ss,
-                                                     normalizes, P_types, start_methods) {
+                                                     normalizes, P_types, precisions,
+                                                     start_methods) {
       if (i %% stepsize == 0){
         efa_progress_bar(message = sprintf("Running EFA %g of %g", i, n_efa))
       }
 
-      try(EFA(R, n_factors, N = N, method = methods[i], rotation = rotations[i],
+      # precision only affects rotated solutions; the grid leaves it NA for the
+      # unrotated rows, so fall back to the default tolerance there.
+      precision_i <- if (is.na(precisions[i])) default_precision else precisions[i]
+
+      # Per-EFA warnings (e.g. Heywood cases) are summarised once after the grid
+      # is run, so they are suppressed here to avoid one warning per model.
+      try(suppressWarnings(
+          EFA(R, n_factors, N = N, method = methods[i], rotation = rotations[i],
               type = "none", max_iter = max_iter, init_comm = init_comms[i],
               criterion = criteria[i], criterion_type = criterion_types[i],
               abs_eigen = abs_eigens[i], varimax_type = varimax_types[i],
               k = ifelse(rotations[i] == "promax",k_ps[i], k_ss[i]),
-              normalize = normalizes[i], P_type = P_types[i], precision = precision,
-              order_type = "eigen", start_method = start_methods[i], maxit = 5e4),
+              normalize = normalizes[i], P_type = P_types[i], precision = precision_i,
+              order_type = "eigen", start_method = start_methods[i], maxit = 5e4)),
           silent = TRUE)
     }, methods = arg_grid$method, rotations = arg_grid$rotation,
     init_comms = arg_grid$init_comm, criteria = arg_grid$criterion,
     criterion_types = arg_grid$criterion_type, abs_eigens = arg_grid$abs_eigen,
     varimax_types = arg_grid$varimax_type, k_ps = arg_grid$k_promax,
     k_ss = arg_grid$k_simplimax, normalizes = arg_grid$normalize,
-    P_types = arg_grid$P_type, start_methods = arg_grid$start_method,
+    P_types = arg_grid$P_type, precisions = arg_grid$precision,
+    start_methods = arg_grid$start_method,
     future.seed = TRUE)
 
     if (n_efa %% 10 != 0){
@@ -605,6 +624,19 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
 
   bad <- ext_list$for_grid$converged != 0 | ext_list$for_grid$errors |
          ext_list$for_grid$heywood
+
+  # Summarise the per-model problems once (the individual EFA warnings were
+  # suppressed during the grid run to avoid one warning per model).
+  n_excluded <- sum(bad %in% TRUE)
+  if (n_excluded > 0L) {
+    cli::cli_warn(
+      c(paste("Excluded {n_excluded} of {length(bad)} EFA{?s} from averaging due to",
+              "errors, non-convergence, or Heywood cases."),
+        "i" = "Inspect {.field implementations_grid} in the returned object for the per-model details."),
+      class = "efa_avg_excluded_solutions"
+    )
+  }
+
   if (all(bad %in% TRUE)) {
 
     av_list <- list(
@@ -636,7 +668,8 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
       .average_values(re_list$vars_accounted, re_list$L, re_list$L_corres,
                       ext_list$h2, re_list$phi, ext_list$extract_phi, averaging,
                       trim, ext_list$for_grid[, c("chisq", "p_chi", "caf", "cfi",
-                                                  "rmsea", "aic", "bic")], df,
+                                                  "rmsea", "aic", "bic", "srmr",
+                                                  "tli", "ecvi", "rmsr")], df,
                       colnames(R)))
 
   }

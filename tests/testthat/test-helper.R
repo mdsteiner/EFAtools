@@ -222,7 +222,8 @@ test_that(".extract_data works", {
                         "vars_accounted", "for_grid"))
   expect_named(ext_a$for_grid, c("errors", "error_m", "converged", "heywood",
                                  "admissible", "chisq", "p_chi", "caf", "cfi",
-                                 "rmsea", "aic", "bic"))
+                                 "rmsea", "aic", "bic", "srmr", "tli", "ecvi",
+                                 "rmsr"))
   checkmate::expect_array(ext_a$L)
   expect_equal(dim(ext_a$L), c(ncol(test_models$baseline$cormat), 3, 3))
   checkmate::expect_array(ext_a$L_corres)
@@ -244,6 +245,16 @@ test_that(".extract_data works", {
   expect_equal(ext_a$for_grid$rmsea < .05, c(NA, TRUE, TRUE, NA))
   expect_equal(sign(ext_a$for_grid$aic), c(NA, -1, -1, NA))
   expect_equal(sign(ext_a$for_grid$bic), c(NA, -1, -1, NA))
+  # SRMR/RMSR are residual-based (also computed for PAF); TLI/ECVI need a
+  # chi-square and are NA for PAF. The non-converged run contributes NA to all.
+  expect_type(ext_a$for_grid$srmr, "double")
+  expect_equal(sum(is.na(ext_a$for_grid$srmr)), 1)
+  expect_type(ext_a$for_grid$rmsr, "double")
+  expect_equal(sum(is.na(ext_a$for_grid$rmsr)), 1)
+  expect_type(ext_a$for_grid$tli, "double")
+  expect_equal(sum(is.na(ext_a$for_grid$tli)), 2)
+  expect_type(ext_a$for_grid$ecvi, "double")
+  expect_equal(sum(is.na(ext_a$for_grid$ecvi)), 2)
   checkmate::expect_array(ext_a$vars_accounted)
   expect_equal(dim(ext_a$vars_accounted), c(3, 3, 3))
 
@@ -253,7 +264,8 @@ test_that(".extract_data works", {
                          "vars_accounted", "for_grid"))
   expect_named(ext_er$for_grid, c("errors", "error_m", "converged", "heywood",
                                   "admissible", "chisq", "p_chi", "caf", "cfi",
-                                  "rmsea", "aic", "bic"))
+                                  "rmsea", "aic", "bic", "srmr", "tli", "ecvi",
+                                  "rmsr"))
   checkmate::expect_array(ext_er$L)
   expect_equal(dim(ext_er$L), c(ncol(test_models$baseline$cormat), 3, 3))
   checkmate::expect_array(ext_er$L_corres)
@@ -275,6 +287,14 @@ test_that(".extract_data works", {
   expect_equal(ext_er$for_grid$rmsea < .05, c(NA, TRUE, TRUE, NA))
   expect_equal(sign(ext_er$for_grid$aic), c(NA, -1, -1, NA))
   expect_equal(sign(ext_er$for_grid$bic), c(NA, -1, -1, NA))
+  expect_type(ext_er$for_grid$srmr, "double")
+  expect_equal(sum(is.na(ext_er$for_grid$srmr)), 1)
+  expect_type(ext_er$for_grid$rmsr, "double")
+  expect_equal(sum(is.na(ext_er$for_grid$rmsr)), 1)
+  expect_type(ext_er$for_grid$tli, "double")
+  expect_equal(sum(is.na(ext_er$for_grid$tli)), 2)
+  expect_type(ext_er$for_grid$ecvi, "double")
+  expect_equal(sum(is.na(ext_er$for_grid$ecvi)), 2)
   checkmate::expect_array(ext_er$vars_accounted)
   expect_equal(dim(ext_er$vars_accounted), c(3, 3, 3))
 
@@ -285,7 +305,8 @@ test_that(".extract_data works", {
                           "vars_accounted", "for_grid"))
   expect_named(ext_rot$for_grid, c("errors", "error_m", "converged", "heywood",
                                    "admissible", "chisq", "p_chi", "caf", "cfi",
-                                   "rmsea", "aic", "bic"))
+                                   "rmsea", "aic", "bic", "srmr", "tli", "ecvi",
+                                   "rmsr"))
   checkmate::expect_array(ext_rot$L)
   expect_equal(dim(ext_rot$L), c(ncol(test_models$baseline$cormat), 3, 3))
   checkmate::expect_array(ext_rot$L_corres)
@@ -306,6 +327,14 @@ test_that(".extract_data works", {
   expect_equal(ext_rot$for_grid$rmsea < .05, c(NA, TRUE, TRUE))
   expect_equal(sign(ext_rot$for_grid$aic), c(NA, -1, -1))
   expect_equal(sign(ext_rot$for_grid$bic), c(NA, -1, -1))
+  expect_type(ext_rot$for_grid$srmr, "double")
+  expect_equal(sum(is.na(ext_rot$for_grid$srmr)), 0)
+  expect_type(ext_rot$for_grid$rmsr, "double")
+  expect_equal(sum(is.na(ext_rot$for_grid$rmsr)), 0)
+  expect_type(ext_rot$for_grid$tli, "double")
+  expect_equal(sum(is.na(ext_rot$for_grid$tli)), 1)
+  expect_type(ext_rot$for_grid$ecvi, "double")
+  expect_equal(sum(is.na(ext_rot$for_grid$ecvi)), 1)
   checkmate::expect_array(ext_rot$vars_accounted)
   expect_equal(dim(ext_rot$vars_accounted), c(3, 3, 3))
 })
@@ -753,6 +782,37 @@ test_that(".array_reorder works", {
                        rep(.4, 3)),
                      c(3, 3, 3)))
 
+})
+
+test_that(".array_reorder uses an optimal permutation alignment", {
+  # Two solutions engineered so that a greedy per-row congruence match maps both
+  # target factors 1 and 3 onto source column 1 (order 1, 2, 1): column 1 would
+  # be duplicated and column 3 dropped, corrupting the average. The optimal
+  # (linear-sum-assignment) alignment instead recovers the true permutation.
+  L1 <- cbind(c(.9, .8, 0, 0, 0, 0),
+              c(0, 0, .9, .8, 0, 0),
+              c(0, 0, 0, 0, .9, .8))
+  Ln <- cbind(c(.2, .1, 0, 0, .9, .8),
+              c(0, 0, .9, .8, 0, 0),
+              c(0, 0, 0, 0, .2, .1))
+
+  # The greedy which.max alignment used previously collapses to a non-permutation.
+  greedy_order <- apply(abs(.factor_congruence(L1, Ln, skip_checks = TRUE)), 1,
+                        which.max)
+  expect_equal(greedy_order, c(1, 2, 1))
+
+  L_arr <- array(c(L1, Ln), dim = c(6, 3, 2))
+  corres_arr <- array(as.numeric(abs(c(L1, Ln)) > .3), dim = c(6, 3, 2))
+  va_arr <- array(1, dim = c(3, 3, 2))
+
+  res <- .array_reorder(vars_accounted = va_arr, L = L_arr, L_corres = corres_arr,
+                        phi = NA, extract_phi = FALSE, n_factors = 3)
+
+  aligned <- res$L[, , 2]
+  # All three source factors are retained (no duplicated/dropped column) ...
+  expect_equal(nrow(unique(round(t(aligned), 8))), 3)
+  # ... and the recovered order is the true permutation, leaving Ln in place.
+  expect_equal(aligned, Ln)
 })
 
 ### test .oblq_grid
