@@ -277,17 +277,25 @@ static FitResult run_single_oblique_fit(const arma::mat& S,
 
 static bool fit_is_better_cpp(const FitResult& candidate,
                               const FitResult& incumbent) {
-  if (candidate.valid && !incumbent.valid) {
-    return true;
-  }
+  // Selection across multi-start fits is driven by the rotation criterion value:
+  // the attained objective measures closeness to the target, whereas convergence
+  // is only a numerical termination flag (the projected-gradient norm fell below
+  // eps within maxit). Each start's reported value is the objective of an actually
+  // attained transformation, so a lower value is a strictly better solution and is
+  // never discarded merely because that start has not formally converged. Exact
+  // ties are broken toward the converged fit. An invalid (non-invertible)
+  // candidate has an infinite objective and can never win.
   if (!candidate.valid) {
     return false;
   }
-  if (candidate.convergence && !incumbent.convergence) {
+  if (!incumbent.valid) {
     return true;
   }
-  if (candidate.convergence == incumbent.convergence && candidate.value < incumbent.value) {
+  if (candidate.value < incumbent.value) {
     return true;
+  }
+  if (candidate.value == incumbent.value) {
+    return candidate.convergence && !incumbent.convergence;
   }
   return false;
 }

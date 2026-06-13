@@ -330,6 +330,14 @@
 }
 
 
+# Bare closed-form orthogonal Procrustes transform: the orthogonal `T` minimizing
+# `||A %*% T - B||_F`. For warm starts where `A` and `B` are already validated;
+# `.orthogonal_procrustes()` wraps this with input validation and full output.
+.procrustes_orthogonal_T <- function(A, B) {
+  s <- svd(crossprod(A, B))
+  s$u %*% t(s$v)
+}
+
 #' Closed-form orthogonal Procrustes rotation
 #'
 #' Rotate `A` to the orthogonal target `B` by minimizing
@@ -349,9 +357,7 @@
   A <- mats$A
   B <- mats$B
 
-  M <- crossprod(A, B)
-  s <- svd(M)
-  Tmat <- s$u %*% t(s$v)
+  Tmat <- .procrustes_orthogonal_T(A, B)
 
   Lrot <- A %*% Tmat
   value <- 0.5 * sum((Lrot - B)^2)
@@ -489,7 +495,7 @@
   S_list <- lapply(unrotated_list, crossprod)
   T_starts <- vector("list", m)
   if (rotation == "oblique" && k > 1L) {
-    T_starts <- lapply(unrotated_list, function(A) .orthogonal_procrustes(A, target)$T)
+    T_starts <- lapply(unrotated_list, function(A) .procrustes_orthogonal_T(A, target))
   }
 
   outer_random_starts <- if (oblique_random_starts_stage %in% c("outer", "both")) {

@@ -545,6 +545,7 @@ behaviour-changing items grouped with NEWS + deliberate snapshot updates:
    numeric/alignment tests. — done (pending commit)
 4. **U-rev-d (Procrustes robustness):** B29 warm start + B34 selection rule; add the
    self-recovery test file. Re-run after to confirm EFA_POOLED first_target/bootstrap CIs.
+   — done (pending commit)
 5. **U-rev-e (OMEGA/SL/scores):** B24 cormat, B25 sums_load denominator, B23 impute,
    B36/B37/B38 guards; psych oracle tests. (Coordinate with the Phase-7 reliability rework —
    some fold in.)

@@ -34,7 +34,9 @@ is useful when the same \code{A} is rotated repeatedly. \code{S} is used only wh
 cross-product must be recomputed on the normalized matrix.}
 
 \item{T_init}{Optional \verb{k x k} nonsingular starting transformation matrix for
-the oblique solver. Its columns are normalized internally.}
+the oblique solver. Its columns are normalized internally. If \code{NULL} (the
+default), the oblique solver is warm-started from the closed-form orthogonal
+Procrustes solution.}
 
 \item{oblique_eps}{Positive convergence tolerance for the projected-gradient
 norm in the oblique solver.}
@@ -88,7 +90,11 @@ For \code{rotation = "oblique"}, the function calls the compiled
 
 \deqn{L = A T^{-T}, \qquad \Phi = T'T, \qquad diag(\Phi) = 1.}
 
-Random starts are only used for oblique alignment. For one-factor models,
-oblique and orthogonal alignment are equivalent, so the function uses the
-stable one-factor orthogonal solution instead of calling the oblique optimizer.
+By default the oblique solver is warm-started from the closed-form orthogonal
+Procrustes solution, which resolves the factor permutation and sign
+indeterminacy and avoids the poor local minima an identity start can fall
+into. Supply \code{T_init} to override this start. Random starts are only used for
+oblique alignment. For one-factor models, oblique and orthogonal alignment are
+equivalent, so the function uses the stable one-factor orthogonal solution
+instead of calling the oblique optimizer.
 }

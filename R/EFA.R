@@ -687,7 +687,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                         dimnames = list(rownam_L, colnam_L,
                                         NULL))
 
-    nonconv_counter <- 0
+    failed_rot <- 0
     for (boot_i in seq_len(b)) {
 
       if (failed[boot_i]) next
@@ -699,8 +699,11 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                    oblique_random_starts = 5),
         error = function(e) NULL
       )
-      if (is.null(aligned_i) || isFALSE(aligned_i$convergence)) {
-        nonconv_counter <- nonconv_counter + 1
+      # Exclude a replicate only when no valid alignment could be produced. The
+      # best multi-start fit is kept even if it did not formally converge: it is
+      # the lowest-objective alignment available and its loadings are well-defined.
+      if (is.null(aligned_i) || isFALSE(aligned_i$valid)) {
+        failed_rot <- failed_rot + 1
         next
       }
       L_rot_boot[,, boot_i] <- aligned_i$loadings
@@ -708,9 +711,9 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
       Structure_boot[,, boot_i] <- aligned_i$loadings %*% aligned_i$Phi
     }
 
-    valid_rot <- b - n_failed - nonconv_counter
-    if (nonconv_counter > 0) {
-      cli::cli_warn(c("{nonconv_counter} target rotation{?s} in the bootstrap procedure did not converge.",
+    valid_rot <- b - n_failed - failed_rot
+    if (failed_rot > 0) {
+      cli::cli_warn(c("{failed_rot} target rotation{?s} in the bootstrap procedure could not be aligned.",
                     "i" = "Bootstrap SE and CI of rotated loadings, factor correlations and structure coefficients are based on {valid_rot} bootstrap sample{?s}."))
     }
 
@@ -753,7 +756,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                         dimnames = list(rownam_L, colnam_L,
                                         NULL))
 
-    nonconv_counter <- 0
+    failed_rot <- 0
 
     for (boot_i in seq_len(b)) {
 
@@ -766,15 +769,15 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
         error = function(e) NULL
       )
       if (is.null(aligned_i)) {
-        nonconv_counter <- nonconv_counter + 1
+        failed_rot <- failed_rot + 1
         next
       }
       L_rot_boot[,, boot_i] <- aligned_i$loadings
     }
 
-    valid_rot <- b - n_failed - nonconv_counter
-    if (nonconv_counter > 0) {
-      cli::cli_warn(c("{nonconv_counter} target rotation{?s} in the bootstrap procedure did not converge.",
+    valid_rot <- b - n_failed - failed_rot
+    if (failed_rot > 0) {
+      cli::cli_warn(c("{failed_rot} target rotation{?s} in the bootstrap procedure could not be aligned.",
                     "i" = "Bootstrap SE and CI of rotated loadings are based on {valid_rot} bootstrap sample{?s}."))
     }
 

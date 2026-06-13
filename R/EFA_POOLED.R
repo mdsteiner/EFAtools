@@ -209,8 +209,7 @@ EFA_POOLED <- function(data_list,
                  rotation = rotation_type),
             procrustes_args)
         )
-        point_rotation_failures[d] <- !is.null(target_rotations[[d]]$convergence) &&
-          isFALSE(target_rotations[[d]]$convergence)
+        point_rotation_failures[d] <- isFALSE(target_rotations[[d]]$valid)
         rot_loadings[[d]] <- target_rotations[[d]]$loadings
         if (rotation_type == "oblique") {
           phis[[d]] <- target_rotations[[d]]$Phi
@@ -219,7 +218,7 @@ EFA_POOLED <- function(data_list,
 
       if (any(point_rotation_failures)) {
         cli::cli_warn(
-          c("At least one fixed-target Procrustes alignment did not converge.",
+          c("At least one fixed-target Procrustes alignment could not be aligned to a valid rotation.",
             "i" = "The pooled point estimates still use the best available {.fn PROCRUSTES} alignment; inspect {.code alignment$point_rotation_failures}."),
           class = "efa_pooled_align_failed"
         )
@@ -1042,7 +1041,10 @@ EFA_POOLED <- function(data_list,
       procrustes_args)
   )
 
-  if (!is.null(pr$convergence) && isFALSE(pr$convergence)) {
+  # Drop the replicate only when no valid alignment was produced. A best
+  # multi-start fit that did not formally converge is still the lowest-objective
+  # alignment available, with well-defined loadings, and is retained.
+  if (isFALSE(pr$valid)) {
     return(NULL)
   }
 

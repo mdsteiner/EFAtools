@@ -18,9 +18,13 @@
 #'
 #' \deqn{L = A T^{-T}, \qquad \Phi = T'T, \qquad diag(\Phi) = 1.}
 #'
-#' Random starts are only used for oblique alignment. For one-factor models,
-#' oblique and orthogonal alignment are equivalent, so the function uses the
-#' stable one-factor orthogonal solution instead of calling the oblique optimizer.
+#' By default the oblique solver is warm-started from the closed-form orthogonal
+#' Procrustes solution, which resolves the factor permutation and sign
+#' indeterminacy and avoids the poor local minima an identity start can fall
+#' into. Supply `T_init` to override this start. Random starts are only used for
+#' oblique alignment. For one-factor models, oblique and orthogonal alignment are
+#' equivalent, so the function uses the stable one-factor orthogonal solution
+#' instead of calling the oblique optimizer.
 #'
 #' @param A Numeric loading matrix to be aligned.
 #' @param Target Numeric target matrix with the same dimensions as `A`.
@@ -30,7 +34,9 @@
 #'   `oblique_normalize = FALSE`; if Kaiser normalization is requested, the
 #'   cross-product must be recomputed on the normalized matrix.
 #' @param T_init Optional `k x k` nonsingular starting transformation matrix for
-#'   the oblique solver. Its columns are normalized internally.
+#'   the oblique solver. Its columns are normalized internally. If `NULL` (the
+#'   default), the oblique solver is warm-started from the closed-form orthogonal
+#'   Procrustes solution.
 #' @param oblique_eps Positive convergence tolerance for the projected-gradient
 #'   norm in the oblique solver.
 #' @param oblique_maxit Non-negative integer. Maximum number of projected-gradient
@@ -99,6 +105,25 @@ PROCRUSTES <- function(A,
 
   S_arg <- if (is.null(S)) NULL else .procrustes_validate_crossprod(S, k)
   T_arg <- if (is.null(T_init)) NULL else .procrustes_validate_t_init(T_init, k)
+
+  # Warm-start the oblique solver from the closed-form orthogonal Procrustes
+  # solution when the user supplies no start. The identity start can be trapped
+  # in poor local minima on well-conditioned problems (and trapped solutions
+  # still report convergence), whereas the orthogonal solution resolves the
+  # factor permutation and sign structure and lands in the basin of the global
+  # oblique optimum. The consensus engine warm-starts its inner alignments the
+  # same way. An explicit T_init overrides this.
+  if (is.null(T_arg)) {
+    if (controls$oblique_normalize) {
+      # Compute the start in the same Kaiser row-normalized space the compiled
+      # solver optimizes in (mirrors the row weighting in .oblique_procrustes()).
+      w <- sqrt(rowSums(A^2))
+      w[!is.finite(w) | w < 1e-15] <- 1
+      T_arg <- .procrustes_orthogonal_T(A / w, Target / w)
+    } else {
+      T_arg <- .procrustes_orthogonal_T(A, Target)
+    }
+  }
 
   out <- .oblique_procrustes(
     A = A,
