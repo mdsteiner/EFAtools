@@ -103,6 +103,33 @@ test_that("n_factors are correctly returned", {
   expect_false("RMSEA" %in% names(hull_raw_uls_CFI$n_factors))
 })
 
+test_that("the convex-hull elimination tests every interior triplet", {
+  # Hand-built fit table (columns: nfactors, goodness-of-fit, df, st). The fit
+  # values increase monotonically, so the boundary step removes nothing; the
+  # geometry is set so the last interior solution (two factors) lies below the
+  # line connecting its neighbours and must be dropped from the hull.
+  s <- cbind(0:3, c(0.00, 0.80, 0.85, 1.00), c(10, 6, 3, 1), 0)
+  out <- .hull_calc(s, J = 3, gof_t = "CAF")
+
+  # the below-chord last interior solution is off the hull (NA st) ...
+  expect_true(is.na(out$s_complete[3, 4]))
+  # ... while the supporting interior solution remains on it
+  expect_false(is.na(out$s_complete[2, 4]))
+  expect_equal(out$retain, 1)
+
+  # a last interior solution lying above its neighbours' chord is kept
+  s2 <- cbind(0:3, c(0.00, 0.85, 0.95, 1.00), c(10, 6, 3, 1), 0)
+  out2 <- .hull_calc(s2, J = 3, gof_t = "CAF")
+  expect_false(is.na(out2$s_complete[3, 4]))
+
+  # a fully convex fit curve collapses the hull below three solutions; the
+  # max-fit fallback is used instead of indexing past the remaining solutions
+  s3 <- cbind(0:4, c(0.00, 0.10, 0.25, 0.55, 1.00), c(10, 8, 6, 3, 1), 0)
+  expect_warning(out3 <- .hull_calc(s3, J = 4, gof_t = "CAF"),
+                 class = "efa_hull_few_solutions")
+  expect_equal(out3$retain, 4)
+})
+
 
 # Create singular correlation matrix for tests
 x <- rnorm(10)

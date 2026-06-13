@@ -14,3 +14,4 @@
 ^\.claude$
 ^CLAUDE\.md$
 ^REWRITE_PLAN\.md$
+^PRE_PHASE2_REVIEW\.md$

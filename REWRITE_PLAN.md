@@ -1,11 +1,20 @@
 # EFAtools — Rewrite & Expansion Plan
 
-> Status: **in progress** — Phase 0 complete; Phase 1 partially complete (see the
+> Status: **in progress** — Phase 0 complete; Phase 1 substantially complete (see the
 > checklists and the unit queue in §5a). Originally prepared from a full review of the
 > package (v0.7.1.9000) plus a structured best-practice research pass; last synced
-> against the code at commit 660ca34 (2026-06). This document is the single source of
+> against the code at commit 288d3d9 (2026-06). This document is the single source of
 > truth for the rewrite; it is meant to be edited as decisions are made and phases
 > completed.
+>
+> **2026-06-13 pre-Phase-2 review:** a full correctness/robustness/test audit landed in
+> `PRE_PHASE2_REVIEW.md`. It re-opened **B1** (quartimax still routes to bentlerT) and
+> down-graded **B9** to partial (rotmat half unfixed → **B22**), and added **B20–B54** to
+> §6 plus a review-spawned unit queue (U-rev-a … U-rev-h) to run **before Phase 3**. The
+> maintainer's three flagged areas: EFA_POOLED SE aggregation **verified correct**; HULL
+> has one critical elimination off-by-one (**B20**); the oblique Procrustes **core math is
+> correct** but the default identity start (**B29**) and multi-start selection (**B34**)
+> need fixing.
 >
 > This file is a development artefact, **not** part of the shipped package (it is
 > listed in `.Rbuildignore`).
@@ -543,7 +552,7 @@ scheduled).
 
 | ID | Severity | Bug | Anchor | Status | Fix → where |
 |----|----------|-----|--------|--------|-------------|
-| B1 | high | `quartimax` called `GPArotation::bentlerT` | was `R/ROTATE_ORTH.R` (deleted) | **fixed** (7af40bf) | Engine-by-name table in `rotate_model.R`; covered by `test-regression-rotations.R`. |
+| B1 | high | `quartimax` called `GPArotation::bentlerT` | `R/rotate_model.R: .orth_engines` (line ~18) | **REOPENED** (was "fixed" 7af40bf) | The engine-by-name table **preserves** the misrouting (`quartimax = …bentlerT`, "as in the established implementation"); `test-regression-rotations.R` pins the wrong engine. Verified ≠ `GPArotation::quartimax`/`psych` by 0.24–0.84. Decide outright fix (point at `cfT(kappa=0)`, NEWS) vs honest rename. → see `PRE_PHASE2_REVIEW.md` §3. |
 | B2 | high | ML/ULS χ² omits Bartlett correction; ULS χ² uses LS residual SS as if Wishart | `R/helper.R: .gof()` | **open** | Bartlett-corrected ML; proper residual-based ULS statistic. → **U9c** (O7; SE side in Ph6). |
 | B3 | med | ULS objective sums lower triangle incl. diagonal (`trimatl`) & differs from reported `Fm`; obj/grad eigenvalue floors inconsistent (`0` vs `eps*100`). *(The earlier "two eigendecompositions" claim is outdated — one each now, but `R` is still passed by value.)* | `src/uls_helper.cpp: uls_residuals()` / `grad_uls()` | **open** | Strictly off-diagonal; one shared floor; `const&`. → **Ph3** (also fixes minres parity). |
 | B4 | high | `print.OMEGA` `ncol(x[[1]] == 3)` paren typo | `R/print.OMEGA.R: print.OMEGA()` | **open** | Fixed by the cli rewrite of the OMEGA print. → **U6** (long term: tidy `efa_reliability`, Ph7). |
@@ -552,7 +561,7 @@ scheduled).
 | B6 | med | `factor_corres` dimension check is a no-op (`nrow()` of a vector) | `R/OMEGA_helper.R` | **open** | `length(g_load)`/`nrow(s_load)`. → **Ph7**. |
 | B7 | high | `isTRUE()` on length>1 vectors in the error-aggregation condition. *(The `temp_corres` half of the original report appears addressed in `helper.R` — re-verify when picked up.)* | `R/EFA_AVERAGE.R` (error aggregation, ~`:606`) | **open** | Elementwise NA-safe condition. → **U9b**. |
 | B8 | med | `print.N_FACTORS` read `x$output$…` (field is `x$outputs`) → Bartlett print + scree silently no-op | was `R/print.N_FACTORS.R` (deleted) | **fixed** (660ca34) | Unified `format.N_FACTORS` reads `x$outputs`. |
-| B9 | med | Oblique reflection/reorder didn't propagate to Phi/structure/rotmat (`ss_factors` worst) | was `R/ROTATE_OBLQ.R` (deleted) | **fixed** (7af40bf; NEWS entry) | `.reflect_and_order()` in `rotate_model.R` + invariance test. |
+| B9 | med | Oblique reflection/reorder didn't propagate to Phi/structure/rotmat (`ss_factors` worst) | was `R/ROTATE_OBLQ.R` (deleted) | **partial** (7af40bf) | Phi/Structure propagation **fixed & verified**; the **rotmat** half is NOT (sign flips never applied to rotmat) → tracked as **B22**. |
 | B10 | med | PAF `stop()` on neg-eigenvalues aborted whole bootstrap; max-iter off-by-one convergence flag | `src/paf_iter.cpp` | **mitigated** (77da514: replicates tryCatch-guarded in `.boot_fun`) | C++ still `stop()`s; status codes + off-by-one fix land with the engine rewrite. → **Ph3**. |
 | B11 | med | `print.COMPARE` `aes_string()` + `size=` (deprecated); plot drawn inside `print` | `R/print.COMPARE.R: print.COMPARE()` | **open** | `aes(.data$…)` + `linewidth`; move into a `plot.COMPARE` method. → **U6**. |
 | B12 | med | `GPArotation` `randomStarts` used with no min-version floor | `DESCRIPTION` | **open** | Pin `GPArotation (>= 2022.4-1)` (U8c). `randomStarts` default kept at **10** — raising `EFA()` to the research-recommended 100 is too slow under the R engine; revisit (and unify the 10-vs-100 `EFA()`/`.rotate_model()` defaults) once rotation is fast in C++. → **U8c + Phase 4**. |
@@ -563,6 +572,67 @@ scheduled).
 | B17 | low | `residuals.EFA` names a logical arg `print` and prints as a side effect | `R/residuals.EFA.R` | **open** | Pure extractor with `type=`; formatting in `summary.EFA`. → **U5**. |
 | B18 | med | `arma::eig_sym` called unguarded — the only C++ entry point without the checked-eigen pattern added in 77da514; a degenerate replicate matrix is undefined behaviour, not a caught error | `src/nest_sym.cpp` (`eig_sym` call) | **open** | Apply the same guarded-eigen pattern as the other C++ helpers. → **U9b**. |
 | B19 | low | EKC `AM2019`: `which(lambda <= refs)[1] - 1` yields `NA` when no eigenvalue crosses the reference; `NA` flows into `N_FACTORS` aggregation (downstream highlight guard anticipates it) | `R/EKC.R` (`AM2019` branch) | **open** | Decide the convention (`NA` vs `J`) + guard + boundary test. → **U9b**. |
+
+**B20–B54 — from the 2026-06-13 pre-Phase-2 review** (`PRE_PHASE2_REVIEW.md`; all
+**verified numerically** unless noted). Severity = effect in realistic use.
+
+| ID | Severity | Bug | Anchor | Status | Fix → where |
+|----|----------|-----|--------|--------|-------------|
+| B20 | **critical** | Convex-hull elimination off-by-one (`while (i < nr_s-1)`) never tests the last interior triplet → wrong retained factors on real data (verified on `WJIV_ages_14_19`) | `R/HULL.R: .hull_calc` | **fixed** (pending commit) | Loop bound → `i <= nr_s - 1`; step 5/6 moved above the `<3` check so a hull collapsing below 3 routes to the few-solutions fallback (guarded indexing) instead of crashing. Hand-built geometry test added (remove/keep/collapse). Bundled-data counts unchanged; WJIV RMSEA 12→1. NEWS entry added. → **U-rev-a**. |
+| B21 | **critical** | Pooled CAF computed on a zero-diagonal residual matrix (`.compute_kmo` never sees `diag←1`) → NaN or garbage near-1 in **every** call | `R/EFA_POOLED.R: .efa_pooled_fit_indices` | **fixed** (pending commit) | Added `diag(delta_hat) <- 1` before `.compute_kmo` (covers point + bootstrap paths); CAF snapshots re-baselined (`:NA`→value). Single-imputation identity test (pooled CAF == single-EFA CAF) added. No NEWS (function unreleased). → **U-rev-a**. |
+| B22 | high | `rotmat` sign flips never propagated (rows+cols permuted, signs dropped) → `L_unrot %*% rotmat ≠ rot_loadings` after any reflection/reorder (the unfixed half of B9) | `R/rotate_model.R: .reflect_and_order` (line ~79); `R/PROMAX.R: .rotate_promax` | **open** | `rotmat <- (rotmat %*% diag(signs))[, ord]`; invariant test. → **U-rev-b**. |
+| B23 | high | `FACTOR_SCORES(impute=…)` never imputes (psych `missing=` unset); "means"/"median" are no-ops that silently switch to the sapa algorithm | `R/FACTOR_SCORES.R` | **open** | Pass `missing=(impute!="none")`, fix option spelling, or drop arg until Ph7. → **U-rev-e**. |
+| B24 | high | `.OMEGA_FLEX` overwrites a user `cormat` with `model$orig_R` (`NA` for flexible-input SL) → OMEGA on a flexible-SL object crashes with a raw base error | `R/OMEGA_helper.R: .OMEGA_FLEX` (line ~26) | **open** | Only use `orig_R` when user cormat is NULL and non-NA. → **U-rev-e**. |
+| B25 | high | `variance="sums_load"` g row: `omega_tot_g` uses the correspondence-zeroed sum denominator while `omega_h_g`/`omega_sub_g` use the unzeroed one → `tot ≠ hier+sub` | `R/OMEGA_helper.R: .OMEGA_FLEX` | **open** | One (unzeroed) denominator for all g quantities. → **U-rev-e** / Ph7. |
+| B26 | high | PUC formula assumes complete-g + simple structure; wrong in the two supported violation scenarios (cross-loadings, incomplete g) | `R/OMEGA_helper.R` (`.OMEGA_LAVAAN`/`.OMEGA_FLEX`) | **open** | Compute PUC from the actual cross-pair count. → Ph7. |
+| B27 | high | `NEST()` builds `u2 <- sqrt(1 - h2)` from a reference-model EFA with no Heywood guard → NaN → unclassed `Rcpp::stop`; crashes the documented direct PAF call | `R/NEST.R` (line ~111) | **open** | Clamp/guard communalities (use `heywood` field); classed condition + test. → **U-rev-f**. |
+| B28 | high | `EFA_POOLED(se="np-boot")` aborts whole pooled bootstrap if any one component-EFA replicate failed | `R/EFA_POOLED.R: .efa_pooled_bootstrap_pool` (loop ~1252) | **open** | Skip/tally non-finite replicates; warn (classed). → **U-rev-f**. |
+| B29 | high | Oblique `PROCRUSTES()` defaults to identity start, 0 random starts → silent bad local minima (trapped solutions report `convergence=TRUE`); hits `EFA_POOLED` first_target + EFA oblique bootstrap CIs. Consensus path unaffected (warm orthogonal start) | `src/oblique_procrustes.cpp` (T_primary `eye`); `R/PROCRUSTES.R` | **open** | Warm orthogonal-Procrustes start (as consensus does) and/or random starts. → **U-rev-d**. |
+| B30 | high | Greedy `which.max` congruence alignment can map two factors onto one (non-permutation) → corrupts the EFA_AVERAGE mean; correct `.align_solution` (LSAP) exists | `R/averaging.R: .array_reorder` (~344) | **open** | Use `.align_solution`/reject non-permutations. → **U-rev-c**. |
+| B31 | high | Vector `precision` built into the grid but the worker passes the raw user arg → `assert_number` fails every EFA, swallowed by `try()` → all-NA result | `R/EFA_AVERAGE.R` (future_lapply ~582; single-combo ~546) | **open** | Pass `arg_grid$precision[[i]]`; recycling test. → **U-rev-c**. |
+| B32 | high | D2 χ² ARIV centred at `sqrt(mean(χ²))` not `mean(sqrt(χ²))` → one-sided inflation of ARIV/FMI/pooled χ² vs Li et al. (1991)/`mitml` | `R/EFA_POOLED.R: .efa_pooled_D2` (line ~647) | **open** | `r <- (1+1/m)*var(sqrt(chis))`; cite Li et al.; re-baseline. → **U-rev-g**. |
+| B33 | high→med | CFI/TLI lack `max(δ,0)` noncentrality clamping → deflated/zero CFI when the null over-fits (≠ lavaan/Bentler), internally contradictory with `p_chi`/RMSEA | `R/fit-indices.R: .gof` (CFI ~148); `R/EFA_POOLED.R` ~751 | **open** | Truncate deltas at 0 (per cited Bentler/Kline). Behaviour-changing in over-fit regime; NEWS. → **U-rev-g**. |
+| B34 | high→med | Procrustes multi-start selection prefers any converged fit over any non-converged one regardless of objective → discards better solutions; returned flag hides it | `src/oblique_procrustes.cpp: fit_is_better_cpp` (~278) | **open** | Select on objective first, tie-break on convergence. → **U-rev-d**. |
+| B35 | med | Heywood detector (`h2 ≥ 1+eps`) unreachable for ML/ULS (bounded `psi ≥ .005`) → improper ML/ULS boundary solutions never flagged; NEWS "consistent across PAF/ML/ULS" is vacuous | `R/estimate_model.R: .finalize_fit`; `R/ML.R`/`R/ULS.R` bounds | **open** | Flag boundary (`psi` at bound) solutions, or soften the NEWS claim. → **U-rev-g**. |
+| B36 | med | ECV/group-H use correspondence-zeroed group loadings (≠ `psych::omega`/Rodriguez 2016) despite the psych-reproduction claim | `R/OMEGA_helper.R: .OMEGA_FLEX` | **open** | Unzeroed group loadings for ECV. → Ph7. |
+| B37 | med | SL second-order Heywood → NaN `s*` columns + cryptic base warning; `suppressWarnings()` swallows the classed `efa_heywood` | `R/SL.R` (EFA branch) | **open** | Detect + classed condition; targeted suppression. → **U-rev-e**. |
+| B38 | med | SL lavaan branch lacks the psi/theta Heywood guards `.OMEGA_LAVAAN` has; elementwise `sqrt(psi)` valid only for diagonal psi | `R/SL.R` (lavaan branch) | **open** | Port guards; use diagonal explicitly (also dedup with `.OMEGA_LAVAAN`). → **U-rev-e**. |
+| B39 | med | NEST no-stop boundary reports `max_fac−1` (just-rejected model); reference fits run past the `df>0` bound | `R/NEST.R` (loop exit) | **open** | Report last accepted; stop at df bound. → **U-rev-f**. |
+| B40 | med | PARALLEL silently returns `NA` when real eigenvalues never cross the reference | `R/PARALLEL.R: .determine_factors` | **open** | Decide boundary convention + document; classed note. → **U-rev-f**. |
+| B41 | med | Smoothed matrices re-flagged NPD on every downstream call (NPD threshold `eps^0.6` stricter than `psych::cor.smooth`) → repeated `efa_cor_smoothed` (B15 incomplete across calls) | `R/cor-input.R: .prepare_cor_input` | **open** | Relax re-check / tag already-smoothed. → **U-rev-f**. |
+| B42 | med | `N_FACTORS` suitability gate hard-aborts when `N` missing even for N-free criteria | `R/N_FACTORS.R: N_FACTORS` | **open** | Gate abort on whether an N-requiring item was requested. → **U-rev-f**. |
+| B43 | med | Raw-data path: NA in the computed correlation matrix → unclassed base crash | `R/cor-input.R: .prepare_cor_input` | **open** | Classed condition pointing at `use=`. → **U-rev-f**. |
+| B44 | med | `.hull_calc` crashes with an opaque base error if any gof value is NA | `R/HULL.R: .hull_calc` | **open** | Drop/short-circuit NA rows + classed warning. → **U-rev-f**. |
+| B45 | med | CONSENSUS_PROCRUSTES between-run congruence computed on **unaligned** pooled loadings → uninterpretable diagnostic | `R/PROCRUSTES.R: CONSENSUS_PROCRUSTES` (~325) | **open** | Align before computing congruence. → **U-rev-d**. |
+| B46 | med | EFA_AVERAGE permanently overwrites the user's global `progressr` handlers | `R/EFA_AVERAGE.R` (~551) | **open** | Scope with `withr`/`on.exit`. → **U-rev-c**. |
+| B47 | med | EFA_AVERAGE relays classed EFA warnings once per grid row (spam); EFA.R comment claims a non-existent suppression | `R/EFA_AVERAGE.R` (~577) | **open** | Summarize to one warning; fix comment. → **U-rev-c**. |
+| B48 | med | EFA_AVERAGE does not extract/tally/average the new fit indices (SRMR, TLI, ECVI, RMSR) | `R/averaging.R: .extract_data` | **open** | Add to extraction + averaging maps. → **U-rev-c**. |
+| B49 | med | `print.EFA_AVERAGE` auto-plots by default (violates "print never plots") | `R/print.EFA_AVERAGE.R` | **open** | `plot = FALSE` default. → **U-rev-c**. |
+| B50 | med | Rubin df lacks Barnard–Rubin adjustment → can exceed N; reported FMI is uncorrected λ | `R/EFA_POOLED.R: .efa_pooled_rubin_pool` (~979) | **open** | Apply Barnard–Rubin df (needs complete-data df). → Ph6/U-rev-g. |
+| B51 | med | NA `chi_null` unguarded: `det()` underflow in `.null_chisq` crashes EFA/`.gof`/SMT, silently NAs BARTLETT | `R/fit-indices.R: .null_chisq/.gof`; `R/SMT.R:150` | **open** | Guard determinant; classed condition. → **U-rev-f**. |
+| B52 | med | `factor_corres.cpp` cross-loading index sets collide for ≥10 factors (indices joined without separator) | `src/factor_corres.cpp` (~88) | **open** | Join with a separator. → **U-rev-f**. |
+| B53 | med | Bootstrap re-fires per-replicate warnings (`efa_type_override`, C++ max-iter) `b_boot` times | `R/EFA.R: .boot_fun` | **open** | Suppress within loop; surface once. → **U-rev-f**. |
+| B54 | med | Pooled `fit_indices$Fm` is a different estimand than the component `Fm` it is named after (≈2× for ULS); pooled set omits TLI/ECVI; `fit_indices_pooled_algorithm` SEs/CIs statistically incoherent | `R/EFA_POOLED.R: .efa_pooled_fit_indices` | **open** | Recompute/rename consistently; add missing indices; drop or relabel the algorithm-SE block. → **U-rev-g**. |
+
+**B55–B60 — from the print-method audit re-run** (2026-06-13; `PRE_PHASE2_REVIEW.md`
+§4/§5/§8/§10; all verified-numerically).
+
+| ID | Severity | Bug | Anchor | Status | Fix → where |
+|----|----------|-----|--------|--------|-------------|
+| B55 | med | Any 1-factor solution with a rotation prints garbage Phi/Structure/Variances tables — `.rotate_single_factor` NA-fills (scalar `NA`, not `NULL`) and print guards `is.null` only; variances breakage hits orthogonal 1-factor too | `R/rotate_model.R: .rotate_single_factor` (~119); `R/print.EFA.R` (~474/484/512) | **open** | Return `NULL` for inapplicable fields, or add `all(is.na())` print guards. → **U-rev-h**. |
+| B56 | med | `format()` leaks ANSI for `LOADINGS`/`SLLOADINGS`/`N_FACTORS`/`efa_retention` (cli_format_method, no `ansi_strip`) when colours on → violates plain-text `format()` contract | `R/print.LOADINGS.R`/`print.SLLOADINGS.R`/`N_FACTORS.R`/`efa_retention.R` (`format.*`) | **open** | Wrap bodies in `cli::ansi_strip` like the EFA family. → **U-rev-h**. |
+| B57 | low (dedup) | `.efa_loading_row_order` == `.loadings_row_order` byte-for-byte (both live) | `R/print.EFA.R` (~1951) / `R/print.LOADINGS.R` (~256) | **open** | Keep one, call from both; ~17 lines. → **U-rev-h**. |
+| B58 | low (dedup) | Small-primary-gap diagnostic computed twice (count vs rows); `count == length(rows)` → desync risk | `R/print.EFA.R: .efa_small_primary_gap_count` (~1640) / `_rows` (~1801) | **open** | Count returns `length(rows(...))`; ~10 lines. → **U-rev-h**. |
+| B59 | low | `print.EFA_AVERAGE` lists `admissible` among "varied settings" (removal vector omits it; masked unless a solution is inadmissible) | `R/print.EFA_AVERAGE.R` (~39–40) | **open** | Add `"admissible"` to the removal vector. → **U-rev-c**. |
+| B60 | low | Print/formatter cluster: negative-zero rendered with `−` in `.efa_num`/`.numformat`; dead `.print_efa_structure_note` (only a commented call); `.efa_num` padding returns a `cli ansi_string` even when unstyled | `R/format-helpers.R`; `R/print.EFA.R` (~1874) | **open** | Normalise `-0`; remove dead fn; `as.character()` the padded result. → **U-rev-h**. |
+
+*(Further low/doc/test findings live in `PRE_PHASE2_REVIEW.md` §5–§8; not all are mirrored
+here.)*
+
+**Review-spawned unit queue (U-rev-a … U-rev-i):** see `PRE_PHASE2_REVIEW.md` §9 for the
+atomic, dependency-ordered breakdown. Insert ahead of Phase 3 — these harden the existing
+features the C++/SE phases will build on. **All fifteen subsystem reviews are now complete**
+(the print-method + dedup reviewer was re-run with verification on 2026-06-13).
 
 ---
 

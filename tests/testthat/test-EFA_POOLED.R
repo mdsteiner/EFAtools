@@ -51,6 +51,16 @@ test_that("EFA_POOLED returns a well-formed pooled object", {
   expect_true(is.finite(pooled_obl$fit_indices$RMSR))
 })
 
+test_that("pooled CAF reproduces the single-solution CAF on identical imputations", {
+  # Pooling identical correlation matrices reproduces the single EFA solution, so
+  # the pooled CAF (computed on the residual matrix with a unit diagonal) must
+  # equal the CAF that EFA() reports for that solution.
+  single <- EFA(cormat, n_factors = 3, N = 500, method = "PAF", rotation = "promax")
+  expect_equal(pooled_obl$fit_indices$CAF, single$fit_indices$CAF, tolerance = 1e-6)
+  expect_gt(pooled_obl$fit_indices$CAF, 0)
+  expect_lt(pooled_obl$fit_indices$CAF, 1)
+})
+
 test_that("EFA_POOLED records the pooling settings", {
   s <- pooled_obl$settings
   expect_true(s$pooled)

@@ -67,7 +67,7 @@
       RMSEA [90% CI]  [95% bootstrap/MI-CI] : <num> [ <num>; <num>] [ <num>, <num>]
       AIC  [95% bootstrap/MI-CI] : <num> [ <num>, <num>]
       BIC  [95% bootstrap/MI-CI] : <num> [ <num>, <num>]
-      CAF  [95% bootstrap/MI-CI] :NA [ <num>, <num>]
+      CAF  [95% bootstrap/MI-CI] : <num> [ <num>, <num>]
       RMSR  [95% bootstrap/MI-CI] : <num> [ <num>, <num>]
       SRMR  : <num>
       
@@ -193,7 +193,7 @@
       RMSEA [90% CI]  : <num> [ <num>; <num>]
       AIC  : <num>
       BIC  : <num>
-      CAF  :NA
+      CAF  : <num>
       RMSR  : <num>
       SRMR  : <num>
 
@@ -369,7 +369,7 @@
       RMSEA [90% CI]  : <num> [ <num>; <num>]
       AIC  : <num>
       BIC  : <num>
-      CAF  :NA
+      CAF  : <num>
       RMSR  : <num>
       SRMR  : <num>
       

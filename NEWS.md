@@ -50,6 +50,11 @@
   (so the structure matrix and reported correlations did not match the loadings), the
   rotation matrix was left in the unordered factor order, and with
   `order_type = "ss_factors"` the factor intercorrelations were not reordered at all.
+* `HULL()`: The convex-hull elimination now tests every triplet of adjacent solutions,
+  including the one formed by the last interior solution. Previously this final triplet
+  was skipped, so a solution lying below the line connecting its neighbours could remain
+  on the hull. This can change the number of factors suggested by `HULL()` (and hence by
+  `N_FACTORS()`).
 
 
 # EFAtools 0.7.1

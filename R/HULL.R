@@ -363,6 +363,38 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
     d_s <- diff(s[, 2])
   }
 
+  # 5) all triplets of adjacent solutions are considered consecutively.
+  #    The middle solution is excluded if its point is below or on the line
+  #    connecting its neighbors in GOF vs df.
+
+  # 6) repeat 5) until no solution can be excluded
+
+  # The `i <= nr_s - 1` bound ensures the final interior triplet is also tested;
+  # the loop is a no-op while fewer than three boundary solutions remain.
+  nr_s <- nrow(s)
+  i <- 2
+
+  while(i <= nr_s - 1) {
+
+    f1 <- s[i - 1, 2]
+    f2 <- s[i, 2]
+    f3 <- s[i + 1, 2]
+    df1 <- s[i - 1, 3]
+    df2 <- s[i, 3]
+    df3 <- s[i + 1, 3]
+
+    # compute f2 if it were on the line between f1 and f3
+    p_f2 <- f1 + (f3 - f1) / (df3 - df1) * (df2 - df1)
+
+    # check if f2 is below or on the predicted line and if so, remove it
+    if (f2 <= p_f2) {
+      s <- s[-i, , drop = FALSE]
+      nr_s <- nr_s -1
+      i <- 1
+    }
+    i <- i + 1
+  }
+
   if (nrow(s) < 3) {
     cli::cli_warn(
       c("Fewer than three solutions were located on the hull using {gof_t} as goodness-of-fit index.",
@@ -387,38 +419,6 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
 
 
   } else {
-
-
-    # 5) all triplets of adjacent solutions are considered consecutively.
-    #    middle solution is excluded if its point is below or on the line
-    #    connecting its neighbors in GOF vs df
-
-    # 6) repeat 5) until no solution can be excluded
-
-    nr_s <- nrow(s)
-    i <- 2
-
-    while(i < nr_s - 1) {
-
-      f1 <- s[i - 1, 2]
-      f2 <- s[i, 2]
-      f3 <- s[i + 1, 2]
-      df1 <- s[i - 1, 3]
-      df2 <- s[i, 3]
-      df3 <- s[i + 1, 3]
-
-      # compute f2 if it were on the line between f1 and f3
-      p_f2 <- f1 + (f3 - f1) / (df3 - df1) * (df2 - df1)
-
-      # check if f2 is below or on the predicted line and if so, remove it
-      if (f2 <= p_f2) {
-        s <- s[-i, , drop = FALSE]
-        nr_s <- nr_s -1
-        i <- 1
-      }
-      i <- i + 1
-    }
-
 
     # 7) the st values of the hull solutions are determined (Eq 5)
     for (i in 2:(nrow(s) - 1)) {

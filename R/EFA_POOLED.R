@@ -776,6 +776,7 @@ EFA_POOLED <- function(data_list,
   # Ensure symmetry of residuals by (residuals + t(residuals)) / 2. Asymmetry
   # can arise due to floating point imprecision from averaging the matrices.
   delta_hat <- (residuals + t(residuals)) / 2
+  diag(delta_hat) <- 1
   CAF <- tryCatch(1 - .compute_kmo(delta_hat)$KMO,
                   error = function(e) NA_real_)
 
