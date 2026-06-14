@@ -79,8 +79,9 @@
 
     }
 
-  # Check if input to factor_corres is correct
-  checkmate::assert_matrix(factor_corres, null.ok = TRUE, nrows = nrow(g_load),
+  # Check if input to factor_corres is correct (g_load is a vector here, so the
+  # item count is its length, equivalently nrow(s_load)).
+  checkmate::assert_matrix(factor_corres, null.ok = TRUE, nrows = length(g_load),
                            ncols = ncol(s_load))
 
   # Create an input dataframe

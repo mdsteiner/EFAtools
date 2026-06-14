@@ -313,6 +313,11 @@ test_that("errors are thrown correctly", {
   expect_warning(.OMEGA_FLEX(schmid_mod, type = "psych",
                              factor_corres = sl_mod$sl[, c("F1", "F2", "F3")] >= .2,
                              variance = "correlation"), class = "efa_omega_corres_override")
+  # A factor_corres with the wrong number of rows (one fewer than the number of
+  # items) must be rejected, not silently used to corrupt the omega outputs.
+  expect_error(.OMEGA_FLEX(sl_mod, type = "EFAtools",
+                           factor_corres = (sl_mod$sl[, c("F1", "F2", "F3")] >= .2)[-1, ],
+                           variance = "correlation"))
 })
 
 rm(efa_mod, sl_mod,
