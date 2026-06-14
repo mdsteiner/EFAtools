@@ -100,55 +100,14 @@ KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
   R <- prep$R
 
 
-  # Store original R for later
-  R_orig <- R
+  # Calculate the PCA / SMC / EFA eigenvalues for the requested types
+  eigen_list <- .three_eigen(R, eigen_type, n_factors = n_factors, ...)
 
-  # Prepare objects
-  n_fac_PCA <- NA
-  n_fac_SMC <- NA
-  n_fac_EFA <- NA
-  eigen_R_PCA <- NA
-  eigen_R_SMC <- NA
-  eigen_R_EFA <- NA
-
-  if("PCA" %in% eigen_type) {
-
-    # Calculate eigenvalues and determine number of factors
-    eigen_R_PCA <- eigen(R, symmetric = TRUE, only.values = TRUE)$values
-    n_fac_PCA <- sum(eigen_R_PCA >= 1)
-
-  }
-
-  if("SMC" %in% eigen_type) {
-
-    # Calculate SMCs and replace diagonal of correlation matrix with these
-    inverse_R <- solve(R)
-    SMCs <- 1 - 1 / diag(inverse_R)
-    diag(R) <- SMCs
-
-    # Calculate eigenvalues and determine number of factors
-    eigen_R_SMC <- eigen(R, symmetric = TRUE, only.values = TRUE)$values
-    n_fac_SMC <- sum(eigen_R_SMC >= 1)
-
-  }
-
-  if("EFA" %in% eigen_type) {
-
-    R <- R_orig
-
-    # Do an EFA to get final communality estimates and replace diagonal of
-    # correlation matrix with these
-    EFA_h2 <- suppressMessages(suppressWarnings(EFA(R, n_factors = n_factors, ...)$h2))
-    diag(R) <- EFA_h2
-
-    # Calculate eigenvalues and determine number of factors
-    eigen_R_EFA <- eigen(R, symmetric = TRUE, only.values = TRUE)$values
-    n_fac_EFA <- sum(eigen_R_EFA >= 1)
-
-  }
-
-  eigen_list <- list(PCA = eigen_R_PCA, SMC = eigen_R_SMC, EFA = eigen_R_EFA)
-  nfac_list <- list(PCA = n_fac_PCA, SMC = n_fac_SMC, EFA = n_fac_EFA)
+  # Kaiser-Guttman: retain as many factors as there are eigenvalues greater than
+  # or equal to 1 (NA for any eigenvalue type that was not requested)
+  nfac_list <- lapply(eigen_list, function(eig) {
+    if (length(eig) == 1L && is.na(eig)) NA else sum(eig >= 1)
+  })
 
   # one record per requested eigenvalue type (eigenvalues with the >= 1 rule)
   results <- list()

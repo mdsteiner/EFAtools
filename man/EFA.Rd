@@ -182,6 +182,8 @@ with the final communality estimates as diagonal.}
 \item{convergence}{Integer code for convergence as returned by
 \code{\link[stats:optim]{stats::optim()}} (only for ML and ULS).
 0 indicates successful completion.}
+\item{heywood}{A named integer vector indicating which variables have a
+Heywood (improper) case in the unrotated solution; empty if there are none.}
 \item{unrot_loadings}{Loading matrix containing the final unrotated loadings.}
 \item{vars_accounted}{Matrix of explained variances and sums of squared loadings. Based on the unrotated loadings.}
 \item{fit_indices}{For ML and ULS: Fit indices derived from the unrotated
@@ -200,6 +202,8 @@ returned. Note that while in Lorenzo-Seva, Timmerman, & Kiers (2011) the CAF is 
 \item{model_implied_R}{The model implied correlation
 matrix.}
 \item{residuals}{Residual correlations, i.e., orig_R - model_implied_R}
+\item{standardized_residuals}{Residual correlations standardized by their
+bootstrap standard errors. Only returned, if \code{se = "np-boot"}.}
 \item{rot_loadings}{Loading matrix containing the final rotated loadings
 (pattern matrix).}
 \item{Phi}{The factor intercorrelations (only for oblique rotations).}
@@ -312,8 +316,8 @@ specified and will be passed to the respective \code{GPArotation} function
 The \code{type} argument has no effect on ULS and ML. For ULS, no additional
 arguments are needed. For ML, an additional argument
 \code{start_method} is needed to determine the starting values for the
-optimization procedure. Default for this argument is "factanal" which takes
-the starting values specified in the \code{\link[stats:factanal]{stats::factanal()}} function.
+optimization procedure. Default for this argument is "psych" which takes
+the starting values specified in \code{\link[psych:fa]{psych::fa()}}.
 }
 \examples{
 # A type EFAtools (as presented in Steiner and Grieder, 2020) EFA

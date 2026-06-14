@@ -63,32 +63,39 @@ library(EFAtools)
 
 # Run multiple factor retention methods
 N_FACTORS(test_models$baseline$cormat, N = 500)
-#> Warning in N_FACTORS(test_models$baseline$cormat, N = 500): ! 'x' was a correlation matrix but CD needs raw data. Skipping CD.
-#> ℹ The default implementation of EKC has changed compared to EFAtools version <= 0.5.0 to reflect the original version by Braeken and van Assen (2017). The previous version (which often yields different results from the original) is available with type = 'AM2019'. See details in the help page.
-#> 
+#> Warning: `x` is a correlation matrix, but "CD" needs raw data.
+#> ℹ Skipping "CD".
 #> ── Tests for the suitability of the data for factor analysis ───────────────────
 #> 
-#> Bartlett's test of sphericity
+#> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05:
+#>   χ²(153) = 2173.28, p < .001. These data are probably suitable for factor
+#>   analysis.
+#> ✔ The Kaiser-Meyer-Olkin criterion is marvellous (KMO = 0.916). These data are
+#>   probably suitable for factor analysis.
 #> 
-#> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05.
-#>   These data are probably suitable for factor analysis.
+#> ── Number of factors suggested by the factor retention criteria ────────────────
 #> 
-#>   𝜒²(153) = 2173.28, p < .001
+#> Empirical Kaiser Criterion
+#> • Original implementation (Braeken & van Assen, 2017): 3
 #> 
-#> Kaiser-Meyer-Olkin criterion (KMO)
+#> Hull method
+#> • CAF: 3
+#> • CFI: 1
+#> • RMSEA: 1
 #> 
-#> ✔ The overall KMO value for your data is marvellous with 0.916.
-#>   These data are probably suitable for factor analysis.
+#> Minimum average partial
+#> • Original implementation (TR2): 1
+#> • Revised implementation (TR4): 3
 #> 
-#> ── Number of factors suggested by the different factor retention criteria ──────
+#> Next Eigenvalue Sufficiency Test
+#> • Suggested number of factors: 3
 #> 
-#> • Comparison data: NA
-#> • EKC (original implementation, type 'BvA2017'): 3
-#> • Hull method with CAF: 3
-#> • Hull method with CFI: 1
-#> • Hull method with RMSEA: 1
-#> • Parallel analysis with SMC: 3
-#> • NEST: 3
+#> Parallel analysis
+#> • SMC eigenvalues: 3
+#> 
+#> ── Criteria that could not be run ──────────────────────────────────────────────
+#> 
+#> ! CD: needs raw data, but a correlation matrix was supplied
 
 # A type SPSS EFA to mimick the SPSS implementation with
 # promax rotation
@@ -102,45 +109,55 @@ EFA_SPSS
 #> 
 #> ── Rotated Loadings ────────────────────────────────────────────────────────────
 #> 
-#>       F1      F2      F3      h2      u2  
-#> V1   -.048    .035    .613    .367    .633
-#> V2   -.001    .067    .482    .277    .723
-#> V3    .060    .056    .453    .283    .717
-#> V4    .101   -.009    .551    .378    .622
-#> V5    .157   -.018    .438    .293    .707
-#> V6   -.072   -.049    .704    .399    .601
-#> V7    .001    .533    .093    .357    .643
-#> V8   -.016    .581    .030    .349    .651
-#> V9    .038    .550   -.001    .330    .670
-#> V10  -.022    .674   -.071    .383    .617
-#> V11   .015    .356    .232    .297    .703
-#> V12   .020    .651   -.010    .432    .568
-#> V13   .614    .086   -.067    .394    .606
-#> V14   .548   -.068    .088    .322    .678
-#> V15   .561    .128   -.070    .363    .637
-#> V16   .555   -.050    .091    .344    .656
-#> V17   .664   -.037   -.027    .390    .610
-#> V18   .555    .004    .050    .350    .650
+#>        F1     F2     F3    h2    u2
+#> V1   -.048   .035   .613  .367  .633
+#> V2   -.001   .067   .482  .277  .723
+#> V3    .060   .056   .453  .283  .717
+#> V4    .101  -.009   .551  .378  .622
+#> V5    .157  -.018   .438  .293  .707
+#> V6   -.072  -.049   .704  .399  .601
+#> V7    .001   .533   .093  .357  .643
+#> V8   -.016   .581   .030  .349  .651
+#> V9    .038   .550  -.001  .330  .670
+#> V10  -.022   .674  -.071  .383  .617
+#> V11   .015   .356   .232  .297  .703
+#> V12   .020   .651  -.010  .432  .568
+#> V13   .614   .086  -.067  .394  .606
+#> V14   .548  -.068   .088  .322  .678
+#> V15   .561   .128  -.070  .363  .637
+#> V16   .555  -.050   .091  .344  .656
+#> V17   .664  -.037  -.027  .390  .610
+#> V18   .555   .004   .050  .350  .650
+#> 
+#> Legend:
+#>   bold = |loading| >= .300
+#>   grey = below cutoff
+#>   red h2/u2 = Heywood-relevant value
+#> 
 #> 
 #> ── Factor Intercorrelations ────────────────────────────────────────────────────
 #> 
-#>       F1      F2      F3  
-#> F1    1.000   0.617   0.648
-#> F2    0.617   1.000   0.632
-#> F3    0.648   0.632   1.000
+#>       F1     F2     F3
+#> F1  1.000
+#> F2   .617  1.000
+#> F3   .648   .632  1.000
+#> 
 #> 
 #> ── Variances Accounted for ─────────────────────────────────────────────────────
 #> 
-#>                       F1      F2      F3  
-#> SS loadings           2.198   2.074   2.034
-#> Prop Tot Var          0.122   0.115   0.113
-#> Cum Prop Tot Var      0.122   0.237   0.350
-#> Prop Comm Var         0.349   0.329   0.323
-#> Cum Prop Comm Var     0.349   0.677   1.000
+#>                      F1     F2     F3
+#> SS loadings        2.198  2.074  2.034
+#> Prop Tot Var        .122   .115   .113
+#> Cum Prop Tot Var    .122   .237   .350
+#> Prop Comm Var       .349   .329   .323
+#> Cum Prop Comm Var   .349   .677  1.000
+#> 
 #> 
 #> ── Model Fit ───────────────────────────────────────────────────────────────────
 #> 
-#> CAF: .50
+#> CAF  : .50
+#> RMSR  : .03
+#> SRMR  : .02
 #> df: 102
 
 # A type psych EFA to mimick the psych::fa() implementation with
@@ -156,64 +173,72 @@ COMPARE(EFA_SPSS$rot_loadings, EFA_psych$rot_loadings,
 #> Max decimals where all numbers are equal: 0
 #> Minimum number of decimals provided: 17
 #> 
-#>        F1      F2      F3  
-#> V1    0.0150  0.0142 -0.0195
-#> V2    0.0109  0.0109 -0.0138
-#> V3    0.0095  0.0103 -0.0119
-#> V4    0.0118  0.0131 -0.0154
-#> V5    0.0084  0.0105 -0.0109
-#> V6    0.0183  0.0169 -0.0245
-#> V7   -0.0026 -0.0017  0.0076
-#> V8   -0.0043 -0.0035  0.0102
-#> V9   -0.0055 -0.0040  0.0117
-#> V10  -0.0075 -0.0066  0.0151
-#> V11   0.0021  0.0029  0.0001
-#> V12  -0.0064 -0.0050  0.0136
-#> V13  -0.0109 -0.0019  0.0163
-#> V14  -0.0049  0.0028  0.0070
-#> V15  -0.0107 -0.0023  0.0161
-#> V16  -0.0051  0.0028  0.0074
-#> V17  -0.0096 -0.0001  0.0136
-#> V18  -0.0066  0.0014  0.0098
-```
-
-<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" />
-
-``` r
+#>        F1      F2      F3
+#> V1    .0150   .0142  -.0195
+#> V2    .0109   .0109  -.0138
+#> V3    .0095   .0103  -.0119
+#> V4    .0118   .0131  -.0154
+#> V5    .0084   .0105  -.0109
+#> V6    .0183   .0169  -.0245
+#> V7   -.0026  -.0017   .0076
+#> V8   -.0043  -.0035   .0102
+#> V9   -.0055  -.0040   .0117
+#> V10  -.0075  -.0066   .0151
+#> V11   .0021   .0029   .0001
+#> V12  -.0064  -.0050   .0136
+#> V13  -.0109  -.0019   .0163
+#> V14  -.0049   .0028   .0070
+#> V15  -.0107  -.0023   .0161
+#> V16  -.0051   .0028   .0074
+#> V17  -.0096  -.0001   .0136
+#> V18  -.0066   .0014   .0098
 
 # Run EFA and compute standard errors and confidence intervals based
 # on non-parametric bootstrap:
 EFA(GRiPS_raw, n_factors = 1, method = "ML", se = "np-boot")
-#> ℹ 'x' was not a correlation matrix. Correlations are found from entered raw data.
+#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
 #> 
 #> EFA performed with type = 'EFAtools', method = 'ML', and rotation = 'none'.
 #> 
 #> ── Unrotated Loadings ──────────────────────────────────────────────────────────
 #> 
-#>               F1      h2      u2  
-#> fun           .796    .634    .366
-#> friends       .851    .725    .275
-#> enjoy         .872    .760    .240
-#> hurt          .767    .588    .412
-#> part          .817    .667    .333
-#> commonly      .832    .692    .308
-#> chances       .788    .621    .379
-#> attracted     .845    .715    .285
+#>             F1    h2    u2
+#> fun        .796  .634  .366
+#> friends    .851  .725  .275
+#> enjoy      .872  .760  .240
+#> hurt       .767  .588  .412
+#> part       .817  .667  .333
+#> commonly   .832  .692  .308
+#> chances    .788  .621  .379
+#> attracted  .845  .715  .285
+#> 
+#> Legend:
+#>   bold = |loading| >= .300
+#>   grey = below cutoff
+#>   red h2/u2 = Heywood-relevant value
+#> 
 #> 
 #> ── Variances Accounted for ─────────────────────────────────────────────────────
 #> 
-#>               F1  
+#>                 F1
 #> SS loadings   5.401
-#> Prop Tot Var  0.675
+#> Prop Tot Var   .675
+#> 
 #> 
 #> ── Model Fit ───────────────────────────────────────────────────────────────────
 #> 
-#> 𝜒²(20) = 59.92, p < .001
-#> CFI =1.00
-#> RMSEA [90% CI] = .05 [.04; .06]
-#> AIC = 19.92
-#> BIC = -74.02
-#> CAF = .50
+#> χ²(20) = 59.61, p < .001
+#> CFI  [95% bootstrap-CI] : .99 [.98, .99]
+#> TLI  : .99
+#> RMSEA [90% CI]  [95% bootstrap-CI] : .05 [.04; .06] [.05, .09]
+#> AIC  [95% bootstrap-CI] : 19.61 [13.43, 106.96]
+#> BIC  [95% bootstrap-CI] : -74.33 [-80.51, 13.02]
+#> ECVI  : 0.11
+#> CAF  [95% bootstrap-CI] : .50 [.48, .51]
+#> RMSR  [95% bootstrap-CI] : .02 [.02, .03]
+#> SRMR  : .01
+#> 
+#> Note: Bootstrap CIs based on 1000 bootstrap samples.
 
 
 # Average solution across many different EFAs with oblique rotations
@@ -233,124 +258,129 @@ EFA_AV
 #> 
 #> For each cell, the proportion of solutions including the respective indicator-to-factor correspondence. A salience threshold of 0.3 was used to determine indicator-to-factor correspondences.
 #> 
-#>       F1      F2      F3 
-#> V1    .11     .00    1.00
-#> V2    .11     .00    1.00
-#> V3    .11     .00     .94
-#> V4    .11     .00    1.00
-#> V5    .11     .00     .94
-#> V6    .11     .00    1.00
-#> V7    .11     .94     .00
-#> V8    .11    1.00     .00
-#> V9    .11     .94     .00
-#> V10   .11    1.00     .00
-#> V11   .11     .89     .00
-#> V12   .11    1.00     .00
-#> V13  1.00     .00     .00
-#> V14  1.00     .00     .00
-#> V15  1.00     .00     .00
-#> V16  1.00     .00     .00
-#> V17  1.00     .00     .00
-#> V18  1.00     .00     .00
+#>       F1    F2    F3
+#> V1    .00   .01  1.00
+#> V2    .00   .01  1.00
+#> V3    .00   .01  1.00
+#> V4    .00   .01  1.00
+#> V5    .00   .01  1.00
+#> V6    .00   .01  1.00
+#> V7    .00  1.00   .09
+#> V8    .00  1.00   .09
+#> V9    .00  1.00   .09
+#> V10   .00  1.00   .09
+#> V11   .00   .91   .09
+#> V12   .00  1.00   .09
+#> V13  1.00   .00   .06
+#> V14   .94   .00   .06
+#> V15   .99   .00   .06
+#> V16   .94   .00   .06
+#> V17  1.00   .00   .06
+#> V18   .94   .00   .06
 #> 
 #> 
 #> ══ Loadings ════════════════════════════════════════════════════════════════════
 #> 
 #> ── Mean ────────────────────────────────────────────────────────────────────────
 #> 
-#>       F1      F2      F3  
-#> V1    .025    .048    .576
-#> V2    .060    .077    .451
-#> V3    .115    .066    .425
-#> V4    .157    .007    .518
-#> V5    .198   -.002    .412
-#> V6    .002   -.028    .658
-#> V7    .074    .497    .102
-#> V8    .056    .538    .046
-#> V9    .100    .510    .018
-#> V10   .048    .625   -.046
-#> V11   .082    .336    .228
-#> V12   .094    .606    .007
-#> V13   .597    .083   -.047
-#> V14   .531   -.056    .093
-#> V15   .548    .122   -.049
-#> V16   .540   -.041    .097
-#> V17   .633   -.033   -.009
-#> V18   .542    .009    .060
+#>        F1     F2     F3
+#> V1   -.036   .052   .592
+#> V2    .008   .082   .468
+#> V3    .065   .072   .444
+#> V4    .102   .015   .537
+#> V5    .154   .006   .431
+#> V6   -.059  -.025   .669
+#> V7    .019   .507   .141
+#> V8    .002   .548   .086
+#> V9    .051   .521   .058
+#> V10  -.004   .635  -.003
+#> V11   .028   .345   .259
+#> V12   .038   .618   .052
+#> V13   .580   .103  -.008
+#> V14   .514  -.040   .122
+#> V15   .529   .141  -.010
+#> V16   .521  -.024   .127
+#> V17   .622  -.013   .025
+#> V18   .522   .026   .093
+#> 
 #> 
 #> ── Range ───────────────────────────────────────────────────────────────────────
 #> 
-#>       F1      F2      F3  
-#> V1    0.513   0.086   0.239
-#> V2    0.431   0.093   0.186
-#> V3    0.394   0.108   0.179
-#> V4    0.415   0.110   0.214
-#> V5    0.315   0.122   0.177
-#> V6    0.514   0.104   0.267
-#> V7    0.527   0.255   0.089
-#> V8    0.520   0.275   0.078
-#> V9    0.470   0.276   0.080
-#> V10   0.533   0.313   0.097
-#> V11   0.482   0.176   0.102
-#> V12   0.548   0.324   0.103
-#> V13   0.081   0.289   0.114
-#> V14   0.063   0.220   0.117
-#> V15   0.091   0.280   0.107
-#> V16   0.072   0.230   0.122
-#> V17   0.108   0.270   0.124
-#> V18   0.081   0.246   0.118
+#>       F1    F2    F3
+#> V1   .300  .630  .159
+#> V2   .245  .492  .142
+#> V3   .263  .436  .181
+#> V4   .343  .506  .193
+#> V5   .309  .390  .212
+#> V6   .336  .703  .174
+#> V7   .092  .254  .460
+#> V8   .078  .218  .494
+#> V9   .069  .177  .474
+#> V10  .098  .207  .596
+#> V11  .147  .327  .332
+#> V12  .082  .210  .574
+#> V13  .308  .283  .655
+#> V14  .346  .211  .519
+#> V15  .283  .253  .633
+#> V16  .350  .210  .526
+#> V17  .366  .300  .626
+#> V18  .331  .206  .556
+#> 
 #> 
 #> 
 #> ══ Factor Intercorrelations from Oblique Solutions ═════════════════════════════
 #> 
 #> ── Mean ────────────────────────────────────────────────────────────────────────
 #> 
-#>       F1      F2      F3  
-#> F1    1.000   0.431   0.518
-#> F2    0.431   1.000   0.454
-#> F3    0.518   0.454   1.000
+#>       F1     F2     F3
+#> F1  1.000
+#> F2   .503  1.000
+#> F3   .544   .500  1.000
+#> 
 #> 
 #> ── Range ───────────────────────────────────────────────────────────────────────
 #> 
-#>       F1      F2      F3  
-#> F1    0.000   1.276   0.679
-#> F2    1.276   0.000   1.316
-#> F3    0.679   1.316   0.000
+#>      F1    F2    F3
+#> F1  .000
+#> F2  .827  .000
+#> F3  .712  .995  .000
+#> 
 #> 
 #> 
 #> ══ Variances Accounted for ═════════════════════════════════════════════════════
 #> 
 #> ── Mean ────────────────────────────────────────────────────────────────────────
 #> 
-#>                   F1      F2      F3  
-#> SS loadings       2.443   1.929   1.904
-#> Prop Tot Var      0.136   0.107   0.106
-#> Prop Comm Var     0.389   0.307   0.303
+#>                  F1     F2     F3
+#> SS loadings    2.105  1.993  2.209
+#> Prop Tot Var    .117   .111   .123
+#> Prop Comm Var   .334   .316   .350
+#> 
 #> 
 #> ── Range ───────────────────────────────────────────────────────────────────────
 #> 
-#>                   F1      F2      F3  
-#> SS loadings       2.831   1.356   1.291
-#> Prop Tot Var      0.157   0.075   0.072
-#> Prop Comm Var     0.419   0.215   0.215
+#>                  F1     F2     F3
+#> SS loadings    1.761  2.272  3.887
+#> Prop Tot Var    .098   .126   .216
+#> Prop Comm Var   .279   .360   .616
+#> 
 #> 
 #> 
 #> ══ Model Fit ═══════════════════════════════════════════════════════════════════
 #> 
 #>        M (SD) [Min; Max]
-#> 𝜒²: 101.73 (34.62) [53.23; 125.98]
+#> 𝜒²: 123.80 ( 0.08) [123.75; 123.92]
 #> df: 102
-#> p: .369 (.450) [.054; 1.000]
-#> CFI: 1.00 (.00) [1.00; 1.00]
-#> RMSEA: .01 (.01) [.00; .02]
-#> AIC: -102.27 (34.62) [-150.77; -78.02]
-#> BIC: -532.16 (34.62) [-580.66; -507.91]
+#> p: .070 (.001) [.069; .070]
+#> CFI: .99 (.00) [.99; .99]
+#> TLI: .98 (.00) [.98; .98]
+#> RMSEA: .02 (.00) [.02; .02]
+#> AIC: -80.20 ( 0.08) [-80.25; -80.08]
+#> BIC: -510.09 ( 0.08) [-510.14; -509.97]
+#> ECVI:  0.52 ( 0.00) [ 0.52;  0.52]
 #> CAF: .50 (.00) [.50; .50]
-```
-
-<img src="man/figures/README-unnamed-chunk-5-2.png" width="100%" />
-
-``` r
+#> RMSR: .03 (.00) [.03; .03]
+#> SRMR: .02 (.00) [.02; .03]
 
 # Perform a Schmid-Leiman transformation
 SL <- SL(EFA_psych)
@@ -363,10 +393,10 @@ OMEGA(SL, factor_corres = factor_corres)
 #> Omega total, omega hierarchical, omega subscale, H index, explained common variance (ECV), and percent of uncontaminated correlations (PUC) for the general factor (top row) and omegas and H index for the group factors:
 #> 
 #>      tot  hier   sub     H   ECV   PUC
-#> g  0.883 0.750 0.122 0.845 0.668 0.706
-#> F1 0.769 0.498 0.272 0.465            
-#> F2 0.764 0.494 0.270 0.473            
-#> F3 0.745 0.543 0.202 0.380
+#> g  0.883 0.750 0.122 0.845 0.661 0.706
+#> F1 0.769 0.498 0.272 0.470            
+#> F2 0.764 0.494 0.270 0.477            
+#> F3 0.745 0.543 0.202 0.391
 ```
 
 ## Citation

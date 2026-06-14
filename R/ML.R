@@ -31,7 +31,7 @@
 .fit_ml <- function(R, n_fac, start_method) {
 
   if (start_method == "psych") {
-    R.smc <- (1 - 1 / diag(solve(R)))
+    R.smc <- .smc_start(R)
     if((sum(R.smc) == n_fac) && (n_fac > 1)) {
       start <- rep(.5, n_fac)
     }  else {

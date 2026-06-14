@@ -1117,3 +1117,33 @@ rm(efa_pro, efa_temp, x_base, y_base, efa_ml, efa_uls, efa_paf, gof_ml, gof_uls,
    av_median, av_median_NA, arr_re_NA, arr_re, obl_grid_1, obl_grid_2,
    obl_grid_3, obl_grid_4, orth_grid_1, orth_grid_2, orth_grid_3, orth_grid_4,
    tg_ob, tg_ob2, tg_orth, tg_orth2, tg_nn)
+
+
+test_that(".smc_start returns the squared multiple correlations", {
+  R <- test_models$baseline$cormat
+  expect_equal(.smc_start(R), 1 - 1 / diag(solve(R)))
+})
+
+test_that(".three_eigen returns eigenvalues per requested diagonal convention", {
+  R <- test_models$baseline$cormat
+
+  res <- .three_eigen(R, c("PCA", "SMC"))
+
+  # PCA: eigenvalues on the unit-diagonal correlation matrix
+  expect_equal(res$PCA, eigen(R, symmetric = TRUE, only.values = TRUE)$values)
+
+  # SMC: eigenvalues with the squared multiple correlations on the diagonal
+  R_smc <- R
+  diag(R_smc) <- .smc_start(R)
+  expect_equal(res$SMC, eigen(R_smc, symmetric = TRUE, only.values = TRUE)$values)
+
+  # a convention that was not requested is NA
+  expect_true(is.na(res$EFA))
+
+  # EFA: eigenvalues with the communalities of an n-factor EFA on the diagonal
+  res_efa <- .three_eigen(R, "EFA", n_factors = 2)
+  R_efa <- R
+  diag(R_efa) <- suppressMessages(suppressWarnings(EFA(R, n_factors = 2)$h2))
+  expect_equal(res_efa$EFA, eigen(R_efa, symmetric = TRUE, only.values = TRUE)$values)
+  expect_true(is.na(res_efa$PCA))
+})

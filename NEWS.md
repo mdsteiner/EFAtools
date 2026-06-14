@@ -13,6 +13,19 @@
   Detection is consistent across `PAF`, `ML`, and `ULS`: a variable is flagged when its
   communality reaches or exceeds 1 (which can happen under `PAF`), or when its uniqueness is
   pinned at the estimator's lower bound (the boundary/improper case under `ML` and `ULS`).
+* `EFA()` objects now have a `summary()` method that prints the full, detailed solution
+  (loadings with communalities and uniquenesses, explained variances, fit indices, and
+  residuals); `print()` now gives a more compact overview.
+* The factor-retention functions `CD()`, `EKC()`, `HULL()`, `KGC()`, `MAP()`, `NEST()`,
+  `PARALLEL()`, `SCREE()`, and `SMT()` now return objects of a common `efa_retention` class
+  with shared `print()` and `plot()` methods.
+* `COMPARE()` objects now have a `plot()` method that returns a `ggplot` object. The plot is
+  no longer drawn as a side effect of `print()`.
+* Console output (the `print`, `summary`, and `format` methods) is now produced with the `cli`
+  package, and the messages, warnings, and errors emitted across the package are now S3-classed
+  conditions, which makes them easier to handle programmatically.
+* `lavaan` moved from Imports to Suggests. The `lavaan`-input paths of `OMEGA()` and `SL()` now
+  require the `lavaan` package to be installed and raise a clear error if it is missing.
 
 ## Bug Fixes
 

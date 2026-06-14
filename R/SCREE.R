@@ -85,48 +85,8 @@ SCREE <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
   R <- prep$R
 
 
-  # Store original R for later
-  R_orig <- R
-
-  # Prepare objects
-  eigen_R_PCA <- NA
-  eigen_R_SMC <- NA
-  eigen_R_EFA <- NA
-
-  if("PCA" %in% eigen_type) {
-
-    # Calculate eigenvalues and determine number of factors
-    eigen_R_PCA <- eigen(R, symmetric = TRUE, only.values = TRUE)$values
-
-  }
-
-  if("SMC" %in% eigen_type) {
-
-    # Calculate SMCs and replace diagonal of correlation matrix with these
-    inverse_R <- solve(R)
-    SMCs <- 1 - 1 / diag(inverse_R)
-    diag(R) <- SMCs
-
-    # Calculate eigenvalues and determine number of factors
-    eigen_R_SMC <- eigen(R, symmetric = TRUE, only.values = TRUE)$values
-
-  }
-
-  if("EFA" %in% eigen_type) {
-
-    R <- R_orig
-
-    # Do an EFA to get final communality estimates and replace diagonal of
-    # correlation matrix with these
-    EFA_h2 <- suppressMessages(suppressWarnings(EFA(R, n_factors = n_factors, ...)$h2))
-    diag(R) <- EFA_h2
-
-    # Calculate eigenvalues and determine number of factors
-    eigen_R_EFA <- eigen(R, symmetric = TRUE, only.values = TRUE)$values
-
-  }
-
-  eigen_list <- list(PCA = eigen_R_PCA, SMC = eigen_R_SMC, EFA = eigen_R_EFA)
+  # Calculate the PCA / SMC / EFA eigenvalues for the requested types
+  eigen_list <- .three_eigen(R, eigen_type, n_factors = n_factors, ...)
 
   # one eigenvalue record per requested type; the scree plot is purely visual, so
   # there is no numeric suggestion (n_factors is NA)

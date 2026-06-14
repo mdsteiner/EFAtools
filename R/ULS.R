@@ -33,7 +33,7 @@
 # function to obtain the uls fit; adapted from the psych package
 .fit_uls <- function(R, n_fac) {
 
-  start <- diag(R) - (1 - 1 / diag(solve(R)))
+  start <- diag(R) - .smc_start(R)
 
   res <- stats::optim(start, .uls_residuals, gr = .grad_uls, method = "L-BFGS-B",
                lower = .uniqueness_floor, upper = 1,

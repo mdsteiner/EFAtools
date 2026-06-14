@@ -34,7 +34,7 @@
 #'  Default is  `"pearson"`.
 #' @param n_datasets numeric. The number of datasets to simulate. Default is 1000.
 #'   This is passed to [PARALLEL()].
-#' @param percent numeric. A vector of percentiles to take the simulated eigenvalues from.
+#' @param percent numeric. The percentile to take from the simulated eigenvalues.
 #'  Default is 95. This is passed to [PARALLEL()].
 #' @param decision_rule character. Which rule to use to determine the number of
 #' factors to retain. Default is `"means"`, which will use the average
@@ -71,7 +71,7 @@
 #'   compare the different solutions. Thus, the threshold of .05 is then .95. This
 #'   is necessary due to how the heuristic to locate the elbow of the hull works.
 #'
-#'   The ML estimation method uses the [stats::factanal()]
+#'   The ML estimation method uses the [psych::fa()]
 #'    starting values. See also the [EFA] documentation.
 #'
 #'    The `HULL` function can also be called together with other factor
@@ -424,17 +424,8 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
       class = "efa_hull_few_solutions"
     )
 
-    # combine values
-    for (row_i in 0:J) {
-
-      if (row_i %in% s[,1]) {
-        s_complete[row_i + 1, 4] <- s[s[,1] == row_i, 4]
-      } else {
-        s_complete[row_i + 1, 4] <- NA
-      }
-
-    }
-    s_complete[, 4] <- rep(NA, nrow(s_complete))
+    # the st values are undefined with fewer than three hull solutions
+    s_complete[, 4] <- NA
 
     # 8) select solution with highest gof value
     retain <- s[which.max(s[, 2]), 1]

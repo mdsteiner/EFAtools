@@ -562,7 +562,16 @@ behaviour-changing items grouped with NEWS + deliberate snapshot updates:
    B57/B58 print-helper dedup, B60 cluster (negative-zero, dead `.print_efa_structure_note`,
    `.efa_num` ansi_string) + 1-factor/NA print snapshots. — done (pending commit)
 9. **U-rev-i (dedup + docs):** SMT/.gof, KGC/SCREE eigen helper, SMC start, dead-code
-   removal, lifecycle; NEWS/README refresh, percent/start/heywood doc fixes.
+   removal, lifecycle; NEWS/README refresh, percent/start/heywood doc fixes. — done (pending
+   commit). `.rmsea_lambda` shared by `.gof`/SMT; `.three_eigen` (helper.R) consumed by
+   KGC+SCREE; `.smc_start` (estimate_model.R) consumed by `.PAF`/`.fit_ml`/`.fit_uls` and
+   `.three_eigen` — **raw-only/numeric-identical**, the "(also tidies B-list edges)"
+   singular-fallback unification deferred as behaviour-changing. `.calc_cis`/`.stat_over_list`
+   + their `.Rd` removed; dead `.hull_calc` few-solutions `st` loop removed; `lifecycle`
+   dropped from Imports/NAMESPACE. NEWS gained summary.EFA / `efa_retention` / plot.COMPARE /
+   cli / lavaan→Suggests bullets; README re-knitted; percent (HULL/N_FACTORS), ML-start
+   (EFA/HULL → psych), and EFA `@return` (heywood + standardized_residuals) docs fixed.
+   Suite FAIL 0 PASS 3084 (no snapshot changes).
 
 ---
 

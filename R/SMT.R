@@ -133,8 +133,7 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
       temp <- suppressWarnings(suppressMessages(EFA(R, n_factors = i,
                                                     method = "ML",
                                                     rotate ="none", N = N)))
-      ps[i] <- stats::pchisq(temp$fit_indices$chi, temp$fit_indices$df,
-                             lower.tail = FALSE)
+      ps[i] <- temp$fit_indices$p_chi
       RMSEA_LB[i] <- temp$fit_indices$RMSEA_LB
       AIC[i] <- temp$fit_indices$AIC
 
@@ -144,8 +143,7 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   # non-significant?
 
   # First check if 0 factors already result in nonsignificant chi square
-  p_null <- stats::pchisq(temp$fit_indices$chi_null,
-                          temp$fit_indices$df_null, lower.tail = F)
+  p_null <- temp$fit_indices$p_null
 
     if(p_null > 0.05){
 
@@ -165,17 +163,7 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   chi_null <- temp$fit_indices$chi_null
   df_null <- temp$fit_indices$df_null
 
-  p_chi_fun <- function(x, val, df, goal){goal - stats::pchisq(val, df, ncp = x)}
-
-  if (stats::pchisq(chi_null, df = df_null, ncp = 0) >= .95) {
-    lambda_l <- stats::uniroot(f = p_chi_fun, interval = c(1e-10, 10000), val = chi_null,
-                               df = df_null, goal = .95, extendInt = "upX",
-                               maxiter = 100L)$root
-  } else {
-    lambda_l <- 0
-  }
-
-  RMSEA_LB_null <- sqrt(lambda_l / (df_null * (N - 1)))
+  RMSEA_LB_null <- sqrt(.rmsea_lambda(chi_null, df_null, .95) / (df_null * (N - 1)))
 
   AIC_null <- chi_null - 2 * df_null
 

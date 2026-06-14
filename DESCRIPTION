@@ -51,7 +51,6 @@ Imports:
     stats,
     ggplot2 (>= 3.4.0),
     cli,
-    lifecycle,
     Rcpp,
     future.apply,
     future,

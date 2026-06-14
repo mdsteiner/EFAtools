@@ -66,7 +66,7 @@ Default is  \code{"pearson"}.}
 \item{n_datasets}{numeric. The number of datasets to simulate. Default is 1000.
 This is passed to \code{\link[=PARALLEL]{PARALLEL()}}.}
 
-\item{percent}{numeric. A vector of percentiles to take the simulated eigenvalues from.
+\item{percent}{numeric. The percentile to take from the simulated eigenvalues.
 Default is 95. This is passed to \code{\link[=PARALLEL]{PARALLEL()}}.}
 
 \item{decision_rule}{character. Which rule to use to determine the number of
@@ -124,7 +124,7 @@ Note that if \code{gof = "RMSEA"} is used, 1 - RMSEA is actually used to
 compare the different solutions. Thus, the threshold of .05 is then .95. This
 is necessary due to how the heuristic to locate the elbow of the hull works.
 
-The ML estimation method uses the \code{\link[stats:factanal]{stats::factanal()}}
+The ML estimation method uses the \code{\link[psych:fa]{psych::fa()}}
 starting values. See also the \link{EFA} documentation.
 
 The \code{HULL} function can also be called together with other factor

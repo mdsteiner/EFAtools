@@ -71,8 +71,8 @@
 #' @param n_datasets numeric. Passed to [PARALLEL()] (also within
 #' [HULL()]). The number of datasets to simulate. Default is 1000.
 #' @param percent numeric. Passed to [PARALLEL()] (also within
-#' [HULL()]). A vector of percentiles to take the simulated eigenvalues
-#'  from. Default is 95.
+#' [HULL()]). The percentile to take from the simulated eigenvalues.
+#'  Default is 95.
 #' @param decision_rule character. Passed to [PARALLEL()] (also within
 #'  [HULL()]). Which rule to use to determine the number of
 #'  factors to retain. Default is `"means"`, which will use the average

@@ -117,8 +117,8 @@ factors to extract if \code{"EFA"} is included in \code{eigen_type_HULL} or
 \code{\link[=HULL]{HULL()}}). The number of datasets to simulate. Default is 1000.}
 
 \item{percent}{numeric. Passed to \code{\link[=PARALLEL]{PARALLEL()}} (also within
-\code{\link[=HULL]{HULL()}}). A vector of percentiles to take the simulated eigenvalues
-from. Default is 95.}
+\code{\link[=HULL]{HULL()}}). The percentile to take from the simulated eigenvalues.
+Default is 95.}
 
 \item{decision_rule}{character. Passed to \code{\link[=PARALLEL]{PARALLEL()}} (also within
 \code{\link[=HULL]{HULL()}}). Which rule to use to determine the number of

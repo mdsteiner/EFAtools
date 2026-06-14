@@ -13,6 +13,12 @@
 # fitters and the Heywood detector in .finalize_fit() so the value has one source.
 .uniqueness_floor <- 0.005
 
+# Squared multiple correlations (1 - 1/diag(R^-1)) used as starting communalities by the
+# estimators. Shared by the PAF, ML, and ULS fitters so the start has one source.
+.smc_start <- function(R) {
+  1 - 1 / diag(solve(R))
+}
+
 # Shared post-processing for an unrotated solution. Reflects the loadings to a
 # consistent sign, names them (with a V-fallback when the input is unnamed),
 # computes the explained variances, fit indices, communalities, model-implied

@@ -92,6 +92,20 @@
   -as.numeric(ld$modulus) * (N - 1 - (2 * p + 5) / 6)
 }
 
+# Noncentrality parameter for an RMSEA confidence bound: solve pchisq(chi, df, ncp) = goal
+# for ncp via stats::uniroot (the 90% CI lower bound uses goal = .95, the upper bound goal =
+# .05; Browne & Cudeck, 1992). Returns 0 when the model chi-square already lies below the
+# target quantile, so the bound collapses to 0. Shared by .gof() and SMT().
+.rmsea_lambda <- function(chi, df, goal) {
+  if (stats::pchisq(chi, df = df, ncp = 0) >= goal) {
+    p_chi_fun <- function(x, val, df, goal) goal - stats::pchisq(val, df, ncp = x)
+    stats::uniroot(f = p_chi_fun, interval = c(1e-10, 10000), val = chi, df = df,
+                   goal = goal, extendInt = "upX", maxiter = 100L)$root
+  } else {
+    0
+  }
+}
+
 .gof <- function(L, # The loading/ pattern matrix
                  R, # The correlation matrix
                  N, # The number of cases
@@ -184,24 +198,8 @@
       # formula 12.6 from Kline 2016; Principles and practices of...
       RMSEA <- sqrt(max(0, chi - df) / (df * (N - 1)))
 
-    p_chi_fun <- function(x, val, df, goal){goal - stats::pchisq(val, df, ncp = x)}
-
-    if (stats::pchisq(chi, df = df, ncp = 0) >= .95) {
-      lambda_l <- stats::uniroot(f = p_chi_fun, interval = c(1e-10, 10000), val = chi,
-                          df = df, goal = .95, extendInt = "upX",
-                          maxiter = 100L)$root
-    } else {
-      lambda_l <- 0
-    }
-
-    if (stats::pchisq(chi, df = df, ncp = 0) >= .05) {
-      lambda_u <- stats::uniroot(f = p_chi_fun, interval = c(1e-10, 10000),
-                          val = chi, df = df, goal = .05,
-                          extendInt = "upX", maxiter = 100L)$root
-    }
-    else {
-      lambda_u <- 0
-    }
+    lambda_l <- .rmsea_lambda(chi, df, .95)
+    lambda_u <- .rmsea_lambda(chi, df, .05)
 
     RMSEA_LB <- sqrt(lambda_l / (df * (N - 1)))
     RMSEA_UB <- sqrt(lambda_u / (df * (N - 1)))

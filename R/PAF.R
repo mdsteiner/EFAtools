@@ -39,7 +39,7 @@
 
     } else {
 
-      h2_init <- 1 - 1 / diag(solve(R))
+      h2_init <- .smc_start(R)
 
     }
 
