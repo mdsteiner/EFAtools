@@ -29,9 +29,10 @@ analysis output.}
 factor analysis output to compare to x.}
 
 \item{reorder}{character. Whether and how elements / columns should be
-reordered. If "congruence" (default), reordering is done according to Tuckers
-correspondence coefficient, if "names", objects according to their names,
-if "none", no reordering is done.}
+reordered. If "congruence" (default), the columns of \code{y} are matched to those
+of \code{x} by an optimal one-to-one assignment that maximizes Tucker's congruence
+coefficient, so each factor is matched exactly once; if "names", objects are
+reordered according to their names; if "none", no reordering is done.}
 
 \item{corres}{logical. Whether factor correspondences should be compared if a
 matrix is entered.}

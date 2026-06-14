@@ -9,9 +9,10 @@
 #' @param y matrix, or vector. Loadings or communalities of another
 #'  factor analysis output to compare to x.
 #' @param reorder character. Whether and how elements / columns should be
-#' reordered. If "congruence" (default), reordering is done according to Tuckers
-#' correspondence coefficient, if "names", objects according to their names,
-#' if "none", no reordering is done.
+#' reordered. If "congruence" (default), the columns of `y` are matched to those
+#' of `x` by an optimal one-to-one assignment that maximizes Tucker's congruence
+#' coefficient, so each factor is matched exactly once; if "names", objects are
+#' reordered according to their names; if "none", no reordering is done.
 #' @param corres logical. Whether factor correspondences should be compared if a
 #'  matrix is entered.
 #' @param thresh numeric. The threshold to classify a pattern coefficient as substantial. Default is .3.
@@ -154,8 +155,12 @@ COMPARE <- function(x,
         )
       }
 
-      # factor order for y
-      factor_order <- apply(abs(congruence), 1, which.max)
+      # optimal one-to-one assignment of y's columns to x's columns, maximising
+      # the matched absolute congruences. A greedy row-wise which.max can send two
+      # x-factors to the same y column, duplicating one column of y and dropping
+      # another; the linear assignment guarantees a permutation. Mirrors the
+      # matching in `.align_solution()`.
+      factor_order <- as.integer(clue::solve_LSAP(max(abs(congruence)) - abs(congruence)))
 
       # obtain signs to reflect signs of y if necessary
       factor_sign <- sapply(seq_len(n_factors),
@@ -163,6 +168,9 @@ COMPARE <- function(x,
                               sign(congruence[ll, factor_order[ll]])
                               }, congruence = congruence,
                             factor_order = factor_order)
+
+      # an exactly-zero matched congruence must not zero out a reflected y column
+      factor_sign[factor_sign == 0] <- 1
 
       factor_sign <- rep(factor_sign, each = nrow(x))
 

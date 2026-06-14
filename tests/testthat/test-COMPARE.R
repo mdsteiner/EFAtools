@@ -231,6 +231,35 @@ test_that("COMPARE returns the correct values", {
 })
 
 
+test_that("congruence reordering yields a true permutation when columns collide", {
+  # x has orthonormal factors; y is built so that the greedy row-wise which.max
+  # match assigns y-column 1 to BOTH x-factor 1 and x-factor 2 (a collision that
+  # would duplicate one y column and drop another). The optimal one-to-one
+  # assignment is the permutation c(1, 3, 2).
+  x <- diag(3)
+  y <- matrix(c(0.7, 0.7, 0.10,    # aligned with factors 1 and 2
+                0.2, 0.1, 0.97,    # aligned with factor 3
+                0.1, 0.2, 0.95),   # aligned with factor 3
+              ncol = 3)
+
+  cmp <- COMPARE(x, y, reorder = "congruence", corres = FALSE)
+
+  # y as reordered (and sign-matched) inside COMPARE
+  y_reordered <- x - cmp$diff
+
+  # index in y that each reordered column came from
+  recovered <- vapply(seq_len(ncol(y_reordered)), function(j) {
+    which(vapply(seq_len(ncol(y)), function(k)
+      isTRUE(all.equal(y_reordered[, j], y[, k])), logical(1)))
+  }, integer(1))
+
+  # a genuine permutation: every factor used exactly once, never duplicated or
+  # dropped (the greedy which.max produced c(1, 1, 2))
+  expect_setequal(recovered, seq_len(ncol(y)))
+  expect_equal(recovered, c(1L, 3L, 2L))
+})
+
+
 test_that("errors etc. are thrown correctly", {
   expect_error(COMPARE(c(1, 2), 1), class = "efa_compare_dim_mismatch")
   expect_error(COMPARE(c(1, 2), c("1", "2")), class = "efa_compare_bad_input")

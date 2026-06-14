@@ -103,6 +103,12 @@
   warnings (about arguments pinned alongside `type`, and about the iterative fit reaching its
   maximum number of iterations) once per replicate. They are now suppressed during
   resampling, and non-convergence across replicates is reported once as a summary.
+* `COMPARE()`: With `reorder = "congruence"`, the columns of `y` are now matched to those of
+  `x` by an optimal one-to-one assignment that maximizes the total Tucker congruence, rather
+  than by an independent per-factor best match. The greedy match could assign two factors of
+  `x` to the same column of `y`, duplicating that column and dropping another, which corrupted
+  the reported differences, factor correspondences, and root mean squared distance. The result
+  is unchanged whenever the greedy match was already one-to-one.
 
 
 # EFAtools 0.7.1
