@@ -21,6 +21,7 @@
   list(
     L = L,
     h2 = h2,
+    psi = uls$res$par,
     Fm = Fm,
     iter = uls$res$counts[1],
     convergence = uls$res$convergence,
@@ -35,7 +36,7 @@
   start <- diag(R) - (1 - 1 / diag(solve(R)))
 
   res <- stats::optim(start, .uls_residuals, gr = .grad_uls, method = "L-BFGS-B",
-               lower = .005, upper = 1,
+               lower = .uniqueness_floor, upper = 1,
                control = c(list(fnscale = 1, parscale = rep(0.01, length(start)))),
                R = R, n_fac = n_fac)
 

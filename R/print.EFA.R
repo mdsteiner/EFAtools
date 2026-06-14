@@ -312,6 +312,7 @@ format.summary.EFA <- function(x, ...) {
     N = settings$N,
     fit = x$fit_indices,
     h2 = x$h2,
+    heywood = x$heywood,
     np_boot = identical(.efa_setting_text(se), "np-boot"),
     ci = .efa_ci_level(x),
     rmsea_ci_level = .efa_rmsea_ci_level(x),
@@ -426,7 +427,7 @@ format.summary.EFA <- function(x, ...) {
       max_factors_per_block = max_factors_per_block,
       ...
     )
-    .print_efa_heywood_warning(spec$h2)
+    .print_efa_heywood_warning(spec$heywood, spec$h2)
     .print_efa_loading_ci_section(x, spec,
       component = "unrot_loadings",
       loadings = x$unrot_loadings,
@@ -458,7 +459,7 @@ format.summary.EFA <- function(x, ...) {
     max_factors_per_block = max_factors_per_block,
     ...
   )
-  .print_efa_heywood_warning(spec$h2)
+  .print_efa_heywood_warning(spec$heywood, spec$h2)
   .print_efa_loading_ci_section(x, spec,
     component = "rot_loadings",
     loadings = x$rot_loadings,
@@ -915,12 +916,17 @@ format.summary.EFA <- function(x, ...) {
   invisible(NULL)
 }
 
-.print_efa_heywood_warning <- function(h2) {
-  if (is.null(h2)) {
-    return(invisible(NULL))
+.print_efa_heywood_warning <- function(heywood, h2 = NULL) {
+  # Prefer the detector's heywood field (covers communalities >= 1 and ML/ULS
+  # boundary uniquenesses). Fall back to h2 for objects that carry no such field
+  # (e.g. pooled solutions), preserving the communality-based note for them.
+  n_heywood <- if (!is.null(heywood)) {
+    length(heywood)
+  } else if (!is.null(h2)) {
+    sum(h2 >= 1 + .Machine$double.eps, na.rm = TRUE)
+  } else {
+    0L
   }
-
-  n_heywood <- sum(h2 >= 1 + .Machine$double.eps, na.rm = TRUE)
 
   if (n_heywood == 1) {
     cat(cli::col_red(cli::style_bold("\nWarning: A Heywood case was detected!")))
@@ -965,9 +971,9 @@ format.summary.EFA <- function(x, ...) {
   }
 
   components <- if (isTRUE(spec$is_pooled)) {
-    c("fit_indices_pooled_algorithm", "fit_indices_descriptive", "fit_indices")
+    c("fit_indices_descriptive", "fit_indices")
   } else {
-    c("fit_indices", "fit_indices_pooled_algorithm", "fit_indices_descriptive")
+    c("fit_indices", "fit_indices_descriptive")
   }
 
   for (component in components) {
@@ -1530,11 +1536,15 @@ format.summary.EFA <- function(x, ...) {
     }
   }
 
-  h2 <- spec$h2
-  heywood <- if (is.null(h2)) {
-    0L
+  # Prefer the detector's heywood field (covers communalities >= 1 and ML/ULS
+  # boundary uniquenesses), matching the printed Heywood note; fall back to h2 for
+  # objects without that field (e.g. pooled solutions).
+  heywood <- if (!is.null(spec$heywood)) {
+    length(spec$heywood)
+  } else if (!is.null(spec$h2)) {
+    sum(spec$h2 >= 1 + .Machine$double.eps, na.rm = TRUE)
   } else {
-    sum(h2 >= 1 + .Machine$double.eps, na.rm = TRUE)
+    0L
   }
   .efa_print_key_value("Heywood cases", heywood)
 

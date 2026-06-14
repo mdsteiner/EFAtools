@@ -64,9 +64,11 @@
       
       χ²(20) = <num>, p = <num>
       CFI  [95% bootstrap/MI-CI] : <num> [ <num>, <num>]
+      TLI  : <num>
       RMSEA [90% CI]  [95% bootstrap/MI-CI] : <num> [ <num>; <num>] [ <num>, <num>]
       AIC  [95% bootstrap/MI-CI] : <num> [ <num>, <num>]
       BIC  [95% bootstrap/MI-CI] : <num> [ <num>, <num>]
+      ECVI  : <num>
       CAF  [95% bootstrap/MI-CI] : <num> [ <num>, <num>]
       RMSR  [95% bootstrap/MI-CI] : <num> [ <num>, <num>]
       SRMR  : <num>
@@ -190,9 +192,11 @@
       
       χ²(20) = <num>, p = <num>
       CFI  : <num>
+      TLI  : <num>
       RMSEA [90% CI]  : <num> [ <num>; <num>]
       AIC  : <num>
       BIC  : <num>
+      ECVI  : <num>
       CAF  : <num>
       RMSR  : <num>
       SRMR  : <num>
@@ -366,9 +370,11 @@
       
       χ²(20) = <num>, p = <num>
       CFI  : <num>
+      TLI  : <num>
       RMSEA [90% CI]  : <num> [ <num>; <num>]
       AIC  : <num>
       BIC  : <num>
+      ECVI  : <num>
       CAF  : <num>
       RMSR  : <num>
       SRMR  : <num>

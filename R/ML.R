@@ -17,6 +17,7 @@
   list(
     L = L,
     h2 = h2,
+    psi = ml$res$par,
     Fm = ml$res$value,
     iter = ml$res$counts[1],
     convergence = ml$res$convergence,
@@ -41,7 +42,7 @@
   }
 
   res <- stats::optim(start, .error_ml, gr = .grad_ml, method = "L-BFGS-B",
-                      lower = .005, upper = 1,
+                      lower = .uniqueness_floor, upper = 1,
                       control = c(list(fnscale = 1,
                                        parscale = rep(0.01, length(start)))),
                       R = R, n_fac = n_fac)

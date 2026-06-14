@@ -157,6 +157,18 @@ test_that("pooled fit indices D2-pool the imputation chi-squares", {
   expect_true(is.finite(fi$p_chi))
   expect_true(is.finite(fi$RMSR))
 
+  # The pooled set reports TLI and ECVI (computed off the pooled chi-square,
+  # mirroring .gof()), and no longer carries the mislabeled Fm.
+  expect_true(is.finite(fi$TLI))
+  expect_true(is.finite(fi$ECVI))
+  expect_null(fi$Fm)
+  ratio_null <- fi$chi_null / fi$df_null
+  expect_equal(fi$TLI, (ratio_null - fi$chi / fi$df) / (ratio_null - 1))
+  N_used <- pooled_none$settings$N
+  n_vars <- ncol(pooled_none$orig_R)
+  n_params <- n_vars * (n_vars + 1) / 2 - fi$df
+  expect_equal(fi$ECVI, (fi$chi + 2 * n_params) / (N_used - 1))
+
   md <- pooled_none$mi_diagnostics
   expect_identical(md$m, 3L)
   expect_gte(md$ARIV, 0)
@@ -166,6 +178,15 @@ test_that("pooled fit indices D2-pool the imputation chi-squares", {
   # the pooled observed correlation matrix is the mean across imputations
   R_mean <- Reduce(`+`, lapply(pooled_none$fits, function(f) f$orig_R)) / 3
   expect_equal(pooled_none$orig_R, R_mean, ignore_attr = TRUE)
+})
+
+test_that(".efa_pooled_D2 ARIV matches the Li et al. (1991) formula", {
+  # The average relative increase in variance is the between-imputation variance
+  # of the sqrt-transformed statistics, i.e. (1 + 1/M) * var(sqrt(chi^2)).
+  chis <- c(30, 35, 50)
+  d2 <- .efa_pooled_D2(chis, df = 20)
+  expect_equal(d2$ARIV, (1 + 1 / length(chis)) * stats::var(sqrt(chis)))
+  expect_equal(d2$FMI, d2$ARIV / (1 + d2$ARIV))
 })
 
 test_that("EFA_POOLED validates its arguments with classed conditions", {
@@ -335,7 +356,7 @@ test_that("a failed bootstrap replicate is skipped, not fatal", {
     if (!is.null(na)) a[, , na] <- NA_real_
     a
   }
-  # bootstrap fit-index arrays so the full pooled-fit algorithm path also runs
+  # bootstrap fit-index arrays so the Rubin-Wald descriptive fit path also runs
   mk_fit <- function(na = NULL) {
     f <- matrix(stats::rnorm(B * 2, 1, 0.1), nrow = B,
                 dimnames = list(NULL, c("chi", "CFI")))
@@ -344,9 +365,11 @@ test_that("a failed bootstrap replicate is skipped, not fatal", {
   }
   L <- matrix(0.6, p, k)
   fits <- list(
-    list(boot.arrays = list(unrot_loadings = mk_arr(na = 2), residuals = mk_res(na = 2),
+    list(fit_indices = list(chi = 1, CFI = 1),
+         boot.arrays = list(unrot_loadings = mk_arr(na = 2), residuals = mk_res(na = 2),
                             fit_indices = mk_fit(na = 2))),
-    list(boot.arrays = list(unrot_loadings = mk_arr(),       residuals = mk_res(),
+    list(fit_indices = list(chi = 1, CFI = 1),
+         boot.arrays = list(unrot_loadings = mk_arr(),       residuals = mk_res(),
                             fit_indices = mk_fit()))
   )
   orig_R <- replicate(m, { R <- matrix(0.4, p, p); diag(R) <- 1; R }, simplify = FALSE)
@@ -356,7 +379,7 @@ test_that("a failed bootstrap replicate is skipped, not fatal", {
     mean_unrot_loadings = L, rotation_type = "none",
     align_unrotated = "signed_tucker_congruence",
     h2 = rep(0.36, p), residuals = matrix(0, p, p),
-    fit_indices = list(chi = 1, CFI = 1), pooled_orig_R = orig_R[[1]],
+    pooled_orig_R = orig_R[[1]],
     N = 250, method = "ML"
   )
 
@@ -365,8 +388,10 @@ test_that("a failed bootstrap replicate is skipped, not fatal", {
     class = "efa_pooled_boot_failed"
   )
   expect_true(all(is.finite(pooled$SE$unrot_loadings)))
-  # the fit-algorithm bootstrap path also ran (its failed replicate skipped, not fatal)
-  expect_false(is.null(pooled$SE$fit_indices_pooled_algorithm))
+  # the Rubin-Wald descriptive fit path also ran (its failed replicate skipped,
+  # not fatal) and produced finite fit-index SEs
+  expect_false(is.null(pooled$SE$fit_indices_descriptive))
+  expect_true(all(is.finite(pooled$SE$fit_indices_descriptive)))
 
   # if an imputation is left with fewer than two valid replicates, no SEs can be
   # computed and the pooled bootstrap returns NULL (the existing "no SEs" path)

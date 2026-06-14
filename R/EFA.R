@@ -469,9 +469,10 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   if (length(fit_out$heywood) > 0) {
     heywood_vars <- names(fit_out$heywood)
     cli::cli_warn(
-      c(paste("{cli::qty(heywood_vars)}Heywood case{?s} detected: the communalit{?y/ies}",
-              "of {.val {heywood_vars}} {?is/are} {.val {1}} or larger."),
-        "i" = "The solution is improper; interpret the affected loadings and uniquenesses with caution."),
+      c(paste("{cli::qty(heywood_vars)}Heywood case{?s} detected for {.val {heywood_vars}}:",
+              "the solution is improper (a communality at or above 1, or a uniqueness",
+              "fixed at the estimation boundary)."),
+        "i" = "Interpret the affected loadings and uniquenesses with caution."),
       class = "efa_heywood"
     )
   }

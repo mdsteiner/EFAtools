@@ -77,7 +77,10 @@
         converged[row_i] <- efa_temp$convergence
 
         if (efa_temp$convergence == 0) {
-          has_heywood <- any(efa_temp$h2 >= 1 + .Machine$double.eps)
+          # Use the fit's Heywood flag so improper solutions are excluded
+          # consistently across estimators (a communality >= 1, or an ML/ULS
+          # uniqueness pinned at the estimation boundary).
+          has_heywood <- length(efa_temp$heywood) > 0
           heywood[row_i] <- has_heywood
 
           if (!has_heywood) {

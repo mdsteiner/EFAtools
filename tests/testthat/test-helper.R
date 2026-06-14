@@ -143,6 +143,31 @@ test_that(".gof works", {
 })
 
 
+test_that(".gof CFI uses the Bentler noncentrality truncation (matches lavaan)", {
+  skip_on_cran()
+  skip_if_not_installed("lavaan")
+  # Random near-uncorrelated data: a one-factor model barely improves on the
+  # baseline, so the model noncentrality (chi - df) is negative. The Bentler
+  # convention floors it at 0 (CFI = 1); the previous unfloored ratio deflated
+  # CFI toward 0 (here it returned about 0.21).
+  set.seed(1)
+  X <- matrix(stats::rnorm(100 * 7), 100, 7)
+  R <- stats::cor(X)
+  colnames(R) <- rownames(R) <- paste0("V", seq_len(7))
+
+  cfi_efa <- suppressWarnings(
+    EFA(R, n_factors = 1, N = 100, method = "ML")
+  )$fit_indices$CFI
+
+  mod <- paste0("f =~ ", paste(colnames(R), collapse = " + "))
+  fit_l <- lavaan::cfa(mod, sample.cov = R, sample.nobs = 100, std.lv = TRUE)
+  cfi_lav <- unname(lavaan::fitMeasures(fit_l, "cfi"))
+
+  expect_equal(cfi_efa, cfi_lav, tolerance = 1e-3)
+  expect_equal(cfi_efa, 1)
+})
+
+
 test_that(".compute_caf returns 0 (with warning) when KMO is not computable", {
   # Hollow residual matrix: solve() succeeds (not a try-error) but the inverse
   # has a negative diagonal, so KMO is NaN. CAF must fall back to 0, not NaN.

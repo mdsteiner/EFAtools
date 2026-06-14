@@ -268,7 +268,9 @@ The argument \code{start_method} is only evaluated if "ML" is included in
 To avoid a bias in the averaged factor solutions from problematic solutions,
 these are excluded prior to averaging. A solution is deemed problematic if
 at least one of the following is true: an error occurred, the model did not
-converge, or there is at least one Heywood case (defined as a communality of >= 1 + .Machine$double.eps).
+converge, or there is at least one Heywood (improper) case (a communality at
+or above 1, or, for \code{ML}/\code{ULS}, a uniqueness pinned at the estimator's lower
+bound).
 Information on errors, convergence, and Heywood cases are returned in the
 implementations_grid and a summary of these is given when printing the output.
 In addition to these, information on the admissibility of the factor solutions

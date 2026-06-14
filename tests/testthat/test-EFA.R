@@ -445,6 +445,27 @@ test_that("Heywood cases are detected, warned, and recorded", {
   efa_clean <- suppressWarnings(EFA(test_models$baseline$cormat, 3, N = 500,
                                     method = "ML"))
   expect_length(efa_clean$heywood, 0)
+
+  # ML/ULS constrain the uniquenesses to a lower bound, so an improper solution
+  # keeps the communality just below 1 and instead pins a uniqueness at that
+  # bound. A near-unit first loading forces this boundary case; it must be flagged
+  # for both estimators even though no communality reaches 1.
+  L_bnd <- c(.999, .7, .6, .5)
+  R_bnd <- L_bnd %*% t(L_bnd)
+  diag(R_bnd) <- 1
+
+  for (m in c("ML", "ULS")) {
+    expect_warning(EFA(R_bnd, 1, N = 200, method = m), class = "efa_heywood")
+    efa_bnd <- suppressWarnings(EFA(R_bnd, 1, N = 200, method = m))
+    expect_gt(length(efa_bnd$heywood), 0)
+    expect_true(all(efa_bnd$h2[efa_bnd$heywood] < 1))
+  }
+
+  # The same matrix with a clearly proper structure is not flagged.
+  L_ok <- c(.9, .7, .6, .5)
+  R_ok <- L_ok %*% t(L_ok)
+  diag(R_ok) <- 1
+  expect_length(suppressWarnings(EFA(R_ok, 1, N = 200, method = "ML"))$heywood, 0)
 })
 
 rm(efa_cor, efa_raw, efa_psych, efa_spss, efa_ml, efa_uls, efa_equa, efa_quart,

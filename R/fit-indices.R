@@ -153,23 +153,28 @@
     # null model
     chi_null <- .null_chisq(R, N)
     df_null <- (m**2 - m) / 2
-    delta_hat_null <- chi_null - df_null
     p_null <- stats::pchisq(chi_null, df_null, lower.tail = F)
 
     # current model
-    # formula 12.1 from Kline 2016; Principles and practices of...
     p_chi <- stats::pchisq(chi, df, lower.tail = F)
-    delta_hat_m <- chi - df
-    CFI <- (delta_hat_null - delta_hat_m) / delta_hat_null
-    if (CFI > 1 || df == 0) CFI <- 1
-    if (CFI < 0) CFI <- 0
+
+    ### compute CFI (Bentler, 1990): the model and baseline noncentralities
+    # d = chi - df are each floored at 0 before the ratio, so an over-fitting
+    # model (d <= 0) cannot deflate the index and CFI is 1 when the baseline
+    # itself does not misfit (denominator 0). The flooring keeps CFI in [0, 1]
+    # without a post-hoc clamp and matches lavaan::fitMeasures().
+    d_m <- max(chi - df, 0)
+    d_null <- max(chi_null - df_null, 0)
+    CFI <- if (df == 0 || max(d_m, d_null) == 0) 1 else 1 - d_m / max(d_m, d_null)
 
     ### compute TLI (Tucker-Lewis index / NNFI; Tucker & Lewis, 1973)
     if (df == 0) {
       TLI <- 1
     } else {
       ratio_null <- chi_null / df_null
-      TLI <- (ratio_null - chi / df) / (ratio_null - 1)
+      # ratio_null == 1 (baseline chi-square equal to its df) leaves the index
+      # undefined (0/0); report a perfect 1 as in the just-identified case.
+      TLI <- if (ratio_null == 1) 1 else (ratio_null - chi / df) / (ratio_null - 1)
     }
 
 

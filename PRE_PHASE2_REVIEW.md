@@ -557,7 +557,7 @@ behaviour-changing items grouped with NEWS + deliberate snapshot updates:
    summarisation. (These three were tagged `→ U-rev-f` in the §6 register but were never part
    of U-rev-f's actual scope; split out here.) — done (pending commit)
 7. **U-rev-g (fit conventions, behaviour-changing):** B33 CFI/TLI clamping, B32 D2 ARIV,
-   B35 Heywood-flag/NEWS, B54 pooled Fm — each with NEWS + snapshot.
+   B35 Heywood-flag/NEWS, B54 pooled Fm — each with NEWS + snapshot. — done (pending commit)
 8. **U-rev-h (print methods):** B55 1-factor NA-fill print, B56 `format()` ANSI strip ×4,
    B57/B58 print-helper dedup, B60 cluster (negative-zero, dead `.print_efa_structure_note`,
    `.efa_num` ansi_string) + 1-factor/NA print snapshots.

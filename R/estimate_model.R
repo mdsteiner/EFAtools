@@ -7,6 +7,12 @@
 # the shared post-processing common to all methods, and `.estimate_model()`
 # assembles the method-specific output object.
 
+# Lower bound the ML and ULS optimisers impose on the uniquenesses. A solution
+# whose uniqueness is pinned at this floor is an improper (boundary) solution:
+# the unconstrained optimum would place it at or below zero. Shared by the ML/ULS
+# fitters and the Heywood detector in .finalize_fit() so the value has one source.
+.uniqueness_floor <- 0.005
+
 # Shared post-processing for an unrotated solution. Reflects the loadings to a
 # consistent sign, names them (with a V-fallback when the input is unnamed),
 # computes the explained variances, fit indices, communalities, model-implied
@@ -57,10 +63,19 @@
   # Name communalities
   names(h2) <- colnames(orig_R)
 
-  # Detect Heywood cases (an improper solution where a variable's communality is
-  # at or above 1). Named integer vector of the affected variables (empty if none);
-  # surfaced to the user by EFA() and shown in summary().
-  heywood <- which(h2 >= 1 + .Machine$double.eps)
+  # Detect Heywood (improper) cases. Named integer vector of the affected
+  # variables (empty if none); surfaced to the user by EFA() and shown in
+  # summary(). Under PAF the communality can reach or exceed 1 directly. Under
+  # ML/ULS the optimiser constrains the uniquenesses to [floor, 1], so an improper
+  # solution instead shows up as a uniqueness pinned at the lower floor (the
+  # boundary case); flag those too so detection is consistent across estimators.
+  heywood_comm <- h2 >= 1 + .Machine$double.eps
+  heywood_boundary <- if (!is.null(fit$psi)) {
+    fit$psi <= .uniqueness_floor + sqrt(.Machine$double.eps)
+  } else {
+    rep(FALSE, length(h2))
+  }
+  heywood <- which(heywood_comm | heywood_boundary)
 
   list(
     orig_R = orig_R,

@@ -112,9 +112,10 @@ communalities, residuals, and structure coefficients are Wald-type MI
 intervals. The confidence level of these pooled intervals is controlled by
 \code{p}; the \code{ci} argument passed through \code{...} to the component
 \code{EFA} calls is not used for the pooled intervals.
-\code{boot.CI$fit_indices_pooled_algorithm}, when available, is a
-percentile-style summary obtained by re-running the pooled-fit algorithm over
-matched bootstrap replicate indices.
+\code{boot.CI$fit_indices_descriptive}, when available, holds Rubin-Wald MI
+summaries of the per-imputation bootstrap fit indices. The chi-square-based
+fit indices themselves are pooled with the D2 rule, whose reference
+distribution (e.g. the RMSEA confidence interval) supplies their uncertainty.
 }
 \examples{
 

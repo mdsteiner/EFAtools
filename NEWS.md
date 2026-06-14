@@ -8,12 +8,27 @@
   `ULS` estimation (SRMR is also reported for `PAF`). The SRMR matches `lavaan`; the TLI
   and ECVI are based on the Bartlett-corrected chi square. The new indices are shown in
   `print()` and `summary()`.
-* `EFA()` now detects Heywood cases (a communality at or above 1) in the fitted solution,
-  records the affected variables in a new `heywood` element of the returned object, and
-  emits a classed warning. Detection is consistent across `PAF`, `ML`, and `ULS`.
+* `EFA()` now detects Heywood (improper) cases in the fitted solution, records the affected
+  variables in a new `heywood` element of the returned object, and emits a classed warning.
+  Detection is consistent across `PAF`, `ML`, and `ULS`: a variable is flagged when its
+  communality reaches or exceeds 1 (which can happen under `PAF`), or when its uniqueness is
+  pinned at the estimator's lower bound (the boundary/improper case under `ML` and `ULS`).
 
 ## Bug Fixes
 
+* `EFA()` and `EFA_POOLED()`: The comparative fit index (CFI) now floors the model and
+  baseline noncentralities at zero before taking their ratio (Bentler, 1990), so it is no
+  longer deflated toward zero when the baseline (independence) model fits comparatively well.
+  The value is unchanged for well-fitting models and now matches `lavaan`. CFI can change for
+  solutions in which the baseline model does not misfit much.
+* `EFA_POOLED()`: Corrected and extended the pooled chi-square-based model-fit indices. The D2
+  average relative increase in variance is now centred on the mean of the square-root
+  statistics (Li, Meng, Raghunathan & Rubin, 1991), removing a one-sided inflation of the
+  pooled chi-square, RMSEA, and CFI; the pooled set now also reports the Tucker-Lewis index
+  (TLI) and the expected cross-validation index (ECVI). Bootstrap/MI confidence intervals for
+  the pooled fit indices are now the Rubin-Wald multiple-imputation summaries; a miscalibrated
+  bootstrap-percentile interval (obtained by re-running the pooling algorithm over matched
+  replicate indices) was removed, as was a mislabeled pooled `Fm`.
 * `EFA_AVERAGE()`: When every averaged solution fails (all runs error, fail to converge, or
   are Heywood cases), the function now returns an empty (`NA`) averaged result instead of
   erroring or averaging an empty set.
