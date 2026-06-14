@@ -42,6 +42,7 @@ test_that("identified number of factors is correct", {
 })
 
 # Create singular correlation matrix for tests
+set.seed(7)
 x <- rnorm(10)
 y <- rnorm(10)
 z <- x + y

@@ -144,6 +144,7 @@ test_that("a non-finite goodness-of-fit value is dropped with a classed warning"
 
 
 # Create singular correlation matrix for tests
+set.seed(7)
 x <- rnorm(10)
 y <- rnorm(10)
 z <- x + y

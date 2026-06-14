@@ -2,6 +2,7 @@
 # detection, the N-handling policy, and the singular / non-positive-definite
 # branches.
 
+set.seed(7)                                            # keep the singular fixture deterministic
 x <- rnorm(10)
 y <- rnorm(10)
 z <- x + y
