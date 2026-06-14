@@ -81,7 +81,9 @@ An object of class \code{efa_retention} (see \code{\link[=print.efa_retention]{p
 \code{\link[=plot.efa_retention]{plot.efa_retention()}} for the print and plot methods). Its main fields are:
 \item{n_factors}{A named numeric vector with the suggested number of factors for
 each requested eigenvalue type (\code{"PCA"}, \code{"SMC"}, and/or \code{"EFA"}). These are
-\code{NA} when no real data are supplied (i.e. only \code{N} and \code{n_vars} are given).}
+\code{NA} when no real data are supplied (i.e. only \code{N} and \code{n_vars} are given). When
+every real eigenvalue exceeds its reference (no crossing is found), all \code{n_vars}
+components are retained and a warning is issued.}
 \item{results}{A list with one record per eigenvalue type, each holding the real
 eigenvalues (when real data were supplied) and the simulated reference
 eigenvalues (means and percentiles) used for printing and plotting.}

@@ -90,11 +90,24 @@ NEST <- function(x, N = NA,
   emp_eigen <- eigen(R, symmetric = TRUE, only.values = TRUE)$values
   nvar <- ncol(R)
 
-  # rule by Achim (2017)
-  max_fac <- floor(.8 * nvar)
+  # Number of factors to test. Achim's (2017) rule caps this at floor(.8 * nvar);
+  # it is additionally bounded so the (nf - 1)-factor reference model fit at each
+  # step stays over-identified (df > 0). The reference data for the nf-th empirical
+  # eigenvalue come from an (nf - 1)-factor EFA, whose loadings are only
+  # trustworthy when that model has positive degrees of freedom
+  # (df = ((nvar - k)^2 - (nvar + k)) / 2 for k factors); the largest reference
+  # factor count with df > 0 caps the search at one factor beyond it.
+  ref_k <- seq_len(nvar) - 1L
+  ref_df <- ((nvar - ref_k)^2 - (nvar + ref_k)) / 2
+  max_fac <- min(floor(.8 * nvar), max(ref_k[ref_df > 0]) + 1L)
 
   references <- vector(mode = "double", length = max_fac)
 
+  # `stopped` records whether the search ended because an empirical eigenvalue
+  # fell at/below its reference (i.e. a factor was rejected). If none does so
+  # within the tested range, every tested factor was accepted and the last tested
+  # model is retained (see the boundary handling after the loop).
+  stopped <- FALSE
   for (nf in 1:max_fac) {
 
     if (nf == 1) {
@@ -137,14 +150,19 @@ NEST <- function(x, N = NA,
 
     references[nf] <- stats::quantile(ref_values, probs = 1 - alpha)
     if (emp_eigen[nf] <= references[nf]) {
+      stopped <- TRUE
       break
     }
 
 
   }
 
-  n_factors <- nf - 1
-  references <- references[1:nf]
+  # On a rejection the retained model is the one with one fewer factor than the
+  # rejected position. At the no-stop boundary (no rejection within the tested
+  # range) every tested factor was accepted, so the last tested model
+  # (`nf == max_fac`) is retained rather than the just-past index.
+  n_factors <- if (stopped) nf - 1L else nf
+  references <- references[seq_len(nf)]
 
   results <- list(list(
     name = "NEST",

@@ -73,6 +73,41 @@ test_that("a Heywood case in the reference model raises a classed error", {
   expect_error(suppressWarnings(NEST(R_hey, N = 200)), class = "efa_nest_heywood")
 })
 
+test_that("the last accepted model is retained at the no-stop boundary", {
+  # Four variables with two clear factors: NEST accepts the 1st empirical
+  # eigenvalue (vs the identity reference) and the 2nd (vs the one-factor
+  # reference). The search then runs out of testable factors -- floor(.8 * nvar)
+  # is 3, but the (nf - 1)-factor reference model must stay over-identified
+  # (df > 0), which caps it at 2. With no rejection, the retained count must be
+  # the last *accepted* model (2), not the loop's just-past index (1).
+  R_bound <- matrix(c(1, .7, .1, .1,
+                      .7, 1, .1, .1,
+                      .1, .1, 1, .7,
+                      .1, .1, .7, 1), 4, 4)
+
+  set.seed(123)
+  nest_bound <- NEST(R_bound, N = 200, n_datasets = 300)
+  rec_bound <- .retention_record(nest_bound, "NEST")
+
+  expect_equal(nest_bound$n_factors[["NEST"]], 2)
+  # every tested empirical eigenvalue exceeded its reference (no rejection), so
+  # the reference series has one entry per retained factor (not n_factors + 1)
+  expect_length(rec_bound$reference, nest_bound$n_factors[["NEST"]])
+  expect_true(all(rec_bound$y[seq_len(nest_bound$n_factors[["NEST"]])] >
+                    rec_bound$reference[seq_len(nest_bound$n_factors[["NEST"]])]))
+
+  # The reference fits stay over-identified: an uncapped floor(.8 * nvar) = 3
+  # would fit a 2-factor (df < 0) reference for 4 variables; the df > 0 bound
+  # prevents that, so no under-identified reference fit is triggered.
+  expect_no_warning(
+    {
+      set.seed(123)
+      NEST(R_bound, N = 200, n_datasets = 300)
+    },
+    class = "efa_underidentified"
+  )
+})
+
 test_that("settings are returned correctly", {
 
   expect_equal(nest_cor$settings$N, 500)

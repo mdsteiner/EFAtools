@@ -202,6 +202,58 @@ test_that("np-boot aborts when every replicate fails", {
   )
 })
 
+# Count how many signalled warnings carry a given condition class, muffling all
+# warnings so the wrapped expression runs to completion.
+count_warning_class <- function(expr, cls) {
+  n <- 0L
+  withCallingHandlers(
+    force(expr),
+    warning = function(w) {
+      if (inherits(w, cls)) n <<- n + 1L
+      invokeRestart("muffleWarning")
+    }
+  )
+  n
+}
+
+test_that("a pinned argument re-warns once, not once per bootstrap replicate", {
+  skip_on_cran()
+  # `efa_type_override` reflects the (type, pinned-argument) combination, which is
+  # identical for every replicate and already surfaced once by the point-estimate
+  # fit. The bootstrap loop must not repeat it b_boot times.
+  set.seed(42)
+  n_override <- count_warning_class(
+    EFA(GRiPS_raw, n_factors = 2, method = "PAF", type = "EFAtools",
+        max_iter = 500, se = "np-boot", b_boot = 6),
+    "efa_type_override"
+  )
+  expect_equal(n_override, 1L)
+})
+
+test_that("bootstrap non-convergence is summarized in a single classed warning", {
+  skip_on_cran()
+  # A tiny iteration cap forces every replicate to hit the maximum-iteration limit;
+  # the per-replicate fitter warnings must be suppressed and replaced by a single
+  # classed summary rather than one warning per replicate.
+  set.seed(1)
+  n_summary <- count_warning_class(
+    EFA(GRiPS_raw, n_factors = 2, method = "PAF", type = "none",
+        init_comm = "smc", criterion = 1e-3, criterion_type = "sum",
+        abs_eigen = TRUE, max_iter = 1, se = "np-boot", b_boot = 5),
+    "efa_boot_nonconvergence"
+  )
+  expect_equal(n_summary, 1L)
+
+  # a cleanly converging bootstrap emits no non-convergence summary
+  set.seed(7)
+  n_clean <- count_warning_class(
+    EFA(GRiPS_raw, n_factors = 2, method = "PAF", rotation = "promax",
+        se = "np-boot", b_boot = 8),
+    "efa_boot_nonconvergence"
+  )
+  expect_equal(n_clean, 0L)
+})
+
 test_that("eigendecomposition guards turn degenerate matrices into errors", {
   # a non-finite (constant-column-style) correlation matrix makes the symmetric
   # eigendecomposition fail; the guarded fitters must error, not crash R

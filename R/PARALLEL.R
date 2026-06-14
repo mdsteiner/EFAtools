@@ -73,7 +73,9 @@
 #'   [plot.efa_retention()] for the print and plot methods). Its main fields are:
 #' \item{n_factors}{A named numeric vector with the suggested number of factors for
 #'   each requested eigenvalue type (`"PCA"`, `"SMC"`, and/or `"EFA"`). These are
-#'   `NA` when no real data are supplied (i.e. only `N` and `n_vars` are given).}
+#'   `NA` when no real data are supplied (i.e. only `N` and `n_vars` are given). When
+#'   every real eigenvalue exceeds its reference (no crossing is found), all `n_vars`
+#'   components are retained and a warning is issued.}
 #' \item{results}{A list with one record per eigenvalue type, each holding the real
 #'   eigenvalues (when real data were supplied) and the simulated reference
 #'   eigenvalues (means and percentiles) used for printing and plotting.}
@@ -468,6 +470,20 @@ if (decision_rule == "crawford") {
   n_fac <- which(!(eigvals_real > results[, pp]))[1] - 1
 
 }
+
+  # When every real eigenvalue exceeds its reference the rule finds no crossing
+  # (`which()` is empty, so the index is NA). Every dimension then sits above the
+  # noise reference, so retain all tested components (the same "all-exceed"
+  # convention as the empirical Kaiser criterion in [EKC()]) and flag the boundary
+  # with a classed warning rather than returning a silent NA.
+  if (is.na(n_fac)) {
+    n_fac <- length(eigvals_real)
+    cli::cli_warn(
+      c("All real eigenvalues exceeded the parallel analysis reference; no crossing was found.",
+        "i" = "Retaining all {n_fac} component{?s}. This often indicates a near-singular or highly collinear correlation matrix; interpret the suggestion with caution."),
+      class = "efa_parallel_no_crossing"
+    )
+  }
 
   return(n_fac)
 

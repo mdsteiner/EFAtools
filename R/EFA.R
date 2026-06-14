@@ -463,9 +463,9 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
                              abs_eigen = abs_eigen, start_method = start_method)
 
   # Surface Heywood cases from the point-estimate solution (the detector runs in
-  # .finalize_fit for every fit). This fires once per EFA() call; routines that run
-  # many EFAs (such as model averaging) suppress the per-run warnings and report a
-  # single summary instead.
+  # .finalize_fit for every fit). This fires once per EFA() call; EFA_AVERAGE,
+  # which fits one EFA per grid cell, suppresses these per-model warnings and
+  # reports a single summary instead.
   if (length(fit_out$heywood) > 0) {
     heywood_vars <- names(fit_out$heywood)
     cli::cli_warn(
@@ -585,6 +585,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
 .boot_fun <- function(x, b, call_fun, ...) {
 
   boot_list <- vector("list", b)
+  n_nonconverged <- 0L
 
   for (boot_i in seq_len(b)) {
 
@@ -593,10 +594,27 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
     # be fit is left as its pre-allocated NULL and skipped later, rather than
     # aborting the whole call. Note `boot_list[[boot_i]] <- NULL` would *delete*
     # the element, so only assign on success.
-    fit_i <- tryCatch(call_fun(x[,, boot_i], ...), error = function(e) NULL)
+    #
+    # Per-replicate warnings are suppressed here: they repeat identical
+    # information b times. The type/preset-override notice depends only on the
+    # (type, pinned arguments) combination, which is the same for every replicate
+    # and already surfaced once by the point-estimate fit; the iterative fitter's
+    # max-iteration warning would otherwise fire once per non-converged replicate.
+    # Non-convergence is instead tallied and reported once after the loop.
+    fit_i <- tryCatch(suppressWarnings(call_fun(x[,, boot_i], ...)),
+                      error = function(e) NULL)
     if (!is.null(fit_i)) {
       boot_list[[boot_i]] <- fit_i
+      if (isTRUE(fit_i$convergence != 0)) n_nonconverged <- n_nonconverged + 1L
     }
+  }
+
+  if (n_nonconverged > 0L) {
+    cli::cli_warn(
+      c("{n_nonconverged} of {b} bootstrap replicate{?s} did not converge.",
+        "i" = "Their bootstrap standard errors and confidence intervals may be unreliable."),
+      class = "efa_boot_nonconvergence"
+    )
   }
 
   boot_list

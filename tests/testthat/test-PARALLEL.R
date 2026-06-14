@@ -272,5 +272,42 @@ test_that(".parallel_summarise uses stats::quantile for the percentile series", 
                                na.rm = TRUE))
 })
 
+test_that(".determine_factors retains all components and warns when no crossing", {
+  # every real eigenvalue exceeds its reference: the rule finds no crossing, so
+  # instead of a silent NA it retains all tested components and flags the boundary
+  eigvals_real <- matrix(c(3, 2, 1.5), ncol = 1)
+  results <- cbind(c(2, 1, 0.5), c(2.5, 1.2, 0.6))
+  colnames(results) <- c("Means", "95 Percentile")
+
+  for (rule in c("means", "percentile", "crawford")) {
+    expect_warning(
+      n_fac <- .determine_factors(rule, eigvals_real, results, percent = 95),
+      class = "efa_parallel_no_crossing"
+    )
+    expect_equal(n_fac, nrow(eigvals_real), info = rule)
+  }
+})
+
+test_that(".determine_factors returns a normal crossing and 0 without the warning", {
+  results <- cbind(c(1, 1, 1), c(1.2, 1.2, 1.2))
+  colnames(results) <- c("Means", "95 Percentile")
+
+  # first eigenvalue exceeds the reference, the second does not -> retain 1
+  expect_no_warning(
+    n1 <- .determine_factors("means", matrix(c(3, 0.5, 0.2), ncol = 1),
+                             results, percent = 95),
+    class = "efa_parallel_no_crossing"
+  )
+  expect_equal(n1, 1)
+
+  # the first eigenvalue is already at/below the reference -> retain 0
+  expect_no_warning(
+    n0 <- .determine_factors("means", matrix(c(0.5, 0.4, 0.3), ncol = 1),
+                             results, percent = 95),
+    class = "efa_parallel_no_crossing"
+  )
+  expect_equal(n0, 0)
+})
+
 rm(pa_cor, pa_cor_pca, pa_raw, pa_nodat, pa_craw, pa_perc, x, y, z, dat_sing,
    cor_sing, burt)

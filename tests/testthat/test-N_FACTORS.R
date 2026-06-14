@@ -139,7 +139,12 @@ test_that("errors etc. are thrown correctly", {
                            suitability = FALSE), class = "efa_n_from_data")
   expect_error(N_FACTORS(cbind(x, y, z, z + 1, y + 1, x + 1)), class = "efa_cor_singular")
   expect_warning(N_FACTORS(test_models$baseline$cormat, N = 500), class = "efa_criterion_skipped")
-  expect_warning(N_FACTORS(burt, N = 170, criteria = c("PARALLEL", "EKC")), class = "efa_cor_smoothed")
+  # burt is near-singular: it is smoothed, and PARALLEL finds every real SMC
+  # eigenvalue above its reference (no crossing), so both warnings are expected
+  expect_warning(
+    expect_warning(N_FACTORS(burt, N = 170, criteria = c("PARALLEL", "EKC")),
+                   class = "efa_parallel_no_crossing"),
+    class = "efa_cor_smoothed")
 })
 
 rm(nf_grips, x, y, z, burt)

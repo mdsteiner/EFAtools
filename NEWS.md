@@ -64,6 +64,17 @@
   was skipped, so a solution lying below the line connecting its neighbours could remain
   on the hull. This can change the number of factors suggested by `HULL()` (and hence by
   `N_FACTORS()`).
+* `NEST()`: When the test accepts every eigenvalue it examines (no empirical eigenvalue
+  falls at or below its reference within the search range), it now retains that last
+  accepted model rather than the model with one fewer factor. The search range is also
+  bounded so that the reference model fitted at each step stays over-identified.
+* `PARALLEL()`: When every real eigenvalue exceeds its reference, so the decision rule finds
+  no crossing, the suggested number of factors is now all retained components, reported with
+  a warning, instead of a silent `NA` (matching the convention used by `EKC()`).
+* `EFA(se = "np-boot")`: The non-parametric bootstrap no longer repeats per-replicate
+  warnings (about arguments pinned alongside `type`, and about the iterative fit reaching its
+  maximum number of iterations) once per replicate. They are now suppressed during
+  resampling, and non-convergence across replicates is reported once as a summary.
 
 
 # EFAtools 0.7.1
