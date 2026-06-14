@@ -66,6 +66,23 @@ test_that("a non-positive-definite matrix is smoothed, or aborts under posdef_ab
   # posdef_abort = TRUE turns the same input into an error instead
   expect_error(.prepare_cor_input(cor_nposdef, N = 10, posdef_abort = TRUE),
                class = "efa_cor_not_posdef")
+
+  # an already-smoothed matrix is not re-flagged on a subsequent pass (the
+  # non-positive-definite check uses psych::cor.smooth()'s own trigger), and it
+  # is returned unchanged
+  smoothed <- prep_sm$R
+  expect_no_warning(prep_again <- .prepare_cor_input(smoothed, N = 10))
+  expect_equal(prep_again$R, smoothed)
+})
+
+test_that("NA in the raw-data correlation matrix aborts with a classed error", {
+  # under use = "everything" a missing value leaves NAs in the computed
+  # correlations; this must be a clear classed error, not an opaque base crash
+  dat_na <- matrix(c(1, 2, 3, 4, 5, 6, 7, 8,
+                     8, 6, 7, 5, 3, 4, 1, 2,
+                     2, 5, 1, 8, 3, 7, 4, NA), ncol = 3)
+  expect_error(suppressMessages(.prepare_cor_input(dat_na, use = "everything")),
+               class = "efa_cor_na")
 })
 
 test_that("a singular matrix aborts unless the check is disabled", {

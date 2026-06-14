@@ -108,7 +108,21 @@ NEST <- function(x, N = NA,
       # For further factors, use model with nf - 1 as reference data
       mm <- EFA(R, N = N, n_factors = nf - 1, ...)
       L <- mm$unrot_loadings
-      u2 <- diag(sqrt(1-mm$h2))
+
+      # A Heywood case in the reference model (communality at or above 1) makes
+      # the uniqueness negative, so the reference data cannot be simulated; abort
+      # with an actionable message instead of passing NaN into the C++ simulator.
+      uniqueness <- 1 - mm$h2
+      if (any(!is.finite(uniqueness) | uniqueness < 0)) {
+        cli::cli_abort(
+          c("A Heywood case occurred in the {nf - 1}-factor reference model used by NEST.",
+            "x" = "A communality at or above 1 leaves no unique variance to simulate the reference data from.",
+            "i" = "Try a different extraction {.arg method} (e.g. {.val ML} or {.val ULS}) or fewer indicators."),
+          class = "efa_nest_heywood"
+        )
+      }
+
+      u2 <- diag(sqrt(uniqueness))
 
       # bind loadings and uniquenesses together to create data according to
       # factor score rule X = F*L + e, which is faster than using the model

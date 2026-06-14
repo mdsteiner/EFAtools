@@ -2,6 +2,17 @@
 #include <string>
 using namespace Rcpp;
 
+// Join the 1-based factor indices into a single key, separated so that the sets
+// do not collide for ten or more factors (e.g. {1, 2} -> "1-2", not "12" == {12}).
+static std::string join_corres(const Rcpp::CharacterVector& pos) {
+  std::string out;
+  for (int k = 0; k < pos.size(); k++) {
+    if (k > 0) out += "-";
+    out += Rcpp::as<std::string>(pos[k]);
+  }
+  return out;
+}
+
 //' Compute number of non-matching indicator-to-factor correspondences
 //'
 //' @param x numeric matrix. A matrix of pattern coefficients.
@@ -85,8 +96,8 @@ Rcpp::List factor_corres(NumericMatrix x,
      y_pos.push_back("0");
    }
 
-   x_corres_cross.push_back(collapse(x_pos));
-   y_corres_cross.push_back(collapse(y_pos));
+   x_corres_cross.push_back(join_corres(x_pos));
+   y_corres_cross.push_back(join_corres(y_pos));
  }
 
  diff_corres = sum(x_corres != y_corres);

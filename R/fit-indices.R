@@ -84,9 +84,12 @@
 # .gof() and HULL so the model and baseline chi-square sit on the same scale.
 .null_chisq <- function(R, N) {
   p <- ncol(R)
-  detR <- det(R)
-  if (!is.finite(detR) || detR <= 0) return(NA_real_)
-  -log(detR) * (N - 1 - (2 * p + 5) / 6)
+  # Use the log-determinant directly: det(R) underflows to 0 for large,
+  # near-singular (but still positive-definite) matrices, which would otherwise
+  # turn the statistic into NA and propagate into .gof(), SMT(), and BARTLETT().
+  ld <- determinant(R, logarithm = TRUE)
+  if (ld$sign <= 0 || !is.finite(ld$modulus)) return(NA_real_)
+  -as.numeric(ld$modulus) * (N - 1 - (2 * p + 5) / 6)
 }
 
 .gof <- function(L, # The loading/ pattern matrix

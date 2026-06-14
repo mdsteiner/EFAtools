@@ -550,7 +550,7 @@ behaviour-changing items grouped with NEWS + deliberate snapshot updates:
    B36/B37/B38 guards; psych oracle tests. (Coordinate with the Phase-7 reliability rework —
    some fold in.) — done (pending commit)
 6. **U-rev-f (robustness guards):** B27 NEST Heywood, B28 EFA_POOLED boot-failure, B42/B43/
-   B44/B51 classed guards, B41 smoothing re-flag, B52 factor_corres separator.
+   B44/B51 classed guards, B41 smoothing re-flag, B52 factor_corres separator. — done (pending commit)
 7. **U-rev-g (fit conventions, behaviour-changing):** B33 CFI/TLI clamping, B32 D2 ARIV,
    B35 Heywood-flag/NEWS, B54 pooled Fm — each with NEWS + snapshot.
 8. **U-rev-h (print methods):** B55 1-factor NA-fill print, B56 `format()` ANSI strip ×4,

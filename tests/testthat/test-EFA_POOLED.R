@@ -319,6 +319,68 @@ test_that("oblique bootstrap pooling produces rotated SEs, CIs, and Phi", {
   expect_true(all(fmi[is.finite(fmi)] >= 0 & fmi[is.finite(fmi)] <= 1))
 })
 
+test_that("a failed bootstrap replicate is skipped, not fatal", {
+  # A component EFA NA-fills a bootstrap replicate it could not fit; the pooled
+  # bootstrap must skip that replicate (classed warning) and still produce finite
+  # SEs from the valid ones, rather than aborting on the NA in the alignment step.
+  withr::local_seed(1)
+  p <- 3L; k <- 1L; B <- 4L; m <- 2L
+  mk_arr <- function(na = NULL) {
+    a <- array(stats::rnorm(p * k * B, 0.6, 0.05), dim = c(p, k, B))
+    if (!is.null(na)) a[, , na] <- NA_real_
+    a
+  }
+  mk_res <- function(na = NULL) {
+    a <- array(stats::rnorm(p * p * B, 0, 0.02), dim = c(p, p, B))
+    if (!is.null(na)) a[, , na] <- NA_real_
+    a
+  }
+  # bootstrap fit-index arrays so the full pooled-fit algorithm path also runs
+  mk_fit <- function(na = NULL) {
+    f <- matrix(stats::rnorm(B * 2, 1, 0.1), nrow = B,
+                dimnames = list(NULL, c("chi", "CFI")))
+    if (!is.null(na)) f[na, ] <- NA_real_
+    f
+  }
+  L <- matrix(0.6, p, k)
+  fits <- list(
+    list(boot.arrays = list(unrot_loadings = mk_arr(na = 2), residuals = mk_res(na = 2),
+                            fit_indices = mk_fit(na = 2))),
+    list(boot.arrays = list(unrot_loadings = mk_arr(),       residuals = mk_res(),
+                            fit_indices = mk_fit()))
+  )
+  orig_R <- replicate(m, { R <- matrix(0.4, p, p); diag(R) <- 1; R }, simplify = FALSE)
+  args <- list(
+    fits = fits, orig_R_list = orig_R,
+    unrot_loadings_aligned = replicate(m, L, simplify = FALSE),
+    mean_unrot_loadings = L, rotation_type = "none",
+    align_unrotated = "signed_tucker_congruence",
+    h2 = rep(0.36, p), residuals = matrix(0, p, p),
+    fit_indices = list(chi = 1, CFI = 1), pooled_orig_R = orig_R[[1]],
+    N = 250, method = "ML"
+  )
+
+  expect_warning(
+    pooled <- do.call(.efa_pooled_bootstrap_pool, args),
+    class = "efa_pooled_boot_failed"
+  )
+  expect_true(all(is.finite(pooled$SE$unrot_loadings)))
+  # the fit-algorithm bootstrap path also ran (its failed replicate skipped, not fatal)
+  expect_false(is.null(pooled$SE$fit_indices_pooled_algorithm))
+
+  # if an imputation is left with fewer than two valid replicates, no SEs can be
+  # computed and the pooled bootstrap returns NULL (the existing "no SEs" path)
+  fits_fail <- fits
+  fits_fail[[1]]$boot.arrays$unrot_loadings <- mk_arr(na = seq_len(B))
+  args_fail <- args
+  args_fail$fits <- fits_fail
+  expect_warning(
+    pooled_fail <- do.call(.efa_pooled_bootstrap_pool, args_fail),
+    class = "efa_pooled_boot_insufficient"
+  )
+  expect_null(pooled_fail)
+})
+
 test_that("print.EFA_POOLED output is stable (PAF, promax)", {
   local_reproducible_output()
 

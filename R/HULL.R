@@ -354,6 +354,28 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   #    that fj > fi (eliminate solutions not on the boundary of the convex hull)
 
   s_complete <- s
+
+  # A non-finite goodness-of-fit value (e.g. an undefined CFI/RMSEA for a Heywood
+  # or near-singular model) cannot lie on the convex hull; drop those solutions
+  # with a classed warning rather than failing in the comparisons below.
+  na_rows <- !is.finite(s[, 2])
+  if (any(na_rows)) {
+    cli::cli_warn(
+      c("{sum(na_rows)} solution{?s} had a non-finite {gof_t} value and {?was/were} excluded from the hull.",
+        "i" = "Inspect the affected models, or try a different goodness-of-fit index or estimation method."),
+      class = "efa_hull_na_fit"
+    )
+    s <- s[!na_rows, , drop = FALSE]
+  }
+
+  if (nrow(s) < 1) {
+    cli::cli_abort(
+      c("No solution had a finite {gof_t} value, so the Hull method cannot proceed.",
+        "i" = "Try a different goodness-of-fit index or estimation method."),
+      class = "efa_hull_no_fit"
+    )
+  }
+
   d_s <- diff(s[, 2])
   while (any(d_s < 0)) {
     s <- s[c(1, d_s) > 0, , drop = FALSE]

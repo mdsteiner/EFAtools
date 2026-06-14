@@ -200,8 +200,22 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
   ## Tests for suitability of factor analysis
   suitability_out <- NULL
   if (isTRUE(suitability)) {
+    # Bartlett's test of sphericity needs N; the KMO criterion does not. When N
+    # is unavailable (a correlation matrix without N), skip Bartlett's test with a
+    # note and still report KMO, instead of aborting and thereby blocking the
+    # N-free retention criteria too.
+    bartlett_out <- if (is.na(N)) {
+      cli::cli_warn(
+        c("{.arg N} is {.val NA}; Bartlett's test of sphericity was skipped.",
+          "i" = "Provide {.arg N} or raw data to include it."),
+        class = "efa_suitability_no_n"
+      )
+      NULL
+    } else {
+      BARTLETT(R, N = N, use = use, cor_method = cor_method)
+    }
     suitability_out <- list(
-      bartlett = BARTLETT(R, N = N, use = use, cor_method = cor_method),
+      bartlett = bartlett_out,
       kmo = KMO(R, use = use, cor_method = cor_method)
     )
   }

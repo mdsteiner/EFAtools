@@ -59,6 +59,19 @@ test_that("errors are thrown correctly", {
   expect_error(NEST(cor_sing, N = 20), class = "efa_cor_singular")
 })
 
+test_that("a Heywood case in the reference model raises a classed error", {
+  # a positive-definite matrix whose one-factor model has a communality above 1:
+  # the reference data cannot be simulated (negative uniqueness), so NEST must
+  # abort with a classed condition instead of an unclassed C++ error
+  R_hey <- diag(4)
+  R_hey[1, 2:4] <- R_hey[2:4, 1] <- .9
+  R_hey[2, 3:4] <- R_hey[3:4, 2] <- .78
+  R_hey[3, 4] <- R_hey[4, 3] <- .78
+  expect_gt(min(eigen(R_hey, symmetric = TRUE, only.values = TRUE)$values), 0)
+  # the reference EFA legitimately warns about the Heywood case; assert the abort
+  expect_error(suppressWarnings(NEST(R_hey, N = 200)), class = "efa_nest_heywood")
+})
+
 test_that("settings are returned correctly", {
 
   expect_equal(nest_cor$settings$N, 500)

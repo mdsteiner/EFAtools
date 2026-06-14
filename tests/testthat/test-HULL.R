@@ -130,6 +130,18 @@ test_that("the convex-hull elimination tests every interior triplet", {
   expect_equal(out3$retain, 4)
 })
 
+test_that("a non-finite goodness-of-fit value is dropped with a classed warning", {
+  # A model with an undefined fit value (e.g. an NA CFI for a Heywood or
+  # near-singular solution) cannot lie on the hull; it must be excluded with a
+  # classed warning instead of crashing the elimination comparisons.
+  s <- cbind(0:4, c(0.00, 0.80, NA, 0.90, 1.00), c(10, 8, 6, 3, 1), 0)
+  expect_warning(out <- .hull_calc(s, J = 4, gof_t = "CFI"),
+                 class = "efa_hull_na_fit")
+  expect_false(is.na(out$retain))
+  # the dropped (NA-fit) solution carries no hull membership
+  expect_true(is.na(out$s_complete[3, 4]))
+})
+
 
 # Create singular correlation matrix for tests
 x <- rnorm(10)

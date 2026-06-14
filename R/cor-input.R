@@ -109,6 +109,16 @@
     R <- stats::cor(x, use = use, method = cor_method)
     colnames(R) <- colnames(x)
 
+    # Missing values can leave NAs in the computed correlations (e.g. a column
+    # with no complete pairs under the chosen `use`); flag this clearly instead
+    # of failing later in solve()/eigen() with an opaque base error.
+    if (anyNA(R)) {
+      cli::cli_abort(
+        c("The correlation matrix computed from the raw data contains missing values.",
+          "i" = "Adjust {.arg use} (e.g. {.val pairwise.complete.obs}) or supply data with fewer missing values."),
+        class = "efa_cor_na", call = error_call)
+    }
+
     if (N_policy != "none") {
       N <- nrow(x)
     }
@@ -123,9 +133,13 @@
   }
 
   # Check if correlation matrix is positive definite, if it is not, either stop
-  # (SPSS type) or smooth the matrix and surface a single classed warning
-  if (any(eigen(R, symmetric = TRUE, only.values = TRUE)$values <=
-          .Machine$double.eps^.6)) {
+  # (SPSS type) or smooth the matrix and surface a single classed warning.
+  # The threshold matches psych::cor.smooth()'s own trigger (smallest eigenvalue
+  # below .Machine$double.eps), so a matrix that has already been smoothed - whose
+  # eigenvalue floor sits well above this - is not re-flagged on each downstream
+  # call (e.g. inside HULL -> PARALLEL -> EFA).
+  if (any(eigen(R, symmetric = TRUE, only.values = TRUE)$values <
+          .Machine$double.eps)) {
 
     if (posdef_abort) {
       cli::cli_abort(

@@ -67,6 +67,20 @@ test_that("visual criteria and suitability = FALSE are handled", {
   expect_false(grepl("suitability of the data", txt, fixed = TRUE))
 })
 
+test_that("missing N skips Bartlett's test but still runs N-free criteria", {
+  # A correlation matrix without N: Bartlett's test needs N and is skipped with a
+  # classed warning, while KMO and the N-free retention criteria still run -
+  # instead of the suitability check aborting the whole call.
+  expect_warning(
+    nf_noN <- N_FACTORS(test_models$baseline$cormat,
+                        criteria = c("KGC", "MAP", "SCREE")),
+    class = "efa_suitability_no_n"
+  )
+  expect_null(nf_noN$suitability$bartlett)
+  expect_s3_class(nf_noN$suitability$kmo, "KMO")
+  expect_named(nf_noN$outputs, c("KGC", "MAP", "SCREE"), ignore.order = TRUE)
+})
+
 test_that("a failing criterion warns, is reported, and the others still run", {
   # EKC needs N, which is missing for a correlation matrix; MAP still runs
   expect_warning(

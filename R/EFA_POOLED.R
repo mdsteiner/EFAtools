@@ -1217,6 +1217,7 @@ EFA_POOLED <- function(data_list,
   }
 
   nonconv_procrustes <- integer(m)
+  boot_failures <- integer(m)
 
   for (d in seq_len(m)) {
     arr <- fits[[d]]$boot.arrays
@@ -1254,6 +1255,16 @@ EFA_POOLED <- function(data_list,
 
     for (b in seq_len(B_use)) {
       Lb_unrot0 <- unrot_arr[, , b]
+
+      # A component EFA NA-fills a bootstrap replicate it could not fit; skip it
+      # (its pre-initialized rows stay NA and are dropped by the NA-tolerant
+      # pooling) and tally it, rather than letting the NA reach the alignment /
+      # Procrustes step and abort the whole pooled bootstrap.
+      if (!all(is.finite(Lb_unrot0))) {
+        boot_failures[d] <- boot_failures[d] + 1L
+        next
+      }
+
       Lb_unrot <- .efa_pooled_align_unrot_boot(
         L_boot = Lb_unrot0,
         target = mean_unrot_loadings,
@@ -1293,6 +1304,18 @@ EFA_POOLED <- function(data_list,
         boot_residuals[[d]][b, ] <- .efa_pooled_vec(arr$residuals[, , b])
       }
     }
+  }
+
+  # Insufficient implies some failed, so test it first and emit a single warning.
+  if (any(B_use - boot_failures < 2L)) {
+    cli::cli_warn("Too few valid bootstrap replicates remain after dropping failures; pooled bootstrap SEs/CIs could not be computed.",
+                  class = "efa_pooled_boot_insufficient")
+    return(NULL)
+  }
+
+  if (any(boot_failures > 0L)) {
+    cli::cli_warn("Some bootstrap replicates failed in the component EFAs; pooled bootstrap SEs/CIs are based on the valid replicates.",
+                  class = "efa_pooled_boot_failed")
   }
 
   if (any(nonconv_procrustes > 0L)) {
@@ -1438,6 +1461,15 @@ EFA_POOLED <- function(data_list,
       for (d in seq_len(m)) {
         arr <- fits[[d]]$boot.arrays
         Lb_unrot <- matrix(boot_unrot[[d]][b, ], nrow = p_vars, ncol = k)
+
+        # A failed component replicate is NA-filled in the first loop; skip it
+        # here too (its row stays NA and is dropped by the summary), mirroring the
+        # rotated-path guard below, so a failed replicate never reaches the fit
+        # reconstruction regardless of rotation type.
+        if (anyNA(Lb_unrot)) {
+          next
+        }
+
         Lb_unrot_list[[d]] <- Lb_unrot
 
         if (rotation_type != "none") {

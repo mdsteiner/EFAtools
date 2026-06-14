@@ -60,6 +60,25 @@ test_that("errors are thrown correctly", {
   expect_warning(BARTLETT(cor_nposdef, N = 10), class = "efa_cor_smoothed")
 })
 
+test_that("a near-singular but positive-definite matrix still yields a statistic", {
+  # det() underflows to 0 for a large, highly correlated (but positive-definite)
+  # matrix; the null-model chi-square must be recovered from the log-determinant
+  # rather than turning into NA and silently NA-ing Bartlett's test or crashing
+  # the CFI/TLI block of the model fit indices.
+  R <- matrix(0.999, 110, 110)
+  diag(R) <- 1
+  expect_gt(min(eigen(R, symmetric = TRUE, only.values = TRUE)$values), 0)
+  expect_equal(det(R), 0)  # documents why a naive determinant fails here
+
+  bart <- BARTLETT(R, N = 500)
+  expect_true(is.finite(bart$chisq))
+  expect_true(is.finite(bart$p_value))
+
+  # the same matrix must not crash the model fit indices (CFI/TLI use the null)
+  expect_no_error(
+    suppressWarnings(suppressMessages(EFA(R, n_factors = 1, N = 500, method = "ML"))))
+})
+
 test_that("print output is stable", {
   local_reproducible_output()
 
