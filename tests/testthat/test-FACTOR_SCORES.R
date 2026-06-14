@@ -1,7 +1,6 @@
 EFA_raw <- suppressMessages(EFA(DOSPERT_raw, n_factors = 10, type = "EFAtools",
                                 method = "PAF", rotation = "oblimin"))
-fac_scores_raw <- FACTOR_SCORES(DOSPERT_raw, f = EFA_raw, method = "Bartlett",
-                                impute = "none")
+fac_scores_raw <- FACTOR_SCORES(DOSPERT_raw, f = EFA_raw, method = "Bartlett")
 
 EFA_cor <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
                type = "EFAtools", method = "PAF", rotation = "oblimin")
@@ -34,20 +33,15 @@ test_that("output is correct", {
 })
 
 test_that("settings are returned correctly", {
-  expect_named(fac_scores_raw$settings, c("method", "impute"))
-  expect_named(fac_scores_cor$settings, c("method", "impute"))
-  expect_named(fac_scores_unrot$settings, c("method", "impute"))
-  expect_named(fac_scores_man$settings, c("method", "impute"))
+  expect_named(fac_scores_raw$settings, "method")
+  expect_named(fac_scores_cor$settings, "method")
+  expect_named(fac_scores_unrot$settings, "method")
+  expect_named(fac_scores_man$settings, "method")
 
   expect_equal(fac_scores_raw$settings$method, "Bartlett")
   expect_equal(fac_scores_cor$settings$method, "Thurstone")
   expect_equal(fac_scores_unrot$settings$method, "Thurstone")
   expect_equal(fac_scores_man$settings$method, "Thurstone")
-
-  expect_equal(fac_scores_raw$settings$impute, "none")
-  expect_equal(fac_scores_cor$settings$impute, "none")
-  expect_equal(fac_scores_unrot$settings$impute, "none")
-  expect_equal(fac_scores_man$settings$impute, "none")
 })
 
 

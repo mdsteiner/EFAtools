@@ -22,9 +22,6 @@
 #' "Thurstone" (regression-based; default), "tenBerge", "Anderson", "Bartlett",
 #' "Harman", or "components".
 #' See [psych::factor.scores()] for details.
-#' @param impute character. Whether and how missing values in `x` should
-#' be imputed. One of "none" (default, only complete cases are scored), "median",
-#' or "mean".
 #'
 #' @return A list of class FACTOR_SCORES containing the following:
 #'
@@ -39,11 +36,10 @@
 #' @export
 #'
 #' @examples
-#' # Example with raw data with method "Bartlett" and no imputation
+#' # Example with raw data with method "Bartlett"
 #' EFA_raw <- EFA(DOSPERT_raw, n_factors = 10, type = "EFAtools", method = "PAF",
 #'                rotation = "oblimin", randomStarts = 0)
-#' fac_scores_raw <- FACTOR_SCORES(DOSPERT_raw, f = EFA_raw, method = "Bartlett",
-#'                                 impute = "none")
+#' fac_scores_raw <- FACTOR_SCORES(DOSPERT_raw, f = EFA_raw, method = "Bartlett")
 #'
 #' # Same as above, but with raw data AND a correlation matrix
 #' cor_pearson <- cor(DOSPERT_raw)
@@ -52,7 +48,7 @@
 #'                        rotation = "oblimin", randomStarts = 0)
 #' fac_scores_cor_pearson <- FACTOR_SCORES(DOSPERT_raw, f = EFA_cor_pearson,
 #'                                         rho = cor_pearson,
-#'                                         method = "Bartlett", impute = "none")
+#'                                         method = "Bartlett")
 #'
 #' # Scores between two alternatives above are identical
 #' isTRUE(all.equal(fac_scores_raw$scores, fac_scores_cor_pearson$scores,
@@ -65,8 +61,7 @@
 #'
 FACTOR_SCORES <- function(x, f, Phi = NULL, rho = NULL,
                           method = c("Thurstone", "tenBerge", "Anderson",
-                                     "Bartlett", "Harman", "components"),
-                          impute = c("none", "means", "median")){
+                                     "Bartlett", "Harman", "components")){
 
   .assert_cor_input(x)
 
@@ -81,7 +76,6 @@ FACTOR_SCORES <- function(x, f, Phi = NULL, rho = NULL,
   }
 
 method <- match.arg(method)
-impute <- match.arg(impute)
 checkmate::assert_matrix(Phi, null.ok = TRUE)
 
 if(!inherits(f, c("EFA", "matrix", "LOADINGS"))){
@@ -117,10 +111,9 @@ if(inherits(f, c("EFA"))){
 }
 
 out_fac_scores <- psych::factor.scores(x = x, f = f, Phi = Phi, method = method,
-                                       rho = rho, impute = impute)
+                                       rho = rho)
 
-settings <- list(method = method,
-                 impute = impute)
+settings <- list(method = method)
 
 output <- c(out_fac_scores,
             settings = list(settings))

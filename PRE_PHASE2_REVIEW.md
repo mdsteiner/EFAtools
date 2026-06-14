@@ -548,7 +548,7 @@ behaviour-changing items grouped with NEWS + deliberate snapshot updates:
    — done (pending commit)
 5. **U-rev-e (OMEGA/SL/scores):** B24 cormat, B25 sums_load denominator, B23 impute,
    B36/B37/B38 guards; psych oracle tests. (Coordinate with the Phase-7 reliability rework —
-   some fold in.)
+   some fold in.) — done (pending commit)
 6. **U-rev-f (robustness guards):** B27 NEST Heywood, B28 EFA_POOLED boot-failure, B42/B43/
    B44/B51 classed guards, B41 smoothing re-flag, B52 factor_corres separator.
 7. **U-rev-g (fit conventions, behaviour-changing):** B33 CFI/TLI clamping, B32 D2 ARIV,

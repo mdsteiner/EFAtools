@@ -234,31 +234,31 @@ test_that("output class and dimensions are correct", {
 test_that("output is correct", {
   expect_equal(rowSums(om_sl_add[2:4, 2:3]), om_sl_add[2:4, 1], tolerance = 1e-3)
   expect_equal(om_sl_add[1, 4], 0.842, tolerance = 1e-3)
-  expect_equal(om_sl_add[1, 5], 0.659, tolerance = 1e-3)
+  expect_equal(om_sl_add[1, 5], 0.652, tolerance = 1e-3)
   expect_equal(om_sl_add[1, 6], 0.706, tolerance = 1e-3)
   expect_equal(rowSums(om_sl_named_add[2:4, 2:3]), om_sl_named_add[2:4, 1],
                tolerance = 1e-3)
   expect_equal(om_sl_named_add[1, 4], 0.842, tolerance = 1e-3)
-  expect_equal(om_sl_named_add[1, 5], 0.659, tolerance = 1e-3)
+  expect_equal(om_sl_named_add[1, 5], 0.652, tolerance = 1e-3)
   expect_equal(om_sl_named_add[1, 6], 0.706, tolerance = 1e-3)
   expect_equal(rowSums(om_schmid_1_add[2:4, 2:3]), om_schmid_1_add[2:4, 1],
                tolerance = 1e-3)
   expect_equal(om_schmid_1_add[1, 4], 0.845, tolerance = 1e-3)
-  expect_equal(om_schmid_1_add[1, 5], 0.668, tolerance = 1e-3)
+  expect_equal(om_schmid_1_add[1, 5], 0.661, tolerance = 1e-3)
   expect_equal(om_schmid_1_add[1, 6], 0.706, tolerance = 1e-3)
   expect_equal(rowSums(om_schmid_2[2:4, 2:3]), om_schmid_2[2:4, 1],
                tolerance = 1e-3)
   expect_equal(om_schmid_2[1, 4], 0.845, tolerance = 1e-3)
-  expect_equal(om_schmid_2[1, 5], 0.668, tolerance = 1e-3)
+  expect_equal(om_schmid_2[1, 5], 0.661, tolerance = 1e-3)
   expect_equal(om_schmid_2[1, 6], 0.706, tolerance = 1e-3)
   expect_equal(rowSums(om_man_1_add[2:4, 2:3]), om_man_1_add[2:4, 1],
                tolerance = 1e-3)
   expect_equal(om_man_1_add[1, 4], 0.842, tolerance = 1e-3)
-  expect_equal(om_man_1_add[1, 5], 0.659, tolerance = 1e-3)
+  expect_equal(om_man_1_add[1, 5], 0.652, tolerance = 1e-3)
   expect_equal(om_man_1_add[1, 6], 0.706, tolerance = 1e-3)
   expect_equal(rowSums(om_man_2[2:4, 2:3]), om_man_2[2:4, 1], tolerance = 1e-3)
   expect_equal(om_man_2[1, 4], 0.842, tolerance = 1e-3)
-  expect_equal(om_man_2[1, 5], 0.659, tolerance = 1e-3)
+  expect_equal(om_man_2[1, 5], 0.652, tolerance = 1e-3)
   expect_equal(om_man_2[1, 6], 0.706, tolerance = 1e-3)
 
   expect_gte(om_sl_add[1, 1], sum(om_sl_add[1, 2:3]))
@@ -267,6 +267,25 @@ test_that("output is correct", {
   expect_gte(om_schmid_2[1, 1], sum(om_schmid_2[1, 2:3]))
   expect_gte(om_man_1_add[1, 1], sum(om_man_1_add[1, 2:3]))
   expect_gte(om_man_2[1, 1], sum(om_man_2[1, 2:3]))
+
+  # With variance = "sums_load", the general-factor omega total equals
+  # hierarchical + subscale exactly (shared total-variance denominator).
+  expect_equal(unname(om_man_2[1, 1]), unname(sum(om_man_2[1, 2:3])))
+})
+
+test_that("type = 'psych' reproduces psych::omega (g omegas and ECV)", {
+  skip_on_cran()
+  skip_if_not_installed("psych")
+
+  po <- psych::omega(test_models$baseline$cormat, nfactors = 3, n.obs = 500,
+                     fm = "pa", rotate = "Promax", plot = FALSE)
+
+  # The psych-type path derives the same variable-to-factor correspondences as
+  # psych::omega and bases the ECV on the (unzeroed) group loadings, so the
+  # general-factor omegas and the ECV reproduce psych::omega.
+  expect_equal(unname(om_schmid_1_add[1, "ECV"]), unname(po$ECV), tolerance = 1e-4)
+  expect_equal(unname(om_schmid_1_add[1, "tot"]), po$omega.tot, tolerance = 1e-3)
+  expect_equal(unname(om_schmid_1_add[1, "hier"]), po$omega_h, tolerance = 1e-3)
 })
 
 test_that("errors are thrown correctly", {

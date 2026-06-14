@@ -203,6 +203,16 @@ lav_mod_ho_inv <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
 lav_fit_ho_inv <- suppressWarnings(lavaan::cfa(lav_mod_ho_inv,
                                            sample.cov = test_models$baseline$cormat,
                                            sample.nobs = 500, estimator = "ml"))
+
+# Improper second-order solution: a first-order factor residual variance turns
+# negative while all loadings stay below 1 (a variance Heywood case).
+lav_mod_var_hey <- 'F1 =~ V1 + V2
+                    F2 =~ V3 + V4
+                    F3 =~ V5 + V6
+                    g =~ F1 + F2 + F3'
+lav_fit_var_hey <- suppressWarnings(lavaan::cfa(lav_mod_var_hey,
+                                           sample.cov = test_models$baseline$cormat,
+                                           sample.nobs = 500, estimator = "ml"))
 }
 
 test_that("errors are thrown correctly", {
@@ -216,9 +226,27 @@ test_that("errors are thrown correctly", {
   expect_error(SL(fa_mod_unrot, type = "EFAtools", method = "PAF"), class = "efa_sl_not_oblique")
   expect_error(SL(fa_mod_orth, type = "EFAtools", method = "PAF"), class = "efa_sl_not_oblique")
   expect_error(SL(lav_fit_NA, g_name = "g"), class = "efa_omega_na_loadings")
+  expect_error(SL(lav_fit_var_hey, g_name = "g"), class = "efa_omega_heywood")
   expect_error(SL(lav_fit_ho, g_name = "fu"), class = "efa_omega_g_name")
   expect_warning(SL(lav_fit_ho_inv, g_name = "g"), class = "efa_sl_second_order_loadings")
   expect_error(SL(EFA_mod$rot_loadings, type = "EFAtools", method = "ML"), class = "efa_sl_phi_missing")
+})
+
+test_that("a second-order Heywood case raises a classed error", {
+  # A pattern matrix with a highly (and unevenly) intercorrelated factor space
+  # makes the single second-order factor improper: a second-order communality
+  # exceeds 1, so the residualized first-order loadings would be undefined.
+  L1 <- matrix(0, 6, 3)
+  L1[1:2, 1] <- 0.7
+  L1[3:4, 2] <- 0.7
+  L1[5:6, 3] <- 0.7
+  colnames(L1) <- c("F1", "F2", "F3")
+  Phi_heywood <- matrix(c(1, 0.8, 0.95,
+                          0.8, 1, 0.7,
+                          0.95, 0.7, 1), nrow = 3)
+
+  expect_error(SL(L1, Phi = Phi_heywood, type = "EFAtools", method = "PAF"),
+               class = "efa_omega_heywood")
 })
 
 test_that("print output is stable", {
@@ -231,6 +259,6 @@ rm(EFA_mod, SL_EFAtools, SL_SPSS, fa_mod, SL_psych, SL_flex, EFA_mod_unrot,
    EFA_mod_orth, fa_mod_unrot, fa_mod_orth)
 if (requireNamespace("lavaan", quietly = TRUE)) {
   rm(lav_mod_ho, lav_fit_ho, SL_lav, lav_mod_NA, lav_fit_NA, lav_mod_ho_inv,
-     lav_fit_ho_inv)
+     lav_fit_ho_inv, lav_mod_var_hey, lav_fit_var_hey)
 }
 

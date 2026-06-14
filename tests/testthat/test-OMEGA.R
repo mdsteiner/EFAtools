@@ -64,6 +64,30 @@ test_that("errors are thrown correctly", {
                      factor_corres = sl_mod$sl[, c("F1", "F2", "F3")] >= .2), class = "efa_omega_missing_args")
 })
 
+test_that("a user cormat is honoured for a flexible-input SL object", {
+  # A flexible-input SL object stores orig_R = NA; OMEGA must use the supplied
+  # cormat rather than overwriting it (and must not crash).
+  sl_flex <- SL(efa_mod$rot_loadings, Phi = efa_mod$Phi, type = "EFAtools",
+                method = "PAF")
+  expect_true(identical(sl_flex$orig_R, NA))
+
+  fc <- sl_flex$sl[, c("F1", "F2", "F3")] >= .2
+  om_flex <- OMEGA(sl_flex, type = "EFAtools",
+                   cormat = test_models$baseline$cormat, factor_corres = fc)
+  expect_s3_class(om_flex, "OMEGA")
+
+  # The coefficients match the equivalent model = NULL manual path with the same
+  # loadings, uniquenesses, and correlation matrix (the SL object carries factor
+  # names, so only the row labels differ).
+  om_flex_ref <- OMEGA(model = NULL, type = "EFAtools",
+                       var_names = rownames(sl_flex$sl),
+                       g_load = sl_flex$sl[, "g"],
+                       s_load = sl_flex$sl[, c("F1", "F2", "F3")],
+                       u2 = sl_flex$sl[, "u2"],
+                       cormat = test_models$baseline$cormat, factor_corres = fc)
+  expect_equal(unname(unclass(om_flex)), unname(unclass(om_flex_ref)))
+})
+
 test_that("print output is stable", {
   local_reproducible_output()
 

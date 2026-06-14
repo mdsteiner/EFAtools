@@ -23,7 +23,12 @@
 
  } else if(inherits(model, "SL")){
 
-    cormat <- model$orig_R
+    # Honour a user-supplied cormat; only fall back to the SL object's stored
+    # correlation matrix when none was given. Flexible-input SL objects store
+    # orig_R = NA, in which case cormat stays NULL and the checks below apply.
+    if(is.null(cormat) && is.matrix(model$orig_R)){
+      cormat <- model$orig_R
+    }
 
     model <-  model$sl
     var_names <- rownames(model)
@@ -169,8 +174,10 @@
     # Sums of all group factor loadings for all group factors
     sums_s <- colSums(input[, 2:(ncol(s_load) + 1)])
 
-    # Compute omega total, hierarchical, and subscale for g-factor
-    omega_tot_g <- (sum_g^2 + sum(sums_s_s^2)) / (sum_g^2 + sum(sums_s_s^2) +
+    # Compute omega total, hierarchical, and subscale for g-factor. All three
+    # share the same (unzeroed) total-variance denominator, so that
+    # tot = hier + sub for the g row.
+    omega_tot_g <- (sum_g^2 + sum(sums_s_s^2)) / (sum_g^2 + sum(sums_s^2) +
                                                     sum_e)
     omega_h_g <- sum_g^2 / (sum_g^2 + sum(sums_s^2) + sum_e)
     omega_sub_g <- sum(sums_s_s^2) / (sum_g^2 + sum(sums_s^2) + sum_e)
@@ -193,10 +200,14 @@
     sum_s_load_sq <- vector("double", ncol(omega_mat))
     h_s_load <- vector("double", ncol(omega_mat))
 
-    # Calculate denominators for H for group factors and for ECV
+    # Calculate denominators for H for group factors and for ECV. The H index
+    # and ECV are based on the (unzeroed) group-factor loadings, as in
+    # psych::omega and Rodriguez et al. (2016); the correspondence map
+    # (omega_mat) only defines item-to-factor membership, which enters the PUC.
     for (j in seq_along(omega_mat)){
-      sum_s_load_sq[j] <- sum(omega_mat[, j]^2 / (1 - omega_mat[, j]^2))
-      h_s_load[j] <- sum(omega_mat[ , j]^2)
+      s_j <- input[[j + 1]]
+      sum_s_load_sq[j] <- sum(s_j^2 / (1 - s_j^2))
+      h_s_load[j] <- sum(s_j^2)
     }
 
     h_g <- 1 / (1 + (1 / sum(input$g^2 / (1 - input$g^2))))

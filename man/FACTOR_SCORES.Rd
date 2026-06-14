@@ -9,8 +9,7 @@ FACTOR_SCORES(
   f,
   Phi = NULL,
   rho = NULL,
-  method = c("Thurstone", "tenBerge", "Anderson", "Bartlett", "Harman", "components"),
-  impute = c("none", "means", "median")
+  method = c("Thurstone", "tenBerge", "Anderson", "Bartlett", "Harman", "components")
 )
 }
 \arguments{
@@ -33,10 +32,6 @@ wishes to get factor scores for a correlation matrix other than Pearson's
 "Thurstone" (regression-based; default), "tenBerge", "Anderson", "Bartlett",
 "Harman", or "components".
 See \code{\link[psych:factor.scores]{psych::factor.scores()}} for details.}
-
-\item{impute}{character. Whether and how missing values in \code{x} should
-be imputed. One of "none" (default, only complete cases are scored), "median",
-or "mean".}
 }
 \value{
 A list of class FACTOR_SCORES containing the following:
@@ -58,11 +53,10 @@ specified methods if raw data are provided, and only factor weights if a
 correlation matrix is provided.
 }
 \examples{
-# Example with raw data with method "Bartlett" and no imputation
+# Example with raw data with method "Bartlett"
 EFA_raw <- EFA(DOSPERT_raw, n_factors = 10, type = "EFAtools", method = "PAF",
                rotation = "oblimin", randomStarts = 0)
-fac_scores_raw <- FACTOR_SCORES(DOSPERT_raw, f = EFA_raw, method = "Bartlett",
-                                impute = "none")
+fac_scores_raw <- FACTOR_SCORES(DOSPERT_raw, f = EFA_raw, method = "Bartlett")
 
 # Same as above, but with raw data AND a correlation matrix
 cor_pearson <- cor(DOSPERT_raw)
@@ -71,7 +65,7 @@ EFA_cor_pearson <- EFA(cor_pearson, n_factors = 10, N = nrow(DOSPERT_raw),
                        rotation = "oblimin", randomStarts = 0)
 fac_scores_cor_pearson <- FACTOR_SCORES(DOSPERT_raw, f = EFA_cor_pearson,
                                         rho = cor_pearson,
-                                        method = "Bartlett", impute = "none")
+                                        method = "Bartlett")
 
 # Scores between two alternatives above are identical
 isTRUE(all.equal(fac_scores_raw$scores, fac_scores_cor_pearson$scores,

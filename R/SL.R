@@ -206,6 +206,11 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
                      class = "efa_omega_heywood")
     }
 
+    if(any(diag(std_sol$theta) <= 0) || any(diag(std_sol$psi) <= 0)){
+      cli::cli_abort("A Heywood case was detected (a variance of 0 or negative); no omegas are computed.",
+                     class = "efa_omega_heywood")
+    }
+
     # Create list with factor and corresponding subtest names
     col_names <- colnames(std_sol$lambda)
 
@@ -268,8 +273,12 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
 
     L_sls_2 <- L1 %*% L2
 
-    # Calculate direct group factor loadings
-    L_sls_1 <- L1 %*% sqrt(std_sol$psi[col_names, col_names])
+    # Calculate direct group factor loadings: scale the first-order loadings by
+    # the residual standard deviations of the first-order factors. Take the psi
+    # diagonal directly (a single first-order factor would make a matrix subset
+    # collapse to a scalar and break the nested diag()).
+    L_sls_1 <- L1 %*% diag(sqrt(diag(std_sol$psi)[col_names]),
+                           nrow = length(col_names))
 
     orig_R <- NA
     iter <- NA
@@ -296,8 +305,21 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
     # Schmid-Leiman solution, direct loadings of second order factor
     L_sls_2 <- L1 %*% L2
 
+    # Communalities of the second-order factor. A value at or above 1 is a
+    # Heywood case: the residualized first-order loadings would be undefined
+    # (the square root below would be taken of a negative number).
+    comm_h <- diag(L2 %*% t(L2))
+
+    if(any(comm_h >= 1 + .Machine$double.eps)){
+      cli::cli_abort(
+        c("A Heywood case was detected in the second-order factor analysis; no Schmid-Leiman solution is computed.",
+          "i" = "A second-order communality is 1 or larger, so the residualized first-order loadings are undefined."),
+        class = "efa_omega_heywood"
+      )
+    }
+
     # compute uniqueness of higher order factor
-    u2_h <- sqrt(1 - diag(L2 %*% t(L2)))
+    u2_h <- sqrt(1 - comm_h)
 
     # Schmid-Leiman solution, residualized first order factor loadings
     L_sls_1 <- L1 %*% diag(u2_h)
