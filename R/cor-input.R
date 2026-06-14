@@ -120,7 +120,13 @@
     }
 
     if (N_policy != "none") {
-      N <- nrow(x)
+      # Under listwise deletion stats::cor() drops incomplete rows, so N must be
+      # the number of complete cases rather than the raw row count.
+      N <- if (use %in% c("complete.obs", "na.or.complete")) {
+        sum(stats::complete.cases(x))
+      } else {
+        nrow(x)
+      }
     }
 
   }

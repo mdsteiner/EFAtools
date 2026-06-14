@@ -57,6 +57,27 @@ test_that("N_policy governs how N is handled", {
   expect_equal(prep_opt$N, nrow(GRiPS_raw))
 })
 
+test_that("listwise-deletion modes set N to the number of complete cases", {
+  # raw data with two incomplete rows: under "complete.obs"/"na.or.complete"
+  # stats::cor() drops them listwise, so N must be the complete-case count.
+  set.seed(11)
+  dat_miss <- matrix(rnorm(30 * 3), ncol = 3)
+  dat_miss[2, 1] <- NA
+  dat_miss[7, 3] <- NA
+  n_complete <- sum(stats::complete.cases(dat_miss))
+
+  for (u in c("complete.obs", "na.or.complete")) {
+    prep <- suppressMessages(.prepare_cor_input(dat_miss, use = u))
+    expect_equal(prep$N, n_complete)
+    expect_lt(prep$N, nrow(dat_miss))
+  }
+
+  # other modes keep the raw row count
+  prep_pw <- suppressMessages(
+    .prepare_cor_input(dat_miss, use = "pairwise.complete.obs"))
+  expect_equal(prep_pw$N, nrow(dat_miss))
+})
+
 test_that("a non-positive-definite matrix is smoothed, or aborts under posdef_abort", {
   # default: the matrix is smoothed to positive-definiteness with a classed warning
   expect_warning(prep_sm <- .prepare_cor_input(cor_nposdef, N = 10),

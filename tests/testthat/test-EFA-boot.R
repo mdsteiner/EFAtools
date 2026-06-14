@@ -39,6 +39,36 @@ test_that("np-boot runs end to end for all methods and rotation families", {
   }
 })
 
+test_that("np-boot resamples only the complete cases under listwise deletion", {
+  skip_on_cran()
+
+  # Build raw data whose complete cases sit at the tail: the first 35 rows each
+  # carry a missing value and the 25 complete cases are rows 36-60. Under
+  # use = "complete.obs" the correlation matrix - and hence N - rests on those
+  # 25 complete cases, so the bootstrap must resample them. Resampling row
+  # positions 1:N (= 1:25) would instead draw only all-missing rows, and
+  # stats::cor(use = "complete.obs") then errors with "no complete element
+  # pairs"; resampling the complete cases yields NA-free bootstrap correlations
+  # and finite standard errors.
+  set.seed(123)
+  f <- rnorm(60)
+  dat <- vapply(1:6, function(j) 0.6 * f + 0.8 * rnorm(60), numeric(60))
+  colnames(dat) <- paste0("V", 1:6)
+  dat[1:35, 1] <- NA
+
+  expect_equal(sum(stats::complete.cases(dat)), 25)        # complete cases are rows 36-60
+  expect_true(all(!stats::complete.cases(dat[1:25, ])))    # the old 1:N pool was all-missing
+
+  set.seed(123)
+  res <- suppressWarnings(suppressMessages(
+    EFA(dat, n_factors = 1, method = "PAF", se = "np-boot", b_boot = 30,
+        use = "complete.obs")
+  ))
+
+  expect_s3_class(res, "EFA")
+  expect_true(all(is.finite(res$boot.SE$unrot_loadings)))
+})
+
 test_that("oblique np-boot output has the expected structure", {
   se <- boot_promax$boot.SE
   ci <- boot_promax$boot.CI

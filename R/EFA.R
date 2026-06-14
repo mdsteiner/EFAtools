@@ -13,7 +13,9 @@
 #' @param n_factors numeric. Number of factors to extract.
 #' @param N numeric. The number of observations. Needs only be specified if a
 #' correlation matrix is used. If input is a correlation matrix and `N` = NA
-#' (default), not all fit indices can be computed.
+#' (default), not all fit indices can be computed. When raw data with missing
+#' values are entered and `use` is `"complete.obs"` or `"na.or.complete"`, rows
+#' are deleted listwise, so `N` is taken as the number of complete cases.
 #' @param method character. One of "PAF", "ML", or "ULS" to use principal axis
 #' factoring, maximum likelihood, or unweighted least squares (also called minres),
 #' respectively, to fit the EFA.
@@ -396,7 +398,15 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   if (!is_cormat && isTRUE(np_boot)) {
 
     m <- ncol(R)
-    rows <- 1:N
+    # Resample the cases the correlation matrix was actually built from. Under
+    # listwise deletion that is the complete cases (N of them), not the first N
+    # row positions, so the case bootstrap stays a faithful resample of the
+    # estimator that produced R (Efron & Tibshirani, 1993).
+    rows <- if (use %in% c("complete.obs", "na.or.complete")) {
+      which(stats::complete.cases(x))
+    } else {
+      seq_len(nrow(x))
+    }
 
     # create bootstrap samples and from these, correlation matrices
     R_boot_array <- array(NA_real_, c(m, m, b_boot), dimnames = list(colnames(x),

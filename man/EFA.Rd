@@ -60,7 +60,9 @@ data.}
 
 \item{N}{numeric. The number of observations. Needs only be specified if a
 correlation matrix is used. If input is a correlation matrix and \code{N} = NA
-(default), not all fit indices can be computed.}
+(default), not all fit indices can be computed. When raw data with missing
+values are entered and \code{use} is \code{"complete.obs"} or \code{"na.or.complete"}, rows
+are deleted listwise, so \code{N} is taken as the number of complete cases.}
 
 \item{method}{character. One of "PAF", "ML", or "ULS" to use principal axis
 factoring, maximum likelihood, or unweighted least squares (also called minres),
