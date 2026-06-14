@@ -60,10 +60,10 @@ test_that("output class and dimensions are correct", {
   checkmate::expect_matrix(bifacQ$rotmat)
   checkmate::expect_matrix(bifacQ$vars_accounted_rot)
 
-  expect_equal(obli_1$Phi, NA)
-  expect_equal(obli_1$Structure, NA)
+  expect_null(obli_1$Phi)
+  expect_null(obli_1$Structure)
   expect_equal(obli_1$rotmat, NA)
-  expect_equal(obli_1$vars_accounted_rot, NA)
+  expect_null(obli_1$vars_accounted_rot)
 })
 
 test_that("settings are returned correctly", {

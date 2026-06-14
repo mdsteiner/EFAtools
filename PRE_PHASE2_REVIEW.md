@@ -560,7 +560,7 @@ behaviour-changing items grouped with NEWS + deliberate snapshot updates:
    B35 Heywood-flag/NEWS, B54 pooled Fm — each with NEWS + snapshot. — done (pending commit)
 8. **U-rev-h (print methods):** B55 1-factor NA-fill print, B56 `format()` ANSI strip ×4,
    B57/B58 print-helper dedup, B60 cluster (negative-zero, dead `.print_efa_structure_note`,
-   `.efa_num` ansi_string) + 1-factor/NA print snapshots.
+   `.efa_num` ansi_string) + 1-factor/NA print snapshots. — done (pending commit)
 9. **U-rev-i (dedup + docs):** SMT/.gof, KGC/SCREE eigen helper, SMC start, dead-code
    removal, lifecycle; NEWS/README refresh, percent/start/heywood doc fixes.
 

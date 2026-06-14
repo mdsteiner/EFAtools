@@ -19,3 +19,16 @@ test_that(".new_efa_retention builds the documented shape for a known id", {
   expect_equal(unname(out$n_factors), c(3, 2))
   expect_equal(out$status, "ok")
 })
+
+test_that("format.efa_retention returns plain text even when styling is enabled", {
+  # Force colours on so a styled print() embeds ANSI; format() must not.
+  old <- options(cli.num_colors = 256)
+  on.exit(options(old), add = TRUE)
+
+  ekc <- EKC(test_models$baseline$cormat, N = 500)
+  styled <- utils::capture.output(print(ekc))
+  plain <- format(ekc)
+
+  expect_true(any(grepl("\033", styled, fixed = TRUE)))
+  expect_false(any(grepl("\033", plain, fixed = TRUE)))
+})

@@ -54,11 +54,20 @@ test_that("format.LOADINGS sorts rows when requested", {
   expect_snapshot(print(make_loadings(), sort_loadings = "clustered"))
 })
 
-test_that("color = FALSE never emits ANSI even when colours are on", {
+test_that("color controls print styling while format() stays plain", {
   withr::local_options(cli.num_colors = 256)
   L <- make_loadings()
-  expect_true(cli::ansi_has_any(paste(format(L, color = TRUE), collapse = "")))
+  # styling is controlled by `color` in print(), which embeds ANSI when colours are on
+  expect_true(cli::ansi_has_any(paste(
+    utils::capture.output(print(L, color = TRUE)), collapse = "")))
+  expect_false(cli::ansi_has_any(paste(
+    utils::capture.output(print(L, color = FALSE)), collapse = "")))
+  # format() is the plain-text representation regardless of `color`
+  expect_false(cli::ansi_has_any(paste(format(L, color = TRUE), collapse = "")))
   expect_false(cli::ansi_has_any(paste(format(L, color = FALSE), collapse = "")))
+  # format() returns only the rendered table lines, with no trailing blank element
+  fmt <- format(L)
+  expect_true(nzchar(fmt[length(fmt)]))
 })
 
 test_that("wide matrices wrap into stacked blocks via max_factors_per_block", {
@@ -90,4 +99,17 @@ test_that("format.SLLOADINGS flags a Heywood case", {
 test_that("format.SLLOADINGS prints cleanly without Heywood cases", {
   local_reproducible_output()
   expect_snapshot(print(make_sl(heywood = FALSE)))
+})
+
+test_that("format.SLLOADINGS returns plain text even when styling is enabled", {
+  old <- options(cli.num_colors = 256)
+  on.exit(options(old), add = TRUE)
+
+  styled <- utils::capture.output(print(make_sl(heywood = TRUE)))
+  plain <- format(make_sl(heywood = TRUE))
+
+  expect_true(any(grepl("\033", styled, fixed = TRUE)))
+  expect_false(any(grepl("\033", plain, fixed = TRUE)))
+  # no trailing blank element
+  expect_true(nzchar(plain[length(plain)]))
 })

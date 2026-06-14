@@ -19,7 +19,7 @@ test_that("output class and dimensions are correct", {
 
   expect_s3_class(vari_1$rot_loadings, "LOADINGS")
   expect_equal(vari_1$rotmat, NA)
-  expect_equal(vari_1$vars_accounted_rot, NA)
+  expect_null(vari_1$vars_accounted_rot)
   expect_type(vari_1$settings, "list")
 })
 

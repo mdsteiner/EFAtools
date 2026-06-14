@@ -58,37 +58,6 @@ print.LOADINGS <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
                            sort_loadings = c("none", "primary", "clustered"),
                            legend = FALSE, ...) {
 
-  out <- format.LOADINGS(x,
-    cutoff = cutoff,
-    digits = digits,
-    max_name_length = max_name_length,
-    h2 = h2,
-    color = color,
-    name_style = name_style,
-    max_factor_name_length = max_factor_name_length,
-    max_factors_per_block = max_factors_per_block,
-    sort_loadings = sort_loadings,
-    legend = legend,
-    ...
-  )
-
-  cat(out, sep = "\n")
-  cat("\n")
-
-  invisible(x)
-}
-
-#' @rdname print.LOADINGS
-#' @method format LOADINGS
-#' @export
-format.LOADINGS <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
-                            h2 = NULL, color = TRUE,
-                            name_style = c("truncate", "abbreviate", "full"),
-                            max_factor_name_length = NULL,
-                            max_factors_per_block = NULL,
-                            sort_loadings = c("none", "primary", "clustered"),
-                            legend = FALSE, ...) {
-
   name_style <- match.arg(name_style)
   sort_loadings <- match.arg(sort_loadings)
 
@@ -113,7 +82,7 @@ format.LOADINGS <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     sort_loadings = sort_loadings
   )
 
-  cli::cli_format_method({
+  cat(cli::cli_format_method({
     cli::cli_verbatim(.efa_format_matrix(
       values = spec$values,
       row_labels = spec$var_names,
@@ -129,7 +98,21 @@ format.LOADINGS <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
       cli::cli_verbatim("")
       cli::cli_verbatim(.efa_loadings_legend(cutoff, spec$has_h2, digits, color))
     }
-  })
+  }), sep = "\n")
+  cat("\n")
+
+  invisible(x)
+}
+
+#' @rdname print.LOADINGS
+#' @method format LOADINGS
+#' @export
+format.LOADINGS <- function(x, ...) {
+  # `print()` ends with a blank line for console spacing, which capture.output
+  # records as a trailing empty element; drop it so format() returns only the
+  # rendered table lines (plain, un-styled).
+  out <- cli::ansi_strip(utils::capture.output(print(x, ...)))
+  if (length(out) > 0L && !nzchar(out[length(out)])) out[-length(out)] else out
 }
 
 .validate_loadings_print_args <- function(x, cutoff, digits, max_name_length,
@@ -217,7 +200,7 @@ format.LOADINGS <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     )
   }
 
-  row_order <- .loadings_row_order(x, sort_loadings)
+  row_order <- .efa_loading_row_order(x, sort_loadings)
   x <- x[row_order, , drop = FALSE]
   var_names <- var_names[row_order]
   if (has_h2) {
@@ -251,26 +234,6 @@ format.LOADINGS <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     col_type = col_type,
     has_h2 = has_h2
   )
-}
-
-.loadings_row_order <- function(x, sort_loadings = c("none", "primary", "clustered")) {
-  sort_loadings <- match.arg(sort_loadings)
-
-  if (identical(sort_loadings, "none") || nrow(x) < 2L || ncol(x) < 1L) {
-    return(seq_len(nrow(x)))
-  }
-
-  abs_x <- abs(x)
-  abs_x[is.na(abs_x)] <- -Inf
-  primary_factor <- max.col(abs_x, ties.method = "first")
-  primary_loading <- apply(abs_x, 1L, max, na.rm = TRUE)
-  primary_loading[!is.finite(primary_loading)] <- -Inf
-
-  if (identical(sort_loadings, "primary")) {
-    return(order(primary_factor, seq_along(primary_factor)))
-  }
-
-  order(primary_factor, -primary_loading, seq_along(primary_factor))
 }
 
 .align_loadings_h2 <- function(h2, var_names, has_row_names = TRUE) {

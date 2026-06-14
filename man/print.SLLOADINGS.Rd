@@ -7,7 +7,7 @@
 \usage{
 \method{print}{SLLOADINGS}(x, cutoff = 0.2, digits = 3, color = TRUE, ...)
 
-\method{format}{SLLOADINGS}(x, cutoff = 0.2, digits = 3, color = TRUE, ...)
+\method{format}{SLLOADINGS}(x, ...)
 }
 \arguments{
 \item{x}{class SLLOADINGS matrix.}

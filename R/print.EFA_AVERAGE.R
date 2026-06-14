@@ -92,9 +92,8 @@ print.EFA_AVERAGE <- function(x, stat = c("average", "range"),
       "was used to determine indicator-to-factor correspondences.")
   cat("\n")
   cat("\n")
-  cat(format(structure(x$ind_fac_corres, class = "LOADINGS"), cutoff = 1e-4,
-             digits = 2), sep = "\n")
-  cat("\n")
+  print(structure(x$ind_fac_corres, class = "LOADINGS"), cutoff = 1e-4,
+        digits = 2)
 
   # Print the loadings
     cat("\n")

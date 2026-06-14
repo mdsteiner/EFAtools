@@ -42,7 +42,7 @@ test_that("output class and dimensions are correct", {
   checkmate::expect_matrix(bifacT$vars_accounted_rot)
 
   expect_equal(equa_1$rotmat, NA)
-  expect_equal(equa_1$vars_accounted_rot, NA)
+  expect_null(equa_1$vars_accounted_rot)
 })
 
 test_that("settings are returned correctly", {

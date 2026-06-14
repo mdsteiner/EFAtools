@@ -27,18 +27,6 @@
 #'
 print.SLLOADINGS <- function(x, cutoff = .2, digits = 3, color = TRUE, ...) {
 
-  cat(format.SLLOADINGS(x, cutoff = cutoff, digits = digits, color = color, ...),
-      sep = "\n")
-  cat("\n")
-
-  invisible(x)
-}
-
-#' @rdname print.SLLOADINGS
-#' @method format SLLOADINGS
-#' @export
-format.SLLOADINGS <- function(x, cutoff = .2, digits = 3, color = TRUE, ...) {
-
   mat <- unclass(x)
   n_col <- ncol(mat)
 
@@ -62,7 +50,7 @@ format.SLLOADINGS <- function(x, cutoff = .2, digits = 3, color = TRUE, ...) {
   loading_cols <- seq_len(n_col - 2L)
   n_heywood <- sum(mat[, loading_cols, drop = FALSE] > 1, na.rm = TRUE)
 
-  cli::cli_format_method({
+  cat(cli::cli_format_method({
     cli::cli_verbatim(.efa_format_matrix(
       values = mat,
       row_labels = var_names,
@@ -81,5 +69,19 @@ format.SLLOADINGS <- function(x, cutoff = .2, digits = 3, color = TRUE, ...) {
         cli::cli_alert_warning("Results contain {n_heywood} Heywood cases!")
       }
     }
-  })
+  }), sep = "\n")
+  cat("\n")
+
+  invisible(x)
+}
+
+#' @rdname print.SLLOADINGS
+#' @method format SLLOADINGS
+#' @export
+format.SLLOADINGS <- function(x, ...) {
+  # `print()` ends with a blank line for console spacing, which capture.output
+  # records as a trailing empty element; drop it so format() returns only the
+  # rendered table lines (plain, un-styled).
+  out <- cli::ansi_strip(utils::capture.output(print(x, ...)))
+  if (length(out) > 0L && !nzchar(out[length(out)])) out[-length(out)] else out
 }

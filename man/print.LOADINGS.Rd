@@ -20,20 +20,7 @@
   ...
 )
 
-\method{format}{LOADINGS}(
-  x,
-  cutoff = 0.3,
-  digits = 3,
-  max_name_length = 10,
-  h2 = NULL,
-  color = TRUE,
-  name_style = c("truncate", "abbreviate", "full"),
-  max_factor_name_length = NULL,
-  max_factors_per_block = NULL,
-  sort_loadings = c("none", "primary", "clustered"),
-  legend = FALSE,
-  ...
-)
+\method{format}{LOADINGS}(x, ...)
 }
 \arguments{
 \item{x}{class LOADINGS matrix.}

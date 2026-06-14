@@ -111,18 +111,20 @@
 }
 
 # Single-factor solutions cannot be rotated; warn and return the unrotated
-# loadings in the family's output shape, NA-filling the rotation outputs.
+# loadings in the family's output shape. The rotation-only outputs (factor
+# intercorrelations, structure matrix, rotated variances) are returned as NULL so
+# the print/summary sections that guard on `is.null` skip them.
 .rotate_single_factor <- function(L, settings, oblique) {
 
   cli::cli_warn("A single factor cannot be rotated; returning the unrotated loadings.",
                 class = "efa_single_factor")
 
   if (isTRUE(oblique)) {
-    return(list(rot_loadings = L, Phi = NA, Structure = NA, rotmat = NA,
-                vars_accounted_rot = NA, settings = settings))
+    return(list(rot_loadings = L, Phi = NULL, Structure = NULL, rotmat = NA,
+                vars_accounted_rot = NULL, settings = settings))
   }
 
-  list(rot_loadings = L, rotmat = NA, vars_accounted_rot = NA, settings = settings)
+  list(rot_loadings = L, rotmat = NA, vars_accounted_rot = NULL, settings = settings)
 }
 
 # Resolve the preset, run the named engine, and post-process. The field set and

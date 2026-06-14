@@ -2,6 +2,24 @@ test_that(".numformat works", {
   expect_equal(.numformat(0.23), " .23")
   expect_equal(.numformat(0.2345, digits = 3), " .234")
   expect_equal(.numformat(0.2345, digits = 3, print_zero = TRUE), " 0.234")
+
+  # a value rounding to zero from below is rendered without a sign, like its
+  # positive counterpart (no negative zero)
+  expect_equal(.numformat(-0.0001), .numformat(0.0001))
+  expect_equal(.numformat(-0.0001, print_zero = TRUE),
+               .numformat(0.0001, print_zero = TRUE))
+})
+
+test_that(".efa_num normalises negative zero and returns plain character", {
+  expect_equal(.efa_num(-0.0001, digits = 3), .efa_num(0.0001, digits = 3))
+  expect_equal(.efa_num(-0.0001, digits = 3, print_zero = TRUE),
+               .efa_num(0.0001, digits = 3, print_zero = TRUE))
+  expect_false(any(grepl("-", .efa_num(-0.0001, digits = 3), fixed = TRUE)))
+
+  # the padded result is always plain character, never a cli ansi_string
+  padded <- .efa_num(0.5, digits = 3, pad = TRUE)
+  expect_type(padded, "character")
+  expect_false(inherits(padded, "cli_ansi_string"))
 })
 
 

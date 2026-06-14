@@ -415,6 +415,23 @@ test_that("format.summary.EFA returns plain text even when styling is enabled", 
   expect_false(any(grepl("\033", plain, fixed = TRUE)))
 })
 
+test_that("print/summary.EFA omit the inapplicable tables for a rotated single factor", {
+  local_reproducible_output()
+
+  efa_1fac <- suppressWarnings(
+    EFA(test_models$baseline$cormat, n_factors = 1, N = 500, method = "PAF",
+        rotation = "promax")
+  )
+
+  # A single factor cannot be rotated, so the rotation-only outputs are absent and
+  # their print sections are skipped (rather than rendering a stray NA).
+  expect_null(efa_1fac$Phi)
+  expect_null(efa_1fac$vars_accounted_rot)
+
+  expect_snapshot(print(efa_1fac), transform = scrub_num)
+  expect_snapshot(print(summary(efa_1fac)), transform = scrub_num)
+})
+
 test_that("residuals.EFA is a pure extractor", {
   # returns the residual matrix with no printing side effect
   expect_output(residuals(efa_psych), NA)

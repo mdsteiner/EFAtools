@@ -53,6 +53,18 @@ test_that("print and plot work on the aggregate object", {
   }
 })
 
+test_that("format.N_FACTORS returns plain text even when styling is enabled", {
+  # Force colours on so a styled print() embeds ANSI; format() must not.
+  old <- options(cli.num_colors = 256)
+  on.exit(options(old), add = TRUE)
+
+  styled <- utils::capture.output(print(nf_grips))
+  plain <- format(nf_grips)
+
+  expect_true(any(grepl("\033", styled, fixed = TRUE)))
+  expect_false(any(grepl("\033", plain, fixed = TRUE)))
+})
+
 test_that("visual criteria and suitability = FALSE are handled", {
   nf_scree <- N_FACTORS(test_models$baseline$cormat, suitability = FALSE,
                         criteria = c("MAP", "SCREE"))

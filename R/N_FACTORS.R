@@ -337,24 +337,23 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
 
 }
 
-#' Format method for N_FACTORS objects
+#' Print method for N_FACTORS objects
 #'
 #' @param x an object of class N_FACTORS, returned by [N_FACTORS()].
 #' @param ... not used.
 #'
-#' @returns A character vector with the formatted (plain, un-styled) output.
+#' @returns Invisibly returns `x`. Called for the side effect of printing the
+#'   suitability results and the suggested numbers of factors.
 #'
 #' @export
-#' @method format N_FACTORS
+#' @method print N_FACTORS
 #'
 #' @examples
 #' \donttest{
-#' nf <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC", "SMT"),
-#'                 N = 500)
-#' format(nf)
+#' N_FACTORS(test_models$baseline$cormat, criteria = c("EKC", "SMT"), N = 500)
 #' }
-format.N_FACTORS <- function(x, ...) {
-  cli::cli_format_method({
+print.N_FACTORS <- function(x, ...) {
+  cat(cli::cli_format_method({
 
     if (!is.null(x$suitability)) {
 
@@ -452,27 +451,28 @@ format.N_FACTORS <- function(x, ...) {
       }
     }
 
-  })
+  }), sep = "\n")
+  invisible(x)
 }
 
-#' Print method for N_FACTORS objects
+#' Format method for N_FACTORS objects
 #'
 #' @param x an object of class N_FACTORS, returned by [N_FACTORS()].
 #' @param ... not used.
 #'
-#' @returns Invisibly returns `x`. Called for the side effect of printing the
-#'   suitability results and the suggested numbers of factors.
+#' @returns A character vector with the formatted (plain, un-styled) output.
 #'
 #' @export
-#' @method print N_FACTORS
+#' @method format N_FACTORS
 #'
 #' @examples
 #' \donttest{
-#' N_FACTORS(test_models$baseline$cormat, criteria = c("EKC", "SMT"), N = 500)
+#' nf <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC", "SMT"),
+#'                 N = 500)
+#' format(nf)
 #' }
-print.N_FACTORS <- function(x, ...) {
-  cat(format(x, ...), sep = "\n")
-  invisible(x)
+format.N_FACTORS <- function(x, ...) {
+  cli::ansi_strip(utils::capture.output(print(x, ...)))
 }
 
 #' Plot method for N_FACTORS objects

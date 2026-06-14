@@ -22,10 +22,10 @@ test_that("output class and dimensions are correct", {
   expect_type(prom$settings, "list")
 
   expect_s3_class(prom_1$rot_loadings, "LOADINGS")
-  expect_equal(prom_1$Phi, NA)
-  expect_equal(prom_1$Structure, NA)
+  expect_null(prom_1$Phi)
+  expect_null(prom_1$Structure)
   expect_equal(prom_1$rotmat, NA)
-  expect_equal(prom_1$vars_accounted_rot, NA)
+  expect_null(prom_1$vars_accounted_rot)
   expect_type(prom_1$settings, "list")
 })
 

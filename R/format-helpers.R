@@ -38,6 +38,7 @@
 
     ncode <- paste0("%.", digits, "f")
     x <- sub("^(-?)0.", "\\1.", sprintf(ncode, x))
+    x <- sub("^-([0.]+)$", "\\1", x)
     if (isTRUE(pad)) {
       x <- formatC(x, width = digits + 2)
     }
@@ -47,6 +48,7 @@
 
     ncode <- paste0("%.", digits, "f")
     x <- sprintf(ncode, x)
+    x <- sub("^-([0.]+)$", "\\1", x)
 
     if (isTRUE(pad)) {
       x <- formatC(x, width = digits + 3)
@@ -72,11 +74,16 @@
   if (isFALSE(print_zero)) {
     out <- sub("^(-?)0.", "\\1.", out)
   }
+  # Normalise negative zero (e.g. "-.000" or "-0.000") to its unsigned form, as
+  # base R and psych do; a value rounding to zero from below should not print a sign.
+  out <- sub("^-([0.]+)$", "\\1", out)
   out[!finite] <- "NA"
 
   if (isTRUE(pad)) {
     width <- if (isFALSE(print_zero)) digits + 2L else digits + 3L
-    out <- cli::ansi_align(out, width = width, align = "right")
+    # `ansi_align()` returns a cli ansi_string; coerce so the result is always plain
+    # character, even when unstyled.
+    out <- as.character(cli::ansi_align(out, width = width, align = "right"))
   }
 
   if (!is.null(dims)) {

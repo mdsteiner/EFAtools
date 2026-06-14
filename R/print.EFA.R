@@ -482,20 +482,15 @@ format.summary.EFA <- function(x, ...) {
     .print_efa_phi_ci_section(x, spec, digits, ci)
   }
 
-  if (!is.null(x$Structure)) {
-    if (isTRUE(show_structure)) {
-      .print_efa_structure_section(x,
-        cutoff = cutoff,
-        digits = digits,
-        max_name_length = max_name_length,
-        sort_loadings = sort_loadings,
-        max_factors_per_block = max_factors_per_block,
-        ...
-      )
-    }
-    # else {
-    #   .print_efa_structure_note()
-    # }
+  if (!is.null(x$Structure) && isTRUE(show_structure)) {
+    .print_efa_structure_section(x,
+      cutoff = cutoff,
+      digits = digits,
+      max_name_length = max_name_length,
+      sort_loadings = sort_loadings,
+      max_factors_per_block = max_factors_per_block,
+      ...
+    )
   }
 
   invisible(NULL)
@@ -1648,17 +1643,8 @@ format.summary.EFA <- function(x, ...) {
 }
 
 .efa_small_primary_gap_count <- function(loadings, cutoff, min_primary_gap) {
-  if (ncol(loadings) < 2L) {
-    return(0L)
-  }
-
-  abs_loadings <- abs(loadings)
-  abs_loadings[is.na(abs_loadings)] <- -Inf
-  sorted <- t(apply(abs_loadings, 1L, sort, decreasing = TRUE))
-  primary <- sorted[, 1L]
-  secondary <- sorted[, 2L]
-  sum(is.finite(primary) & primary >= cutoff &
-        is.finite(secondary) & (primary - secondary) < min_primary_gap)
+  length(.efa_small_primary_gap_rows(loadings, cutoff = cutoff,
+                                     min_primary_gap = min_primary_gap))
 }
 
 .efa_largest_abs_residual <- function(residuals) {
@@ -1877,16 +1863,6 @@ format.summary.EFA <- function(x, ...) {
     legend = FALSE,
     max_factors_per_block = max_factors_per_block,
     ...
-  )
-  invisible(NULL)
-}
-
-.print_efa_structure_note <- function() {
-  cat("\n")
-  cat(cli::style_italic("Note: "),
-    "Structure coefficients are available; use show_structure = TRUE to print them.",
-    "\n",
-    sep = ""
   )
   invisible(NULL)
 }
