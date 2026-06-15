@@ -17,8 +17,10 @@
 #' values are entered and `use` is `"complete.obs"` or `"na.or.complete"`, rows
 #' are deleted listwise, so `N` is taken as the number of complete cases.
 #' @param method character. One of "PAF", "ML", or "ULS" to use principal axis
-#' factoring, maximum likelihood, or unweighted least squares (also called minres),
-#' respectively, to fit the EFA.
+#' factoring, maximum likelihood, or unweighted least squares, respectively, to fit
+#' the EFA. "MINRES" is accepted as a synonym for "ULS": minimum residual and
+#' unweighted least squares are two names for the same estimator and return identical
+#' results.
 #' @param rotation character. Either perform no rotation ("none"; default),
 #' an orthogonal rotation ("varimax", "equamax", "quartimax", "geominT",
 #' "bentlerT", or "bifactorT"), or an oblique rotation ("promax", "oblimin",
@@ -298,7 +300,7 @@
 #'                P_type = "unnorm", precision= 1e-5, order_type = "eigen",
 #'                varimax_type = "svd")
 #'
-EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
+EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES"),
                 rotation = c("none", "varimax", "equamax", "quartimax", "geominT",
                              "bentlerT", "bifactorT", "promax", "oblimin",
                              "quartimin", "simplimax", "bentlerQ", "geominQ",
@@ -321,6 +323,9 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS"),
   .assert_cor_input(x)
 
   method <- match.arg(method)
+  # "MINRES" is a synonym for "ULS" (same estimator); resolve it once here so the
+  # rest of EFA() and the reported settings use the single canonical name.
+  if (method == "MINRES") method <- "ULS"
   rotation <- match.arg(rotation)
   se <- match.arg(se)
   np_boot <- se == "np-boot"

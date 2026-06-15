@@ -24,7 +24,7 @@ EFA(
   x,
   n_factors,
   N = NA,
-  method = c("PAF", "ML", "ULS"),
+  method = c("PAF", "ML", "ULS", "MINRES"),
   rotation = c("none", "varimax", "equamax", "quartimax", "geominT", "bentlerT",
     "bifactorT", "promax", "oblimin", "quartimin", "simplimax", "bentlerQ", "geominQ",
     "bifactorQ"),
@@ -65,8 +65,10 @@ values are entered and \code{use} is \code{"complete.obs"} or \code{"na.or.compl
 are deleted listwise, so \code{N} is taken as the number of complete cases.}
 
 \item{method}{character. One of "PAF", "ML", or "ULS" to use principal axis
-factoring, maximum likelihood, or unweighted least squares (also called minres),
-respectively, to fit the EFA.}
+factoring, maximum likelihood, or unweighted least squares, respectively, to fit
+the EFA. "MINRES" is accepted as a synonym for "ULS": minimum residual and
+unweighted least squares are two names for the same estimator and return identical
+results.}
 
 \item{rotation}{character. Either perform no rotation ("none"; default),
 an orthogonal rotation ("varimax", "equamax", "quartimax", "geominT",

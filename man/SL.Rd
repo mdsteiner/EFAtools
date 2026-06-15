@@ -16,7 +16,7 @@ SL(
   x,
   Phi = NULL,
   type = c("EFAtools", "psych", "SPSS", "none"),
-  method = c("PAF", "ML", "ULS"),
+  method = c("PAF", "ML", "ULS", "MINRES"),
   g_name = "g",
   ...
 )
@@ -42,9 +42,9 @@ This is used to control the procedure of the second-order factor analysis. See
 \code{\link[=EFA]{EFA()}} for details.}
 
 \item{method}{character. One of "PAF", "ML", or "ULS" to use
-principal axis factoring, maximum likelihood, or unweighted least squares
-(also called minres), respectively, used in \code{\link[=EFA]{EFA()}} to find the second-order
-loadings.}
+principal axis factoring, maximum likelihood, or unweighted least squares,
+respectively, used in \code{\link[=EFA]{EFA()}} to find the second-order loadings. "MINRES" is
+accepted as a synonym for "ULS" (the same estimator).}
 
 \item{g_name}{character. The name of the general factor. This needs only be
 specified if \code{x} is a \code{lavaan} second-order solution. Default is "g".}

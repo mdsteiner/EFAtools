@@ -56,4 +56,27 @@ test_that("fit indices are returned correctly", {
   expect_type(ULS_test_1$fit_indices$p_null, "double")
 })
 
+test_that("MINRES is accepted as a synonym for ULS", {
+  uls <- suppressWarnings(EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
+                              method = "ULS"))
+  minres <- suppressWarnings(EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
+                                 method = "MINRES"))
+
+  # minimum residual and unweighted least squares are the same estimator
+  expect_equal(minres$unrot_loadings, uls$unrot_loadings)
+  expect_equal(minres$h2, uls$h2)
+  expect_equal(minres$fit_indices, uls$fit_indices)
+  # the alias resolves to the canonical method name
+  expect_identical(minres$settings$method, "ULS")
+})
+
+test_that("SL() and EFA_AVERAGE() accept method = 'MINRES'", {
+  EFA_mod <- suppressWarnings(EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
+                                  method = "PAF", rotation = "promax"))
+  expect_no_error(suppressWarnings(SL(EFA_mod, method = "MINRES")))
+  expect_no_error(suppressWarnings(
+    EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
+                method = "MINRES", show_progress = FALSE)))
+})
+
 rm(ULS_test, ULS_test_1)

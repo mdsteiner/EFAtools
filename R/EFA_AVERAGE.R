@@ -17,7 +17,8 @@
 #' (default), not all fit indices can be computed.
 #' @param method character vector. Any combination of  "PAF", "ML", and "ULS",
 #' to use principal axis factoring, maximum likelihood, or unweighted least
-#' squares (also called minres), respectively, to fit the EFAs. Default is "PAF".
+#' squares, respectively, to fit the EFAs. "MINRES" is accepted as a synonym for
+#' "ULS" (the same estimator). Default is "PAF".
 #' @param rotation character vector. Either perform no rotation ("none"),
 #' any combination of orthogonal rotations ("varimax", "equamax", "quartimax", "geominT",
 #' "bentlerT", and "bifactorT"; using "orthogonal" runs all of these), or of
@@ -303,8 +304,12 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
 
   checkmate::assert_count(n_factors)
   checkmate::assert_count(N, na.ok = TRUE)
-  checkmate::assert_subset(method, c("PAF", "ML", "ULS"),
+  checkmate::assert_subset(method, c("PAF", "ML", "ULS", "MINRES"),
                            empty.ok = FALSE)
+  # "MINRES" is a synonym for "ULS" (same estimator); resolve to the canonical
+  # name so the type grid below is keyed once per requested estimator.
+  method[method == "MINRES"] <- "ULS"
+  method <- unique(method)
   checkmate::assert_subset(rotation, c("none", "orthogonal", "oblique", "varimax",
                                        "equamax", "quartimax", "geominT", "bentlerT",
                                        "bifactorT", "promax", "oblimin", "quartimin",

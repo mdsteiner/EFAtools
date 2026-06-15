@@ -105,7 +105,11 @@ double uls_residuals(arma::vec psi, arma::mat R, const int n_fac) {
 
   model = loadings * loadings.t();
   residual = R - model;
-  residual = arma::trimatl(residual);
+  // Sum the squared off-diagonal residuals only (strictly lower triangle). The
+  // diagonal residual is the communality gap, which the free uniquenesses absorb
+  // and which the analytic gradient .grad_uls() and the reported Fm both exclude;
+  // keeping the objective off-diagonal makes all three consistent (minres).
+  residual = arma::trimatl(residual, -1);
   residual = pow(residual, 2);
   error = accu(residual);
   return(error);

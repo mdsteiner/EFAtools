@@ -26,9 +26,9 @@
 #' This is used to control the procedure of the second-order factor analysis. See
 #' [EFA()] for details.
 #' @param method character. One of "PAF", "ML", or "ULS" to use
-#' principal axis factoring, maximum likelihood, or unweighted least squares
-#' (also called minres), respectively, used in [EFA()] to find the second-order
-#' loadings.
+#' principal axis factoring, maximum likelihood, or unweighted least squares,
+#' respectively, used in [EFA()] to find the second-order loadings. "MINRES" is
+#' accepted as a synonym for "ULS" (the same estimator).
 #' @param g_name character. The name of the general factor. This needs only be
 #' specified if `x` is a `lavaan` second-order solution. Default is "g".
 #' @param ... Arguments to be passed to [EFA()].
@@ -106,12 +106,14 @@
 #' }
 #' }
 SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
-               method = c("PAF", "ML", "ULS"), g_name = "g", ...) {
+               method = c("PAF", "ML", "ULS", "MINRES"), g_name = "g", ...) {
 
   # Perform argument checks
   checkmate::assert_matrix(Phi, null.ok = TRUE)
   type <- match.arg(type)
   method <- match.arg(method)
+  # "MINRES" is a synonym for "ULS" (same estimator); resolve to the canonical name.
+  if (method == "MINRES") method <- "ULS"
   checkmate::assert_string(g_name)
 
   if(!inherits(x, c("EFA", "fa", "lavaan", "matrix", "LOADINGS", "loadings"))){

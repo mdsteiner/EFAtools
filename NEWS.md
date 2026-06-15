@@ -26,6 +26,9 @@
   conditions, which makes them easier to handle programmatically.
 * `lavaan` moved from Imports to Suggests. The `lavaan`-input paths of `OMEGA()` and `SL()` now
   require the `lavaan` package to be installed and raise a clear error if it is missing.
+* `EFA()`, `SL()`, and `EFA_AVERAGE()` now accept `method = "MINRES"` as a synonym for
+  `method = "ULS"`. Minimum residual and unweighted least squares are two names for the same
+  estimator and return identical results.
 
 ## Bug Fixes
 
@@ -48,6 +51,10 @@
 * Factor extraction (`PAF`, `ML`, and `ULS`) now raises a clear error when the requested
   number of factors is not smaller than the number of variables, instead of reading past
   the available eigenvalues (undefined behaviour in builds without bounds checking).
+* `ULS` extraction: the minimised objective is now the sum of squared off-diagonal residuals,
+  consistent with its analytic gradient and the reported minimum (`Fm`). The diagonal
+  residuals were previously included in the objective but not in its gradient. The fitted
+  loadings are unchanged to within optimiser tolerance.
 * `NEST()` and `PARALLEL()`: A failed eigendecomposition of a degenerate simulated matrix
   now raises a clear error instead of resulting in undefined behaviour.
 * The chi-square model-fit statistic is now the Bartlett-corrected maximum likelihood

@@ -61,7 +61,8 @@ correlation matrix is used. If input is a correlation matrix and \code{N} = NA
 
 \item{method}{character vector. Any combination of  "PAF", "ML", and "ULS",
 to use principal axis factoring, maximum likelihood, or unweighted least
-squares (also called minres), respectively, to fit the EFAs. Default is "PAF".}
+squares, respectively, to fit the EFAs. "MINRES" is accepted as a synonym for
+"ULS" (the same estimator). Default is "PAF".}
 
 \item{rotation}{character vector. Either perform no rotation ("none"),
 any combination of orthogonal rotations ("varimax", "equamax", "quartimax", "geominT",
