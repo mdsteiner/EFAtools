@@ -110,10 +110,6 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
   checkmate::assert_number(alpha, lower = 0, upper = 1)
   checkmate::assert_count(max_iter)
 
-  # Create correlation matrix
-  R <- stats::cor(x, use = use, method = cor_method)
-  colnames(R) <- colnames(x)
-
   if (any(is.na(x))) {
     n_row_complete <- nrow(x)
     x <- stats::na.omit(x)
@@ -144,6 +140,9 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
     n_factors_max <- m_possible
 
   }
+
+  # Create correlation matrix
+  R <- stats::cor(x, use = use, method = cor_method)
 
   eigvals_real <- eigen(R, symmetric = TRUE, only.values = TRUE)$values
 
