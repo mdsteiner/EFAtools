@@ -282,6 +282,28 @@ test_that("errors etc. are thrown correctly", {
 
 })
 
+test_that("COMPARE is NA-safe and honours na.rm (vector and matrix)", {
+  # NA-containing input used to crash in .decimals ("missing value where
+  # TRUE/FALSE needed") before COMPARE could return; the documented na.rm
+  # argument must work for both vector and matrix input (reorder = "none"
+  # avoids the congruence path, which aborts earlier on NAs).
+  v_na <- c(1, 2, NA, 4)
+  v_ok <- c(1, 2, 3, 4)
+  expect_s3_class(COMPARE(v_na, v_ok, reorder = "none", na.rm = TRUE), "COMPARE")
+  expect_s3_class(COMPARE(v_na, v_ok, reorder = "none", na.rm = FALSE), "COMPARE")
+
+  m_na <- matrix(c(1, NA, 1, 2), ncol = 2)
+  m_ok <- matrix(c(1, 1, 1, 1), ncol = 2)
+  expect_s3_class(COMPARE(m_na, m_ok, reorder = "none", na.rm = TRUE), "COMPARE")
+  expect_s3_class(COMPARE(m_na, m_ok, reorder = "none", na.rm = FALSE), "COMPARE")
+
+  # na.rm = TRUE drops the missing entry from the RMSE statistic rather than
+  # propagating NA into it.
+  cmp_rm <- COMPARE(v_na, v_ok, reorder = "none", na.rm = TRUE)
+  expect_false(is.na(cmp_rm$g))
+  expect_equal(cmp_rm$g, 0)
+})
+
 test_that("print output is stable", {
   local_reproducible_output()
 

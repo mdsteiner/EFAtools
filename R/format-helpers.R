@@ -330,28 +330,28 @@
   if (!is.null(dim(x))) {
 
     max(apply(x, 1:2, function(ll) {
-      if (abs(ll - round(ll)) > .Machine$double.eps^0.5) {
+      if (!is.na(ll) && abs(ll - round(ll)) > .Machine$double.eps^0.5) {
         nchar(strsplit(sub('0+$', '', as.character(ll)), ".",
                        fixed = TRUE)[[1]][[2]])
       } else {
         return(0)
       }
-    }))
+    }), na.rm = TRUE)
 
   } else if (length(x) > 1) {
 
     max(sapply(x, function(ll) {
-      if (abs(ll - round(ll)) > .Machine$double.eps^0.5) {
+      if (!is.na(ll) && abs(ll - round(ll)) > .Machine$double.eps^0.5) {
         nchar(strsplit(sub('0+$', '', as.character(ll)), ".", fixed = TRUE)[[1]][[2]])
       } else {
         return(0)
       }
-    }))
+    }), na.rm = TRUE)
 
 
   } else {
 
-    if (abs(x - round(x)) > .Machine$double.eps^0.5) {
+    if (!is.na(x) && abs(x - round(x)) > .Machine$double.eps^0.5) {
       nchar(strsplit(sub('0+$', '', as.character(x)), ".", fixed = TRUE)[[1]][[2]])
     } else {
       return(0)

@@ -248,11 +248,13 @@ COMPARE <- function(x,
   # compute differences and statistics
   diff <- x - y
 
-  if(inherits(x, "matrix")) {
-    g <- sqrt(sum(diag(t(diff) %*% (diff))) / prod(dim(x)))
-  } else {
-    g <- sqrt((sum(diff ** 2) / length(diff)))
-  }
+  # RMSE of the elementwise differences. na.rm drops missing entries from both
+  # the numerator and the denominator so the statistic stays a proper mean
+  # square; the unified form also covers the matrix case (length(diff) is the
+  # full element count) without forming t(diff) %*% diff.
+  sq <- diff ^ 2
+  n_ok <- if (na.rm) sum(!is.na(diff)) else length(diff)
+  g <- sqrt(sum(sq, na.rm = na.rm) / n_ok)
 
 
   mean_abs_diff <- mean(abs(diff), na.rm = na.rm)
@@ -270,7 +272,7 @@ COMPARE <- function(x,
   x <- gsub("-|\\.", "", x)
   y <- gsub("-|\\.", "", y)
   for (ii in seq_len((max_dec + 1))) {
-    are_equal_v[ii] <- all(substr(x, 1, ii) == substr(y, 1, ii))
+    are_equal_v[ii] <- all(substr(x, 1, ii) == substr(y, 1, ii), na.rm = na.rm)
   }
 
   are_equal <- utils::tail(which(are_equal_v), 1)

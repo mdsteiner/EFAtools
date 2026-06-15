@@ -241,6 +241,12 @@ test_that(".decimals works", {
   expect_equal(.decimals(8), 0)
   expect_type(.decimals(8), "double")
   expect_error(.decimals("a"), class = "efa_not_numeric")
+
+  # NA elements must not trigger "missing value where TRUE/FALSE needed"; they
+  # contribute 0 decimals so the rest of the input still drives the result.
+  expect_equal(.decimals(NA_real_), 0)
+  expect_equal(.decimals(c(1.23, NA, 4.5)), 2)
+  expect_equal(.decimals(matrix(c(1.23, NA, 4.5, 6), ncol = 2)), 2)
 })
 
 efa_list <- list(EFA(test_models$baseline$cormat, n_factors = 3, N = 500),
