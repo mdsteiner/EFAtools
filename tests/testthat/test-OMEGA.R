@@ -8,6 +8,17 @@ lav_mod <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
 lav_fit <- lavaan::cfa(lav_mod, sample.cov = test_models$baseline$cormat,
                    sample.nobs = 500, estimator = "ml", orthogonal = TRUE)
 om_lav <- OMEGA(lav_fit, g_name = "g")
+
+# Second-order model (g loads on the first-order factors): exercises the
+# Schmid-Leiman transform of a higher-order solution.
+lav_mod_ho <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
+               F2 =~ V7 + V8 + V9 + V10 + V11 + V12
+               F3 =~ V13 + V14 + V15 + V16 + V17 + V18
+               g =~ F1 + F2 + F3'
+lav_fit_ho <- suppressWarnings(lavaan::cfa(lav_mod_ho,
+                                           sample.cov = test_models$baseline$cormat,
+                                           sample.nobs = 500, estimator = "ml"))
+om_lav_ho <- suppressMessages(OMEGA(lav_fit_ho, g_name = "g"))
 }
 
 ## Use with an output from the SL function, with type EFAtools
@@ -40,6 +51,27 @@ test_that("output class and dimensions are correct", {
   expect_output(str(om_sl), "List of 2")
   expect_output(str(om_schmid), "List of 2")
   expect_output(str(om_man), "List of 2")
+})
+
+test_that("a second-order lavaan model is Schmid-Leiman transformed", {
+  skip_if_not_installed("lavaan")
+
+  # The second-order general factor triggers the SL transform of the higher-order
+  # solution; OMEGA informs the user and returns the full coefficient matrix.
+  expect_message(OMEGA(lav_fit_ho, g_name = "g"),
+                 class = "efa_omega_g_second_order")
+  expect_s3_class(om_lav_ho, "OMEGA")
+  expect_identical(dim(om_lav_ho), c(4L, 6L))
+  expect_identical(rownames(om_lav_ho), c("g", "F1", "F2", "F3"))
+  expect_identical(colnames(om_lav_ho),
+                   c("tot", "hier", "sub", "H", "ECV", "PUC"))
+
+  # The transformed group-factor loadings yield finite omega coefficients within
+  # [0, 1], and omega hierarchical never exceeds omega total.
+  coefs <- unclass(om_lav_ho)[, c("tot", "hier", "sub")]
+  expect_true(all(is.finite(coefs)))
+  expect_true(all(coefs >= 0 & coefs <= 1))
+  expect_true(all(om_lav_ho[, "tot"] >= om_lav_ho[, "hier"]))
 })
 
 test_that("errors are thrown correctly", {
@@ -117,5 +149,5 @@ test_that("print output is stable", {
 
 rm(efa_mod, sl_mod, om_sl, schmid_mod, om_schmid, om_man)
 if (requireNamespace("lavaan", quietly = TRUE)) {
-  rm(lav_mod, lav_fit, om_lav)
+  rm(lav_mod, lav_fit, om_lav, lav_mod_ho, lav_fit_ho, om_lav_ho)
 }

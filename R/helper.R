@@ -37,6 +37,16 @@
   }
 }
 
+# Second-order Schmid-Leiman group-factor loadings: scale the first-order factor
+# loadings by the residual standard deviations of the first-order factors. Only
+# the psi diagonal is used (off-diagonal first-order disturbance covariances are
+# not residual standard deviations); `nrow` keeps diag() a matrix when there is a
+# single first-order factor. Shared by SL() and OMEGA() for lavaan second-order
+# input. Schmid & Leiman (1957, Psychometrika).
+.sl_group_loadings <- function(loadings, psi, col_names) {
+  loadings %*% diag(sqrt(diag(psi)[col_names]), nrow = length(col_names))
+}
+
 #' Covert a `"LOADINGS"` table to matrix or a matrix to `"LOADINGS"`
 #'
 #' @author Andreas Soteriades

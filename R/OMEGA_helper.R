@@ -419,8 +419,9 @@
         # Calculate direct g loadings
         std_sol[[i]][["lambda"]][, g_name] <- std_sol[[i]][["lambda"]][, col_names] %*% std_sol[[i]][["beta"]][col_names, g_name]
 
-        # Calculate direct group factor loadings
-        std_sol[[i]][["lambda"]][, col_names] <- std_sol[[i]][["lambda"]][, col_names] %*% sqrt(std_sol[[i]][["psi"]][col_names, col_names])
+        # Calculate direct group factor loadings (see .sl_group_loadings).
+        std_sol[[i]][["lambda"]][, col_names] <- .sl_group_loadings(
+          std_sol[[i]][["lambda"]][, col_names], std_sol[[i]][["psi"]], col_names)
 
       }
 

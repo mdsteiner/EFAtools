@@ -273,12 +273,8 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
 
     L_sls_2 <- L1 %*% L2
 
-    # Calculate direct group factor loadings: scale the first-order loadings by
-    # the residual standard deviations of the first-order factors. Take the psi
-    # diagonal directly (a single first-order factor would make a matrix subset
-    # collapse to a scalar and break the nested diag()).
-    L_sls_1 <- L1 %*% diag(sqrt(diag(std_sol$psi)[col_names]),
-                           nrow = length(col_names))
+    # Calculate direct group factor loadings (see .sl_group_loadings).
+    L_sls_1 <- .sl_group_loadings(L1, std_sol$psi, col_names)
 
     orig_R <- NA
     iter <- NA
