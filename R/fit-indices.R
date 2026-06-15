@@ -89,7 +89,12 @@
   # turn the statistic into NA and propagate into .gof(), SMT(), and BARTLETT().
   ld <- determinant(R, logarithm = TRUE)
   if (ld$sign <= 0 || !is.finite(ld$modulus)) return(NA_real_)
-  -as.numeric(ld$modulus) * (N - 1 - (2 * p + 5) / 6)
+  # Guard the Bartlett multiplier: for small N relative to p it turns
+  # non-positive, which would flip the baseline chi-square sign and propagate a
+  # spurious statistic into .gof(), SMT(), and BARTLETT().
+  mult <- N - 1 - (2 * p + 5) / 6
+  if (mult <= 0) return(NA_real_)
+  -as.numeric(ld$modulus) * mult
 }
 
 # Noncentrality parameter for an RMSEA confidence bound: solve pchisq(chi, df, ncp) = goal
@@ -152,8 +157,17 @@
       if (!is.finite(Fchi) || ldSigma$sign <= 0 || ldR$sign <= 0) {
         NA_real_
       } else {
-        # clamp the floating-point dust of a (near-)perfect fit to 0
-        max(0, Fchi) * (N - 1 - (2 * m + 5) / 6 - (2 * q) / 3)
+        # The Bartlett multiplier goes non-positive for small N relative to the
+        # number of variables, which would turn the discrepancy into a negative
+        # (meaningless) chi-square; return NA so it falls through to the existing
+        # chi NA branch instead of masquerading as perfect fit.
+        mult <- N - 1 - (2 * m + 5) / 6 - (2 * q) / 3
+        if (mult <= 0) {
+          NA_real_
+        } else {
+          # clamp the floating-point dust of a (near-)perfect fit to 0
+          max(0, Fchi) * mult
+        }
       }
     }, error = function(e) NA_real_)
   } else {

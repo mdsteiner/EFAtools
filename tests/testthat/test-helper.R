@@ -186,6 +186,23 @@ test_that(".gof CFI uses the Bentler noncentrality truncation (matches lavaan)",
 })
 
 
+test_that(".gof guards the Bartlett multiplier against tiny N (no negative chi)", {
+  # For small N relative to the number of variables the model multiplier
+  # N - 1 - (2m + 5)/6 - (2q)/3 turns non-positive (here N = 5, m = 6, q = 3).
+  # The chi-square must then be NA, not a negative statistic masquerading as
+  # perfect fit (p_chi -> 1, RMSEA floored to 0, CFI from a meaningless number).
+  gof_tiny <- .gof(efa_ml$unrot_loadings, efa_ml$orig_R, N = 5, "ML",
+                   efa_ml$fit_indices$Fm)
+  expect_true(is.na(gof_tiny$chi))
+  expect_true(is.na(gof_tiny$p_chi))
+  expect_true(is.na(gof_tiny$CFI))
+  expect_true(is.na(gof_tiny$RMSEA))
+
+  # The null (baseline) multiplier N - 1 - (2p + 5)/6 is guarded the same way.
+  expect_true(is.na(.null_chisq(efa_ml$orig_R, N = 3)))
+})
+
+
 test_that(".compute_caf returns 0 (with warning) when KMO is not computable", {
   # Hollow residual matrix: solve() succeeds (not a try-error) but the inverse
   # has a negative diagonal, so KMO is NaN. CAF must fall back to 0, not NaN.
