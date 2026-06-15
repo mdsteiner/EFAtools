@@ -105,6 +105,10 @@ test_that("NA in the raw-data correlation matrix aborts with a classed error", {
                      2, 5, 1, 8, 3, 7, 4, NA), ncol = 3)
   expect_error(suppressMessages(.prepare_cor_input(dat_na, use = "everything")),
                class = "efa_cor_na")
+  # under use = "all.obs" stats::cor() throws a hard base error before any NA
+  # check; this must route to the same classed abort, not an unclassed crash
+  expect_error(suppressMessages(.prepare_cor_input(dat_na, use = "all.obs")),
+               class = "efa_cor_na")
 })
 
 test_that("a singular matrix aborts unless the check is disabled", {

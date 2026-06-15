@@ -106,18 +106,19 @@
       )
     }
 
-    R <- stats::cor(x, use = use, method = cor_method)
-    colnames(R) <- colnames(x)
-
-    # Missing values can leave NAs in the computed correlations (e.g. a column
-    # with no complete pairs under the chosen `use`); flag this clearly instead
-    # of failing later in solve()/eigen() with an opaque base error.
-    if (anyNA(R)) {
+    # Missing values can make stats::cor() either throw a hard base error (e.g.
+    # use = "all.obs", or "complete.obs" with no complete cases) or return NAs
+    # (e.g. a column with no complete pairs under the chosen `use`). Route both
+    # failure modes to the same classed abort instead of failing with an opaque
+    # base error here or later in solve()/eigen().
+    R <- try(stats::cor(x, use = use, method = cor_method), silent = TRUE)
+    if (inherits(R, "try-error") || anyNA(R)) {
       cli::cli_abort(
-        c("The correlation matrix computed from the raw data contains missing values.",
+        c("The correlation matrix could not be computed from the raw data because of missing values.",
           "i" = "Adjust {.arg use} (e.g. {.val pairwise.complete.obs}) or supply data with fewer missing values."),
         class = "efa_cor_na", call = error_call)
     }
+    colnames(R) <- colnames(x)
 
     if (N_policy != "none") {
       # Under listwise deletion stats::cor() drops incomplete rows, so N must be
