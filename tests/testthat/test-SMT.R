@@ -115,6 +115,18 @@ test_that("null-model statistics are computed from R and N, not the fitted model
   expect_false(anyNA(null_out))
 })
 
+test_that("SMT propagates NA null statistics (no crash) for tiny N", {
+  # When N is small relative to the number of variables the Bartlett null
+  # multiplier N - 1 - (2p + 5)/6 is non-positive, so .null_chisq() is NA. SMT
+  # must carry that through to NA null statistics instead of crashing in the
+  # RMSEA noncentrality search (.rmsea_lambda) with an opaque base error.
+  R <- stats::cor(GRiPS_raw)  # 8 variables -> null multiplier <= 0 for N <= 4
+  smt_tiny <- suppressWarnings(SMT(R, N = 4))
+  expect_s3_class(smt_tiny, "efa_retention")
+  expect_true(is.na(.retention_record(smt_tiny, "chi")$y[1]))
+  expect_true(is.na(.retention_record(smt_tiny, "RMSEA")$y[1]))
+})
+
 test_that("settings are returned correctly", {
   expect_named(smt_cor$settings, c("N", "use", "cor_method"))
   expect_named(smt_raw$settings, c("N", "use", "cor_method"))

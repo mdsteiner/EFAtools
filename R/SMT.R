@@ -193,9 +193,12 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   }
 
   # With which number of factors is the AIC lowest? (which.min returns the first
-  # minimum, so ties yield a single, well-defined suggestion)
+  # minimum, so ties yield a single, well-defined suggestion). which.min()
+  # returns integer(0) when every AIC is NA (a degenerate tiny-N case where the
+  # null and all factor models are undefined); fall back to NA so the record
+  # keeps a length-1 suggestion.
   AIC_all <- c(AIC_null, AIC)
-  nfac_AIC <- which.min(AIC_all) - 1
+  nfac_AIC <- if (all(is.na(AIC_all))) NA_integer_ else which.min(AIC_all) - 1
 
   # one record per criterion (values for the null model through max_fac factors)
   results <- list(

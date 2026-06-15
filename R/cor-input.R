@@ -108,15 +108,23 @@
 
     # Missing values can make stats::cor() either throw a hard base error (e.g.
     # use = "all.obs", or "complete.obs" with no complete cases) or return NAs
-    # (e.g. a column with no complete pairs under the chosen `use`). Route both
-    # failure modes to the same classed abort instead of failing with an opaque
-    # base error here or later in solve()/eigen().
+    # (e.g. a column with no complete pairs under the chosen `use`). Catch both
+    # instead of failing with an opaque base error here or later in
+    # solve()/eigen(). A try-error without any NAs in the data has another cause
+    # (e.g. a non-numeric or zero-variance column), so report that separately
+    # rather than blaming missing values.
     R <- try(stats::cor(x, use = use, method = cor_method), silent = TRUE)
     if (inherits(R, "try-error") || anyNA(R)) {
+      if (anyNA(x)) {
+        cli::cli_abort(
+          c("The correlation matrix could not be computed from the raw data because of missing values.",
+            "i" = "Adjust {.arg use} (e.g. {.val pairwise.complete.obs}) or supply data with fewer missing values."),
+          class = "efa_cor_na", call = error_call)
+      }
       cli::cli_abort(
-        c("The correlation matrix could not be computed from the raw data because of missing values.",
-          "i" = "Adjust {.arg use} (e.g. {.val pairwise.complete.obs}) or supply data with fewer missing values."),
-        class = "efa_cor_na", call = error_call)
+        c("The correlation matrix could not be computed from the raw data.",
+          "i" = "Check that all columns are numeric and have non-zero variance."),
+        class = "efa_cor_uncomputable", call = error_call)
     }
     colnames(R) <- colnames(x)
 

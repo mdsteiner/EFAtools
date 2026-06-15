@@ -111,6 +111,16 @@ test_that("NA in the raw-data correlation matrix aborts with a classed error", {
                class = "efa_cor_na")
 })
 
+test_that("non-numeric raw data aborts with a distinct classed error", {
+  # A character column makes stats::cor() fail for a reason other than NAs (the
+  # data here has none); report that as efa_cor_uncomputable rather than blaming
+  # missing values.
+  dat_chr <- data.frame(a = c("x", "y", "z", "w"), b = c(1, 2, 3, 4),
+                        d = c(4, 3, 2, 1))
+  expect_error(suppressMessages(.prepare_cor_input(dat_chr)),
+               class = "efa_cor_uncomputable")
+})
+
 test_that("a singular matrix aborts unless the check is disabled", {
   expect_error(.prepare_cor_input(cor_sing, N = 10), class = "efa_cor_singular")
   expect_error(suppressMessages(.prepare_cor_input(dat_sing)),

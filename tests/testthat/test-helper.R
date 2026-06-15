@@ -200,6 +200,11 @@ test_that(".gof guards the Bartlett multiplier against tiny N (no negative chi)"
 
   # The null (baseline) multiplier N - 1 - (2p + 5)/6 is guarded the same way.
   expect_true(is.na(.null_chisq(efa_ml$orig_R, N = 3)))
+
+  # A missing N must propagate NA, not crash the `if (mult <= 0)` guard with
+  # if(NA), and an undefined chi-square has no RMSEA noncentrality bound.
+  expect_true(is.na(.null_chisq(efa_ml$orig_R, N = NA_real_)))
+  expect_true(is.na(.rmsea_lambda(NA_real_, df = 10, goal = .95)))
 })
 
 

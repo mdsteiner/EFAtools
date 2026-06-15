@@ -93,7 +93,7 @@
   # non-positive, which would flip the baseline chi-square sign and propagate a
   # spurious statistic into .gof(), SMT(), and BARTLETT().
   mult <- N - 1 - (2 * p + 5) / 6
-  if (mult <= 0) return(NA_real_)
+  if (is.na(mult) || mult <= 0) return(NA_real_)
   -as.numeric(ld$modulus) * mult
 }
 
@@ -102,6 +102,10 @@
 # .05; Browne & Cudeck, 1992). Returns 0 when the model chi-square already lies below the
 # target quantile, so the bound collapses to 0. Shared by .gof() and SMT().
 .rmsea_lambda <- function(chi, df, goal) {
+  # An undefined chi-square (e.g. the null model for a tiny N, where .null_chisq()
+  # returns NA) has no noncentrality bound; propagate NA rather than failing the
+  # `if (pchisq(NA) >= goal)` test with "missing value where TRUE/FALSE needed".
+  if (is.na(chi)) return(NA_real_)
   if (stats::pchisq(chi, df = df, ncp = 0) >= goal) {
     p_chi_fun <- function(x, val, df, goal) goal - stats::pchisq(val, df, ncp = x)
     stats::uniroot(f = p_chi_fun, interval = c(1e-10, 10000), val = chi, df = df,
