@@ -32,15 +32,13 @@ arma::mat parallel_sim(const int n_datasets, const int n_vars, const int N,
   arma::vec Lambda(n_vars);
   arma::vec eigval(n_vars);
   arma::mat eig_vals(n_datasets, n_vars);
-  arma::mat x(N, n_vars);
-  arma::mat R(n_vars, n_vars);
 
   if (eigen_type == 1) { // PCA
 
     // perform simulations for n_datasets time
     for (uword i = 0; i < n_datasets; i++) {
-      x = randn(N, n_vars);
-      R = cor(x);
+      arma::mat x = randn(N, n_vars);
+      arma::mat R = cor(x);
       eig_sym_checked(eigval, R);
       Lambda = flipud(eigval);
       eig_vals.row(i) = Lambda.t();
@@ -53,8 +51,8 @@ arma::mat parallel_sim(const int n_datasets, const int n_vars, const int N,
     int iter = 0;
 
     while((success < n_datasets) && (iter < maxit)) {
-      x = randn(N, n_vars);
-      R = cor(x);
+      arma::mat x = randn(N, n_vars);
+      arma::mat R = cor(x);
       bool flag = inv_sympd(temp, R);
       if (!flag){
         iter++;

@@ -492,7 +492,13 @@
     dimnames(target) <- list(dn$items, dn$target_factors)
   }
 
-  S_list <- lapply(unrotated_list, crossprod)
+  # The crossprods only feed the oblique solver; on the orthogonal path (or k == 1)
+  # PROCRUSTES() ignores S entirely, so leave the list NULL there.
+  S_list <- if (rotation == "oblique" && k > 1L) {
+    lapply(unrotated_list, crossprod)
+  } else {
+    vector("list", m)
+  }
   T_starts <- vector("list", m)
   if (rotation == "oblique" && k > 1L) {
     T_starts <- lapply(unrotated_list, function(A) .procrustes_orthogonal_T(A, target))

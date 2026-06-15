@@ -25,7 +25,7 @@ static void eig_sym_checked(arma::vec& eigval, const arma::mat& X) {
 }
 
 // [[Rcpp::export(.grad_ml)]]
-arma::vec grad_ml(arma::vec psi, arma::mat R, const int n_fac) {
+arma::vec grad_ml(arma::vec psi, const arma::mat& R, const int n_fac) {
   // gradient function for maximum likelihood estimation, adapted from stats::factanal()
 
   // Guard the eigen-extraction below: it reads the largest n_fac eigenpairs and
@@ -39,21 +39,19 @@ arma::vec grad_ml(arma::vec psi, arma::mat R, const int n_fac) {
 
   arma::vec eigval;
   arma::mat eigvec;
-  arma::uvec idx(n_fac);
-  idx.fill(true);
 
   arma::mat sc = arma::diagmat(1 / sqrt(psi));
   arma::mat Rs = sc * R * sc;
   eig_sym_checked(eigval, eigvec, Rs);
   arma::vec Lambda = flipud(eigval);
-  Lambda = Lambda.elem(arma::find(idx));
+  Lambda = Lambda.head(n_fac);
   Lambda -= 1;
   // replace values smaller than 0
   arma::uvec idx2 = find(Lambda < 0);
   Lambda.elem(idx2).fill(0);
   // extract eigenvectors
   arma::mat V = fliplr(eigvec);
-  V = V.cols(arma::find(idx));
+  V = V.head_cols(n_fac);
 
   arma::mat load = V * arma::diagmat(sqrt(Lambda));
   load = arma::diagmat(sqrt(psi)) * load;
@@ -66,7 +64,7 @@ arma::vec grad_ml(arma::vec psi, arma::mat R, const int n_fac) {
 
 
 // [[Rcpp::export(.error_ml)]]
-double error_ml(arma::vec psi, arma::mat R, const int n_fac) {
+double error_ml(arma::vec psi, const arma::mat& R, const int n_fac) {
   // loss function for maximum likelihood fitting; adapted from stats::factanal()
 
   // Guard the eigen-extraction below: it reads the largest n_fac eigenpairs and

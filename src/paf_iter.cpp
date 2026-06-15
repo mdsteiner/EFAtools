@@ -65,8 +65,6 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
   arma::vec eigval;
   arma::mat eigvec;
   arma::mat Lt;
-  arma::uvec idx(n_fac);
-  idx.fill(true);
 
   if (abs_eig == false) {
 
@@ -78,9 +76,9 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
           //  compute the eigenvalues and eigenvectors
           eig_sym_checked(eigval, eigvec, R);
           Lambda = flipud(eigval);
-          Lambda = Lambda.elem(arma::find(idx));
+          Lambda = Lambda.head(n_fac);
           V = fliplr(eigvec);
-          V = V.cols(arma::find(idx));
+          V = V.head_cols(n_fac);
 
           if (any(Lambda < 0)) {
             neg_eigen = true;
@@ -115,9 +113,9 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
           //  compute the eigenvalues and eigenvectors
           eig_sym_checked(eigval, eigvec, R);
           Lambda = flipud(eigval);
-          Lambda = Lambda.elem(arma::find(idx));
+          Lambda = Lambda.head(n_fac);
           V = fliplr(eigvec);
-          V = V.cols(arma::find(idx));
+          V = V.head_cols(n_fac);
 
           if (any(Lambda < 0)) {
             neg_eigen = true;
@@ -158,9 +156,9 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
           //  compute the eigenvalues and eigenvectors
           eig_sym_checked(eigval, eigvec, R);
           Lambda = flipud(eigval);
-          Lambda = Lambda.elem(arma::find(idx));
+          Lambda = Lambda.head(n_fac);
           V = fliplr(eigvec);
-          V = V.cols(arma::find(idx));
+          V = V.head_cols(n_fac);
 
           if (any(Lambda < 0)) {
             neg_eigen = true;
@@ -197,9 +195,9 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
           //  compute the eigenvalues and eigenvectors
           eig_sym_checked(eigval, eigvec, R);
           Lambda = flipud(eigval);
-          Lambda = Lambda.elem(arma::find(idx));
+          Lambda = Lambda.head(n_fac);
           V = fliplr(eigvec);
-          V = V.cols(arma::find(idx));
+          V = V.head_cols(n_fac);
 
           if (any(Lambda < 0)) {
             neg_eigen = true;
@@ -244,9 +242,9 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
           //  compute the eigenvalues and eigenvectors
           eig_sym_checked(eigval, eigvec, R);
           Lambda = arma::abs(flipud(eigval));
-          Lambda = Lambda.elem(arma::find(idx));
+          Lambda = Lambda.head(n_fac);
           V = fliplr(eigvec);
-          V = V.cols(arma::find(idx));
+          V = V.head_cols(n_fac);
 
           // compute the loadings from the eigenvector matrix and diagonal
           // eigenvalue matrix
@@ -276,9 +274,9 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
           //  compute the eigenvalues and eigenvectors
           eig_sym_checked(eigval, eigvec, R);
           Lambda = arma::abs(flipud(eigval));
-          Lambda = Lambda.elem(arma::find(idx));
+          Lambda = Lambda.head(n_fac);
           V = fliplr(eigvec);
-          V = V.cols(arma::find(idx));
+          V = V.head_cols(n_fac);
 
           // compute the loadings from the eigenvector matrix and diagonal
           // eigenvalue matrix
@@ -314,9 +312,9 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
           //  compute the eigenvalues and eigenvectors
           eig_sym_checked(eigval, eigvec, R);
           Lambda = arma::abs(flipud(eigval));
-          Lambda = Lambda.elem(arma::find(idx));
+          Lambda = Lambda.head(n_fac);
           V = fliplr(eigvec);
-          V = V.cols(arma::find(idx));
+          V = V.head_cols(n_fac);
 
           // compute the loadings from the eigenvector matrix and diagonal
           // eigenvalue matrix
@@ -348,9 +346,9 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
           //  compute the eigenvalues and eigenvectors
           eig_sym_checked(eigval, eigvec, R);
           Lambda = arma::abs(flipud(eigval));
-          Lambda = Lambda.elem(arma::find(idx));
+          Lambda = Lambda.head(n_fac);
           V = fliplr(eigvec);
-          V = V.cols(arma::find(idx));
+          V = V.head_cols(n_fac);
 
           // compute the loadings from the eigenvector matrix and diagonal
           // eigenvalue matrix

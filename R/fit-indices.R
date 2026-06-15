@@ -82,12 +82,13 @@
 # Independence-model (baseline) chi-square: the Bartlett-corrected ML discrepancy of the
 # null model (model-implied matrix = identity), -log|R| * (N - 1 - (2p + 5)/6). Shared by
 # .gof() and HULL so the model and baseline chi-square sit on the same scale.
-.null_chisq <- function(R, N) {
+.null_chisq <- function(R, N, ld = determinant(R, logarithm = TRUE)) {
   p <- ncol(R)
   # Use the log-determinant directly: det(R) underflows to 0 for large,
   # near-singular (but still positive-definite) matrices, which would otherwise
   # turn the statistic into NA and propagate into .gof(), SMT(), and BARTLETT().
-  ld <- determinant(R, logarithm = TRUE)
+  # `ld` defaults to that decomposition; callers that already have it (e.g. .gof()
+  # for the model chi-square) pass it in to avoid recomputing determinant(R).
   if (ld$sign <= 0 || !is.finite(ld$modulus)) return(NA_real_)
   # Guard the Bartlett multiplier: for small N relative to p it turns
   # non-positive, which would flip the baseline chi-square sign and propagate a
@@ -182,8 +183,9 @@
 
     ### compute CFI
 
-    # null model
-    chi_null <- .null_chisq(R, N)
+    # null model: reuse the log-determinant already computed for the model
+    # chi-square above instead of letting .null_chisq() recompute determinant(R).
+    chi_null <- .null_chisq(R, N, ld = ldR)
     df_null <- (m**2 - m) / 2
     p_null <- stats::pchisq(chi_null, df_null, lower.tail = F)
 

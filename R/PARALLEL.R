@@ -185,7 +185,6 @@ PARALLEL <- function(x = NULL,
                                  singular_tail = "parallel analysis is not possible")
       R <- prep$R
       N <- prep$N
-      R_i <- solve(R)
       eigvals_R <- eigen(R, symmetric = TRUE, only.values = TRUE)$values
 
       if ("PCA" %in% eigen_type) {
@@ -196,7 +195,7 @@ PARALLEL <- function(x = NULL,
       if ("SMC" %in% eigen_type) {
         # compute smcs
         R_SMC <- R
-        diag(R_SMC) <- 1 - (1 / diag(R_i))
+        diag(R_SMC) <- 1 - (1 / diag(solve(R)))
         eigvals_real_SMC <- matrix(eigen(R_SMC, symmetric = TRUE,
                                      only.values = TRUE)$values, ncol = 1)
         colnames(eigvals_real_SMC) <- "Real Eigenvalues"

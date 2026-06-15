@@ -39,14 +39,12 @@ arma::vec nest_sym(const int nf, const int N, arma::mat M,
    arma::vec eigvals(M.n_cols);
    //arma::vec Lambda(M.n_cols);
    arma::vec ref_values(nreps);
-   arma::mat dat(N, M.n_cols);
-   arma::mat R(M.n_cols, M.n_cols);
 
    for (uword i = 0; i < nreps; i++) {
 
      // generate random data for nfactors + nvariables colums (ncm)
-     dat = randn(N, ncm);
-     R = cor(dat * M);
+     arma::mat dat = randn(N, ncm);
+     arma::mat R = cor(dat * M);
      eig_sym_checked(eigvals, R);
      //Lambda = flipud(eigvals);
      ref_values(i) = eigvals(ind);

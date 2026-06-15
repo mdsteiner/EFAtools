@@ -25,26 +25,26 @@ BEGIN_RCPP
 END_RCPP
 }
 // grad_ml
-arma::vec grad_ml(arma::vec psi, arma::mat R, const int n_fac);
+arma::vec grad_ml(arma::vec psi, const arma::mat& R, const int n_fac);
 RcppExport SEXP _EFAtools_grad_ml(SEXP psiSEXP, SEXP RSEXP, SEXP n_facSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::vec >::type psi(psiSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type R(RSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type R(RSEXP);
     Rcpp::traits::input_parameter< const int >::type n_fac(n_facSEXP);
     rcpp_result_gen = Rcpp::wrap(grad_ml(psi, R, n_fac));
     return rcpp_result_gen;
 END_RCPP
 }
 // error_ml
-double error_ml(arma::vec psi, arma::mat R, const int n_fac);
+double error_ml(arma::vec psi, const arma::mat& R, const int n_fac);
 RcppExport SEXP _EFAtools_error_ml(SEXP psiSEXP, SEXP RSEXP, SEXP n_facSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::vec >::type psi(psiSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type R(RSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type R(RSEXP);
     Rcpp::traits::input_parameter< const int >::type n_fac(n_facSEXP);
     rcpp_result_gen = Rcpp::wrap(error_ml(psi, R, n_fac));
     return rcpp_result_gen;
@@ -120,13 +120,13 @@ BEGIN_RCPP
 END_RCPP
 }
 // grad_uls
-arma::vec grad_uls(arma::vec psi, arma::mat R, const int n_fac);
+arma::vec grad_uls(arma::vec psi, const arma::mat& R, const int n_fac);
 RcppExport SEXP _EFAtools_grad_uls(SEXP psiSEXP, SEXP RSEXP, SEXP n_facSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::vec >::type psi(psiSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type R(RSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type R(RSEXP);
     Rcpp::traits::input_parameter< const int >::type n_fac(n_facSEXP);
     rcpp_result_gen = Rcpp::wrap(grad_uls(psi, R, n_fac));
     return rcpp_result_gen;
