@@ -183,7 +183,7 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
 
     }
 
-    n_order <- order(colnames(L1))
+    n_order <- suppressWarnings(order(as.numeric(gsub("[^0-9]", "", colnames(L1)))))
     L1 <- L1[, n_order]
     Phi <- Phi[n_order, n_order]
 
@@ -252,7 +252,7 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
     }
 
     if (!is.null(colnames(x))) {
-      n_order <- order(colnames(x))
+      n_order <- suppressWarnings(order(as.numeric(gsub("[^0-9]", "", colnames(x)))))
       x <- x[, n_order]
 
       if(!is.null(Phi)){
