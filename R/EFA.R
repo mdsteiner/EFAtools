@@ -347,6 +347,14 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES"),
   checkmate::assert_count(max_iter, na.ok = TRUE)
   checkmate::assert_choice(init_comm, c("smc", "mac", "unity", NA))
   checkmate::assert_number(criterion, lower = 0, upper = 1, na.ok = TRUE)
+  if (!is.na(criterion) && criterion >= 1) {
+    cli::cli_abort(
+      c("{.arg criterion} must be smaller than 1.",
+        "x" = "You supplied {.arg criterion} = {criterion}.",
+        "i" = "Use a small positive convergence tolerance such as {.val 0.001}."),
+      class = "efa_criterion_too_large"
+    )
+  }
   checkmate::assert_choice(criterion_type, c("max_individual", "sum", NA))
   checkmate::assert_flag(abs_eigen, na.ok = TRUE)
   checkmate::assert_number(k, na.ok = TRUE)

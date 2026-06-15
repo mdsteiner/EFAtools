@@ -339,6 +339,8 @@ test_that("errors are thrown correctly", {
   expect_warning(EFA(GRiPS_raw, N = 20, n_factors = 1), class = "efa_n_from_data")
   expect_error(EFA(dat_sing, n_factors = 1), class = "efa_cor_singular")
   expect_error(EFA(cor_sing, N = 10, n_factors = 1), class = "efa_cor_singular")
+  expect_error(EFA(test_models$baseline$cormat, n_factors = 3, N = 500, method = "PAF", criterion = 1),
+               class = "efa_criterion_too_large")
   expect_warning(EFA(matrix(rnorm(30), ncol = 3), n_factors = 2), class = "efa_underidentified")
   expect_warning(EFA(matrix(rnorm(30), ncol = 3), n_factors = 1), class = "efa_just_identified")
   expect_warning(EFA(test_models$baseline$cormat, n_factors = 3, method = "ML"), class = "efa_fit_na_n")

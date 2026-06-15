@@ -75,7 +75,7 @@
   # ML/ULS the optimiser constrains the uniquenesses to [floor, 1], so an improper
   # solution instead shows up as a uniqueness pinned at the lower floor (the
   # boundary case); flag those too so detection is consistent across estimators.
-  heywood_comm <- h2 >= 1 + .Machine$double.eps
+  heywood_comm <- h2 >= 1
   heywood_boundary <- if (!is.null(fit$psi)) {
     fit$psi <= .uniqueness_floor + sqrt(.Machine$double.eps)
   } else {

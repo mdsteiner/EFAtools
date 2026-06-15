@@ -51,7 +51,9 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
   }
 
   int iter = 1;
-  double delta = 1.0;
+  // Start above the criterion so the iteration runs at least once even when
+  // criterion >= 1 (EFA() rejects that, but keep the kernel self-contained).
+  double delta = criterion + 1.0;
   arma::vec tv(R.n_cols);
   arma::vec Lambda;
   arma::mat V;
