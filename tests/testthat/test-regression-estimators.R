@@ -166,4 +166,78 @@ test_that("TLI and ECVI equal their closed forms over the Bartlett-corrected chi
   }
 })
 
+# The PAF variant code paths reproduce the same psych::fa(fm = "pa") solution as the
+# already-tested "psych" type. The EFAtools/SPSS variants (absolute eigenvalues, the
+# max-individual convergence criterion) hit the fixed point to ~1e-15; the alternate
+# initial-communality paths (mac/unity) reach it within the PAF stopping tolerance.
+test_that("PAF variant paths reproduce psych::fa(fm = 'pa')", {
+  skip_on_cran()
+  skip_if_not_installed("psych")
+
+  R <- test_models$baseline$cormat
+  N <- 500
+  k <- 3
+  ref <- suppressMessages(suppressWarnings(
+    psych::fa(R, nfactors = k, n.obs = N, fm = "pa",
+              rotate = "none", SMC = TRUE, max.iter = 50)))
+
+  variants <- list(
+    list(label = "EFAtools", args = list(type = "EFAtools"),                tol = 1e-4),
+    list(label = "SPSS",     args = list(type = "SPSS"),                     tol = 1e-4),
+    list(label = "mac",      args = list(type = "psych", init_comm = "mac"),   tol = 5e-3),
+    list(label = "unity",    args = list(type = "psych", init_comm = "unity"), tol = 5e-3)
+  )
+
+  for (v in variants) {
+    efa <- suppressWarnings(do.call(
+      EFA, c(list(R, n_factors = k, N = N, method = "PAF"), v$args)))
+    expect_equal(unname(1 - efa$h2), unname(1 - ref$communality),
+                 tolerance = v$tol, info = v$label)
+    expect_equal(repro_offdiag(efa$unrot_loadings),
+                 repro_offdiag(ref$loadings), tolerance = v$tol, info = v$label)
+  }
+})
+
+# CFI and RMSEA match lavaan once lavaan's statistic is placed on the Bartlett-corrected
+# scale EFAtools uses (the model chi by bart / N, the baseline chi by the null model's own
+# multiplier, which carries no factor term). AIC and BIC follow the documented chi-square
+# forms, not lavaan's -2logL-based versions.
+test_that("CFI, RMSEA, AIC, and BIC match their references on the baseline", {
+  skip_on_cran()
+
+  R <- test_models$baseline$cormat
+  N <- 500
+  k <- 3
+  p <- ncol(R)
+  fi <- suppressWarnings(EFA(R, n_factors = k, N = N, method = "ML"))$fit_indices
+
+  expect_equal(fi$AIC, fi$chi - 2 * fi$df, tolerance = 1e-8)
+  expect_equal(fi$BIC, fi$chi - log(N) * fi$df, tolerance = 1e-8)
+
+  skip_if_not_installed("lavaan")
+
+  lav <- tryCatch({
+    fit <- lavaan::efa(sample.cov = R, sample.nobs = N, nfactors = k,
+                       rotation = "none", estimator = "ML", se = "none")[[1]]
+    lavaan::fitMeasures(fit, c("chisq", "df", "baseline.chisq", "baseline.df"))
+  }, error = function(e) NULL)
+  skip_if(is.null(lav), "lavaan::efa() did not return the baseline fit measures")
+
+  bart      <- N - 1 - (2 * p + 5) / 6 - (2 * k) / 3   # model: k factors
+  mult_null <- N - 1 - (2 * p + 5) / 6                 # null: no factors
+  chi_m <- unname(lav["chisq"]) * bart / N
+  df_m  <- unname(lav["df"])
+  chi_0 <- unname(lav["baseline.chisq"]) * mult_null / N
+  df_0  <- unname(lav["baseline.df"])
+
+  d_m   <- max(chi_m - df_m, 0)
+  d_0   <- max(chi_0 - df_0, 0)
+  cfi_ref   <- 1 - d_m / max(d_m, d_0)
+  rmsea_ref <- sqrt(max(0, chi_m - df_m) / (df_m * (N - 1)))
+
+  # observed agreement on the baseline model: ~1e-13
+  expect_equal(fi$CFI, cfi_ref, tolerance = 1e-3)
+  expect_equal(fi$RMSEA, rmsea_ref, tolerance = 1e-3)
+})
+
 rm(repro_offdiag, reg_fixtures)

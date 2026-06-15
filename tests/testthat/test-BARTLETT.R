@@ -22,6 +22,32 @@ test_that("p-values and df are correct", {
   expect_equal(bart_rand$df, 6)
 })
 
+test_that("chi-square statistic matches psych", {
+  skip_on_cran()
+  skip_if_not_installed("psych")
+
+  # correlation-matrix branch (also pinned to the known value so a wrong Bartlett
+  # correction is caught even without psych)
+  expect_equal(bart_cor$chisq,
+               psych::cortest.bartlett(test_models$baseline$cormat, n = 500)$chisq,
+               tolerance = 1e-4)
+  expect_equal(bart_cor$chisq, 2173.283, tolerance = 1e-3)
+
+  # raw-data branch (N recovered from the data)
+  expect_equal(bart_raw$chisq,
+               psych::cortest.bartlett(stats::cor(GRiPS_raw),
+                                       n = nrow(GRiPS_raw))$chisq,
+               tolerance = 1e-4)
+
+  # non-significant random branch
+  set.seed(500)
+  rand_mat <- matrix(rnorm(100), ncol = 4)
+  expect_equal(bart_rand$chisq,
+               psych::cortest.bartlett(stats::cor(rand_mat),
+                                       n = nrow(rand_mat))$chisq,
+               tolerance = 1e-4)
+})
+
 test_that("settings are returned correctly", {
   expect_named(bart_cor$settings, c("N", "use", "cor_method"))
   expect_named(bart_raw$settings, c("N", "use", "cor_method"))

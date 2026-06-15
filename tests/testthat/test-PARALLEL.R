@@ -1,4 +1,6 @@
-
+# seed the parallel-analysis simulation so the retained-factor counts are
+# reproducible (future_lapply uses future.seed = TRUE under the sequential plan)
+set.seed(42)
 pa_cor <- PARALLEL(test_models$baseline$cormat, N = 500)
 pa_cor_pca <- PARALLEL(test_models$baseline$cormat, N = 500, eigen_type = "PCA")
 pa_raw <- PARALLEL(GRiPS_raw)

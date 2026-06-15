@@ -23,6 +23,19 @@ test_that("KMO values are correct", {
   expect_length(kmo_nona$KMO_i, ncol(dat_nonames))
 })
 
+test_that("per-variable and overall KMO match psych", {
+  skip_on_cran()
+  skip_if_not_installed("psych")
+
+  psych_cor <- psych::KMO(test_models$baseline$cormat)
+  expect_equal(unname(kmo_cor$KMO_i), unname(psych_cor$MSAi), tolerance = 1e-4)
+  expect_equal(kmo_cor$KMO, unname(psych_cor$MSA), tolerance = 1e-4)
+
+  expect_equal(unname(kmo_raw$KMO_i),
+               unname(psych::KMO(stats::cor(GRiPS_raw))$MSAi),
+               tolerance = 1e-4)
+})
+
 test_that("settings are returned correctly", {
   expect_named(kmo_cor$settings, c("use", "cor_method"))
   expect_named(kmo_raw$settings, c("use", "cor_method"))

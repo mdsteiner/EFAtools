@@ -1,3 +1,9 @@
+# EFA_AVERAGE runs its grid of EFAs through future.apply with future.seed = TRUE,
+# so the random starts of the oblique rotation engines draw from the session RNG.
+# Seed once here so the fixtures below - and the print snapshot built from them -
+# are reproducible regardless of what ran earlier in the test run.
+set.seed(42)
+
 efa_def <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
                        show_progress = FALSE)
 efa_ml <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
@@ -9,11 +15,6 @@ efa_all <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
                        method = c("PAF", "ML", "ULS"),
                        type = c("none", "EFAtools", "psych", "SPSS"),
                        salience_threshold = .2, show_progress = FALSE)
-efa_all_np <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
-                       method = c("PAF", "ML", "ULS"),
-                       type = c("none", "EFAtools", "psych", "SPSS"),
-                       salience_threshold = .2, show_progress = FALSE)
-
 efa_all_oblq <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
                             method = c("PAF", "ML", "ULS"),
                             type = c("none", "EFAtools", "psych", "SPSS"),
@@ -507,11 +508,9 @@ test_that("an all-failed averaging grid returns an empty (NA) result", {
 })
 
 test_that("an all-Heywood averaging grid returns an empty (NA) result", {
-  # A 3-variable matrix whose single-factor solution implies a communality > 1.
-  # Disabled: this input still hits a latent out-of-bounds in the per-cell PAF
-  # estimation (it segfaults in an isolated process and only passes here by heap
-  # layout). Re-enable once that crash is fixed.
-  skip("EFA_AVERAGE on Heywood inputs has an unresolved out-of-bounds (see task).")
+  # A 3-variable matrix whose single-factor solution implies a communality > 1, so
+  # every fitted solution is a Heywood case and is excluded; with nothing left to
+  # average, the communalities and loadings come back as NA rather than an error.
   m <- matrix(c(1, .8, .8,  .8, 1, .5,  .8, .5, 1), 3, 3)
   res <- suppressWarnings(EFA_AVERAGE(m, n_factors = 1, N = 200, method = "PAF",
                                       type = "none", rotation = "none",

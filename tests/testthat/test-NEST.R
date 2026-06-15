@@ -1,4 +1,5 @@
-
+# seed the reference-data simulation so the retained-factor counts are reproducible
+set.seed(42)
 nest_cor <- NEST(test_models$baseline$cormat, N = 500)
 nest_raw <- NEST(GRiPS_raw)
 

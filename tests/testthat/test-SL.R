@@ -108,6 +108,21 @@ test_that("sl solution is correct", {
   expect_equal(unname(SL_lav$sl[1:12, "F3"]) < .20, rep(TRUE, 12))
 })
 
+test_that("sl loadings reproduce psych::schmid", {
+  skip_on_cran()
+  skip_if_not_installed("psych")
+
+  # The Schmid-Leiman transformation of the same psych Promax solution must match
+  # psych::schmid()'s g and group loadings (its columns are g, F1*, F2*, F3*).
+  sch <- suppressMessages(suppressWarnings(
+    psych::schmid(test_models$baseline$cormat, nfactors = 3, n.obs = 500,
+                  fm = "pa", rotate = "Promax")))
+
+  expect_equal(unname(SL_psych$sl[, c("g", "F1", "F2", "F3")]),
+               unname(sch$sl[, c("g", "F1*", "F2*", "F3*")]),
+               tolerance = 1e-4)
+})
+
 test_that("settings are returned correctly", {
   skip_if_not_installed("lavaan")
   expect_named(SL_EFAtools$settings, c("method", "rotation", "type", "n_factors",

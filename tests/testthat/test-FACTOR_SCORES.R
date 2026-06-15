@@ -32,6 +32,24 @@ test_that("output is correct", {
                                  "R2", "settings"))
 })
 
+test_that("factor scores have the expected shape and recover a known factor", {
+  skip_on_cran()
+
+  # raw-data scores: one row per observation, one column per factor (guards against
+  # a transposed or weight-matrix mix-up in the returned object)
+  expect_equal(dim(fac_scores_raw$scores), c(nrow(DOSPERT_raw), 10L))
+  expect_false(anyNA(fac_scores_raw$scores))
+
+  # On a strongly unidimensional scale the single estimated factor score must track
+  # the factor it represents; the mean item response is a faithful proxy for that
+  # latent factor, so the two correlate almost perfectly.
+  efa_1f <- suppressMessages(EFA(GRiPS_raw, n_factors = 1, type = "EFAtools",
+                                 method = "PAF"))
+  fs_1f <- suppressMessages(FACTOR_SCORES(GRiPS_raw, f = efa_1f, method = "Bartlett"))
+  expect_equal(dim(fs_1f$scores), c(nrow(GRiPS_raw), 1L))
+  expect_gt(abs(stats::cor(fs_1f$scores[, 1], rowMeans(GRiPS_raw))), 0.95)
+})
+
 test_that("settings are returned correctly", {
   expect_named(fac_scores_raw$settings, "method")
   expect_named(fac_scores_cor$settings, "method")

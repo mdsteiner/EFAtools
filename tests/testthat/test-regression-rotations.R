@@ -89,6 +89,23 @@ test_that("varimax reproduces stats::varimax", {
   expect_lt(aligned_max_diff(efa$rot_loadings, ref$loadings), 1e-4)
 })
 
+test_that("kaiser varimax reproduces stats::varimax", {
+  skip_on_cran()
+
+  # The svd path is pinned above; this targets the Kaiser successive-pairwise
+  # algorithm (varimax_type "kaiser", used by type "EFAtools"/"SPSS"). It optimises
+  # the same Kaiser-normalised varimax criterion as stats::varimax's SVD updates but
+  # via a different engine, so the loadings agree to ~5e-4 rather than exactly; this
+  # pins the rotated loadings only, not the .SV criterion-monitoring path. The bound
+  # sits well below a genuine rotation regression (which shifts loadings by >=1e-2)
+  # while leaving headroom over the cross-engine difference for BLAS portability.
+  ref <- stats::varimax(L, normalize = TRUE, eps = 1e-5)
+  for (ty in c("EFAtools", "SPSS")) {
+    efa <- suppressWarnings(.rotate_model(unrot, rotation = "varimax", type = ty))
+    expect_lt(aligned_max_diff(efa$rot_loadings, ref$loadings), 2e-3)
+  }
+})
+
 test_that("promax reproduces stats::promax", {
   skip_on_cran()
 
