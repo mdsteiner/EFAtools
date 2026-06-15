@@ -39,7 +39,7 @@ factors/components to retain. The function implements the original MAP criterion
 \eqn{\mathrm{TR4}} variant proposed by Velicer, Eaton, and Fava (2000).
 }
 \details{
-#' MAP is based on the idea that systematic common variance is increasingly removed from a
+MAP is based on the idea that systematic common variance is increasingly removed from a
 correlation matrix \eqn{R} as principal components are partialled out. After removing the
 first \eqn{m} components, a residual (partial) covariance matrix is obtained as
 \deqn{C_m = R - A_m A_m',}
@@ -61,8 +61,7 @@ a higher-order variant that places more weight on dominant residual association 
 
 \strong{Input handling.} \code{x} can be a correlation matrix or raw data. If \code{x} is not a
 correlation matrix, correlations are computed using \code{\link[stats:cor]{stats::cor()}} with the requested
-missing-data handling (\code{use}) and association measure (\code{cor_method}). If a correlation
-matrix is supplied, \code{N} must be provided.
+missing-data handling (\code{use}) and association measure (\code{cor_method}).
 
 \strong{Matrix conditioning.} The function stops if the correlation matrix is singular (non-invertible),
 because subsequent computations rely on stable matrix operations. If the correlation matrix is not

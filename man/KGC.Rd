@@ -68,7 +68,7 @@ eigenvalues and the retained solution used for printing and plotting.}
 }
 \description{
 Probably the most popular factor retention criterion. Kaiser and Guttman suggested
-to retain as many factors as there are sample eigenvalues greater than 1.
+to retain as many factors as there are sample eigenvalues greater than or equal to 1.
 This is why the criterion is also known as eigenvalues-greater-than-one rule.
 }
 \details{

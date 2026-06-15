@@ -1,7 +1,7 @@
 #' Kaiser-Guttman Criterion
 #'
 #' Probably the most popular factor retention criterion. Kaiser and Guttman suggested
-#' to retain as many factors as there are sample eigenvalues greater than 1.
+#' to retain as many factors as there are sample eigenvalues greater than or equal to 1.
 #' This is why the criterion is also known as eigenvalues-greater-than-one rule.
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with

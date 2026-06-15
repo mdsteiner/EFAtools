@@ -215,7 +215,8 @@
 #' Note: Rowsums can exceed 1 due to cross-loadings.}
 #' \item{vars_accounted}{A list with the average, standard deviation, minimum,
 #' maximum, and range of explained variances and sums of squared loadings across
-#' the factor solutions. Based on the unrotated loadings.}
+#' the factor solutions. Based on the unrotated loadings if rotation was "none"
+#' or only one factor was extracted, otherwise on the rotated loadings.}
 #' \item{fit_indices}{A matrix containing the average, standard deviation,
 #' minimum, maximum, and range for all applicable fit indices across the respective
 #' factor solutions, and the degrees of freedom (df). If the method argument
@@ -231,8 +232,10 @@
 #' details).}
 #' \item{implementations_grid}{A matrix containing, for each performed EFA,
 #' the setting combination, if an error occurred (logical), the error message
-#' (character), an integer code for convergence as returned by
-#' [`stats::optim()`][stats::optim] (0 indicates successful completion.),
+#' (character), an integer convergence code (0 = converged; for ML and ULS the
+#' code returned by [`stats::optim()`][stats::optim], for PAF 1 if the maximum
+#' number of iterations was reached without meeting the convergence criterion and
+#' 0 otherwise),
 #' if heywood cases occurred (logical, see details for definition), if the
 #' solution was admissible (logical, see details for definition), and the fit
 #' indices.}

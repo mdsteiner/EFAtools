@@ -99,7 +99,7 @@
 #' @param randomStarts numeric. The number of random starts to use in rotations
 #'  that use the `GPArotation` package. Some rotations are prone to produce
 #'  local minima and sometimes many random starts are needed (see the GPArotation
-#'  package documentation for details).
+#'  package documentation for details). Default is 10.
 #' @param ... Additional arguments passed to rotation functions from the `GPArotation` package (e.g., `maxit` for maximum number of iterations).
 #'
 #' @details There are two main ways to use this function. The easiest way is to
@@ -167,7 +167,7 @@
 #' "unnorm" uses the formula from Hendrickson and White (1964), specifically:
 #' `P = abs(A^(k + 1)) / A`,
 #' where A is the unnormalized matrix containing varimax rotated loadings.
-#' "SPSS" uses the normalized varimax rotated loadings. Specifically it used the
+#' "norm" uses the normalized varimax rotated loadings. Specifically it used the
 #' following formula, which can be found in the SPSS 23 and SPSS 27 Algorithms manuals:
 #' `P = abs(A / sqrt(rowSums(A^2))) ^(k + 1) * (sqrt(rowSums(A^2)) / A)`.
 #' As for PAF, the EFAtools type setting combination for promax was the best
@@ -210,9 +210,10 @@
 #' \item{final_eigen}{Eigenvalues obtained from the correlation matrix
 #'  with the final communality estimates as diagonal.}
 #' \item{iter}{The number of iterations needed for convergence.}
-#' \item{convergence}{Integer code for convergence as returned by
-#' [`stats::optim()`][stats::optim] (only for ML and ULS).
-#' 0 indicates successful completion.}
+#' \item{convergence}{Integer convergence code (0 = converged). For ML and ULS
+#'  this is the code returned by [`stats::optim()`][stats::optim]; for PAF it is
+#'  1 if the maximum number of iterations was reached without meeting the
+#'  convergence criterion and 0 otherwise.}
 #' \item{heywood}{A named integer vector indicating which variables have a
 #'  Heywood (improper) case in the unrotated solution; empty if there are none.}
 #' \item{unrot_loadings}{Loading matrix containing the final unrotated loadings.}
