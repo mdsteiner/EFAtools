@@ -71,5 +71,19 @@ test_that("errors etc. are thrown correctly", {
   expect_warning(.rotate_model(unrot_1, rotation = "varimax", type = "EFAtools"), class = "efa_single_factor")
 })
 
+test_that(".VARIMAX_SPSS tolerates a zero-communality row (Kaiser normalisation)", {
+  # A zero-communality row makes 1/sqrt(h2) = Inf; without floored weights Kaiser
+  # normalisation injects NaN that corrupts the rotation or triggers an
+  # uninformative if(NA) error. The floored row must stay zero throughout.
+  L <- matrix(c(0.8, 0.1,
+                0.7, 0.2,
+                0.0, 0.0,
+                0.1, 0.9,
+                0.2, 0.8), ncol = 2, byrow = TRUE)
+  res <- .VARIMAX_SPSS(L, normalize = TRUE)
+  expect_false(anyNA(res$loadings))
+  expect_equal(res$loadings[3, ], c(0, 0))
+})
+
 rm(unrot, vari, unrot_1, vari_1, vari_psych, vari_spss)
 

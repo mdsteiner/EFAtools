@@ -7,8 +7,14 @@
   n_rows <- nrow(x)
 
   if (isTRUE(normalize)) {
+    # Kaiser row normalisation. Floor the weights so a zero-communality row
+    # (h2 = 0) does not divide by zero and inject NaN into the rotation; such a
+    # row stays zero throughout and is restored unchanged below. The length-nrow
+    # w recycles column-major, scaling row i by 1/w[i] (mirrors PROCRUSTES.R).
     h2 <- diag(x %*% t(x))
-    x <- diag(1/sqrt(h2)) %*% x
+    w <- sqrt(h2)
+    w[!is.finite(w) | w < 1e-15] <- 1
+    x <- x / w
   }
 
 
@@ -58,7 +64,7 @@
   }
 
   if (isTRUE(normalize)) {
-    x <- diag(sqrt(h2)) %*% x
+    x <- x * w
   }
 
   # Create output list
