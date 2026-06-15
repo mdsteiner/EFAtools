@@ -1260,70 +1260,83 @@ format.summary.EFA <- function(x, ...) {
                                         show_mi_diagnostics) {
   if (!is.numeric(cutoff) || length(cutoff) != 1L ||
       !is.finite(cutoff) || cutoff < 0) {
-    stop("`cutoff` must be a single finite non-negative number.", call. = FALSE)
+    cli::cli_abort("{.arg cutoff} must be a single finite non-negative number.",
+                   class = "efa_print_invalid_cutoff")
   }
 
   if (!is.numeric(digits) || length(digits) != 1L || !is.finite(digits) ||
       digits < 0 || digits != as.integer(digits)) {
-    stop("`digits` must be a single finite non-negative integer.", call. = FALSE)
+    cli::cli_abort("{.arg digits} must be a single finite non-negative integer.",
+                   class = "efa_print_invalid_digits")
   }
 
   if (!is.numeric(max_name_length) || length(max_name_length) != 1L ||
       !is.finite(max_name_length) || max_name_length < 1 ||
       max_name_length != as.integer(max_name_length)) {
-    stop("`max_name_length` must be a single finite positive integer.", call. = FALSE)
+    cli::cli_abort("{.arg max_name_length} must be a single finite positive integer.",
+                   class = "efa_print_invalid_max_name_length")
   }
 
   if (!.efa_is_top_n(diagnostics_top_n)) {
-    stop("`diagnostics_top_n` must be a positive integer or Inf.", call. = FALSE)
+    cli::cli_abort("{.arg diagnostics_top_n} must be a positive integer or {.val Inf}.",
+                   class = "efa_print_invalid_diagnostics_top_n")
   }
 
   if (!is.numeric(residual_cutoff) || length(residual_cutoff) != 1L ||
       !is.finite(residual_cutoff) || residual_cutoff < 0) {
-    stop("`residual_cutoff` must be a single finite non-negative number.", call. = FALSE)
+    cli::cli_abort("{.arg residual_cutoff} must be a single finite non-negative number.",
+                   class = "efa_print_invalid_residual_cutoff")
   }
 
   if (!.efa_is_top_n(residual_top_n)) {
-    stop("`residual_top_n` must be a positive integer or Inf.", call. = FALSE)
+    cli::cli_abort("{.arg residual_top_n} must be a positive integer or {.val Inf}.",
+                   class = "efa_print_invalid_residual_top_n")
   }
 
   if (!is.logical(show_structure) || length(show_structure) != 1L ||
       is.na(show_structure)) {
-    stop("`show_structure` must be TRUE or FALSE.", call. = FALSE)
+    cli::cli_abort("{.arg show_structure} must be {.val TRUE} or {.val FALSE}.",
+                   class = "efa_print_invalid_show_structure")
   }
 
   if (!is.logical(show_loading_legend) || length(show_loading_legend) != 1L ||
       is.na(show_loading_legend)) {
-    stop("`show_loading_legend` must be TRUE or FALSE.", call. = FALSE)
+    cli::cli_abort("{.arg show_loading_legend} must be {.val TRUE} or {.val FALSE}.",
+                   class = "efa_print_invalid_show_loading_legend")
   }
 
   if (!is.numeric(cross_loading_cutoff) || length(cross_loading_cutoff) != 1L ||
       !is.finite(cross_loading_cutoff) || cross_loading_cutoff < 0) {
-    stop("`cross_loading_cutoff` must be a single finite non-negative number.", call. = FALSE)
+    cli::cli_abort("{.arg cross_loading_cutoff} must be a single finite non-negative number.",
+                   class = "efa_print_invalid_cross_loading_cutoff")
   }
 
   if (!is.numeric(min_primary_gap) || length(min_primary_gap) != 1L ||
       !is.finite(min_primary_gap) || min_primary_gap < 0) {
-    stop("`min_primary_gap` must be a single finite non-negative number.", call. = FALSE)
+    cli::cli_abort("{.arg min_primary_gap} must be a single finite non-negative number.",
+                   class = "efa_print_invalid_min_primary_gap")
   }
 
   if (!is.numeric(min_salient_per_factor) || length(min_salient_per_factor) != 1L ||
       !is.finite(min_salient_per_factor) || min_salient_per_factor < 1 ||
       min_salient_per_factor != as.integer(min_salient_per_factor)) {
-    stop("`min_salient_per_factor` must be a single finite positive integer.", call. = FALSE)
+    cli::cli_abort("{.arg min_salient_per_factor} must be a single finite positive integer.",
+                   class = "efa_print_invalid_min_salient_per_factor")
   }
 
   if (!is.null(max_factors_per_block) &&
       (!is.numeric(max_factors_per_block) || length(max_factors_per_block) != 1L ||
        !is.finite(max_factors_per_block) || max_factors_per_block < 1 ||
        max_factors_per_block != as.integer(max_factors_per_block))) {
-    stop("`max_factors_per_block` must be NULL or a single finite positive integer.", call. = FALSE)
+    cli::cli_abort("{.arg max_factors_per_block} must be {.val NULL} or a single finite positive integer.",
+                   class = "efa_print_invalid_max_factors_per_block")
   }
 
   if (!is.null(show_mi_diagnostics) &&
       (!is.logical(show_mi_diagnostics) || length(show_mi_diagnostics) != 1L ||
        is.na(show_mi_diagnostics))) {
-    stop("`show_mi_diagnostics` must be TRUE, FALSE, or NULL.", call. = FALSE)
+    cli::cli_abort("{.arg show_mi_diagnostics} must be {.val TRUE}, {.val FALSE}, or {.val NULL}.",
+                   class = "efa_print_invalid_show_mi_diagnostics")
   }
 
   invisible(TRUE)

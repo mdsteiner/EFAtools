@@ -119,54 +119,64 @@ format.LOADINGS <- function(x, ...) {
                                           h2, color, max_factor_name_length,
                                           max_factors_per_block, legend) {
   if (!is.matrix(x) || !is.numeric(x)) {
-    stop("`x` must be a numeric matrix.", call. = FALSE)
+    cli::cli_abort("{.arg x} must be a numeric matrix.",
+                   class = "efa_print_invalid_x")
   }
 
   if (nrow(x) < 1L || ncol(x) < 1L) {
-    stop("`x` must have at least one row and one column.", call. = FALSE)
+    cli::cli_abort("{.arg x} must have at least one row and one column.",
+                   class = "efa_print_invalid_x")
   }
 
   if (!is.numeric(cutoff) || length(cutoff) != 1L ||
       !is.finite(cutoff) || cutoff < 0) {
-    stop("`cutoff` must be a single finite non-negative number.", call. = FALSE)
+    cli::cli_abort("{.arg cutoff} must be a single finite non-negative number.",
+                   class = "efa_print_invalid_cutoff")
   }
 
   if (!is.numeric(digits) || length(digits) != 1L || !is.finite(digits) ||
       digits < 0 || digits != as.integer(digits)) {
-    stop("`digits` must be a single finite non-negative integer.", call. = FALSE)
+    cli::cli_abort("{.arg digits} must be a single finite non-negative integer.",
+                   class = "efa_print_invalid_digits")
   }
 
   if (!is.numeric(max_name_length) || length(max_name_length) != 1L ||
       !is.finite(max_name_length) || max_name_length < 1 ||
       max_name_length != as.integer(max_name_length)) {
-    stop("`max_name_length` must be a single finite positive integer.", call. = FALSE)
+    cli::cli_abort("{.arg max_name_length} must be a single finite positive integer.",
+                   class = "efa_print_invalid_max_name_length")
   }
 
   if (!is.null(max_factor_name_length) &&
       (!is.numeric(max_factor_name_length) || length(max_factor_name_length) != 1L ||
        !is.finite(max_factor_name_length) || max_factor_name_length < 1 ||
        max_factor_name_length != as.integer(max_factor_name_length))) {
-    stop("`max_factor_name_length` must be NULL or a single finite positive integer.", call. = FALSE)
+    cli::cli_abort("{.arg max_factor_name_length} must be {.val NULL} or a single finite positive integer.",
+                   class = "efa_print_invalid_max_factor_name_length")
   }
 
   if (!is.null(max_factors_per_block) &&
       (!is.numeric(max_factors_per_block) || length(max_factors_per_block) != 1L ||
        !is.finite(max_factors_per_block) || max_factors_per_block < 1 ||
        max_factors_per_block != as.integer(max_factors_per_block))) {
-    stop("`max_factors_per_block` must be NULL or a single finite positive integer.", call. = FALSE)
+    cli::cli_abort("{.arg max_factors_per_block} must be {.val NULL} or a single finite positive integer.",
+                   class = "efa_print_invalid_max_factors_per_block")
   }
 
   if (!is.logical(color) || length(color) != 1L || is.na(color)) {
-    stop("`color` must be TRUE or FALSE.", call. = FALSE)
+    cli::cli_abort("{.arg color} must be {.val TRUE} or {.val FALSE}.",
+                   class = "efa_print_invalid_color")
   }
 
   if (!is.logical(legend) || length(legend) != 1L || is.na(legend)) {
-    stop("`legend` must be TRUE or FALSE.", call. = FALSE)
+    cli::cli_abort("{.arg legend} must be {.val TRUE} or {.val FALSE}.",
+                   class = "efa_print_invalid_legend")
   }
 
   if (!is.null(h2)) {
     if (!is.numeric(h2) || length(h2) != nrow(x)) {
-      stop("`h2` must be a numeric vector with one value per row of `x`.", call. = FALSE)
+      cli::cli_abort("{.arg h2} must be a numeric vector with one value per row of {.arg x}.",
+                     class = "efa_print_invalid_h2")
     }
   }
 
@@ -244,9 +254,9 @@ format.LOADINGS <- function(x, ...) {
 
   if (isTRUE(has_row_names) && has_complete_h2_names) {
     if (!all(var_names %in% h2_names)) {
-      stop(
-        "If `h2` is named and `x` has row names, names(h2) must include all row names of `x`.",
-        call. = FALSE
+      cli::cli_abort(
+        "If {.arg h2} is named and {.arg x} has row names, {.code names(h2)} must include all row names of {.arg x}.",
+        class = "efa_print_invalid_h2"
       )
     }
     h2 <- h2[var_names]

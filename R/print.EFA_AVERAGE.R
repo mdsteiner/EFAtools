@@ -172,7 +172,11 @@ print.EFA_AVERAGE <- function(x, stat = c("average", "range"),
 
     } else {
 
-      message(cli::col_cyan(cli::symbol$info, " The factor solution contained more than 10 factors, no plot was generated. If you still want to create the plot, use 'plot(", substitute(x) ,")'.\n"))
+      obj_name <- deparse1(substitute(x))
+      cli::cli_inform(c(
+        "i" = "The factor solution contained more than 10 factors, no plot was generated.",
+        "i" = "If you still want to create the plot, use {.code plot({obj_name})}."
+      ))
 
     }
 

@@ -492,4 +492,33 @@ rm(efa_cor, efa_raw, efa_psych, efa_spss, efa_ml, efa_uls, efa_equa, efa_quart,
    efa_paf_moderate, efa_ml_moderate, efa_uls_moderate, x, y, z, dat_sing, cor_sing,
    cor_nposdef)
 
+test_that("print.EFA argument validators raise classed conditions", {
+  efa <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500)
+
+  expect_error(print(efa, cutoff = -1), class = "efa_print_invalid_cutoff")
+  expect_error(print(efa, digits = 1.5), class = "efa_print_invalid_digits")
+  expect_error(print(efa, max_name_length = 0),
+               class = "efa_print_invalid_max_name_length")
+  expect_error(print(efa, diagnostics_top_n = -1),
+               class = "efa_print_invalid_diagnostics_top_n")
+  expect_error(print(efa, residual_cutoff = -1),
+               class = "efa_print_invalid_residual_cutoff")
+  expect_error(print(efa, residual_top_n = 0),
+               class = "efa_print_invalid_residual_top_n")
+  expect_error(print(efa, show_structure = NA),
+               class = "efa_print_invalid_show_structure")
+  expect_error(print(efa, show_loading_legend = NA),
+               class = "efa_print_invalid_show_loading_legend")
+  expect_error(print(efa, cross_loading_cutoff = -1),
+               class = "efa_print_invalid_cross_loading_cutoff")
+  expect_error(print(efa, min_primary_gap = -1),
+               class = "efa_print_invalid_min_primary_gap")
+  expect_error(print(efa, min_salient_per_factor = 0),
+               class = "efa_print_invalid_min_salient_per_factor")
+  expect_error(print(efa, max_factors_per_block = 0),
+               class = "efa_print_invalid_max_factors_per_block")
+  expect_error(print(efa, show_mi_diagnostics = NA),
+               class = "efa_print_invalid_show_mi_diagnostics")
+})
+
 

@@ -88,14 +88,30 @@
                      abs_eig = abs_eigen, crit_type = crit_type,
                      max_iter = max_iter)
 
+  # Negative eigenvalues make the communality estimates (square roots of the
+  # eigenvalues) undefined. The kernel flags this rather than aborting so the
+  # condition can be raised here as a classed R condition.
+  if (isTRUE(L_list$neg_eigen)) {
+    cli::cli_abort(
+      c("Negative eigenvalues detected; cannot compute communality estimates.",
+        "i" = 'Try {.code init_comm = "unity"} or {.code init_comm = "mac"}.'),
+      class = "efa_paf_negative_eigen"
+    )
+  }
+
   h2 <- as.vector(L_list$h2)
   iter <- L_list$iter
   L <- L_list$L
 
-  # save convergence status (0 = converged, 1 = not converged (maximum number of
-  # iterations reached))
-  if (iter >= max_iter){
+  # save convergence status (0 = converged, 1 = not converged): the procedure has
+  # not converged if the final change in the communality estimates still exceeds
+  # the convergence criterion.
+  if (isTRUE(L_list$delta > criterion)) {
     convergence <- 1
+    cli::cli_warn(
+      "Reached the maximum number of iterations without convergence; results may not be interpretable.",
+      class = "efa_paf_nonconvergence"
+    )
   } else {
     convergence <- 0
   }

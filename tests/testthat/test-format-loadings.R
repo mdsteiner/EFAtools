@@ -113,3 +113,41 @@ test_that("format.SLLOADINGS returns plain text even when styling is enabled", {
   # no trailing blank element
   expect_true(nzchar(plain[length(plain)]))
 })
+
+test_that("print.LOADINGS argument validators raise classed conditions", {
+  L <- make_loadings()
+
+  expect_error(print(L, cutoff = -1), class = "efa_print_invalid_cutoff")
+  expect_error(print(L, digits = 1.5), class = "efa_print_invalid_digits")
+  expect_error(print(L, max_name_length = 0),
+               class = "efa_print_invalid_max_name_length")
+  expect_error(print(L, max_factor_name_length = 0),
+               class = "efa_print_invalid_max_factor_name_length")
+  expect_error(print(L, max_factors_per_block = 0),
+               class = "efa_print_invalid_max_factors_per_block")
+  expect_error(print(L, color = NA), class = "efa_print_invalid_color")
+  expect_error(print(L, legend = NA), class = "efa_print_invalid_legend")
+  # h2 with the wrong length
+  expect_error(print(L, h2 = c(0.5, 0.5)), class = "efa_print_invalid_h2")
+
+  # x that is not a valid numeric matrix is rejected by the validator
+  valid_args <- list(cutoff = .3, digits = 3, max_name_length = 10, h2 = NULL,
+                     color = TRUE, max_factor_name_length = NULL,
+                     max_factors_per_block = NULL, legend = FALSE)
+  expect_error(do.call(.validate_loadings_print_args,
+                       c(list(x = "not a matrix"), valid_args)),
+               class = "efa_print_invalid_x")
+  expect_error(do.call(.validate_loadings_print_args,
+                       c(list(x = matrix(numeric(0), 0, 0)), valid_args)),
+               class = "efa_print_invalid_x")
+})
+
+test_that("a named h2 that omits a row name raises a classed condition", {
+  # make_loadings() has row names; a named h2 missing one of them must abort in
+  # .align_loadings_h2 rather than silently mismatching communalities to rows.
+  L <- make_loadings()
+  expect_error(
+    print(L, h2 = c(fun = .7, friends_long_name = .6, enjoy = .6, wrong = .5)),
+    class = "efa_print_invalid_h2"
+  )
+})

@@ -54,6 +54,9 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
   // Start above the criterion so the iteration runs at least once even when
   // criterion >= 1 (EFA() rejects that, but keep the kernel self-contained).
   double delta = criterion + 1.0;
+  // Flagged (instead of aborting here) when an eigenvalue turns negative in a
+  // non-absolute branch, so PAF() can raise a classed R condition.
+  bool neg_eigen = false;
   arma::vec tv(R.n_cols);
   arma::vec Lambda;
   arma::mat V;
@@ -80,7 +83,8 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
           V = V.cols(arma::find(idx));
 
           if (any(Lambda < 0)) {
-            stop("Negative Eigenvalues detected; cannot compute communality estimates. Try again with init_comm = 'unity' or 'mac'");
+            neg_eigen = true;
+            break;
           }
 
           // compute the loadings from the eigenvector matrix and diagonal
@@ -116,7 +120,8 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
           V = V.cols(arma::find(idx));
 
           if (any(Lambda < 0)) {
-            stop("Negative Eigenvalues detected; cannot compute communality estimates. Try again with init_comm = 'unity' or 'mac'");
+            neg_eigen = true;
+            break;
           }
 
           // compute the loadings from the eigenvector matrix and diagonal
@@ -158,7 +163,8 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
           V = V.cols(arma::find(idx));
 
           if (any(Lambda < 0)) {
-            stop("Negative Eigenvalues detected; cannot compute communality estimates. Try again with init_comm = 'unity' or 'mac'");
+            neg_eigen = true;
+            break;
           }
 
           // compute the loadings from the eigenvector matrix and diagonal
@@ -196,7 +202,8 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
           V = V.cols(arma::find(idx));
 
           if (any(Lambda < 0)) {
-            stop("Negative Eigenvalues detected; cannot compute communality estimates. Try again with init_comm = 'unity' or 'mac'");
+            neg_eigen = true;
+            break;
           }
 
           // compute the loadings from the eigenvector matrix and diagonal
@@ -375,14 +382,14 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
 
   }
 
-  // break if after maximum iterations there was no convergence
-  if (iter >= max_iter){
-    warning("Reached maximum number of iterations without convergence. Results may not be interpretable.");
-  }
-
+  // Return the final change in the communality estimates and the
+  // negative-eigenvalue flag so PAF() can raise the convergence and
+  // negative-eigenvalue conditions as classed R conditions.
   return Rcpp::List::create(Rcpp::Named("h2") = h2,
                             Rcpp::Named("R") = R,
                             Rcpp::Named("iter") = iter,
-                            Rcpp::Named("L") = L);
+                            Rcpp::Named("L") = L,
+                            Rcpp::Named("delta") = delta,
+                            Rcpp::Named("neg_eigen") = neg_eigen);
 }
 

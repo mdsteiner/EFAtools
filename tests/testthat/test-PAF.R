@@ -267,11 +267,11 @@ test_that("warnings and errors are thrown correctly", {
                       type = "SPSS", abs_eigen = TRUE), class = "efa_type_override")
   expect_error(.estimate_model(method = "PAF",IDS2_R, n_factors = 7, N = 1991, max_iter = 500, type = "none",
                     init_comm = "smc", criterion = 1e-4, criterion_type = "sum",
-                    abs_eigen = FALSE), "Negative Eigenvalues detected; cannot compute communality estimates. Try again with init_comm = 'unity' or 'mac'")
+                    abs_eigen = FALSE), class = "efa_paf_negative_eigen")
   expect_error(.estimate_model(method = "PAF",IDS2_R, n_factors = 7, N = 1991, max_iter = 500, type = "none",
                     init_comm = "smc", criterion = 1e-4,
                     criterion_type = "max_individual",
-                    abs_eigen = FALSE), "Negative Eigenvalues detected; cannot compute communality estimates. Try again with init_comm = 'unity' or 'mac'")
+                    abs_eigen = FALSE), class = "efa_paf_negative_eigen")
 })
 
 rm(paf_efatools, paf_psych, paf_spss, paf_none, paf_mac_t, paf_mac_f, paf_F1_t,
