@@ -142,10 +142,18 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   # With which number of factors does the chi square first become
   # non-significant?
 
-  # First check if 0 factors already result in nonsignificant chi square
-  p_null <- temp$fit_indices$p_null
+  # Null-model (zero-factor) statistics. These depend only on R and N (the
+  # model-implied matrix is the identity), so compute them directly rather than
+  # reading them off the last fitted EFA, whose fit_indices come back NA when
+  # that model is degenerate (e.g. a Heywood / non-positive-definite case).
+  # Mirrors the null-model block in .gof().
+  m <- ncol(R)
+  chi_null <- .null_chisq(R, N)
+  df_null <- (m^2 - m) / 2
+  p_null <- stats::pchisq(chi_null, df_null, lower.tail = FALSE)
 
-    if(p_null > 0.05){
+  # First check if 0 factors already result in nonsignificant chi square
+    if(isTRUE(p_null > 0.05)){
 
       nfac_chi <- 0
 
@@ -160,15 +168,13 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
     }
 
   # Calculate RMSEA (incl. lower bound of 90% CI) and AIC for the null model
-  chi_null <- temp$fit_indices$chi_null
-  df_null <- temp$fit_indices$df_null
-
+  # (chi_null and df_null were computed above from R and N).
   RMSEA_LB_null <- sqrt(.rmsea_lambda(chi_null, df_null, .95) / (df_null * (N - 1)))
 
   AIC_null <- chi_null - 2 * df_null
 
   # With which number of factors does the RMSEA lower bound first fall below .05?
-  if(RMSEA_LB_null < .05){
+  if(isTRUE(RMSEA_LB_null < .05)){
 
     nfac_RMSEA <- 0
 

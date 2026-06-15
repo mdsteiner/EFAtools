@@ -81,6 +81,40 @@ test_that("RMSEA_LB and AIC values are correct", {
   expect_equal(aic_zero[-1], c(-10, -2), tolerance = 0.1)
 })
 
+test_that("null-model statistics are computed from R and N, not the fitted model", {
+  # The zero-factor (null) statistics depend only on the correlation matrix and
+  # N. SMT must derive them directly so they stay finite even when the
+  # max-factor model is degenerate (a Heywood / non-positive-definite case
+  # leaves that model's fit_indices NA, which previously crashed the p_null and
+  # RMSEA_LB_null comparisons).
+  R <- test_models$baseline$cormat
+  N <- 500
+
+  # SMT smooths a non-positive-definite input before use (the trigger is a
+  # smallest eigenvalue below .Machine$double.eps; see .prepare_cor_input). The
+  # baseline matrix clears that threshold, so smoothing is a no-op and the R used
+  # inside SMT equals the input here; enforce that so the recomputation is valid.
+  expect_true(all(eigen(R, symmetric = TRUE, only.values = TRUE)$values >=
+                    .Machine$double.eps))
+
+  m <- ncol(R)
+  chi_null <- .null_chisq(R, N)
+  df_null <- (m^2 - m) / 2
+  p_null <- stats::pchisq(chi_null, df_null, lower.tail = FALSE)
+  RMSEA_LB_null <- sqrt(.rmsea_lambda(chi_null, df_null, .95) / (df_null * (N - 1)))
+  AIC_null <- chi_null - 2 * df_null
+
+  # the null model is the first element of each criterion record's y vector
+  null_out <- c(chi   = .retention_record(smt_cor, "chi")$y[1],
+                RMSEA = .retention_record(smt_cor, "RMSEA")$y[1],
+                AIC   = .retention_record(smt_cor, "AIC")$y[1])
+  expect_equal(null_out, c(chi = p_null, RMSEA = RMSEA_LB_null, AIC = AIC_null))
+
+  # finite null statistics in the SMT output are what keep the comparison guards
+  # from crashing
+  expect_false(anyNA(null_out))
+})
+
 test_that("settings are returned correctly", {
   expect_named(smt_cor$settings, c("N", "use", "cor_method"))
   expect_named(smt_raw$settings, c("N", "use", "cor_method"))
