@@ -19,16 +19,16 @@ static void eig_sym_checked(arma::vec& eigval, arma::mat& eigvec,
   }
 }
 
-// Objective and gradient of the maximum-likelihood factor model, fused so that a
-// single eigendecomposition of the rescaled correlation matrix serves both. The
-// objective is the discrepancy minimised by stats::factanal()/psych; the gradient
-// is its derivative with respect to the uniquenesses psi (adapted from
-// stats::factanal()). A one-slot cache keyed on psi holds the last decomposition's
-// objective, gradient, and factor loadings, so the optimiser's paired
-// value/gradient evaluations at the same psi decompose only once.
-class FaFunctor : public roptim::Functor {
+// Shared scaffolding for the bounded L-BFGS-B factor estimators. Each estimator's
+// objective and gradient are fused so that a single eigendecomposition of the
+// rescaled correlation matrix per psi serves both, and a one-slot cache keyed on
+// psi holds the last decomposition's objective, gradient, and factor loadings, so
+// the optimiser's paired value/gradient evaluations at the same psi decompose only
+// once. This base owns the cache, the value/gradient/loadings accessors, and the
+// n_fac bound check; each estimator overrides compute() with its criterion math.
+class FactorFunctor : public roptim::Functor {
 public:
-  FaFunctor(const arma::mat& R, int n_fac) : R_(R), n_fac_(n_fac) {
+  FactorFunctor(const arma::mat& R, int n_fac) : R_(R), n_fac_(n_fac) {
     // The eigen-extraction reads the largest n_fac eigenpairs and would index past
     // the available eigenvalues if n_fac >= ncol(R); reject that up front.
     if (n_fac < 1 || static_cast<arma::uword>(n_fac) >= R.n_cols) {
@@ -57,7 +57,38 @@ public:
         arma::all(psi == cached_psi_)) {
       return;
     }
+    compute(psi, cached_f_, cached_g_, cached_load_);
+    cached_psi_ = psi;
+    valid_ = true;
+  }
 
+protected:
+  // Criterion-specific objective f, gradient g, and factor loadings load from a
+  // single eigendecomposition of the rescaled correlation matrix at psi.
+  virtual void compute(const arma::vec& psi, double& f, arma::vec& g,
+                       arma::mat& load) = 0;
+
+  const arma::mat& R_;
+  const int n_fac_;
+
+private:
+  arma::vec cached_psi_;
+  double cached_f_ = 0.0;
+  arma::vec cached_g_;
+  arma::mat cached_load_;
+  bool valid_ = false;
+};
+
+// Maximum-likelihood factor model. The objective is the discrepancy minimised by
+// stats::factanal()/psych; the gradient is its derivative with respect to the
+// uniquenesses psi (adapted from stats::factanal()).
+class FaFunctor : public FactorFunctor {
+public:
+  using FactorFunctor::FactorFunctor;
+
+protected:
+  void compute(const arma::vec& psi, double& f, arma::vec& g,
+               arma::mat& load) override {
     // One eigendecomposition of Rs = D^-1/2 R D^-1/2 (D = diag(psi)) feeds the
     // objective, gradient, and loadings.
     arma::mat sc = arma::diagmat(1.0 / sqrt(psi));
@@ -72,80 +103,37 @@ public:
 
     // objective: -sum(log(e) - e) over the smallest p - n_fac eigenvalues
     arma::vec e = lambda.tail(lambda.n_elem - n_fac_);
-    cached_f_ = -(arma::accu(arma::log(e) - e) - n_fac_ + (int)R_.n_rows);
+    f = -(arma::accu(arma::log(e) - e) - n_fac_ + (int)R_.n_rows);
 
     // factor loadings from the leading n_fac eigenpairs (also used by the gradient)
     arma::vec top = lambda.head(n_fac_) - 1.0;
     top.elem(arma::find(top < 0)).zeros();
-    arma::mat load = arma::diagmat(arma::sqrt(psi)) *
+    load = arma::diagmat(arma::sqrt(psi)) *
       (V.head_cols(n_fac_) * arma::diagmat(arma::sqrt(top)));
 
     // gradient of the objective with respect to psi
-    arma::mat g = load * load.t() + arma::diagmat(psi) - R_;
-    cached_g_ = g.diag() / arma::pow(psi, 2);
-
-    cached_load_ = std::move(load);
-    cached_psi_ = psi;
-    valid_ = true;
+    arma::mat gmat = load * load.t() + arma::diagmat(psi) - R_;
+    g = gmat.diag() / arma::pow(psi, 2);
   }
-
-private:
-  const arma::mat& R_;
-  const int n_fac_;
-
-  arma::vec cached_psi_;
-  double cached_f_ = 0.0;
-  arma::vec cached_g_;
-  arma::mat cached_load_;
-  bool valid_ = false;
 };
 
-// Objective and gradient of the unweighted-least-squares (minres) factor model,
-// fused so that a single eigendecomposition of R - diag(psi) serves both. The
-// objective is the sum of squared strictly-lower off-diagonal residuals of the
-// reproduced correlation matrix (the diagonal is absorbed by the free
-// uniquenesses); the gradient is the diagonal of the full residual (adapted from
-// the psych package). A one-slot cache keyed on psi holds the last
-// decomposition's objective, gradient, and factor loadings, so the optimiser's
-// paired value/gradient evaluations at the same psi decompose only once.
+// Unweighted-least-squares (minres) factor model. The objective is the sum of
+// squared strictly-lower off-diagonal residuals of the reproduced correlation
+// matrix (the diagonal is absorbed by the free uniquenesses); the gradient is the
+// diagonal of the full residual (adapted from the psych package).
 //
-// The objective and gradient eigen-floor the shared decomposition differently
-// (the gradient clips negative eigenvalues to 0; the objective lifts eigenvalues
-// below machine epsilon to eps*100), so refresh() forms a loading matrix for
-// each. The gradient's floor-at-0 loadings are also the reported solution, the
-// extraction stats::eigen() would give at the optimum.
-class UlsFunctor : public roptim::Functor {
+// The objective and gradient eigen-floor the shared decomposition differently (the
+// gradient clips negative eigenvalues to 0; the objective lifts eigenvalues below
+// machine epsilon to eps*100), so compute() forms a loading matrix for each. The
+// gradient's floor-at-0 loadings are also the reported solution, the extraction
+// stats::eigen() would give at the optimum.
+class UlsFunctor : public FactorFunctor {
 public:
-  UlsFunctor(const arma::mat& R, int n_fac) : R_(R), n_fac_(n_fac) {
-    // The eigen-extraction reads the largest n_fac eigenpairs and would index past
-    // the available eigenvalues if n_fac >= ncol(R); reject that up front.
-    if (n_fac < 1 || static_cast<arma::uword>(n_fac) >= R.n_cols) {
-      Rcpp::stop("n_fac must be at least 1 and smaller than the number of "
-                 "variables (got n_fac = %d for %d variables).",
-                 n_fac, static_cast<int>(R.n_cols));
-    }
-  }
+  using FactorFunctor::FactorFunctor;
 
-  double operator()(const arma::vec& psi) override {
-    refresh(psi);
-    return cached_f_;
-  }
-
-  void Gradient(const arma::vec& psi, arma::vec& grad) override {
-    refresh(psi);
-    grad = cached_g_;
-  }
-
-  // Floor-at-0 factor loadings of the most recently evaluated psi; call refresh()
-  // with the optimum first so they correspond to the solution.
-  const arma::mat& loadings() const { return cached_load_; }
-
-  void refresh(const arma::vec& psi) {
-    if (valid_ && psi.n_elem == cached_psi_.n_elem &&
-        arma::all(psi == cached_psi_)) {
-      return;
-    }
-
+protected:
+  void compute(const arma::vec& psi, double& f, arma::vec& g,
+               arma::mat& load) override {
     // One eigendecomposition of Rs = R with diagonal replaced by 1 - psi
     // (= R - diag(psi) since R is a correlation matrix) feeds both criteria.
     arma::mat Rs = R_;
@@ -163,8 +151,8 @@ public:
     arma::vec lam_g = lambda;
     lam_g.elem(arma::find(lam_g < 0)).zeros();
     arma::mat load_g = V * arma::diagmat(arma::sqrt(lam_g));
-    arma::mat g = load_g * load_g.t() + arma::diagmat(psi) - R_;
-    cached_g_ = g.diag();
+    arma::mat gmat = load_g * load_g.t() + arma::diagmat(psi) - R_;
+    g = gmat.diag();
 
     // objective: lift eigenvalues below machine epsilon to eps*100, then sum the
     // squared strictly-lower off-diagonal residuals (the diagonal, absorbed by the
@@ -173,22 +161,10 @@ public:
     lam_f.elem(arma::find(lam_f < arma::datum::eps)).fill(arma::datum::eps * 100);
     arma::mat load_f = V * arma::diagmat(arma::sqrt(lam_f));
     arma::mat resid = arma::trimatl(Rs - load_f * load_f.t(), -1);
-    cached_f_ = arma::accu(arma::square(resid));
+    f = arma::accu(arma::square(resid));
 
-    cached_load_ = std::move(load_g);
-    cached_psi_ = psi;
-    valid_ = true;
+    load = std::move(load_g);
   }
-
-private:
-  const arma::mat& R_;
-  const int n_fac_;
-
-  arma::vec cached_psi_;
-  double cached_f_ = 0.0;
-  arma::vec cached_g_;
-  arma::mat cached_load_;
-  bool valid_ = false;
 };
 
 // Raw result of the bounded optimiser, before the method-specific post-processing.
