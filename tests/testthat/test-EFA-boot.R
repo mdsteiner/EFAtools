@@ -125,6 +125,56 @@ test_that("np-boot is reproducible with a fixed seed", {
   expect_equal(a$boot.SE$Phi, b$boot.SE$Phi)
 })
 
+test_that("np-boot with a fixed seed is reproducible at 1 vs 2 workers", {
+  skip_on_cran()
+  # The replicate fits are parallelised across workers with future.apply, and
+  # future.seed = TRUE binds each replicate's RNG stream to its index. With a fixed
+  # `seed` the bootstrap must therefore return the same result regardless of the
+  # number of workers. The comparison uses a small tolerance rather than bit-for-bit
+  # equality: the worker fits run in separate processes whose BLAS/LAPACK may sum in a
+  # different order, so results can differ in the last bit or two while remaining
+  # numerically equivalent. The multisession workers are fresh R processes that load
+  # the installed package, so run this under devtools::check() / after
+  # devtools::install() for the worker code to match the main process. (multicore is
+  # unavailable on Windows.)
+  old_plan <- future::plan()
+  on.exit(future::plan(old_plan), add = TRUE)
+
+  run <- function() suppressWarnings(suppressMessages(
+    EFA(GRiPS_raw, n_factors = 2, method = "PAF", rotation = "promax",
+        se = "np-boot", b_boot = 12, seed = 2024)
+  ))
+
+  future::plan(future::sequential)
+  one <- run()
+
+  future::plan(future::multisession, workers = 2)
+  two <- run()
+
+  expect_equal(one$boot.arrays, two$boot.arrays, tolerance = 1e-10)
+  expect_equal(one$boot.SE, two$boot.SE, tolerance = 1e-10)
+  expect_equal(one$boot.CI, two$boot.CI, tolerance = 1e-10)
+})
+
+test_that("a supplied seed leaves the caller's RNG stream unchanged", {
+  # Passing `seed` must not have a lasting side effect on the global RNG: the stream
+  # is restored on exit, so a draw taken after a seeded bootstrap is identical to one
+  # taken without the call having happened.
+  set.seed(1)
+  state_before <- get(".Random.seed", envir = globalenv(), inherits = FALSE)
+
+  # An oblique rotation exercises every RNG consumer the restore must neutralize:
+  # the case resampling, the point-estimate rotation random starts, and the oblique
+  # Procrustes random starts that run after the replicate fits.
+  invisible(suppressWarnings(suppressMessages(
+    EFA(GRiPS_raw, n_factors = 2, method = "PAF", rotation = "promax",
+        se = "np-boot", b_boot = 6, seed = 99)
+  )))
+
+  expect_identical(get(".Random.seed", envir = globalenv(), inherits = FALSE),
+                   state_before)
+})
+
 test_that("np-boot on a correlation matrix warns and disables the bootstrap", {
   expect_warning(
     res <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,

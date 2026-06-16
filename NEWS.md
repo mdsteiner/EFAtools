@@ -29,6 +29,18 @@
 * `EFA()`, `SL()`, and `EFA_AVERAGE()` now accept `method = "MINRES"` as a synonym for
   `method = "ULS"`. Minimum residual and unweighted least squares are two names for the same
   estimator and return identical results.
+* `EFA()` gains a `seed` argument and now fits the non-parametric bootstrap replicates
+  (`se = "np-boot"`) in parallel across replicates via the `future` framework. By default the
+  replicates are still fitted sequentially; register a plan with `future::plan()` (for example
+  `future::plan(future::multisession, workers = 2)`) to fit them in parallel. With a fixed
+  `seed`, the bootstrap is reproducible and returns the same result regardless of the number of
+  workers. Because each worker runs its own linear algebra, keep the number of workers small if
+  your `BLAS` is multi-threaded, to avoid over-subscribing the available cores.
+* The bootstrapped standard errors and confidence intervals for rotated loadings from `EFA(se =
+  "np-boot")` can differ slightly from earlier versions. The oblique re-rotation of the bootstrap
+  replicates is now carried out in a single compiled pass (with its warm start computed in C++),
+  and the order in which random numbers are drawn has changed. The results are unchanged in
+  distribution and are now reproducible and independent of the number of workers.
 
 ## Bug Fixes
 

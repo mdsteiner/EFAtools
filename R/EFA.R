@@ -100,6 +100,13 @@
 #'  that use the `GPArotation` package. Some rotations are prone to produce
 #'  local minima and sometimes many random starts are needed (see the GPArotation
 #'  package documentation for details). Default is 10.
+#' @param seed numeric. An optional seed for the random-number generator used by the
+#'  non-parametric bootstrap (`se = "np-boot"`), i.e. for the case resampling, the
+#'  rotation random starts, and the Procrustes random starts. Setting it makes the
+#'  bootstrap reproducible and, importantly, independent of the number of parallel
+#'  workers (see Details); the caller's random-number stream is restored afterwards,
+#'  so supplying a seed leaves no lasting effect on it. Default is `NULL`, which uses
+#'  (and advances) the current state of the generator.
 #' @param ... Additional arguments passed to rotation functions from the `GPArotation` package (e.g., `maxit` for maximum number of iterations).
 #'
 #' @details There are two main ways to use this function. The easiest way is to
@@ -197,6 +204,15 @@
 #' `start_method` is needed to determine the starting values for the
 #' optimization procedure. Default for this argument is "psych" which takes
 #' the starting values specified in [psych::fa()].
+#'
+#' When `se = "np-boot"`, the bootstrap replicate fits are run in parallel across
+#' replicates with the `future` framework. By default they run sequentially; to run
+#' them in parallel, register a plan with [future::plan()] (e.g.
+#' `future::plan(future::multisession, workers = 2)`; see examples). With a fixed
+#' `seed` the bootstrap is reproducible and yields the same result regardless of the
+#' number of workers. Each worker runs its own (Armadillo) linear algebra, so if your
+#' `BLAS` is multi-threaded, limit the number of workers (or the BLAS threads) to
+#' avoid over-subscribing the available cores.
 #'
 #'
 #' @return A list of class EFA containing (a subset of) the following:
@@ -301,6 +317,16 @@
 #'                P_type = "unnorm", precision= 1e-5, order_type = "eigen",
 #'                varimax_type = "svd")
 #'
+#' \dontrun{
+#' # Bootstrap standard errors from raw data, reproducible via a fixed seed and run
+#' # in parallel across replicates. Keep the number of workers small (here 2) so the
+#' # workers do not over-subscribe the cores against a multi-threaded BLAS.
+#' future::plan(future::multisession, workers = 2)
+#' EFA_boot <- EFA(GRiPS_raw, n_factors = 1, method = "PAF", rotation = "none",
+#'                 se = "np-boot", b_boot = 1000, seed = 42)
+#' future::plan(future::sequential)
+#' }
+#'
 EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES"),
                 rotation = c("none", "varimax", "equamax", "quartimax", "geominT",
                              "bentlerT", "bifactorT", "promax", "oblimin",
@@ -317,7 +343,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES"),
                 order_type = NA, start_method = "psych",
                 cor_method = c("pearson", "spearman", "kendall"),
                 b_boot = 1000, ci = .95,
-                randomStarts = 10,
+                randomStarts = 10, seed = NULL,
                 ...) {
 
   # Perform argument checks
@@ -366,6 +392,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES"),
   checkmate::assert_choice(order_type, c("eigen", "ss_factors", NA))
   checkmate::assert_integerish(b_boot, len = 1, any.missing = FALSE)
   checkmate::assert_number(ci, lower = 0, upper = 1)
+  checkmate::assert_int(seed, null.ok = TRUE)
 
   # The common-factor model requires fewer factors than variables; with
   # n_factors >= n_variables it is not identified and the eigenvalue-based
@@ -410,6 +437,31 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES"),
   N <- prep$N
 
   if (!is_cormat && isTRUE(np_boot)) {
+
+    # A fixed seed makes the whole bootstrap reproducible and independent of the
+    # number of parallel workers: the case resampling, the rotation random starts,
+    # and the Procrustes random starts all run from this state. The case resampling
+    # advances the global RNG by a b_boot-dependent amount; the parallel replicate
+    # fit then adds a fixed, worker-count-independent step when future.seed = TRUE
+    # derives a per-replicate L'Ecuyer stream. Both advances are deterministic given
+    # the seed, so the downstream draws -- and the result -- are identical at any
+    # number of workers. The caller's RNG stream is saved and restored afterwards --
+    # or, if none existed yet, the seed set.seed() creates is removed again -- so
+    # EFA() leaves no side effect on it.
+    if (!is.null(seed)) {
+      seed_existed <- exists(".Random.seed", envir = globalenv(), inherits = FALSE)
+      saved_seed <- if (seed_existed) {
+        get(".Random.seed", envir = globalenv(), inherits = FALSE)
+      }
+      on.exit({
+        if (seed_existed) {
+          assign(".Random.seed", saved_seed, envir = globalenv())
+        } else if (exists(".Random.seed", envir = globalenv(), inherits = FALSE)) {
+          rm(".Random.seed", envir = globalenv())
+        }
+      }, add = TRUE)
+      set.seed(seed)
+    }
 
     m <- ncol(R)
     # Resample the cases the correlation matrix was actually built from. Under
@@ -616,30 +668,31 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES"),
 
 .boot_fun <- function(x, b, call_fun, ...) {
 
-  boot_list <- vector("list", b)
-  n_nonconverged <- 0L
+  # The per-replicate fits are independent and estimation is RNG-free, so they are
+  # run in parallel across replicates at the R/process level with future.apply. A
+  # parallel processing plan can be selected with future::plan(); the default plan
+  # runs sequentially. future.seed = TRUE assigns each replicate its own reproducible
+  # L'Ecuyer-CMRG stream, so the bootstrap is reproducible and independent of the
+  # number of workers (any RNG a fitter might draw is bound to the replicate index,
+  # never to the worker).
+  #
+  # A replicate whose (possibly degenerate) resampled correlation matrix cannot be
+  # fit returns NULL and is skipped later, rather than aborting the whole call.
+  #
+  # Per-replicate warnings are suppressed here: they repeat identical information b
+  # times. The type/preset-override notice depends only on the (type, pinned
+  # arguments) combination, which is the same for every replicate and already
+  # surfaced once by the point-estimate fit; the iterative fitter's max-iteration
+  # warning would otherwise fire once per non-converged replicate. Non-convergence
+  # is instead tallied and reported once, after all replicates have been fitted.
+  boot_list <- future.apply::future_lapply(seq_len(b), function(boot_i) {
+    tryCatch(suppressWarnings(call_fun(x[,, boot_i], ...)),
+             error = function(e) NULL)
+  }, future.seed = TRUE)
 
-  for (boot_i in seq_len(b)) {
-
-    # save complete output, as this has to be passed to rotation method. A
-    # replicate whose (possibly degenerate) resampled correlation matrix cannot
-    # be fit is left as its pre-allocated NULL and skipped later, rather than
-    # aborting the whole call. Note `boot_list[[boot_i]] <- NULL` would *delete*
-    # the element, so only assign on success.
-    #
-    # Per-replicate warnings are suppressed here: they repeat identical
-    # information b times. The type/preset-override notice depends only on the
-    # (type, pinned arguments) combination, which is the same for every replicate
-    # and already surfaced once by the point-estimate fit; the iterative fitter's
-    # max-iteration warning would otherwise fire once per non-converged replicate.
-    # Non-convergence is instead tallied and reported once after the loop.
-    fit_i <- tryCatch(suppressWarnings(call_fun(x[,, boot_i], ...)),
-                      error = function(e) NULL)
-    if (!is.null(fit_i)) {
-      boot_list[[boot_i]] <- fit_i
-      if (isTRUE(fit_i$convergence != 0)) n_nonconverged <- n_nonconverged + 1L
-    }
-  }
+  n_nonconverged <- sum(vapply(boot_list,
+                               function(fit_i) isTRUE(fit_i$convergence != 0),
+                               logical(1)))
 
   if (n_nonconverged > 0L) {
     cli::cli_warn(

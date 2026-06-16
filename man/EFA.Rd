@@ -48,6 +48,7 @@ EFA(
   b_boot = 1000,
   ci = 0.95,
   randomStarts = 10,
+  seed = NULL,
   ...
 )
 }
@@ -168,6 +169,14 @@ Must be between 0 and 1. Default ist .95 for 95\% CIs.}
 that use the \code{GPArotation} package. Some rotations are prone to produce
 local minima and sometimes many random starts are needed (see the GPArotation
 package documentation for details). Default is 10.}
+
+\item{seed}{numeric. An optional seed for the random-number generator used by the
+non-parametric bootstrap (\code{se = "np-boot"}), i.e. for the case resampling, the
+rotation random starts, and the Procrustes random starts. Setting it makes the
+bootstrap reproducible and, importantly, independent of the number of parallel
+workers (see Details); the caller's random-number stream is restored afterwards,
+so supplying a seed leaves no lasting effect on it. Default is \code{NULL}, which uses
+(and advances) the current state of the generator.}
 
 \item{...}{Additional arguments passed to rotation functions from the \code{GPArotation} package (e.g., \code{maxit} for maximum number of iterations).}
 }
@@ -323,6 +332,15 @@ arguments are needed. For ML, an additional argument
 \code{start_method} is needed to determine the starting values for the
 optimization procedure. Default for this argument is "psych" which takes
 the starting values specified in \code{\link[psych:fa]{psych::fa()}}.
+
+When \code{se = "np-boot"}, the bootstrap replicate fits are run in parallel across
+replicates with the \code{future} framework. By default they run sequentially; to run
+them in parallel, register a plan with \code{\link[future:plan]{future::plan()}} (e.g.
+\code{future::plan(future::multisession, workers = 2)}; see examples). With a fixed
+\code{seed} the bootstrap is reproducible and yields the same result regardless of the
+number of workers. Each worker runs its own (Armadillo) linear algebra, so if your
+\code{BLAS} is multi-threaded, limit the number of workers (or the BLAS threads) to
+avoid over-subscribing the available cores.
 }
 \examples{
 # A type EFAtools (as presented in Steiner and Grieder, 2020) EFA
@@ -361,5 +379,15 @@ PAF_pro <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
                criterion_type = "sum", abs_eigen = FALSE, k = 3,
                P_type = "unnorm", precision= 1e-5, order_type = "eigen",
                varimax_type = "svd")
+
+\dontrun{
+# Bootstrap standard errors from raw data, reproducible via a fixed seed and run
+# in parallel across replicates. Keep the number of workers small (here 2) so the
+# workers do not over-subscribe the cores against a multi-threaded BLAS.
+future::plan(future::multisession, workers = 2)
+EFA_boot <- EFA(GRiPS_raw, n_factors = 1, method = "PAF", rotation = "none",
+                se = "np-boot", b_boot = 1000, seed = 42)
+future::plan(future::sequential)
+}
 
 }
