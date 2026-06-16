@@ -46,7 +46,6 @@
 <url><loc>/reference/WJIV_ages_6_8.html</loc></url>
 <url><loc>/reference/WJIV_ages_9_13.html</loc></url>
 <url><loc>/reference/dot-average_matrices.html</loc></url>
-<url><loc>/reference/dot-calc_cis.html</loc></url>
 <url><loc>/reference/dot-change_class.html</loc></url>
 <url><loc>/reference/dot-compute_vars.html</loc></url>
 <url><loc>/reference/dot-consensus_loss.html</loc></url>
@@ -57,10 +56,12 @@
 <url><loc>/reference/dot-nest_sym.html</loc></url>
 <url><loc>/reference/dot-numformat.html</loc></url>
 <url><loc>/reference/dot-oblique_procrustes.html</loc></url>
+<url><loc>/reference/dot-oblique_procrustes_batch.html</loc></url>
 <url><loc>/reference/dot-orthogonal_procrustes.html</loc></url>
 <url><loc>/reference/dot-paf_iter.html</loc></url>
 <url><loc>/reference/dot-parallel_sim.html</loc></url>
-<url><loc>/reference/dot-stat_over_list.html</loc></url>
+<url><loc>/reference/dot-rotate_cf_orth.html</loc></url>
+<url><loc>/reference/dot-rotate_oblimin.html</loc></url>
 <url><loc>/reference/dot-tucker_congruence.html</loc></url>
 <url><loc>/reference/format.N_FACTORS.html</loc></url>
 <url><loc>/reference/format.efa_retention.html</loc></url>

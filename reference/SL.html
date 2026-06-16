@@ -84,7 +84,7 @@ second-order confirmatory factor analysis (CFA) solution from lavaan.</p>
 <span>  <span class="va">x</span>,</span>
 <span>  Phi <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"EFAtools"</span>, <span class="st">"psych"</span>, <span class="st">"SPSS"</span>, <span class="st">"none"</span><span class="op">)</span>,</span>
-<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PAF"</span>, <span class="st">"ML"</span>, <span class="st">"ULS"</span><span class="op">)</span>,</span>
+<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PAF"</span>, <span class="st">"ML"</span>, <span class="st">"ULS"</span>, <span class="st">"MINRES"</span><span class="op">)</span>,</span>
 <span>  g_name <span class="op">=</span> <span class="st">"g"</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -129,9 +129,9 @@ This is used to control the procedure of the second-order factor analysis. See
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
 <dd><p>character. One of "PAF", "ML", or "ULS" to use
-principal axis factoring, maximum likelihood, or unweighted least squares
-(also called minres), respectively, used in <code><a href="EFA.html">EFA()</a></code> to find the second-order
-loadings.</p></dd>
+principal axis factoring, maximum likelihood, or unweighted least squares,
+respectively, used in <code><a href="EFA.html">EFA()</a></code> to find the second-order loadings. "MINRES" is
+accepted as a synonym for "ULS" (the same estimator).</p></dd>
 
 
 <dt id="arg-g-name">g_name<a class="anchor" aria-label="anchor" href="#arg-g-name"></a></dt>

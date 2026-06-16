@@ -176,7 +176,9 @@ available ("ML" and "ULS").</p></dd>
 <dl><dt>n_factors</dt>
 <dd><p>A named numeric vector with the suggested number of factors for
 each requested eigenvalue type (<code>"PCA"</code>, <code>"SMC"</code>, and/or <code>"EFA"</code>). These are
-<code>NA</code> when no real data are supplied (i.e. only <code>N</code> and <code>n_vars</code> are given).</p></dd>
+<code>NA</code> when no real data are supplied (i.e. only <code>N</code> and <code>n_vars</code> are given). When
+every real eigenvalue exceeds its reference (no crossing is found), all <code>n_vars</code>
+components are retained and a warning is issued.</p></dd>
 
 <dt>results</dt>
 <dd><p>A list with one record per eigenvalue type, each holding the real

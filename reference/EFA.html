@@ -80,7 +80,7 @@ except varimax and promax, the <code>GPArotation</code> package is needed.</p>
 <span>  <span class="va">x</span>,</span>
 <span>  <span class="va">n_factors</span>,</span>
 <span>  N <span class="op">=</span> <span class="cn">NA</span>,</span>
-<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PAF"</span>, <span class="st">"ML"</span>, <span class="st">"ULS"</span><span class="op">)</span>,</span>
+<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PAF"</span>, <span class="st">"ML"</span>, <span class="st">"ULS"</span>, <span class="st">"MINRES"</span><span class="op">)</span>,</span>
 <span>  rotation <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"varimax"</span>, <span class="st">"equamax"</span>, <span class="st">"quartimax"</span>, <span class="st">"geominT"</span>, <span class="st">"bentlerT"</span>,</span>
 <span>    <span class="st">"bifactorT"</span>, <span class="st">"promax"</span>, <span class="st">"oblimin"</span>, <span class="st">"quartimin"</span>, <span class="st">"simplimax"</span>, <span class="st">"bentlerQ"</span>, <span class="st">"geominQ"</span>,</span>
 <span>    <span class="st">"bifactorQ"</span><span class="op">)</span>,</span>
@@ -104,6 +104,7 @@ except varimax and promax, the <code>GPArotation</code> package is needed.</p>
 <span>  b_boot <span class="op">=</span> <span class="fl">1000</span>,</span>
 <span>  ci <span class="op">=</span> <span class="fl">0.95</span>,</span>
 <span>  randomStarts <span class="op">=</span> <span class="fl">10</span>,</span>
+<span>  seed <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -139,13 +140,17 @@ data.</p></dd>
 <dt id="arg-n">N<a class="anchor" aria-label="anchor" href="#arg-n"></a></dt>
 <dd><p>numeric. The number of observations. Needs only be specified if a
 correlation matrix is used. If input is a correlation matrix and <code>N</code> = NA
-(default), not all fit indices can be computed.</p></dd>
+(default), not all fit indices can be computed. When raw data with missing
+values are entered and <code>use</code> is <code>"complete.obs"</code> or <code>"na.or.complete"</code>, rows
+are deleted listwise, so <code>N</code> is taken as the number of complete cases.</p></dd>
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
 <dd><p>character. One of "PAF", "ML", or "ULS" to use principal axis
-factoring, maximum likelihood, or unweighted least squares (also called minres),
-respectively, to fit the EFA.</p></dd>
+factoring, maximum likelihood, or unweighted least squares, respectively, to fit
+the EFA. "MINRES" is accepted as a synonym for "ULS": minimum residual and
+unweighted least squares are two names for the same estimator and return identical
+results.</p></dd>
 
 
 <dt id="arg-rotation">rotation<a class="anchor" aria-label="anchor" href="#arg-rotation"></a></dt>
@@ -284,11 +289,21 @@ Must be between 0 and 1. Default ist .95 for 95% CIs.</p></dd>
 <dd><p>numeric. The number of random starts to use in rotations
 that use the <code>GPArotation</code> package. Some rotations are prone to produce
 local minima and sometimes many random starts are needed (see the GPArotation
-package documentation for details).</p></dd>
+package documentation for details). Default is 10.</p></dd>
+
+
+<dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
+<dd><p>numeric. An optional seed for the random-number generator used by the
+non-parametric bootstrap (<code>se = "np-boot"</code>), i.e. for the case resampling, the
+rotation random starts, and the Procrustes random starts. Setting it makes the
+bootstrap reproducible and, importantly, independent of the number of parallel
+workers (see Details); the caller's random-number stream is restored afterwards,
+so supplying a seed leaves no lasting effect on it. Default is <code>NULL</code>, which uses
+(and advances) the current state of the generator.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Additional arguments passed to rotation functions from the <code>GPArotation</code> package (e.g., <code>maxit</code> for maximum number of iterations).</p></dd>
+<dd><p>Additional arguments passed to the rotation procedure (e.g., <code>maxit</code> for the maximum number of iterations).</p></dd>
 
 </dl></div>
     <div id="value">
@@ -318,9 +333,14 @@ with the final communality estimates as diagonal.</p></dd>
 <dd><p>The number of iterations needed for convergence.</p></dd>
 
 <dt>convergence</dt>
-<dd><p>Integer code for convergence as returned by
-<code><a href="https://rdrr.io/r/stats/optim.html" class="external-link">stats::optim()</a></code> (only for ML and ULS).
-0 indicates successful completion.</p></dd>
+<dd><p>Integer convergence code (0 = converged). For ML and ULS
+this is the code returned by <code><a href="https://rdrr.io/r/stats/optim.html" class="external-link">stats::optim()</a></code>; for PAF it is
+1 if the maximum number of iterations was reached without meeting the
+convergence criterion and 0 otherwise.</p></dd>
+
+<dt>heywood</dt>
+<dd><p>A named integer vector indicating which variables have a
+Heywood (improper) case in the unrotated solution; empty if there are none.</p></dd>
 
 <dt>unrot_loadings</dt>
 <dd><p>Loading matrix containing the final unrotated loadings.</p></dd>
@@ -349,6 +369,10 @@ matrix.</p></dd>
 
 <dt>residuals</dt>
 <dd><p>Residual correlations, i.e., orig_R - model_implied_R</p></dd>
+
+<dt>standardized_residuals</dt>
+<dd><p>Residual correlations standardized by their
+bootstrap standard errors. Only returned, if <code>se = "np-boot"</code>.</p></dd>
 
 <dt>rot_loadings</dt>
 <dd><p>Loading matrix containing the final rotated loadings
@@ -430,7 +454,7 @@ which formula is used to compute the target matrix P in the promax rotation.
 "unnorm" uses the formula from Hendrickson and White (1964), specifically:
 <code>P = abs(A^(k + 1)) / A</code>,
 where A is the unnormalized matrix containing varimax rotated loadings.
-"SPSS" uses the normalized varimax rotated loadings. Specifically it used the
+"norm" uses the normalized varimax rotated loadings. Specifically it used the
 following formula, which can be found in the SPSS 23 and SPSS 27 Algorithms manuals:
 <code>P = abs(A / sqrt(rowSums(A^2))) ^(k + 1) * (sqrt(rowSums(A^2)) / A)</code>.
 As for PAF, the EFAtools type setting combination for promax was the best
@@ -448,15 +472,23 @@ to produce results more similar to those of SPSS:
 <code>sum(n*colSums(abs(lambda)) - colSums(lambda ^ 4) ^ 2) / n^2</code>.</p>
 <p>For all other rotations except varimax and promax, the <code>type</code> argument
 only controls the <code>order_type</code> argument with the same values as stated
-above for the varimax and promax rotations. For these other rotations, the
-<code>GPArotation</code> package is needed. Additional arguments can also be
-specified and will be passed to the respective <code>GPArotation</code> function
-(e.g., maxit to change the maximum number of iterations for the rotation procedure).</p>
+above for the varimax and promax rotations. For most of these other rotations, the
+<code>GPArotation</code> package is used. Additional arguments can also be specified and
+will be passed to the rotation procedure (e.g., maxit to change the maximum
+number of iterations).</p>
 <p>The <code>type</code> argument has no effect on ULS and ML. For ULS, no additional
 arguments are needed. For ML, an additional argument
 <code>start_method</code> is needed to determine the starting values for the
-optimization procedure. Default for this argument is "factanal" which takes
-the starting values specified in the <code><a href="https://rdrr.io/r/stats/factanal.html" class="external-link">stats::factanal()</a></code> function.</p>
+optimization procedure. Default for this argument is "psych" which takes
+the starting values specified in <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code>.</p>
+<p>When <code>se = "np-boot"</code>, the bootstrap replicate fits are run in parallel across
+replicates with the <code>future</code> framework. By default they run sequentially; to run
+them in parallel, register a plan with <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future::plan()</a></code> (e.g.
+<code>future::plan(future::multisession, workers = 2)</code>; see examples). With a fixed
+<code>seed</code> the bootstrap is reproducible and yields the same result regardless of the
+number of workers. Each worker runs its own (Armadillo) linear algebra, so if your
+<code>BLAS</code> is multi-threaded, limit the number of workers (or the BLAS threads) to
+avoid over-subscribing the available cores.</p>
     </div>
 
     <div id="ref-examples">
@@ -497,6 +529,16 @@ the starting values specified in the <code><a href="https://rdrr.io/r/stats/fact
 <span class="r-in"><span>               criterion_type <span class="op">=</span> <span class="st">"sum"</span>, abs_eigen <span class="op">=</span> <span class="cn">FALSE</span>, k <span class="op">=</span> <span class="fl">3</span>,</span></span>
 <span class="r-in"><span>               P_type <span class="op">=</span> <span class="st">"unnorm"</span>, precision<span class="op">=</span> <span class="fl">1e-5</span>, order_type <span class="op">=</span> <span class="st">"eigen"</span>,</span></span>
 <span class="r-in"><span>               varimax_type <span class="op">=</span> <span class="st">"svd"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+<span class="r-in"><span><span class="co"># Bootstrap standard errors from raw data, reproducible via a fixed seed and run</span></span></span>
+<span class="r-in"><span><span class="co"># in parallel across replicates. Keep the number of workers small (here 2) so the</span></span></span>
+<span class="r-in"><span><span class="co"># workers do not over-subscribe the cores against a multi-threaded BLAS.</span></span></span>
+<span class="r-in"><span><span class="fu">future</span><span class="fu">::</span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="fu">future</span><span class="fu">::</span><span class="va"><a href="https://future.futureverse.org/reference/multisession.html" class="external-link">multisession</a></span>, workers <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">EFA_boot</span> <span class="op">&lt;-</span> <span class="fu">EFA</span><span class="op">(</span><span class="va">GRiPS_raw</span>, n_factors <span class="op">=</span> <span class="fl">1</span>, method <span class="op">=</span> <span class="st">"PAF"</span>, rotation <span class="op">=</span> <span class="st">"none"</span>,</span></span>
+<span class="r-in"><span>                se <span class="op">=</span> <span class="st">"np-boot"</span>, b_boot <span class="op">=</span> <span class="fl">1000</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">future</span><span class="fu">::</span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="fu">future</span><span class="fu">::</span><span class="va"><a href="https://future.futureverse.org/reference/sequential.html" class="external-link">sequential</a></span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

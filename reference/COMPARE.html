@@ -104,9 +104,10 @@ factor analysis output to compare to x.</p></dd>
 
 <dt id="arg-reorder">reorder<a class="anchor" aria-label="anchor" href="#arg-reorder"></a></dt>
 <dd><p>character. Whether and how elements / columns should be
-reordered. If "congruence" (default), reordering is done according to Tuckers
-correspondence coefficient, if "names", objects according to their names,
-if "none", no reordering is done.</p></dd>
+reordered. If "congruence" (default), the columns of <code>y</code> are matched to those
+of <code>x</code> by an optimal one-to-one assignment that maximizes Tucker's congruence
+coefficient, so each factor is matched exactly once; if "names", objects are
+reordered according to their names; if "none", no reordering is done.</p></dd>
 
 
 <dt id="arg-corres">corres<a class="anchor" aria-label="anchor" href="#arg-corres"></a></dt>
@@ -217,7 +218,8 @@ between x and y when all loadings <code>&gt;= thresh</code> are considered.</p><
     <h2>Examples</h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># A type SPSS EFA to mimick the SPSS implementation</span></span></span>
 <span class="r-in"><span><span class="va">EFA_SPSS_6</span> <span class="op">&lt;-</span> <span class="fu"><a href="EFA.html">EFA</a></span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">case_11b</span><span class="op">$</span><span class="va">cormat</span>, n_factors <span class="op">=</span> <span class="fl">6</span>, type <span class="op">=</span> <span class="st">"SPSS"</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Reached maximum number of iterations without convergence. Results may not be interpretable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Reached the maximum number of iterations without convergence; results may not</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> be interpretable.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># A type psych EFA to mimick the psych::fa() implementation</span></span></span>
 <span class="r-in"><span><span class="va">EFA_psych_6</span> <span class="op">&lt;-</span> <span class="fu"><a href="EFA.html">EFA</a></span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">case_11b</span><span class="op">$</span><span class="va">cormat</span>, n_factors <span class="op">=</span> <span class="fl">6</span>, type <span class="op">=</span> <span class="st">"psych"</span><span class="op">)</span></span></span>
@@ -238,7 +240,7 @@ between x and y when all loadings <code>&gt;= thresh</code> are considered.</p><
 <span class="r-out co"><span class="r-pr">#&gt;</span> V5    .0001  -.0001  -.0007  <span style="color: #BB0000;"> .0027</span>  <span style="color: #BB0000;"> .0131</span>   .0007</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> V6   -.0008  <span style="color: #BB0000;">-.0030</span>  <span style="color: #BB0000;">-.0053</span>  <span style="color: #BB0000;">-.0178</span>  <span style="color: #BB0000;"> .0215</span>   .0008</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> V7    .0000  -.0005  -.0009  <span style="color: #BB0000;">-.0047</span>  <span style="color: #BB0000;"> .0041</span>  -.0001</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> V8   -.0000   .0002  -.0000  <span style="color: #BB0000;">-.0085</span>  <span style="color: #BB0000;">-.0027</span>  <span style="color: #BB0000;">-.0018</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V8    .0000   .0002   .0000  <span style="color: #BB0000;">-.0085</span>  <span style="color: #BB0000;">-.0027</span>  <span style="color: #BB0000;">-.0018</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> V9    .0002   .0005   .0006  <span style="color: #BB0000;">-.0067</span>  <span style="color: #BB0000;">-.0063</span>  -.0002</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> V10   .0000  -.0002  -.0007   .0005   .0008   .0006</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> V11   .0003   .0007  <span style="color: #BB0000;">-.0012</span>  <span style="color: #BB0000;"> .0025</span>  <span style="color: #BB0000;">-.0024</span>  -.0006</span>
@@ -247,7 +249,7 @@ between x and y when all loadings <code>&gt;= thresh</code> are considered.</p><
 <span class="r-out co"><span class="r-pr">#&gt;</span> V14   .0000   .0006   .0004  <span style="color: #BB0000;"> .0093</span>  <span style="color: #BB0000;"> .0035</span>   .0001</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> V15  -.0001  <span style="color: #BB0000;"> .0011</span>   .0006  <span style="color: #BB0000;"> .0171</span>  <span style="color: #BB0000;"> .0025</span>   .0004</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> V16   .0001   .0002  <span style="color: #BB0000;"> .0011</span>  <span style="color: #BB0000;"> .0042</span>  <span style="color: #BB0000;">-.0027</span>   .0001</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> V17   .0001  -.0000   .0008  <span style="color: #BB0000;"> .0021</span>   .0008   .0006</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V17   .0001   .0000   .0008  <span style="color: #BB0000;"> .0021</span>   .0008   .0006</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> V18   .0001   .0001   .0007   .0003  <span style="color: #BB0000;"> .0016</span>   .0006</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 </code></pre></div>

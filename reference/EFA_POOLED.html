@@ -195,9 +195,10 @@ communalities, residuals, and structure coefficients are Wald-type MI
 intervals. The confidence level of these pooled intervals is controlled by
 <code>p</code>; the <code>ci</code> argument passed through <code>...</code> to the component
 <code>EFA</code> calls is not used for the pooled intervals.
-<code>boot.CI$fit_indices_pooled_algorithm</code>, when available, is a
-percentile-style summary obtained by re-running the pooled-fit algorithm over
-matched bootstrap replicate indices.</p>
+<code>boot.CI$fit_indices_descriptive</code>, when available, holds Rubin-Wald MI
+summaries of the per-imputation bootstrap fit indices. The chi-square-based
+fit indices themselves are pooled with the D2 rule, whose reference
+distribution (e.g. the RMSEA confidence interval) supplies their uncertainty.</p>
     </div>
     <div id="author">
     <h2>Author</h2>
@@ -246,12 +247,14 @@ matched bootstrap replicate indices.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Model Fit</span> ───────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> χ²(20) = 36.83, <span style="font-style: italic;">p</span> = .604</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> χ²(20) = 36.86, <span style="font-style: italic;">p</span> = .604</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> CFI  : .99</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> TLI  : .99</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> RMSEA [90% CI]  : .03 [.01; .05]</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AIC  : -3.17</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BIC  : -97.11</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CAF  :1.00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AIC  : -3.14</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BIC  : -97.08</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ECVI  : 0.09</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CAF  : .50</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> RMSR  : .02</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> SRMR  : .02</span>
 <span class="r-in"><span></span></span>
@@ -293,13 +296,15 @@ matched bootstrap replicate indices.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Model Fit</span> ───────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> χ²(20) = 36.83, <span style="font-style: italic;">p</span> = .604</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CFI  [95% bootstrap/MI-CI] : .99 [.81, 1.00]</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSEA [90% CI]  [95% bootstrap/MI-CI] : .03 [.01; .05] [.00, .07]</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AIC  [95% bootstrap/MI-CI] : -3.17 [-40.00, 60.08]</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BIC  [95% bootstrap/MI-CI] : -97.11 [-133.94, -33.86]</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CAF  [95% bootstrap/MI-CI] :1.00 [1.00, 1.00]</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSR  [95% bootstrap/MI-CI] : .02 [.02, .02]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> χ²(20) = 36.86, <span style="font-style: italic;">p</span> = .604</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFI  [95% bootstrap/MI-CI] : .99 [.97, 1.00]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> TLI  : .99</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> RMSEA [90% CI]  [95% bootstrap/MI-CI] : .03 [.01; .05] [.04, .09]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AIC  [95% bootstrap/MI-CI] : -3.14 [-16.29, 109.65]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BIC  [95% bootstrap/MI-CI] : -97.08 [-110.23, 15.71]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ECVI  : 0.09</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CAF  [95% bootstrap/MI-CI] : .50 [.46, .53]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> RMSR  [95% bootstrap/MI-CI] : .02 [.01, .03]</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> SRMR  : .02</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-style: italic;">Note: </span>Bootstrap/MI CIs based on 1000 bootstrap samples per imputation.</span>

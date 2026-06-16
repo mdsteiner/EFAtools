@@ -115,7 +115,9 @@ cross-product must be recomputed on the normalized matrix.</p></dd>
 
 <dt id="arg-t-init">T_init<a class="anchor" aria-label="anchor" href="#arg-t-init"></a></dt>
 <dd><p>Optional <code>k x k</code> nonsingular starting transformation matrix for
-the oblique solver. Its columns are normalized internally.</p></dd>
+the oblique solver. Its columns are normalized internally. If <code>NULL</code> (the
+default), the oblique solver is warm-started from the closed-form orthogonal
+Procrustes solution.</p></dd>
 
 
 <dt id="arg-oblique-eps">oblique_eps<a class="anchor" aria-label="anchor" href="#arg-oblique-eps"></a></dt>
@@ -179,9 +181,13 @@ Procrustes problem</p>
 <code><a href="dot-oblique_procrustes.html">.oblique_procrustes()</a></code> optimizer. The oblique convention is the same as in
 <code><a href="https://rdrr.io/pkg/GPArotation/man/rotations.html" class="external-link">GPArotation::targetQ()</a></code>:</p>
 <p>$$L = A T^{-T}, \qquad \Phi = T'T, \qquad diag(\Phi) = 1.$$</p>
-<p>Random starts are only used for oblique alignment. For one-factor models,
-oblique and orthogonal alignment are equivalent, so the function uses the
-stable one-factor orthogonal solution instead of calling the oblique optimizer.</p>
+<p>By default the oblique solver is warm-started from the closed-form orthogonal
+Procrustes solution, which resolves the factor permutation and sign
+indeterminacy and avoids the poor local minima an identity start can fall
+into. Supply <code>T_init</code> to override this start. Random starts are only used for
+oblique alignment. For one-factor models, oblique and orthogonal alignment are
+equivalent, so the function uses the stable one-factor orthogonal solution
+instead of calling the oblique optimizer.</p>
     </div>
 
   </div>

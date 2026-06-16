@@ -110,7 +110,7 @@ criterion values over \(m\).</p></li>
 </ul></div>
     <div id="details">
     <h2>Details</h2>
-    <p>#' MAP is based on the idea that systematic common variance is increasingly removed from a
+    <p>MAP is based on the idea that systematic common variance is increasingly removed from a
 correlation matrix \(R\) as principal components are partialled out. After removing the
 first \(m\) components, a residual (partial) covariance matrix is obtained as
 $$C_m = R - A_m A_m',$$
@@ -127,8 +127,7 @@ corresponds to Velicer's original MAP procedure.</p></li>
 a higher-order variant that places more weight on dominant residual association structure.</p></li>
 </ul><p><strong>Input handling.</strong> <code>x</code> can be a correlation matrix or raw data. If <code>x</code> is not a
 correlation matrix, correlations are computed using <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code> with the requested
-missing-data handling (<code>use</code>) and association measure (<code>cor_method</code>). If a correlation
-matrix is supplied, <code>N</code> must be provided.</p>
+missing-data handling (<code>use</code>) and association measure (<code>cor_method</code>).</p>
 <p><strong>Matrix conditioning.</strong> The function stops if the correlation matrix is singular (non-invertible),
 because subsequent computations rely on stable matrix operations. If the correlation matrix is not
 positive definite (e.g., due to sampling error), it is smoothed using <code><a href="https://rdrr.io/pkg/psych/man/cor.smooth.html" class="external-link">psych::cor.smooth()</a></code>.</p>

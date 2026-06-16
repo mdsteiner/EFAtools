@@ -144,7 +144,8 @@ correlation matrix is used. If input is a correlation matrix and <code>N</code> 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
 <dd><p>character vector. Any combination of  "PAF", "ML", and "ULS",
 to use principal axis factoring, maximum likelihood, or unweighted least
-squares (also called minres), respectively, to fit the EFAs. Default is "PAF".</p></dd>
+squares, respectively, to fit the EFAs. "MINRES" is accepted as a synonym for
+"ULS" (the same estimator). Default is "PAF".</p></dd>
 
 
 <dt id="arg-rotation">rotation<a class="anchor" aria-label="anchor" href="#arg-rotation"></a></dt>
@@ -331,7 +332,8 @@ Note: Rowsums can exceed 1 due to cross-loadings.</p></dd>
 <dt>vars_accounted</dt>
 <dd><p>A list with the average, standard deviation, minimum,
 maximum, and range of explained variances and sums of squared loadings across
-the factor solutions. Based on the unrotated loadings.</p></dd>
+the factor solutions. Based on the unrotated loadings if rotation was "none"
+or only one factor was extracted, otherwise on the rotated loadings.</p></dd>
 
 <dt>fit_indices</dt>
 <dd><p>A matrix containing the average, standard deviation,
@@ -339,17 +341,22 @@ minimum, maximum, and range for all applicable fit indices across the respective
 factor solutions, and the degrees of freedom (df). If the method argument
 contains ML or ULS: Fit indices derived
 from the unrotated factor loadings: Chi Square (chisq), including significance
-level, Comparative Fit Index (CFI), Root Mean Square Error of Approximation
-(RMSEA), Akaike Information Criterion (AIC), Bayesian Information Criterion
-(BIC)and the common part accounted for (CAF) index as proposed by
-Lorenzo-Seva, Timmerman, &amp; Kiers (2011). For PAF, only the CAF can be
-calculated (see details).</p></dd>
+level, Comparative Fit Index (CFI), Tucker-Lewis Index (TLI), Root Mean Square
+Error of Approximation (RMSEA), Akaike Information Criterion (AIC), Bayesian
+Information Criterion (BIC), Expected Cross-Validation Index (ECVI), and the
+common part accounted for (CAF) index as proposed by Lorenzo-Seva, Timmerman,
+&amp; Kiers (2011). The residual-based Standardized Root Mean Square Residual
+(SRMR) and Root Mean Square Residual (RMSR) and the CAF are also computed for
+PAF; for PAF the remaining (chi-square-based) indices are not available (see
+details).</p></dd>
 
 <dt>implementations_grid</dt>
 <dd><p>A matrix containing, for each performed EFA,
 the setting combination, if an error occurred (logical), the error message
-(character), an integer code for convergence as returned by
-<code><a href="https://rdrr.io/r/stats/optim.html" class="external-link">stats::optim()</a></code> (0 indicates successful completion.),
+(character), an integer convergence code (0 = converged; for ML and ULS the
+code returned by <code><a href="https://rdrr.io/r/stats/optim.html" class="external-link">stats::optim()</a></code>, for PAF 1 if the maximum
+number of iterations was reached without meeting the convergence criterion and
+0 otherwise),
 if heywood cases occurred (logical, see details for definition), if the
 solution was admissible (logical, see details for definition), and the fit
 indices.</p></dd>
@@ -394,7 +401,9 @@ in <code>type</code>.</p>
 <p>To avoid a bias in the averaged factor solutions from problematic solutions,
 these are excluded prior to averaging. A solution is deemed problematic if
 at least one of the following is true: an error occurred, the model did not
-converge, or there is at least one Heywood case (defined as a communality of &gt;= 1 + .Machine$double.eps).
+converge, or there is at least one Heywood (improper) case (a communality at
+or above 1, or, for <code>ML</code>/<code>ULS</code>, a uniqueness pinned at the estimator's lower
+bound).
 Information on errors, convergence, and Heywood cases are returned in the
 implementations_grid and a summary of these is given when printing the output.
 In addition to these, information on the admissibility of the factor solutions

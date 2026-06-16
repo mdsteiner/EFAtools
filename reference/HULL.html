@@ -156,7 +156,7 @@ This is passed to <code><a href="PARALLEL.html">PARALLEL()</a></code>.</p></dd>
 
 
 <dt id="arg-percent">percent<a class="anchor" aria-label="anchor" href="#arg-percent"></a></dt>
-<dd><p>numeric. A vector of percentiles to take the simulated eigenvalues from.
+<dd><p>numeric. The percentile to take from the simulated eigenvalues.
 Default is 95. This is passed to <code><a href="PARALLEL.html">PARALLEL()</a></code>.</p></dd>
 
 
@@ -218,7 +218,7 @@ provide example code on how to enable parallel processing.</p>
 <p>Note that if <code>gof = "RMSEA"</code> is used, 1 - RMSEA is actually used to
 compare the different solutions. Thus, the threshold of .05 is then .95. This
 is necessary due to how the heuristic to locate the elbow of the hull works.</p>
-<p>The ML estimation method uses the <code><a href="https://rdrr.io/r/stats/factanal.html" class="external-link">stats::factanal()</a></code>
+<p>The ML estimation method uses the <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code>
 starting values. See also the <a href="EFA.html">EFA</a> documentation.</p>
 <p>The <code>HULL</code> function can also be called together with other factor
 retention criteria in the <code><a href="N_FACTORS.html">N_FACTORS()</a></code> function.</p>

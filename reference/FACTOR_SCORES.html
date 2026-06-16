@@ -81,8 +81,7 @@ correlation matrix is provided.</p>
 <span>  <span class="va">f</span>,</span>
 <span>  Phi <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  rho <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Thurstone"</span>, <span class="st">"tenBerge"</span>, <span class="st">"Anderson"</span>, <span class="st">"Bartlett"</span>, <span class="st">"Harman"</span>, <span class="st">"components"</span><span class="op">)</span>,</span>
-<span>  impute <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"means"</span>, <span class="st">"median"</span><span class="op">)</span></span>
+<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Thurstone"</span>, <span class="st">"tenBerge"</span>, <span class="st">"Anderson"</span>, <span class="st">"Bartlett"</span>, <span class="st">"Harman"</span>, <span class="st">"components"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -119,12 +118,6 @@ wishes to get factor scores for a correlation matrix other than Pearson's
 "Harman", or "components".
 See <code><a href="https://rdrr.io/pkg/psych/man/factor.scores.html" class="external-link">psych::factor.scores()</a></code> for details.</p></dd>
 
-
-<dt id="arg-impute">impute<a class="anchor" aria-label="anchor" href="#arg-impute"></a></dt>
-<dd><p>character. Whether and how missing values in <code>x</code> should
-be imputed. One of "none" (default, only complete cases are scored), "median",
-or "mean".</p></dd>
-
 </dl></div>
     <div id="value">
     <h2>Value</h2>
@@ -152,12 +145,11 @@ or "mean".</p></dd>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Example with raw data with method "Bartlett" and no imputation</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Example with raw data with method "Bartlett"</span></span></span>
 <span class="r-in"><span><span class="va">EFA_raw</span> <span class="op">&lt;-</span> <span class="fu"><a href="EFA.html">EFA</a></span><span class="op">(</span><span class="va">DOSPERT_raw</span>, n_factors <span class="op">=</span> <span class="fl">10</span>, type <span class="op">=</span> <span class="st">"EFAtools"</span>, method <span class="op">=</span> <span class="st">"PAF"</span>,</span></span>
 <span class="r-in"><span>               rotation <span class="op">=</span> <span class="st">"oblimin"</span>, randomStarts <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from the raw data.</span>
-<span class="r-in"><span><span class="va">fac_scores_raw</span> <span class="op">&lt;-</span> <span class="fu">FACTOR_SCORES</span><span class="op">(</span><span class="va">DOSPERT_raw</span>, f <span class="op">=</span> <span class="va">EFA_raw</span>, method <span class="op">=</span> <span class="st">"Bartlett"</span>,</span></span>
-<span class="r-in"><span>                                impute <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">fac_scores_raw</span> <span class="op">&lt;-</span> <span class="fu">FACTOR_SCORES</span><span class="op">(</span><span class="va">DOSPERT_raw</span>, f <span class="op">=</span> <span class="va">EFA_raw</span>, method <span class="op">=</span> <span class="st">"Bartlett"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Same as above, but with raw data AND a correlation matrix</span></span></span>
 <span class="r-in"><span><span class="va">cor_pearson</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">DOSPERT_raw</span><span class="op">)</span></span></span>
@@ -166,7 +158,7 @@ or "mean".</p></dd>
 <span class="r-in"><span>                       rotation <span class="op">=</span> <span class="st">"oblimin"</span>, randomStarts <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">fac_scores_cor_pearson</span> <span class="op">&lt;-</span> <span class="fu">FACTOR_SCORES</span><span class="op">(</span><span class="va">DOSPERT_raw</span>, f <span class="op">=</span> <span class="va">EFA_cor_pearson</span>,</span></span>
 <span class="r-in"><span>                                        rho <span class="op">=</span> <span class="va">cor_pearson</span>,</span></span>
-<span class="r-in"><span>                                        method <span class="op">=</span> <span class="st">"Bartlett"</span>, impute <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>                                        method <span class="op">=</span> <span class="st">"Bartlett"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Scores between two alternatives above are identical</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Logic.html" class="external-link">isTRUE</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/all.equal.html" class="external-link">all.equal</a></span><span class="op">(</span><span class="va">fac_scores_raw</span><span class="op">$</span><span class="va">scores</span>, <span class="va">fac_scores_cor_pearson</span><span class="op">$</span><span class="va">scores</span>,</span></span>
