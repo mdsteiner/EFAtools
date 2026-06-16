@@ -86,6 +86,22 @@ struct Candidate {
   double screen_value;
 };
 
+// Outcome of a full multi-start oblique fit: the winning fit plus the per-start
+// diagnostics surfaced by the single-matrix entry point. Shared by the single
+// and batched entry points so the multi-start orchestration is written once.
+struct ObliqueFitSummary {
+  FitResult best_fit;
+  int best_start_index;
+  int n_triaged;
+  int n_fully_optimized;
+  std::vector<double> all_values;
+  std::vector<int> all_converged;
+  std::vector<int> all_iterations;
+  std::vector<int> all_start_indices;
+  std::vector<double> screen_values;
+  std::vector<int> screen_start_indices;
+};
+
 static State invalid_state_cpp(const unsigned int k) {
   State out;
   out.f = std::numeric_limits<double>::infinity();
@@ -168,6 +184,23 @@ static arma::mat random_orthogonal_start_cpp(const unsigned int k) {
   }
 
   return Q;
+}
+
+// Closed-form orthogonal Procrustes transform T = U V' from the SVD of A'B, the
+// orthogonal matrix minimizing ||A T - B||_F. Mirrors the R-level warm start used
+// by PROCRUSTES() (.procrustes_orthogonal_T); the product U V' is invariant to the
+// LAPACK sign/ordering of the singular vectors, so it matches the R warm start.
+// Returns false (leaving `T` untouched) if the decomposition fails, so callers can
+// treat that slice as unalignable rather than propagating a hard error.
+static bool orthogonal_procrustes_T_cpp(const arma::mat& A, const arma::mat& B,
+                                        arma::mat& T) {
+  arma::mat U, V;
+  arma::vec s;
+  if (!arma::svd(U, s, V, A.t() * B)) {
+    return false;
+  }
+  T = U * V.t();
+  return all_finite_cpp(T);
 }
 
 static FitResult run_single_oblique_fit(const arma::mat& S,
@@ -300,6 +333,181 @@ static bool fit_is_better_cpp(const FitResult& candidate,
   return false;
 }
 
+// Run the primary fit from `T_primary`, then optionally screen, triage, and fully
+// optimize the requested random starts, keeping the best fit by objective value.
+// This is the multi-start orchestration shared by the single-matrix and batched
+// oblique entry points. Random starts are drawn serially with R::rnorm.
+static ObliqueFitSummary run_oblique_multistart(const arma::mat& S,
+                                                const arma::mat& C,
+                                                double BtB,
+                                                const arma::mat& T_primary,
+                                                double eps,
+                                                int maxit,
+                                                int max_line_search,
+                                                double step0,
+                                                int random_starts,
+                                                int screen_keep,
+                                                int triage_maxit,
+                                                double triage_improve_tol) {
+  const unsigned int k = T_primary.n_cols;
+
+  ObliqueFitSummary summary;
+  FitResult best_fit = run_single_oblique_fit(S, C, BtB, T_primary, eps, maxit, max_line_search, step0);
+  double incumbent_value = best_fit.value;
+
+  summary.all_values.reserve(static_cast<std::size_t>(1 + std::max(0, random_starts)));
+  summary.all_converged.reserve(static_cast<std::size_t>(1 + std::max(0, random_starts)));
+  summary.all_iterations.reserve(static_cast<std::size_t>(1 + std::max(0, random_starts)));
+  summary.all_start_indices.reserve(static_cast<std::size_t>(1 + std::max(0, random_starts)));
+  summary.screen_values.reserve(static_cast<std::size_t>(std::max(0, random_starts)));
+  summary.screen_start_indices.reserve(static_cast<std::size_t>(std::max(0, random_starts)));
+
+  summary.all_values.push_back(best_fit.value);
+  summary.all_converged.push_back(best_fit.convergence ? 1 : 0);
+  summary.all_iterations.push_back(best_fit.iterations);
+  summary.all_start_indices.push_back(1);
+
+  int best_start_index = 1;
+  int n_triaged = 0;
+  int n_fully_optimized = 1;
+
+  if (random_starts > 0) {
+    std::vector<Candidate> candidates;
+    candidates.reserve(static_cast<std::size_t>(random_starts));
+
+    for (int s = 0; s < random_starts; ++s) {
+      arma::mat Tstart = random_orthogonal_start_cpp(k);
+      State screen_state = compute_state_kxk(Tstart, S, C, BtB);
+      Candidate cand;
+      cand.start_index = s + 2;
+      cand.Tstart = Tstart;
+      cand.screen_value = screen_state.f;
+      candidates.push_back(cand);
+    }
+
+    std::sort(candidates.begin(), candidates.end(),
+              [](const Candidate& a, const Candidate& b) {
+                return a.screen_value < b.screen_value;
+              });
+
+    for (const Candidate& cand : candidates) {
+      summary.screen_values.push_back(cand.screen_value);
+      summary.screen_start_indices.push_back(cand.start_index);
+    }
+
+    int keep = std::min(screen_keep, random_starts);
+    keep = std::max(keep, 0);
+
+    for (int i = 0; i < keep; ++i) {
+      const Candidate& cand = candidates[static_cast<std::size_t>(i)];
+
+      FitResult triage_fit = run_single_oblique_fit(
+        S, C, BtB, cand.Tstart, eps, triage_maxit, max_line_search, step0
+      );
+      ++n_triaged;
+
+      summary.all_values.push_back(triage_fit.value);
+      summary.all_converged.push_back(triage_fit.convergence ? 1 : 0);
+      summary.all_iterations.push_back(triage_fit.iterations);
+      summary.all_start_indices.push_back(cand.start_index);
+
+      double rel_improve;
+      if (std::isfinite(incumbent_value)) {
+        rel_improve = (incumbent_value - triage_fit.value) /
+          (std::abs(incumbent_value) + 1e-12);
+      } else {
+        rel_improve = triage_fit.valid ? std::numeric_limits<double>::infinity() :
+          -std::numeric_limits<double>::infinity();
+      }
+
+      if (triage_fit.valid && rel_improve >= triage_improve_tol) {
+        FitResult full_fit = run_single_oblique_fit(
+          S, C, BtB, triage_fit.T, eps, maxit, max_line_search, step0
+        );
+        ++n_fully_optimized;
+
+        summary.all_values.back() = full_fit.value;
+        summary.all_converged.back() = full_fit.convergence ? 1 : 0;
+        summary.all_iterations.back() = full_fit.iterations;
+
+        if (fit_is_better_cpp(full_fit, best_fit)) {
+          best_fit = full_fit;
+          incumbent_value = full_fit.value;
+          best_start_index = cand.start_index;
+        }
+      }
+    }
+  }
+
+  summary.best_fit = best_fit;
+  summary.best_start_index = best_start_index;
+  summary.n_triaged = n_triaged;
+  summary.n_fully_optimized = n_fully_optimized;
+  return summary;
+}
+
+// Validate the shared oblique-solver control scalars. Used by both the single and
+// batched entry points so the contract and its messages live in one place.
+static void validate_oblique_scalars(double eps, int maxit, int max_line_search,
+                                     double step0, int random_starts, int screen_keep,
+                                     int triage_maxit, double triage_improve_tol) {
+  if (!is_valid_scalar_cpp(eps) || eps <= 0.0) {
+    Rcpp::stop("eps must be a positive finite scalar.");
+  }
+  if (maxit < 0) {
+    Rcpp::stop("maxit must be non-negative.");
+  }
+  if (max_line_search < 0) {
+    Rcpp::stop("max_line_search must be non-negative.");
+  }
+  if (!is_valid_scalar_cpp(step0) || step0 <= 0.0) {
+    Rcpp::stop("step0 must be a positive finite scalar.");
+  }
+  if (random_starts < 0) {
+    Rcpp::stop("random_starts must be non-negative.");
+  }
+  if (screen_keep < 0) {
+    Rcpp::stop("screen_keep must be non-negative.");
+  }
+  if (triage_maxit < 0) {
+    Rcpp::stop("triage_maxit must be non-negative.");
+  }
+  if (!is_valid_scalar_cpp(triage_improve_tol) || triage_improve_tol < 0.0) {
+    Rcpp::stop("triage_improve_tol must be a non-negative finite scalar.");
+  }
+}
+
+// Kaiser row normalization shared by both entry points: scale each row of A_work
+// and B_work by the inverse row norm of A_work, returning the weights so the
+// rotated loadings can be back-transformed. A zero/non-finite row norm is floored
+// to 1 to leave that row unchanged.
+static arma::vec kaiser_normalize_rows(arma::mat& A_work, arma::mat& B_work) {
+  arma::vec W = sqrt(sum(square(A_work), 1));
+  for (arma::uword i = 0; i < W.n_elem; ++i) {
+    if (!std::isfinite(W(i)) || W(i) < 1e-15) {
+      W(i) = 1.0;
+    }
+  }
+  A_work.each_col() /= W;
+  B_work.each_col() /= W;
+  return W;
+}
+
+// Assemble the rotated loadings and factor correlations from a fitted
+// transformation: L = A_work U (un-normalized when Kaiser weights were applied),
+// Phi = symmetrized T'T with unit diagonal. Shared by both entry points.
+static void finalize_oblique(const FitResult& best_fit, const arma::mat& A_work,
+                             const arma::vec& W, bool normalize,
+                             arma::mat& Lrot, arma::mat& Phi) {
+  Lrot = A_work * best_fit.U;
+  if (normalize) {
+    Lrot.each_col() %= W;
+  }
+  Phi = best_fit.T.t() * best_fit.T;
+  Phi = (Phi + Phi.t()) / 2.0;
+  Phi.diag().fill(1.0);
+}
+
 //' Oblique Procrustes target rotation using a k x k inner objective
 //'
 //' Compute an oblique target rotation for a loading matrix using a
@@ -391,30 +599,8 @@ Rcpp::List oblique_procrustes(const arma::mat& A,
   if (!all_finite_cpp(A) || !all_finite_cpp(B)) {
     Rcpp::stop("A and B must contain only finite values.");
   }
-  if (!is_valid_scalar_cpp(eps) || eps <= 0.0) {
-    Rcpp::stop("eps must be a positive finite scalar.");
-  }
-  if (maxit < 0) {
-    Rcpp::stop("maxit must be non-negative.");
-  }
-  if (max_line_search < 0) {
-    Rcpp::stop("max_line_search must be non-negative.");
-  }
-  if (!is_valid_scalar_cpp(step0) || step0 <= 0.0) {
-    Rcpp::stop("step0 must be a positive finite scalar.");
-  }
-  if (random_starts < 0) {
-    Rcpp::stop("random_starts must be non-negative.");
-  }
-  if (screen_keep < 0) {
-    Rcpp::stop("screen_keep must be non-negative.");
-  }
-  if (triage_maxit < 0) {
-    Rcpp::stop("triage_maxit must be non-negative.");
-  }
-  if (!is_valid_scalar_cpp(triage_improve_tol) || triage_improve_tol < 0.0) {
-    Rcpp::stop("triage_improve_tol must be a non-negative finite scalar.");
-  }
+  validate_oblique_scalars(eps, maxit, max_line_search, step0, random_starts,
+                           screen_keep, triage_maxit, triage_improve_tol);
 
   const unsigned int k = A.n_cols;
 
@@ -423,14 +609,7 @@ Rcpp::List oblique_procrustes(const arma::mat& A,
   arma::vec W;
 
   if (normalize) {
-    W = sqrt(sum(square(A_work), 1));
-    for (unsigned int i = 0; i < W.n_elem; ++i) {
-      if (!std::isfinite(W(i)) || W(i) < 1e-15) {
-        W(i) = 1.0;
-      }
-    }
-    A_work.each_col() /= W;
-    B_work.each_col() /= W;
+    W = kaiser_normalize_rows(A_work, B_work);
   }
 
   arma::mat S;
@@ -469,108 +648,14 @@ Rcpp::List oblique_procrustes(const arma::mat& A,
     }
   }
 
-  FitResult best_fit = run_single_oblique_fit(S, C, BtB, T_primary, eps, maxit, max_line_search, step0);
-  double incumbent_value = best_fit.value;
+  ObliqueFitSummary summary = run_oblique_multistart(
+    S, C, BtB, T_primary, eps, maxit, max_line_search, step0,
+    random_starts, screen_keep, triage_maxit, triage_improve_tol
+  );
+  const FitResult& best_fit = summary.best_fit;
 
-  std::vector<double> all_values;
-  std::vector<int> all_converged;
-  std::vector<int> all_iterations;
-  std::vector<int> all_start_indices;
-  std::vector<double> screen_values;
-  std::vector<int> screen_start_indices;
-
-  all_values.reserve(static_cast<std::size_t>(1 + std::max(0, random_starts)));
-  all_converged.reserve(static_cast<std::size_t>(1 + std::max(0, random_starts)));
-  all_iterations.reserve(static_cast<std::size_t>(1 + std::max(0, random_starts)));
-  all_start_indices.reserve(static_cast<std::size_t>(1 + std::max(0, random_starts)));
-  screen_values.reserve(static_cast<std::size_t>(std::max(0, random_starts)));
-  screen_start_indices.reserve(static_cast<std::size_t>(std::max(0, random_starts)));
-
-  all_values.push_back(best_fit.value);
-  all_converged.push_back(best_fit.convergence ? 1 : 0);
-  all_iterations.push_back(best_fit.iterations);
-  all_start_indices.push_back(1);
-
-  int best_start_index = 1;
-  int n_triaged = 0;
-  int n_fully_optimized = 1;
-
-  if (random_starts > 0) {
-    std::vector<Candidate> candidates;
-    candidates.reserve(static_cast<std::size_t>(random_starts));
-
-    for (int s = 0; s < random_starts; ++s) {
-      arma::mat Tstart = random_orthogonal_start_cpp(k);
-      State screen_state = compute_state_kxk(Tstart, S, C, BtB);
-      Candidate cand;
-      cand.start_index = s + 2;
-      cand.Tstart = Tstart;
-      cand.screen_value = screen_state.f;
-      candidates.push_back(cand);
-    }
-
-    std::sort(candidates.begin(), candidates.end(),
-              [](const Candidate& a, const Candidate& b) {
-                return a.screen_value < b.screen_value;
-              });
-
-    for (const Candidate& cand : candidates) {
-      screen_values.push_back(cand.screen_value);
-      screen_start_indices.push_back(cand.start_index);
-    }
-
-    int keep = std::min(screen_keep, random_starts);
-    keep = std::max(keep, 0);
-
-    for (int i = 0; i < keep; ++i) {
-      const Candidate& cand = candidates[static_cast<std::size_t>(i)];
-
-      FitResult triage_fit = run_single_oblique_fit(
-        S, C, BtB, cand.Tstart, eps, triage_maxit, max_line_search, step0
-      );
-      ++n_triaged;
-
-      all_values.push_back(triage_fit.value);
-      all_converged.push_back(triage_fit.convergence ? 1 : 0);
-      all_iterations.push_back(triage_fit.iterations);
-      all_start_indices.push_back(cand.start_index);
-
-      double rel_improve;
-      if (std::isfinite(incumbent_value)) {
-        rel_improve = (incumbent_value - triage_fit.value) /
-          (std::abs(incumbent_value) + 1e-12);
-      } else {
-        rel_improve = triage_fit.valid ? std::numeric_limits<double>::infinity() :
-          -std::numeric_limits<double>::infinity();
-      }
-
-      if (triage_fit.valid && rel_improve >= triage_improve_tol) {
-        FitResult full_fit = run_single_oblique_fit(
-          S, C, BtB, triage_fit.T, eps, maxit, max_line_search, step0
-        );
-        ++n_fully_optimized;
-
-        all_values.back() = full_fit.value;
-        all_converged.back() = full_fit.convergence ? 1 : 0;
-        all_iterations.back() = full_fit.iterations;
-
-        if (fit_is_better_cpp(full_fit, best_fit)) {
-          best_fit = full_fit;
-          incumbent_value = full_fit.value;
-          best_start_index = cand.start_index;
-        }
-      }
-    }
-  }
-
-  arma::mat Lrot = A_work * best_fit.U;
-  if (normalize) {
-    Lrot.each_col() %= W;
-  }
-
-  arma::mat Phi = best_fit.T.t() * best_fit.T;
-  Phi = (Phi + Phi.t()) / 2.0;
-  Phi.diag().fill(1.0);
+  arma::mat Lrot, Phi;
+  finalize_oblique(best_fit, A_work, W, normalize, Lrot, Phi);
 
   Rcpp::NumericMatrix table_r = Rcpp::wrap(best_fit.Table);
   colnames(table_r) = Rcpp::CharacterVector::create("iter", "f", "log10_s", "step");
@@ -587,16 +672,208 @@ Rcpp::List oblique_procrustes(const arma::mat& A,
     Rcpp::Named("Table") = table_r,
     Rcpp::Named("line_search_failed") = best_fit.line_search_failed,
     Rcpp::Named("method") = "oblique_procrustes",
-    Rcpp::Named("best_start_index") = best_start_index,
-    Rcpp::Named("all_start_indices") = Rcpp::wrap(all_start_indices),
-    Rcpp::Named("all_values") = Rcpp::wrap(all_values),
-    Rcpp::Named("all_converged") = Rcpp::wrap(all_converged),
-    Rcpp::Named("all_iterations") = Rcpp::wrap(all_iterations),
-    Rcpp::Named("screen_start_indices") = Rcpp::wrap(screen_start_indices),
-    Rcpp::Named("screen_values") = Rcpp::wrap(screen_values),
+    Rcpp::Named("best_start_index") = summary.best_start_index,
+    Rcpp::Named("all_start_indices") = Rcpp::wrap(summary.all_start_indices),
+    Rcpp::Named("all_values") = Rcpp::wrap(summary.all_values),
+    Rcpp::Named("all_converged") = Rcpp::wrap(summary.all_converged),
+    Rcpp::Named("all_iterations") = Rcpp::wrap(summary.all_iterations),
+    Rcpp::Named("screen_start_indices") = Rcpp::wrap(summary.screen_start_indices),
+    Rcpp::Named("screen_values") = Rcpp::wrap(summary.screen_values),
     Rcpp::Named("n_random_starts") = random_starts,
-    Rcpp::Named("n_screened") = static_cast<int>(screen_values.size()),
-    Rcpp::Named("n_triaged") = n_triaged,
-    Rcpp::Named("n_fully_optimized") = n_fully_optimized
+    Rcpp::Named("n_screened") = static_cast<int>(summary.screen_values.size()),
+    Rcpp::Named("n_triaged") = summary.n_triaged,
+    Rcpp::Named("n_fully_optimized") = summary.n_fully_optimized
+  );
+}
+
+//' Batched oblique Procrustes target rotation over a cube of loading matrices
+//'
+//' Align each slice of a loading-matrix cube to a single shared target using the
+//' same oblique target rotation as `.oblique_procrustes()`, in one call. This
+//' removes the per-replicate marshalling overhead of looping `PROCRUSTES()` in R
+//' over bootstrap or multiple-imputation arrays.
+//'
+//' Each slice `A[, , i]` is aligned to `B`. For a single-factor cube the alignment
+//' reduces to the closed-form sign match `T = sign(crossprod(A_i, B))` with factor
+//' correlation `1`, matching the one-factor short-circuit in `PROCRUSTES()`. For
+//' two or more factors the slice is warm-started from the closed-form orthogonal
+//' Procrustes solution (mirroring `PROCRUSTES()`) and optimized with the same
+//' multi-start oblique solver as `.oblique_procrustes()`. Random starts are drawn
+//' serially with `R::rnorm` in the calling process.
+//'
+//' Slices are aligned independently. A slice that cannot be aligned (a non-finite
+//' loading matrix, a failed warm-start decomposition, an invalid fit, or any
+//' linear-algebra exception) is reported with `valid = FALSE` and `NA` for the
+//' loadings, factor correlations, and all other per-slice diagnostics, rather than
+//' aborting the whole call, so one degenerate replicate does not discard the rest.
+//'
+//' @param A Numeric array of dimension `n x m x b`: the `b` loading matrices to
+//'   align.
+//' @param B Numeric `n x m` target loading matrix shared across all slices.
+//' @param eps Numeric scalar. Convergence tolerance for the projected-gradient
+//'   norm.
+//' @param maxit Integer scalar. Maximum number of full projected-gradient updates.
+//' @param max_line_search Integer scalar. Maximum number of step-halving attempts
+//'   after the initial trial step in each line-search phase.
+//' @param step0 Numeric scalar. Initial step size used in the projected-gradient
+//'   update.
+//' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before
+//'   rotation and reverse it afterwards (ignored for single-factor slices).
+//' @param random_starts Integer scalar. Number of additional random starts per
+//'   slice.
+//' @param screen_keep Integer scalar. Number of screened random starts retained
+//'   for triage optimization.
+//' @param triage_maxit Integer scalar. Number of short optimization iterations
+//'   used in the triage stage.
+//' @param triage_improve_tol Numeric scalar. Relative improvement required for a
+//'   triaged start to be promoted to full optimization.
+//'
+//' @returns A named list with the aligned-loadings array `loadings` (`n x m x b`),
+//'   the factor-correlation array `Phi` (`m x m x b`), and the per-slice
+//'   diagnostics `valid`, `convergence`, `value`, `iterations`, and
+//'   `line_search_failed`.
+//'
+// [[Rcpp::export(.oblique_procrustes_batch)]]
+Rcpp::List oblique_procrustes_batch(const arma::cube& A,
+                                    const arma::mat& B,
+                                    double eps = 1e-5,
+                                    int maxit = 1000,
+                                    int max_line_search = 10,
+                                    double step0 = 1.0,
+                                    bool normalize = false,
+                                    int random_starts = 0,
+                                    int screen_keep = 2,
+                                    int triage_maxit = 25,
+                                    double triage_improve_tol = 0.0) {
+  const arma::uword n = A.n_rows;
+  const arma::uword m = A.n_cols;
+  const arma::uword b = A.n_slices;
+
+  if (n == 0 || m == 0 || b == 0) {
+    Rcpp::stop("A must be a non-empty n x m x b array.");
+  }
+  if (B.n_rows != n || B.n_cols != m) {
+    Rcpp::stop("B must have the same dimensions as each slice of A.");
+  }
+  if (!all_finite_cpp(B)) {
+    Rcpp::stop("B must contain only finite values.");
+  }
+  validate_oblique_scalars(eps, maxit, max_line_search, step0, random_starts,
+                           screen_keep, triage_maxit, triage_improve_tol);
+
+  // Each slice is aligned independently. A slice that cannot be aligned -- a
+  // non-finite loading matrix, a failed warm-start decomposition, an invalid fit,
+  // or any unexpected linear-algebra exception -- is marked invalid and left as
+  // NA, rather than aborting the whole batch. This preserves the per-replicate
+  // failure isolation of the per-replicate PROCRUSTES() loop it replaces: one
+  // degenerate bootstrap replicate drops out instead of losing the entire run.
+  // An invalid slice is reported as valid = FALSE with everything else NA, so a
+  // skipped replicate is never mistaken for a fit that ran but failed to converge.
+  arma::cube loadings(n, m, b);
+  arma::cube Phi(m, m, b);
+  loadings.fill(NA_REAL);
+  Phi.fill(NA_REAL);
+  Rcpp::LogicalVector valid(b);
+  Rcpp::LogicalVector convergence(b, NA_LOGICAL);
+  Rcpp::NumericVector value(b, NA_REAL);
+  Rcpp::IntegerVector iterations(b, NA_INTEGER);
+  Rcpp::LogicalVector line_search_failed(b, NA_LOGICAL);
+
+  if (m == 1) {
+    // Single factor: oblique alignment reduces to a sign match (Phi = 1), with no
+    // optimization or random starts, mirroring the one-factor short-circuit in
+    // PROCRUSTES(). Kaiser normalization does not affect a sign and is skipped.
+    // The factor count is a whole-cube constant, so this branch is taken once.
+    for (arma::uword i = 0; i < b; ++i) {
+      Rcpp::checkUserInterrupt();
+      const R_xlen_t out_i = static_cast<R_xlen_t>(i);
+      const arma::mat A_i = A.slice(i);
+      if (!A_i.is_finite()) {
+        continue;
+      }
+      double t = (arma::accu(A_i % B) >= 0.0) ? 1.0 : -1.0;
+      arma::mat L = A_i * t;
+      loadings.slice(i) = L;
+      Phi.slice(i).fill(1.0);
+      valid[out_i] = true;
+      convergence[out_i] = true;
+      value[out_i] = 0.5 * arma::accu(arma::square(L - B));
+      iterations[out_i] = 0;
+      line_search_failed[out_i] = false;
+    }
+  } else {
+    // The target B (and, when not normalizing, crossprod(B)) is shared across all
+    // slices, so hoist the invariant rather than rebuilding it per replicate.
+    const double BtB_shared = normalize ? 0.0 : accu(B % B);
+
+    for (arma::uword i = 0; i < b; ++i) {
+      Rcpp::checkUserInterrupt();
+      const R_xlen_t out_i = static_cast<R_xlen_t>(i);
+      const arma::mat A_i = A.slice(i);
+      if (!A_i.is_finite()) {
+        continue;
+      }
+
+      try {
+        arma::mat A_work;  // only materialized (and modified) under normalize
+        arma::vec W;
+        arma::mat S, C, T_primary;
+        double BtB;
+        bool warm_ok;
+
+        if (normalize) {
+          A_work = A_i;
+          arma::mat B_work = B;
+          W = kaiser_normalize_rows(A_work, B_work);
+          S = A_work.t() * A_work;
+          C = A_work.t() * B_work;
+          BtB = accu(B_work % B_work);
+          warm_ok = orthogonal_procrustes_T_cpp(A_work, B_work, T_primary);
+        } else {
+          S = A_i.t() * A_i;
+          C = A_i.t() * B;
+          BtB = BtB_shared;
+          warm_ok = orthogonal_procrustes_T_cpp(A_i, B, T_primary);
+        }
+        if (!warm_ok) {
+          continue;
+        }
+
+        ObliqueFitSummary summary = run_oblique_multistart(
+          S, C, BtB, T_primary, eps, maxit, max_line_search, step0,
+          random_starts, screen_keep, triage_maxit, triage_improve_tol
+        );
+        const FitResult& best_fit = summary.best_fit;
+        if (!best_fit.valid) {
+          continue;
+        }
+
+        // Form the loadings from the (normalized) matrix actually fitted, without
+        // copying A_i again when no normalization is applied.
+        const arma::mat& A_fit = normalize ? A_work : A_i;
+        arma::mat Lrot, Phi_i;
+        finalize_oblique(best_fit, A_fit, W, normalize, Lrot, Phi_i);
+
+        loadings.slice(i) = Lrot;
+        Phi.slice(i) = Phi_i;
+        valid[out_i] = true;
+        convergence[out_i] = best_fit.convergence;
+        value[out_i] = best_fit.value;
+        iterations[out_i] = best_fit.iterations;
+        line_search_failed[out_i] = best_fit.line_search_failed;
+      } catch (const std::exception&) {
+        // Leave this slice as NA / invalid and continue with the remaining ones.
+      }
+    }
+  }
+
+  return Rcpp::List::create(
+    Rcpp::Named("loadings") = loadings,
+    Rcpp::Named("Phi") = Phi,
+    Rcpp::Named("valid") = valid,
+    Rcpp::Named("convergence") = convergence,
+    Rcpp::Named("value") = value,
+    Rcpp::Named("iterations") = iterations,
+    Rcpp::Named("line_search_failed") = line_search_failed
   );
 }

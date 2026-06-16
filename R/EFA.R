@@ -738,27 +738,35 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES"),
                                         NULL))
 
     failed_rot <- 0
-    for (boot_i in seq_len(b)) {
 
-      if (failed[boot_i]) next
-
-      # save target-rotated loading matrix
-      aligned_i <- tryCatch(
-        PROCRUSTES(boot_fit[[boot_i]]$unrot_loadings,
-                   Target = L_rot, rotation = "oblique",
-                   oblique_random_starts = 5),
-        error = function(e) NULL
-      )
-      # Exclude a replicate only when no valid alignment could be produced. The
-      # best multi-start fit is kept even if it did not formally converge: it is
-      # the lowest-objective alignment available and its loadings are well-defined.
-      if (is.null(aligned_i) || isFALSE(aligned_i$valid)) {
-        failed_rot <- failed_rot + 1
-        next
+    # Align every successfully fit replicate to the target in a single compiled
+    # call over the loading cube, rather than one PROCRUSTES() round trip per
+    # replicate. Replicates that failed to fit or could not be aligned to the
+    # point estimate are excluded from the cube and stay NA in the output arrays.
+    keep <- which(!failed)
+    if (length(keep) > 0) {
+      A_cube <- array(NA_real_, c(nrow_L, ncol_L, length(keep)))
+      for (j in seq_along(keep)) {
+        A_cube[, , j] <- boot_fit[[keep[j]]]$unrot_loadings
       }
-      L_rot_boot[,, boot_i] <- aligned_i$loadings
-      Phi_rot_boot[,, boot_i] <- aligned_i$Phi
-      Structure_boot[,, boot_i] <- aligned_i$loadings %*% aligned_i$Phi
+
+      aligned <- .oblique_procrustes_batch(A_cube, L_rot, random_starts = 5)
+
+      for (j in seq_along(keep)) {
+        boot_i <- keep[j]
+        # Exclude a replicate only when no valid alignment could be produced. The
+        # best multi-start fit is kept even if it did not formally converge: it is
+        # the lowest-objective alignment available and its loadings are well-defined.
+        if (!isTRUE(aligned$valid[j])) {
+          failed_rot <- failed_rot + 1
+          next
+        }
+        L_j <- matrix(aligned$loadings[, , j], nrow_L, ncol_L)
+        Phi_j <- matrix(aligned$Phi[, , j], ncol_L, ncol_L)
+        L_rot_boot[, , boot_i] <- L_j
+        Phi_rot_boot[, , boot_i] <- Phi_j
+        Structure_boot[, , boot_i] <- L_j %*% Phi_j
+      }
     }
 
     valid_rot <- b - n_failed - failed_rot

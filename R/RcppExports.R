@@ -116,6 +116,57 @@
     .Call(`_EFAtools_oblique_procrustes`, A, B, S_r, T_init_r, eps, maxit, max_line_search, step0, normalize, random_starts, screen_keep, triage_maxit, triage_improve_tol)
 }
 
+#' Batched oblique Procrustes target rotation over a cube of loading matrices
+#'
+#' Align each slice of a loading-matrix cube to a single shared target using the
+#' same oblique target rotation as `.oblique_procrustes()`, in one call. This
+#' removes the per-replicate marshalling overhead of looping `PROCRUSTES()` in R
+#' over bootstrap or multiple-imputation arrays.
+#'
+#' Each slice `A[, , i]` is aligned to `B`. For a single-factor cube the alignment
+#' reduces to the closed-form sign match `T = sign(crossprod(A_i, B))` with factor
+#' correlation `1`, matching the one-factor short-circuit in `PROCRUSTES()`. For
+#' two or more factors the slice is warm-started from the closed-form orthogonal
+#' Procrustes solution (mirroring `PROCRUSTES()`) and optimized with the same
+#' multi-start oblique solver as `.oblique_procrustes()`. Random starts are drawn
+#' serially with `R::rnorm` in the calling process.
+#'
+#' Slices are aligned independently. A slice that cannot be aligned (a non-finite
+#' loading matrix, a failed warm-start decomposition, an invalid fit, or any
+#' linear-algebra exception) is reported with `valid = FALSE` and `NA` for the
+#' loadings, factor correlations, and all other per-slice diagnostics, rather than
+#' aborting the whole call, so one degenerate replicate does not discard the rest.
+#'
+#' @param A Numeric array of dimension `n x m x b`: the `b` loading matrices to
+#'   align.
+#' @param B Numeric `n x m` target loading matrix shared across all slices.
+#' @param eps Numeric scalar. Convergence tolerance for the projected-gradient
+#'   norm.
+#' @param maxit Integer scalar. Maximum number of full projected-gradient updates.
+#' @param max_line_search Integer scalar. Maximum number of step-halving attempts
+#'   after the initial trial step in each line-search phase.
+#' @param step0 Numeric scalar. Initial step size used in the projected-gradient
+#'   update.
+#' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before
+#'   rotation and reverse it afterwards (ignored for single-factor slices).
+#' @param random_starts Integer scalar. Number of additional random starts per
+#'   slice.
+#' @param screen_keep Integer scalar. Number of screened random starts retained
+#'   for triage optimization.
+#' @param triage_maxit Integer scalar. Number of short optimization iterations
+#'   used in the triage stage.
+#' @param triage_improve_tol Numeric scalar. Relative improvement required for a
+#'   triaged start to be promoted to full optimization.
+#'
+#' @returns A named list with the aligned-loadings array `loadings` (`n x m x b`),
+#'   the factor-correlation array `Phi` (`m x m x b`), and the per-slice
+#'   diagnostics `valid`, `convergence`, `value`, `iterations`, and
+#'   `line_search_failed`.
+#'
+.oblique_procrustes_batch <- function(A, B, eps = 1e-5, maxit = 1000L, max_line_search = 10L, step0 = 1.0, normalize = FALSE, random_starts = 0L, screen_keep = 2L, triage_maxit = 25L, triage_improve_tol = 0.0) {
+    .Call(`_EFAtools_oblique_procrustes_batch`, A, B, eps, maxit, max_line_search, step0, normalize, random_starts, screen_keep, triage_maxit, triage_improve_tol)
+}
+
 #' Perform the iterative PAF procedure
 #'
 #' Function called from within PAF so usually no call to this is needed by the user.

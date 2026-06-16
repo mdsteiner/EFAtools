@@ -369,3 +369,97 @@ test_that("ML np-boot drops only the analytic RMSEA bounds from the fit-index SE
   expect_true(is.finite(res$fit_indices$RMSEA_LB))
   expect_true(is.finite(res$fit_indices$RMSEA_UB))
 })
+
+test_that(".oblique_procrustes_batch isolates an unalignable replicate", {
+  # A single non-finite slice must not abort the whole batch: it is reported
+  # valid = FALSE with NA loadings/Phi/diagnostics, while the OTHER (distinct)
+  # slices align independently and correctly. This mirrors the per-replicate
+  # failure isolation of the per-replicate PROCRUSTES() loop the batch replaces.
+  set.seed(311)
+  efa <- suppressWarnings(suppressMessages(
+    EFA(GRiPS_raw, n_factors = 2, method = "PAF", rotation = "promax")))
+  L_rot <- efa$rot_loadings
+  p <- nrow(L_rot); m <- ncol(L_rot); N <- nrow(GRiPS_raw)
+
+  # three DISTINCT replicate loadings, so a cross-slice contamination bug cannot
+  # hide behind identical input slices
+  slice_fit <- function(seed) {
+    set.seed(seed)
+    ind <- sample(N, N, replace = TRUE)
+    suppressWarnings(.estimate_model(stats::cor(GRiPS_raw[ind, ]), method = "PAF",
+        n_factors = m, N = N, type = "EFAtools", lean = TRUE))$unrot_loadings
+  }
+  cube <- array(NA_real_, c(p, m, 3))
+  cube[, , 1] <- slice_fit(11)
+  cube[, , 2] <- slice_fit(12)
+  cube[, , 3] <- slice_fit(13)
+  cube[1, 1, 2] <- Inf                       # make the middle replicate unalignable
+
+  set.seed(1)
+  res <- .oblique_procrustes_batch(cube, L_rot, random_starts = 5)
+
+  expect_identical(as.logical(res$valid), c(TRUE, FALSE, TRUE))
+  expect_true(all(is.na(res$loadings[, , 2])))           # invalid slice -> NA, not garbage
+  expect_true(all(is.na(res$Phi[, , 2])))
+  # invalid slice: every diagnostic is NA, only `valid` is a definite FALSE
+  expect_true(all(is.na(c(res$value[2], res$iterations[2],
+                          res$convergence[2], res$line_search_failed[2]))))
+  expect_true(all(is.finite(res$loadings[, , c(1, 3)])))
+  expect_true(all(is.finite(res$Phi[, , c(1, 3)])))
+
+  # the surviving slices are aligned independently: distinct inputs give distinct
+  # outputs (a contamination bug would tie them together)...
+  expect_gt(max(abs(res$loadings[, , 1] - res$loadings[, , 3])), 1e-3)
+  # ...and the first surviving slice reproduces a stand-alone single-slice
+  # alignment of the same input under the same RNG offset (uncontaminated result)
+  set.seed(1)
+  solo <- .oblique_procrustes_batch(cube[, , 1, drop = FALSE], L_rot, random_starts = 5)
+  expect_equal(res$loadings[, , 1], solo$loadings[, , 1], tolerance = 1e-10)
+})
+
+test_that(".oblique_procrustes_batch matches the per-replicate PROCRUSTES alignment", {
+  skip_on_cran()
+  # The batched alignment must reproduce the single-matrix oblique PROCRUSTES path
+  # it replaces (same warm start, same R::rnorm random-start stream) to tolerance.
+  set.seed(321)
+  efa <- suppressWarnings(suppressMessages(
+    EFA(GRiPS_raw, n_factors = 3, method = "PAF", rotation = "promax")))
+  L_rot <- efa$rot_loadings
+  p <- nrow(L_rot); m <- ncol(L_rot)
+  N <- nrow(GRiPS_raw)
+
+  b <- 10L
+  cube <- array(NA_real_, c(p, m, b))
+  for (i in seq_len(b)) {
+    ind <- sample(N, N, replace = TRUE)
+    fit <- suppressWarnings(.estimate_model(stats::cor(GRiPS_raw[ind, ]),
+              method = "PAF", n_factors = m, N = N, type = "EFAtools", lean = TRUE))
+    cube[, , i] <- fit$unrot_loadings
+  }
+
+  set.seed(99)
+  loop_L <- array(NA_real_, c(p, m, b))
+  for (j in seq_len(b)) {
+    loop_L[, , j] <- PROCRUSTES(cube[, , j], Target = L_rot, rotation = "oblique",
+                                oblique_random_starts = 5)$loadings
+  }
+  set.seed(99)
+  batch <- .oblique_procrustes_batch(cube, L_rot, random_starts = 5)
+
+  expect_equal(batch$loadings, loop_L, tolerance = 1e-8)
+})
+
+test_that("oblique np-boot runs end to end for a single-factor model", {
+  skip_on_cran()
+  # A one-factor model with an oblique-family rotation reaches the batch's m == 1
+  # closed-form path; the bootstrap must run end to end and return finite SEs.
+  set.seed(404)
+  res <- suppressWarnings(suppressMessages(
+    EFA(GRiPS_raw, n_factors = 1, method = "PAF", rotation = "promax",
+        se = "np-boot", b_boot = 8)))
+
+  expect_s3_class(res, "EFA")
+  expect_false(is.null(res$boot.SE$rot_loadings))
+  expect_true(all(is.finite(res$boot.SE$rot_loadings)))
+  expect_identical(dim(res$boot.arrays$rot_loadings)[3], 8L)
+})

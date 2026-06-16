@@ -294,10 +294,31 @@ worker-count-independent guarantee; dqrng lands when a C++ kernel draws RNG in t
       *DoD:* PAF byte-identical (≈1e-15 vs psych); NEWS only if B10 moves a number.
 - [ ] **P3.4** Lean bootstrap: `.gof(ci = FALSE)` per replicate; skip uniroot + unused eigens.
       *DoD:* fit-index/loading/residual CIs preserved within MC tolerance; faster.
-- [ ] **P3.5** Batched C++ Procrustes (cube alignment in one call).
-      *DoD:* SE/CI statistically equivalent; record RNG-order change for P3.6 NEWS.
+- [x] **P3.5** Batched C++ Procrustes (cube alignment in one call). DONE (awaiting commit).
+      `.oblique_procrustes_batch(A_cube, B, ...)` loops slices in C++ over the shared
+      `run_oblique_multistart` core; `.boot_se_ci()` oblique branch now makes one batched
+      call over the non-failed replicates instead of `b` `PROCRUSTES()` round trips.
+      Single-factor slices use a closed-form sign match in C++ (no R fallback loop).
+      The batch is per-slice robust: an unalignable slice (non-finite loadings, failed
+      warm-start SVD, invalid fit, or any linear-algebra exception) is reported
+      `valid = FALSE` with NA loadings/Phi and the run continues, preserving the
+      per-replicate failure isolation of the loop it replaces. Shared helpers
+      (`validate_oblique_scalars`/`kaiser_normalize_rows`/`finalize_oblique`) back both
+      the single and batched entry points.
+      *Result:* output **numerically identical** to the old per-replicate path
+      (max |loading diff| ≈ 1.7e-15, SE diff ≈ 1e-17); `Structure = pattern·Φ` exact;
+      ≈1.9× faster on the alignment (after hoisting the shared target cross-product).
+      **For P3.6:** the anticipated RNG-order shift did NOT materialise — processing
+      non-failed slices in order keeps the `R::rnorm` stream aligned with the old loop.
+      The one behavioural change is that the oblique bootstrap **warm start now uses
+      Armadillo's `svd` inside C++** (was R's `svd()` via `.procrustes_orthogonal_T`);
+      `U Vᵀ` is sign/order-invariant so it matches to ≈1e-15, but exact bit-identity to
+      the old path is not guaranteed in SVD-degenerate cases. P3.6's reproducibility
+      test should pin the NEW path against itself; cross-version equality is ~1e-15.
 - [ ] **P3.6** `seed` arg + `future.apply` bootstrap + reproducibility test + NEWS.
       *DoD:* bit-identical at 1 vs 2 workers; `test-EFA-boot.R` green.
+      NEWS: note that oblique bootstrap re-rotation is now a single compiled pass and
+      that its warm start moved to C++ `svd` (see P3.5 above).
 
 ### Phase 4 — C++ rotation (GPF) engine → `0.9.x`
 **Goal:** native, fast rotations; reduce/remove the GPArotation dependency.

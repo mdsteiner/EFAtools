@@ -141,6 +141,27 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// oblique_procrustes_batch
+Rcpp::List oblique_procrustes_batch(const arma::cube& A, const arma::mat& B, double eps, int maxit, int max_line_search, double step0, bool normalize, int random_starts, int screen_keep, int triage_maxit, double triage_improve_tol);
+RcppExport SEXP _EFAtools_oblique_procrustes_batch(SEXP ASEXP, SEXP BSEXP, SEXP epsSEXP, SEXP maxitSEXP, SEXP max_line_searchSEXP, SEXP step0SEXP, SEXP normalizeSEXP, SEXP random_startsSEXP, SEXP screen_keepSEXP, SEXP triage_maxitSEXP, SEXP triage_improve_tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::cube& >::type A(ASEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type B(BSEXP);
+    Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< int >::type max_line_search(max_line_searchSEXP);
+    Rcpp::traits::input_parameter< double >::type step0(step0SEXP);
+    Rcpp::traits::input_parameter< bool >::type normalize(normalizeSEXP);
+    Rcpp::traits::input_parameter< int >::type random_starts(random_startsSEXP);
+    Rcpp::traits::input_parameter< int >::type screen_keep(screen_keepSEXP);
+    Rcpp::traits::input_parameter< int >::type triage_maxit(triage_maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type triage_improve_tol(triage_improve_tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(oblique_procrustes_batch(A, B, eps, maxit, max_line_search, step0, normalize, random_starts, screen_keep, triage_maxit, triage_improve_tol));
+    return rcpp_result_gen;
+END_RCPP
+}
 // paf_iter
 Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R, const int n_fac, bool abs_eig, int crit_type, int max_iter);
 RcppExport SEXP _EFAtools_paf_iter(SEXP h2SEXP, SEXP criterionSEXP, SEXP RSEXP, SEXP n_facSEXP, SEXP abs_eigSEXP, SEXP crit_typeSEXP, SEXP max_iterSEXP) {
@@ -184,6 +205,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EFAtools_factor_corres", (DL_FUNC) &_EFAtools_factor_corres, 3},
     {"_EFAtools_nest_sym", (DL_FUNC) &_EFAtools_nest_sym, 4},
     {"_EFAtools_oblique_procrustes", (DL_FUNC) &_EFAtools_oblique_procrustes, 13},
+    {"_EFAtools_oblique_procrustes_batch", (DL_FUNC) &_EFAtools_oblique_procrustes_batch, 11},
     {"_EFAtools_paf_iter", (DL_FUNC) &_EFAtools_paf_iter, 7},
     {"_EFAtools_parallel_sim", (DL_FUNC) &_EFAtools_parallel_sim, 5},
     {NULL, NULL, 0}
