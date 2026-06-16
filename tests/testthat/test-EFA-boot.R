@@ -317,3 +317,55 @@ test_that("over-extraction guards turn n_fac >= ncol into errors", {
   expect_error(.grad_uls(psi, R, m), "smaller than the number of variables")
   expect_error(.uls_residuals(psi, R, m), "smaller than the number of variables")
 })
+
+test_that(".estimate_model(lean = TRUE) returns only the bootstrap-aggregated quantities", {
+  # The bootstrap replicate fitter computes just the loadings, fit indices, and
+  # residuals that .boot_se_ci() aggregates. Those must match the full fit
+  # exactly, except for the analytic RMSEA bounds, which the lean fit does not
+  # solve (they are not meaningfully bootstrapped).
+  R <- test_models$baseline$cormat
+  N <- 500
+  bounds <- c("RMSEA_LB", "RMSEA_UB")
+
+  method_args <- list(
+    PAF = list(type = "EFAtools"),
+    ML  = list(start_method = "psych"),
+    ULS = list()
+  )
+
+  for (method in names(method_args)) {
+    common <- c(list(R, method = method, n_factors = 3, N = N),
+                method_args[[method]])
+    full <- suppressWarnings(do.call(.estimate_model, common))
+    lean <- suppressWarnings(do.call(.estimate_model, c(common, list(lean = TRUE))))
+
+    expect_named(lean, c("unrot_loadings", "fit_indices", "residuals", "convergence"))
+
+    expect_equal(as.vector(lean$unrot_loadings), as.vector(full$unrot_loadings),
+                 info = method)
+    expect_equal(as.vector(lean$residuals), as.vector(full$residuals), info = method)
+    expect_identical(lean$convergence, full$convergence, info = method)
+
+    keep <- setdiff(names(full$fit_indices), bounds)
+    expect_equal(lean$fit_indices[keep], full$fit_indices[keep], info = method)
+    expect_true(all(is.na(unlist(lean$fit_indices[bounds]))), info = method)
+  }
+})
+
+test_that("ML np-boot drops only the analytic RMSEA bounds from the fit-index SEs", {
+  skip_on_cran()
+  set.seed(202)
+  res <- suppressWarnings(suppressMessages(
+    EFA(GRiPS_raw, n_factors = 2, method = "ML", rotation = "none",
+        se = "np-boot", b_boot = 10)
+  ))
+
+  se_fit <- res$boot.SE$fit_indices
+  # the per-replicate analytic RMSEA bounds are not bootstrapped
+  expect_true(all(is.na(se_fit[c("RMSEA_LB", "RMSEA_UB")])))
+  # the bootstrapped fit indices that are aggregated stay finite
+  expect_true(all(is.finite(se_fit[c("CAF", "RMSR", "SRMR")])))
+  # the point estimate keeps its full analytic RMSEA confidence interval
+  expect_true(is.finite(res$fit_indices$RMSEA_LB))
+  expect_true(is.finite(res$fit_indices$RMSEA_UB))
+})

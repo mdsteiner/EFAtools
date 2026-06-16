@@ -23,7 +23,7 @@
 # consistent sign, names them (with a V-fallback when the input is unnamed),
 # computes the explained variances, fit indices, communalities, model-implied
 # correlation matrix, residuals, and the original/final eigenvalues.
-.finalize_fit <- function(fit, N, method) {
+.finalize_fit <- function(fit, N, method, lean = FALSE) {
 
   L <- fit$L
   orig_R <- fit$orig_R
@@ -41,6 +41,23 @@
     } else {
       L <- as.matrix(L)
     }
+  }
+
+  # Bootstrap replicate path: .boot_se_ci() aggregates only each replicate's
+  # unrotated loadings, fit indices, and residuals, so only those are computed.
+  # The two eigendecompositions, variable naming, explained variances, and
+  # Heywood detection are skipped (none are aggregated per replicate), and the
+  # analytic RMSEA confidence bounds are not solved (.gof(ci = FALSE)). The sign
+  # reflection above is kept so the loadings are identical to the full path,
+  # leaving the downstream target alignment unchanged.
+  if (lean) {
+    model_implied_R <- L %*% t(L) + diag(1 - h2)
+    return(list(
+      unrot_loadings = L,
+      fit_indices = .gof(L, orig_R, N, method, fit$Fm, ci = FALSE),
+      residuals = orig_R - model_implied_R,
+      convergence = fit$convergence
+    ))
   }
 
   if (!is.null(colnames(orig_R))) {
@@ -104,7 +121,7 @@
 .estimate_model <- function(R, method, n_factors, N = NA,
                             type = "none", max_iter = NA, init_comm = NA,
                             criterion = NA, criterion_type = NA, abs_eigen = NA,
-                            start_method = NA) {
+                            start_method = NA, lean = FALSE) {
 
   fit <- switch(
     method,
@@ -115,7 +132,13 @@
     ULS = .ULS(R, n_factors = n_factors)
   )
 
-  common <- .finalize_fit(fit, N = N, method = method)
+  common <- .finalize_fit(fit, N = N, method = method, lean = lean)
+
+  # The bootstrap replicate path needs only the post-processed common fields;
+  # skip the method-specific output assembly, which the aggregation never reads.
+  if (lean) {
+    return(common)
+  }
 
   if (method == "PAF") {
 

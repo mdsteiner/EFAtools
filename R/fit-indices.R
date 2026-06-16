@@ -120,7 +120,8 @@
                  R, # The correlation matrix
                  N, # The number of cases
                  method, # The estimation method
-                 Fm) { # Minimized error
+                 Fm, # Minimized error
+                 ci = TRUE) { # Compute the analytic RMSEA confidence bounds
   m <- nrow(L)
   q <- ncol(L)
 
@@ -217,16 +218,29 @@
 
       # formula 12.6 from Kline 2016; Principles and practices of...
       RMSEA <- sqrt(max(0, chi - df) / (df * (N - 1)))
+      if(RMSEA > 1) RMSEA <- 1
 
-    lambda_l <- .rmsea_lambda(chi, df, .95)
-    lambda_u <- .rmsea_lambda(chi, df, .05)
+      if (isTRUE(ci)) {
 
-    RMSEA_LB <- sqrt(lambda_l / (df * (N - 1)))
-    RMSEA_UB <- sqrt(lambda_u / (df * (N - 1)))
+        # Analytic 90% RMSEA confidence bounds via the noncentrality solver
+        # (Browne & Cudeck, 1992). The two uniroot solves are skipped when
+        # ci = FALSE (the per-replicate bootstrap fits): an analytic confidence
+        # interval is not itself bootstrapped, so the bounds are not aggregated.
+        lambda_l <- .rmsea_lambda(chi, df, .95)
+        lambda_u <- .rmsea_lambda(chi, df, .05)
 
-    if(RMSEA > 1) RMSEA <- 1
-    if(RMSEA_LB > 1) RMSEA_LB <- 1
-    if(RMSEA_UB > 1) RMSEA_UB <- 1
+        RMSEA_LB <- sqrt(lambda_l / (df * (N - 1)))
+        RMSEA_UB <- sqrt(lambda_u / (df * (N - 1)))
+
+        if(RMSEA_LB > 1) RMSEA_LB <- 1
+        if(RMSEA_UB > 1) RMSEA_UB <- 1
+
+      } else {
+
+        RMSEA_LB <- NA_real_
+        RMSEA_UB <- NA_real_
+
+      }
 
     } else {
 

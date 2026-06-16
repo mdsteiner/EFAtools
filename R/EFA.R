@@ -513,7 +513,10 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES"),
                            type = type, max_iter = max_iter,
                            init_comm = init_comm, criterion = criterion,
                            criterion_type = criterion_type,
-                           abs_eigen = abs_eigen, start_method = start_method)
+                           abs_eigen = abs_eigen, start_method = start_method,
+                           # Each replicate fits only the quantities the bootstrap
+                           # aggregation consumes (see .finalize_fit()).
+                           lean = TRUE)
 
   }
 
