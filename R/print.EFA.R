@@ -1346,7 +1346,7 @@ format.summary.EFA <- function(x, ...) {
   iter <- .efa_as_scalar_number(spec$iter)
   max_iter <- .efa_as_scalar_number(spec$max_iter)
 
-  is.finite(iter) && is.finite(max_iter) && iter > max_iter
+  is.finite(iter) && is.finite(max_iter) && iter >= max_iter
 }
 
 .efa_as_scalar_number <- function(x) {

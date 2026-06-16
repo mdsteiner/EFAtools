@@ -27,7 +27,7 @@ print.SL <- function(x, ...) {
       "'", sep = "")
   cat("\n")
 
-  if (!is.null(x$settings$max_iter) && x$iter > x$settings$max_iter) {
+  if (!is.null(x$settings$max_iter) && x$iter >= x$settings$max_iter) {
     cat("\n")
     cat(.efa_style(paste(cli::symbol$cross,
                          "Maximum number of iterations reached",

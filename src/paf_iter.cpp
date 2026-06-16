@@ -43,21 +43,22 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
                n_fac, static_cast<int>(R.n_cols));
   }
 
-  // Only crit_type 1 and 2 have an iteration loop below; any other value would
-  // skip every branch and return an uninitialised (empty) loading matrix.
+  // Only crit_type 1 and 2 are handled in the loop below; any other value would
+  // leave delta undefined and the loading matrix uninitialised (empty).
   if (crit_type != 1 && crit_type != 2) {
     Rcpp::stop("crit_type must be 1 (maximum individual change) or 2 (sum of "
                "changes).");
   }
 
-  int iter = 1;
+  // iter counts completed iterations: start at 0 and stop once max_iter passes
+  // have run, so a run that converges on the Nth pass reports N (not N + 1).
+  int iter = 0;
   // Start above the criterion so the iteration runs at least once even when
   // criterion >= 1 (EFA() rejects that, but keep the kernel self-contained).
   double delta = criterion + 1.0;
   // Flagged (instead of aborting here) when an eigenvalue turns negative in a
   // non-absolute branch, so PAF() can raise a classed R condition.
   bool neg_eigen = false;
-  arma::vec tv(R.n_cols);
   arma::vec Lambda;
   arma::mat V;
   arma::mat L;
@@ -66,317 +67,62 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
   arma::mat eigvec;
   arma::mat Lt;
 
-  if (abs_eig == false) {
+  // One iterative loop parameterised on abs_eig, crit_type, and the n_fac == 1
+  // special case. The per-iteration branches are loop-invariant and negligible
+  // next to the eigendecomposition, while collapsing the eight near-identical
+  // variants keeps the procedure in a single place.
+  while ((delta > criterion) & (iter < max_iter)) {
 
-    if (n_fac > 1) {
+    // compute the eigenvalues and eigenvectors
+    eig_sym_checked(eigval, eigvec, R);
+    Lambda = flipud(eigval);
+    // SPSS uses absolute eigenvalues to avoid problems taking the square root;
+    // taking the absolute value here matches the signed branch when all
+    // retained eigenvalues are non-negative.
+    if (abs_eig) {
+      Lambda = arma::abs(Lambda);
+    }
+    Lambda = Lambda.head(n_fac);
+    V = fliplr(eigvec);
+    V = V.head_cols(n_fac);
 
-      if (crit_type == 1) {
-
-        while ((delta > criterion) & (iter <= max_iter)) {
-          //  compute the eigenvalues and eigenvectors
-          eig_sym_checked(eigval, eigvec, R);
-          Lambda = flipud(eigval);
-          Lambda = Lambda.head(n_fac);
-          V = fliplr(eigvec);
-          V = V.head_cols(n_fac);
-
-          if (any(Lambda < 0)) {
-            neg_eigen = true;
-            break;
-          }
-
-          // compute the loadings from the eigenvector matrix and diagonal
-          // eigenvalue matrix
-          L = V * arma::diagmat(sqrt(Lambda));
-
-          // get the new communality estimates from the loadings
-          Lt = L * L.t();
-          new_h2 = Lt.diag();
-
-          // save the maximum change in the communality estimates
-          delta = arma::abs(h2 - new_h2).max();
-
-          // update diagonal of R with the new communality estimates
-          R.diag() = new_h2;
-
-          // update old communality estimates with new ones
-          h2 = new_h2;
-
-          // incerase iterator
-          iter += 1;
-
-        }
-
-      } else if (crit_type == 2) {
-
-        while ((delta > criterion) & (iter <= max_iter)) {
-          //  compute the eigenvalues and eigenvectors
-          eig_sym_checked(eigval, eigvec, R);
-          Lambda = flipud(eigval);
-          Lambda = Lambda.head(n_fac);
-          V = fliplr(eigvec);
-          V = V.head_cols(n_fac);
-
-          if (any(Lambda < 0)) {
-            neg_eigen = true;
-            break;
-          }
-
-          // compute the loadings from the eigenvector matrix and diagonal
-          // eigenvalue matrix
-          L = V * arma::diagmat(sqrt(Lambda));
-
-          // get the new communality estimates from the loadings
-          Lt = L * L.t();
-          new_h2 = Lt.diag();
-
-          // convergence criterion according to the psych package
-          delta = std::abs(arma::accu(h2) - arma::accu(new_h2));
-
-          // update diagonal of R with the new communality estimates
-          R.diag() = new_h2;
-
-          // update old communality estimates with new ones
-          h2 = new_h2;
-
-          // incerase iterator
-          iter += 1;
-
-        }
-
-      }
-
-
-    } else {
-
-
-      if (crit_type == 1) {
-
-        while ((delta > criterion) & (iter <= max_iter)) {
-          //  compute the eigenvalues and eigenvectors
-          eig_sym_checked(eigval, eigvec, R);
-          Lambda = flipud(eigval);
-          Lambda = Lambda.head(n_fac);
-          V = fliplr(eigvec);
-          V = V.head_cols(n_fac);
-
-          if (any(Lambda < 0)) {
-            neg_eigen = true;
-            break;
-          }
-
-          // compute the loadings from the eigenvector matrix and diagonal
-          // eigenvalue matrix
-          Lambda = arma::sqrt(Lambda);
-          tv.fill(Lambda[0]);
-          L = V % tv;
-
-          // get the new communality estimates from the loadings
-          Lt = L * L.t();
-          new_h2 = Lt.diag();
-
-          // save the maximum change in the communality estimates
-          delta = arma::abs(h2 - new_h2).max();
-
-          // update diagonal of R with the new communality estimates
-          R.diag() = new_h2;
-
-          // update old communality estimates with new ones
-          h2 = new_h2;
-
-          // incerase iterator
-          iter += 1;
-
-        }
-
-      } else if (crit_type == 2) {
-
-        while ((delta > criterion) & (iter <= max_iter)) {
-          //  compute the eigenvalues and eigenvectors
-          eig_sym_checked(eigval, eigvec, R);
-          Lambda = flipud(eigval);
-          Lambda = Lambda.head(n_fac);
-          V = fliplr(eigvec);
-          V = V.head_cols(n_fac);
-
-          if (any(Lambda < 0)) {
-            neg_eigen = true;
-            break;
-          }
-
-          // compute the loadings from the eigenvector matrix and diagonal
-          // eigenvalue matrix
-          Lambda = arma::sqrt(Lambda);
-          tv.fill(Lambda[0]);
-          L = V % tv;
-
-          // get the new communality estimates from the loadings
-          Lt = L * L.t();
-          new_h2 = Lt.diag();
-
-          // convergence criterion according to the psych package
-          delta = std::abs(arma::accu(h2) - arma::accu(new_h2));
-
-          // update diagonal of R with the new communality estimates
-          R.diag() = new_h2;
-
-          // update old communality estimates with new ones
-          h2 = new_h2;
-
-          // incerase iterator
-          iter += 1;
-
-        }
-
-      }
-
+    // Negative eigenvalues make the loadings (square roots of the eigenvalues)
+    // undefined; only the signed branch can hit this, so flag and stop there.
+    if (!abs_eig && any(Lambda < 0)) {
+      neg_eigen = true;
+      break;
     }
 
-  } else if (abs_eig == true) {
-
+    // compute the loadings from the eigenvector matrix and diagonal eigenvalue
+    // matrix
     if (n_fac > 1) {
-
-      if (crit_type == 1) {
-
-        while ((delta > criterion) & (iter <= max_iter)) {
-          //  compute the eigenvalues and eigenvectors
-          eig_sym_checked(eigval, eigvec, R);
-          Lambda = arma::abs(flipud(eigval));
-          Lambda = Lambda.head(n_fac);
-          V = fliplr(eigvec);
-          V = V.head_cols(n_fac);
-
-          // compute the loadings from the eigenvector matrix and diagonal
-          // eigenvalue matrix
-          L = V * arma::diagmat(sqrt(arma::abs(Lambda)));
-
-          // get the new communality estimates from the loadings
-          Lt = L * L.t();
-          new_h2 = Lt.diag();
-
-          // save the maximum change in the communality estimates
-          delta = arma::abs(h2 - new_h2).max();
-
-          // update diagonal of R with the new communality estimates
-          R.diag() = new_h2;
-
-          // update old communality estimates with new ones
-          h2 = new_h2;
-
-          // incerase iterator
-          iter += 1;
-
-        }
-
-      } else if (crit_type == 2) {
-
-        while ((delta > criterion) & (iter <= max_iter)) {
-          //  compute the eigenvalues and eigenvectors
-          eig_sym_checked(eigval, eigvec, R);
-          Lambda = arma::abs(flipud(eigval));
-          Lambda = Lambda.head(n_fac);
-          V = fliplr(eigvec);
-          V = V.head_cols(n_fac);
-
-          // compute the loadings from the eigenvector matrix and diagonal
-          // eigenvalue matrix
-          L = V * arma::diagmat(sqrt(arma::abs(Lambda)));
-
-          // get the new communality estimates from the loadings
-          Lt = L * L.t();
-          new_h2 = Lt.diag();
-
-          // convergence criterion according to the psych package
-          delta = std::abs(arma::accu(h2) - arma::accu(new_h2));
-
-          // update diagonal of R with the new communality estimates
-          R.diag() = new_h2;
-
-          // update old communality estimates with new ones
-          h2 = new_h2;
-
-          // incerase iterator
-          iter += 1;
-
-        }
-
-      }
-
-
+      L = V * arma::diagmat(arma::sqrt(Lambda));
     } else {
-
-
-      if (crit_type == 1) {
-
-        while ((delta > criterion) & (iter <= max_iter)) {
-          //  compute the eigenvalues and eigenvectors
-          eig_sym_checked(eigval, eigvec, R);
-          Lambda = arma::abs(flipud(eigval));
-          Lambda = Lambda.head(n_fac);
-          V = fliplr(eigvec);
-          V = V.head_cols(n_fac);
-
-          // compute the loadings from the eigenvector matrix and diagonal
-          // eigenvalue matrix
-          Lambda = arma::sqrt(arma::abs(Lambda));
-          tv.fill(Lambda[0]);
-          L = V % tv;
-
-          // get the new communality estimates from the loadings
-          Lt = L * L.t();
-          new_h2 = Lt.diag();
-
-          // save the maximum change in the communality estimates
-          delta = arma::abs(h2 - new_h2).max();
-
-          // update diagonal of R with the new communality estimates
-          R.diag() = new_h2;
-
-          // update old communality estimates with new ones
-          h2 = new_h2;
-
-          // incerase iterator
-          iter += 1;
-
-        }
-
-      } else if (crit_type == 2) {
-
-        while ((delta > criterion) & (iter <= max_iter)) {
-          //  compute the eigenvalues and eigenvectors
-          eig_sym_checked(eigval, eigvec, R);
-          Lambda = arma::abs(flipud(eigval));
-          Lambda = Lambda.head(n_fac);
-          V = fliplr(eigvec);
-          V = V.head_cols(n_fac);
-
-          // compute the loadings from the eigenvector matrix and diagonal
-          // eigenvalue matrix
-          Lambda = arma::sqrt(arma::abs(Lambda));
-          tv.fill(Lambda[0]);
-          L = V % tv;
-
-          // get the new communality estimates from the loadings
-          Lt = L * L.t();
-          new_h2 = Lt.diag();
-
-          // convergence criterion according to the psych package
-          delta = std::abs(arma::accu(h2) - arma::accu(new_h2));
-
-          // update diagonal of R with the new communality estimates
-          R.diag() = new_h2;
-
-          // update old communality estimates with new ones
-          h2 = new_h2;
-
-          // incerase iterator
-          iter += 1;
-
-        }
-
-      }
-
+      Lambda = arma::sqrt(Lambda);
+      L = V * Lambda[0];
     }
+
+    // get the new communality estimates from the loadings
+    Lt = L * L.t();
+    new_h2 = Lt.diag();
+
+    // change in the communality estimates: the maximum individual change
+    // (crit_type 1) or the change in their sum, as used by the psych package
+    // (crit_type 2)
+    if (crit_type == 1) {
+      delta = arma::abs(h2 - new_h2).max();
+    } else {
+      delta = std::abs(arma::accu(h2) - arma::accu(new_h2));
+    }
+
+    // update diagonal of R with the new communality estimates
+    R.diag() = new_h2;
+
+    // update old communality estimates with new ones
+    h2 = new_h2;
+
+    // increase iterator
+    iter += 1;
 
   }
 
@@ -390,4 +136,3 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
                             Rcpp::Named("delta") = delta,
                             Rcpp::Named("neg_eigen") = neg_eigen);
 }
-

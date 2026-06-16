@@ -51,6 +51,9 @@
 * Factor extraction (`PAF`, `ML`, and `ULS`) now raises a clear error when the requested
   number of factors is not smaller than the number of variables, instead of reading past
   the available eigenvalues (undefined behaviour in builds without bounds checking).
+* `EFA()` with `method = "PAF"`: the reported number of iterations (`iter`) is now the
+  number of iterations actually performed; it was previously one too high. The loadings,
+  communalities, and convergence status are unchanged.
 * `ULS` extraction: the minimised objective is now the sum of squared off-diagonal residuals,
   consistent with its analytic gradient and the reported minimum (`Fm`). The diagonal
   residuals were previously included in the objective but not in its gradient. The fitted
