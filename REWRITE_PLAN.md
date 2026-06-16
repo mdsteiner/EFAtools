@@ -69,7 +69,7 @@ Please confirm/adjust these. Each is flagged at the phase where it first bites.
 | ~~O1~~ | **RESOLVED → see D5.** R floor set to `R (>= 4.1.0)`. May bump to 4.2.0 later if the `_` pipe placeholder is wanted. | Locked | Phase 0/1 |
 | O2 | Accept new compiled deps? `LinkingTo: roptim` (phase-1 optimizer), `pbv` (bivariate-normal CDF), `dqrng` (+`sitmo`,`BH`) (parallel RNG); `Imports: lifecycle`, `robustbase` (MCD). | **Yes** to all; **but `dqrng`/`sitmo`/`BH` deferred out of Phase 3** (only `roptim` added there — see Phase 3 decisions); revisit `RcppEnsmallen` later (O3). | Phases 3,5,7,8 |
 | ~~O3~~ | **RESOLVED → `roptim`.** Both `roptim` and `RcppEnsmallen` evaluated 2026-06-15: `roptim` wins on the byte-identical gate (wraps R's `lbfgsb`) and native box-constrained L-BFGS-B; `RcppEnsmallen` has no L-BFGS-B (only Augmented Lagrangian) and stays a post-1.0 backend option. | Locked | Phase 3 |
-| O4 | GPArotation: fully replace with a native C++ GPF engine, or keep it as a fallback during transition? | **Keep as a `Suggests`/fallback**, port criteria to C++ one-by-one with 1e-6 cross-checks, drop only after full parity. | Phase 4 |
+| O4 | GPArotation: fully replace with a native C++ GPF engine, or keep it as a fallback during transition? | **Keep**; Phase 4 ports a **subset** (CF/oblimin/quartimin/geomin) to C++ and **keeps GPArotation in Imports** for the un-ported criteria (bentler/bifactor/simplimax) + as the parity oracle. Demote to Suggests/fallback and drop only after the full set is ported (later phase). Cross-checks use **relaxed parity** (best-`Q` + ~1e-4 aligned), not 1e-6 iterate-matching. | Phase 4 |
 | O5 | Move `lavaan` and (eventually) `psych` from `Imports` to `Suggests` (gated with `requireNamespace`)? | **Yes** for `lavaan` now; `psych` once `cor.smooth`/`factor.scores` are reimplemented. | Phase 1/3 |
 | O6 | Behaviour-changing bug fixes (quartimax→quartimax, Bartlett χ² correction, ULS objective). Fix outright (NEWS entry), or keep current numbers behind a legacy/`type` flag for continuity? | **Fix outright** with prominent NEWS entries; only the SPSS/psych *compatibility presets* need to preserve their documented behaviour. | Phase 2 |
 | O7 | χ² multiplier convention: standardise on lavaan/factanal (Bartlett-corrected ML; `N` vs `N-1`)? | **Yes**, with explicit parity tests vs lavaan and a documented choice. | Phase 2/6 |
@@ -321,33 +321,65 @@ worker-count-independent guarantee; dqrng lands when a C++ kernel draws RNG in t
       that its warm start moved to C++ `svd` (see P3.5 above).
 
 ### Phase 4 — C++ rotation (GPF) engine → `0.9.x`
-**Goal:** native, fast rotations; reduce/remove the GPArotation dependency.
-- [ ] `src/rotate.cpp`: one templated GPForth+GPFoblq engine + criterion functors.
-      Port order: (1) CF family (covers varimax/quartimax/equamax), (2) oblimin/
-      quartimin, (3) geominQ/T, (4) bentler/bifactor, (5) simplimax, (6) infomax,
-      (7) **target & pst** (new — §4/research gap).
-- [ ] Reimplement promax on top of C++ varimax; retire the bespoke `.VARIMAX_SPSS`
-      Jacobi loop + the mismatched `.SV` monitor (keep an SPSS-compat shim/fixtures if
-      `type="SPSS"` parity must be exact — O6).
-- [ ] Report local-minima count across random starts (cheap once C++).
-- [ ] **Reassess the default `randomStarts` (B12).** The R/GPArotation engine makes 100
-      random starts — the value local-minima research recommends as sufficient (Hattori,
-      Zhang & Preacher, 2017, *Multivariate Behavioral Research*, for geomin) — far too slow
-      for a default: a single `EFA()` is fine, but `EFA_AVERAGE` (grid × starts) and
-      bootstrap-heavy uses become unusably slow (the full test suite went from a few minutes
-      to ~30). So `EFA()`'s default is kept at **10** for now. Once rotation runs in fast C++,
-      re-evaluate whether 100 (or another higher value) is feasible as the default, and whether
-      `EFA()`'s default and `.rotate_model()`'s internal default (currently 10 vs 100) should
-      be unified at it.
-- [ ] Replace the `R::rnorm` element loops in the random-start generators
-      (`oblique_procrustes.cpp` / the new `rotate.cpp`) with thread-safe draws
-      (`arma::randn` or `dqrng` streams) **before** any OpenMP region touches them.
-- [ ] Keep `GPArotation` as a `Suggests` fallback per criterion until 1e-6 parity is
-      proven across random-start/normalization settings (O4); then drop.
+**Goal:** native, fast rotations for the high-use criteria; reduce the GPArotation dependency.
 
-**Validation:** each criterion vs `GPArotation` to 1e-6 on `test_models`;
-Structure = pattern·Phi invariant to reflection/ordering.
-**Exit:** oblique bootstrap re-rotation runs entirely in C++.
+**Decisions (resolved 2026-06-16).** Build one **`vgQ`-criterion-templated GPForth+GPFoblq
+engine** on the `oblique_procrustes.cpp` scaffolding (manifold projection, Armijo line search,
+screen→triage→optimize multistart, robustness guards, random orthonormal starts are all
+reusable — the Procrustes objective is just one criterion functor; **add** the orthogonal
+/Stiefel projection variant). **Scope = the high-use subset: CF (quartimax/equamax),
+oblimin/quartimin, geomin (T/Q).** **Keep GPArotation in Imports** as the per-criterion engine
+for bentler/bifactor/simplimax (ported later) and as the validation oracle — hybrid dispatch
+in `rotate_model.R` (ported names → C++, the rest → GPArotation). **`varimax`/`promax` stay
+native R** (already not GPArotation; `.VARIMAX_SPSS`/`.SV` retirement deferred). **Serial C++,
+no OpenMP this phase** (the C++-vs-R win is the lever; `EFA_AVERAGE` already parallelises its
+grid via `future`, so in-engine OpenMP would nest/oversubscribe; `R::rnorm` starts stay serial
+and reproducible — thread-safe draws + OpenMP deferred to post-1.0). `infomax` and `target/pst`
+are **new** criteria, not parity work — deferred. The engine is **not** on the bootstrap hot
+path (oblique bootstrap alignment already uses the P3.5 `.oblique_procrustes_batch`); it
+affects the **point estimate** and **`EFA_AVERAGE`** only.
+
+**Validation philosophy (relaxed per maintainer).** Rotation criteria are non-convex, so
+"parity" = the C++ engine reaches a criterion value `Q` **as good as or better than**
+GPArotation (same `Q` definition) **and** returns a valid rotation; for well-identified
+fixtures, aligned loadings match GPArotation within **~1e-4** (`aligned_max_diff`, sign
+/permutation removed) and the Phi fingerprint within ~1e-4. Byte-identity to GPArotation's
+specific iterates is **not** required (different RNG/line-search may find a different,
+equally-valid minimum). `Structure = pattern·Phi` invariant to reflection/ordering.
+
+- [ ] `src/rotate.cpp`: generalize the scaffolding into a templated GPForth+GPFoblq engine +
+      `vgQ` criterion interface (Bernaards & Jennrich, 2005); add the orthogonal/Stiefel
+      projection; reuse line search/multistart/Kaiser/starts; return multistart local-minima
+      diagnostics. Returned `Th` must match GPArotation's convention so `.reflect_and_order()`
+      reconstructs unchanged (orth: `loadings = L·Th`; obliq: `loadings = L·(Th⁻¹)'`,
+      `Phi = Th'Th`).
+- [ ] Criterion functors: CF (quartimax κ=0, equamax κ=k/(2p)), oblimin/quartimin (γ),
+      geomin (T/Q, ε).
+- [ ] **Reassess `randomStarts` (B12).** Once benchmarked, if 100 starts keep a representative
+      `EFA()`/`EFA_AVERAGE` acceptably fast (very likely — 100 C++ starts should cost ≤ today's
+      10 R starts, and the screen/triage path means 100 starts ≠ 100 full optimizations), bump
+      `EFA()`'s default 10 → 100 and unify with `.rotate_model()`'s 100; else pick a compromise
+      (~30). Behaviour change → NEWS + snapshot updates.
+- [ ] Surface the local-minima count across starts (cheap; the engine already tracks it).
+- [ ] Keep `GPArotation` (Imports) for the un-ported criteria + as oracle; demote to
+      Suggests/fallback and drop only after the full criterion set is ported (later phase).
+
+**Exit:** quartimax/equamax/oblimin/quartimin/geominT/geominQ run entirely in native C++ and
+pass the relaxed-parity net vs GPArotation; GPArotation still handles bentler/bifactor
+/simplimax + varimax/promax stay native.
+
+**Unit queue (P4.1–P4.4 — each atomic, plan-mode first; relaxed-parity validation):**
+- [ ] **P4.1** `rotate.cpp` GPF engine (generalize scaffolding + add GPForth) + **CF family**
+      (quartimax, equamax) wired to C++. *DoD:* quartimax/equamax pass relaxed parity vs
+      GPArotation; `test-ROTATE_ORTH.R`/`test-regression-rotations.R` updated for those two;
+      P3.5 Procrustes/bootstrap tests stay green (prove no regression from any extraction).
+- [ ] **P4.2** **oblimin/quartimin** functor (oblique, on the engine's GPFoblq path).
+      *DoD:* relaxed parity; `test-ROTATE_OBLQ.R` updated for those two (Phi fingerprint).
+- [ ] **P4.3** **geomin** functor (geominT + geominQ). *DoD:* relaxed parity — geomin is
+      multi-minima, so emphasise the best-`Q` check over loading-matching.
+- [ ] **P4.4** Benchmark + `randomStarts` B12 decision (bump 100 + unify if feasible) +
+      local-minima reporting + NEWS. *DoD:* benchmark recorded; default set; snapshots/NEWS
+      updated; suite green.
 
 ### Phase 5 — Polychoric + ordinal/DWLS → `0.9.x`
 **Goal:** ordinal EFA with a bootstrap-fast polychoric matrix and a DWLS estimator.

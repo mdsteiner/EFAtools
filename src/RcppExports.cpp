@@ -194,6 +194,27 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rotate_cf_orth
+Rcpp::List rotate_cf_orth(const arma::mat& L, double kappa, double eps, bool normalize, int random_starts, int maxit, int max_line_search, double step0, int screen_keep, int triage_maxit, double triage_improve_tol);
+RcppExport SEXP _EFAtools_rotate_cf_orth(SEXP LSEXP, SEXP kappaSEXP, SEXP epsSEXP, SEXP normalizeSEXP, SEXP random_startsSEXP, SEXP maxitSEXP, SEXP max_line_searchSEXP, SEXP step0SEXP, SEXP screen_keepSEXP, SEXP triage_maxitSEXP, SEXP triage_improve_tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type L(LSEXP);
+    Rcpp::traits::input_parameter< double >::type kappa(kappaSEXP);
+    Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
+    Rcpp::traits::input_parameter< bool >::type normalize(normalizeSEXP);
+    Rcpp::traits::input_parameter< int >::type random_starts(random_startsSEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< int >::type max_line_search(max_line_searchSEXP);
+    Rcpp::traits::input_parameter< double >::type step0(step0SEXP);
+    Rcpp::traits::input_parameter< int >::type screen_keep(screen_keepSEXP);
+    Rcpp::traits::input_parameter< int >::type triage_maxit(triage_maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type triage_improve_tol(triage_improve_tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(rotate_cf_orth(L, kappa, eps, normalize, random_starts, maxit, max_line_search, step0, screen_keep, triage_maxit, triage_improve_tol));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_EFAtools_fit_ml_cpp", (DL_FUNC) &_EFAtools_fit_ml_cpp, 4},
@@ -208,6 +229,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EFAtools_oblique_procrustes_batch", (DL_FUNC) &_EFAtools_oblique_procrustes_batch, 11},
     {"_EFAtools_paf_iter", (DL_FUNC) &_EFAtools_paf_iter, 7},
     {"_EFAtools_parallel_sim", (DL_FUNC) &_EFAtools_parallel_sim, 5},
+    {"_EFAtools_rotate_cf_orth", (DL_FUNC) &_EFAtools_rotate_cf_orth, 11},
     {NULL, NULL, 0}
 };
 

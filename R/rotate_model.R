@@ -9,16 +9,32 @@
 # reflects and reorders its varimax base before the oblique fit, so it finalizes
 # its own solution.
 
-# Orthogonal GPArotation engines, keyed by rotation name. Each returns the raw
-# rotated solution ($loadings, $Th); `eps`, `normalize`, `randomStarts`, and any
-# extra arguments are forwarded through `...`.
+# Orthogonal rotation engines, keyed by rotation name. Each returns the raw rotated
+# solution ($loadings, $Th); `eps`, `normalize`, `randomStarts`, and any extra
+# arguments are forwarded through `...`. The Crawford-Ferguson criteria (quartimax,
+# equamax) use the native engine; the remaining criteria use GPArotation.
 .orth_engines <- list(
-  equamax   = function(L, ...) GPArotation::cfT(L, kappa = ncol(L) / (2 * nrow(L)), ...),
-  quartimax = function(L, ...) GPArotation::quartimax(L, ...),
+  equamax   = function(L, ...) .gpf_cf_orth(L, kappa = ncol(L) / (2 * nrow(L)), ...),
+  quartimax = function(L, ...) .gpf_cf_orth(L, kappa = 0, ...),
   bentlerT  = function(L, ...) GPArotation::bentlerT(L, ...),
   geominT   = function(L, ...) GPArotation::geominT(L, ...),
   bifactorT = function(L, ...) GPArotation::bifactorT(L, ...)
 )
+
+# Thin wrapper over the native Crawford-Ferguson orthogonal rotation. Maps the
+# GPArotation-style engine signature (`eps`, `normalize`, `randomStarts`, `maxit`) onto
+# the compiled entry and returns the raw rotated solution ($loadings, $Th) in the
+# convention `.reflect_and_order()` expects (the rotation matrix reproduces the rotated
+# loadings via `L_unrot %*% Th`). `maxit` is forwarded so the documented EFA `...`
+# rotation control reaches the optimizer as it does for the GPArotation engines; the
+# criterion itself takes no further tuning arguments, so any other `...` are ignored.
+.gpf_cf_orth <- function(L, kappa, eps = 1e-5, normalize = TRUE,
+                         randomStarts = 100, maxit = 1000L, ...) {
+  res <- .rotate_cf_orth(unclass(L), kappa = kappa, eps = eps,
+                         normalize = normalize, random_starts = randomStarts,
+                         maxit = maxit)
+  list(loadings = res$loadings, Th = res$Th)
+}
 
 # Oblique GPArotation engines, keyed by rotation name. Each returns the raw
 # rotated solution ($loadings, $Th, $Phi). `k` is consumed by simplimax and

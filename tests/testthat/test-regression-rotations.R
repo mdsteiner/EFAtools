@@ -27,16 +27,12 @@ test_that("orthogonal rotations reproduce their GPArotation engine", {
   skip_on_cran()
   skip_if_not_installed("GPArotation")
 
-  # rotation name -> the GPArotation engine EFAtools dispatches to for each orthogonal
-  # rotation.
+  # rotation name -> the GPArotation engine EFAtools dispatches to for each
+  # GPArotation-backed orthogonal rotation. The Crawford-Ferguson criteria (quartimax,
+  # equamax) are computed by the native engine and validated separately below.
   engines <- list(
-    equamax   = function() GPArotation::cfT(L, kappa = ncol(L) / (2 * nrow(L)),
-                                            normalize = TRUE, eps = 1e-5,
-                                            randomStarts = 100),
     bentlerT  = function() GPArotation::bentlerT(L, normalize = TRUE, eps = 1e-5,
                                                  randomStarts = 100),
-    quartimax = function() GPArotation::quartimax(L, normalize = TRUE, eps = 1e-5,
-                                                  randomStarts = 100),
     geominT   = function() GPArotation::geominT(L, normalize = TRUE, eps = 1e-5,
                                                 randomStarts = 100),
     bifactorT = function() GPArotation::bifactorT(L, normalize = TRUE, eps = 1e-5,
@@ -49,6 +45,55 @@ test_that("orthogonal rotations reproduce their GPArotation engine", {
     set.seed(seed)
     ref <- suppressWarnings(engines[[rn]]())
     expect_lt(aligned_max_diff(efa$rot_loadings, ref$loadings), 1e-4)
+  }
+})
+
+test_that("quartimax and equamax route through the native CF rotation engine", {
+  skip_on_cran()
+  skip_if_not_installed("GPArotation")
+
+  # quartimax and equamax are computed by the native Crawford-Ferguson engine
+  # (kappa = 0 and kappa = k / (2 p) respectively); the remaining orthogonal criteria
+  # stay on GPArotation. CF is non-convex, so parity is relaxed rather than byte-exact:
+  # the engine must reach an as-good-or-better minimum of the SAME criterion, and the
+  # aligned loadings must agree to ~1e-4 rather than the ~1e-6 the convex engines reach.
+  # The like-for-like reference is cfT() with the matching kappa -- GPArotation's
+  # quartimax() optimises the same rotation but reports a differently scaled criterion
+  # value, so cfT(kappa = 0) is the correct Q reference for quartimax.
+  fixtures <- list(
+    baseline = list(R = test_models$baseline$cormat, N = 500,                nf = 3),
+    GRiPS    = list(R = stats::cor(GRiPS_raw),        N = nrow(GRiPS_raw),    nf = 2),
+    DOSPERT  = list(R = stats::cor(DOSPERT_raw),      N = nrow(DOSPERT_raw),  nf = 4)
+  )
+
+  for (fx_name in names(fixtures)) {
+    fx <- fixtures[[fx_name]]
+    unrot_fx <- suppressWarnings(EFA(fx$R, n_factors = fx$nf, N = fx$N))
+    Lx <- unclass(unrot_fx$unrot_loadings)
+    p <- nrow(Lx)
+    k <- ncol(Lx)
+
+    for (rn in c("quartimax", "equamax")) {
+      kappa <- if (rn == "quartimax") 0 else k / (2 * p)
+
+      set.seed(seed)
+      native <- .rotate_cf_orth(Lx, kappa = kappa, eps = 1e-5, normalize = TRUE,
+                                random_starts = 100)
+      set.seed(seed)
+      ref <- GPArotation::cfT(Lx, kappa = kappa, normalize = TRUE, eps = 1e-5,
+                              randomStarts = 100)
+      ref_Q <- ref$Table[nrow(ref$Table), 2]
+
+      # (a) as-good-or-better minimum of the same criterion (same Q definition)
+      expect_lte(native$value, ref_Q + 1e-6)
+      # (b) aligned loadings within relaxed parity
+      expect_lt(aligned_max_diff(native$loadings, ref$loadings), 1e-4)
+
+      # the public rotation path routes through the native engine and reproduces it
+      set.seed(seed)
+      efa <- suppressWarnings(.rotate_model(unrot_fx, rotation = rn, type = "EFAtools"))
+      expect_lt(aligned_max_diff(efa$rot_loadings, ref$loadings), 1e-4)
+    }
   }
 })
 
