@@ -59,8 +59,8 @@ Imports:
     progressr,
     rlang,
     clue
-LinkingTo: 
-    Rcpp, RcppArmadillo
+LinkingTo:
+    Rcpp, RcppArmadillo, roptim
 Suggests:
     testthat (>= 3.0.0),
     lavaan,

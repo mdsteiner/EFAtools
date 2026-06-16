@@ -41,26 +41,12 @@
     start <- (1 - 0.5 * n_fac / ncol(R)) / diag(solve(R))
   }
 
-  res <- stats::optim(start, .error_ml, gr = .grad_ml, method = "L-BFGS-B",
-                      lower = .uniqueness_floor, upper = 1,
-                      control = c(list(fnscale = 1,
-                                       parscale = rep(0.01, length(start)))),
-                      R = R, n_fac = n_fac)
+  # Bounded L-BFGS-B over the uniquenesses, run entirely in C++ (roptim drives
+  # R's lbfgsb routine, so the box constraints and control match stats::optim).
+  ml <- .fit_ml_cpp(R, n_fac, start, .uniqueness_floor)
 
-  Lambda <- .FAout(res$par, R, n_fac)
+  res <- list(par = ml$psi, value = ml$Fm, counts = c(ml$iter, NA_integer_),
+              convergence = ml$convergence)
 
-  result <- list(loadings = Lambda, res = res, R = R)
-
-  result
-}
-
-# taken from factanal
-.FAout <- function(psi, R, n_fac) {
-  sc <- diag(1 / sqrt(psi))
-  Rs <- sc %*% R %*% sc
-  E <- eigen(Rs, symmetric = TRUE)
-  L <- E$vectors[, seq_len(n_fac), drop = FALSE]
-  load <- L %*% diag(sqrt(pmax(E$values[seq_len(n_fac)] - 1, 0)),
-                     n_fac)
-  diag(sqrt(psi)) %*% load
+  list(loadings = ml$loadings, res = res, R = R)
 }

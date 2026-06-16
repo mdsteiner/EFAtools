@@ -11,16 +11,30 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// factor_corres
-Rcpp::List factor_corres(NumericMatrix x, NumericMatrix y, double thresh);
-RcppExport SEXP _EFAtools_factor_corres(SEXP xSEXP, SEXP ySEXP, SEXP threshSEXP) {
+// fit_ml_cpp
+Rcpp::List fit_ml_cpp(const arma::mat& R, const int n_fac, arma::vec start, const double lower);
+RcppExport SEXP _EFAtools_fit_ml_cpp(SEXP RSEXP, SEXP n_facSEXP, SEXP startSEXP, SEXP lowerSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type y(ySEXP);
-    Rcpp::traits::input_parameter< double >::type thresh(threshSEXP);
-    rcpp_result_gen = Rcpp::wrap(factor_corres(x, y, thresh));
+    Rcpp::traits::input_parameter< const arma::mat& >::type R(RSEXP);
+    Rcpp::traits::input_parameter< const int >::type n_fac(n_facSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type start(startSEXP);
+    Rcpp::traits::input_parameter< const double >::type lower(lowerSEXP);
+    rcpp_result_gen = Rcpp::wrap(fit_ml_cpp(R, n_fac, start, lower));
+    return rcpp_result_gen;
+END_RCPP
+}
+// error_ml
+double error_ml(arma::vec psi, const arma::mat& R, const int n_fac);
+RcppExport SEXP _EFAtools_error_ml(SEXP psiSEXP, SEXP RSEXP, SEXP n_facSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type psi(psiSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type R(RSEXP);
+    Rcpp::traits::input_parameter< const int >::type n_fac(n_facSEXP);
+    rcpp_result_gen = Rcpp::wrap(error_ml(psi, R, n_fac));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -37,16 +51,16 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// error_ml
-double error_ml(arma::vec psi, const arma::mat& R, const int n_fac);
-RcppExport SEXP _EFAtools_error_ml(SEXP psiSEXP, SEXP RSEXP, SEXP n_facSEXP) {
+// factor_corres
+Rcpp::List factor_corres(NumericMatrix x, NumericMatrix y, double thresh);
+RcppExport SEXP _EFAtools_factor_corres(SEXP xSEXP, SEXP ySEXP, SEXP threshSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::vec >::type psi(psiSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type R(RSEXP);
-    Rcpp::traits::input_parameter< const int >::type n_fac(n_facSEXP);
-    rcpp_result_gen = Rcpp::wrap(error_ml(psi, R, n_fac));
+    Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type y(ySEXP);
+    Rcpp::traits::input_parameter< double >::type thresh(threshSEXP);
+    rcpp_result_gen = Rcpp::wrap(factor_corres(x, y, thresh));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -147,9 +161,10 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_EFAtools_factor_corres", (DL_FUNC) &_EFAtools_factor_corres, 3},
-    {"_EFAtools_grad_ml", (DL_FUNC) &_EFAtools_grad_ml, 3},
+    {"_EFAtools_fit_ml_cpp", (DL_FUNC) &_EFAtools_fit_ml_cpp, 4},
     {"_EFAtools_error_ml", (DL_FUNC) &_EFAtools_error_ml, 3},
+    {"_EFAtools_grad_ml", (DL_FUNC) &_EFAtools_grad_ml, 3},
+    {"_EFAtools_factor_corres", (DL_FUNC) &_EFAtools_factor_corres, 3},
     {"_EFAtools_nest_sym", (DL_FUNC) &_EFAtools_nest_sym, 4},
     {"_EFAtools_oblique_procrustes", (DL_FUNC) &_EFAtools_oblique_procrustes, 13},
     {"_EFAtools_paf_iter", (DL_FUNC) &_EFAtools_paf_iter, 7},
