@@ -51,6 +51,46 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fit_uls_cpp
+Rcpp::List fit_uls_cpp(const arma::mat& R, const int n_fac, arma::vec start, const double lower);
+RcppExport SEXP _EFAtools_fit_uls_cpp(SEXP RSEXP, SEXP n_facSEXP, SEXP startSEXP, SEXP lowerSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type R(RSEXP);
+    Rcpp::traits::input_parameter< const int >::type n_fac(n_facSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type start(startSEXP);
+    Rcpp::traits::input_parameter< const double >::type lower(lowerSEXP);
+    rcpp_result_gen = Rcpp::wrap(fit_uls_cpp(R, n_fac, start, lower));
+    return rcpp_result_gen;
+END_RCPP
+}
+// uls_residuals
+double uls_residuals(arma::vec psi, const arma::mat& R, const int n_fac);
+RcppExport SEXP _EFAtools_uls_residuals(SEXP psiSEXP, SEXP RSEXP, SEXP n_facSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type psi(psiSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type R(RSEXP);
+    Rcpp::traits::input_parameter< const int >::type n_fac(n_facSEXP);
+    rcpp_result_gen = Rcpp::wrap(uls_residuals(psi, R, n_fac));
+    return rcpp_result_gen;
+END_RCPP
+}
+// grad_uls
+arma::vec grad_uls(arma::vec psi, const arma::mat& R, const int n_fac);
+RcppExport SEXP _EFAtools_grad_uls(SEXP psiSEXP, SEXP RSEXP, SEXP n_facSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type psi(psiSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type R(RSEXP);
+    Rcpp::traits::input_parameter< const int >::type n_fac(n_facSEXP);
+    rcpp_result_gen = Rcpp::wrap(grad_uls(psi, R, n_fac));
+    return rcpp_result_gen;
+END_RCPP
+}
 // factor_corres
 Rcpp::List factor_corres(NumericMatrix x, NumericMatrix y, double thresh);
 RcppExport SEXP _EFAtools_factor_corres(SEXP xSEXP, SEXP ySEXP, SEXP threshSEXP) {
@@ -133,44 +173,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// grad_uls
-arma::vec grad_uls(arma::vec psi, const arma::mat& R, const int n_fac);
-RcppExport SEXP _EFAtools_grad_uls(SEXP psiSEXP, SEXP RSEXP, SEXP n_facSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::vec >::type psi(psiSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type R(RSEXP);
-    Rcpp::traits::input_parameter< const int >::type n_fac(n_facSEXP);
-    rcpp_result_gen = Rcpp::wrap(grad_uls(psi, R, n_fac));
-    return rcpp_result_gen;
-END_RCPP
-}
-// uls_residuals
-double uls_residuals(arma::vec psi, arma::mat R, const int n_fac);
-RcppExport SEXP _EFAtools_uls_residuals(SEXP psiSEXP, SEXP RSEXP, SEXP n_facSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::vec >::type psi(psiSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type R(RSEXP);
-    Rcpp::traits::input_parameter< const int >::type n_fac(n_facSEXP);
-    rcpp_result_gen = Rcpp::wrap(uls_residuals(psi, R, n_fac));
-    return rcpp_result_gen;
-END_RCPP
-}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_EFAtools_fit_ml_cpp", (DL_FUNC) &_EFAtools_fit_ml_cpp, 4},
     {"_EFAtools_error_ml", (DL_FUNC) &_EFAtools_error_ml, 3},
     {"_EFAtools_grad_ml", (DL_FUNC) &_EFAtools_grad_ml, 3},
+    {"_EFAtools_fit_uls_cpp", (DL_FUNC) &_EFAtools_fit_uls_cpp, 4},
+    {"_EFAtools_uls_residuals", (DL_FUNC) &_EFAtools_uls_residuals, 3},
+    {"_EFAtools_grad_uls", (DL_FUNC) &_EFAtools_grad_uls, 3},
     {"_EFAtools_factor_corres", (DL_FUNC) &_EFAtools_factor_corres, 3},
     {"_EFAtools_nest_sym", (DL_FUNC) &_EFAtools_nest_sym, 4},
     {"_EFAtools_oblique_procrustes", (DL_FUNC) &_EFAtools_oblique_procrustes, 13},
     {"_EFAtools_paf_iter", (DL_FUNC) &_EFAtools_paf_iter, 7},
     {"_EFAtools_parallel_sim", (DL_FUNC) &_EFAtools_parallel_sim, 5},
-    {"_EFAtools_grad_uls", (DL_FUNC) &_EFAtools_grad_uls, 3},
-    {"_EFAtools_uls_residuals", (DL_FUNC) &_EFAtools_uls_residuals, 3},
     {NULL, NULL, 0}
 };
 

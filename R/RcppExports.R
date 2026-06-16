@@ -13,6 +13,18 @@
     .Call(`_EFAtools_grad_ml`, psi, R, n_fac)
 }
 
+.fit_uls_cpp <- function(R, n_fac, start, lower) {
+    .Call(`_EFAtools_fit_uls_cpp`, R, n_fac, start, lower)
+}
+
+.uls_residuals <- function(psi, R, n_fac) {
+    .Call(`_EFAtools_uls_residuals`, psi, R, n_fac)
+}
+
+.grad_uls <- function(psi, R, n_fac) {
+    .Call(`_EFAtools_grad_uls`, psi, R, n_fac)
+}
+
 #' Compute number of non-matching indicator-to-factor correspondences
 #'
 #' @param x numeric matrix. A matrix of pattern coefficients.
@@ -132,13 +144,5 @@
 #' @param maxit numeric. Maximum iterations to perform after which to abort.
 .parallel_sim <- function(n_datasets, n_vars, N, eigen_type, maxit = 10000L) {
     .Call(`_EFAtools_parallel_sim`, n_datasets, n_vars, N, eigen_type, maxit)
-}
-
-.grad_uls <- function(psi, R, n_fac) {
-    .Call(`_EFAtools_grad_uls`, psi, R, n_fac)
-}
-
-.uls_residuals <- function(psi, R, n_fac) {
-    .Call(`_EFAtools_uls_residuals`, psi, R, n_fac)
 }
 

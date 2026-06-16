@@ -35,21 +35,12 @@
 
   start <- diag(R) - .smc_start(R)
 
-  res <- stats::optim(start, .uls_residuals, gr = .grad_uls, method = "L-BFGS-B",
-               lower = .uniqueness_floor, upper = 1,
-               control = c(list(fnscale = 1, parscale = rep(0.01, length(start)))),
-               R = R, n_fac = n_fac)
+  # Bounded L-BFGS-B over the uniquenesses, run entirely in C++ (roptim drives
+  # R's lbfgsb routine, so the box constraints and control match stats::optim).
+  uls <- .fit_uls_cpp(R, n_fac, start, .uniqueness_floor)
 
-  Lambda <- .FAout_wls(res$par, R, n_fac)
+  res <- list(par = uls$psi, value = uls$Fm, counts = c(uls$iter, NA_integer_),
+              convergence = uls$convergence)
 
-  result <- list(loadings = Lambda, res = res, R = R)
-}
-
-.FAout_wls <-  function(psi, R, n_fac) {
-  diag(R) <- 1 - psi
-  E <- eigen(R, symmetric = TRUE)
-
-  L <- E$vectors[,1L:n_fac,drop=FALSE] %*%
-    diag(sqrt(pmax(E$values[1L:n_fac,drop=FALSE], 0)), n_fac)
-  return(L)
+  list(loadings = uls$loadings, res = res, R = R)
 }
