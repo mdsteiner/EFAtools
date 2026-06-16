@@ -101,11 +101,10 @@ test_that("oblique rotations reproduce their GPArotation engine", {
   skip_on_cran()
   skip_if_not_installed("GPArotation")
 
+  # rotation name -> the GPArotation engine EFAtools dispatches to for each
+  # GPArotation-backed oblique rotation. The oblimin and quartimin criteria are computed
+  # by the native engine and validated separately below.
   engines <- list(
-    oblimin   = function() GPArotation::oblimin(L, normalize = TRUE, eps = 1e-5,
-                                                randomStarts = 100),
-    quartimin = function() GPArotation::quartimin(L, normalize = TRUE, eps = 1e-5,
-                                                  randomStarts = 100),
     simplimax = function() GPArotation::simplimax(L, k = nrow(L), normalize = TRUE,
                                                   eps = 1e-5, randomStarts = 100),
     bentlerQ  = function() GPArotation::bentlerQ(L, normalize = TRUE, eps = 1e-5,
@@ -124,6 +123,71 @@ test_that("oblique rotations reproduce their GPArotation engine", {
     expect_lt(aligned_max_diff(efa$rot_loadings, ref$loadings), 1e-4)
     expect_equal(phi_fingerprint(efa$Phi), phi_fingerprint(ref$Phi), tolerance = 1e-4)
   }
+})
+
+test_that("oblimin and quartimin route through the native oblique GPF engine", {
+  skip_on_cran()
+  skip_if_not_installed("GPArotation")
+
+  # oblimin and quartimin are computed by the native gradient-projection engine (oblimin
+  # with the GPArotation default gam = 0; quartimin is the same criterion); the remaining
+  # oblique criteria stay on GPArotation. The criterion is non-convex, so parity is relaxed
+  # rather than byte-exact: the engine must reach an as-good-or-better minimum of the SAME
+  # criterion, the aligned loadings must agree to ~1e-4, and the factor correlations must
+  # match under the permutation/sign-invariant fingerprint. The single GPArotation::oblimin()
+  # reference serves both public names (quartimin is the same gam = 0 criterion).
+  fixtures <- list(
+    baseline = list(R = test_models$baseline$cormat, N = 500,                nf = 3),
+    GRiPS    = list(R = stats::cor(GRiPS_raw),        N = nrow(GRiPS_raw),    nf = 2),
+    DOSPERT  = list(R = stats::cor(DOSPERT_raw),      N = nrow(DOSPERT_raw),  nf = 4)
+  )
+
+  for (fx_name in names(fixtures)) {
+    fx <- fixtures[[fx_name]]
+    unrot_fx <- suppressWarnings(EFA(fx$R, n_factors = fx$nf, N = fx$N))
+    Lx <- unclass(unrot_fx$unrot_loadings)
+
+    set.seed(seed)
+    native <- .rotate_oblimin(Lx, gam = 0, eps = 1e-5, normalize = TRUE,
+                              random_starts = 100)
+    set.seed(seed)
+    ref <- suppressWarnings(GPArotation::oblimin(Lx, normalize = TRUE, eps = 1e-5,
+                                                 randomStarts = 100))
+    ref_Q <- ref$Table[nrow(ref$Table), 2]
+
+    # the native engine reaches an as-good-or-better minimum of the same criterion, with
+    # aligned loadings and matching factor correlations
+    expect_lte(native$value, ref_Q + 1e-6)
+    expect_lt(aligned_max_diff(native$loadings, ref$loadings), 1e-4)
+    expect_equal(phi_fingerprint(native$Phi), phi_fingerprint(ref$Phi), tolerance = 1e-4)
+
+    # both public rotation names dispatch to the native engine and reproduce the reference
+    for (rn in c("oblimin", "quartimin")) {
+      set.seed(seed)
+      efa <- suppressWarnings(.rotate_model(unrot_fx, rotation = rn, type = "EFAtools"))
+      expect_lt(aligned_max_diff(efa$rot_loadings, ref$loadings), 1e-4)
+      expect_equal(phi_fingerprint(efa$Phi), phi_fingerprint(ref$Phi), tolerance = 1e-4)
+    }
+  }
+})
+
+test_that("the native oblimin engine generalizes to non-zero gamma", {
+  skip_on_cran()
+  skip_if_not_installed("GPArotation")
+
+  # The package only ever uses gam = 0 (oblimin == quartimin), but the native engine
+  # implements the full oblimin family parameterized by gamma. Exercise the gamma-centering
+  # path with gam = 0.5 (biquartimin) against GPArotation's oblimin at the same gamma, under
+  # the same relaxed-parity scheme (Q-dominance, aligned loadings, Phi fingerprint).
+  set.seed(seed)
+  native <- .rotate_oblimin(L, gam = 0.5, eps = 1e-5, normalize = TRUE, random_starts = 100)
+  set.seed(seed)
+  ref <- suppressWarnings(GPArotation::oblimin(L, gam = 0.5, normalize = TRUE, eps = 1e-5,
+                                               randomStarts = 100))
+
+  expect_lte(native$value, ref$Table[nrow(ref$Table), 2] + 1e-6)
+  expect_lt(aligned_max_diff(native$loadings, ref$loadings), 1e-4)
+  expect_equal(phi_fingerprint(native$Phi), phi_fingerprint(ref$Phi), tolerance = 1e-4)
 })
 
 test_that("varimax reproduces stats::varimax", {

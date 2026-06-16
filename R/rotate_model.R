@@ -28,20 +28,48 @@
 # loadings via `L_unrot %*% Th`). `maxit` is forwarded so the documented EFA `...`
 # rotation control reaches the optimizer as it does for the GPArotation engines; the
 # criterion itself takes no further tuning arguments, so any other `...` are ignored.
+# Warn when a native gradient-projection rotation did not reach the convergence tolerance
+# within `maxit` iterations, mirroring the warning the GPArotation engines emit so that the
+# native and GPArotation-backed rotations behave the same way on a non-convergent fit.
+.warn_rotation_no_convergence <- function(converged, maxit) {
+  if (!isTRUE(converged)) {
+    cli::cli_warn("The rotation did not converge within {maxit} iterations.",
+                  class = "efa_rotation_no_convergence")
+  }
+}
+
 .gpf_cf_orth <- function(L, kappa, eps = 1e-5, normalize = TRUE,
                          randomStarts = 100, maxit = 1000L, ...) {
   res <- .rotate_cf_orth(unclass(L), kappa = kappa, eps = eps,
                          normalize = normalize, random_starts = randomStarts,
                          maxit = maxit)
+  .warn_rotation_no_convergence(res$convergence, maxit)
   list(loadings = res$loadings, Th = res$Th)
 }
 
-# Oblique GPArotation engines, keyed by rotation name. Each returns the raw
-# rotated solution ($loadings, $Th, $Phi). `k` is consumed by simplimax and
-# ignored by the others.
+# Thin wrapper over the native oblimin oblique rotation. Maps the GPArotation-style engine
+# signature (`gam`, `eps`, `normalize`, `randomStarts`, `maxit`) onto the compiled entry and
+# returns the raw rotated solution ($loadings, $Th, $Phi) in the convention
+# `.reflect_and_order()` expects (the rotation matrix reproduces the rotated loadings via
+# `L_unrot %*% t(solve(Th))`, and `Phi = t(Th) %*% Th`). `gam = 0` is the quartimin
+# criterion. `maxit` is forwarded so the documented EFA `...` rotation control reaches the
+# optimizer as it does for the GPArotation engines; the criterion takes no further tuning
+# arguments, so any other `...` are ignored.
+.gpf_oblimin <- function(L, gam = 0, eps = 1e-5, normalize = TRUE,
+                         randomStarts = 100, maxit = 1000L, ...) {
+  res <- .rotate_oblimin(unclass(L), gam = gam, eps = eps, normalize = normalize,
+                         random_starts = randomStarts, maxit = maxit)
+  .warn_rotation_no_convergence(res$convergence, maxit)
+  list(loadings = res$loadings, Th = res$Th, Phi = res$Phi)
+}
+
+# Oblique rotation engines, keyed by rotation name. Each returns the raw rotated solution
+# ($loadings, $Th, $Phi); `k` is consumed by simplimax and ignored by the others. The
+# oblimin and quartimin criteria (quartimin is oblimin with `gam = 0`) use the native
+# engine; the remaining criteria use GPArotation.
 .oblq_engines <- list(
-  oblimin   = function(L, k, ...) GPArotation::oblimin(L, ...),
-  quartimin = function(L, k, ...) GPArotation::quartimin(L, ...),
+  oblimin   = function(L, k, ...) .gpf_oblimin(L, ...),
+  quartimin = function(L, k, ...) .gpf_oblimin(L, gam = 0, ...),
   simplimax = function(L, k, ...) GPArotation::simplimax(L, k = k, ...),
   bentlerQ  = function(L, k, ...) GPArotation::bentlerQ(L, ...),
   geominQ   = function(L, k, ...) GPArotation::geominQ(L, ...),

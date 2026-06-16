@@ -47,10 +47,9 @@ the triage stage.}
 start to be promoted to full optimization.}
 }
 \value{
-A named list containing the rotated loadings, the orthogonal rotation matrix
-\code{Th} (with \code{L \%*\% Th} reproducing the rotated loadings), the attained criterion
-value, convergence and line-search diagnostics, the iteration table, and the
-multi-start summaries (best start, value spread, number of distinct local minima).
+A named list with the rotated loadings, the orthogonal rotation matrix \code{Th}
+(with \code{L \%*\% Th} reproducing the rotated loadings), the attained criterion value, and
+the convergence and validity flags.
 }
 \description{
 Rotate a loading matrix orthogonally under the Crawford-Ferguson criterion using a

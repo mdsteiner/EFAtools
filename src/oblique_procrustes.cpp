@@ -9,43 +9,9 @@
 using namespace Rcpp;
 using namespace arma;
 
-static arma::mat normalize_cols_cpp(const arma::mat& X, double eps = 1e-15) {
-  arma::mat Y = X;
-
-  for (arma::uword j = 0; j < Y.n_cols; ++j) {
-    double nrm = arma::norm(Y.col(j), 2);
-
-    if (!std::isfinite(nrm) || nrm < eps) {
-      // A zero column violates diag(t(T) %*% T) = 1. This fallback keeps the
-      // candidate on the constraint set; singular candidates are subsequently
-      // rejected by the inverse check in ProcrustesManifold::compute().
-      Y.col(j).zeros();
-      Y(std::min(j, Y.n_rows - 1), j) = 1.0;
-    } else {
-      Y.col(j) /= nrm;
-    }
-  }
-
-  return Y;
-}
-
-static bool inverse_checked_cpp(const arma::mat& X, arma::mat& invX) {
-  if (X.n_rows != X.n_cols || !all_finite_cpp(X)) {
-    return false;
-  }
-
-  try {
-    bool ok = arma::solve(
-      invX,
-      X,
-      arma::eye<arma::mat>(X.n_rows, X.n_cols),
-      arma::solve_opts::fast
-    );
-    return ok && all_finite_cpp(invX);
-  } catch (...) {
-    return false;
-  }
-}
+// `normalize_cols_cpp` (column normalization onto diag(t(T) %*% T) = 1) and
+// `inverse_checked_cpp` (rejecting checked inverse) are shared leaf helpers defined in
+// gpf_common.h, included via gpf_engine.h above.
 
 // Oblique Procrustes manifold for the shared gradient-projection engine. The
 // transformation T lives on the column-normalized manifold diag(t(T) %*% T) = 1; the
@@ -61,10 +27,9 @@ struct ProcrustesManifold {
   double BtB;
 
   GpfState compute(const arma::mat& Tmat) const {
-    const arma::uword k = Tmat.n_cols;
     arma::mat invT;
     if (!inverse_checked_cpp(Tmat, invT)) {
-      return gpf_invalid_state(k);
+      return gpf_invalid_state();
     }
 
     arma::mat U = invT.t();
@@ -74,9 +39,9 @@ struct ProcrustesManifold {
     double f = 0.5 * (accu(U % SU) - 2.0 * accu(U % C) + BtB);
     arma::mat G = -U * GU.t() * U;
 
-    arma::rowvec proj = sum(Tmat % G, 0);
-    arma::mat Gp = G - Tmat * diagmat(proj.t());
-    double s = norm(vectorise(Gp), 2);
+    arma::mat Gp;
+    double s;
+    oblique_tangent_project(Tmat, G, Gp, s);
 
     GpfState out;
     out.f = f;
@@ -86,7 +51,7 @@ struct ProcrustesManifold {
       all_finite_cpp(G) && all_finite_cpp(Gp);
 
     if (!out.valid) {
-      return gpf_invalid_state(k);
+      return gpf_invalid_state();
     }
     return out;
   }
@@ -148,31 +113,9 @@ static arma::vec kaiser_normalize_rows(arma::mat& A_work, arma::mat& B_work) {
   return W;
 }
 
-// Assemble the rotated loadings and factor correlations from a fitted
-// transformation: L = A_work U (un-normalized when Kaiser weights were applied),
-// Phi = symmetrized T'T with unit diagonal. Shared by both entry points. The
-// loadings transform U = solve(t(T)) is reconstructed from the winning T here rather
-// than carried through the iteration state. An invalid winner yields a zero U (a valid
-// fit always has an invertible T, so this only zeros genuinely degenerate results),
-// matching the invalid-state convention of the previous implementation.
-static void finalize_oblique(const GpfFit& best_fit, const arma::mat& A_work,
-                             const arma::vec& W, bool normalize,
-                             arma::mat& Lrot, arma::mat& Phi) {
-  arma::mat invT;
-  arma::mat U;
-  if (best_fit.valid && inverse_checked_cpp(best_fit.T, invT)) {
-    U = invT.t();
-  } else {
-    U.zeros(best_fit.T.n_rows, best_fit.T.n_cols);
-  }
-  Lrot = A_work * U;
-  if (normalize) {
-    Lrot.each_col() %= W;
-  }
-  Phi = best_fit.T.t() * best_fit.T;
-  Phi = (Phi + Phi.t()) / 2.0;
-  Phi.diag().fill(1.0);
-}
+// `finalize_oblique()` (reconstruct the rotated loadings and factor correlations from a
+// fitted transformation) is a shared inline in gpf_engine.h, used by this Procrustes path
+// and the criterion rotations in rotate.cpp.
 
 //' Oblique Procrustes target rotation using a k x k inner objective
 //'

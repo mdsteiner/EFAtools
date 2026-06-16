@@ -13,7 +13,7 @@
       
       For each cell, the proportion of solutions including the respective indicator-to-factor correspondence. A salience threshold of <num> was used to determine indicator-to-factor correspondences.
       
-            F1    F2    F3
+            F1 F2 F3
       V1 <num> <num> <num>
       V2 <num> <num> <num>
       V3 <num> <num> <num>
@@ -38,7 +38,7 @@
       
       -- Mean ------------------------------------------------------------------------
       
-             F1     F2     F3
+             F1 F2 F3
       V1 <num> <num> <num>
       V2 <num> <num> <num>
       V3 <num> <num> <num>
@@ -61,7 +61,7 @@
       
       -- Range -----------------------------------------------------------------------
       
-            F1    F2    F3
+            F1 F2 F3
       V1 <num> <num> <num>
       V2 <num> <num> <num>
       V3 <num> <num> <num>
@@ -87,7 +87,7 @@
       
       -- Mean ------------------------------------------------------------------------
       
-            F1     F2     F3
+            F1 F2 F3
       F1 <num>
       F2 <num> <num>
       F3 <num> <num> <num>
@@ -95,7 +95,7 @@
       
       -- Range -----------------------------------------------------------------------
       
-           F1    F2    F3
+           F1 F2 F3
       F1 <num>
       F2 <num> <num>
       F3 <num> <num> <num>
@@ -106,7 +106,7 @@
       
       -- Mean ------------------------------------------------------------------------
       
-                       F1     F2     F3
+                       F1 F2 F3
       SS loadings <num> <num> <num>
       Prop Tot Var <num> <num> <num>
       Prop Comm Var <num> <num> <num>
@@ -114,7 +114,7 @@
       
       -- Range -----------------------------------------------------------------------
       
-                      F1    F2    F3
+                      F1 F2 F3
       SS loadings <num> <num> <num>
       Prop Tot Var <num> <num> <num>
       Prop Comm Var <num> <num> <num>
@@ -144,7 +144,7 @@
       
       For each cell, the proportion of solutions including the respective indicator-to-factor correspondence. A salience threshold of <num> was used to determine indicator-to-factor correspondences.
       
-            F1    F2    F3
+            F1 F2 F3
       V1 <num> <num> <num>
       V2 <num> <num> <num>
       V3 <num> <num> <num>
@@ -169,7 +169,7 @@
       
       -- Mean ------------------------------------------------------------------------
       
-            F1     F2     F3
+            F1 F2 F3
       V1 <num> <num> <num>
       V2 <num> <num> <num>
       V3 <num> <num> <num>
@@ -192,7 +192,7 @@
       
       -- Standard Deviation ----------------------------------------------------------
       
-            F1    F2    F3
+            F1 F2 F3
       V1 <num> <num> <num>
       V2 <num> <num> <num>
       V3 <num> <num> <num>
@@ -215,7 +215,7 @@
       
       -- Minimum ---------------------------------------------------------------------
       
-            F1     F2     F3
+            F1 F2 F3
       V1 <num> <num> <num>
       V2 <num> <num> <num>
       V3 <num> <num> <num>
@@ -238,7 +238,7 @@
       
       -- Maximum ---------------------------------------------------------------------
       
-            F1     F2     F3
+            F1 F2 F3
       V1 <num> <num> <num>
       V2 <num> <num> <num>
       V3 <num> <num> <num>
@@ -264,7 +264,7 @@
       
       -- Mean ------------------------------------------------------------------------
       
-                       F1    F2    F3
+                       F1 F2 F3
       SS loadings <num> <num> <num>
       Prop Tot Var <num> <num> <num>
       Prop Comm Var <num> <num> <num>
@@ -272,7 +272,7 @@
       
       -- Standard Deviation ----------------------------------------------------------
       
-                      F1    F2    F3
+                      F1 F2 F3
       SS loadings <num> <num> <num>
       Prop Tot Var <num> <num> <num>
       Prop Comm Var <num> <num> <num>
@@ -280,7 +280,7 @@
       
       -- Minimum ---------------------------------------------------------------------
       
-                       F1    F2    F3
+                       F1 F2 F3
       SS loadings <num> <num> <num>
       Prop Tot Var <num> <num> <num>
       Prop Comm Var <num> <num> <num>
@@ -288,7 +288,7 @@
       
       -- Maximum ---------------------------------------------------------------------
       
-                       F1    F2    F3
+                       F1 F2 F3
       SS loadings <num> <num> <num>
       Prop Tot Var <num> <num> <num>
       Prop Comm Var <num> <num> <num>
@@ -326,7 +326,7 @@
       
       For each cell, the proportion of solutions including the respective indicator-to-factor correspondence. A salience threshold of <num> was used to determine indicator-to-factor correspondences.
       
-            F1    F2    F3
+            F1 F2 F3
       V1 <num> <num> <num>
       V2 <num> <num> <num>
       V3 <num> <num> <num>
@@ -351,7 +351,7 @@
       
       -- Median ----------------------------------------------------------------------
       
-             F1     F2     F3
+             F1 F2 F3
       V1 <num> <num> <num>
       V2 <num> <num> <num>
       V3 <num> <num> <num>
@@ -374,7 +374,7 @@
       
       -- Range -----------------------------------------------------------------------
       
-            F1    F2    F3
+            F1 F2 F3
       V1 <num> <num> <num>
       V2 <num> <num> <num>
       V3 <num> <num> <num>
@@ -400,7 +400,7 @@
       
       -- Median ----------------------------------------------------------------------
       
-            F1     F2     F3
+            F1 F2 F3
       F1 <num>
       F2 <num> <num>
       F3 <num> <num> <num>
@@ -408,7 +408,7 @@
       
       -- Range -----------------------------------------------------------------------
       
-           F1    F2    F3
+           F1 F2 F3
       F1 <num>
       F2 <num> <num>
       F3 <num> <num> <num>
@@ -419,7 +419,7 @@
       
       -- Median ----------------------------------------------------------------------
       
-                       F1     F2     F3
+                       F1 F2 F3
       SS loadings <num> <num> <num>
       Prop Tot Var <num> <num> <num>
       Prop Comm Var <num> <num> <num>
@@ -427,7 +427,7 @@
       
       -- Range -----------------------------------------------------------------------
       
-                       F1     F2     F3
+                       F1 F2 F3
       SS loadings <num> <num> <num>
       Prop Tot Var <num> <num> <num>
       Prop Comm Var <num> <num> <num>

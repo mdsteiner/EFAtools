@@ -67,13 +67,41 @@ struct GpfSummary {
   std::vector<int> screen_start_indices;
 };
 
-inline GpfState gpf_invalid_state(const arma::uword k) {
+// An invalid state has an infinite objective so it can never win selection or pass the
+// convergence test. Its projected gradient is never read (the line search only steps
+// from valid states), so Gp is left empty rather than allocated.
+inline GpfState gpf_invalid_state() {
   GpfState out;
   out.f = std::numeric_limits<double>::infinity();
   out.s = std::numeric_limits<double>::infinity();
-  out.Gp.zeros(k, k);
   out.valid = false;
   return out;
+}
+
+// Assemble the rotated loadings and factor correlations from a fitted oblique
+// transformation, shared by the oblique entry points (the Procrustes target rotation and
+// the criterion rotations). The loadings transform U = solve(t(T)) is reconstructed from
+// the winning T here rather than carried through the iteration state: L = A_work U
+// (un-normalized by the Kaiser weights W when they were applied), Phi = symmetrized t(T) T
+// with unit diagonal. An invalid winner yields a zero U (a valid fit always has an
+// invertible T, so this only zeros genuinely degenerate results).
+inline void finalize_oblique(const GpfFit& best_fit, const arma::mat& A_work,
+                             const arma::vec& W, bool normalize,
+                             arma::mat& Lrot, arma::mat& Phi) {
+  arma::mat invT;
+  arma::mat U;
+  if (best_fit.valid && inverse_checked_cpp(best_fit.T, invT)) {
+    U = invT.t();
+  } else {
+    U.zeros(best_fit.T.n_rows, best_fit.T.n_cols);
+  }
+  Lrot = A_work * U;
+  if (normalize) {
+    Lrot.each_col() %= W;
+  }
+  Phi = best_fit.T.t() * best_fit.T;
+  Phi = (Phi + Phi.t()) / 2.0;
+  Phi.diag().fill(1.0);
 }
 
 // Selection across multi-start fits is driven by the objective value: the attained
@@ -142,8 +170,13 @@ GpfFit run_single_gpf_fit(const Manifold& manifold,
                           double step0) {
   Tmat = manifold.normalize_start(Tmat);
 
-  arma::mat table(maxit + 1, 4);
-  table.fill(NA_REAL);
+  // Record per-iteration diagnostics in a growing buffer rather than preallocating a
+  // (maxit + 1) x 4 table. maxit is a documented, user-forwarded control that can be
+  // large (e.g. EFA_AVERAGE passes maxit = 5e4) while the optimization typically
+  // converges in far fewer iterations, so an eager allocation would reserve -- and
+  // NA-fill -- a table that is then trimmed away, and `maxit + 1` could overflow.
+  std::vector<double> diag_rows;  // row-major: iter, f, log10(s), step per recorded row
+  diag_rows.reserve(4 * 64);
   int filled = 0;
   bool convergence = false;
   bool line_search_failed = false;
@@ -152,10 +185,10 @@ GpfFit run_single_gpf_fit(const Manifold& manifold,
   GpfState state = manifold.compute(Tmat);
 
   for (int iter = 0; iter <= maxit; ++iter) {
-    table(filled, 0) = static_cast<double>(iter);
-    table(filled, 1) = state.f;
-    table(filled, 2) = std::log10(std::max(state.s, std::numeric_limits<double>::epsilon()));
-    table(filled, 3) = al;
+    diag_rows.push_back(static_cast<double>(iter));
+    diag_rows.push_back(state.f);
+    diag_rows.push_back(std::log10(std::max(state.s, std::numeric_limits<double>::epsilon())));
+    diag_rows.push_back(al);
     ++filled;
 
     if (state.valid && state.s < eps) {
@@ -226,9 +259,20 @@ GpfFit run_single_gpf_fit(const Manifold& manifold,
     }
   }
 
+  // filled >= 1 (iteration 0 is always recorded before any break), so the table has at
+  // least one row. The buffer holds exactly `filled` rows of the four diagnostics.
+  arma::mat table(filled, 4);
+  for (int r = 0; r < filled; ++r) {
+    const std::size_t base = 4 * static_cast<std::size_t>(r);
+    table(r, 0) = diag_rows[base + 0];
+    table(r, 1) = diag_rows[base + 1];
+    table(r, 2) = diag_rows[base + 2];
+    table(r, 3) = diag_rows[base + 3];
+  }
+
   GpfFit out;
   out.T = Tmat;
-  out.Table = table.rows(0, filled - 1);
+  out.Table = table;
   out.value = state.f;
   out.convergence = convergence;
   out.valid = state.valid;

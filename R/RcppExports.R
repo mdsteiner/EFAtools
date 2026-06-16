@@ -231,10 +231,9 @@
 #' @param triage_improve_tol Numeric scalar. Relative improvement required for a triaged
 #'   start to be promoted to full optimization.
 #'
-#' @returns A named list containing the rotated loadings, the orthogonal rotation matrix
-#'   `Th` (with `L %*% Th` reproducing the rotated loadings), the attained criterion
-#'   value, convergence and line-search diagnostics, the iteration table, and the
-#'   multi-start summaries (best start, value spread, number of distinct local minima).
+#' @returns A named list with the rotated loadings, the orthogonal rotation matrix `Th`
+#'   (with `L %*% Th` reproducing the rotated loadings), the attained criterion value, and
+#'   the convergence and validity flags.
 #'
 #' @references
 #' Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms and
@@ -246,5 +245,55 @@
 #'
 .rotate_cf_orth <- function(L, kappa, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0, screen_keep = 2L, triage_maxit = 25L, triage_improve_tol = 0.0) {
     .Call(`_EFAtools_rotate_cf_orth`, L, kappa, eps, normalize, random_starts, maxit, max_line_search, step0, screen_keep, triage_maxit, triage_improve_tol)
+}
+
+#' Oblique oblimin factor rotation
+#'
+#' Rotate a loading matrix obliquely under the oblimin criterion using a
+#' gradient-projection optimizer along the oblique (column-normalized) manifold.
+#'
+#' The criterion value `f` and its gradient `dQ/dL` at the rotated loadings
+#' `L = A %*% solve(t(T))` define the search; the engine maps the gradient to the
+#' transformation `T` on the manifold `diag(t(T) %*% T) = 1`, projects it onto the tangent
+#' space, performs a sufficient-decrease line search, and retracts back onto the manifold
+#' by column normalization. `gam = 0` is the quartimin criterion.
+#'
+#' Additional random starts may be requested. To bound runtime the solver screens each
+#' random start by its objective, runs a short triage optimization on the best-screened
+#' starts, and fully optimizes only those that improve on the current incumbent by at
+#' least `triage_improve_tol`.
+#'
+#' @param L Numeric matrix. The unrotated loading matrix (variables by factors).
+#' @param gam Numeric scalar. The oblimin parameter; `gam = 0` is the quartimin criterion.
+#' @param eps Numeric scalar. Convergence tolerance for the projected-gradient norm.
+#' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before rotation
+#'   and reverse it afterwards.
+#' @param random_starts Integer scalar. Number of additional random starts.
+#' @param maxit Integer scalar. Maximum number of projected-gradient updates.
+#' @param max_line_search Integer scalar. Maximum number of step-halving attempts after
+#'   the initial trial step in each line-search phase.
+#' @param step0 Numeric scalar. Initial step size used in the projected-gradient update.
+#' @param screen_keep Integer scalar. Number of screened random starts retained for triage
+#'   optimization.
+#' @param triage_maxit Integer scalar. Number of short optimization iterations used in the
+#'   triage stage.
+#' @param triage_improve_tol Numeric scalar. Relative improvement required for a triaged
+#'   start to be promoted to full optimization.
+#'
+#' @returns A named list with the rotated loadings, the transformation matrix `Th`
+#'   (with `L %*% t(solve(Th))` reproducing the rotated loadings), the factor correlation
+#'   matrix `Phi` (`t(Th) %*% Th`), the attained criterion value, and the convergence and
+#'   validity flags.
+#'
+#' @references
+#' Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms and
+#' software for arbitrary rotation criteria in factor analysis. *Educational and
+#' Psychological Measurement*, 65, 676-696.
+#'
+#' Jennrich, R. I., & Sampson, P. F. (1966). Rotation for simple loadings.
+#' *Psychometrika*, 31, 313-323.
+#'
+.rotate_oblimin <- function(L, gam = 0.0, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0, screen_keep = 2L, triage_maxit = 25L, triage_improve_tol = 0.0) {
+    .Call(`_EFAtools_rotate_oblimin`, L, gam, eps, normalize, random_starts, maxit, max_line_search, step0, screen_keep, triage_maxit, triage_improve_tol)
 }
 

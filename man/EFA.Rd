@@ -178,7 +178,7 @@ workers (see Details); the caller's random-number stream is restored afterwards,
 so supplying a seed leaves no lasting effect on it. Default is \code{NULL}, which uses
 (and advances) the current state of the generator.}
 
-\item{...}{Additional arguments passed to rotation functions from the \code{GPArotation} package (e.g., \code{maxit} for maximum number of iterations).}
+\item{...}{Additional arguments passed to the rotation procedure (e.g., \code{maxit} for the maximum number of iterations).}
 }
 \value{
 A list of class EFA containing (a subset of) the following:
@@ -322,10 +322,10 @@ to produce results more similar to those of SPSS:
 
 For all other rotations except varimax and promax, the \code{type} argument
 only controls the \code{order_type} argument with the same values as stated
-above for the varimax and promax rotations. For these other rotations, the
-\code{GPArotation} package is needed. Additional arguments can also be
-specified and will be passed to the respective \code{GPArotation} function
-(e.g., maxit to change the maximum number of iterations for the rotation procedure).
+above for the varimax and promax rotations. For most of these other rotations, the
+\code{GPArotation} package is used. Additional arguments can also be specified and
+will be passed to the rotation procedure (e.g., maxit to change the maximum
+number of iterations).
 
 The \code{type} argument has no effect on ULS and ML. For ULS, no additional
 arguments are needed. For ML, an additional argument

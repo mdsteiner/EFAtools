@@ -148,35 +148,40 @@ test_that("factors, Phi, structure, and rotmat are reordered consistently", {
 
 test_that("oblique Phi, structure, and rotmat are reflected/reordered with the loadings", {
   skip_on_cran()
-  skip_if_not_installed("GPArotation")
 
-  # Reflect and reorder the engine's own solution the documented way, then check the
-  # rotated output matches it exactly. This pins the sign reflection of Phi (a factor
-  # in this solution has a negative column sum) and the consistent reflection and
-  # reordering of Phi and the rotation matrix, which a structure == pattern %*% Phi
-  # check alone misses.
+  # Feed .reflect_and_order a raw oblique solution whose first factor has a negative column
+  # sum, and check that the documented sign reflection is applied consistently to the
+  # loadings, the factor intercorrelations, and the rotation matrix (a
+  # structure == pattern %*% Phi check alone misses the Phi/rotmat reflection). This
+  # exercises the package's own reflection branch directly and deterministically, rather
+  # than relying on a rotation engine to return a negative-column-sum factor (an orientation
+  # that varies across GPArotation versions). The raw input is a real oblimin solution with
+  # its first factor negated -- still a valid oblique solution (loadings = L %*% t(solve(Th)),
+  # Phi = t(Th) %*% Th) -- so reflecting it back must recover the canonical solution.
   L <- unrot$unrot_loadings
-  set.seed(11)
-  ref <- suppressWarnings(GPArotation::oblimin(L, eps = 1e-5, normalize = TRUE,
-                                               randomStarts = 100))
-  signs <- sign(colSums(ref$loadings))
-  signs[signs == 0] <- 1
-  ord <- order(colSums((ref$loadings %*% diag(signs))^2), decreasing = TRUE)
-  exp_load <- (ref$loadings %*% diag(signs))[, ord]
-  exp_phi <- (diag(signs) %*% ref$Phi %*% diag(signs))[ord, ord]
-  exp_rotmat <- (ref$Th %*% diag(signs))[, ord]
-
-  set.seed(11)
   o <- suppressWarnings(.rotate_model(unrot, rotation = "oblimin", type = "EFAtools"))
+  k <- ncol(o$rot_loadings)
 
-  expect_false(all(signs == 1))  # the reflection path is exercised
-  expect_equal(unclass(o$rot_loadings), exp_load, ignore_attr = TRUE, tolerance = 1e-6)
-  expect_equal(o$Phi, exp_phi, ignore_attr = TRUE, tolerance = 1e-6)
-  expect_equal(o$rotmat, exp_rotmat, ignore_attr = TRUE, tolerance = 1e-6)
-  expect_equal(unclass(o$Structure), exp_load %*% exp_phi, ignore_attr = TRUE,
-               tolerance = 1e-6)
-  # the rotation matrix reproduces the rotated pattern: L_unrot %*% t(solve(rotmat))
-  expect_equal(unclass(L) %*% t(solve(o$rotmat)), unclass(o$rot_loadings),
+  neg <- replace(rep(1, k), 1L, -1)
+  raw_loadings <- unclass(o$rot_loadings) %*% diag(neg)
+  raw_Phi      <- diag(neg) %*% o$Phi %*% diag(neg)
+  raw_rotmat   <- o$rotmat %*% diag(neg)
+
+  res <- .reflect_and_order(raw_loadings, Phi = raw_Phi, rotmat = raw_rotmat,
+                            L_unrot = L, name_factors = FALSE)
+
+  # the negative factor is reflected back to a non-negative column sum
+  expect_true(all(colSums(unclass(res$rot_loadings)) >= 0))
+  # loadings, Phi, and the rotation matrix are reflected consistently, recovering the
+  # canonical solution
+  expect_equal(unclass(res$rot_loadings), unclass(o$rot_loadings), ignore_attr = TRUE)
+  expect_equal(res$Phi, o$Phi, ignore_attr = TRUE)
+  expect_equal(res$rotmat, o$rotmat, ignore_attr = TRUE)
+  # the structure matrix stays pattern %*% Phi, and the rotation matrix reproduces the
+  # rotated pattern via L_unrot %*% t(solve(rotmat))
+  expect_equal(unclass(res$Structure), unclass(res$rot_loadings) %*% res$Phi,
+               ignore_attr = TRUE)
+  expect_equal(unclass(L) %*% t(solve(res$rotmat)), unclass(res$rot_loadings),
                ignore_attr = TRUE, tolerance = 1e-6)
 })
 

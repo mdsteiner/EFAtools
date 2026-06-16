@@ -24,6 +24,60 @@ inline bool is_valid_scalar_cpp(const double x) {
   return std::isfinite(x);
 }
 
+// Scale each column of X to unit Euclidean norm, the projection onto the oblique
+// constraint set diag(t(T) %*% T) = 1. A zero/non-finite column norm is replaced by a
+// unit basis vector so the candidate stays on the constraint set; a singular candidate
+// is subsequently rejected by the inverse check in the oblique manifold's compute().
+inline arma::mat normalize_cols_cpp(const arma::mat& X, double eps = 1e-15) {
+  arma::mat Y = X;
+
+  for (arma::uword j = 0; j < Y.n_cols; ++j) {
+    double nrm = arma::norm(Y.col(j), 2);
+
+    if (!std::isfinite(nrm) || nrm < eps) {
+      Y.col(j).zeros();
+      Y(std::min(j, Y.n_rows - 1), j) = 1.0;
+    } else {
+      Y.col(j) /= nrm;
+    }
+  }
+
+  return Y;
+}
+
+// Solve X * invX = I for a square, finite X, returning false (leaving invX untouched)
+// if X is non-square, non-finite, or the solve fails or yields a non-finite result, so
+// callers can reject a singular transformation rather than evaluate it through a
+// pseudo-inverse.
+inline bool inverse_checked_cpp(const arma::mat& X, arma::mat& invX) {
+  if (X.n_rows != X.n_cols || !all_finite_cpp(X)) {
+    return false;
+  }
+
+  try {
+    bool ok = arma::solve(
+      invX,
+      X,
+      arma::eye<arma::mat>(X.n_rows, X.n_cols),
+      arma::solve_opts::fast
+    );
+    return ok && all_finite_cpp(invX);
+  } catch (...) {
+    return false;
+  }
+}
+
+// Project the raw gradient G onto the tangent space of the oblique column-normalized
+// manifold diag(t(T) %*% T) = 1: Gp = G - T diag(colSums(T .* G)); also report its
+// Frobenius norm. Shared by the oblique solvers (the Procrustes objective and the
+// criterion objective); only the upstream gradient G differs between them.
+inline void oblique_tangent_project(const arma::mat& Tmat, const arma::mat& G,
+                                    arma::mat& Gp, double& s) {
+  arma::rowvec proj = arma::sum(Tmat % G, 0);
+  Gp = G - Tmat * arma::diagmat(proj.t());
+  s = arma::norm(arma::vectorise(Gp), 2);
+}
+
 // A uniformly distributed random k x k orthogonal matrix, drawn the same way as
 // GPArotation::Random.Start(): a standard-normal matrix run through a QR
 // decomposition, with the orthogonal factor's columns sign-fixed by the diagonal

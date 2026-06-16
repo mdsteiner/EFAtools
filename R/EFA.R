@@ -107,7 +107,7 @@
 #'  workers (see Details); the caller's random-number stream is restored afterwards,
 #'  so supplying a seed leaves no lasting effect on it. Default is `NULL`, which uses
 #'  (and advances) the current state of the generator.
-#' @param ... Additional arguments passed to rotation functions from the `GPArotation` package (e.g., `maxit` for maximum number of iterations).
+#' @param ... Additional arguments passed to the rotation procedure (e.g., `maxit` for the maximum number of iterations).
 #'
 #' @details There are two main ways to use this function. The easiest way is to
 #' use it with a specified `type` (see above), which sets most of the other
@@ -194,10 +194,10 @@
 #'
 #' For all other rotations except varimax and promax, the `type` argument
 #' only controls the `order_type` argument with the same values as stated
-#' above for the varimax and promax rotations. For these other rotations, the
-#' `GPArotation` package is needed. Additional arguments can also be
-#' specified and will be passed to the respective `GPArotation` function
-#' (e.g., maxit to change the maximum number of iterations for the rotation procedure).
+#' above for the varimax and promax rotations. For most of these other rotations, the
+#' `GPArotation` package is used. Additional arguments can also be specified and
+#' will be passed to the rotation procedure (e.g., maxit to change the maximum
+#' number of iterations).
 #'
 #' The `type` argument has no effect on ULS and ML. For ULS, no additional
 #' arguments are needed. For ML, an additional argument
