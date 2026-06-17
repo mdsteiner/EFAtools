@@ -96,30 +96,52 @@ test_that("errors etc. are thrown correctly", {
   expect_warning(.rotate_model(unrot_1, rotation = "equamax", type = "EFAtools"), class = "efa_single_factor")
 })
 
-test_that("orthogonal rotation matrix reproduces the rotated loadings", {
+test_that("the bentlerT rotation matrix is orthogonal and reproduces the rotated loadings", {
   skip_on_cran()
-  skip_if_not_installed("GPArotation")
 
-  # the engine reflects two factors on this solution, so the rotation matrix must carry
-  # both the sign reflection and the factor reordering. Reflect and reorder the engine's
-  # own solution the documented way, check the package's rotation matrix matches that
-  # (signed, reordered) target, then confirm the self-contained reproduction identity
-  # L_unrot %*% rotmat == rot_loadings.
+  # bentlerT is computed by the native gradient-projection engine. These invariants hold for any
+  # valid orthogonal solution and need no reference package (so coverage survives the criterion
+  # moving off GPArotation): the rotation matrix is orthogonal (t(Th) %*% Th == I), and it
+  # reproduces the rotated loadings via the documented identity L_unrot %*% Th == rot_loadings.
+  # The sign-reflection/reordering of the rotation matrix is exercised deterministically by the
+  # orthogonal reflect-and-order test below.
   L <- unrot$unrot_loadings
-  set.seed(11)
-  ref <- suppressWarnings(GPArotation::bentlerT(unclass(L), eps = 1e-5,
-                                                normalize = TRUE, randomStarts = 100))
-  signs <- sign(colSums(ref$loadings))
-  signs[signs == 0] <- 1
-  ord <- order(colSums((ref$loadings %*% diag(signs))^2), decreasing = TRUE)
-  exp_rotmat <- (ref$Th %*% diag(signs))[, ord]
+  k <- ncol(L)
 
-  set.seed(11)
-  o <- suppressWarnings(.rotate_model(unrot, rotation = "bentlerT", type = "psych"))
+  expect_equal(crossprod(bentT$rotmat), diag(k), ignore_attr = TRUE, tolerance = 1e-6)
+  expect_equal(unclass(L) %*% bentT$rotmat, unclass(bentT$rot_loadings),
+               ignore_attr = TRUE, tolerance = 1e-6)
+})
 
-  expect_false(all(signs == 1))  # this fixture exercises the reflection path
-  expect_equal(o$rotmat, exp_rotmat, ignore_attr = TRUE, tolerance = 1e-6)
-  expect_equal(unclass(L) %*% o$rotmat, unclass(o$rot_loadings),
+test_that("orthogonal loadings and rotmat are reflected/reordered consistently", {
+  skip_on_cran()
+
+  # Feed .reflect_and_order a raw orthogonal solution whose first factor has a negative column
+  # sum, and check that the documented sign reflection is applied consistently to the loadings
+  # and the rotation matrix (the orthogonal counterpart of the oblique reflect-and-order test).
+  # This exercises the package's orthogonal reflection branch directly and deterministically,
+  # rather than relying on the bentlerT engine to return a negative-column-sum factor (an
+  # orientation that varies with the random starts). The raw input is a real bentlerT solution
+  # with its first factor negated -- still a valid orthogonal solution (loadings = L %*% Th) --
+  # so reflecting it back must recover the canonical solution.
+  L <- unrot$unrot_loadings
+  k <- ncol(bentT$rot_loadings)
+
+  neg <- replace(rep(1, k), 1L, -1)
+  raw_loadings <- unclass(bentT$rot_loadings) %*% diag(neg)
+  raw_rotmat   <- bentT$rotmat %*% diag(neg)
+
+  res <- .reflect_and_order(raw_loadings, rotmat = raw_rotmat, L_unrot = L,
+                            name_factors = FALSE)
+
+  # the negative factor is reflected back to a non-negative column sum
+  expect_true(all(colSums(unclass(res$rot_loadings)) >= 0))
+  # loadings and the rotation matrix are reflected consistently, recovering the canonical solution
+  expect_equal(unclass(res$rot_loadings), unclass(bentT$rot_loadings), ignore_attr = TRUE)
+  expect_equal(res$rotmat, bentT$rotmat, ignore_attr = TRUE)
+  # the rotation matrix stays orthogonal and reproduces the rotated loadings via L_unrot %*% rotmat
+  expect_equal(crossprod(res$rotmat), diag(k), ignore_attr = TRUE, tolerance = 1e-6)
+  expect_equal(unclass(L) %*% res$rotmat, unclass(res$rot_loadings),
                ignore_attr = TRUE, tolerance = 1e-6)
 })
 

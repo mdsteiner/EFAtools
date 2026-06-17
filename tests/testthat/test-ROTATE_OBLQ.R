@@ -185,4 +185,21 @@ test_that("oblique Phi, structure, and rotmat are reflected/reordered with the l
                ignore_attr = TRUE, tolerance = 1e-6)
 })
 
+test_that("the bentlerQ solution satisfies the oblique structure invariants", {
+  skip_on_cran()
+
+  # bentlerQ is computed by the native gradient-projection engine. These invariants hold for any
+  # valid oblique solution and need no reference package (so coverage survives the criterion
+  # moving off GPArotation): the structure matrix equals pattern %*% Phi, the rotation matrix
+  # reproduces the rotated pattern via the documented identity L_unrot %*% t(solve(Th)), and the
+  # factor correlation matrix has a unit diagonal.
+  L <- unrot$unrot_loadings
+
+  expect_equal(unclass(bentQ$Structure), unclass(bentQ$rot_loadings) %*% bentQ$Phi,
+               ignore_attr = TRUE)
+  expect_equal(unclass(L) %*% t(solve(bentQ$rotmat)), unclass(bentQ$rot_loadings),
+               ignore_attr = TRUE, tolerance = 1e-6)
+  expect_equal(diag(bentQ$Phi), rep(1, ncol(bentQ$rot_loadings)))
+})
+
 rm(unrot, obli, unrot_1, obli_1, quarti, simpli, bentQ, geoQ, bifacQ)

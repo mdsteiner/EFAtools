@@ -102,6 +102,38 @@ struct GeominCriterion : public RotationCriterion {
   }
 };
 
+// Bentler's invariant pattern simplicity criterion (GPArotation::vgQ.bentler). With the k x k
+// cross-product of squared loadings M = L2' L2 and its diagonal D, the criterion is
+// f = -(log|M| - log|D|) / 4: it is minimized when M is as close to diagonal as possible, i.e.
+// the columns of squared loadings are mutually orthogonal (an invariant-pattern notion of simple
+// structure). The gradient is Gq = -L .* (L2 (M^-1 - D^-1)). A degenerate M -- a rank-deficient
+// cross-product or a zero column of squared loadings (a zero diagonal entry) -- leaves the
+// criterion undefined; this is signalled by an infinite objective and a zero gradient so the
+// manifold's validity check rejects the candidate, mirroring the invalid-state handling of the
+// other criteria rather than throwing.
+struct BentlerCriterion : public RotationCriterion {
+  void eval(const arma::mat& L, double& f, arma::mat& Gq) const override {
+    arma::mat L2 = square(L);
+    arma::mat M = L2.t() * L2;  // k x k cross-product of squared loadings
+    arma::vec dM = M.diag();
+
+    double logDetM, sgn;
+    bool det_ok = arma::log_det(logDetM, sgn, M);  // logDetM = log|det(M)|, sgn = sign(det(M))
+    arma::mat Minv;
+    bool inv_ok = inverse_checked_cpp(M, Minv);
+
+    if (!det_ok || sgn <= 0.0 || !std::isfinite(logDetM) || !inv_ok || dM.min() <= 0.0) {
+      f = std::numeric_limits<double>::infinity();
+      Gq.zeros(L.n_rows, L.n_cols);
+      return;
+    }
+
+    double logDetD = accu(log(dM));
+    f = -(logDetM - logDetD) / 4.0;
+    Gq = -(L % (L2 * (Minv - diagmat(1.0 / dM))));
+  }
+};
+
 
 // Retract X back onto the orthogonal group via its polar factor U V' from the SVD,
 // the Stiefel retraction used by GPForth. Returns false (leaving Tout untouched) if
@@ -660,6 +692,219 @@ Rcpp::List rotate_geomin_oblq(const arma::mat& L,
   }
 
   GeominCriterion crit(delta);
+  OblqCriterionManifold manifold{A_work, crit};
+  arma::mat T_primary(k, k, fill::eye);
+
+  GpfSummary summary = run_gpf_multistart(
+    manifold, T_primary, eps, maxit, max_line_search, step0,
+    random_starts, screen_keep, triage_maxit, triage_improve_tol
+  );
+  const GpfFit& best_fit = summary.best_fit;
+
+  // Reconstruct the rotated loadings (L = A %*% solve(t(T)), Kaiser weights restored) and the
+  // factor correlations (Phi = t(T) %*% T) from the winning transformation, shared with the
+  // Procrustes oblique entry point.
+  arma::mat loadings;
+  arma::mat Phi;
+  finalize_oblique(best_fit, A_work, W, normalize, loadings, Phi);
+
+  return Rcpp::List::create(
+    Rcpp::Named("loadings") = loadings,
+    Rcpp::Named("Th") = best_fit.T,
+    Rcpp::Named("Phi") = Phi,
+    Rcpp::Named("value") = best_fit.value,
+    Rcpp::Named("convergence") = best_fit.convergence,
+    Rcpp::Named("valid") = best_fit.valid
+  );
+}
+
+//' Orthogonal Bentler factor rotation
+//'
+//' Rotate a loading matrix orthogonally under Bentler's invariant pattern simplicity criterion
+//' using a gradient-projection optimizer along the orthogonal (Stiefel) manifold.
+//'
+//' The criterion value `f` and its gradient `dQ/dL` at the rotated loadings
+//' `L = A %*% T` define the search; the engine maps the gradient to the orthogonal
+//' transformation `T`, projects it onto the tangent space, performs a sufficient-decrease line
+//' search, and retracts back onto the orthogonal group via a polar (singular value) projection.
+//' The Bentler criterion measures the departure of the cross-products of squared loadings from a
+//' diagonal pattern; it is prone to local minima, so additional random starts are recommended.
+//'
+//' Additional random orthogonal starts may be requested. To bound runtime the solver screens
+//' each random start by its objective, runs a short triage optimization on the best-screened
+//' starts, and fully optimizes only those that improve on the current incumbent by at least
+//' `triage_improve_tol`.
+//'
+//' @param L Numeric matrix. The unrotated loading matrix (variables by factors).
+//' @param eps Numeric scalar. Convergence tolerance for the projected-gradient norm.
+//' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before rotation and
+//'   reverse it afterwards.
+//' @param random_starts Integer scalar. Number of additional random orthogonal starts.
+//' @param maxit Integer scalar. Maximum number of projected-gradient updates.
+//' @param max_line_search Integer scalar. Maximum number of step-halving attempts after the
+//'   initial trial step in each line-search phase.
+//' @param step0 Numeric scalar. Initial step size used in the projected-gradient update.
+//' @param screen_keep Integer scalar. Number of screened random starts retained for triage
+//'   optimization.
+//' @param triage_maxit Integer scalar. Number of short optimization iterations used in the
+//'   triage stage.
+//' @param triage_improve_tol Numeric scalar. Relative improvement required for a triaged start
+//'   to be promoted to full optimization.
+//'
+//' @returns A named list with the rotated loadings, the orthogonal rotation matrix `Th`
+//'   (with `L %*% Th` reproducing the rotated loadings), the attained criterion value, and the
+//'   convergence and validity flags.
+//'
+//' @references
+//' Bentler, P. M. (1977). Factor simplicity index and transformations. *Psychometrika*, 42,
+//' 277-295.
+//'
+//' Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms and
+//' software for arbitrary rotation criteria in factor analysis. *Educational and
+//' Psychological Measurement*, 65, 676-696.
+//'
+// [[Rcpp::export(.rotate_bentler_orth)]]
+Rcpp::List rotate_bentler_orth(const arma::mat& L,
+                               double eps = 1e-5,
+                               bool normalize = true,
+                               int random_starts = 0,
+                               int maxit = 1000,
+                               int max_line_search = 10,
+                               double step0 = 1.0,
+                               int screen_keep = 2,
+                               int triage_maxit = 25,
+                               double triage_improve_tol = 0.0) {
+  if (L.n_rows == 0 || L.n_cols == 0) {
+    Rcpp::stop("L must be a non-empty matrix.");
+  }
+  if (L.n_cols < 2) {
+    Rcpp::stop("Orthogonal rotation requires at least two factors; use the R wrapper "
+               "for single-factor solutions.");
+  }
+  if (!all_finite_cpp(L)) {
+    Rcpp::stop("L must contain only finite values.");
+  }
+  validate_gpf_scalars(eps, maxit, max_line_search, step0, random_starts,
+                       screen_keep, triage_maxit, triage_improve_tol);
+
+  const arma::uword k = L.n_cols;
+
+  // Kaiser normalization scales rows before rotation; because the weights act on rows and the
+  // rotation right-multiplies, they cancel in the final loadings, so the rotated loadings are
+  // reported as L %*% Th (the documented reproduction identity).
+  arma::mat A_work = L;
+  arma::vec W;
+  if (normalize) {
+    W = kaiser_weights(L);
+    A_work.each_col() /= W;
+  }
+
+  BentlerCriterion crit;
+  OrthCriterionManifold manifold{A_work, crit};
+  arma::mat T_primary(k, k, fill::eye);
+
+  GpfSummary summary = run_gpf_multistart(
+    manifold, T_primary, eps, maxit, max_line_search, step0,
+    random_starts, screen_keep, triage_maxit, triage_improve_tol
+  );
+  const GpfFit& best_fit = summary.best_fit;
+
+  arma::mat loadings = L * best_fit.T;
+
+  return Rcpp::List::create(
+    Rcpp::Named("loadings") = loadings,
+    Rcpp::Named("Th") = best_fit.T,
+    Rcpp::Named("value") = best_fit.value,
+    Rcpp::Named("convergence") = best_fit.convergence,
+    Rcpp::Named("valid") = best_fit.valid
+  );
+}
+
+//' Oblique Bentler factor rotation
+//'
+//' Rotate a loading matrix obliquely under Bentler's invariant pattern simplicity criterion
+//' using a gradient-projection optimizer along the oblique (column-normalized) manifold.
+//'
+//' The criterion value `f` and its gradient `dQ/dL` at the rotated loadings
+//' `L = A %*% solve(t(T))` define the search; the engine maps the gradient to the
+//' transformation `T` on the manifold `diag(t(T) %*% T) = 1`, projects it onto the tangent
+//' space, performs a sufficient-decrease line search, and retracts back onto the manifold by
+//' column normalization. The Bentler criterion measures the departure of the cross-products of
+//' squared loadings from a diagonal pattern; it is prone to local minima, so additional random
+//' starts are recommended.
+//'
+//' Additional random starts may be requested. To bound runtime the solver screens each random
+//' start by its objective, runs a short triage optimization on the best-screened starts, and
+//' fully optimizes only those that improve on the current incumbent by at least
+//' `triage_improve_tol`.
+//'
+//' @param L Numeric matrix. The unrotated loading matrix (variables by factors).
+//' @param eps Numeric scalar. Convergence tolerance for the projected-gradient norm.
+//' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before rotation and
+//'   reverse it afterwards.
+//' @param random_starts Integer scalar. Number of additional random starts.
+//' @param maxit Integer scalar. Maximum number of projected-gradient updates.
+//' @param max_line_search Integer scalar. Maximum number of step-halving attempts after the
+//'   initial trial step in each line-search phase.
+//' @param step0 Numeric scalar. Initial step size used in the projected-gradient update.
+//' @param screen_keep Integer scalar. Number of screened random starts retained for triage
+//'   optimization.
+//' @param triage_maxit Integer scalar. Number of short optimization iterations used in the
+//'   triage stage.
+//' @param triage_improve_tol Numeric scalar. Relative improvement required for a triaged start
+//'   to be promoted to full optimization.
+//'
+//' @returns A named list with the rotated loadings, the transformation matrix `Th`
+//'   (with `L %*% t(solve(Th))` reproducing the rotated loadings), the factor correlation
+//'   matrix `Phi` (`t(Th) %*% Th`), the attained criterion value, and the convergence and
+//'   validity flags.
+//'
+//' @references
+//' Bentler, P. M. (1977). Factor simplicity index and transformations. *Psychometrika*, 42,
+//' 277-295.
+//'
+//' Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms and
+//' software for arbitrary rotation criteria in factor analysis. *Educational and
+//' Psychological Measurement*, 65, 676-696.
+//'
+// [[Rcpp::export(.rotate_bentler_oblq)]]
+Rcpp::List rotate_bentler_oblq(const arma::mat& L,
+                               double eps = 1e-5,
+                               bool normalize = true,
+                               int random_starts = 0,
+                               int maxit = 1000,
+                               int max_line_search = 10,
+                               double step0 = 1.0,
+                               int screen_keep = 2,
+                               int triage_maxit = 25,
+                               double triage_improve_tol = 0.0) {
+  if (L.n_rows == 0 || L.n_cols == 0) {
+    Rcpp::stop("L must be a non-empty matrix.");
+  }
+  if (L.n_cols < 2) {
+    Rcpp::stop("Oblique rotation requires at least two factors; use the R wrapper "
+               "for single-factor solutions.");
+  }
+  if (!all_finite_cpp(L)) {
+    Rcpp::stop("L must contain only finite values.");
+  }
+  validate_gpf_scalars(eps, maxit, max_line_search, step0, random_starts,
+                       screen_keep, triage_maxit, triage_improve_tol);
+
+  const arma::uword k = L.n_cols;
+
+  // Kaiser normalization scales rows before rotation; because the weights act on rows and the
+  // rotation (right-multiplying solve(t(T))) acts on columns, they cancel in the final
+  // loadings, so the rotated loadings reproduce L %*% t(solve(Th)) (the documented
+  // reproduction identity).
+  arma::mat A_work = L;
+  arma::vec W;
+  if (normalize) {
+    W = kaiser_weights(L);
+    A_work.each_col() /= W;
+  }
+
+  BentlerCriterion crit;
   OblqCriterionManifold manifold{A_work, crit};
   arma::mat T_primary(k, k, fill::eye);
 
