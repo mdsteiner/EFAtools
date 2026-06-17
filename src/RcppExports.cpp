@@ -318,6 +318,46 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rotate_bifactor_orth
+Rcpp::List rotate_bifactor_orth(const arma::mat& L, double eps, bool normalize, int random_starts, int maxit, int max_line_search, double step0, int screen_keep, int triage_maxit, double triage_improve_tol);
+RcppExport SEXP _EFAtools_rotate_bifactor_orth(SEXP LSEXP, SEXP epsSEXP, SEXP normalizeSEXP, SEXP random_startsSEXP, SEXP maxitSEXP, SEXP max_line_searchSEXP, SEXP step0SEXP, SEXP screen_keepSEXP, SEXP triage_maxitSEXP, SEXP triage_improve_tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type L(LSEXP);
+    Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
+    Rcpp::traits::input_parameter< bool >::type normalize(normalizeSEXP);
+    Rcpp::traits::input_parameter< int >::type random_starts(random_startsSEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< int >::type max_line_search(max_line_searchSEXP);
+    Rcpp::traits::input_parameter< double >::type step0(step0SEXP);
+    Rcpp::traits::input_parameter< int >::type screen_keep(screen_keepSEXP);
+    Rcpp::traits::input_parameter< int >::type triage_maxit(triage_maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type triage_improve_tol(triage_improve_tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(rotate_bifactor_orth(L, eps, normalize, random_starts, maxit, max_line_search, step0, screen_keep, triage_maxit, triage_improve_tol));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rotate_bifactor_oblq
+Rcpp::List rotate_bifactor_oblq(const arma::mat& L, double eps, bool normalize, int random_starts, int maxit, int max_line_search, double step0, int screen_keep, int triage_maxit, double triage_improve_tol);
+RcppExport SEXP _EFAtools_rotate_bifactor_oblq(SEXP LSEXP, SEXP epsSEXP, SEXP normalizeSEXP, SEXP random_startsSEXP, SEXP maxitSEXP, SEXP max_line_searchSEXP, SEXP step0SEXP, SEXP screen_keepSEXP, SEXP triage_maxitSEXP, SEXP triage_improve_tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type L(LSEXP);
+    Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
+    Rcpp::traits::input_parameter< bool >::type normalize(normalizeSEXP);
+    Rcpp::traits::input_parameter< int >::type random_starts(random_startsSEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< int >::type max_line_search(max_line_searchSEXP);
+    Rcpp::traits::input_parameter< double >::type step0(step0SEXP);
+    Rcpp::traits::input_parameter< int >::type screen_keep(screen_keepSEXP);
+    Rcpp::traits::input_parameter< int >::type triage_maxit(triage_maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type triage_improve_tol(triage_improve_tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(rotate_bifactor_oblq(L, eps, normalize, random_starts, maxit, max_line_search, step0, screen_keep, triage_maxit, triage_improve_tol));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_EFAtools_fit_ml_cpp", (DL_FUNC) &_EFAtools_fit_ml_cpp, 4},
@@ -338,6 +378,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EFAtools_rotate_geomin_oblq", (DL_FUNC) &_EFAtools_rotate_geomin_oblq, 11},
     {"_EFAtools_rotate_bentler_orth", (DL_FUNC) &_EFAtools_rotate_bentler_orth, 10},
     {"_EFAtools_rotate_bentler_oblq", (DL_FUNC) &_EFAtools_rotate_bentler_oblq, 10},
+    {"_EFAtools_rotate_bifactor_orth", (DL_FUNC) &_EFAtools_rotate_bifactor_orth, 10},
+    {"_EFAtools_rotate_bifactor_oblq", (DL_FUNC) &_EFAtools_rotate_bifactor_oblq, 10},
     {NULL, NULL, 0}
 };
 

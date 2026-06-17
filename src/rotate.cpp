@@ -134,6 +134,38 @@ struct BentlerCriterion : public RotationCriterion {
   }
 };
 
+// Jennrich-Bentler bifactor (biquartimin) criterion (GPArotation::vgQ.bifactor). The first
+// factor is treated as the general factor and is exempt from the penalty: with the squared
+// group-factor loadings L2 = L[, -1]^2 and their per-row sums r_i = sum_j L2_ij, the criterion
+// f = sum_i r_i^2 - sum_{i,j} L2_ij^2 = sum_i sum_{j != j'} L2_ij L2_ij' is the sum of the
+// between-group-factor cross-products of squared loadings; it is minimized when each variable
+// loads on the general factor plus at most one group factor (bifactor simple structure). The
+// gradient over the group columns is 4 L[, -1] .* (r_i - L2) (with r_i broadcast across the
+// group columns) and the general (first) column of the gradient is zero. The criterion is a
+// polynomial in L, so it is finite for any finite L and needs no degenerate-state guard. With a
+// single group factor (two factors) the criterion is identically zero, matching GPArotation.
+struct BifactorCriterion : public RotationCriterion {
+  void eval(const arma::mat& L, double& f, arma::mat& Gq) const override {
+    const arma::uword p = L.n_rows;
+    const arma::uword k = L.n_cols;
+    // Group-factor block: every column except the first (the general factor).
+    arma::mat Lg = L.cols(1, k - 1);
+    arma::mat L2 = square(Lg);
+    arma::vec rowS = sum(L2, 1);  // per-row sum of the group-factor squared loadings
+    f = accu(square(rowS)) - accu(square(L2));
+    // group-column gradient 4 L[, -1] .* (r_i - L2); the general (first) column is zero
+    arma::mat Gt = -L2;
+    Gt.each_col() += rowS;
+    Gt = 4.0 * (Lg % Gt);
+    // Only the general column needs zeroing; the group block is fully overwritten by Gt, so
+    // zero-filling the whole gradient first would waste a write over p * (k - 1) entries on every
+    // evaluation (this is the innermost kernel of the multi-start solver).
+    Gq.set_size(p, k);
+    Gq.col(0).zeros();
+    Gq.cols(1, k - 1) = Gt;
+  }
+};
+
 
 // Retract X back onto the orthogonal group via its polar factor U V' from the SVD,
 // the Stiefel retraction used by GPForth. Returns false (leaving Tout untouched) if
@@ -905,6 +937,223 @@ Rcpp::List rotate_bentler_oblq(const arma::mat& L,
   }
 
   BentlerCriterion crit;
+  OblqCriterionManifold manifold{A_work, crit};
+  arma::mat T_primary(k, k, fill::eye);
+
+  GpfSummary summary = run_gpf_multistart(
+    manifold, T_primary, eps, maxit, max_line_search, step0,
+    random_starts, screen_keep, triage_maxit, triage_improve_tol
+  );
+  const GpfFit& best_fit = summary.best_fit;
+
+  // Reconstruct the rotated loadings (L = A %*% solve(t(T)), Kaiser weights restored) and the
+  // factor correlations (Phi = t(T) %*% T) from the winning transformation, shared with the
+  // Procrustes oblique entry point.
+  arma::mat loadings;
+  arma::mat Phi;
+  finalize_oblique(best_fit, A_work, W, normalize, loadings, Phi);
+
+  return Rcpp::List::create(
+    Rcpp::Named("loadings") = loadings,
+    Rcpp::Named("Th") = best_fit.T,
+    Rcpp::Named("Phi") = Phi,
+    Rcpp::Named("value") = best_fit.value,
+    Rcpp::Named("convergence") = best_fit.convergence,
+    Rcpp::Named("valid") = best_fit.valid
+  );
+}
+
+//' Orthogonal bifactor factor rotation
+//'
+//' Rotate a loading matrix orthogonally under the Jennrich-Bentler bifactor criterion using a
+//' gradient-projection optimizer along the orthogonal (Stiefel) manifold.
+//'
+//' The criterion value `f` and its gradient `dQ/dL` at the rotated loadings
+//' `L = A %*% T` define the search; the engine maps the gradient to the orthogonal
+//' transformation `T`, projects it onto the tangent space, performs a sufficient-decrease line
+//' search, and retracts back onto the orthogonal group via a polar (singular value) projection.
+//' The first factor is treated as a general factor and is exempt from the penalty; the criterion
+//' measures the between-group-factor cross-products of the squared loadings, so it is minimized
+//' when each variable loads on the general factor plus at most one group factor. The criterion is
+//' prone to local minima, so additional random starts are recommended.
+//'
+//' Additional random orthogonal starts may be requested. To bound runtime the solver screens
+//' each random start by its objective, runs a short triage optimization on the best-screened
+//' starts, and fully optimizes only those that improve on the current incumbent by at least
+//' `triage_improve_tol`.
+//'
+//' @param L Numeric matrix. The unrotated loading matrix (variables by factors).
+//' @param eps Numeric scalar. Convergence tolerance for the projected-gradient norm.
+//' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before rotation and
+//'   reverse it afterwards.
+//' @param random_starts Integer scalar. Number of additional random orthogonal starts.
+//' @param maxit Integer scalar. Maximum number of projected-gradient updates.
+//' @param max_line_search Integer scalar. Maximum number of step-halving attempts after the
+//'   initial trial step in each line-search phase.
+//' @param step0 Numeric scalar. Initial step size used in the projected-gradient update.
+//' @param screen_keep Integer scalar. Number of screened random starts retained for triage
+//'   optimization.
+//' @param triage_maxit Integer scalar. Number of short optimization iterations used in the
+//'   triage stage.
+//' @param triage_improve_tol Numeric scalar. Relative improvement required for a triaged start
+//'   to be promoted to full optimization.
+//'
+//' @returns A named list with the rotated loadings, the orthogonal rotation matrix `Th`
+//'   (with `L %*% Th` reproducing the rotated loadings), the attained criterion value, and the
+//'   convergence and validity flags.
+//'
+//' @references
+//' Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms and
+//' software for arbitrary rotation criteria in factor analysis. *Educational and
+//' Psychological Measurement*, 65, 676-696.
+//'
+//' Jennrich, R. I., & Bentler, P. M. (2011). Exploratory bi-factor analysis. *Psychometrika*,
+//' 76, 537-549.
+//'
+// [[Rcpp::export(.rotate_bifactor_orth)]]
+Rcpp::List rotate_bifactor_orth(const arma::mat& L,
+                                double eps = 1e-5,
+                                bool normalize = true,
+                                int random_starts = 0,
+                                int maxit = 1000,
+                                int max_line_search = 10,
+                                double step0 = 1.0,
+                                int screen_keep = 2,
+                                int triage_maxit = 25,
+                                double triage_improve_tol = 0.0) {
+  if (L.n_rows == 0 || L.n_cols == 0) {
+    Rcpp::stop("L must be a non-empty matrix.");
+  }
+  if (L.n_cols < 2) {
+    Rcpp::stop("Orthogonal rotation requires at least two factors; use the R wrapper "
+               "for single-factor solutions.");
+  }
+  if (!all_finite_cpp(L)) {
+    Rcpp::stop("L must contain only finite values.");
+  }
+  validate_gpf_scalars(eps, maxit, max_line_search, step0, random_starts,
+                       screen_keep, triage_maxit, triage_improve_tol);
+
+  const arma::uword k = L.n_cols;
+
+  // Kaiser normalization scales rows before rotation; because the weights act on rows and the
+  // rotation right-multiplies, they cancel in the final loadings, so the rotated loadings are
+  // reported as L %*% Th (the documented reproduction identity).
+  arma::mat A_work = L;
+  arma::vec W;
+  if (normalize) {
+    W = kaiser_weights(L);
+    A_work.each_col() /= W;
+  }
+
+  BifactorCriterion crit;
+  OrthCriterionManifold manifold{A_work, crit};
+  arma::mat T_primary(k, k, fill::eye);
+
+  GpfSummary summary = run_gpf_multistart(
+    manifold, T_primary, eps, maxit, max_line_search, step0,
+    random_starts, screen_keep, triage_maxit, triage_improve_tol
+  );
+  const GpfFit& best_fit = summary.best_fit;
+
+  arma::mat loadings = L * best_fit.T;
+
+  return Rcpp::List::create(
+    Rcpp::Named("loadings") = loadings,
+    Rcpp::Named("Th") = best_fit.T,
+    Rcpp::Named("value") = best_fit.value,
+    Rcpp::Named("convergence") = best_fit.convergence,
+    Rcpp::Named("valid") = best_fit.valid
+  );
+}
+
+//' Oblique bifactor factor rotation
+//'
+//' Rotate a loading matrix obliquely under the Jennrich-Bentler bifactor criterion using a
+//' gradient-projection optimizer along the oblique (column-normalized) manifold.
+//'
+//' The criterion value `f` and its gradient `dQ/dL` at the rotated loadings
+//' `L = A %*% solve(t(T))` define the search; the engine maps the gradient to the
+//' transformation `T` on the manifold `diag(t(T) %*% T) = 1`, projects it onto the tangent
+//' space, performs a sufficient-decrease line search, and retracts back onto the manifold by
+//' column normalization. The first factor is treated as a general factor and is exempt from the
+//' penalty; the criterion measures the between-group-factor cross-products of the squared
+//' loadings, so it is minimized when each variable loads on the general factor plus at most one
+//' group factor. The criterion is prone to local minima, so additional random starts are
+//' recommended.
+//'
+//' Additional random starts may be requested. To bound runtime the solver screens each random
+//' start by its objective, runs a short triage optimization on the best-screened starts, and
+//' fully optimizes only those that improve on the current incumbent by at least
+//' `triage_improve_tol`.
+//'
+//' @param L Numeric matrix. The unrotated loading matrix (variables by factors).
+//' @param eps Numeric scalar. Convergence tolerance for the projected-gradient norm.
+//' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before rotation and
+//'   reverse it afterwards.
+//' @param random_starts Integer scalar. Number of additional random starts.
+//' @param maxit Integer scalar. Maximum number of projected-gradient updates.
+//' @param max_line_search Integer scalar. Maximum number of step-halving attempts after the
+//'   initial trial step in each line-search phase.
+//' @param step0 Numeric scalar. Initial step size used in the projected-gradient update.
+//' @param screen_keep Integer scalar. Number of screened random starts retained for triage
+//'   optimization.
+//' @param triage_maxit Integer scalar. Number of short optimization iterations used in the
+//'   triage stage.
+//' @param triage_improve_tol Numeric scalar. Relative improvement required for a triaged start
+//'   to be promoted to full optimization.
+//'
+//' @returns A named list with the rotated loadings, the transformation matrix `Th`
+//'   (with `L %*% t(solve(Th))` reproducing the rotated loadings), the factor correlation
+//'   matrix `Phi` (`t(Th) %*% Th`), the attained criterion value, and the convergence and
+//'   validity flags.
+//'
+//' @references
+//' Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms and
+//' software for arbitrary rotation criteria in factor analysis. *Educational and
+//' Psychological Measurement*, 65, 676-696.
+//'
+//' Jennrich, R. I., & Bentler, P. M. (2011). Exploratory bi-factor analysis. *Psychometrika*,
+//' 76, 537-549.
+//'
+// [[Rcpp::export(.rotate_bifactor_oblq)]]
+Rcpp::List rotate_bifactor_oblq(const arma::mat& L,
+                                double eps = 1e-5,
+                                bool normalize = true,
+                                int random_starts = 0,
+                                int maxit = 1000,
+                                int max_line_search = 10,
+                                double step0 = 1.0,
+                                int screen_keep = 2,
+                                int triage_maxit = 25,
+                                double triage_improve_tol = 0.0) {
+  if (L.n_rows == 0 || L.n_cols == 0) {
+    Rcpp::stop("L must be a non-empty matrix.");
+  }
+  if (L.n_cols < 2) {
+    Rcpp::stop("Oblique rotation requires at least two factors; use the R wrapper "
+               "for single-factor solutions.");
+  }
+  if (!all_finite_cpp(L)) {
+    Rcpp::stop("L must contain only finite values.");
+  }
+  validate_gpf_scalars(eps, maxit, max_line_search, step0, random_starts,
+                       screen_keep, triage_maxit, triage_improve_tol);
+
+  const arma::uword k = L.n_cols;
+
+  // Kaiser normalization scales rows before rotation; because the weights act on rows and the
+  // rotation (right-multiplying solve(t(T))) acts on columns, they cancel in the final
+  // loadings, so the rotated loadings reproduce L %*% t(solve(Th)) (the documented
+  // reproduction identity).
+  arma::mat A_work = L;
+  arma::vec W;
+  if (normalize) {
+    W = kaiser_weights(L);
+    A_work.each_col() /= W;
+  }
+
+  BifactorCriterion crit;
   OblqCriterionManifold manifold{A_work, crit};
   arma::mat T_primary(k, k, fill::eye);
 

@@ -21,6 +21,11 @@
   built-in gradient-projection rotation engine instead of the `GPArotation` package. The engine
   reaches an equal-or-better minimum of the Bentler invariant pattern simplicity criterion; the
   remaining rotation criteria continue to use `GPArotation`.
+* The `bifactorT` and `bifactorQ` bifactor rotations in `EFA()` are now computed by the same
+  built-in gradient-projection rotation engine instead of the `GPArotation` package. Because the
+  bifactor criterion is prone to local minima, the engine reaches an equal-or-better minimum of the
+  Jennrich-Bentler bifactor criterion rather than reproducing `GPArotation`'s particular solution
+  exactly; `simplimax` is now the only rotation that continues to use `GPArotation`.
 * `EFA()` now additionally reports the Tucker-Lewis index (TLI, also called the
   non-normed fit index), the expected cross-validation index (ECVI), and the
   standardized root mean square residual (SRMR) among its `fit_indices` for `ML` and

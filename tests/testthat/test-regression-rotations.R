@@ -6,7 +6,7 @@
 # sign reflection); the oblique factor correlations are compared via a permutation/sign
 # invariant fingerprint. For the GPArotation engines the oracle is given the same
 # randomStarts = 100 under a shared seed as EFAtools uses, which makes the local-minimum
-# prone criteria (bifactor, simplimax) align deterministically. Tolerance is generous
+# prone simplimax criterion align deterministically. Tolerance is generous
 # relative to the observed agreement (exact for every rotation here) so the contract is
 # portable.
 
@@ -31,28 +31,6 @@ fixtures <- list(
   GRiPS    = list(R = stats::cor(GRiPS_raw),        N = nrow(GRiPS_raw),    nf = 2),
   DOSPERT  = list(R = stats::cor(DOSPERT_raw),      N = nrow(DOSPERT_raw),  nf = 4)
 )
-
-test_that("orthogonal rotations reproduce their GPArotation engine", {
-  skip_on_cran()
-  skip_if_not_installed("GPArotation")
-
-  # rotation name -> the GPArotation engine EFAtools dispatches to for each
-  # GPArotation-backed orthogonal rotation. The Crawford-Ferguson criteria (quartimax,
-  # equamax), geomin (geominT), and Bentler (bentlerT) are computed by the native engine and
-  # validated separately below.
-  engines <- list(
-    bifactorT = function() GPArotation::bifactorT(L, normalize = TRUE, eps = 1e-5,
-                                                  randomStarts = 100)
-  )
-
-  for (rn in names(engines)) {
-    set.seed(seed)
-    efa <- suppressWarnings(.rotate_model(unrot, rotation = rn, type = "EFAtools"))
-    set.seed(seed)
-    ref <- suppressWarnings(engines[[rn]]())
-    expect_lt(aligned_max_diff(efa$rot_loadings, ref$loadings), 1e-4)
-  }
-})
 
 test_that("quartimax and equamax route through the native CF rotation engine", {
   skip_on_cran()
@@ -176,18 +154,58 @@ test_that("bentlerT routes through the native GPF engine", {
   }
 })
 
+test_that("bifactorT routes through the native GPF engine", {
+  skip_on_cran()
+  skip_if_not_installed("GPArotation")
+
+  # bifactorT is computed by the native gradient-projection engine; with this every orthogonal
+  # criterion is native. The Jennrich-Bentler bifactor criterion (the first factor is a general
+  # factor, exempt from the penalty) is strongly prone to local minima, so parity is relaxed: the
+  # PRIMARY contract is that the native engine reaches an as-good-or-better minimum of the SAME
+  # criterion. bifactorT's Table column 2 is the bifactor value computed on the same
+  # Kaiser-normalized loadings the native engine reports, so it is directly comparable to
+  # native$value. The criterion needs at least two group factors to be non-trivial: with a single
+  # group factor (two factors) it is identically zero, so any rotation is optimal and the aligned
+  # loadings may legitimately differ. On the k >= 3 fixtures the criterion is well identified at
+  # randomStarts = 100, so the aligned loadings also agree to ~1e-4; where an environment settles
+  # on a different but equal-Q minimum, the Q-dominance check still holds.
+  for (fx_name in names(fixtures)) {
+    fx <- fixtures[[fx_name]]
+    unrot_fx <- suppressWarnings(EFA(fx$R, n_factors = fx$nf, N = fx$N))
+    Lx <- unclass(unrot_fx$unrot_loadings)
+
+    set.seed(seed)
+    native <- .rotate_bifactor_orth(Lx, eps = 1e-5, normalize = TRUE, random_starts = 100)
+    set.seed(seed)
+    ref <- GPArotation::bifactorT(Lx, normalize = TRUE, eps = 1e-5, randomStarts = 100)
+    ref_Q <- ref$Table[nrow(ref$Table), 2]
+
+    # (a) as-good-or-better minimum of the same bifactor criterion (every fixture)
+    expect_lte(native$value, ref_Q + 1e-6)
+    # (b) aligned loadings within relaxed parity, where the criterion is non-trivial (k >= 3)
+    if (ncol(Lx) >= 3) {
+      expect_lt(aligned_max_diff(native$loadings, ref$loadings), 1e-4)
+    }
+
+    # the public rotation path routes through the native engine and reproduces it exactly (same
+    # seed, same compiled entry), so it inherits the Q-dominance guarantee above
+    set.seed(seed)
+    efa <- suppressWarnings(.rotate_model(unrot_fx, rotation = "bifactorT", type = "EFAtools"))
+    expect_lt(aligned_max_diff(efa$rot_loadings, native$loadings), 1e-6)
+  }
+})
+
 test_that("oblique rotations reproduce their GPArotation engine", {
   skip_on_cran()
   skip_if_not_installed("GPArotation")
 
-  # rotation name -> the GPArotation engine EFAtools dispatches to for each
-  # GPArotation-backed oblique rotation. The oblimin and quartimin criteria, geomin (geominQ),
-  # and Bentler (bentlerQ) are computed by the native engine and validated separately below.
+  # rotation name -> the GPArotation engine EFAtools dispatches to. Among the oblique criteria only
+  # simplimax still uses GPArotation; the oblimin and quartimin criteria, geomin (geominQ), Bentler
+  # (bentlerQ), and bifactor (bifactorQ) are computed by the native engine and validated separately
+  # below.
   engines <- list(
     simplimax = function() GPArotation::simplimax(L, k = nrow(L), normalize = TRUE,
-                                                  eps = 1e-5, randomStarts = 100),
-    bifactorQ = function() GPArotation::bifactorQ(L, normalize = TRUE, eps = 1e-5,
-                                                  randomStarts = 100)
+                                                  eps = 1e-5, randomStarts = 100)
   )
 
   for (rn in names(engines)) {
@@ -338,6 +356,50 @@ test_that("bentlerQ routes through the native GPF engine", {
     # seed, same compiled entry), so it inherits the Q-dominance guarantee above
     set.seed(seed)
     efa <- suppressWarnings(.rotate_model(unrot_fx, rotation = "bentlerQ", type = "EFAtools"))
+    expect_lt(aligned_max_diff(efa$rot_loadings, native$loadings), 1e-6)
+    expect_lt(max(abs(phi_fingerprint(efa$Phi) - phi_fingerprint(native$Phi))), 1e-6)
+  }
+})
+
+test_that("bifactorQ routes through the native GPF engine", {
+  skip_on_cran()
+  skip_if_not_installed("GPArotation")
+
+  # bifactorQ is computed by the native gradient-projection engine; among the oblique criteria only
+  # simplimax still uses GPArotation. The Jennrich-Bentler bifactor criterion (the first factor is a
+  # general factor, exempt from the penalty) is strongly prone to local minima and comparatively
+  # flat near its oblique optimum, so parity is relaxed: the PRIMARY contract is that the native
+  # engine reaches an as-good-or-better minimum of the SAME criterion (bifactorQ's Table column 2,
+  # directly comparable to native$value). The criterion needs at least two group factors to be
+  # non-trivial: with a single group factor (two factors) it is identically zero, so any rotation is
+  # optimal. On the k >= 3 fixtures the native engine and GPArotation settle on the same equal-Q
+  # solution only to ~1e-4 (the flat oblique optimum), so the aligned loadings and factor
+  # correlations are checked at a looser ~1e-3 tolerance; a genuine rotation regression shifts
+  # loadings by >= 1e-2.
+  for (fx_name in names(fixtures)) {
+    fx <- fixtures[[fx_name]]
+    unrot_fx <- suppressWarnings(EFA(fx$R, n_factors = fx$nf, N = fx$N))
+    Lx <- unclass(unrot_fx$unrot_loadings)
+
+    set.seed(seed)
+    native <- .rotate_bifactor_oblq(Lx, eps = 1e-5, normalize = TRUE, random_starts = 100)
+    set.seed(seed)
+    ref <- suppressWarnings(GPArotation::bifactorQ(Lx, normalize = TRUE, eps = 1e-5,
+                                                   randomStarts = 100))
+    ref_Q <- ref$Table[nrow(ref$Table), 2]
+
+    # (a) as-good-or-better minimum of the same bifactor criterion (every fixture)
+    expect_lte(native$value, ref_Q + 1e-6)
+    # (b) aligned loadings and factor correlations within relaxed parity, where non-trivial (k >= 3)
+    if (ncol(Lx) >= 3) {
+      expect_lt(aligned_max_diff(native$loadings, ref$loadings), 1e-3)
+      expect_lt(max(abs(phi_fingerprint(native$Phi) - phi_fingerprint(ref$Phi))), 1e-3)
+    }
+
+    # the public rotation path routes through the native engine and reproduces it exactly (same
+    # seed, same compiled entry), so it inherits the Q-dominance guarantee above
+    set.seed(seed)
+    efa <- suppressWarnings(.rotate_model(unrot_fx, rotation = "bifactorQ", type = "EFAtools"))
     expect_lt(aligned_max_diff(efa$rot_loadings, native$loadings), 1e-6)
     expect_lt(max(abs(phi_fingerprint(efa$Phi) - phi_fingerprint(native$Phi))), 1e-6)
   }

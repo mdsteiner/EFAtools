@@ -12,13 +12,13 @@
 # Orthogonal rotation engines, keyed by rotation name. Each returns the raw rotated
 # solution ($loadings, $Th); `eps`, `normalize`, `randomStarts`, and any extra
 # arguments are forwarded through `...`. The Crawford-Ferguson criteria (quartimax,
-# equamax), geomin, and Bentler use the native engine; the remaining criteria use GPArotation.
+# equamax), geomin, Bentler, and bifactor all use the native engine.
 .orth_engines <- list(
   equamax   = function(L, ...) .gpf_cf_orth(L, kappa = ncol(L) / (2 * nrow(L)), ...),
   quartimax = function(L, ...) .gpf_cf_orth(L, kappa = 0, ...),
   bentlerT  = function(L, ...) .gpf_bentler_orth(L, ...),
   geominT   = function(L, ...) .gpf_geomin_orth(L, ...),
-  bifactorT = function(L, ...) GPArotation::bifactorT(L, ...)
+  bifactorT = function(L, ...) .gpf_bifactor_orth(L, ...)
 )
 
 # Thin wrapper over the native Crawford-Ferguson orthogonal rotation. Maps the
@@ -131,17 +131,49 @@
   list(loadings = res$loadings, Th = res$Th, Phi = res$Phi)
 }
 
+# Thin wrapper over the native bifactor orthogonal rotation. Maps the GPArotation-style engine
+# signature (`eps`, `normalize`, `randomStarts`, `maxit`) onto the compiled entry and returns
+# the raw rotated solution ($loadings, $Th) in the convention `.reflect_and_order()` expects
+# (the rotation matrix reproduces the rotated loadings via `L_unrot %*% Th`). `maxit` is
+# forwarded so the documented EFA `...` rotation control reaches the optimizer as it does for the
+# GPArotation engines; the criterion itself takes no further tuning arguments, so any other `...`
+# are ignored. The bifactor criterion is prone to local minima, so the engine is run with the same
+# random starts as the GPArotation engine and reaches an equal-or-better minimum of the criterion.
+.gpf_bifactor_orth <- function(L, eps = 1e-5, normalize = TRUE,
+                               randomStarts = 100, maxit = 1000L, ...) {
+  res <- .rotate_bifactor_orth(unclass(L), eps = eps, normalize = normalize,
+                               random_starts = randomStarts, maxit = maxit)
+  .warn_rotation_no_convergence(res$convergence, maxit)
+  list(loadings = res$loadings, Th = res$Th)
+}
+
+# Thin wrapper over the native bifactor oblique rotation. Maps the GPArotation-style engine
+# signature (`eps`, `normalize`, `randomStarts`, `maxit`) onto the compiled entry and returns the
+# raw rotated solution ($loadings, $Th, $Phi) in the convention `.reflect_and_order()` expects
+# (the rotation matrix reproduces the rotated loadings via `L_unrot %*% t(solve(Th))`, and
+# `Phi = t(Th) %*% Th`). `maxit` is forwarded so the documented EFA `...` rotation control reaches
+# the optimizer as it does for the GPArotation engines; any other `...` are ignored. The bifactor
+# criterion is prone to local minima, so the engine is run with the same random starts as the
+# GPArotation engine and reaches an equal-or-better minimum of the criterion.
+.gpf_bifactor_oblq <- function(L, eps = 1e-5, normalize = TRUE,
+                               randomStarts = 100, maxit = 1000L, ...) {
+  res <- .rotate_bifactor_oblq(unclass(L), eps = eps, normalize = normalize,
+                               random_starts = randomStarts, maxit = maxit)
+  .warn_rotation_no_convergence(res$convergence, maxit)
+  list(loadings = res$loadings, Th = res$Th, Phi = res$Phi)
+}
+
 # Oblique rotation engines, keyed by rotation name. Each returns the raw rotated solution
 # ($loadings, $Th, $Phi); `k` is consumed by simplimax and ignored by the others. The
-# oblimin and quartimin criteria (quartimin is oblimin with `gam = 0`), geomin, and Bentler
-# use the native engine; the remaining criteria use GPArotation.
+# oblimin and quartimin criteria (quartimin is oblimin with `gam = 0`), geomin, Bentler, and
+# bifactor use the native engine; simplimax uses GPArotation.
 .oblq_engines <- list(
   oblimin   = function(L, k, ...) .gpf_oblimin(L, ...),
   quartimin = function(L, k, ...) .gpf_oblimin(L, gam = 0, ...),
   simplimax = function(L, k, ...) GPArotation::simplimax(L, k = k, ...),
   bentlerQ  = function(L, k, ...) .gpf_bentler_oblq(L, ...),
   geominQ   = function(L, k, ...) .gpf_geomin_oblq(L, ...),
-  bifactorQ = function(L, k, ...) GPArotation::bifactorQ(L, ...)
+  bifactorQ = function(L, k, ...) .gpf_bifactor_oblq(L, ...)
 )
 
 # Canonical rotation names by family. The engine tables above key the GPArotation

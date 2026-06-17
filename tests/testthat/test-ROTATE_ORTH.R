@@ -113,6 +113,21 @@ test_that("the bentlerT rotation matrix is orthogonal and reproduces the rotated
                ignore_attr = TRUE, tolerance = 1e-6)
 })
 
+test_that("the bifactorT rotation matrix is orthogonal and reproduces the rotated loadings", {
+  skip_on_cran()
+
+  # bifactorT is computed by the native gradient-projection engine. These invariants hold for any
+  # valid orthogonal solution and need no reference package (so coverage survives the criterion
+  # moving off GPArotation): the rotation matrix is orthogonal (t(Th) %*% Th == I), and it
+  # reproduces the rotated loadings via the documented identity L_unrot %*% Th == rot_loadings.
+  L <- unrot$unrot_loadings
+  k <- ncol(L)
+
+  expect_equal(crossprod(bifacT$rotmat), diag(k), ignore_attr = TRUE, tolerance = 1e-6)
+  expect_equal(unclass(L) %*% bifacT$rotmat, unclass(bifacT$rot_loadings),
+               ignore_attr = TRUE, tolerance = 1e-6)
+})
+
 test_that("orthogonal loadings and rotmat are reflected/reordered consistently", {
   skip_on_cran()
 
