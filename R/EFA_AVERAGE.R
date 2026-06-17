@@ -89,8 +89,7 @@
 #' P in the promax rotation if "none" is among the specified types and "promax"
 #' or "oblique" is among the specified rotations. Default is `2:4`.
 #' @param k_simplimax numeric. The number of 'close to zero loadings' for the
-#' simplimax rotation (see \code{\link[GPArotation:GPA]{GPArotation::GPFoblq}})
-#' if "simplimax" or "oblique" is among the specified rotations. Default
+#' simplimax rotation if "simplimax" or "oblique" is among the specified rotations. Default
 #' is `ncol(x)`, where x is the entered data.
 #' @param P_type character vector. Any combination of "norm" and "unnorm".
 #' This specifies how the target matrix P is computed in promax rotation if

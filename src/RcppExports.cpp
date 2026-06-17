@@ -358,6 +358,24 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rotate_simplimax_oblq
+Rcpp::List rotate_simplimax_oblq(const arma::mat& L, int k, double eps, bool normalize, int random_starts, int maxit, int max_line_search, double step0);
+RcppExport SEXP _EFAtools_rotate_simplimax_oblq(SEXP LSEXP, SEXP kSEXP, SEXP epsSEXP, SEXP normalizeSEXP, SEXP random_startsSEXP, SEXP maxitSEXP, SEXP max_line_searchSEXP, SEXP step0SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type L(LSEXP);
+    Rcpp::traits::input_parameter< int >::type k(kSEXP);
+    Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
+    Rcpp::traits::input_parameter< bool >::type normalize(normalizeSEXP);
+    Rcpp::traits::input_parameter< int >::type random_starts(random_startsSEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< int >::type max_line_search(max_line_searchSEXP);
+    Rcpp::traits::input_parameter< double >::type step0(step0SEXP);
+    rcpp_result_gen = Rcpp::wrap(rotate_simplimax_oblq(L, k, eps, normalize, random_starts, maxit, max_line_search, step0));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_EFAtools_fit_ml_cpp", (DL_FUNC) &_EFAtools_fit_ml_cpp, 4},
@@ -380,6 +398,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EFAtools_rotate_bentler_oblq", (DL_FUNC) &_EFAtools_rotate_bentler_oblq, 10},
     {"_EFAtools_rotate_bifactor_orth", (DL_FUNC) &_EFAtools_rotate_bifactor_orth, 10},
     {"_EFAtools_rotate_bifactor_oblq", (DL_FUNC) &_EFAtools_rotate_bifactor_oblq, 10},
+    {"_EFAtools_rotate_simplimax_oblq", (DL_FUNC) &_EFAtools_rotate_simplimax_oblq, 8},
     {NULL, NULL, 0}
 };
 

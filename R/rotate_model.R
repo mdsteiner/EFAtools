@@ -163,14 +163,32 @@
   list(loadings = res$loadings, Th = res$Th, Phi = res$Phi)
 }
 
+# Thin wrapper over the native simplimax oblique rotation. Maps the GPArotation-style engine
+# signature (`k`, `eps`, `normalize`, `randomStarts`, `maxit`) onto the compiled entry and
+# returns the raw rotated solution ($loadings, $Th, $Phi) in the convention
+# `.reflect_and_order()` expects (the rotation matrix reproduces the rotated loadings via
+# `L_unrot %*% t(solve(Th))`, and `Phi = t(Th) %*% Th`). `k` is the number of 'close to zero'
+# loadings the criterion targets; `k = nrow(L)` is the default and the value `.rotate_model()`
+# supplies. `maxit` is forwarded so the documented EFA `...` rotation control reaches the
+# optimizer; any other `...` are ignored. The simplimax criterion is strongly prone to local
+# minima, so the native engine fully optimizes all `randomStarts` random starts (plus the identity
+# start) and keeps the lowest-criterion solution.
+.gpf_simplimax_oblq <- function(L, k = nrow(L), eps = 1e-5, normalize = TRUE,
+                                randomStarts = 100, maxit = 1000L, ...) {
+  res <- .rotate_simplimax_oblq(unclass(L), k = k, eps = eps, normalize = normalize,
+                                random_starts = randomStarts, maxit = maxit)
+  .warn_rotation_no_convergence(res$convergence, maxit)
+  list(loadings = res$loadings, Th = res$Th, Phi = res$Phi)
+}
+
 # Oblique rotation engines, keyed by rotation name. Each returns the raw rotated solution
 # ($loadings, $Th, $Phi); `k` is consumed by simplimax and ignored by the others. The
-# oblimin and quartimin criteria (quartimin is oblimin with `gam = 0`), geomin, Bentler, and
-# bifactor use the native engine; simplimax uses GPArotation.
+# oblimin and quartimin criteria (quartimin is oblimin with `gam = 0`), geomin, Bentler,
+# bifactor, and simplimax all use the native engine.
 .oblq_engines <- list(
   oblimin   = function(L, k, ...) .gpf_oblimin(L, ...),
   quartimin = function(L, k, ...) .gpf_oblimin(L, gam = 0, ...),
-  simplimax = function(L, k, ...) GPArotation::simplimax(L, k = k, ...),
+  simplimax = function(L, k, ...) .gpf_simplimax_oblq(L, k = k, ...),
   bentlerQ  = function(L, k, ...) .gpf_bentler_oblq(L, ...),
   geominQ   = function(L, k, ...) .gpf_geomin_oblq(L, ...),
   bifactorQ = function(L, k, ...) .gpf_bifactor_oblq(L, ...)

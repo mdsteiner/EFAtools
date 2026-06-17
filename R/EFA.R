@@ -67,8 +67,7 @@
 #' Default is "pearson".
 #' @param k numeric. Either the power used for computing the target matrix P in
 #' the promax rotation or the number of 'close to zero loadings' for the simplimax
-#' rotation (see \code{\link[GPArotation:GPA]{GPArotation::GPFoblq}}). If left to
-#' `NA` (default), the value for promax depends on the specified type.
+#' rotation. If left to `NA` (default), the value for promax depends on the specified type.
 #' For simplimax, `nrow(L)`, where L is the matrix of unrotated loadings,
 #' is used by default.
 #' @param normalize logical. If `TRUE`, a kaiser normalization is
@@ -96,10 +95,10 @@
 #' @param b_boot numeric. The number of bootstrap samples to draw. Default is 1000.
 #' @param ci numeric. The confidence interval to create from the bootstrap samples.
 #'  Must be between 0 and 1. Default ist .95 for 95% CIs.
-#' @param randomStarts numeric. The number of random starts to use in rotations
-#'  that use the `GPArotation` package. Some rotations are prone to produce
-#'  local minima and sometimes many random starts are needed (see the GPArotation
-#'  package documentation for details). Default is 10.
+#' @param randomStarts numeric. The number of random starts to use in the
+#'  rotation. Some rotation criteria are prone to produce local minima, and
+#'  sometimes many random starts are needed to locate the best solution.
+#'  Default is 10.
 #' @param seed numeric. An optional seed for the random-number generator used by the
 #'  non-parametric bootstrap (`se = "np-boot"`), i.e. for the case resampling, the
 #'  rotation random starts, and the Procrustes random starts. Setting it makes the

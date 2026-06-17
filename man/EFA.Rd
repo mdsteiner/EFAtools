@@ -129,8 +129,7 @@ in the varimax criterion (see details, and Grieder & Steiner, 2020). Default is 
 
 \item{k}{numeric. Either the power used for computing the target matrix P in
 the promax rotation or the number of 'close to zero loadings' for the simplimax
-rotation (see \code{\link[GPArotation:GPA]{GPArotation::GPFoblq}}). If left to
-\code{NA} (default), the value for promax depends on the specified type.
+rotation. If left to \code{NA} (default), the value for promax depends on the specified type.
 For simplimax, \code{nrow(L)}, where L is the matrix of unrotated loadings,
 is used by default.}
 
@@ -165,10 +164,10 @@ Default is "pearson".}
 \item{ci}{numeric. The confidence interval to create from the bootstrap samples.
 Must be between 0 and 1. Default ist .95 for 95\% CIs.}
 
-\item{randomStarts}{numeric. The number of random starts to use in rotations
-that use the \code{GPArotation} package. Some rotations are prone to produce
-local minima and sometimes many random starts are needed (see the GPArotation
-package documentation for details). Default is 10.}
+\item{randomStarts}{numeric. The number of random starts to use in the
+rotation. Some rotation criteria are prone to produce local minima, and
+sometimes many random starts are needed to locate the best solution.
+Default is 10.}
 
 \item{seed}{numeric. An optional seed for the random-number generator used by the
 non-parametric bootstrap (\code{se = "np-boot"}), i.e. for the case resampling, the

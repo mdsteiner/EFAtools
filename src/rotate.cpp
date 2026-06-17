@@ -1,6 +1,8 @@
 #include <RcppArmadillo.h>
+#include <algorithm>
 #include <cmath>
 #include <limits>
+#include <vector>
 #include "gpf_engine.h"
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::plugins(cpp14)]]
@@ -163,6 +165,58 @@ struct BifactorCriterion : public RotationCriterion {
     Gq.set_size(p, k);
     Gq.col(0).zeros();
     Gq.cols(1, k - 1) = Gt;
+  }
+};
+
+// Simplimax criterion (GPArotation::vgQ.simplimax). With the k smallest squared loadings
+// flagged by a 0/1 indicator matrix Imat -- k ("the number of close-to-zero loadings") a
+// tuning parameter -- the criterion f = sum of those k smallest squared loadings is minimized
+// when the k smallest loadings are driven toward zero, concentrating each variable's weight on
+// a few factors (simple structure). The gradient is Gq = 2 Imat .* L. The indicator set is
+// data-dependent and recomputed at every evaluation -- as the rotated loadings move, which k
+// entries are smallest changes -- so the criterion is only piecewise smooth (its gradient jumps
+// as loadings cross the kth-smallest threshold). The k smallest are selected with the same
+// tie-breaking as R's order(L2)[1:k] (ascending squared loading; ties broken by ascending
+// column-major index), so the selected set matches GPArotation exactly. The criterion is finite
+// for any finite L, so no degenerate-state guard is needed.
+struct SimplimaxCriterion : public RotationCriterion {
+  arma::uword k_;
+  // Reusable index scratch for the partial_sort below, sized once and reused across the many
+  // eval() calls of a single rotation (the engine runs serially), avoiding a per-evaluation
+  // heap allocation on this hot path.
+  mutable std::vector<arma::uword> idx_;
+  explicit SimplimaxCriterion(arma::uword k) : k_(k) {}
+
+  void eval(const arma::mat& L, double& f, arma::mat& Gq) const override {
+    arma::vec l2 = vectorise(square(L));  // column-major, matching R's order(L2)
+    const arma::uword n = l2.n_elem;
+    // k is validated to [1, n] at the entry point; clamp defensively so the partial_sort middle
+    // iterator can never run past the end if the criterion is ever constructed against a sub-block.
+    const arma::uword kk = std::min(k_, n);
+
+    // Indices of the k smallest squared loadings. partial_sort places only the first kk in order;
+    // the comparator breaks ties by ascending index to mirror R's stable order(L2)[1:k].
+    idx_.resize(n);
+    for (arma::uword i = 0; i < n; ++i) {
+      idx_[i] = i;
+    }
+    std::partial_sort(idx_.begin(), idx_.begin() + kk, idx_.end(),
+                      [&l2](arma::uword a, arma::uword b) {
+                        return l2[a] < l2[b] || (l2[a] == l2[b] && a < b);
+                      });
+
+    // f = sum of the kk smallest squared loadings; the gradient 2*Imat*L equals 2*L on those
+    // entries and zero elsewhere, so write it directly (arma linear indexing is column-major,
+    // matching the vectorise above) rather than forming the indicator matrix and an elementwise
+    // product.
+    Gq.zeros(L.n_rows, L.n_cols);
+    double fval = 0.0;
+    for (arma::uword i = 0; i < kk; ++i) {
+      const arma::uword j = idx_[i];
+      fval += l2[j];
+      Gq(j) = 2.0 * L(j);
+    }
+    f = fval;
   }
 };
 
@@ -1160,6 +1214,138 @@ Rcpp::List rotate_bifactor_oblq(const arma::mat& L,
   GpfSummary summary = run_gpf_multistart(
     manifold, T_primary, eps, maxit, max_line_search, step0,
     random_starts, screen_keep, triage_maxit, triage_improve_tol
+  );
+  const GpfFit& best_fit = summary.best_fit;
+
+  // Reconstruct the rotated loadings (L = A %*% solve(t(T)), Kaiser weights restored) and the
+  // factor correlations (Phi = t(T) %*% T) from the winning transformation, shared with the
+  // Procrustes oblique entry point.
+  arma::mat loadings;
+  arma::mat Phi;
+  finalize_oblique(best_fit, A_work, W, normalize, loadings, Phi);
+
+  return Rcpp::List::create(
+    Rcpp::Named("loadings") = loadings,
+    Rcpp::Named("Th") = best_fit.T,
+    Rcpp::Named("Phi") = Phi,
+    Rcpp::Named("value") = best_fit.value,
+    Rcpp::Named("convergence") = best_fit.convergence,
+    Rcpp::Named("valid") = best_fit.valid
+  );
+}
+
+//' Oblique simplimax factor rotation
+//'
+//' Rotate a loading matrix obliquely under the simplimax criterion using a gradient-projection
+//' optimizer along the oblique (column-normalized) manifold.
+//'
+//' The criterion value `f` and its gradient `dQ/dL` at the rotated loadings
+//' `L = A %*% solve(t(T))` define the search; the engine maps the gradient to the
+//' transformation `T` on the manifold `diag(t(T) %*% T) = 1`, projects it onto the tangent
+//' space, performs a non-monotone line search, and retracts back onto the manifold by column
+//' normalization. The simplimax criterion sums the `k` smallest squared loadings, so it is
+//' minimized when the `k` "close-to-zero" loadings are driven toward zero; the count `k` is a
+//' tuning parameter. Because the set of `k` smallest loadings is reselected at every evaluation,
+//' the criterion is only piecewise smooth: its gradient does not vanish at the optimum, so the
+//' line search accepts a step whenever it decreases the largest objective over a short window of
+//' recent iterations (a non-monotone test; Grippo, Lampariello, & Lucidi, 1986), letting the
+//' optimizer step across the kinks where a strictly monotone descent would stall.
+//'
+//' The criterion is strongly prone to local minima, so the solver fully optimizes the identity
+//' start together with `random_starts` random orthogonal starts and keeps the solution with the
+//' lowest criterion value. Fully optimizing every start -- rather than the screen-and-triage
+//' strategy used for the smooth criteria, which assumes the rational start lies in the global
+//' basin -- is the standard remedy for the local minima of complexity-based rotation criteria
+//' (Kiers, 1994; Browne, 2001).
+//'
+//' @param L Numeric matrix. The unrotated loading matrix (variables by factors).
+//' @param k Integer scalar. The number of "close-to-zero" loadings the criterion targets; must
+//'   be in `[1, nrow(L) * ncol(L)]`. `k = nrow(L)` is the usual default.
+//' @param eps Numeric scalar. Convergence tolerance for the projected-gradient norm. Because the
+//'   simplimax criterion is only piecewise smooth, the projected gradient need not reach this
+//'   tolerance at the optimum; convergence is then reported when the criterion value stalls (the
+//'   non-monotone search described above), so `eps` mainly governs the smooth phases of the search.
+//' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before rotation and
+//'   reverse it afterwards.
+//' @param random_starts Integer scalar. Number of random orthogonal starts fully optimized in
+//'   addition to the identity start.
+//' @param maxit Integer scalar. Maximum number of projected-gradient updates per start.
+//' @param max_line_search Integer scalar. Maximum number of step-halving attempts after the
+//'   initial trial step in each line-search phase.
+//' @param step0 Numeric scalar. Initial step size used in the projected-gradient update.
+//'
+//' @returns A named list with the rotated loadings, the transformation matrix `Th`
+//'   (with `L %*% t(solve(Th))` reproducing the rotated loadings), the factor correlation
+//'   matrix `Phi` (`t(Th) %*% Th`), the attained criterion value, and the convergence and
+//'   validity flags.
+//'
+//' @references
+//' Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms and
+//' software for arbitrary rotation criteria in factor analysis. *Educational and
+//' Psychological Measurement*, 65, 676-696.
+//'
+//' Browne, M. W. (2001). An overview of analytic rotation in exploratory factor analysis.
+//' *Multivariate Behavioral Research*, 36, 111-150.
+//'
+//' Grippo, L., Lampariello, F., & Lucidi, S. (1986). A nonmonotone line search technique for
+//' Newton's method. *SIAM Journal on Numerical Analysis*, 23, 707-716.
+//'
+//' Kiers, H. A. L. (1994). Simplimax: Oblique rotation to an optimal target with simple
+//' structure. *Psychometrika*, 59, 567-579.
+//'
+// [[Rcpp::export(.rotate_simplimax_oblq)]]
+Rcpp::List rotate_simplimax_oblq(const arma::mat& L,
+                                 int k,
+                                 double eps = 1e-5,
+                                 bool normalize = true,
+                                 int random_starts = 0,
+                                 int maxit = 1000,
+                                 int max_line_search = 10,
+                                 double step0 = 1.0) {
+  if (L.n_rows == 0 || L.n_cols == 0) {
+    Rcpp::stop("L must be a non-empty matrix.");
+  }
+  if (L.n_cols < 2) {
+    Rcpp::stop("Oblique rotation requires at least two factors; use the R wrapper "
+               "for single-factor solutions.");
+  }
+  if (!all_finite_cpp(L)) {
+    Rcpp::stop("L must contain only finite values.");
+  }
+  if (k < 1 || static_cast<arma::uword>(k) > L.n_elem) {
+    Rcpp::stop("k must be an integer in [1, nrow(L) * ncol(L)].");
+  }
+
+  // simplimax is strongly multimodal, so the engine's full-multistart mode fully optimizes every
+  // start and keeps the lowest-criterion solution (Kiers, 1994; Browne, 2001), rather than the
+  // screen-and-triage heuristic the smooth criteria use (its early-iteration objective screen is
+  // uninformative for this criterion). fwindow = 10 selects the non-monotone line search (Grippo,
+  // Lampariello, & Lucidi, 1986) needed for the piecewise-smooth criterion. The screen and triage
+  // controls are ignored in full-multistart mode.
+  const int fwindow = 10;
+  validate_gpf_scalars(eps, maxit, max_line_search, step0, random_starts, 0, 0, 0.0);
+
+  const arma::uword k_fac = L.n_cols;
+
+  // Kaiser normalization scales rows before rotation; because the weights act on rows and the
+  // rotation (right-multiplying solve(t(T))) acts on columns, they cancel in the final
+  // loadings, so the rotated loadings reproduce L %*% t(solve(Th)) (the documented
+  // reproduction identity).
+  arma::mat A_work = L;
+  arma::vec W;
+  if (normalize) {
+    W = kaiser_weights(L);
+    A_work.each_col() /= W;
+  }
+
+  SimplimaxCriterion crit(static_cast<arma::uword>(k));
+  OblqCriterionManifold manifold{A_work, crit};
+  arma::mat T_primary(k_fac, k_fac, fill::eye);
+
+  GpfSummary summary = run_gpf_multistart(
+    manifold, T_primary, eps, maxit, max_line_search, step0,
+    random_starts, /*screen_keep=*/0, /*triage_maxit=*/0, /*triage_improve_tol=*/0.0,
+    fwindow, /*full_multistart=*/true
   );
   const GpfFit& best_fit = summary.best_fit;
 

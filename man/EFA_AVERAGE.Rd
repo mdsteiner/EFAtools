@@ -147,8 +147,7 @@ P in the promax rotation if "none" is among the specified types and "promax"
 or "oblique" is among the specified rotations. Default is \code{2:4}.}
 
 \item{k_simplimax}{numeric. The number of 'close to zero loadings' for the
-simplimax rotation (see \code{\link[GPArotation:GPA]{GPArotation::GPFoblq}})
-if "simplimax" or "oblique" is among the specified rotations. Default
+simplimax rotation if "simplimax" or "oblique" is among the specified rotations. Default
 is \code{ncol(x)}, where x is the entered data.}
 
 \item{P_type}{character vector. Any combination of "norm" and "unnorm".

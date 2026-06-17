@@ -606,3 +606,66 @@
     .Call(`_EFAtools_rotate_bifactor_oblq`, L, eps, normalize, random_starts, maxit, max_line_search, step0, screen_keep, triage_maxit, triage_improve_tol)
 }
 
+#' Oblique simplimax factor rotation
+#'
+#' Rotate a loading matrix obliquely under the simplimax criterion using a gradient-projection
+#' optimizer along the oblique (column-normalized) manifold.
+#'
+#' The criterion value `f` and its gradient `dQ/dL` at the rotated loadings
+#' `L = A %*% solve(t(T))` define the search; the engine maps the gradient to the
+#' transformation `T` on the manifold `diag(t(T) %*% T) = 1`, projects it onto the tangent
+#' space, performs a non-monotone line search, and retracts back onto the manifold by column
+#' normalization. The simplimax criterion sums the `k` smallest squared loadings, so it is
+#' minimized when the `k` "close-to-zero" loadings are driven toward zero; the count `k` is a
+#' tuning parameter. Because the set of `k` smallest loadings is reselected at every evaluation,
+#' the criterion is only piecewise smooth: its gradient does not vanish at the optimum, so the
+#' line search accepts a step whenever it decreases the largest objective over a short window of
+#' recent iterations (a non-monotone test; Grippo, Lampariello, & Lucidi, 1986), letting the
+#' optimizer step across the kinks where a strictly monotone descent would stall.
+#'
+#' The criterion is strongly prone to local minima, so the solver fully optimizes the identity
+#' start together with `random_starts` random orthogonal starts and keeps the solution with the
+#' lowest criterion value. Fully optimizing every start -- rather than the screen-and-triage
+#' strategy used for the smooth criteria, which assumes the rational start lies in the global
+#' basin -- is the standard remedy for the local minima of complexity-based rotation criteria
+#' (Kiers, 1994; Browne, 2001).
+#'
+#' @param L Numeric matrix. The unrotated loading matrix (variables by factors).
+#' @param k Integer scalar. The number of "close-to-zero" loadings the criterion targets; must
+#'   be in `[1, nrow(L) * ncol(L)]`. `k = nrow(L)` is the usual default.
+#' @param eps Numeric scalar. Convergence tolerance for the projected-gradient norm. Because the
+#'   simplimax criterion is only piecewise smooth, the projected gradient need not reach this
+#'   tolerance at the optimum; convergence is then reported when the criterion value stalls (the
+#'   non-monotone search described above), so `eps` mainly governs the smooth phases of the search.
+#' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before rotation and
+#'   reverse it afterwards.
+#' @param random_starts Integer scalar. Number of random orthogonal starts fully optimized in
+#'   addition to the identity start.
+#' @param maxit Integer scalar. Maximum number of projected-gradient updates per start.
+#' @param max_line_search Integer scalar. Maximum number of step-halving attempts after the
+#'   initial trial step in each line-search phase.
+#' @param step0 Numeric scalar. Initial step size used in the projected-gradient update.
+#'
+#' @returns A named list with the rotated loadings, the transformation matrix `Th`
+#'   (with `L %*% t(solve(Th))` reproducing the rotated loadings), the factor correlation
+#'   matrix `Phi` (`t(Th) %*% Th`), the attained criterion value, and the convergence and
+#'   validity flags.
+#'
+#' @references
+#' Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms and
+#' software for arbitrary rotation criteria in factor analysis. *Educational and
+#' Psychological Measurement*, 65, 676-696.
+#'
+#' Browne, M. W. (2001). An overview of analytic rotation in exploratory factor analysis.
+#' *Multivariate Behavioral Research*, 36, 111-150.
+#'
+#' Grippo, L., Lampariello, F., & Lucidi, S. (1986). A nonmonotone line search technique for
+#' Newton's method. *SIAM Journal on Numerical Analysis*, 23, 707-716.
+#'
+#' Kiers, H. A. L. (1994). Simplimax: Oblique rotation to an optimal target with simple
+#' structure. *Psychometrika*, 59, 567-579.
+#'
+.rotate_simplimax_oblq <- function(L, k, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0) {
+    .Call(`_EFAtools_rotate_simplimax_oblq`, L, k, eps, normalize, random_starts, maxit, max_line_search, step0)
+}
+

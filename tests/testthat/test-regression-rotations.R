@@ -4,9 +4,9 @@
 # and compared against the oracle on that same loading matrix. Sign and column-permutation
 # differences are removed with the package's own COMPARE() (Tucker-congruence reorder plus
 # sign reflection); the oblique factor correlations are compared via a permutation/sign
-# invariant fingerprint. For the GPArotation engines the oracle is given the same
-# randomStarts = 100 under a shared seed as EFAtools uses, which makes the local-minimum
-# prone simplimax criterion align deterministically. Tolerance is generous
+# invariant fingerprint. For the GPArotation engines the oracle is given randomStarts under a
+# shared seed (100 for the smooth criteria, matching EFAtools; 300 for the multimodal simplimax
+# criterion, a matched budget at which both engines reach the global basin). Tolerance is generous
 # relative to the observed agreement (exact for every rotation here) so the contract is
 # portable.
 
@@ -37,8 +37,8 @@ test_that("quartimax and equamax route through the native CF rotation engine", {
   skip_if_not_installed("GPArotation")
 
   # quartimax and equamax are computed by the native Crawford-Ferguson engine
-  # (kappa = 0 and kappa = k / (2 p) respectively); the remaining orthogonal criteria
-  # stay on GPArotation. CF is non-convex, so parity is relaxed rather than byte-exact:
+  # (kappa = 0 and kappa = k / (2 p) respectively), as are the remaining orthogonal
+  # criteria. CF is non-convex, so parity is relaxed rather than byte-exact:
   # the engine must reach an as-good-or-better minimum of the SAME criterion, and the
   # aligned loadings must agree to ~1e-4 rather than the ~1e-6 the convex engines reach.
   # The like-for-like reference is cfT() with the matching kappa -- GPArotation's
@@ -79,8 +79,8 @@ test_that("geominT routes through the native geomin GPF engine", {
   skip_on_cran()
   skip_if_not_installed("GPArotation")
 
-  # geominT is computed by the native gradient-projection engine; the remaining orthogonal
-  # criteria stay on GPArotation. The geomin criterion is prone to local minima, so parity is
+  # geominT is computed by the native gradient-projection engine, as are the remaining orthogonal
+  # criteria. The geomin criterion is prone to local minima, so parity is
   # relaxed: the PRIMARY contract is that the native engine reaches an as-good-or-better minimum
   # of the SAME criterion. geominT's Table column 2 is the geomin value, computed on the same
   # Kaiser-normalized loadings the native engine reports, so it is directly comparable to
@@ -123,8 +123,8 @@ test_that("bentlerT routes through the native GPF engine", {
   skip_on_cran()
   skip_if_not_installed("GPArotation")
 
-  # bentlerT is computed by the native gradient-projection engine; the remaining orthogonal
-  # criteria stay on GPArotation. The Bentler criterion is non-convex, so parity is relaxed: the
+  # bentlerT is computed by the native gradient-projection engine, as are the remaining orthogonal
+  # criteria. The Bentler criterion is non-convex, so parity is relaxed: the
   # PRIMARY contract is that the native engine reaches an as-good-or-better minimum of the SAME
   # criterion. bentlerT's Table column 2 is the Bentler value computed on the same
   # Kaiser-normalized loadings the native engine reports, so it is directly comparable to
@@ -195,27 +195,64 @@ test_that("bifactorT routes through the native GPF engine", {
   }
 })
 
-test_that("oblique rotations reproduce their GPArotation engine", {
+test_that("simplimax routes through the native oblique GPF engine", {
   skip_on_cran()
   skip_if_not_installed("GPArotation")
 
-  # rotation name -> the GPArotation engine EFAtools dispatches to. Among the oblique criteria only
-  # simplimax still uses GPArotation; the oblimin and quartimin criteria, geomin (geominQ), Bentler
-  # (bentlerQ), and bifactor (bifactorQ) are computed by the native engine and validated separately
-  # below.
-  engines <- list(
-    simplimax = function() GPArotation::simplimax(L, k = nrow(L), normalize = TRUE,
-                                                  eps = 1e-5, randomStarts = 100)
-  )
+  # simplimax is computed by the native gradient-projection engine; with this every analytic
+  # rotation criterion is native. Unlike the smooth criteria, the simplimax criterion reselects the
+  # k smallest squared loadings at every evaluation (k = nrow(L) by default), so it is only
+  # piecewise smooth and strongly multimodal: its gradient does not vanish at the optimum (the
+  # native engine uses a non-monotone line search to step across the kinks) and the global minimum
+  # depends on the random restarts. The native engine therefore fully optimizes every restart and
+  # keeps the lowest-criterion solution -- the standard remedy for the local minima of
+  # complexity-based criteria (Kiers, 1994; Browne, 2001) -- rather than the screen-and-triage
+  # heuristic the smooth criteria use.
+  #
+  # Because the criterion is multimodal, native and GPArotation draw independent restart sequences
+  # and need not reach the SAME minimizer; the well-defined contract is the attained criterion
+  # VALUE. At a matched restart budget where both searches have converged, the native engine
+  # reaches an as-good-or-better minimum than GPArotation (on these fixtures strictly deeper on
+  # two and an exact tie on the third), so the PRIMARY check is best-Q dominance. simplimax's
+  # Table column 2 is the criterion value on the
+  # same Kaiser-normalized loadings the native engine reports, so it is directly comparable to
+  # native$value. Aligned-loadings parity is NOT asserted: at equal-or-better Q the two engines may
+  # settle on different, equally valid simple-structure rotations.
+  for (fx_name in names(fixtures)) {
+    fx <- fixtures[[fx_name]]
+    unrot_fx <- suppressWarnings(EFA(fx$R, n_factors = fx$nf, N = fx$N))
+    Lx <- unclass(unrot_fx$unrot_loadings)
 
-  for (rn in names(engines)) {
     set.seed(seed)
-    efa <- suppressWarnings(.rotate_model(unrot, rotation = rn, type = "EFAtools"))
+    native <- .rotate_simplimax_oblq(Lx, k = nrow(Lx), eps = 1e-5, normalize = TRUE,
+                                     random_starts = 300)
     set.seed(seed)
-    ref <- suppressWarnings(engines[[rn]]())
-    expect_lt(aligned_max_diff(efa$rot_loadings, ref$loadings), 1e-4)
-    expect_equal(phi_fingerprint(efa$Phi), phi_fingerprint(ref$Phi), tolerance = 1e-4)
+    ref <- suppressWarnings(GPArotation::simplimax(Lx, k = nrow(Lx), normalize = TRUE,
+                                                   eps = 1e-5, randomStarts = 300))
+    ref_Q <- ref$Table[nrow(ref$Table), 2]
+
+    # both engines get the same generous restart budget (300), enough for this multimodal
+    # criterion to reach the global basin; at a matched budget the native engine attains an
+    # as-good-or-better minimum -- on these fixtures strictly deeper on two (baseline, DOSPERT)
+    # and an exact tie on the third (GRiPS). The 1e-3 slack is generous headroom -- native is at
+    # or below the reference (up to 1.4e-3 below), and the converged basin is R-RNG-deterministic
+    # -- so the check is robust to cross-platform BLAS/basin variation while still catching a
+    # genuine regression (which shifts the value by orders of magnitude more). Aligned-loadings
+    # parity is not asserted (see above).
+    expect_lte(native$value, ref_Q + 1e-3)
+    # the native solution is a valid oblique rotation (unit-diagonal factor correlations)
+    expect_equal(diag(native$Phi), rep(1, ncol(Lx)))
   }
+
+  # the public rotation path routes through the native engine and reproduces it exactly (same seed,
+  # same compiled entry, k defaults to nrow(L)); checked at a small restart budget for speed
+  set.seed(seed)
+  efa <- suppressWarnings(.rotate_model(unrot, rotation = "simplimax", type = "EFAtools",
+                                        randomStarts = 10))
+  set.seed(seed)
+  nat <- .rotate_simplimax_oblq(L, k = nrow(L), eps = 1e-5, normalize = TRUE, random_starts = 10)
+  expect_lt(aligned_max_diff(efa$rot_loadings, nat$loadings), 1e-6)
+  expect_equal(phi_fingerprint(efa$Phi), phi_fingerprint(nat$Phi), tolerance = 1e-6)
 })
 
 test_that("oblimin and quartimin route through the native oblique GPF engine", {
@@ -224,10 +261,10 @@ test_that("oblimin and quartimin route through the native oblique GPF engine", {
 
   # oblimin and quartimin are computed by the native gradient-projection engine (oblimin
   # with the GPArotation default gam = 0; quartimin is the same criterion); the remaining
-  # oblique criteria stay on GPArotation. The criterion is non-convex, so parity is relaxed
-  # rather than byte-exact: the engine must reach an as-good-or-better minimum of the SAME
-  # criterion, the aligned loadings must agree to ~1e-4, and the factor correlations must
-  # match under the permutation/sign-invariant fingerprint. The single GPArotation::oblimin()
+  # oblique criteria are computed by the native engine too. The criterion is non-convex, so
+  # parity is relaxed rather than byte-exact: the engine must reach an as-good-or-better minimum
+  # of the SAME criterion, the aligned loadings must agree to ~1e-4, and the factor correlations
+  # must match under the permutation/sign-invariant fingerprint. The single GPArotation::oblimin()
   # reference serves both public names (quartimin is the same gam = 0 criterion).
   for (fx_name in names(fixtures)) {
     fx <- fixtures[[fx_name]]
@@ -281,8 +318,8 @@ test_that("geominQ routes through the native geomin GPF engine", {
   skip_on_cran()
   skip_if_not_installed("GPArotation")
 
-  # geominQ is computed by the native gradient-projection engine; the remaining oblique criteria
-  # stay on GPArotation. As with geominT, the geomin criterion is prone to local minima, so the
+  # geominQ is computed by the native gradient-projection engine, as are the remaining oblique
+  # criteria. As with geominT, the geomin criterion is prone to local minima, so the
   # PRIMARY contract is an as-good-or-better minimum of the SAME criterion (geominQ's Table
   # column 2, directly comparable to native$value) rather than byte-exact reproduction. On these
   # fixtures the criterion is well identified at randomStarts = 100, so the aligned loadings and
@@ -325,8 +362,8 @@ test_that("bentlerQ routes through the native GPF engine", {
   skip_on_cran()
   skip_if_not_installed("GPArotation")
 
-  # bentlerQ is computed by the native gradient-projection engine; the remaining oblique criteria
-  # stay on GPArotation. The Bentler criterion is non-convex AND comparatively flat near its
+  # bentlerQ is computed by the native gradient-projection engine, as are the remaining oblique
+  # criteria. The Bentler criterion is non-convex AND comparatively flat near its
   # oblique optimum, so parity is relaxed: the PRIMARY contract is that the native engine reaches
   # an as-good-or-better minimum of the SAME criterion (bentlerQ's Table column 2, directly
   # comparable to native$value). Because the oblique optimum is flat, the native engine and
@@ -365,8 +402,8 @@ test_that("bifactorQ routes through the native GPF engine", {
   skip_on_cran()
   skip_if_not_installed("GPArotation")
 
-  # bifactorQ is computed by the native gradient-projection engine; among the oblique criteria only
-  # simplimax still uses GPArotation. The Jennrich-Bentler bifactor criterion (the first factor is a
+  # bifactorQ is computed by the native gradient-projection engine; with this every analytic
+  # rotation criterion is native. The Jennrich-Bentler bifactor criterion (the first factor is a
   # general factor, exempt from the penalty) is strongly prone to local minima and comparatively
   # flat near its oblique optimum, so parity is relaxed: the PRIMARY contract is that the native
   # engine reaches an as-good-or-better minimum of the SAME criterion (bifactorQ's Table column 2,
