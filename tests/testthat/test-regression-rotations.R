@@ -198,6 +198,7 @@ test_that("bifactorT routes through the native GPF engine", {
 test_that("simplimax routes through the native oblique GPF engine", {
   skip_on_cran()
   skip_if_not_installed("GPArotation")
+  skip_if_not_slow()
 
   # simplimax is computed by the native gradient-projection engine; with this every analytic
   # rotation criterion is native. Unlike the smooth criteria, the simplimax criterion reselects the
@@ -243,6 +244,10 @@ test_that("simplimax routes through the native oblique GPF engine", {
     # the native solution is a valid oblique rotation (unit-diagonal factor correlations)
     expect_equal(diag(native$Phi), rep(1, ncol(Lx)))
   }
+})
+
+test_that("the public simplimax rotation path reproduces the native engine", {
+  skip_on_cran()
 
   # the public rotation path routes through the native engine and reproduces it exactly (same seed,
   # same compiled entry, k defaults to nrow(L)); checked at a small restart budget for speed

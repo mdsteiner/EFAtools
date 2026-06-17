@@ -119,7 +119,7 @@ N_FACTORS(test_models$baseline$cormat, N = 500,
 
 ## Exploratory Factor Analysis: Factor Extraction
 
-Multiple algorithms to perform an EFA and to rotate the found solutions are implemented in the `EFAtools` package. All of them can be used using the `EFA()` function. To perform the EFA, you can use one of principal axis factoring (PAF), maximum likelihood estimation (ML), and unweighted least squares (ULS; also sometimes referred to as MINRES). To rotate the solutions, the `EFAtools` package offers varimax and promax rotations, as well as the orthogonal and oblique rotations provided by the `GPArotation` package (i.e., the `GPArotation` functions are called in the `EFA()` function in this case).
+Multiple algorithms to perform an EFA and to rotate the found solutions are implemented in the `EFAtools` package. All of them can be used using the `EFA()` function. To perform the EFA, you can use one of principal axis factoring (PAF), maximum likelihood estimation (ML), and unweighted least squares (ULS; also sometimes referred to as MINRES). To rotate the solutions, the `EFAtools` package offers varimax and promax rotations, as well as a range of other orthogonal and oblique rotations (e.g., quartimax, equamax, oblimin, quartimin, geomin, bentler, bifactor, and simplimax), all computed by rotation engines built into the package.
 
 You can run an EFA with PAF and no rotation like this:
 

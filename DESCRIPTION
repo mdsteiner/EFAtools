@@ -54,7 +54,6 @@ Imports:
     Rcpp,
     future.apply,
     future,
-    GPArotation (>= 2022.4-1),
     checkmate,
     progressr,
     rlang,
@@ -63,6 +62,7 @@ LinkingTo:
     Rcpp, RcppArmadillo, roptim
 Suggests:
     testthat (>= 3.0.0),
+    GPArotation (>= 2022.4-1),
     lavaan,
     knitr,
     rmarkdown,

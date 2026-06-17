@@ -233,7 +233,8 @@
 #'
 #' @returns A named list with the rotated loadings, the orthogonal rotation matrix `Th`
 #'   (with `L %*% Th` reproducing the rotated loadings), the attained criterion value, and
-#'   the convergence and validity flags.
+#'   the convergence and validity flags. The list additionally reports the
+#'   criterion value reached at each optimized start in `all_values`, with a per-start convergence flag in `all_converged`.
 #'
 #' @references
 #' Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms and
@@ -283,7 +284,8 @@
 #' @returns A named list with the rotated loadings, the transformation matrix `Th`
 #'   (with `L %*% t(solve(Th))` reproducing the rotated loadings), the factor correlation
 #'   matrix `Phi` (`t(Th) %*% Th`), the attained criterion value, and the convergence and
-#'   validity flags.
+#'   validity flags. The list additionally reports the criterion value reached
+#'   at each optimized start in `all_values`, with a per-start convergence flag in `all_converged`.
 #'
 #' @references
 #' Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms and
@@ -335,7 +337,8 @@
 #'
 #' @returns A named list with the rotated loadings, the orthogonal rotation matrix `Th`
 #'   (with `L %*% Th` reproducing the rotated loadings), the attained criterion value, and the
-#'   convergence and validity flags.
+#'   convergence and validity flags. The list additionally reports the criterion
+#'   value reached at each optimized start in `all_values`, with a per-start convergence flag in `all_converged`.
 #'
 #' @references
 #' Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms and
@@ -388,7 +391,8 @@
 #' @returns A named list with the rotated loadings, the transformation matrix `Th`
 #'   (with `L %*% t(solve(Th))` reproducing the rotated loadings), the factor correlation
 #'   matrix `Phi` (`t(Th) %*% Th`), the attained criterion value, and the convergence and
-#'   validity flags.
+#'   validity flags. The list additionally reports the criterion value reached
+#'   at each optimized start in `all_values`, with a per-start convergence flag in `all_converged`.
 #'
 #' @references
 #' Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms and
@@ -437,7 +441,8 @@
 #'
 #' @returns A named list with the rotated loadings, the orthogonal rotation matrix `Th`
 #'   (with `L %*% Th` reproducing the rotated loadings), the attained criterion value, and the
-#'   convergence and validity flags.
+#'   convergence and validity flags. The list additionally reports the criterion
+#'   value reached at each optimized start in `all_values`, with a per-start convergence flag in `all_converged`.
 #'
 #' @references
 #' Bentler, P. M. (1977). Factor simplicity index and transformations. *Psychometrika*, 42,
@@ -488,7 +493,8 @@
 #' @returns A named list with the rotated loadings, the transformation matrix `Th`
 #'   (with `L %*% t(solve(Th))` reproducing the rotated loadings), the factor correlation
 #'   matrix `Phi` (`t(Th) %*% Th`), the attained criterion value, and the convergence and
-#'   validity flags.
+#'   validity flags. The list additionally reports the criterion value reached
+#'   at each optimized start in `all_values`, with a per-start convergence flag in `all_converged`.
 #'
 #' @references
 #' Bentler, P. M. (1977). Factor simplicity index and transformations. *Psychometrika*, 42,
@@ -539,7 +545,8 @@
 #'
 #' @returns A named list with the rotated loadings, the orthogonal rotation matrix `Th`
 #'   (with `L %*% Th` reproducing the rotated loadings), the attained criterion value, and the
-#'   convergence and validity flags.
+#'   convergence and validity flags. The list additionally reports the criterion
+#'   value reached at each optimized start in `all_values`, with a per-start convergence flag in `all_converged`.
 #'
 #' @references
 #' Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms and
@@ -592,7 +599,8 @@
 #' @returns A named list with the rotated loadings, the transformation matrix `Th`
 #'   (with `L %*% t(solve(Th))` reproducing the rotated loadings), the factor correlation
 #'   matrix `Phi` (`t(Th) %*% Th`), the attained criterion value, and the convergence and
-#'   validity flags.
+#'   validity flags. The list additionally reports the criterion value reached
+#'   at each optimized start in `all_values`, with a per-start convergence flag in `all_converged`.
 #'
 #' @references
 #' Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms and
@@ -649,7 +657,8 @@
 #' @returns A named list with the rotated loadings, the transformation matrix `Th`
 #'   (with `L %*% t(solve(Th))` reproducing the rotated loadings), the factor correlation
 #'   matrix `Phi` (`t(Th) %*% Th`), the attained criterion value, and the convergence and
-#'   validity flags.
+#'   validity flags. The list additionally reports the criterion value reached
+#'   at each optimized start in `all_values`, with a per-start convergence flag in `all_converged`.
 #'
 #' @references
 #' Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms and

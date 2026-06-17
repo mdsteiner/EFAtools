@@ -32,6 +32,15 @@
   simplimax criterion rather than reproducing `GPArotation`'s particular solution exactly. With
   this, every analytic rotation in `EFA()` is computed by the built-in engine, and `GPArotation`
   is no longer used to perform rotations.
+* The default number of random starts for the rotation in `EFA()` (`randomStarts`) has been
+  raised from 10 to 100, making local minima less likely for the rotation criteria that are
+  prone to them. The rotation engine screens the random starts cheaply and fully optimizes only
+  the most promising ones, so the higher default barely changes the runtime of a single `EFA()`
+  for most criteria (a few seconds at most, for `simplimax`, which fully optimizes every start).
+* `summary()` now reports the number of distinct local optima the rotation found across its
+  random starts, and `EFA()` records the rotation diagnostics (the number of random starts, how
+  many converged, the distinct-optima count, and the spread and best value of the attained
+  criterion) in `settings$rotation_diagnostics`.
 * `EFA()` now additionally reports the Tucker-Lewis index (TLI, also called the
   non-normed fit index), the expected cross-validation index (ECVI), and the
   standardized root mean square residual (SRMR) among its `fit_indices` for `ML` and
@@ -56,6 +65,9 @@
   conditions, which makes them easier to handle programmatically.
 * `lavaan` moved from Imports to Suggests. The `lavaan`-input paths of `OMEGA()` and `SL()` now
   require the `lavaan` package to be installed and raise a clear error if it is missing.
+* `GPArotation` moved from Imports to Suggests. All rotations in `EFA()` are computed by the
+  package's built-in rotation engines, so `GPArotation` is no longer needed to run the package;
+  it is now used only as an optional reference in the test suite.
 * `EFA()`, `SL()`, and `EFA_AVERAGE()` now accept `method = "MINRES"` as a synonym for
   `method = "ULS"`. Minimum residual and unweighted least squares are two names for the same
   estimator and return identical results.

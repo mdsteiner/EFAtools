@@ -4,8 +4,8 @@
 #' or `ULS` with or without subsequent rotation.
 #' All arguments with default value `NA` can be left to default if `type`
 #' is set to one of "EFAtools", "SPSS", or "psych". The respective specifications are
-#' then handled according to the specified type (see details). For all rotations
-#' except varimax and promax, the `GPArotation` package is needed.
+#' then handled according to the specified type (see details). All rotations are
+#' performed by rotation engines built into the package.
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
 #' correlations. If raw data is entered, the correlation matrix is found from the
@@ -97,8 +97,10 @@
 #'  Must be between 0 and 1. Default ist .95 for 95% CIs.
 #' @param randomStarts numeric. The number of random starts to use in the
 #'  rotation. Some rotation criteria are prone to produce local minima, and
-#'  sometimes many random starts are needed to locate the best solution.
-#'  Default is 10.
+#'  several random starts are usually needed to locate the best solution. The
+#'  rotation screens the random starts cheaply and fully optimises only the most
+#'  promising ones, so a large value adds little cost for most criteria. Default
+#'  is 100.
 #' @param seed numeric. An optional seed for the random-number generator used by the
 #'  non-parametric bootstrap (`se = "np-boot"`), i.e. for the case resampling, the
 #'  rotation random starts, and the Procrustes random starts. Setting it makes the
@@ -193,10 +195,9 @@
 #'
 #' For all other rotations except varimax and promax, the `type` argument
 #' only controls the `order_type` argument with the same values as stated
-#' above for the varimax and promax rotations. For most of these other rotations, the
-#' `GPArotation` package is used. Additional arguments can also be specified and
-#' will be passed to the rotation procedure (e.g., maxit to change the maximum
-#' number of iterations).
+#' above for the varimax and promax rotations. Additional arguments can also be
+#' specified and will be passed to the rotation procedure (e.g., maxit to change the
+#' maximum number of iterations).
 #'
 #' The `type` argument has no effect on ULS and ML. For ULS, no additional
 #' arguments are needed. For ML, an additional argument
@@ -342,7 +343,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES"),
                 order_type = NA, start_method = "psych",
                 cor_method = c("pearson", "spearman", "kendall"),
                 b_boot = 1000, ci = .95,
-                randomStarts = 10, seed = NULL,
+                randomStarts = 100, seed = NULL,
                 ...) {
 
   # Perform argument checks

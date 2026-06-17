@@ -46,12 +46,18 @@ test_that("output class and dimensions are correct", {
 })
 
 test_that("settings are returned correctly", {
-  expect_named(equa$settings, c("normalize", "precision", "order_type", "randomStarts"))
+  expect_named(equa$settings, c("normalize", "precision", "order_type", "randomStarts", "rotation_diagnostics"))
   expect_named(equa_1$settings,c("normalize", "precision", "order_type", "randomStarts"))
-  expect_named(quarti$settings, c("normalize", "precision", "order_type", "randomStarts"))
-  expect_named(bentT$settings, c("normalize", "precision", "order_type", "randomStarts"))
-  expect_named(geoT$settings, c("normalize", "precision", "order_type", "randomStarts"))
-  expect_named(bifacT$settings, c("normalize", "precision", "order_type", "randomStarts"))
+  expect_named(quarti$settings, c("normalize", "precision", "order_type", "randomStarts", "rotation_diagnostics"))
+  expect_named(bentT$settings, c("normalize", "precision", "order_type", "randomStarts", "rotation_diagnostics"))
+  expect_named(geoT$settings, c("normalize", "precision", "order_type", "randomStarts", "rotation_diagnostics"))
+  expect_named(bifacT$settings, c("normalize", "precision", "order_type", "randomStarts", "rotation_diagnostics"))
+
+  # the diagnostic carries forwarded per-start criterion values for every native
+  # orthogonal rotation (a dropped all_values would leave criterion_best at NA)
+  for (obj in list(equa, quarti, bentT, geoT, bifacT)) {
+    expect_true(is.finite(obj$settings$rotation_diagnostics$criterion_best))
+  }
 
   expect_equal(equa$settings$normalize, TRUE)
   expect_equal(equa_1$settings$normalize, TRUE)

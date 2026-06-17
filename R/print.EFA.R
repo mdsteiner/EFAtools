@@ -308,6 +308,7 @@ format.summary.EFA <- function(x, ...) {
   list(
     method = settings$method,
     rotation = settings$rotation,
+    rotation_diagnostics = settings$rotation_diagnostics,
     type = settings$type,
     N = settings$N,
     fit = x$fit_indices,
@@ -1542,6 +1543,18 @@ format.summary.EFA <- function(x, ...) {
     if (nzchar(valid_text)) {
       .efa_print_key_value("Valid target-rotated samples", valid_text)
     }
+  }
+
+  # Distinct local optima the rotation found across its random starts, counted over the
+  # starts that converged (only present for the gradient-projection rotations that use
+  # random starts; omitted when none converged).
+  rot_diag <- spec$rotation_diagnostics
+  if (!is.null(rot_diag) && isTRUE(rot_diag$n_converged >= 1L)) {
+    .efa_print_key_value(
+      "Rotation local optima",
+      paste0(rot_diag$n_distinct_minima, " distinct from ",
+             rot_diag$n_starts, " random starts")
+    )
   }
 
   # Prefer the detector's heywood field (covers communalities >= 1 and ML/ULS

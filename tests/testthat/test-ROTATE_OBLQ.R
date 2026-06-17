@@ -7,7 +7,7 @@ obli_1 <- suppressWarnings(.rotate_model(unrot_1, rotation = "oblimin",
 
 quarti <- suppressWarnings(.rotate_model(unrot, rotation = "quartimin", type = "psych"))
 simpli <- suppressWarnings(.rotate_model(unrot, rotation = "simplimax", type = "SPSS",
-                       maxit = 2000))
+                       maxit = 2000, randomStarts = 1))
 bentQ <- suppressWarnings(.rotate_model(unrot, rotation = "bentlerQ", type = "none",
                        order_type = "eigen"))
 geoQ <- suppressWarnings(.rotate_model(unrot, rotation = "geominQ", type = "EFAtools"))
@@ -67,13 +67,19 @@ test_that("output class and dimensions are correct", {
 })
 
 test_that("settings are returned correctly", {
-  expect_named(obli$settings, c("normalize", "precision", "order_type", "k", "randomStarts"))
+  expect_named(obli$settings, c("normalize", "precision", "order_type", "k", "randomStarts", "rotation_diagnostics"))
   expect_named(obli_1$settings, c("normalize", "precision", "order_type", "k", "randomStarts"))
-  expect_named(quarti$settings, c("normalize", "precision", "order_type", "k", "randomStarts"))
-  expect_named(simpli$settings, c("normalize", "precision", "order_type", "k", "randomStarts"))
-  expect_named(bentQ$settings, c("normalize", "precision", "order_type", "k", "randomStarts"))
-  expect_named(geoQ$settings, c("normalize", "precision", "order_type", "k", "randomStarts"))
-  expect_named(bifacQ$settings, c("normalize", "precision", "order_type", "k", "randomStarts"))
+  expect_named(quarti$settings, c("normalize", "precision", "order_type", "k", "randomStarts", "rotation_diagnostics"))
+  expect_named(simpli$settings, c("normalize", "precision", "order_type", "k", "randomStarts", "rotation_diagnostics"))
+  expect_named(bentQ$settings, c("normalize", "precision", "order_type", "k", "randomStarts", "rotation_diagnostics"))
+  expect_named(geoQ$settings, c("normalize", "precision", "order_type", "k", "randomStarts", "rotation_diagnostics"))
+  expect_named(bifacQ$settings, c("normalize", "precision", "order_type", "k", "randomStarts", "rotation_diagnostics"))
+
+  # the diagnostic carries forwarded per-start criterion values for every native oblique
+  # rotation (a dropped all_values would leave criterion_best at NA)
+  for (obj in list(obli, quarti, simpli, bentQ, geoQ, bifacQ)) {
+    expect_true(is.finite(obj$settings$rotation_diagnostics$criterion_best))
+  }
 
   expect_equal(obli$settings$normalize, TRUE)
   expect_equal(obli_1$settings$normalize, TRUE)

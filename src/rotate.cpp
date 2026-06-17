@@ -357,6 +357,101 @@ static arma::vec kaiser_weights(const arma::mat& A) {
   return W;
 }
 
+// Shared body of the orthogonal criterion rotation entry points (Crawford-Ferguson, geomin,
+// Bentler, bifactor). The entries differ only in their criterion-specific scalar validation and
+// the criterion functor they construct; the optimization is otherwise identical, so it lives
+// here once. Kaiser normalization scales the rows before rotation, and because the weights act
+// on rows while the rotation right-multiplies they cancel in the final loadings, so the rotated
+// loadings are reported as L %*% Th (the documented reproduction identity). `crit` must be a
+// RotationCriterion subclass.
+template <typename Crit>
+static Rcpp::List make_orth_entry(const arma::mat& L, const Crit& crit,
+                                  double eps, bool normalize, int random_starts,
+                                  int maxit, int max_line_search, double step0,
+                                  int screen_keep, int triage_maxit,
+                                  double triage_improve_tol) {
+  const arma::uword k = L.n_cols;
+
+  arma::mat A_work = L;
+  arma::vec W;
+  if (normalize) {
+    W = kaiser_weights(L);
+    A_work.each_col() /= W;
+  }
+
+  OrthCriterionManifold manifold{A_work, crit};
+  arma::mat T_primary(k, k, fill::eye);
+
+  GpfSummary summary = run_gpf_multistart(
+    manifold, T_primary, eps, maxit, max_line_search, step0,
+    random_starts, screen_keep, triage_maxit, triage_improve_tol
+  );
+  const GpfFit& best_fit = summary.best_fit;
+
+  arma::mat loadings = L * best_fit.T;
+
+  return Rcpp::List::create(
+    Rcpp::Named("loadings") = loadings,
+    Rcpp::Named("Th") = best_fit.T,
+    Rcpp::Named("value") = best_fit.value,
+    Rcpp::Named("convergence") = best_fit.convergence,
+    Rcpp::Named("valid") = best_fit.valid,
+    Rcpp::Named("all_values") = Rcpp::wrap(summary.all_values),
+    Rcpp::Named("all_converged") = Rcpp::wrap(summary.all_converged)
+  );
+}
+
+// Shared body of the oblique criterion rotation entry points (oblimin, geomin, Bentler,
+// bifactor, simplimax). As with make_orth_entry the entries differ only in their
+// criterion-specific validation and functor. Here the rotation acts through solve(t(T)), so the
+// Kaiser weights again cancel and the rotated loadings reproduce L %*% t(solve(Th)); the rotated
+// loadings and the factor correlations Phi are reconstructed from the winning transformation by
+// finalize_oblique() (shared with the Procrustes oblique entry point). `fwindow` and
+// `full_multistart` select the non-monotone line search and full-multistart strategy that the
+// piecewise-smooth, strongly multimodal simplimax criterion needs; they default to the
+// smooth-criterion behavior (monotone search, screen-and-triage multi-start).
+template <typename Crit>
+static Rcpp::List make_oblq_entry(const arma::mat& L, const Crit& crit,
+                                  double eps, bool normalize, int random_starts,
+                                  int maxit, int max_line_search, double step0,
+                                  int screen_keep, int triage_maxit,
+                                  double triage_improve_tol,
+                                  int fwindow = 0, bool full_multistart = false) {
+  const arma::uword k = L.n_cols;
+
+  arma::mat A_work = L;
+  arma::vec W;
+  if (normalize) {
+    W = kaiser_weights(L);
+    A_work.each_col() /= W;
+  }
+
+  OblqCriterionManifold manifold{A_work, crit};
+  arma::mat T_primary(k, k, fill::eye);
+
+  GpfSummary summary = run_gpf_multistart(
+    manifold, T_primary, eps, maxit, max_line_search, step0,
+    random_starts, screen_keep, triage_maxit, triage_improve_tol,
+    fwindow, full_multistart
+  );
+  const GpfFit& best_fit = summary.best_fit;
+
+  arma::mat loadings;
+  arma::mat Phi;
+  finalize_oblique(best_fit, A_work, W, normalize, loadings, Phi);
+
+  return Rcpp::List::create(
+    Rcpp::Named("loadings") = loadings,
+    Rcpp::Named("Th") = best_fit.T,
+    Rcpp::Named("Phi") = Phi,
+    Rcpp::Named("value") = best_fit.value,
+    Rcpp::Named("convergence") = best_fit.convergence,
+    Rcpp::Named("valid") = best_fit.valid,
+    Rcpp::Named("all_values") = Rcpp::wrap(summary.all_values),
+    Rcpp::Named("all_converged") = Rcpp::wrap(summary.all_converged)
+  );
+}
+
 //' Orthogonal Crawford-Ferguson factor rotation
 //'
 //' Rotate a loading matrix orthogonally under the Crawford-Ferguson criterion using a
@@ -393,7 +488,8 @@ static arma::vec kaiser_weights(const arma::mat& A) {
 //'
 //' @returns A named list with the rotated loadings, the orthogonal rotation matrix `Th`
 //'   (with `L %*% Th` reproducing the rotated loadings), the attained criterion value, and
-//'   the convergence and validity flags.
+//'   the convergence and validity flags. The list additionally reports the
+//'   criterion value reached at each optimized start in `all_values`, with a per-start convergence flag in `all_converged`.
 //'
 //' @references
 //' Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms and
@@ -415,53 +511,17 @@ Rcpp::List rotate_cf_orth(const arma::mat& L,
                           int screen_keep = 2,
                           int triage_maxit = 25,
                           double triage_improve_tol = 0.0) {
-  if (L.n_rows == 0 || L.n_cols == 0) {
-    Rcpp::stop("L must be a non-empty matrix.");
-  }
-  if (L.n_cols < 2) {
-    Rcpp::stop("Orthogonal rotation requires at least two factors; use the R wrapper "
-               "for single-factor solutions.");
-  }
-  if (!all_finite_cpp(L)) {
-    Rcpp::stop("L must contain only finite values.");
-  }
+  validate_gpf_input(L, "Orthogonal");
   if (!is_valid_scalar_cpp(kappa) || kappa < 0.0 || kappa > 1.0) {
     Rcpp::stop("kappa must be a finite scalar in [0, 1].");
   }
   validate_gpf_scalars(eps, maxit, max_line_search, step0, random_starts,
                        screen_keep, triage_maxit, triage_improve_tol);
 
-  const arma::uword k = L.n_cols;
-
-  // Kaiser normalization scales rows before rotation; because the weights act on rows
-  // and the rotation right-multiplies, they cancel in the final loadings, so the
-  // rotated loadings are reported as L %*% Th (the documented reproduction identity).
-  arma::mat A_work = L;
-  arma::vec W;
-  if (normalize) {
-    W = kaiser_weights(L);
-    A_work.each_col() /= W;
-  }
-
   CfCriterion crit(kappa);
-  OrthCriterionManifold manifold{A_work, crit};
-  arma::mat T_primary(k, k, fill::eye);
-
-  GpfSummary summary = run_gpf_multistart(
-    manifold, T_primary, eps, maxit, max_line_search, step0,
-    random_starts, screen_keep, triage_maxit, triage_improve_tol
-  );
-  const GpfFit& best_fit = summary.best_fit;
-
-  arma::mat loadings = L * best_fit.T;
-
-  return Rcpp::List::create(
-    Rcpp::Named("loadings") = loadings,
-    Rcpp::Named("Th") = best_fit.T,
-    Rcpp::Named("value") = best_fit.value,
-    Rcpp::Named("convergence") = best_fit.convergence,
-    Rcpp::Named("valid") = best_fit.valid
-  );
+  return make_orth_entry(L, crit, eps, normalize, random_starts, maxit,
+                         max_line_search, step0, screen_keep, triage_maxit,
+                         triage_improve_tol);
 }
 
 //' Oblique oblimin factor rotation
@@ -500,7 +560,8 @@ Rcpp::List rotate_cf_orth(const arma::mat& L,
 //' @returns A named list with the rotated loadings, the transformation matrix `Th`
 //'   (with `L %*% t(solve(Th))` reproducing the rotated loadings), the factor correlation
 //'   matrix `Phi` (`t(Th) %*% Th`), the attained criterion value, and the convergence and
-//'   validity flags.
+//'   validity flags. The list additionally reports the criterion value reached
+//'   at each optimized start in `all_values`, with a per-start convergence flag in `all_converged`.
 //'
 //' @references
 //' Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms and
@@ -522,60 +583,17 @@ Rcpp::List rotate_oblimin(const arma::mat& L,
                           int screen_keep = 2,
                           int triage_maxit = 25,
                           double triage_improve_tol = 0.0) {
-  if (L.n_rows == 0 || L.n_cols == 0) {
-    Rcpp::stop("L must be a non-empty matrix.");
-  }
-  if (L.n_cols < 2) {
-    Rcpp::stop("Oblique rotation requires at least two factors; use the R wrapper "
-               "for single-factor solutions.");
-  }
-  if (!all_finite_cpp(L)) {
-    Rcpp::stop("L must contain only finite values.");
-  }
+  validate_gpf_input(L, "Oblique");
   if (!is_valid_scalar_cpp(gam)) {
     Rcpp::stop("gam must be a finite scalar.");
   }
   validate_gpf_scalars(eps, maxit, max_line_search, step0, random_starts,
                        screen_keep, triage_maxit, triage_improve_tol);
 
-  const arma::uword k = L.n_cols;
-
-  // Kaiser normalization scales rows before rotation; because the weights act on rows and
-  // the rotation (right-multiplying solve(t(T))) acts on columns, they cancel in the final
-  // loadings, so the rotated loadings reproduce L %*% t(solve(Th)) (the documented
-  // reproduction identity).
-  arma::mat A_work = L;
-  arma::vec W;
-  if (normalize) {
-    W = kaiser_weights(L);
-    A_work.each_col() /= W;
-  }
-
   ObliminCriterion crit(gam);
-  OblqCriterionManifold manifold{A_work, crit};
-  arma::mat T_primary(k, k, fill::eye);
-
-  GpfSummary summary = run_gpf_multistart(
-    manifold, T_primary, eps, maxit, max_line_search, step0,
-    random_starts, screen_keep, triage_maxit, triage_improve_tol
-  );
-  const GpfFit& best_fit = summary.best_fit;
-
-  // Reconstruct the rotated loadings (L = A %*% solve(t(T)), Kaiser weights restored) and
-  // the factor correlations (Phi = t(T) %*% T) from the winning transformation, shared with
-  // the Procrustes oblique entry point.
-  arma::mat loadings;
-  arma::mat Phi;
-  finalize_oblique(best_fit, A_work, W, normalize, loadings, Phi);
-
-  return Rcpp::List::create(
-    Rcpp::Named("loadings") = loadings,
-    Rcpp::Named("Th") = best_fit.T,
-    Rcpp::Named("Phi") = Phi,
-    Rcpp::Named("value") = best_fit.value,
-    Rcpp::Named("convergence") = best_fit.convergence,
-    Rcpp::Named("valid") = best_fit.valid
-  );
+  return make_oblq_entry(L, crit, eps, normalize, random_starts, maxit,
+                         max_line_search, step0, screen_keep, triage_maxit,
+                         triage_improve_tol);
 }
 
 //' Orthogonal geomin factor rotation
@@ -616,7 +634,8 @@ Rcpp::List rotate_oblimin(const arma::mat& L,
 //'
 //' @returns A named list with the rotated loadings, the orthogonal rotation matrix `Th`
 //'   (with `L %*% Th` reproducing the rotated loadings), the attained criterion value, and the
-//'   convergence and validity flags.
+//'   convergence and validity flags. The list additionally reports the criterion
+//'   value reached at each optimized start in `all_values`, with a per-start convergence flag in `all_converged`.
 //'
 //' @references
 //' Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms and
@@ -638,53 +657,17 @@ Rcpp::List rotate_geomin_orth(const arma::mat& L,
                               int screen_keep = 2,
                               int triage_maxit = 25,
                               double triage_improve_tol = 0.0) {
-  if (L.n_rows == 0 || L.n_cols == 0) {
-    Rcpp::stop("L must be a non-empty matrix.");
-  }
-  if (L.n_cols < 2) {
-    Rcpp::stop("Orthogonal rotation requires at least two factors; use the R wrapper "
-               "for single-factor solutions.");
-  }
-  if (!all_finite_cpp(L)) {
-    Rcpp::stop("L must contain only finite values.");
-  }
+  validate_gpf_input(L, "Orthogonal");
   if (!is_valid_scalar_cpp(delta) || delta <= 0.0) {
     Rcpp::stop("delta must be a positive finite scalar.");
   }
   validate_gpf_scalars(eps, maxit, max_line_search, step0, random_starts,
                        screen_keep, triage_maxit, triage_improve_tol);
 
-  const arma::uword k = L.n_cols;
-
-  // Kaiser normalization scales rows before rotation; because the weights act on rows and the
-  // rotation right-multiplies, they cancel in the final loadings, so the rotated loadings are
-  // reported as L %*% Th (the documented reproduction identity).
-  arma::mat A_work = L;
-  arma::vec W;
-  if (normalize) {
-    W = kaiser_weights(L);
-    A_work.each_col() /= W;
-  }
-
   GeominCriterion crit(delta);
-  OrthCriterionManifold manifold{A_work, crit};
-  arma::mat T_primary(k, k, fill::eye);
-
-  GpfSummary summary = run_gpf_multistart(
-    manifold, T_primary, eps, maxit, max_line_search, step0,
-    random_starts, screen_keep, triage_maxit, triage_improve_tol
-  );
-  const GpfFit& best_fit = summary.best_fit;
-
-  arma::mat loadings = L * best_fit.T;
-
-  return Rcpp::List::create(
-    Rcpp::Named("loadings") = loadings,
-    Rcpp::Named("Th") = best_fit.T,
-    Rcpp::Named("value") = best_fit.value,
-    Rcpp::Named("convergence") = best_fit.convergence,
-    Rcpp::Named("valid") = best_fit.valid
-  );
+  return make_orth_entry(L, crit, eps, normalize, random_starts, maxit,
+                         max_line_search, step0, screen_keep, triage_maxit,
+                         triage_improve_tol);
 }
 
 //' Oblique geomin factor rotation
@@ -726,7 +709,8 @@ Rcpp::List rotate_geomin_orth(const arma::mat& L,
 //' @returns A named list with the rotated loadings, the transformation matrix `Th`
 //'   (with `L %*% t(solve(Th))` reproducing the rotated loadings), the factor correlation
 //'   matrix `Phi` (`t(Th) %*% Th`), the attained criterion value, and the convergence and
-//'   validity flags.
+//'   validity flags. The list additionally reports the criterion value reached
+//'   at each optimized start in `all_values`, with a per-start convergence flag in `all_converged`.
 //'
 //' @references
 //' Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms and
@@ -748,60 +732,17 @@ Rcpp::List rotate_geomin_oblq(const arma::mat& L,
                               int screen_keep = 2,
                               int triage_maxit = 25,
                               double triage_improve_tol = 0.0) {
-  if (L.n_rows == 0 || L.n_cols == 0) {
-    Rcpp::stop("L must be a non-empty matrix.");
-  }
-  if (L.n_cols < 2) {
-    Rcpp::stop("Oblique rotation requires at least two factors; use the R wrapper "
-               "for single-factor solutions.");
-  }
-  if (!all_finite_cpp(L)) {
-    Rcpp::stop("L must contain only finite values.");
-  }
+  validate_gpf_input(L, "Oblique");
   if (!is_valid_scalar_cpp(delta) || delta <= 0.0) {
     Rcpp::stop("delta must be a positive finite scalar.");
   }
   validate_gpf_scalars(eps, maxit, max_line_search, step0, random_starts,
                        screen_keep, triage_maxit, triage_improve_tol);
 
-  const arma::uword k = L.n_cols;
-
-  // Kaiser normalization scales rows before rotation; because the weights act on rows and the
-  // rotation (right-multiplying solve(t(T))) acts on columns, they cancel in the final
-  // loadings, so the rotated loadings reproduce L %*% t(solve(Th)) (the documented
-  // reproduction identity).
-  arma::mat A_work = L;
-  arma::vec W;
-  if (normalize) {
-    W = kaiser_weights(L);
-    A_work.each_col() /= W;
-  }
-
   GeominCriterion crit(delta);
-  OblqCriterionManifold manifold{A_work, crit};
-  arma::mat T_primary(k, k, fill::eye);
-
-  GpfSummary summary = run_gpf_multistart(
-    manifold, T_primary, eps, maxit, max_line_search, step0,
-    random_starts, screen_keep, triage_maxit, triage_improve_tol
-  );
-  const GpfFit& best_fit = summary.best_fit;
-
-  // Reconstruct the rotated loadings (L = A %*% solve(t(T)), Kaiser weights restored) and the
-  // factor correlations (Phi = t(T) %*% T) from the winning transformation, shared with the
-  // Procrustes oblique entry point.
-  arma::mat loadings;
-  arma::mat Phi;
-  finalize_oblique(best_fit, A_work, W, normalize, loadings, Phi);
-
-  return Rcpp::List::create(
-    Rcpp::Named("loadings") = loadings,
-    Rcpp::Named("Th") = best_fit.T,
-    Rcpp::Named("Phi") = Phi,
-    Rcpp::Named("value") = best_fit.value,
-    Rcpp::Named("convergence") = best_fit.convergence,
-    Rcpp::Named("valid") = best_fit.valid
-  );
+  return make_oblq_entry(L, crit, eps, normalize, random_starts, maxit,
+                         max_line_search, step0, screen_keep, triage_maxit,
+                         triage_improve_tol);
 }
 
 //' Orthogonal Bentler factor rotation
@@ -839,7 +780,8 @@ Rcpp::List rotate_geomin_oblq(const arma::mat& L,
 //'
 //' @returns A named list with the rotated loadings, the orthogonal rotation matrix `Th`
 //'   (with `L %*% Th` reproducing the rotated loadings), the attained criterion value, and the
-//'   convergence and validity flags.
+//'   convergence and validity flags. The list additionally reports the criterion
+//'   value reached at each optimized start in `all_values`, with a per-start convergence flag in `all_converged`.
 //'
 //' @references
 //' Bentler, P. M. (1977). Factor simplicity index and transformations. *Psychometrika*, 42,
@@ -860,50 +802,14 @@ Rcpp::List rotate_bentler_orth(const arma::mat& L,
                                int screen_keep = 2,
                                int triage_maxit = 25,
                                double triage_improve_tol = 0.0) {
-  if (L.n_rows == 0 || L.n_cols == 0) {
-    Rcpp::stop("L must be a non-empty matrix.");
-  }
-  if (L.n_cols < 2) {
-    Rcpp::stop("Orthogonal rotation requires at least two factors; use the R wrapper "
-               "for single-factor solutions.");
-  }
-  if (!all_finite_cpp(L)) {
-    Rcpp::stop("L must contain only finite values.");
-  }
+  validate_gpf_input(L, "Orthogonal");
   validate_gpf_scalars(eps, maxit, max_line_search, step0, random_starts,
                        screen_keep, triage_maxit, triage_improve_tol);
 
-  const arma::uword k = L.n_cols;
-
-  // Kaiser normalization scales rows before rotation; because the weights act on rows and the
-  // rotation right-multiplies, they cancel in the final loadings, so the rotated loadings are
-  // reported as L %*% Th (the documented reproduction identity).
-  arma::mat A_work = L;
-  arma::vec W;
-  if (normalize) {
-    W = kaiser_weights(L);
-    A_work.each_col() /= W;
-  }
-
   BentlerCriterion crit;
-  OrthCriterionManifold manifold{A_work, crit};
-  arma::mat T_primary(k, k, fill::eye);
-
-  GpfSummary summary = run_gpf_multistart(
-    manifold, T_primary, eps, maxit, max_line_search, step0,
-    random_starts, screen_keep, triage_maxit, triage_improve_tol
-  );
-  const GpfFit& best_fit = summary.best_fit;
-
-  arma::mat loadings = L * best_fit.T;
-
-  return Rcpp::List::create(
-    Rcpp::Named("loadings") = loadings,
-    Rcpp::Named("Th") = best_fit.T,
-    Rcpp::Named("value") = best_fit.value,
-    Rcpp::Named("convergence") = best_fit.convergence,
-    Rcpp::Named("valid") = best_fit.valid
-  );
+  return make_orth_entry(L, crit, eps, normalize, random_starts, maxit,
+                         max_line_search, step0, screen_keep, triage_maxit,
+                         triage_improve_tol);
 }
 
 //' Oblique Bentler factor rotation
@@ -943,7 +849,8 @@ Rcpp::List rotate_bentler_orth(const arma::mat& L,
 //' @returns A named list with the rotated loadings, the transformation matrix `Th`
 //'   (with `L %*% t(solve(Th))` reproducing the rotated loadings), the factor correlation
 //'   matrix `Phi` (`t(Th) %*% Th`), the attained criterion value, and the convergence and
-//'   validity flags.
+//'   validity flags. The list additionally reports the criterion value reached
+//'   at each optimized start in `all_values`, with a per-start convergence flag in `all_converged`.
 //'
 //' @references
 //' Bentler, P. M. (1977). Factor simplicity index and transformations. *Psychometrika*, 42,
@@ -964,57 +871,14 @@ Rcpp::List rotate_bentler_oblq(const arma::mat& L,
                                int screen_keep = 2,
                                int triage_maxit = 25,
                                double triage_improve_tol = 0.0) {
-  if (L.n_rows == 0 || L.n_cols == 0) {
-    Rcpp::stop("L must be a non-empty matrix.");
-  }
-  if (L.n_cols < 2) {
-    Rcpp::stop("Oblique rotation requires at least two factors; use the R wrapper "
-               "for single-factor solutions.");
-  }
-  if (!all_finite_cpp(L)) {
-    Rcpp::stop("L must contain only finite values.");
-  }
+  validate_gpf_input(L, "Oblique");
   validate_gpf_scalars(eps, maxit, max_line_search, step0, random_starts,
                        screen_keep, triage_maxit, triage_improve_tol);
 
-  const arma::uword k = L.n_cols;
-
-  // Kaiser normalization scales rows before rotation; because the weights act on rows and the
-  // rotation (right-multiplying solve(t(T))) acts on columns, they cancel in the final
-  // loadings, so the rotated loadings reproduce L %*% t(solve(Th)) (the documented
-  // reproduction identity).
-  arma::mat A_work = L;
-  arma::vec W;
-  if (normalize) {
-    W = kaiser_weights(L);
-    A_work.each_col() /= W;
-  }
-
   BentlerCriterion crit;
-  OblqCriterionManifold manifold{A_work, crit};
-  arma::mat T_primary(k, k, fill::eye);
-
-  GpfSummary summary = run_gpf_multistart(
-    manifold, T_primary, eps, maxit, max_line_search, step0,
-    random_starts, screen_keep, triage_maxit, triage_improve_tol
-  );
-  const GpfFit& best_fit = summary.best_fit;
-
-  // Reconstruct the rotated loadings (L = A %*% solve(t(T)), Kaiser weights restored) and the
-  // factor correlations (Phi = t(T) %*% T) from the winning transformation, shared with the
-  // Procrustes oblique entry point.
-  arma::mat loadings;
-  arma::mat Phi;
-  finalize_oblique(best_fit, A_work, W, normalize, loadings, Phi);
-
-  return Rcpp::List::create(
-    Rcpp::Named("loadings") = loadings,
-    Rcpp::Named("Th") = best_fit.T,
-    Rcpp::Named("Phi") = Phi,
-    Rcpp::Named("value") = best_fit.value,
-    Rcpp::Named("convergence") = best_fit.convergence,
-    Rcpp::Named("valid") = best_fit.valid
-  );
+  return make_oblq_entry(L, crit, eps, normalize, random_starts, maxit,
+                         max_line_search, step0, screen_keep, triage_maxit,
+                         triage_improve_tol);
 }
 
 //' Orthogonal bifactor factor rotation
@@ -1054,7 +918,8 @@ Rcpp::List rotate_bentler_oblq(const arma::mat& L,
 //'
 //' @returns A named list with the rotated loadings, the orthogonal rotation matrix `Th`
 //'   (with `L %*% Th` reproducing the rotated loadings), the attained criterion value, and the
-//'   convergence and validity flags.
+//'   convergence and validity flags. The list additionally reports the criterion
+//'   value reached at each optimized start in `all_values`, with a per-start convergence flag in `all_converged`.
 //'
 //' @references
 //' Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms and
@@ -1075,50 +940,14 @@ Rcpp::List rotate_bifactor_orth(const arma::mat& L,
                                 int screen_keep = 2,
                                 int triage_maxit = 25,
                                 double triage_improve_tol = 0.0) {
-  if (L.n_rows == 0 || L.n_cols == 0) {
-    Rcpp::stop("L must be a non-empty matrix.");
-  }
-  if (L.n_cols < 2) {
-    Rcpp::stop("Orthogonal rotation requires at least two factors; use the R wrapper "
-               "for single-factor solutions.");
-  }
-  if (!all_finite_cpp(L)) {
-    Rcpp::stop("L must contain only finite values.");
-  }
+  validate_gpf_input(L, "Orthogonal");
   validate_gpf_scalars(eps, maxit, max_line_search, step0, random_starts,
                        screen_keep, triage_maxit, triage_improve_tol);
 
-  const arma::uword k = L.n_cols;
-
-  // Kaiser normalization scales rows before rotation; because the weights act on rows and the
-  // rotation right-multiplies, they cancel in the final loadings, so the rotated loadings are
-  // reported as L %*% Th (the documented reproduction identity).
-  arma::mat A_work = L;
-  arma::vec W;
-  if (normalize) {
-    W = kaiser_weights(L);
-    A_work.each_col() /= W;
-  }
-
   BifactorCriterion crit;
-  OrthCriterionManifold manifold{A_work, crit};
-  arma::mat T_primary(k, k, fill::eye);
-
-  GpfSummary summary = run_gpf_multistart(
-    manifold, T_primary, eps, maxit, max_line_search, step0,
-    random_starts, screen_keep, triage_maxit, triage_improve_tol
-  );
-  const GpfFit& best_fit = summary.best_fit;
-
-  arma::mat loadings = L * best_fit.T;
-
-  return Rcpp::List::create(
-    Rcpp::Named("loadings") = loadings,
-    Rcpp::Named("Th") = best_fit.T,
-    Rcpp::Named("value") = best_fit.value,
-    Rcpp::Named("convergence") = best_fit.convergence,
-    Rcpp::Named("valid") = best_fit.valid
-  );
+  return make_orth_entry(L, crit, eps, normalize, random_starts, maxit,
+                         max_line_search, step0, screen_keep, triage_maxit,
+                         triage_improve_tol);
 }
 
 //' Oblique bifactor factor rotation
@@ -1160,7 +989,8 @@ Rcpp::List rotate_bifactor_orth(const arma::mat& L,
 //' @returns A named list with the rotated loadings, the transformation matrix `Th`
 //'   (with `L %*% t(solve(Th))` reproducing the rotated loadings), the factor correlation
 //'   matrix `Phi` (`t(Th) %*% Th`), the attained criterion value, and the convergence and
-//'   validity flags.
+//'   validity flags. The list additionally reports the criterion value reached
+//'   at each optimized start in `all_values`, with a per-start convergence flag in `all_converged`.
 //'
 //' @references
 //' Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms and
@@ -1181,57 +1011,14 @@ Rcpp::List rotate_bifactor_oblq(const arma::mat& L,
                                 int screen_keep = 2,
                                 int triage_maxit = 25,
                                 double triage_improve_tol = 0.0) {
-  if (L.n_rows == 0 || L.n_cols == 0) {
-    Rcpp::stop("L must be a non-empty matrix.");
-  }
-  if (L.n_cols < 2) {
-    Rcpp::stop("Oblique rotation requires at least two factors; use the R wrapper "
-               "for single-factor solutions.");
-  }
-  if (!all_finite_cpp(L)) {
-    Rcpp::stop("L must contain only finite values.");
-  }
+  validate_gpf_input(L, "Oblique");
   validate_gpf_scalars(eps, maxit, max_line_search, step0, random_starts,
                        screen_keep, triage_maxit, triage_improve_tol);
 
-  const arma::uword k = L.n_cols;
-
-  // Kaiser normalization scales rows before rotation; because the weights act on rows and the
-  // rotation (right-multiplying solve(t(T))) acts on columns, they cancel in the final
-  // loadings, so the rotated loadings reproduce L %*% t(solve(Th)) (the documented
-  // reproduction identity).
-  arma::mat A_work = L;
-  arma::vec W;
-  if (normalize) {
-    W = kaiser_weights(L);
-    A_work.each_col() /= W;
-  }
-
   BifactorCriterion crit;
-  OblqCriterionManifold manifold{A_work, crit};
-  arma::mat T_primary(k, k, fill::eye);
-
-  GpfSummary summary = run_gpf_multistart(
-    manifold, T_primary, eps, maxit, max_line_search, step0,
-    random_starts, screen_keep, triage_maxit, triage_improve_tol
-  );
-  const GpfFit& best_fit = summary.best_fit;
-
-  // Reconstruct the rotated loadings (L = A %*% solve(t(T)), Kaiser weights restored) and the
-  // factor correlations (Phi = t(T) %*% T) from the winning transformation, shared with the
-  // Procrustes oblique entry point.
-  arma::mat loadings;
-  arma::mat Phi;
-  finalize_oblique(best_fit, A_work, W, normalize, loadings, Phi);
-
-  return Rcpp::List::create(
-    Rcpp::Named("loadings") = loadings,
-    Rcpp::Named("Th") = best_fit.T,
-    Rcpp::Named("Phi") = Phi,
-    Rcpp::Named("value") = best_fit.value,
-    Rcpp::Named("convergence") = best_fit.convergence,
-    Rcpp::Named("valid") = best_fit.valid
-  );
+  return make_oblq_entry(L, crit, eps, normalize, random_starts, maxit,
+                         max_line_search, step0, screen_keep, triage_maxit,
+                         triage_improve_tol);
 }
 
 //' Oblique simplimax factor rotation
@@ -1277,7 +1064,8 @@ Rcpp::List rotate_bifactor_oblq(const arma::mat& L,
 //' @returns A named list with the rotated loadings, the transformation matrix `Th`
 //'   (with `L %*% t(solve(Th))` reproducing the rotated loadings), the factor correlation
 //'   matrix `Phi` (`t(Th) %*% Th`), the attained criterion value, and the convergence and
-//'   validity flags.
+//'   validity flags. The list additionally reports the criterion value reached
+//'   at each optimized start in `all_values`, with a per-start convergence flag in `all_converged`.
 //'
 //' @references
 //' Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms and
@@ -1302,16 +1090,7 @@ Rcpp::List rotate_simplimax_oblq(const arma::mat& L,
                                  int maxit = 1000,
                                  int max_line_search = 10,
                                  double step0 = 1.0) {
-  if (L.n_rows == 0 || L.n_cols == 0) {
-    Rcpp::stop("L must be a non-empty matrix.");
-  }
-  if (L.n_cols < 2) {
-    Rcpp::stop("Oblique rotation requires at least two factors; use the R wrapper "
-               "for single-factor solutions.");
-  }
-  if (!all_finite_cpp(L)) {
-    Rcpp::stop("L must contain only finite values.");
-  }
+  validate_gpf_input(L, "Oblique");
   if (k < 1 || static_cast<arma::uword>(k) > L.n_elem) {
     Rcpp::stop("k must be an integer in [1, nrow(L) * ncol(L)].");
   }
@@ -1321,47 +1100,12 @@ Rcpp::List rotate_simplimax_oblq(const arma::mat& L,
   // screen-and-triage heuristic the smooth criteria use (its early-iteration objective screen is
   // uninformative for this criterion). fwindow = 10 selects the non-monotone line search (Grippo,
   // Lampariello, & Lucidi, 1986) needed for the piecewise-smooth criterion. The screen and triage
-  // controls are ignored in full-multistart mode.
+  // controls are unused in full-multistart mode.
   const int fwindow = 10;
   validate_gpf_scalars(eps, maxit, max_line_search, step0, random_starts, 0, 0, 0.0);
 
-  const arma::uword k_fac = L.n_cols;
-
-  // Kaiser normalization scales rows before rotation; because the weights act on rows and the
-  // rotation (right-multiplying solve(t(T))) acts on columns, they cancel in the final
-  // loadings, so the rotated loadings reproduce L %*% t(solve(Th)) (the documented
-  // reproduction identity).
-  arma::mat A_work = L;
-  arma::vec W;
-  if (normalize) {
-    W = kaiser_weights(L);
-    A_work.each_col() /= W;
-  }
-
   SimplimaxCriterion crit(static_cast<arma::uword>(k));
-  OblqCriterionManifold manifold{A_work, crit};
-  arma::mat T_primary(k_fac, k_fac, fill::eye);
-
-  GpfSummary summary = run_gpf_multistart(
-    manifold, T_primary, eps, maxit, max_line_search, step0,
-    random_starts, /*screen_keep=*/0, /*triage_maxit=*/0, /*triage_improve_tol=*/0.0,
-    fwindow, /*full_multistart=*/true
-  );
-  const GpfFit& best_fit = summary.best_fit;
-
-  // Reconstruct the rotated loadings (L = A %*% solve(t(T)), Kaiser weights restored) and the
-  // factor correlations (Phi = t(T) %*% T) from the winning transformation, shared with the
-  // Procrustes oblique entry point.
-  arma::mat loadings;
-  arma::mat Phi;
-  finalize_oblique(best_fit, A_work, W, normalize, loadings, Phi);
-
-  return Rcpp::List::create(
-    Rcpp::Named("loadings") = loadings,
-    Rcpp::Named("Th") = best_fit.T,
-    Rcpp::Named("Phi") = Phi,
-    Rcpp::Named("value") = best_fit.value,
-    Rcpp::Named("convergence") = best_fit.convergence,
-    Rcpp::Named("valid") = best_fit.valid
-  );
+  return make_oblq_entry(L, crit, eps, normalize, random_starts, maxit,
+                         max_line_search, step0, /*screen_keep=*/0, /*triage_maxit=*/0,
+                         /*triage_improve_tol=*/0.0, fwindow, /*full_multistart=*/true);
 }

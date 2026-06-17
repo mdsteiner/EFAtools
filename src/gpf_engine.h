@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <string>
 #include <vector>
 #include "gpf_common.h"
 
@@ -153,6 +154,23 @@ inline void validate_gpf_scalars(double eps, int maxit, int max_line_search,
   }
   if (!is_valid_scalar_cpp(triage_improve_tol) || triage_improve_tol < 0.0) {
     Rcpp::stop("triage_improve_tol must be a non-negative finite scalar.");
+  }
+}
+
+// Validate the loading matrix shared by every criterion rotation entry point, keeping the
+// input contract and its messages with the scalar-control contract above. `family` is the
+// rotation family name ("Orthogonal"/"Oblique") used in the at-least-two-factors message; the
+// single-factor case is handled by the R wrapper, so the compiled entries require k >= 2.
+inline void validate_gpf_input(const arma::mat& L, const char* family) {
+  if (L.n_rows == 0 || L.n_cols == 0) {
+    Rcpp::stop("L must be a non-empty matrix.");
+  }
+  if (L.n_cols < 2) {
+    Rcpp::stop(std::string(family) + " rotation requires at least two factors; use the "
+               "R wrapper for single-factor solutions.");
+  }
+  if (!all_finite_cpp(L)) {
+    Rcpp::stop("L must contain only finite values.");
   }
 }
 

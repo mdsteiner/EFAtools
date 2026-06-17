@@ -50,7 +50,8 @@ to be promoted to full optimization.}
 \value{
 A named list with the rotated loadings, the orthogonal rotation matrix \code{Th}
 (with \code{L \%*\% Th} reproducing the rotated loadings), the attained criterion value, and the
-convergence and validity flags.
+convergence and validity flags. The list additionally reports the criterion
+value reached at each optimized start in \code{all_values}, with a per-start convergence flag in \code{all_converged}.
 }
 \description{
 Rotate a loading matrix orthogonally under the geomin criterion using a

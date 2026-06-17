@@ -21,6 +21,7 @@ test_that("PROCRUSTES matches psych::Procrustes and GPArotation::targetQ outputs
   # The default single start of GPArotation::targetQ() is itself trapped in a
   # local minimum on this matrix; random starts are needed for it to reach the
   # global oblique target-rotation optimum that PROCRUSTES() now finds.
+  skip_if_not_installed("GPArotation")
   set.seed(42)
   oracle <- suppressWarnings(
     GPArotation::targetQ(unrot_loadings[[2]], Target = rot_loadings[[1]],

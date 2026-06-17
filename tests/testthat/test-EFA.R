@@ -147,12 +147,12 @@ test_that("settings are returned correctly", {
                                    "N", "use", "cor_method", "se", "b_boot", "ci", "max_iter",
                                    "init_comm", "criterion", "criterion_type",
                                    "abs_eigen", "normalize", "precision",
-                                   "order_type", "randomStarts"))
+                                   "order_type", "randomStarts", "rotation_diagnostics"))
   expect_named(efa_quart$settings, c("method", "rotation", "type", "n_factors",
                                    "N", "use", "cor_method", "se", "b_boot", "ci", "max_iter",
                                    "init_comm", "criterion", "criterion_type",
                                    "abs_eigen", "normalize", "precision",
-                                   "order_type", "k", "randomStarts"))
+                                   "order_type", "k", "randomStarts", "rotation_diagnostics"))
   expect_named(efa_none$settings, c("method", "rotation", "type", "n_factors",
                                    "N", "use", "cor_method", "se", "b_boot", "ci", "max_iter",
                                    "init_comm", "criterion", "criterion_type",
@@ -432,6 +432,45 @@ test_that("print/summary.EFA omit the inapplicable tables for a rotated single f
 
   expect_snapshot(print(efa_1fac), transform = scrub_num)
   expect_snapshot(print(summary(efa_1fac)), transform = scrub_num)
+})
+
+test_that("EFA records rotation diagnostics for multistart rotations", {
+  # A native gradient-projection rotation records the per-start diagnostics.
+  efa_geo <- suppressWarnings(
+    EFA(test_models$baseline$cormat, n_factors = 3, N = 500, rotation = "geominQ")
+  )
+  rd <- efa_geo$settings$rotation_diagnostics
+  expect_type(rd, "list")
+  expect_named(rd, c("n_starts", "n_converged", "n_distinct_minima",
+                     "criterion_spread", "criterion_best"))
+  expect_equal(rd$n_starts, 100)
+  # The distinct-optima count is taken over the converged starts only, so it is at least
+  # one (the rational start converges here) and never exceeds the converged count.
+  expect_gte(rd$n_converged, 1L)
+  expect_gte(rd$n_distinct_minima, 1L)
+  expect_lte(rd$n_distinct_minima, rd$n_converged)
+  expect_true(is.finite(rd$criterion_best))
+  expect_gte(rd$criterion_spread, 0)
+
+  # simplimax also records diagnostics; the requested random starts are stored verbatim.
+  efa_simp <- suppressWarnings(
+    EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
+        rotation = "simplimax", randomStarts = 20)
+  )
+  rd_simp <- efa_simp$settings$rotation_diagnostics
+  expect_equal(rd_simp$n_starts, 20)
+  expect_true(is.finite(rd_simp$criterion_best))
+
+  # Rotations that do not use random starts carry no diagnostics.
+  expect_null(efa_psych$settings$rotation_diagnostics)   # promax
+  expect_null(efa_cor$settings$rotation_diagnostics)     # rotation = "none"
+
+  # summary() surfaces the diagnostic only for the multistart rotations.
+  local_reproducible_output()
+  geo_summary <- utils::capture.output(print(summary(efa_geo)))
+  expect_true(any(grepl("Rotation local optima", geo_summary, fixed = TRUE)))
+  promax_summary <- utils::capture.output(print(summary(efa_psych)))
+  expect_false(any(grepl("Rotation local optima", promax_summary, fixed = TRUE)))
 })
 
 test_that("residuals.EFA is a pure extractor", {

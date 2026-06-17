@@ -47,7 +47,8 @@ to be promoted to full optimization.}
 A named list with the rotated loadings, the transformation matrix \code{Th}
 (with \code{L \%*\% t(solve(Th))} reproducing the rotated loadings), the factor correlation
 matrix \code{Phi} (\code{t(Th) \%*\% Th}), the attained criterion value, and the convergence and
-validity flags.
+validity flags. The list additionally reports the criterion value reached
+at each optimized start in \code{all_values}, with a per-start convergence flag in \code{all_converged}.
 }
 \description{
 Rotate a loading matrix obliquely under the Jennrich-Bentler bifactor criterion using a

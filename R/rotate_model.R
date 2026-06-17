@@ -9,25 +9,24 @@
 # reflects and reorders its varimax base before the oblique fit, so it finalizes
 # its own solution.
 
-# Orthogonal rotation engines, keyed by rotation name. Each returns the raw rotated
-# solution ($loadings, $Th); `eps`, `normalize`, `randomStarts`, and any extra
-# arguments are forwarded through `...`. The Crawford-Ferguson criteria (quartimax,
-# equamax), geomin, Bentler, and bifactor all use the native engine.
+# Orthogonal rotation engines, keyed by rotation name. Each resolves its criterion-specific
+# argument and hands the matching compiled entry to `.gpf_native()`, which returns the raw
+# rotated solution ($loadings, $Th); `eps`, `normalize`, `randomStarts`, and any extra
+# arguments are forwarded through `...`. The Crawford-Ferguson criteria (quartimax with
+# kappa = 0, equamax with kappa = k / (2 p)), geomin, Bentler, and bifactor all use the native
+# engine. The geomin offset `delta` defaults to GPArotation's 0.01 and may be overridden by an
+# exact-named `delta` in `...`.
 .orth_engines <- list(
-  equamax   = function(L, ...) .gpf_cf_orth(L, kappa = ncol(L) / (2 * nrow(L)), ...),
-  quartimax = function(L, ...) .gpf_cf_orth(L, kappa = 0, ...),
-  bentlerT  = function(L, ...) .gpf_bentler_orth(L, ...),
-  geominT   = function(L, ...) .gpf_geomin_orth(L, ...),
-  bifactorT = function(L, ...) .gpf_bifactor_orth(L, ...)
+  equamax   = function(L, ...) .gpf_native(.rotate_cf_orth, L,
+                                           list(kappa = ncol(L) / (2 * nrow(L))), ...),
+  quartimax = function(L, ...) .gpf_native(.rotate_cf_orth, L, list(kappa = 0), ...),
+  bentlerT  = function(L, ...) .gpf_native(.rotate_bentler_orth, L, list(), ...),
+  geominT   = function(L, ...) .gpf_native(.rotate_geomin_orth, L,
+                                           list(delta = .gpf_crit(list(...), "delta", 0.01)),
+                                           ...),
+  bifactorT = function(L, ...) .gpf_native(.rotate_bifactor_orth, L, list(), ...)
 )
 
-# Thin wrapper over the native Crawford-Ferguson orthogonal rotation. Maps the
-# GPArotation-style engine signature (`eps`, `normalize`, `randomStarts`, `maxit`) onto
-# the compiled entry and returns the raw rotated solution ($loadings, $Th) in the
-# convention `.reflect_and_order()` expects (the rotation matrix reproduces the rotated
-# loadings via `L_unrot %*% Th`). `maxit` is forwarded so the documented EFA `...`
-# rotation control reaches the optimizer as it does for the GPArotation engines; the
-# criterion itself takes no further tuning arguments, so any other `...` are ignored.
 # Warn when a native gradient-projection rotation did not reach the convergence tolerance
 # within `maxit` iterations, mirroring the warning the GPArotation engines emit so that the
 # native and GPArotation-backed rotations behave the same way on a non-convergent fit.
@@ -38,160 +37,55 @@
   }
 }
 
-.gpf_cf_orth <- function(L, kappa, eps = 1e-5, normalize = TRUE,
-                         randomStarts = 100, maxit = 1000L, ...) {
-  res <- .rotate_cf_orth(unclass(L), kappa = kappa, eps = eps,
-                         normalize = normalize, random_starts = randomStarts,
-                         maxit = maxit)
-  .warn_rotation_no_convergence(res$convergence, maxit)
-  list(loadings = res$loadings, Th = res$Th)
+# Read an overridable criterion parameter (the geomin `delta`, the oblimin `gam`) from a
+# rotation engine's `...` by EXACT name, falling back to `default`. Looking the value up by
+# exact name -- rather than declaring the parameter as a named formal before `...` -- keeps
+# R's partial matching from silently binding an abbreviated or misspelled dot argument (e.g.
+# `EFA(rotation = "geominT", del = 1)`) to the criterion parameter; an unrecognised argument is
+# ignored, as it already is for the criteria that take no tuning parameter.
+.gpf_crit <- function(dots, name, default) {
+  if (name %in% names(dots)) dots[[name]] else default
 }
 
-# Thin wrapper over the native geomin orthogonal rotation. Maps the GPArotation-style engine
-# signature (`delta`, `eps`, `normalize`, `randomStarts`, `maxit`) onto the compiled entry and
-# returns the raw rotated solution ($loadings, $Th) in the convention `.reflect_and_order()`
-# expects (the rotation matrix reproduces the rotated loadings via `L_unrot %*% Th`). `delta`
-# is the geomin offset; `delta = 0.01` matches GPArotation's default and may be overridden
-# through `...`. `maxit` is forwarded so the documented EFA `...` rotation control reaches the
-# optimizer as it does for the GPArotation engines; any other `...` are ignored. The geomin
-# criterion is prone to local minima, so the engine is run with the same random starts as the
-# GPArotation engine and reaches an equal-or-better minimum of the criterion.
-.gpf_geomin_orth <- function(L, delta = 0.01, eps = 1e-5, normalize = TRUE,
-                             randomStarts = 100, maxit = 1000L, ...) {
-  res <- .rotate_geomin_orth(unclass(L), delta = delta, eps = eps,
-                             normalize = normalize, random_starts = randomStarts,
-                             maxit = maxit)
+# Shared driver for the native gradient-projection rotations. `entry` is the compiled rotation
+# (e.g. `.rotate_cf_orth`); `crit` is a named list of the criterion-specific argument(s) for
+# that entry (empty for the criteria that take none). The GPArotation-style controls (`eps`,
+# `normalize`, `randomStarts` -> `random_starts`, `maxit`) are mapped onto the compiled entry, a
+# non-convergent fit warns, and the raw rotated solution is returned in the convention
+# `.reflect_and_order()` expects: the rotated `$loadings`, the rotation matrix `$Th`, and -- for
+# oblique rotations -- the factor correlations `$Phi` (orthogonal entries return no `Phi`).
+# Passing the criterion arguments explicitly via `crit` keeps them out of the partial-matching
+# path; the trailing `...` simply absorbs the controls the engine-table closures forward
+# through, so only the four named here reach the optimizer.
+.gpf_native <- function(entry, L, crit = list(), eps = 1e-5, normalize = TRUE,
+                        randomStarts = 100, maxit = 1000L, ...) {
+  res <- do.call(entry, c(list(unclass(L)), crit,
+                          list(eps = eps, normalize = normalize,
+                               random_starts = randomStarts, maxit = maxit)))
   .warn_rotation_no_convergence(res$convergence, maxit)
-  list(loadings = res$loadings, Th = res$Th)
+  out <- list(loadings = res$loadings, Th = res$Th,
+              all_values = res$all_values, all_converged = res$all_converged)
+  if (!is.null(res$Phi)) out$Phi <- res$Phi
+  out
 }
 
-# Thin wrapper over the native oblimin oblique rotation. Maps the GPArotation-style engine
-# signature (`gam`, `eps`, `normalize`, `randomStarts`, `maxit`) onto the compiled entry and
-# returns the raw rotated solution ($loadings, $Th, $Phi) in the convention
-# `.reflect_and_order()` expects (the rotation matrix reproduces the rotated loadings via
-# `L_unrot %*% t(solve(Th))`, and `Phi = t(Th) %*% Th`). `gam = 0` is the quartimin
-# criterion. `maxit` is forwarded so the documented EFA `...` rotation control reaches the
-# optimizer as it does for the GPArotation engines; the criterion takes no further tuning
-# arguments, so any other `...` are ignored.
-.gpf_oblimin <- function(L, gam = 0, eps = 1e-5, normalize = TRUE,
-                         randomStarts = 100, maxit = 1000L, ...) {
-  res <- .rotate_oblimin(unclass(L), gam = gam, eps = eps, normalize = normalize,
-                         random_starts = randomStarts, maxit = maxit)
-  .warn_rotation_no_convergence(res$convergence, maxit)
-  list(loadings = res$loadings, Th = res$Th, Phi = res$Phi)
-}
-
-# Thin wrapper over the native geomin oblique rotation. Maps the GPArotation-style engine
-# signature (`delta`, `eps`, `normalize`, `randomStarts`, `maxit`) onto the compiled entry and
-# returns the raw rotated solution ($loadings, $Th, $Phi) in the convention
-# `.reflect_and_order()` expects (the rotation matrix reproduces the rotated loadings via
-# `L_unrot %*% t(solve(Th))`, and `Phi = t(Th) %*% Th`). `delta` is the geomin offset;
-# `delta = 0.01` matches GPArotation's default and may be overridden through `...`. `maxit` is
-# forwarded so the documented EFA `...` rotation control reaches the optimizer as it does for
-# the GPArotation engines; any other `...` are ignored. The geomin criterion is prone to local
-# minima, so the engine is run with the same random starts as the GPArotation engine and
-# reaches an equal-or-better minimum of the criterion.
-.gpf_geomin_oblq <- function(L, delta = 0.01, eps = 1e-5, normalize = TRUE,
-                             randomStarts = 100, maxit = 1000L, ...) {
-  res <- .rotate_geomin_oblq(unclass(L), delta = delta, eps = eps, normalize = normalize,
-                             random_starts = randomStarts, maxit = maxit)
-  .warn_rotation_no_convergence(res$convergence, maxit)
-  list(loadings = res$loadings, Th = res$Th, Phi = res$Phi)
-}
-
-# Thin wrapper over the native Bentler orthogonal rotation. Maps the GPArotation-style engine
-# signature (`eps`, `normalize`, `randomStarts`, `maxit`) onto the compiled entry and returns
-# the raw rotated solution ($loadings, $Th) in the convention `.reflect_and_order()` expects
-# (the rotation matrix reproduces the rotated loadings via `L_unrot %*% Th`). `maxit` is
-# forwarded so the documented EFA `...` rotation control reaches the optimizer as it does for the
-# GPArotation engines; the criterion itself takes no further tuning arguments, so any other `...`
-# are ignored. The Bentler criterion is prone to local minima, so the engine is run with the same
-# random starts as the GPArotation engine and reaches an equal-or-better minimum of the criterion.
-.gpf_bentler_orth <- function(L, eps = 1e-5, normalize = TRUE,
-                              randomStarts = 100, maxit = 1000L, ...) {
-  res <- .rotate_bentler_orth(unclass(L), eps = eps, normalize = normalize,
-                              random_starts = randomStarts, maxit = maxit)
-  .warn_rotation_no_convergence(res$convergence, maxit)
-  list(loadings = res$loadings, Th = res$Th)
-}
-
-# Thin wrapper over the native Bentler oblique rotation. Maps the GPArotation-style engine
-# signature (`eps`, `normalize`, `randomStarts`, `maxit`) onto the compiled entry and returns the
-# raw rotated solution ($loadings, $Th, $Phi) in the convention `.reflect_and_order()` expects
-# (the rotation matrix reproduces the rotated loadings via `L_unrot %*% t(solve(Th))`, and
-# `Phi = t(Th) %*% Th`). `maxit` is forwarded so the documented EFA `...` rotation control reaches
-# the optimizer as it does for the GPArotation engines; any other `...` are ignored. The Bentler
-# criterion is prone to local minima, so the engine is run with the same random starts as the
-# GPArotation engine and reaches an equal-or-better minimum of the criterion.
-.gpf_bentler_oblq <- function(L, eps = 1e-5, normalize = TRUE,
-                              randomStarts = 100, maxit = 1000L, ...) {
-  res <- .rotate_bentler_oblq(unclass(L), eps = eps, normalize = normalize,
-                              random_starts = randomStarts, maxit = maxit)
-  .warn_rotation_no_convergence(res$convergence, maxit)
-  list(loadings = res$loadings, Th = res$Th, Phi = res$Phi)
-}
-
-# Thin wrapper over the native bifactor orthogonal rotation. Maps the GPArotation-style engine
-# signature (`eps`, `normalize`, `randomStarts`, `maxit`) onto the compiled entry and returns
-# the raw rotated solution ($loadings, $Th) in the convention `.reflect_and_order()` expects
-# (the rotation matrix reproduces the rotated loadings via `L_unrot %*% Th`). `maxit` is
-# forwarded so the documented EFA `...` rotation control reaches the optimizer as it does for the
-# GPArotation engines; the criterion itself takes no further tuning arguments, so any other `...`
-# are ignored. The bifactor criterion is prone to local minima, so the engine is run with the same
-# random starts as the GPArotation engine and reaches an equal-or-better minimum of the criterion.
-.gpf_bifactor_orth <- function(L, eps = 1e-5, normalize = TRUE,
-                               randomStarts = 100, maxit = 1000L, ...) {
-  res <- .rotate_bifactor_orth(unclass(L), eps = eps, normalize = normalize,
-                               random_starts = randomStarts, maxit = maxit)
-  .warn_rotation_no_convergence(res$convergence, maxit)
-  list(loadings = res$loadings, Th = res$Th)
-}
-
-# Thin wrapper over the native bifactor oblique rotation. Maps the GPArotation-style engine
-# signature (`eps`, `normalize`, `randomStarts`, `maxit`) onto the compiled entry and returns the
-# raw rotated solution ($loadings, $Th, $Phi) in the convention `.reflect_and_order()` expects
-# (the rotation matrix reproduces the rotated loadings via `L_unrot %*% t(solve(Th))`, and
-# `Phi = t(Th) %*% Th`). `maxit` is forwarded so the documented EFA `...` rotation control reaches
-# the optimizer as it does for the GPArotation engines; any other `...` are ignored. The bifactor
-# criterion is prone to local minima, so the engine is run with the same random starts as the
-# GPArotation engine and reaches an equal-or-better minimum of the criterion.
-.gpf_bifactor_oblq <- function(L, eps = 1e-5, normalize = TRUE,
-                               randomStarts = 100, maxit = 1000L, ...) {
-  res <- .rotate_bifactor_oblq(unclass(L), eps = eps, normalize = normalize,
-                               random_starts = randomStarts, maxit = maxit)
-  .warn_rotation_no_convergence(res$convergence, maxit)
-  list(loadings = res$loadings, Th = res$Th, Phi = res$Phi)
-}
-
-# Thin wrapper over the native simplimax oblique rotation. Maps the GPArotation-style engine
-# signature (`k`, `eps`, `normalize`, `randomStarts`, `maxit`) onto the compiled entry and
-# returns the raw rotated solution ($loadings, $Th, $Phi) in the convention
-# `.reflect_and_order()` expects (the rotation matrix reproduces the rotated loadings via
-# `L_unrot %*% t(solve(Th))`, and `Phi = t(Th) %*% Th`). `k` is the number of 'close to zero'
-# loadings the criterion targets; `k = nrow(L)` is the default and the value `.rotate_model()`
-# supplies. `maxit` is forwarded so the documented EFA `...` rotation control reaches the
-# optimizer; any other `...` are ignored. The simplimax criterion is strongly prone to local
-# minima, so the native engine fully optimizes all `randomStarts` random starts (plus the identity
-# start) and keeps the lowest-criterion solution.
-.gpf_simplimax_oblq <- function(L, k = nrow(L), eps = 1e-5, normalize = TRUE,
-                                randomStarts = 100, maxit = 1000L, ...) {
-  res <- .rotate_simplimax_oblq(unclass(L), k = k, eps = eps, normalize = normalize,
-                                random_starts = randomStarts, maxit = maxit)
-  .warn_rotation_no_convergence(res$convergence, maxit)
-  list(loadings = res$loadings, Th = res$Th, Phi = res$Phi)
-}
-
-# Oblique rotation engines, keyed by rotation name. Each returns the raw rotated solution
-# ($loadings, $Th, $Phi); `k` is consumed by simplimax and ignored by the others. The
-# oblimin and quartimin criteria (quartimin is oblimin with `gam = 0`), geomin, Bentler,
-# bifactor, and simplimax all use the native engine.
+# Oblique rotation engines, keyed by rotation name. Each resolves its criterion-specific
+# argument and hands the matching compiled entry to `.gpf_native()`, which returns the raw
+# rotated solution ($loadings, $Th, $Phi); `k` is the simplimax target count (consumed here and
+# ignored by the others). The oblimin and quartimin criteria (quartimin is oblimin pinned at
+# `gam = 0`, not overridable; oblimin's `gam` defaults to 0 and may be overridden by an
+# exact-named `gam` in `...`), geomin, Bentler, bifactor, and simplimax all use the native
+# engine.
 .oblq_engines <- list(
-  oblimin   = function(L, k, ...) .gpf_oblimin(L, ...),
-  quartimin = function(L, k, ...) .gpf_oblimin(L, gam = 0, ...),
-  simplimax = function(L, k, ...) .gpf_simplimax_oblq(L, k = k, ...),
-  bentlerQ  = function(L, k, ...) .gpf_bentler_oblq(L, ...),
-  geominQ   = function(L, k, ...) .gpf_geomin_oblq(L, ...),
-  bifactorQ = function(L, k, ...) .gpf_bifactor_oblq(L, ...)
+  oblimin   = function(L, k, ...) .gpf_native(.rotate_oblimin, L,
+                                              list(gam = .gpf_crit(list(...), "gam", 0)), ...),
+  quartimin = function(L, k, ...) .gpf_native(.rotate_oblimin, L, list(gam = 0), ...),
+  simplimax = function(L, k, ...) .gpf_native(.rotate_simplimax_oblq, L, list(k = k), ...),
+  bentlerQ  = function(L, k, ...) .gpf_native(.rotate_bentler_oblq, L, list(), ...),
+  geominQ   = function(L, k, ...) .gpf_native(.rotate_geomin_oblq, L,
+                                              list(delta = .gpf_crit(list(...), "delta", 0.01)),
+                                              ...),
+  bifactorQ = function(L, k, ...) .gpf_native(.rotate_bifactor_oblq, L, list(), ...)
 )
 
 # Canonical rotation names by family. The engine tables above key the GPArotation
@@ -289,6 +183,40 @@
   list(rot_loadings = L, rotmat = NA, vars_accounted_rot = NULL, settings = settings)
 }
 
+# Count distinct local minima among the criterion values reached by the rotation's
+# random starts. Values within a small relative tolerance of each other are treated
+# as the same minimum (different starts converging to one optimum differ only at the
+# convergence tolerance), so the count reflects how many genuinely different optima
+# the starts found.
+.count_distinct_minima <- function(values, tol = 1e-6) {
+  v <- sort(values[is.finite(values)])
+  if (length(v) == 0L) return(0L)
+  n <- 1L
+  for (i in seq_along(v)[-1]) {
+    if (v[i] - v[i - 1L] > tol * (1 + abs(v[i]))) n <- n + 1L
+  }
+  n
+}
+
+# Summarise a multistart rotation run for the output: the number of random starts
+# requested, how many converged to a genuine local optimum, how many distinct optima they
+# found, and the spread and best value of the attained criterion. `all_values` and
+# `all_converged` are the per-start criterion values and convergence flags returned by the
+# native rotation engines. The distinct-optima count and spread are taken over the
+# CONVERGED starts only: the screen-and-triage engine leaves the starts it does not promote
+# at a short, unconverged triage iterate, which is not a local optimum and must not be
+# counted as one (those starts have `all_converged == 0`). The best criterion value is the
+# lowest attained over all finite starts (the selected solution).
+.rotation_diagnostics <- function(all_values, all_converged, randomStarts) {
+  finite <- is.finite(all_values)
+  converged <- all_values[finite & all_converged == 1L]
+  list(n_starts = randomStarts,
+       n_converged = length(converged),
+       n_distinct_minima = .count_distinct_minima(converged),
+       criterion_spread = if (length(converged) > 1L) max(converged) - min(converged) else 0,
+       criterion_best = if (any(finite)) min(all_values[finite]) else NA_real_)
+}
+
 # Resolve the preset, run the named engine, and post-process. The field set and
 # order of the returned list differ per rotation family.
 .rotate_model <- function(x, rotation, type = c("EFAtools", "psych", "SPSS", "none"),
@@ -359,6 +287,8 @@
     AV <- .orth_engines[[rotation]](L, eps = precision,
                                     normalize = resolved$normalize,
                                     randomStarts = randomStarts, ...)
+    settings$rotation_diagnostics <- .rotation_diagnostics(AV$all_values,
+                                                           AV$all_converged, randomStarts)
     out <- .reflect_and_order(AV$loadings, rotmat = AV$Th, L_unrot = L,
                               name_factors = FALSE)
     return(c(out, list(settings = settings)))
@@ -386,6 +316,8 @@
     AV <- .oblq_engines[[rotation]](L, k = k, eps = precision,
                                     normalize = resolved$normalize,
                                     randomStarts = randomStarts, ...)
+    settings$rotation_diagnostics <- .rotation_diagnostics(AV$all_values,
+                                                           AV$all_converged, randomStarts)
     out <- .reflect_and_order(AV$loadings, Phi = AV$Phi, rotmat = AV$Th,
                               L_unrot = L, name_factors = FALSE)
     return(c(out, list(settings = settings)))

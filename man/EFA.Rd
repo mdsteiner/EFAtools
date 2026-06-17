@@ -47,7 +47,7 @@ EFA(
   cor_method = c("pearson", "spearman", "kendall"),
   b_boot = 1000,
   ci = 0.95,
-  randomStarts = 10,
+  randomStarts = 100,
   seed = NULL,
   ...
 )
@@ -166,8 +166,10 @@ Must be between 0 and 1. Default ist .95 for 95\% CIs.}
 
 \item{randomStarts}{numeric. The number of random starts to use in the
 rotation. Some rotation criteria are prone to produce local minima, and
-sometimes many random starts are needed to locate the best solution.
-Default is 10.}
+several random starts are usually needed to locate the best solution. The
+rotation screens the random starts cheaply and fully optimises only the most
+promising ones, so a large value adds little cost for most criteria. Default
+is 100.}
 
 \item{seed}{numeric. An optional seed for the random-number generator used by the
 non-parametric bootstrap (\code{se = "np-boot"}), i.e. for the case resampling, the
@@ -235,8 +237,8 @@ This function does an EFA with either \code{PAF}, \code{ML},
 or \code{ULS} with or without subsequent rotation.
 All arguments with default value \code{NA} can be left to default if \code{type}
 is set to one of "EFAtools", "SPSS", or "psych". The respective specifications are
-then handled according to the specified type (see details). For all rotations
-except varimax and promax, the \code{GPArotation} package is needed.
+then handled according to the specified type (see details). All rotations are
+performed by rotation engines built into the package.
 }
 \details{
 There are two main ways to use this function. The easiest way is to
@@ -321,10 +323,9 @@ to produce results more similar to those of SPSS:
 
 For all other rotations except varimax and promax, the \code{type} argument
 only controls the \code{order_type} argument with the same values as stated
-above for the varimax and promax rotations. For most of these other rotations, the
-\code{GPArotation} package is used. Additional arguments can also be specified and
-will be passed to the rotation procedure (e.g., maxit to change the maximum
-number of iterations).
+above for the varimax and promax rotations. Additional arguments can also be
+specified and will be passed to the rotation procedure (e.g., maxit to change the
+maximum number of iterations).
 
 The \code{type} argument has no effect on ULS and ML. For ULS, no additional
 arguments are needed. For ML, an additional argument
