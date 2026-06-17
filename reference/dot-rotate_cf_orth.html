@@ -140,7 +140,8 @@ start to be promoted to full optimization.</p></dd>
     <h2>Value</h2>
     <p>A named list with the rotated loadings, the orthogonal rotation matrix <code>Th</code>
 (with <code>L %*% Th</code> reproducing the rotated loadings), the attained criterion value, and
-the convergence and validity flags.</p>
+the convergence and validity flags. The list additionally reports the
+criterion value reached at each optimized start in <code>all_values</code>, with a per-start convergence flag in <code>all_converged</code>.</p>
     </div>
     <div id="details">
     <h2>Details</h2>

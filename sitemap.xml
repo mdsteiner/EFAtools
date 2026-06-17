@@ -60,8 +60,15 @@
 <url><loc>/reference/dot-orthogonal_procrustes.html</loc></url>
 <url><loc>/reference/dot-paf_iter.html</loc></url>
 <url><loc>/reference/dot-parallel_sim.html</loc></url>
+<url><loc>/reference/dot-rotate_bentler_oblq.html</loc></url>
+<url><loc>/reference/dot-rotate_bentler_orth.html</loc></url>
+<url><loc>/reference/dot-rotate_bifactor_oblq.html</loc></url>
+<url><loc>/reference/dot-rotate_bifactor_orth.html</loc></url>
 <url><loc>/reference/dot-rotate_cf_orth.html</loc></url>
+<url><loc>/reference/dot-rotate_geomin_oblq.html</loc></url>
+<url><loc>/reference/dot-rotate_geomin_orth.html</loc></url>
 <url><loc>/reference/dot-rotate_oblimin.html</loc></url>
+<url><loc>/reference/dot-rotate_simplimax_oblq.html</loc></url>
 <url><loc>/reference/dot-tucker_congruence.html</loc></url>
 <url><loc>/reference/format.N_FACTORS.html</loc></url>
 <url><loc>/reference/format.efa_retention.html</loc></url>
