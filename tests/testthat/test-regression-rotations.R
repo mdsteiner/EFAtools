@@ -23,18 +23,26 @@ unrot <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500)
 L <- unclass(unrot$unrot_loadings)
 seed <- 42
 
+# shared fixture set for the native-engine relaxed-parity tests below (the non-convex CF,
+# oblimin, and geomin criteria are exercised across three real correlation matrices of
+# different factor counts so the Q-dominance contract is not pinned to a single solution)
+fixtures <- list(
+  baseline = list(R = test_models$baseline$cormat, N = 500,                nf = 3),
+  GRiPS    = list(R = stats::cor(GRiPS_raw),        N = nrow(GRiPS_raw),    nf = 2),
+  DOSPERT  = list(R = stats::cor(DOSPERT_raw),      N = nrow(DOSPERT_raw),  nf = 4)
+)
+
 test_that("orthogonal rotations reproduce their GPArotation engine", {
   skip_on_cran()
   skip_if_not_installed("GPArotation")
 
   # rotation name -> the GPArotation engine EFAtools dispatches to for each
   # GPArotation-backed orthogonal rotation. The Crawford-Ferguson criteria (quartimax,
-  # equamax) are computed by the native engine and validated separately below.
+  # equamax) and geomin (geominT) are computed by the native engine and validated separately
+  # below.
   engines <- list(
     bentlerT  = function() GPArotation::bentlerT(L, normalize = TRUE, eps = 1e-5,
                                                  randomStarts = 100),
-    geominT   = function() GPArotation::geominT(L, normalize = TRUE, eps = 1e-5,
-                                                randomStarts = 100),
     bifactorT = function() GPArotation::bifactorT(L, normalize = TRUE, eps = 1e-5,
                                                   randomStarts = 100)
   )
@@ -60,12 +68,6 @@ test_that("quartimax and equamax route through the native CF rotation engine", {
   # The like-for-like reference is cfT() with the matching kappa -- GPArotation's
   # quartimax() optimises the same rotation but reports a differently scaled criterion
   # value, so cfT(kappa = 0) is the correct Q reference for quartimax.
-  fixtures <- list(
-    baseline = list(R = test_models$baseline$cormat, N = 500,                nf = 3),
-    GRiPS    = list(R = stats::cor(GRiPS_raw),        N = nrow(GRiPS_raw),    nf = 2),
-    DOSPERT  = list(R = stats::cor(DOSPERT_raw),      N = nrow(DOSPERT_raw),  nf = 4)
-  )
-
   for (fx_name in names(fixtures)) {
     fx <- fixtures[[fx_name]]
     unrot_fx <- suppressWarnings(EFA(fx$R, n_factors = fx$nf, N = fx$N))
@@ -97,20 +99,62 @@ test_that("quartimax and equamax route through the native CF rotation engine", {
   }
 })
 
+test_that("geominT routes through the native geomin GPF engine", {
+  skip_on_cran()
+  skip_if_not_installed("GPArotation")
+
+  # geominT is computed by the native gradient-projection engine; the remaining orthogonal
+  # criteria stay on GPArotation. The geomin criterion is prone to local minima, so parity is
+  # relaxed: the PRIMARY contract is that the native engine reaches an as-good-or-better minimum
+  # of the SAME criterion. geominT's Table column 2 is the geomin value, computed on the same
+  # Kaiser-normalized loadings the native engine reports, so it is directly comparable to
+  # native$value. On these fixtures the criterion is well identified at randomStarts = 100, so
+  # the aligned loadings also agree to ~1e-4; should an environment ever settle on a different
+  # but equal-Q minimum, the Q-dominance check still passes and only the aligned-loadings check
+  # would legitimately diverge.
+
+  # the native engine pins the geomin offset at delta = 0.01, chosen to match GPArotation's
+  # default; guard that the reference below is taken at the same offset
+  expect_equal(formals(GPArotation::geominT)$delta, 0.01)
+
+  for (fx_name in names(fixtures)) {
+    fx <- fixtures[[fx_name]]
+    unrot_fx <- suppressWarnings(EFA(fx$R, n_factors = fx$nf, N = fx$N))
+    Lx <- unclass(unrot_fx$unrot_loadings)
+
+    set.seed(seed)
+    native <- .rotate_geomin_orth(Lx, delta = 0.01, eps = 1e-5, normalize = TRUE,
+                                  random_starts = 100)
+    set.seed(seed)
+    ref <- GPArotation::geominT(Lx, delta = 0.01, normalize = TRUE, eps = 1e-5,
+                                randomStarts = 100)
+    ref_Q <- ref$Table[nrow(ref$Table), 2]
+
+    # (a) as-good-or-better minimum of the same geomin criterion
+    expect_lte(native$value, ref_Q + 1e-6)
+    # (b) aligned loadings within relaxed parity (well-identified on these fixtures)
+    expect_lt(aligned_max_diff(native$loadings, ref$loadings), 1e-4)
+
+    # the public rotation path routes through the native engine and reproduces it exactly (same
+    # seed, same compiled entry), so it inherits the Q-dominance guarantee above
+    set.seed(seed)
+    efa <- suppressWarnings(.rotate_model(unrot_fx, rotation = "geominT", type = "EFAtools"))
+    expect_lt(aligned_max_diff(efa$rot_loadings, native$loadings), 1e-6)
+  }
+})
+
 test_that("oblique rotations reproduce their GPArotation engine", {
   skip_on_cran()
   skip_if_not_installed("GPArotation")
 
   # rotation name -> the GPArotation engine EFAtools dispatches to for each
-  # GPArotation-backed oblique rotation. The oblimin and quartimin criteria are computed
-  # by the native engine and validated separately below.
+  # GPArotation-backed oblique rotation. The oblimin and quartimin criteria and geomin
+  # (geominQ) are computed by the native engine and validated separately below.
   engines <- list(
     simplimax = function() GPArotation::simplimax(L, k = nrow(L), normalize = TRUE,
                                                   eps = 1e-5, randomStarts = 100),
     bentlerQ  = function() GPArotation::bentlerQ(L, normalize = TRUE, eps = 1e-5,
                                                  randomStarts = 100),
-    geominQ   = function() GPArotation::geominQ(L, normalize = TRUE, eps = 1e-5,
-                                                randomStarts = 100),
     bifactorQ = function() GPArotation::bifactorQ(L, normalize = TRUE, eps = 1e-5,
                                                   randomStarts = 100)
   )
@@ -136,12 +180,6 @@ test_that("oblimin and quartimin route through the native oblique GPF engine", {
   # criterion, the aligned loadings must agree to ~1e-4, and the factor correlations must
   # match under the permutation/sign-invariant fingerprint. The single GPArotation::oblimin()
   # reference serves both public names (quartimin is the same gam = 0 criterion).
-  fixtures <- list(
-    baseline = list(R = test_models$baseline$cormat, N = 500,                nf = 3),
-    GRiPS    = list(R = stats::cor(GRiPS_raw),        N = nrow(GRiPS_raw),    nf = 2),
-    DOSPERT  = list(R = stats::cor(DOSPERT_raw),      N = nrow(DOSPERT_raw),  nf = 4)
-  )
-
   for (fx_name in names(fixtures)) {
     fx <- fixtures[[fx_name]]
     unrot_fx <- suppressWarnings(EFA(fx$R, n_factors = fx$nf, N = fx$N))
@@ -190,6 +228,50 @@ test_that("the native oblimin engine generalizes to non-zero gamma", {
   expect_equal(phi_fingerprint(native$Phi), phi_fingerprint(ref$Phi), tolerance = 1e-4)
 })
 
+test_that("geominQ routes through the native geomin GPF engine", {
+  skip_on_cran()
+  skip_if_not_installed("GPArotation")
+
+  # geominQ is computed by the native gradient-projection engine; the remaining oblique criteria
+  # stay on GPArotation. As with geominT, the geomin criterion is prone to local minima, so the
+  # PRIMARY contract is an as-good-or-better minimum of the SAME criterion (geominQ's Table
+  # column 2, directly comparable to native$value) rather than byte-exact reproduction. On these
+  # fixtures the criterion is well identified at randomStarts = 100, so the aligned loadings and
+  # the factor correlations also agree; where they diverged at equal Q, the Q-dominance check
+  # would still hold.
+
+  # the native engine pins the geomin offset at delta = 0.01, chosen to match GPArotation's
+  # default; guard that the reference below is taken at the same offset
+  expect_equal(formals(GPArotation::geominQ)$delta, 0.01)
+
+  for (fx_name in names(fixtures)) {
+    fx <- fixtures[[fx_name]]
+    unrot_fx <- suppressWarnings(EFA(fx$R, n_factors = fx$nf, N = fx$N))
+    Lx <- unclass(unrot_fx$unrot_loadings)
+
+    set.seed(seed)
+    native <- .rotate_geomin_oblq(Lx, delta = 0.01, eps = 1e-5, normalize = TRUE,
+                                  random_starts = 100)
+    set.seed(seed)
+    ref <- suppressWarnings(GPArotation::geominQ(Lx, delta = 0.01, normalize = TRUE,
+                                                 eps = 1e-5, randomStarts = 100))
+    ref_Q <- ref$Table[nrow(ref$Table), 2]
+
+    # (a) as-good-or-better minimum of the same geomin criterion
+    expect_lte(native$value, ref_Q + 1e-6)
+    # (b) aligned loadings and factor correlations within relaxed parity (well-identified here)
+    expect_lt(aligned_max_diff(native$loadings, ref$loadings), 1e-4)
+    expect_equal(phi_fingerprint(native$Phi), phi_fingerprint(ref$Phi), tolerance = 1e-4)
+
+    # the public rotation path routes through the native engine and reproduces it exactly (same
+    # seed, same compiled entry), so it inherits the Q-dominance guarantee above
+    set.seed(seed)
+    efa <- suppressWarnings(.rotate_model(unrot_fx, rotation = "geominQ", type = "EFAtools"))
+    expect_lt(aligned_max_diff(efa$rot_loadings, native$loadings), 1e-6)
+    expect_equal(phi_fingerprint(efa$Phi), phi_fingerprint(native$Phi), tolerance = 1e-6)
+  }
+})
+
 test_that("varimax reproduces stats::varimax", {
   skip_on_cran()
 
@@ -225,4 +307,4 @@ test_that("promax reproduces stats::promax", {
   expect_lt(aligned_max_diff(efa$rot_loadings, ref$loadings), 1e-4)
 })
 
-rm(aligned_max_diff, phi_fingerprint, unrot, L, seed)
+rm(aligned_max_diff, phi_fingerprint, unrot, L, seed, fixtures)

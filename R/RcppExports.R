@@ -297,3 +297,108 @@
     .Call(`_EFAtools_rotate_oblimin`, L, gam, eps, normalize, random_starts, maxit, max_line_search, step0, screen_keep, triage_maxit, triage_improve_tol)
 }
 
+#' Orthogonal geomin factor rotation
+#'
+#' Rotate a loading matrix orthogonally under the geomin criterion using a
+#' gradient-projection optimizer along the orthogonal (Stiefel) manifold.
+#'
+#' The criterion value `f` and its gradient `dQ/dL` at the rotated loadings
+#' `L = A %*% T` define the search; the engine maps the gradient to the orthogonal
+#' transformation `T`, projects it onto the tangent space, performs a sufficient-decrease
+#' line search, and retracts back onto the orthogonal group via a polar (singular value)
+#' projection. The geomin criterion sums the per-variable geometric mean of the squared
+#' loadings offset by `delta`; it is prone to local minima, so additional random starts are
+#' recommended.
+#'
+#' Additional random orthogonal starts may be requested. To bound runtime the solver screens
+#' each random start by its objective, runs a short triage optimization on the best-screened
+#' starts, and fully optimizes only those that improve on the current incumbent by at least
+#' `triage_improve_tol`.
+#'
+#' @param L Numeric matrix. The unrotated loading matrix (variables by factors).
+#' @param delta Numeric scalar. The geomin offset added to the squared loadings; must be a
+#'   positive finite scalar. `delta = 0.01` is the usual default.
+#' @param eps Numeric scalar. Convergence tolerance for the projected-gradient norm.
+#' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before rotation and
+#'   reverse it afterwards.
+#' @param random_starts Integer scalar. Number of additional random orthogonal starts.
+#' @param maxit Integer scalar. Maximum number of projected-gradient updates.
+#' @param max_line_search Integer scalar. Maximum number of step-halving attempts after the
+#'   initial trial step in each line-search phase.
+#' @param step0 Numeric scalar. Initial step size used in the projected-gradient update.
+#' @param screen_keep Integer scalar. Number of screened random starts retained for triage
+#'   optimization.
+#' @param triage_maxit Integer scalar. Number of short optimization iterations used in the
+#'   triage stage.
+#' @param triage_improve_tol Numeric scalar. Relative improvement required for a triaged start
+#'   to be promoted to full optimization.
+#'
+#' @returns A named list with the rotated loadings, the orthogonal rotation matrix `Th`
+#'   (with `L %*% Th` reproducing the rotated loadings), the attained criterion value, and the
+#'   convergence and validity flags.
+#'
+#' @references
+#' Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms and
+#' software for arbitrary rotation criteria in factor analysis. *Educational and
+#' Psychological Measurement*, 65, 676-696.
+#'
+#' Browne, M. W. (2001). An overview of analytic rotation in exploratory factor analysis.
+#' *Multivariate Behavioral Research*, 36, 111-150.
+#'
+.rotate_geomin_orth <- function(L, delta = 0.01, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0, screen_keep = 2L, triage_maxit = 25L, triage_improve_tol = 0.0) {
+    .Call(`_EFAtools_rotate_geomin_orth`, L, delta, eps, normalize, random_starts, maxit, max_line_search, step0, screen_keep, triage_maxit, triage_improve_tol)
+}
+
+#' Oblique geomin factor rotation
+#'
+#' Rotate a loading matrix obliquely under the geomin criterion using a gradient-projection
+#' optimizer along the oblique (column-normalized) manifold.
+#'
+#' The criterion value `f` and its gradient `dQ/dL` at the rotated loadings
+#' `L = A %*% solve(t(T))` define the search; the engine maps the gradient to the
+#' transformation `T` on the manifold `diag(t(T) %*% T) = 1`, projects it onto the tangent
+#' space, performs a sufficient-decrease line search, and retracts back onto the manifold by
+#' column normalization. The geomin criterion sums the per-variable geometric mean of the
+#' squared loadings offset by `delta`; it is prone to local minima, so additional random
+#' starts are recommended.
+#'
+#' Additional random starts may be requested. To bound runtime the solver screens each random
+#' start by its objective, runs a short triage optimization on the best-screened starts, and
+#' fully optimizes only those that improve on the current incumbent by at least
+#' `triage_improve_tol`.
+#'
+#' @param L Numeric matrix. The unrotated loading matrix (variables by factors).
+#' @param delta Numeric scalar. The geomin offset added to the squared loadings; must be a
+#'   positive finite scalar. `delta = 0.01` is the usual default.
+#' @param eps Numeric scalar. Convergence tolerance for the projected-gradient norm.
+#' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before rotation and
+#'   reverse it afterwards.
+#' @param random_starts Integer scalar. Number of additional random starts.
+#' @param maxit Integer scalar. Maximum number of projected-gradient updates.
+#' @param max_line_search Integer scalar. Maximum number of step-halving attempts after the
+#'   initial trial step in each line-search phase.
+#' @param step0 Numeric scalar. Initial step size used in the projected-gradient update.
+#' @param screen_keep Integer scalar. Number of screened random starts retained for triage
+#'   optimization.
+#' @param triage_maxit Integer scalar. Number of short optimization iterations used in the
+#'   triage stage.
+#' @param triage_improve_tol Numeric scalar. Relative improvement required for a triaged start
+#'   to be promoted to full optimization.
+#'
+#' @returns A named list with the rotated loadings, the transformation matrix `Th`
+#'   (with `L %*% t(solve(Th))` reproducing the rotated loadings), the factor correlation
+#'   matrix `Phi` (`t(Th) %*% Th`), the attained criterion value, and the convergence and
+#'   validity flags.
+#'
+#' @references
+#' Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms and
+#' software for arbitrary rotation criteria in factor analysis. *Educational and
+#' Psychological Measurement*, 65, 676-696.
+#'
+#' Browne, M. W. (2001). An overview of analytic rotation in exploratory factor analysis.
+#' *Multivariate Behavioral Research*, 36, 111-150.
+#'
+.rotate_geomin_oblq <- function(L, delta = 0.01, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0, screen_keep = 2L, triage_maxit = 25L, triage_improve_tol = 0.0) {
+    .Call(`_EFAtools_rotate_geomin_oblq`, L, delta, eps, normalize, random_starts, maxit, max_line_search, step0, screen_keep, triage_maxit, triage_improve_tol)
+}
+

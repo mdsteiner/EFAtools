@@ -12,12 +12,12 @@
 # Orthogonal rotation engines, keyed by rotation name. Each returns the raw rotated
 # solution ($loadings, $Th); `eps`, `normalize`, `randomStarts`, and any extra
 # arguments are forwarded through `...`. The Crawford-Ferguson criteria (quartimax,
-# equamax) use the native engine; the remaining criteria use GPArotation.
+# equamax) and geomin use the native engine; the remaining criteria use GPArotation.
 .orth_engines <- list(
   equamax   = function(L, ...) .gpf_cf_orth(L, kappa = ncol(L) / (2 * nrow(L)), ...),
   quartimax = function(L, ...) .gpf_cf_orth(L, kappa = 0, ...),
   bentlerT  = function(L, ...) GPArotation::bentlerT(L, ...),
-  geominT   = function(L, ...) GPArotation::geominT(L, ...),
+  geominT   = function(L, ...) .gpf_geomin_orth(L, ...),
   bifactorT = function(L, ...) GPArotation::bifactorT(L, ...)
 )
 
@@ -47,6 +47,24 @@
   list(loadings = res$loadings, Th = res$Th)
 }
 
+# Thin wrapper over the native geomin orthogonal rotation. Maps the GPArotation-style engine
+# signature (`delta`, `eps`, `normalize`, `randomStarts`, `maxit`) onto the compiled entry and
+# returns the raw rotated solution ($loadings, $Th) in the convention `.reflect_and_order()`
+# expects (the rotation matrix reproduces the rotated loadings via `L_unrot %*% Th`). `delta`
+# is the geomin offset; `delta = 0.01` matches GPArotation's default and may be overridden
+# through `...`. `maxit` is forwarded so the documented EFA `...` rotation control reaches the
+# optimizer as it does for the GPArotation engines; any other `...` are ignored. The geomin
+# criterion is prone to local minima, so the engine is run with the same random starts as the
+# GPArotation engine and reaches an equal-or-better minimum of the criterion.
+.gpf_geomin_orth <- function(L, delta = 0.01, eps = 1e-5, normalize = TRUE,
+                             randomStarts = 100, maxit = 1000L, ...) {
+  res <- .rotate_geomin_orth(unclass(L), delta = delta, eps = eps,
+                             normalize = normalize, random_starts = randomStarts,
+                             maxit = maxit)
+  .warn_rotation_no_convergence(res$convergence, maxit)
+  list(loadings = res$loadings, Th = res$Th)
+}
+
 # Thin wrapper over the native oblimin oblique rotation. Maps the GPArotation-style engine
 # signature (`gam`, `eps`, `normalize`, `randomStarts`, `maxit`) onto the compiled entry and
 # returns the raw rotated solution ($loadings, $Th, $Phi) in the convention
@@ -63,16 +81,34 @@
   list(loadings = res$loadings, Th = res$Th, Phi = res$Phi)
 }
 
+# Thin wrapper over the native geomin oblique rotation. Maps the GPArotation-style engine
+# signature (`delta`, `eps`, `normalize`, `randomStarts`, `maxit`) onto the compiled entry and
+# returns the raw rotated solution ($loadings, $Th, $Phi) in the convention
+# `.reflect_and_order()` expects (the rotation matrix reproduces the rotated loadings via
+# `L_unrot %*% t(solve(Th))`, and `Phi = t(Th) %*% Th`). `delta` is the geomin offset;
+# `delta = 0.01` matches GPArotation's default and may be overridden through `...`. `maxit` is
+# forwarded so the documented EFA `...` rotation control reaches the optimizer as it does for
+# the GPArotation engines; any other `...` are ignored. The geomin criterion is prone to local
+# minima, so the engine is run with the same random starts as the GPArotation engine and
+# reaches an equal-or-better minimum of the criterion.
+.gpf_geomin_oblq <- function(L, delta = 0.01, eps = 1e-5, normalize = TRUE,
+                             randomStarts = 100, maxit = 1000L, ...) {
+  res <- .rotate_geomin_oblq(unclass(L), delta = delta, eps = eps, normalize = normalize,
+                             random_starts = randomStarts, maxit = maxit)
+  .warn_rotation_no_convergence(res$convergence, maxit)
+  list(loadings = res$loadings, Th = res$Th, Phi = res$Phi)
+}
+
 # Oblique rotation engines, keyed by rotation name. Each returns the raw rotated solution
 # ($loadings, $Th, $Phi); `k` is consumed by simplimax and ignored by the others. The
-# oblimin and quartimin criteria (quartimin is oblimin with `gam = 0`) use the native
-# engine; the remaining criteria use GPArotation.
+# oblimin and quartimin criteria (quartimin is oblimin with `gam = 0`) and geomin use the
+# native engine; the remaining criteria use GPArotation.
 .oblq_engines <- list(
   oblimin   = function(L, k, ...) .gpf_oblimin(L, ...),
   quartimin = function(L, k, ...) .gpf_oblimin(L, gam = 0, ...),
   simplimax = function(L, k, ...) GPArotation::simplimax(L, k = k, ...),
   bentlerQ  = function(L, k, ...) GPArotation::bentlerQ(L, ...),
-  geominQ   = function(L, k, ...) GPArotation::geominQ(L, ...),
+  geominQ   = function(L, k, ...) .gpf_geomin_oblq(L, ...),
   bifactorQ = function(L, k, ...) GPArotation::bifactorQ(L, ...)
 )
 

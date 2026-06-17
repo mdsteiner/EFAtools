@@ -78,6 +78,30 @@ struct ObliminCriterion : public RotationCriterion {
   }
 };
 
+// Geomin family, parameterized by delta (GPArotation::vgQ.geomin). The criterion is the sum
+// over variables of the geometric mean of their squared loadings, each offset by delta:
+// f = sum_i exp(mean_j log(L2_ij)) with L2 = L^2 + delta. The offset keeps the row geometric
+// means (and their logarithms) finite when a loading is zero; smaller delta rewards a sparser
+// pattern but sharpens the local minima. delta = 0.01 is the GPArotation default. With the
+// per-row geometric mean pro_i = exp(mean_j log(L2_ij)), the gradient is (2 / k)(L / L2) with
+// each row scaled by pro_i.
+struct GeominCriterion : public RotationCriterion {
+  double delta_;
+  explicit GeominCriterion(double delta) : delta_(delta) {}
+
+  void eval(const arma::mat& L, double& f, arma::mat& Gq) const override {
+    const double k = static_cast<double>(L.n_cols);
+    // delta > 0 (validated by the entry points) keeps L2 strictly positive, so log(L2) and
+    // the geometric means below are always finite.
+    arma::mat L2 = square(L);
+    L2 += delta_;
+    arma::vec pro = exp(mean(log(L2), 1));  // dim = 1: per-row mean of log(L2) (rowMeans)
+    f = accu(pro);
+    Gq = (2.0 / k) * (L / L2);
+    Gq.each_col() %= pro;  // scale row i by pro_i (pro broadcast across columns)
+  }
+};
+
 
 // Retract X back onto the orthogonal group via its polar factor U V' from the SVD,
 // the Stiefel retraction used by GPForth. Returns false (leaving Tout untouched) if
@@ -422,6 +446,232 @@ Rcpp::List rotate_oblimin(const arma::mat& L,
   // Reconstruct the rotated loadings (L = A %*% solve(t(T)), Kaiser weights restored) and
   // the factor correlations (Phi = t(T) %*% T) from the winning transformation, shared with
   // the Procrustes oblique entry point.
+  arma::mat loadings;
+  arma::mat Phi;
+  finalize_oblique(best_fit, A_work, W, normalize, loadings, Phi);
+
+  return Rcpp::List::create(
+    Rcpp::Named("loadings") = loadings,
+    Rcpp::Named("Th") = best_fit.T,
+    Rcpp::Named("Phi") = Phi,
+    Rcpp::Named("value") = best_fit.value,
+    Rcpp::Named("convergence") = best_fit.convergence,
+    Rcpp::Named("valid") = best_fit.valid
+  );
+}
+
+//' Orthogonal geomin factor rotation
+//'
+//' Rotate a loading matrix orthogonally under the geomin criterion using a
+//' gradient-projection optimizer along the orthogonal (Stiefel) manifold.
+//'
+//' The criterion value `f` and its gradient `dQ/dL` at the rotated loadings
+//' `L = A %*% T` define the search; the engine maps the gradient to the orthogonal
+//' transformation `T`, projects it onto the tangent space, performs a sufficient-decrease
+//' line search, and retracts back onto the orthogonal group via a polar (singular value)
+//' projection. The geomin criterion sums the per-variable geometric mean of the squared
+//' loadings offset by `delta`; it is prone to local minima, so additional random starts are
+//' recommended.
+//'
+//' Additional random orthogonal starts may be requested. To bound runtime the solver screens
+//' each random start by its objective, runs a short triage optimization on the best-screened
+//' starts, and fully optimizes only those that improve on the current incumbent by at least
+//' `triage_improve_tol`.
+//'
+//' @param L Numeric matrix. The unrotated loading matrix (variables by factors).
+//' @param delta Numeric scalar. The geomin offset added to the squared loadings; must be a
+//'   positive finite scalar. `delta = 0.01` is the usual default.
+//' @param eps Numeric scalar. Convergence tolerance for the projected-gradient norm.
+//' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before rotation and
+//'   reverse it afterwards.
+//' @param random_starts Integer scalar. Number of additional random orthogonal starts.
+//' @param maxit Integer scalar. Maximum number of projected-gradient updates.
+//' @param max_line_search Integer scalar. Maximum number of step-halving attempts after the
+//'   initial trial step in each line-search phase.
+//' @param step0 Numeric scalar. Initial step size used in the projected-gradient update.
+//' @param screen_keep Integer scalar. Number of screened random starts retained for triage
+//'   optimization.
+//' @param triage_maxit Integer scalar. Number of short optimization iterations used in the
+//'   triage stage.
+//' @param triage_improve_tol Numeric scalar. Relative improvement required for a triaged start
+//'   to be promoted to full optimization.
+//'
+//' @returns A named list with the rotated loadings, the orthogonal rotation matrix `Th`
+//'   (with `L %*% Th` reproducing the rotated loadings), the attained criterion value, and the
+//'   convergence and validity flags.
+//'
+//' @references
+//' Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms and
+//' software for arbitrary rotation criteria in factor analysis. *Educational and
+//' Psychological Measurement*, 65, 676-696.
+//'
+//' Browne, M. W. (2001). An overview of analytic rotation in exploratory factor analysis.
+//' *Multivariate Behavioral Research*, 36, 111-150.
+//'
+// [[Rcpp::export(.rotate_geomin_orth)]]
+Rcpp::List rotate_geomin_orth(const arma::mat& L,
+                              double delta = 0.01,
+                              double eps = 1e-5,
+                              bool normalize = true,
+                              int random_starts = 0,
+                              int maxit = 1000,
+                              int max_line_search = 10,
+                              double step0 = 1.0,
+                              int screen_keep = 2,
+                              int triage_maxit = 25,
+                              double triage_improve_tol = 0.0) {
+  if (L.n_rows == 0 || L.n_cols == 0) {
+    Rcpp::stop("L must be a non-empty matrix.");
+  }
+  if (L.n_cols < 2) {
+    Rcpp::stop("Orthogonal rotation requires at least two factors; use the R wrapper "
+               "for single-factor solutions.");
+  }
+  if (!all_finite_cpp(L)) {
+    Rcpp::stop("L must contain only finite values.");
+  }
+  if (!is_valid_scalar_cpp(delta) || delta <= 0.0) {
+    Rcpp::stop("delta must be a positive finite scalar.");
+  }
+  validate_gpf_scalars(eps, maxit, max_line_search, step0, random_starts,
+                       screen_keep, triage_maxit, triage_improve_tol);
+
+  const arma::uword k = L.n_cols;
+
+  // Kaiser normalization scales rows before rotation; because the weights act on rows and the
+  // rotation right-multiplies, they cancel in the final loadings, so the rotated loadings are
+  // reported as L %*% Th (the documented reproduction identity).
+  arma::mat A_work = L;
+  arma::vec W;
+  if (normalize) {
+    W = kaiser_weights(L);
+    A_work.each_col() /= W;
+  }
+
+  GeominCriterion crit(delta);
+  OrthCriterionManifold manifold{A_work, crit};
+  arma::mat T_primary(k, k, fill::eye);
+
+  GpfSummary summary = run_gpf_multistart(
+    manifold, T_primary, eps, maxit, max_line_search, step0,
+    random_starts, screen_keep, triage_maxit, triage_improve_tol
+  );
+  const GpfFit& best_fit = summary.best_fit;
+
+  arma::mat loadings = L * best_fit.T;
+
+  return Rcpp::List::create(
+    Rcpp::Named("loadings") = loadings,
+    Rcpp::Named("Th") = best_fit.T,
+    Rcpp::Named("value") = best_fit.value,
+    Rcpp::Named("convergence") = best_fit.convergence,
+    Rcpp::Named("valid") = best_fit.valid
+  );
+}
+
+//' Oblique geomin factor rotation
+//'
+//' Rotate a loading matrix obliquely under the geomin criterion using a gradient-projection
+//' optimizer along the oblique (column-normalized) manifold.
+//'
+//' The criterion value `f` and its gradient `dQ/dL` at the rotated loadings
+//' `L = A %*% solve(t(T))` define the search; the engine maps the gradient to the
+//' transformation `T` on the manifold `diag(t(T) %*% T) = 1`, projects it onto the tangent
+//' space, performs a sufficient-decrease line search, and retracts back onto the manifold by
+//' column normalization. The geomin criterion sums the per-variable geometric mean of the
+//' squared loadings offset by `delta`; it is prone to local minima, so additional random
+//' starts are recommended.
+//'
+//' Additional random starts may be requested. To bound runtime the solver screens each random
+//' start by its objective, runs a short triage optimization on the best-screened starts, and
+//' fully optimizes only those that improve on the current incumbent by at least
+//' `triage_improve_tol`.
+//'
+//' @param L Numeric matrix. The unrotated loading matrix (variables by factors).
+//' @param delta Numeric scalar. The geomin offset added to the squared loadings; must be a
+//'   positive finite scalar. `delta = 0.01` is the usual default.
+//' @param eps Numeric scalar. Convergence tolerance for the projected-gradient norm.
+//' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before rotation and
+//'   reverse it afterwards.
+//' @param random_starts Integer scalar. Number of additional random starts.
+//' @param maxit Integer scalar. Maximum number of projected-gradient updates.
+//' @param max_line_search Integer scalar. Maximum number of step-halving attempts after the
+//'   initial trial step in each line-search phase.
+//' @param step0 Numeric scalar. Initial step size used in the projected-gradient update.
+//' @param screen_keep Integer scalar. Number of screened random starts retained for triage
+//'   optimization.
+//' @param triage_maxit Integer scalar. Number of short optimization iterations used in the
+//'   triage stage.
+//' @param triage_improve_tol Numeric scalar. Relative improvement required for a triaged start
+//'   to be promoted to full optimization.
+//'
+//' @returns A named list with the rotated loadings, the transformation matrix `Th`
+//'   (with `L %*% t(solve(Th))` reproducing the rotated loadings), the factor correlation
+//'   matrix `Phi` (`t(Th) %*% Th`), the attained criterion value, and the convergence and
+//'   validity flags.
+//'
+//' @references
+//' Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms and
+//' software for arbitrary rotation criteria in factor analysis. *Educational and
+//' Psychological Measurement*, 65, 676-696.
+//'
+//' Browne, M. W. (2001). An overview of analytic rotation in exploratory factor analysis.
+//' *Multivariate Behavioral Research*, 36, 111-150.
+//'
+// [[Rcpp::export(.rotate_geomin_oblq)]]
+Rcpp::List rotate_geomin_oblq(const arma::mat& L,
+                              double delta = 0.01,
+                              double eps = 1e-5,
+                              bool normalize = true,
+                              int random_starts = 0,
+                              int maxit = 1000,
+                              int max_line_search = 10,
+                              double step0 = 1.0,
+                              int screen_keep = 2,
+                              int triage_maxit = 25,
+                              double triage_improve_tol = 0.0) {
+  if (L.n_rows == 0 || L.n_cols == 0) {
+    Rcpp::stop("L must be a non-empty matrix.");
+  }
+  if (L.n_cols < 2) {
+    Rcpp::stop("Oblique rotation requires at least two factors; use the R wrapper "
+               "for single-factor solutions.");
+  }
+  if (!all_finite_cpp(L)) {
+    Rcpp::stop("L must contain only finite values.");
+  }
+  if (!is_valid_scalar_cpp(delta) || delta <= 0.0) {
+    Rcpp::stop("delta must be a positive finite scalar.");
+  }
+  validate_gpf_scalars(eps, maxit, max_line_search, step0, random_starts,
+                       screen_keep, triage_maxit, triage_improve_tol);
+
+  const arma::uword k = L.n_cols;
+
+  // Kaiser normalization scales rows before rotation; because the weights act on rows and the
+  // rotation (right-multiplying solve(t(T))) acts on columns, they cancel in the final
+  // loadings, so the rotated loadings reproduce L %*% t(solve(Th)) (the documented
+  // reproduction identity).
+  arma::mat A_work = L;
+  arma::vec W;
+  if (normalize) {
+    W = kaiser_weights(L);
+    A_work.each_col() /= W;
+  }
+
+  GeominCriterion crit(delta);
+  OblqCriterionManifold manifold{A_work, crit};
+  arma::mat T_primary(k, k, fill::eye);
+
+  GpfSummary summary = run_gpf_multistart(
+    manifold, T_primary, eps, maxit, max_line_search, step0,
+    random_starts, screen_keep, triage_maxit, triage_improve_tol
+  );
+  const GpfFit& best_fit = summary.best_fit;
+
+  // Reconstruct the rotated loadings (L = A %*% solve(t(T)), Kaiser weights restored) and the
+  // factor correlations (Phi = t(T) %*% T) from the winning transformation, shared with the
+  // Procrustes oblique entry point.
   arma::mat loadings;
   arma::mat Phi;
   finalize_oblique(best_fit, A_work, W, normalize, loadings, Phi);
