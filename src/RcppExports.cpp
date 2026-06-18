@@ -194,6 +194,36 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// polychoric_cpp
+Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov, double correct, bool nearest_pd, int n_threads);
+RcppExport SEXP _EFAtools_polychoric_cpp(SEXP xSEXP, SEXP acovSEXP, SEXP correctSEXP, SEXP nearest_pdSEXP, SEXP n_threadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::IntegerMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< std::string >::type acov(acovSEXP);
+    Rcpp::traits::input_parameter< double >::type correct(correctSEXP);
+    Rcpp::traits::input_parameter< bool >::type nearest_pd(nearest_pdSEXP);
+    Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(polychoric_cpp(x, acov, correct, nearest_pd, n_threads));
+    return rcpp_result_gen;
+END_RCPP
+}
+// bvn_rect_cpp
+Rcpp::NumericVector bvn_rect_cpp(Rcpp::NumericVector a0, Rcpp::NumericVector a1, Rcpp::NumericVector b0, Rcpp::NumericVector b1, Rcpp::NumericVector rho);
+RcppExport SEXP _EFAtools_bvn_rect_cpp(SEXP a0SEXP, SEXP a1SEXP, SEXP b0SEXP, SEXP b1SEXP, SEXP rhoSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type a0(a0SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type a1(a1SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type b0(b0SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type b1(b1SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type rho(rhoSEXP);
+    rcpp_result_gen = Rcpp::wrap(bvn_rect_cpp(a0, a1, b0, b1, rho));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rotate_cf_orth
 Rcpp::List rotate_cf_orth(const arma::mat& L, double kappa, double eps, bool normalize, int random_starts, int maxit, int max_line_search, double step0, int screen_keep, int triage_maxit, double triage_improve_tol);
 RcppExport SEXP _EFAtools_rotate_cf_orth(SEXP LSEXP, SEXP kappaSEXP, SEXP epsSEXP, SEXP normalizeSEXP, SEXP random_startsSEXP, SEXP maxitSEXP, SEXP max_line_searchSEXP, SEXP step0SEXP, SEXP screen_keepSEXP, SEXP triage_maxitSEXP, SEXP triage_improve_tolSEXP) {
@@ -390,6 +420,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EFAtools_oblique_procrustes_batch", (DL_FUNC) &_EFAtools_oblique_procrustes_batch, 11},
     {"_EFAtools_paf_iter", (DL_FUNC) &_EFAtools_paf_iter, 7},
     {"_EFAtools_parallel_sim", (DL_FUNC) &_EFAtools_parallel_sim, 5},
+    {"_EFAtools_polychoric_cpp", (DL_FUNC) &_EFAtools_polychoric_cpp, 5},
+    {"_EFAtools_bvn_rect_cpp", (DL_FUNC) &_EFAtools_bvn_rect_cpp, 5},
     {"_EFAtools_rotate_cf_orth", (DL_FUNC) &_EFAtools_rotate_cf_orth, 11},
     {"_EFAtools_rotate_oblimin", (DL_FUNC) &_EFAtools_rotate_oblimin, 11},
     {"_EFAtools_rotate_geomin_orth", (DL_FUNC) &_EFAtools_rotate_geomin_orth, 11},

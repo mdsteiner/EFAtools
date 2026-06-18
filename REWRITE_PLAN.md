@@ -405,22 +405,26 @@ not wired to a Phase-5 caller until Phase 6 adds `se = "robust"`. **Method and `
 orthogonal** — `method = "DWLS"` and `cor_method = "poly"` are chosen independently (DWLS+poly is
 the documented recommended ordinal combo; no auto-switch). DWLS weights = inverse `diag(Γ)`
 (lavaan WLSMV convention), threaded as a **per-correlation-element** weight (NOT per-variable).
-`pbv` added to `LinkingTo`. Threading: point-estimate polychoric uses OpenMP over pairs;
+**`method = "DWLS"` without a polychoric ACOV `cli_abort`s (classed) — no warning, no silent ULS
+fallback** (maintainer 2026-06-17: ignorable fallbacks get ignored). (No new dependency — P5.1
+landed with a cancellation-free 1-D conditioning BVN integral, GL-16 + Brent + OpenMP, so the
+planned `pbv`/GL-5 path was dropped.) Threading: point-estimate polychoric uses OpenMP over pairs;
 per-replicate polychoric runs serial within each `future` worker (no nesting with the
 process-level bootstrap).
 
-- [ ] `src/polychoric.cpp`: thresholds-once; two-step ρ via fresh Brent **minimiser**;
-      BVN CDF via **`pbv`** (GL-5); OpenMP over pairs; returns the matrix, plus the ACOV at the
-      requested `acov` level (O11). Documented empty-cell correction arg + zero-variance detection
-      (`cli_abort`) + nearest-PD projection (`cli_warn`), integrated with the existing
-      `.prepare_cor_input()` smoothing (no double-smoothing).
+- [x] `src/polychoric.cpp`: thresholds-once; two-step ρ via fresh Brent **minimiser**;
+      BVN via a **cancellation-free 1-D conditioning integral (GL-16)**; OpenMP over pairs; returns
+      the matrix, plus the ACOV at the requested `acov` level (O11). Documented empty-cell correction
+      arg + zero-variance detection (`cli_abort`) + nearest-PD projection (`cli_warn`), integrated
+      with the existing `.prepare_cor_input()` smoothing (no double-smoothing). *(matrix done — P5.1.)*
 - [ ] `cor_method` gains `"poly"`/`"tet"` across `EFA`, `KMO`, `BARTLETT`, `N_FACTORS` + the
       retention criteria (branch at the two `stats::cor()` seams: `.prepare_cor_input()` and the
       bootstrap recompute). (`"auto"` + mixed-type deferred.)
 - [ ] `DWLS` method in `estimate_model()` — a `DwlsFunctor` subclass of the Phase-3
-      `FactorFunctor` (weighted-ULS, per-element weights `= 1/diag(Γ)`); full `WLS` post-1.0 (O11).
+      `FactorFunctor` (weighted-ULS, per-element weights `= 1/diag(Γ)`); `cli_abort` when no
+      polychoric ACOV is available (no fallback); full `WLS` post-1.0 (O11).
 
-**Validation:** BVN CDF vs `pbv`/`mnormt` ~1e-7; matrix vs `polycor` two-step / `lavaan`
+**Validation:** BVN/rectangle probabilities vs `mnormt` ~1e-7; matrix vs `polycor` two-step / `lavaan`
 `lavCor(ordered=TRUE)` / `psych::polychoric(correct=FALSE,global=FALSE)`; diag ACOV vs `polycor`
 std.err; full Γ vs `lavaan` NACOV; DWLS vs `lavaan` (ordered, DWLS); determinism + PD under
 bootstrap resampling.
@@ -428,8 +432,10 @@ bootstrap resampling.
 Phase 6.
 
 **Unit queue (P5.1–P5.4 — each atomic, plan-mode first):**
-- [ ] **P5.1** `polychoric.cpp` matrix (thresholds + Brent ρ + pbv BVN + OpenMP + robustness),
-      `acov = "none"`. Add `pbv` to LinkingTo. *DoD:* matrix vs polycor/lavaan/psych + BVN vs pbv.
+- [x] **P5.1** `polychoric.cpp` matrix — **done** (awaiting commit). Landed with a cancellation-free
+      1-D conditioning BVN integral (GL-16 + Brent + OpenMP); `pbv`/GL-5 dropped (GL-5 + incl-excl
+      gave catastrophic cancellation on sparse hi-corr cells). Matrix ≈2e-5 vs polycor/psych on
+      GRiPS/DOSPERT/UPPS + tet; `acov = "none"`.
 - [ ] **P5.2** Plumb `cor_method = "poly"/"tet"` through `.prepare_cor_input()` + the bootstrap
       seam + `match.arg` everywhere → ordinal EFA + bootstrap on the existing ML/ULS.
       *DoD:* ordinal EFA end-to-end; bootstrap determinism/PD; speed on `DOSPERT_raw`.
@@ -437,7 +443,8 @@ Phase 6.
       the full Γ (Muthén 1984 / Jöreskog 1994). *DoD:* diag vs polycor std.err; full Γ vs lavaan
       NACOV. (Full Γ consumed in Phase 6.)
 - [ ] **P5.4** **DWLS** estimator (`DwlsFunctor`; weights `1/diag(Γ)`; `method = "DWLS"`,
-      orthogonal to `cor_method`). *DoD:* DWLS loadings vs lavaan (ordered, DWLS); bootstrap path
+      orthogonal to `cor_method`; **classed `cli_abort` if no polychoric ACOV** — no fallback).
+      *DoD:* DWLS loadings vs lavaan (ordered, DWLS); abort fires (class-based test); bootstrap path
       recomputes diag weights per replicate (serial within worker).
 
 ### Phase 6 — Standard errors, fit, missing data → `0.9.x`

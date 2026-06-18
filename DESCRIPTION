@@ -67,7 +67,9 @@ Suggests:
     knitr,
     rmarkdown,
     microbenchmark,
-    vdiffr
+    vdiffr,
+    polycor,
+    mnormt
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.0.0

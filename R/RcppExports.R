@@ -197,6 +197,14 @@
     .Call(`_EFAtools_parallel_sim`, n_datasets, n_vars, N, eigen_type, maxit)
 }
 
+.polychoric_cpp <- function(x, acov, correct, nearest_pd, n_threads) {
+    .Call(`_EFAtools_polychoric_cpp`, x, acov, correct, nearest_pd, n_threads)
+}
+
+.bvn_rect_cpp <- function(a0, a1, b0, b1, rho) {
+    .Call(`_EFAtools_bvn_rect_cpp`, a0, a1, b0, b1, rho)
+}
+
 #' Orthogonal Crawford-Ferguson factor rotation
 #'
 #' Rotate a loading matrix orthogonally under the Crawford-Ferguson criterion using a
