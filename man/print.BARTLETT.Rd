@@ -2,19 +2,38 @@
 % Please edit documentation in R/print.BARTLETT.R
 \name{print.BARTLETT}
 \alias{print.BARTLETT}
-\title{Print BARTLETT object}
+\alias{format.BARTLETT}
+\title{Print and format a BARTLETT object}
 \usage{
 \method{print}{BARTLETT}(x, ...)
+
+\method{format}{BARTLETT}(x, ...)
 }
 \arguments{
-\item{x}{list of class BARTLETT (output from the \link{BARTLETT} function)}
+\item{x}{An object of class \code{BARTLETT} (output from \code{\link[=BARTLETT]{BARTLETT()}}).}
 
-\item{...}{additional arguments passed to print}
+\item{...}{Not used; for consistency with the generic.}
+}
+\value{
+\code{print()} returns its argument \code{x} invisibly. \code{format()} returns a
+character vector with the report lines (styled to the active console theme;
+plain when colours are disabled).
 }
 \description{
-Print BARTLETT object
+\code{print()} reports the outcome of \code{\link[=BARTLETT]{BARTLETT()}}'s test of sphericity: a verdict
+on whether the test was significant (and what that implies for the suitability
+of the data for factor analysis), followed by the chi-square statistic, its
+degrees of freedom, and the p-value. \code{format()} assembles the same report and
+returns it as a character vector; \code{print()} is \code{cat(format(x), sep = "\\n")}.
+The lines follow the active console theme, so they are plain when colours are
+disabled (for example when captured into a file or stripped with
+\code{\link[cli:ansi_strip]{cli::ansi_strip()}}).
 }
 \examples{
-BARTLETT(test_models$baseline$cormat, N = 500)
+bart <- BARTLETT(test_models$baseline$cormat, N = 500)
+bart
+
+# format() returns the same lines as plain text:
+writeLines(format(bart))
 
 }

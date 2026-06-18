@@ -2,12 +2,15 @@
 % Please edit documentation in R/print.EFA_AVERAGE.R
 \name{print.EFA_AVERAGE}
 \alias{print.EFA_AVERAGE}
-\title{Print EFA_AVERAGE object}
+\alias{format.EFA_AVERAGE}
+\title{Print and format an EFA_AVERAGE object}
 \usage{
 \method{print}{EFA_AVERAGE}(x, stat = c("average", "range"), plot = FALSE, ...)
+
+\method{format}{EFA_AVERAGE}(x, stat = c("average", "range"), ...)
 }
 \arguments{
-\item{x}{list. An object of class EFA_AVERAGE to be printed}
+\item{x}{An object of class \code{EFA_AVERAGE} (output from \code{\link[=EFA_AVERAGE]{EFA_AVERAGE()}}).}
 
 \item{stat}{character. A vector with the statistics to print. Possible inputs
 are "average", "sd", "range", "min", and "max". Default is "average" and
@@ -15,16 +18,31 @@ are "average", "sd", "range", "min", and "max". Default is "average" and
 
 \item{plot}{logical. Whether a plot of the average and min- max loadings should
 be created. Default is FALSE. If more than 10 factors are extracted, no plot is
-created.}
+created. Only used by \code{print()}.}
 
-\item{...}{Further arguments for print.}
+\item{...}{Not used; for consistency with the generic.}
+}
+\value{
+\code{print()} returns its argument \code{x} invisibly. \code{format()} returns a
+character vector with the report lines (styled to the active console theme;
+plain when colours are disabled).
 }
 \description{
-Print Method showing a summarized output of the \link{EFA_AVERAGE} function
+\code{print()} shows a summarised output of the \link{EFA_AVERAGE} function: the
+averaging settings, the error/convergence/Heywood/admissibility rates, the
+indicator-to-factor correspondences, the averaged loadings (and, for oblique
+solutions, the factor intercorrelations), the variances accounted for, and the
+model fit. \code{format()} assembles the same report and returns it as a character
+vector; \code{print()} is \code{cat(format(x), sep = "\\n")}. The lines follow the active
+console theme, so they are plain when colours are disabled (for example when
+captured into a file or stripped with \code{\link[cli:ansi_strip]{cli::ansi_strip()}}).
 }
 \examples{
 \dontrun{
 EFA_aver <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500)
 EFA_aver
+
+# format() returns the same lines as plain text:
+writeLines(format(EFA_aver))
 }
 }

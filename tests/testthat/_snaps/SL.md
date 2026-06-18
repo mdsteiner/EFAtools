@@ -28,8 +28,6 @@
       V17 <num> <num> <num> <num> <num> <num>
       V18 <num> <num> <num> <num> <num> <num>
       
-      
-      
       -- Variances Accounted for -----------------------------------------------------
       
                            g     F1    F2     F3
@@ -38,5 +36,4 @@
       Cum Prop Tot Var <num> <num> <num> <num>
       Prop Comm Var <num> <num> <num> <num>
       Cum Prop Comm Var <num> <num> <num> <num>
-      
 

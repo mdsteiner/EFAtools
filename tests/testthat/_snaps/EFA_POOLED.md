@@ -40,7 +40,6 @@
         grey = below cutoff
         red h2/u2 = Heywood-relevant value
       
-      
       -- 95% bootstrap/MI CIs for salient unrotated loadings -------------------------
       
       Variable   Factor  est    lower  upper
@@ -59,19 +58,18 @@
       SS loadings <num>
       Prop Tot Var <num>
       
-      
       -- Model Fit -------------------------------------------------------------------
       
       χ²(20) = <num>, p = <num>
-      CFI  [95% bootstrap/MI-CI] : <num> [ <num>, <num>]
-      TLI  : <num>
-      RMSEA [90% CI]  [95% bootstrap/MI-CI] : <num> [ <num>; <num>] [ <num>, <num>]
-      AIC  [95% bootstrap/MI-CI] : <num> [ <num>, <num>]
-      BIC  [95% bootstrap/MI-CI] : <num> [ <num>, <num>]
-      ECVI  : <num>
-      CAF  [95% bootstrap/MI-CI] : <num> [ <num>, <num>]
-      RMSR  [95% bootstrap/MI-CI] : <num> [ <num>, <num>]
-      SRMR  : <num>
+      CFI [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
+      TLI: <num>
+      RMSEA [90% CI] [95% bootstrap/MI-CI]: <num> [ <num>; <num>] [ <num>, <num>]
+      AIC [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
+      BIC [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
+      ECVI: <num>
+      CAF [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
+      RMSR [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
+      SRMR: <num>
       
       Note: Bootstrap/MI CIs based on 16 bootstrap samples per imputation.
       
@@ -128,14 +126,12 @@
         grey = below cutoff
         red h2/u2 = Heywood-relevant value
       
-      
       -- Factor Intercorrelations ----------------------------------------------------
       
             F1 F2 F3
       F1 <num>
       F2 <num> <num>
       F3 <num> <num> <num>
-      
       
       -- Variances Accounted for -----------------------------------------------------
       
@@ -146,12 +142,11 @@
       Prop Comm Var <num> <num> <num>
       Cum Prop Comm Var <num> <num> <num>
       
-      
       -- Model Fit -------------------------------------------------------------------
       
-      CAF  : <num>
-      RMSR  : <num>
-      SRMR  : <num>
+      CAF: <num>
+      RMSR: <num>
+      SRMR: <num>
       df: 102
 
 # print.EFA_POOLED output is stable (ML, unrotated)
@@ -180,26 +175,24 @@
         grey = below cutoff
         red h2/u2 = Heywood-relevant value
       
-      
       -- Variances Accounted for -----------------------------------------------------
       
                       F1
       SS loadings <num>
       Prop Tot Var <num>
       
-      
       -- Model Fit -------------------------------------------------------------------
       
       χ²(20) = <num>, p = <num>
-      CFI  : <num>
-      TLI  : <num>
-      RMSEA [90% CI]  : <num> [ <num>; <num>]
-      AIC  : <num>
-      BIC  : <num>
-      ECVI  : <num>
-      CAF  : <num>
-      RMSR  : <num>
-      SRMR  : <num>
+      CFI: <num>
+      TLI: <num>
+      RMSEA [90% CI]: <num> [ <num>; <num>]
+      AIC: <num>
+      BIC: <num>
+      ECVI: <num>
+      CAF: <num>
+      RMSR: <num>
+      SRMR: <num>
 
 # summary.EFA_POOLED output is stable (PAF, promax)
 
@@ -253,14 +246,12 @@
         grey = below cutoff
         red h2/u2 = Heywood-relevant value
       
-      
       -- Factor Intercorrelations ----------------------------------------------------
       
             F1 F2 F3
       F1 <num>
       F2 <num> <num>
       F3 <num> <num> <num>
-      
       
       -- Structure Matrix ------------------------------------------------------------
       
@@ -284,7 +275,6 @@
       V17 <num> <num> <num>
       V18 <num> <num> <num>
       
-      
       -- Simple Structure Diagnostics ------------------------------------------------
       
       Items with primary-loading gap < <num>:
@@ -300,12 +290,11 @@
       Prop Comm Var <num> <num> <num>
       Cum Prop Comm Var <num> <num> <num>
       
-      
       -- Model Fit -------------------------------------------------------------------
       
-      CAF  : <num>
-      RMSR  : <num>
-      SRMR  : <num>
+      CAF: <num>
+      RMSR: <num>
+      SRMR: <num>
       df: 102
       
       -- Residual Diagnostics --------------------------------------------------------
@@ -358,26 +347,24 @@
         grey = below cutoff
         red h2/u2 = Heywood-relevant value
       
-      
       -- Variances Accounted for -----------------------------------------------------
       
                       F1
       SS loadings <num>
       Prop Tot Var <num>
       
-      
       -- Model Fit -------------------------------------------------------------------
       
       χ²(20) = <num>, p = <num>
-      CFI  : <num>
-      TLI  : <num>
-      RMSEA [90% CI]  : <num> [ <num>; <num>]
-      AIC  : <num>
-      BIC  : <num>
-      ECVI  : <num>
-      CAF  : <num>
-      RMSR  : <num>
-      SRMR  : <num>
+      CFI: <num>
+      TLI: <num>
+      RMSEA [90% CI]: <num> [ <num>; <num>]
+      AIC: <num>
+      BIC: <num>
+      ECVI: <num>
+      CAF: <num>
+      RMSR: <num>
+      SRMR: <num>
       
       -- Residual Diagnostics --------------------------------------------------------
       

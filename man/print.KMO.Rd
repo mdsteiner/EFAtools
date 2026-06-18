@@ -2,20 +2,37 @@
 % Please edit documentation in R/print.KMO.R
 \name{print.KMO}
 \alias{print.KMO}
-\title{Print KMO object}
+\alias{format.KMO}
+\title{Print and format a KMO object}
 \usage{
 \method{print}{KMO}(x, ...)
+
+\method{format}{KMO}(x, ...)
 }
 \arguments{
-\item{x}{list of class KMO (output from the \link{KMO} function)}
+\item{x}{An object of class \code{KMO} (output from \code{\link[=KMO]{KMO()}}).}
 
-\item{...}{additional arguments passed to print}
+\item{...}{Not used; for consistency with the generic.}
+}
+\value{
+\code{print()} returns its argument \code{x} invisibly. \code{format()} returns a
+character vector with the report lines (styled to the active console theme;
+plain when colours are disabled).
 }
 \description{
-Print KMO object
+\code{print()} shows the Kaiser-Meyer-Olkin (KMO) criterion computed by \code{\link[=KMO]{KMO()}}: a
+titled section with a verdict on the overall KMO value (and what it implies for
+the suitability of the data for factor analysis), the overall value, and the
+per-variable KMO values. \code{format()} assembles the same report and returns it as
+a character vector; \code{print()} is \code{cat(format(x), sep = "\\n")}. The lines follow
+the active console theme, so they are plain when colours are disabled (for
+example when captured into a file or stripped with \code{\link[cli:ansi_strip]{cli::ansi_strip()}}).
 }
 \examples{
 KMO_base <- KMO(test_models$baseline$cormat)
 KMO_base
+
+# format() returns the same lines as plain text:
+writeLines(format(KMO_base))
 
 }

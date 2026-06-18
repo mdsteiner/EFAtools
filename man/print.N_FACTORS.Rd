@@ -12,8 +12,8 @@
 \item{...}{not used.}
 }
 \value{
-Invisibly returns \code{x}. Called for the side effect of printing the
-suitability results and the suggested numbers of factors.
+\code{print()} returns its argument \code{x} invisibly; it is
+\code{cat(format(x), sep = "\\n")}.
 }
 \description{
 Print method for N_FACTORS objects

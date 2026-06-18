@@ -12,7 +12,8 @@
 \item{...}{not used.}
 }
 \value{
-A character vector with the formatted (plain, un-styled) output.
+A character vector with the report lines (styled to the active
+console theme; plain when colours are disabled).
 }
 \description{
 Format method for N_FACTORS objects
@@ -21,6 +22,6 @@ Format method for N_FACTORS objects
 \donttest{
 nf <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC", "SMT"),
                 N = 500)
-format(nf)
+writeLines(format(nf))
 }
 }

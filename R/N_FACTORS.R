@@ -342,8 +342,8 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
 #' @param x an object of class N_FACTORS, returned by [N_FACTORS()].
 #' @param ... not used.
 #'
-#' @returns Invisibly returns `x`. Called for the side effect of printing the
-#'   suitability results and the suggested numbers of factors.
+#' @returns `print()` returns its argument `x` invisibly; it is
+#'   `cat(format(x), sep = "\n")`.
 #'
 #' @export
 #' @method print N_FACTORS
@@ -353,7 +353,29 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
 #' N_FACTORS(test_models$baseline$cormat, criteria = c("EKC", "SMT"), N = 500)
 #' }
 print.N_FACTORS <- function(x, ...) {
-  cat(cli::cli_format_method({
+  cat(format(x, ...), sep = "\n")
+  invisible(x)
+}
+
+#' Format method for N_FACTORS objects
+#'
+#' @param x an object of class N_FACTORS, returned by [N_FACTORS()].
+#' @param ... not used.
+#'
+#' @returns A character vector with the report lines (styled to the active
+#'   console theme; plain when colours are disabled).
+#'
+#' @export
+#' @method format N_FACTORS
+#'
+#' @examples
+#' \donttest{
+#' nf <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC", "SMT"),
+#'                 N = 500)
+#' writeLines(format(nf))
+#' }
+format.N_FACTORS <- function(x, ...) {
+  cli::cli_format_method({
 
     if (!is.null(x$suitability)) {
 
@@ -451,28 +473,7 @@ print.N_FACTORS <- function(x, ...) {
       }
     }
 
-  }), sep = "\n")
-  invisible(x)
-}
-
-#' Format method for N_FACTORS objects
-#'
-#' @param x an object of class N_FACTORS, returned by [N_FACTORS()].
-#' @param ... not used.
-#'
-#' @returns A character vector with the formatted (plain, un-styled) output.
-#'
-#' @export
-#' @method format N_FACTORS
-#'
-#' @examples
-#' \donttest{
-#' nf <- N_FACTORS(test_models$baseline$cormat, criteria = c("EKC", "SMT"),
-#'                 N = 500)
-#' format(nf)
-#' }
-format.N_FACTORS <- function(x, ...) {
-  cli::ansi_strip(utils::capture.output(print(x, ...)))
+  })
 }
 
 #' Plot method for N_FACTORS objects

@@ -126,8 +126,8 @@
 #'   criterion (e.g. [EKC()] or [HULL()]).
 #' @param ... not used.
 #'
-#' @returns Invisibly returns `x`. Called for the side effect of printing the
-#'   suggested number of factors.
+#' @returns `print()` returns its argument `x` invisibly; it is
+#'   `cat(format(x), sep = "\n")`.
 #'
 #' @export
 #' @method print efa_retention
@@ -135,7 +135,26 @@
 #' @examples
 #' EKC(test_models$baseline$cormat, N = 500)
 print.efa_retention <- function(x, ...) {
-  cat(cli::cli_format_method({
+  cat(format(x, ...), sep = "\n")
+  invisible(x)
+}
+
+#' Format method for efa_retention objects
+#'
+#' @param x an object of class efa_retention, returned by a factor-retention
+#'   criterion (e.g. [EKC()] or [HULL()]).
+#' @param ... not used.
+#'
+#' @returns A character vector with the report lines (styled to the active
+#'   console theme; plain when colours are disabled).
+#'
+#' @export
+#' @method format efa_retention
+#'
+#' @examples
+#' writeLines(format(EKC(test_models$baseline$cormat, N = 500)))
+format.efa_retention <- function(x, ...) {
+  cli::cli_format_method({
     cli::cli_rule(left = x$criterion[["label"]])
     if (!is.null(x$subtitle)) {
       cli::cli_text("{x$subtitle}")
@@ -152,25 +171,7 @@ print.efa_retention <- function(x, ...) {
         cli::cli_alert_info("{msg}")
       }
     }
-  }), sep = "\n")
-  invisible(x)
-}
-
-#' Format method for efa_retention objects
-#'
-#' @param x an object of class efa_retention, returned by a factor-retention
-#'   criterion (e.g. [EKC()] or [HULL()]).
-#' @param ... not used.
-#'
-#' @returns A character vector with the formatted (plain, un-styled) output.
-#'
-#' @export
-#' @method format efa_retention
-#'
-#' @examples
-#' format(EKC(test_models$baseline$cormat, N = 500))
-format.efa_retention <- function(x, ...) {
-  cli::ansi_strip(utils::capture.output(print(x, ...)))
+  })
 }
 
 #' Plot method for efa_retention objects

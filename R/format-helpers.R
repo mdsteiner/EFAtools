@@ -14,55 +14,10 @@
   x
 }
 
-#' Format numbers for print method
-#'
-#' Helper function used in the print method for class LOADINGS and SLLOADINGS.
-#' Strips the 0 in front of the decimal point of a number if number < 1, only
-#' keeps the first `digits` number of digits, and adds an empty space in
-#' front of the number if the number is positive. This way all returned strings
-#' (except for those > 1, which are exceptions in LOADINGS) have the same number
-#' of characters.
-#'
-#' @param x numeric. Number to be formatted.
-#' @param digits numeric. Number of digits after the comma to keep.
-#' @param print_zero logical. Whether, if a number is between \[-1, 1\], the
-#'  zero should be omitted or printed (default is FALSE, i.e. omit zeros).
-#' @param pad logical. Whether, if a number starts with a 0 and the 0 is not printed
-#'  a white-space should be added.
-#'
-#' @return A formated number
-.numformat <- function(x, digits = 2, print_zero = FALSE,
-                       pad = TRUE) {
-
-  if (isFALSE(print_zero)) {
-
-    ncode <- paste0("%.", digits, "f")
-    x <- sub("^(-?)0.", "\\1.", sprintf(ncode, x))
-    x <- sub("^-([0.]+)$", "\\1", x)
-    if (isTRUE(pad)) {
-      x <- formatC(x, width = digits + 2)
-    }
-
-
-  } else {
-
-    ncode <- paste0("%.", digits, "f")
-    x <- sprintf(ncode, x)
-    x <- sub("^-([0.]+)$", "\\1", x)
-
-    if (isTRUE(pad)) {
-      x <- formatC(x, width = digits + 3)
-    }
-
-  }
-  x
-
-}
-
 # Canonical number formatter for printed output: rounds to `digits`, drops the leading 0 of
 # values in (-1, 1) unless `print_zero`, optionally left-pads to a common width, and renders
 # non-finite values as "NA". Accepts a scalar, vector, or matrix and returns the same shape
-# (dimnames preserved). Produces the same strings as the older `.numformat`-style helpers.
+# (dimnames preserved).
 .efa_num <- function(x, digits = 3, print_zero = FALSE, pad = TRUE) {
 
   dims <- dim(x)
@@ -72,7 +27,7 @@
 
   out <- sprintf(paste0("%.", digits, "f"), v)
   if (isFALSE(print_zero)) {
-    out <- sub("^(-?)0.", "\\1.", out)
+    out <- sub("^(-?)0\\.", "\\1.", out)
   }
   # Normalise negative zero (e.g. "-.000" or "-0.000") to its unsigned form, as
   # base R and psych do; a value rounding to zero from below should not print a sign.
@@ -92,24 +47,29 @@
   out
 }
 
-# Render a numeric matrix as decimal-aligned console lines. `col_roles` tags each column:
-# "loading" columns are split into vertically stacked blocks when the table is wider than the
-# console (or `max_factors_per_block` is set), with the h2/u2 columns repeated in every block;
-# non-loading roles are auxiliary (kept together in one block, never split): "corr"
-# (factor-correlation and variance tables) is rendered plain, and "compare" (COMPARE
-# difference tables) colours cells whose |x| exceeds `cutoff` red. Individual rows are never
-# wrapped. Salient loadings (|x| >= cutoff) are bold, weaker ones grey, and Heywood-relevant
-# cells (|loading| > 1, h2 > 1, u2 < 0) red; styling is dropped when `color = FALSE` or colours
-# are off. With `lower_only = TRUE` the strictly-upper triangle is left blank (for symmetric
-# matrices such as factor intercorrelations).
+# Render a numeric matrix as decimal-aligned console lines. `col_roles` tags each column. The
+# data columns -- "loading", and the non-loading "corr" (factor-correlation and variance
+# tables) and "compare" (COMPARE difference tables) -- are split into vertically stacked
+# blocks when the table is wider than the console (or, for loadings, `max_factors_per_block`
+# is set); the h2/u2 columns are auxiliary and repeat in every block, as does the row-label
+# column. Individual rows are never wrapped. "corr" cells are plain; "compare" cells whose
+# |x| exceeds `cutoff` are red. Salient loadings (|x| >= cutoff) are bold, weaker ones grey,
+# and Heywood-relevant cells (|loading| > 1, h2 > 1, u2 < 0) red; styling is dropped when
+# `color = FALSE` or colours are off. With `lower_only = TRUE` the strictly-upper triangle is
+# left blank (for symmetric matrices such as factor intercorrelations); later column blocks
+# omit any rows that fall entirely within that blank triangle.
 .efa_format_matrix <- function(values, row_labels, col_labels, col_roles,
                                cutoff = 0, digits = 3, color = TRUE,
                                max_factors_per_block = NULL, lower_only = FALSE) {
 
   values <- as.matrix(values)
   n_col <- ncol(values)
-  loading_cols <- which(col_roles == "loading")
-  aux_cols <- which(col_roles != "loading")
+  # Auxiliary columns (h2/u2) repeat in every block; every other column is data to be split
+  # across console-fitting blocks. For loading tables this matches loading vs h2/u2 exactly;
+  # for non-loading tables (all "corr"/"compare") there are no aux columns, so the data
+  # columns themselves are split with only the row-label column repeated.
+  aux_cols <- which(col_roles %in% c("h2", "u2"))
+  split_cols <- setdiff(seq_len(n_col), aux_cols)
 
   cell_str <- .efa_num(values, digits = digits, print_zero = FALSE, pad = FALSE)
   if (isTRUE(lower_only)) {
@@ -123,7 +83,7 @@
         max(cli::ansi_nchar(cell_str[, j], type = "width")))
   }, integer(1L))
 
-  blocks <- .efa_matrix_blocks(loading_cols, aux_cols, row_width, col_widths,
+  blocks <- .efa_matrix_blocks(split_cols, aux_cols, row_width, col_widths,
                                max_factors_per_block)
 
   out <- character(0)
@@ -136,8 +96,16 @@
       if (bb > 1L) {
         out <- c(out, "")
       }
-      out <- c(out, .efa_matrix_block_label(col_labels, loading_cols, cols,
+      out <- c(out, .efa_matrix_block_label(col_labels, split_cols, cols,
                                             bb, length(blocks)))
+    }
+
+    # With `lower_only` the strict-upper triangle is blank, so a later column block's leading
+    # rows can be entirely empty; render only the rows with a cell in this block's columns.
+    rows <- if (isTRUE(lower_only)) {
+      which(rowSums(cell_str[, cols, drop = FALSE] != "") > 0L)
+    } else {
+      seq_len(nrow(cell_str))
     }
 
     out <- c(out, .efa_matrix_block(
@@ -147,6 +115,7 @@
       col_labels = col_labels,
       row_labels = row_labels,
       cols = cols,
+      rows = rows,
       row_width = row_width,
       col_widths = col_widths,
       cutoff = cutoff,
@@ -162,7 +131,7 @@
 
 # Assemble the header and body lines for one column block of `.efa_format_matrix()`.
 .efa_matrix_block <- function(cell_str, values, col_roles, col_labels, row_labels,
-                              cols, row_width, col_widths, cutoff, color) {
+                              cols, rows, row_width, col_widths, cutoff, color) {
 
   header_cells <- vapply(cols, function(j) {
     # Style the label first, then centre it, so the alignment padding stays outside the
@@ -173,7 +142,7 @@
   header <- paste0(strrep(" ", row_width), "  ",
                    paste(header_cells, collapse = "  "))
 
-  rows <- vapply(seq_len(nrow(cell_str)), function(ii) {
+  body <- vapply(rows, function(ii) {
     cells <- vapply(cols, function(jj) {
       plain <- cli::ansi_align(cell_str[ii, jj], width = col_widths[jj],
                                align = "right")
@@ -183,7 +152,7 @@
     paste0(label, "  ", paste(cells, collapse = "  "))
   }, character(1L))
 
-  c(header, rows)
+  c(header, body)
 }
 
 # Style a single padded cell by column role (no-op when colour is off).
@@ -220,31 +189,32 @@
   cell
 }
 
-# Split the loading columns into console-fitting blocks; the h2/u2 (aux) columns repeat in
-# every block. With `max_factors_per_block` the split is fixed; otherwise it follows the
-# console width.
-.efa_matrix_blocks <- function(loading_cols, aux_cols, row_width, col_widths,
+# Split the data columns (`split_cols`: loading/corr/compare) into console-fitting blocks;
+# the h2/u2 (aux) columns repeat in every block. With `max_factors_per_block` the split is
+# fixed; otherwise it follows the console width. Non-loading tables have no aux columns, so
+# each block holds only its own data columns (the row-label column is repeated separately).
+.efa_matrix_blocks <- function(split_cols, aux_cols, row_width, col_widths,
                                max_factors_per_block = NULL) {
-  if (length(loading_cols) <= 1L) {
-    return(list(c(loading_cols, aux_cols)))
+  if (length(split_cols) <= 1L) {
+    return(list(c(split_cols, aux_cols)))
   }
 
   if (!is.null(max_factors_per_block)) {
-    split_points <- ceiling(seq_along(loading_cols) / max_factors_per_block)
-    return(lapply(split(loading_cols, split_points),
+    split_points <- ceiling(seq_along(split_cols) / max_factors_per_block)
+    return(lapply(split(split_cols, split_points),
                   function(cols) c(cols, aux_cols)))
   }
 
   console_width <- .efa_console_width()
-  full_width <- .efa_table_width(c(loading_cols, aux_cols), row_width, col_widths)
+  full_width <- .efa_table_width(c(split_cols, aux_cols), row_width, col_widths)
   if (full_width <= console_width) {
-    return(list(c(loading_cols, aux_cols)))
+    return(list(c(split_cols, aux_cols)))
   }
 
   blocks <- list()
   current <- integer(0)
 
-  for (col in loading_cols) {
+  for (col in split_cols) {
     candidate <- c(current, col, aux_cols)
     if (length(current) > 0L &&
         .efa_table_width(candidate, row_width, col_widths) > console_width) {
@@ -275,8 +245,8 @@
   row_width + 2L + sum(col_widths[cols]) + 2L * (length(cols) - 1L)
 }
 
-.efa_matrix_block_label <- function(col_labels, loading_cols, cols, block, n_blocks) {
-  factor_cols <- intersect(cols, loading_cols)
+.efa_matrix_block_label <- function(col_labels, split_cols, cols, block, n_blocks) {
+  factor_cols <- intersect(cols, split_cols)
   first <- col_labels[min(factor_cols)]
   last <- col_labels[max(factor_cols)]
 
@@ -361,34 +331,8 @@
 
 }
 
-# Create a string (used to print settings in print functions, to use in cat()
-# with sep = "")
-.settings_string <- function(x){
-
-  n <- length(x)
-
-if(n == 1){
-
-  c(.efa_style(x, "bold"))
-
-} else if (n == 2){
-
-  c(.efa_style(x[1], "bold"), " and ", .efa_style(x[2], "bold"))
-
-} else if (n > 2){
-
-  c(paste(.efa_style(x[seq_len(n-1)], "bold"), collapse = ", "), ", and ",
-    .efa_style(x[n], "bold"))
-
-}
-
-}
-
-
 .paste_gof_ci <- function(indices, index) {
-  paste0(" [", .numformat(indices$lower[index],
-                         pad = FALSE), ", ",
-         .numformat(indices$upper[index],
-                           pad = FALSE),
+  paste0(" [", .efa_num(indices$lower[index], digits = 2, pad = FALSE), ", ",
+         .efa_num(indices$upper[index], digits = 2, pad = FALSE),
          "]")
 }

@@ -119,6 +119,11 @@ test_that("print output is stable", {
   bart_na <- structure(list(chisq = NA_real_, df = NA_integer_, p_value = NA_real_,
                             settings = list()), class = "BARTLETT")
   expect_snapshot(print(bart_na), transform = scrub_num)
+
+  # missing components (NULL) must not error and must still print a stable line
+  bart_null <- structure(list(chisq = NULL, df = NULL, p_value = NULL,
+                              settings = list()), class = "BARTLETT")
+  expect_snapshot(print(bart_null), transform = scrub_num)
 })
 
 rm(bart_cor, bart_raw, bart_rand, x, y, z, dat_sing, cor_sing, cor_nposdef)

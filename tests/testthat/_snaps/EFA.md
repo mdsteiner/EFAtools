@@ -33,14 +33,12 @@
         grey = below cutoff
         red h2/u2 = Heywood-relevant value
       
-      
       -- Factor Intercorrelations ----------------------------------------------------
       
             F1 F2 F3
       F1 <num>
       F2 <num> <num>
       F3 <num> <num> <num>
-      
       
       -- Variances Accounted for -----------------------------------------------------
       
@@ -51,12 +49,11 @@
       Prop Comm Var <num> <num> <num>
       Cum Prop Comm Var <num> <num> <num>
       
-      
       -- Model Fit -------------------------------------------------------------------
       
-      CAF  : <num>
-      RMSR  : <num>
-      SRMR  : <num>
+      CAF: <num>
+      RMSR: <num>
+      SRMR: <num>
       df: 102
 
 # print.EFA output is stable (ML, promax)
@@ -94,14 +91,12 @@
         grey = below cutoff
         red h2/u2 = Heywood-relevant value
       
-      
       -- Factor Intercorrelations ----------------------------------------------------
       
             F1 F2 F3
       F1 <num>
       F2 <num> <num>
       F3 <num> <num> <num>
-      
       
       -- Variances Accounted for -----------------------------------------------------
       
@@ -112,19 +107,18 @@
       Prop Comm Var <num> <num> <num>
       Cum Prop Comm Var <num> <num> <num>
       
-      
       -- Model Fit -------------------------------------------------------------------
       
       χ²(102) = <num>, p = <num>
-      CFI  : <num>
-      TLI  : <num>
-      RMSEA [90% CI]  : <num> [ <num>; <num>]
-      AIC  : <num>
-      BIC  : <num>
-      ECVI  : <num>
-      CAF  : <num>
-      RMSR  : <num>
-      SRMR  : <num>
+      CFI: <num>
+      TLI: <num>
+      RMSEA [90% CI]: <num> [ <num>; <num>]
+      AIC: <num>
+      BIC: <num>
+      ECVI: <num>
+      CAF: <num>
+      RMSR: <num>
+      SRMR: <num>
 
 # summary.EFA output is stable (PAF, promax)
 
@@ -174,14 +168,12 @@
         grey = below cutoff
         red h2/u2 = Heywood-relevant value
       
-      
       -- Factor Intercorrelations ----------------------------------------------------
       
             F1 F2 F3
       F1 <num>
       F2 <num> <num>
       F3 <num> <num> <num>
-      
       
       -- Structure Matrix ------------------------------------------------------------
       
@@ -205,7 +197,6 @@
       V17 <num> <num> <num>
       V18 <num> <num> <num>
       
-      
       -- Simple Structure Diagnostics ------------------------------------------------
       
       Items with primary-loading gap < <num>:
@@ -221,12 +212,11 @@
       Prop Comm Var <num> <num> <num>
       Cum Prop Comm Var <num> <num> <num>
       
-      
       -- Model Fit -------------------------------------------------------------------
       
-      CAF  : <num>
-      RMSR  : <num>
-      SRMR  : <num>
+      CAF: <num>
+      RMSR: <num>
+      SRMR: <num>
       df: 102
       
       -- Residual Diagnostics --------------------------------------------------------
@@ -287,14 +277,12 @@
         grey = below cutoff
         red h2/u2 = Heywood-relevant value
       
-      
       -- Factor Intercorrelations ----------------------------------------------------
       
             F1 F2 F3
       F1 <num>
       F2 <num> <num>
       F3 <num> <num> <num>
-      
       
       -- Structure Matrix ------------------------------------------------------------
       
@@ -318,7 +306,6 @@
       V17 <num> <num> <num>
       V18 <num> <num> <num>
       
-      
       -- Variances Accounted for -----------------------------------------------------
       
                            F1 F3 F2
@@ -328,19 +315,18 @@
       Prop Comm Var <num> <num> <num>
       Cum Prop Comm Var <num> <num> <num>
       
-      
       -- Model Fit -------------------------------------------------------------------
       
       χ²(102) = <num>, p = <num>
-      CFI  : <num>
-      TLI  : <num>
-      RMSEA [90% CI]  : <num> [ <num>; <num>]
-      AIC  : <num>
-      BIC  : <num>
-      ECVI  : <num>
-      CAF  : <num>
-      RMSR  : <num>
-      SRMR  : <num>
+      CFI: <num>
+      TLI: <num>
+      RMSEA [90% CI]: <num> [ <num>; <num>]
+      AIC: <num>
+      BIC: <num>
+      ECVI: <num>
+      CAF: <num>
+      RMSR: <num>
+      SRMR: <num>
       
       -- Residual Diagnostics --------------------------------------------------------
       
@@ -387,16 +373,15 @@
         grey = below cutoff
         red h2/u2 = Heywood-relevant value
       
-      
       -- Variances Accounted for -----------------------------------------------------
       
       No variance-accounted table available.
       
       -- Model Fit -------------------------------------------------------------------
       
-      CAF  : <num>
-      RMSR  : <num>
-      SRMR  : <num>
+      CAF: <num>
+      RMSR: <num>
+      SRMR: <num>
       df: 135
 
 ---
@@ -446,16 +431,15 @@
         grey = below cutoff
         red h2/u2 = Heywood-relevant value
       
-      
       -- Variances Accounted for -----------------------------------------------------
       
       No variance-accounted table available.
       
       -- Model Fit -------------------------------------------------------------------
       
-      CAF  : <num>
-      RMSR  : <num>
-      SRMR  : <num>
+      CAF: <num>
+      RMSR: <num>
+      SRMR: <num>
       df: 135
       
       -- Residual Diagnostics --------------------------------------------------------

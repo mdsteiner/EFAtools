@@ -5,9 +5,9 @@
     Output
       
       v The Bartlett's test of sphericity was significant at an alpha level of <num>.
-        These data are probably suitable for factor analysis.
+      These data are probably suitable for factor analysis.
       
-        𝜒²(153) = <num>, p < <num>
+      𝜒²(153) = <num>, p < <num>
 
 ---
 
@@ -16,9 +16,9 @@
     Output
       
       x The Bartlett's test of sphericity was not significant at an alpha level of <num>.
-        These data are probably not suitable for factor analysis.
+      These data are probably not suitable for factor analysis.
       
-        𝜒²(6) = <num>, p = <num>
+      𝜒²(6) = <num>, p = <num>
 
 ---
 
@@ -28,6 +28,15 @@
       
       ! The Bartlett's test of sphericity did not render a result.
       
+      𝜒²(NA) = NA, p = NA
+
+---
+
+    Code
+      print(bart_null)
+    Output
       
-        𝜒²(NA) = NA, pNA
+      ! The Bartlett's test of sphericity did not render a result.
+      
+      𝜒²() = NA, p = NA
 

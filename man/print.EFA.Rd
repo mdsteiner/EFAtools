@@ -11,7 +11,11 @@
 \alias{format.summary.EFA}
 \title{Print and summarise an EFA object}
 \usage{
-\method{print}{EFA}(
+\method{print}{EFA}(x, ...)
+
+\method{print}{EFA_POOLED}(x, ...)
+
+\method{format}{EFA}(
   x,
   cutoff = 0.3,
   digits = 3,
@@ -21,10 +25,6 @@
   max_factors_per_block = NULL,
   ...
 )
-
-\method{print}{EFA_POOLED}(x, ...)
-
-\method{format}{EFA}(x, ...)
 
 \method{format}{EFA_POOLED}(x, ...)
 
@@ -59,6 +59,8 @@
 \item{x, object}{An object of class \code{EFA} or \code{EFA_POOLED}; for the
 \code{summary.EFA} methods, the object returned by \code{\link[=summary]{summary()}}.}
 
+\item{...}{Further arguments passed to \code{\link[=print.LOADINGS]{print.LOADINGS()}}.}
+
 \item{cutoff}{numeric. The absolute value at or above which loadings are
 emphasised in the loading table. Default is .3.}
 
@@ -76,8 +78,6 @@ loading-table styling. Default is \code{TRUE}.}
 
 \item{max_factors_per_block}{numeric or \code{NULL}. Maximum number of factor
 columns per loading-table block. If \code{NULL}, chosen from the console width.}
-
-\item{...}{Further arguments passed to \code{\link[=print.LOADINGS]{print.LOADINGS()}}.}
 
 \item{ci}{character. Which confidence intervals \code{\link[=summary]{summary()}} shows, if
 available. \code{"auto"} and \code{"separate"} print CI sections when CIs were
@@ -114,8 +114,9 @@ pooled objects.}
 }
 \value{
 \code{print()} and the print method for \code{summary.EFA} objects return their
-argument invisibly. \code{format()} returns a character vector of plain-text
-lines. \code{summary()} returns an object of class \code{summary.EFA}.
+argument invisibly. \code{format()} returns a character vector with the report
+lines (styled to the active console theme; plain when colours are disabled).
+\code{summary()} returns an object of class \code{summary.EFA}.
 }
 \description{
 \code{print()} shows a concise overview of an \code{\link[=EFA]{EFA()}} or \code{\link[=EFA_POOLED]{EFA_POOLED()}} solution:
@@ -124,8 +125,11 @@ oblique solutions), the variances accounted for, and the model fit.
 \code{\link[=summary]{summary()}} returns a \code{summary.EFA} object whose print method adds the full
 diagnostics: model and simple-structure diagnostics, confidence-interval
 tables, the structure matrix, multiple-imputation uncertainty (for pooled
-objects), and residual diagnostics. \code{format()} returns the same lines as a
-plain, un-styled character vector.
+objects), and residual diagnostics. \code{format()} assembles the same report and
+returns it as a character vector; \code{print()} is \code{cat(format(x), sep = "\\n")}.
+The lines follow the active console theme, so they are plain when colours are
+disabled (for example when captured into a file or stripped with
+\code{\link[cli:ansi_strip]{cli::ansi_strip()}}).
 }
 \details{
 The methods are shared by single-imputation \code{EFA} objects and pooled

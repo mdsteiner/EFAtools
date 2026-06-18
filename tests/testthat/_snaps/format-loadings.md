@@ -83,6 +83,49 @@
       v4  .440  .670  .900
       
 
+# wide non-loading tables wrap into stacked blocks
+
+    Code
+      .print_efa_matrix(make_wide_vars(), role = "corr")
+    Output
+      Factors F1-F9 (block 1/2)
+                     F1     F2     F3     F4     F5     F6     F7     F8     F9
+      SS loadings  3.500  3.218  2.936  2.655  2.373  2.091  1.809  1.527  1.245
+      Prop Var      .300   .275   .249   .224   .198   .173   .147   .122   .096
+      Cum Var       .300   .575   .824  1.047  1.245  1.418  1.565  1.687  1.784
+      
+      Factors F10-F12 (block 2/2)
+                    F10    F11    F12
+      SS loadings   .964   .682   .400
+      Prop Var      .071   .045   .020
+      Cum Var      1.855  1.900  1.920
+      
+
+---
+
+    Code
+      .print_efa_matrix(make_wide_phi(), role = "corr", lower_only = TRUE)
+    Output
+      Factors F1-F11 (block 1/2)
+             F1     F2     F3     F4     F5     F6     F7     F8     F9    F10    F11
+      F1   1.000
+      F2    .100  1.000
+      F3    .108   .193  1.000
+      F4    .117   .202   .278  1.000
+      F5    .125   .210   .286   .354  1.000
+      F6    .134   .218   .295   .362   .422  1.000
+      F7    .142   .227   .303   .371   .430   .481  1.000
+      F8    .151   .235   .312   .379   .438   .489   .532  1.000
+      F9    .159   .244   .320   .388   .447   .498   .540   .574  1.000
+      F10   .168   .252   .328   .396   .455   .506   .548   .582   .608  1.000
+      F11   .176   .261   .337   .405   .464   .515   .557   .591   .616   .633  1.000
+      F12   .185   .269   .345   .413   .472   .523   .565   .599   .625   .642   .650
+      
+      Factors F12 (block 2/2)
+            F12
+      F12  1.000
+      
+
 # format.SLLOADINGS flags a Heywood case
 
     Code

@@ -13,8 +13,8 @@ criterion (e.g. \code{\link[=EKC]{EKC()}} or \code{\link[=HULL]{HULL()}}).}
 \item{...}{not used.}
 }
 \value{
-Invisibly returns \code{x}. Called for the side effect of printing the
-suggested number of factors.
+\code{print()} returns its argument \code{x} invisibly; it is
+\code{cat(format(x), sep = "\\n")}.
 }
 \description{
 Print method for efa_retention objects

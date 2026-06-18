@@ -380,18 +380,19 @@ test_that("print.EFA output is stable (ML, promax)", {
   expect_snapshot(print(efa_ml_moderate), transform = scrub_num)
 })
 
-test_that("format.EFA returns plain text even when styling is enabled", {
-  # Force colours on so a styled print() embeds ANSI; format() must not.
+test_that("format.EFA is the source of truth and honours the colour state", {
+  # print() is exactly cat(format(x), sep = "\n"), so the two agree line for line.
+  expect_identical(utils::capture.output(print(efa_psych)), format(efa_psych))
+
   old <- options(cli.num_colors = 256)
   on.exit(options(old), add = TRUE)
 
-  styled <- utils::capture.output(print(efa_psych))
-  plain <- format(efa_psych)
+  # With colours on the report embeds ANSI ...
+  expect_true(any(grepl("\033", format(efa_psych), fixed = TRUE)))
 
-  # sanity check: with colours forced on, print() really does emit ANSI ...
-  expect_true(any(grepl("\033", styled, fixed = TRUE)))
-  # ... whereas format() is guaranteed plain regardless of the colour state.
-  expect_false(any(grepl("\033", plain, fixed = TRUE)))
+  # ... and with colours off it is plain.
+  options(cli.num_colors = 1)
+  expect_false(any(grepl("\033", format(efa_psych), fixed = TRUE)))
 })
 
 test_that("summary.EFA output is stable (PAF, promax)", {
@@ -406,15 +407,21 @@ test_that("summary.EFA output is stable (ML, promax)", {
   expect_snapshot(print(summary(efa_ml_moderate)), transform = scrub_num)
 })
 
-test_that("format.summary.EFA returns plain text even when styling is enabled", {
+test_that("format.summary.EFA is the source of truth and honours the colour state", {
+  s <- summary(efa_psych)
+
+  # print() is exactly cat(format(x), sep = "\n"), so the two agree line for line.
+  expect_identical(utils::capture.output(print(s)), format(s))
+
   old <- options(cli.num_colors = 256)
   on.exit(options(old), add = TRUE)
 
-  styled <- utils::capture.output(print(summary(efa_psych)))
-  plain <- format(summary(efa_psych))
+  # With colours on the report embeds ANSI ...
+  expect_true(any(grepl("\033", format(s), fixed = TRUE)))
 
-  expect_true(any(grepl("\033", styled, fixed = TRUE)))
-  expect_false(any(grepl("\033", plain, fixed = TRUE)))
+  # ... and with colours off it is plain.
+  options(cli.num_colors = 1)
+  expect_false(any(grepl("\033", format(s), fixed = TRUE)))
 })
 
 test_that("print/summary.EFA omit the inapplicable tables for a rotated single factor", {

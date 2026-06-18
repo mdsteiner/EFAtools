@@ -20,15 +20,19 @@ test_that(".new_efa_retention builds the documented shape for a known id", {
   expect_equal(out$status, "ok")
 })
 
-test_that("format.efa_retention returns plain text even when styling is enabled", {
-  # Force colours on so a styled print() embeds ANSI; format() must not.
+test_that("format.efa_retention is the source of truth and honours the colour state", {
+  ekc <- EKC(test_models$baseline$cormat, N = 500)
+
+  # print() is exactly cat(format(x), sep = "\n"), so the two agree line for line.
+  expect_identical(utils::capture.output(print(ekc)), format(ekc))
+
   old <- options(cli.num_colors = 256)
   on.exit(options(old), add = TRUE)
 
-  ekc <- EKC(test_models$baseline$cormat, N = 500)
-  styled <- utils::capture.output(print(ekc))
-  plain <- format(ekc)
+  # With colours on the report embeds ANSI ...
+  expect_true(any(grepl("\033", format(ekc), fixed = TRUE)))
 
-  expect_true(any(grepl("\033", styled, fixed = TRUE)))
-  expect_false(any(grepl("\033", plain, fixed = TRUE)))
+  # ... and with colours off it is plain.
+  options(cli.num_colors = 1)
+  expect_false(any(grepl("\033", format(ekc), fixed = TRUE)))
 })

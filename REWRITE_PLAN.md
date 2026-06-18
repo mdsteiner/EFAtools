@@ -76,7 +76,7 @@ Please confirm/adjust these. Each is flagged at the phase where it first bites.
 | O8 | EFA object schema: introduce `new_efa()`/`validate_efa()` and standardise fields (keeping current names where possible, NA-filling inapplicable ones)? | **Yes** — stable, documented contract; additive where possible to avoid breaking `$`-indexing users. | Phase 1 |
 | O9 | Deprecation timeline for the UPPERCASE wrappers. | `1.0.0` warn (once/session) → ~`1.x` (12–18 mo / 2–3 minors) `always=TRUE` → `2.0.0` `deprecate_stop`. | Phase 8 |
 | O10 | FIML scope. Research rates full casewise FIML *very-high* effort. | **Two-stage EM-Σ** (`missing = "two.stage"`) in scope for `0.9.x`; **direct casewise FIML** deferred to post-1.0. | Phase 6 |
-| O11 | WLS: full WLS vs DWLS only for v1. | **DWLS** for v1 (diagonal weights from the polychoric ACOV); full WLS post-1.0. | Phase 5/6 |
+| ~~O11~~ | WLS: full WLS vs DWLS only for v1. | **RESOLVED → DWLS** for v1 (per-element weights `= 1/diag(Γ)`, lavaan WLSMV convention); the full Γ machinery is built in Phase 5 (gated `acov` level) so Phase-6 robust SEs can reuse it; full `WLS` post-1.0. Method stays orthogonal to `cor_method`. | Phase 5/6 |
 | O12 | EGA / network dimensionality as a retention method. | **Defer**; optionally add an `EGAnet` bridge in `Suggests` post-1.0 (avoids a heavy dep). | Post-1.0 |
 | O13 | Reproducibility: adopt `dqrng` per-replicate streams (and `future.seed=TRUE` at R level). This **changes** exact seed→result reproducibility vs current versions. | **Yes** — document the break; guarantee thread-count-independent reproducibility going forward. | Phase 3/7 |
 | O14 | Simulation model-error default method (`CB` exact-RMSEA vs `TKL` RMSEA+CFI). Depend on / vendor `noisemaker`? | Default **CB**; offer `TKL`,`WB`; validate against `noisemaker`/`fungible` (cross-check tests only, not a hard dep). | Phase 7 |
@@ -349,21 +349,21 @@ fixtures, aligned loadings match GPArotation within **~1e-4** (`aligned_max_diff
 specific iterates is **not** required (different RNG/line-search may find a different,
 equally-valid minimum). `Structure = pattern·Phi` invariant to reflection/ordering.
 
-- [ ] `src/rotate.cpp`: generalize the scaffolding into a templated GPForth+GPFoblq engine +
+- [x] `src/rotate.cpp`: generalize the scaffolding into a templated GPForth+GPFoblq engine +
       `vgQ` criterion interface (Bernaards & Jennrich, 2005); add the orthogonal/Stiefel
       projection; reuse line search/multistart/Kaiser/starts; return multistart local-minima
       diagnostics. Returned `Th` must match GPArotation's convention so `.reflect_and_order()`
       reconstructs unchanged (orth: `loadings = L·Th`; obliq: `loadings = L·(Th⁻¹)'`,
       `Phi = Th'Th`).
-- [ ] Criterion functors: CF (quartimax κ=0, equamax κ=k/(2p)), oblimin/quartimin (γ),
+- [x] Criterion functors: CF (quartimax κ=0, equamax κ=k/(2p)), oblimin/quartimin (γ),
       geomin (T/Q, ε).
-- [ ] **Reassess `randomStarts` (B12).** Once benchmarked, if 100 starts keep a representative
+- [x] **Reassess `randomStarts` (B12).** Once benchmarked, if 100 starts keep a representative
       `EFA()`/`EFA_AVERAGE` acceptably fast (very likely — 100 C++ starts should cost ≤ today's
       10 R starts, and the screen/triage path means 100 starts ≠ 100 full optimizations), bump
       `EFA()`'s default 10 → 100 and unify with `.rotate_model()`'s 100; else pick a compromise
       (~30). Behaviour change → NEWS + snapshot updates.
-- [ ] Surface the local-minima count across starts (cheap; the engine already tracks it).
-- [ ] Demote `GPArotation` Imports → Suggests once the full criterion set is native; gate the
+- [x] Surface the local-minima count across starts (cheap; the engine already tracks it).
+- [x] Demote `GPArotation` Imports → Suggests once the full criterion set is native; gate the
       parity tests with `skip_if_not_installed` so it stays a dev/CI oracle, not a runtime dep
       (no runtime fallback — all criteria are native).
 
@@ -378,36 +378,67 @@ GPArotation call:**
       (quartimax, equamax). *DoD:* relaxed parity; `test-ROTATE_ORTH.R`/`test-regression-rotations.R`
       updated; P3.5 Procrustes/bootstrap tests stay green.
 - [x] **P4.2** **oblimin/quartimin** functor (oblique). *DoD:* relaxed parity; `test-ROTATE_OBLQ.R` (Phi fingerprint).
-- [ ] **P4.3** **geomin** functor (geominT + geominQ) — *in progress*. *DoD:* relaxed parity, best-`Q` emphasis (multi-minima).
-- [ ] **P4.4** **bentler** functor (bentlerT + bentlerQ) — port `vgQ.bentler` (invariant criterion).
+- [x] **P4.3** **geomin** functor (geominT + geominQ) — *in progress*. *DoD:* relaxed parity, best-`Q` emphasis (multi-minima).
+- [x] **P4.4** **bentler** functor (bentlerT + bentlerQ) — port `vgQ.bentler` (invariant criterion).
       *DoD:* relaxed parity; `test-ROTATE_ORTH.R` + `test-ROTATE_OBLQ.R` updated for those two.
-- [ ] **P4.5** **bifactor** functor (bifactorT + bifactorQ) — port `vgQ.bifactor` (Jennrich-Bentler).
+- [x] **P4.5** **bifactor** functor (bifactorT + bifactorQ) — port `vgQ.bifactor` (Jennrich-Bentler).
       *DoD:* relaxed parity, best-`Q` emphasis (multi-minima).
-- [ ] **P4.6** **simplimax** functor (oblique, `k` target near-zeros) — port `vgQ.simplimax`.
+- [x] **P4.6** **simplimax** functor (oblique, `k` target near-zeros) — port `vgQ.simplimax`.
       *DoD:* relaxed parity; `test-ROTATE_OBLQ.R` updated.
-- [ ] **P4.7** Benchmark + `randomStarts` B12 decision (bump 100 + unify if feasible) +
+- [x] **P4.7** Benchmark + `randomStarts` B12 decision (bump 100 + unify if feasible) +
       local-minima reporting + NEWS. *DoD:* benchmark recorded; default set; snapshots/NEWS updated.
-- [ ] **P4.8** **Drop GPArotation runtime dep**: confirm no `GPArotation::` runtime calls remain;
+- [x] **P4.8** **Drop GPArotation runtime dep**: confirm no `GPArotation::` runtime calls remain;
       DESCRIPTION Imports → Suggests; gate every parity test/example with `skip_if_not_installed`;
       `devtools::check()` clean without it; NEWS. *DoD:* check clean; suite green.
 
 ### Phase 5 — Polychoric + ordinal/DWLS → `0.9.x`
 **Goal:** ordinal EFA with a bootstrap-fast polychoric matrix and a DWLS estimator.
+
+**Decisions (resolved 2026-06-17).** **Core ordinal only** for v1: `cor_method` gains `"poly"`
+and `"tet"` (all columns treated categorical; tetrachoric = the 2-category case of the same
+routine). **Polyserial/biserial mixed-type + `"auto"` detection deferred** to a later sub-phase.
+Polychoric returns the matrix always; the ACOV is computed at a **gated level**
+`acov = c("none","diag","full")` so callers pay only for what they need — `diag` (per-element
+asymptotic variances) for DWLS weights + the bootstrap, `full` Γ (cross-pair covariances) for the
+Phase-6 robust/sandwich SEs. The **full Γ is implemented and validated now** (per maintainer) but
+not wired to a Phase-5 caller until Phase 6 adds `se = "robust"`. **Method and `cor_method` stay
+orthogonal** — `method = "DWLS"` and `cor_method = "poly"` are chosen independently (DWLS+poly is
+the documented recommended ordinal combo; no auto-switch). DWLS weights = inverse `diag(Γ)`
+(lavaan WLSMV convention), threaded as a **per-correlation-element** weight (NOT per-variable).
+`pbv` added to `LinkingTo`. Threading: point-estimate polychoric uses OpenMP over pairs;
+per-replicate polychoric runs serial within each `future` worker (no nesting with the
+process-level bootstrap).
+
 - [ ] `src/polychoric.cpp`: thresholds-once; two-step ρ via fresh Brent **minimiser**;
-      BVN CDF via **`pbv`** (GL-5); OpenMP over pairs; returns matrix **+ ACOV (Γ)**
-      (O11). Documented empty-cell correction arg + zero-variance detection (`cli_abort`)
-      + nearest-PD projection (`cli_warn`).
-- [ ] Polyserial/biserial + Pearson fallback so mixed-type matrices are possible
-      (confirm scope — research open question).
-- [ ] `cor_method` gains `"poly"`/`"tet"`/`"auto"` across `efa_fit`, `efa_kmo`,
-      `efa_bartlett`, retention criteria.
-- [ ] `DWLS` fit_type in `estimate_model()` using diagonal weights from Γ; (full `WLS`
-      post-1.0, O11).
+      BVN CDF via **`pbv`** (GL-5); OpenMP over pairs; returns the matrix, plus the ACOV at the
+      requested `acov` level (O11). Documented empty-cell correction arg + zero-variance detection
+      (`cli_abort`) + nearest-PD projection (`cli_warn`), integrated with the existing
+      `.prepare_cor_input()` smoothing (no double-smoothing).
+- [ ] `cor_method` gains `"poly"`/`"tet"` across `EFA`, `KMO`, `BARTLETT`, `N_FACTORS` + the
+      retention criteria (branch at the two `stats::cor()` seams: `.prepare_cor_input()` and the
+      bootstrap recompute). (`"auto"` + mixed-type deferred.)
+- [ ] `DWLS` method in `estimate_model()` — a `DwlsFunctor` subclass of the Phase-3
+      `FactorFunctor` (weighted-ULS, per-element weights `= 1/diag(Γ)`); full `WLS` post-1.0 (O11).
 
 **Validation:** BVN CDF vs `pbv`/`mnormt` ~1e-7; matrix vs `polycor` two-step / `lavaan`
-`lavCor(ordered=TRUE)` / `psych::polychoric(correct=FALSE,global=FALSE)` per the
-documented reference ladder; determinism + PD under bootstrap resampling.
-**Exit:** ordinal EFA + DWLS validated; ordinal bootstrap fast on `DOSPERT_raw`.
+`lavCor(ordered=TRUE)` / `psych::polychoric(correct=FALSE,global=FALSE)`; diag ACOV vs `polycor`
+std.err; full Γ vs `lavaan` NACOV; DWLS vs `lavaan` (ordered, DWLS); determinism + PD under
+bootstrap resampling.
+**Exit:** ordinal EFA + DWLS validated; ordinal bootstrap fast on `DOSPERT_raw`; full Γ ready for
+Phase 6.
+
+**Unit queue (P5.1–P5.4 — each atomic, plan-mode first):**
+- [ ] **P5.1** `polychoric.cpp` matrix (thresholds + Brent ρ + pbv BVN + OpenMP + robustness),
+      `acov = "none"`. Add `pbv` to LinkingTo. *DoD:* matrix vs polycor/lavaan/psych + BVN vs pbv.
+- [ ] **P5.2** Plumb `cor_method = "poly"/"tet"` through `.prepare_cor_input()` + the bootstrap
+      seam + `match.arg` everywhere → ordinal EFA + bootstrap on the existing ML/ULS.
+      *DoD:* ordinal EFA end-to-end; bootstrap determinism/PD; speed on `DOSPERT_raw`.
+- [ ] **P5.3** Polychoric **ACOV** (`acov = "diag"|"full"`): per-element asymptotic variances +
+      the full Γ (Muthén 1984 / Jöreskog 1994). *DoD:* diag vs polycor std.err; full Γ vs lavaan
+      NACOV. (Full Γ consumed in Phase 6.)
+- [ ] **P5.4** **DWLS** estimator (`DwlsFunctor`; weights `1/diag(Γ)`; `method = "DWLS"`,
+      orthogonal to `cor_method`). *DoD:* DWLS loadings vs lavaan (ordered, DWLS); bootstrap path
+      recomputes diag weights per replicate (serial within worker).
 
 ### Phase 6 — Standard errors, fit, missing data → `0.9.x`
 **Goal:** analytic SEs that make bootstrap optional; principled missing-data handling.

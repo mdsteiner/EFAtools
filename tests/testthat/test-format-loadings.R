@@ -24,6 +24,28 @@ make_wide_loadings <- function() {
   W
 }
 
+# A non-loading "corr"-role table (variances accounted for) with enough factor columns to
+# overflow an 80-column console; values are deterministic so the printed decimals are stable.
+make_wide_vars <- function(n = 12) {
+  prop <- seq(0.30, 0.02, length.out = n)
+  va <- rbind("SS loadings" = seq(3.5, 0.4, length.out = n),
+              "Prop Var"    = prop,
+              "Cum Var"     = cumsum(prop))
+  colnames(va) <- paste0("F", seq_len(n))
+  va
+}
+
+# A symmetric factor-intercorrelation matrix (Phi) wide enough to overflow an 80-column
+# console; only the lower triangle (plus the unit diagonal) is ever shown.
+make_wide_phi <- function(n = 12) {
+  phi <- matrix(0, n, n)
+  phi[lower.tri(phi)] <- seq(0.10, 0.65, length.out = n * (n - 1) / 2)
+  phi <- phi + t(phi)
+  diag(phi) <- 1
+  dimnames(phi) <- list(paste0("F", seq_len(n)), paste0("F", seq_len(n)))
+  phi
+}
+
 make_sl <- function(heywood = TRUE) {
   f1 <- if (heywood) 1.05 else 0.62
   h2_2 <- if (heywood) 1.10 else 0.70
@@ -89,6 +111,38 @@ test_that("block wrapping stacks blocks and never folds a row", {
   expect_gt(sum(grepl("(block ", out, fixed = TRUE)), 1L)
   # no emitted line exceeds the console width -> columns were split, lines not wrapped
   expect_true(all(cli::ansi_nchar(out) <= 40L))
+})
+
+test_that("wide non-loading tables wrap into stacked blocks", {
+  local_reproducible_output() # console width 80
+  # a rectangular variances-accounted table and a symmetric Phi (lower triangle only)
+  expect_snapshot(.print_efa_matrix(make_wide_vars(), role = "corr"))
+  expect_snapshot(.print_efa_matrix(make_wide_phi(), role = "corr",
+                                    lower_only = TRUE))
+})
+
+test_that("non-loading block wrapping splits columns without folding rows", {
+  local_reproducible_output() # console width 80
+
+  corr_lines <- function(values, lower_only = FALSE) {
+    .efa_format_matrix(values,
+                       row_labels = rownames(values),
+                       col_labels = colnames(values),
+                       col_roles = rep("corr", ncol(values)),
+                       lower_only = lower_only)
+  }
+
+  vars <- corr_lines(make_wide_vars())
+  # more than one block, and no emitted line exceeds the console width
+  expect_gt(sum(grepl("(block ", vars, fixed = TRUE)), 1L)
+  expect_true(all(cli::ansi_nchar(vars) <= 80L))
+
+  phi <- corr_lines(make_wide_phi(), lower_only = TRUE)
+  expect_gt(sum(grepl("(block ", phi, fixed = TRUE)), 1L)
+  expect_true(all(cli::ansi_nchar(phi) <= 80L))
+  # a later block's leading rows fall entirely in the blanked upper triangle and are dropped,
+  # so no emitted line is a value-less row label (a phantom blank row would print as bare "Fk")
+  expect_false(any(grepl("^F[0-9]+ *$", phi)))
 })
 
 test_that("format.SLLOADINGS flags a Heywood case", {

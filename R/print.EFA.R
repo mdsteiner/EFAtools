@@ -6,8 +6,11 @@
 #' [summary()] returns a `summary.EFA` object whose print method adds the full
 #' diagnostics: model and simple-structure diagnostics, confidence-interval
 #' tables, the structure matrix, multiple-imputation uncertainty (for pooled
-#' objects), and residual diagnostics. `format()` returns the same lines as a
-#' plain, un-styled character vector.
+#' objects), and residual diagnostics. `format()` assembles the same report and
+#' returns it as a character vector; `print()` is `cat(format(x), sep = "\n")`.
+#' The lines follow the active console theme, so they are plain when colours are
+#' disabled (for example when captured into a file or stripped with
+#' [cli::ansi_strip()]).
 #'
 #' @details
 #' The methods are shared by single-imputation `EFA` objects and pooled
@@ -61,8 +64,9 @@
 #' @param ... Further arguments passed to [print.LOADINGS()].
 #'
 #' @returns `print()` and the print method for `summary.EFA` objects return their
-#'   argument invisibly. `format()` returns a character vector of plain-text
-#'   lines. `summary()` returns an object of class `summary.EFA`.
+#'   argument invisibly. `format()` returns a character vector with the report
+#'   lines (styled to the active console theme; plain when colours are disabled).
+#'   `summary()` returns an object of class `summary.EFA`.
 #'
 #' @export
 #'
@@ -79,23 +83,8 @@
 #' # format() returns plain text, e.g. for embedding in a report:
 #' writeLines(format(mod))
 #'
-print.EFA <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
-                      sort_loadings = c("none", "primary", "clustered"),
-                      show_loading_legend = TRUE,
-                      max_factors_per_block = NULL, ...) {
-  sort_loadings <- match.arg(sort_loadings)
-
-  .render_efa(x,
-    view = "brief",
-    cutoff = cutoff,
-    digits = digits,
-    max_name_length = max_name_length,
-    sort_loadings = sort_loadings,
-    show_loading_legend = show_loading_legend,
-    max_factors_per_block = max_factors_per_block,
-    ...
-  )
-
+print.EFA <- function(x, ...) {
+  cat(format(x, ...), sep = "\n")
   invisible(x)
 }
 
@@ -109,15 +98,29 @@ print.EFA_POOLED <- function(x, ...) {
 #' @rdname print.EFA
 #' @export
 #' @method format EFA
-format.EFA <- function(x, ...) {
-  cli::ansi_strip(utils::capture.output(print(x, ...)))
+format.EFA <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
+                       sort_loadings = c("none", "primary", "clustered"),
+                       show_loading_legend = TRUE,
+                       max_factors_per_block = NULL, ...) {
+  sort_loadings <- match.arg(sort_loadings)
+
+  .render_efa(x,
+    view = "brief",
+    cutoff = cutoff,
+    digits = digits,
+    max_name_length = max_name_length,
+    sort_loadings = sort_loadings,
+    show_loading_legend = show_loading_legend,
+    max_factors_per_block = max_factors_per_block,
+    ...
+  )
 }
 
 #' @rdname print.EFA
 #' @export
 #' @method format EFA_POOLED
 format.EFA_POOLED <- function(x, ...) {
-  cli::ansi_strip(utils::capture.output(print(x, ...)))
+  format.EFA(x, ...)
 }
 
 #' @rdname print.EFA
@@ -174,8 +177,7 @@ summary.EFA_POOLED <- function(object, ...) {
 #' @export
 #' @method print summary.EFA
 print.summary.EFA <- function(x, ...) {
-  opts <- utils::modifyList(x$opts, list(...))
-  do.call(.render_efa, c(list(x$efa, view = "full"), opts))
+  cat(format(x, ...), sep = "\n")
   invisible(x)
 }
 
@@ -183,7 +185,8 @@ print.summary.EFA <- function(x, ...) {
 #' @export
 #' @method format summary.EFA
 format.summary.EFA <- function(x, ...) {
-  cli::ansi_strip(utils::capture.output(print(x, ...)))
+  opts <- utils::modifyList(x$opts, list(...))
+  do.call(.render_efa, c(list(x$efa, view = "full"), opts))
 }
 
 # Render the EFA report at the requested depth: "brief" (print) shows the header,
@@ -234,66 +237,68 @@ format.summary.EFA <- function(x, ...) {
     isTRUE(spec$is_pooled)
   }
 
-  .print_efa_header(spec)
+  # Assemble the whole report inside a single cli container so prose wraps to the console
+  # width; `format()` returns these lines and `print()` is `cat(format(x), sep = "\n")`.
+  cli::cli_format_method({
+    .print_efa_header(spec)
 
-  if (full) {
-    .print_efa_diagnostics_section(x, spec,
-      cutoff = cutoff,
-      digits = digits,
-      cross_loading_cutoff = cross_loading_cutoff,
-      min_primary_gap = min_primary_gap,
-      min_salient_per_factor = min_salient_per_factor
-    )
-  }
+    if (full) {
+      .print_efa_diagnostics_section(x, spec,
+        cutoff = cutoff,
+        digits = digits,
+        cross_loading_cutoff = cross_loading_cutoff,
+        min_primary_gap = min_primary_gap,
+        min_salient_per_factor = min_salient_per_factor
+      )
+    }
 
-  .print_efa_loadings_section(x, spec,
-    cutoff = cutoff,
-    digits = digits,
-    max_name_length = max_name_length,
-    ci = if (full) ci else "none",
-    ci_filter = ci_filter,
-    show_structure = isTRUE(show_structure) && full,
-    sort_loadings = sort_loadings,
-    show_loading_legend = show_loading_legend,
-    max_factors_per_block = max_factors_per_block,
-    ...
-  )
-
-  if (full) {
-    .print_efa_simple_structure_section(x, spec,
+    .print_efa_loadings_section(x, spec,
       cutoff = cutoff,
       digits = digits,
       max_name_length = max_name_length,
-      cross_loading_cutoff = cross_loading_cutoff,
-      min_primary_gap = min_primary_gap,
-      min_salient_per_factor = min_salient_per_factor,
-      diagnostics_top_n = diagnostics_top_n,
-      sort_loadings = sort_loadings
+      ci = if (full) ci else "none",
+      ci_filter = ci_filter,
+      show_structure = isTRUE(show_structure) && full,
+      sort_loadings = sort_loadings,
+      show_loading_legend = show_loading_legend,
+      max_factors_per_block = max_factors_per_block,
+      ...
     )
-  }
 
-  .print_efa_variances_section(x, spec, digits = digits)
+    if (full) {
+      .print_efa_simple_structure_section(x, spec,
+        cutoff = cutoff,
+        digits = digits,
+        max_name_length = max_name_length,
+        cross_loading_cutoff = cross_loading_cutoff,
+        min_primary_gap = min_primary_gap,
+        min_salient_per_factor = min_salient_per_factor,
+        diagnostics_top_n = diagnostics_top_n,
+        sort_loadings = sort_loadings
+      )
+    }
 
-  if (!.print_efa_identification_warning(spec)) {
-    return(invisible(x))
-  }
+    .print_efa_variances_section(x, spec, digits = digits)
 
-  .print_efa_model_fit_section(x, spec)
-  .print_efa_bootstrap_note(x, spec)
+    # A negative df (underidentified) stops the report after the warning; df == 0 (just
+    # identified) emits its caveat but the fit/bootstrap/residual sections still follow.
+    if (.print_efa_identification_warning(spec)) {
+      .print_efa_model_fit_section(x, spec)
+      .print_efa_bootstrap_note(x, spec)
 
-  if (full && isTRUE(show_mi)) {
-    .print_efa_mi_diagnostics_section(x, spec, digits = digits)
-  }
+      if (full && isTRUE(show_mi)) {
+        .print_efa_mi_diagnostics_section(x, spec, digits = digits)
+      }
 
-  if (full) {
-    .print_efa_residuals_section(x,
-      residual_cutoff = residual_cutoff,
-      residual_top_n = residual_top_n,
-      digits = digits
-    )
-  }
-
-  invisible(x)
+      if (full) {
+        .print_efa_residuals_section(x,
+          residual_cutoff = residual_cutoff,
+          residual_top_n = residual_top_n,
+          digits = digits
+        )
+      }
+    }
+  })
 }
 
 .efa_print_spec <- function(x) {
@@ -331,50 +336,51 @@ format.summary.EFA <- function(x, ...) {
 }
 
 .print_efa_header <- function(spec) {
-  cat("\n")
+  cli::cli_text("")
 
   if (isTRUE(spec$is_pooled)) {
     .print_efa_pooled_header(spec)
   } else {
-    cat("EFA performed with type = '", cli::style_bold(spec$type),
+    # Emitted verbatim (not via cli_text) so the "setting = 'value'" tokens are never split
+    # across a line break; the bold values therefore use style_bold() rather than {.strong}.
+    cli::cli_verbatim(paste0(
+      "EFA performed with type = '", cli::style_bold(spec$type),
       "', method = '", cli::style_bold(spec$method),
-      "', and rotation = '", cli::style_bold(spec$rotation), "'.",
-      sep = ""
-    )
-    cat("\n")
+      "', and rotation = '", cli::style_bold(spec$rotation), "'."
+    ))
   }
 
   if (.efa_iteration_nonconvergence(spec)) {
-    cat("\n")
-    cat(cli::col_red(cli::style_bold(paste(
-      cli::symbol$cross,
-      "Maximum number of iterations reached",
-      "without convergence"
-    ))))
-    cat("\n")
+    cli::cli_text("")
+    cli::cli_alert_danger(
+      "Maximum number of iterations reached without convergence"
+    )
   }
+
+  invisible(NULL)
 }
 
 
 .print_efa_pooled_header <- function(spec) {
-  cat("Pooled EFA")
-
   n_imputations <- .efa_setting_text(spec$n_imputations)
-  if (nzchar(n_imputations)) {
-    cat(" across ", cli::style_bold(n_imputations), " imputations", sep = "")
+
+  across <- if (nzchar(n_imputations)) {
+    paste0(" across ", cli::style_bold(n_imputations), " imputations")
+  } else {
+    ""
   }
 
-  cat(" performed with type = '", cli::style_bold(spec$type),
+  # Verbatim, for the same reason as the unpooled header above.
+  cli::cli_verbatim(paste0(
+    "Pooled EFA", across, " performed with type = '", cli::style_bold(spec$type),
     "', method = '", cli::style_bold(spec$method),
-    "', and rotation = '", cli::style_bold(spec$rotation), "'.",
-    sep = ""
-  )
-  cat("\n")
+    "', and rotation = '", cli::style_bold(spec$rotation), "'."
+  ))
 
   pooling_settings <- .efa_pooled_settings_text(spec)
   if (length(pooling_settings) > 0L) {
-    cat("Pooling settings: ", paste(pooling_settings, collapse = ", "), ".", sep = "")
-    cat("\n")
+    cli::cli_verbatim(paste0("Pooling settings: ",
+                             paste(pooling_settings, collapse = ", "), "."))
   }
 
   invisible(NULL)
@@ -414,11 +420,11 @@ format.summary.EFA <- function(x, ...) {
     .print_efa_rule("Unrotated Loadings")
 
     if (is.null(x$unrot_loadings)) {
-      cat("No unrotated loading matrix available.\n")
+      cli::cli_text("No unrotated loading matrix available.")
       return(invisible(NULL))
     }
 
-    print(x$unrot_loadings,
+    .efa_emit_lines(.efa_capture_loadings(x$unrot_loadings,
       cutoff = cutoff,
       digits = digits,
       max_name_length = max_name_length,
@@ -427,7 +433,7 @@ format.summary.EFA <- function(x, ...) {
       legend = show_loading_legend,
       max_factors_per_block = max_factors_per_block,
       ...
-    )
+    ))
     .print_efa_heywood_warning(spec$heywood, spec$h2)
     .print_efa_loading_ci_section(x, spec,
       component = "unrot_loadings",
@@ -446,11 +452,11 @@ format.summary.EFA <- function(x, ...) {
   .print_efa_rule("Rotated Loadings")
 
   if (is.null(x$rot_loadings)) {
-    cat("No rotated loading matrix available.\n")
+    cli::cli_text("No rotated loading matrix available.")
     return(invisible(NULL))
   }
 
-  print(x$rot_loadings,
+  .efa_emit_lines(.efa_capture_loadings(x$rot_loadings,
     cutoff = cutoff,
     digits = digits,
     max_name_length = max_name_length,
@@ -459,7 +465,7 @@ format.summary.EFA <- function(x, ...) {
     legend = show_loading_legend,
     max_factors_per_block = max_factors_per_block,
     ...
-  )
+  ))
   .print_efa_heywood_warning(spec$heywood, spec$h2)
   .print_efa_loading_ci_section(x, spec,
     component = "rot_loadings",
@@ -479,7 +485,7 @@ format.summary.EFA <- function(x, ...) {
     dimnames(phi) <- list(factor_names, factor_names)
 
     .print_efa_rule("Factor Intercorrelations")
-    .print_efa_corr_matrix(phi, digits = digits, lower_only = TRUE)
+    .efa_emit_lines(.efa_corr_lines(phi, digits = digits, lower_only = TRUE))
     .print_efa_phi_ci_section(x, spec, digits, ci)
   }
 
@@ -507,21 +513,74 @@ format.summary.EFA <- function(x, ...) {
   }
 
   if (is.null(vars_accounted)) {
-    cat("No variance-accounted table available.\n")
+    cli::cli_text("No variance-accounted table available.")
     return(invisible(NULL))
   }
 
-  .print_efa_corr_matrix(vars_accounted, digits = digits)
+  .efa_emit_lines(.efa_corr_lines(vars_accounted, digits = digits))
 
   invisible(NULL)
 }
 
-# Render a numeric matrix (factor intercorrelations or variances accounted for) with a
-# neutral "corr" role, so these tables align consistently with the loading table. Thin
-# wrapper around the shared `.print_efa_matrix()`; `lower_only = TRUE` blanks the
-# strictly-upper triangle (for Phi).
-.print_efa_corr_matrix <- function(values, digits = 3, lower_only = FALSE) {
-  .print_efa_matrix(values, role = "corr", digits = digits, lower_only = lower_only)
+# Format a "corr"-role matrix (factor intercorrelations or variances accounted for) into
+# decimal-aligned lines for embedding in the cli report via `cli::cli_verbatim()`. Reuses
+# the shared `.efa_format_matrix()` renderer, so these tables align consistently with the
+# loading table; rows/columns are labelled from the matrix dimnames and `lower_only = TRUE`
+# blanks the strictly-upper triangle (for symmetric matrices such as Phi).
+.efa_corr_lines <- function(values, digits = 3, lower_only = FALSE) {
+  values <- as.matrix(values)
+  .efa_format_matrix(
+    values = values,
+    row_labels = .efa_variable_names(values),
+    col_labels = .efa_factor_names(values),
+    col_roles = rep("corr", ncol(values)),
+    digits = digits,
+    lower_only = lower_only
+  )
+}
+
+# Capture an already-styled loading/structure table as verbatim lines for embedding in the
+# cli report. Reuses all of `print.LOADINGS`' formatting (h2/sorting/legend/column blocks)
+# and preserves colour; the trailing blank line `print.LOADINGS` adds for console spacing is
+# dropped so the surrounding cli layout controls the spacing.
+.efa_capture_loadings <- function(x, ...) {
+  out <- utils::capture.output(print(x, ...))
+  if (length(out) > 0L && !nzchar(out[length(out)])) out <- out[-length(out)]
+  out
+}
+
+# Emit pre-formatted table lines into the cli report. `cli::cli_verbatim()` silently drops
+# interior empty-string elements, which would erase the blank line a loading table puts
+# before its legend and the blank separators between column blocks of a wide table. So emit
+# each run of non-empty lines verbatim (no reflow) and each blank line as `cli_text("")`,
+# preserving the table's own vertical spacing.
+.efa_emit_lines <- function(lines) {
+  if (length(lines) < 1L) {
+    return(invisible(NULL))
+  }
+
+  blank <- !nzchar(lines)
+  run <- cumsum(c(TRUE, blank[-1L] != blank[-length(blank)]))
+  for (r in unique(run)) {
+    idx <- which(run == r)
+    if (blank[idx[1L]]) {
+      for (i in idx) cli::cli_text("")
+    } else {
+      cli::cli_verbatim(lines[idx])
+    }
+  }
+
+  invisible(NULL)
+}
+
+# Emit a bullet list whose items embed user-supplied variable/factor names. `cli::cli_ul()`
+# treats each item as a cli/glue template, so a name containing `{` or `}` would be evaluated
+# as an expression (corrupting output or aborting). Double the braces so they render
+# literally.
+.efa_emit_bullets <- function(items) {
+  items <- gsub("}", "}}", gsub("{", "{{", items, fixed = TRUE), fixed = TRUE)
+  cli::cli_ul(items)
+  invisible(NULL)
 }
 
 .print_efa_identification_warning <- function(spec) {
@@ -532,26 +591,18 @@ format.summary.EFA <- function(x, ...) {
   }
 
   if (df == 0) {
-    cat("\n")
-    cat(
-      cli::col_yellow(cli::style_bold("!")),
-      cli::col_yellow(
-        " The model is just identified (df = 0). Goodness of fit indices may not be interpretable."
-      )
+    cli::cli_text("")
+    cli::cli_alert_warning(
+      "The model is just identified (df = 0). Goodness of fit indices may not be interpretable."
     )
-    cat("\n")
     return(TRUE)
   }
 
   if (df < 0) {
-    cat("\n")
-    cat(
-      cli::col_yellow(cli::style_bold("!")),
-      cli::col_yellow(
-        " The model is underidentified (df < 0). No goodness of fit indices were calculated."
-      )
+    cli::cli_text("")
+    cli::cli_alert_warning(
+      "The model is underidentified (df < 0). No goodness of fit indices were calculated."
     )
-    cat("\n")
     return(FALSE)
   }
 
@@ -565,9 +616,18 @@ format.summary.EFA <- function(x, ...) {
   .print_efa_rule("Model Fit")
 
   if (is.null(fit) || length(fit) < 1L) {
-    cat("No model-fit indices available.\n")
+    cli::cli_text("No model-fit indices available.")
     return(invisible(NULL))
   }
+
+  # One "name[ CI-tag]: value[ CI]" data line. `tag = FALSE` drops the bootstrap-CI tag and
+  # per-index CI suffix (for indices that carry no bootstrap CI: TLI/ECVI/SRMR). Emitted
+  # verbatim below so a value is never reflowed mid-token.
+  fit_line <- function(name, key, ci = "", tag = TRUE, ...) {
+    label <- if (isTRUE(tag)) fit_ci$label else ""
+    paste0(name, label, ": ", .efa_format_fit_value(fit, key, pad = FALSE, ...), ci)
+  }
+  is_finite_fit <- function(key) is.finite(.efa_fit_scalar(fit, key))
 
   method <- .efa_setting_text(spec$method)
   df <- .efa_fit_scalar(fit, "df")
@@ -576,21 +636,14 @@ format.summary.EFA <- function(x, ...) {
 
   if (identical(method, "PAF") || .efa_is_missing_number(spec$N) ||
       !is.finite(chi) || !is.finite(df)) {
-    cat(paste("CAF", fit_ci$label, ":"),
-      .efa_format_fit_value(fit, "CAF"), fit_ci$CAF, "\n",
-      sep = ""
-    )
-    cat(paste("RMSR", fit_ci$label, ":"),
-      .efa_format_fit_value(fit, "RMSR"), fit_ci$RMSR, "\n",
-      sep = ""
-    )
-    if (is.finite(.efa_fit_scalar(fit, "SRMR"))) {
-      cat("SRMR  :", .efa_format_fit_value(fit, "SRMR"), "\n", sep = "")
+    lines <- c(fit_line("CAF", "CAF", fit_ci$CAF),
+               fit_line("RMSR", "RMSR", fit_ci$RMSR))
+    if (is_finite_fit("SRMR")) {
+      lines <- c(lines, fit_line("SRMR", "SRMR", tag = FALSE))
     }
-    cat("df: ",
-      .efa_format_fit_value(fit, "df", digits = 0, print_zero = TRUE, pad = FALSE), "\n",
-      sep = ""
-    )
+    lines <- c(lines, paste0("df: ",
+      .efa_format_fit_value(fit, "df", digits = 0, print_zero = TRUE, pad = FALSE)))
+    .efa_emit_lines(lines)
     return(invisible(NULL))
   }
 
@@ -602,58 +655,39 @@ format.summary.EFA <- function(x, ...) {
     paste0(" = ", .efa_format_number(p_chi, digits = 3, pad = FALSE))
   }
 
-  cat("\u03c7\u00b2(",
-    .efa_format_fit_value(fit, "df", digits = 0, print_zero = TRUE, pad = FALSE),
-    ") = ",
-    .efa_format_fit_value(fit, "chi", digits = 2, print_zero = TRUE), ", ",
-    cli::style_italic("p"),
-    p_text,
-    "\n",
-    sep = ""
-  )
-
-  cat(paste("CFI", fit_ci$label, ": "),
-    .efa_format_fit_value(fit, "CFI", pad = FALSE), fit_ci$CFI, "\n",
-    sep = ""
-  )
-
-  if (is.finite(.efa_fit_scalar(fit, "TLI"))) {
-    cat("TLI  : ", .efa_format_fit_value(fit, "TLI", pad = FALSE), "\n", sep = "")
-  }
+  df_text <- .efa_format_fit_value(fit, "df", digits = 0, print_zero = TRUE, pad = FALSE)
+  chi_text <- .efa_format_fit_value(fit, "chi", digits = 2, print_zero = TRUE, pad = FALSE)
 
   rmsea_label <- paste0("RMSEA [", .efa_ci_level_text(spec$rmsea_ci_level), " CI]")
-  cat(paste(rmsea_label, fit_ci$label, ": "),
-    paste0(
-      .efa_format_fit_value(fit, "RMSEA", pad = FALSE), " [",
-      .efa_format_fit_value(fit, "RMSEA_LB", pad = FALSE), "; ",
-      .efa_format_fit_value(fit, "RMSEA_UB", pad = FALSE), "]"
-    ),
-    fit_ci$RMSEA, "\n",
-    sep = ""
+  rmsea_value <- paste0(
+    .efa_format_fit_value(fit, "RMSEA", pad = FALSE), " [",
+    .efa_format_fit_value(fit, "RMSEA_LB", pad = FALSE), "; ",
+    .efa_format_fit_value(fit, "RMSEA_UB", pad = FALSE), "]"
   )
 
-  cat(paste("AIC", fit_ci$label, ": "),
-    .efa_format_fit_value(fit, "AIC", print_zero = TRUE), fit_ci$AIC, "\n",
-    sep = ""
-  )
-  cat(paste("BIC", fit_ci$label, ": "),
-    .efa_format_fit_value(fit, "BIC", print_zero = TRUE), fit_ci$BIC, "\n",
-    sep = ""
-  )
-  if (is.finite(.efa_fit_scalar(fit, "ECVI"))) {
-    cat("ECVI  :", .efa_format_fit_value(fit, "ECVI", print_zero = TRUE), "\n", sep = "")
+  # The chi-square line carries an italic "p"; emit verbatim (with style_italic) so the
+  # styling survives and the line is not reflowed.
+  lines <- paste0("\u03c7\u00b2(", df_text, ") = ", chi_text, ", ",
+                  cli::style_italic("p"), p_text)
+  lines <- c(lines, fit_line("CFI", "CFI", fit_ci$CFI))
+  if (is_finite_fit("TLI")) {
+    lines <- c(lines, fit_line("TLI", "TLI", tag = FALSE))
   }
-  cat(paste("CAF", fit_ci$label, ":"),
-    .efa_format_fit_value(fit, "CAF"), fit_ci$CAF, "\n",
-    sep = ""
-  )
-  cat(paste("RMSR", fit_ci$label, ":"),
-    .efa_format_fit_value(fit, "RMSR"), fit_ci$RMSR, "\n",
-    sep = ""
-  )
-  if (is.finite(.efa_fit_scalar(fit, "SRMR"))) {
-    cat("SRMR  :", .efa_format_fit_value(fit, "SRMR"), "\n", sep = "")
+  lines <- c(lines, paste0(rmsea_label, fit_ci$label, ": ", rmsea_value, fit_ci$RMSEA))
+  lines <- c(lines,
+             fit_line("AIC", "AIC", fit_ci$AIC, print_zero = TRUE),
+             fit_line("BIC", "BIC", fit_ci$BIC, print_zero = TRUE))
+  if (is_finite_fit("ECVI")) {
+    lines <- c(lines, fit_line("ECVI", "ECVI", tag = FALSE, print_zero = TRUE))
   }
+  lines <- c(lines,
+             fit_line("CAF", "CAF", fit_ci$CAF),
+             fit_line("RMSR", "RMSR", fit_ci$RMSR))
+  if (is_finite_fit("SRMR")) {
+    lines <- c(lines, fit_line("SRMR", "SRMR", tag = FALSE))
+  }
+
+  .efa_emit_lines(lines)
 
   invisible(NULL)
 }
@@ -700,19 +734,22 @@ format.summary.EFA <- function(x, ...) {
     "Bootstrap CIs"
   }
 
-  cat("\n", cli::style_italic("Note: "), note_label, sep = "")
+  note <- note_label
 
   b_text <- .efa_bootstrap_sample_text(spec)
   if (nzchar(b_text)) {
-    cat(" based on ", b_text, sep = "")
+    note <- paste0(note, " based on ", b_text)
   }
 
   target_rotation_note <- .efa_target_rotation_note(x, spec)
   if (nzchar(target_rotation_note)) {
-    cat("; ", target_rotation_note, sep = "")
+    note <- paste0(note, "; ", target_rotation_note)
   }
 
-  cat(".\n")
+  note <- paste0(note, ".")
+
+  cli::cli_text("")
+  cli::cli_text("{.emph Note:} {note}")
 
   invisible(NULL)
 }
@@ -722,7 +759,7 @@ format.summary.EFA <- function(x, ...) {
   .print_efa_rule("Residual Diagnostics")
 
   if (is.null(x$residuals)) {
-    cat("No residual matrix available.\n")
+    cli::cli_text("No residual matrix available.")
     return(invisible(NULL))
   }
 
@@ -730,7 +767,7 @@ format.summary.EFA <- function(x, ...) {
   idx <- which(upper.tri(residuals) & is.finite(residuals), arr.ind = TRUE)
 
   if (nrow(idx) < 1L) {
-    cat("No finite off-diagonal residuals available.\n")
+    cli::cli_text("No finite off-diagonal residuals available.")
     return(invisible(NULL))
   }
 
@@ -739,23 +776,17 @@ format.summary.EFA <- function(x, ...) {
   n_large <- sum(keep, na.rm = TRUE)
   largest_abs <- max(abs(values), na.rm = TRUE)
 
-  cat("Residual cutoff: ", "|r| > ",
-    .efa_format_plain_number(residual_cutoff, digits), "\n",
-    sep = ""
-  )
-  cat("Number of large residuals: ", n_large, "\n", sep = "")
-  cat("Largest absolute residual: ",
-    .efa_format_plain_number(largest_abs, digits), "\n",
-    sep = ""
-  )
+  cutoff_text <- .efa_format_plain_number(residual_cutoff, digits)
+  largest_text <- .efa_format_plain_number(largest_abs, digits)
+  cli::cli_text("Residual cutoff: |r| > {cutoff_text}")
+  cli::cli_text("Number of large residuals: {n_large}")
+  cli::cli_text("Largest absolute residual: {largest_text}")
 
   if (n_large < 1L) {
-    cat("\nNo absolute residuals > ",
-      .efa_format_plain_number(residual_cutoff, digits),
-      " occurred.\n",
-      sep = ""
-    )
-    cat("\nInspect the residual matrix for details (e.g., with residuals()).\n")
+    cli::cli_text("")
+    cli::cli_text("No absolute residuals > {cutoff_text} occurred.")
+    cli::cli_text("")
+    cli::cli_text("Inspect the residual matrix for details (e.g., with residuals()).")
     return(invisible(NULL))
   }
 
@@ -774,6 +805,8 @@ format.summary.EFA <- function(x, ...) {
   large_idx <- large_idx[seq_len(n_print), , drop = FALSE]
   large_values <- large_values[seq_len(n_print)]
 
+  # The residual matrix is symmetric, so prefer column names but fall back to row
+  # names (unlike `.efa_variable_names()`, which only consults row names).
   var_names <- colnames(residuals)
   if (is.null(var_names)) {
     var_names <- rownames(residuals)
@@ -782,23 +815,22 @@ format.summary.EFA <- function(x, ...) {
     var_names <- paste0("V", seq_len(ncol(residuals)))
   }
 
-  cat("\n")
   heading <- if (n_print < n_large) {
     paste0("Largest residuals (top ", n_print, " of ", n_large, "):")
   } else {
     "Largest residuals:"
   }
-  cat(heading, "\n", sep = "")
 
-  for (i in seq_along(large_values)) {
-    cat(cli::symbol$bullet, " ",
-      var_names[large_idx[i, 1]], " ~~ ", var_names[large_idx[i, 2]],
-      ": ", .efa_format_plain_number(large_values[i], digits), "\n",
-      sep = ""
-    )
-  }
+  bullets <- vapply(seq_along(large_values), function(i) {
+    paste0(var_names[large_idx[i, 1]], " ~~ ", var_names[large_idx[i, 2]],
+           ": ", .efa_format_plain_number(large_values[i], digits))
+  }, character(1L))
 
-  cat("\nInspect the residual matrix for details (e.g., with residuals()).\n")
+  cli::cli_text("")
+  cli::cli_text("{heading}")
+  .efa_emit_bullets(bullets)
+  cli::cli_text("")
+  cli::cli_text("Inspect the residual matrix for details (e.g., with residuals()).")
 
   invisible(NULL)
 }
@@ -836,21 +868,13 @@ format.summary.EFA <- function(x, ...) {
   .print_efa_rule(title)
 
   if (!any(keep, na.rm = TRUE)) {
-    cat("No loading CIs matched ci_filter = '", ci_filter, "'.\n", sep = "")
+    cli::cli_text("No loading CIs matched ci_filter = '{ci_filter}'.")
     return(invisible(NULL))
   }
 
   idx <- which(keep, arr.ind = TRUE)
-  row_names <- rownames(loadings)
-  if (is.null(row_names)) {
-    row_names <- paste0("V", seq_len(nrow(loadings)))
-  }
-  row_names <- .efa_truncate_names(row_names, max_name_length)
-
-  factor_names <- colnames(loadings)
-  if (is.null(factor_names)) {
-    factor_names <- paste0("F", seq_len(ncol(loadings)))
-  }
+  row_names <- .efa_truncate_names(.efa_variable_names(loadings), max_name_length)
+  factor_names <- .efa_factor_names(loadings)
 
   .print_efa_ci_table(
     key = row_names[idx[, 1]],
@@ -891,10 +915,7 @@ format.summary.EFA <- function(x, ...) {
   }
 
   idx <- which(keep, arr.ind = TRUE)
-  factor_names <- colnames(phi)
-  if (is.null(factor_names)) {
-    factor_names <- paste0("F", seq_len(ncol(phi)))
-  }
+  factor_names <- .efa_factor_names(phi)
 
   .print_efa_rule(.efa_phi_ci_title(spec))
   .print_efa_ci_table(
@@ -912,34 +933,34 @@ format.summary.EFA <- function(x, ...) {
   invisible(NULL)
 }
 
-.print_efa_heywood_warning <- function(heywood, h2 = NULL) {
-  # Prefer the detector's heywood field (covers communalities >= 1 and ML/ULS
-  # boundary uniquenesses). Fall back to h2 for objects that carry no such field
-  # (e.g. pooled solutions), preserving the communality-based note for them.
-  n_heywood <- if (!is.null(heywood)) {
+# Count Heywood cases: prefer the detector's `heywood` field (covers communalities
+# >= 1 and ML/ULS boundary uniquenesses); fall back to communalities >= 1 for objects
+# that carry no such field (e.g. pooled solutions).
+.efa_heywood_count <- function(heywood, h2 = NULL) {
+  if (!is.null(heywood)) {
     length(heywood)
   } else if (!is.null(h2)) {
     sum(h2 >= 1 + .Machine$double.eps, na.rm = TRUE)
   } else {
     0L
   }
+}
 
-  if (n_heywood == 1) {
-    cat(cli::col_red(cli::style_bold("\nWarning: A Heywood case was detected!")))
-    cat("\n")
-  } else if (n_heywood > 1) {
-    cat(cli::col_red(cli::style_bold(paste("\nWarning:", n_heywood, "Heywood cases were detected!"))))
-    cat("\n")
+.print_efa_heywood_warning <- function(heywood, h2 = NULL) {
+  n_heywood <- .efa_heywood_count(heywood, h2)
+
+  if (n_heywood >= 1) {
+    cli::cli_text("")
+    cli::cli_alert_danger("{n_heywood} Heywood case{?s} {?was/were} detected!")
   }
 
   invisible(NULL)
 }
 
 .print_efa_rule <- function(title) {
-  cat("\n")
-  cat(cli::rule(left = cli::style_bold(title)))
-  cat("\n")
-  cat("\n")
+  cli::cli_text("")
+  cli::cli_rule(left = "{.strong {title}}")
+  cli::cli_text("")
 
   invisible(NULL)
 }
@@ -1187,10 +1208,10 @@ format.summary.EFA <- function(x, ...) {
   x
 }
 
+# Format a vector of CI numbers for the CI tables. `.efa_num` is vectorized, so one
+# call formats the whole vector; the result feeds data.frame columns that drop names.
 .efa_format_ci_num <- function(x, digits) {
-  vapply(x, function(z) {
-    .numformat(round(z, digits = digits), digits = digits)
-  }, character(1))
+  .efa_num(round(x, digits = digits), digits = digits)
 }
 
 .print_efa_ci_table <- function(key, second_key = NULL, estimate, lower, upper,
@@ -1234,9 +1255,8 @@ format.summary.EFA <- function(x, ...) {
     mapply(pad, headers, widths, USE.NAMES = FALSE),
     collapse = "  "
   )
-  cat(header, "\n", sep = "")
 
-  for (i in seq_len(nrow(plain_rows))) {
+  rows <- vapply(seq_len(nrow(plain_rows)), function(i) {
     cells <- as.character(unlist(plain_rows[i, , drop = FALSE], use.names = FALSE))
     padded <- mapply(pad, cells, widths, USE.NAMES = FALSE)
 
@@ -1244,8 +1264,11 @@ format.summary.EFA <- function(x, ...) {
       padded[3] <- cli::style_bold(padded[3])
     }
 
-    cat(paste(padded, collapse = "  "), "\n", sep = "")
-  }
+    paste(padded, collapse = "  ")
+  }, character(1L))
+
+  # A fixed-width table; emit verbatim so cli does not reflow the aligned columns.
+  .efa_emit_lines(c(header, rows))
 
   invisible(NULL)
 }
@@ -1392,8 +1415,8 @@ format.summary.EFA <- function(x, ...) {
     return("NA")
   }
 
-  .numformat(round(x, digits = digits), digits = digits,
-             print_zero = print_zero, pad = pad)
+  .efa_num(round(x, digits = digits), digits = digits,
+           print_zero = print_zero, pad = pad)
 }
 
 .efa_format_fit_value <- function(fit, name, digits = 2,
@@ -1503,7 +1526,7 @@ format.summary.EFA <- function(x, ...) {
   .print_efa_rule(title)
 
   if (is.null(loadings)) {
-    cat("No loading matrix available for diagnostics.\n")
+    cli::cli_text("No loading matrix available for diagnostics.")
     return(invisible(NULL))
   }
 
@@ -1557,16 +1580,9 @@ format.summary.EFA <- function(x, ...) {
     )
   }
 
-  # Prefer the detector's heywood field (covers communalities >= 1 and ML/ULS
-  # boundary uniquenesses), matching the printed Heywood note; fall back to h2 for
-  # objects without that field (e.g. pooled solutions).
-  heywood <- if (!is.null(spec$heywood)) {
-    length(spec$heywood)
-  } else if (!is.null(spec$h2)) {
-    sum(spec$h2 >= 1 + .Machine$double.eps, na.rm = TRUE)
-  } else {
-    0L
-  }
+  # Count Heywood cases the same way as the printed Heywood note (see
+  # `.efa_heywood_count()`).
+  heywood <- .efa_heywood_count(spec$heywood, spec$h2)
   .efa_print_key_value("Heywood cases", heywood)
 
   cross_salient <- abs(loadings) >= cross_loading_cutoff
@@ -1631,7 +1647,9 @@ format.summary.EFA <- function(x, ...) {
 }
 
 .efa_print_key_value <- function(key, value) {
-  cat(paste0(key, ": "), value, "\n", sep = "")
+  # A "label: value" data line; emit verbatim so a long key or a settings value (e.g. the
+  # pooled "Pooling: ..." line) is never reflowed mid-token.
+  cli::cli_verbatim(paste0(key, ": ", as.character(value)))
   invisible(NULL)
 }
 
@@ -1849,7 +1867,7 @@ format.summary.EFA <- function(x, ...) {
 }
 
 .efa_print_limited_bullets <- function(heading, values, top_n) {
-  cat(heading, "\n", sep = "")
+  cli::cli_text("{heading}")
 
   if (length(values) < 1L) {
     return(invisible(NULL))
@@ -1861,18 +1879,13 @@ format.summary.EFA <- function(x, ...) {
     length(values)
   }
 
-  for (i in seq_len(n_print)) {
-    cat(cli::symbol$bullet, " ", values[i], "\n", sep = "")
-  }
-
+  bullets <- values[seq_len(n_print)]
   if (n_print < length(values)) {
-    cat(cli::symbol$bullet, " ... ", length(values) - n_print,
-      " more not shown\n",
-      sep = ""
-    )
+    bullets <- c(bullets, paste0("... ", length(values) - n_print, " more not shown"))
   }
 
-  cat("\n")
+  .efa_emit_bullets(bullets)
+  cli::cli_text("")
   invisible(NULL)
 }
 
@@ -1880,7 +1893,7 @@ format.summary.EFA <- function(x, ...) {
                                          sort_loadings, max_factors_per_block,
                                          ...) {
   .print_efa_rule("Structure Matrix")
-  print(x$Structure,
+  .efa_emit_lines(.efa_capture_loadings(x$Structure,
     cutoff = cutoff,
     digits = digits,
     max_name_length = max_name_length,
@@ -1889,7 +1902,7 @@ format.summary.EFA <- function(x, ...) {
     legend = FALSE,
     max_factors_per_block = max_factors_per_block,
     ...
-  )
+  ))
   invisible(NULL)
 }
 
@@ -1985,7 +1998,7 @@ format.summary.EFA <- function(x, ...) {
     return("NA")
   }
 
-  .numformat(round(x, digits = digits), digits = digits, pad = pad)
+  .efa_num(round(x, digits = digits), digits = digits, pad = pad)
 }
 
 

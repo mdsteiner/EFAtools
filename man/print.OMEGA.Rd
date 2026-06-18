@@ -2,27 +2,46 @@
 % Please edit documentation in R/print.OMEGA.R
 \name{print.OMEGA}
 \alias{print.OMEGA}
-\title{Print OMEGA object}
+\alias{format.OMEGA}
+\title{Print and format an OMEGA object}
 \usage{
 \method{print}{OMEGA}(x, digits = 3, ...)
+
+\method{format}{OMEGA}(x, digits = 3, ...)
 }
 \arguments{
-\item{x}{output of class OMEGA (output from the \link{OMEGA} function)}
+\item{x}{An object of class \code{OMEGA} (output from \code{\link[=OMEGA]{OMEGA()}}).}
 
-\item{digits}{numeric. Passed to \code{\link[base:Round]{round}}. Number of digits
-to round to (default is 3).}
+\item{digits}{Integer. The number of decimal places the coefficients are
+rounded to (passed to \code{\link[=round]{round()}}). Default is 3.}
 
-\item{...}{additional arguments passed to print}
+\item{...}{Not used; for consistency with the generic.}
+}
+\value{
+\code{print()} returns its argument \code{x} invisibly. \code{format()} returns a
+character vector with the report lines (styled to the active console theme;
+plain when colours are disabled).
 }
 \description{
-Print OMEGA object
+\code{print()} shows the omega coefficients computed by \code{\link[=OMEGA]{OMEGA()}}: omega total (and,
+for multi-factor solutions, omega hierarchical, omega subscale, the H index,
+the explained common variance, and the percent of uncontaminated correlations)
+for the general factor and the group factors, for a single group or for each
+group. \code{format()} assembles the same report and returns it as a character
+vector; \code{print()} is \code{cat(format(x), sep = "\\n")}. The lines follow the active
+console theme, so they are plain when colours are disabled (for example when
+captured into a file or stripped with \code{\link[cli:ansi_strip]{cli::ansi_strip()}}).
 }
 \examples{
 efa_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
                type = "EFAtools", method = "PAF", rotation = "promax")
 sl_mod <- SL(efa_mod, type = "EFAtools", method = "PAF")
 
-OMEGA(sl_mod, type = "EFAtools",
-factor_corres = sl_mod$sl[, c("F1", "F2", "F3")] >= .2)
+om <- OMEGA(sl_mod, type = "EFAtools",
+            factor_corres = sl_mod$sl[, c("F1", "F2", "F3")] >= .2)
+om
+
+# format() returns the same lines as plain text:
+writeLines(format(om))
 
 }

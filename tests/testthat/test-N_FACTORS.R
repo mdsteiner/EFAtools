@@ -53,16 +53,19 @@ test_that("print and plot work on the aggregate object", {
   }
 })
 
-test_that("format.N_FACTORS returns plain text even when styling is enabled", {
-  # Force colours on so a styled print() embeds ANSI; format() must not.
+test_that("format.N_FACTORS is the source of truth and honours the colour state", {
+  # print() is exactly cat(format(x), sep = "\n"), so the two agree line for line.
+  expect_identical(utils::capture.output(print(nf_grips)), format(nf_grips))
+
   old <- options(cli.num_colors = 256)
   on.exit(options(old), add = TRUE)
 
-  styled <- utils::capture.output(print(nf_grips))
-  plain <- format(nf_grips)
+  # With colours on the report embeds ANSI ...
+  expect_true(any(grepl("\033", format(nf_grips), fixed = TRUE)))
 
-  expect_true(any(grepl("\033", styled, fixed = TRUE)))
-  expect_false(any(grepl("\033", plain, fixed = TRUE)))
+  # ... and with colours off it is plain.
+  options(cli.num_colors = 1)
+  expect_false(any(grepl("\033", format(nf_grips), fixed = TRUE)))
 })
 
 test_that("visual criteria and suitability = FALSE are handled", {

@@ -2,17 +2,32 @@
 % Please edit documentation in R/print.COMPARE.R
 \name{print.COMPARE}
 \alias{print.COMPARE}
-\title{Print COMPARE object}
+\alias{format.COMPARE}
+\title{Print and format a COMPARE object}
 \usage{
 \method{print}{COMPARE}(x, ...)
+
+\method{format}{COMPARE}(x, ...)
 }
 \arguments{
-\item{x}{list. An object of class COMPARE to be printed}
+\item{x}{An object of class \code{COMPARE} (output from \code{\link[=COMPARE]{COMPARE()}}).}
 
-\item{...}{Further arguments for print.}
+\item{...}{Not used; for consistency with the generic.}
+}
+\value{
+\code{print()} returns its argument \code{x} invisibly. \code{format()} returns a
+character vector with the report lines (styled to the active console theme;
+plain when colours are disabled).
 }
 \description{
-Print Method showing a summarized output of the \code{\link[=COMPARE]{COMPARE()}} function.
+\code{print()} shows a summarised output of the \code{\link[=COMPARE]{COMPARE()}} function: the mean
+(with its range), median, the number of decimals to which all numbers agree,
+and the minimum number of decimals provided, followed (optionally) by the
+table of elementwise differences. \code{format()} assembles the same report and
+returns it as a character vector; \code{print()} is \code{cat(format(x), sep = "\\n")}.
+The lines follow the active console theme, so they are plain when colours are
+disabled (for example when captured into a file or stripped with
+\code{\link[cli:ansi_strip]{cli::ansi_strip()}}).
 }
 \examples{
 # A type SPSS EFA to mimick the SPSS implementation
@@ -22,6 +37,11 @@ EFA_SPSS_5 <- EFA(IDS2_R, n_factors = 5, type = "SPSS")
 EFA_psych_5 <- EFA(IDS2_R, n_factors = 5, type = "psych")
 
 # compare the two
-COMPARE(EFA_SPSS_5$unrot_loadings, EFA_psych_5$unrot_loadings,
-        x_labels = c("SPSS", "psych"))
+comp <- COMPARE(EFA_SPSS_5$unrot_loadings, EFA_psych_5$unrot_loadings,
+                x_labels = c("SPSS", "psych"))
+comp
+
+# format() returns the same lines as plain text:
+writeLines(format(comp))
+
 }

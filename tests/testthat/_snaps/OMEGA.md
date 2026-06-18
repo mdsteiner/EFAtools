@@ -3,7 +3,9 @@
     Code
       print(om_sl)
     Output
-      Omega total, omega hierarchical, omega subscale, H index, explained common variance (ECV), and percent of uncontaminated correlations (PUC) for the general factor (top row) and omegas and H index for the group factors:
+      Omega total, omega hierarchical, omega subscale, H index, explained common
+      variance (ECV), and percent of uncontaminated correlations (PUC) for the
+      general factor (top row) and omegas and H index for the group factors:
       
            tot  hier   sub     H   ECV   PUC
       g <num> <num> <num> <num> <num> <num>
@@ -33,7 +35,10 @@
     Code
       print(om_mg6)
     Output
-      Omega total, omega hierarchical, omega subscale, H index, explained common variance (ECV), and percent of uncontaminated correlations (PUC) for the general factor (top row) and omegas and H index for the group factors for each group:
+      Omega total, omega hierarchical, omega subscale, H index, explained common
+      variance (ECV), and percent of uncontaminated correlations (PUC) for the
+      general factor (top row) and omegas and H index for the group factors for each
+      group:
       
       Group GroupA:
            tot  hier   sub     H   ECV   PUC
@@ -54,7 +59,8 @@
     Code
       print(om_mg3)
     Output
-      Omega total, omega hierarchical, and omega subscale for the general factor (top row) and the group factors for each group:
+      Omega total, omega hierarchical, and omega subscale for the general factor (top
+      row) and the group factors for each group:
       
       Group GroupA:
            tot  hier   sub
@@ -78,6 +84,7 @@
       Omega total for the single factor for each group:
       
       Group GroupA: <num>
+      
       Group GroupB: <num>
 
 ---
@@ -87,11 +94,11 @@
     Output
       Omega total and H index for the single factor for each group:
       
-      Group GroupA: 
+      Group GroupA:
       Omega: <num>
       H index: <num>
       
-      Group GroupB: 
+      Group GroupB:
       Omega: <num>
       H index: <num>
 

@@ -2,21 +2,38 @@
 % Please edit documentation in R/print.SL.R
 \name{print.SL}
 \alias{print.SL}
-\title{Print SL object}
+\alias{format.SL}
+\title{Print and format an SL object}
 \usage{
 \method{print}{SL}(x, ...)
+
+\method{format}{SL}(x, ...)
 }
 \arguments{
-\item{x}{list. An object of class SL to be printed}
+\item{x}{An object of class \code{SL} (output from \code{\link[=SL]{SL()}}).}
 
-\item{...}{Further arguments for print.}
+\item{...}{Not used; for consistency with the generic.}
+}
+\value{
+\code{print()} returns its argument \code{x} invisibly. \code{format()} returns a
+character vector with the report lines (styled to the active console theme;
+plain when colours are disabled).
 }
 \description{
-Print Method showing a summarized output of the \link{SL} function.
+\code{print()} shows a summarised output of the \link{SL} function: a model header (when
+the settings are available), the Schmid-Leiman loading matrix, and the
+variances accounted for. \code{format()} assembles the same report and returns it as
+a character vector; \code{print()} is \code{cat(format(x), sep = "\\n")}. The lines follow
+the active console theme, so they are plain when colours are disabled (for
+example when captured into a file or stripped with \code{\link[cli:ansi_strip]{cli::ansi_strip()}}).
 }
 \examples{
 EFA_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
                type = "EFAtools", method = "PAF", rotation = "promax")
-SL(EFA_mod, type = "EFAtools", method = "PAF")
+sl_mod <- SL(EFA_mod, type = "EFAtools", method = "PAF")
+sl_mod
+
+# format() returns the same lines as plain text:
+writeLines(format(sl_mod))
 
 }

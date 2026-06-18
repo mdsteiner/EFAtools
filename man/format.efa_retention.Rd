@@ -13,11 +13,12 @@ criterion (e.g. \code{\link[=EKC]{EKC()}} or \code{\link[=HULL]{HULL()}}).}
 \item{...}{not used.}
 }
 \value{
-A character vector with the formatted (plain, un-styled) output.
+A character vector with the report lines (styled to the active
+console theme; plain when colours are disabled).
 }
 \description{
 Format method for efa_retention objects
 }
 \examples{
-format(EKC(test_models$baseline$cormat, N = 500))
+writeLines(format(EKC(test_models$baseline$cormat, N = 500)))
 }
