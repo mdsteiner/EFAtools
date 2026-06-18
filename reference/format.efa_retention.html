@@ -85,17 +85,18 @@ criterion (e.g. <code><a href="EKC.html">EKC()</a></code> or <code><a href="HULL
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A character vector with the formatted (plain, un-styled) output.</p>
+    <p>A character vector with the report lines (styled to the active
+console theme; plain when colours are disabled).</p>
     </div>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="EKC.html">EKC</a></span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "── Empirical Kaiser Criterion ──────────────────────────────────────────────────"                                    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [2] ""                                                                                                                    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [3] "• Original implementation (Braeken &amp; van Assen, 2017): 3"                                                            </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [4] ""                                                                                                                    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [5] "ℹ Multiple implementations of EKC exist; make sure to report which one you used (see the EKC help page for details)."</span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/writeLines.html" class="external-link">writeLines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="EKC.html">EKC</a></span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Empirical Kaiser Criterion ──────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Original implementation (Braeken &amp; van Assen, 2017): 3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Multiple implementations of EKC exist; make sure to report which one you used (see the EKC help page for details).</span>
 </code></pre></div>
     </div>
   </div>

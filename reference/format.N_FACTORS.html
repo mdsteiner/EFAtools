@@ -84,7 +84,8 @@
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A character vector with the formatted (plain, un-styled) output.</p>
+    <p>A character vector with the report lines (styled to the active
+console theme; plain when colours are disabled).</p>
     </div>
 
     <div id="ref-examples">
@@ -92,24 +93,24 @@
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="va">nf</span> <span class="op">&lt;-</span> <span class="fu"><a href="N_FACTORS.html">N_FACTORS</a></span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, criteria <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"EKC"</span>, <span class="st">"SMT"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>                N <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="va">nf</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] "── Tests for the suitability of the data for factor analysis ───────────────────"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [2] ""                                                                                </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [3] "✔ The Bartlett's test of sphericity was significant at an alpha level of .05:"   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [4] "  χ²(153) = 2173.28, p &lt; .001. These data are probably suitable for factor"      </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [5] "  analysis."                                                                     </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [6] "✔ The Kaiser-Meyer-Olkin criterion is marvellous (KMO = 0.916). These data are"  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [7] "  probably suitable for factor analysis."                                        </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [8] ""                                                                                </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [9] "── Number of factors suggested by the factor retention criteria ────────────────"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [10] ""                                                                                </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [11] "Empirical Kaiser Criterion"                                                      </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [12] "• Original implementation (Braeken &amp; van Assen, 2017): 3"                        </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13] ""                                                                                </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [14] "Sequential model tests"                                                          </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [15] "• Sequential chi-square model tests: 3"                                          </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [16] "• Lower bound of RMSEA 90% CI: 2"                                                </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [17] "• Akaike Information Criterion: 3"                                               </span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/writeLines.html" class="external-link">writeLines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="va">nf</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Tests for the suitability of the data for factor analysis ───────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> The Bartlett's test of sphericity was significant at an alpha level of .05:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   χ²(153) = 2173.28, p &lt; .001. These data are probably suitable for factor</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   analysis.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> The Kaiser-Meyer-Olkin criterion is marvellous (KMO = 0.916). These data are</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   probably suitable for factor analysis.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Number of factors suggested by the factor retention criteria ────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Empirical Kaiser Criterion</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Original implementation (Braeken &amp; van Assen, 2017): 3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Sequential model tests</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Sequential chi-square model tests: 3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Lower bound of RMSEA 90% CI: 2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Akaike Information Criterion: 3</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>
