@@ -63,7 +63,10 @@
 #' Default is `NA`.
 #' @param use character. Passed to [stats::cor()] if raw data
 #' is given as input. Default is "pairwise.complete.obs".
-#' @param cor_method character. Passed to [stats::cor()].
+#' @param cor_method character. Correlation computed from raw data: `"pearson"`,
+#'   `"spearman"`, or `"kendall"` (passed to [stats::cor()]), or `"poly"` /
+#'   `"tetra"` for polychoric / tetrachoric correlations of ordinal / binary data
+#'   (a two-step estimator with no empty-cell continuity correction).
 #' Default is "pearson".
 #' @param k numeric. Either the power used for computing the target matrix P in
 #' the promax rotation or the number of 'close to zero loadings' for the simplimax
@@ -341,7 +344,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES"),
                 varimax_type = NA,
                 k = NA, normalize = TRUE, P_type = NA, precision = 1e-5,
                 order_type = NA, start_method = "psych",
-                cor_method = c("pearson", "spearman", "kendall"),
+                cor_method = c("pearson", "spearman", "kendall", "poly", "tetra"),
                 b_boot = 1000, ci = .95,
                 randomStarts = 100, seed = NULL,
                 ...) {
@@ -468,7 +471,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES"),
     # listwise deletion that is the complete cases (N of them), not the first N
     # row positions, so the case bootstrap stays a faithful resample of the
     # estimator that produced R (Efron & Tibshirani, 1993).
-    rows <- if (use %in% c("complete.obs", "na.or.complete")) {
+    rows <- if (.is_listwise_use(use)) {
       which(stats::complete.cases(x))
     } else {
       seq_len(nrow(x))
@@ -479,9 +482,29 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES"),
                                                                colnames(x),
                                                                NULL))
 
+    poly_cor <- .is_poly_cor(cor_method)
+    tetra_cor <- cor_method == "tetra"
+
     for (boot_i in seq_len(b_boot)) {
       ind <- sample(rows, size = N, replace = TRUE)
-      R_boot_array[,, boot_i] <- stats::cor(x[ind,], use = use, method = cor_method)
+      R_boot_array[,, boot_i] <- if (poly_cor) {
+        # A resample can be degenerate -- a constant column, a pair with no
+        # overlapping cases, or a numerically uncomputable matrix -- and make
+        # .polychoric() fail. Any genuine bug in .polychoric() would already have
+        # surfaced on the point-estimate fit over the full data above, so a failure
+        # here is necessarily resample-specific; fall back to an all-NA matrix so
+        # the replicate is dropped at the fit stage, mirroring how stats::cor()
+        # returns NA for a degenerate Pearson resample and how .boot_fun() drops
+        # unfittable replicates. n_threads = 1 keeps each recompute serial; the
+        # bootstrap is parallelised at the fit.
+        tryCatch(
+          suppressWarnings(
+            .polychoric(x[ind, , drop = FALSE], n_threads = 1L, nearest_pd = FALSE,
+                        binary_only = tetra_cor)$R),
+          error = function(e) matrix(NA_real_, m, m))
+      } else {
+        stats::cor(x[ind, , drop = FALSE], use = use, method = cor_method)
+      }
     }
 
   }

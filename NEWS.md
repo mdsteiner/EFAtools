@@ -2,6 +2,15 @@
 
 ## Changes to Functions
 
+* `cor_method` now accepts `"poly"` and `"tetra"` to compute polychoric and tetrachoric
+  correlations from raw ordinal (respectively binary) data, using a two-step estimator with
+  no empty-cell continuity correction. Supported by `EFA()` (including its non-parametric
+  bootstrap), `EFA_AVERAGE()`, the suitability tests `KMO()` and `BARTLETT()`, and the
+  retention criteria `EKC()`, `KGC()`, `MAP()`, `SCREE()`, `SMT()`, and `N_FACTORS()`. The
+  criteria that compare the data against simulated continuous reference data (`CD()`,
+  `PARALLEL()`, `NEST()`, and `HULL()`) do not support `"poly"` / `"tetra"` and signal an
+  error.
+
 * The `quartimax` and `equamax` orthogonal rotations in `EFA()` are now computed by a
   built-in gradient-projection rotation engine instead of the `GPArotation` package. The
   rotated solutions are numerically equivalent (the engine reaches the same minimum of the

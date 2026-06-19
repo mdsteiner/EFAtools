@@ -7,10 +7,13 @@
 # Registry of the factor-retention criteria (id -> metadata). Each `fun` runs
 # its criterion from the N_FACTORS() control list `ctl`; `x` is the raw data
 # when `needs_raw`, the prepared correlation matrix otherwise. Criteria that
-# forward additional arguments to EFA() receive them via `ctl$dots`.
+# forward additional arguments to EFA() receive them via `ctl$dots`. `poly_ok =
+# FALSE` marks the criteria that compare the data against continuous reference
+# data, so polychoric/tetrachoric correlations are not supported (they are
+# skipped with an informative note by N_FACTORS()).
 .retention_registry <- list(
   CD = list(
-    label = "Comparison data", needs_raw = TRUE,
+    label = "Comparison data", needs_raw = TRUE, poly_ok = FALSE,
     fun = function(x, ctl) {
       CD(x, n_factors_max = ctl$n_factors_max, N_pop = ctl$N_pop,
          N_samples = ctl$N_samples, alpha = ctl$alpha, use = ctl$use,
@@ -23,7 +26,7 @@
           type = ctl$ekc_type)
     }),
   HULL = list(
-    label = "Hull method", needs_raw = FALSE,
+    label = "Hull method", needs_raw = FALSE, poly_ok = FALSE,
     fun = function(x, ctl) {
       do.call(HULL, c(list(x, N = ctl$N, n_fac_theor = ctl$n_fac_theor,
                            method = ctl$method, gof = ctl$gof,
@@ -48,14 +51,14 @@
       MAP(x, use = ctl$use, cor_method = ctl$cor_method)
     }),
   NEST = list(
-    label = "Next Eigenvalue Sufficiency Test", needs_raw = FALSE,
+    label = "Next Eigenvalue Sufficiency Test", needs_raw = FALSE, poly_ok = FALSE,
     fun = function(x, ctl) {
       NEST(x, N = ctl$N, use = ctl$use, cor_method = ctl$cor_method,
            alpha = ctl$alpha_nest, n_datasets = ctl$n_datasets_nest,
            method = ctl$method)
     }),
   PARALLEL = list(
-    label = "Parallel analysis", needs_raw = FALSE,
+    label = "Parallel analysis", needs_raw = FALSE, poly_ok = FALSE,
     fun = function(x, ctl) {
       do.call(PARALLEL, c(list(x, N = ctl$N, n_datasets = ctl$n_datasets,
                                percent = ctl$percent,

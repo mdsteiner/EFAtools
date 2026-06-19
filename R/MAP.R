@@ -50,7 +50,10 @@
 #' @param use Character string specifying the treatment of missing values when computing correlations.
 #'   Passed to [stats::cor()]. Defaults to `"pairwise.complete.obs"`.
 #' @param cor_method Character string specifying the correlation coefficient to be computed if raw
-#'   data are supplied. Passed to [stats::cor()]. Defaults to `"pearson"`.
+#'   data are supplied. One of `"pearson"`, `"spearman"`, or `"kendall"` (passed to
+#'   [stats::cor()]), or `"poly"` / `"tetra"` for polychoric / tetrachoric correlations
+#'   of ordinal / binary data (a two-step estimator with no empty-cell continuity
+#'   correction). Defaults to `"pearson"`.
 #'
 #' @return An object of class `efa_retention` (see [print.efa_retention()] for the
 #'   print method) with the following main elements:
@@ -84,7 +87,7 @@ MAP <- function(x,
                 use = c("pairwise.complete.obs", "all.obs",
                         "complete.obs", "everything",
                         "na.or.complete"),
-                cor_method = c("pearson", "spearman", "kendall")) {
+                cor_method = c("pearson", "spearman", "kendall", "poly", "tetra")) {
 
   # Perform argument checks
   .assert_cor_input(x)

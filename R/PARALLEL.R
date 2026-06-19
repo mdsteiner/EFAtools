@@ -25,7 +25,9 @@
 #'  matrices with the final communalities of an EFA solution as diagonal.
 #' @param use character. Passed to [stats::cor()] if raw data
 #' is given as input. Default is "pairwise.complete.obs".
-#' @param cor_method character. Passed to [stats::cor()]
+#' @param cor_method character. One of `"pearson"`, `"spearman"`, or `"kendall"`,
+#'   passed to [stats::cor()]. `"poly"` and `"tetra"` are not supported because
+#'   `PARALLEL` compares the data against simulated continuous reference data.
 #' Default is "pearson".
 #' @param decision_rule character. Which rule to use to determine the number of
 #'  factors to retain. Default is `"means"`, which will use the average
@@ -127,7 +129,7 @@ PARALLEL <- function(x = NULL,
                      eigen_type = c("PCA", "SMC", "EFA"),
                      use = c("pairwise.complete.obs", "all.obs", "complete.obs",
                              "everything", "na.or.complete"),
-                     cor_method = c("pearson", "spearman", "kendall"),
+                     cor_method = c("pearson", "spearman", "kendall", "poly", "tetra"),
                      decision_rule = c("means", "percentile", "crawford"),
                      n_factors = 1,
                      ...) {
@@ -145,6 +147,7 @@ PARALLEL <- function(x = NULL,
   eigen_type <- match.arg(eigen_type, several.ok = TRUE)
   use <- match.arg(use)
   cor_method <- match.arg(cor_method)
+  .reject_poly_reference(cor_method, "PARALLEL")
   decision_rule <- match.arg(decision_rule)
   checkmate::assert_count(n_factors)
   checkmate::assert_count(N, na.ok = TRUE)

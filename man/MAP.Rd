@@ -8,7 +8,7 @@ MAP(
   x,
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
     "na.or.complete"),
-  cor_method = c("pearson", "spearman", "kendall")
+  cor_method = c("pearson", "spearman", "kendall", "poly", "tetra")
 )
 }
 \arguments{
@@ -19,7 +19,10 @@ MAP(
 Passed to \code{\link[stats:cor]{stats::cor()}}. Defaults to \code{"pairwise.complete.obs"}.}
 
 \item{cor_method}{Character string specifying the correlation coefficient to be computed if raw
-data are supplied. Passed to \code{\link[stats:cor]{stats::cor()}}. Defaults to \code{"pearson"}.}
+data are supplied. One of \code{"pearson"}, \code{"spearman"}, or \code{"kendall"} (passed to
+\code{\link[stats:cor]{stats::cor()}}), or \code{"poly"} / \code{"tetra"} for polychoric / tetrachoric correlations
+of ordinal / binary data (a two-step estimator with no empty-cell continuity
+correction). Defaults to \code{"pearson"}.}
 }
 \value{
 An object of class \code{efa_retention} (see \code{\link[=print.efa_retention]{print.efa_retention()}} for the

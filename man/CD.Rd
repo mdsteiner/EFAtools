@@ -23,7 +23,7 @@ CD(
   alpha = 0.3,
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
     "na.or.complete"),
-  cor_method = c("pearson", "spearman", "kendall"),
+  cor_method = c("pearson", "spearman", "kendall", "poly", "tetra"),
   max_iter = 50
 )
 }
@@ -50,7 +50,9 @@ is "pairwise.complete.obs". However, for the comparison data procedure,
 be handled differently (e.g., imputation), do this before passing the data to
 \code{CD()}.}
 
-\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor()}}.
+\item{cor_method}{character. One of \code{"pearson"}, \code{"spearman"}, or \code{"kendall"},
+passed to \code{\link[stats:cor]{stats::cor()}}. \code{"poly"} and \code{"tetra"} are not supported because
+\code{CD} compares the data against simulated continuous reference data.
 Default is "pearson".}
 
 \item{max_iter}{numeric. The maximum number of iterations to perform after

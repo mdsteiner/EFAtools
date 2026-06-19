@@ -17,7 +17,10 @@
 #'  diagonal.
 #' @param use character. Passed to [stats::cor()] if raw
 #'  data is given as input. Default is "pairwise.complete.obs".
-#' @param cor_method character. Passed to [stats::cor()].
+#' @param cor_method character. Correlation computed from raw data: `"pearson"`,
+#'   `"spearman"`, or `"kendall"` (passed to [stats::cor()]), or `"poly"` /
+#'   `"tetra"` for polychoric / tetrachoric correlations of ordinal / binary data
+#'   (a two-step estimator with no empty-cell continuity correction).
 #' Default is "pearson".
 #' @param n_factors numeric. Number of factors to extract if "EFA" is included in
 #' `eigen_type`. Default is 1.
@@ -83,7 +86,7 @@
 KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
                 use = c("pairwise.complete.obs", "all.obs", "complete.obs",
                         "everything", "na.or.complete"),
-                cor_method = c("pearson", "spearman", "kendall"), n_factors = 1,
+                cor_method = c("pearson", "spearman", "kendall", "poly", "tetra"), n_factors = 1,
                 ...){
 
   # Perform argument checks

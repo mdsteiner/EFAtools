@@ -30,7 +30,10 @@
 #'  diagonal. This is passed to  [PARALLEL()].
 #' @param use character. Passed to [stats::cor()] if raw data
 #' is given as input. Default is `"pairwise.complete.obs"`.
-#' @param cor_method character. Passed to [stats::cor()].
+#' @param cor_method character. One of `"pearson"`, `"spearman"`, or `"kendall"`,
+#'   passed to [stats::cor()]. `"poly"` and `"tetra"` are not supported because
+#'   `HULL` derives its factor-search bound from an internal parallel analysis
+#'   against continuous reference data.
 #'  Default is  `"pearson"`.
 #' @param n_datasets numeric. The number of datasets to simulate. Default is 1000.
 #'   This is passed to [PARALLEL()].
@@ -123,7 +126,7 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
                  eigen_type = c("SMC", "PCA", "EFA"),
                  use = c("pairwise.complete.obs", "all.obs", "complete.obs",
                          "everything", "na.or.complete"),
-                 cor_method = c("pearson", "spearman", "kendall"),
+                 cor_method = c("pearson", "spearman", "kendall", "poly", "tetra"),
                  n_datasets = 1000, percent = 95,
                  decision_rule = c("means", "percentile", "crawford"),
                  n_factors = 1, ...) {
@@ -134,6 +137,10 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   method <- match.arg(method)
   use <- match.arg(use)
   cor_method <- match.arg(cor_method)
+  # The Hull method derives its factor-search bound from an internal parallel
+  # analysis, whose reference data are continuous; poly/tetra are therefore not
+  # supported, consistent with PARALLEL/NEST/CD.
+  .reject_poly_reference(cor_method, "HULL")
   gof <- match.arg(gof, several.ok = TRUE)
   eigen_type <- match.arg(eigen_type)
   checkmate::assert_count(n_fac_theor, na.ok = TRUE)

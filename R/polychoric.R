@@ -3,6 +3,7 @@
 # backend (.polychoric_cpp); this wrapper owns the input validation and the classed
 # conditions, which can only be raised at the R level.
 .polychoric <- function(x, correct = 0, nearest_pd = FALSE, n_threads = 1L,
+                        binary_only = FALSE,
                         error_call = rlang::caller_env()) {
 
   if (!is.numeric(correct) || length(correct) != 1L || !is.finite(correct) ||
@@ -46,6 +47,16 @@
       c("Polychoric correlations need at least two response categories per variable.",
         "x" = "{cli::qty(bad)} Variable{?s} {.val {bad}} {?is/are} constant."),
       class = "efa_cor_constant_col", call = error_call)
+  }
+
+  # Tetrachoric correlations are the binary special case; reject any variable with
+  # more than two categories so the request is not silently widened to polychoric.
+  if (isTRUE(binary_only) && any(n_cat > 2L)) {
+    bad <- nms[n_cat > 2L]
+    cli::cli_abort(
+      c("Tetrachoric correlations require binary variables (at most two categories).",
+        "x" = "{cli::qty(bad)} Variable{?s} {.val {bad}} {?has/have} more than two categories."),
+      class = "efa_cor_not_binary", call = error_call)
   }
 
   # Many categories usually means the variable is continuous, not ordinal; warn but

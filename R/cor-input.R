@@ -57,6 +57,15 @@
   invisible(x)
 }
 
+# Single source of truth for the correlation methods that are estimated from the
+# raw data by .polychoric() rather than stats::cor(). Used both to route the
+# computation and to reject criteria whose reference data are continuous.
+.is_poly_cor <- function(cor_method) cor_method %in% c("poly", "tetra")
+
+# The `use` policies that listwise-delete incomplete rows (so N is the number of
+# complete cases and resampling/correlation run on complete data).
+.is_listwise_use <- function(use) use %in% c("complete.obs", "na.or.complete")
+
 # Detect or compute the correlation matrix, check invertibility, and smooth a
 # non-positive-definite matrix. Assumes `x` has already been validated as a
 # matrix or data frame (see .assert_cor_input()). Shared by EFA and the
@@ -106,32 +115,72 @@
       )
     }
 
-    # Missing values can make stats::cor() either throw a hard base error (e.g.
-    # use = "all.obs", or "complete.obs" with no complete cases) or return NAs
-    # (e.g. a column with no complete pairs under the chosen `use`). Catch both
-    # instead of failing with an opaque base error here or later in
-    # solve()/eigen(). A try-error without any NAs in the data has another cause
-    # (e.g. a non-numeric or zero-variance column), so report that separately
-    # rather than blaming missing values.
-    R <- try(stats::cor(x, use = use, method = cor_method), silent = TRUE)
-    if (inherits(R, "try-error") || anyNA(R)) {
-      if (anyNA(x)) {
+    if (.is_poly_cor(cor_method)) {
+
+      # Polychoric/tetrachoric correlations come from the raw ordinal data.
+      # .polychoric() handles missing data per pair, so reproduce the other `use`
+      # policies on the data first to keep `use` meaning the same as for
+      # stats::cor(): missing values abort under "all.obs"/"everything" (which do
+      # not delete and so would yield an uncomputable result, matching how
+      # stats::cor() errors or returns NAs there), listwise deletion applies under
+      # "complete.obs"/"na.or.complete", and "pairwise.complete.obs" maps to the
+      # per-pair handling. The wrapper owns the ordinal validation and classed
+      # conditions (including the NA-pair abort); nearest_pd = FALSE so a
+      # non-positive-definite result is smoothed once below by the shared
+      # psych::cor.smooth() step rather than projected here as well. The returned
+      # matrix already carries the variable names, so the colnames step that the
+      # Pearson branch needs is not repeated.
+      if (use %in% c("all.obs", "everything") && anyNA(x)) {
         cli::cli_abort(
           c("The correlation matrix could not be computed from the raw data because of missing values.",
             "i" = "Adjust {.arg use} (e.g. {.val pairwise.complete.obs}) or supply data with fewer missing values."),
           class = "efa_cor_na", call = error_call)
       }
-      cli::cli_abort(
-        c("The correlation matrix could not be computed from the raw data.",
-          "i" = "Check that all columns are numeric and have non-zero variance."),
-        class = "efa_cor_uncomputable", call = error_call)
+      if (.is_listwise_use(use)) {
+        x <- x[stats::complete.cases(x), , drop = FALSE]
+        # Listwise deletion can remove every row; report that as missing data
+        # rather than letting .polychoric() raise a misleading "constant variable".
+        if (nrow(x) == 0L) {
+          cli::cli_abort(
+            c("The correlation matrix could not be computed from the raw data because of missing values.",
+              "i" = "No complete cases remain under {.code use = {.val {use}}}; try {.val pairwise.complete.obs}."),
+            class = "efa_cor_na", call = error_call)
+        }
+      }
+      R <- .polychoric(x, n_threads = 1L, nearest_pd = FALSE,
+                       binary_only = cor_method == "tetra",
+                       error_call = error_call)$R
+
+    } else {
+
+      # Missing values can make stats::cor() either throw a hard base error (e.g.
+      # use = "all.obs", or "complete.obs" with no complete cases) or return NAs
+      # (e.g. a column with no complete pairs under the chosen `use`). Catch both
+      # instead of failing with an opaque base error here or later in
+      # solve()/eigen(). A try-error without any NAs in the data has another cause
+      # (e.g. a non-numeric or zero-variance column), so report that separately
+      # rather than blaming missing values.
+      R <- try(stats::cor(x, use = use, method = cor_method), silent = TRUE)
+      if (inherits(R, "try-error") || anyNA(R)) {
+        if (anyNA(x)) {
+          cli::cli_abort(
+            c("The correlation matrix could not be computed from the raw data because of missing values.",
+              "i" = "Adjust {.arg use} (e.g. {.val pairwise.complete.obs}) or supply data with fewer missing values."),
+            class = "efa_cor_na", call = error_call)
+        }
+        cli::cli_abort(
+          c("The correlation matrix could not be computed from the raw data.",
+            "i" = "Check that all columns are numeric and have non-zero variance."),
+          class = "efa_cor_uncomputable", call = error_call)
+      }
+      colnames(R) <- colnames(x)
+
     }
-    colnames(R) <- colnames(x)
 
     if (N_policy != "none") {
       # Under listwise deletion stats::cor() drops incomplete rows, so N must be
       # the number of complete cases rather than the raw row count.
-      N <- if (use %in% c("complete.obs", "na.or.complete")) {
+      N <- if (.is_listwise_use(use)) {
         sum(stats::complete.cases(x))
       } else {
         nrow(x)
@@ -182,4 +231,20 @@
   }
 
   list(R = R, N = N, is_cormat = is_cormat)
+}
+
+# Polychoric/tetrachoric correlations describe the observed data only. Criteria
+# that compare the data against a separately generated continuous reference (CD,
+# PARALLEL, NEST) cannot honour them, so they reject the request with one shared
+# classed condition rather than silently mixing an ordinal observed matrix with a
+# Pearson reference distribution.
+.reject_poly_reference <- function(cor_method, fn, error_call = rlang::caller_env()) {
+  if (.is_poly_cor(cor_method)) {
+    cli::cli_abort(
+      c("{.val {cor_method}} correlations are not supported by {.fn {fn}}.",
+        "x" = "{.fn {fn}} compares the data against a reference computed with a continuous (Pearson) correlation.",
+        "i" = "Use {.val pearson}, {.val spearman}, or {.val kendall}."),
+      class = "efa_cor_method_unsupported", call = error_call)
+  }
+  invisible(NULL)
 }

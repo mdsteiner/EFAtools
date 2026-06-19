@@ -20,7 +20,12 @@
 #' correlation matrix.
 #' @param use character. Passed to [stats::cor()] if raw
 #' data is given as input. Default is `"pairwise.complete.obs"`.
-#' @param cor_method character. Passed to [stats::cor()]
+#' @param cor_method character. Correlation computed from raw data: `"pearson"`,
+#'   `"spearman"`, or `"kendall"` (passed to [stats::cor()]), or `"poly"` /
+#'   `"tetra"` for polychoric / tetrachoric correlations (a two-step estimator
+#'   with no empty-cell continuity correction). Criteria that compare against
+#'   simulated continuous data (`CD`, `PARALLEL`, `NEST`, `HULL`) do not support
+#'   `"poly"` / `"tetra"` and are skipped in that case.
 #' Default is  `"pearson"`.
 #' @param n_factors_max numeric. Passed to [CD()]. The maximum number
 #' of factors to test against.
@@ -156,7 +161,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
                       suitability = TRUE, N = NA,
                       use = c("pairwise.complete.obs", "all.obs",
                               "complete.obs", "everything", "na.or.complete"),
-                      cor_method = c("pearson", "spearman", "kendall"),
+                      cor_method = c("pearson", "spearman", "kendall", "poly", "tetra"),
                       n_factors_max = NA, N_pop = 10000, N_samples = 500,
                       alpha = .30, max_iter_CD = 50, n_fac_theor = NA,
                       method = c("ML", "PAF", "ULS"),
@@ -251,6 +256,19 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
         class = "efa_criterion_skipped"
       )
       not_run[[id]] <- "needs raw data, but a correlation matrix was supplied"
+      next
+    }
+
+    # Criteria that compare against continuous reference data cannot use
+    # polychoric/tetrachoric correlations; skip them with a clear note rather than
+    # letting them fail and be reported as a generic error.
+    if (.is_poly_cor(cor_method) && isFALSE(entry$poly_ok)) {
+      cli::cli_warn(
+        c("{.val {id}} does not support {.code cor_method = {.val {cor_method}}}.",
+          "i" = "Its reference data are continuous; skipping {.val {id}}."),
+        class = "efa_criterion_skipped"
+      )
+      not_run[[id]] <- paste0("does not support cor_method = \"", cor_method, "\"")
       next
     }
 

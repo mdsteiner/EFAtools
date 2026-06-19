@@ -27,7 +27,7 @@ SMT(
   N = NA,
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
     "na.or.complete"),
-  cor_method = c("pearson", "spearman", "kendall")
+  cor_method = c("pearson", "spearman", "kendall", "poly", "tetra")
 )
 }
 \arguments{
@@ -40,7 +40,10 @@ correlation matrix is used.}
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}} if raw
 data is given as input. Default is "pairwise.complete.obs".}
 
-\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor()}}.
+\item{cor_method}{character. Correlation computed from raw data: \code{"pearson"},
+\code{"spearman"}, or \code{"kendall"} (passed to \code{\link[stats:cor]{stats::cor()}}), or \code{"poly"} /
+\code{"tetra"} for polychoric / tetrachoric correlations of ordinal / binary data
+(a two-step estimator with no empty-cell continuity correction).
 Default is "pearson".}
 }
 \value{

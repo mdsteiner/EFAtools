@@ -20,7 +20,9 @@
 #'  `NA` values will be excluded using na.omit(). If missing data should
 #'  be handled differently (e.g., imputation), do this before passing the data to
 #'  `CD()`.
-#' @param cor_method character. Passed to [stats::cor()].
+#' @param cor_method character. One of `"pearson"`, `"spearman"`, or `"kendall"`,
+#'   passed to [stats::cor()]. `"poly"` and `"tetra"` are not supported because
+#'   `CD` compares the data against simulated continuous reference data.
 #' Default is "pearson".
 #' @param max_iter numeric. The maximum number of iterations to perform after
 #'  which the iterative PAF procedure is halted. Default is 50.
@@ -86,7 +88,7 @@
 CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .30,
                use = c("pairwise.complete.obs", "all.obs", "complete.obs",
                     "everything", "na.or.complete"),
-               cor_method = c("pearson", "spearman", "kendall"),
+               cor_method = c("pearson", "spearman", "kendall", "poly", "tetra"),
                max_iter = 50) {
 
   # Perform argument checks
@@ -103,6 +105,7 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
 
   use <- match.arg(use)
   cor_method <- match.arg(cor_method)
+  .reject_poly_reference(cor_method, "CD")
 
   checkmate::assert_count(n_factors_max, na.ok = TRUE)
   checkmate::assert_count(N_pop)

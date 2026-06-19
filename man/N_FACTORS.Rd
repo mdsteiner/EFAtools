@@ -11,7 +11,7 @@ N_FACTORS(
   N = NA,
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
     "na.or.complete"),
-  cor_method = c("pearson", "spearman", "kendall"),
+  cor_method = c("pearson", "spearman", "kendall", "poly", "tetra"),
   n_factors_max = NA,
   N_pop = 10000,
   N_samples = 500,
@@ -53,7 +53,12 @@ correlation matrix.}
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}} if raw
 data is given as input. Default is \code{"pairwise.complete.obs"}.}
 
-\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor()}}
+\item{cor_method}{character. Correlation computed from raw data: \code{"pearson"},
+\code{"spearman"}, or \code{"kendall"} (passed to \code{\link[stats:cor]{stats::cor()}}), or \code{"poly"} /
+\code{"tetra"} for polychoric / tetrachoric correlations (a two-step estimator
+with no empty-cell continuity correction). Criteria that compare against
+simulated continuous data (\code{CD}, \code{PARALLEL}, \code{NEST}, \code{HULL}) do not support
+\code{"poly"} / \code{"tetra"} and are skipped in that case.
 Default is  \code{"pearson"}.}
 
 \item{n_factors_max}{numeric. Passed to \code{\link[=CD]{CD()}}. The maximum number

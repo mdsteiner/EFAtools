@@ -14,7 +14,9 @@
 #' @param alpha numeric. The alpha level to use (i.e., 1-alpha percentile of eigenvalues is used for reference values).
 #' @param use character. Passed to [stats::cor()] if raw
 #'  data is given as input. Default is  `"pairwise.complete.obs"`.
-#' @param cor_method character. Passed to [stats::cor()].
+#' @param cor_method character. One of `"pearson"`, `"spearman"`, or `"kendall"`,
+#'   passed to [stats::cor()]. `"poly"` and `"tetra"` are not supported because
+#'   `NEST` compares the data against simulated continuous reference data.
 #'  Default is  `"pearson"`.
 #' @param n_datasets numeric. The number of datasets to simulate. Default is 1000.
 #' @param ... Additional arguments passed to [EFA()]. For example,
@@ -66,7 +68,7 @@ NEST <- function(x, N = NA,
                  use = c("pairwise.complete.obs", "all.obs",
                          "complete.obs", "everything",
                          "na.or.complete"),
-                 cor_method = c("pearson", "spearman", "kendall"),
+                 cor_method = c("pearson", "spearman", "kendall", "poly", "tetra"),
                  n_datasets = 1000,
                  ...) {
 
@@ -78,6 +80,7 @@ NEST <- function(x, N = NA,
   checkmate::assert_number(alpha, lower = 0, upper = 1)
   use <- match.arg(use)
   cor_method <- match.arg(cor_method)
+  .reject_poly_reference(cor_method, "NEST")
   checkmate::assert_count(n_datasets, na.ok = FALSE,
                           positive = TRUE)
 

@@ -44,7 +44,7 @@ EFA(
   precision = 1e-05,
   order_type = NA,
   start_method = "psych",
-  cor_method = c("pearson", "spearman", "kendall"),
+  cor_method = c("pearson", "spearman", "kendall", "poly", "tetra"),
   b_boot = 1000,
   ci = 0.95,
   randomStarts = 100,
@@ -156,7 +156,10 @@ starting values specified in \code{\link[psych:fa]{psych::fa()}}. "factanal" tak
 starting values specified in the \code{\link[stats:factanal]{stats::factanal()}} function.
 Solutions are very similar.}
 
-\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor()}}.
+\item{cor_method}{character. Correlation computed from raw data: \code{"pearson"},
+\code{"spearman"}, or \code{"kendall"} (passed to \code{\link[stats:cor]{stats::cor()}}), or \code{"poly"} /
+\code{"tetra"} for polychoric / tetrachoric correlations of ordinal / binary data
+(a two-step estimator with no empty-cell continuity correction).
 Default is "pearson".}
 
 \item{b_boot}{numeric. The number of bootstrap samples to draw. Default is 1000.}

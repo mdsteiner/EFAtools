@@ -18,7 +18,7 @@ HULL(
   eigen_type = c("SMC", "PCA", "EFA"),
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
     "na.or.complete"),
-  cor_method = c("pearson", "spearman", "kendall"),
+  cor_method = c("pearson", "spearman", "kendall", "poly", "tetra"),
   n_datasets = 1000,
   percent = 95,
   decision_rule = c("means", "percentile", "crawford"),
@@ -60,7 +60,10 @@ diagonal. This is passed to  \code{\link[=PARALLEL]{PARALLEL()}}.}
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}} if raw data
 is given as input. Default is \code{"pairwise.complete.obs"}.}
 
-\item{cor_method}{character. Passed to \code{\link[stats:cor]{stats::cor()}}.
+\item{cor_method}{character. One of \code{"pearson"}, \code{"spearman"}, or \code{"kendall"},
+passed to \code{\link[stats:cor]{stats::cor()}}. \code{"poly"} and \code{"tetra"} are not supported because
+\code{HULL} derives its factor-search bound from an internal parallel analysis
+against continuous reference data.
 Default is  \code{"pearson"}.}
 
 \item{n_datasets}{numeric. The number of datasets to simulate. Default is 1000.
