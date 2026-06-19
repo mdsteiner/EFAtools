@@ -21,9 +21,14 @@
 // sum of non-negative terms, so it keeps full relative accuracy for tiny cells with no
 // cancellation. It is evaluated by Gauss-Legendre quadrature, infinite X-cuts clamped to
 // a finite range where phi is negligible, and infinite Y-cuts handled directly by the
-// normal CDF (Phi(+/-Inf) = 1/0). The per-pair correlation is found by Brent's (1973)
-// method. Every per-pair quantity is pure C++/Armadillo (std::erfc for the normal CDF),
-// so the pair loop is allocation-light and safe to run under OpenMP.
+// normal CDF (Phi(+/-Inf) = 1/0). The per-pair correlation maximises the log-likelihood by
+// Fisher scoring: the score is the closed-form derivative of each cell probability obtained by
+// differentiating the same conditioning integral with respect to rho (so it is consistent with
+// the quadrature used for the probabilities), and the step is normalised by the expected
+// information of the cell-count multinomial (Olsson, 1979). The step is capped away from the
+// singular endpoints and backtracked to keep the likelihood monotone, with Brent's (1973)
+// method as a fallback. Every per-pair quantity is pure C++/Armadillo (std::erfc for the normal
+// CDF), so the pair loop is allocation-light and safe to run under OpenMP.
 //
 // References:
 //   Olsson, U. (1979). Maximum likelihood estimation of the polychoric correlation
@@ -43,9 +48,9 @@ static const double POLY_INV_SQRT_2 = 0.70710678118654752440;    // 1/sqrt(2)
 // infinite outer (X) integration limits to a finite range without loss of accuracy.
 static const double POLY_CLAMP = 8.5;
 // Gauss-Legendre node count for the rectangle quadrature. The integrand is a smooth
-// Gaussian over each threshold band, so this converges quickly; 16 nodes reproduce the
+// Gaussian over each threshold band, so this converges quickly; 12 nodes reproduce the
 // reference estimators to within ~1e-5 and higher orders do not change the result.
-static const int POLY_GL_N = 16;
+static const int POLY_GL_N = 12;
 
 // Standard normal CDF via the complementary error function (thread-safe, allocation-free,
 // accurate to floating-point precision). Phi(+/-Inf) evaluates cleanly to 1 / 0.
@@ -177,8 +182,9 @@ static double polychoric_pair(const int* xp, int nrow, int ci, int cj,
                               const std::vector<double>& tau_j,
                               int Ki, int Kj, double correct,
                               const std::vector<double>& gx, const std::vector<double>& gw,
-                              std::vector<double>& tab, std::vector<double>& rowp,
-                              std::vector<double>& colcdf, std::vector<double>& rcut,
+                              std::vector<double>& tab, std::vector<double>& pmat,
+                              std::vector<double>& dpmat, std::vector<double>& colcdf,
+                              std::vector<double>& coldcdf, std::vector<double>& rcut,
                               std::vector<double>& ccut, std::vector<double>& xnode,
                               std::vector<double>& wpdf) {
   const int n = (int) gx.size();
@@ -196,11 +202,14 @@ static double polychoric_pair(const int* xp, int nrow, int ci, int cj,
   if (total <= 0.0) return NA_REAL;  // no overlapping complete cases for this pair
 
   // Empty-cell continuity correction: add `correct` pseudo-counts to zero cells (mirrors
-  // psych's correct= for sparse tables). correct = 0 leaves the table untouched.
+  // psych's correct= for sparse tables). correct = 0 leaves the table untouched. ntab is the
+  // total table mass (including any pseudo-counts) - the multinomial size used in the
+  // expected information.
+  double ntab = total;
   if (correct > 0.0) {
     std::size_t ncell = (std::size_t) Ki * Kj;
     for (std::size_t idx = 0; idx < ncell; idx++) {
-      if (tab[idx] == 0.0) tab[idx] = correct;
+      if (tab[idx] == 0.0) { tab[idx] = correct; ntab += correct; }
     }
   }
 
@@ -212,7 +221,7 @@ static double polychoric_pair(const int* xp, int nrow, int ci, int cj,
 
   // Precompute the rho-INDEPENDENT part of the quadrature once per pair: for each X (row)
   // band, the clamped limits, the abscissae, and the weight*phi(x) factors depend only on the
-  // fixed thresholds, so they are reused across every Brent evaluation instead of being
+  // fixed thresholds, so they are reused across every likelihood evaluation instead of being
   // rebuilt each time. A band lying entirely beyond +/-POLY_CLAMP is marked with zero weight.
   for (int a = 0; a < Ki; a++) {
     double lo = rcut[a]     < -POLY_CLAMP ? -POLY_CLAMP : rcut[a];
@@ -230,38 +239,137 @@ static double polychoric_pair(const int* xp, int nrow, int ci, int cj,
     }
   }
 
-  // Smallest positive double, used only to keep log() finite for an utterly negligible
-  // (underflowing) cell; the conditioning integral is otherwise non-negative and accurate.
+  // Smallest positive double, used only to keep log()/division finite for an utterly
+  // negligible (underflowing) cell; the conditioning integral is otherwise non-negative.
   const double p_floor = std::numeric_limits<double>::min();
 
-  // Negative log-likelihood at rho: only the inner (column) normal CDFs depend on rho. The
-  // per-row inner CDFs are shared across the cells of that row.
-  auto neg_loglik = [&](double rho) {
+  // Evaluate the negative log-likelihood, the score dl/drho, and the expected (Fisher)
+  // information at rho. The cell probabilities P_ab and their derivatives dP_ab/drho are built
+  // from the SAME conditioning integral, so the score is exactly the derivative of the
+  // quadrature objective (not of the unreachable exact probability) and the iteration
+  // converges cleanly. Differentiating P_ab = int phi(x)[Phi((c1-rho x)/s) - Phi((c0-rho x)/s)] dx
+  // under the integral sign gives d/drho Phi((c-rho x)/s) = phi((c-rho x)/s) (rho c - x) / s^3
+  // (Plackett, 1954); an infinite column cut contributes zero. Only the inner column terms
+  // depend on rho and are shared across the cells of a row. The information is the multinomial
+  // expectation ntab * sum_ab (dP_ab/drho)^2 / P_ab (Olsson, 1979): positive, and needing no
+  // second derivative.
+  auto eval = [&](double rho, double& nll, double& score, double& info) {
     double s = std::sqrt(1.0 - rho * rho);
-    double val = 0.0;
+    double s3 = s * s * s;
     for (int a = 0; a < Ki; a++) {
       std::size_t base = (std::size_t) a * n;
-      for (int b = 0; b < Kj; b++) rowp[b] = 0.0;
+      std::size_t pbase = (std::size_t) a * Kj;
+      for (int b = 0; b < Kj; b++) { pmat[pbase + b] = 0.0; dpmat[pbase + b] = 0.0; }
       for (int k = 0; k < n; k++) {
         double w = wpdf[base + k];
         if (w == 0.0) continue;  // band beyond the clamp contributes nothing
         double x = xnode[base + k];
-        for (int b = 0; b <= Kj; b++) colcdf[b] = std_norm_cdf((ccut[b] - rho * x) / s);
-        for (int b = 0; b < Kj; b++) rowp[b] += w * (colcdf[b + 1] - colcdf[b]);
-      }
-      for (int b = 0; b < Kj; b++) {
-        double nab = tab[(std::size_t) a * Kj + b];
-        if (nab == 0.0) continue;
-        double p = rowp[b];
-        if (p < p_floor) p = p_floor;
-        val -= nab * std::log(p);
+        for (int b = 0; b <= Kj; b++) {
+          double c = ccut[b];
+          double z = (c - rho * x) / s;
+          colcdf[b] = std_norm_cdf(z);
+          coldcdf[b] = std::isfinite(c) ? std_norm_pdf(z) * (rho * c - x) / s3 : 0.0;
+        }
+        for (int b = 0; b < Kj; b++) {
+          pmat[pbase + b]  += w * (colcdf[b + 1]  - colcdf[b]);
+          dpmat[pbase + b] += w * (coldcdf[b + 1] - coldcdf[b]);
+        }
       }
     }
-    return val;
+    // Accumulate the negative log-likelihood, score, and information over the cells.
+    nll = 0.0;
+    score = 0.0;
+    double iacc = 0.0;
+    for (int a = 0; a < Ki; a++) {
+      std::size_t pbase = (std::size_t) a * Kj;
+      for (int b = 0; b < Kj; b++) {
+        double p = pmat[pbase + b];
+        if (p < p_floor) p = p_floor;
+        double dP = dpmat[pbase + b];
+        iacc += dP * dP / p;
+        double nab = tab[pbase + b];
+        if (nab != 0.0) {
+          nll -= nab * std::log(p);
+          score += nab * dP / p;
+        }
+      }
+    }
+    info = ntab * iacc;
   };
 
-  // Optimise on (-1, 1) bounded away from the singular endpoints, as in polycor.
-  return brent_min(neg_loglik, -0.9999, 0.9999, 1e-8, 200);
+  // Warm start at the Pearson correlation of the category codes (lavaan / Olsson, 1979): it
+  // is already close to rho, so the scoring iteration starts inside the basin and converges in
+  // a few steps instead of overshooting from rho = 0 as a cold start would. Computed from the
+  // contingency table with the category indices as scores; falls back to 0 for a degenerate
+  // (zero-variance) margin.
+  double sa = 0.0, sb = 0.0, saa = 0.0, sbb = 0.0, sab = 0.0;
+  for (int a = 0; a < Ki; a++) {
+    std::size_t pbase = (std::size_t) a * Kj;
+    for (int b = 0; b < Kj; b++) {
+      double nij = tab[pbase + b];
+      if (nij == 0.0) continue;
+      sa += nij * a; sb += nij * b;
+      saa += nij * (double) a * a; sbb += nij * (double) b * b;
+      sab += nij * (double) a * b;
+    }
+  }
+  double cov = sab - sa * sb / ntab;
+  double va = saa - sa * sa / ntab, vb = sbb - sb * sb / ntab;
+  double rho0 = (va > 0.0 && vb > 0.0) ? cov / std::sqrt(va * vb) : 0.0;
+
+  // Maximise the log-likelihood over (-maxcor, maxcor), bounded away from the singular
+  // endpoints as in polycor, by damped Fisher scoring (step = score / information).
+  // Convergence is judged on the full scoring step (the Newton decrement) at an interior
+  // point. A scoring step can still overshoot the optimum into the near-singular region close
+  // to rho = +/-1, where the cell probabilities underflow and the information blows up; to
+  // prevent that, each step is capped to at most half the distance to the boundary, which
+  // shrinks to zero as rho -> +/-1 yet never binds near an interior optimum (the score, and so
+  // the step, vanishes there on its own). The capped step is still backtracked by halving to
+  // keep the negative log-likelihood monotone. Any pair that fails to converge or yields
+  // unusable information is finished by Brent's method on the same objective.
+  //
+  // The step tolerance is ~1e-5 in rho: near the optimum the log-likelihood is flat, so a
+  // tighter target would chase changes below floating-point noise (a tolerance also used by
+  // comparable scoring implementations); 1e-5 is far inside the accuracy of the estimate.
+  const double maxcor = 0.9999;
+  const double tol = 1e-5;
+  double rho = rho0 > maxcor ? maxcor : (rho0 < -maxcor ? -maxcor : rho0);
+  double nll, score, info;
+  eval(rho, nll, score, info);
+  bool converged = false;
+  for (int iter = 0; iter < 50; iter++) {
+    // An empty tail cell at high |rho| can floor its probability while its derivative stays
+    // large, blowing the summed information up to +Inf (which `info > 0` would not catch);
+    // any non-finite score/information hands the pair to the robust Brent fallback.
+    if (!(info > 0.0) || !std::isfinite(info) || !std::isfinite(score)) break;
+    double step = score / info;
+    if (std::abs(step) < tol && std::abs(rho) < maxcor) {  // interior Newton decrement -> optimum
+      converged = true;
+      break;
+    }
+    double cap = 0.5 * (1.0 - std::abs(rho));  // never jump more than halfway to +/-1
+    if (step >  cap) step =  cap;
+    else if (step < -cap) step = -cap;
+    double t = 1.0;
+    bool improved = false;
+    double cand = rho, nn = nll, sc = score, inf = info;
+    for (int h = 0; h < 40; h++) {
+      double c = rho + t * step;
+      if (c < -maxcor) c = -maxcor;
+      else if (c > maxcor) c = maxcor;
+      double f, g, fi;
+      eval(c, f, g, fi);
+      if (f <= nll) { cand = c; nn = f; sc = g; inf = fi; improved = true; break; }
+      t *= 0.5;
+    }
+    if (!improved || cand == rho) break;  // line search stalled / pinned at boundary -> Brent
+    rho = cand; nll = nn; score = sc; info = inf;
+  }
+  if (!converged) {
+    rho = brent_min([&](double r) { double f, g, fi; eval(r, f, g, fi); return f; },
+                    -maxcor, maxcor, tol, 200);
+  }
+  return rho;
 }
 
 // Internal C++ backend for the two-step polychoric/tetrachoric matrix, called from
@@ -342,8 +450,10 @@ Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
   {
     // Thread-local scratch reused across this thread's pairs (no allocation in the loop).
     std::vector<double> tab((std::size_t) Kmax * Kmax);
-    std::vector<double> rowp(Kmax);
+    std::vector<double> pmat((std::size_t) Kmax * Kmax);
+    std::vector<double> dpmat((std::size_t) Kmax * Kmax);
     std::vector<double> colcdf(Kmax + 1);
+    std::vector<double> coldcdf(Kmax + 1);
     std::vector<double> rcut(Kmax + 1), ccut(Kmax + 1);
     std::vector<double> xnode((std::size_t) Kmax * POLY_GL_N);
     std::vector<double> wpdf((std::size_t) Kmax * POLY_GL_N);
@@ -353,7 +463,7 @@ Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
       int i = pair_i[t];
       int j = pair_j[t];
       rho[t] = polychoric_pair(xp, nrow, i, j, tau[i], tau[j], Kcat[i], Kcat[j], correct,
-                               gx, gw, tab, rowp, colcdf, rcut, ccut, xnode, wpdf);
+                               gx, gw, tab, pmat, dpmat, colcdf, coldcdf, rcut, ccut, xnode, wpdf);
     }
   }
 
