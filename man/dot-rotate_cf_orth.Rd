@@ -13,7 +13,7 @@
   maxit = 1000L,
   max_line_search = 10L,
   step0 = 1,
-  screen_keep = 2L,
+  screen_keep = 5L,
   triage_maxit = 25L,
   triage_improve_tol = 0
 )
@@ -60,7 +60,7 @@ gradient-projection optimizer along the orthogonal (Stiefel) manifold.
 The criterion value \code{f} and its gradient \code{dQ/dL} at the rotated loadings
 \code{L = A \%*\% T} define the search; the engine maps the gradient to the orthogonal
 transformation \code{T}, projects it onto the tangent space, performs a
-sufficient-decrease line search, and retracts back onto the orthogonal group via a
+non-monotone line search, and retracts back onto the orthogonal group via a
 polar (singular value) projection. \code{kappa = 0} is the quartimax criterion and
 \code{kappa = ncol(A) / (2 * nrow(A))} is the equamax criterion.
 

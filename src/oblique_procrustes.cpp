@@ -127,11 +127,8 @@ static arma::vec kaiser_normalize_rows(arma::mat& A_work, arma::mat& B_work) {
 //' `Phi = t(T) %*% T`. The optimization is carried out over the transformation
 //' matrix `T` under the oblique normalization constraint `diag(t(T) %*% T) = 1`.
 //'
-//' The line search is monotone: a candidate is accepted only if it satisfies the
-//' sufficient-decrease condition, or, as a numerical fallback, if it at least
-//' decreases the objective after all step halvings are exhausted. Non-invertible
-//' candidate transformations are rejected rather than evaluated through a
-//' pseudo-inverse.
+//' Non-invertible candidate transformations are rejected rather than evaluated
+//' through a pseudo-inverse.
 //'
 //' Additional random starts may be requested. To reduce runtime, the solver uses
 //' a two-stage strategy for extra starts: cheap objective screening, followed by

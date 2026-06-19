@@ -41,6 +41,14 @@
   random starts, and `EFA()` records the rotation diagnostics (the number of random starts, how
   many converged, the distinct-optima count, and the spread and best value of the attained
   criterion) in `settings$rotation_diagnostics`.
+* The built-in gradient-projection rotation engine now uses a Barzilai-Borwein step size with a
+  non-monotone line search. The analytic rotations in `EFA()`, and the `PROCRUSTES()` target
+  rotation, reach the same solution in substantially fewer iterations; the speed-up is most
+  noticeable on larger problems and in the resampling workflows that rotate many solutions
+  (`EFA()` bootstrap standard errors and `EFA_AVERAGE()`).
+* The oblique geomin rotation (`geominQ`) now triages more of its random starts by default, so it
+  reliably reaches the global geomin optimum on problems where the previous setting occasionally
+  settled at a nearby local optimum.
 * `EFA()` now additionally reports the Tucker-Lewis index (TLI, also called the
   non-normed fit index), the expected cross-validation index (ECVI), and the
   standardized root mean square residual (SRMR) among its `fit_indices` for `ML` and

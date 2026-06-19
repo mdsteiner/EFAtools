@@ -56,12 +56,21 @@
 # oblique rotations -- the factor correlations `$Phi` (orthogonal entries return no `Phi`).
 # Passing the criterion arguments explicitly via `crit` keeps them out of the partial-matching
 # path; the trailing `...` simply absorbs the controls the engine-table closures forward
-# through, so only the four named here reach the optimizer.
+# through. The screen-and-triage multistart controls (`screen_keep`, `triage_maxit`,
+# `triage_improve_tol`) are forwarded only when a criterion overrides the compiled entry's default
+# (a `NULL` leaves that default in place); they are set per criterion by `.gpf_multistart_defaults`
+# below. simplimax's entry takes no such controls (it always runs full multistart), and its closure
+# passes none, so they are never forwarded to it.
 .gpf_native <- function(entry, L, crit = list(), eps = 1e-5, normalize = TRUE,
-                        randomStarts = 100, maxit = 1000L, ...) {
-  res <- do.call(entry, c(list(unclass(L)), crit,
-                          list(eps = eps, normalize = normalize,
-                               random_starts = randomStarts, maxit = maxit)))
+                        randomStarts = 100, maxit = 1000L,
+                        screen_keep = NULL, triage_maxit = NULL,
+                        triage_improve_tol = NULL, ...) {
+  args <- list(eps = eps, normalize = normalize,
+               random_starts = randomStarts, maxit = maxit)
+  if (!is.null(screen_keep)) args$screen_keep <- screen_keep
+  if (!is.null(triage_maxit)) args$triage_maxit <- triage_maxit
+  if (!is.null(triage_improve_tol)) args$triage_improve_tol <- triage_improve_tol
+  res <- do.call(entry, c(list(unclass(L)), crit, args))
   .warn_rotation_no_convergence(res$convergence, maxit)
   out <- list(loadings = res$loadings, Th = res$Th,
               all_values = res$all_values, all_converged = res$all_converged)
@@ -86,6 +95,22 @@
                                               list(delta = .gpf_crit(list(...), "delta", 0.01)),
                                               ...),
   bifactorQ = function(L, k, ...) .gpf_native(.rotate_bifactor_oblq, L, list(), ...)
+)
+
+# Per-criterion screen-and-triage multistart overrides for the native gradient-projection
+# rotations. The compiled entries triage the five best-screened random starts by default
+# (screen_keep = 5, triage_maxit = 25); two already reach the global criterion optimum for every
+# criterion except geominQ across a panel of real correlation matrices, and five is a cheap safety
+# margin (a small, single-digit-millisecond cost
+# per rotation) against harder, unseen data. The oblique geomin criterion (geominQ) is multimodal
+# enough to need more: its best-screened starts can all miss the global basin, so it triages more
+# starts for longer (screen_keep = 10, triage_maxit = 50), recovering the global optimum on every
+# tested matrix while staying far cheaper than fully optimizing all starts. A criterion absent from
+# this list uses the compiled default. (geominT, the orthogonal geomin, reaches the global optimum
+# at the default; simplimax is omitted because it always runs full multistart, not
+# screen-and-triage.)
+.gpf_multistart_defaults <- list(
+  geominQ = list(screen_keep = 10, triage_maxit = 50)
 )
 
 # Canonical rotation names by family. The engine tables above key the GPArotation
@@ -284,9 +309,13 @@
 
     if (ncol(L) < 2) return(.rotate_single_factor(L, settings, oblique = FALSE))
 
+    ms <- .gpf_multistart_defaults[[rotation]]
     AV <- .orth_engines[[rotation]](L, eps = precision,
                                     normalize = resolved$normalize,
-                                    randomStarts = randomStarts, ...)
+                                    randomStarts = randomStarts,
+                                    screen_keep = ms$screen_keep,
+                                    triage_maxit = ms$triage_maxit,
+                                    triage_improve_tol = ms$triage_improve_tol, ...)
     settings$rotation_diagnostics <- .rotation_diagnostics(AV$all_values,
                                                            AV$all_converged, randomStarts)
     out <- .reflect_and_order(AV$loadings, rotmat = AV$Th, L_unrot = L,
@@ -313,9 +342,13 @@
       settings$k <- k
     }
 
+    ms <- .gpf_multistart_defaults[[rotation]]
     AV <- .oblq_engines[[rotation]](L, k = k, eps = precision,
                                     normalize = resolved$normalize,
-                                    randomStarts = randomStarts, ...)
+                                    randomStarts = randomStarts,
+                                    screen_keep = ms$screen_keep,
+                                    triage_maxit = ms$triage_maxit,
+                                    triage_improve_tol = ms$triage_improve_tol, ...)
     settings$rotation_diagnostics <- .rotation_diagnostics(AV$all_values,
                                                            AV$all_converged, randomStarts)
     out <- .reflect_and_order(AV$loadings, Phi = AV$Phi, rotmat = AV$Th,

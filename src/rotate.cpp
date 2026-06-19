@@ -14,8 +14,8 @@ using namespace arma;
 // generalized over an arbitrary rotation criterion (Bernaards & Jennrich, 2005). A
 // criterion exposes the objective value f and its gradient Gq = dQ/dL at the rotated
 // loadings L; the engine maps Gq to the gradient with respect to the orthogonal
-// transformation T, projects it onto the tangent space, line-searches with a
-// sufficient-decrease test, and retracts back onto the orthogonal group via a polar
+// transformation T, projects it onto the tangent space, performs a non-monotone
+// line search, and retracts back onto the orthogonal group via a polar
 // (SVD) projection. This mirrors GPArotation::GPForth(); only the criterion functor
 // changes between rotation methods.
 
@@ -406,17 +406,16 @@ static Rcpp::List make_orth_entry(const arma::mat& L, const Crit& crit,
 // criterion-specific validation and functor. Here the rotation acts through solve(t(T)), so the
 // Kaiser weights again cancel and the rotated loadings reproduce L %*% t(solve(Th)); the rotated
 // loadings and the factor correlations Phi are reconstructed from the winning transformation by
-// finalize_oblique() (shared with the Procrustes oblique entry point). `fwindow` and
-// `full_multistart` select the non-monotone line search and full-multistart strategy that the
-// piecewise-smooth, strongly multimodal simplimax criterion needs; they default to the
-// smooth-criterion behavior (monotone search, screen-and-triage multi-start).
+// finalize_oblique() (shared with the Procrustes oblique entry point). `full_multistart` selects
+// the full-multistart strategy that the strongly multimodal simplimax criterion needs; it defaults
+// to the smooth-criterion screen-and-triage multi-start.
 template <typename Crit>
 static Rcpp::List make_oblq_entry(const arma::mat& L, const Crit& crit,
                                   double eps, bool normalize, int random_starts,
                                   int maxit, int max_line_search, double step0,
                                   int screen_keep, int triage_maxit,
                                   double triage_improve_tol,
-                                  int fwindow = 0, bool full_multistart = false) {
+                                  bool full_multistart = false) {
   const arma::uword k = L.n_cols;
 
   arma::mat A_work = L;
@@ -432,7 +431,7 @@ static Rcpp::List make_oblq_entry(const arma::mat& L, const Crit& crit,
   GpfSummary summary = run_gpf_multistart(
     manifold, T_primary, eps, maxit, max_line_search, step0,
     random_starts, screen_keep, triage_maxit, triage_improve_tol,
-    fwindow, full_multistart
+    full_multistart
   );
   const GpfFit& best_fit = summary.best_fit;
 
@@ -460,7 +459,7 @@ static Rcpp::List make_oblq_entry(const arma::mat& L, const Crit& crit,
 //' The criterion value `f` and its gradient `dQ/dL` at the rotated loadings
 //' `L = A %*% T` define the search; the engine maps the gradient to the orthogonal
 //' transformation `T`, projects it onto the tangent space, performs a
-//' sufficient-decrease line search, and retracts back onto the orthogonal group via a
+//' non-monotone line search, and retracts back onto the orthogonal group via a
 //' polar (singular value) projection. `kappa = 0` is the quartimax criterion and
 //' `kappa = ncol(A) / (2 * nrow(A))` is the equamax criterion.
 //'
@@ -508,7 +507,7 @@ Rcpp::List rotate_cf_orth(const arma::mat& L,
                           int maxit = 1000,
                           int max_line_search = 10,
                           double step0 = 1.0,
-                          int screen_keep = 2,
+                          int screen_keep = 5,
                           int triage_maxit = 25,
                           double triage_improve_tol = 0.0) {
   validate_gpf_input(L, "Orthogonal");
@@ -532,7 +531,7 @@ Rcpp::List rotate_cf_orth(const arma::mat& L,
 //' The criterion value `f` and its gradient `dQ/dL` at the rotated loadings
 //' `L = A %*% solve(t(T))` define the search; the engine maps the gradient to the
 //' transformation `T` on the manifold `diag(t(T) %*% T) = 1`, projects it onto the tangent
-//' space, performs a sufficient-decrease line search, and retracts back onto the manifold
+//' space, performs a non-monotone line search, and retracts back onto the manifold
 //' by column normalization. `gam = 0` is the quartimin criterion.
 //'
 //' Additional random starts may be requested. To bound runtime the solver screens each
@@ -580,7 +579,7 @@ Rcpp::List rotate_oblimin(const arma::mat& L,
                           int maxit = 1000,
                           int max_line_search = 10,
                           double step0 = 1.0,
-                          int screen_keep = 2,
+                          int screen_keep = 5,
                           int triage_maxit = 25,
                           double triage_improve_tol = 0.0) {
   validate_gpf_input(L, "Oblique");
@@ -603,7 +602,7 @@ Rcpp::List rotate_oblimin(const arma::mat& L,
 //'
 //' The criterion value `f` and its gradient `dQ/dL` at the rotated loadings
 //' `L = A %*% T` define the search; the engine maps the gradient to the orthogonal
-//' transformation `T`, projects it onto the tangent space, performs a sufficient-decrease
+//' transformation `T`, projects it onto the tangent space, performs a non-monotone
 //' line search, and retracts back onto the orthogonal group via a polar (singular value)
 //' projection. The geomin criterion sums the per-variable geometric mean of the squared
 //' loadings offset by `delta`; it is prone to local minima, so additional random starts are
@@ -654,7 +653,7 @@ Rcpp::List rotate_geomin_orth(const arma::mat& L,
                               int maxit = 1000,
                               int max_line_search = 10,
                               double step0 = 1.0,
-                              int screen_keep = 2,
+                              int screen_keep = 5,
                               int triage_maxit = 25,
                               double triage_improve_tol = 0.0) {
   validate_gpf_input(L, "Orthogonal");
@@ -678,7 +677,7 @@ Rcpp::List rotate_geomin_orth(const arma::mat& L,
 //' The criterion value `f` and its gradient `dQ/dL` at the rotated loadings
 //' `L = A %*% solve(t(T))` define the search; the engine maps the gradient to the
 //' transformation `T` on the manifold `diag(t(T) %*% T) = 1`, projects it onto the tangent
-//' space, performs a sufficient-decrease line search, and retracts back onto the manifold by
+//' space, performs a non-monotone line search, and retracts back onto the manifold by
 //' column normalization. The geomin criterion sums the per-variable geometric mean of the
 //' squared loadings offset by `delta`; it is prone to local minima, so additional random
 //' starts are recommended.
@@ -729,7 +728,7 @@ Rcpp::List rotate_geomin_oblq(const arma::mat& L,
                               int maxit = 1000,
                               int max_line_search = 10,
                               double step0 = 1.0,
-                              int screen_keep = 2,
+                              int screen_keep = 5,
                               int triage_maxit = 25,
                               double triage_improve_tol = 0.0) {
   validate_gpf_input(L, "Oblique");
@@ -752,7 +751,7 @@ Rcpp::List rotate_geomin_oblq(const arma::mat& L,
 //'
 //' The criterion value `f` and its gradient `dQ/dL` at the rotated loadings
 //' `L = A %*% T` define the search; the engine maps the gradient to the orthogonal
-//' transformation `T`, projects it onto the tangent space, performs a sufficient-decrease line
+//' transformation `T`, projects it onto the tangent space, performs a non-monotone line
 //' search, and retracts back onto the orthogonal group via a polar (singular value) projection.
 //' The Bentler criterion measures the departure of the cross-products of squared loadings from a
 //' diagonal pattern; it is prone to local minima, so additional random starts are recommended.
@@ -799,7 +798,7 @@ Rcpp::List rotate_bentler_orth(const arma::mat& L,
                                int maxit = 1000,
                                int max_line_search = 10,
                                double step0 = 1.0,
-                               int screen_keep = 2,
+                               int screen_keep = 5,
                                int triage_maxit = 25,
                                double triage_improve_tol = 0.0) {
   validate_gpf_input(L, "Orthogonal");
@@ -820,7 +819,7 @@ Rcpp::List rotate_bentler_orth(const arma::mat& L,
 //' The criterion value `f` and its gradient `dQ/dL` at the rotated loadings
 //' `L = A %*% solve(t(T))` define the search; the engine maps the gradient to the
 //' transformation `T` on the manifold `diag(t(T) %*% T) = 1`, projects it onto the tangent
-//' space, performs a sufficient-decrease line search, and retracts back onto the manifold by
+//' space, performs a non-monotone line search, and retracts back onto the manifold by
 //' column normalization. The Bentler criterion measures the departure of the cross-products of
 //' squared loadings from a diagonal pattern; it is prone to local minima, so additional random
 //' starts are recommended.
@@ -868,7 +867,7 @@ Rcpp::List rotate_bentler_oblq(const arma::mat& L,
                                int maxit = 1000,
                                int max_line_search = 10,
                                double step0 = 1.0,
-                               int screen_keep = 2,
+                               int screen_keep = 5,
                                int triage_maxit = 25,
                                double triage_improve_tol = 0.0) {
   validate_gpf_input(L, "Oblique");
@@ -888,7 +887,7 @@ Rcpp::List rotate_bentler_oblq(const arma::mat& L,
 //'
 //' The criterion value `f` and its gradient `dQ/dL` at the rotated loadings
 //' `L = A %*% T` define the search; the engine maps the gradient to the orthogonal
-//' transformation `T`, projects it onto the tangent space, performs a sufficient-decrease line
+//' transformation `T`, projects it onto the tangent space, performs a non-monotone line
 //' search, and retracts back onto the orthogonal group via a polar (singular value) projection.
 //' The first factor is treated as a general factor and is exempt from the penalty; the criterion
 //' measures the between-group-factor cross-products of the squared loadings, so it is minimized
@@ -937,7 +936,7 @@ Rcpp::List rotate_bifactor_orth(const arma::mat& L,
                                 int maxit = 1000,
                                 int max_line_search = 10,
                                 double step0 = 1.0,
-                                int screen_keep = 2,
+                                int screen_keep = 5,
                                 int triage_maxit = 25,
                                 double triage_improve_tol = 0.0) {
   validate_gpf_input(L, "Orthogonal");
@@ -958,7 +957,7 @@ Rcpp::List rotate_bifactor_orth(const arma::mat& L,
 //' The criterion value `f` and its gradient `dQ/dL` at the rotated loadings
 //' `L = A %*% solve(t(T))` define the search; the engine maps the gradient to the
 //' transformation `T` on the manifold `diag(t(T) %*% T) = 1`, projects it onto the tangent
-//' space, performs a sufficient-decrease line search, and retracts back onto the manifold by
+//' space, performs a non-monotone line search, and retracts back onto the manifold by
 //' column normalization. The first factor is treated as a general factor and is exempt from the
 //' penalty; the criterion measures the between-group-factor cross-products of the squared
 //' loadings, so it is minimized when each variable loads on the general factor plus at most one
@@ -1008,7 +1007,7 @@ Rcpp::List rotate_bifactor_oblq(const arma::mat& L,
                                 int maxit = 1000,
                                 int max_line_search = 10,
                                 double step0 = 1.0,
-                                int screen_keep = 2,
+                                int screen_keep = 5,
                                 int triage_maxit = 25,
                                 double triage_improve_tol = 0.0) {
   validate_gpf_input(L, "Oblique");
@@ -1098,14 +1097,13 @@ Rcpp::List rotate_simplimax_oblq(const arma::mat& L,
   // simplimax is strongly multimodal, so the engine's full-multistart mode fully optimizes every
   // start and keeps the lowest-criterion solution (Kiers, 1994; Browne, 2001), rather than the
   // screen-and-triage heuristic the smooth criteria use (its early-iteration objective screen is
-  // uninformative for this criterion). fwindow = 10 selects the non-monotone line search (Grippo,
-  // Lampariello, & Lucidi, 1986) needed for the piecewise-smooth criterion. The screen and triage
-  // controls are unused in full-multistart mode.
-  const int fwindow = 10;
+  // uninformative for this criterion). The engine's non-monotone line search (Grippo, Lampariello,
+  // & Lucidi, 1986) handles its piecewise-smoothness. The screen and triage controls are unused in
+  // full-multistart mode.
   validate_gpf_scalars(eps, maxit, max_line_search, step0, random_starts, 0, 0, 0.0);
 
   SimplimaxCriterion crit(static_cast<arma::uword>(k));
   return make_oblq_entry(L, crit, eps, normalize, random_starts, maxit,
                          max_line_search, step0, /*screen_keep=*/0, /*triage_maxit=*/0,
-                         /*triage_improve_tol=*/0.0, fwindow, /*full_multistart=*/true);
+                         /*triage_improve_tol=*/0.0, /*full_multistart=*/true);
 }

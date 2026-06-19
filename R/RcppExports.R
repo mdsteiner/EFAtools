@@ -57,11 +57,8 @@
 #' `Phi = t(T) %*% T`. The optimization is carried out over the transformation
 #' matrix `T` under the oblique normalization constraint `diag(t(T) %*% T) = 1`.
 #'
-#' The line search is monotone: a candidate is accepted only if it satisfies the
-#' sufficient-decrease condition, or, as a numerical fallback, if it at least
-#' decreases the objective after all step halvings are exhausted. Non-invertible
-#' candidate transformations are rejected rather than evaluated through a
-#' pseudo-inverse.
+#' Non-invertible candidate transformations are rejected rather than evaluated
+#' through a pseudo-inverse.
 #'
 #' Additional random starts may be requested. To reduce runtime, the solver uses
 #' a two-stage strategy for extra starts: cheap objective screening, followed by
@@ -213,7 +210,7 @@
 #' The criterion value `f` and its gradient `dQ/dL` at the rotated loadings
 #' `L = A %*% T` define the search; the engine maps the gradient to the orthogonal
 #' transformation `T`, projects it onto the tangent space, performs a
-#' sufficient-decrease line search, and retracts back onto the orthogonal group via a
+#' non-monotone line search, and retracts back onto the orthogonal group via a
 #' polar (singular value) projection. `kappa = 0` is the quartimax criterion and
 #' `kappa = ncol(A) / (2 * nrow(A))` is the equamax criterion.
 #'
@@ -252,7 +249,7 @@
 #' Crawford, C. B., & Ferguson, G. A. (1970). A general rotation criterion and its use
 #' in orthogonal rotation. *Psychometrika*, 35, 321-332.
 #'
-.rotate_cf_orth <- function(L, kappa, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0, screen_keep = 2L, triage_maxit = 25L, triage_improve_tol = 0.0) {
+.rotate_cf_orth <- function(L, kappa, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0, screen_keep = 5L, triage_maxit = 25L, triage_improve_tol = 0.0) {
     .Call(`_EFAtools_rotate_cf_orth`, L, kappa, eps, normalize, random_starts, maxit, max_line_search, step0, screen_keep, triage_maxit, triage_improve_tol)
 }
 
@@ -264,7 +261,7 @@
 #' The criterion value `f` and its gradient `dQ/dL` at the rotated loadings
 #' `L = A %*% solve(t(T))` define the search; the engine maps the gradient to the
 #' transformation `T` on the manifold `diag(t(T) %*% T) = 1`, projects it onto the tangent
-#' space, performs a sufficient-decrease line search, and retracts back onto the manifold
+#' space, performs a non-monotone line search, and retracts back onto the manifold
 #' by column normalization. `gam = 0` is the quartimin criterion.
 #'
 #' Additional random starts may be requested. To bound runtime the solver screens each
@@ -303,7 +300,7 @@
 #' Jennrich, R. I., & Sampson, P. F. (1966). Rotation for simple loadings.
 #' *Psychometrika*, 31, 313-323.
 #'
-.rotate_oblimin <- function(L, gam = 0.0, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0, screen_keep = 2L, triage_maxit = 25L, triage_improve_tol = 0.0) {
+.rotate_oblimin <- function(L, gam = 0.0, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0, screen_keep = 5L, triage_maxit = 25L, triage_improve_tol = 0.0) {
     .Call(`_EFAtools_rotate_oblimin`, L, gam, eps, normalize, random_starts, maxit, max_line_search, step0, screen_keep, triage_maxit, triage_improve_tol)
 }
 
@@ -314,7 +311,7 @@
 #'
 #' The criterion value `f` and its gradient `dQ/dL` at the rotated loadings
 #' `L = A %*% T` define the search; the engine maps the gradient to the orthogonal
-#' transformation `T`, projects it onto the tangent space, performs a sufficient-decrease
+#' transformation `T`, projects it onto the tangent space, performs a non-monotone
 #' line search, and retracts back onto the orthogonal group via a polar (singular value)
 #' projection. The geomin criterion sums the per-variable geometric mean of the squared
 #' loadings offset by `delta`; it is prone to local minima, so additional random starts are
@@ -356,7 +353,7 @@
 #' Browne, M. W. (2001). An overview of analytic rotation in exploratory factor analysis.
 #' *Multivariate Behavioral Research*, 36, 111-150.
 #'
-.rotate_geomin_orth <- function(L, delta = 0.01, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0, screen_keep = 2L, triage_maxit = 25L, triage_improve_tol = 0.0) {
+.rotate_geomin_orth <- function(L, delta = 0.01, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0, screen_keep = 5L, triage_maxit = 25L, triage_improve_tol = 0.0) {
     .Call(`_EFAtools_rotate_geomin_orth`, L, delta, eps, normalize, random_starts, maxit, max_line_search, step0, screen_keep, triage_maxit, triage_improve_tol)
 }
 
@@ -368,7 +365,7 @@
 #' The criterion value `f` and its gradient `dQ/dL` at the rotated loadings
 #' `L = A %*% solve(t(T))` define the search; the engine maps the gradient to the
 #' transformation `T` on the manifold `diag(t(T) %*% T) = 1`, projects it onto the tangent
-#' space, performs a sufficient-decrease line search, and retracts back onto the manifold by
+#' space, performs a non-monotone line search, and retracts back onto the manifold by
 #' column normalization. The geomin criterion sums the per-variable geometric mean of the
 #' squared loadings offset by `delta`; it is prone to local minima, so additional random
 #' starts are recommended.
@@ -410,7 +407,7 @@
 #' Browne, M. W. (2001). An overview of analytic rotation in exploratory factor analysis.
 #' *Multivariate Behavioral Research*, 36, 111-150.
 #'
-.rotate_geomin_oblq <- function(L, delta = 0.01, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0, screen_keep = 2L, triage_maxit = 25L, triage_improve_tol = 0.0) {
+.rotate_geomin_oblq <- function(L, delta = 0.01, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0, screen_keep = 5L, triage_maxit = 25L, triage_improve_tol = 0.0) {
     .Call(`_EFAtools_rotate_geomin_oblq`, L, delta, eps, normalize, random_starts, maxit, max_line_search, step0, screen_keep, triage_maxit, triage_improve_tol)
 }
 
@@ -421,7 +418,7 @@
 #'
 #' The criterion value `f` and its gradient `dQ/dL` at the rotated loadings
 #' `L = A %*% T` define the search; the engine maps the gradient to the orthogonal
-#' transformation `T`, projects it onto the tangent space, performs a sufficient-decrease line
+#' transformation `T`, projects it onto the tangent space, performs a non-monotone line
 #' search, and retracts back onto the orthogonal group via a polar (singular value) projection.
 #' The Bentler criterion measures the departure of the cross-products of squared loadings from a
 #' diagonal pattern; it is prone to local minima, so additional random starts are recommended.
@@ -460,7 +457,7 @@
 #' software for arbitrary rotation criteria in factor analysis. *Educational and
 #' Psychological Measurement*, 65, 676-696.
 #'
-.rotate_bentler_orth <- function(L, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0, screen_keep = 2L, triage_maxit = 25L, triage_improve_tol = 0.0) {
+.rotate_bentler_orth <- function(L, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0, screen_keep = 5L, triage_maxit = 25L, triage_improve_tol = 0.0) {
     .Call(`_EFAtools_rotate_bentler_orth`, L, eps, normalize, random_starts, maxit, max_line_search, step0, screen_keep, triage_maxit, triage_improve_tol)
 }
 
@@ -472,7 +469,7 @@
 #' The criterion value `f` and its gradient `dQ/dL` at the rotated loadings
 #' `L = A %*% solve(t(T))` define the search; the engine maps the gradient to the
 #' transformation `T` on the manifold `diag(t(T) %*% T) = 1`, projects it onto the tangent
-#' space, performs a sufficient-decrease line search, and retracts back onto the manifold by
+#' space, performs a non-monotone line search, and retracts back onto the manifold by
 #' column normalization. The Bentler criterion measures the departure of the cross-products of
 #' squared loadings from a diagonal pattern; it is prone to local minima, so additional random
 #' starts are recommended.
@@ -512,7 +509,7 @@
 #' software for arbitrary rotation criteria in factor analysis. *Educational and
 #' Psychological Measurement*, 65, 676-696.
 #'
-.rotate_bentler_oblq <- function(L, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0, screen_keep = 2L, triage_maxit = 25L, triage_improve_tol = 0.0) {
+.rotate_bentler_oblq <- function(L, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0, screen_keep = 5L, triage_maxit = 25L, triage_improve_tol = 0.0) {
     .Call(`_EFAtools_rotate_bentler_oblq`, L, eps, normalize, random_starts, maxit, max_line_search, step0, screen_keep, triage_maxit, triage_improve_tol)
 }
 
@@ -523,7 +520,7 @@
 #'
 #' The criterion value `f` and its gradient `dQ/dL` at the rotated loadings
 #' `L = A %*% T` define the search; the engine maps the gradient to the orthogonal
-#' transformation `T`, projects it onto the tangent space, performs a sufficient-decrease line
+#' transformation `T`, projects it onto the tangent space, performs a non-monotone line
 #' search, and retracts back onto the orthogonal group via a polar (singular value) projection.
 #' The first factor is treated as a general factor and is exempt from the penalty; the criterion
 #' measures the between-group-factor cross-products of the squared loadings, so it is minimized
@@ -564,7 +561,7 @@
 #' Jennrich, R. I., & Bentler, P. M. (2011). Exploratory bi-factor analysis. *Psychometrika*,
 #' 76, 537-549.
 #'
-.rotate_bifactor_orth <- function(L, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0, screen_keep = 2L, triage_maxit = 25L, triage_improve_tol = 0.0) {
+.rotate_bifactor_orth <- function(L, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0, screen_keep = 5L, triage_maxit = 25L, triage_improve_tol = 0.0) {
     .Call(`_EFAtools_rotate_bifactor_orth`, L, eps, normalize, random_starts, maxit, max_line_search, step0, screen_keep, triage_maxit, triage_improve_tol)
 }
 
@@ -576,7 +573,7 @@
 #' The criterion value `f` and its gradient `dQ/dL` at the rotated loadings
 #' `L = A %*% solve(t(T))` define the search; the engine maps the gradient to the
 #' transformation `T` on the manifold `diag(t(T) %*% T) = 1`, projects it onto the tangent
-#' space, performs a sufficient-decrease line search, and retracts back onto the manifold by
+#' space, performs a non-monotone line search, and retracts back onto the manifold by
 #' column normalization. The first factor is treated as a general factor and is exempt from the
 #' penalty; the criterion measures the between-group-factor cross-products of the squared
 #' loadings, so it is minimized when each variable loads on the general factor plus at most one
@@ -618,7 +615,7 @@
 #' Jennrich, R. I., & Bentler, P. M. (2011). Exploratory bi-factor analysis. *Psychometrika*,
 #' 76, 537-549.
 #'
-.rotate_bifactor_oblq <- function(L, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0, screen_keep = 2L, triage_maxit = 25L, triage_improve_tol = 0.0) {
+.rotate_bifactor_oblq <- function(L, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0, screen_keep = 5L, triage_maxit = 25L, triage_improve_tol = 0.0) {
     .Call(`_EFAtools_rotate_bifactor_oblq`, L, eps, normalize, random_starts, maxit, max_line_search, step0, screen_keep, triage_maxit, triage_improve_tol)
 }
 

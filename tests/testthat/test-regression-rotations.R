@@ -340,9 +340,14 @@ test_that("geominQ routes through the native geomin GPF engine", {
     unrot_fx <- suppressWarnings(EFA(fx$R, n_factors = fx$nf, N = fx$N))
     Lx <- unclass(unrot_fx$unrot_loadings)
 
+    # geominQ uses a wider multistart by default than the bare compiled entry (the oblique geomin
+    # criterion is multimodal enough that the two best-screened starts can both miss the global
+    # basin), so the direct call is given the same per-criterion settings the public path applies,
+    # ensuring both optimize identically.
     set.seed(seed)
-    native <- .rotate_geomin_oblq(Lx, delta = 0.01, eps = 1e-5, normalize = TRUE,
-                                  random_starts = 100)
+    native <- do.call(.rotate_geomin_oblq,
+                      c(list(Lx, delta = 0.01, eps = 1e-5, normalize = TRUE, random_starts = 100),
+                        .gpf_multistart_defaults$geominQ))
     set.seed(seed)
     ref <- suppressWarnings(GPArotation::geominQ(Lx, delta = 0.01, normalize = TRUE,
                                                  eps = 1e-5, randomStarts = 100))

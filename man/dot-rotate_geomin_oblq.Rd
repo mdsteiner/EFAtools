@@ -13,7 +13,7 @@
   maxit = 1000L,
   max_line_search = 10L,
   step0 = 1,
-  screen_keep = 2L,
+  screen_keep = 5L,
   triage_maxit = 25L,
   triage_improve_tol = 0
 )
@@ -62,7 +62,7 @@ optimizer along the oblique (column-normalized) manifold.
 The criterion value \code{f} and its gradient \code{dQ/dL} at the rotated loadings
 \code{L = A \%*\% solve(t(T))} define the search; the engine maps the gradient to the
 transformation \code{T} on the manifold \code{diag(t(T) \%*\% T) = 1}, projects it onto the tangent
-space, performs a sufficient-decrease line search, and retracts back onto the manifold by
+space, performs a non-monotone line search, and retracts back onto the manifold by
 column normalization. The geomin criterion sums the per-variable geometric mean of the
 squared loadings offset by \code{delta}; it is prone to local minima, so additional random
 starts are recommended.

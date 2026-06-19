@@ -10,8 +10,8 @@
 #include "gpf_common.h"
 
 // Gradient-projection (GP) manifold optimizer shared by the rotation solvers. The
-// solver structure -- the projected-gradient iteration with a sufficient-decrease
-// line search, and the screen -> triage -> optimize multi-start orchestration -- is
+// solver structure -- the projected-gradient iteration with a non-monotone line
+// search, and the screen -> triage -> optimize multi-start orchestration -- is
 // identical across solvers; only three operations differ between them and are
 // supplied by a `Manifold` strategy:
 //
@@ -174,39 +174,41 @@ inline void validate_gpf_input(const arma::mat& L, const char* family) {
   }
 }
 
-// One projected-gradient optimization from a starting transformation. The step is doubled
-// between iterations and halved within the line search.
+// One projected-gradient optimization from a starting transformation. The trial step is set at
+// the start of each iteration and halved within the line search.
 //
-// `fwindow` selects the line-search acceptance rule. With the default `fwindow == 0` the line
-// search is monotone: a candidate is accepted only if it satisfies the sufficient-decrease
-// (Armijo) condition, or, as a numerical fallback, if it at least decreases the objective after
-// all step halvings are exhausted; otherwise the optimization terminates. The lowest-objective
-// iterate is necessarily the final one, which is reported, and convergence is the projected
-// gradient falling below `eps`. This is the rule used by every smooth rotation criterion (and the
-// Procrustes objective), whose gradient vanishes at the optimum.
+// The trial step is the Barzilai-Borwein spectral step `al = ||dT||^2 / |<dT, dGp>|` (clamped to
+// [1e-10, 20]) formed from the change in the iterate `dT` and in its projected gradient `dGp`
+// between the two most recent iterates, falling back to doubling on the first iteration and when
+// the gradient change vanishes. The spectral step adapts to the local curvature and reaches the
+// stationary point in far fewer iterations than fixed step doubling, but it is non-monotone (it can
+// take transient up-steps), so it is paired with the non-monotone line search described next
+// (Barzilai & Borwein, 1988; Raydan, 1997). Every rotation criterion (and the Procrustes objective)
+// uses this engine.
 //
-// With `fwindow >= 1` the acceptance is non-monotone (Grippo, Lampariello & Lucidi, 1986): a
-// candidate is accepted if it sufficiently decreases the largest objective over the last
-// `fwindow` iterations (rather than the current one), and when no step is accepted the
-// smallest-step candidate is taken unconditionally instead of terminating. This lets the optimizer
-// cross the kinks of a criterion whose gradient does not vanish at the optimum (the simplimax
-// criterion reselects the k smallest squared loadings at every evaluation, so it is only piecewise
-// smooth and a strictly monotone search stalls short of the minimum). Because such a search may end
-// on an up-step and its projected-gradient norm need not reach `eps`, the non-monotone path instead
-// (a) reports the lowest-objective iterate it visited and (b) reports convergence when that best
-// objective has stopped improving for `fwindow` consecutive iterations by the end of the run (it
-// has stalled at the optimum) -- the projected-gradient tolerance is not the right convergence
-// signal there. The search still runs to `maxit` (its non-monotone steps can cross a kink to a
-// deeper basin). The `fwindow == 0` path is exactly the monotone behavior above; `fwindow` changes
-// the acceptance test, the reported iterate, and the convergence flag, not the search trajectory.
+// The non-monotone line search (Grippo, Lampariello & Lucidi, 1986) accepts a candidate if it
+// sufficiently decreases the largest objective over the last `kNonmonotoneWindow` iterations
+// (rather than the current one), and when no step is accepted the smallest-step candidate is taken
+// unconditionally instead of terminating. This lets the optimizer cross the kinks of a criterion
+// whose gradient does not vanish at the optimum (the simplimax criterion reselects the k smallest
+// squared loadings at every evaluation, so it is only piecewise smooth and a strictly monotone
+// search stalls short of the minimum). Because such a search may end on an up-step and its
+// projected-gradient norm need not reach `eps`, the engine (a) reports the lowest-objective iterate
+// it visited and (b) reports convergence when that best objective has stopped improving for
+// `kNonmonotoneWindow` consecutive iterations by the end of the run (it has stalled at the
+// optimum) -- the projected-gradient tolerance is not the right convergence signal there. The
+// search still runs to `maxit` (its non-monotone steps can cross a kink to a deeper basin).
 template <typename Manifold>
 GpfFit run_single_gpf_fit(const Manifold& manifold,
                           arma::mat Tmat,
                           double eps,
                           int maxit,
                           int max_line_search,
-                          double step0,
-                          int fwindow = 0) {
+                          double step0) {
+  // Number of recent iterations over which the non-monotone line search takes its reference
+  // objective, and the stall length that signals convergence at a piecewise-smooth optimum
+  // (Grippo, Lampariello & Lucidi, 1986).
+  const int kNonmonotoneWindow = 10;
   Tmat = manifold.normalize_start(Tmat);
 
   // Record per-iteration diagnostics in a growing buffer rather than preallocating a
@@ -221,22 +223,22 @@ GpfFit run_single_gpf_fit(const Manifold& manifold,
   bool line_search_failed = false;
   double al = step0;
 
+  // Previous accepted iterate and its projected gradient, kept for the Barzilai-Borwein step.
+  // Empty until the first iteration has run, so the first step falls back to doubling.
+  arma::mat Tmat_prev;
+  arma::mat Gp_prev;
+
   GpfState state = manifold.compute(Tmat);
 
-  // Non-monotone path (fwindow >= 1) bookkeeping: the lowest-objective iterate visited (reported in
-  // place of the final, possibly-up-step iterate) and a stall counter for the convergence flag. The
-  // counter resets whenever the best objective drops by more than a relative tolerance; once it
-  // stays flat for `fwindow` iterations the search has stalled at the (piecewise-smooth) optimum.
-  // Only the winning transformation needs a matrix copy (the reported value/validity are scalars),
-  // and only when fwindow >= 1, so the monotone path takes no extra copy.
-  arma::mat best_T;
+  // The lowest-objective iterate visited (reported in place of the final, possibly-up-step iterate)
+  // and a stall counter for the convergence flag. The counter resets whenever the best objective
+  // drops by more than a relative tolerance; once it stays flat for `kNonmonotoneWindow` iterations
+  // the search has stalled at the (piecewise-smooth) optimum.
+  arma::mat best_T = Tmat;
   double best_f = state.f;
   bool best_valid = state.valid;
   double stall_ref_f = state.f;
   int iters_since_improve = 0;
-  if (fwindow >= 1) {
-    best_T = Tmat;
-  }
 
   for (int iter = 0; iter <= maxit; ++iter) {
     diag_rows.push_back(static_cast<double>(iter));
@@ -245,7 +247,7 @@ GpfFit run_single_gpf_fit(const Manifold& manifold,
     diag_rows.push_back(al);
     ++filled;
 
-    if (fwindow >= 1 && state.valid) {
+    if (state.valid) {
       // Track the lowest-objective iterate (for reporting) and stalling (for the convergence flag).
       if (state.f < best_f) {
         best_f = state.f;
@@ -277,37 +279,42 @@ GpfFit run_single_gpf_fit(const Manifold& manifold,
       break;
     }
 
+    // Trial step for this iteration: the Barzilai-Borwein spectral step
+    // al = ||dT||^2 / |<dT, dGp>| (clamped to [1e-10, 20]) from the change in the iterate and its
+    // projected gradient since the previous accepted iterate. The first iteration (no previous
+    // iterate) and a vanishing gradient change fall back to doubling the step. The previous iterate
+    // is then updated for the next step (the values before this iteration's line-search update,
+    // matching GPArotation's Tmat_prev/Gp_prev).
     al = 2.0 * al;
+    if (!Tmat_prev.is_empty()) {
+      arma::mat dT = Tmat - Tmat_prev;
+      arma::mat dGp = state.Gp - Gp_prev;
+      double bb_denom = arma::accu(dGp % dGp);
+      double bb_cross = std::abs(arma::accu(dT % dGp));
+      if (bb_denom > 0.0 && bb_cross > 0.0) {
+        al = arma::accu(dT % dT) / bb_cross;
+        al = std::max(1e-10, std::min(al, 20.0));
+      }
+    }
+    Tmat_prev = Tmat;
+    Gp_prev = state.Gp;
     if (!std::isfinite(al) || al <= 0.0) {
       al = step0;
     }
 
-    // Non-monotone reference: the largest objective over the last `fwindow` recorded
-    // iterations (the f-values live in column 1 of the diagnostics buffer). With the default
-    // fwindow == 0 this is just the current objective, so the acceptance test below reduces
-    // exactly to the monotone sufficient-decrease test.
+    // Non-monotone reference: the largest objective over the last `kNonmonotoneWindow` recorded
+    // iterations (the f-values live in column 1 of the diagnostics buffer).
     double target_f = state.f;
-    if (fwindow >= 1) {
-      const int lo = std::max(0, filled - fwindow);
-      for (int r = lo; r < filled; ++r) {
-        target_f = std::max(target_f, diag_rows[4 * static_cast<std::size_t>(r) + 1]);
-      }
+    const int lo = std::max(0, filled - kNonmonotoneWindow);
+    for (int r = lo; r < filled; ++r) {
+      target_f = std::max(target_f, diag_rows[4 * static_cast<std::size_t>(r) + 1]);
     }
 
     bool armijo_improved = false;
 
-    // Monotone fallback bookkeeping (fwindow == 0 only): the best strict decrease tried. The
-    // matrices are assigned only when a candidate strictly decreases the objective (any_decrease),
-    // so they need no per-iteration initial copy.
-    bool any_decrease = false;
-    double best_decrease_value = state.f;
-    double best_decrease_step = al;
-    arma::mat best_decrease_T;
-    GpfState best_decrease_state;
-
-    // Non-monotone fallback bookkeeping (fwindow >= 1 only): the smallest-step valid candidate (the
-    // line search halves the step, so the last valid candidate is the smallest-step one), accepted
-    // unconditionally when no step satisfies the sufficient-decrease test.
+    // Fallback bookkeeping: the smallest-step valid candidate (the line search halves the step, so
+    // the last valid candidate is the smallest-step one), accepted unconditionally when no step
+    // satisfies the sufficient-decrease test.
     bool have_last_valid = false;
     double last_valid_step = al;
     arma::mat last_valid_T;
@@ -322,18 +329,10 @@ GpfFit run_single_gpf_fit(const Manifold& manifold,
         GpfState cand = manifold.compute(T_candidate);
 
         if (cand.valid) {
-          if (fwindow >= 1) {
-            have_last_valid = true;
-            last_valid_step = trial_step;
-            last_valid_T = T_candidate;
-            last_valid_state = cand;
-          } else if (cand.f < best_decrease_value) {
-            any_decrease = true;
-            best_decrease_value = cand.f;
-            best_decrease_step = trial_step;
-            best_decrease_T = T_candidate;
-            best_decrease_state = cand;
-          }
+          have_last_valid = true;
+          last_valid_step = trial_step;
+          last_valid_T = T_candidate;
+          last_valid_state = cand;
 
           if ((target_f - cand.f) > 0.5 * state.s * state.s * trial_step) {
             Tmat = T_candidate;
@@ -349,24 +348,13 @@ GpfFit run_single_gpf_fit(const Manifold& manifold,
     }
 
     if (!armijo_improved) {
-      if (fwindow >= 1) {
-        // GPArotation's GPFoblq/GPForth take the smallest-step candidate even when it does not
-        // decrease the (non-monotone) objective, so the optimizer can step across a kink rather
-        // than stop. Terminate only if the line search produced no valid candidate at all.
-        if (have_last_valid) {
-          Tmat = last_valid_T;
-          state = last_valid_state;
-          al = last_valid_step;
-        } else {
-          line_search_failed = true;
-          break;
-        }
-      } else if (any_decrease) {
-        // Preserve monotone descent even when the sufficient-decrease test is too
-        // strict because of numerical noise near convergence.
-        Tmat = best_decrease_T;
-        state = best_decrease_state;
-        al = best_decrease_step;
+      // GPArotation's GPFoblq/GPForth take the smallest-step candidate even when it does not
+      // decrease the (non-monotone) objective, so the optimizer can step across a kink rather
+      // than stop. Terminate only if the line search produced no valid candidate at all.
+      if (have_last_valid) {
+        Tmat = last_valid_T;
+        state = last_valid_state;
+        al = last_valid_step;
       } else {
         line_search_failed = true;
         break;
@@ -374,13 +362,12 @@ GpfFit run_single_gpf_fit(const Manifold& manifold,
     }
   }
 
-  // For the non-monotone path, a search that exhausted maxit while its best objective stopped
-  // improving has stalled at the (piecewise-smooth) optimum -- report it as converged, since the
-  // projected-gradient tolerance is not the right convergence signal there. The search itself still
-  // runs to maxit (the non-monotone steps can cross a kink to a deeper basin, so terminating early
-  // would forfeit the lower minima those crossings find). A genuine line-search failure is never
-  // reclassified as converged.
-  if (fwindow >= 1 && !line_search_failed && iters_since_improve >= fwindow) {
+  // A search that exhausted maxit while its best objective stopped improving has stalled at the
+  // (piecewise-smooth) optimum -- report it as converged, since the projected-gradient tolerance is
+  // not the right convergence signal there. The search itself still runs to maxit (the non-monotone
+  // steps can cross a kink to a deeper basin, so terminating early would forfeit the lower minima
+  // those crossings find). A genuine line-search failure is never reclassified as converged.
+  if (!line_search_failed && iters_since_improve >= kNonmonotoneWindow) {
     convergence = true;
   }
 
@@ -395,19 +382,16 @@ GpfFit run_single_gpf_fit(const Manifold& manifold,
     table(r, 3) = diag_rows[base + 3];
   }
 
-  // The non-monotone path reports its lowest-objective iterate (best_*); the monotone path reports
-  // its final iterate (which is also its lowest, by construction). For the non-monotone path the
-  // reported iterate may therefore be earlier than the last row of the diagnostics `table` (and
-  // than `iterations`), which always describe the full trajectory. The table is diagnostic only and
-  // is not surfaced by the rotation entry points -- those read T/value/convergence/valid.
-  const bool nonmono = (fwindow >= 1);
-
+  // The engine reports its lowest-objective iterate (best_*), which may be earlier than the last row
+  // of the diagnostics `table` (and than `iterations`), which always describe the full trajectory.
+  // The table is diagnostic only and is not surfaced by the rotation entry points -- those read
+  // T/value/convergence/valid.
   GpfFit out;
-  out.T = nonmono ? best_T : Tmat;
+  out.T = best_T;
   out.Table = table;
-  out.value = nonmono ? best_f : state.f;
+  out.value = best_f;
   out.convergence = convergence;
-  out.valid = nonmono ? best_valid : state.valid;
+  out.valid = best_valid;
   out.line_search_failed = line_search_failed;
   out.iterations = filled - 1;
   return out;
@@ -433,13 +417,12 @@ GpfSummary run_gpf_multistart(const Manifold& manifold,
                               int screen_keep,
                               int triage_maxit,
                               double triage_improve_tol,
-                              int fwindow = 0,
                               bool full_multistart = false) {
   const arma::uword k = T_primary.n_cols;
 
   GpfSummary summary;
   GpfFit best_fit = run_single_gpf_fit(manifold, T_primary, eps, maxit, max_line_search,
-                                       step0, fwindow);
+                                       step0);
   double incumbent_value = best_fit.value;
 
   summary.all_values.reserve(static_cast<std::size_t>(1 + std::max(0, random_starts)));
@@ -469,8 +452,7 @@ GpfSummary run_gpf_multistart(const Manifold& manifold,
     // path and stay empty/zero in this mode (the rotation entry points read only best_fit).
     for (int s = 0; s < random_starts; ++s) {
       arma::mat Tstart = random_orthogonal_start_cpp(k);
-      GpfFit fit = run_single_gpf_fit(manifold, Tstart, eps, maxit, max_line_search, step0,
-                                      fwindow);
+      GpfFit fit = run_single_gpf_fit(manifold, Tstart, eps, maxit, max_line_search, step0);
       ++n_fully_optimized;
       summary.all_values.push_back(fit.value);
       summary.all_converged.push_back(fit.convergence ? 1 : 0);
@@ -512,7 +494,7 @@ GpfSummary run_gpf_multistart(const Manifold& manifold,
       const GpfCandidate& cand = candidates[static_cast<std::size_t>(i)];
 
       GpfFit triage_fit = run_single_gpf_fit(
-        manifold, cand.Tstart, eps, triage_maxit, max_line_search, step0, fwindow
+        manifold, cand.Tstart, eps, triage_maxit, max_line_search, step0
       );
       ++n_triaged;
 
@@ -532,7 +514,7 @@ GpfSummary run_gpf_multistart(const Manifold& manifold,
 
       if (triage_fit.valid && rel_improve >= triage_improve_tol) {
         GpfFit full_fit = run_single_gpf_fit(
-          manifold, triage_fit.T, eps, maxit, max_line_search, step0, fwindow
+          manifold, triage_fit.T, eps, maxit, max_line_search, step0
         );
         ++n_fully_optimized;
 
