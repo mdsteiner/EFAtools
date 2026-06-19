@@ -205,8 +205,11 @@ PARALLEL <- function(x = NULL,
       }
 
       if ("EFA" %in% eigen_type) {
-        eigvals_real_EFA <- matrix(EFA(R, n_factors = n_factors, N = N,
-                                   ...)$final_eigen,  ncol = 1)
+        # Internal fit used only for its eigenvalues; suppress its warnings so a
+        # forwarded estimator that does not converge does not raise a warning from
+        # inside PARALLEL().
+        eigvals_real_EFA <- matrix(suppressWarnings(EFA(R, n_factors = n_factors,
+                                   N = N, ...)$final_eigen),  ncol = 1)
         colnames(eigvals_real_EFA) <- "Real Eigenvalues"
       }
 

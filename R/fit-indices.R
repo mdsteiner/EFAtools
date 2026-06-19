@@ -148,8 +148,11 @@
   # ULS it is the proper chi-square-distributed statistic (matching psych::fa(fm =
   # "minres")), not the raw least-squares residual sum of squares treated as Wishart. NA
   # for PAF, missing N, underidentified df, or a non-PD model-implied matrix (e.g. Heywood
-  # cases), where the discrepancy is undefined.
-  if (method != "PAF" && !is.na(N) && df >= 0) {
+  # cases), where the discrepancy is undefined. DWLS is also excluded: the ML discrepancy is
+  # not its fit function -- the appropriate categorical statistic is the mean-and-variance-
+  # adjusted chi-square from the full asymptotic covariance -- so the chi-square-derived block
+  # is left undefined here rather than reported on an inapplicable scale.
+  if (!(method %in% c("PAF", "DWLS")) && !is.na(N) && df >= 0) {
     Sigma <- L %*% t(L)
     diag(Sigma) <- 1
     chi <- tryCatch({

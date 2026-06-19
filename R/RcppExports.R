@@ -25,6 +25,18 @@
     .Call(`_EFAtools_grad_uls`, psi, R, n_fac)
 }
 
+.fit_dwls_cpp <- function(R, n_fac, W) {
+    .Call(`_EFAtools_fit_dwls_cpp`, R, n_fac, W)
+}
+
+.dwls_residuals <- function(par, R, n_fac, W) {
+    .Call(`_EFAtools_dwls_residuals`, par, R, n_fac, W)
+}
+
+.grad_dwls <- function(par, R, n_fac, W) {
+    .Call(`_EFAtools_grad_dwls`, par, R, n_fac, W)
+}
+
 #' Compute number of non-matching indicator-to-factor correspondences
 #'
 #' @param x numeric matrix. A matrix of pattern coefficients.

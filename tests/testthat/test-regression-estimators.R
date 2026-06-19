@@ -240,4 +240,44 @@ test_that("CFI, RMSEA, AIC, and BIC match their references on the baseline", {
   expect_equal(fi$RMSEA, rmsea_ref, tolerance = 1e-3)
 })
 
+# DWLS reproduces lavaan's diagonally weighted least squares loadings on ordinal data.
+# The comparison uses the rotation-invariant reproduced off-diagonal correlations and the
+# communalities. Agreement is limited by how closely the two polychoric matrices agree
+# (~2e-5), so the observed loading agreement is ~3e-5; the tolerance is set generously at
+# 1e-3. The reference is estimator = "DWLS" specifically (not ULS/ULSMV).
+test_that("DWLS reproduces lavaan::efa(estimator = 'DWLS') on DOSPERT_raw", {
+  skip_on_cran()
+  skip_if_not_installed("lavaan")
+
+  x <- DOSPERT_raw[stats::complete.cases(DOSPERT_raw), , drop = FALSE]
+  k <- 3
+  efa <- suppressWarnings(EFA(x, n_factors = k, method = "DWLS",
+                              cor_method = "poly", rotation = "none"))
+  fit <- suppressWarnings(lavaan::efa(data = as.data.frame(x), nfactors = k,
+                                      ordered = colnames(x), estimator = "DWLS",
+                                      rotation = "none")[[1]])
+  L_ref <- lavaan::lavInspect(fit, "est")$lambda
+
+  expect_equal(repro_offdiag(efa$unrot_loadings), repro_offdiag(L_ref), tolerance = 1e-3)
+  expect_equal(unname(efa$h2), unname(diag(tcrossprod(L_ref))), tolerance = 1e-3)
+})
+
+test_that("DWLS reproduces lavaan::efa(estimator = 'DWLS') on UPPS_raw", {
+  skip_on_cran()
+  skip_if_not_slow()
+  skip_if_not_installed("lavaan")
+
+  x <- UPPS_raw[stats::complete.cases(UPPS_raw), , drop = FALSE]
+  k <- 5
+  efa <- suppressWarnings(EFA(x, n_factors = k, method = "DWLS",
+                              cor_method = "poly", rotation = "none"))
+  fit <- suppressWarnings(lavaan::efa(data = as.data.frame(x), nfactors = k,
+                                      ordered = colnames(x), estimator = "DWLS",
+                                      rotation = "none")[[1]])
+  L_ref <- lavaan::lavInspect(fit, "est")$lambda
+
+  expect_equal(repro_offdiag(efa$unrot_loadings), repro_offdiag(L_ref), tolerance = 1e-3)
+  expect_equal(unname(efa$h2), unname(diag(tcrossprod(L_ref))), tolerance = 1e-3)
+})
+
 rm(repro_offdiag, reg_fixtures)

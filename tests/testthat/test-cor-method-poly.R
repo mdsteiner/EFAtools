@@ -64,6 +64,19 @@ test_that("cor_method = 'tetra' rejects variables with more than two categories"
                class = "efa_cor_not_binary")
 })
 
+test_that("method = 'DWLS' requires a polychoric asymptotic covariance", {
+  # a correlation matrix carries no raw data to estimate an asymptotic covariance from
+  expect_error(EFA(test_models$baseline$cormat, n_factors = 3, method = "DWLS", N = 500),
+               class = "efa_dwls_no_acov")
+  # a continuous correlation method produces no polychoric asymptotic covariance
+  expect_error(EFA(DOSPERT_raw, n_factors = 3, method = "DWLS", cor_method = "pearson"),
+               class = "efa_dwls_no_acov")
+  # the abort fires before fitting, regardless of bootstrap settings
+  expect_error(EFA(test_models$baseline$cormat, n_factors = 3, method = "DWLS", N = 500,
+                   se = "np-boot"),
+               class = "efa_dwls_no_acov")
+})
+
 test_that("KMO() and BARTLETT() honour cor_method = 'poly'", {
   x <- DOSPERT_raw[stats::complete.cases(DOSPERT_raw), ]
   N <- nrow(x)
@@ -154,6 +167,20 @@ test_that("the polychoric bootstrap is reproducible and positive definite under 
   expect_identical(b1$boot$SE$unrot_loadings, b2$boot$SE$unrot_loadings)
   # Replicate matrices are recomputed per resample (degenerate ones are dropped at
   # the fit), so the surviving replicates yield finite SEs.
+  expect_true(all(is.finite(b1$boot$SE$unrot_loadings)))
+})
+
+test_that("the DWLS polychoric bootstrap is reproducible and positive definite under resampling", {
+  g <- GRiPS_raw[stats::complete.cases(GRiPS_raw), ]
+
+  b1 <- suppressWarnings(EFA(g, n_factors = 1, method = "DWLS", cor_method = "poly",
+                             se = "np-boot", b_boot = 25, seed = 42))
+  b2 <- suppressWarnings(EFA(g, n_factors = 1, method = "DWLS", cor_method = "poly",
+                             se = "np-boot", b_boot = 25, seed = 42))
+
+  # Same seed -> identical bootstrap SEs; each replicate recomputes its own polychoric
+  # matrix and diagonal-ACOV weights, and the surviving replicates yield finite SEs.
+  expect_identical(b1$boot$SE$unrot_loadings, b2$boot$SE$unrot_loadings)
   expect_true(all(is.finite(b1$boot$SE$unrot_loadings)))
 })
 

@@ -91,6 +91,47 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fit_dwls_cpp
+Rcpp::List fit_dwls_cpp(const arma::mat& R, const int n_fac, const arma::mat& W);
+RcppExport SEXP _EFAtools_fit_dwls_cpp(SEXP RSEXP, SEXP n_facSEXP, SEXP WSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type R(RSEXP);
+    Rcpp::traits::input_parameter< const int >::type n_fac(n_facSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type W(WSEXP);
+    rcpp_result_gen = Rcpp::wrap(fit_dwls_cpp(R, n_fac, W));
+    return rcpp_result_gen;
+END_RCPP
+}
+// dwls_residuals
+double dwls_residuals(arma::vec par, const arma::mat& R, const int n_fac, const arma::mat& W);
+RcppExport SEXP _EFAtools_dwls_residuals(SEXP parSEXP, SEXP RSEXP, SEXP n_facSEXP, SEXP WSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type par(parSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type R(RSEXP);
+    Rcpp::traits::input_parameter< const int >::type n_fac(n_facSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type W(WSEXP);
+    rcpp_result_gen = Rcpp::wrap(dwls_residuals(par, R, n_fac, W));
+    return rcpp_result_gen;
+END_RCPP
+}
+// grad_dwls
+arma::vec grad_dwls(arma::vec par, const arma::mat& R, const int n_fac, const arma::mat& W);
+RcppExport SEXP _EFAtools_grad_dwls(SEXP parSEXP, SEXP RSEXP, SEXP n_facSEXP, SEXP WSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type par(parSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type R(RSEXP);
+    Rcpp::traits::input_parameter< const int >::type n_fac(n_facSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type W(WSEXP);
+    rcpp_result_gen = Rcpp::wrap(grad_dwls(par, R, n_fac, W));
+    return rcpp_result_gen;
+END_RCPP
+}
 // factor_corres
 Rcpp::List factor_corres(NumericMatrix x, NumericMatrix y, double thresh);
 RcppExport SEXP _EFAtools_factor_corres(SEXP xSEXP, SEXP ySEXP, SEXP threshSEXP) {
@@ -414,6 +455,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EFAtools_fit_uls_cpp", (DL_FUNC) &_EFAtools_fit_uls_cpp, 4},
     {"_EFAtools_uls_residuals", (DL_FUNC) &_EFAtools_uls_residuals, 3},
     {"_EFAtools_grad_uls", (DL_FUNC) &_EFAtools_grad_uls, 3},
+    {"_EFAtools_fit_dwls_cpp", (DL_FUNC) &_EFAtools_fit_dwls_cpp, 3},
+    {"_EFAtools_dwls_residuals", (DL_FUNC) &_EFAtools_dwls_residuals, 4},
+    {"_EFAtools_grad_dwls", (DL_FUNC) &_EFAtools_grad_dwls, 4},
     {"_EFAtools_factor_corres", (DL_FUNC) &_EFAtools_factor_corres, 3},
     {"_EFAtools_nest_sym", (DL_FUNC) &_EFAtools_nest_sym, 4},
     {"_EFAtools_oblique_procrustes", (DL_FUNC) &_EFAtools_oblique_procrustes, 13},

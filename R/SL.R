@@ -54,6 +54,8 @@
 #' \item{L2}{Second-order factor loadings.}
 #' \item{vars_accounted}{A matrix of explained variances and sums of squared loadings.}
 #' \item{iter}{The number of iterations needed for convergence in EFA.}
+#' \item{convergence}{Integer convergence code of the second-order EFA (0 =
+#' converged); `NA` for a lavaan input. See [EFA()].}
 #' \item{settings}{list. The settings (arguments) used in EFA to get the
 #' second-order loadings.}
 #'
@@ -280,6 +282,7 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
 
     orig_R <- NA
     iter <- NA
+    convergence <- NA
     settings <- NA
 
   } else {
@@ -295,6 +298,7 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
     }
 
     iter <- EFA_phi$iter
+    convergence <- EFA_phi$convergence
     settings <- EFA_phi$settings
 
     # extract second order loadings
@@ -346,6 +350,7 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
     L2 = L2,
     vars_accounted = vars_accounted,
     iter = iter,
+    convergence = convergence,
     settings = settings
     )
 

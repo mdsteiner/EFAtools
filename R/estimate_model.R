@@ -121,7 +121,7 @@
 .estimate_model <- function(R, method, n_factors, N = NA,
                             type = "none", max_iter = NA, init_comm = NA,
                             criterion = NA, criterion_type = NA, abs_eigen = NA,
-                            start_method = NA, lean = FALSE) {
+                            start_method = NA, weights = NULL, lean = FALSE) {
 
   fit <- switch(
     method,
@@ -129,7 +129,8 @@
                init_comm = init_comm, criterion = criterion,
                criterion_type = criterion_type, abs_eigen = abs_eigen),
     ML = .ML(R, n_factors = n_factors, start_method = start_method),
-    ULS = .ULS(R, n_factors = n_factors)
+    ULS = .ULS(R, n_factors = n_factors),
+    DWLS = .DWLS(R, n_factors = n_factors, weights = weights)
   )
 
   common <- .finalize_fit(fit, N = N, method = method, lean = lean)

@@ -121,8 +121,12 @@ NEST <- function(x, N = NA,
     } else {
 
 
-      # For further factors, use model with nf - 1 as reference data
-      mm <- EFA(R, N = N, n_factors = nf - 1, ...)
+      # For further factors, use model with nf - 1 as reference data. The fit is an
+      # internal step run once per tested factor; suppress its warnings so a forwarded
+      # estimator (e.g. method = "ML") cannot turn per-model Heywood or non-convergence
+      # warnings into one warning per loop iteration. A Heywood case is handled
+      # explicitly below.
+      mm <- suppressWarnings(EFA(R, N = N, n_factors = nf - 1, ...))
       L <- mm$unrot_loadings
 
       # A Heywood case in the reference model (communality at or above 1) makes

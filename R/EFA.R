@@ -16,11 +16,15 @@
 #' (default), not all fit indices can be computed. When raw data with missing
 #' values are entered and `use` is `"complete.obs"` or `"na.or.complete"`, rows
 #' are deleted listwise, so `N` is taken as the number of complete cases.
-#' @param method character. One of "PAF", "ML", or "ULS" to use principal axis
-#' factoring, maximum likelihood, or unweighted least squares, respectively, to fit
-#' the EFA. "MINRES" is accepted as a synonym for "ULS": minimum residual and
-#' unweighted least squares are two names for the same estimator and return identical
-#' results.
+#' @param method character. One of "PAF", "ML", "ULS", or "DWLS" to use principal axis
+#' factoring, maximum likelihood, unweighted least squares, or diagonally weighted least
+#' squares, respectively, to fit the EFA. "MINRES" is accepted as a synonym for "ULS":
+#' minimum residual and unweighted least squares are two names for the same estimator and
+#' return identical results. "DWLS" is the recommended estimator for ordinal data: it
+#' weights each correlation residual by the inverse of the polychoric correlation's
+#' asymptotic variance, and therefore requires raw ordinal data together with
+#' `cor_method = "poly"` or `"tetra"` (it has no fallback for a supplied correlation
+#' matrix or a continuous `cor_method`).
 #' @param rotation character. Either perform no rotation ("none"; default),
 #' an orthogonal rotation ("varimax", "equamax", "quartimax", "geominT",
 #' "bentlerT", or "bifactorT"), or an oblique rotation ("promax", "oblimin",
@@ -208,6 +212,16 @@
 #' optimization procedure. Default for this argument is "psych" which takes
 #' the starting values specified in [psych::fa()].
 #'
+#' For DWLS, the loadings are estimated by minimizing the off-diagonal correlation
+#' residuals weighted by the inverse asymptotic variances of the polychoric correlations
+#' (Muthén, 1984), reproducing the loadings of a diagonally weighted least squares fit
+#' (e.g. `lavaan::efa(..., estimator = "DWLS")`). Because the weighting follows the
+#' polychoric asymptotic covariance, the matrix and the weights are estimated on the
+#' listwise-complete cases. The chi-square and the indices derived from it (CFI, TLI,
+#' RMSEA, AIC, BIC) are not reported for DWLS: the appropriate categorical test statistic
+#' is a mean- and variance-adjusted chi-square, which is not currently computed. The
+#' descriptive residual indices (RMSR, SRMR, CAF) are reported as usual.
+#'
 #' When `se = "np-boot"`, the bootstrap replicate fits are run in parallel across
 #' replicates with the `future` framework. By default they run sequentially; to run
 #' them in parallel, register a plan with [future::plan()] (e.g.
@@ -229,10 +243,11 @@
 #' \item{final_eigen}{Eigenvalues obtained from the correlation matrix
 #'  with the final communality estimates as diagonal.}
 #' \item{iter}{The number of iterations needed for convergence.}
-#' \item{convergence}{Integer convergence code (0 = converged). For ML and ULS
-#'  this is the code returned by [`stats::optim()`][stats::optim]; for PAF it is
-#'  1 if the maximum number of iterations was reached without meeting the
-#'  convergence criterion and 0 otherwise.}
+#' \item{convergence}{Integer convergence code (0 = converged). For ML, ULS, and
+#'  DWLS this is the code returned by the optimiser
+#'  ([`stats::optim()`][stats::optim]); for PAF it is 1 if the maximum number of
+#'  iterations was reached without meeting the convergence criterion and 0
+#'  otherwise. A non-zero code is also reported with a warning.}
 #' \item{heywood}{A named integer vector indicating which variables have a
 #'  Heywood (improper) case in the unrotated solution; empty if there are none.}
 #' \item{unrot_loadings}{Loading matrix containing the final unrotated loadings.}
@@ -330,7 +345,7 @@
 #' future::plan(future::sequential)
 #' }
 #'
-EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES"),
+EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "DWLS"),
                 rotation = c("none", "varimax", "equamax", "quartimax", "geominT",
                              "bentlerT", "bifactorT", "promax", "oblimin",
                              "quartimin", "simplimax", "bentlerQ", "geominQ",
@@ -416,6 +431,24 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES"),
   # non-positive-definite matrix.
   is_cormat <- .is_cormat(x)
 
+  # DWLS weights each polychoric correlation residual by the inverse of its asymptotic
+  # variance, so it needs a polychoric/tetrachoric asymptotic covariance. That is only
+  # available from raw ordinal data with cor_method = "poly" or "tetra"; there is no
+  # fallback to unit weights. Resolve this before any computation so an unsupported
+  # request fails with a single clear error rather than downstream.
+  if (method == "DWLS" && !(.is_poly_cor(cor_method) && !is_cormat)) {
+    cli::cli_abort(
+      c("{.code method = \"DWLS\"} requires a polychoric asymptotic covariance.",
+        "x" = if (is_cormat) {
+          "You supplied a correlation matrix, so no asymptotic covariance can be estimated."
+        } else {
+          "{.code cor_method = {.val {cor_method}}} does not produce one."
+        },
+        "i" = "Supply raw ordinal data with {.code cor_method = \"poly\"} or {.code \"tetra\"}."),
+      class = "efa_dwls_no_acov"
+    )
+  }
+
   if (is_cormat) {
 
     if (isTRUE(np_boot)) {
@@ -434,10 +467,13 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES"),
   # Detect or compute the correlation matrix, check it, and smooth it if needed
   prep <- .prepare_cor_input(x, N = N, use = use, cor_method = cor_method,
                              N_policy = "optional",
+                             acov = if (method == "DWLS") "diag" else "none",
                              check_singular = type != "psych",
                              posdef_abort = type == "SPSS")
   R <- prep$R
   N <- prep$N
+  # DWLS weight matrix (1 / diag(Gamma)); NULL for the other estimators.
+  weights <- prep$weights
 
   if (!is_cormat && isTRUE(np_boot)) {
 
@@ -471,7 +507,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES"),
     # listwise deletion that is the complete cases (N of them), not the first N
     # row positions, so the case bootstrap stays a faithful resample of the
     # estimator that produced R (Efron & Tibshirani, 1993).
-    rows <- if (.is_listwise_use(use)) {
+    rows <- if (.is_listwise_use(use) || method == "DWLS") {
       which(stats::complete.cases(x))
     } else {
       seq_len(nrow(x))
@@ -484,26 +520,46 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES"),
 
     poly_cor <- .is_poly_cor(cor_method)
     tetra_cor <- cor_method == "tetra"
+    dwls <- method == "DWLS"
+
+    # DWLS reweights each replicate by the inverse of its own polychoric asymptotic
+    # variances, so the per-element weights are recomputed alongside the matrix and
+    # carried into the lean fit; NULL for the other estimators, which need no weights.
+    # The weights are positional, so no dimnames are needed.
+    W_boot_array <- if (dwls) array(NA_real_, c(m, m, b_boot)) else NULL
 
     for (boot_i in seq_len(b_boot)) {
       ind <- sample(rows, size = N, replace = TRUE)
-      R_boot_array[,, boot_i] <- if (poly_cor) {
+      if (poly_cor) {
         # A resample can be degenerate -- a constant column, a pair with no
-        # overlapping cases, or a numerically uncomputable matrix -- and make
-        # .polychoric() fail. Any genuine bug in .polychoric() would already have
-        # surfaced on the point-estimate fit over the full data above, so a failure
-        # here is necessarily resample-specific; fall back to an all-NA matrix so
-        # the replicate is dropped at the fit stage, mirroring how stats::cor()
-        # returns NA for a degenerate Pearson resample and how .boot_fun() drops
-        # unfittable replicates. n_threads = 1 keeps each recompute serial; the
-        # bootstrap is parallelised at the fit.
-        tryCatch(
-          suppressWarnings(
-            .polychoric(x[ind, , drop = FALSE], n_threads = 1L, nearest_pd = FALSE,
-                        binary_only = tetra_cor)$R),
-          error = function(e) matrix(NA_real_, m, m))
+        # overlapping cases, a numerically uncomputable matrix, or (for DWLS) a pair
+        # whose asymptotic variance is non-positive -- and make .polychoric() or the
+        # weight construction fail. Any genuine bug would already have surfaced on the
+        # point-estimate fit over the full data above, so a failure here is necessarily
+        # resample-specific; fall back to an all-NA matrix so the replicate is dropped at
+        # the fit stage, mirroring how stats::cor() returns NA for a degenerate Pearson
+        # resample and how .boot_fun() drops unfittable replicates. n_threads = 1 keeps
+        # each recompute serial; the bootstrap is parallelised at the fit. DWLS requests
+        # the diagonal ACOV and builds the weights inside the same try so the matrix and
+        # weights share one resample and a degenerate weight drops the replicate too.
+        rep_i <- tryCatch(
+          suppressWarnings({
+            poly <- .polychoric(x[ind, , drop = FALSE], n_threads = 1L, nearest_pd = FALSE,
+                                binary_only = tetra_cor,
+                                acov = if (dwls) "diag" else "none")
+            list(R = poly$R,
+                 W = if (dwls) .poly_weight_matrix(poly$acov, m) else NULL)
+          }),
+          error = function(e) NULL)
+        if (is.null(rep_i)) {
+          R_boot_array[,, boot_i] <- matrix(NA_real_, m, m)
+        } else {
+          R_boot_array[,, boot_i] <- rep_i$R
+          if (dwls) W_boot_array[,, boot_i] <- rep_i$W
+        }
       } else {
-        stats::cor(x[ind, , drop = FALSE], use = use, method = cor_method)
+        R_boot_array[,, boot_i] <- stats::cor(x[ind, , drop = FALSE], use = use,
+                                              method = cor_method)
       }
     }
 
@@ -535,7 +591,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES"),
 
   # run factor analysis with respective fit method
 
-  if (method %in% c("ML", "ULS")) {
+  if (method %in% c("ML", "ULS", "DWLS")) {
 
     if (type == "SPSS") {
 
@@ -563,7 +619,8 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES"),
                              type = type, max_iter = max_iter,
                              init_comm = init_comm, criterion = criterion,
                              criterion_type = criterion_type,
-                             abs_eigen = abs_eigen, start_method = start_method)
+                             abs_eigen = abs_eigen, start_method = start_method,
+                             weights = weights)
 
   # Surface Heywood cases from the point-estimate solution (the detector runs in
   # .finalize_fit for every fit). This fires once per EFA() call; EFA_AVERAGE,
@@ -580,6 +637,21 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES"),
     )
   }
 
+  # Surface optimiser non-convergence from the point-estimate solution for the
+  # iterative estimators (ML, ULS, DWLS), whose fitters return a non-zero
+  # convergence code when the optimiser stops before meeting its tolerance. PAF
+  # raises its own non-convergence warning from inside .PAF(). This fires once per
+  # EFA() call; the bootstrap replicates suppress their per-fit warnings and are
+  # tallied separately in .boot_fun().
+  if (method %in% c("ML", "ULS", "DWLS") && isTRUE(fit_out$convergence != 0)) {
+    cli::cli_warn(
+      c("The {.val {method}} optimiser did not converge (convergence code {fit_out$convergence}).",
+        "i" = paste("It stopped before meeting the convergence tolerance (typically the maximum",
+                    "number of iterations was reached); the results may not be interpretable.")),
+      class = "efa_nonconvergence"
+    )
+  }
+
   if (isTRUE(np_boot)) {
 
     boot_fits <- .boot_fun(R_boot_array, b_boot, .estimate_model,
@@ -591,7 +663,9 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES"),
                            abs_eigen = abs_eigen, start_method = start_method,
                            # Each replicate fits only the quantities the bootstrap
                            # aggregation consumes (see .finalize_fit()).
-                           lean = TRUE)
+                           lean = TRUE,
+                           # DWLS carries the per-replicate weight matrices; NULL otherwise.
+                           weights_array = W_boot_array)
 
   }
 
@@ -626,7 +700,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES"),
 
   if (rotation != "none"){
 
-    if(method == "ULS"){
+    if(method %in% c("ULS", "DWLS")){
 
       settings <- rot_out$settings
       output <- c(fit_out, within(rot_out, rm(settings)),
@@ -656,7 +730,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES"),
     ci = ci
   )
 
-  if(method == "ULS" & rotation == "none"){
+  if(method %in% c("ULS", "DWLS") & rotation == "none"){
 
     output <- c(output, settings = list(settings_EFA))
 
@@ -689,7 +763,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES"),
 
 
 
-.boot_fun <- function(x, b, call_fun, ...) {
+.boot_fun <- function(x, b, call_fun, ..., weights_array = NULL) {
 
   # The per-replicate fits are independent and estimation is RNG-free, so they are
   # run in parallel across replicates at the R/process level with future.apply. A
@@ -709,7 +783,10 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES"),
   # warning would otherwise fire once per non-converged replicate. Non-convergence
   # is instead tallied and reported once, after all replicates have been fitted.
   boot_list <- future.apply::future_lapply(seq_len(b), function(boot_i) {
-    tryCatch(suppressWarnings(call_fun(x[,, boot_i], ...)),
+    # DWLS passes the replicate's own weight matrix; the other estimators ignore the
+    # NULL (.estimate_model()'s weights default).
+    w_i <- if (is.null(weights_array)) NULL else weights_array[,, boot_i]
+    tryCatch(suppressWarnings(call_fun(x[,, boot_i], ..., weights = w_i)),
              error = function(e) NULL)
   }, future.seed = TRUE)
 

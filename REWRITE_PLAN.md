@@ -75,7 +75,7 @@ Please confirm/adjust these. Each is flagged at the phase where it first bites.
 | O7 | χ² multiplier convention: standardise on lavaan/factanal (Bartlett-corrected ML; `N` vs `N-1`)? | **Yes**, with explicit parity tests vs lavaan and a documented choice. | Phase 2/6 |
 | O8 | EFA object schema: introduce `new_efa()`/`validate_efa()` and standardise fields (keeping current names where possible, NA-filling inapplicable ones)? | **Yes** — stable, documented contract; additive where possible to avoid breaking `$`-indexing users. | Phase 1 |
 | O9 | Deprecation timeline for the UPPERCASE wrappers. | `1.0.0` warn (once/session) → ~`1.x` (12–18 mo / 2–3 minors) `always=TRUE` → `2.0.0` `deprecate_stop`. | Phase 8 |
-| O10 | FIML scope. Research rates full casewise FIML *very-high* effort. | **Two-stage EM-Σ** (`missing = "two.stage"`) in scope for `0.9.x`; **direct casewise FIML** deferred to post-1.0. | Phase 6 |
+| O10 | FIML scope. Research rates full casewise FIML *very-high* effort. | **Two-stage EM-Σ** (`missing = "two.stage"`) in scope for `0.9.x` — **split into its own Phase 6b** (orthogonal to the SE work); **direct casewise FIML** deferred to post-1.0. | Phase 6b |
 | ~~O11~~ | WLS: full WLS vs DWLS only for v1. | **RESOLVED → DWLS** for v1 (per-element weights `= 1/diag(Γ)`, lavaan WLSMV convention); the full Γ machinery is built in Phase 5 (gated `acov` level) so Phase-6 robust SEs can reuse it; full `WLS` post-1.0. Method stays orthogonal to `cor_method`. | Phase 5/6 |
 | O12 | EGA / network dimensionality as a retention method. | **Defer**; optionally add an `EGAnet` bridge in `Suggests` post-1.0 (avoids a heavy dep). | Post-1.0 |
 | O13 | Reproducibility: adopt `dqrng` per-replicate streams (and `future.seed=TRUE` at R level). This **changes** exact seed→result reproducibility vs current versions. | **Yes** — document the break; guarantee thread-count-independent reproducibility going forward. | Phase 3/7 |
@@ -417,10 +417,10 @@ process-level bootstrap).
       the matrix, plus the ACOV at the requested `acov` level (O11). Documented empty-cell correction
       arg + zero-variance detection (`cli_abort`) + nearest-PD projection (`cli_warn`), integrated
       with the existing `.prepare_cor_input()` smoothing (no double-smoothing). *(matrix done — P5.1.)*
-- [ ] `cor_method` gains `"poly"`/`"tet"` across `EFA`, `KMO`, `BARTLETT`, `N_FACTORS` + the
+- [x] `cor_method` gains `"poly"`/`"tet"` across `EFA`, `KMO`, `BARTLETT`, `N_FACTORS` + the
       retention criteria (branch at the two `stats::cor()` seams: `.prepare_cor_input()` and the
       bootstrap recompute). (`"auto"` + mixed-type deferred.)
-- [ ] `DWLS` method in `estimate_model()` — a `DwlsFunctor` subclass of the Phase-3
+- [x] `DWLS` method in `estimate_model()` — a `DwlsFunctor` subclass of the Phase-3
       `FactorFunctor` (weighted-ULS, per-element weights `= 1/diag(Γ)`); `cli_abort` when no
       polychoric ACOV is available (no fallback); full `WLS` post-1.0 (O11).
 
@@ -436,32 +436,74 @@ Phase 6.
       1-D conditioning BVN integral (GL-16 + Brent + OpenMP); `pbv`/GL-5 dropped (GL-5 + incl-excl
       gave catastrophic cancellation on sparse hi-corr cells). Matrix ≈2e-5 vs polycor/psych on
       GRiPS/DOSPERT/UPPS + tet; `acov = "none"`.
-- [ ] **P5.2** Plumb `cor_method = "poly"/"tet"` through `.prepare_cor_input()` + the bootstrap
+- [x] **P5.2** Plumb `cor_method = "poly"/"tet"` through `.prepare_cor_input()` + the bootstrap
       seam + `match.arg` everywhere → ordinal EFA + bootstrap on the existing ML/ULS.
       *DoD:* ordinal EFA end-to-end; bootstrap determinism/PD; speed on `DOSPERT_raw`.
-- [ ] **P5.3** Polychoric **ACOV** (`acov = "diag"|"full"`): per-element asymptotic variances +
+- [x] **P5.3** Polychoric **ACOV** (`acov = "diag"|"full"`): per-element asymptotic variances +
       the full Γ (Muthén 1984 / Jöreskog 1994). *DoD:* diag vs polycor std.err; full Γ vs lavaan
       NACOV. (Full Γ consumed in Phase 6.)
-- [ ] **P5.4** **DWLS** estimator (`DwlsFunctor`; weights `1/diag(Γ)`; `method = "DWLS"`,
+- [x] **P5.4** **DWLS** estimator (`DwlsFunctor`; weights `1/diag(Γ)`; `method = "DWLS"`,
       orthogonal to `cor_method`; **classed `cli_abort` if no polychoric ACOV** — no fallback).
       *DoD:* DWLS loadings vs lavaan (ordered, DWLS); abort fires (class-based test); bootstrap path
       recomputes diag weights per replicate (serial within worker).
 
-### Phase 6 — Standard errors, fit, missing data → `0.9.x`
-**Goal:** analytic SEs that make bootstrap optional; principled missing-data handling.
-- [ ] `se.cpp` **Phase A**: information-matrix SEs for unrotated ML loadings/uniquenesses.
-- [ ] **Phase B**: rotation Jacobian (Jennrich) → SEs/CIs for rotated loadings, Phi,
-      structure coefficients, communalities (oblique CF family first).
-- [ ] **Phase C**: sandwich / Satorra-Bentler robust SEs (bread = augmented info; meat =
-      Γ, reusing the polychoric/4th-moment Γ) + scaled χ² for the categorical path.
-- [ ] `se = c("none","information","sandwich","np-boot")`; bootstrap stays the
-      always-available ground-truth fallback (and the only path for promax — O16).
-- [ ] Two-stage EM-Σ missing-data path `missing = "two.stage"` (O10); SEs under
-      missingness use Γ estimated under the missingness pattern. Direct FIML deferred.
+### Phase 6 — Standard errors & fit → `0.9.x`
+**Goal:** analytic SEs that make bootstrap optional. *(Missing data split out → Phase 6b.)*
+
+**Decisions (resolved 2026-06-18).** Ship **all of A (information) + B (rotation Jacobian) + C
+(sandwich/robust + scaled χ²)** this phase; **missing data is split into its own Phase 6b**. The
+existing `se = c("none","np-boot")` (default `"none"`, kept) extends to
+`se = c("none","information","sandwich","np-boot")`; `.boot_se_ci()` is generalised to
+`.compute_se_ci()` with a dispatch, and the analytic methods populate the **identical
+`output$boot$SE/$CI` schema** so nothing downstream changes. **Coverage is math-determined and
+unsupported combinations `cli_abort` (no silent fallback to another SE):** `information` → ML only;
+`sandwich` → ML/ULS/DWLS; **PAF and promax → bootstrap only** (O16); any analytic `se` with
+`rotation = "promax"` aborts (no GPF Jacobian), directing to `se = "np-boot"`. The Phase-5 full Γ
+(`acov = "full"`) is the sandwich meat for the ordinal path; a 4th-moment ADF Γ (from raw data) is
+the meat for the continuous path. **`EFAutilities` added to Suggests** as the EFA-specific
+analytic-SE oracle (gated), alongside `lavaan` and the always-available `np-boot` ground truth.
+
+- [ ] `se.cpp` **Phase A**: information-matrix SEs for unrotated ML loadings/uniquenesses (needs the
+      model Jacobian dΣ/dθ through the eigendecomposition — greenfield; `FaFunctor` computes no
+      Hessian today).
+- [ ] **Phase B**: rotation Jacobian (Jennrich) → SEs/CIs for rotated loadings, Phi, structure
+      coefficients, communalities (oblique CF family first). Expose the vgQ gradient `Gq = ∂Q/∂L`
+      from `rotate.cpp` (computed but not currently returned).
+- [ ] **Phase C**: sandwich / Satorra-Bentler robust SEs (bread = augmented info; meat = the
+      polychoric full Γ for the ordinal path, a 4th-moment ADF Γ for the continuous path) + scaled
+      χ² for the categorical/DWLS path (DWLS χ² is currently NA).
+- [ ] `se = c("none","information","sandwich","np-boot")`; bootstrap stays the always-available
+      ground-truth fallback (and the only path for PAF/promax — O16).
 
 **Validation:** analytic SEs vs `np-boot` and vs `EFAutilities::efa` / `lavaan`
 (`se="robust.sem"`, `test="satorra.bentler"`) to documented tolerances.
-**Exit:** rotated-loading SEs available analytically and validated.
+**Exit:** rotated-loading SEs available analytically and validated; robust SEs + scaled χ² for the
+ordinal/DWLS path.
+
+**Unit queue (P6.1–P6.4 — each atomic, plan-mode first; analytic SEs share the bootstrap schema):**
+- [ ] **P6.1** `se` scaffolding (extend arg + `.compute_se_ci()` dispatch + classed aborts on
+      unsupported combos) **+ Phase A** information SEs for unrotated ML. Add `EFAutilities` to
+      Suggests. *DoD:* `se = "information"` gives unrotated ML loading/uniqueness SEs vs
+      EFAutilities/lavaan/np-boot; unsupported combos `cli_abort` (class-based tests).
+- [ ] **P6.2** **Phase B** rotation Jacobian → rotated loadings/Phi/Structure/communality SEs
+      (expose `Gq`; CF/oblique first, then the other native criteria). *DoD:* rotated SEs vs
+      EFAutilities/lavaan; promax aborts to np-boot.
+- [ ] **P6.3** **Phase C (ordinal)** sandwich/robust SEs, meat = polychoric full Γ (P5.3) + scaled
+      (Satorra-Bentler) χ² for the DWLS/poly path. *DoD:* vs `lavaan` (`se="robust.sem"`,
+      `test="satorra.bentler"`) + np-boot.
+- [ ] **P6.4** **Phase C (continuous)** sandwich/robust SEs, meat = a 4th-moment ADF Γ from raw data
+      (robust ML for non-normal continuous) + scaled χ². *Deferrable* if the ordinal robust path is
+      the priority. *DoD:* vs `lavaan` robust ML + np-boot.
+
+### Phase 6b — Missing data (two-stage EM-Σ) → `0.9.x`
+**Goal:** principled missing-data handling, split out of Phase 6 (orthogonal to the SE work).
+- [ ] Two-stage EM-Σ path `missing = "two.stage"` (O10): EM estimate of Σ (and thresholds for the
+      ordinal path) under the missingness pattern → EFA on that Σ; SEs under missingness use Γ
+      estimated under the missingness pattern. Direct casewise FIML deferred post-1.0.
+- [ ] No NA-bearing fixtures ship today → tests synthesize missingness (MCAR/MAR).
+
+**Validation:** vs `lavaan` (`missing = "ml"` / two-stage) and complete-case baselines.
+**Exit:** two-stage missing-data EFA validated. *(Unit queue expanded when scheduled.)*
 
 ### Phase 7 — New user functions → `0.9.x` → `1.0.0`
 **Goal:** reliability expansion + the four new functions, on the now-fast engine.

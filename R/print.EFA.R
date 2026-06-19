@@ -325,6 +325,7 @@ format.summary.EFA <- function(x, ...) {
     b_boot = settings$b_boot,
     max_iter = settings$max_iter,
     iter = x$iter,
+    convergence = x$convergence,
     is_pooled = is_pooled,
     n_imputations = .efa_n_imputations(x),
     target_method = settings$target_method,
@@ -352,9 +353,7 @@ format.summary.EFA <- function(x, ...) {
 
   if (.efa_iteration_nonconvergence(spec)) {
     cli::cli_text("")
-    cli::cli_alert_danger(
-      "Maximum number of iterations reached without convergence"
-    )
+    cli::cli_alert_danger(.efa_nonconvergence_banner(spec$method))
   }
 
   invisible(NULL)
@@ -1367,10 +1366,30 @@ format.summary.EFA <- function(x, ...) {
 }
 
 .efa_iteration_nonconvergence <- function(spec) {
+  # All current fits report a convergence code (0 = converged); a non-zero code
+  # means the estimator stopped before meeting its tolerance. The iteration-count
+  # fallback below covers objects that carry no convergence code but do report iter
+  # and max_iter (e.g. solutions saved by an older package version).
+  convergence <- .efa_as_scalar_number(spec$convergence)
+  if (is.finite(convergence) && convergence != 0) {
+    return(TRUE)
+  }
+
   iter <- .efa_as_scalar_number(spec$iter)
   max_iter <- .efa_as_scalar_number(spec$max_iter)
 
   is.finite(iter) && is.finite(max_iter) && iter >= max_iter
+}
+
+# Message for the non-convergence banner (shared by print.EFA() and print.SL()).
+# PAF non-convergence always means the iteration cap was hit; the optimiser-based
+# estimators report a convergence code that need not be an iteration limit.
+.efa_nonconvergence_banner <- function(method) {
+  if (identical(method, "PAF")) {
+    "Maximum number of iterations reached without convergence"
+  } else {
+    "The optimiser did not converge"
+  }
 }
 
 .efa_as_scalar_number <- function(x) {

@@ -59,6 +59,8 @@ and uniquenesses.}
 \item{L2}{Second-order factor loadings.}
 \item{vars_accounted}{A matrix of explained variances and sums of squared loadings.}
 \item{iter}{The number of iterations needed for convergence in EFA.}
+\item{convergence}{Integer convergence code of the second-order EFA (0 =
+converged); \code{NA} for a lavaan input. See \code{\link[=EFA]{EFA()}}.}
 \item{settings}{list. The settings (arguments) used in EFA to get the
 second-order loadings.}
 }

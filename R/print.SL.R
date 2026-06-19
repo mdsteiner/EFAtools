@@ -51,11 +51,13 @@ format.SL <- function(x, ...) {
         cli::style_bold(type), "' and method = '", cli::style_bold(method), "'"
       ))
 
-      if (!is.null(x$settings$max_iter) && x$iter >= x$settings$max_iter) {
+      # Surface non-convergence of the second-order EFA, keyed on its convergence
+      # code (with the iteration-count fallback), matching print.EFA().
+      if (.efa_iteration_nonconvergence(list(convergence = x$convergence,
+                                             iter = x$iter,
+                                             max_iter = x$settings$max_iter))) {
         cli::cli_text("")
-        cli::cli_alert_danger(
-          "Maximum number of iterations reached without convergence"
-        )
+        cli::cli_alert_danger(.efa_nonconvergence_banner(method))
       }
     }
 

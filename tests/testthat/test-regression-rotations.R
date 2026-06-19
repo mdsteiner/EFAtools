@@ -200,8 +200,8 @@ test_that("simplimax routes through the native oblique GPF engine", {
   skip_if_not_installed("GPArotation")
   skip_if_not_slow()
 
-  # simplimax is computed by the native gradient-projection engine; with this every analytic
-  # rotation criterion is native. Unlike the smooth criteria, the simplimax criterion reselects the
+  # simplimax is computed by the native gradient-projection engine;
+  # unlike the smooth criteria, the simplimax criterion reselects the
   # k smallest squared loadings at every evaluation (k = nrow(L) by default), so it is only
   # piecewise smooth and strongly multimodal: its gradient does not vanish at the optimum (the
   # native engine uses a non-monotone line search to step across the kinks) and the global minimum

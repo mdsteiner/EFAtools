@@ -36,11 +36,33 @@ test_that("output class and dimensions are correct", {
   expect_s3_class(SL_flex, "SL")
   expect_s3_class(SL_lav, "SL")
 
-  expect_output(str(SL_EFAtools), "List of 6")
-  expect_output(str(SL_SPSS), "List of 6")
-  expect_output(str(SL_psych), "List of 6")
-  expect_output(str(SL_flex), "List of 6")
-  expect_output(str(SL_lav), "List of 6")
+  expect_output(str(SL_EFAtools), "List of 7")
+  expect_output(str(SL_SPSS), "List of 7")
+  expect_output(str(SL_psych), "List of 7")
+  expect_output(str(SL_flex), "List of 7")
+  expect_output(str(SL_lav), "List of 7")
+})
+
+test_that("non-convergence of the second-order EFA is recorded and surfaced", {
+  testthat::local_reproducible_output()
+
+  # The convergence code of the second-order EFA is carried on the SL object.
+  expect_equal(SL_SPSS$convergence, 0)
+
+  # A non-zero code shows the banner: the optimiser estimators use the generic
+  # message, PAF the iteration-specific one. Set the code explicitly so the test
+  # does not depend on the second-order fit's actual convergence.
+  sl_uls <- SL_SPSS
+  sl_uls$convergence <- 1L
+  expect_true(any(grepl("The optimiser did not converge", format(sl_uls), fixed = TRUE)))
+
+  sl_paf <- SL_EFAtools
+  sl_paf$convergence <- 1L
+  expect_true(any(grepl("Maximum number of iterations reached without convergence",
+                        format(sl_paf), fixed = TRUE)))
+
+  # A converged fit shows no banner.
+  expect_false(any(grepl("did not converge", format(SL_SPSS), fixed = TRUE)))
 })
 
 test_that("original correlation is correct", {

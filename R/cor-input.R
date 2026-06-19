@@ -62,6 +62,31 @@
 # computation and to reject criteria whose reference data are continuous.
 .is_poly_cor <- function(cor_method) cor_method %in% c("poly", "tetra")
 
+# Build the symmetric per-element DWLS weight matrix W (W_ij = 1 / Var(rho_hat_ij), zero
+# diagonal) from the diagonal polychoric asymptotic covariance returned by .polychoric():
+# a length p(p - 1)/2 vector of off-diagonal variances ordered by the upper triangle
+# (i < j) in utils::combn() column order. The combn order is row-major, which differs
+# from R's column-major upper.tri(), so the pairs are placed via explicit (i, j) indexing
+# rather than `W[upper.tri(W)] <- ...`. Shared by the DWLS point estimate and the per-
+# replicate bootstrap recompute.
+.poly_weight_matrix <- function(acov_diag, p) {
+  # A non-positive or non-finite asymptotic variance means a (near-)degenerate variable pair
+  # whose inverse-variance weight is undefined; refuse rather than emit Inf/NaN weights that
+  # would silently corrupt the fit. (The bootstrap recompute catches this and drops the
+  # replicate.)
+  if (any(!is.finite(acov_diag)) || any(acov_diag <= 0)) {
+    cli::cli_abort(
+      c("A polychoric asymptotic variance was not positive, so the DWLS weights are undefined.",
+        "i" = "A variable pair is (near-)degenerate."),
+      class = "efa_dwls_degenerate_weight"
+    )
+  }
+  W <- matrix(0, p, p)
+  idx <- utils::combn(p, 2L)
+  W[t(idx)] <- 1 / acov_diag
+  W + t(W)
+}
+
 # The `use` policies that listwise-delete incomplete rows (so N is the number of
 # complete cases and resampling/correlation run on complete data).
 .is_listwise_use <- function(use) use %in% c("complete.obs", "na.or.complete")
@@ -77,6 +102,7 @@
                                use = "pairwise.complete.obs",
                                cor_method = "pearson",
                                N_policy = c("optional", "none", "required"),
+                               acov = c("none", "diag"),
                                inform_from_data = TRUE,
                                check_singular = TRUE,
                                posdef_abort = FALSE,
@@ -87,6 +113,11 @@
                                error_call = rlang::caller_env()) {
 
   N_policy <- match.arg(N_policy)
+  acov <- match.arg(acov)
+
+  # DWLS weights (1 / diag(Gamma)); populated only on the polychoric raw-data path when
+  # an asymptotic covariance is requested, NULL otherwise.
+  weights <- NULL
 
   is_cormat <- .is_cormat(x)
 
@@ -147,9 +178,19 @@
             class = "efa_cor_na", call = error_call)
         }
       }
-      R <- .polychoric(x, n_threads = 1L, nearest_pd = FALSE,
-                       binary_only = cor_method == "tetra",
-                       error_call = error_call)$R
+      poly <- .polychoric(x, n_threads = 1L, nearest_pd = FALSE,
+                          binary_only = cor_method == "tetra",
+                          acov = acov, error_call = error_call)
+      R <- poly$R
+      # When an asymptotic covariance is requested (the DWLS path), .polychoric()
+      # estimates the matrix and the covariance on the listwise-complete rows, so the
+      # per-element variances pair with the returned matrix; turn them into the symmetric
+      # DWLS weight matrix. The weights are the asymptotic variances of the observed
+      # (un-projected) polychoric correlations, as in lavaan, and are kept on that scale even
+      # if R is subsequently projected to positive definiteness below.
+      if (acov != "none") {
+        weights <- .poly_weight_matrix(poly$acov, ncol(R))
+      }
 
     } else {
 
@@ -179,8 +220,11 @@
 
     if (N_policy != "none") {
       # Under listwise deletion stats::cor() drops incomplete rows, so N must be
-      # the number of complete cases rather than the raw row count.
-      N <- if (.is_listwise_use(use)) {
+      # the number of complete cases rather than the raw row count. Requesting a
+      # polychoric ACOV (the DWLS path) likewise reduces to the listwise-complete rows
+      # inside .polychoric(), regardless of `use`, so N follows the complete cases there
+      # too.
+      N <- if (.is_listwise_use(use) || acov != "none") {
         sum(stats::complete.cases(x))
       } else {
         nrow(x)
@@ -230,7 +274,7 @@
 
   }
 
-  list(R = R, N = N, is_cormat = is_cormat)
+  list(R = R, N = N, is_cormat = is_cormat, weights = weights)
 }
 
 # Polychoric/tetrachoric correlations describe the observed data only. Criteria

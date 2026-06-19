@@ -533,6 +533,93 @@ test_that("Heywood cases are detected, warned, and recorded", {
   expect_length(suppressWarnings(EFA(R_ok, 1, N = 200, method = "ML"))$heywood, 0)
 })
 
+test_that("point-estimate non-convergence is surfaced for the iterative estimators", {
+  R <- test_models$baseline$cormat
+
+  # Force the convergence code via a mock so the assertions do not depend on the
+  # well-behaved baseline fits actually converging. EFA() must warn on a non-zero
+  # code and stay silent on a zero code, for ML, ULS, and DWLS. heywood is cleared
+  # so the only candidate warning is the convergence one. Each mock is scoped to its
+  # own local() frame.
+  for (m in c("ML", "ULS")) {
+    local({
+      fit <- suppressWarnings(.estimate_model(R, method = m, n_factors = 3, N = 500,
+                                              start_method = "psych"))
+      fit$heywood <- integer(0)
+      testthat::local_mocked_bindings(.estimate_model = function(...) fit)
+
+      fit$convergence <- 1L
+      expect_warning(EFA(R, 3, N = 500, method = m), class = "efa_nonconvergence")
+
+      # A zero code must not warn (the mock makes this deterministic).
+      fit$convergence <- 0L
+      conv_classes <- character(0)
+      withCallingHandlers(
+        EFA(R, 3, N = 500, method = m),
+        warning = function(w) {
+          conv_classes <<- c(conv_classes, class(w))
+          invokeRestart("muffleWarning")
+        }
+      )
+      expect_false("efa_nonconvergence" %in% conv_classes)
+    })
+  }
+
+  # DWLS needs raw ordinal data with cor_method = "poly". The mocked fitter makes
+  # the real estimation irrelevant, so a minimal fit carrying only the fields EFA()
+  # reads after the fit suffices (the polychoric matrix is still built inside EFA()).
+  local({
+    xo <- DOSPERT_raw[, 1:6]
+    testthat::local_mocked_bindings(
+      .estimate_model = function(...) list(convergence = 1L, heywood = integer(0))
+    )
+    expect_warning(EFA(xo, 2, method = "DWLS", cor_method = "poly"),
+                   class = "efa_nonconvergence")
+  })
+
+  # PAF surfaces non-convergence through its own warning class, never the
+  # optimiser-estimator one.
+  paf_classes <- character(0)
+  withCallingHandlers(
+    EFA(R, 3, N = 500, method = "PAF", type = "none", init_comm = "smc",
+        criterion = 1e-3, criterion_type = "sum", abs_eigen = TRUE, max_iter = 1),
+    warning = function(w) {
+      paf_classes <<- c(paf_classes, class(w))
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_true("efa_paf_nonconvergence" %in% paf_classes)
+  expect_false("efa_nonconvergence" %in% paf_classes)
+})
+
+test_that("the print banner reports optimiser non-convergence", {
+  testthat::local_reproducible_output()
+  R <- test_models$baseline$cormat
+  efa <- suppressWarnings(EFA(R, 3, N = 500, method = "ML"))
+
+  # Set the code explicitly so the assertions do not depend on the fixture's actual
+  # convergence. A zero code shows no banner; a non-zero code shows the generic
+  # optimiser banner for ML/ULS/DWLS.
+  efa$convergence <- 0L
+  expect_false(any(grepl("The optimiser did not converge", format(efa), fixed = TRUE)))
+  efa$convergence <- 1L
+  expect_true(any(grepl("The optimiser did not converge", format(efa), fixed = TRUE)))
+
+  # PAF keeps its iteration-specific banner.
+  paf <- suppressWarnings(
+    EFA(R, 3, N = 500, method = "PAF", type = "none", init_comm = "smc",
+        criterion = 1e-3, criterion_type = "sum", abs_eigen = TRUE, max_iter = 1)
+  )
+  expect_true(any(grepl("Maximum number of iterations reached without convergence",
+                        format(paf), fixed = TRUE)))
+
+  # An object carrying no convergence code (e.g. one saved by an older version) still
+  # shows the banner via the iteration-count fallback (iter >= max_iter).
+  paf$convergence <- NULL
+  expect_true(any(grepl("Maximum number of iterations reached without convergence",
+                        format(paf), fixed = TRUE)))
+})
+
 rm(efa_cor, efa_raw, efa_psych, efa_spss, efa_ml, efa_uls, efa_equa, efa_quart,
    efa_none, cormat_zero, cormat_moderate, efa_paf_zero, efa_ml_zero, efa_uls_zero,
    efa_paf_moderate, efa_ml_moderate, efa_uls_moderate, x, y, z, dat_sing, cor_sing,

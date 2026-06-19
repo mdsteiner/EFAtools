@@ -24,7 +24,7 @@ EFA(
   x,
   n_factors,
   N = NA,
-  method = c("PAF", "ML", "ULS", "MINRES"),
+  method = c("PAF", "ML", "ULS", "MINRES", "DWLS"),
   rotation = c("none", "varimax", "equamax", "quartimax", "geominT", "bentlerT",
     "bifactorT", "promax", "oblimin", "quartimin", "simplimax", "bentlerQ", "geominQ",
     "bifactorQ"),
@@ -65,11 +65,15 @@ correlation matrix is used. If input is a correlation matrix and \code{N} = NA
 values are entered and \code{use} is \code{"complete.obs"} or \code{"na.or.complete"}, rows
 are deleted listwise, so \code{N} is taken as the number of complete cases.}
 
-\item{method}{character. One of "PAF", "ML", or "ULS" to use principal axis
-factoring, maximum likelihood, or unweighted least squares, respectively, to fit
-the EFA. "MINRES" is accepted as a synonym for "ULS": minimum residual and
-unweighted least squares are two names for the same estimator and return identical
-results.}
+\item{method}{character. One of "PAF", "ML", "ULS", or "DWLS" to use principal axis
+factoring, maximum likelihood, unweighted least squares, or diagonally weighted least
+squares, respectively, to fit the EFA. "MINRES" is accepted as a synonym for "ULS":
+minimum residual and unweighted least squares are two names for the same estimator and
+return identical results. "DWLS" is the recommended estimator for ordinal data: it
+weights each correlation residual by the inverse of the polychoric correlation's
+asymptotic variance, and therefore requires raw ordinal data together with
+\code{cor_method = "poly"} or \code{"tetra"} (it has no fallback for a supplied correlation
+matrix or a continuous \code{cor_method}).}
 
 \item{rotation}{character. Either perform no rotation ("none"; default),
 an orthogonal rotation ("varimax", "equamax", "quartimax", "geominT",
@@ -196,10 +200,11 @@ with the initial communality estimates as diagonal in PAF.}
 \item{final_eigen}{Eigenvalues obtained from the correlation matrix
 with the final communality estimates as diagonal.}
 \item{iter}{The number of iterations needed for convergence.}
-\item{convergence}{Integer convergence code (0 = converged). For ML and ULS
-this is the code returned by \code{\link[stats:optim]{stats::optim()}}; for PAF it is
-1 if the maximum number of iterations was reached without meeting the
-convergence criterion and 0 otherwise.}
+\item{convergence}{Integer convergence code (0 = converged). For ML, ULS, and
+DWLS this is the code returned by the optimiser
+(\code{\link[stats:optim]{stats::optim()}}); for PAF it is 1 if the maximum number of
+iterations was reached without meeting the convergence criterion and 0
+otherwise. A non-zero code is also reported with a warning.}
 \item{heywood}{A named integer vector indicating which variables have a
 Heywood (improper) case in the unrotated solution; empty if there are none.}
 \item{unrot_loadings}{Loading matrix containing the final unrotated loadings.}
@@ -335,6 +340,16 @@ arguments are needed. For ML, an additional argument
 \code{start_method} is needed to determine the starting values for the
 optimization procedure. Default for this argument is "psych" which takes
 the starting values specified in \code{\link[psych:fa]{psych::fa()}}.
+
+For DWLS, the loadings are estimated by minimizing the off-diagonal correlation
+residuals weighted by the inverse asymptotic variances of the polychoric correlations
+(Muthén, 1984), reproducing the loadings of a diagonally weighted least squares fit
+(e.g. \code{lavaan::efa(..., estimator = "DWLS")}). Because the weighting follows the
+polychoric asymptotic covariance, the matrix and the weights are estimated on the
+listwise-complete cases. The chi-square and the indices derived from it (CFI, TLI,
+RMSEA, AIC, BIC) are not reported for DWLS: the appropriate categorical test statistic
+is a mean- and variance-adjusted chi-square, which is not currently computed. The
+descriptive residual indices (RMSR, SRMR, CAF) are reported as usual.
 
 When \code{se = "np-boot"}, the bootstrap replicate fits are run in parallel across
 replicates with the \code{future} framework. By default they run sequentially; to run
