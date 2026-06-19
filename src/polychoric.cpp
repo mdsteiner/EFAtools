@@ -171,6 +171,28 @@ static double brent_min(F f, double lo, double hi, double tol, int max_iter) {
   return x;
 }
 
+// Accumulate one Gauss-Legendre node's contribution to a row of cell probabilities and
+// their rho-derivatives: P_ab += w * P(Y in column band b | X = x) and dP_ab/drho += the
+// rho-derivative of the same. The conditional band CDF and its derivative (Plackett, 1954:
+// d/drho Phi((c - rho x)/s) = phi((c - rho x)/s) (rho c - x)/s^3; an infinite column cut
+// contributes zero) are shared by the likelihood evaluation in polychoric_pair and the ACOV
+// cell probabilities in poly_cell_probs, so the formula lives in exactly one place. cut_j is
+// padded with +/-Inf; colcdf/coldcdf are scratch of length >= Kj+1.
+static inline void poly_accum_node(double x, double w, double rho, double s, double s3,
+                                   const double* cut_j, int Kj, double* prow, double* dprow,
+                                   double* colcdf, double* coldcdf) {
+  for (int b = 0; b <= Kj; b++) {
+    double c = cut_j[b];
+    double z = (c - rho * x) / s;
+    colcdf[b] = std_norm_cdf(z);
+    coldcdf[b] = std::isfinite(c) ? std_norm_pdf(z) * (rho * c - x) / s3 : 0.0;
+  }
+  for (int b = 0; b < Kj; b++) {
+    prow[b]  += w * (colcdf[b + 1]  - colcdf[b]);
+    dprow[b] += w * (coldcdf[b + 1] - coldcdf[b]);
+  }
+}
+
 // Two-step polychoric correlation for one variable pair, thresholds fixed. Builds the
 // contingency table from the pairwise-complete rows, optionally applies the empty-cell
 // continuity correction, then minimises the negative log-likelihood over rho. Pure C++
@@ -263,17 +285,8 @@ static double polychoric_pair(const int* xp, int nrow, int ci, int cj,
       for (int k = 0; k < n; k++) {
         double w = wpdf[base + k];
         if (w == 0.0) continue;  // band beyond the clamp contributes nothing
-        double x = xnode[base + k];
-        for (int b = 0; b <= Kj; b++) {
-          double c = ccut[b];
-          double z = (c - rho * x) / s;
-          colcdf[b] = std_norm_cdf(z);
-          coldcdf[b] = std::isfinite(c) ? std_norm_pdf(z) * (rho * c - x) / s3 : 0.0;
-        }
-        for (int b = 0; b < Kj; b++) {
-          pmat[pbase + b]  += w * (colcdf[b + 1]  - colcdf[b]);
-          dpmat[pbase + b] += w * (coldcdf[b + 1] - coldcdf[b]);
-        }
+        poly_accum_node(xnode[base + k], w, rho, s, s3, ccut.data(), Kj,
+                        &pmat[pbase], &dpmat[pbase], colcdf.data(), coldcdf.data());
       }
     }
     // Accumulate the negative log-likelihood, score, and information over the cells.
@@ -372,14 +385,100 @@ static double polychoric_pair(const int* xp, int nrow, int ci, int cj,
   return rho;
 }
 
+// Cell probabilities P_ab and their rho-derivatives dP_ab/drho at a fixed rho, for the
+// ACOV. Same conditioning integral and rho-derivative as the likelihood evaluation in
+// polychoric_pair, but at a single rho with no optimisation. cut_i/cut_j are the threshold
+// vectors already padded with +/-Inf; pmat/dpmat (Ki*Kj) and colcdf/coldcdf (>= Kj+1) are
+// caller-owned scratch so the per-pair call does not allocate.
+static void poly_cell_probs(double rho, const std::vector<double>& cut_i,
+                            const std::vector<double>& cut_j, int Ki, int Kj,
+                            const std::vector<double>& gx, const std::vector<double>& gw,
+                            std::vector<double>& pmat, std::vector<double>& dpmat,
+                            std::vector<double>& colcdf, std::vector<double>& coldcdf) {
+  const int n = (int) gx.size();
+  double s = std::sqrt(1.0 - rho * rho);
+  double s3 = s * s * s;
+  for (int a = 0; a < Ki; a++) {
+    double lo = cut_i[a]     < -POLY_CLAMP ? -POLY_CLAMP : cut_i[a];
+    double hi = cut_i[a + 1] >  POLY_CLAMP ?  POLY_CLAMP : cut_i[a + 1];
+    std::size_t pbase = (std::size_t) a * Kj;
+    for (int b = 0; b < Kj; b++) { pmat[pbase + b] = 0.0; dpmat[pbase + b] = 0.0; }
+    if (hi <= lo) continue;
+    double mid = 0.5 * (lo + hi), half = 0.5 * (hi - lo);
+    for (int k = 0; k < n; k++) {
+      double x = mid + half * gx[k];
+      double w = gw[k] * half * std_norm_pdf(x);
+      poly_accum_node(x, w, rho, s, s3, cut_j.data(), Kj,
+                      &pmat[pbase], &dpmat[pbase], colcdf.data(), coldcdf.data());
+    }
+  }
+}
+
+// Cross-information A21[k] = sum_cases (score_rho * score_tau_k) between rho and the
+// thresholds of one variable of a pair, for the ACOV's threshold correction. Only the two
+// contingency rows/columns adjacent to threshold k contribute; dpi_ab/dtau_k = phi(tau_k) *
+// (conditional band over the OTHER variable) (Joreskog, 1994). The two variables differ only
+// in the cell stride: with the threshold variable on the rows, cell (k,o) sits at index
+// k*Kother + o and its lower-neighbour at +Kother; on the columns, cell (o,k) sits at
+// o*Kself + k and its neighbour at +1. Passing (stride_self, stride_other) handles both, so
+// the formula is written once. cut_self/cut_other are padded with +/-Inf.
+static void poly_cross_info(int n_self_thr, int n_other, int stride_self, int stride_other,
+                            const std::vector<double>& cut_self,
+                            const std::vector<double>& phi_self,
+                            const std::vector<double>& cut_other, double rho, double s,
+                            const double* nab, const double* dxr, const double* pmat,
+                            double p_floor, std::vector<double>& colb, double* A21out) {
+  for (int k = 0; k < n_self_thr; k++) {
+    double x = cut_self[k + 1];                       // tau_self[k]
+    for (int o = 0; o <= n_other; o++) colb[o] = std_norm_cdf((cut_other[o] - rho * x) / s);
+    double acc = 0.0;
+    for (int o = 0; o < n_other; o++) {
+      double band = colb[o + 1] - colb[o];
+      std::size_t up = (std::size_t) k * stride_self + (std::size_t) o * stride_other;
+      double pu = pmat[up] < p_floor ? p_floor : pmat[up];
+      double term = nab[up] * dxr[up] / pu;
+      std::size_t lo = up + stride_self;               // the adjacent row/column of band k
+      double pl = pmat[lo] < p_floor ? p_floor : pmat[lo];
+      term -= nab[lo] * dxr[lo] / pl;
+      acc += band * term;
+    }
+    A21out[k] = phi_self[k] * acc;
+  }
+}
+
+// Per-variable threshold "bread" for the polychoric ACOV. From the listwise category
+// counts m (length K) and thresholds tau (length K-1), returns the per-category threshold
+// influence IFth (K x (K-1)), IFth(a,.) = A11^{-1} SC.TH(a), where SC.TH(a) is the marginal
+// (univariate) ML threshold score for a case in category a and A11 = sum_a m_a SC.TH(a)
+// SC.TH(a)' is its outer-product (Fisher) information. Mirrors lavaan's lav_uvord_scores /
+// the A11 block of muthen1984. An empty category (m_a = 0) contributes a zero score row.
+static arma::mat poly_threshold_bread(const std::vector<double>& m, int K,
+                                      const std::vector<double>& tau, double Nc) {
+  int nth = K - 1;
+  arma::mat S(K, nth, arma::fill::zeros);          // SC.TH(category a, threshold k)
+  arma::vec mv(K);
+  for (int a = 0; a < K; a++) {
+    mv[a] = m[a];
+    double inv_pm = (m[a] > 0.0) ? Nc / m[a] : 0.0;  // 1 / P(category a); 0 if empty
+    if (a <= nth - 1) S(a, a)     +=  std_norm_pdf(tau[a]) * inv_pm;       // upper boundary
+    if (a >= 1)       S(a, a - 1) += -std_norm_pdf(tau[a - 1]) * inv_pm;   // lower boundary
+  }
+  arma::mat A11 = S.t() * arma::diagmat(mv) * S;
+  arma::mat A11inv;
+  if (!arma::inv_sympd(A11inv, A11) && !arma::inv(A11inv, A11) &&
+      !arma::pinv(A11inv, A11)) {
+    A11inv = arma::zeros<arma::mat>(nth, nth);
+  }
+  return S * A11inv;                                // IFth (K x nth)
+}
+
 // Internal C++ backend for the two-step polychoric/tetrachoric matrix, called from
 // .polychoric(), which owns the user-facing validation and classed conditions.
 // [[Rcpp::export(.polychoric_cpp)]]
 Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
                           double correct, bool nearest_pd, int n_threads) {
-  // acov is accepted for forward compatibility; only the matrix is produced here.
-  if (acov != "none") {
-    Rcpp::stop("Only acov = \"none\" is currently supported.");
+  if (acov != "none" && acov != "diag" && acov != "full") {
+    Rcpp::stop("`acov` must be one of \"none\", \"diag\", or \"full\".");
   }
   const int nrow = x.nrow();
   const int p = x.ncol();
@@ -505,6 +604,153 @@ Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
     }
   }
 
+  // Asymptotic covariance of the polychoric correlations (gated by `acov`). The two-step
+  // estimator's ACOV must account for the estimated thresholds (Muthen, 1984; Joreskog,
+  // 1994): each rho's influence function is its conditional score minus the threshold
+  // influence carried through the implicit derivative drho/dtau. We follow lavaan's
+  // empirical (outer-product) two-step construction (muthen1984): per case build the
+  // correlation influence IF = (s_rho - A21 . A11^{-1} . s_tau) / A22 from the per-case
+  // scores, then Gamma = crossprod(IF) -- the variance-scale covariance Var(rho-hat)
+  // (lavaan's WLS.W; diag(WLS.W)^{-1} are the DWLS weights). Because every per-case score is
+  // constant within a contingency cell, the diagonal reduces to a cell sum (the cheap path)
+  // and equals diag(Gamma) by construction. When an ACOV is requested the R wrapper restricts
+  // the input to the listwise-complete rows first, so the point estimate, thresholds, and
+  // ACOV share one case set (a sandwich covariance must be that of the estimator that
+  // produced the estimates); here every row is complete and the point-estimate thresholds
+  // `tau` are reused directly. References:
+  //   Muthen, B. (1984). A general structural equation model with dichotomous, ordered
+  //     categorical, and continuous latent variable indicators. Psychometrika, 49, 115-132.
+  //   Joreskog, K. G. (1994). On the estimation of polychoric correlations and their
+  //     asymptotic covariance matrix. Psychometrika, 59, 381-389.
+  Rcpp::RObject acov_out = R_NilValue;
+  if (acov == "diag" || acov == "full") {
+    const double p_floor = std::numeric_limits<double>::min();
+    const int Nc = nrow;                  // listwise-complete (enforced by the R wrapper)
+    const double Ncd = (double) Nc;
+
+    // Per variable: padded threshold cuts and densities (reusing the point-estimate
+    // thresholds, finite and exact on complete data), the marginal category counts, and the
+    // per-category threshold influence (the A11^{-1} bread).
+    std::vector< std::vector<double> > cut_v(p), phi_v(p);
+    std::vector<arma::mat> IFth(p);
+    for (int j = 0; j < p; j++) {
+      int K = Kcat[j];
+      const int* col = xp + (std::size_t) j * nrow;
+      std::vector<double> mcnt(K, 0.0);
+      for (int r = 0; r < nrow; r++) {
+        if (col[r] != NA_INTEGER) mcnt[col[r]] += 1.0;  // complete here; guard misuse
+      }
+      std::vector<double> ph(K - 1), cut(K + 1);
+      for (int k = 0; k < K - 1; k++) ph[k] = std_norm_pdf(tau[j][k]);
+      cut[0] = -POLY_INF; cut[K] = POLY_INF;
+      for (int k = 0; k < K - 1; k++) cut[k + 1] = tau[j][k];
+      phi_v[j] = ph;
+      cut_v[j] = cut;
+      IFth[j] = poly_threshold_bread(mcnt, K, tau[j], Ncd);
+    }
+
+    std::vector<double> acov_diag((std::size_t) npairs, 0.0);
+    arma::mat IF_cor;
+    if (acov == "full") IF_cor.set_size(Nc, npairs);
+
+    #pragma omp parallel num_threads(n_threads)
+    {
+      // Thread-local scratch reused across this thread's pairs.
+      std::vector<double> pmat((std::size_t) Kmax * Kmax);
+      std::vector<double> dpmat((std::size_t) Kmax * Kmax);
+      std::vector<double> nab((std::size_t) Kmax * Kmax);
+      std::vector<double> dxr((std::size_t) Kmax * Kmax);
+      std::vector<double> cif((std::size_t) Kmax * Kmax);
+      std::vector<double> colcdf(Kmax + 1), coldcdf(Kmax + 1), colb(Kmax + 1);
+      std::vector<double> Ti(Kmax), Tj(Kmax), A21i(Kmax), A21j(Kmax);
+
+      #pragma omp for schedule(dynamic)
+      for (int t = 0; t < npairs; t++) {
+        int i = pair_i[t], j = pair_j[t];
+        int Ki = Kcat[i], Kj = Kcat[j];
+        double r = rho[t];
+        double s = std::sqrt(1.0 - r * r);
+        const std::vector<double>& ci = cut_v[i];
+        const std::vector<double>& cj = cut_v[j];
+
+        poly_cell_probs(r, ci, cj, Ki, Kj, gx, gw, pmat, dpmat, colcdf, coldcdf);
+
+        // Cell counts (every row is listwise-complete; the NA guard only matters under direct
+        // misuse of the C++ entry point).
+        std::fill(nab.begin(), nab.begin() + (std::size_t) Ki * Kj, 0.0);
+        const int* coli = xp + (std::size_t) i * nrow;
+        const int* colj = xp + (std::size_t) j * nrow;
+        for (int r0 = 0; r0 < nrow; r0++) {
+          if (coli[r0] == NA_INTEGER || colj[r0] == NA_INTEGER) continue;
+          nab[(std::size_t) coli[r0] * Kj + colj[r0]] += 1.0;
+        }
+
+        // dx.rho per cell and the outer-product rho-information A22 = sum_cases s_rho^2.
+        double A22 = 0.0;
+        for (int a = 0; a < Ki; a++) {
+          for (int b = 0; b < Kj; b++) {
+            std::size_t idx = (std::size_t) a * Kj + b;
+            double pf = pmat[idx] < p_floor ? p_floor : pmat[idx];
+            double d = dpmat[idx] / pf;
+            dxr[idx] = d;
+            A22 += nab[idx] * d * d;
+          }
+        }
+
+        // Cross-information of rho with each variable's thresholds: variable i on the rows
+        // (cell stride Kj, 1), variable j on the columns (cell stride 1, Kj).
+        poly_cross_info(Ki - 1, Kj, Kj, 1, ci, phi_v[i], cj, r, s,
+                        nab.data(), dxr.data(), pmat.data(), p_floor, colb, A21i.data());
+        poly_cross_info(Kj - 1, Ki, 1, Kj, cj, phi_v[j], ci, r, s,
+                        nab.data(), dxr.data(), pmat.data(), p_floor, colb, A21j.data());
+
+        // Threshold-influence aggregates T_i(a) = A21_i . IFth_i(a), T_j(b) likewise.
+        const arma::mat& Fi = IFth[i];
+        const arma::mat& Fj = IFth[j];
+        for (int a = 0; a < Ki; a++) {
+          double tt = 0.0;
+          for (int k = 0; k < Ki - 1; k++) tt += A21i[k] * Fi(a, k);
+          Ti[a] = tt;
+        }
+        for (int b = 0; b < Kj; b++) {
+          double tt = 0.0;
+          for (int k = 0; k < Kj - 1; k++) tt += A21j[k] * Fj(b, k);
+          Tj[b] = tt;
+        }
+
+        // Per-cell correlation influence and the diagonal (= cell sum of n_ab * IF^2).
+        double invA22 = (A22 > 0.0) ? 1.0 / A22 : 0.0;
+        double vsum = 0.0;
+        for (int a = 0; a < Ki; a++) {
+          for (int b = 0; b < Kj; b++) {
+            std::size_t idx = (std::size_t) a * Kj + b;
+            double v = (dxr[idx] - Ti[a] - Tj[b]) * invA22;
+            cif[idx] = v;
+            vsum += nab[idx] * v * v;
+          }
+        }
+        acov_diag[t] = vsum;
+
+        // Full Gamma: scatter the per-case influence into this pair's column (disjoint).
+        if (acov == "full") {
+          double* outcol = IF_cor.colptr(t);
+          for (int r0 = 0; r0 < nrow; r0++) {
+            outcol[r0] = (coli[r0] == NA_INTEGER || colj[r0] == NA_INTEGER)
+                           ? 0.0 : cif[(std::size_t) coli[r0] * Kj + colj[r0]];
+          }
+        }
+      }
+    }
+
+    if (acov == "diag") {
+      acov_out = Rcpp::NumericVector(acov_diag.begin(), acov_diag.end());
+    } else {
+      arma::mat Gamma = IF_cor.t() * IF_cor;           // pstar x pstar, variance scale
+      Gamma = 0.5 * (Gamma + Gamma.t());               // symmetrise away round-off
+      acov_out = Rcpp::wrap(Gamma);
+    }
+  }
+
   Rcpp::List thr(p);
   for (int j = 0; j < p; j++) {
     thr[j] = Rcpp::NumericVector(tau[j].begin(), tau[j].end());
@@ -514,7 +760,7 @@ Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
     Rcpp::Named("R") = Rmat,
     Rcpp::Named("thresholds") = thr,
     Rcpp::Named("pd_adjusted") = pd_adjusted,
-    Rcpp::Named("acov") = R_NilValue);
+    Rcpp::Named("acov") = acov_out);
 }
 
 // Bivariate normal rectangle probability P(a0 < X <= a1, b0 < Y <= b1; rho), exposed only

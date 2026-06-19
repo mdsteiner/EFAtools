@@ -3,8 +3,10 @@
 # backend (.polychoric_cpp); this wrapper owns the input validation and the classed
 # conditions, which can only be raised at the R level.
 .polychoric <- function(x, correct = 0, nearest_pd = FALSE, n_threads = 1L,
-                        binary_only = FALSE,
+                        binary_only = FALSE, acov = c("none", "diag", "full"),
                         error_call = rlang::caller_env()) {
+
+  acov <- match.arg(acov)
 
   if (!is.numeric(correct) || length(correct) != 1L || !is.finite(correct) ||
       correct < 0) {
@@ -28,6 +30,26 @@
   }
   nms <- colnames(x)
   p <- ncol(x)
+
+  # When an asymptotic covariance is requested, the point estimate, thresholds, and ACOV must
+  # all come from the SAME cases: a sandwich covariance is only valid for the estimator that
+  # produced the estimates, so a pairwise matrix paired with a listwise covariance is not the
+  # covariance of any estimator (lavaan likewise computes categorical standard errors on a
+  # single case set). Reduce to the listwise-complete rows up front, so the recode below also
+  # collapses any category that survives only in incomplete rows. Without an ACOV the matrix
+  # stays pairwise-complete for data efficiency (exploratory factor analysis needs no standard
+  # errors from the matrix itself).
+  if (acov != "none") {
+    complete <- stats::complete.cases(x)
+    if (sum(complete) < 2L) {
+      cli::cli_abort(
+        c("A polychoric asymptotic covariance needs at least two listwise-complete observations.",
+          "x" = "{sum(complete)} row{?s} {?is/are} complete across all variables.",
+          "i" = "Supply complete data, or impute the missing values, before requesting an {.arg acov}."),
+        class = "efa_cor_no_complete_cases", call = error_call)
+    }
+    x <- x[complete, , drop = FALSE]
+  }
 
   codes <- matrix(NA_integer_, nrow(x), p)
   n_cat <- integer(p)
@@ -69,7 +91,7 @@
       class = "efa_cor_many_categories")
   }
 
-  res <- .polychoric_cpp(codes, "none", as.numeric(correct), isTRUE(nearest_pd),
+  res <- .polychoric_cpp(codes, acov, as.numeric(correct), isTRUE(nearest_pd),
                          n_threads)
 
   R <- res$R
@@ -98,5 +120,24 @@
       class = "efa_cor_smoothed")
   }
 
-  list(R = R, thresholds = thresholds)
+  out <- list(R = R, thresholds = thresholds)
+
+  # The asymptotic covariance of the off-diagonal correlations (Muthen, 1984; Joreskog,
+  # 1994), at the requested level: a variance per element ("diag") or the full cross-pair
+  # matrix ("full"), on the variance scale (Var(rho-hat)). It is the covariance of the
+  # (un-projected) two-step estimates computed on the listwise-complete rows; `nearest_pd`
+  # only smooths the returned R, it does not change the covariance. Pairs follow column order
+  # of the upper triangle (i < j), so the labels match utils::combn(nms, 2).
+  if (acov != "none") {
+    labels <- apply(utils::combn(nms, 2L), 2L, paste, collapse = "-")
+    av <- res$acov
+    if (acov == "diag") {
+      names(av) <- labels
+    } else {
+      dimnames(av) <- list(labels, labels)
+    }
+    out$acov <- av
+  }
+
+  out
 }
