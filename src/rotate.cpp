@@ -146,25 +146,55 @@ struct BentlerCriterion : public RotationCriterion {
 // group columns) and the general (first) column of the gradient is zero. The criterion is a
 // polynomial in L, so it is finite for any finite L and needs no degenerate-state guard. With a
 // single group factor (two factors) the criterion is identically zero, matching GPArotation.
+//
+// The general factor defaults to the first column (the rotation's own convention). The analytic
+// standard errors construct the criterion with an explicit `general_col` because the reported
+// solution has been factor-reordered by `.reflect_and_order` (sum-of-squared loadings), which can
+// move the general factor out of the first column; exempting the right column there lets the
+// warm-started re-rotation reproduce the reported loadings.
 struct BifactorCriterion : public RotationCriterion {
+  arma::uword general_col_;
+  explicit BifactorCriterion(arma::uword general_col = 0) : general_col_(general_col) {}
+
   void eval(const arma::mat& L, double& f, arma::mat& Gq) const override {
     const arma::uword p = L.n_rows;
     const arma::uword k = L.n_cols;
-    // Group-factor block: every column except the first (the general factor).
-    arma::mat Lg = L.cols(1, k - 1);
+    Gq.set_size(p, k);
+
+    if (general_col_ == 0) {
+      // Fast contiguous path (the rotation hot path): the general factor is the first column.
+      arma::mat Lg = L.cols(1, k - 1);
+      arma::mat L2 = square(Lg);
+      arma::vec rowS = sum(L2, 1);  // per-row sum of the group-factor squared loadings
+      f = accu(square(rowS)) - accu(square(L2));
+      // group-column gradient 4 L[, -1] .* (r_i - L2); the general (first) column is zero
+      arma::mat Gt = -L2;
+      Gt.each_col() += rowS;
+      Gt = 4.0 * (Lg % Gt);
+      // Only the general column needs zeroing; the group block is fully overwritten by Gt, so
+      // zero-filling the whole gradient first would waste a write over p * (k - 1) entries on every
+      // evaluation (this is the innermost kernel of the multi-start solver).
+      Gq.col(0).zeros();
+      Gq.cols(1, k - 1) = Gt;
+      return;
+    }
+
+    // General path (analytic standard errors only): the group block is every column except the
+    // general factor, which sits at general_col_.
+    arma::uvec group_idx(k - 1);
+    arma::uword j = 0;
+    for (arma::uword c = 0; c < k; ++c) {
+      if (c != general_col_) group_idx(j++) = c;
+    }
+    arma::mat Lg = L.cols(group_idx);
     arma::mat L2 = square(Lg);
-    arma::vec rowS = sum(L2, 1);  // per-row sum of the group-factor squared loadings
+    arma::vec rowS = sum(L2, 1);
     f = accu(square(rowS)) - accu(square(L2));
-    // group-column gradient 4 L[, -1] .* (r_i - L2); the general (first) column is zero
     arma::mat Gt = -L2;
     Gt.each_col() += rowS;
     Gt = 4.0 * (Lg % Gt);
-    // Only the general column needs zeroing; the group block is fully overwritten by Gt, so
-    // zero-filling the whole gradient first would waste a write over p * (k - 1) entries on every
-    // evaluation (this is the innermost kernel of the multi-start solver).
-    Gq.set_size(p, k);
-    Gq.col(0).zeros();
-    Gq.cols(1, k - 1) = Gt;
+    Gq.col(general_col_).zeros();
+    Gq.cols(group_idx) = Gt;
   }
 };
 
@@ -1106,4 +1136,192 @@ Rcpp::List rotate_simplimax_oblq(const arma::mat& L,
   return make_oblq_entry(L, crit, eps, normalize, random_starts, maxit,
                          max_line_search, step0, /*screen_keep=*/0, /*triage_maxit=*/0,
                          /*triage_improve_tol=*/0.0, /*full_multistart=*/true);
+}
+
+// Rotated solution of a single warm-started re-rotation (loadings, and Phi when oblique).
+struct WarmRotateResult {
+  arma::mat loadings;
+  arma::mat Phi;
+  bool valid;
+};
+
+// Warm-started single rotation from a supplied transformation `T_init`. Used by the analytic
+// rotation-Jacobian standard errors (R/EFA.R `.se_information_rotated`), which propagate the
+// unrotated-loading covariance through the rotation by finite-differencing the map
+// A -> (rotated loadings, Phi) over the unrotated loadings A. Each difference must re-solve the
+// rotation from the converged transformation rather than from a fresh multi-start, so the rotated
+// optimum tracks the perturbation smoothly. This runs one gradient-projection solve from `T_init`
+// (no random starts) to a tight tolerance and reconstructs the rotated loadings -- and, when
+// oblique, the factor correlations Phi -- exactly as the public rotation entries do. `crit` is one
+// of the file-local rotation criteria.
+static WarmRotateResult warm_rotate_core(const arma::mat& L, const RotationCriterion& crit,
+                                         const arma::mat& T_init, bool normalize, bool oblique) {
+  // A tight-but-reachable convergence tolerance keeps the re-rotation accurate enough that the
+  // finite difference of the rotated loadings is not swamped by the solver's own residual, while
+  // still letting the projected-gradient stopping test fire (a tolerance below the gradient's
+  // floating-point floor would never be met, forcing every solve to run the full maxit). Warm-
+  // started at the optimum it converges in a handful of iterations, so a modest maxit caps the
+  // cost of the rare ill-conditioned perturbation without affecting the result.
+  const double eps = 1e-7;
+  const int maxit = 100;
+  const int max_line_search = 10;
+  const double step0 = 1.0;
+
+  arma::mat A_work = L;
+  arma::vec W;
+  if (normalize) {
+    W = kaiser_weights(L);
+    A_work.each_col() /= W;
+  }
+
+  WarmRotateResult res;
+  if (oblique) {
+    OblqCriterionManifold manifold{A_work, crit};
+    GpfSummary summary = run_gpf_multistart(manifold, T_init, eps, maxit, max_line_search,
+                                            step0, /*random_starts=*/0, /*screen_keep=*/0,
+                                            /*triage_maxit=*/0, /*triage_improve_tol=*/0.0);
+    finalize_oblique(summary.best_fit, A_work, W, normalize, res.loadings, res.Phi);
+    res.valid = summary.best_fit.valid;
+  } else {
+    // Orthogonal: the rotated loadings reproduce L %*% T on the raw (un-normalized) loadings, so
+    // the Kaiser weights enter only the criterion that selects T (matching make_orth_entry).
+    OrthCriterionManifold manifold{A_work, crit};
+    GpfSummary summary = run_gpf_multistart(manifold, T_init, eps, maxit, max_line_search,
+                                            step0, /*random_starts=*/0, /*screen_keep=*/0,
+                                            /*triage_maxit=*/0, /*triage_improve_tol=*/0.0);
+    res.loadings = L * summary.best_fit.T;
+    res.valid = summary.best_fit.valid;
+  }
+  return res;
+}
+
+// Assemble the rotation Jacobians d vec(L) / d vec(A) and (oblique) d vec(Phi) / d vec(A) by
+// forward-differencing the warm-started re-rotation over the p*k entries of A, against the
+// re-rotation at the unperturbed A. The whole p*k loop is done in C++ to avoid p*k round trips to
+// R: each column re-solves the rotation once from `T_init`. A forward stencil (rather than a
+// central one) halves the re-rotations at no measurable accuracy cost, because the re-rotation is
+// smooth and solved to a tight tolerance (it is also the stencil lavaan's delta method uses).
+// Returns the Jacobians, the re-rotated point estimate at the unperturbed A (for the caller's
+// consistency check), and a validity flag that is false if the base or any perturbed re-rotation
+// failed.
+template <typename Crit>
+static Rcpp::List se_jacobian_impl(const arma::mat& A, const Crit& crit,
+                                   const arma::mat& T_init, bool normalize, bool oblique,
+                                   double eps) {
+  const arma::uword p = A.n_rows;
+  const arma::uword k = A.n_cols;
+  const arma::uword pk = p * k;
+
+  WarmRotateResult base = warm_rotate_core(A, crit, T_init, normalize, oblique);
+
+  arma::mat J_L(pk, pk, arma::fill::zeros);
+  arma::mat J_Phi;
+  if (oblique) {
+    J_Phi.set_size(k * k, pk);
+    J_Phi.zeros();
+  }
+  bool valid = base.valid;
+  const arma::vec base_l = valid ? arma::vectorise(base.loadings) : arma::vec();
+  const arma::vec base_phi = (valid && oblique) ? arma::vectorise(base.Phi) : arma::vec();
+
+  // One reusable copy: perturb a single entry, re-rotate, then restore it for the next column,
+  // rather than allocating a fresh p*k copy of A on every iteration. warm_rotate_core() copies its
+  // input before mutating, so Ap is never altered by the call.
+  arma::mat Ap = A;
+  for (arma::uword col = 0; col < pk && valid; ++col) {
+    Ap(col) += eps;
+    WarmRotateResult rp = warm_rotate_core(Ap, crit, T_init, normalize, oblique);
+    Ap(col) = A(col);
+    if (!rp.valid) {
+      valid = false;
+      break;
+    }
+    J_L.col(col) = (arma::vectorise(rp.loadings) - base_l) / eps;
+    if (oblique) {
+      J_Phi.col(col) = (arma::vectorise(rp.Phi) - base_phi) / eps;
+    }
+  }
+
+  Rcpp::List out = Rcpp::List::create(
+    Rcpp::Named("J_L") = J_L,
+    Rcpp::Named("base_loadings") = base.loadings,
+    Rcpp::Named("valid") = valid);
+  if (oblique) {
+    out["J_Phi"] = J_Phi;
+    out["base_Phi"] = base.Phi;
+  }
+  return out;
+}
+
+//' Rotation Jacobians for analytic rotation standard errors
+//'
+//' Forward-difference the warm-started re-rotation map `A -> (rotated loadings, Phi)` over the
+//' unrotated loadings `A` to obtain the rotation Jacobians used by the analytic standard errors for
+//' rotated loadings (`se = "information"` in [EFA()]). The full `nrow(A) * ncol(A)` finite-
+//' difference loop runs in compiled code, re-solving the rotation from the converged transformation
+//' `T_init` at each perturbation; the caller forms `J V J'` in R.
+//'
+//' @param A Numeric matrix. The unrotated loading matrix at the solution.
+//' @param T_init Numeric matrix. The converged transformation that warm-starts each re-rotation.
+//' @param method Character scalar. The criterion family: one of `"cf"`, `"oblimin"`, `"geomin"`,
+//'   `"bentler"`, `"bifactor"`.
+//' @param param Numeric scalar. The criterion's tuning argument (`kappa` for `"cf"`, `gam` for
+//'   `"oblimin"`, `delta` for `"geomin"`); ignored for `"bentler"` and `"bifactor"`.
+//' @param normalize Logical scalar. Apply Kaiser normalization before rotation and reverse it after.
+//' @param oblique Logical scalar. Use the oblique (column-normalized) manifold; otherwise orthogonal.
+//' @param eps Numeric scalar. The forward-difference step on the loadings.
+//' @param general_col Integer scalar. For `method = "bifactor"`, the zero-based column holding the
+//'   general factor in the (factor-reordered) reported solution; ignored by the other criteria.
+//'
+//' @returns A named list with the Jacobian `J_L` (`pk x pk`), the re-rotated `base_loadings`, a
+//'   validity flag, and -- when oblique -- the Jacobian `J_Phi` (`k^2 x pk`) and `base_Phi`.
+//'
+//' @references
+//' Jennrich, R. I. (1973). Standard errors for obliquely rotated factor loadings.
+//' *Psychometrika*, 38, 593-604.
+//'
+//' @keywords internal
+// [[Rcpp::export(.rotation_se_jacobian)]]
+Rcpp::List rotation_se_jacobian(const arma::mat& A, const arma::mat& T_init,
+                                std::string method, double param,
+                                bool normalize, bool oblique, double eps,
+                                int general_col = 0) {
+  validate_gpf_input(A, oblique ? "Oblique" : "Orthogonal");
+  const arma::uword k = A.n_cols;
+  if (T_init.n_rows != k || T_init.n_cols != k || !all_finite_cpp(T_init)) {
+    Rcpp::stop("T_init must be a finite k x k matrix.");
+  }
+  if (!is_valid_scalar_cpp(eps) || eps <= 0.0) {
+    Rcpp::stop("eps must be a finite positive scalar.");
+  }
+
+  if (method == "cf") {
+    if (!is_valid_scalar_cpp(param) || param < 0.0 || param > 1.0) {
+      Rcpp::stop("kappa must be a finite scalar in [0, 1].");
+    }
+    return se_jacobian_impl(A, CfCriterion(param), T_init, normalize, oblique, eps);
+  }
+  if (method == "oblimin") {
+    if (!is_valid_scalar_cpp(param)) {
+      Rcpp::stop("gam must be a finite scalar.");
+    }
+    return se_jacobian_impl(A, ObliminCriterion(param), T_init, normalize, oblique, eps);
+  }
+  if (method == "geomin") {
+    if (!is_valid_scalar_cpp(param) || param <= 0.0) {
+      Rcpp::stop("delta must be a finite positive scalar.");
+    }
+    return se_jacobian_impl(A, GeominCriterion(param), T_init, normalize, oblique, eps);
+  }
+  if (method == "bentler") {
+    return se_jacobian_impl(A, BentlerCriterion(), T_init, normalize, oblique, eps);
+  }
+  if (method == "bifactor") {
+    if (general_col < 0 || static_cast<arma::uword>(general_col) >= k) {
+      Rcpp::stop("general_col must be in [0, ncol(A) - 1].");
+    }
+    return se_jacobian_impl(A, BifactorCriterion(static_cast<arma::uword>(general_col)),
+                            T_init, normalize, oblique, eps);
+  }
+  Rcpp::stop("Unknown rotation method for the standard-error Jacobian.");
 }

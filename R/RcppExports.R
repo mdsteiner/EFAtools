@@ -695,3 +695,35 @@
     .Call(`_EFAtools_rotate_simplimax_oblq`, L, k, eps, normalize, random_starts, maxit, max_line_search, step0)
 }
 
+#' Rotation Jacobians for analytic rotation standard errors
+#'
+#' Forward-difference the warm-started re-rotation map `A -> (rotated loadings, Phi)` over the
+#' unrotated loadings `A` to obtain the rotation Jacobians used by the analytic standard errors for
+#' rotated loadings (`se = "information"` in [EFA()]). The full `nrow(A) * ncol(A)` finite-
+#' difference loop runs in compiled code, re-solving the rotation from the converged transformation
+#' `T_init` at each perturbation; the caller forms `J V J'` in R.
+#'
+#' @param A Numeric matrix. The unrotated loading matrix at the solution.
+#' @param T_init Numeric matrix. The converged transformation that warm-starts each re-rotation.
+#' @param method Character scalar. The criterion family: one of `"cf"`, `"oblimin"`, `"geomin"`,
+#'   `"bentler"`, `"bifactor"`.
+#' @param param Numeric scalar. The criterion's tuning argument (`kappa` for `"cf"`, `gam` for
+#'   `"oblimin"`, `delta` for `"geomin"`); ignored for `"bentler"` and `"bifactor"`.
+#' @param normalize Logical scalar. Apply Kaiser normalization before rotation and reverse it after.
+#' @param oblique Logical scalar. Use the oblique (column-normalized) manifold; otherwise orthogonal.
+#' @param eps Numeric scalar. The forward-difference step on the loadings.
+#' @param general_col Integer scalar. For `method = "bifactor"`, the zero-based column holding the
+#'   general factor in the (factor-reordered) reported solution; ignored by the other criteria.
+#'
+#' @returns A named list with the Jacobian `J_L` (`pk x pk`), the re-rotated `base_loadings`, a
+#'   validity flag, and -- when oblique -- the Jacobian `J_Phi` (`k^2 x pk`) and `base_Phi`.
+#'
+#' @references
+#' Jennrich, R. I. (1973). Standard errors for obliquely rotated factor loadings.
+#' *Psychometrika*, 38, 593-604.
+#'
+#' @keywords internal
+.rotation_se_jacobian <- function(A, T_init, method, param, normalize, oblique, eps, general_col = 0L) {
+    .Call(`_EFAtools_rotation_se_jacobian`, A, T_init, method, param, normalize, oblique, eps, general_col)
+}
+

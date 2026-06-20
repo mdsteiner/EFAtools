@@ -447,6 +447,24 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rotation_se_jacobian
+Rcpp::List rotation_se_jacobian(const arma::mat& A, const arma::mat& T_init, std::string method, double param, bool normalize, bool oblique, double eps, int general_col);
+RcppExport SEXP _EFAtools_rotation_se_jacobian(SEXP ASEXP, SEXP T_initSEXP, SEXP methodSEXP, SEXP paramSEXP, SEXP normalizeSEXP, SEXP obliqueSEXP, SEXP epsSEXP, SEXP general_colSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type A(ASEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type T_init(T_initSEXP);
+    Rcpp::traits::input_parameter< std::string >::type method(methodSEXP);
+    Rcpp::traits::input_parameter< double >::type param(paramSEXP);
+    Rcpp::traits::input_parameter< bool >::type normalize(normalizeSEXP);
+    Rcpp::traits::input_parameter< bool >::type oblique(obliqueSEXP);
+    Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
+    Rcpp::traits::input_parameter< int >::type general_col(general_colSEXP);
+    rcpp_result_gen = Rcpp::wrap(rotation_se_jacobian(A, T_init, method, param, normalize, oblique, eps, general_col));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_EFAtools_fit_ml_cpp", (DL_FUNC) &_EFAtools_fit_ml_cpp, 4},
@@ -475,6 +493,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EFAtools_rotate_bifactor_orth", (DL_FUNC) &_EFAtools_rotate_bifactor_orth, 10},
     {"_EFAtools_rotate_bifactor_oblq", (DL_FUNC) &_EFAtools_rotate_bifactor_oblq, 10},
     {"_EFAtools_rotate_simplimax_oblq", (DL_FUNC) &_EFAtools_rotate_simplimax_oblq, 8},
+    {"_EFAtools_rotation_se_jacobian", (DL_FUNC) &_EFAtools_rotation_se_jacobian, 8},
     {NULL, NULL, 0}
 };
 

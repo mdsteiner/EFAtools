@@ -25,6 +25,13 @@ method (2nd ed.). Butterworths.
 Jennrich, R. I., & Thayer, D. T. (1973). A note on Lawley's formulas for
 standard errors in maximum likelihood factor analysis. Psychometrika, 38, 571–580.
 doi: 10.1007/BF02291495
+
+Jennrich, R. I. (1973). Standard errors for obliquely rotated factor
+loadings. Psychometrika, 38, 593–604. doi: 10.1007/BF02291497
+
+Zhang, G., & Preacher, K. J. (2015). Factor rotation and standard errors
+in exploratory factor analysis. Journal of Educational and Behavioral Statistics,
+40, 579–603. doi: 10.3102/1076998615606098
 }
 \usage{
 EFA(
@@ -90,19 +97,23 @@ an orthogonal rotation ("varimax", "equamax", "quartimax", "geominT",
 \item{se}{character. Whether and how standard errors should be computed. One of
 "none" (default, no standard errors), "information", "sandwich", or "np-boot".
 "np-boot" draws a non-parametric bootstrap and needs raw data. "information"
-returns analytic standard errors for the \emph{unrotated} loadings and uniquenesses from
-the expected (Fisher) information matrix of the maximum-likelihood solution; it
-therefore requires \code{method = "ML"} and is not available with \code{rotation = "promax"}.
-Unlike the bootstrap it also works from a correlation matrix as long as \code{N} is
-supplied. "sandwich" is reserved for robust analytic standard errors and is not yet
-implemented. The information-matrix covariance is the inverse expected information
-under the identification constraint that \eqn{\Lambda' \Psi^{-1} \Lambda} is
-diagonal, scaled by \eqn{1 / (N - 1)}; the associated confidence intervals are Wald
-intervals (estimate \eqn{\pm} z * SE). These analytic standard errors assume
-multivariate normality and a correctly specified model; under heavy-tailed data or
-model misfit they can understate the sampling variability, where a bootstrap
-(\code{se = "np-boot"}) is more robust. See Lawley and Maxwell (1971) and Jennrich
-and Thayer (1973).}
+returns analytic standard errors from the expected (Fisher) information matrix of the
+maximum-likelihood solution: for the unrotated loadings and uniquenesses, and -- when a
+rotation is applied -- for the rotated loadings, the factor correlations, the structure
+coefficients, and the communalities. The rotated standard errors are obtained by propagating
+the unrotated-loading covariance through the rotation by the delta method (Jennrich, 1973);
+because rotated quantities are identification-invariant they are directly comparable across
+programs. It therefore requires \code{method = "ML"} and is not available with the \code{"promax"} or
+\code{"simplimax"} rotations, which have no usable analytic rotation Jacobian. Unlike the bootstrap
+it also works from a correlation matrix as long as \code{N} is supplied. "sandwich" is reserved for
+robust analytic standard errors and is not yet implemented. The information-matrix covariance
+is the inverse expected information under the identification constraint that
+\eqn{\Lambda' \Psi^{-1} \Lambda} is diagonal, scaled by \eqn{1 / (N - 1)}; the associated
+confidence intervals are Wald intervals (estimate \eqn{\pm} z * SE). These analytic standard
+errors assume multivariate normality and a correctly specified model; under heavy-tailed data
+or model misfit they can understate the sampling variability, where a bootstrap
+(\code{se = "np-boot"}) is more robust. See Lawley and Maxwell (1971) and Jennrich and Thayer
+(1973); for the rotated quantities, Jennrich (1973) and Zhang and Preacher (2015).}
 
 \item{type}{character. If one of "EFAtools" (default), "psych", or "SPSS" is
 used, and the following arguments with default NA are left with
@@ -256,8 +267,8 @@ bootstrap standard errors. Only returned, if \code{se = "np-boot"}.}
 loadings. Based on rotated loadings and, for oblique rotations, the factor
 intercorrelations.}
 \item{settings}{A list of the settings used.}
-\item{boot.SE}{A list of standard errors. For \code{se = "np-boot"}: for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, only if rotated), and fit indices. For \code{se = "information"}: for the unrotated loadings and the uniquenesses. Only returned, if \code{se} is not "none".}
-\item{boot.CI}{A list of confidence intervals of width \code{ci}. For \code{se = "np-boot"}: percentile intervals for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, if obliquely rotated), and fit indices. For \code{se = "information"}: Wald intervals for the unrotated loadings and the uniquenesses. Only returned, if \code{se} is not "none".}
+\item{boot.SE}{A list of standard errors. For \code{se = "np-boot"}: for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, only if rotated), and fit indices. For \code{se = "information"}: for the unrotated loadings and the uniquenesses, and -- when a rotation is applied -- the rotated loadings, the communalities, and (for oblique rotations) the factor correlations (Phi) and structure coefficients. Only returned, if \code{se} is not "none".}
+\item{boot.CI}{A list of confidence intervals of width \code{ci}. For \code{se = "np-boot"}: percentile intervals for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, if obliquely rotated), and fit indices. For \code{se = "information"}: Wald intervals for the unrotated loadings and the uniquenesses, and -- when a rotation is applied -- the rotated loadings, the communalities, and (for oblique rotations) the factor correlations (Phi) and structure coefficients. Only returned, if \code{se} is not "none".}
 \item{boot.arrays}{A list of arrays with the bootstrapped loadings (aligned rotated and unrotated), aligned structure coefficients (if rotated obliquely), aligned factor correlations (Phi, if obliquely rotated), and fit indices. Only returned, if \code{se = "np-boot"} (\code{NULL} for the analytic methods).}
 }
 \description{

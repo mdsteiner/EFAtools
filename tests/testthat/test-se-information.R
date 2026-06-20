@@ -40,6 +40,21 @@
 }
 
 
+# Match the columns of B to the columns of A by maximum absolute loading-column correlation,
+# returning the permutation and signs that align B to A. Rotated solutions order and sign factors
+# arbitrarily across packages and bootstrap replicates, so the rotated SEs must be aligned before
+# they are compared.
+.align_factor_cols <- function(A, B) {
+  k <- ncol(A); perm <- integer(k); sgn <- numeric(k); used <- logical(k)
+  for (j in seq_len(k)) {
+    cors <- vapply(seq_len(k),
+                   function(i) if (used[i]) NA_real_ else stats::cor(A[, j], B[, i]), 0)
+    i <- which.max(abs(cors)); perm[j] <- i; sgn[j] <- sign(cors[i]); used[i] <- TRUE
+  }
+  list(perm = perm, sgn = sgn)
+}
+
+
 test_that("closed-form information SEs match an independent dense reference", {
   L <- matrix(c(0.70, 0.60, 0.50, 0.10, 0.00, 0.20,
                 0.10, 0.05, 0.20, 0.70, 0.60, 0.50), 6, 2)
@@ -140,18 +155,191 @@ test_that("information SEs populate the bootstrap SE/CI schema", {
 })
 
 
-test_that("information SEs cover only the unrotated solution under a (non-promax) rotation", {
+test_that("information SEs populate the rotated SE/CI schema under an oblique rotation", {
   R <- test_models$baseline$cormat
   fit <- EFA(R, n_factors = 3, N = 500, method = "ML", rotation = "oblimin", se = "information")
 
-  expect_false(is.null(fit$rot_loadings))                 # the rotated solution is still returned
-  expect_setequal(names(fit$boot.SE), c("unrot_loadings", "uniquenesses"))
-  expect_null(fit$boot.SE$rot_loadings)                   # rotated SEs are not produced here
+  expect_setequal(names(fit$boot.SE),
+                  c("unrot_loadings", "uniquenesses", "rot_loadings",
+                    "communalities", "Phi", "Structure"))
+  expect_setequal(names(fit$boot.CI),
+                  c("unrot_loadings", "uniquenesses", "rot_loadings",
+                    "communalities", "Phi", "Structure"))
+  expect_null(fit$boot.arrays)
 
-  # No unrotated-loading CI table is shown under a rotation, so neither a Wald CI table nor
-  # its provenance note may appear (the note must not advertise hidden intervals).
-  out <- testthat::capture_output(print(summary(fit)))
-  expect_false(any(grepl("Wald", out, fixed = TRUE)))
+  expect_equal(dim(fit$boot.SE$rot_loadings), dim(fit$rot_loadings))
+  expect_equal(dim(fit$boot.SE$Structure), dim(fit$rot_loadings))
+  expect_equal(dim(fit$boot.SE$Phi), dim(fit$Phi))
+  expect_length(fit$boot.SE$communalities, ncol(R))
+  expect_false(anyNA(fit$boot.SE$rot_loadings))
+
+  # The unit diagonal of Phi is fixed, so it carries no sampling variance.
+  expect_true(all(diag(fit$boot.SE$Phi) == 0))
+
+  # Wald intervals bracket every rotated point estimate.
+  expect_true(all(fit$boot.CI$rot_loadings$lower <= fit$rot_loadings &
+                    fit$rot_loadings <= fit$boot.CI$rot_loadings$upper))
+  expect_true(all(fit$boot.CI$Structure$lower <= fit$Structure &
+                    fit$Structure <= fit$boot.CI$Structure$upper))
+  expect_named(fit$boot.CI$Phi, c("lower", "upper"))
+})
+
+
+test_that("information SEs under an orthogonal rotation omit Phi and the structure matrix", {
+  R <- test_models$baseline$cormat
+  fit <- EFA(R, n_factors = 3, N = 500, method = "ML", rotation = "varimax", se = "information")
+
+  expect_setequal(names(fit$boot.SE),
+                  c("unrot_loadings", "uniquenesses", "rot_loadings", "communalities"))
+  expect_null(fit$boot.SE$Phi)
+  expect_null(fit$boot.SE$Structure)
+  expect_equal(dim(fit$boot.SE$rot_loadings), dim(fit$rot_loadings))
+  expect_false(anyNA(fit$boot.SE$rot_loadings))
+  expect_false(anyNA(fit$boot.SE$communalities))
+})
+
+
+test_that("information SEs are produced for every supported native rotation", {
+  # The lavaan oracle below validates the SE magnitude for a representative rotation; this guards
+  # the remaining native criteria against a wrong criterion mapping in `.rotation_se_method` or a
+  # warm-start reproduction failure that would silently degrade their rotated SEs to NA.
+  R <- test_models$baseline$cormat
+  orth <- c("quartimax", "equamax", "bentlerT", "geominT", "bifactorT")
+  oblq <- c("quartimin", "bentlerQ", "geominQ", "bifactorQ")
+  for (rot in c(orth, oblq)) {
+    fit <- EFA(R, n_factors = 3, N = 500, method = "ML", rotation = rot, se = "information")
+    expect_false(anyNA(fit$boot.SE$rot_loadings), info = rot)
+    expect_equal(dim(fit$boot.SE$rot_loadings), dim(fit$rot_loadings), info = rot)
+    expect_false(anyNA(fit$boot.SE$communalities), info = rot)
+    if (rot %in% oblq) {
+      expect_false(anyNA(fit$boot.SE$Phi), info = rot)
+      expect_false(anyNA(fit$boot.SE$Structure), info = rot)
+      expect_true(all(diag(fit$boot.SE$Phi) == 0), info = rot)
+    } else {
+      expect_null(fit$boot.SE$Phi, info = rot)
+    }
+  }
+})
+
+
+test_that("bifactor rotated SEs survive a general-factor reorder", {
+  # When a group factor has a larger sum of squared loadings than the general factor,
+  # `.reflect_and_order` moves the general factor out of the first column. The analytic SE
+  # re-rotation must exempt the general factor wherever it landed (not blindly column 1), or it
+  # cannot reproduce the reported loadings and the SEs collapse to NA. A weak general factor (0.30
+  # on every variable) with two strong group factors (0.75) forces that reorder.
+  set.seed(1)
+  p <- 12
+  Lp <- matrix(0, p, 3); Lp[, 1] <- 0.30; Lp[1:6, 2] <- 0.75; Lp[7:12, 3] <- 0.75
+  Sig <- Lp %*% t(Lp); diag(Sig) <- 1
+  X <- matrix(stats::rnorm(800 * p), 800) %*% chol(Sig)
+  colnames(X) <- paste0("v", seq_len(p))
+
+  for (rot in c("bifactorT", "bifactorQ")) {
+    fit <- EFA(X, n_factors = 3, method = "ML", rotation = rot, se = "information")
+    # the general factor (the column loading on every variable) is not in column 1 here
+    expect_gt(which.max(apply(abs(unclass(fit$rot_loadings)), 2, min)), 1L)
+    expect_false(anyNA(fit$boot.SE$rot_loadings), info = rot)
+  }
+})
+
+
+test_that("rotated information loading and Phi SEs match lavaan's delta method", {
+  skip_on_cran()
+  skip_if_not_installed("lavaan")
+
+  set.seed(42)
+  R0 <- test_models$baseline$cormat
+  X <- matrix(stats::rnorm(1500 * ncol(R0)), 1500) %*% chol(R0)
+  colnames(X) <- colnames(R0)
+  N <- 1500
+
+  # normalize = FALSE matches lavaan's row.weights = "none"; oblimin (gam = 0) is quartimin, the
+  # criterion lavaan rotates to under rotation = "oblimin".
+  fit <- suppressWarnings(
+    EFA(X, n_factors = 3, method = "ML", rotation = "oblimin", normalize = FALSE,
+        se = "information"))
+  ef <- lavaan::efa(sample.cov = stats::cor(X), sample.nobs = N, nfactors = 3,
+                    rotation = "oblimin", rotation.se = "delta",
+                    rotation.args = list(row.weights = "none"))
+  lf <- Filter(function(e) inherits(e, "lavaan"), ef)[[1]]
+  Ll <- lavaan::lavInspect(lf, "est")$lambda
+  SEl <- lavaan::lavInspect(lf, "se")$lambda
+
+  Lt <- unclass(fit$rot_loadings)
+  al <- .align_factor_cols(Ll, Lt)
+  Lt_a <- sweep(Lt[, al$perm, drop = FALSE], 2, al$sgn, "*")
+  SEt_a <- fit$boot.SE$rot_loadings[, al$perm, drop = FALSE]
+
+  # Both packages reach the same (identification-invariant) rotated solution.
+  expect_equal(max(abs(Lt_a - Ll)), 0, tolerance = 0.01)
+  # Their delta-method loading SEs agree to finite-sample noise: lavaan scales by N and EFAtools by
+  # N - 1, and the optima differ at O(1 / sqrt(N)).
+  expect_gt(stats::cor(c(SEt_a), c(SEl)), 0.97)
+  expect_lt(mean(abs(SEt_a - SEl)), 0.004)
+
+  # Factor-correlation SEs, matched by correlation value (the two packages order factors differently
+  # so the off-diagonal positions do not line up).
+  pe <- lavaan::parameterEstimates(lf)
+  fc <- pe[pe$op == "~~" & pe$lhs != pe$rhs, ]
+  ours <- data.frame(corr = fit$Phi[lower.tri(fit$Phi)],
+                     se = fit$boot.SE$Phi[lower.tri(fit$boot.SE$Phi)])
+  ours <- ours[order(ours$corr), ]
+  fc <- fc[order(fc$est), ]
+  expect_lt(max(abs(ours$se - fc$se)), 0.01)
+})
+
+
+test_that("rotated information SEs track the bootstrap", {
+  skip_on_cran()
+  skip_if_not_slow()
+
+  set.seed(7)
+  R0 <- test_models$baseline$cormat
+  X <- matrix(stats::rnorm(2000 * ncol(R0)), 2000) %*% chol(R0)
+  colnames(X) <- colnames(R0)
+
+  fa <- EFA(X, n_factors = 3, method = "ML", rotation = "oblimin", se = "information")
+  fb <- EFA(X, n_factors = 3, method = "ML", rotation = "oblimin",
+            se = "np-boot", b_boot = 300, seed = 1)
+
+  al <- .align_factor_cols(unclass(fa$rot_loadings), unclass(fb$rot_loadings))
+  SEb <- fb$boot.SE$rot_loadings[, al$perm, drop = FALSE]
+
+  # Bootstrap rotated-loading SEs carry target-rotation (Procrustes) alignment noise that the
+  # analytic delta method does not, so the two are different finite-sample estimators (Yuan &
+  # Hayashi, 2006) that agree in overall magnitude (median ratio near 1) rather than cell by cell.
+  expect_lt(abs(stats::median(fa$boot.SE$rot_loadings / SEb) - 1), 0.3)
+
+  SEs_b <- fb$boot.SE$Structure[, al$perm, drop = FALSE]
+  expect_lt(abs(stats::median(fa$boot.SE$Structure / SEs_b) - 1), 0.3)
+
+  # Communalities are rotation-invariant (no alignment), so they agree in pattern as well as
+  # magnitude; the bootstrap has no communality slot, so they are recomputed from the replicate
+  # loadings.
+  comm_b <- apply(fb$boot.arrays$unrot_loadings, 3, function(L) rowSums(L^2))
+  comm_b_se <- apply(comm_b, 1, stats::sd, na.rm = TRUE)
+  expect_gt(stats::cor(fa$boot.SE$communalities, comm_b_se), 0.55)
+  expect_lt(abs(stats::median(fa$boot.SE$communalities / comm_b_se) - 1), 0.4)
+})
+
+
+test_that("a Heywood case under a rotation yields NA rotated SEs with a classed warning", {
+  # A communality above one drives a uniqueness below its zero boundary, where the expected
+  # information is undefined, so no analytic SE -- rotated or unrotated -- exists.
+  L <- matrix(c(sqrt(1.11), 0.6, 0.5, 0.4, 0.2, 0.7,
+                0.1, 0.05, 0.2, 0.3, 0.15, 0.25), 6, 2)   # h2[1] > 1, so psi[1] < 0
+  fit_out <- list(unrot_loadings = L)
+  rot_info <- list(rotation = "oblimin", rotmat = diag(2), rot_loadings = L,
+                   Phi = diag(2), normalize = FALSE, crit_args = list(gam = 0, delta = 0.01))
+
+  expect_warning(
+    out <- EFAtools:::.se_information_rotated(fit_out, rot_info, N = 200, ci = 0.95),
+    class = "efa_se_unreliable"
+  )
+  expect_true(anyNA(out$SE$rot_loadings))
+  expect_true(anyNA(out$SE$Phi))
+  expect_true(anyNA(out$SE$communalities))
 })
 
 
@@ -193,6 +381,11 @@ test_that("unsupported se combinations abort early with a clear class", {
   )
   expect_error(
     EFA(R, n_factors = 3, N = 500, method = "ML", rotation = "promax", se = "information"),
+    class = "efa_se_unsupported"
+  )
+  # simplimax has a non-smooth (piecewise) criterion, so it has no usable analytic rotation Jacobian.
+  expect_error(
+    EFA(R, n_factors = 3, N = 500, method = "ML", rotation = "simplimax", se = "information"),
     class = "efa_se_unsupported"
   )
   expect_error(

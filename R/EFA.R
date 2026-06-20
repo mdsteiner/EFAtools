@@ -32,19 +32,23 @@
 #' @param se character. Whether and how standard errors should be computed. One of
 #'  "none" (default, no standard errors), "information", "sandwich", or "np-boot".
 #'  "np-boot" draws a non-parametric bootstrap and needs raw data. "information"
-#'  returns analytic standard errors for the *unrotated* loadings and uniquenesses from
-#'  the expected (Fisher) information matrix of the maximum-likelihood solution; it
-#'  therefore requires `method = "ML"` and is not available with `rotation = "promax"`.
-#'  Unlike the bootstrap it also works from a correlation matrix as long as `N` is
-#'  supplied. "sandwich" is reserved for robust analytic standard errors and is not yet
-#'  implemented. The information-matrix covariance is the inverse expected information
-#'  under the identification constraint that \eqn{\Lambda' \Psi^{-1} \Lambda} is
-#'  diagonal, scaled by \eqn{1 / (N - 1)}; the associated confidence intervals are Wald
-#'  intervals (estimate \eqn{\pm} z * SE). These analytic standard errors assume
-#'  multivariate normality and a correctly specified model; under heavy-tailed data or
-#'  model misfit they can understate the sampling variability, where a bootstrap
-#'  (`se = "np-boot"`) is more robust. See Lawley and Maxwell (1971) and Jennrich
-#'  and Thayer (1973).
+#'  returns analytic standard errors from the expected (Fisher) information matrix of the
+#'  maximum-likelihood solution: for the unrotated loadings and uniquenesses, and -- when a
+#'  rotation is applied -- for the rotated loadings, the factor correlations, the structure
+#'  coefficients, and the communalities. The rotated standard errors are obtained by propagating
+#'  the unrotated-loading covariance through the rotation by the delta method (Jennrich, 1973);
+#'  because rotated quantities are identification-invariant they are directly comparable across
+#'  programs. It therefore requires `method = "ML"` and is not available with the `"promax"` or
+#'  `"simplimax"` rotations, which have no usable analytic rotation Jacobian. Unlike the bootstrap
+#'  it also works from a correlation matrix as long as `N` is supplied. "sandwich" is reserved for
+#'  robust analytic standard errors and is not yet implemented. The information-matrix covariance
+#'  is the inverse expected information under the identification constraint that
+#'  \eqn{\Lambda' \Psi^{-1} \Lambda} is diagonal, scaled by \eqn{1 / (N - 1)}; the associated
+#'  confidence intervals are Wald intervals (estimate \eqn{\pm} z * SE). These analytic standard
+#'  errors assume multivariate normality and a correctly specified model; under heavy-tailed data
+#'  or model misfit they can understate the sampling variability, where a bootstrap
+#'  (`se = "np-boot"`) is more robust. See Lawley and Maxwell (1971) and Jennrich and Thayer
+#'  (1973); for the rotated quantities, Jennrich (1973) and Zhang and Preacher (2015).
 #' @param type character. If one of "EFAtools" (default), "psych", or "SPSS" is
 #'  used, and the following arguments with default NA are left with
 #'  NA, these implementations are executed according to the respective program
@@ -292,8 +296,8 @@
 #' loadings. Based on rotated loadings and, for oblique rotations, the factor
 #' intercorrelations.}
 #' \item{settings}{A list of the settings used.}
-#' \item{boot.SE}{A list of standard errors. For `se = "np-boot"`: for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, only if rotated), and fit indices. For `se = "information"`: for the unrotated loadings and the uniquenesses. Only returned, if `se` is not "none".}
-#' \item{boot.CI}{A list of confidence intervals of width `ci`. For `se = "np-boot"`: percentile intervals for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, if obliquely rotated), and fit indices. For `se = "information"`: Wald intervals for the unrotated loadings and the uniquenesses. Only returned, if `se` is not "none".}
+#' \item{boot.SE}{A list of standard errors. For `se = "np-boot"`: for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, only if rotated), and fit indices. For `se = "information"`: for the unrotated loadings and the uniquenesses, and -- when a rotation is applied -- the rotated loadings, the communalities, and (for oblique rotations) the factor correlations (Phi) and structure coefficients. Only returned, if `se` is not "none".}
+#' \item{boot.CI}{A list of confidence intervals of width `ci`. For `se = "np-boot"`: percentile intervals for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, if obliquely rotated), and fit indices. For `se = "information"`: Wald intervals for the unrotated loadings and the uniquenesses, and -- when a rotation is applied -- the rotated loadings, the communalities, and (for oblique rotations) the factor correlations (Phi) and structure coefficients. Only returned, if `se` is not "none".}
 #' \item{boot.arrays}{A list of arrays with the bootstrapped loadings (aligned rotated and unrotated), aligned structure coefficients (if rotated obliquely), aligned factor correlations (Phi, if obliquely rotated), and fit indices. Only returned, if `se = "np-boot"` (`NULL` for the analytic methods).}
 #'
 #' @source Grieder, S., & Steiner, M.D. (2020). Algorithmic Jingle Jungle:
@@ -312,6 +316,11 @@
 #' @source Jennrich, R. I., & Thayer, D. T. (1973). A note on Lawley's formulas for
 #' standard errors in maximum likelihood factor analysis. Psychometrika, 38, 571–580.
 #' doi: 10.1007/BF02291495
+#' @source Jennrich, R. I. (1973). Standard errors for obliquely rotated factor
+#' loadings. Psychometrika, 38, 593–604. doi: 10.1007/BF02291497
+#' @source Zhang, G., & Preacher, K. J. (2015). Factor rotation and standard errors
+#' in exploratory factor analysis. Journal of Educational and Behavioral Statistics,
+#' 40, 579–603. doi: 10.3102/1076998615606098
 #'
 #' @export
 #'
@@ -415,8 +424,9 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
   # Analytic standard errors cover only a subset of estimators and rotations. Reject the
   # unsupported combinations here, before any computation, with a clear pointer to the
   # bootstrap. Information-matrix SEs are derived from the ML discrepancy and so require
-  # method = "ML"; promax is a two-step target rotation without a usable analytic Jacobian;
-  # PAF has no discrepancy-based information from which a sandwich could be built.
+  # method = "ML"; promax (a two-step target rotation) and simplimax (a non-smooth, piecewise
+  # criterion) have no usable analytic rotation Jacobian; PAF has no discrepancy-based information
+  # from which a sandwich could be built.
   if (se == "information" && method != "ML") {
     cli::cli_abort(
       c("{.code se = \"information\"} is only available for {.code method = \"ML\"}.",
@@ -432,10 +442,10 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
       class = "efa_se_unsupported"
     )
   }
-  if (se %in% c("information", "sandwich") && rotation == "promax") {
+  if (se %in% c("information", "sandwich") && rotation %in% c("promax", "simplimax")) {
     cli::cli_abort(
-      c("{.code se = {.val {se}}} is not available with {.code rotation = \"promax\"}.",
-        "i" = "Use {.code se = \"np-boot\"} for promax-rotated solutions."),
+      c("{.code se = {.val {se}}} is not available with {.code rotation = {.val {rotation}}}.",
+        "i" = "Use {.code se = \"np-boot\"} for {rotation}-rotated solutions."),
       class = "efa_se_unsupported"
     )
   }
@@ -821,12 +831,28 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
   if (se != "none") {
     if (rotation == "none") {
       L_rot <- NULL
+      rot_info <- NULL
     } else {
       L_rot <- rot_out$rot_loadings
+      # Analytic rotated SEs re-solve the rotation when finite-differencing its Jacobian, so they
+      # need the converged transformation, the factor correlations, the resolved Kaiser-
+      # normalization flag, and the criterion's tuning arguments (the same `.gpf_crit` defaults the
+      # rotation itself used). NULL for the bootstrap, which carries its own replicate rotations.
+      rot_info <- if (se == "information") {
+        list(rotation = rotation,
+             rotmat = rot_out$rotmat,
+             rot_loadings = rot_out$rot_loadings,
+             Phi = rot_out$Phi,
+             normalize = rot_out$settings$normalize,
+             crit_args = list(gam = .gpf_crit(list(...), "gam", 0),
+                              delta = .gpf_crit(list(...), "delta", 0.01)))
+      } else {
+        NULL
+      }
     }
     boot_out <- .compute_se_ci(fit_out, L_rot, se_method = se,
                                boot_fits = boot_fits, boot_rot = boot_rot,
-                               ci = ci, b = b_boot, N = N)
+                               ci = ci, b = b_boot, N = N, rot_info = rot_info)
     output <- c(output, boot = boot_out)
     # Only the bootstrap yields a sampling SD for every residual; the analytic methods do
     # not, so standardise the residuals only when those SEs are available.
@@ -900,11 +926,18 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
 # the fitted model itself. Every branch returns the same list(SE, CI, arrays) schema, so the
 # print and summary methods are agnostic to how the SEs were produced.
 .compute_se_ci <- function(fit_out, L_rot, se_method, boot_fits = NULL,
-                           boot_rot = "none", ci = .95, b = NULL, N = NULL) {
+                           boot_rot = "none", ci = .95, b = NULL, N = NULL,
+                           rot_info = NULL) {
 
   switch(se_method,
     "np-boot" = .boot_se_ci(fit_out, L_rot, boot_fits, boot_rot, ci, b),
-    "information" = .se_information(fit_out, N, ci),
+    # rot_info is non-NULL exactly for an information-SE fit under a real rotation; the unrotated
+    # path (rotation = "none") leaves it NULL.
+    "information" = if (is.null(rot_info)) {
+      .se_information(fit_out, N, ci)
+    } else {
+      .se_information_rotated(fit_out, rot_info, N, ci)
+    },
     "sandwich" = .abort_se_not_implemented(),
     NULL
   )
@@ -1076,6 +1109,197 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
     loadings_se = matrix(se[seq_len(pk)], p, k),
     uniquenesses_se = se[pk + seq_len(p)]
   )
+}
+
+
+# Map a rotation name to the warm-start criterion family and tuning argument used by the compiled
+# `.rotation_se_jacobian()`, mirroring the engine selection in `.orth_engines`/`.oblq_engines`
+# (R/rotate_model.R). varimax shares the Crawford-Ferguson criterion at kappa = 1 / p, quartimax at
+# kappa = 0, equamax at kappa = k / (2 p); quartimin is oblimin at gam = 0. The geomin offset
+# `delta` and oblimin `gam` are taken from the resolved criterion arguments (the same `.gpf_crit`
+# defaults the rotation itself used). promax and simplimax have no usable analytic Jacobian and are
+# rejected before reaching here, so an unrecognised rotation returns NULL.
+.rotation_se_method <- function(rotation, p, k, crit_args = list()) {
+  gam <- if (is.null(crit_args$gam)) 0 else crit_args$gam
+  delta <- if (is.null(crit_args$delta)) 0.01 else crit_args$delta
+  switch(rotation,
+    varimax   = list(method = "cf",       param = 1 / p,       oblique = FALSE),
+    quartimax = list(method = "cf",       param = 0,           oblique = FALSE),
+    equamax   = list(method = "cf",       param = k / (2 * p), oblique = FALSE),
+    bentlerT  = list(method = "bentler",  param = 0,           oblique = FALSE),
+    geominT   = list(method = "geomin",   param = delta,       oblique = FALSE),
+    bifactorT = list(method = "bifactor", param = 0,           oblique = FALSE),
+    oblimin   = list(method = "oblimin",  param = gam,         oblique = TRUE),
+    quartimin = list(method = "oblimin",  param = 0,           oblique = TRUE),
+    bentlerQ  = list(method = "bentler",  param = 0,           oblique = TRUE),
+    geominQ   = list(method = "geomin",   param = delta,       oblique = TRUE),
+    bifactorQ = list(method = "bifactor", param = 0,           oblique = TRUE),
+    NULL)
+}
+
+# Wald lower/upper interval around an estimate from its standard error. `est` is unclassed so the
+# returned bounds are plain numeric matrices/vectors (the rotated estimates carry the "LOADINGS"
+# class).
+.wald_ci <- function(est, se, z) {
+  est <- unclass(est)
+  list(lower = est - z * se, upper = est + z * se)
+}
+
+
+# Analytic standard errors and Wald CIs for an obliquely or orthogonally ROTATED ML solution.
+# The expected-information covariance of the unrotated loadings (P6.1, `.se_information_ml`) is
+# propagated through the rotation by the delta method. The rotation maps the unrotated loadings A
+# to the rotated pattern L = A T(A)^{-1 T} (oblique) / A T(A) (orthogonal) and, for oblique
+# rotations, the factor correlations Phi = T(A)' T(A); both depend on A alone (not the
+# uniquenesses), so only the p*k loading block V of the parameter covariance is needed. The
+# rotation Jacobians d vec(L) / d vec(A) and d vec(Phi) / d vec(A) are obtained by
+# finite-differencing a warm-started re-rotation of A (`.rotation_se_jacobian()`), which re-solves
+# the rotation from the converged transformation so the optimum tracks each perturbation smoothly.
+# This is the delta-method standard error of Jennrich (1973), matching lavaan's rotation.se =
+# "delta".
+# Because rotated quantities are identification-invariant they are comparable across packages
+# (unlike the unrotated loadings, whose orientation is identification-dependent).
+#
+#   Var(vec L)   = J_L V J_L'                                   -> rotated-loading SEs
+#   Var(vec Phi) = J_Phi V J_Phi'                              -> factor-correlation SEs (oblique)
+#   S = L Phi:  J_S = (Phi' (x) I_p) J_L + (I_k (x) L) J_Phi;  Var(vec S) = J_S V J_S'  (oblique)
+#   h2_i = rowSums(A^2)_i (rotation-invariant), gradient 2 A[i, ]; Var(h2_i) = g_i V g_i'
+#
+# Fills the same SE/CI schema as the bootstrap (rot_loadings/Phi/Structure plus the unrotated
+# loadings and uniquenesses); there are no replicate arrays. Falls back to NA rotated SEs (with a
+# classed warning) at a Heywood case, a singular information matrix, or a rotation the warm start
+# cannot reproduce (e.g. a non-converged transformation). References: Jennrich (1973); Zhang &
+# Preacher (2015).
+.se_information_rotated <- function(fit_out, rot_info, N, ci) {
+
+  A <- unclass(fit_out$unrot_loadings)
+  p <- nrow(A)
+  k <- ncol(A)
+  pk <- p * k
+  psi <- 1 - rowSums(A^2)
+  z <- stats::qnorm(1 - (1 - ci) / 2)
+
+  # P6.1 unrotated pieces (always reported, mirroring the bootstrap's unrot_loadings) and the
+  # loading covariance block propagated through the rotation.
+  se0 <- .se_information_ml(A, psi, N)
+  V <- se0$vcov[seq_len(pk), seq_len(pk), drop = FALSE]
+  SE_unrot <- se0$loadings_se
+  SE_psi <- se0$uniquenesses_se
+  dimnames(SE_unrot) <- dimnames(A)
+  names(SE_psi) <- rownames(A)
+  # `.se_information_ml()` NA's the unrotated SEs whenever the parameter covariance is non-finite
+  # OR carries a negative variance on its diagonal (a near-degenerate orientation `solve()` still
+  # inverts). Reuse that as the single reliability signal for the rotated quantities too: they are
+  # propagated from the same covariance, so if it was too ill-conditioned for the unrotated SEs it
+  # must not yield finite rotated SEs either.
+  info_reliable <- !anyNA(SE_unrot)
+
+  spec <- .rotation_se_method(rot_info$rotation, p, k, rot_info$crit_args)
+  rotmat <- rot_info$rotmat
+  L_rot <- unclass(rot_info$rot_loadings)
+  Phi_pt <- rot_info$Phi
+  # Orthogonal rotations and the single-factor fall-back carry no factor correlations, so they
+  # report rotated loadings and communalities only.
+  oblique <- !is.null(Phi_pt)
+
+  # Communalities are rotation-invariant (h2_i = rowSums(A^2)_i = (L Phi L')_ii), so their SEs use
+  # the closed-form loading gradient g_i = 2 A[i, ] directly -- no finite differencing.
+  h2 <- rowSums(A^2)
+  names(h2) <- rownames(A)
+  G_h <- matrix(0, p, pk)
+  for (i in seq_len(p)) G_h[i, (seq_len(k) - 1L) * p + i] <- 2 * A[i, ]
+  # diag(G_h V G_h') without forming the full product: diag(M V M')[i] = rowSums((M V) * M)[i].
+  SE_h2 <- if (!info_reliable) rep(NA_real_, p) else sqrt(pmax(rowSums((G_h %*% V) * G_h), 0))
+  names(SE_h2) <- rownames(A)
+
+  na_mat <- function() {
+    m <- matrix(NA_real_, p, k)
+    dimnames(m) <- dimnames(L_rot)
+    m
+  }
+  SE_rot <- na_mat()
+  SE_Phi <- if (oblique) matrix(NA_real_, k, k) else NULL
+  SE_S <- if (oblique) na_mat() else NULL
+  S_pt <- if (oblique) `dimnames<-`(L_rot %*% Phi_pt, dimnames(L_rot)) else NULL
+
+  can_rotate <- !is.null(spec) && is.matrix(rotmat) && !anyNA(rotmat) &&
+    k >= 2L && !is.null(L_rot) && info_reliable
+
+  if (can_rotate) {
+    normalize <- isTRUE(rot_info$normalize)
+    # The bifactor criterion exempts a fixed column as the general factor, but `.reflect_and_order`
+    # may have moved the general factor out of the first column. It is the one column that loads on
+    # every variable -- so the column whose smallest absolute loading is largest, the others being
+    # group factors with near-zero out-group loadings. Identify it so the re-rotation optimises the
+    # same criterion the point estimate did; the other criteria ignore general_col.
+    general_col <- if (identical(spec$method, "bifactor")) {
+      which.max(apply(abs(L_rot), 2, min)) - 1L
+    } else {
+      0L
+    }
+    # Forward difference of the warm-started re-rotation (the stencil lavaan's delta method uses);
+    # the whole p*k finite-difference loop runs in compiled code (.rotation_se_jacobian()) to avoid
+    # p*k round trips to R. This is a one-shot cost per fit: a few hundredths of a second for a
+    # typical problem (p = 18, k = 3) and about 1 s for a large one (p = 40, k = 8) -- far below a
+    # bootstrap, and an order of magnitude faster than the equivalent pure-R numeric differentiation.
+    eps <- 1e-4
+    jac <- .rotation_se_jacobian(A, rotmat, spec$method, spec$param, normalize,
+                                 spec$oblique, eps, general_col)
+    # The re-rotation at the unperturbed A must reproduce the reported rotated loadings; a gross
+    # mismatch flags a criterion/parameter mismatch or a transformation outside the criterion's
+    # basin, for which the Jacobian is not trustworthy. The tolerance absorbs the small drift
+    # between the reported optimum and a re-solve to a tighter tolerance -- and, for varimax, between
+    # the SVD/SPSS varimax algorithm and the Crawford-Ferguson re-rotation at a flat optimum -- while
+    # still catching a genuine basin/criterion mismatch (which moves loadings an order of magnitude
+    # more).
+    if (isTRUE(jac$valid) && max(abs(jac$base_loadings - L_rot)) < 5e-2) {
+      J_L <- jac$J_L
+      SE_rot <- matrix(sqrt(pmax(rowSums((J_L %*% V) * J_L), 0)), p, k)
+      dimnames(SE_rot) <- dimnames(L_rot)
+      if (spec$oblique) {
+        J_Phi <- jac$J_Phi
+        SE_Phi <- matrix(sqrt(pmax(rowSums((J_Phi %*% V) * J_Phi), 0)), k, k)
+        diag(SE_Phi) <- 0       # the unit diagonal of Phi is fixed, so it has no variance
+        SE_Phi <- (SE_Phi + t(SE_Phi)) / 2
+        # Structure S = L Phi: dvec(S) = (Phi' (x) I_p) dvec(L) + (I_k (x) L) dvec(Phi); the
+        # rotation matrices are the re-rotated point estimates, consistent with the Jacobians.
+        L0 <- jac$base_loadings
+        Phi0 <- jac$base_Phi
+        J_S <- kronecker(t(Phi0), diag(p)) %*% J_L + kronecker(diag(k), L0) %*% J_Phi
+        SE_S <- matrix(sqrt(pmax(rowSums((J_S %*% V) * J_S), 0)), p, k)
+        dimnames(SE_S) <- dimnames(L_rot)
+      }
+    }
+  } else if (info_reliable && k < 2L) {
+    # No rotation was actually performed (single factor): the rotated loadings equal the unrotated
+    # ones, so their SEs are the unrotated loading SEs; there is no Phi or structure matrix.
+    SE_rot <- SE_unrot
+    dimnames(SE_rot) <- dimnames(L_rot)
+  }
+
+  SE <- list(unrot_loadings = SE_unrot, uniquenesses = SE_psi,
+             rot_loadings = SE_rot, communalities = SE_h2)
+  CI <- list(unrot_loadings = .wald_ci(A, SE_unrot, z),
+             uniquenesses = .wald_ci(psi, SE_psi, z),
+             rot_loadings = .wald_ci(L_rot, SE_rot, z),
+             communalities = .wald_ci(h2, SE_h2, z))
+  if (oblique) {
+    SE$Phi <- SE_Phi
+    SE$Structure <- SE_S
+    CI$Phi <- .wald_ci(Phi_pt, SE_Phi, z)
+    CI$Structure <- .wald_ci(S_pt, SE_S, z)
+  }
+
+  if (anyNA(SE_unrot) || anyNA(SE_psi) || anyNA(SE_rot) || anyNA(SE_h2) ||
+      (oblique && (anyNA(SE_Phi) || anyNA(SE_S)))) {
+    cli::cli_warn(
+      c("Analytic standard errors could not be computed for all parameters.",
+        "i" = "This occurs at a Heywood case (a uniqueness at or below its zero boundary), when the expected information matrix is singular, or when the rotation could not be reproduced for the standard-error Jacobian."),
+      class = "efa_se_unreliable"
+    )
+  }
+
+  list(SE = SE, CI = CI, arrays = NULL)
 }
 
 
