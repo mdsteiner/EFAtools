@@ -40,15 +40,32 @@
 #'  because rotated quantities are identification-invariant they are directly comparable across
 #'  programs. It therefore requires `method = "ML"` and is not available with the `"promax"` or
 #'  `"simplimax"` rotations, which have no usable analytic rotation Jacobian. Unlike the bootstrap
-#'  it also works from a correlation matrix as long as `N` is supplied. "sandwich" is reserved for
-#'  robust analytic standard errors and is not yet implemented. The information-matrix covariance
-#'  is the inverse expected information under the identification constraint that
+#'  it also works from a correlation matrix as long as `N` is supplied. The information-matrix
+#'  covariance is the inverse expected information under the identification constraint that
 #'  \eqn{\Lambda' \Psi^{-1} \Lambda} is diagonal, scaled by \eqn{1 / (N - 1)}; the associated
 #'  confidence intervals are Wald intervals (estimate \eqn{\pm} z * SE). These analytic standard
 #'  errors assume multivariate normality and a correctly specified model; under heavy-tailed data
 #'  or model misfit they can understate the sampling variability, where a bootstrap
-#'  (`se = "np-boot"`) is more robust. See Lawley and Maxwell (1971) and Jennrich and Thayer
-#'  (1973); for the rotated quantities, Jennrich (1973) and Zhang and Preacher (2015).
+#'  (`se = "np-boot"`) is more robust. "sandwich" returns robust (Godambe sandwich) standard
+#'  errors from raw data, combining the estimator weight with an asymptotic-distribution-free
+#'  covariance of the correlations, so it stays valid under non-normality and weight
+#'  misspecification (Browne, 1984; Satorra & Bentler, 1994). It is available either for ordinal
+#'  data with `cor_method = "poly"` or `"tetra"` and `method` one of `"ML"`, `"ULS"`, or `"DWLS"`
+#'  (the meat is the polychoric / tetrachoric asymptotic covariance), or for continuous data with
+#'  `cor_method = "pearson"` and `method = "ML"` or `"ULS"` (the meat is the fourth-moment ADF
+#'  covariance of the sample correlations, the basis of the MLM / MLR robust statistics). It
+#'  reports the same set
+#'  of standard errors as `"information"` (unrotated and, under a rotation, rotated loadings,
+#'  factor correlations, structure coefficients, and communalities, propagated by the same delta
+#'  method) and additionally fills the model fit's chi-square block with a scaled (Satorra-Bentler
+#'  / scaled-and-shifted) chi-square. Because the asymptotic covariance must describe the same
+#'  cases as the correlation matrix, the sandwich (like `method = "DWLS"`) is computed on the
+#'  listwise-complete cases; on data with missing values the reported `N`, the correlation matrix,
+#'  and the point estimate therefore reflect the complete cases regardless of `use`. Like
+#'  `"information"`, it is not available with `"promax"` or
+#'  `"simplimax"`. See Lawley and Maxwell (1971) and Jennrich and Thayer (1973); for the rotated
+#'  quantities, Jennrich (1973) and Zhang and Preacher (2015); for the robust standard errors and
+#'  scaled chi-square, Browne (1984), Satorra and Bentler (1994), and Asparouhov and Muthen (2010).
 #' @param type character. If one of "EFAtools" (default), "psych", or "SPSS" is
 #'  used, and the following arguments with default NA are left with
 #'  NA, these implementations are executed according to the respective program
@@ -296,8 +313,8 @@
 #' loadings. Based on rotated loadings and, for oblique rotations, the factor
 #' intercorrelations.}
 #' \item{settings}{A list of the settings used.}
-#' \item{boot.SE}{A list of standard errors. For `se = "np-boot"`: for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, only if rotated), and fit indices. For `se = "information"`: for the unrotated loadings and the uniquenesses, and -- when a rotation is applied -- the rotated loadings, the communalities, and (for oblique rotations) the factor correlations (Phi) and structure coefficients. Only returned, if `se` is not "none".}
-#' \item{boot.CI}{A list of confidence intervals of width `ci`. For `se = "np-boot"`: percentile intervals for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, if obliquely rotated), and fit indices. For `se = "information"`: Wald intervals for the unrotated loadings and the uniquenesses, and -- when a rotation is applied -- the rotated loadings, the communalities, and (for oblique rotations) the factor correlations (Phi) and structure coefficients. Only returned, if `se` is not "none".}
+#' \item{boot.SE}{A list of standard errors. For `se = "np-boot"`: for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, only if rotated), and fit indices. For `se = "information"` and `se = "sandwich"`: for the unrotated loadings and the uniquenesses, and -- when a rotation is applied -- the rotated loadings, the communalities, and (for oblique rotations) the factor correlations (Phi) and structure coefficients. The `"sandwich"` errors are robust to non-normality and weight misspecification. Only returned, if `se` is not "none".}
+#' \item{boot.CI}{A list of confidence intervals of width `ci`. For `se = "np-boot"`: percentile intervals for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, if obliquely rotated), and fit indices. For `se = "information"` and `se = "sandwich"`: Wald intervals for the unrotated loadings and the uniquenesses, and -- when a rotation is applied -- the rotated loadings, the communalities, and (for oblique rotations) the factor correlations (Phi) and structure coefficients. Only returned, if `se` is not "none".}
 #' \item{boot.arrays}{A list of arrays with the bootstrapped loadings (aligned rotated and unrotated), aligned structure coefficients (if rotated obliquely), aligned factor correlations (Phi, if obliquely rotated), and fit indices. Only returned, if `se = "np-boot"` (`NULL` for the analytic methods).}
 #'
 #' @source Grieder, S., & Steiner, M.D. (2020). Algorithmic Jingle Jungle:
@@ -321,6 +338,14 @@
 #' @source Zhang, G., & Preacher, K. J. (2015). Factor rotation and standard errors
 #' in exploratory factor analysis. Journal of Educational and Behavioral Statistics,
 #' 40, 579–603. doi: 10.3102/1076998615606098
+#' @source Browne, M. W. (1984). Asymptotically distribution-free methods for the
+#' analysis of covariance structures. British Journal of Mathematical and Statistical
+#' Psychology, 37, 62–83. doi: 10.1111/j.2044-8317.1984.tb00789.x
+#' @source Satorra, A., & Bentler, P. M. (1994). Corrections to test statistics and
+#' standard errors in covariance structure analysis. In A. von Eye & C. C. Clogg (Eds.),
+#' Latent variables analysis (pp. 399–419). Sage.
+#' @source Asparouhov, T., & Muthen, B. (2010). Simple second order chi-square
+#' correction. Mplus Technical Appendix.
 #'
 #' @export
 #'
@@ -368,6 +393,21 @@
 #' ML_info <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
 #'                method = "ML", rotation = "none", se = "information")
 #' ML_info$boot.SE$unrot_loadings
+#'
+#' \donttest{
+#' # Robust (sandwich) standard errors and a scaled chi-square for ordinal raw data.
+#' # These need a polychoric/tetrachoric correlation method and method ML, ULS, or DWLS.
+#' DWLS_rob <- EFA(DOSPERT_raw, n_factors = 6, cor_method = "poly",
+#'                 method = "DWLS", rotation = "oblimin", se = "sandwich")
+#' DWLS_rob$boot.SE$rot_loadings
+#' DWLS_rob$fit_indices$chi      # the scaled (Satorra-Bentler) chi-square
+#'
+#' # The same robust SEs and scaled chi-square for continuous data: a Pearson
+#' # correlation with method ML or ULS (the fourth-moment ADF covariance).
+#' ML_rob <- EFA(GRiPS_raw, n_factors = 1, cor_method = "pearson",
+#'               method = "ML", rotation = "none", se = "sandwich")
+#' ML_rob$boot.SE$unrot_loadings
+#' }
 #'
 #' \dontrun{
 #' # Bootstrap standard errors from raw data, reproducible via a fixed seed and run
@@ -449,12 +489,20 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
       class = "efa_se_unsupported"
     )
   }
-
-  # Sandwich SEs are not implemented for any estimator yet; reject up front rather than
-  # after the full fit (PAF and promax are already excluded above as permanently
-  # unsupported, so only the not-yet-implemented cases remain here).
-  if (se == "sandwich") {
-    .abort_se_not_implemented()
+  # Sandwich (robust) SEs combine the estimator weight with an asymptotic-distribution-free
+  # covariance of the correlations (the robust meat), so they require raw data (enforced once N
+  # is resolved below) to estimate that covariance. Two paths supply it: the polychoric/
+  # tetrachoric asymptotic covariance for ordinal data (any estimator), or the fourth-moment
+  # (Browne, 1984) covariance for continuous data with cor_method = "pearson" and method ML or
+  # ULS. Spearman/Kendall correlations and continuous DWLS have no such covariance.
+  if (se == "sandwich" && !.is_poly_cor(cor_method) &&
+      !(cor_method == "pearson" && method %in% c("ML", "ULS"))) {
+    cli::cli_abort(
+      c("{.code se = \"sandwich\"} is not available for this correlation/estimator combination.",
+        "x" = "You requested {.code cor_method = {.val {cor_method}}} with {.code method = {.val {method}}}.",
+        "i" = "Use {.code cor_method = \"poly\"}/{.val tetra} (any estimator), or {.code cor_method = \"pearson\"} with {.code method = \"ML\"} or {.val ULS}; otherwise use {.code se = \"np-boot\"}."),
+      class = "efa_se_unsupported"
+    )
   }
 
   checkmate::assert_count(n_factors)
@@ -539,13 +587,20 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
   # Detect or compute the correlation matrix, check it, and smooth it if needed
   prep <- .prepare_cor_input(x, N = N, use = use, cor_method = cor_method,
                              N_policy = "optional",
-                             acov = if (method == "DWLS") "diag" else "none",
+                             # Sandwich SEs need the full asymptotic covariance of the
+                             # correlations (the robust meat); its diagonal also supplies
+                             # the DWLS weights, so "full" subsumes the DWLS "diag" request.
+                             acov = if (se == "sandwich") "full"
+                                    else if (method == "DWLS") "diag" else "none",
                              check_singular = type != "psych",
                              posdef_abort = type == "SPSS")
   R <- prep$R
   N <- prep$N
   # DWLS weight matrix (1 / diag(Gamma)); NULL for the other estimators.
   weights <- prep$weights
+  # Full asymptotic covariance of the off-diagonal correlations (the sandwich meat); NULL unless
+  # se = "sandwich" on a raw-data path (polychoric/tetrachoric, or continuous Pearson).
+  Gamma <- prep$Gamma
 
   # Analytic SEs scale the inverse information by 1 / (N - 1), so they need the sample
   # size. Raw data always supplies it (N = number of rows); a correlation matrix does not,
@@ -555,6 +610,18 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
       c("{.code se = {.val {se}}} requires the sample size {.arg N}.",
         "i" = "Supply {.arg N} when {.arg x} is a correlation matrix."),
       class = "efa_se_no_n"
+    )
+  }
+
+  # The sandwich meat (the asymptotic covariance of the correlations) can only be estimated from
+  # raw data; a correlation matrix carries no such covariance, so reject that combination
+  # explicitly (rather than failing later when the meat is NULL).
+  if (se == "sandwich" && is.null(Gamma)) {
+    cli::cli_abort(
+      c("{.code se = \"sandwich\"} requires raw data to estimate the asymptotic covariance of the correlations.",
+        "x" = "You supplied a correlation matrix.",
+        "i" = "Provide raw data (ordinal with {.code cor_method = \"poly\"}/{.val tetra}, or continuous with {.code cor_method = \"pearson\"}), or use {.code se = \"np-boot\"}."),
+      class = "efa_se_unsupported"
     )
   }
 
@@ -838,7 +905,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
       # need the converged transformation, the factor correlations, the resolved Kaiser-
       # normalization flag, and the criterion's tuning arguments (the same `.gpf_crit` defaults the
       # rotation itself used). NULL for the bootstrap, which carries its own replicate rotations.
-      rot_info <- if (se == "information") {
+      rot_info <- if (se %in% c("information", "sandwich")) {
         list(rotation = rotation,
              rotmat = rot_out$rotmat,
              rot_loadings = rot_out$rot_loadings,
@@ -852,12 +919,23 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
     }
     boot_out <- .compute_se_ci(fit_out, L_rot, se_method = se,
                                boot_fits = boot_fits, boot_rot = boot_rot,
-                               ci = ci, b = b_boot, N = N, rot_info = rot_info)
+                               ci = ci, b = b_boot, N = N, rot_info = rot_info,
+                               gamma = Gamma, method = method)
+    # The sandwich also returns the robust scaled chi-square block; it is patched into the
+    # fit indices below rather than carried in the SE schema, so strip it before merging.
+    scaled_test <- boot_out$scaled_test
+    boot_out$scaled_test <- NULL
     output <- c(output, boot = boot_out)
     # Only the bootstrap yields a sampling SD for every residual; the analytic methods do
     # not, so standardise the residuals only when those SEs are available.
     if (!is.null(boot_out$SE$residuals)) {
       output$standardized_residuals <- output$residuals / boot_out$SE$residuals
+    }
+    # Fill the chi-square block of the fit indices with the robust scaled chi-square
+    # (Satorra-Bentler / scaled-shifted): .gof() leaves it undefined for DWLS, and for
+    # ML/ULS the unscaled discrepancy chi-square is not robust to the ordinal weighting.
+    if (se == "sandwich" && !is.null(scaled_test)) {
+      output$fit_indices <- .apply_scaled_test(output$fit_indices, scaled_test, N)
     }
   }
 
@@ -912,35 +990,57 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
 
 }
 
-# Reject the not-yet-implemented sandwich estimator with a consistent classed error.
-.abort_se_not_implemented <- function() {
-  cli::cli_abort(
-    c("Analytic sandwich standard errors are not implemented yet.",
-      "i" = "Use {.code se = \"information\"} or {.code se = \"np-boot\"}."),
-    class = "efa_se_not_implemented"
-  )
-}
-
 # Dispatch standard-error/confidence-interval computation on the requested method. The
 # nonparametric bootstrap aggregates resampled fits; the analytic methods derive SEs from
 # the fitted model itself. Every branch returns the same list(SE, CI, arrays) schema, so the
-# print and summary methods are agnostic to how the SEs were produced.
+# print and summary methods are agnostic to how the SEs were produced. The sandwich branch
+# additionally returns a `scaled_test` element (the robust scaled chi-square), which EFA()
+# strips off and folds into the fit indices. `gamma` (the polychoric ACOV meat) and `method`
+# are used only by the sandwich.
 .compute_se_ci <- function(fit_out, L_rot, se_method, boot_fits = NULL,
                            boot_rot = "none", ci = .95, b = NULL, N = NULL,
-                           rot_info = NULL) {
+                           rot_info = NULL, gamma = NULL, method = NULL) {
 
   switch(se_method,
     "np-boot" = .boot_se_ci(fit_out, L_rot, boot_fits, boot_rot, ci, b),
-    # rot_info is non-NULL exactly for an information-SE fit under a real rotation; the unrotated
+    # rot_info is non-NULL exactly for an analytic-SE fit under a real rotation; the unrotated
     # path (rotation = "none") leaves it NULL.
     "information" = if (is.null(rot_info)) {
       .se_information(fit_out, N, ci)
     } else {
       .se_information_rotated(fit_out, rot_info, N, ci)
     },
-    "sandwich" = .abort_se_not_implemented(),
+    "sandwich" = .se_sandwich_dispatch(fit_out, rot_info, N, ci, gamma, method),
     NULL
   )
+}
+
+
+# Leading `keep`-block of the inverse of the bordered matrix [A C'; C 0] -- the constrained
+# (reflexive generalised) inverse of a gauge-singular information matrix A under the identification
+# constraints whose Jacobian is `Cmat` (k(k-1)/2 rows, zero rows for a single factor). Returns NULL
+# if the augmented system is singular. Shared by the expected-information and sandwich SEs.
+.bordered_inverse_block <- function(A, Cmat, keep) {
+  nc <- nrow(Cmat)
+  Aug <- if (nc > 0L) {
+    rbind(cbind(A, t(Cmat)), cbind(Cmat, matrix(0, nc, nc)))
+  } else {
+    A
+  }
+  inv <- tryCatch(solve(Aug), error = function(e) NULL)
+  if (is.null(inv)) return(NULL)
+  inv[seq_len(keep), seq_len(keep), drop = FALSE]
+}
+
+# Delta-method SEs of the communalities h2_i = rowSums(Lambda^2)_i from a loading covariance V
+# (p*k x p*k over column-major vec(Lambda)). The gradient of h2_i is 2 Lambda[i, ], nonzero only in
+# variable i's loading columns. Shared by the rotated information and sandwich SEs.
+.communality_se <- function(L, V) {
+  p <- nrow(L)
+  k <- ncol(L)
+  G_h <- matrix(0, p, p * k)
+  for (i in seq_len(p)) G_h[i, (seq_len(k) - 1L) * p + i] <- 2 * L[i, ]
+  sqrt(pmax(rowSums((G_h %*% V) * G_h), 0))
 }
 
 
@@ -1085,18 +1185,12 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
   }
 
   # --- bordered information, inverse, scaling --------------------------------------------
-  Aug <- if (nc > 0L) {
-    rbind(cbind(A, t(Cmat)), cbind(Cmat, matrix(0, nc, nc)))
-  } else {
-    A
-  }
-
-  Vfull <- tryCatch(solve(Aug), error = function(e) NULL)
-  if (is.null(Vfull)) {
+  Vblock <- .bordered_inverse_block(A, Cmat, q)
+  if (is.null(Vblock)) {
     return(na_out)
   }
 
-  V <- Vfull[seq_len(q), seq_len(q), drop = FALSE] / (N - 1)
+  V <- Vblock / (N - 1)
   # A near-degenerate orientation can leave a tiny negative variance on the diagonal; the
   # guard below substitutes NA, so silence base R's "NaNs produced" before it surfaces.
   se <- suppressWarnings(sqrt(diag(V)))
@@ -1170,7 +1264,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
 # classed warning) at a Heywood case, a singular information matrix, or a rotation the warm start
 # cannot reproduce (e.g. a non-converged transformation). References: Jennrich (1973); Zhang &
 # Preacher (2015).
-.se_information_rotated <- function(fit_out, rot_info, N, ci) {
+.se_information_rotated <- function(fit_out, rot_info, N, ci, se0 = NULL) {
 
   A <- unclass(fit_out$unrot_loadings)
   p <- nrow(A)
@@ -1179,9 +1273,12 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
   psi <- 1 - rowSums(A^2)
   z <- stats::qnorm(1 - (1 - ci) / 2)
 
-  # P6.1 unrotated pieces (always reported, mirroring the bootstrap's unrot_loadings) and the
-  # loading covariance block propagated through the rotation.
-  se0 <- .se_information_ml(A, psi, N)
+  # Unrotated pieces (always reported, mirroring the bootstrap's unrot_loadings) and the
+  # loading covariance block propagated through the rotation. The covariance is the expected-
+  # information one by default; the sandwich path supplies its own robust covariance in `se0`
+  # (with the same $vcov/$loadings_se/$uniquenesses_se schema), so the rotation propagation
+  # below is identical for both and is purely a function of the loading covariance V.
+  if (is.null(se0)) se0 <- .se_information_ml(A, psi, N)
   V <- se0$vcov[seq_len(pk), seq_len(pk), drop = FALSE]
   SE_unrot <- se0$loadings_se
   SE_psi <- se0$uniquenesses_se
@@ -1202,14 +1299,11 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
   # report rotated loadings and communalities only.
   oblique <- !is.null(Phi_pt)
 
-  # Communalities are rotation-invariant (h2_i = rowSums(A^2)_i = (L Phi L')_ii), so their SEs use
-  # the closed-form loading gradient g_i = 2 A[i, ] directly -- no finite differencing.
+  # Communalities are rotation-invariant (h2_i = rowSums(A^2)_i = (L Phi L')_ii), so their SEs come
+  # from the closed-form loading gradient (.communality_se) directly -- no finite differencing.
   h2 <- rowSums(A^2)
   names(h2) <- rownames(A)
-  G_h <- matrix(0, p, pk)
-  for (i in seq_len(p)) G_h[i, (seq_len(k) - 1L) * p + i] <- 2 * A[i, ]
-  # diag(G_h V G_h') without forming the full product: diag(M V M')[i] = rowSums((M V) * M)[i].
-  SE_h2 <- if (!info_reliable) rep(NA_real_, p) else sqrt(pmax(rowSums((G_h %*% V) * G_h), 0))
+  SE_h2 <- if (!info_reliable) rep(NA_real_, p) else .communality_se(A, V)
   names(SE_h2) <- rownames(A)
 
   na_mat <- function() {
@@ -1294,12 +1388,335 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
       (oblique && (anyNA(SE_Phi) || anyNA(SE_S)))) {
     cli::cli_warn(
       c("Analytic standard errors could not be computed for all parameters.",
-        "i" = "This occurs at a Heywood case (a uniqueness at or below its zero boundary), when the expected information matrix is singular, or when the rotation could not be reproduced for the standard-error Jacobian."),
+        "i" = "This occurs at a Heywood case (a uniqueness at or below its zero boundary), when the parameter covariance is singular, or when the rotation could not be reproduced for the standard-error Jacobian."),
       class = "efa_se_unreliable"
     )
   }
 
   list(SE = SE, CI = CI, arrays = NULL)
+}
+
+
+# Robust (sandwich) standard errors and a scaled chi-square for the ordinal/polychoric path.
+# The factor model is fitted by minimising a weighted off-diagonal discrepancy
+# F(theta) = (s - sigma(theta))' V (s - sigma(theta)) over the free loadings theta = vec(Lambda),
+# where s = vech of the off-diagonal sample (polychoric/tetrachoric) correlations,
+# sigma_ij(theta) = (Lambda Lambda')_ij, and V is the estimator's weight matrix (DWLS: diagonal
+# inverse asymptotic variances; ULS: identity; ML: the normal-theory GLS weight). When V is not
+# the inverse of the true asymptotic covariance of s (which it never is for ordinal data), the
+# naive inverse-information SEs are biased, and the Godambe sandwich
+#   Var(theta) = (1/(N-1)) A^- (Delta' V Gamma V Delta) A^-,   A = Delta' V Delta,
+# with Gamma the (threshold-adjusted) asymptotic covariance of s, gives consistent SEs (Browne,
+# 1984; Muthen, 1984; Satorra & Bentler, 1994). This mirrors lavaan's se = "robust.sem". The
+# rotational over-parameterisation of A is handled by bordering it with the identification-
+# constraint Jacobian, exactly as the expected-information path does. The bordered loading
+# covariance is propagated through a rotation by the same Jacobian machinery as the information
+# SEs (.se_information_rotated), so promax/simplimax stay bootstrap-only.
+.se_sandwich_dispatch <- function(fit_out, rot_info, N, ci, Gamma, method) {
+
+  core <- .se_sandwich_core(fit_out, N, Gamma, method)
+
+  res <- if (is.null(rot_info)) {
+    .se_sandwich_unrotated(fit_out, core, ci)
+  } else {
+    # Reuse the information-SE rotation propagation verbatim by supplying the robust loading
+    # covariance in place of the expected-information one (identical $vcov schema). Because the
+    # rotation Jacobian annihilates the rotational gauge directions, the rotated SEs are
+    # identification-invariant and do not depend on which bordering constraint produced V_AA.
+    se0 <- list(vcov = core$V_AA,
+                loadings_se = core$loadings_se,
+                uniquenesses_se = core$uniquenesses_se)
+    .se_information_rotated(fit_out, rot_info, N, ci, se0 = se0)
+  }
+
+  res$scaled_test <- core$scaled_test
+  res
+}
+
+# Identification-constraint Jacobian for the rotational gauge: the gradient of the off-diagonal
+# entries of Lambda'Lambda (which the canonical orientation sets to zero) with respect to the
+# column-major vec(Lambda). nc = k(k-1)/2 rows, p*k columns; for k = 1 there is no gauge freedom
+# and the matrix has zero rows. The constraint only needs to be transversal to the gauge
+# directions of A; any such choice yields the same rotated (estimable) SEs.
+.se_sandwich_constraint <- function(L) {
+  p <- nrow(L)
+  k <- ncol(L)
+  nc <- k * (k - 1L) / 2L
+  Cmat <- matrix(0, nc, p * k)
+  if (k > 1L) {
+    uv <- 0L
+    for (v in 2:k) {
+      for (u in seq_len(v - 1L)) {
+        uv <- uv + 1L
+        grad <- matrix(0, p, k)
+        grad[, u] <- L[, v]
+        grad[, v] <- L[, u]
+        Cmat[uv, ] <- as.vector(grad)
+      }
+    }
+  }
+  Cmat
+}
+
+# Build the robust loading covariance V_AA (p*k x p*k), the unrotated loading/uniqueness SEs, and
+# the scaled chi-square from the fitted loadings and the polychoric ACOV `Gamma`. `Gamma` enters on
+# the variance scale Var(rho-hat) and is converted here to the unit asymptotic-variance scale
+# (N * Var) used by the WLS/sandwich formulas (= lavaan's NACOV). Returns NA SEs (reliable = FALSE)
+# at a singular bordered information matrix or an unusable covariance.
+#
+# The linear algebra is O(n^2 q) for the meat and O(n^3) for the chi-square trace (n = p(p-1)/2
+# pairs, q = p*k), and is kept in R: it is a one-shot cost of a few hundredths of a second for a
+# typical problem and about 0.3 s (p = 30) to 1.5 s (p = 40, n = 780 pairs) for a large one --
+# negligible next to the polychoric estimate it builds on, and far below a bootstrap.
+.se_sandwich_core <- function(fit_out, N, Gamma, method) {
+
+  L <- unclass(fit_out$unrot_loadings)
+  p <- nrow(L)
+  k <- ncol(L)
+  pk <- p * k
+
+  na_core <- list(
+    V_AA = matrix(NA_real_, pk, pk),
+    loadings_se = matrix(NA_real_, p, k),
+    uniquenesses_se = rep(NA_real_, p),
+    scaled_test = NULL,
+    reliable = FALSE
+  )
+
+  if (is.null(Gamma) || anyNA(Gamma) || nrow(Gamma) != p * (p - 1L) / 2L) {
+    return(na_core)
+  }
+
+  # Variance scale (Var(rho-hat)) -> unit asymptotic-variance scale (N * Var); the 1/(N-1) on the
+  # final covariance and the N on the chi-square then follow lavaan's robust.sem conventions.
+  Gamma <- N * Gamma
+
+  pairs <- utils::combn(p, 2L)
+  pi <- pairs[1, ]
+  pj <- pairs[2, ]
+  n <- ncol(pairs)
+
+  # Model Jacobian Delta = d sigma_offdiag / d vec(Lambda) (n x pk). For pair (i, j),
+  # d sigma_ij / d Lambda[a, f] = (a == i) Lambda[j, f] + (a == j) Lambda[i, f]; rows in
+  # utils::combn(p, 2) order, columns in column-major vec(Lambda) order.
+  Delta <- matrix(0, n, pk)
+  for (f in seq_len(k)) {
+    Delta[cbind(seq_len(n), (f - 1L) * p + pi)] <- L[pj, f]
+    Delta[cbind(seq_len(n), (f - 1L) * p + pj)] <- L[pi, f]
+  }
+
+  # Estimator weight V (unit scale). DWLS: diagonal inverse variances; ULS: identity; ML: the
+  # normal-theory GLS weight 1/2 (Sigma^-1 (x) Sigma^-1) restricted to the off-diagonal pairs, at
+  # the model-implied correlation matrix Sigma = Lambda Lambda' (unit diagonal).
+  if (method == "DWLS") {
+    vdiag <- 1 / diag(Gamma)
+    Vmat <- NULL
+  } else if (method == "ULS") {
+    vdiag <- rep(1, n)
+    Vmat <- NULL
+  } else {
+    Sigma <- tcrossprod(L)
+    diag(Sigma) <- 1
+    P <- tryCatch(solve(Sigma), error = function(e) NULL)
+    if (is.null(P)) return(na_core)
+    vdiag <- NULL
+    Vmat <- matrix(0, n, n)
+    for (s in seq_len(n)) {
+      a <- pi[s]
+      b <- pj[s]
+      Vmat[, s] <- 0.5 * (P[pi, a] * P[pj, b] + P[pi, b] * P[pj, a])
+    }
+  }
+  is_diag <- is.null(Vmat)
+
+  # VD = V Delta; bread A = Delta' V Delta (singular by the k(k-1)/2 rotational gauge freedoms).
+  VD <- if (is_diag) vdiag * Delta else Vmat %*% Delta
+  A <- crossprod(Delta, VD)
+
+  # Border A with the gauge-fixing constraint so the augmented system is invertible; the leading
+  # pk-block of its inverse is the reflexive generalised inverse of A.
+  Abread <- .bordered_inverse_block(A, .se_sandwich_constraint(L), pk)
+  if (is.null(Abread)) return(na_core)
+
+  # Meat Delta' V Gamma V Delta = (V Delta)' Gamma (V Delta); robust covariance A^- meat A^- /(N-1).
+  Gamma_theta <- crossprod(VD, Gamma %*% VD)
+  V_AA <- (Abread %*% Gamma_theta %*% Abread) / (N - 1)
+
+  # The reliability gate covers the whole covariance, not only its diagonal: a non-finite entry
+  # anywhere would otherwise still corrupt the uniqueness and rotated SEs, which read the full V_AA.
+  reliable <- all(is.finite(V_AA)) && all(diag(V_AA) >= 0)
+  loadings_se <- if (reliable) sqrt(diag(V_AA)) else rep(NA_real_, pk)
+
+  # Uniqueness SE = communality SE (psi_i = 1 - rowSums(Lambda^2)_i), via the shared gradient.
+  uniq_se <- if (!reliable) rep(NA_real_, p) else .communality_se(L, V_AA)
+
+  scaled_test <- if (!reliable) NULL else {
+    .scaled_chisq(fit_out, Gamma, pairs, VD, vdiag, Vmat, Abread, N)
+  }
+
+  list(
+    V_AA = V_AA,
+    loadings_se = matrix(loadings_se, p, k),
+    uniquenesses_se = uniq_se,
+    scaled_test = scaled_test,
+    reliable = reliable
+  )
+}
+
+# Scaled chi-square test statistics (Satorra & Bentler, 1994; Asparouhov & Muthen, 2010) for the
+# weighted off-diagonal fit. T = N * (s - sigma)' V (s - sigma) is the (unscaled) fit statistic;
+# U = V - V Delta A^- Delta' V is the residual projector; c1 = tr(U Gamma), c2 = tr((U Gamma)^2)
+# its trace coefficients (Gamma on the unit scale). Returns the scaled-shifted (WLSMV-default),
+# mean-adjusted, and mean-and-variance-adjusted statistics plus the scaled baseline statistic for
+# the robust CFI/TLI/RMSEA. NULL when the model is just-identified (df <= 0) or the traces degenerate.
+.scaled_chisq <- function(fit_out, Gamma, pairs, VD, vdiag, Vmat, Abread, N) {
+
+  L <- unclass(fit_out$unrot_loadings)
+  df <- fit_out$fit_indices$df
+  if (is.null(df) || is.na(df) || df <= 0) return(NULL)
+
+  n <- ncol(pairs)
+  is_diag <- is.null(Vmat)
+  apply_V <- function(x) if (is_diag) vdiag * x else as.vector(Vmat %*% x)
+
+  # The sample correlations s and residuals e are read from the (possibly smoothed) analysis matrix,
+  # while Gamma is the asymptotic covariance of the observed un-projected polychoric correlations --
+  # the same convention the DWLS point estimate and lavaan use (the weights/ACOV describe the
+  # observed correlations even when the matrix is projected to positive definiteness).
+  R <- unclass(fit_out$orig_R)
+  s <- R[t(pairs)]                       # off-diagonal sample correlations
+  e <- (R - tcrossprod(L))[t(pairs)]     # residuals r_ij - (Lambda Lambda')_ij
+
+  Tstat <- N * sum(e * apply_V(e))
+
+  # Residual projector U = V - V Delta A^- Delta' V. The dense V Delta A^- Delta' V term makes U
+  # dense anyway, so add the (diagonal or full) weight onto it in place instead of materialising a
+  # dense V.
+  U <- -(VD %*% Abread %*% t(VD))
+  if (is_diag) diag(U) <- diag(U) + vdiag else U <- U + Vmat
+  c1 <- sum(U * Gamma)
+  UG <- U %*% Gamma
+  c2 <- sum(UG * t(UG))
+  if (!is.finite(c1) || !is.finite(c2) || c1 <= 0 || c2 <= 0) return(NULL)
+
+  # Independence baseline (all off-diagonal correlations fixed to 0): residual is s, projector the
+  # baseline weight V0. V0 is diagonal for every estimator -- it equals the (model-independent)
+  # weight for DWLS/ULS, and 1/2 I for ML (the normal-theory weight at Sigma = I) -- so the baseline
+  # traces use only its diagonal.
+  v0 <- if (is_diag) vdiag else rep(0.5, n)
+  Tbase <- N * sum(s * (v0 * s))
+  df_base <- n
+  c1_base <- sum(v0 * diag(Gamma))       # tr(diag(v0) Gamma)
+  V0G <- v0 * Gamma                      # diag(v0) %*% Gamma (row scaling)
+  c2_base <- sum(V0G * t(V0G))           # tr((diag(v0) Gamma)^2)
+
+  scaled <- .scaled_variants(Tstat, df, c1, c2)
+  chi_null <- if (is.finite(c1_base) && is.finite(c2_base) && c2_base > 0) {
+    .scaled_variants(Tbase, df_base, c1_base, c2_base)$T_ss
+  } else {
+    NA_real_
+  }
+
+  list(
+    m = nrow(L),
+    df = df,
+    chi = scaled$T_ss,                   # scaled-shifted (WLSMV default) -> the reported chi-square
+    chi_scaling = scaled$a,
+    chi_shift = scaled$b,
+    chi_unscaled = Tstat,
+    chi_mean_adjusted = scaled$T_mean,
+    chi_mean_var = scaled$T_mv,
+    df_mean_var = scaled$df_mv,
+    chi_null = chi_null,
+    df_null = df_base
+  )
+}
+
+# The three scalings of a fit statistic T (Satorra & Bentler, 1994; Asparouhov & Muthen, 2010)
+# from its trace coefficients c1 = tr(U Gamma), c2 = tr((U Gamma)^2) and degrees of freedom df:
+# mean-adjusted (T * df/c1, reference df); scaled-shifted a*T + b with a = sqrt(df/c2),
+# b = df - a*c1 (reference df, the WLSMV default); mean-and-variance-adjusted T * c1/c2 with the
+# Satterthwaite df* = c1^2/c2.
+.scaled_variants <- function(Tstat, df, c1, c2) {
+  a <- sqrt(df / c2)
+  list(
+    T_mean = Tstat * df / c1,
+    a = a,
+    b = df - a * c1,
+    T_ss = a * Tstat + (df - a * c1),
+    df_mv = c1^2 / c2,
+    T_mv = Tstat * c1 / c2
+  )
+}
+
+# Unrotated robust SE/CI wrapper: fills the uniform list(SE, CI, arrays) schema from the core's
+# loading/uniqueness SEs, mirroring .se_information() but with the sandwich covariance.
+.se_sandwich_unrotated <- function(fit_out, core, ci) {
+
+  L <- unclass(fit_out$unrot_loadings)
+  SE_L <- core$loadings_se
+  SE_psi <- core$uniquenesses_se
+  dimnames(SE_L) <- dimnames(L)
+  names(SE_psi) <- rownames(L)
+
+  if (anyNA(SE_L) || anyNA(SE_psi)) {
+    cli::cli_warn(
+      c("Robust standard errors could not be computed for all parameters.",
+        "i" = "This occurs when the bordered information matrix is singular or the asymptotic covariance is not usable."),
+      class = "efa_se_unreliable"
+    )
+  }
+
+  psi <- 1 - rowSums(L^2)
+  names(psi) <- rownames(L)
+  z <- stats::qnorm(1 - (1 - ci) / 2)
+
+  list(
+    SE = list(unrot_loadings = SE_L, uniquenesses = SE_psi),
+    CI = list(unrot_loadings = .wald_ci(L, SE_L, z),
+              uniquenesses = .wald_ci(psi, SE_psi, z)),
+    arrays = NULL
+  )
+}
+
+# Fold the robust scaled chi-square into the fit indices, overwriting the chi-square-derived block
+# (.gof() leaves it undefined for DWLS and reports the non-robust discrepancy for ML/ULS). The
+# reported chi-square is the scaled-shifted (WLSMV-default) statistic; the mean-adjusted and
+# mean-and-variance-adjusted statistics and the scaling/shift are added as extra fields. CFI/TLI/
+# RMSEA come from the scaled model and baseline statistics via the shared .chi_fit_indices().
+.apply_scaled_test <- function(fit_indices, st, N) {
+
+  if (is.null(st)) return(fit_indices)
+
+  idx <- .chi_fit_indices(st$chi, st$df, st$chi_null, st$df_null, N, st$m, ci = TRUE)
+
+  fit_indices$chi <- st$chi
+  fit_indices$df <- st$df
+  fit_indices$p_chi <- idx$p_chi
+  fit_indices$CFI <- idx$CFI
+  fit_indices$TLI <- idx$TLI
+  fit_indices$RMSEA <- idx$RMSEA
+  fit_indices$RMSEA_LB <- idx$RMSEA_LB
+  fit_indices$RMSEA_UB <- idx$RMSEA_UB
+  # AIC/BIC/ECVI are likelihood-ratio chi-square information criteria; they have no standard
+  # interpretation when built on the moment-scaled (Satorra-Bentler) statistic, so leave them NA
+  # rather than report a misleading model-comparison number.
+  fit_indices$AIC <- NA_real_
+  fit_indices$BIC <- NA_real_
+  fit_indices$ECVI <- NA_real_
+  fit_indices$chi_null <- st$chi_null
+  fit_indices$df_null <- st$df_null
+  fit_indices$p_null <- idx$p_null
+
+  fit_indices$chi_scaled_type <- "scaled.shifted"
+  fit_indices$chi_scaling <- st$chi_scaling
+  fit_indices$chi_shift <- st$chi_shift
+  fit_indices$chi_unscaled <- st$chi_unscaled
+  fit_indices$chi_mean_adjusted <- st$chi_mean_adjusted
+  fit_indices$chi_mean_var <- st$chi_mean_var
+  fit_indices$df_mean_var <- st$df_mean_var
+
+  fit_indices
 }
 
 

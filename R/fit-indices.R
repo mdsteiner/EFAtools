@@ -116,6 +116,88 @@
   }
 }
 
+# Chi-square-derived fit indices: the p-values, CFI (Bentler, 1990), TLI/NNFI (Tucker &
+# Lewis, 1973), RMSEA with its analytic 90% bounds (Browne & Cudeck, 1992), AIC, BIC, and
+# ECVI (Browne & Cudeck, 1989). Computed from a model chi-square and an independence-
+# baseline chi-square with their degrees of freedom; `m` is the number of variables, `ci`
+# toggles the (uniroot-solved) RMSEA bounds. Returns NA throughout when the model chi-
+# square is undefined. Shared by .gof() (the ML/ULS discrepancy chi-square) and the
+# scaled-chi-square sandwich-SE path, which passes its scaled model and baseline statistics
+# in, so both report the block by exactly the same formulas.
+.chi_fit_indices <- function(chi, df, chi_null, df_null, N, m, ci) {
+
+  if (is.na(chi)) {
+    return(list(p_chi = NA, CFI = NA, TLI = NA, RMSEA = NA, RMSEA_LB = NA,
+                RMSEA_UB = NA, AIC = NA, BIC = NA, ECVI = NA, p_null = NA))
+  }
+
+  p_null <- stats::pchisq(chi_null, df_null, lower.tail = F)
+  p_chi <- stats::pchisq(chi, df, lower.tail = F)
+
+  # CFI and TLI need the independence-baseline chi-square; when it is undefined (e.g. a degenerate
+  # scaled baseline) they are NA while the model-only RMSEA/AIC/BIC/p remain computable.
+  if (is.na(chi_null)) {
+    CFI <- NA_real_
+    TLI <- NA_real_
+  } else {
+    # CFI: model and baseline noncentralities d = chi - df floored at 0, so an over-fitting
+    # model cannot deflate the index and it stays in [0, 1] (matches lavaan::fitMeasures()).
+    d_m <- max(chi - df, 0)
+    d_null <- max(chi_null - df_null, 0)
+    CFI <- if (df == 0 || max(d_m, d_null) == 0) 1 else 1 - d_m / max(d_m, d_null)
+
+    if (df == 0) {
+      TLI <- 1
+    } else {
+      ratio_null <- chi_null / df_null
+      # ratio_null == 1 leaves the index undefined (0/0); report a perfect 1.
+      TLI <- if (ratio_null == 1) 1 else (ratio_null - chi / df) / (ratio_null - 1)
+    }
+  }
+
+  if (df != 0) {
+
+    # formula 12.6 from Kline 2016; Principles and practices of...
+    RMSEA <- sqrt(max(0, chi - df) / (df * (N - 1)))
+    if (RMSEA > 1) RMSEA <- 1
+
+    if (isTRUE(ci)) {
+
+      # Analytic 90% RMSEA confidence bounds via the noncentrality solver (Browne &
+      # Cudeck, 1992); skipped when ci = FALSE (e.g. per-replicate bootstrap fits).
+      lambda_l <- .rmsea_lambda(chi, df, .95)
+      lambda_u <- .rmsea_lambda(chi, df, .05)
+
+      RMSEA_LB <- sqrt(lambda_l / (df * (N - 1)))
+      RMSEA_UB <- sqrt(lambda_u / (df * (N - 1)))
+
+      if (RMSEA_LB > 1) RMSEA_LB <- 1
+      if (RMSEA_UB > 1) RMSEA_UB <- 1
+
+    } else {
+
+      RMSEA_LB <- NA_real_
+      RMSEA_UB <- NA_real_
+
+    }
+
+  } else {
+
+    RMSEA <- 0
+    RMSEA_LB <- 0
+    RMSEA_UB <- 0
+
+  }
+
+  AIC <- chi - 2 * df
+  BIC <- chi - log(N) * df
+  n_params <- m * (m + 1) / 2 - df
+  ECVI <- (chi + 2 * n_params) / (N - 1)
+
+  list(p_chi = p_chi, CFI = CFI, TLI = TLI, RMSEA = RMSEA, RMSEA_LB = RMSEA_LB,
+       RMSEA_UB = RMSEA_UB, AIC = AIC, BIC = BIC, ECVI = ECVI, p_null = p_null)
+}
+
 .gof <- function(L, # The loading/ pattern matrix
                  R, # The correlation matrix
                  N, # The number of cases
@@ -183,119 +265,41 @@
     chi <- NA_real_
   }
 
-  if (!is.na(chi)) {
-
-    ### compute CFI
-
-    # null model: reuse the log-determinant already computed for the model
-    # chi-square above instead of letting .null_chisq() recompute determinant(R).
-    chi_null <- .null_chisq(R, N, ld = ldR)
-    df_null <- (m**2 - m) / 2
-    p_null <- stats::pchisq(chi_null, df_null, lower.tail = F)
-
-    # current model
-    p_chi <- stats::pchisq(chi, df, lower.tail = F)
-
-    ### compute CFI (Bentler, 1990): the model and baseline noncentralities
-    # d = chi - df are each floored at 0 before the ratio, so an over-fitting
-    # model (d <= 0) cannot deflate the index and CFI is 1 when the baseline
-    # itself does not misfit (denominator 0). The flooring keeps CFI in [0, 1]
-    # without a post-hoc clamp and matches lavaan::fitMeasures().
-    d_m <- max(chi - df, 0)
-    d_null <- max(chi_null - df_null, 0)
-    CFI <- if (df == 0 || max(d_m, d_null) == 0) 1 else 1 - d_m / max(d_m, d_null)
-
-    ### compute TLI (Tucker-Lewis index / NNFI; Tucker & Lewis, 1973)
-    if (df == 0) {
-      TLI <- 1
-    } else {
-      ratio_null <- chi_null / df_null
-      # ratio_null == 1 (baseline chi-square equal to its df) leaves the index
-      # undefined (0/0); report a perfect 1 as in the just-identified case.
-      TLI <- if (ratio_null == 1) 1 else (ratio_null - chi / df) / (ratio_null - 1)
-    }
-
-
-    ### compute RMSEA, incl. 90% confidence intervals if df are not 0
-    if(df != 0){
-
-      # formula 12.6 from Kline 2016; Principles and practices of...
-      RMSEA <- sqrt(max(0, chi - df) / (df * (N - 1)))
-      if(RMSEA > 1) RMSEA <- 1
-
-      if (isTRUE(ci)) {
-
-        # Analytic 90% RMSEA confidence bounds via the noncentrality solver
-        # (Browne & Cudeck, 1992). The two uniroot solves are skipped when
-        # ci = FALSE (the per-replicate bootstrap fits): an analytic confidence
-        # interval is not itself bootstrapped, so the bounds are not aggregated.
-        lambda_l <- .rmsea_lambda(chi, df, .95)
-        lambda_u <- .rmsea_lambda(chi, df, .05)
-
-        RMSEA_LB <- sqrt(lambda_l / (df * (N - 1)))
-        RMSEA_UB <- sqrt(lambda_u / (df * (N - 1)))
-
-        if(RMSEA_LB > 1) RMSEA_LB <- 1
-        if(RMSEA_UB > 1) RMSEA_UB <- 1
-
-      } else {
-
-        RMSEA_LB <- NA_real_
-        RMSEA_UB <- NA_real_
-
-      }
-
-    } else {
-
-      RMSEA <- 0
-      RMSEA_LB <- 0
-      RMSEA_UB <- 0
-
-    }
-
-    ### compute AIC and BIC based on chi square
-    AIC <- chi - 2 * df
-    BIC <- chi - log(N) * df
-
-    ### compute ECVI (expected cross-validation index; Browne & Cudeck, 1989)
-    n_params <- m * (m + 1) / 2 - df
-    ECVI <- (chi + 2 * n_params) / (N - 1)
-
-  } else {
+  # null model: reuse the log-determinant already computed for the model chi-square above
+  # instead of letting .null_chisq() recompute determinant(R). Undefined (NA) chi-square
+  # leaves the whole chi-derived block NA.
+  if (is.na(chi)) {
     chi <- NA
-    p_chi <- NA
-    CFI <- NA
-    TLI <- NA
-    RMSEA <- NA
-    RMSEA_LB <- NA
-    RMSEA_UB <- NA
-    AIC <- NA
-    BIC <- NA
-    ECVI <- NA
     chi_null <- NA
     df_null <- NA
-    p_null <- NA
+  } else {
+    chi_null <- .null_chisq(R, N, ld = ldR)
+    df_null <- (m**2 - m) / 2
   }
+
+  # CFI/TLI/RMSEA/AIC/BIC/ECVI and the p-values. Shared with the scaled-chi-square
+  # (sandwich-SE) path, which supplies its own scaled model and baseline statistics.
+  idx <- .chi_fit_indices(chi, df, chi_null, df_null, N, m, ci)
 
   out <- list(
     chi = chi,
     df = df,
-    p_chi = p_chi,
+    p_chi = idx$p_chi,
     CAF = CAF,
     RMSR = RMSR,
     SRMR = SRMR,
-    CFI = CFI,
-    TLI = TLI,
-    RMSEA = RMSEA,
-    RMSEA_LB = RMSEA_LB,
-    RMSEA_UB = RMSEA_UB,
-    AIC = AIC,
-    BIC = BIC,
-    ECVI = ECVI,
+    CFI = idx$CFI,
+    TLI = idx$TLI,
+    RMSEA = idx$RMSEA,
+    RMSEA_LB = idx$RMSEA_LB,
+    RMSEA_UB = idx$RMSEA_UB,
+    AIC = idx$AIC,
+    BIC = idx$BIC,
+    ECVI = idx$ECVI,
     Fm = Fm,
     chi_null = chi_null,
     df_null = df_null,
-    p_null = p_null
+    p_null = idx$p_null
   )
 
 }

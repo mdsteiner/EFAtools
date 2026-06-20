@@ -76,8 +76,8 @@
   # replicate.)
   if (any(!is.finite(acov_diag)) || any(acov_diag <= 0)) {
     cli::cli_abort(
-      c("A polychoric asymptotic variance was not positive, so the DWLS weights are undefined.",
-        "i" = "A variable pair is (near-)degenerate."),
+      c("A polychoric asymptotic variance was not positive, so the inverse-variance weights are undefined.",
+        "i" = "A variable pair is (near-)degenerate (e.g. an empty or near-empty response category)."),
       class = "efa_dwls_degenerate_weight"
     )
   }
@@ -85,6 +85,46 @@
   idx <- utils::combn(p, 2L)
   W[t(idx)] <- 1 / acov_diag
   W + t(W)
+}
+
+# Asymptotic-distribution-free (ADF; Browne, 1984) covariance of the off-diagonal sample
+# correlations from raw continuous data, on the variance scale Var(rho-hat) and in
+# utils::combn(p, 2) column order -- the continuous analogue of the polychoric asymptotic
+# covariance, and the meat of the robust/sandwich standard errors. For case n and pair (i < j)
+# the per-case influence is IF[n, (ij)] = (w_ni w_nj - 1/2 r_ij (w_ni^2 + w_nj^2)) / N, with w
+# the columns standardised to unit variance; Gamma = crossprod(IF). The -1/2 r (w^2 - 1) terms
+# are the delta-method correction for estimating the marginal SDs (the standardisation
+# nuisance, the continuous counterpart of the polychoric threshold influence). N * Gamma equals
+# lavaan's correlation-structure NACOV (the basis of the MLM/MLR robust statistics). Kept in R:
+# the cost is the BLAS crossprod (about 0.4 s at p = 40, N = 800); the influence build is cheap.
+.adf_gamma <- function(x) {
+  x <- as.matrix(x)
+  N <- nrow(x)
+  p <- ncol(x)
+
+  # Centre each column and scale by its population SD, so colMeans(W^2) == 1 and crossprod(W)/N
+  # is exactly the Pearson correlation matrix (the 1/N vs 1/(N-1) factors cancel).
+  W <- sweep(x, 2L, colMeans(x), "-")
+  W <- sweep(W, 2L, sqrt(colSums(W^2) / N), "/")
+  Wsq <- W^2
+
+  pairs <- utils::combn(p, 2L)
+  pi <- pairs[1, ]
+  pj <- pairs[2, ]
+  r <- (crossprod(W) / N)[cbind(pi, pj)]
+
+  # One influence column per off-diagonal pair (combn order), with the 1/N folded in so the
+  # crossprod lands on the variance scale.
+  IF <- (W[, pi, drop = FALSE] * W[, pj, drop = FALSE] -
+           0.5 * (Wsq[, pi, drop = FALSE] + Wsq[, pj, drop = FALSE]) * rep(r, each = N)) / N
+  Gamma <- crossprod(IF)
+  Gamma <- (Gamma + t(Gamma)) / 2          # symmetrise away round-off
+
+  if (!is.null(colnames(x))) {
+    labels <- apply(utils::combn(colnames(x), 2L), 2L, paste, collapse = "-")
+    dimnames(Gamma) <- list(labels, labels)
+  }
+  Gamma
 }
 
 # The `use` policies that listwise-delete incomplete rows (so N is the number of
@@ -102,7 +142,7 @@
                                use = "pairwise.complete.obs",
                                cor_method = "pearson",
                                N_policy = c("optional", "none", "required"),
-                               acov = c("none", "diag"),
+                               acov = c("none", "diag", "full"),
                                inform_from_data = TRUE,
                                check_singular = TRUE,
                                posdef_abort = FALSE,
@@ -118,6 +158,10 @@
   # DWLS weights (1 / diag(Gamma)); populated only on the polychoric raw-data path when
   # an asymptotic covariance is requested, NULL otherwise.
   weights <- NULL
+  # Full p(p-1)/2 x p(p-1)/2 asymptotic covariance of the off-diagonal correlations
+  # (Var(rho-hat) scale); populated only when acov = "full" (the sandwich-SE path), NULL
+  # otherwise. It is the meat of the robust/sandwich standard errors.
+  Gamma <- NULL
 
   is_cormat <- .is_cormat(x)
 
@@ -188,11 +232,45 @@
       # DWLS weight matrix. The weights are the asymptotic variances of the observed
       # (un-projected) polychoric correlations, as in lavaan, and are kept on that scale even
       # if R is subsequently projected to positive definiteness below.
-      if (acov != "none") {
+      if (acov == "diag") {
         weights <- .poly_weight_matrix(poly$acov, ncol(R))
+      } else if (acov == "full") {
+        # poly$acov is the full p(p-1)/2 x p(p-1)/2 asymptotic covariance; its diagonal
+        # reciprocals are exactly the DWLS weights (diag(Gamma) == the acov = "diag" vector),
+        # so the full path subsumes the diagonal one for the DWLS point estimate.
+        Gamma <- poly$acov
+        weights <- .poly_weight_matrix(diag(Gamma), ncol(R))
       }
 
     } else {
+
+      # The fourth-moment ADF covariance (.adf_gamma) is defined for Pearson correlations; a full
+      # covariance for a rank correlation (spearman/kendall) would pair a rank R with a Pearson-
+      # moment covariance, so reject that here rather than return a mismatched meat. EFA() already
+      # gates this upstream; the guard keeps the helper's contract local for any other caller.
+      if (acov == "full" && cor_method != "pearson") {
+        cli::cli_abort(
+          c("A full asymptotic-distribution-free covariance is only available for {.code cor_method = \"pearson\"}.",
+            "x" = "You requested {.code cor_method = {.val {cor_method}}} with {.code acov = \"full\"}."),
+          class = "efa_acov_unsupported", call = error_call)
+      }
+
+      # A full ADF asymptotic covariance (the continuous sandwich meat) must describe the same
+      # cases the correlation matrix was computed from -- a sandwich covariance is only valid for
+      # the estimator that produced the estimates -- so reduce to the listwise-complete rows
+      # first, mirroring the polychoric acov path. Without an ACOV the matrix stays pairwise for
+      # data efficiency. (Only the full level is requested on the Pearson path; the diagonal DWLS
+      # weights are an ordinal construct, so "diag" is left to the polychoric branch above.)
+      if (acov == "full") {
+        x <- x[stats::complete.cases(x), , drop = FALSE]
+        if (nrow(x) < 2L) {
+          cli::cli_abort(
+            c("An asymptotic-distribution-free covariance needs at least two listwise-complete observations.",
+              "x" = "{nrow(x)} row{?s} {?is/are} complete across all variables.",
+              "i" = "Supply complete data, or impute the missing values, before requesting an {.arg acov}."),
+            class = "efa_cor_no_complete_cases", call = error_call)
+        }
+      }
 
       # Missing values can make stats::cor() either throw a hard base error (e.g.
       # use = "all.obs", or "complete.obs" with no complete cases) or return NAs
@@ -215,6 +293,13 @@
           class = "efa_cor_uncomputable", call = error_call)
       }
       colnames(R) <- colnames(x)
+
+      # Full ADF covariance of the off-diagonal correlations (Browne, 1984): the meat of the
+      # continuous robust/sandwich SEs, on the variance scale Var(rho-hat) and in utils::combn()
+      # order, computed on the same listwise-complete rows as R.
+      if (acov == "full") {
+        Gamma <- .adf_gamma(x)
+      }
 
     }
 
@@ -274,7 +359,7 @@
 
   }
 
-  list(R = R, N = N, is_cormat = is_cormat, weights = weights)
+  list(R = R, N = N, is_cormat = is_cormat, weights = weights, Gamma = Gamma)
 }
 
 # Polychoric/tetrachoric correlations describe the observed data only. Criteria

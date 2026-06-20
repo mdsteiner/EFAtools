@@ -392,14 +392,14 @@ test_that("unsupported se combinations abort early with a clear class", {
     EFA(R, n_factors = 3, N = 500, method = "PAF", rotation = "none", se = "sandwich"),
     class = "efa_se_unsupported"
   )
+  # Sandwich SEs require an ordinal correlation method; a continuous (Pearson) matrix is rejected.
   expect_error(
     EFA(R, n_factors = 3, N = 500, method = "ML", rotation = "none", se = "sandwich"),
-    class = "efa_se_not_implemented"
+    class = "efa_se_unsupported"
   )
-  # Sandwich is rejected up front for every non-PAF, non-promax estimator, not only ML.
   expect_error(
     EFA(R, n_factors = 3, N = 500, method = "ULS", rotation = "none", se = "sandwich"),
-    class = "efa_se_not_implemented"
+    class = "efa_se_unsupported"
   )
   # A correlation matrix carries no sample size, which the analytic methods require.
   expect_error(
