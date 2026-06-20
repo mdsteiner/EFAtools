@@ -284,7 +284,7 @@ format.summary.EFA <- function(x, ...) {
     # identified) emits its caveat but the fit/bootstrap/residual sections still follow.
     if (.print_efa_identification_warning(spec)) {
       .print_efa_model_fit_section(x, spec)
-      .print_efa_bootstrap_note(x, spec)
+      .print_efa_bootstrap_note(x, spec, ci = if (full) ci else "none")
 
       if (full && isTRUE(show_mi)) {
         .print_efa_mi_diagnostics_section(x, spec, digits = digits)
@@ -722,8 +722,21 @@ format.summary.EFA <- function(x, ...) {
   out
 }
 
-.print_efa_bootstrap_note <- function(x, spec) {
+.print_efa_bootstrap_note <- function(x, spec, ci = NULL) {
   if (!isTRUE(spec$has_boot_ci)) {
+    return(invisible(NULL))
+  }
+
+  # Analytic SEs (information matrix) produce Wald intervals, not resampled ones; describe
+  # their source rather than a bootstrap-sample count. The analytic Wald CIs are attached
+  # only to the unrotated loadings, which are displayed only for an unrotated solution with
+  # CIs enabled, so suppress the provenance note when no such CI table is shown.
+  if (!isTRUE(spec$np_boot) && !isTRUE(spec$is_pooled)) {
+    if (identical(ci, "none") || !identical(spec$rotation, "none")) {
+      return(invisible(NULL))
+    }
+    cli::cli_text("")
+    cli::cli_text("{.emph Note:} Wald CIs from the expected information matrix.")
     return(invisible(NULL))
   }
 
@@ -1082,6 +1095,11 @@ format.summary.EFA <- function(x, ...) {
 .efa_ci_source_text <- function(spec) {
   if (isTRUE(spec$is_pooled)) {
     return("bootstrap/MI")
+  }
+
+  # Analytic intervals are Wald (estimate +/- z * SE); only the bootstrap CIs are percentile.
+  if (!isTRUE(spec$np_boot)) {
+    return("Wald")
   }
 
   "bootstrap"

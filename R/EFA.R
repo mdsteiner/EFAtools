@@ -29,9 +29,22 @@
 #' an orthogonal rotation ("varimax", "equamax", "quartimax", "geominT",
 #' "bentlerT", or "bifactorT"), or an oblique rotation ("promax", "oblimin",
 #' "quartimin", "simplimax", "bentlerQ", "geominQ", or "bifactorQ").
-#' @param se character. Whether and how standard errors should be computed.
-#'  Currently, only "np-boot" for non-parametric bootstrap is available
-#'  and needs raw data to work. Default is "none".
+#' @param se character. Whether and how standard errors should be computed. One of
+#'  "none" (default, no standard errors), "information", "sandwich", or "np-boot".
+#'  "np-boot" draws a non-parametric bootstrap and needs raw data. "information"
+#'  returns analytic standard errors for the *unrotated* loadings and uniquenesses from
+#'  the expected (Fisher) information matrix of the maximum-likelihood solution; it
+#'  therefore requires `method = "ML"` and is not available with `rotation = "promax"`.
+#'  Unlike the bootstrap it also works from a correlation matrix as long as `N` is
+#'  supplied. "sandwich" is reserved for robust analytic standard errors and is not yet
+#'  implemented. The information-matrix covariance is the inverse expected information
+#'  under the identification constraint that \eqn{\Lambda' \Psi^{-1} \Lambda} is
+#'  diagonal, scaled by \eqn{1 / (N - 1)}; the associated confidence intervals are Wald
+#'  intervals (estimate \eqn{\pm} z * SE). These analytic standard errors assume
+#'  multivariate normality and a correctly specified model; under heavy-tailed data or
+#'  model misfit they can understate the sampling variability, where a bootstrap
+#'  (`se = "np-boot"`) is more robust. See Lawley and Maxwell (1971) and Jennrich
+#'  and Thayer (1973).
 #' @param type character. If one of "EFAtools" (default), "psych", or "SPSS" is
 #'  used, and the following arguments with default NA are left with
 #'  NA, these implementations are executed according to the respective program
@@ -279,9 +292,9 @@
 #' loadings. Based on rotated loadings and, for oblique rotations, the factor
 #' intercorrelations.}
 #' \item{settings}{A list of the settings used.}
-#' \item{boot.SE}{A list bootstrap standard errors for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, only if rotated), and fit indices. Only returned, if `se = "np-boot"`.}
-#' \item{boot.CI}{A list bootstrap confidence intervals of width `ci` for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, if obliquely rotated), and fit indices. Only returned, if `se = "np-boot"`.}
-#' \item{boot.arrays}{A list of arrays with the bootstrapped loadings (aligned rotated and unrotated), aligned structure coefficients (if rotated obliquely), aligned factor correlations (Phi, if obliquely rotated), and fit indices. Only returned, if `se = "np-boot"`.}
+#' \item{boot.SE}{A list of standard errors. For `se = "np-boot"`: for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, only if rotated), and fit indices. For `se = "information"`: for the unrotated loadings and the uniquenesses. Only returned, if `se` is not "none".}
+#' \item{boot.CI}{A list of confidence intervals of width `ci`. For `se = "np-boot"`: percentile intervals for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, if obliquely rotated), and fit indices. For `se = "information"`: Wald intervals for the unrotated loadings and the uniquenesses. Only returned, if `se` is not "none".}
+#' \item{boot.arrays}{A list of arrays with the bootstrapped loadings (aligned rotated and unrotated), aligned structure coefficients (if rotated obliquely), aligned factor correlations (Phi, if obliquely rotated), and fit indices. Only returned, if `se = "np-boot"` (`NULL` for the analytic methods).}
 #'
 #' @source Grieder, S., & Steiner, M.D. (2020). Algorithmic Jingle Jungle:
 #' A Comparison of Implementations of Principal Axis Factoring and Promax Rotation
@@ -294,6 +307,11 @@
 #' Research, 46, 340-364, doi: 10.1080/00273171.2011.564527
 #' @source Kaiser, H. F. (1958). The varimax criterion for analytic rotation in
 #' factor analysis. Psychometrika, 23, 187–200. doi: 10.1007/BF02289233
+#' @source Lawley, D. N., & Maxwell, A. E. (1971). Factor analysis as a statistical
+#' method (2nd ed.). Butterworths.
+#' @source Jennrich, R. I., & Thayer, D. T. (1973). A note on Lawley's formulas for
+#' standard errors in maximum likelihood factor analysis. Psychometrika, 38, 571–580.
+#' doi: 10.1007/BF02291495
 #'
 #' @export
 #'
@@ -335,6 +353,13 @@
 #'                P_type = "unnorm", precision= 1e-5, order_type = "eigen",
 #'                varimax_type = "svd")
 #'
+#' # Analytic (expected-information) standard errors for an unrotated ML solution.
+#' # These are returned for the unrotated loadings and the uniquenesses and, unlike the
+#' # bootstrap, can be computed from a correlation matrix as long as N is supplied.
+#' ML_info <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
+#'                method = "ML", rotation = "none", se = "information")
+#' ML_info$boot.SE$unrot_loadings
+#'
 #' \dontrun{
 #' # Bootstrap standard errors from raw data, reproducible via a fixed seed and run
 #' # in parallel across replicates. Keep the number of workers small (here 2) so the
@@ -350,7 +375,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
                              "bentlerT", "bifactorT", "promax", "oblimin",
                              "quartimin", "simplimax", "bentlerQ", "geominQ",
                              "bifactorQ"),
-                se = c("none", "np-boot"),
+                se = c("none", "information", "sandwich", "np-boot"),
                 type = c("EFAtools", "psych", "SPSS", "none"), max_iter = NA,
                 init_comm = NA, criterion = NA, criterion_type = NA,
                 abs_eigen = NA, use = c("pairwise.complete.obs", "all.obs",
@@ -385,6 +410,41 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
         "i" = "Set {.arg start_method} to {.val psych} or {.val factanal}."),
       class = "efa_ml_start_missing"
     )
+  }
+
+  # Analytic standard errors cover only a subset of estimators and rotations. Reject the
+  # unsupported combinations here, before any computation, with a clear pointer to the
+  # bootstrap. Information-matrix SEs are derived from the ML discrepancy and so require
+  # method = "ML"; promax is a two-step target rotation without a usable analytic Jacobian;
+  # PAF has no discrepancy-based information from which a sandwich could be built.
+  if (se == "information" && method != "ML") {
+    cli::cli_abort(
+      c("{.code se = \"information\"} is only available for {.code method = \"ML\"}.",
+        "x" = "You requested {.code method = {.val {method}}}.",
+        "i" = "Use {.code se = \"np-boot\"} for {.val {method}}."),
+      class = "efa_se_unsupported"
+    )
+  }
+  if (se == "sandwich" && method == "PAF") {
+    cli::cli_abort(
+      c("{.code se = \"sandwich\"} is not available for {.code method = \"PAF\"}.",
+        "i" = "Use {.code se = \"np-boot\"} for {.val PAF}."),
+      class = "efa_se_unsupported"
+    )
+  }
+  if (se %in% c("information", "sandwich") && rotation == "promax") {
+    cli::cli_abort(
+      c("{.code se = {.val {se}}} is not available with {.code rotation = \"promax\"}.",
+        "i" = "Use {.code se = \"np-boot\"} for promax-rotated solutions."),
+      class = "efa_se_unsupported"
+    )
+  }
+
+  # Sandwich SEs are not implemented for any estimator yet; reject up front rather than
+  # after the full fit (PAF and promax are already excluded above as permanently
+  # unsupported, so only the not-yet-implemented cases remain here).
+  if (se == "sandwich") {
+    .abort_se_not_implemented()
   }
 
   checkmate::assert_count(n_factors)
@@ -449,15 +509,17 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
     )
   }
 
-  if (is_cormat) {
+  # A correlation matrix carries no cases to resample, so the bootstrap is impossible.
+  # Analytic SEs (information/sandwich) need only R, the loadings, the uniquenesses and N,
+  # so they remain available from a correlation matrix as long as N is supplied (checked
+  # below, once N is resolved).
+  if (is_cormat && isTRUE(np_boot)) {
 
-    if (isTRUE(np_boot)) {
-      cli::cli_warn(
-        c("Cannot compute bootstrap standard errors from correlation matrix.",
-        "x" = "You've supplied {.var se} = {.val {se}}, but {.var x} is a correlation matrix.",
-        "i" = "Setting {.var se} to {.val none}. Rerun with raw data to calculate bootstrap SEs.")
-      )
-    }
+    cli::cli_warn(
+      c("Cannot compute bootstrap standard errors from correlation matrix.",
+      "x" = "You've supplied {.var se} = {.val {se}}, but {.var x} is a correlation matrix.",
+      "i" = "Setting {.var se} to {.val none}. Rerun with raw data to calculate bootstrap SEs.")
+    )
 
     np_boot <- FALSE
     se <- "none"
@@ -474,6 +536,17 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
   N <- prep$N
   # DWLS weight matrix (1 / diag(Gamma)); NULL for the other estimators.
   weights <- prep$weights
+
+  # Analytic SEs scale the inverse information by 1 / (N - 1), so they need the sample
+  # size. Raw data always supplies it (N = number of rows); a correlation matrix does not,
+  # so require it explicitly there.
+  if (se %in% c("information", "sandwich") && is.na(N)) {
+    cli::cli_abort(
+      c("{.code se = {.val {se}}} requires the sample size {.arg N}.",
+        "i" = "Supply {.arg N} when {.arg x} is a correlation matrix."),
+      class = "efa_se_no_n"
+    )
+  }
 
   if (!is_cormat && isTRUE(np_boot)) {
 
@@ -652,6 +725,8 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
     )
   }
 
+  # Only the bootstrap produces replicate fits; the analytic SE methods leave this NULL.
+  boot_fits <- NULL
   if (isTRUE(np_boot)) {
 
     boot_fits <- .boot_fun(R_boot_array, b_boot, .estimate_model,
@@ -743,16 +818,21 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
 
   }
 
-  if (isTRUE(np_boot)) {
+  if (se != "none") {
     if (rotation == "none") {
       L_rot <- NULL
     } else {
       L_rot <- rot_out$rot_loadings
     }
-    boot_out <- .boot_se_ci(fit_out, L_rot,
-                            boot_fits, boot_rot, ci, b_boot)
+    boot_out <- .compute_se_ci(fit_out, L_rot, se_method = se,
+                               boot_fits = boot_fits, boot_rot = boot_rot,
+                               ci = ci, b = b_boot, N = N)
     output <- c(output, boot = boot_out)
-    output$standardized_residuals <- output$residuals / boot_out$SE$residuals
+    # Only the bootstrap yields a sampling SD for every residual; the analytic methods do
+    # not, so standardise the residuals only when those SEs are available.
+    if (!is.null(boot_out$SE$residuals)) {
+      output$standardized_residuals <- output$residuals / boot_out$SE$residuals
+    }
   }
 
   class(output) <- "EFA"
@@ -805,6 +885,199 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
   boot_list
 
 }
+
+# Reject the not-yet-implemented sandwich estimator with a consistent classed error.
+.abort_se_not_implemented <- function() {
+  cli::cli_abort(
+    c("Analytic sandwich standard errors are not implemented yet.",
+      "i" = "Use {.code se = \"information\"} or {.code se = \"np-boot\"}."),
+    class = "efa_se_not_implemented"
+  )
+}
+
+# Dispatch standard-error/confidence-interval computation on the requested method. The
+# nonparametric bootstrap aggregates resampled fits; the analytic methods derive SEs from
+# the fitted model itself. Every branch returns the same list(SE, CI, arrays) schema, so the
+# print and summary methods are agnostic to how the SEs were produced.
+.compute_se_ci <- function(fit_out, L_rot, se_method, boot_fits = NULL,
+                           boot_rot = "none", ci = .95, b = NULL, N = NULL) {
+
+  switch(se_method,
+    "np-boot" = .boot_se_ci(fit_out, L_rot, boot_fits, boot_rot, ci, b),
+    "information" = .se_information(fit_out, N, ci),
+    "sandwich" = .abort_se_not_implemented(),
+    NULL
+  )
+}
+
+
+# Analytic information-matrix SEs and Wald CIs for the unrotated ML loadings and
+# uniquenesses. Fills the same SE/CI schema as the bootstrap; the rotated-loading,
+# fit-index and residual slots have no closed-form information here and stay absent, and
+# there are no replicate arrays.
+.se_information <- function(fit_out, N, ci) {
+
+  L <- fit_out$unrot_loadings
+  # The ML solution reproduces the unit diagonal of the correlation matrix, so the
+  # uniquenesses are 1 minus the communalities of the unrotated loadings.
+  psi <- 1 - rowSums(L^2)
+
+  se <- .se_information_ml(L, psi, N)
+  SE_L <- se$loadings_se
+  SE_psi <- se$uniquenesses_se
+
+  if (anyNA(SE_L) || anyNA(SE_psi)) {
+    cli::cli_warn(
+      c("Analytic standard errors could not be computed for all parameters.",
+        "i" = "This occurs at a Heywood case (a uniqueness at or below its zero boundary) or when the expected information matrix is singular."),
+      class = "efa_se_unreliable"
+    )
+  }
+
+  dimnames(SE_L) <- dimnames(L)
+  names(SE_psi) <- rownames(L)
+
+  # Wald intervals around the point estimates.
+  z <- stats::qnorm(1 - (1 - ci) / 2)
+  L_lower <- L - z * SE_L
+  L_upper <- L + z * SE_L
+  psi_lower <- psi - z * SE_psi
+  psi_upper <- psi + z * SE_psi
+  names(psi) <- names(psi_lower) <- names(psi_upper) <- rownames(L)
+
+  list(
+    SE = list(
+      unrot_loadings = SE_L,
+      uniquenesses = SE_psi
+    ),
+    CI = list(
+      unrot_loadings = list(lower = L_lower, upper = L_upper),
+      uniquenesses = list(lower = psi_lower, upper = psi_upper)
+    ),
+    arrays = NULL
+  )
+}
+
+
+# Expected-information (Fisher) covariance of the unrotated ML loadings and uniquenesses,
+# under the EFA identification constraint that Lambda' Psi^{-1} Lambda is diagonal.
+#
+# theta = (vec(Lambda) [p*k], psi [p]); the unit expected information
+# A[i, j] = 1/2 tr(W dSig_i W dSig_j), with W = Sigma^{-1} and Sigma = Lambda Lambda' +
+# diag(psi), is assembled in closed form from W, B = Sigma^{-1} Lambda and
+# G = Lambda' Sigma^{-1} Lambda (Jennrich & Thayer, 1973; Lawley & Maxwell). The constraint
+# removes the k(k-1)/2 rotational degrees of freedom and is imposed with a bordered
+# information matrix; the parameter covariance is the leading block of its inverse, scaled
+# by 1 / (N - 1) (matching the N - 1 convention of the fit statistics). R is accepted for
+# forward compatibility (sandwich SEs) but is unused by the expected-information path.
+#
+# Validity: this is the normal-theory expected information, consistent only under
+# multivariate normality and a correctly specified model (Yuan & Hayashi, 2006). In that
+# regime it agrees with resampling SEs; under heavy-tailed data or model misfit it tends to
+# UNDERESTIMATE the true sampling variability (analytic < bootstrap), so a robust sandwich
+# or bootstrap SE is preferable there (Zhang, Preacher, & Jennrich, 2012; Zhang et al.,
+# 2019). Cross-loading (nonmarker) variables also carry larger SEs than single-factor
+# markers (Zhang & Preacher, 2015).
+.se_information_ml <- function(L, psi, N, R = NULL) {
+
+  p <- nrow(L)
+  k <- ncol(L)
+  pk <- p * k
+  q <- pk + p
+
+  na_out <- list(
+    vcov = matrix(NA_real_, q, q),
+    loadings_se = matrix(NA_real_, p, k),
+    uniquenesses_se = rep(NA_real_, p)
+  )
+
+  # A Heywood case (a uniqueness at or below its zero boundary) makes Psi^{-1} and the
+  # Lambda' Psi^{-1} Lambda identification ill-defined, so no analytic SE is available.
+  if (anyNA(psi) || any(psi <= 0)) {
+    return(na_out)
+  }
+
+  Sigma <- tcrossprod(L)
+  diag(Sigma) <- diag(Sigma) + psi
+  W <- tryCatch(solve(Sigma), error = function(e) NULL)
+  if (is.null(W)) {
+    return(na_out)
+  }
+
+  B <- W %*% L              # Sigma^{-1} Lambda          (p x k)
+  G <- crossprod(L, B)      # Lambda' Sigma^{-1} Lambda  (k x k)
+
+  lidx <- function(a, b) (b - 1L) * p + a   # column-major index of Lambda[a, b]
+
+  # --- unit expected information A (q x q) -----------------------------------------------
+  A <- matrix(0, q, q)
+
+  # loading x loading: A[(a,b),(c,d)] = G[b,d] W[a,c] + B[a,d] B[c,b].
+  # The first term is kronecker(G, W) under the column-major loading order.
+  A[seq_len(pk), seq_len(pk)] <- kronecker(G, W)
+  for (b in seq_len(k)) {
+    rows <- lidx(seq_len(p), b)
+    for (d in seq_len(k)) {
+      cols <- lidx(seq_len(p), d)
+      A[rows, cols] <- A[rows, cols] + outer(B[, d], B[, b])
+    }
+  }
+
+  # loading x uniqueness: A[(a,b), psi_c] = W[a,c] B[c,b].
+  for (b in seq_len(k)) {
+    rows <- lidx(seq_len(p), b)
+    A[rows, pk + seq_len(p)] <- W * matrix(B[, b], p, p, byrow = TRUE)
+  }
+  A[pk + seq_len(p), seq_len(pk)] <- t(A[seq_len(pk), pk + seq_len(p)])
+
+  # uniqueness x uniqueness: A[psi_a, psi_c] = 1/2 W[a,c]^2.
+  A[pk + seq_len(p), pk + seq_len(p)] <- 0.5 * W^2
+
+  # --- identification constraint: off-diagonals of Lambda' Psi^{-1} Lambda = 0 -----------
+  nc <- k * (k - 1L) / 2L
+  Astar <- L / psi          # Psi^{-1} Lambda (row a divided by psi[a])
+  Cmat <- matrix(0, nc, q)
+  uv <- 0L
+  if (k > 1L) {
+    for (v in 2:k) {
+      for (u in seq_len(v - 1L)) {
+        uv <- uv + 1L
+        grad <- matrix(0, p, k)
+        grad[, u] <- Astar[, v]
+        grad[, v] <- Astar[, u]
+        Cmat[uv, seq_len(pk)] <- as.vector(grad)
+        Cmat[uv, pk + seq_len(p)] <- -Astar[, u] * Astar[, v]
+      }
+    }
+  }
+
+  # --- bordered information, inverse, scaling --------------------------------------------
+  Aug <- if (nc > 0L) {
+    rbind(cbind(A, t(Cmat)), cbind(Cmat, matrix(0, nc, nc)))
+  } else {
+    A
+  }
+
+  Vfull <- tryCatch(solve(Aug), error = function(e) NULL)
+  if (is.null(Vfull)) {
+    return(na_out)
+  }
+
+  V <- Vfull[seq_len(q), seq_len(q), drop = FALSE] / (N - 1)
+  # A near-degenerate orientation can leave a tiny negative variance on the diagonal; the
+  # guard below substitutes NA, so silence base R's "NaNs produced" before it surfaces.
+  se <- suppressWarnings(sqrt(diag(V)))
+  if (anyNA(se) || any(!is.finite(se))) {
+    se <- rep(NA_real_, q)
+  }
+
+  list(
+    vcov = V,
+    loadings_se = matrix(se[seq_len(pk)], p, k),
+    uniquenesses_se = se[pk + seq_len(p)]
+  )
+}
+
 
 .boot_se_ci <- function(fit_target, L_rot, boot_fit, boot_rot, ci, b) {
 
