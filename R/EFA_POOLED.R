@@ -42,7 +42,7 @@
 #' for those methods.
 #'
 #' If each component `EFA` call was run with `se = "np-boot"` and
-#' returned `boot.arrays`, pooled bootstrap SEs and Wald-type MI confidence
+#' returned `replicates`, pooled bootstrap SEs and Wald-type MI confidence
 #' intervals are computed for loadings, communalities, residuals, and, when
 #' applicable, factor correlations and structure coefficients. Importantly, the
 #' rotated bootstrap loading matrices stored by the component `EFA` calls
@@ -55,7 +55,7 @@
 #' intervals. The confidence level of these pooled intervals is controlled by
 #' `p`; the `ci` argument passed through `...` to the component
 #' `EFA` calls is not used for the pooled intervals.
-#' `boot.CI$fit_indices_descriptive`, when available, holds Rubin-Wald MI
+#' `CI$fit_indices_descriptive`, when available, holds Rubin-Wald MI
 #' summaries of the per-imputation bootstrap fit indices. The chi-square-based
 #' fit indices themselves are pooled with the D2 rule, whose reference
 #' distribution (e.g. the RMSEA confidence interval) supplies their uncertainty.
@@ -64,11 +64,20 @@
 #' imputations. Each list element is a data frame or matrix of raw data, or a
 #' correlation matrix. See argument `x` in [EFA()].
 #' @param p Numeric in \eqn{(0, 1)}. One minus the confidence level used for
-#' pooled Wald-type bootstrap/MI confidence intervals when bootstrap arrays are
-#' available. For example, `p = .05` gives 95% intervals.
-#' @param target_method Character. `"consensus"` aligns all solutions to an
-#' iteratively updated consensus target. `"first_target"` aligns all
-#' solutions to the first imputation's rotated solution.
+#' pooled Wald-type bootstrap/MI confidence intervals when bootstrap replicates
+#' are available. For example, `p = .05` gives 95% intervals.
+#' @param target_method Character. `"first_target"` (the default) aligns all
+#' imputations to the first imputation's rotated solution via one Procrustes
+#' rotation per imputation. `"consensus"` instead refines a centroid target
+#' via Generalized Procrustes Analysis (Gower 1975; van Ginkel & Kroonenberg
+#' 2014; Lorenzo-Seva & Van Ginkel 2016), iteratively re-Procrustes-rotating
+#' all solutions toward it and re-averaging until the target stabilises.
+#' For orthogonal rotations the two methods converge to the same pooled
+#' estimate (consensus is just a more expensive route to the same answer);
+#' for oblique rotations `"consensus"` is not supported and aborts with a
+#' classed condition (`efa_consensus_oblique_unsupported`), because the
+#' centroid iteration is degenerate for oblique transforms with more than
+#' one factor.
 #' @param align_unrotated Character. How to align unrotated loadings before
 #' pooling. `"signed_tucker_congruence"` preserves the unrotated axes up
 #' to factor reordering and sign changes using Tucker congruence.
@@ -78,8 +87,10 @@
 #' @param fit_pool_method Character. Currently only `"D2"` is implemented
 #' for chi-square-type fit. If no chi-square is available, only residual-based
 #' fit and descriptive quantities are returned.
-#' @param consensus_args List of additional arguments passed to
-#' `CONSENSUS_PROCRUSTES`.
+#' @param consensus_args List of additional arguments controlling the
+#' GPA-consensus iteration when `target_method = "consensus"`. See the
+#' source of `.gpa_consensus_target` for the available tuning parameters
+#' (convergence tolerance, maximum iterations, multi-start options).
 #' @param procrustes_args List of additional arguments passed to `PROCRUSTES`
 #' for fixed-target alignment.
 #' @param rmsea_ci_level Numeric. Confidence level for the RMSEA CI.
@@ -89,7 +100,19 @@
 #' @param ... Additional arguments passed to [EFA()].
 #'
 #' @return A list of class `"EFA_POOLED"` containing pooled estimates,
-#' residuals, fit indices, the individual fits, and MI diagnostics.
+#' residuals, fit indices, the individual fits, and MI diagnostics. In
+#' addition to the slots inherited from [EFA()] (including `SE`, `CI`, and
+#' `replicates` when bootstrap pooling ran), the object carries:
+#' \describe{
+#' \item{MI}{Multiple-imputation diagnostics for each pooled parameter family
+#' (`unrot_loadings`, `h2`, `residuals`, optionally `rot_loadings`, `Phi`,
+#' `Structure`, and `fit_indices_descriptive`). Each entry is a list with
+#' `RIV` (relative increase in variance), `FMI` (fraction of missing
+#' information), and `df` (Barnard-Rubin degrees of freedom). Additional
+#' integer vectors `bootstrap_rotation_failures` and
+#' `bootstrap_rotation_valid` record per-imputation alignment outcomes.
+#' Rubin (1987).}
+#' }
 #'
 #' @export
 #'
@@ -108,7 +131,7 @@
 #' }
 EFA_POOLED <- function(data_list,
                        p = 0.05,
-                       target_method = c("consensus", "first_target"),
+                       target_method = c("first_target", "consensus"),
                        align_unrotated = c("signed_tucker_congruence", "none", "procrustes"),
                        fit_pool_method = c("D2"),
                        consensus_args = list(),
@@ -226,14 +249,18 @@ EFA_POOLED <- function(data_list,
       }
 
       final_target <- rot_loadings_initial[[1]]
+      inner_converged <- vapply(target_rotations[-1L], function(x) {
+        isTRUE(x$valid) && (is.null(x$convergence) || isTRUE(x$convergence))
+      }, logical(1L))
       alignment <- list(method = "first_target",
                         target = final_target,
                         target_rotations = target_rotations,
-                        point_rotation_failures = which(point_rotation_failures))
+                        point_rotation_failures = which(point_rotation_failures),
+                        converged = all(inner_converged))
 
     } else if (target_method == "consensus") {
       consensus <- do.call(
-        CONSENSUS_PROCRUSTES,
+        .gpa_consensus_target,
         c(list(unrotated_list = unrot_loadings,
                init_targets = rot_loadings_initial,
                rotation = rotation_type),
@@ -470,10 +497,10 @@ EFA_POOLED <- function(data_list,
   }
 
   if (!is.null(boot_pooled)) {
-    results$boot.SE <- boot_pooled$SE
-    results$boot.CI <- boot_pooled$CI
-    results$boot.arrays <- boot_pooled$arrays
-    results$boot.MI <- boot_pooled$MI
+    results$SE         <- boot_pooled$SE
+    results$CI         <- boot_pooled$CI
+    results$replicates <- boot_pooled$replicates
+    results$MI         <- boot_pooled$MI
     results$standardized_residuals <- results$residuals / boot_pooled$SE$residuals
   }
 
@@ -848,13 +875,13 @@ EFA_POOLED <- function(data_list,
 ## Bootstrap pooling helpers
 ## -----------------------------------------------------------------------------
 
-.efa_pooled_has_boot_arrays <- function(fits) {
-  # Bootstrap MI pooling requires the raw unrotated bootstrap loading arrays.
+.efa_pooled_has_replicates <- function(fits) {
+  # Bootstrap MI pooling requires the raw unrotated bootstrap loading replicates.
   # Scalar bootstrap SEs/CIs are not enough because the replicates must be
   # re-expressed in the final MI target space.
   vapply(fits, function(x) {
-    !is.null(x$boot.arrays) &&
-      !is.null(x$boot.arrays$unrot_loadings)
+    !is.null(x$replicates) &&
+      !is.null(x$replicates$unrot_loadings)
   }, logical(1))
 }
 
@@ -1131,10 +1158,10 @@ EFA_POOLED <- function(data_list,
   rotation_type <- match.arg(rotation_type)
   align_unrotated <- match.arg(align_unrotated)
 
-  has_boot <- .efa_pooled_has_boot_arrays(fits)
+  has_boot <- .efa_pooled_has_replicates(fits)
   if (!all(has_boot)) {
     if (any(has_boot)) {
-      cli::cli_warn("Bootstrap arrays were found for only some imputations; pooled bootstrap SEs/CIs were not computed.",
+      cli::cli_warn("Bootstrap replicates were found for only some imputations; pooled bootstrap SEs/CIs were not computed.",
                     class = "efa_pooled_partial_boot")
     }
     return(NULL)
@@ -1145,7 +1172,7 @@ EFA_POOLED <- function(data_list,
   k <- ncol(as.matrix(mean_unrot_loadings))
   loading_dimnames <- dimnames(as.matrix(mean_unrot_loadings))
 
-  B_vec <- vapply(fits, function(x) dim(x$boot.arrays$unrot_loadings)[3], integer(1))
+  B_vec <- vapply(fits, function(x) dim(x$replicates$unrot_loadings)[3], integer(1))
   if (length(unique(B_vec)) > 1L) {
     B_use <- min(B_vec)
     cli::cli_warn("The number of bootstrap replicates differs across imputations; using the minimum number available in all imputations.",
@@ -1186,7 +1213,7 @@ EFA_POOLED <- function(data_list,
   boot_failures <- integer(m)
 
   for (d in seq_len(m)) {
-    arr <- fits[[d]]$boot.arrays
+    arr <- fits[[d]]$replicates
     unrot_arr <- arr$unrot_loadings
 
     boot_unrot[[d]] <- matrix(NA_real_, nrow = B_use, ncol = p_vars * k)
@@ -1381,7 +1408,7 @@ EFA_POOLED <- function(data_list,
 
   can_describe_fit_boot <- length(fit_q_names) > 0L &&
     all(vapply(fits, function(x) {
-      fit_arr <- x$boot.arrays$fit_indices
+      fit_arr <- x$replicates$fit_indices
       !is.null(fit_arr) &&
         nrow(as.matrix(fit_arr)) >= B_use &&
         ncol(as.matrix(fit_arr)) >= length(fit_q_names)
@@ -1392,7 +1419,7 @@ EFA_POOLED <- function(data_list,
     boot_fit <- vector("list", m)
 
     for (d in seq_len(m)) {
-      fit_arr <- as.matrix(fits[[d]]$boot.arrays$fit_indices)
+      fit_arr <- as.matrix(fits[[d]]$replicates$fit_indices)
       if (is.null(colnames(fit_arr))) {
         colnames(fit_arr) <- names(fits[[d]]$fit_indices)
       }
@@ -1416,7 +1443,7 @@ EFA_POOLED <- function(data_list,
   list(
     SE = SE,
     CI = CI,
-    arrays = arrays,
+    replicates = arrays,
     MI = MI,
     n_boot = B_use
   )

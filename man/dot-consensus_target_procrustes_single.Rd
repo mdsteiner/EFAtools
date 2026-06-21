@@ -2,7 +2,7 @@
 % Please edit documentation in R/procrustes-consensus.R
 \name{.consensus_target_procrustes_single}
 \alias{.consensus_target_procrustes_single}
-\title{Internal single-start consensus engine}
+\title{Internal single-start GPA-consensus engine}
 \usage{
 .consensus_target_procrustes_single(
   unrotated_list,
@@ -18,16 +18,6 @@
   alpha = 1,
   match_target = TRUE,
   hyper_cutoff = 0.15,
-  oblique_maxit = 300,
-  oblique_eps = 1e-05,
-  oblique_max_line_search = 10,
-  oblique_step0 = 1,
-  oblique_normalize = FALSE,
-  oblique_random_starts = 0,
-  oblique_random_starts_stage = c("final", "none", "outer", "both"),
-  oblique_screen_keep = 2,
-  oblique_triage_maxit = 25,
-  oblique_triage_improve_tol = 0,
   verbose = FALSE
 )
 }
@@ -73,25 +63,10 @@ column-matched to the previous target before convergence is evaluated.}
 \item{hyper_cutoff}{Non-negative cutoff used by \code{.hyperplane_count()} for
 summary output.}
 
-\item{oblique_maxit, oblique_eps, oblique_max_line_search, oblique_step0, oblique_normalize}{Parameters
-passed to \code{PROCRUSTES()} when \code{rotation = "oblique"}.}
-
-\item{oblique_random_starts}{Number of random starts used by the inner oblique
-solver. See \code{oblique_random_starts_stage} for when these are used.}
-
-\item{oblique_random_starts_stage}{Character string controlling whether random
-starts are used during the outer consensus loop, the final alignment pass,
-both, or neither. The default \code{"final"} keeps the outer loop smooth by using
-warm starts during iteration and applies random-start protection only in the
-final pass.}
-
-\item{oblique_screen_keep, oblique_triage_maxit, oblique_triage_improve_tol}{Screening and triage parameters passed to the compiled oblique solver when
-random starts are used.}
-
 \item{verbose}{Logical; if \code{TRUE}, print convergence messages for the outer
 loop.}
 }
 \description{
-This internal helper performs a single consensus-target run from one starting
-target. Users should normally call \code{\link[=CONSENSUS_PROCRUSTES]{CONSENSUS_PROCRUSTES()}} instead.
+Performs a single GPA-consensus run from one starting target. The
+multi-start wrapper \code{\link[=.gpa_consensus_target]{.gpa_consensus_target()}} dispatches here.
 }

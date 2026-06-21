@@ -332,7 +332,7 @@ format.summary.EFA <- function(x, ...) {
     align_unrotated = settings$align_unrotated,
     fit_pool_method = settings$fit_pool_method,
     component_se = settings$component_se,
-    has_boot_ci = !is.null(x$boot.CI)
+    has_ci = !is.null(x$CI)
   )
 }
 
@@ -702,7 +702,7 @@ format.summary.EFA <- function(x, ...) {
     BIC = ""
   )
 
-  if (!isTRUE(spec$has_boot_ci)) {
+  if (!isTRUE(spec$has_ci)) {
     return(out)
   }
 
@@ -723,7 +723,7 @@ format.summary.EFA <- function(x, ...) {
 }
 
 .print_efa_bootstrap_note <- function(x, spec, ci = NULL) {
-  if (!isTRUE(spec$has_boot_ci)) {
+  if (!isTRUE(spec$has_ci)) {
     return(invisible(NULL))
   }
 
@@ -978,15 +978,15 @@ format.summary.EFA <- function(x, ...) {
 }
 
 .efa_should_print_ci <- function(x, ci) {
-  !identical(ci, "none") && !is.null(x$boot.CI)
+  !identical(ci, "none") && !is.null(x$CI)
 }
 
 .efa_get_component_ci <- function(x, component) {
-  if (is.null(x$boot.CI)) {
+  if (is.null(x$CI)) {
     return(NULL)
   }
 
-  ci <- x$boot.CI[[component]]
+  ci <- x$CI[[component]]
   if (.efa_is_ci_pair(ci)) {
     return(ci)
   }
@@ -995,7 +995,7 @@ format.summary.EFA <- function(x, ...) {
 }
 
 .efa_get_fit_ci <- function(x, spec = .efa_print_spec(x)) {
-  if (is.null(x$boot.CI)) {
+  if (is.null(x$CI)) {
     return(NULL)
   }
 
@@ -1006,7 +1006,7 @@ format.summary.EFA <- function(x, ...) {
   }
 
   for (component in components) {
-    ci <- x$boot.CI[[component]]
+    ci <- x$CI[[component]]
     if (.efa_is_ci_pair(ci)) {
       return(ci)
     }
@@ -1144,12 +1144,12 @@ format.summary.EFA <- function(x, ...) {
 }
 
 .efa_valid_target_rotations <- function(x) {
-  if (!is.null(x$boot.SE$valid_target_rotations)) {
-    return(x$boot.SE$valid_target_rotations)
+  if (!is.null(x$SE$valid_target_rotations)) {
+    return(x$SE$valid_target_rotations)
   }
 
-  if (!is.null(x$boot.MI$bootstrap_rotation_valid)) {
-    return(x$boot.MI$bootstrap_rotation_valid)
+  if (!is.null(x$MI$bootstrap_rotation_valid)) {
+    return(x$MI$bootstrap_rotation_valid)
   }
 
   NULL
@@ -1161,8 +1161,8 @@ format.summary.EFA <- function(x, ...) {
     return(as.integer(spec$b_boot[1]))
   }
 
-  if (!is.null(x$boot.arrays$unrot_loadings)) {
-    arr <- x$boot.arrays$unrot_loadings
+  if (!is.null(x$replicates$unrot_loadings)) {
+    arr <- x$replicates$unrot_loadings
     if (length(dim(arr)) >= 3L) {
       return(dim(arr)[3L])
     }
@@ -1944,12 +1944,12 @@ format.summary.EFA <- function(x, ...) {
 }
 
 .print_efa_mi_diagnostics_section <- function(x, spec, digits = 3) {
-  if (!isTRUE(spec$is_pooled) || is.null(x$boot.MI)) {
+  if (!isTRUE(spec$is_pooled) || is.null(x$MI)) {
     return(invisible(NULL))
   }
 
-  fmi_values <- .efa_collect_mi_values(x$boot.MI, pattern = "fmi")
-  riv_values <- .efa_collect_mi_values(x$boot.MI, pattern = "riv")
+  fmi_values <- .efa_collect_mi_values(x$MI, pattern = "fmi")
+  riv_values <- .efa_collect_mi_values(x$MI, pattern = "riv")
 
   if (length(fmi_values) < 1L && length(riv_values) < 1L) {
     return(invisible(NULL))

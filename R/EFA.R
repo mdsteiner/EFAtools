@@ -313,9 +313,11 @@
 #' loadings. Based on rotated loadings and, for oblique rotations, the factor
 #' intercorrelations.}
 #' \item{settings}{A list of the settings used.}
-#' \item{boot.SE}{A list of standard errors. For `se = "np-boot"`: for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, only if rotated), and fit indices. For `se = "information"` and `se = "sandwich"`: for the unrotated loadings and the uniquenesses, and -- when a rotation is applied -- the rotated loadings, the communalities, and (for oblique rotations) the factor correlations (Phi) and structure coefficients. The `"sandwich"` errors are robust to non-normality and weight misspecification. Only returned, if `se` is not "none".}
-#' \item{boot.CI}{A list of confidence intervals of width `ci`. For `se = "np-boot"`: percentile intervals for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, if obliquely rotated), and fit indices. For `se = "information"` and `se = "sandwich"`: Wald intervals for the unrotated loadings and the uniquenesses, and -- when a rotation is applied -- the rotated loadings, the communalities, and (for oblique rotations) the factor correlations (Phi) and structure coefficients. Only returned, if `se` is not "none".}
-#' \item{boot.arrays}{A list of arrays with the bootstrapped loadings (aligned rotated and unrotated), aligned structure coefficients (if rotated obliquely), aligned factor correlations (Phi, if obliquely rotated), and fit indices. Only returned, if `se = "np-boot"` (`NULL` for the analytic methods).}
+#' \item{SE}{A named list of standard error matrices. For `se = "np-boot"`: bootstrap standard deviations of the unrotated and (when a rotation is applied) rotated loadings, the residuals, and the fit indices, plus -- for oblique rotations -- the factor correlations (`Phi`) and the structure coefficients. For `se = "information"`: Wald standard errors from the expected (Fisher) information matrix for the unrotated loadings and the uniquenesses and, when a rotation is applied, the rotated loadings and the communalities (and, for oblique rotations, `Phi` and the structure coefficients). For `se = "sandwich"`: robust Godambe sandwich standard errors with the same coverage as `"information"`, robust to non-normality and weight misspecification. Only returned if `se` is not `"none"`.}
+#' \item{CI}{A named list of confidence intervals of width `ci`. For `se = "np-boot"`: percentile intervals matching the components of `SE`. For `se = "information"` and `se = "sandwich"`: Wald intervals matching the components of `SE`. Only returned if `se` is not `"none"`.}
+#' \item{replicates}{A named list of bootstrap replicate cubes for the aligned unrotated and (where applicable) rotated loadings, structure coefficients, factor correlations (`Phi`), residuals, and fit indices. Each cube's last dimension indexes the replicate. Populated only for `se = "np-boot"`; `NULL` for the analytic SE methods.}
+#' \item{vcov_unrot_loadings}{The full unrotated loading covariance matrix the marginal `SE$unrot_loadings` were derived from: a `p * n_factors` by `p * n_factors` numeric matrix in column-major `vec(Lambda)` order. Populated for `se = "information"` (expected-information block) and `se = "sandwich"` (robust V_AA), even when a rotation is applied (the persisted block is always the unrotated one); NA-filled if the analytic covariance is unreliable (a Heywood case or a singular bordered information matrix); `NULL` for `se = "np-boot"` and `se = "none"`.}
+#' \item{Gamma}{The asymptotic covariance of the off-diagonal sample correlations -- the meat of the robust sandwich SEs -- on the variance scale (`Var(rho-hat)`; lavaan's correlation NACOV is `N * Gamma`). A `p (p - 1) / 2` by `p (p - 1) / 2` numeric matrix; rows and columns ordered by [utils::combn()] over the column pairs and labelled `"<var_i>-<var_j>"`. Populated only for `se = "sandwich"`; `NULL` otherwise.}
 #'
 #' @source Grieder, S., & Steiner, M.D. (2020). Algorithmic Jingle Jungle:
 #' A Comparison of Implementations of Principal Axis Factoring and Promax Rotation
@@ -392,21 +394,21 @@
 #' # bootstrap, can be computed from a correlation matrix as long as N is supplied.
 #' ML_info <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
 #'                method = "ML", rotation = "none", se = "information")
-#' ML_info$boot.SE$unrot_loadings
+#' ML_info$SE$unrot_loadings
 #'
 #' \donttest{
 #' # Robust (sandwich) standard errors and a scaled chi-square for ordinal raw data.
 #' # These need a polychoric/tetrachoric correlation method and method ML, ULS, or DWLS.
 #' DWLS_rob <- EFA(DOSPERT_raw, n_factors = 6, cor_method = "poly",
 #'                 method = "DWLS", rotation = "oblimin", se = "sandwich")
-#' DWLS_rob$boot.SE$rot_loadings
+#' DWLS_rob$SE$rot_loadings
 #' DWLS_rob$fit_indices$chi      # the scaled (Satorra-Bentler) chi-square
 #'
 #' # The same robust SEs and scaled chi-square for continuous data: a Pearson
 #' # correlation with method ML or ULS (the fourth-moment ADF covariance).
 #' ML_rob <- EFA(GRiPS_raw, n_factors = 1, cor_method = "pearson",
 #'               method = "ML", rotation = "none", se = "sandwich")
-#' ML_rob$boot.SE$unrot_loadings
+#' ML_rob$SE$unrot_loadings
 #' }
 #'
 #' \dontrun{
@@ -895,6 +897,14 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
 
   }
 
+  # Persist the full unrotated loading covariance (populated below for the analytic SE
+  # methods) and the asymptotic covariance of the off-diagonal correlations (populated
+  # for `se = "sandwich"`). Both stay present-but-NULL elsewhere so downstream consumers
+  # (multiple-imputation pooling) can probe them by name without an `is.null(names(...))`
+  # dance.
+  output["vcov_unrot_loadings"] <- list(NULL)
+  output["Gamma"] <- list(Gamma)
+
   if (se != "none") {
     if (rotation == "none") {
       L_rot <- NULL
@@ -925,7 +935,17 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
     # fit indices below rather than carried in the SE schema, so strip it before merging.
     scaled_test <- boot_out$scaled_test
     boot_out$scaled_test <- NULL
-    output <- c(output, boot = boot_out)
+    output$SE <- boot_out$SE
+    output$CI <- boot_out$CI
+    # Single-bracket list assignment preserves a present-but-NULL slot for the
+    # analytic SE methods (information, sandwich) where there are no replicate
+    # arrays; `output$replicates <- NULL` would remove the slot entirely.
+    output["replicates"] <- list(boot_out$replicates)
+    # The analytic SE paths (information, sandwich) carry through the full unrotated
+    # loading covariance the marginal SEs were derived from; the bootstrap path leaves it
+    # NULL. Same single-bracket pattern as `replicates` so the slot is present-but-NULL
+    # on the bootstrap rather than absent.
+    output["vcov_unrot_loadings"] <- list(boot_out$vcov_unrot_loadings)
     # Only the bootstrap yields a sampling SD for every residual; the analytic methods do
     # not, so standardise the residuals only when those SEs are available.
     if (!is.null(boot_out$SE$residuals)) {
@@ -992,8 +1012,8 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
 
 # Dispatch standard-error/confidence-interval computation on the requested method. The
 # nonparametric bootstrap aggregates resampled fits; the analytic methods derive SEs from
-# the fitted model itself. Every branch returns the same list(SE, CI, arrays) schema, so the
-# print and summary methods are agnostic to how the SEs were produced. The sandwich branch
+# the fitted model itself. Every branch returns the same list(SE, CI, replicates) schema, so
+# the print and summary methods are agnostic to how the SEs were produced. The sandwich branch
 # additionally returns a `scaled_test` element (the robust scaled chi-square), which EFA()
 # strips off and folds into the fit indices. `gamma` (the polychoric ACOV meat) and `method`
 # are used only by the sandwich.
@@ -1058,6 +1078,17 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
   se <- .se_information_ml(L, psi, N)
   SE_L <- se$loadings_se
   SE_psi <- se$uniquenesses_se
+  pk <- length(L)
+  # The full bordered vcov covers loadings AND uniquenesses (q = pk + p); the persisted slot
+  # is the leading pk x pk loading block (matches the sandwich V_AA schema and what
+  # `.se_information_rotated()` already extracts inline).
+  V_unrot <- se$vcov[seq_len(pk), seq_len(pk), drop = FALSE]
+  # `.se_information_ml()` NA-fills the marginal SEs on two paths: the early Heywood / singular
+  # return (matrix-of-NAs vcov already) AND the post-solve sqrt-gate where a near-degenerate V has
+  # a small negative diagonal entry. The second path leaves vcov finite-but-not-PSD, which would
+  # otherwise be persisted next to NA SEs and silently propagate sqrt(NaN) downstream. Mirror the
+  # marginal-SE NA into the persisted covariance so the slot carries the same reliability signal.
+  if (anyNA(SE_L)) V_unrot[] <- NA_real_
 
   if (anyNA(SE_L) || anyNA(SE_psi)) {
     cli::cli_warn(
@@ -1087,7 +1118,8 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
       unrot_loadings = list(lower = L_lower, upper = L_upper),
       uniquenesses = list(lower = psi_lower, upper = psi_upper)
     ),
-    arrays = NULL
+    replicates = NULL,
+    vcov_unrot_loadings = V_unrot
   )
 }
 
@@ -1393,7 +1425,13 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
     )
   }
 
-  list(SE = SE, CI = CI, arrays = NULL)
+  # Surface the pk x pk unrotated loading vcov (the information block, or the sandwich V_AA
+  # when `se0` was supplied) so it can be persisted on the EFA object alongside the rotated SEs.
+  # NA-fill if the underlying unrotated SEs were unreliable (info_reliable signals both the
+  # Heywood early-return and the finite-but-not-PSD covariance path) so the slot is consistent
+  # with the marginal SEs and downstream consumers can fail closed on `anyNA()`.
+  if (!info_reliable) V[] <- NA_real_
+  list(SE = SE, CI = CI, replicates = NULL, vcov_unrot_loadings = V)
 }
 
 
@@ -1649,8 +1687,8 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
   )
 }
 
-# Unrotated robust SE/CI wrapper: fills the uniform list(SE, CI, arrays) schema from the core's
-# loading/uniqueness SEs, mirroring .se_information() but with the sandwich covariance.
+# Unrotated robust SE/CI wrapper: fills the uniform list(SE, CI, replicates) schema from the
+# core's loading/uniqueness SEs, mirroring .se_information() but with the sandwich covariance.
 .se_sandwich_unrotated <- function(fit_out, core, ci) {
 
   L <- unclass(fit_out$unrot_loadings)
@@ -1671,11 +1709,19 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
   names(psi) <- rownames(L)
   z <- stats::qnorm(1 - (1 - ci) / 2)
 
+  # `.se_sandwich_core()` always returns a numeric V_AA, even when `reliable = FALSE` (it is
+  # only the marginal `loadings_se` that gets NA-filled in the unreliable branch). NA-fill the
+  # persisted covariance to match, so a finite-but-not-PSD V_AA does not silently ship next to
+  # NA SEs and propagate sqrt(NaN) into downstream pooling.
+  V_AA <- core$V_AA
+  if (!isTRUE(core$reliable)) V_AA[] <- NA_real_
+
   list(
     SE = list(unrot_loadings = SE_L, uniquenesses = SE_psi),
     CI = list(unrot_loadings = .wald_ci(L, SE_L, z),
               uniquenesses = .wald_ci(psi, SE_psi, z)),
-    arrays = NULL
+    replicates = NULL,
+    vcov_unrot_loadings = V_AA
   )
 }
 
@@ -1864,7 +1910,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
         fit_indices = gof_se_ci$ci,
         residuals = residuals_se_ci$ci
       ),
-      arrays = list(
+      replicates = list(
         unrot_loadings = L_unrot_boot,
         rot_loadings = L_rot_boot,
         Phi = Phi_rot_boot,
@@ -1922,7 +1968,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
         fit_indices = gof_se_ci$ci,
         residuals = residuals_se_ci$ci
       ),
-      arrays = list(
+      replicates = list(
         unrot_loadings = L_unrot_boot,
         rot_loadings = L_rot_boot,
         fit_indices = gof_boot,
@@ -1944,7 +1990,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
         fit_indices = gof_se_ci$ci,
         residuals = residuals_se_ci$ci
       ),
-      arrays = list(
+      replicates = list(
         unrot_loadings = L_unrot_boot,
         fit_indices = gof_boot,
         residuals = residuals_boot

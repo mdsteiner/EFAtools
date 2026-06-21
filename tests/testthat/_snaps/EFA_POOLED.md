@@ -97,7 +97,7 @@
     Output
       
       Pooled EFA across 3 imputations performed with type = 'EFAtools', method = 'PAF', and rotation = 'promax'.
-      Pooling settings: target_method = 'consensus', align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.
+      Pooling settings: target_method = 'first_target', align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.
       
       -- Rotated Loadings ------------------------------------------------------------
       
@@ -201,7 +201,7 @@
     Output
       
       Pooled EFA across 3 imputations performed with type = 'EFAtools', method = 'PAF', and rotation = 'promax'.
-      Pooling settings: target_method = 'consensus', align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.
+      Pooling settings: target_method = 'first_target', align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.
       
       -- Pooled Model Diagnostics ----------------------------------------------------
       
@@ -209,8 +209,8 @@
       Variables: 18
       N: 500
       Imputations: 3
-      Pooling: target_method = 'consensus', align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'
-      Alignment: method = 'consensus', converged
+      Pooling: target_method = 'first_target', align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'
+      Alignment: method = 'first_target', converged
       Heywood cases: 0
       Cross-loading items (|loading| >= <num>): 0
       Items without salient loading (|loading| >= <num>): 0

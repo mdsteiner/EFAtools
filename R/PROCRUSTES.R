@@ -146,27 +146,32 @@ PROCRUSTES <- function(A,
 }
 
 
-#' Consensus Procrustes alignment across multiple loading matrices
+#' Generalized Procrustes Analysis consensus target across loading matrices
 #'
-#' Align several loading matrices to a common Procrustes consensus target.
+#' Internal helper that constructs a Generalized Procrustes Analysis (GPA)
+#' consensus target across a list of loading matrices and returns the aligned
+#' loadings, the centroid target, and convergence diagnostics. Used by
+#' [EFA_POOLED()] under `target_method = "consensus"` to build a common
+#' rotation target across imputations. Oblique rotations are not supported
+#' here: the iteration is degenerate for oblique transforms with more than
+#' one factor (cf. Lorenzo-Seva & Van Ginkel 2016, who use a Promin step on
+#' top of the centroid rather than iterated oblique Procrustes); callers
+#' should pass the unrotated solutions of an orthogonal rotation, or use
+#' `target_method = "first_target"`.
 #'
-#' The function iterates between two steps:
+#' The iteration alternates two steps:
 #'
-#' 1. each loading matrix is independently aligned to the current target with
-#'    `PROCRUSTES()`; and
-#' 2. the target is updated to the centroid, i.e., the elementwise average of the
-#'    aligned matrices.
+#' 1. each loading matrix is aligned to the current target with `PROCRUSTES()`;
+#' 2. the target is updated to the elementwise centroid of the aligned matrices.
 #'
-#' This makes the target symmetric across imputations or samples: no single
-#' solution is permanently privileged as the reference. The outer loop can stop
-#' when the target stabilizes, when the consensus loss stabilizes, or when both
-#' criteria are satisfied.
+#' The outer loop stops when the target stabilises, when the consensus loss
+#' stabilises, or when both criteria are satisfied.
 #'
 #' If `multi_start = FALSE`, one consensus run is performed. If
-#' `multi_start = TRUE`, the same single-start engine is repeated for the
-#' selected starting targets, and the run with the smallest final mean loss is
-#' returned as the main result. All runs and a between-run congruence summary are
-#' retained in the `multi_start` component.
+#' `multi_start = TRUE`, the same engine is repeated for the selected starting
+#' targets and the run with the smallest final mean loss is returned as the
+#' main result; all runs and a between-run congruence summary are retained in
+#' the `multi_start` component.
 #'
 #' @param unrotated_list List of unrotated loading matrices to be aligned. All
 #'   matrices must be numeric, finite, and have identical dimensions.
@@ -201,18 +206,6 @@ PROCRUSTES <- function(A,
 #'   column-matched to the previous target before convergence is evaluated.
 #' @param hyper_cutoff Non-negative cutoff used by `.hyperplane_count()` for
 #'   summary output.
-#' @param oblique_maxit,oblique_eps,oblique_max_line_search,oblique_step0,oblique_normalize Parameters
-#'   passed to `PROCRUSTES()` when `rotation = "oblique"`.
-#' @param oblique_random_starts Number of random starts used by the inner oblique
-#'   solver. See `oblique_random_starts_stage` for when these are used.
-#' @param oblique_random_starts_stage Character string controlling whether random
-#'   starts are used during the outer consensus loop, the final alignment pass,
-#'   both, or neither. The default `"final"` keeps the outer loop smooth by using
-#'   warm starts during iteration and applies random-start protection only in the
-#'   final pass.
-#' @param oblique_screen_keep,oblique_triage_maxit,oblique_triage_improve_tol
-#'   Screening and triage parameters passed to the compiled oblique solver when
-#'   random starts are used.
 #' @param verbose Logical; if `TRUE`, print convergence messages for the outer
 #'   loop.
 #'
@@ -222,12 +215,19 @@ PROCRUSTES <- function(A,
 #'   contains the per-start losses, convergence indicators, run summaries, all
 #'   run objects, and between-run Tucker congruence matrices.
 #'
-#' @export
-#'
 #' @references
 #' Gower, J. C. (1975). Generalized Procrustes analysis. *Psychometrika*, 40,
 #' 33-51.
-CONSENSUS_PROCRUSTES <- function(unrotated_list,
+#'
+#' Van Ginkel, J. R., & Kroonenberg, P. M. (2014). Using Generalized
+#' Procrustes Analysis for Multiple Imputation in Principal Component
+#' Analysis. *Journal of Classification*, 31, 242-269.
+#'
+#' Lorenzo-Seva, U., & Van Ginkel, J. R. (2016). Multiple Imputation of
+#' missing values in exploratory factor analysis of multidimensional scales:
+#' estimating latent trait scores. *Anales de Psicologia*, 32, 596-608.
+#'
+.gpa_consensus_target <- function(unrotated_list,
                                  init_targets = NULL,
                                  rotation = c("orthogonal", "oblique"),
                                  start = 1,
@@ -242,21 +242,27 @@ CONSENSUS_PROCRUSTES <- function(unrotated_list,
                                  alpha = 1,
                                  match_target = TRUE,
                                  hyper_cutoff = 0.15,
-                                 oblique_maxit = 500,
-                                 oblique_eps = 1e-5,
-                                 oblique_max_line_search = 10,
-                                 oblique_step0 = 1,
-                                 oblique_normalize = FALSE,
-                                 oblique_random_starts = 0,
-                                 oblique_random_starts_stage = c("final", "none", "outer", "both"),
-                                 oblique_screen_keep = 2,
-                                 oblique_triage_maxit = 25,
-                                 oblique_triage_improve_tol = 0,
                                  verbose = FALSE) {
   rotation <- match.arg(rotation)
   convergence <- match.arg(convergence)
-  oblique_random_starts_stage <- match.arg(oblique_random_starts_stage)
   multi_start <- .procrustes_check_flag(multi_start, "multi_start")
+
+  # The iteration is well-behaved for orthogonal Procrustes (closed-form per
+  # step; classical Gower 1975 GPA) but the extra column-skew freedom of an
+  # oblique transform lets the centroid loss collapse to degenerate targets
+  # for k > 1; Lorenzo-Seva & Van Ginkel (2016) sidestep this by running a
+  # Promin target rotation on top of the centroid, which this engine does
+  # not implement. NCOL() treats NULL/vectors/1-D arrays as a single column
+  # so the guard fires only on genuinely multi-column inputs.
+  if (rotation == "oblique" && is.list(unrotated_list) &&
+      length(unrotated_list) >= 1L &&
+      isTRUE(NCOL(unrotated_list[[1L]]) >= 2L)) {
+    cli::cli_abort(
+      c("GPA-consensus alignment does not support oblique rotations with more than one factor.",
+        "i" = "Use {.code target_method = \"first_target\"} in {.fn EFA_POOLED}, or pass orthogonal unrotated loadings."),
+      class = "efa_consensus_oblique_unsupported"
+    )
+  }
 
   single_args <- list(
     unrotated_list = unrotated_list,
@@ -271,16 +277,6 @@ CONSENSUS_PROCRUSTES <- function(unrotated_list,
     alpha = alpha,
     match_target = match_target,
     hyper_cutoff = hyper_cutoff,
-    oblique_maxit = oblique_maxit,
-    oblique_eps = oblique_eps,
-    oblique_max_line_search = oblique_max_line_search,
-    oblique_step0 = oblique_step0,
-    oblique_normalize = oblique_normalize,
-    oblique_random_starts = oblique_random_starts,
-    oblique_random_starts_stage = oblique_random_starts_stage,
-    oblique_screen_keep = oblique_screen_keep,
-    oblique_triage_maxit = oblique_triage_maxit,
-    oblique_triage_improve_tol = oblique_triage_improve_tol,
     verbose = verbose
   )
 

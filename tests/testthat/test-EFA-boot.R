@@ -31,11 +31,11 @@ test_that("np-boot runs end to end for all methods and rotation families", {
     ))
 
     expect_s3_class(res, "EFA")
-    expect_false(is.null(res$boot.SE), info = label)
-    expect_false(is.null(res$boot.CI), info = label)
-    expect_false(is.null(res$boot.arrays), info = label)
+    expect_false(is.null(res$SE), info = label)
+    expect_false(is.null(res$CI), info = label)
+    expect_false(is.null(res$replicates), info = label)
     # the third array dimension is the number of bootstrap replicates
-    expect_identical(dim(res$boot.arrays$unrot_loadings)[3], 8L, info = label)
+    expect_identical(dim(res$replicates$unrot_loadings)[3], 8L, info = label)
   }
 })
 
@@ -66,13 +66,13 @@ test_that("np-boot resamples only the complete cases under listwise deletion", {
   ))
 
   expect_s3_class(res, "EFA")
-  expect_true(all(is.finite(res$boot.SE$unrot_loadings)))
+  expect_true(all(is.finite(res$SE$unrot_loadings)))
 })
 
 test_that("oblique np-boot output has the expected structure", {
-  se <- boot_promax$boot.SE
-  ci <- boot_promax$boot.CI
-  arr <- boot_promax$boot.arrays
+  se <- boot_promax$SE
+  ci <- boot_promax$CI
+  arr <- boot_promax$replicates
 
   expect_named(se, c("unrot_loadings", "rot_loadings", "Phi", "Structure",
                      "fit_indices", "residuals", "valid_target_rotations"))
@@ -93,8 +93,8 @@ test_that("oblique np-boot output has the expected structure", {
 })
 
 test_that("np-boot standard errors and confidence intervals are valid", {
-  se <- boot_promax$boot.SE
-  ci <- boot_promax$boot.CI
+  se <- boot_promax$SE
+  ci <- boot_promax$CI
 
   for (nm in c("unrot_loadings", "rot_loadings", "Phi", "Structure")) {
     expect_true(all(se[[nm]] >= 0), info = nm)            # SEs are non-negative
@@ -120,9 +120,9 @@ test_that("np-boot is reproducible with a fixed seed", {
   set.seed(7); a <- run()
   set.seed(7); b <- run()
 
-  expect_equal(a$boot.SE$unrot_loadings, b$boot.SE$unrot_loadings)
-  expect_equal(a$boot.SE$rot_loadings, b$boot.SE$rot_loadings)
-  expect_equal(a$boot.SE$Phi, b$boot.SE$Phi)
+  expect_equal(a$SE$unrot_loadings, b$SE$unrot_loadings)
+  expect_equal(a$SE$rot_loadings, b$SE$rot_loadings)
+  expect_equal(a$SE$Phi, b$SE$Phi)
 })
 
 test_that("np-boot with a fixed seed is reproducible at 1 vs 2 workers", {
@@ -151,9 +151,9 @@ test_that("np-boot with a fixed seed is reproducible at 1 vs 2 workers", {
   future::plan(future::multisession, workers = 2)
   two <- run()
 
-  expect_equal(one$boot.arrays, two$boot.arrays, tolerance = 1e-10)
-  expect_equal(one$boot.SE, two$boot.SE, tolerance = 1e-10)
-  expect_equal(one$boot.CI, two$boot.CI, tolerance = 1e-10)
+  expect_equal(one$replicates, two$replicates, tolerance = 1e-10)
+  expect_equal(one$SE, two$SE, tolerance = 1e-10)
+  expect_equal(one$CI, two$CI, tolerance = 1e-10)
 })
 
 test_that("a supplied seed leaves the caller's RNG stream unchanged", {
@@ -183,7 +183,7 @@ test_that("np-boot on a correlation matrix warns and disables the bootstrap", {
   )
   expect_s3_class(res, "EFA")
   expect_identical(res$settings$se, "none")
-  expect_null(res$boot.SE)
+  expect_null(res$SE)
 })
 
 test_that("a failed bootstrap replicate is skipped with a warning", {
@@ -216,7 +216,7 @@ test_that("a failed bootstrap replicate is skipped with a warning", {
   )
 
   # the failed replicate's slice stays NA; SEs from the rest are finite
-  expect_true(all(is.na(res$arrays$unrot_loadings[, , 2])))
+  expect_true(all(is.na(res$replicates$unrot_loadings[, , 2])))
   expect_true(all(is.finite(res$SE$unrot_loadings)))
 })
 
@@ -410,7 +410,7 @@ test_that("ML np-boot drops only the analytic RMSEA bounds from the fit-index SE
         se = "np-boot", b_boot = 10)
   ))
 
-  se_fit <- res$boot.SE$fit_indices
+  se_fit <- res$SE$fit_indices
   # the per-replicate analytic RMSEA bounds are not bootstrapped
   expect_true(all(is.na(se_fit[c("RMSEA_LB", "RMSEA_UB")])))
   # the bootstrapped fit indices that are aggregated stay finite
@@ -509,7 +509,7 @@ test_that("oblique np-boot runs end to end for a single-factor model", {
         se = "np-boot", b_boot = 8)))
 
   expect_s3_class(res, "EFA")
-  expect_false(is.null(res$boot.SE$rot_loadings))
-  expect_true(all(is.finite(res$boot.SE$rot_loadings)))
-  expect_identical(dim(res$boot.arrays$rot_loadings)[3], 8L)
+  expect_false(is.null(res$SE$rot_loadings))
+  expect_true(all(is.finite(res$SE$rot_loadings)))
+  expect_identical(dim(res$replicates$rot_loadings)[3], 8L)
 })

@@ -1,6 +1,6 @@
 # Procrustes rotation and the consensus-target engine: input validation, the closed-form
 # orthogonal Procrustes solution, congruence/hyperplane diagnostics, and the single-start
-# consensus iterator behind CONSENSUS_PROCRUSTES().
+# GPA-consensus iterator behind .gpa_consensus_target().
 
 #' Average a list of matrices elementwise
 #'
@@ -384,12 +384,12 @@
 }
 
 
-#' Internal single-start consensus engine
+#' Internal single-start GPA-consensus engine
 #'
-#' This internal helper performs a single consensus-target run from one starting
-#' target. Users should normally call [CONSENSUS_PROCRUSTES()] instead.
+#' Performs a single GPA-consensus run from one starting target. The
+#' multi-start wrapper [.gpa_consensus_target()] dispatches here.
 #'
-#' @inheritParams CONSENSUS_PROCRUSTES
+#' @inheritParams .gpa_consensus_target
 #'
 .consensus_target_procrustes_single <- function(unrotated_list,
                                                 init_targets = NULL,
@@ -404,20 +404,9 @@
                                                 alpha = 1,
                                                 match_target = TRUE,
                                                 hyper_cutoff = 0.15,
-                                                oblique_maxit = 300,
-                                                oblique_eps = 1e-5,
-                                                oblique_max_line_search = 10,
-                                                oblique_step0 = 1,
-                                                oblique_normalize = FALSE,
-                                                oblique_random_starts = 0,
-                                                oblique_random_starts_stage = c("final", "none", "outer", "both"),
-                                                oblique_screen_keep = 2,
-                                                oblique_triage_maxit = 25,
-                                                oblique_triage_improve_tol = 0,
                                                 verbose = FALSE) {
   rotation <- match.arg(rotation)
   convergence <- match.arg(convergence)
-  oblique_random_starts_stage <- match.arg(oblique_random_starts_stage)
 
   alpha <- .procrustes_check_numeric_scalar(alpha, "alpha", lower = 0, upper = 1,
                                             lower_closed = FALSE)
@@ -441,18 +430,6 @@
   match_target <- .procrustes_check_flag(match_target, "match_target")
   verbose <- .procrustes_check_flag(verbose, "verbose")
   hyper_cutoff <- .procrustes_check_numeric_scalar(hyper_cutoff, "hyper_cutoff", lower = 0)
-
-  oblique_controls <- .procrustes_validate_oblique_controls(
-    oblique_eps = oblique_eps,
-    oblique_maxit = oblique_maxit,
-    oblique_max_line_search = oblique_max_line_search,
-    oblique_step0 = oblique_step0,
-    oblique_normalize = oblique_normalize,
-    oblique_random_starts = oblique_random_starts,
-    oblique_screen_keep = oblique_screen_keep,
-    oblique_triage_maxit = oblique_triage_maxit,
-    oblique_triage_improve_tol = oblique_triage_improve_tol
-  )
 
   unrotated_list <- .procrustes_validate_matrix_list(
     unrotated_list, "unrotated_list", min_length = 2L
@@ -492,30 +469,6 @@
     dimnames(target) <- list(dn$items, dn$target_factors)
   }
 
-  # The crossprods only feed the oblique solver; on the orthogonal path (or k == 1)
-  # PROCRUSTES() ignores S entirely, so leave the list NULL there.
-  S_list <- if (rotation == "oblique" && k > 1L) {
-    lapply(unrotated_list, crossprod)
-  } else {
-    vector("list", m)
-  }
-  T_starts <- vector("list", m)
-  if (rotation == "oblique" && k > 1L) {
-    T_starts <- lapply(unrotated_list, function(A) .procrustes_orthogonal_T(A, target))
-  }
-
-  outer_random_starts <- if (oblique_random_starts_stage %in% c("outer", "both")) {
-    oblique_controls$oblique_random_starts
-  } else {
-    0L
-  }
-
-  final_random_starts <- if (oblique_random_starts_stage %in% c("final", "both")) {
-    oblique_controls$oblique_random_starts
-  } else {
-    0L
-  }
-
   hist_iter <- integer(max_iter)
   hist_rel_change <- numeric(max_iter)
   hist_loss <- numeric(max_iter)
@@ -541,22 +494,8 @@
       aligned[[d]] <- PROCRUSTES(
         A = unrotated_list[[d]],
         Target = target,
-        rotation = rotation,
-        S = S_list[[d]],
-        T_init = T_starts[[d]],
-        oblique_eps = oblique_controls$oblique_eps,
-        oblique_maxit = oblique_controls$oblique_maxit,
-        oblique_max_line_search = oblique_controls$oblique_max_line_search,
-        oblique_step0 = oblique_controls$oblique_step0,
-        oblique_normalize = oblique_controls$oblique_normalize,
-        oblique_random_starts = outer_random_starts,
-        oblique_screen_keep = oblique_controls$oblique_screen_keep,
-        oblique_triage_maxit = oblique_controls$oblique_triage_maxit,
-        oblique_triage_improve_tol = oblique_controls$oblique_triage_improve_tol
+        rotation = rotation
       )
-      if (rotation == "oblique" && k > 1L) {
-        T_starts[[d]] <- aligned[[d]]$T
-      }
     }
 
     aligned_loadings <- lapply(aligned, `[[`, "loadings")
@@ -669,18 +608,7 @@
     final_aligned[[d]] <- PROCRUSTES(
       A = unrotated_list[[d]],
       Target = target,
-      rotation = rotation,
-      S = S_list[[d]],
-      T_init = T_starts[[d]],
-      oblique_eps = oblique_controls$oblique_eps,
-      oblique_maxit = oblique_controls$oblique_maxit,
-      oblique_max_line_search = oblique_controls$oblique_max_line_search,
-      oblique_step0 = oblique_controls$oblique_step0,
-      oblique_normalize = oblique_controls$oblique_normalize,
-      oblique_random_starts = final_random_starts,
-      oblique_screen_keep = oblique_controls$oblique_screen_keep,
-      oblique_triage_maxit = oblique_controls$oblique_triage_maxit,
-      oblique_triage_improve_tol = oblique_controls$oblique_triage_improve_tol
+      rotation = rotation
     )
   }
 
@@ -748,9 +676,6 @@
     final_failures = which(!final_converged),
     final_kappa_T = final_kappa,
     hyperplane_target = .hyperplane_count(target, cutoff = hyper_cutoff),
-    hyperplane_pooled = .hyperplane_count(pooled_loadings, cutoff = hyper_cutoff),
-    oblique_random_starts_stage = oblique_random_starts_stage,
-    oblique_random_starts_outer = outer_random_starts,
-    oblique_random_starts_final = final_random_starts
+    hyperplane_pooled = .hyperplane_count(pooled_loadings, cutoff = hyper_cutoff)
   )
 }

@@ -85,7 +85,7 @@ test_that("information uniqueness SEs match lavaan", {
 
   # Uniquenesses are rotation-invariant, so they are directly comparable across the two
   # packages' identifications. The small gap is the N vs N - 1 scaling.
-  expect_equal(unname(fit$boot.SE$uniquenesses), uq$se, tolerance = 0.02)
+  expect_equal(unname(fit$SE$uniquenesses), uq$se, tolerance = 0.02)
 })
 
 
@@ -107,8 +107,8 @@ test_that("single-factor information loading and uniqueness SEs match lavaan", {
   uq <- pe[pe$op == "~~" & pe$lhs == pe$rhs & pe$lhs %in% colnames(R), ]
   uq <- uq[match(colnames(R), uq$lhs), ]
 
-  expect_equal(as.vector(fit$boot.SE$unrot_loadings), ld$se, tolerance = 0.01)
-  expect_equal(unname(fit$boot.SE$uniquenesses), uq$se, tolerance = 0.01)
+  expect_equal(as.vector(fit$SE$unrot_loadings), ld$se, tolerance = 0.01)
+  expect_equal(unname(fit$SE$uniquenesses), uq$se, tolerance = 0.01)
 })
 
 
@@ -131,8 +131,8 @@ test_that("information loading SEs track the bootstrap on an identifiable soluti
   fb <- EFA(X, n_factors = 3, method = "ML", rotation = "none",
             se = "np-boot", b_boot = 250, seed = 1)
 
-  expect_gt(cor(c(fa$boot.SE$unrot_loadings), c(fb$boot.SE$unrot_loadings)), 0.9)
-  expect_lt(abs(median(fa$boot.SE$unrot_loadings / fb$boot.SE$unrot_loadings) - 1), 0.35)
+  expect_gt(cor(c(fa$SE$unrot_loadings), c(fb$SE$unrot_loadings)), 0.9)
+  expect_lt(abs(median(fa$SE$unrot_loadings / fb$SE$unrot_loadings) - 1), 0.35)
 })
 
 
@@ -140,18 +140,18 @@ test_that("information SEs populate the bootstrap SE/CI schema", {
   R <- test_models$baseline$cormat
   fit <- EFA(R, n_factors = 3, N = 500, method = "ML", rotation = "none", se = "information")
 
-  expect_setequal(names(fit$boot.SE), c("unrot_loadings", "uniquenesses"))
-  expect_setequal(names(fit$boot.CI), c("unrot_loadings", "uniquenesses"))
-  expect_null(fit$boot.arrays)
+  expect_setequal(names(fit$SE), c("unrot_loadings", "uniquenesses"))
+  expect_setequal(names(fit$CI), c("unrot_loadings", "uniquenesses"))
+  expect_null(fit$replicates)
 
-  expect_equal(dim(fit$boot.SE$unrot_loadings), dim(fit$unrot_loadings))
-  expect_length(fit$boot.SE$uniquenesses, ncol(R))
-  expect_false(anyNA(fit$boot.SE$unrot_loadings))
+  expect_equal(dim(fit$SE$unrot_loadings), dim(fit$unrot_loadings))
+  expect_length(fit$SE$uniquenesses, ncol(R))
+  expect_false(anyNA(fit$SE$unrot_loadings))
 
   # Wald intervals bracket the point estimates.
-  expect_true(all(fit$boot.CI$unrot_loadings$lower <= fit$unrot_loadings))
-  expect_true(all(fit$unrot_loadings <= fit$boot.CI$unrot_loadings$upper))
-  expect_named(fit$boot.CI$uniquenesses, c("lower", "upper"))
+  expect_true(all(fit$CI$unrot_loadings$lower <= fit$unrot_loadings))
+  expect_true(all(fit$unrot_loadings <= fit$CI$unrot_loadings$upper))
+  expect_named(fit$CI$uniquenesses, c("lower", "upper"))
 })
 
 
@@ -159,29 +159,29 @@ test_that("information SEs populate the rotated SE/CI schema under an oblique ro
   R <- test_models$baseline$cormat
   fit <- EFA(R, n_factors = 3, N = 500, method = "ML", rotation = "oblimin", se = "information")
 
-  expect_setequal(names(fit$boot.SE),
+  expect_setequal(names(fit$SE),
                   c("unrot_loadings", "uniquenesses", "rot_loadings",
                     "communalities", "Phi", "Structure"))
-  expect_setequal(names(fit$boot.CI),
+  expect_setequal(names(fit$CI),
                   c("unrot_loadings", "uniquenesses", "rot_loadings",
                     "communalities", "Phi", "Structure"))
-  expect_null(fit$boot.arrays)
+  expect_null(fit$replicates)
 
-  expect_equal(dim(fit$boot.SE$rot_loadings), dim(fit$rot_loadings))
-  expect_equal(dim(fit$boot.SE$Structure), dim(fit$rot_loadings))
-  expect_equal(dim(fit$boot.SE$Phi), dim(fit$Phi))
-  expect_length(fit$boot.SE$communalities, ncol(R))
-  expect_false(anyNA(fit$boot.SE$rot_loadings))
+  expect_equal(dim(fit$SE$rot_loadings), dim(fit$rot_loadings))
+  expect_equal(dim(fit$SE$Structure), dim(fit$rot_loadings))
+  expect_equal(dim(fit$SE$Phi), dim(fit$Phi))
+  expect_length(fit$SE$communalities, ncol(R))
+  expect_false(anyNA(fit$SE$rot_loadings))
 
   # The unit diagonal of Phi is fixed, so it carries no sampling variance.
-  expect_true(all(diag(fit$boot.SE$Phi) == 0))
+  expect_true(all(diag(fit$SE$Phi) == 0))
 
   # Wald intervals bracket every rotated point estimate.
-  expect_true(all(fit$boot.CI$rot_loadings$lower <= fit$rot_loadings &
-                    fit$rot_loadings <= fit$boot.CI$rot_loadings$upper))
-  expect_true(all(fit$boot.CI$Structure$lower <= fit$Structure &
-                    fit$Structure <= fit$boot.CI$Structure$upper))
-  expect_named(fit$boot.CI$Phi, c("lower", "upper"))
+  expect_true(all(fit$CI$rot_loadings$lower <= fit$rot_loadings &
+                    fit$rot_loadings <= fit$CI$rot_loadings$upper))
+  expect_true(all(fit$CI$Structure$lower <= fit$Structure &
+                    fit$Structure <= fit$CI$Structure$upper))
+  expect_named(fit$CI$Phi, c("lower", "upper"))
 })
 
 
@@ -189,13 +189,13 @@ test_that("information SEs under an orthogonal rotation omit Phi and the structu
   R <- test_models$baseline$cormat
   fit <- EFA(R, n_factors = 3, N = 500, method = "ML", rotation = "varimax", se = "information")
 
-  expect_setequal(names(fit$boot.SE),
+  expect_setequal(names(fit$SE),
                   c("unrot_loadings", "uniquenesses", "rot_loadings", "communalities"))
-  expect_null(fit$boot.SE$Phi)
-  expect_null(fit$boot.SE$Structure)
-  expect_equal(dim(fit$boot.SE$rot_loadings), dim(fit$rot_loadings))
-  expect_false(anyNA(fit$boot.SE$rot_loadings))
-  expect_false(anyNA(fit$boot.SE$communalities))
+  expect_null(fit$SE$Phi)
+  expect_null(fit$SE$Structure)
+  expect_equal(dim(fit$SE$rot_loadings), dim(fit$rot_loadings))
+  expect_false(anyNA(fit$SE$rot_loadings))
+  expect_false(anyNA(fit$SE$communalities))
 })
 
 
@@ -208,15 +208,15 @@ test_that("information SEs are produced for every supported native rotation", {
   oblq <- c("quartimin", "bentlerQ", "geominQ", "bifactorQ")
   for (rot in c(orth, oblq)) {
     fit <- EFA(R, n_factors = 3, N = 500, method = "ML", rotation = rot, se = "information")
-    expect_false(anyNA(fit$boot.SE$rot_loadings), info = rot)
-    expect_equal(dim(fit$boot.SE$rot_loadings), dim(fit$rot_loadings), info = rot)
-    expect_false(anyNA(fit$boot.SE$communalities), info = rot)
+    expect_false(anyNA(fit$SE$rot_loadings), info = rot)
+    expect_equal(dim(fit$SE$rot_loadings), dim(fit$rot_loadings), info = rot)
+    expect_false(anyNA(fit$SE$communalities), info = rot)
     if (rot %in% oblq) {
-      expect_false(anyNA(fit$boot.SE$Phi), info = rot)
-      expect_false(anyNA(fit$boot.SE$Structure), info = rot)
-      expect_true(all(diag(fit$boot.SE$Phi) == 0), info = rot)
+      expect_false(anyNA(fit$SE$Phi), info = rot)
+      expect_false(anyNA(fit$SE$Structure), info = rot)
+      expect_true(all(diag(fit$SE$Phi) == 0), info = rot)
     } else {
-      expect_null(fit$boot.SE$Phi, info = rot)
+      expect_null(fit$SE$Phi, info = rot)
     }
   }
 })
@@ -239,7 +239,7 @@ test_that("bifactor rotated SEs survive a general-factor reorder", {
     fit <- EFA(X, n_factors = 3, method = "ML", rotation = rot, se = "information")
     # the general factor (the column loading on every variable) is not in column 1 here
     expect_gt(which.max(apply(abs(unclass(fit$rot_loadings)), 2, min)), 1L)
-    expect_false(anyNA(fit$boot.SE$rot_loadings), info = rot)
+    expect_false(anyNA(fit$SE$rot_loadings), info = rot)
   }
 })
 
@@ -269,7 +269,7 @@ test_that("rotated information loading and Phi SEs match lavaan's delta method",
   Lt <- unclass(fit$rot_loadings)
   al <- .align_factor_cols(Ll, Lt)
   Lt_a <- sweep(Lt[, al$perm, drop = FALSE], 2, al$sgn, "*")
-  SEt_a <- fit$boot.SE$rot_loadings[, al$perm, drop = FALSE]
+  SEt_a <- fit$SE$rot_loadings[, al$perm, drop = FALSE]
 
   # Both packages reach the same (identification-invariant) rotated solution.
   expect_equal(max(abs(Lt_a - Ll)), 0, tolerance = 0.01)
@@ -283,7 +283,7 @@ test_that("rotated information loading and Phi SEs match lavaan's delta method",
   pe <- lavaan::parameterEstimates(lf)
   fc <- pe[pe$op == "~~" & pe$lhs != pe$rhs, ]
   ours <- data.frame(corr = fit$Phi[lower.tri(fit$Phi)],
-                     se = fit$boot.SE$Phi[lower.tri(fit$boot.SE$Phi)])
+                     se = fit$SE$Phi[lower.tri(fit$SE$Phi)])
   ours <- ours[order(ours$corr), ]
   fc <- fc[order(fc$est), ]
   expect_lt(max(abs(ours$se - fc$se)), 0.01)
@@ -304,23 +304,23 @@ test_that("rotated information SEs track the bootstrap", {
             se = "np-boot", b_boot = 300, seed = 1)
 
   al <- .align_factor_cols(unclass(fa$rot_loadings), unclass(fb$rot_loadings))
-  SEb <- fb$boot.SE$rot_loadings[, al$perm, drop = FALSE]
+  SEb <- fb$SE$rot_loadings[, al$perm, drop = FALSE]
 
   # Bootstrap rotated-loading SEs carry target-rotation (Procrustes) alignment noise that the
   # analytic delta method does not, so the two are different finite-sample estimators (Yuan &
   # Hayashi, 2006) that agree in overall magnitude (median ratio near 1) rather than cell by cell.
-  expect_lt(abs(stats::median(fa$boot.SE$rot_loadings / SEb) - 1), 0.3)
+  expect_lt(abs(stats::median(fa$SE$rot_loadings / SEb) - 1), 0.3)
 
-  SEs_b <- fb$boot.SE$Structure[, al$perm, drop = FALSE]
-  expect_lt(abs(stats::median(fa$boot.SE$Structure / SEs_b) - 1), 0.3)
+  SEs_b <- fb$SE$Structure[, al$perm, drop = FALSE]
+  expect_lt(abs(stats::median(fa$SE$Structure / SEs_b) - 1), 0.3)
 
   # Communalities are rotation-invariant (no alignment), so they agree in pattern as well as
   # magnitude; the bootstrap has no communality slot, so they are recomputed from the replicate
   # loadings.
-  comm_b <- apply(fb$boot.arrays$unrot_loadings, 3, function(L) rowSums(L^2))
+  comm_b <- apply(fb$replicates$unrot_loadings, 3, function(L) rowSums(L^2))
   comm_b_se <- apply(comm_b, 1, stats::sd, na.rm = TRUE)
-  expect_gt(stats::cor(fa$boot.SE$communalities, comm_b_se), 0.55)
-  expect_lt(abs(stats::median(fa$boot.SE$communalities / comm_b_se) - 1), 0.4)
+  expect_gt(stats::cor(fa$SE$communalities, comm_b_se), 0.55)
+  expect_lt(abs(stats::median(fa$SE$communalities / comm_b_se) - 1), 0.4)
 })
 
 
@@ -353,8 +353,8 @@ test_that("information SEs are available from a correlation matrix and match the
   cmat <- EFA(stats::cor(X), n_factors = 3, N = 800, method = "ML",
               rotation = "none", se = "information")
 
-  expect_equal(raw$boot.SE$unrot_loadings, cmat$boot.SE$unrot_loadings, tolerance = 1e-5)
-  expect_equal(raw$boot.SE$uniquenesses, cmat$boot.SE$uniquenesses, tolerance = 1e-5)
+  expect_equal(raw$SE$unrot_loadings, cmat$SE$unrot_loadings, tolerance = 1e-5)
+  expect_equal(raw$SE$uniquenesses, cmat$SE$uniquenesses, tolerance = 1e-5)
 })
 
 

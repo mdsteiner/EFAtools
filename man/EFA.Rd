@@ -295,9 +295,11 @@ bootstrap standard errors. Only returned, if \code{se = "np-boot"}.}
 loadings. Based on rotated loadings and, for oblique rotations, the factor
 intercorrelations.}
 \item{settings}{A list of the settings used.}
-\item{boot.SE}{A list of standard errors. For \code{se = "np-boot"}: for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, only if rotated), and fit indices. For \code{se = "information"} and \code{se = "sandwich"}: for the unrotated loadings and the uniquenesses, and -- when a rotation is applied -- the rotated loadings, the communalities, and (for oblique rotations) the factor correlations (Phi) and structure coefficients. The \code{"sandwich"} errors are robust to non-normality and weight misspecification. Only returned, if \code{se} is not "none".}
-\item{boot.CI}{A list of confidence intervals of width \code{ci}. For \code{se = "np-boot"}: percentile intervals for loadings (rotated and unrotated), structure coefficients (if rotated obliquely), factor correlations (Phi, if obliquely rotated), and fit indices. For \code{se = "information"} and \code{se = "sandwich"}: Wald intervals for the unrotated loadings and the uniquenesses, and -- when a rotation is applied -- the rotated loadings, the communalities, and (for oblique rotations) the factor correlations (Phi) and structure coefficients. Only returned, if \code{se} is not "none".}
-\item{boot.arrays}{A list of arrays with the bootstrapped loadings (aligned rotated and unrotated), aligned structure coefficients (if rotated obliquely), aligned factor correlations (Phi, if obliquely rotated), and fit indices. Only returned, if \code{se = "np-boot"} (\code{NULL} for the analytic methods).}
+\item{SE}{A named list of standard error matrices. For \code{se = "np-boot"}: bootstrap standard deviations of the unrotated and (when a rotation is applied) rotated loadings, the residuals, and the fit indices, plus -- for oblique rotations -- the factor correlations (\code{Phi}) and the structure coefficients. For \code{se = "information"}: Wald standard errors from the expected (Fisher) information matrix for the unrotated loadings and the uniquenesses and, when a rotation is applied, the rotated loadings and the communalities (and, for oblique rotations, \code{Phi} and the structure coefficients). For \code{se = "sandwich"}: robust Godambe sandwich standard errors with the same coverage as \code{"information"}, robust to non-normality and weight misspecification. Only returned if \code{se} is not \code{"none"}.}
+\item{CI}{A named list of confidence intervals of width \code{ci}. For \code{se = "np-boot"}: percentile intervals matching the components of \code{SE}. For \code{se = "information"} and \code{se = "sandwich"}: Wald intervals matching the components of \code{SE}. Only returned if \code{se} is not \code{"none"}.}
+\item{replicates}{A named list of bootstrap replicate cubes for the aligned unrotated and (where applicable) rotated loadings, structure coefficients, factor correlations (\code{Phi}), residuals, and fit indices. Each cube's last dimension indexes the replicate. Populated only for \code{se = "np-boot"}; \code{NULL} for the analytic SE methods.}
+\item{vcov_unrot_loadings}{The full unrotated loading covariance matrix the marginal \code{SE$unrot_loadings} were derived from: a \code{p * n_factors} by \code{p * n_factors} numeric matrix in column-major \code{vec(Lambda)} order. Populated for \code{se = "information"} (expected-information block) and \code{se = "sandwich"} (robust V_AA), even when a rotation is applied (the persisted block is always the unrotated one); NA-filled if the analytic covariance is unreliable (a Heywood case or a singular bordered information matrix); \code{NULL} for \code{se = "np-boot"} and \code{se = "none"}.}
+\item{Gamma}{The asymptotic covariance of the off-diagonal sample correlations -- the meat of the robust sandwich SEs -- on the variance scale (\code{Var(rho-hat)}; lavaan's correlation NACOV is \code{N * Gamma}). A \code{p (p - 1) / 2} by \code{p (p - 1) / 2} numeric matrix; rows and columns ordered by \code{\link[utils:combn]{utils::combn()}} over the column pairs and labelled \code{"<var_i>-<var_j>"}. Populated only for \code{se = "sandwich"}; \code{NULL} otherwise.}
 }
 \description{
 This function does an EFA with either \code{PAF}, \code{ML},
@@ -462,21 +464,21 @@ PAF_pro <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
 # bootstrap, can be computed from a correlation matrix as long as N is supplied.
 ML_info <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
                method = "ML", rotation = "none", se = "information")
-ML_info$boot.SE$unrot_loadings
+ML_info$SE$unrot_loadings
 
 \donttest{
 # Robust (sandwich) standard errors and a scaled chi-square for ordinal raw data.
 # These need a polychoric/tetrachoric correlation method and method ML, ULS, or DWLS.
 DWLS_rob <- EFA(DOSPERT_raw, n_factors = 6, cor_method = "poly",
                 method = "DWLS", rotation = "oblimin", se = "sandwich")
-DWLS_rob$boot.SE$rot_loadings
+DWLS_rob$SE$rot_loadings
 DWLS_rob$fit_indices$chi      # the scaled (Satorra-Bentler) chi-square
 
 # The same robust SEs and scaled chi-square for continuous data: a Pearson
 # correlation with method ML or ULS (the fourth-moment ADF covariance).
 ML_rob <- EFA(GRiPS_raw, n_factors = 1, cor_method = "pearson",
               method = "ML", rotation = "none", se = "sandwich")
-ML_rob$boot.SE$unrot_loadings
+ML_rob$SE$unrot_loadings
 }
 
 \dontrun{

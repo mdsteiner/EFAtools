@@ -7,7 +7,7 @@
 EFA_POOLED(
   data_list,
   p = 0.05,
-  target_method = c("consensus", "first_target"),
+  target_method = c("first_target", "consensus"),
   align_unrotated = c("signed_tucker_congruence", "none", "procrustes"),
   fit_pool_method = c("D2"),
   consensus_args = list(),
@@ -23,12 +23,21 @@ imputations. Each list element is a data frame or matrix of raw data, or a
 correlation matrix. See argument \code{x} in \code{\link[=EFA]{EFA()}}.}
 
 \item{p}{Numeric in \eqn{(0, 1)}. One minus the confidence level used for
-pooled Wald-type bootstrap/MI confidence intervals when bootstrap arrays are
-available. For example, \code{p = .05} gives 95\% intervals.}
+pooled Wald-type bootstrap/MI confidence intervals when bootstrap replicates
+are available. For example, \code{p = .05} gives 95\% intervals.}
 
-\item{target_method}{Character. \code{"consensus"} aligns all solutions to an
-iteratively updated consensus target. \code{"first_target"} aligns all
-solutions to the first imputation's rotated solution.}
+\item{target_method}{Character. \code{"first_target"} (the default) aligns all
+imputations to the first imputation's rotated solution via one Procrustes
+rotation per imputation. \code{"consensus"} instead refines a centroid target
+via Generalized Procrustes Analysis (Gower 1975; van Ginkel & Kroonenberg
+2014; Lorenzo-Seva & Van Ginkel 2016), iteratively re-Procrustes-rotating
+all solutions toward it and re-averaging until the target stabilises.
+For orthogonal rotations the two methods converge to the same pooled
+estimate (consensus is just a more expensive route to the same answer);
+for oblique rotations \code{"consensus"} is not supported and aborts with a
+classed condition (\code{efa_consensus_oblique_unsupported}), because the
+centroid iteration is degenerate for oblique transforms with more than
+one factor.}
 
 \item{align_unrotated}{Character. How to align unrotated loadings before
 pooling. \code{"signed_tucker_congruence"} preserves the unrotated axes up
@@ -41,8 +50,10 @@ returned by \code{EFA}.}
 for chi-square-type fit. If no chi-square is available, only residual-based
 fit and descriptive quantities are returned.}
 
-\item{consensus_args}{List of additional arguments passed to
-\code{CONSENSUS_PROCRUSTES}.}
+\item{consensus_args}{List of additional arguments controlling the
+GPA-consensus iteration when \code{target_method = "consensus"}. See the
+source of \code{.gpa_consensus_target} for the available tuning parameters
+(convergence tolerance, maximum iterations, multi-start options).}
 
 \item{procrustes_args}{List of additional arguments passed to \code{PROCRUSTES}
 for fixed-target alignment.}
@@ -57,7 +68,19 @@ matrix.}
 }
 \value{
 A list of class \code{"EFA_POOLED"} containing pooled estimates,
-residuals, fit indices, the individual fits, and MI diagnostics.
+residuals, fit indices, the individual fits, and MI diagnostics. In
+addition to the slots inherited from \code{\link[=EFA]{EFA()}} (including \code{SE}, \code{CI}, and
+\code{replicates} when bootstrap pooling ran), the object carries:
+\describe{
+\item{MI}{Multiple-imputation diagnostics for each pooled parameter family
+(\code{unrot_loadings}, \code{h2}, \code{residuals}, optionally \code{rot_loadings}, \code{Phi},
+\code{Structure}, and \code{fit_indices_descriptive}). Each entry is a list with
+\code{RIV} (relative increase in variance), \code{FMI} (fraction of missing
+information), and \code{df} (Barnard-Rubin degrees of freedom). Additional
+integer vectors \code{bootstrap_rotation_failures} and
+\code{bootstrap_rotation_valid} record per-imputation alignment outcomes.
+Rubin (1987).}
+}
 }
 \description{
 Fits \code{\link[=EFA]{EFA()}} to each of several imputed datasets, aligns the
@@ -99,7 +122,7 @@ current \code{EFA} objects do not expose the likelihood quantities needed
 for those methods.
 
 If each component \code{EFA} call was run with \code{se = "np-boot"} and
-returned \code{boot.arrays}, pooled bootstrap SEs and Wald-type MI confidence
+returned \code{replicates}, pooled bootstrap SEs and Wald-type MI confidence
 intervals are computed for loadings, communalities, residuals, and, when
 applicable, factor correlations and structure coefficients. Importantly, the
 rotated bootstrap loading matrices stored by the component \code{EFA} calls
@@ -112,7 +135,7 @@ communalities, residuals, and structure coefficients are Wald-type MI
 intervals. The confidence level of these pooled intervals is controlled by
 \code{p}; the \code{ci} argument passed through \code{...} to the component
 \code{EFA} calls is not used for the pooled intervals.
-\code{boot.CI$fit_indices_descriptive}, when available, holds Rubin-Wald MI
+\code{CI$fit_indices_descriptive}, when available, holds Rubin-Wald MI
 summaries of the per-imputation bootstrap fit indices. The chi-square-based
 fit indices themselves are pooled with the D2 rule, whose reference
 distribution (e.g. the RMSEA confidence interval) supplies their uncertainty.

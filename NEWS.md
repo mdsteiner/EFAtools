@@ -2,6 +2,19 @@
 
 ## Changes to Functions
 
+* `EFA()` objects now carry through the full unrotated loading covariance matrix
+  (`vcov_unrot_loadings`) for the analytic SE methods (`se = "information"` and
+  `se = "sandwich"`, in both unrotated and rotated fits), and the asymptotic
+  covariance of the off-diagonal correlations (`Gamma`) for `se = "sandwich"`.
+
+* Renamed the top-level fields `boot.SE`, `boot.CI`, and `boot.arrays` on
+  `EFA` objects to `SE`, `CI`, and `replicates`, and the additional
+  `EFA_POOLED` field `boot.MI` to `MI`. The previous names were artefacts of
+  internal list flattening and were misleading because `SE` and `CI` are
+  populated under the `"information"` and `"sandwich"` SE methods as well, not
+  only the nonparametric bootstrap. Code that read these fields directly must
+  update its slot accessors.
+
 * `cor_method` now accepts `"poly"` and `"tetra"` to compute polychoric and tetrachoric
   correlations from raw ordinal (respectively binary) data, using a two-step estimator with
   no empty-cell continuity correction. Supported by `EFA()` (including its non-parametric
@@ -100,6 +113,17 @@
   replicates is now carried out in a single compiled pass (with its warm start computed in C++),
   and the order in which random numbers are drawn has changed. The results are unchanged in
   distribution and are now reproducible and independent of the number of workers.
+* `EFA_POOLED()` now defaults to `target_method = "first_target"`, which aligns every imputation
+  to the first imputation's rotated solution with a single Procrustes rotation. For orthogonal
+  rotations this reaches the same pooled estimate as `"consensus"` with substantially less work.
+  `"consensus"` (Generalized Procrustes Analysis of the imputation-specific rotated loadings,
+  in the style of van Ginkel & Kroonenberg, 2014, and Lorenzo-Seva & Van Ginkel, 2016) is still
+  available as an opt-in for orthogonal rotations, and now raises a classed condition
+  (`efa_consensus_oblique_unsupported`) when combined with an oblique rotation, because the
+  iterated-oblique-Procrustes centroid can drift to degenerate targets that the literature
+  sidesteps by adding a Promin step that this engine does not implement.
+* The internal GPA-consensus engine that used to be exported as `CONSENSUS_PROCRUSTES()` is no
+  longer part of the public API. It is reached only via `EFA_POOLED(target_method = "consensus")`.
 
 ## Bug Fixes
 

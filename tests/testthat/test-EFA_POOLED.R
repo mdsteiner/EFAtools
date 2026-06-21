@@ -65,14 +65,17 @@ test_that("EFA_POOLED records the pooling settings", {
   s <- pooled_obl$settings
   expect_true(s$pooled)
   expect_identical(s$n_imputations, 3L)
-  expect_identical(s$target_method, "consensus")
+  expect_identical(s$target_method, "first_target")
   expect_identical(s$align_unrotated, "signed_tucker_congruence")
   expect_identical(s$fit_pool_method, "D2")
   expect_equal(s$p, 0.05)
   expect_equal(s$ci, 0.95)
-  # no bootstrap arrays were available, so the pooled object must not claim SEs
+  # no bootstrap arrays were available, so the pooled object must not claim SEs;
+  # neither the current names nor the historic flattened ones may appear.
   expect_identical(s$se, "none")
-  expect_false(any(c("boot.SE", "boot.CI", "boot.arrays", "boot.MI") %in%
+  expect_false(any(c("SE", "CI", "replicates", "MI",
+                     "vcov_unrot_loadings", "Gamma",
+                     "boot.SE", "boot.CI", "boot.arrays", "boot.MI") %in%
                      names(pooled_obl)))
 })
 
@@ -270,11 +273,14 @@ test_that("bootstrap arrays are pooled into MI SEs and CIs", {
                se = "np-boot", b_boot = 16)
   )
 
-  expect_true(all(c("boot.SE", "boot.CI", "boot.arrays", "boot.MI",
+  expect_true(all(c("SE", "CI", "replicates", "MI",
                     "standardized_residuals") %in% names(pooled_boot)))
+  # the historic flattened slot names must not leak in alongside the new ones
+  expect_false(any(c("boot.SE", "boot.CI", "boot.arrays", "boot.MI") %in%
+                     names(pooled_boot)))
 
   L <- unclass(pooled_boot$unrot_loadings)
-  se <- pooled_boot$boot.SE$unrot_loadings
+  se <- pooled_boot$SE$unrot_loadings
   expect_identical(dim(se), dim(L))
   # the SEs must actually be computed (finite), not silently all-NA, and the
   # bootstrap must have produced real variation (positive SE somewhere)
@@ -286,7 +292,7 @@ test_that("bootstrap arrays are pooled into MI SEs and CIs", {
   # pooled point estimate. The centring check is the real test (it fails if the
   # interval is built around the wrong quantity or the bounds are swapped);
   # asserting only lower <= L <= upper would hold for any symmetric interval.
-  ci <- pooled_boot$boot.CI$unrot_loadings
+  ci <- pooled_boot$CI$unrot_loadings
   expect_true(all(is.finite(ci$lower) & is.finite(ci$upper)))
   expect_true(all(ci$upper >= ci$lower))
   expect_equal((ci$lower + ci$upper) / 2, L, ignore_attr = TRUE)
@@ -296,7 +302,7 @@ test_that("bootstrap arrays are pooled into MI SEs and CIs", {
 
   # FMIs must be computed (at least some finite) and in [0, 1]; an all-NA vector
   # would pass a bare all(..., na.rm = TRUE) range check vacuously.
-  fmi <- pooled_boot$boot.MI$unrot_loadings$FMI
+  fmi <- pooled_boot$MI$unrot_loadings$FMI
   expect_true(any(is.finite(fmi)))
   expect_true(all(fmi[is.finite(fmi)] >= 0 & fmi[is.finite(fmi)] <= 1))
 
@@ -322,8 +328,8 @@ test_that("oblique bootstrap pooling produces rotated SEs, CIs, and Phi", {
   # the oblique branch pools rotated loadings, factor correlations, and
   # structure coefficients in addition to the unrotated quantities
   for (comp in c("rot_loadings", "Phi", "Structure")) {
-    se <- pooled_boot$boot.SE[[comp]]
-    ci <- pooled_boot$boot.CI[[comp]]
+    se <- pooled_boot$SE[[comp]]
+    ci <- pooled_boot$CI[[comp]]
     expect_false(is.null(se))
     expect_true(all(is.finite(se)))
     expect_true(all(se >= 0))
@@ -331,11 +337,11 @@ test_that("oblique bootstrap pooling produces rotated SEs, CIs, and Phi", {
     expect_true(all(ci$upper >= ci$lower))
   }
 
-  expect_identical(dim(pooled_boot$boot.SE$Phi), dim(as.matrix(pooled_boot$Phi)))
-  expect_identical(dim(pooled_boot$boot.SE$Structure),
+  expect_identical(dim(pooled_boot$SE$Phi), dim(as.matrix(pooled_boot$Phi)))
+  expect_identical(dim(pooled_boot$SE$Structure),
                    dim(unclass(pooled_boot$Structure)))
 
-  fmi <- pooled_boot$boot.MI$Phi$FMI
+  fmi <- pooled_boot$MI$Phi$FMI
   expect_true(any(is.finite(fmi)))
   expect_true(all(fmi[is.finite(fmi)] >= 0 & fmi[is.finite(fmi)] <= 1))
 })
@@ -366,11 +372,11 @@ test_that("a failed bootstrap replicate is skipped, not fatal", {
   L <- matrix(0.6, p, k)
   fits <- list(
     list(fit_indices = list(chi = 1, CFI = 1),
-         boot.arrays = list(unrot_loadings = mk_arr(na = 2), residuals = mk_res(na = 2),
-                            fit_indices = mk_fit(na = 2))),
+         replicates = list(unrot_loadings = mk_arr(na = 2), residuals = mk_res(na = 2),
+                           fit_indices = mk_fit(na = 2))),
     list(fit_indices = list(chi = 1, CFI = 1),
-         boot.arrays = list(unrot_loadings = mk_arr(),       residuals = mk_res(),
-                            fit_indices = mk_fit()))
+         replicates = list(unrot_loadings = mk_arr(),       residuals = mk_res(),
+                           fit_indices = mk_fit()))
   )
   orig_R <- replicate(m, { R <- matrix(0.4, p, p); diag(R) <- 1; R }, simplify = FALSE)
   args <- list(
@@ -396,7 +402,7 @@ test_that("a failed bootstrap replicate is skipped, not fatal", {
   # if an imputation is left with fewer than two valid replicates, no SEs can be
   # computed and the pooled bootstrap returns NULL (the existing "no SEs" path)
   fits_fail <- fits
-  fits_fail[[1]]$boot.arrays$unrot_loadings <- mk_arr(na = seq_len(B))
+  fits_fail[[1]]$replicates$unrot_loadings <- mk_arr(na = seq_len(B))
   args_fail <- args
   args_fail$fits <- fits_fail
   expect_warning(

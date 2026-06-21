@@ -7,14 +7,14 @@ test_that("sandwich SEs fill the unrotated SE/CI schema and a scaled chi-square"
              rotation = "none", se = "sandwich")
 
   # Unrotated loading and uniqueness SEs are present, finite, and positive.
-  expect_equal(dim(fit$boot.SE$unrot_loadings), c(8L, 2L))
-  expect_true(all(is.finite(fit$boot.SE$unrot_loadings)))
-  expect_true(all(fit$boot.SE$unrot_loadings > 0))
-  expect_length(fit$boot.SE$uniquenesses, 8L)
-  expect_true(all(is.finite(fit$boot.SE$uniquenesses)))
+  expect_equal(dim(fit$SE$unrot_loadings), c(8L, 2L))
+  expect_true(all(is.finite(fit$SE$unrot_loadings)))
+  expect_true(all(fit$SE$unrot_loadings > 0))
+  expect_length(fit$SE$uniquenesses, 8L)
+  expect_true(all(is.finite(fit$SE$uniquenesses)))
 
   # Wald intervals bracket the point estimates.
-  ci <- fit$boot.CI$unrot_loadings
+  ci <- fit$CI$unrot_loadings
   expect_true(all(ci$lower <= unclass(fit$unrot_loadings)))
   expect_true(all(ci$upper >= unclass(fit$unrot_loadings)))
 
@@ -72,18 +72,18 @@ test_that("sandwich SEs propagate through an oblique rotation", {
   fit <- EFA(dat, n_factors = 2, cor_method = "poly", method = "DWLS",
              rotation = "oblimin", se = "sandwich")
 
-  expect_equal(dim(fit$boot.SE$rot_loadings), c(8L, 2L))
-  expect_true(all(is.finite(fit$boot.SE$rot_loadings)))
+  expect_equal(dim(fit$SE$rot_loadings), c(8L, 2L))
+  expect_true(all(is.finite(fit$SE$rot_loadings)))
   # Factor correlations: a symmetric SE matrix with a fixed (zero-variance) unit diagonal.
-  expect_equal(dim(fit$boot.SE$Phi), c(2L, 2L))
-  expect_equal(diag(fit$boot.SE$Phi), c(0, 0))
-  expect_equal(fit$boot.SE$Phi, t(fit$boot.SE$Phi))
-  expect_true(is.finite(fit$boot.SE$Phi[1, 2]))
+  expect_equal(dim(fit$SE$Phi), c(2L, 2L))
+  expect_equal(diag(fit$SE$Phi), c(0, 0))
+  expect_equal(fit$SE$Phi, t(fit$SE$Phi))
+  expect_true(is.finite(fit$SE$Phi[1, 2]))
   # Structure coefficients and communalities are reported for the oblique solution.
-  expect_equal(dim(fit$boot.SE$Structure), c(8L, 2L))
-  expect_length(fit$boot.SE$communalities, 8L)
+  expect_equal(dim(fit$SE$Structure), c(8L, 2L))
+  expect_length(fit$SE$communalities, 8L)
   # Communalities are rotation-invariant, so their SEs equal the unrotated uniqueness SEs.
-  expect_equal(unname(fit$boot.SE$communalities), unname(fit$boot.SE$uniquenesses),
+  expect_equal(unname(fit$SE$communalities), unname(fit$SE$uniquenesses),
                tolerance = 1e-8)
 })
 
@@ -93,7 +93,7 @@ test_that("sandwich SEs are available for ULS and ML on the ordinal path", {
   for (m in c("ULS", "ML")) {
     fit <- EFA(dat, n_factors = 2, cor_method = "poly", method = m,
                rotation = "none", se = "sandwich")
-    expect_true(all(is.finite(fit$boot.SE$unrot_loadings)),
+    expect_true(all(is.finite(fit$SE$unrot_loadings)),
                 info = paste("method", m))
     expect_true(is.finite(fit$fit_indices$chi), info = paste("method", m))
   }
@@ -160,7 +160,7 @@ test_that("single-factor sandwich loading SEs match lavaan robust.sem (DWLS and 
     # are directly comparable. The residual gap is the small polychoric-correlation difference.
     expect_equal(as.numeric(fit$unrot_loadings) * sgn, L_lav, tolerance = 0.01,
                  info = pair[1])
-    expect_equal(as.numeric(fit$boot.SE$unrot_loadings), SE_lav, tolerance = 0.01,
+    expect_equal(as.numeric(fit$SE$unrot_loadings), SE_lav, tolerance = 0.01,
                  info = pair[1])
   }
 })
@@ -248,12 +248,12 @@ test_that("continuous Pearson sandwich SEs fill the SE/CI schema and a scaled ch
                rotation = "none", se = "sandwich")
 
     # Unrotated loading and uniqueness SEs are present, finite, and positive.
-    expect_true(all(is.finite(fit$boot.SE$unrot_loadings)), info = m)
-    expect_true(all(fit$boot.SE$unrot_loadings > 0), info = m)
-    expect_true(all(is.finite(fit$boot.SE$uniquenesses)), info = m)
+    expect_true(all(is.finite(fit$SE$unrot_loadings)), info = m)
+    expect_true(all(fit$SE$unrot_loadings > 0), info = m)
+    expect_true(all(is.finite(fit$SE$uniquenesses)), info = m)
 
     # Wald intervals bracket the point estimates.
-    ci <- fit$boot.CI$unrot_loadings
+    ci <- fit$CI$unrot_loadings
     expect_true(all(ci$lower <= unclass(fit$unrot_loadings)), info = m)
     expect_true(all(ci$upper >= unclass(fit$unrot_loadings)), info = m)
 
@@ -278,16 +278,16 @@ test_that("continuous Pearson sandwich SEs propagate through an oblique rotation
   fit <- EFA(dat, n_factors = 2, cor_method = "pearson", method = "ML",
              rotation = "oblimin", se = "sandwich")
 
-  expect_equal(dim(fit$boot.SE$rot_loadings), c(8L, 2L))
-  expect_true(all(is.finite(fit$boot.SE$rot_loadings)))
-  expect_equal(dim(fit$boot.SE$Phi), c(2L, 2L))
-  expect_equal(diag(fit$boot.SE$Phi), c(0, 0))
-  expect_equal(fit$boot.SE$Phi, t(fit$boot.SE$Phi))
-  expect_true(is.finite(fit$boot.SE$Phi[1, 2]))
-  expect_equal(dim(fit$boot.SE$Structure), c(8L, 2L))
-  expect_length(fit$boot.SE$communalities, 8L)
+  expect_equal(dim(fit$SE$rot_loadings), c(8L, 2L))
+  expect_true(all(is.finite(fit$SE$rot_loadings)))
+  expect_equal(dim(fit$SE$Phi), c(2L, 2L))
+  expect_equal(diag(fit$SE$Phi), c(0, 0))
+  expect_equal(fit$SE$Phi, t(fit$SE$Phi))
+  expect_true(is.finite(fit$SE$Phi[1, 2]))
+  expect_equal(dim(fit$SE$Structure), c(8L, 2L))
+  expect_length(fit$SE$communalities, 8L)
   # Communalities are rotation-invariant, so their SEs equal the unrotated uniqueness SEs.
-  expect_equal(unname(fit$boot.SE$communalities), unname(fit$boot.SE$uniquenesses),
+  expect_equal(unname(fit$SE$communalities), unname(fit$SE$uniquenesses),
                tolerance = 1e-8)
 })
 
@@ -402,7 +402,7 @@ test_that("single-factor continuous sandwich loading SEs and scaled chi match la
   # lavaan's, so the loadings (up to sign) and their robust SEs match closely. The SEs differ only
   # by the N vs N-1 convention (a uniform ~sqrt(N/(N-1)) ratio), hence the tight 2e-3 band.
   expect_equal(L_efa * sgn, L_lav, tolerance = 0.01)
-  expect_equal(as.numeric(fit$boot.SE$unrot_loadings), SE_lav, tolerance = 2e-3)
+  expect_equal(as.numeric(fit$SE$unrot_loadings), SE_lav, tolerance = 2e-3)
 
   ss <- lavaan::lavInspect(lfit, "test")[["scaled.shifted"]]
   expect_equal(fit$fit_indices$df, ss$df)
@@ -428,8 +428,8 @@ test_that("continuous sandwich SEs are in the same ballpark as the bootstrap (ML
     boot <- EFA(dat, n_factors = 1, cor_method = "pearson", method = m,
                 rotation = "none", se = "np-boot", b_boot = 200, seed = 123)
 
-    se_rob <- as.numeric(rob$boot.SE$unrot_loadings)
-    se_boot <- as.numeric(boot$boot.SE$unrot_loadings)
+    se_rob <- as.numeric(rob$SE$unrot_loadings)
+    se_boot <- as.numeric(boot$SE$unrot_loadings)
 
     # Robust and bootstrap SEs estimate the same sampling variability (observed median ratio ~1.02
     # for both ML and ULS). This is a coarse cross-check robust to the b_boot = 200 Monte-Carlo
