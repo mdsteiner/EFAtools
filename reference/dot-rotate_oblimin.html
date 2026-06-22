@@ -77,7 +77,7 @@ gradient-projection optimizer along the oblique (column-normalized) manifold.</p
 <span>  maxit <span class="op">=</span> <span class="fl">1000L</span>,</span>
 <span>  max_line_search <span class="op">=</span> <span class="fl">10L</span>,</span>
 <span>  step0 <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  screen_keep <span class="op">=</span> <span class="fl">2L</span>,</span>
+<span>  screen_keep <span class="op">=</span> <span class="fl">5L</span>,</span>
 <span>  triage_maxit <span class="op">=</span> <span class="fl">25L</span>,</span>
 <span>  triage_improve_tol <span class="op">=</span> <span class="fl">0</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -149,7 +149,7 @@ at each optimized start in <code>all_values</code>, with a per-start convergence
     <p>The criterion value <code>f</code> and its gradient <code>dQ/dL</code> at the rotated loadings
 <code>L = A %*% solve(t(T))</code> define the search; the engine maps the gradient to the
 transformation <code>T</code> on the manifold <code>diag(t(T) %*% T) = 1</code>, projects it onto the tangent
-space, performs a sufficient-decrease line search, and retracts back onto the manifold
+space, performs a non-monotone line search, and retracts back onto the manifold
 by column normalization. <code>gam = 0</code> is the quartimin criterion.</p>
 <p>Additional random starts may be requested. To bound runtime the solver screens each
 random start by its objective, runs a short triage optimization on the best-screened

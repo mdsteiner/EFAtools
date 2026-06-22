@@ -102,7 +102,7 @@ function) and provide a summary across the different solutions.</p>
 <span>  start_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"psych"</span>, <span class="st">"factanal"</span><span class="op">)</span>,</span>
 <span>  use <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pairwise.complete.obs"</span>, <span class="st">"all.obs"</span>, <span class="st">"complete.obs"</span>, <span class="st">"everything"</span>,</span>
 <span>    <span class="st">"na.or.complete"</span><span class="op">)</span>,</span>
-<span>  cor_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pearson"</span>, <span class="st">"spearman"</span>, <span class="st">"kendall"</span><span class="op">)</span>,</span>
+<span>  cor_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pearson"</span>, <span class="st">"spearman"</span>, <span class="st">"kendall"</span>, <span class="st">"poly"</span>, <span class="st">"tetra"</span><span class="op">)</span>,</span>
 <span>  show_progress <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -292,7 +292,10 @@ is given as input. Default is "pairwise.complete.obs".</p></dd>
 
 
 <dt id="arg-cor-method">cor_method<a class="anchor" aria-label="anchor" href="#arg-cor-method"></a></dt>
-<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>.
+<dd><p>character. Correlation computed from raw data: <code>"pearson"</code>,
+<code>"spearman"</code>, or <code>"kendall"</code> (passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>), or <code>"poly"</code> /
+<code>"tetra"</code> for polychoric / tetrachoric correlations of ordinal / binary data
+(a two-step estimator with no empty-cell continuity correction).
 Default is "pearson".</p></dd>
 
 

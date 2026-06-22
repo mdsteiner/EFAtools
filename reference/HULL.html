@@ -79,7 +79,7 @@ parallelization.</p>
 <span>  eigen_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SMC"</span>, <span class="st">"PCA"</span>, <span class="st">"EFA"</span><span class="op">)</span>,</span>
 <span>  use <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pairwise.complete.obs"</span>, <span class="st">"all.obs"</span>, <span class="st">"complete.obs"</span>, <span class="st">"everything"</span>,</span>
 <span>    <span class="st">"na.or.complete"</span><span class="op">)</span>,</span>
-<span>  cor_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pearson"</span>, <span class="st">"spearman"</span>, <span class="st">"kendall"</span><span class="op">)</span>,</span>
+<span>  cor_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pearson"</span>, <span class="st">"spearman"</span>, <span class="st">"kendall"</span>, <span class="st">"poly"</span>, <span class="st">"tetra"</span><span class="op">)</span>,</span>
 <span>  n_datasets <span class="op">=</span> <span class="fl">1000</span>,</span>
 <span>  percent <span class="op">=</span> <span class="fl">95</span>,</span>
 <span>  decision_rule <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"means"</span>, <span class="st">"percentile"</span>, <span class="st">"crawford"</span><span class="op">)</span>,</span>
@@ -146,7 +146,10 @@ is given as input. Default is <code>"pairwise.complete.obs"</code>.</p></dd>
 
 
 <dt id="arg-cor-method">cor_method<a class="anchor" aria-label="anchor" href="#arg-cor-method"></a></dt>
-<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>.
+<dd><p>character. One of <code>"pearson"</code>, <code>"spearman"</code>, or <code>"kendall"</code>,
+passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>. <code>"poly"</code> and <code>"tetra"</code> are not supported because
+<code>HULL</code> derives its factor-search bound from an internal parallel analysis
+against continuous reference data.
 Default is  <code>"pearson"</code>.</p></dd>
 
 

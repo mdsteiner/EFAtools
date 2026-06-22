@@ -81,7 +81,7 @@ can be checked for their suitability for factor analysis.</p>
 <span>  N <span class="op">=</span> <span class="cn">NA</span>,</span>
 <span>  use <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pairwise.complete.obs"</span>, <span class="st">"all.obs"</span>, <span class="st">"complete.obs"</span>, <span class="st">"everything"</span>,</span>
 <span>    <span class="st">"na.or.complete"</span><span class="op">)</span>,</span>
-<span>  cor_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pearson"</span>, <span class="st">"spearman"</span>, <span class="st">"kendall"</span><span class="op">)</span>,</span>
+<span>  cor_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pearson"</span>, <span class="st">"spearman"</span>, <span class="st">"kendall"</span>, <span class="st">"poly"</span>, <span class="st">"tetra"</span><span class="op">)</span>,</span>
 <span>  n_factors_max <span class="op">=</span> <span class="cn">NA</span>,</span>
 <span>  N_pop <span class="op">=</span> <span class="fl">10000</span>,</span>
 <span>  N_samples <span class="op">=</span> <span class="fl">500</span>,</span>
@@ -138,7 +138,12 @@ data is given as input. Default is <code>"pairwise.complete.obs"</code>.</p></dd
 
 
 <dt id="arg-cor-method">cor_method<a class="anchor" aria-label="anchor" href="#arg-cor-method"></a></dt>
-<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>
+<dd><p>character. Correlation computed from raw data: <code>"pearson"</code>,
+<code>"spearman"</code>, or <code>"kendall"</code> (passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>), or <code>"poly"</code> /
+<code>"tetra"</code> for polychoric / tetrachoric correlations (a two-step estimator
+with no empty-cell continuity correction). Criteria that compare against
+simulated continuous data (<code>CD</code>, <code>PARALLEL</code>, <code>NEST</code>, <code>HULL</code>) do not support
+<code>"poly"</code> / <code>"tetra"</code> and are skipped in that case.
 Default is  <code>"pearson"</code>.</p></dd>
 
 

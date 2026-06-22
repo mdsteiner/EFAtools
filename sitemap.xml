@@ -12,7 +12,6 @@
 <url><loc>/reference/BARTLETT.html</loc></url>
 <url><loc>/reference/CD.html</loc></url>
 <url><loc>/reference/COMPARE.html</loc></url>
-<url><loc>/reference/CONSENSUS_PROCRUSTES.html</loc></url>
 <url><loc>/reference/DOSPERT.html</loc></url>
 <url><loc>/reference/DOSPERT_raw.html</loc></url>
 <url><loc>/reference/EFA.html</loc></url>
@@ -52,6 +51,7 @@
 <url><loc>/reference/dot-consensus_target_procrustes_single.html</loc></url>
 <url><loc>/reference/dot-extract_list_object.html</loc></url>
 <url><loc>/reference/dot-factor_corres.html</loc></url>
+<url><loc>/reference/dot-gpa_consensus_target.html</loc></url>
 <url><loc>/reference/dot-hyperplane_count.html</loc></url>
 <url><loc>/reference/dot-nest_sym.html</loc></url>
 <url><loc>/reference/dot-oblique_procrustes.html</loc></url>
@@ -68,6 +68,7 @@
 <url><loc>/reference/dot-rotate_geomin_orth.html</loc></url>
 <url><loc>/reference/dot-rotate_oblimin.html</loc></url>
 <url><loc>/reference/dot-rotate_simplimax_oblq.html</loc></url>
+<url><loc>/reference/dot-rotation_se_jacobian.html</loc></url>
 <url><loc>/reference/dot-tucker_congruence.html</loc></url>
 <url><loc>/reference/format.N_FACTORS.html</loc></url>
 <url><loc>/reference/format.efa_retention.html</loc></url>

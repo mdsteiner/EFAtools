@@ -76,7 +76,7 @@ using a gradient-projection optimizer along the orthogonal (Stiefel) manifold.</
 <span>  maxit <span class="op">=</span> <span class="fl">1000L</span>,</span>
 <span>  max_line_search <span class="op">=</span> <span class="fl">10L</span>,</span>
 <span>  step0 <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  screen_keep <span class="op">=</span> <span class="fl">2L</span>,</span>
+<span>  screen_keep <span class="op">=</span> <span class="fl">5L</span>,</span>
 <span>  triage_maxit <span class="op">=</span> <span class="fl">25L</span>,</span>
 <span>  triage_improve_tol <span class="op">=</span> <span class="fl">0</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -142,7 +142,7 @@ value reached at each optimized start in <code>all_values</code>, with a per-sta
     <h2>Details</h2>
     <p>The criterion value <code>f</code> and its gradient <code>dQ/dL</code> at the rotated loadings
 <code>L = A %*% T</code> define the search; the engine maps the gradient to the orthogonal
-transformation <code>T</code>, projects it onto the tangent space, performs a sufficient-decrease line
+transformation <code>T</code>, projects it onto the tangent space, performs a non-monotone line
 search, and retracts back onto the orthogonal group via a polar (singular value) projection.
 The Bentler criterion measures the departure of the cross-products of squared loadings from a
 diagonal pattern; it is prone to local minima, so additional random starts are recommended.</p>

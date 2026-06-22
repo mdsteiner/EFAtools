@@ -303,9 +303,6 @@ factoring (PAF) and it enables the computation of more goodness of fit
 indices:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/N_FACTORS.html">N_FACTORS</a></span><span class="op">(</span><span class="va">DOSPERT_sub</span>, method <span class="op">=</span> <span class="st">"ULS"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Heywood cases detected for : the solution is improper (a communality at or</span></span>
-<span><span class="co">#&gt; above 1, or a uniqueness fixed at the estimation boundary).</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Interpret the affected loadings and uniquenesses with caution.</span></span>
 <span><span class="co">#&gt; ── Tests for the suitability of the data for factor analysis ───────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> The Bartlett's test of sphericity was significant at an alpha level of .05:</span></span>
@@ -851,7 +848,7 @@ two matrices), not just from different implementations:</p>
 <span><span class="co">#&gt; heaR_1  <span style="color: #BB0000;">-.0331</span>  <span style="color: #BB0000;">-.0223</span>  <span style="color: #BB0000;"> .0156</span>  <span style="color: #BB0000;"> .0095</span>   .0003  <span style="color: #BB0000;">-.0269</span></span></span>
 <span><span class="co">#&gt; heaR_2  <span style="color: #BB0000;">-.0316</span>  <span style="color: #BB0000;">-.0276</span>  <span style="color: #BB0000;"> .0272</span>  <span style="color: #BB0000;"> .0147</span>  <span style="color: #BB0000;">-.0019</span>  <span style="color: #BB0000;">-.0376</span></span></span>
 <span><span class="co">#&gt; heaR_3  <span style="color: #BB0000;">-.0820</span>  <span style="color: #BB0000;">-.0955</span>  <span style="color: #BB0000;">-.0213</span>  <span style="color: #BB0000;">-.0202</span>  <span style="color: #BB0000;"> .1154</span>  <span style="color: #BB0000;">-.0595</span></span></span>
-<span><span class="co">#&gt; heaR_4  <span style="color: #BB0000;">-.0791</span>  <span style="color: #BB0000;">-.0913</span>  <span style="color: #BB0000;">-.0269</span>  <span style="color: #BB0000;">-.0266</span>  <span style="color: #BB0000;"> .1262</span>  <span style="color: #BB0000;">-.0660</span></span></span>
+<span><span class="co">#&gt; heaR_4  <span style="color: #BB0000;">-.0791</span>  <span style="color: #BB0000;">-.0912</span>  <span style="color: #BB0000;">-.0269</span>  <span style="color: #BB0000;">-.0266</span>  <span style="color: #BB0000;"> .1262</span>  <span style="color: #BB0000;">-.0660</span></span></span>
 <span><span class="co">#&gt; heaR_5  <span style="color: #BB0000;">-.0376</span>  <span style="color: #BB0000;">-.0393</span>  <span style="color: #BB0000;"> .0227</span>  <span style="color: #BB0000;"> .0119</span>  <span style="color: #BB0000;"> .0123</span>  <span style="color: #BB0000;">-.0404</span></span></span>
 <span><span class="co">#&gt; heaR_6  <span style="color: #BB0000;">-.0610</span>  <span style="color: #BB0000;">-.0618</span>  <span style="color: #BB0000;">-.0202</span>  <span style="color: #BB0000;">-.0150</span>  <span style="color: #BB0000;"> .0728</span>  <span style="color: #BB0000;">-.0437</span></span></span>
 <span><span class="co">#&gt; recR_1  <span style="color: #BB0000;">-.0354</span>  <span style="color: #BB0000;">-.0289</span>  <span style="color: #BB0000;">-.0171</span>  <span style="color: #BB0000;">-.0074</span>  <span style="color: #BB0000;"> .0253</span>  <span style="color: #BB0000;">-.0280</span></span></span>
@@ -931,7 +928,7 @@ but 25 is enough to show the difference):</p>
 <span><span class="co">#&gt; Parallel analysis suggests that the number of factors =  10  and the number of components =  4 </span></span>
 <span><span class="co">#&gt; Parallel analysis suggests that the number of factors =  10  and the number of components =  4 </span></span>
 <span><span class="co">#&gt; Parallel analysis suggests that the number of factors =  10  and the number of components =  4 </span></span>
-<span><span class="co">#&gt; Parallel analysis suggests that the number of factors =  10  and the number of components =  4</span></span>
+<span><span class="co">#&gt; Parallel analysis suggests that the number of factors =  10  and the number of components =  5</span></span>
 <span><span class="co">#&gt; Parallel analysis suggests that the number of factors =  10  and the number of components =  4</span></span>
 <span><span class="co">#&gt; Parallel analysis suggests that the number of factors =  10  and the number of components =  4</span></span>
 <span><span class="co">#&gt; Parallel analysis suggests that the number of factors =  10  and the number of components =  4</span></span>
@@ -951,7 +948,7 @@ but 25 is enough to show the difference):</p>
 <span><span class="co">#&gt; Parallel analysis suggests that the number of factors =  10  and the number of components =  4</span></span>
 <span><span class="co">#&gt; Parallel analysis suggests that the number of factors =  10  and the number of components =  4</span></span>
 <span><span class="co">#&gt; Parallel analysis suggests that the number of factors =  10  and the number of components =  4</span></span>
-<span><span class="co">#&gt; Parallel analysis suggests that the number of factors =  10  and the number of components =  4</span></span>
+<span><span class="co">#&gt; Parallel analysis suggests that the number of factors =  10  and the number of components =  5</span></span>
 <span><span class="co">#&gt; Parallel analysis suggests that the number of factors =  10  and the number of components =  4</span></span>
 <span><span class="co">#&gt; Parallel analysis suggests that the number of factors =  10  and the number of components =  4 </span></span>
 <span><span class="co">#&gt; Parallel analysis suggests that the number of factors =  10  and the number of components =  4</span></span>
@@ -994,8 +991,8 @@ but 25 is enough to show the difference):</p>
 <span><span class="co">#&gt;              PARALLEL(DOSPERT_sub, eigen_type = "SMC", n_datasets = 25)</span></span>
 <span><span class="co">#&gt;  psych::fa.parallel(DOSPERT_sub, SMC = TRUE, plot = FALSE, n.iter = 25)</span></span>
 <span><span class="co">#&gt;        min        lq      mean    median        uq       max neval</span></span>
-<span><span class="co">#&gt;   56.09735  66.73247  71.99584  71.39553  76.45245  84.80083   100</span></span>
-<span><span class="co">#&gt;  132.55053 138.19155 141.64485 140.81776 142.59006 163.38397   100</span></span></code></pre></div>
+<span><span class="co">#&gt;   52.17844  66.41247  69.55454  69.04702  72.43375  80.44809   100</span></span>
+<span><span class="co">#&gt;  134.94620 138.87061 143.63108 141.29205 146.77984 170.81540   100</span></span></code></pre></div>
 <p>Moreover, the following code compares the PAF implementation (of type
 “psych”) of the EFAtools package with the one from the psych
 package:</p>
@@ -1006,11 +1003,11 @@ package:</p>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt; Unit: milliseconds</span></span>
 <span><span class="co">#&gt;                                                   expr      min       lq</span></span>
-<span><span class="co">#&gt;                                    EFA(DOSPERT_raw, 6) 18.59944 25.70797</span></span>
-<span><span class="co">#&gt;  psych::fa(DOSPERT_raw, 6, rotate = "none", fm = "pa") 25.52000 34.33977</span></span>
+<span><span class="co">#&gt;                                    EFA(DOSPERT_raw, 6) 17.21643 23.75787</span></span>
+<span><span class="co">#&gt;  psych::fa(DOSPERT_raw, 6, rotate = "none", fm = "pa") 26.76011 34.60010</span></span>
 <span><span class="co">#&gt;      mean   median       uq       max neval</span></span>
-<span><span class="co">#&gt;  25.90395 25.90646 26.14506  35.44075   100</span></span>
-<span><span class="co">#&gt;  36.76131 34.57244 39.28225 137.37389   100</span></span></code></pre></div>
+<span><span class="co">#&gt;  24.02352 24.28438 24.56285  28.97192   100</span></span>
+<span><span class="co">#&gt;  38.07693 34.79590 39.10339 138.51343   100</span></span></code></pre></div>
 <p>While these differences are not large, they grow larger the more
 iterations the procedures need, which is usually the case if solutions
 are more tricky to find. Especially for simulations this might come in
@@ -1055,70 +1052,70 @@ run:</p>
 <span><span class="co">#&gt; determine indicator-to-factor correspondences.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;       <span style="font-weight: bold;">F1</span>    <span style="font-weight: bold;">F2</span>    <span style="font-weight: bold;">F3</span></span></span>
-<span><span class="co">#&gt; V1   <span style="font-weight: bold;"> .01</span>  <span style="font-weight: bold;"> .02</span>  <span style="font-weight: bold;">1.00</span></span></span>
-<span><span class="co">#&gt; V2   <span style="font-weight: bold;"> .01</span>  <span style="font-weight: bold;"> .02</span>  <span style="font-weight: bold;">1.00</span></span></span>
-<span><span class="co">#&gt; V3   <span style="font-weight: bold;"> .01</span>  <span style="font-weight: bold;"> .02</span>  <span style="font-weight: bold;"> .99</span></span></span>
-<span><span class="co">#&gt; V4   <span style="font-weight: bold;"> .01</span>  <span style="font-weight: bold;"> .02</span>  <span style="font-weight: bold;">1.00</span></span></span>
-<span><span class="co">#&gt; V5   <span style="font-weight: bold;"> .01</span>  <span style="font-weight: bold;"> .02</span>  <span style="font-weight: bold;"> .99</span></span></span>
-<span><span class="co">#&gt; V6   <span style="font-weight: bold;"> .01</span>  <span style="font-weight: bold;"> .02</span>  <span style="font-weight: bold;">1.00</span></span></span>
-<span><span class="co">#&gt; V7   <span style="font-weight: bold;"> .01</span>  <span style="font-weight: bold;"> .99</span>  <span style="font-weight: bold;"> .07</span></span></span>
-<span><span class="co">#&gt; V8   <span style="font-weight: bold;"> .01</span>  <span style="font-weight: bold;">1.00</span>  <span style="font-weight: bold;"> .07</span></span></span>
-<span><span class="co">#&gt; V9   <span style="font-weight: bold;"> .01</span>  <span style="font-weight: bold;"> .99</span>  <span style="font-weight: bold;"> .07</span></span></span>
-<span><span class="co">#&gt; V10  <span style="font-weight: bold;"> .01</span>  <span style="font-weight: bold;">1.00</span>  <span style="font-weight: bold;"> .07</span></span></span>
-<span><span class="co">#&gt; V11  <span style="font-weight: bold;"> .01</span>  <span style="font-weight: bold;"> .92</span>  <span style="font-weight: bold;"> .07</span></span></span>
-<span><span class="co">#&gt; V12  <span style="font-weight: bold;"> .01</span>  <span style="font-weight: bold;">1.00</span>  <span style="font-weight: bold;"> .07</span></span></span>
-<span><span class="co">#&gt; V13  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;"> .04</span></span></span>
-<span><span class="co">#&gt; V14  <span style="font-weight: bold;"> .96</span>  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;"> .05</span></span></span>
-<span><span class="co">#&gt; V15  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;"> .04</span></span></span>
-<span><span class="co">#&gt; V16  <span style="font-weight: bold;"> .96</span>  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;"> .05</span></span></span>
-<span><span class="co">#&gt; V17  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;"> .05</span></span></span>
-<span><span class="co">#&gt; V18  <span style="font-weight: bold;"> .96</span>  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;"> .05</span></span></span>
+<span><span class="co">#&gt; V1   <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;"> .02</span>  <span style="font-weight: bold;">1.00</span></span></span>
+<span><span class="co">#&gt; V2   <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;"> .02</span>  <span style="font-weight: bold;">1.00</span></span></span>
+<span><span class="co">#&gt; V3   <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;"> .02</span>  <span style="font-weight: bold;">1.00</span></span></span>
+<span><span class="co">#&gt; V4   <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;"> .02</span>  <span style="font-weight: bold;">1.00</span></span></span>
+<span><span class="co">#&gt; V5   <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;"> .02</span>  <span style="font-weight: bold;">1.00</span></span></span>
+<span><span class="co">#&gt; V6   <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;"> .02</span>  <span style="font-weight: bold;">1.00</span></span></span>
+<span><span class="co">#&gt; V7   <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span>  <span style="font-weight: bold;"> .09</span></span></span>
+<span><span class="co">#&gt; V8   <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span>  <span style="font-weight: bold;"> .09</span></span></span>
+<span><span class="co">#&gt; V9   <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span>  <span style="font-weight: bold;"> .09</span></span></span>
+<span><span class="co">#&gt; V10  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span>  <span style="font-weight: bold;"> .09</span></span></span>
+<span><span class="co">#&gt; V11  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;"> .91</span>  <span style="font-weight: bold;"> .09</span></span></span>
+<span><span class="co">#&gt; V12  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span>  <span style="font-weight: bold;"> .09</span></span></span>
+<span><span class="co">#&gt; V13  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;"> .06</span></span></span>
+<span><span class="co">#&gt; V14  <span style="font-weight: bold;"> .94</span>  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;"> .06</span></span></span>
+<span><span class="co">#&gt; V15  <span style="font-weight: bold;"> .99</span>  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;"> .06</span></span></span>
+<span><span class="co">#&gt; V16  <span style="font-weight: bold;"> .94</span>  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;"> .06</span></span></span>
+<span><span class="co">#&gt; V17  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;"> .06</span></span></span>
+<span><span class="co">#&gt; V18  <span style="font-weight: bold;"> .94</span>  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;"> .06</span></span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ══ <span style="font-weight: bold;">Loadings</span> ════════════════════════════════════════════════════════════════════</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Mean</span> ────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;        <span style="font-weight: bold;">F1</span>     <span style="font-weight: bold;">F2</span>     <span style="font-weight: bold;">F3</span></span></span>
-<span><span class="co">#&gt; V1   <span style="color: #555555;">-.030</span>  <span style="color: #555555;"> .059</span>  <span style="font-weight: bold;"> .591</span></span></span>
-<span><span class="co">#&gt; V2   <span style="color: #555555;"> .013</span>  <span style="color: #555555;"> .087</span>  <span style="font-weight: bold;"> .466</span></span></span>
-<span><span class="co">#&gt; V3   <span style="color: #555555;"> .070</span>  <span style="color: #555555;"> .076</span>  <span style="font-weight: bold;"> .441</span></span></span>
-<span><span class="co">#&gt; V4   <span style="color: #555555;"> .108</span>  <span style="color: #555555;"> .019</span>  <span style="font-weight: bold;"> .535</span></span></span>
-<span><span class="co">#&gt; V5   <span style="color: #555555;"> .158</span>  <span style="color: #555555;"> .009</span>  <span style="font-weight: bold;"> .428</span></span></span>
-<span><span class="co">#&gt; V6   <span style="color: #555555;">-.054</span>  <span style="color: #555555;">-.018</span>  <span style="font-weight: bold;"> .669</span></span></span>
-<span><span class="co">#&gt; V7   <span style="color: #555555;"> .025</span>  <span style="font-weight: bold;"> .509</span>  <span style="color: #555555;"> .131</span></span></span>
-<span><span class="co">#&gt; V8   <span style="color: #555555;"> .009</span>  <span style="font-weight: bold;"> .550</span>  <span style="color: #555555;"> .075</span></span></span>
-<span><span class="co">#&gt; V9   <span style="color: #555555;"> .057</span>  <span style="font-weight: bold;"> .521</span>  <span style="color: #555555;"> .047</span></span></span>
-<span><span class="co">#&gt; V10  <span style="color: #555555;"> .002</span>  <span style="font-weight: bold;"> .636</span>  <span style="color: #555555;">-.015</span></span></span>
-<span><span class="co">#&gt; V11  <span style="color: #555555;"> .034</span>  <span style="font-weight: bold;"> .348</span>  <span style="color: #555555;"> .252</span></span></span>
-<span><span class="co">#&gt; V12  <span style="color: #555555;"> .045</span>  <span style="font-weight: bold;"> .619</span>  <span style="color: #555555;"> .040</span></span></span>
-<span><span class="co">#&gt; V13  <span style="font-weight: bold;"> .584</span>  <span style="color: #555555;"> .096</span>  <span style="color: #555555;">-.016</span></span></span>
-<span><span class="co">#&gt; V14  <span style="font-weight: bold;"> .517</span>  <span style="color: #555555;">-.045</span>  <span style="color: #555555;"> .117</span></span></span>
-<span><span class="co">#&gt; V15  <span style="font-weight: bold;"> .534</span>  <span style="color: #555555;"> .135</span>  <span style="color: #555555;">-.019</span></span></span>
-<span><span class="co">#&gt; V16  <span style="font-weight: bold;"> .525</span>  <span style="color: #555555;">-.029</span>  <span style="color: #555555;"> .122</span></span></span>
-<span><span class="co">#&gt; V17  <span style="font-weight: bold;"> .625</span>  <span style="color: #555555;">-.020</span>  <span style="color: #555555;"> .019</span></span></span>
-<span><span class="co">#&gt; V18  <span style="font-weight: bold;"> .526</span>  <span style="color: #555555;"> .021</span>  <span style="color: #555555;"> .087</span></span></span>
+<span><span class="co">#&gt; V1   <span style="color: #555555;">-.039</span>  <span style="color: #555555;"> .062</span>  <span style="font-weight: bold;"> .592</span></span></span>
+<span><span class="co">#&gt; V2   <span style="color: #555555;"> .006</span>  <span style="color: #555555;"> .090</span>  <span style="font-weight: bold;"> .468</span></span></span>
+<span><span class="co">#&gt; V3   <span style="color: #555555;"> .063</span>  <span style="color: #555555;"> .079</span>  <span style="font-weight: bold;"> .443</span></span></span>
+<span><span class="co">#&gt; V4   <span style="color: #555555;"> .100</span>  <span style="color: #555555;"> .023</span>  <span style="font-weight: bold;"> .537</span></span></span>
+<span><span class="co">#&gt; V5   <span style="color: #555555;"> .152</span>  <span style="color: #555555;"> .012</span>  <span style="font-weight: bold;"> .430</span></span></span>
+<span><span class="co">#&gt; V6   <span style="color: #555555;">-.063</span>  <span style="color: #555555;">-.014</span>  <span style="font-weight: bold;"> .669</span></span></span>
+<span><span class="co">#&gt; V7   <span style="color: #555555;"> .018</span>  <span style="font-weight: bold;"> .510</span>  <span style="color: #555555;"> .139</span></span></span>
+<span><span class="co">#&gt; V8   <span style="color: #555555;"> .002</span>  <span style="font-weight: bold;"> .550</span>  <span style="color: #555555;"> .083</span></span></span>
+<span><span class="co">#&gt; V9   <span style="color: #555555;"> .051</span>  <span style="font-weight: bold;"> .522</span>  <span style="color: #555555;"> .055</span></span></span>
+<span><span class="co">#&gt; V10  <span style="color: #555555;">-.004</span>  <span style="font-weight: bold;"> .636</span>  <span style="color: #555555;">-.006</span></span></span>
+<span><span class="co">#&gt; V11  <span style="color: #555555;"> .027</span>  <span style="font-weight: bold;"> .349</span>  <span style="color: #555555;"> .258</span></span></span>
+<span><span class="co">#&gt; V12  <span style="color: #555555;"> .038</span>  <span style="font-weight: bold;"> .620</span>  <span style="color: #555555;"> .049</span></span></span>
+<span><span class="co">#&gt; V13  <span style="font-weight: bold;"> .582</span>  <span style="color: #555555;"> .098</span>  <span style="color: #555555;">-.011</span></span></span>
+<span><span class="co">#&gt; V14  <span style="font-weight: bold;"> .515</span>  <span style="color: #555555;">-.042</span>  <span style="color: #555555;"> .120</span></span></span>
+<span><span class="co">#&gt; V15  <span style="font-weight: bold;"> .531</span>  <span style="color: #555555;"> .136</span>  <span style="color: #555555;">-.013</span></span></span>
+<span><span class="co">#&gt; V16  <span style="font-weight: bold;"> .523</span>  <span style="color: #555555;">-.026</span>  <span style="color: #555555;"> .126</span></span></span>
+<span><span class="co">#&gt; V17  <span style="font-weight: bold;"> .624</span>  <span style="color: #555555;">-.018</span>  <span style="color: #555555;"> .023</span></span></span>
+<span><span class="co">#&gt; V18  <span style="font-weight: bold;"> .524</span>  <span style="color: #555555;"> .023</span>  <span style="color: #555555;"> .091</span></span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Range</span> ───────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;       <span style="font-weight: bold;">F1</span>    <span style="font-weight: bold;">F2</span>    <span style="font-weight: bold;">F3</span></span></span>
-<span><span class="co">#&gt; V1   .675  .636  .229</span></span>
-<span><span class="co">#&gt; V2   .581  .509  .198</span></span>
-<span><span class="co">#&gt; V3   .567  .492  .231</span></span>
-<span><span class="co">#&gt; V4   .635  .574  .255</span></span>
-<span><span class="co">#&gt; V5   .531  .467  .263</span></span>
-<span><span class="co">#&gt; V6   .694  .729  .260</span></span>
-<span><span class="co">#&gt; V7   .550  .337  .493</span></span>
-<span><span class="co">#&gt; V8   .531  .295  .518</span></span>
-<span><span class="co">#&gt; V9   .482  .285  .480</span></span>
-<span><span class="co">#&gt; V10  .557  .315  .612</span></span>
-<span><span class="co">#&gt; V11  .559  .401  .375</span></span>
-<span><span class="co">#&gt; V12  .565  .324  .589</span></span>
-<span><span class="co">#&gt; V13  .342  .305  .665</span></span>
-<span><span class="co">#&gt; V14  .331  .220  .519</span></span>
-<span><span class="co">#&gt; V15  .311  .299  .642</span></span>
-<span><span class="co">#&gt; V16  .338  .230  .524</span></span>
-<span><span class="co">#&gt; V17  .376  .270  .628</span></span>
-<span><span class="co">#&gt; V18  .327  .246  .554</span></span>
+<span><span class="co">#&gt; V1   .280  .654  .131</span></span>
+<span><span class="co">#&gt; V2   .230  .517  .126</span></span>
+<span><span class="co">#&gt; V3   .242  .476  .127</span></span>
+<span><span class="co">#&gt; V4   .304  .557  .123</span></span>
+<span><span class="co">#&gt; V5   .278  .435  .166</span></span>
+<span><span class="co">#&gt; V6   .303  .736  .173</span></span>
+<span><span class="co">#&gt; V7   .092  .243  .495</span></span>
+<span><span class="co">#&gt; V8   .086  .199  .536</span></span>
+<span><span class="co">#&gt; V9   .074  .170  .511</span></span>
+<span><span class="co">#&gt; V10  .099  .205  .637</span></span>
+<span><span class="co">#&gt; V11  .147  .335  .353</span></span>
+<span><span class="co">#&gt; V12  .093  .210  .615</span></span>
+<span><span class="co">#&gt; V13  .343  .154  .669</span></span>
+<span><span class="co">#&gt; V14  .341  .080  .521</span></span>
+<span><span class="co">#&gt; V15  .317  .147  .646</span></span>
+<span><span class="co">#&gt; V16  .345  .079  .529</span></span>
+<span><span class="co">#&gt; V17  .389  .135  .635</span></span>
+<span><span class="co">#&gt; V18  .336  .077  .558</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ══ <span style="font-weight: bold;">Factor Intercorrelations from Oblique Solutions</span> ═════════════════════════════</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -1127,30 +1124,30 @@ run:</p>
 <span><span class="co">#&gt;       <span style="font-weight: bold;">F1</span>     <span style="font-weight: bold;">F2</span>     <span style="font-weight: bold;">F3</span></span></span>
 <span><span class="co">#&gt; F1  1.000</span></span>
 <span><span class="co">#&gt; F2   .512  1.000</span></span>
-<span><span class="co">#&gt; F3   .541   .503  1.000</span></span>
+<span><span class="co">#&gt; F3   .543   .492  1.000</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Range</span> ───────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;      <span style="font-weight: bold;">F1</span>    <span style="font-weight: bold;">F2</span>    <span style="font-weight: bold;">F3</span></span></span>
 <span><span class="co">#&gt; F1  .000</span></span>
-<span><span class="co">#&gt; F2  .681  .000</span></span>
-<span><span class="co">#&gt; F3  .690  .959  .000</span></span>
+<span><span class="co">#&gt; F2  .690  .000</span></span>
+<span><span class="co">#&gt; F3  .702  .963  .000</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ══ <span style="font-weight: bold;">Variances Accounted for</span> ═════════════════════════════════════════════════════</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Mean</span> ────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;                  <span style="font-weight: bold;">F1</span>     <span style="font-weight: bold;">F2</span>     <span style="font-weight: bold;">F3</span></span></span>
-<span><span class="co">#&gt; SS loadings    2.152  2.014  2.142</span></span>
-<span><span class="co">#&gt; Prop Tot Var    .120   .112   .119</span></span>
-<span><span class="co">#&gt; Prop Comm Var   .341   .319   .340</span></span>
+<span><span class="co">#&gt; SS loadings    2.110  2.014  2.183</span></span>
+<span><span class="co">#&gt; Prop Tot Var    .117   .112   .121</span></span>
+<span><span class="co">#&gt; Prop Comm Var   .335   .319   .346</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Range</span> ───────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;                  <span style="font-weight: bold;">F1</span>     <span style="font-weight: bold;">F2</span>     <span style="font-weight: bold;">F3</span></span></span>
-<span><span class="co">#&gt; SS loadings    3.997  2.539  3.780</span></span>
-<span><span class="co">#&gt; Prop Tot Var    .222   .141   .210</span></span>
-<span><span class="co">#&gt; Prop Comm Var   .634   .403   .599</span></span>
+<span><span class="co">#&gt; SS loadings    1.652  2.461  3.762</span></span>
+<span><span class="co">#&gt; Prop Tot Var    .092   .137   .209</span></span>
+<span><span class="co">#&gt; Prop Comm Var   .262   .390   .596</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ══ <span style="font-weight: bold;">Model Fit</span> ═══════════════════════════════════════════════════════════════════</span></span>
 <span><span class="co">#&gt; </span></span>
