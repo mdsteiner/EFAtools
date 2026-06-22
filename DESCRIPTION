@@ -64,6 +64,8 @@ Suggests:
     testthat (>= 3.0.0),
     GPArotation (>= 2022.4-1),
     lavaan,
+    lavaan.mi,
+    MASS,
     knitr,
     rmarkdown,
     microbenchmark,

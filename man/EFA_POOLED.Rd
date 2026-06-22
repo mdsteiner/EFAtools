@@ -69,17 +69,30 @@ matrix.}
 \value{
 A list of class \code{"EFA_POOLED"} containing pooled estimates,
 residuals, fit indices, the individual fits, and MI diagnostics. In
-addition to the slots inherited from \code{\link[=EFA]{EFA()}} (including \code{SE}, \code{CI}, and
-\code{replicates} when bootstrap pooling ran), the object carries:
+addition to the slots inherited from \code{\link[=EFA]{EFA()}} (including \code{SE}, \code{CI}, and,
+on the bootstrap path, \code{replicates}), the object carries:
 \describe{
-\item{MI}{Multiple-imputation diagnostics for each pooled parameter family
-(\code{unrot_loadings}, \code{h2}, \code{residuals}, optionally \code{rot_loadings}, \code{Phi},
-\code{Structure}, and \code{fit_indices_descriptive}). Each entry is a list with
-\code{RIV} (relative increase in variance), \code{FMI} (fraction of missing
-information), and \code{df} (Barnard-Rubin degrees of freedom). Additional
+\item{MI}{Multiple-imputation diagnostics for each pooled parameter family.
+On the bootstrap path: \code{unrot_loadings}, \code{h2}, \code{residuals}, optionally
+\code{rot_loadings}, \code{Phi}, \code{Structure}, and \code{fit_indices_descriptive}, plus
 integer vectors \code{bootstrap_rotation_failures} and
-\code{bootstrap_rotation_valid} record per-imputation alignment outcomes.
-Rubin (1987).}
+\code{bootstrap_rotation_valid} recording per-imputation alignment outcomes
+(df is the Rubin 1987 form). On the analytic path
+(\code{se = "information"}): \code{unrot_loadings} and \code{uniquenesses}, plus, when a
+rotation was requested, \code{rot_loadings}, \code{h2}, and (oblique) \code{Phi} and
+\code{Structure} (df is the Barnard-Rubin 1999 form with \eqn{\nu_{com} = N - 1}).
+Each per-family entry is a list with \code{RIV} (relative increase in variance),
+\code{FMI} (fraction of missing information), and \code{df}; the rotated families on
+the analytic path additionally carry a \code{method} string recording the gauge
+alignment used (\code{"procrustes_kronecker"} for orthogonal rotated loadings,
+\code{"gauge_invariant"} for communalities, and \code{"signed_permutation_approx"} for
+oblique rotated loadings, factor correlations, and structure coefficients).}
+\item{mi_fit}{On the \code{se = "sandwich"} (MI2S) path only: the single \code{\link[=EFA]{EFA()}}
+fit on the pooled correlation matrix \eqn{\bar r} and pooled asymptotic
+covariance \eqn{\tilde\Gamma}. Its \code{orig_R} is \eqn{\bar r} and its \code{Gamma}
+is \eqn{\tilde\Gamma}; the pooled \code{SE}, \code{CI}, and \code{fit_indices} are taken
+from it. \code{MI} is \code{NULL} on this path because the imputation uncertainty is
+carried by \eqn{\tilde\Gamma} rather than by per-parameter Rubin pooling.}
 }
 }
 \description{
@@ -88,6 +101,32 @@ factor solutions to a common factor space, and pools the resulting estimates
 and selected fit quantities across imputations.
 }
 \details{
+The standard-error pooling pathway is selected automatically from the \code{se}
+method recorded on the component \code{\link[=EFA]{EFA()}} fits, which must be identical across
+imputations:
+\itemize{
+\item \code{se = "none"}: no standard errors are pooled.
+\item \code{se = "information"}: the per-imputation expected-information standard
+errors are pooled with Rubin's rules (Wald intervals, Barnard-Rubin
+small-sample degrees of freedom).
+\item \code{se = "sandwich"}: the two-stage pooled-inputs (MI2S) approach fits a
+single model on the Rubin-pooled correlation matrix and asymptotic
+covariance.
+\item \code{se = "np-boot"}: the non-parametric bootstrap replicates are re-aligned to
+the multiple-imputation target and Rubin-pooled.
+}
+
+Component fits that mix \code{se} methods abort with \code{efa_pooled_mixed_se}. On the
+information and np-boot routes, a non-trivial failure to produce pooled
+standard errors (for example an unreliable analytic covariance or too few
+bootstrap replicates) falls back to point-estimate-only pooling, downgrades
+\code{settings$se} to \code{"none"}, and signals the classed warning
+\code{efa_pooled_se_unavailable} (see the Conditions section). The MI2S route is
+the exception: its single fit fuses the point estimates and standard errors
+through the pooled asymptotic covariance, so a structural failure such as a
+non-positive-definite pooled covariance aborts directly rather than falling
+back.
+
 The function first fits the same \code{\link[=EFA]{EFA()}} model to each imputed
 dataset. Unrotated loading matrices can optionally be put into a common
 signed/permuted factor order before averaging. Rotated loading matrices are
@@ -117,9 +156,16 @@ complete-data null-model chi-squares are available. The asymptotic
 chi-square approximation to D2 is then used for RMSEA and CFI. AIC and BIC,
 if returned, are chi-square-derived descriptive quantities based on this D2
 approximation and should not be interpreted as likelihood-based MI
-information criteria. D3/D4 pooling is not implemented here because the
-current \code{EFA} objects do not expose the likelihood quantities needed
-for those methods.
+information criteria. The chi-square pooling rule is D2 (Li, Meng,
+Raghunathan & Rubin, 1991) on the information and bootstrap routes and the
+single fit's scaled chi-square on the sandwich/MI2S route. D3 and D4 (Chan &
+Meng, 2022) are intentionally not offered: D3 needs a fixed-parameter refit
+mode that EFAtools does not expose and a Procrustes alignment that the
+rotational gauge-invariance shortcut does not justify; D4 sidesteps the gauge
+but is structurally undefined for the likelihood-free \code{PAF}, \code{ULS}, and
+\code{DWLS} estimators. \code{lavaan.mi}
+likewise falls back to D2 under \code{pool.robust = TRUE}, the analogue of the
+EFAtools sandwich/MI2S route.
 
 If each component \code{EFA} call was run with \code{se = "np-boot"} and
 returned \code{replicates}, pooled bootstrap SEs and Wald-type MI confidence
@@ -139,7 +185,150 @@ intervals. The confidence level of these pooled intervals is controlled by
 summaries of the per-imputation bootstrap fit indices. The chi-square-based
 fit indices themselves are pooled with the D2 rule, whose reference
 distribution (e.g. the RMSEA confidence interval) supplies their uncertainty.
+
+When the component \code{EFA} calls were instead run with
+\code{se = "information"} (no bootstrap replicates), the unrotated-loading and
+uniqueness SE matrices that those calls return analytically are pooled
+element-wise with Rubin's rules. The within-imputation variance \eqn{U_d} is
+taken directly from \eqn{SE_d^2}, the between-imputation variance \eqn{B} is
+the sample variance of the per-imputation point estimates (after column
+alignment), and \eqn{T = Ubar + (1 + 1/m) B}. Wald confidence intervals use
+Barnard-Rubin small-sample degrees of freedom with \eqn{\nu_{com} = N - 1}
+(Barnard & Rubin 1999). NA propagation is fail-closed: if any imputation
+carries NA at an element, all pooled outputs (SE, CI bounds, RIV, FMI, df)
+for that element are NA. When a rotation was requested, the rotated loadings,
+communalities, and (for oblique rotations) factor correlations and structure
+coefficients are pooled as well (see below); residual SE pooling remains
+available only on the bootstrap path. Under
+\code{align_unrotated = "procrustes"}, the per-imputation orthogonal transform
+\eqn{Q_d} mixes loading columns, so marginal SEs alone no longer determine
+the aligned marginal SE matrix. The full unrotated covariance persisted on
+each fit (\code{vcov_unrot_loadings}, populated by \code{se = "information"}) is
+propagated via the column-major Kronecker identity
+\deqn{Var(vec(L_d Q_d)) = (Q_d' \otimes I_p) V_d (Q_d \otimes I_p),}
+from which the aligned row-marginal variances are read off and pooled.
+\eqn{Q_d} is treated as fixed (Schoenemann 1966; mirrors the lavaan / mice
+convention of not differentiating the per-imputation Procrustes solution).
+If any component fit lacks \code{vcov_unrot_loadings}, the pool aborts with the
+classed condition \code{efa_pooled_no_vcov}; if any component fit carries an
+NA-filled \code{vcov_unrot_loadings} (the upstream signal of a Heywood case or
+singular bordered information matrix), it aborts with the classed condition
+\code{efa_pooled_unreliable_vcov}.
+
+Rotated quantities are pooled in a common multiple-imputation rotational
+gauge. For orthogonal rotations the gauge-aligned rotated loading is
+\eqn{L_d^{unrot} Q_d}, with \eqn{Q_d} the orthogonal Procrustes rotation
+(\eqn{Q = U V'} from the singular value decomposition of
+\eqn{(L_d^{unrot})' \tilde\Lambda^{rot}}; Schoenemann 1966) to the
+multiple-imputation rotated target, and the unrotated covariance \eqn{V_d} is
+propagated through the same fixed-\eqn{Q_d} Kronecker identity used for
+\code{align_unrotated = "procrustes"}. This is the fixed-gauge marginal standard
+error of the rotated loading in the common target gauge; it is a different
+(and generally smaller) quantity than the criterion-aware delta-method
+rotation standard error each component fit returns (Jennrich 1973; Zhang &
+Preacher 2015), and it shares its estimand with the bootstrap pool, which
+likewise Procrustes-aligns each replicate to the target. Communalities are
+rotation-invariant and pool element-wise with no alignment. For oblique
+rotations there is no closed-form oblique-Procrustes Jacobian, so the
+rotated-loading, factor-correlation, and structure-coefficient standard errors
+are pooled by reusing each component fit's own rotated standard errors after a
+signed-permutation alignment to the multiple-imputation target. This is a
+deliberate approximation -- the per-fit standard error is conditional on that
+fit's rotation-criterion optimum rather than on the common gauge -- and is
+flagged by \verb{MI$<param>$method = "signed_permutation_approx"}. Researchers who
+need rigorous uncertainty quantification for oblique solutions should
+cross-check with \code{se = "np-boot"}, which re-aligns the unrotated replicates to
+the target before estimating the within-imputation covariance; the multiple-
+imputation rotation literature otherwise summarises oblique uncertainty with
+generalised Procrustes centroids rather than per-element standard errors (van
+Ginkel & Kroonenberg 2014; Lorenzo-Seva & Van Ginkel 2016).
+
+When the component \code{EFA} calls were run with \code{se = "sandwich"} (robust
+standard errors from a polychoric/tetrachoric or continuous-Pearson
+asymptotic covariance), pooling instead follows the two-stage,
+pooled-inputs approach (Chung & Cai 2019; Sriutaisuk, Liu, Chung, Kim & Gu
+2025). Rather than fitting per imputation and pooling the estimates, the
+correlation matrix and the asymptotic covariance of its off-diagonal entries
+are pooled across imputations with Rubin's (1987) rules,
+\deqn{\bar r = \frac{1}{m}\sum_d r_d, \qquad
+      \tilde\Gamma = \Gamma_W + \left(1 + \frac{1}{m}\right)\Gamma_B,}
+with \eqn{\Gamma_W = \frac{1}{m}\sum_d \Gamma_d} the within-imputation
+covariance (the average of the per-imputation \eqn{\Gamma_d}) and
+\eqn{\Gamma_B} the between-imputation covariance of the off-diagonal
+correlations (sample covariance, \eqn{m - 1} divisor). A single \code{EFA} model
+is then fitted to \eqn{\bar r} with \eqn{\tilde\Gamma} as the robust meat
+(and, for \code{method = "DWLS"}, its diagonal as the weights). Because there is
+only one fit there is a single rotational gauge, so this route bypasses the
+per-imputation Procrustes/target alignment entirely (\code{target_method} and
+\code{align_unrotated} do not apply and are ignored with a classed message).
+The fitted object carries native scaled-shifted chi-square test statistics
+and sandwich standard errors that already reflect the multiple-imputation
+uncertainty; the chi-square is not D2-pooled, and the
+likelihood-ratio-based AIC/BIC/ECVI are left \code{NA} (as for any sandwich fit).
+The single fit is returned in the \code{mi_fit} slot, and the per-imputation
+\code{fits} are retained for diagnostics. The pooled asymptotic covariance is not
+guaranteed positive semidefinite at small \eqn{m}; rather than projecting it
+to the nearest positive-definite matrix (which would silently distort the
+robust meat), an indefinite \eqn{\tilde\Gamma} aborts with the classed
+condition \code{efa_pooled_mi2s_acov_not_psd}, which signals that more
+imputations are needed. Sriutaisuk et al. (2025) recommend at least 20
+imputations for the scaled-shifted statistic, and more (around 100) at
+higher rates of missingness; fewer than 20 raises a classed warning. The
+polychoric/tetrachoric (ordinal) case is the primary, best-evaluated target;
+the continuous-Pearson case uses the same recipe but is less benchmarked
+under multiple imputation.
 }
+\section{Conditions}{
+
+\code{EFA_POOLED()} signals the following classed conditions (catch them by the
+class shown; the parenthetical is the remediation):
+
+\emph{Argument validation.} \code{efa_pooled_bad_p}, \code{efa_pooled_bad_ci_level} (aborts:
+pass \code{p} and \code{rmsea_ci_level} strictly inside 0-1); \code{efa_pooled_ci_ignored}
+(warning: drop the component \code{ci}; the pooled level is set by \code{p}).
+
+\emph{Conformability.} \code{efa_pooled_min_fits} (abort: supply at least two
+imputations), \code{efa_pooled_dim_mismatch}, \code{efa_pooled_var_mismatch},
+\code{efa_pooled_setting_mismatch} (aborts: fit every imputation on the same
+variables and dimensions with the same \code{method}, \code{rotation}, and
+\code{n_factors}).
+
+\emph{Standard-error routing.} \code{efa_pooled_mixed_se} (abort: the component fits use
+different \code{se} methods; re-fit them all with the same \code{se}).
+\code{efa_pooled_se_unavailable} (warning: the information or np-boot route could
+not produce pooled standard errors; the pooled point estimates, residuals, and
+fit indices are still returned and \code{settings$se} is downgraded to \code{"none"};
+re-fit with adequate data or more replicates, or accept the
+point-estimate-only solution).
+
+\emph{Information route.} \code{efa_pooled_no_vcov}, \code{efa_pooled_unreliable_vcov},
+\code{efa_pooled_analytic_align_meta_missing} (aborts: a fit lacks a usable
+\code{vcov_unrot_loadings} or per-imputation alignment metadata; drop or re-fit it,
+or use \code{align_unrotated = "signed_tucker_congruence"});
+\code{efa_pooled_analytic_partial_se} (warning); \code{efa_pooled_rotated_se_unreliable}
+(warning: one or more imputations could not supply a usable rotated standard
+error, so the affected pooled rotated-loading, factor-correlation, and
+structure-coefficient standard errors are returned as \code{NA}). Through
+\code{EFA_POOLED()} the aborts are caught and re-signalled as
+\code{efa_pooled_se_unavailable}.
+
+\emph{Bootstrap route.} \code{efa_pooled_partial_boot}, \code{efa_pooled_unequal_boot},
+\code{efa_pooled_min_boot}, \code{efa_pooled_boot_insufficient}, \code{efa_pooled_boot_failed},
+\code{efa_pooled_boot_nonconv} (warnings: re-run the component fits with more, or
+more stable, bootstrap replicates).
+
+\emph{Sandwich/MI2S route.} \code{efa_pooled_mi2s_acov_not_psd},
+\code{efa_pooled_mi2s_inputs_inconsistent}, \code{efa_pooled_mi2s_no_n} (aborts);
+\code{efa_pooled_mi2s_n_too_small}, \code{efa_pooled_mi2s_alignment_ignored} (warnings).
+These aborts propagate directly (no \code{efa_pooled_se_unavailable} fallback)
+because the MI2S point estimates and standard errors share one fit; for a
+non-positive-definite pooled covariance, increase the number of imputations.
+
+\emph{Sample size and fit pooling.} \code{efa_pooled_no_n}, \code{efa_pooled_partial_n},
+\code{efa_pooled_unequal_n}, \code{efa_pooled_align_failed},
+\code{efa_consensus_oblique_unsupported}, \code{efa_pooled_chisq_df}.
+}
+
 \examples{
 
 # create a list of three datasets, mimicking a list you would obtain from
@@ -153,6 +342,49 @@ mod
 mod <- EFA_POOLED(dat_list, n_factors = 1, method = "ML", se = "np-boot")
 mod
 }
+}
+\references{
+Barnard, J., & Rubin, D. B. (1999). Small-sample degrees of freedom with
+multiple imputation. \emph{Biometrika}, 86(4), 948-955.
+
+Chan, K. W., & Meng, X.-L. (2022). Multiple improvements of multiple
+imputation likelihood ratio tests. \emph{Statistica Sinica}, 32, 1489-1514.
+
+Chung, S., & Cai, L. (2019). Alternative multiple imputation inference for
+categorical structural equation modeling. \emph{Multivariate Behavioral
+Research}, 54(3), 323-337.
+
+Gower, J. C. (1975). Generalized Procrustes analysis. \emph{Psychometrika},
+40(1), 33-51.
+
+Li, K. H., Meng, X.-L., Raghunathan, T. E., & Rubin, D. B. (1991).
+Significance levels from repeated p-values with multiply-imputed data.
+\emph{Statistica Sinica}, 1(1), 65-92.
+
+Jennrich, R. I. (1973). Standard errors for obliquely rotated factor
+loadings. \emph{Psychometrika}, 38(4), 593-604.
+
+Lorenzo-Seva, U., & Van Ginkel, J. R. (2016). Multiple imputation of missing
+values in exploratory factor analysis of multidimensional scales. \emph{Anales de
+Psicologia}, 32(2), 596-608.
+
+Rubin, D. B. (1987). \emph{Multiple imputation for nonresponse in surveys}. Wiley.
+
+Schoenemann, P. H. (1966). A generalized solution of the orthogonal
+Procrustes problem. \emph{Psychometrika}, 31(1), 1-10.
+
+Sriutaisuk, S., Liu, Y., Chung, S., Kim, H., & Gu, F. (2025). Evaluating
+imputation-based fit statistics in structural equation modeling with ordinal
+data: The MI2S approach. \emph{Educational and Psychological Measurement}, 85(1),
+5-37.
+
+van Ginkel, J. R., & Kroonenberg, P. M. (2014). Using generalized Procrustes
+analysis for multiple imputation in principal component analysis. \emph{Journal of
+Classification}, 31(2), 242-269.
+
+Zhang, G., & Preacher, K. J. (2015). Factor rotation and standard errors in
+exploratory factor analysis. \emph{Journal of Educational and Behavioral
+Statistics}, 40(6), 579-603.
 }
 \author{
 Andreas Soteriades, Markus Steiner

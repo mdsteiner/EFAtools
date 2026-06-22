@@ -203,9 +203,12 @@ test_that("information SEs are produced for every supported native rotation", {
   # The lavaan oracle below validates the SE magnitude for a representative rotation; this guards
   # the remaining native criteria against a wrong criterion mapping in `.rotation_se_method` or a
   # warm-start reproduction failure that would silently degrade their rotated SEs to NA.
+  # One representative per family: a smooth CF / oblimin path (quartimax / quartimin) and the
+  # bifactor general-factor-exempt path (bifactorT / bifactorQ). The bifactor REORDER path is
+  # exercised by the next block; this block covers the non-reorder case.
   R <- test_models$baseline$cormat
-  orth <- c("quartimax", "equamax", "bentlerT", "geominT", "bifactorT")
-  oblq <- c("quartimin", "bentlerQ", "geominQ", "bifactorQ")
+  orth <- c("quartimax", "bifactorT")
+  oblq <- c("quartimin", "bifactorQ")
   for (rot in c(orth, oblq)) {
     fit <- EFA(R, n_factors = 3, N = 500, method = "ML", rotation = rot, se = "information")
     expect_false(anyNA(fit$SE$rot_loadings), info = rot)

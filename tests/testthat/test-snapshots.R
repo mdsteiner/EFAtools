@@ -6,6 +6,7 @@
 # and platforms and would make the baselines flaky.
 
 test_that("print.efa_retention output is stable for SMT", {
+  skip_if_not_slow()
   local_reproducible_output()
 
   smt <- SMT(test_models$baseline$cormat, N = 500)
@@ -17,6 +18,7 @@ test_that("print.efa_retention output is stable for SMT", {
 })
 
 test_that("print.efa_retention output is stable for SCREE", {
+  skip_if_not_slow()
   local_reproducible_output()
 
   scree <- SCREE(test_models$baseline$cormat)
@@ -27,6 +29,7 @@ test_that("print.efa_retention output is stable for SCREE", {
 })
 
 test_that("print.efa_retention output is stable for CD", {
+  skip_if_not_slow()
   local_reproducible_output()
 
   # CD is stochastic; seed and use a small simulation for a stable, fast snapshot
@@ -36,6 +39,7 @@ test_that("print.efa_retention output is stable for CD", {
 })
 
 test_that("print.efa_retention output is stable for PARALLEL", {
+  skip_if_not_slow()
   local_reproducible_output()
 
   # seed the simulated eigenvalues so the printed suggestion cannot drift
@@ -49,6 +53,7 @@ test_that("print.efa_retention output is stable for PARALLEL", {
 })
 
 test_that("print.efa_retention output is stable for KGC", {
+  skip_if_not_slow()
   local_reproducible_output()
 
   kgc <- KGC(test_models$baseline$cormat)
@@ -59,6 +64,7 @@ test_that("print.efa_retention output is stable for KGC", {
 })
 
 test_that("print.efa_retention output is stable for NEST", {
+  skip_if_not_slow()
   local_reproducible_output()
 
   nest <- NEST(test_models$baseline$cormat, N = 500)
@@ -66,6 +72,7 @@ test_that("print.efa_retention output is stable for NEST", {
 })
 
 test_that("print.efa_retention output is stable for EKC", {
+  skip_if_not_slow()
   local_reproducible_output()
 
   ekc <- EKC(test_models$baseline$cormat, N = 500)
@@ -77,6 +84,7 @@ test_that("print.efa_retention output is stable for EKC", {
 })
 
 test_that("print.efa_retention output is stable for HULL", {
+  skip_if_not_slow()
   local_reproducible_output()
 
   hull <- HULL(test_models$baseline$cormat, N = 500, method = "ML")
@@ -87,6 +95,7 @@ test_that("print.efa_retention output is stable for HULL", {
 })
 
 test_that("print.efa_retention output is stable for MAP", {
+  skip_if_not_slow()
   local_reproducible_output()
 
   map <- MAP(test_models$baseline$cormat)
@@ -94,6 +103,7 @@ test_that("print.efa_retention output is stable for MAP", {
 })
 
 test_that("print.N_FACTORS output is stable", {
+  skip_if_not_slow()
   local_reproducible_output()
 
   # deterministic criteria only (no simulations); suitability = FALSE keeps

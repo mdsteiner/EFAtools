@@ -2,6 +2,62 @@
 
 ## Changes to Functions
 
+* `EFA_POOLED()` now dispatches its multiple-imputation standard-error pooling
+  automatically by the standard-error method of its component fits: Rubin's
+  rules for the information method (with Wald confidence intervals and
+  Barnard-Rubin small-sample degrees of freedom), the two-stage pooled-inputs
+  (MI2S) approach (Chung & Cai, 2019; Sriutaisuk, Liu, Chung, Kim, & Gu, 2025)
+  for the sandwich method (a single fit on a Rubin-pooled correlation matrix and
+  asymptotic covariance), and the existing bootstrap pooling for the
+  non-parametric bootstrap method. Mixed standard-error methods across component
+  fits now raise a classed `efa_pooled_mixed_se` condition rather than silently
+  producing uninterpretable results, and a failure to produce pooled standard
+  errors on the information or bootstrap route is signalled with a classed
+  `efa_pooled_se_unavailable` warning (falling back to point-estimate-only
+  pooling) rather than being silently dropped.
+
+* `EFA_POOLED()` routes component fits with `se = "sandwich"` through the
+  two-stage pooled-inputs (MI2S) approach (Chung & Cai, 2019; Sriutaisuk,
+  Liu, Chung, Kim, & Gu, 2025): the correlation matrix and the asymptotic
+  covariance of its off-diagonal entries are Rubin-pooled across imputations,
+  and a single `EFA` fit on the pooled inputs produces native scaled-shifted
+  chi-square test statistics and sandwich standard errors that reflect the
+  multiple-imputation uncertainty. The single pooled fit is exposed as
+  `mi_fit` on the returned object alongside the per-imputation `fits` list.
+  Because there is a single fit there is one rotational gauge, so the route
+  bypasses per-imputation rotation alignment (`target_method` and
+  `align_unrotated` do not apply). The pooled asymptotic covariance is not
+  smoothed: an indefinite pooled covariance at small m aborts with the
+  classed condition `efa_pooled_mi2s_acov_not_psd`, and fewer than 20
+  imputations raises a classed warning. The polychoric/tetrachoric case is the
+  primary target; the continuous-Pearson case uses the same recipe but is less
+  benchmarked under multiple imputation.
+
+* `EFA_POOLED()` now pools the unrotated-loading and uniqueness standard errors
+  produced by component fits under `se = "information"`, using Rubin's rules
+  with Barnard-Rubin small-sample degrees of freedom and Wald confidence
+  intervals. Under `align_unrotated = "procrustes"`, the per-imputation
+  orthogonal Procrustes transform mixes loading columns, so the full
+  unrotated covariance persisted on each fit (`vcov_unrot_loadings`) is
+  propagated through the column-major Kronecker identity (treating the
+  per-imputation Procrustes transform as fixed) before Rubin pooling; see
+  `?EFA_POOLED` for the formula. Component fits missing the
+  full covariance abort with the classed condition `efa_pooled_no_vcov`, and
+  fits carrying an NA-filled covariance (the upstream signal of a Heywood
+  case or singular bordered information matrix) abort with
+  `efa_pooled_unreliable_vcov`.
+
+* `EFA_POOLED()` now also pools the rotated-loading, communality, factor-
+  correlation (`Phi`), and structure-coefficient standard errors from component
+  fits under `se = "information"`. Orthogonal rotations use the closed-form
+  orthogonal Procrustes alignment to the multiple-imputation rotated target and
+  propagate the unrotated parameter covariance through the Kronecker identity;
+  communalities are rotation-invariant and pool without alignment. Oblique
+  rotations use a signed-permutation alignment of the per-imputation rotated
+  standard errors as a documented approximation (flagged in
+  `MI$<param>$method`); researchers requiring rigorous uncertainty
+  quantification for oblique solutions should cross-check with `se = "np-boot"`.
+
 * `EFA()` objects now carry through the full unrotated loading covariance matrix
   (`vcov_unrot_loadings`) for the analytic SE methods (`se = "information"` and
   `se = "sandwich"`, in both unrotated and rotated fits), and the asymptotic

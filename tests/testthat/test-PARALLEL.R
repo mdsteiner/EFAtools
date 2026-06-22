@@ -1,3 +1,7 @@
+# Each PARALLEL() call simulates ~100 datasets and eigen-decomposes them, so this
+# fixture block dominates the file (~50s). Skipped by default; opt in with
+# `Sys.setenv(EFATOOLS_TEST_SLOW = "true")` to run. See helper-slow.R.
+if (is_slow_test()) {
 # seed the parallel-analysis simulation so the retained-factor counts are
 # reproducible (future_lapply uses future.seed = TRUE under the sequential plan)
 set.seed(42)
@@ -9,8 +13,10 @@ pa_craw <- PARALLEL(test_models$baseline$cormat, N = 500, eigen_type = "PCA",
                     decision_rule = "crawford")
 pa_perc <- PARALLEL(test_models$baseline$cormat, N = 500, eigen_type = "PCA",
                     decision_rule = "percentile")
+}  # is_slow_test()
 
 test_that("output class and dimensions are correct", {
+  skip_if_not_slow()
   expect_s3_class(pa_cor, "efa_retention")
   expect_length(pa_cor, 7)
   expect_s3_class(pa_raw, "efa_retention")
@@ -28,6 +34,7 @@ test_that("output class and dimensions are correct", {
 
 
 test_that("found eigenvalues are correct", {
+  skip_if_not_slow()
   # real eigenvalues form the solid line (record $y)
   expect_equal(sum(.retention_record(pa_cor, "PCA")$y),
                ncol(test_models$baseline$cormat))
@@ -73,6 +80,7 @@ test_that("found eigenvalues are correct", {
 
 
 test_that("identified number of factors is correct", {
+  skip_if_not_slow()
   expect_equal(pa_cor$n_factors[["PCA"]], 3)
   expect_equal(pa_cor$n_factors[["SMC"]], 3)
   expect_equal(pa_cor$n_factors[["EFA"]], 7, tolerance = 2)
@@ -90,6 +98,7 @@ test_that("identified number of factors is correct", {
 
 
 test_that("settings are returned correctly", {
+  skip_if_not_slow()
   expect_named(pa_cor$settings, c("x_dat", "N", "n_vars", "n_datasets", "percent",
                                   "eigen_type", "use", "cor_method", "decision_rule",
                                   "n_factors"))
@@ -205,6 +214,7 @@ burt <- matrix(c(1.00,  0.83,  0.81,  0.80,   0.71, 0.70, 0.54, 0.53,  0.59,  0.
 #sim_NA <- data.frame(rnorm(30), rnorm(30), rnorm(30), rep("a", 30))
 
 test_that("errors are thrown correctly", {
+  skip_if_not_slow()
   expect_error(PARALLEL(1:5), class = "efa_input_not_matrix")
   expect_warning(suppressMessages(PARALLEL(GRiPS_raw, n_vars = 5)), class = "efa_nvars_from_data")
   expect_warning(suppressMessages(PARALLEL(GRiPS_raw, N = 20, eigen_type = "PCA")), class = "efa_n_from_data")
@@ -311,5 +321,7 @@ test_that(".determine_factors returns a normal crossing and 0 without the warnin
   expect_equal(n0, 0)
 })
 
-rm(pa_cor, pa_cor_pca, pa_raw, pa_nodat, pa_craw, pa_perc, x, y, z, dat_sing,
-   cor_sing, burt)
+if (is_slow_test()) {
+  rm(pa_cor, pa_cor_pca, pa_raw, pa_nodat, pa_craw, pa_perc)
+}
+rm(x, y, z, dat_sing, cor_sing, burt)

@@ -1,3 +1,9 @@
+# HULL refits the model at every candidate factor count for every (method, gof)
+# combination, which makes the file-top fixture block the single heaviest in the
+# suite (~60s). Skip the fixtures + the tests below by default; opt in with
+# `Sys.setenv(EFATOOLS_TEST_SLOW = "true")` to run the full HULL coverage. See
+# helper-slow.R for the convention.
+if (is_slow_test()) {
 hull_cor_paf <- suppressMessages(HULL(test_models$baseline$cormat, N = 500))
 hull_cor_ml <- HULL(test_models$baseline$cormat, N = 500, method = "ML")
 hull_cor_uls <- HULL(test_models$baseline$cormat, N = 500, method = "ULS")
@@ -20,9 +26,11 @@ hull_raw_uls_CFI <- suppressMessages(suppressWarnings(HULL(GRiPS_raw,
 hull_raw_ml_nf <- suppressMessages(suppressWarnings(HULL(GRiPS_raw, N = 500,
                                                          method = "ML",
                                                          n_fac_theor = 7)))
+}  # is_slow_test()
 
 
 test_that("output class and dimensions are correct", {
+  skip_if_not_slow()
   objs <- list(hull_cor_paf, hull_cor_ml, hull_cor_uls, hull_cor_uls_CFI,
                hull_PCA, hull_EFA, hull_raw_paf, hull_raw_ml, hull_raw_uls,
                hull_raw_uls_CFI)
@@ -34,6 +42,7 @@ test_that("output class and dimensions are correct", {
 })
 
 test_that("n_fac_max is correctly specified", {
+  skip_if_not_slow()
   expect_lte(hull_cor_paf$settings$n_fac_max,
              .det_max_factors(ncol(test_models$baseline$cormat)))
   expect_lte(hull_cor_ml$settings$n_fac_max,
@@ -63,6 +72,7 @@ test_that("n_fac_max is correctly specified", {
 })
 
 test_that("records are correctly returned", {
+  skip_if_not_slow()
   expect_named(hull_cor_paf$n_factors, "CAF")
   expect_equal(hull_cor_paf$results[[1]]$plot_type, "hull")
   checkmate::expect_numeric(hull_cor_paf$results[[1]]$y)
@@ -78,6 +88,7 @@ test_that("records are correctly returned", {
 })
 
 test_that("n_factors are correctly returned", {
+  skip_if_not_slow()
   expect_equal(hull_cor_paf$n_factors[["CAF"]], 3)
   expect_false("CFI" %in% names(hull_cor_paf$n_factors))
   expect_false("RMSEA" %in% names(hull_cor_paf$n_factors))
@@ -104,6 +115,7 @@ test_that("n_factors are correctly returned", {
 })
 
 test_that("the convex-hull elimination tests every interior triplet", {
+  skip_if_not_slow()
   # Hand-built fit table (columns: nfactors, goodness-of-fit, df, st). The fit
   # values increase monotonically, so the boundary step removes nothing; the
   # geometry is set so the last interior solution (two factors) lies below the
@@ -131,6 +143,7 @@ test_that("the convex-hull elimination tests every interior triplet", {
 })
 
 test_that("a non-finite goodness-of-fit value is dropped with a classed warning", {
+  skip_if_not_slow()
   # A model with an undefined fit value (e.g. an NA CFI for a Heywood or
   # near-singular solution) cannot lie on the hull; it must be excluded with a
   # classed warning instead of crashing the elimination comparisons.
@@ -165,6 +178,7 @@ burt <- matrix(c(1.00,  0.83,  0.81,  0.80,   0.71, 0.70, 0.54, 0.53,  0.59,  0.
                nrow = 11, ncol = 11)
 
 test_that("errors etc are thrown correctly", {
+  skip_if_not_slow()
   expect_error(HULL(1:5), class = "efa_input_not_matrix")
   expect_message(suppressWarnings(HULL(GRiPS_raw)), class = "efa_cor_from_data")
   expect_warning(suppressMessages(HULL(GRiPS_raw)), class = "efa_hull_min_factors")
@@ -186,6 +200,9 @@ test_that("errors etc are thrown correctly", {
   expect_warning(HULL(burt, N = 20, method = "ML", n_fac_theor = 1), class = "efa_cor_smoothed")
 })
 
-rm(hull_cor_paf, hull_cor_ml, hull_cor_uls, hull_cor_uls_CFI, hull_raw_paf,
-   hull_raw_ml, hull_raw_uls, hull_raw_uls_CFI, hull_raw_ml_nf, hull_cor_ml_nf,
-   hull_PCA, hull_EFA, x, y, z, dat_sing, cor_sing, burt)
+if (is_slow_test()) {
+  rm(hull_cor_paf, hull_cor_ml, hull_cor_uls, hull_cor_uls_CFI, hull_raw_paf,
+     hull_raw_ml, hull_raw_uls, hull_raw_uls_CFI, hull_raw_ml_nf, hull_cor_ml_nf,
+     hull_PCA, hull_EFA)
+}
+rm(x, y, z, dat_sing, cor_sing, burt)

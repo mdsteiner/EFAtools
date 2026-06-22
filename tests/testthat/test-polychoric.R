@@ -35,6 +35,13 @@
   cbind(z1, z2, derive(), derive(), derive(), derive())
 }
 
+# Listwise-complete GRiPS and its default polychoric matrix, computed once and
+# reused by the structural blocks that would otherwise rebuild them. Tests that
+# need non-default arguments (`correct`, `nearest_pd`, `n_threads`, `acov`) or
+# that mutate the data still build their own.
+g <- GRiPS_raw[stats::complete.cases(GRiPS_raw), ]
+poly_g <- .polychoric(g)
+
 test_that(".bvn_rect_cpp matches mnormt::sadmvn rectangle probabilities", {
   skip_on_cran()
   skip_if_not_installed("mnormt")
@@ -61,8 +68,7 @@ test_that("polychoric matrix matches polycor and psych on GRiPS", {
   skip_on_cran()
   skip_if_not_installed("polycor")
 
-  g <- GRiPS_raw[stats::complete.cases(GRiPS_raw), ]
-  ours <- .polychoric(g)$R
+  ours <- poly_g$R
 
   expect_lt(max(abs(ours - .ref_polychor(g))), 1e-4)
 
@@ -75,7 +81,6 @@ test_that("tetrachoric (2 categories) matches polycor and psych", {
   skip_on_cran()
   skip_if_not_installed("polycor")
 
-  g <- GRiPS_raw[stats::complete.cases(GRiPS_raw), ]
   gb <- apply(g, 2L, function(col) as.integer(col > stats::median(col)))
   ours <- .polychoric(gb)$R
 
@@ -86,8 +91,7 @@ test_that("tetrachoric (2 categories) matches polycor and psych", {
 })
 
 test_that("the matrix is a valid correlation matrix with named thresholds", {
-  g <- GRiPS_raw[stats::complete.cases(GRiPS_raw), ]
-  res <- .polychoric(g)
+  res <- poly_g
 
   expect_equal(dim(res$R), c(ncol(g), ncol(g)))
   expect_equal(dimnames(res$R), list(colnames(g), colnames(g)))
@@ -102,15 +106,15 @@ test_that("the matrix is a valid correlation matrix with named thresholds", {
 })
 
 test_that("the result is deterministic and independent of thread count", {
-  g <- GRiPS_raw[stats::complete.cases(GRiPS_raw), ]
   expect_identical(.polychoric(g, n_threads = 1L)$R, .polychoric(g, n_threads = 1L)$R)
   expect_identical(.polychoric(g, n_threads = 1L)$R, .polychoric(g, n_threads = 4L)$R)
 })
 
 test_that("a constant column is rejected with a classed condition", {
-  g <- GRiPS_raw[stats::complete.cases(GRiPS_raw), ]
-  g[, 1L] <- 3L
-  expect_error(.polychoric(g), class = "efa_cor_constant_col")
+  # local copy: this block mutates the column to force the constant-column path
+  gx <- g
+  gx[, 1L] <- 3L
+  expect_error(.polychoric(gx), class = "efa_cor_constant_col")
 })
 
 test_that("a non-positive-definite matrix is left alone unless nearest_pd is requested", {
@@ -125,7 +129,6 @@ test_that("a non-positive-definite matrix is left alone unless nearest_pd is req
 })
 
 test_that("missing data is handled pairwise-complete", {
-  g <- GRiPS_raw[stats::complete.cases(GRiPS_raw), ]
   gm <- g
   gm[1:20, 1] <- NA          # scattered missingness; every pair still overlaps
   gm[21:40, 2] <- NA
@@ -145,7 +148,6 @@ test_that("a pair with no overlapping complete cases is rejected with a classed 
 })
 
 test_that("the empty-cell continuity correction runs and changes the estimate", {
-  g <- GRiPS_raw[stats::complete.cases(GRiPS_raw), ]
   res <- .polychoric(g, correct = 0.5)
   expect_false(anyNA(res$R))
   expect_true(isSymmetric(res$R))
@@ -160,7 +162,6 @@ test_that("a likely-continuous (many-category) variable warns", {
 })
 
 test_that("invalid correct or n_threads are rejected with a classed condition", {
-  g <- GRiPS_raw[stats::complete.cases(GRiPS_raw), ]
   expect_error(.polychoric(g, correct = -1), class = "efa_cor_bad_arg")
   expect_error(.polychoric(g, n_threads = 0L), class = "efa_cor_bad_arg")
 })

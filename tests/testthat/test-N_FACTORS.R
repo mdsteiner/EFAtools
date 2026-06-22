@@ -1,7 +1,14 @@
+# N_FACTORS aggregates the heavy retention criteria (CD's bootstrap simulation,
+# PARALLEL's eigen Monte Carlo, HULL's per-factor refits), so the file-top
+# `nf_grips` fixture dominates this file (~28s). Skipped by default; opt in with
+# `Sys.setenv(EFATOOLS_TEST_SLOW = "true")`. See helper-slow.R.
+if (is_slow_test()) {
 set.seed(42)
 nf_grips <- suppressMessages(suppressWarnings(N_FACTORS(GRiPS_raw)))
+}  # is_slow_test()
 
 test_that("output class and dimensions are correct", {
+  skip_if_not_slow()
   expect_s3_class(nf_grips, "N_FACTORS")
   expect_named(nf_grips, c("suitability", "outputs", "n_factors", "not_run",
                            "settings"))
@@ -37,6 +44,7 @@ test_that("output class and dimensions are correct", {
 })
 
 test_that("print and plot work on the aggregate object", {
+  skip_if_not_slow()
   # the suitability block is rendered, including the Bartlett verdict and the
   # KMO label ladder (GRiPS has a marvellous KMO and a significant Bartlett test)
   txt <- paste(format(nf_grips), collapse = "\n")
@@ -54,6 +62,7 @@ test_that("print and plot work on the aggregate object", {
 })
 
 test_that("format.N_FACTORS is the source of truth and honours the colour state", {
+  skip_if_not_slow()
   # print() is exactly cat(format(x), sep = "\n"), so the two agree line for line.
   expect_identical(utils::capture.output(print(nf_grips)), format(nf_grips))
 
@@ -69,6 +78,7 @@ test_that("format.N_FACTORS is the source of truth and honours the colour state"
 })
 
 test_that("visual criteria and suitability = FALSE are handled", {
+  skip_if_not_slow()
   nf_scree <- N_FACTORS(test_models$baseline$cormat, suitability = FALSE,
                         criteria = c("MAP", "SCREE"))
 
@@ -83,6 +93,7 @@ test_that("visual criteria and suitability = FALSE are handled", {
 })
 
 test_that("missing N skips Bartlett's test but still runs N-free criteria", {
+  skip_if_not_slow()
   # A correlation matrix without N: Bartlett's test needs N and is skipped with a
   # classed warning, while KMO and the N-free retention criteria still run -
   # instead of the suitability check aborting the whole call.
@@ -97,6 +108,7 @@ test_that("missing N skips Bartlett's test but still runs N-free criteria", {
 })
 
 test_that("a failing criterion warns, is reported, and the others still run", {
+  skip_if_not_slow()
   # EKC needs N, which is missing for a correlation matrix; MAP still runs
   expect_warning(
     nf_fail <- N_FACTORS(test_models$baseline$cormat, suitability = FALSE,
@@ -111,6 +123,7 @@ test_that("a failing criterion warns, is reported, and the others still run", {
 })
 
 test_that("a skipped criterion is reported in not_run", {
+  skip_if_not_slow()
   expect_warning(
     nf_skip <- N_FACTORS(test_models$baseline$cormat, N = 500),
     class = "efa_criterion_skipped"
@@ -121,6 +134,7 @@ test_that("a skipped criterion is reported in not_run", {
 })
 
 test_that("an all-failed run is a hard error", {
+  skip_if_not_slow()
   # CD is the only requested criterion and is skipped on a correlation matrix
   expect_error(
     suppressWarnings(N_FACTORS(test_models$baseline$cormat, suitability = FALSE,
@@ -149,6 +163,7 @@ burt <- matrix(c(1.00,  0.83,  0.81,  0.80,   0.71, 0.70, 0.54, 0.53,  0.59,  0.
                nrow = 11, ncol = 11)
 
 test_that("errors etc. are thrown correctly", {
+  skip_if_not_slow()
   expect_error(N_FACTORS(1:10), class = "efa_input_not_matrix")
   expect_warning(N_FACTORS(GRiPS_raw, N = 10, criteria = "MAP",
                            suitability = FALSE), class = "efa_n_from_data")
@@ -162,4 +177,5 @@ test_that("errors etc. are thrown correctly", {
     class = "efa_cor_smoothed")
 })
 
-rm(nf_grips, x, y, z, burt)
+if (is_slow_test()) rm(nf_grips)
+rm(x, y, z, burt)

@@ -159,9 +159,9 @@ test_that("the polychoric bootstrap is reproducible and positive definite under 
   g <- GRiPS_raw[stats::complete.cases(GRiPS_raw), ]
 
   b1 <- EFA(g, n_factors = 1, method = "ULS", cor_method = "poly",
-            se = "np-boot", b_boot = 25, seed = 42)
+            se = "np-boot", b_boot = 6, seed = 42)
   b2 <- EFA(g, n_factors = 1, method = "ULS", cor_method = "poly",
-            se = "np-boot", b_boot = 25, seed = 42)
+            se = "np-boot", b_boot = 6, seed = 42)
 
   # Same seed -> identical bootstrap SEs, independent of how many replicates were fit.
   expect_identical(b1$boot$SE$unrot_loadings, b2$boot$SE$unrot_loadings)
@@ -174,9 +174,9 @@ test_that("the DWLS polychoric bootstrap is reproducible and positive definite u
   g <- GRiPS_raw[stats::complete.cases(GRiPS_raw), ]
 
   b1 <- suppressWarnings(EFA(g, n_factors = 1, method = "DWLS", cor_method = "poly",
-                             se = "np-boot", b_boot = 25, seed = 42))
+                             se = "np-boot", b_boot = 6, seed = 42))
   b2 <- suppressWarnings(EFA(g, n_factors = 1, method = "DWLS", cor_method = "poly",
-                             se = "np-boot", b_boot = 25, seed = 42))
+                             se = "np-boot", b_boot = 6, seed = 42))
 
   # Same seed -> identical bootstrap SEs; each replicate recomputes its own polychoric
   # matrix and diagonal-ACOV weights, and the surviving replicates yield finite SEs.

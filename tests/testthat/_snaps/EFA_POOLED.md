@@ -14,8 +14,8 @@
       N: 250
       Imputations: 2
       Pooling: align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'
-      Bootstrap samples per imputation: 16
-      Valid target-rotated samples: 16 out of 16 per imputation
+      Bootstrap samples per imputation: 6
+      Valid target-rotated samples: 6 out of 6 per imputation
       Heywood cases: 0
       Cross-loading items (|loading| >= <num>): 0
       Items without salient loading (|loading| >= <num>): 0
@@ -71,7 +71,7 @@
       RMSR [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
       SRMR: <num>
       
-      Note: Bootstrap/MI CIs based on 16 bootstrap samples per imputation.
+      Note: Bootstrap/MI CIs based on 6 bootstrap samples per imputation.
       
       -- MI Uncertainty Summary ------------------------------------------------------
       

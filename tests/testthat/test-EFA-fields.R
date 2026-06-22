@@ -116,7 +116,9 @@ test_that("sandwich SEs fill the same schema as information across rotations", {
 
 test_that("np-boot fills `replicates` and adds fit_indices/residuals SEs", {
   skip_on_cran()
-  b <- 10L
+  # Small `b` -- this test pins schema/slot names; the replicate count enters only
+  # via dim(...)[3L] == b, not via any numeric agreement.
+  b <- 4L
 
   # Unrotated: SE/CI cover the unrotated loadings, fit indices, and residuals;
   # `replicates` is a list of three 3D cubes whose last dimension is b.

@@ -315,6 +315,7 @@ format.summary.EFA <- function(x, ...) {
     rotation = settings$rotation,
     rotation_diagnostics = settings$rotation_diagnostics,
     type = settings$type,
+    se = se,
     N = settings$N,
     fit = x$fit_indices,
     h2 = x$h2,
@@ -388,19 +389,24 @@ format.summary.EFA <- function(x, ...) {
 .efa_pooled_settings_text <- function(spec) {
   out <- character(0)
 
-  target_method <- .efa_setting_text(spec$target_method)
-  if (nzchar(target_method) && !identical(spec$rotation, "none")) {
-    out <- c(out, paste0("target_method = '", target_method, "'"))
-  }
+  # The MI2S sandwich route fits a single model to the pooled inputs, so the
+  # per-imputation alignment and chi-square pooling settings (target_method,
+  # align_unrotated, fit_pool_method) do not apply and are not reported.
+  if (!identical(spec$component_se, "sandwich")) {
+    target_method <- .efa_setting_text(spec$target_method)
+    if (nzchar(target_method) && !identical(spec$rotation, "none")) {
+      out <- c(out, paste0("target_method = '", target_method, "'"))
+    }
 
-  align_unrotated <- .efa_setting_text(spec$align_unrotated)
-  if (nzchar(align_unrotated)) {
-    out <- c(out, paste0("align_unrotated = '", align_unrotated, "'"))
-  }
+    align_unrotated <- .efa_setting_text(spec$align_unrotated)
+    if (nzchar(align_unrotated)) {
+      out <- c(out, paste0("align_unrotated = '", align_unrotated, "'"))
+    }
 
-  fit_pool_method <- .efa_setting_text(spec$fit_pool_method)
-  if (nzchar(fit_pool_method)) {
-    out <- c(out, paste0("fit_pool_method = '", fit_pool_method, "'"))
+    fit_pool_method <- .efa_setting_text(spec$fit_pool_method)
+    if (nzchar(fit_pool_method)) {
+      out <- c(out, paste0("fit_pool_method = '", fit_pool_method, "'"))
+    }
   }
 
   if (is.finite(spec$rmsea_ci_level) &&
@@ -727,16 +733,31 @@ format.summary.EFA <- function(x, ...) {
     return(invisible(NULL))
   }
 
-  # Analytic SEs (information matrix) produce Wald intervals, not resampled ones; describe
-  # their source rather than a bootstrap-sample count. The analytic Wald CIs are attached
-  # only to the unrotated loadings, which are displayed only for an unrotated solution with
-  # CIs enabled, so suppress the provenance note when no such CI table is shown.
-  if (!isTRUE(spec$np_boot) && !isTRUE(spec$is_pooled)) {
-    if (identical(ci, "none") || !identical(spec$rotation, "none")) {
+  # Analytic SEs produce Wald intervals, not resampled ones; describe their source rather
+  # than a bootstrap-sample count. For a NON-pooled analytic fit the Wald CIs are attached
+  # only to the unrotated loadings (displayed only for an unrotated solution with CIs
+  # enabled), so suppress the note when no such table is shown. Pooled objects, however,
+  # attach and display rotated-loading CIs on both the information and MI2S routes, so the
+  # note must still appear for a rotated pooled solution. The wording follows the SE method:
+  # se = "information" draws Wald CIs from the expected information matrix (Rubin-pooled with
+  # Barnard-Rubin df when pooled), while se = "sandwich" draws them from the robust (Godambe)
+  # sandwich covariance (built on the multiple-imputation-pooled asymptotic covariance when
+  # pooled), so the pooled MI2S note must not claim information-matrix Rubin pooling.
+  if (!isTRUE(spec$np_boot)) {
+    if (identical(ci, "none") ||
+        (!identical(spec$rotation, "none") && !isTRUE(spec$is_pooled))) {
       return(invisible(NULL))
     }
     cli::cli_text("")
-    cli::cli_text("{.emph Note:} Wald CIs from the expected information matrix.")
+    if (isTRUE(spec$is_pooled) && identical(spec$component_se, "sandwich")) {
+      cli::cli_text("{.emph Note:} Wald CIs from the robust sandwich covariance built on the multiple-imputation-pooled asymptotic covariance.")
+    } else if (isTRUE(spec$is_pooled)) {
+      cli::cli_text("{.emph Note:} Wald CIs from the expected information matrix, Rubin-pooled across imputations (Barnard-Rubin df).")
+    } else if (identical(spec$se, "sandwich")) {
+      cli::cli_text("{.emph Note:} Wald CIs from the robust (Godambe) sandwich covariance.")
+    } else {
+      cli::cli_text("{.emph Note:} Wald CIs from the expected information matrix.")
+    }
     return(invisible(NULL))
   }
 
@@ -1094,6 +1115,19 @@ format.summary.EFA <- function(x, ...) {
 
 .efa_ci_source_text <- function(spec) {
   if (isTRUE(spec$is_pooled)) {
+    # Label the pooled CI source by route. The information route Rubin-pools the
+    # per-imputation Wald intervals across imputations ("Wald/MI"). The sandwich
+    # (MI2S) route fits a single model to the pooled inputs and carries the
+    # imputation uncertainty in the pooled asymptotic covariance rather than by
+    # per-parameter Rubin pooling, so its intervals are Wald intervals from that
+    # single sandwich fit ("sandwich/MI") -- not Rubin-pooled. The bootstrap
+    # route's within-imputation variance is bootstrap-based ("bootstrap/MI").
+    if (identical(spec$component_se, "information")) {
+      return("Wald/MI")
+    }
+    if (identical(spec$component_se, "sandwich")) {
+      return("sandwich/MI")
+    }
     return("bootstrap/MI")
   }
 

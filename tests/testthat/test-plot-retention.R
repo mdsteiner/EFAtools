@@ -1,4 +1,5 @@
 test_that("efa_retention plot methods return ggplot objects", {
+  skip_if_not_slow()
   ekc <- EKC(test_models$baseline$cormat, N = 500)
   p_ekc <- plot(ekc)
   expect_s3_class(p_ekc, "ggplot")

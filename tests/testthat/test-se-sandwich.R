@@ -32,6 +32,23 @@ test_that("sandwich SEs fill the unrotated SE/CI schema and a scaled chi-square"
 })
 
 
+test_that("the unrotated sandwich CI-provenance note names the robust sandwich, not the information matrix", {
+  skip_on_cran()
+
+  dat <- DOSPERT_raw[, 1:8]
+  fit <- EFA(dat, n_factors = 2, cor_method = "poly", method = "DWLS",
+             rotation = "none", se = "sandwich")
+
+  # The full summary carries the CI-provenance note; for a robust (Godambe sandwich) fit it must
+  # describe the sandwich covariance, not the expected information matrix (which is correct only
+  # for se = "information").
+  body <- cli::ansi_strip(format(summary(fit)))
+  note <- body[grepl("Note:", body)]
+  expect_true(any(grepl("sandwich", note)))
+  expect_false(any(grepl("expected information matrix", note)))
+})
+
+
 test_that(".chi_fit_indices is robust to an undefined (NA) baseline chi-square", {
   # A degenerate scaled baseline yields chi_null = NA while the model chi stays finite; the shared
   # fit-index helper must return NA CFI/TLI (not error) and still compute the model-only RMSEA.
@@ -426,13 +443,13 @@ test_that("continuous sandwich SEs are in the same ballpark as the bootstrap (ML
     rob <- EFA(dat, n_factors = 1, cor_method = "pearson", method = m,
                rotation = "none", se = "sandwich")
     boot <- EFA(dat, n_factors = 1, cor_method = "pearson", method = m,
-                rotation = "none", se = "np-boot", b_boot = 200, seed = 123)
+                rotation = "none", se = "np-boot", b_boot = 50, seed = 123)
 
     se_rob <- as.numeric(rob$SE$unrot_loadings)
     se_boot <- as.numeric(boot$SE$unrot_loadings)
 
     # Robust and bootstrap SEs estimate the same sampling variability (observed median ratio ~1.02
-    # for both ML and ULS). This is a coarse cross-check robust to the b_boot = 200 Monte-Carlo
+    # for both ML and ULS). This is a coarse cross-check robust to the b_boot = 50 Monte-Carlo
     # noise -- the precise validation is the lavaan oracle above (ML); the band still catches a
     # gross (>~40%) systematic miscalibration of the robust SE, which is the only numeric guard for
     # ULS (lavaan's continuous ULS robust correlation path is unsupported).

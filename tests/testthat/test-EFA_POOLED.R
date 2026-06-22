@@ -270,7 +270,7 @@ test_that("bootstrap arrays are pooled into MI SEs and CIs", {
   })
   pooled_boot <- suppressMessages(
     EFA_POOLED(boot_list, n_factors = 1, method = "ML",
-               se = "np-boot", b_boot = 16)
+               se = "np-boot", b_boot = 6)
   )
 
   expect_true(all(c("SE", "CI", "replicates", "MI",
@@ -297,7 +297,7 @@ test_that("bootstrap arrays are pooled into MI SEs and CIs", {
   expect_true(all(ci$upper >= ci$lower))
   expect_equal((ci$lower + ci$upper) / 2, L, ignore_attr = TRUE)
 
-  expect_equal(pooled_boot$settings$b_boot, 16)
+  expect_equal(pooled_boot$settings$b_boot, 6)
   expect_identical(pooled_boot$settings$se, "np-boot")
 
   # FMIs must be computed (at least some finite) and in [0, 1]; an all-NA vector
@@ -322,7 +322,7 @@ test_that("oblique bootstrap pooling produces rotated SEs, CIs, and Phi", {
   })
   pooled_boot <- suppressWarnings(suppressMessages(
     EFA_POOLED(boot_list, n_factors = 2, method = "PAF", rotation = "promax",
-               se = "np-boot", b_boot = 12)
+               se = "np-boot", b_boot = 6)
   ))
 
   # the oblique branch pools rotated loadings, factor correlations, and

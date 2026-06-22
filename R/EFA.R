@@ -717,6 +717,36 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
 
   }
 
+  .efa_core(
+    R = R, N = N, weights = weights, Gamma = Gamma,
+    R_boot_array = if (isTRUE(np_boot)) R_boot_array else NULL,
+    W_boot_array = if (isTRUE(np_boot)) W_boot_array else NULL,
+    np_boot = np_boot, b_boot = b_boot, method = method, rotation = rotation,
+    type = type, n_factors = n_factors, se = se, ci = ci, use = use,
+    cor_method = cor_method, max_iter = max_iter, init_comm = init_comm,
+    criterion = criterion, criterion_type = criterion_type,
+    abs_eigen = abs_eigen, start_method = start_method, normalize = normalize,
+    precision = precision, order_type = order_type, varimax_type = varimax_type,
+    P_type = P_type, k = k, randomStarts = randomStarts, ...)
+}
+
+# Fit the common-factor model from already-prepared inputs: a correlation matrix R, the
+# sample size N, optional DWLS weights, the optional sandwich meat Gamma, and -- for the
+# bootstrap -- pre-resampled correlation/weight arrays. Split out from EFA() so multiple-
+# imputation pooling can drive the same estimate -> rotate -> standard-error pipeline on
+# pooled inputs (the MI2S route in EFA_POOLED()) without re-entering EFA()'s raw-data
+# preparation and input guards.
+.efa_core <- function(R, N, weights = NULL, Gamma = NULL,
+                      R_boot_array = NULL, W_boot_array = NULL,
+                      np_boot = FALSE, b_boot = 1000, method, rotation, type,
+                      n_factors, se = "none", ci = .95,
+                      use = "pairwise.complete.obs", cor_method = "pearson",
+                      max_iter = NA, init_comm = NA, criterion = NA,
+                      criterion_type = NA, abs_eigen = NA, start_method = "psych",
+                      normalize = TRUE, precision = 1e-5, order_type = NA,
+                      varimax_type = NA, P_type = NA, k = NA, randomStarts = 100,
+                      ...) {
+
   # Check if model is identified
 
   # calculate degrees of freedom

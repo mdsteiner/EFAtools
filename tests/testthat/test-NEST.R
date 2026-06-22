@@ -1,9 +1,15 @@
+# NEST simulates reference eigenvalues at every candidate factor count, which makes
+# the file-top fixtures ~10s. Skipped by default; opt in with
+# `Sys.setenv(EFATOOLS_TEST_SLOW = "true")`. See helper-slow.R.
+if (is_slow_test()) {
 # seed the reference-data simulation so the retained-factor counts are reproducible
 set.seed(42)
 nest_cor <- NEST(test_models$baseline$cormat, N = 500)
 nest_raw <- NEST(GRiPS_raw)
+}  # is_slow_test()
 
 test_that("output class and dimensions are correct", {
+  skip_if_not_slow()
   expect_s3_class(nest_cor, "efa_retention")
   expect_length(nest_cor, 7)
   expect_s3_class(nest_raw, "efa_retention")
@@ -13,6 +19,7 @@ test_that("output class and dimensions are correct", {
 
 
 test_that("found eigenvalues are correct", {
+  skip_if_not_slow()
   expect_equal(sum(.retention_record(nest_cor, "NEST")$y),
                ncol(test_models$baseline$cormat))
   expect_equal(sum(.retention_record(nest_raw, "NEST")$y), ncol(GRiPS_raw))
@@ -22,6 +29,7 @@ test_that("found eigenvalues are correct", {
 })
 
 test_that("reference eigenvalues are correct", {
+  skip_if_not_slow()
   nf_cor <- nest_cor$n_factors[["NEST"]]
   eig_cor <- .retention_record(nest_cor, "NEST")$y
   ref_cor <- .retention_record(nest_cor, "NEST")$reference
@@ -38,6 +46,7 @@ test_that("reference eigenvalues are correct", {
 })
 
 test_that("identified number of factors is correct", {
+  skip_if_not_slow()
   expect_equal(nest_cor$n_factors[["NEST"]], 3)
   expect_equal(nest_raw$n_factors[["NEST"]], 1)
 })
@@ -53,6 +62,7 @@ cor_sing <- stats::cor(dat_sing)
 cor_nposdef <- matrix(c(1, 1, 0, 1, 1, 1, 0, 1, 1), ncol = 3)
 
 test_that("errors are thrown correctly", {
+  skip_if_not_slow()
   expect_error(NEST(1:5), class = "efa_input_not_matrix")
   expect_error(NEST(test_models$baseline$cormat), class = "efa_n_required")
   expect_message(NEST(GRiPS_raw), class = "efa_cor_from_data")
@@ -62,6 +72,7 @@ test_that("errors are thrown correctly", {
 })
 
 test_that("a Heywood case in the reference model raises a classed error", {
+  skip_if_not_slow()
   # a positive-definite matrix whose one-factor model has a communality above 1:
   # the reference data cannot be simulated (negative uniqueness), so NEST must
   # abort with a classed condition instead of an unclassed C++ error
@@ -75,6 +86,7 @@ test_that("a Heywood case in the reference model raises a classed error", {
 })
 
 test_that("the last accepted model is retained at the no-stop boundary", {
+  skip_if_not_slow()
   # Four variables with two clear factors: NEST accepts the 1st empirical
   # eigenvalue (vs the identity reference) and the 2nd (vs the one-factor
   # reference). The search then runs out of testable factors -- floor(.8 * nvar)
@@ -110,6 +122,7 @@ test_that("the last accepted model is retained at the no-stop boundary", {
 })
 
 test_that("settings are returned correctly", {
+  skip_if_not_slow()
 
   expect_equal(nest_cor$settings$N, 500)
   expect_equal(nest_raw$settings$N, 810)
@@ -121,4 +134,5 @@ test_that("settings are returned correctly", {
   expect_equal(nest_raw$settings$cor_method, "pearson")
 })
 
-rm(nest_cor, nest_raw, x, y, z, dat_sing, cor_sing, cor_nposdef)
+if (is_slow_test()) rm(nest_cor, nest_raw)
+rm(x, y, z, dat_sing, cor_sing, cor_nposdef)

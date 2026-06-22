@@ -13,9 +13,14 @@ boot_promax <- suppressWarnings(suppressMessages(
 test_that("np-boot runs end to end for all methods and rotation families", {
   skip_on_cran()
 
-  combos <- expand.grid(
-    method = c("PAF", "ML", "ULS"),
-    rotation = c("none", "varimax", "promax", "oblimin"),
+  # Three (method, rotation) representatives -- one per method and one per rotation
+  # family (none / orthogonal / oblique) -- guard the method x np-boot dispatch
+  # without redoing the full method x rotation cross product. The rotation-family
+  # slot schema is independently pinned across se = information / sandwich / np-boot
+  # by test-EFA-fields.R.
+  combos <- data.frame(
+    method   = c("PAF", "ML", "ULS"),
+    rotation = c("promax", "varimax", "none"),
     stringsAsFactors = FALSE
   )
 

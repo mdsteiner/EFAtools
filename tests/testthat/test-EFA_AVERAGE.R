@@ -2,6 +2,12 @@
 # so the random starts of the oblique rotation engines draw from the session RNG.
 # Seed once here so the fixtures below - and the print snapshot built from them -
 # are reproducible regardless of what ran earlier in the test run.
+#
+# The vector-valued default tuning settings expand to ~144 inner EFA fits per
+# fixture, so the un-collapsed `efa_def` / `efa_all_none` / `efa_all_md`
+# fixtures dominate the file (~25s combined). Skipped by default; opt in with
+# `Sys.setenv(EFATOOLS_TEST_SLOW = "true")`. See helper-slow.R.
+if (is_slow_test()) {
 set.seed(42)
 
 efa_def <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
@@ -11,18 +17,39 @@ efa_ml <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
 efa_uls <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
                       method = "ULS", show_progress = FALSE)
 
-efa_all <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
-                       method = c("PAF", "ML", "ULS"),
-                       type = c("none", "EFAtools", "psych", "SPSS"),
-                       salience_threshold = .2, show_progress = FALSE)
-efa_all_oblq <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
-                            method = c("PAF", "ML", "ULS"),
-                            type = c("none", "EFAtools", "psych", "SPSS"),
-                            rotation = "oblique", show_progress = FALSE)
-efa_all_orth <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
-                            method = c("PAF", "ML", "ULS"),
-                            type = c("none", "EFAtools", "psych", "SPSS"),
-                            rotation = "orthogonal", show_progress = FALSE)
+# Scalar overrides on the six default-vector tuning axes (init_comm,
+# criterion_type, varimax_type, k_promax, P_type, start_method) for the
+# fixtures whose downstream tests don't depend on the multi-value defaults.
+# `efa_def` (above) still pins the vector defaults end-to-end; `efa_all_none`
+# and `efa_all_md` (below) keep their full-grid expansion because they feed
+# print-snapshot tests. Each of these scalar fixtures drops from ~1728 to ~12
+# inner EFA fits.
+.scalar_axes <- list(
+  init_comm     = "smc",
+  criterion_type = "sum",
+  varimax_type  = "svd",
+  k_promax      = 4,
+  P_type        = "norm",
+  start_method  = "psych"
+)
+efa_all <- do.call(EFA_AVERAGE, c(
+  list(test_models$baseline$cormat, n_factors = 3, N = 500,
+       method = c("PAF", "ML", "ULS"),
+       type = c("none", "EFAtools", "psych", "SPSS"),
+       salience_threshold = .2, show_progress = FALSE),
+  .scalar_axes))
+efa_all_oblq <- do.call(EFA_AVERAGE, c(
+  list(test_models$baseline$cormat, n_factors = 3, N = 500,
+       method = c("PAF", "ML", "ULS"),
+       type = c("none", "EFAtools", "psych", "SPSS"),
+       rotation = "oblique", show_progress = FALSE),
+  .scalar_axes))
+efa_all_orth <- do.call(EFA_AVERAGE, c(
+  list(test_models$baseline$cormat, n_factors = 3, N = 500,
+       method = c("PAF", "ML", "ULS"),
+       type = c("none", "EFAtools", "psych", "SPSS"),
+       rotation = "orthogonal", show_progress = FALSE),
+  .scalar_axes))
 efa_all_none <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
                             method = c("PAF", "ML", "ULS"),
                             type = c("none", "EFAtools", "psych", "SPSS"),
@@ -32,15 +59,19 @@ efa_all_md <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
                             method = c("PAF", "ML", "ULS"),
                             type = c("none", "EFAtools", "psych", "SPSS"),
                             rotation = "oblique", averaging = "median", show_progress = FALSE)
-efa_all_tm <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
-                          method = c("PAF", "ML", "ULS"),
-                          type = c("none", "EFAtools", "psych", "SPSS"),
-                          rotation = "oblique", averaging = "mean",
-                          trim = .2, show_progress = FALSE)
+efa_all_tm <- do.call(EFA_AVERAGE, c(
+  list(test_models$baseline$cormat, n_factors = 3, N = 500,
+       method = c("PAF", "ML", "ULS"),
+       type = c("none", "EFAtools", "psych", "SPSS"),
+       rotation = "oblique", averaging = "mean",
+       trim = .2, show_progress = FALSE),
+  .scalar_axes))
 efa_raw <- EFA_AVERAGE(GRiPS_raw, n_factors = 1, rotation = "none", show_progress = FALSE)
 efa_raw_p <- EFA_AVERAGE(GRiPS_raw, n_factors = 2, rotation = "promax", show_progress = FALSE)
+}  # is_slow_test()
 
 test_that("output class and dimensions are correct", {
+  skip_if_not_slow()
   expect_s3_class(efa_def, "EFA_AVERAGE")
   expect_s3_class(efa_ml, "EFA_AVERAGE")
   expect_s3_class(efa_uls, "EFA_AVERAGE")
@@ -101,6 +132,7 @@ test_that("output class and dimensions are correct", {
 })
 
 test_that("settings are returned correctly", {
+  skip_if_not_slow()
   expect_named(efa_def$settings, c("method", "rotation", "type", "n_factors", "N",
                                    "init_comm", "criterion", "criterion_type",
                                    "abs_eigen", "varimax_type", "normalize",
@@ -243,12 +275,12 @@ test_that("settings are returned correctly", {
   expect_equal(efa_def$settings$init_comm, c("smc", "mac", "unity"))
   expect_equal(efa_ml$settings$init_comm, c("smc", "mac", "unity"))
   expect_equal(efa_uls$settings$init_comm, c("smc", "mac", "unity"))
-  expect_equal(efa_all$settings$init_comm, c("smc", "mac", "unity"))
-  expect_equal(efa_all_oblq$settings$init_comm, c("smc", "mac", "unity"))
-  expect_equal(efa_all_orth$settings$init_comm, c("smc", "mac", "unity"))
+  expect_equal(efa_all$settings$init_comm, "smc")
+  expect_equal(efa_all_oblq$settings$init_comm, "smc")
+  expect_equal(efa_all_orth$settings$init_comm, "smc")
   expect_equal(efa_all_none$settings$init_comm, c("smc", "mac", "unity"))
   expect_equal(efa_all_md$settings$init_comm, c("smc", "mac", "unity"))
-  expect_equal(efa_all_tm$settings$init_comm, c("smc", "mac", "unity"))
+  expect_equal(efa_all_tm$settings$init_comm, "smc")
   expect_equal(efa_raw$settings$init_comm, c("smc", "mac", "unity"))
   expect_equal(efa_raw_p$settings$init_comm, c("smc", "mac", "unity"))
 
@@ -267,12 +299,12 @@ test_that("settings are returned correctly", {
   expect_equal(efa_def$settings$criterion_type, c("sum", "max_individual"))
   expect_equal(efa_ml$settings$criterion_type, c("sum", "max_individual"))
   expect_equal(efa_uls$settings$criterion_type, c("sum", "max_individual"))
-  expect_equal(efa_all$settings$criterion_type, c("sum", "max_individual"))
-  expect_equal(efa_all_oblq$settings$criterion_type, c("sum", "max_individual"))
-  expect_equal(efa_all_orth$settings$criterion_type, c("sum", "max_individual"))
+  expect_equal(efa_all$settings$criterion_type, "sum")
+  expect_equal(efa_all_oblq$settings$criterion_type, "sum")
+  expect_equal(efa_all_orth$settings$criterion_type, "sum")
   expect_equal(efa_all_none$settings$criterion_type, c("sum", "max_individual"))
   expect_equal(efa_all_md$settings$criterion_type, c("sum", "max_individual"))
-  expect_equal(efa_all_tm$settings$criterion_type, c("sum", "max_individual"))
+  expect_equal(efa_all_tm$settings$criterion_type, "sum")
   expect_equal(efa_raw$settings$criterion_type, c("sum", "max_individual"))
   expect_equal(efa_raw_p$settings$criterion_type, c("sum", "max_individual"))
 
@@ -303,12 +335,12 @@ test_that("settings are returned correctly", {
   expect_equal(efa_def$settings$varimax_type, c("svd", "kaiser"))
   expect_equal(efa_ml$settings$varimax_type, c("svd", "kaiser"))
   expect_equal(efa_uls$settings$varimax_type, c("svd", "kaiser"))
-  expect_equal(efa_all$settings$varimax_type, c("svd", "kaiser"))
-  expect_equal(efa_all_oblq$settings$varimax_type, c("svd", "kaiser"))
-  expect_equal(efa_all_orth$settings$varimax_type, c("svd", "kaiser"))
+  expect_equal(efa_all$settings$varimax_type, "svd")
+  expect_equal(efa_all_oblq$settings$varimax_type, "svd")
+  expect_equal(efa_all_orth$settings$varimax_type, "svd")
   expect_equal(efa_all_none$settings$varimax_type, c("svd", "kaiser"))
   expect_equal(efa_all_md$settings$varimax_type, c("svd", "kaiser"))
-  expect_equal(efa_all_tm$settings$varimax_type, c("svd", "kaiser"))
+  expect_equal(efa_all_tm$settings$varimax_type, "svd")
   expect_equal(efa_raw$settings$varimax_type, c("svd", "kaiser"))
   expect_equal(efa_raw_p$settings$varimax_type, c("svd", "kaiser"))
 
@@ -327,12 +359,12 @@ test_that("settings are returned correctly", {
   expect_equal(efa_def$settings$k_promax, 2:4)
   expect_equal(efa_ml$settings$k_promax, 2:4)
   expect_equal(efa_uls$settings$k_promax, 2:4)
-  expect_equal(efa_all$settings$k_promax, 2:4)
-  expect_equal(efa_all_oblq$settings$k_promax, 2:4)
-  expect_equal(efa_all_orth$settings$k_promax, 2:4)
+  expect_equal(efa_all$settings$k_promax, 4)
+  expect_equal(efa_all_oblq$settings$k_promax, 4)
+  expect_equal(efa_all_orth$settings$k_promax, 4)
   expect_equal(efa_all_none$settings$k_promax, 2:4)
   expect_equal(efa_all_md$settings$k_promax, 2:4)
-  expect_equal(efa_all_tm$settings$k_promax, 2:4)
+  expect_equal(efa_all_tm$settings$k_promax, 4)
   expect_equal(efa_raw$settings$k_promax, 2:4)
   expect_equal(efa_raw_p$settings$k_promax, 2:4)
 
@@ -351,12 +383,12 @@ test_that("settings are returned correctly", {
   expect_equal(efa_def$settings$P_type, c("norm", "unnorm"))
   expect_equal(efa_ml$settings$P_type, c("norm", "unnorm"))
   expect_equal(efa_uls$settings$P_type, c("norm", "unnorm"))
-  expect_equal(efa_all$settings$P_type, c("norm", "unnorm"))
-  expect_equal(efa_all_oblq$settings$P_type, c("norm", "unnorm"))
-  expect_equal(efa_all_orth$settings$P_type, c("norm", "unnorm"))
+  expect_equal(efa_all$settings$P_type, "norm")
+  expect_equal(efa_all_oblq$settings$P_type, "norm")
+  expect_equal(efa_all_orth$settings$P_type, "norm")
   expect_equal(efa_all_none$settings$P_type, c("norm", "unnorm"))
   expect_equal(efa_all_md$settings$P_type, c("norm", "unnorm"))
-  expect_equal(efa_all_tm$settings$P_type, c("norm", "unnorm"))
+  expect_equal(efa_all_tm$settings$P_type, "norm")
   expect_equal(efa_raw$settings$P_type, c("norm", "unnorm"))
   expect_equal(efa_raw_p$settings$P_type, c("norm", "unnorm"))
 
@@ -375,12 +407,12 @@ test_that("settings are returned correctly", {
   expect_equal(efa_def$settings$start_method, c("psych", "factanal"))
   expect_equal(efa_ml$settings$start_method, c("psych", "factanal"))
   expect_equal(efa_uls$settings$start_method, c("psych", "factanal"))
-  expect_equal(efa_all$settings$start_method, c("psych", "factanal"))
-  expect_equal(efa_all_oblq$settings$start_method, c("psych", "factanal"))
-  expect_equal(efa_all_orth$settings$start_method, c("psych", "factanal"))
+  expect_equal(efa_all$settings$start_method, "psych")
+  expect_equal(efa_all_oblq$settings$start_method, "psych")
+  expect_equal(efa_all_orth$settings$start_method, "psych")
   expect_equal(efa_all_none$settings$start_method, c("psych", "factanal"))
   expect_equal(efa_all_md$settings$start_method, c("psych", "factanal"))
-  expect_equal(efa_all_tm$settings$start_method, c("psych", "factanal"))
+  expect_equal(efa_all_tm$settings$start_method, "psych")
   expect_equal(efa_raw$settings$start_method, c("psych", "factanal"))
   expect_equal(efa_raw_p$settings$start_method, c("psych", "factanal"))
 
@@ -470,6 +502,7 @@ cor_sing <- stats::cor(dat_sing)
 cor_nposdef <- matrix(c(1, 1, 0, 1, 1, 1, 0, 1, 1), ncol = 3)
 
 test_that("errors are thrown correctly", {
+  skip_if_not_slow()
   expect_error(EFA_AVERAGE(1:5, show_progress = FALSE), class = "efa_input_not_matrix")
   expect_message(EFA_AVERAGE(GRiPS_raw, n_factors = 2, method = "PAF", type = c("EFAtools", "psych"), show_progress = FALSE),
                  class = "efa_cor_from_data")
@@ -495,6 +528,7 @@ test_that("errors are thrown correctly", {
 })
 
 test_that("an all-failed averaging grid returns an empty (NA) result", {
+  skip_if_not_slow()
   # When every solution fails (here all runs hit max_iter and do not converge),
   # the averaged result is NA rather than an error or an average over an empty set.
   res <- suppressWarnings(EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3,
@@ -508,6 +542,7 @@ test_that("an all-failed averaging grid returns an empty (NA) result", {
 })
 
 test_that("an all-Heywood averaging grid returns an empty (NA) result", {
+  skip_if_not_slow()
   # A 3-variable matrix whose single-factor solution implies a communality > 1, so
   # every fitted solution is a Heywood case and is excluded; with nothing left to
   # average, the communalities and loadings come back as NA rather than an error.
@@ -522,6 +557,7 @@ test_that("an all-Heywood averaging grid returns an empty (NA) result", {
 })
 
 test_that("print output is stable", {
+  skip_if_not_slow()
   skip_on_cran()
   local_reproducible_output()
 
@@ -538,10 +574,12 @@ test_that("print output is stable", {
 
 test_that("plot returns a ggplot", {
   skip_on_cran()
+  skip_if_not_slow()
   expect_s3_class(plot(efa_def), "ggplot")
 })
 
 test_that("a vector-valued precision is recycled across the grid", {
+  skip_if_not_slow()
   # A vector precision is expanded into the grid; each EFA must receive its own
   # scalar value rather than the whole vector (which would fail every fit and
   # return an all-NA result).
@@ -557,6 +595,7 @@ test_that("a vector-valued precision is recycled across the grid", {
 })
 
 test_that("problematic solutions are summarised in a single warning", {
+  skip_if_not_slow()
   # All runs hit max_iter and are excluded, so one summary warning is raised
   # rather than one per model.
   expect_warning(
@@ -573,6 +612,7 @@ test_that("printing does not plot by default", {
 
 test_that("admissibility is reported as an outcome, not a varied setting", {
   skip_on_cran()
+  skip_if_not_slow()
   local_reproducible_output()
   obj <- efa_def
   # Force mixed admissibility so the column would surface in the varied-settings
@@ -585,6 +625,7 @@ test_that("admissibility is reported as an outcome, not a varied setting", {
 })
 
 test_that("averaged fit indices match the per-model grid means", {
+  skip_if_not_slow()
   # efa_def uses the untrimmed mean, so each averaged index equals the column
   # mean over the included models (and the new residual indices are averaged too).
   fi <- efa_def$fit_indices
@@ -593,8 +634,10 @@ test_that("averaged fit indices match the per-model grid means", {
   expect_equal(fi$average[fi$index == "srmr"], mean(grid$srmr, na.rm = TRUE))
 })
 
-rm(efa_def, efa_ml, efa_uls, efa_all, efa_all_oblq, efa_all_orth, efa_all_none,
-   efa_all_md, efa_all_tm, efa_raw, efa_raw_p)
+if (is_slow_test()) {
+  rm(efa_def, efa_ml, efa_uls, efa_all, efa_all_oblq, efa_all_orth, efa_all_none,
+     efa_all_md, efa_all_tm, efa_raw, efa_raw_p)
+}
 
 
 

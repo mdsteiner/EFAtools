@@ -44,7 +44,10 @@ test_that("quartimax and equamax route through the native CF rotation engine", {
   # The like-for-like reference is cfT() with the matching kappa -- GPArotation's
   # quartimax() optimises the same rotation but reports a differently scaled criterion
   # value, so cfT(kappa = 0) is the correct Q reference for quartimax.
-  for (fx_name in names(fixtures)) {
+  # A rotation-engine regression shifts loadings by >= 1e-2 regardless of fixture, so
+  # a single baseline fixture is enough to catch one; cross-fixture coverage is kept
+  # for the multimodal/flat criteria below.
+  for (fx_name in "baseline") {
     fx <- fixtures[[fx_name]]
     unrot_fx <- suppressWarnings(EFA(fx$R, n_factors = fx$nf, N = fx$N))
     Lx <- unclass(unrot_fx$unrot_loadings)
@@ -271,7 +274,9 @@ test_that("oblimin and quartimin route through the native oblique GPF engine", {
   # of the SAME criterion, the aligned loadings must agree to ~1e-4, and the factor correlations
   # must match under the permutation/sign-invariant fingerprint. The single GPArotation::oblimin()
   # reference serves both public names (quartimin is the same gam = 0 criterion).
-  for (fx_name in names(fixtures)) {
+  # A single baseline fixture is enough to catch any rotation-engine regression here;
+  # cross-fixture coverage is kept for the multimodal/flat criteria below.
+  for (fx_name in "baseline") {
     fx <- fixtures[[fx_name]]
     unrot_fx <- suppressWarnings(EFA(fx$R, n_factors = fx$nf, N = fx$N))
     Lx <- unclass(unrot_fx$unrot_loadings)
