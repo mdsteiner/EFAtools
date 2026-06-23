@@ -16,7 +16,7 @@
     label = "Comparison data", needs_raw = TRUE, poly_ok = FALSE,
     fun = function(x, ctl) {
       CD(x, n_factors_max = ctl$n_factors_max, N_pop = ctl$N_pop,
-         N_samples = ctl$N_samples, alpha = ctl$alpha, use = ctl$use,
+         N_samples = ctl$N_samples, alpha = ctl$alpha,
          cor_method = ctl$cor_method, max_iter = ctl$max_iter_CD)
     }),
   EKC = list(

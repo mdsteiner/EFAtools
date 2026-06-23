@@ -75,6 +75,13 @@ model. The \code{alpha}-level defines against which percentile of the synthetic
 eigenvalue distribution to compare the empirical eigenvalues against, i.e., an
 alpha of .05 (the default) uses the 95th percentile as reference value.
 
+The number of factors tested is capped at \eqn{\lfloor 0.8 \times p \rfloor}
+(with \eqn{p} the number of variables; Achim, 2017) and additionally limited so
+that the \eqn{(k - 1)}-factor reference model used at each step stays
+over-identified. If no empirical eigenvalue falls at or below its reference
+within this range, every tested factor is accepted and this capped number is
+returned.
+
 For details on the method, including simulation studies, see Achim (2017),
 Brandenburg and Papenberg (2024), and Caron (2025).
 
@@ -89,3 +96,18 @@ NEST(test_models$baseline$cormat, N = 500)
 # with raw data
 NEST(GRiPS_raw)
 }
+\seealso{
+\code{\link[=N_FACTORS]{N_FACTORS()}} as a wrapper function for this and the other factor
+retention criteria.
+
+Other factor retention criteria:
+\code{\link[=CD]{CD()}},
+\code{\link[=EKC]{EKC()}},
+\code{\link[=HULL]{HULL()}},
+\code{\link[=KGC]{KGC()}},
+\code{\link[=MAP]{MAP()}},
+\code{\link[=PARALLEL]{PARALLEL()}},
+\code{\link[=SCREE]{SCREE()}},
+\code{\link[=SMT]{SMT()}}
+}
+\concept{factor retention criteria}

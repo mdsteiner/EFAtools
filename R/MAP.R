@@ -19,13 +19,15 @@
 #' remaining in \eqn{R^*_m}. The recommended number of factors/components is the \eqn{m} that
 #' minimizes the chosen criterion.
 #'
-#' This function returns two MAP criteria:
+#' This function returns two MAP criteria, both summarizing the off-diagonal elements
+#' \eqn{r^*_{ij}} of \eqn{R^*_m}:
 #' \itemize{
-#'   \item **TR2 (original MAP):** \deqn{\mathrm{MAP}_m = \frac{\mathrm{Trace}(R^{*2}_m) - p}{p(p-1)}}
-#'   which is algebraically equivalent to the mean squared off-diagonal partial correlations and
-#'   corresponds to Velicer's original MAP procedure.
-#'   \item **TR4 (revised MAP):** \deqn{\mathrm{MAP4}_m = \frac{\mathrm{Trace}(R^{*4}_m) - p}{p(p-1)}}
-#'   a higher-order variant that places more weight on dominant residual association structure.
+#'   \item **TR2 (original MAP):** \deqn{\mathrm{MAP}_m = \frac{\sum_{i \neq j} (r^*_{ij})^2}{p(p-1)}}
+#'   the mean squared off-diagonal partial correlation, corresponding to Velicer's original
+#'   MAP procedure.
+#'   \item **TR4 (revised MAP):** \deqn{\mathrm{MAP4}_m = \frac{\sum_{i \neq j} (r^*_{ij})^4}{p(p-1)}}
+#'   the mean fourth-power off-diagonal partial correlation, which places more weight on dominant
+#'   residual association structure and is less affected by small partial correlations.
 #' }
 #'
 #' **Input handling.** `x` can be a correlation matrix or raw data. If `x` is not a
@@ -82,6 +84,11 @@
 #' res2 <- MAP(test_models$baseline$cormat)
 #' res2
 #'
+#' @family factor retention criteria
+#'
+#' @seealso [N_FACTORS()] as a wrapper function for this and the other factor
+#'   retention criteria.
+#'
 #' @export
 MAP <- function(x,
                 use = c("pairwise.complete.obs", "all.obs",
@@ -116,19 +123,18 @@ MAP <- function(x,
   vecs <- ed$vectors
   A <- vecs %*% sqrt(diag(vals))
 
-  map_from_trace_power <- function(M) {
-    # "Trace of the matrix ... to the k-th power" in the VEF (2000) sense (matrix power),
-    # then transformed to the MAP scale:
-    #   (Trace(M^k) - p) / (p(p-1))  (matches the TR2-to-MAP equivalence described in the chapter)
-    M2 <- M %*% M
-    M4 <- M2 %*% M2
-
-    c((sum(diag(M2)) - p) / (p * (p - 1)), # TR2 criterion
-      (sum(diag(M4)) - p) / (p * (p - 1))) # TR4 criterion
+  map_from_partials <- function(M) {
+    # Velicer's (1976) MAP and the revised criterion of Velicer, Eaton & Fava (2000)
+    # summarize the off-diagonal partial correlations of M (which has a unit diagonal):
+    #   TR2 = mean squared off-diagonal partial correlation
+    #   TR4 = mean fourth-power off-diagonal partial correlation
+    # Subtracting p removes the p diagonal ones; p(p - 1) is the number of off-diagonal cells.
+    c((sum(M^2) - p) / (p * (p - 1)), # TR2 criterion (original MAP)
+      (sum(M^4) - p) / (p * (p - 1))) # TR4 criterion (revised MAP)
   }
 
   # m=0, Rstar = R
-  criteria[1, c(2, 3)] <- map_from_trace_power(R)
+  criteria[1, c(2, 3)] <- map_from_partials(R)
 
   # run through ms
   for (m in seq_len(m_max)) {
@@ -147,7 +153,7 @@ MAP <- function(x,
     Dm <- diag(1 / sqrt(d))
 
     Rstar <- Dm %*% Cm %*% Dm
-    criteria[m + 1, c(2, 3)] <- map_from_trace_power(Rstar)
+    criteria[m + 1, c(2, 3)] <- map_from_partials(Rstar)
 
   }
 

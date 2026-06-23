@@ -20,11 +20,11 @@
 #' matrix \eqn{R^{-1}} is to a diagonal matrix \eqn{S} to determine a given
 #' correlation matrix's (\eqn{R}) suitability for factor analysis.
 #' The index is
-#' \deqn{KMO = \frac{\sum\limits_{i<j}\sum r_{ij}^2}{\sum\limits_{i<j}\sum r_{ij}^2 + \sum\limits_{i<j}\sum q_{ij}^2}}
+#' \deqn{KMO = \frac{\sum_{i \neq j} r_{ij}^2}{\sum_{i \neq j} r_{ij}^2 + \sum_{i \neq j} q_{ij}^2}}
 #' with \eqn{Q = SR^{-1}S} and S = \eqn{(diag R^{-1})^{-1/2}} where
-#' \eqn{\sum\limits_{i<j}\sum r_{ij}^2} is the sum of squares of the upper
-#' off-diagonal elements of \eqn{R} and \eqn{\sum\limits_{i<j}\sum q_{ij}^2} is the
-#' sum of squares of the upper off-diagonal elements of \eqn{Q} (see also Cureton & D'Agostino, 1983).
+#' \eqn{\sum_{i \neq j} r_{ij}^2} is the sum of squares of the off-diagonal
+#' elements of \eqn{R} and \eqn{\sum_{i \neq j} q_{ij}^2} is the sum of squares of
+#' the off-diagonal elements of \eqn{Q} (see also Cureton & D'Agostino, 1983).
 #'
 #' So KMO varies between 0 and 1, with larger values indicating higher suitability
 #' for factor analysis. Kaiser and Rice (1974) suggest that KMO should at least

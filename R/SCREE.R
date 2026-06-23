@@ -58,11 +58,10 @@
 #' determining the number of components to retain. Psychological Bulletin, 99,
 #' 432–442. http://dx.doi.org/10.1037/0033-2909.99.3.432
 #'
-#' @seealso Other factor retention criteria: [CD()], [EKC()],
-#' [HULL()], [PARALLEL()], [SMT()]
+#' @family factor retention criteria
 #'
-#' [N_FACTORS()] as a wrapper function for this and all the
-#' above-mentioned factor retention criteria.
+#' @seealso [N_FACTORS()] as a wrapper function for this and the other factor
+#'   retention criteria.
 #'
 #' @export
 #'

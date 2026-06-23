@@ -49,7 +49,8 @@
 #' [KGC()], [SCREE()], [PARALLEL()], and [NEST()]. The
 #' estimation method to use. One of  `"PAF"`, `"ULS"`, or  `"ML"`,
 #' for principal axis factoring, unweighted least squares, and maximum
-#' likelihood, respectively.
+#' likelihood, respectively. In [KGC()], [SCREE()], and [PARALLEL()] it only
+#' takes effect when the respective `eigen_type` includes `"EFA"`.
 #' @param gof character. Passed to [HULL()]. The goodness of fit index
 #' to use. Either `"CAF"`, `"CFI"`, or `"RMSEA"`, or any
 #' combination of them. If `method = "PAF"` is used, only
@@ -335,17 +336,17 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
   # Visual criteria (the scree plot) make no numeric suggestion and are omitted;
   # for the others NA suggestions are kept (named), so a criterion that ran but
   # could not determine a number stays visible.
-  n_factors <- unlist(lapply(names(outputs), function(id) {
+  n_factors_out <- unlist(lapply(names(outputs), function(id) {
     if (isTRUE(.retention_registry[[id]]$visual)) return(NULL)
     nf <- outputs[[id]]$n_factors
     names(nf) <- ifelse(names(nf) == id, id, paste(id, names(nf), sep = "_"))
     nf
   }))
-  if (is.null(n_factors)) n_factors <- numeric(0)
+  if (is.null(n_factors_out)) n_factors_out <- numeric(0)
 
   output <- list(suitability = suitability_out,
                  outputs = outputs,
-                 n_factors = n_factors,
+                 n_factors = n_factors_out,
                  not_run = if (length(not_run) > 0) not_run else NULL,
                  settings = settings)
 

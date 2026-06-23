@@ -86,9 +86,17 @@ retention criteria in the \code{\link[=N_FACTORS]{N_FACTORS()}} function.
 SCREE(test_models$baseline$cormat, eigen_type = c("PCA", "SMC"))
 }
 \seealso{
-Other factor retention criteria: \code{\link[=CD]{CD()}}, \code{\link[=EKC]{EKC()}},
-\code{\link[=HULL]{HULL()}}, \code{\link[=PARALLEL]{PARALLEL()}}, \code{\link[=SMT]{SMT()}}
+\code{\link[=N_FACTORS]{N_FACTORS()}} as a wrapper function for this and the other factor
+retention criteria.
 
-\code{\link[=N_FACTORS]{N_FACTORS()}} as a wrapper function for this and all the
-above-mentioned factor retention criteria.
+Other factor retention criteria:
+\code{\link[=CD]{CD()}},
+\code{\link[=EKC]{EKC()}},
+\code{\link[=HULL]{HULL()}},
+\code{\link[=KGC]{KGC()}},
+\code{\link[=MAP]{MAP()}},
+\code{\link[=NEST]{NEST()}},
+\code{\link[=PARALLEL]{PARALLEL()}},
+\code{\link[=SMT]{SMT()}}
 }
+\concept{factor retention criteria}

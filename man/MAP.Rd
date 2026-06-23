@@ -53,13 +53,15 @@ with \eqn{D_m = \mathrm{diag}(C_m)}. The MAP criteria summarize the off-diagonal
 remaining in \eqn{R^*_m}. The recommended number of factors/components is the \eqn{m} that
 minimizes the chosen criterion.
 
-This function returns two MAP criteria:
+This function returns two MAP criteria, both summarizing the off-diagonal elements
+\eqn{r^*_{ij}} of \eqn{R^*_m}:
 \itemize{
-\item \strong{TR2 (original MAP):} \deqn{\mathrm{MAP}_m = \frac{\mathrm{Trace}(R^{*2}_m) - p}{p(p-1)}}
-which is algebraically equivalent to the mean squared off-diagonal partial correlations and
-corresponds to Velicer's original MAP procedure.
-\item \strong{TR4 (revised MAP):} \deqn{\mathrm{MAP4}_m = \frac{\mathrm{Trace}(R^{*4}_m) - p}{p(p-1)}}
-a higher-order variant that places more weight on dominant residual association structure.
+\item \strong{TR2 (original MAP):} \deqn{\mathrm{MAP}_m = \frac{\sum_{i \neq j} (r^*_{ij})^2}{p(p-1)}}
+the mean squared off-diagonal partial correlation, corresponding to Velicer's original
+MAP procedure.
+\item \strong{TR4 (revised MAP):} \deqn{\mathrm{MAP4}_m = \frac{\sum_{i \neq j} (r^*_{ij})^4}{p(p-1)}}
+the mean fourth-power off-diagonal partial correlation, which places more weight on dominant
+residual association structure and is less affected by small partial correlations.
 }
 
 \strong{Input handling.} \code{x} can be a correlation matrix or raw data. If \code{x} is not a
@@ -96,3 +98,18 @@ Velicer, W. F. (1976). Determining the number of components from the matrix of p
 Velicer, W. F., Eaton, C. A., & Fava, J. L. (2000). Construct explication through factor or component analysis: A review and evaluation of alternative procedures for determining the number of factors or components. In Goffin, R. D. & Helmes, E. (Eds.), \emph{Problems and Solutions in
 Human Assessment: Honoring Douglas N. Jackson at Seventy} (pp. 41--71). Boston: Kluwer.
 }
+\seealso{
+\code{\link[=N_FACTORS]{N_FACTORS()}} as a wrapper function for this and the other factor
+retention criteria.
+
+Other factor retention criteria:
+\code{\link[=CD]{CD()}},
+\code{\link[=EKC]{EKC()}},
+\code{\link[=HULL]{HULL()}},
+\code{\link[=KGC]{KGC()}},
+\code{\link[=NEST]{NEST()}},
+\code{\link[=PARALLEL]{PARALLEL()}},
+\code{\link[=SCREE]{SCREE()}},
+\code{\link[=SMT]{SMT()}}
+}
+\concept{factor retention criteria}

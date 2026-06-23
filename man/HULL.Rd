@@ -34,9 +34,9 @@ correlations.}
 Only has to be specified if x is a correlation matrix, otherwise it is determined
 based on the dimensions of x.}
 
-\item{n_fac_theor}{numeric. Theoretical number of factors to retain. The maximum
-of this number and the number of factors suggested by \link{PARALLEL} plus
-one will be used in the Hull method.}
+\item{n_fac_theor}{numeric. Theoretical number of factors to retain. One plus
+the larger of this number and the number of factors suggested by \link{PARALLEL}
+is used as the upper bound \emph{J} of factors to extract in the Hull method.}
 
 \item{method}{character. The estimation method to use. One of  \code{"PAF"},
 \code{"ULS"}, or  \code{"ML"}, for principal axis factoring, unweighted
@@ -154,9 +154,17 @@ HULL(test_models$baseline$cormat, N = 500, gof = "CAF")
 }
 }
 \seealso{
-Other factor retention criteria: \code{\link[=CD]{CD()}}, \code{\link[=EKC]{EKC()}},
-\code{\link[=KGC]{KGC()}}, \code{\link[=PARALLEL]{PARALLEL()}}, \code{\link[=SMT]{SMT()}}
+\code{\link[=N_FACTORS]{N_FACTORS()}} as a wrapper function for this and the other factor
+retention criteria.
 
-\code{\link[=N_FACTORS]{N_FACTORS()}} as a wrapper function for this and all the
-above-mentioned factor retention criteria.
+Other factor retention criteria:
+\code{\link[=CD]{CD()}},
+\code{\link[=EKC]{EKC()}},
+\code{\link[=KGC]{KGC()}},
+\code{\link[=MAP]{MAP()}},
+\code{\link[=NEST]{NEST()}},
+\code{\link[=PARALLEL]{PARALLEL()}},
+\code{\link[=SCREE]{SCREE()}},
+\code{\link[=SMT]{SMT()}}
 }
+\concept{factor retention criteria}

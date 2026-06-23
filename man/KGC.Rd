@@ -71,7 +71,7 @@ eigenvalues and the retained solution used for printing and plotting.}
 }
 \description{
 Probably the most popular factor retention criterion. Kaiser and Guttman suggested
-to retain as many factors as there are sample eigenvalues greater than or equal to 1.
+to retain as many factors as there are sample eigenvalues greater than 1.
 This is why the criterion is also known as eigenvalues-greater-than-one rule.
 }
 \details{
@@ -101,9 +101,17 @@ retention criteria in the \code{\link[=N_FACTORS]{N_FACTORS()}} function.
 KGC(test_models$baseline$cormat, eigen_type = c("PCA", "SMC"))
 }
 \seealso{
-Other factor retention criteria: \code{\link[=CD]{CD()}}, \code{\link[=EKC]{EKC()}},
-\code{\link[=HULL]{HULL()}}, \code{\link[=PARALLEL]{PARALLEL()}}, \code{\link[=SMT]{SMT()}}
+\code{\link[=N_FACTORS]{N_FACTORS()}} as a wrapper function for this and the other factor
+retention criteria.
 
-\code{\link[=N_FACTORS]{N_FACTORS()}} as a wrapper function for this and all the
-above-mentioned factor retention criteria.
+Other factor retention criteria:
+\code{\link[=CD]{CD()}},
+\code{\link[=EKC]{EKC()}},
+\code{\link[=HULL]{HULL()}},
+\code{\link[=MAP]{MAP()}},
+\code{\link[=NEST]{NEST()}},
+\code{\link[=PARALLEL]{PARALLEL()}},
+\code{\link[=SCREE]{SCREE()}},
+\code{\link[=SMT]{SMT()}}
 }
+\concept{factor retention criteria}

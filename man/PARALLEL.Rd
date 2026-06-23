@@ -12,6 +12,10 @@ Svetina, D., & Thompson, M. S. (2010). Evaluation of parallel analysis methods
 for determining the number of factors. Educational and Psychological
 Measurement, 70(6), 885-901.
 
+Glorfeld, L. W. (1995). An improvement on Horn's parallel analysis
+methodology for selecting the correct number of factors to retain. Educational
+and Psychological Measurement, 55(3), 377-393.
+
 Horn, J. L. (1965). A rationale and test for the number of factors in
 factor analysis. Psychometrika, 30(2), 179–185. doi: 10.1007/BF02289447
 }
@@ -68,7 +72,10 @@ Default is "pearson".}
 factors to retain. Default is \code{"means"}, which will use the average
 simulated eigenvalues. \code{"percentile"}, uses the percentiles specified
 in percent. \code{"crawford"} uses the 95th percentile for the first factor
-and the mean afterwards (based on Crawford et al, 2010).}
+and the mean afterwards (based on Crawford et al, 2010). The \code{"means"} rule
+retains a factor whenever its real eigenvalue exceeds the average simulated
+one and thus tends to retain more factors than the more conservative
+\code{"percentile"} rule (Glorfeld, 1995).}
 
 \item{n_factors}{numeric. Number of factors to extract if "EFA" is included in
 \code{eigen_type}. Default is 1.}
@@ -148,9 +155,17 @@ pa_faster <- PARALLEL(test_models$case_11b$cormat, N = 500)
 }
 }
 \seealso{
-Other factor retention criteria: \code{\link[=CD]{CD()}}, \code{\link[=EKC]{EKC()}},
-\code{\link[=HULL]{HULL()}}, \code{\link[=KGC]{KGC()}}, \code{\link[=SMT]{SMT()}}
+\code{\link[=N_FACTORS]{N_FACTORS()}} as a wrapper function for this and the other factor
+retention criteria.
 
-\code{\link[=N_FACTORS]{N_FACTORS()}} as a wrapper function for this and all the
-above-mentioned factor retention criteria.
+Other factor retention criteria:
+\code{\link[=CD]{CD()}},
+\code{\link[=EKC]{EKC()}},
+\code{\link[=HULL]{HULL()}},
+\code{\link[=KGC]{KGC()}},
+\code{\link[=MAP]{MAP()}},
+\code{\link[=NEST]{NEST()}},
+\code{\link[=SCREE]{SCREE()}},
+\code{\link[=SMT]{SMT()}}
 }
+\concept{factor retention criteria}

@@ -153,7 +153,7 @@
       -- Minimum average partial -----------------------------------------------------
       
       * Original implementation (TR2): 1
-      * Revised implementation (TR4): 3
+      * Revised implementation (TR4): 1
 
 # print.N_FACTORS output is stable
 
@@ -171,7 +171,7 @@
       
       Minimum average partial
       * Original implementation (TR2): 1
-      * Revised implementation (TR4): 3
+      * Revised implementation (TR4): 1
       
       Sequential model tests
       * Sequential chi-square model tests: 3

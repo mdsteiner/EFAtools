@@ -165,19 +165,19 @@
 #' for these functions are detailed below.
 #'
 #' For PAF, the values of `init_comm`, `criterion`, `criterion_type`,
-#' and `abs_eigen` depend on the `type` argument.
+#' `max_iter`, and `abs_eigen` depend on the `type` argument.
 #'
 #' `type = "EFAtools"` will use the following argument specification:
 #' `init_comm = "smc", criterion = .001, criterion_type = "sum",
-#' abs_eigen = TRUE`.
+#' max_iter = 300, abs_eigen = TRUE`.
 #'
 #' `type = "psych"` will use the following argument specification:
 #' `init_comm = "smc", criterion = .001, criterion_type = "sum",
-#' abs_eigen = FALSE`.
+#' max_iter = 50, abs_eigen = FALSE`.
 #'
 #' `type = "SPSS"` will use the following argument specification:
 #' `init_comm = "smc", criterion = .001, criterion_type = "max_individual",
-#' abs_eigen = TRUE`.
+#' max_iter = 25, abs_eigen = TRUE`.
 #'
 #' If SMCs fail, SPSS takes "mac". However, as SPSS takes absolute eigenvalues,
 #' this is hardly ever the case. Psych, on the other hand, takes "unity" if SMCs

@@ -9,9 +9,9 @@
 #' @param N numeric. Number of cases in the data. This is passed to [PARALLEL].
 #'  Only has to be specified if x is a correlation matrix, otherwise it is determined
 #'  based on the dimensions of x.
-#' @param n_fac_theor numeric. Theoretical number of factors to retain. The maximum
-#'   of this number and the number of factors suggested by [PARALLEL] plus
-#'   one will be used in the Hull method.
+#' @param n_fac_theor numeric. Theoretical number of factors to retain. One plus
+#'   the larger of this number and the number of factors suggested by [PARALLEL]
+#'   is used as the upper bound *J* of factors to extract in the Hull method.
 #' @param method character. The estimation method to use. One of  `"PAF"`,
 #'    `"ULS"`, or  `"ML"`, for principal axis factoring, unweighted
 #'    least squares, and maximum likelihood, respectively.
@@ -94,11 +94,10 @@
 #' The Hull method for selecting the number of common factors. Multivariate
 #' Behavioral Research, 46(2), 340-364.
 #'
-#' @seealso Other factor retention criteria: [CD()], [EKC()],
-#' [KGC()], [PARALLEL()], [SMT()]
+#' @family factor retention criteria
 #'
-#' [N_FACTORS()] as a wrapper function for this and all the
-#' above-mentioned factor retention criteria.
+#' @seealso [N_FACTORS()] as a wrapper function for this and the other factor
+#'   retention criteria.
 #'
 #' @export
 #'
@@ -315,10 +314,27 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   # one record per requested goodness-of-fit index (df vs. fit, with the hull
   # membership and the retained solution used for printing and plotting)
   results <- list()
+  inadmissible <- character(0)
   for (g in c("CAF", "CFI", "RMSEA")) {
     if (!(g %in% gof)) next
     sol <- gof_results[[g]]$s_complete
     retain <- gof_results[[g]]$retain
+
+    # The right-most hull solutions over-extract and may be inadmissible, so flag
+    # only the selected solution if it has a Heywood case or did not converge.
+    if (!is.na(retain) && retain >= 1) {
+      fit_sel <- loadings[[retain]]
+      issues <- c(if (length(fit_sel$heywood) > 0) "Heywood case",
+                  if (isTRUE(fit_sel$convergence != 0)) "non-convergence")
+      if (length(issues) > 0) {
+        inadmissible <- c(
+          inadmissible,
+          paste0(g, ": ", retain, " factor", if (retain != 1) "s" else "",
+                 " (", paste(issues, collapse = ", "), ")")
+        )
+      }
+    }
+
     results[[g]] <- list(
       name = g,
       label = g,
@@ -330,7 +346,15 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
       threshold = NULL,
       highlight = retain,
       point_labels = unname(sol[, "nfactors"]),
-      on_hull = !is.na(sol[, "st"])
+      on_hull = gof_results[[g]]$on_hull
+    )
+  }
+
+  if (length(inadmissible) > 0) {
+    cli::cli_warn(
+      c("The Hull method selected an inadmissible solution: {inadmissible}.",
+        "i" = "The selected solution has a Heywood case or did not converge, so the retained number of factors may be unreliable; interpret it with caution and cross-check with other criteria."),
+      class = "efa_hull_inadmissible"
     )
   }
 
@@ -471,8 +495,15 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   }
 
 
+  # hull membership: the solutions that survived the boundary/triplet elimination.
+  # Derived from the surviving solutions rather than from `st`, so the retained
+  # solution is still flagged as on the hull in the < 3 fallback where `st` is
+  # undefined.
+  on_hull <- s_complete[, 1] %in% s[, 1]
+
   out <- list(s_complete = s_complete,
-              retain = unname(retain))
+              retain = unname(retain),
+              on_hull = on_hull)
 
   return(out)
 

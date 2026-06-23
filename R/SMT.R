@@ -75,16 +75,15 @@
 #' @source Preacher, K. J., Zhang G., Kim, C., & Mels, G. (2013). Choosing the
 #' Optimal Number of Factors in Exploratory Factor Analysis: A Model Selection
 #' Perspective, Multivariate Behavioral Research, 48(1), 28-56,
-#' doi:10.108/00273171.2012.710386
+#' doi:10.1080/00273171.2012.710386
 #' @source Steiger, J. H., & Lind, J. C. (1980, May). Statistically based tests
 #' for the number of common factors. Paper presented at the annual meeting of
 #' the Psychometric Society, Iowa City, IA.
 #'
-#' @seealso Other factor retention criteria: [CD()], [EKC()],
-#' [HULL()], [KGC()], [PARALLEL()]
+#' @family factor retention criteria
 #'
-#' [N_FACTORS()] as a wrapper function for this and all the
-#' above-mentioned factor retention criteria.
+#' @seealso [N_FACTORS()] as a wrapper function for this and the other factor
+#'   retention criteria.
 #'
 #' @export
 #'
@@ -155,20 +154,23 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   df_null <- (m^2 - m) / 2
   p_null <- stats::pchisq(chi_null, df_null, lower.tail = FALSE)
 
-  # First check if 0 factors already result in nonsignificant chi square
-    if(isTRUE(p_null > 0.05)){
-
-      nfac_chi <- 0
-
-    } else if(any(ps > 0.05, na.rm = TRUE)) {
-
-      nfac_chi <- which(ps > 0.05)[1]
-
-    } else {
-
-      nfac_chi <- NA
-
-    }
+  # Walk the sequence (0, 1, ..., max_fac factors) and stop at the first model
+  # that is either non-significant (retain that number of factors) or has an
+  # undefined chi-square p value. An NA p (e.g. a non-converged / Heywood model)
+  # breaks the strictly sequential test, so the search stops there rather than
+  # skipping ahead to a later non-significant model, in which case no number can
+  # be suggested.
+  p_seq <- c(p_null, ps)
+  stop_at <- which(p_seq > 0.05 | is.na(p_seq))[1]
+  if (is.na(stop_at)) {
+    # every model was significant: no non-significant model in range
+    nfac_chi <- NA
+  } else if (is.na(p_seq[stop_at])) {
+    # the sequence was broken by an undefined p value
+    nfac_chi <- NA
+  } else {
+    nfac_chi <- stop_at - 1L
+  }
 
   # Calculate RMSEA (incl. lower bound of 90% CI) and AIC for the null model
   # (chi_null and df_null were computed above from R and N).

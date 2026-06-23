@@ -89,7 +89,8 @@ suggested by \link{PARALLEL} plus one will be used in the Hull method.}
 \code{\link[=KGC]{KGC()}}, \code{\link[=SCREE]{SCREE()}}, \code{\link[=PARALLEL]{PARALLEL()}}, and \code{\link[=NEST]{NEST()}}. The
 estimation method to use. One of  \code{"PAF"}, \code{"ULS"}, or  \code{"ML"},
 for principal axis factoring, unweighted least squares, and maximum
-likelihood, respectively.}
+likelihood, respectively. In \code{\link[=KGC]{KGC()}}, \code{\link[=SCREE]{SCREE()}}, and \code{\link[=PARALLEL]{PARALLEL()}} it only
+takes effect when the respective \code{eigen_type} includes \code{"EFA"}.}
 
 \item{gof}{character. Passed to \code{\link[=HULL]{HULL()}}. The goodness of fit index
 to use. Either \code{"CAF"}, \code{"CFI"}, or \code{"RMSEA"}, or any

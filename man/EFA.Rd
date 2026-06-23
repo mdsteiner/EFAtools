@@ -324,16 +324,16 @@ important for the varimax and promax rotations). The type-specific settings
 for these functions are detailed below.
 
 For PAF, the values of \code{init_comm}, \code{criterion}, \code{criterion_type},
-and \code{abs_eigen} depend on the \code{type} argument.
+\code{max_iter}, and \code{abs_eigen} depend on the \code{type} argument.
 
 \code{type = "EFAtools"} will use the following argument specification:
-\verb{init_comm = "smc", criterion = .001, criterion_type = "sum", abs_eigen = TRUE}.
+\verb{init_comm = "smc", criterion = .001, criterion_type = "sum", max_iter = 300, abs_eigen = TRUE}.
 
 \code{type = "psych"} will use the following argument specification:
-\verb{init_comm = "smc", criterion = .001, criterion_type = "sum", abs_eigen = FALSE}.
+\verb{init_comm = "smc", criterion = .001, criterion_type = "sum", max_iter = 50, abs_eigen = FALSE}.
 
 \code{type = "SPSS"} will use the following argument specification:
-\verb{init_comm = "smc", criterion = .001, criterion_type = "max_individual", abs_eigen = TRUE}.
+\verb{init_comm = "smc", criterion = .001, criterion_type = "max_individual", max_iter = 25, abs_eigen = TRUE}.
 
 If SMCs fail, SPSS takes "mac". However, as SPSS takes absolute eigenvalues,
 this is hardly ever the case. Psych, on the other hand, takes "unity" if SMCs

@@ -1,7 +1,7 @@
 #' Comparison Data
 #'
 #' Factor retention method introduced by Ruscio and Roche (2012). The code was
-#' adapted from the CD code by Auerswald and Moshagen (2017) available at
+#' adapted from the CD code by Auerswald and Moshagen (2019) available at
 #' <https://osf.io/x5cz2/?view_only=d03efba1fd0f4c849a87db82e6705668>
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data.
@@ -15,11 +15,6 @@
 #'  Default is 500.
 #' @param alpha numeric. The alpha level used to test the significance of the
 #'  improvement added by an additional factor. Default is .30.
-#' @param use character. Passed to [stats::cor()]. Default
-#'  is "pairwise.complete.obs". However, for the comparison data procedure,
-#'  `NA` values will be excluded using na.omit(). If missing data should
-#'  be handled differently (e.g., imputation), do this before passing the data to
-#'  `CD()`.
 #' @param cor_method character. One of `"pearson"`, `"spearman"`, or `"kendall"`,
 #'   passed to [stats::cor()]. `"poly"` and `"tetra"` are not supported because
 #'   `CD` compares the data against simulated continuous reference data.
@@ -68,11 +63,10 @@
 #' factorial structure. Psychological Assessment, 24, 282–292.
 #' doi: 10.1037/a0025697
 #'
-#' @seealso Other factor retention criteria: [EKC()],
-#'  [HULL()], [KGC()], [PARALLEL()], [SMT()]
+#' @family factor retention criteria
 #'
-#'   [N_FACTORS()] as a wrapper function for this and all
-#'   the above-mentioned factor retention criteria.
+#' @seealso [N_FACTORS()] as a wrapper function for this and the other factor
+#'   retention criteria.
 #'
 #' @export
 #'
@@ -86,8 +80,6 @@
 #' CD(DOSPERT_raw)
 #'}
 CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .30,
-               use = c("pairwise.complete.obs", "all.obs", "complete.obs",
-                    "everything", "na.or.complete"),
                cor_method = c("pearson", "spearman", "kendall", "poly", "tetra"),
                max_iter = 50) {
 
@@ -103,7 +95,6 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
     x <- as.data.frame(x)
   }
 
-  use <- match.arg(use)
   cor_method <- match.arg(cor_method)
   .reject_poly_reference(cor_method, "CD")
 
@@ -130,6 +121,17 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
 
   m_possible <- .det_max_factors(k)
 
+  # Comparison data needs at least one over-identified model (df > 0) to compare
+  # against; with too few indicators no such model exists and the search range is
+  # empty, so abort rather than silently returning zero factors.
+  if (m_possible < 1) {
+    cli::cli_abort(
+      c("Comparison data cannot be run because no factor model with {k} indicator{?s} is over-identified.",
+        "i" = "Provide more indicators."),
+      class = "efa_cd_min_indicators"
+    )
+  }
+
   if (is.na(n_factors_max) || n_factors_max > m_possible) {
 
     if (!is.na(n_factors_max) & n_factors_max > m_possible) {
@@ -144,8 +146,9 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
 
   }
 
-  # Create correlation matrix
-  R <- stats::cor(x, use = use, method = cor_method)
+  # Create correlation matrix (x has no missing values at this point: incomplete
+  # rows were removed above)
+  R <- stats::cor(x, method = cor_method)
 
   eigvals_real <- eigen(R, symmetric = TRUE, only.values = TRUE)$values
 
@@ -158,7 +161,7 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
 
   while (n_factors <= n_factors_max && isTRUE(sig)) {
 
-    pop <- .gen_data(x, cor_method = cor_method, use, n_factors, N_pop,
+    pop <- .gen_data(x, cor_method = cor_method, n_factors, N_pop,
                      max_iter = max_iter)
 
     for (j in 1:N_samples) {
@@ -188,10 +191,15 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
     N_pop = N_pop,
     N_samples = N_samples,
     alpha = alpha,
-    use = use,
     cor_method = cor_method,
     max_iter = max_iter
   )
+
+  # The RMSE curve is plotted over every tested factor count, including the first
+  # count whose lack of significant improvement stopped the search (one beyond the
+  # retained number), so the flattening that drives the decision stays visible.
+  # When the search instead ran to n_factors_max, all columns are populated.
+  n_tested <- min(n_factors + 1, n_factors_max)
 
   # single record: the mean RMSE curve over candidate factor counts (the full
   # per-sample RMSE matrix is kept in rmse_eigenvalues)
@@ -200,8 +208,8 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
     label = "Suggested number of factors",
     n_factors = n_factors,
     plot_type = "eigen",
-    x = seq_len(n_factors),
-    y = colMeans(RMSE_eigvals)[seq_len(n_factors)],
+    x = seq_len(n_tested),
+    y = colMeans(RMSE_eigvals)[seq_len(n_tested)],
     highlight = if (n_factors >= 1) n_factors else NULL,
     y_label = "RMSE eigenvalues",
     rmse_eigenvalues = RMSE_eigvals
@@ -218,7 +226,7 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
 }
 
 
-.gen_data <- function(x, cor_method, use, n_factors, N, max_trials = 5,
+.gen_data <- function(x, cor_method, n_factors, N, max_trials = 5,
                       initial_multiplier = 1, max_iter = 100) {
   # Steps refer to description in the following article:
   # Ruscio, J., & Kaczetow, W. (2008). Simulating multivariate nonnormal data using an iterative algorithm.
@@ -242,7 +250,7 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
 
   # Calculate and store a copy of the target correlation matrix (step 3) -----------------------------------------
 
-  R <- stats::cor(x, method = cor_method, use = use)
+  R <- stats::cor(x, method = cor_method)
   R_inter <- R
 
   # Generate random normal data for shared and unique components, initialize factor loadings (steps 5, 6) --------
@@ -261,7 +269,7 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
     # Calculate factor loadings and apply to reproduce desired correlations (steps 7, 8) ---------------------------
 
     L <- suppressWarnings(.paf_iter(rep(1, k), criterion = .001, R = R_inter,
-                   n_fac = n_factors, abs_eig = TRUE, crit_type = 2,
+                   n_fac = n_factors, abs_eig = TRUE, crit_type = 1,
                    max_iter = max_iter)$L)
 
     shared_load[,1:n_factors] <- L
@@ -323,7 +331,7 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
   # Construct the data set with the lowest RMSE correlation (step 13) --------------------------------------------
 
   L <- suppressWarnings(.paf_iter(rep(1, k), criterion = .001, R = R_best,
-                n_fac = n_factors, abs_eig = TRUE, crit_type = 2,
+                n_fac = n_factors, abs_eig = TRUE, crit_type = 1,
                 max_iter = max_iter)$L)
   shared_load[, seq_len(n_factors)] <- L
 

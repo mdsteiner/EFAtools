@@ -1,7 +1,7 @@
 #' Kaiser-Guttman Criterion
 #'
 #' Probably the most popular factor retention criterion. Kaiser and Guttman suggested
-#' to retain as many factors as there are sample eigenvalues greater than or equal to 1.
+#' to retain as many factors as there are sample eigenvalues greater than 1.
 #' This is why the criterion is also known as eigenvalues-greater-than-one rule.
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
@@ -73,11 +73,10 @@
 #' determining the number of components to retain. Psychological Bulletin, 99,
 #' 432–442. http://dx.doi.org/10.1037/0033-2909.99.3.432
 #'
-#' @seealso Other factor retention criteria: [CD()], [EKC()],
-#' [HULL()], [PARALLEL()], [SMT()]
+#' @family factor retention criteria
 #'
-#' [N_FACTORS()] as a wrapper function for this and all the
-#' above-mentioned factor retention criteria.
+#' @seealso [N_FACTORS()] as a wrapper function for this and the other factor
+#'   retention criteria.
 #'
 #' @export
 #'
@@ -107,12 +106,12 @@ KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
   eigen_list <- .three_eigen(R, eigen_type, n_factors = n_factors, ...)
 
   # Kaiser-Guttman: retain as many factors as there are eigenvalues greater than
-  # or equal to 1 (NA for any eigenvalue type that was not requested)
+  # 1 (NA for any eigenvalue type that was not requested)
   nfac_list <- lapply(eigen_list, function(eig) {
-    if (length(eig) == 1L && is.na(eig)) NA else sum(eig >= 1)
+    if (length(eig) == 1L && is.na(eig)) NA else sum(eig > 1)
   })
 
-  # one record per requested eigenvalue type (eigenvalues with the >= 1 rule)
+  # one record per requested eigenvalue type (eigenvalues with the > 1 rule)
   results <- list()
   for (et in c("PCA", "SMC", "EFA")) {
     if (!(et %in% eigen_type)) next

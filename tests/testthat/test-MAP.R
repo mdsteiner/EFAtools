@@ -13,7 +13,7 @@ test_that("output class and dimensions are correct", {
 
 test_that("identified number of factors is correct", {
   expect_equal(map_cor$n_factors[["TR2"]], 1)
-  expect_equal(map_cor$n_factors[["TR4"]], 3)
+  expect_equal(map_cor$n_factors[["TR4"]], 1)
 })
 
 test_that("criterion series are returned", {

@@ -17,8 +17,10 @@ test_that("CD returns the correct values", {
   expect_equal(cd_grips$n_factors[["CD"]], 1)
 
   rec <- .retention_record(cd_grips, "CD")
-  expect_length(rec$y, cd_grips$n_factors[["CD"]])
-  expect_length(rec$x, cd_grips$n_factors[["CD"]])
+  # the RMSE curve runs one factor beyond the retained number (the first count
+  # whose lack of significant improvement stopped the search)
+  expect_length(rec$y, cd_grips$n_factors[["CD"]] + 1)
+  expect_length(rec$x, cd_grips$n_factors[["CD"]] + 1)
 })
 
 grips_na <- GRiPS_raw

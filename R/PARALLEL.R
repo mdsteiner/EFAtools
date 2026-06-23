@@ -33,7 +33,10 @@
 #'  factors to retain. Default is `"means"`, which will use the average
 #'  simulated eigenvalues. `"percentile"`, uses the percentiles specified
 #'  in percent. `"crawford"` uses the 95th percentile for the first factor
-#'  and the mean afterwards (based on Crawford et al, 2010).
+#'  and the mean afterwards (based on Crawford et al, 2010). The `"means"` rule
+#'  retains a factor whenever its real eigenvalue exceeds the average simulated
+#'  one and thus tends to retain more factors than the more conservative
+#'  `"percentile"` rule (Glorfeld, 1995).
 #' @param n_factors numeric. Number of factors to extract if "EFA" is included in
 #' `eigen_type`. Default is 1.
 #' @param ... Additional arguments passed to [EFA()]. For example,
@@ -91,14 +94,17 @@
 #' for determining the number of factors. Educational and Psychological
 #' Measurement, 70(6), 885-901.
 #'
+#' @source Glorfeld, L. W. (1995). An improvement on Horn's parallel analysis
+#' methodology for selecting the correct number of factors to retain. Educational
+#' and Psychological Measurement, 55(3), 377-393.
+#'
 #' @source Horn, J. L. (1965). A rationale and test for the number of factors in
 #' factor analysis. Psychometrika, 30(2), 179–185. doi: 10.1007/BF02289447
 #'
-#' @seealso Other factor retention criteria: [CD()], [EKC()],
-#' [HULL()], [KGC()], [SMT()]
+#' @family factor retention criteria
 #'
-#' [N_FACTORS()] as a wrapper function for this and all the
-#' above-mentioned factor retention criteria.
+#' @seealso [N_FACTORS()] as a wrapper function for this and the other factor
+#'   retention criteria.
 #'
 #' @export
 #'
@@ -240,17 +246,19 @@ PARALLEL <- function(x = NULL,
 
     if ("PCA" %in% eigen_type) {
 
-      eigvals_PCA <- try(future.apply::future_lapply(size_vec, .parallel_sim, N = N,
+      eigvals_PCA <- try(future.apply::future_lapply(size_vec, .parallel_sim_eig, N = N,
                                              n_vars = n_vars, eigen_type = 1,
+                                             cor_method = cor_method,
                                              future.seed = TRUE),
                          silent = TRUE)
 
       it_i <- 1
       while (inherits(eigvals_PCA, "try-error") && it_i < 25) {
-        eigvals_PCA <- try(future.apply::future_lapply(size_vec, .parallel_sim,
+        eigvals_PCA <- try(future.apply::future_lapply(size_vec, .parallel_sim_eig,
                                                        N = N,
                                                        n_vars = n_vars,
                                                        eigen_type = 1,
+                                                       cor_method = cor_method,
                                                        future.seed = TRUE),
                            silent = TRUE)
         it_i <- it_i + 1
@@ -282,18 +290,20 @@ PARALLEL <- function(x = NULL,
 
     if ("SMC" %in% eigen_type) {
 
-      eigvals_SMC <- try(future.apply::future_lapply(size_vec, .parallel_sim,
+      eigvals_SMC <- try(future.apply::future_lapply(size_vec, .parallel_sim_eig,
                                                      N = N, n_vars = n_vars,
                                                      eigen_type = 2,
+                                                     cor_method = cor_method,
                                                      maxit = n_datasets * 10,
                                                      future.seed = TRUE),
                          silent = TRUE)
       it_i <- 1
       while (inherits(eigvals_SMC, "try-error") && it_i < 25) {
-        eigvals_SMC <- try(future.apply::future_lapply(size_vec, .parallel_sim,
+        eigvals_SMC <- try(future.apply::future_lapply(size_vec, .parallel_sim_eig,
                                                        N = N,
                                                        n_vars = n_vars,
                                                        eigen_type = 2,
+                                                       cor_method = cor_method,
                                                        maxit = n_datasets * 10,
                                                        future.seed = TRUE),
                            silent = TRUE)
@@ -327,7 +337,8 @@ PARALLEL <- function(x = NULL,
 
       eigvals_EFA <- future.apply::future_lapply(size_vec, .parallel_EFA_sim,
                                              n_vars = n_vars, N = N,
-                                             n_factors = n_factors, ...,
+                                             n_factors = n_factors,
+                                             cor_method = cor_method, ...,
                                              future.seed = TRUE)
       eigvals_EFA <- do.call(rbind, eigvals_EFA)
 
@@ -413,20 +424,20 @@ PARALLEL <- function(x = NULL,
 }
 
 
-.parallel_EFA_sim <- function(n_datasets, n_vars, N, n_factors, ...){
+.parallel_EFA_sim <- function(n_datasets, n_vars, N, n_factors, cor_method, ...){
 
   eigvals <- matrix(nrow = n_datasets, ncol = n_vars)
 
   for(i in seq_len(n_datasets)){
 
     x <- matrix(stats::rnorm(N * n_vars), nrow = N, ncol = n_vars)
-    R <- stats::cor(x)
+    R <- stats::cor(x, method = cor_method)
     eigvals_i <- try(suppressWarnings(suppressMessages(EFA(R, n_factors = n_factors, N = N,
                                           ...)$final_eigen)), silent = TRUE)
     it_i <- 1
     while (inherits(eigvals_i, "try-error") && it_i < 25) {
       x <- matrix(stats::rnorm(N * n_vars), nrow = N, ncol = n_vars)
-      R <- stats::cor(x)
+      R <- stats::cor(x, method = cor_method)
       eigvals_i <- try(suppressWarnings(suppressMessages(EFA(R, n_factors = n_factors, N = N,
                                             ...)$final_eigen)), silent = TRUE)
       it_i <- it_i + 1
@@ -445,6 +456,50 @@ PARALLEL <- function(x = NULL,
   }
 
   return(eigvals)
+}
+
+# Reference eigenvalues for one simulation chunk. Horn's (1965) parallel analysis
+# requires the reference matrices to be built with the same correlation estimator
+# as the observed data. The default Pearson case uses the compiled .parallel_sim();
+# rank-based estimators ("spearman", "kendall") are simulated in R via stats::cor()
+# so the reference matches the observed correlations rather than always being Pearson.
+.parallel_sim_eig <- function(n_datasets, n_vars, N, eigen_type, cor_method,
+                              maxit = 10000) {
+
+  if (cor_method == "pearson") {
+    return(.parallel_sim(n_datasets, n_vars, N, eigen_type, maxit))
+  }
+
+  eig_vals <- matrix(NA_real_, nrow = n_datasets, ncol = n_vars)
+  success <- 0L
+  iter <- 0L
+
+  # Only the SMC path can reject a draw (a singular simulated matrix) and so needs
+  # the maxit retry bound. The PCA path never rejects, so it must run all n_datasets
+  # draws regardless of maxit, matching the compiled .parallel_sim() whose PCA loop
+  # ignores maxit.
+  while (success < n_datasets && (eigen_type != 2 || iter < maxit)) {
+    iter <- iter + 1L
+    x <- matrix(stats::rnorm(N * n_vars), nrow = N, ncol = n_vars)
+    R <- stats::cor(x, method = cor_method)
+
+    if (eigen_type == 2) { # SMC: replace the diagonal with squared multiple
+      # correlations; skip the draw if the simulated matrix is singular.
+      smc <- try(.smc_start(R), silent = TRUE)
+      if (inherits(smc, "try-error")) next
+      diag(R) <- smc
+    }
+
+    success <- success + 1L
+    eig_vals[success, ] <- eigen(R, symmetric = TRUE, only.values = TRUE)$values
+  }
+
+  if (success < n_datasets) {
+    cli::cli_abort("Could not generate enough non-singular matrices.",
+                   class = "efa_parallel_sim_failed")
+  }
+
+  eig_vals
 }
 
 .determine_factors <- function(decision_rule, eigvals_real, results, percent){

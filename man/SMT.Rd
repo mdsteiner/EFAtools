@@ -15,7 +15,7 @@ fit. Sociological Methods and Research, 21, 230–258.
 Preacher, K. J., Zhang G., Kim, C., & Mels, G. (2013). Choosing the
 Optimal Number of Factors in Exploratory Factor Analysis: A Model Selection
 Perspective, Multivariate Behavioral Research, 48(1), 28-56,
-doi:10.108/00273171.2012.710386
+doi:10.1080/00273171.2012.710386
 
 Steiger, J. H., & Lind, J. C. (1980, May). Statistically based tests
 for the number of common factors. Paper presented at the annual meeting of
@@ -108,9 +108,17 @@ SMT_base
 
 }
 \seealso{
-Other factor retention criteria: \code{\link[=CD]{CD()}}, \code{\link[=EKC]{EKC()}},
-\code{\link[=HULL]{HULL()}}, \code{\link[=KGC]{KGC()}}, \code{\link[=PARALLEL]{PARALLEL()}}
+\code{\link[=N_FACTORS]{N_FACTORS()}} as a wrapper function for this and the other factor
+retention criteria.
 
-\code{\link[=N_FACTORS]{N_FACTORS()}} as a wrapper function for this and all the
-above-mentioned factor retention criteria.
+Other factor retention criteria:
+\code{\link[=CD]{CD()}},
+\code{\link[=EKC]{EKC()}},
+\code{\link[=HULL]{HULL()}},
+\code{\link[=KGC]{KGC()}},
+\code{\link[=MAP]{MAP()}},
+\code{\link[=NEST]{NEST()}},
+\code{\link[=PARALLEL]{PARALLEL()}},
+\code{\link[=SCREE]{SCREE()}}
 }
+\concept{factor retention criteria}

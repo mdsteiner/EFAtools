@@ -34,6 +34,13 @@
 #'  eigenvalue distribution to compare the empirical eigenvalues against, i.e., an
 #'  alpha of .05 (the default) uses the 95th percentile as reference value.
 #'
+#'  The number of factors tested is capped at \eqn{\lfloor 0.8 \times p \rfloor}
+#'  (with \eqn{p} the number of variables; Achim, 2017) and additionally limited so
+#'  that the \eqn{(k - 1)}-factor reference model used at each step stays
+#'  over-identified. If no empirical eigenvalue falls at or below its reference
+#'  within this range, every tested factor is accepted and this capped number is
+#'  returned.
+#'
 #'  For details on the method, including simulation studies, see Achim (2017),
 #'  Brandenburg and Papenberg (2024), and Caron (2025).
 #'
@@ -53,6 +60,11 @@
 #' @source Brandenburg, N., & Papenberg, M. (2024). Reassessment of innovative methods to determine the number of factors: A simulation-based comparison of exploratory graph analysis and Next Eigenvalue Sufficiency Test. Psychological Methods, 29(1), 21–47. https://doi.org/10.1037/met0000527
 #' @source Caron, P.-O. (2025). A Comparison of the Next Eigenvalue Sufficiency Test to Other Stopping Rules for the Number of Factors in Factor Analysis.
 #' Educational and Psychological Measurement, Online-first publication. https://doi.org/10.1177/00131644241308528
+#'
+#' @family factor retention criteria
+#'
+#' @seealso [N_FACTORS()] as a wrapper function for this and the other factor
+#'   retention criteria.
 #'
 #' @export
 #'

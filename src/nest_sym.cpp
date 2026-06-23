@@ -37,7 +37,6 @@ arma::vec nest_sym(const int nf, const int N, arma::mat M,
    const int ncm = M.n_rows;
    const int ind = M.n_cols - nf;
    arma::vec eigvals(M.n_cols);
-   //arma::vec Lambda(M.n_cols);
    arma::vec ref_values(nreps);
 
    for (uword i = 0; i < nreps; i++) {
@@ -46,7 +45,6 @@ arma::vec nest_sym(const int nf, const int N, arma::mat M,
      arma::mat dat = randn(N, ncm);
      arma::mat R = cor(dat * M);
      eig_sym_checked(eigvals, R);
-     //Lambda = flipud(eigvals);
      ref_values(i) = eigvals(ind);
 
    }

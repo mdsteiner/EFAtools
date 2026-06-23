@@ -21,8 +21,6 @@ CD(
   N_pop = 10000,
   N_samples = 500,
   alpha = 0.3,
-  use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
-    "na.or.complete"),
   cor_method = c("pearson", "spearman", "kendall", "poly", "tetra"),
   max_iter = 50
 )
@@ -44,12 +42,6 @@ Default is 500.}
 \item{alpha}{numeric. The alpha level used to test the significance of the
 improvement added by an additional factor. Default is .30.}
 
-\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}}. Default
-is "pairwise.complete.obs". However, for the comparison data procedure,
-\code{NA} values will be excluded using na.omit(). If missing data should
-be handled differently (e.g., imputation), do this before passing the data to
-\code{CD()}.}
-
 \item{cor_method}{character. One of \code{"pearson"}, \code{"spearman"}, or \code{"kendall"},
 passed to \code{\link[stats:cor]{stats::cor()}}. \code{"poly"} and \code{"tetra"} are not supported because
 \code{CD} compares the data against simulated continuous reference data.
@@ -70,7 +62,7 @@ eigenvalues of the generated and the entered data per number of factors
 }
 \description{
 Factor retention method introduced by Ruscio and Roche (2012). The code was
-adapted from the CD code by Auerswald and Moshagen (2017) available at
+adapted from the CD code by Auerswald and Moshagen (2019) available at
 \url{https://osf.io/x5cz2/?view_only=d03efba1fd0f4c849a87db82e6705668}
 }
 \details{
@@ -106,9 +98,17 @@ CD(DOSPERT_raw)
 }
 }
 \seealso{
-Other factor retention criteria: \code{\link[=EKC]{EKC()}},
-\code{\link[=HULL]{HULL()}}, \code{\link[=KGC]{KGC()}}, \code{\link[=PARALLEL]{PARALLEL()}}, \code{\link[=SMT]{SMT()}}
+\code{\link[=N_FACTORS]{N_FACTORS()}} as a wrapper function for this and the other factor
+retention criteria.
 
-\code{\link[=N_FACTORS]{N_FACTORS()}} as a wrapper function for this and all
-the above-mentioned factor retention criteria.
+Other factor retention criteria:
+\code{\link[=EKC]{EKC()}},
+\code{\link[=HULL]{HULL()}},
+\code{\link[=KGC]{KGC()}},
+\code{\link[=MAP]{MAP()}},
+\code{\link[=NEST]{NEST()}},
+\code{\link[=PARALLEL]{PARALLEL()}},
+\code{\link[=SCREE]{SCREE()}},
+\code{\link[=SMT]{SMT()}}
 }
+\concept{factor retention criteria}
