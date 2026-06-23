@@ -148,18 +148,26 @@ test_that("SRMR reproduces lavaan", {
   }
 })
 
-test_that("TLI and ECVI equal their closed forms over the Bartlett-corrected chi square", {
+test_that("TLI equals its (N - 1)-scale closed form; ECVI uses the Bartlett-corrected chi", {
   for (fx in reg_fixtures) {
     p <- ncol(fx$R)
     for (mth in c("ML", "ULS")) {
       fi <- suppressWarnings(EFA(fx$R, n_factors = fx$k, N = fx$N,
                                  method = mth))$fit_indices
 
+      # CFI/TLI compare the model and baseline noncentralities on a common (N - 1) scale,
+      # so the reported (Bartlett-corrected) model and baseline chi-squares are rescaled
+      # from their own multipliers to (N - 1).
+      mult_m    <- fx$N - 1 - (2 * p + 5) / 6 - (2 * fx$k) / 3
+      mult_null <- fx$N - 1 - (2 * p + 5) / 6
+      chi_cfi      <- fi$chi      * (fx$N - 1) / mult_m
+      chi_null_cfi <- fi$chi_null * (fx$N - 1) / mult_null
       expect_equal(fi$TLI,
-                   ((fi$chi_null / fi$df_null) - (fi$chi / fi$df)) /
-                     ((fi$chi_null / fi$df_null) - 1),
+                   ((chi_null_cfi / fi$df_null) - (chi_cfi / fi$df)) /
+                     ((chi_null_cfi / fi$df_null) - 1),
                    tolerance = 1e-8)
 
+      # ECVI is still built on the Bartlett-corrected model chi-square.
       n_params <- p * (p + 1) / 2 - fi$df
       expect_equal(fi$ECVI, (fi$chi + 2 * n_params) / (fx$N - 1), tolerance = 1e-8)
     }
@@ -198,10 +206,11 @@ test_that("PAF variant paths reproduce psych::fa(fm = 'pa')", {
   }
 })
 
-# CFI and RMSEA match lavaan once lavaan's statistic is placed on the Bartlett-corrected
-# scale EFAtools uses (the model chi by bart / N, the baseline chi by the null model's own
-# multiplier, which carries no factor term). AIC and BIC follow the documented chi-square
-# forms, not lavaan's -2logL-based versions.
+# AIC and BIC follow the documented chi-square forms, not lavaan's -2logL-based versions.
+# CFI places the model and baseline noncentralities on a common (N - 1) scale, matching
+# lavaan once its statistics are rescaled from the multiplier N to N - 1. RMSEA keeps the
+# Bartlett-corrected model chi-square in its numerator (so it matches lavaan's statistic
+# rescaled by bart / N).
 test_that("CFI, RMSEA, AIC, and BIC match their references on the baseline", {
   skip_on_cran()
 
@@ -223,17 +232,18 @@ test_that("CFI, RMSEA, AIC, and BIC match their references on the baseline", {
   }, error = function(e) NULL)
   skip_if(is.null(lav), "lavaan::efa() did not return the baseline fit measures")
 
-  bart      <- N - 1 - (2 * p + 5) / 6 - (2 * k) / 3   # model: k factors
-  mult_null <- N - 1 - (2 * p + 5) / 6                 # null: no factors
-  chi_m <- unname(lav["chisq"]) * bart / N
-  df_m  <- unname(lav["df"])
-  chi_0 <- unname(lav["baseline.chisq"]) * mult_null / N
-  df_0  <- unname(lav["baseline.df"])
+  bart <- N - 1 - (2 * p + 5) / 6 - (2 * k) / 3   # model: k factors (Bartlett, for RMSEA)
+  df_m <- unname(lav["df"])
+  df_0 <- unname(lav["baseline.df"])
+  # lavaan's statistics use the multiplier N; CFI needs both on the common (N - 1) scale.
+  chi_m_n1   <- unname(lav["chisq"])          * (N - 1) / N
+  chi_0_n1   <- unname(lav["baseline.chisq"]) * (N - 1) / N
+  chi_m_bart <- unname(lav["chisq"]) * bart / N
 
-  d_m   <- max(chi_m - df_m, 0)
-  d_0   <- max(chi_0 - df_0, 0)
+  d_m  <- max(chi_m_n1 - df_m, 0)
+  d_0  <- max(chi_0_n1 - df_0, 0)
   cfi_ref   <- 1 - d_m / max(d_m, d_0)
-  rmsea_ref <- sqrt(max(0, chi_m - df_m) / (df_m * (N - 1)))
+  rmsea_ref <- sqrt(max(0, chi_m_bart - df_m) / (df_m * (N - 1)))
 
   # observed agreement on the baseline model: ~1e-13
   expect_equal(fi$CFI, cfi_ref, tolerance = 1e-3)

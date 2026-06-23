@@ -19,9 +19,8 @@
   if (order_type == "ss_factors") {
 
     # reflect factors with negative sums
-    signs <- sign(colSums(AV$loadings))
-    signs[signs == 0] <- 1
-    AV$loadings <- AV$loadings %*% diag(signs)
+    signs <- .reflect_signs(AV$loadings)
+    AV$loadings <- AV$loadings %*% diag(signs, nrow = length(signs))
 
     # reorder the factors according to largest sums of squares
     ss <- colSums(AV$loadings ^2)
@@ -67,9 +66,8 @@
 
   if (order_type == "eigen") {
     # reflect factors with negative sums
-    signs <- sign(colSums(AP))
-    signs[signs == 0] <- 1
-    AP <- AP %*% diag(signs)
+    signs <- .reflect_signs(AP)
+    AP <- AP %*% diag(signs, nrow = length(signs))
 
     # order according to communalities
     eig_rotated <- diag(t(AP) %*% AP)

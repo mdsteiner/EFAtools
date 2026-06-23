@@ -43,6 +43,25 @@ Latent variables analysis (pp. 399–419). Sage.
 
 Asparouhov, T., & Muthen, B. (2010). Simple second order chi-square
 correction. Mplus Technical Appendix.
+
+Bartlett, M. S. (1951). The effect of standardization on a chi-square
+approximation in factor analysis. Biometrika, 38, 337–344. doi: 10.2307/2332580
+
+Bentler, P. M. (1990). Comparative fit indexes in structural models.
+Psychological Bulletin, 107, 238–246. doi: 10.1037/0033-2909.107.2.238
+
+Tucker, L. R., & Lewis, C. (1973). A reliability coefficient for maximum
+likelihood factor analysis. Psychometrika, 38, 1–10. doi: 10.1007/BF02291170
+
+Browne, M. W., & Cudeck, R. (1989). Single sample cross-validation indices
+for covariance structures. Multivariate Behavioral Research, 24, 445–455.
+doi: 10.1207/s15327906mbr2404_4
+
+Browne, M. W., & Cudeck, R. (1992). Alternative ways of assessing model fit.
+Sociological Methods & Research, 21, 230–258. doi: 10.1177/0049124192021002005
+
+Bentler, P. M. (1995). EQS structural equations program manual. Multivariate
+Software.
 }
 \usage{
 EFA(
@@ -259,7 +278,9 @@ A list of class EFA containing (a subset of) the following:
 with the initial communality estimates as diagonal in PAF.}
 \item{final_eigen}{Eigenvalues obtained from the correlation matrix
 with the final communality estimates as diagonal.}
-\item{iter}{The number of iterations needed for convergence.}
+\item{iter}{For PAF, the number of iterations until convergence. For ML, ULS, and
+DWLS, the number of objective-function evaluations used by the optimiser (not the
+number of optimiser iterations).}
 \item{convergence}{Integer convergence code (0 = converged). For ML, ULS, and
 DWLS this is the code returned by the optimiser
 (\code{\link[stats:optim]{stats::optim()}}); for PAF it is 1 if the maximum number of
@@ -271,17 +292,23 @@ Heywood (improper) case in the unrotated solution; empty if there are none.}
 \item{vars_accounted}{Matrix of explained variances and sums of squared loadings. Based on the unrotated loadings.}
 \item{fit_indices}{For ML and ULS: Fit indices derived from the unrotated
 factor loadings: Chi Square, including significance level, degrees of freedom
-(df), Comparative Fit Index (CFI), Tucker-Lewis Index (TLI, also called the
-non-normed fit index; Tucker & Lewis, 1973), Root Mean Square Error of
-Approximation (RMSEA), including its 90\% confidence interval, Akaike
-Information Criterion (AIC), Bayesian Information Criterion (BIC), Expected
-Cross-Validation Index (ECVI; Browne & Cudeck, 1989), Root Mean Squared
-Residual (RMSR), Standardized Root Mean Squared Residual (SRMR; Bentler,
-1995), and the common part accounted for (CAF) index as proposed by
-Lorenzo-Seva, Timmerman, & Kiers (2011). The Chi Square, CFI, TLI, RMSEA,
-AIC, BIC, and ECVI are based on the Bartlett-corrected Chi Square (matching
-\code{\link[stats:factanal]{stats::factanal()}} for ML). For PAF, only the CAF, RMSR, SRMR, and dfs are
-returned. Note that while in Lorenzo-Seva, Timmerman, & Kiers (2011) the CAF is introduced as ranging between 0 and 1, with values close to 1 indicating close fit, this does not match the formula they introduce for calculating CAF: \code{1 - KMO(residuals)}, which only works if the diagonal of the residual matrix is set to 1s and will then approximate 0.5 with close fit.}
+(df), Comparative Fit Index (CFI; Bentler, 1990), Tucker-Lewis Index (TLI, also
+called the non-normed fit index; Tucker & Lewis, 1973), Root Mean Square Error of
+Approximation (RMSEA), including its 90\% confidence interval (Browne & Cudeck,
+1992), Akaike Information Criterion (AIC), Bayesian Information Criterion (BIC),
+Expected Cross-Validation Index (ECVI; Browne & Cudeck, 1989), Root Mean Squared
+Residual (RMSR), Standardized Root Mean Squared Residual (SRMR; Bentler, 1995),
+and the common part accounted for (CAF) index as proposed by Lorenzo-Seva,
+Timmerman, & Kiers (2011). The model Chi Square is the Bartlett-corrected
+discrepancy (matching \code{\link[stats:factanal]{stats::factanal()}} for ML), and the RMSEA, AIC, BIC, and
+ECVI are derived from it. AIC and BIC are the minimum-fit-function (Chi-Square-based)
+forms \verb{Chi Square - 2 * df} and \verb{Chi Square - log(N) * df} (as in \code{\link[psych:fa]{psych::fa()}}),
+not the likelihood-based criteria, and can therefore be negative. CFI and TLI instead
+place the model and baseline noncentralities on a common \code{N - 1} scale (Bentler, 1990;
+Tucker & Lewis, 1973), so the factor count does not bias the incremental fit. For PAF
+and DWLS, only CAF, RMSR, SRMR, and df are computed and the Chi-Square-derived indices
+are returned as \code{NA}; for DWLS with \code{se = "sandwich"} the full block is instead filled
+from a scaled Chi Square (see Details). Note that while in Lorenzo-Seva, Timmerman, & Kiers (2011) the CAF is introduced as ranging between 0 and 1, with values close to 1 indicating close fit, this does not match the formula they introduce for calculating CAF: \code{1 - KMO(residuals)}, which only works if the diagonal of the residual matrix is set to 1s and will then approximate 0.5 with close fit.}
 \item{model_implied_R}{The model implied correlation
 matrix.}
 \item{residuals}{Residual correlations, i.e., orig_R - model_implied_R}
@@ -408,10 +435,15 @@ residuals weighted by the inverse asymptotic variances of the polychoric correla
 (Muthén, 1984), reproducing the loadings of a diagonally weighted least squares fit
 (e.g. \code{lavaan::efa(..., estimator = "DWLS")}). Because the weighting follows the
 polychoric asymptotic covariance, the matrix and the weights are estimated on the
-listwise-complete cases. The chi-square and the indices derived from it (CFI, TLI,
-RMSEA, AIC, BIC) are not reported for DWLS: the appropriate categorical test statistic
-is a mean- and variance-adjusted chi-square, which is not currently computed. The
-descriptive residual indices (RMSR, SRMR, CAF) are reported as usual.
+listwise-complete cases. By default the chi-square and the indices derived from it
+(CFI, TLI, RMSEA, AIC, BIC) are not reported for DWLS, because the ordinary
+maximum-likelihood discrepancy is not its fit function; only the descriptive residual
+indices (RMSR, SRMR, CAF) are returned. When \code{se = "sandwich"}, a scaled (Satorra &
+Bentler, 1994; Asparouhov & Muthén, 2010) chi-square and the CFI, TLI, and RMSEA
+derived from it are reported (AIC and BIC remain \code{NA}). That scaled statistic is a
+two-stage correction applied to the polychoric-correlation residuals (Browne, 1984),
+so it is not identical to the full WLSMV test of \pkg{lavaan} or Mplus, which also
+projects the thresholds.
 
 When \code{se = "np-boot"}, the bootstrap replicate fits are run in parallel across
 replicates with the \code{future} framework. By default they run sequentially; to run

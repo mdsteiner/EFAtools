@@ -144,9 +144,8 @@
   var_names <- rownames(L_unrot)
 
   # reflect factors with negative sums
-  signs <- sign(colSums(loadings))
-  signs[signs == 0] <- 1
-  loadings <- loadings %*% diag(signs)
+  signs <- .reflect_signs(loadings)
+  loadings <- loadings %*% diag(signs, nrow = length(signs))
 
   # order the factors by their sum of squared loadings (largest first)
   ord <- order(colSums(loadings^2), decreasing = TRUE)

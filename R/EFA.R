@@ -252,10 +252,15 @@
 #' (Muthén, 1984), reproducing the loadings of a diagonally weighted least squares fit
 #' (e.g. `lavaan::efa(..., estimator = "DWLS")`). Because the weighting follows the
 #' polychoric asymptotic covariance, the matrix and the weights are estimated on the
-#' listwise-complete cases. The chi-square and the indices derived from it (CFI, TLI,
-#' RMSEA, AIC, BIC) are not reported for DWLS: the appropriate categorical test statistic
-#' is a mean- and variance-adjusted chi-square, which is not currently computed. The
-#' descriptive residual indices (RMSR, SRMR, CAF) are reported as usual.
+#' listwise-complete cases. By default the chi-square and the indices derived from it
+#' (CFI, TLI, RMSEA, AIC, BIC) are not reported for DWLS, because the ordinary
+#' maximum-likelihood discrepancy is not its fit function; only the descriptive residual
+#' indices (RMSR, SRMR, CAF) are returned. When `se = "sandwich"`, a scaled (Satorra &
+#' Bentler, 1994; Asparouhov & Muthén, 2010) chi-square and the CFI, TLI, and RMSEA
+#' derived from it are reported (AIC and BIC remain `NA`). That scaled statistic is a
+#' two-stage correction applied to the polychoric-correlation residuals (Browne, 1984),
+#' so it is not identical to the full WLSMV test of \pkg{lavaan} or Mplus, which also
+#' projects the thresholds.
 #'
 #' When `se = "np-boot"`, the bootstrap replicate fits are run in parallel across
 #' replicates with the `future` framework. By default they run sequentially; to run
@@ -277,7 +282,9 @@
 #'  with the initial communality estimates as diagonal in PAF.}
 #' \item{final_eigen}{Eigenvalues obtained from the correlation matrix
 #'  with the final communality estimates as diagonal.}
-#' \item{iter}{The number of iterations needed for convergence.}
+#' \item{iter}{For PAF, the number of iterations until convergence. For ML, ULS, and
+#'  DWLS, the number of objective-function evaluations used by the optimiser (not the
+#'  number of optimiser iterations).}
 #' \item{convergence}{Integer convergence code (0 = converged). For ML, ULS, and
 #'  DWLS this is the code returned by the optimiser
 #'  ([`stats::optim()`][stats::optim]); for PAF it is 1 if the maximum number of
@@ -289,17 +296,23 @@
 #' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings. Based on the unrotated loadings.}
 #' \item{fit_indices}{For ML and ULS: Fit indices derived from the unrotated
 #' factor loadings: Chi Square, including significance level, degrees of freedom
-#' (df), Comparative Fit Index (CFI), Tucker-Lewis Index (TLI, also called the
-#' non-normed fit index; Tucker & Lewis, 1973), Root Mean Square Error of
-#' Approximation (RMSEA), including its 90% confidence interval, Akaike
-#' Information Criterion (AIC), Bayesian Information Criterion (BIC), Expected
-#' Cross-Validation Index (ECVI; Browne & Cudeck, 1989), Root Mean Squared
-#' Residual (RMSR), Standardized Root Mean Squared Residual (SRMR; Bentler,
-#' 1995), and the common part accounted for (CAF) index as proposed by
-#' Lorenzo-Seva, Timmerman, & Kiers (2011). The Chi Square, CFI, TLI, RMSEA,
-#' AIC, BIC, and ECVI are based on the Bartlett-corrected Chi Square (matching
-#' [stats::factanal()] for ML). For PAF, only the CAF, RMSR, SRMR, and dfs are
-#' returned. Note that while in Lorenzo-Seva, Timmerman, & Kiers (2011) the CAF is introduced as ranging between 0 and 1, with values close to 1 indicating close fit, this does not match the formula they introduce for calculating CAF: `1 - KMO(residuals)`, which only works if the diagonal of the residual matrix is set to 1s and will then approximate 0.5 with close fit.}
+#' (df), Comparative Fit Index (CFI; Bentler, 1990), Tucker-Lewis Index (TLI, also
+#' called the non-normed fit index; Tucker & Lewis, 1973), Root Mean Square Error of
+#' Approximation (RMSEA), including its 90% confidence interval (Browne & Cudeck,
+#' 1992), Akaike Information Criterion (AIC), Bayesian Information Criterion (BIC),
+#' Expected Cross-Validation Index (ECVI; Browne & Cudeck, 1989), Root Mean Squared
+#' Residual (RMSR), Standardized Root Mean Squared Residual (SRMR; Bentler, 1995),
+#' and the common part accounted for (CAF) index as proposed by Lorenzo-Seva,
+#' Timmerman, & Kiers (2011). The model Chi Square is the Bartlett-corrected
+#' discrepancy (matching [stats::factanal()] for ML), and the RMSEA, AIC, BIC, and
+#' ECVI are derived from it. AIC and BIC are the minimum-fit-function (Chi-Square-based)
+#' forms `Chi Square - 2 * df` and `Chi Square - log(N) * df` (as in [psych::fa()]),
+#' not the likelihood-based criteria, and can therefore be negative. CFI and TLI instead
+#' place the model and baseline noncentralities on a common `N - 1` scale (Bentler, 1990;
+#' Tucker & Lewis, 1973), so the factor count does not bias the incremental fit. For PAF
+#' and DWLS, only CAF, RMSR, SRMR, and df are computed and the Chi-Square-derived indices
+#' are returned as `NA`; for DWLS with `se = "sandwich"` the full block is instead filled
+#' from a scaled Chi Square (see Details). Note that while in Lorenzo-Seva, Timmerman, & Kiers (2011) the CAF is introduced as ranging between 0 and 1, with values close to 1 indicating close fit, this does not match the formula they introduce for calculating CAF: `1 - KMO(residuals)`, which only works if the diagonal of the residual matrix is set to 1s and will then approximate 0.5 with close fit.}
 #' \item{model_implied_R}{The model implied correlation
 #' matrix.}
 #' \item{residuals}{Residual correlations, i.e., orig_R - model_implied_R}
@@ -349,6 +362,19 @@
 #' Latent variables analysis (pp. 399–419). Sage.
 #' @source Asparouhov, T., & Muthen, B. (2010). Simple second order chi-square
 #' correction. Mplus Technical Appendix.
+#' @source Bartlett, M. S. (1951). The effect of standardization on a chi-square
+#' approximation in factor analysis. Biometrika, 38, 337–344. doi: 10.2307/2332580
+#' @source Bentler, P. M. (1990). Comparative fit indexes in structural models.
+#' Psychological Bulletin, 107, 238–246. doi: 10.1037/0033-2909.107.2.238
+#' @source Tucker, L. R., & Lewis, C. (1973). A reliability coefficient for maximum
+#' likelihood factor analysis. Psychometrika, 38, 1–10. doi: 10.1007/BF02291170
+#' @source Browne, M. W., & Cudeck, R. (1989). Single sample cross-validation indices
+#' for covariance structures. Multivariate Behavioral Research, 24, 445–455.
+#' doi: 10.1207/s15327906mbr2404_4
+#' @source Browne, M. W., & Cudeck, R. (1992). Alternative ways of assessing model fit.
+#' Sociological Methods & Research, 21, 230–258. doi: 10.1177/0049124192021002005
+#' @source Bentler, P. M. (1995). EQS structural equations program manual. Multivariate
+#' Software.
 #'
 #' @export
 #'
@@ -756,7 +782,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
 
   # calculate degrees of freedom
   m <- ncol(R)
-  df <- ((m - n_factors)**2 - (m + n_factors)) / 2
+  df <- .efa_df(m, n_factors)
 
   if(df < 0){
 
@@ -1639,9 +1665,12 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
 # Scaled chi-square test statistics (Satorra & Bentler, 1994; Asparouhov & Muthen, 2010) for the
 # weighted off-diagonal fit. T = N * (s - sigma)' V (s - sigma) is the (unscaled) fit statistic;
 # U = V - V Delta A^- Delta' V is the residual projector; c1 = tr(U Gamma), c2 = tr((U Gamma)^2)
-# its trace coefficients (Gamma on the unit scale). Returns the scaled-shifted (WLSMV-default),
-# mean-adjusted, and mean-and-variance-adjusted statistics plus the scaled baseline statistic for
-# the robust CFI/TLI/RMSEA. NULL when the model is just-identified (df <= 0) or the traces degenerate.
+# its trace coefficients (Gamma on the unit scale). The projector spans only the off-diagonal
+# correlation residuals, so this is the two-stage correlation-structure correction (Browne, 1984)
+# and is not identical to the full WLSMV statistic of lavaan/Mplus, which also projects the
+# thresholds. Returns the scaled-shifted, mean-adjusted, and mean-and-variance-adjusted statistics
+# plus the scaled baseline statistic for the robust CFI/TLI/RMSEA. NULL when the model is
+# just-identified (df <= 0) or the traces degenerate.
 .scaled_chisq <- function(fit_out, Gamma, pairs, VD, vdiag, Vmat, Abread, N) {
 
   L <- unclass(fit_out$unrot_loadings)

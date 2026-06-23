@@ -670,9 +670,17 @@ format.summary.EFA <- function(x, ...) {
     .efa_format_fit_value(fit, "RMSEA_UB", pad = FALSE), "]"
   )
 
+  # When the sandwich path supplies a scaled (Satorra-Bentler) chi-square, mark the line so
+  # it is not read as an ordinary chi-square (the CFI/TLI/RMSEA below are derived from it).
+  chi_prefix <- if (!is.null(fit[["chi_scaled_type"]]) && !is.na(fit[["chi_scaled_type"]])) {
+    "scaled "
+  } else {
+    ""
+  }
+
   # The chi-square line carries an italic "p"; emit verbatim (with style_italic) so the
   # styling survives and the line is not reflowed.
-  lines <- paste0("\u03c7\u00b2(", df_text, ") = ", chi_text, ", ",
+  lines <- paste0(chi_prefix, "\u03c7\u00b2(", df_text, ") = ", chi_text, ", ",
                   cli::style_italic("p"), p_text)
   lines <- c(lines, fit_line("CFI", "CFI", fit_ci$CFI))
   if (is_finite_fit("TLI")) {

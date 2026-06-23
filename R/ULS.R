@@ -13,16 +13,13 @@
   h2 <- diag(L %*% t(L))
   diag(R) <- h2
 
-  # ULS objective: sum of squared off-diagonal residuals
-  Fm <- orig_R - (L %*% t(L))
-  Fm <- sum(Fm[upper.tri(Fm)] ^ 2)
-
-  # raw fit, finalized by .estimate_model()
+  # raw fit, finalized by .estimate_model(). `Fm` is the ULS objective (sum of squared
+  # off-diagonal residuals) the C++ backend already minimised and returned.
   list(
     L = L,
     h2 = h2,
     psi = uls$res$par,
-    Fm = Fm,
+    Fm = uls$res$value,
     iter = uls$res$counts[1],
     convergence = uls$res$convergence,
     orig_R = orig_R,

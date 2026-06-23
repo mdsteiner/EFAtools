@@ -55,13 +55,19 @@
 #' model-implied correlation matrix of the pooled solution. Consequently,
 #' residual-based fit indices such as RMSR/SRMR are based on pooled residuals.
 #'
-#' Fit indices based on the model chi-square are not arithmetic means of the
-#' per-imputation fit indices. If possible, chi-square-type fit is pooled with
-#' the D2 rule. For CFI, the null-model chi-square is D2-pooled as well when
-#' complete-data null-model chi-squares are available. The asymptotic
-#' chi-square approximation to D2 is then used for RMSEA and CFI. AIC and BIC,
-#' if returned, are chi-square-derived descriptive quantities based on this D2
-#' approximation and should not be interpreted as likelihood-based MI
+#' The model chi-square and the indices derived from it (RMSEA, ECVI, and the
+#' descriptive AIC/BIC) are not arithmetic means of the per-imputation values: the
+#' complete-data chi-squares are pooled with the D2 rule and the asymptotic
+#' chi-square approximation to D2 is used downstream. The incremental indices CFI
+#' (Bentler, 1990) and TLI (Tucker & Lewis, 1973) are reported instead as the
+#' average of the per-imputation indices, which keeps them consistent with the
+#' component fits (CFI stays in \[0, 1\]; TLI, like a single `EFA()` fit, is left
+#' unclamped). Pooling the model and baseline chi-squares separately, as
+#' `lavaan.mi`/`semTools` do, shrinks the two noncentralities unequally and can
+#' drive these non-linear indices outside \[0, 1\]. The separately pooled
+#' noncentralities used by that reference remain available in `mi_diagnostics`.
+#' AIC and BIC, if returned, are chi-square-derived descriptive quantities based on
+#' the D2 approximation and should not be interpreted as likelihood-based MI
 #' information criteria. The chi-square pooling rule is D2 (Li, Meng,
 #' Raghunathan & Rubin, 1991) on the information and bootstrap routes and the
 #' single fit's scaled chi-square on the sandwich/MI2S route. D3 and D4 (Chan &
@@ -304,6 +310,9 @@
 #' Barnard, J., & Rubin, D. B. (1999). Small-sample degrees of freedom with
 #' multiple imputation. *Biometrika*, 86(4), 948-955.
 #'
+#' Bentler, P. M. (1990). Comparative fit indexes in structural models.
+#' *Psychological Bulletin*, 107(2), 238-246.
+#'
 #' Chan, K. W., & Meng, X.-L. (2022). Multiple improvements of multiple
 #' imputation likelihood ratio tests. *Statistica Sinica*, 32, 1489-1514.
 #'
@@ -334,6 +343,9 @@
 #' imputation-based fit statistics in structural equation modeling with ordinal
 #' data: The MI2S approach. *Educational and Psychological Measurement*, 85(1),
 #' 5-37.
+#'
+#' Tucker, L. R., & Lewis, C. (1973). A reliability coefficient for maximum
+#' likelihood factor analysis. *Psychometrika*, 38(1), 1-10.
 #'
 #' van Ginkel, J. R., & Kroonenberg, P. M. (2014). Using generalized Procrustes
 #' analysis for multiple imputation in principal component analysis. *Journal of
@@ -667,6 +679,7 @@ EFA_POOLED <- function(data_list,
     residuals = residuals,
     RMSR = RMSR,
     N = N_pool,
+    Ns = Ns,
     method = method,
     pool_method = fit_pool_method,
     rmsea_ci_level = rmsea_ci_level
@@ -1352,12 +1365,20 @@ EFA_POOLED <- function(data_list,
                                     residuals,
                                     RMSR,
                                     N,
+                                    Ns = NULL,
                                     method,
                                     pool_method = "D2",
                                     rmsea_ci_level = .90) {
 
   fit_list <- .extract_list_object(fits, "fit_indices")
-  fit_list <- fit_list[!vapply(fit_list, is.null, logical(1))]
+  keep <- !vapply(fit_list, is.null, logical(1))
+  fit_list <- fit_list[keep]
+
+  # Per-imputation N aligned to the kept fits. Each imputation's chi-square was
+  # computed in .gof() with that imputation's own N, so the rescaling to the
+  # common (N - 1) scale used by the CFI/TLI diagnostics below must use the same
+  # per-imputation N.
+  Ns_kept <- if (is.null(Ns)) rep(NA_real_, length(fit_list)) else as.numeric(Ns)[keep]
 
   p_vars <- nrow(pooled_R)
   df <- NA_real_
@@ -1385,11 +1406,20 @@ EFA_POOLED <- function(data_list,
     }, numeric(1))
   }
 
-  D2 <- NULL
-  if (identical(pool_method, "D2") && length(chis) > 0L && is.finite(df)) {
-    D2 <- .efa_pooled_D2(chis, df)
+  # D2-pool a vector of per-imputation chi-squares at `dfree` degrees of freedom,
+  # or NULL when pooling does not apply (non-D2 request, no statistics, or a
+  # degenerate df). Shared by the reported model/baseline statistics and their
+  # (N - 1)-scaled diagnostic counterparts (chi_cfi / chi_null_cfi).
+  .pool_chi <- function(chi_stats, dfree) {
+    if (identical(pool_method, "D2") && length(chi_stats) > 0L &&
+        is.finite(dfree) && dfree > 0) {
+      .efa_pooled_D2(chi_stats, dfree)
+    } else {
+      NULL
+    }
   }
 
+  D2 <- .pool_chi(chis, df)
   if (!is.null(D2)) {
     chi <- D2$chi
     p_chi <- D2$p
@@ -1399,11 +1429,7 @@ EFA_POOLED <- function(data_list,
   }
 
   df_null <- p_vars * (p_vars - 1) / 2
-  D2_null <- NULL
-  if (identical(pool_method, "D2") && length(chis_null) > 0L &&
-      is.finite(df_null) && df_null > 0) {
-    D2_null <- .efa_pooled_D2(chis_null, df_null)
-  }
+  D2_null <- .pool_chi(chis_null, df_null)
 
   if (!is.null(D2_null)) {
     chi_null <- D2_null$chi
@@ -1416,28 +1442,66 @@ EFA_POOLED <- function(data_list,
     p_null <- NA_real_
   }
 
-  if (is.finite(chi) && is.finite(chi_null) &&
-      is.finite(df) && is.finite(df_null) && df >= 0) {
-    # CFI (Bentler, 1990) with noncentralities floored at 0, mirroring .gof().
-    d_model <- max(chi - df, 0)
-    d_null <- max(chi_null - df_null, 0)
-    CFI <- if (df == 0 || max(d_model, d_null) == 0) 1 else 1 - d_model / max(d_model, d_null)
-  } else {
-    CFI <- NA_real_
-  }
+  # CFI (Bentler, 1990) and TLI (Tucker & Lewis, 1973) are incremental indices:
+  # non-linear functions of the model and baseline noncentralities. Pooling them by
+  # separately D2-pooling the model and baseline chi-squares (the lavaan.mi/semTools
+  # convention) shrinks each statistic by its own between-imputation ARIV (Li, Meng,
+  # Raghunathan & Rubin, 1991); the baseline's ARIV is typically far larger than the
+  # model's, so the two noncentralities are deflated unequally and the resulting
+  # CFI/TLI can fall outside [0, 1] and contradict every per-imputation value -- and
+  # a common (N - 1) rescaling does not fix it, the non-linearity being in the cross-
+  # imputation shrinkage, not the within-imputation multiplier. Report instead the
+  # average of the per-imputation indices, each computed in range by the per-model
+  # path (.gof()/.chi_fit_indices()). That is the Rubin (1987) point estimate of the
+  # index -- the same centre the bootstrap route's `fit_indices_descriptive` CI uses
+  # -- it stays in range (CFI in [0, 1]; TLI within the per-imputation range, which
+  # .gof() likewise leaves unclamped), and it reduces to EFA()'s value in the single-
+  # imputation limit (identical imputations have zero between-imputation spread).
+  cfis <- vapply(fit_list, function(x) {
+    if (!is.null(x$CFI)) x$CFI else NA_real_
+  }, numeric(1))
+  tlis <- vapply(fit_list, function(x) {
+    if (!is.null(x$TLI)) x$TLI else NA_real_
+  }, numeric(1))
+  # Average via .efa_pooled_col_means() -- the mean of each column's finite entries
+  # (NA when a column has none) -- the same finite-mean primitive that centres the
+  # bootstrap fit_indices_descriptive CI (.efa_pooled_rubin_pool()), so the reported
+  # point estimate and that CI share one definition. Columns are positional (it
+  # drops dimnames); column 1 is CFI, column 2 TLI.
+  inc_means <- .efa_pooled_col_means(cbind(cfis, tlis))
+  CFI <- inc_means[[1L]]
+  TLI <- inc_means[[2L]]
 
-  # TLI (Tucker & Lewis, 1973) and ECVI (Browne & Cudeck, 1989), mirroring .gof()
-  # off the pooled (D2) chi-square so the pooled set matches the per-model one.
-  if (is.finite(chi) && is.finite(df) && is.finite(chi_null) &&
-      is.finite(df_null) && df_null > 0) {
-    if (df == 0) {
-      TLI <- 1
-    } else {
-      ratio_null <- chi_null / df_null
-      TLI <- if (ratio_null == 1) 1 else (ratio_null - chi / df) / (ratio_null - 1)
-    }
-  } else {
-    TLI <- NA_real_
+  # Diagnostic only (exposed via mi_diagnostics, not the basis of the reported
+  # CFI/TLI above): the model and baseline chi-squares D2-pooled on the common
+  # (N - 1) noncentrality scale, the basis on which lavaan.mi/semTools form pooled
+  # incremental indices, kept so the pooled fit can be reconciled against that
+  # reference. Each imputation's Bartlett-corrected chi is mapped back to the
+  # (N - 1) scale -- chi = F * mult implies F * (N - 1) = chi * (N - 1) / mult, with
+  # .bartlett_mult() shared with .gof()/.null_chisq() so the multiplier cannot drift
+  # -- before pooling, since D2 is non-linear in a constant rescaling. The model and
+  # baseline use different multipliers (the factor-count term (2q)/3 enters only the
+  # model), so a small-N imputation can pass one finiteness mask (ok_m / ok_n) and
+  # not the other; that asymmetry touches this diagnostic alone. q is read from the
+  # first fit, valid because .efa_pooled_check_fits() pins an equal factor count
+  # across imputations.
+  chi_cfi <- NA_real_
+  chi_null_cfi <- NA_real_
+  if (identical(pool_method, "D2") && length(chis) > 0L && is.finite(df) && df > 0) {
+    q <- ncol(as.matrix(fits[[1L]]$unrot_loadings))
+    mult_model <- .bartlett_mult(Ns_kept, p_vars, q)
+    mult_null <- .bartlett_mult(Ns_kept, p_vars)
+    chis_cfi <- rep(NA_real_, length(chis))
+    ok_m <- is.finite(Ns_kept) & is.finite(mult_model) & mult_model > 0
+    chis_cfi[ok_m] <- chis[ok_m] * (Ns_kept[ok_m] - 1) / mult_model[ok_m]
+    chis_null_cfi <- rep(NA_real_, length(chis_null))
+    ok_n <- is.finite(Ns_kept) & is.finite(mult_null) & mult_null > 0
+    chis_null_cfi[ok_n] <- chis_null[ok_n] * (Ns_kept[ok_n] - 1) / mult_null[ok_n]
+
+    D2_cfi <- .pool_chi(chis_cfi, df)
+    if (!is.null(D2_cfi)) chi_cfi <- D2_cfi$chi
+    D2_null_cfi <- .pool_chi(chis_null_cfi, df_null)
+    if (!is.null(D2_null_cfi)) chi_null_cfi <- D2_null_cfi$chi
   }
 
   if (is.finite(chi) && is.finite(df) && is.finite(N) && N > 1) {
@@ -1510,6 +1574,13 @@ EFA_POOLED <- function(data_list,
       FMI = if (!is.null(D2)) D2$FMI else NA_real_,
       ARIV_null = if (!is.null(D2_null)) D2_null$ARIV else NA_real_,
       FMI_null = if (!is.null(D2_null)) D2_null$FMI else NA_real_,
+      # Pooled model and baseline chi-squares on the common (N - 1) noncentrality
+      # scale -- the lavaan.mi/semTools basis for pooled incremental indices, kept
+      # for reconciliation against that reference. The reported CFI/TLI average the
+      # per-imputation indices instead; these are diagnostic and distinct from the
+      # reported chi / chi_null, which keep their Bartlett multipliers.
+      chi_cfi = chi_cfi,
+      chi_null_cfi = chi_null_cfi,
       m = if (!is.null(D2)) D2$M else length(fits)
     )
   )

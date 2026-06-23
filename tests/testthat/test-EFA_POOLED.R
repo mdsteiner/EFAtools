@@ -154,25 +154,29 @@ test_that("pooled components are internally consistent", {
 
 test_that("pooled fit indices D2-pool the imputation chi-squares", {
   fi <- pooled_none$fit_indices
+  md <- pooled_none$mi_diagnostics
   expect_identical(fi$pool_method, "D2")
   expect_equal(fi$df, pooled_none$fits[[1]]$fit_indices$df)
   expect_true(is.finite(fi$chi) && fi$chi >= 0)
   expect_true(is.finite(fi$p_chi))
   expect_true(is.finite(fi$RMSR))
 
-  # The pooled set reports TLI and ECVI (computed off the pooled chi-square,
-  # mirroring .gof()), and no longer carries the mislabeled Fm.
+  # The pooled set reports CFI/TLI as the average of the per-imputation indices
+  # (kept in range and consistent with the component fits; verified in
+  # test-EFA_POOLED-cfi-scale.R). The separately pooled (N - 1)-scale model and
+  # baseline noncentralities remain exposed via mi_diagnostics chi_cfi /
+  # chi_null_cfi for reconciliation against lavaan.mi, while ECVI keeps the
+  # reported pooled chi-square. No mislabeled Fm.
   expect_true(is.finite(fi$TLI))
   expect_true(is.finite(fi$ECVI))
   expect_null(fi$Fm)
-  ratio_null <- fi$chi_null / fi$df_null
-  expect_equal(fi$TLI, (ratio_null - fi$chi / fi$df) / (ratio_null - 1))
+  expect_true(is.finite(md$chi_cfi))
+  expect_true(is.finite(md$chi_null_cfi))
   N_used <- pooled_none$settings$N
   n_vars <- ncol(pooled_none$orig_R)
   n_params <- n_vars * (n_vars + 1) / 2 - fi$df
   expect_equal(fi$ECVI, (fi$chi + 2 * n_params) / (N_used - 1))
 
-  md <- pooled_none$mi_diagnostics
   expect_identical(md$m, 3L)
   expect_gte(md$ARIV, 0)
   expect_gte(md$FMI, 0)

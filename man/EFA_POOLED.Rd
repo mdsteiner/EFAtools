@@ -149,13 +149,19 @@ are calculated from the pooled observed correlation matrix minus the
 model-implied correlation matrix of the pooled solution. Consequently,
 residual-based fit indices such as RMSR/SRMR are based on pooled residuals.
 
-Fit indices based on the model chi-square are not arithmetic means of the
-per-imputation fit indices. If possible, chi-square-type fit is pooled with
-the D2 rule. For CFI, the null-model chi-square is D2-pooled as well when
-complete-data null-model chi-squares are available. The asymptotic
-chi-square approximation to D2 is then used for RMSEA and CFI. AIC and BIC,
-if returned, are chi-square-derived descriptive quantities based on this D2
-approximation and should not be interpreted as likelihood-based MI
+The model chi-square and the indices derived from it (RMSEA, ECVI, and the
+descriptive AIC/BIC) are not arithmetic means of the per-imputation values: the
+complete-data chi-squares are pooled with the D2 rule and the asymptotic
+chi-square approximation to D2 is used downstream. The incremental indices CFI
+(Bentler, 1990) and TLI (Tucker & Lewis, 1973) are reported instead as the
+average of the per-imputation indices, which keeps them consistent with the
+component fits (CFI stays in [0, 1]; TLI, like a single \code{EFA()} fit, is left
+unclamped). Pooling the model and baseline chi-squares separately, as
+\code{lavaan.mi}/\code{semTools} do, shrinks the two noncentralities unequally and can
+drive these non-linear indices outside [0, 1]. The separately pooled
+noncentralities used by that reference remain available in \code{mi_diagnostics}.
+AIC and BIC, if returned, are chi-square-derived descriptive quantities based on
+the D2 approximation and should not be interpreted as likelihood-based MI
 information criteria. The chi-square pooling rule is D2 (Li, Meng,
 Raghunathan & Rubin, 1991) on the information and bootstrap routes and the
 single fit's scaled chi-square on the sandwich/MI2S route. D3 and D4 (Chan &
@@ -347,6 +353,9 @@ mod
 Barnard, J., & Rubin, D. B. (1999). Small-sample degrees of freedom with
 multiple imputation. \emph{Biometrika}, 86(4), 948-955.
 
+Bentler, P. M. (1990). Comparative fit indexes in structural models.
+\emph{Psychological Bulletin}, 107(2), 238-246.
+
 Chan, K. W., & Meng, X.-L. (2022). Multiple improvements of multiple
 imputation likelihood ratio tests. \emph{Statistica Sinica}, 32, 1489-1514.
 
@@ -377,6 +386,9 @@ Sriutaisuk, S., Liu, Y., Chung, S., Kim, H., & Gu, F. (2025). Evaluating
 imputation-based fit statistics in structural equation modeling with ordinal
 data: The MI2S approach. \emph{Educational and Psychological Measurement}, 85(1),
 5-37.
+
+Tucker, L. R., & Lewis, C. (1973). A reliability coefficient for maximum
+likelihood factor analysis. \emph{Psychometrika}, 38(1), 1-10.
 
 van Ginkel, J. R., & Kroonenberg, P. M. (2014). Using generalized Procrustes
 analysis for multiple imputation in principal component analysis. \emph{Journal of

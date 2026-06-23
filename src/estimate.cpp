@@ -443,7 +443,9 @@ Rcpp::List fit_dwls_cpp(const arma::mat& R, const int n_fac, const arma::mat& W)
   arma::mat Lc = U * arma::diagmat(s);
 
   arma::mat E  = R - Lc * Lc.t();
-  double Fm = 0.5 * arma::accu((W % E) % E);
+  arma::mat WE = W % E;
+  WE.diag().zeros();  // off-diagonal weighting only, matching DwlsFunctor (the minimised objective)
+  double Fm = 0.5 * arma::accu(WE % E);
 
   return Rcpp::List::create(
     Rcpp::Named("loadings")    = Lc,

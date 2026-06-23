@@ -19,6 +19,17 @@
   1 - 1 / diag(solve(R))
 }
 
+# Sign convention shared by the unrotated (.finalize_fit) and rotated (.reflect_and_order)
+# solutions: reflect each factor so its loadings sum to a non-negative value (as in the
+# psych package and SPSS). Returns the +/-1 sign vector; apply it with
+# `L %*% diag(signs, nrow = length(signs))` -- the `nrow` guards the single-factor case,
+# where diag() would otherwise read a length-1 vector as a matrix dimension.
+.reflect_signs <- function(L) {
+  signs <- sign(colSums(L))
+  signs[signs == 0] <- 1
+  signs
+}
+
 # Shared post-processing for an unrotated solution. Reflects the loadings to a
 # consistent sign, names them (with a V-fallback when the input is unnamed),
 # computes the explained variances, fit indices, communalities, model-implied
@@ -31,17 +42,8 @@
   n_factors <- ncol(L)
 
   # reverse the sign of loadings as done in the psych package and SPSS
-  if (n_factors > 1) {
-    signs <- sign(colSums(L))
-    signs[signs == 0] <- 1
-    L <- L %*% diag(signs)
-  } else {
-    if (sum(L) < 0) {
-      L <- -as.matrix(L)
-    } else {
-      L <- as.matrix(L)
-    }
-  }
+  signs <- .reflect_signs(L)
+  L <- L %*% diag(signs, nrow = length(signs))
 
   # Bootstrap replicate path: .boot_se_ci() aggregates only each replicate's
   # unrotated loadings, fit indices, and residuals, so only those are computed.

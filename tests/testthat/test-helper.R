@@ -109,7 +109,7 @@ test_that(".gof works", {
                c("chi", "df", "p_chi", "CAF", "RMSR", "SRMR", "CFI", "TLI",
                  "RMSEA", "RMSEA_LB", "RMSEA_UB", "AIC", "BIC", "ECVI", "Fm",
                  "chi_null", "df_null", "p_null"))
-  expect_lt(gof_ml$p_chi, .05)
+  expect_true(is.na(gof_ml$p_chi))    # df == 0: the chi-square test is undefined
   expect_equal(gof_ml$CFI, 1)
   expect_equal(gof_ml$RMSEA, 0)
   if (inherits(w_ml, "warning")) {
@@ -124,7 +124,7 @@ test_that(".gof works", {
                c("chi", "df", "p_chi", "CAF", "RMSR", "SRMR", "CFI", "TLI",
                  "RMSEA", "RMSEA_LB", "RMSEA_UB", "AIC", "BIC", "ECVI", "Fm",
                  "chi_null", "df_null", "p_null"))
-  expect_lt(gof_uls$p_chi, .05)
+  expect_true(is.na(gof_uls$p_chi))   # df == 0: the chi-square test is undefined
   expect_equal(gof_uls$CFI, 1)
   expect_equal(gof_uls$RMSEA, 0)
   if (inherits(w_uls, "warning")) {

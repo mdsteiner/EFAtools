@@ -113,7 +113,7 @@ NEST <- function(x, N = NA,
   # (df = ((nvar - k)^2 - (nvar + k)) / 2 for k factors); the largest reference
   # factor count with df > 0 caps the search at one factor beyond it.
   ref_k <- seq_len(nvar) - 1L
-  ref_df <- ((nvar - ref_k)^2 - (nvar + ref_k)) / 2
+  ref_df <- .efa_df(nvar, ref_k)
   max_fac <- min(floor(.8 * nvar), max(ref_k[ref_df > 0]) + 1L)
 
   references <- vector(mode = "double", length = max_fac)

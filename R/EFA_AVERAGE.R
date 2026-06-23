@@ -366,7 +366,7 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
 
   # calculate degrees of freedom
   m <- ncol(R)
-  df <- ((m - n_factors)**2 - (m + n_factors)) / 2
+  df <- .efa_df(m, n_factors)
 
   if(df < 0){
 
