@@ -139,6 +139,52 @@ test_that("cor_method = 'poly' honours `use` for missing data", {
                KMO(R_listwise)$KMO)
 })
 
+test_that("cor_method = 'poly' uses pairwise-complete thresholds under missing data", {
+  skip_on_cran()
+  skip_if_not_installed("polycor")
+
+  set.seed(202)
+  N <- 2000
+  L <- chol(matrix(c(1, .6, .6, 1), 2L))
+  Z <- matrix(stats::rnorm(2 * N), N, 2L) %*% L
+  a <- findInterval(Z[, 1], stats::qnorm(c(.3, .6)))
+  b <- findInterval(Z[, 2], stats::qnorm(c(.25, .55, .8)))
+  # Missing-at-random: a is dropped more often where b is high, so b's pairwise-complete
+  # marginal differs from its full-column marginal. A pairwise polychoric must take its
+  # thresholds from each pair's own complete cases (as polycor does); using the full-column
+  # marginals instead would bias this estimate by ~0.06.
+  am <- a; am[(b >= 2) & (stats::runif(N) < 0.7)] <- NA
+  ours <- .polychoric(cbind(am, b))$R[1, 2]
+  ref <- suppressWarnings(polycor::polychor(am, b, ML = FALSE))
+  expect_equal(ours, ref, tolerance = 1e-3)
+})
+
+test_that("an asymptotic covariance over pairwise data reports the listwise override", {
+  g <- GRiPS_raw[stats::complete.cases(GRiPS_raw), ]
+  gm <- g; gm[1:5, 1] <- NA
+
+  # With missing data, an asymptotic covariance (here the DWLS weights) forces listwise
+  # deletion even though `use` asks for pairwise-complete estimation; that override is reported.
+  expect_message(
+    .prepare_cor_input(gm, cor_method = "poly", acov = "diag",
+                       use = "pairwise.complete.obs", inform_from_data = FALSE),
+    class = "efa_acov_listwise"
+  )
+  # Complete data needs no override, so nothing is reported.
+  expect_no_message(
+    .prepare_cor_input(g, cor_method = "poly", acov = "diag",
+                       use = "pairwise.complete.obs", inform_from_data = FALSE),
+    class = "efa_acov_listwise"
+  )
+  # A Pearson diagonal covariance does not listwise-delete (only the full ADF covariance does),
+  # so no override is reported even with missing data.
+  expect_no_message(
+    .prepare_cor_input(gm, cor_method = "pearson", acov = "diag",
+                       use = "pairwise.complete.obs", inform_from_data = FALSE),
+    class = "efa_acov_listwise"
+  )
+})
+
 test_that("N_FACTORS skips reference-based criteria under poly with an informative note", {
   classes <- character()
   withCallingHandlers(

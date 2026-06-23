@@ -6,10 +6,13 @@
 #include <limits>
 
 // Native two-step (conditional) polychoric correlation estimator. Thresholds are
-// fixed once per variable from the marginal cumulative proportions; each pairwise
-// correlation then maximises the bivariate-ordinal log-likelihood over rho with
-// those thresholds held fixed (Olsson, 1979, two-step estimator; matches
-// polycor::polychor(ML = FALSE) and the psych two-step).
+// fixed from the marginal cumulative proportions; each pairwise correlation then
+// maximises the bivariate-ordinal log-likelihood over rho with those thresholds held
+// fixed (Olsson, 1979, two-step estimator; matches polycor::polychor(ML = FALSE) and
+// the psych two-step). On complete data the thresholds are the per-variable (full-column)
+// marginals; when the data have missing values each pairwise correlation instead uses the
+// thresholds of its own pairwise-complete cases, so the thresholds and the contingency
+// table always come from the same cases.
 //
 // Each ordinal cell probability is the integral of the bivariate normal density over
 // its (possibly half-infinite) threshold rectangle. Rather than forming it by
@@ -38,8 +41,11 @@
 //   Genz, A., & Bretz, F. (2009). Computation of Multivariate Normal and t Probabilities.
 //     Springer.
 //   Brent, R. P. (1973). Algorithms for Minimization without Derivatives. Prentice-Hall.
-//   Higham, N. J. (2002). Computing the nearest correlation matrix - a problem from
-//     finance. IMA Journal of Numerical Analysis, 22, 329-343.
+//   Rebonato, R., & Jackel, P. (2000). The most general methodology to create a valid
+//     correlation matrix for risk management and option pricing purposes. Journal of Risk,
+//     2(2), 17-27.
+//   Wichura, M. J. (1988). Algorithm AS 241: The percentage points of the normal
+//     distribution. Applied Statistics, 37, 477-484.
 
 static const double POLY_INF = std::numeric_limits<double>::infinity();
 static const double POLY_INV_SQRT_2PI = 0.39894228040143267794;  // 1/sqrt(2*pi)
@@ -47,10 +53,15 @@ static const double POLY_INV_SQRT_2 = 0.70710678118654752440;    // 1/sqrt(2)
 // Beyond this |x| the standard normal density is below ~1e-16; used to clamp the
 // infinite outer (X) integration limits to a finite range without loss of accuracy.
 static const double POLY_CLAMP = 8.5;
-// Gauss-Legendre node count for the rectangle quadrature. The integrand is a smooth
-// Gaussian over each threshold band, so this converges quickly; 12 nodes reproduce the
-// reference estimators to within ~1e-5 and higher orders do not change the result.
+// Gauss-Legendre node count for the rectangle quadrature. The integrand is a smooth Gaussian
+// over each threshold band whose conditional transition has width sqrt(1 - rho^2), so 12 nodes
+// reproduce the reference estimators to within ~1e-5 for |rho| up to about 0.95. Near |rho| = 1
+// the transition narrows and a fixed 12-node rule under-resolves it, biasing the estimate, so a
+// pair whose estimate exceeds POLY_REFINE_RHO is re-estimated with the finer POLY_GL_N_HI rule.
+// The common, moderate-correlation case keeps the cheap 12-node rule and is unchanged.
 static const int POLY_GL_N = 12;
+static const int POLY_GL_N_HI = 96;
+static const double POLY_REFINE_RHO = 0.95;
 
 // Standard normal CDF via the complementary error function (thread-safe, allocation-free,
 // accurate to floating-point precision). Phi(+/-Inf) evaluates cleanly to 1 / 0.
@@ -59,6 +70,56 @@ static inline double std_norm_cdf(double z) {
 }
 static inline double std_norm_pdf(double z) {
   return POLY_INV_SQRT_2PI * std::exp(-0.5 * z * z);
+}
+
+// Standard normal quantile via Wichura's (1988) AS 241 (accurate to ~1e-16), thread-safe and
+// allocation-free so it can be called inside the OpenMP pair loop, where R::qnorm cannot. Used
+// for the per-pair (pairwise-complete) thresholds under missing data; returns +/-Inf at p = 1/0
+// (an empty marginal category, handled by the +/-POLY_CLAMP clamping downstream).
+static inline double std_norm_quantile(double p) {
+  // Endpoints first: the AS241 rational evaluates Inf/Inf -> NaN at p = 0/1, so an empty
+  // pairwise marginal category (cumulative proportion exactly 0 or 1) must be sent to the
+  // infinite cut the threshold padding and +/-POLY_CLAMP clamping expect (as R::qnorm does).
+  if (p <= 0.0) return -POLY_INF;
+  if (p >= 1.0) return POLY_INF;
+  double q = p - 0.5, r, val;
+  if (std::fabs(q) <= 0.425) {
+    r = 0.180625 - q * q;
+    val = q * (((((((2509.0809287301226727 * r + 33430.575583588128105) * r +
+            67265.770927008700853) * r + 45921.953931549871457) * r +
+            13731.693765509461125) * r + 1971.5909503065514427) * r +
+            133.14166789178437745) * r + 3.387132872796366608) /
+          (((((((5226.495278852854561 * r + 28729.085735721942674) * r +
+            39307.89580009271061) * r + 21213.794301586595867) * r +
+            5394.1960214247511077) * r + 687.1870074920579083) * r +
+            42.313330701600911252) * r + 1.0);
+  } else {
+    r = (q < 0.0) ? p : 1.0 - p;
+    r = std::sqrt(-std::log(r));
+    if (r <= 5.0) {
+      r -= 1.6;
+      val = (((((((7.7454501427834140764e-4 * r + 0.0227238449892691845833) * r +
+              0.24178072517745061177) * r + 1.27045825245236838258) * r +
+              3.64784832476320460504) * r + 5.7694972214606914055) * r +
+              4.6303378461565452959) * r + 1.42343711074968357734) /
+            (((((((1.05075007164441684324e-9 * r + 5.475938084995344946e-4) * r +
+              0.0151986665636164571966) * r + 0.14810397642748007459) * r +
+              0.68976733498510000455) * r + 1.6763848301838038494) * r +
+              2.05319162663775882187) * r + 1.0);
+    } else {
+      r -= 5.0;
+      val = (((((((2.01033439929228813265e-7 * r + 2.71155556874348757815e-5) * r +
+              0.0012426609473880784386) * r + 0.026532189526576123093) * r +
+              0.29656057182850489123) * r + 1.7848265399172913358) * r +
+              5.4637849111641143699) * r + 6.6579046435011037772) /
+            (((((((2.04426310338993978564e-15 * r + 1.4215117583164458887e-7) * r +
+              1.8463183175100546818e-5) * r + 7.868691311456132591e-4) * r +
+              0.0148753612908506148525) * r + 0.13692988092273580531) * r +
+              0.59983220655588793769) * r + 1.0);
+    }
+    if (q < 0.0) val = -val;
+  }
+  return val;
 }
 
 // Gauss-Legendre nodes/weights on [-1, 1] (Golub-Welsch via Newton on the Legendre roots).
@@ -193,16 +254,17 @@ static inline void poly_accum_node(double x, double w, double rho, double s, dou
   }
 }
 
-// Two-step polychoric correlation for one variable pair, thresholds fixed. Builds the
-// contingency table from the pairwise-complete rows, optionally applies the empty-cell
-// continuity correction, then minimises the negative log-likelihood over rho. Pure C++
-// (OpenMP-safe); reuses caller-owned scratch buffers so the hot path does not allocate.
-// Returns NA_REAL when the pair has no overlapping complete cases (the R wrapper turns a
-// resulting NA into a classed condition).
+// Two-step polychoric correlation for one variable pair. Builds the contingency table from the
+// pairwise-complete rows, fixes the thresholds (the shared per-variable tau_i/tau_j, or - when
+// use_local is set, i.e. the data have missing values - this pair's own marginal thresholds),
+// optionally applies the empty-cell continuity correction, then minimises the negative
+// log-likelihood over rho. Pure C++ (OpenMP-safe); reuses caller-owned scratch buffers so the
+// hot path does not allocate. Returns NA_REAL when the pair has no overlapping complete cases
+// (the R wrapper turns a resulting NA into a classed condition).
 static double polychoric_pair(const int* xp, int nrow, int ci, int cj,
                               const std::vector<double>& tau_i,
                               const std::vector<double>& tau_j,
-                              int Ki, int Kj, double correct,
+                              int Ki, int Kj, double correct, bool use_local,
                               const std::vector<double>& gx, const std::vector<double>& gw,
                               std::vector<double>& tab, std::vector<double>& pmat,
                               std::vector<double>& dpmat, std::vector<double>& colcdf,
@@ -223,6 +285,35 @@ static double polychoric_pair(const int* xp, int nrow, int ci, int cj,
   }
   if (total <= 0.0) return NA_REAL;  // no overlapping complete cases for this pair
 
+  // Pad the thresholds with +/-Inf so each ordinal cell is a (half-infinite) rectangle. With
+  // complete data the per-variable (full-column) thresholds tau_i/tau_j are shared by every
+  // pair. With missing data each pair instead uses the thresholds of its own pairwise-complete
+  // cases (the marginals of this contingency table, taken before any continuity correction):
+  // the thresholds and the table then come from the same cases, as in polycor / psych. An empty
+  // marginal category gives a +/-Inf cut, which the +/-POLY_CLAMP clamping turns into a
+  // zero-width (zero-probability, zero-count) band.
+  rcut[0] = -POLY_INF; rcut[Ki] = POLY_INF;
+  ccut[0] = -POLY_INF; ccut[Kj] = POLY_INF;
+  if (use_local) {
+    double cum = 0.0;
+    for (int a = 0; a < Ki - 1; a++) {
+      double rs = 0.0;
+      for (int b = 0; b < Kj; b++) rs += tab[(std::size_t) a * Kj + b];
+      cum += rs;
+      rcut[a + 1] = std_norm_quantile(cum / total);
+    }
+    cum = 0.0;
+    for (int b = 0; b < Kj - 1; b++) {
+      double cs = 0.0;
+      for (int a = 0; a < Ki; a++) cs += tab[(std::size_t) a * Kj + b];
+      cum += cs;
+      ccut[b + 1] = std_norm_quantile(cum / total);
+    }
+  } else {
+    for (int k = 0; k < Ki - 1; k++) rcut[k + 1] = tau_i[k];
+    for (int k = 0; k < Kj - 1; k++) ccut[k + 1] = tau_j[k];
+  }
+
   // Empty-cell continuity correction: add `correct` pseudo-counts to zero cells (mirrors
   // psych's correct= for sparse tables). correct = 0 leaves the table untouched. ntab is the
   // total table mass (including any pseudo-counts) - the multinomial size used in the
@@ -234,12 +325,6 @@ static double polychoric_pair(const int* xp, int nrow, int ci, int cj,
       if (tab[idx] == 0.0) { tab[idx] = correct; ntab += correct; }
     }
   }
-
-  // Pad the fixed thresholds with +/-Inf so each ordinal cell is a (half-infinite) rectangle.
-  rcut[0] = -POLY_INF; rcut[Ki] = POLY_INF;
-  for (int k = 0; k < Ki - 1; k++) rcut[k + 1] = tau_i[k];
-  ccut[0] = -POLY_INF; ccut[Kj] = POLY_INF;
-  for (int k = 0; k < Kj - 1; k++) ccut[k + 1] = tau_j[k];
 
   // Precompute the rho-INDEPENDENT part of the quadrature once per pair: for each X (row)
   // band, the clamped limits, the abscissae, and the weight*phi(x) factors depend only on the
@@ -296,14 +381,26 @@ static double polychoric_pair(const int* xp, int nrow, int ci, int cj,
     for (int a = 0; a < Ki; a++) {
       std::size_t pbase = (std::size_t) a * Kj;
       for (int b = 0; b < Kj; b++) {
-        double p = pmat[pbase + b];
-        if (p < p_floor) p = p_floor;
+        double praw = pmat[pbase + b];
+        double p = praw < p_floor ? p_floor : praw;
         double dP = dpmat[pbase + b];
-        iacc += dP * dP / p;
+        // Expected (Fisher) information sum_ab (dP)^2/P. A near-impossible cell carries no
+        // information (dP^2/P -> 0 as P -> 0), but at |rho| near 1 its probability can underflow
+        // while its rho-derivative, divided by s^3 = (1 - rho^2)^{3/2}, stays O(1); the floored
+        // ratio would then explode and, through the Newton step score/info, fake a vanishing step
+        // that stops the iteration at the warm start far from the optimum. Skip the underflowed
+        // cells - their true contribution is negligible.
+        if (praw > p_floor) iacc += dP * dP / praw;
         double nab = tab[pbase + b];
         if (nab != 0.0) {
           nll -= nab * std::log(p);
-          score += nab * dP / p;
+          // The score must be the gradient of this nll. When the cell probability has
+          // underflowed (p held at p_floor), -nab*log(p) is locally constant in rho, so its
+          // gradient is zero; gating the score on the same condition as the information keeps
+          // the Newton step score/info consistent. Adding the unfloored derivative here would
+          // inject a spurious large term that pulls a strongly-correlated pair (one with an
+          // observed near-impossible off-diagonal cell) away from its optimum.
+          if (praw > p_floor) score += nab * dP / p;
         }
       }
     }
@@ -343,7 +440,9 @@ static double polychoric_pair(const int* xp, int nrow, int ci, int cj,
   //
   // The step tolerance is ~1e-5 in rho: near the optimum the log-likelihood is flat, so a
   // tighter target would chase changes below floating-point noise (a tolerance also used by
-  // comparable scoring implementations); 1e-5 is far inside the accuracy of the estimate.
+  // comparable scoring implementations); 1e-5 is far inside the accuracy of the estimate. The
+  // same constant is reused as Brent's relative-x tolerance in the fallback (where it bounds
+  // |rho - rho*| to ~1e-5 * |rho|), which is likewise far inside the estimate's accuracy.
   const double maxcor = 0.9999;
   const double tol = 1e-5;
   double rho = rho0 > maxcor ? maxcor : (rho0 < -maxcor ? -maxcor : rho0);
@@ -351,9 +450,9 @@ static double polychoric_pair(const int* xp, int nrow, int ci, int cj,
   eval(rho, nll, score, info);
   bool converged = false;
   for (int iter = 0; iter < 50; iter++) {
-    // An empty tail cell at high |rho| can floor its probability while its derivative stays
-    // large, blowing the summed information up to +Inf (which `info > 0` would not catch);
-    // any non-finite score/information hands the pair to the robust Brent fallback.
+    // The expected information excludes underflowed cells (see eval), so a high-|rho| empty
+    // tail cell can no longer inflate it; this guard is defensive, handing any pair that still
+    // yields non-positive or non-finite information/score to the robust Brent fallback.
     if (!(info > 0.0) || !std::isfinite(info) || !std::isfinite(score)) break;
     double step = score / info;
     if (std::abs(step) < tol && std::abs(rho) < maxcor) {  // interior Newton decrement -> optimum
@@ -489,9 +588,20 @@ Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
 
   const int* xp = x.begin();
 
-  // Gauss-Legendre rule for the rectangle quadrature, computed once on the main thread.
-  std::vector<double> gx, gw;
+  // Gauss-Legendre rules for the rectangle quadrature, computed once on the main thread: the
+  // base 12-node rule and the finer rule used to re-estimate near-collinear pairs (|rho| close
+  // to 1), where the base rule under-resolves the narrow conditional transition.
+  std::vector<double> gx, gw, gx_hi, gw_hi;
   gauss_legendre(POLY_GL_N, gx, gw);
+  gauss_legendre(POLY_GL_N_HI, gx_hi, gw_hi);
+
+  // Whether any cell is missing. With complete data every pair shares the per-variable
+  // thresholds (the fast, exact path); with missing data each pair instead uses its own
+  // pairwise-complete thresholds (computed inside the parallel loop via a thread-safe quantile).
+  bool any_missing = false;
+  for (std::size_t k = 0; k < (std::size_t) nrow * p; k++) {
+    if (xp[k] == NA_INTEGER) { any_missing = true; break; }
+  }
 
   // Category counts and thresholds, computed once per variable on the main thread
   // (R::qnorm is not called inside the parallel region below). The codes are 0-based
@@ -544,6 +654,10 @@ Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
   }
   const int npairs = (int) pair_i.size();
   std::vector<double> rho((std::size_t) npairs, 0.0);
+  // Records, per pair, whether the finer (POLY_GL_N_HI) rule produced the estimate, so the
+  // ACOV below can reuse the same rule rather than re-deriving it from the rounded estimate
+  // (a refined value can land just the other side of POLY_REFINE_RHO).
+  std::vector<char> used_hi((std::size_t) npairs, 0);
 
   #pragma omp parallel num_threads(n_threads)
   {
@@ -554,15 +668,25 @@ Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
     std::vector<double> colcdf(Kmax + 1);
     std::vector<double> coldcdf(Kmax + 1);
     std::vector<double> rcut(Kmax + 1), ccut(Kmax + 1);
-    std::vector<double> xnode((std::size_t) Kmax * POLY_GL_N);
-    std::vector<double> wpdf((std::size_t) Kmax * POLY_GL_N);
+    std::vector<double> xnode((std::size_t) Kmax * POLY_GL_N_HI);
+    std::vector<double> wpdf((std::size_t) Kmax * POLY_GL_N_HI);
 
     #pragma omp for schedule(dynamic)
     for (int t = 0; t < npairs; t++) {
       int i = pair_i[t];
       int j = pair_j[t];
-      rho[t] = polychoric_pair(xp, nrow, i, j, tau[i], tau[j], Kcat[i], Kcat[j], correct,
-                               gx, gw, tab, pmat, dpmat, colcdf, coldcdf, rcut, ccut, xnode, wpdf);
+      double r = polychoric_pair(xp, nrow, i, j, tau[i], tau[j], Kcat[i], Kcat[j], correct,
+                                 any_missing, gx, gw, tab, pmat, dpmat, colcdf, coldcdf,
+                                 rcut, ccut, xnode, wpdf);
+      // Near |rho| = 1 the 12-node rule under-resolves the conditional transition and biases
+      // the estimate, so re-estimate the rare near-collinear pair with the finer rule.
+      if (std::isfinite(r) && std::fabs(r) > POLY_REFINE_RHO) {
+        r = polychoric_pair(xp, nrow, i, j, tau[i], tau[j], Kcat[i], Kcat[j], correct,
+                            any_missing, gx_hi, gw_hi, tab, pmat, dpmat, colcdf, coldcdf,
+                            rcut, ccut, xnode, wpdf);
+        used_hi[t] = 1;
+      }
+      rho[t] = r;
     }
   }
 
@@ -574,19 +698,22 @@ Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
   }
 
   // Optional nearest-PD projection, gated by `nearest_pd` so callers can choose how it
-  // composes with downstream smoothing. The default path needs only the smallest eigenvalue,
-  // so it uses the cheaper values-only eigendecomposition; the eigenvectors are computed only
-  // on the rare projection branch. A non-finite matrix (a pair with no overlapping complete
-  // cases) is left untouched here; the R wrapper raises a classed condition on the NA.
+  // composes with downstream smoothing. When requested it first takes the cheaper values-only
+  // eigendecomposition to test definiteness and computes the eigenvectors only on the rare
+  // projection branch; callers that do not ask for it (the default, including every bootstrap
+  // replicate) skip the eigendecomposition entirely. A non-finite matrix (a pair with no
+  // overlapping complete cases) is left untouched here; the R wrapper raises a classed
+  // condition on the NA.
   bool pd_adjusted = false;
-  if (Rmat.is_finite()) {
+  if (nearest_pd && Rmat.is_finite()) {
     arma::vec eigval;
     if (!arma::eig_sym(eigval, Rmat)) {
       Rcpp::stop("Eigendecomposition of the polychoric correlation matrix failed.");
     }
-    if (nearest_pd && eigval.min() < std::numeric_limits<double>::epsilon()) {
-      // Clip the eigenvalues to a small positive floor and rescale to a unit
-      // diagonal (a simple nearest-correlation projection; Higham, 2002).
+    if (eigval.min() < std::numeric_limits<double>::epsilon()) {
+      // Clip the eigenvalues to a small positive floor and rescale to a unit diagonal (the
+      // spectral nearest-correlation projection of Rebonato & Jackel, 2000; an eigenvalue
+      // clip-and-rescale, not Higham's iterative Frobenius-nearest algorithm).
       arma::vec ev;
       arma::mat eigvec;
       if (!arma::eig_sym(ev, eigvec, Rmat)) {
@@ -673,7 +800,11 @@ Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
         const std::vector<double>& ci = cut_v[i];
         const std::vector<double>& cj = cut_v[j];
 
-        poly_cell_probs(r, ci, cj, Ki, Kj, gx, gw, pmat, dpmat, colcdf, coldcdf);
+        // Use the same quadrature rule that estimated this pair (the finer rule for the rare
+        // near-collinear pairs), so the cell probabilities are consistent with rho.
+        bool hi = used_hi[t] != 0;
+        poly_cell_probs(r, ci, cj, Ki, Kj, hi ? gx_hi : gx, hi ? gw_hi : gw,
+                        pmat, dpmat, colcdf, coldcdf);
 
         // Cell counts (every row is listwise-complete; the NA guard only matters under direct
         // misuse of the C++ entry point).
@@ -781,12 +912,15 @@ Rcpp::NumericVector bvn_rect_cpp(Rcpp::NumericVector a0, Rcpp::NumericVector a1,
   if (nb1 > n) n = nb1;
   if (nr  > n) n = nr;
 
-  std::vector<double> gx, gw;
+  std::vector<double> gx, gw, gx_hi, gw_hi;
   gauss_legendre(POLY_GL_N, gx, gw);
+  gauss_legendre(POLY_GL_N_HI, gx_hi, gw_hi);
   Rcpp::NumericVector out(n);
   for (R_xlen_t i = 0; i < n; i++) {
+    double rr = rho[i % nr];
+    bool hi = std::fabs(rr) > POLY_REFINE_RHO;
     out[i] = bvn_rect(a0[i % na0], a1[i % na1], b0[i % nb0], b1[i % nb1],
-                      rho[i % nr], gx, gw);
+                      rr, hi ? gx_hi : gx, hi ? gw_hi : gw);
   }
   return out;
 }

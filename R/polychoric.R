@@ -4,7 +4,7 @@
 # conditions, which can only be raised at the R level.
 .polychoric <- function(x, correct = 0, nearest_pd = FALSE, n_threads = 1L,
                         binary_only = FALSE, acov = c("none", "diag", "full"),
-                        error_call = rlang::caller_env()) {
+                        label_acov = TRUE, error_call = rlang::caller_env()) {
 
   acov <- match.arg(acov)
 
@@ -129,12 +129,16 @@
   # only smooths the returned R, it does not change the covariance. Pairs follow column order
   # of the upper triangle (i < j), so the labels match utils::combn(nms, 2).
   if (acov != "none") {
-    labels <- apply(utils::combn(nms, 2L), 2L, paste, collapse = "-")
     av <- res$acov
-    if (acov == "diag") {
-      names(av) <- labels
-    } else {
-      dimnames(av) <- list(labels, labels)
+    # The point estimate names the asymptotic covariance by variable pair; the per-replicate
+    # bootstrap recompute consumes it positionally and skips the labelling (label_acov = FALSE).
+    if (label_acov) {
+      labels <- .pair_labels(nms)
+      if (acov == "diag") {
+        names(av) <- labels
+      } else {
+        dimnames(av) <- list(labels, labels)
+      }
     }
     out$acov <- av
   }

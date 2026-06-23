@@ -222,7 +222,8 @@ Solutions are very similar.}
 \item{cor_method}{character. Correlation computed from raw data: \code{"pearson"},
 \code{"spearman"}, or \code{"kendall"} (passed to \code{\link[stats:cor]{stats::cor()}}), or \code{"poly"} /
 \code{"tetra"} for polychoric / tetrachoric correlations of ordinal / binary data
-(a two-step estimator with no empty-cell continuity correction).
+(a two-step estimator with no empty-cell continuity correction, matching
+\code{polycor::polychor()} and \code{lavaan}).
 Default is "pearson".}
 
 \item{b_boot}{numeric. The number of bootstrap samples to draw. Default is 1000.}

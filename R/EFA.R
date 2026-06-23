@@ -104,7 +104,8 @@
 #' @param cor_method character. Correlation computed from raw data: `"pearson"`,
 #'   `"spearman"`, or `"kendall"` (passed to [stats::cor()]), or `"poly"` /
 #'   `"tetra"` for polychoric / tetrachoric correlations of ordinal / binary data
-#'   (a two-step estimator with no empty-cell continuity correction).
+#'   (a two-step estimator with no empty-cell continuity correction, matching
+#'   `polycor::polychor()` and `lavaan`).
 #' Default is "pearson".
 #' @param k numeric. Either the power used for computing the target matrix P in
 #' the promax rotation or the number of 'close to zero loadings' for the simplimax
@@ -590,10 +591,13 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
   prep <- .prepare_cor_input(x, N = N, use = use, cor_method = cor_method,
                              N_policy = "optional",
                              # Sandwich SEs need the full asymptotic covariance of the
-                             # correlations (the robust meat); its diagonal also supplies
-                             # the DWLS weights, so "full" subsumes the DWLS "diag" request.
+                             # correlations (the robust meat); for DWLS its diagonal also
+                             # supplies the per-element weights, so "full" subsumes the DWLS
+                             # "diag" request. dwls = TRUE builds those weights; the ML / ULS
+                             # sandwich path uses the meat alone.
                              acov = if (se == "sandwich") "full"
                                     else if (method == "DWLS") "diag" else "none",
+                             dwls = method == "DWLS",
                              check_singular = type != "psych",
                              posdef_abort = type == "SPSS")
   R <- prep$R
@@ -698,7 +702,8 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
           suppressWarnings({
             poly <- .polychoric(x[ind, , drop = FALSE], n_threads = 1L, nearest_pd = FALSE,
                                 binary_only = tetra_cor,
-                                acov = if (dwls) "diag" else "none")
+                                acov = if (dwls) "diag" else "none",
+                                label_acov = FALSE)
             list(R = poly$R,
                  W = if (dwls) .poly_weight_matrix(poly$acov, m) else NULL)
           }),

@@ -2,10 +2,12 @@
 #
 # The two-step estimator is validated against the conditional-ML two-step references
 # polycor::polychor(ML = FALSE) and psych::polychoric(correct = FALSE, global = FALSE);
-# on complete data the pooled thresholds used here coincide with the per-pair thresholds
-# those functions derive, so the estimates agree. The bivariate-normal rectangle that
-# drives the likelihood is cross-checked against mnormt::sadmvn. Heavy reference loops
-# over the large item sets run only under EFATOOLS_TEST_SLOW.
+# the thresholds match those functions' per-pair thresholds (the full-column marginals on
+# complete data, the pairwise-complete marginals under missing data), so the estimates agree.
+# Near-collinear pairs, where those fixed-quadrature references themselves lose accuracy, are
+# instead checked against an mnormt two-step gold. The bivariate-normal rectangle that drives
+# the likelihood is cross-checked against mnormt::sadmvn. Heavy reference loops over the large
+# item sets run only under EFATOOLS_TEST_SLOW.
 
 # Reference two-step polychoric matrix via polycor, pairwise.
 .ref_polychor <- function(x) {
@@ -15,6 +17,27 @@
     m[i, j] <- m[j, i] <- suppressWarnings(polycor::polychor(x[, i], x[, j], ML = FALSE))
   }
   m
+}
+
+# Exact two-step polychoric for one pair, integrating each cell with mnormt's adaptive
+# bivariate-normal rule. This is the oracle in the near-collinear regime, where the
+# fixed-quadrature reference estimators (polycor / psych) themselves lose accuracy.
+.gold_polychor <- function(a, b) {
+  ai <- match(a, sort(unique(a))) - 1L; bi <- match(b, sort(unique(b))) - 1L
+  Ki <- max(ai) + 1L; Kj <- max(bi) + 1L; N <- length(ai)
+  ti <- stats::qnorm(cumsum(tabulate(ai + 1L, Ki)) / N)[-Ki]
+  tj <- stats::qnorm(cumsum(tabulate(bi + 1L, Kj)) / N)[-Kj]
+  rc <- c(-Inf, ti, Inf); cc <- c(-Inf, tj, Inf)
+  nab <- matrix(0, Ki, Kj)
+  for (r in seq_len(N)) nab[ai[r] + 1L, bi[r] + 1L] <- nab[ai[r] + 1L, bi[r] + 1L] + 1
+  nll <- function(rho) {
+    V <- matrix(c(1, rho, rho, 1), 2L); s <- 0
+    for (i in seq_len(Ki)) for (j in seq_len(Kj)) if (nab[i, j] > 0)
+      s <- s + nab[i, j] * log(max(as.numeric(mnormt::sadmvn(
+        c(rc[i], cc[j]), c(rc[i + 1L], cc[j + 1L]), c(0, 0), V)), 1e-300))
+    -s
+  }
+  stats::optimize(nll, c(-0.9999, 0.9999), tol = 1e-9)$minimum
 }
 
 # Deterministic raw ordinal data whose two-step polychoric matrix is not positive
@@ -48,7 +71,7 @@ test_that(".bvn_rect_cpp matches mnormt::sadmvn rectangle probabilities", {
 
   cuts <- c(-Inf, -2.5, -1, 0, 1, 2.5, Inf)
   worst <- 0
-  for (rho in c(0, 0.3, 0.5, 0.75, 0.9, 0.95, -0.8)) {
+  for (rho in c(0, 0.3, 0.5, 0.75, 0.9, 0.95, 0.99, -0.8)) {
     V <- matrix(c(1, rho, rho, 1), 2L)
     for (ia in seq_len(length(cuts) - 1L)) for (ib in seq_len(length(cuts) - 1L)) {
       ours <- .bvn_rect_cpp(cuts[ia], cuts[ia + 1L], cuts[ib], cuts[ib + 1L], rho)
@@ -58,10 +81,74 @@ test_that(".bvn_rect_cpp matches mnormt::sadmvn rectangle probabilities", {
       worst <- max(worst, abs(ours - ref))
     }
   }
-  # The 12-node Gauss-Legendre rule reproduces the reference bivariate-normal integrator to
-  # better than 1e-6 over this grid (worst case near rho = 0.95); this is far tighter than the
-  # ~1e-4 agreement the polychoric matrix itself needs.
+  # The quadrature reproduces the reference bivariate-normal integrator to better than 1e-6 over
+  # this grid: the 12-node rule for |rho| up to 0.95, and the finer rule (used once |rho| exceeds
+  # the refinement threshold) at rho = 0.99, where the conditional transition is narrow. This is
+  # far tighter than the ~1e-4 agreement the polychoric matrix itself needs.
   expect_lt(worst, 1e-6)
+})
+
+test_that("near-collinear pairs match the exact two-step estimate", {
+  skip_on_cran()
+  skip_if_not_installed("mnormt")
+
+  # Near |rho| = 1 the contingency table has near-impossible off-diagonal cells whose
+  # probability underflows; a naive expected-information step false-converges at the warm start,
+  # and a fixed-order quadrature under-resolves the narrow conditional band. The estimator must
+  # still recover the exact two-step value (and the reference estimators polycor / psych are
+  # themselves biased here, so the oracle is the mnormt two-step).
+  cut7 <- stats::qnorm(seq_len(6) / 7)
+  set.seed(101)
+  N <- 4000
+  for (rt in c(0.97, 0.99, 0.995, 0.999)) {
+    L <- chol(matrix(c(1, rt, rt, 1), 2L))
+    Z <- matrix(stats::rnorm(2 * N), N, 2L) %*% L
+    a <- findInterval(Z[, 1], cut7); b <- findInterval(Z[, 2], cut7)
+    expect_equal(.polychoric(cbind(a, b))$R[1, 2], .gold_polychor(a, b), tolerance = 1e-4)
+  }
+})
+
+test_that("an empty pairwise-complete marginal category does not corrupt the estimate", {
+  skip_on_cran()
+  skip_if_not_installed("polycor")
+
+  set.seed(303)
+  N <- 1500
+  L <- chol(matrix(c(1, .5, .5, 1), 2L))
+  Z <- matrix(stats::rnorm(2 * N), N, 2L) %*% L
+  a <- findInterval(Z[, 1], stats::qnorm(c(.2, .5, .8)))   # categories 0..3
+  b <- findInterval(Z[, 2], stats::qnorm(c(.3, .7)))       # categories 0..2
+
+  # Drop b wherever a is in its top (then bottom) category, so that category is absent from the
+  # pair's pairwise-complete table while still present in a's full column. The per-pair
+  # cumulative proportion then lands exactly on 1 (or 0), which must map to an infinite cut and
+  # a zero-width empty band -- not a NaN that silently corrupts the estimate.
+  for (empty in c(3L, 0L)) {
+    bm <- b; bm[a == empty] <- NA
+    ours <- .polychoric(cbind(a, bm))$R[1, 2]
+    expect_false(is.na(ours))
+    expect_equal(ours, suppressWarnings(polycor::polychor(a, bm, ML = FALSE)),
+                 tolerance = 1e-3)
+  }
+})
+
+test_that("an observed near-impossible cell does not bias a strongly-correlated pair", {
+  skip_on_cran()
+  skip_if_not_installed("mnormt")
+
+  cut7 <- stats::qnorm(seq_len(6) / 7)
+  set.seed(404)
+  N <- 5000
+  L <- chol(matrix(c(1, 0.995, 0.995, 1), 2L))
+  Z <- matrix(stats::rnorm(2 * N), N, 2L) %*% L
+  a <- findInterval(Z[, 1], cut7); b <- findInterval(Z[, 2], cut7)
+  # A few careless responses fall in the near-impossible opposite corners, whose model
+  # probability underflows at the optimum. The score must drop those cells consistently with
+  # the information; otherwise their spurious gradient drags the pair off its true correlation
+  # (the unfixed estimate is biased ~0.02; with the gated score it tracks the gold to ~4e-3).
+  a[1:3] <- 0L; b[1:3] <- 6L
+  a[4:6] <- 6L; b[4:6] <- 0L
+  expect_equal(.polychoric(cbind(a, b))$R[1, 2], .gold_polychor(a, b), tolerance = 8e-3)
 })
 
 test_that("polychoric matrix matches polycor and psych on GRiPS", {

@@ -2,6 +2,23 @@
 
 ## Changes to Functions
 
+* Polychoric and tetrachoric correlations (`cor_method = "poly"` / `"tetra"`)
+  are now accurate for near-collinear item pairs. The per-pair optimiser no
+  longer stops prematurely when a near-impossible response cell underflows, and
+  a finer quadrature is used as a correlation approaches the singular boundary,
+  so strongly related items are no longer estimated as more weakly related than
+  they are. Under missing data with `use = "pairwise.complete.obs"`, each pair's
+  thresholds are now estimated from that pair's own complete cases (as in
+  `polycor::polychor()` and `lavaan`), removing a bias that could arise when the
+  missingness was related to the responses.
+
+* `EFA()` with `se = "sandwich"` and `method = "ML"` or `"ULS"` no longer fails
+  with a weight-related error on a near-degenerate response pair: the
+  diagonally-weighted least-squares weights are now constructed only for
+  `method = "DWLS"`. When an asymptotic covariance requires complete cases and so
+  overrides `use = "pairwise.complete.obs"` (listwise-deleting incomplete rows),
+  `EFA()` now reports this rather than changing the estimates silently.
+
 * `EFA_POOLED()` now dispatches its multiple-imputation standard-error pooling
   automatically by the standard-error method of its component fits: Rubin's
   rules for the information method (with Wald confidence intervals and

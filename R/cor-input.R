@@ -2,7 +2,11 @@
 # input type, smooth a non-positive-definite matrix, and resolve N. Shared by EFA and
 # the suitability/retention functions so these checks live in one place.
 
-# Checks if x is a correlation matrix
+# Heuristically decide whether x is already a correlation matrix rather than raw data:
+# square, symmetric, all entries in [-1, 1], and a unit diagonal. This cannot distinguish a
+# correlation matrix from a (rare) raw-data matrix that happens to meet all four conditions,
+# and it treats a covariance matrix as raw data (its diagonal is not all ones); callers that
+# accept either input assume raw data unless these conditions hold.
 .is_cormat <- function(x){
 
   if(nrow(x) == ncol(x) &&
@@ -62,6 +66,14 @@
 # computation and to reject criteria whose reference data are continuous.
 .is_poly_cor <- function(cor_method) cor_method %in% c("poly", "tetra")
 
+# Labels for the off-diagonal variable pairs in utils::combn(p, 2) column order
+# ("name_i-name_j"), shared by every routine that names a pair-indexed vector or matrix
+# (the polychoric and ADF asymptotic covariances and DWLS weights).
+.pair_labels <- function(nms) {
+  idx <- utils::combn(length(nms), 2L)
+  paste(nms[idx[1L, ]], nms[idx[2L, ]], sep = "-")
+}
+
 # Build the symmetric per-element DWLS weight matrix W (W_ij = 1 / Var(rho_hat_ij), zero
 # diagonal) from the diagonal polychoric asymptotic covariance returned by .polychoric():
 # a length p(p - 1)/2 vector of off-diagonal variances ordered by the upper triangle
@@ -92,8 +104,8 @@
 # utils::combn(p, 2) column order -- the continuous analogue of the polychoric asymptotic
 # covariance, and the meat of the robust/sandwich standard errors. For case n and pair (i < j)
 # the per-case influence is IF[n, (ij)] = (w_ni w_nj - 1/2 r_ij (w_ni^2 + w_nj^2)) / N, with w
-# the columns standardised to unit variance; Gamma = crossprod(IF). The -1/2 r (w^2 - 1) terms
-# are the delta-method correction for estimating the marginal SDs (the standardisation
+# the columns standardised to unit variance; Gamma = crossprod(IF). The -1/2 r (w_ni^2 + w_nj^2)
+# terms are the delta-method correction for estimating the marginal SDs (the standardisation
 # nuisance, the continuous counterpart of the polychoric threshold influence). N * Gamma equals
 # lavaan's correlation-structure NACOV (the basis of the MLM/MLR robust statistics). Kept in R:
 # the cost is the BLAS crossprod (about 0.4 s at p = 40, N = 800); the influence build is cheap.
@@ -121,7 +133,7 @@
   Gamma <- (Gamma + t(Gamma)) / 2          # symmetrise away round-off
 
   if (!is.null(colnames(x))) {
-    labels <- apply(utils::combn(colnames(x), 2L), 2L, paste, collapse = "-")
+    labels <- .pair_labels(colnames(x))
     dimnames(Gamma) <- list(labels, labels)
   }
   Gamma
@@ -143,6 +155,7 @@
                                cor_method = "pearson",
                                N_policy = c("optional", "none", "required"),
                                acov = c("none", "diag", "full"),
+                               dwls = FALSE,
                                inform_from_data = TRUE,
                                check_singular = TRUE,
                                posdef_abort = FALSE,
@@ -162,6 +175,12 @@
   # (Var(rho-hat) scale); populated only when acov = "full" (the sandwich-SE path), NULL
   # otherwise. It is the meat of the robust/sandwich standard errors.
   Gamma <- NULL
+
+  # TRUE exactly when an asymptotic covariance forces listwise deletion of incomplete rows:
+  # the polychoric path deletes for any acov (inside .polychoric()), the Pearson/rank path only
+  # for the full ADF covariance. Used both to report the override and to resolve N, so neither
+  # claims a deletion that did not happen.
+  acov_listwise <- acov == "full" || (.is_poly_cor(cor_method) && acov != "none")
 
   is_cormat <- .is_cormat(x)
 
@@ -187,6 +206,17 @@
         c("Both {.arg N} and raw data were supplied.",
           "i" = "Taking {.arg N} from the data."),
         class = "efa_n_from_data"
+      )
+    }
+
+    # An asymptotic covariance (the DWLS weights or the sandwich meat) must describe a single
+    # set of complete cases, so incomplete rows are listwise-deleted below even though `use`
+    # asks for pairwise-complete estimation. Surface that override rather than letting it change
+    # the estimates silently.
+    if (acov_listwise && use == "pairwise.complete.obs" && anyNA(x)) {
+      cli::cli_inform(
+        c("i" = "An asymptotic covariance requires complete cases; incomplete rows were dropped (listwise), overriding {.code use = \"pairwise.complete.obs\"}."),
+        class = "efa_acov_listwise"
       )
     }
 
@@ -235,11 +265,12 @@
       if (acov == "diag") {
         weights <- .poly_weight_matrix(poly$acov, ncol(R))
       } else if (acov == "full") {
-        # poly$acov is the full p(p-1)/2 x p(p-1)/2 asymptotic covariance; its diagonal
-        # reciprocals are exactly the DWLS weights (diag(Gamma) == the acov = "diag" vector),
-        # so the full path subsumes the diagonal one for the DWLS point estimate.
+        # poly$acov is the full p(p-1)/2 x p(p-1)/2 asymptotic covariance: the sandwich meat.
+        # Only DWLS needs the per-element inverse-variance weights, and its diagonal supplies
+        # them (diag(Gamma) == the acov = "diag" vector); the ML / ULS sandwich path uses Gamma
+        # alone, so the weights are built only when the estimator is DWLS.
         Gamma <- poly$acov
-        weights <- .poly_weight_matrix(diag(Gamma), ncol(R))
+        if (dwls) weights <- .poly_weight_matrix(diag(Gamma), ncol(R))
       }
 
     } else {
@@ -308,8 +339,11 @@
       # the number of complete cases rather than the raw row count. Requesting a
       # polychoric ACOV (the DWLS path) likewise reduces to the listwise-complete rows
       # inside .polychoric(), regardless of `use`, so N follows the complete cases there
-      # too.
-      N <- if (.is_listwise_use(use) || acov != "none") {
+      # too. Under pairwise-complete estimation with missing data, N is the nominal row
+      # count: each correlation is estimated from its own pairwise-complete subset, which
+      # may be smaller, so fit statistics and analytic standard errors that scale with N
+      # treat the data as if complete.
+      N <- if (.is_listwise_use(use) || acov_listwise) {
         sum(stats::complete.cases(x))
       } else {
         nrow(x)
