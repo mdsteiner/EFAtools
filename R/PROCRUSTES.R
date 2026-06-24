@@ -44,8 +44,10 @@
 #' @param oblique_max_line_search Non-negative integer. Maximum number of
 #'   step-halving attempts after the initial line-search step.
 #' @param oblique_step0 Positive initial step size for the oblique solver.
-#' @param oblique_normalize Logical; if `TRUE`, apply Kaiser row normalization in
-#'   the oblique solver and back-transform the aligned loadings afterwards.
+#' @param oblique_normalize Logical; if `TRUE`, apply Kaiser row normalization to
+#'   the loadings (only) in the oblique solver and back-transform the aligned
+#'   loadings afterwards, leaving `Target` unnormalized (as in
+#'   `GPArotation::targetQ(normalize = TRUE)`).
 #' @param oblique_random_starts Non-negative integer. Number of additional random
 #'   starts used by the oblique solver.
 #' @param oblique_screen_keep Non-negative integer. Number of random starts
@@ -58,7 +60,10 @@
 #' @returns A list containing aligned `loadings`, transformation matrix `T`,
 #'   factor intercorrelation matrix `Phi`, target criterion `value`, convergence
 #'   diagnostics, line-search diagnostics, and multi-start summaries. Row and
-#'   column names are preserved where possible.
+#'   column names are preserved where possible. When `oblique_normalize = TRUE`
+#'   the returned `loadings` are back-transformed to the original scale, but
+#'   `value` is the criterion on the Kaiser-normalized loadings, so it is not
+#'   `0.5 * sum((loadings - Target)^2)`.
 #'
 #' @export
 #'
@@ -116,10 +121,11 @@ PROCRUSTES <- function(A,
   if (is.null(T_arg)) {
     if (controls$oblique_normalize) {
       # Compute the start in the same Kaiser row-normalized space the compiled
-      # solver optimizes in (mirrors the row weighting in .oblique_procrustes()).
+      # solver optimizes in: the loadings are row-weighted, the target is left raw
+      # (mirrors the row weighting in .oblique_procrustes()).
       w <- sqrt(rowSums(A^2))
       w[!is.finite(w) | w < 1e-15] <- 1
-      T_arg <- .procrustes_orthogonal_T(A / w, Target / w)
+      T_arg <- .procrustes_orthogonal_T(A / w, Target)
     } else {
       T_arg <- .procrustes_orthogonal_T(A, Target)
     }

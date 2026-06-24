@@ -78,11 +78,14 @@ inline void oblique_tangent_project(const arma::mat& Tmat, const arma::mat& G,
   s = arma::norm(arma::vectorise(Gp), 2);
 }
 
-// A uniformly distributed random k x k orthogonal matrix, drawn the same way as
+// A uniformly distributed random k x k orthogonal matrix, constructed as in
 // GPArotation::Random.Start(): a standard-normal matrix run through a QR
 // decomposition, with the orthogonal factor's columns sign-fixed by the diagonal
-// of R. Random draws use R::rnorm so they advance the calling process's RNG. Falls
-// back to the identity if the decomposition fails.
+// of R. The normal entries are filled row-major here rather than column-major as
+// R's matrix() does, so for a given seed this yields a valid uniform orthogonal
+// start but not the bit-identical matrix GPArotation would draw. Random draws use
+// R::rnorm so they advance the calling process's RNG. Falls back to the identity
+// if the decomposition fails.
 inline arma::mat random_orthogonal_start_cpp(const unsigned int k) {
   arma::mat Z(k, k);
   for (unsigned int i = 0; i < k; ++i) {

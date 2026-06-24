@@ -129,8 +129,8 @@
 }
 
 # Shared post-processing for a rotated solution. Reflects each factor to a
-# consistent (positive) orientation, orders the factors by their sum of squared
-# loadings, and assembles the rotated loadings, factor correlations, structure
+# consistent (positive) orientation, orders the factors as requested by
+# `order_type`, and assembles the rotated loadings, factor correlations, structure
 # matrix, and explained variances. The sign reflection and the factor ordering are
 # applied to the loadings, the rotation matrix, and the factor intercorrelations
 # alike, so the structure matrix and reported correlations stay consistent with the
@@ -138,7 +138,7 @@
 # (varimax labels them; the GPArotation engines leave them unnamed). Used by every
 # engine except promax.
 .reflect_and_order <- function(loadings, Phi = NULL, rotmat, L_unrot,
-                               name_factors) {
+                               name_factors, order_type) {
 
   oblique <- !is.null(Phi)
   var_names <- rownames(L_unrot)
@@ -147,8 +147,24 @@
   signs <- .reflect_signs(loadings)
   loadings <- loadings %*% diag(signs, nrow = length(signs))
 
-  # order the factors by their sum of squared loadings (largest first)
-  ord <- order(colSums(loadings^2), decreasing = TRUE)
+  if (oblique) {
+    # reflect the factor intercorrelations the same way as the loadings so the
+    # structure matrix and reported correlations stay in sync
+    Phi <- diag(signs, nrow = length(signs)) %*% Phi %*% diag(signs, nrow = length(signs))
+  }
+
+  # order the factors by their explained variance (largest first). "eigen" orders
+  # by the reported "SS loadings": colSums(L^2) for orthogonal solutions, the
+  # Phi-weighted sum of squares diag(Phi L'L) for oblique ones, so the reported
+  # variances decrease monotonically (as in psych). "ss_factors" orders oblique
+  # factors by the raw pattern sum of squares colSums(L^2) instead. For orthogonal
+  # solutions Phi = I, so the two keys coincide and order_type has no effect.
+  ss <- if (oblique && order_type == "eigen") {
+    diag(Phi %*% crossprod(loadings))
+  } else {
+    colSums(loadings^2)
+  }
+  ord <- order(ss, decreasing = TRUE)
   loadings <- loadings[, ord, drop = FALSE]
 
   fac_names <- if (isTRUE(name_factors)) colnames(L_unrot)[ord] else NULL
@@ -160,9 +176,6 @@
   rotmat <- (rotmat %*% diag(signs))[, ord, drop = FALSE]
 
   if (oblique) {
-    # reflect and reorder the factor intercorrelations the same way as the
-    # loadings so the structure matrix and reported correlations stay in sync
-    Phi <- diag(signs) %*% Phi %*% diag(signs)
     Phi <- Phi[ord, ord]
     dimnames(Phi) <- NULL
   }
@@ -270,7 +283,7 @@
       .VARIMAX_SPSS(L, normalize = resolved$normalize, precision = precision)
     }
     out <- .reflect_and_order(AV$loadings, rotmat = AV$rotmat, L_unrot = L,
-                              name_factors = TRUE)
+                              name_factors = TRUE, order_type = resolved$order_type)
     return(c(out, list(settings = settings)))
 
   }
@@ -318,7 +331,7 @@
     settings$rotation_diagnostics <- .rotation_diagnostics(AV$all_values,
                                                            AV$all_converged, randomStarts)
     out <- .reflect_and_order(AV$loadings, rotmat = AV$Th, L_unrot = L,
-                              name_factors = FALSE)
+                              name_factors = FALSE, order_type = resolved$order_type)
     return(c(out, list(settings = settings)))
 
   }
@@ -351,7 +364,8 @@
     settings$rotation_diagnostics <- .rotation_diagnostics(AV$all_values,
                                                            AV$all_converged, randomStarts)
     out <- .reflect_and_order(AV$loadings, Phi = AV$Phi, rotmat = AV$Th,
-                              L_unrot = L, name_factors = FALSE)
+                              L_unrot = L, name_factors = FALSE,
+                              order_type = resolved$order_type)
     return(c(out, list(settings = settings)))
 
   }

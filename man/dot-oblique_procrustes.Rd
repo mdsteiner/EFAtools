@@ -45,8 +45,9 @@ attempts after the initial trial step in each line-search phase.}
 \item{step0}{Numeric scalar. Initial step size used in the projected-gradient
 update.}
 
-\item{normalize}{Logical scalar. If \code{TRUE}, apply Kaiser normalization before
-rotation and reverse it after rotation.}
+\item{normalize}{Logical scalar. If \code{TRUE}, apply Kaiser normalization to the
+loadings (only) before rotation and reverse it afterwards; the target is left
+unnormalized, matching \code{GPArotation::targetQ(normalize = TRUE)}.}
 
 \item{random_starts}{Integer scalar. Number of additional random starts.}
 

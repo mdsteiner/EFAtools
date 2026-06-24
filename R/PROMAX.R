@@ -39,17 +39,33 @@
 
   if (P_type == "unnorm") {
 
-    # this is the formula for P as given by Hendricks and White (1964)
-    P <- abs(A^(k + 1)) / A
+    # Promax target of Hendrickson and White (1964): P = sign(A) |A|^k. Written
+    # without dividing by A -- the algebraically identical abs(A^(k + 1)) / A form
+    # yields 0/0 = NaN for an exact-zero loading -- as stats::promax also does.
+    P <- sign(A) * abs(A)^k
 
   } else if (P_type == "norm") {
 
-    # this is the formula as used by SPSS Version 23
-    P <- abs(A / sqrt(rowSums(A^2))) ^(k + 1) * (sqrt(rowSums(A^2)) / A)
+    # SPSS-normalized target: row-normalize A by its row norm before raising to the
+    # power, P = sign(A) |A / rowNorm|^k. The row norm is floored so a zero-
+    # communality row (norm 0) stays 0 instead of producing 0/0 = NaN, mirroring the
+    # Kaiser-weight floor in .VARIMAX_SPSS; an isolated zero loading in a non-zero
+    # row already maps to 0 without the floor.
+    rn <- sqrt(rowSums(A^2))
+    rn[!is.finite(rn) | rn < 1e-15] <- 1
+    P <- sign(A) * abs(A / rn)^k
   }
 
   # run the least squares fit
-  U <- stats::lm.fit(A, P)$coefficients
+  fit <- stats::lm.fit(A, P)
+  if (fit$rank < ncol(A)) {
+    cli::cli_abort(
+      c("The varimax base passed to promax is rank-deficient, so the oblique target fit is not identified.",
+        "i" = "Inspect the unrotated loadings or extract fewer factors."),
+      class = "efa_promax_rank_deficient"
+    )
+  }
+  U <- fit$coefficients
 
   # rescale the transformation matrix
   D <- diag(solve(t(U) %*% U))
@@ -68,13 +84,15 @@
     # reflect factors with negative sums
     signs <- .reflect_signs(AP)
     AP <- AP %*% diag(signs, nrow = length(signs))
-
-    # order according to communalities
-    eig_rotated <- diag(t(AP) %*% AP)
-    eig_order <- order(eig_rotated, decreasing = TRUE)
-    AP <- AP[, eig_order]
-
     Phi <- diag(signs) %*% Phi %*% diag(signs)
+
+    # order the factors by their explained variance, largest first: the
+    # Phi-weighted sum of squares diag(Phi L'L), which is the quantity reported as
+    # the "SS loadings", so the reported variances decrease monotonically (as in
+    # psych)
+    ss_rotated <- diag(Phi %*% crossprod(AP))
+    eig_order <- order(ss_rotated, decreasing = TRUE)
+    AP <- AP[, eig_order, drop = FALSE]
     Phi <- Phi[eig_order, eig_order]
 
     # the rotation matrix follows the same sign reflection and factor ordering as

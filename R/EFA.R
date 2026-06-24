@@ -54,11 +54,9 @@
 #'  (the meat is the polychoric / tetrachoric asymptotic covariance), or for continuous data with
 #'  `cor_method = "pearson"` and `method = "ML"` or `"ULS"` (the meat is the fourth-moment ADF
 #'  covariance of the sample correlations, the basis of the MLM / MLR robust statistics). It
-#'  reports the same set
-#'  of standard errors as `"information"` (unrotated and, under a rotation, rotated loadings,
-#'  factor correlations, structure coefficients, and communalities, propagated by the same delta
-#'  method) and additionally fills the model fit's chi-square block with a scaled (Satorra-Bentler
-#'  / scaled-and-shifted) chi-square. Because the asymptotic covariance must describe the same
+#'  reports the same standard errors as `"information"`, propagated by the same delta method, and
+#'  additionally fills the model fit's chi-square block with a scaled (Satorra-Bentler /
+#'  scaled-and-shifted) chi-square. Because the asymptotic covariance must describe the same
 #'  cases as the correlation matrix, the sandwich (like `method = "DWLS"`) is computed on the
 #'  listwise-complete cases; on data with missing values the reported `N`, the correlation matrix,
 #'  and the point estimate therefore reflect the complete cases regardless of `use`. Like
@@ -122,13 +120,17 @@
 #' @param precision numeric. The tolerance for stopping in the rotation
 #' procedure. Default is 10^-5 for all rotation methods.
 #' @param varimax_type character. The type of the varimax rotation performed.
-#' If "svd", singular value decomposition is used, as [stats::varimax()] does. If "kaiser", the varimax procedure performed in SPSS is used.
-#' This is the original procedure from Kaiser (1958), but with slight alterations
-#' in the varimax criterion (see details, and Grieder & Steiner, 2020). Default is `NA`.
-#' @param order_type character. How to order the factors. "eigen" will reorder
-#' the factors according to the largest to lowest eigenvalues of the matrix of
-#' rotated loadings. "ss_factors" will reorder the factors according to descending
-#' sum of squared factor loadings per factor. Default is `NA`.
+#' If "svd", singular value decomposition is used, as [stats::varimax()] does. If
+#' "kaiser", the varimax procedure performed in SPSS is used, following the original
+#' procedure from Kaiser (1958) (see details). Default is `NA`.
+#' @param order_type character. How to order the factors. "eigen" reorders the
+#' factors by descending explained variance, i.e. by their reported sums of squared
+#' loadings ("SS loadings"): the column sums of squares for orthogonal solutions and
+#' the factor-intercorrelation-weighted sums of squares for oblique solutions, so the
+#' reported variances decrease monotonically (as in the psych package). "ss_factors"
+#' reorders the factors by descending (unweighted) sum of squared factor loadings per
+#' factor; for oblique solutions this can differ from "eigen", whereas for orthogonal
+#' solutions the two coincide. Default is `NA`.
 #' @param start_method character. How to specify the starting values for the
 #' optimization procedure for ML. Default is "psych" which takes the
 #' starting values specified in [psych::fa()]. "factanal" takes the
@@ -141,8 +143,9 @@
 #'  rotation. Some rotation criteria are prone to produce local minima, and
 #'  several random starts are usually needed to locate the best solution. The
 #'  rotation screens the random starts cheaply and fully optimises only the most
-#'  promising ones, so a large value adds little cost for most criteria. Default
-#'  is 100.
+#'  promising ones, so a large value adds little cost for most criteria. The
+#'  complexity criteria (simplimax and, to a lesser extent, geomin) are the most
+#'  multimodal and may need a larger value on difficult data. Default is 100.
 #' @param seed numeric. An optional seed for the random-number generator used by the
 #'  non-parametric bootstrap (`se = "np-boot"`), i.e. for the case resampling, the
 #'  rotation random starts, and the Procrustes random starts. Setting it makes the
@@ -222,18 +225,17 @@
 #' `P = abs(A / sqrt(rowSums(A^2))) ^(k + 1) * (sqrt(rowSums(A^2)) / A)`.
 #' As for PAF, the EFAtools type setting combination for promax was the best
 #' compared to the other setting combinations tested in simulation studies in
-#' Grieder & Steiner (2020).
+#' Grieder & Steiner (2020). Note that all `type` presets keep the EFAtools default
+#' Kaiser normalization (`normalize = TRUE`), whereas [psych::fa()] does not
+#' normalize before its promax target rotation; set `normalize = FALSE` to
+#' reproduce the [psych::fa()] promax result exactly.
 #'
 #' The `varimax_type` argument can take two values, "svd", and "kaiser". "svd" uses
 #' singular value decomposition, by calling [stats::varimax()]. "kaiser"
-#' performs the varimax procedure as described in the SPSS 23 Algorithms manual and as described
-#' by Kaiser (1958). However, there is a slight alteration in computing the varimax criterion, which
-#' we found to better align with the results obtain from SPSS. Specifically, the original varimax
-#' criterion as described in the SPSS 23 Algorithms manual is
+#' performs the varimax procedure as described in the SPSS Algorithms manual and by
+#' Kaiser (1958). The varimax simplicity criterion monitored for convergence is
 #' `sum(n*colSums(lambda ^ 4) - colSums(lambda ^ 2) ^ 2) / n ^ 2`, where n is the
-#' number of indicators, and lambda is the rotated loadings matrix. However, we found the following
-#' to produce results more similar to those of SPSS:
-#' `sum(n*colSums(abs(lambda)) - colSums(lambda ^ 4) ^ 2) / n^2`.
+#' number of indicators, and lambda is the Kaiser-normalized rotated loadings matrix.
 #'
 #' For all other rotations except varimax and promax, the `type` argument
 #' only controls the `order_type` argument with the same values as stated
@@ -312,7 +314,10 @@
 #' Tucker & Lewis, 1973), so the factor count does not bias the incremental fit. For PAF
 #' and DWLS, only CAF, RMSR, SRMR, and df are computed and the Chi-Square-derived indices
 #' are returned as `NA`; for DWLS with `se = "sandwich"` the full block is instead filled
-#' from a scaled Chi Square (see Details). Note that while in Lorenzo-Seva, Timmerman, & Kiers (2011) the CAF is introduced as ranging between 0 and 1, with values close to 1 indicating close fit, this does not match the formula they introduce for calculating CAF: `1 - KMO(residuals)`, which only works if the diagonal of the residual matrix is set to 1s and will then approximate 0.5 with close fit.}
+#' from a scaled Chi Square (see Details). Note that Lorenzo-Seva, Timmerman, & Kiers (2011)
+#' introduce the CAF as ranging between 0 and 1, with values close to 1 indicating close fit.
+#' This does not match the formula they give for it, `1 - KMO(residuals)`, which only works if the
+#' diagonal of the residual matrix is set to 1s and then approximates 0.5 with close fit.}
 #' \item{model_implied_R}{The model implied correlation
 #' matrix.}
 #' \item{residuals}{Residual correlations, i.e., orig_R - model_implied_R}
@@ -322,7 +327,10 @@
 #' (pattern matrix).}
 #' \item{Phi}{The factor intercorrelations (only for oblique rotations).}
 #' \item{Structure}{The structure matrix (only for oblique rotations).}
-#' \item{rotmat}{The rotation matrix.}
+#' \item{rotmat}{The rotation matrix. The rotated loadings are recovered from the
+#' unrotated loadings as `unrot_loadings %*% rotmat` for orthogonal rotations and
+#' for promax, and as `unrot_loadings %*% t(solve(rotmat))` for the other oblique
+#' rotations.}
 #' \item{vars_accounted_rot}{Matrix of explained variances and sums of squared
 #' loadings. Based on rotated loadings and, for oblique rotations, the factor
 #' intercorrelations.}
@@ -1124,6 +1132,34 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
   sqrt(pmax(rowSums((G_h %*% V) * G_h), 0))
 }
 
+# Skeleton gradient of the rotational identification constraint for the factor pair (u, v): a
+# p x k matrix with column u set to X[, v] and column v to X[, u]. The off-diagonal (u, v) entry
+# of X' Lambda has exactly this gradient in vec(Lambda) -- with X = Lambda it is the gradient of
+# off-diag(Lambda' Lambda), and with X = Psi^-1 Lambda the direct part of off-diag(Lambda' Psi^-1
+# Lambda); callers add any free-psi column or psi(Lambda) chain-rule term. Shared by the expected-
+# information and sandwich gauge constraints.
+.gauge_grad <- function(X, u, v) {
+  g <- matrix(0, nrow(X), ncol(X))
+  g[, u] <- X[, v]
+  g[, v] <- X[, u]
+  g
+}
+
+# TRUE if M is a (numerically) positive-semidefinite covariance: finite, with a non-negative
+# diagonal and no eigenvalue below a small tolerance scaled by its largest diagonal entry. Used to
+# gate the analytic parameter covariances before their square roots are reported: checking only the
+# diagonal would pass a covariance that is non-PSD off the diagonal (where `pmax(., 0)` would then
+# silently floor a negative rotated variance to an understated SE rather than flag it).
+.is_psd <- function(M) {
+  if (!all(is.finite(M))) return(FALSE)
+  d <- diag(M)
+  if (any(d < 0)) return(FALSE)
+  sym <- (M + t(M)) / 2
+  ev <- tryCatch(min(eigen(sym, symmetric = TRUE, only.values = TRUE)$values),
+                 error = function(e) NA_real_)
+  is.finite(ev) && ev >= -1e-8 * max(d, 1)
+}
+
 
 # Analytic information-matrix SEs and Wald CIs for the unrotated ML loadings and
 # uniquenesses. Fills the same SE/CI schema as the bootstrap; the rotated-loading,
@@ -1144,11 +1180,10 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
   # is the leading pk x pk loading block (matches the sandwich V_AA schema and what
   # `.se_information_rotated()` already extracts inline).
   V_unrot <- se$vcov[seq_len(pk), seq_len(pk), drop = FALSE]
-  # `.se_information_ml()` NA-fills the marginal SEs on two paths: the early Heywood / singular
-  # return (matrix-of-NAs vcov already) AND the post-solve sqrt-gate where a near-degenerate V has
-  # a small negative diagonal entry. The second path leaves vcov finite-but-not-PSD, which would
-  # otherwise be persisted next to NA SEs and silently propagate sqrt(NaN) downstream. Mirror the
-  # marginal-SE NA into the persisted covariance so the slot carries the same reliability signal.
+  # `.se_information_ml()` returns an all-NA vcov together with NA marginal SEs whenever the
+  # parameter covariance is unusable (a Heywood / singular early return, or a non-PSD covariance
+  # caught by the PSD gate). Mirror that NA into the persisted slot defensively, so a finite vcov is
+  # never shipped next to NA SEs (which would otherwise propagate sqrt(NaN) downstream).
   if (anyNA(SE_L)) V_unrot[] <- NA_real_
 
   if (anyNA(SE_L) || anyNA(SE_psi)) {
@@ -1268,10 +1303,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
     for (v in 2:k) {
       for (u in seq_len(v - 1L)) {
         uv <- uv + 1L
-        grad <- matrix(0, p, k)
-        grad[, u] <- Astar[, v]
-        grad[, v] <- Astar[, u]
-        Cmat[uv, seq_len(pk)] <- as.vector(grad)
+        Cmat[uv, seq_len(pk)] <- as.vector(.gauge_grad(Astar, u, v))
         Cmat[uv, pk + seq_len(p)] <- -Astar[, u] * Astar[, v]
       }
     }
@@ -1284,12 +1316,14 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
   }
 
   V <- Vblock / (N - 1)
-  # A near-degenerate orientation can leave a tiny negative variance on the diagonal; the
-  # guard below substitutes NA, so silence base R's "NaNs produced" before it surfaces.
-  se <- suppressWarnings(sqrt(diag(V)))
-  if (anyNA(se) || any(!is.finite(se))) {
-    se <- rep(NA_real_, q)
+  # The parameter covariance must be positive semidefinite. A near-degenerate orientation can
+  # leave it non-PSD -- a tiny negative variance on the diagonal, or a negative eigenvalue with a
+  # still-positive diagonal -- and no trustworthy standard error then exists, so fall back to the
+  # all-NA return rather than report the square root of a negative variance.
+  if (!.is_psd(V)) {
+    return(na_out)
   }
+  se <- sqrt(diag(V))
 
   list(
     vcov = V,
@@ -1532,24 +1566,33 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
   res
 }
 
-# Identification-constraint Jacobian for the rotational gauge: the gradient of the off-diagonal
-# entries of Lambda'Lambda (which the canonical orientation sets to zero) with respect to the
-# column-major vec(Lambda). nc = k(k-1)/2 rows, p*k columns; for k = 1 there is no gauge freedom
-# and the matrix has zero rows. The constraint only needs to be transversal to the gauge
-# directions of A; any such choice yields the same rotated (estimable) SEs.
-.se_sandwich_constraint <- function(L) {
+# Identification-constraint Jacobian for the rotational gauge: the gradient, with respect to the
+# column-major vec(Lambda), of the off-diagonal entries the estimator's canonical orientation sets
+# to zero. nc = k(k-1)/2 rows, p*k columns; for k = 1 there is no gauge freedom and the matrix has
+# zero rows. The constraint must match the orientation the loadings are reported in so the unrotated
+# loading SEs are scaled in that gauge (the rotated SEs are gauge-invariant and the same for any
+# transversal choice). With `psi = NULL` (eigen-based ULS/DWLS) it fixes off-diag(Lambda'Lambda);
+# with `psi` supplied (ML, where psi = 1 - rowSums(Lambda^2)) it fixes off-diag(Lambda' Psi^-1
+# Lambda) (Lawley & Maxwell), whose gradient carries a chain-rule term through psi(Lambda).
+.se_sandwich_constraint <- function(L, psi = NULL) {
   p <- nrow(L)
   k <- ncol(L)
   nc <- k * (k - 1L) / 2L
   Cmat <- matrix(0, nc, p * k)
   if (k > 1L) {
+    Astar <- if (is.null(psi)) NULL else L / psi   # Psi^-1 Lambda for the ML gauge
     uv <- 0L
     for (v in 2:k) {
       for (u in seq_len(v - 1L)) {
         uv <- uv + 1L
-        grad <- matrix(0, p, k)
-        grad[, u] <- L[, v]
-        grad[, v] <- L[, u]
+        grad <- if (is.null(psi)) {
+          .gauge_grad(L, u, v)
+        } else {
+          # d off-diag(Lambda' Psi^-1 Lambda)_uv / d vec(Lambda): the direct part plus the term
+          # from psi_a = 1 - rowSums(Lambda^2)_a depending on Lambda (d psi_a / d lambda_ac = -2
+          # lambda_ac), which contributes 2 (Astar[, u] Astar[, v]) Lambda across all columns.
+          .gauge_grad(Astar, u, v) + 2 * (Astar[, u] * Astar[, v]) * L
+        }
         Cmat[uv, ] <- as.vector(grad)
       }
     }
@@ -1633,17 +1676,48 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
   A <- crossprod(Delta, VD)
 
   # Border A with the gauge-fixing constraint so the augmented system is invertible; the leading
-  # pk-block of its inverse is the reflexive generalised inverse of A.
-  Abread <- .bordered_inverse_block(A, .se_sandwich_constraint(L), pk)
+  # pk-block of its inverse is the reflexive generalised inverse of A. The constraint fixes the
+  # rotational orientation, so it must match the one the solution's loadings are reported in: the
+  # unrotated loading SEs are scaled in that gauge (the rotated SEs and scaled chi-square are
+  # gauge-invariant, so the choice does not affect them). Rather than assume the orientation from the
+  # estimator label, detect it from the loadings: an eigen-based ULS/DWLS solution is
+  # Lambda'Lambda-diagonal, an ML solution is Lambda'Psi^-1 Lambda-diagonal (Lawley & Maxwell). The
+  # orientation the solution is in leaves a (scale-free) relative off-diagonal at the optimiser floor
+  # while the other is O(0.01-1), so the smaller ratio identifies the gauge -- and detecting keeps it
+  # tied to the actual solution, so a future estimator with either identification is handled without
+  # special-casing. Two cases the loadings cannot resolve fall back to a fixed choice: the
+  # Lambda'Psi^-1 Lambda gauge needs Psi^-1, so it is unavailable at a Heywood case (psi <= 0) or a
+  # non-finite solution -- routed to Lambda'Lambda; and homogeneous uniquenesses (Psi proportional to
+  # I) make BOTH orientations diagonal, so the gauge is undetermined by the loadings (yet the two
+  # still give different SEs through the chain-rule term), broken by the estimator's identification.
+  # A single factor has no rotational freedom (the constraint is empty either way).
+  psi <- 1 - rowSums(L^2)
+  use_ltpil_gauge <- if (k < 2L || anyNA(psi) || any(psi <= 0)) {
+    FALSE
+  } else {
+    rel_off <- function(M) max(abs(M[upper.tri(M)])) / max(abs(diag(M)), .Machine$double.eps)
+    r_ltl <- rel_off(crossprod(L))
+    r_ltpil <- rel_off(crossprod(L, L / psi))
+    # Both orientations near-diagonal (Psi proportional to I): the loadings cannot distinguish the
+    # gauge, so use the estimator's known identification; otherwise the smaller ratio wins.
+    if (max(r_ltl, r_ltpil) < 1e-4) method == "ML" else r_ltpil < r_ltl
+  }
+  Cmat <- if (use_ltpil_gauge) {
+    .se_sandwich_constraint(L, psi = psi)
+  } else {
+    .se_sandwich_constraint(L)
+  }
+  Abread <- .bordered_inverse_block(A, Cmat, pk)
   if (is.null(Abread)) return(na_core)
 
   # Meat Delta' V Gamma V Delta = (V Delta)' Gamma (V Delta); robust covariance A^- meat A^- /(N-1).
   Gamma_theta <- crossprod(VD, Gamma %*% VD)
   V_AA <- (Abread %*% Gamma_theta %*% Abread) / (N - 1)
 
-  # The reliability gate covers the whole covariance, not only its diagonal: a non-finite entry
-  # anywhere would otherwise still corrupt the uniqueness and rotated SEs, which read the full V_AA.
-  reliable <- all(is.finite(V_AA)) && all(diag(V_AA) >= 0)
+  # The covariance must be positive semidefinite: a non-finite entry or a negative eigenvalue (even
+  # with a still-positive diagonal) would otherwise corrupt the marginal, uniqueness, and rotated
+  # SEs, which read the full V_AA.
+  reliable <- .is_psd(V_AA)
   loadings_se <- if (reliable) sqrt(diag(V_AA)) else rep(NA_real_, pk)
 
   # Uniqueness SE = communality SE (psi_i = 1 - rowSums(Lambda^2)_i), via the shared gradient.

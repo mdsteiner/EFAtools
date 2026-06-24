@@ -93,8 +93,9 @@
 #'   attempts after the initial trial step in each line-search phase.
 #' @param step0 Numeric scalar. Initial step size used in the projected-gradient
 #'   update.
-#' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before
-#'   rotation and reverse it after rotation.
+#' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization to the
+#'   loadings (only) before rotation and reverse it afterwards; the target is left
+#'   unnormalized, matching `GPArotation::targetQ(normalize = TRUE)`.
 #' @param random_starts Integer scalar. Number of additional random starts.
 #' @param screen_keep Integer scalar. Number of screened random starts retained
 #'   for triage optimization.
@@ -156,8 +157,9 @@
 #'   after the initial trial step in each line-search phase.
 #' @param step0 Numeric scalar. Initial step size used in the projected-gradient
 #'   update.
-#' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before
-#'   rotation and reverse it afterwards (ignored for single-factor slices).
+#' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization to the
+#'   loadings (only) before rotation and reverse it afterwards, leaving the target
+#'   unnormalized (ignored for single-factor slices).
 #' @param random_starts Integer scalar. Number of additional random starts per
 #'   slice.
 #' @param screen_keep Integer scalar. Number of screened random starts retained

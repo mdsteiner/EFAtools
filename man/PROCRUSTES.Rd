@@ -49,8 +49,10 @@ step-halving attempts after the initial line-search step.}
 
 \item{oblique_step0}{Positive initial step size for the oblique solver.}
 
-\item{oblique_normalize}{Logical; if \code{TRUE}, apply Kaiser row normalization in
-the oblique solver and back-transform the aligned loadings afterwards.}
+\item{oblique_normalize}{Logical; if \code{TRUE}, apply Kaiser row normalization to
+the loadings (only) in the oblique solver and back-transform the aligned
+loadings afterwards, leaving \code{Target} unnormalized (as in
+\code{GPArotation::targetQ(normalize = TRUE)}).}
 
 \item{oblique_random_starts}{Non-negative integer. Number of additional random
 starts used by the oblique solver.}
@@ -68,7 +70,10 @@ required for a triaged start to be promoted to full optimization.}
 A list containing aligned \code{loadings}, transformation matrix \code{T},
 factor intercorrelation matrix \code{Phi}, target criterion \code{value}, convergence
 diagnostics, line-search diagnostics, and multi-start summaries. Row and
-column names are preserved where possible.
+column names are preserved where possible. When \code{oblique_normalize = TRUE}
+the returned \code{loadings} are back-transformed to the original scale, but
+\code{value} is the criterion on the Kaiser-normalized loadings, so it is not
+\code{0.5 * sum((loadings - Target)^2)}.
 }
 \description{
 \code{PROCRUSTES()} aligns one loading matrix to a target loading matrix with the

@@ -16,7 +16,7 @@
 
   if (isFALSE(skip_checks)) {
 
-    if (any(is.na(x) | any(is.na(y)))) {
+    if (anyNA(x) || anyNA(y)) {
       if (isTRUE(na.rm)) {
         cli::cli_warn(
           c("The input contained missing values.",

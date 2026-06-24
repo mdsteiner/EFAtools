@@ -67,16 +67,17 @@
   return(x)
 }
 
-# varimax criterion for SPSS varimax implementation
+# Varimax simplicity criterion monitored for convergence by .VARIMAX_SPSS(); the
+# rotation stops once it stabilises. This is the criterion SV given in the SPSS
+# Statistics Algorithms manual (FACTOR, "Orthogonal Rotations (Harman, 1976)"),
+# evaluated on the Kaiser-normalized loadings: for each factor, n times the sum of
+# its fourth-power loadings minus the squared sum of its squared loadings, summed
+# over factors and divided by n^2 (Kaiser, 1958).
 .SV <- function(lambda) {
 
   n <- nrow(lambda)
 
-  # the SPSS manual (ftp://public.dhe.ibm.com/software/analytics/spss/documentation/statistics/23.0/en/client/Manuals/IBM_SPSS_Statistics_Algorithms.pdf)
-  # suggests the following formula:
-  # sum(n*colSums(lambda**4) - colSums(lambda ** 2) ** 2) / n**2
-  # however, the formula below produces results more in line with SPSS
-  sum(n*colSums(abs(lambda)) - colSums(lambda ** 4) ** 2) / n**2
+  sum(n * colSums(lambda ** 4) - colSums(lambda ** 2) ** 2) / n ** 2
 
 }
 

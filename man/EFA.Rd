@@ -149,11 +149,9 @@ data with \code{cor_method = "poly"} or \code{"tetra"} and \code{method} one of 
 (the meat is the polychoric / tetrachoric asymptotic covariance), or for continuous data with
 \code{cor_method = "pearson"} and \code{method = "ML"} or \code{"ULS"} (the meat is the fourth-moment ADF
 covariance of the sample correlations, the basis of the MLM / MLR robust statistics). It
-reports the same set
-of standard errors as \code{"information"} (unrotated and, under a rotation, rotated loadings,
-factor correlations, structure coefficients, and communalities, propagated by the same delta
-method) and additionally fills the model fit's chi-square block with a scaled (Satorra-Bentler
-/ scaled-and-shifted) chi-square. Because the asymptotic covariance must describe the same
+reports the same standard errors as \code{"information"}, propagated by the same delta method, and
+additionally fills the model fit's chi-square block with a scaled (Satorra-Bentler /
+scaled-and-shifted) chi-square. Because the asymptotic covariance must describe the same
 cases as the correlation matrix, the sandwich (like \code{method = "DWLS"}) is computed on the
 listwise-complete cases; on data with missing values the reported \code{N}, the correlation matrix,
 and the point estimate therefore reflect the complete cases regardless of \code{use}. Like
@@ -205,9 +203,9 @@ Default is \code{NA}.}
 is given as input. Default is "pairwise.complete.obs".}
 
 \item{varimax_type}{character. The type of the varimax rotation performed.
-If "svd", singular value decomposition is used, as \code{\link[stats:varimax]{stats::varimax()}} does. If "kaiser", the varimax procedure performed in SPSS is used.
-This is the original procedure from Kaiser (1958), but with slight alterations
-in the varimax criterion (see details, and Grieder & Steiner, 2020). Default is \code{NA}.}
+If "svd", singular value decomposition is used, as \code{\link[stats:varimax]{stats::varimax()}} does. If
+"kaiser", the varimax procedure performed in SPSS is used, following the original
+procedure from Kaiser (1958) (see details). Default is \code{NA}.}
 
 \item{k}{numeric. Either the power used for computing the target matrix P in
 the promax rotation or the number of 'close to zero loadings' for the simplimax
@@ -227,10 +225,14 @@ normalized target matrix as used in SPSS. Default is \code{NA}.}
 \item{precision}{numeric. The tolerance for stopping in the rotation
 procedure. Default is 10^-5 for all rotation methods.}
 
-\item{order_type}{character. How to order the factors. "eigen" will reorder
-the factors according to the largest to lowest eigenvalues of the matrix of
-rotated loadings. "ss_factors" will reorder the factors according to descending
-sum of squared factor loadings per factor. Default is \code{NA}.}
+\item{order_type}{character. How to order the factors. "eigen" reorders the
+factors by descending explained variance, i.e. by their reported sums of squared
+loadings ("SS loadings"): the column sums of squares for orthogonal solutions and
+the factor-intercorrelation-weighted sums of squares for oblique solutions, so the
+reported variances decrease monotonically (as in the psych package). "ss_factors"
+reorders the factors by descending (unweighted) sum of squared factor loadings per
+factor; for oblique solutions this can differ from "eigen", whereas for orthogonal
+solutions the two coincide. Default is \code{NA}.}
 
 \item{start_method}{character. How to specify the starting values for the
 optimization procedure for ML. Default is "psych" which takes the
@@ -254,8 +256,9 @@ Must be between 0 and 1. Default ist .95 for 95\% CIs.}
 rotation. Some rotation criteria are prone to produce local minima, and
 several random starts are usually needed to locate the best solution. The
 rotation screens the random starts cheaply and fully optimises only the most
-promising ones, so a large value adds little cost for most criteria. Default
-is 100.}
+promising ones, so a large value adds little cost for most criteria. The
+complexity criteria (simplimax and, to a lesser extent, geomin) are the most
+multimodal and may need a larger value on difficult data. Default is 100.}
 
 \item{seed}{numeric. An optional seed for the random-number generator used by the
 non-parametric bootstrap (\code{se = "np-boot"}), i.e. for the case resampling, the
@@ -308,7 +311,10 @@ place the model and baseline noncentralities on a common \code{N - 1} scale (Ben
 Tucker & Lewis, 1973), so the factor count does not bias the incremental fit. For PAF
 and DWLS, only CAF, RMSR, SRMR, and df are computed and the Chi-Square-derived indices
 are returned as \code{NA}; for DWLS with \code{se = "sandwich"} the full block is instead filled
-from a scaled Chi Square (see Details). Note that while in Lorenzo-Seva, Timmerman, & Kiers (2011) the CAF is introduced as ranging between 0 and 1, with values close to 1 indicating close fit, this does not match the formula they introduce for calculating CAF: \code{1 - KMO(residuals)}, which only works if the diagonal of the residual matrix is set to 1s and will then approximate 0.5 with close fit.}
+from a scaled Chi Square (see Details). Note that Lorenzo-Seva, Timmerman, & Kiers (2011)
+introduce the CAF as ranging between 0 and 1, with values close to 1 indicating close fit.
+This does not match the formula they give for it, \code{1 - KMO(residuals)}, which only works if the
+diagonal of the residual matrix is set to 1s and then approximates 0.5 with close fit.}
 \item{model_implied_R}{The model implied correlation
 matrix.}
 \item{residuals}{Residual correlations, i.e., orig_R - model_implied_R}
@@ -318,7 +324,10 @@ bootstrap standard errors. Only returned, if \code{se = "np-boot"}.}
 (pattern matrix).}
 \item{Phi}{The factor intercorrelations (only for oblique rotations).}
 \item{Structure}{The structure matrix (only for oblique rotations).}
-\item{rotmat}{The rotation matrix.}
+\item{rotmat}{The rotation matrix. The rotated loadings are recovered from the
+unrotated loadings as \code{unrot_loadings \%*\% rotmat} for orthogonal rotations and
+for promax, and as \code{unrot_loadings \%*\% t(solve(rotmat))} for the other oblique
+rotations.}
 \item{vars_accounted_rot}{Matrix of explained variances and sums of squared
 loadings. Based on rotated loadings and, for oblique rotations, the factor
 intercorrelations.}
@@ -405,18 +414,17 @@ following formula, which can be found in the SPSS 23 and SPSS 27 Algorithms manu
 \code{P = abs(A / sqrt(rowSums(A^2))) ^(k + 1) * (sqrt(rowSums(A^2)) / A)}.
 As for PAF, the EFAtools type setting combination for promax was the best
 compared to the other setting combinations tested in simulation studies in
-Grieder & Steiner (2020).
+Grieder & Steiner (2020). Note that all \code{type} presets keep the EFAtools default
+Kaiser normalization (\code{normalize = TRUE}), whereas \code{\link[psych:fa]{psych::fa()}} does not
+normalize before its promax target rotation; set \code{normalize = FALSE} to
+reproduce the \code{\link[psych:fa]{psych::fa()}} promax result exactly.
 
 The \code{varimax_type} argument can take two values, "svd", and "kaiser". "svd" uses
 singular value decomposition, by calling \code{\link[stats:varimax]{stats::varimax()}}. "kaiser"
-performs the varimax procedure as described in the SPSS 23 Algorithms manual and as described
-by Kaiser (1958). However, there is a slight alteration in computing the varimax criterion, which
-we found to better align with the results obtain from SPSS. Specifically, the original varimax
-criterion as described in the SPSS 23 Algorithms manual is
+performs the varimax procedure as described in the SPSS Algorithms manual and by
+Kaiser (1958). The varimax simplicity criterion monitored for convergence is
 \code{sum(n*colSums(lambda ^ 4) - colSums(lambda ^ 2) ^ 2) / n ^ 2}, where n is the
-number of indicators, and lambda is the rotated loadings matrix. However, we found the following
-to produce results more similar to those of SPSS:
-\code{sum(n*colSums(abs(lambda)) - colSums(lambda ^ 4) ^ 2) / n^2}.
+number of indicators, and lambda is the Kaiser-normalized rotated loadings matrix.
 
 For all other rotations except varimax and promax, the \code{type} argument
 only controls the \code{order_type} argument with the same values as stated

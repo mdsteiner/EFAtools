@@ -368,6 +368,9 @@
     Phi = diag(ncol(A)),
     value = value,
     convergence = TRUE,
+    # the closed-form orthogonal solution always exists; report the same `valid`
+    # field the oblique path returns so callers can test the contract uniformly
+    valid = TRUE,
     iterations = 0L,
     kappa_T = 1,
     Table = cbind(iter = 0, f = value, log10_s = NA_real_, step = NA_real_),
@@ -517,6 +520,10 @@
     rel_change <- norm(new_target - target, type = "F") /
       (norm(target, type = "F") + 1e-12)
 
+    # Per-iteration loss proxy: the slices were aligned to the previous target, so
+    # this scores them against the freshly updated target rather than re-aligning
+    # to it. It drives the loss-stabilisation stopping rule and the history; once
+    # the target has stabilised the proxy and the exact GPA loss coincide.
     current_loss <- .consensus_loss(aligned_loadings, new_target)
 
     rel_loss_change <- if (is.na(prev_loss)) {

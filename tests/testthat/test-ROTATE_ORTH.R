@@ -153,7 +153,7 @@ test_that("orthogonal loadings and rotmat are reflected/reordered consistently",
   raw_rotmat   <- bentT$rotmat %*% diag(neg)
 
   res <- .reflect_and_order(raw_loadings, rotmat = raw_rotmat, L_unrot = L,
-                            name_factors = FALSE)
+                            name_factors = FALSE, order_type = "eigen")
 
   # the negative factor is reflected back to a non-negative column sum
   expect_true(all(colSums(unclass(res$rot_loadings)) >= 0))

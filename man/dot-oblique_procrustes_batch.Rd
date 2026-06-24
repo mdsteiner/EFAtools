@@ -35,8 +35,9 @@ after the initial trial step in each line-search phase.}
 \item{step0}{Numeric scalar. Initial step size used in the projected-gradient
 update.}
 
-\item{normalize}{Logical scalar. If \code{TRUE}, apply Kaiser normalization before
-rotation and reverse it afterwards (ignored for single-factor slices).}
+\item{normalize}{Logical scalar. If \code{TRUE}, apply Kaiser normalization to the
+loadings (only) before rotation and reverse it afterwards, leaving the target
+unnormalized (ignored for single-factor slices).}
 
 \item{random_starts}{Integer scalar. Number of additional random starts per
 slice.}

@@ -97,11 +97,12 @@ static bool orthogonal_procrustes_T_cpp(const arma::mat& A, const arma::mat& B,
   return all_finite_cpp(T);
 }
 
-// Kaiser row normalization shared by both entry points: scale each row of A_work
-// and B_work by the inverse row norm of A_work, returning the weights so the
-// rotated loadings can be back-transformed. A zero/non-finite row norm is floored
-// to 1 to leave that row unchanged.
-static arma::vec kaiser_normalize_rows(arma::mat& A_work, arma::mat& B_work) {
+// Kaiser row normalization shared by both entry points: scale each row of the
+// loadings A_work by its inverse row norm, returning the weights so the rotated
+// loadings can be back-transformed. The target is left unnormalized, matching
+// GPArotation::targetQ(normalize = TRUE), which normalizes only the loadings. A
+// zero/non-finite row norm is floored to 1 to leave that row unchanged.
+static arma::vec kaiser_normalize_rows(arma::mat& A_work) {
   arma::vec W = sqrt(sum(square(A_work), 1));
   for (arma::uword i = 0; i < W.n_elem; ++i) {
     if (!std::isfinite(W(i)) || W(i) < 1e-15) {
@@ -109,7 +110,6 @@ static arma::vec kaiser_normalize_rows(arma::mat& A_work, arma::mat& B_work) {
     }
   }
   A_work.each_col() /= W;
-  B_work.each_col() /= W;
   return W;
 }
 
@@ -151,8 +151,9 @@ static arma::vec kaiser_normalize_rows(arma::mat& A_work, arma::mat& B_work) {
 //'   attempts after the initial trial step in each line-search phase.
 //' @param step0 Numeric scalar. Initial step size used in the projected-gradient
 //'   update.
-//' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before
-//'   rotation and reverse it after rotation.
+//' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization to the
+//'   loadings (only) before rotation and reverse it afterwards; the target is left
+//'   unnormalized, matching `GPArotation::targetQ(normalize = TRUE)`.
 //' @param random_starts Integer scalar. Number of additional random starts.
 //' @param screen_keep Integer scalar. Number of screened random starts retained
 //'   for triage optimization.
@@ -211,11 +212,11 @@ Rcpp::List oblique_procrustes(const arma::mat& A,
   const unsigned int k = A.n_cols;
 
   arma::mat A_work = A;
-  arma::mat B_work = B;
   arma::vec W;
 
   if (normalize) {
-    W = kaiser_normalize_rows(A_work, B_work);
+    // normalize only the loadings; the target B stays raw (targetQ parity)
+    W = kaiser_normalize_rows(A_work);
   }
 
   arma::mat S;
@@ -231,8 +232,8 @@ Rcpp::List oblique_procrustes(const arma::mat& A,
     }
   }
 
-  arma::mat C = A_work.t() * B_work;
-  double BtB = accu(B_work % B_work);
+  arma::mat C = A_work.t() * B;
+  double BtB = accu(B % B);
   if (!all_finite_cpp(S) || !all_finite_cpp(C) || !std::isfinite(BtB)) {
     Rcpp::stop("The Procrustes objective could not be formed from finite values.");
   }
@@ -324,8 +325,9 @@ Rcpp::List oblique_procrustes(const arma::mat& A,
 //'   after the initial trial step in each line-search phase.
 //' @param step0 Numeric scalar. Initial step size used in the projected-gradient
 //'   update.
-//' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before
-//'   rotation and reverse it afterwards (ignored for single-factor slices).
+//' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization to the
+//'   loadings (only) before rotation and reverse it afterwards, leaving the target
+//'   unnormalized (ignored for single-factor slices).
 //' @param random_starts Integer scalar. Number of additional random starts per
 //'   slice.
 //' @param screen_keep Integer scalar. Number of screened random starts retained
@@ -409,9 +411,10 @@ Rcpp::List oblique_procrustes_batch(const arma::cube& A,
       line_search_failed[out_i] = false;
     }
   } else {
-    // The target B (and, when not normalizing, crossprod(B)) is shared across all
-    // slices, so hoist the invariant rather than rebuilding it per replicate.
-    const double BtB_shared = normalize ? 0.0 : accu(B % B);
+    // The target B is raw in both the normalized and unnormalized objective (only
+    // the loadings are Kaiser-normalized), so B'B is shared across all slices;
+    // hoist it rather than rebuilding it per replicate.
+    const double BtB_shared = accu(B % B);
 
     for (arma::uword i = 0; i < b; ++i) {
       Rcpp::checkUserInterrupt();
@@ -425,28 +428,25 @@ Rcpp::List oblique_procrustes_batch(const arma::cube& A,
         arma::mat A_work;  // only materialized (and modified) under normalize
         arma::vec W;
         arma::mat S, C, T_primary;
-        double BtB;
         bool warm_ok;
 
+        // The target B is raw in both branches, so BtB = BtB_shared throughout.
         if (normalize) {
           A_work = A_i;
-          arma::mat B_work = B;
-          W = kaiser_normalize_rows(A_work, B_work);
+          W = kaiser_normalize_rows(A_work);   // normalize only the loadings
           S = A_work.t() * A_work;
-          C = A_work.t() * B_work;
-          BtB = accu(B_work % B_work);
-          warm_ok = orthogonal_procrustes_T_cpp(A_work, B_work, T_primary);
+          C = A_work.t() * B;
+          warm_ok = orthogonal_procrustes_T_cpp(A_work, B, T_primary);
         } else {
           S = A_i.t() * A_i;
           C = A_i.t() * B;
-          BtB = BtB_shared;
           warm_ok = orthogonal_procrustes_T_cpp(A_i, B, T_primary);
         }
         if (!warm_ok) {
           continue;
         }
 
-        ProcrustesManifold manifold{S, C, BtB};
+        ProcrustesManifold manifold{S, C, BtB_shared};
         GpfSummary summary = run_gpf_multistart(
           manifold, T_primary, eps, maxit, max_line_search, step0,
           random_starts, screen_keep, triage_maxit, triage_improve_tol

@@ -135,21 +135,56 @@ test_that("errors etc. are thrown correctly", {
   expect_warning(.rotate_model(unrot_1, rotation = "oblimin", type = "EFAtools"), class = "efa_single_factor")
 })
 
-test_that("factors, Phi, structure, and rotmat are reordered consistently", {
-  # ss_factors and eigen use the same ordering criterion, so the oblique solution
-  # (loadings, Phi, structure, and rotation matrix) is identical, and the structure
-  # matrix equals pattern %*% Phi.
+test_that("order_type orders oblique factors by the requested key", {
+  # "eigen" orders by the reported SS loadings (the factor-intercorrelation-weighted
+  # sum of squares diag(Phi L'L)); "ss_factors" orders by the unweighted pattern sum
+  # of squares colSums(L^2). For an oblique solution these keys can rank the factors
+  # differently, so the two order_type values can yield different factor orders.
+
+  # On a real oblimin solution whose two keys rank the factors the same way, both
+  # order_type values produce the identical, internally consistent solution sorted
+  # (descending) by the relevant key.
   set.seed(42)
   eig <- suppressWarnings(.rotate_model(unrot, rotation = "oblimin", type = "EFAtools"))
   set.seed(42)
   ss <- suppressWarnings(.rotate_model(unrot, rotation = "oblimin", type = "SPSS"))
-
+  expect_equal(unclass(ss$rot_loadings), unclass(eig$rot_loadings), ignore_attr = TRUE)
   expect_equal(unclass(eig$Structure), unclass(eig$rot_loadings) %*% eig$Phi,
                ignore_attr = TRUE)
-  expect_equal(unclass(ss$rot_loadings), unclass(eig$rot_loadings), ignore_attr = TRUE)
-  expect_equal(ss$Phi, eig$Phi, ignore_attr = TRUE)
-  expect_equal(unclass(ss$Structure), unclass(eig$Structure), ignore_attr = TRUE)
-  expect_equal(ss$rotmat, eig$rotmat, ignore_attr = TRUE)
+  expect_equal(unclass(ss$Structure), unclass(ss$rot_loadings) %*% ss$Phi,
+               ignore_attr = TRUE)
+  expect_false(is.unsorted(rev(diag(eig$Phi %*% crossprod(unclass(eig$rot_loadings))))))
+  expect_false(is.unsorted(rev(colSums(unclass(ss$rot_loadings)^2))))
+
+  # Feed .reflect_and_order a fixed oblique solution whose two keys rank the factors
+  # differently, and check that each order_type sorts by its own key, producing
+  # different orders while keeping the solution consistent (structure = pattern %*% Phi).
+  L <- rbind(
+    c(0.85, 0.10, 0.05),
+    c(0.80, 0.05, 0.00),
+    c(0.05, 0.75, 0.55),
+    c(0.10, 0.55, 0.75),
+    c(0.00, 0.50, 0.70),
+    c(0.05, 0.45, 0.65)
+  )
+  Phi <- matrix(c(1.00, 0.20, 0.20,
+                  0.20, 1.00, 0.65,
+                  0.20, 0.65, 1.00), 3, 3)
+  expect_false(identical(order(colSums(L^2), decreasing = TRUE),
+                         order(diag(Phi %*% crossprod(L)), decreasing = TRUE)))
+
+  eig2 <- .reflect_and_order(L, Phi = Phi, rotmat = diag(3), L_unrot = L,
+                             name_factors = FALSE, order_type = "eigen")
+  ss2 <- .reflect_and_order(L, Phi = Phi, rotmat = diag(3), L_unrot = L,
+                            name_factors = FALSE, order_type = "ss_factors")
+  expect_false(is.unsorted(rev(diag(eig2$Phi %*% crossprod(unclass(eig2$rot_loadings))))))
+  expect_false(is.unsorted(rev(colSums(unclass(ss2$rot_loadings)^2))))
+  expect_false(isTRUE(all.equal(unclass(eig2$rot_loadings), unclass(ss2$rot_loadings),
+                                check.attributes = TRUE)))
+  expect_equal(unclass(eig2$Structure), unclass(eig2$rot_loadings) %*% eig2$Phi,
+               ignore_attr = TRUE)
+  expect_equal(unclass(ss2$Structure), unclass(ss2$rot_loadings) %*% ss2$Phi,
+               ignore_attr = TRUE)
 })
 
 test_that("oblique Phi, structure, and rotmat are reflected/reordered with the loadings", {
@@ -174,7 +209,7 @@ test_that("oblique Phi, structure, and rotmat are reflected/reordered with the l
   raw_rotmat   <- o$rotmat %*% diag(neg)
 
   res <- .reflect_and_order(raw_loadings, Phi = raw_Phi, rotmat = raw_rotmat,
-                            L_unrot = L, name_factors = FALSE)
+                            L_unrot = L, name_factors = FALSE, order_type = "eigen")
 
   # the negative factor is reflected back to a non-negative column sum
   expect_true(all(colSums(unclass(res$rot_loadings)) >= 0))

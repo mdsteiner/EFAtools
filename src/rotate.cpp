@@ -372,16 +372,16 @@ struct OblqCriterionManifold {
   }
 };
 
-// Kaiser row weights for a single loading matrix, matching GPArotation's
-// NormalizingWeight(): each row weight is max(sqrt(rowSumSq), machine eps). Dividing
-// the rows by these weights before rotation and restoring afterwards is Kaiser
-// normalization.
+// Kaiser row weights for a single loading matrix: each row weight is its loading
+// norm sqrt(rowSumSq). Dividing the rows by these weights before rotation and
+// restoring afterwards is Kaiser normalization. A zero/non-finite row norm (a
+// zero-communality row) is floored to 1 so the row is left unchanged rather than
+// divided by zero -- the same null-row guard the varimax and Procrustes paths use.
 static arma::vec kaiser_weights(const arma::mat& A) {
   arma::vec W = sqrt(sum(square(A), 1));
-  const double floor = std::numeric_limits<double>::epsilon();
   for (arma::uword i = 0; i < W.n_elem; ++i) {
-    if (!std::isfinite(W(i)) || W(i) < floor) {
-      W(i) = floor;
+    if (!std::isfinite(W(i)) || W(i) < 1e-15) {
+      W(i) = 1.0;
     }
   }
   return W;

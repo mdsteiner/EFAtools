@@ -458,3 +458,130 @@ test_that("continuous sandwich SEs are in the same ballpark as the bootstrap (ML
     expect_lt(stats::median(se_rob / se_boot), 1.4)
   }
 })
+
+
+# Unrotated robust loading SEs are gauge-dependent: they must be scaled in the orientation the
+# estimator reports its loadings in (Lambda'Lambda diagonal for the eigen-based ULS/DWLS, Lambda'
+# Psi^-1 Lambda diagonal for ML; Lawley & Maxwell). Independent reference: the Godambe sandwich with
+# the gauge-constraint Jacobian taken by CENTRAL FINITE DIFFERENCES of the orientation function,
+# sharing no code with the package's analytic constraint (.se_sandwich_constraint).
+.ref_sandwich_loading_se <- function(L, Gamma, N, method, gauge) {
+  p <- nrow(L); k <- ncol(L); pk <- p * k; G <- N * Gamma
+  pr <- utils::combn(p, 2L); pii <- pr[1, ]; pjj <- pr[2, ]; n <- ncol(pr)
+  Delta <- matrix(0, n, pk)
+  for (f in seq_len(k)) {
+    Delta[cbind(seq_len(n), (f - 1L) * p + pii)] <- L[pjj, f]
+    Delta[cbind(seq_len(n), (f - 1L) * p + pjj)] <- L[pii, f]
+  }
+  if (method == "ULS") {
+    VD <- Delta
+  } else {
+    Sig <- tcrossprod(L); diag(Sig) <- 1; P <- solve(Sig)
+    Vmat <- matrix(0, n, n)
+    for (s in seq_len(n)) {
+      a <- pii[s]; b <- pjj[s]
+      Vmat[, s] <- 0.5 * (P[pii, a] * P[pjj, b] + P[pii, b] * P[pjj, a])
+    }
+    VD <- Vmat %*% Delta
+  }
+  A <- crossprod(Delta, VD)
+  gfun <- function(par) {
+    Lm <- matrix(par, p, k)
+    M <- if (gauge == "LtL") crossprod(Lm) else {
+      ps <- 1 - rowSums(Lm^2); crossprod(Lm, Lm / ps)
+    }
+    M[upper.tri(M)]
+  }
+  nc <- k * (k - 1L) / 2L; Cmat <- matrix(0, nc, pk); h <- 1e-6; par0 <- as.vector(L)
+  for (j in seq_len(pk)) {
+    pp <- par0; pp[j] <- pp[j] + h; pm <- par0; pm[j] <- pm[j] - h
+    Cmat[, j] <- (gfun(pp) - gfun(pm)) / (2 * h)
+  }
+  Aug <- rbind(cbind(A, t(Cmat)), cbind(Cmat, matrix(0, nc, nc)))
+  Ab <- solve(Aug)[seq_len(pk), seq_len(pk)]
+  V_AA <- (Ab %*% crossprod(VD, G %*% VD) %*% Ab) / (N - 1)
+  matrix(sqrt(diag(V_AA)), p, k)
+}
+
+
+test_that("the unrotated sandwich loading SEs match the estimator's reporting gauge", {
+  # A two-factor structure with cross-loadings, so the Lambda'Lambda and Lambda'Psi^-1 Lambda
+  # orientations differ noticeably (and a wrong gauge would be caught).
+  set.seed(2024)
+  Lp <- matrix(c(.75, .70, .65, .20, .10, .15,
+                 .15, .10, .20, .75, .70, .65), 6, 2)
+  Sig <- Lp %*% t(Lp); diag(Sig) <- 1
+  X <- matrix(stats::rnorm(800 * 6), 800) %*% chol(Sig)
+  colnames(X) <- paste0("v", seq_len(6))
+  N <- nrow(X)
+
+  # ML reports loadings in the Lambda'Psi^-1 Lambda orientation, so its robust unrotated loading
+  # SEs must be scaled in that gauge -- and are materially different from the Lambda'Lambda gauge.
+  fit_ml <- EFA(X, n_factors = 2, cor_method = "pearson", method = "ML",
+                rotation = "none", se = "sandwich")
+  L_ml <- unclass(fit_ml$unrot_loadings)
+  ref_ml_correct <- .ref_sandwich_loading_se(L_ml, fit_ml$Gamma, N, "ML", "LtPiL")
+  ref_ml_wrong   <- .ref_sandwich_loading_se(L_ml, fit_ml$Gamma, N, "ML", "LtL")
+  expect_equal(unclass(fit_ml$SE$unrot_loadings), ref_ml_correct,
+               tolerance = 1e-5, ignore_attr = TRUE)
+  expect_gt(max(abs(ref_ml_correct - ref_ml_wrong)) / mean(ref_ml_correct), 0.05)
+
+  # ULS reports loadings in the (eigen-based) Lambda'Lambda orientation, so its robust unrotated
+  # loading SEs stay in that gauge.
+  fit_uls <- EFA(X, n_factors = 2, cor_method = "pearson", method = "ULS",
+                 rotation = "none", se = "sandwich")
+  L_uls <- unclass(fit_uls$unrot_loadings)
+  ref_uls_correct <- .ref_sandwich_loading_se(L_uls, fit_uls$Gamma, N, "ULS", "LtL")
+  expect_equal(unclass(fit_uls$SE$unrot_loadings), ref_uls_correct,
+               tolerance = 1e-5, ignore_attr = TRUE)
+})
+
+
+test_that(".is_psd accepts PSD covariances and rejects non-PSD ones with a non-negative diagonal", {
+  expect_true(EFAtools:::.is_psd(diag(3)))
+  expect_true(EFAtools:::.is_psd(matrix(c(2, 1, 1, 2), 2)))
+  # Positive diagonal with a round-off-level negative eigenvalue (eigenvalues ~ 2 and -1e-9): inside
+  # the -1e-8 tolerance, so accepted. Exercises the eigenvalue gate, not just the diagonal.
+  expect_true(EFAtools:::.is_psd(matrix(c(1, 1 + 1e-9, 1 + 1e-9, 1), 2)))
+  # All diagonal entries are positive, but the matrix is indefinite (eigenvalues -1 and 3): the
+  # diagonal-only gate would wrongly accept it.
+  expect_false(EFAtools:::.is_psd(matrix(c(1, 2, 2, 1), 2)))
+  expect_false(EFAtools:::.is_psd(matrix(c(1, NA, NA, 1), 2)))
+  expect_false(EFAtools:::.is_psd(matrix(c(-1, 0, 0, 1), 2)))
+})
+
+
+test_that("the sandwich core degrades gracefully when the gauge is undefined or undetermined", {
+  # Regression: an NA loading or a Heywood uniqueness (psi <= 0) makes the Lambda'Psi^-1 Lambda
+  # orientation undefined. Gauge detection must rule it out and fall back to the Lambda'Lambda gauge
+  # without erroring on the comparison, and must not abort the (gauge-invariant) rest of the
+  # computation.
+  G <- diag(3L)   # p = 3 -> p (p - 1) / 2 = 3 off-diagonal pairs
+
+  # An NA loading propagates to psi and to the off-diagonal comparison; detection must coerce the
+  # undefined gauge to the Lambda'Lambda fallback rather than raise "missing value where TRUE/FALSE
+  # needed".
+  fo_na <- list(unrot_loadings = matrix(c(0.7, NA, 0.6, 0.5, 0.4, 0.3), 3, 2),
+                orig_R = diag(3), fit_indices = list(df = 1))
+  expect_no_error(out_na <- EFAtools:::.se_sandwich_core(fo_na, N = 200, Gamma = G, method = "ML"))
+  expect_false(out_na$reliable)
+  expect_true(all(is.na(out_na$loadings_se)))
+
+  # A communality above one drives psi[1] < 0; the core must not error.
+  fo_hey <- list(unrot_loadings = matrix(c(0.95, 0.6, 0.5, 0.4, 0.3, 0.2), 3, 2),
+                 orig_R = diag(3), fit_indices = list(df = 1))
+  expect_no_error(EFAtools:::.se_sandwich_core(fo_hey, N = 200, Gamma = G, method = "ML"))
+
+  # Homogeneous uniquenesses (Psi proportional to I) make BOTH orientations diagonal, so the gauge is
+  # undetermined by the loadings and the detection takes the method tie-break branch. Build such a
+  # solution -- an equal-norm simple structure rotated to introduce cross-loadings -- and confirm the
+  # tie-break runs for either estimator without error (this construction is numerically degenerate at
+  # the bordering step, so both return reliable = FALSE rather than a value).
+  L0 <- matrix(0, 6L, 2L); L0[1:3, 1] <- 0.6; L0[4:6, 2] <- 0.6
+  Q <- matrix(c(cos(pi / 6), -sin(pi / 6), sin(pi / 6), cos(pi / 6)), 2L)
+  Sig_tie <- tcrossprod(L0 %*% Q); diag(Sig_tie) <- 1
+  fo_tie <- list(unrot_loadings = L0 %*% Q, orig_R = Sig_tie, fit_indices = list(df = 4))
+  G_tie <- diag(15L)   # p = 6 -> 15 off-diagonal pairs
+  expect_no_error(EFAtools:::.se_sandwich_core(fo_tie, N = 300, Gamma = G_tie, method = "ML"))
+  expect_no_error(EFAtools:::.se_sandwich_core(fo_tie, N = 300, Gamma = G_tie, method = "ULS"))
+})
