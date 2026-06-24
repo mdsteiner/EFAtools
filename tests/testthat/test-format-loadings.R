@@ -155,6 +155,20 @@ test_that("format.SLLOADINGS prints cleanly without Heywood cases", {
   expect_snapshot(print(make_sl(heywood = FALSE)))
 })
 
+test_that("format.SLLOADINGS counts a communality-only Heywood item once", {
+  # h2 > 1 (and u2 < 0) with no single loading > 1 must be flagged exactly once:
+  # not missed (as a loading-only count would), nor multiplied across coupled cells.
+  sl <- matrix(c(0.70, 0.20, 0.10, 0.53, 0.47,
+                 0.80, 0.75, 0.10, 1.20, -0.20,
+                 0.40, 0.10, 0.55, 0.46, 0.54),
+               nrow = 3, byrow = TRUE,
+               dimnames = list(c("i1", "i2", "i3"), c("g", "F1", "F2", "h2", "u2")))
+  class(sl) <- "SLLOADINGS"
+  out <- cli::ansi_strip(utils::capture.output(print(sl)))
+  expect_true(any(grepl("Results contain a Heywood case!", out, fixed = TRUE)))
+  expect_false(any(grepl("Heywood cases", out, fixed = TRUE)))
+})
+
 test_that("format.SLLOADINGS returns plain text even when styling is enabled", {
   old <- options(cli.num_colors = 256)
   on.exit(options(old), add = TRUE)

@@ -1,3 +1,17 @@
+# Percent of uncontaminated correlations (PUC): the proportion of item pairs that
+# do not share a group factor (Reise et al., 2013; Bonifay et al., 2015). `grp_ind`
+# is a logical items-by-group-factors membership matrix (the general factor is
+# excluded, as it contaminates no correlation). Each item pair sharing at least one
+# group factor is a single contaminated correlation, regardless of how many group
+# factors it shares.
+.puc <- function(grp_ind) {
+  grp_ind <- as.matrix(grp_ind)
+  shares_grp <- (grp_ind %*% t(grp_ind)) > 0
+  n_items <- nrow(grp_ind)
+  cont_corrs <- sum(shares_grp[upper.tri(shares_grp)])
+  1 - cont_corrs / (n_items * (n_items - 1) / 2)
+}
+
 # Flexible omega function (e.g. to use with loadings obtained by MacOrtho)------
 .OMEGA_FLEX <- function(model = NULL, type = c("EFAtools", "psych"),
                         factor_corres = NULL,
@@ -131,7 +145,7 @@
 
   input$u2 <- u2
 
-  omega_mat <- input[, 2:(ncol(s_load) + 1)] * factor_corres
+  omega_mat <- input[, 2:(ncol(s_load) + 1), drop = FALSE] * factor_corres
 
   # Sum of all g loadings
   sum_g <- sum(input$g)
@@ -173,7 +187,7 @@
   } else if(variance == "sums_load") {
 
     # Sums of all group factor loadings for all group factors
-    sums_s <- colSums(input[, 2:(ncol(s_load) + 1)])
+    sums_s <- colSums(input[, 2:(ncol(s_load) + 1), drop = FALSE])
 
     # Compute omega total, hierarchical, and subscale for g-factor. All three
     # share the same (unzeroed) total-variance denominator, so that
@@ -190,10 +204,42 @@
     omega_sub_sub <- sums_s_s^2 / (sums_g_s^2 + sums_s_s^2 + sums_e_s)
   }
 
+  # A group factor with no assigned items (an all-zero factor_corres column, e.g.
+  # a type = "psych" factor that is never the largest loading for any item) has a
+  # zero subscale-variance denominator and hence undefined coefficients. Report
+  # them as NA -- consistent with the H index below -- instead of a silent NaN.
+  empty_fac <- which(colSums(factor_corres == 1) == 0)
+  if (length(empty_fac) > 0) {
+    omega_tot_sub[empty_fac] <- NA
+    omega_h_sub[empty_fac] <- NA
+    omega_sub_sub[empty_fac] <- NA
+    cli::cli_warn(
+      c("Some group factors have no assigned items in {.arg factor_corres}.",
+        "i" = "Their omega coefficients and H index are returned as {.val NA}."),
+      class = "efa_omega_empty_factor"
+    )
+  }
+
   # Combine and display results in a table
   omega_tot <- c(omega_tot_g, omega_tot_sub)
   omega_h <- c(omega_h_g, omega_h_sub)
   omega_sub <- c(omega_sub_g, omega_sub_sub)
+
+  # In "correlation" mode the total-variance denominator (the correlation matrix)
+  # is independent of the loading-based numerators, so a correlation matrix that
+  # is inconsistent with the supplied loadings and uniquenesses can push a
+  # coefficient above 1 or make omega hierarchical exceed omega total. These are
+  # not admissible reliabilities; warn rather than return them silently.
+  tol <- .Machine$double.eps^0.5
+  if (variance == "correlation" &&
+      (any(c(omega_tot, omega_h, omega_sub) > 1 + tol, na.rm = TRUE) ||
+       any(omega_h > omega_tot + tol, na.rm = TRUE))) {
+    cli::cli_warn(
+      c("Some omega coefficients are out of range (above 1, or omega hierarchical above omega total).",
+        "i" = "Check that {.arg cormat} is consistent with the loadings and uniquenesses, or use {.code variance = \"sums_load\"}."),
+      class = "efa_omega_out_of_range"
+    )
+  }
 
   if(isTRUE(add_ind)){
 
@@ -201,13 +247,16 @@
     sum_s_load_sq <- vector("double", ncol(omega_mat))
     h_s_load <- vector("double", ncol(omega_mat))
 
-    # Calculate denominators for H for group factors and for ECV. The H index
-    # and ECV are based on the (unzeroed) group-factor loadings, as in
-    # psych::omega and Rodriguez et al. (2016); the correspondence map
-    # (omega_mat) only defines item-to-factor membership, which enters the PUC.
-    for (j in seq_along(omega_mat)){
+    # The H index (Hancock & Mueller, 2001) of a group factor is defined over
+    # that factor's own indicators, so its loadings are restricted to the items
+    # assigned to the factor by factor_corres. ECV (Rodriguez et al., 2016) is a
+    # ratio of common variances and uses the full group-factor loading columns.
+    # factor_corres defines item-to-factor membership, which also enters the PUC.
+    for (j in seq_len(ncol(s_load))){
       s_j <- input[[j + 1]]
-      sum_s_load_sq[j] <- sum(s_j^2 / (1 - s_j^2))
+      s_mem <- s_j[factor_corres[, j] == 1]
+      # A group factor with no assigned items has an undefined H index.
+      sum_s_load_sq[j] <- if (length(s_mem) > 0) sum(s_mem^2 / (1 - s_mem^2)) else NA_real_
       h_s_load[j] <- sum(s_j^2)
     }
 
@@ -216,14 +265,9 @@
 
     ECV <- sum(input$g^2) / sum(sum(input$g^2), sum(h_s_load))
 
-    # Calculate number of items per factor
-    item_on_fac <- colSums(omega_mat != 0)
-
-    # Calculate number of contaminated correlations
-    cont_corrs <- sum(sapply(item_on_fac, function (x) {x*(x - 1) / 2}))
-
-    # Calculate proportion of uncontaminated correlations (PUC)
-    PUC <- 1 - cont_corrs/(nrow(omega_mat)*(nrow(omega_mat) - 1) / 2)
+    # Proportion of uncontaminated correlations from the factor_corres membership
+    # map (matching the H index; the general factor is not a contaminant; see .puc).
+    PUC <- .puc(factor_corres == 1)
 
     # Create output
     h <- c(h_g, h_s)
@@ -486,16 +530,11 @@
 
         ECV <- sum(g_load^2) / sum(sum(g_load^2), sum(h_s_load))
 
-        # Calculate number of items per factor
-        item_on_fac <- colSums(std_sol[[i]][["lambda"]] != 0)
-
-        # Calculate number of contaminated correlations
-        cont_corrs <- sum(sapply(item_on_fac, function (x) {x*(x - 1) / 2})) -
-          (nrow(std_sol[[i]][["lambda"]])*(nrow(std_sol[[i]][["lambda"]]) - 1) / 2)
-
-        # Calculate proportion of uncontaminated correlations (PUC)
-        PUC <- 1 - cont_corrs /
-          (nrow(std_sol[[i]][["lambda"]])*(nrow(std_sol[[i]][["lambda"]]) - 1) / 2)
+        # Proportion of uncontaminated correlations from the group-factor loading
+        # pattern. Only the group factors contaminate correlations, so the
+        # general-factor column is excluded -- the general factor need not load on
+        # every item (e.g. an incomplete-g bifactor). See .puc.
+        PUC <- .puc(std_sol[[i]][["lambda"]][, col_names, drop = FALSE] != 0)
 
         # Create output
         h <- c(h_g, h_s)

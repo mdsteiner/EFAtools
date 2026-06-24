@@ -320,6 +320,128 @@ test_that("errors are thrown correctly", {
                            variance = "correlation"))
 })
 
+test_that("group-factor H index uses only the factor's assigned items", {
+  # Item 6 has a sizeable loading on F2 but is assigned to F1; that cross-loading
+  # must not enter F2's H index (Hancock & Mueller, 2001).
+  g_load <- rep(0.5, 6)
+  s_load <- matrix(0, 6, 2)
+  s_load[1:3, 1] <- 0.6
+  s_load[4:5, 2] <- 0.6
+  s_load[6, 1] <- 0.5
+  s_load[6, 2] <- 0.5
+  fc <- matrix(0, 6, 2)
+  fc[1:3, 1] <- 1
+  fc[6, 1] <- 1
+  fc[4:5, 2] <- 1
+  u2 <- 1 - g_load^2 - rowSums(s_load^2)
+  om <- .OMEGA_FLEX(model = NULL, type = "EFAtools", var_names = paste0("V", 1:6),
+                    g_load = g_load, s_load = s_load, u2 = u2,
+                    factor_corres = fc, variance = "sums_load")
+  s2 <- s_load[fc[, 2] == 1, 2]
+  expect_equal(unname(om["2", "H"]), 1 / (1 + 1 / sum(s2^2 / (1 - s2^2))))
+})
+
+test_that("PUC counts each contaminated pair once (no double counting)", {
+  # Items 3 and 4 belong to BOTH group factors, so the pair {3, 4} is a single
+  # contaminated correlation even though it sits within two group factors.
+  fc <- matrix(c(1, 1, 1, 1, 0, 0,
+                 0, 0, 1, 1, 1, 1), ncol = 2)
+  s_load <- 0.4 * fc
+  g_load <- rep(0.5, 6)
+  u2 <- 1 - g_load^2 - rowSums(s_load^2)
+  om <- .OMEGA_FLEX(model = NULL, type = "EFAtools", var_names = paste0("V", 1:6),
+                    g_load = g_load, s_load = s_load, u2 = u2,
+                    factor_corres = fc, variance = "sums_load")
+  # C(6, 2) = 15 pairs; 11 unique contaminated -> PUC = 1 - 11/15.
+  expect_equal(unname(om[1, "PUC"]), 1 - 11 / 15)
+})
+
+test_that("PUC for an incomplete-g bifactor depends only on the group factors", {
+  skip_if_not_installed("lavaan")
+  # Bifactor where the general factor does not load on V18; PUC must still be the
+  # group-factor-only quantity (Reise et al., 2013): 1 - 3 * C(6,2) / C(18,2).
+  mod <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
+          F2 =~ V7 + V8 + V9 + V10 + V11 + V12
+          F3 =~ V13 + V14 + V15 + V16 + V17 + V18
+          g  =~ V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11 + V12 +
+                V13 + V14 + V15 + V16 + V17'
+  fit <- suppressWarnings(lavaan::cfa(mod, sample.cov = test_models$baseline$cormat,
+                                      sample.nobs = 500, estimator = "ml",
+                                      orthogonal = TRUE))
+  om <- suppressMessages(suppressWarnings(.OMEGA_LAVAAN(fit, g_name = "g")))
+  expect_equal(unname(om[1, "PUC"]), 1 - 3 * choose(6, 2) / choose(18, 2))
+})
+
+test_that("an inconsistent cormat triggers an out-of-range warning", {
+  # Strong general loadings combined with a weakly correlated matrix push
+  # omega hierarchical above 1 (and above omega total); this must not pass silently.
+  g_load <- rep(0.7, 6)
+  s_load <- matrix(0, 6, 2)
+  s_load[1:3, 1] <- 0.1
+  s_load[4:6, 2] <- 0.1
+  u2 <- 1 - g_load^2 - rowSums(s_load^2)
+  Rm <- matrix(0.3, 6, 6)
+  diag(Rm) <- 1
+  rownames(Rm) <- colnames(Rm) <- paste0("V", 1:6)
+  expect_warning(
+    .OMEGA_FLEX(model = NULL, type = "EFAtools", var_names = paste0("V", 1:6),
+                g_load = g_load, s_load = s_load, u2 = u2, cormat = Rm,
+                factor_corres = s_load > 0, variance = "correlation"),
+    class = "efa_omega_out_of_range")
+})
+
+test_that("a single group-factor column is handled without error", {
+  g_load <- rep(0.7, 6)
+  s_load <- matrix(0.2, 6, 1)
+  u2 <- 1 - g_load^2 - rowSums(s_load^2)
+  fc <- matrix(1, 6, 1)
+  expect_s3_class(
+    .OMEGA_FLEX(model = NULL, type = "EFAtools", var_names = paste0("V", 1:6),
+                g_load = g_load, s_load = s_load, u2 = u2,
+                factor_corres = fc, variance = "sums_load"), "OMEGA")
+  Rm <- matrix(0.6, 6, 6)
+  diag(Rm) <- 1
+  rownames(Rm) <- colnames(Rm) <- paste0("V", 1:6)
+  expect_s3_class(
+    suppressWarnings(.OMEGA_FLEX(model = NULL, type = "EFAtools",
+                var_names = paste0("V", 1:6), g_load = g_load, s_load = s_load,
+                u2 = u2, cormat = Rm, factor_corres = fc,
+                variance = "correlation")), "OMEGA")
+})
+
+test_that("a group factor with no assigned items reports NA coefficients and warns", {
+  # type = 'psych' assigns each item to its highest-loading factor; F2 never wins,
+  # so its correspondence column is all zero and its coefficients are undefined.
+  g <- rep(0.5, 6)
+  s <- matrix(c(rep(0.6, 6), rep(0.3, 6)), ncol = 2)
+  u2 <- 1 - g^2 - rowSums(s^2)
+  # Model-implied (consistent) correlation matrix so only the empty-factor warning
+  # fires (no out-of-range, no variance override).
+  L <- cbind(g, s)
+  Rm <- L %*% t(L); diag(Rm) <- 1
+  rownames(Rm) <- colnames(Rm) <- paste0("V", 1:6)
+  expect_warning(
+    om <- .OMEGA_FLEX(model = NULL, type = "psych", var_names = paste0("V", 1:6),
+                      g_load = g, s_load = s, u2 = u2, cormat = Rm,
+                      variance = "correlation"),
+    class = "efa_omega_empty_factor")
+  expect_true(all(is.na(om["2", c("tot", "hier", "sub", "H")])))
+})
+
+test_that("PUC membership follows factor_corres, not the loading magnitudes", {
+  # Item 2 is assigned to F1 by factor_corres but has a zero loading on F1; it must
+  # still count as an F1 member for PUC, consistent with the H index.
+  g <- rep(0.5, 4)
+  s <- matrix(0, 4, 2); s[1, 1] <- 0.4; s[3, 2] <- 0.4; s[4, 2] <- 0.4
+  fc <- matrix(0, 4, 2); fc[1:2, 1] <- 1; fc[3:4, 2] <- 1
+  u2 <- 1 - g^2 - rowSums(s^2)
+  om <- .OMEGA_FLEX(model = NULL, type = "EFAtools", var_names = paste0("V", 1:4),
+                    g_load = g, s_load = s, u2 = u2, factor_corres = fc,
+                    variance = "sums_load")
+  # F1 = {1, 2}, F2 = {3, 4}: 2 contaminated pairs of C(4, 2) = 6 -> PUC = 1 - 2/6.
+  expect_equal(unname(om[1, "PUC"]), 1 - 2 / 6)
+})
+
 rm(efa_mod, sl_mod,
    om_sl_add, om_sl_noadd, om_sl_named_add, om_sl_named_noadd, schmid_mod,
    om_schmid_1_add, om_schmid_1_noadd, om_schmid_2, om_man_1_add, om_man_1_noadd,

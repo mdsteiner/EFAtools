@@ -5,7 +5,7 @@
 # for progress bar in EFA_AVERAGE
 .show_av_progress <- function(emoji, what, done = FALSE) {
 
-  cat("\r", rep(" ", ifelse(options("width") > 30, options("width"), 30)))
+  cat("\r", rep(" ", ifelse(getOption("width") > 30, getOption("width"), 30)))
   if (isFALSE(done)) {
     #cat("\r", paste0(curr, "/", to, ":"), "Running", what)
     cat("\r", emoji, what)
@@ -558,4 +558,93 @@
   }
 
   return(do.call(rbind, t_grid_list))
+}
+
+### assemble the full implementation grid for EFA_AVERAGE
+# Stack the per-(method, type) parameter grids into one grid of EFA() argument
+# combinations. The three named types (EFAtools/psych/SPSS) take their tuning
+# arguments from the shared `.efa_presets` table (the same source EFA() resolves),
+# so an averaged sub-analysis matches EFA(type = <that type>); type "none" forwards
+# the user-supplied arguments. Each estimator keeps only the arguments it uses
+# (PAF: starting communalities and convergence criterion; ML: starting values),
+# mirroring EFA() itself. Methods are processed in the order PAF, ML, ULS and types
+# in the order EFAtools, psych, SPSS, none, so the row order and names of the
+# assembled grid are stable.
+.build_avg_grid <- function(method, type, rotation, init_comm, criterion,
+                            criterion_type, abs_eigen, start_method, k_promax,
+                            normalize, P_type, precision, varimax_type,
+                            k_simplimax) {
+
+  # Tags used to build the grid-list names (e.g. "ftls_pf", "nn_ml"), kept
+  # identical to the names the grid is assembled under so row names stay stable.
+  method_tag <- c(PAF = "pf", ML = "ml", ULS = "ls")
+  type_tag   <- c(EFAtools = "ftls", psych = "psch", SPSS = "spss", none = "nn")
+
+  # The communality/start arguments each estimator uses; the rest stay NA. For
+  # named types PAF's values come from the `.efa_presets` PAF block, for type
+  # "none" from the user.
+  method_args <- function(m, from_user, paf = NULL) {
+    switch(m,
+      PAF = if (from_user) {
+        list(init_comm = init_comm, criterion = criterion,
+             criterion_type = criterion_type, abs_eigen = abs_eigen,
+             start_method = NA)
+      } else {
+        list(init_comm = paf$init_comm, criterion = paf$criterion,
+             criterion_type = paf$criterion_type,
+             abs_eigen = paf$abs_eigen, start_method = NA)
+      },
+      ML  = list(init_comm = NA, criterion = NA, criterion_type = NA,
+                 abs_eigen = NA,
+                 start_method = if (from_user) start_method else "psych"),
+      ULS = list(init_comm = NA, criterion = NA, criterion_type = NA,
+                 abs_eigen = NA, start_method = NA))
+  }
+
+  grid_list <- list()
+
+  for (m in c("PAF", "ML", "ULS")) {
+    if (!(m %in% method)) next
+
+    for (t in c("EFAtools", "psych", "SPSS", "none")) {
+      if (!(t %in% type)) next
+
+      if (t == "none") {
+        ma   <- method_args(m, from_user = TRUE)
+        rest <- list(k_promax = k_promax, normalize = normalize, P_type = P_type,
+                     precision = precision, varimax_type = varimax_type)
+      } else {
+        # Resolve named-type tuning arguments through .resolve_settings() -- the
+        # same resolver EFA() uses -- with EFA()'s default user arguments
+        # (normalize on, everything else unset), so an averaged sub-analysis
+        # cannot drift from EFA(type = t): PAF's convergence settings come from
+        # the PAF block, the promax/varimax settings from the PROMAX block.
+        # `precision` is not a preset, so it keeps EFA()'s default.
+        paf <- .resolve_settings(
+          type = t,
+          user = list(init_comm = NA, criterion = NA, criterion_type = NA,
+                      max_iter = NA, abs_eigen = NA),
+          preset = .efa_presets$PAF)
+        pro <- .resolve_settings(
+          type = t,
+          user = list(normalize = TRUE, P_type = NA, order_type = NA,
+                      varimax_type = NA, k = NA),
+          preset = .efa_presets$PROMAX)
+        ma   <- method_args(m, from_user = FALSE, paf = paf)
+        rest <- list(k_promax = pro$k, normalize = pro$normalize,
+                     P_type = pro$P_type, precision = 1e-5,
+                     varimax_type = pro$varimax_type)
+      }
+
+      grid_list[[paste0(type_tag[[t]], "_", method_tag[[m]])]] <- .type_grid(
+        method = m, init_comm = ma$init_comm, criterion = ma$criterion,
+        criterion_type = ma$criterion_type, abs_eigen = ma$abs_eigen,
+        start_method = ma$start_method, rotation = rotation,
+        k_promax = rest$k_promax, normalize = rest$normalize,
+        P_type = rest$P_type, precision = rest$precision,
+        varimax_type = rest$varimax_type, k_simplimax = k_simplimax)
+    }
+  }
+
+  unique(do.call(rbind, grid_list))
 }

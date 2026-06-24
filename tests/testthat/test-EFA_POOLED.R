@@ -403,6 +403,13 @@ test_that("a failed bootstrap replicate is skipped, not fatal", {
   expect_false(is.null(pooled$SE$fit_indices_descriptive))
   expect_true(all(is.finite(pooled$SE$fit_indices_descriptive)))
 
+  # The skipped (NA-filled) replicate is tallied as a source failure, and the
+  # valid-rotation count subtracts it (not only rotation failures), so it never
+  # overstates the replicates that entered the pool.
+  expect_identical(pooled$MI$bootstrap_source_failures, c(1L, 0L))
+  expect_identical(pooled$MI$bootstrap_rotation_failures, c(0L, 0L))
+  expect_identical(pooled$MI$bootstrap_rotation_valid, c(B - 1L, B))
+
   # if an imputation is left with fewer than two valid replicates, no SEs can be
   # computed and the pooled bootstrap returns NULL (the existing "no SEs" path)
   fits_fail <- fits

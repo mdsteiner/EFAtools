@@ -208,11 +208,40 @@ test_that("the reliability gate aborts on an NA-filled vcov under any alignment"
       fits = fits,
       unrot_loadings_aligned = aligned$loadings,
       align_meta = aligned$meta,
-      N_pool = N_id, ci = 0.95,
+      ci = 0.95,
       align_unrotated = "signed_tucker_congruence"
     ),
     class = "efa_pooled_unreliable_vcov"
   )
+})
+
+test_that("the reliability gate signals a classed abort (not a bare error) for >= 2 bad imputations", {
+  # The classed abort's message uses cli pluralizers; with two or more flagged
+  # imputations a {?...} pluralizer without an explicit cli::qty() count would
+  # throw a bare formatting error that escapes the route's tryCatch. Assert the
+  # abort is the documented classed condition for both one and several bad fits.
+  base_fit <- EFA(cormat, n_factors = k, N = N_id, method = "ML",
+                  rotation = "none", se = "information")
+  unrot_list <- lapply(replicate(4L, base_fit, simplify = FALSE),
+                       function(f) unclass(f$unrot_loadings))
+  aligned <- EFAtools:::.efa_pooled_align_unrotated_list(
+    unrot_list, align_unrotated = "signed_tucker_congruence", return_meta = TRUE
+  )
+
+  for (bad in list(2L, c(2L, 3L), c(1L, 2L, 4L))) {
+    fits <- replicate(4L, base_fit, simplify = FALSE)
+    for (d in bad) fits[[d]]$vcov_unrot_loadings[] <- NA_real_
+    expect_error(
+      EFAtools:::.efa_pooled_analytic_pool(
+        fits = fits,
+        unrot_loadings_aligned = aligned$loadings,
+        align_meta = aligned$meta,
+        ci = 0.95,
+        align_unrotated = "signed_tucker_congruence"
+      ),
+      class = "efa_pooled_unreliable_vcov"
+    )
+  }
 })
 
 # ---- 8. np-boot route: soft failure -> se-unavailable + fallback ------------

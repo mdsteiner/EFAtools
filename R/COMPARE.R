@@ -39,7 +39,7 @@
 #' @param plot logical. Retained for backwards compatibility; the difference plot
 #'  is now drawn with [plot.COMPARE()] rather than when printing. Default is TRUE.
 #' @param plot_red numeric. Threshold above which to plot the absolute differences
-#'  in red. Default is .001.
+#'  in red. Default is .01.
 #'
 #' @return A list of class COMPARE containing summary statistics on the differences
 #'  of x and y.
@@ -144,41 +144,36 @@ COMPARE <- function(x,
     n_factors <- ncol(x)
 
     if (reorder == "congruence" && n_factors > 1) {
-      # get Tucker's congruence coefficients
-      congruence <- .factor_congruence(x, y)
-
-      if (any(is.na(congruence))) {
+      # Match y's columns to those of x with the shared congruence alignment: an
+      # optimal one-to-one assignment that maximises the matched absolute Tucker
+      # congruences and reflects signs accordingly. The linear assignment
+      # guarantees a permutation (a greedy row-wise which.max could send two
+      # x-factors to the same y column, duplicating one column and dropping
+      # another), and carries x's dimnames onto the realigned y.
+      #
+      # Tucker's congruence is undefined for missing or non-finite inputs and for
+      # zero/near-zero or non-finite congruences. Reject the former up front; map
+      # the alignment's classed aborts for the latter to the same reorder error.
+      if (!all(is.finite(x)) || !all(is.finite(y))) {
         cli::cli_abort(
-          c("Tucker's congruence coefficients contained {.val NA}s; cannot reorder columns by congruence.",
+          c("{.arg x} or {.arg y} contains missing or non-finite values; cannot reorder columns by congruence.",
             "i" = "Try another reordering method."),
           class = "efa_compare_congruence_na"
         )
       }
 
-      # optimal one-to-one assignment of y's columns to x's columns, maximising
-      # the matched absolute congruences. A greedy row-wise which.max can send two
-      # x-factors to the same y column, duplicating one column of y and dropping
-      # another; the linear assignment guarantees a permutation. Mirrors the
-      # matching in `.align_solution()`.
-      factor_order <- as.integer(clue::solve_LSAP(max(abs(congruence)) - abs(congruence)))
-
-      # obtain signs to reflect signs of y if necessary
-      factor_sign <- sapply(seq_len(n_factors),
-                            function(ll, congruence, factor_order){
-                              sign(congruence[ll, factor_order[ll]])
-                              }, congruence = congruence,
-                            factor_order = factor_order)
-
-      # an exactly-zero matched congruence must not zero out a reflected y column
-      factor_sign[factor_sign == 0] <- 1
-
-      factor_sign <- rep(factor_sign, each = nrow(x))
-
-      # reorder
-      y <- y[, factor_order]
-
-      # reflect signs if necessary
-      y <- y * factor_sign
+      congruence_undefined <- function(e) {
+        cli::cli_abort(
+          c("Tucker's congruence is undefined for a zero, near-zero, or non-finite column; cannot reorder columns by congruence.",
+            "i" = "Try another reordering method."),
+          class = "efa_compare_congruence_na"
+        )
+      }
+      y <- tryCatch(
+        .align_solution(L_target = x, L = y)$loadings,
+        efa_zero_column = congruence_undefined,
+        efa_undefined_congruence = congruence_undefined
+      )
     } else if (reorder == "names" && n_factors > 1) {
 
       if (!is.null(colnames(x)) && !is.null(colnames(y))) {
@@ -241,8 +236,6 @@ COMPARE <- function(x,
       diff_corres <- NA
       diff_corres_cross <- NA
 
-      g <- NA
-
   }
 
   # compute differences and statistics
@@ -263,25 +256,30 @@ COMPARE <- function(x,
   min_abs_diff <- min(abs(diff), na.rm = na.rm)
   max_abs_diff <- max(abs(diff), na.rm = na.rm)
 
-  are_equal_v <- c()
-
+  # max_dec: the most decimal places at which a comparison is meaningful (the
+  # fewest decimals carried by either input). are_equal: the most decimal places
+  # to which every corresponding pair of x and y still agrees. Comparing the
+  # truncated values place by place is correct whatever the magnitude of the
+  # integer part; concatenating the digit strings would let extra integer digits
+  # inflate the count. signif() strips the floating-point representation noise
+  # before truncating, so a value such as 0.57 (held as 0.5699999999999999) is
+  # not mis-truncated to 0.56 at the second decimal.
   max_dec <- min(c(.decimals(x), .decimals(y)))
 
-  class(x) <- "character"
-  class(y) <- "character"
-  x <- gsub("-|\\.", "", x)
-  y <- gsub("-|\\.", "", y)
-  for (ii in seq_len((max_dec + 1))) {
-    are_equal_v[ii] <- all(substr(x, 1, ii) == substr(y, 1, ii), na.rm = na.rm)
+  ax <- abs(x)
+  ay <- abs(y)
+  # Walk the decimal places from the integer part outwards, stopping at the
+  # first one that differs: once a place disagrees no deeper place can count, so
+  # there is nothing to gain from testing the rest.
+  are_equal <- 0
+  for (d in 0:max_dec) {
+    if (!isTRUE(all(trunc(signif(ax * 10^d, 13)) == trunc(signif(ay * 10^d, 13)),
+                    na.rm = na.rm))) {
+      break
+    }
+    are_equal <- d
   }
-
-  are_equal <- utils::tail(which(are_equal_v), 1)
-
-  if(length(are_equal) == 0){
-    are_equal <- 0
-  } else {
-     are_equal <- are_equal - 1
-  }
+  are_equal <- as.double(are_equal)
 
   settings <- list(
     reorder = reorder,

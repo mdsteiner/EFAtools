@@ -231,6 +231,19 @@ test_that("COMPARE returns the correct values", {
 })
 
 
+test_that("are_equal counts decimal agreement without floating-point miscounts", {
+  # 0.57 is held as 0.5699999999999999; a plain trunc(x * 100) reads its second
+  # decimal as 6 and would wrongly report agreement with 0.5699999 to two
+  # decimals. They agree only to the first decimal.
+  expect_equal(COMPARE(c(0.57, 0.1), c(0.5699999, 0.1),
+                       reorder = "none")$are_equal, 1)
+  # 0.6285 * 1e4 underflows to 6284.999...; a plain trunc drops a place and would
+  # under-report. 0.6285 and 0.62851 agree to four decimals.
+  expect_equal(COMPARE(c(0.6285, 0.1), c(0.62851, 0.1),
+                       reorder = "none")$are_equal, 4)
+})
+
+
 test_that("congruence reordering yields a true permutation when columns collide", {
   # x has orthonormal factors; y is built so that the greedy row-wise which.max
   # match assigns y-column 1 to BOTH x-factor 1 and x-factor 2 (a collision that
@@ -279,6 +292,23 @@ test_that("errors etc. are thrown correctly", {
   expect_warning(COMPARE(mat_s, mat_L, reorder = "names"), class = "efa_compare_reorder_mismatch")
 
   expect_error(COMPARE(mat_s, mat_s), class = "efa_compare_congruence_na")
+
+  # A column whose norm is below sqrt(.Machine$double.eps) but non-zero makes
+  # Tucker's congruence undefined just as an exactly-zero column does; it must
+  # surface the reorder error, not a low-level zero-column abort.
+  nz <- matrix(c(1e-9, 1e-9, 0.8, 0.6), ncol = 2)
+  expect_error(COMPARE(nz, nz, reorder = "congruence", corres = FALSE),
+               class = "efa_compare_congruence_na")
+
+  # Non-finite inputs, and finite values whose squared magnitudes overflow,
+  # both leave Tucker's congruence undefined; each must surface the same reorder
+  # error rather than a non-finite/solver abort from the alignment internals.
+  m_inf <- matrix(c(Inf, 0.5, 0.5, 0.8, 0.6, 0.7), ncol = 2)
+  expect_error(COMPARE(m_inf, m_inf, reorder = "congruence", corres = FALSE),
+               class = "efa_compare_congruence_na")
+  m_big <- matrix(c(1e200, 1e200, 1e200, 0.8, 0.6, 0.7), ncol = 2)
+  expect_error(COMPARE(m_big, m_big, reorder = "congruence", corres = FALSE),
+               class = "efa_compare_congruence_na")
 
 })
 

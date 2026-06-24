@@ -748,7 +748,7 @@ format.summary.EFA <- function(x, ...) {
   # attach and display rotated-loading CIs on both the information and MI2S routes, so the
   # note must still appear for a rotated pooled solution. The wording follows the SE method:
   # se = "information" draws Wald CIs from the expected information matrix (Rubin-pooled with
-  # Barnard-Rubin df when pooled), while se = "sandwich" draws them from the robust (Godambe)
+  # plain Rubin (1987) df when pooled), while se = "sandwich" draws them from the robust (Godambe)
   # sandwich covariance (built on the multiple-imputation-pooled asymptotic covariance when
   # pooled), so the pooled MI2S note must not claim information-matrix Rubin pooling.
   if (!isTRUE(spec$np_boot)) {
@@ -760,7 +760,7 @@ format.summary.EFA <- function(x, ...) {
     if (isTRUE(spec$is_pooled) && identical(spec$component_se, "sandwich")) {
       cli::cli_text("{.emph Note:} Wald CIs from the robust sandwich covariance built on the multiple-imputation-pooled asymptotic covariance.")
     } else if (isTRUE(spec$is_pooled)) {
-      cli::cli_text("{.emph Note:} Wald CIs from the expected information matrix, Rubin-pooled across imputations (Barnard-Rubin df).")
+      cli::cli_text("{.emph Note:} Wald CIs from the expected information matrix, Rubin-pooled across imputations (Rubin's 1987 degrees of freedom).")
     } else if (identical(spec$se, "sandwich")) {
       cli::cli_text("{.emph Note:} Wald CIs from the robust (Godambe) sandwich covariance.")
     } else {

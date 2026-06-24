@@ -26,7 +26,10 @@ Default is \code{NULL}, in which case all intercorrelations are assumed to be ze
 wishes to get factor scores for a correlation matrix other than Pearson's
 (e.g. polychoric). Defaults to \code{NULL}, in which case
 \code{\link[psych:factor.scores]{psych::factor.scores()}} uses
-\code{cor(x, use = "pairwise")}.}
+\code{cor(x, use = "pairwise")}. If the EFA in \code{f} was fit on a non-Pearson
+correlation, pass that same matrix here so the factor weights stay
+consistent with the loadings; otherwise the weights are based on the Pearson
+correlation of \code{x}.}
 
 \item{method}{character. The method used to calculate factor scores. One of
 "Thurstone" (regression-based; default), "tenBerge", "Anderson", "Bartlett",
@@ -41,7 +44,11 @@ A list of class FACTOR_SCORES containing the following:
 \item{r.scores}{The correlations of the factor score estimates.}
 \item{missing}{A vector of the number of missing observations per subject
 (only if raw data are provided.}
-\item{R2}{Multiple R2 of the scores with the factors.}
+\item{R2}{Factor score validity coefficients as returned by
+\code{\link[psych:factor.scores]{psych::factor.scores()}}. For orthogonal factors these equal the squared
+multiple correlations between the factors and the estimated scores; for
+oblique factors they are the more general factor-score adequacy coefficients
+and no longer coincide with the squared multiple correlations.}
 \item{settings}{A list of the settings used.}
 }
 \description{

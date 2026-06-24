@@ -21,8 +21,9 @@
 
 * `EFA_POOLED()` now dispatches its multiple-imputation standard-error pooling
   automatically by the standard-error method of its component fits: Rubin's
-  rules for the information method (with Wald confidence intervals and
-  Barnard-Rubin small-sample degrees of freedom), the two-stage pooled-inputs
+  rules for the information method (with Wald confidence intervals using Rubin's
+  (1987) degrees of freedom, appropriate for the asymptotically-normal analytic
+  loadings), the two-stage pooled-inputs
   (MI2S) approach (Chung & Cai, 2019; Sriutaisuk, Liu, Chung, Kim, & Gu, 2025)
   for the sandwich method (a single fit on a Rubin-pooled correlation matrix and
   asymptotic covariance), and the existing bootstrap pooling for the
@@ -52,8 +53,8 @@
 
 * `EFA_POOLED()` now pools the unrotated-loading and uniqueness standard errors
   produced by component fits under `se = "information"`, using Rubin's rules
-  with Barnard-Rubin small-sample degrees of freedom and Wald confidence
-  intervals. Under `align_unrotated = "procrustes"`, the per-imputation
+  with Wald confidence intervals and plain Rubin (1987) degrees of
+  freedom. Under `align_unrotated = "procrustes"`, the per-imputation
   orthogonal Procrustes transform mixes loading columns, so the full
   unrotated covariance persisted on each fit (`vcov_unrot_loadings`) is
   propagated through the column-major Kronecker identity (treating the

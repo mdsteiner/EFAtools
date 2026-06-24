@@ -113,9 +113,20 @@
     # Phi unchanged for one factor, because sign^2 = 1.
   }
 
-  dimnames(L) <- list(target_rownames, target_colnames)
+  # Only attach dimnames when the target actually carries some: assigning
+  # list(NULL, NULL) would leave an empty-but-present attribute that callers
+  # then have to scrub before it surfaces in downstream results (e.g. a diff).
+  if (is.null(target_rownames) && is.null(target_colnames)) {
+    dimnames(L) <- NULL
+  } else {
+    dimnames(L) <- list(target_rownames, target_colnames)
+  }
   if (!is.null(Phi)) {
-    dimnames(Phi) <- list(target_colnames, target_colnames)
+    dimnames(Phi) <- if (is.null(target_colnames)) {
+      NULL
+    } else {
+      list(target_colnames, target_colnames)
+    }
   }
 
   list(
@@ -165,6 +176,16 @@
 
   # Full pairwise congruence matrix (shared core; reuse the validated norms).
   cong <- .congruence_matrix(L1, L2, n1, n2)
+
+  # A non-finite congruence (e.g. column magnitudes that overflow when squared)
+  # is as undefined as a zero column; flag it so callers get a clean classed
+  # abort instead of a downstream solver or assignment failure.
+  if (any(!is.finite(cong))) {
+    cli::cli_abort(
+      "{.arg L1} and {.arg L2} produced a non-finite Tucker congruence.",
+      class = "efa_undefined_congruence"
+    )
+  }
 
   rownames(cong) <- colnames(L1)
   colnames(cong) <- colnames(L2)

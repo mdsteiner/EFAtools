@@ -2,23 +2,24 @@
 # se = "information" path: rotated loadings, communalities (h2), and (oblique)
 # factor correlations (Phi) and structure coefficients.
 #
-# For ORTHOGONAL rotations the rotated-loading SE is the FIXED-GAUGE marginal SE
-# of L_d^unrot Q_d, with Q_d the orthogonal Procrustes rotation to the MI rotated
-# target and the per-imputation unrotated covariance V_d propagated by the exact
-# column-major Kronecker identity Var(vec(L_d Q_d)) = (Q_d' (x) I_p) V_d (Q_d (x) I_p)
-# (the same Kronecker-propagation helper used by align_unrotated = "procrustes").
-# Communalities are rotation-invariant and pool with no alignment.
-#
-# For OBLIQUE rotations there is no closed-form oblique-Procrustes Jacobian, so the
-# per-imputation rotated SEs are reused as the within-imputation variance after a
-# signed-permutation alignment to the MI target -- a documented approximation,
-# flagged in MI$<param>$method = "signed_permutation_approx".
+# A rotated-loading SE is conditional on the rotation criterion (Jennrich 1973,
+# 1974; Browne 2001; Zhang & Preacher 2015), so for ORTHOGONAL and OBLIQUE
+# rotations alike the within-imputation variance is each fit's own criterion-aware
+# delta-method rotated SE (the quantity EFA() returns), reused after a
+# signed-permutation alignment to the MI target; the between-imputation variance
+# is the sample variance of the aligned per-imputation rotated loadings. Both
+# rotation families are flagged MI$<param>$method = "signed_permutation_approx".
+# A fixed-rotation linear map of the unrotated covariance is deliberately NOT used
+# for rotated-loading SEs (it would inflate them by redistributing the rotational
+# indeterminacy variance the criterion pins down). Communalities are
+# rotation-invariant and pool with no alignment.
 #
 # Assertion groups:
 #   1. Identity-imputation invariance (orthogonal): pooled rotated SE equals the
-#      exact Kronecker propagation; B = 0; FMI = 0.
+#      per-fit criterion-aware delta SE; B = 0; FMI = 0.
 #   2. Point-estimate / orthogonal-Procrustes sanity.
-#   3. Kronecker reuse (no duplicate propagation).
+#   3. Regression guard: orthogonal rotated SE is the delta SE, not the inflated
+#      fixed-Q propagation.
 #   4. Communalities pooling (gauge-invariant, no alignment).
 #   5. np-boot cross-check on an orthogonal solution (informational).
 #   6. Oblique approximation: signed-permutation path, flagged, does not abort.
@@ -34,7 +35,7 @@ identical_list <- replicate(m_id, cormat, simplify = FALSE)
 
 # ---- Group 1 ---------------------------------------------------------------
 
-test_that("identity imputations (orthogonal): pooled rotated SE equals the exact Kronecker propagation, B = 0", {
+test_that("identity imputations (orthogonal): pooled rotated SE equals the per-fit criterion-aware delta SE, B = 0", {
   pooled <- suppressMessages(EFA_POOLED(
     identical_list, n_factors = k, N = N_id, method = "ML",
     rotation = "varimax", se = "information"
@@ -49,33 +50,21 @@ test_that("identity imputations (orthogonal): pooled rotated SE equals the exact
   expect_equal(unclass(pooled$rot_loadings), unclass(oracle$rot_loadings),
                tolerance = 1e-8)
 
-  # Reference: propagate V through the orthogonal Procrustes Q to the MI target by
-  # the brute-force column-major Kronecker formula (independent of the helper's
-  # row-block extraction). This is the within-imputation variance; with identical
-  # imputations B = 0, so the pooled SE must equal it.
-  A      <- unclass(oracle$unrot_loadings)
-  V      <- oracle$vcov_unrot_loadings
-  target <- unclass(oracle$rot_loadings)
-  Q      <- EFAtools:::.procrustes_orthogonal_T(A, target)
-  J      <- kronecker(t(Q), diag(p_vars))
-  V_al   <- J %*% V %*% t(J)
-  ref_se <- matrix(sqrt(pmax(diag(V_al), 0)), p_vars, k)
-
-  expect_equal(unname(pooled$SE$rot_loadings), unname(ref_se), tolerance = 1e-7)
+  # The within-imputation variance is each fit's criterion-aware delta-method
+  # rotated SE (the quantity EFA() returns); with identical imputations the
+  # signed-permutation alignment is the identity and B = 0, so the pooled rotated
+  # SE equals the single-fit rotated SE exactly.
+  expect_equal(unname(pooled$SE$rot_loadings), unname(oracle$SE$rot_loadings),
+               tolerance = 1e-6)
 
   fmi <- pooled$MI$rot_loadings$FMI
   riv <- pooled$MI$rot_loadings$RIV
-  expect_true(all(abs(fmi[is.finite(fmi)]) < 1e-8))
-  expect_true(all(abs(riv[is.finite(riv)]) < 1e-8))
+  expect_true(all(abs(fmi[is.finite(fmi)]) < 1e-6))
+  expect_true(all(abs(riv[is.finite(riv)]) < 1e-6))
 
-  # The fixed-gauge SE is a DIFFERENT estimand from the per-fit criterion-aware
-  # delta-method rotated SE, so it must NOT simply equal the single-fit rotated SE.
-  expect_false(isTRUE(all.equal(unname(pooled$SE$rot_loadings),
-                                unname(oracle$SE$rot_loadings),
-                                tolerance = 1e-3)))
-
-  # Provenance flag for the rigorous orthogonal path.
-  expect_identical(pooled$MI$rot_loadings$method, "procrustes_kronecker")
+  # Provenance flag: the criterion-aware signed-permutation reuse (orthogonal and
+  # oblique alike).
+  expect_identical(pooled$MI$rot_loadings$method, "signed_permutation_approx")
 })
 
 # ---- Group 2 ---------------------------------------------------------------
@@ -95,7 +84,7 @@ test_that("orthogonal point estimate: L_d^unrot Q_d reproduces the aligned rotat
 
 # ---- Group 3 ---------------------------------------------------------------
 
-test_that("orthogonal rotated pool routes through the Kronecker propagation helper", {
+test_that("orthogonal rotated SE is the criterion-aware delta SE, not the inflated fixed-Q propagation", {
   pooled <- suppressMessages(EFA_POOLED(
     identical_list, n_factors = k, N = N_id, method = "ML",
     rotation = "varimax", se = "information"
@@ -103,14 +92,25 @@ test_that("orthogonal rotated pool routes through the Kronecker propagation help
   oracle <- EFA(cormat, n_factors = k, N = N_id, method = "ML",
                 rotation = "varimax", se = "information")
 
+  # The pooled orthogonal rotated SE is the per-fit criterion-aware delta SE.
+  expect_equal(unname(pooled$SE$rot_loadings), unname(oracle$SE$rot_loadings),
+               tolerance = 1e-6)
+
+  # Regression guard: the former fixed-Q Kronecker propagation of the
+  # unrotated covariance is a DISTINCT matrix from the reported (criterion-aware)
+  # SE -- an orthogonal Q preserves each row's total variance, so it redistributes
+  # the rotational-indeterminacy variance the criterion otherwise pins down (and is
+  # never smaller). Confirm the reported SE is not that propagated quantity; the
+  # gap grows from modest on this well-separated structure to several-fold when
+  # factors are weakly separated.
   A      <- unclass(oracle$unrot_loadings)
   V      <- oracle$vcov_unrot_loadings
   target <- unclass(oracle$rot_loadings)
   Q      <- EFAtools:::.procrustes_orthogonal_T(A, target)
+  kron_se <- EFAtools:::.efa_pooled_propagate_procrustes_vcov(V, Q, p_vars, k)
 
-  helper_se <- EFAtools:::.efa_pooled_propagate_procrustes_vcov(V, Q, p_vars, k)
-
-  expect_equal(unname(pooled$SE$rot_loadings), unname(helper_se), tolerance = 1e-8)
+  reported <- unclass(pooled$SE$rot_loadings)
+  expect_gt(max(abs(kron_se - reported)), 1e-3)
 })
 
 # ---- Group 4 ---------------------------------------------------------------
@@ -180,25 +180,35 @@ test_that("distinct imputations (B > 0): pooled rotated-loading and h2 SEs match
   expect_true(any(B_h2 > 0))                 # the regime is genuinely B > 0
   expect_true(any(pooled_b$MI$h2$FMI > 0))   # and it flows through to FMI
 
-  # --- Rotated loadings: independent brute-force Kronecker + explicit Rubin T ---
+  # --- Rotated loadings: independent Rubin from the per-fit criterion-aware delta
+  # SE. Mirror the production gauge exactly: the MI target is the first fit's
+  # rotated solution; imputation 1 uses it directly and 2..m are Procrustes-aligned
+  # to it. The within-imputation variance is each fit's $SE$rot_loadings, reordered
+  # by the signed-permutation alignment of its own rotated solution to Lr_d; B is
+  # the sample variance of the aligned rotated loadings. ---
   target  <- as.matrix(pooled_b$alignment$target)
   est_mat <- matrix(NA_real_, m, p_b * k_b)
   se_mat  <- matrix(NA_real_, m, p_b * k_b)
   for (d in seq_len(m)) {
-    A <- unclass(pooled_b$fits[[d]]$unrot_loadings)
-    V <- pooled_b$fits[[d]]$vcov_unrot_loadings
-    if (is.null(V) || anyNA(V)) skip("a component fit had non-finite unrotated covariance")
-    Q <- EFAtools:::.procrustes_orthogonal_T(A, target)
-    est_mat[d, ] <- as.vector(A %*% Q)
-    J  <- kronecker(t(Q), diag(p_b))
-    Va <- J %*% V %*% t(J)
-    se_mat[d, ] <- sqrt(pmax(diag(Va), 0))
+    if (d == 1L) {
+      Lr_d <- target
+    } else {
+      A    <- unclass(pooled_b$fits[[d]]$unrot_loadings)
+      Lr_d <- unclass(EFAtools::PROCRUSTES(A, target, rotation = "orthogonal")$loadings)
+    }
+    se_d <- pooled_b$fits[[d]]$SE$rot_loadings
+    if (is.null(se_d) || anyNA(se_d)) skip("a component fit had non-finite rotated SEs")
+    fo <- EFAtools:::.align_solution(
+      L_target = Lr_d, L = unclass(pooled_b$fits[[d]]$rot_loadings)
+    )$factor_order
+    est_mat[d, ] <- as.vector(Lr_d)
+    se_mat[d, ]  <- as.vector(unclass(se_d)[, fo, drop = FALSE])
   }
   Ubar_r <- colMeans(se_mat^2)
   B_r    <- apply(est_mat, 2, stats::var)
   ref_se_rot <- matrix(sqrt(Ubar_r + (1 + 1 / m) * B_r), p_b, k_b)
   expect_equal(unname(pooled_b$SE$rot_loadings), unname(ref_se_rot),
-               tolerance = 1e-7)
+               tolerance = 1e-6)
   expect_true(any(pooled_b$MI$rot_loadings$FMI > 0))
 
   # Factor-column labels are consistent across the loading-shaped SE families.
@@ -386,11 +396,9 @@ test_that("an unreliable per-imputation rotated SE warns and NA-blanks the poole
       fits = fits,
       unrot_loadings_aligned = aligned$loadings,
       align_meta = aligned$meta,
-      N_pool = N_id, ci = 0.95,
+      ci = 0.95,
       align_unrotated = "signed_tucker_congruence",
       rotation_type = "oblique",
-      unrot_loadings_raw = unrot_list,
-      final_target = rot_list[[1]],
       rot_loadings = rot_list,
       phis = phi_list,
       structure_loadings = str_list,

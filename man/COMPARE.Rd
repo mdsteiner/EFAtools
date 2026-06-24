@@ -70,7 +70,7 @@ as labels on the x-axis of the plot. Default is "x" and "y".}
 is now drawn with \code{\link[=plot.COMPARE]{plot.COMPARE()}} rather than when printing. Default is TRUE.}
 
 \item{plot_red}{numeric. Threshold above which to plot the absolute differences
-in red. Default is .001.}
+in red. Default is .01.}
 }
 \value{
 A list of class COMPARE containing summary statistics on the differences

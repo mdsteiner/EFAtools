@@ -48,7 +48,13 @@ print.SLLOADINGS <- function(x, cutoff = .2, digits = 3, color = TRUE, ...) {
   col_roles[n_col] <- "u2"
 
   loading_cols <- seq_len(n_col - 2L)
-  n_heywood <- sum(mat[, loading_cols, drop = FALSE] > 1, na.rm = TRUE)
+  # Count items (rows) flagged as Heywood cases: a loading with absolute value
+  # above 1, a communality (h2) above 1, or a negative uniqueness. These are
+  # deterministically coupled within an item, so each affected item counts once.
+  n_heywood <- sum(
+    rowSums(abs(mat[, loading_cols, drop = FALSE]) > 1, na.rm = TRUE) > 0 |
+      (!is.na(mat[, n_col - 1L]) & mat[, n_col - 1L] > 1) |
+      (!is.na(mat[, n_col]) & mat[, n_col] < 0))
 
   cat(cli::cli_format_method({
     cli::cli_verbatim(.efa_format_matrix(

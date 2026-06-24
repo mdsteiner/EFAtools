@@ -37,7 +37,10 @@ estimate (consensus is just a more expensive route to the same answer);
 for oblique rotations \code{"consensus"} is not supported and aborts with a
 classed condition (\code{efa_consensus_oblique_unsupported}), because the
 centroid iteration is degenerate for oblique transforms with more than
-one factor.}
+one factor. Anchoring on the first imputation can understate the genuine
+between-imputation variability when the imputations disagree substantially;
+\code{"consensus"} (orthogonal rotations) is more robust to an atypical first
+imputation (van Ginkel & Kroonenberg 2014).}
 
 \item{align_unrotated}{Character. How to align unrotated loadings before
 pooling. \code{"signed_tucker_congruence"} preserves the unrotated axes up
@@ -75,18 +78,22 @@ on the bootstrap path, \code{replicates}), the object carries:
 \item{MI}{Multiple-imputation diagnostics for each pooled parameter family.
 On the bootstrap path: \code{unrot_loadings}, \code{h2}, \code{residuals}, optionally
 \code{rot_loadings}, \code{Phi}, \code{Structure}, and \code{fit_indices_descriptive}, plus
-integer vectors \code{bootstrap_rotation_failures} and
-\code{bootstrap_rotation_valid} recording per-imputation alignment outcomes
-(df is the Rubin 1987 form). On the analytic path
-(\code{se = "information"}): \code{unrot_loadings} and \code{uniquenesses}, plus, when a
-rotation was requested, \code{rot_loadings}, \code{h2}, and (oblique) \code{Phi} and
-\code{Structure} (df is the Barnard-Rubin 1999 form with \eqn{\nu_{com} = N - 1}).
-Each per-family entry is a list with \code{RIV} (relative increase in variance),
-\code{FMI} (fraction of missing information), and \code{df}; the rotated families on
-the analytic path additionally carry a \code{method} string recording the gauge
-alignment used (\code{"procrustes_kronecker"} for orthogonal rotated loadings,
-\code{"gauge_invariant"} for communalities, and \code{"signed_permutation_approx"} for
-oblique rotated loadings, factor correlations, and structure coefficients).}
+integer vectors \code{bootstrap_source_failures} (replicates the component \code{EFA}
+could not fit), \code{bootstrap_rotation_failures} (replicates whose Procrustes
+alignment to the target was invalid), and \code{bootstrap_rotation_valid} (those
+that entered the pool, \code{B - source - rotation} failures). Both paths use the
+plain Rubin (1987) df. On the analytic path (\code{se = "information"}):
+\code{unrot_loadings} and \code{uniquenesses}, plus, when a rotation was requested,
+\code{rot_loadings}, \code{h2}, and (oblique) \code{Phi} and \code{Structure}. Each per-family
+entry is a list with \code{RIV} (relative increase in variance), \code{FMI} (the
+fraction of missing information, reported as Rubin's asymptotic
+\eqn{\lambda = RIV / (1 + RIV)}, equal to \code{lavaan.mi}'s \code{fmi}), and \code{df}; the
+rotated families on the analytic path additionally carry a \code{method} string
+recording the gauge alignment used (\code{"gauge_invariant"} for communalities and
+\code{"signed_permutation_approx"} for rotated loadings and, for oblique rotations,
+factor correlations and structure coefficients). \code{fit_indices_descriptive}, on
+the bootstrap path, pools every per-imputation fit index, so the structural
+constants among them (\code{df}, \code{df_null}) appear with a standard error of 0.}
 \item{mi_fit}{On the \code{se = "sandwich"} (MI2S) path only: the single \code{\link[=EFA]{EFA()}}
 fit on the pooled correlation matrix \eqn{\bar r} and pooled asymptotic
 covariance \eqn{\tilde\Gamma}. Its \code{orig_R} is \eqn{\bar r} and its \code{Gamma}
@@ -107,8 +114,8 @@ imputations:
 \itemize{
 \item \code{se = "none"}: no standard errors are pooled.
 \item \code{se = "information"}: the per-imputation expected-information standard
-errors are pooled with Rubin's rules (Wald intervals, Barnard-Rubin
-small-sample degrees of freedom).
+errors are pooled with Rubin's rules (Wald intervals, plain Rubin (1987)
+degrees of freedom).
 \item \code{se = "sandwich"}: the two-stage pooled-inputs (MI2S) approach fits a
 single model on the Rubin-pooled correlation matrix and asymptotic
 covariance.
@@ -152,7 +159,11 @@ residual-based fit indices such as RMSR/SRMR are based on pooled residuals.
 The model chi-square and the indices derived from it (RMSEA, ECVI, and the
 descriptive AIC/BIC) are not arithmetic means of the per-imputation values: the
 complete-data chi-squares are pooled with the D2 rule and the asymptotic
-chi-square approximation to D2 is used downstream. The incremental indices CFI
+chi-square approximation to D2 is used downstream. Because D2 deflates the
+pooled chi-square by its between-imputation average relative increase in
+variance, the pooled RMSEA inherits that shrinkage and can fall below the mean
+of the per-imputation RMSEAs (as it does in \code{lavaan.mi}); read it together with
+the per-imputation fit. The incremental indices CFI
 (Bentler, 1990) and TLI (Tucker & Lewis, 1973) are reported instead as the
 average of the per-imputation indices, which keeps them consistent with the
 component fits (CFI stays in [0, 1]; TLI, like a single \code{EFA()} fit, is left
@@ -199,8 +210,12 @@ element-wise with Rubin's rules. The within-imputation variance \eqn{U_d} is
 taken directly from \eqn{SE_d^2}, the between-imputation variance \eqn{B} is
 the sample variance of the per-imputation point estimates (after column
 alignment), and \eqn{T = Ubar + (1 + 1/m) B}. Wald confidence intervals use
-Barnard-Rubin small-sample degrees of freedom with \eqn{\nu_{com} = N - 1}
-(Barnard & Rubin 1999). NA propagation is fail-closed: if any imputation
+the plain Rubin (1987) degrees of freedom \eqn{\nu = (m - 1)(1 + 1/r)^2} (with
+\eqn{r} the relative increase in variance): the analytic loadings are
+asymptotically normal, so their complete-data reference is normal
+(\eqn{\nu_{com} = \infty}) and the Barnard-Rubin (1999) small-sample adjustment
+reduces to this form, matching \code{lavaan.mi}. NA propagation is fail-closed: if
+any imputation
 carries NA at an element, all pooled outputs (SE, CI bounds, RIV, FMI, df)
 for that element are NA. When a rotation was requested, the rotated loadings,
 communalities, and (for oblique rotations) factor correlations and structure
@@ -222,32 +237,31 @@ singular bordered information matrix), it aborts with the classed condition
 \code{efa_pooled_unreliable_vcov}.
 
 Rotated quantities are pooled in a common multiple-imputation rotational
-gauge. For orthogonal rotations the gauge-aligned rotated loading is
-\eqn{L_d^{unrot} Q_d}, with \eqn{Q_d} the orthogonal Procrustes rotation
-(\eqn{Q = U V'} from the singular value decomposition of
-\eqn{(L_d^{unrot})' \tilde\Lambda^{rot}}; Schoenemann 1966) to the
-multiple-imputation rotated target, and the unrotated covariance \eqn{V_d} is
-propagated through the same fixed-\eqn{Q_d} Kronecker identity used for
-\code{align_unrotated = "procrustes"}. This is the fixed-gauge marginal standard
-error of the rotated loading in the common target gauge; it is a different
-(and generally smaller) quantity than the criterion-aware delta-method
-rotation standard error each component fit returns (Jennrich 1973; Zhang &
-Preacher 2015), and it shares its estimand with the bootstrap pool, which
-likewise Procrustes-aligns each replicate to the target. Communalities are
-rotation-invariant and pool element-wise with no alignment. For oblique
-rotations there is no closed-form oblique-Procrustes Jacobian, so the
-rotated-loading, factor-correlation, and structure-coefficient standard errors
-are pooled by reusing each component fit's own rotated standard errors after a
-signed-permutation alignment to the multiple-imputation target. This is a
-deliberate approximation -- the per-fit standard error is conditional on that
-fit's rotation-criterion optimum rather than on the common gauge -- and is
-flagged by \verb{MI$<param>$method = "signed_permutation_approx"}. Researchers who
-need rigorous uncertainty quantification for oblique solutions should
-cross-check with \code{se = "np-boot"}, which re-aligns the unrotated replicates to
-the target before estimating the within-imputation covariance; the multiple-
-imputation rotation literature otherwise summarises oblique uncertainty with
-generalised Procrustes centroids rather than per-element standard errors (van
-Ginkel & Kroonenberg 2014; Lorenzo-Seva & Van Ginkel 2016).
+gauge. A rotated-loading standard error is conditional on the rotation
+criterion (Jennrich 1973, 1974; Browne 2001; Zhang & Preacher 2015), so for
+orthogonal and oblique rotations alike the within-imputation variance is each
+component fit's own criterion-aware delta-method rotated standard error (the
+quantity \code{EFA()} returns), reused after a signed-permutation alignment to the
+multiple-imputation target; the between-imputation variance is the sample
+variance of the aligned per-imputation rotated loadings. This shares the
+estimand of the bootstrap pool, which likewise aligns each replicate to the
+target, and is flagged by \verb{MI$<param>$method = "signed_permutation_approx"}. It
+is a deliberate approximation: the per-fit standard error is conditional on
+that fit's rotation-criterion optimum rather than on the common gauge. A
+fixed-rotation linear map of the unrotated covariance is deliberately not used
+for rotated-loading standard errors -- an orthogonal rotation preserves each
+row's total variance, so it would merely redistribute the rotational
+indeterminacy variance the criterion otherwise pins down, inflating the
+reported standard errors. The same signed-permutation alignment carries the
+factor-correlation and structure-coefficient standard errors for oblique
+rotations. Communalities are rotation-invariant and pool element-wise with no
+alignment. Researchers who need a fully gauge-consistent uncertainty for
+rotated solutions should cross-check with \code{se = "np-boot"}, which re-aligns the
+unrotated replicates to the target before estimating the within-imputation
+covariance; the multiple-imputation rotation literature otherwise summarises
+rotated uncertainty with generalised Procrustes centroids rather than
+per-element standard errors (van Ginkel & Kroonenberg 2014; Lorenzo-Seva & Van
+Ginkel 2016).
 
 When the component \code{EFA} calls were run with \code{se = "sandwich"} (robust
 standard errors from a polychoric/tetrachoric or continuous-Pearson
@@ -266,7 +280,9 @@ is then fitted to \eqn{\bar r} with \eqn{\tilde\Gamma} as the robust meat
 (and, for \code{method = "DWLS"}, its diagonal as the weights). Because there is
 only one fit there is a single rotational gauge, so this route bypasses the
 per-imputation Procrustes/target alignment entirely (\code{target_method} and
-\code{align_unrotated} do not apply and are ignored with a classed message).
+\code{align_unrotated} do not apply; supplying a non-default value raises the classed
+warning \code{efa_pooled_mi2s_alignment_ignored}, while the defaults are ignored
+silently).
 The fitted object carries native scaled-shifted chi-square test statistics
 and sandwich standard errors that already reflect the multiple-imputation
 uncertainty; the chi-square is not D2-pooled, and the
@@ -356,6 +372,9 @@ multiple imputation. \emph{Biometrika}, 86(4), 948-955.
 Bentler, P. M. (1990). Comparative fit indexes in structural models.
 \emph{Psychological Bulletin}, 107(2), 238-246.
 
+Browne, M. W. (2001). An overview of analytic rotation in exploratory factor
+analysis. \emph{Multivariate Behavioral Research}, 36(1), 111-150.
+
 Chan, K. W., & Meng, X.-L. (2022). Multiple improvements of multiple
 imputation likelihood ratio tests. \emph{Statistica Sinica}, 32, 1489-1514.
 
@@ -372,6 +391,10 @@ Significance levels from repeated p-values with multiply-imputed data.
 
 Jennrich, R. I. (1973). Standard errors for obliquely rotated factor
 loadings. \emph{Psychometrika}, 38(4), 593-604.
+
+Jennrich, R. I. (1974). Simplified formulae for standard errors in
+maximum-likelihood factor analysis. \emph{British Journal of Mathematical and
+Statistical Psychology}, 27(1), 122-131.
 
 Lorenzo-Seva, U., & Van Ginkel, J. R. (2016). Multiple imputation of missing
 values in exploratory factor analysis of multidimensional scales. \emph{Anales de

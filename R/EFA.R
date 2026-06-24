@@ -1018,7 +1018,11 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
     # Only the bootstrap yields a sampling SD for every residual; the analytic methods do
     # not, so standardise the residuals only when those SEs are available.
     if (!is.null(boot_out$SE$residuals)) {
-      output$standardized_residuals <- output$residuals / boot_out$SE$residuals
+      # The residual diagonal is fixed at 0 with SE 0, so 0/0 would yield NaN on the
+      # diagonal; set it to 0 so the off-diagonal standardised residuals are usable.
+      std_resid <- output$residuals / boot_out$SE$residuals
+      diag(std_resid) <- 0
+      output$standardized_residuals <- std_resid
     }
     # Fill the chi-square block of the fit indices with the robust scaled chi-square
     # (Satorra-Bentler / scaled-shifted): .gof() leaves it undefined for DWLS, and for

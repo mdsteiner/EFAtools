@@ -78,9 +78,8 @@ second-order confirmatory factor analysis (CFA) solution from lavaan.
 The SL transformation (also called SL orthogonalization) is a procedure with
 which an oblique factor solution is transformed into a hierarchical,
 orthogonalized solution. As a first step, the factor intercorrelations are
-again factor analyzed to find second-order factor loadings. If there is only
-one higher-order factor, this step of the procedure stops there, resulting in
-a second-order factor structure. The first-order factor and the second-order
+factor analyzed to extract a single second-order (general) factor, yielding a
+two-level hierarchical structure. The first-order factor and the second-order
 factor are then orthogonalized, resulting in an orthogonalized factor solution
 with proportionality constraints. The procedure thus makes a suggested
 hierarchical data structure based on factor intercorrelations explicit. One

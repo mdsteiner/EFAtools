@@ -250,6 +250,18 @@ lav_mod_var_hey <- 'F1 =~ V1 + V2
 lav_fit_var_hey <- suppressWarnings(lavaan::cfa(lav_mod_var_hey,
                                            sample.cov = test_models$baseline$cormat,
                                            sample.nobs = 500, estimator = "ml"))
+
+# Bifactor solution (general factor loads on the items, not the first-order
+# factors): SL needs a second-order model, so this must abort cleanly.
+lav_mod_bifactor <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
+                     F2 =~ V7 + V8 + V9 + V10 + V11 + V12
+                     F3 =~ V13 + V14 + V15 + V16 + V17 + V18
+                     g =~ V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11 +
+                          V12 + V13 + V14 + V15 + V16 + V17 + V18'
+lav_fit_bifactor <- suppressWarnings(lavaan::cfa(lav_mod_bifactor,
+                                           sample.cov = test_models$baseline$cormat,
+                                           sample.nobs = 500, estimator = "ml",
+                                           orthogonal = TRUE))
 }
 
 test_that("errors are thrown correctly", {
@@ -262,11 +274,12 @@ test_that("errors are thrown correctly", {
   expect_warning(SL(fa_mod, type = "EFAtools", method = "PAF", Phi = fa_mod$Phi), class = "efa_sl_phi_specified")
   expect_error(SL(fa_mod_unrot, type = "EFAtools", method = "PAF"), class = "efa_sl_not_oblique")
   expect_error(SL(fa_mod_orth, type = "EFAtools", method = "PAF"), class = "efa_sl_not_oblique")
-  expect_error(SL(lav_fit_NA, g_name = "g"), class = "efa_omega_na_loadings")
-  expect_error(SL(lav_fit_var_hey, g_name = "g"), class = "efa_omega_heywood")
-  expect_error(SL(lav_fit_ho, g_name = "fu"), class = "efa_omega_g_name")
+  expect_error(SL(lav_fit_NA, g_name = "g"), class = "efa_sl_na_loadings")
+  expect_error(SL(lav_fit_var_hey, g_name = "g"), class = "efa_sl_heywood")
+  expect_error(SL(lav_fit_ho, g_name = "fu"), class = "efa_sl_g_name")
   expect_warning(SL(lav_fit_ho_inv, g_name = "g"), class = "efa_sl_second_order_loadings")
   expect_error(SL(EFA_mod$rot_loadings, type = "EFAtools", method = "ML"), class = "efa_sl_phi_missing")
+  expect_error(SL(lav_fit_bifactor, g_name = "g"), class = "efa_sl_not_second_order")
 })
 
 test_that("a second-order Heywood case raises a classed error", {
@@ -283,7 +296,7 @@ test_that("a second-order Heywood case raises a classed error", {
                           0.95, 0.7, 1), nrow = 3)
 
   expect_error(SL(L1, Phi = Phi_heywood, type = "EFAtools", method = "PAF"),
-               class = "efa_omega_heywood")
+               class = "efa_sl_heywood")
 })
 
 test_that("print output is stable", {
@@ -296,6 +309,7 @@ rm(EFA_mod, SL_EFAtools, SL_SPSS, fa_mod, SL_psych, SL_flex, EFA_mod_unrot,
    EFA_mod_orth, fa_mod_unrot, fa_mod_orth)
 if (requireNamespace("lavaan", quietly = TRUE)) {
   rm(lav_mod_ho, lav_fit_ho, SL_lav, lav_mod_NA, lav_fit_NA, lav_mod_ho_inv,
-     lav_fit_ho_inv, lav_mod_var_hey, lav_fit_var_hey)
+     lav_fit_ho_inv, lav_mod_var_hey, lav_fit_var_hey, lav_mod_bifactor,
+     lav_fit_bifactor)
 }
 

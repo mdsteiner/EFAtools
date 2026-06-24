@@ -27,9 +27,6 @@ within latent variable systems. In R. Cudeck, S. du Toit, & D. Sörbom (Eds.),
 Structural equation modeling: Present and future—A Festschrift in honor of Karl
 Jöreskog (pp. 195–216). Lincolnwood, IL: Scientific Software International.
 
-Sijtsma, K. (2009). On the use, the misuse, and the very limited usefulness
-of Cronbach’s alpha. Psychometrika, 74, 107–120.
-
 Reise, S. P., Scheines, R., Widaman, K. F., & Haviland, M. G. (2013).
 Multidimensionality and structural coefficient bias in structural equation
 modeling: A bifactor perspective. Educational and Psychological Measurement,
@@ -137,7 +134,7 @@ squared sums of general factor loadings and group factor loadings and
 the sum of uniquenesses (see details).}
 }
 \value{
-If found for an SL or \code{lavaan} second-order of bifactor solution
+If found for an SL or \code{lavaan} second-order or bifactor solution
 without multiple groups:
 A matrix with omegas for the whole scale and for the subscales and (only if
 \code{add_ind = TRUE}) with the H index, ECV, and PUC.
@@ -171,8 +168,8 @@ can be reproduced.
 
 This function calculates McDonald's omegas (McDonald, 1978, 1985, 1999),
 the H index (Hancock & Mueller, 2001), the explained common variance (ECV;
-Sijtsma, 2009), and the percent of uncontaminated correlations (PUC; Bonifay
-et al., 2015; Reise et al., 2013).
+Rodriguez et al., 2016a, 2016b), and the percent of uncontaminated
+correlations (PUC; Bonifay et al., 2015; Reise et al., 2013).
 
 All types of omegas (total, hierarchical, and subscale) are calculated for
 the general factor as well as for the subscales / group factors (see, e.g.,
@@ -189,10 +186,10 @@ The H index (also construct reliability or replicability index) is the
 correlation between an optimally-weighted composite score
 and a factor (Hancock & Mueller, 2001; Rodriguez et al., 2016a, 2016b). It, too,
 can be calculated for the whole scale / general factor as well as for the
-subscales / grouup factors. Low values indicate that a latent variable is not well
+subscales / group factors. Low values indicate that a latent variable is not well
 defined by its indicators.
 
-The ECV (Sijtsma, 2009, Rodriguez et al., 2016a, 2016b) is the ratio of the
+The ECV (Rodriguez et al., 2016a, 2016b) is the ratio of the
 variance explained by the general factor and the variance explained by the
 general factor and the group factors.
 
@@ -216,7 +213,7 @@ factor assumed) or a breadth factor (bifactor model assumed). Please note that
 this function only works for second-order models if they contain no more than
 one second-order factor. In case of a second-order solution, a
 Schmid-Leiman transformation is performed on the first- and second-order loadings
-and omega coefficents are obtained from the transformed (orthogonalized) solution
+and omega coefficients are obtained from the transformed (orthogonalized) solution
 (see \code{\link[=SL]{SL()}} for more information on Schmid-Leiman transformation).
 There is also the possibility to enter a \code{lavaan} single factor solution.
 In this case, \code{g_name} is not needed. Finally, if a solution from a

@@ -511,7 +511,6 @@
     centroid <- .average_matrices(aligned_loadings)
     if (isTRUE(match_target) && k > 1L) {
       centroid <- .align_solution(L = centroid, L_target = target)$loadings
-      dimnames(centroid) <- dimnames(target)
     }
 
     new_target <- (1 - alpha) * target + alpha * centroid

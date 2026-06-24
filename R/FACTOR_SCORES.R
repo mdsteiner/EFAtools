@@ -17,7 +17,10 @@
 #' wishes to get factor scores for a correlation matrix other than Pearson's
 #' (e.g. polychoric). Defaults to `NULL`, in which case
 #' [psych::factor.scores()] uses
-#' `cor(x, use = "pairwise")`.
+#' `cor(x, use = "pairwise")`. If the EFA in `f` was fit on a non-Pearson
+#' correlation, pass that same matrix here so the factor weights stay
+#' consistent with the loadings; otherwise the weights are based on the Pearson
+#' correlation of `x`.
 #' @param method character. The method used to calculate factor scores. One of
 #' "Thurstone" (regression-based; default), "tenBerge", "Anderson", "Bartlett",
 #' "Harman", or "components".
@@ -30,7 +33,11 @@
 #' \item{r.scores}{The correlations of the factor score estimates.}
 #' \item{missing}{A vector of the number of missing observations per subject
 #' (only if raw data are provided.}
-#' \item{R2}{Multiple R2 of the scores with the factors.}
+#' \item{R2}{Factor score validity coefficients as returned by
+#' [psych::factor.scores()]. For orthogonal factors these equal the squared
+#' multiple correlations between the factors and the estimated scores; for
+#' oblique factors they are the more general factor-score adequacy coefficients
+#' and no longer coincide with the squared multiple correlations.}
 #' \item{settings}{A list of the settings used.}
 #'
 #' @export
@@ -65,8 +72,9 @@ FACTOR_SCORES <- function(x, f, Phi = NULL, rho = NULL,
 
   .assert_cor_input(x)
 
-  # Check if it is a correlation matrix
-  if(.is_cormat(x)){
+  # Check if it is a correlation matrix (reused below for the cor_method warning).
+  is_cmat <- .is_cormat(x)
+  if(is_cmat){
 
     cli::cli_inform(
       c("i" = "{.arg x} is a correlation matrix; factor scores cannot be computed. Enter raw data to get factor scores."),
@@ -88,6 +96,21 @@ if(!inherits(f, c("EFA", "matrix", "LOADINGS"))){
 if(inherits(f, c("EFA"))){
 
   Phi <- f$Phi
+
+  # psych::factor.scores derives the score weights from the Pearson correlation of
+  # `x` when `rho` is NULL. If the EFA was fit on a non-Pearson matrix (e.g.
+  # polychoric), those weights are inconsistent with the loadings unless the same
+  # matrix is supplied via `rho`.
+  cor_method <- f$settings$cor_method
+  if (!is.null(cor_method) && !identical(cor_method, "pearson") &&
+      is.null(rho) && !is_cmat) {
+    cli::cli_warn(
+      c("{.arg f} was fit with {.code cor_method = {.val {cor_method}}}, but {.arg rho} is {.code NULL}.",
+        "i" = "The factor weights will be based on the Pearson correlation of {.arg x}, which may be inconsistent with the loadings.",
+        "i" = "Pass the {.val {cor_method}} correlation matrix via {.arg rho} for consistent weights."),
+      class = "efa_scores_cor_method"
+    )
+  }
 
   if(f$settings$rotation != "none"){
     f <- unclass(f$rot_loadings)

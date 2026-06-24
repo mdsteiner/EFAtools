@@ -14,8 +14,8 @@
 #'
 #' - `se = "none"`: no standard errors are pooled.
 #' - `se = "information"`: the per-imputation expected-information standard
-#'   errors are pooled with Rubin's rules (Wald intervals, Barnard-Rubin
-#'   small-sample degrees of freedom).
+#'   errors are pooled with Rubin's rules (Wald intervals, plain Rubin (1987)
+#'   degrees of freedom).
 #' - `se = "sandwich"`: the two-stage pooled-inputs (MI2S) approach fits a
 #'   single model on the Rubin-pooled correlation matrix and asymptotic
 #'   covariance.
@@ -58,7 +58,11 @@
 #' The model chi-square and the indices derived from it (RMSEA, ECVI, and the
 #' descriptive AIC/BIC) are not arithmetic means of the per-imputation values: the
 #' complete-data chi-squares are pooled with the D2 rule and the asymptotic
-#' chi-square approximation to D2 is used downstream. The incremental indices CFI
+#' chi-square approximation to D2 is used downstream. Because D2 deflates the
+#' pooled chi-square by its between-imputation average relative increase in
+#' variance, the pooled RMSEA inherits that shrinkage and can fall below the mean
+#' of the per-imputation RMSEAs (as it does in `lavaan.mi`); read it together with
+#' the per-imputation fit. The incremental indices CFI
 #' (Bentler, 1990) and TLI (Tucker & Lewis, 1973) are reported instead as the
 #' average of the per-imputation indices, which keeps them consistent with the
 #' component fits (CFI stays in \[0, 1\]; TLI, like a single `EFA()` fit, is left
@@ -105,8 +109,12 @@
 #' taken directly from \eqn{SE_d^2}, the between-imputation variance \eqn{B} is
 #' the sample variance of the per-imputation point estimates (after column
 #' alignment), and \eqn{T = Ubar + (1 + 1/m) B}. Wald confidence intervals use
-#' Barnard-Rubin small-sample degrees of freedom with \eqn{\nu_{com} = N - 1}
-#' (Barnard & Rubin 1999). NA propagation is fail-closed: if any imputation
+#' the plain Rubin (1987) degrees of freedom \eqn{\nu = (m - 1)(1 + 1/r)^2} (with
+#' \eqn{r} the relative increase in variance): the analytic loadings are
+#' asymptotically normal, so their complete-data reference is normal
+#' (\eqn{\nu_{com} = \infty}) and the Barnard-Rubin (1999) small-sample adjustment
+#' reduces to this form, matching `lavaan.mi`. NA propagation is fail-closed: if
+#' any imputation
 #' carries NA at an element, all pooled outputs (SE, CI bounds, RIV, FMI, df)
 #' for that element are NA. When a rotation was requested, the rotated loadings,
 #' communalities, and (for oblique rotations) factor correlations and structure
@@ -128,32 +136,31 @@
 #' `efa_pooled_unreliable_vcov`.
 #'
 #' Rotated quantities are pooled in a common multiple-imputation rotational
-#' gauge. For orthogonal rotations the gauge-aligned rotated loading is
-#' \eqn{L_d^{unrot} Q_d}, with \eqn{Q_d} the orthogonal Procrustes rotation
-#' (\eqn{Q = U V'} from the singular value decomposition of
-#' \eqn{(L_d^{unrot})' \tilde\Lambda^{rot}}; Schoenemann 1966) to the
-#' multiple-imputation rotated target, and the unrotated covariance \eqn{V_d} is
-#' propagated through the same fixed-\eqn{Q_d} Kronecker identity used for
-#' `align_unrotated = "procrustes"`. This is the fixed-gauge marginal standard
-#' error of the rotated loading in the common target gauge; it is a different
-#' (and generally smaller) quantity than the criterion-aware delta-method
-#' rotation standard error each component fit returns (Jennrich 1973; Zhang &
-#' Preacher 2015), and it shares its estimand with the bootstrap pool, which
-#' likewise Procrustes-aligns each replicate to the target. Communalities are
-#' rotation-invariant and pool element-wise with no alignment. For oblique
-#' rotations there is no closed-form oblique-Procrustes Jacobian, so the
-#' rotated-loading, factor-correlation, and structure-coefficient standard errors
-#' are pooled by reusing each component fit's own rotated standard errors after a
-#' signed-permutation alignment to the multiple-imputation target. This is a
-#' deliberate approximation -- the per-fit standard error is conditional on that
-#' fit's rotation-criterion optimum rather than on the common gauge -- and is
-#' flagged by `MI$<param>$method = "signed_permutation_approx"`. Researchers who
-#' need rigorous uncertainty quantification for oblique solutions should
-#' cross-check with `se = "np-boot"`, which re-aligns the unrotated replicates to
-#' the target before estimating the within-imputation covariance; the multiple-
-#' imputation rotation literature otherwise summarises oblique uncertainty with
-#' generalised Procrustes centroids rather than per-element standard errors (van
-#' Ginkel & Kroonenberg 2014; Lorenzo-Seva & Van Ginkel 2016).
+#' gauge. A rotated-loading standard error is conditional on the rotation
+#' criterion (Jennrich 1973, 1974; Browne 2001; Zhang & Preacher 2015), so for
+#' orthogonal and oblique rotations alike the within-imputation variance is each
+#' component fit's own criterion-aware delta-method rotated standard error (the
+#' quantity `EFA()` returns), reused after a signed-permutation alignment to the
+#' multiple-imputation target; the between-imputation variance is the sample
+#' variance of the aligned per-imputation rotated loadings. This shares the
+#' estimand of the bootstrap pool, which likewise aligns each replicate to the
+#' target, and is flagged by `MI$<param>$method = "signed_permutation_approx"`. It
+#' is a deliberate approximation: the per-fit standard error is conditional on
+#' that fit's rotation-criterion optimum rather than on the common gauge. A
+#' fixed-rotation linear map of the unrotated covariance is deliberately not used
+#' for rotated-loading standard errors -- an orthogonal rotation preserves each
+#' row's total variance, so it would merely redistribute the rotational
+#' indeterminacy variance the criterion otherwise pins down, inflating the
+#' reported standard errors. The same signed-permutation alignment carries the
+#' factor-correlation and structure-coefficient standard errors for oblique
+#' rotations. Communalities are rotation-invariant and pool element-wise with no
+#' alignment. Researchers who need a fully gauge-consistent uncertainty for
+#' rotated solutions should cross-check with `se = "np-boot"`, which re-aligns the
+#' unrotated replicates to the target before estimating the within-imputation
+#' covariance; the multiple-imputation rotation literature otherwise summarises
+#' rotated uncertainty with generalised Procrustes centroids rather than
+#' per-element standard errors (van Ginkel & Kroonenberg 2014; Lorenzo-Seva & Van
+#' Ginkel 2016).
 #'
 #' When the component `EFA` calls were run with `se = "sandwich"` (robust
 #' standard errors from a polychoric/tetrachoric or continuous-Pearson
@@ -172,7 +179,9 @@
 #' (and, for `method = "DWLS"`, its diagonal as the weights). Because there is
 #' only one fit there is a single rotational gauge, so this route bypasses the
 #' per-imputation Procrustes/target alignment entirely (`target_method` and
-#' `align_unrotated` do not apply and are ignored with a classed message).
+#' `align_unrotated` do not apply; supplying a non-default value raises the classed
+#' warning `efa_pooled_mi2s_alignment_ignored`, while the defaults are ignored
+#' silently).
 #' The fitted object carries native scaled-shifted chi-square test statistics
 #' and sandwich standard errors that already reflect the multiple-imputation
 #' uncertainty; the chi-square is not D2-pooled, and the
@@ -207,7 +216,10 @@
 #' for oblique rotations `"consensus"` is not supported and aborts with a
 #' classed condition (`efa_consensus_oblique_unsupported`), because the
 #' centroid iteration is degenerate for oblique transforms with more than
-#' one factor.
+#' one factor. Anchoring on the first imputation can understate the genuine
+#' between-imputation variability when the imputations disagree substantially;
+#' `"consensus"` (orthogonal rotations) is more robust to an atypical first
+#' imputation (van Ginkel & Kroonenberg 2014).
 #' @param align_unrotated Character. How to align unrotated loadings before
 #' pooling. `"signed_tucker_congruence"` preserves the unrotated axes up
 #' to factor reordering and sign changes using Tucker congruence.
@@ -237,18 +249,22 @@
 #' \item{MI}{Multiple-imputation diagnostics for each pooled parameter family.
 #' On the bootstrap path: `unrot_loadings`, `h2`, `residuals`, optionally
 #' `rot_loadings`, `Phi`, `Structure`, and `fit_indices_descriptive`, plus
-#' integer vectors `bootstrap_rotation_failures` and
-#' `bootstrap_rotation_valid` recording per-imputation alignment outcomes
-#' (df is the Rubin 1987 form). On the analytic path
-#' (`se = "information"`): `unrot_loadings` and `uniquenesses`, plus, when a
-#' rotation was requested, `rot_loadings`, `h2`, and (oblique) `Phi` and
-#' `Structure` (df is the Barnard-Rubin 1999 form with \eqn{\nu_{com} = N - 1}).
-#' Each per-family entry is a list with `RIV` (relative increase in variance),
-#' `FMI` (fraction of missing information), and `df`; the rotated families on
-#' the analytic path additionally carry a `method` string recording the gauge
-#' alignment used (`"procrustes_kronecker"` for orthogonal rotated loadings,
-#' `"gauge_invariant"` for communalities, and `"signed_permutation_approx"` for
-#' oblique rotated loadings, factor correlations, and structure coefficients).}
+#' integer vectors `bootstrap_source_failures` (replicates the component `EFA`
+#' could not fit), `bootstrap_rotation_failures` (replicates whose Procrustes
+#' alignment to the target was invalid), and `bootstrap_rotation_valid` (those
+#' that entered the pool, `B - source - rotation` failures). Both paths use the
+#' plain Rubin (1987) df. On the analytic path (`se = "information"`):
+#' `unrot_loadings` and `uniquenesses`, plus, when a rotation was requested,
+#' `rot_loadings`, `h2`, and (oblique) `Phi` and `Structure`. Each per-family
+#' entry is a list with `RIV` (relative increase in variance), `FMI` (the
+#' fraction of missing information, reported as Rubin's asymptotic
+#' \eqn{\lambda = RIV / (1 + RIV)}, equal to `lavaan.mi`'s `fmi`), and `df`; the
+#' rotated families on the analytic path additionally carry a `method` string
+#' recording the gauge alignment used (`"gauge_invariant"` for communalities and
+#' `"signed_permutation_approx"` for rotated loadings and, for oblique rotations,
+#' factor correlations and structure coefficients). `fit_indices_descriptive`, on
+#' the bootstrap path, pools every per-imputation fit index, so the structural
+#' constants among them (`df`, `df_null`) appear with a standard error of 0.}
 #' \item{mi_fit}{On the `se = "sandwich"` (MI2S) path only: the single [EFA()]
 #' fit on the pooled correlation matrix \eqn{\bar r} and pooled asymptotic
 #' covariance \eqn{\tilde\Gamma}. Its `orig_R` is \eqn{\bar r} and its `Gamma`
@@ -313,6 +329,9 @@
 #' Bentler, P. M. (1990). Comparative fit indexes in structural models.
 #' *Psychological Bulletin*, 107(2), 238-246.
 #'
+#' Browne, M. W. (2001). An overview of analytic rotation in exploratory factor
+#' analysis. *Multivariate Behavioral Research*, 36(1), 111-150.
+#'
 #' Chan, K. W., & Meng, X.-L. (2022). Multiple improvements of multiple
 #' imputation likelihood ratio tests. *Statistica Sinica*, 32, 1489-1514.
 #'
@@ -329,6 +348,10 @@
 #'
 #' Jennrich, R. I. (1973). Standard errors for obliquely rotated factor
 #' loadings. *Psychometrika*, 38(4), 593-604.
+#'
+#' Jennrich, R. I. (1974). Simplified formulae for standard errors in
+#' maximum-likelihood factor analysis. *British Journal of Mathematical and
+#' Statistical Psychology*, 27(1), 122-131.
 #'
 #' Lorenzo-Seva, U., & Van Ginkel, J. R. (2016). Multiple imputation of missing
 #' values in exploratory factor analysis of multidimensional scales. *Anales de
@@ -482,6 +505,11 @@ EFA_POOLED <- function(data_list,
   ## Align rotated loadings and Phi, if a rotation was requested
   ## -------------------------------------------------------------------------
 
+  # A single-factor solution cannot be rotated and has no factor correlations, so
+  # an oblique request on one factor is treated as the no-Phi case throughout,
+  # matching a single-fit EFA() (which returns Phi = NULL for one factor).
+  oblique <- rotation_type == "oblique" && ncol(unrot_loadings_aligned[[1]]) >= 2L
+
   phis <- NULL
   structure_loadings <- NULL
 
@@ -493,9 +521,12 @@ EFA_POOLED <- function(data_list,
       target_rotations <- vector("list", m_imp)
       rot_loadings <- vector("list", m_imp)
       phis <- vector("list", m_imp)
+      # One factor is aligned by sign only; an oblique Procrustes is neither
+      # needed nor well defined for a single column.
+      proc_rotation <- if (oblique) "oblique" else "orthogonal"
 
       rot_loadings[[1]] <- rot_loadings_initial[[1]]
-      if (rotation_type == "oblique") {
+      if (oblique) {
         phis[[1]] <- fits[[1]]$Phi
       }
 
@@ -505,12 +536,12 @@ EFA_POOLED <- function(data_list,
           PROCRUSTES,
           c(list(A = unrot_loadings[[d]],
                  Target = rot_loadings_initial[[1]],
-                 rotation = rotation_type),
+                 rotation = proc_rotation),
             procrustes_args)
         )
         point_rotation_failures[d] <- isFALSE(target_rotations[[d]]$valid)
         rot_loadings[[d]] <- target_rotations[[d]]$loadings
-        if (rotation_type == "oblique") {
+        if (oblique) {
           phis[[d]] <- target_rotations[[d]]$Phi
         }
       }
@@ -559,7 +590,7 @@ EFA_POOLED <- function(data_list,
     mean_rot_loadings <- .average_matrices(rot_loadings)
     rownames(mean_rot_loadings) <- var_names
 
-    if (rotation_type == "oblique") {
+    if (oblique) {
       mean_phis <- .average_matrices(phis)
       # Ensure mean_phis is symmetric (needed, as due to floating point imprecision,
       # the averaged matrix can be asymmetric, leading to issues in downstream checks
@@ -593,9 +624,9 @@ EFA_POOLED <- function(data_list,
 
   pooled_orig_R <- .average_matrices(orig_R_list)
 
-  if (rotation_type == "oblique") {
+  if (oblique) {
     common_R <- mean_rot_loadings %*% mean_phis %*% t(mean_rot_loadings)
-  } else if (rotation_type == "orthogonal") {
+  } else if (rotation_type != "none") {
     common_R <- mean_rot_loadings %*% t(mean_rot_loadings)
   } else {
     common_R <- mean_unrot_loadings %*% t(mean_unrot_loadings)
@@ -624,13 +655,13 @@ EFA_POOLED <- function(data_list,
     Phi = NULL
   )
 
-  if (rotation_type == "oblique") {
+  if (oblique) {
     mean_vars_accounted_rot <- .compute_vars(
       L_unrot = mean_unrot_loadings,
       L_rot = mean_rot_loadings,
       Phi = mean_phis
     )
-  } else if (rotation_type == "orthogonal") {
+  } else if (rotation_type != "none") {
     mean_vars_accounted_rot <- .compute_vars(
       L_unrot = mean_unrot_loadings,
       L_rot = mean_rot_loadings,
@@ -689,7 +720,7 @@ EFA_POOLED <- function(data_list,
   ## SEs and CIs for pooled MI estimates. Two routes: a bootstrap pool that
   ## requires component-level replicate cubes, and an analytic pool that
   ## consumes the per-imputation closed-form SE matrices populated by
-  ## se = "information" via Rubin's rules with Barnard-Rubin small-sample df.
+  ## se = "information" via Rubin's (1987) rules.
   ## -------------------------------------------------------------------------
 
   # The route fixes which pool runs: "information" consumes the per-imputation
@@ -708,17 +739,6 @@ EFA_POOLED <- function(data_list,
     NULL
   }
   if (identical(route, "information")) {
-    # On the orthogonal first_target path the per-imputation orthogonal Procrustes
-    # transform was already computed for the point estimate (alignment$target_rotations);
-    # reuse it for the rotated-SE propagation instead of re-solving the same SVD.
-    rot_transforms <- if (identical(target_method, "first_target") &&
-                          rotation_type == "orthogonal" &&
-                          !is.null(alignment$target_rotations)) {
-      lapply(alignment$target_rotations,
-             function(tr) if (is.null(tr)) NULL else tr$T)
-    } else {
-      NULL
-    }
     # Catch only the analytic pool's own classed aborts (an unreliable/absent
     # unrotated covariance, or missing alignment metadata) and fall back to
     # point-estimate-only pooling; an unexpected error is a real bug and must
@@ -728,19 +748,15 @@ EFA_POOLED <- function(data_list,
         fits = fits,
         unrot_loadings_aligned = unrot_loadings_aligned,
         align_meta = unrot_align_meta,
-        N_pool = N_pool,
         ci = 1 - p,
         align_unrotated = align_unrotated,
         rotation_type = rotation_type,
-        unrot_loadings_raw = unrot_loadings,
-        final_target = final_target,
         rot_loadings = rot_loadings,
         phis = phis,
         structure_loadings = structure_loadings,
         mean_structure_loadings = mean_structure_loadings,
         mean_phis = mean_phis,
-        h2 = h2,
-        rot_transforms = rot_transforms
+        h2 = h2
       ),
       efa_pooled_unreliable_vcov = se_unavailable_handler,
       efa_pooled_no_vcov = se_unavailable_handler,
@@ -842,7 +858,7 @@ EFA_POOLED <- function(data_list,
     results$vars_accounted_rot <- mean_vars_accounted_rot
   }
 
-  if (rotation_type == "oblique") {
+  if (oblique) {
     results$Phi <- mean_phis
     results$Structure <- mean_structure_loadings
   }
@@ -856,7 +872,12 @@ EFA_POOLED <- function(data_list,
     # test-EFA-fields.R; `results$replicates <- NULL` would remove the slot.
     results["replicates"] <- list(boot_pooled$replicates)
     if (!is.null(boot_pooled$SE$residuals)) {
-      results$standardized_residuals <- results$residuals / boot_pooled$SE$residuals
+      # The residual diagonal is fixed at 0 with SE 0, so 0/0 would yield NaN on
+      # the diagonal; the off-diagonal standardised residuals are the meaningful
+      # quantities, so set the diagonal to 0 (matches single-fit EFA()).
+      std_resid <- results$residuals / boot_pooled$SE$residuals
+      diag(std_resid) <- 0
+      results$standardized_residuals <- std_resid
     }
   }
 
@@ -907,13 +928,14 @@ EFA_POOLED <- function(data_list,
 
 .efa_pooled_mi2s_inputs <- function(fits) {
   # Pool the per-imputation correlation matrices and their asymptotic covariances
-  # into a single correlation matrix r_bar and a single ACOV Gamma_tilde via
-  # Rubin's (1987) rules, following the two-stage approach of Chung & Cai (2019)
-  # and Sriutaisuk, Liu, Chung, Kim & Gu (2025, Educ. Psychol. Meas.):
+  # into a single correlation matrix r_bar and a single ACOV Gamma_tilde via the
+  # two-stage pooled-input ACOV of Chung & Cai (2019) and Sriutaisuk, Liu, Chung,
+  # Kim & Gu (2025, Educ. Psychol. Meas.). This is the ACOV-pooling step of MI2S,
+  # distinct from the parameter-pooling Rubin's-rules routes (which carry FMI/df):
   #   r_bar       = (1/m) sum_d R_d                         (element-wise mean)
   #   Gamma_W     = (1/m) sum_d Gamma_d                     (within-imputation ACOV)
   #   Gamma_B     = (1/(m-1)) sum_d (v_d - v_bar)(v_d - v_bar)'   (between, = cov())
-  #   Gamma_tilde = Gamma_W + (1 + 1/m) Gamma_B             (Rubin total ACOV)
+  #   Gamma_tilde = Gamma_W + (1 + 1/m) Gamma_B             (total pooled ACOV)
   # All quantities stay on the per-fit variance scale (Var(rho-hat)) and in the
   # utils::combn(p, 2) off-diagonal order that EFA()'s $Gamma uses, so the pooled
   # ACOV feeds the sandwich core unchanged.
@@ -939,9 +961,11 @@ EFA_POOLED <- function(data_list,
   Gamma_tilde <- Gamma_W + (1 + 1 / m) * Gamma_B
   Gamma_tilde <- (Gamma_tilde + t(Gamma_tilde)) / 2
 
-  # Gamma_tilde is not guaranteed positive semidefinite: Gamma_B is a noisy
-  # (m - 1)-df estimate, so too few imputations can drive it indefinite. That is
-  # the diagnostic signal of insufficient imputations, so abort rather than
+  # Gamma_tilde = Gamma_W + (1 + 1/m) Gamma_B is in exact arithmetic a sum of two
+  # positive-semidefinite matrices (Gamma_W averages PSD per-fit ACOVs; Gamma_B is
+  # a sample covariance), so it cannot become indefinite from a small m alone. A
+  # negative eigenvalue therefore signals floating-point round-off or a degenerate
+  # / corrupted per-fit Gamma rather than imputation noise. Abort rather than
   # silently project to the nearest PD matrix (which would distort the sandwich
   # meat and the test statistic without warning).
   ev <- eigen(Gamma_tilde, symmetric = TRUE, only.values = TRUE)$values
@@ -949,8 +973,8 @@ EFA_POOLED <- function(data_list,
   if (min(ev) < -tol) {
     cli::cli_abort(
       c("The pooled asymptotic covariance is not positive semidefinite.",
-        "x" = "Its smallest eigenvalue is {.val {min(ev)}}; the between-imputation covariance is too noisy at {m} imputation{?s}.",
-        "i" = "Increase the number of imputations (Sriutaisuk et al. 2025 recommend 20 or more, and more at higher rates of missingness)."),
+        "x" = "Its smallest eigenvalue is {.val {min(ev)}}, beyond round-off; a per-imputation asymptotic covariance is likely degenerate or corrupted.",
+        "i" = "Check the per-imputation {.code $Gamma} matrices (e.g. a near-singular polychoric correlation); re-fitting the affected imputations usually resolves it."),
       class = "efa_pooled_mi2s_acov_not_psd"
     )
   }
@@ -1442,32 +1466,19 @@ EFA_POOLED <- function(data_list,
     p_null <- NA_real_
   }
 
-  # CFI (Bentler, 1990) and TLI (Tucker & Lewis, 1973) are incremental indices:
-  # non-linear functions of the model and baseline noncentralities. Pooling them by
-  # separately D2-pooling the model and baseline chi-squares (the lavaan.mi/semTools
-  # convention) shrinks each statistic by its own between-imputation ARIV (Li, Meng,
-  # Raghunathan & Rubin, 1991); the baseline's ARIV is typically far larger than the
-  # model's, so the two noncentralities are deflated unequally and the resulting
-  # CFI/TLI can fall outside [0, 1] and contradict every per-imputation value -- and
-  # a common (N - 1) rescaling does not fix it, the non-linearity being in the cross-
-  # imputation shrinkage, not the within-imputation multiplier. Report instead the
-  # average of the per-imputation indices, each computed in range by the per-model
-  # path (.gof()/.chi_fit_indices()). That is the Rubin (1987) point estimate of the
-  # index -- the same centre the bootstrap route's `fit_indices_descriptive` CI uses
-  # -- it stays in range (CFI in [0, 1]; TLI within the per-imputation range, which
-  # .gof() likewise leaves unclamped), and it reduces to EFA()'s value in the single-
-  # imputation limit (identical imputations have zero between-imputation spread).
+  # The incremental indices CFI and TLI are reported as the average of the
+  # per-imputation indices rather than formed from separately pooled model/baseline
+  # chi-squares; see the rationale in the function documentation (@details). Average
+  # via .efa_pooled_col_means(), the same finite-mean primitive that centres the
+  # bootstrap fit_indices_descriptive CI, so the reported point estimate and that CI
+  # share one definition.
   cfis <- vapply(fit_list, function(x) {
     if (!is.null(x$CFI)) x$CFI else NA_real_
   }, numeric(1))
   tlis <- vapply(fit_list, function(x) {
     if (!is.null(x$TLI)) x$TLI else NA_real_
   }, numeric(1))
-  # Average via .efa_pooled_col_means() -- the mean of each column's finite entries
-  # (NA when a column has none) -- the same finite-mean primitive that centres the
-  # bootstrap fit_indices_descriptive CI (.efa_pooled_rubin_pool()), so the reported
-  # point estimate and that CI share one definition. Columns are positional (it
-  # drops dimnames); column 1 is CFI, column 2 TLI.
+  # Columns are positional (col_means drops dimnames): column 1 is CFI, column 2 TLI.
   inc_means <- .efa_pooled_col_means(cbind(cfis, tlis))
   CFI <- inc_means[[1L]]
   TLI <- inc_means[[2L]]
@@ -1656,6 +1667,11 @@ EFA_POOLED <- function(data_list,
 
 .efa_pooled_make_ci <- function(est, se, df, alpha) {
   # Wald-type confidence intervals using Rubin degrees of freedom when finite.
+  # `est` may be a plug-in estimate (communalities, Structure, symmetrised Phi)
+  # supplied via the callers' `est_override`, in which case the interval is
+  # centred on the plug-in while its half-width (se, df) comes from the pooled
+  # column-mean's between/within variance; the two coincide when the plug-in
+  # equals that column mean and differ only by the (typically small) plug-in gap.
   crit <- ifelse(
     is.finite(df),
     stats::qt(1 - alpha / 2, df = df),
@@ -1743,6 +1759,10 @@ EFA_POOLED <- function(data_list,
   df_old[is.infinite(r)] <- m - 1
   df_old[is.na(r)] <- NA_real_
 
+  # Reported FMI is Rubin's asymptotic lambda = r / (1 + r) (the limiting fraction
+  # of missing information; equals lavaan.mi's `fmi`), not mice's finite-m gamma
+  # = (r + 2/(df_old + 3)) / (r + 1), which adds a small-m correction. The two
+  # agree as m grows; lambda is the conventional EFA/SEM-MI reporting choice.
   fmi <- r / (1 + r)
   fmi[is.infinite(r)] <- 1
   fmi[is.nan(fmi)] <- 0
@@ -1846,7 +1866,7 @@ EFA_POOLED <- function(data_list,
   out
 }
 
-.efa_pooled_analytic_marginal <- function(q_mat, se_mat, m, N_pool, alpha,
+.efa_pooled_analytic_marginal <- function(q_mat, se_mat, m, alpha,
                                           est_override = NULL) {
   # Rubin pool of one parameter family from aligned per-imputation point estimates
   # (rows of `q_mat`) and aligned per-imputation marginal SEs (rows of `se_mat`, so
@@ -1864,7 +1884,12 @@ EFA_POOLED <- function(data_list,
   Qbar[na] <- NA_real_; Ubar[na] <- NA_real_; B[na] <- NA_real_
 
   est <- if (is.null(est_override)) Qbar else est_override
-  .efa_pooled_rubin_core(est, Ubar, B, m, N_pool = N_pool, alpha = alpha)
+  # Plain Rubin (1987) df (N_pool = Inf): analytic information-matrix loadings are
+  # asymptotically normal (Wald-z), so the complete-data reference is normal
+  # (nu_com = Inf) and the Barnard-Rubin small-sample adjustment does not apply -- it
+  # reduces to plain Rubin. This matches lavaan.mi, which reports df -> Inf for
+  # asymptotically-normal SEM parameters.
+  .efa_pooled_rubin_core(est, Ubar, B, m, N_pool = Inf, alpha = alpha)
 }
 
 .efa_pooled_assemble_family <- function(pool, reshape, method = NULL) {
@@ -1883,21 +1908,17 @@ EFA_POOLED <- function(data_list,
 .efa_pooled_analytic_pool <- function(fits,
                                       unrot_loadings_aligned,
                                       align_meta,
-                                      N_pool,
                                       ci = 0.95,
                                       align_unrotated = c("signed_tucker_congruence",
                                                           "none", "procrustes"),
                                       rotation_type = c("none", "orthogonal",
                                                         "oblique"),
-                                      unrot_loadings_raw = NULL,
-                                      final_target = NULL,
                                       rot_loadings = NULL,
                                       phis = NULL,
                                       structure_loadings = NULL,
                                       mean_structure_loadings = NULL,
                                       mean_phis = NULL,
-                                      h2 = NULL,
-                                      rot_transforms = NULL) {
+                                      h2 = NULL) {
   # Rubin's-rules pool of analytic per-imputation marginal SEs for the unrotated
   # loadings and uniquenesses. Serves component fits run with se = "information":
   # each fit carries $SE$unrot_loadings (p x k) and $SE$uniquenesses (length p),
@@ -1962,9 +1983,11 @@ EFA_POOLED <- function(data_list,
     is.null(x$vcov_unrot_loadings) || !anyNA(x$vcov_unrot_loadings)
   }, logical(1L))
   if (!all(vcov_reliable)) {
+    bad <- which(!vcov_reliable)
+    n_bad <- length(bad)
     cli::cli_abort(
       c("Pooled analytic standard errors require a reliable unrotated loading covariance on every imputation.",
-        "i" = "Imputation{?s} {.val {which(!vcov_reliable)}} carr{?ies/y} an NA-filled {.code $vcov_unrot_loadings} (Heywood case or singular information). Drop or re-fit those imputations."),
+        "i" = "{cli::qty(n_bad)}Imputation{?s} {.val {bad}} {cli::qty(n_bad)}carr{?ies/y} an NA-filled {.code $vcov_unrot_loadings} (Heywood case or singular information). Drop or re-fit {cli::qty(n_bad)}{?it/them}."),
       class = "efa_pooled_unreliable_vcov"
     )
   }
@@ -1976,9 +1999,11 @@ EFA_POOLED <- function(data_list,
       !is.null(x$vcov_unrot_loadings)
     }, logical(1L))
     if (!all(has_vcov)) {
+      bad <- which(!has_vcov)
+      n_bad <- length(bad)
       cli::cli_abort(
         c("{.code align_unrotated = \"procrustes\"} with {.code se = \"information\"} requires the full unrotated loading covariance on every imputation.",
-          "i" = "Imputation{?s} {.val {which(!has_vcov)}} {?is/are} missing {.code $vcov_unrot_loadings}; re-fit those imputations or use {.code align_unrotated = \"signed_tucker_congruence\"}."),
+          "i" = "{cli::qty(n_bad)}Imputation{?s} {.val {bad}} {cli::qty(n_bad)}{?is/are} missing {.code $vcov_unrot_loadings}; re-fit those imputations or use {.code align_unrotated = \"signed_tucker_congruence\"}."),
         class = "efa_pooled_no_vcov"
       )
     }
@@ -2036,8 +2061,8 @@ EFA_POOLED <- function(data_list,
   # Fail-closed NA mask and Rubin pooling are shared with the rotated families
   # below via .efa_pooled_analytic_marginal().
   alpha <- 1 - ci
-  pool_L   <- .efa_pooled_analytic_marginal(Q_mat, SE_mat,     m, N_pool, alpha)
-  pool_psi <- .efa_pooled_analytic_marginal(Q_psi, SE_psi_mat, m, N_pool, alpha)
+  pool_L   <- .efa_pooled_analytic_marginal(Q_mat, SE_mat,     m, alpha)
+  pool_psi <- .efa_pooled_analytic_marginal(Q_psi, SE_psi_mat, m, alpha)
 
   reshape_loading <- function(v) {
     M <- matrix(v, p_vars, k_fac)
@@ -2059,27 +2084,23 @@ EFA_POOLED <- function(data_list,
 
   ## Rotated quantities -------------------------------------------------------
   ## Pool the rotated loadings, communalities, and (oblique) factor correlations
-  ## and structure coefficients, each in a common MI rotational gauge.
-  ##  - Orthogonal: the MI-aligned rotated loading is L_d^unrot Q_d, with Q_d the
-  ##    orthogonal Procrustes rotation (Q = U V' from the SVD of (L_d^unrot)' L̃^rot;
-  ##    Schoenemann 1966) to the MI rotated target. The full unrotated covariance
-  ##    V_d is propagated through the exact column-major Kronecker identity by
-  ##    .efa_pooled_propagate_procrustes_vcov() (the same Kronecker-propagation
-  ##    helper used by align_unrotated = "procrustes"), with Q_d fixed. This is the
-  ##    fixed-gauge marginal SE -- a different (and generally smaller) estimand
-  ##    than the per-fit criterion-aware delta-method rotated SE -- and matches the
-  ##    estimand of the np-boot pool, which also Procrustes-aligns to the MI target.
-  ##  - Oblique: no closed-form oblique-Procrustes Jacobian is available, so the
-  ##    per-imputation rotated SEs are reused as the within-imputation variance
-  ##    after a signed-permutation alignment to the MI target -- a documented
-  ##    approximation, flagged in MI$<param>$method = "signed_permutation_approx".
-  ## Communalities are rotation-invariant and pool without any alignment.
+  ## and structure coefficients, each in a common MI rotational gauge. A
+  ## rotated-loading standard error is conditional on the rotation criterion
+  ## (Jennrich 1973, 1974; Browne 2001; Zhang & Preacher 2015), so for orthogonal
+  ## and oblique rotations alike the within-imputation variance is each fit's own
+  ## criterion-aware delta-method rotated SE (the quantity EFA() returns), reused
+  ## after a signed-permutation alignment to the MI target. The between-imputation
+  ## spread of the aligned point estimates supplies B, so the pooled SE shares the
+  ## estimand of the np-boot pool, which likewise aligns each replicate to the
+  ## target. This is a deliberate approximation -- the per-fit SE is conditional on
+  ## that fit's rotation optimum rather than the common gauge -- and is flagged in
+  ## MI$<param>$method = "signed_permutation_approx". Communalities are
+  ## rotation-invariant and pool without any alignment.
   if (rotation_type != "none") {
     # Phi and Structure exist only for a genuine oblique rotation (a single-factor
     # solution carries no factor correlations); gate on k_fac so the oblique branch
     # never dereferences the NULL Phi/Structure slots of a one-factor fit.
     oblique <- rotation_type == "oblique" && k_fac >= 2L
-    final_target_m <- as.matrix(final_target)
 
     q_rot  <- matrix(NA_real_, m, p_vars * k_fac)
     se_rot <- matrix(NA_real_, m, p_vars * k_fac)
@@ -2100,23 +2121,24 @@ EFA_POOLED <- function(data_list,
       q_h2[d, ]  <- .efa_pooled_communalities(Lr_d, Phi_d)
       se_h2[d, ] <- as.numeric(fits[[d]]$SE$communalities)
 
+      # Within-imputation variance for the rotated loadings = this fit's
+      # criterion-aware delta-method rotated SE, reused after a signed-permutation
+      # alignment to THIS imputation's pooled rotated loading Lr_d. Aligning to
+      # Lr_d (rather than the global target) keeps the SE column order matched to
+      # the order q_rot/q_phi/q_str use; aligning to the global target can pick a
+      # different order when factors are weakly separated, pairing a cell's pooled
+      # estimate with another factor's within-imputation variance. Only the column
+      # order is used (SE magnitudes are sign-invariant).
+      fo <- .align_solution(
+        L_target = Lr_d,
+        L        = as.matrix(fits[[d]]$rot_loadings)
+      )$factor_order
+      se_rot[d, ] <- .efa_pooled_vec(
+        as.matrix(fits[[d]]$SE$rot_loadings)[, fo, drop = FALSE]
+      )
+
       if (oblique) {
-        # Signed-permutation alignment of the per-imputation rotated SEs to the
-        # gauge of THIS imputation's pooled point estimate (Lr_d, the oblique-
-        # Procrustes solution already aligned to the MI target) rather than to the
-        # global target directly. Aligning the per-fit criterion solution to Lr_d
-        # keeps the SE column order consistent with the column order q_rot/q_phi/
-        # q_str use; aligning to the global target can pick a different order when
-        # factors are weakly separated, pairing a cell's pooled estimate with
-        # another factor's within-imputation variance. Only the column order is
-        # needed (SE magnitudes are sign-invariant).
-        fo <- .align_solution(
-          L_target = Lr_d,
-          L        = as.matrix(fits[[d]]$rot_loadings)
-        )$factor_order
-        se_rot[d, ] <- .efa_pooled_vec(
-          as.matrix(fits[[d]]$SE$rot_loadings)[, fo, drop = FALSE]
-        )
+        # Apply the same column alignment to the per-fit Phi and Structure SEs.
         se_phi[d, ] <- .efa_pooled_vech(
           as.matrix(fits[[d]]$SE$Phi)[fo, fo, drop = FALSE]
         )
@@ -2125,29 +2147,6 @@ EFA_POOLED <- function(data_list,
           as.matrix(fits[[d]]$SE$Structure)[, fo, drop = FALSE]
         )
         q_str[d, ]  <- .efa_pooled_vec(as.matrix(structure_loadings[[d]]))
-      } else {
-        # Orthogonal: propagate the full unrotated covariance through the fixed
-        # Procrustes Q_d. Fail-closed if the covariance is absent (an NA-filled
-        # covariance NA-propagates per row inside the helper).
-        V_d <- fits[[d]]$vcov_unrot_loadings
-        if (is.null(V_d)) {
-          se_rot[d, ] <- NA_real_
-        } else {
-          # Reuse the orthogonal Procrustes transform already computed for the
-          # point estimate when the caller supplied it (target_method =
-          # "first_target"); it is identical to recomputing it here. Fall back to
-          # recomputing for imputations/targets without a stored transform.
-          Q_d <- if (!is.null(rot_transforms) && !is.null(rot_transforms[[d]])) {
-            rot_transforms[[d]]
-          } else {
-            .procrustes_orthogonal_T(
-              as.matrix(unrot_loadings_raw[[d]]), final_target_m
-            )
-          }
-          se_rot[d, ] <- .efa_pooled_vec(
-            .efa_pooled_propagate_procrustes_vcov(V_d, Q_d, p_vars, k_fac)
-          )
-        }
       }
     }
 
@@ -2175,15 +2174,15 @@ EFA_POOLED <- function(data_list,
       )
     }
 
-    pool_rot <- .efa_pooled_analytic_marginal(q_rot, se_rot, m, N_pool, alpha)
-    pool_h2  <- .efa_pooled_analytic_marginal(q_h2, se_h2, m, N_pool, alpha,
+    pool_rot <- .efa_pooled_analytic_marginal(q_rot, se_rot, m, alpha)
+    pool_h2  <- .efa_pooled_analytic_marginal(q_h2, se_h2, m, alpha,
                                               est_override = as.numeric(h2))
 
     # Rotated loadings and structure are p x k like the unrotated loadings, so they
     # share the same factor-column labels (reshape_loading carries loading_dn).
     rot_asm <- .efa_pooled_assemble_family(
       pool_rot, reshape_loading,
-      method = if (oblique) "signed_permutation_approx" else "procrustes_kronecker"
+      method = "signed_permutation_approx"
     )
     SE$rot_loadings <- rot_asm$SE; CI$rot_loadings <- rot_asm$CI
     MI$rot_loadings <- rot_asm$MI
@@ -2205,7 +2204,7 @@ EFA_POOLED <- function(data_list,
       # center on the unsymmetrised column mean of vech(Phi), which can differ from
       # the reported (symmetrised) estimate.
       pool_phi <- .efa_pooled_analytic_marginal(
-        q_phi, se_phi, m, N_pool, alpha,
+        q_phi, se_phi, m, alpha,
         est_override = .efa_pooled_vech(mean_phis)
       )
       phi_asm <- .efa_pooled_assemble_family(pool_phi, unvech_phi,
@@ -2220,7 +2219,7 @@ EFA_POOLED <- function(data_list,
       SE$Phi <- phi_asm$SE; CI$Phi <- phi_asm$CI; MI$Phi <- phi_asm$MI
 
       pool_str <- .efa_pooled_analytic_marginal(
-        q_str, se_str, m, N_pool, alpha,
+        q_str, se_str, m, alpha,
         est_override = .efa_pooled_vec(mean_structure_loadings)
       )
       str_asm <- .efa_pooled_assemble_family(pool_str, reshape_loading,
@@ -2362,6 +2361,12 @@ EFA_POOLED <- function(data_list,
   k <- ncol(mean_unrot_target)
   loading_dimnames <- dimnames(mean_unrot_target)
 
+  # A single factor cannot be rotated and has no factor correlations, so an
+  # oblique request on one factor degenerates to the no-Phi case (matching a
+  # single-fit EFA()); align such a solution by sign only.
+  oblique <- rotation_type == "oblique" && k >= 2L
+  boot_proc_rotation <- if (oblique) "oblique" else "orthogonal"
+
   B_vec <- vapply(fits, function(x) dim(x$replicates$unrot_loadings)[3], integer(1))
   if (length(unique(B_vec)) > 1L) {
     B_use <- min(B_vec)
@@ -2392,7 +2397,7 @@ EFA_POOLED <- function(data_list,
     q_rot <- lapply(rot_loadings, .efa_pooled_vec)
     boot_rot <- vector("list", m)
   }
-  if (rotation_type == "oblique") {
+  if (oblique) {
     q_phi <- lapply(phis, .efa_pooled_vech)
     boot_phi <- vector("list", m)
     q_structure <- lapply(structure_loadings, .efa_pooled_vec)
@@ -2411,7 +2416,7 @@ EFA_POOLED <- function(data_list,
     if (rotation_type != "none") {
       boot_rot[[d]] <- matrix(NA_real_, nrow = B_use, ncol = p_vars * k)
     }
-    if (rotation_type == "oblique") {
+    if (oblique) {
       boot_phi[[d]] <- matrix(NA_real_, nrow = B_use, ncol = k * (k + 1) / 2)
       boot_structure[[d]] <- matrix(NA_real_, nrow = B_use, ncol = p_vars * k)
     }
@@ -2419,12 +2424,12 @@ EFA_POOLED <- function(data_list,
     boot_h2[[d]] <- matrix(NA_real_, nrow = B_use, ncol = p_vars)
     boot_residuals[[d]] <- matrix(NA_real_, nrow = B_use, ncol = p_vars * p_vars)
 
-    if (rotation_type == "oblique") {
+    if (oblique) {
       q_h2[[d]] <- .efa_pooled_communalities(rot_loadings[[d]], phis[[d]])
       q_residuals[[d]] <- .efa_pooled_vec(.efa_pooled_residual_from_solution(
         orig_R_list[[d]], rot_loadings[[d]], phis[[d]]
       ))
-    } else if (rotation_type == "orthogonal") {
+    } else if (rotation_type != "none") {
       q_h2[[d]] <- .efa_pooled_communalities(rot_loadings[[d]], NULL)
       q_residuals[[d]] <- .efa_pooled_vec(.efa_pooled_residual_from_solution(
         orig_R_list[[d]], rot_loadings[[d]], NULL
@@ -2462,14 +2467,14 @@ EFA_POOLED <- function(data_list,
         rot_b <- .efa_pooled_align_rot_boot(
           L_boot_unrot = Lb_unrot0,
           final_target = final_target_m,
-          rotation_type = rotation_type,
+          rotation_type = boot_proc_rotation,
           procrustes_args = procrustes_args
         )
 
         if (!is.null(rot_b)) {
           boot_rot[[d]][b, ] <- .efa_pooled_vec(rot_b$Lambda)
 
-          if (rotation_type == "oblique") {
+          if (oblique) {
             boot_phi[[d]][b, ] <- .efa_pooled_vech(rot_b$Phi)
             boot_structure[[d]][b, ] <- .efa_pooled_vec(rot_b$Lambda %*% rot_b$Phi)
             boot_h2[[d]][b, ] <- .efa_pooled_communalities(rot_b$Lambda, rot_b$Phi)
@@ -2545,8 +2550,14 @@ EFA_POOLED <- function(data_list,
     unrot_loadings = list(RIV = pool_unrot$RIV, FMI = pool_unrot$FMI, df = pool_unrot$df),
     h2 = list(RIV = pool_h2$RIV, FMI = pool_h2$FMI, df = pool_h2$df),
     residuals = list(RIV = pool_residuals$RIV, FMI = pool_residuals$FMI, df = pool_residuals$df),
+    # Per-imputation alignment outcomes. `boot_failures` are replicates the
+    # component EFA could not fit (NA-filled, dropped before rotation);
+    # `bootstrap_rotation_failures` are replicates whose Procrustes alignment to
+    # the MI target did not produce a valid rotation. The valid count subtracts
+    # both, so it never overstates the replicates that actually entered the pool.
+    bootstrap_source_failures = boot_failures,
     bootstrap_rotation_failures = nonconv_procrustes,
-    bootstrap_rotation_valid = B_use - nonconv_procrustes
+    bootstrap_rotation_valid = B_use - boot_failures - nonconv_procrustes
   )
 
   if (rotation_type != "none") {
@@ -2558,7 +2569,7 @@ EFA_POOLED <- function(data_list,
     MI$rot_loadings <- list(RIV = pool_rot$RIV, FMI = pool_rot$FMI, df = pool_rot$df)
   }
 
-  if (rotation_type == "oblique") {
+  if (oblique) {
     pool_phi <- .efa_pooled_rubin_pool(q_phi, boot_phi, alpha = alpha)
     phi_res <- .efa_pooled_rubin_symmetric_result(
       pool_phi, k, dimnames(as.matrix(phis[[1]]))

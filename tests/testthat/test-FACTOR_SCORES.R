@@ -73,5 +73,24 @@ test_that("warnings and errors are thrown correctly", {
 })
 
 
+test_that("a non-Pearson EFA with rho = NULL on raw data warns", {
+  skip_on_cran()
+
+  # psych::factor.scores derives the weights from the Pearson correlation of the
+  # raw data when rho is NULL, which is inconsistent with loadings fit on a
+  # non-Pearson correlation; warn unless the matching matrix is supplied via rho.
+  efa_sp <- suppressMessages(EFA(GRiPS_raw, n_factors = 1, type = "EFAtools",
+                                 method = "PAF", cor_method = "spearman"))
+  expect_warning(FACTOR_SCORES(GRiPS_raw, f = efa_sp, method = "Bartlett"),
+                 class = "efa_scores_cor_method")
+
+  # Supplying the matching correlation via rho silences the warning.
+  rho_sp <- stats::cor(GRiPS_raw, method = "spearman")
+  expect_no_warning(FACTOR_SCORES(GRiPS_raw, f = efa_sp, rho = rho_sp,
+                                  method = "Bartlett"),
+                    class = "efa_scores_cor_method")
+})
+
+
 rm(EFA_raw, fac_scores_raw, EFA_cor, fac_scores_cor, EFA_unrot, fac_scores_unrot,
    fac_scores_man)
