@@ -8,9 +8,11 @@
 # its criterion from the N_FACTORS() control list `ctl`; `x` is the raw data
 # when `needs_raw`, the prepared correlation matrix otherwise. Criteria that
 # forward additional arguments to EFA() receive them via `ctl$dots`. `poly_ok =
-# FALSE` marks the criteria that compare the data against continuous reference
-# data, so polychoric/tetrachoric correlations are not supported (they are
-# skipped with an informative note by N_FACTORS()).
+# FALSE` marks the criteria that do not support polychoric/tetrachoric
+# correlations -- either because they compare the data against continuous
+# reference data (CD, PARALLEL, NEST, HULL) or because their normal-theory
+# chi-square test is not valid for such correlations (SMT); these are skipped
+# with an informative note by N_FACTORS().
 .retention_registry <- list(
   CD = list(
     label = "Comparison data", needs_raw = TRUE, poly_ok = FALSE,
@@ -77,7 +79,7 @@
                        ctl$dots))
     }),
   SMT = list(
-    label = "Sequential model tests", needs_raw = FALSE,
+    label = "Sequential model tests", needs_raw = FALSE, poly_ok = FALSE,
     fun = function(x, ctl) {
       SMT(x, N = ctl$N, use = ctl$use, cor_method = ctl$cor_method)
     })
@@ -342,10 +344,14 @@ plot.efa_retention <- function(x, ...) {
     return(invisible(NULL))
   }
 
-  variant_levels <- vapply(results, function(r) r$label, character(1))
+  # The RMSEA record carries 1 - RMSEA on the y-axis (see the HULL details), so its
+  # facet is labelled accordingly; the record/bullet label stays "RMSEA".
+  hull_facet <- function(label) ifelse(label == "RMSEA", "1 - RMSEA", label)
+
+  variant_levels <- hull_facet(vapply(results, function(r) r$label, character(1)))
 
   dat <- do.call(rbind, lapply(results, function(r) {
-    data.frame(variant = r$label, df = r$x, fit = r$y,
+    data.frame(variant = hull_facet(r$label), df = r$x, fit = r$y,
                nfac = r$point_labels, on_hull = r$on_hull,
                stringsAsFactors = FALSE)
   }))
@@ -354,7 +360,7 @@ plot.efa_retention <- function(x, ...) {
   retained <- do.call(rbind, lapply(results, function(r) {
     idx <- which(r$point_labels == r$highlight)
     if (length(idx) == 0) return(NULL)
-    data.frame(variant = r$label, df = r$x[idx], fit = r$y[idx],
+    data.frame(variant = hull_facet(r$label), df = r$x[idx], fit = r$y[idx],
                stringsAsFactors = FALSE)
   }))
 

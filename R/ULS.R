@@ -10,7 +10,7 @@
 
   L <- uls$loadings
   orig_R <- R
-  h2 <- diag(L %*% t(L))
+  h2 <- rowSums(L^2)
   diag(R) <- h2
 
   # raw fit, finalized by .estimate_model(). `Fm` is the ULS objective (sum of squared

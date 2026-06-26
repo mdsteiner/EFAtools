@@ -126,6 +126,10 @@ an orthogonal rotation ("varimax", "equamax", "quartimax", "geominT",
 
 \item{se}{character. Whether and how standard errors should be computed. One of
 "none" (default, no standard errors), "information", "sandwich", or "np-boot".
+Availability in brief: "information" requires \code{method = "ML"}; "sandwich" requires
+raw data (ordinal \code{cor_method = "poly"}/\code{"tetra"} with "ML"/"ULS"/"DWLS", or
+continuous \code{cor_method = "pearson"} with "ML"/"ULS"); "np-boot" requires raw data;
+and the analytic methods are unavailable with the "promax" and "simplimax" rotations.
 "np-boot" draws a non-parametric bootstrap and needs raw data. "information"
 returns analytic standard errors from the expected (Fisher) information matrix of the
 maximum-likelihood solution: for the unrotated loadings and uniquenesses, and -- when a
@@ -133,15 +137,17 @@ rotation is applied -- for the rotated loadings, the factor correlations, the st
 coefficients, and the communalities. The rotated standard errors are obtained by propagating
 the unrotated-loading covariance through the rotation by the delta method (Jennrich, 1973);
 because rotated quantities are identification-invariant they are directly comparable across
-programs. It therefore requires \code{method = "ML"} and is not available with the \code{"promax"} or
-\code{"simplimax"} rotations, which have no usable analytic rotation Jacobian. Unlike the bootstrap
-it also works from a correlation matrix as long as \code{N} is supplied. The information-matrix
+programs (the \code{"promax"} and \code{"simplimax"} rotations are excluded, having no usable analytic
+rotation Jacobian). Unlike the bootstrap it also works from a correlation matrix as long as
+\code{N} is supplied. The information-matrix
 covariance is the inverse expected information under the identification constraint that
 \eqn{\Lambda' \Psi^{-1} \Lambda} is diagonal, scaled by \eqn{1 / (N - 1)}; the associated
 confidence intervals are Wald intervals (estimate \eqn{\pm} z * SE). These analytic standard
 errors assume multivariate normality and a correctly specified model; under heavy-tailed data
 or model misfit they can understate the sampling variability, where a bootstrap
-(\code{se = "np-boot"}) is more robust. "sandwich" returns robust (Godambe sandwich) standard
+(\code{se = "np-boot"}) is more robust. The rotated structure-coefficient intervals are, conversely,
+somewhat conservative for high-communality variables; \code{"sandwich"} or \code{"np-boot"} give sharper
+structure intervals there. "sandwich" returns robust (Godambe sandwich) standard
 errors from raw data, combining the estimator weight with an asymptotic-distribution-free
 covariance of the correlations, so it stays valid under non-normality and weight
 misspecification (Browne, 1984; Satorra & Bentler, 1994). It is available either for ordinal
@@ -285,9 +291,9 @@ with the final communality estimates as diagonal.}
 DWLS, the number of objective-function evaluations used by the optimiser (not the
 number of optimiser iterations).}
 \item{convergence}{Integer convergence code (0 = converged). For ML, ULS, and
-DWLS this is the code returned by the optimiser
-(\code{\link[stats:optim]{stats::optim()}}); for PAF it is 1 if the maximum number of
-iterations was reached without meeting the convergence criterion and 0
+DWLS this is the convergence code from the bounded optimiser (the same codes as
+\code{\link[stats:optim]{stats::optim()}}'s "L-BFGS-B"); for PAF it is 1 if the maximum
+number of iterations was reached without meeting the convergence criterion and 0
 otherwise. A non-zero code is also reported with a warning.}
 \item{heywood}{A named integer vector indicating which variables have a
 Heywood (improper) case in the unrotated solution; empty if there are none.}
@@ -303,15 +309,23 @@ Expected Cross-Validation Index (ECVI; Browne & Cudeck, 1989), Root Mean Squared
 Residual (RMSR), Standardized Root Mean Squared Residual (SRMR; Bentler, 1995),
 and the common part accounted for (CAF) index as proposed by Lorenzo-Seva,
 Timmerman, & Kiers (2011). The model Chi Square is the Bartlett-corrected
-discrepancy (matching \code{\link[stats:factanal]{stats::factanal()}} for ML), and the RMSEA, AIC, BIC, and
-ECVI are derived from it. AIC and BIC are the minimum-fit-function (Chi-Square-based)
+discrepancy (matching \code{\link[stats:factanal]{stats::factanal()}} for ML), and the AIC, BIC, and ECVI are
+derived from it. AIC and BIC are the minimum-fit-function (Chi-Square-based)
 forms \verb{Chi Square - 2 * df} and \verb{Chi Square - log(N) * df} (as in \code{\link[psych:fa]{psych::fa()}}),
-not the likelihood-based criteria, and can therefore be negative. CFI and TLI instead
-place the model and baseline noncentralities on a common \code{N - 1} scale (Bentler, 1990;
-Tucker & Lewis, 1973), so the factor count does not bias the incremental fit. For PAF
+not the likelihood-based criteria, and can therefore be negative. The RMSEA, CFI, and
+TLI instead place the model (and, for CFI and TLI, the baseline) noncentrality on the
+uncorrected \code{N - 1} discrepancy scale (Browne & Cudeck, 1992; Bentler, 1990; Tucker &
+Lewis, 1973) on which these approximation indices are defined, so the Bartlett
+small-sample correction enters only the Chi Square test, not the approximate-fit
+indices. For PAF
 and DWLS, only CAF, RMSR, SRMR, and df are computed and the Chi-Square-derived indices
 are returned as \code{NA}; for DWLS with \code{se = "sandwich"} the full block is instead filled
-from a scaled Chi Square (see Details). Note that Lorenzo-Seva, Timmerman, & Kiers (2011)
+from a scaled Chi Square (see Details). With \code{se = "sandwich"} the \code{fit_indices} also
+carry the scaled-statistic components: \code{chi_scaling} (the multiplier a in the
+scaled-and-shifted statistic a * T + b, i.e. the reciprocal of \pkg{lavaan}'s
+\code{chisq.scaling.factor}), \code{chi_shift} (b), \code{chi_unscaled} (the unscaled statistic T),
+and the alternative \code{chi_mean_adjusted} and \code{chi_mean_var} statistics with their
+\code{df_mean_var}. Note that Lorenzo-Seva, Timmerman, & Kiers (2011)
 introduce the CAF as ranging between 0 and 1, with values close to 1 indicating close fit.
 This does not match the formula they give for it, \code{1 - KMO(residuals)}, which only works if the
 diagonal of the residual matrix is set to 1s and then approximates 0.5 with close fit.}
@@ -339,8 +353,8 @@ intercorrelations.}
 \item{Gamma}{The asymptotic covariance of the off-diagonal sample correlations -- the meat of the robust sandwich SEs -- on the variance scale (\code{Var(rho-hat)}; lavaan's correlation NACOV is \code{N * Gamma}). A \code{p (p - 1) / 2} by \code{p (p - 1) / 2} numeric matrix; rows and columns ordered by \code{\link[utils:combn]{utils::combn()}} over the column pairs and labelled \code{"<var_i>-<var_j>"}. Populated only for \code{se = "sandwich"}; \code{NULL} otherwise.}
 }
 \description{
-This function does an EFA with either \code{PAF}, \code{ML},
-or \code{ULS} with or without subsequent rotation.
+This function does an EFA with either \code{PAF}, \code{ML}, \code{ULS},
+or \code{DWLS} with or without subsequent rotation.
 All arguments with default value \code{NA} can be left to default if \code{type}
 is set to one of "EFAtools", "SPSS", or "psych". The respective specifications are
 then handled according to the specified type (see details). All rotations are
@@ -451,7 +465,11 @@ Bentler, 1994; Asparouhov & Muthén, 2010) chi-square and the CFI, TLI, and RMSE
 derived from it are reported (AIC and BIC remain \code{NA}). That scaled statistic is a
 two-stage correction applied to the polychoric-correlation residuals (Browne, 1984),
 so it is not identical to the full WLSMV test of \pkg{lavaan} or Mplus, which also
-projects the thresholds.
+projects the thresholds. The polychoric asymptotic covariance underlying both the DWLS
+weights and the scaled (sandwich) statistic relies on large-sample theory that degrades for
+empty or near-empty response-category combinations; with very sparse cells the resulting
+weights and standard errors can be unreliable (a warning is issued when empty cells are
+present), so interpret them with caution and consider collapsing rare categories.
 
 When \code{se = "np-boot"}, the bootstrap replicate fits are run in parallel across
 replicates with the \code{future} framework. By default they run sequentially; to run

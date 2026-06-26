@@ -13,7 +13,8 @@
      all(x >= (-1 + .Machine$double.eps * 100), na.rm = TRUE) &&
      all(x <= (1 + .Machine$double.eps * 100), na.rm = TRUE)){
 
-    if (round(sum(diag(x), na.rm = TRUE)) == nrow(x) && isSymmetric(unclass(unname(x)))) {
+    if (all(abs(diag(x) - 1) <= .Machine$double.eps * 100, na.rm = TRUE) &&
+        isSymmetric(unclass(unname(x)))) {
 
       if (any(is.na(x))) {
 
@@ -192,6 +193,16 @@
       cli::cli_abort(N_required_msg, class = "efa_n_required", call = error_call)
     }
 
+    # A correlation matrix carries no raw data, so an asymptotic covariance cannot be estimated
+    # from it; report that the request is ignored rather than silently returning no weights.
+    if (acov != "none") {
+      cli::cli_warn(
+        c("An asymptotic covariance was requested but {.arg x} is already a correlation matrix.",
+          "i" = "{.arg acov} needs raw data and is ignored here."),
+        class = "efa_acov_ignored"
+      )
+    }
+
   } else {
 
     if (inform_from_data) {
@@ -207,6 +218,20 @@
           "i" = "Taking {.arg N} from the data."),
         class = "efa_n_from_data"
       )
+    }
+
+    # The asymptotic covariance is available from continuous (Pearson) data only as the full ADF
+    # meat: a diagonal (DWLS-weight) covariance and any rank-correlation covariance are ordinal
+    # constructs supplied on the polychoric path, not here. Reject the unsupported combinations
+    # before reporting any listwise deletion below, so an override is not announced for a
+    # computation that is then refused. EFA() gates these earlier; the guard keeps the helper's
+    # contract local for any other caller.
+    if (!.is_poly_cor(cor_method) && acov != "none" &&
+        !(acov == "full" && cor_method == "pearson")) {
+      cli::cli_abort(
+        c("That asymptotic covariance is not available for {.code cor_method = {.val {cor_method}}}.",
+          "x" = "Only {.code acov = \"full\"} with {.code cor_method = \"pearson\"} is supported for continuous data; {.code acov = \"diag\"} (DWLS weights) needs {.code cor_method = \"poly\"} or {.code \"tetra\"}."),
+        class = "efa_acov_unsupported", call = error_call)
     }
 
     # An asymptotic covariance (the DWLS weights or the sandwich meat) must describe a single
@@ -252,7 +277,7 @@
             class = "efa_cor_na", call = error_call)
         }
       }
-      poly <- .polychoric(x, n_threads = 1L, nearest_pd = FALSE,
+      poly <- .polychoric(x, nearest_pd = FALSE,
                           binary_only = cor_method == "tetra",
                           acov = acov, error_call = error_call)
       R <- poly$R
@@ -274,17 +299,6 @@
       }
 
     } else {
-
-      # The fourth-moment ADF covariance (.adf_gamma) is defined for Pearson correlations; a full
-      # covariance for a rank correlation (spearman/kendall) would pair a rank R with a Pearson-
-      # moment covariance, so reject that here rather than return a mismatched meat. EFA() already
-      # gates this upstream; the guard keeps the helper's contract local for any other caller.
-      if (acov == "full" && cor_method != "pearson") {
-        cli::cli_abort(
-          c("A full asymptotic-distribution-free covariance is only available for {.code cor_method = \"pearson\"}.",
-            "x" = "You requested {.code cor_method = {.val {cor_method}}} with {.code acov = \"full\"}."),
-          class = "efa_acov_unsupported", call = error_call)
-      }
 
       # A full ADF asymptotic covariance (the continuous sandwich meat) must describe the same
       # cases the correlation matrix was computed from -- a sandwich covariance is only valid for

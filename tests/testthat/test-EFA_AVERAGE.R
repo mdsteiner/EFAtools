@@ -632,6 +632,12 @@ test_that("averaged fit indices match the per-model grid means", {
   grid <- efa_def$implementations_grid
   expect_equal(fi$average[fi$index == "caf"], mean(grid$caf, na.rm = TRUE))
   expect_equal(fi$average[fi$index == "srmr"], mean(grid$srmr, na.rm = TRUE))
+
+  # df is constant across the averaged solutions, so its dispersion is zero: the
+  # sd and range cells of the df row are 0 (average/min/max hold df itself).
+  expect_equal(fi$sd[fi$index == "df"], 0)
+  expect_equal(fi$range[fi$index == "df"], 0)
+  expect_equal(fi$average[fi$index == "df"], fi$min[fi$index == "df"])
 })
 
 if (is_slow_test()) {

@@ -140,19 +140,19 @@ test_that(".gof works", {
                c("chi", "df", "p_chi", "CAF", "RMSR", "SRMR", "CFI", "TLI",
                  "RMSEA", "RMSEA_LB", "RMSEA_UB", "AIC", "BIC", "ECVI", "Fm",
                  "chi_null", "df_null", "p_null"))
-  expect_equal(gof_paf$chi, NA)
-  expect_equal(gof_paf$p_chi, NA)
-  expect_equal(gof_paf$CFI, NA)
-  expect_equal(gof_paf$RMSEA, NA)
+  expect_equal(gof_paf$chi, NA_real_)
+  expect_equal(gof_paf$p_chi, NA_real_)
+  expect_equal(gof_paf$CFI, NA_real_)
+  expect_equal(gof_paf$RMSEA, NA_real_)
   if (inherits(w_paf, "warning")) {
     expect_equal(gof_paf$CAF, 0, tolerance = .01)
   } else {
     expect_equal(gof_paf$CAF, .5, tolerance = .1)
   }
   expect_equal(gof_paf$df, ((m - q)**2 - (m + q)) / 2)
-  expect_equal(gof_paf$chi_null, NA)
-  expect_equal(gof_paf$df_null, NA)
-  expect_equal(gof_paf$p_null, NA)
+  expect_equal(gof_paf$chi_null, NA_real_)
+  expect_equal(gof_paf$df_null, NA_real_)
+  expect_equal(gof_paf$p_null, NA_real_)
 })
 
 
@@ -222,6 +222,12 @@ test_that(".is_cormat works", {
   expect_equal(.is_cormat(matrix(c(1, .1, .3, 1), ncol = 2)), FALSE)
   expect_error(.is_cormat(matrix(c(1, NA, NA, 1), ncol = 2)),
                class = "efa_cormat_has_na")
+  # A symmetric matrix with entries in [-1, 1] but a non-unit diagonal (here trace 2.6, which
+  # rounds to the row count) is not a correlation matrix and must not be detected as one.
+  expect_equal(
+    .is_cormat(matrix(c(0.6, 0.2, 0.2, 0.2, 1, 0.2, 0.2, 0.2, 1), ncol = 3)),
+    FALSE
+  )
 })
 
 q_p <- .det_max_factors(8) + 1
@@ -247,6 +253,23 @@ test_that(".decimals works", {
   expect_equal(.decimals(NA_real_), 0)
   expect_equal(.decimals(c(1.23, NA, 4.5)), 2)
   expect_equal(.decimals(matrix(c(1.23, NA, 4.5, 6), ncol = 2)), 2)
+
+  # Small magnitudes that R renders in scientific notation (e.g. "3e-05") used to
+  # abort with "subscript out of bounds"; the decimal count must be taken from the
+  # fixed-notation representation instead.
+  expect_equal(.decimals(3e-5), 5)
+  expect_equal(.decimals(1e-4), 4)
+  expect_equal(.decimals(1e-6), 6)
+  expect_equal(.decimals(1.23e-5), 7)
+  expect_equal(.decimals(c(0.5, 3e-5)), 5)
+  expect_equal(.decimals(matrix(c(0.5, 3e-5, 0.4, 0.2), ncol = 2)), 5)
+
+  # A comma-decimal OutDec must not collapse the count to 0: the separator is
+  # pinned to "." so the split still finds the fractional part.
+  withr::with_options(list(OutDec = ","), {
+    expect_equal(.decimals(0.123), 3)
+    expect_equal(.decimals(3e-5), 5)
+  })
 })
 
 efa_list <- list(EFA(test_models$baseline$cormat, n_factors = 3, N = 500),

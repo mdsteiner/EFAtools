@@ -102,12 +102,18 @@ if(inherits(f, c("EFA"))){
   # polychoric), those weights are inconsistent with the loadings unless the same
   # matrix is supplied via `rho`.
   cor_method <- f$settings$cor_method
+  # With rho = NULL, psych derives the score machinery from the Pearson cor(x): for
+  # the regression-based methods (Thurstone, tenBerge, Anderson) the weights and
+  # scores, and for every method the score intercorrelations (r.scores), are then
+  # inconsistent with loadings fit on a non-Pearson correlation. (Bartlett and
+  # components weights/scores are correlation-free, but their r.scores is not, so
+  # the warning still applies.)
   if (!is.null(cor_method) && !identical(cor_method, "pearson") &&
       is.null(rho) && !is_cmat) {
     cli::cli_warn(
       c("{.arg f} was fit with {.code cor_method = {.val {cor_method}}}, but {.arg rho} is {.code NULL}.",
-        "i" = "The factor weights will be based on the Pearson correlation of {.arg x}, which may be inconsistent with the loadings.",
-        "i" = "Pass the {.val {cor_method}} correlation matrix via {.arg rho} for consistent weights."),
+        "i" = "The factor weights and scores (for regression-based methods) and the score intercorrelations (for all methods) will be based on the Pearson correlation of {.arg x}, which may be inconsistent with the loadings.",
+        "i" = "Pass the {.val {cor_method}} correlation matrix via {.arg rho} for consistent results."),
       class = "efa_scores_cor_method"
     )
   }
@@ -131,6 +137,25 @@ if(inherits(f, c("EFA"))){
 
   }
 
+}
+
+# psych's "Anderson" path calls invMatSqrt() on the 1x1 matrix produced by a
+# single-factor model, which triggers R's diag(scalar) trap and aborts with an
+# opaque "non-conformable arguments" error. Anderson-Rubin orthogonalisation is
+# also undefined with a single factor (nothing to make uncorrelated), so guard it.
+if (method == "Anderson" && ncol(f) == 1L) {
+  cli::cli_abort(
+    c("Anderson-Rubin scores are not defined for a single factor.",
+      "i" = "There is nothing to orthogonalise with one factor; use {.code method = \"Thurstone\"} or {.code method = \"Bartlett\"}."),
+    class = "efa_scores_anderson_single"
+  )
+}
+
+# psych's "components" path computes `x %*% w` without coercing x, so a data.frame
+# of raw data fails the matrix multiply; coerce up front. This is a no-op for the
+# other methods, which scale(x) the data internally.
+if (is.data.frame(x)) {
+  x <- as.matrix(x)
 }
 
 out_fac_scores <- psych::factor.scores(x = x, f = f, Phi = Phi, method = method,

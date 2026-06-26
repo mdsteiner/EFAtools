@@ -23,15 +23,16 @@
 #' @param cor_method character. Correlation computed from raw data: `"pearson"`,
 #'   `"spearman"`, or `"kendall"` (passed to [stats::cor()]), or `"poly"` /
 #'   `"tetra"` for polychoric / tetrachoric correlations (a two-step estimator
-#'   with no empty-cell continuity correction). Criteria that compare against
-#'   simulated continuous data (`CD`, `PARALLEL`, `NEST`, `HULL`) do not support
-#'   `"poly"` / `"tetra"` and are skipped in that case.
+#'   with no empty-cell continuity correction). `CD`, `PARALLEL`, `NEST`, and
+#'   `HULL` compare against simulated continuous data, and `SMT` relies on a
+#'   normal-theory chi-square test; none of these support `"poly"` / `"tetra"`,
+#'   so they are skipped in that case.
 #' Default is  `"pearson"`.
 #' @param n_factors_max numeric. Passed to [CD()]. The maximum number
 #' of factors to test against.
 #' Larger numbers will increase the duration the procedure takes, but test more
-#' possible solutions. Maximum possible is number of variables / 2. Default is
-#' NA. If not specified, number of variables / 2 is used.
+#' possible solutions. If left NA (default), the maximum number of factors for
+#' which the model is still over-identified (df > 0) is used.
 #' @param N_pop numeric. Passed to [CD()]. Size of finite populations
 #' of comparison data. Default is 10000.
 #' @param N_samples numeric. Passed to [CD()]. Number of samples drawn
@@ -260,13 +261,14 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
       next
     }
 
-    # Criteria that compare against continuous reference data cannot use
-    # polychoric/tetrachoric correlations; skip them with a clear note rather than
-    # letting them fail and be reported as a generic error.
+    # Some criteria do not support polychoric/tetrachoric correlations (they
+    # compare against continuous reference data, or their normal-theory test is
+    # invalid for such correlations); skip them with a clear note rather than
+    # letting them run on an inappropriate matrix.
     if (.is_poly_cor(cor_method) && isFALSE(entry$poly_ok)) {
       cli::cli_warn(
         c("{.val {id}} does not support {.code cor_method = {.val {cor_method}}}.",
-          "i" = "Its reference data are continuous; skipping {.val {id}}."),
+          "i" = "Skipping {.val {id}}."),
         class = "efa_criterion_skipped"
       )
       not_run[[id]] <- paste0("does not support cor_method = \"", cor_method, "\"")
@@ -448,7 +450,7 @@ format.N_FACTORS <- function(x, ...) {
         }
         kmo_text <- paste0("The Kaiser-Meyer-Olkin criterion is ", kmo_label,
                            " (KMO = ", round(kmo, 3), "). ", verdict)
-        kmo_symbol <- if (kmo >= .7) "v" else if (kmo >= .6) "!" else "x"
+        kmo_symbol <- if (kmo >= .7) "v" else if (kmo >= .5) "!" else "x"
         cli::cli_bullets(stats::setNames(kmo_text, kmo_symbol))
       } else {
         cli::cli_bullets(c("!" =

@@ -518,7 +518,6 @@ if (decision_rule == "crawford") {
       class = "efa_parallel_crawford"
     )
     n_fac <- which(!(eigvals_real > results[, "Means"]))[1] - 1
-    decision_rule <- "means"
   }
 
 } else if (decision_rule == "means") {

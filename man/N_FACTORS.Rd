@@ -56,16 +56,17 @@ data is given as input. Default is \code{"pairwise.complete.obs"}.}
 \item{cor_method}{character. Correlation computed from raw data: \code{"pearson"},
 \code{"spearman"}, or \code{"kendall"} (passed to \code{\link[stats:cor]{stats::cor()}}), or \code{"poly"} /
 \code{"tetra"} for polychoric / tetrachoric correlations (a two-step estimator
-with no empty-cell continuity correction). Criteria that compare against
-simulated continuous data (\code{CD}, \code{PARALLEL}, \code{NEST}, \code{HULL}) do not support
-\code{"poly"} / \code{"tetra"} and are skipped in that case.
+with no empty-cell continuity correction). \code{CD}, \code{PARALLEL}, \code{NEST}, and
+\code{HULL} compare against simulated continuous data, and \code{SMT} relies on a
+normal-theory chi-square test; none of these support \code{"poly"} / \code{"tetra"},
+so they are skipped in that case.
 Default is  \code{"pearson"}.}
 
 \item{n_factors_max}{numeric. Passed to \code{\link[=CD]{CD()}}. The maximum number
 of factors to test against.
 Larger numbers will increase the duration the procedure takes, but test more
-possible solutions. Maximum possible is number of variables / 2. Default is
-NA. If not specified, number of variables / 2 is used.}
+possible solutions. If left NA (default), the maximum number of factors for
+which the model is still over-identified (df > 0) is used.}
 
 \item{N_pop}{numeric. Passed to \code{\link[=CD]{CD()}}. Size of finite populations
 of comparison data. Default is 10000.}

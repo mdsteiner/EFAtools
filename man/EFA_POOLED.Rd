@@ -159,7 +159,14 @@ residual-based fit indices such as RMSR/SRMR are based on pooled residuals.
 The model chi-square and the indices derived from it (RMSEA, ECVI, and the
 descriptive AIC/BIC) are not arithmetic means of the per-imputation values: the
 complete-data chi-squares are pooled with the D2 rule and the asymptotic
-chi-square approximation to D2 is used downstream. Because D2 deflates the
+chi-square approximation to D2 is used downstream. The reported pooled
+chi-square is this asymptotic statistic \eqn{df \cdot F_{D2}}{df * F_D2}, but
+its p-value is the D2 reference F-test tail
+\eqn{\Pr(F_{df_1, df_2} > F_{D2})}{P(F(df1, df2) > F_D2)}, not
+\eqn{\Pr(\chi^2_{df} > df \cdot F_{D2})}{P(chi^2_df > df * F_D2)}; the two
+coincide only as the D2
+denominator degrees of freedom grow (no between-imputation variance), and the
+printed fit block flags the chi-square line accordingly. Because D2 deflates the
 pooled chi-square by its between-imputation average relative increase in
 variance, the pooled RMSEA inherits that shrinkage and can fall below the mean
 of the per-imputation RMSEAs (as it does in \code{lavaan.mi}); read it together with

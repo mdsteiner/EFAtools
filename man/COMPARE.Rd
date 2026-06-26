@@ -85,7 +85,10 @@ of x and y.
 For example, if x contains only values up to the third decimals, and y is a
 normal double, max_dec will be three.}
 \item{are_equal}{The maximal number of decimals to which all elements of x and y
-are equal.}
+agree in absolute value. The comparison is on magnitudes, so two elements that
+are equal in size but opposite in sign count as agreeing; signed disagreements
+are reflected in \code{diff} and the mean / median / min / max absolute differences.
+\code{NA} if \code{na.rm = FALSE} and any element is missing.}
 \item{diff_corres}{The number of differing variable-to-factor correspondences
 between x and y, when only the highest loading is considered.}
 \item{diff_corres_cross}{The number of differing variable-to-factor correspondences

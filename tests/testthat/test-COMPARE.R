@@ -332,6 +332,27 @@ test_that("COMPARE is NA-safe and honours na.rm (vector and matrix)", {
   cmp_rm <- COMPARE(v_na, v_ok, reorder = "none", na.rm = TRUE)
   expect_false(is.na(cmp_rm$g))
   expect_equal(cmp_rm$g, 0)
+
+  # are_equal mirrors the other statistics under missingness: NA (printed "none")
+  # when na.rm = FALSE and an element is missing, and a number when na.rm = TRUE
+  # (consistent with max_dec, which always drops missings).
+  expect_true(is.na(COMPARE(c(0.5, NA), c(0.5, 0.5),
+                            reorder = "none", na.rm = FALSE)$are_equal))
+  expect_equal(COMPARE(c(0.5, NA), c(0.5, 0.5),
+                       reorder = "none", na.rm = TRUE)$are_equal, 1)
+
+  # Even with na.rm = TRUE, if every pair has a missing value there is nothing to
+  # compare, so are_equal is NA rather than spuriously climbing to max_dec (the
+  # empty all() would otherwise report agreement to every decimal place). The
+  # all-missing overlap also makes min()/max() warn ("no non-missing arguments"),
+  # which is unrelated to are_equal, so it is suppressed here.
+  expect_true(is.na(suppressWarnings(
+    COMPARE(c(1.234, NA), c(NA, 5.678), reorder = "none", na.rm = TRUE))$are_equal))
+
+  # Near-zero values render in scientific notation, which used to crash the
+  # decimal-count helper that drives max_dec; COMPARE must still return.
+  expect_s3_class(COMPARE(c(0.5, 0.00003), c(0.5, 0.4), reorder = "none"),
+                  "COMPARE")
 })
 
 test_that("print output is stable", {

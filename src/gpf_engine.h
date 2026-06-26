@@ -190,7 +190,7 @@ inline void validate_gpf_input(const arma::mat& L, const char* family) {
 // sufficiently decreases the largest objective over the last `kNonmonotoneWindow` iterations
 // (rather than the current one), and when no step is accepted the smallest-step candidate is taken
 // unconditionally instead of terminating. This lets the optimizer cross the kinks of a criterion
-// whose gradient does not vanish at the optimum (the simplimax criterion reselects the k smallest
+// whose gradient jumps at those kinks (the simplimax criterion reselects the k smallest
 // squared loadings at every evaluation, so it is only piecewise smooth and a strictly monotone
 // search stalls short of the minimum). Because such a search may end on an up-step and its
 // projected-gradient norm need not reach `eps`, the engine (a) reports the lowest-objective iterate
@@ -283,8 +283,7 @@ GpfFit run_single_gpf_fit(const Manifold& manifold,
     // al = ||dT||^2 / |<dT, dGp>| (clamped to [1e-10, 20]) from the change in the iterate and its
     // projected gradient since the previous accepted iterate. The first iteration (no previous
     // iterate) and a vanishing gradient change fall back to doubling the step. The previous iterate
-    // is then updated for the next step (the values before this iteration's line-search update,
-    // matching GPArotation's Tmat_prev/Gp_prev).
+    // is then updated for the next step (the values before this iteration's line-search update).
     al = 2.0 * al;
     if (!Tmat_prev.is_empty()) {
       arma::mat dT = Tmat - Tmat_prev;
@@ -423,7 +422,6 @@ GpfSummary run_gpf_multistart(const Manifold& manifold,
   GpfSummary summary;
   GpfFit best_fit = run_single_gpf_fit(manifold, T_primary, eps, maxit, max_line_search,
                                        step0);
-  double incumbent_value = best_fit.value;
 
   summary.all_values.reserve(static_cast<std::size_t>(1 + std::max(0, random_starts)));
   summary.all_converged.reserve(static_cast<std::size_t>(1 + std::max(0, random_starts)));
@@ -464,6 +462,7 @@ GpfSummary run_gpf_multistart(const Manifold& manifold,
       }
     }
   } else if (random_starts > 0) {
+    double incumbent_value = best_fit.value;
     std::vector<GpfCandidate> candidates;
     candidates.reserve(static_cast<std::size_t>(random_starts));
 

@@ -207,17 +207,16 @@ test_that("PAF variant paths reproduce psych::fa(fm = 'pa')", {
 })
 
 # AIC and BIC follow the documented chi-square forms, not lavaan's -2logL-based versions.
-# CFI places the model and baseline noncentralities on a common (N - 1) scale, matching
-# lavaan once its statistics are rescaled from the multiplier N to N - 1. RMSEA keeps the
-# Bartlett-corrected model chi-square in its numerator (so it matches lavaan's statistic
-# rescaled by bart / N).
+# CFI and RMSEA place the model (and, for CFI, the baseline) noncentrality on a common
+# (N - 1) scale, matching lavaan once its statistics are rescaled from the multiplier N to
+# N - 1. The Bartlett correction enters only the reported chi-square test (and the AIC/BIC
+# derived from it), not these approximation indices.
 test_that("CFI, RMSEA, AIC, and BIC match their references on the baseline", {
   skip_on_cran()
 
   R <- test_models$baseline$cormat
   N <- 500
   k <- 3
-  p <- ncol(R)
   fi <- suppressWarnings(EFA(R, n_factors = k, N = N, method = "ML"))$fit_indices
 
   expect_equal(fi$AIC, fi$chi - 2 * fi$df, tolerance = 1e-8)
@@ -232,18 +231,17 @@ test_that("CFI, RMSEA, AIC, and BIC match their references on the baseline", {
   }, error = function(e) NULL)
   skip_if(is.null(lav), "lavaan::efa() did not return the baseline fit measures")
 
-  bart <- N - 1 - (2 * p + 5) / 6 - (2 * k) / 3   # model: k factors (Bartlett, for RMSEA)
   df_m <- unname(lav["df"])
   df_0 <- unname(lav["baseline.df"])
-  # lavaan's statistics use the multiplier N; CFI needs both on the common (N - 1) scale.
-  chi_m_n1   <- unname(lav["chisq"])          * (N - 1) / N
-  chi_0_n1   <- unname(lav["baseline.chisq"]) * (N - 1) / N
-  chi_m_bart <- unname(lav["chisq"]) * bart / N
+  # lavaan's statistics use the multiplier N; CFI and RMSEA need them on the common (N - 1)
+  # noncentrality scale.
+  chi_m_n1 <- unname(lav["chisq"])          * (N - 1) / N
+  chi_0_n1 <- unname(lav["baseline.chisq"]) * (N - 1) / N
 
   d_m  <- max(chi_m_n1 - df_m, 0)
   d_0  <- max(chi_0_n1 - df_0, 0)
   cfi_ref   <- 1 - d_m / max(d_m, d_0)
-  rmsea_ref <- sqrt(max(0, chi_m_bart - df_m) / (df_m * (N - 1)))
+  rmsea_ref <- sqrt(max(0, chi_m_n1 - df_m) / (df_m * (N - 1)))
 
   # observed agreement on the baseline model: ~1e-13
   expect_equal(fi$CFI, cfi_ref, tolerance = 1e-3)

@@ -177,8 +177,8 @@ static arma::vec kaiser_normalize_rows(arma::mat& A_work) {
 //' and software for arbitrary rotation criteria in factor analysis.
 //' *Educational and Psychological Measurement*, 65, 676-696.
 //'
-//' Gower, J. C. (1975). Generalized Procrustes analysis. *Psychometrika*, 40,
-//' 33-51.
+//' Browne, M. W. (2001). An overview of analytic rotation in exploratory factor
+//' analysis. *Multivariate Behavioral Research*, 36, 111-150.
 //'
 // [[Rcpp::export(.oblique_procrustes)]]
 Rcpp::List oblique_procrustes(const arma::mat& A,

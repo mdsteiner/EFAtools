@@ -50,7 +50,9 @@
 #'   factors according to comparison data results.}
 #' \item{results}{A list with a single record holding the mean RMSE between the
 #'   eigenvalues of the generated and the entered data per number of factors
-#'   (used for the plot) and, in `rmse_eigenvalues`, the full matrix of RMSEs.}
+#'   (used for the plot) and, in `rmse_eigenvalues`, the per-sample RMSE matrix
+#'   (rows are samples, columns are factor counts; columns beyond the last tested
+#'   factor count are left as zero).}
 #' \item{settings}{A list of the settings used.}
 #'
 #' @source Auerswald, M., & Moshagen, M. (2019). How to determine the number of
@@ -237,7 +239,6 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
   k <- ncol(x)
   sim_dat <- matrix(0, nrow = N, ncol = k)         # Matrix to store the simulated data
   dists <- matrix(0, nrow = N, ncol = k)   # Matrix to store each variable's score distribution
-  iter <- 0                                   # Iteration counter
   best_RMSE <- 1                                   # Lowest RMSE correlation
   t_no_impr <- 0                  # Trial counter
 
@@ -252,6 +253,10 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
 
   R <- stats::cor(x, method = cor_method)
   R_inter <- R
+  # Seed the best-so-far matrices so the no-improvement branch below is safe even
+  # if the first iteration does not lower the initial RMSE (best_RMSE = 1).
+  R_best <- R_inter
+  res_best <- matrix(0, nrow = k, ncol = k)
 
   # Generate random normal data for shared and unique components, initialize factor loadings (steps 5, 6) --------
 
@@ -264,7 +269,6 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
   # Begin loop that ends when specified number of iterations pass without improvement in RMSE correlation --------
 
   while (t_no_impr < max_trials) {
-    iter <- iter + 1
 
     # Calculate factor loadings and apply to reproduce desired correlations (steps 7, 8) ---------------------------
 
@@ -310,8 +314,6 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
 
       R_rep <- stats::cor(sim_dat, method = cor_method)
       R_res <- R - R_rep
-      # check whether this also works:
-      # sqrt(sum(diag(t(R_res) %*% (R_res))) / prod(dim(R)))
       RMSE <- sqrt(sum(R_res[lower.tri(R_res)] * R_res[lower.tri(R_res)]) /
                      (.5 * (k * k - k)))
 
@@ -357,7 +359,6 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
       unique_comp[, i] * unique_load[i, 1]
   }
 
-  sim_dat <- apply(sim_dat, 2, scale) # standardizes each variable in the matrix
   for (i in seq_len(k)) {
     sim_dat <- sim_dat[sort.list(sim_dat[, i]),]
     sim_dat[,i] <- dists[, i]

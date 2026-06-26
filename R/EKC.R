@@ -169,19 +169,17 @@ EKC <- function(x, N = NA,
     # implementation based on Auerswald and Moshagen 2019:
     # https://osf.io/fnc86?view_only=d03efba1fd0f4c849a87db82e6705668
 
-    p <- ncol(R)
-
     # reference values
-    refs <- vector("double", p)
-    for (i in seq_len(p)) {
-      refs[i] <- max(((1 + sqrt(p / N))^2) * (p - sum(refs)) / (p - i + 1), 1)
+    refs <- vector("double", J)
+    for (i in seq_len(J)) {
+      refs[i] <- max(((1 + sqrt(J / N))^2) * (J - sum(refs)) / (J - i + 1), 1)
     }
 
     # index of the first eigenvalue at/below its reference; retain those before
-    # it. If none crosses (all eigenvalues exceed their reference) retain all p
+    # it. If none crosses (all eigenvalues exceed their reference) retain all J
     # factors, matching the BvA2017 "all-exceed" convention.
     crossing <- which(lambda <= refs)[1]
-    n_factors_AM2019 <- if (is.na(crossing)) p else crossing - 1
+    n_factors_AM2019 <- if (is.na(crossing)) J else crossing - 1
 
     results[["AM2019"]] <- list(
       name = "AM2019",
@@ -192,11 +190,7 @@ EKC <- function(x, N = NA,
       y = lambda,
       reference = refs,
       threshold = NULL,
-      highlight = if (!is.na(n_factors_AM2019) && n_factors_AM2019 >= 1) {
-        n_factors_AM2019
-      } else {
-        NULL
-      }
+      highlight = if (n_factors_AM2019 >= 1) n_factors_AM2019 else NULL
     )
 
   }

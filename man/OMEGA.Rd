@@ -182,6 +182,11 @@ to the general factor, and omega subscale is the true score variance in a
 composite attributable to all subscales / group factors (for the whole scale)
 or to the specific subscale / group factor (for subscale composites).
 
+Accordingly, on a subscale row the \code{hier} column reports the share of that
+subscale's composite variance due to the general factor and the \code{sub} column
+the share due to the subscale-specific factor; the latter corresponds to the
+omega hierarchical subscale of Rodriguez et al. (2016a, 2016b).
+
 The H index (also construct reliability or replicability index) is the
 correlation between an optimally-weighted composite score
 and a factor (Hancock & Mueller, 2001; Rodriguez et al., 2016a, 2016b). It, too,
@@ -218,7 +223,10 @@ and omega coefficients are obtained from the transformed (orthogonalized) soluti
 There is also the possibility to enter a \code{lavaan} single factor solution.
 In this case, \code{g_name} is not needed. Finally, if a solution from a
 \code{lavaan} multiple group analysis is entered, the indices are computed for
-each group.
+each group. For \code{lavaan} input the composite variances entering the omegas are
+model-implied (computed from the fitted loadings and residual variances), so the
+coefficients coincide with the observed-score versions when the model fits
+perfectly.
 The type argument is not evaluated if \code{model} is of class
 \code{lavaan}.
 
@@ -249,17 +257,21 @@ group factor loading for each variable as the relevant group factor loading.
 To do this, \code{factor_corres} must be left \code{NULL}.
 
 The calculation of the total variance (for the whole scale as well as the
-subscale composites) can also be controlled in this function using the
-\code{variance} argument. For both types---\code{"EFAtools"} and \code{"psych"}
----\code{variance} is set to \code{"correlation"} by default, which means that
-total variances are found using the correlation matrix. If
-\code{variance = "sums_load"} the total variance is calculated using the
-squared sums of general loadings and group factor loadings and the sum of the
-uniquenesses. This will only get comparable results to
-\code{variance = "correlation"} if no cross-loadings are present and simple
-structure is well-achieved in general with the SL solution (i.e., the
-uniquenesses should capture almost all of the variance not explained by the
-general factor and the variable's allocated group factor).
+subscale composites) is controlled with the \code{variance} argument. It is set to
+\code{"correlation"} by default, which finds the total variances from the
+correlation matrix (the observed-variance form of omega; this reproduces
+\code{\link[psych:omega]{psych::omega()}}). If \code{variance = "sums_load"} the total variances are instead
+model-implied, found from the squared sums of the general and group factor
+loadings and the sum of the uniquenesses; the whole-scale omega total is then
+McDonald's model-implied total and the general and group variances partition it
+exactly (omega total = omega hierarchical + omega subscale for the general
+factor). The two settings give the same whole-scale omega total and omega
+hierarchical up to model misfit (observed versus model-implied total variance);
+they differ in the whole-scale omega subscale, which counts all group-factor
+variance under \code{"sums_load"} but only the variance of the assigned subscale
+composites under \code{"correlation"}. For the subscale rows, the model-based
+(\code{"sums_load"}) coefficients approximate the correlation-based ones when simple
+structure is well-achieved.
 }
 }
 \examples{

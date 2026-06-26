@@ -297,36 +297,29 @@
                    class = "efa_not_numeric")
   }
 
-  if (!is.null(dim(x))) {
-
-    max(apply(x, 1:2, function(ll) {
-      if (!is.na(ll) && abs(ll - round(ll)) > .Machine$double.eps^0.5) {
-        nchar(strsplit(sub('0+$', '', as.character(ll)), ".",
-                       fixed = TRUE)[[1]][[2]])
-      } else {
-        return(0)
-      }
-    }), na.rm = TRUE)
-
-  } else if (length(x) > 1) {
-
-    max(sapply(x, function(ll) {
-      if (!is.na(ll) && abs(ll - round(ll)) > .Machine$double.eps^0.5) {
-        nchar(strsplit(sub('0+$', '', as.character(ll)), ".", fixed = TRUE)[[1]][[2]])
-      } else {
-        return(0)
-      }
-    }), na.rm = TRUE)
-
-
-  } else {
-
-    if (!is.na(x) && abs(x - round(x)) > .Machine$double.eps^0.5) {
-      nchar(strsplit(sub('0+$', '', as.character(x)), ".", fixed = TRUE)[[1]][[2]])
-    } else {
+  # Decimal places carried by a single value. format(scientific = FALSE) is used
+  # rather than as.character() so small magnitudes (e.g. 3e-5) render as "0.00003"
+  # instead of "3e-05": the scientific form has no "." to split on (or splits off a
+  # meaningless exponent), which otherwise aborts with "subscript out of bounds" or
+  # mis-counts. digits = 15 matches the precision as.character() uses for in-range
+  # values, so the count is unchanged for ordinary loading magnitudes. decimal.mark =
+  # "." pins the separator so the "." split stays correct under a comma-decimal
+  # `OutDec` option, which both format() and as.character() would otherwise honour.
+  n_dec <- function(ll) {
+    if (is.na(ll) || abs(ll - round(ll)) <= .Machine$double.eps^0.5) {
       return(0)
     }
+    frac <- strsplit(format(ll, scientific = FALSE, trim = TRUE, digits = 15,
+                            decimal.mark = "."), ".", fixed = TRUE)[[1]]
+    if (length(frac) < 2L) 0L else nchar(sub("0+$", "", frac[[2]]))
+  }
 
+  if (!is.null(dim(x))) {
+    max(apply(x, 1:2, n_dec), na.rm = TRUE)
+  } else if (length(x) > 1) {
+    max(sapply(x, n_dec), na.rm = TRUE)
+  } else {
+    n_dec(x)
   }
 
 }

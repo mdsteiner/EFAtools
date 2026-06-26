@@ -40,6 +40,15 @@
   stats::optimize(nll, c(-0.9999, 0.9999), tol = 1e-9)$minimum
 }
 
+# Expand a contingency table of counts into raw two-column ordinal data (row, column codes).
+.expand_table <- function(tab) {
+  do.call(rbind, lapply(which(tab > 0), function(k) {
+    a <- ((k - 1L) %% nrow(tab)) + 1L
+    b <- ((k - 1L) %/% nrow(tab)) + 1L
+    cbind(rep(a, tab[a, b]), rep(b, tab[a, b]))
+  }))
+}
+
 # Deterministic raw ordinal data whose two-step polychoric matrix is not positive
 # definite: four items are noisy monotone functions of the common score z1 + z2, so the
 # columns are near-collinear and disattenuation pushes the smallest eigenvalue clearly
@@ -60,8 +69,8 @@
 
 # Listwise-complete GRiPS and its default polychoric matrix, computed once and
 # reused by the structural blocks that would otherwise rebuild them. Tests that
-# need non-default arguments (`correct`, `nearest_pd`, `n_threads`, `acov`) or
-# that mutate the data still build their own.
+# need non-default arguments (`nearest_pd`, `acov`) or that mutate the data still
+# build their own.
 g <- GRiPS_raw[stats::complete.cases(GRiPS_raw), ]
 poly_g <- .polychoric(g)
 
@@ -192,9 +201,8 @@ test_that("the matrix is a valid correlation matrix with named thresholds", {
   expect_equal(lengths(res$thresholds), n_cat - 1L, ignore_attr = TRUE)
 })
 
-test_that("the result is deterministic and independent of thread count", {
-  expect_identical(.polychoric(g, n_threads = 1L)$R, .polychoric(g, n_threads = 1L)$R)
-  expect_identical(.polychoric(g, n_threads = 1L)$R, .polychoric(g, n_threads = 4L)$R)
+test_that("the result is deterministic", {
+  expect_identical(.polychoric(g)$R, .polychoric(g)$R)
 })
 
 test_that("a constant column is rejected with a classed condition", {
@@ -234,23 +242,39 @@ test_that("a pair with no overlapping complete cases is rejected with a classed 
   expect_error(.polychoric(m), class = "efa_cor_na")
 })
 
-test_that("the empty-cell continuity correction runs and changes the estimate", {
-  res <- .polychoric(g, correct = 0.5)
-  expect_false(anyNA(res$R))
-  expect_true(isSymmetric(res$R))
-  expect_equal(diag(res$R), rep(1, ncol(g)), ignore_attr = TRUE)
-  # GRiPS has empty corner cells, so the pseudo-counts must move at least one estimate.
-  expect_false(isTRUE(all.equal(res$R, .polychoric(g, correct = 0)$R)))
+test_that("an empty off-diagonal cell does not bias the estimate below the MLE", {
+  skip_if_not_installed("mnormt")
+  # A few extreme cells dominate the likelihood of a table with empty cells, and a low-order
+  # quadrature under-resolves its wide tail bands and mislocates the maximum. The estimate must
+  # still reach the interior MLE (~0.98), not the much lower value a coarse rule would give.
+  x <- .expand_table(rbind(c(41, 0), c(13, 0), c(28, 0), c(171, 47)))
+  ours <- .polychoric(x)$R[1, 2]
+  gold <- .gold_polychor(x[, 1], x[, 2])     # exact two-step MLE (mnormt)
+  # The estimate must reach the interior maximum (~0.98), not the low shoulder; the likelihood
+  # is flat near the maximum, so allow a modest tolerance around the gold MLE.
+  expect_gt(ours, 0.95)
+  expect_equal(ours, gold, tolerance = 1e-2)
+})
+
+test_that("a structurally empty cell warns when an asymptotic covariance is requested", {
+  # An empty cell with a non-negligible expected count (~6 here) is flagged; an otherwise dense
+  # ordinal set whose only empty cells are rare corners is not. The covariance is still returned.
+  sparse <- .expand_table(rbind(c(41, 0), c(13, 0), c(28, 0), c(171, 47)))
+  expect_warning(.polychoric(sparse, acov = "diag"), class = "efa_cor_sparse_cells")
+  expect_no_warning(
+    .polychoric(DOSPERT_raw[, 1:8], acov = "diag"),
+    class = "efa_cor_sparse_cells"
+  )
+  # The per-replicate bootstrap recompute (label_acov = FALSE) skips the diagnostic entirely.
+  expect_no_warning(
+    .polychoric(sparse, acov = "diag", label_acov = FALSE),
+    class = "efa_cor_sparse_cells"
+  )
 })
 
 test_that("a likely-continuous (many-category) variable warns", {
   x <- cbind(rep(1:12, length.out = 100L), rep(1:3, length.out = 100L))
   expect_warning(.polychoric(x), class = "efa_cor_many_categories")
-})
-
-test_that("invalid correct or n_threads are rejected with a classed condition", {
-  expect_error(.polychoric(g, correct = -1), class = "efa_cor_bad_arg")
-  expect_error(.polychoric(g, n_threads = 0L), class = "efa_cor_bad_arg")
 })
 
 test_that("polychoric matches polycor on DOSPERT and UPPS", {

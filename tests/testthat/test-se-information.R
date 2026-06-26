@@ -185,6 +185,21 @@ test_that("information SEs populate the rotated SE/CI schema under an oblique ro
 })
 
 
+test_that("information communality SEs equal the uniqueness SEs (one estimand)", {
+  # h2_i = 1 - psi_i exactly, so the communality and uniqueness are a single estimand up to sign
+  # and must carry the same standard error (and a mirrored Wald interval). The reported SE is the
+  # psi-block value; a loading-gradient delta on the expected-information covariance is a second,
+  # less accurate route that overstates Var(h2_i) against the sampling distribution.
+  R <- test_models$baseline$cormat
+  fit <- EFA(R, n_factors = 3, N = 500, method = "ML", rotation = "oblimin", se = "information")
+
+  expect_equal(unname(fit$SE$communalities), unname(fit$SE$uniquenesses))
+  # The Wald intervals mirror: communality upper = 1 - uniqueness lower (and lower = 1 - upper).
+  expect_equal(unname(fit$CI$communalities$upper), unname(1 - fit$CI$uniquenesses$lower))
+  expect_equal(unname(fit$CI$communalities$lower), unname(1 - fit$CI$uniquenesses$upper))
+})
+
+
 test_that("information SEs under an orthogonal rotation omit Phi and the structure matrix", {
   R <- test_models$baseline$cormat
   fit <- EFA(R, n_factors = 3, N = 500, method = "ML", rotation = "varimax", se = "information")
@@ -317,12 +332,15 @@ test_that("rotated information SEs track the bootstrap", {
   SEs_b <- fb$SE$Structure[, al$perm, drop = FALSE]
   expect_lt(abs(stats::median(fa$SE$Structure / SEs_b) - 1), 0.3)
 
-  # Communalities are rotation-invariant (no alignment), so they agree in pattern as well as
-  # magnitude; the bootstrap has no communality slot, so they are recomputed from the replicate
-  # loadings.
+  # Communalities are rotation-invariant (no alignment), so they are compared cell by cell. The
+  # analytic communality SE is the uniqueness-block (psi-block) value it shares with the uniqueness
+  # (h2 = 1 - psi); the bootstrap has no communality slot, so the reference is recomputed from the
+  # replicate loadings. The two agree in magnitude (median ratio near 1); the normal-theory SE and
+  # the bootstrap are different finite-sample estimators, so the per-variable pattern correlation is
+  # positive but looser than the magnitude agreement.
   comm_b <- apply(fb$replicates$unrot_loadings, 3, function(L) rowSums(L^2))
   comm_b_se <- apply(comm_b, 1, stats::sd, na.rm = TRUE)
-  expect_gt(stats::cor(fa$SE$communalities, comm_b_se), 0.55)
+  expect_gt(stats::cor(fa$SE$communalities, comm_b_se), 0.4)
   expect_lt(abs(stats::median(fa$SE$communalities / comm_b_se) - 1), 0.4)
 })
 

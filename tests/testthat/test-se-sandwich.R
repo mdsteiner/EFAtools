@@ -51,9 +51,11 @@ test_that("the unrotated sandwich CI-provenance note names the robust sandwich, 
 
 test_that(".chi_fit_indices is robust to an undefined (NA) baseline chi-square", {
   # A degenerate scaled baseline yields chi_null = NA while the model chi stays finite; the shared
-  # fit-index helper must return NA CFI/TLI (not error) and still compute the model-only RMSEA.
+  # fit-index helper must return NA CFI/TLI (not error) and still compute the model-only RMSEA. The
+  # scaled path passes its statistics as the noncentrality inputs (chi_cfi / chi_null_cfi).
   idx <- EFAtools:::.chi_fit_indices(chi = 50, df = 10, chi_null = NA_real_,
-                                     df_null = 28, N = 500, m = 8, ci = TRUE)
+                                     df_null = 28, N = 500, m = 8, ci = TRUE,
+                                     chi_cfi = 50, chi_null_cfi = NA_real_)
   expect_true(is.na(idx$CFI))
   expect_true(is.na(idx$TLI))
   expect_true(is.na(idx$p_null))
@@ -216,7 +218,7 @@ test_that("the EFAtools polychoric Gamma matches lavaan's NACOV up to the N scal
   dat <- as.data.frame(DOSPERT_raw[, 1:6])
   vn <- colnames(dat)
 
-  poly <- EFAtools:::.polychoric(as.matrix(dat), n_threads = 1L, nearest_pd = FALSE,
+  poly <- EFAtools:::.polychoric(as.matrix(dat), nearest_pd = FALSE,
                                  binary_only = FALSE, acov = "full")
   N <- sum(stats::complete.cases(dat))
 

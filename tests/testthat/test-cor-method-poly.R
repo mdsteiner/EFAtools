@@ -26,7 +26,8 @@ test_that("EFA() runs ordinal factor analysis and matches psych::fa on a polycho
              rotation = "none")
 
   # Reference: psych's minres factor analysis (ULS is the same estimator) of psych's
-  # own polychoric matrix, with correct = 0 to match .polychoric()'s default.
+  # own polychoric matrix, with correct = FALSE so psych applies no empty-cell
+  # continuity correction, matching .polychoric().
   Rp <- suppressWarnings(psych::polychoric(x, correct = FALSE, global = FALSE)$rho)
   fa_ref <- suppressWarnings(psych::fa(Rp, nfactors = k, fm = "minres",
                                        rotate = "none", n.obs = N))
@@ -176,12 +177,34 @@ test_that("an asymptotic covariance over pairwise data reports the listwise over
                        use = "pairwise.complete.obs", inform_from_data = FALSE),
     class = "efa_acov_listwise"
   )
-  # A Pearson diagonal covariance does not listwise-delete (only the full ADF covariance does),
-  # so no override is reported even with missing data.
-  expect_no_message(
+  # A diagonal (DWLS-weight) covariance is an ordinal construct; requesting it for a Pearson
+  # correlation is rejected rather than silently producing no weights.
+  expect_error(
     .prepare_cor_input(gm, cor_method = "pearson", acov = "diag",
                        use = "pairwise.complete.obs", inform_from_data = FALSE),
-    class = "efa_acov_listwise"
+    class = "efa_acov_unsupported"
+  )
+})
+
+test_that("an acov requested for a correlation matrix is ignored with a warning", {
+  set.seed(1)
+  R <- stats::cor(matrix(stats::rnorm(200L), ncol = 4L))
+  expect_warning(
+    .prepare_cor_input(R, N = 50, acov = "full", inform_from_data = FALSE),
+    class = "efa_acov_ignored"
+  )
+})
+
+test_that("an unsupported acov/cor_method is rejected before any listwise notice", {
+  set.seed(1)
+  dat <- matrix(stats::rnorm(150L), ncol = 3L)
+  dat[1:3, 1L] <- NA
+  # full + a rank correlation is unsupported; with missing data the abort must precede (and
+  # replace) the listwise-override notice rather than follow it.
+  expect_error(
+    .prepare_cor_input(dat, cor_method = "spearman", acov = "full",
+                       use = "pairwise.complete.obs", inform_from_data = FALSE),
+    class = "efa_acov_unsupported"
   )
 })
 
@@ -199,6 +222,25 @@ test_that("N_FACTORS skips reference-based criteria under poly with an informati
   # failure; EKC still runs on the polychoric matrix.
   expect_true("efa_criterion_skipped" %in% classes)
   expect_false("efa_criterion_failed" %in% classes)
+})
+
+test_that("N_FACTORS skips SMT under poly because its normal-theory test is invalid", {
+  classes <- character()
+  out <- withCallingHandlers(
+    N_FACTORS(GRiPS_raw, criteria = c("EKC", "SMT"), cor_method = "poly",
+              method = "ULS", suitability = FALSE),
+    warning = function(w) {
+      classes <<- c(classes, class(w))
+      invokeRestart("muffleWarning")
+    }
+  )
+  # SMT's sequential model tests rest on the normal-theory ML chi-square, which is
+  # not valid for polychoric/tetrachoric correlations, so it is skipped (not run on
+  # an inappropriate matrix); EKC, a descriptive eigenvalue rule, still runs.
+  expect_true("efa_criterion_skipped" %in% classes)
+  expect_true("SMT" %in% names(out$not_run))
+  expect_false("SMT" %in% names(out$outputs))
+  expect_true("EKC" %in% names(out$outputs))
 })
 
 test_that("the polychoric bootstrap is reproducible and positive definite under resampling", {

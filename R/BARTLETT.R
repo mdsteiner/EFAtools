@@ -37,8 +37,10 @@
 #'  in the [N_FACTORS()] function.
 #'
 #' @return A list containing
-#' \item{chisq}{The chi square statistic.}
-#' \item{p_value}{The p value of the chi square statistic.}
+#' \item{chisq}{The chi square statistic, or `NA` if `N` is too small for the
+#'   Bartlett correction (i.e. \eqn{N - 1 - (2p + 5)/6 \le 0}).}
+#' \item{p_value}{The p value of the chi square statistic, or `NA` when `chisq`
+#'   is `NA`.}
 #' \item{df}{The degrees of freedom for the chi square statistic.}
 #' \item{settings}{A list of the settings used.}
 #'

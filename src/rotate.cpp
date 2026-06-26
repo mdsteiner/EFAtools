@@ -1062,7 +1062,7 @@ Rcpp::List rotate_bifactor_oblq(const arma::mat& L,
 //' normalization. The simplimax criterion sums the `k` smallest squared loadings, so it is
 //' minimized when the `k` "close-to-zero" loadings are driven toward zero; the count `k` is a
 //' tuning parameter. Because the set of `k` smallest loadings is reselected at every evaluation,
-//' the criterion is only piecewise smooth: its gradient does not vanish at the optimum, so the
+//' the criterion is only piecewise smooth: its gradient jumps as loadings cross the kth-smallest threshold, so the
 //' line search accepts a step whenever it decreases the largest objective over a short window of
 //' recent iterations (a non-monotone test; Grippo, Lampariello, & Lucidi, 1986), letting the
 //' optimizer step across the kinks where a strictly monotone descent would stall.

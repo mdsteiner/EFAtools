@@ -82,12 +82,14 @@
 # (N - 1) rescaling so all three use one definition.
 .bartlett_mult <- function(N, p, q = 0) N - 1 - (2 * p + 5) / 6 - (2 * q) / 3
 
-# Independence-model (baseline) chi-square: Bartlett's test of sphericity, the Bartlett-
-# corrected ML discrepancy of the null model (model-implied matrix = identity),
-# -log|R| * (N - 1 - (2p + 5)/6). Reported as the baseline statistic and reused by HULL.
-# (The incremental indices CFI/TLI in .gof() place the model and baseline on a common
-# (N - 1) scale separately; see .chi_fit_indices().)
-.null_chisq <- function(R, N, ld = determinant(R, logarithm = TRUE)) {
+# Independence-model (baseline) chi-square of the null model (model-implied matrix =
+# identity), -log|R| * mult. With `corrected = TRUE` (default) mult is the Bartlett
+# multiplier N - 1 - (2p + 5)/6: this is Bartlett's test of sphericity, the reported
+# baseline statistic shared with BARTLETT() and the CFI/TLI baseline in .gof(). With
+# `corrected = FALSE` mult is (N - 1), the uncorrected discrepancy scale on which the
+# RMSEA noncentrality is built (the 0-factor reference in HULL() and the null model in SMT()).
+.null_chisq <- function(R, N, ld = determinant(R, logarithm = TRUE),
+                        corrected = TRUE) {
   p <- ncol(R)
   # Use the log-determinant directly: det(R) underflows to 0 for large,
   # near-singular (but still positive-definite) matrices, which would otherwise
@@ -95,10 +97,10 @@
   # `ld` defaults to that decomposition; callers that already have it (e.g. .gof()
   # for the model chi-square) pass it in to avoid recomputing determinant(R).
   if (ld$sign <= 0 || !is.finite(ld$modulus)) return(NA_real_)
-  # Guard the Bartlett multiplier: for small N relative to p it turns
+  # Guard the multiplier: for small N relative to p the Bartlett multiplier turns
   # non-positive, which would flip the baseline chi-square sign and propagate a
   # spurious statistic into .gof(), SMT(), and BARTLETT().
-  mult <- .bartlett_mult(N, p)
+  mult <- if (corrected) .bartlett_mult(N, p) else N - 1
   if (is.na(mult) || mult <= 0) return(NA_real_)
   -as.numeric(ld$modulus) * mult
 }
@@ -119,6 +121,15 @@
   } else {
     0
   }
+}
+
+# RMSEA point estimate from a model chi-square on the (N - 1) noncentrality scale: the
+# self-consistent Browne & Cudeck (1992) quantity sqrt(max(0, chi_cfi - df) / (df * (N - 1))).
+# Callers guard df > 0 and N > 1 (a positive divisor); the cap at 1, where wanted, is applied by
+# the caller. Shared by .chi_fit_indices(), HULL(), and the EFA_POOLED() D2 pooler so the RMSEA
+# convention lives in one place.
+.rmsea_point <- function(chi_cfi, df, N) {
+  sqrt(max(0, chi_cfi - df) / (df * (N - 1)))
 }
 
 # CFI (Bentler, 1990) and TLI (Tucker & Lewis, 1973) from model and baseline
@@ -152,13 +163,17 @@
 # toggles the (uniroot-solved) RMSEA bounds. Returns NA throughout when the model chi-
 # square is undefined. Shared by .gof() (the ML/ULS discrepancy chi-square) and the
 # scaled-chi-square sandwich-SE path, which passes its scaled model and baseline statistics
-# in, so both report the block by exactly the same formulas.
+# in, so both report the block by exactly the same formulas. `chi_cfi` / `chi_null_cfi` are the
+# model and baseline statistics on the common (N - 1) noncentrality scale used for CFI/TLI/RMSEA;
+# they are required (not defaulted to `chi`/`chi_null`) so a caller cannot silently report those
+# approximation indices off the Bartlett-corrected test scale.
 .chi_fit_indices <- function(chi, df, chi_null, df_null, N, m, ci,
-                             chi_cfi = chi, chi_null_cfi = chi_null) {
+                             chi_cfi, chi_null_cfi) {
 
   if (is.na(chi)) {
-    return(list(p_chi = NA, CFI = NA, TLI = NA, RMSEA = NA, RMSEA_LB = NA,
-                RMSEA_UB = NA, AIC = NA, BIC = NA, ECVI = NA, p_null = NA))
+    return(list(p_chi = NA_real_, CFI = NA_real_, TLI = NA_real_, RMSEA = NA_real_,
+                RMSEA_LB = NA_real_, RMSEA_UB = NA_real_, AIC = NA_real_,
+                BIC = NA_real_, ECVI = NA_real_, p_null = NA_real_))
   }
 
   p_null <- stats::pchisq(chi_null, df_null, lower.tail = F)
@@ -171,8 +186,8 @@
   # (Bentler, 1990; Tucker & Lewis, 1973) require on a single scaling constant. `chi_cfi`
   # and `chi_null_cfi` carry the model and baseline statistics on that common scale (.gof()
   # passes the ML/ULS discrepancy on the (N - 1) noncentrality scale; the scaled sandwich
-  # path leaves them at their defaults, since its scaled model and baseline statistics are
-  # already comparable). When the baseline is undefined (e.g. a degenerate scaled baseline)
+  # path passes its scaled model and baseline statistics, which are already comparable).
+  # When the baseline is undefined (e.g. a degenerate scaled baseline)
   # CFI/TLI are NA while the model-only RMSEA/AIC/BIC/p remain computable.
   inc <- .incremental_fit(chi_cfi, df, chi_null_cfi, df_null)
   CFI <- inc$CFI
@@ -180,20 +195,21 @@
 
   if (df != 0) {
 
-    # RMSEA point estimate and bounds, formula 12.6 from Kline (2016, Principles and
-    # Practice of Structural Equation Modeling). The noncentrality chi - df is divided by
-    # (N - 1) while the model chi-square it draws on carries the Bartlett multiplier; this
-    # conventional (N - 1) scaling differs from a strictly self-consistent Browne & Cudeck
-    # (1992) interval by well under 1%.
-    RMSEA <- sqrt(max(0, chi - df) / (df * (N - 1)))
+    # RMSEA point estimate and bounds (Steiger & Lind, 1980; Browne & Cudeck, 1992).
+    # The noncentrality estimate chi_cfi - df and its divisor df * (N - 1) are both on the
+    # uncorrected (N - 1) discrepancy scale, so the RMSEA is the self-consistent
+    # Browne-Cudeck quantity and shares one noncentrality scale with CFI/TLI. The Bartlett
+    # small-sample multiplier is applied only to the reported model chi-square test (matching
+    # stats::factanal), not to this approximation index, for which it has no role.
+    RMSEA <- .rmsea_point(chi_cfi, df, N)
     if (RMSEA > 1) RMSEA <- 1
 
     if (isTRUE(ci)) {
 
       # Analytic 90% RMSEA confidence bounds via the noncentrality solver (Browne &
       # Cudeck, 1992); skipped when ci = FALSE (e.g. per-replicate bootstrap fits).
-      lambda_l <- .rmsea_lambda(chi, df, .95)
-      lambda_u <- .rmsea_lambda(chi, df, .05)
+      lambda_l <- .rmsea_lambda(chi_cfi, df, .95)
+      lambda_u <- .rmsea_lambda(chi_cfi, df, .05)
 
       RMSEA_LB <- sqrt(lambda_l / (df * (N - 1)))
       RMSEA_UB <- sqrt(lambda_u / (df * (N - 1)))
@@ -263,8 +279,10 @@
   # F = tr(Sigma^-1 R) - log|Sigma^-1 R| - p, evaluated at the model-implied correlation
   # matrix Sigma = LL' (unit diagonal), times (N - 1 - (2p + 5)/6 - (2q)/3). For ML this
   # equals the ML objective times the Bartlett multiplier (matching stats::factanal); for
-  # ULS it is the proper chi-square-distributed statistic (matching psych::fa(fm =
-  # "minres")), not the raw least-squares residual sum of squares treated as Wishart. NA
+  # ULS the same ML/Wishart discrepancy is evaluated at the ULS-fitted Sigma (matching
+  # psych::fa(fm = "minres")), rather than treating the raw least-squares residual sum of
+  # squares as the statistic. Its chi-square reference distribution is asymptotically exact
+  # under ML and is used here as the conventional approximation for ULS. NA
   # for PAF, missing N, underidentified df, or a non-PD model-implied matrix (e.g. Heywood
   # cases), where the discrepancy is undefined. DWLS is also excluded: the ML discrepancy is
   # not its fit function -- the appropriate categorical statistic is the mean-and-variance-
@@ -303,11 +321,12 @@
   # instead of letting .null_chisq() recompute determinant(R). Undefined (NA) chi-square
   # leaves the whole chi-derived block NA.
   if (is.na(chi)) {
-    chi <- NA
-    chi_null <- NA
-    df_null <- NA
-    chi_cfi <- NA
-    chi_null_cfi <- NA
+    # chi is already NA_real_ here; NA out the baseline and common-scale quantities to
+    # match, so the whole undefined chi-square block is reported as a numeric (NA_real_) NA.
+    chi_null <- NA_real_
+    df_null <- NA_real_
+    chi_cfi <- NA_real_
+    chi_null_cfi <- NA_real_
   } else {
     chi_null <- .null_chisq(R, N, ld = ldR)
     df_null <- (m**2 - m) / 2

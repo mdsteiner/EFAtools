@@ -44,8 +44,9 @@
 #' partial correlation matrix \eqn{R^*_m} using \eqn{D_m^{-1/2}} (i.e., dividing by the square roots of
 #' residual variances).
 #'
-#' **Termination.** If residual variances (the diagonal of \eqn{C_m}) become non-positive or
-#' numerically unstable, the loop terminates early because \eqn{R^*_m} cannot be formed reliably.
+#' **Termination.** If any residual variance (the diagonal of \eqn{C_m}) drops to at most a small
+#' positive floor (1e-5) or becomes non-finite, the loop terminates early because \eqn{R^*_m}
+#' cannot be formed reliably.
 #'
 #' @param x A numeric `matrix` or `data.frame`. Can be either (a) a correlation matrix, or
 #'   (b) raw data (rows = observations, columns = variables) from which correlations are computed.
@@ -112,16 +113,18 @@ MAP <- function(x,
   # set up m_grid
   m_max <- p - 1
   ms <- 0:m_max
-  criteria <- matrix(NA_real_, nrow = p, ncol = 3)
-  criteria[, 1] <- ms
-  colnames(criteria) <- c("m", "TR2 (orig. MAP)", "TR4 (revised MAP)")
+  criteria <- matrix(NA_real_, nrow = p, ncol = 2)
+  colnames(criteria) <- c("TR2 (orig. MAP)", "TR4 (revised MAP)")
 
 
   # PCA to get the loadings A
   ed <- eigen(R, symmetric = TRUE)
   vals <- ed$values
   vecs <- ed$vectors
-  A <- vecs %*% sqrt(diag(vals))
+  # A = V Lambda^(1/2): scale each eigenvector column by the square root of its
+  # eigenvalue (equivalent to vecs %*% sqrt(diag(vals)) but without forming the
+  # p x p diagonal matrix)
+  A <- sweep(vecs, 2, sqrt(vals), "*")
 
   map_from_partials <- function(M) {
     # Velicer's (1976) MAP and the revised criterion of Velicer, Eaton & Fava (2000)
@@ -134,7 +137,7 @@ MAP <- function(x,
   }
 
   # m=0, Rstar = R
-  criteria[1, c(2, 3)] <- map_from_partials(R)
+  criteria[1, ] <- map_from_partials(R)
 
   # run through ms
   for (m in seq_len(m_max)) {
@@ -153,13 +156,13 @@ MAP <- function(x,
     Dm <- diag(1 / sqrt(d))
 
     Rstar <- Dm %*% Cm %*% Dm
-    criteria[m + 1, c(2, 3)] <- map_from_partials(Rstar)
+    criteria[m + 1, ] <- map_from_partials(Rstar)
 
   }
 
 
-  n_factors_TR2 <- ms[which.min(criteria[, 2])]
-  n_factors_TR4 <- ms[which.min(criteria[, 3])]
+  n_factors_TR2 <- ms[which.min(criteria[, "TR2 (orig. MAP)"])]
+  n_factors_TR4 <- ms[which.min(criteria[, "TR4 (revised MAP)"])]
 
   # one record per MAP criterion (criterion values over the number of partialled
   # components m)

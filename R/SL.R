@@ -329,8 +329,10 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
       )
     }
 
-    # compute uniqueness of higher order factor
-    u2_h <- sqrt(1 - comm_h)
+    # compute uniqueness of higher order factor. A communality a hair above 1
+    # (within floating-point noise, below the Heywood abort threshold above) is
+    # clamped to 1 so the square root never sees a tiny negative value.
+    u2_h <- sqrt(pmax(0, 1 - comm_h))
 
     # Schmid-Leiman solution, residualized first order factor loadings
     L_sls_1 <- L1 %*% diag(u2_h)

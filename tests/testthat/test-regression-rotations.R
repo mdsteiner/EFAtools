@@ -206,7 +206,7 @@ test_that("simplimax routes through the native oblique GPF engine", {
   # simplimax is computed by the native gradient-projection engine;
   # unlike the smooth criteria, the simplimax criterion reselects the
   # k smallest squared loadings at every evaluation (k = nrow(L) by default), so it is only
-  # piecewise smooth and strongly multimodal: its gradient does not vanish at the optimum (the
+  # piecewise smooth and strongly multimodal: its gradient jumps as loadings cross the kth-smallest threshold (the
   # native engine uses a non-monotone line search to step across the kinks) and the global minimum
   # depends on the random restarts. The native engine therefore fully optimizes every restart and
   # keeps the lowest-criterion solution -- the standard remedy for the local minima of

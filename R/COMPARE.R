@@ -53,7 +53,10 @@
 #'  For example, if x contains only values up to the third decimals, and y is a
 #'  normal double, max_dec will be three.}
 #' \item{are_equal}{The maximal number of decimals to which all elements of x and y
-#'  are equal.}
+#'  agree in absolute value. The comparison is on magnitudes, so two elements that
+#'  are equal in size but opposite in sign count as agreeing; signed disagreements
+#'  are reflected in `diff` and the mean / median / min / max absolute differences.
+#'  `NA` if `na.rm = FALSE` and any element is missing.}
 #' \item{diff_corres}{The number of differing variable-to-factor correspondences
 #'  between x and y, when only the highest loading is considered.}
 #' \item{diff_corres_cross}{The number of differing variable-to-factor correspondences
@@ -268,18 +271,28 @@ COMPARE <- function(x,
 
   ax <- abs(x)
   ay <- abs(y)
-  # Walk the decimal places from the integer part outwards, stopping at the
-  # first one that differs: once a place disagrees no deeper place can count, so
-  # there is nothing to gain from testing the rest.
-  are_equal <- 0
-  for (d in 0:max_dec) {
-    if (!isTRUE(all(trunc(signif(ax * 10^d, 13)) == trunc(signif(ay * 10^d, 13)),
-                    na.rm = na.rm))) {
-      break
+  if (anyNA(diff) && (!na.rm || all(is.na(diff)))) {
+    # are_equal is undefined when there is nothing to compare: under na.rm = FALSE
+    # any missing element poisons the comparison, and under na.rm = TRUE a fully
+    # missing overlap leaves no comparable pair (the loop's all(logical(0)) would
+    # otherwise spuriously report agreement to every decimal place). Report NA (the
+    # printed "none"), mirroring how mean_abs_diff and g propagate NA, and matching
+    # max_dec, which ignores missings.
+    are_equal <- NA_real_
+  } else {
+    # Walk the decimal places from the integer part outwards, stopping at the
+    # first one that differs: once a place disagrees no deeper place can count, so
+    # there is nothing to gain from testing the rest.
+    are_equal <- 0
+    for (d in 0:max_dec) {
+      if (!isTRUE(all(trunc(signif(ax * 10^d, 13)) == trunc(signif(ay * 10^d, 13)),
+                      na.rm = na.rm))) {
+        break
+      }
+      are_equal <- d
     }
-    are_equal <- d
+    are_equal <- as.double(are_equal)
   }
-  are_equal <- as.double(are_equal)
 
   settings <- list(
     reorder = reorder,
@@ -292,7 +305,6 @@ COMPARE <- function(x,
     print_diff = print_diff,
     na.rm = na.rm,
     x_labels = x_labels,
-    plot = plot,
     plot_red = plot_red
   )
 

@@ -31,7 +31,7 @@
 // information of the cell-count multinomial (Olsson, 1979). The step is capped away from the
 // singular endpoints and backtracked to keep the likelihood monotone, with Brent's (1973)
 // method as a fallback. Every per-pair quantity is pure C++/Armadillo (std::erfc for the normal
-// CDF), so the pair loop is allocation-light and safe to run under OpenMP.
+// CDF), so the pair loop is allocation-light and reuses caller-owned scratch.
 //
 // References:
 //   Olsson, U. (1979). Maximum likelihood estimation of the polychoric correlation
@@ -62,9 +62,18 @@ static const double POLY_CLAMP = 8.5;
 static const int POLY_GL_N = 12;
 static const int POLY_GL_N_HI = 96;
 static const double POLY_REFINE_RHO = 0.95;
+// A pair with an empty contingency cell is re-estimated with the finer rule only once its cheap
+// (12-node) estimate reaches this gate. A table with an empty cell biases the 12-node estimate
+// only when it is strongly correlated (a sharp conditional transition over a wide tail band); at
+// a low or moderate |rho| the conditional is smooth and the 12-node estimate is already accurate,
+// so refining would be wasted work. The gate sits well below the worst under-shoot of a biased
+// pair (empirically about 0.75, since the 12-node estimate of such a pair lands low), leaving
+// margin while keeping the finer rule off the many weakly-correlated sparse pairs of heterogeneous
+// ordinal data.
+static const double POLY_EMPTY_REFINE_RHO = 0.65;
 
-// Standard normal CDF via the complementary error function (thread-safe, allocation-free,
-// accurate to floating-point precision). Phi(+/-Inf) evaluates cleanly to 1 / 0.
+// Standard normal CDF via the complementary error function (allocation-free, accurate to
+// floating-point precision). Phi(+/-Inf) evaluates cleanly to 1 / 0.
 static inline double std_norm_cdf(double z) {
   return 0.5 * std::erfc(-z * POLY_INV_SQRT_2);
 }
@@ -72,10 +81,9 @@ static inline double std_norm_pdf(double z) {
   return POLY_INV_SQRT_2PI * std::exp(-0.5 * z * z);
 }
 
-// Standard normal quantile via Wichura's (1988) AS 241 (accurate to ~1e-16), thread-safe and
-// allocation-free so it can be called inside the OpenMP pair loop, where R::qnorm cannot. Used
-// for the per-pair (pairwise-complete) thresholds under missing data; returns +/-Inf at p = 1/0
-// (an empty marginal category, handled by the +/-POLY_CLAMP clamping downstream).
+// Standard normal quantile via Wichura's (1988) AS 241 (accurate to ~1e-16), allocation-free.
+// Used for the per-pair (pairwise-complete) thresholds under missing data; returns +/-Inf at
+// p = 1/0 (an empty marginal category, handled by the +/-POLY_CLAMP clamping downstream).
 static inline double std_norm_quantile(double p) {
   // Endpoints first: the AS241 rational evaluates Inf/Inf -> NaN at p = 0/1, so an empty
   // pairwise marginal category (cumulative proportion exactly 0 or 1) must be sent to the
@@ -123,7 +131,7 @@ static inline double std_norm_quantile(double p) {
 }
 
 // Gauss-Legendre nodes/weights on [-1, 1] (Golub-Welsch via Newton on the Legendre roots).
-// Computed once per call, used read-only inside the parallel pair loop.
+// Computed once per call, used read-only inside the pair loop.
 static void gauss_legendre(int n, std::vector<double>& x, std::vector<double>& w) {
   const double pi = 3.14159265358979323846;
   x.assign(n, 0.0);
@@ -254,23 +262,45 @@ static inline void poly_accum_node(double x, double w, double rho, double s, dou
   }
 }
 
+// Fix the interior thresholds of a contingency table from its cumulative marginals (divisor
+// `denom`, the table mass): rcut[a + 1] = Phi^{-1}(cumulative row mass / denom) and ccut[b + 1]
+// likewise for columns. The outer cuts (rcut[0]/rcut[Ki], ccut[0]/ccut[Kj]) are +/-Inf and set by
+// the caller. Used by the pairwise-marginal (missing-data) pass.
+static inline void poly_fix_thresholds(const std::vector<double>& tab, int Ki, int Kj,
+                                       double denom, std::vector<double>& rcut,
+                                       std::vector<double>& ccut) {
+  double cum = 0.0;
+  for (int a = 0; a < Ki - 1; a++) {
+    double rs = 0.0;
+    for (int b = 0; b < Kj; b++) rs += tab[(std::size_t) a * Kj + b];
+    cum += rs;
+    rcut[a + 1] = std_norm_quantile(cum / denom);
+  }
+  cum = 0.0;
+  for (int b = 0; b < Kj - 1; b++) {
+    double cs = 0.0;
+    for (int a = 0; a < Ki; a++) cs += tab[(std::size_t) a * Kj + b];
+    cum += cs;
+    ccut[b + 1] = std_norm_quantile(cum / denom);
+  }
+}
+
 // Two-step polychoric correlation for one variable pair. Builds the contingency table from the
 // pairwise-complete rows, fixes the thresholds (the shared per-variable tau_i/tau_j, or - when
 // use_local is set, i.e. the data have missing values - this pair's own marginal thresholds),
-// optionally applies the empty-cell continuity correction, then minimises the negative
-// log-likelihood over rho. Pure C++ (OpenMP-safe); reuses caller-owned scratch buffers so the
-// hot path does not allocate. Returns NA_REAL when the pair has no overlapping complete cases
-// (the R wrapper turns a resulting NA into a classed condition).
+// then minimises the negative log-likelihood over rho. Pure C++; reuses caller-owned scratch
+// buffers so the hot path does not allocate. Returns NA_REAL when the pair has no overlapping
+// complete cases (the R wrapper turns a resulting NA into a classed condition).
 static double polychoric_pair(const int* xp, int nrow, int ci, int cj,
                               const std::vector<double>& tau_i,
                               const std::vector<double>& tau_j,
-                              int Ki, int Kj, double correct, bool use_local,
+                              int Ki, int Kj, bool use_local,
                               const std::vector<double>& gx, const std::vector<double>& gw,
                               std::vector<double>& tab, std::vector<double>& pmat,
                               std::vector<double>& dpmat, std::vector<double>& colcdf,
                               std::vector<double>& coldcdf, std::vector<double>& rcut,
                               std::vector<double>& ccut, std::vector<double>& xnode,
-                              std::vector<double>& wpdf) {
+                              std::vector<double>& wpdf, bool& had_empty) {
   const int n = (int) gx.size();
   std::fill(tab.begin(), tab.begin() + (std::size_t) Ki * Kj, 0.0);
   double total = 0.0;
@@ -285,45 +315,30 @@ static double polychoric_pair(const int* xp, int nrow, int ci, int cj,
   }
   if (total <= 0.0) return NA_REAL;  // no overlapping complete cases for this pair
 
+  // Whether any contingency cell is empty, reported back through `had_empty`. A handful of
+  // extreme cells then dominate the likelihood, and the fixed 12-node rule under-resolves the
+  // wide (clamped) tail bands of such a table - mislocating the maximum, sometimes badly, even
+  // at moderate rho - so the caller re-estimates these pairs with the finer quadrature rule,
+  // exactly as it does for the near-collinear pairs. Dense tables (no empty cell) keep the
+  // cheap 12-node rule.
+  had_empty = false;
+  for (std::size_t idx = 0, ncell = (std::size_t) Ki * Kj; idx < ncell; idx++) {
+    if (tab[idx] == 0.0) { had_empty = true; break; }
+  }
+
   // Pad the thresholds with +/-Inf so each ordinal cell is a (half-infinite) rectangle. With
   // complete data the per-variable (full-column) thresholds tau_i/tau_j are shared by every
   // pair. With missing data each pair instead uses the thresholds of its own pairwise-complete
-  // cases (the marginals of this contingency table, taken before any continuity correction):
-  // the thresholds and the table then come from the same cases, as in polycor / psych. An empty
-  // marginal category gives a +/-Inf cut, which the +/-POLY_CLAMP clamping turns into a
-  // zero-width (zero-probability, zero-count) band.
+  // cases (the marginals of this contingency table): the thresholds and the table then come from
+  // the same cases, as in polycor / psych. An empty marginal category gives a +/-Inf cut, which
+  // the +/-POLY_CLAMP clamping turns into a zero-width (zero-probability, zero-count) band.
   rcut[0] = -POLY_INF; rcut[Ki] = POLY_INF;
   ccut[0] = -POLY_INF; ccut[Kj] = POLY_INF;
   if (use_local) {
-    double cum = 0.0;
-    for (int a = 0; a < Ki - 1; a++) {
-      double rs = 0.0;
-      for (int b = 0; b < Kj; b++) rs += tab[(std::size_t) a * Kj + b];
-      cum += rs;
-      rcut[a + 1] = std_norm_quantile(cum / total);
-    }
-    cum = 0.0;
-    for (int b = 0; b < Kj - 1; b++) {
-      double cs = 0.0;
-      for (int a = 0; a < Ki; a++) cs += tab[(std::size_t) a * Kj + b];
-      cum += cs;
-      ccut[b + 1] = std_norm_quantile(cum / total);
-    }
+    poly_fix_thresholds(tab, Ki, Kj, total, rcut, ccut);
   } else {
     for (int k = 0; k < Ki - 1; k++) rcut[k + 1] = tau_i[k];
     for (int k = 0; k < Kj - 1; k++) ccut[k + 1] = tau_j[k];
-  }
-
-  // Empty-cell continuity correction: add `correct` pseudo-counts to zero cells (mirrors
-  // psych's correct= for sparse tables). correct = 0 leaves the table untouched. ntab is the
-  // total table mass (including any pseudo-counts) - the multinomial size used in the
-  // expected information.
-  double ntab = total;
-  if (correct > 0.0) {
-    std::size_t ncell = (std::size_t) Ki * Kj;
-    for (std::size_t idx = 0; idx < ncell; idx++) {
-      if (tab[idx] == 0.0) { tab[idx] = correct; ntab += correct; }
-    }
   }
 
   // Precompute the rho-INDEPENDENT part of the quadrature once per pair: for each X (row)
@@ -358,7 +373,7 @@ static double polychoric_pair(const int* xp, int nrow, int ci, int cj,
   // under the integral sign gives d/drho Phi((c-rho x)/s) = phi((c-rho x)/s) (rho c - x) / s^3
   // (Plackett, 1954); an infinite column cut contributes zero. Only the inner column terms
   // depend on rho and are shared across the cells of a row. The information is the multinomial
-  // expectation ntab * sum_ab (dP_ab/drho)^2 / P_ab (Olsson, 1979): positive, and needing no
+  // expectation total * sum_ab (dP_ab/drho)^2 / P_ab (Olsson, 1979): positive, and needing no
   // second derivative.
   auto eval = [&](double rho, double& nll, double& score, double& info) {
     double s = std::sqrt(1.0 - rho * rho);
@@ -404,12 +419,13 @@ static double polychoric_pair(const int* xp, int nrow, int ci, int cj,
         }
       }
     }
-    info = ntab * iacc;
+    info = total * iacc;
   };
 
-  // Warm start at the Pearson correlation of the category codes (lavaan / Olsson, 1979): it
-  // is already close to rho, so the scoring iteration starts inside the basin and converges in
-  // a few steps instead of overshooting from rho = 0 as a cold start would. Computed from the
+  // Warm start at the Pearson correlation of the category codes (an inexpensive starting value
+  // also used by lavaan): it is usually close to rho, so the scoring iteration starts inside the
+  // basin and converges in a few steps instead of overshooting from rho = 0 as a cold start
+  // would. Computed from the
   // contingency table with the category indices as scores; falls back to 0 for a degenerate
   // (zero-variance) margin.
   double sa = 0.0, sb = 0.0, saa = 0.0, sbb = 0.0, sab = 0.0;
@@ -423,8 +439,8 @@ static double polychoric_pair(const int* xp, int nrow, int ci, int cj,
       sab += nij * (double) a * b;
     }
   }
-  double cov = sab - sa * sb / ntab;
-  double va = saa - sa * sa / ntab, vb = sbb - sb * sb / ntab;
+  double cov = sab - sa * sb / total;
+  double va = saa - sa * sa / total, vb = sbb - sb * sb / total;
   double rho0 = (va > 0.0 && vb > 0.0) ? cov / std::sqrt(va * vb) : 0.0;
 
   // Maximise the log-likelihood over (-maxcor, maxcor), bounded away from the singular
@@ -481,6 +497,7 @@ static double polychoric_pair(const int* xp, int nrow, int ci, int cj,
     rho = brent_min([&](double r) { double f, g, fi; eval(r, f, g, fi); return f; },
                     -maxcor, maxcor, tol, 200);
   }
+
   return rho;
 }
 
@@ -575,7 +592,7 @@ static arma::mat poly_threshold_bread(const std::vector<double>& m, int K,
 // .polychoric(), which owns the user-facing validation and classed conditions.
 // [[Rcpp::export(.polychoric_cpp)]]
 Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
-                          double correct, bool nearest_pd, int n_threads) {
+                          bool nearest_pd) {
   if (acov != "none" && acov != "diag" && acov != "full") {
     Rcpp::stop("`acov` must be one of \"none\", \"diag\", or \"full\".");
   }
@@ -584,27 +601,25 @@ Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
   if (p < 2) {
     Rcpp::stop("At least two variables are required for a correlation matrix.");
   }
-  if (n_threads < 1) n_threads = 1;
 
   const int* xp = x.begin();
 
-  // Gauss-Legendre rules for the rectangle quadrature, computed once on the main thread: the
-  // base 12-node rule and the finer rule used to re-estimate near-collinear pairs (|rho| close
-  // to 1), where the base rule under-resolves the narrow conditional transition.
+  // Gauss-Legendre rules for the rectangle quadrature, computed once: the base 12-node rule and
+  // the finer rule used to re-estimate near-collinear pairs (|rho| close to 1), where the base
+  // rule under-resolves the narrow conditional transition.
   std::vector<double> gx, gw, gx_hi, gw_hi;
   gauss_legendre(POLY_GL_N, gx, gw);
   gauss_legendre(POLY_GL_N_HI, gx_hi, gw_hi);
 
   // Whether any cell is missing. With complete data every pair shares the per-variable
   // thresholds (the fast, exact path); with missing data each pair instead uses its own
-  // pairwise-complete thresholds (computed inside the parallel loop via a thread-safe quantile).
+  // pairwise-complete thresholds (computed inside the pair loop via the AS 241 quantile).
   bool any_missing = false;
   for (std::size_t k = 0; k < (std::size_t) nrow * p; k++) {
     if (xp[k] == NA_INTEGER) { any_missing = true; break; }
   }
 
-  // Category counts and thresholds, computed once per variable on the main thread
-  // (R::qnorm is not called inside the parallel region below). The codes are 0-based
+  // Category counts and thresholds, computed once per variable. The codes are 0-based
   // and consecutive (the R wrapper recodes them), so the number of categories is
   // max(code) + 1 and no marginal proportion lands exactly on 0.
   std::vector<int> Kcat(p, 0);
@@ -640,9 +655,8 @@ Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
     tau[j] = th;
   }
 
-  // Flat list of upper-triangle pairs, parallelised over OpenMP. Each pair writes a
-  // distinct rho slot, so the result is independent of the thread count (no reduction
-  // races) and therefore bit-for-bit deterministic.
+  // Flat list of upper-triangle pairs. Each pair writes a distinct rho slot, so the
+  // result is bit-for-bit deterministic.
   std::vector<int> pair_i, pair_j;
   pair_i.reserve((std::size_t) p * (p - 1) / 2);
   pair_j.reserve((std::size_t) p * (p - 1) / 2);
@@ -659,9 +673,8 @@ Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
   // (a refined value can land just the other side of POLY_REFINE_RHO).
   std::vector<char> used_hi((std::size_t) npairs, 0);
 
-  #pragma omp parallel num_threads(n_threads)
   {
-    // Thread-local scratch reused across this thread's pairs (no allocation in the loop).
+    // Scratch reused across pairs (no allocation in the loop).
     std::vector<double> tab((std::size_t) Kmax * Kmax);
     std::vector<double> pmat((std::size_t) Kmax * Kmax);
     std::vector<double> dpmat((std::size_t) Kmax * Kmax);
@@ -671,19 +684,26 @@ Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
     std::vector<double> xnode((std::size_t) Kmax * POLY_GL_N_HI);
     std::vector<double> wpdf((std::size_t) Kmax * POLY_GL_N_HI);
 
-    #pragma omp for schedule(dynamic)
     for (int t = 0; t < npairs; t++) {
       int i = pair_i[t];
       int j = pair_j[t];
-      double r = polychoric_pair(xp, nrow, i, j, tau[i], tau[j], Kcat[i], Kcat[j], correct,
+      bool had_empty = false;
+      double r = polychoric_pair(xp, nrow, i, j, tau[i], tau[j], Kcat[i], Kcat[j],
                                  any_missing, gx, gw, tab, pmat, dpmat, colcdf, coldcdf,
-                                 rcut, ccut, xnode, wpdf);
-      // Near |rho| = 1 the 12-node rule under-resolves the conditional transition and biases
-      // the estimate, so re-estimate the rare near-collinear pair with the finer rule.
-      if (std::isfinite(r) && std::fabs(r) > POLY_REFINE_RHO) {
-        r = polychoric_pair(xp, nrow, i, j, tau[i], tau[j], Kcat[i], Kcat[j], correct,
+                                 rcut, ccut, xnode, wpdf, had_empty);
+      // The 12-node rule under-resolves the conditional transition near |rho| = 1, and the same
+      // sharp transition over a wide tail band biases the estimate of a strongly-correlated table
+      // with an empty cell -- where the 12-node estimate itself under-shoots, dropping below
+      // POLY_REFINE_RHO so the near-collinear test alone would miss it. Re-estimate such pairs with
+      // the finer rule: when the cheap estimate is near-collinear, or has an empty cell and is
+      // already at least moderately correlated (POLY_EMPTY_REFINE_RHO). An empty cell at a low |rho|
+      // carries no quadrature bias, so it keeps the cheap rule.
+      if (std::isfinite(r) && (std::fabs(r) > POLY_REFINE_RHO ||
+                               (had_empty && std::fabs(r) > POLY_EMPTY_REFINE_RHO))) {
+        bool he2 = false;
+        r = polychoric_pair(xp, nrow, i, j, tau[i], tau[j], Kcat[i], Kcat[j],
                             any_missing, gx_hi, gw_hi, tab, pmat, dpmat, colcdf, coldcdf,
-                            rcut, ccut, xnode, wpdf);
+                            rcut, ccut, xnode, wpdf, he2);
         used_hi[t] = 1;
       }
       rho[t] = r;
@@ -740,7 +760,10 @@ Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
   // scores, then Gamma = crossprod(IF) -- the variance-scale covariance Var(rho-hat)
   // (lavaan's WLS.W; diag(WLS.W)^{-1} are the DWLS weights). Because every per-case score is
   // constant within a contingency cell, the diagonal reduces to a cell sum (the cheap path)
-  // and equals diag(Gamma) by construction. When an ACOV is requested the R wrapper restricts
+  // and equals diag(Gamma) by construction. This is the large-sample (per-observation, 1/N)
+  // covariance: N * Gamma matches lavaan's per-case correlation NACOV, and lavaan's reported
+  // vcov() differs only by the small-sample 1/(N - 1) versus 1/N convention (a factor of
+  // (N - 1)/N that vanishes as N grows). When an ACOV is requested the R wrapper restricts
   // the input to the listwise-complete rows first, so the point estimate, thresholds, and
   // ACOV share one case set (a sandwich covariance must be that of the estimator that
   // produced the estimates); here every row is complete and the point-estimate thresholds
@@ -780,9 +803,8 @@ Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
     arma::mat IF_cor;
     if (acov == "full") IF_cor.set_size(Nc, npairs);
 
-    #pragma omp parallel num_threads(n_threads)
     {
-      // Thread-local scratch reused across this thread's pairs.
+      // Scratch reused across pairs.
       std::vector<double> pmat((std::size_t) Kmax * Kmax);
       std::vector<double> dpmat((std::size_t) Kmax * Kmax);
       std::vector<double> nab((std::size_t) Kmax * Kmax);
@@ -791,7 +813,6 @@ Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
       std::vector<double> colcdf(Kmax + 1), coldcdf(Kmax + 1), colb(Kmax + 1);
       std::vector<double> Ti(Kmax), Tj(Kmax), A21i(Kmax), A21j(Kmax);
 
-      #pragma omp for schedule(dynamic)
       for (int t = 0; t < npairs; t++) {
         int i = pair_i[t], j = pair_j[t];
         int Ki = Kcat[i], Kj = Kcat[j];

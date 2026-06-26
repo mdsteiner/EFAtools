@@ -71,6 +71,17 @@ test_that("n_fac_max is correctly specified", {
                .det_max_factors(ncol(GRiPS_raw)))
 })
 
+test_that("the factor-search bound stays over-identified with the minimum number of indicators", {
+  skip_if_not_slow()
+  # With 6 indicators the largest over-identified model has 2 factors (a 3-factor
+  # solution is just-identified, df = 0). The search bound J must be capped at that
+  # maximum and never forced up to 3, so the Hull method cannot select a df = 0 model.
+  R6 <- test_models$baseline$cormat[1:6, 1:6]
+  out <- suppressWarnings(suppressMessages(HULL(R6, N = 500, method = "ULS")))
+  expect_equal(out$settings$n_fac_max, .det_max_factors(6))
+  expect_lte(max(out$n_factors, na.rm = TRUE), .det_max_factors(6))
+})
+
 test_that("records are correctly returned", {
   skip_if_not_slow()
   expect_named(hull_cor_paf$n_factors, "CAF")

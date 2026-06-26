@@ -30,7 +30,9 @@
 #'  The following eigenvalues are compared against synthetic datasets based on an EFA-model with one fewer factors
 #'  than the position of the respective empirical eigenvalue. E.g, the second
 #'  empirical eigenvalue is compared against synthetic data based on a one-factor
-#'  model. The `alpha`-level defines against which percentile of the synthetic
+#'  model. In each comparison the \eqn{k}-th empirical eigenvalue is tested against
+#'  the \eqn{k}-th largest eigenvalue of the synthetic datasets. The `alpha`-level
+#'  defines against which percentile of the synthetic
 #'  eigenvalue distribution to compare the empirical eigenvalues against, i.e., an
 #'  alpha of .05 (the default) uses the 95th percentile as reference value.
 #'

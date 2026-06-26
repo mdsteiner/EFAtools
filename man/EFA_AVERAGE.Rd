@@ -216,9 +216,9 @@ details).}
 \item{implementations_grid}{A matrix containing, for each performed EFA,
 the setting combination, if an error occurred (logical), the error message
 (character), an integer convergence code (0 = converged; for ML and ULS the
-code returned by \code{\link[stats:optim]{stats::optim()}}, for PAF 1 if the maximum
-number of iterations was reached without meeting the convergence criterion and
-0 otherwise),
+same codes as \code{\link[stats:optim]{stats::optim()}}'s "L-BFGS-B", for PAF 1 if the
+maximum number of iterations was reached without meeting the convergence
+criterion and 0 otherwise),
 if heywood cases occurred (logical, see details for definition), if the
 solution was admissible (logical, see details for definition), and the fit
 indices.}
@@ -307,16 +307,25 @@ therefore not be interpreted as whole factor solutions.
 The output also includes information on the average, minimum, maximum, and
 variability of the fit indices across the non-problematic factor solutions.
 It is important to note that not all fit indices are computed for all fit
-methods: For ML and ULS, all fit indices can be computed, while for PAF, only
-the common part accounted for (CAF) index (Lorenzo-Seva, Timmerman, & Kiers, 2011)
-can be computed. As a consequence, if only "PAF" is included in the
-\code{method} argument, averaging can only be performed for the CAF, and the
-other fit indices are NA. If a combination of "PAF" and "ML" and/or "ULS" are
-included in the \code{method} argument, the CAF is averaged across all non-
-problematic factor solutions, while all other fit indices are only averaged
-across the ML and ULS solutions. The user should therefore keep in mind that
-the number of EFAs across which the fit indices are averaged can diverge for
-the CAF compared to all other fit indices.
+methods: For ML and ULS, all fit indices can be computed, while for PAF the
+chi-square-based indices (the chi-square statistic and its significance, CFI,
+TLI, RMSEA, AIC, BIC, and ECVI) are NA. The common part accounted for (CAF)
+index (Lorenzo-Seva, Timmerman, & Kiers, 2011) and the residual-based SRMR and
+RMSR are still computed for PAF. As a consequence, if only "PAF" is included in
+the \code{method} argument, averaging is performed for the CAF, SRMR, and RMSR, while
+the chi-square-based indices are NA. If a combination of "PAF" and "ML" and/or
+"ULS" are included in the \code{method} argument, the CAF, SRMR, and RMSR are
+averaged across all non-problematic factor solutions, while the chi-square-based
+indices are only averaged across the ML and ULS solutions. The user should
+therefore keep in mind that the number of EFAs across which the fit indices are
+averaged can diverge for the CAF, SRMR, and RMSR compared to the chi-square-based
+indices.
+
+Each reported fit index is summarised across the (non-problematic) solutions in
+the same descriptive way: the average, standard deviation, minimum, and maximum
+of the per-solution values. This includes the chi-square significance level
+(\code{p_chi}), which is therefore the mean (or median) of the per-solution p-values
+and is purely descriptive; it is not the p-value of any pooled chi-square test.
 }
 \examples{
 \dontrun{

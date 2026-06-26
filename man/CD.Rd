@@ -57,7 +57,9 @@ An object of class \code{efa_retention} (see \code{\link[=print.efa_retention]{p
 factors according to comparison data results.}
 \item{results}{A list with a single record holding the mean RMSE between the
 eigenvalues of the generated and the entered data per number of factors
-(used for the plot) and, in \code{rmse_eigenvalues}, the full matrix of RMSEs.}
+(used for the plot) and, in \code{rmse_eigenvalues}, the per-sample RMSE matrix
+(rows are samples, columns are factor counts; columns beyond the last tested
+factor count are left as zero).}
 \item{settings}{A list of the settings used.}
 }
 \description{

@@ -7,7 +7,6 @@
 
   cat("\r", rep(" ", ifelse(getOption("width") > 30, getOption("width"), 30)))
   if (isFALSE(done)) {
-    #cat("\r", paste0(curr, "/", to, ":"), "Running", what)
     cat("\r", emoji, what)
   } else {
     cat("\r", "Done!\n")
@@ -275,11 +274,14 @@
   fit_max[is.infinite(fit_max)] <- NA
   fit_range[is.infinite(fit_range)] <- NA
 
+  # df is the same for every averaged solution (fixed m and n_factors), so its
+  # dispersion is zero: sd and range of a constant are 0, while average/min/max
+  # equal df itself.
   fit_indices <- data.frame(
     index = c(names(fit_av), "df"),
     average = c(fit_av, df),
-    sd = c(fit_sd, df),
-    range = c(fit_range, df),
+    sd = c(fit_sd, 0),
+    range = c(fit_range, 0),
     min = c(fit_min, df),
     max = c(fit_max, df),
     stringsAsFactors = FALSE

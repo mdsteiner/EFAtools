@@ -150,7 +150,10 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   # that model is degenerate (e.g. a Heywood / non-positive-definite case).
   # Mirrors the null-model block in .gof().
   m <- ncol(R)
-  chi_null <- .null_chisq(R, N)
+  # Reuse one log-determinant of R for both null chi-squares (the Bartlett-corrected statistic
+  # below and the uncorrected RMSEA baseline further down) instead of factorising R twice.
+  ld_R <- determinant(R, logarithm = TRUE)
+  chi_null <- .null_chisq(R, N, ld = ld_R)
   df_null <- (m^2 - m) / 2
   p_null <- stats::pchisq(chi_null, df_null, lower.tail = FALSE)
 
@@ -172,9 +175,19 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
     nfac_chi <- stop_at - 1L
   }
 
-  # Calculate RMSEA (incl. lower bound of 90% CI) and AIC for the null model
-  # (chi_null and df_null were computed above from R and N).
-  RMSEA_LB_null <- sqrt(.rmsea_lambda(chi_null, df_null, .95) / (df_null * (N - 1)))
+  # Calculate RMSEA (incl. lower bound of 90% CI) and AIC for the null model. The
+  # RMSEA noncentrality is built on the uncorrected (N - 1) discrepancy scale (as in
+  # .chi_fit_indices()), so the null model uses the uncorrected baseline chi-square;
+  # p_null and AIC_null keep the Bartlett-corrected statistic computed above. When N is
+  # too small for the Bartlett correction (chi_null is NA) the null-model asymptotics
+  # break down, so leave the RMSEA bound NA too, matching how .gof() drops the
+  # fitted-model fit indices at such N.
+  chi_null_rmsea <- .null_chisq(R, N, ld = ld_R, corrected = FALSE)
+  RMSEA_LB_null <- if (is.na(chi_null)) {
+    NA_real_
+  } else {
+    sqrt(.rmsea_lambda(chi_null_rmsea, df_null, .95) / (df_null * (N - 1)))
+  }
 
   AIC_null <- chi_null - 2 * df_null
 

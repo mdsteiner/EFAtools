@@ -672,8 +672,14 @@ format.summary.EFA <- function(x, ...) {
 
   # When the sandwich path supplies a scaled (Satorra-Bentler) chi-square, mark the line so
   # it is not read as an ordinary chi-square (the CFI/TLI/RMSEA below are derived from it).
+  # A D2-pooled fit is flagged the same way: its chi-square is the Li et al. (1991)
+  # asymptotic statistic df * F_D2, whose p-value comes from the D2 reference F(df1, df2)
+  # rather than the chi-square(df) tail (the note below spells this out when they diverge).
+  is_d2 <- isTRUE(spec$is_pooled) && identical(fit[["pool_method"]], "D2")
   chi_prefix <- if (!is.null(fit[["chi_scaled_type"]]) && !is.na(fit[["chi_scaled_type"]])) {
     "scaled "
+  } else if (is_d2) {
+    "D2-pooled "
   } else {
     ""
   }
@@ -701,6 +707,21 @@ format.summary.EFA <- function(x, ...) {
   }
 
   .efa_emit_lines(lines)
+
+  # The D2-pooled chi-square (Li, Meng, Raghunathan & Rubin, 1991) is the asymptotic
+  # statistic df * F_D2 and its p-value comes from the reference F(df1, df2); state that
+  # so the reported p is not mistaken for the chi-square(df) tail probability. The two
+  # references coincide only as df2 -> Inf (no between-imputation variance), so the note is
+  # shown when df2 is finite.
+  if (is_d2) {
+    d2_df2 <- if (is.null(fit$mi_diagnostics)) NA_real_ else fit$mi_diagnostics$D2_df2
+    if (is.finite(d2_df2)) {
+      d2_df2_text <- .efa_format_plain_number(d2_df2, digits = 1)
+      cli::cli_text(
+        "{.emph Note:} the pooled \u03c7\u00b2 is the D2 statistic; its {.emph p} uses the D2 reference F({df_text}, {d2_df2_text}), not the \u03c7\u00b2({df_text}) tail."
+      )
+    }
+  }
 
   invisible(NULL)
 }

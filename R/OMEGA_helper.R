@@ -32,7 +32,6 @@
     var_names <- rownames(model)
     g_load <- model[, 1]
     s_load <- model[, s_load_names]
-    factor_names <- c("g", seq_len(ncol(s_load)))
     u2 <- model[, "u2"]
 
  } else if(inherits(model, "SL")){
@@ -48,14 +47,12 @@
     var_names <- rownames(model)
     g_load <- model[, 1]
     s_load <- model[, 2:(ncol(model) - 2)]
-    factor_names <- c("g", seq_len(ncol(s_load)))
     u2 <- model[, "u2"]
 
-  } else {
-
-    factor_names <- c("g", seq_len(ncol(s_load)))
-
   }
+
+  # Same general + group factor labels regardless of how s_load was obtained.
+  factor_names <- c("g", seq_len(ncol(s_load)))
 
     if(variance == "correlation"){
 
@@ -189,13 +186,16 @@
     # Sums of all group factor loadings for all group factors
     sums_s <- colSums(input[, 2:(ncol(s_load) + 1), drop = FALSE])
 
-    # Compute omega total, hierarchical, and subscale for g-factor. All three
-    # share the same (unzeroed) total-variance denominator, so that
-    # tot = hier + sub for the g row.
-    omega_tot_g <- (sum_g^2 + sum(sums_s_s^2)) / (sum_g^2 + sum(sums_s^2) +
-                                                    sum_e)
+    # Compute omega total, hierarchical, and subscale for the whole scale. The
+    # composite here is all items, so every item's loading on every group factor
+    # contributes to its variance: the general and group terms use the full
+    # loading-column sums. omega total is then McDonald's model-implied total,
+    # 1 - sum(u^2) / V, with V the model-implied composite variance, and the
+    # general and group variances partition it exactly (tot = hier + sub for the
+    # g row). McDonald (1999, Test Theory, Eq. 6.20a).
+    omega_tot_g <- (sum_g^2 + sum(sums_s^2)) / (sum_g^2 + sum(sums_s^2) + sum_e)
     omega_h_g <- sum_g^2 / (sum_g^2 + sum(sums_s^2) + sum_e)
-    omega_sub_g <- sum(sums_s_s^2) / (sum_g^2 + sum(sums_s^2) + sum_e)
+    omega_sub_g <- sum(sums_s^2) / (sum_g^2 + sum(sums_s^2) + sum_e)
 
     # Compute omega total, hierarchical, and subscale for group factors
     omega_tot_sub <- (sums_g_s^2 + sums_s_s^2) / (sums_g_s^2 + sums_s_s^2 +
@@ -331,6 +331,16 @@
   if(is.null(group_names)){
 
     group_names <- names(std_sol)
+
+  } else if(length(group_names) != length(std_sol)){
+
+    # A user-supplied vector must label every fitted group, otherwise the output
+    # would be silently mislabelled (or error) when the names are attached below.
+    cli::cli_abort(
+      c("{.arg group_names} does not match the number of groups in the {.cls lavaan} model.",
+        "i" = "The model has {length(std_sol)} group{?s}, but {.arg group_names} has {length(group_names)}."),
+      class = "efa_omega_group_names"
+    )
 
   }
 
@@ -534,7 +544,8 @@
         # pattern. Only the group factors contaminate correlations, so the
         # general-factor column is excluded -- the general factor need not load on
         # every item (e.g. an incomplete-g bifactor). See .puc.
-        PUC <- .puc(std_sol[[i]][["lambda"]][, col_names, drop = FALSE] != 0)
+        PUC <- .puc(abs(std_sol[[i]][["lambda"]][, col_names, drop = FALSE]) >
+                      0 + .Machine$double.eps * 100)
 
         # Create output
         h <- c(h_g, h_s)

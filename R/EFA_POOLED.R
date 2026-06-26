@@ -58,7 +58,14 @@
 #' The model chi-square and the indices derived from it (RMSEA, ECVI, and the
 #' descriptive AIC/BIC) are not arithmetic means of the per-imputation values: the
 #' complete-data chi-squares are pooled with the D2 rule and the asymptotic
-#' chi-square approximation to D2 is used downstream. Because D2 deflates the
+#' chi-square approximation to D2 is used downstream. The reported pooled
+#' chi-square is this asymptotic statistic \eqn{df \cdot F_{D2}}{df * F_D2}, but
+#' its p-value is the D2 reference F-test tail
+#' \eqn{\Pr(F_{df_1, df_2} > F_{D2})}{P(F(df1, df2) > F_D2)}, not
+#' \eqn{\Pr(\chi^2_{df} > df \cdot F_{D2})}{P(chi^2_df > df * F_D2)}; the two
+#' coincide only as the D2
+#' denominator degrees of freedom grow (no between-imputation variance), and the
+#' printed fit block flags the chi-square line accordingly. Because D2 deflates the
 #' pooled chi-square by its between-imputation average relative increase in
 #' variance, the pooled RMSEA inherits that shrinkage and can fall below the mean
 #' of the per-imputation RMSEAs (as it does in `lavaan.mi`); read it together with
@@ -1483,19 +1490,20 @@ EFA_POOLED <- function(data_list,
   CFI <- inc_means[[1L]]
   TLI <- inc_means[[2L]]
 
-  # Diagnostic only (exposed via mi_diagnostics, not the basis of the reported
-  # CFI/TLI above): the model and baseline chi-squares D2-pooled on the common
-  # (N - 1) noncentrality scale, the basis on which lavaan.mi/semTools form pooled
-  # incremental indices, kept so the pooled fit can be reconciled against that
-  # reference. Each imputation's Bartlett-corrected chi is mapped back to the
+  # The model and baseline chi-squares D2-pooled on the common (N - 1) noncentrality
+  # scale, the basis on which lavaan.mi/semTools form pooled incremental indices.
+  # chi_cfi is the (N - 1)-scaled pooled model statistic that drives the reported RMSEA
+  # below; chi_null_cfi is exposed via mi_diagnostics so the pooled fit can be reconciled
+  # against that reference (the reported CFI/TLI are averaged per imputation, not formed
+  # from these). Each imputation's Bartlett-corrected chi is mapped back to the
   # (N - 1) scale -- chi = F * mult implies F * (N - 1) = chi * (N - 1) / mult, with
   # .bartlett_mult() shared with .gof()/.null_chisq() so the multiplier cannot drift
   # -- before pooling, since D2 is non-linear in a constant rescaling. The model and
   # baseline use different multipliers (the factor-count term (2q)/3 enters only the
   # model), so a small-N imputation can pass one finiteness mask (ok_m / ok_n) and
-  # not the other; that asymmetry touches this diagnostic alone. q is read from the
-  # first fit, valid because .efa_pooled_check_fits() pins an equal factor count
-  # across imputations.
+  # not the other; the model mask ok_m gates the RMSEA statistic, ok_n the chi_null_cfi
+  # diagnostic. q is read from the first fit, valid because .efa_pooled_check_fits()
+  # pins an equal factor count across imputations.
   chi_cfi <- NA_real_
   chi_null_cfi <- NA_real_
   if (identical(pool_method, "D2") && length(chis) > 0L && is.finite(df) && df > 0) {
@@ -1522,11 +1530,14 @@ EFA_POOLED <- function(data_list,
     ECVI <- NA_real_
   }
 
+  # RMSEA is built on the uncorrected (N - 1) discrepancy scale (as in
+  # .chi_fit_indices()), so it uses the (N - 1)-scaled pooled model statistic chi_cfi,
+  # not the Bartlett-corrected chi (which drives the reported model chi-square test).
   rmsea_denom <- df * (N - 1)
-  if (is.finite(chi) && is.finite(df) && is.finite(N) &&
+  if (is.finite(chi_cfi) && is.finite(df) && is.finite(N) &&
       df > 0 && N > 1 && is.finite(rmsea_denom) && rmsea_denom > 0) {
-    RMSEA <- sqrt(max((chi - df) / rmsea_denom, 0))
-    rmsea_ci <- .efa_pooled_rmsea_ci(chi, df, N, level = rmsea_ci_level)
+    RMSEA <- .rmsea_point(chi_cfi, df, N)
+    rmsea_ci <- .efa_pooled_rmsea_ci(chi_cfi, df, N, level = rmsea_ci_level)
   } else {
     RMSEA <- NA_real_
     rmsea_ci <- c(lower = NA_real_, upper = NA_real_)
@@ -1821,16 +1832,12 @@ EFA_POOLED <- function(data_list,
   core <- .efa_pooled_rubin_core(est, U_bar, B_mi, m, N_pool = Inf, alpha = alpha)
 
   list(
-    est   = est,
-    q_bar = q_bar,
-    se    = core$se,
-    ci    = core$ci,
-    U_bar = U_bar,
-    B_mi  = B_mi,
-    T_mi  = core$Tot,
-    RIV   = core$RIV,
-    FMI   = core$FMI,
-    df    = core$df
+    est = est,
+    se  = core$se,
+    ci  = core$ci,
+    RIV = core$RIV,
+    FMI = core$FMI,
+    df  = core$df
   )
 }
 

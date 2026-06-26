@@ -13,7 +13,7 @@
 
 \item{N}{numeric. Number of cases / observations in dataset.}
 
-\item{eigen_type}{numeric. Whether PCA (eigen_type = 1; i.e., leaving diagonal of correlation matrix at 1) or PAF (eigen_type = 2; i.e., setting diagonal of correlation matrix to SMCs).}
+\item{eigen_type}{numeric. Whether PCA (eigen_type = 1; i.e., leaving diagonal of correlation matrix at 1) or SMC (eigen_type = 2; i.e., setting diagonal of correlation matrix to SMCs).}
 
 \item{maxit}{numeric. Maximum iterations to perform after which to abort.}
 }

@@ -273,6 +273,34 @@ test_that("output is correct", {
   expect_equal(unname(om_man_2[1, 1]), unname(sum(om_man_2[1, 2:3])))
 })
 
+test_that("variance = 'sums_load' whole-scale omega total is McDonald's model-implied total (full loading columns)", {
+  # A dense group-loading matrix: item 1 is assigned to F1 but also loads on F2.
+  # The whole-scale composite contains all items, so its model-implied omega total
+  # counts every group loading (full columns), giving 1 - sum(u2)/V, with the
+  # general and group variances partitioning it exactly (McDonald, 1999).
+  g_load <- rep(0.5, 6)
+  s_load <- matrix(0, 6, 2); s_load[1:3, 1] <- 0.5; s_load[4:6, 2] <- 0.5
+  s_load[1, 2] <- 0.3
+  u2 <- 1 - g_load^2 - rowSums(s_load^2)
+  fc <- matrix(0, 6, 2); fc[1:3, 1] <- 1; fc[4:6, 2] <- 1   # item 1 assigned to F1 only
+
+  om <- .OMEGA_FLEX(model = NULL, type = "EFAtools", var_names = paste0("V", 1:6),
+                    g_load = g_load, s_load = s_load, u2 = u2,
+                    factor_corres = fc, variance = "sums_load")
+
+  full_s <- colSums(s_load)                       # full columns (all items)
+  V <- sum(g_load)^2 + sum(full_s^2) + sum(u2)    # model-implied composite variance
+
+  # omega total is McDonald's model-implied total, using the full loading columns,
+  # and the whole-scale subscale omega is the full group-factor variance (not the
+  # assigned-only mass), so tot = hier + sub exactly.
+  expect_equal(unname(om[1, "tot"]), 1 - sum(u2) / V)
+  expect_equal(unname(om[1, "sub"]), sum(full_s^2) / V)
+  expect_equal(unname(om[1, "tot"]), unname(om[1, "hier"] + om[1, "sub"]))
+  # the off-assignment loading makes the full mass strictly exceed the assigned one
+  expect_gt(sum(full_s^2), sum(colSums(s_load * fc)^2))
+})
+
 test_that("type = 'psych' reproduces psych::omega (g omegas and ECV)", {
   skip_on_cran()
   skip_if_not_installed("psych")

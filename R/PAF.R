@@ -129,7 +129,7 @@
   list(
     L = L,
     h2 = h2,
-    Fm = NA,
+    Fm = NA_real_,
     iter = iter,
     convergence = convergence,
     orig_R = orig_R,

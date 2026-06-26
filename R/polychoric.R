@@ -2,25 +2,11 @@
 # each variable to consecutive 0-based categories, then defers the numerics to the C++
 # backend (.polychoric_cpp); this wrapper owns the input validation and the classed
 # conditions, which can only be raised at the R level.
-.polychoric <- function(x, correct = 0, nearest_pd = FALSE, n_threads = 1L,
+.polychoric <- function(x, nearest_pd = FALSE,
                         binary_only = FALSE, acov = c("none", "diag", "full"),
                         label_acov = TRUE, error_call = rlang::caller_env()) {
 
   acov <- match.arg(acov)
-
-  if (!is.numeric(correct) || length(correct) != 1L || !is.finite(correct) ||
-      correct < 0) {
-    cli::cli_abort(
-      c("{.arg correct} must be a single non-negative number.",
-        "x" = "You supplied {.obj_type_friendly {correct}}."),
-      class = "efa_cor_bad_arg", call = error_call)
-  }
-  n_threads <- suppressWarnings(as.integer(n_threads))
-  if (length(n_threads) != 1L || is.na(n_threads) || n_threads < 1L) {
-    cli::cli_abort(
-      c("{.arg n_threads} must be a single positive integer."),
-      class = "efa_cor_bad_arg", call = error_call)
-  }
 
   # Factor columns of a data frame become their integer codes; numeric data passes
   # through. The recoding below maps each column onto its own 0-based categories.
@@ -81,8 +67,8 @@
       class = "efa_cor_not_binary", call = error_call)
   }
 
-  # Many categories usually means the variable is continuous, not ordinal; warn but
-  # proceed, mirroring how reference implementations flag this.
+  # Many categories usually means the variable is continuous, not ordinal; warn (rather than
+  # abort, so a genuinely ordinal many-category variable still works) but proceed.
   if (any(n_cat >= 10L)) {
     many <- nms[n_cat >= 10L]
     cli::cli_warn(
@@ -91,8 +77,7 @@
       class = "efa_cor_many_categories")
   }
 
-  res <- .polychoric_cpp(codes, acov, as.numeric(correct), isTRUE(nearest_pd),
-                         n_threads)
+  res <- .polychoric_cpp(codes, acov, isTRUE(nearest_pd))
 
   R <- res$R
   dimnames(R) <- list(nms, nms)
@@ -130,9 +115,36 @@
   # of the upper triangle (i < j), so the labels match utils::combn(nms, 2).
   if (acov != "none") {
     av <- res$acov
-    # The point estimate names the asymptotic covariance by variable pair; the per-replicate
-    # bootstrap recompute consumes it positionally and skips the labelling (label_acov = FALSE).
+    # The point estimate names the asymptotic covariance by variable pair and runs the
+    # structural-sparsity diagnostic below; the per-replicate bootstrap recompute consumes the
+    # covariance positionally and skips both (label_acov = FALSE), so neither is repeated per
+    # replicate.
     if (label_acov) {
+      # The two-step asymptotic covariance (and the DWLS weights / robust standard errors derived
+      # from it) rely on large-sample theory that degrades for structurally empty contingency
+      # cells, where the analytic variances can be far too small. Warn only when a cell is empty
+      # despite a non-negligible expected count under independence (a structural rather than
+      # incidental zero, by the usual >= 5 contingency-table rule); a rare corner combination in a
+      # many-category table is not flagged. The covariance is still returned.
+      n_obs <- nrow(codes)
+      pairs_ij <- utils::combn(p, 2L)
+      # Stop at the first structurally-sparse pair instead of building every pair's table.
+      any_sparse <- FALSE
+      for (k in seq_len(ncol(pairs_ij))) {
+        i <- pairs_ij[1L, k]; j <- pairs_ij[2L, k]
+        tab <- matrix(tabulate(codes[, i] * n_cat[j] + codes[, j] + 1L,
+                               nbins = n_cat[i] * n_cat[j]),
+                      n_cat[i], n_cat[j], byrow = TRUE)
+        expected <- outer(rowSums(tab), colSums(tab)) / n_obs
+        if (any(tab == 0L & expected >= 5)) { any_sparse <- TRUE; break }
+      }
+      if (any_sparse) {
+        cli::cli_warn(
+          c("Some response-category combinations are empty despite a non-negligible expected count.",
+            "i" = "The polychoric asymptotic covariance (and any DWLS weights or robust standard errors derived from it) can be unreliable for such structurally sparse cells; interpret them with caution."),
+          class = "efa_cor_sparse_cells")
+      }
+
       labels <- .pair_labels(nms)
       if (acov == "diag") {
         names(av) <- labels

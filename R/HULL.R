@@ -200,13 +200,18 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
                   class = "efa_hull_max_factors")
   }
 
-  if (J < 3) {
+  # The Hull method needs at least three solutions (for 0 to J factors) to form a
+  # hull, i.e. J of at least 2. With few indicators the largest over-identified
+  # model can itself be below the usual floor of three factors, so cap the floor at
+  # that maximum to avoid forcing an under-identified (df = 0) top model.
+  hull_floor <- min(3L, .det_max_factors(ncol(R)))
+  if (J < hull_floor) {
     cli::cli_warn(
-      c("The suggested maximum number of factors was {J}, but must be at least 3 for the Hull method.",
-        "i" = "Setting it to 3."),
+      c("The suggested maximum number of factors was {J}, but the Hull method needs at least {hull_floor}.",
+        "i" = "Setting it to {hull_floor}."),
       class = "efa_hull_min_factors"
     )
-    J <- 3
+    J <- hull_floor
 
   }
 
@@ -219,7 +224,7 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   if ("CAF" %in% gof) {
     s_CAF <- s
     colnames(s_CAF) <- c("nfactors", "CAF", "df", "st")
-    s_CAF[1, 2] <- 1 - KMO(R)$KMO
+    s_CAF[1, 2] <- 1 - .compute_kmo(R)$KMO
     s_CAF[1, 3] <- (m**2 - m) / 2
   }
 
@@ -233,12 +238,20 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
   if ("RMSEA" %in% gof) {
     s_RMSEA <- s
     colnames(s_RMSEA) <- c("nfactors", "RMSEA", "df", "st")
-    # 0-factor (independence model) reference, on the same Bartlett-corrected
-    # ML-discrepancy scale as the 1:J solutions returned by .gof()
-    chi <- .null_chisq(R, N)
+    # 0-factor (independence model) reference, on the same uncorrected (N - 1) discrepancy scale
+    # the RMSEA of the 1:J solutions uses in .chi_fit_indices(). When N is too small for the
+    # Bartlett correction (the corrected null chi-square is NA) the chi-square asymptotics break
+    # down, so the reference is left undefined too -- matching how .gof()/SMT() drop the RMSEA at
+    # such N (where every fitted 1:J solution is likewise NA, the factor-count term only lowering
+    # the multiplier further). The log-determinant is computed once and reused for both calls.
+    ld_R <- determinant(R, logarithm = TRUE)
     df <- (m**2 - m) / 2
     # compute 1 - RMSEA
-    s_RMSEA[1, 2] <- 1 - sqrt(max(0, chi - df) / (df * (N - 1)))
+    s_RMSEA[1, 2] <- if (is.na(.null_chisq(R, N, ld = ld_R))) {
+      NA_real_
+    } else {
+      1 - .rmsea_point(.null_chisq(R, N, ld = ld_R, corrected = FALSE), df, N)
+    }
     s_RMSEA[1, 3] <- (m**2 - m) / 2
 
   }
@@ -250,47 +263,26 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
                                                            N = N, ...,
                                                            future.seed = FALSE))
 
-  # then for 1 to J factors
+  # then for 1 to J factors. method == "PAF" forces gof to "CAF" above, so the
+  # gof-keyed blocks already cover it; the df is the same for every index (Eq 4
+  # gives the free parameters, and the difference in df equals the difference in
+  # free parameters).
   for (i in seq_len(J)) {
-    if (method == "PAF") {
+    if ("CAF" %in% gof) {
       # compute goodness of fit "f" as CAF (common part accounted for; Eq 3)
-      # compute CAF
       s_CAF[i + 1, 2] <- loadings[[i]]$fit_indices$CAF
-      # compute dfs (Eq 4 provides the number of free parameters; using dfs yields
-      # th same numbers, as the difference in df equals the difference in free
-      # parameters)
       s_CAF[i + 1, 3] <- loadings[[i]]$fit_indices$df
-    } else {
-      if ("CAF" %in% gof) {
-        # compute goodness of fit "f" as CAF (common part accounted for; Eq 3)
-        # compute CAF
-        s_CAF[i + 1, 2] <- loadings[[i]]$fit_indices$CAF
-        # compute dfs (Eq 4 provides the number of free parameters; using dfs yields
-        # th same numbers, as the difference in df equals the difference in free
-        # parameters)
-        s_CAF[i + 1, 3] <- loadings[[i]]$fit_indices$df
-      }
+    }
 
-      if ("CFI" %in% gof) {
-        # compute CFI
-        s_CFI[i + 1, 2] <- loadings[[i]]$fit_indices$CFI
-        # compute dfs (Eq 4 provides the number of free parameters; using dfs yields
-        # th same numbers, as the difference in df equals the difference in free
-        # parameters)
-        s_CFI[i + 1, 3] <- loadings[[i]]$fit_indices$df
+    if ("CFI" %in% gof) {
+      s_CFI[i + 1, 2] <- loadings[[i]]$fit_indices$CFI
+      s_CFI[i + 1, 3] <- loadings[[i]]$fit_indices$df
+    }
 
-      }
-
-      if ("RMSEA" %in% gof) {
-        # compute 1 - RMSEA
-        s_RMSEA[i + 1, 2] <- 1 - loadings[[i]]$fit_indices$RMSEA
-        # compute dfs (Eq 4 provides the number of free parameters; using dfs yields
-        # th same numbers, as the difference in df equals the difference in free
-        # parameters)
-        s_RMSEA[i + 1, 3] <- loadings[[i]]$fit_indices$df
-
-      }
-
+    if ("RMSEA" %in% gof) {
+      # compute 1 - RMSEA
+      s_RMSEA[i + 1, 2] <- 1 - loadings[[i]]$fit_indices$RMSEA
+      s_RMSEA[i + 1, 3] <- loadings[[i]]$fit_indices$df
     }
 
   }

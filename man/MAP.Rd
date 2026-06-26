@@ -78,8 +78,9 @@ of \eqn{A} are used to compute \eqn{C_m = R - A_m A_m'}. The residual is re-stan
 partial correlation matrix \eqn{R^*_m} using \eqn{D_m^{-1/2}} (i.e., dividing by the square roots of
 residual variances).
 
-\strong{Termination.} If residual variances (the diagonal of \eqn{C_m}) become non-positive or
-numerically unstable, the loop terminates early because \eqn{R^*_m} cannot be formed reliably.
+\strong{Termination.} If any residual variance (the diagonal of \eqn{C_m}) drops to at most a small
+positive floor (1e-5) or becomes non-finite, the loop terminates early because \eqn{R^*_m}
+cannot be formed reliably.
 }
 \examples{
 ## Example with raw data

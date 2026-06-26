@@ -54,13 +54,13 @@ test_that("RMSEA_LB and AIC values are correct", {
   rmsea_raw <- .retention_record(smt_raw, "RMSEA")$y
   rmsea_zero <- .retention_record(smt_zero, "RMSEA")$y
 
-  expect_equal(rmsea_cor[1], 0.156644, tolerance = 1e-2)
-  expect_equal(rmsea_raw[1], 0.460146, tolerance = 1e-2)
+  expect_equal(rmsea_cor[1], 0.157856, tolerance = 1e-2)
+  expect_equal(rmsea_raw[1], 0.461174, tolerance = 1e-2)
   expect_equal(rmsea_zero[1], 0, tolerance = 1e-2)
 
-  expect_equal(rmsea_cor[-1], c(0.0560604, 0.0390112, rep(0, 10)),
+  expect_equal(rmsea_cor[-1], c(0.0567972, 0.0397977, rep(0, 10)),
                tolerance = 1e-2)
-  expect_equal(rmsea_raw[-1], c(0.0352895, 0.0261428, rep(0, 2)),
+  expect_equal(rmsea_raw[-1], c(0.0354958, 0.0263924, rep(0, 2)),
                tolerance = 1e-2)
   expect_equal(rmsea_zero[-1], rep(0, 2), tolerance = 1e-2)
 
@@ -101,7 +101,11 @@ test_that("null-model statistics are computed from R and N, not the fitted model
   chi_null <- .null_chisq(R, N)
   df_null <- (m^2 - m) / 2
   p_null <- stats::pchisq(chi_null, df_null, lower.tail = FALSE)
-  RMSEA_LB_null <- sqrt(.rmsea_lambda(chi_null, df_null, .95) / (df_null * (N - 1)))
+  # RMSEA is built on the uncorrected (N - 1) discrepancy scale, so the null-model
+  # bound uses the uncorrected baseline chi-square (p_null and AIC_null keep the
+  # Bartlett-corrected statistic).
+  chi_null_rmsea <- .null_chisq(R, N, corrected = FALSE)
+  RMSEA_LB_null <- sqrt(.rmsea_lambda(chi_null_rmsea, df_null, .95) / (df_null * (N - 1)))
   AIC_null <- chi_null - 2 * df_null
 
   # the null model is the first element of each criterion record's y vector

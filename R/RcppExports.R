@@ -119,8 +119,8 @@
 #' and software for arbitrary rotation criteria in factor analysis.
 #' *Educational and Psychological Measurement*, 65, 676-696.
 #'
-#' Gower, J. C. (1975). Generalized Procrustes analysis. *Psychometrika*, 40,
-#' 33-51.
+#' Browne, M. W. (2001). An overview of analytic rotation in exploratory factor
+#' analysis. *Multivariate Behavioral Research*, 36, 111-150.
 #'
 .oblique_procrustes <- function(A, B, S_r = NULL, T_init_r = NULL, eps = 1e-5, maxit = 1000L, max_line_search = 10L, step0 = 1.0, normalize = FALSE, random_starts = 0L, screen_keep = 2L, triage_maxit = 25L, triage_improve_tol = 0.0) {
     .Call(`_EFAtools_oblique_procrustes`, A, B, S_r, T_init_r, eps, maxit, max_line_search, step0, normalize, random_starts, screen_keep, triage_maxit, triage_improve_tol)
@@ -202,14 +202,14 @@
 #' @param n_datasets numeric. Number of datasets with dimensions (N, n_vars) to simulate.
 #' @param n_vars numeric. Number of variables / indicators in dataset.
 #' @param N numeric. Number of cases / observations in dataset.
-#' @param eigen_type numeric. Whether PCA (eigen_type = 1; i.e., leaving diagonal of correlation matrix at 1) or PAF (eigen_type = 2; i.e., setting diagonal of correlation matrix to SMCs).
+#' @param eigen_type numeric. Whether PCA (eigen_type = 1; i.e., leaving diagonal of correlation matrix at 1) or SMC (eigen_type = 2; i.e., setting diagonal of correlation matrix to SMCs).
 #' @param maxit numeric. Maximum iterations to perform after which to abort.
 .parallel_sim <- function(n_datasets, n_vars, N, eigen_type, maxit = 10000L) {
     .Call(`_EFAtools_parallel_sim`, n_datasets, n_vars, N, eigen_type, maxit)
 }
 
-.polychoric_cpp <- function(x, acov, correct, nearest_pd, n_threads) {
-    .Call(`_EFAtools_polychoric_cpp`, x, acov, correct, nearest_pd, n_threads)
+.polychoric_cpp <- function(x, acov, nearest_pd) {
+    .Call(`_EFAtools_polychoric_cpp`, x, acov, nearest_pd)
 }
 
 .bvn_rect_cpp <- function(a0, a1, b0, b1, rho) {
@@ -645,7 +645,7 @@
 #' normalization. The simplimax criterion sums the `k` smallest squared loadings, so it is
 #' minimized when the `k` "close-to-zero" loadings are driven toward zero; the count `k` is a
 #' tuning parameter. Because the set of `k` smallest loadings is reselected at every evaluation,
-#' the criterion is only piecewise smooth: its gradient does not vanish at the optimum, so the
+#' the criterion is only piecewise smooth: its gradient jumps as loadings cross the kth-smallest threshold, so the
 #' line search accepts a step whenever it decreases the largest objective over a short window of
 #' recent iterations (a non-monotone test; Grippo, Lampariello, & Lucidi, 1986), letting the
 #' optimizer step across the kinks where a strictly monotone descent would stall.

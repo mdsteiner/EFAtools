@@ -10,7 +10,7 @@
 
   L <- ml$loadings
   orig_R <- R
-  h2 <- diag(L %*% t(L))
+  h2 <- rowSums(L^2)
   diag(R) <- h2
 
   # raw fit, finalized by .estimate_model()
@@ -32,8 +32,11 @@
 
   if (start_method == "psych") {
     R.smc <- .smc_start(R)
+    # psych::fa()-style start: the uniqueness start diag(R) - smc, or a flat 0.5
+    # fallback sized to the variables (the optimiser parameter is the length-p
+    # uniqueness vector).
     if((sum(R.smc) == n_fac) && (n_fac > 1)) {
-      start <- rep(.5, n_fac)
+      start <- rep(.5, ncol(R))
     }  else {
       start <- diag(R)- R.smc
     }

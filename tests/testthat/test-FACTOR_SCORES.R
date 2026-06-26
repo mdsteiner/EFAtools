@@ -76,19 +76,45 @@ test_that("warnings and errors are thrown correctly", {
 test_that("a non-Pearson EFA with rho = NULL on raw data warns", {
   skip_on_cran()
 
-  # psych::factor.scores derives the weights from the Pearson correlation of the
-  # raw data when rho is NULL, which is inconsistent with loadings fit on a
-  # non-Pearson correlation; warn unless the matching matrix is supplied via rho.
+  # When rho is NULL, psych derives the score machinery from the Pearson cor(x):
+  # for regression-based methods the weights/scores, and for every method the
+  # score intercorrelations (r.scores), become inconsistent with a non-Pearson
+  # fit; warn unless the matching matrix is supplied via rho.
   efa_sp <- suppressMessages(EFA(GRiPS_raw, n_factors = 1, type = "EFAtools",
                                  method = "PAF", cor_method = "spearman"))
-  expect_warning(FACTOR_SCORES(GRiPS_raw, f = efa_sp, method = "Bartlett"),
+  expect_warning(FACTOR_SCORES(GRiPS_raw, f = efa_sp, method = "Thurstone"),
                  class = "efa_scores_cor_method")
 
   # Supplying the matching correlation via rho silences the warning.
   rho_sp <- stats::cor(GRiPS_raw, method = "spearman")
   expect_no_warning(FACTOR_SCORES(GRiPS_raw, f = efa_sp, rho = rho_sp,
-                                  method = "Bartlett"),
+                                  method = "Thurstone"),
                     class = "efa_scores_cor_method")
+
+  # Bartlett weights/scores are correlation-free, but psych still computes
+  # r.scores from the Pearson cor(x), so the warning still fires for a
+  # non-Pearson fit with rho = NULL.
+  expect_warning(FACTOR_SCORES(GRiPS_raw, f = efa_sp, method = "Bartlett"),
+                 class = "efa_scores_cor_method")
+})
+
+test_that("components scores work on a raw data.frame and Anderson guards single factor", {
+  skip_on_cran()
+
+  # psych's components path does `x %*% w` without coercing, so a data.frame raw
+  # input must be coerced to a matrix by the wrapper; this previously errored.
+  # EFA_raw (file top) is the matching 10-factor DOSPERT fit and is still in scope.
+  fs_comp <- FACTOR_SCORES(DOSPERT_raw, f = EFA_raw, method = "components")
+  expect_s3_class(fs_comp, "FACTOR_SCORES")
+  expect_equal(dim(fs_comp$scores), c(nrow(DOSPERT_raw), 10L))
+  expect_false(anyNA(fs_comp$scores))
+
+  # Anderson-Rubin orthogonalisation is undefined for a single factor (and psych
+  # aborts opaquely); the wrapper raises a classed error instead.
+  efa_1f <- suppressMessages(EFA(GRiPS_raw, n_factors = 1, type = "EFAtools",
+                                 method = "PAF"))
+  expect_error(FACTOR_SCORES(GRiPS_raw, f = efa_1f, method = "Anderson"),
+               class = "efa_scores_anderson_single")
 })
 
 

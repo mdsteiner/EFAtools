@@ -60,7 +60,7 @@
       
       -- Model Fit -------------------------------------------------------------------
       
-      χ²(20) = <num>, p = <num>
+      D2-pooled χ²(20) = <num>, p = <num>
       CFI [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
       TLI: <num>
       RMSEA [90% CI] [95% bootstrap/MI-CI]: <num> [ <num>; <num>] [ <num>, <num>]
@@ -70,6 +70,8 @@
       CAF [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
       RMSR [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
       SRMR: <num>
+      Note: the pooled χ² is the D2 statistic; its p uses the D2 reference F(20, <num>),
+      not the χ²(20) tail.
       
       Note: Bootstrap/MI CIs based on 6 bootstrap samples per imputation.
       
@@ -183,7 +185,7 @@
       
       -- Model Fit -------------------------------------------------------------------
       
-      χ²(20) = <num>, p = <num>
+      D2-pooled χ²(20) = <num>, p = <num>
       CFI: <num>
       TLI: <num>
       RMSEA [90% CI]: <num> [ <num>; <num>]
@@ -193,6 +195,8 @@
       CAF: <num>
       RMSR: <num>
       SRMR: <num>
+      Note: the pooled χ² is the D2 statistic; its p uses the D2 reference F(20, <num>),
+      not the χ²(20) tail.
 
 # summary.EFA_POOLED output is stable (PAF, promax)
 
@@ -355,7 +359,7 @@
       
       -- Model Fit -------------------------------------------------------------------
       
-      χ²(20) = <num>, p = <num>
+      D2-pooled χ²(20) = <num>, p = <num>
       CFI: <num>
       TLI: <num>
       RMSEA [90% CI]: <num> [ <num>; <num>]
@@ -365,6 +369,8 @@
       CAF: <num>
       RMSR: <num>
       SRMR: <num>
+      Note: the pooled χ² is the D2 statistic; its p uses the D2 reference F(20, <num>),
+      not the χ²(20) tail.
       
       -- Residual Diagnostics --------------------------------------------------------
       

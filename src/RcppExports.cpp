@@ -236,17 +236,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // polychoric_cpp
-Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov, double correct, bool nearest_pd, int n_threads);
-RcppExport SEXP _EFAtools_polychoric_cpp(SEXP xSEXP, SEXP acovSEXP, SEXP correctSEXP, SEXP nearest_pdSEXP, SEXP n_threadsSEXP) {
+Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov, bool nearest_pd);
+RcppExport SEXP _EFAtools_polychoric_cpp(SEXP xSEXP, SEXP acovSEXP, SEXP nearest_pdSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::IntegerMatrix >::type x(xSEXP);
     Rcpp::traits::input_parameter< std::string >::type acov(acovSEXP);
-    Rcpp::traits::input_parameter< double >::type correct(correctSEXP);
     Rcpp::traits::input_parameter< bool >::type nearest_pd(nearest_pdSEXP);
-    Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
-    rcpp_result_gen = Rcpp::wrap(polychoric_cpp(x, acov, correct, nearest_pd, n_threads));
+    rcpp_result_gen = Rcpp::wrap(polychoric_cpp(x, acov, nearest_pd));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -482,7 +480,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EFAtools_oblique_procrustes_batch", (DL_FUNC) &_EFAtools_oblique_procrustes_batch, 11},
     {"_EFAtools_paf_iter", (DL_FUNC) &_EFAtools_paf_iter, 7},
     {"_EFAtools_parallel_sim", (DL_FUNC) &_EFAtools_parallel_sim, 5},
-    {"_EFAtools_polychoric_cpp", (DL_FUNC) &_EFAtools_polychoric_cpp, 5},
+    {"_EFAtools_polychoric_cpp", (DL_FUNC) &_EFAtools_polychoric_cpp, 3},
     {"_EFAtools_bvn_rect_cpp", (DL_FUNC) &_EFAtools_bvn_rect_cpp, 5},
     {"_EFAtools_rotate_cf_orth", (DL_FUNC) &_EFAtools_rotate_cf_orth, 11},
     {"_EFAtools_rotate_oblimin", (DL_FUNC) &_EFAtools_rotate_oblimin, 11},
