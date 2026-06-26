@@ -141,9 +141,10 @@ data is given as input. Default is <code>"pairwise.complete.obs"</code>.</p></dd
 <dd><p>character. Correlation computed from raw data: <code>"pearson"</code>,
 <code>"spearman"</code>, or <code>"kendall"</code> (passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>), or <code>"poly"</code> /
 <code>"tetra"</code> for polychoric / tetrachoric correlations (a two-step estimator
-with no empty-cell continuity correction). Criteria that compare against
-simulated continuous data (<code>CD</code>, <code>PARALLEL</code>, <code>NEST</code>, <code>HULL</code>) do not support
-<code>"poly"</code> / <code>"tetra"</code> and are skipped in that case.
+with no empty-cell continuity correction). <code>CD</code>, <code>PARALLEL</code>, <code>NEST</code>, and
+<code>HULL</code> compare against simulated continuous data, and <code>SMT</code> relies on a
+normal-theory chi-square test; none of these support <code>"poly"</code> / <code>"tetra"</code>,
+so they are skipped in that case.
 Default is  <code>"pearson"</code>.</p></dd>
 
 
@@ -151,8 +152,8 @@ Default is  <code>"pearson"</code>.</p></dd>
 <dd><p>numeric. Passed to <code><a href="CD.html">CD()</a></code>. The maximum number
 of factors to test against.
 Larger numbers will increase the duration the procedure takes, but test more
-possible solutions. Maximum possible is number of variables / 2. Default is
-NA. If not specified, number of variables / 2 is used.</p></dd>
+possible solutions. If left NA (default), the maximum number of factors for
+which the model is still over-identified (df &gt; 0) is used.</p></dd>
 
 
 <dt id="arg-n-pop">N_pop<a class="anchor" aria-label="anchor" href="#arg-n-pop"></a></dt>
@@ -188,7 +189,8 @@ suggested by <a href="PARALLEL.html">PARALLEL</a> plus one will be used in the H
 <code><a href="KGC.html">KGC()</a></code>, <code><a href="SCREE.html">SCREE()</a></code>, <code><a href="PARALLEL.html">PARALLEL()</a></code>, and <code><a href="NEST.html">NEST()</a></code>. The
 estimation method to use. One of  <code>"PAF"</code>, <code>"ULS"</code>, or  <code>"ML"</code>,
 for principal axis factoring, unweighted least squares, and maximum
-likelihood, respectively.</p></dd>
+likelihood, respectively. In <code><a href="KGC.html">KGC()</a></code>, <code><a href="SCREE.html">SCREE()</a></code>, and <code><a href="PARALLEL.html">PARALLEL()</a></code> it only
+takes effect when the respective <code>eigen_type</code> includes <code>"EFA"</code>.</p></dd>
 
 
 <dt id="arg-gof">gof<a class="anchor" aria-label="anchor" href="#arg-gof"></a></dt>
@@ -341,8 +343,8 @@ documentations for details):</p><ul><li><p>Comparison data (see <code><a href="C
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Use raw data, such that CD can also be performed</span></span></span>
 <span class="r-in"><span><span class="va">nfac_raw</span> <span class="op">&lt;-</span> <span class="fu">N_FACTORS</span><span class="op">(</span><span class="va">GRiPS_raw</span>, method <span class="op">=</span> <span class="st">"ML"</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The suggested maximum number of factors was 2, but must be at least 3 for the</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Hull method.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The suggested maximum number of factors was 2, but the Hull method needs at</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> least 3.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Setting it to 3.</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>

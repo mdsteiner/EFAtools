@@ -140,8 +140,10 @@ step-halving attempts after the initial line-search step.</p></dd>
 
 
 <dt id="arg-oblique-normalize">oblique_normalize<a class="anchor" aria-label="anchor" href="#arg-oblique-normalize"></a></dt>
-<dd><p>Logical; if <code>TRUE</code>, apply Kaiser row normalization in
-the oblique solver and back-transform the aligned loadings afterwards.</p></dd>
+<dd><p>Logical; if <code>TRUE</code>, apply Kaiser row normalization to
+the loadings (only) in the oblique solver and back-transform the aligned
+loadings afterwards, leaving <code>Target</code> unnormalized (as in
+<code>GPArotation::targetQ(normalize = TRUE)</code>).</p></dd>
 
 
 <dt id="arg-oblique-random-starts">oblique_random_starts<a class="anchor" aria-label="anchor" href="#arg-oblique-random-starts"></a></dt>
@@ -169,7 +171,10 @@ required for a triaged start to be promoted to full optimization.</p></dd>
     <p>A list containing aligned <code>loadings</code>, transformation matrix <code>T</code>,
 factor intercorrelation matrix <code>Phi</code>, target criterion <code>value</code>, convergence
 diagnostics, line-search diagnostics, and multi-start summaries. Row and
-column names are preserved where possible.</p>
+column names are preserved where possible. When <code>oblique_normalize = TRUE</code>
+the returned <code>loadings</code> are back-transformed to the original scale, but
+<code>value</code> is the criterion on the Kaiser-normalized loadings, so it is not
+<code>0.5 * sum((loadings - Target)^2)</code>.</p>
     </div>
     <div id="details">
     <h2>Details</h2>

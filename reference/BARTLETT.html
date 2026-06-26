@@ -117,10 +117,12 @@ Default is "pearson".</p></dd>
     <h2>Value</h2>
     <p>A list containing</p>
 <dl><dt>chisq</dt>
-<dd><p>The chi square statistic.</p></dd>
+<dd><p>The chi square statistic, or <code>NA</code> if <code>N</code> is too small for the
+Bartlett correction (i.e. \(N - 1 - (2p + 5)/6 \le 0\)).</p></dd>
 
 <dt>p_value</dt>
-<dd><p>The p value of the chi square statistic.</p></dd>
+<dd><p>The p value of the chi square statistic, or <code>NA</code> when <code>chisq</code>
+is <code>NA</code>.</p></dd>
 
 <dt>df</dt>
 <dd><p>The degrees of freedom for the chi square statistic.</p></dd>

@@ -120,8 +120,6 @@ Psychological Methods, 21, 137-150.</p>
 within latent variable systems. In R. Cudeck, S. du Toit, &amp; D. Sörbom (Eds.),
 Structural equation modeling: Present and future—A Festschrift in honor of Karl
 Jöreskog (pp. 195–216). Lincolnwood, IL: Scientific Software International.</p>
-<p>Sijtsma, K. (2009). On the use, the misuse, and the very limited usefulness
-of Cronbach’s alpha. Psychometrika, 74, 107–120.</p>
 <p>Reise, S. P., Scheines, R., Widaman, K. F., &amp; Haviland, M. G. (2013).
 Multidimensionality and structural coefficient bias in structural equation
 modeling: A bifactor perspective. Educational and Psychological Measurement,
@@ -242,7 +240,7 @@ the sum of uniquenesses (see details).</p></dd>
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>If found for an SL or <code>lavaan</code> second-order of bifactor solution
+    <p>If found for an SL or <code>lavaan</code> second-order or bifactor solution
 without multiple groups:
 A matrix with omegas for the whole scale and for the subscales and (only if
 <code>add_ind = TRUE</code>) with the H index, ECV, and PUC.</p>
@@ -280,8 +278,8 @@ containing the output described above for each group.</p>
 
 <p>This function calculates McDonald's omegas (McDonald, 1978, 1985, 1999),
 the H index (Hancock &amp; Mueller, 2001), the explained common variance (ECV;
-Sijtsma, 2009), and the percent of uncontaminated correlations (PUC; Bonifay
-et al., 2015; Reise et al., 2013).</p>
+Rodriguez et al., 2016a, 2016b), and the percent of uncontaminated
+correlations (PUC; Bonifay et al., 2015; Reise et al., 2013).</p>
 <p>All types of omegas (total, hierarchical, and subscale) are calculated for
 the general factor as well as for the subscales / group factors (see, e.g.,
 Gignac, 2014; Rodriguez et al., 2016a, 2016b). Omegas refer to the correlation
@@ -292,13 +290,17 @@ Omega hierarchical is the true score variance in a composite that is attributabl
 to the general factor, and omega subscale is the true score variance in a
 composite attributable to all subscales / group factors (for the whole scale)
 or to the specific subscale / group factor (for subscale composites).</p>
+<p>Accordingly, on a subscale row the <code>hier</code> column reports the share of that
+subscale's composite variance due to the general factor and the <code>sub</code> column
+the share due to the subscale-specific factor; the latter corresponds to the
+omega hierarchical subscale of Rodriguez et al. (2016a, 2016b).</p>
 <p>The H index (also construct reliability or replicability index) is the
 correlation between an optimally-weighted composite score
 and a factor (Hancock &amp; Mueller, 2001; Rodriguez et al., 2016a, 2016b). It, too,
 can be calculated for the whole scale / general factor as well as for the
-subscales / grouup factors. Low values indicate that a latent variable is not well
+subscales / group factors. Low values indicate that a latent variable is not well
 defined by its indicators.</p>
-<p>The ECV (Sijtsma, 2009, Rodriguez et al., 2016a, 2016b) is the ratio of the
+<p>The ECV (Rodriguez et al., 2016a, 2016b) is the ratio of the
 variance explained by the general factor and the variance explained by the
 general factor and the group factors.</p>
 <p>The PUC (Bonifay et al., 2015; Reise et al., 2013, Rodriguez et al., 2016a,
@@ -323,12 +325,15 @@ factor assumed) or a breadth factor (bifactor model assumed). Please note that
 this function only works for second-order models if they contain no more than
 one second-order factor. In case of a second-order solution, a
 Schmid-Leiman transformation is performed on the first- and second-order loadings
-and omega coefficents are obtained from the transformed (orthogonalized) solution
+and omega coefficients are obtained from the transformed (orthogonalized) solution
 (see <code><a href="SL.html">SL()</a></code> for more information on Schmid-Leiman transformation).
 There is also the possibility to enter a <code>lavaan</code> single factor solution.
 In this case, <code>g_name</code> is not needed. Finally, if a solution from a
 <code>lavaan</code> multiple group analysis is entered, the indices are computed for
-each group.
+each group. For <code>lavaan</code> input the composite variances entering the omegas are
+model-implied (computed from the fitted loadings and residual variances), so the
+coefficients coincide with the observed-score versions when the model fits
+perfectly.
 The type argument is not evaluated if <code>model</code> is of class
 <code>lavaan</code>.</p>
 <p>If <code>model</code> is of class <code><a href="SL.html">SL()</a></code> or
@@ -355,17 +360,21 @@ variable-to-factor correspondences are found by taking the highest
 group factor loading for each variable as the relevant group factor loading.
 To do this, <code>factor_corres</code> must be left <code>NULL</code>.</p>
 <p>The calculation of the total variance (for the whole scale as well as the
-subscale composites) can also be controlled in this function using the
-<code>variance</code> argument. For both types—<code>"EFAtools"</code> and <code>"psych"</code>
-—<code>variance</code> is set to <code>"correlation"</code> by default, which means that
-total variances are found using the correlation matrix. If
-<code>variance = "sums_load"</code> the total variance is calculated using the
-squared sums of general loadings and group factor loadings and the sum of the
-uniquenesses. This will only get comparable results to
-<code>variance = "correlation"</code> if no cross-loadings are present and simple
-structure is well-achieved in general with the SL solution (i.e., the
-uniquenesses should capture almost all of the variance not explained by the
-general factor and the variable's allocated group factor).</p>
+subscale composites) is controlled with the <code>variance</code> argument. It is set to
+<code>"correlation"</code> by default, which finds the total variances from the
+correlation matrix (the observed-variance form of omega; this reproduces
+<code><a href="https://rdrr.io/pkg/psych/man/omega.html" class="external-link">psych::omega()</a></code>). If <code>variance = "sums_load"</code> the total variances are instead
+model-implied, found from the squared sums of the general and group factor
+loadings and the sum of the uniquenesses; the whole-scale omega total is then
+McDonald's model-implied total and the general and group variances partition it
+exactly (omega total = omega hierarchical + omega subscale for the general
+factor). The two settings give the same whole-scale omega total and omega
+hierarchical up to model misfit (observed versus model-implied total variance);
+they differ in the whole-scale omega subscale, which counts all group-factor
+variance under <code>"sums_load"</code> but only the variance of the assigned subscale
+composites under <code>"correlation"</code>. For the subscale rows, the model-based
+(<code>"sums_load"</code>) coefficients approximate the correlation-based ones when simple
+structure is well-achieved.</p>
 </div>
 
     </div>
@@ -437,9 +446,9 @@ general factor and the variable's allocated group factor).</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      tot  hier   sub     H   ECV   PUC</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> g  0.883 0.740 0.125 0.842 0.652 0.706</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> F1 0.769 0.500 0.269 0.468            </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> F2 0.763 0.494 0.270 0.477            </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> F3 0.744 0.519 0.225 0.419            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F1 0.769 0.500 0.269 0.463            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F2 0.763 0.494 0.270 0.472            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F3 0.744 0.519 0.225 0.408            </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## Use with an output from the psych::schmid function, with type psych for</span></span></span>
 <span class="r-in"><span><span class="co">## OMEGA</span></span></span>
@@ -454,9 +463,9 @@ general factor and the variable's allocated group factor).</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       tot  hier   sub     H   ECV   PUC</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> g   0.883 0.750 0.122 0.845 0.661 0.706</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> F1* 0.769 0.498 0.272 0.471            </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> F2* 0.765 0.494 0.271 0.478            </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> F3* 0.745 0.543 0.202 0.390            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F1* 0.769 0.498 0.272 0.466            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F2* 0.765 0.494 0.271 0.473            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F3* 0.745 0.543 0.202 0.379            </span>
 <span class="r-in"><span><span class="co"># Use specified correlation matrix</span></span></span>
 <span class="r-in"><span><span class="fu">OMEGA</span><span class="op">(</span><span class="va">schmid_mod</span>, type <span class="op">=</span> <span class="st">"psych"</span>, cormat <span class="op">=</span> <span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Omega total, omega hierarchical, omega subscale, H index, explained common</span></span>
@@ -465,9 +474,9 @@ general factor and the variable's allocated group factor).</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       tot  hier   sub     H   ECV   PUC</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> g   0.883 0.750 0.122 0.845 0.661 0.706</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> F1* 0.769 0.498 0.272 0.471            </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> F2* 0.764 0.494 0.270 0.478            </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> F3* 0.745 0.543 0.202 0.390            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F1* 0.769 0.498 0.272 0.466            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F2* 0.764 0.494 0.270 0.473            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F3* 0.745 0.543 0.202 0.379            </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## Manually specify components (useful if omegas should be computed for a SL</span></span></span>
 <span class="r-in"><span><span class="co">## or bifactor solution found with another program)</span></span></span>
@@ -492,9 +501,9 @@ general factor and the variable's allocated group factor).</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     tot  hier   sub     H   ECV   PUC</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> g 0.883 0.740 0.125 0.842 0.652 0.706</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 0.769 0.500 0.269 0.468            </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2 0.763 0.494 0.270 0.477            </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3 0.744 0.519 0.225 0.419            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 0.769 0.500 0.269 0.463            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 0.763 0.494 0.270 0.472            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 0.744 0.519 0.225 0.408            </span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

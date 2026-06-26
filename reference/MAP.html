@@ -123,11 +123,13 @@ $$R^*_m = D_m^{-1/2} \, C_m \, D_m^{-1/2},$$
 with \(D_m = \mathrm{diag}(C_m)\). The MAP criteria summarize the off-diagonal association
 remaining in \(R^*_m\). The recommended number of factors/components is the \(m\) that
 minimizes the chosen criterion.</p>
-<p>This function returns two MAP criteria:</p><ul><li><p><strong>TR2 (original MAP):</strong> $$\mathrm{MAP}_m = \frac{\mathrm{Trace}(R^{*2}_m) - p}{p(p-1)}$$
-which is algebraically equivalent to the mean squared off-diagonal partial correlations and
-corresponds to Velicer's original MAP procedure.</p></li>
-<li><p><strong>TR4 (revised MAP):</strong> $$\mathrm{MAP4}_m = \frac{\mathrm{Trace}(R^{*4}_m) - p}{p(p-1)}$$
-a higher-order variant that places more weight on dominant residual association structure.</p></li>
+<p>This function returns two MAP criteria, both summarizing the off-diagonal elements
+\(r^*_{ij}\) of \(R^*_m\):</p><ul><li><p><strong>TR2 (original MAP):</strong> $$\mathrm{MAP}_m = \frac{\sum_{i \neq j} (r^*_{ij})^2}{p(p-1)}$$
+the mean squared off-diagonal partial correlation, corresponding to Velicer's original
+MAP procedure.</p></li>
+<li><p><strong>TR4 (revised MAP):</strong> $$\mathrm{MAP4}_m = \frac{\sum_{i \neq j} (r^*_{ij})^4}{p(p-1)}$$
+the mean fourth-power off-diagonal partial correlation, which places more weight on dominant
+residual association structure and is less affected by small partial correlations.</p></li>
 </ul><p><strong>Input handling.</strong> <code>x</code> can be a correlation matrix or raw data. If <code>x</code> is not a
 correlation matrix, correlations are computed using <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code> with the requested
 missing-data handling (<code>use</code>) and association measure (<code>cor_method</code>).</p>
@@ -139,8 +141,9 @@ of \(R\) as \(A = V \Lambda^{1/2}\). For each \(m = 0, \dots, p-1\), the first \
 of \(A\) are used to compute \(C_m = R - A_m A_m'\). The residual is re-standardized to the
 partial correlation matrix \(R^*_m\) using \(D_m^{-1/2}\) (i.e., dividing by the square roots of
 residual variances).</p>
-<p><strong>Termination.</strong> If residual variances (the diagonal of \(C_m\)) become non-positive or
-numerically unstable, the loop terminates early because \(R^*_m\) cannot be formed reliably.</p>
+<p><strong>Termination.</strong> If any residual variance (the diagonal of \(C_m\)) drops to at most a small
+positive floor (1e-5) or becomes non-finite, the loop terminates early because \(R^*_m\)
+cannot be formed reliably.</p>
     </div>
     <div id="references">
     <h2>References</h2>
@@ -148,6 +151,20 @@ numerically unstable, the loop terminates early because \(R^*_m\) cannot be form
 <em>Psychometrika, 41</em>, 321–327.</p>
 <p>Velicer, W. F., Eaton, C. A., &amp; Fava, J. L. (2000). Construct explication through factor or component analysis: A review and evaluation of alternative procedures for determining the number of factors or components. In Goffin, R. D. &amp; Helmes, E. (Eds.), <em>Problems and Solutions in
 Human Assessment: Honoring Douglas N. Jackson at Seventy</em> (pp. 41–71). Boston: Kluwer.</p>
+    </div>
+    <div id="see-also">
+    <h2>See also</h2>
+    <div class="dont-index"><p><code><a href="N_FACTORS.html">N_FACTORS()</a></code> as a wrapper function for this and the other factor
+retention criteria.</p>
+<p>Other factor retention criteria:
+<code><a href="CD.html">CD()</a></code>,
+<code><a href="EKC.html">EKC()</a></code>,
+<code><a href="HULL.html">HULL()</a></code>,
+<code><a href="KGC.html">KGC()</a></code>,
+<code><a href="NEST.html">NEST()</a></code>,
+<code><a href="PARALLEL.html">PARALLEL()</a></code>,
+<code><a href="SCREE.html">SCREE()</a></code>,
+<code><a href="SMT.html">SMT()</a></code></p></div>
     </div>
 
     <div id="ref-examples">
@@ -167,7 +184,7 @@ Human Assessment: Honoring Douglas N. Jackson at Seventy</em> (pp. 41–71). Bos
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── Minimum average partial ─────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> • Original implementation (TR2): 1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> • Revised implementation (TR4): 3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Revised implementation (TR4): 1</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

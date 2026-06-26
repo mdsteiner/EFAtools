@@ -110,9 +110,9 @@ based on the dimensions of x.</p></dd>
 
 
 <dt id="arg-n-fac-theor">n_fac_theor<a class="anchor" aria-label="anchor" href="#arg-n-fac-theor"></a></dt>
-<dd><p>numeric. Theoretical number of factors to retain. The maximum
-of this number and the number of factors suggested by <a href="PARALLEL.html">PARALLEL</a> plus
-one will be used in the Hull method.</p></dd>
+<dd><p>numeric. Theoretical number of factors to retain. One plus
+the larger of this number and the number of factors suggested by <a href="PARALLEL.html">PARALLEL</a>
+is used as the upper bound <em>J</em> of factors to extract in the Hull method.</p></dd>
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
@@ -228,10 +228,17 @@ retention criteria in the <code><a href="N_FACTORS.html">N_FACTORS()</a></code> 
     </div>
     <div id="see-also">
     <h2>See also</h2>
-    <div class="dont-index"><p>Other factor retention criteria: <code><a href="CD.html">CD()</a></code>, <code><a href="EKC.html">EKC()</a></code>,
-<code><a href="KGC.html">KGC()</a></code>, <code><a href="PARALLEL.html">PARALLEL()</a></code>, <code><a href="SMT.html">SMT()</a></code></p>
-<p><code><a href="N_FACTORS.html">N_FACTORS()</a></code> as a wrapper function for this and all the
-above-mentioned factor retention criteria.</p></div>
+    <div class="dont-index"><p><code><a href="N_FACTORS.html">N_FACTORS()</a></code> as a wrapper function for this and the other factor
+retention criteria.</p>
+<p>Other factor retention criteria:
+<code><a href="CD.html">CD()</a></code>,
+<code><a href="EKC.html">EKC()</a></code>,
+<code><a href="KGC.html">KGC()</a></code>,
+<code><a href="MAP.html">MAP()</a></code>,
+<code><a href="NEST.html">NEST()</a></code>,
+<code><a href="PARALLEL.html">PARALLEL()</a></code>,
+<code><a href="SCREE.html">SCREE()</a></code>,
+<code><a href="SMT.html">SMT()</a></code></p></div>
     </div>
 
     <div id="ref-examples">

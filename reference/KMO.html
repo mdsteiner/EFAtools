@@ -131,11 +131,11 @@ sampling adequacy (MSA), that indicates how near the inverted correlation
 matrix \(R^{-1}\) is to a diagonal matrix \(S\) to determine a given
 correlation matrix's (\(R\)) suitability for factor analysis.
 The index is
-$$KMO = \frac{\sum\limits_{i&lt;j}\sum r_{ij}^2}{\sum\limits_{i&lt;j}\sum r_{ij}^2 + \sum\limits_{i&lt;j}\sum q_{ij}^2}$$
+$$KMO = \frac{\sum_{i \neq j} r_{ij}^2}{\sum_{i \neq j} r_{ij}^2 + \sum_{i \neq j} q_{ij}^2}$$
 with \(Q = SR^{-1}S\) and S = \((diag R^{-1})^{-1/2}\) where
-\(\sum\limits_{i&lt;j}\sum r_{ij}^2\) is the sum of squares of the upper
-off-diagonal elements of \(R\) and \(\sum\limits_{i&lt;j}\sum q_{ij}^2\) is the
-sum of squares of the upper off-diagonal elements of \(Q\) (see also Cureton &amp; D'Agostino, 1983).</p>
+\(\sum_{i \neq j} r_{ij}^2\) is the sum of squares of the off-diagonal
+elements of \(R\) and \(\sum_{i \neq j} q_{ij}^2\) is the sum of squares of
+the off-diagonal elements of \(Q\) (see also Cureton &amp; D'Agostino, 1983).</p>
 <p>So KMO varies between 0 and 1, with larger values indicating higher suitability
 for factor analysis. Kaiser and Rice (1974) suggest that KMO should at least
 exceed .50 for a correlation matrix to be suitable for factor analysis.</p>

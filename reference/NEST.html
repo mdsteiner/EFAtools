@@ -160,13 +160,35 @@ with uncorrelated variables; same as in parallel analysis, see <code><a href="PA
 The following eigenvalues are compared against synthetic datasets based on an EFA-model with one fewer factors
 than the position of the respective empirical eigenvalue. E.g, the second
 empirical eigenvalue is compared against synthetic data based on a one-factor
-model. The <code>alpha</code>-level defines against which percentile of the synthetic
+model. In each comparison the \(k\)-th empirical eigenvalue is tested against
+the \(k\)-th largest eigenvalue of the synthetic datasets. The <code>alpha</code>-level
+defines against which percentile of the synthetic
 eigenvalue distribution to compare the empirical eigenvalues against, i.e., an
 alpha of .05 (the default) uses the 95th percentile as reference value.</p>
+<p>The number of factors tested is capped at \(\lfloor 0.8 \times p \rfloor\)
+(with \(p\) the number of variables; Achim, 2017) and additionally limited so
+that the \((k - 1)\)-factor reference model used at each step stays
+over-identified. If no empirical eigenvalue falls at or below its reference
+within this range, every tested factor is accepted and this capped number is
+returned.</p>
 <p>For details on the method, including simulation studies, see Achim (2017),
 Brandenburg and Papenberg (2024), and Caron (2025).</p>
 <p>The <code>NEST</code> function can also be called together with other factor
 retention criteria in the <code><a href="N_FACTORS.html">N_FACTORS()</a></code> function.</p>
+    </div>
+    <div id="see-also">
+    <h2>See also</h2>
+    <div class="dont-index"><p><code><a href="N_FACTORS.html">N_FACTORS()</a></code> as a wrapper function for this and the other factor
+retention criteria.</p>
+<p>Other factor retention criteria:
+<code><a href="CD.html">CD()</a></code>,
+<code><a href="EKC.html">EKC()</a></code>,
+<code><a href="HULL.html">HULL()</a></code>,
+<code><a href="KGC.html">KGC()</a></code>,
+<code><a href="MAP.html">MAP()</a></code>,
+<code><a href="PARALLEL.html">PARALLEL()</a></code>,
+<code><a href="SCREE.html">SCREE()</a></code>,
+<code><a href="SMT.html">SMT()</a></code></p></div>
     </div>
 
     <div id="ref-examples">

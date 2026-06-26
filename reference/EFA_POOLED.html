@@ -112,7 +112,10 @@ estimate (consensus is just a more expensive route to the same answer);
 for oblique rotations <code>"consensus"</code> is not supported and aborts with a
 classed condition (<code>efa_consensus_oblique_unsupported</code>), because the
 centroid iteration is degenerate for oblique transforms with more than
-one factor.</p></dd>
+one factor. Anchoring on the first imputation can understate the genuine
+between-imputation variability when the imputations disagree substantially;
+<code>"consensus"</code> (orthogonal rotations) is more robust to an atypical first
+imputation (van Ginkel &amp; Kroonenberg 2014).</p></dd>
 
 
 <dt id="arg-align-unrotated">align_unrotated<a class="anchor" aria-label="anchor" href="#arg-align-unrotated"></a></dt>
@@ -165,18 +168,22 @@ on the bootstrap path, <code>replicates</code>), the object carries:</p><dl><dt>
 <dd><p>Multiple-imputation diagnostics for each pooled parameter family.
 On the bootstrap path: <code>unrot_loadings</code>, <code>h2</code>, <code>residuals</code>, optionally
 <code>rot_loadings</code>, <code>Phi</code>, <code>Structure</code>, and <code>fit_indices_descriptive</code>, plus
-integer vectors <code>bootstrap_rotation_failures</code> and
-<code>bootstrap_rotation_valid</code> recording per-imputation alignment outcomes
-(df is the Rubin 1987 form). On the analytic path
-(<code>se = "information"</code>): <code>unrot_loadings</code> and <code>uniquenesses</code>, plus, when a
-rotation was requested, <code>rot_loadings</code>, <code>h2</code>, and (oblique) <code>Phi</code> and
-<code>Structure</code> (df is the Barnard-Rubin 1999 form with \(\nu_{com} = N - 1\)).
-Each per-family entry is a list with <code>RIV</code> (relative increase in variance),
-<code>FMI</code> (fraction of missing information), and <code>df</code>; the rotated families on
-the analytic path additionally carry a <code>method</code> string recording the gauge
-alignment used (<code>"procrustes_kronecker"</code> for orthogonal rotated loadings,
-<code>"gauge_invariant"</code> for communalities, and <code>"signed_permutation_approx"</code> for
-oblique rotated loadings, factor correlations, and structure coefficients).</p></dd>
+integer vectors <code>bootstrap_source_failures</code> (replicates the component <code>EFA</code>
+could not fit), <code>bootstrap_rotation_failures</code> (replicates whose Procrustes
+alignment to the target was invalid), and <code>bootstrap_rotation_valid</code> (those
+that entered the pool, <code>B - source - rotation</code> failures). Both paths use the
+plain Rubin (1987) df. On the analytic path (<code>se = "information"</code>):
+<code>unrot_loadings</code> and <code>uniquenesses</code>, plus, when a rotation was requested,
+<code>rot_loadings</code>, <code>h2</code>, and (oblique) <code>Phi</code> and <code>Structure</code>. Each per-family
+entry is a list with <code>RIV</code> (relative increase in variance), <code>FMI</code> (the
+fraction of missing information, reported as Rubin's asymptotic
+\(\lambda = RIV / (1 + RIV)\), equal to <code>lavaan.mi</code>'s <code>fmi</code>), and <code>df</code>; the
+rotated families on the analytic path additionally carry a <code>method</code> string
+recording the gauge alignment used (<code>"gauge_invariant"</code> for communalities and
+<code>"signed_permutation_approx"</code> for rotated loadings and, for oblique rotations,
+factor correlations and structure coefficients). <code>fit_indices_descriptive</code>, on
+the bootstrap path, pools every per-imputation fit index, so the structural
+constants among them (<code>df</code>, <code>df_null</code>) appear with a standard error of 0.</p></dd>
 
 <dt>mi_fit</dt>
 <dd><p>On the <code>se = "sandwich"</code> (MI2S) path only: the single <code><a href="EFA.html">EFA()</a></code>
@@ -194,8 +201,8 @@ carried by \(\tilde\Gamma\) rather than by per-parameter Rubin pooling.</p></dd>
 method recorded on the component <code><a href="EFA.html">EFA()</a></code> fits, which must be identical across
 imputations:</p><ul><li><p><code>se = "none"</code>: no standard errors are pooled.</p></li>
 <li><p><code>se = "information"</code>: the per-imputation expected-information standard
-errors are pooled with Rubin's rules (Wald intervals, Barnard-Rubin
-small-sample degrees of freedom).</p></li>
+errors are pooled with Rubin's rules (Wald intervals, plain Rubin (1987)
+degrees of freedom).</p></li>
 <li><p><code>se = "sandwich"</code>: the two-stage pooled-inputs (MI2S) approach fits a
 single model on the Rubin-pooled correlation matrix and asymptotic
 covariance.</p></li>
@@ -230,13 +237,30 @@ the observed correlation matrices are averaged across imputations and residuals
 are calculated from the pooled observed correlation matrix minus the
 model-implied correlation matrix of the pooled solution. Consequently,
 residual-based fit indices such as RMSR/SRMR are based on pooled residuals.</p>
-<p>Fit indices based on the model chi-square are not arithmetic means of the
-per-imputation fit indices. If possible, chi-square-type fit is pooled with
-the D2 rule. For CFI, the null-model chi-square is D2-pooled as well when
-complete-data null-model chi-squares are available. The asymptotic
-chi-square approximation to D2 is then used for RMSEA and CFI. AIC and BIC,
-if returned, are chi-square-derived descriptive quantities based on this D2
-approximation and should not be interpreted as likelihood-based MI
+<p>The model chi-square and the indices derived from it (RMSEA, ECVI, and the
+descriptive AIC/BIC) are not arithmetic means of the per-imputation values: the
+complete-data chi-squares are pooled with the D2 rule and the asymptotic
+chi-square approximation to D2 is used downstream. The reported pooled
+chi-square is this asymptotic statistic \(df \cdot F_{D2}\), but
+its p-value is the D2 reference F-test tail
+\(\Pr(F_{df_1, df_2} &gt; F_{D2})\), not
+\(\Pr(\chi^2_{df} &gt; df \cdot F_{D2})\); the two
+coincide only as the D2
+denominator degrees of freedom grow (no between-imputation variance), and the
+printed fit block flags the chi-square line accordingly. Because D2 deflates the
+pooled chi-square by its between-imputation average relative increase in
+variance, the pooled RMSEA inherits that shrinkage and can fall below the mean
+of the per-imputation RMSEAs (as it does in <code>lavaan.mi</code>); read it together with
+the per-imputation fit. The incremental indices CFI
+(Bentler, 1990) and TLI (Tucker &amp; Lewis, 1973) are reported instead as the
+average of the per-imputation indices, which keeps them consistent with the
+component fits (CFI stays in [0, 1]; TLI, like a single <code><a href="EFA.html">EFA()</a></code> fit, is left
+unclamped). Pooling the model and baseline chi-squares separately, as
+<code>lavaan.mi</code>/<code>semTools</code> do, shrinks the two noncentralities unequally and can
+drive these non-linear indices outside [0, 1]. The separately pooled
+noncentralities used by that reference remain available in <code>mi_diagnostics</code>.
+AIC and BIC, if returned, are chi-square-derived descriptive quantities based on
+the D2 approximation and should not be interpreted as likelihood-based MI
 information criteria. The chi-square pooling rule is D2 (Li, Meng,
 Raghunathan &amp; Rubin, 1991) on the information and bootstrap routes and the
 single fit's scaled chi-square on the sandwich/MI2S route. D3 and D4 (Chan &amp;
@@ -272,8 +296,12 @@ element-wise with Rubin's rules. The within-imputation variance \(U_d\) is
 taken directly from \(SE_d^2\), the between-imputation variance \(B\) is
 the sample variance of the per-imputation point estimates (after column
 alignment), and \(T = Ubar + (1 + 1/m) B\). Wald confidence intervals use
-Barnard-Rubin small-sample degrees of freedom with \(\nu_{com} = N - 1\)
-(Barnard &amp; Rubin 1999). NA propagation is fail-closed: if any imputation
+the plain Rubin (1987) degrees of freedom \(\nu = (m - 1)(1 + 1/r)^2\) (with
+\(r\) the relative increase in variance): the analytic loadings are
+asymptotically normal, so their complete-data reference is normal
+(\(\nu_{com} = \infty\)) and the Barnard-Rubin (1999) small-sample adjustment
+reduces to this form, matching <code>lavaan.mi</code>. NA propagation is fail-closed: if
+any imputation
 carries NA at an element, all pooled outputs (SE, CI bounds, RIV, FMI, df)
 for that element are NA. When a rotation was requested, the rotated loadings,
 communalities, and (for oblique rotations) factor correlations and structure
@@ -294,32 +322,31 @@ NA-filled <code>vcov_unrot_loadings</code> (the upstream signal of a Heywood cas
 singular bordered information matrix), it aborts with the classed condition
 <code>efa_pooled_unreliable_vcov</code>.</p>
 <p>Rotated quantities are pooled in a common multiple-imputation rotational
-gauge. For orthogonal rotations the gauge-aligned rotated loading is
-\(L_d^{unrot} Q_d\), with \(Q_d\) the orthogonal Procrustes rotation
-(\(Q = U V'\) from the singular value decomposition of
-\((L_d^{unrot})' \tilde\Lambda^{rot}\); Schoenemann 1966) to the
-multiple-imputation rotated target, and the unrotated covariance \(V_d\) is
-propagated through the same fixed-\(Q_d\) Kronecker identity used for
-<code>align_unrotated = "procrustes"</code>. This is the fixed-gauge marginal standard
-error of the rotated loading in the common target gauge; it is a different
-(and generally smaller) quantity than the criterion-aware delta-method
-rotation standard error each component fit returns (Jennrich 1973; Zhang &amp;
-Preacher 2015), and it shares its estimand with the bootstrap pool, which
-likewise Procrustes-aligns each replicate to the target. Communalities are
-rotation-invariant and pool element-wise with no alignment. For oblique
-rotations there is no closed-form oblique-Procrustes Jacobian, so the
-rotated-loading, factor-correlation, and structure-coefficient standard errors
-are pooled by reusing each component fit's own rotated standard errors after a
-signed-permutation alignment to the multiple-imputation target. This is a
-deliberate approximation – the per-fit standard error is conditional on that
-fit's rotation-criterion optimum rather than on the common gauge – and is
-flagged by <code>MI$&lt;param&gt;$method = "signed_permutation_approx"</code>. Researchers who
-need rigorous uncertainty quantification for oblique solutions should
-cross-check with <code>se = "np-boot"</code>, which re-aligns the unrotated replicates to
-the target before estimating the within-imputation covariance; the multiple-
-imputation rotation literature otherwise summarises oblique uncertainty with
-generalised Procrustes centroids rather than per-element standard errors (van
-Ginkel &amp; Kroonenberg 2014; Lorenzo-Seva &amp; Van Ginkel 2016).</p>
+gauge. A rotated-loading standard error is conditional on the rotation
+criterion (Jennrich 1973, 1974; Browne 2001; Zhang &amp; Preacher 2015), so for
+orthogonal and oblique rotations alike the within-imputation variance is each
+component fit's own criterion-aware delta-method rotated standard error (the
+quantity <code><a href="EFA.html">EFA()</a></code> returns), reused after a signed-permutation alignment to the
+multiple-imputation target; the between-imputation variance is the sample
+variance of the aligned per-imputation rotated loadings. This shares the
+estimand of the bootstrap pool, which likewise aligns each replicate to the
+target, and is flagged by <code>MI$&lt;param&gt;$method = "signed_permutation_approx"</code>. It
+is a deliberate approximation: the per-fit standard error is conditional on
+that fit's rotation-criterion optimum rather than on the common gauge. A
+fixed-rotation linear map of the unrotated covariance is deliberately not used
+for rotated-loading standard errors – an orthogonal rotation preserves each
+row's total variance, so it would merely redistribute the rotational
+indeterminacy variance the criterion otherwise pins down, inflating the
+reported standard errors. The same signed-permutation alignment carries the
+factor-correlation and structure-coefficient standard errors for oblique
+rotations. Communalities are rotation-invariant and pool element-wise with no
+alignment. Researchers who need a fully gauge-consistent uncertainty for
+rotated solutions should cross-check with <code>se = "np-boot"</code>, which re-aligns the
+unrotated replicates to the target before estimating the within-imputation
+covariance; the multiple-imputation rotation literature otherwise summarises
+rotated uncertainty with generalised Procrustes centroids rather than
+per-element standard errors (van Ginkel &amp; Kroonenberg 2014; Lorenzo-Seva &amp; Van
+Ginkel 2016).</p>
 <p>When the component <code>EFA</code> calls were run with <code>se = "sandwich"</code> (robust
 standard errors from a polychoric/tetrachoric or continuous-Pearson
 asymptotic covariance), pooling instead follows the two-stage,
@@ -337,7 +364,9 @@ is then fitted to \(\bar r\) with \(\tilde\Gamma\) as the robust meat
 (and, for <code>method = "DWLS"</code>, its diagonal as the weights). Because there is
 only one fit there is a single rotational gauge, so this route bypasses the
 per-imputation Procrustes/target alignment entirely (<code>target_method</code> and
-<code>align_unrotated</code> do not apply and are ignored with a classed message).
+<code>align_unrotated</code> do not apply; supplying a non-default value raises the classed
+warning <code>efa_pooled_mi2s_alignment_ignored</code>, while the defaults are ignored
+silently).
 The fitted object carries native scaled-shifted chi-square test statistics
 and sandwich standard errors that already reflect the multiple-imputation
 uncertainty; the chi-square is not D2-pooled, and the
@@ -404,6 +433,10 @@ non-positive-definite pooled covariance, increase the number of imputations.</p>
     <h2>References</h2>
     <p>Barnard, J., &amp; Rubin, D. B. (1999). Small-sample degrees of freedom with
 multiple imputation. <em>Biometrika</em>, 86(4), 948-955.</p>
+<p>Bentler, P. M. (1990). Comparative fit indexes in structural models.
+<em>Psychological Bulletin</em>, 107(2), 238-246.</p>
+<p>Browne, M. W. (2001). An overview of analytic rotation in exploratory factor
+analysis. <em>Multivariate Behavioral Research</em>, 36(1), 111-150.</p>
 <p>Chan, K. W., &amp; Meng, X.-L. (2022). Multiple improvements of multiple
 imputation likelihood ratio tests. <em>Statistica Sinica</em>, 32, 1489-1514.</p>
 <p>Chung, S., &amp; Cai, L. (2019). Alternative multiple imputation inference for
@@ -416,6 +449,9 @@ Significance levels from repeated p-values with multiply-imputed data.
 <em>Statistica Sinica</em>, 1(1), 65-92.</p>
 <p>Jennrich, R. I. (1973). Standard errors for obliquely rotated factor
 loadings. <em>Psychometrika</em>, 38(4), 593-604.</p>
+<p>Jennrich, R. I. (1974). Simplified formulae for standard errors in
+maximum-likelihood factor analysis. <em>British Journal of Mathematical and
+Statistical Psychology</em>, 27(1), 122-131.</p>
 <p>Lorenzo-Seva, U., &amp; Van Ginkel, J. R. (2016). Multiple imputation of missing
 values in exploratory factor analysis of multidimensional scales. <em>Anales de
 Psicologia</em>, 32(2), 596-608.</p>
@@ -426,6 +462,8 @@ Procrustes problem. <em>Psychometrika</em>, 31(1), 1-10.</p>
 imputation-based fit statistics in structural equation modeling with ordinal
 data: The MI2S approach. <em>Educational and Psychological Measurement</em>, 85(1),
 5-37.</p>
+<p>Tucker, L. R., &amp; Lewis, C. (1973). A reliability coefficient for maximum
+likelihood factor analysis. <em>Psychometrika</em>, 38(1), 1-10.</p>
 <p>van Ginkel, J. R., &amp; Kroonenberg, P. M. (2014). Using generalized Procrustes
 analysis for multiple imputation in principal component analysis. <em>Journal of
 Classification</em>, 31(2), 242-269.</p>
@@ -456,14 +494,14 @@ Statistics</em>, 40(6), 579-603.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Unrotated Loadings</span> ──────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             <span style="font-weight: bold;">F1</span>    <span style="font-weight: bold;">h2</span>    <span style="font-weight: bold;">u2</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fun        <span style="font-weight: bold;">.805</span>  .648  .352</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> friends    <span style="font-weight: bold;">.840</span>  .706  .294</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> enjoy      <span style="font-weight: bold;">.874</span>  .763  .237</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> hurt       <span style="font-weight: bold;">.766</span>  .587  .413</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> part       <span style="font-weight: bold;">.804</span>  .646  .354</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> commonly   <span style="font-weight: bold;">.824</span>  .680  .320</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> chances    <span style="font-weight: bold;">.781</span>  .610  .390</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> attracted  <span style="font-weight: bold;">.860</span>  .740  .260</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fun        <span style="font-weight: bold;">.802</span>  .644  .356</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> friends    <span style="font-weight: bold;">.852</span>  .726  .274</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> enjoy      <span style="font-weight: bold;">.863</span>  .745  .255</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> hurt       <span style="font-weight: bold;">.785</span>  .617  .383</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> part       <span style="font-weight: bold;">.798</span>  .636  .364</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> commonly   <span style="font-weight: bold;">.828</span>  .686  .314</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> chances    <span style="font-weight: bold;">.770</span>  .592  .408</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> attracted  <span style="font-weight: bold;">.846</span>  .715  .285</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Legend:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="font-weight: bold;">bold</span> = |loading| &gt;= .300</span>
@@ -473,21 +511,23 @@ Statistics</em>, 40(6), 579-603.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Variances Accounted for</span> ─────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                 <span style="font-weight: bold;">F1</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> SS loadings   5.379</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Prop Tot Var   .672</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> SS loadings   5.361</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Prop Tot Var   .670</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Model Fit</span> ───────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> χ²(20) = 16.01, <span style="font-style: italic;">p</span> = .793</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CFI: 1.00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> TLI: 1.00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSEA [90% CI]: .00 [.00; .02]</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -23.99</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -117.93</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ECVI: 0.06</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> D2-pooled χ²(20) = 0.38, <span style="font-style: italic;">p</span> = 1.000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFI: .99</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> TLI: .98</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> RMSEA [90% CI]: .00 [.00; .00]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -39.62</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -133.56</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ECVI: 0.04</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> CAF: .50</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> RMSR: .02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> SRMR: .01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> SRMR: .02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-style: italic;">Note:</span> the pooled χ² is the D2 statistic; its <span style="font-style: italic;">p</span> uses the D2 reference F(20, .2),</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> not the χ²(20) tail.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="co"># add computation of standard errors and CIs</span></span></span>
@@ -503,14 +543,14 @@ Statistics</em>, 40(6), 579-603.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Unrotated Loadings</span> ──────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             <span style="font-weight: bold;">F1</span>    <span style="font-weight: bold;">h2</span>    <span style="font-weight: bold;">u2</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fun        <span style="font-weight: bold;">.805</span>  .648  .352</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> friends    <span style="font-weight: bold;">.840</span>  .706  .294</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> enjoy      <span style="font-weight: bold;">.874</span>  .763  .237</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> hurt       <span style="font-weight: bold;">.766</span>  .587  .413</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> part       <span style="font-weight: bold;">.804</span>  .646  .354</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> commonly   <span style="font-weight: bold;">.824</span>  .680  .320</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> chances    <span style="font-weight: bold;">.781</span>  .610  .390</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> attracted  <span style="font-weight: bold;">.860</span>  .740  .260</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fun        <span style="font-weight: bold;">.802</span>  .644  .356</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> friends    <span style="font-weight: bold;">.852</span>  .726  .274</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> enjoy      <span style="font-weight: bold;">.863</span>  .745  .255</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> hurt       <span style="font-weight: bold;">.785</span>  .617  .383</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> part       <span style="font-weight: bold;">.798</span>  .636  .364</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> commonly   <span style="font-weight: bold;">.828</span>  .686  .314</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> chances    <span style="font-weight: bold;">.770</span>  .592  .408</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> attracted  <span style="font-weight: bold;">.846</span>  .715  .285</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Legend:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="font-weight: bold;">bold</span> = |loading| &gt;= .300</span>
@@ -520,21 +560,23 @@ Statistics</em>, 40(6), 579-603.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Variances Accounted for</span> ─────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                 <span style="font-weight: bold;">F1</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> SS loadings   5.379</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Prop Tot Var   .672</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> SS loadings   5.361</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Prop Tot Var   .670</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Model Fit</span> ───────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> χ²(20) = 16.01, <span style="font-style: italic;">p</span> = .793</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CFI [95% bootstrap/MI-CI]: 1.00 [.98, 1.00]</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> TLI: 1.00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSEA [90% CI] [95% bootstrap/MI-CI]: .00 [.00; .02] [.03, .09]</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AIC [95% bootstrap/MI-CI]: -23.99 [-27.26, 101.59]</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BIC [95% bootstrap/MI-CI]: -117.93 [-121.20, 7.65]</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ECVI: 0.06</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CAF [95% bootstrap/MI-CI]: .50 [.44, .57]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> D2-pooled χ²(20) = 0.38, <span style="font-style: italic;">p</span> = 1.000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFI [95% bootstrap/MI-CI]: .99 [.97, 1.01]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> TLI: .98</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> RMSEA [90% CI] [95% bootstrap/MI-CI]: .00 [.00; .00] [.02, .11]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AIC [95% bootstrap/MI-CI]: -39.62 [-44.34, 135.34]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BIC [95% bootstrap/MI-CI]: -133.56 [-138.29, 41.40]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ECVI: 0.04</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CAF [95% bootstrap/MI-CI]: .50 [.48, .52]</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> RMSR [95% bootstrap/MI-CI]: .02 [.01, .03]</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> SRMR: .01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> SRMR: .02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-style: italic;">Note:</span> the pooled χ² is the D2 statistic; its <span style="font-style: italic;">p</span> uses the D2 reference F(20, .2),</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> not the χ²(20) tail.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-style: italic;">Note:</span> Bootstrap/MI CIs based on 1000 bootstrap samples per imputation.</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>

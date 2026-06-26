@@ -109,7 +109,10 @@ Default is <code>NULL</code>, in which case all intercorrelations are assumed to
 wishes to get factor scores for a correlation matrix other than Pearson's
 (e.g. polychoric). Defaults to <code>NULL</code>, in which case
 <code><a href="https://rdrr.io/pkg/psych/man/factor.scores.html" class="external-link">psych::factor.scores()</a></code> uses
-<code>cor(x, use = "pairwise")</code>.</p></dd>
+<code>cor(x, use = "pairwise")</code>. If the EFA in <code>f</code> was fit on a non-Pearson
+correlation, pass that same matrix here so the factor weights stay
+consistent with the loadings; otherwise the weights are based on the Pearson
+correlation of <code>x</code>.</p></dd>
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
@@ -136,7 +139,11 @@ See <code><a href="https://rdrr.io/pkg/psych/man/factor.scores.html" class="exte
 (only if raw data are provided.</p></dd>
 
 <dt>R2</dt>
-<dd><p>Multiple R2 of the scores with the factors.</p></dd>
+<dd><p>Factor score validity coefficients as returned by
+<code><a href="https://rdrr.io/pkg/psych/man/factor.scores.html" class="external-link">psych::factor.scores()</a></code>. For orthogonal factors these equal the squared
+multiple correlations between the factors and the estimated scores; for
+oblique factors they are the more general factor-score adequacy coefficients
+and no longer coincide with the squared multiple correlations.</p></dd>
 
 <dt>settings</dt>
 <dd><p>A list of the settings used.</p></dd>

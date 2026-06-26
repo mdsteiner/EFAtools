@@ -130,8 +130,9 @@ update.</p></dd>
 
 
 <dt id="arg-normalize">normalize<a class="anchor" aria-label="anchor" href="#arg-normalize"></a></dt>
-<dd><p>Logical scalar. If <code>TRUE</code>, apply Kaiser normalization before
-rotation and reverse it after rotation.</p></dd>
+<dd><p>Logical scalar. If <code>TRUE</code>, apply Kaiser normalization to the
+loadings (only) before rotation and reverse it afterwards; the target is left
+unnormalized, matching <code>GPArotation::targetQ(normalize = TRUE)</code>.</p></dd>
 
 
 <dt id="arg-random-starts">random_starts<a class="anchor" aria-label="anchor" href="#arg-random-starts"></a></dt>
@@ -181,8 +182,8 @@ transformation convention as <code><a href="https://rdrr.io/pkg/GPArotation/man/
     <p>Bernaards, C. A., &amp; Jennrich, R. I. (2005). Gradient projection algorithms
 and software for arbitrary rotation criteria in factor analysis.
 <em>Educational and Psychological Measurement</em>, 65, 676-696.</p>
-<p>Gower, J. C. (1975). Generalized Procrustes analysis. <em>Psychometrika</em>, 40,
-33-51.</p>
+<p>Browne, M. W. (2001). An overview of analytic rotation in exploratory factor
+analysis. <em>Multivariate Behavioral Research</em>, 36, 111-150.</p>
     </div>
 
   </div>

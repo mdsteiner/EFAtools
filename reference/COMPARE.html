@@ -167,7 +167,7 @@ is now drawn with <code><a href="plot.COMPARE.html">plot.COMPARE()</a></code> ra
 
 <dt id="arg-plot-red">plot_red<a class="anchor" aria-label="anchor" href="#arg-plot-red"></a></dt>
 <dd><p>numeric. Threshold above which to plot the absolute differences
-in red. Default is .001.</p></dd>
+in red. Default is .01.</p></dd>
 
 </dl></div>
     <div id="value">
@@ -196,7 +196,10 @@ normal double, max_dec will be three.</p></dd>
 
 <dt>are_equal</dt>
 <dd><p>The maximal number of decimals to which all elements of x and y
-are equal.</p></dd>
+agree in absolute value. The comparison is on magnitudes, so two elements that
+are equal in size but opposite in sign count as agreeing; signed disagreements
+are reflected in <code>diff</code> and the mean / median / min / max absolute differences.
+<code>NA</code> if <code>na.rm = FALSE</code> and any element is missing.</p></dd>
 
 <dt>diff_corres</dt>
 <dd><p>The number of differing variable-to-factor correspondences
