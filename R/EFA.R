@@ -33,9 +33,13 @@
 #'  "none" (default, no standard errors), "information", "sandwich", or "np-boot".
 #'  Availability in brief: "information" requires `method = "ML"`; "sandwich" requires
 #'  raw data (ordinal `cor_method = "poly"`/`"tetra"` with "ML"/"ULS"/"DWLS", or
-#'  continuous `cor_method = "pearson"` with "ML"/"ULS"); "np-boot" requires raw data;
-#'  and the analytic methods are unavailable with the "promax" and "simplimax" rotations.
-#'  "np-boot" draws a non-parametric bootstrap and needs raw data. "information"
+#'  continuous `cor_method = "pearson"` with "ML"/"ULS"); under `cor_method = "fiml"` both
+#'  "information" and "sandwich" return the corrected two-stage sandwich for "ML"/"ULS" (see below);
+#'  "np-boot" requires raw data; and the analytic methods are unavailable with the "promax"
+#'  and "simplimax" rotations.
+#'  "np-boot" draws a non-parametric bootstrap and needs raw data; with
+#'  `cor_method = "fiml"` it re-estimates the EM moments on each resample (the analytic
+#'  corrected two-stage standard errors below are also available). "information"
 #'  returns analytic standard errors from the expected (Fisher) information matrix of the
 #'  maximum-likelihood solution: for the unrotated loadings and uniquenesses, and -- when a
 #'  rotation is applied -- for the rotated loadings, the factor correlations, the structure
@@ -67,9 +71,18 @@
 #'  listwise-complete cases; on data with missing values the reported `N`, the correlation matrix,
 #'  and the point estimate therefore reflect the complete cases regardless of `use`. Like
 #'  `"information"`, it is not available with `"promax"` or
-#'  `"simplimax"`. See Lawley and Maxwell (1971) and Jennrich and Thayer (1973); for the rotated
-#'  quantities, Jennrich (1973) and Zhang and Preacher (2015); for the robust standard errors and
-#'  scaled chi-square, Browne (1984), Satorra and Bentler (1994), and Asparouhov and Muthen (2010).
+#'  `"simplimax"`. Under `cor_method = "fiml"` both `"information"` and `"sandwich"` instead return,
+#'  for `method = "ML"` or `"ULS"`, the corrected two-stage (Yuan & Bentler, 2000; Savalei &
+#'  Bentler, 2009) sandwich standard errors, built on the saturated FIML asymptotic covariance with
+#'  the estimator's own Stage-2 weight: the model is fitted to the
+#'  EM-estimated correlation, so the naive Stage-2 standard errors (treating that correlation as
+#'  complete data) are inconsistent under missingness and are never reported. (`method = "PAF"`
+#'  carries no Stage-2 weight for the sandwich, so use `se = "np-boot"` there.) See Lawley and
+#'  Maxwell (1971) and Jennrich and Thayer (1973); for the rotated quantities, Jennrich (1973) and
+#'  Zhang and Preacher (2015); for the robust standard errors and scaled chi-square, Browne (1984),
+#'  Satorra and Bentler (1994), and Asparouhov and Muthen (2010); for the two-stage FIML standard
+#'  errors and rescaled statistic, Yuan and Bentler (2000), Savalei and Bentler (2009), and Yuan,
+#'  Marshall, and Bentler (2002).
 #' @param type character. If one of "EFAtools" (default), "psych", or "SPSS" is
 #'  used, and the following arguments with default NA are left with
 #'  NA, these implementations are executed according to the respective program
@@ -106,10 +119,32 @@
 #' @param use character. Passed to [stats::cor()] if raw data
 #' is given as input. Default is "pairwise.complete.obs".
 #' @param cor_method character. Correlation computed from raw data: `"pearson"`,
-#'   `"spearman"`, or `"kendall"` (passed to [stats::cor()]), or `"poly"` /
+#'   `"spearman"`, or `"kendall"` (passed to [stats::cor()]), `"poly"` /
 #'   `"tetra"` for polychoric / tetrachoric correlations of ordinal / binary data
 #'   (a two-step estimator with no empty-cell continuity correction, matching
-#'   `polycor::polychor()` and `lavaan`).
+#'   `polycor::polychor()` and `lavaan`), or `"fiml"` for a two-stage
+#'   full-information maximum-likelihood correlation. With `"fiml"`, the saturated
+#'   multivariate-normal mean and covariance are estimated from raw data with
+#'   missing values by an EM algorithm assuming the data are missing at random
+#'   (Yuan, Marshall, & Bentler, 2002; Little & Rubin, 2002), and the standardized
+#'   covariance is then analysed. This reproduces `psych::corFiml()` followed by
+#'   `psych::fa()` and `lavaan(missing = "two.stage")`, *not* `lavaan::efa(missing
+#'   = "ml")`, so the point estimates are not expected to match the latter. The model
+#'   fit indices are corrected two-stage statistics: the Chi Square is the
+#'   Satorra-Bentler-corrected two-stage statistic (Yuan, Marshall, & Bentler, 2002), the
+#'   normal-theory discrepancy on the EM correlation rescaled by the saturated FIML asymptotic
+#'   covariance, because the plain likelihood-ratio statistic is not asymptotically
+#'   `Chi^2(df)` under the two-stage estimator. The CFI, TLI, and RMSEA are derived from the
+#'   scaled model and baseline statistics; AIC, BIC, and ECVI are left `NA`, as for any
+#'   moment-scaled statistic (see the `fit_indices` entry in Value). `"fiml"`
+#'   uses every case and handles the missingness itself, so `use` is ignored; it
+#'   supplies a continuous (Pearson-type) correlation only and is therefore not
+#'   compatible with `method = "DWLS"`. Standard errors are available analytically for
+#'   `method = "ML"` or `"ULS"` -- `"information"` and `"sandwich"` both return the corrected
+#'   two-stage sandwich (see `se`) -- or, for any method, by the non-parametric bootstrap
+#'   (`se = "np-boot"`), which re-runs the EM
+#'   moment estimation on every resample and is therefore slow, so a smaller `b_boot` may be
+#'   advisable.
 #' Default is "pearson".
 #' @param k numeric. Either the power used for computing the target matrix P in
 #' the promax rotation or the number of 'close to zero loadings' for the simplimax
@@ -143,6 +178,8 @@
 #' starting values specified in the [stats::factanal()] function.
 #' Solutions are very similar.
 #' @param b_boot numeric. The number of bootstrap samples to draw. Default is 1000.
+#'  Under `cor_method = "fiml"` each bootstrap sample re-runs the EM moment
+#'  estimation, so a smaller value may be advisable.
 #' @param ci numeric. The confidence interval to create from the bootstrap samples.
 #'  Must be between 0 and 1. Default ist .95 for 95% CIs.
 #' @param randomStarts numeric. The number of random starts to use in the
@@ -317,9 +354,16 @@
 #' and the common part accounted for (CAF) index as proposed by Lorenzo-Seva,
 #' Timmerman, & Kiers (2011). The model Chi Square is the Bartlett-corrected
 #' discrepancy (matching [stats::factanal()] for ML), and the AIC, BIC, and ECVI are
-#' derived from it. AIC and BIC are the minimum-fit-function (Chi-Square-based)
-#' forms `Chi Square - 2 * df` and `Chi Square - log(N) * df` (as in [psych::fa()]),
-#' not the likelihood-based criteria, and can therefore be negative. The RMSEA, CFI, and
+#' derived from it. When `cor_method = "fiml"` the model and baseline Chi Square are
+#' instead the Satorra-Bentler-corrected two-stage statistics (Yuan, Marshall, &
+#' Bentler, 2002): the normal-theory discrepancy on the EM-estimated correlation,
+#' rescaled by the saturated FIML asymptotic covariance, because the plain two-stage
+#' likelihood-ratio statistic is not asymptotically `Chi^2(df)` under the two-stage
+#' estimator. For ML and ULS the AIC, BIC, and ECVI are the minimum-fit-function
+#' (Chi-Square-based) forms `Chi Square - 2 * df` and `Chi Square - log(N) * df` (as in
+#' [psych::fa()]), not the likelihood-based criteria, and can therefore be negative; they
+#' are left `NA` for any scaled (moment-adjusted) Chi Square, i.e. under
+#' `cor_method = "fiml"` and with `se = "sandwich"`. The RMSEA, CFI, and
 #' TLI instead place the model (and, for CFI and TLI, the baseline) noncentrality on the
 #' uncorrected `N - 1` discrepancy scale (Browne & Cudeck, 1992; Bentler, 1990; Tucker &
 #' Lewis, 1973) on which these approximation indices are defined, so the Bartlett
@@ -327,7 +371,8 @@
 #' indices. For PAF
 #' and DWLS, only CAF, RMSR, SRMR, and df are computed and the Chi-Square-derived indices
 #' are returned as `NA`; for DWLS with `se = "sandwich"` the full block is instead filled
-#' from a scaled Chi Square (see Details). With `se = "sandwich"` the `fit_indices` also
+#' from a scaled Chi Square (see Details). Whenever the Chi Square is a scaled one
+#' (`se = "sandwich"`, or any `cor_method = "fiml"` fit) the `fit_indices` also
 #' carry the scaled-statistic components: `chi_scaling` (the multiplier a in the
 #' scaled-and-shifted statistic a * T + b, i.e. the reciprocal of \pkg{lavaan}'s
 #' `chisq.scaling.factor`), `chi_shift` (b), `chi_unscaled` (the unscaled statistic T),
@@ -464,6 +509,17 @@
 #' ML_rob$SE$unrot_loadings
 #' }
 #'
+#' \donttest{
+#' # Two-stage FIML correlations from raw data with missing values: the saturated
+#' # multivariate-normal moments are EM-estimated (assuming the data are missing at
+#' # random) and the standardized covariance is analysed. This matches
+#' # psych::corFiml() followed by psych::fa(), not lavaan::efa(missing = "ml").
+#' x_miss <- GRiPS_raw
+#' x_miss[cbind(1:20, 1)] <- NA
+#' EFA_fiml <- EFA(x_miss, n_factors = 1, method = "ML", cor_method = "fiml")
+#' EFA_fiml$unrot_loadings
+#' }
+#'
 #' \dontrun{
 #' # Bootstrap standard errors from raw data, reproducible via a fixed seed and run
 #' # in parallel across replicates. Keep the number of workers small (here 2) so the
@@ -488,7 +544,8 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
                 varimax_type = NA,
                 k = NA, normalize = TRUE, P_type = NA, precision = 1e-5,
                 order_type = NA, start_method = "psych",
-                cor_method = c("pearson", "spearman", "kendall", "poly", "tetra"),
+                cor_method = c("pearson", "spearman", "kendall", "poly", "tetra",
+                               "fiml"),
                 b_boot = 1000, ci = .95,
                 randomStarts = 100, seed = NULL,
                 ...) {
@@ -516,13 +573,62 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
     )
   }
 
+  # Detect a correlation-matrix input once, up front: the FIML guard below and the
+  # bootstrap/DWLS guards further down all branch on it, and resolving it before R is
+  # validated/smoothed keeps those warnings from being pre-empted by a singular or
+  # non-positive-definite matrix.
+  is_cormat <- .is_cormat(x)
+
+  # Two-stage / full-information ML correlations are EM-estimated from raw data with missing
+  # values (Yuan, Marshall, & Bentler, 2002). Reject the input and option combinations that path
+  # cannot honour here, before any computation, so they fail with a dedicated message rather than
+  # a downstream one. The analytic standard errors are handled by the corrected two-stage sandwich
+  # (.se_fiml()) for ML and ULS; DWLS, a correlation-matrix input, and PAF with analytic standard
+  # errors are unsupported.
+  if (cor_method == "fiml") {
+    if (is_cormat) {
+      cli::cli_abort(
+        c("{.code cor_method = \"fiml\"} needs raw data, not a correlation matrix.",
+          "x" = "A correlation matrix carries no cases to estimate the FIML moments from.",
+          "i" = "Supply raw data (with missing values), or choose another {.arg cor_method}."),
+        class = "efa_fiml_needs_raw"
+      )
+    }
+    if (method == "DWLS") {
+      cli::cli_abort(
+        c("{.code method = \"DWLS\"} is not compatible with {.code cor_method = \"fiml\"}.",
+          "x" = "DWLS needs a polychoric asymptotic covariance, which the continuous FIML correlation does not provide.",
+          "i" = "Use {.code method = \"ML\"}, {.val ULS}, or {.val PAF}, or {.code cor_method = \"poly\"}/{.val tetra} for DWLS."),
+        class = "efa_fiml_unsupported_method"
+      )
+    }
+    # The corrected two-stage sandwich (.se_fiml()) reuses the Stage-2 ML/ULS weight; PAF minimises
+    # no discrepancy and so carries no weight for it, exactly as the polychoric/continuous sandwich
+    # rejects PAF. Reject the analytic-SE request here (the bootstrap stays available for PAF).
+    if (se %in% c("information", "sandwich") && !(method %in% c("ML", "ULS"))) {
+      cli::cli_abort(
+        c("Analytic standard errors under {.code cor_method = \"fiml\"} require {.code method = \"ML\"} or {.val ULS}.",
+          "x" = "You requested {.code method = {.val {method}}}.",
+          "i" = "{.val PAF} minimises no discrepancy, so it has no weight for the two-stage sandwich; use {.code se = \"np-boot\"} for {.val {method}}."),
+        class = "efa_se_unsupported"
+      )
+    }
+    if (use != "pairwise.complete.obs") {
+      cli::cli_warn(
+        c("{.arg use} is ignored when {.code cor_method = \"fiml\"}.",
+          "i" = "FIML uses every case and handles the missingness itself, so {.code use = {.val {use}}} has no effect."),
+        class = "efa_fiml_use_ignored"
+      )
+    }
+  }
+
   # Analytic standard errors cover only a subset of estimators and rotations. Reject the
   # unsupported combinations here, before any computation, with a clear pointer to the
   # bootstrap. Information-matrix SEs are derived from the ML discrepancy and so require
   # method = "ML"; promax (a two-step target rotation) and simplimax (a non-smooth, piecewise
   # criterion) have no usable analytic rotation Jacobian; PAF has no discrepancy-based information
   # from which a sandwich could be built.
-  if (se == "information" && method != "ML") {
+  if (se == "information" && method != "ML" && cor_method != "fiml") {
     cli::cli_abort(
       c("{.code se = \"information\"} is only available for {.code method = \"ML\"}.",
         "x" = "You requested {.code method = {.val {method}}}.",
@@ -530,7 +636,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
       class = "efa_se_unsupported"
     )
   }
-  if (se == "sandwich" && method == "PAF") {
+  if (se == "sandwich" && method == "PAF" && cor_method != "fiml") {
     cli::cli_abort(
       c("{.code se = \"sandwich\"} is not available for {.code method = \"PAF\"}.",
         "i" = "Use {.code se = \"np-boot\"} for {.val PAF}."),
@@ -550,7 +656,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
   # tetrachoric asymptotic covariance for ordinal data (any estimator), or the fourth-moment
   # (Browne, 1984) covariance for continuous data with cor_method = "pearson" and method ML or
   # ULS. Spearman/Kendall correlations and continuous DWLS have no such covariance.
-  if (se == "sandwich" && !.is_poly_cor(cor_method) &&
+  if (se == "sandwich" && cor_method != "fiml" && !.is_poly_cor(cor_method) &&
       !(cor_method == "pearson" && method %in% c("ML", "ULS"))) {
     cli::cli_abort(
       c("{.code se = \"sandwich\"} is not available for this correlation/estimator combination.",
@@ -599,11 +705,6 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
     )
   }
 
-  # A correlation matrix cannot yield bootstrap SEs; resolve this before
-  # validating/smoothing R so the warning is not pre-empted by a singular or
-  # non-positive-definite matrix.
-  is_cormat <- .is_cormat(x)
-
   # DWLS weights each polychoric correlation residual by the inverse of its asymptotic
   # variance, so it needs a polychoric/tetrachoric asymptotic covariance. That is only
   # available from raw ordinal data with cor_method = "poly" or "tetra"; there is no
@@ -650,7 +751,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
                              # raw data to estimate the covariance from, so do not request one
                              # there (the sandwich is rejected just below); requesting it would
                              # only draw a spurious "acov ignored" warning before that abort.
-                             acov = if (se == "sandwich" && !is_cormat) "full"
+                             acov = if (se == "sandwich" && !is_cormat && cor_method != "fiml") "full"
                                     else if (method == "DWLS") "diag" else "none",
                              dwls = method == "DWLS",
                              check_singular = type != "psych",
@@ -662,6 +763,24 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
   # Full asymptotic covariance of the off-diagonal correlations (the sandwich meat); NULL unless
   # se = "sandwich" on a raw-data path (polychoric/tetrachoric, or continuous Pearson).
   Gamma <- prep$Gamma
+  # Two-stage / full-information ML moments for the fit-index likelihood-ratio chi-square; the
+  # saturated mean/covariance and log-likelihood EM-estimated in .prepare_cor_input() are
+  # carried alongside the raw data so .gof() can evaluate the model and baseline FIML log-
+  # likelihoods. Reuse prep$fiml (no second EM run); NULL for every other cor_method.
+  fiml_pt <- if (cor_method == "fiml") {
+    list(data = x, mu = prep$fiml$mu, sigma = prep$fiml$sigma, logl = prep$fiml$logl)
+  }
+  # On an analytic-SE fit the saturated FIML correlation covariance is needed twice from the same
+  # moments -- by the scaled chi-square (.fiml_scaled_test, via .gof()) and by the SE sandwich
+  # (.se_fiml_core) -- so build it once here and cache it on the fiml list; both read it and skip the
+  # rebuild. Only the analytic-SE path duplicates it: with se = "none"/"np-boot" only .gof() forms it
+  # (once), and the bootstrap replicate lists omit the field and recompute per replicate. NULL on a
+  # degenerate covariance, where each consumer falls back to its own guarded recompute.
+  if (!is.null(fiml_pt) && se %in% c("information", "sandwich")) {
+    fiml_pt$acov_cor <- tryCatch(
+      .fiml_saturated_acov(fiml_pt$data, fiml_pt$mu, fiml_pt$sigma)$cor,
+      error = function(e) NULL)
+  }
 
   # Analytic SEs scale the inverse information by 1 / (N - 1), so they need the sample
   # size. Raw data always supplies it (N = number of rows); a correlation matrix does not,
@@ -677,7 +796,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
   # The sandwich meat (the asymptotic covariance of the correlations) can only be estimated from
   # raw data; a correlation matrix carries no such covariance, so reject that combination
   # explicitly (rather than failing later when the meat is NULL).
-  if (se == "sandwich" && is.null(Gamma)) {
+  if (se == "sandwich" && is.null(Gamma) && cor_method != "fiml") {
     cli::cli_abort(
       c("{.code se = \"sandwich\"} requires raw data to estimate the asymptotic covariance of the correlations.",
         "x" = "You supplied a correlation matrix.",
@@ -717,8 +836,13 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
     # Resample the cases the correlation matrix was actually built from. Under
     # listwise deletion that is the complete cases (N of them), not the first N
     # row positions, so the case bootstrap stays a faithful resample of the
-    # estimator that produced R (Efron & Tibshirani, 1993).
-    rows <- if (.is_listwise_use(use) || method == "DWLS") {
+    # estimator that produced R (Efron & Tibshirani, 1993). FIML uses every row
+    # that carries at least one observed value (fully-missing rows are dropped, so
+    # N counts only these) and `use` does not apply; resampling exactly those rows
+    # -- not all nrow(x) positions -- keeps each replicate's sample size equal to N.
+    rows <- if (cor_method == "fiml") {
+      which(rowSums(!is.na(x)) > 0L)
+    } else if (.is_listwise_use(use) || method == "DWLS") {
       which(stats::complete.cases(x))
     } else {
       seq_len(nrow(x))
@@ -731,6 +855,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
 
     poly_cor <- .is_poly_cor(cor_method)
     tetra_cor <- cor_method == "tetra"
+    fiml_cor <- cor_method == "fiml"
     dwls <- method == "DWLS"
 
     # DWLS reweights each replicate by the inverse of its own polychoric asymptotic
@@ -738,6 +863,12 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
     # carried into the lean fit; NULL for the other estimators, which need no weights.
     # The weights are positional, so no dimnames are needed.
     W_boot_array <- if (dwls) array(NA_real_, c(m, m, b_boot)) else NULL
+
+    # FIML carries each replicate's resampled data and its own EM moments (saturated mean,
+    # covariance, and log-likelihood) into the lean fit, so the per-replicate fit indices use
+    # the same likelihood-ratio chi-square as the point estimate. One list element per
+    # replicate (NULL for a dropped resample); NULL for the other cor_methods.
+    fiml_boot <- if (fiml_cor) vector("list", b_boot) else NULL
 
     for (boot_i in seq_len(b_boot)) {
       ind <- sample(rows, size = N, replace = TRUE)
@@ -769,6 +900,24 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
           R_boot_array[,, boot_i] <- rep_i$R
           if (dwls) W_boot_array[,, boot_i] <- rep_i$W
         }
+      } else if (fiml_cor) {
+        # Two-stage FIML: re-estimate the EM moments on the resample and standardise to a
+        # correlation, mirroring the point-estimate path. The full EM object (moments and the
+        # saturated log-likelihood) and the resampled data are retained so the lean fit can
+        # form this replicate's FIML likelihood-ratio chi-square. A degenerate resample (a
+        # constant or collinear column, an EM breakdown) makes .fiml_em_moments() abort; fall
+        # back to an all-NA matrix so the replicate is dropped at the fit stage, as on the poly
+        # and Pearson paths. The EM recompute is serial here; the replicate fits parallelise
+        # downstream.
+        em_i <- tryCatch(suppressWarnings(.fiml_em_moments(x[ind, , drop = FALSE])),
+                         error = function(e) NULL)
+        if (is.null(em_i)) {
+          R_boot_array[,, boot_i] <- matrix(NA_real_, m, m)
+        } else {
+          R_boot_array[,, boot_i] <- stats::cov2cor(em_i$sigma)
+          fiml_boot[[boot_i]] <- list(data = x[ind, , drop = FALSE], mu = em_i$mu,
+                                      sigma = em_i$sigma, logl = em_i$logl)
+        }
       } else {
         R_boot_array[,, boot_i] <- stats::cor(x[ind, , drop = FALSE], use = use,
                                               method = cor_method)
@@ -781,6 +930,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
     R = R, N = N, weights = weights, Gamma = Gamma,
     R_boot_array = if (isTRUE(np_boot)) R_boot_array else NULL,
     W_boot_array = if (isTRUE(np_boot)) W_boot_array else NULL,
+    fiml = fiml_pt, fiml_boot = if (isTRUE(np_boot)) fiml_boot else NULL,
     np_boot = np_boot, b_boot = b_boot, method = method, rotation = rotation,
     type = type, n_factors = n_factors, se = se, ci = ci, use = use,
     cor_method = cor_method, max_iter = max_iter, init_comm = init_comm,
@@ -795,9 +945,13 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
 # bootstrap -- pre-resampled correlation/weight arrays. Split out from EFA() so multiple-
 # imputation pooling can drive the same estimate -> rotate -> standard-error pipeline on
 # pooled inputs (the MI2S route in EFA_POOLED()) without re-entering EFA()'s raw-data
-# preparation and input guards.
+# preparation and input guards. `fiml` (point estimate) and `fiml_boot` (per-replicate)
+# carry the two-stage EM moments + raw data for the FIML likelihood-ratio fit indices and
+# default to NULL; EFA_POOLED()'s MI2S route never supplies them (it is gated to poly/tetra/
+# pearson), so its fit indices stay on the standard discrepancy path.
 .efa_core <- function(R, N, weights = NULL, Gamma = NULL,
                       R_boot_array = NULL, W_boot_array = NULL,
+                      fiml = NULL, fiml_boot = NULL,
                       np_boot = FALSE, b_boot = 1000, method, rotation, type,
                       n_factors, se = "none", ci = .95,
                       use = "pairwise.complete.obs", cor_method = "pearson",
@@ -862,7 +1016,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
                              init_comm = init_comm, criterion = criterion,
                              criterion_type = criterion_type,
                              abs_eigen = abs_eigen, start_method = start_method,
-                             weights = weights)
+                             weights = weights, fiml = fiml)
 
   # Surface Heywood cases from the point-estimate solution (the detector runs in
   # .finalize_fit for every fit). This fires once per EFA() call; EFA_AVERAGE,
@@ -909,7 +1063,10 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
                            # aggregation consumes (see .finalize_fit()).
                            lean = TRUE,
                            # DWLS carries the per-replicate weight matrices; NULL otherwise.
-                           weights_array = W_boot_array)
+                           weights_array = W_boot_array,
+                           # FIML carries the per-replicate EM moments + resampled data for the
+                           # likelihood-ratio fit indices; NULL for the other cor_methods.
+                           fiml_list = fiml_boot)
 
   }
 
@@ -1020,7 +1177,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
     boot_out <- .compute_se_ci(fit_out, L_rot, se_method = se,
                                boot_fits = boot_fits, boot_rot = boot_rot,
                                ci = ci, b = b_boot, N = N, rot_info = rot_info,
-                               gamma = Gamma, method = method)
+                               gamma = Gamma, method = method, fiml = fiml)
     # The sandwich also returns the robust scaled chi-square block; it is patched into the
     # fit indices below rather than carried in the SE schema, so strip it before merging.
     scaled_test <- boot_out$scaled_test
@@ -1061,7 +1218,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
 
 
 
-.boot_fun <- function(x, b, call_fun, ..., weights_array = NULL) {
+.boot_fun <- function(x, b, call_fun, ..., weights_array = NULL, fiml_list = NULL) {
 
   # The per-replicate fits are independent and estimation is RNG-free, so they are
   # run in parallel across replicates at the R/process level with future.apply. A
@@ -1084,7 +1241,11 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
     # DWLS passes the replicate's own weight matrix; the other estimators ignore the
     # NULL (.estimate_model()'s weights default).
     w_i <- if (is.null(weights_array)) NULL else weights_array[,, boot_i]
-    tryCatch(suppressWarnings(call_fun(x[,, boot_i], ..., weights = w_i)),
+    # FIML passes the replicate's own EM moments + resampled data for its likelihood-ratio fit
+    # indices; the other paths ignore the NULL (.estimate_model()'s fiml default). Each element
+    # carries an N x p resample, so the list adds to what future.apply serialises per worker.
+    f_i <- if (is.null(fiml_list)) NULL else fiml_list[[boot_i]]
+    tryCatch(suppressWarnings(call_fun(x[,, boot_i], ..., weights = w_i, fiml = f_i)),
              error = function(e) NULL)
   }, future.seed = TRUE)
 
@@ -1110,10 +1271,20 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
 # the print and summary methods are agnostic to how the SEs were produced. The sandwich branch
 # additionally returns a `scaled_test` element (the robust scaled chi-square), which EFA()
 # strips off and folds into the fit indices. `gamma` (the polychoric ACOV meat) and `method`
-# are used only by the sandwich.
+# are used only by the sandwich. `fiml` (the two-stage EM moments + raw data) is non-NULL only
+# for cor_method = "fiml", where both analytic settings route to the corrected two-stage sandwich.
 .compute_se_ci <- function(fit_out, L_rot, se_method, boot_fits = NULL,
                            boot_rot = "none", ci = .95, b = NULL, N = NULL,
-                           rot_info = NULL, gamma = NULL, method = NULL) {
+                           rot_info = NULL, gamma = NULL, method = NULL,
+                           fiml = NULL) {
+
+  # cor_method = "fiml": the EM correlation is a two-stage estimate, so both analytic settings
+  # ("information"/"sandwich") return the corrected two-stage sandwich SE built on the saturated
+  # FIML covariance. The naive Stage-2 information SE (treating the EM correlation as complete data)
+  # is inconsistent under missingness and is never shipped. The bootstrap path is unchanged.
+  if (!is.null(fiml) && se_method %in% c("information", "sandwich")) {
+    return(.se_fiml(fit_out, rot_info, N, ci, fiml, method))
+  }
 
   switch(se_method,
     "np-boot" = .boot_se_ci(fit_out, L_rot, boot_fits, boot_rot, ci, b),
@@ -1956,7 +2127,15 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
   L_unrot_boot <- array(NA_real_, c(nrow_L, ncol_L, b),
                         dimnames = list(rownam_L, colnam_L,
                                         NULL))
-  gof_boot <- matrix(NA_real_, ncol = length(fit_target$fit_indices), nrow = b)
+  # The bootstrap aggregates only the numeric fit indices: a scaled chi-square fit (the
+  # cor_method = "fiml" two-stage statistic, or any se = "sandwich" fit) adds the character
+  # `chi_scaled_type` tag and the extra scaled-statistic components, which the quantile/SD
+  # aggregation below cannot consume. Aligning each replicate to these names also lets a
+  # replicate whose scaled statistic degenerated (and so lacks a component) contribute NA
+  # there rather than shifting every column.
+  gof_names <- names(fit_target$fit_indices)[
+    vapply(fit_target$fit_indices, is.numeric, logical(1))]
+  gof_boot <- matrix(NA_real_, ncol = length(gof_names), nrow = b)
   residuals_boot <- array(NA_real_, c(nrow_L, nrow_L, b),
                           dimnames = list(rownam_L, rownam_L,
                                           NULL))
@@ -1980,7 +2159,11 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
     }
 
     L_unrot_boot[,, boot_i] <- aligned$loadings
-    gof_boot[boot_i, ] <- unlist(boot_fit[[boot_i]]$fit_indices)
+    fi_i <- boot_fit[[boot_i]]$fit_indices
+    gof_boot[boot_i, ] <- vapply(gof_names, function(nm) {
+      v <- fi_i[[nm]]
+      if (is.null(v) || !is.numeric(v)) NA_real_ else as.numeric(v[1L])
+    }, numeric(1))
     residuals_boot[,, boot_i] <- boot_fit[[boot_i]]$residuals
 
   }
@@ -2006,9 +2189,9 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
   L_unrot_se_ci <- .array_se_ci(L_unrot_boot, ps)
   gof_se_ci <- .array_se_ci(gof_boot, ps, M = 2)
   residuals_se_ci <- .array_se_ci(residuals_boot, ps)
-  names(gof_se_ci$se) <- names(fit_target$fit_indices)
-  names(gof_se_ci$ci$lower) <- names(fit_target$fit_indices)
-  names(gof_se_ci$ci$upper) <- names(fit_target$fit_indices)
+  names(gof_se_ci$se) <- gof_names
+  names(gof_se_ci$ci$lower) <- gof_names
+  names(gof_se_ci$ci$upper) <- gof_names
 
   if(boot_rot == "oblique") {
 

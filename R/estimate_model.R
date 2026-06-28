@@ -34,7 +34,7 @@
 # consistent sign, names them (with a V-fallback when the input is unnamed),
 # computes the explained variances, fit indices, communalities, model-implied
 # correlation matrix, residuals, and the original/final eigenvalues.
-.finalize_fit <- function(fit, N, method, lean = FALSE) {
+.finalize_fit <- function(fit, N, method, lean = FALSE, fiml = NULL) {
 
   L <- fit$L
   orig_R <- fit$orig_R
@@ -56,7 +56,7 @@
     model_implied_R <- L %*% t(L) + diag(1 - h2)
     return(list(
       unrot_loadings = L,
-      fit_indices = .gof(L, orig_R, N, method, fit$Fm, ci = FALSE),
+      fit_indices = .gof(L, orig_R, N, method, fit$Fm, ci = FALSE, fiml = fiml),
       residuals = orig_R - model_implied_R,
       convergence = fit$convergence
     ))
@@ -77,7 +77,7 @@
   vars_accounted <- .compute_vars(L_unrot = L, L_rot = L)
   colnames(vars_accounted) <- colnames(L)
 
-  fit_ind <- .gof(L, orig_R, N, method, fit$Fm)
+  fit_ind <- .gof(L, orig_R, N, method, fit$Fm, fiml = fiml)
 
   # calculate model implied R
   model_implied_R <- L %*% t(L) + diag(1 - h2)
@@ -123,7 +123,8 @@
 .estimate_model <- function(R, method, n_factors, N = NA,
                             type = "none", max_iter = NA, init_comm = NA,
                             criterion = NA, criterion_type = NA, abs_eigen = NA,
-                            start_method = NA, weights = NULL, lean = FALSE) {
+                            start_method = NA, weights = NULL, lean = FALSE,
+                            fiml = NULL) {
 
   fit <- switch(
     method,
@@ -135,7 +136,7 @@
     DWLS = .DWLS(R, n_factors = n_factors, weights = weights)
   )
 
-  common <- .finalize_fit(fit, N = N, method = method, lean = lean)
+  common <- .finalize_fit(fit, N = N, method = method, lean = lean, fiml = fiml)
 
   # The bootstrap replicate path needs only the post-processed common fields;
   # skip the method-specific output assembly, which the aggregation never reads.

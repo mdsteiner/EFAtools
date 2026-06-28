@@ -44,7 +44,7 @@ EFA_AVERAGE(
   start_method = c("psych", "factanal"),
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
     "na.or.complete"),
-  cor_method = c("pearson", "spearman", "kendall", "poly", "tetra"),
+  cor_method = c("pearson", "spearman", "kendall", "poly", "tetra", "fiml"),
   show_progress = TRUE
 )
 }
@@ -172,10 +172,16 @@ How to specify the starting values for the optimization procedure for ML.
 is given as input. Default is "pairwise.complete.obs".}
 
 \item{cor_method}{character. Correlation computed from raw data: \code{"pearson"},
-\code{"spearman"}, or \code{"kendall"} (passed to \code{\link[stats:cor]{stats::cor()}}), or \code{"poly"} /
+\code{"spearman"}, or \code{"kendall"} (passed to \code{\link[stats:cor]{stats::cor()}}), \code{"poly"} /
 \code{"tetra"} for polychoric / tetrachoric correlations of ordinal / binary data
-(a two-step estimator with no empty-cell continuity correction).
-Default is "pearson".}
+(a two-step estimator with no empty-cell continuity correction), or \code{"fiml"}
+for a two-stage full-information maximum-likelihood correlation from raw data
+with missing values. With \code{"fiml"} the saturated multivariate-normal mean and
+covariance are estimated by an EM algorithm assuming the data are missing at
+random and the standardized covariance is analysed, reproducing
+\code{psych::corFiml()} followed by \code{psych::fa()} and
+\code{lavaan(missing = "two.stage")}, \emph{not} \code{lavaan::efa(missing = "ml")} (see
+\code{\link[=EFA]{EFA()}} and the details). Default is "pearson".}
 
 \item{show_progress}{logical. Whether a progress bar should be shown in the
 console. Default is TRUE.}
@@ -241,6 +247,20 @@ combinations for the to-be-performed EFAs. These settings are then entered as
 arguments to the \code{\link[=EFA]{EFA()}} function and the EFAs are run in a second
 step. After all EFAs are run, the factor solutions are averaged and their
 variability determined in a third step.
+
+When raw data are supplied, the correlation matrix is computed once before the
+grid is run and reused for every EFA in it. Under \code{cor_method = "fiml"} this
+means the saturated multivariate-normal moments are EM-estimated a single time
+(from the raw data with missing values, assuming the data are missing at
+random) and the resulting two-stage correlation is analysed by every solution
+in the grid; the EM is not re-run per solution. Under \code{cor_method = "fiml"},
+\code{use} does not select cases (every case contributes to the EM). The averaged
+loadings and communalities are then the two-stage FIML estimates, but the
+averaged Chi-Square and the indices derived from it (CFI, TLI, RMSEA, AIC, BIC,
+ECVI) are the ordinary ML/ULS discrepancy statistics on the EM correlation, not
+the corrected two-stage (Satorra-Bentler) statistics that a standalone
+\code{\link[=EFA]{EFA()}} with \code{cor_method = "fiml"} reports; in particular the averaged AIC and
+BIC are finite here rather than \code{NA}.
 
 The grid containing the setting combinations is produced based on the entries
 to the respective arguments. To this end, all possible combinations resulting
@@ -352,6 +372,16 @@ Aver_meth <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
 Aver_rot <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
                          method = "ML", rotation = "oblique", type = "EFAtools",
                          start_method = "psych")
+}
+
+\dontrun{
+# Two-stage FIML correlations from raw data with missing values: the EM
+# saturated moments are estimated once and the resulting correlation is
+# averaged across the grid of EFAs.
+x_miss <- GRiPS_raw
+x_miss[cbind(1:20, 1)] <- NA
+Aver_fiml <- EFA_AVERAGE(x_miss, n_factors = 1, method = c("PAF", "ML"),
+                         cor_method = "fiml")
 }
 
 }

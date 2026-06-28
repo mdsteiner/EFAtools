@@ -14,10 +14,11 @@ cormat <- test_models$baseline$cormat                  # well-behaved correlatio
 test_that("a correlation matrix is detected and returned unchanged", {
   prep <- .prepare_cor_input(cormat, N = 500)
 
-  expect_named(prep, c("R", "N", "is_cormat", "weights", "Gamma"))
+  expect_named(prep, c("R", "N", "is_cormat", "weights", "Gamma", "fiml"))
   expect_true(prep$is_cormat)
   expect_equal(prep$R, cormat)
   expect_equal(prep$N, 500)
+  expect_null(prep$fiml)                                # only the FIML path populates it
 
   # a clean correlation matrix triggers no message, warning, or error
   expect_silent(.prepare_cor_input(cormat, N = 500))

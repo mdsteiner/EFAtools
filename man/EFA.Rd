@@ -88,7 +88,7 @@ EFA(
   precision = 1e-05,
   order_type = NA,
   start_method = "psych",
-  cor_method = c("pearson", "spearman", "kendall", "poly", "tetra"),
+  cor_method = c("pearson", "spearman", "kendall", "poly", "tetra", "fiml"),
   b_boot = 1000,
   ci = 0.95,
   randomStarts = 100,
@@ -128,9 +128,13 @@ an orthogonal rotation ("varimax", "equamax", "quartimax", "geominT",
 "none" (default, no standard errors), "information", "sandwich", or "np-boot".
 Availability in brief: "information" requires \code{method = "ML"}; "sandwich" requires
 raw data (ordinal \code{cor_method = "poly"}/\code{"tetra"} with "ML"/"ULS"/"DWLS", or
-continuous \code{cor_method = "pearson"} with "ML"/"ULS"); "np-boot" requires raw data;
-and the analytic methods are unavailable with the "promax" and "simplimax" rotations.
-"np-boot" draws a non-parametric bootstrap and needs raw data. "information"
+continuous \code{cor_method = "pearson"} with "ML"/"ULS"); under \code{cor_method = "fiml"} both
+"information" and "sandwich" return the corrected two-stage sandwich for "ML"/"ULS" (see below);
+"np-boot" requires raw data; and the analytic methods are unavailable with the "promax"
+and "simplimax" rotations.
+"np-boot" draws a non-parametric bootstrap and needs raw data; with
+\code{cor_method = "fiml"} it re-estimates the EM moments on each resample (the analytic
+corrected two-stage standard errors below are also available). "information"
 returns analytic standard errors from the expected (Fisher) information matrix of the
 maximum-likelihood solution: for the unrotated loadings and uniquenesses, and -- when a
 rotation is applied -- for the rotated loadings, the factor correlations, the structure
@@ -162,9 +166,18 @@ cases as the correlation matrix, the sandwich (like \code{method = "DWLS"}) is c
 listwise-complete cases; on data with missing values the reported \code{N}, the correlation matrix,
 and the point estimate therefore reflect the complete cases regardless of \code{use}. Like
 \code{"information"}, it is not available with \code{"promax"} or
-\code{"simplimax"}. See Lawley and Maxwell (1971) and Jennrich and Thayer (1973); for the rotated
-quantities, Jennrich (1973) and Zhang and Preacher (2015); for the robust standard errors and
-scaled chi-square, Browne (1984), Satorra and Bentler (1994), and Asparouhov and Muthen (2010).}
+\code{"simplimax"}. Under \code{cor_method = "fiml"} both \code{"information"} and \code{"sandwich"} instead return,
+for \code{method = "ML"} or \code{"ULS"}, the corrected two-stage (Yuan & Bentler, 2000; Savalei &
+Bentler, 2009) sandwich standard errors, built on the saturated FIML asymptotic covariance with
+the estimator's own Stage-2 weight: the model is fitted to the
+EM-estimated correlation, so the naive Stage-2 standard errors (treating that correlation as
+complete data) are inconsistent under missingness and are never reported. (\code{method = "PAF"}
+carries no Stage-2 weight for the sandwich, so use \code{se = "np-boot"} there.) See Lawley and
+Maxwell (1971) and Jennrich and Thayer (1973); for the rotated quantities, Jennrich (1973) and
+Zhang and Preacher (2015); for the robust standard errors and scaled chi-square, Browne (1984),
+Satorra and Bentler (1994), and Asparouhov and Muthen (2010); for the two-stage FIML standard
+errors and rescaled statistic, Yuan and Bentler (2000), Savalei and Bentler (2009), and Yuan,
+Marshall, and Bentler (2002).}
 
 \item{type}{character. If one of "EFAtools" (default), "psych", or "SPSS" is
 used, and the following arguments with default NA are left with
@@ -247,13 +260,36 @@ starting values specified in the \code{\link[stats:factanal]{stats::factanal()}}
 Solutions are very similar.}
 
 \item{cor_method}{character. Correlation computed from raw data: \code{"pearson"},
-\code{"spearman"}, or \code{"kendall"} (passed to \code{\link[stats:cor]{stats::cor()}}), or \code{"poly"} /
+\code{"spearman"}, or \code{"kendall"} (passed to \code{\link[stats:cor]{stats::cor()}}), \code{"poly"} /
 \code{"tetra"} for polychoric / tetrachoric correlations of ordinal / binary data
 (a two-step estimator with no empty-cell continuity correction, matching
-\code{polycor::polychor()} and \code{lavaan}).
+\code{polycor::polychor()} and \code{lavaan}), or \code{"fiml"} for a two-stage
+full-information maximum-likelihood correlation. With \code{"fiml"}, the saturated
+multivariate-normal mean and covariance are estimated from raw data with
+missing values by an EM algorithm assuming the data are missing at random
+(Yuan, Marshall, & Bentler, 2002; Little & Rubin, 2002), and the standardized
+covariance is then analysed. This reproduces \code{psych::corFiml()} followed by
+\code{psych::fa()} and \code{lavaan(missing = "two.stage")}, \emph{not} \code{lavaan::efa(missing = "ml")}, so the point estimates are not expected to match the latter. The model
+fit indices are corrected two-stage statistics: the Chi Square is the
+Satorra-Bentler-corrected two-stage statistic (Yuan, Marshall, & Bentler, 2002), the
+normal-theory discrepancy on the EM correlation rescaled by the saturated FIML asymptotic
+covariance, because the plain likelihood-ratio statistic is not asymptotically
+\code{Chi^2(df)} under the two-stage estimator. The CFI, TLI, and RMSEA are derived from the
+scaled model and baseline statistics; AIC, BIC, and ECVI are left \code{NA}, as for any
+moment-scaled statistic (see the \code{fit_indices} entry in Value). \code{"fiml"}
+uses every case and handles the missingness itself, so \code{use} is ignored; it
+supplies a continuous (Pearson-type) correlation only and is therefore not
+compatible with \code{method = "DWLS"}. Standard errors are available analytically for
+\code{method = "ML"} or \code{"ULS"} -- \code{"information"} and \code{"sandwich"} both return the corrected
+two-stage sandwich (see \code{se}) -- or, for any method, by the non-parametric bootstrap
+(\code{se = "np-boot"}), which re-runs the EM
+moment estimation on every resample and is therefore slow, so a smaller \code{b_boot} may be
+advisable.
 Default is "pearson".}
 
-\item{b_boot}{numeric. The number of bootstrap samples to draw. Default is 1000.}
+\item{b_boot}{numeric. The number of bootstrap samples to draw. Default is 1000.
+Under \code{cor_method = "fiml"} each bootstrap sample re-runs the EM moment
+estimation, so a smaller value may be advisable.}
 
 \item{ci}{numeric. The confidence interval to create from the bootstrap samples.
 Must be between 0 and 1. Default ist .95 for 95\% CIs.}
@@ -310,9 +346,16 @@ Residual (RMSR), Standardized Root Mean Squared Residual (SRMR; Bentler, 1995),
 and the common part accounted for (CAF) index as proposed by Lorenzo-Seva,
 Timmerman, & Kiers (2011). The model Chi Square is the Bartlett-corrected
 discrepancy (matching \code{\link[stats:factanal]{stats::factanal()}} for ML), and the AIC, BIC, and ECVI are
-derived from it. AIC and BIC are the minimum-fit-function (Chi-Square-based)
-forms \verb{Chi Square - 2 * df} and \verb{Chi Square - log(N) * df} (as in \code{\link[psych:fa]{psych::fa()}}),
-not the likelihood-based criteria, and can therefore be negative. The RMSEA, CFI, and
+derived from it. When \code{cor_method = "fiml"} the model and baseline Chi Square are
+instead the Satorra-Bentler-corrected two-stage statistics (Yuan, Marshall, &
+Bentler, 2002): the normal-theory discrepancy on the EM-estimated correlation,
+rescaled by the saturated FIML asymptotic covariance, because the plain two-stage
+likelihood-ratio statistic is not asymptotically \code{Chi^2(df)} under the two-stage
+estimator. For ML and ULS the AIC, BIC, and ECVI are the minimum-fit-function
+(Chi-Square-based) forms \verb{Chi Square - 2 * df} and \verb{Chi Square - log(N) * df} (as in
+\code{\link[psych:fa]{psych::fa()}}), not the likelihood-based criteria, and can therefore be negative; they
+are left \code{NA} for any scaled (moment-adjusted) Chi Square, i.e. under
+\code{cor_method = "fiml"} and with \code{se = "sandwich"}. The RMSEA, CFI, and
 TLI instead place the model (and, for CFI and TLI, the baseline) noncentrality on the
 uncorrected \code{N - 1} discrepancy scale (Browne & Cudeck, 1992; Bentler, 1990; Tucker &
 Lewis, 1973) on which these approximation indices are defined, so the Bartlett
@@ -320,7 +363,8 @@ small-sample correction enters only the Chi Square test, not the approximate-fit
 indices. For PAF
 and DWLS, only CAF, RMSR, SRMR, and df are computed and the Chi-Square-derived indices
 are returned as \code{NA}; for DWLS with \code{se = "sandwich"} the full block is instead filled
-from a scaled Chi Square (see Details). With \code{se = "sandwich"} the \code{fit_indices} also
+from a scaled Chi Square (see Details). Whenever the Chi Square is a scaled one
+(\code{se = "sandwich"}, or any \code{cor_method = "fiml"} fit) the \code{fit_indices} also
 carry the scaled-statistic components: \code{chi_scaling} (the multiplier a in the
 scaled-and-shifted statistic a * T + b, i.e. the reciprocal of \pkg{lavaan}'s
 \code{chisq.scaling.factor}), \code{chi_shift} (b), \code{chi_unscaled} (the unscaled statistic T),
@@ -538,6 +582,17 @@ DWLS_rob$fit_indices$chi      # the scaled (Satorra-Bentler) chi-square
 ML_rob <- EFA(GRiPS_raw, n_factors = 1, cor_method = "pearson",
               method = "ML", rotation = "none", se = "sandwich")
 ML_rob$SE$unrot_loadings
+}
+
+\donttest{
+# Two-stage FIML correlations from raw data with missing values: the saturated
+# multivariate-normal moments are EM-estimated (assuming the data are missing at
+# random) and the standardized covariance is analysed. This matches
+# psych::corFiml() followed by psych::fa(), not lavaan::efa(missing = "ml").
+x_miss <- GRiPS_raw
+x_miss[cbind(1:20, 1)] <- NA
+EFA_fiml <- EFA(x_miss, n_factors = 1, method = "ML", cor_method = "fiml")
+EFA_fiml$unrot_loadings
 }
 
 \dontrun{

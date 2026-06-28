@@ -176,6 +176,9 @@
   # (Var(rho-hat) scale); populated only when acov = "full" (the sandwich-SE path), NULL
   # otherwise. It is the meat of the robust/sandwich standard errors.
   Gamma <- NULL
+  # The EM-estimated saturated mean/covariance and saturated log-likelihood; populated only
+  # on the two-stage FIML raw-data path (cor_method = "fiml"), NULL otherwise.
+  fiml <- NULL
 
   # TRUE exactly when an asymptotic covariance forces listwise deletion of incomplete rows:
   # the polychoric path deletes for any acov (inside .polychoric()), the Pearson/rank path only
@@ -245,7 +248,27 @@
       )
     }
 
-    if (.is_poly_cor(cor_method)) {
+    if (cor_method == "fiml") {
+
+      # Two-stage / full-information ML: EM-estimate the saturated multivariate-normal mean
+      # and covariance from the raw data with missing values (assuming the data are missing
+      # at random; Yuan, Marshall, & Bentler, 2002; Little & Rubin, 2002), then analyse the
+      # standardised covariance. Every case contributes, so `use` does not apply and N is the
+      # EM case count (resolved below). Routed apart from stats::cor(), which would instead
+      # delete cases. The EM moments are carried forward in the returned list for downstream use.
+      em <- .fiml_em_moments(x)
+      R <- stats::cov2cor(em$sigma)
+      # Mirror the other raw-data paths: label R by the input's column names (NULL for an
+      # unnamed matrix) rather than the V1..Vp fallback the EM synthesises, so the analysis
+      # matrix is named consistently across cor_method.
+      dimnames(R) <- list(colnames(x), colnames(x))
+      fiml <- list(mu = em$mu, sigma = em$sigma, logl = em$logl)
+      # The saturated mean/covariance and saturated log-likelihood are carried forward so the
+      # downstream fit indices can form the FIML likelihood-ratio chi-square (model and
+      # independence-baseline log-likelihoods over the missingness patterns) rather than a naive
+      # complete-case discrepancy on R; see .gof_fiml_chisq().
+
+    } else if (.is_poly_cor(cor_method)) {
 
       # Polychoric/tetrachoric correlations come from the raw ordinal data.
       # .polychoric() handles missing data per pair, so reproduce the other `use`
@@ -357,7 +380,11 @@
       # count: each correlation is estimated from its own pairwise-complete subset, which
       # may be smaller, so fit statistics and analytic standard errors that scale with N
       # treat the data as if complete.
-      N <- if (.is_listwise_use(use) || acov_listwise) {
+      N <- if (cor_method == "fiml") {
+        # FIML analyses every case that carries at least one observed value (the EM case
+        # count), independent of `use`.
+        em$n
+      } else if (.is_listwise_use(use) || acov_listwise) {
         sum(stats::complete.cases(x))
       } else {
         nrow(x)
@@ -407,7 +434,8 @@
 
   }
 
-  list(R = R, N = N, is_cormat = is_cormat, weights = weights, Gamma = Gamma)
+  list(R = R, N = N, is_cormat = is_cormat, weights = weights, Gamma = Gamma,
+       fiml = fiml)
 }
 
 # Polychoric/tetrachoric correlations describe the observed data only. Criteria

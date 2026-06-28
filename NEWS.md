@@ -2,6 +2,33 @@
 
 ## Changes to Functions
 
+* `EFA()` gains `cor_method = "fiml"` for raw data with missing values: the
+  saturated multivariate-normal mean and covariance are estimated by EM under a
+  missing-at-random assumption (Yuan, Marshall, & Bentler, 2002; Little & Rubin,
+  2002) and the standardized covariance is analysed, reproducing the loadings of
+  `psych::corFiml()` followed by `psych::fa()` (a two-stage estimator). The model
+  fit indices are corrected two-stage statistics: the Chi Square (and the CFI,
+  TLI, and RMSEA derived from it) is the Satorra-Bentler-corrected two-stage
+  statistic (Yuan, Marshall, & Bentler, 2002) -- the normal-theory discrepancy on
+  the EM correlation rescaled by the saturated FIML asymptotic covariance, since
+  the plain two-stage likelihood-ratio statistic is not asymptotically
+  `Chi^2(df)`; AIC, BIC, and ECVI are left `NA`, as for any scaled statistic.
+  Standard errors are available analytically for `method = "ML"` or `"ULS"` --
+  `se = "information"` and `"sandwich"` both return the corrected two-stage (Yuan
+  & Bentler, 2000; Savalei & Bentler, 2009) sandwich standard errors, the naive
+  Stage-2 errors being inconsistent under missingness -- or, for any method, by
+  the non-parametric bootstrap (`se = "np-boot"`). `use` does not apply (every
+  case is used), and
+  `cor_method = "fiml"` is incompatible with `method = "DWLS"`.
+
+* `EFA_AVERAGE()` gains `cor_method = "fiml"`: the two-stage FIML correlation is
+  estimated once from the raw data with missing values and reused across every
+  EFA in the averaging grid (matching `psych::corFiml()` followed by
+  `psych::fa()`, not `lavaan::efa(missing = "ml")`). The averaged loadings are the
+  two-stage estimates; the averaged Chi-Square-based fit indices are the ordinary
+  ML/ULS discrepancy statistics on the EM correlation, not the corrected two-stage
+  statistics reported by a standalone `EFA(cor_method = "fiml")`.
+
 * Polychoric and tetrachoric correlations (`cor_method = "poly"` / `"tetra"`)
   are now accurate for near-collinear item pairs. The per-pair optimiser no
   longer stops prematurely when a near-impossible response cell underflows, and

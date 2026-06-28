@@ -8,6 +8,16 @@
 #' and selected fit quantities across imputations.
 #'
 #' @details
+#' `EFA_POOLED()` is the multiple-imputation route to handling missing data:
+#' several imputed datasets are each fitted and the solutions pooled. A
+#' single-fit alternative is full-information maximum likelihood, available
+#' directly in [EFA()] as `cor_method = "fiml"`, which EM-estimates a two-stage
+#' correlation from one raw dataset with missing values and analyses it in a
+#' single fit. Both feed the same correlation-scale EFA core; they differ only in
+#' how the missingness is handled (pooling across imputations here, a single EM
+#' correlation there). FIML is intentionally not routed through `EFA_POOLED()`,
+#' which is a multi-fit pooler by construction.
+#'
 #' The standard-error pooling pathway is selected automatically from the `se`
 #' method recorded on the component [EFA()] fits, which must be identical across
 #' imputations:

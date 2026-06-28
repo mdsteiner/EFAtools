@@ -246,12 +246,84 @@
 # fit and the identification check use one formula.
 .efa_df <- function(m, q) ((m - q)^2 - (m + q)) / 2
 
+# Two-stage / full-information ML likelihood-ratio chi-square for cor_method = "fiml". The EM
+# moments `fiml` (the saturated mean `mu`, covariance `sigma`, and saturated observed-data
+# log-likelihood `logl`, plus the raw `data`) come from .prepare_cor_input(); the analysed
+# correlation R is cov2cor(sigma). The model-implied correlation R_model = LL' + diag(1 - h2)
+# has a unit diagonal (diag(LL') = rowSums(L^2) = h2), so it is the model-implied LL' (the `LLt`
+# .gof() already formed) with the diagonal set to 1; put it back on the covariance scale with the
+# Stage-1 variances d = diag(sigma) as
+# Sigma_model = D^(1/2) R_model D^(1/2). The model leaves the mean unrestricted (mu_model = mu),
+# so chi = 2 (logl_sat - logl_model) and df = ((p - q)^2 - (p + q))/2 are unchanged (the mean
+# and variance parameters are shared with the saturated model and cancel). The independence
+# baseline (free means + free variances, zero covariances) factorises under MAR, so its MLE is
+# each variable's available-case mean and ML (/n_j) variance; chi_null = 2 (logl_sat - logl_null)
+# with df_null = p(p - 1)/2. No Bartlett correction applies to a likelihood-ratio statistic, so
+# the CFI/TLI/RMSEA noncentrality scale uses the same statistics (chi_cfi = chi, chi_null_cfi =
+# chi_null). This helper returns the plain two-stage likelihood-ratio statistic; `.gof()` reports
+# the Satorra-Bentler-corrected two-stage statistic (.fiml_scaled_test()) in its place, and the
+# plain LRT here stands only as the fallback when that correction cannot be formed -- referenced to
+# chi^2(df) it is only approximate under the two-stage estimator (Yuan, Marshall, & Bentler, 2002,
+# Psychometrika 67:95-121). Returns NA throughout for PAF (no discrepancy), missing N,
+# underidentified df, or a non-positive-definite Sigma_model (e.g. a Heywood case), matching how
+# the ML/ULS discrepancy block leaves those undefined.
+.gof_fiml_chisq <- function(LLt, N, method, df, m, fiml) {
+
+  if (!(method %in% c("ML", "ULS")) || is.na(N) || df < 0) {
+    return(list(chi = NA_real_, chi_null = NA_real_, df_null = NA_real_,
+                chi_cfi = NA_real_, chi_null_cfi = NA_real_))
+  }
+
+  # The saturated log-likelihood was accumulated by the EM over rows with at least one observed
+  # value; re-apply the same filter and share one missingness-pattern grouping across the model
+  # and baseline log-likelihoods so all three use the identical row set. The filter matters on
+  # the point-estimate path, where fiml$data is the user's raw data and may keep a fully-missing
+  # row the EM dropped when forming logl_sat (the bootstrap resample pool already excludes such
+  # rows).
+  data <- as.matrix(fiml$data)         # EFA() accepts a data frame; match .fiml_loglik()
+  obs <- !is.na(data)
+  keep <- rowSums(obs) > 0L
+  data <- data[keep, , drop = FALSE]
+  patterns <- .fiml_patterns(obs[keep, , drop = FALSE])
+  logl_sat <- fiml$logl
+
+  d <- diag(fiml$sigma)
+  R_model <- LLt                       # the p x p product .gof() already formed
+  diag(R_model) <- 1
+  Sigma_model <- R_model * tcrossprod(sqrt(d))
+  logl_model <- tryCatch(.fiml_loglik(data, fiml$mu, Sigma_model, patterns = patterns),
+                         error = function(e) NA_real_)
+  # A non-positive-definite Sigma_model (e.g. a Heywood case) leaves the model deviance
+  # undefined; NA the whole chi-square block together, matching how the ML/ULS discrepancy path
+  # NAs the model and baseline in lockstep when the discrepancy is undefined.
+  if (is.na(logl_model)) {
+    return(list(chi = NA_real_, chi_null = NA_real_, df_null = NA_real_,
+                chi_cfi = NA_real_, chi_null_cfi = NA_real_))
+  }
+  chi <- max(0, 2 * (logl_sat - logl_model))
+
+  # Independence baseline: per-variable available-case mean and ML (/n_j) variance. A diagonal
+  # Sigma makes the joint observed-data log-likelihood equal the sum of the univariate marginals,
+  # so this is the exact independence-model FIML log-likelihood.
+  mu_null <- colMeans(data, na.rm = TRUE)
+  var_null <- colMeans(sweep(data, 2L, mu_null, "-")^2, na.rm = TRUE)
+  logl_null <- tryCatch(
+    .fiml_loglik(data, mu_null, diag(var_null, nrow = m), patterns = patterns),
+    error = function(e) NA_real_)
+  chi_null <- if (is.na(logl_null)) NA_real_ else max(0, 2 * (logl_sat - logl_null))
+  df_null <- m * (m - 1) / 2
+
+  list(chi = chi, chi_null = chi_null, df_null = df_null,
+       chi_cfi = chi, chi_null_cfi = chi_null)
+}
+
 .gof <- function(L, # The loading/ pattern matrix
                  R, # The correlation matrix
                  N, # The number of cases
                  method, # The estimation method
                  Fm, # Minimized error
-                 ci = TRUE) { # Compute the analytic RMSEA confidence bounds
+                 ci = TRUE, # Compute the analytic RMSEA confidence bounds
+                 fiml = NULL) { # EM moments + raw data for the FIML LRT (cor_method = "fiml")
   m <- nrow(L)
   q <- ncol(L)
 
@@ -275,69 +347,86 @@
   ### denominator is the count of non-redundant elements p(p + 1)/2.
   SRMR <- sqrt(sum(delta_hat[upper.tri(delta_hat)] ^ 2) / (m * (m + 1) / 2))
 
-  # Model chi-square: the Bartlett-corrected (Bartlett, 1951) ML discrepancy
-  # F = tr(Sigma^-1 R) - log|Sigma^-1 R| - p, evaluated at the model-implied correlation
-  # matrix Sigma = LL' (unit diagonal), times (N - 1 - (2p + 5)/6 - (2q)/3). For ML this
-  # equals the ML objective times the Bartlett multiplier (matching stats::factanal); for
-  # ULS the same ML/Wishart discrepancy is evaluated at the ULS-fitted Sigma (matching
-  # psych::fa(fm = "minres")), rather than treating the raw least-squares residual sum of
-  # squares as the statistic. Its chi-square reference distribution is asymptotically exact
-  # under ML and is used here as the conventional approximation for ULS. NA
-  # for PAF, missing N, underidentified df, or a non-PD model-implied matrix (e.g. Heywood
-  # cases), where the discrepancy is undefined. DWLS is also excluded: the ML discrepancy is
-  # not its fit function -- the appropriate categorical statistic is the mean-and-variance-
-  # adjusted chi-square from the full asymptotic covariance -- so the chi-square-derived block
-  # is left undefined here rather than reported on an inapplicable scale.
-  # The Bartlett multiplier goes non-positive for small N relative to the number of
-  # variables, which would turn the discrepancy into a negative (meaningless) chi-square;
-  # guard it here so the statistic falls through to the chi NA branch below.
-  mult <- .bartlett_mult(N, m, q)
-  if (!(method %in% c("PAF", "DWLS")) && !is.na(N) && df >= 0 && mult > 0) {
-    Sigma <- LLt
-    diag(Sigma) <- 1
-    # discrepancy F (>= 0, clamped); the reported chi-square is F * mult.
-    Fchi <- tryCatch({
-      # F = tr(Sigma^-1 R) - log|Sigma^-1 R| - p, computed via a determinant split
-      # (log|Sigma^-1 R| = log|R| - log|Sigma|) to avoid forming the explicit inverse
-      # and to stay stable for ill-conditioned Sigma.
-      ldSigma <- determinant(Sigma, logarithm = TRUE)
-      ldR <- determinant(R, logarithm = TRUE)
-      val <- sum(diag(solve(Sigma, R))) +
-        as.numeric(ldSigma$modulus) - as.numeric(ldR$modulus) - m
-      if (!is.finite(val) || ldSigma$sign <= 0 || ldR$sign <= 0) {
-        NA_real_
-      } else {
-        # clamp the floating-point dust of a (near-)perfect fit to 0
-        max(0, val)
-      }
-    }, error = function(e) NA_real_)
-    chi <- Fchi * mult
-  } else {
-    chi <- NA_real_
-    Fchi <- NA_real_
-  }
+  # Model and baseline chi-square. For cor_method = "fiml" both are likelihood-ratio statistics
+  # computed from the EM moments and the raw data (.gof_fiml_chisq); otherwise the Bartlett-
+  # corrected ML/ULS discrepancy below. Either way the residual indices above and the shared
+  # .chi_fit_indices() call below stay the single source of the rest of the block.
+  if (is.null(fiml)) {
 
-  # null model: reuse the log-determinant already computed for the model chi-square above
-  # instead of letting .null_chisq() recompute determinant(R). Undefined (NA) chi-square
-  # leaves the whole chi-derived block NA.
-  if (is.na(chi)) {
-    # chi is already NA_real_ here; NA out the baseline and common-scale quantities to
-    # match, so the whole undefined chi-square block is reported as a numeric (NA_real_) NA.
-    chi_null <- NA_real_
-    df_null <- NA_real_
-    chi_cfi <- NA_real_
-    chi_null_cfi <- NA_real_
+    # Model chi-square: the Bartlett-corrected (Bartlett, 1951) ML discrepancy
+    # F = tr(Sigma^-1 R) - log|Sigma^-1 R| - p, evaluated at the model-implied correlation
+    # matrix Sigma = LL' (unit diagonal), times (N - 1 - (2p + 5)/6 - (2q)/3). For ML this
+    # equals the ML objective times the Bartlett multiplier (matching stats::factanal); for
+    # ULS the same ML/Wishart discrepancy is evaluated at the ULS-fitted Sigma (matching
+    # psych::fa(fm = "minres")), rather than treating the raw least-squares residual sum of
+    # squares as the statistic. Its chi-square reference distribution is asymptotically exact
+    # under ML and is used here as the conventional approximation for ULS. NA
+    # for PAF, missing N, underidentified df, or a non-PD model-implied matrix (e.g. Heywood
+    # cases), where the discrepancy is undefined. DWLS is also excluded: the ML discrepancy is
+    # not its fit function -- the appropriate categorical statistic is the mean-and-variance-
+    # adjusted chi-square from the full asymptotic covariance -- so the chi-square-derived block
+    # is left undefined here rather than reported on an inapplicable scale.
+    # The Bartlett multiplier goes non-positive for small N relative to the number of
+    # variables, which would turn the discrepancy into a negative (meaningless) chi-square;
+    # guard it here so the statistic falls through to the chi NA branch below.
+    mult <- .bartlett_mult(N, m, q)
+    if (!(method %in% c("PAF", "DWLS")) && !is.na(N) && df >= 0 && mult > 0) {
+      Sigma <- LLt
+      diag(Sigma) <- 1
+      # discrepancy F (>= 0, clamped); the reported chi-square is F * mult.
+      Fchi <- tryCatch({
+        # F = tr(Sigma^-1 R) - log|Sigma^-1 R| - p, computed via a determinant split
+        # (log|Sigma^-1 R| = log|R| - log|Sigma|) to avoid forming the explicit inverse
+        # and to stay stable for ill-conditioned Sigma.
+        ldSigma <- determinant(Sigma, logarithm = TRUE)
+        ldR <- determinant(R, logarithm = TRUE)
+        val <- sum(diag(solve(Sigma, R))) +
+          as.numeric(ldSigma$modulus) - as.numeric(ldR$modulus) - m
+        if (!is.finite(val) || ldSigma$sign <= 0 || ldR$sign <= 0) {
+          NA_real_
+        } else {
+          # clamp the floating-point dust of a (near-)perfect fit to 0
+          max(0, val)
+        }
+      }, error = function(e) NA_real_)
+      chi <- Fchi * mult
+    } else {
+      chi <- NA_real_
+      Fchi <- NA_real_
+    }
+
+    # null model: reuse the log-determinant already computed for the model chi-square above
+    # instead of letting .null_chisq() recompute determinant(R). Undefined (NA) chi-square
+    # leaves the whole chi-derived block NA.
+    if (is.na(chi)) {
+      # chi is already NA_real_ here; NA out the baseline and common-scale quantities to
+      # match, so the whole undefined chi-square block is reported as a numeric (NA_real_) NA.
+      chi_null <- NA_real_
+      df_null <- NA_real_
+      chi_cfi <- NA_real_
+      chi_null_cfi <- NA_real_
+    } else {
+      chi_null <- .null_chisq(R, N, ld = ldR)
+      df_null <- (m**2 - m) / 2
+      # CFI/TLI compare the model and baseline noncentralities and so need both on one
+      # scaling constant (Bentler, 1990; Tucker & Lewis, 1973). The reported model and
+      # baseline chi-squares keep their own Bartlett corrections (the model matching
+      # factanal, the baseline being Bartlett's test of sphericity), but the factor-count
+      # term (2q)/3 sits only in the model multiplier and would bias the ratio. Put both on
+      # the common (N - 1) scale -- the noncentrality scale RMSEA also uses -- for CFI/TLI.
+      chi_cfi <- Fchi * (N - 1)
+      chi_null_cfi <- -as.numeric(ldR$modulus) * (N - 1)
+    }
+
   } else {
-    chi_null <- .null_chisq(R, N, ld = ldR)
-    df_null <- (m**2 - m) / 2
-    # CFI/TLI compare the model and baseline noncentralities and so need both on one
-    # scaling constant (Bentler, 1990; Tucker & Lewis, 1973). The reported model and
-    # baseline chi-squares keep their own Bartlett corrections (the model matching
-    # factanal, the baseline being Bartlett's test of sphericity), but the factor-count
-    # term (2q)/3 sits only in the model multiplier and would bias the ratio. Put both on
-    # the common (N - 1) scale -- the noncentrality scale RMSEA also uses -- for CFI/TLI.
-    chi_cfi <- Fchi * (N - 1)
-    chi_null_cfi <- -as.numeric(ldR$modulus) * (N - 1)
+
+    fc <- .gof_fiml_chisq(LLt, N, method, df, m, fiml)
+    chi <- fc$chi
+    chi_null <- fc$chi_null
+    df_null <- fc$df_null
+    chi_cfi <- fc$chi_cfi
+    chi_null_cfi <- fc$chi_null_cfi
+
   }
 
   # CFI/TLI/RMSEA/AIC/BIC/ECVI and the p-values. Shared with the scaled-chi-square
@@ -366,5 +455,28 @@
     df_null = df_null,
     p_null = idx$p_null
   )
+
+  # cor_method = "fiml": replace the plain two-stage likelihood-ratio chi-square (computed above)
+  # with the asymptotically-correct Satorra-Bentler-corrected two-stage statistic (Yuan, Marshall,
+  # & Bentler, 2002), built on the saturated FIML asymptotic covariance. The plain LRT is referenced
+  # to chi^2(df), which is not the two-stage estimator's reference distribution, so the p-value and
+  # the noncentrality-based CFI/TLI/RMSEA are biased. Applied to every FIML fit (point estimate and
+  # bootstrap replicates), independent of `se`; .fiml_scaled_test() returns NULL (PAF, a just/under-
+  # identified model, or a degenerate/non-PD saturated covariance), where the NA / likelihood-ratio
+  # block above stands.
+  if (!is.null(fiml)) {
+    # AIC/BIC/ECVI are likelihood-ratio information criteria with no standard interpretation under
+    # the corrected two-stage statistic; leave them NA for every FIML fit. .apply_scaled_test() also
+    # NAs them on the scaled path, but it does not run on the plain-LRT and just-identified (df == 0)
+    # fallbacks, so NA them here too rather than ship a chi-square-derived value the two-stage
+    # estimator cannot support.
+    out$AIC <- NA_real_
+    out$BIC <- NA_real_
+    out$ECVI <- NA_real_
+    st <- .fiml_scaled_test(L, R, N, method, df, m, fiml)
+    if (!is.null(st)) out <- .apply_scaled_test(out, st, N)
+  }
+
+  out
 
 }

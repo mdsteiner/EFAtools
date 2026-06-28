@@ -315,6 +315,7 @@ format.summary.EFA <- function(x, ...) {
     rotation = settings$rotation,
     rotation_diagnostics = settings$rotation_diagnostics,
     type = settings$type,
+    cor_method = settings$cor_method,
     se = se,
     N = settings$N,
     fit = x$fit_indices,
@@ -350,6 +351,13 @@ format.summary.EFA <- function(x, ...) {
       "', method = '", cli::style_bold(spec$method),
       "', and rotation = '", cli::style_bold(spec$rotation), "'."
     ))
+  }
+
+  # Flag two-stage FIML correlations (saturated mean/covariance EM-estimated from raw data
+  # with missing values; Yuan, Marshall, & Bentler, 2002) so the analysed matrix is not read
+  # as an ordinary complete-case correlation. Emitted verbatim (plain, no ANSI).
+  if (identical(.efa_setting_text(spec$cor_method), "fiml")) {
+    cli::cli_verbatim("Correlations: FIML (two-stage, missing data)")
   }
 
   if (.efa_iteration_nonconvergence(spec)) {
@@ -782,6 +790,10 @@ format.summary.EFA <- function(x, ...) {
       cli::cli_text("{.emph Note:} Wald CIs from the robust sandwich covariance built on the multiple-imputation-pooled asymptotic covariance.")
     } else if (isTRUE(spec$is_pooled)) {
       cli::cli_text("{.emph Note:} Wald CIs from the expected information matrix, Rubin-pooled across imputations (Rubin's 1987 degrees of freedom).")
+    } else if (identical(.efa_setting_text(spec$cor_method), "fiml")) {
+      # Under cor_method = "fiml" both analytic settings yield the corrected two-stage sandwich, so
+      # the note describes that covariance rather than the expected information matrix.
+      cli::cli_text("{.emph Note:} Wald CIs from the corrected two-stage (FIML) sandwich covariance.")
     } else if (identical(spec$se, "sandwich")) {
       cli::cli_text("{.emph Note:} Wald CIs from the robust (Godambe) sandwich covariance.")
     } else {
