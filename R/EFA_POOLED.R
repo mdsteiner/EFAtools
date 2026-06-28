@@ -18,6 +18,8 @@
 #' correlation there). FIML is intentionally not routed through `EFA_POOLED()`,
 #' which is a multi-fit pooler by construction.
 #'
+#' ## Standard-error pooling routes
+#'
 #' The standard-error pooling pathway is selected automatically from the `se`
 #' method recorded on the component [EFA()] fits, which must be identical across
 #' imputations:
@@ -43,6 +45,8 @@
 #' non-positive-definite pooled covariance aborts directly rather than falling
 #' back.
 #'
+#' ## Aligning solutions across imputations
+#'
 #' The function first fits the same [EFA()] model to each imputed
 #' dataset. Unrotated loading matrices can optionally be put into a common
 #' signed/permuted factor order before averaging. Rotated loading matrices are
@@ -50,6 +54,29 @@
 #' imputation's rotated solution as a fixed target. For oblique solutions,
 #' factor intercorrelations are transformed/aligned together with the loading
 #' matrices so that the factor model remains internally consistent.
+#'
+#' `target_method` controls how rotated solutions are aligned. `"first_target"` (the
+#' default) aligns all imputations to the first imputation's rotated solution via one
+#' Procrustes rotation per imputation. `"consensus"` instead refines a centroid target
+#' via Generalized Procrustes Analysis (Gower 1975; van Ginkel & Kroonenberg 2014;
+#' Lorenzo-Seva & Van Ginkel 2016), iteratively re-Procrustes-rotating all solutions
+#' toward it and re-averaging until the target stabilises. For orthogonal rotations the
+#' two methods converge to the same pooled estimate (consensus is just a more expensive
+#' route to the same answer); for oblique rotations `"consensus"` is not supported and
+#' aborts with a classed condition (`efa_consensus_oblique_unsupported`), because the
+#' centroid iteration is degenerate for oblique transforms with more than one factor.
+#' Anchoring on the first imputation can understate the genuine between-imputation
+#' variability when the imputations disagree substantially; `"consensus"` (orthogonal
+#' rotations) is more robust to an atypical first imputation (van Ginkel & Kroonenberg
+#' 2014).
+#'
+#' `align_unrotated` controls how unrotated loadings are aligned before pooling.
+#' `"signed_tucker_congruence"` (the default) preserves the unrotated axes up to factor
+#' reordering and sign changes using Tucker congruence. `"procrustes"` aligns the
+#' unrotated matrices to the first imputation by orthogonal Procrustes rotation. `"none"`
+#' averages unrotated loadings as returned by `EFA`.
+#'
+#' ## Pooling point estimates
 #'
 #' Point estimates are pooled by arithmetic averaging after alignment. For
 #' oblique rotations, the returned structure matrix is computed from the pooled
@@ -64,6 +91,8 @@
 #' are calculated from the pooled observed correlation matrix minus the
 #' model-implied correlation matrix of the pooled solution. Consequently,
 #' residual-based fit indices such as RMSR/SRMR are based on pooled residuals.
+#'
+#' ## Pooling the model chi-square and fit indices
 #'
 #' The model chi-square and the indices derived from it (RMSEA, ECVI, and the
 #' descriptive AIC/BIC) are not arithmetic means of the per-imputation values: the
@@ -100,6 +129,8 @@
 #' likewise falls back to D2 under `pool.robust = TRUE`, the analogue of the
 #' EFAtools sandwich/MI2S route.
 #'
+#' ## Bootstrap pooling (np-boot)
+#'
 #' If each component `EFA` call was run with `se = "np-boot"` and
 #' returned `replicates`, pooled bootstrap SEs and Wald-type MI confidence
 #' intervals are computed for loadings, communalities, residuals, and, when
@@ -118,6 +149,8 @@
 #' summaries of the per-imputation bootstrap fit indices. The chi-square-based
 #' fit indices themselves are pooled with the D2 rule, whose reference
 #' distribution (e.g. the RMSEA confidence interval) supplies their uncertainty.
+#'
+#' ## Analytic pooling (information)
 #'
 #' When the component `EFA` calls were instead run with
 #' `se = "information"` (no bootstrap replicates), the unrotated-loading and
@@ -152,6 +185,8 @@
 #' singular bordered information matrix), it aborts with the classed condition
 #' `efa_pooled_unreliable_vcov`.
 #'
+#' ### Rotated-loading standard errors
+#'
 #' Rotated quantities are pooled in a common multiple-imputation rotational
 #' gauge. A rotated-loading standard error is conditional on the rotation
 #' criterion (Jennrich 1973, 1974; Browne 2001; Zhang & Preacher 2015), so for
@@ -178,6 +213,8 @@
 #' rotated uncertainty with generalised Procrustes centroids rather than
 #' per-element standard errors (van Ginkel & Kroonenberg 2014; Lorenzo-Seva & Van
 #' Ginkel 2016).
+#'
+#' ## Two-stage pooling (sandwich / MI2S)
 #'
 #' When the component `EFA` calls were run with `se = "sandwich"` (robust
 #' standard errors from a polychoric/tetrachoric or continuous-Pearson
@@ -222,30 +259,19 @@
 #' @param p Numeric in \eqn{(0, 1)}. One minus the confidence level used for
 #' pooled Wald-type bootstrap/MI confidence intervals when bootstrap replicates
 #' are available. For example, `p = .05` gives 95% intervals.
-#' @param target_method Character. `"first_target"` (the default) aligns all
-#' imputations to the first imputation's rotated solution via one Procrustes
-#' rotation per imputation. `"consensus"` instead refines a centroid target
-#' via Generalized Procrustes Analysis (Gower 1975; van Ginkel & Kroonenberg
-#' 2014; Lorenzo-Seva & Van Ginkel 2016), iteratively re-Procrustes-rotating
-#' all solutions toward it and re-averaging until the target stabilises.
-#' For orthogonal rotations the two methods converge to the same pooled
-#' estimate (consensus is just a more expensive route to the same answer);
-#' for oblique rotations `"consensus"` is not supported and aborts with a
-#' classed condition (`efa_consensus_oblique_unsupported`), because the
-#' centroid iteration is degenerate for oblique transforms with more than
-#' one factor. Anchoring on the first imputation can understate the genuine
-#' between-imputation variability when the imputations disagree substantially;
-#' `"consensus"` (orthogonal rotations) is more robust to an atypical first
-#' imputation (van Ginkel & Kroonenberg 2014).
-#' @param align_unrotated Character. How to align unrotated loadings before
-#' pooling. `"signed_tucker_congruence"` preserves the unrotated axes up
-#' to factor reordering and sign changes using Tucker congruence.
-#' `"procrustes"` aligns the unrotated matrices to the first imputation by
-#' orthogonal Procrustes rotation. `"none"` averages unrotated loadings as
-#' returned by `EFA`.
+#' @param target_method Character. How rotated solutions are aligned across imputations
+#' before pooling: `"first_target"` (the default) aligns every imputation to the first
+#' imputation's rotated solution, while `"consensus"` refines a centroid target by
+#' Generalized Procrustes Analysis (orthogonal rotations only). See *Aligning solutions
+#' across imputations* in Details.
+#' @param align_unrotated Character. How unrotated loadings are aligned before pooling:
+#' `"signed_tucker_congruence"` (the default; sign/permutation via Tucker congruence),
+#' `"procrustes"` (orthogonal Procrustes to the first imputation), or `"none"`. See
+#' *Aligning solutions across imputations* in Details.
 #' @param fit_pool_method Character. Currently only `"D2"` is implemented
 #' for chi-square-type fit. If no chi-square is available, only residual-based
-#' fit and descriptive quantities are returned.
+#' fit and descriptive quantities are returned. See *Pooling the model chi-square and
+#' fit indices* in Details.
 #' @param consensus_args List of additional arguments controlling the
 #' GPA-consensus iteration when `target_method = "consensus"`. See the
 #' source of `.gpa_consensus_target` for the available tuning parameters
@@ -256,7 +282,10 @@
 #' @param rmsr_upper Logical. If `TRUE`, compute RMSR from the unique
 #' off-diagonal residual correlations. If `FALSE`, use the full off-diagonal
 #' matrix.
-#' @param ... Additional arguments passed to [EFA()].
+#' @param ... Additional arguments passed to [EFA()] (e.g. `method`, `rotation`, `se`,
+#' `n_factors`, `N`). These select the estimator, rotation, standard-error method, and
+#' fit indices used for every imputation; see [EFA()] for the available options, their
+#' properties, and which combinations are valid.
 #'
 #' @return A list of class `"EFA_POOLED"` containing pooled estimates,
 #' residuals, fit indices, the individual fits, and MI diagnostics. In
