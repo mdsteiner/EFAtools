@@ -345,7 +345,13 @@ test_that("errors are thrown correctly", {
   expect_warning(EFA(matrix(rnorm(30), ncol = 3), n_factors = 1), class = "efa_just_identified")
   expect_warning(EFA(test_models$baseline$cormat, n_factors = 3, method = "ML"), class = "efa_fit_na_n")
   expect_warning(EFA(test_models$baseline$cormat, n_factors = 3, method = "ULS"), class = "efa_fit_na_n")
-  expect_warning(EFA(cor_nposdef, n_factors = 1, N = 10), class = "efa_cor_smoothed")
+  expect_warning(
+    suppressWarnings(
+      EFA(cor_nposdef, n_factors = 1, N = 10),
+      classes = c("efa_just_identified", "efa_heywood")
+    ),
+    class = "efa_cor_smoothed"
+  )
   expect_warning(EFA(test_models$baseline$cormat, n_factors = 3, method = "ML", N = 500, type = "SPSS"), class = "efa_spss_method_untested")
   expect_warning(EFA(test_models$baseline$cormat, n_factors = 3, method = "ULS", N = 500, type = "SPSS"), class = "efa_spss_method_untested")
   expect_warning(EFA(test_models$baseline$cormat, n_factors = 3, rotation = "oblimin", N = 500, type = "SPSS"), class = "efa_spss_rotation_untested")
@@ -497,7 +503,10 @@ test_that("residuals.EFA is a pure extractor", {
 test_that("Heywood cases are detected, warned, and recorded", {
   # Over-extracting the baseline model with PAF yields a Heywood case (V14).
   expect_warning(
-    EFA(test_models$baseline$cormat, 6, N = 500, method = "PAF"),
+    suppressWarnings(
+      EFA(test_models$baseline$cormat, 6, N = 500, method = "PAF"),
+      classes = "efa_paf_nonconvergence"
+    ),
     class = "efa_heywood"
   )
 

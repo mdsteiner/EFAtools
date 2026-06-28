@@ -36,7 +36,7 @@ test_that("output class and dimensions are correct", {
                hull_raw_uls_CFI)
   for (obj in objs) {
     expect_s3_class(obj, "efa_retention")
-    expect_length(obj, 7)
+    expect_length(obj, 10)
     expect_length(obj$settings, 8)
   }
 })
@@ -107,10 +107,16 @@ test_that("n_factors are correctly returned", {
   expect_equal(hull_cor_uls$n_factors[["CAF"]], 3)
   expect_equal(hull_cor_uls$n_factors[["CFI"]], 1)
   expect_equal(hull_cor_uls$n_factors[["RMSEA"]], 1)
+  expect_equal(hull_cor_uls$n_fac_CAF, hull_cor_uls$n_factors[["CAF"]])
+  expect_equal(hull_cor_uls$n_fac_CFI, hull_cor_uls$n_factors[["CFI"]])
+  expect_equal(hull_cor_uls$n_fac_RMSEA, hull_cor_uls$n_factors[["RMSEA"]])
 
   expect_equal(hull_cor_uls_CFI$n_factors[["CFI"]], 1)
   expect_false("CAF" %in% names(hull_cor_uls_CFI$n_factors))
   expect_false("RMSEA" %in% names(hull_cor_uls_CFI$n_factors))
+  expect_equal(hull_cor_uls_CFI$n_fac_CAF, NA_real_)
+  expect_equal(hull_cor_uls_CFI$n_fac_CFI, hull_cor_uls_CFI$n_factors[["CFI"]])
+  expect_equal(hull_cor_uls_CFI$n_fac_RMSEA, NA_real_)
 
   expect_equal(hull_raw_paf$n_factors[["CAF"]], 1)
   expect_false("CFI" %in% names(hull_raw_paf$n_factors))
@@ -193,8 +199,20 @@ test_that("errors etc are thrown correctly", {
   expect_error(HULL(1:5), class = "efa_input_not_matrix")
   expect_message(suppressWarnings(HULL(GRiPS_raw)), class = "efa_cor_from_data")
   expect_warning(suppressMessages(HULL(GRiPS_raw)), class = "efa_hull_min_factors")
-  expect_warning(suppressMessages(HULL(IDS2_R, N = 20)), class = "efa_hull_few_solutions")
-  expect_warning(suppressMessages(HULL(GRiPS_raw, N = 20)), class = "efa_n_from_data")
+  expect_warning(
+    suppressWarnings(
+      suppressMessages(HULL(IDS2_R, N = 20)),
+      classes = "efa_hull_min_factors"
+    ),
+    class = "efa_hull_few_solutions"
+  )
+  expect_warning(
+    suppressWarnings(
+      suppressMessages(HULL(GRiPS_raw, N = 20)),
+      classes = "efa_hull_min_factors"
+    ),
+    class = "efa_n_from_data"
+  )
   expect_error(HULL(test_models$baseline$cormat), class = "efa_n_required")
   expect_error(HULL(test_models$baseline$cormat, method = "ML"), class = "efa_n_required")
   expect_error(HULL(test_models$baseline$cormat, method = "ULS"), class = "efa_n_required")

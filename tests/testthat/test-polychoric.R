@@ -426,13 +426,23 @@ test_that("acov uses the listwise-complete rows consistently under missingness",
   gm[1:60, 1] <- NA
   gm[61:110, 2] <- NA
 
-  res <- .polychoric(gm, acov = "full")
+  res <- suppressWarnings(
+    .polychoric(gm, acov = "full"),
+    classes = "efa_cor_sparse_cells"
+  )
   lw <- .polychoric(gm[stats::complete.cases(gm), ])
 
   # the returned matrix and the ACOV come from the SAME (listwise) case set
   expect_equal(res$R, lw$R)
   expect_true(all(is.finite(res$acov)))
-  expect_equal(diag(res$acov), .polychoric(gm, acov = "diag")$acov, ignore_attr = TRUE)
+  expect_equal(
+    diag(res$acov),
+    suppressWarnings(
+      .polychoric(gm, acov = "diag"),
+      classes = "efa_cor_sparse_cells"
+    )$acov,
+    ignore_attr = TRUE
+  )
 })
 
 test_that("acov aborts when there are too few listwise-complete cases", {
@@ -452,8 +462,11 @@ test_that("acov full and diag match lavaan's NACOV on DOSPERT and UPPS", {
 
   for (data in list(DOSPERT_raw, UPPS_raw)) {
     x <- data[stats::complete.cases(data), 1:6]
-    f <- .polychoric(x, acov = "full")$acov
-    lav <- .lav_acov(x)
+    f <- suppressWarnings(
+      .polychoric(x, acov = "full"),
+      classes = "efa_cor_sparse_cells"
+    )$acov
+    lav <- suppressWarnings(.lav_acov(x))
     ord <- match(rownames(lav), rownames(f))
     ours <- f[ord, ord]
 
@@ -475,8 +488,11 @@ test_that("acov full matches lavaan's NACOV on the full item sets", {
 
   for (data in list(DOSPERT_raw, UPPS_raw)) {
     x <- data[stats::complete.cases(data), ]
-    f <- .polychoric(x, acov = "full")$acov
-    lav <- .lav_acov(x)
+    f <- suppressWarnings(
+      .polychoric(x, acov = "full"),
+      classes = "efa_cor_sparse_cells"
+    )$acov
+    lav <- suppressWarnings(.lav_acov(x))
     ord <- match(rownames(lav), rownames(f))
     ours <- f[ord, ord]
     expect_lt(max(abs(diag(ours) - diag(lav)) / diag(lav)), 2e-3)

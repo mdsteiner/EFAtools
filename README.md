@@ -10,8 +10,6 @@ status](https://www.r-pkg.org/badges/version/EFAtools)](https://CRAN.R-project.o
 [![R-CMD-check](https://github.com/mdsteiner/EFAtools/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/mdsteiner/EFAtools/actions/workflows/R-CMD-check.yaml)
 [![Codecov test
 coverage](https://codecov.io/gh/mdsteiner/EFAtools/graph/badge.svg)](https://app.codecov.io/gh/mdsteiner/EFAtools)
-[![Lifecycle:
-stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.02521/status.svg)](https://doi.org/10.21105/joss.02521)
 
 <!-- badges: end -->
@@ -19,11 +17,9 @@ stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://
 The EFAtools package provides functions to perform exploratory factor
 analysis (EFA) procedures and compare their solutions. The goal is to
 provide state-of-the-art factor retention methods and a high degree of
-flexibility in the EFA procedures. This way, implementations from R
-psych and SPSS can be compared. Moreover, functions for Schmid-Leiman
-transformation, and computation of omegas are provided. To speed up the
-analyses, some of the iterative procedures like principal axis factoring
-(PAF) are implemented in C++.
+flexibility in the EFA procedures. To speed up the analyses, some of the
+iterative procedures like principal axis factoring (PAF) are implemented
+in C++.
 
 ## Installation
 
@@ -38,365 +34,909 @@ You can install the development version from
 [GitHub](https://github.com/) with:
 
 ``` r
-install.packages("devtools")
-devtools::install_github("mdsteiner/EFAtools")
+# install.packages("pak")
+pak::pak("mdsteiner/EFAtools")
 ```
 
-To also build the vignette when installing the development version, use:
+## Examples
 
-``` r
-install.packages("devtools")
-devtools::install_github("mdsteiner/EFAtools", build_vignettes = TRUE)
-```
-
-## Example
-
-Here are a few examples on how to perform the analyses with the
-different types and how to compare the results using the `COMPARE`
-function. For more details, see the vignette by running
-`vignette("EFAtools", package = "EFAtools")`. The vignette provides a
-high-level introduction into the functionalities of the package.
+Here are a few examples of EFAtools functionalities
 
 ``` r
 # load the package
 library(EFAtools)
+```
+
+### Factor Retention
+
+Use `N_FACTORS()` to test the suitability of the data for factor
+analysis and to run multiple factor retention criteria with a single
+function call.
+
+Works on raw-data:
+
+``` r
 
 # Run multiple factor retention methods
-N_FACTORS(test_models$baseline$cormat, N = 500)
-#> Warning: `x` is a correlation matrix, but "CD" needs raw data.
-#> ℹ Skipping "CD".
+N_FACTORS(GRiPS_raw)
+#> Warning: The suggested maximum number of factors was 2, but the Hull method needs at
+#> least 3.
+#> ℹ Setting it to 3.
 #> ── Tests for the suitability of the data for factor analysis ───────────────────
 #> 
 #> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05:
-#>   χ²(153) = 2173.28, p < .001. These data are probably suitable for factor
+#>   χ²(28) = 5054.06, p < .001. These data are probably suitable for factor
 #>   analysis.
-#> ✔ The Kaiser-Meyer-Olkin criterion is marvellous (KMO = 0.916). These data are
+#> ✔ The Kaiser-Meyer-Olkin criterion is marvellous (KMO = 0.955). These data are
 #>   probably suitable for factor analysis.
 #> 
 #> ── Number of factors suggested by the factor retention criteria ────────────────
 #> 
+#> Comparison data
+#> • Suggested number of factors: 1
+#> 
 #> Empirical Kaiser Criterion
-#> • Original implementation (Braeken & van Assen, 2017): 3
+#> • Original implementation (Braeken & van Assen, 2017): 1
 #> 
 #> Hull method
-#> • CAF: 3
+#> • CAF: 1
 #> • CFI: 1
 #> • RMSEA: 1
 #> 
 #> Minimum average partial
 #> • Original implementation (TR2): 1
-#> • Revised implementation (TR4): 3
+#> • Revised implementation (TR4): 1
 #> 
 #> Next Eigenvalue Sufficiency Test
-#> • Suggested number of factors: 3
+#> • Suggested number of factors: 1
 #> 
 #> Parallel analysis
-#> • SMC eigenvalues: 3
+#> • SMC eigenvalues: 1
+```
+
+Skips some criteria on correlation input:
+
+``` r
+
+N_FACTORS(DOSPERT$cormat, N = DOSPERT$N)
+#> Warning: `x` is a correlation matrix, but "CD" needs raw data.
+#> ℹ Skipping "CD".
+#> ── Tests for the suitability of the data for factor analysis ───────────────────
+#> 
+#> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05:
+#>   χ²(780) = 16071.13, p < .001. These data are probably suitable for factor
+#>   analysis.
+#> ✔ The Kaiser-Meyer-Olkin criterion is meritorious (KMO = 0.9). These data are
+#>   probably suitable for factor analysis.
+#> 
+#> ── Number of factors suggested by the factor retention criteria ────────────────
+#> 
+#> Empirical Kaiser Criterion
+#> • Original implementation (Braeken & van Assen, 2017): 10
+#> 
+#> Hull method
+#> • CAF: 12
+#> • CFI: 1
+#> • RMSEA: 1
+#> 
+#> Minimum average partial
+#> • Original implementation (TR2): 5
+#> • Revised implementation (TR4): 4
+#> 
+#> Next Eigenvalue Sufficiency Test
+#> • Suggested number of factors: 10
+#> 
+#> Parallel analysis
+#> • SMC eigenvalues: 12
 #> 
 #> ── Criteria that could not be run ──────────────────────────────────────────────
 #> 
 #> ! CD: needs raw data, but a correlation matrix was supplied
+```
 
-# A type SPSS EFA to mimick the SPSS implementation with
-# promax rotation
-EFA_SPSS <- EFA(test_models$baseline$cormat, n_factors = 3, type = "SPSS",
-                  rotation = "promax")
+### EFA
 
-# look at solution
-EFA_SPSS
+#### Raw-Data Input
+
+With raw-data input, you can use all functionalities, including sandwich
+and bootstrap standard errors and DWLS estimation with polychoric
+correlations or two-stage FIML estimation of correlations.
+
+``` r
+
+# ULS / MINRES estimation with oblimin rotation and sandwich SEs
+mod <- EFA(DOSPERT_raw, n_factors = 5, method = "ULS", rotation = "oblimin",
+           se = "sandwich")
+#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
+mod
 #> 
-#> EFA performed with type = 'SPSS', method = 'PAF', and rotation = 'promax'.
+#> EFA performed with type = 'EFAtools', method = 'ULS', and rotation = 'oblimin'.
 #> 
 #> ── Rotated Loadings ────────────────────────────────────────────────────────────
 #> 
-#>        F1     F2     F3    h2    u2
-#> V1   -.048   .035   .613  .367  .633
-#> V2   -.001   .067   .482  .277  .723
-#> V3    .060   .056   .453  .283  .717
-#> V4    .101  -.009   .551  .378  .622
-#> V5    .157  -.018   .438  .293  .707
-#> V6   -.072  -.049   .704  .399  .601
-#> V7    .001   .533   .093  .357  .643
-#> V8   -.016   .581   .030  .349  .651
-#> V9    .038   .550  -.001  .330  .670
-#> V10  -.022   .674  -.071  .383  .617
-#> V11   .015   .356   .232  .297  .703
-#> V12   .020   .651  -.010  .432  .568
-#> V13   .614   .086  -.067  .394  .606
-#> V14   .548  -.068   .088  .322  .678
-#> V15   .561   .128  -.070  .363  .637
-#> V16   .555  -.050   .091  .344  .656
-#> V17   .664  -.037  -.027  .390  .610
-#> V18   .555   .004   .050  .350  .650
+#>           F1     F2     F3     F4     F5    h2    u2
+#> ethR_1   .513  -.018   .030  -.016   .130  .309  .691
+#> ethR_2   .518  -.044   .078   .019   .045  .304  .696
+#> ethR_3   .639  -.001   .024  -.223   .081  .490  .510
+#> ethR_4   .586  -.122  -.050  -.060   .046  .295  .705
+#> ethR_5   .477   .065  -.010  -.127   .032  .267  .733
+#> ethR_6   .621  -.098  -.007  -.016  -.021  .345  .655
+#> finR_1  -.004  -.005   .840  -.021   .025  .717  .283
+#> finR_2  -.066   .029  -.045   .068   .688  .476  .524
+#> finR_3  -.005  -.013   .856   .010   .016  .730  .270
+#> finR_4   .072   .041   .090  -.040   .710  .600  .400
+#> finR_5  -.005  -.029   .873   .000   .040  .768  .232
+#> finR_6   .054   .064   .093   .085   .683  .599  .401
+#> heaR_1   .426   .087   .101   .087  -.036  .273  .727
+#> heaR_2   .453   .053   .050   .136  -.050  .262  .738
+#> heaR_3   .415   .130   .071   .019  -.052  .257  .743
+#> heaR_4   .362   .163   .123  -.015  -.066  .254  .746
+#> heaR_5   .382   .091  -.019   .123  -.057  .185  .815
+#> heaR_6   .430   .206   .026   .138   .003  .338  .662
+#> recR_1   .017   .407  -.035   .217   .026  .254  .746
+#> recR_2   .117   .531   .111  -.101   .038  .410  .590
+#> recR_3   .060   .619   .026   .003   .054  .452  .548
+#> recR_4  -.072   .861  -.033  -.059   .027  .682  .318
+#> recR_5  -.008   .805   .013  -.091  -.003  .628  .372
+#> recR_6  -.020   .637   .031   .025   .102  .467  .533
+#> socR_1  -.029  -.085  -.071   .646  -.004  .419  .581
+#> socR_2   .093  -.027   .031   .679   .039  .474  .526
+#> socR_3  -.133  -.058   .018   .640  -.005  .416  .584
+#> socR_4  -.004   .018   .032   .614   .007  .383  .617
+#> socR_5   .049   .103  -.045   .379   .051  .185  .815
+#> socR_6   .004  -.008   .016   .549   .041  .308  .692
 #> 
 #> Legend:
 #>   bold = |loading| >= .300
 #>   grey = below cutoff
 #>   red h2/u2 = Heywood-relevant value
 #> 
+#> ── Factor Intercorrelations ────────────────────────────────────────────────────
+#> 
+#>       F1     F2     F3     F4     F5
+#> F1  1.000
+#> F2   .372  1.000
+#> F3   .448   .319  1.000
+#> F4   .006   .200  -.042  1.000
+#> F5   .154   .290   .344   .145  1.000
+#> 
+#> ── Variances Accounted for ─────────────────────────────────────────────────────
+#> 
+#>                      F1     F2     F3     F4     F5
+#> SS loadings        3.163  2.940  2.457  2.323  1.664
+#> Prop Tot Var        .105   .098   .082   .077   .055
+#> Cum Prop Tot Var    .105   .203   .285   .363   .418
+#> Prop Comm Var       .252   .234   .196   .185   .133
+#> Cum Prop Comm Var   .252   .486   .682   .867  1.000
+#> 
+#> ── Model Fit ───────────────────────────────────────────────────────────────────
+#> 
+#> scaled χ²(295) = 2912.75, p < .001
+#> CFI: .90
+#> TLI: .86
+#> RMSEA [90% CI]: .05 [.05; .06]
+#> AIC: NA
+#> BIC: NA
+#> CAF: .43
+#> RMSR: .03
+#> SRMR: .03
+# detailed output with summary()
+summary(mod)
+#> 
+#> EFA performed with type = 'EFAtools', method = 'ULS', and rotation = 'oblimin'.
+#> 
+#> ── Model Diagnostics ───────────────────────────────────────────────────────────
+#> 
+#> Factors: 5
+#> Variables: 30
+#> N: 3123
+#> Rotation local optima: 1 distinct from 100 random starts
+#> Heywood cases: 0
+#> Cross-loading items (|loading| >= .300): 0
+#> Items without salient loading (|loading| >= .300): 0
+#> Factors with fewer than 3 salient indicators: 0
+#> Items with primary-loading gap < .200: 2
+#> Largest |residual|: .246
+#> Factor intercorrelations > .85: none
+#> 
+#> ── Rotated Loadings ────────────────────────────────────────────────────────────
+#> 
+#>           F1     F2     F3     F4     F5    h2    u2
+#> ethR_1   .513  -.018   .030  -.016   .130  .309  .691
+#> ethR_2   .518  -.044   .078   .019   .045  .304  .696
+#> ethR_3   .639  -.001   .024  -.223   .081  .490  .510
+#> ethR_4   .586  -.122  -.050  -.060   .046  .295  .705
+#> ethR_5   .477   .065  -.010  -.127   .032  .267  .733
+#> ethR_6   .621  -.098  -.007  -.016  -.021  .345  .655
+#> finR_1  -.004  -.005   .840  -.021   .025  .717  .283
+#> finR_2  -.066   .029  -.045   .068   .688  .476  .524
+#> finR_3  -.005  -.013   .856   .010   .016  .730  .270
+#> finR_4   .072   .041   .090  -.040   .710  .600  .400
+#> finR_5  -.005  -.029   .873   .000   .040  .768  .232
+#> finR_6   .054   .064   .093   .085   .683  .599  .401
+#> heaR_1   .426   .087   .101   .087  -.036  .273  .727
+#> heaR_2   .453   .053   .050   .136  -.050  .262  .738
+#> heaR_3   .415   .130   .071   .019  -.052  .257  .743
+#> heaR_4   .362   .163   .123  -.015  -.066  .254  .746
+#> heaR_5   .382   .091  -.019   .123  -.057  .185  .815
+#> heaR_6   .430   .206   .026   .138   .003  .338  .662
+#> recR_1   .017   .407  -.035   .217   .026  .254  .746
+#> recR_2   .117   .531   .111  -.101   .038  .410  .590
+#> recR_3   .060   .619   .026   .003   .054  .452  .548
+#> recR_4  -.072   .861  -.033  -.059   .027  .682  .318
+#> recR_5  -.008   .805   .013  -.091  -.003  .628  .372
+#> recR_6  -.020   .637   .031   .025   .102  .467  .533
+#> socR_1  -.029  -.085  -.071   .646  -.004  .419  .581
+#> socR_2   .093  -.027   .031   .679   .039  .474  .526
+#> socR_3  -.133  -.058   .018   .640  -.005  .416  .584
+#> socR_4  -.004   .018   .032   .614   .007  .383  .617
+#> socR_5   .049   .103  -.045   .379   .051  .185  .815
+#> socR_6   .004  -.008   .016   .549   .041  .308  .692
+#> 
+#> Legend:
+#>   bold = |loading| >= .300
+#>   grey = below cutoff
+#>   red h2/u2 = Heywood-relevant value
+#> 
+#> ── 95% Wald CIs for salient rotated loadings ───────────────────────────────────
+#> 
+#> Variable  Factor  est    lower  upper
+#> ethR_1    F1       .513   .469   .557
+#> ethR_2    F1       .518   .473   .562
+#> ethR_3    F1       .639   .600   .679
+#> ethR_4    F1       .586   .541   .630
+#> ethR_5    F1       .477   .431   .522
+#> ethR_6    F1       .621   .581   .661
+#> heaR_1    F1       .426   .382   .471
+#> heaR_2    F1       .453   .409   .497
+#> heaR_3    F1       .415   .366   .463
+#> heaR_4    F1       .362   .313   .411
+#> heaR_5    F1       .382   .335   .428
+#> heaR_6    F1       .430   .385   .475
+#> recR_1    F2       .407   .369   .445
+#> recR_2    F2       .531   .491   .572
+#> recR_3    F2       .619   .584   .655
+#> recR_4    F2       .861   .838   .885
+#> recR_5    F2       .805   .778   .832
+#> recR_6    F2       .637   .602   .672
+#> finR_1    F3       .840   .805   .876
+#> finR_3    F3       .856   .823   .888
+#> finR_5    F3       .873   .843   .903
+#> socR_1    F4       .646   .612   .679
+#> socR_2    F4       .679   .651   .707
+#> socR_3    F4       .640   .605   .675
+#> socR_4    F4       .614   .582   .646
+#> socR_5    F4       .379   .341   .416
+#> socR_6    F4       .549   .512   .585
+#> finR_2    F5       .688   .652   .723
+#> finR_4    F5       .710   .674   .747
+#> finR_6    F5       .683   .647   .720
+#> 
+#> ── Factor Intercorrelations ────────────────────────────────────────────────────
+#> 
+#>       F1     F2     F3     F4     F5
+#> F1  1.000
+#> F2   .372  1.000
+#> F3   .448   .319  1.000
+#> F4   .006   .200  -.042  1.000
+#> F5   .154   .290   .344   .145  1.000
+#> 
+#> ── 95% Wald CIs for factor intercorrelations ───────────────────────────────────
+#> 
+#> Factors   est    lower  upper
+#> F1 ~~ F2   .372   .341   .402
+#> F1 ~~ F3   .448   .412   .485
+#> F1 ~~ F4   .006  -.028   .039
+#> F1 ~~ F5   .154   .104   .204
+#> F2 ~~ F3   .319   .277   .362
+#> F2 ~~ F4   .200   .169   .230
+#> F2 ~~ F5   .290   .234   .346
+#> F3 ~~ F4  -.042  -.091   .007
+#> F3 ~~ F5   .344   .298   .390
+#> F4 ~~ F5   .145   .099   .191
+#> 
+#> ── Structure Matrix ────────────────────────────────────────────────────────────
+#> 
+#>           F1    F2     F3     F4    F5
+#> ethR_1   .540  .217   .299   .001  .212
+#> ethR_2   .543  .190   .310   .017  .142
+#> ethR_3   .661  .223   .348  -.209  .155
+#> ethR_4   .525  .081   .192  -.072  .075
+#> ethR_5   .500  .223   .240  -.106  .102
+#> ethR_6   .578  .121   .233  -.035  .042
+#> finR_1   .374  .265   .846  -.054  .309
+#> finR_2   .031  .203   .168   .175  .681
+#> finR_3   .376  .265   .854  -.027  .307
+#> finR_4   .237  .294   .382   .068  .759
+#> finR_5   .382  .260   .875  -.037  .331
+#> finR_6   .225  .329   .369   .193  .754
+#> heaR_1   .499  .284   .303   .097  .102
+#> heaR_2   .488  .250   .247   .140  .072
+#> heaR_3   .487  .296   .279   .037  .077
+#> heaR_4   .467  .315   .315   .005  .077
+#> heaR_5   .399  .235   .156   .136  .039
+#> heaR_6   .519  .402   .279   .181  .158
+#> recR_1   .158  .453   .103   .304  .166
+#> recR_2   .370  .601   .350   .007  .234
+#> recR_3   .310  .666   .269   .134  .252
+#> recR_4   .237  .820   .221   .118  .246
+#> recR_5   .297  .788   .270   .069  .221
+#> recR_6   .247  .674   .260   .165  .298
+#> socR_1  -.089  .010  -.140   .631  .036
+#> socR_2   .107  .164   .049   .678  .155
+#> socR_3  -.143  .025  -.089   .626  .057
+#> socR_4   .022  .152   .013   .617  .111
+#> socR_5   .078  .197   .012   .409  .128
+#> socR_6   .018  .120   .006   .553  .124
+#> 
+#> ── Simple Structure Diagnostics ────────────────────────────────────────────────
+#> 
+#> Items with primary-loading gap < .200:
+#> • heaR_4: F1 = .362, F2 = .163
+#> • recR_1: F2 = .407, F4 = .217
+#> 
+#> 
+#> ── Variances Accounted for ─────────────────────────────────────────────────────
+#> 
+#>                      F1     F2     F3     F4     F5
+#> SS loadings        3.163  2.940  2.457  2.323  1.664
+#> Prop Tot Var        .105   .098   .082   .077   .055
+#> Cum Prop Tot Var    .105   .203   .285   .363   .418
+#> Prop Comm Var       .252   .234   .196   .185   .133
+#> Cum Prop Comm Var   .252   .486   .682   .867  1.000
+#> 
+#> ── Model Fit ───────────────────────────────────────────────────────────────────
+#> 
+#> scaled χ²(295) = 2912.75, p < .001
+#> CFI: .90
+#> TLI: .86
+#> RMSEA [90% CI]: .05 [.05; .06]
+#> AIC: NA
+#> BIC: NA
+#> CAF: .43
+#> RMSR: .03
+#> SRMR: .03
+#> 
+#> ── Residual Diagnostics ────────────────────────────────────────────────────────
+#> 
+#> Residual cutoff: |r| > .100
+#> Number of large residuals: 7
+#> Largest absolute residual: .246
+#> 
+#> Largest residuals:
+#> • heaR_3 ~~ heaR_4: .246
+#> • socR_5 ~~ socR_6: .190
+#> • socR_2 ~~ socR_4: .145
+#> • recR_4 ~~ recR_5: .138
+#> • heaR_1 ~~ heaR_2: .135
+#> • recR_2 ~~ recR_3: .126
+#> • recR_1 ~~ recR_3: .112
+#> 
+#> Inspect the residual matrix for details (e.g., with residuals()).
+
+#inspect residuals with residuals()
+residuals(mod)
+#>              ethR_1       ethR_2       ethR_3       ethR_4        ethR_5
+#> ethR_1  0.000000000  0.001917900  0.040108892 -0.004369293  0.0398665165
+#> ethR_2  0.001917900  0.000000000  0.051352421 -0.020431240 -0.0049432965
+#> ethR_3  0.040108892  0.051352421  0.000000000  0.081671450  0.0288816866
+#> ethR_4 -0.004369293 -0.020431240  0.081671450  0.000000000  0.0333134696
+#> ethR_5  0.039866516 -0.004943296  0.028881687  0.033313470  0.0000000000
+#> ethR_6  0.040582204  0.026283483  0.045451543  0.028148654  0.0187892739
+#> finR_1  0.011127001 -0.006434037  0.014244992  0.009379816  0.0025756998
+#> finR_2  0.007553570  0.003705828 -0.015346586  0.017745381  0.0176036738
+#> finR_3  0.006233461  0.003308877  0.001315340  0.009312468  0.0034944277
+#> finR_4 -0.016624811 -0.014663125 -0.017356120 -0.016698471 -0.0174307052
+#> finR_5 -0.008253207  0.003043777 -0.004687718  0.004285814  0.0092380807
+#> finR_6 -0.009286029 -0.003710525 -0.006965509 -0.013539656 -0.0301850113
+#> heaR_1  0.004974977  0.008362143 -0.055877276  0.007132089  0.0010127739
+#> heaR_2 -0.051382944  0.055166643 -0.070562208 -0.036727809 -0.0331374434
+#> heaR_3 -0.009722443 -0.049225313 -0.048069933 -0.053699783 -0.0525275083
+#> heaR_4 -0.033039266 -0.008960232 -0.015555165 -0.039907169 -0.0221866252
+#> heaR_5 -0.032668820 -0.078643755 -0.046817302  0.042178950 -0.0501148566
+#> heaR_6 -0.032441690 -0.012615309 -0.084461320 -0.064144574 -0.0056842306
+#> recR_1  0.017147769 -0.020116010 -0.023082309 -0.018232276 -0.0215745628
+#> recR_2 -0.007842344 -0.019216095  0.026180249 -0.018337407  0.0005967783
+#> recR_3  0.021362240 -0.023522516  0.007777952  0.023306876 -0.0194801181
+#> recR_4 -0.001484183  0.019319313  0.023063507  0.031611175  0.0222081232
+#> recR_5 -0.005969560  0.014000848  0.020587445  0.031114695  0.0168276523
+#> recR_6  0.020948069  0.027890355  0.015363854 -0.029059999  0.0169438153
+#> socR_1  0.000806860 -0.012454706 -0.018900098  0.029253015  0.0035232684
+#> socR_2  0.011740426  0.004707613  0.012154624 -0.002292166  0.0282698252
+#> socR_3  0.022990996 -0.005414545  0.026565990  0.025314359 -0.0142255346
+#> socR_4  0.022463180  0.006149984  0.042415994 -0.019458508  0.0157348216
+#> socR_5 -0.015092819  0.014061796  0.002213433 -0.012377440  0.0357737850
+#> socR_6 -0.014824816  0.030629268  0.024031868  0.039389116 -0.0112568151
+#>              ethR_6        finR_1        finR_2        finR_3        finR_4
+#> ethR_1  0.040582204  1.112700e-02  0.0075535698  6.233461e-03 -0.0166248106
+#> ethR_2  0.026283483 -6.434037e-03  0.0037058276  3.308877e-03 -0.0146631253
+#> ethR_3  0.045451543  1.424499e-02 -0.0153465862  1.315340e-03 -0.0173561198
+#> ethR_4  0.028148654  9.379816e-03  0.0177453811  9.312468e-03 -0.0166984712
+#> ethR_5  0.018789274  2.575700e-03  0.0176036738  3.494428e-03 -0.0174307052
+#> ethR_6  0.000000000 -5.662428e-03 -0.0162175434 -1.021181e-03 -0.0043617571
+#> finR_1 -0.005662428  0.000000e+00  0.0087004974  8.088778e-05 -0.0056161652
+#> finR_2 -0.016217543  8.700497e-03  0.0000000000  2.498766e-03  0.0008717529
+#> finR_3 -0.001021181  8.088778e-05  0.0024987657  0.000000e+00 -0.0069266835
+#> finR_4 -0.004361757 -5.616165e-03  0.0008717529 -6.926684e-03  0.0000000000
+#> finR_5  0.025056099  3.481751e-03  0.0004844848  3.513079e-03  0.0041242424
+#> finR_6 -0.016470431 -1.355540e-02 -0.0082524593  2.963681e-03  0.0214543731
+#> heaR_1 -0.018433909  1.792687e-02  0.0036649145  8.985145e-04  0.0137070190
+#> heaR_2 -0.016470837 -2.387765e-02  0.0155659428  6.578785e-03  0.0077781862
+#> heaR_3 -0.038071233 -1.429450e-02 -0.0123412149 -7.788520e-03  0.0336364625
+#> heaR_4 -0.060952599 -3.754424e-03 -0.0399518832 -6.037476e-03  0.0222389062
+#> heaR_5 -0.065972829 -6.846799e-03 -0.0034835004 -8.308590e-03  0.0246854909
+#> heaR_6 -0.003199119 -7.804742e-03  0.0103726863 -5.704013e-03  0.0123496532
+#> recR_1 -0.037810992  6.736902e-03  0.0258254704  5.928581e-03 -0.0112643878
+#> recR_2 -0.032039516  1.226022e-02  0.0006634646 -1.310808e-02  0.0020501320
+#> recR_3 -0.016986859 -3.360832e-03  0.0081716557 -1.803331e-03 -0.0009082108
+#> recR_4  0.041721475 -9.301009e-03 -0.0062789188  9.980389e-03  0.0062924215
+#> recR_5  0.035964591  4.251960e-04 -0.0071195012  9.512968e-03  0.0011034225
+#> recR_6  0.010031264  6.759023e-03  0.0046234751 -3.828882e-03 -0.0324267549
+#> socR_1  0.016903089  2.591499e-03  0.0336329043  7.609381e-03  0.0021701495
+#> socR_2 -0.001469726  1.023220e-03  0.0135078560  6.453198e-03 -0.0085522565
+#> socR_3  0.012457428 -3.306203e-03 -0.0127767504  9.893865e-03 -0.0147403651
+#> socR_4 -0.001954184 -7.945136e-03 -0.0248892504 -1.207073e-02  0.0125020724
+#> socR_5  0.043324097  2.112184e-02  0.0038245550 -1.807369e-02 -0.0084601186
+#> socR_6  0.011257520  7.598876e-03 -0.0343169613 -1.676189e-03 -0.0055715620
+#>               finR_5       finR_6        heaR_1       heaR_2       heaR_3
+#> ethR_1 -0.0082532069 -0.009286029  0.0049749766 -0.051382944 -0.009722443
+#> ethR_2  0.0030437766 -0.003710525  0.0083621430  0.055166643 -0.049225313
+#> ethR_3 -0.0046877178 -0.006965509 -0.0558772764 -0.070562208 -0.048069933
+#> ethR_4  0.0042858140 -0.013539656  0.0071320887 -0.036727809 -0.053699783
+#> ethR_5  0.0092380807 -0.030185011  0.0010127739 -0.033137443 -0.052527508
+#> ethR_6  0.0250560991 -0.016470431 -0.0184339094 -0.016470837 -0.038071233
+#> finR_1  0.0034817509 -0.013555401  0.0179268693 -0.023877654 -0.014294500
+#> finR_2  0.0004844848 -0.008252459  0.0036649145  0.015565943 -0.012341215
+#> finR_3  0.0035130791  0.002963681  0.0008985145  0.006578785 -0.007788520
+#> finR_4  0.0041242424  0.021454373  0.0137070190  0.007778186  0.033636462
+#> finR_5  0.0000000000 -0.004350617 -0.0025399943  0.008688334 -0.019196171
+#> finR_6 -0.0043506174  0.000000000 -0.0086512606  0.010828029  0.032742317
+#> heaR_1 -0.0025399943 -0.008651261  0.0000000000  0.134744470 -0.037917070
+#> heaR_2  0.0086883342  0.010828029  0.1347444696  0.000000000  0.011495127
+#> heaR_3 -0.0191961710  0.032742317 -0.0379170701  0.011495127  0.000000000
+#> heaR_4 -0.0181459685  0.042817995 -0.0879544260 -0.039913629  0.246048416
+#> heaR_5  0.0024835494  0.017695385  0.0069554472  0.053177695  0.097486673
+#> heaR_6 -0.0048411017  0.019469864  0.0400415933  0.048970234  0.042177257
+#> recR_1 -0.0133250238 -0.010110995  0.0385149082  0.042181093 -0.028311370
+#> recR_2 -0.0099501705 -0.006382334  0.0042557158 -0.019267980  0.014913165
+#> recR_3 -0.0019269895 -0.019009983  0.0077593475 -0.004347081 -0.016209104
+#> recR_4  0.0175468561 -0.011312022  0.0020271649 -0.007770894 -0.032917255
+#> recR_5  0.0074957437 -0.001280454  0.0126984498 -0.010735757 -0.019892255
+#> recR_6 -0.0004331486  0.016610161 -0.0481764605 -0.020457964 -0.015608539
+#> socR_1  0.0077225903 -0.026656401  0.0290091620  0.018385833 -0.016464714
+#> socR_2 -0.0080895488 -0.008773788 -0.0175637498 -0.010818655 -0.007281367
+#> socR_3  0.0009902625  0.013650169 -0.0130447670 -0.033653184 -0.007074495
+#> socR_4  0.0071285248 -0.004181445 -0.0559959050 -0.022965887  0.002606382
+#> socR_5 -0.0009945018 -0.010899600  0.0065224503 -0.018230312 -0.021953959
+#> socR_6  0.0002060683  0.019249072 -0.0149986602 -0.047981027 -0.004447033
+#>              heaR_4       heaR_5        heaR_6       recR_1        recR_2
+#> ethR_1 -0.033039266 -0.032668820 -3.244169e-02  0.017147769 -0.0078423438
+#> ethR_2 -0.008960232 -0.078643755 -1.261531e-02 -0.020116010 -0.0192160948
+#> ethR_3 -0.015555165 -0.046817302 -8.446132e-02 -0.023082309  0.0261802488
+#> ethR_4 -0.039907169  0.042178950 -6.414457e-02 -0.018232276 -0.0183374073
+#> ethR_5 -0.022186625 -0.050114857 -5.684231e-03 -0.021574563  0.0005967783
+#> ethR_6 -0.060952599 -0.065972829 -3.199119e-03 -0.037810992 -0.0320395160
+#> finR_1 -0.003754424 -0.006846799 -7.804742e-03  0.006736902  0.0122602201
+#> finR_2 -0.039951883 -0.003483500  1.037269e-02  0.025825470  0.0006634646
+#> finR_3 -0.006037476 -0.008308590 -5.704013e-03  0.005928581 -0.0131080830
+#> finR_4  0.022238906  0.024685491  1.234965e-02 -0.011264388  0.0020501320
+#> finR_5 -0.018145969  0.002483549 -4.841102e-03 -0.013325024 -0.0099501705
+#> finR_6  0.042817995  0.017695385  1.946986e-02 -0.010110995 -0.0063823343
+#> heaR_1 -0.087954426  0.006955447  4.004159e-02  0.038514908  0.0042557158
+#> heaR_2 -0.039913629  0.053177695  4.897023e-02  0.042181093 -0.0192679799
+#> heaR_3  0.246048416  0.097486673  4.217726e-02 -0.028311370  0.0149131647
+#> heaR_4  0.000000000  0.055890567  5.212824e-02 -0.017062157  0.0235172951
+#> heaR_5  0.055890567  0.000000000  8.871116e-02  0.064718883  0.0069543311
+#> heaR_6  0.052128236  0.088711156  1.110223e-16  0.027034056  0.0055630715
+#> recR_1 -0.017062157  0.064718883  2.703406e-02  0.000000000  0.0421381687
+#> recR_2  0.023517295  0.006954331  5.563072e-03  0.042138169  0.0000000000
+#> recR_3 -0.007880619 -0.013439695 -4.224870e-03  0.111561108  0.1261749511
+#> recR_4 -0.049565941 -0.032687726 -3.943762e-02 -0.055618813 -0.0780319200
+#> recR_5 -0.034115104 -0.030578343 -3.527430e-02 -0.068601722 -0.0419724053
+#> recR_6  0.025719839 -0.016720314  1.185086e-02  0.001496346 -0.0186880385
+#> socR_1 -0.033283387  0.022437892 -2.180810e-02  0.044539945 -0.0412132854
+#> socR_2 -0.001017746 -0.031734973  8.396766e-03 -0.039516034 -0.0069896378
+#> socR_3 -0.010388111 -0.003901592 -2.037909e-02  0.006296804  0.0025600487
+#> socR_4  0.021094419 -0.028690233 -3.687410e-02 -0.047504630  0.0200855865
+#> socR_5 -0.021543520 -0.046676390  1.558664e-02 -0.010229610  0.0044973282
+#> socR_6  0.014141631 -0.015473321 -3.594436e-02 -0.016774432  0.0080663135
+#>               recR_3       recR_4       recR_5        recR_6       socR_1
+#> ethR_1  0.0213622398 -0.001484183 -0.005969560  0.0209480687  0.000806860
+#> ethR_2 -0.0235225161  0.019319313  0.014000848  0.0278903547 -0.012454706
+#> ethR_3  0.0077779521  0.023063507  0.020587445  0.0153638536 -0.018900098
+#> ethR_4  0.0233068757  0.031611175  0.031114695 -0.0290599989  0.029253015
+#> ethR_5 -0.0194801181  0.022208123  0.016827652  0.0169438153  0.003523268
+#> ethR_6 -0.0169868588  0.041721475  0.035964591  0.0100312645  0.016903089
+#> finR_1 -0.0033608324 -0.009301009  0.000425196  0.0067590234  0.002591499
+#> finR_2  0.0081716557 -0.006278919 -0.007119501  0.0046234751  0.033632904
+#> finR_3 -0.0018033305  0.009980389  0.009512968 -0.0038288824  0.007609381
+#> finR_4 -0.0009082108  0.006292421  0.001103423 -0.0324267549  0.002170150
+#> finR_5 -0.0019269895  0.017546856  0.007495744 -0.0004331486  0.007722590
+#> finR_6 -0.0190099832 -0.011312022 -0.001280454  0.0166101608 -0.026656401
+#> heaR_1  0.0077593475  0.002027165  0.012698450 -0.0481764605  0.029009162
+#> heaR_2 -0.0043470811 -0.007770894 -0.010735757 -0.0204579636  0.018385833
+#> heaR_3 -0.0162091043 -0.032917255 -0.019892255 -0.0156085389 -0.016464714
+#> heaR_4 -0.0078806194 -0.049565941 -0.034115104  0.0257198393 -0.033283387
+#> heaR_5 -0.0134396946 -0.032687726 -0.030578343 -0.0167203136  0.022437892
+#> heaR_6 -0.0042248703 -0.039437617 -0.035274302  0.0118508646 -0.021808098
+#> recR_1  0.1115611075 -0.055618813 -0.068601722  0.0014963460  0.044539945
+#> recR_2  0.1261749511 -0.078031920 -0.041972405 -0.0186880385 -0.041213285
+#> recR_3  0.0000000000 -0.053595869 -0.055836248 -0.0213043578 -0.010111162
+#> recR_4 -0.0535958689  0.000000000  0.137872527  0.0330606581  0.029515654
+#> recR_5 -0.0558362477  0.137872527  0.000000000 -0.0109558586  0.023221232
+#> recR_6 -0.0213043578  0.033060658 -0.010955859  0.0000000000 -0.026975186
+#> socR_1 -0.0101111620  0.029515654  0.023221232 -0.0269751862  0.000000000
+#> socR_2 -0.0123831450  0.012569973  0.014029092  0.0146278708  0.020978578
+#> socR_3  0.0060424204  0.007252597  0.008578265 -0.0056401178  0.016892154
+#> socR_4  0.0079666116  0.009953444  0.013416691  0.0030085594 -0.007201901
+#> socR_5 -0.0098534841  0.005302550  0.005317443  0.0096070343 -0.035147268
+#> socR_6 -0.0087257570 -0.004799737 -0.005134521  0.0245081413 -0.041987581
+#>              socR_2        socR_3       socR_4        socR_5        socR_6
+#> ethR_1  0.011740426  0.0229909965  0.022463180 -0.0150928195 -0.0148248156
+#> ethR_2  0.004707613 -0.0054145448  0.006149984  0.0140617960  0.0306292675
+#> ethR_3  0.012154624  0.0265659898  0.042415994  0.0022134330  0.0240318676
+#> ethR_4 -0.002292166  0.0253143591 -0.019458508 -0.0123774402  0.0393891165
+#> ethR_5  0.028269825 -0.0142255346  0.015734822  0.0357737850 -0.0112568151
+#> ethR_6 -0.001469726  0.0124574284 -0.001954184  0.0433240972  0.0112575195
+#> finR_1  0.001023220 -0.0033062026 -0.007945136  0.0211218369  0.0075988760
+#> finR_2  0.013507856 -0.0127767504 -0.024889250  0.0038245550 -0.0343169613
+#> finR_3  0.006453198  0.0098938651 -0.012070727 -0.0180736894 -0.0016761891
+#> finR_4 -0.008552257 -0.0147403651  0.012502072 -0.0084601186 -0.0055715620
+#> finR_5 -0.008089549  0.0009902625  0.007128525 -0.0009945018  0.0002060683
+#> finR_6 -0.008773788  0.0136501691 -0.004181445 -0.0108995999  0.0192490722
+#> heaR_1 -0.017563750 -0.0130447670 -0.055995905  0.0065224503 -0.0149986602
+#> heaR_2 -0.010818655 -0.0336531842 -0.022965887 -0.0182303123 -0.0479810272
+#> heaR_3 -0.007281367 -0.0070744948  0.002606382 -0.0219539593 -0.0044470326
+#> heaR_4 -0.001017746 -0.0103881110  0.021094419 -0.0215435205  0.0141416308
+#> heaR_5 -0.031734973 -0.0039015921 -0.028690233 -0.0466763899 -0.0154733205
+#> heaR_6  0.008396766 -0.0203790939 -0.036874099  0.0155866360 -0.0359443552
+#> recR_1 -0.039516034  0.0062968042 -0.047504630 -0.0102296095 -0.0167744324
+#> recR_2 -0.006989638  0.0025600487  0.020085587  0.0044973282  0.0080663135
+#> recR_3 -0.012383145  0.0060424204  0.007966612 -0.0098534841 -0.0087257570
+#> recR_4  0.012569973  0.0072525969  0.009953444  0.0053025504 -0.0047997375
+#> recR_5  0.014029092  0.0085782650  0.013416691  0.0053174428 -0.0051345215
+#> recR_6  0.014627871 -0.0056401178  0.003008559  0.0096070343  0.0245081413
+#> socR_1  0.020978578  0.0168921541 -0.007201901 -0.0351472685 -0.0419875805
+#> socR_2  0.000000000 -0.0474000959  0.145138599 -0.0500357905 -0.0589002183
+#> socR_3 -0.047400096  0.0000000000 -0.007743223 -0.0054711753  0.0775383760
+#> socR_4  0.145138599 -0.0077432234  0.000000000 -0.0483059742 -0.0487076115
+#> socR_5 -0.050035791 -0.0054711753 -0.048305974  0.0000000000  0.1897359371
+#> socR_6 -0.058900218  0.0775383760 -0.048707612  0.1897359371  0.0000000000
+
+# DWLS estimation based on polychoric correlations, with robust sandwich SEs
+mod <- EFA(GRiPS_raw, n_factors = 1, method = "DWLS", cor_method = "poly",
+           se = "sandwich")
+#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
+#> Warning: Some response-category combinations are empty despite a non-negligible expected
+#> count.
+#> ℹ The polychoric asymptotic covariance (and any DWLS weights or robust standard
+#>   errors derived from it) can be unreliable for such structurally sparse cells;
+#>   interpret them with caution.
+mod
+#> 
+#> EFA performed with type = 'EFAtools', method = 'DWLS', and rotation = 'none'.
+#> 
+#> ── Unrotated Loadings ──────────────────────────────────────────────────────────
+#> 
+#>             F1    h2    u2
+#> fun        .818  .669  .331
+#> friends    .855  .731  .269
+#> enjoy      .893  .797  .203
+#> hurt       .775  .601  .399
+#> part       .824  .679  .321
+#> commonly   .843  .711  .289
+#> chances    .817  .668  .332
+#> attracted  .859  .738  .262
+#> 
+#> Legend:
+#>   bold = |loading| >= .300
+#>   grey = below cutoff
+#>   red h2/u2 = Heywood-relevant value
+#> 
+#> ── Variances Accounted for ─────────────────────────────────────────────────────
+#> 
+#>                 F1
+#> SS loadings   5.594
+#> Prop Tot Var   .699
+#> 
+#> ── Model Fit ───────────────────────────────────────────────────────────────────
+#> 
+#> scaled χ²(20) = 237.21, p < .001
+#> CFI: .99
+#> TLI: .99
+#> RMSEA [90% CI]: .12 [.10; .13]
+#> AIC: NA
+#> BIC: NA
+#> CAF: .49
+#> RMSR: .02
+#> SRMR: .02
+summary(mod)
+#> 
+#> EFA performed with type = 'EFAtools', method = 'DWLS', and rotation = 'none'.
+#> 
+#> ── Model Diagnostics ───────────────────────────────────────────────────────────
+#> 
+#> Factors: 1
+#> Variables: 8
+#> N: 810
+#> Heywood cases: 0
+#> Cross-loading items (|loading| >= .300): 0
+#> Items without salient loading (|loading| >= .300): 0
+#> Factors with fewer than 3 salient indicators: 0
+#> Items with primary-loading gap < .200: 0
+#> Largest |residual|: .038
+#> 
+#> ── Unrotated Loadings ──────────────────────────────────────────────────────────
+#> 
+#>             F1    h2    u2
+#> fun        .818  .669  .331
+#> friends    .855  .731  .269
+#> enjoy      .893  .797  .203
+#> hurt       .775  .601  .399
+#> part       .824  .679  .321
+#> commonly   .843  .711  .289
+#> chances    .817  .668  .332
+#> attracted  .859  .738  .262
+#> 
+#> Legend:
+#>   bold = |loading| >= .300
+#>   grey = below cutoff
+#>   red h2/u2 = Heywood-relevant value
+#> 
+#> ── 95% Wald CIs for salient unrotated loadings ─────────────────────────────────
+#> 
+#> Variable   Factor  est    lower  upper
+#> fun        F1       .818   .798   .838
+#> friends    F1       .855   .835   .875
+#> enjoy      F1       .893   .875   .910
+#> hurt       F1       .775   .750   .800
+#> part       F1       .824   .802   .846
+#> commonly   F1       .843   .825   .861
+#> chances    F1       .817   .795   .840
+#> attracted  F1       .859   .842   .877
+#> 
+#> ── Variances Accounted for ─────────────────────────────────────────────────────
+#> 
+#>                 F1
+#> SS loadings   5.594
+#> Prop Tot Var   .699
+#> 
+#> ── Model Fit ───────────────────────────────────────────────────────────────────
+#> 
+#> scaled χ²(20) = 237.21, p < .001
+#> CFI: .99
+#> TLI: .99
+#> RMSEA [90% CI]: .12 [.10; .13]
+#> AIC: NA
+#> BIC: NA
+#> CAF: .49
+#> RMSR: .02
+#> SRMR: .02
+#> 
+#> Note: Wald CIs from the robust (Godambe) sandwich covariance.
+#> 
+#> ── Residual Diagnostics ────────────────────────────────────────────────────────
+#> 
+#> Residual cutoff: |r| > .100
+#> Number of large residuals: 0
+#> Largest absolute residual: .038
+#> 
+#> No absolute residuals > .100 occurred.
+#> 
+#> Inspect the residual matrix for details (e.g., with residuals()).
+```
+
+#### Correlation Input
+
+When you don’t have raw data available, you can enter a correlation
+matrix and sample size. With ML-estimation, you can still get
+information SEs, but note that they assume multivariate normality.
+
+``` r
+
+# ML estimation with oblimin rotation and information SEs, based on correlation
+# matrix and N
+mod <- EFA(test_models$baseline$cormat, N = 500,  n_factors = 3, method = "ML",
+           rotation = "oblimin", se = "information")
+mod
+#> 
+#> EFA performed with type = 'EFAtools', method = 'ML', and rotation = 'oblimin'.
+#> 
+#> ── Rotated Loadings ────────────────────────────────────────────────────────────
+#> 
+#>        F1     F2     F3    h2    u2
+#> V1   -.036   .043   .607  .373  .627
+#> V2    .013   .087   .458  .274  .726
+#> V3    .074   .074   .430  .280  .720
+#> V4    .111   .007   .536  .379  .621
+#> V5    .164   .005   .418  .290  .710
+#> V6   -.055  -.036   .687  .402  .598
+#> V7    .017   .524   .095  .355  .645
+#> V8   -.003   .562   .044  .345  .655
+#> V9    .044   .535   .017  .328  .672
+#> V10  -.019   .661  -.051  .385  .615
+#> V11   .030   .352   .230  .296  .704
+#> V12   .034   .649  -.015  .437  .563
+#> V13   .612   .095  -.068  .397  .603
+#> V14   .540  -.053   .086  .320  .680
+#> V15   .552   .137  -.065  .363  .637
+#> V16   .550  -.039   .092  .345  .655
+#> V17   .652  -.035  -.013  .390  .610
+#> V18   .549   .012   .052  .349  .651
+#> 
+#> Legend:
+#>   bold = |loading| >= .300
+#>   grey = below cutoff
+#>   red h2/u2 = Heywood-relevant value
 #> 
 #> ── Factor Intercorrelations ────────────────────────────────────────────────────
 #> 
 #>       F1     F2     F3
 #> F1  1.000
-#> F2   .617  1.000
-#> F3   .648   .632  1.000
-#> 
+#> F2   .591  1.000
+#> F3   .621   .596  1.000
 #> 
 #> ── Variances Accounted for ─────────────────────────────────────────────────────
 #> 
 #>                      F1     F2     F3
-#> SS loadings        2.198  2.074  2.034
-#> Prop Tot Var        .122   .115   .113
-#> Cum Prop Tot Var    .122   .237   .350
-#> Prop Comm Var       .349   .329   .323
-#> Cum Prop Comm Var   .349   .677  1.000
-#> 
+#> SS loadings        2.225  2.088  1.994
+#> Prop Tot Var        .124   .116   .111
+#> Cum Prop Tot Var    .124   .240   .350
+#> Prop Comm Var       .353   .331   .316
+#> Cum Prop Comm Var   .353   .684  1.000
 #> 
 #> ── Model Fit ───────────────────────────────────────────────────────────────────
 #> 
-#> CAF  : .50
-#> RMSR  : .03
-#> SRMR  : .02
-#> df: 102
-
-# A type psych EFA to mimick the psych::fa() implementation with
-# promax rotation
-EFA_psych <- EFA(test_models$baseline$cormat, n_factors = 3, type = "psych",
-                  rotation = "promax")
-
-# compare the type psych and type SPSS implementations
-COMPARE(EFA_SPSS$rot_loadings, EFA_psych$rot_loadings,
-        x_labels = c("SPSS", "psych"))
-#> Mean [min, max] absolute difference:  0.0090 [ 0.0001,  0.0245]
-#> Median absolute difference:  0.0095
-#> Max decimals where all numbers are equal: 0
-#> Minimum number of decimals provided: 17
+#> χ²(102) = 123.75, p = .070
+#> CFI: .99
+#> TLI: .98
+#> RMSEA [90% CI]: .02 [.00; .03]
+#> AIC: -80.25
+#> BIC: -510.14
+#> ECVI: 0.52
+#> CAF: .50
+#> RMSR: .03
+#> SRMR: .03
+summary(mod)
 #> 
-#>        F1      F2      F3
-#> V1    .0150   .0142  -.0195
-#> V2    .0109   .0109  -.0138
-#> V3    .0095   .0103  -.0119
-#> V4    .0118   .0131  -.0154
-#> V5    .0084   .0105  -.0109
-#> V6    .0183   .0169  -.0245
-#> V7   -.0026  -.0017   .0076
-#> V8   -.0043  -.0035   .0102
-#> V9   -.0055  -.0040   .0117
-#> V10  -.0075  -.0066   .0151
-#> V11   .0021   .0029   .0001
-#> V12  -.0064  -.0050   .0136
-#> V13  -.0109  -.0019   .0163
-#> V14  -.0049   .0028   .0070
-#> V15  -.0107  -.0023   .0161
-#> V16  -.0051   .0028   .0074
-#> V17  -.0096  -.0001   .0136
-#> V18  -.0066   .0014   .0098
-
-# Run EFA and compute standard errors and confidence intervals based
-# on non-parametric bootstrap:
-EFA(GRiPS_raw, n_factors = 1, method = "ML", se = "np-boot")
-#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
+#> EFA performed with type = 'EFAtools', method = 'ML', and rotation = 'oblimin'.
 #> 
-#> EFA performed with type = 'EFAtools', method = 'ML', and rotation = 'none'.
+#> ── Model Diagnostics ───────────────────────────────────────────────────────────
 #> 
-#> ── Unrotated Loadings ──────────────────────────────────────────────────────────
+#> Factors: 3
+#> Variables: 18
+#> N: 500
+#> Rotation local optima: 1 distinct from 100 random starts
+#> Heywood cases: 0
+#> Cross-loading items (|loading| >= .300): 0
+#> Items without salient loading (|loading| >= .300): 0
+#> Factors with fewer than 3 salient indicators: 0
+#> Items with primary-loading gap < .200: 1
+#> Largest |residual|: .069
+#> Factor intercorrelations > .85: none
 #> 
-#>             F1    h2    u2
-#> fun        .796  .634  .366
-#> friends    .851  .725  .275
-#> enjoy      .872  .760  .240
-#> hurt       .767  .588  .412
-#> part       .817  .667  .333
-#> commonly   .832  .692  .308
-#> chances    .788  .621  .379
-#> attracted  .845  .715  .285
+#> ── Rotated Loadings ────────────────────────────────────────────────────────────
+#> 
+#>        F1     F2     F3    h2    u2
+#> V1   -.036   .043   .607  .373  .627
+#> V2    .013   .087   .458  .274  .726
+#> V3    .074   .074   .430  .280  .720
+#> V4    .111   .007   .536  .379  .621
+#> V5    .164   .005   .418  .290  .710
+#> V6   -.055  -.036   .687  .402  .598
+#> V7    .017   .524   .095  .355  .645
+#> V8   -.003   .562   .044  .345  .655
+#> V9    .044   .535   .017  .328  .672
+#> V10  -.019   .661  -.051  .385  .615
+#> V11   .030   .352   .230  .296  .704
+#> V12   .034   .649  -.015  .437  .563
+#> V13   .612   .095  -.068  .397  .603
+#> V14   .540  -.053   .086  .320  .680
+#> V15   .552   .137  -.065  .363  .637
+#> V16   .550  -.039   .092  .345  .655
+#> V17   .652  -.035  -.013  .390  .610
+#> V18   .549   .012   .052  .349  .651
 #> 
 #> Legend:
 #>   bold = |loading| >= .300
 #>   grey = below cutoff
 #>   red h2/u2 = Heywood-relevant value
 #> 
+#> ── 95% Wald CIs for salient rotated loadings ───────────────────────────────────
 #> 
-#> ── Variances Accounted for ─────────────────────────────────────────────────────
+#> Variable  Factor  est    lower  upper
+#> V13       F1       .612   .476   .748
+#> V14       F1       .540   .401   .679
+#> V15       F1       .552   .413   .691
+#> V16       F1       .550   .411   .689
+#> V17       F1       .652   .521   .784
+#> V18       F1       .549   .410   .689
+#> V7        F2       .524   .385   .662
+#> V8        F2       .562   .427   .697
+#> V9        F2       .535   .398   .671
+#> V10       F2       .661   .533   .788
+#> V11       F2       .352   .208   .497
+#> V12       F2       .649   .515   .783
+#> V1        F3       .607   .463   .750
+#> V2        F3       .458   .307   .610
+#> V3        F3       .430   .276   .584
+#> V4        F3       .536   .387   .686
+#> V5        F3       .418   .264   .572
+#> V6        F3       .687   .554   .821
 #> 
-#>                 F1
-#> SS loadings   5.401
-#> Prop Tot Var   .675
-#> 
-#> 
-#> ── Model Fit ───────────────────────────────────────────────────────────────────
-#> 
-#> χ²(20) = 59.61, p < .001
-#> CFI  [95% bootstrap-CI] : .99 [.98, .99]
-#> TLI  : .99
-#> RMSEA [90% CI]  [95% bootstrap-CI] : .05 [.04; .06] [.05, .09]
-#> AIC  [95% bootstrap-CI] : 19.61 [13.43, 106.96]
-#> BIC  [95% bootstrap-CI] : -74.33 [-80.51, 13.02]
-#> ECVI  : 0.11
-#> CAF  [95% bootstrap-CI] : .50 [.48, .51]
-#> RMSR  [95% bootstrap-CI] : .02 [.02, .03]
-#> SRMR  : .01
-#> 
-#> Note: Bootstrap CIs based on 1000 bootstrap samples.
-
-
-# Average solution across many different EFAs with oblique rotations
-EFA_AV <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
-                      method = c("PAF", "ML", "ULS"), rotation = "oblique",
-                      show_progress = FALSE)
-
-# look at solution
-EFA_AV
-#> 
-#> Averaging performed with averaging method mean (trim = 0) across 162 EFAs, varying the following settings: method, init_comm, criterion_type, start_method, rotation, k_promax, P_type, and varimax_type.
-#> 
-#> The error rate is at 0%. Of the solutions that did not result in an error, 100% converged, 0% contained Heywood cases, and 100% were admissible.
-#> 
-#> 
-#> ══ Indicator-to-Factor Correspondences ═════════════════════════════════════════
-#> 
-#> For each cell, the proportion of solutions including the respective indicator-to-factor correspondence. A salience threshold of 0.3 was used to determine indicator-to-factor correspondences.
-#> 
-#>       F1    F2    F3
-#> V1    .00   .01  1.00
-#> V2    .00   .01  1.00
-#> V3    .00   .01  1.00
-#> V4    .00   .01  1.00
-#> V5    .00   .01  1.00
-#> V6    .00   .01  1.00
-#> V7    .00  1.00   .09
-#> V8    .00  1.00   .09
-#> V9    .00  1.00   .09
-#> V10   .00  1.00   .09
-#> V11   .00   .91   .09
-#> V12   .00  1.00   .09
-#> V13  1.00   .00   .06
-#> V14   .94   .00   .06
-#> V15   .99   .00   .06
-#> V16   .94   .00   .06
-#> V17  1.00   .00   .06
-#> V18   .94   .00   .06
-#> 
-#> 
-#> ══ Loadings ════════════════════════════════════════════════════════════════════
-#> 
-#> ── Mean ────────────────────────────────────────────────────────────────────────
-#> 
-#>        F1     F2     F3
-#> V1   -.036   .052   .592
-#> V2    .008   .082   .468
-#> V3    .065   .072   .444
-#> V4    .102   .015   .537
-#> V5    .154   .006   .431
-#> V6   -.059  -.025   .669
-#> V7    .019   .507   .141
-#> V8    .002   .548   .086
-#> V9    .051   .521   .058
-#> V10  -.004   .635  -.003
-#> V11   .028   .345   .259
-#> V12   .038   .618   .052
-#> V13   .580   .103  -.008
-#> V14   .514  -.040   .122
-#> V15   .529   .141  -.010
-#> V16   .521  -.024   .127
-#> V17   .622  -.013   .025
-#> V18   .522   .026   .093
-#> 
-#> 
-#> ── Range ───────────────────────────────────────────────────────────────────────
-#> 
-#>       F1    F2    F3
-#> V1   .300  .630  .159
-#> V2   .245  .492  .142
-#> V3   .263  .436  .181
-#> V4   .343  .506  .193
-#> V5   .309  .390  .212
-#> V6   .336  .703  .174
-#> V7   .092  .254  .460
-#> V8   .078  .218  .494
-#> V9   .069  .177  .474
-#> V10  .098  .207  .596
-#> V11  .147  .327  .332
-#> V12  .082  .210  .574
-#> V13  .308  .283  .655
-#> V14  .346  .211  .519
-#> V15  .283  .253  .633
-#> V16  .350  .210  .526
-#> V17  .366  .300  .626
-#> V18  .331  .206  .556
-#> 
-#> 
-#> 
-#> ══ Factor Intercorrelations from Oblique Solutions ═════════════════════════════
-#> 
-#> ── Mean ────────────────────────────────────────────────────────────────────────
+#> ── Factor Intercorrelations ────────────────────────────────────────────────────
 #> 
 #>       F1     F2     F3
 #> F1  1.000
-#> F2   .503  1.000
-#> F3   .544   .500  1.000
+#> F2   .591  1.000
+#> F3   .621   .596  1.000
+#> 
+#> ── 95% Wald CIs for factor intercorrelations ───────────────────────────────────
+#> 
+#> Factors   est    lower  upper
+#> F1 ~~ F2   .591   .499   .683
+#> F1 ~~ F3   .621   .531   .712
+#> F2 ~~ F3   .596   .503   .690
+#> 
+#> ── Structure Matrix ────────────────────────────────────────────────────────────
+#> 
+#>       F1    F2    F3
+#> V1   .366  .384  .610
+#> V2   .349  .367  .518
+#> V3   .385  .374  .520
+#> V4   .448  .392  .609
+#> V5   .427  .351  .523
+#> V6   .350  .341  .631
+#> V7   .385  .590  .418
+#> V8   .357  .587  .377
+#> V9   .371  .571  .363
+#> V10  .339  .619  .331
+#> V11  .381  .507  .459
+#> V12  .409  .661  .393
+#> V13  .626  .416  .369
+#> V14  .562  .317  .390
+#> V15  .593  .425  .360
+#> V16  .584  .341  .410
+#> V17  .623  .343  .371
+#> V18  .589  .368  .401
+#> 
+#> ── Simple Structure Diagnostics ────────────────────────────────────────────────
+#> 
+#> Items with primary-loading gap < .200:
+#> • V11: F2 = .352, F3 = .230
 #> 
 #> 
-#> ── Range ───────────────────────────────────────────────────────────────────────
+#> ── Variances Accounted for ─────────────────────────────────────────────────────
 #> 
-#>      F1    F2    F3
-#> F1  .000
-#> F2  .827  .000
-#> F3  .712  .995  .000
+#>                      F1     F2     F3
+#> SS loadings        2.225  2.088  1.994
+#> Prop Tot Var        .124   .116   .111
+#> Cum Prop Tot Var    .124   .240   .350
+#> Prop Comm Var       .353   .331   .316
+#> Cum Prop Comm Var   .353   .684  1.000
 #> 
+#> ── Model Fit ───────────────────────────────────────────────────────────────────
 #> 
+#> χ²(102) = 123.75, p = .070
+#> CFI: .99
+#> TLI: .98
+#> RMSEA [90% CI]: .02 [.00; .03]
+#> AIC: -80.25
+#> BIC: -510.14
+#> ECVI: 0.52
+#> CAF: .50
+#> RMSR: .03
+#> SRMR: .03
 #> 
-#> ══ Variances Accounted for ═════════════════════════════════════════════════════
+#> ── Residual Diagnostics ────────────────────────────────────────────────────────
 #> 
-#> ── Mean ────────────────────────────────────────────────────────────────────────
+#> Residual cutoff: |r| > .100
+#> Number of large residuals: 0
+#> Largest absolute residual: .069
 #> 
-#>                  F1     F2     F3
-#> SS loadings    2.105  1.993  2.209
-#> Prop Tot Var    .117   .111   .123
-#> Prop Comm Var   .334   .316   .350
+#> No absolute residuals > .100 occurred.
 #> 
-#> 
-#> ── Range ───────────────────────────────────────────────────────────────────────
-#> 
-#>                  F1     F2     F3
-#> SS loadings    1.761  2.272  3.887
-#> Prop Tot Var    .098   .126   .216
-#> Prop Comm Var   .279   .360   .616
-#> 
-#> 
-#> 
-#> ══ Model Fit ═══════════════════════════════════════════════════════════════════
-#> 
-#>        M (SD) [Min; Max]
-#> 𝜒²: 123.80 ( 0.08) [123.75; 123.92]
-#> df: 102
-#> p: .070 (.001) [.069; .070]
-#> CFI: .99 (.00) [.99; .99]
-#> TLI: .98 (.00) [.98; .98]
-#> RMSEA: .02 (.00) [.02; .02]
-#> AIC: -80.20 ( 0.08) [-80.25; -80.08]
-#> BIC: -510.09 ( 0.08) [-510.14; -509.97]
-#> ECVI:  0.52 ( 0.00) [ 0.52;  0.52]
-#> CAF: .50 (.00) [.50; .50]
-#> RMSR: .03 (.00) [.03; .03]
-#> SRMR: .02 (.00) [.02; .03]
-
-# Perform a Schmid-Leiman transformation
-SL <- SL(EFA_psych)
-
-# Based on a specific salience threshold for the loadings (here: .20):
-factor_corres <- SL$sl[, c("F1", "F2", "F3")] >= .2
-
-# Compute omegas from the Schmid-Leiman solution
-OMEGA(SL, factor_corres = factor_corres)
-#> Omega total, omega hierarchical, omega subscale, H index, explained common variance (ECV), and percent of uncontaminated correlations (PUC) for the general factor (top row) and omegas and H index for the group factors:
-#> 
-#>      tot  hier   sub     H   ECV   PUC
-#> g  0.883 0.750 0.122 0.845 0.661 0.706
-#> F1 0.769 0.498 0.272 0.470            
-#> F2 0.764 0.494 0.270 0.477            
-#> F3 0.745 0.543 0.202 0.391
+#> Inspect the residual matrix for details (e.g., with residuals()).
 ```
 
 ## Citation
@@ -413,4 +953,4 @@ and flexible implementations of exploratory factor analysis tools.
 
 If you want to contribute or report bugs, please open an issue on GitHub
 or email us at <markus.d.steiner@gmail.com> or
-<silvia.grieder@gmail.com>.
+<silvia.steiner.grieder@gmail.com>.

@@ -167,14 +167,20 @@ test_that("an asymptotic covariance over pairwise data reports the listwise over
   # With missing data, an asymptotic covariance (here the DWLS weights) forces listwise
   # deletion even though `use` asks for pairwise-complete estimation; that override is reported.
   expect_message(
-    .prepare_cor_input(gm, cor_method = "poly", acov = "diag",
-                       use = "pairwise.complete.obs", inform_from_data = FALSE),
+    suppressWarnings(
+      .prepare_cor_input(gm, cor_method = "poly", acov = "diag",
+                         use = "pairwise.complete.obs", inform_from_data = FALSE),
+      classes = "efa_cor_sparse_cells"
+    ),
     class = "efa_acov_listwise"
   )
   # Complete data needs no override, so nothing is reported.
   expect_no_message(
-    .prepare_cor_input(g, cor_method = "poly", acov = "diag",
-                       use = "pairwise.complete.obs", inform_from_data = FALSE),
+    suppressWarnings(
+      .prepare_cor_input(g, cor_method = "poly", acov = "diag",
+                         use = "pairwise.complete.obs", inform_from_data = FALSE),
+      classes = "efa_cor_sparse_cells"
+    ),
     class = "efa_acov_listwise"
   )
   # A diagonal (DWLS-weight) covariance is an ordinal construct; requesting it for a Pearson

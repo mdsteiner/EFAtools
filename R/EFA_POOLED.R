@@ -120,21 +120,14 @@
 #' the D2 approximation and should not be interpreted as likelihood-based MI
 #' information criteria. The chi-square pooling rule is D2 (Li, Meng,
 #' Raghunathan & Rubin, 1991) on the information and bootstrap routes and the
-#' single fit's scaled chi-square on the sandwich/MI2S route. D3 and D4 (Chan &
-#' Meng, 2022) are intentionally not offered: D3 needs a fixed-parameter refit
-#' mode that EFAtools does not expose and a Procrustes alignment that the
-#' rotational gauge-invariance shortcut does not justify; D4 sidesteps the gauge
-#' but is structurally undefined for the likelihood-free `PAF`, `ULS`, and
-#' `DWLS` estimators. `lavaan.mi`
-#' likewise falls back to D2 under `pool.robust = TRUE`, the analogue of the
-#' EFAtools sandwich/MI2S route.
+#' single fit's scaled chi-square on the sandwich/MI2S route.
 #'
 #' ## Bootstrap pooling (np-boot)
 #'
 #' If each component `EFA` call was run with `se = "np-boot"` and
 #' returned `replicates`, pooled bootstrap SEs and Wald-type MI confidence
 #' intervals are computed for loadings, communalities, residuals, and, when
-#' applicable, factor correlations and structure coefficients. Importantly, the
+#' applicable, factor correlations and structure coefficients. The
 #' rotated bootstrap loading matrices stored by the component `EFA` calls
 #' are not reused directly, because they were aligned to imputation-specific
 #' targets. Instead, the unrotated bootstrap loading matrices are re-aligned to
@@ -152,8 +145,8 @@
 #'
 #' ## Analytic pooling (information)
 #'
-#' When the component `EFA` calls were instead run with
-#' `se = "information"` (no bootstrap replicates), the unrotated-loading and
+#' When the component `EFA` calls were run with
+#' `se = "information"`, the unrotated-loading and
 #' uniqueness SE matrices that those calls return analytically are pooled
 #' element-wise with Rubin's rules. The within-imputation variance \eqn{U_d} is
 #' taken directly from \eqn{SE_d^2}, the between-imputation variance \eqn{B} is
@@ -319,54 +312,6 @@
 #' carried by \eqn{\tilde\Gamma} rather than by per-parameter Rubin pooling.}
 #' }
 #'
-#' @section Conditions:
-#' `EFA_POOLED()` signals the following classed conditions (catch them by the
-#' class shown; the parenthetical is the remediation):
-#'
-#' *Argument validation.* `efa_pooled_bad_p`, `efa_pooled_bad_ci_level` (aborts:
-#' pass `p` and `rmsea_ci_level` strictly inside 0-1); `efa_pooled_ci_ignored`
-#' (warning: drop the component `ci`; the pooled level is set by `p`).
-#'
-#' *Conformability.* `efa_pooled_min_fits` (abort: supply at least two
-#' imputations), `efa_pooled_dim_mismatch`, `efa_pooled_var_mismatch`,
-#' `efa_pooled_setting_mismatch` (aborts: fit every imputation on the same
-#' variables and dimensions with the same `method`, `rotation`, and
-#' `n_factors`).
-#'
-#' *Standard-error routing.* `efa_pooled_mixed_se` (abort: the component fits use
-#' different `se` methods; re-fit them all with the same `se`).
-#' `efa_pooled_se_unavailable` (warning: the information or np-boot route could
-#' not produce pooled standard errors; the pooled point estimates, residuals, and
-#' fit indices are still returned and `settings$se` is downgraded to `"none"`;
-#' re-fit with adequate data or more replicates, or accept the
-#' point-estimate-only solution).
-#'
-#' *Information route.* `efa_pooled_no_vcov`, `efa_pooled_unreliable_vcov`,
-#' `efa_pooled_analytic_align_meta_missing` (aborts: a fit lacks a usable
-#' `vcov_unrot_loadings` or per-imputation alignment metadata; drop or re-fit it,
-#' or use `align_unrotated = "signed_tucker_congruence"`);
-#' `efa_pooled_analytic_partial_se` (warning); `efa_pooled_rotated_se_unreliable`
-#' (warning: one or more imputations could not supply a usable rotated standard
-#' error, so the affected pooled rotated-loading, factor-correlation, and
-#' structure-coefficient standard errors are returned as `NA`). Through
-#' `EFA_POOLED()` the aborts are caught and re-signalled as
-#' `efa_pooled_se_unavailable`.
-#'
-#' *Bootstrap route.* `efa_pooled_partial_boot`, `efa_pooled_unequal_boot`,
-#' `efa_pooled_min_boot`, `efa_pooled_boot_insufficient`, `efa_pooled_boot_failed`,
-#' `efa_pooled_boot_nonconv` (warnings: re-run the component fits with more, or
-#' more stable, bootstrap replicates).
-#'
-#' *Sandwich/MI2S route.* `efa_pooled_mi2s_acov_not_psd`,
-#' `efa_pooled_mi2s_inputs_inconsistent`, `efa_pooled_mi2s_no_n` (aborts);
-#' `efa_pooled_mi2s_n_too_small`, `efa_pooled_mi2s_alignment_ignored` (warnings).
-#' These aborts propagate directly (no `efa_pooled_se_unavailable` fallback)
-#' because the MI2S point estimates and standard errors share one fit; for a
-#' non-positive-definite pooled covariance, increase the number of imputations.
-#'
-#' *Sample size and fit pooling.* `efa_pooled_no_n`, `efa_pooled_partial_n`,
-#' `efa_pooled_unequal_n`, `efa_pooled_align_failed`,
-#' `efa_consensus_oblique_unsupported`, `efa_pooled_chisq_df`.
 #'
 #' @references
 #' Barnard, J., & Rubin, D. B. (1999). Small-sample degrees of freedom with
@@ -411,7 +356,7 @@
 #' Sriutaisuk, S., Liu, Y., Chung, S., Kim, H., & Gu, F. (2025). Evaluating
 #' imputation-based fit statistics in structural equation modeling with ordinal
 #' data: The MI2S approach. *Educational and Psychological Measurement*, 85(1),
-#' 5-37.
+#' 82-113.
 #'
 #' Tucker, L. R., & Lewis, C. (1973). A reliability coefficient for maximum
 #' likelihood factor analysis. *Psychometrika*, 38(1), 1-10.

@@ -3,7 +3,7 @@
 \docType{data}
 \name{test_models}
 \alias{test_models}
-\title{Four test models used in Grieder and Steiner (2020)}
+\title{Four test models used in Grieder and Steiner (2022)}
 \format{
 A list of 4 lists "baseline", "case_1a", "case_6b", and "case_11b", each with the following elements.
 \describe{
@@ -13,9 +13,9 @@ A list of 4 lists "baseline", "case_1a", "case_6b", and "case_11b", each with th
 }
 }
 \source{
-Grieder, S., & Steiner, M.D. (2020). Algorithmic Jingle Jungle:
-A Comparison of Implementations of Principal Axis Factoring and Promax Rotation
-in R and SPSS. Manuscript in Preparation.
+Grieder, S., & Steiner, M. D. (2022). Algorithmic jingle jungle: A comparison
+of implementations of principal axis factoring and promax rotation in R and SPSS.
+Behavior Research Methods, 54, 54–74. doi: 10.3758/s13428-021-01581-x
 }
 \usage{
 test_models
@@ -23,7 +23,7 @@ test_models
 \description{
 Correlation matrices created from simulated data from four of the
 \code{\link{population_models}} cases, each with strong factor intercorrelations.
-These are used in Grieder & Steiner (2020) to compare the psych and SPSS
+These are used in Grieder & Steiner (2022) to compare the psych and SPSS
 implementations in this package with the actual implementations of the programs.
 For details on the cases, see \code{\link{population_models}}.
 }

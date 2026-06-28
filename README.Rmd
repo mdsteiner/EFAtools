@@ -19,12 +19,11 @@ knitr::opts_chunk$set(
 [![CRAN status](https://www.r-pkg.org/badges/version/EFAtools)](https://CRAN.R-project.org/package=EFAtools)
 [![R-CMD-check](https://github.com/mdsteiner/EFAtools/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/mdsteiner/EFAtools/actions/workflows/R-CMD-check.yaml)
 [![Codecov test coverage](https://codecov.io/gh/mdsteiner/EFAtools/graph/badge.svg)](https://app.codecov.io/gh/mdsteiner/EFAtools)
-[![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.02521/status.svg)](https://doi.org/10.21105/joss.02521)
 
 <!-- badges: end -->
 
-The EFAtools package provides functions to perform exploratory factor analysis (EFA) procedures and compare their solutions. The goal is to provide state-of-the-art factor retention methods and a high degree of flexibility in the EFA procedures. This way, implementations from R psych and SPSS can be compared. Moreover, functions for Schmid-Leiman transformation, and computation of omegas are provided. To speed up the analyses, some of the iterative procedures like principal axis factoring (PAF) are implemented in C++.
+The EFAtools package provides functions to perform exploratory factor analysis (EFA) procedures and compare their solutions. The goal is to provide state-of-the-art factor retention methods and a high degree of flexibility in the EFA procedures. To speed up the analyses, some of the iterative procedures like principal axis factoring (PAF) are implemented in C++.
 
 ## Installation
 
@@ -36,66 +35,81 @@ install.packages("EFAtools")
 You can install the development version from [GitHub](https://github.com/) with:
 
 ```{r eval=FALSE}
-install.packages("devtools")
-devtools::install_github("mdsteiner/EFAtools")
+# install.packages("pak")
+pak::pak("mdsteiner/EFAtools")
 ```
 
-To also build the vignette when installing the development version, use:
 
-```{r eval=FALSE}
-install.packages("devtools")
-devtools::install_github("mdsteiner/EFAtools", build_vignettes = TRUE)
-```
+## Examples
 
-## Example
-
-Here are a few examples on how to perform the analyses with the different types and how to compare the results using the `COMPARE` function. For more details, see the vignette by running `vignette("EFAtools", package = "EFAtools")`. The vignette provides a high-level introduction into the functionalities of the package.
+Here are a few examples of EFAtools functionalities
 
 ```{r fig.height=3}
 # load the package
 library(EFAtools)
+```
+
+### Factor Retention
+
+Use `N_FACTORS()` to test the suitability of the data for factor analysis and to run multiple factor retention criteria with a single function call.
+
+Works on raw-data:
+
+```{r fig.height=3}
 
 # Run multiple factor retention methods
-N_FACTORS(test_models$baseline$cormat, N = 500)
+N_FACTORS(GRiPS_raw)
+```
 
-# A type SPSS EFA to mimick the SPSS implementation with
-# promax rotation
-EFA_SPSS <- EFA(test_models$baseline$cormat, n_factors = 3, type = "SPSS",
-                  rotation = "promax")
+Skips some criteria on correlation input:
 
-# look at solution
-EFA_SPSS
+```{r}
 
-# A type psych EFA to mimick the psych::fa() implementation with
-# promax rotation
-EFA_psych <- EFA(test_models$baseline$cormat, n_factors = 3, type = "psych",
-                  rotation = "promax")
+N_FACTORS(DOSPERT$cormat, N = DOSPERT$N)
 
-# compare the type psych and type SPSS implementations
-COMPARE(EFA_SPSS$rot_loadings, EFA_psych$rot_loadings,
-        x_labels = c("SPSS", "psych"))
+```
 
-# Run EFA and compute standard errors and confidence intervals based
-# on non-parametric bootstrap:
-EFA(GRiPS_raw, n_factors = 1, method = "ML", se = "np-boot")
+### EFA
+
+#### Raw-Data Input
+
+With raw-data input, you can use all functionalities, including sandwich and bootstrap standard errors and DWLS estimation with polychoric correlations or two-stage FIML estimation of correlations.
 
 
-# Average solution across many different EFAs with oblique rotations
-EFA_AV <- EFA_AVERAGE(test_models$baseline$cormat, n_factors = 3, N = 500,
-                      method = c("PAF", "ML", "ULS"), rotation = "oblique",
-                      show_progress = FALSE)
+```{r fig.height=3}
 
-# look at solution
-EFA_AV
+# ULS / MINRES estimation with oblimin rotation and sandwich SEs
+mod <- EFA(DOSPERT_raw, n_factors = 5, method = "ULS", rotation = "oblimin",
+           se = "sandwich")
+mod
+# detailed output with summary()
+summary(mod)
 
-# Perform a Schmid-Leiman transformation
-SL <- SL(EFA_psych)
+#inspect residuals with residuals()
+residuals(mod)
 
-# Based on a specific salience threshold for the loadings (here: .20):
-factor_corres <- SL$sl[, c("F1", "F2", "F3")] >= .2
+# DWLS estimation based on polychoric correlations, with robust sandwich SEs
+mod <- EFA(GRiPS_raw, n_factors = 1, method = "DWLS", cor_method = "poly",
+           se = "sandwich")
+mod
+summary(mod)
+```
 
-# Compute omegas from the Schmid-Leiman solution
-OMEGA(SL, factor_corres = factor_corres)
+
+#### Correlation Input
+
+When you don't have raw data available, you can enter a correlation matrix and sample size. With ML-estimation, you can still get information SEs, but note that they assume multivariate normality.
+
+```{r fig.height=3}
+
+# ML estimation with oblimin rotation and information SEs, based on correlation
+# matrix and N
+mod <- EFA(test_models$baseline$cormat, N = 500,  n_factors = 3, method = "ML",
+           rotation = "oblimin", se = "information")
+mod
+summary(mod)
+
+
 ```
 
 ## Citation
@@ -106,4 +120,4 @@ Steiner, M.D., & Grieder, S.G. (2020). EFAtools: An R package with fast and flex
 
 ## Contribute or Report Bugs
 
-If you want to contribute or report bugs, please open an issue on GitHub or email us at markus.d.steiner@gmail.com or silvia.grieder@gmail.com.
+If you want to contribute or report bugs, please open an issue on GitHub or email us at markus.d.steiner@gmail.com or silvia.steiner.grieder@gmail.com.

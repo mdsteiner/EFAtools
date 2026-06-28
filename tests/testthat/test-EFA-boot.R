@@ -349,12 +349,20 @@ test_that("eigendecomposition guards turn degenerate matrices into errors", {
   diag(R_bad) <- 1
   psi <- rep(0.5, m)
 
-  expect_error(.paf_iter(psi, 0.001, R_bad, 2L, TRUE, 2L, 100L),
-               "Eigendecomposition failed")
-  expect_error(.grad_ml(psi, R_bad, 2L), "Eigendecomposition failed")
-  expect_error(.error_ml(psi, R_bad, 2L), "Eigendecomposition failed")
-  expect_error(.grad_uls(psi, R_bad, 2L), "Eigendecomposition failed")
-  expect_error(.uls_residuals(psi, R_bad, 2L), "Eigendecomposition failed")
+  expect_eigendecomp_error <- function(expr) {
+    # Armadillo writes a diagnostic to stderr before returning failure; capture it
+    # so the test asserts the classed R error without noisy logs.
+    invisible(utils::capture.output(
+      expect_error(force(expr), "Eigendecomposition failed"),
+      type = "message"
+    ))
+  }
+
+  expect_eigendecomp_error(.paf_iter(psi, 0.001, R_bad, 2L, TRUE, 2L, 100L))
+  expect_eigendecomp_error(.grad_ml(psi, R_bad, 2L))
+  expect_eigendecomp_error(.error_ml(psi, R_bad, 2L))
+  expect_eigendecomp_error(.grad_uls(psi, R_bad, 2L))
+  expect_eigendecomp_error(.uls_residuals(psi, R_bad, 2L))
 })
 
 test_that("over-extraction guards turn n_fac >= ncol into errors", {

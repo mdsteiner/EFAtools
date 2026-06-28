@@ -80,7 +80,7 @@
 #' [stats::varimax()] does, and "kaiser" uses the varimax
 #' procedure performed in SPSS. This is the original procedure from Kaiser (1958),
 #' but with slight alterations in the varimax criterion (for details, see
-#' [EFA()] and Grieder & Steiner, 2020).
+#' [EFA()] and Grieder & Steiner, 2022).
 #' Default is `c("svd", "kaiser")`.
 #' @param normalize logical vector. Any combination of TRUE and FALSE.
 #' `TRUE` performs a kaiser normalization before the specified rotation(s).
@@ -274,9 +274,9 @@
 #' correspond to the rownames from the implementations_grid.}
 #' \item{settings}{A list of the settings used.}
 #'
-#' @source Grieder, S., & Steiner, M.D. (2020). Algorithmic Jingle Jungle:
-#' A Comparison of Implementations of Principal Axis Factoring and Promax Rotation
-#'  in R and SPSS. Manuscript in Preparation.
+#' @source Grieder, S., & Steiner, M. D. (2022). Algorithmic jingle jungle: A comparison
+#' of implementations of principal axis factoring and promax rotation in R and SPSS.
+#' Behavior Research Methods, 54, 54–74. doi: 10.3758/s13428-021-01581-x
 #' @source Hendrickson, A. E., & White, P. O. (1964). Promax: A quick method for
 #' rotation to oblique simple structure. British Journal of Statistical Psychology,
 #' 17 , 65–70. doi: 10.1111/j.2044-8317.1964.tb00244.x

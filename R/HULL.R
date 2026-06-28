@@ -364,6 +364,10 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
     subtitle = paste0("Estimation method: ", method)
   )
 
+  out$n_fac_CAF <- unname(out$n_factors["CAF"])
+  out$n_fac_CFI <- unname(out$n_factors["CFI"])
+  out$n_fac_RMSEA <- unname(out$n_factors["RMSEA"])
+
   return(out)
 
 }

@@ -18,9 +18,9 @@ A list of 9 containing EFA results for each of the data sets mentioned above. Ea
 }
 }
 \source{
-Grieder, S., & Steiner, M.D. (2020). Algorithmic Jingle Jungle:
-A Comparison of Implementations of Principal Axis Factoring and Promax Rotation
-in R and SPSS. Manuscript in Preparation.
+Grieder, S., & Steiner, M. D. (2022). Algorithmic jingle jungle: A comparison
+of implementations of principal axis factoring and promax rotation in R and SPSS.
+Behavior Research Methods, 54, 54–74. doi: 10.3758/s13428-021-01581-x
 
 Wolff, H.G., & Preising, K. (2005). Exploring item and higher order factor structure with the Schmid-Leiman solution: Syntax codes for SPSS and SAS. Behavior Research Methods, 37, 48–58. doi: 10.3758/BF03206397
 
@@ -44,7 +44,7 @@ SPSS_27
 }
 \description{
 Various outputs from SPSS (version 27) FACTOR for the IDS-2 (Grob & Hagmann-von Arx, 2018), the WJIV (3 to 5 and 20 to 39 years; McGrew, LaForte, & Schrank, 2014), the DOSPERT (Frey et al., 2017; Weber,
-Blais, & Betz, 2002), the NEO-PI-R (Costa, & McCrae, 1992), and four simulated datasets (baseline, case_1a, case_6b, and case_11b, see \link{test_models} and \link{population_models}) used in Grieder and Steiner (2020).
+Blais, & Betz, 2002), the NEO-PI-R (Costa, & McCrae, 1992), and four simulated datasets (baseline, case_1a, case_6b, and case_11b, see \link{test_models} and \link{population_models}) used in Grieder and Steiner (2022).
 }
 \details{
 The IDS-2, the two WJIV, the DOSPERT, and the NEO-PI-R contain all the above entries, while the four simulated datasets contain only paf_load, var_load, pro_load, and pro_phi.

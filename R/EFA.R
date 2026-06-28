@@ -1,6 +1,6 @@
 #' Exploratory factor analysis (EFA)
 #'
-#' This function does an EFA with either `PAF`, `ML`, `ULS`,
+#' This function does an EFA with either `PAF`, `ML`, `ULS`/`MINRES`,
 #' or `DWLS` with or without subsequent rotation.
 #' All arguments with default value `NA` can be left to default if `type`
 #' is set to one of "EFAtools", "SPSS", or "psych". The respective specifications are
@@ -18,7 +18,7 @@
 #' are deleted listwise, so `N` is taken as the number of complete cases.
 #' @param method character. The estimator used to fit the EFA: "PAF" (principal axis
 #' factoring), "ML" (maximum likelihood), "ULS" (unweighted least squares; "MINRES" is an
-#' accepted synonym returning identical results), or "DWLS" (diagonally weighted least
+#' accepted alias returning identical results), or "DWLS" (diagonally weighted least
 #' squares, for ordinal data). See the *Estimators* section in Details for their
 #' properties and data requirements.
 #' @param rotation character. Either perform no rotation ("none"; default),
@@ -37,7 +37,7 @@
 #'  used, and the following arguments with default NA are left with
 #'  NA, these implementations are executed according to the respective program
 #'  ("psych" and "SPSS") or according to the best solution found in Grieder &
-#'  Steiner (2020; "EFAtools"). Individual properties can be adapted using one of
+#'  Steiner (2022; "EFAtools"). Individual properties can be adapted using one of
 #'  the three types and specifying some of the following arguments. If set to
 #'  "none" additional arguments must be specified depending on the `method`
 #'  and `rotation` used (see details).
@@ -259,7 +259,7 @@
 #'   \eqn{\pm} z * SE). These standard errors assume multivariate normality and a correctly
 #'   specified model; under heavy-tailed data or model misfit they can understate the
 #'   sampling variability, where a bootstrap is more robust. The rotated
-#'   structure-coefficient intervals are, conversely, somewhat conservative for
+#'   structure-coefficient intervals are somewhat conservative for
 #'   high-communality variables, where `"sandwich"` or `"np-boot"` give sharper intervals.
 #' - **"sandwich"** returns robust (Godambe sandwich) standard errors from raw data,
 #'   combining the estimator weight with an asymptotic-distribution-free covariance of the
@@ -302,7 +302,7 @@
 #'
 #' See Lawley and Maxwell (1971) and Jennrich and Thayer (1973) for the information-matrix
 #' standard errors; Jennrich (1973) and Zhang and Preacher (2015) for the rotated
-#' quantities; Browne (1984), Satorra and Bentler (1994), and Asparouhov and Muthen (2010)
+#' quantities; Browne (1984), Satorra and Bentler (1994), and Asparouhov and Muthén (2010)
 #' for the robust standard errors and scaled chi-square; and Yuan and Bentler (2000),
 #' Savalei and Bentler (2009), and Yuan, Marshall, and Bentler (2002) for the two-stage
 #' FIML standard errors and rescaled statistic.
@@ -397,7 +397,7 @@
 #' PAF procedure. The EFAtools type setting combination was the best in terms of accuracy
 #' and number of Heywood cases compared to all the
 #' other setting combinations tested in simulation studies in Grieder & Steiner
-#' (2020), which is why this type is used as a default here.
+#' (2022), which is why this type is used as a default here.
 #'
 #' For varimax, the values of `varimax_type` and `order_type` depend on
 #' the `type` argument.
@@ -433,7 +433,7 @@
 #' `P = abs(A / sqrt(rowSums(A^2))) ^(k + 1) * (sqrt(rowSums(A^2)) / A)`.
 #' As for PAF, the EFAtools type setting combination for promax was the best
 #' compared to the other setting combinations tested in simulation studies in
-#' Grieder & Steiner (2020). Note that all `type` presets keep the EFAtools default
+#' Grieder & Steiner (2022). Note that all `type` presets keep the EFAtools default
 #' Kaiser normalization (`normalize = TRUE`), whereas [psych::fa()] does not
 #' normalize before its promax target rotation; set `normalize = FALSE` to
 #' reproduce the [psych::fa()] promax result exactly.
@@ -541,9 +541,9 @@
 #' \item{vcov_unrot_loadings}{The full unrotated loading covariance matrix the marginal `SE$unrot_loadings` were derived from: a `p * n_factors` by `p * n_factors` numeric matrix in column-major `vec(Lambda)` order. Populated for `se = "information"` (expected-information block) and `se = "sandwich"` (robust V_AA), even when a rotation is applied (the persisted block is always the unrotated one); NA-filled if the analytic covariance is unreliable (a Heywood case or a singular bordered information matrix); `NULL` for `se = "np-boot"` and `se = "none"`.}
 #' \item{Gamma}{The asymptotic covariance of the off-diagonal sample correlations -- the meat of the robust sandwich SEs -- on the variance scale (`Var(rho-hat)`; lavaan's correlation NACOV is `N * Gamma`). A `p (p - 1) / 2` by `p (p - 1) / 2` numeric matrix; rows and columns ordered by [utils::combn()] over the column pairs and labelled `"<var_i>-<var_j>"`. Populated only for `se = "sandwich"`; `NULL` otherwise.}
 #'
-#' @source Grieder, S., & Steiner, M.D. (2020). Algorithmic Jingle Jungle:
-#' A Comparison of Implementations of Principal Axis Factoring and Promax Rotation
-#'  in R and SPSS. Manuscript in Preparation.
+#' @source Grieder, S., & Steiner, M. D. (2022). Algorithmic jingle jungle: A comparison
+#' of implementations of principal axis factoring and promax rotation in R and SPSS.
+#' Behavior Research Methods, 54, 54–74. doi: 10.3758/s13428-021-01581-x
 #' @source Hendrickson, A. E., & White, P. O. (1964). Promax: A quick method for
 #' rotation to oblique simple structure. British Journal of Statistical Psychology,
 #' 17 , 65–70. doi: 10.1111/j.2044-8317.1964.tb00244.x
@@ -568,10 +568,24 @@
 #' @source Satorra, A., & Bentler, P. M. (1994). Corrections to test statistics and
 #' standard errors in covariance structure analysis. In A. von Eye & C. C. Clogg (Eds.),
 #' Latent variables analysis (pp. 399–419). Sage.
-#' @source Asparouhov, T., & Muthen, B. (2010). Simple second order chi-square
+#' @source Asparouhov, T., & Muthén, B. (2010). Simple second order chi-square
 #' correction. Mplus Technical Appendix.
-#' @source Bartlett, M. S. (1951). The effect of standardization on a chi-square
-#' approximation in factor analysis. Biometrika, 38, 337–344. doi: 10.2307/2332580
+#' @source Muthén, B. (1984). A general structural equation model with dichotomous,
+#' ordered categorical, and continuous latent variable indicators. Psychometrika, 49,
+#' 115–132. doi: 10.1007/BF02294210
+#' @source Yuan, K.-H., & Bentler, P. M. (2000). Three likelihood-based methods for mean
+#' and covariance structure analysis with nonnormal missing data. Sociological Methodology,
+#' 30, 165–200. doi: 10.1111/0081-1750.00078
+#' @source Yuan, K.-H., Marshall, L. L., & Bentler, P. M. (2002). A unified approach to
+#' exploratory factor analysis with missing data, nonnormal data, and in the presence of
+#' outliers. Psychometrika, 67, 95–121. doi: 10.1007/BF02294711
+#' @source Savalei, V., & Bentler, P. M. (2009). A two-stage approach to missing data:
+#' Theory and application to auxiliary variables. Structural Equation Modeling, 16, 477–497.
+#' doi: 10.1080/10705510903008238
+#' @source Little, R. J. A., & Rubin, D. B. (2002). Statistical analysis with missing data
+#' (2nd ed.). Wiley.
+#' @source Bartlett, M. S. (1951). The effect of standardization on
+#' approximation in factor analysis. Biometrika, 38, 337–344.
 #' @source Bentler, P. M. (1990). Comparative fit indexes in structural models.
 #' Psychological Bulletin, 107, 238–246. doi: 10.1037/0033-2909.107.2.238
 #' @source Tucker, L. R., & Lewis, C. (1973). A reliability coefficient for maximum
@@ -587,80 +601,54 @@
 #' @export
 #'
 #' @examples
-#' # A type EFAtools (as presented in Steiner and Grieder, 2020) EFA
-#' EFAtools_PAF <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
-#'                     type = "EFAtools", method = "PAF", rotation = "none")
 #'
-#' # A type SPSS EFA to mimick the SPSS implementation (this will throw a warning,
-#' # see below)
-#' SPSS_PAF <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
-#'                 type = "SPSS", method = "PAF", rotation = "none")
+#' # Principal axis factoring with oblimin rotation
+#' mod_oblimin <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
+#'                    rotation = "oblimin")
+#' mod_oblimin
+#' summary(mod_oblimin)
 #'
-#' # A type psych EFA to mimick the psych::fa() implementation
-#' psych_PAF <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
-#'                  type = "psych", method = "PAF", rotation = "none")
+#' # ML estimation with oblimin rotation
+#' mod_oblimin <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
+#'                    method = "ML", rotation = "oblimin")
+#' mod_oblimin
+#' summary(mod_oblimin)
 #'
-#' # Use ML instead of PAF with type EFAtools
-#' EFAtools_ML <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
-#'                    type = "EFAtools", method = "ML", rotation = "none")
-#'
-#' # Use oblimin rotation instead of no rotation with type EFAtools
-#' EFAtools_oblim <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
-#'                       type = "EFAtools", method = "PAF", rotation = "oblimin")
-#'
-#' # Do a PAF without rotation without specifying a type, so the arguments
-#' # can be flexibly specified (this is only recommended if you know what you're
-#' # doing)
-#' PAF_none <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
-#'                 type = "none", method = "PAF", rotation = "none",
-#'                 max_iter = 500, init_comm = "mac", criterion = 1e-4,
-#'                 criterion_type = "sum", abs_eigen = FALSE)
-#'
-#' # Add a promax rotation
-#' PAF_pro <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
-#'                type = "none", method = "PAF", rotation = "promax",
-#'                max_iter = 500, init_comm = "mac", criterion = 1e-4,
-#'                criterion_type = "sum", abs_eigen = FALSE, k = 3,
-#'                P_type = "unnorm", precision= 1e-5, order_type = "eigen",
-#'                varimax_type = "svd")
-#'
-#' # Analytic (expected-information) standard errors for an unrotated ML solution.
-#' # These are returned for the unrotated loadings and the uniquenesses and, unlike the
-#' # bootstrap, can be computed from a correlation matrix as long as N is supplied.
+#' # Analytic (expected-information) standard errors for the above
 #' ML_info <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
-#'                method = "ML", rotation = "none", se = "information")
-#' ML_info$SE$unrot_loadings
+#'                method = "ML", rotation = "oblimin", se = "information")
+#' ML_info
+#' summary(ML_info)
 #'
 #' \donttest{
 #' # Robust (sandwich) standard errors and a scaled chi-square for ordinal raw data.
 #' # These need a polychoric/tetrachoric correlation method and method ML, ULS, or DWLS.
 #' DWLS_rob <- EFA(DOSPERT_raw, n_factors = 6, cor_method = "poly",
 #'                 method = "DWLS", rotation = "oblimin", se = "sandwich")
-#' DWLS_rob$SE$rot_loadings
-#' DWLS_rob$fit_indices$chi      # the scaled (Satorra-Bentler) chi-square
+#' DWLS_rob
+#' summary(DWLS_rob)
 #'
 #' # The same robust SEs and scaled chi-square for continuous data: a Pearson
 #' # correlation with method ML or ULS (the fourth-moment ADF covariance).
 #' ML_rob <- EFA(GRiPS_raw, n_factors = 1, cor_method = "pearson",
 #'               method = "ML", rotation = "none", se = "sandwich")
-#' ML_rob$SE$unrot_loadings
+#' ML_rob
+#' summary(ML_rob)
 #' }
 #'
 #' \donttest{
 #' # Two-stage FIML correlations from raw data with missing values: the saturated
 #' # multivariate-normal moments are EM-estimated (assuming the data are missing at
-#' # random) and the standardized covariance is analysed. This matches
-#' # psych::corFiml() followed by psych::fa(), not lavaan::efa(missing = "ml").
+#' # random) and the standardized covariance is analysed.
 #' x_miss <- GRiPS_raw
 #' x_miss[cbind(1:20, 1)] <- NA
 #' EFA_fiml <- EFA(x_miss, n_factors = 1, method = "ML", cor_method = "fiml")
-#' EFA_fiml$unrot_loadings
+#' EFA_fiml
 #' }
 #'
 #' \dontrun{
 #' # Bootstrap standard errors from raw data, reproducible via a fixed seed and run
-#' # in parallel across replicates. Keep the number of workers small (here 2) so the
-#' # workers do not over-subscribe the cores against a multi-threaded BLAS.
+#' # in parallel across replicates.
 #' future::plan(future::multisession, workers = 2)
 #' EFA_boot <- EFA(GRiPS_raw, n_factors = 1, method = "PAF", rotation = "none",
 #'                 se = "np-boot", b_boot = 1000, seed = 42)

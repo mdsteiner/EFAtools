@@ -5,7 +5,10 @@
 # fit-index handling.
 
 x_dwls <- DOSPERT_raw[stats::complete.cases(DOSPERT_raw), ]
-pc_dwls <- .polychoric(x_dwls, acov = "diag")
+pc_dwls <- suppressWarnings(
+  .polychoric(x_dwls, acov = "diag"),
+  classes = "efa_cor_sparse_cells"
+)
 R_dwls <- pc_dwls$R
 W_dwls <- .poly_weight_matrix(pc_dwls$acov, ncol(R_dwls))
 

@@ -1,7 +1,7 @@
 #' population_models
 #'
 #' Population factor models, some of which (baseline to case_11e) used for the
-#' simulation analyses reported in Grieder and Steiner (2019). All combinations
+#' simulation analyses reported in Grieder and Steiner (2022). All combinations
 #' of the pattern matrices and the factor
 #' intercorrelations were used in the simulations. Many models are based on cases
 #' used in de Winter and Dodou (2012).
@@ -63,8 +63,8 @@
 #'   \item{mixed}{(matrix) - Matrix of mixed (around .3, .5, and .7; smoothing was necessary for the matrix to be positive definite) factor intercorrelations.}
 #'   \item{strong}{(matrix) - Matrix of strong factor intercorrelations of .7. Same intercorrelations as used in de Winter and Dodou (2012).}
 #'  }
-#' @source Grieder, S., & Steiner, M.D. (2020). Algorithmic Jingle Jungle:
-#' A Comparison of Implementations of Principal Axis Factoring and Promax Rotation
-#'  in R and SPSS. Manuscript in Preparation.
+#' @source Grieder, S., & Steiner, M. D. (2022). Algorithmic jingle jungle: A comparison
+#' of implementations of principal axis factoring and promax rotation in R and SPSS.
+#' Behavior Research Methods, 54, 54–74. doi: 10.3758/s13428-021-01581-x
 #' @source de Winter, J.C.F., & Dodou, D. (2012). Factor recovery by principal axis factoring and maximum likelihood factor analysis as a function of factor pattern and sample size. Journal of Applied Statistics. 39.
 "population_models"
