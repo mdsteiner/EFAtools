@@ -102,7 +102,7 @@ function) and provide a summary across the different solutions.</p>
 <span>  start_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"psych"</span>, <span class="st">"factanal"</span><span class="op">)</span>,</span>
 <span>  use <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pairwise.complete.obs"</span>, <span class="st">"all.obs"</span>, <span class="st">"complete.obs"</span>, <span class="st">"everything"</span>,</span>
 <span>    <span class="st">"na.or.complete"</span><span class="op">)</span>,</span>
-<span>  cor_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pearson"</span>, <span class="st">"spearman"</span>, <span class="st">"kendall"</span>, <span class="st">"poly"</span>, <span class="st">"tetra"</span><span class="op">)</span>,</span>
+<span>  cor_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pearson"</span>, <span class="st">"spearman"</span>, <span class="st">"kendall"</span>, <span class="st">"poly"</span>, <span class="st">"tetra"</span>, <span class="st">"fiml"</span><span class="op">)</span>,</span>
 <span>  show_progress <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -293,10 +293,16 @@ is given as input. Default is "pairwise.complete.obs".</p></dd>
 
 <dt id="arg-cor-method">cor_method<a class="anchor" aria-label="anchor" href="#arg-cor-method"></a></dt>
 <dd><p>character. Correlation computed from raw data: <code>"pearson"</code>,
-<code>"spearman"</code>, or <code>"kendall"</code> (passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>), or <code>"poly"</code> /
+<code>"spearman"</code>, or <code>"kendall"</code> (passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>), <code>"poly"</code> /
 <code>"tetra"</code> for polychoric / tetrachoric correlations of ordinal / binary data
-(a two-step estimator with no empty-cell continuity correction).
-Default is "pearson".</p></dd>
+(a two-step estimator with no empty-cell continuity correction), or <code>"fiml"</code>
+for a two-stage full-information maximum-likelihood correlation from raw data
+with missing values. With <code>"fiml"</code> the saturated multivariate-normal mean and
+covariance are estimated by an EM algorithm assuming the data are missing at
+random and the standardized covariance is analysed, reproducing
+<code><a href="https://rdrr.io/pkg/psych/man/corFiml.html" class="external-link">psych::corFiml()</a></code> followed by <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code> and
+<code>lavaan(missing = "two.stage")</code>, <em>not</em> <code>lavaan::efa(missing = "ml")</code> (see
+<code><a href="EFA.html">EFA()</a></code> and the details). Default is "pearson".</p></dd>
 
 
 <dt id="arg-show-progress">show_progress<a class="anchor" aria-label="anchor" href="#arg-show-progress"></a></dt>
@@ -378,6 +384,19 @@ combinations for the to-be-performed EFAs. These settings are then entered as
 arguments to the <code><a href="EFA.html">EFA()</a></code> function and the EFAs are run in a second
 step. After all EFAs are run, the factor solutions are averaged and their
 variability determined in a third step.</p>
+<p>When raw data are supplied, the correlation matrix is computed once before the
+grid is run and reused for every EFA in it. Under <code>cor_method = "fiml"</code> this
+means the saturated multivariate-normal moments are EM-estimated a single time
+(from the raw data with missing values, assuming the data are missing at
+random) and the resulting two-stage correlation is analysed by every solution
+in the grid; the EM is not re-run per solution. Under <code>cor_method = "fiml"</code>,
+<code>use</code> does not select cases (every case contributes to the EM). The averaged
+loadings and communalities are then the two-stage FIML estimates, but the
+averaged Chi-Square and the indices derived from it (CFI, TLI, RMSEA, AIC, BIC,
+ECVI) are the ordinary ML/ULS discrepancy statistics on the EM correlation, not
+the corrected two-stage (Satorra-Bentler) statistics that a standalone
+<code><a href="EFA.html">EFA()</a></code> with <code>cor_method = "fiml"</code> reports; in particular the averaged AIC and
+BIC are finite here rather than <code>NA</code>.</p>
 <p>The grid containing the setting combinations is produced based on the entries
 to the respective arguments. To this end, all possible combinations resulting
 in unique EFA models are considered. That is, if, for example, the <code>type</code>
@@ -480,6 +499,16 @@ and is purely descriptive; it is not the p-value of any pooled chi-square test.<
 <span class="r-in"><span><span class="va">Aver_rot</span> <span class="op">&lt;-</span> <span class="fu">EFA_AVERAGE</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, N <span class="op">=</span> <span class="fl">500</span>,</span></span>
 <span class="r-in"><span>                         method <span class="op">=</span> <span class="st">"ML"</span>, rotation <span class="op">=</span> <span class="st">"oblique"</span>, type <span class="op">=</span> <span class="st">"EFAtools"</span>,</span></span>
 <span class="r-in"><span>                         start_method <span class="op">=</span> <span class="st">"psych"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+<span class="r-in"><span><span class="co"># Two-stage FIML correlations from raw data with missing values: the EM</span></span></span>
+<span class="r-in"><span><span class="co"># saturated moments are estimated once and the resulting correlation is</span></span></span>
+<span class="r-in"><span><span class="co"># averaged across the grid of EFAs.</span></span></span>
+<span class="r-in"><span><span class="va">x_miss</span> <span class="op">&lt;-</span> <span class="va">GRiPS_raw</span></span></span>
+<span class="r-in"><span><span class="va">x_miss</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">20</span>, <span class="fl">1</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span></span>
+<span class="r-in"><span><span class="va">Aver_fiml</span> <span class="op">&lt;-</span> <span class="fu">EFA_AVERAGE</span><span class="op">(</span><span class="va">x_miss</span>, n_factors <span class="op">=</span> <span class="fl">1</span>, method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PAF"</span>, <span class="st">"ML"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>                         cor_method <span class="op">=</span> <span class="st">"fiml"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

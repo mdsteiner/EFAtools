@@ -991,8 +991,8 @@ but 25 is enough to show the difference):</p>
 <span><span class="co">#&gt;              PARALLEL(DOSPERT_sub, eigen_type = "SMC", n_datasets = 25)</span></span>
 <span><span class="co">#&gt;  psych::fa.parallel(DOSPERT_sub, SMC = TRUE, plot = FALSE, n.iter = 25)</span></span>
 <span><span class="co">#&gt;       min       lq     mean   median       uq      max neval</span></span>
-<span><span class="co">#&gt;  106.9779 133.3993 141.1726 137.3028 148.5157 225.3379   100</span></span>
-<span><span class="co">#&gt;  123.7785 133.0021 139.3811 135.1205 143.5553 271.8953   100</span></span></code></pre></div>
+<span><span class="co">#&gt;  114.6303 138.4170 144.8508 141.9342 151.9336 160.2063   100</span></span>
+<span><span class="co">#&gt;  134.5098 138.5593 145.1835 141.8166 150.9253 177.1546   100</span></span></code></pre></div>
 <p>Moreover, the following code compares the PAF implementation (of type
 “psych”) of the EFAtools package with the one from the psych
 package:</p>
@@ -1002,12 +1002,12 @@ package:</p>
 <span>  <span class="fu">psych</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">fa</a></span><span class="op">(</span><span class="va">DOSPERT_raw</span>, <span class="fl">6</span>, rotate <span class="op">=</span> <span class="st">"none"</span>, fm <span class="op">=</span> <span class="st">"pa"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt; Unit: milliseconds</span></span>
-<span><span class="co">#&gt;                                                   expr     min       lq</span></span>
-<span><span class="co">#&gt;                                    EFA(DOSPERT_raw, 6) 17.2956 24.62935</span></span>
-<span><span class="co">#&gt;  psych::fa(DOSPERT_raw, 6, rotate = "none", fm = "pa") 24.8526 33.95684</span></span>
+<span><span class="co">#&gt;                                                   expr      min       lq</span></span>
+<span><span class="co">#&gt;                                    EFA(DOSPERT_raw, 6) 17.93285 24.95999</span></span>
+<span><span class="co">#&gt;  psych::fa(DOSPERT_raw, 6, rotate = "none", fm = "pa") 25.06408 34.08280</span></span>
 <span><span class="co">#&gt;      mean   median       uq      max neval</span></span>
-<span><span class="co">#&gt;  24.70288 24.86917 25.02910 29.15193   100</span></span>
-<span><span class="co">#&gt;  35.49876 34.26387 38.39693 43.57231   100</span></span></code></pre></div>
+<span><span class="co">#&gt;  25.78238 25.17409 25.32361 112.0380   100</span></span>
+<span><span class="co">#&gt;  36.19658 34.33897 38.54275 126.4074   100</span></span></code></pre></div>
 <p>While these differences are not large, they grow larger the more
 iterations the procedures need, which is usually the case if solutions
 are more tricky to find. Especially for simulations this might come in

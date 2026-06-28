@@ -100,7 +100,7 @@ performed by rotation engines built into the package.</p>
 <span>  precision <span class="op">=</span> <span class="fl">1e-05</span>,</span>
 <span>  order_type <span class="op">=</span> <span class="cn">NA</span>,</span>
 <span>  start_method <span class="op">=</span> <span class="st">"psych"</span>,</span>
-<span>  cor_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pearson"</span>, <span class="st">"spearman"</span>, <span class="st">"kendall"</span>, <span class="st">"poly"</span>, <span class="st">"tetra"</span><span class="op">)</span>,</span>
+<span>  cor_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pearson"</span>, <span class="st">"spearman"</span>, <span class="st">"kendall"</span>, <span class="st">"poly"</span>, <span class="st">"tetra"</span>, <span class="st">"fiml"</span><span class="op">)</span>,</span>
 <span>  b_boot <span class="op">=</span> <span class="fl">1000</span>,</span>
 <span>  ci <span class="op">=</span> <span class="fl">0.95</span>,</span>
 <span>  randomStarts <span class="op">=</span> <span class="fl">100</span>,</span>
@@ -177,66 +177,29 @@ are deleted listwise, so <code>N</code> is taken as the number of complete cases
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
-<dd><p>character. One of "PAF", "ML", "ULS", or "DWLS" to use principal axis
-factoring, maximum likelihood, unweighted least squares, or diagonally weighted least
-squares, respectively, to fit the EFA. "MINRES" is accepted as a synonym for "ULS":
-minimum residual and unweighted least squares are two names for the same estimator and
-return identical results. "DWLS" is the recommended estimator for ordinal data: it
-weights each correlation residual by the inverse of the polychoric correlation's
-asymptotic variance, and therefore requires raw ordinal data together with
-<code>cor_method = "poly"</code> or <code>"tetra"</code> (it has no fallback for a supplied correlation
-matrix or a continuous <code>cor_method</code>).</p></dd>
+<dd><p>character. The estimator used to fit the EFA: "PAF" (principal axis
+factoring), "ML" (maximum likelihood), "ULS" (unweighted least squares; "MINRES" is an
+accepted synonym returning identical results), or "DWLS" (diagonally weighted least
+squares, for ordinal data). See the <em>Estimators</em> section in Details for their
+properties and data requirements.</p></dd>
 
 
 <dt id="arg-rotation">rotation<a class="anchor" aria-label="anchor" href="#arg-rotation"></a></dt>
 <dd><p>character. Either perform no rotation ("none"; default),
 an orthogonal rotation ("varimax", "equamax", "quartimax", "geominT",
 "bentlerT", or "bifactorT"), or an oblique rotation ("promax", "oblimin",
-"quartimin", "simplimax", "bentlerQ", "geominQ", or "bifactorQ").</p></dd>
+"quartimin", "simplimax", "bentlerQ", "geominQ", or "bifactorQ"). See the
+<em>Rotations</em> section in Details for their properties and known issues.</p></dd>
 
 
 <dt id="arg-se">se<a class="anchor" aria-label="anchor" href="#arg-se"></a></dt>
-<dd><p>character. Whether and how standard errors should be computed. One of
-"none" (default, no standard errors), "information", "sandwich", or "np-boot".
-Availability in brief: "information" requires <code>method = "ML"</code>; "sandwich" requires
-raw data (ordinal <code>cor_method = "poly"</code>/<code>"tetra"</code> with "ML"/"ULS"/"DWLS", or
-continuous <code>cor_method = "pearson"</code> with "ML"/"ULS"); "np-boot" requires raw data;
-and the analytic methods are unavailable with the "promax" and "simplimax" rotations.
-"np-boot" draws a non-parametric bootstrap and needs raw data. "information"
-returns analytic standard errors from the expected (Fisher) information matrix of the
-maximum-likelihood solution: for the unrotated loadings and uniquenesses, and – when a
-rotation is applied – for the rotated loadings, the factor correlations, the structure
-coefficients, and the communalities. The rotated standard errors are obtained by propagating
-the unrotated-loading covariance through the rotation by the delta method (Jennrich, 1973);
-because rotated quantities are identification-invariant they are directly comparable across
-programs (the <code>"promax"</code> and <code>"simplimax"</code> rotations are excluded, having no usable analytic
-rotation Jacobian). Unlike the bootstrap it also works from a correlation matrix as long as
-<code>N</code> is supplied. The information-matrix
-covariance is the inverse expected information under the identification constraint that
-\(\Lambda' \Psi^{-1} \Lambda\) is diagonal, scaled by \(1 / (N - 1)\); the associated
-confidence intervals are Wald intervals (estimate \(\pm\) z * SE). These analytic standard
-errors assume multivariate normality and a correctly specified model; under heavy-tailed data
-or model misfit they can understate the sampling variability, where a bootstrap
-(<code>se = "np-boot"</code>) is more robust. The rotated structure-coefficient intervals are, conversely,
-somewhat conservative for high-communality variables; <code>"sandwich"</code> or <code>"np-boot"</code> give sharper
-structure intervals there. "sandwich" returns robust (Godambe sandwich) standard
-errors from raw data, combining the estimator weight with an asymptotic-distribution-free
-covariance of the correlations, so it stays valid under non-normality and weight
-misspecification (Browne, 1984; Satorra &amp; Bentler, 1994). It is available either for ordinal
-data with <code>cor_method = "poly"</code> or <code>"tetra"</code> and <code>method</code> one of <code>"ML"</code>, <code>"ULS"</code>, or <code>"DWLS"</code>
-(the meat is the polychoric / tetrachoric asymptotic covariance), or for continuous data with
-<code>cor_method = "pearson"</code> and <code>method = "ML"</code> or <code>"ULS"</code> (the meat is the fourth-moment ADF
-covariance of the sample correlations, the basis of the MLM / MLR robust statistics). It
-reports the same standard errors as <code>"information"</code>, propagated by the same delta method, and
-additionally fills the model fit's chi-square block with a scaled (Satorra-Bentler /
-scaled-and-shifted) chi-square. Because the asymptotic covariance must describe the same
-cases as the correlation matrix, the sandwich (like <code>method = "DWLS"</code>) is computed on the
-listwise-complete cases; on data with missing values the reported <code>N</code>, the correlation matrix,
-and the point estimate therefore reflect the complete cases regardless of <code>use</code>. Like
-<code>"information"</code>, it is not available with <code>"promax"</code> or
-<code>"simplimax"</code>. See Lawley and Maxwell (1971) and Jennrich and Thayer (1973); for the rotated
-quantities, Jennrich (1973) and Zhang and Preacher (2015); for the robust standard errors and
-scaled chi-square, Browne (1984), Satorra and Bentler (1994), and Asparouhov and Muthen (2010).</p></dd>
+<dd><p>character. Whether and how to compute standard errors (and matching
+confidence intervals): "none" (default, no standard errors), "information" (analytic
+standard errors from the expected Fisher information of the ML solution), "sandwich"
+(robust Godambe sandwich standard errors from raw data), or "np-boot" (non-parametric
+bootstrap). The methods differ in their assumptions, their data requirements, and which
+estimator, rotation, and <code>cor_method</code> combinations they support; see the <em>Standard
+errors</em> section in Details.</p></dd>
 
 
 <dt id="arg-type">type<a class="anchor" aria-label="anchor" href="#arg-type"></a></dt>
@@ -348,16 +311,18 @@ Solutions are very similar.</p></dd>
 
 
 <dt id="arg-cor-method">cor_method<a class="anchor" aria-label="anchor" href="#arg-cor-method"></a></dt>
-<dd><p>character. Correlation computed from raw data: <code>"pearson"</code>,
-<code>"spearman"</code>, or <code>"kendall"</code> (passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>), or <code>"poly"</code> /
-<code>"tetra"</code> for polychoric / tetrachoric correlations of ordinal / binary data
-(a two-step estimator with no empty-cell continuity correction, matching
-<code><a href="https://rdrr.io/pkg/polycor/man/polychor.html" class="external-link">polycor::polychor()</a></code> and <code>lavaan</code>).
-Default is "pearson".</p></dd>
+<dd><p>character. How the correlation is computed from raw data:
+<code>"pearson"</code>, <code>"spearman"</code>, or <code>"kendall"</code> (passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>); <code>"poly"</code> /
+<code>"tetra"</code> for polychoric / tetrachoric correlations of ordinal / binary data; or
+<code>"fiml"</code> for a two-stage full-information maximum-likelihood correlation from raw data
+with missing values. See the <em>Correlation methods</em> section in Details for their
+properties and the combinations they support. Default is "pearson".</p></dd>
 
 
 <dt id="arg-b-boot">b_boot<a class="anchor" aria-label="anchor" href="#arg-b-boot"></a></dt>
-<dd><p>numeric. The number of bootstrap samples to draw. Default is 1000.</p></dd>
+<dd><p>numeric. The number of bootstrap samples to draw. Default is 1000.
+Under <code>cor_method = "fiml"</code> each bootstrap sample re-runs the EM moment
+estimation, so a smaller value may be advisable.</p></dd>
 
 
 <dt id="arg-ci">ci<a class="anchor" aria-label="anchor" href="#arg-ci"></a></dt>
@@ -446,9 +411,16 @@ Residual (RMSR), Standardized Root Mean Squared Residual (SRMR; Bentler, 1995),
 and the common part accounted for (CAF) index as proposed by Lorenzo-Seva,
 Timmerman, &amp; Kiers (2011). The model Chi Square is the Bartlett-corrected
 discrepancy (matching <code><a href="https://rdrr.io/r/stats/factanal.html" class="external-link">stats::factanal()</a></code> for ML), and the AIC, BIC, and ECVI are
-derived from it. AIC and BIC are the minimum-fit-function (Chi-Square-based)
-forms <code>Chi Square - 2 * df</code> and <code>Chi Square - log(N) * df</code> (as in <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code>),
-not the likelihood-based criteria, and can therefore be negative. The RMSEA, CFI, and
+derived from it. When <code>cor_method = "fiml"</code> the model and baseline Chi Square are
+instead the Satorra-Bentler-corrected two-stage statistics (Yuan, Marshall, &amp;
+Bentler, 2002): the normal-theory discrepancy on the EM-estimated correlation,
+rescaled by the saturated FIML asymptotic covariance, because the plain two-stage
+likelihood-ratio statistic is not asymptotically <code>Chi^2(df)</code> under the two-stage
+estimator. For ML and ULS the AIC, BIC, and ECVI are the minimum-fit-function
+(Chi-Square-based) forms <code>Chi Square - 2 * df</code> and <code>Chi Square - log(N) * df</code> (as in
+<code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code>), not the likelihood-based criteria, and can therefore be negative; they
+are left <code>NA</code> for any scaled (moment-adjusted) Chi Square, i.e. under
+<code>cor_method = "fiml"</code> and with <code>se = "sandwich"</code>. The RMSEA, CFI, and
 TLI instead place the model (and, for CFI and TLI, the baseline) noncentrality on the
 uncorrected <code>N - 1</code> discrepancy scale (Browne &amp; Cudeck, 1992; Bentler, 1990; Tucker &amp;
 Lewis, 1973) on which these approximation indices are defined, so the Bartlett
@@ -456,7 +428,8 @@ small-sample correction enters only the Chi Square test, not the approximate-fit
 indices. For PAF
 and DWLS, only CAF, RMSR, SRMR, and df are computed and the Chi-Square-derived indices
 are returned as <code>NA</code>; for DWLS with <code>se = "sandwich"</code> the full block is instead filled
-from a scaled Chi Square (see Details). With <code>se = "sandwich"</code> the <code>fit_indices</code> also
+from a scaled Chi Square (see Details). Whenever the Chi Square is a scaled one
+(<code>se = "sandwich"</code>, or any <code>cor_method = "fiml"</code> fit) the <code>fit_indices</code> also
 carry the scaled-statistic components: <code>chi_scaling</code> (the multiplier a in the
 scaled-and-shifted statistic a * T + b, i.e. the reciprocal of <span class="pkg">lavaan</span>'s
 <code>chisq.scaling.factor</code>), <code>chi_shift</code> (b), <code>chi_unscaled</code> (the unscaled statistic T),
@@ -525,7 +498,245 @@ arguments accordingly. Another way is to use it more flexibly by explicitly
 specifying all arguments used and set <code>type</code> to "none" (see examples).
 A mix of the two can also be done by specifying a <code>type</code> as well as
 additional arguments. However, this will throw warnings to avoid unintentional
-deviations from the implementations according to the specified <code>type</code>.</p>
+deviations from the implementations according to the specified <code>type</code>.</p><div class="section">
+<h3 id="estimators">Estimators<a class="anchor" aria-label="anchor" href="#estimators"></a></h3>
+
+
+<p>The estimator is chosen with <code>method</code>.</p><ul><li><p><strong>PAF</strong> (principal axis factoring) iteratively estimates the communalities and makes
+no distributional assumptions, which makes it robust and a good general-purpose
+default. Because it minimises no likelihood or weighted discrepancy it provides no
+model chi-square, and hence no chi-square-based fit indices (see <em>Fit indices</em>). The
+PAF iteration is governed by <code>init_comm</code>, <code>criterion</code>, <code>criterion_type</code>, <code>max_iter</code>,
+and <code>abs_eigen</code> (set by <code>type</code>; see <em>Using the type presets</em>).</p></li>
+<li><p><strong>ML</strong> (maximum likelihood) maximises the normal-theory likelihood. It yields the
+full set of fit indices and is the only estimator with analytic expected-information
+standard errors (<code>se = "information"</code>), but it assumes multivariate normality and is
+the most prone to Heywood (improper) cases. Its starting values are set by
+<code>start_method</code>.</p></li>
+<li><p><strong>ULS</strong> (unweighted least squares) minimises the sum of squared correlation
+residuals. "MINRES" (minimum residual) is the same estimator under a different name
+and returns identical results. It makes no normality assumption, is robust to mild
+non-normality, and yields the full set of fit indices.</p></li>
+<li><p><strong>DWLS</strong> (diagonally weighted least squares) is the recommended estimator for ordinal
+data. It weights each off-diagonal correlation residual by the inverse asymptotic
+variance of the corresponding polychoric correlation (Muthén, 1984), reproducing the
+loadings of a diagonally weighted least squares fit (e.g.
+<code>lavaan::efa(..., estimator = "DWLS")</code>). It therefore requires raw ordinal data with
+<code>cor_method = "poly"</code> or <code>"tetra"</code> and has no fallback for a supplied correlation
+matrix or a continuous <code>cor_method</code>. Because the weighting follows the polychoric
+asymptotic covariance, the matrix and the weights are estimated on the
+listwise-complete cases. Its fit-index behaviour is described under <em>Fit indices</em>.</p></li>
+</ul></div>
+
+<div class="section">
+<h3 id="correlation-methods">Correlation methods<a class="anchor" aria-label="anchor" href="#correlation-methods"></a></h3>
+
+
+<p>When raw data are supplied, <code>cor_method</code> selects how the correlation matrix is computed
+(it is ignored when a correlation matrix is entered directly).</p><ul><li><p><strong>"pearson"</strong> (default), <strong>"spearman"</strong>, and <strong>"kendall"</strong> are passed to
+<code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code> for continuous or rank data.</p></li>
+<li><p><strong>"poly"</strong> / <strong>"tetra"</strong> compute polychoric / tetrachoric correlations for ordinal /
+binary data, assuming an underlying bivariate-normal latent variable. They use a
+two-step estimator with no empty-cell continuity correction, matching
+<code><a href="https://rdrr.io/pkg/polycor/man/polychor.html" class="external-link">polycor::polychor()</a></code> and <code>lavaan</code>. The polychoric asymptotic covariance that
+underlies both the DWLS weights and the scaled (sandwich) statistic relies on
+large-sample theory that degrades for empty or near-empty response-category
+combinations; with very sparse cells the resulting weights and standard errors can be
+unreliable (a warning is issued when empty cells are present), so interpret them with
+caution and consider collapsing rare categories.</p></li>
+<li><p><strong>"fiml"</strong> estimates a two-stage full-information maximum-likelihood correlation. The
+saturated multivariate-normal mean and covariance are estimated from raw data with
+missing values by an EM algorithm assuming the data are missing at random (Yuan,
+Marshall, &amp; Bentler, 2002; Little &amp; Rubin, 2002), and the standardized covariance is
+then analysed. This reproduces <code><a href="https://rdrr.io/pkg/psych/man/corFiml.html" class="external-link">psych::corFiml()</a></code> followed by <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code> and
+<code>lavaan(missing = "two.stage")</code>, <em>not</em> <code>lavaan::efa(missing = "ml")</code>, so the point
+estimates are not expected to match the latter. The model fit indices are corrected
+two-stage statistics (see <em>Fit indices</em>). <code>"fiml"</code> uses every case and handles the
+missingness itself, so <code>use</code> is ignored; it supplies a continuous (Pearson-type)
+correlation only and is therefore not compatible with <code>method = "DWLS"</code>. Standard
+errors are available analytically for <code>method = "ML"</code> or <code>"ULS"</code> and, for any method,
+by the non-parametric bootstrap (see <em>Standard errors</em>). For multiply imputed data,
+<code><a href="EFA_POOLED.html">EFA_POOLED()</a></code> is the alternative route to handling missingness.</p></li>
+</ul></div>
+
+<div class="section">
+<h3 id="rotations">Rotations<a class="anchor" aria-label="anchor" href="#rotations"></a></h3>
+
+
+<p>A rotation transforms the unrotated loadings toward a simpler, more interpretable
+pattern; all rotations are performed by rotation engines built into the package.
+Orthogonal rotations keep the factors uncorrelated, whereas oblique rotations let them
+correlate (returning a pattern matrix, a structure matrix, and the factor
+intercorrelations <code>Phi</code>) and are usually more realistic for psychological constructs.</p>
+<p>Orthogonal rotations:</p><ul><li><p><strong>varimax</strong> maximises the variance of the squared loadings within each factor (column
+simplicity). It is the most widely used orthogonal rotation and spreads variance
+across factors rather than concentrating it in a general factor.</p></li>
+<li><p><strong>quartimax</strong> simplifies the variables (rows) so that each loads mainly on one factor;
+it tends to produce a strong general factor.</p></li>
+<li><p><strong>equamax</strong> is a Crawford-Ferguson compromise between varimax (column) and quartimax
+(row) simplicity.</p></li>
+<li><p><strong>geominT</strong> uses a geometric-mean criterion that rewards a sparse pattern and
+tolerates variables with cross-loadings; a smaller offset <code>delta</code> gives a sparser
+solution but sharper local minima.</p></li>
+<li><p><strong>bentlerT</strong> uses Bentler's invariant pattern simplicity criterion.</p></li>
+<li><p><strong>bifactorT</strong> is the Jennrich-Bentler orthogonal bifactor criterion: a general factor
+plus group factors (bifactor simple structure).</p></li>
+</ul><p>Oblique rotations:</p><ul><li><p><strong>promax</strong> is a fast two-step rotation: a varimax solution is raised to a power
+(controlled by <code>k</code> and <code>P_type</code>) to form a target that is then fitted obliquely. It is
+the common, inexpensive oblique default.</p></li>
+<li><p><strong>oblimin</strong> is a flexible oblique family controlled by <code>gam</code> (default 0); a good
+general-purpose criterion.</p></li>
+<li><p><strong>quartimin</strong> is oblimin pinned at <code>gam = 0</code>; a robust default oblique criterion.</p></li>
+<li><p><strong>simplimax</strong> drives the <code>k</code> smallest loadings toward zero. Its criterion is only
+piecewise smooth, so it is the most prone to local minima and relies on several
+<code>randomStarts</code>.</p></li>
+<li><p><strong>bentlerQ</strong> is the oblique Bentler invariant pattern simplicity criterion.</p></li>
+<li><p><strong>geominQ</strong> is the oblique geomin criterion; it handles complex (cross-loading)
+structure well but is multimodal, so it benefits from more <code>randomStarts</code> (and uses a
+more thorough multi-start search internally).</p></li>
+<li><p><strong>bifactorQ</strong> is the oblique (correlated) Jennrich-Bentler bifactor criterion.</p></li>
+</ul><p>The criterion-based rotations (all except varimax and promax) are fitted by gradient
+projection with <code>randomStarts</code> random starts to guard against local minima; the
+complexity criteria (simplimax and geominQ in particular) are the most multimodal. The
+<code>type</code> argument changes the varimax and promax settings (see <em>Using the type presets</em>)
+and, for every rotation, the factor <code>order_type</code>. A single factor cannot be rotated.</p>
+</div>
+
+<div class="section">
+<h3 id="standard-errors">Standard errors<a class="anchor" aria-label="anchor" href="#standard-errors"></a></h3>
+
+
+<p><code>se</code> selects whether and how standard errors (and matching confidence intervals) are
+computed. They cover the unrotated loadings and uniquenesses and, when a rotation is
+applied, the rotated loadings, the communalities, and – for oblique rotations – the
+factor correlations and the structure coefficients (see the <code>SE</code> and <code>CI</code> entries in
+Value).</p><ul><li><p><strong>"none"</strong> (default) computes no standard errors.</p></li>
+<li><p><strong>"information"</strong> returns analytic standard errors from the expected (Fisher)
+information matrix of the maximum-likelihood solution, and therefore requires
+<code>method = "ML"</code>. The rotated standard errors are obtained by propagating the
+unrotated-loading covariance through the rotation by the delta method (Jennrich,
+1973); because rotated quantities are identification-invariant they are directly
+comparable across programs. Unlike the bootstrap it also works from a correlation
+matrix as long as <code>N</code> is supplied. The covariance is the inverse expected information
+under the identification constraint that \(\Lambda' \Psi^{-1} \Lambda\) is diagonal,
+scaled by \(1 / (N - 1)\); the confidence intervals are Wald intervals (estimate
+\(\pm\) z * SE). These standard errors assume multivariate normality and a correctly
+specified model; under heavy-tailed data or model misfit they can understate the
+sampling variability, where a bootstrap is more robust. The rotated
+structure-coefficient intervals are, conversely, somewhat conservative for
+high-communality variables, where <code>"sandwich"</code> or <code>"np-boot"</code> give sharper intervals.</p></li>
+<li><p><strong>"sandwich"</strong> returns robust (Godambe sandwich) standard errors from raw data,
+combining the estimator weight with an asymptotic-distribution-free covariance of the
+correlations, so it stays valid under non-normality and weight misspecification
+(Browne, 1984; Satorra &amp; Bentler, 1994). It is available either for ordinal data with
+<code>cor_method = "poly"</code> or <code>"tetra"</code> and <code>method</code> one of <code>"ML"</code>, <code>"ULS"</code>, or <code>"DWLS"</code>
+(the meat is the polychoric / tetrachoric asymptotic covariance), or for continuous
+data with <code>cor_method = "pearson"</code> and <code>method = "ML"</code> or <code>"ULS"</code> (the meat is the
+fourth-moment ADF covariance of the sample correlations, the basis of the MLM / MLR
+robust statistics). It reports the same standard errors as <code>"information"</code>, propagated
+by the same delta method, and additionally fills the model fit's chi-square block with
+a scaled (Satorra-Bentler / scaled-and-shifted) chi-square (see <em>Fit indices</em>).
+Because the asymptotic covariance must describe the same cases as the correlation
+matrix, the sandwich (like <code>method = "DWLS"</code>) is computed on the listwise-complete
+cases; on data with missing values the reported <code>N</code>, the correlation matrix, and the
+point estimate therefore reflect the complete cases regardless of <code>use</code>.</p></li>
+<li><p><strong>"np-boot"</strong> draws a non-parametric (case-resampling) bootstrap and needs raw data.
+It is the most general method – available for any <code>method</code>, rotation, and
+<code>cor_method</code> – and the most robust to non-normality and misfit, at the cost of speed;
+its intervals are bootstrap percentile intervals. The replicate fits are run across
+replicates with the <code>future</code> framework. By default they run sequentially; to run them
+in parallel, register a plan with <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future::plan()</a></code> (e.g.
+<code>future::plan(future::multisession, workers = 2)</code>; see examples). With a fixed <code>seed</code>
+the bootstrap is reproducible and yields the same result regardless of the number of
+workers. Each worker runs its own (Armadillo) linear algebra, so if your <code>BLAS</code> is
+multi-threaded, limit the number of workers (or the BLAS threads) to avoid
+over-subscribing the available cores. Under <code>cor_method = "fiml"</code> each resample also
+re-runs the EM moment estimation and is therefore slow, so a smaller <code>b_boot</code> may be
+advisable.</p></li>
+</ul><p>The analytic methods (<code>"information"</code> and <code>"sandwich"</code>) are not available with the
+<code>"promax"</code> or <code>"simplimax"</code> rotations, which have no usable analytic rotation Jacobian;
+use <code>"np-boot"</code> there. Under <code>cor_method = "fiml"</code>, <code>"information"</code> and <code>"sandwich"</code>
+instead return, for <code>method = "ML"</code> or <code>"ULS"</code>, the corrected two-stage (Yuan &amp; Bentler,
+2000; Savalei &amp; Bentler, 2009) sandwich standard errors, built on the saturated FIML
+asymptotic covariance with the estimator's own Stage-2 weight: the model is fitted to
+the EM-estimated correlation, so the naive Stage-2 standard errors (treating that
+correlation as complete data) are inconsistent under missingness and are never reported
+(<code>method = "PAF"</code> carries no Stage-2 weight, so use <code>se = "np-boot"</code> there).</p>
+<p>See Lawley and Maxwell (1971) and Jennrich and Thayer (1973) for the information-matrix
+standard errors; Jennrich (1973) and Zhang and Preacher (2015) for the rotated
+quantities; Browne (1984), Satorra and Bentler (1994), and Asparouhov and Muthen (2010)
+for the robust standard errors and scaled chi-square; and Yuan and Bentler (2000),
+Savalei and Bentler (2009), and Yuan, Marshall, and Bentler (2002) for the two-stage
+FIML standard errors and rescaled statistic.</p>
+</div>
+
+<div class="section">
+<h3 id="fit-indices">Fit indices<a class="anchor" aria-label="anchor" href="#fit-indices"></a></h3>
+
+
+<p>For ML and ULS, <code>EFA()</code> reports the model chi-square (with its p-value and degrees of
+freedom), the Comparative Fit Index (CFI; Bentler, 1990), the Tucker-Lewis Index (TLI,
+also called the non-normed fit index; Tucker &amp; Lewis, 1973), the Root Mean Square Error
+of Approximation (RMSEA) with its 90% confidence interval (Browne &amp; Cudeck, 1992), the
+Akaike and Bayesian Information Criteria (AIC, BIC), the Expected Cross-Validation Index
+(ECVI; Browne &amp; Cudeck, 1989), the Root Mean Squared Residual (RMSR), the Standardized
+Root Mean Squared Residual (SRMR; Bentler, 1995), and the common-part-accounted-for
+(CAF) index (Lorenzo-Seva, Timmerman, &amp; Kiers, 2011). The model chi-square is the
+Bartlett-corrected discrepancy (matching <code><a href="https://rdrr.io/r/stats/factanal.html" class="external-link">stats::factanal()</a></code> for ML); the AIC, BIC, and
+ECVI are the minimum-fit-function (chi-square-based) forms (as in <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code>) and can
+therefore be negative. The RMSEA, CFI, and TLI place the model and baseline
+noncentrality on the uncorrected \(N - 1\) discrepancy scale on which these
+approximate-fit indices are defined, so the Bartlett small-sample correction enters only
+the chi-square test, not the approximate-fit indices.</p>
+<p>Which indices are reported depends on the estimator:</p><ul><li><p><strong>ML and ULS</strong> report the full set above.</p></li>
+<li><p><strong>PAF</strong> reports only the descriptive residual indices (RMSR, SRMR, CAF) and df; the
+chi-square-based indices are <code>NA</code>, because PAF minimises no discrepancy.</p></li>
+<li><p><strong>DWLS</strong> by default reports only RMSR, SRMR, CAF, and df, because the ordinary
+maximum-likelihood discrepancy is not its fit function. When <code>se = "sandwich"</code>, a
+scaled (Satorra &amp; Bentler, 1994; Asparouhov &amp; Muthén, 2010) chi-square and the CFI,
+TLI, and RMSEA derived from it are reported (AIC and BIC remain <code>NA</code>). That scaled
+statistic is a two-stage correction applied to the polychoric-correlation residuals
+(Browne, 1984), so it is not identical to the full WLSMV test of <span class="pkg">lavaan</span> or
+Mplus, which also projects the thresholds.</p></li>
+<li><p><strong><code>cor_method = "fiml"</code></strong> (with ML or ULS) reports Satorra-Bentler-corrected two-stage
+statistics (Yuan, Marshall, &amp; Bentler, 2002): the normal-theory discrepancy on the
+EM-estimated correlation, rescaled by the saturated FIML asymptotic covariance,
+because the plain two-stage likelihood-ratio statistic is not asymptotically
+\(\chi^2(df)\). The CFI, TLI, and RMSEA follow from the scaled statistics; AIC, BIC,
+and ECVI are left <code>NA</code>, as for any scaled (moment-adjusted) chi-square.</p></li>
+</ul><p>Whenever the chi-square is a scaled one (<code>se = "sandwich"</code>, or any <code>cor_method = "fiml"</code>
+fit), the AIC, BIC, and ECVI are <code>NA</code> and the returned <code>fit_indices</code> additionally carry
+the scaled-statistic components (see the <code>fit_indices</code> entry in Value). Note that
+Lorenzo-Seva, Timmerman, and Kiers (2011) introduce the CAF as ranging between 0 and 1,
+with values close to 1 indicating close fit; this does not match the formula they give
+for it, \(1 - KMO(residuals)\), which only works if the diagonal of the residual
+matrix is set to 1s and then approximates 0.5 with close fit.</p>
+</div>
+
+<div class="section">
+<h3 id="available-combinations">Available combinations<a class="anchor" aria-label="anchor" href="#available-combinations"></a></h3>
+
+
+<p>Not every estimator, rotation, standard-error, and correlation method can be combined:</p><ul><li><p><strong>Estimator and correlation method.</strong> <code>method = "DWLS"</code> requires ordinal data with
+<code>cor_method = "poly"</code> or <code>"tetra"</code>. <code>cor_method = "fiml"</code> works with PAF, ML, and ULS
+(not DWLS) and needs raw data with missing values.</p></li>
+<li><p><strong>Standard errors.</strong> <code>se = "information"</code> requires <code>method = "ML"</code> and can be computed
+from a correlation matrix when <code>N</code> is supplied. <code>se = "sandwich"</code> requires raw data,
+with either a polychoric/tetrachoric <code>cor_method</code> (ML, ULS, or DWLS) or a Pearson
+<code>cor_method</code> (ML or ULS); it is not available for PAF. Under <code>cor_method = "fiml"</code>,
+<code>"information"</code> and <code>"sandwich"</code> are available for ML and ULS only and both return the
+corrected two-stage sandwich. <code>se = "np-boot"</code> requires raw data and works with any
+estimator, rotation, and correlation method. Neither <code>"information"</code> nor <code>"sandwich"</code>
+is available with the <code>"promax"</code> or <code>"simplimax"</code> rotations.</p></li>
+<li><p><strong>Fit indices.</strong> The chi-square-based indices are available for ML and ULS (and, as
+scaled statistics, for <code>cor_method = "fiml"</code> and for DWLS with <code>se = "sandwich"</code>); PAF
+and DWLS otherwise report only the descriptive residual indices.</p></li>
+</ul></div>
+
+<div class="section">
+<h3 id="using-the-type-presets">Using the type presets<a class="anchor" aria-label="anchor" href="#using-the-type-presets"></a></h3>
+
+
 <p>The <code>type</code> argument is evaluated for PAF and for all rotations (mainly
 important for the varimax and promax rotations). The type-specific settings
 for these functions are detailed below.</p>
@@ -591,32 +802,8 @@ arguments are needed. For ML, an additional argument
 <code>start_method</code> is needed to determine the starting values for the
 optimization procedure. Default for this argument is "psych" which takes
 the starting values specified in <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code>.</p>
-<p>For DWLS, the loadings are estimated by minimizing the off-diagonal correlation
-residuals weighted by the inverse asymptotic variances of the polychoric correlations
-(Muthén, 1984), reproducing the loadings of a diagonally weighted least squares fit
-(e.g. <code>lavaan::efa(..., estimator = "DWLS")</code>). Because the weighting follows the
-polychoric asymptotic covariance, the matrix and the weights are estimated on the
-listwise-complete cases. By default the chi-square and the indices derived from it
-(CFI, TLI, RMSEA, AIC, BIC) are not reported for DWLS, because the ordinary
-maximum-likelihood discrepancy is not its fit function; only the descriptive residual
-indices (RMSR, SRMR, CAF) are returned. When <code>se = "sandwich"</code>, a scaled (Satorra &amp;
-Bentler, 1994; Asparouhov &amp; Muthén, 2010) chi-square and the CFI, TLI, and RMSEA
-derived from it are reported (AIC and BIC remain <code>NA</code>). That scaled statistic is a
-two-stage correction applied to the polychoric-correlation residuals (Browne, 1984),
-so it is not identical to the full WLSMV test of <span class="pkg">lavaan</span> or Mplus, which also
-projects the thresholds. The polychoric asymptotic covariance underlying both the DWLS
-weights and the scaled (sandwich) statistic relies on large-sample theory that degrades for
-empty or near-empty response-category combinations; with very sparse cells the resulting
-weights and standard errors can be unreliable (a warning is issued when empty cells are
-present), so interpret them with caution and consider collapsing rare categories.</p>
-<p>When <code>se = "np-boot"</code>, the bootstrap replicate fits are run in parallel across
-replicates with the <code>future</code> framework. By default they run sequentially; to run
-them in parallel, register a plan with <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future::plan()</a></code> (e.g.
-<code>future::plan(future::multisession, workers = 2)</code>; see examples). With a fixed
-<code>seed</code> the bootstrap is reproducible and yields the same result regardless of the
-number of workers. Each worker runs its own (Armadillo) linear algebra, so if your
-<code>BLAS</code> is multi-threaded, limit the number of workers (or the BLAS threads) to
-avoid over-subscribing the available cores.</p>
+</div>
+
     </div>
 
     <div id="ref-examples">
@@ -745,6 +932,28 @@ avoid over-subscribing the available cores.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> commonly  0.01611700</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> chances   0.02174988</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> attracted 0.01607471</span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="co"># Two-stage FIML correlations from raw data with missing values: the saturated</span></span></span>
+<span class="r-in"><span><span class="co"># multivariate-normal moments are EM-estimated (assuming the data are missing at</span></span></span>
+<span class="r-in"><span><span class="co"># random) and the standardized covariance is analysed. This matches</span></span></span>
+<span class="r-in"><span><span class="co"># psych::corFiml() followed by psych::fa(), not lavaan::efa(missing = "ml").</span></span></span>
+<span class="r-in"><span><span class="va">x_miss</span> <span class="op">&lt;-</span> <span class="va">GRiPS_raw</span></span></span>
+<span class="r-in"><span><span class="va">x_miss</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">20</span>, <span class="fl">1</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span></span>
+<span class="r-in"><span><span class="va">EFA_fiml</span> <span class="op">&lt;-</span> <span class="fu">EFA</span><span class="op">(</span><span class="va">x_miss</span>, n_factors <span class="op">=</span> <span class="fl">1</span>, method <span class="op">=</span> <span class="st">"ML"</span>, cor_method <span class="op">=</span> <span class="st">"fiml"</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from the raw data.</span>
+<span class="r-in"><span><span class="va">EFA_fiml</span><span class="op">$</span><span class="va">unrot_loadings</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             <span style="font-weight: bold;">F1</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fun        <span style="font-weight: bold;">.795</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> friends    <span style="font-weight: bold;">.852</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> enjoy      <span style="font-weight: bold;">.871</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> hurt       <span style="font-weight: bold;">.767</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> part       <span style="font-weight: bold;">.817</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> commonly   <span style="font-weight: bold;">.832</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> chances    <span style="font-weight: bold;">.788</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> attracted  <span style="font-weight: bold;">.845</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>

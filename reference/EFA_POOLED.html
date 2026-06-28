@@ -101,36 +101,25 @@ are available. For example, <code>p = .05</code> gives 95% intervals.</p></dd>
 
 
 <dt id="arg-target-method">target_method<a class="anchor" aria-label="anchor" href="#arg-target-method"></a></dt>
-<dd><p>Character. <code>"first_target"</code> (the default) aligns all
-imputations to the first imputation's rotated solution via one Procrustes
-rotation per imputation. <code>"consensus"</code> instead refines a centroid target
-via Generalized Procrustes Analysis (Gower 1975; van Ginkel &amp; Kroonenberg
-2014; Lorenzo-Seva &amp; Van Ginkel 2016), iteratively re-Procrustes-rotating
-all solutions toward it and re-averaging until the target stabilises.
-For orthogonal rotations the two methods converge to the same pooled
-estimate (consensus is just a more expensive route to the same answer);
-for oblique rotations <code>"consensus"</code> is not supported and aborts with a
-classed condition (<code>efa_consensus_oblique_unsupported</code>), because the
-centroid iteration is degenerate for oblique transforms with more than
-one factor. Anchoring on the first imputation can understate the genuine
-between-imputation variability when the imputations disagree substantially;
-<code>"consensus"</code> (orthogonal rotations) is more robust to an atypical first
-imputation (van Ginkel &amp; Kroonenberg 2014).</p></dd>
+<dd><p>Character. How rotated solutions are aligned across imputations
+before pooling: <code>"first_target"</code> (the default) aligns every imputation to the first
+imputation's rotated solution, while <code>"consensus"</code> refines a centroid target by
+Generalized Procrustes Analysis (orthogonal rotations only). See <em>Aligning solutions
+across imputations</em> in Details.</p></dd>
 
 
 <dt id="arg-align-unrotated">align_unrotated<a class="anchor" aria-label="anchor" href="#arg-align-unrotated"></a></dt>
-<dd><p>Character. How to align unrotated loadings before
-pooling. <code>"signed_tucker_congruence"</code> preserves the unrotated axes up
-to factor reordering and sign changes using Tucker congruence.
-<code>"procrustes"</code> aligns the unrotated matrices to the first imputation by
-orthogonal Procrustes rotation. <code>"none"</code> averages unrotated loadings as
-returned by <code>EFA</code>.</p></dd>
+<dd><p>Character. How unrotated loadings are aligned before pooling:
+<code>"signed_tucker_congruence"</code> (the default; sign/permutation via Tucker congruence),
+<code>"procrustes"</code> (orthogonal Procrustes to the first imputation), or <code>"none"</code>. See
+<em>Aligning solutions across imputations</em> in Details.</p></dd>
 
 
 <dt id="arg-fit-pool-method">fit_pool_method<a class="anchor" aria-label="anchor" href="#arg-fit-pool-method"></a></dt>
 <dd><p>Character. Currently only <code>"D2"</code> is implemented
 for chi-square-type fit. If no chi-square is available, only residual-based
-fit and descriptive quantities are returned.</p></dd>
+fit and descriptive quantities are returned. See <em>Pooling the model chi-square and
+fit indices</em> in Details.</p></dd>
 
 
 <dt id="arg-consensus-args">consensus_args<a class="anchor" aria-label="anchor" href="#arg-consensus-args"></a></dt>
@@ -156,7 +145,10 @@ matrix.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Additional arguments passed to <code><a href="EFA.html">EFA()</a></code>.</p></dd>
+<dd><p>Additional arguments passed to <code><a href="EFA.html">EFA()</a></code> (e.g. <code>method</code>, <code>rotation</code>, <code>se</code>,
+<code>n_factors</code>, <code>N</code>). These select the estimator, rotation, standard-error method, and
+fit indices used for every imputation; see <code><a href="EFA.html">EFA()</a></code> for the available options, their
+properties, and which combinations are valid.</p></dd>
 
 </dl></div>
     <div id="value">
@@ -197,7 +189,19 @@ carried by \(\tilde\Gamma\) rather than by per-parameter Rubin pooling.</p></dd>
 </dl></div>
     <div id="details">
     <h2>Details</h2>
-    <p>The standard-error pooling pathway is selected automatically from the <code>se</code>
+    <p><code>EFA_POOLED()</code> is the multiple-imputation route to handling missing data:
+several imputed datasets are each fitted and the solutions pooled. A
+single-fit alternative is full-information maximum likelihood, available
+directly in <code><a href="EFA.html">EFA()</a></code> as <code>cor_method = "fiml"</code>, which EM-estimates a two-stage
+correlation from one raw dataset with missing values and analyses it in a
+single fit. Both feed the same correlation-scale EFA core; they differ only in
+how the missingness is handled (pooling across imputations here, a single EM
+correlation there). FIML is intentionally not routed through <code>EFA_POOLED()</code>,
+which is a multi-fit pooler by construction.</p><div class="section">
+<h3 id="standard-error-pooling-routes">Standard-error pooling routes<a class="anchor" aria-label="anchor" href="#standard-error-pooling-routes"></a></h3>
+
+
+<p>The standard-error pooling pathway is selected automatically from the <code>se</code>
 method recorded on the component <code><a href="EFA.html">EFA()</a></code> fits, which must be identical across
 imputations:</p><ul><li><p><code>se = "none"</code>: no standard errors are pooled.</p></li>
 <li><p><code>se = "information"</code>: the per-imputation expected-information standard
@@ -218,6 +222,12 @@ the exception: its single fit fuses the point estimates and standard errors
 through the pooled asymptotic covariance, so a structural failure such as a
 non-positive-definite pooled covariance aborts directly rather than falling
 back.</p>
+</div>
+
+<div class="section">
+<h3 id="aligning-solutions-across-imputations">Aligning solutions across imputations<a class="anchor" aria-label="anchor" href="#aligning-solutions-across-imputations"></a></h3>
+
+
 <p>The function first fits the same <code><a href="EFA.html">EFA()</a></code> model to each imputed
 dataset. Unrotated loading matrices can optionally be put into a common
 signed/permuted factor order before averaging. Rotated loading matrices are
@@ -225,6 +235,31 @@ aligned with either a consensus Procrustes target or with the first
 imputation's rotated solution as a fixed target. For oblique solutions,
 factor intercorrelations are transformed/aligned together with the loading
 matrices so that the factor model remains internally consistent.</p>
+<p><code>target_method</code> controls how rotated solutions are aligned. <code>"first_target"</code> (the
+default) aligns all imputations to the first imputation's rotated solution via one
+Procrustes rotation per imputation. <code>"consensus"</code> instead refines a centroid target
+via Generalized Procrustes Analysis (Gower 1975; van Ginkel &amp; Kroonenberg 2014;
+Lorenzo-Seva &amp; Van Ginkel 2016), iteratively re-Procrustes-rotating all solutions
+toward it and re-averaging until the target stabilises. For orthogonal rotations the
+two methods converge to the same pooled estimate (consensus is just a more expensive
+route to the same answer); for oblique rotations <code>"consensus"</code> is not supported and
+aborts with a classed condition (<code>efa_consensus_oblique_unsupported</code>), because the
+centroid iteration is degenerate for oblique transforms with more than one factor.
+Anchoring on the first imputation can understate the genuine between-imputation
+variability when the imputations disagree substantially; <code>"consensus"</code> (orthogonal
+rotations) is more robust to an atypical first imputation (van Ginkel &amp; Kroonenberg
+2014).</p>
+<p><code>align_unrotated</code> controls how unrotated loadings are aligned before pooling.
+<code>"signed_tucker_congruence"</code> (the default) preserves the unrotated axes up to factor
+reordering and sign changes using Tucker congruence. <code>"procrustes"</code> aligns the
+unrotated matrices to the first imputation by orthogonal Procrustes rotation. <code>"none"</code>
+averages unrotated loadings as returned by <code>EFA</code>.</p>
+</div>
+
+<div class="section">
+<h3 id="pooling-point-estimates">Pooling point estimates<a class="anchor" aria-label="anchor" href="#pooling-point-estimates"></a></h3>
+
+
 <p>Point estimates are pooled by arithmetic averaging after alignment. For
 oblique rotations, the returned structure matrix is computed from the pooled
 aligned pattern matrix and the pooled factor correlation matrix,
@@ -237,6 +272,12 @@ the observed correlation matrices are averaged across imputations and residuals
 are calculated from the pooled observed correlation matrix minus the
 model-implied correlation matrix of the pooled solution. Consequently,
 residual-based fit indices such as RMSR/SRMR are based on pooled residuals.</p>
+</div>
+
+<div class="section">
+<h3 id="pooling-the-model-chi-square-and-fit-indices">Pooling the model chi-square and fit indices<a class="anchor" aria-label="anchor" href="#pooling-the-model-chi-square-and-fit-indices"></a></h3>
+
+
 <p>The model chi-square and the indices derived from it (RMSEA, ECVI, and the
 descriptive AIC/BIC) are not arithmetic means of the per-imputation values: the
 complete-data chi-squares are pooled with the D2 rule and the asymptotic
@@ -271,6 +312,12 @@ but is structurally undefined for the likelihood-free <code>PAF</code>, <code>UL
 <code>DWLS</code> estimators. <code>lavaan.mi</code>
 likewise falls back to D2 under <code>pool.robust = TRUE</code>, the analogue of the
 EFAtools sandwich/MI2S route.</p>
+</div>
+
+<div class="section">
+<h3 id="bootstrap-pooling-np-boot-">Bootstrap pooling (np-boot)<a class="anchor" aria-label="anchor" href="#bootstrap-pooling-np-boot-"></a></h3>
+
+
 <p>If each component <code>EFA</code> call was run with <code>se = "np-boot"</code> and
 returned <code>replicates</code>, pooled bootstrap SEs and Wald-type MI confidence
 intervals are computed for loadings, communalities, residuals, and, when
@@ -289,6 +336,12 @@ intervals. The confidence level of these pooled intervals is controlled by
 summaries of the per-imputation bootstrap fit indices. The chi-square-based
 fit indices themselves are pooled with the D2 rule, whose reference
 distribution (e.g. the RMSEA confidence interval) supplies their uncertainty.</p>
+</div>
+
+<div class="section">
+<h3 id="analytic-pooling-information-">Analytic pooling (information)<a class="anchor" aria-label="anchor" href="#analytic-pooling-information-"></a></h3>
+
+
 <p>When the component <code>EFA</code> calls were instead run with
 <code>se = "information"</code> (no bootstrap replicates), the unrotated-loading and
 uniqueness SE matrices that those calls return analytically are pooled
@@ -320,7 +373,10 @@ If any component fit lacks <code>vcov_unrot_loadings</code>, the pool aborts wit
 classed condition <code>efa_pooled_no_vcov</code>; if any component fit carries an
 NA-filled <code>vcov_unrot_loadings</code> (the upstream signal of a Heywood case or
 singular bordered information matrix), it aborts with the classed condition
-<code>efa_pooled_unreliable_vcov</code>.</p>
+<code>efa_pooled_unreliable_vcov</code>.</p><div class="section">
+<h4 id="rotated-loading-standard-errors">Rotated-loading standard errors<a class="anchor" aria-label="anchor" href="#rotated-loading-standard-errors"></a></h4>
+
+
 <p>Rotated quantities are pooled in a common multiple-imputation rotational
 gauge. A rotated-loading standard error is conditional on the rotation
 criterion (Jennrich 1973, 1974; Browne 2001; Zhang &amp; Preacher 2015), so for
@@ -347,6 +403,15 @@ covariance; the multiple-imputation rotation literature otherwise summarises
 rotated uncertainty with generalised Procrustes centroids rather than
 per-element standard errors (van Ginkel &amp; Kroonenberg 2014; Lorenzo-Seva &amp; Van
 Ginkel 2016).</p>
+</div>
+
+
+</div>
+
+<div class="section">
+<h3 id="two-stage-pooling-sandwich-mi-s-">Two-stage pooling (sandwich / MI2S)<a class="anchor" aria-label="anchor" href="#two-stage-pooling-sandwich-mi-s-"></a></h3>
+
+
 <p>When the component <code>EFA</code> calls were run with <code>se = "sandwich"</code> (robust
 standard errors from a polychoric/tetrachoric or continuous-Pearson
 asymptotic covariance), pooling instead follows the two-stage,
@@ -383,6 +448,8 @@ higher rates of missingness; fewer than 20 raises a classed warning. The
 polychoric/tetrachoric (ordinal) case is the primary, best-evaluated target;
 the continuous-Pearson case uses the same recipe but is less benchmarked
 under multiple imputation.</p>
+</div>
+
     </div>
     <div id="conditions">
     <h2>Conditions</h2>
