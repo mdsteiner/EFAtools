@@ -986,8 +986,8 @@ but 25 is enough to show the difference):</p>
 <span><span class="co">#&gt;              PARALLEL(DOSPERT_sub, eigen_type = "SMC", n_datasets = 25)</span></span>
 <span><span class="co">#&gt;  psych::fa.parallel(DOSPERT_sub, SMC = TRUE, plot = FALSE, n.iter = 25)</span></span>
 <span><span class="co">#&gt;       min       lq     mean   median       uq      max neval</span></span>
-<span><span class="co">#&gt;  102.5257 121.5943 130.8626 124.6949 141.9723 145.9238   100</span></span>
-<span><span class="co">#&gt;  121.9596 128.3952 136.8831 130.1929 135.1296 376.4479   100</span></span></code></pre></div>
+<span><span class="co">#&gt;  112.5849 135.4869 142.2797 140.5658 150.3674 157.3972   100</span></span>
+<span><span class="co">#&gt;  130.5198 136.6719 144.5919 138.6406 142.8724 384.2779   100</span></span></code></pre></div>
 <p>Moreover, the following code compares the PAF implementation (of type
 “psych”) of the EFAtools package with the one from the psych
 package:</p>
@@ -998,11 +998,11 @@ package:</p>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt; Unit: milliseconds</span></span>
 <span><span class="co">#&gt;                                                   expr      min       lq</span></span>
-<span><span class="co">#&gt;                                    EFA(DOSPERT_raw, 6) 14.64735 14.95971</span></span>
-<span><span class="co">#&gt;  psych::fa(DOSPERT_raw, 6, rotate = "none", fm = "pa") 21.33579 21.69056</span></span>
+<span><span class="co">#&gt;                                    EFA(DOSPERT_raw, 6) 17.98947 24.97325</span></span>
+<span><span class="co">#&gt;  psych::fa(DOSPERT_raw, 6, rotate = "none", fm = "pa") 25.04087 34.46512</span></span>
 <span><span class="co">#&gt;      mean   median       uq       max neval</span></span>
-<span><span class="co">#&gt;  15.22885 15.08102 15.21944  19.52256   100</span></span>
-<span><span class="co">#&gt;  24.62342 22.02272 24.95282 106.66348   100</span></span></code></pre></div>
+<span><span class="co">#&gt;  25.10837 25.24313 25.56699  30.39056   100</span></span>
+<span><span class="co">#&gt;  36.74434 34.95148 39.10473 128.18924   100</span></span></code></pre></div>
 <p>While these differences are not large, they grow larger the more
 iterations the procedures need, which is usually the case if solutions
 are more tricky to find. Especially for simulations this might come in
@@ -1057,7 +1057,7 @@ run:</p>
 <span><span class="co">#&gt; V8   <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span>  <span style="font-weight: bold;"> .09</span></span></span>
 <span><span class="co">#&gt; V9   <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span>  <span style="font-weight: bold;"> .09</span></span></span>
 <span><span class="co">#&gt; V10  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span>  <span style="font-weight: bold;"> .09</span></span></span>
-<span><span class="co">#&gt; V11  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;"> .92</span>  <span style="font-weight: bold;"> .09</span></span></span>
+<span><span class="co">#&gt; V11  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;"> .91</span>  <span style="font-weight: bold;"> .09</span></span></span>
 <span><span class="co">#&gt; V12  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span>  <span style="font-weight: bold;"> .09</span></span></span>
 <span><span class="co">#&gt; V13  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;"> .06</span></span></span>
 <span><span class="co">#&gt; V14  <span style="font-weight: bold;"> .94</span>  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;"> .06</span></span></span>
@@ -1073,20 +1073,20 @@ run:</p>
 <span><span class="co">#&gt;        <span style="font-weight: bold;">F1</span>     <span style="font-weight: bold;">F2</span>     <span style="font-weight: bold;">F3</span></span></span>
 <span><span class="co">#&gt; V1   <span style="color: #555555;">-.039</span>  <span style="color: #555555;"> .062</span>  <span style="font-weight: bold;"> .592</span></span></span>
 <span><span class="co">#&gt; V2   <span style="color: #555555;"> .006</span>  <span style="color: #555555;"> .090</span>  <span style="font-weight: bold;"> .468</span></span></span>
-<span><span class="co">#&gt; V3   <span style="color: #555555;"> .063</span>  <span style="color: #555555;"> .079</span>  <span style="font-weight: bold;"> .444</span></span></span>
+<span><span class="co">#&gt; V3   <span style="color: #555555;"> .063</span>  <span style="color: #555555;"> .079</span>  <span style="font-weight: bold;"> .443</span></span></span>
 <span><span class="co">#&gt; V4   <span style="color: #555555;"> .100</span>  <span style="color: #555555;"> .023</span>  <span style="font-weight: bold;"> .537</span></span></span>
 <span><span class="co">#&gt; V5   <span style="color: #555555;"> .152</span>  <span style="color: #555555;"> .012</span>  <span style="font-weight: bold;"> .430</span></span></span>
 <span><span class="co">#&gt; V6   <span style="color: #555555;">-.063</span>  <span style="color: #555555;">-.014</span>  <span style="font-weight: bold;"> .669</span></span></span>
 <span><span class="co">#&gt; V7   <span style="color: #555555;"> .018</span>  <span style="font-weight: bold;"> .510</span>  <span style="color: #555555;"> .139</span></span></span>
-<span><span class="co">#&gt; V8   <span style="color: #555555;"> .002</span>  <span style="font-weight: bold;"> .550</span>  <span style="color: #555555;"> .084</span></span></span>
-<span><span class="co">#&gt; V9   <span style="color: #555555;"> .051</span>  <span style="font-weight: bold;"> .522</span>  <span style="color: #555555;"> .056</span></span></span>
-<span><span class="co">#&gt; V10  <span style="color: #555555;">-.004</span>  <span style="font-weight: bold;"> .636</span>  <span style="color: #555555;">-.005</span></span></span>
+<span><span class="co">#&gt; V8   <span style="color: #555555;"> .002</span>  <span style="font-weight: bold;"> .550</span>  <span style="color: #555555;"> .083</span></span></span>
+<span><span class="co">#&gt; V9   <span style="color: #555555;"> .051</span>  <span style="font-weight: bold;"> .522</span>  <span style="color: #555555;"> .055</span></span></span>
+<span><span class="co">#&gt; V10  <span style="color: #555555;">-.004</span>  <span style="font-weight: bold;"> .636</span>  <span style="color: #555555;">-.006</span></span></span>
 <span><span class="co">#&gt; V11  <span style="color: #555555;"> .027</span>  <span style="font-weight: bold;"> .349</span>  <span style="color: #555555;"> .258</span></span></span>
-<span><span class="co">#&gt; V12  <span style="color: #555555;"> .038</span>  <span style="font-weight: bold;"> .620</span>  <span style="color: #555555;"> .050</span></span></span>
-<span><span class="co">#&gt; V13  <span style="font-weight: bold;"> .582</span>  <span style="color: #555555;"> .098</span>  <span style="color: #555555;">-.010</span></span></span>
-<span><span class="co">#&gt; V14  <span style="font-weight: bold;"> .515</span>  <span style="color: #555555;">-.043</span>  <span style="color: #555555;"> .120</span></span></span>
+<span><span class="co">#&gt; V12  <span style="color: #555555;"> .038</span>  <span style="font-weight: bold;"> .620</span>  <span style="color: #555555;"> .049</span></span></span>
+<span><span class="co">#&gt; V13  <span style="font-weight: bold;"> .582</span>  <span style="color: #555555;"> .098</span>  <span style="color: #555555;">-.011</span></span></span>
+<span><span class="co">#&gt; V14  <span style="font-weight: bold;"> .515</span>  <span style="color: #555555;">-.042</span>  <span style="color: #555555;"> .120</span></span></span>
 <span><span class="co">#&gt; V15  <span style="font-weight: bold;"> .531</span>  <span style="color: #555555;"> .136</span>  <span style="color: #555555;">-.013</span></span></span>
-<span><span class="co">#&gt; V16  <span style="font-weight: bold;"> .523</span>  <span style="color: #555555;">-.027</span>  <span style="color: #555555;"> .126</span></span></span>
+<span><span class="co">#&gt; V16  <span style="font-weight: bold;"> .523</span>  <span style="color: #555555;">-.026</span>  <span style="color: #555555;"> .126</span></span></span>
 <span><span class="co">#&gt; V17  <span style="font-weight: bold;"> .624</span>  <span style="color: #555555;">-.018</span>  <span style="color: #555555;"> .023</span></span></span>
 <span><span class="co">#&gt; V18  <span style="font-weight: bold;"> .524</span>  <span style="color: #555555;"> .023</span>  <span style="color: #555555;"> .091</span></span></span>
 <span><span class="co">#&gt; </span></span>
@@ -1100,7 +1100,7 @@ run:</p>
 <span><span class="co">#&gt; V5   .278  .435  .166</span></span>
 <span><span class="co">#&gt; V6   .303  .736  .173</span></span>
 <span><span class="co">#&gt; V7   .092  .243  .495</span></span>
-<span><span class="co">#&gt; V8   .087  .199  .536</span></span>
+<span><span class="co">#&gt; V8   .086  .199  .536</span></span>
 <span><span class="co">#&gt; V9   .074  .170  .511</span></span>
 <span><span class="co">#&gt; V10  .099  .205  .637</span></span>
 <span><span class="co">#&gt; V11  .147  .335  .353</span></span>
@@ -1119,7 +1119,7 @@ run:</p>
 <span><span class="co">#&gt;       <span style="font-weight: bold;">F1</span>     <span style="font-weight: bold;">F2</span>     <span style="font-weight: bold;">F3</span></span></span>
 <span><span class="co">#&gt; F1  1.000</span></span>
 <span><span class="co">#&gt; F2   .512  1.000</span></span>
-<span><span class="co">#&gt; F3   .543   .491  1.000</span></span>
+<span><span class="co">#&gt; F3   .543   .492  1.000</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Range</span> ───────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
