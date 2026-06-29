@@ -451,7 +451,9 @@ and the alternative <code>chi_mean_adjusted</code> and <code>chi_mean_var</code>
 <code>df_mean_var</code>. Note that Lorenzo-Seva, Timmerman, &amp; Kiers (2011)
 introduce the CAF as ranging between 0 and 1, with values close to 1 indicating close fit.
 This does not match the formula they give for it, <code>1 - KMO(residuals)</code>, which only works if the
-diagonal of the residual matrix is set to 1s and then approximates 0.5 with close fit.</p></dd>
+diagonal of the residual matrix is set to 1s and then approximates 0.5 with close fit. The
+print and summary methods show SRMR rather than RMSR in the model-fit block; RMSR remains
+available here for programmatic use and backward compatibility.</p></dd>
 
 <dt>model_implied_R</dt>
 <dd><p>The model implied correlation
@@ -688,24 +690,28 @@ FIML standard errors and rescaled statistic.</p>
 <h3 id="fit-indices">Fit indices<a class="anchor" aria-label="anchor" href="#fit-indices"></a></h3>
 
 
-<p>For ML and ULS, <code>EFA()</code> reports the model chi-square (with its p-value and degrees of
+<p>For ML and ULS, <code>EFA()</code> returns the model chi-square (with its p-value and degrees of
 freedom), the Comparative Fit Index (CFI; Bentler, 1990), the Tucker-Lewis Index (TLI,
 also called the non-normed fit index; Tucker &amp; Lewis, 1973), the Root Mean Square Error
 of Approximation (RMSEA) with its 90% confidence interval (Browne &amp; Cudeck, 1992), the
 Akaike and Bayesian Information Criteria (AIC, BIC), the Expected Cross-Validation Index
 (ECVI; Browne &amp; Cudeck, 1989), the Root Mean Squared Residual (RMSR), the Standardized
 Root Mean Squared Residual (SRMR; Bentler, 1995), and the common-part-accounted-for
-(CAF) index (Lorenzo-Seva, Timmerman, &amp; Kiers, 2011). The model chi-square is the
+(CAF) index (Lorenzo-Seva, Timmerman, &amp; Kiers, 2011). The print and summary methods show
+SRMR, not RMSR, because the two residual summaries differ only by the fixed scaling
+\(\sqrt{(p - 1) / (p + 1)}\) for a fixed number of variables; RMSR remains in the
+returned object. The model chi-square is the
 Bartlett-corrected discrepancy (matching <code><a href="https://rdrr.io/r/stats/factanal.html" class="external-link">stats::factanal()</a></code> for ML); the AIC, BIC, and
 ECVI are the minimum-fit-function (chi-square-based) forms (as in <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code>) and can
 therefore be negative. The RMSEA, CFI, and TLI place the model and baseline
 noncentrality on the uncorrected \(N - 1\) discrepancy scale on which these
 approximate-fit indices are defined, so the Bartlett small-sample correction enters only
 the chi-square test, not the approximate-fit indices.</p>
-<p>Which indices are reported depends on the estimator:</p><ul><li><p><strong>ML and ULS</strong> report the full set above.</p></li>
-<li><p><strong>PAF</strong> reports only the descriptive residual indices (RMSR, SRMR, CAF) and df; the
-chi-square-based indices are <code>NA</code>, because PAF minimises no discrepancy.</p></li>
-<li><p><strong>DWLS</strong> by default reports only RMSR, SRMR, CAF, and df, because the ordinary
+<p>Which indices are reported depends on the estimator:</p><ul><li><p><strong>ML and ULS</strong> compute the full set above.</p></li>
+<li><p><strong>PAF</strong> returns only the descriptive residual indices (RMSR, SRMR, CAF) and df; the
+printed model-fit block shows CAF and SRMR. The chi-square-based indices are <code>NA</code>,
+because PAF minimises no discrepancy.</p></li>
+<li><p><strong>DWLS</strong> by default returns only RMSR, SRMR, CAF, and df, because the ordinary
 maximum-likelihood discrepancy is not its fit function. When <code>se = "sandwich"</code>, a
 scaled (Satorra &amp; Bentler, 1994; Asparouhov &amp; Muthén, 2010) chi-square and the CFI,
 TLI, and RMSEA derived from it are reported (AIC and BIC remain <code>NA</code>). That scaled
@@ -876,7 +882,6 @@ the starting values specified in <code><a href="https://rdrr.io/pkg/psych/man/fa
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Model Fit</span> ───────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> CAF: .50</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSR: .03</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> SRMR: .02</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> df: 102</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mod_oblimin</span><span class="op">)</span></span></span>
@@ -971,7 +976,6 @@ the starting values specified in <code><a href="https://rdrr.io/pkg/psych/man/fa
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Model Fit</span> ───────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> CAF: .50</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSR: .03</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> SRMR: .02</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> df: 102</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -1045,7 +1049,6 @@ the starting values specified in <code><a href="https://rdrr.io/pkg/psych/man/fa
 <span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -510.14</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ECVI: 0.52</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> CAF: .50</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSR: .03</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> SRMR: .03</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mod_oblimin</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -1146,7 +1149,6 @@ the starting values specified in <code><a href="https://rdrr.io/pkg/psych/man/fa
 <span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -510.14</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ECVI: 0.52</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> CAF: .50</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSR: .03</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> SRMR: .03</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Residual Diagnostics</span> ────────────────────────────────────────────────────────</span>
@@ -1219,7 +1221,6 @@ the starting values specified in <code><a href="https://rdrr.io/pkg/psych/man/fa
 <span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -510.14</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ECVI: 0.52</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> CAF: .50</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSR: .03</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> SRMR: .03</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">ML_info</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -1349,7 +1350,6 @@ the starting values specified in <code><a href="https://rdrr.io/pkg/psych/man/fa
 <span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -510.14</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ECVI: 0.52</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> CAF: .50</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSR: .03</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> SRMR: .03</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Residual Diagnostics</span> ────────────────────────────────────────────────────────</span>
@@ -1444,7 +1444,6 @@ the starting values specified in <code><a href="https://rdrr.io/pkg/psych/man/fa
 <span class="r-out co"><span class="r-pr">#&gt;</span> AIC: NA</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> BIC: NA</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> CAF: .41</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSR: .03</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> SRMR: .03</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">DWLS_rob</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -1636,7 +1635,6 @@ the starting values specified in <code><a href="https://rdrr.io/pkg/psych/man/fa
 <span class="r-out co"><span class="r-pr">#&gt;</span> AIC: NA</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> BIC: NA</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> CAF: .41</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSR: .03</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> SRMR: .03</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Residual Diagnostics</span> ────────────────────────────────────────────────────────</span>
@@ -1695,7 +1693,6 @@ the starting values specified in <code><a href="https://rdrr.io/pkg/psych/man/fa
 <span class="r-out co"><span class="r-pr">#&gt;</span> AIC: NA</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> BIC: NA</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> CAF: .50</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSR: .02</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> SRMR: .01</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">ML_rob</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -1757,7 +1754,6 @@ the starting values specified in <code><a href="https://rdrr.io/pkg/psych/man/fa
 <span class="r-out co"><span class="r-pr">#&gt;</span> AIC: NA</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> BIC: NA</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> CAF: .50</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSR: .02</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> SRMR: .01</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-style: italic;">Note:</span> Wald CIs from the robust (Godambe) sandwich covariance.</span>
@@ -1818,7 +1814,6 @@ the starting values specified in <code><a href="https://rdrr.io/pkg/psych/man/fa
 <span class="r-out co"><span class="r-pr">#&gt;</span> AIC: NA</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> BIC: NA</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> CAF: .50</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSR: .02</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> SRMR: .01</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
