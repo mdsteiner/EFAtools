@@ -633,11 +633,12 @@ format.summary.EFA <- function(x, ...) {
     return(invisible(NULL))
   }
 
-  # One "name[ CI-tag]: value[ CI]" data line. `tag = FALSE` drops the bootstrap-CI tag and
-  # per-index CI suffix (for indices that carry no bootstrap CI: TLI/ECVI/SRMR). Emitted
-  # verbatim below so a value is never reflowed mid-token.
-  fit_line <- function(name, key, ci = "", tag = TRUE, ...) {
-    label <- if (isTRUE(tag)) fit_ci$label else ""
+  # One "name[ CI-tag]: value[ CI]" data line. The CI tag is emitted only for
+  # indices whose own CI suffix is available, so partially populated fit-index
+  # CI lists do not label plain point estimates as interval estimates.
+  fit_line <- function(name, key, ci = fit_ci[[key]], tag = TRUE, ...) {
+    if (is.null(ci)) ci <- ""
+    label <- if (isTRUE(tag) && nzchar(ci)) fit_ci$label else ""
     paste0(name, label, ": ", .efa_format_fit_value(fit, key, pad = FALSE, ...), ci)
   }
   is_finite_fit <- function(key) is.finite(.efa_fit_scalar(fit, key))
@@ -649,10 +650,9 @@ format.summary.EFA <- function(x, ...) {
 
   if (identical(method, "PAF") || .efa_is_missing_number(spec$N) ||
       !is.finite(chi) || !is.finite(df)) {
-    lines <- c(fit_line("CAF", "CAF", fit_ci$CAF),
-               fit_line("RMSR", "RMSR", fit_ci$RMSR))
+    lines <- fit_line("CAF", "CAF")
     if (is_finite_fit("SRMR")) {
-      lines <- c(lines, fit_line("SRMR", "SRMR", tag = FALSE))
+      lines <- c(lines, fit_line("SRMR", "SRMR"))
     }
     lines <- c(lines, paste0("df: ",
       .efa_format_fit_value(fit, "df", digits = 0, print_zero = TRUE, pad = FALSE)))
@@ -696,22 +696,20 @@ format.summary.EFA <- function(x, ...) {
   # styling survives and the line is not reflowed.
   lines <- paste0(chi_prefix, "\u03c7\u00b2(", df_text, ") = ", chi_text, ", ",
                   cli::style_italic("p"), p_text)
-  lines <- c(lines, fit_line("CFI", "CFI", fit_ci$CFI))
+  lines <- c(lines, fit_line("CFI", "CFI"))
   if (is_finite_fit("TLI")) {
-    lines <- c(lines, fit_line("TLI", "TLI", tag = FALSE))
+    lines <- c(lines, fit_line("TLI", "TLI"))
   }
   lines <- c(lines, paste0(rmsea_label, fit_ci$label, ": ", rmsea_value, fit_ci$RMSEA))
   lines <- c(lines,
              fit_line("AIC", "AIC", fit_ci$AIC, print_zero = TRUE),
              fit_line("BIC", "BIC", fit_ci$BIC, print_zero = TRUE))
   if (is_finite_fit("ECVI")) {
-    lines <- c(lines, fit_line("ECVI", "ECVI", tag = FALSE, print_zero = TRUE))
+    lines <- c(lines, fit_line("ECVI", "ECVI", print_zero = TRUE))
   }
-  lines <- c(lines,
-             fit_line("CAF", "CAF", fit_ci$CAF),
-             fit_line("RMSR", "RMSR", fit_ci$RMSR))
+  lines <- c(lines, fit_line("CAF", "CAF"))
   if (is_finite_fit("SRMR")) {
-    lines <- c(lines, fit_line("SRMR", "SRMR", tag = FALSE))
+    lines <- c(lines, fit_line("SRMR", "SRMR"))
   }
 
   .efa_emit_lines(lines)
@@ -739,10 +737,13 @@ format.summary.EFA <- function(x, ...) {
     label = "",
     CAF = "",
     RMSR = "",
+    SRMR = "",
     CFI = "",
+    TLI = "",
     RMSEA = "",
     AIC = "",
-    BIC = ""
+    BIC = "",
+    ECVI = ""
   )
 
   if (!isTRUE(spec$has_ci)) {
@@ -757,10 +758,13 @@ format.summary.EFA <- function(x, ...) {
   out$label <- paste0(" [", .efa_ci_header_label(spec), "-CI]")
   out$CAF <- .efa_paste_gof_ci(fitind_ci, "CAF")
   out$RMSR <- .efa_paste_gof_ci(fitind_ci, "RMSR")
+  out$SRMR <- .efa_paste_gof_ci(fitind_ci, "SRMR")
   out$CFI <- .efa_paste_gof_ci(fitind_ci, "CFI")
+  out$TLI <- .efa_paste_gof_ci(fitind_ci, "TLI")
   out$RMSEA <- .efa_paste_gof_ci(fitind_ci, "RMSEA")
   out$AIC <- .efa_paste_gof_ci(fitind_ci, "AIC")
   out$BIC <- .efa_paste_gof_ci(fitind_ci, "BIC")
+  out$ECVI <- .efa_paste_gof_ci(fitind_ci, "ECVI")
 
   out
 }

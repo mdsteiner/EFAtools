@@ -52,7 +52,6 @@
       -- Model Fit -------------------------------------------------------------------
       
       CAF: <num>
-      RMSR: <num>
       SRMR: <num>
       df: 102
 
@@ -117,7 +116,6 @@
       BIC: <num>
       ECVI: <num>
       CAF: <num>
-      RMSR: <num>
       SRMR: <num>
 
 # summary.EFA output is stable (PAF, promax)
@@ -215,7 +213,6 @@
       -- Model Fit -------------------------------------------------------------------
       
       CAF: <num>
-      RMSR: <num>
       SRMR: <num>
       df: 102
       
@@ -325,7 +322,6 @@
       BIC: <num>
       ECVI: <num>
       CAF: <num>
-      RMSR: <num>
       SRMR: <num>
       
       -- Residual Diagnostics --------------------------------------------------------
@@ -380,7 +376,6 @@
       -- Model Fit -------------------------------------------------------------------
       
       CAF: <num>
-      RMSR: <num>
       SRMR: <num>
       df: 135
 
@@ -438,7 +433,6 @@
       -- Model Fit -------------------------------------------------------------------
       
       CAF: <num>
-      RMSR: <num>
       SRMR: <num>
       df: 135
       

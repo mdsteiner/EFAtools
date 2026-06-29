@@ -40,6 +40,5 @@
       AIC: NA
       BIC: NA
       CAF: <num>
-      RMSR: <num>
       SRMR: <num>
 

@@ -313,6 +313,17 @@ test_that("bootstrap arrays are pooled into MI SEs and CIs", {
   expect_identical(dim(pooled_boot$standardized_residuals),
                    dim(pooled_boot$residuals))
 
+  fit_ci <- pooled_boot$CI$fit_indices_descriptive
+  expect_true(all(is.finite(fit_ci$lower[c("SRMR", "TLI", "ECVI")])))
+  expect_true(all(is.finite(fit_ci$upper[c("SRMR", "TLI", "ECVI")])))
+  expect_true("RMSR" %in% names(pooled_boot$fit_indices))
+
+  summary_lines <- cli::ansi_strip(format(summary(pooled_boot)))
+  expect_false(any(grepl("^RMSR\\b", summary_lines)))
+  expect_true(any(grepl("^SRMR \\[95% bootstrap/MI-CI\\]:", summary_lines)))
+  expect_true(any(grepl("^TLI \\[95% bootstrap/MI-CI\\]:", summary_lines)))
+  expect_true(any(grepl("^ECVI \\[95% bootstrap/MI-CI\\]:", summary_lines)))
+
   # summary() additionally shows the MI uncertainty summary
   expect_snapshot(print(summary(pooled_boot)), transform = scrub_num)
 })

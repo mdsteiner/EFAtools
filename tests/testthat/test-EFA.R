@@ -429,6 +429,25 @@ test_that("format.summary.EFA is the source of truth and honours the colour stat
   options(cli.num_colors = 1)
   expect_false(any(grepl("\033", format(s), fixed = TRUE)))
 })
+test_that("SRMR is the printed residual fit index while RMSR remains returned", {
+  residuals <- matrix(c(0, .10, -.20,
+                        .10, 0, .30,
+                        -.20, .30, 0), nrow = 3, byrow = TRUE)
+  p <- nrow(residuals)
+  rmsr <- .rmsr(residuals)
+  srmr <- sqrt(sum(residuals[upper.tri(residuals)]^2) / (p * (p + 1) / 2))
+
+  expect_equal(srmr, rmsr * sqrt((p - 1) / (p + 1)))
+  expect_lt(srmr, rmsr)
+
+  expect_true(all(c("RMSR", "SRMR") %in% names(efa_ml$fit_indices)))
+  out <- cli::ansi_strip(format(efa_ml))
+  summary_out <- cli::ansi_strip(format(summary(efa_ml)))
+  expect_false(any(grepl("^RMSR\\b", out)))
+  expect_false(any(grepl("^RMSR\\b", summary_out)))
+  expect_true(any(grepl("^SRMR:", out)))
+  expect_true(any(grepl("^SRMR:", summary_out)))
+})
 
 test_that("print/summary.EFA omit the inapplicable tables for a rotated single factor", {
   local_reproducible_output()

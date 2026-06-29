@@ -62,14 +62,13 @@
       
       D2-pooled χ²(20) = <num>, p = <num>
       CFI [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
-      TLI: <num>
+      TLI [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
       RMSEA [90% CI] [95% bootstrap/MI-CI]: <num> [ <num>; <num>] [ <num>, <num>]
       AIC [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
       BIC [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
-      ECVI: <num>
+      ECVI [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
       CAF [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
-      RMSR [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
-      SRMR: <num>
+      SRMR [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
       Note: the pooled χ² is the D2 statistic; its p uses the D2 reference F(20, <num>),
       not the χ²(20) tail.
       
@@ -147,7 +146,6 @@
       -- Model Fit -------------------------------------------------------------------
       
       CAF: <num>
-      RMSR: <num>
       SRMR: <num>
       df: 102
 
@@ -193,7 +191,6 @@
       BIC: <num>
       ECVI: <num>
       CAF: <num>
-      RMSR: <num>
       SRMR: <num>
       Note: the pooled χ² is the D2 statistic; its p uses the D2 reference F(20, <num>),
       not the χ²(20) tail.
@@ -297,7 +294,6 @@
       -- Model Fit -------------------------------------------------------------------
       
       CAF: <num>
-      RMSR: <num>
       SRMR: <num>
       df: 102
       
@@ -367,7 +363,6 @@
       BIC: <num>
       ECVI: <num>
       CAF: <num>
-      RMSR: <num>
       SRMR: <num>
       Note: the pooled χ² is the D2 statistic; its p uses the D2 reference F(20, <num>),
       not the χ²(20) tail.

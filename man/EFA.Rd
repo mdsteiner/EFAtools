@@ -320,7 +320,9 @@ and the alternative \code{chi_mean_adjusted} and \code{chi_mean_var} statistics 
 \code{df_mean_var}. Note that Lorenzo-Seva, Timmerman, & Kiers (2011)
 introduce the CAF as ranging between 0 and 1, with values close to 1 indicating close fit.
 This does not match the formula they give for it, \code{1 - KMO(residuals)}, which only works if the
-diagonal of the residual matrix is set to 1s and then approximates 0.5 with close fit.}
+diagonal of the residual matrix is set to 1s and then approximates 0.5 with close fit. The
+print and summary methods show SRMR rather than RMSR in the model-fit block; RMSR remains
+available here for programmatic use and backward compatibility.}
 \item{model_implied_R}{The model implied correlation
 matrix.}
 \item{residuals}{Residual correlations, i.e., orig_R - model_implied_R}
@@ -546,14 +548,17 @@ FIML standard errors and rescaled statistic.
 
 \subsection{Fit indices}{
 
-For ML and ULS, \code{\link[=EFA]{EFA()}} reports the model chi-square (with its p-value and degrees of
+For ML and ULS, \code{\link[=EFA]{EFA()}} returns the model chi-square (with its p-value and degrees of
 freedom), the Comparative Fit Index (CFI; Bentler, 1990), the Tucker-Lewis Index (TLI,
 also called the non-normed fit index; Tucker & Lewis, 1973), the Root Mean Square Error
 of Approximation (RMSEA) with its 90\% confidence interval (Browne & Cudeck, 1992), the
 Akaike and Bayesian Information Criteria (AIC, BIC), the Expected Cross-Validation Index
 (ECVI; Browne & Cudeck, 1989), the Root Mean Squared Residual (RMSR), the Standardized
 Root Mean Squared Residual (SRMR; Bentler, 1995), and the common-part-accounted-for
-(CAF) index (Lorenzo-Seva, Timmerman, & Kiers, 2011). The model chi-square is the
+(CAF) index (Lorenzo-Seva, Timmerman, & Kiers, 2011). The print and summary methods show
+SRMR, not RMSR, because the two residual summaries differ only by the fixed scaling
+\eqn{\sqrt{(p - 1) / (p + 1)}} for a fixed number of variables; RMSR remains in the
+returned object. The model chi-square is the
 Bartlett-corrected discrepancy (matching \code{\link[stats:factanal]{stats::factanal()}} for ML); the AIC, BIC, and
 ECVI are the minimum-fit-function (chi-square-based) forms (as in \code{\link[psych:fa]{psych::fa()}}) and can
 therefore be negative. The RMSEA, CFI, and TLI place the model and baseline
@@ -563,10 +568,11 @@ the chi-square test, not the approximate-fit indices.
 
 Which indices are reported depends on the estimator:
 \itemize{
-\item \strong{ML and ULS} report the full set above.
-\item \strong{PAF} reports only the descriptive residual indices (RMSR, SRMR, CAF) and df; the
-chi-square-based indices are \code{NA}, because PAF minimises no discrepancy.
-\item \strong{DWLS} by default reports only RMSR, SRMR, CAF, and df, because the ordinary
+\item \strong{ML and ULS} compute the full set above.
+\item \strong{PAF} returns only the descriptive residual indices (RMSR, SRMR, CAF) and df; the
+printed model-fit block shows CAF and SRMR. The chi-square-based indices are \code{NA},
+because PAF minimises no discrepancy.
+\item \strong{DWLS} by default returns only RMSR, SRMR, CAF, and df, because the ordinary
 maximum-likelihood discrepancy is not its fit function. When \code{se = "sandwich"}, a
 scaled (Satorra & Bentler, 1994; Asparouhov & Muthén, 2010) chi-square and the CFI,
 TLI, and RMSEA derived from it are reported (AIC and BIC remain \code{NA}). That scaled

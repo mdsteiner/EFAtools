@@ -424,13 +424,32 @@ test_that("ML np-boot drops only the analytic RMSEA bounds from the fit-index SE
   ))
 
   se_fit <- res$SE$fit_indices
+  ci_fit <- res$CI$fit_indices
   # the per-replicate analytic RMSEA bounds are not bootstrapped
   expect_true(all(is.na(se_fit[c("RMSEA_LB", "RMSEA_UB")])))
   # the bootstrapped fit indices that are aggregated stay finite
-  expect_true(all(is.finite(se_fit[c("CAF", "RMSR", "SRMR")])))
+  expect_true(all(is.finite(se_fit[c("CAF", "RMSR", "SRMR", "TLI", "ECVI")])))
+  expect_true(all(is.finite(ci_fit$lower[c("SRMR", "TLI", "ECVI")])))
+  expect_true(all(is.finite(ci_fit$upper[c("SRMR", "TLI", "ECVI")])))
   # the point estimate keeps its full analytic RMSEA confidence interval
   expect_true(is.finite(res$fit_indices$RMSEA_LB))
   expect_true(is.finite(res$fit_indices$RMSEA_UB))
+
+  out <- cli::ansi_strip(format(res))
+  expect_true("RMSR" %in% names(res$fit_indices))
+  expect_false(any(grepl("^RMSR\\b", out)))
+  expect_true(any(grepl("^SRMR \\[95% bootstrap-CI\\]:", out)))
+  expect_true(any(grepl("^TLI \\[95% bootstrap-CI\\]:", out)))
+  expect_true(any(grepl("^ECVI \\[95% bootstrap-CI\\]:", out)))
+})
+
+test_that("PAF np-boot fit output prints SRMR CIs but not RMSR", {
+  out <- cli::ansi_strip(format(boot_promax))
+
+  expect_true("RMSR" %in% names(boot_promax$fit_indices))
+  expect_true(all(is.finite(boot_promax$CI$fit_indices$lower[c("CAF", "RMSR", "SRMR")])))
+  expect_false(any(grepl("^RMSR\\b", out)))
+  expect_true(any(grepl("^SRMR \\[95% bootstrap-CI\\]:", out)))
 })
 
 test_that(".oblique_procrustes_batch isolates an unalignable replicate", {

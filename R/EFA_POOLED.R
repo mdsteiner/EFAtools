@@ -91,6 +91,9 @@
 #' are calculated from the pooled observed correlation matrix minus the
 #' model-implied correlation matrix of the pooled solution. Consequently,
 #' residual-based fit indices such as RMSR/SRMR are based on pooled residuals.
+#' Both are returned for programmatic use, but the print and summary methods show
+#' SRMR only because it is the more common reported residual fit index and differs
+#' from RMSR only by a fixed scaling for a fixed number of variables.
 #'
 #' ## Pooling the model chi-square and fit indices
 #'
