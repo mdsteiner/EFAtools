@@ -515,11 +515,12 @@ test_that("errors are thrown correctly", {
                class = "efa_cor_singular")
   expect_error(EFA_AVERAGE(matrix(rnorm(30), ncol = 3), n_factors = 2, show_progress = FALSE),
                class = "efa_underidentified")
-  expect_warning(EFA_AVERAGE(matrix(rnorm(30), ncol = 3), n_factors = 1,
+  expect_warning(suppressWarnings(EFA_AVERAGE(matrix(rnorm(30), ncol = 3), n_factors = 1,
                              method = "PAF", type = c("EFAtools", "psych"), show_progress = FALSE),
+                             class = c("efa_avg_excluded_solutions")),
                  class = "efa_just_identified")
-  expect_warning(EFA_AVERAGE(cor_nposdef, n_factors = 1, N = 10, method = "PAF",
-                     type = c("EFAtools", "psych"), show_progress = FALSE), class = "efa_cor_smoothed")
+  expect_warning(suppressWarnings(EFA_AVERAGE(cor_nposdef, n_factors = 1, N = 10, method = "PAF",
+                     type = c("EFAtools", "psych"), show_progress = FALSE), classes = c("efa_just_identified", "efa_avg_excluded_solutions")), class = "efa_cor_smoothed")
   expect_message(EFA_AVERAGE(GRiPS_raw, n_factors = 1, method = "PAF", type = c("EFAtools", "psych"), show_progress = FALSE),
                  class = "efa_avg_single_factor_rotation")
   expect_warning(EFA_AVERAGE(GRiPS_raw, n_factors = 1, method = "PAF", type = c("EFAtools"),
