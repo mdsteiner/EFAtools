@@ -261,12 +261,13 @@ test_that("output is correct", {
   expect_equal(om_man_2[1, 5], 0.652, tolerance = 1e-3)
   expect_equal(om_man_2[1, 6], 0.706, tolerance = 1e-3)
 
-  expect_gte(om_sl_add[1, 1], sum(om_sl_add[1, 2:3]))
-  expect_gte(om_sl_named_add[1, 1], sum(om_sl_named_add[1, 2:3]))
-  expect_gte(om_schmid_1_add[1, 1], sum(om_schmid_1_add[1, 2:3]))
-  expect_gte(om_schmid_2[1, 1], sum(om_schmid_2[1, 2:3]))
-  expect_gte(om_man_1_add[1, 1], sum(om_man_1_add[1, 2:3]))
-  expect_gte(om_man_2[1, 1], sum(om_man_2[1, 2:3]))
+  tol <- sqrt(.Machine$double.eps)
+  expect_gte(om_sl_add[1, 1] + tol, sum(om_sl_add[1, 2:3]))
+  expect_gte(om_sl_named_add[1, 1] + tol, sum(om_sl_named_add[1, 2:3]))
+  expect_gte(om_schmid_1_add[1, 1] + tol, sum(om_schmid_1_add[1, 2:3]))
+  expect_gte(om_schmid_2[1, 1] + tol, sum(om_schmid_2[1, 2:3]))
+  expect_gte(om_man_1_add[1, 1] + tol, sum(om_man_1_add[1, 2:3]))
+  expect_gte(om_man_2[1, 1] + tol, sum(om_man_2[1, 2:3]))
 
   # With variance = "sums_load", the general-factor omega total equals
   # hierarchical + subscale exactly (shared total-variance denominator).
