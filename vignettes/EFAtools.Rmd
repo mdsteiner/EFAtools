@@ -175,7 +175,7 @@ COMPARE(
 )
 ```
 
-Finally, if you are interested in factor scores from the EFA solution, these can be obtained with `FACTOR_SCORES()`, a wrapper for `psych::factor.scores()` to be used directly with an output from `EFA()`:
+Finally, if you are interested in factor scores from the EFA solution, these can be obtained with `FACTOR_SCORES()`, a convenience wrapper that estimates the scores directly from an output from `EFA()` (see `efa_scores()` for the factor-score weights together with score-quality diagnostics):
 
 ```{r}
 EFA_mod <- EFA(DOSPERT_sub, n_factors = 6, rotation = "promax")

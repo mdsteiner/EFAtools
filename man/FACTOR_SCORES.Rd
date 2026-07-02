@@ -22,19 +22,16 @@ factor scores) or matrix with correlations.}
 specified if a factor loadings matrix is entered directly into \code{f}.
 Default is \code{NULL}, in which case all intercorrelations are assumed to be zero.}
 
-\item{rho}{matrix. Used when \code{x} is a matrix of raw data and the user
-wishes to get factor scores for a correlation matrix other than Pearson's
-(e.g. polychoric). Defaults to \code{NULL}, in which case
-\code{\link[psych:factor.scores]{psych::factor.scores()}} uses
-\code{cor(x, use = "pairwise")}. If the EFA in \code{f} was fit on a non-Pearson
-correlation, pass that same matrix here so the factor weights stay
-consistent with the loadings; otherwise the weights are based on the Pearson
-correlation of \code{x}.}
+\item{rho}{matrix. Correlation matrix used to derive the scoring weights.
+Defaults to \code{NULL}, in which case the matrix the EFA in \code{f} was fit on
+(\code{f$orig_R}) is used, so the weights stay consistent with the loadings even for
+a non-Pearson correlation (e.g. polychoric); for a directly supplied loading
+matrix the Pearson correlation of \code{x} is used. Pass a matrix here to score
+against a different correlation.}
 
 \item{method}{character. The method used to calculate factor scores. One of
 "Thurstone" (regression-based; default), "tenBerge", "Anderson", "Bartlett",
-"Harman", or "components".
-See \code{\link[psych:factor.scores]{psych::factor.scores()}} for details.}
+"Harman", or "components".}
 }
 \value{
 A list of class FACTOR_SCORES containing the following:
@@ -42,21 +39,19 @@ A list of class FACTOR_SCORES containing the following:
 \item{scores}{The factor scores (only if raw data are provided.)}
 \item{weights}{The factor weights.}
 \item{r.scores}{The correlations of the factor score estimates.}
-\item{missing}{A vector of the number of missing observations per subject
-(only if raw data are provided.}
-\item{R2}{Factor score validity coefficients as returned by
-\code{\link[psych:factor.scores]{psych::factor.scores()}}. For orthogonal factors these equal the squared
-multiple correlations between the factors and the estimated scores; for
-oblique factors they are the more general factor-score adequacy coefficients
-and no longer coincide with the squared multiple correlations.}
+\item{missing}{Whether the raw data contained missing values (only if raw data
+are provided).}
+\item{R2}{The squared factor-score determinacy for each factor: the squared
+correlation between a factor and its estimated score. For orthogonal factors
+this equals the squared multiple correlation between the factor and the
+observed variables; for oblique factors it is the score-specific determinacy.
+See \code{\link[=efa_scores]{efa_scores()}} for the underlying score-quality diagnostics.}
 \item{settings}{A list of the settings used.}
 }
 \description{
-This is a wrapper function for
-\code{\link[psych:factor.scores]{psych::factor.scores()}} to be used directly
-with an output from \code{\link[=EFA]{EFA()}} or by manually specifying the factor
-loadings and intercorrelations. Calculates factor scores according to the
-specified methods if raw data are provided, and only factor weights if a
+A convenience wrapper around \code{\link[=efa_scores]{efa_scores()}} that returns factor scores and
+weights in a compact list. Factor scores are calculated according to the
+specified method if raw data are provided, and only factor weights if a
 correlation matrix is provided.
 }
 \examples{
@@ -84,3 +79,13 @@ EFA_cor <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
 fac_scores_cor <- FACTOR_SCORES(test_models$baseline$cormat, f = EFA_cor)
 
 }
+\seealso{
+\code{\link[=efa_scores]{efa_scores()}} for the factor-score weights together with the full
+set of score-quality diagnostics (determinacy, univocality, and Guttman
+indeterminacy index) and a print/summary method.
+
+Other factor scoring:
+\code{\link[=efa_scores]{efa_scores()}},
+\code{\link[=print.efa_scores]{print.efa_scores()}}
+}
+\concept{factor scoring}

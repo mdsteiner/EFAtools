@@ -72,6 +72,7 @@ Suggests:
     vdiffr,
     polycor,
     mnormt,
+    fungible,
     withr
 VignetteBuilder: knitr
 Config/testthat/edition: 3

@@ -1,10 +1,8 @@
 #' Estimate factor scores for an EFA model
 #'
-#' This is a wrapper function for
-#' [psych::factor.scores()] to be used directly
-#' with an output from [EFA()] or by manually specifying the factor
-#' loadings and intercorrelations. Calculates factor scores according to the
-#' specified methods if raw data are provided, and only factor weights if a
+#' A convenience wrapper around [efa_scores()] that returns factor scores and
+#' weights in a compact list. Factor scores are calculated according to the
+#' specified method if raw data are provided, and only factor weights if a
 #' correlation matrix is provided.
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data (needed to get
@@ -13,32 +11,35 @@
 #' @param Phi matrix. A matrix of factor intercorrelations. Only needs to be
 #' specified if a factor loadings matrix is entered directly into `f`.
 #' Default is `NULL`, in which case all intercorrelations are assumed to be zero.
-#' @param rho matrix. Used when `x` is a matrix of raw data and the user
-#' wishes to get factor scores for a correlation matrix other than Pearson's
-#' (e.g. polychoric). Defaults to `NULL`, in which case
-#' [psych::factor.scores()] uses
-#' `cor(x, use = "pairwise")`. If the EFA in `f` was fit on a non-Pearson
-#' correlation, pass that same matrix here so the factor weights stay
-#' consistent with the loadings; otherwise the weights are based on the Pearson
-#' correlation of `x`.
+#' @param rho matrix. Correlation matrix used to derive the scoring weights.
+#' Defaults to `NULL`, in which case the matrix the EFA in `f` was fit on
+#' (`f$orig_R`) is used, so the weights stay consistent with the loadings even for
+#' a non-Pearson correlation (e.g. polychoric); for a directly supplied loading
+#' matrix the Pearson correlation of `x` is used. Pass a matrix here to score
+#' against a different correlation.
 #' @param method character. The method used to calculate factor scores. One of
 #' "Thurstone" (regression-based; default), "tenBerge", "Anderson", "Bartlett",
 #' "Harman", or "components".
-#' See [psych::factor.scores()] for details.
 #'
 #' @return A list of class FACTOR_SCORES containing the following:
 #'
 #' \item{scores}{The factor scores (only if raw data are provided.)}
 #' \item{weights}{The factor weights.}
 #' \item{r.scores}{The correlations of the factor score estimates.}
-#' \item{missing}{A vector of the number of missing observations per subject
-#' (only if raw data are provided.}
-#' \item{R2}{Factor score validity coefficients as returned by
-#' [psych::factor.scores()]. For orthogonal factors these equal the squared
-#' multiple correlations between the factors and the estimated scores; for
-#' oblique factors they are the more general factor-score adequacy coefficients
-#' and no longer coincide with the squared multiple correlations.}
+#' \item{missing}{Whether the raw data contained missing values (only if raw data
+#' are provided).}
+#' \item{R2}{The squared factor-score determinacy for each factor: the squared
+#' correlation between a factor and its estimated score. For orthogonal factors
+#' this equals the squared multiple correlation between the factor and the
+#' observed variables; for oblique factors it is the score-specific determinacy.
+#' See [efa_scores()] for the underlying score-quality diagnostics.}
 #' \item{settings}{A list of the settings used.}
+#'
+#' @seealso [efa_scores()] for the factor-score weights together with the full
+#' set of score-quality diagnostics (determinacy, univocality, and Guttman
+#' indeterminacy index) and a print/summary method.
+#'
+#' @family factor scoring
 #'
 #' @export
 #'
@@ -70,104 +71,33 @@ FACTOR_SCORES <- function(x, f, Phi = NULL, rho = NULL,
                           method = c("Thurstone", "tenBerge", "Anderson",
                                      "Bartlett", "Harman", "components")){
 
-  .assert_cor_input(x)
+  method <- match.arg(method)
 
-  # Check if it is a correlation matrix (reused below for the cor_method warning).
-  is_cmat <- .is_cormat(x)
-  if(is_cmat){
+  # "Thurstone" is the regression method under efa_scores' naming; every other
+  # label is shared. Delegate the whole computation (and the classed conditions).
+  es <- efa_scores(x, f = f, Phi = Phi, rho = rho,
+                   method = if (method == "Thurstone") "regression" else method)
 
-    cli::cli_inform(
-      c("i" = "{.arg x} is a correlation matrix; factor scores cannot be computed. Enter raw data to get factor scores."),
-      class = "efa_scores_needs_raw"
-    )
-
-  }
-
-method <- match.arg(method)
-checkmate::assert_matrix(Phi, null.ok = TRUE)
-
-if(!inherits(f, c("EFA", "matrix", "LOADINGS"))){
-
-  cli::cli_abort("{.arg f} must be an {.cls EFA} object, a matrix, or a {.cls LOADINGS} object.",
-                 class = "efa_scores_bad_f")
-
-}
-
-if(inherits(f, c("EFA"))){
-
-  Phi <- f$Phi
-
-  # psych::factor.scores derives the score weights from the Pearson correlation of
-  # `x` when `rho` is NULL. If the EFA was fit on a non-Pearson matrix (e.g.
-  # polychoric), those weights are inconsistent with the loadings unless the same
-  # matrix is supplied via `rho`.
-  cor_method <- f$settings$cor_method
-  # With rho = NULL, psych derives the score machinery from the Pearson cor(x): for
-  # the regression-based methods (Thurstone, tenBerge, Anderson) the weights and
-  # scores, and for every method the score intercorrelations (r.scores), are then
-  # inconsistent with loadings fit on a non-Pearson correlation. (Bartlett and
-  # components weights/scores are correlation-free, but their r.scores is not, so
-  # the warning still applies.)
-  if (!is.null(cor_method) && !identical(cor_method, "pearson") &&
-      is.null(rho) && !is_cmat) {
-    cli::cli_warn(
-      c("{.arg f} was fit with {.code cor_method = {.val {cor_method}}}, but {.arg rho} is {.code NULL}.",
-        "i" = "The factor weights and scores (for regression-based methods) and the score intercorrelations (for all methods) will be based on the Pearson correlation of {.arg x}, which may be inconsistent with the loadings.",
-        "i" = "Pass the {.val {cor_method}} correlation matrix via {.arg rho} for consistent results."),
-      class = "efa_scores_cor_method"
-    )
-  }
-
-  if(f$settings$rotation != "none"){
-    f <- unclass(f$rot_loadings)
-  } else {
-    f <- unclass(f$unrot_loadings)
-  }
-
-} else {
-
-  f <- unclass(f)
-
-  if(is.null(Phi)){
-
-    cli::cli_inform(
-      c("i" = "{.arg Phi} was left {.code NULL} and loadings were entered directly in {.arg f}; assuming uncorrelated factors."),
-      class = "efa_scores_phi_null"
-    )
-
-  }
-
-}
-
-# psych's "Anderson" path calls invMatSqrt() on the 1x1 matrix produced by a
-# single-factor model, which triggers R's diag(scalar) trap and aborts with an
-# opaque "non-conformable arguments" error. Anderson-Rubin orthogonalisation is
-# also undefined with a single factor (nothing to make uncorrelated), so guard it.
-if (method == "Anderson" && ncol(f) == 1L) {
-  cli::cli_abort(
-    c("Anderson-Rubin scores are not defined for a single factor.",
-      "i" = "There is nothing to orthogonalise with one factor; use {.code method = \"Thurstone\"} or {.code method = \"Bartlett\"}."),
-    class = "efa_scores_anderson_single"
+  # Reassemble the legacy FACTOR_SCORES output shape.
+  output <- list(
+    scores = es$scores,
+    weights = es$weights,
+    r.scores = es$r.scores
   )
-}
 
-# psych's "components" path computes `x %*% w` without coercing x, so a data.frame
-# of raw data fails the matrix multiply; coerce up front. This is a no-op for the
-# other methods, which scale(x) the data internally.
-if (is.data.frame(x)) {
-  x <- as.matrix(x)
-}
+  # Only raw data (with returned scores) carries the `missing` field.
+  if (!is.null(es$scores)) {
+    output$missing <- anyNA(x)
+  }
 
-out_fac_scores <- psych::factor.scores(x = x, f = f, Phi = Phi, method = method,
-                                       rho = rho)
+  # Squared factor-score determinacy, named by factor.
+  output$R2 <- stats::setNames(es$determinacy$rho2, rownames(es$determinacy))
 
-settings <- list(method = method)
+  # Preserve the original (user-facing) method label in the settings.
+  output$settings <- list(method = method)
 
-output <- c(out_fac_scores,
-            settings = list(settings))
+  class(output) <- "FACTOR_SCORES"
 
-class(output) <- "FACTOR_SCORES"
-
-return(output)
+  output
 
 }

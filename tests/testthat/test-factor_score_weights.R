@@ -1,0 +1,175 @@
+# Fixtures: an oblique and an orthogonal EFA fit supply Lambda / Phi / R that are
+# passed identically to the native engine and to psych::factor.scores(), so the
+# two weight matrices must agree regardless of the fit quality.
+R_mat <- test_models$baseline$cormat
+
+efa_ob <- suppressMessages(suppressWarnings(
+  EFA(R_mat, n_factors = 3, N = 500, type = "EFAtools", method = "PAF",
+      rotation = "oblimin")))
+Lambda_ob <- unclass(efa_ob$rot_loadings)
+Phi_ob <- unclass(efa_ob$Phi)
+h2_ob <- diag(Lambda_ob %*% Phi_ob %*% t(Lambda_ob))
+
+efa_or <- suppressMessages(suppressWarnings(
+  EFA(R_mat, n_factors = 3, N = 500, type = "EFAtools", method = "PAF",
+      rotation = "varimax")))
+Lambda_or <- unclass(efa_or$rot_loadings)
+Phi_or <- diag(ncol(Lambda_or))
+h2_or <- diag(Lambda_or %*% Phi_or %*% t(Lambda_or))
+
+
+test_that("native weights match psych::factor.scores for every method", {
+  skip_on_cran()
+  skip_if_not_installed("psych")
+
+  # Oblique fixture: every method except Anderson (which is orthogonal only).
+  for (m in c("Thurstone", "Bartlett", "tenBerge", "Harman", "components")) {
+    W <- EFAtools:::.factor_score_weights(Lambda_ob, Phi_ob, R_mat, h2_ob,
+                                          method = m)
+    W_psych <- psych::factor.scores(x = R_mat, f = Lambda_ob, Phi = Phi_ob,
+                                    method = m)$weights
+    expect_equal(W, W_psych, tolerance = 1e-6, ignore_attr = TRUE,
+                 info = paste("method:", m))
+  }
+
+  # Anderson-Rubin is defined for orthogonal factors only.
+  W_and <- EFAtools:::.factor_score_weights(Lambda_or, Phi_or, R_mat, h2_or,
+                                            method = "Anderson")
+  W_and_psych <- psych::factor.scores(x = R_mat, f = Lambda_or, Phi = Phi_or,
+                                      method = "Anderson")$weights
+  expect_equal(W_and, W_and_psych, tolerance = 1e-6, ignore_attr = TRUE)
+})
+
+test_that("regression is an alias of Thurstone", {
+  W_thu <- EFAtools:::.factor_score_weights(Lambda_ob, Phi_ob, R_mat, h2_ob,
+                                            method = "Thurstone")
+  W_reg <- EFAtools:::.factor_score_weights(Lambda_ob, Phi_ob, R_mat, h2_ob,
+                                            method = "regression")
+  expect_identical(W_thu, W_reg)
+})
+
+test_that("orthogonal regression weights reproduce the SMC validity coefficients", {
+  # For Phi = I the regression weights are W = R^-1 Lambda, so diag(Lambda' W)
+  # equals diag(Lambda' R^-1 Lambda): each factor's squared multiple correlation
+  # with the observed variables (Grice, 2001).
+  W <- EFAtools:::.factor_score_weights(Lambda_or, Phi_or, R_mat, h2_or,
+                                        method = "regression")
+  smc <- diag(t(Lambda_or) %*% solve(R_mat, Lambda_or))
+  expect_equal(diag(crossprod(Lambda_or, W)), smc, tolerance = 1e-8)
+})
+
+test_that("weights satisfy their estimator-defining properties (psych-free)", {
+  # Closed-form identities that pin the weight *values* without psych, so the
+  # numeric correctness is still guarded on CRAN (where the psych cross-check is
+  # skipped).
+
+  # Bartlett is conditionally unbiased: Lambda' W = I (Bartlett, 1937).
+  W_bart <- EFAtools:::.factor_score_weights(Lambda_ob, Phi_ob, R_mat, h2_ob,
+                                             method = "Bartlett")
+  expect_equal(crossprod(Lambda_ob, W_bart), diag(ncol(Lambda_ob)),
+               tolerance = 1e-8, ignore_attr = TRUE)
+
+  # Anderson-Rubin scores are uncorrelated with unit variance: W' R W = I
+  # (Anderson & Rubin, 1956).
+  W_and <- EFAtools:::.factor_score_weights(Lambda_or, Phi_or, R_mat, h2_or,
+                                            method = "Anderson")
+  expect_equal(crossprod(W_and, R_mat %*% W_and), diag(ncol(Lambda_or)),
+               tolerance = 1e-8, ignore_attr = TRUE)
+
+  # ten Berge scores preserve the factor correlations: W' R W = Phi
+  # (ten Berge et al., 1999).
+  W_tb <- EFAtools:::.factor_score_weights(Lambda_ob, Phi_ob, R_mat, h2_ob,
+                                           method = "tenBerge")
+  expect_equal(crossprod(W_tb, R_mat %*% W_tb), Phi_ob,
+               tolerance = 1e-8, ignore_attr = TRUE)
+})
+
+test_that("the singular-matrix pseudo-inverse fallback works", {
+  # .pinv is the Moore-Penrose inverse of a rank-deficient matrix: M Mp M = M
+  # and Mp M Mp = Mp.
+  set.seed(7)
+  B <- matrix(rnorm(12), 4, 3)
+  M <- tcrossprod(cbind(B, B[, 1]))  # 4x4, rank 3 (singular)
+  Mp <- EFAtools:::.pinv(M)
+  expect_equal(M %*% Mp %*% M, M, tolerance = 1e-8)
+  expect_equal(Mp %*% M %*% Mp, Mp, tolerance = 1e-8)
+
+  # An exactly singular correlation matrix routes solve() through .pinv instead
+  # of erroring, so the engine still returns the pseudo-inverse weights.
+  R_sing <- matrix(c(1, 0.5, 0.5,
+                     0.5, 1,   1,
+                     0.5, 1,   1), nrow = 3)  # rows 2 and 3 identical -> singular
+  Lam <- matrix(c(0.7, 0.2,
+                  0.5, 0.3,
+                  0.4, 0.4), nrow = 3, byrow = TRUE)
+  h2s <- diag(Lam %*% t(Lam))
+  W_sing <- EFAtools:::.factor_score_weights(Lam, diag(2), R_sing, h2s,
+                                             method = "Thurstone")
+  expect_true(all(is.finite(W_sing)))
+  expect_equal(W_sing, EFAtools:::.pinv(R_sing) %*% Lam,
+               tolerance = 1e-10, ignore_attr = TRUE)
+})
+
+test_that("a Heywood case warns for Bartlett and Anderson but a proper solution does not", {
+  Lambda <- matrix(c(0.9, 0.4,
+                     0.5, 0.3,
+                     0.4, 0.8), nrow = 3, byrow = TRUE)
+  Phi <- diag(2)
+  R <- matrix(c(1,    0.30, 0.20,
+                0.30, 1,    0.25,
+                0.20, 0.25, 1),    nrow = 3)
+  h2 <- c(1.02, 0.4, 0.5)  # first communality > 1 -> non-positive uniqueness
+
+  expect_warning(
+    EFAtools:::.factor_score_weights(Lambda, Phi, R, h2, method = "Bartlett"),
+    class = "efa_scores_heywood")
+  expect_warning(
+    EFAtools:::.factor_score_weights(Lambda, Phi, R, h2, method = "Anderson"),
+    class = "efa_scores_heywood")
+
+  # A proper solution (all uniquenesses positive) does not warn.
+  Lambda_ok <- matrix(c(0.7, 0.1,
+                        0.6, 0.2,
+                        0.2, 0.7), nrow = 3, byrow = TRUE)
+  h2_ok <- diag(Lambda_ok %*% Phi %*% t(Lambda_ok))
+  expect_no_warning(
+    EFAtools:::.factor_score_weights(Lambda_ok, Phi, R, h2_ok, method = "Bartlett"))
+})
+
+test_that("matrix (inverse) square-root helpers are correct, including 1x1", {
+  set.seed(1)
+  A <- crossprod(matrix(rnorm(4), 2, 2)) + diag(2)  # 2x2 symmetric positive definite
+
+  expect_equal(EFAtools:::.mat_sqrt(A) %*% EFAtools:::.mat_sqrt(A), A,
+               tolerance = 1e-10)
+  expect_equal(EFAtools:::.inv_mat_sqrt(A), solve(EFAtools:::.mat_sqrt(A)),
+               tolerance = 1e-10)
+  expect_equal(EFAtools:::.mat_sqrt(A) %*% EFAtools:::.inv_mat_sqrt(A), diag(2),
+               tolerance = 1e-10)
+
+  # 1x1 inputs must return the scalar (inverse) root, not a mis-dimensioned
+  # identity from diag(scalar).
+  expect_equal(EFAtools:::.mat_sqrt(matrix(4, 1, 1)), matrix(2, 1, 1),
+               tolerance = 1e-12)
+  expect_equal(EFAtools:::.inv_mat_sqrt(matrix(4, 1, 1)), matrix(0.5, 1, 1),
+               tolerance = 1e-12)
+
+  # Indefinite / singular inputs exercise the eigenvalue clamps: without them
+  # .mat_sqrt would take the root of a negative eigenvalue (NaN) and
+  # .inv_mat_sqrt would divide by a zero eigenvalue (Inf).
+  expect_true(all(is.finite(EFAtools:::.mat_sqrt(diag(c(4, 1, -0.25))))))
+  expect_true(all(is.finite(EFAtools:::.inv_mat_sqrt(diag(c(4, 1, 0))))))
+})
+
+test_that("W has the right shape and carries the loading dimnames for every method", {
+  # The psych cross-check uses ignore_attr = TRUE, so dimnames are pinned here
+  # (across methods, since the engine sets them in one shared step).
+  for (m in c("Thurstone", "Bartlett", "tenBerge", "Harman", "components")) {
+    W <- EFAtools:::.factor_score_weights(Lambda_ob, Phi_ob, R_mat, h2_ob,
+                                          method = m)
+    expect_equal(dim(W), dim(Lambda_ob), info = m)
+    expect_identical(dimnames(W), dimnames(Lambda_ob), info = m)
+  }
+})
+
+rm(R_mat, efa_ob, Lambda_ob, Phi_ob, h2_ob, efa_or, Lambda_or, Phi_or, h2_or)
