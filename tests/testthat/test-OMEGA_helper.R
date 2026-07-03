@@ -137,14 +137,18 @@ lav_fit_ho_2 <- suppressWarnings(lavaan::cfa(lav_mod_ho_2,
 
 test_that("errors are thrown correctly", {
   skip_if_not_installed("lavaan")
-  expect_error(.OMEGA_LAVAAN(lav_fit_NA, g_name = "g"), class = "efa_omega_na_loadings")
-  expect_error(.OMEGA_LAVAAN(lav_fit_1, g_name = "fu"), class = "efa_omega_g_name")
+  # OMEGA's lavaan path now delegates spec-building (and its validation) to the
+  # shared reliability adapter, so the aborts carry the adapter's
+  # efa_reliability_* classes; the informational notices remain OMEGA's own
+  # efa_omega_* conditions.
+  expect_error(.OMEGA_LAVAAN(lav_fit_NA, g_name = "g"), class = "efa_reliability_na_loadings")
+  expect_error(.OMEGA_LAVAAN(lav_fit_1, g_name = "fu"), class = "efa_reliability_g_name")
   expect_message(.OMEGA_LAVAAN(lav_fit_2, add_ind = FALSE), class = "efa_omega_single_factor")
   expect_message(.OMEGA_LAVAAN(lav_fit_2), class = "efa_omega_single_factor")
   expect_message(.OMEGA_LAVAAN(lav_fit_ho_1, g_name = "g"), class = "efa_omega_g_second_order")
-  expect_error(.OMEGA_LAVAAN(lav_fit_inv, g_name = "F3"), class = "efa_omega_invalid_lavaan")
+  expect_error(.OMEGA_LAVAAN(lav_fit_inv, g_name = "F3"), class = "efa_reliability_invalid_lavaan")
   expect_message(.OMEGA_LAVAAN(lav_fit_bi_red, g_name = "g"), class = "efa_omega_few_loadings")
-  expect_error(.OMEGA_LAVAAN(lav_fit_ho_2, g_name = "g"), class = "efa_omega_higher_order")
+  expect_error(.OMEGA_LAVAAN(lav_fit_ho_2, g_name = "g"), class = "efa_reliability_higher_order")
 })
 
 

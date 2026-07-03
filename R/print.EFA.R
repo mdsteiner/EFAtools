@@ -540,7 +540,7 @@ format.summary.EFA <- function(x, ...) {
 # the shared `.efa_format_matrix()` renderer, so these tables align consistently with the
 # loading table; rows/columns are labelled from the matrix dimnames and `lower_only = TRUE`
 # blanks the strictly-upper triangle (for symmetric matrices such as Phi).
-.efa_corr_lines <- function(values, digits = 3, lower_only = FALSE) {
+.efa_corr_lines <- function(values, digits = 3, lower_only = FALSE, na = "NA") {
   values <- as.matrix(values)
   .efa_format_matrix(
     values = values,
@@ -548,7 +548,8 @@ format.summary.EFA <- function(x, ...) {
     col_labels = .efa_factor_names(values),
     col_roles = rep("corr", ncol(values)),
     digits = digits,
-    lower_only = lower_only
+    lower_only = lower_only,
+    na = na
   )
 }
 

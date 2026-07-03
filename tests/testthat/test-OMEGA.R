@@ -74,6 +74,77 @@ test_that("a second-order lavaan model is Schmid-Leiman transformed", {
   expect_true(all(om_lav_ho[, "tot"] >= om_lav_ho[, "hier"]))
 })
 
+test_that("OMEGA lavaan numbers are unchanged (byte-identical regression)", {
+  skip_if_not_installed("lavaan")
+
+  # Reference coefficient outputs captured from OMEGA()'s lavaan path, which scores
+  # the fitted solution through the shared reliability core. These pin the exact
+  # doubles (non-Heywood fixtures) so any change to that path is caught.
+  ref_bi <- structure(c(0.88301174174790287, 0.74751625677111733, 0.766678791034203,
+    0.7685498467792552, 0.76548235222658689, 0.5703940426328894,
+    0.50146589411449449, 0.49415766808792488, 0.11752938952131604,
+    0.17712221413822785, 0.26521289691970851, 0.2743921786913302,
+    0.84884383208407344, 0.37901193583533627, 0.48206335211458812,
+    0.47292561296446434, 0.67182974097583426, NA, NA, NA, 0.70588235294117641,
+    NA, NA, NA), dim = c(4L, 6L), dimnames = list(c("g", "F1", "F2", "F3"),
+    c("tot", "hier", "sub", "H", "ECV", "PUC")), class = "OMEGA")
+  expect_identical(om_lav, ref_bi)
+
+  ref_ho <- structure(c(0.88158341868254952, 0.74400564775764777, 0.76359153637480304,
+    0.76786220097481273, 0.76381778912616816, 0.54868574924161106,
+    0.50423868000554961, 0.50487682924077948, 0.11776562955638133,
+    0.19531989851603676, 0.25935285636925343, 0.26298537173403319,
+    0.84773834907453449, 0.36084418350415226, 0.44810509596935005,
+    0.45435071956970075, 0.68379181434818159, NA, NA, NA, 0.70588235294117641,
+    NA, NA, NA), dim = c(4L, 6L), dimnames = list(c("g", "F1", "F2", "F3"),
+    c("tot", "hier", "sub", "H", "ECV", "PUC")), class = "OMEGA")
+  expect_identical(om_lav_ho, ref_ho)
+
+  # A single factor returns a named c(Omega, H) vector.
+  ref_sf <- structure(c(Omega = 0.86802682659256869, H = 0.86873279471693676),
+                      class = "OMEGA")
+  fit_sf <- suppressWarnings(lavaan::cfa(
+    'g =~ V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11 + V12 +
+          V13 + V14 + V15 + V16 + V17 + V18',
+    sample.cov = test_models$baseline$cormat, sample.nobs = 500,
+    estimator = "ml", orthogonal = TRUE))
+  expect_identical(suppressMessages(OMEGA(fit_sf, g_name = "g")), ref_sf)
+
+  # Multiple groups return a named list of (unclassed) coefficient matrices.
+  ref_mg <- structure(list(A = structure(c(0.88301175860369074, 0.74751650041121109,
+    0.7666785723706202, 0.76854962402215088, 0.7654826788236242, 0.57038939781173303,
+    0.50147399385562386, 0.49415517812176823, 0.11752907978006645, 0.17712710259947803,
+    0.26520457851499635, 0.27439444590038276, 0.84884398691526919, 0.37901393509779763,
+    0.48206053742597404, 0.47292785665908216, 0.67183010049739167, NA, NA, NA,
+    0.70588235294117641, NA, NA, NA), dim = c(4L, 6L), dimnames = list(
+    c("g", "F1", "F2", "F3"), c("tot", "hier", "sub", "H", "ECV", "PUC"))),
+    B = structure(c(0.88301177654016794, 0.74751702091877537, 0.76667849734450322,
+    0.76854951437076557, 0.76548249348611708, 0.57038915952811098, 0.50147394437097303,
+    0.49415464215133981, 0.1175292830540509, 0.17712786139066439, 0.26520455297353013,
+    0.27439487221942582, 0.84884395119146006, 0.37901520165768471, 0.48206079699355442,
+    0.47292821672600055, 0.6718296371036121, NA, NA, NA, 0.70588235294117641,
+    NA, NA, NA), dim = c(4L, 6L), dimnames = list(c("g", "F1", "F2", "F3"),
+    c("tot", "hier", "sub", "H", "ECV", "PUC")))), class = "OMEGA")
+  fit_mg <- suppressWarnings(lavaan::cfa(lav_mod,
+    sample.cov = list(test_models$baseline$cormat, test_models$baseline$cormat),
+    sample.nobs = c(500, 500), estimator = "ml", orthogonal = TRUE))
+  expect_identical(OMEGA(fit_mg, g_name = "g", group_names = c("A", "B")), ref_mg)
+})
+
+test_that("the general-factor row is labelled with g_name, not a hardcoded 'g'", {
+  skip_if_not_installed("lavaan")
+  mod <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
+          F2 =~ V7 + V8 + V9 + V10 + V11 + V12
+          F3 =~ V13 + V14 + V15 + V16 + V17 + V18
+          gen =~ V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11 + V12 +
+                 V13 + V14 + V15 + V16 + V17 + V18'
+  fit <- suppressWarnings(lavaan::cfa(mod, sample.cov = test_models$baseline$cormat,
+                                      sample.nobs = 500, estimator = "ml",
+                                      orthogonal = TRUE))
+  expect_identical(rownames(OMEGA(fit, g_name = "gen")),
+                   c("gen", "F1", "F2", "F3"))
+})
+
 test_that("errors are thrown correctly", {
   expect_error(OMEGA(model = NULL, type = "EFAtools", var_names = rownames(sl_mod$sl),
                      g_load = sl_mod$sl[, "g"], s_load = 1:7,

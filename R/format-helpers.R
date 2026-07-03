@@ -16,9 +16,10 @@
 
 # Canonical number formatter for printed output: rounds to `digits`, drops the leading 0 of
 # values in (-1, 1) unless `print_zero`, optionally left-pads to a common width, and renders
-# non-finite values as "NA". Accepts a scalar, vector, or matrix and returns the same shape
+# non-finite values as `na` (default "NA"; pass "" to blank structurally-absent cells, as
+# base R's na.print does). Accepts a scalar, vector, or matrix and returns the same shape
 # (dimnames preserved).
-.efa_num <- function(x, digits = 3, print_zero = FALSE, pad = TRUE) {
+.efa_num <- function(x, digits = 3, print_zero = FALSE, pad = TRUE, na = "NA") {
 
   dims <- dim(x)
   dn <- dimnames(x)
@@ -32,7 +33,7 @@
   # Normalise negative zero (e.g. "-.000" or "-0.000") to its unsigned form, as
   # base R and psych do; a value rounding to zero from below should not print a sign.
   out <- sub("^-([0.]+)$", "\\1", out)
-  out[!finite] <- "NA"
+  out[!finite] <- na
 
   if (isTRUE(pad)) {
     width <- if (isFALSE(print_zero)) digits + 2L else digits + 3L
@@ -60,7 +61,8 @@
 # omit any rows that fall entirely within that blank triangle.
 .efa_format_matrix <- function(values, row_labels, col_labels, col_roles,
                                cutoff = 0, digits = 3, color = TRUE,
-                               max_factors_per_block = NULL, lower_only = FALSE) {
+                               max_factors_per_block = NULL, lower_only = FALSE,
+                               na = "NA") {
 
   values <- as.matrix(values)
   n_col <- ncol(values)
@@ -71,7 +73,7 @@
   aux_cols <- which(col_roles %in% c("h2", "u2"))
   split_cols <- setdiff(seq_len(n_col), aux_cols)
 
-  cell_str <- .efa_num(values, digits = digits, print_zero = FALSE, pad = FALSE)
+  cell_str <- .efa_num(values, digits = digits, print_zero = FALSE, pad = FALSE, na = na)
   if (isTRUE(lower_only)) {
     cell_str[upper.tri(cell_str)] <- ""
   }
