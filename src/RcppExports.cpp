@@ -145,20 +145,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// nest_sym
-arma::vec nest_sym(const int nf, const int N, arma::mat M, const int nreps);
-RcppExport SEXP _EFAtools_nest_sym(SEXP nfSEXP, SEXP NSEXP, SEXP MSEXP, SEXP nrepsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const int >::type nf(nfSEXP);
-    Rcpp::traits::input_parameter< const int >::type N(NSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type M(MSEXP);
-    Rcpp::traits::input_parameter< const int >::type nreps(nrepsSEXP);
-    rcpp_result_gen = Rcpp::wrap(nest_sym(nf, N, M, nreps));
-    return rcpp_result_gen;
-END_RCPP
-}
 // oblique_procrustes
 Rcpp::List oblique_procrustes(const arma::mat& A, const arma::mat& B, Rcpp::Nullable<Rcpp::NumericMatrix> S_r, Rcpp::Nullable<Rcpp::NumericMatrix> T_init_r, double eps, int maxit, int max_line_search, double step0, bool normalize, int random_starts, int screen_keep, int triage_maxit, double triage_improve_tol);
 RcppExport SEXP _EFAtools_oblique_procrustes(SEXP ASEXP, SEXP BSEXP, SEXP S_rSEXP, SEXP T_init_rSEXP, SEXP epsSEXP, SEXP maxitSEXP, SEXP max_line_searchSEXP, SEXP step0SEXP, SEXP normalizeSEXP, SEXP random_startsSEXP, SEXP screen_keepSEXP, SEXP triage_maxitSEXP, SEXP triage_improve_tolSEXP) {
@@ -463,6 +449,34 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// simulate_cfm_mvn
+arma::mat simulate_cfm_mvn(const arma::mat& R, const int N, const double tol);
+RcppExport SEXP _EFAtools_simulate_cfm_mvn(SEXP RSEXP, SEXP NSEXP, SEXP tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type R(RSEXP);
+    Rcpp::traits::input_parameter< const int >::type N(NSEXP);
+    Rcpp::traits::input_parameter< const double >::type tol(tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(simulate_cfm_mvn(R, N, tol));
+    return rcpp_result_gen;
+END_RCPP
+}
+// simulate_cfm_eigen
+arma::vec simulate_cfm_eigen(const int nf, const int N, const arma::mat& Lambda, const arma::vec& Psi, const int nreps);
+RcppExport SEXP _EFAtools_simulate_cfm_eigen(SEXP nfSEXP, SEXP NSEXP, SEXP LambdaSEXP, SEXP PsiSEXP, SEXP nrepsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const int >::type nf(nfSEXP);
+    Rcpp::traits::input_parameter< const int >::type N(NSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type Lambda(LambdaSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type Psi(PsiSEXP);
+    Rcpp::traits::input_parameter< const int >::type nreps(nrepsSEXP);
+    rcpp_result_gen = Rcpp::wrap(simulate_cfm_eigen(nf, N, Lambda, Psi, nreps));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_EFAtools_fit_ml_cpp", (DL_FUNC) &_EFAtools_fit_ml_cpp, 4},
@@ -475,7 +489,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EFAtools_dwls_residuals", (DL_FUNC) &_EFAtools_dwls_residuals, 4},
     {"_EFAtools_grad_dwls", (DL_FUNC) &_EFAtools_grad_dwls, 4},
     {"_EFAtools_factor_corres", (DL_FUNC) &_EFAtools_factor_corres, 3},
-    {"_EFAtools_nest_sym", (DL_FUNC) &_EFAtools_nest_sym, 4},
     {"_EFAtools_oblique_procrustes", (DL_FUNC) &_EFAtools_oblique_procrustes, 13},
     {"_EFAtools_oblique_procrustes_batch", (DL_FUNC) &_EFAtools_oblique_procrustes_batch, 11},
     {"_EFAtools_paf_iter", (DL_FUNC) &_EFAtools_paf_iter, 7},
@@ -492,6 +505,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EFAtools_rotate_bifactor_oblq", (DL_FUNC) &_EFAtools_rotate_bifactor_oblq, 10},
     {"_EFAtools_rotate_simplimax_oblq", (DL_FUNC) &_EFAtools_rotate_simplimax_oblq, 8},
     {"_EFAtools_rotation_se_jacobian", (DL_FUNC) &_EFAtools_rotation_se_jacobian, 8},
+    {"_EFAtools_simulate_cfm_mvn", (DL_FUNC) &_EFAtools_simulate_cfm_mvn, 3},
+    {"_EFAtools_simulate_cfm_eigen", (DL_FUNC) &_EFAtools_simulate_cfm_eigen, 5},
     {NULL, NULL, 0}
 };
 

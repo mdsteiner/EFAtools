@@ -321,6 +321,64 @@ test_that(".determine_factors returns a normal crossing and 0 without the warnin
   expect_equal(n0, 0)
 })
 
+test_that("the null-model reference draw matches the compiled fast path", {
+  # The rank-method and EFA paths draw the null model with the shared MVN kernel on the
+  # identity correlation, while the Pearson PCA/SMC path uses the compiled .parallel_sim().
+  # This pins that the two draw the same underlying stream: the kernel's eigenvalues agree
+  # with the compiled fast path up to the compiled cor() vs stats::cor() rounding (~1e-15)
+  # under a fixed seed. (That PARALLEL's rank/EFA paths actually route through the kernel is
+  # guarded by the two tests below, which drive .parallel_sim_eig() and .parallel_EFA_sim().)
+  N <- 60; p <- 5; nd <- 3
+
+  set.seed(101)
+  e_fast <- .parallel_sim(nd, p, N, 1L)          # compiled PCA fast path
+
+  set.seed(101)
+  e_kernel <- t(vapply(seq_len(nd), function(i) {
+    eigen(stats::cor(.simulate_cfm_mvn(diag(p), N)), symmetric = TRUE,
+          only.values = TRUE)$values
+  }, numeric(p)))
+
+  expect_equal(e_kernel, e_fast, tolerance = 1e-10)
+})
+
+test_that(".parallel_sim_eig draws its rank-method reference from the shared kernel", {
+  # The rank-method PCA path never rejects a draw, so its reference eigenvalues must be
+  # identical to a direct per-draw recompute through the shared kernel under the same
+  # random-number stream -- a guard that the draw routes through .simulate_cfm_mvn().
+  N <- 60; p <- 5; nd <- 4
+
+  set.seed(202)
+  got <- .parallel_sim_eig(nd, n_vars = p, N = N, eigen_type = 1L,
+                           cor_method = "spearman")
+
+  set.seed(202)
+  want <- t(vapply(seq_len(nd), function(i) {
+    eigen(stats::cor(.simulate_cfm_mvn(diag(p), N), method = "spearman"),
+          symmetric = TRUE, only.values = TRUE)$values
+  }, numeric(p)))
+
+  expect_identical(got, want)
+})
+
+test_that(".parallel_EFA_sim draws its reference from the shared kernel", {
+  # The EFA path likewise draws the null-model data with the shared kernel; under a
+  # fixed seed its eigenvalues equal a direct recompute that draws the same way.
+  N <- 60; p <- 5; nd <- 2
+
+  set.seed(303)
+  got <- .parallel_EFA_sim(nd, n_vars = p, N = N, n_factors = 1,
+                           cor_method = "pearson")
+
+  set.seed(303)
+  want <- t(vapply(seq_len(nd), function(i) {
+    R <- stats::cor(.simulate_cfm_mvn(diag(p), N))
+    suppressWarnings(suppressMessages(EFA(R, n_factors = 1, N = N)$final_eigen))
+  }, numeric(p)))
+
+  expect_equal(got, want)
+})
+
 if (is_slow_test()) {
   rm(pa_cor, pa_cor_pca, pa_raw, pa_nodat, pa_craw, pa_perc)
 }

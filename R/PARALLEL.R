@@ -428,15 +428,19 @@ PARALLEL <- function(x = NULL,
 
   eigvals <- matrix(nrow = n_datasets, ncol = n_vars)
 
+  # The null-model reference data are uncorrelated variables, drawn with the shared
+  # multivariate-normal kernel from the identity correlation (the no-factor case).
+  R_null <- diag(n_vars)
+
   for(i in seq_len(n_datasets)){
 
-    x <- matrix(stats::rnorm(N * n_vars), nrow = N, ncol = n_vars)
+    x <- .simulate_cfm_mvn(R_null, N)
     R <- stats::cor(x, method = cor_method)
     eigvals_i <- try(suppressWarnings(suppressMessages(EFA(R, n_factors = n_factors, N = N,
                                           ...)$final_eigen)), silent = TRUE)
     it_i <- 1
     while (inherits(eigvals_i, "try-error") && it_i < 25) {
-      x <- matrix(stats::rnorm(N * n_vars), nrow = N, ncol = n_vars)
+      x <- .simulate_cfm_mvn(R_null, N)
       R <- stats::cor(x, method = cor_method)
       eigvals_i <- try(suppressWarnings(suppressMessages(EFA(R, n_factors = n_factors, N = N,
                                             ...)$final_eigen)), silent = TRUE)
@@ -460,9 +464,12 @@ PARALLEL <- function(x = NULL,
 
 # Reference eigenvalues for one simulation chunk. Horn's (1965) parallel analysis
 # requires the reference matrices to be built with the same correlation estimator
-# as the observed data. The default Pearson case uses the compiled .parallel_sim();
-# rank-based estimators ("spearman", "kendall") are simulated in R via stats::cor()
-# so the reference matches the observed correlations rather than always being Pearson.
+# as the observed data. The default Pearson case uses the compiled .parallel_sim()
+# for its allocation-light, eigenvalue-only loop; rank-based estimators ("spearman",
+# "kendall") draw the null-model data with the shared multivariate-normal kernel
+# (.simulate_cfm_mvn on the identity correlation -- uncorrelated variables) and then
+# correlate them with stats::cor(), so the reference matches the observed correlation
+# estimator rather than always being Pearson.
 .parallel_sim_eig <- function(n_datasets, n_vars, N, eigen_type, cor_method,
                               maxit = 10000) {
 
@@ -474,13 +481,17 @@ PARALLEL <- function(x = NULL,
   success <- 0L
   iter <- 0L
 
+  # The null-model reference data are uncorrelated variables, drawn with the shared
+  # kernel from the identity correlation (the no-factor case).
+  R_null <- diag(n_vars)
+
   # Only the SMC path can reject a draw (a singular simulated matrix) and so needs
   # the maxit retry bound. The PCA path never rejects, so it must run all n_datasets
   # draws regardless of maxit, matching the compiled .parallel_sim() whose PCA loop
   # ignores maxit.
   while (success < n_datasets && (eigen_type != 2 || iter < maxit)) {
     iter <- iter + 1L
-    x <- matrix(stats::rnorm(N * n_vars), nrow = N, ncol = n_vars)
+    x <- .simulate_cfm_mvn(R_null, N)
     R <- stats::cor(x, method = cor_method)
 
     if (eigen_type == 2) { # SMC: replace the diagonal with squared multiple

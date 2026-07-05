@@ -21,6 +21,17 @@ test_that("CD returns the correct values", {
   # whose lack of significant improvement stopped the search)
   expect_length(rec$y, cd_grips$n_factors[["CD"]] + 1)
   expect_length(rec$x, cd_grips$n_factors[["CD"]] + 1)
+
+  # Regression pin on the comparison-data draw: CD generates its populations
+  # through the shared Ruscio-Kaczetow kernel, so pin the mean RMSE-eigenvalue
+  # curve of the seeded run to catch any drift. Only the tested factor counts
+  # (1 and 2) are populated; later columns stay zero because the search stops
+  # after the first factor.
+  expect_equal(
+    colMeans(rec$rmse_eigenvalues),
+    c(0.033821350175717364, 0.038807011125946637, 0, 0),
+    tolerance = 1e-6
+  )
 })
 
 grips_na <- GRiPS_raw

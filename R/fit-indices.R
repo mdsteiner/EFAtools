@@ -246,6 +246,58 @@
 # fit and the identification check use one formula.
 .efa_df <- function(m, q) ((m - q)^2 - (m + q)) / 2
 
+# Maximum-likelihood (Wishart) discrepancy F(Sigma, R) = tr(Sigma^-1 R) - log|Sigma^-1 R| - m
+# between a model-implied matrix `Sigma` (unit diagonal) and an observed/population matrix `R`
+# with `m` variables. Computed via a determinant split (log|Sigma^-1 R| = log|R| - log|Sigma|)
+# to avoid forming the explicit inverse and to stay stable for ill-conditioned Sigma; the
+# caller may pass a precomputed `ldR = determinant(R, logarithm = TRUE)` when it also needs it
+# elsewhere. Returns the discrepancy clamped at 0 (a (near-)perfect fit is floating-point dust),
+# or NA when Sigma or R is not positive definite or the trace is non-finite. Shared by .gof()
+# (the model chi-square) and .efa_population_fit() so simulation and fitting use one formula.
+.ml_discrepancy <- function(Sigma, R, m = ncol(R),
+                            ldR = determinant(R, logarithm = TRUE)) {
+  tryCatch({
+    ldSigma <- determinant(Sigma, logarithm = TRUE)
+    val <- sum(diag(solve(Sigma, R))) +
+      as.numeric(ldSigma$modulus) - as.numeric(ldR$modulus) - m
+    if (!is.finite(val) || ldSigma$sign <= 0 || ldR$sign <= 0) {
+      NA_real_
+    } else {
+      max(0, val)
+    }
+  }, error = function(e) NA_real_)
+}
+
+# Population-limit fit of a fixed `q`-factor model (loadings `L`, p by q) to a population
+# correlation matrix `R_pop`: the RMSEA, CFI, and TLI of THIS model, in the N -> infinity,
+# no-Bartlett-multiplier limit, reusing the same formulas as the fitting side (.ml_discrepancy,
+# .efa_df, .chi_fit_indices) rather than reimplementing them. It reports the misfit of the given
+# `L` (not a re-optimized best fit), which is what efa_simulate() wants for the generating model;
+# a re-fitted EFA that re-optimizes the loadings can attain a smaller discrepancy.
+# In that limit the noncentrality parameter equals the discrepancy F per unit (N - 1), so passing
+# chi = df + F with N = 2 (N - 1 = 1) makes .chi_fit_indices() return RMSEA = sqrt(F / df),
+# CFI = 1 - F / max(F, F_null) (the floor-at-0 CFI from .incremental_fit(); equals 1 - F / F_null
+# in the intended regime F <= F_null, which always holds here since L is the generating model), and
+# TLI on the exact population scale (the sampling correction and the Bartlett multiplier both drop
+# out). The model-implied matrix is LL' with unit diagonal (as in
+# .gof()); the independence baseline discrepancy is F_null = -log|R_pop| (as in .null_chisq()).
+.efa_population_fit <- function(L, R_pop) {
+  m <- nrow(L)
+  q <- ncol(L)
+  df <- .efa_df(m, q)
+  Sigma_model <- tcrossprod(L)
+  diag(Sigma_model) <- 1
+  ldR <- determinant(R_pop, logarithm = TRUE)
+  Fval <- .ml_discrepancy(Sigma_model, R_pop, m, ldR)
+  F_null <- -as.numeric(ldR$modulus)
+  df_null <- m * (m - 1) / 2
+  idx <- .chi_fit_indices(chi = df + Fval, df = df,
+                          chi_null = df_null + F_null, df_null = df_null,
+                          N = 2, m = m, ci = FALSE,
+                          chi_cfi = df + Fval, chi_null_cfi = df_null + F_null)
+  list(rmsea = idx$RMSEA, cfi = idx$CFI, tli = idx$TLI, df = df, Fval = Fval)
+}
+
 # Two-stage / full-information ML likelihood-ratio chi-square for cor_method = "fiml". The EM
 # moments `fiml` (the saturated mean `mu`, covariance `sigma`, and saturated observed-data
 # log-likelihood `logl`, plus the raw `data`) come from .prepare_cor_input(); the analysed
@@ -373,22 +425,10 @@
     if (!(method %in% c("PAF", "DWLS")) && !is.na(N) && df >= 0 && mult > 0) {
       Sigma <- LLt
       diag(Sigma) <- 1
+      # log|R|, reused for the discrepancy below and the CFI/TLI/baseline scale further down.
+      ldR <- determinant(R, logarithm = TRUE)
       # discrepancy F (>= 0, clamped); the reported chi-square is F * mult.
-      Fchi <- tryCatch({
-        # F = tr(Sigma^-1 R) - log|Sigma^-1 R| - p, computed via a determinant split
-        # (log|Sigma^-1 R| = log|R| - log|Sigma|) to avoid forming the explicit inverse
-        # and to stay stable for ill-conditioned Sigma.
-        ldSigma <- determinant(Sigma, logarithm = TRUE)
-        ldR <- determinant(R, logarithm = TRUE)
-        val <- sum(diag(solve(Sigma, R))) +
-          as.numeric(ldSigma$modulus) - as.numeric(ldR$modulus) - m
-        if (!is.finite(val) || ldSigma$sign <= 0 || ldR$sign <= 0) {
-          NA_real_
-        } else {
-          # clamp the floating-point dust of a (near-)perfect fit to 0
-          max(0, val)
-        }
-      }, error = function(e) NA_real_)
+      Fchi <- .ml_discrepancy(Sigma, R, m, ldR)
       chi <- Fchi * mult
     } else {
       chi <- NA_real_

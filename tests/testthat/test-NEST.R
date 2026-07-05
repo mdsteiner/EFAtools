@@ -134,5 +134,65 @@ test_that("settings are returned correctly", {
   expect_equal(nest_raw$settings$cor_method, "pearson")
 })
 
+# The reference-eigenvalue simulation is drawn by .simulate_cfm_eigen through the shared
+# MVN kernel. These fast tests run unconditionally: the first two pin the two draw paths
+# (the null model and a factor-score model), the third drives NEST() itself so the wiring
+# from each reference model into the kernel is covered without the slow fixtures.
+test_that("the null-model reference draw shares the MVN kernel's stream", {
+  # The nf == 1 reference is the null (identity) model. Under a fixed seed the largest
+  # reference eigenvalue must equal a direct recompute that draws the same null model
+  # through .simulate_cfm_mvn(diag(p)) -- pinning that both kernel entries draw the same
+  # stream. Tolerance covers arma::cor vs stats::cor (mirrors test-PARALLEL.R).
+  N <- 60; p <- 5; nd <- 4
+
+  set.seed(11)
+  got <- .simulate_cfm_eigen(1L, N, matrix(numeric(0), p, 0), rep(1, p), nd)
+
+  set.seed(11)
+  want <- vapply(seq_len(nd), function(i) {
+    eigen(stats::cor(.simulate_cfm_mvn(diag(p), N)), symmetric = TRUE,
+          only.values = TRUE)$values[1]
+  }, numeric(1))
+
+  expect_equal(as.vector(got), want, tolerance = 1e-10)
+})
+
+test_that("the factor-score reference draw matches its pinned reference eigenvalues", {
+  # A one-factor reference model (the nf = 2 draw path). The reference eigenvalues are
+  # pinned; the draw must reproduce them under this seed. expect_equal (not identical)
+  # because the linear algebra downstream of the platform-independent RNG draw varies by
+  # ~1e-13 across BLAS implementations, whereas any change to the draw stream is O(1).
+  N <- 50; nd <- 5
+  L <- matrix(c(.7, .6, .5, .4), 4, 1)
+  Psi <- 1 - L^2
+
+  set.seed(123)
+  got <- .simulate_cfm_eigen(2L, N, L, as.vector(Psi), nd)
+
+  expect_equal(
+    as.vector(got),
+    c(0.851006411446006, 0.841528141373475, 0.876576983719939,
+      0.856551711327252, 0.840572878485076)
+  )
+})
+
+test_that("NEST recovers a clear two-factor structure end to end", {
+  # Drives NEST() itself so the wiring from each reference model into .simulate_cfm_eigen
+  # -- the loadings and uniquenesses NEST() passes it -- is exercised by a fast test. Two
+  # well-separated factors keep the retained count stable at a small number of simulated
+  # datasets; the nf = 3 step builds a two-factor reference, covering a multi-column
+  # loading matrix in the draw.
+  R2 <- matrix(.1, 6, 6)
+  R2[1:3, 1:3] <- .6
+  R2[4:6, 4:6] <- .6
+  diag(R2) <- 1
+
+  set.seed(2024)
+  nest_2f <- NEST(R2, N = 300, n_datasets = 100)
+
+  expect_s3_class(nest_2f, "efa_retention")
+  expect_equal(nest_2f$n_factors[["NEST"]], 2)
+})
+
 if (is_slow_test()) rm(nest_cor, nest_raw)
 rm(x, y, z, dat_sing, cor_sing, cor_nposdef)

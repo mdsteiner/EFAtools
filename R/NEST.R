@@ -129,25 +129,28 @@ NEST <- function(x, N = NA,
 
     if (nf == 1) {
 
-      # for the first factor, use identity matrix as reference data
-      M <- diag(nvar)
+      # For the first factor the reference is the null (identity) model: no loadings
+      # and unit uniquenesses.
+      Lambda <- matrix(numeric(0), nvar, 0)
+      Psi <- rep(1, nvar)
 
     } else {
 
 
-      # For further factors, use model with nf - 1 as reference data. The fit is an
+      # For further factors, use a model with nf - 1 factors as reference. The fit is an
       # internal step run once per tested factor; suppress its warnings so a forwarded
       # estimator (e.g. method = "ML") cannot turn per-model Heywood or non-convergence
       # warnings into one warning per loop iteration. A Heywood case is handled
       # explicitly below.
       mm <- suppressWarnings(EFA(R, N = N, n_factors = nf - 1, ...))
-      L <- mm$unrot_loadings
+      Lambda <- mm$unrot_loadings
 
       # A Heywood case in the reference model (communality at or above 1) makes
       # the uniqueness negative, so the reference data cannot be simulated; abort
-      # with an actionable message instead of passing NaN into the C++ simulator.
-      uniqueness <- 1 - mm$h2
-      if (any(!is.finite(uniqueness) | uniqueness < 0)) {
+      # with an actionable message instead of passing a negative variance to the
+      # C++ simulator.
+      Psi <- 1 - mm$h2
+      if (any(!is.finite(Psi) | Psi < 0)) {
         cli::cli_abort(
           c("A Heywood case occurred in the {nf - 1}-factor reference model used by NEST.",
             "x" = "A communality at or above 1 leaves no unique variance to simulate the reference data from.",
@@ -156,18 +159,13 @@ NEST <- function(x, N = NA,
         )
       }
 
-      u2 <- diag(sqrt(uniqueness))
-
-      # bind loadings and uniquenesses together to create data according to
-      # factor score rule X = F*L + e, which is faster than using the model
-      # implied R to draw from a multivariate normal distribution.
-      M <- cbind(L, u2)
-
-
     }
 
-    # use C++ to simulate datasets
-    ref_values <- .nest_sym(nf, N, t(M), n_datasets)
+    # Simulate the reference datasets and return the nf-th largest eigenvalue of each.
+    # The shared kernel draws via the factor-score rule X = F*L' + e from the reference
+    # model (loadings Lambda, uniquenesses Psi), which is faster than drawing from the
+    # model-implied correlation matrix.
+    ref_values <- .simulate_cfm_eigen(nf, N, Lambda, Psi, n_datasets)
 
     references[nf] <- stats::quantile(ref_values, probs = 1 - alpha)
     if (emp_eigen[nf] <= references[nf]) {

@@ -46,19 +46,6 @@
     .Call(`_EFAtools_factor_corres`, x, y, thresh)
 }
 
-#' Get reference values for nest.
-#'
-#' Function called from within NEST so usually no call to this is needed by the user.
-#' Provides a C++ implementation of the NEST simulation procedure
-#'
-#' @param nf numeric. Current number of factors.
-#' @param N numeric. Number of cases / observations in dataset.
-#' @param M numeric matrix. A transposed matrix of cbind(loadings, diag(sqrt(uniquenesses))).
-#' @param nreps numeric. Number of datasets to create.
-.nest_sym <- function(nf, N, M, nreps = 1000L) {
-    .Call(`_EFAtools_nest_sym`, nf, N, M, nreps)
-}
-
 #' Oblique Procrustes target rotation using a k x k inner objective
 #'
 #' Compute an oblique target rotation for a loading matrix using a
@@ -727,5 +714,49 @@
 #' @keywords internal
 .rotation_se_jacobian <- function(A, T_init, method, param, normalize, oblique, eps, general_col = 0L) {
     .Call(`_EFAtools_rotation_se_jacobian`, A, T_init, method, param, normalize, oblique, eps, general_col)
+}
+
+#' Draw multivariate-normal data from a population correlation matrix.
+#'
+#' Internal helper called from efa_simulate(). Draws `N` cases from a
+#' `p`-variate normal with correlation (or covariance) `R` by post-multiplying a
+#' matrix of standard normal deviates by a matrix square root `M` of `R` (with
+#' M' M = R, so the rows of Z * M are N(0, R)). This is the same Z * M rule used by
+#' the NEST reference simulation (.simulate_cfm_eigen): there `M` is the transposed
+#' factor-score matrix, here it is a Cholesky or eigen square root.
+#' A positive-definite `R` is factored by Cholesky; a positive-semidefinite but
+#' singular `R` (which makes the Cholesky fail although it is still a valid
+#' covariance, e.g. a no-factor block or a smoothed factor intercorrelation
+#' matrix) falls back to a symmetric eigen square root.
+#'
+#' @param R numeric matrix. Population correlation/covariance matrix.
+#' @param N integer. Number of cases to draw.
+#' @param tol numeric. Eigenvalues below `-tol` mark `R` as indefinite.
+.simulate_cfm_mvn <- function(R, N, tol = 1e-8) {
+    .Call(`_EFAtools_simulate_cfm_mvn`, R, N, tol)
+}
+
+#' Reference eigenvalues for the NEST simulation via the shared kernel.
+#'
+#' Internal helper called from NEST(). Simulates `nreps` datasets from an
+#' `(nf - 1)`-factor reference model, given that model's loadings `Lambda` and
+#' uniquenesses `Psi`, and returns the `nf`-th largest eigenvalue of each simulated
+#' correlation matrix. The data are drawn with the shared Z * M rule (see
+#' .simulate_cfm_mvn()) using the factor-score square root
+#' `M = t([Lambda | diag(sqrt(Psi))])`, so a row `randn(1, nf - 1 + p) * M` is
+#' N(0, Lambda Lambda' + diag(Psi)). Drawing `nf - 1 + p` standard normals and
+#' post-multiplying by the factor-score matrix is faster than forming the model-
+#' implied correlation matrix and drawing from it, and matches the position at which
+#' NEST() reads the reference eigenvalue.
+#'
+#' @param nf integer. Position of the empirical eigenvalue being tested (1-based);
+#'   the `nf`-th largest simulated eigenvalue is returned per replicate.
+#' @param N integer. Number of cases / observations per simulated dataset.
+#' @param Lambda numeric matrix. Loadings of the `(nf - 1)`-factor reference model
+#'   (`p x (nf - 1)`); pass a `p x 0` matrix for the `nf == 1` null (identity) model.
+#' @param Psi numeric vector. Uniquenesses (`1 - h2`) of the reference model.
+#' @param nreps integer. Number of datasets to simulate.
+.simulate_cfm_eigen <- function(nf, N, Lambda, Psi, nreps = 1000L) {
+    .Call(`_EFAtools_simulate_cfm_eigen`, nf, N, Lambda, Psi, nreps)
 }
 
