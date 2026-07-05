@@ -194,17 +194,6 @@ COMPARE <- function(x,
 
     }
 
-    if (n_factors > 1 && isTRUE(corres)) {
-      # factor correspondences
-      corres_list <- .factor_corres(x, y, thresh = thresh)
-      diff_corres <- corres_list$diff_corres
-      diff_corres_cross <- corres_list$diff_corres_cross
-    } else {
-      diff_corres <- 0
-      diff_corres_cross <- 0
-    }
-
-
   } else if (inherits(x, c("numeric", "integer"))) {
 
     if (reorder == "congruence" && !is.null(names(x)) && !is.null(names(y))){
@@ -236,9 +225,58 @@ COMPARE <- function(x,
 
       }
 
-      diff_corres <- NA
-      diff_corres_cross <- NA
+  }
 
+  # delegate the difference statistics and factor correspondences to the
+  # printless core; x and y are already coerced and aligned at this point, so the
+  # core does not (and must not) reorder them.
+  core <- .compare_loadings(x, y, thresh = thresh, na.rm = na.rm, corres = corres)
+
+  settings <- list(
+    reorder = reorder,
+    corres = corres,
+    digits = digits,
+    thresh = thresh,
+    m_red = m_red,
+    range_red = range_red,
+    round_red = round_red,
+    print_diff = print_diff,
+    na.rm = na.rm,
+    x_labels = x_labels,
+    plot_red = plot_red
+  )
+
+
+
+  # create output list: the core statistics followed by the recorded settings
+  out <- c(core, list(settings = settings))
+
+  class(out) <- "COMPARE"
+
+  out
+}
+
+
+# Difference statistics and factor correspondences for two already coerced and
+# aligned loading/communality objects. Kept free of coercion, reordering, and
+# printing so a caller that has aligned x and y to a shared target can reuse it
+# without triggering a second alignment.
+.compare_loadings <- function(x, y, thresh = 0.3, na.rm = FALSE, corres = TRUE) {
+
+  # factor correspondences are only defined for matrices; a single factor or a
+  # disabled comparison leaves nothing to disagree on, and vectors report NA.
+  if (inherits(x, "matrix")) {
+    if (ncol(x) > 1 && isTRUE(corres)) {
+      corres_list <- .factor_corres(x, y, thresh = thresh)
+      diff_corres <- corres_list$diff_corres
+      diff_corres_cross <- corres_list$diff_corres_cross
+    } else {
+      diff_corres <- 0
+      diff_corres_cross <- 0
+    }
+  } else {
+    diff_corres <- NA
+    diff_corres_cross <- NA
   }
 
   # compute differences and statistics
@@ -294,24 +332,7 @@ COMPARE <- function(x,
     are_equal <- as.double(are_equal)
   }
 
-  settings <- list(
-    reorder = reorder,
-    corres = corres,
-    digits = digits,
-    thresh = thresh,
-    m_red = m_red,
-    range_red = range_red,
-    round_red = round_red,
-    print_diff = print_diff,
-    na.rm = na.rm,
-    x_labels = x_labels,
-    plot_red = plot_red
-  )
-
-
-
-  # create output list
-  out <- list(
+  list(
     diff = diff,
     mean_abs_diff = mean_abs_diff,
     median_abs_diff = median_abs_diff,
@@ -321,11 +342,6 @@ COMPARE <- function(x,
     are_equal = are_equal,
     diff_corres = diff_corres,
     diff_corres_cross = diff_corres_cross,
-    g = g,
-    settings = settings
+    g = g
   )
-
-  class(out) <- "COMPARE"
-
-  out
 }

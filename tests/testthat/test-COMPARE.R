@@ -376,5 +376,124 @@ test_that("plot returns a ggplot and guards too-few differences", {
   expect_error(plot(dec), class = "efa_compare_too_few_to_plot")
 })
 
+
+# Reference implementation of the statistics and factor correspondences that
+# .compare_loadings() returns. The test below pins the extracted core against
+# accidental drift: it mirrors the helper's computation (a regression guard) rather
+# than deriving it independently, so the statistic *values* are anchored by the
+# value-based COMPARE tests above. Only the vector NA path is written differently
+# here (an explicit numeric/integer test, not a catch-all else); the two agree for
+# the matrix/numeric/integer inputs exercised.
+ref_compare_loadings <- function(x, y, thresh = 0.3, na.rm = FALSE, corres = TRUE) {
+
+  if (inherits(x, "matrix")) {
+    if (ncol(x) > 1 && isTRUE(corres)) {
+      corres_list <- .factor_corres(x, y, thresh = thresh)
+      diff_corres <- corres_list$diff_corres
+      diff_corres_cross <- corres_list$diff_corres_cross
+    } else {
+      diff_corres <- 0
+      diff_corres_cross <- 0
+    }
+  } else if (inherits(x, c("numeric", "integer"))) {
+    diff_corres <- NA
+    diff_corres_cross <- NA
+  }
+
+  diff <- x - y
+
+  sq <- diff ^ 2
+  n_ok <- if (na.rm) sum(!is.na(diff)) else length(diff)
+  g <- sqrt(sum(sq, na.rm = na.rm) / n_ok)
+
+  mean_abs_diff <- mean(abs(diff), na.rm = na.rm)
+  median_abs_diff <- stats::median(abs(diff), na.rm = na.rm)
+
+  min_abs_diff <- min(abs(diff), na.rm = na.rm)
+  max_abs_diff <- max(abs(diff), na.rm = na.rm)
+
+  max_dec <- min(c(.decimals(x), .decimals(y)))
+
+  ax <- abs(x)
+  ay <- abs(y)
+  if (anyNA(diff) && (!na.rm || all(is.na(diff)))) {
+    are_equal <- NA_real_
+  } else {
+    are_equal <- 0
+    for (d in 0:max_dec) {
+      if (!isTRUE(all(trunc(signif(ax * 10^d, 13)) == trunc(signif(ay * 10^d, 13)),
+                      na.rm = na.rm))) {
+        break
+      }
+      are_equal <- d
+    }
+    are_equal <- as.double(are_equal)
+  }
+
+  list(
+    diff = diff,
+    mean_abs_diff = mean_abs_diff,
+    median_abs_diff = median_abs_diff,
+    min_abs_diff = min_abs_diff,
+    max_abs_diff = max_abs_diff,
+    max_dec = max_dec,
+    are_equal = are_equal,
+    diff_corres = diff_corres,
+    diff_corres_cross = diff_corres_cross,
+    g = g
+  )
+}
+
+test_that(".compare_loadings reproduces COMPARE's pre-extraction computation", {
+  set_dn <- function(m) {
+    colnames(m) <- paste0("F", seq_len(ncol(m)))
+    rownames(m) <- paste0("V", seq_len(nrow(m)))
+    m
+  }
+
+  m2x <- set_dn(matrix(c(0.8, 0.1, 0.2, 0.7, 0.15, 0.75, 0.1, 0.05), ncol = 2))
+  m2y <- set_dn(matrix(c(0.75, 0.12, 0.25, 0.68, 0.2, 0.7, 0.08, 0.02), ncol = 2))
+  m1x <- set_dn(matrix(c(0.5, 0.6, 0.7, 0.8), ncol = 1))
+  m1y <- set_dn(matrix(c(0.52, 0.58, 0.72, 0.79), ncol = 1))
+  # signed disagreement (0.57 vs -0.5699999) and float-noise magnitudes exercise
+  # are_equal / max_dec.
+  vx  <- c(a = 0.57, b = 0.6285, c = 0.1)
+  vy  <- c(a = -0.5699999, b = 0.62851, c = 0.1)
+  vix <- 1:6
+  viy <- c(1L, 2L, 3L, 4L, 5L, 7L)
+  # NA-containing matrix, corres kept on to mirror COMPARE's default path.
+  mnax <- set_dn(matrix(c(0.8, NA, 0.2, 0.7, 0.15, 0.75, NA, 0.05), ncol = 2))
+  mnay <- set_dn(matrix(c(0.75, 0.12, 0.25, 0.68, 0.2, 0.7, 0.08, 0.02), ncol = 2))
+  vnax <- c(0.5, NA, 0.30003, 0.4)
+  vnay <- c(0.5, 0.5, 0.3, 0.4)
+  # near-zero value renders in scientific notation (drives the .decimals path).
+  scix <- c(0.5, 0.00003, 0.4)
+  sciy <- c(0.5, 0.4, 0.4)
+  # every pair missing under na.rm = TRUE -> are_equal NA, min()/max() warn.
+  allmiss_x <- c(1.234, NA)
+  allmiss_y <- c(NA, 5.678)
+
+  cases <- list(
+    list(x = m2x, y = m2y, corres = TRUE),
+    list(x = m2x, y = m2y, corres = FALSE),
+    list(x = m2x, y = m2y, corres = TRUE, thresh = 0.5),
+    list(x = m1x, y = m1y),
+    list(x = vx, y = vy),
+    list(x = vix, y = viy),
+    list(x = mnax, y = mnay, na.rm = FALSE),
+    list(x = mnax, y = mnay, na.rm = TRUE),
+    list(x = vnax, y = vnay, na.rm = FALSE),
+    list(x = vnax, y = vnay, na.rm = TRUE),
+    list(x = scix, y = sciy),
+    list(x = allmiss_x, y = allmiss_y, na.rm = TRUE)
+  )
+
+  for (cs in cases) {
+    got <- suppressWarnings(do.call(.compare_loadings, cs))
+    ref <- suppressWarnings(do.call(ref_compare_loadings, cs))
+    expect_identical(got, ref)
+  }
+})
+
 rm(int, dec, matr, SPSS_PAF, psych_PAF, load, load_ro1, load_ro2, SPSS_PAF_1,
    psych_PAF_1, load_F1, vec_s, vec_L, mat_s, mat_L)
