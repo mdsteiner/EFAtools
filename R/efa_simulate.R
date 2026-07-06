@@ -660,20 +660,7 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
   # before the replicate loop) puts both under one umbrella; the model-error draw runs once in the
   # main process, and nothing between it and the replicate loop consumes random numbers, so a call
   # without model error draws the identical stream it did before this argument existed.
-  if (!is.null(seed)) {
-    seed_existed <- exists(".Random.seed", envir = globalenv(), inherits = FALSE)
-    saved_seed <- if (seed_existed) {
-      get(".Random.seed", envir = globalenv(), inherits = FALSE)
-    }
-    on.exit({
-      if (seed_existed) {
-        assign(".Random.seed", saved_seed, envir = globalenv())
-      } else if (exists(".Random.seed", envir = globalenv(), inherits = FALSE)) {
-        rm(".Random.seed", envir = globalenv())
-      }
-    }, add = TRUE)
-    set.seed(seed)
-  }
+  .set_local_seed(seed)
 
   # Inject model error: perturb the population so the q-factor model fits it with the target
   # RMSEA (CB/WB) or RMSEA and/or CFI (TKL), and record the achieved fit. Requires the factor-model

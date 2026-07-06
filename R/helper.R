@@ -24,6 +24,42 @@
   )
 }
 
+# Set `seed` for the duration of the *calling* function and restore the caller's
+# global RNG state when that function returns, so `.Random.seed` carries no lasting
+# side effect: the caller's stream is saved and reinstated on exit or -- if none
+# existed yet -- the state set.seed() creates is removed again. The restoring
+# on.exit() is registered in the caller's frame (`envir`, via do.call) so it fires
+# when the public function returns, not when this helper does; the saved state is
+# inlined into the handler with bquote() so it resolves in that frame. `add = TRUE`
+# composes with any other on.exit() handlers the caller has registered. A NULL
+# `seed` is a no-op. Used to make seeded, worker-count-independent bootstraps and
+# simulations reproducible without disturbing the caller's RNG stream.
+.set_local_seed <- function(seed, envir = parent.frame()) {
+  if (is.null(seed)) {
+    return(invisible(NULL))
+  }
+  seed_existed <- exists(".Random.seed", envir = globalenv(), inherits = FALSE)
+  saved_seed <- if (seed_existed) {
+    get(".Random.seed", envir = globalenv(), inherits = FALSE)
+  }
+  do.call(
+    on.exit,
+    list(
+      bquote({
+        if (.(seed_existed)) {
+          assign(".Random.seed", .(saved_seed), envir = globalenv())
+        } else if (exists(".Random.seed", envir = globalenv(), inherits = FALSE)) {
+          rm(".Random.seed", envir = globalenv())
+        }
+      }),
+      add = TRUE
+    ),
+    envir = envir
+  )
+  set.seed(seed)
+  invisible(NULL)
+}
+
 # Abort (classed) when the suggested lavaan package is unavailable; guards the lavaan
 # input paths of OMEGA() and SL(). `call` is forwarded so the error points at the caller.
 .require_lavaan <- function(call = rlang::caller_env()) {

@@ -228,16 +228,17 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
   }
 
   ## Factor retention criteria, driven by the registry (run in registry order)
-  ctl <- list(N = N, use = use, cor_method = cor_method,
-              n_factors_max = n_factors_max, N_pop = N_pop,
-              N_samples = N_samples, alpha = alpha, max_iter_CD = max_iter_CD,
-              n_fac_theor = n_fac_theor, method = method, gof = gof,
-              eigen_type_HULL = eigen_type_HULL,
-              eigen_type_other = eigen_type_other, n_factors = n_factors,
-              n_datasets = n_datasets, percent = percent,
-              decision_rule = decision_rule, ekc_type = ekc_type,
-              n_datasets_nest = n_datasets_nest, alpha_nest = alpha_nest,
-              dots = list(...))
+  ctl <- .n_factors_ctl(N = N, use = use, cor_method = cor_method,
+                        n_factors_max = n_factors_max, N_pop = N_pop,
+                        N_samples = N_samples, alpha = alpha,
+                        max_iter_CD = max_iter_CD, n_fac_theor = n_fac_theor,
+                        method = method, gof = gof,
+                        eigen_type_HULL = eigen_type_HULL,
+                        eigen_type_other = eigen_type_other,
+                        n_factors = n_factors, n_datasets = n_datasets,
+                        percent = percent, decision_rule = decision_rule,
+                        ekc_type = ekc_type, n_datasets_nest = n_datasets_nest,
+                        alpha_nest = alpha_nest, dots = list(...))
 
   run <- intersect(names(.retention_registry), criteria)
   outputs <- list()
@@ -340,9 +341,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
   # could not determine a number stays visible.
   n_factors_out <- unlist(lapply(names(outputs), function(id) {
     if (isTRUE(.retention_registry[[id]]$visual)) return(NULL)
-    nf <- outputs[[id]]$n_factors
-    names(nf) <- ifelse(names(nf) == id, id, paste(id, names(nf), sep = "_"))
-    nf
+    .retention_key(id, outputs[[id]]$n_factors)
   }))
   if (is.null(n_factors_out)) n_factors_out <- numeric(0)
 

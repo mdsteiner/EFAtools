@@ -85,6 +85,40 @@
     })
 )
 
+# Control list consumed by the factor-retention registry funs. The defaults
+# mirror the N_FACTORS() argument defaults so any requested criterion resolves;
+# callers pass only what they override. `gof` defaults to the Hull
+# goodness-of-fit indices valid for `method` (PAF supports only the CAF).
+.n_factors_ctl <- function(N = NA, use = "pairwise.complete.obs",
+                           cor_method = "pearson", n_factors_max = NA,
+                           N_pop = 10000, N_samples = 500, alpha = .30,
+                           max_iter_CD = 50, n_fac_theor = NA, method = "ML",
+                           gof = if (method == "PAF") "CAF" else c("CAF", "CFI", "RMSEA"),
+                           eigen_type_HULL = "SMC", eigen_type_other = "SMC",
+                           n_factors = 1, n_datasets = 1000, percent = 95,
+                           decision_rule = "means", ekc_type = "BvA2017",
+                           n_datasets_nest = 1000, alpha_nest = .05,
+                           dots = list()) {
+  list(N = N, use = use, cor_method = cor_method,
+       n_factors_max = n_factors_max, N_pop = N_pop,
+       N_samples = N_samples, alpha = alpha, max_iter_CD = max_iter_CD,
+       n_fac_theor = n_fac_theor, method = method, gof = gof,
+       eigen_type_HULL = eigen_type_HULL,
+       eigen_type_other = eigen_type_other, n_factors = n_factors,
+       n_datasets = n_datasets, percent = percent,
+       decision_rule = decision_rule, ekc_type = ekc_type,
+       n_datasets_nest = n_datasets_nest, alpha_nest = alpha_nest,
+       dots = dots)
+}
+
+# Name a criterion's suggested factor counts the way N_FACTORS() aggregates
+# them: a single-variant suggestion keeps the bare id, a multi-variant one
+# becomes "<id>_<variant>".
+.retention_key <- function(id, nf) {
+  names(nf) <- ifelse(names(nf) == id, id, paste(id, names(nf), sep = "_"))
+  nf
+}
+
 # Construct an efa_retention object from a list of per-sub-variant records. The
 # top-level `n_factors` named vector is derived from the records. `subtitle` is an
 # optional one-line context string (e.g. the estimation method); `note` is an

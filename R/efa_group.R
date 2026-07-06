@@ -266,20 +266,7 @@ efa_group <- function(x, groups = NULL, n_factors, N = NA,
   # seed = NULL so they advance this one seeded stream in sequence rather than each
   # resetting it; EFA()'s own future.seed = TRUE keeps the replicate fits
   # worker-count-independent. Mirrors the seed handling in EFA().
-  if (do_boot && !is.null(seed)) {
-    seed_existed <- exists(".Random.seed", envir = globalenv(), inherits = FALSE)
-    saved_seed <- if (seed_existed) {
-      get(".Random.seed", envir = globalenv(), inherits = FALSE)
-    }
-    on.exit({
-      if (seed_existed) {
-        assign(".Random.seed", saved_seed, envir = globalenv())
-      } else if (exists(".Random.seed", envir = globalenv(), inherits = FALSE)) {
-        rm(".Random.seed", envir = globalenv())
-      }
-    }, add = TRUE)
-    set.seed(seed)
-  }
+  if (do_boot) .set_local_seed(seed)
 
   # Fit every group at the common number of factors. A degenerate group (too few
   # cases, a constant item, a non-computable matrix) makes EFA abort; re-raise it

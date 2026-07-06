@@ -948,20 +948,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
     # number of workers. The caller's RNG stream is saved and restored afterwards --
     # or, if none existed yet, the seed set.seed() creates is removed again -- so
     # EFA() leaves no side effect on it.
-    if (!is.null(seed)) {
-      seed_existed <- exists(".Random.seed", envir = globalenv(), inherits = FALSE)
-      saved_seed <- if (seed_existed) {
-        get(".Random.seed", envir = globalenv(), inherits = FALSE)
-      }
-      on.exit({
-        if (seed_existed) {
-          assign(".Random.seed", saved_seed, envir = globalenv())
-        } else if (exists(".Random.seed", envir = globalenv(), inherits = FALSE)) {
-          rm(".Random.seed", envir = globalenv())
-        }
-      }, add = TRUE)
-      set.seed(seed)
-    }
+    .set_local_seed(seed)
 
     m <- ncol(R)
     # Resample the cases the correlation matrix was actually built from. Under
