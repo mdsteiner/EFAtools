@@ -236,10 +236,6 @@
         </td>
         <td><p>Count near-zero loadings</p></td>
       </tr><tr><td>
-          <p><code><a href="dot-nest_sym.html">.nest_sym()</a></code> </p>
-        </td>
-        <td><p>Get reference values for nest.</p></td>
-      </tr><tr><td>
           <p><code><a href="dot-oblique_procrustes.html">.oblique_procrustes()</a></code> </p>
         </td>
         <td><p>Oblique Procrustes target rotation using a k x k inner objective</p></td>
@@ -296,9 +292,41 @@
         </td>
         <td><p>Oblique simplimax factor rotation</p></td>
       </tr><tr><td>
+          <p><code><a href="dot-simulate_cfm_eigen.html">.simulate_cfm_eigen()</a></code> </p>
+        </td>
+        <td><p>Reference eigenvalues for the NEST simulation via the shared kernel.</p></td>
+      </tr><tr><td>
+          <p><code><a href="dot-simulate_cfm_mvn.html">.simulate_cfm_mvn()</a></code> </p>
+        </td>
+        <td><p>Draw multivariate-normal data from a population correlation matrix.</p></td>
+      </tr><tr><td>
           <p><code><a href="dot-tucker_congruence.html">.tucker_congruence()</a></code> </p>
         </td>
         <td><p>Tucker congruence between factors</p></td>
+      </tr><tr><td>
+          <p><code><a href="efa_group.html">efa_group()</a></code> </p>
+        </td>
+        <td><p>Multigroup exploratory factor analysis</p></td>
+      </tr><tr><td>
+          <p><code><a href="efa_power.html">efa_power()</a></code> </p>
+        </td>
+        <td><p>Power analysis for exploratory factor analysis</p></td>
+      </tr><tr><td>
+          <p><code><a href="efa_reliability.html">efa_reliability()</a></code> </p>
+        </td>
+        <td><p>Reliability and common-variance coefficients for a factor solution</p></td>
+      </tr><tr><td>
+          <p><code><a href="efa_scores.html">efa_scores()</a></code> </p>
+        </td>
+        <td><p>Estimate factor scores and score-quality diagnostics for an EFA model</p></td>
+      </tr><tr><td>
+          <p><code><a href="efa_screen.html">efa_screen()</a></code> </p>
+        </td>
+        <td><p>Screen data for exploratory factor analysis</p></td>
+      </tr><tr><td>
+          <p><code><a href="efa_simulate.html">efa_simulate()</a></code> </p>
+        </td>
+        <td><p>Simulate data from a common-factor population model</p></td>
       </tr><tr><td>
           <p><code><a href="format.N_FACTORS.html">format(<i>&lt;N_FACTORS&gt;</i>)</a></code> </p>
         </td>
@@ -319,6 +347,14 @@
           <p><code><a href="plot.N_FACTORS.html">plot(<i>&lt;N_FACTORS&gt;</i>)</a></code> </p>
         </td>
         <td><p>Plot method for N_FACTORS objects</p></td>
+      </tr><tr><td>
+          <p><code><a href="plot.efa_group.html">plot(<i>&lt;efa_group&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>Plot a multigroup factor analysis</p></td>
+      </tr><tr><td>
+          <p><code><a href="plot.efa_power.html">plot(<i>&lt;efa_power&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>Plot the RMSEA power curve</p></td>
       </tr><tr><td>
           <p><code><a href="plot.efa_retention.html">plot(<i>&lt;efa_retention&gt;</i>)</a></code> </p>
         </td>
@@ -368,9 +404,33 @@
         </td>
         <td><p>Print SLLOADINGS object</p></td>
       </tr><tr><td>
+          <p><code><a href="print.efa_group.html">print(<i>&lt;efa_group&gt;</i>)</a></code> <code><a href="print.efa_group.html">format(<i>&lt;efa_group&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>Print and format a multigroup factor analysis</p></td>
+      </tr><tr><td>
+          <p><code><a href="print.efa_power.html">print(<i>&lt;efa_power&gt;</i>)</a></code> <code><a href="print.efa_power.html">format(<i>&lt;efa_power&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>Print and format an efa_power object</p></td>
+      </tr><tr><td>
+          <p><code><a href="print.efa_reliability.html">print(<i>&lt;efa_reliability&gt;</i>)</a></code> <code><a href="print.efa_reliability.html">format(<i>&lt;efa_reliability&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>Print and format a reliability object</p></td>
+      </tr><tr><td>
           <p><code><a href="print.efa_retention.html">print(<i>&lt;efa_retention&gt;</i>)</a></code> </p>
         </td>
         <td><p>Print method for efa_retention objects</p></td>
+      </tr><tr><td>
+          <p><code><a href="print.efa_scores.html">print(<i>&lt;efa_scores&gt;</i>)</a></code> <code><a href="print.efa_scores.html">format(<i>&lt;efa_scores&gt;</i>)</a></code> <code><a href="print.efa_scores.html">summary(<i>&lt;efa_scores&gt;</i>)</a></code> <code><a href="print.efa_scores.html">print(<i>&lt;summary.efa_scores&gt;</i>)</a></code> <code><a href="print.efa_scores.html">format(<i>&lt;summary.efa_scores&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>Print and format an efa_scores object</p></td>
+      </tr><tr><td>
+          <p><code><a href="print.efa_screen.html">print(<i>&lt;efa_screen&gt;</i>)</a></code> <code><a href="print.efa_screen.html">format(<i>&lt;efa_screen&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>Print and format an efa_screen object</p></td>
+      </tr><tr><td>
+          <p><code><a href="print.efa_simulated.html">print(<i>&lt;efa_simulated&gt;</i>)</a></code> <code><a href="print.efa_simulated.html">format(<i>&lt;efa_simulated&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>Print and format an efa_simulated object</p></td>
       </tr><tr><td>
           <p><code><a href="residuals.EFA.html">residuals(<i>&lt;EFA&gt;</i>)</a></code> </p>
         </td>

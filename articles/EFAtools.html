@@ -860,8 +860,9 @@ two matrices), not just from different implementations:</p>
 <span><span class="co">#&gt; socR_6  <span style="color: #BB0000;"> .0199</span>  <span style="color: #BB0000;">-.0179</span>  <span style="color: #BB0000;">-.0076</span>  <span style="color: #BB0000;">-.0427</span>  <span style="color: #BB0000;"> .0257</span>  <span style="color: #BB0000;">-.0124</span></span></span></code></pre></div>
 <p>Finally, if you are interested in factor scores from the EFA
 solution, these can be obtained with <code><a href="../reference/FACTOR_SCORES.html">FACTOR_SCORES()</a></code>, a
-wrapper for <code><a href="https://rdrr.io/pkg/psych/man/factor.scores.html" class="external-link">psych::factor.scores()</a></code> to be used directly with
-an output from <code><a href="../reference/EFA.html">EFA()</a></code>:</p>
+convenience wrapper that estimates the scores directly from an output
+from <code><a href="../reference/EFA.html">EFA()</a></code> (see <code><a href="../reference/efa_scores.html">efa_scores()</a></code> for the
+factor-score weights together with score-quality diagnostics):</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">EFA_mod</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/EFA.html">EFA</a></span><span class="op">(</span><span class="va">DOSPERT_sub</span>, n_factors <span class="op">=</span> <span class="fl">6</span>, rotation <span class="op">=</span> <span class="st">"promax"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from</span></span>
@@ -936,7 +937,7 @@ but 25 is enough to show the difference):</p>
 <span><span class="co">#&gt; Parallel analysis suggests that the number of factors =  10  and the number of components =  4 </span></span>
 <span><span class="co">#&gt; Parallel analysis suggests that the number of factors =  10  and the number of components =  4 </span></span>
 <span><span class="co">#&gt; Parallel analysis suggests that the number of factors =  10  and the number of components =  4</span></span>
-<span><span class="co">#&gt; Parallel analysis suggests that the number of factors =  10  and the number of components =  4 </span></span>
+<span><span class="co">#&gt; Parallel analysis suggests that the number of factors =  10  and the number of components =  5 </span></span>
 <span><span class="co">#&gt; Parallel analysis suggests that the number of factors =  10  and the number of components =  4</span></span>
 <span><span class="co">#&gt; Parallel analysis suggests that the number of factors =  10  and the number of components =  4 </span></span>
 <span><span class="co">#&gt; Parallel analysis suggests that the number of factors =  10  and the number of components =  4 </span></span>
@@ -985,9 +986,9 @@ but 25 is enough to show the difference):</p>
 <span><span class="co">#&gt;                                                                    expr</span></span>
 <span><span class="co">#&gt;              PARALLEL(DOSPERT_sub, eigen_type = "SMC", n_datasets = 25)</span></span>
 <span><span class="co">#&gt;  psych::fa.parallel(DOSPERT_sub, SMC = TRUE, plot = FALSE, n.iter = 25)</span></span>
-<span><span class="co">#&gt;       min       lq     mean   median       uq      max neval</span></span>
-<span><span class="co">#&gt;  112.5849 135.4869 142.2797 140.5658 150.3674 157.3972   100</span></span>
-<span><span class="co">#&gt;  130.5198 136.6719 144.5919 138.6406 142.8724 384.2779   100</span></span></code></pre></div>
+<span><span class="co">#&gt;        min       lq     mean   median       uq      max neval</span></span>
+<span><span class="co">#&gt;   99.65098 133.4128 134.9893 134.4271 135.3228 238.2598   100</span></span>
+<span><span class="co">#&gt;  134.37091 139.8936 144.8019 141.5789 148.0826 198.1875   100</span></span></code></pre></div>
 <p>Moreover, the following code compares the PAF implementation (of type
 “psych”) of the EFAtools package with the one from the psych
 package:</p>
@@ -998,11 +999,11 @@ package:</p>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt; Unit: milliseconds</span></span>
 <span><span class="co">#&gt;                                                   expr      min       lq</span></span>
-<span><span class="co">#&gt;                                    EFA(DOSPERT_raw, 6) 17.98947 24.97325</span></span>
-<span><span class="co">#&gt;  psych::fa(DOSPERT_raw, 6, rotate = "none", fm = "pa") 25.04087 34.46512</span></span>
+<span><span class="co">#&gt;                                    EFA(DOSPERT_raw, 6) 17.45855 23.61803</span></span>
+<span><span class="co">#&gt;  psych::fa(DOSPERT_raw, 6, rotate = "none", fm = "pa") 26.59577 34.60034</span></span>
 <span><span class="co">#&gt;      mean   median       uq       max neval</span></span>
-<span><span class="co">#&gt;  25.10837 25.24313 25.56699  30.39056   100</span></span>
-<span><span class="co">#&gt;  36.74434 34.95148 39.10473 128.18924   100</span></span></code></pre></div>
+<span><span class="co">#&gt;  24.06000 24.30549 24.54464  29.71744   100</span></span>
+<span><span class="co">#&gt;  37.13987 34.89448 39.08207 133.03107   100</span></span></code></pre></div>
 <p>While these differences are not large, they grow larger the more
 iterations the procedures need, which is usually the case if solutions
 are more tricky to find. Especially for simulations this might come in
