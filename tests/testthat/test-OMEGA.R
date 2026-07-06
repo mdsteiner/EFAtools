@@ -74,12 +74,13 @@ test_that("a second-order lavaan model is Schmid-Leiman transformed", {
   expect_true(all(om_lav_ho[, "tot"] >= om_lav_ho[, "hier"]))
 })
 
-test_that("OMEGA lavaan numbers are unchanged (byte-identical regression)", {
+test_that("OMEGA lavaan numbers are unchanged (regression)", {
   skip_if_not_installed("lavaan")
 
   # Reference coefficient outputs captured from OMEGA()'s lavaan path, which scores
-  # the fitted solution through the shared reliability core. These pin the exact
-  # doubles (non-Heywood fixtures) so any change to that path is caught.
+  # the fitted solution through the shared reliability core. These pin the coefficients
+  # (non-Heywood fixtures) to a tight tolerance so any change to that path is caught;
+  # the comparison is not bit-exact because the last bits differ across BLAS/platforms.
   ref_bi <- structure(c(0.88301174174790287, 0.74751625677111733, 0.766678791034203,
     0.7685498467792552, 0.76548235222658689, 0.5703940426328894,
     0.50146589411449449, 0.49415766808792488, 0.11752938952131604,
@@ -88,7 +89,7 @@ test_that("OMEGA lavaan numbers are unchanged (byte-identical regression)", {
     0.47292561296446434, 0.67182974097583426, NA, NA, NA, 0.70588235294117641,
     NA, NA, NA), dim = c(4L, 6L), dimnames = list(c("g", "F1", "F2", "F3"),
     c("tot", "hier", "sub", "H", "ECV", "PUC")), class = "OMEGA")
-  expect_identical(om_lav, ref_bi)
+  expect_equal(om_lav, ref_bi, tolerance = 1e-6)
 
   ref_ho <- structure(c(0.88158341868254952, 0.74400564775764777, 0.76359153637480304,
     0.76786220097481273, 0.76381778912616816, 0.54868574924161106,
@@ -98,7 +99,7 @@ test_that("OMEGA lavaan numbers are unchanged (byte-identical regression)", {
     0.45435071956970075, 0.68379181434818159, NA, NA, NA, 0.70588235294117641,
     NA, NA, NA), dim = c(4L, 6L), dimnames = list(c("g", "F1", "F2", "F3"),
     c("tot", "hier", "sub", "H", "ECV", "PUC")), class = "OMEGA")
-  expect_identical(om_lav_ho, ref_ho)
+  expect_equal(om_lav_ho, ref_ho, tolerance = 1e-6)
 
   # A single factor returns a named c(Omega, H) vector.
   ref_sf <- structure(c(Omega = 0.86802682659256869, H = 0.86873279471693676),
@@ -108,7 +109,7 @@ test_that("OMEGA lavaan numbers are unchanged (byte-identical regression)", {
           V13 + V14 + V15 + V16 + V17 + V18',
     sample.cov = test_models$baseline$cormat, sample.nobs = 500,
     estimator = "ml", orthogonal = TRUE))
-  expect_identical(suppressMessages(OMEGA(fit_sf, g_name = "g")), ref_sf)
+  expect_equal(suppressMessages(OMEGA(fit_sf, g_name = "g")), ref_sf, tolerance = 1e-6)
 
   # Multiple groups return a named list of (unclassed) coefficient matrices.
   ref_mg <- structure(list(A = structure(c(0.88301175860369074, 0.74751650041121109,
@@ -128,7 +129,8 @@ test_that("OMEGA lavaan numbers are unchanged (byte-identical regression)", {
   fit_mg <- suppressWarnings(lavaan::cfa(lav_mod,
     sample.cov = list(test_models$baseline$cormat, test_models$baseline$cormat),
     sample.nobs = c(500, 500), estimator = "ml", orthogonal = TRUE))
-  expect_identical(OMEGA(fit_mg, g_name = "g", group_names = c("A", "B")), ref_mg)
+  expect_equal(OMEGA(fit_mg, g_name = "g", group_names = c("A", "B")), ref_mg,
+               tolerance = 1e-6)
 })
 
 test_that("the general-factor row is labelled with g_name, not a hardcoded 'g'", {

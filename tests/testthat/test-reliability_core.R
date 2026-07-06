@@ -1,8 +1,10 @@
 ## Tests for .reliability_core() -- the reliability engine behind OMEGA().
 
-test_that(".reliability_core reproduces the OMEGA coefficient menu byte-for-byte", {
-  # Byte-identical references captured from OMEGA's flexible engine (both variance
-  # modes). A regression in the lifted math would change these exact doubles.
+test_that(".reliability_core reproduces the OMEGA coefficient menu (regression)", {
+  # Reference coefficients captured from OMEGA's flexible engine (both variance
+  # modes), pinned to a tight tolerance. A regression in the lifted math would move
+  # these numbers far beyond it; the comparison is not bit-exact because the last bits
+  # differ across BLAS/platforms.
   ref_corr <- structure(c(0.8828685009816174, 0.76916616970747365,
     0.76340460593899595, 0.74403137565562616, 0.73987835131636559,
     0.49973769215022423, 0.4935927140365538, 0.51896424927096363,
@@ -34,20 +36,21 @@ test_that(".reliability_core reproduces the OMEGA coefficient menu byte-for-byte
                var_names = rownames(sl_mod$sl), fac_names = seq_len(3))
 
   # Both variance modes, driven directly through the core.
-  expect_identical(.reliability_core(spec, "correlation", TRUE), ref_corr)
+  expect_equal(.reliability_core(spec, "correlation", TRUE), ref_corr, tolerance = 1e-6)
   spec_sums <- spec
   spec_sums$cormat <- NULL
-  expect_identical(.reliability_core(spec_sums, "sums_load", TRUE), ref_sums)
+  expect_equal(.reliability_core(spec_sums, "sums_load", TRUE), ref_sums, tolerance = 1e-6)
 
   # add_ind = FALSE drops the H/ECV/PUC columns but leaves the omegas unchanged.
   noadd <- .reliability_core(spec, "correlation", FALSE)
-  expect_identical(unclass(noadd), unclass(ref_corr)[, c("tot", "hier", "sub")])
+  expect_equal(unclass(noadd), unclass(ref_corr)[, c("tot", "hier", "sub")],
+               tolerance = 1e-6)
   expect_s3_class(noadd, "OMEGA")
 
   # The .OMEGA_FLEX adapter must normalise an SL object to a spec that yields the
   # same numbers through the core.
-  expect_identical(.OMEGA_FLEX(sl_mod, type = "EFAtools", factor_corres = fc,
-                               variance = "correlation"), ref_sl)
+  expect_equal(.OMEGA_FLEX(sl_mod, type = "EFAtools", factor_corres = fc,
+                           variance = "correlation"), ref_sl, tolerance = 1e-6)
 })
 
 test_that("a loading of absolute value >= 1 returns that construct's H index as NA and notes it", {

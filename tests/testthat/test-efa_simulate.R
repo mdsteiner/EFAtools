@@ -601,8 +601,11 @@ test_that("invalid category specifications are rejected", {
     class = "efa_simulate_input")
   # Proportions that pass the sum tolerance but whose interior cumulative sum would
   # cross 1 are renormalized rather than driving qnorm to NaN (which would crash
-  # findInterval with an unclassed error); the tiny last category is left empty.
-  props_edge <- rep(list(c(0.5, 0.5000005, 5e-7)), p)
+  # findInterval with an unclassed error); the tiny last category is left empty. The
+  # total sits just inside the sum tolerance (1 + 9e-7 < 1 + 1e-6) rather than exactly
+  # on it, so the check is not decided by the last-bit rounding of the sum (which
+  # differs across BLAS/platforms).
+  props_edge <- rep(list(c(0.5, 0.5000005, 4e-7)), p)
   expect_warning(
     dat_edge <- efa_simulate(N = 500, R = R_vm, categories = props_edge, seed = 1),
     class = "efa_simulate_empty_category")
