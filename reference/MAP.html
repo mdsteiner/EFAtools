@@ -60,7 +60,7 @@ factors/components to retain. The function implements the original MAP criterion
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Velicer's Minimum Average Partial (MAP) Criterion</h1>
-    <small class="dont-index">Source: <a href="https://github.com/mdsteiner/EFAtools/blob/v.0.8.0/R/MAP.R" class="external-link"><code>R/MAP.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/mdsteiner/EFAtools/blob/master/R/MAP.R" class="external-link"><code>R/MAP.R</code></a></small>
     <div class="hidden name"><code>MAP.Rd</code></div>
     </div>
 
@@ -122,14 +122,19 @@ criterion values over \(m\).</p></li>
     <h2>Details</h2>
     <p>MAP partials successive principal components out of the correlation matrix and,
 after removing \(m\) components, summarizes the off-diagonal partial
-correlations \(r^*_{ij}\) that remain; the suggested number of factors is the
-\(m\) that minimizes the criterion. Two criteria are returned:</p><ul><li><p><strong>TR2 (original MAP; Velicer, 1976):</strong>
-$$\mathrm{MAP}_m = \frac{\sum_{i \neq j} (r^*_{ij})^2}{p(p-1)},$$
-the mean squared off-diagonal partial correlation.</p></li>
-<li><p><strong>TR4 (revised MAP; Velicer, Eaton, &amp; Fava, 2000):</strong>
-$$\mathrm{MAP4}_m = \frac{\sum_{i \neq j} (r^*_{ij})^4}{p(p-1)},$$
-the mean fourth-power off-diagonal partial correlation, which downweights
-small partial correlations.</p></li>
+correlations \(r^*_{ij}\) that remain in the \(m\)-th partial correlation
+matrix \(M\) (which has a unit diagonal); the suggested number of factors is
+the \(m\) that minimizes the criterion. Two criteria are returned, each
+rescaling the trace of a matrix power of \(M\) by the number of off-diagonal
+cells \(p(p-1)\):</p><ul><li><p><strong>TR2 (original MAP; Velicer, 1976):</strong> the average squared off-diagonal
+partial correlation,
+$$\mathrm{TR2}_m = \frac{\mathrm{tr}(M^2) - p}{p(p-1)} = \frac{\sum_{i \neq j} (r^*_{ij})^2}{p(p-1)},$$
+where subtracting \(p\) removes the \(p\) unit diagonal entries.</p></li>
+<li><p><strong>TR4 (revised MAP; Velicer, Eaton, &amp; Fava, 2000):</strong> the analogous
+fourth-power summary, formed from the trace of the fourth matrix power,
+$$\mathrm{TR4}_m = \frac{\mathrm{tr}(M^4) - p}{p(p-1)}.$$
+Moving from the squared to the fourth power downweights the small partial
+correlations relative to the large ones, which can sharpen the minimum.</p></li>
 </ul><p>A non-positive-definite input correlation matrix (e.g. from sampling error) is
 smoothed with <code><a href="https://rdrr.io/pkg/psych/man/cor.smooth.html" class="external-link">psych::cor.smooth()</a></code>.</p>
     </div>
@@ -165,7 +170,7 @@ retention criteria.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── Minimum average partial ─────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> • Original implementation (TR2): 1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> • Revised implementation (TR4): 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Revised implementation (TR4): 3</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
