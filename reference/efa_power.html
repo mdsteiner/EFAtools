@@ -350,18 +350,13 @@ and <code>eps1</code>):</p><dl><dt><code>"close"</code></dt>
 <dd><p>The test of <em>close fit</em> (MacCallum et al., 1996): the null
 hypothesis is that the fit is close (RMSEA \(\le\) <code>eps0</code>, conventionally
 0.05), and power is computed against a worse alternative (<code>eps1</code>,
-conventionally 0.08, so <code>eps0 &lt; eps1</code>). The critical value is the upper
-<code>alpha</code> point of the null distribution
-(<code>qchisq(alpha, df, ncp0, lower.tail = FALSE)</code>) and the power is the mass of
-the alternative distribution beyond it.</p></dd>
+conventionally 0.08, so <code>eps0 &lt; eps1</code>), in the upper tail.</p></dd>
 
 <dt><code>"notclose"</code></dt>
 <dd><p>The test of <em>not-close fit</em>: the null hypothesis is that
 the fit is not close (RMSEA \(\ge\) <code>eps0</code>), and power is computed against
-a better alternative (<code>eps1</code>, conventionally 0.01, so <code>eps0 &gt; eps1</code>). Here
-the rejection region is the lower tail, so the critical value is the lower
-<code>alpha</code> point of the null distribution and the power is the mass of the
-alternative distribution below it.</p></dd>
+a better alternative (<code>eps1</code>, conventionally 0.01, so <code>eps0 &gt; eps1</code>), in the
+lower tail.</p></dd>
 
 
 </dl><p>When <code>eps0</code> and <code>eps1</code> are ordered the wrong way round for the chosen <code>type</code> a
@@ -383,18 +378,17 @@ only approximately – a more realistic target (MacCallum, 2003). The true numbe
 of factors <code>k_true</code> is <code>ncol(Lambda)</code> for a factor-model population, or <code>k</code> for a
 bare <code>R</code>.</p>
 <p>Each replicate is analysed three ways. <strong>Hit-rate</strong>: every criterion in <code>criteria</code>
-(drawn from the same registry as <code><a href="N_FACTORS.html">N_FACTORS()</a></code>) is run and its suggested number of
-factors compared with <code>k_true</code>; the hit-rate is the proportion of agreements over the
-replicates on which the criterion returned a definite factor count (replicates where
-it errored or was undecided are excluded, not counted as misses). <strong>Structure
-recovery</strong> (only for a factor-model population): the <code>k_true</code>-factor model is fitted
-with <code><a href="EFA.html">EFA()</a></code>, the rotated loadings are matched to the population loadings (column
-permutation and sign), and the matched-factor Tucker congruences (Lorenzo-Seva &amp; ten
-Berge, 2006) are compared with <code>recovery_threshold</code>; recovery counts a replicate a
-success when the smallest (<code>min</code>) or the average (<code>mean</code>) matched congruence reaches
-the threshold. <strong>Convergence</strong>: the same fit supplies the proportion of replicates
-whose fit completed and, among the completed fits, the proportion that converged and
-that produced a Heywood case.</p>
+is run and its suggested number of factors compared with <code>k_true</code>; the hit-rate is
+the proportion of agreements over the replicates on which the criterion returned a
+definite factor count (replicates where it errored or was undecided are excluded,
+not counted as misses). <strong>Structure recovery</strong> (only for a factor-model
+population): the <code>k_true</code>-factor model is fitted with <code><a href="EFA.html">EFA()</a></code>, its rotated loadings
+are matched to the population loadings, and the matched-factor Tucker congruences
+(Lorenzo-Seva &amp; ten Berge, 2006) are compared with <code>recovery_threshold</code>; a
+replicate counts as a success when the smallest (<code>min</code>) or the average (<code>mean</code>)
+matched congruence reaches it. <strong>Convergence</strong>: the same fit supplies the
+proportion of replicates whose fit completed and, among those, the proportion that
+converged and that produced a Heywood case.</p>
 <p>Replicates are analysed in parallel with <span class="pkg">future.apply</span>; a plan is selected with
 <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future::plan()</a></code>. Each replicate is bound to its own reproducible random-number
 stream, so with a fixed <code>seed</code> the result is identical regardless of the number of

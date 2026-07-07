@@ -96,8 +96,10 @@ factor scores) or matrix with correlations.</p></dd>
 
 <dt id="arg-phi">Phi<a class="anchor" aria-label="anchor" href="#arg-phi"></a></dt>
 <dd><p>matrix. A matrix of factor intercorrelations. Only needs to be
-specified if a factor loadings matrix is entered directly into <code>f</code>.
-Default is <code>NULL</code>, in which case all intercorrelations are assumed to be zero.</p></dd>
+specified if a factor loadings matrix is entered directly into <code>f</code>; for an
+<code><a href="EFA.html">EFA()</a></code> object the intercorrelations are taken from the object. Default is
+<code>NULL</code>, in which case the intercorrelations of a directly supplied loading
+matrix are assumed to be zero.</p></dd>
 
 
 <dt id="arg-rho">rho<a class="anchor" aria-label="anchor" href="#arg-rho"></a></dt>
@@ -105,8 +107,9 @@ Default is <code>NULL</code>, in which case all intercorrelations are assumed to
 Defaults to <code>NULL</code>, in which case the matrix the EFA in <code>f</code> was fit on
 (<code>f$orig_R</code>) is used, so the weights stay consistent with the loadings even for
 a non-Pearson correlation (e.g. polychoric); for a directly supplied loading
-matrix the Pearson correlation of <code>x</code> is used. Pass a matrix here to score
-against a different correlation.</p></dd>
+matrix, <code>x</code> itself is used when it is a correlation matrix, otherwise the
+Pearson correlation of <code>x</code>. Pass a matrix here to score against a different
+correlation.</p></dd>
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>

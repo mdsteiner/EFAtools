@@ -204,17 +204,13 @@ bound <em>J</em> of the number of factors to extract (see details).</p></dd>
     <div id="details">
     <h2>Details</h2>
     <p>The Hull method aims to find a model with an optimal balance between
-model fit and number of parameters. That is, it aims to retrieve only major
-factors (Lorenzo-Seva, Timmerman, &amp; Kiers, 2011). To this end, it performs
-the following steps (Lorenzo-Seva, Timmerman, &amp; Kiers, 2011, p.351):</p><ol><li><p>It performs parallel analysis and adds one to the identified number of factors (this number is denoted <em>J</em>). <em>J</em> is taken as an upper bound of the number of factors to retain in the hull method. Alternatively, a theoretical number of factors can be entered. In this case <em>J</em> will be set to whichever of these two numbers (from parallel analysis or based on theory) is higher.</p></li>
-<li><p>For all 0 to <em>J</em> factors, the goodness-of-fit (one of <em>CAF</em>, <em>RMSEA</em>, or <em>CFI</em>) and the degrees of freedom (<em>df</em>) are computed.</p></li>
-<li><p>The solutions are ordered according to their <em>df</em>.</p></li>
-<li><p>Solutions that are not on the boundary of the convex hull are eliminated (see Lorenzo-Seva, Timmerman, &amp; Kiers, 2011, for details).</p></li>
-<li><p>All the triplets of adjacent solutions are considered consecutively. The middle solution is excluded if its point is below or on the line connecting its neighbors in a plot of the goodness-of-fit versus the degrees of freedom.</p></li>
-<li><p>Step 5 is repeated until no solution can be excluded.</p></li>
-<li><p>The <em>st</em> values of the “hull” solutions are determined.</p></li>
-<li><p>The solution with the highest <em>st</em> value is selected.</p></li>
-</ol><p>The <a href="PARALLEL.html">PARALLEL</a> function and the principal axis factoring of the
+model fit and number of parameters, retaining only major factors
+(Lorenzo-Seva, Timmerman, &amp; Kiers, 2011). It fits 0 to <em>J</em> factors – where
+<em>J</em> is the number of factors suggested by parallel analysis (or <code>n_fac_theor</code>,
+if that is larger), plus one – keeps the solutions on the upper boundary of
+the convex hull of goodness-of-fit against degrees of freedom, and selects the
+one at the sharpest elbow, i.e. with the highest <em>st</em> value.</p>
+<p>The <a href="PARALLEL.html">PARALLEL</a> function and the principal axis factoring of the
 different number of factors can be parallelized using the future framework,
 by calling the <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future::plan()</a></code> function. The examples
 provide example code on how to enable parallel processing.</p>
@@ -223,8 +219,6 @@ compare the different solutions. Thus, the threshold of .05 is then .95. This
 is necessary due to how the heuristic to locate the elbow of the hull works.</p>
 <p>The ML estimation method uses the <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code>
 starting values. See also the <a href="EFA.html">EFA</a> documentation.</p>
-<p>The <code>HULL</code> function can also be called together with other factor
-retention criteria in the <code><a href="N_FACTORS.html">N_FACTORS()</a></code> function.</p>
     </div>
     <div id="see-also">
     <h2>See also</h2>

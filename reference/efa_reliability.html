@@ -172,9 +172,8 @@ used for <code>lavaan</code> input.</p></dd>
 omega, as in <code><a href="https://rdrr.io/pkg/psych/man/omega.html" class="external-link">psych::omega()</a></code>); <code>"sums_load"</code> uses the model-implied composite
 variance from the squared loading sums and the uniquenesses (see <code><a href="OMEGA.html">OMEGA()</a></code>), which
 needs no correlation matrix and so is the way to score a bare loading matrix or
-manual components given without one. It is a deliberate override only for <code><a href="SL.html">SL()</a></code>,
-<code>schmid</code>, bifactor-matrix, and manual input; <code>lavaan</code> input is always model-implied,
-and an oblique <code><a href="EFA.html">EFA()</a></code> always correlation-based.</p></dd>
+manual components given without one. Some inputs fix the convention: <code>lavaan</code> is
+always model-implied and an oblique <code><a href="EFA.html">EFA()</a></code> is always correlation-based.</p></dd>
 
 
 <dt id="arg-var-names">var_names<a class="anchor" aria-label="anchor" href="#arg-var-names"></a></dt>
@@ -251,14 +250,11 @@ method.</p>
 
 <p>The reliability coefficients are McDonald's omegas (McDonald, 1978, 1985,
 1999), standardized Cronbach's alpha (Cronbach, 1951), and the H index
-(construct replicability; Hancock &amp; Mueller, 2001). Omega total is the total
-true-score variance in a unit-weighted composite, omega hierarchical the share
-due to the general factor, and omega subscale the share due to the group
-factors (for the whole scale) or the specific group factor (for a subscale).
-The common-variance indices are the ECV and PUC (Bonifay et al., 2015; Reise et
-al., 2013; Rodriguez et al., 2016a, 2016b); they describe the general factor and
-so are reported for the general factor only. See <code><a href="OMEGA.html">OMEGA()</a></code> for the definitions
-and interpretation of each coefficient.</p>
+(construct replicability; Hancock &amp; Mueller, 2001). The common-variance indices
+are the ECV and PUC (Bonifay et al., 2015; Reise et al., 2013; Rodriguez et al.,
+2016a, 2016b); they describe the general factor and so are reported for the
+general factor only. See <code><a href="OMEGA.html">OMEGA()</a></code> for the definition and interpretation of each
+coefficient.</p>
 </div>
 
 <div class="section">
@@ -266,18 +262,15 @@ and interpretation of each coefficient.</p>
 
 
 <p>The dispatch on <code>model</code> mirrors <code><a href="OMEGA.html">OMEGA()</a></code>, with two additions: an oblique
-<code><a href="EFA.html">EFA()</a></code> object is scored as the correlated-factors model it is (with no general
-factor, the bifactor indices omega hierarchical, ECV, and PUC are not meaningful
-and are omitted, leaving the whole-scale omega total and alpha and each group
-factor's congeneric omega, H, and alpha), and a bare loading matrix is read as a
-raw bifactor solution (general factor in the first column). For a correlated-factors
-<code><a href="EFA.html">EFA()</a></code> solution <code>variance</code> is always <code>"correlation"</code> (the factors are correlated,
-so the model-implied <code>"sums_load"</code> composite variance does not apply). The
-indicator-to-factor correspondences come from
-<code>factor_map</code> when it is supplied; otherwise each variable is assigned to the
-group factor on which it loads most strongly. For <code>lavaan</code> input the composite
-variances are model-implied (<code>variance</code> is not used), and the coefficients are
-computed per group.</p>
+<code><a href="EFA.html">EFA()</a></code> object is scored as the correlated-factors model it is (having no general
+factor, it omits the bifactor indices – omega hierarchical, ECV, and PUC), and a
+bare loading matrix is read as a raw bifactor solution (general factor in the
+first column). For a correlated-factors <code><a href="EFA.html">EFA()</a></code> solution <code>variance</code> is always
+<code>"correlation"</code>. The indicator-to-factor correspondences come from <code>factor_map</code>
+when it is supplied; otherwise each variable is assigned to the group factor on
+which it loads most strongly. For <code>lavaan</code> input the composite variances are
+model-implied (<code>variance</code> is not used), and the coefficients are computed per
+group.</p>
 </div>
 
     </div>

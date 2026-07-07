@@ -80,6 +80,13 @@ factors/components to retain. The function implements the original MAP criterion
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
+    <div id="source">
+    <h2>Source</h2>
+    <p>Velicer, W. F. (1976). Determining the number of components from the matrix of partial correlations.
+<em>Psychometrika, 41</em>, 321–327.</p>
+<p>Velicer, W. F., Eaton, C. A., &amp; Fava, J. L. (2000). Construct explication through factor or component analysis: A review and evaluation of alternative procedures for determining the number of factors or components. In Goffin, R. D. &amp; Helmes, E. (Eds.), <em>Problems and Solutions in
+Human Assessment: Honoring Douglas N. Jackson at Seventy</em> (pp. 41–71). Boston: Kluwer.</p>
+    </div>
     <div id="arguments">
     <h2>Arguments</h2>
 
@@ -113,44 +120,18 @@ criterion values over \(m\).</p></li>
 </ul></div>
     <div id="details">
     <h2>Details</h2>
-    <p>MAP is based on the idea that systematic common variance is increasingly removed from a
-correlation matrix \(R\) as principal components are partialled out. After removing the
-first \(m\) components, a residual (partial) covariance matrix is obtained as
-$$C_m = R - A_m A_m',$$
-where \(A_m\) contains the first \(m\) principal component loading vectors (PCA loadings).
-This residual matrix is then standardized to a partial correlation matrix
-$$R^*_m = D_m^{-1/2} \, C_m \, D_m^{-1/2},$$
-with \(D_m = \mathrm{diag}(C_m)\). The MAP criteria summarize the off-diagonal association
-remaining in \(R^*_m\). The recommended number of factors/components is the \(m\) that
-minimizes the chosen criterion.</p>
-<p>This function returns two MAP criteria, both summarizing the off-diagonal elements
-\(r^*_{ij}\) of \(R^*_m\):</p><ul><li><p><strong>TR2 (original MAP):</strong> $$\mathrm{MAP}_m = \frac{\sum_{i \neq j} (r^*_{ij})^2}{p(p-1)}$$
-the mean squared off-diagonal partial correlation, corresponding to Velicer's original
-MAP procedure.</p></li>
-<li><p><strong>TR4 (revised MAP):</strong> $$\mathrm{MAP4}_m = \frac{\sum_{i \neq j} (r^*_{ij})^4}{p(p-1)}$$
-the mean fourth-power off-diagonal partial correlation, which places more weight on dominant
-residual association structure and is less affected by small partial correlations.</p></li>
-</ul><p><strong>Input handling.</strong> <code>x</code> can be a correlation matrix or raw data. If <code>x</code> is not a
-correlation matrix, correlations are computed using <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code> with the requested
-missing-data handling (<code>use</code>) and association measure (<code>cor_method</code>).</p>
-<p><strong>Matrix conditioning.</strong> The function stops if the correlation matrix is singular (non-invertible),
-because subsequent computations rely on stable matrix operations. If the correlation matrix is not
-positive definite (e.g., due to sampling error), it is smoothed using <code><a href="https://rdrr.io/pkg/psych/man/cor.smooth.html" class="external-link">psych::cor.smooth()</a></code>.</p>
-<p><strong>PCA-based partialing.</strong> The PCA loading matrix \(A\) is obtained from the eigen-decomposition
-of \(R\) as \(A = V \Lambda^{1/2}\). For each \(m = 0, \dots, p-1\), the first \(m\) columns
-of \(A\) are used to compute \(C_m = R - A_m A_m'\). The residual is re-standardized to the
-partial correlation matrix \(R^*_m\) using \(D_m^{-1/2}\) (i.e., dividing by the square roots of
-residual variances).</p>
-<p><strong>Termination.</strong> If any residual variance (the diagonal of \(C_m\)) drops to at most a small
-positive floor (1e-5) or becomes non-finite, the loop terminates early because \(R^*_m\)
-cannot be formed reliably.</p>
-    </div>
-    <div id="references">
-    <h2>References</h2>
-    <p>Velicer, W. F. (1976). Determining the number of components from the matrix of partial correlations.
-<em>Psychometrika, 41</em>, 321–327.</p>
-<p>Velicer, W. F., Eaton, C. A., &amp; Fava, J. L. (2000). Construct explication through factor or component analysis: A review and evaluation of alternative procedures for determining the number of factors or components. In Goffin, R. D. &amp; Helmes, E. (Eds.), <em>Problems and Solutions in
-Human Assessment: Honoring Douglas N. Jackson at Seventy</em> (pp. 41–71). Boston: Kluwer.</p>
+    <p>MAP partials successive principal components out of the correlation matrix and,
+after removing \(m\) components, summarizes the off-diagonal partial
+correlations \(r^*_{ij}\) that remain; the suggested number of factors is the
+\(m\) that minimizes the criterion. Two criteria are returned:</p><ul><li><p><strong>TR2 (original MAP; Velicer, 1976):</strong>
+$$\mathrm{MAP}_m = \frac{\sum_{i \neq j} (r^*_{ij})^2}{p(p-1)},$$
+the mean squared off-diagonal partial correlation.</p></li>
+<li><p><strong>TR4 (revised MAP; Velicer, Eaton, &amp; Fava, 2000):</strong>
+$$\mathrm{MAP4}_m = \frac{\sum_{i \neq j} (r^*_{ij})^4}{p(p-1)},$$
+the mean fourth-power off-diagonal partial correlation, which downweights
+small partial correlations.</p></li>
+</ul><p>A non-positive-definite input correlation matrix (e.g. from sampling error) is
+smoothed with <code><a href="https://rdrr.io/pkg/psych/man/cor.smooth.html" class="external-link">psych::cor.smooth()</a></code>.</p>
     </div>
     <div id="see-also">
     <h2>See also</h2>

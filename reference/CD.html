@@ -155,24 +155,16 @@ factor count are left as zero).</p></dd>
 </dl></div>
     <div id="details">
     <h2>Details</h2>
-    <p>"Parallel analysis (PA) is an effective stopping rule that compares
-the eigenvalues of randomly generated data with those for the actual data.
-PA takes into account sampling error, and at present it is widely considered
-the best available method. We introduce a variant of PA that goes even further
-by reproducing the observed correlation matrix rather than generating random
-data. Comparison data (CD) with known factorial structure are first generated
-using 1 factor, and then the number of factors is increased until the
-reproduction of the observed eigenvalues fails to improve significantly"
-(Ruscio &amp; Roche, 2012, p. 282).</p>
-<p>The CD implementation here is based on the code by Ruscio and Roche (2012), but
-is slightly adapted to increase speed by performing the principal axis factoring
-using a C++ based function.</p>
+    <p>Comparison data (CD) extends parallel analysis by reproducing the
+observed correlation matrix rather than generating random data: datasets with a
+known factor structure are generated with an increasing number of factors, and
+the smallest number for which adding a further factor no longer significantly
+improves the reproduction of the observed eigenvalues is retained (Ruscio &amp;
+Roche, 2012).</p>
 <p>Note that if the data contains missing values, these will be removed for the
 comparison data procedure using <code><a href="https://rdrr.io/r/stats/na.fail.html" class="external-link">stats::na.omit()</a></code>. If
 missing data should be treated differently, e.g., by imputation, do this outside
 <code>CD</code> and then pass the complete data.</p>
-<p>The <code>CD</code> function can also be called together with other factor retention
-criteria in the <code><a href="N_FACTORS.html">N_FACTORS()</a></code> function.</p>
     </div>
     <div id="see-also">
     <h2>See also</h2>

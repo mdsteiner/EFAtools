@@ -194,21 +194,16 @@ which preserve the factor intercorrelations.</p></dd>
 <dd><p>component scores, <code>W = Lambda</code>.</p></dd>
 
 
-</dl><p>The determinacy of a score is its correlation with the factor it estimates,
-<code>rho_i = cor(F_i, Fhat_i)</code>, computed from the returned weights. For regression
-scores this equals the multiple correlation between the factor and the observed
-variables, <code>sqrt(diag(S' R^-1 S))</code> (Guttman, 1955; Grice, 2001). The
-off-diagonal score-factor correlations give the univocality (the correlation of
-a score with the <em>other</em> factors), and <code>2 rho^2 - 1</code> is Guttman's (1955)
-indeterminacy index, the minimum correlation between two equally valid sets of
-scores. For a <code>method</code> other than <code>"regression"</code> both quantities are specific to
-those scores: the determinacy is the chosen method's own score-factor correlation
-(never larger than the regression value), and the reported <code>guttman</code> follows from
-it rather than being the model's maximal indeterminacy index.</p>
-<p>When <code>f</code> is an <code><a href="EFA.html">EFA()</a></code> object the scoring correlation matrix defaults to the
-matrix the model was fit on (<code>f$orig_R</code>), so the weights stay consistent with
-the loadings even for a non-Pearson correlation (e.g. polychoric). A matrix
-supplied via <code>rho</code> overrides this.</p>
+</dl><p>The determinacy (validity) of a score is its correlation with the factor it
+estimates, computed from the returned weights; for regression scores it is the
+multiple correlation between the factor and the observed variables (Guttman,
+1955; Grice, 2001). The off-diagonal score-factor correlations give the
+univocality (the correlation of a score with the <em>other</em> factors), and
+<code>2 rho^2 - 1</code> is Guttman's (1955) indeterminacy index, the minimum correlation
+between two equally valid sets of scores. For a <code>method</code> other than
+<code>"regression"</code> both quantities are specific to those scores: the determinacy is
+the method's own score-factor correlation (never larger than the regression
+value), and the reported <code>guttman</code> follows from it.</p>
     </div>
     <div id="see-also">
     <h2>See also</h2>
