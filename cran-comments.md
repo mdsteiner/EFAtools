@@ -1,10 +1,19 @@
 ## Resubmission
 This is a resubmission. In this version we have:
 
-* Fixed a test to accomodate changes in an upcoming release of the psych package, which caused reverse-dependency issues in psych.
-* `EFA()`: Added `randomStarts` argument passed to GPArotation functions, as suggested by Coen Bernaards.
-* `FACTOR_SCORES()`: Added `rho` argument, thanks to Andreas Soteriades.
-* `EFA_POOLED()`: Fixed issue that could lead to averaged Phi not being symmetric.
+Added new functions:
+* `efa_group()` performs multi-group EFA.
+* `efa_power()` to conduct power analysis (analytic power based on RMSEA and simulation based power analysis).
+* `efa_reliability()` to calculate various reliability indices.
+* `efa_screen()` to screen data for multivariate normality and suitability for factor analysis.
+* `efa_simulate()` to simulate data with various distributions and missing data mechanisms.
+
+Changes to functions:
+* computation of polychoric correlations
+* raw-data missing value handling using FIML estimation
+* added sandwich and information standard errors
+* implemented all criterion-based rotations internally in C++ and moved GPArotation from imports to suggests (only used in tests)
+* various bug-fixes
 
 ## Test environments
 * mac-builder (release, devel)
@@ -13,10 +22,6 @@ This is a resubmission. In this version we have:
 
 ## R CMD check results
 
-0 errors | 0 warnings | 1 note
+0 errors | 0 warnings | 0 notes
 
-Notes:
-
-Namespace in Imports field not imported from: ‘progress’
--> package is needed in EFA_AVERAGE() (accessed indirectly via progressr package)
 
