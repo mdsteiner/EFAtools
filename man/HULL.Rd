@@ -104,19 +104,12 @@ parallelization.
 }
 \details{
 The Hull method aims to find a model with an optimal balance between
-model fit and number of parameters. That is, it aims to retrieve only major
-factors (Lorenzo-Seva, Timmerman, & Kiers, 2011). To this end, it performs
-the following steps (Lorenzo-Seva, Timmerman, & Kiers, 2011, p.351):
-\enumerate{
-\item It performs parallel analysis and adds one to the identified number of factors (this number is denoted \emph{J}). \emph{J} is taken as an upper bound of the number of factors to retain in the hull method. Alternatively, a theoretical number of factors can be entered. In this case \emph{J} will be set to whichever of these two numbers (from parallel analysis or based on theory) is higher.
-\item For all 0 to \emph{J} factors, the goodness-of-fit (one of \emph{CAF}, \emph{RMSEA}, or \emph{CFI}) and the degrees of freedom (\emph{df}) are computed.
-\item The solutions are ordered according to their \emph{df}.
-\item Solutions that are not on the boundary of the convex hull are eliminated (see Lorenzo-Seva, Timmerman, & Kiers, 2011, for details).
-\item All the triplets of adjacent solutions are considered consecutively. The middle solution is excluded if its point is below or on the line connecting its neighbors in a plot of the goodness-of-fit versus the degrees of freedom.
-\item Step 5 is repeated until no solution can be excluded.
-\item The \emph{st} values of the “hull” solutions are determined.
-\item The solution with the highest \emph{st} value is selected.
-}
+model fit and number of parameters, retaining only major factors
+(Lorenzo-Seva, Timmerman, & Kiers, 2011). It fits 0 to \emph{J} factors -- where
+\emph{J} is the number of factors suggested by parallel analysis (or \code{n_fac_theor},
+if that is larger), plus one -- keeps the solutions on the upper boundary of
+the convex hull of goodness-of-fit against degrees of freedom, and selects the
+one at the sharpest elbow, i.e. with the highest \emph{st} value.
 
 The \link{PARALLEL} function and the principal axis factoring of the
 different number of factors can be parallelized using the future framework,
@@ -129,9 +122,6 @@ is necessary due to how the heuristic to locate the elbow of the hull works.
 
 The ML estimation method uses the \code{\link[psych:fa]{psych::fa()}}
 starting values. See also the \link{EFA} documentation.
-
-The \code{HULL} function can also be called together with other factor
-retention criteria in the \code{\link[=N_FACTORS]{N_FACTORS()}} function.
 }
 \examples{
 \donttest{

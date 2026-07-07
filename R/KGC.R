@@ -28,7 +28,7 @@
 #' to change the extraction method (PAF is default).
 #'
 #' @details Originally, the Kaiser-Guttman criterion was intended for the use
-#' with prinicpal components, hence with eigenvalues derived from the original
+#' with principal components, hence with eigenvalues derived from the original
 #' correlation matrix. This can be done here by setting `eigen_type` to
 #' "PCA". However, it is well-known that this criterion is often inaccurate and
 #' that it tends to overestimate the number of factors, especially for unidimensional

@@ -52,15 +52,6 @@
 #'  eliminates the main problem inherent in the Kaiser-Guttman criterion
 #'  ([KGC()]).
 #'
-#'  Three different ways of finding the eigenvalues under the factor model are
-#'  implemented, namely "SMC", "PCA", and "EFA". PCA leaves the diagonal elements
-#'  of the correlation matrix as they are and is thus equivalent to what is done
-#'  in PCA. SMC uses squared multiple correlations as communality estimates with
-#'  which the diagonal of the correlation matrix is replaced. Finally, EFA performs
-#'  an [EFA()] with one factor (can be adapted to more factors) to estimate
-#'  the communalities and based on the correlation matrix with these as diagonal
-#'  elements, finds the eigenvalues.
-#'
 #'  Parallel analysis is often argued to be one of the most accurate factor
 #'  retention criteria. However, for highly correlated
 #'  factor structures it has been shown to underestimate the correct number of

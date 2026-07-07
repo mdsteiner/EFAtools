@@ -51,19 +51,12 @@
 #' [PARALLEL()].
 #'
 #' @details The Hull method aims to find a model with an optimal balance between
-#'  model fit and number of parameters. That is, it aims to retrieve only major
-#'  factors (Lorenzo-Seva, Timmerman, & Kiers, 2011). To this end, it performs
-#'  the following steps (Lorenzo-Seva, Timmerman, & Kiers, 2011, p.351):
-#'  \enumerate{
-#'    \item It performs parallel analysis and adds one to the identified number of factors (this number is denoted *J*). *J* is taken as an upper bound of the number of factors to retain in the hull method. Alternatively, a theoretical number of factors can be entered. In this case *J* will be set to whichever of these two numbers (from parallel analysis or based on theory) is higher.
-#'    \item For all 0 to *J* factors, the goodness-of-fit (one of *CAF*, *RMSEA*, or *CFI*) and the degrees of freedom (*df*) are computed.
-#'    \item The solutions are ordered according to their *df*.
-#'    \item Solutions that are not on the boundary of the convex hull are eliminated (see Lorenzo-Seva, Timmerman, & Kiers, 2011, for details).
-#'    \item All the triplets of adjacent solutions are considered consecutively. The middle solution is excluded if its point is below or on the line connecting its neighbors in a plot of the goodness-of-fit versus the degrees of freedom.
-#'    \item Step 5 is repeated until no solution can be excluded.
-#'    \item The *st* values of the “hull” solutions are determined.
-#'    \item The solution with the highest *st* value is selected.
-#'  }
+#'  model fit and number of parameters, retaining only major factors
+#'  (Lorenzo-Seva, Timmerman, & Kiers, 2011). It fits 0 to *J* factors -- where
+#'  *J* is the number of factors suggested by parallel analysis (or `n_fac_theor`,
+#'  if that is larger), plus one -- keeps the solutions on the upper boundary of
+#'  the convex hull of goodness-of-fit against degrees of freedom, and selects the
+#'  one at the sharpest elbow, i.e. with the highest *st* value.
 #'
 #' The [PARALLEL] function and the principal axis factoring of the
 #'   different number of factors can be parallelized using the future framework,
@@ -77,8 +70,6 @@
 #'   The ML estimation method uses the [psych::fa()]
 #'    starting values. See also the [EFA] documentation.
 #'
-#'    The `HULL` function can also be called together with other factor
-#'    retention criteria in the [N_FACTORS()] function.
 #' @returns An object of class `efa_retention` (see [print.efa_retention()] and
 #'   [plot.efa_retention()] for the print and plot methods). Its main fields are:
 #' \item{n_factors}{A named numeric vector with the suggested number of factors

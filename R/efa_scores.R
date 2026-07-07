@@ -23,22 +23,16 @@
 #'   \item{`"Harman"`}{Harman's (1976) idealized-variable scores.}
 #'   \item{`"components"`}{component scores, `W = Lambda`.}
 #' }
-#' The determinacy of a score is its correlation with the factor it estimates,
-#' `rho_i = cor(F_i, Fhat_i)`, computed from the returned weights. For regression
-#' scores this equals the multiple correlation between the factor and the observed
-#' variables, `sqrt(diag(S' R^-1 S))` (Guttman, 1955; Grice, 2001). The
-#' off-diagonal score-factor correlations give the univocality (the correlation of
-#' a score with the *other* factors), and `2 rho^2 - 1` is Guttman's (1955)
-#' indeterminacy index, the minimum correlation between two equally valid sets of
-#' scores. For a `method` other than `"regression"` both quantities are specific to
-#' those scores: the determinacy is the chosen method's own score-factor correlation
-#' (never larger than the regression value), and the reported `guttman` follows from
-#' it rather than being the model's maximal indeterminacy index.
-#'
-#' When `f` is an [EFA()] object the scoring correlation matrix defaults to the
-#' matrix the model was fit on (`f$orig_R`), so the weights stay consistent with
-#' the loadings even for a non-Pearson correlation (e.g. polychoric). A matrix
-#' supplied via `rho` overrides this.
+#' The determinacy (validity) of a score is its correlation with the factor it
+#' estimates, computed from the returned weights; for regression scores it is the
+#' multiple correlation between the factor and the observed variables (Guttman,
+#' 1955; Grice, 2001). The off-diagonal score-factor correlations give the
+#' univocality (the correlation of a score with the *other* factors), and
+#' `2 rho^2 - 1` is Guttman's (1955) indeterminacy index, the minimum correlation
+#' between two equally valid sets of scores. For a `method` other than
+#' `"regression"` both quantities are specific to those scores: the determinacy is
+#' the method's own score-factor correlation (never larger than the regression
+#' value), and the reported `guttman` follows from it.
 #'
 #' @param x data.frame or matrix. Raw data (needed to obtain factor scores) or a
 #'   correlation matrix (yields weights and diagnostics only). When raw data carry

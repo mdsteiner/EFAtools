@@ -31,16 +31,11 @@
 #'   \item{`"close"`}{The test of *close fit* (MacCallum et al., 1996): the null
 #'     hypothesis is that the fit is close (RMSEA \eqn{\le} `eps0`, conventionally
 #'     0.05), and power is computed against a worse alternative (`eps1`,
-#'     conventionally 0.08, so `eps0 < eps1`). The critical value is the upper
-#'     `alpha` point of the null distribution
-#'     (`qchisq(alpha, df, ncp0, lower.tail = FALSE)`) and the power is the mass of
-#'     the alternative distribution beyond it.}
+#'     conventionally 0.08, so `eps0 < eps1`), in the upper tail.}
 #'   \item{`"notclose"`}{The test of *not-close fit*: the null hypothesis is that
 #'     the fit is not close (RMSEA \eqn{\ge} `eps0`), and power is computed against
-#'     a better alternative (`eps1`, conventionally 0.01, so `eps0 > eps1`). Here
-#'     the rejection region is the lower tail, so the critical value is the lower
-#'     `alpha` point of the null distribution and the power is the mass of the
-#'     alternative distribution below it.}
+#'     a better alternative (`eps1`, conventionally 0.01, so `eps0 > eps1`), in the
+#'     lower tail.}
 #' }
 #' When `eps0` and `eps1` are ordered the wrong way round for the chosen `type` a
 #' message is emitted but the requested test is still computed. Equal `eps0` and
@@ -63,18 +58,17 @@
 #' bare `R`.
 #'
 #' Each replicate is analysed three ways. **Hit-rate**: every criterion in `criteria`
-#' (drawn from the same registry as [N_FACTORS()]) is run and its suggested number of
-#' factors compared with `k_true`; the hit-rate is the proportion of agreements over the
-#' replicates on which the criterion returned a definite factor count (replicates where
-#' it errored or was undecided are excluded, not counted as misses). **Structure
-#' recovery** (only for a factor-model population): the `k_true`-factor model is fitted
-#' with [EFA()], the rotated loadings are matched to the population loadings (column
-#' permutation and sign), and the matched-factor Tucker congruences (Lorenzo-Seva & ten
-#' Berge, 2006) are compared with `recovery_threshold`; recovery counts a replicate a
-#' success when the smallest (`min`) or the average (`mean`) matched congruence reaches
-#' the threshold. **Convergence**: the same fit supplies the proportion of replicates
-#' whose fit completed and, among the completed fits, the proportion that converged and
-#' that produced a Heywood case.
+#' is run and its suggested number of factors compared with `k_true`; the hit-rate is
+#' the proportion of agreements over the replicates on which the criterion returned a
+#' definite factor count (replicates where it errored or was undecided are excluded,
+#' not counted as misses). **Structure recovery** (only for a factor-model
+#' population): the `k_true`-factor model is fitted with [EFA()], its rotated loadings
+#' are matched to the population loadings, and the matched-factor Tucker congruences
+#' (Lorenzo-Seva & ten Berge, 2006) are compared with `recovery_threshold`; a
+#' replicate counts as a success when the smallest (`min`) or the average (`mean`)
+#' matched congruence reaches it. **Convergence**: the same fit supplies the
+#' proportion of replicates whose fit completed and, among those, the proportion that
+#' converged and that produced a Heywood case.
 #'
 #' Replicates are analysed in parallel with \pkg{future.apply}; a plan is selected with
 #' [future::plan()]. Each replicate is bound to its own reproducible random-number

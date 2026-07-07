@@ -98,9 +98,6 @@ well at determining the number of factors to extract in EFA (Auerswald &
 Moshagen, 2019). The RMSEA lower bound also performed well at determining the true
 number of factors, while the AIC performed well at determining the
 most generalizable model (Preacher, Zhang, Kim, & Mels, 2013).
-
-The \code{SMT} function can also be called together with other factor
-retention criteria in the \code{\link[=N_FACTORS]{N_FACTORS()}} function.
 }
 \examples{
 SMT_base <- SMT(test_models$baseline$cormat, N = 500)

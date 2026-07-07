@@ -68,27 +68,17 @@ adapted from the CD code by Auerswald and Moshagen (2019) available at
 \url{https://osf.io/x5cz2/?view_only=d03efba1fd0f4c849a87db82e6705668}
 }
 \details{
-"Parallel analysis (PA) is an effective stopping rule that compares
-the eigenvalues of randomly generated data with those for the actual data.
-PA takes into account sampling error, and at present it is widely considered
-the best available method. We introduce a variant of PA that goes even further
-by reproducing the observed correlation matrix rather than generating random
-data. Comparison data (CD) with known factorial structure are first generated
-using 1 factor, and then the number of factors is increased until the
-reproduction of the observed eigenvalues fails to improve significantly"
-(Ruscio & Roche, 2012, p. 282).
-
-The CD implementation here is based on the code by Ruscio and Roche (2012), but
-is slightly adapted to increase speed by performing the principal axis factoring
-using a C++ based function.
+Comparison data (CD) extends parallel analysis by reproducing the
+observed correlation matrix rather than generating random data: datasets with a
+known factor structure are generated with an increasing number of factors, and
+the smallest number for which adding a further factor no longer significantly
+improves the reproduction of the observed eigenvalues is retained (Ruscio &
+Roche, 2012).
 
 Note that if the data contains missing values, these will be removed for the
 comparison data procedure using \code{\link[stats:na.fail]{stats::na.omit()}}. If
 missing data should be treated differently, e.g., by imputation, do this outside
 \code{CD} and then pass the complete data.
-
-The \code{CD} function can also be called together with other factor retention
-criteria in the \code{\link[=N_FACTORS]{N_FACTORS()}} function.
 }
 \examples{
 \donttest{

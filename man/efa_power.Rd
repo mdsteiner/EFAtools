@@ -202,16 +202,11 @@ and \code{eps1}):
 \item{\code{"close"}}{The test of \emph{close fit} (MacCallum et al., 1996): the null
 hypothesis is that the fit is close (RMSEA \eqn{\le} \code{eps0}, conventionally
 0.05), and power is computed against a worse alternative (\code{eps1},
-conventionally 0.08, so \code{eps0 < eps1}). The critical value is the upper
-\code{alpha} point of the null distribution
-(\code{qchisq(alpha, df, ncp0, lower.tail = FALSE)}) and the power is the mass of
-the alternative distribution beyond it.}
+conventionally 0.08, so \code{eps0 < eps1}), in the upper tail.}
 \item{\code{"notclose"}}{The test of \emph{not-close fit}: the null hypothesis is that
 the fit is not close (RMSEA \eqn{\ge} \code{eps0}), and power is computed against
-a better alternative (\code{eps1}, conventionally 0.01, so \code{eps0 > eps1}). Here
-the rejection region is the lower tail, so the critical value is the lower
-\code{alpha} point of the null distribution and the power is the mass of the
-alternative distribution below it.}
+a better alternative (\code{eps1}, conventionally 0.01, so \code{eps0 > eps1}), in the
+lower tail.}
 }
 When \code{eps0} and \code{eps1} are ordered the wrong way round for the chosen \code{type} a
 message is emitted but the requested test is still computed. Equal \code{eps0} and
@@ -234,18 +229,17 @@ of factors \code{k_true} is \code{ncol(Lambda)} for a factor-model population, o
 bare \code{R}.
 
 Each replicate is analysed three ways. \strong{Hit-rate}: every criterion in \code{criteria}
-(drawn from the same registry as \code{\link[=N_FACTORS]{N_FACTORS()}}) is run and its suggested number of
-factors compared with \code{k_true}; the hit-rate is the proportion of agreements over the
-replicates on which the criterion returned a definite factor count (replicates where
-it errored or was undecided are excluded, not counted as misses). \strong{Structure
-recovery} (only for a factor-model population): the \code{k_true}-factor model is fitted
-with \code{\link[=EFA]{EFA()}}, the rotated loadings are matched to the population loadings (column
-permutation and sign), and the matched-factor Tucker congruences (Lorenzo-Seva & ten
-Berge, 2006) are compared with \code{recovery_threshold}; recovery counts a replicate a
-success when the smallest (\code{min}) or the average (\code{mean}) matched congruence reaches
-the threshold. \strong{Convergence}: the same fit supplies the proportion of replicates
-whose fit completed and, among the completed fits, the proportion that converged and
-that produced a Heywood case.
+is run and its suggested number of factors compared with \code{k_true}; the hit-rate is
+the proportion of agreements over the replicates on which the criterion returned a
+definite factor count (replicates where it errored or was undecided are excluded,
+not counted as misses). \strong{Structure recovery} (only for a factor-model
+population): the \code{k_true}-factor model is fitted with \code{\link[=EFA]{EFA()}}, its rotated loadings
+are matched to the population loadings, and the matched-factor Tucker congruences
+(Lorenzo-Seva & ten Berge, 2006) are compared with \code{recovery_threshold}; a
+replicate counts as a success when the smallest (\code{min}) or the average (\code{mean})
+matched congruence reaches it. \strong{Convergence}: the same fit supplies the
+proportion of replicates whose fit completed and, among those, the proportion that
+converged and that produced a Heywood case.
 
 Replicates are analysed in parallel with \pkg{future.apply}; a plan is selected with
 \code{\link[future:plan]{future::plan()}}. Each replicate is bound to its own reproducible random-number

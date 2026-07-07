@@ -23,7 +23,7 @@ SL(
 }
 \arguments{
 \item{x}{object of class \code{\link[=EFA]{EFA()}}, class \code{\link[psych:fa]{psych::fa()}},
-class \code{lavaan::lavaan()} or matrix. If class \code{\link[=EFA]{EFA()}} or
+class \code{lavaan::lavaan()}, a matrix, or a \code{LOADINGS}/\code{loadings} object. If class \code{\link[=EFA]{EFA()}} or
 class \code{\link[psych:fa]{psych::fa()}}, pattern coefficients and factor
 intercorrelations are taken from this object. If class \code{lavaan::lavaan()},
 it must be a second-order CFA solution. In this case first-order and second-order

@@ -49,13 +49,10 @@
 #'     determinant below about 0.00001 is commonly taken as a sign of
 #'     multicollinearity (Field, 2018).}
 #'   \item{Condition number}{The ratio of the largest to the smallest eigenvalue of
-#'     \eqn{R} (the exact 2-norm condition number of a symmetric positive-definite
-#'     matrix). Large values indicate an ill-conditioned matrix with near-linear
-#'     dependencies among the variables. Its square root is the condition index: a
-#'     condition index above 30 (a condition number above roughly 900) is a
-#'     conventional sign of strong multicollinearity, and 10 to 30 (a condition
-#'     number of roughly 100 to 900) of moderate multicollinearity (Belsley, Kuh &
-#'     Welsch, 1980).}
+#'     \eqn{R}. Large values indicate an ill-conditioned matrix with near-linear
+#'     dependencies among the variables. Its square root is the condition index: an
+#'     index above 30 is a conventional sign of strong multicollinearity, and 10 to
+#'     30 of moderate multicollinearity (Belsley, Kuh & Welsch, 1980).}
 #'   \item{SMC}{The squared multiple correlation of each variable with all the
 #'     others, \eqn{1 - 1/(R^{-1})_{ii}}. A low SMC flags a variable that shares
 #'     little variance with the rest of the set.}
@@ -80,27 +77,20 @@
 #'     from raw data.}
 #'   \item{Multivariate normality}{Two tests of multivariate normality computed from
 #'     the complete cases of the raw data: Mardia's (1970) multivariate skewness and
-#'     kurtosis, and the Henze-Zirkler (1990) omnibus test. Mardia's skewness statistic
-#'     is referred to a chi-square distribution and his kurtosis statistic to a standard
-#'     normal; the skewness statistic is small-sample corrected (Mardia, 1974) when there
-#'     are fewer than twenty complete cases. The Henze-Zirkler statistic is referred to
-#'     its lognormal null distribution. All three use the maximum-likelihood (divisor
-#'     \eqn{n}) covariance; a small p-value indicates a departure from multivariate
-#'     normality (a reason to prefer robust or ordinal estimation over normal-theory
-#'     maximum likelihood). Available only from raw data, and skipped with a note if the
-#'     complete-case covariance is singular.}
-#'   \item{Outliers}{Multivariate outliers flagged by their robust Mahalanobis distance. A
-#'     high-breakdown robust location and scatter are estimated from the complete cases with
-#'     the fast minimum covariance determinant (MCD) algorithm (Rousseeuw & Van Driessen,
-#'     1999): the MCD subset covering a proportion `mcd_alpha` of the observations is found
-#'     by concentration steps from many random starts, scaled to consistency at the normal
-#'     model (Croux & Haesbroeck, 1999) with a small-sample correction (Pison et al., 2002),
-#'     and reweighted. Each observation's squared robust distance is referred to a
-#'     chi-square distribution, and one exceeding `qchisq(outlier_cutoff, p)` is flagged.
-#'     With too few complete cases (\eqn{n \le 2p}) or collinear variables the robust
-#'     covariance is undefined, so the classical Mahalanobis distance (from the ordinary
-#'     mean and covariance) is used instead with a warning; if even that covariance is
-#'     singular the diagnostic is skipped with a note. Available only from raw data.}
+#'     kurtosis, and the Henze-Zirkler (1990) omnibus test. A small p-value indicates
+#'     a departure from multivariate normality, a reason to prefer robust or ordinal
+#'     estimation over normal-theory maximum likelihood. Available only from raw data,
+#'     and skipped with a note if the complete-case covariance is singular.}
+#'   \item{Outliers}{Multivariate outliers flagged by their robust Mahalanobis
+#'     distance. A high-breakdown robust location and scatter are estimated from the
+#'     complete cases with the fast minimum covariance determinant (MCD) algorithm
+#'     (Rousseeuw & Van Driessen, 1999), using a subset covering a proportion
+#'     `mcd_alpha` of the observations; an observation whose squared robust distance
+#'     exceeds `qchisq(outlier_cutoff, p)` is flagged. With too few complete cases
+#'     (\eqn{n \le 2p}) or collinear variables the robust covariance is undefined, so
+#'     the classical Mahalanobis distance is used instead with a warning; if even that
+#'     covariance is singular the diagnostic is skipped with a note. Available only
+#'     from raw data.}
 #' }
 #'
 #' @returns An object of class `efa_screen`, a list containing:

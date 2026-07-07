@@ -159,22 +159,18 @@
 #' group factor loading for each variable as the relevant group factor loading.
 #' To do this, `factor_corres` must be left `NULL`.
 #'
-#' The calculation of the total variance (for the whole scale as well as the
-#' subscale composites) is controlled with the `variance` argument. It is set to
-#' `"correlation"` by default, which finds the total variances from the
-#' correlation matrix (the observed-variance form of omega; this reproduces
-#' [psych::omega()]). If `variance = "sums_load"` the total variances are instead
-#' model-implied, found from the squared sums of the general and group factor
-#' loadings and the sum of the uniquenesses; the whole-scale omega total is then
-#' McDonald's model-implied total and the general and group variances partition it
-#' exactly (omega total = omega hierarchical + omega subscale for the general
-#' factor). The two settings give the same whole-scale omega total and omega
-#' hierarchical up to model misfit (observed versus model-implied total variance);
-#' they differ in the whole-scale omega subscale, which counts all group-factor
-#' variance under `"sums_load"` but only the variance of the assigned subscale
-#' composites under `"correlation"`. For the subscale rows, the model-based
-#' (`"sums_load"`) coefficients approximate the correlation-based ones when simple
-#' structure is well-achieved.
+#' The `variance` argument controls how the total variances (for the whole scale
+#' and the subscale composites) are computed. `"correlation"` (default) finds them
+#' from the correlation matrix -- the observed-variance form of omega, which
+#' reproduces [psych::omega()]. `"sums_load"` instead uses the model-implied
+#' variances from the squared sums of the general and group factor loadings and the
+#' sum of the uniquenesses, so the whole-scale omega total is McDonald's
+#' model-implied total and partitions exactly into omega hierarchical plus omega
+#' subscale. The two settings agree on the whole-scale omega total and omega
+#' hierarchical up to model misfit, and differ mainly in the whole-scale omega
+#' subscale, which counts all group-factor variance under `"sums_load"` but only the
+#' assigned subscale composites under `"correlation"`. On the subscale rows the
+#' two conventions agree when simple structure is well-achieved.
 #'
 #'
 #' @return If found for an SL or `lavaan` second-order or bifactor solution

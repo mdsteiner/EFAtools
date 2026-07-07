@@ -14,30 +14,24 @@
 #'
 #' The reliability coefficients are McDonald's omegas (McDonald, 1978, 1985,
 #' 1999), standardized Cronbach's alpha (Cronbach, 1951), and the H index
-#' (construct replicability; Hancock & Mueller, 2001). Omega total is the total
-#' true-score variance in a unit-weighted composite, omega hierarchical the share
-#' due to the general factor, and omega subscale the share due to the group
-#' factors (for the whole scale) or the specific group factor (for a subscale).
-#' The common-variance indices are the ECV and PUC (Bonifay et al., 2015; Reise et
-#' al., 2013; Rodriguez et al., 2016a, 2016b); they describe the general factor and
-#' so are reported for the general factor only. See [OMEGA()] for the definitions
-#' and interpretation of each coefficient.
+#' (construct replicability; Hancock & Mueller, 2001). The common-variance indices
+#' are the ECV and PUC (Bonifay et al., 2015; Reise et al., 2013; Rodriguez et al.,
+#' 2016a, 2016b); they describe the general factor and so are reported for the
+#' general factor only. See [OMEGA()] for the definition and interpretation of each
+#' coefficient.
 #'
 #' ## Input
 #'
 #' The dispatch on `model` mirrors [OMEGA()], with two additions: an oblique
-#' [EFA()] object is scored as the correlated-factors model it is (with no general
-#' factor, the bifactor indices omega hierarchical, ECV, and PUC are not meaningful
-#' and are omitted, leaving the whole-scale omega total and alpha and each group
-#' factor's congeneric omega, H, and alpha), and a bare loading matrix is read as a
-#' raw bifactor solution (general factor in the first column). For a correlated-factors
-#' [EFA()] solution `variance` is always `"correlation"` (the factors are correlated,
-#' so the model-implied `"sums_load"` composite variance does not apply). The
-#' indicator-to-factor correspondences come from
-#' `factor_map` when it is supplied; otherwise each variable is assigned to the
-#' group factor on which it loads most strongly. For `lavaan` input the composite
-#' variances are model-implied (`variance` is not used), and the coefficients are
-#' computed per group.
+#' [EFA()] object is scored as the correlated-factors model it is (having no general
+#' factor, it omits the bifactor indices -- omega hierarchical, ECV, and PUC), and a
+#' bare loading matrix is read as a raw bifactor solution (general factor in the
+#' first column). For a correlated-factors [EFA()] solution `variance` is always
+#' `"correlation"`. The indicator-to-factor correspondences come from `factor_map`
+#' when it is supplied; otherwise each variable is assigned to the group factor on
+#' which it loads most strongly. For `lavaan` input the composite variances are
+#' model-implied (`variance` is not used), and the coefficients are computed per
+#' group.
 #'
 #' @param model a [SL()], `schmid` ([psych::schmid()]), [EFA()] (oblique), or
 #'   `lavaan` object; a raw bifactor loading matrix (general factor first); or
@@ -61,9 +55,8 @@
 #'   omega, as in [psych::omega()]); `"sums_load"` uses the model-implied composite
 #'   variance from the squared loading sums and the uniquenesses (see [OMEGA()]), which
 #'   needs no correlation matrix and so is the way to score a bare loading matrix or
-#'   manual components given without one. It is a deliberate override only for [SL()],
-#'   `schmid`, bifactor-matrix, and manual input; `lavaan` input is always model-implied,
-#'   and an oblique [EFA()] always correlation-based.
+#'   manual components given without one. Some inputs fix the convention: `lavaan` is
+#'   always model-implied and an oblique [EFA()] is always correlation-based.
 #' @param var_names character. Subtest names in the row order of the loadings.
 #'   Only needed when `model` is `NULL`.
 #' @param fac_names character. An optional vector of group-factor names in the

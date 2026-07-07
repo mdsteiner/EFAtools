@@ -10,7 +10,7 @@
 #' second-order confirmatory factor analysis (CFA) solution from lavaan.
 #'
 #' @param x object of class [EFA()], class [psych::fa()],
-#' class `lavaan::lavaan()` or matrix. If class [EFA()] or
+#' class `lavaan::lavaan()`, a matrix, or a `LOADINGS`/`loadings` object. If class [EFA()] or
 #' class [psych::fa()], pattern coefficients and factor
 #' intercorrelations are taken from this object. If class `lavaan::lavaan()`,
 #' it must be a second-order CFA solution. In this case first-order and second-order

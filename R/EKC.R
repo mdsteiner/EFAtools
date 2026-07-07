@@ -59,9 +59,6 @@
 #'  versions here. Be sure to state clearly which version you use when reporting your
 #'  results to avoid confusion and ensure reproducibility.
 #'
-#'  The `EKC` function can also be called together with other factor
-#'   retention criteria in the [N_FACTORS()] function.
-#'
 #' @returns An object of class `efa_retention` (see [print.efa_retention()] and
 #'   [plot.efa_retention()] for the print and plot methods). Its main fields are:
 #' \item{n_factors}{A named numeric vector with the suggested number of factors

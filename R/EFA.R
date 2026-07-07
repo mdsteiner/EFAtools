@@ -4,8 +4,7 @@
 #' or `DWLS` with or without subsequent rotation.
 #' All arguments with default value `NA` can be left to default if `type`
 #' is set to one of "EFAtools", "SPSS", or "psych". The respective specifications are
-#' then handled according to the specified type (see details). All rotations are
-#' performed by rotation engines built into the package.
+#' then handled according to the specified type (see details).
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
 #' correlations. If raw data is entered, the correlation matrix is found from the
@@ -109,7 +108,7 @@
 #'  Under `cor_method = "fiml"` each bootstrap sample re-runs the EM moment
 #'  estimation, so a smaller value may be advisable.
 #' @param ci numeric. The confidence interval to create from the bootstrap samples.
-#'  Must be between 0 and 1. Default ist .95 for 95% CIs.
+#'  Must be between 0 and 1. Default is .95 for 95% CIs.
 #' @param randomStarts numeric. The number of random starts to use in the
 #'  rotation. Some rotation criteria are prone to produce local minima, and
 #'  several random starts are usually needed to locate the best solution. The
@@ -120,7 +119,7 @@
 #' @param seed numeric. An optional seed for the random-number generator used by the
 #'  non-parametric bootstrap (`se = "np-boot"`), i.e. for the case resampling, the
 #'  rotation random starts, and the Procrustes random starts. Setting it makes the
-#'  bootstrap reproducible and, importantly, independent of the number of parallel
+#'  bootstrap reproducible and independent of the number of parallel
 #'  workers (see Details); the caller's random-number stream is restored afterwards,
 #'  so supplying a seed leaves no lasting effect on it. Default is `NULL`, which uses
 #'  (and advances) the current state of the generator.
@@ -277,16 +276,14 @@
 #'   cases; on data with missing values the reported `N`, the correlation matrix, and the
 #'   point estimate therefore reflect the complete cases regardless of `use`.
 #' - **"np-boot"** draws a non-parametric (case-resampling) bootstrap and needs raw data.
-#'   It is the most general method -- available for any `method`, rotation, and
+#'   It is the most general method -- available for any `method`, `rotation`, and
 #'   `cor_method` -- and the most robust to non-normality and misfit, at the cost of speed;
 #'   its intervals are bootstrap percentile intervals. The replicate fits are run across
 #'   replicates with the `future` framework. By default they run sequentially; to run them
 #'   in parallel, register a plan with [future::plan()] (e.g.
 #'   `future::plan(future::multisession, workers = 2)`; see examples). With a fixed `seed`
 #'   the bootstrap is reproducible and yields the same result regardless of the number of
-#'   workers. Each worker runs its own (Armadillo) linear algebra, so if your `BLAS` is
-#'   multi-threaded, limit the number of workers (or the BLAS threads) to avoid
-#'   over-subscribing the available cores. Under `cor_method = "fiml"` each resample also
+#'   workers. Under `cor_method = "fiml"` each resample also
 #'   re-runs the EM moment estimation and is therefore slow, so a smaller `b_boot` may be
 #'   advisable.
 #'
@@ -297,15 +294,8 @@
 #' 2000; Savalei & Bentler, 2009) sandwich standard errors, built on the saturated FIML
 #' asymptotic covariance with the estimator's own Stage-2 weight: the model is fitted to
 #' the EM-estimated correlation, so the naive Stage-2 standard errors (treating that
-#' correlation as complete data) are inconsistent under missingness and are never reported
+#' correlation as complete data) are inconsistent under missingness and are not reported
 #' (`method = "PAF"` carries no Stage-2 weight, so use `se = "np-boot"` there).
-#'
-#' See Lawley and Maxwell (1971) and Jennrich and Thayer (1973) for the information-matrix
-#' standard errors; Jennrich (1973) and Zhang and Preacher (2015) for the rotated
-#' quantities; Browne (1984), Satorra and Bentler (1994), and Asparouhov and Muthén (2010)
-#' for the robust standard errors and scaled chi-square; and Yuan and Bentler (2000),
-#' Savalei and Bentler (2009), and Yuan, Marshall, and Bentler (2002) for the two-stage
-#' FIML standard errors and rescaled statistic.
 #'
 #' ## Fit indices
 #'
@@ -321,8 +311,9 @@
 #' \eqn{\sqrt{(p - 1) / (p + 1)}} for a fixed number of variables; RMSR remains in the
 #' returned object. The model chi-square is the
 #' Bartlett-corrected discrepancy (matching [stats::factanal()] for ML); the AIC, BIC, and
-#' ECVI are the minimum-fit-function (chi-square-based) forms (as in [psych::fa()]) and can
-#' therefore be negative. The RMSEA, CFI, and TLI place the model and baseline
+#' ECVI are the minimum-fit-function (chi-square-based) forms (\eqn{\chi^2 - 2\,df} and
+#' \eqn{\chi^2 - \log(N)\,df} for AIC and BIC, as in [psych::fa()]) and can therefore be
+#' negative. The RMSEA, CFI, and TLI place the model and baseline
 #' noncentrality on the uncorrected \eqn{N - 1} discrepancy scale on which these
 #' approximate-fit indices are defined, so the Bartlett small-sample correction enters only
 #' the chi-square test, not the approximate-fit indices.
@@ -350,8 +341,8 @@
 #' fit), the AIC, BIC, and ECVI are `NA` and the returned `fit_indices` additionally carry
 #' the scaled-statistic components (see the `fit_indices` entry in Value). Note that
 #' Lorenzo-Seva, Timmerman, and Kiers (2011) introduce the CAF as ranging between 0 and 1,
-#' with values close to 1 indicating close fit; this does not match the formula they give
-#' for it, \eqn{1 - KMO(residuals)}, which only works if the diagonal of the residual
+#' with values close to 1 indicating close fit; this does not match the formula they apply,
+#' \eqn{1 - KMO(residuals)}, which only works if the diagonal of the residual
 #' matrix is set to 1s and then approximates 0.5 with close fit.
 #'
 #' ## Available combinations
@@ -484,46 +475,21 @@
 #'  Heywood (improper) case in the unrotated solution; empty if there are none.}
 #' \item{unrot_loadings}{Loading matrix containing the final unrotated loadings.}
 #' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings. Based on the unrotated loadings.}
-#' \item{fit_indices}{For ML and ULS: Fit indices derived from the unrotated
-#' factor loadings: Chi Square, including significance level, degrees of freedom
-#' (df), Comparative Fit Index (CFI; Bentler, 1990), Tucker-Lewis Index (TLI, also
-#' called the non-normed fit index; Tucker & Lewis, 1973), Root Mean Square Error of
-#' Approximation (RMSEA), including its 90% confidence interval (Browne & Cudeck,
-#' 1992), Akaike Information Criterion (AIC), Bayesian Information Criterion (BIC),
-#' Expected Cross-Validation Index (ECVI; Browne & Cudeck, 1989), Root Mean Squared
-#' Residual (RMSR), Standardized Root Mean Squared Residual (SRMR; Bentler, 1995),
-#' and the common part accounted for (CAF) index as proposed by Lorenzo-Seva,
-#' Timmerman, & Kiers (2011). The model Chi Square is the Bartlett-corrected
-#' discrepancy (matching [stats::factanal()] for ML), and the AIC, BIC, and ECVI are
-#' derived from it. When `cor_method = "fiml"` the model and baseline Chi Square are
-#' instead the Satorra-Bentler-corrected two-stage statistics (Yuan, Marshall, &
-#' Bentler, 2002): the normal-theory discrepancy on the EM-estimated correlation,
-#' rescaled by the saturated FIML asymptotic covariance, because the plain two-stage
-#' likelihood-ratio statistic is not asymptotically `Chi^2(df)` under the two-stage
-#' estimator. For ML and ULS the AIC, BIC, and ECVI are the minimum-fit-function
-#' (Chi-Square-based) forms `Chi Square - 2 * df` and `Chi Square - log(N) * df` (as in
-#' [psych::fa()]), not the likelihood-based criteria, and can therefore be negative; they
-#' are left `NA` for any scaled (moment-adjusted) Chi Square, i.e. under
-#' `cor_method = "fiml"` and with `se = "sandwich"`. The RMSEA, CFI, and
-#' TLI instead place the model (and, for CFI and TLI, the baseline) noncentrality on the
-#' uncorrected `N - 1` discrepancy scale (Browne & Cudeck, 1992; Bentler, 1990; Tucker &
-#' Lewis, 1973) on which these approximation indices are defined, so the Bartlett
-#' small-sample correction enters only the Chi Square test, not the approximate-fit
-#' indices. For PAF
-#' and DWLS, only CAF, RMSR, SRMR, and df are computed and the Chi-Square-derived indices
-#' are returned as `NA`; for DWLS with `se = "sandwich"` the full block is instead filled
-#' from a scaled Chi Square (see Details). Whenever the Chi Square is a scaled one
-#' (`se = "sandwich"`, or any `cor_method = "fiml"` fit) the `fit_indices` also
-#' carry the scaled-statistic components: `chi_scaling` (the multiplier a in the
-#' scaled-and-shifted statistic a * T + b, i.e. the reciprocal of \pkg{lavaan}'s
-#' `chisq.scaling.factor`), `chi_shift` (b), `chi_unscaled` (the unscaled statistic T),
-#' and the alternative `chi_mean_adjusted` and `chi_mean_var` statistics with their
-#' `df_mean_var`. Note that Lorenzo-Seva, Timmerman, & Kiers (2011)
-#' introduce the CAF as ranging between 0 and 1, with values close to 1 indicating close fit.
-#' This does not match the formula they give for it, `1 - KMO(residuals)`, which only works if the
-#' diagonal of the residual matrix is set to 1s and then approximates 0.5 with close fit. The
-#' print and summary methods show SRMR rather than RMSR in the model-fit block; RMSR remains
-#' available here for programmatic use and backward compatibility.}
+#' \item{fit_indices}{A named list of fit indices computed from the unrotated
+#' loadings. For ML and ULS it holds the model Chi Square (with its p-value and
+#' df), CFI, TLI, RMSEA with its 90% confidence interval, AIC, BIC, ECVI, RMSR,
+#' SRMR, and CAF; for PAF and DWLS only RMSR, SRMR, CAF, and df are populated and
+#' the Chi-Square-based indices are `NA` (for DWLS with `se = "sandwich"` the full
+#' block is filled from a scaled Chi Square instead). Whenever the Chi Square is a
+#' scaled statistic (`se = "sandwich"`, or any `cor_method = "fiml"` fit) AIC,
+#' BIC, and ECVI are `NA` and the list additionally carries the scaling
+#' components: `chi_scaling` (the multiplier a in the scaled-and-shifted statistic
+#' \eqn{aT + b}, i.e. the reciprocal of \pkg{lavaan}'s `chisq.scaling.factor`),
+#' `chi_shift` (b), `chi_unscaled` (the unscaled statistic T), and the alternative
+#' `chi_mean_adjusted` and `chi_mean_var` statistics with their `df_mean_var`.
+#' RMSR is retained for programmatic use and backward compatibility, although the
+#' print and summary methods display SRMR. See the *Fit indices* section in
+#' Details for how each index is defined, scaled, and referenced.}
 #' \item{model_implied_R}{The model implied correlation
 #' matrix.}
 #' \item{residuals}{Residual correlations, i.e., orig_R - model_implied_R}

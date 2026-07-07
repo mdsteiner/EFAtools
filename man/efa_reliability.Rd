@@ -86,9 +86,8 @@ used for \code{lavaan} input.}
 omega, as in \code{\link[psych:omega]{psych::omega()}}); \code{"sums_load"} uses the model-implied composite
 variance from the squared loading sums and the uniquenesses (see \code{\link[=OMEGA]{OMEGA()}}), which
 needs no correlation matrix and so is the way to score a bare loading matrix or
-manual components given without one. It is a deliberate override only for \code{\link[=SL]{SL()}},
-\code{schmid}, bifactor-matrix, and manual input; \code{lavaan} input is always model-implied,
-and an oblique \code{\link[=EFA]{EFA()}} always correlation-based.}
+manual components given without one. Some inputs fix the convention: \code{lavaan} is
+always model-implied and an oblique \code{\link[=EFA]{EFA()}} is always correlation-based.}
 
 \item{var_names}{character. Subtest names in the row order of the loadings.
 Only needed when \code{model} is \code{NULL}.}
@@ -144,31 +143,25 @@ matrix, or manually supplied components.
 
 The reliability coefficients are McDonald's omegas (McDonald, 1978, 1985,
 1999), standardized Cronbach's alpha (Cronbach, 1951), and the H index
-(construct replicability; Hancock & Mueller, 2001). Omega total is the total
-true-score variance in a unit-weighted composite, omega hierarchical the share
-due to the general factor, and omega subscale the share due to the group
-factors (for the whole scale) or the specific group factor (for a subscale).
-The common-variance indices are the ECV and PUC (Bonifay et al., 2015; Reise et
-al., 2013; Rodriguez et al., 2016a, 2016b); they describe the general factor and
-so are reported for the general factor only. See \code{\link[=OMEGA]{OMEGA()}} for the definitions
-and interpretation of each coefficient.
+(construct replicability; Hancock & Mueller, 2001). The common-variance indices
+are the ECV and PUC (Bonifay et al., 2015; Reise et al., 2013; Rodriguez et al.,
+2016a, 2016b); they describe the general factor and so are reported for the
+general factor only. See \code{\link[=OMEGA]{OMEGA()}} for the definition and interpretation of each
+coefficient.
 }
 
 \subsection{Input}{
 
 The dispatch on \code{model} mirrors \code{\link[=OMEGA]{OMEGA()}}, with two additions: an oblique
-\code{\link[=EFA]{EFA()}} object is scored as the correlated-factors model it is (with no general
-factor, the bifactor indices omega hierarchical, ECV, and PUC are not meaningful
-and are omitted, leaving the whole-scale omega total and alpha and each group
-factor's congeneric omega, H, and alpha), and a bare loading matrix is read as a
-raw bifactor solution (general factor in the first column). For a correlated-factors
-\code{\link[=EFA]{EFA()}} solution \code{variance} is always \code{"correlation"} (the factors are correlated,
-so the model-implied \code{"sums_load"} composite variance does not apply). The
-indicator-to-factor correspondences come from
-\code{factor_map} when it is supplied; otherwise each variable is assigned to the
-group factor on which it loads most strongly. For \code{lavaan} input the composite
-variances are model-implied (\code{variance} is not used), and the coefficients are
-computed per group.
+\code{\link[=EFA]{EFA()}} object is scored as the correlated-factors model it is (having no general
+factor, it omits the bifactor indices -- omega hierarchical, ECV, and PUC), and a
+bare loading matrix is read as a raw bifactor solution (general factor in the
+first column). For a correlated-factors \code{\link[=EFA]{EFA()}} solution \code{variance} is always
+\code{"correlation"}. The indicator-to-factor correspondences come from \code{factor_map}
+when it is supplied; otherwise each variable is assigned to the group factor on
+which it loads most strongly. For \code{lavaan} input the composite variances are
+model-implied (\code{variance} is not used), and the coefficients are computed per
+group.
 }
 }
 \examples{

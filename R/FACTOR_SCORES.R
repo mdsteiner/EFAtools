@@ -9,14 +9,17 @@
 #' factor scores) or matrix with correlations.
 #' @param f object of class [EFA()] or matrix.
 #' @param Phi matrix. A matrix of factor intercorrelations. Only needs to be
-#' specified if a factor loadings matrix is entered directly into `f`.
-#' Default is `NULL`, in which case all intercorrelations are assumed to be zero.
+#' specified if a factor loadings matrix is entered directly into `f`; for an
+#' [EFA()] object the intercorrelations are taken from the object. Default is
+#' `NULL`, in which case the intercorrelations of a directly supplied loading
+#' matrix are assumed to be zero.
 #' @param rho matrix. Correlation matrix used to derive the scoring weights.
 #' Defaults to `NULL`, in which case the matrix the EFA in `f` was fit on
 #' (`f$orig_R`) is used, so the weights stay consistent with the loadings even for
 #' a non-Pearson correlation (e.g. polychoric); for a directly supplied loading
-#' matrix the Pearson correlation of `x` is used. Pass a matrix here to score
-#' against a different correlation.
+#' matrix, `x` itself is used when it is a correlation matrix, otherwise the
+#' Pearson correlation of `x`. Pass a matrix here to score against a different
+#' correlation.
 #' @param method character. The method used to calculate factor scores. One of
 #' "Thurstone" (regression-based; default), "tenBerge", "Anderson", "Bartlett",
 #' "Harman", or "components".

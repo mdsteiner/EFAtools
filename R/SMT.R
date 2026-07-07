@@ -53,9 +53,6 @@
 #' number of factors, while the AIC performed well at determining the
 #' most generalizable model (Preacher, Zhang, Kim, & Mels, 2013).
 #'
-#' The `SMT` function can also be called together with other factor
-#' retention criteria in the [N_FACTORS()] function.
-#'
 #' @returns An object of class `efa_retention` (see [print.efa_retention()] for
 #'   the print method). Its main fields are:
 #' \item{n_factors}{A named numeric vector (`"chi"`, `"RMSEA"`, `"AIC"`) with the

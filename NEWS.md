@@ -1,121 +1,53 @@
-# EFAtools 0.7.1.9000
+# EFAtools 0.8.0
+
+## New Functions
+
+* `efa_group()` performs multi-group EFA.
+* `efa_power()` to conduct power analysis (analytic power based on RMSEA and simulation based power analysis).
+* `efa_reliability()` to calculate various reliability indices.
+* `efa_screen()` to screen data for multivariate normality and suitability for factor analysis.
+* `efa_simulate()` to simulate data with various distributions and missing data mechanisms.
+
 
 ## Changes to Functions
 
-* `EFA()` gains `cor_method = "fiml"` for raw data with missing values: the
-  saturated multivariate-normal mean and covariance are estimated by EM under a
-  missing-at-random assumption (Yuan, Marshall, & Bentler, 2002; Little & Rubin,
-  2002) and the standardized covariance is analysed, reproducing the loadings of
-  `psych::corFiml()` followed by `psych::fa()` (a two-stage estimator). The model
-  fit indices are corrected two-stage statistics: the Chi Square (and the CFI,
-  TLI, and RMSEA derived from it) is the Satorra-Bentler-corrected two-stage
-  statistic (Yuan, Marshall, & Bentler, 2002) -- the normal-theory discrepancy on
-  the EM correlation rescaled by the saturated FIML asymptotic covariance, since
-  the plain two-stage likelihood-ratio statistic is not asymptotically
-  `Chi^2(df)`; AIC, BIC, and ECVI are left `NA`, as for any scaled statistic.
-  Standard errors are available analytically for `method = "ML"` or `"ULS"` --
-  `se = "information"` and `"sandwich"` both return the corrected two-stage (Yuan
-  & Bentler, 2000; Savalei & Bentler, 2009) sandwich standard errors, the naive
-  Stage-2 errors being inconsistent under missingness -- or, for any method, by
-  the non-parametric bootstrap (`se = "np-boot"`). `use` does not apply (every
-  case is used), and
-  `cor_method = "fiml"` is incompatible with `method = "DWLS"`.
-
-* `EFA_AVERAGE()` gains `cor_method = "fiml"`: the two-stage FIML correlation is
-  estimated once from the raw data with missing values and reused across every
-  EFA in the averaging grid (matching `psych::corFiml()` followed by
-  `psych::fa()`, not `lavaan::efa(missing = "ml")`). The averaged loadings are the
-  two-stage estimates; the averaged Chi-Square-based fit indices are the ordinary
-  ML/ULS discrepancy statistics on the EM correlation, not the corrected two-stage
-  statistics reported by a standalone `EFA(cor_method = "fiml")`.
-
-* Polychoric and tetrachoric correlations (`cor_method = "poly"` / `"tetra"`)
-  are now accurate for near-collinear item pairs. The per-pair optimiser no
-  longer stops prematurely when a near-impossible response cell underflows, and
-  a finer quadrature is used as a correlation approaches the singular boundary,
-  so strongly related items are no longer estimated as more weakly related than
-  they are. Under missing data with `use = "pairwise.complete.obs"`, each pair's
-  thresholds are now estimated from that pair's own complete cases (as in
-  `polycor::polychor()` and `lavaan`), removing a bias that could arise when the
-  missingness was related to the responses.
-
-* `EFA()` with `se = "sandwich"` and `method = "ML"` or `"ULS"` no longer fails
-  with a weight-related error on a near-degenerate response pair: the
-  diagonally-weighted least-squares weights are now constructed only for
-  `method = "DWLS"`. When an asymptotic covariance requires complete cases and so
-  overrides `use = "pairwise.complete.obs"` (listwise-deleting incomplete rows),
-  `EFA()` now reports this rather than changing the estimates silently.
-
-* `EFA_POOLED()` now dispatches its multiple-imputation standard-error pooling
-  automatically by the standard-error method of its component fits: Rubin's
-  rules for the information method (with Wald confidence intervals using Rubin's
-  (1987) degrees of freedom, appropriate for the asymptotically-normal analytic
-  loadings), the two-stage pooled-inputs
-  (MI2S) approach (Chung & Cai, 2019; Sriutaisuk, Liu, Chung, Kim, & Gu, 2025)
-  for the sandwich method (a single fit on a Rubin-pooled correlation matrix and
-  asymptotic covariance), and the existing bootstrap pooling for the
-  non-parametric bootstrap method. Mixed standard-error methods across component
-  fits now raise a classed `efa_pooled_mixed_se` condition rather than silently
-  producing uninterpretable results, and a failure to produce pooled standard
-  errors on the information or bootstrap route is signalled with a classed
-  `efa_pooled_se_unavailable` warning (falling back to point-estimate-only
-  pooling) rather than being silently dropped.
-
-* `EFA_POOLED()` routes component fits with `se = "sandwich"` through the
-  two-stage pooled-inputs (MI2S) approach (Chung & Cai, 2019; Sriutaisuk,
-  Liu, Chung, Kim, & Gu, 2025): the correlation matrix and the asymptotic
-  covariance of its off-diagonal entries are Rubin-pooled across imputations,
-  and a single `EFA` fit on the pooled inputs produces native scaled-shifted
-  chi-square test statistics and sandwich standard errors that reflect the
-  multiple-imputation uncertainty. The single pooled fit is exposed as
-  `mi_fit` on the returned object alongside the per-imputation `fits` list.
-  Because there is a single fit there is one rotational gauge, so the route
-  bypasses per-imputation rotation alignment (`target_method` and
-  `align_unrotated` do not apply). The pooled asymptotic covariance is not
-  smoothed: an indefinite pooled covariance at small m aborts with the
-  classed condition `efa_pooled_mi2s_acov_not_psd`, and fewer than 20
-  imputations raises a classed warning. The polychoric/tetrachoric case is the
-  primary target; the continuous-Pearson case uses the same recipe but is less
-  benchmarked under multiple imputation.
-
-* `EFA_POOLED()` now pools the unrotated-loading and uniqueness standard errors
-  produced by component fits under `se = "information"`, using Rubin's rules
-  with Wald confidence intervals and plain Rubin (1987) degrees of
-  freedom. Under `align_unrotated = "procrustes"`, the per-imputation
-  orthogonal Procrustes transform mixes loading columns, so the full
-  unrotated covariance persisted on each fit (`vcov_unrot_loadings`) is
-  propagated through the column-major Kronecker identity (treating the
-  per-imputation Procrustes transform as fixed) before Rubin pooling; see
-  `?EFA_POOLED` for the formula. Component fits missing the
-  full covariance abort with the classed condition `efa_pooled_no_vcov`, and
-  fits carrying an NA-filled covariance (the upstream signal of a Heywood
-  case or singular bordered information matrix) abort with
-  `efa_pooled_unreliable_vcov`.
-
-* `EFA_POOLED()` now also pools the rotated-loading, communality, factor-
-  correlation (`Phi`), and structure-coefficient standard errors from component
-  fits under `se = "information"`. Orthogonal rotations use the closed-form
-  orthogonal Procrustes alignment to the multiple-imputation rotated target and
-  propagate the unrotated parameter covariance through the Kronecker identity;
-  communalities are rotation-invariant and pool without alignment. Oblique
-  rotations use a signed-permutation alignment of the per-imputation rotated
-  standard errors as a documented approximation (flagged in
-  `MI$<param>$method`); researchers requiring rigorous uncertainty
-  quantification for oblique solutions should cross-check with `se = "np-boot"`.
-
-* `EFA()` objects now carry through the full unrotated loading covariance matrix
-  (`vcov_unrot_loadings`) for the analytic SE methods (`se = "information"` and
-  `se = "sandwich"`, in both unrotated and rotated fits), and the asymptotic
-  covariance of the off-diagonal correlations (`Gamma`) for `se = "sandwich"`.
-
-* Renamed the top-level fields `boot.SE`, `boot.CI`, and `boot.arrays` on
-  `EFA` objects to `SE`, `CI`, and `replicates`, and the additional
-  `EFA_POOLED` field `boot.MI` to `MI`. The previous names were artefacts of
-  internal list flattening and were misleading because `SE` and `CI` are
-  populated under the `"information"` and `"sandwich"` SE methods as well, not
-  only the nonparametric bootstrap. Code that read these fields directly must
-  update its slot accessors.
-
+* `EFA()`: 
+  * gains `cor_method = "fiml"` for raw data with missing values.
+  * gains `se = "sandwich"` and `se = "information"`.
+  * renamed the top-level fields `boot.SE`, `boot.CI`, and `boot.arrays` on
+    `EFA` objects to `SE`, `CI`, and `replicates`, as the old names are no longer 
+    accurate given the additional SE implementations.
+  * All criterion-based rotations are now computed by a built-in gradient-projection
+    rotation engine instead of the `GPArotation` package. The rotated solutions
+    are numerically equivalent but implemented in C++ for speed to allow high 
+    numbers of random starts.
+  * The default number of random starts for the rotation in `EFA()` (`randomStarts`)
+    has been raised from 10 to 100, making local minima less likely for the 
+    rotation criteria that areprone to them.
+  * additionally reports the Tucker-Lewis index (TLI, also called the
+    non-normed fit index), the expected cross-validation index (ECVI), and the
+    standardized root mean square residual (SRMR)
+  * gains a `seed` argument and now fits the non-parametric bootstrap replicates
+    (`se = "np-boot"`) in parallel across replicates via the `future` framework.
+  * now has a `summary()` method that prints the full, detailed solution 
+    (loadings with communalities and uniquenesses, explained variances, fit
+    indices, and residuals); `print()` now gives a more compact overview.
+* `EFA_AVERAGE()` gains `cor_method = "fiml"` (passed to `EFA()`).
+* `EFA_POOLED()`:
+  * now dispatches its multiple-imputation standard-error pooling automatically
+    by the standard-error method of its component fits: Rubin's rules for the
+    information method (with Wald confidence intervals), the two-stage pooled-inputs
+    (MI2S) approach for the sandwich method, and the existing bootstrap pooling
+    for the non-parametric bootstrap method. 
+  * Renamed the top-level field `boot.MI` to `MI`. 
+  * now defaults to `target_method = "first_target"`, which aligns every imputation
+    to the first imputation's rotated solution with a single Procrustes rotation.
+    For orthogonal rotations this reaches the same pooled estimate as `"consensus"`
+    with substantially less work. `"consensus"` (Generalized Procrustes Analysis of
+    the imputation-specific rotated loadings) is still available as an opt-in for
+    orthogonal rotations, and now raises a classed condition
+    (`efa_consensus_oblique_unsupported`) when combined with an oblique rotation,
+    because the iterated-oblique-Procrustes centroid can drift to degenerate targets.
 * `cor_method` now accepts `"poly"` and `"tetra"` to compute polychoric and tetrachoric
   correlations from raw ordinal (respectively binary) data, using a two-step estimator with
   no empty-cell continuity correction. Supported by `EFA()` (including its non-parametric
@@ -124,68 +56,6 @@
   criteria that compare the data against simulated continuous reference data (`CD()`,
   `PARALLEL()`, `NEST()`, and `HULL()`) do not support `"poly"` / `"tetra"` and signal an
   error.
-
-* The `quartimax` and `equamax` orthogonal rotations in `EFA()` are now computed by a
-  built-in gradient-projection rotation engine instead of the `GPArotation` package. The
-  rotated solutions are numerically equivalent (the engine reaches the same minimum of the
-  Crawford-Ferguson criterion); the remaining rotation criteria continue to use
-  `GPArotation`.
-* The `oblimin` and `quartimin` oblique rotations in `EFA()` are now computed by the same
-  built-in gradient-projection rotation engine instead of the `GPArotation` package. The
-  rotated solutions are numerically equivalent (the engine reaches the same minimum of the
-  oblimin criterion); the remaining oblique rotation criteria continue to use
-  `GPArotation`.
-* The `geominT` and `geominQ` geomin rotations in `EFA()` are now computed by the same
-  built-in gradient-projection rotation engine instead of the `GPArotation` package. Because
-  the geomin criterion is prone to local minima, the engine reaches an equal-or-better minimum
-  of the geomin criterion rather than reproducing `GPArotation`'s particular solution exactly;
-  the remaining rotation criteria continue to use `GPArotation`.
-* The `bentlerT` and `bentlerQ` Bentler rotations in `EFA()` are now computed by the same
-  built-in gradient-projection rotation engine instead of the `GPArotation` package. The engine
-  reaches an equal-or-better minimum of the Bentler invariant pattern simplicity criterion; the
-  remaining rotation criteria continue to use `GPArotation`.
-* The `bifactorT` and `bifactorQ` bifactor rotations in `EFA()` are now computed by the same
-  built-in gradient-projection rotation engine instead of the `GPArotation` package. Because the
-  bifactor criterion is prone to local minima, the engine reaches an equal-or-better minimum of the
-  Jennrich-Bentler bifactor criterion rather than reproducing `GPArotation`'s particular solution
-  exactly.
-* The `simplimax` oblique rotation in `EFA()` is now computed by the same built-in
-  gradient-projection rotation engine instead of the `GPArotation` package. Because the simplimax
-  criterion is prone to local minima, the engine reaches an equal-or-better minimum of the
-  simplimax criterion rather than reproducing `GPArotation`'s particular solution exactly. With
-  this, every analytic rotation in `EFA()` is computed by the built-in engine, and `GPArotation`
-  is no longer used to perform rotations.
-* The default number of random starts for the rotation in `EFA()` (`randomStarts`) has been
-  raised from 10 to 100, making local minima less likely for the rotation criteria that are
-  prone to them. The rotation engine screens the random starts cheaply and fully optimizes only
-  the most promising ones, so the higher default barely changes the runtime of a single `EFA()`
-  for most criteria (a few seconds at most, for `simplimax`, which fully optimizes every start).
-* `summary()` now reports the number of distinct local optima the rotation found across its
-  random starts, and `EFA()` records the rotation diagnostics (the number of random starts, how
-  many converged, the distinct-optima count, and the spread and best value of the attained
-  criterion) in `settings$rotation_diagnostics`.
-* The built-in gradient-projection rotation engine now uses a Barzilai-Borwein step size with a
-  non-monotone line search. The analytic rotations in `EFA()`, and the `PROCRUSTES()` target
-  rotation, reach the same solution in substantially fewer iterations; the speed-up is most
-  noticeable on larger problems and in the resampling workflows that rotate many solutions
-  (`EFA()` bootstrap standard errors and `EFA_AVERAGE()`).
-* The oblique geomin rotation (`geominQ`) now triages more of its random starts by default, so it
-  reliably reaches the global geomin optimum on problems where the previous setting occasionally
-  settled at a nearby local optimum.
-* `EFA()` now additionally reports the Tucker-Lewis index (TLI, also called the
-  non-normed fit index), the expected cross-validation index (ECVI), and the
-  standardized root mean square residual (SRMR) among its `fit_indices` for `ML` and
-  `ULS` estimation (SRMR is also reported for `PAF`). The SRMR matches `lavaan`; the TLI
-  and ECVI are based on the Bartlett-corrected chi square. The new indices are shown in
-  `print()` and `summary()`.
-* `EFA()` now detects Heywood (improper) cases in the fitted solution, records the affected
-  variables in a new `heywood` element of the returned object, and emits a classed warning.
-  Detection is consistent across `PAF`, `ML`, and `ULS`: a variable is flagged when its
-  communality reaches or exceeds 1 (which can happen under `PAF`), or when its uniqueness is
-  pinned at the estimator's lower bound (the boundary/improper case under `ML` and `ULS`).
-* `EFA()` objects now have a `summary()` method that prints the full, detailed solution
-  (loadings with communalities and uniquenesses, explained variances, fit indices, and
-  residuals); `print()` now gives a more compact overview.
 * The factor-retention functions `CD()`, `EKC()`, `HULL()`, `KGC()`, `MAP()`, `NEST()`,
   `PARALLEL()`, `SCREE()`, and `SMT()` now return objects of a common `efa_retention` class
   with shared `print()` and `plot()` methods.
@@ -194,37 +64,9 @@
 * Console output (the `print`, `summary`, and `format` methods) is now produced with the `cli`
   package, and the messages, warnings, and errors emitted across the package are now S3-classed
   conditions, which makes them easier to handle programmatically.
-* `lavaan` moved from Imports to Suggests. The `lavaan`-input paths of `OMEGA()` and `SL()` now
-  require the `lavaan` package to be installed and raise a clear error if it is missing.
-* `GPArotation` moved from Imports to Suggests. All rotations in `EFA()` are computed by the
-  package's built-in rotation engines, so `GPArotation` is no longer needed to run the package;
-  it is now used only as an optional reference in the test suite.
 * `EFA()`, `SL()`, and `EFA_AVERAGE()` now accept `method = "MINRES"` as a synonym for
   `method = "ULS"`. Minimum residual and unweighted least squares are two names for the same
   estimator and return identical results.
-* `EFA()` gains a `seed` argument and now fits the non-parametric bootstrap replicates
-  (`se = "np-boot"`) in parallel across replicates via the `future` framework. By default the
-  replicates are still fitted sequentially; register a plan with `future::plan()` (for example
-  `future::plan(future::multisession, workers = 2)`) to fit them in parallel. With a fixed
-  `seed`, the bootstrap is reproducible and returns the same result regardless of the number of
-  workers. Because each worker runs its own linear algebra, keep the number of workers small if
-  your `BLAS` is multi-threaded, to avoid over-subscribing the available cores.
-* The bootstrapped standard errors and confidence intervals for rotated loadings from `EFA(se =
-  "np-boot")` can differ slightly from earlier versions. The oblique re-rotation of the bootstrap
-  replicates is now carried out in a single compiled pass (with its warm start computed in C++),
-  and the order in which random numbers are drawn has changed. The results are unchanged in
-  distribution and are now reproducible and independent of the number of workers.
-* `EFA_POOLED()` now defaults to `target_method = "first_target"`, which aligns every imputation
-  to the first imputation's rotated solution with a single Procrustes rotation. For orthogonal
-  rotations this reaches the same pooled estimate as `"consensus"` with substantially less work.
-  `"consensus"` (Generalized Procrustes Analysis of the imputation-specific rotated loadings,
-  in the style of van Ginkel & Kroonenberg, 2014, and Lorenzo-Seva & Van Ginkel, 2016) is still
-  available as an opt-in for orthogonal rotations, and now raises a classed condition
-  (`efa_consensus_oblique_unsupported`) when combined with an oblique rotation, because the
-  iterated-oblique-Procrustes centroid can drift to degenerate targets that the literature
-  sidesteps by adding a Promin step that this engine does not implement.
-* The internal GPA-consensus engine that used to be exported as `CONSENSUS_PROCRUSTES()` is no
-  longer part of the public API. It is reached only via `EFA_POOLED(target_method = "consensus")`.
 
 ## Bug Fixes
 
@@ -236,17 +78,13 @@
 * `EFA_POOLED()`: Corrected and extended the pooled chi-square-based model-fit indices. The D2
   average relative increase in variance is now centred on the mean of the square-root
   statistics (Li, Meng, Raghunathan & Rubin, 1991), removing a one-sided inflation of the
-  pooled chi-square, RMSEA, and CFI; the pooled set now also reports the Tucker-Lewis index
-  (TLI) and the expected cross-validation index (ECVI). Bootstrap/MI confidence intervals for
+  pooled chi-square, RMSEA, and CFI. Bootstrap/MI confidence intervals for
   the pooled fit indices are now the Rubin-Wald multiple-imputation summaries; a miscalibrated
   bootstrap-percentile interval (obtained by re-running the pooling algorithm over matched
   replicate indices) was removed, as was a mislabeled pooled `Fm`.
 * `EFA_AVERAGE()`: When every averaged solution fails (all runs error, fail to converge, or
   are Heywood cases), the function now returns an empty (`NA`) averaged result instead of
   erroring or averaging an empty set.
-* Factor extraction (`PAF`, `ML`, and `ULS`) now raises a clear error when the requested
-  number of factors is not smaller than the number of variables, instead of reading past
-  the available eigenvalues (undefined behaviour in builds without bounds checking).
 * `EFA()` with `method = "PAF"`: the reported number of iterations (`iter`) is now the
   number of iterations actually performed; it was previously one too high. The loadings,
   communalities, and convergence status are unchanged.
@@ -267,16 +105,8 @@
   Consequently the p-value, CFI, RMSEA (and its confidence interval), AIC, and BIC change
   for ML and ULS solutions, and the number of factors suggested by `SMT()` and `HULL()`
   may change for these methods.
-
 * `PARALLEL()`: The percentile reference eigenvalues are now computed with
-  `stats::quantile()` (matching `psych::fa.parallel`), correcting a slight off-by-one in
-  the previous indexing. In addition, the simulated datasets are now split across parallel
-  workers with an exact integer partition, fixing an invalid negative chunk that could
-  occur when the number of simulated datasets was close to the number of workers.
-* Non-positive-definite correlation matrices are now reported with a single classed warning
-  (`efa_cor_smoothed`) when they are smoothed, consistently across `EFA()`, `KMO()`,
-  `BARTLETT()`, and the factor-retention functions.
-
+  `stats::quantile()`, correcting a slight off-by-one in the previous indexing.
 * `EFA()`: For oblique rotations, the factor intercorrelations (`Phi`), the structure
   matrix, and the explained variances are now reflected and reordered consistently with
   the rotated loadings. Previously, when a factor was reflected to a positive orientation
@@ -289,10 +119,6 @@
   Previously the sign reflection was not applied to it and its factors were left in a
   different order, so this reconstruction did not hold whenever a factor was reflected or
   reordered.
-* `EFA()` and `EFA_AVERAGE()`: The orthogonal `"quartimax"` rotation now optimizes the
-  quartimax criterion. Previously it optimized the Bentler invariant pattern simplicity
-  criterion, so the quartimax-rotated loadings change. `EFA(rotation = "quartimax")` now
-  agrees with `psych::fa(rotate = "quartimax")` and `GPArotation::quartimax()`.
 * `HULL()`: The convex-hull elimination now tests every triplet of adjacent solutions,
   including the one formed by the last interior solution. Previously this final triplet
   was skipped, so a solution lying below the line connecting its neighbours could remain
