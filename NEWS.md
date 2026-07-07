@@ -1,3 +1,7 @@
+# EFAtools 0.8.0.90000
+
+* Fix a regression in MAP TR4.
+
 # EFAtools 0.8.0
 
 ## New Functions

@@ -10,16 +10,21 @@
 #'
 #' MAP partials successive principal components out of the correlation matrix and,
 #' after removing \eqn{m} components, summarizes the off-diagonal partial
-#' correlations \eqn{r^*_{ij}} that remain; the suggested number of factors is the
-#' \eqn{m} that minimizes the criterion. Two criteria are returned:
+#' correlations \eqn{r^*_{ij}} that remain in the \eqn{m}-th partial correlation
+#' matrix \eqn{M} (which has a unit diagonal); the suggested number of factors is
+#' the \eqn{m} that minimizes the criterion. Two criteria are returned, each
+#' rescaling the trace of a matrix power of \eqn{M} by the number of off-diagonal
+#' cells \eqn{p(p-1)}:
 #' \itemize{
-#'   \item **TR2 (original MAP; Velicer, 1976):**
-#'   \deqn{\mathrm{MAP}_m = \frac{\sum_{i \neq j} (r^*_{ij})^2}{p(p-1)},}
-#'   the mean squared off-diagonal partial correlation.
-#'   \item **TR4 (revised MAP; Velicer, Eaton, & Fava, 2000):**
-#'   \deqn{\mathrm{MAP4}_m = \frac{\sum_{i \neq j} (r^*_{ij})^4}{p(p-1)},}
-#'   the mean fourth-power off-diagonal partial correlation, which downweights
-#'   small partial correlations.
+#'   \item **TR2 (original MAP; Velicer, 1976):** the average squared off-diagonal
+#'   partial correlation,
+#'   \deqn{\mathrm{TR2}_m = \frac{\mathrm{tr}(M^2) - p}{p(p-1)} = \frac{\sum_{i \neq j} (r^*_{ij})^2}{p(p-1)},}
+#'   where subtracting \eqn{p} removes the \eqn{p} unit diagonal entries.
+#'   \item **TR4 (revised MAP; Velicer, Eaton, & Fava, 2000):** the analogous
+#'   fourth-power summary, formed from the trace of the fourth matrix power,
+#'   \deqn{\mathrm{TR4}_m = \frac{\mathrm{tr}(M^4) - p}{p(p-1)}.}
+#'   Moving from the squared to the fourth power downweights the small partial
+#'   correlations relative to the large ones, which can sharpen the minimum.
 #' }
 #'
 #' A non-positive-definite input correlation matrix (e.g. from sampling error) is
@@ -103,12 +108,10 @@ MAP <- function(x,
 
   map_from_partials <- function(M) {
     # Velicer's (1976) MAP and the revised criterion of Velicer, Eaton & Fava (2000)
-    # summarize the off-diagonal partial correlations of M (which has a unit diagonal):
-    #   TR2 = mean squared off-diagonal partial correlation
-    #   TR4 = mean fourth-power off-diagonal partial correlation
-    # Subtracting p removes the p diagonal ones; p(p - 1) is the number of off-diagonal cells.
-    c((sum(M^2) - p) / (p * (p - 1)), # TR2 criterion (original MAP)
-      (sum(M^4) - p) / (p * (p - 1))) # TR4 criterion (revised MAP)
+    M2 <- M %*% M
+    M4 <- M2 %*% M2
+    c((sum(diag(M2)) - p) / (p * (p - 1)), # TR2 criterion (original MAP)
+      (sum(diag(M4)) - p) / (p * (p - 1))) # TR4 criterion (revised MAP)
   }
 
   # m=0, Rstar = R
