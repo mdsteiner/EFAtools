@@ -87,7 +87,7 @@
 #' at a prescribed misfit; exact factor structures are unrealistic and overstate
 #' recovery in simulation studies (MacCallum, 2003). The perturbation is applied once
 #' to the population, and the achieved fit is computed with the same fit-index
-#' formulas [EFA()] uses and returned in the `model_error` element. It is applied only
+#' formulas [efa_fit()] uses and returned in the `model_error` element. It is applied only
 #' when a target is supplied (`target_rmsea` and/or `target_cfi`), needs a
 #' factor-model population (`Lambda`) with residual degrees of freedom and an exact
 #' factor structure (a diagonal `Psi`), and is orthogonal to the marginal, ordinal,

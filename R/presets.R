@@ -46,6 +46,15 @@
   )
 )
 
+# The settings lists and the rotation engine keep the historical internal spellings of two
+# knobs; messages must show the names the current interface takes (rotate_control()).
+.knob_display_names <- function(nms) {
+  renames <- c(P_type = "p_type", randomStarts = "random_starts")
+  hit <- nms %in% names(renames)
+  nms[hit] <- renames[nms[hit]]
+  nms
+}
+
 # Resolve a preset block into the final settings list. `type` is the chosen
 # preset (or "none"); `user` holds the user-supplied values (NA where unset);
 # `preset` is the `.efa_presets` slice for the calling function. Every setting
@@ -62,6 +71,7 @@
     missing <- required[vapply(user[required], is.na, logical(1))]
 
     if (length(missing) > 0) {
+      missing <- .knob_display_names(missing)
       cli::cli_abort(
         c(
           paste("{cli::qty(missing)} {.arg type} is {.val none} but",
@@ -98,7 +108,7 @@
 
     # `pairs` is interpolated as a variable (never baked into the glue template)
     # so user-supplied values cannot be parsed as cli markup.
-    pairs <- paste0(pinned, " = ",
+    pairs <- paste0(.knob_display_names(pinned), " = ",
                     vapply(pinned, function(nm) format(resolved[[nm]]),
                            character(1)))
 

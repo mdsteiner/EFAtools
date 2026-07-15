@@ -194,7 +194,7 @@ test_that("distinct imputations (B > 0): pooled rotated-loading and h2 SEs match
       Lr_d <- target
     } else {
       A    <- unclass(pooled_b$fits[[d]]$unrot_loadings)
-      Lr_d <- unclass(EFAtools::PROCRUSTES(A, target, rotation = "orthogonal")$loadings)
+      Lr_d <- unclass(EFAtools::efa_procrustes(A, target, rotation = "orthogonal")$loadings)
     }
     se_d <- pooled_b$fits[[d]]$SE$rot_loadings
     if (is.null(se_d) || anyNA(se_d)) skip("a component fit had non-finite rotated SEs")

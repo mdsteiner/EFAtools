@@ -1257,7 +1257,7 @@ static Rcpp::List se_jacobian_impl(const arma::mat& A, const Crit& crit,
 //'
 //' Forward-difference the warm-started re-rotation map `A -> (rotated loadings, Phi)` over the
 //' unrotated loadings `A` to obtain the rotation Jacobians used by the analytic standard errors for
-//' rotated loadings (`se = "information"` in [EFA()]). The full `nrow(A) * ncol(A)` finite-
+//' rotated loadings (`se = "information"` in [efa_fit()]). The full `nrow(A) * ncol(A)` finite-
 //' difference loop runs in compiled code, re-solving the rotation from the converged transformation
 //' `T_init` at each perturbation; the caller forms `J V J'` in R.
 //'

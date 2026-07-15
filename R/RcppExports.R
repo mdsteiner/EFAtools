@@ -117,14 +117,14 @@
 #'
 #' Align each slice of a loading-matrix cube to a single shared target using the
 #' same oblique target rotation as `.oblique_procrustes()`, in one call. This
-#' removes the per-replicate marshalling overhead of looping `PROCRUSTES()` in R
+#' removes the per-replicate marshalling overhead of looping `efa_procrustes()` in R
 #' over bootstrap or multiple-imputation arrays.
 #'
 #' Each slice `A[, , i]` is aligned to `B`. For a single-factor cube the alignment
 #' reduces to the closed-form sign match `T = sign(crossprod(A_i, B))` with factor
-#' correlation `1`, matching the one-factor short-circuit in `PROCRUSTES()`. For
+#' correlation `1`, matching the one-factor short-circuit in `efa_procrustes()`. For
 #' two or more factors the slice is warm-started from the closed-form orthogonal
-#' Procrustes solution (mirroring `PROCRUSTES()`) and optimized with the same
+#' Procrustes solution (mirroring `efa_procrustes()`) and optimized with the same
 #' multi-start oblique solver as `.oblique_procrustes()`. Random starts are drawn
 #' serially with `R::rnorm` in the calling process.
 #'
@@ -183,8 +183,8 @@
 
 #' Parallel analysis on simulated data.
 #'
-#' Function called from within PARALLEL so usually no call to this is needed by the user.
-#' Provides a C++ implementation of the PARALLEL simulation procedure
+#' Function called from within efa_parallel() so usually no call to this is needed by the user.
+#' Provides a C++ implementation of the efa_parallel() simulation procedure
 #'
 #' @param n_datasets numeric. Number of datasets with dimensions (N, n_vars) to simulate.
 #' @param n_vars numeric. Number of variables / indicators in dataset.
@@ -688,7 +688,7 @@
 #'
 #' Forward-difference the warm-started re-rotation map `A -> (rotated loadings, Phi)` over the
 #' unrotated loadings `A` to obtain the rotation Jacobians used by the analytic standard errors for
-#' rotated loadings (`se = "information"` in [EFA()]). The full `nrow(A) * ncol(A)` finite-
+#' rotated loadings (`se = "information"` in [efa_fit()]). The full `nrow(A) * ncol(A)` finite-
 #' difference loop runs in compiled code, re-solving the rotation from the converged transformation
 #' `T_init` at each perturbation; the caller forms `J V J'` in R.
 #'
@@ -736,9 +736,9 @@
     .Call(`_EFAtools_simulate_cfm_mvn`, R, N, tol)
 }
 
-#' Reference eigenvalues for the NEST simulation via the shared kernel.
+#' Reference eigenvalues for the efa_nest() simulation via the shared kernel.
 #'
-#' Internal helper called from NEST(). Simulates `nreps` datasets from an
+#' Internal helper called from efa_nest(). Simulates `nreps` datasets from an
 #' `(nf - 1)`-factor reference model, given that model's loadings `Lambda` and
 #' uniquenesses `Psi`, and returns the `nf`-th largest eigenvalue of each simulated
 #' correlation matrix. The data are drawn with the shared Z * M rule (see
@@ -747,7 +747,7 @@
 #' N(0, Lambda Lambda' + diag(Psi)). Drawing `nf - 1 + p` standard normals and
 #' post-multiplying by the factor-score matrix is faster than forming the model-
 #' implied correlation matrix and drawing from it, and matches the position at which
-#' NEST() reads the reference eigenvalue.
+#' efa_nest() reads the reference eigenvalue.
 #'
 #' @param nf integer. Position of the empirical eigenvalue being tested (1-based);
 #'   the `nf`-th largest simulated eigenvalue is returned per replicate.

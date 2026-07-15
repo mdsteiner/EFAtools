@@ -61,12 +61,12 @@ OMEGA(
 )
 }
 \arguments{
-\item{model}{class \code{\link[=SL]{SL()}}, class \code{schmid}, or class
-\code{lavaan} object. That is, an output object from \code{\link[=SL]{SL()}} or
+\item{model}{class \code{\link[=efa_schmid_leiman]{efa_schmid_leiman()}}, class \code{schmid}, or class
+\code{lavaan} object. That is, an output object from \code{\link[=efa_schmid_leiman]{efa_schmid_leiman()}} or
 \code{\link[psych:schmid]{psych::schmid()}}, or a \code{lavaan} fit object with a
 single factor, second-order, or bifactor solution. If of class \code{lavaan},
 only \code{g_name} needs to be specified additionally. If of class
-\code{\link[=SL]{SL()}} or \code{schmid}, only the arguments \code{factor_corres}
+\code{\link[=efa_schmid_leiman]{efa_schmid_leiman()}} or \code{schmid}, only the arguments \code{factor_corres}
 and \code{cormat} need to be specified additionally.}
 
 \item{type}{character. Either \code{"EFAtools"} (default) or \code{"psych"}
@@ -107,7 +107,7 @@ This needs only be specified if \code{model} is left \code{NULL}.}
 only be specified if \code{model} is left \code{NULL}.}
 
 \item{cormat}{matrix. A correlation matrix to be used when
-\code{variance = "correlation"}. If left \code{NULL} and an \code{\link[=SL]{SL()}}
+\code{variance = "correlation"}. If left \code{NULL} and an \code{\link[=efa_schmid_leiman]{efa_schmid_leiman()}}
 output is entered in \code{model}, the correlation matrix is taken from the
 output. If left \code{NULL} and a \code{\link[psych:schmid]{psych::schmid()}}
 output is entered, the correlation matrix will be found based on the pattern
@@ -153,11 +153,17 @@ If found for a \code{lavaan} output from a multiple group analysis: A list
 containing the output described above for each group.
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#superseded}{\figure{lifecycle-superseded.svg}{options: alt='[Superseded]'}}}{\strong{[Superseded]}}
+
+\code{OMEGA()} has been superseded by \code{\link[=efa_reliability]{efa_reliability()}}, which is the recommended
+interface going forward. It remains available and unchanged so existing code
+keeps working.
+
 This function finds omega total, hierarchical, and subscale, as well as additional
 model-based indices of interpretive relevance (H index, ECV, PUC)
 from a Schmid-Leiman (SL) solution or lavaan single factor, second-order (see below),
 or bifactor solution. The SL-based omegas can either be found from a
-\code{\link[psych:schmid]{psych::schmid()}}, \code{\link[=SL]{SL()}}, or,
+\code{\link[psych:schmid]{psych::schmid()}}, \code{\link[=efa_schmid_leiman]{efa_schmid_leiman()}}, or,
 in a more flexible way, by leaving
 \code{model = NULL} and specifying additional arguments. By setting the
 \code{type} argument, results from \code{\link[psych:omega]{psych::omega()}}
@@ -219,7 +225,7 @@ this function only works for second-order models if they contain no more than
 one second-order factor. In case of a second-order solution, a
 Schmid-Leiman transformation is performed on the first- and second-order loadings
 and omega coefficients are obtained from the transformed (orthogonalized) solution
-(see \code{\link[=SL]{SL()}} for more information on Schmid-Leiman transformation).
+(see \code{\link[=efa_schmid_leiman]{efa_schmid_leiman()}} for more information on Schmid-Leiman transformation).
 There is also the possibility to enter a \code{lavaan} single factor solution.
 In this case, \code{g_name} is not needed. Finally, if a solution from a
 \code{lavaan} multiple group analysis is entered, the indices are computed for
@@ -230,7 +236,7 @@ perfectly.
 The type argument is not evaluated if \code{model} is of class
 \code{lavaan}.
 
-If \code{model} is of class \code{\link[=SL]{SL()}} or
+If \code{model} is of class \code{\link[=efa_schmid_leiman]{efa_schmid_leiman()}} or
 \code{\link[psych:schmid]{psych::schmid()}} only the
 \code{type} and, depending on the type (see below), the \code{factor_corres}
 arguments need to be specified additionally. If model is of class
@@ -304,9 +310,9 @@ OMEGA(fit_ho, g_name = "g")
 }
 
 ## Use with an output from the SL function, with type EFAtools
-efa_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
-               type = "EFAtools", method = "PAF", rotation = "promax")
-sl_mod <- SL(efa_mod, type = "EFAtools", method = "PAF")
+efa_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
+                   method = "PAF", rotation = "promax")
+sl_mod <- efa_schmid_leiman(efa_mod, method = "PAF")
 
 # Two examples how to specify the indicator-to-factor correspondences:
 
@@ -334,9 +340,9 @@ OMEGA(schmid_mod, type = "psych", cormat = test_models$baseline$cormat)
 ## As an example, we extract the elements from an SL output here. This gives
 ## the same results as in the second example above.
 
-efa_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
-               type = "EFAtools", method = "PAF", rotation = "promax")
-sl_mod <- SL(efa_mod, type = "EFAtools", method = "PAF")
+efa_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
+                   method = "PAF", rotation = "promax")
+sl_mod <- efa_schmid_leiman(efa_mod, method = "PAF")
 
 factor_corres <- matrix(c(rep(0, 12), rep(1, 6), rep(0, 6), rep(1, 6),
                         rep(0, 6), rep(1, 6), rep(0, 12)), ncol = 3,
@@ -347,4 +353,8 @@ OMEGA(model = NULL, type = "EFAtools", var_names = rownames(sl_mod$sl),
       u2 = sl_mod$sl[, "u2"], cormat = test_models$baseline$cormat,
       factor_corres = factor_corres)
 
+}
+\seealso{
+\code{\link[=efa_reliability]{efa_reliability()}} for the same coefficients in a tidy, long-format
+result.
 }

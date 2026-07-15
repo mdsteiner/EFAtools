@@ -62,7 +62,7 @@
 #' the proportion of agreements over the replicates on which the criterion returned a
 #' definite factor count (replicates where it errored or was undecided are excluded,
 #' not counted as misses). **Structure recovery** (only for a factor-model
-#' population): the `k_true`-factor model is fitted with [EFA()], its rotated loadings
+#' population): the `k_true`-factor model is fitted with [efa_fit()], its rotated loadings
 #' are matched to the population loadings, and the matched-factor Tucker congruences
 #' (Lorenzo-Seva & ten Berge, 2006) are compared with `recovery_threshold`; a
 #' replicate counts as a success when the smallest (`min`) or the average (`mean`)
@@ -120,14 +120,14 @@
 #'   analyse. Default is `500`.
 #' @param criteria character. Simulation mode. The factor-retention criteria to
 #'   evaluate the hit-rate for, any of `"CD"`, `"EKC"`, `"HULL"`, `"KGC"`, `"MAP"`,
-#'   `"NEST"`, `"PARALLEL"`, and `"SMT"` (see [N_FACTORS()]). Default is
+#'   `"NEST"`, `"PARALLEL"`, and `"SMT"` (see [efa_retain()]). Default is
 #'   `c("EKC", "MAP")`. Criteria that simulate internally (`"CD"`, `"HULL"`, `"NEST"`,
 #'   `"PARALLEL"`) make each run substantially slower.
 #' @param method character. Simulation mode. The estimation method (`"PAF"`, `"ML"`,
 #'   or `"ULS"`) used for the recovery fit and the retention criteria. Default is
 #'   `"PAF"`.
 #' @param rotation character. Simulation mode. The rotation for the recovery fit,
-#'   passed to [EFA()]. Default is `NULL`, which matches the population: `"varimax"`
+#'   passed to [efa_fit()]. Default is `NULL`, which matches the population: `"varimax"`
 #'   for orthogonal factors and `"promax"` for oblique ones (a single factor is left
 #'   unrotated). Recovery aligns the fitted loadings to the population pattern by
 #'   permutation and sign only, so a rotation that does not seek that structure -- for
@@ -624,7 +624,7 @@ efa_power <- function(mode = c("rmsea", "simulation"),
   # loadings recovery aligns against. EFA's own Heywood/non-convergence warnings are
   # muffled here; the flags are read off the returned object instead.
   fit <- suppressMessages(suppressWarnings(tryCatch(
-    EFA(dat, n_factors = k_true, method = method, rotation = rotation),
+    efa_fit(dat, n_factors = k_true, method = method, rotation = rotation),
     error = function(e) NULL)))
   fit_ok <- !is.null(fit)
   converged <- isTRUE(fit_ok && fit$convergence == 0)

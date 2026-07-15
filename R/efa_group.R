@@ -3,7 +3,7 @@
 #' Fit an exploratory factor analysis in each of several groups at a common
 #' number of factors and bring the per-group solutions into one shared
 #' orientation so their loadings can be compared. Each group is fitted with
-#' [EFA()]; the solutions are then aligned either to a symmetric consensus target
+#' [efa_fit()]; the solutions are then aligned either to a symmetric consensus target
 #' or to a chosen reference group (see *Alignment*).
 #'
 #' @details
@@ -16,13 +16,14 @@
 #' or order is an error rather than being silently reordered.
 #'
 #' Every group is fitted at the same `n_factors` (a common-\eqn{k} multigroup
-#' model). Extra arguments in `...` (for example `method`, `rotation`,
-#' `cor_method`, or `type`) are forwarded unchanged to each [EFA()] call, so the
-#' estimator and rotation are common to all groups.
+#' model). Extra arguments in `...` (for example `method`, `rotation`, `cor_method`, or an
+#' [estimate_control()] / [rotate_control()] carrying the tuning knobs) are forwarded
+#' unchanged to each [efa_fit()] call, so the estimator and rotation are common to all
+#' groups.
 #'
 #' The \eqn{k}-factor model must be identified for the shared item set: its
 #' degrees of freedom \eqn{((p - k)^2 - (p + k)) / 2} must be non-negative. Unlike
-#' a single [EFA()] fit -- which only warns on an under-identified model -- a
+#' a single [efa_fit()] fit -- which only warns on an under-identified model -- a
 #' multigroup fit aborts, because a shared alignment target across an
 #' under-identified group is not interpretable.
 #'
@@ -96,8 +97,9 @@
 #' @param invariance logical. Whether to add an approximate-invariance verdict per factor and
 #'   group pair from the Lorenzo-Seva and ten Berge (2006) congruence bands (see *Value*).
 #'   Default is `FALSE`.
-#' @param ... Additional arguments passed to [EFA()] for every group (for
-#'   example `method`, `rotation`, `cor_method`, `type`).
+#' @param ... Additional arguments passed to [efa_fit()] for every group (for
+#'   example `method`, `rotation`, `cor_method`, or an [estimate_control()] /
+#'   [rotate_control()] to select a preset).
 #'
 #' @returns An object of class `efa_group`, a list containing:
 #' \item{loadings}{A named list of the aligned per-group loading matrices. Their
@@ -134,10 +136,10 @@
 #'   `[0.85, 0.95)` is "fair"; congruences `< 0.85`, below their bands, are labelled
 #'   "incongruent". The verdict is read from `phi_lower` when a bootstrap is available
 #'   (conservative) and from `phi` otherwise. `NULL` when `invariance = FALSE`.}
-#' \item{efa}{The named list of per-group [EFA()] objects (each retains its own
+#' \item{efa}{The named list of per-group [efa_fit()] objects (each retains its own
 #'   diagnostics, e.g. `heywood`).}
 #' \item{alignment}{The alignment result: the consensus object (see
-#'   [PROCRUSTES()]), or a list with the reference group, the target, and the
+#'   [efa_procrustes()]), or a list with the reference group, the target, and the
 #'   per-group Procrustes results.}
 #' \item{settings}{A list of the settings used, including the per-group `N`, the
 #'   alignment method, the rotation, the estimator, the input type, and whether a
@@ -262,15 +264,15 @@ efa_group <- function(x, groups = NULL, n_factors, N = NA,
   # A supplied `seed` makes the whole congruence bootstrap reproducible and
   # independent of the number of parallel workers, and leaves the caller's RNG stream
   # untouched: it is saved and restored on exit (or, if none existed, the state
-  # set.seed() creates is removed again). The per-group EFA() fits are called with
+  # set.seed() creates is removed again). The per-group efa_fit() fits are called with
   # seed = NULL so they advance this one seeded stream in sequence rather than each
-  # resetting it; EFA()'s own future.seed = TRUE keeps the replicate fits
-  # worker-count-independent. Mirrors the seed handling in EFA().
+  # resetting it; efa_fit()'s own future.seed = TRUE keeps the replicate fits
+  # worker-count-independent. Mirrors the seed handling in efa_fit().
   if (do_boot) .set_local_seed(seed)
 
   # Fit every group at the common number of factors. A degenerate group (too few
-  # cases, a constant item, a non-computable matrix) makes EFA abort; re-raise it
-  # with the group's name so the failure is attributable. EFA warnings (e.g. a
+  # cases, a constant item, a non-computable matrix) makes efa_fit abort; re-raise it
+  # with the group's name so the failure is attributable. efa_fit warnings (e.g. a
   # Heywood case) are left to surface; the flagged variables stay in the fit's
   # `heywood` element.
   #
@@ -305,10 +307,10 @@ efa_group <- function(x, groups = NULL, n_factors, N = NA,
                     list(se = "np-boot", b_boot = b_boot, ci = ci, seed = NULL))
     }
     fit_g <- tryCatch(
-      do.call(EFA, fit_args),
+      do.call(efa_fit, fit_args),
       error = function(e) {
         cli::cli_abort(
-          c("The {.fn EFA} fit failed for group {.val {group_names[[g]]}}.",
+          c("The {.fn efa_fit} fit failed for group {.val {group_names[[g]]}}.",
             "x" = conditionMessage(e)),
           class = "efa_group_fit_failed", parent = e
         )
@@ -328,7 +330,7 @@ efa_group <- function(x, groups = NULL, n_factors, N = NA,
   rotation_type <- if (is.null(rotation)) "none" else .rotation_family(rotation)
   oblique <- rotation_type == "oblique" && n_factors >= 2L
 
-  # Loadings as plain matrices (EFA returns them classed as LOADINGS).
+  # Loadings as plain matrices (efa_fit returns them classed as efa_loadings/LOADINGS).
   unrot_loadings <- lapply(fits, function(f) .change_class(f$unrot_loadings, "matrix"))
   rot_loadings <- if (rotation_type != "none") {
     lapply(fits, function(f) .change_class(f$rot_loadings, "matrix"))
@@ -703,8 +705,8 @@ efa_group <- function(x, groups = NULL, n_factors, N = NA,
   if (oblique) phis[[ref_idx]] <- ref_phi
 
   for (g in seq_len(m)[-ref_idx]) {
-    pr <- PROCRUSTES(A = unrot_loadings[[g]], Target = ref_loadings,
-                     rotation = proc_rotation)
+    pr <- efa_procrustes(A = unrot_loadings[[g]], Target = ref_loadings,
+                         rotation = proc_rotation)
     loadings[[g]] <- pr$loadings
     if (oblique) phis[[g]] <- pr$Phi
     procrustes[[g]] <- pr
@@ -850,7 +852,7 @@ efa_group <- function(x, groups = NULL, n_factors, N = NA,
       # A replicate EFA() could not fit is NA-filled by EFA; skip it.
       if (!all(is.finite(Li))) next
       pr <- tryCatch(
-        PROCRUSTES(A = Li, Target = target, rotation = proc_rotation),
+        efa_procrustes(A = Li, Target = target, rotation = proc_rotation),
         error = function(e) NULL
       )
       if (is.null(pr) || !isTRUE(pr$valid)) next

@@ -18,6 +18,6 @@
 \item{maxit}{numeric. Maximum iterations to perform after which to abort.}
 }
 \description{
-Function called from within PARALLEL so usually no call to this is needed by the user.
-Provides a C++ implementation of the PARALLEL simulation procedure
+Function called from within efa_parallel() so usually no call to this is needed by the user.
+Provides a C++ implementation of the efa_parallel() simulation procedure
 }

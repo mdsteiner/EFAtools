@@ -82,7 +82,7 @@ format.efa_screen <- function(x, digits = 3, ...) {
       cli::cli_alert_warning(
         "Bartlett's test of sphericity was not computed; no sample size (N) was supplied.")
     } else if (!is.null(bart$p_value) && !is.na(bart$p_value)) {
-      # Bartlett significance wording reused verbatim from format.BARTLETT.
+      # Bartlett significance wording reused verbatim from format.efa_bartlett.
       if (bart$p_value < .05) {
         cli::cli_alert_success(
           "The Bartlett's test of sphericity was significant at an alpha level of .05.")
@@ -135,7 +135,7 @@ format.efa_screen <- function(x, digits = 3, ...) {
     # The standard display names are MSA (the per-variable measure of sampling adequacy,
     # stored as kmo_i) and SMC (the squared multiple correlation). The per-variable
     # values are laid out as base R's data-frame print, emitted verbatim so cli does not
-    # reflow the aligned columns (as format.KMO does for the KMO vector).
+    # reflow the aligned columns (as format.efa_kmo does for the KMO vector).
     disp <- .screen_per_item_display(x, digits)
     cli::cli_verbatim(utils::capture.output(print(disp)))
 
@@ -204,7 +204,7 @@ format.efa_screen <- function(x, digits = 3, ...) {
 }
 
 # Kaiser & Rice (1974) verbal bands for the overall KMO value, reproduced from
-# format.KMO: the highest band the value clears gives its label, the suitability it
+# format.efa_kmo: the highest band the value clears gives its label, the suitability it
 # implies, and the alert style (success >= .7, warning >= .6, danger below).
 .kmo_band <- function(kmo) {
   bands <- list(
@@ -221,7 +221,7 @@ format.efa_screen <- function(x, digits = 3, ...) {
 # TRUE when a p-value is present and below .05 (guards NA / NULL p-values).
 .screen_is_sig <- function(p) !is.null(p) && !is.na(p) && p < .05
 
-# p-value tail formatting shared by the Bartlett and MVN lines (matches format.BARTLETT).
+# p-value tail formatting shared by the Bartlett and MVN lines (matches format.efa_bartlett).
 .screen_p_str <- function(p) {
   if (is.null(p) || is.na(p)) " = NA" else if (p < .001) " < .001" else paste0(" = ", round(p, 3))
 }

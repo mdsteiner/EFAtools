@@ -60,15 +60,15 @@ diagnostics \code{valid}, \code{convergence}, \code{value}, \code{iterations}, a
 \description{
 Align each slice of a loading-matrix cube to a single shared target using the
 same oblique target rotation as \code{.oblique_procrustes()}, in one call. This
-removes the per-replicate marshalling overhead of looping \code{PROCRUSTES()} in R
+removes the per-replicate marshalling overhead of looping \code{efa_procrustes()} in R
 over bootstrap or multiple-imputation arrays.
 }
 \details{
 Each slice \code{A[, , i]} is aligned to \code{B}. For a single-factor cube the alignment
 reduces to the closed-form sign match \code{T = sign(crossprod(A_i, B))} with factor
-correlation \code{1}, matching the one-factor short-circuit in \code{PROCRUSTES()}. For
+correlation \code{1}, matching the one-factor short-circuit in \code{efa_procrustes()}. For
 two or more factors the slice is warm-started from the closed-form orthogonal
-Procrustes solution (mirroring \code{PROCRUSTES()}) and optimized with the same
+Procrustes solution (mirroring \code{efa_procrustes()}) and optimized with the same
 multi-start oblique solver as \code{.oblique_procrustes()}. Random starts are drawn
 serially with \code{R::rnorm} in the calling process.
 

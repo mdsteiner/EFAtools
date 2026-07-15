@@ -42,15 +42,15 @@ column names, they are matched to the model variables by name (any extra
 columns are ignored, and a model variable missing from \code{x} is an error);
 unnamed data are matched by position.}
 
-\item{f}{object of class \code{\link[=EFA]{EFA()}}, a \code{LOADINGS} object, or a matrix of factor
+\item{f}{object of class \code{\link[=efa_fit]{efa_fit()}}, an \code{efa_loadings} object, or a matrix of factor
 loadings.}
 
 \item{Phi}{matrix. Factor intercorrelations. Only used when a loading matrix is
-supplied directly in \code{f}; taken from the \code{EFA} object otherwise. Default is
+supplied directly in \code{f}; taken from the \code{efa} object otherwise. Default is
 \code{NULL}, in which case the factors are assumed uncorrelated.}
 
 \item{rho}{matrix. Correlation matrix used to derive the scoring weights.
-Defaults to \code{NULL}, in which case \code{f$orig_R} is used for an \code{EFA} object and
+Defaults to \code{NULL}, in which case \code{f$orig_R} is used for an \code{efa} object and
 \code{cor(x, use = "pairwise")} otherwise. Pass a matrix here to score against a
 correlation other than the one implied by \code{f}/\code{x}.}
 
@@ -74,7 +74,7 @@ squared determinacy \code{rho2}, and Guttman's indeterminacy index \code{guttman
 }
 \description{
 Computes factor-score weights (and, from raw data, the factor scores
-themselves) natively for an \code{\link[=EFA]{EFA()}} solution or a directly supplied loading
+themselves) natively for an \code{\link[=efa_fit]{efa_fit()}} solution or a directly supplied loading
 matrix, together with the score-quality diagnostics that describe how well the
 estimated scores represent the factors: the score intercorrelations, the
 determinacy (validity) and univocality of each score, and Guttman's
@@ -109,15 +109,15 @@ value), and the reported \code{guttman} follows from it.
 }
 \examples{
 # Weights and score diagnostics from an EFA on a correlation matrix
-efa <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
-           method = "PAF", rotation = "oblimin")
+efa <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
+               method = "PAF", rotation = "oblimin")
 fs <- efa_scores(test_models$baseline$cormat, f = efa)
 fs
 summary(fs)
 
 # Factor scores from raw data (Bartlett method)
 \donttest{
-efa_raw <- EFA(GRiPS_raw, n_factors = 1, method = "PAF")
+efa_raw <- efa_fit(GRiPS_raw, n_factors = 1, method = "PAF")
 efa_scores(GRiPS_raw, f = efa_raw, method = "Bartlett")
 }
 
@@ -127,7 +127,6 @@ efa_scores(test_models$baseline$cormat, f = efa$rot_loadings, Phi = efa$Phi)
 }
 \seealso{
 Other factor scoring:
-\code{\link[=FACTOR_SCORES]{FACTOR_SCORES()}},
 \code{\link[=print.efa_scores]{print.efa_scores()}}
 }
 \concept{factor scoring}

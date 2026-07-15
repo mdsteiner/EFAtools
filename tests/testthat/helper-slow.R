@@ -1,4 +1,4 @@
-# Opt-in gate for slow tests. The heavy retention (HULL, PARALLEL, NEST, N_FACTORS),
+# Opt-in gate for slow tests. The heavy retention (HULL, PARALLEL, NEST, efa_retain),
 # np-boot, polychoric, multimodal-rotation, lavaan-oracle, and grid-of-EFAs fixtures
 # dominate the suite's runtime; they are skipped by default and run only when
 # EFATOOLS_TEST_SLOW is set truthy, e.g. `Sys.setenv(EFATOOLS_TEST_SLOW = "true")` (or

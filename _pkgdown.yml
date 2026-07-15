@@ -1,0 +1,107 @@
+url: https://mdsteiner.github.io/EFAtools/
+
+template:
+  bootstrap: 5
+
+reference:
+- title: Fitting
+  desc: >
+    Fit exploratory factor models, average across solutions, pool across imputed
+    data sets, compare groups, and configure the estimation and rotation engines.
+  contents:
+  - efa_fit
+  - has_concept("factor analysis")
+  - has_concept("Control functions")
+  - print.efa
+  - print.efa_average
+  - plot.efa_average
+  - print.efa_loadings
+  - residuals.efa
+
+- title: Factor retention
+  desc: >
+    Criteria for determining the number of factors to retain, and a wrapper to run
+    several of them at once.
+  contents:
+  - has_concept("factor retention criteria")
+  - print.efa_retain
+  - format.efa_retain
+  - plot.efa_retain
+  - print.efa_retention
+  - format.efa_retention
+  - plot.efa_retention
+
+- title: Rotation and transformation
+  desc: >
+    Align a solution with a target and transform an oblique solution into a
+    hierarchical one.
+  contents:
+  - has_concept("factor rotation")
+  - print.efa_schmid_leiman
+  - print.efa_sl_loadings
+
+- title: Reliability
+  desc: Reliability coefficients for a fitted or user-specified factor solution.
+  contents:
+  - has_concept("reliability coefficients")
+
+- title: Scores and comparison
+  desc: Factor scores with score-quality diagnostics, and comparison of two solutions.
+  contents:
+  - has_concept("factor scoring")
+  - has_concept("factor comparison")
+  - print.efa_compare
+  - plot.efa_compare
+
+- title: Screening and simulation
+  desc: >
+    Check whether data are suitable for factor analysis and simulate data from a
+    common factor model.
+  contents:
+  - has_concept("factor analysis suitability")
+  - has_concept("data simulation")
+  - print.efa_bartlett
+  - print.efa_kmo
+
+- title: Power
+  desc: Analytic and simulation-based power analysis.
+  contents:
+  - has_concept("power analysis")
+
+- title: Datasets
+  desc: Example data sets and models.
+  contents:
+  - has_keyword("datasets")
+
+- title: Superseded
+  desc: >
+    The original uppercase names. They remain exported and keep their original
+    argument lists, but the lowercase `efa_*` equivalents are the recommended
+    interface.
+  contents:
+  - EFA
+  - EFA_POOLED
+  - EFA_AVERAGE
+  - N_FACTORS
+  - BARTLETT
+  - KMO
+  - CD
+  - EKC
+  - HULL
+  - KGC
+  - MAP
+  - NEST
+  - PARALLEL
+  - SCREE
+  - SMT
+  - SL
+  - OMEGA
+  - print.OMEGA
+  - FACTOR_SCORES
+  - COMPARE
+  - PROCRUSTES
+
+- title: internal
+  contents:
+  - EFAtools-package
+  - starts_with("\\.")

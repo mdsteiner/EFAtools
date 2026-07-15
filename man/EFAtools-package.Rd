@@ -12,6 +12,7 @@ Provides functions to perform exploratory factor analysis (EFA) procedures and c
 Useful links:
 \itemize{
   \item \url{https://github.com/mdsteiner/EFAtools}
+  \item \url{https://mdsteiner.github.io/EFAtools/}
   \item Report bugs at \url{https://github.com/mdsteiner/EFAtools/issues}
 }
 

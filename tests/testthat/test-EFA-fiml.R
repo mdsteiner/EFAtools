@@ -509,7 +509,7 @@ test_that("the FIML CI-provenance note names the corrected two-stage sandwich", 
   expect_false(any(grepl("expected information matrix", note)))
 })
 
-test_that("print/summary.EFA label FIML correlations in the header", {
+test_that("print/summary.efa label FIML correlations in the header", {
   skip_on_cran()
   skip_if_not_installed("MASS")
   local_reproducible_output()

@@ -8,7 +8,7 @@
 }
 \arguments{
 \item{x}{an object of class efa_retention, returned by a factor-retention
-criterion (e.g. \code{\link[=EKC]{EKC()}} or \code{\link[=HULL]{HULL()}}).}
+criterion (e.g. \code{\link[=efa_ekc]{efa_ekc()}} or \code{\link[=efa_hull]{efa_hull()}}).}
 
 \item{...}{not used.}
 }
@@ -20,5 +20,5 @@ console theme; plain when colours are disabled).
 Format method for efa_retention objects
 }
 \examples{
-writeLines(format(EKC(test_models$baseline$cormat, N = 500)))
+writeLines(format(efa_ekc(test_models$baseline$cormat, N = 500)))
 }

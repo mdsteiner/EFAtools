@@ -5,88 +5,99 @@
 # of truth mapping each criterion id to its display label.
 
 # Registry of the factor-retention criteria (id -> metadata). Each `fun` runs
-# its criterion from the N_FACTORS() control list `ctl`; `x` is the raw data
-# when `needs_raw`, the prepared correlation matrix otherwise. Criteria that
-# forward additional arguments to EFA() receive them via `ctl$dots`. `poly_ok =
+# its criterion from the efa_retain() control list `ctl`; `x` is the raw data
+# when `needs_raw`, the prepared correlation matrix otherwise. Every criterion
+# that fits a model through efa_fit() (HULL, KGC, PARALLEL, SCREE, NEST, SMT)
+# receives `ctl$estimate_control`, so the estimation settings reach all of them
+# and not just some; those that also forward arguments to efa_fit() receive them
+# via `ctl$dots`. CD, EKC and MAP fit no model (CD's `max_iter` caps its own
+# comparison-data generation, not an EFA), so neither applies to them. `poly_ok =
 # FALSE` marks the criteria that do not support polychoric/tetrachoric
 # correlations -- either because they compare the data against continuous
 # reference data (CD, PARALLEL, NEST, HULL) or because their normal-theory
 # chi-square test is not valid for such correlations (SMT); these are skipped
-# with an informative note by N_FACTORS().
+# with an informative note by efa_retain().
 .retention_registry <- list(
   CD = list(
     label = "Comparison data", needs_raw = TRUE, poly_ok = FALSE,
     fun = function(x, ctl) {
-      CD(x, n_factors_max = ctl$n_factors_max, N_pop = ctl$N_pop,
+      efa_cd(x, n_factors_max = ctl$n_factors_max, N_pop = ctl$N_pop,
          N_samples = ctl$N_samples, alpha = ctl$alpha,
          cor_method = ctl$cor_method, max_iter = ctl$max_iter_CD)
     }),
   EKC = list(
     label = "Empirical Kaiser Criterion", needs_raw = FALSE,
     fun = function(x, ctl) {
-      EKC(x, N = ctl$N, use = ctl$use, cor_method = ctl$cor_method,
+      efa_ekc(x, N = ctl$N, use = ctl$use, cor_method = ctl$cor_method,
           type = ctl$ekc_type)
     }),
   HULL = list(
     label = "Hull method", needs_raw = FALSE, poly_ok = FALSE,
     fun = function(x, ctl) {
-      do.call(HULL, c(list(x, N = ctl$N, n_fac_theor = ctl$n_fac_theor,
+      do.call(efa_hull, c(list(x, N = ctl$N, n_fac_theor = ctl$n_fac_theor,
                            method = ctl$method, gof = ctl$gof,
                            eigen_type = ctl$eigen_type_HULL, use = ctl$use,
                            cor_method = ctl$cor_method,
                            n_datasets = ctl$n_datasets, percent = ctl$percent,
                            decision_rule = ctl$decision_rule,
-                           n_factors = ctl$n_factors),
+                           n_factors = ctl$n_factors,
+                           estimate_control = ctl$estimate_control),
                       ctl$dots))
     }),
   KGC = list(
     label = "Kaiser-Guttman criterion", needs_raw = FALSE,
     fun = function(x, ctl) {
-      do.call(KGC, c(list(x, eigen_type = ctl$eigen_type_other, use = ctl$use,
+      do.call(efa_kgc, c(list(x, eigen_type = ctl$eigen_type_other, use = ctl$use,
                           cor_method = ctl$cor_method,
-                          n_factors = ctl$n_factors, method = ctl$method),
+                          n_factors = ctl$n_factors, method = ctl$method,
+                          estimate_control = ctl$estimate_control),
                      ctl$dots))
     }),
   MAP = list(
     label = "Minimum average partial", needs_raw = FALSE,
     fun = function(x, ctl) {
-      MAP(x, use = ctl$use, cor_method = ctl$cor_method)
+      efa_map(x, use = ctl$use, cor_method = ctl$cor_method)
     }),
   NEST = list(
     label = "Next Eigenvalue Sufficiency Test", needs_raw = FALSE, poly_ok = FALSE,
     fun = function(x, ctl) {
-      NEST(x, N = ctl$N, use = ctl$use, cor_method = ctl$cor_method,
-           alpha = ctl$alpha_nest, n_datasets = ctl$n_datasets_nest,
-           method = ctl$method)
+      do.call(efa_nest, c(list(x, N = ctl$N, use = ctl$use,
+                           cor_method = ctl$cor_method, alpha = ctl$alpha_nest,
+                           n_datasets = ctl$n_datasets_nest, method = ctl$method,
+                           estimate_control = ctl$estimate_control),
+                      ctl$dots))
     }),
   PARALLEL = list(
     label = "Parallel analysis", needs_raw = FALSE, poly_ok = FALSE,
     fun = function(x, ctl) {
-      do.call(PARALLEL, c(list(x, N = ctl$N, n_datasets = ctl$n_datasets,
+      do.call(efa_parallel, c(list(x, N = ctl$N, n_datasets = ctl$n_datasets,
                                percent = ctl$percent,
                                eigen_type = ctl$eigen_type_other, use = ctl$use,
                                cor_method = ctl$cor_method,
                                decision_rule = ctl$decision_rule,
-                               n_factors = ctl$n_factors, method = ctl$method),
+                               n_factors = ctl$n_factors, method = ctl$method,
+                               estimate_control = ctl$estimate_control),
                           ctl$dots))
     }),
   SCREE = list(
     label = "Scree plot", needs_raw = FALSE, visual = TRUE,
     fun = function(x, ctl) {
-      do.call(SCREE, c(list(x, eigen_type = ctl$eigen_type_other, use = ctl$use,
+      do.call(efa_scree, c(list(x, eigen_type = ctl$eigen_type_other, use = ctl$use,
                             cor_method = ctl$cor_method,
-                            n_factors = ctl$n_factors, method = ctl$method),
+                            n_factors = ctl$n_factors, method = ctl$method,
+                            estimate_control = ctl$estimate_control),
                        ctl$dots))
     }),
   SMT = list(
     label = "Sequential model tests", needs_raw = FALSE, poly_ok = FALSE,
     fun = function(x, ctl) {
-      SMT(x, N = ctl$N, use = ctl$use, cor_method = ctl$cor_method)
+      efa_smt(x, N = ctl$N, use = ctl$use, cor_method = ctl$cor_method,
+          estimate_control = ctl$estimate_control)
     })
 )
 
 # Control list consumed by the factor-retention registry funs. The defaults
-# mirror the N_FACTORS() argument defaults so any requested criterion resolves;
+# mirror the efa_retain() argument defaults so any requested criterion resolves;
 # callers pass only what they override. `gof` defaults to the Hull
 # goodness-of-fit indices valid for `method` (PAF supports only the CAF).
 .n_factors_ctl <- function(N = NA, use = "pairwise.complete.obs",
@@ -98,7 +109,7 @@
                            n_factors = 1, n_datasets = 1000, percent = 95,
                            decision_rule = "means", ekc_type = "BvA2017",
                            n_datasets_nest = 1000, alpha_nest = .05,
-                           dots = list()) {
+                           estimate_control = NULL, dots = list()) {
   list(N = N, use = use, cor_method = cor_method,
        n_factors_max = n_factors_max, N_pop = N_pop,
        N_samples = N_samples, alpha = alpha, max_iter_CD = max_iter_CD,
@@ -108,10 +119,10 @@
        n_datasets = n_datasets, percent = percent,
        decision_rule = decision_rule, ekc_type = ekc_type,
        n_datasets_nest = n_datasets_nest, alpha_nest = alpha_nest,
-       dots = dots)
+       estimate_control = estimate_control, dots = dots)
 }
 
-# Name a criterion's suggested factor counts the way N_FACTORS() aggregates
+# Name a criterion's suggested factor counts the way efa_retain() aggregates
 # them: a single-variant suggestion keeps the bare id, a multi-variant one
 # becomes "<id>_<variant>".
 .retention_key <- function(id, nf) {
@@ -151,7 +162,7 @@
 }
 
 # Bullet lines (one per record) shared by format.efa_retention and
-# format.N_FACTORS.
+# format.efa_retain.
 .retention_bullets <- function(results) {
   vapply(results, function(r) {
     value <- if (is.na(r$n_factors)) "not applicable" else as.character(r$n_factors)
@@ -162,7 +173,7 @@
 #' Print method for efa_retention objects
 #'
 #' @param x an object of class efa_retention, returned by a factor-retention
-#'   criterion (e.g. [EKC()] or [HULL()]).
+#'   criterion (e.g. [efa_ekc()] or [efa_hull()]).
 #' @param ... not used.
 #'
 #' @returns `print()` returns its argument `x` invisibly; it is
@@ -172,7 +183,7 @@
 #' @method print efa_retention
 #'
 #' @examples
-#' EKC(test_models$baseline$cormat, N = 500)
+#' efa_ekc(test_models$baseline$cormat, N = 500)
 print.efa_retention <- function(x, ...) {
   cat(format(x, ...), sep = "\n")
   invisible(x)
@@ -181,7 +192,7 @@ print.efa_retention <- function(x, ...) {
 #' Format method for efa_retention objects
 #'
 #' @param x an object of class efa_retention, returned by a factor-retention
-#'   criterion (e.g. [EKC()] or [HULL()]).
+#'   criterion (e.g. [efa_ekc()] or [efa_hull()]).
 #' @param ... not used.
 #'
 #' @returns A character vector with the report lines (styled to the active
@@ -191,7 +202,7 @@ print.efa_retention <- function(x, ...) {
 #' @method format efa_retention
 #'
 #' @examples
-#' writeLines(format(EKC(test_models$baseline$cormat, N = 500)))
+#' writeLines(format(efa_ekc(test_models$baseline$cormat, N = 500)))
 format.efa_retention <- function(x, ...) {
   cli::cli_format_method({
     cli::cli_rule(left = x$criterion[["label"]])
@@ -216,11 +227,11 @@ format.efa_retention <- function(x, ...) {
 #' Plot method for efa_retention objects
 #'
 #' Plots the result of a factor-retention criterion. Eigenvalue-based criteria
-#' (e.g. [EKC()]) are shown as an eigenvalue plot, the Hull method ([HULL()]) as
+#' (e.g. [efa_ekc()]) are shown as an eigenvalue plot, the Hull method ([efa_hull()]) as
 #' a convex-hull plot. Criteria with more than one sub-variant are faceted.
 #'
 #' @param x an object of class efa_retention, returned by a factor-retention
-#'   criterion (e.g. [EKC()] or [HULL()]).
+#'   criterion (e.g. [efa_ekc()] or [efa_hull()]).
 #' @param ... not used.
 #'
 #' @returns A [ggplot2::ggplot] object, or invisibly `NULL` if the criterion has
@@ -230,7 +241,7 @@ format.efa_retention <- function(x, ...) {
 #' @method plot efa_retention
 #'
 #' @examples
-#' plot(EKC(test_models$baseline$cormat, N = 500))
+#' plot(efa_ekc(test_models$baseline$cormat, N = 500))
 plot.efa_retention <- function(x, ...) {
 
   plot_types <- unique(vapply(x$results, function(r) r$plot_type, character(1)))

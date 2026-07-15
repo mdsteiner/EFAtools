@@ -66,8 +66,9 @@ coefficients for an oblique rotation). \code{0} flags every cell. Default is \co
 group pair from the Lorenzo-Seva and ten Berge (2006) congruence bands (see \emph{Value}).
 Default is \code{FALSE}.}
 
-\item{...}{Additional arguments passed to \code{\link[=EFA]{EFA()}} for every group (for
-example \code{method}, \code{rotation}, \code{cor_method}, \code{type}).}
+\item{...}{Additional arguments passed to \code{\link[=efa_fit]{efa_fit()}} for every group (for
+example \code{method}, \code{rotation}, \code{cor_method}, or an \code{\link[=estimate_control]{estimate_control()}} /
+\code{\link[=rotate_control]{rotate_control()}} to select a preset).}
 }
 \value{
 An object of class \code{efa_group}, a list containing:
@@ -105,10 +106,10 @@ the Lorenzo-Seva and ten Berge (2006) similarity bands: \code{phi >= 0.95} is "e
 \verb{[0.85, 0.95)} is "fair"; congruences \verb{< 0.85}, below their bands, are labelled
 "incongruent". The verdict is read from \code{phi_lower} when a bootstrap is available
 (conservative) and from \code{phi} otherwise. \code{NULL} when \code{invariance = FALSE}.}
-\item{efa}{The named list of per-group \code{\link[=EFA]{EFA()}} objects (each retains its own
+\item{efa}{The named list of per-group \code{\link[=efa_fit]{efa_fit()}} objects (each retains its own
 diagnostics, e.g. \code{heywood}).}
 \item{alignment}{The alignment result: the consensus object (see
-\code{\link[=PROCRUSTES]{PROCRUSTES()}}), or a list with the reference group, the target, and the
+\code{\link[=efa_procrustes]{efa_procrustes()}}), or a list with the reference group, the target, and the
 per-group Procrustes results.}
 \item{settings}{A list of the settings used, including the per-group \code{N}, the
 alignment method, the rotation, the estimator, the input type, and whether a
@@ -119,7 +120,7 @@ input).}
 Fit an exploratory factor analysis in each of several groups at a common
 number of factors and bring the per-group solutions into one shared
 orientation so their loadings can be compared. Each group is fitted with
-\code{\link[=EFA]{EFA()}}; the solutions are then aligned either to a symmetric consensus target
+\code{\link[=efa_fit]{efa_fit()}}; the solutions are then aligned either to a symmetric consensus target
 or to a chosen reference group (see \emph{Alignment}).
 }
 \details{
@@ -133,13 +134,14 @@ All groups must contain the same items in the same order; a different item set
 or order is an error rather than being silently reordered.
 
 Every group is fitted at the same \code{n_factors} (a common-\eqn{k} multigroup
-model). Extra arguments in \code{...} (for example \code{method}, \code{rotation},
-\code{cor_method}, or \code{type}) are forwarded unchanged to each \code{\link[=EFA]{EFA()}} call, so the
-estimator and rotation are common to all groups.
+model). Extra arguments in \code{...} (for example \code{method}, \code{rotation}, \code{cor_method}, or an
+\code{\link[=estimate_control]{estimate_control()}} / \code{\link[=rotate_control]{rotate_control()}} carrying the tuning knobs) are forwarded
+unchanged to each \code{\link[=efa_fit]{efa_fit()}} call, so the estimator and rotation are common to all
+groups.
 
 The \eqn{k}-factor model must be identified for the shared item set: its
 degrees of freedom \eqn{((p - k)^2 - (p + k)) / 2} must be non-negative. Unlike
-a single \code{\link[=EFA]{EFA()}} fit -- which only warns on an under-identified model -- a
+a single \code{\link[=efa_fit]{efa_fit()}} fit -- which only warns on an under-identified model -- a
 multigroup fit aborts, because a shared alignment target across an
 under-identified group is not interpretable.
 }
@@ -224,6 +226,9 @@ doi: 10.1027/1614-2241.2.2.57
 }
 \seealso{
 Other factor analysis:
+\code{\link[=efa_average]{efa_average()}},
+\code{\link[=efa_fit]{efa_fit()}},
+\code{\link[=efa_mi]{efa_mi()}},
 \code{\link[=plot.efa_group]{plot.efa_group()}},
 \code{\link[=print.efa_group]{print.efa_group()}}
 }

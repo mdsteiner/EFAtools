@@ -247,7 +247,7 @@ structure so the \code{q}-factor model (\code{q = ncol(Lambda)}) fits it only ap
 at a prescribed misfit; exact factor structures are unrealistic and overstate
 recovery in simulation studies (MacCallum, 2003). The perturbation is applied once
 to the population, and the achieved fit is computed with the same fit-index
-formulas \code{\link[=EFA]{EFA()}} uses and returned in the \code{model_error} element. It is applied only
+formulas \code{\link[=efa_fit]{efa_fit()}} uses and returned in the \code{model_error} element. It is applied only
 when a target is supplied (\code{target_rmsea} and/or \code{target_cfi}), needs a
 factor-model population (\code{Lambda}) with residual degrees of freedom and an exact
 factor structure (a diagonal \code{Psi}), and is orthogonal to the marginal, ordinal,

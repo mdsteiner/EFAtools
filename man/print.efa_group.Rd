@@ -45,7 +45,10 @@ writeLines(format(mg))
 }
 \seealso{
 Other factor analysis:
+\code{\link[=efa_average]{efa_average()}},
+\code{\link[=efa_fit]{efa_fit()}},
 \code{\link[=efa_group]{efa_group()}},
+\code{\link[=efa_mi]{efa_mi()}},
 \code{\link[=plot.efa_group]{plot.efa_group()}}
 }
 \concept{factor analysis}

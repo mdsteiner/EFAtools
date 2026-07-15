@@ -46,7 +46,9 @@ efa_uls_moderate <- EFA(cormat_moderate, 3, 500, method = "ULS",
 
 
 test_that("output class and dimensions are correct", {
-  expect_s3_class(efa_cor, "EFA")
+  # Objects carry the new `efa` class first and keep the legacy `EFA` string for
+  # inherits()/back-compat; the loading matrices are dual-classed the same way.
+  expect_identical(class(efa_cor), c("efa", "EFA"))
   expect_s3_class(efa_raw, "EFA")
   expect_s3_class(efa_psych, "EFA")
   expect_s3_class(efa_spss, "EFA")
@@ -56,7 +58,7 @@ test_that("output class and dimensions are correct", {
   expect_s3_class(efa_quart, "EFA")
   expect_s3_class(efa_none, "EFA")
 
-  expect_s3_class(efa_cor$unrot_loadings, "LOADINGS")
+  expect_identical(class(efa_cor$unrot_loadings), c("efa_loadings", "LOADINGS"))
   expect_s3_class(efa_raw$unrot_loadings, "LOADINGS")
   expect_s3_class(efa_psych$unrot_loadings, "LOADINGS")
   expect_s3_class(efa_spss$unrot_loadings, "LOADINGS")
@@ -66,7 +68,7 @@ test_that("output class and dimensions are correct", {
   expect_s3_class(efa_quart$unrot_loadings, "LOADINGS")
   expect_s3_class(efa_none$unrot_loadings, "LOADINGS")
 
-  expect_s3_class(efa_psych$rot_loadings, "LOADINGS")
+  expect_identical(class(efa_psych$rot_loadings), c("efa_loadings", "LOADINGS"))
   expect_s3_class(efa_spss$rot_loadings, "LOADINGS")
   expect_s3_class(efa_equa$rot_loadings, "LOADINGS")
   expect_s3_class(efa_quart$rot_loadings, "LOADINGS")
@@ -303,24 +305,24 @@ test_that("settings are returned correctly", {
 })
 
 test_that("factor analyses are performed correctly", {
-  expect_equal(mean(abs(COMPARE(efa_paf_zero$rot_loadings,
-                               population_models$loadings$baseline,
-                               plot = FALSE)$diff)), 0, tolerance = .01)
-  expect_equal(mean(abs(COMPARE(efa_ml_zero$rot_loadings,
-                               population_models$loadings$baseline,
-                               plot = FALSE)$diff)), 0, tolerance = .01)
-  expect_equal(mean(abs(COMPARE(efa_uls_zero$rot_loadings,
-                               population_models$loadings$baseline,
-                               plot = FALSE)$diff)), 0, tolerance = .01)
-  # expect_equal(mean(abs(COMPARE(efa_paf_moderate$rot_loadings,
-  #                              population_models$loadings$baseline,
-  #                              plot = FALSE)$diff)), 0, tolerance = .01)
-  expect_equal(mean(abs(COMPARE(efa_ml_moderate$rot_loadings,
-                               population_models$loadings$baseline,
-                               plot = FALSE)$diff)), 0, tolerance = .01)
-  expect_equal(mean(abs(COMPARE(efa_uls_moderate$rot_loadings,
-                               population_models$loadings$baseline,
-                               plot = FALSE)$diff)), 0, tolerance = .01)
+  expect_equal(mean(abs(efa_compare(efa_paf_zero$rot_loadings,
+                                   population_models$loadings$baseline,
+                                   plot = FALSE)$diff)), 0, tolerance = .01)
+  expect_equal(mean(abs(efa_compare(efa_ml_zero$rot_loadings,
+                                   population_models$loadings$baseline,
+                                   plot = FALSE)$diff)), 0, tolerance = .01)
+  expect_equal(mean(abs(efa_compare(efa_uls_zero$rot_loadings,
+                                   population_models$loadings$baseline,
+                                   plot = FALSE)$diff)), 0, tolerance = .01)
+  # expect_equal(mean(abs(efa_compare(efa_paf_moderate$rot_loadings,
+  #                                  population_models$loadings$baseline,
+  #                                  plot = FALSE)$diff)), 0, tolerance = .01)
+  expect_equal(mean(abs(efa_compare(efa_ml_moderate$rot_loadings,
+                                   population_models$loadings$baseline,
+                                   plot = FALSE)$diff)), 0, tolerance = .01)
+  expect_equal(mean(abs(efa_compare(efa_uls_moderate$rot_loadings,
+                                   population_models$loadings$baseline,
+                                   plot = FALSE)$diff)), 0, tolerance = .01)
 })
 
 # Create singular correlation matrix for tests
@@ -339,8 +341,11 @@ test_that("errors are thrown correctly", {
   expect_warning(EFA(GRiPS_raw, N = 20, n_factors = 1), class = "efa_n_from_data")
   expect_error(EFA(dat_sing, n_factors = 1), class = "efa_cor_singular")
   expect_error(EFA(cor_sing, N = 10, n_factors = 1), class = "efa_cor_singular")
+  # a criterion of 1 is not a convergence tolerance. EFA() repacks it into the estimation
+  # control, which rejects it up front -- as it already did for any larger value -- so the
+  # invalid call is caught at the argument rather than deep inside the fit.
   expect_error(EFA(test_models$baseline$cormat, n_factors = 3, N = 500, method = "PAF", criterion = 1),
-               class = "efa_criterion_too_large")
+               class = "efa_control_input")
   expect_warning(EFA(matrix(rnorm(30), ncol = 3), n_factors = 2), class = "efa_underidentified")
   expect_warning(EFA(matrix(rnorm(30), ncol = 3), n_factors = 1), class = "efa_just_identified")
   expect_warning(EFA(test_models$baseline$cormat, n_factors = 3, method = "ML"), class = "efa_fit_na_n")
@@ -374,19 +379,19 @@ test_that("EFA rejects n_factors >= number of variables", {
                class = "efa_too_many_factors")
 })
 
-test_that("print.EFA output is stable (PAF, promax)", {
+test_that("print.efa output is stable (PAF, promax)", {
   local_reproducible_output()
 
   expect_snapshot(print(efa_psych), transform = scrub_num)
 })
 
-test_that("print.EFA output is stable (ML, promax)", {
+test_that("print.efa output is stable (ML, promax)", {
   local_reproducible_output()
 
   expect_snapshot(print(efa_ml_moderate), transform = scrub_num)
 })
 
-test_that("format.EFA is the source of truth and honours the colour state", {
+test_that("format.efa is the source of truth and honours the colour state", {
   # print() is exactly cat(format(x), sep = "\n"), so the two agree line for line.
   expect_identical(utils::capture.output(print(efa_psych)), format(efa_psych))
 
@@ -401,19 +406,19 @@ test_that("format.EFA is the source of truth and honours the colour state", {
   expect_false(any(grepl("\033", format(efa_psych), fixed = TRUE)))
 })
 
-test_that("summary.EFA output is stable (PAF, promax)", {
+test_that("summary.efa output is stable (PAF, promax)", {
   local_reproducible_output()
 
   expect_snapshot(print(summary(efa_psych)), transform = scrub_num)
 })
 
-test_that("summary.EFA output is stable (ML, promax)", {
+test_that("summary.efa output is stable (ML, promax)", {
   local_reproducible_output()
 
   expect_snapshot(print(summary(efa_ml_moderate)), transform = scrub_num)
 })
 
-test_that("format.summary.EFA is the source of truth and honours the colour state", {
+test_that("format.summary.efa is the source of truth and honours the colour state", {
   s <- summary(efa_psych)
 
   # print() is exactly cat(format(x), sep = "\n"), so the two agree line for line.
@@ -449,7 +454,7 @@ test_that("SRMR is the printed residual fit index while RMSR remains returned", 
   expect_true(any(grepl("^SRMR:", summary_out)))
 })
 
-test_that("print/summary.EFA omit the inapplicable tables for a rotated single factor", {
+test_that("print/summary.efa omit the inapplicable tables for a rotated single factor", {
   local_reproducible_output()
 
   efa_1fac <- suppressWarnings(
@@ -505,7 +510,7 @@ test_that("EFA records rotation diagnostics for multistart rotations", {
   expect_false(any(grepl("Rotation local optima", promax_summary, fixed = TRUE)))
 })
 
-test_that("residuals.EFA is a pure extractor", {
+test_that("residuals.efa is a pure extractor", {
   # returns the residual matrix with no printing side effect
   expect_output(residuals(efa_psych), NA)
   expect_identical(residuals(efa_psych), efa_psych$residuals)
@@ -653,7 +658,7 @@ rm(efa_cor, efa_raw, efa_psych, efa_spss, efa_ml, efa_uls, efa_equa, efa_quart,
    efa_paf_moderate, efa_ml_moderate, efa_uls_moderate, x, y, z, dat_sing, cor_sing,
    cor_nposdef)
 
-test_that("print.EFA argument validators raise classed conditions", {
+test_that("print.efa argument validators raise classed conditions", {
   efa <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500)
 
   expect_error(print(efa, cutoff = -1), class = "efa_print_invalid_cutoff")

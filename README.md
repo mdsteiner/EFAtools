@@ -49,7 +49,7 @@ library(EFAtools)
 
 ### Factor Retention
 
-Use `N_FACTORS()` to test the suitability of the data for factor
+Use `efa_retain()` to test the suitability of the data for factor
 analysis and to run multiple factor retention criteria with a single
 function call.
 
@@ -58,7 +58,7 @@ Works on raw-data:
 ``` r
 
 # Run multiple factor retention methods
-N_FACTORS(GRiPS_raw)
+efa_retain(GRiPS_raw)
 #> Warning: The suggested maximum number of factors was 2, but the Hull method needs at
 #> least 3.
 #> ℹ Setting it to 3.
@@ -98,7 +98,7 @@ Skips some criteria on correlation input:
 
 ``` r
 
-N_FACTORS(DOSPERT$cormat, N = DOSPERT$N)
+efa_retain(DOSPERT$cormat, N = DOSPERT$N)
 #> Warning: `x` is a correlation matrix, but "CD" needs raw data.
 #> ℹ Skipping "CD".
 #> ── Tests for the suitability of the data for factor analysis ───────────────────
@@ -121,7 +121,7 @@ N_FACTORS(DOSPERT$cormat, N = DOSPERT$N)
 #> 
 #> Minimum average partial
 #> • Original implementation (TR2): 5
-#> • Revised implementation (TR4): 4
+#> • Revised implementation (TR4): 6
 #> 
 #> Next Eigenvalue Sufficiency Test
 #> • Suggested number of factors: 10
@@ -145,7 +145,7 @@ correlations or two-stage FIML estimation of correlations.
 ``` r
 
 # ULS / MINRES estimation with oblimin rotation and sandwich SEs
-mod <- EFA(DOSPERT_raw, n_factors = 5, method = "ULS", rotation = "oblimin",
+mod <- efa_fit(DOSPERT_raw, n_factors = 5, method = "ULS", rotation = "oblimin",
            se = "sandwich")
 #> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
 mod
@@ -218,7 +218,6 @@ mod
 #> AIC: NA
 #> BIC: NA
 #> CAF: .43
-#> RMSR: .03
 #> SRMR: .03
 # detailed output with summary()
 summary(mod)
@@ -394,7 +393,6 @@ summary(mod)
 #> AIC: NA
 #> BIC: NA
 #> CAF: .43
-#> RMSR: .03
 #> SRMR: .03
 #> 
 #> ── Residual Diagnostics ────────────────────────────────────────────────────────
@@ -604,7 +602,7 @@ residuals(mod)
 #> socR_6 -0.058900218  0.0775383760 -0.048707612  0.1897359371  0.0000000000
 
 # DWLS estimation based on polychoric correlations, with robust sandwich SEs
-mod <- EFA(GRiPS_raw, n_factors = 1, method = "DWLS", cor_method = "poly",
+mod <- efa_fit(GRiPS_raw, n_factors = 1, method = "DWLS", cor_method = "poly",
            se = "sandwich")
 #> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
 #> Warning: Some response-category combinations are empty despite a non-negligible expected
@@ -648,7 +646,6 @@ mod
 #> AIC: NA
 #> BIC: NA
 #> CAF: .49
-#> RMSR: .02
 #> SRMR: .02
 summary(mod)
 #> 
@@ -710,7 +707,6 @@ summary(mod)
 #> AIC: NA
 #> BIC: NA
 #> CAF: .49
-#> RMSR: .02
 #> SRMR: .02
 #> 
 #> Note: Wald CIs from the robust (Godambe) sandwich covariance.
@@ -736,7 +732,7 @@ information SEs, but note that they assume multivariate normality.
 
 # ML estimation with oblimin rotation and information SEs, based on correlation
 # matrix and N
-mod <- EFA(test_models$baseline$cormat, N = 500,  n_factors = 3, method = "ML",
+mod <- efa_fit(test_models$baseline$cormat, N = 500,  n_factors = 3, method = "ML",
            rotation = "oblimin", se = "information")
 mod
 #> 
@@ -795,7 +791,6 @@ mod
 #> BIC: -510.14
 #> ECVI: 0.52
 #> CAF: .50
-#> RMSR: .03
 #> SRMR: .03
 summary(mod)
 #> 
@@ -925,7 +920,6 @@ summary(mod)
 #> BIC: -510.14
 #> ECVI: 0.52
 #> CAF: .50
-#> RMSR: .03
 #> SRMR: .03
 #> 
 #> ── Residual Diagnostics ────────────────────────────────────────────────────────

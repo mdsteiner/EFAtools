@@ -116,8 +116,8 @@
   dimnames(Structure) <- list(rownames(AP), colnames(AP))
 
   # prepare and return output list
-  class(AP) <- "LOADINGS"
-  class(Structure) <- "LOADINGS"
+  class(AP) <- c("efa_loadings", "LOADINGS")
+  class(Structure) <- c("efa_loadings", "LOADINGS")
 
   list(rot_loadings = AP,
        Phi = Phi,

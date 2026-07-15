@@ -1,6 +1,26 @@
-# EFAtools 0.8.0.90000
+# EFAtools 0.8.0.9000
 
-* Fix a regression in MAP TR4.
+* The public interface of the package is now the lowercase `efa_*` functions,
+configured through `estimate_control()` and `rotate_control()`. `efa_fit()` fits
+the factor models, `efa_retain()` and the individual retention criteria determine
+the number of factors, and the other steps of an analysis are covered by
+`efa_screen()`, `efa_average()`, `efa_mi()`, `efa_group()`,
+`efa_schmid_leiman()`, `efa_procrustes()`, `efa_compare()`, `efa_reliability()`,
+`efa_scores()`, `efa_simulate()`, and `efa_power()`.
+
+* The uppercase function names are superseded by their `efa_*` equivalents. They
+remain exported, keep their arguments, and emit no warning, so existing code
+needs no changes. New arguments and features are added to the `efa_*` functions
+only, which are the recommended interface for new code.
+
+* The rotation arguments `P_type` and `randomStarts` are now named `p_type` and
+`random_starts`. `EFA()` still accepts the former names silently, and
+`EFA_AVERAGE()` keeps `P_type` as its argument name, so existing code keeps
+working.
+
+* Fixed a regression in `MAP()`: the revised (TR4) criterion was computed from
+the element-wise fourth powers of the partial correlations instead of the trace
+of the fourth matrix power, which could change the suggested number of factors.
 
 # EFAtools 0.8.0
 
@@ -27,7 +47,7 @@
     numbers of random starts.
   * The default number of random starts for the rotation in `EFA()` (`randomStarts`)
     has been raised from 10 to 100, making local minima less likely for the 
-    rotation criteria that areprone to them.
+    rotation criteria that are prone to them.
   * additionally reports the Tucker-Lewis index (TLI, also called the
     non-normed fit index), the expected cross-validation index (ECVI), and the
     standardized root mean square residual (SRMR)

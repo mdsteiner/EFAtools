@@ -1,6 +1,6 @@
 Package: EFAtools
 Title: Fast and Flexible Implementations of Exploratory Factor Analysis Tools
-Version: 0.8.0
+Version: 0.8.0.9000
 Authors@R: 
     c(person(given = "Markus",
              family = "Steiner",
@@ -44,7 +44,7 @@ Depends: R (>= 4.1.0)
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
-URL: https://github.com/mdsteiner/EFAtools
+URL: https://github.com/mdsteiner/EFAtools, https://mdsteiner.github.io/EFAtools/
 BugReports: https://github.com/mdsteiner/EFAtools/issues
 Imports:
     psych,
@@ -57,7 +57,8 @@ Imports:
     checkmate,
     progressr,
     rlang,
-    clue
+    clue,
+    lifecycle
 LinkingTo:
     Rcpp, RcppArmadillo, roptim
 Suggests:

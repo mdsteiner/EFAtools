@@ -184,7 +184,7 @@
   colnames(vars_accounted_rot) <- fac_names
 
   if (!oblique) {
-    class(loadings) <- "LOADINGS"
+    class(loadings) <- c("efa_loadings", "LOADINGS")
     return(list(rot_loadings = loadings,
                 rotmat = rotmat,
                 vars_accounted_rot = vars_accounted_rot))
@@ -193,8 +193,8 @@
   Structure <- loadings %*% Phi
   dimnames(Structure) <- list(var_names, fac_names)
 
-  class(loadings) <- "LOADINGS"
-  class(Structure) <- "LOADINGS"
+  class(loadings) <- c("efa_loadings", "LOADINGS")
+  class(Structure) <- c("efa_loadings", "LOADINGS")
 
   list(rot_loadings = loadings,
        Phi = Phi,

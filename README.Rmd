@@ -51,21 +51,21 @@ library(EFAtools)
 
 ### Factor Retention
 
-Use `N_FACTORS()` to test the suitability of the data for factor analysis and to run multiple factor retention criteria with a single function call.
+Use `efa_retain()` to test the suitability of the data for factor analysis and to run multiple factor retention criteria with a single function call.
 
 Works on raw-data:
 
 ```{r fig.height=3}
 
 # Run multiple factor retention methods
-N_FACTORS(GRiPS_raw)
+efa_retain(GRiPS_raw)
 ```
 
 Skips some criteria on correlation input:
 
 ```{r}
 
-N_FACTORS(DOSPERT$cormat, N = DOSPERT$N)
+efa_retain(DOSPERT$cormat, N = DOSPERT$N)
 
 ```
 
@@ -79,7 +79,7 @@ With raw-data input, you can use all functionalities, including sandwich and boo
 ```{r fig.height=3}
 
 # ULS / MINRES estimation with oblimin rotation and sandwich SEs
-mod <- EFA(DOSPERT_raw, n_factors = 5, method = "ULS", rotation = "oblimin",
+mod <- efa_fit(DOSPERT_raw, n_factors = 5, method = "ULS", rotation = "oblimin",
            se = "sandwich")
 mod
 # detailed output with summary()
@@ -89,7 +89,7 @@ summary(mod)
 residuals(mod)
 
 # DWLS estimation based on polychoric correlations, with robust sandwich SEs
-mod <- EFA(GRiPS_raw, n_factors = 1, method = "DWLS", cor_method = "poly",
+mod <- efa_fit(GRiPS_raw, n_factors = 1, method = "DWLS", cor_method = "poly",
            se = "sandwich")
 mod
 summary(mod)
@@ -104,7 +104,7 @@ When you don't have raw data available, you can enter a correlation matrix and s
 
 # ML estimation with oblimin rotation and information SEs, based on correlation
 # matrix and N
-mod <- EFA(test_models$baseline$cormat, N = 500,  n_factors = 3, method = "ML",
+mod <- efa_fit(test_models$baseline$cormat, N = 500,  n_factors = 3, method = "ML",
            rotation = "oblimin", se = "information")
 mod
 summary(mod)

@@ -1,7 +1,7 @@
 #' Estimate factor scores and score-quality diagnostics for an EFA model
 #'
 #' Computes factor-score weights (and, from raw data, the factor scores
-#' themselves) natively for an [EFA()] solution or a directly supplied loading
+#' themselves) natively for an [efa_fit()] solution or a directly supplied loading
 #' matrix, together with the score-quality diagnostics that describe how well the
 #' estimated scores represent the factors: the score intercorrelations, the
 #' determinacy (validity) and univocality of each score, and Guttman's
@@ -39,13 +39,13 @@
 #'   column names, they are matched to the model variables by name (any extra
 #'   columns are ignored, and a model variable missing from `x` is an error);
 #'   unnamed data are matched by position.
-#' @param f object of class [EFA()], a `LOADINGS` object, or a matrix of factor
+#' @param f object of class [efa_fit()], an `efa_loadings` object, or a matrix of factor
 #'   loadings.
 #' @param Phi matrix. Factor intercorrelations. Only used when a loading matrix is
-#'   supplied directly in `f`; taken from the `EFA` object otherwise. Default is
+#'   supplied directly in `f`; taken from the `efa` object otherwise. Default is
 #'   `NULL`, in which case the factors are assumed uncorrelated.
 #' @param rho matrix. Correlation matrix used to derive the scoring weights.
-#'   Defaults to `NULL`, in which case `f$orig_R` is used for an `EFA` object and
+#'   Defaults to `NULL`, in which case `f$orig_R` is used for an `efa` object and
 #'   `cor(x, use = "pairwise")` otherwise. Pass a matrix here to score against a
 #'   correlation other than the one implied by `f`/`x`.
 #' @param method character. The factor-score method: one of `"regression"`
@@ -93,15 +93,15 @@
 #'
 #' @examples
 #' # Weights and score diagnostics from an EFA on a correlation matrix
-#' efa <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
-#'            method = "PAF", rotation = "oblimin")
+#' efa <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
+#'                method = "PAF", rotation = "oblimin")
 #' fs <- efa_scores(test_models$baseline$cormat, f = efa)
 #' fs
 #' summary(fs)
 #'
 #' # Factor scores from raw data (Bartlett method)
 #' \donttest{
-#' efa_raw <- EFA(GRiPS_raw, n_factors = 1, method = "PAF")
+#' efa_raw <- efa_fit(GRiPS_raw, n_factors = 1, method = "PAF")
 #' efa_scores(GRiPS_raw, f = efa_raw, method = "Bartlett")
 #' }
 #'
@@ -329,8 +329,8 @@ efa_scores <- function(x, f, Phi = NULL, rho = NULL,
 #' @method print efa_scores
 #'
 #' @examples
-#' efa <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
-#'            method = "PAF", rotation = "oblimin")
+#' efa <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
+#'                method = "PAF", rotation = "oblimin")
 #' fs <- efa_scores(test_models$baseline$cormat, f = efa)
 #' fs
 #' summary(fs)

@@ -2,7 +2,7 @@
 # and align factors across runs by congruence, and aggregate loadings, communalities,
 # variances, and fit indices.
 
-# for progress bar in EFA_AVERAGE
+# for progress bar in efa_average()
 .show_av_progress <- function(emoji, what, done = FALSE) {
 
   cat("\r", rep(" ", ifelse(getOption("width") > 30, getOption("width"), 30)))
@@ -216,13 +216,13 @@
   L_sd <- apply(L, 1:2, stats::sd, na.rm = TRUE)
   rownames(L_av) <- ind_names
   colnames(L_av) <- f_names
-  class(L_av) <- "LOADINGS"
+  class(L_av) <- c("efa_loadings", "LOADINGS")
   rownames(L_min) <- ind_names
   colnames(L_min) <- f_names
-  class(L_min) <- "LOADINGS"
+  class(L_min) <- c("efa_loadings", "LOADINGS")
   rownames(L_max) <- ind_names
   colnames(L_max) <- f_names
-  class(L_max) <- "LOADINGS"
+  class(L_max) <- c("efa_loadings", "LOADINGS")
   rownames(L_range) <- ind_names
   colnames(L_range) <- f_names
   rownames(L_sd) <- ind_names
@@ -381,7 +381,7 @@
 
 }
 
-### create grid for oblique rotations in EFA_AVERAGE
+### create grid for oblique rotations in efa_average()
 .oblq_grid <- function(method, init_comm, criterion, criterion_type,
                        abs_eigen, start_method, rotation, k_promax, normalize, P_type,
                        precision, varimax_type, k_simplimax){
@@ -428,7 +428,7 @@
 
 }
 
-### create grid for orthogonal rotations in EFA_AVERAGE
+### create grid for orthogonal rotations in efa_average()
 .orth_grid <- function(method, init_comm, criterion, criterion_type,
                        abs_eigen, start_method, rotation, normalize,
                        precision, varimax_type){
@@ -562,7 +562,7 @@
   return(do.call(rbind, t_grid_list))
 }
 
-### assemble the full implementation grid for EFA_AVERAGE
+### assemble the full implementation grid for efa_average()
 # Stack the per-(method, type) parameter grids into one grid of EFA() argument
 # combinations. The three named types (EFAtools/psych/SPSS) take their tuning
 # arguments from the shared `.efa_presets` table (the same source EFA() resolves),

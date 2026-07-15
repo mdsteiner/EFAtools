@@ -25,8 +25,8 @@
 #' @method print efa_reliability
 #'
 #' @examples
-#' efa_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
-#'                type = "EFAtools", method = "PAF", rotation = "promax")
+#' efa_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
+#'                    method = "PAF", rotation = "promax")
 #' rel <- efa_reliability(efa_mod)
 #' rel
 #'

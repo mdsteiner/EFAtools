@@ -206,7 +206,7 @@ test_that("the MI2S path invokes no rotation-alignment machinery", {
     NULL
   }
   testthat::local_mocked_bindings(
-    PROCRUSTES = spy,
+    efa_procrustes = spy,
     .gpa_consensus_target = spy,
     .align_solution = spy,
     .efa_pooled_rubin_core = spy

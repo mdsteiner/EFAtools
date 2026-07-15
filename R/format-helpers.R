@@ -1,5 +1,5 @@
 # Number formatting and styled-table builders shared by the print methods: padded decimal
-# formatting, the LOADINGS/COMPARE cell renderers, and small settings/CI string helpers.
+# formatting, the LOADINGS/efa_compare cell renderers, and small settings/CI string helpers.
 
 # Apply named logical styles to a pre-assembled string, mapping each to its cli primitive
 # (in order). A no-op when `style` is empty or when colours are off (the cli primitives are
@@ -50,7 +50,7 @@
 
 # Render a numeric matrix as decimal-aligned console lines. `col_roles` tags each column. The
 # data columns -- "loading", and the non-loading "corr" (factor-correlation and variance
-# tables) and "compare" (COMPARE difference tables) -- are split into vertically stacked
+# tables) and "compare" (efa_compare difference tables) -- are split into vertically stacked
 # blocks when the table is wider than the console (or, for loadings, `max_factors_per_block`
 # is set); the h2/u2 columns are auxiliary and repeat in every block, as does the row-label
 # column. Individual rows are never wrapped. "corr" cells are plain; "compare" cells whose
@@ -182,8 +182,8 @@
   if (identical(role, "u2") && is.finite(value) && value < 0) {
     return(cli::col_red(cell))
   }
-  # "compare" columns (COMPARE difference tables) flag salient differences: cells whose
-  # absolute value exceeds `cutoff` (the COMPARE `range_red` threshold) are coloured red.
+  # "compare" columns (efa_compare difference tables) flag salient differences: cells whose
+  # absolute value exceeds `cutoff` (the efa_compare `range_red` threshold) are coloured red.
   if (identical(role, "compare") && is.finite(value) && abs(value) > cutoff) {
     return(cli::col_red(cell))
   }
@@ -261,7 +261,7 @@
 
 # Render a numeric matrix through the shared renderer and print it (with a trailing blank
 # line), deriving row/column labels from its dimnames. `role` fills every column: "corr"
-# (factor-correlation/variance tables) is plain; "compare" (COMPARE difference tables)
+# (factor-correlation/variance tables) is plain; "compare" (efa_compare difference tables)
 # colours cells with |x| > `cutoff` red. `lower_only` blanks the strictly-upper triangle
 # (symmetric matrices); `header = FALSE` drops the column-header row (e.g. an unlabelled
 # single-column vector difference). This is the one consumer-facing wrapper around

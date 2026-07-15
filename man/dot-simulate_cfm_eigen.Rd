@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{.simulate_cfm_eigen}
 \alias{.simulate_cfm_eigen}
-\title{Reference eigenvalues for the NEST simulation via the shared kernel.}
+\title{Reference eigenvalues for the efa_nest() simulation via the shared kernel.}
 \usage{
 .simulate_cfm_eigen(nf, N, Lambda, Psi, nreps = 1000L)
 }
@@ -20,7 +20,7 @@ the \code{nf}-th largest simulated eigenvalue is returned per replicate.}
 \item{nreps}{integer. Number of datasets to simulate.}
 }
 \description{
-Internal helper called from NEST(). Simulates \code{nreps} datasets from an
+Internal helper called from efa_nest(). Simulates \code{nreps} datasets from an
 \code{(nf - 1)}-factor reference model, given that model's loadings \code{Lambda} and
 uniquenesses \code{Psi}, and returns the \code{nf}-th largest eigenvalue of each simulated
 correlation matrix. The data are drawn with the shared Z * M rule (see
@@ -29,5 +29,5 @@ correlation matrix. The data are drawn with the shared Z * M rule (see
 N(0, Lambda Lambda' + diag(Psi)). Drawing \code{nf - 1 + p} standard normals and
 post-multiplying by the factor-score matrix is faster than forming the model-
 implied correlation matrix and drawing from it, and matches the position at which
-NEST() reads the reference eigenvalue.
+efa_nest() reads the reference eigenvalue.
 }

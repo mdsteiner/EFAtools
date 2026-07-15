@@ -46,7 +46,7 @@ test_that(".factor_congruence works", {
 
 test_that(".factor_congruence has (i, j) = cos(x_i, y_j) orientation", {
   # Asymmetric inputs so the congruence matrix differs from its transpose; this
-  # pins the orientation the COMPARE / averaging reordering depends on.
+  # pins the orientation the efa_compare / averaging reordering depends on.
   A <- matrix(c(2, 0, 1,
                 0, 1, 0,
                 0, 0, 3,

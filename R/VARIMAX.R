@@ -10,7 +10,7 @@
     # Kaiser row normalisation. Floor the weights so a zero-communality row
     # (h2 = 0) does not divide by zero and inject NaN into the rotation; such a
     # row stays zero throughout and is restored unchanged below. The length-nrow
-    # w recycles column-major, scaling row i by 1/w[i] (mirrors PROCRUSTES.R).
+    # w recycles column-major, scaling row i by 1/w[i] (mirrors efa_procrustes.R).
     h2 <- diag(x %*% t(x))
     w <- sqrt(h2)
     w[!is.finite(w) | w < 1e-15] <- 1

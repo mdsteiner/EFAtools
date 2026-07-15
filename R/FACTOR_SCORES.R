@@ -1,5 +1,12 @@
 #' Estimate factor scores for an EFA model
 #'
+#' @description
+#' `r lifecycle::badge("superseded")`
+#'
+#' `FACTOR_SCORES()` has been superseded by [efa_scores()], which is the
+#' recommended interface going forward. It remains available and unchanged so
+#' existing code keeps working.
+#'
 #' A convenience wrapper around [efa_scores()] that returns factor scores and
 #' weights in a compact list. Factor scores are calculated according to the
 #' specified method if raw data are provided, and only factor weights if a
@@ -7,10 +14,10 @@
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data (needed to get
 #' factor scores) or matrix with correlations.
-#' @param f object of class [EFA()] or matrix.
+#' @param f object of class [efa_fit()] or matrix.
 #' @param Phi matrix. A matrix of factor intercorrelations. Only needs to be
 #' specified if a factor loadings matrix is entered directly into `f`; for an
-#' [EFA()] object the intercorrelations are taken from the object. Default is
+#' [efa_fit()] object the intercorrelations are taken from the object. Default is
 #' `NULL`, in which case the intercorrelations of a directly supplied loading
 #' matrix are assumed to be zero.
 #' @param rho matrix. Correlation matrix used to derive the scoring weights.
@@ -42,21 +49,20 @@
 #' set of score-quality diagnostics (determinacy, univocality, and Guttman
 #' indeterminacy index) and a print/summary method.
 #'
-#' @family factor scoring
-#'
 #' @export
 #'
 #' @examples
 #' # Example with raw data with method "Bartlett"
-#' EFA_raw <- EFA(DOSPERT_raw, n_factors = 10, type = "EFAtools", method = "PAF",
-#'                rotation = "oblimin", randomStarts = 0)
+#' EFA_raw <- efa_fit(DOSPERT_raw, n_factors = 10, method = "PAF",
+#'                    rotation = "oblimin",
+#'                    rotate_control = rotate_control(random_starts = 1))
 #' fac_scores_raw <- FACTOR_SCORES(DOSPERT_raw, f = EFA_raw, method = "Bartlett")
 #'
 #' # Same as above, but with raw data AND a correlation matrix
 #' cor_pearson <- cor(DOSPERT_raw)
-#' EFA_cor_pearson <- EFA(cor_pearson, n_factors = 10, N = nrow(DOSPERT_raw),
-#'                        type = "EFAtools", method = "PAF",
-#'                        rotation = "oblimin", randomStarts = 0)
+#' EFA_cor_pearson <- efa_fit(cor_pearson, n_factors = 10, N = nrow(DOSPERT_raw),
+#'                            method = "PAF", rotation = "oblimin",
+#'                            rotate_control = rotate_control(random_starts = 1))
 #' fac_scores_cor_pearson <- FACTOR_SCORES(DOSPERT_raw, f = EFA_cor_pearson,
 #'                                         rho = cor_pearson,
 #'                                         method = "Bartlett")
@@ -66,8 +72,8 @@
 #'                  check.attributes = FALSE))
 #'
 #' # Example with a correlation matrix only (does not return factor scores)
-#' EFA_cor <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
-#'                type = "EFAtools", method = "PAF", rotation = "oblimin")
+#' EFA_cor <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
+#'                    method = "PAF", rotation = "oblimin")
 #' fac_scores_cor <- FACTOR_SCORES(test_models$baseline$cormat, f = EFA_cor)
 #'
 FACTOR_SCORES <- function(x, f, Phi = NULL, rho = NULL,

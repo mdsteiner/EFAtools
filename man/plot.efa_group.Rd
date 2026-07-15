@@ -49,7 +49,10 @@ doi: 10.1027/1614-2241.2.2.57
 }
 \seealso{
 Other factor analysis:
+\code{\link[=efa_average]{efa_average()}},
+\code{\link[=efa_fit]{efa_fit()}},
 \code{\link[=efa_group]{efa_group()}},
+\code{\link[=efa_mi]{efa_mi()}},
 \code{\link[=print.efa_group]{print.efa_group()}}
 }
 \concept{factor analysis}

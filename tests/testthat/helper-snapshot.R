@@ -18,7 +18,7 @@ scrub_num <- function(lines) {
   lines
 }
 
-# Like scrub_num, but also masks integer percentages. The EFA_AVERAGE print reports
+# Like scrub_num, but also masks integer percentages. The efa_average() print reports
 # error/convergence/Heywood/admissibility rates as `round(mean(...) * 100)` over many inner
 # solutions; those percentages can flip across BLAS implementations, so the snapshot pins the
 # wording but not the rate. (The deterministic "N EFAs" grid size is left verbatim.)

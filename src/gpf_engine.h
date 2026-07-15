@@ -213,7 +213,7 @@ GpfFit run_single_gpf_fit(const Manifold& manifold,
 
   // Record per-iteration diagnostics in a growing buffer rather than preallocating a
   // (maxit + 1) x 4 table. maxit is a documented, user-forwarded control that can be
-  // large (e.g. EFA_AVERAGE passes maxit = 5e4) while the optimization typically
+  // large (e.g. efa_average() passes maxit = 5e4) while the optimization typically
   // converges in far fewer iterations, so an eager allocation would reserve -- and
   // NA-fill -- a table that is then trimmed away, and `maxit + 1` could overflow.
   std::vector<double> diag_rows;  // row-major: iter, f, log10(s), step per recorded row

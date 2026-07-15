@@ -4,12 +4,12 @@
 #'
 #' Consider a list of named sub-lists. This function extracts, for each sub-list,
 #' the sub-list element that is specified by the user. This function is useful
-#' for extracting results from [EFA()] for each permutation run in
-#' [EFA_POOLED()].
+#' for extracting results from [efa_fit()] for each permutation run in
+#' [efa_mi()].
 #'
 #' @param alist A list of sub-lists, typically a list of \eqn{m} objects of class
 #' `"EFA"`, where \eqn{m} is the number of imputations passed to
-#' [EFA_POOLED()].
+#' [efa_mi()].
 #' @param object String of length 1. The name of the object to extract e.g.
 #' `"h2"` or `"vars_accounted"`.
 #'
@@ -61,7 +61,8 @@
 }
 
 # Abort (classed) when the suggested lavaan package is unavailable; guards the lavaan
-# input paths of OMEGA() and SL(). `call` is forwarded so the error points at the caller.
+# input paths of OMEGA() and efa_schmid_leiman(). `call` is forwarded so the error points
+# at the caller.
 .require_lavaan <- function(call = rlang::caller_env()) {
   if (!requireNamespace("lavaan", quietly = TRUE)) {
     cli::cli_abort(
@@ -77,26 +78,26 @@
 # loadings by the residual standard deviations of the first-order factors. Only
 # the psi diagonal is used (off-diagonal first-order disturbance covariances are
 # not residual standard deviations); `nrow` keeps diag() a matrix when there is a
-# single first-order factor. Shared by SL() and OMEGA() for lavaan second-order
-# input. Schmid & Leiman (1957, Psychometrika).
+# single first-order factor. Shared by efa_schmid_leiman() and OMEGA() for lavaan
+# second-order input. Schmid & Leiman (1957, Psychometrika).
 .sl_group_loadings <- function(loadings, psi, col_names) {
   loadings %*% diag(sqrt(diag(psi)[col_names]), nrow = length(col_names))
 }
 
-#' Covert a `"LOADINGS"` table to matrix or a matrix to `"LOADINGS"`
+#' Convert an `"efa_loadings"` table to matrix or a matrix to `"efa_loadings"`
 #'
 #' @author Andreas Soteriades
 #'
-#' The loadings tables returned by [EFA()] are of class
-#' `"LOADINGS"`, which prevents applying functions on them. This function
-#' allows to change their class to `"matrix"`, and to change back to
-#' `"LOADINGS"` when done.
+#' The loadings tables returned by [efa_fit()] are of class
+#' `c("efa_loadings", "LOADINGS")`, which prevents applying functions on them.
+#' This function allows to change their class to `"matrix"`, and to change back
+#' to `"efa_loadings"` when done.
 #'
-#' @param x A table of class `"matrix"` or `"LOADINGS"`.
-#' @param cl A string with the class to change the table to. Should be
-#' `"LOADINGS"` or `"matrix"`.
+#' @param x A table of class `"matrix"` or `"efa_loadings"`.
+#' @param cl A character vector with the class to change the table to. Should be
+#' `c("efa_loadings", "LOADINGS")` or `"matrix"`.
 #'
-#' @return A table with the loadings, of class either `"LOADINGS"` or
+#' @return A table with the loadings, of class either `"efa_loadings"` or
 #' `"matrix"`.
 .change_class <- function(x, cl = 'matrix') {
   class(x) <- cl
@@ -132,7 +133,7 @@
 # eigenvalue-based retention criteria: "PCA" keeps the unit diagonal, "SMC" substitutes the
 # squared multiple correlations, and "EFA" substitutes the final communalities of an EFA
 # solution (default principal axis factoring extracting `n_factors`). Returns a named list
-# (PCA/SMC/EFA); an entry is NA for any convention not requested. `...` is forwarded to EFA()
+# (PCA/SMC/EFA); an entry is NA for any convention not requested. `...` is forwarded to efa_fit()
 # for the "EFA" convention.
 .three_eigen <- function(R, eigen_type, n_factors = 1, ...) {
 
@@ -152,7 +153,7 @@
 
   if ("EFA" %in% eigen_type) {
     R_EFA <- R
-    EFA_h2 <- suppressMessages(suppressWarnings(EFA(R, n_factors = n_factors, ...)$h2))
+    EFA_h2 <- suppressMessages(suppressWarnings(efa_fit(R, n_factors = n_factors, ...)$h2))
     diag(R_EFA) <- EFA_h2
     eigen_R_EFA <- eigen(R_EFA, symmetric = TRUE, only.values = TRUE)$values
   }

@@ -42,7 +42,7 @@ validity flag, and -- when oblique -- the Jacobian \code{J_Phi} (\verb{k^2 x pk}
 \description{
 Forward-difference the warm-started re-rotation map \verb{A -> (rotated loadings, Phi)} over the
 unrotated loadings \code{A} to obtain the rotation Jacobians used by the analytic standard errors for
-rotated loadings (\code{se = "information"} in \code{\link[=EFA]{EFA()}}). The full \code{nrow(A) * ncol(A)} finite-
+rotated loadings (\code{se = "information"} in \code{\link[=efa_fit]{efa_fit()}}). The full \code{nrow(A) * ncol(A)} finite-
 difference loop runs in compiled code, re-solving the rotation from the converged transformation
 \code{T_init} at each perturbation; the caller forms \verb{J V J'} in R.
 }

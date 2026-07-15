@@ -1,21 +1,28 @@
 #' McDonald's omega
 #'
+#' @description
+#' `r lifecycle::badge("superseded")`
+#'
+#' `OMEGA()` has been superseded by [efa_reliability()], which is the recommended
+#' interface going forward. It remains available and unchanged so existing code
+#' keeps working.
+#'
 #' This function finds omega total, hierarchical, and subscale, as well as additional
 #' model-based indices of interpretive relevance (H index, ECV, PUC)
 #' from a Schmid-Leiman (SL) solution or lavaan single factor, second-order (see below),
 #' or bifactor solution. The SL-based omegas can either be found from a
-#' [psych::schmid()], [SL()], or,
+#' [psych::schmid()], [efa_schmid_leiman()], or,
 #' in a more flexible way, by leaving
 #' `model = NULL` and specifying additional arguments. By setting the
 #' `type` argument, results from [psych::omega()]
 #' can be reproduced.
 #'
-#' @param model class [SL()], class `schmid`, or class
-#' `lavaan` object. That is, an output object from [SL()] or
+#' @param model class [efa_schmid_leiman()], class `schmid`, or class
+#' `lavaan` object. That is, an output object from [efa_schmid_leiman()] or
 #' [psych::schmid()], or a `lavaan` fit object with a
 #' single factor, second-order, or bifactor solution. If of class `lavaan`,
 #' only `g_name` needs to be specified additionally. If of class
-#' [SL()] or `schmid`, only the arguments `factor_corres`
+#' [efa_schmid_leiman()] or `schmid`, only the arguments `factor_corres`
 #' and `cormat` need to be specified additionally.
 #' @param type character. Either `"EFAtools"` (default) or `"psych"`
 #' (see details)
@@ -45,7 +52,7 @@
 #' @param u2 numeric. A vector of uniquenesses from an SL solution. This needs
 #' only be specified if `model` is left `NULL`.
 #' @param cormat matrix. A correlation matrix to be used when
-#' `variance = "correlation"`. If left `NULL` and an [SL()]
+#' `variance = "correlation"`. If left `NULL` and an [efa_schmid_leiman()]
 #' output is entered in `model`, the correlation matrix is taken from the
 #' output. If left `NULL` and a [psych::schmid()]
 #' output is entered, the correlation matrix will be found based on the pattern
@@ -122,7 +129,7 @@
 #' one second-order factor. In case of a second-order solution, a
 #' Schmid-Leiman transformation is performed on the first- and second-order loadings
 #' and omega coefficients are obtained from the transformed (orthogonalized) solution
-#' (see [SL()] for more information on Schmid-Leiman transformation).
+#' (see [efa_schmid_leiman()] for more information on Schmid-Leiman transformation).
 #' There is also the possibility to enter a `lavaan` single factor solution.
 #' In this case, `g_name` is not needed. Finally, if a solution from a
 #' `lavaan` multiple group analysis is entered, the indices are computed for
@@ -133,7 +140,7 @@
 #' The type argument is not evaluated if `model` is of class
 #' `lavaan`.
 #'
-#' If `model` is of class [SL()] or
+#' If `model` is of class [efa_schmid_leiman()] or
 #' [psych::schmid()] only the
 #' `type` and, depending on the type (see below), the `factor_corres`
 #' arguments need to be specified additionally. If model is of class
@@ -220,6 +227,9 @@
 #' Calculate Total Scale Score Reliability via Coefficient Alpha for Multidimensional
 #' Scales. European Journal of Psychological Assessment, 30, 130-139.
 #'
+#' @seealso [efa_reliability()] for the same coefficients in a tidy, long-format
+#'   result.
+#'
 #' @export
 #'
 #' @examples
@@ -256,9 +266,9 @@
 #' }
 #'
 #' ## Use with an output from the SL function, with type EFAtools
-#' efa_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
-#'                type = "EFAtools", method = "PAF", rotation = "promax")
-#' sl_mod <- SL(efa_mod, type = "EFAtools", method = "PAF")
+#' efa_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
+#'                    method = "PAF", rotation = "promax")
+#' sl_mod <- efa_schmid_leiman(efa_mod, method = "PAF")
 #'
 #' # Two examples how to specify the indicator-to-factor correspondences:
 #'
@@ -286,9 +296,9 @@
 #' ## As an example, we extract the elements from an SL output here. This gives
 #' ## the same results as in the second example above.
 #'
-#' efa_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
-#'                type = "EFAtools", method = "PAF", rotation = "promax")
-#' sl_mod <- SL(efa_mod, type = "EFAtools", method = "PAF")
+#' efa_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
+#'                    method = "PAF", rotation = "promax")
+#' sl_mod <- efa_schmid_leiman(efa_mod, method = "PAF")
 #'
 #' factor_corres <- matrix(c(rep(0, 12), rep(1, 6), rep(0, 6), rep(1, 6),
 #'                         rep(0, 6), rep(1, 6), rep(0, 12)), ncol = 3,

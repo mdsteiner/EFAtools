@@ -83,7 +83,7 @@
   model_implied_R <- L %*% t(L) + diag(1 - h2)
 
   # create the output object
-  class(L) <- "LOADINGS"
+  class(L) <- c("efa_loadings", "LOADINGS")
 
   # Name communalities
   names(h2) <- colnames(orig_R)

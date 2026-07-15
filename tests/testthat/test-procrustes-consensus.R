@@ -66,7 +66,7 @@ test_that("consensus target is a fixed point of one more centroid update", {
     tol = tol, loss_tol = 1e-12, max_iter = 200, min_iter = 2L
   )
   next_aligned <- lapply(d$unrot, function(L) {
-    PROCRUSTES(L, fit$target, rotation = "orthogonal")$loadings
+    efa_procrustes(L, fit$target, rotation = "orthogonal")$loadings
   })
   centroid_next <- Reduce(`+`, next_aligned) / length(next_aligned)
   rel <- norm(unname(centroid_next) - unname(fit$target), type = "F") /

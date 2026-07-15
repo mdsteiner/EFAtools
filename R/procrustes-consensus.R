@@ -494,7 +494,7 @@
     aligned <- vector("list", m)
 
     for (d in seq_len(m)) {
-      aligned[[d]] <- PROCRUSTES(
+      aligned[[d]] <- efa_procrustes(
         A = unrotated_list[[d]],
         Target = target,
         rotation = rotation
@@ -611,7 +611,7 @@
 
   final_aligned <- vector("list", m)
   for (d in seq_len(m)) {
-    final_aligned[[d]] <- PROCRUSTES(
+    final_aligned[[d]] <- efa_procrustes(
       A = unrotated_list[[d]],
       Target = target,
       rotation = rotation

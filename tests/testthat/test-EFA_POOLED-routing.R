@@ -151,7 +151,7 @@ test_that("mixed component se aborts with efa_pooled_mixed_se", {
     .route_mock_fit(if (i == 1L) "information" else "sandwich",
                     p = p_vars, kk = k)
   }
-  testthat::local_mocked_bindings(EFA = fake_efa)
+  testthat::local_mocked_bindings(efa_fit = fake_efa)
 
   expect_error(
     EFA_POOLED(list(cormat, cormat), n_factors = k, N = N_id, method = "ML",

@@ -45,8 +45,8 @@ the active console theme, so they are plain when colours are disabled (for
 example when captured into a file or stripped with \code{\link[cli:ansi_strip]{cli::ansi_strip()}}).
 }
 \examples{
-efa <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
-           method = "PAF", rotation = "oblimin")
+efa <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
+               method = "PAF", rotation = "oblimin")
 fs <- efa_scores(test_models$baseline$cormat, f = efa)
 fs
 summary(fs)
@@ -57,7 +57,6 @@ writeLines(format(fs))
 }
 \seealso{
 Other factor scoring:
-\code{\link[=FACTOR_SCORES]{FACTOR_SCORES()}},
 \code{\link[=efa_scores]{efa_scores()}}
 }
 \concept{factor scoring}

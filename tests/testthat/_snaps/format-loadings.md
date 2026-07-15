@@ -1,4 +1,4 @@
-# format.LOADINGS aligns decimals and renders a plain table
+# format.efa_loadings aligns decimals and renders a plain table
 
     Code
       print(make_loadings())
@@ -10,7 +10,7 @@
       hurt         .040  -.050  1.080
       
 
-# format.LOADINGS prints communalities and a legend
+# format.efa_loadings prints communalities and a legend
 
     Code
       print(make_loadings(), h2 = h2, legend = TRUE)
@@ -27,7 +27,7 @@
         red h2/u2 = Heywood-relevant value
       
 
-# format.LOADINGS sorts rows when requested
+# format.efa_loadings sorts rows when requested
 
     Code
       print(make_loadings(), sort_loadings = "clustered")
@@ -126,7 +126,7 @@
       F12  1.000
       
 
-# format.SLLOADINGS flags a Heywood case
+# format.efa_sl_loadings flags a Heywood case
 
     Code
       print(make_sl(heywood = TRUE))
@@ -139,7 +139,7 @@
       ! Results contain a Heywood case!
       
 
-# format.SLLOADINGS prints cleanly without Heywood cases
+# format.efa_sl_loadings prints cleanly without Heywood cases
 
     Code
       print(make_sl(heywood = FALSE))

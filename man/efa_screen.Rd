@@ -147,13 +147,13 @@ The diagnostics are computed from the analysis correlation matrix \eqn{R}:
 \describe{
 \item{KMO}{The Kaiser-Meyer-Olkin measure of sampling adequacy (Kaiser, 1970;
 Kaiser & Rice, 1974), overall and for each variable. Larger values (a rough
-floor of .50) indicate greater suitability for factor analysis; see \code{\link[=KMO]{KMO()}}.}
+floor of .50) indicate greater suitability for factor analysis; see \code{\link[=efa_kmo]{efa_kmo()}}.}
 \item{Bartlett}{Bartlett's (1951) test of sphericity, the likelihood-ratio
 test of the hypothesis that \eqn{R} is an identity matrix, with
 \eqn{df = p(p - 1)/2} for \eqn{p} variables. It requires the sample size
 \code{N}; when \code{N} is unavailable (a correlation matrix supplied without \code{N}) the
 test is skipped with a warning, \verb{$bartlett} is \code{NULL}, and the remaining
-diagnostics are still returned. See \code{\link[=BARTLETT]{BARTLETT()}}.}
+diagnostics are still returned. See \code{\link[=efa_bartlett]{efa_bartlett()}}.}
 \item{Determinant}{The determinant of \eqn{R}. A value near zero signals
 extreme multicollinearity or a (near-)singular matrix; as a rough guide, a
 determinant below about 0.00001 is commonly taken as a sign of
@@ -212,10 +212,12 @@ efa_screen(GRiPS_raw)
 
 }
 \seealso{
-\code{\link[=KMO]{KMO()}} and \code{\link[=BARTLETT]{BARTLETT()}} for the individual suitability measures, and
-\code{\link[=N_FACTORS]{N_FACTORS()}} for factor retention criteria.
+\code{\link[=efa_kmo]{efa_kmo()}} and \code{\link[=efa_bartlett]{efa_bartlett()}} for the individual suitability measures, and
+\code{\link[=efa_retain]{efa_retain()}} for factor retention criteria.
 
 Other factor analysis suitability:
+\code{\link[=efa_bartlett]{efa_bartlett()}},
+\code{\link[=efa_kmo]{efa_kmo()}},
 \code{\link[=print.efa_screen]{print.efa_screen()}}
 }
 \concept{factor analysis suitability}

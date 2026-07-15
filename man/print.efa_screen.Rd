@@ -51,6 +51,8 @@ writeLines(format(efa_screen(test_models$baseline$cormat, N = 500)))
 }
 \seealso{
 Other factor analysis suitability:
+\code{\link[=efa_bartlett]{efa_bartlett()}},
+\code{\link[=efa_kmo]{efa_kmo()}},
 \code{\link[=efa_screen]{efa_screen()}}
 }
 \concept{factor analysis suitability}

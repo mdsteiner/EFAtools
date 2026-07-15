@@ -37,13 +37,13 @@
 #' \describe{
 #'   \item{KMO}{The Kaiser-Meyer-Olkin measure of sampling adequacy (Kaiser, 1970;
 #'     Kaiser & Rice, 1974), overall and for each variable. Larger values (a rough
-#'     floor of .50) indicate greater suitability for factor analysis; see [KMO()].}
+#'     floor of .50) indicate greater suitability for factor analysis; see [efa_kmo()].}
 #'   \item{Bartlett}{Bartlett's (1951) test of sphericity, the likelihood-ratio
 #'     test of the hypothesis that \eqn{R} is an identity matrix, with
 #'     \eqn{df = p(p - 1)/2} for \eqn{p} variables. It requires the sample size
 #'     `N`; when `N` is unavailable (a correlation matrix supplied without `N`) the
 #'     test is skipped with a warning, `$bartlett` is `NULL`, and the remaining
-#'     diagnostics are still returned. See [BARTLETT()].}
+#'     diagnostics are still returned. See [efa_bartlett()].}
 #'   \item{Determinant}{The determinant of \eqn{R}. A value near zero signals
 #'     extreme multicollinearity or a (near-)singular matrix; as a rough guide, a
 #'     determinant below about 0.00001 is commonly taken as a sign of
@@ -168,8 +168,8 @@
 #' @source Rousseeuw, P. J. & Van Driessen, K. (1999). A fast algorithm for the minimum
 #'   covariance determinant estimator. Technometrics, 41, 212-223.
 #'
-#' @seealso [KMO()] and [BARTLETT()] for the individual suitability measures, and
-#'   [N_FACTORS()] for factor retention criteria.
+#' @seealso [efa_kmo()] and [efa_bartlett()] for the individual suitability measures, and
+#'   [efa_retain()] for factor retention criteria.
 #'
 #' @family factor analysis suitability
 #'

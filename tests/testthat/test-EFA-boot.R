@@ -456,7 +456,7 @@ test_that(".oblique_procrustes_batch isolates an unalignable replicate", {
   # A single non-finite slice must not abort the whole batch: it is reported
   # valid = FALSE with NA loadings/Phi/diagnostics, while the OTHER (distinct)
   # slices align independently and correctly. This mirrors the per-replicate
-  # failure isolation of the per-replicate PROCRUSTES() loop the batch replaces.
+  # failure isolation of the per-replicate efa_procrustes() loop the batch replaces.
   set.seed(311)
   efa <- suppressWarnings(suppressMessages(
     EFA(GRiPS_raw, n_factors = 2, method = "PAF", rotation = "promax")))
@@ -499,9 +499,9 @@ test_that(".oblique_procrustes_batch isolates an unalignable replicate", {
   expect_equal(res$loadings[, , 1], solo$loadings[, , 1], tolerance = 1e-10)
 })
 
-test_that(".oblique_procrustes_batch matches the per-replicate PROCRUSTES alignment", {
+test_that(".oblique_procrustes_batch matches the per-replicate efa_procrustes alignment", {
   skip_on_cran()
-  # The batched alignment must reproduce the single-matrix oblique PROCRUSTES path
+  # The batched alignment must reproduce the single-matrix oblique efa_procrustes path
   # it replaces (same warm start, same R::rnorm random-start stream) to tolerance.
   set.seed(321)
   efa <- suppressWarnings(suppressMessages(
@@ -522,8 +522,8 @@ test_that(".oblique_procrustes_batch matches the per-replicate PROCRUSTES alignm
   set.seed(99)
   loop_L <- array(NA_real_, c(p, m, b))
   for (j in seq_len(b)) {
-    loop_L[, , j] <- PROCRUSTES(cube[, , j], Target = L_rot, rotation = "oblique",
-                                oblique_random_starts = 5)$loadings
+    loop_L[, , j] <- efa_procrustes(cube[, , j], Target = L_rot, rotation = "oblique",
+                                    oblique_random_starts = 5)$loadings
   }
   set.seed(99)
   batch <- .oblique_procrustes_batch(cube, L_rot, random_starts = 5)

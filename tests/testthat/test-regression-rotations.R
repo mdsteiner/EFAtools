@@ -2,7 +2,7 @@
 # each rotation is designed to wrap, so an accidental change (or a re-implementation of the
 # rotation engine) is caught. The rotation is isolated on a single fixed unrotated solution
 # and compared against the oracle on that same loading matrix. Sign and column-permutation
-# differences are removed with the package's own COMPARE() (Tucker-congruence reorder plus
+# differences are removed with the package's own efa_compare() (Tucker-congruence reorder plus
 # sign reflection); the oblique factor correlations are compared via a permutation/sign
 # invariant fingerprint. For the GPArotation engines the oracle is given randomStarts under a
 # shared seed (100 for the smooth criteria, matching EFAtools; 300 for the multimodal simplimax
@@ -12,8 +12,8 @@
 
 # max absolute difference after aligning columns/signs of two loading matrices
 aligned_max_diff <- function(x, y) {
-  COMPARE(x, y, reorder = "congruence", corres = FALSE,
-          plot = FALSE, print_diff = FALSE)$max_abs_diff
+  efa_compare(x, y, reorder = "congruence", corres = FALSE,
+              plot = FALSE, print_diff = FALSE)$max_abs_diff
 }
 
 # permutation/sign-invariant fingerprint of the factor intercorrelations

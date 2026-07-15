@@ -2,28 +2,28 @@
 % Please edit documentation in R/helper.R
 \name{.change_class}
 \alias{.change_class}
-\title{Covert a \code{"LOADINGS"} table to matrix or a matrix to \code{"LOADINGS"}}
+\title{Convert an \code{"efa_loadings"} table to matrix or a matrix to \code{"efa_loadings"}}
 \usage{
 .change_class(x, cl = "matrix")
 }
 \arguments{
-\item{x}{A table of class \code{"matrix"} or \code{"LOADINGS"}.}
+\item{x}{A table of class \code{"matrix"} or \code{"efa_loadings"}.}
 
-\item{cl}{A string with the class to change the table to. Should be
-\code{"LOADINGS"} or \code{"matrix"}.}
+\item{cl}{A character vector with the class to change the table to. Should be
+\code{c("efa_loadings", "LOADINGS")} or \code{"matrix"}.}
 }
 \value{
-A table with the loadings, of class either \code{"LOADINGS"} or
+A table with the loadings, of class either \code{"efa_loadings"} or
 \code{"matrix"}.
 }
 \description{
-Covert a \code{"LOADINGS"} table to matrix or a matrix to \code{"LOADINGS"}
+Convert an \code{"efa_loadings"} table to matrix or a matrix to \code{"efa_loadings"}
 }
 \author{
 Andreas Soteriades
 
-The loadings tables returned by \code{\link[=EFA]{EFA()}} are of class
-\code{"LOADINGS"}, which prevents applying functions on them. This function
-allows to change their class to \code{"matrix"}, and to change back to
-\code{"LOADINGS"} when done.
+The loadings tables returned by \code{\link[=efa_fit]{efa_fit()}} are of class
+\code{c("efa_loadings", "LOADINGS")}, which prevents applying functions on them.
+This function allows to change their class to \code{"matrix"}, and to change back
+to \code{"efa_loadings"} when done.
 }

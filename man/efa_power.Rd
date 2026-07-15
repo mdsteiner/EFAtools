@@ -93,7 +93,7 @@ analyse. Default is \code{500}.}
 
 \item{criteria}{character. Simulation mode. The factor-retention criteria to
 evaluate the hit-rate for, any of \code{"CD"}, \code{"EKC"}, \code{"HULL"}, \code{"KGC"}, \code{"MAP"},
-\code{"NEST"}, \code{"PARALLEL"}, and \code{"SMT"} (see \code{\link[=N_FACTORS]{N_FACTORS()}}). Default is
+\code{"NEST"}, \code{"PARALLEL"}, and \code{"SMT"} (see \code{\link[=efa_retain]{efa_retain()}}). Default is
 \code{c("EKC", "MAP")}. Criteria that simulate internally (\code{"CD"}, \code{"HULL"}, \code{"NEST"},
 \code{"PARALLEL"}) make each run substantially slower.}
 
@@ -102,7 +102,7 @@ or \code{"ULS"}) used for the recovery fit and the retention criteria. Default i
 \code{"PAF"}.}
 
 \item{rotation}{character. Simulation mode. The rotation for the recovery fit,
-passed to \code{\link[=EFA]{EFA()}}. Default is \code{NULL}, which matches the population: \code{"varimax"}
+passed to \code{\link[=efa_fit]{efa_fit()}}. Default is \code{NULL}, which matches the population: \code{"varimax"}
 for orthogonal factors and \code{"promax"} for oblique ones (a single factor is left
 unrotated). Recovery aligns the fitted loadings to the population pattern by
 permutation and sign only, so a rotation that does not seek that structure -- for
@@ -233,7 +233,7 @@ is run and its suggested number of factors compared with \code{k_true}; the hit-
 the proportion of agreements over the replicates on which the criterion returned a
 definite factor count (replicates where it errored or was undecided are excluded,
 not counted as misses). \strong{Structure recovery} (only for a factor-model
-population): the \code{k_true}-factor model is fitted with \code{\link[=EFA]{EFA()}}, its rotated loadings
+population): the \code{k_true}-factor model is fitted with \code{\link[=efa_fit]{efa_fit()}}, its rotated loadings
 are matched to the population loadings, and the matched-factor Tucker congruences
 (Lorenzo-Seva & ten Berge, 2006) are compared with \code{recovery_threshold}; a
 replicate counts as a success when the smallest (\code{min}) or the average (\code{mean})

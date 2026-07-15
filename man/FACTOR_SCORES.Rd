@@ -16,11 +16,11 @@ FACTOR_SCORES(
 \item{x}{data.frame or matrix. Dataframe or matrix of raw data (needed to get
 factor scores) or matrix with correlations.}
 
-\item{f}{object of class \code{\link[=EFA]{EFA()}} or matrix.}
+\item{f}{object of class \code{\link[=efa_fit]{efa_fit()}} or matrix.}
 
 \item{Phi}{matrix. A matrix of factor intercorrelations. Only needs to be
 specified if a factor loadings matrix is entered directly into \code{f}; for an
-\code{\link[=EFA]{EFA()}} object the intercorrelations are taken from the object. Default is
+\code{\link[=efa_fit]{efa_fit()}} object the intercorrelations are taken from the object. Default is
 \code{NULL}, in which case the intercorrelations of a directly supplied loading
 matrix are assumed to be zero.}
 
@@ -52,6 +52,12 @@ See \code{\link[=efa_scores]{efa_scores()}} for the underlying score-quality dia
 \item{settings}{A list of the settings used.}
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#superseded}{\figure{lifecycle-superseded.svg}{options: alt='[Superseded]'}}}{\strong{[Superseded]}}
+
+\code{FACTOR_SCORES()} has been superseded by \code{\link[=efa_scores]{efa_scores()}}, which is the
+recommended interface going forward. It remains available and unchanged so
+existing code keeps working.
+
 A convenience wrapper around \code{\link[=efa_scores]{efa_scores()}} that returns factor scores and
 weights in a compact list. Factor scores are calculated according to the
 specified method if raw data are provided, and only factor weights if a
@@ -59,15 +65,16 @@ correlation matrix is provided.
 }
 \examples{
 # Example with raw data with method "Bartlett"
-EFA_raw <- EFA(DOSPERT_raw, n_factors = 10, type = "EFAtools", method = "PAF",
-               rotation = "oblimin", randomStarts = 0)
+EFA_raw <- efa_fit(DOSPERT_raw, n_factors = 10, method = "PAF",
+                   rotation = "oblimin",
+                   rotate_control = rotate_control(random_starts = 1))
 fac_scores_raw <- FACTOR_SCORES(DOSPERT_raw, f = EFA_raw, method = "Bartlett")
 
 # Same as above, but with raw data AND a correlation matrix
 cor_pearson <- cor(DOSPERT_raw)
-EFA_cor_pearson <- EFA(cor_pearson, n_factors = 10, N = nrow(DOSPERT_raw),
-                       type = "EFAtools", method = "PAF",
-                       rotation = "oblimin", randomStarts = 0)
+EFA_cor_pearson <- efa_fit(cor_pearson, n_factors = 10, N = nrow(DOSPERT_raw),
+                           method = "PAF", rotation = "oblimin",
+                           rotate_control = rotate_control(random_starts = 1))
 fac_scores_cor_pearson <- FACTOR_SCORES(DOSPERT_raw, f = EFA_cor_pearson,
                                         rho = cor_pearson,
                                         method = "Bartlett")
@@ -77,8 +84,8 @@ isTRUE(all.equal(fac_scores_raw$scores, fac_scores_cor_pearson$scores,
                  check.attributes = FALSE))
 
 # Example with a correlation matrix only (does not return factor scores)
-EFA_cor <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
-               type = "EFAtools", method = "PAF", rotation = "oblimin")
+EFA_cor <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
+                   method = "PAF", rotation = "oblimin")
 fac_scores_cor <- FACTOR_SCORES(test_models$baseline$cormat, f = EFA_cor)
 
 }
@@ -86,9 +93,4 @@ fac_scores_cor <- FACTOR_SCORES(test_models$baseline$cormat, f = EFA_cor)
 \code{\link[=efa_scores]{efa_scores()}} for the factor-score weights together with the full
 set of score-quality diagnostics (determinacy, univocality, and Guttman
 indeterminacy index) and a print/summary method.
-
-Other factor scoring:
-\code{\link[=efa_scores]{efa_scores()}},
-\code{\link[=print.efa_scores]{print.efa_scores()}}
 }
-\concept{factor scoring}

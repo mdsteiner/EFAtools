@@ -1,4 +1,4 @@
-# print/summary.EFA label FIML correlations in the header
+# print/summary.efa label FIML correlations in the header
 
     Code
       print(efa)

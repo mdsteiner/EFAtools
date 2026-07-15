@@ -1,4 +1,4 @@
-# print.EFA output is stable (PAF, promax)
+# print.efa output is stable (PAF, promax)
 
     Code
       print(efa_psych)
@@ -55,7 +55,7 @@
       SRMR: <num>
       df: 102
 
-# print.EFA output is stable (ML, promax)
+# print.efa output is stable (ML, promax)
 
     Code
       print(efa_ml_moderate)
@@ -118,7 +118,7 @@
       CAF: <num>
       SRMR: <num>
 
-# summary.EFA output is stable (PAF, promax)
+# summary.efa output is stable (PAF, promax)
 
     Code
       print(summary(efa_psych))
@@ -226,7 +226,7 @@
       
       Inspect the residual matrix for details (e.g., with residuals()).
 
-# summary.EFA output is stable (ML, promax)
+# summary.efa output is stable (ML, promax)
 
     Code
       print(summary(efa_ml_moderate))
@@ -334,7 +334,7 @@
       
       Inspect the residual matrix for details (e.g., with residuals()).
 
-# print/summary.EFA omit the inapplicable tables for a rotated single factor
+# print/summary.efa omit the inapplicable tables for a rotated single factor
 
     Code
       print(efa_1fac)

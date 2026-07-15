@@ -1,5 +1,5 @@
 # Snapshot and structural tests for the shared loading-matrix renderer
-# (.efa_format_matrix) behind format.LOADINGS / format.SLLOADINGS. The inputs are literal
+# (.efa_format_matrix) behind format.efa_loadings / format.efa_sl_loadings. The inputs are literal
 # matrices with hand-chosen values (including negatives, a Heywood loading > 1, h2 > 1 and
 # u2 < 0), so the printed decimals are platform-stable and the snapshots pin down vertical
 # alignment, styling structure, the legend, and the block-wise wrapping directly. Snapshots
@@ -13,14 +13,14 @@ make_loadings <- function() {
               nrow = 4, byrow = TRUE,
               dimnames = list(c("fun", "friends_long_name", "enjoy", "hurt"),
                               c("F1", "F2", "F3")))
-  class(L) <- "LOADINGS"
+  class(L) <- c("efa_loadings", "LOADINGS")
   L
 }
 
 make_wide_loadings <- function() {
   W <- matrix(round(seq(-0.9, 0.9, length.out = 4 * 8), 2), nrow = 4,
               dimnames = list(c("v1", "v2", "v3", "v4"), paste0("F", 1:8)))
-  class(W) <- "LOADINGS"
+  class(W) <- c("efa_loadings", "LOADINGS")
   W
 }
 
@@ -56,22 +56,22 @@ make_sl <- function(heywood = TRUE) {
                nrow = 3, byrow = TRUE,
                dimnames = list(c("i1", "i2", "i3"),
                                c("g", "F1", "F2", "h2", "u2")))
-  class(sl) <- "SLLOADINGS"
+  class(sl) <- c("efa_sl_loadings", "SLLOADINGS")
   sl
 }
 
-test_that("format.LOADINGS aligns decimals and renders a plain table", {
+test_that("format.efa_loadings aligns decimals and renders a plain table", {
   local_reproducible_output()
   expect_snapshot(print(make_loadings()))
 })
 
-test_that("format.LOADINGS prints communalities and a legend", {
+test_that("format.efa_loadings prints communalities and a legend", {
   local_reproducible_output()
   h2 <- c(0.70, 0.58, 0.63, 1.18)
   expect_snapshot(print(make_loadings(), h2 = h2, legend = TRUE))
 })
 
-test_that("format.LOADINGS sorts rows when requested", {
+test_that("format.efa_loadings sorts rows when requested", {
   local_reproducible_output()
   expect_snapshot(print(make_loadings(), sort_loadings = "clustered"))
 })
@@ -145,17 +145,17 @@ test_that("non-loading block wrapping splits columns without folding rows", {
   expect_false(any(grepl("^F[0-9]+ *$", phi)))
 })
 
-test_that("format.SLLOADINGS flags a Heywood case", {
+test_that("format.efa_sl_loadings flags a Heywood case", {
   local_reproducible_output()
   expect_snapshot(print(make_sl(heywood = TRUE)))
 })
 
-test_that("format.SLLOADINGS prints cleanly without Heywood cases", {
+test_that("format.efa_sl_loadings prints cleanly without Heywood cases", {
   local_reproducible_output()
   expect_snapshot(print(make_sl(heywood = FALSE)))
 })
 
-test_that("format.SLLOADINGS counts a communality-only Heywood item once", {
+test_that("format.efa_sl_loadings counts a communality-only Heywood item once", {
   # h2 > 1 (and u2 < 0) with no single loading > 1 must be flagged exactly once:
   # not missed (as a loading-only count would), nor multiplied across coupled cells.
   sl <- matrix(c(0.70, 0.20, 0.10, 0.53, 0.47,
@@ -163,13 +163,13 @@ test_that("format.SLLOADINGS counts a communality-only Heywood item once", {
                  0.40, 0.10, 0.55, 0.46, 0.54),
                nrow = 3, byrow = TRUE,
                dimnames = list(c("i1", "i2", "i3"), c("g", "F1", "F2", "h2", "u2")))
-  class(sl) <- "SLLOADINGS"
+  class(sl) <- c("efa_sl_loadings", "SLLOADINGS")
   out <- cli::ansi_strip(utils::capture.output(print(sl)))
   expect_true(any(grepl("Results contain a Heywood case!", out, fixed = TRUE)))
   expect_false(any(grepl("Heywood cases", out, fixed = TRUE)))
 })
 
-test_that("format.SLLOADINGS returns plain text even when styling is enabled", {
+test_that("format.efa_sl_loadings returns plain text even when styling is enabled", {
   old <- options(cli.num_colors = 256)
   on.exit(options(old), add = TRUE)
 
@@ -182,7 +182,7 @@ test_that("format.SLLOADINGS returns plain text even when styling is enabled", {
   expect_true(nzchar(plain[length(plain)]))
 })
 
-test_that("print.LOADINGS argument validators raise classed conditions", {
+test_that("print.efa_loadings argument validators raise classed conditions", {
   L <- make_loadings()
 
   expect_error(print(L, cutoff = -1), class = "efa_print_invalid_cutoff")

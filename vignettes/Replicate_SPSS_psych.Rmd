@@ -35,15 +35,17 @@ library(EFAtools)
 
 ## Principal Axis Factoring
 
-First, we will fit an EFA with PAF and without rotation using the `EFA` function from `EFAtools` using `type = "psych"` and `type = "SPSS"`. These types are intended to mimic the R psych and SPSS results, respectively.
+First, we will fit an EFA with PAF and without rotation using the `efa_fit` function from `EFAtools`, supplying the `"psych"` and `"SPSS"` presets through `estimate_control()` and `rotate_control()`. These presets are intended to mimic the R psych and SPSS results, respectively.
 
 ```{r}
-# EFAtools::EFA with type = "psych" without rotation
-EFA_psych_paf <- EFA(DOSPERT$cormat, n_factors = 10, N = DOSPERT$N,
-                     type = "psych")
-# EFAtools::EFA with type = "SPSS" without rotation
-EFA_SPSS_paf <- EFA(DOSPERT$cormat, n_factors = 10, N = DOSPERT$N,
-                    type = "SPSS")
+# EFAtools::efa_fit with the psych preset, without rotation
+EFA_psych_paf <- efa_fit(DOSPERT$cormat, n_factors = 10, N = DOSPERT$N,
+                         estimate_control = estimate_control(type = "psych"),
+                         rotate_control = rotate_control(type = "psych"))
+# EFAtools::efa_fit with the SPSS preset, without rotation
+EFA_SPSS_paf <- efa_fit(DOSPERT$cormat, n_factors = 10, N = DOSPERT$N,
+                        estimate_control = estimate_control(type = "SPSS"),
+                        rotate_control = rotate_control(type = "SPSS"))
 ```
 
 As a next step, we fit an EFA with the same configurations (PAF and no rotation) using the `fa` function from `psych` with the same data set.
@@ -54,14 +56,14 @@ psych_paf <- psych::fa(DOSPERT$cormat, nfactors = 10, n.obs = DOSPERT$N,
                        fm = "pa", rotate = "none")
 ```
 
-Now we can compare results from `EFA` with the respective types to the original R `psych` and `SPSS` results using the same data set. This is easily done using the `COMPARE` function available in the `EFAtools` package.
+Now we can compare results from `efa_fit` with the respective presets to the original R `psych` and `SPSS` results using the same data set. This is easily done using the `efa_compare` function available in the `EFAtools` package.
 
 ```{r}
-# Compare loadings from psych::fa and EFAtools::EFA with type = "psych"
-COMPARE(EFA_psych_paf$unrot_loadings, psych_paf$loadings)
+# Compare loadings from psych::fa and EFAtools::efa_fit with the psych preset
+efa_compare(EFA_psych_paf$unrot_loadings, psych_paf$loadings)
 
-# Compare loadings from SPSS and EFAtools::EFA with type = "SPSS"
-COMPARE(EFA_SPSS_paf$unrot_loadings, SPSS_27$DOSPERT$paf_load)
+# Compare loadings from SPSS and EFAtools::efa_fit with the SPSS preset
+efa_compare(EFA_SPSS_paf$unrot_loadings, SPSS_27$DOSPERT$paf_load)
 
 ```
 
@@ -69,7 +71,7 @@ To see that this close match was not trivial, we can look at the match between t
 
 ```{r}
 # Compare loadings from psych::fa and SPSS
-COMPARE(psych_paf$loadings, SPSS_27$DOSPERT$paf_load)
+efa_compare(psych_paf$loadings, SPSS_27$DOSPERT$paf_load)
 ```
 
 We can see that the solutions are slightly different, especially for the 9th and 10th factor. Although the differences are very small here, they can get quite large for other data sets, or get larger after rotation (see below).
@@ -82,28 +84,32 @@ Now we confirmed the replication of PAF results without rotation, we can continu
 ```{r}
 ## Fit the models
 
-# EFAtools::EFA with type = "psych" with varimax rotation
-EFA_psych_var <- EFA(DOSPERT$cormat, n_factors = 10, N = DOSPERT$N,
-                     type = "psych", rotation = "varimax")
-# EFAtools::EFA with type = "SPSS" with varimax rotation
-EFA_SPSS_var <- EFA(DOSPERT$cormat, n_factors = 10, N = DOSPERT$N,
-                    type = "SPSS", rotation = "varimax")
+# EFAtools::efa_fit with the psych preset, with varimax rotation
+EFA_psych_var <- efa_fit(DOSPERT$cormat, n_factors = 10, N = DOSPERT$N,
+                         rotation = "varimax",
+                         estimate_control = estimate_control(type = "psych"),
+                         rotate_control = rotate_control(type = "psych"))
+# EFAtools::efa_fit with the SPSS preset, with varimax rotation
+EFA_SPSS_var <- efa_fit(DOSPERT$cormat, n_factors = 10, N = DOSPERT$N,
+                        rotation = "varimax",
+                        estimate_control = estimate_control(type = "SPSS"),
+                        rotate_control = rotate_control(type = "SPSS"))
 # psych::fa with varimax rotation
 psych_var <- psych::fa(DOSPERT$cormat, nfactors = 10, n.obs = DOSPERT$N,
                        fm = "pa", rotate = "varimax")
 
 ## Check replication of results
 
-# Compare loadings from psych::fa and EFAtools::EFA with type = "psych"
-COMPARE(EFA_psych_var$rot_loadings, psych_var$loadings)
+# Compare loadings from psych::fa and EFAtools::efa_fit with the psych preset
+efa_compare(EFA_psych_var$rot_loadings, psych_var$loadings)
 
-# Compare loadings from SPSS and EFAtools::EFA with type = "SPSS"
-COMPARE(EFA_SPSS_var$rot_loadings, SPSS_27$DOSPERT$var_load)
+# Compare loadings from SPSS and EFAtools::efa_fit with the SPSS preset
+efa_compare(EFA_SPSS_var$rot_loadings, SPSS_27$DOSPERT$var_load)
 
 ## Compare original results (just to see the difference)
 
 # Compare loadings from psych::fa and SPSS
-COMPARE(psych_var$loadings, SPSS_27$DOSPERT$var_load)
+efa_compare(psych_var$loadings, SPSS_27$DOSPERT$var_load)
 
 ```
 
@@ -114,28 +120,32 @@ Finally, we can do the same for promax rotated results as well.
 ```{r}
 ## Fit the models
 
-# EFAtools::EFA with type = "psych" with promax rotation
-EFA_psych_pro <- EFA(DOSPERT$cormat, n_factors = 10, N = DOSPERT$N,
-                     type = "psych", rotation = "promax")
-# EFAtools::EFA with type = "SPSS" with promax rotation
-EFA_SPSS_pro <- EFA(DOSPERT$cormat, n_factors = 10, N = DOSPERT$N,
-                    type = "SPSS", rotation = "promax")
+# EFAtools::efa_fit with the psych preset, with promax rotation
+EFA_psych_pro <- efa_fit(DOSPERT$cormat, n_factors = 10, N = DOSPERT$N,
+                         rotation = "promax",
+                         estimate_control = estimate_control(type = "psych"),
+                         rotate_control = rotate_control(type = "psych"))
+# EFAtools::efa_fit with the SPSS preset, with promax rotation
+EFA_SPSS_pro <- efa_fit(DOSPERT$cormat, n_factors = 10, N = DOSPERT$N,
+                        rotation = "promax",
+                        estimate_control = estimate_control(type = "SPSS"),
+                        rotate_control = rotate_control(type = "SPSS"))
 # psych::fa with promax rotation
 psych_pro <- psych::fa(DOSPERT$cormat, nfactors = 10, n.obs = DOSPERT$N,
                        fm = "pa", rotate = "Promax")
 
 ## Check replication of results
 
-# Compare loadings from psych::fa and EFAtools::EFA with type = "psych"
-COMPARE(EFA_psych_pro$rot_loadings, psych_pro$loadings)
+# Compare loadings from psych::fa and EFAtools::efa_fit with the psych preset
+efa_compare(EFA_psych_pro$rot_loadings, psych_pro$loadings)
 
-# Compare loadings from SPSS and EFAtools::EFA with type = "SPSS"
-COMPARE(EFA_SPSS_pro$rot_loadings, SPSS_27$DOSPERT$pro_load)
+# Compare loadings from SPSS and EFAtools::efa_fit with the SPSS preset
+efa_compare(EFA_SPSS_pro$rot_loadings, SPSS_27$DOSPERT$pro_load)
 
 ## Compare original results (just to see the difference)
 
 # Compare loadings from psych::fa and SPSS
-COMPARE(psych_pro$loadings, SPSS_27$DOSPERT$pro_load)
+efa_compare(psych_pro$loadings, SPSS_27$DOSPERT$pro_load)
 
 ```
 

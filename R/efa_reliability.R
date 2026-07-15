@@ -5,38 +5,48 @@
 #' together with the bifactor common-variance indices (explained common variance,
 #' ECV, and percent of uncontaminated correlations, PUC) for the general factor
 #' and each group factor, and returns them as a tidy, long-format table. The
-#' coefficients can be obtained from a Schmid-Leiman solution ([SL()] or
-#' [psych::schmid()]), an oblique [EFA()] (correlated-factors) solution, a
-#' `lavaan` single-factor, second-order, or bifactor fit, a raw bifactor loading
-#' matrix, or manually supplied components.
+#' coefficients can be obtained from a Schmid-Leiman solution
+#' ([efa_schmid_leiman()] or [psych::schmid()]), an oblique [efa_fit()]
+#' (correlated-factors) solution, a `lavaan` single-factor, second-order, or
+#' bifactor fit, a raw bifactor loading matrix, or manually supplied components.
 #'
 #' @details ## Coefficients
 #'
 #' The reliability coefficients are McDonald's omegas (McDonald, 1978, 1985,
 #' 1999), standardized Cronbach's alpha (Cronbach, 1951), and the H index
-#' (construct replicability; Hancock & Mueller, 2001). The common-variance indices
-#' are the ECV and PUC (Bonifay et al., 2015; Reise et al., 2013; Rodriguez et al.,
-#' 2016a, 2016b); they describe the general factor and so are reported for the
-#' general factor only. See [OMEGA()] for the definition and interpretation of each
-#' coefficient.
+#' (construct replicability; Hancock & Mueller, 2001). The omegas give the share
+#' of true score variance in a unit-weighted composite: omega total the share due
+#' to all factors together, omega hierarchical the share due to the general
+#' factor only, and omega subscale the share due to the group factors (for the
+#' whole scale) or to the specific group factor (for a subscale composite).
+#' Alpha is computed from the standardized correlation matrix. The H index is
+#' the reliability of an optimally weighted composite; low values indicate a
+#' factor that is not well defined by its indicators.
+#'
+#' The common-variance indices ECV and PUC (Bonifay et al., 2015; Reise et al.,
+#' 2013; Rodriguez et al., 2016a, 2016b) describe the general factor and so are
+#' reported for the general factor only. The ECV is the share of the common
+#' variance that is explained by the general factor. The PUC is the proportion
+#' of correlations that reflect general-factor variance alone (those between
+#' indicators of different group factors); the higher it is, the more similar
+#' the general factor is to the single factor of a unidimensional model.
 #'
 #' ## Input
 #'
-#' The dispatch on `model` mirrors [OMEGA()], with two additions: an oblique
-#' [EFA()] object is scored as the correlated-factors model it is (having no general
-#' factor, it omits the bifactor indices -- omega hierarchical, ECV, and PUC), and a
-#' bare loading matrix is read as a raw bifactor solution (general factor in the
-#' first column). For a correlated-factors [EFA()] solution `variance` is always
+#' An oblique [efa_fit()] object is scored as the correlated-factors model it is
+#' (having no general factor, it omits the bifactor indices -- omega hierarchical,
+#' ECV, and PUC), and a bare loading matrix is read as a raw bifactor solution
+#' (general factor in the first column). For a correlated-factors [efa_fit()] solution `variance` is always
 #' `"correlation"`. The indicator-to-factor correspondences come from `factor_map`
 #' when it is supplied; otherwise each variable is assigned to the group factor on
 #' which it loads most strongly. For `lavaan` input the composite variances are
 #' model-implied (`variance` is not used), and the coefficients are computed per
 #' group.
 #'
-#' @param model a [SL()], `schmid` ([psych::schmid()]), [EFA()] (oblique), or
-#'   `lavaan` object; a raw bifactor loading matrix (general factor first); or
-#'   `NULL` to supply the components manually via `g_load`, `s_load`, `u2`, and
-#'   `var_names`.
+#' @param model an [efa_schmid_leiman()], `schmid` ([psych::schmid()]), [efa_fit()]
+#'   (oblique), or `lavaan` object; a raw bifactor loading matrix (general factor
+#'   first); or `NULL` to supply the components manually via `g_load`, `s_load`,
+#'   `u2`, and `var_names`.
 #' @param coefficients character. An optional subset of the coefficients to
 #'   return, any of `"omega_total"`, `"omega_hierarchical"`, `"omega_subscale"`,
 #'   `"alpha"`, `"H"`, `"ECV"`, and `"PUC"`. Default `NULL` returns all of them.
@@ -53,10 +63,10 @@
 #' @param variance character. The total-variance denominator for the coefficients:
 #'   `"correlation"` (default) takes it from the correlation matrix (the observed-score
 #'   omega, as in [psych::omega()]); `"sums_load"` uses the model-implied composite
-#'   variance from the squared loading sums and the uniquenesses (see [OMEGA()]), which
-#'   needs no correlation matrix and so is the way to score a bare loading matrix or
+#'   variance from the squared loading sums and the uniquenesses, which needs no
+#'   correlation matrix and so is the way to score a bare loading matrix or
 #'   manual components given without one. Some inputs fix the convention: `lavaan` is
-#'   always model-implied and an oblique [EFA()] is always correlation-based.
+#'   always model-implied and an oblique [efa_fit()] is always correlation-based.
 #' @param var_names character. Subtest names in the row order of the loadings.
 #'   Only needed when `model` is `NULL`.
 #' @param fac_names character. An optional vector of group-factor names in the
@@ -69,7 +79,7 @@
 #'   override the communality-based default for a raw bifactor matrix).
 #' @param cormat matrix. A correlation matrix used when `variance =
 #'   "correlation"`. If `NULL`, it is taken from the input object or reconstructed
-#'   from `pattern` and `Phi` where possible (see [OMEGA()]).
+#'   from `pattern` and `Phi` where possible.
 #' @param pattern matrix. Pattern coefficients from an oblique solution, used with
 #'   `Phi` to reconstruct `cormat` when `model` is `NULL` and no `cormat` is given.
 #' @param Phi matrix. Factor intercorrelations from an oblique solution, used with
@@ -124,12 +134,12 @@
 #' @examples
 #' ## From an oblique EFA (correlated-factors) solution. With no factor_map, each
 #' ## item is auto-assigned to its highest-loading factor.
-#' efa_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
-#'                type = "EFAtools", method = "PAF", rotation = "promax")
+#' efa_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
+#'                    method = "PAF", rotation = "promax")
 #' efa_reliability(efa_mod)
 #'
 #' ## From a Schmid-Leiman solution, with an explicit indicator-to-factor map.
-#' sl_mod <- SL(efa_mod, type = "EFAtools", method = "PAF")
+#' sl_mod <- efa_schmid_leiman(efa_mod, method = "PAF")
 #' fc <- sl_mod$sl[, c("F1", "F2", "F3")] >= .2
 #' efa_reliability(sl_mod, factor_map = fc)
 #'
@@ -376,7 +386,7 @@ efa_reliability <- function(model = NULL,
     if (!inherits(s_load, c("matrix", "SLLOADINGS"))) {
       cli::cli_abort(
         c("Invalid {.arg s_load}.",
-          "i" = "Supply a Schmid-Leiman or bifactor group-loading matrix of class {.cls matrix} or {.cls SLLOADINGS}."),
+          "i" = "Supply a Schmid-Leiman or bifactor group-loading matrix of class {.cls matrix} or {.cls efa_sl_loadings}."),
         class = "efa_reliability_bad_s_load"
       )
     }

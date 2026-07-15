@@ -3,7 +3,7 @@
 
 efa_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
                type = "EFAtools", method = "PAF", rotation = "promax")
-sl_mod <- SL(efa_mod, type = "EFAtools", method = "PAF")
+sl_mod <- efa_schmid_leiman(efa_mod, estimate_control = estimate_control(type = "EFAtools"), method = "PAF")
 fc <- sl_mod$sl[, c("F1", "F2", "F3")] >= .2
 spec <- list(g_load = sl_mod$sl[, "g"], s_load = sl_mod$sl[, c("F1", "F2", "F3")],
              u2 = sl_mod$sl[, "u2"], map = fc, cormat = test_models$baseline$cormat,

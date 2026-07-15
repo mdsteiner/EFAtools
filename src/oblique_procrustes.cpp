@@ -82,7 +82,7 @@ static double cond_checked_cpp(const arma::mat& X) {
 
 // Closed-form orthogonal Procrustes transform T = U V' from the SVD of A'B, the
 // orthogonal matrix minimizing ||A T - B||_F. Mirrors the R-level warm start used
-// by PROCRUSTES() (.procrustes_orthogonal_T); the product U V' is invariant to the
+// by efa_procrustes() (.procrustes_orthogonal_T); the product U V' is invariant to the
 // LAPACK sign/ordering of the singular vectors, so it matches the R warm start.
 // Returns false (leaving `T` untouched) if the decomposition fails, so callers can
 // treat that slice as unalignable rather than propagating a hard error.
@@ -298,14 +298,14 @@ Rcpp::List oblique_procrustes(const arma::mat& A,
 //'
 //' Align each slice of a loading-matrix cube to a single shared target using the
 //' same oblique target rotation as `.oblique_procrustes()`, in one call. This
-//' removes the per-replicate marshalling overhead of looping `PROCRUSTES()` in R
+//' removes the per-replicate marshalling overhead of looping `efa_procrustes()` in R
 //' over bootstrap or multiple-imputation arrays.
 //'
 //' Each slice `A[, , i]` is aligned to `B`. For a single-factor cube the alignment
 //' reduces to the closed-form sign match `T = sign(crossprod(A_i, B))` with factor
-//' correlation `1`, matching the one-factor short-circuit in `PROCRUSTES()`. For
+//' correlation `1`, matching the one-factor short-circuit in `efa_procrustes()`. For
 //' two or more factors the slice is warm-started from the closed-form orthogonal
-//' Procrustes solution (mirroring `PROCRUSTES()`) and optimized with the same
+//' Procrustes solution (mirroring `efa_procrustes()`) and optimized with the same
 //' multi-start oblique solver as `.oblique_procrustes()`. Random starts are drawn
 //' serially with `R::rnorm` in the calling process.
 //'
@@ -374,7 +374,7 @@ Rcpp::List oblique_procrustes_batch(const arma::cube& A,
   // non-finite loading matrix, a failed warm-start decomposition, an invalid fit,
   // or any unexpected linear-algebra exception -- is marked invalid and left as
   // NA, rather than aborting the whole batch. This preserves the per-replicate
-  // failure isolation of the per-replicate PROCRUSTES() loop it replaces: one
+  // failure isolation of the per-replicate efa_procrustes() loop it replaces: one
   // degenerate bootstrap replicate drops out instead of losing the entire run.
   // An invalid slice is reported as valid = FALSE with everything else NA, so a
   // skipped replicate is never mistaken for a fit that ran but failed to converge.
@@ -391,7 +391,7 @@ Rcpp::List oblique_procrustes_batch(const arma::cube& A,
   if (m == 1) {
     // Single factor: oblique alignment reduces to a sign match (Phi = 1), with no
     // optimization or random starts, mirroring the one-factor short-circuit in
-    // PROCRUSTES(). Kaiser normalization does not affect a sign and is skipped.
+    // efa_procrustes(). Kaiser normalization does not affect a sign and is skipped.
     // The factor count is a whole-cube constant, so this branch is taken once.
     for (arma::uword i = 0; i < b; ++i) {
       Rcpp::checkUserInterrupt();

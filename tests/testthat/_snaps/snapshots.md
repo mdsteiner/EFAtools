@@ -109,7 +109,7 @@
       
       * Original implementation (Braeken & van Assen, 2017): 3
       
-      i Multiple implementations of EKC exist; make sure to report which one you used (see the EKC help page for details).
+      i Multiple implementations of EKC exist; make sure to report which one you used (see the efa_ekc help page for details).
 
 ---
 
@@ -121,7 +121,7 @@
       * Original implementation (Braeken & van Assen, 2017): 3
       * Adapted implementation (Auerswald & Moshagen, 2019): 2
       
-      i Multiple implementations of EKC exist; make sure to report which one you used (see the EKC help page for details).
+      i Multiple implementations of EKC exist; make sure to report which one you used (see the efa_ekc help page for details).
 
 # print.efa_retention output is stable for HULL
 
@@ -153,9 +153,9 @@
       -- Minimum average partial -----------------------------------------------------
       
       * Original implementation (TR2): 1
-      * Revised implementation (TR4): 1
+      * Revised implementation (TR4): 3
 
-# print.N_FACTORS output is stable
+# print.efa_retain output is stable
 
     Code
       print(nf)
@@ -171,7 +171,7 @@
       
       Minimum average partial
       * Original implementation (TR2): 1
-      * Revised implementation (TR4): 1
+      * Revised implementation (TR4): 3
       
       Sequential model tests
       * Sequential chi-square model tests: 3

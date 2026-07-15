@@ -83,9 +83,9 @@ arma::mat simulate_cfm_mvn(const arma::mat& R, const int N,
   return cfm_draw(N, M);
 }
 
-//' Reference eigenvalues for the NEST simulation via the shared kernel.
+//' Reference eigenvalues for the efa_nest() simulation via the shared kernel.
 //'
-//' Internal helper called from NEST(). Simulates `nreps` datasets from an
+//' Internal helper called from efa_nest(). Simulates `nreps` datasets from an
 //' `(nf - 1)`-factor reference model, given that model's loadings `Lambda` and
 //' uniquenesses `Psi`, and returns the `nf`-th largest eigenvalue of each simulated
 //' correlation matrix. The data are drawn with the shared Z * M rule (see
@@ -94,7 +94,7 @@ arma::mat simulate_cfm_mvn(const arma::mat& R, const int N,
 //' N(0, Lambda Lambda' + diag(Psi)). Drawing `nf - 1 + p` standard normals and
 //' post-multiplying by the factor-score matrix is faster than forming the model-
 //' implied correlation matrix and drawing from it, and matches the position at which
-//' NEST() reads the reference eigenvalue.
+//' efa_nest() reads the reference eigenvalue.
 //'
 //' @param nf integer. Position of the empirical eigenvalue being tested (1-based);
 //'   the `nf`-th largest simulated eigenvalue is returned per replicate.

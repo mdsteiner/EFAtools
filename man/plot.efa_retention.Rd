@@ -8,7 +8,7 @@
 }
 \arguments{
 \item{x}{an object of class efa_retention, returned by a factor-retention
-criterion (e.g. \code{\link[=EKC]{EKC()}} or \code{\link[=HULL]{HULL()}}).}
+criterion (e.g. \code{\link[=efa_ekc]{efa_ekc()}} or \code{\link[=efa_hull]{efa_hull()}}).}
 
 \item{...}{not used.}
 }
@@ -18,9 +18,9 @@ no plottable result.
 }
 \description{
 Plots the result of a factor-retention criterion. Eigenvalue-based criteria
-(e.g. \code{\link[=EKC]{EKC()}}) are shown as an eigenvalue plot, the Hull method (\code{\link[=HULL]{HULL()}}) as
+(e.g. \code{\link[=efa_ekc]{efa_ekc()}}) are shown as an eigenvalue plot, the Hull method (\code{\link[=efa_hull]{efa_hull()}}) as
 a convex-hull plot. Criteria with more than one sub-variant are faceted.
 }
 \examples{
-plot(EKC(test_models$baseline$cormat, N = 500))
+plot(efa_ekc(test_models$baseline$cormat, N = 500))
 }

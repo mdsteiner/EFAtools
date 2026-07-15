@@ -17,8 +17,8 @@ static void eig_sym_checked(arma::vec& eigval, const arma::mat& X) {
 
 //' Parallel analysis on simulated data.
 //'
-//' Function called from within PARALLEL so usually no call to this is needed by the user.
-//' Provides a C++ implementation of the PARALLEL simulation procedure
+//' Function called from within efa_parallel() so usually no call to this is needed by the user.
+//' Provides a C++ implementation of the efa_parallel() simulation procedure
 //'
 //' @param n_datasets numeric. Number of datasets with dimensions (N, n_vars) to simulate.
 //' @param n_vars numeric. Number of variables / indicators in dataset.

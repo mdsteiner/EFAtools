@@ -4,7 +4,7 @@
 
 efa_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
                type = "EFAtools", method = "PAF", rotation = "promax")
-sl_mod <- SL(efa_mod, type = "EFAtools", method = "PAF")
+sl_mod <- efa_schmid_leiman(efa_mod, estimate_control = estimate_control(type = "EFAtools"), method = "PAF")
 schmid_mod <- psych::schmid(test_models$baseline$cormat, nfactors = 3,
                             n.obs = 500, fm = "pa", rotate = "Promax")
 fc <- sl_mod$sl[, c("F1", "F2", "F3")] >= .2
