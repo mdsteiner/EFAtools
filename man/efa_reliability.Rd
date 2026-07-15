@@ -206,7 +206,8 @@ efa_reliability(fit, g_name = "g")
 
 }
 \seealso{
-\code{\link[=OMEGA]{OMEGA()}} for the same coefficients in a wide, per-factor layout.
+\code{\link[=OMEGA]{OMEGA()}}, the superseded function that returns these same
+coefficients in a wide, per-factor layout.
 
 Other reliability coefficients:
 \code{\link[=print.efa_reliability]{print.efa_reliability()}}

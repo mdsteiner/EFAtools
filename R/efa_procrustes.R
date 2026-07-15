@@ -69,6 +69,20 @@
 #'
 #' @export
 #'
+#' @examples
+#' ## Align an estimated loading matrix to a known target pattern: fit an
+#' ## unrotated three-factor model, then rotate its loadings toward the true
+#' ## population pattern.
+#' efa_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
+#'                    method = "PAF", rotation = "none")
+#' target <- population_models$loadings$baseline
+#'
+#' ## Orthogonal target rotation (rigid rotation/reflection):
+#' efa_procrustes(efa_mod$unrot_loadings, target, rotation = "orthogonal")
+#'
+#' ## Oblique target rotation (lets the aligned factors correlate):
+#' efa_procrustes(efa_mod$unrot_loadings, target, rotation = "oblique")
+#'
 efa_procrustes <- function(A,
                            Target,
                            rotation = c("orthogonal", "oblique"),

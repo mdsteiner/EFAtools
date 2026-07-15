@@ -6,6 +6,14 @@
 #' perseverance, and sensation seeking. The original data can be accessed via
 #' <https://osf.io/kxp8t/>.
 #'
+#' @format A data.frame with 645 rows (participants) and 45 columns, named by a
+#' subscale prefix and item number, covering the four UPPS subscales:
+#' \describe{
+#'   \item{perseverance_1 to perseverance_10}{(numeric) - Perseverance-subscale items.}
+#'   \item{premeditation_1 to premeditation_11}{(numeric) - Premeditation-subscale items.}
+#'   \item{ss_1 to ss_12}{(numeric) - Sensation-seeking-subscale items.}
+#'   \item{urgency_1 to urgency_12}{(numeric) - Urgency-subscale items.}
+#'  }
 #' @source Whiteside, S. P., Lynam, D. R., Miller, J. D., & Reynolds, S. K. (2005).
 #'  Validation of the UPPS impulsive behaviour scale: A four-factor model of
 #'  impulsivity. European Journal of Personality, 19 (7), 559–574.

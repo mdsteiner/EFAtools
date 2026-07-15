@@ -5,7 +5,20 @@
 \alias{RiskDimensions}
 \title{RiskDimensions}
 \format{
-An object of class \code{list} of length 2.
+A list of 2 with elements "cormat" (9 x 9 matrix of bivariate
+correlations) and "N" (scalar). The correlation matrix contains the following
+risk dimensions:
+\describe{
+\item{Voluntariness}{(numeric) - Voluntariness of exposure to the risk.}
+\item{Immediacy}{(numeric) - Immediacy of the risk's effect.}
+\item{Known to exposed}{(numeric) - How well the risk is known to those exposed to it.}
+\item{Known to science}{(numeric) - How well the risk is known to science.}
+\item{Controllability}{(numeric) - Controllability of the risk.}
+\item{Newness}{(numeric) - Newness of the risk.}
+\item{Chronic}{(numeric) - Whether the risk is chronic rather than catastrophic.}
+\item{Common}{(numeric) - Whether the risk is common rather than dreaded.}
+\item{Severity of consequences}{(numeric) - Severity of the consequences.}
+}
 }
 \source{
 Fischhoff, B, Slovic, P, Lichtenstein, S, Read, S, and Combs, B. (1978). How safe is safe enough? A psychometric study of attitudes towards technological risks and benefits. Policy Sciences, 9, 127-152. doi: 10.1007/BF00143739

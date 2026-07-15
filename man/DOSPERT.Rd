@@ -5,7 +5,14 @@
 \alias{DOSPERT}
 \title{DOSPERT}
 \format{
-An object of class \code{list} of length 2.
+A list of 2 with elements "cormat" (40 x 40 matrix of bivariate
+correlations) and "N" (scalar).
+\describe{
+\item{cormat}{(matrix) - Bivariate correlations of the 40 DOSPERT items,
+which span the six risk domains (social, recreational, gambling,
+health/safety, investment, and ethical).}
+\item{N}{(numeric) - The sample size the correlations are based on.}
+}
 }
 \source{
 Weber, E. U., Blais, A.-R., & Betz, N. E. (2002). A domain specific risk-attitude scale: Measuring risk perceptions and risk behaviors. Journal of Behavioral Decision Making, 15(4), 263–290. doi: 10.1002/bdm.414

@@ -6,7 +6,7 @@
 \alias{EFAtools-package}
 \title{EFAtools: Fast and Flexible Implementations of Exploratory Factor Analysis Tools}
 \description{
-Provides functions to perform exploratory factor analysis (EFA) procedures and compare their solutions. The goal is to provide state-of-the-art factor retention methods and a high degree of flexibility in the EFA procedures. This way, for example, implementations from R 'psych' and 'SPSS' can be compared. Moreover, functions for Schmid-Leiman transformation and the computation of omegas are provided. To speed up the analyses, some of the iterative procedures, like principal axis factoring (PAF), are implemented in C++.
+Provides a complete workflow for exploratory factor analysis (EFA). It covers data screening and factorability checks, a suite of factor retention criteria for choosing the number of factors, and factor extraction by principal axis factoring, maximum likelihood, unweighted least squares, or diagonally weighted least squares from Pearson, Spearman, Kendall, polychoric, tetrachoric, or two-stage full-information maximum likelihood correlations. A built-in rotation engine offers a range of orthogonal and oblique rotations, and standard errors for loadings and related quantities can be obtained by analytic, robust, or bootstrap methods. Further tools support model averaging across analytic choices, multigroup EFA with factor congruence, EFA on multiply imputed data, Schmid-Leiman transformation, reliability coefficients (including McDonald's omegas), factor score estimation, data simulation, and power analysis. Computationally intensive procedures are implemented in 'C++' for speed.
 }
 \seealso{
 Useful links:
