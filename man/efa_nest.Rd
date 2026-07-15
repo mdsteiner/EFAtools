@@ -25,7 +25,7 @@ efa_nest(
 )
 }
 \arguments{
-\item{x}{data.frame or matrix. data.frame or matrix of raw data or matrix with
+\item{x}{data.frame or matrix. Dataframe or matrix of raw data or matrix with
 correlations.}
 
 \item{N}{numeric. The number of observations. Only needed if x is a correlation
@@ -34,7 +34,7 @@ matrix.}
 \item{alpha}{numeric. The alpha level to use (i.e., 1-alpha percentile of eigenvalues is used for reference values).}
 
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}} if raw
-data is given as input. Default is  \code{"pairwise.complete.obs"}.}
+data is given as input. Default is "pairwise.complete.obs".}
 
 \item{cor_method}{character. One of \code{"pearson"}, \code{"spearman"}, or \code{"kendall"},
 passed to \code{\link[stats:cor]{stats::cor()}}. \code{"poly"} and \code{"tetra"} are not supported because

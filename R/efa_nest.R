@@ -7,13 +7,10 @@
 #' It was introduced by Achim (2017), see also Brandenburg and Papenberg (2024) and
 #' Caron (2025) for further simulation studies including NEST.
 #'
-#' @param x data.frame or matrix. data.frame or matrix of raw data or matrix with
-#' correlations.
+#' @inheritParams efa_kgc
 #' @param N numeric. The number of observations. Only needed if x is a correlation
 #'  matrix.
 #' @param alpha numeric. The alpha level to use (i.e., 1-alpha percentile of eigenvalues is used for reference values).
-#' @param use character. Passed to [stats::cor()] if raw
-#'  data is given as input. Default is  `"pairwise.complete.obs"`.
 #' @param cor_method character. One of `"pearson"`, `"spearman"`, or `"kendall"`,
 #'   passed to [stats::cor()]. `"poly"` and `"tetra"` are not supported because
 #'   `NEST` compares the data against simulated continuous reference data.

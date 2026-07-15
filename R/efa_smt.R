@@ -13,17 +13,9 @@
 #' suggested number of factors to retain. For the AIC, it is the number of factors
 #' where the AIC is lowest.
 #'
-#' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
-#' correlations.
+#' @inheritParams efa_kgc
 #' @param N numeric. The number of observations. Needs only be specified if a
 #' correlation matrix is used.
-#' @param use character. Passed to [stats::cor()] if raw
-#' data is given as input. Default is "pairwise.complete.obs".
-#' @param cor_method character. Correlation computed from raw data: `"pearson"`,
-#'   `"spearman"`, or `"kendall"` (passed to [stats::cor()]), or `"poly"` /
-#'   `"tetra"` for polychoric / tetrachoric correlations of ordinal / binary data
-#'   (a two-step estimator with no empty-cell continuity correction).
-#'  Default is "pearson".
 #' @param estimate_control an [estimate_control()] object with the estimation settings for the
 #'  sequential [efa_fit()] fits. `NULL` (default) uses the [efa_fit()] defaults. The sequential
 #'  models are fitted with maximum likelihood (the chi-square, RMSEA, and AIC the SMT is built on

@@ -5,17 +5,9 @@
 #' , 2019; Braeken & van Assen, 2017). The code is based on Braeken & van Assen, (2017) and on Auerswald and Moshagen
 #' (2019).
 #'
-#' @param x data.frame or matrix. data.frame or matrix of raw data or matrix with
-#' correlations.
+#' @inheritParams efa_kgc
 #' @param N numeric. The number of observations. Only needed if x is a correlation
 #'  matrix.
-#' @param use character. Passed to [stats::cor()] if raw
-#'  data is given as input. Default is  `"pairwise.complete.obs"`.
-#' @param cor_method character. Correlation computed from raw data: `"pearson"`,
-#'   `"spearman"`, or `"kendall"` (passed to [stats::cor()]), or `"poly"` /
-#'   `"tetra"` for polychoric / tetrachoric correlations of ordinal / binary data
-#'   (a two-step estimator with no empty-cell continuity correction).
-#'  Default is  `"pearson"`.
 #' @param type character. The calculation of EKC. type `"BvA2017"` is the original implementation; type `"AM2019"` differs from the original implementation but was used in simulation studies (Auerswald & Moshagen, 2019; Caron, 2025). See details.
 #'  Use `type = c("BvA2017", "AM2019")` for both implementations. Make sure
 #'  to report which version you used.
