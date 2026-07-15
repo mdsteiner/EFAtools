@@ -1,0 +1,681 @@
+# Changelog
+
+## EFAtools 0.8.0.9000
+
+- The public interface of the package is now the lowercase `efa_*`
+  functions, configured through
+  [`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
+  and
+  [`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md).
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  fits the factor models,
+  [`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)
+  and the individual retention criteria determine the number of factors,
+  and the other steps of an analysis are covered by
+  [`efa_screen()`](https://mdsteiner.github.io/EFAtools/reference/efa_screen.md),
+  [`efa_average()`](https://mdsteiner.github.io/EFAtools/reference/efa_average.md),
+  [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md),
+  [`efa_group()`](https://mdsteiner.github.io/EFAtools/reference/efa_group.md),
+  [`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md),
+  [`efa_procrustes()`](https://mdsteiner.github.io/EFAtools/reference/efa_procrustes.md),
+  [`efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/efa_compare.md),
+  [`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md),
+  [`efa_scores()`](https://mdsteiner.github.io/EFAtools/reference/efa_scores.md),
+  [`efa_simulate()`](https://mdsteiner.github.io/EFAtools/reference/efa_simulate.md),
+  and
+  [`efa_power()`](https://mdsteiner.github.io/EFAtools/reference/efa_power.md).
+
+- The uppercase function names are superseded by their `efa_*`
+  equivalents. They remain exported, keep their arguments, and emit no
+  warning, so existing code needs no changes. New arguments and features
+  are added to the `efa_*` functions only, which are the recommended
+  interface for new code.
+
+- The rotation arguments `P_type` and `randomStarts` are now named
+  `p_type` and `random_starts`.
+  [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md) still
+  accepts the former names silently, and
+  [`EFA_AVERAGE()`](https://mdsteiner.github.io/EFAtools/reference/EFA_AVERAGE-superseded.md)
+  keeps `P_type` as its argument name, so existing code keeps working.
+
+- Fixed a regression in
+  [`MAP()`](https://mdsteiner.github.io/EFAtools/reference/MAP.md): the
+  revised (TR4) criterion was computed from the element-wise fourth
+  powers of the partial correlations instead of the trace of the fourth
+  matrix power, which could change the suggested number of factors.
+
+## EFAtools 0.8.0
+
+CRAN release: 2026-07-07
+
+### New Functions
+
+- [`efa_group()`](https://mdsteiner.github.io/EFAtools/reference/efa_group.md)
+  performs multi-group EFA.
+- [`efa_power()`](https://mdsteiner.github.io/EFAtools/reference/efa_power.md)
+  to conduct power analysis (analytic power based on RMSEA and
+  simulation based power analysis).
+- [`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md)
+  to calculate various reliability indices.
+- [`efa_screen()`](https://mdsteiner.github.io/EFAtools/reference/efa_screen.md)
+  to screen data for multivariate normality and suitability for factor
+  analysis.
+- [`efa_simulate()`](https://mdsteiner.github.io/EFAtools/reference/efa_simulate.md)
+  to simulate data with various distributions and missing data
+  mechanisms.
+
+### Changes to Functions
+
+- [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md):
+  - gains `cor_method = "fiml"` for raw data with missing values.
+  - gains `se = "sandwich"` and `se = "information"`.
+  - renamed the top-level fields `boot.SE`, `boot.CI`, and `boot.arrays`
+    on `EFA` objects to `SE`, `CI`, and `replicates`, as the old names
+    are no longer accurate given the additional SE implementations.
+  - All criterion-based rotations are now computed by a built-in
+    gradient-projection rotation engine instead of the `GPArotation`
+    package. The rotated solutions are numerically equivalent but
+    implemented in C++ for speed to allow high numbers of random starts.
+  - The default number of random starts for the rotation in
+    [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md)
+    (`randomStarts`) has been raised from 10 to 100, making local minima
+    less likely for the rotation criteria that are prone to them.
+  - additionally reports the Tucker-Lewis index (TLI, also called the
+    non-normed fit index), the expected cross-validation index (ECVI),
+    and the standardized root mean square residual (SRMR)
+  - gains a `seed` argument and now fits the non-parametric bootstrap
+    replicates (`se = "np-boot"`) in parallel across replicates via the
+    `future` framework.
+  - now has a [`summary()`](https://rdrr.io/r/base/summary.html) method
+    that prints the full, detailed solution (loadings with communalities
+    and uniquenesses, explained variances, fit indices, and residuals);
+    [`print()`](https://rdrr.io/r/base/print.html) now gives a more
+    compact overview.
+- [`EFA_AVERAGE()`](https://mdsteiner.github.io/EFAtools/reference/EFA_AVERAGE-superseded.md)
+  gains `cor_method = "fiml"` (passed to
+  [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md)).
+- [`EFA_POOLED()`](https://mdsteiner.github.io/EFAtools/reference/EFA_POOLED.md):
+  - now dispatches its multiple-imputation standard-error pooling
+    automatically by the standard-error method of its component fits:
+    Rubin’s rules for the information method (with Wald confidence
+    intervals), the two-stage pooled-inputs (MI2S) approach for the
+    sandwich method, and the existing bootstrap pooling for the
+    non-parametric bootstrap method.
+  - Renamed the top-level field `boot.MI` to `MI`.
+  - now defaults to `target_method = "first_target"`, which aligns every
+    imputation to the first imputation’s rotated solution with a single
+    Procrustes rotation. For orthogonal rotations this reaches the same
+    pooled estimate as `"consensus"` with substantially less work.
+    `"consensus"` (Generalized Procrustes Analysis of the
+    imputation-specific rotated loadings) is still available as an
+    opt-in for orthogonal rotations, and now raises a classed condition
+    (`efa_consensus_oblique_unsupported`) when combined with an oblique
+    rotation, because the iterated-oblique-Procrustes centroid can drift
+    to degenerate targets.
+- `cor_method` now accepts `"poly"` and `"tetra"` to compute polychoric
+  and tetrachoric correlations from raw ordinal (respectively binary)
+  data, using a two-step estimator with no empty-cell continuity
+  correction. Supported by
+  [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md)
+  (including its non-parametric bootstrap),
+  [`EFA_AVERAGE()`](https://mdsteiner.github.io/EFAtools/reference/EFA_AVERAGE-superseded.md),
+  the suitability tests
+  [`KMO()`](https://mdsteiner.github.io/EFAtools/reference/KMO.md) and
+  [`BARTLETT()`](https://mdsteiner.github.io/EFAtools/reference/BARTLETT.md),
+  and the retention criteria
+  [`EKC()`](https://mdsteiner.github.io/EFAtools/reference/EKC.md),
+  [`KGC()`](https://mdsteiner.github.io/EFAtools/reference/KGC.md),
+  [`MAP()`](https://mdsteiner.github.io/EFAtools/reference/MAP.md),
+  [`SCREE()`](https://mdsteiner.github.io/EFAtools/reference/SCREE.md),
+  [`SMT()`](https://mdsteiner.github.io/EFAtools/reference/SMT.md), and
+  [`N_FACTORS()`](https://mdsteiner.github.io/EFAtools/reference/N_FACTORS.md).
+  The criteria that compare the data against simulated continuous
+  reference data
+  ([`CD()`](https://mdsteiner.github.io/EFAtools/reference/CD.md),
+  [`PARALLEL()`](https://mdsteiner.github.io/EFAtools/reference/PARALLEL.md),
+  [`NEST()`](https://mdsteiner.github.io/EFAtools/reference/NEST.md),
+  and
+  [`HULL()`](https://mdsteiner.github.io/EFAtools/reference/HULL.md)) do
+  not support `"poly"` / `"tetra"` and signal an error.
+- The factor-retention functions
+  [`CD()`](https://mdsteiner.github.io/EFAtools/reference/CD.md),
+  [`EKC()`](https://mdsteiner.github.io/EFAtools/reference/EKC.md),
+  [`HULL()`](https://mdsteiner.github.io/EFAtools/reference/HULL.md),
+  [`KGC()`](https://mdsteiner.github.io/EFAtools/reference/KGC.md),
+  [`MAP()`](https://mdsteiner.github.io/EFAtools/reference/MAP.md),
+  [`NEST()`](https://mdsteiner.github.io/EFAtools/reference/NEST.md),
+  [`PARALLEL()`](https://mdsteiner.github.io/EFAtools/reference/PARALLEL.md),
+  [`SCREE()`](https://mdsteiner.github.io/EFAtools/reference/SCREE.md),
+  and [`SMT()`](https://mdsteiner.github.io/EFAtools/reference/SMT.md)
+  now return objects of a common `efa_retention` class with shared
+  [`print()`](https://rdrr.io/r/base/print.html) and
+  [`plot()`](https://rdrr.io/r/graphics/plot.default.html) methods.
+- [`COMPARE()`](https://mdsteiner.github.io/EFAtools/reference/COMPARE.md)
+  objects now have a
+  [`plot()`](https://rdrr.io/r/graphics/plot.default.html) method that
+  returns a `ggplot` object. The plot is no longer drawn as a side
+  effect of [`print()`](https://rdrr.io/r/base/print.html).
+- Console output (the `print`, `summary`, and `format` methods) is now
+  produced with the `cli` package, and the messages, warnings, and
+  errors emitted across the package are now S3-classed conditions, which
+  makes them easier to handle programmatically.
+- [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md),
+  [`SL()`](https://mdsteiner.github.io/EFAtools/reference/SL.md), and
+  [`EFA_AVERAGE()`](https://mdsteiner.github.io/EFAtools/reference/EFA_AVERAGE-superseded.md)
+  now accept `method = "MINRES"` as a synonym for `method = "ULS"`.
+  Minimum residual and unweighted least squares are two names for the
+  same estimator and return identical results.
+
+### Bug Fixes
+
+- [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md) and
+  [`EFA_POOLED()`](https://mdsteiner.github.io/EFAtools/reference/EFA_POOLED.md):
+  The comparative fit index (CFI) now floors the model and baseline
+  noncentralities at zero before taking their ratio (Bentler, 1990), so
+  it is no longer deflated toward zero when the baseline (independence)
+  model fits comparatively well. The value is unchanged for well-fitting
+  models and now matches `lavaan`. CFI can change for solutions in which
+  the baseline model does not misfit much.
+- [`EFA_POOLED()`](https://mdsteiner.github.io/EFAtools/reference/EFA_POOLED.md):
+  Corrected and extended the pooled chi-square-based model-fit indices.
+  The D2 average relative increase in variance is now centred on the
+  mean of the square-root statistics (Li, Meng, Raghunathan & Rubin,
+  1991), removing a one-sided inflation of the pooled chi-square, RMSEA,
+  and CFI. Bootstrap/MI confidence intervals for the pooled fit indices
+  are now the Rubin-Wald multiple-imputation summaries; a miscalibrated
+  bootstrap-percentile interval (obtained by re-running the pooling
+  algorithm over matched replicate indices) was removed, as was a
+  mislabeled pooled `Fm`.
+- [`EFA_AVERAGE()`](https://mdsteiner.github.io/EFAtools/reference/EFA_AVERAGE-superseded.md):
+  When every averaged solution fails (all runs error, fail to converge,
+  or are Heywood cases), the function now returns an empty (`NA`)
+  averaged result instead of erroring or averaging an empty set.
+- [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md) with
+  `method = "PAF"`: the reported number of iterations (`iter`) is now
+  the number of iterations actually performed; it was previously one too
+  high. The loadings, communalities, and convergence status are
+  unchanged.
+- `ULS` extraction: the minimised objective is now the sum of squared
+  off-diagonal residuals, consistent with its analytic gradient and the
+  reported minimum (`Fm`). The diagonal residuals were previously
+  included in the objective but not in its gradient. The fitted loadings
+  are unchanged to within optimiser tolerance.
+- [`NEST()`](https://mdsteiner.github.io/EFAtools/reference/NEST.md) and
+  [`PARALLEL()`](https://mdsteiner.github.io/EFAtools/reference/PARALLEL.md):
+  A failed eigendecomposition of a degenerate simulated matrix now
+  raises a clear error instead of resulting in undefined behaviour.
+- The chi-square model-fit statistic is now the Bartlett-corrected
+  maximum likelihood discrepancy evaluated at the model-implied
+  correlation matrix, for both `ML` and `ULS` extraction. For
+  `method = "ML"` this matches
+  [`stats::factanal()`](https://rdrr.io/r/stats/factanal.html) and
+  [`psych::fa()`](https://rdrr.io/pkg/psych/man/fa.html); the
+  small-sample Bartlett correction was previously omitted. For
+  `method = "ULS"` it is now a proper chi-square-distributed statistic
+  matching `psych::fa(fm = "minres")`; previously the least-squares
+  residual sum of squares was multiplied by `N - 1` and read as if it
+  were Wishart-distributed, which produced an invalid p-value. The
+  independence (baseline) model used for the CFI is rescaled onto the
+  same discrepancy scale. Consequently the p-value, CFI, RMSEA (and its
+  confidence interval), AIC, and BIC change for ML and ULS solutions,
+  and the number of factors suggested by
+  [`SMT()`](https://mdsteiner.github.io/EFAtools/reference/SMT.md) and
+  [`HULL()`](https://mdsteiner.github.io/EFAtools/reference/HULL.md) may
+  change for these methods.
+- [`PARALLEL()`](https://mdsteiner.github.io/EFAtools/reference/PARALLEL.md):
+  The percentile reference eigenvalues are now computed with
+  [`stats::quantile()`](https://rdrr.io/r/stats/quantile.html),
+  correcting a slight off-by-one in the previous indexing.
+- [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md): For
+  oblique rotations, the factor intercorrelations (`Phi`), the structure
+  matrix, and the explained variances are now reflected and reordered
+  consistently with the rotated loadings. Previously, when a factor was
+  reflected to a positive orientation the factor intercorrelations were
+  not sign-adjusted (so the structure matrix and reported correlations
+  did not match the loadings), and with `order_type = "ss_factors"` the
+  factor intercorrelations were not reordered at all.
+- [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md): The
+  returned rotation matrix (`rotmat`) is now reflected and reordered
+  consistently with the rotated loadings, for both orthogonal and
+  oblique rotations, so that the rotated loadings can be reconstructed
+  from the unrotated loadings and `rotmat`. Previously the sign
+  reflection was not applied to it and its factors were left in a
+  different order, so this reconstruction did not hold whenever a factor
+  was reflected or reordered.
+- [`HULL()`](https://mdsteiner.github.io/EFAtools/reference/HULL.md):
+  The convex-hull elimination now tests every triplet of adjacent
+  solutions, including the one formed by the last interior solution.
+  Previously this final triplet was skipped, so a solution lying below
+  the line connecting its neighbours could remain on the hull. This can
+  change the number of factors suggested by
+  [`HULL()`](https://mdsteiner.github.io/EFAtools/reference/HULL.md)
+  (and hence by
+  [`N_FACTORS()`](https://mdsteiner.github.io/EFAtools/reference/N_FACTORS.md)).
+- [`NEST()`](https://mdsteiner.github.io/EFAtools/reference/NEST.md):
+  When the test accepts every eigenvalue it examines (no empirical
+  eigenvalue falls at or below its reference within the search range),
+  it now retains that last accepted model rather than the model with one
+  fewer factor. The search range is also bounded so that the reference
+  model fitted at each step stays over-identified.
+- [`PARALLEL()`](https://mdsteiner.github.io/EFAtools/reference/PARALLEL.md):
+  When every real eigenvalue exceeds its reference, so the decision rule
+  finds no crossing, the suggested number of factors is now all retained
+  components, reported with a warning, instead of a silent `NA`
+  (matching the convention used by
+  [`EKC()`](https://mdsteiner.github.io/EFAtools/reference/EKC.md)).
+- `EFA(se = "np-boot")`: The non-parametric bootstrap no longer repeats
+  per-replicate warnings (about arguments pinned alongside `type`, and
+  about the iterative fit reaching its maximum number of iterations)
+  once per replicate. They are now suppressed during resampling, and
+  non-convergence across replicates is reported once as a summary.
+- [`COMPARE()`](https://mdsteiner.github.io/EFAtools/reference/COMPARE.md):
+  With `reorder = "congruence"`, the columns of `y` are now matched to
+  those of `x` by an optimal one-to-one assignment that maximizes the
+  total Tucker congruence, rather than by an independent per-factor best
+  match. The greedy match could assign two factors of `x` to the same
+  column of `y`, duplicating that column and dropping another, which
+  corrupted the reported differences, factor correspondences, and root
+  mean squared distance. The result is unchanged whenever the greedy
+  match was already one-to-one.
+
+## EFAtools 0.7.1
+
+CRAN release: 2026-05-08
+
+### Changes to Functions
+
+- [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md):
+  Added `randomStarts` argument passed to GPArotation functions, as
+  suggested by Coen Bernaards.
+- [`FACTOR_SCORES()`](https://mdsteiner.github.io/EFAtools/reference/FACTOR_SCORES.md):
+  Added `rho` argument, thanks to Andreas Soteriades.
+- [`EFA_POOLED()`](https://mdsteiner.github.io/EFAtools/reference/EFA_POOLED.md):
+  Fixed issue that could lead to averaged Phi not being symmetric.
+
+## EFAtools 0.7.0
+
+CRAN release: 2026-04-30
+
+### New Functions
+
+- [`MAP()`](https://mdsteiner.github.io/EFAtools/reference/MAP.md)
+  computes the Velicer MAP criterion (both TR2 and TR4).
+- [`PROCRUSTES()`](https://mdsteiner.github.io/EFAtools/reference/PROCRUSTES.md)
+  to perform orthogonal and oblique Procrustes / target rotation.
+- `CONSENSUS_PROCRUSTES()` to perform Procrustes on a list of targets to
+  obtain a common target.
+- `residuals.EFA()` to extract and print residuals and, if computed,
+  standardized residuals.
+- [`EFA_POOLED()`](https://mdsteiner.github.io/EFAtools/reference/EFA_POOLED.md)
+  to run EFA on a list of multiple imputated datasets and pool the
+  results. Thanks to Andreas Soteriades for the suggestion and first
+  implementation.
+- `print.EFA_POOLED()`, print method adapted from `print.EFA()`
+
+### Changes to Functions
+
+- [`N_FACTORS()`](https://mdsteiner.github.io/EFAtools/reference/N_FACTORS.md)
+  can also compute the MAP criterion.
+- [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md):
+  - Now returns and prints residuals and, if SEs are computed,
+    standardized residuals.
+  - Calculates and prints RMSR.
+  - Can calculate bootstrap standard errors and CIs of parameters and
+    fit indices.
+- `print.EFA()` now prints more information.
+
+### Bug Fixes
+
+- Fixed a bug in
+  [`OMEGA()`](https://mdsteiner.github.io/EFAtools/reference/OMEGA.md)
+  that led to incorrect omega, H, and ECV values for `lavaan` bifactor
+  models. Tnanks to Christopher D. King for bug report and suggested
+  fix.
+- Small fix in the documentation of
+  [`EFA_AVERAGE()`](https://mdsteiner.github.io/EFAtools/reference/EFA_AVERAGE-superseded.md).
+- Fixed incorrect calculation of RMSEA in
+  [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md).
+
+## EFAtools 0.6.1
+
+CRAN release: 2025-07-30
+
+### Changes to Functions
+
+- [`EKC()`](https://mdsteiner.github.io/EFAtools/reference/EKC.md): Now
+  correctly returns the number of factors based on the first time the
+  eigenvalues drop below the references values.
+
+## EFAtools 0.6.0
+
+CRAN release: 2025-06-19
+
+### New Functions
+
+- Added
+  [`NEST()`](https://mdsteiner.github.io/EFAtools/reference/NEST.md) to
+  perform the Next Eigenvalue Sufficiency Test (Achim, 2017).
+
+### Changes to Functions
+
+- [`EKC()`](https://mdsteiner.github.io/EFAtools/reference/EKC.md): The
+  implementation based on Auerswald and Moshagen (2019) used in previous
+  versions differed from the original implementation by Braeken and van
+  Assen (2017). Now both versions are implemented and can be selected
+  with the new `type` argument. Thanks to Luis Eduardo Garrido for
+  pointing this out and to Johan Braeken for sharing sample code, based
+  on which the original version is now implemented.
+- [`N_FACTORS()`](https://mdsteiner.github.io/EFAtools/reference/N_FACTORS.md):
+  - Updated default settings to only use often used and well performing
+    factor retention methods (others, like the Kaiser Guttman criterion
+    can still be used).
+  - Added NEST as additional factor retention method.
+  - New arguments: `ekc_type`, `alpha_nest`, and `n_datasets_nest` to
+    account for the changes in
+    [`EKC()`](https://mdsteiner.github.io/EFAtools/reference/EKC.md) and
+    to control
+    [`NEST()`](https://mdsteiner.github.io/EFAtools/reference/NEST.md).
+
+## EFAtools 0.5.0
+
+CRAN release: 2025-05-23
+
+### Changes to Functions
+
+- `print.EFA()`:
+  - Now returns explained variance from rotated, rather than unrotated
+    solution, if a rotation was performed.
+  - Now prints communalities and uniquenesses in loading/pattern matrix
+- [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md):
+  Calculate and return model implied correlation matrix.
+
+## EFAtools 0.4.6
+
+CRAN release: 2025-03-21
+
+### General
+
+- Small change in test of `.gof()`: Changed some tests to take care of
+  the ATLAS issue when using R-devel on x86_64 Fedora 34 Linux with
+  alternative BLAS/LAPACK.
+
+## EFAtools 0.4.5
+
+CRAN release: 2024-12-22
+
+### Bug Fixes
+
+- Updated
+  [`OMEGA()`](https://mdsteiner.github.io/EFAtools/reference/OMEGA.md)
+  to accommodate changes in the upcoming version of
+  [`psych::schmid()`](https://rdrr.io/pkg/psych/man/schmid.html)
+
+## EFAtools 0.4.4
+
+CRAN release: 2023-01-06
+
+### Changes to Functions
+
+- `print.EFA()`: Added arguments `cutoff`, `digits` and
+  `max_name_length` that are passed to `print.LOADINGS()`.
+- `print.LOADINGS()`: New Argument `max_name_length` to control the
+  maximum length of the displayed variable names (names longer than this
+  will be cut on the right side). Previously, this was fixed to 10
+  (which is now the default).
+
+### Misc
+
+- Updated a test of a helper function (`.gof()`) that threw an error
+  when using R-devel on x86_64 Fedora 36 Linux with alternative
+  BLAS/LAPACK.
+- added `dontrun` to examples of
+  [`EFA_AVERAGE()`](https://mdsteiner.github.io/EFAtools/reference/EFA_AVERAGE-superseded.md)
+  and its print and plot methods as these were causing issues on
+  R-oldrel which were not directly related to EFAtools and thus could
+  not be fixed from within the package.
+
+## EFAtools 0.4.3
+
+CRAN release: 2022-10-02
+
+### Changes to Functions
+
+- `.gof()`: Changed the helper function to take care of the MKL issue
+  when using R-devel on x86_64 Fedora 34 Linux with alternative
+  BLAS/LAPACK.
+
+## EFAtools 0.4.2
+
+CRAN release: 2022-09-27
+
+### Changes to Functions
+
+- `.is_cormat()`: Changed the helper function to better detect wheter a
+  matrix is a correlation matrix.
+- [`PARALLEL()`](https://mdsteiner.github.io/EFAtools/reference/PARALLEL.md):
+  Added a check, testing whether N \> n_vars and throw an error if this
+  is not the case.
+
+### Bug Fixes
+
+- Fixed some tests due to upcoming changes in the psych package which
+  EFAtools depends on.
+
+## EFAtools 0.4.1
+
+CRAN release: 2022-04-24
+
+### Bug Fixes
+
+- Minor fixes in tests to solve problems on macOS m1.
+
+## EFAtools 0.4.0
+
+CRAN release: 2022-03-21
+
+### Changes to Functions
+
+- [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md):
+  Changed error to warning when model is underidentified. This allows
+  the Schmid-Leiman transformation to be performed on a two-factor
+  solution.
+- [`OMEGA()`](https://mdsteiner.github.io/EFAtools/reference/OMEGA.md):
+  Added calculation of additional indices of interpretive relevance (H
+  index, explained common variance \[ECV\], and percent of
+  uncontaminated correlations \[PUC\]). This is optional and can be
+  avoided by setting `add_ind = FALSE`.
+
+### Bug Fixes
+
+- [`CD()`](https://mdsteiner.github.io/EFAtools/reference/CD.md): Added
+  [`na.omit()`](https://rdrr.io/r/stats/na.fail.html) to remove missing
+  values from raw data to avoid an error in the comparison-data
+  procedure.
+
+## EFAtools 0.3.1
+
+CRAN release: 2021-03-27
+
+### General
+
+- When testing for whether a matrix is singular and thus smoothing
+  should be done, test against .Machine\$double.eps^.6 instead of 0, as
+  suggested by Florian Scharf.
+
+### Changes to Functions
+
+- [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md):
+  - Added warnings if `type = "SPSS"` was used with `method = "ML"` or
+    `method = "ULS"`, or with a rotation other than `none`, `varimax` or
+    `promax`.
+  - Avoided smoothing of non-positive definite correlation matrices if
+    `type = "SPSS"` is used.
+  - Use Moore-Penrose Pseudo Inverse in computation of SMCs if
+    `type = "psych"` is used, by calling
+    [`psych::smc()`](https://rdrr.io/pkg/psych/man/smc.html).
+  - Use `varimax_type = "kaiser"` if `type = "EFAtools"` is used with
+    `varimax` or `promax`.
+
+### Bug Fixes
+
+- [`EFA_AVERAGE()`](https://mdsteiner.github.io/EFAtools/reference/EFA_AVERAGE-superseded.md):
+  - Added `future.seed = TRUE` to call to
+    [`future.apply::future_lapply()`](https://future.apply.futureverse.org/reference/future_lapply.html)
+    to prevent warnings.
+  - Fixed test for Heywood cases from testing whether a communality or
+    loading is greater than .998, to only test whether communalities
+    exceed 1 + .Machine\$double.eps
+- `print.EFA()`: Fixed test for Heywood cases from testing whether a
+  communality or loading is greater than .998, to only test whether
+  communalities exceed 1 + .Machine\$double.eps
+- [`OMEGA()`](https://mdsteiner.github.io/EFAtools/reference/OMEGA.md):
+  Small bugfix when `lavaan` second-order model is given as input
+
+## EFAtools 0.3.0
+
+CRAN release: 2020-11-04
+
+### General
+
+- Added examples for
+  [`EFA_AVERAGE()`](https://mdsteiner.github.io/EFAtools/reference/EFA_AVERAGE-superseded.md)
+  to readme and the EFAtools vignette
+- Updated examples in readme and vignettes according to the updated
+  `OMEGA` function
+
+### New Functions
+
+- Added function
+  [`EFA_AVERAGE()`](https://mdsteiner.github.io/EFAtools/reference/EFA_AVERAGE-superseded.md)
+  and respective print and plot methods, to allow running many EFAs
+  across different implementations to obtain an average solution and
+  test the stability of the results.
+
+### Changes to Functions
+
+- [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md):
+  Defaults that were previously set to `NULL` are now mostly set to
+  `NA`. This was necessary for
+  [`EFA_AVERAGE()`](https://mdsteiner.github.io/EFAtools/reference/EFA_AVERAGE-superseded.md)
+  to work correctly.
+- [`PARALLEL()`](https://mdsteiner.github.io/EFAtools/reference/PARALLEL.md):
+  Rewrote the generation of random data based eigenvalues to be more
+  stable when SMCs are used.
+- [`OMEGA()`](https://mdsteiner.github.io/EFAtools/reference/OMEGA.md):
+  Changed expected input for argument `factor_corres` from vector to
+  matrix. Can now be a logical matrix or a numeric matrix with 0’s and
+  1’s of the same dimensions as the matrix of group factor loadings.
+  This is more flexible and allows for cross-loadings.
+
+## EFAtools 0.2.0
+
+CRAN release: 2020-09-17
+
+### General
+
+- Created new vignette *Replicate_SPSS_psych* to show replication of
+  original `psych` and `SPSS` EFA solutions with `EFAtools`.
+
+### New Functions
+
+- Added function
+  [`FACTOR_SCORES()`](https://mdsteiner.github.io/EFAtools/reference/FACTOR_SCORES.md)
+  to calculate factor scores from a solution from
+  [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md). This
+  is just a wrapper for the
+  [`psych::factor.scores`](https://rdrr.io/pkg/psych/man/factor.scores.html)
+  function.
+- Added function
+  [`SCREE()`](https://mdsteiner.github.io/EFAtools/reference/SCREE.md)
+  that does a scree plot. Also added respective print and plot methods.
+
+### Changes to Functions
+
+- [`CD()`](https://mdsteiner.github.io/EFAtools/reference/CD.md): Added
+  check for whether entered data is a tibble, and if so, convert to
+  vanilla data.frame to avoid breaking the procedure.
+- [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md):
+  - Updated the EFAtools type in PAF and Promax.
+  - Added p value for chi square value in output (calculated for ML and
+    ULS fitting methods).
+  - Updated the SPSS varimax implementation to fit SPSS results more
+    closely.
+  - Created an argument “varimax_type” that is set according to the
+    specified type, but that can also be specified individually. With
+    type R psych and EFAtools, the stats::varimax is called by default
+    (`varimax_type = "svd"`), with type SPSS, the reproduced SPSS
+    varimax implementation is used (`varimax_type = "kaiser"`).
+  - Renamed the `kaiser` argument (controls if a Kaiser normalization is
+    done or not) into `normalize` to avoid confusion with the
+    `varimax_type` argument specifications.
+- `ML()`: Changed default start method to “psych”.
+- [`N_FACTORS()`](https://mdsteiner.github.io/EFAtools/reference/N_FACTORS.md):
+  - Added option to do a scree plot if “SCREE” is included in the
+    `criteria` argument.
+  - Added a progress bar.
+- [`OMEGA()`](https://mdsteiner.github.io/EFAtools/reference/OMEGA.md):
+  Now also works with a lavaan second-order solution as input. In this
+  case, it does a Schmid-Leiman transformation based on the first- and
+  second-order loadings first and computes omegas based on this
+  Schmid-Leiman solution.
+- [`SL()`](https://mdsteiner.github.io/EFAtools/reference/SL.md): Now
+  also works with a lavaan second-order solution as input (first- and
+  second-order loadings taken directly from lavaan output).
+
+### Bug Fixes
+
+- `.get_compare_matrix()`: Fixed a bug that occurred when names of data
+  were longer than n_char
+- [`COMPARE()`](https://mdsteiner.github.io/EFAtools/reference/COMPARE.md):
+  Fixed a bug that occurred when using `reorder = "names"`.
+- [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md):
+  RMSEA is now set to 1 if it is \> 1.
+- [`HULL()`](https://mdsteiner.github.io/EFAtools/reference/HULL.md):
+  Fixed a bug that occurred when no factors are located on the HULL
+- [`KMO()`](https://mdsteiner.github.io/EFAtools/reference/KMO.md):
+  Fixed a bug that the inverse of the correlation matrix was not taken
+  anew after smoothing was necessary.
+- [`PARALLEL()`](https://mdsteiner.github.io/EFAtools/reference/PARALLEL.md):
+  - Fixed a bug that occurred when using `decision_rule = "percentile"`
+  - Relocated error messages that were not evaluated if no data were
+    entered (and should be)
+- `print.COMPARE()`: Fixed a bug that occurred when using
+  `print_diff = FALSE` in
+  [`COMPARE()`](https://mdsteiner.github.io/EFAtools/reference/COMPARE.md).
+- `print.KMO()`: Fixed a bug that printed two statements instead of one,
+  when the KMO value was \< .6.
+
+### Minor Changes
+
+- [`OMEGA()`](https://mdsteiner.github.io/EFAtools/reference/OMEGA.md)
+  and [`SL()`](https://mdsteiner.github.io/EFAtools/reference/SL.md):
+  Added an error message if the entered term in `g_name` is invalid
+  (i.e., it cannnot be found among the factor names of the entered
+  lavaan solution).
+
+## EFAtools 0.1.1
+
+CRAN release: 2020-07-13
+
+### Minor Changes
+
+- Added an error message in
+  [`PARALLEL()`](https://mdsteiner.github.io/EFAtools/reference/PARALLEL.md)
+  if no solution has been found after 25 tries.
+
+### Bug Fixes
+
+- Updated different tests
+
+- Deleted no longer used packages from Imports and Suggests in
+  DESCRIPTION
+
+- [`PARALLEL()`](https://mdsteiner.github.io/EFAtools/reference/PARALLEL.md):
+  fixed a bug in indexing if method `"EFA"` was used.
+
+## EFAtools 0.1.0
+
+CRAN release: 2020-07-07
+
+- Added a `NEWS.md` file to track changes to the package.
+- Initial CRAN submission

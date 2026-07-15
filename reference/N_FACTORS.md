@@ -1,0 +1,280 @@
+# Various factor retention criteria
+
+**\[superseded\]**
+
+`N_FACTORS()` has been superseded by
+[`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md),
+which is the recommended interface going forward. It remains available
+and unchanged so existing code keeps working.
+
+## Usage
+
+``` r
+N_FACTORS(
+  x,
+  criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARALLEL"),
+  suitability = TRUE,
+  N = NA,
+  use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
+    "na.or.complete"),
+  cor_method = c("pearson", "spearman", "kendall", "poly", "tetra"),
+  n_factors_max = NA,
+  N_pop = 10000,
+  N_samples = 500,
+  alpha = 0.3,
+  max_iter_CD = 50,
+  n_fac_theor = NA,
+  method = c("ML", "PAF", "ULS"),
+  gof = c("CAF", "CFI", "RMSEA"),
+  eigen_type_HULL = c("SMC", "PCA", "EFA"),
+  eigen_type_other = c("SMC"),
+  n_factors = 1,
+  n_datasets = 1000,
+  percent = 95,
+  decision_rule = c("means", "percentile", "crawford"),
+  ekc_type = c("BvA2017"),
+  n_datasets_nest = 1000,
+  alpha_nest = 0.05,
+  show_progress = FALSE,
+  ...
+)
+```
+
+## Arguments
+
+- x:
+
+  data.frame or matrix. Dataframe or matrix of raw data or matrix with
+  correlations. If `"CD"` is included as a criterion, x must be raw
+  data.
+
+- criteria:
+
+  character. A vector with the factor retention methods to perform.
+  Possible inputs are: `"CD"`, `"EKC"`, `"HULL"`, `"KGC"`, `"MAP"`,
+  `"NEST"`,`"PARALLEL"`, `"SCREE"`, and `"SMT"` (see details). By
+  default, a subset of often used, well-performing methods are
+  performed.
+
+- suitability:
+
+  logical. Whether the data should be checked for suitability for factor
+  analysis using the Bartlett's test of sphericity and the
+  Kaiser-Meyer-Olkin criterion (see details). Default is `TRUE`.
+
+- N:
+
+  numeric. The number of observations. Only needed if x is a correlation
+  matrix.
+
+- use:
+
+  character. Passed to
+  [`stats::cor()`](https://rdrr.io/r/stats/cor.html) if raw data is
+  given as input. Default is `"pairwise.complete.obs"`.
+
+- cor_method:
+
+  character. Correlation computed from raw data: `"pearson"`,
+  `"spearman"`, or `"kendall"` (passed to
+  [`stats::cor()`](https://rdrr.io/r/stats/cor.html)), or `"poly"` /
+  `"tetra"` for polychoric / tetrachoric correlations (a two-step
+  estimator with no empty-cell continuity correction). `CD`, `PARALLEL`,
+  `NEST`, and `HULL` compare against simulated continuous data, and
+  `SMT` relies on a normal-theory chi-square test; none of these support
+  `"poly"` / `"tetra"`, so they are skipped in that case. Default is
+  `"pearson"`.
+
+- n_factors_max:
+
+  numeric. Passed to
+  [`efa_cd()`](https://mdsteiner.github.io/EFAtools/reference/efa_cd.md).
+  The maximum number of factors to test against. Larger numbers will
+  increase the duration the procedure takes, but test more possible
+  solutions. If left NA (default), the maximum number of factors for
+  which the model is still over-identified (df \> 0) is used.
+
+- N_pop:
+
+  numeric. Passed to
+  [`efa_cd()`](https://mdsteiner.github.io/EFAtools/reference/efa_cd.md).
+  Size of finite populations of comparison data. Default is 10000.
+
+- N_samples:
+
+  numeric. Passed to
+  [`efa_cd()`](https://mdsteiner.github.io/EFAtools/reference/efa_cd.md).
+  Number of samples drawn from each population. Default is 500.
+
+- alpha:
+
+  numeric. Passed to
+  [`efa_cd()`](https://mdsteiner.github.io/EFAtools/reference/efa_cd.md).
+  The alpha level used to test the significance of the improvement added
+  by an additional factor. Default is .30.
+
+- max_iter_CD:
+
+  numeric. Passed to
+  [`efa_cd()`](https://mdsteiner.github.io/EFAtools/reference/efa_cd.md).
+  The maximum number of iterations to perform after which the iterative
+  PAF procedure is halted. Default is 50.
+
+- n_fac_theor:
+
+  numeric. Passed to
+  [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md).
+  Theoretical number of factors to retain. The maximum of this number
+  and the number of factors suggested by
+  [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
+  plus one will be used in the Hull method.
+
+- method:
+
+  character. Passed to
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  in
+  [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md),
+  [`efa_kgc()`](https://mdsteiner.github.io/EFAtools/reference/efa_kgc.md),
+  [`efa_scree()`](https://mdsteiner.github.io/EFAtools/reference/efa_scree.md),
+  [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md),
+  and
+  [`efa_nest()`](https://mdsteiner.github.io/EFAtools/reference/efa_nest.md).
+  The estimation method to use. One of `"PAF"`, `"ULS"`, or `"ML"`, for
+  principal axis factoring, unweighted least squares, and maximum
+  likelihood, respectively. In
+  [`efa_kgc()`](https://mdsteiner.github.io/EFAtools/reference/efa_kgc.md),
+  [`efa_scree()`](https://mdsteiner.github.io/EFAtools/reference/efa_scree.md),
+  and
+  [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
+  it only takes effect when the respective `eigen_type` includes
+  `"EFA"`.
+
+- gof:
+
+  character. Passed to
+  [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md).
+  The goodness of fit index to use. Either `"CAF"`, `"CFI"`, or
+  `"RMSEA"`, or any combination of them. If `method = "PAF"` is used,
+  only the CAF can be used as goodness of fit index. For details on the
+  CAF, see Lorenzo-Seva, Timmerman, and Kiers (2011).
+
+- eigen_type_HULL:
+
+  character. Passed to
+  [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
+  in
+  [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md).
+  On what the eigenvalues should be found in the parallel analysis. Can
+  be one of `"SMC"`, `"PCA"`, or `"EFA"`. If using `"SMC"` (default),
+  the diagonal of the correlation matrices is replaced by the squared
+  multiple correlations (SMCs) of the indicators. If using `"PCA"`, the
+  diagonal values of the correlation matrices are left to be 1. If using
+  `"EFA"`, eigenvalues are found on the correlation matrices with the
+  final communalities of an EFA solution as diagonal.
+
+- eigen_type_other:
+
+  character. Passed to
+  [`efa_kgc()`](https://mdsteiner.github.io/EFAtools/reference/efa_kgc.md),
+  [`efa_scree()`](https://mdsteiner.github.io/EFAtools/reference/efa_scree.md),
+  and
+  [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md).
+  The same as eigen_type_HULL, but multiple inputs are possible here
+  (any combination of `"PCA"`, `"SMC"`, and `"EFA"`). Default is
+  `"SMC"`.
+
+- n_factors:
+
+  numeric. Passed to
+  [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
+  (also within
+  [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md)),
+  [`efa_kgc()`](https://mdsteiner.github.io/EFAtools/reference/efa_kgc.md),
+  and
+  [`efa_scree()`](https://mdsteiner.github.io/EFAtools/reference/efa_scree.md).
+  Number of factors to extract if `"EFA"` is included in
+  `eigen_type_HULL` or `eigen_type_other`. Default is 1.
+
+- n_datasets:
+
+  numeric. Passed to
+  [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
+  (also within
+  [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md)).
+  The number of datasets to simulate. Default is 1000.
+
+- percent:
+
+  numeric. Passed to
+  [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
+  (also within
+  [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md)).
+  The percentile to take from the simulated eigenvalues. Default is 95.
+
+- decision_rule:
+
+  character. Passed to
+  [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
+  (also within
+  [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md)).
+  Which rule to use to determine the number of factors to retain.
+  Default is `"means"`, which will use the average simulated
+  eigenvalues. `"percentile"`, uses the percentiles specified in
+  percent. `"crawford"` uses the 95th percentile for the first factor
+  and the mean afterwards (based on Crawford et al, 2010).
+
+- ekc_type:
+
+  character. Passed to the `type` argument of
+  [`efa_ekc()`](https://mdsteiner.github.io/EFAtools/reference/efa_ekc.md).
+  Either `"BvA2017"` for the original implementation by Braeken and van
+  Assen (2017), or `"AM2019"` for the adapted implementation by
+  Auerswald and Moshagen (2019).
+
+- n_datasets_nest:
+
+  numeric. The number of datasets to simulate in
+  [`efa_nest()`](https://mdsteiner.github.io/EFAtools/reference/efa_nest.md).
+  Default is 1000.
+
+- alpha_nest:
+
+  numeric. The alpha level to use in
+  [`efa_nest()`](https://mdsteiner.github.io/EFAtools/reference/efa_nest.md)
+  (i.e., 1-alpha percentile of eigenvalues is used for reference
+  values).
+
+- show_progress:
+
+  logical. Whether a progress bar should be shown in the console.
+  Default is FALSE.
+
+- ...:
+
+  Further arguments passed to
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  in
+  [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
+  (also within
+  [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md)),
+  [`efa_kgc()`](https://mdsteiner.github.io/EFAtools/reference/efa_kgc.md),
+  [`efa_scree()`](https://mdsteiner.github.io/EFAtools/reference/efa_scree.md),
+  and
+  [`efa_nest()`](https://mdsteiner.github.io/EFAtools/reference/efa_nest.md).
+  The estimation tuning knobs are not passed here; they live in
+  `estimate_control`. Note that the arguments listed after `...` must be
+  given by their full name (R matches an abbreviated name only against
+  the arguments before `...`), so that a tuning knob such as `max_iter`
+  cannot be mistaken for `max_iter_CD`.
+
+## Value
+
+A list of class `c("efa_retain", "N_FACTORS")`, identical to the value
+of
+[`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md);
+see there for the components.
+
+## See also
+
+[`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)
