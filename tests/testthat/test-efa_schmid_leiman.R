@@ -1,19 +1,19 @@
 ## Use with an output from the EFAtools::EFA function, both with type EFAtools
 EFA_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
                type = "EFAtools", method = "PAF", rotation = "promax")
-SL_EFAtools <- efa_schmid_leiman(EFA_mod, estimate_control = estimate_control(type = "EFAtools"), method = "PAF")
+SL_EFAtools <- efa_schmid_leiman(EFA_mod, estimate_control = estimate_control(type = "EFAtools"), estimator = "PAF")
 
 # with type SPSS and method ULS
-SL_SPSS <- efa_schmid_leiman(EFA_mod, estimate_control = estimate_control(type = "SPSS"), method = "ULS")
+SL_SPSS <- efa_schmid_leiman(EFA_mod, estimate_control = estimate_control(type = "SPSS"), estimator = "ULS")
 
 ## Use with an output from the psych::fa function with type psych
 fa_mod <- psych::fa(test_models$baseline$cormat, nfactors = 3, n.obs = 500,
                     fm = "pa", rotate = "Promax", n.rotations = 1)
-SL_psych <- efa_schmid_leiman(fa_mod, estimate_control = estimate_control(type = "psych"), method = "PAF")
+SL_psych <- efa_schmid_leiman(fa_mod, estimate_control = estimate_control(type = "psych"), estimator = "PAF")
 
 ## Use more flexibly by entering a pattern matrix and phi directly, with method
 ## ML
-SL_flex <- efa_schmid_leiman(EFA_mod$rot_loadings, Phi = EFA_mod$Phi, method = "ML",
+SL_flex <- efa_schmid_leiman(EFA_mod$rot_loadings, Phi = EFA_mod$Phi, estimator = "ML",
                              estimate_control = estimate_control(type = "EFAtools"))
 
 ## Use with a second-order lavaan solution
@@ -148,24 +148,24 @@ test_that("sl loadings reproduce psych::schmid", {
 
 test_that("settings are returned correctly", {
   skip_if_not_installed("lavaan")
-  expect_named(SL_EFAtools$settings, c("method", "rotation", "type", "n_factors",
+  expect_named(SL_EFAtools$settings, c("estimator", "method", "rotation", "type", "n_factors",
                                    "N", "use", "cor_method", "se", "b_boot", "ci", "max_iter",
                                    "init_comm", "criterion", "criterion_type",
                                    "abs_eigen"))
-  expect_named(SL_SPSS$settings, c("method", "rotation", "type", "n_factors",
+  expect_named(SL_SPSS$settings, c("estimator", "method", "rotation", "type", "n_factors",
                                    "N", "use", "cor_method", "se", "b_boot", "ci"))
-  expect_named(SL_psych$settings, c("method", "rotation", "type", "n_factors",
+  expect_named(SL_psych$settings, c("estimator", "method", "rotation", "type", "n_factors",
                                        "N", "use", "cor_method", "se", "b_boot", "ci", "max_iter",
                                        "init_comm", "criterion", "criterion_type",
                                        "abs_eigen"))
-  expect_named(SL_flex$settings, c("method", "rotation", "type", "n_factors",
+  expect_named(SL_flex$settings, c("estimator", "method", "rotation", "type", "n_factors",
                                   "N", "use", "cor_method", "se", "b_boot", "ci", "start_method"))
   expect_equal(SL_lav$settings, NA)
 
-  expect_equal(SL_EFAtools$settings$method, "PAF")
-  expect_equal(SL_SPSS$settings$method, "ULS")
-  expect_equal(SL_psych$settings$method, "PAF")
-  expect_equal(SL_flex$settings$method, "ML")
+  expect_equal(SL_EFAtools$settings$estimator, "PAF")
+  expect_equal(SL_SPSS$settings$estimator, "ULS")
+  expect_equal(SL_psych$settings$estimator, "PAF")
+  expect_equal(SL_flex$settings$estimator, "ML")
 
   expect_equal(SL_EFAtools$settings$rotation, "none")
   expect_equal(SL_SPSS$settings$rotation, "none")
@@ -268,18 +268,18 @@ lav_fit_bifactor <- suppressWarnings(lavaan::cfa(lav_mod_bifactor,
 test_that("errors are thrown correctly", {
   skip_if_not_installed("lavaan")
   expect_error(efa_schmid_leiman(1:5), class = "efa_sl_bad_input")
-  expect_warning(efa_schmid_leiman(EFA_mod, estimate_control = estimate_control(type = "EFAtools"), method = "PAF", Phi = EFA_mod$Phi),
+  expect_warning(efa_schmid_leiman(EFA_mod, estimate_control = estimate_control(type = "EFAtools"), estimator = "PAF", Phi = EFA_mod$Phi),
                  class = "efa_sl_phi_specified")
-  expect_error(efa_schmid_leiman(EFA_mod_unrot, estimate_control = estimate_control(type = "EFAtools"), method = "PAF"), class = "efa_sl_not_oblique")
-  expect_error(efa_schmid_leiman(EFA_mod_orth, estimate_control = estimate_control(type = "EFAtools"), method = "PAF"), class = "efa_sl_not_oblique")
-  expect_warning(efa_schmid_leiman(fa_mod, estimate_control = estimate_control(type = "EFAtools"), method = "PAF", Phi = fa_mod$Phi), class = "efa_sl_phi_specified")
-  expect_error(efa_schmid_leiman(fa_mod_unrot, estimate_control = estimate_control(type = "EFAtools"), method = "PAF"), class = "efa_sl_not_oblique")
-  expect_error(efa_schmid_leiman(fa_mod_orth, estimate_control = estimate_control(type = "EFAtools"), method = "PAF"), class = "efa_sl_not_oblique")
+  expect_error(efa_schmid_leiman(EFA_mod_unrot, estimate_control = estimate_control(type = "EFAtools"), estimator = "PAF"), class = "efa_sl_not_oblique")
+  expect_error(efa_schmid_leiman(EFA_mod_orth, estimate_control = estimate_control(type = "EFAtools"), estimator = "PAF"), class = "efa_sl_not_oblique")
+  expect_warning(efa_schmid_leiman(fa_mod, estimate_control = estimate_control(type = "EFAtools"), estimator = "PAF", Phi = fa_mod$Phi), class = "efa_sl_phi_specified")
+  expect_error(efa_schmid_leiman(fa_mod_unrot, estimate_control = estimate_control(type = "EFAtools"), estimator = "PAF"), class = "efa_sl_not_oblique")
+  expect_error(efa_schmid_leiman(fa_mod_orth, estimate_control = estimate_control(type = "EFAtools"), estimator = "PAF"), class = "efa_sl_not_oblique")
   expect_error(efa_schmid_leiman(lav_fit_NA, g_name = "g"), class = "efa_sl_na_loadings")
   expect_error(efa_schmid_leiman(lav_fit_var_hey, g_name = "g"), class = "efa_sl_heywood")
   expect_error(efa_schmid_leiman(lav_fit_ho, g_name = "fu"), class = "efa_sl_g_name")
   expect_warning(efa_schmid_leiman(lav_fit_ho_inv, g_name = "g"), class = "efa_sl_second_order_loadings")
-  expect_error(efa_schmid_leiman(EFA_mod$rot_loadings, estimate_control = estimate_control(type = "EFAtools"), method = "ML"), class = "efa_sl_phi_missing")
+  expect_error(efa_schmid_leiman(EFA_mod$rot_loadings, estimate_control = estimate_control(type = "EFAtools"), estimator = "ML"), class = "efa_sl_phi_missing")
   expect_error(efa_schmid_leiman(lav_fit_bifactor, g_name = "g"), class = "efa_sl_not_second_order")
 })
 
@@ -296,7 +296,7 @@ test_that("a second-order Heywood case raises a classed error", {
                           0.8, 1, 0.7,
                           0.95, 0.7, 1), nrow = 3)
 
-  expect_error(efa_schmid_leiman(L1, Phi = Phi_heywood, estimate_control = estimate_control(type = "EFAtools"), method = "PAF"),
+  expect_error(efa_schmid_leiman(L1, Phi = Phi_heywood, estimate_control = estimate_control(type = "EFAtools"), estimator = "PAF"),
                class = "efa_sl_heywood")
 })
 

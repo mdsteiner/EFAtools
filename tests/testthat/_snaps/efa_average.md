@@ -5,11 +5,12 @@
     Output
       
       Averaging performed with averaging method mean (trim = 0) across 72 EFAs,
-      varying the following settings: init_comm, criterion_type, k_promax, P_type,
+      varying the following settings: init_comm, criterion_type, k_promax, p_type,
       and varimax_type.
       
       The error rate is at <pct>. Of the solutions that did not result in an error, <pct>
-      converged, <pct> contained Heywood cases, and <pct> were admissible.
+      converged. Of the solutions that converged, <pct> contained Heywood cases and <pct>
+      were admissible.
       
       == Indicator-to-Factor Correspondences =========================================
       
@@ -130,11 +131,12 @@
     Output
       
       Averaging performed with averaging method mean (trim = 0) across 10 EFAs,
-      varying the following settings: method, init_comm, criterion_type, abs_eigen,
-      and start_method.
+      varying the following settings: estimator, init_comm, criterion_type,
+      abs_eigen, and start_method.
       
       The error rate is at <pct>. Of the solutions that did not result in an error, <pct>
-      converged, <pct> contained Heywood cases, and <pct> were admissible.
+      converged. Of the solutions that converged, <pct> contained Heywood cases and <pct>
+      were admissible.
       
       == Indicator-to-Factor Correspondences =========================================
       
@@ -305,11 +307,12 @@
     Output
       
       Averaging performed with averaging method median across 169 EFAs, varying the
-      following settings: method, init_comm, criterion_type, abs_eigen, start_method,
-      rotation, k_promax, P_type, and varimax_type.
+      following settings: estimator, init_comm, criterion_type, abs_eigen,
+      start_method, rotation, k_promax, p_type, and varimax_type.
       
       The error rate is at <pct>. Of the solutions that did not result in an error, <pct>
-      converged, <pct> contained Heywood cases, and <pct> were admissible.
+      converged. Of the solutions that converged, <pct> contained Heywood cases and <pct>
+      were admissible.
       
       == Indicator-to-Factor Correspondences =========================================
       

@@ -28,7 +28,7 @@ test_that("efa_average with cor_method = 'fiml' analyses the two-stage FIML corr
   X <- avg_fiml_mar_data()
 
   avg <- suppressMessages(suppressWarnings(
-    efa_average(X, n_factors = 2, method = c("ML", "ULS"), rotation = "none",
+    efa_average(X, n_factors = 2, estimator = c("ML", "ULS"), rotation = "none",
                 cor_method = "fiml", show_progress = FALSE)
   ))
   expect_s3_class(avg, "efa_average")
@@ -45,7 +45,7 @@ test_that("efa_average with cor_method = 'fiml' analyses the two-stage FIML corr
   # (deterministic, unrotated ML/ULS) solutions, so the averaged loadings coincide. (That the
   # EM is run only once for the whole grid is pinned separately below.)
   avg_ref <- suppressMessages(suppressWarnings(
-    efa_average(R_fiml, N = em$n, n_factors = 2, method = c("ML", "ULS"),
+    efa_average(R_fiml, N = em$n, n_factors = 2, estimator = c("ML", "ULS"),
                 rotation = "none", show_progress = FALSE)
   ))
   expect_equal(unclass(avg$loadings$average), unclass(avg_ref$loadings$average),
@@ -73,7 +73,7 @@ test_that("efa_average runs the FIML EM once for the whole grid, not per solutio
   )
 
   invisible(suppressMessages(suppressWarnings(
-    efa_average(X, n_factors = 2, method = c("ML", "ULS"), rotation = "none",
+    efa_average(X, n_factors = 2, estimator = c("ML", "ULS"), rotation = "none",
                 cor_method = "fiml", show_progress = FALSE)
   )))
 

@@ -29,8 +29,8 @@
 #'  `NULL` (default) uses the [efa_fit()] defaults. The fit is unrotated, so no rotation settings
 #'  apply.
 #' @param ... Additional arguments passed to [efa_fit()]. For example,
-#' to change the extraction method (PAF is default). The estimation tuning knobs are not passed
-#' here; they live in `estimate_control`.
+#' `estimator`, to change the estimator (PAF is default). The estimation tuning knobs are not
+#' passed here; they live in `estimate_control`.
 #'
 #' @details Originally, the Kaiser-Guttman criterion was intended for the use
 #' with principal components, hence with eigenvalues derived from the original
@@ -98,7 +98,7 @@ efa_kgc <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
   .reject_flat_knobs(...names(), fn = "efa_kgc")
   .assert_cor_input(x)
 
-  eigen_type <- match.arg(eigen_type, several.ok = TRUE)
+  eigen_type <- .match_arg_ci(eigen_type, several.ok = TRUE)
   use <- match.arg(use)
   cor_method <- match.arg(cor_method)
   checkmate::assert_count(n_factors)

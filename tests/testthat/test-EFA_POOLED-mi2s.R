@@ -45,8 +45,9 @@
   q <- p * (p - 1L) / 2L
   R <- stats::cor(matrix(stats::rnorm(200L * p), 200L, p))
   G <- crossprod(matrix(stats::rnorm(60L * q), 60L, q)) / 60L
-  list(orig_R = R, Gamma = G,
+  list(orig_R = R, Gamma = G, unrot_loadings = matrix(0.5, p, 1L),
        settings = list(se = se, cor_method = cor_method, n_factors = 1L,
+                       estimator = "ULS",
                        use = "pairwise.complete.obs", type = "EFAtools"))
 }
 
@@ -255,6 +256,103 @@ test_that("the pooled object exposes mi_fit alongside the component fits", {
 })
 
 
+test_that("estimate_control and rotate_control reach the pooled MI2S fit", {
+  # Regression test: the pooled .efa_core() fit must run with the same tuning as
+  # the component fits; the control objects used to land unread in .efa_core()'s
+  # dots, so the pooled solution was silently computed with the preset defaults.
+  quiet <- function(expr) suppressMessages(suppressWarnings(expr))
+  # Two IDENTICAL imputations: (x + x) / 2 is exact in IEEE arithmetic and the
+  # between-imputation covariance is exactly zero, so the pooled inputs are
+  # bit-identical to the single fit's and the single fit is an exact oracle
+  # (m = 3+ would round the mean and could flip an optimiser iteration).
+  imps <- .mi2s_ord_imps(m = 2L, identical = TRUE)
+  # The SPSS rotation preset resolves order_type = "ss_factors" (EFAtools and
+  # psych both resolve "eigen" for the oblique engines), so it also pins the
+  # rot_type forwarding, which the .efa_core() default would collapse onto the
+  # estimation preset.
+  rc <- rotate_control(type = "SPSS", normalize = FALSE, random_starts = 0L,
+                       gam = 0.5)
+
+  set.seed(1)
+  pooled_default <- quiet(
+    efa_mi(imps, n_factors = 2L, estimator = "ULS", rotation = "oblimin",
+           se = "sandwich", cor_method = "poly")
+  )
+  set.seed(1)
+  pooled_ctl <- quiet(
+    efa_mi(imps, n_factors = 2L, estimator = "ULS", rotation = "oblimin",
+           se = "sandwich", cor_method = "poly", rotate_control = rc)
+  )
+  set.seed(1)
+  single_ctl <- quiet(
+    efa_fit(imps[[1L]], n_factors = 2L, estimator = "ULS", rotation = "oblimin",
+            se = "sandwich", cor_method = "poly", rotate_control = rc)
+  )
+
+  # The single pooled fit records the requested rotation tuning, not the preset
+  # defaults (normalize = TRUE, randomStarts = 100, order_type = "eigen").
+  expect_identical(pooled_ctl$mi_fit$settings$normalize, FALSE)
+  expect_equal(pooled_ctl$mi_fit$settings$randomStarts, 0)
+  expect_identical(pooled_ctl$mi_fit$settings$order_type, "ss_factors")
+  expect_identical(pooled_default$mi_fit$settings$normalize, TRUE)
+  expect_identical(pooled_default$mi_fit$settings$order_type, "eigen")
+
+  # The compared solutions are proper, and the override visibly changes the
+  # pooled solution.
+  expect_true(all(is.finite(unclass(pooled_ctl$rot_loadings))))
+  expect_false(isTRUE(all.equal(unclass(pooled_ctl$rot_loadings),
+                                unclass(pooled_default$rot_loadings),
+                                tolerance = 1e-6)))
+
+  # With identical imputations the pooled fit reproduces the single fit run with
+  # the same rotate_control, including the oblimin gam engine extra.
+  expect_equal(unclass(pooled_ctl$rot_loadings), unclass(single_ctl$rot_loadings),
+               tolerance = 1e-10)
+  expect_equal(pooled_ctl$SE$rot_loadings, single_ctl$SE$rot_loadings,
+               tolerance = 1e-10)
+
+  # A bare engine extra in the dots beats the one stored in rotate_control
+  # (gam = 0.7 over rc's 0.5); if the control won, the two runs would be equal.
+  set.seed(1)
+  pooled_dots <- quiet(
+    efa_mi(imps, n_factors = 2L, estimator = "ULS", rotation = "oblimin",
+           se = "sandwich", cor_method = "poly", rotate_control = rc, gam = 0.7)
+  )
+  expect_false(isTRUE(all.equal(unclass(pooled_dots$rot_loadings),
+                                unclass(pooled_ctl$rot_loadings),
+                                tolerance = 1e-8)))
+
+  # estimate_control side: the ML start method must reach the pooled fit (it is
+  # recorded in the single fit's settings; .efa_core()'s own default is "psych").
+  imps_cont <- .mi2s_cont_imps(m = 2L)
+  pooled_ml <- quiet(
+    efa_mi(imps_cont, n_factors = 1L, estimator = "ML", rotation = "none",
+           se = "sandwich", cor_method = "pearson",
+           estimate_control = estimate_control(start_method = "factanal"))
+  )
+  expect_identical(pooled_ml$mi_fit$settings$start_method, "factanal")
+})
+
+
+test_that("abbreviated control-argument names reach the pooled MI2S fit", {
+  # do.call(efa_fit, ...) accepts unique abbreviations of efa_fit()'s formals
+  # through R's argument matching, so the pooled fit must resolve them too
+  # instead of silently falling back to the preset controls.
+  quiet <- function(expr) suppressMessages(suppressWarnings(expr))
+  imps <- .mi2s_ord_imps(m = 2L, identical = TRUE)
+
+  set.seed(1)
+  pooled_abbrev <- quiet(
+    efa_mi(imps, n_factors = 2L, estimator = "ULS", rotation = "oblimin",
+           se = "sandwich", cor_method = "poly",
+           rotate_c = rotate_control(normalize = FALSE, random_starts = 0L))
+  )
+
+  expect_identical(pooled_abbrev$mi_fit$settings$normalize, FALSE)
+  expect_equal(pooled_abbrev$mi_fit$settings$randomStarts, 0)
+})
+
+
 test_that("continuous Pearson imputations run through MI2S (ML and ULS)", {
   imps <- .mi2s_cont_imps(m = 6L)
 
@@ -276,7 +374,7 @@ test_that("continuous Pearson imputations run through MI2S (ML and ULS)", {
 .mi2s_call <- function(fits, efa_args = list()) {
   .efa_pooled_mi2s(
     fits = fits, data_list = lapply(fits, `[[`, "orig_R"), efa_args = efa_args,
-    settings = fits[[1L]]$settings, method = "ULS", rotation = "none",
+    settings = fits[[1L]]$settings, estimator = "ULS", rotation = "none",
     rotation_type = "none", target_method = "first_target",
     align_unrotated = "signed_tucker_congruence", fit_pool_method = "D2",
     p = 0.05, rmsea_ci_level = 0.90, rmsr_upper = TRUE
@@ -310,6 +408,14 @@ test_that("inconsistent component inputs fail closed", {
   no_gamma[[2L]]$Gamma <- NULL
   expect_error(.mi2s_call(no_gamma),
                class = "efa_pooled_mi2s_inputs_inconsistent")
+})
+
+
+test_that("component fits with mismatched settings fail closed", {
+  fits <- list(.mi2s_mock_fit(1L), .mi2s_mock_fit(2L))
+  fits[[2L]]$settings$estimator <- "ML"
+  expect_error(.efa_pooled_check_fits(fits),
+               class = "efa_pooled_setting_mismatch")
 })
 
 

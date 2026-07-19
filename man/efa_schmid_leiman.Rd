@@ -15,7 +15,7 @@ SAS. Behavior Research Methods, 37 , 48–58. doi:10.3758/BF03206397
 efa_schmid_leiman(
   x,
   Phi = NULL,
-  method = c("PAF", "ML", "ULS", "MINRES"),
+  estimator = c("PAF", "ML", "ULS", "MINRES"),
   g_name = "g",
   estimate_control = NULL,
   ...
@@ -37,10 +37,11 @@ analysis (see \code{L2}).}
 solution. Only needs to be specified if a pattern matrix is entered directly
 into \code{x}.}
 
-\item{method}{character. One of "PAF", "ML", or "ULS" to use
+\item{estimator}{character. One of "PAF", "ML", or "ULS" to use
 principal axis factoring, maximum likelihood, or unweighted least squares,
 respectively, used in \code{\link[=efa_fit]{efa_fit()}} to find the second-order loadings. "MINRES" is
-accepted as a synonym for "ULS" (the same estimator).}
+accepted as a synonym for "ULS" (the same estimator). The value is matched
+case-insensitively.}
 
 \item{g_name}{character. The name of the general factor. This needs only be
 specified if \code{x} is a \code{lavaan} second-order solution. Default is "g".}
@@ -91,15 +92,15 @@ calculation of McDonald's omegas (see \code{\link[=efa_reliability]{efa_reliabil
 \examples{
 ## Use with an output from the EFAtools::efa_fit function, both with type EFAtools
 EFA_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
-                   method = "PAF", rotation = "promax")
-SL_EFAtools <- efa_schmid_leiman(EFA_mod, method = "PAF",
+                   estimator = "PAF", rotation = "promax")
+SL_EFAtools <- efa_schmid_leiman(EFA_mod, estimator = "PAF",
                                  estimate_control = estimate_control(type = "EFAtools"))
 
 \donttest{
 ## Use with an output from the psych::fa function with type psych
 fa_mod <- psych::fa(test_models$baseline$cormat, nfactors = 3, n.obs = 500,
                     fm = "pa", rotate = "Promax")
-SL_psych <- efa_schmid_leiman(fa_mod, method = "PAF",
+SL_psych <- efa_schmid_leiman(fa_mod, estimator = "PAF",
                               estimate_control = estimate_control(type = "psych"))
 }
 
@@ -110,8 +111,8 @@ SL_psych <- efa_schmid_leiman(fa_mod, method = "PAF",
 ## For demonstration, take pattern matrix and phi from an EFA output
 ## This gives the same solution as the first example
 EFA_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
-                   method = "PAF", rotation = "promax")
-SL_flex <- efa_schmid_leiman(EFA_mod$rot_loadings, Phi = EFA_mod$Phi, method = "PAF",
+                   estimator = "PAF", rotation = "promax")
+SL_flex <- efa_schmid_leiman(EFA_mod$rot_loadings, Phi = EFA_mod$Phi, estimator = "PAF",
                              estimate_control = estimate_control(type = "EFAtools"))
 
 \donttest{

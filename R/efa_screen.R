@@ -630,9 +630,15 @@ efa_screen <- function(x, N = NA,
     efa_screen_mcd_unusable = function(cnd) {
       # Fall back to the classical mean/covariance when it is invertible; otherwise signal
       # a total failure so a single, outcome-appropriate condition is raised below.
+      # Gate on the reciprocal condition number, matching the reweighting gate above:
+      # `mahalanobis()` inverts through `solve()`, which refuses anything whose rcond is
+      # below the double-precision epsilon, so the gate has to test the same quantity.
+      # Positive definiteness alone is not enough -- a collinear covariance can pass a
+      # Cholesky on the sign of a rounding-level pivot (and does on some BLAS
+      # implementations) yet still abort in `solve()`. A non-finite covariance is screened
+      # off first: it has no condition number, and `rcond()` would abort on it.
       cov_cl <- stats::cov(X)
-      if (n > p &&
-          !inherits(tryCatch(chol(cov_cl), error = function(e) e), "error")) {
+      if (n > p && all(is.finite(cov_cl)) && rcond(cov_cl) >= 1e-12) {
         list(center = colMeans(X), cov = cov_cl, method = "classical")
       } else {
         NULL

@@ -13,9 +13,9 @@ set.seed(42)
 efa_def <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
                        show_progress = FALSE)
 efa_ml <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
-                      method = "ML", show_progress = FALSE)
+                      estimator = "ML", show_progress = FALSE)
 efa_uls <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
-                      method = "ULS", show_progress = FALSE)
+                      estimator = "ULS", show_progress = FALSE)
 
 # Scalar overrides on the six default-vector tuning axes (init_comm,
 # criterion_type, varimax_type, k_promax, P_type, start_method) for the
@@ -34,34 +34,34 @@ efa_uls <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
 )
 efa_all <- do.call(efa_average, c(
   list(test_models$baseline$cormat, n_factors = 3, N = 500,
-       method = c("PAF", "ML", "ULS"),
+       estimator = c("PAF", "ML", "ULS"),
        type = c("none", "EFAtools", "psych", "SPSS"),
        salience_threshold = .2, show_progress = FALSE),
   .scalar_axes))
 efa_all_oblq <- do.call(efa_average, c(
   list(test_models$baseline$cormat, n_factors = 3, N = 500,
-       method = c("PAF", "ML", "ULS"),
+       estimator = c("PAF", "ML", "ULS"),
        type = c("none", "EFAtools", "psych", "SPSS"),
        rotation = "oblique", show_progress = FALSE),
   .scalar_axes))
 efa_all_orth <- do.call(efa_average, c(
   list(test_models$baseline$cormat, n_factors = 3, N = 500,
-       method = c("PAF", "ML", "ULS"),
+       estimator = c("PAF", "ML", "ULS"),
        type = c("none", "EFAtools", "psych", "SPSS"),
        rotation = "orthogonal", show_progress = FALSE),
   .scalar_axes))
 efa_all_none <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
-                            method = c("PAF", "ML", "ULS"),
+                            estimator = c("PAF", "ML", "ULS"),
                             type = c("none", "EFAtools", "psych", "SPSS"),
                             rotation = "none", show_progress = FALSE)
 
 efa_all_md <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
-                            method = c("PAF", "ML", "ULS"),
+                            estimator = c("PAF", "ML", "ULS"),
                             type = c("none", "EFAtools", "psych", "SPSS"),
                             rotation = "oblique", averaging = "median", show_progress = FALSE)
 efa_all_tm <- do.call(efa_average, c(
   list(test_models$baseline$cormat, n_factors = 3, N = 500,
-       method = c("PAF", "ML", "ULS"),
+       estimator = c("PAF", "ML", "ULS"),
        type = c("none", "EFAtools", "psych", "SPSS"),
        rotation = "oblique", averaging = "mean",
        trim = .2, show_progress = FALSE),
@@ -137,77 +137,77 @@ test_that("output class and dimensions are correct", {
 
 test_that("settings are returned correctly", {
   skip_if_not_slow()
-  expect_named(efa_def$settings, c("method", "rotation", "type", "n_factors", "N",
+  expect_named(efa_def$settings, c("estimator", "method", "rotation", "type", "n_factors", "N",
                                    "init_comm", "criterion", "criterion_type",
                                    "abs_eigen", "varimax_type", "normalize",
                                    "k_promax", "k_simplimax", "P_type",
                                    "precision", "start_method", "use",
                                    "cor_method", "max_iter", "averaging",
                                    "trim", "salience_threshold"))
-  expect_named(efa_ml$settings, c("method", "rotation", "type", "n_factors", "N",
+  expect_named(efa_ml$settings, c("estimator", "method", "rotation", "type", "n_factors", "N",
                                   "init_comm", "criterion", "criterion_type",
                                   "abs_eigen", "varimax_type", "normalize",
                                   "k_promax", "k_simplimax", "P_type",
                                   "precision", "start_method", "use",
                                   "cor_method", "max_iter", "averaging",
                                   "trim", "salience_threshold"))
-  expect_named(efa_uls$settings, c("method", "rotation", "type", "n_factors", "N",
+  expect_named(efa_uls$settings, c("estimator", "method", "rotation", "type", "n_factors", "N",
                                    "init_comm", "criterion", "criterion_type",
                                    "abs_eigen", "varimax_type", "normalize",
                                    "k_promax", "k_simplimax", "P_type",
                                    "precision", "start_method", "use",
                                    "cor_method", "max_iter", "averaging",
                                    "trim", "salience_threshold"))
-  expect_named(efa_all$settings, c("method", "rotation", "type", "n_factors", "N",
+  expect_named(efa_all$settings, c("estimator", "method", "rotation", "type", "n_factors", "N",
                                    "init_comm", "criterion", "criterion_type",
                                    "abs_eigen", "varimax_type", "normalize",
                                    "k_promax", "k_simplimax", "P_type",
                                    "precision", "start_method", "use",
                                    "cor_method", "max_iter", "averaging",
                                    "trim", "salience_threshold"))
-  expect_named(efa_all_oblq$settings, c("method", "rotation", "type", "n_factors", "N",
+  expect_named(efa_all_oblq$settings, c("estimator", "method", "rotation", "type", "n_factors", "N",
                                         "init_comm", "criterion", "criterion_type",
                                         "abs_eigen", "varimax_type", "normalize",
                                         "k_promax", "k_simplimax", "P_type",
                                         "precision", "start_method", "use",
                                         "cor_method", "max_iter", "averaging",
                                         "trim", "salience_threshold"))
-  expect_named(efa_all_orth$settings, c("method", "rotation", "type", "n_factors", "N",
+  expect_named(efa_all_orth$settings, c("estimator", "method", "rotation", "type", "n_factors", "N",
                                         "init_comm", "criterion", "criterion_type",
                                         "abs_eigen", "varimax_type", "normalize",
                                         "k_promax", "k_simplimax", "P_type",
                                         "precision", "start_method", "use",
                                         "cor_method", "max_iter", "averaging",
                                         "trim", "salience_threshold"))
-  expect_named(efa_all_none$settings, c("method", "rotation", "type", "n_factors", "N",
+  expect_named(efa_all_none$settings, c("estimator", "method", "rotation", "type", "n_factors", "N",
                                         "init_comm", "criterion", "criterion_type",
                                         "abs_eigen", "varimax_type", "normalize",
                                         "k_promax", "k_simplimax", "P_type",
                                         "precision", "start_method", "use",
                                         "cor_method", "max_iter", "averaging",
                                         "trim", "salience_threshold"))
-  expect_named(efa_all_md$settings, c("method", "rotation", "type", "n_factors", "N",
+  expect_named(efa_all_md$settings, c("estimator", "method", "rotation", "type", "n_factors", "N",
                                       "init_comm", "criterion", "criterion_type",
                                       "abs_eigen", "varimax_type", "normalize",
                                       "k_promax", "k_simplimax", "P_type",
                                       "precision", "start_method", "use",
                                       "cor_method", "max_iter", "averaging",
                                       "trim", "salience_threshold"))
-  expect_named(efa_all_tm$settings, c("method", "rotation", "type", "n_factors", "N",
+  expect_named(efa_all_tm$settings, c("estimator", "method", "rotation", "type", "n_factors", "N",
                                       "init_comm", "criterion", "criterion_type",
                                       "abs_eigen", "varimax_type", "normalize",
                                       "k_promax", "k_simplimax", "P_type",
                                       "precision", "start_method", "use",
                                       "cor_method", "max_iter", "averaging",
                                       "trim", "salience_threshold"))
-  expect_named(efa_raw$settings, c("method", "rotation", "type", "n_factors", "N",
+  expect_named(efa_raw$settings, c("estimator", "method", "rotation", "type", "n_factors", "N",
                                    "init_comm", "criterion", "criterion_type",
                                    "abs_eigen", "varimax_type", "normalize",
                                    "k_promax", "k_simplimax", "P_type",
                                    "precision", "start_method", "use",
                                    "cor_method", "max_iter", "averaging",
                                    "trim", "salience_threshold"))
-  expect_named(efa_raw_p$settings, c("method", "rotation", "type", "n_factors", "N",
+  expect_named(efa_raw_p$settings, c("estimator", "method", "rotation", "type", "n_factors", "N",
                                      "init_comm", "criterion", "criterion_type",
                                      "abs_eigen", "varimax_type", "normalize",
                                      "k_promax", "k_simplimax", "P_type",
@@ -216,17 +216,17 @@ test_that("settings are returned correctly", {
                                      "trim", "salience_threshold"))
 
 
-  expect_equal(efa_def$settings$method, "PAF")
-  expect_equal(efa_ml$settings$method, "ML")
-  expect_equal(efa_uls$settings$method, "ULS")
-  expect_equal(efa_all$settings$method, c("PAF", "ML", "ULS"))
-  expect_equal(efa_all_oblq$settings$method, c("PAF", "ML", "ULS"))
-  expect_equal(efa_all_orth$settings$method, c("PAF", "ML", "ULS"))
-  expect_equal(efa_all_none$settings$method, c("PAF", "ML", "ULS"))
-  expect_equal(efa_all_md$settings$method, c("PAF", "ML", "ULS"))
-  expect_equal(efa_all_tm$settings$method, c("PAF", "ML", "ULS"))
-  expect_equal(efa_raw$settings$method, "PAF")
-  expect_equal(efa_raw_p$settings$method, "PAF")
+  expect_equal(efa_def$settings$estimator, "PAF")
+  expect_equal(efa_ml$settings$estimator, "ML")
+  expect_equal(efa_uls$settings$estimator, "ULS")
+  expect_equal(efa_all$settings$estimator, c("PAF", "ML", "ULS"))
+  expect_equal(efa_all_oblq$settings$estimator, c("PAF", "ML", "ULS"))
+  expect_equal(efa_all_orth$settings$estimator, c("PAF", "ML", "ULS"))
+  expect_equal(efa_all_none$settings$estimator, c("PAF", "ML", "ULS"))
+  expect_equal(efa_all_md$settings$estimator, c("PAF", "ML", "ULS"))
+  expect_equal(efa_all_tm$settings$estimator, c("PAF", "ML", "ULS"))
+  expect_equal(efa_raw$settings$estimator, "PAF")
+  expect_equal(efa_raw_p$settings$estimator, "PAF")
 
   expect_equal(efa_def$settings$rotation, "promax")
   expect_equal(efa_ml$settings$rotation, "promax")
@@ -508,9 +508,9 @@ cor_nposdef <- matrix(c(1, 1, 0, 1, 1, 1, 0, 1, 1), ncol = 3)
 test_that("errors are thrown correctly", {
   skip_if_not_slow()
   expect_error(efa_average(1:5, show_progress = FALSE), class = "efa_input_not_matrix")
-  expect_message(efa_average(GRiPS_raw, n_factors = 2, method = "PAF", type = c("EFAtools", "psych"), show_progress = FALSE),
+  expect_message(efa_average(GRiPS_raw, n_factors = 2, estimator = "PAF", type = c("EFAtools", "psych"), show_progress = FALSE),
                  class = "efa_cor_from_data")
-  expect_warning(efa_average(GRiPS_raw, n_factors = 2, method = "PAF", type = c("EFAtools", "psych"),
+  expect_warning(efa_average(GRiPS_raw, n_factors = 2, estimator = "PAF", type = c("EFAtools", "psych"),
                              N = 20, show_progress = FALSE),
                  class = "efa_n_from_data")
   expect_error(efa_average(dat_sing, n_factors = 1, show_progress = FALSE),
@@ -520,14 +520,14 @@ test_that("errors are thrown correctly", {
   expect_error(efa_average(matrix(rnorm(30), ncol = 3), n_factors = 2, show_progress = FALSE),
                class = "efa_underidentified")
   expect_warning(suppressWarnings(efa_average(matrix(rnorm(30), ncol = 3), n_factors = 1,
-                             method = "PAF", type = c("EFAtools", "psych"), show_progress = FALSE),
+                             estimator = "PAF", type = c("EFAtools", "psych"), show_progress = FALSE),
                              class = c("efa_avg_excluded_solutions")),
                  class = "efa_just_identified")
-  expect_warning(suppressWarnings(efa_average(cor_nposdef, n_factors = 1, N = 10, method = "PAF",
+  expect_warning(suppressWarnings(efa_average(cor_nposdef, n_factors = 1, N = 10, estimator = "PAF",
                      type = c("EFAtools", "psych"), show_progress = FALSE), classes = c("efa_just_identified", "efa_avg_excluded_solutions")), class = "efa_cor_smoothed")
-  expect_message(efa_average(GRiPS_raw, n_factors = 1, method = "PAF", type = c("EFAtools", "psych"), show_progress = FALSE),
+  expect_message(efa_average(GRiPS_raw, n_factors = 1, estimator = "PAF", type = c("EFAtools", "psych"), show_progress = FALSE),
                  class = "efa_avg_single_factor_rotation")
-  expect_warning(efa_average(GRiPS_raw, n_factors = 1, method = "PAF", type = c("EFAtools"),
+  expect_warning(efa_average(GRiPS_raw, n_factors = 1, estimator = "PAF", type = c("EFAtools"),
                              rotation = "none", show_progress = FALSE),
                  class = "efa_avg_single_combination")
 })
@@ -537,7 +537,7 @@ test_that("an all-failed averaging grid returns an empty (NA) result", {
   # When every solution fails (here all runs hit max_iter and do not converge),
   # the averaged result is NA rather than an error or an average over an empty set.
   res <- suppressWarnings(efa_average(test_models$baseline$cormat, n_factors = 3,
-                                      N = 500, max_iter = 1, method = "PAF",
+                                      N = 500, max_iter = 1, estimator = "PAF",
                                       type = "none", rotation = "none",
                                       show_progress = FALSE))
   expect_s3_class(res, "efa_average")
@@ -552,7 +552,7 @@ test_that("an all-Heywood averaging grid returns an empty (NA) result", {
   # every fitted solution is a Heywood case and is excluded; with nothing left to
   # average, the communalities and loadings come back as NA rather than an error.
   m <- matrix(c(1, .8, .8,  .8, 1, .5,  .8, .5, 1), 3, 3)
-  res <- suppressWarnings(efa_average(m, n_factors = 1, N = 200, method = "PAF",
+  res <- suppressWarnings(efa_average(m, n_factors = 1, N = 200, estimator = "PAF",
                                       type = "none", rotation = "none",
                                       show_progress = FALSE))
   expect_s3_class(res, "efa_average")
@@ -590,7 +590,7 @@ test_that("a vector-valued precision is recycled across the grid", {
   # return an all-NA result).
   res <- suppressWarnings(
     efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
-                method = "ML", rotation = "promax", type = "none",
+                estimator = "ML", rotation = "promax", type = "none",
                 precision = c(1e-5, 1e-3), show_progress = FALSE))
   expect_s3_class(res, "efa_average")
   expect_setequal(unique(res$implementations_grid$precision), c(1e-5, 1e-3))
@@ -605,10 +605,81 @@ test_that("problematic solutions are summarised in a single warning", {
   # rather than one per model.
   expect_warning(
     efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
-                max_iter = 1, method = "PAF", type = "none", rotation = "none",
+                max_iter = 1, estimator = "PAF", type = "none", rotation = "none",
                 show_progress = FALSE),
     class = "efa_avg_excluded_solutions"
   )
+})
+
+# The rates summary reads only the implementations_grid, so the denominator states below can
+# be exercised without fitting anything.
+rates_text <- function(grid) {
+  paste(cli::ansi_strip(cli::cli_format_method(.efa_emit_average_rates(grid))),
+        collapse = " ")
+}
+
+test_that("each rate names the denominator it is computed over", {
+  local_reproducible_output()
+  # Convergence is assessed for every solution that did not error, but Heywood cases and
+  # admissibility only for those that then converged. Here: 2 errored, 2 did not converge,
+  # and 6 converged (3 Heywood, 1 proper but not salient, 2 admissible). The Heywood and
+  # admissibility denominators are therefore 6, not the 8 that did not error - over 8 the
+  # Heywood rate would read 38% rather than 50%.
+  grid <- data.frame(
+    errors     = c(rep(TRUE, 2), rep(FALSE, 8)),
+    converged  = c(rep(NA, 2), rep(1, 2), rep(0, 6)),
+    heywood    = c(rep(NA, 4), rep(TRUE, 3), rep(FALSE, 3)),
+    admissible = c(rep(NA, 4), rep(FALSE, 4), rep(TRUE, 2))
+  )
+
+  out <- rates_text(grid)
+  expect_match(out, "The error rate is at 20%.", fixed = TRUE)
+  expect_match(out, "Of the solutions that did not result in an error, 75% converged.",
+               fixed = TRUE)
+  expect_match(out,
+               "Of the solutions that converged, 50% contained Heywood cases and 33% were admissible.",
+               fixed = TRUE)
+})
+
+test_that("Heywood cases and admissibility are not reported when no solution converged", {
+  local_reproducible_output()
+  # Nothing reached the stage at which either is assessed, so both rates are undefined
+  # rather than 0%.
+  grid <- data.frame(errors = FALSE, converged = c(1, 1), heywood = NA, admissible = NA)
+
+  out <- rates_text(grid)
+  expect_no_match(out, "NaN", fixed = TRUE)
+  expect_match(out, "Of the solutions that did not result in an error, 0% converged.",
+               fixed = TRUE)
+  expect_match(out,
+               "No solution converged, so Heywood cases and admissibility could not be assessed.",
+               fixed = TRUE)
+})
+
+test_that("only the error rate is reported when every EFA errored", {
+  local_reproducible_output()
+  # No model was fitted at all, so convergence is undefined too.
+  grid <- data.frame(errors = TRUE, converged = c(NA, NA), heywood = NA, admissible = NA)
+
+  out <- rates_text(grid)
+  expect_no_match(out, "NaN", fixed = TRUE)
+  expect_match(out, "The error rate is at 100%.", fixed = TRUE)
+  expect_match(out,
+               "No solution could be fitted, so convergence, Heywood cases, and admissibility could not be assessed.",
+               fixed = TRUE)
+})
+
+test_that("printing a run in which no EFA converged reports no NaN rate", {
+  skip_if_not_slow()
+  local_reproducible_output()
+  # Every run hits max_iter, so the Heywood and admissibility rates have an empty
+  # denominator on the way through the public API.
+  res <- suppressWarnings(
+    efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
+                max_iter = 1, estimator = "PAF", type = "none", rotation = "none",
+                show_progress = FALSE))
+
+  expect_no_match(paste(cli::ansi_strip(format(res)), collapse = " "), "NaN", fixed = TRUE)
 })
 
 test_that("printing does not plot by default", {
@@ -627,6 +698,27 @@ test_that("admissibility is reported as an outcome, not a varied setting", {
                collapse = " ")
   # "admissible" appears only in the convergence summary, never in the settings list.
   expect_equal(unname(lengths(gregexpr("admissible", out, fixed = TRUE))), 1L)
+})
+
+test_that("settings varied equally across the grid are still listed", {
+  local_reproducible_output()
+  # A grid whose settings columns each hold the same number of distinct values must
+  # still report every varied setting. Every model is a Heywood case, so the report
+  # stops after the summary and no averaged solution is needed.
+  obj <- structure(list(
+    settings = list(estimator = c("PAF", "ML"), rotation = c("promax", "oblimin"),
+                    averaging = "mean", trim = 0),
+    implementations_grid = data.frame(
+      estimator  = c("PAF", "ML"),
+      rotation   = c("promax", "oblimin"),
+      errors     = FALSE,
+      converged  = 0,
+      heywood    = TRUE,
+      admissible = FALSE
+    )), class = "efa_average")
+
+  out <- paste(cli::ansi_strip(format(obj)), collapse = " ")
+  expect_match(out, "settings: estimator and rotation")
 })
 
 test_that("averaged fit indices match the per-model grid means", {

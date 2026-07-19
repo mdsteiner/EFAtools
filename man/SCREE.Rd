@@ -41,8 +41,8 @@ Default is "pearson".}
 \code{eigen_type}. Default is 1.}
 
 \item{...}{Additional arguments passed to \code{\link[=efa_fit]{efa_fit()}}. For example,
-to change the extraction method (PAF is default). The estimation tuning knobs are not passed
-here; they live in \code{estimate_control}.}
+\code{estimator}, to change the estimator (PAF is default). The estimation tuning knobs are not
+passed here; they live in \code{estimate_control}.}
 }
 \value{
 An object of class \code{efa_retention}, identical to the value of

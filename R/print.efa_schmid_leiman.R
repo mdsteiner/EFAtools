@@ -21,8 +21,8 @@
 #'
 #' @examples
 #' EFA_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
-#'                    method = "PAF", rotation = "promax")
-#' sl_mod <- efa_schmid_leiman(EFA_mod, method = "PAF")
+#'                    estimator = "PAF", rotation = "promax")
+#' sl_mod <- efa_schmid_leiman(EFA_mod, estimator = "PAF")
 #' sl_mod
 #'
 #' # format() returns the same lines as plain text:
@@ -41,16 +41,15 @@ format.efa_schmid_leiman <- function(x, ...) {
   cli::cli_format_method({
 
     if (!all(is.na(x$settings))) {
-      # extract the settings for EFA not depending on the method
-      method <- x$settings$method
-      type <- x$settings$type
+      # extract the estimator of the second-order EFA
+      estimator <- x$settings$estimator
 
       # Emitted verbatim (not via cli_text) so the "setting = 'value'" tokens are never split
       # across a line break; the bold values therefore use style_bold() rather than {.strong}.
       cli::cli_text("")
       cli::cli_verbatim(paste0(
-        "EFA for second-order loadings performed with type = '",
-        cli::style_bold(type), "' and method = '", cli::style_bold(method), "'"
+        "EFA for second-order loadings performed with estimator = '",
+        cli::style_bold(estimator), "'"
       ))
 
       # Surface non-convergence of the second-order EFA, keyed on its convergence
@@ -59,7 +58,7 @@ format.efa_schmid_leiman <- function(x, ...) {
                                              iter = x$iter,
                                              max_iter = x$settings$max_iter))) {
         cli::cli_text("")
-        cli::cli_alert_danger(.efa_nonconvergence_banner(method))
+        cli::cli_alert_danger(.efa_nonconvergence_banner(estimator))
       }
     }
 

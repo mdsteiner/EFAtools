@@ -36,7 +36,7 @@ test_that("output class and dimensions are correct", {
   expect_named(nf_grips$settings, c("criteria", "suitability", "N", "use",
                                     "n_factors_max", "N_pop", "N_samples", "alpha",
                                     "cor_method", "max_iter_CD", "n_fac_theor",
-                                    "method", "gof", "eigen_type_HULL",
+                                    "estimator", "method", "gof", "eigen_type_HULL",
                                     "eigen_type_other", "n_factors", "n_datasets",
                                     "percent", "decision_rule",
                                     "ekc_type", "n_datasets_nest",

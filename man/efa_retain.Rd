@@ -19,7 +19,7 @@ efa_retain(
   ...,
   max_iter_CD = 50,
   n_fac_theor = NA,
-  method = c("ML", "PAF", "ULS"),
+  estimator = c("ML", "PAF", "ULS"),
   gof = c("CAF", "CFI", "RMSEA"),
   eigen_type_HULL = c("SMC", "PCA", "EFA"),
   eigen_type_other = c("SMC"),
@@ -42,7 +42,8 @@ data.}
 \item{criteria}{character. A vector with the factor retention methods to
 perform. Possible inputs are: \code{"CD"}, \code{"EKC"}, \code{"HULL"},
 \code{"KGC"}, \code{"MAP"}, \code{"NEST"},\code{"PARALLEL"}, \code{"SCREE"}, and \code{"SMT"}
-(see details). By default, a subset of often used, well-performing methods are performed.}
+(see details). The values are matched case-insensitively. By default, a subset
+of often used, well-performing methods are performed.}
 
 \item{suitability}{logical. Whether the data should be checked for suitability
 for factor analysis using the Bartlett's test of sphericity and the
@@ -94,16 +95,17 @@ Default is 50.}
 of factors to retain. The maximum of this number and the number of factors
 suggested by \code{\link[=efa_parallel]{efa_parallel()}} plus one will be used in the Hull method.}
 
-\item{method}{character. Passed to \code{\link[=efa_fit]{efa_fit()}} in \code{\link[=efa_hull]{efa_hull()}},
+\item{estimator}{character. Passed to \code{\link[=efa_fit]{efa_fit()}} in \code{\link[=efa_hull]{efa_hull()}},
 \code{\link[=efa_kgc]{efa_kgc()}}, \code{\link[=efa_scree]{efa_scree()}}, \code{\link[=efa_parallel]{efa_parallel()}}, and \code{\link[=efa_nest]{efa_nest()}}. The
-estimation method to use. One of  \code{"PAF"}, \code{"ULS"}, or  \code{"ML"},
+estimator to use. One of  \code{"PAF"}, \code{"ULS"}, or  \code{"ML"},
 for principal axis factoring, unweighted least squares, and maximum
-likelihood, respectively. In \code{\link[=efa_kgc]{efa_kgc()}}, \code{\link[=efa_scree]{efa_scree()}}, and \code{\link[=efa_parallel]{efa_parallel()}} it only
+likelihood, respectively. The value is matched case-insensitively. In
+\code{\link[=efa_kgc]{efa_kgc()}}, \code{\link[=efa_scree]{efa_scree()}}, and \code{\link[=efa_parallel]{efa_parallel()}} it only
 takes effect when the respective \code{eigen_type} includes \code{"EFA"}.}
 
 \item{gof}{character. Passed to \code{\link[=efa_hull]{efa_hull()}}. The goodness of fit index
 to use. Either \code{"CAF"}, \code{"CFI"}, or \code{"RMSEA"}, or any
-combination of them. If \code{method = "PAF"} is used, only
+combination of them. With the \code{"PAF"} estimator, only
 the CAF can be used as goodness of fit index. For details on the CAF, see
 Lorenzo-Seva, Timmerman, and Kiers (2011).}
 
@@ -208,28 +210,28 @@ documentations for details):
 }
 \examples{
 \donttest{
-# Default criteria, with correlation matrix and fit method "ML" (where needed)
+# Default criteria, with correlation matrix and estimator "ML" (where needed)
 # This will throw a warning for CD, as no raw data were specified
-nfac_all <- efa_retain(test_models$baseline$cormat, N = 500, method = "ML")
+nfac_all <- efa_retain(test_models$baseline$cormat, N = 500, estimator = "ML")
 
 # The same as above, but without "CD"
 nfac_wo_CD <- efa_retain(test_models$baseline$cormat, criteria = c("EKC",
                          "HULL", "PARALLEL", "NEST"), N = 500,
-                         method = "ML")
+                         estimator = "ML")
 
 # Use PAF instead of ML (this will take longer). For this, gof has
 # to be set to "CAF" for the Hull method.
 nfac_PAF <- efa_retain(test_models$baseline$cormat, criteria = c("EKC",
                        "HULL", "PARALLEL", "NEST"), N = 500,
-                       method = "PAF", gof = "CAF")
+                       estimator = "PAF", gof = "CAF")
 
 # Do KGC and PARALLEL with only "PCA" type of eigenvalues
 nfac_PCA <- efa_retain(test_models$baseline$cormat, criteria = c("EKC",
                        "HULL", "PARALLEL", "NEST"), N = 500,
-                       method = "ML", eigen_type_other = "PCA")
+                       estimator = "ML", eigen_type_other = "PCA")
 
 # Use raw data, such that CD can also be performed
-nfac_raw <- efa_retain(GRiPS_raw, method = "ML")
+nfac_raw <- efa_retain(GRiPS_raw, estimator = "ML")
 }
 }
 \seealso{

@@ -87,7 +87,7 @@ efa_fit(
   x,
   n_factors,
   N = NA,
-  method = c("PAF", "ML", "ULS", "MINRES", "DWLS"),
+  estimator = c("PAF", "ML", "ULS", "MINRES", "DWLS"),
   rotation = c("none", "varimax", "equamax", "quartimax", "geominT", "bentlerT",
     "bifactorT", "promax", "oblimin", "quartimin", "simplimax", "bentlerQ", "geominQ",
     "bifactorQ"),
@@ -116,11 +116,11 @@ correlation matrix is used. If input is a correlation matrix and \code{N} = NA
 values are entered and \code{use} is \code{"complete.obs"} or \code{"na.or.complete"}, rows
 are deleted listwise, so \code{N} is taken as the number of complete cases.}
 
-\item{method}{character. The estimator used to fit the EFA: "PAF" (principal axis
+\item{estimator}{character. The estimator used to fit the EFA: "PAF" (principal axis
 factoring), "ML" (maximum likelihood), "ULS" (unweighted least squares; "MINRES" is an
 accepted alias returning identical results), or "DWLS" (diagonally weighted least
 squares, for ordinal data). See the \emph{Estimators} section in Details for their
-properties and data requirements.}
+properties and data requirements. The value is matched case-insensitively.}
 
 \item{rotation}{character. Either perform no rotation ("none"; default),
 an orthogonal rotation ("varimax", "equamax", "quartimax", "geominT",
@@ -177,14 +177,16 @@ workers (see Details); the caller's random-number stream is restored afterwards,
 so supplying a seed leaves no lasting effect on it. Default is \code{NULL}, which uses
 (and advances) the current state of the generator.}
 
-\item{...}{Additional arguments forwarded to the rotation procedure (for example
-\code{maxit} for the maximum number of iterations, or a criterion-specific \code{gam} / \code{delta}).
-They are merged with, and take precedence over, the extra arguments stored in
-\code{rotate_control()}. An estimation or rotation tuning knob (such as \code{type}, \code{max_iter},
-or \code{k}) is \emph{not} accepted here: it belongs to \code{\link[=estimate_control]{estimate_control()}} or
-\code{\link[=rotate_control]{rotate_control()}}, and passing it directly is an error rather than a setting that is
-silently ignored. With \code{rotation = "none"} the dots must be empty, as no rotation
-engine runs to consume them.}
+\item{...}{Additional arguments forwarded to the rotation engine. Only the arguments the
+selected \code{rotation} consumes are accepted: \code{maxit} (the maximum number of engine
+iterations) for the GPArotation-style rotations, plus the selected criterion's parameter
+(\code{gam} for "oblimin", \code{delta} for "geominT" and "geominQ"). Anything else -- a misspelled
+name, another criterion's parameter, or any extra with "varimax", "promax", or "none",
+which consume no extras -- is an error rather than a setting that is silently ignored.
+The accepted arguments are merged with, and take precedence over, the extra arguments
+stored in \code{rotate_control()}. An estimation or rotation tuning knob (such as \code{type},
+\code{max_iter}, or \code{k}) is likewise \emph{not} accepted here: it belongs to \code{\link[=estimate_control]{estimate_control()}}
+or \code{\link[=rotate_control]{rotate_control()}}.}
 }
 \value{
 A list of class \code{c("efa", "EFA")} containing (a subset of) the following:
@@ -264,7 +266,7 @@ additional arguments. However, this will throw warnings to avoid unintentional
 deviations from the implementations according to the specified \code{type}.
 \subsection{Estimators}{
 
-The estimator is chosen with \code{method}.
+The estimator is chosen with \code{estimator}.
 \itemize{
 \item \strong{PAF} (principal axis factoring) iteratively estimates the communalities and makes
 no distributional assumptions, which makes it robust and a good general-purpose
@@ -318,8 +320,8 @@ then analysed. This reproduces \code{psych::corFiml()} followed by \code{psych::
 estimates are not expected to match the latter. The model fit indices are corrected
 two-stage statistics (see \emph{Fit indices}). \code{"fiml"} uses every case and handles the
 missingness itself, so \code{use} is ignored; it supplies a continuous (Pearson-type)
-correlation only and is therefore not compatible with \code{method = "DWLS"}. Standard
-errors are available analytically for \code{method = "ML"} or \code{"ULS"} and, for any method,
+correlation only and is therefore not compatible with \code{estimator = "DWLS"}. Standard
+errors are available analytically for \code{estimator = "ML"} or \code{"ULS"} and, for any estimator,
 by the non-parametric bootstrap (see \emph{Standard errors}). For multiply imputed data,
 \code{\link[=efa_mi]{efa_mi()}} is the alternative route to handling missingness.
 }
@@ -386,7 +388,7 @@ Value).
 \item \strong{"none"} (default) computes no standard errors.
 \item \strong{"information"} returns analytic standard errors from the expected (Fisher)
 information matrix of the maximum-likelihood solution, and therefore requires
-\code{method = "ML"}. The rotated standard errors are obtained by propagating the
+\code{estimator = "ML"}. The rotated standard errors are obtained by propagating the
 unrotated-loading covariance through the rotation by the delta method (Jennrich,
 1973); because rotated quantities are identification-invariant they are directly
 comparable across programs. Unlike the bootstrap it also works from a correlation
@@ -402,19 +404,19 @@ high-communality variables, where \code{"sandwich"} or \code{"np-boot"} give sha
 combining the estimator weight with an asymptotic-distribution-free covariance of the
 correlations, so it stays valid under non-normality and weight misspecification
 (Browne, 1984; Satorra & Bentler, 1994). It is available either for ordinal data with
-\code{cor_method = "poly"} or \code{"tetra"} and \code{method} one of \code{"ML"}, \code{"ULS"}, or \code{"DWLS"}
+\code{cor_method = "poly"} or \code{"tetra"} and \code{estimator} one of \code{"ML"}, \code{"ULS"}, or \code{"DWLS"}
 (the meat is the polychoric / tetrachoric asymptotic covariance), or for continuous
-data with \code{cor_method = "pearson"} and \code{method = "ML"} or \code{"ULS"} (the meat is the
+data with \code{cor_method = "pearson"} and \code{estimator = "ML"} or \code{"ULS"} (the meat is the
 fourth-moment ADF covariance of the sample correlations, the basis of the MLM / MLR
 robust statistics). It reports the same standard errors as \code{"information"}, propagated
 by the same delta method, and additionally fills the model fit's chi-square block with
 a scaled (Satorra-Bentler / scaled-and-shifted) chi-square (see \emph{Fit indices}).
 Because the asymptotic covariance must describe the same cases as the correlation
-matrix, the sandwich (like \code{method = "DWLS"}) is computed on the listwise-complete
+matrix, the sandwich (like \code{estimator = "DWLS"}) is computed on the listwise-complete
 cases; on data with missing values the reported \code{N}, the correlation matrix, and the
 point estimate therefore reflect the complete cases regardless of \code{use}.
 \item \strong{"np-boot"} draws a non-parametric (case-resampling) bootstrap and needs raw data.
-It is the most general method -- available for any \code{method}, \code{rotation}, and
+It is the most general method -- available for any \code{estimator}, \code{rotation}, and
 \code{cor_method} -- and the most robust to non-normality and misfit, at the cost of speed;
 its intervals are bootstrap percentile intervals. The replicate fits are run across
 replicates with the \code{future} framework. By default they run sequentially; to run them
@@ -429,12 +431,12 @@ advisable.
 The analytic methods (\code{"information"} and \code{"sandwich"}) are not available with the
 \code{"promax"} or \code{"simplimax"} rotations, which have no usable analytic rotation Jacobian;
 use \code{"np-boot"} there. Under \code{cor_method = "fiml"}, \code{"information"} and \code{"sandwich"}
-instead return, for \code{method = "ML"} or \code{"ULS"}, the corrected two-stage (Yuan & Bentler,
+instead return, for \code{estimator = "ML"} or \code{"ULS"}, the corrected two-stage (Yuan & Bentler,
 2000; Savalei & Bentler, 2009) sandwich standard errors, built on the saturated FIML
 asymptotic covariance with the estimator's own Stage-2 weight: the model is fitted to
 the EM-estimated correlation, so the naive Stage-2 standard errors (treating that
 correlation as complete data) are inconsistent under missingness and are not reported
-(\code{method = "PAF"} carries no Stage-2 weight, so use \code{se = "np-boot"} there).
+(\code{estimator = "PAF"} carries no Stage-2 weight, so use \code{se = "np-boot"} there).
 }
 
 \subsection{Fit indices}{
@@ -492,10 +494,10 @@ matrix is set to 1s and then approximates 0.5 with close fit.
 
 Not every estimator, rotation, standard-error, and correlation method can be combined:
 \itemize{
-\item \strong{Estimator and correlation method.} \code{method = "DWLS"} requires ordinal data with
+\item \strong{Estimator and correlation method.} \code{estimator = "DWLS"} requires ordinal data with
 \code{cor_method = "poly"} or \code{"tetra"}. \code{cor_method = "fiml"} works with PAF, ML, and ULS
 (not DWLS) and needs raw data with missing values.
-\item \strong{Standard errors.} \code{se = "information"} requires \code{method = "ML"} and can be computed
+\item \strong{Standard errors.} \code{se = "information"} requires \code{estimator = "ML"} and can be computed
 from a correlation matrix when \code{N} is supplied. \code{se = "sandwich"} requires raw data,
 with either a polychoric/tetrachoric \code{cor_method} (ML, ULS, or DWLS) or a Pearson
 \code{cor_method} (ML or ULS); it is not available for PAF. Under \code{cor_method = "fiml"},
@@ -605,7 +607,7 @@ summary(mod_oblimin)
 
 # ML estimation with oblimin rotation
 mod_oblimin <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
-                       method = "ML", rotation = "oblimin")
+                       estimator = "ML", rotation = "oblimin")
 mod_oblimin
 summary(mod_oblimin)
 
@@ -619,22 +621,22 @@ mod_spss
 
 # Analytic (expected-information) standard errors for the above
 ML_info <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
-                   method = "ML", rotation = "oblimin", se = "information")
+                   estimator = "ML", rotation = "oblimin", se = "information")
 ML_info
 summary(ML_info)
 
 \donttest{
 # Robust (sandwich) standard errors and a scaled chi-square for ordinal raw data.
-# These need a polychoric/tetrachoric correlation method and method ML, ULS, or DWLS.
+# These need a polychoric/tetrachoric correlation method and estimator ML, ULS, or DWLS.
 DWLS_rob <- efa_fit(DOSPERT_raw, n_factors = 6, cor_method = "poly",
-                    method = "DWLS", rotation = "oblimin", se = "sandwich")
+                    estimator = "DWLS", rotation = "oblimin", se = "sandwich")
 DWLS_rob
 summary(DWLS_rob)
 
 # The same robust SEs and scaled chi-square for continuous data: a Pearson
-# correlation with method ML or ULS (the fourth-moment ADF covariance).
+# correlation with estimator ML or ULS (the fourth-moment ADF covariance).
 ML_rob <- efa_fit(GRiPS_raw, n_factors = 1, cor_method = "pearson",
-                  method = "ML", rotation = "none", se = "sandwich")
+                  estimator = "ML", rotation = "none", se = "sandwich")
 ML_rob
 summary(ML_rob)
 }
@@ -645,7 +647,7 @@ summary(ML_rob)
 # random) and the standardized covariance is analysed.
 x_miss <- GRiPS_raw
 x_miss[cbind(1:20, 1)] <- NA
-efa_fiml <- efa_fit(x_miss, n_factors = 1, method = "ML", cor_method = "fiml")
+efa_fiml <- efa_fit(x_miss, n_factors = 1, estimator = "ML", cor_method = "fiml")
 efa_fiml
 }
 
@@ -653,7 +655,7 @@ efa_fiml
 # Bootstrap standard errors from raw data, reproducible via a fixed seed and run
 # in parallel across replicates.
 future::plan(future::multisession, workers = 2)
-efa_boot <- efa_fit(GRiPS_raw, n_factors = 1, method = "PAF", rotation = "none",
+efa_boot <- efa_fit(GRiPS_raw, n_factors = 1, estimator = "PAF", rotation = "none",
                     se = "np-boot", b_boot = 1000, seed = 42)
 future::plan(future::sequential)
 }

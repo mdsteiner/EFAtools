@@ -1,6 +1,8 @@
 # The tuning arguments `P_type` and `randomStarts` were renamed to the snake_case
-# `p_type` and `random_starts`. The old spellings must keep working, silently, and
-# the returned object must keep its old settings field names.
+# `p_type` and `random_starts`, and the estimator argument `method` was renamed to
+# `estimator`. The old tuning spellings must keep working, silently, and the returned
+# object must keep its old settings field names (for the estimator, as a `method` entry
+# duplicating `estimator`).
 
 cormat <- test_models$baseline$cormat
 
@@ -54,6 +56,9 @@ test_that("EFA() keeps the old settings field names in its output", {
   m_promax <- suppressWarnings(
     EFA(cormat, n_factors = 3, N = 500, rotation = "promax", type = "EFAtools"))
   expect_true("P_type" %in% names(m_promax$settings))
+  # the estimator keeps its former field name alongside the current one
+  expect_identical(m_promax$settings$method, m_promax$settings$estimator)
+  expect_identical(m_promax$settings$method, "PAF")
 
   m_oblq <- suppressWarnings(
     EFA(cormat, n_factors = 3, N = 500, rotation = "oblimin", type = "EFAtools"))
@@ -61,15 +66,19 @@ test_that("EFA() keeps the old settings field names in its output", {
 })
 
 test_that("efa_average() and EFA_AVERAGE() accept p_type / P_type identically", {
-  # A single-combination grid returns a plain EFA output, keeping the test fast.
-  args <- list(cormat, n_factors = 3, N = 500, method = "PAF", rotation = "promax",
+  # A single-combination grid returns a plain EFA output, keeping the test fast. The
+  # frozen wrapper still selects the estimator with `method`; the successor takes
+  # `estimator`.
+  args <- list(cormat, n_factors = 3, N = 500, rotation = "promax",
                type = "none", init_comm = "smc", criterion = 1e-3,
                criterion_type = "sum", abs_eigen = TRUE, varimax_type = "kaiser",
                normalize = TRUE, k_promax = 4, start_method = "psych")
+  args_new <- c(args, list(estimator = "PAF"))
+  args_old <- c(args, list(method = "PAF"))
 
-  avg_new <- suppressWarnings(do.call(efa_average, c(args, list(p_type = "norm"))))
-  avg_old <- suppressWarnings(do.call(efa_average, c(args, list(P_type = "norm"))))
-  ea_old  <- suppressWarnings(do.call(EFA_AVERAGE, c(args, list(P_type = "norm"))))
+  avg_new <- suppressWarnings(do.call(efa_average, c(args_new, list(p_type = "norm"))))
+  avg_old <- suppressWarnings(do.call(efa_average, c(args_new, list(P_type = "norm"))))
+  ea_old  <- suppressWarnings(do.call(EFA_AVERAGE, c(args_old, list(P_type = "norm"))))
 
   expect_equal(avg_new$rot_loadings, avg_old$rot_loadings)
   expect_equal(avg_new$rot_loadings, ea_old$rot_loadings)

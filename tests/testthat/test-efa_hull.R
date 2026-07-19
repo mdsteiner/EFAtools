@@ -5,26 +5,26 @@
 # helper-slow.R for the convention.
 if (is_slow_test()) {
 hull_cor_paf <- suppressMessages(efa_hull(test_models$baseline$cormat, N = 500))
-hull_cor_ml <- efa_hull(test_models$baseline$cormat, N = 500, method = "ML")
-hull_cor_uls <- efa_hull(test_models$baseline$cormat, N = 500, method = "ULS")
-hull_cor_uls_CFI <- efa_hull(test_models$baseline$cormat, N = 500, method = "ULS",
+hull_cor_ml <- efa_hull(test_models$baseline$cormat, N = 500, estimator = "ML")
+hull_cor_uls <- efa_hull(test_models$baseline$cormat, N = 500, estimator = "ULS")
+hull_cor_uls_CFI <- efa_hull(test_models$baseline$cormat, N = 500, estimator = "ULS",
                          gof = "CFI")
 hull_cor_ml_nf <- suppressWarnings(efa_hull(test_models$baseline$cormat, N = 500,
-                                        method = "ML", n_fac_theor = 12))
+                                        estimator = "ML", n_fac_theor = 12))
 
-hull_PCA <- efa_hull(test_models$baseline$cormat, N = 500, method = "ML",
+hull_PCA <- efa_hull(test_models$baseline$cormat, N = 500, estimator = "ML",
                  eigen_type = "PCA")
-hull_EFA <- efa_hull(test_models$baseline$cormat, N = 500, method = "ML",
+hull_EFA <- efa_hull(test_models$baseline$cormat, N = 500, estimator = "ML",
                  eigen_type = "EFA")
 
 hull_raw_paf <- suppressMessages(suppressWarnings(efa_hull(GRiPS_raw)))
-hull_raw_ml <- suppressMessages(suppressWarnings(efa_hull(GRiPS_raw, method = "ML")))
-hull_raw_uls <- suppressMessages(suppressWarnings(efa_hull(GRiPS_raw, method = "ULS")))
+hull_raw_ml <- suppressMessages(suppressWarnings(efa_hull(GRiPS_raw, estimator = "ML")))
+hull_raw_uls <- suppressMessages(suppressWarnings(efa_hull(GRiPS_raw, estimator = "ULS")))
 hull_raw_uls_CFI <- suppressMessages(suppressWarnings(efa_hull(GRiPS_raw,
-                                                           method = "ULS",
+                                                           estimator = "ULS",
                                                            gof = "CFI")))
 hull_raw_ml_nf <- suppressMessages(suppressWarnings(efa_hull(GRiPS_raw, N = 500,
-                                                         method = "ML",
+                                                         estimator = "ML",
                                                          n_fac_theor = 7)))
 }  # is_slow_test()
 
@@ -37,7 +37,7 @@ test_that("output class and dimensions are correct", {
   for (obj in objs) {
     expect_s3_class(obj, "efa_retention")
     expect_length(obj, 10)
-    expect_length(obj$settings, 8)
+    expect_length(obj$settings, 9)
   }
 })
 
@@ -77,7 +77,7 @@ test_that("the factor-search bound stays over-identified with the minimum number
   # solution is just-identified, df = 0). The search bound J must be capped at that
   # maximum and never forced up to 3, so the Hull method cannot select a df = 0 model.
   R6 <- test_models$baseline$cormat[1:6, 1:6]
-  out <- suppressWarnings(suppressMessages(efa_hull(R6, N = 500, method = "ULS")))
+  out <- suppressWarnings(suppressMessages(efa_hull(R6, N = 500, estimator = "ULS")))
   expect_equal(out$settings$n_fac_max, .det_max_factors(6))
   expect_lte(max(out$n_factors, na.rm = TRUE), .det_max_factors(6))
 })
@@ -214,23 +214,23 @@ test_that("errors etc are thrown correctly", {
     class = "efa_n_from_data"
   )
   expect_error(efa_hull(test_models$baseline$cormat), class = "efa_n_required")
-  expect_error(efa_hull(test_models$baseline$cormat, method = "ML"), class = "efa_n_required")
-  expect_error(efa_hull(test_models$baseline$cormat, method = "ULS"), class = "efa_n_required")
+  expect_error(efa_hull(test_models$baseline$cormat, estimator = "ML"), class = "efa_n_required")
+  expect_error(efa_hull(test_models$baseline$cormat, estimator = "ULS"), class = "efa_n_required")
 
-  expect_error(efa_hull(dat_sing, method = "ML"), class = "efa_cor_singular")
-  expect_error(efa_hull(cor_sing, N = 20, method = "ML"), class = "efa_cor_singular")
+  expect_error(efa_hull(dat_sing, estimator = "ML"), class = "efa_cor_singular")
+  expect_error(efa_hull(cor_sing, N = 20, estimator = "ML"), class = "efa_cor_singular")
 
   expect_error(efa_hull(matrix(rnorm(50), ncol = 5)), class = "efa_hull_min_indicators")
 
-  expect_message(suppressWarnings(efa_hull(GRiPS_raw)), 'Only CAF can be used as gof if method "PAF" is used. Setting gof to "CAF"\n')
+  expect_message(suppressWarnings(efa_hull(GRiPS_raw)), class = "efa_hull_gof_caf")
 
   expect_warning(efa_hull(test_models$baseline$cormat, n_fac_theor = 13, N = 500), class = "efa_hull_max_factors")
   # the burt matrix is smoothed and selects an inadmissible/few-solution hull;
   # assert the smoothing warning and muffle the other (incidental) warnings
   suppressWarnings(
-    expect_warning(efa_hull(burt, N = 20, method = "ML"), class = "efa_cor_smoothed"))
+    expect_warning(efa_hull(burt, N = 20, estimator = "ML"), class = "efa_cor_smoothed"))
   suppressWarnings(
-    expect_warning(efa_hull(burt, N = 20, method = "ML", n_fac_theor = 1), class = "efa_cor_smoothed"))
+    expect_warning(efa_hull(burt, N = 20, estimator = "ML", n_fac_theor = 1), class = "efa_cor_smoothed"))
 })
 
 if (is_slow_test()) {

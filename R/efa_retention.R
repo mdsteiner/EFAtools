@@ -35,7 +35,7 @@
     label = "Hull method", needs_raw = FALSE, poly_ok = FALSE,
     fun = function(x, ctl) {
       do.call(efa_hull, c(list(x, N = ctl$N, n_fac_theor = ctl$n_fac_theor,
-                           method = ctl$method, gof = ctl$gof,
+                           estimator = ctl$estimator, gof = ctl$gof,
                            eigen_type = ctl$eigen_type_HULL, use = ctl$use,
                            cor_method = ctl$cor_method,
                            n_datasets = ctl$n_datasets, percent = ctl$percent,
@@ -49,7 +49,7 @@
     fun = function(x, ctl) {
       do.call(efa_kgc, c(list(x, eigen_type = ctl$eigen_type_other, use = ctl$use,
                           cor_method = ctl$cor_method,
-                          n_factors = ctl$n_factors, method = ctl$method,
+                          n_factors = ctl$n_factors, estimator = ctl$estimator,
                           estimate_control = ctl$estimate_control),
                      ctl$dots))
     }),
@@ -63,7 +63,7 @@
     fun = function(x, ctl) {
       do.call(efa_nest, c(list(x, N = ctl$N, use = ctl$use,
                            cor_method = ctl$cor_method, alpha = ctl$alpha_nest,
-                           n_datasets = ctl$n_datasets_nest, method = ctl$method,
+                           n_datasets = ctl$n_datasets_nest, estimator = ctl$estimator,
                            estimate_control = ctl$estimate_control),
                       ctl$dots))
     }),
@@ -75,7 +75,7 @@
                                eigen_type = ctl$eigen_type_other, use = ctl$use,
                                cor_method = ctl$cor_method,
                                decision_rule = ctl$decision_rule,
-                               n_factors = ctl$n_factors, method = ctl$method,
+                               n_factors = ctl$n_factors, estimator = ctl$estimator,
                                estimate_control = ctl$estimate_control),
                           ctl$dots))
     }),
@@ -84,7 +84,7 @@
     fun = function(x, ctl) {
       do.call(efa_scree, c(list(x, eigen_type = ctl$eigen_type_other, use = ctl$use,
                             cor_method = ctl$cor_method,
-                            n_factors = ctl$n_factors, method = ctl$method,
+                            n_factors = ctl$n_factors, estimator = ctl$estimator,
                             estimate_control = ctl$estimate_control),
                        ctl$dots))
     }),
@@ -99,12 +99,12 @@
 # Control list consumed by the factor-retention registry funs. The defaults
 # mirror the efa_retain() argument defaults so any requested criterion resolves;
 # callers pass only what they override. `gof` defaults to the Hull
-# goodness-of-fit indices valid for `method` (PAF supports only the CAF).
+# goodness-of-fit indices valid for `estimator` (PAF supports only the CAF).
 .n_factors_ctl <- function(N = NA, use = "pairwise.complete.obs",
                            cor_method = "pearson", n_factors_max = NA,
                            N_pop = 10000, N_samples = 500, alpha = .30,
-                           max_iter_CD = 50, n_fac_theor = NA, method = "ML",
-                           gof = if (method == "PAF") "CAF" else c("CAF", "CFI", "RMSEA"),
+                           max_iter_CD = 50, n_fac_theor = NA, estimator = "ML",
+                           gof = if (estimator == "PAF") "CAF" else c("CAF", "CFI", "RMSEA"),
                            eigen_type_HULL = "SMC", eigen_type_other = "SMC",
                            n_factors = 1, n_datasets = 1000, percent = 95,
                            decision_rule = "means", ekc_type = "BvA2017",
@@ -113,7 +113,7 @@
   list(N = N, use = use, cor_method = cor_method,
        n_factors_max = n_factors_max, N_pop = N_pop,
        N_samples = N_samples, alpha = alpha, max_iter_CD = max_iter_CD,
-       n_fac_theor = n_fac_theor, method = method, gof = gof,
+       n_fac_theor = n_fac_theor, estimator = estimator, gof = gof,
        eigen_type_HULL = eigen_type_HULL,
        eigen_type_other = eigen_type_other, n_factors = n_factors,
        n_datasets = n_datasets, percent = percent,

@@ -22,7 +22,7 @@ efa_power(
   R = NULL,
   n_datasets = 500,
   criteria = c("EKC", "MAP"),
-  method = "PAF",
+  estimator = "PAF",
   rotation = NULL,
   recovery_threshold = 0.95,
   model_error = c("TKL", "CB", "WB", "none"),
@@ -35,7 +35,7 @@ efa_power(
 \item{mode}{character. The kind of power analysis: \code{"rmsea"} (the default; analytic
 RMSEA power) or \code{"simulation"} (Monte-Carlo hit-rate and structure recovery). The
 remaining arguments split by mode -- \code{type}/\code{eps0}/\code{eps1}/\code{df}/\code{alpha}/\code{power}/\code{group}
-are RMSEA-only, and \code{Lambda}/\code{Phi}/\code{Psi}/\code{R}/\code{n_datasets}/\code{criteria}/\code{method}/\code{rotation}/\code{recovery_threshold}/\code{model_error}/\code{target_rmsea}/\code{target_cfi}/\code{seed}
+are RMSEA-only, and \code{Lambda}/\code{Phi}/\code{Psi}/\code{R}/\code{n_datasets}/\code{criteria}/\code{estimator}/\code{rotation}/\code{recovery_threshold}/\code{model_error}/\code{target_rmsea}/\code{target_cfi}/\code{seed}
 are simulation-only.}
 
 \item{type}{character. The RMSEA test: \code{"close"} (test of close fit) or
@@ -94,12 +94,13 @@ analyse. Default is \code{500}.}
 \item{criteria}{character. Simulation mode. The factor-retention criteria to
 evaluate the hit-rate for, any of \code{"CD"}, \code{"EKC"}, \code{"HULL"}, \code{"KGC"}, \code{"MAP"},
 \code{"NEST"}, \code{"PARALLEL"}, and \code{"SMT"} (see \code{\link[=efa_retain]{efa_retain()}}). Default is
-\code{c("EKC", "MAP")}. Criteria that simulate internally (\code{"CD"}, \code{"HULL"}, \code{"NEST"},
-\code{"PARALLEL"}) make each run substantially slower.}
+\code{c("EKC", "MAP")}. The values are matched case-insensitively. Criteria that
+simulate internally (\code{"CD"}, \code{"HULL"}, \code{"NEST"}, \code{"PARALLEL"}) make each run
+substantially slower.}
 
-\item{method}{character. Simulation mode. The estimation method (\code{"PAF"}, \code{"ML"},
-or \code{"ULS"}) used for the recovery fit and the retention criteria. Default is
-\code{"PAF"}.}
+\item{estimator}{character. Simulation mode. The estimator (\code{"PAF"}, \code{"ML"},
+or \code{"ULS"}) used for the recovery fit and the retention criteria; the value
+is matched case-insensitively. Default is \code{"PAF"}.}
 
 \item{rotation}{character. Simulation mode. The rotation for the recovery fit,
 passed to \code{\link[=efa_fit]{efa_fit()}}. Default is \code{NULL}, which matches the population: \code{"varimax"}

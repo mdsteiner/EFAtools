@@ -47,7 +47,7 @@
 #'
 #' @examples
 #' EFAtools_PAF <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
-#'                         method = "PAF", rotation = "promax")
+#'                         estimator = "PAF", rotation = "promax")
 #' EFAtools_PAF
 #'
 print.efa_loadings <- function(x, cutoff = .3, digits = 3, max_name_length = 10,

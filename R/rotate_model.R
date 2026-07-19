@@ -41,8 +41,10 @@
 # rotation engine's `...` by EXACT name, falling back to `default`. Looking the value up by
 # exact name -- rather than declaring the parameter as a named formal before `...` -- keeps
 # R's partial matching from silently binding an abbreviated or misspelled dot argument (e.g.
-# `EFA(rotation = "geominT", del = 1)`) to the criterion parameter; an unrecognised argument is
-# ignored, as it already is for the criteria that take no tuning parameter.
+# `EFA(rotation = "geominT", del = 1)`) to the criterion parameter. efa_fit() and
+# rotate_control() reject a name their engines cannot consume up front (see
+# `.rotation_dot_extras()`); the exact-name lookup remains the guard against partial matching
+# for direct internal callers, where an unrecognised argument is simply ignored.
 .gpf_crit <- function(dots, name, default) {
   if (name %in% names(dots)) dots[[name]] else default
 }
@@ -112,6 +114,26 @@
 .gpf_multistart_defaults <- list(
   geominQ = list(screen_keep = 10, triage_maxit = 50)
 )
+
+# Names a rotation's engine can consume from efa_fit()'s `...`, kept in lockstep with the
+# engine tables above: `maxit` is the one `.gpf_native()` control `.rotate_model()` does not
+# already pass explicitly, and the criterion extras are read by exact name via `.gpf_crit()`
+# (`gam` for oblimin, `delta` for the geomin pair). varimax and promax run outside the native
+# engines and take no extras, as does rotation = "none", where no engine runs at all.
+# efa_fit() rejects any other dot argument up front; `.rotation_extra_union` is the
+# across-rotation union rotate_control() validates its stored extras against.
+.rotation_dot_extras <- function(rotation) {
+  switch(rotation,
+         none = ,
+         varimax = ,
+         promax = character(0),
+         oblimin = c("maxit", "gam"),
+         geominT = ,
+         geominQ = c("maxit", "delta"),
+         "maxit")
+}
+
+.rotation_extra_union <- c("maxit", "gam", "delta")
 
 # Canonical rotation names by family. The engine tables above key the GPArotation
 # engines and exclude the special-cased `varimax`/`promax`; these vectors are the

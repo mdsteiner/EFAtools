@@ -4,7 +4,7 @@
       print(efa_psych)
     Output
       
-      EFA performed with type = 'psych', method = 'PAF', and rotation = 'promax'.
+      EFA performed with estimator = 'PAF' and rotation = 'promax'.
       
       -- Rotated Loadings ------------------------------------------------------------
       
@@ -61,7 +61,7 @@
       print(efa_ml_moderate)
     Output
       
-      EFA performed with type = 'EFAtools', method = 'ML', and rotation = 'promax'.
+      EFA performed with estimator = 'ML' and rotation = 'promax'.
       
       -- Rotated Loadings ------------------------------------------------------------
       
@@ -124,7 +124,7 @@
       print(summary(efa_psych))
     Output
       
-      EFA performed with type = 'psych', method = 'PAF', and rotation = 'promax'.
+      EFA performed with estimator = 'PAF' and rotation = 'promax'.
       
       -- Model Diagnostics -----------------------------------------------------------
       
@@ -232,7 +232,7 @@
       print(summary(efa_ml_moderate))
     Output
       
-      EFA performed with type = 'EFAtools', method = 'ML', and rotation = 'promax'.
+      EFA performed with estimator = 'ML' and rotation = 'promax'.
       
       -- Model Diagnostics -----------------------------------------------------------
       
@@ -340,7 +340,7 @@
       print(efa_1fac)
     Output
       
-      EFA performed with type = 'EFAtools', method = 'PAF', and rotation = 'promax'.
+      EFA performed with estimator = 'PAF' and rotation = 'promax'.
       
       -- Rotated Loadings ------------------------------------------------------------
       
@@ -385,7 +385,7 @@
       print(summary(efa_1fac))
     Output
       
-      EFA performed with type = 'EFAtools', method = 'PAF', and rotation = 'promax'.
+      EFA performed with estimator = 'PAF' and rotation = 'promax'.
       
       -- Model Diagnostics -----------------------------------------------------------
       

@@ -94,14 +94,14 @@
 #' @examples
 #' # Weights and score diagnostics from an EFA on a correlation matrix
 #' efa <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
-#'                method = "PAF", rotation = "oblimin")
+#'                estimator = "PAF", rotation = "oblimin")
 #' fs <- efa_scores(test_models$baseline$cormat, f = efa)
 #' fs
 #' summary(fs)
 #'
 #' # Factor scores from raw data (Bartlett method)
 #' \donttest{
-#' efa_raw <- efa_fit(GRiPS_raw, n_factors = 1, method = "PAF")
+#' efa_raw <- efa_fit(GRiPS_raw, n_factors = 1, estimator = "PAF")
 #' efa_scores(GRiPS_raw, f = efa_raw, method = "Bartlett")
 #' }
 #'
@@ -124,7 +124,7 @@ efa_scores <- function(x, f, Phi = NULL, rho = NULL,
     )
   }
 
-  method <- match.arg(method)
+  method <- .match_arg_ci(method)
   checkmate::assert_matrix(Phi, null.ok = TRUE)
 
   if (!inherits(f, c("EFA", "matrix", "LOADINGS"))) {
@@ -330,7 +330,7 @@ efa_scores <- function(x, f, Phi = NULL, rho = NULL,
 #'
 #' @examples
 #' efa <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
-#'                method = "PAF", rotation = "oblimin")
+#'                estimator = "PAF", rotation = "oblimin")
 #' fs <- efa_scores(test_models$baseline$cormat, f = efa)
 #' fs
 #' summary(fs)
@@ -493,7 +493,7 @@ format.summary.efa_scores <- function(x, digits = x$opts$digits, ...) {
                                              "Anderson", "Bartlett", "Harman",
                                              "components")) {
 
-  method <- match.arg(method)
+  method <- .match_arg_ci(method)
   if (method == "regression") method <- "Thurstone"
 
   S <- Lambda %*% Phi

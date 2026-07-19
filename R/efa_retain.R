@@ -12,7 +12,8 @@
 #' @param criteria character. A vector with the factor retention methods to
 #' perform. Possible inputs are: `"CD"`, `"EKC"`, `"HULL"`,
 #' `"KGC"`, `"MAP"`, `"NEST"`,`"PARALLEL"`, `"SCREE"`, and `"SMT"`
-#' (see details). By default, a subset of often used, well-performing methods are performed.
+#' (see details). The values are matched case-insensitively. By default, a subset
+#' of often used, well-performing methods are performed.
 #' @param suitability logical. Whether the data should be checked for suitability
 #' for factor analysis using the Bartlett's test of sphericity and the
 #' Kaiser-Meyer-Olkin criterion (see details). Default is `TRUE`.
@@ -46,15 +47,16 @@
 #' @param n_fac_theor numeric. Passed to [efa_hull()]. Theoretical number
 #'  of factors to retain. The maximum of this number and the number of factors
 #'  suggested by [efa_parallel()] plus one will be used in the Hull method.
-#' @param method character. Passed to [efa_fit()] in [efa_hull()],
+#' @param estimator character. Passed to [efa_fit()] in [efa_hull()],
 #' [efa_kgc()], [efa_scree()], [efa_parallel()], and [efa_nest()]. The
-#' estimation method to use. One of  `"PAF"`, `"ULS"`, or  `"ML"`,
+#' estimator to use. One of  `"PAF"`, `"ULS"`, or  `"ML"`,
 #' for principal axis factoring, unweighted least squares, and maximum
-#' likelihood, respectively. In [efa_kgc()], [efa_scree()], and [efa_parallel()] it only
+#' likelihood, respectively. The value is matched case-insensitively. In
+#' [efa_kgc()], [efa_scree()], and [efa_parallel()] it only
 #' takes effect when the respective `eigen_type` includes `"EFA"`.
 #' @param gof character. Passed to [efa_hull()]. The goodness of fit index
 #' to use. Either `"CAF"`, `"CFI"`, or `"RMSEA"`, or any
-#' combination of them. If `method = "PAF"` is used, only
+#' combination of them. With the `"PAF"` estimator, only
 #' the CAF can be used as goodness of fit index. For details on the CAF, see
 #' Lorenzo-Seva, Timmerman, and Kiers (2011).
 #' @param eigen_type_HULL character. Passed to  [efa_parallel()] in
@@ -150,28 +152,28 @@
 #'
 #' @examples
 #' \donttest{
-#' # Default criteria, with correlation matrix and fit method "ML" (where needed)
+#' # Default criteria, with correlation matrix and estimator "ML" (where needed)
 #' # This will throw a warning for CD, as no raw data were specified
-#' nfac_all <- efa_retain(test_models$baseline$cormat, N = 500, method = "ML")
+#' nfac_all <- efa_retain(test_models$baseline$cormat, N = 500, estimator = "ML")
 #'
 #' # The same as above, but without "CD"
 #' nfac_wo_CD <- efa_retain(test_models$baseline$cormat, criteria = c("EKC",
 #'                          "HULL", "PARALLEL", "NEST"), N = 500,
-#'                          method = "ML")
+#'                          estimator = "ML")
 #'
 #' # Use PAF instead of ML (this will take longer). For this, gof has
 #' # to be set to "CAF" for the Hull method.
 #' nfac_PAF <- efa_retain(test_models$baseline$cormat, criteria = c("EKC",
 #'                        "HULL", "PARALLEL", "NEST"), N = 500,
-#'                        method = "PAF", gof = "CAF")
+#'                        estimator = "PAF", gof = "CAF")
 #'
 #' # Do KGC and PARALLEL with only "PCA" type of eigenvalues
 #' nfac_PCA <- efa_retain(test_models$baseline$cormat, criteria = c("EKC",
 #'                        "HULL", "PARALLEL", "NEST"), N = 500,
-#'                        method = "ML", eigen_type_other = "PCA")
+#'                        estimator = "ML", eigen_type_other = "PCA")
 #'
 #' # Use raw data, such that CD can also be performed
-#' nfac_raw <- efa_retain(GRiPS_raw, method = "ML")
+#' nfac_raw <- efa_retain(GRiPS_raw, estimator = "ML")
 #'}
 efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARALLEL"),
                        suitability = TRUE, N = NA,
@@ -190,7 +192,7 @@ efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARA
                        # formal here too unless it can never be confused with a tuning knob.
                        ...,
                        max_iter_CD = 50, n_fac_theor = NA,
-                       method = c("ML", "PAF", "ULS"),
+                       estimator = c("ML", "PAF", "ULS"),
                        gof = c("CAF", "CFI", "RMSEA"),
                        eigen_type_HULL = c("SMC", "PCA", "EFA"),
                        eigen_type_other = c("SMC"),
@@ -211,19 +213,19 @@ efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARA
   .assert_estimate_control(estimate_control)
 
   ## Perform argument checks and prepare input
-  criteria <- match.arg(criteria, several.ok = TRUE,
-                        choices = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
-                                    "SCREE", "SMT", "NEST", "MAP"))
+  criteria <- .match_arg_ci(criteria, several.ok = TRUE,
+                            choices = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
+                                        "SCREE", "SMT", "NEST", "MAP"))
   suitability <- checkmate::assert_flag(suitability)
-  eigen_type_HULL <- match.arg(eigen_type_HULL)
-  eigen_type_other <- match.arg(eigen_type_other, several.ok = TRUE,
-                                choices = c("PCA", "SMC", "EFA"))
-  gof <- match.arg(gof, several.ok = TRUE, choices = c("CAF", "CFI", "RMSEA"))
+  eigen_type_HULL <- .match_arg_ci(eigen_type_HULL)
+  eigen_type_other <- .match_arg_ci(eigen_type_other, several.ok = TRUE,
+                                    choices = c("PCA", "SMC", "EFA"))
+  gof <- .match_arg_ci(gof, several.ok = TRUE, choices = c("CAF", "CFI", "RMSEA"))
   cor_method <- match.arg(cor_method)
   use <- match.arg(use)
-  method <- match.arg(method)
+  estimator <- .match_arg_ci(estimator)
   decision_rule <- match.arg(decision_rule)
-  ekc_type <- match.arg(ekc_type, c("BvA2017", "AM2019"), several.ok = TRUE)
+  ekc_type <- .match_arg_ci(ekc_type, c("BvA2017", "AM2019"), several.ok = TRUE)
   checkmate::assert_number(alpha_nest, lower = 0, upper = 1)
   checkmate::assert_count(n_datasets_nest, na.ok = FALSE, positive = TRUE)
 
@@ -261,7 +263,7 @@ efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARA
                         n_factors_max = n_factors_max, N_pop = N_pop,
                         N_samples = N_samples, alpha = alpha,
                         max_iter_CD = max_iter_CD, n_fac_theor = n_fac_theor,
-                        method = method, gof = gof,
+                        estimator = estimator, gof = gof,
                         eigen_type_HULL = eigen_type_HULL,
                         eigen_type_other = eigen_type_other,
                         n_factors = n_factors, n_datasets = n_datasets,
@@ -353,7 +355,9 @@ efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARA
                    cor_method = cor_method,
                    max_iter_CD = max_iter_CD,
                    n_fac_theor = n_fac_theor,
-                   method = method,
+                   estimator = estimator,
+                   # back-compat alias, as for the frozen P_type key
+                   method = estimator,
                    gof = gof,
                    eigen_type_HULL = eigen_type_HULL,
                    eigen_type_other = eigen_type_other,

@@ -1,5 +1,7 @@
 # EFAtools 0.8.0.9000
 
+## New Interface
+
 * The public interface of the package is now the lowercase `efa_*` functions,
 configured through `estimate_control()` and `rotate_control()`. `efa_fit()` fits
 the factor models, `efa_retain()` and the individual retention criteria determine
@@ -13,14 +15,85 @@ remain exported, keep their arguments, and emit no warning, so existing code
 needs no changes. New arguments and features are added to the `efa_*` functions
 only, which are the recommended interface for new code.
 
+* The `efa_*` functions and the control constructors match the mixed-case choice
+values case-insensitively: the estimator, the rotation, the factor-retention
+criteria, the eigenvalue and goodness-of-fit types, the factor-score method, and
+the estimation and rotation presets (`type`). For example,
+`efa_fit(x, n_factors = 3, estimator = "ml", rotation = "geomint")` selects the
+`"ML"` estimator and the `"geominT"` rotation. The canonical spelling is always
+stored in the returned settings and used in the printed output.
+
+## Breaking Changes
+
+Code written against the superseded uppercase functions keeps working. The
+following concern the `efa_*` interface.
+
+* Arguments that do not belong to a fitting function are now an error rather than
+silently ignored. `efa_fit()`, `efa_retain()`, `efa_schmid_leiman()`, and the
+retention criteria that fit a model (`efa_hull()`, `efa_kgc()`, `efa_nest()`,
+`efa_parallel()`, and `efa_scree()`) reject a tuning knob passed to them directly
+(such as `type`, `max_iter`, `criterion`, or `p_type`), as these now live in
+`estimate_control()` and `rotate_control()`. `efa_fit()` also rejects a `...`
+argument the selected rotation's engine cannot consume — accepted are `maxit`
+for the GPArotation-style rotations plus the selected criterion's parameter
+(`gam` for oblimin, `delta` for geomin), and none at all for varimax, promax,
+and `rotation = "none"`, where no engine runs. `rotate_control()` likewise
+validates its extra engine arguments when the control is created. A misspelling
+such as `gamma = 0.5` (for oblimin's `gam`) is therefore an immediate error
+instead of a fit that silently runs the engine defaults. `EFA()` keeps silently
+dropping an extra that its selected rotation cannot consume, so code written
+against it is unaffected.
+
+* `efa_retain()` takes the maximum number of comparison-data iterations as
+`max_iter_CD`, and this name has to be given in full. The argument sits behind
+`...`, where R no longer matches it from the abbreviation `max_iter`. Such a call
+is rejected as a misplaced estimation knob, rather than silently capping the
+comparison-data iterations as it does in `N_FACTORS()`.
+
+* `estimate_control()` validates its settings when the control object is created,
+so a convergence `criterion` of 1 or larger is now rejected there (a classed
+`efa_control_input` error) instead of inside the fit.
+
+* The `efa_*` functions select the estimator with `estimator` (e.g.
+`efa_fit(x, n_factors = 3, estimator = "ML")`). Passing the former name `method`
+to one of them is an error rather than a silently ignored argument; the superseded
+uppercase functions keep their `method` argument, and the returned `settings` keep
+a `method` entry duplicating `estimator`, so existing code keeps working.
+
 * The rotation arguments `P_type` and `randomStarts` are now named `p_type` and
 `random_starts`. `EFA()` still accepts the former names silently, and
 `EFA_AVERAGE()` keeps `P_type` as its argument name, so existing code keeps
 working.
 
+* `efa_schmid_leiman()` has no `type` argument; the estimation preset for the
+second-order fit is set with `estimate_control(type = ...)`. `SL()` keeps `type`.
+
+## Bug Fixes
+
 * Fixed a regression in `MAP()`: the revised (TR4) criterion was computed from
 the element-wise fourth powers of the partial correlations instead of the trace
 of the fourth matrix power, which could change the suggested number of factors.
+
+* `efa_average()` no longer reports `NaN%` Heywood-case and admissibility rates
+when no solution converged (or every solution errored). The printed summary now
+names the denominator each rate is computed over — Heywood cases and
+admissibility are assessed only for the solutions that converged — and omits a
+rate when no solution reached that stage.
+
+* `efa_simulate()` now reproduces its Cudeck-Browne model error across platforms. With
+`model_error = "CB"` and a `target_rmsea`, the population perturbation drawn for a given
+`seed` could differ by tens of percent between BLAS implementations, and between two
+identical calls on a threaded BLAS. The Jacobian defining the perturbation is now
+differentiated in closed form instead of by a finite difference, which removes the
+rounding noise responsible (and is faster). Populations drawn from a given seed therefore
+differ from those of earlier versions; the achieved RMSEA still equals the target.
+
+* `efa_screen()` no longer aborts with a `system is computationally singular` error
+from `solve()` when the outlier diagnostics fall back to the classical covariance
+and the variables are collinear or nearly so. Whether the abort happened depended on
+the platform's BLAS. The fallback now checks that the complete-case covariance is
+invertible on the same terms as the Mahalanobis step that consumes it, so such data
+reliably reach the documented `efa_screen_no_outliers` note instead.
 
 # EFAtools 0.8.0
 

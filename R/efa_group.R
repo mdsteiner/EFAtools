@@ -16,7 +16,7 @@
 #' or order is an error rather than being silently reordered.
 #'
 #' Every group is fitted at the same `n_factors` (a common-\eqn{k} multigroup
-#' model). Extra arguments in `...` (for example `method`, `rotation`, `cor_method`, or an
+#' model). Extra arguments in `...` (for example `estimator`, `rotation`, `cor_method`, or an
 #' [estimate_control()] / [rotate_control()] carrying the tuning knobs) are forwarded
 #' unchanged to each [efa_fit()] call, so the estimator and rotation are common to all
 #' groups.
@@ -98,7 +98,7 @@
 #'   group pair from the Lorenzo-Seva and ten Berge (2006) congruence bands (see *Value*).
 #'   Default is `FALSE`.
 #' @param ... Additional arguments passed to [efa_fit()] for every group (for
-#'   example `method`, `rotation`, `cor_method`, or an [estimate_control()] /
+#'   example `estimator`, `rotation`, `cor_method`, or an [estimate_control()] /
 #'   [rotate_control()] to select a preset).
 #'
 #' @returns An object of class `efa_group`, a list containing:
@@ -194,6 +194,10 @@ efa_group <- function(x, groups = NULL, n_factors, N = NA,
                       seed = NULL, delta = 0.1, invariance = FALSE, ...) {
 
   efa_args <- list(...)
+  # A flat tuning knob or the former `method` spelling in the dots would only surface from
+  # inside the first per-group fit, re-wrapped as an efa_group_fit_failed "fit failed for
+  # group X" error; reject it here so the message names the actual mistake.
+  .reject_flat_knobs(...names(), fn = "efa_group")
   checkmate::assert_count(n_factors, positive = TRUE)
   checkmate::assert_count(b_boot)
   b_boot <- as.integer(b_boot)
@@ -417,7 +421,7 @@ efa_group <- function(x, groups = NULL, n_factors, N = NA,
     alignment = alignment_method,
     rotation = rotation,
     rotation_family = rotation_type,
-    method = settings1$method,
+    estimator = settings1$estimator,
     cor_method = settings1$cor_method,
     input_type = input_type,
     can_bootstrap = input_type == "raw",

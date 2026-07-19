@@ -51,10 +51,9 @@ correlation matrix is used. If input is a correlation matrix and \code{N} = NA
 values are entered and \code{use} is \code{"complete.obs"} or \code{"na.or.complete"}, rows
 are deleted listwise, so \code{N} is taken as the number of complete cases.}
 
-\item{method}{character. The estimator used to fit the EFA: "PAF" (principal axis
-factoring), "ML" (maximum likelihood), "ULS" (unweighted least squares; "MINRES" is an
-accepted alias returning identical results), or "DWLS" (diagonally weighted least
-squares, for ordinal data). See the \emph{Estimators} section in Details for their
+\item{method}{character. The estimator used to fit the EFA; passed to \code{\link[=efa_fit]{efa_fit()}}
+as its \code{estimator} argument. One of "PAF", "ML", "ULS", "MINRES" (an accepted
+alias of "ULS"), or "DWLS"; see the \code{\link[=efa_fit]{efa_fit()}} documentation for their
 properties and data requirements.}
 
 \item{rotation}{character. Either perform no rotation ("none"; default),

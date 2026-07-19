@@ -2,7 +2,7 @@
 % Please edit documentation in R/efa_average.R
 \name{efa_average}
 \alias{efa_average}
-\title{Model averaging across different EFA methods and types}
+\title{Model averaging across different EFA estimators and types}
 \source{
 Grieder, S., & Steiner, M. D. (2022). Algorithmic jingle jungle: A comparison
 of implementations of principal axis factoring and promax rotation in R and SPSS.
@@ -24,7 +24,7 @@ efa_average(
   x,
   n_factors,
   N = NA,
-  method = "PAF",
+  estimator = "PAF",
   rotation = "promax",
   type = "none",
   averaging = c("mean", "median"),
@@ -60,10 +60,11 @@ data.}
 correlation matrix is used. If input is a correlation matrix and \code{N} = NA
 (default), not all fit indices can be computed.}
 
-\item{method}{character vector. Any combination of  "PAF", "ML", and "ULS",
+\item{estimator}{character vector. Any combination of  "PAF", "ML", and "ULS",
 to use principal axis factoring, maximum likelihood, or unweighted least
 squares, respectively, to fit the EFAs. "MINRES" is accepted as a synonym for
-"ULS" (the same estimator). Default is "PAF".}
+"ULS" (the same estimator). The values are matched case-insensitively.
+Default is "PAF".}
 
 \item{rotation}{character vector. Either perform no rotation ("none"),
 any combination of orthogonal rotations ("varimax", "equamax", "quartimax", "geominT",
@@ -212,7 +213,7 @@ the factor solutions. Based on the unrotated loadings if rotation was "none"
 or only one factor was extracted, otherwise on the rotated loadings.}
 \item{fit_indices}{A matrix containing the average, standard deviation,
 minimum, maximum, and range for all applicable fit indices across the respective
-factor solutions, and the degrees of freedom (df). If the method argument
+factor solutions, and the degrees of freedom (df). If the estimator argument
 contains ML or ULS: Fit indices derived
 from the unrotated factor loadings: Chi Square (chisq), including significance
 level, Comparative Fit Index (CFI), Tucker-Lewis Index (TLI), Root Mean Square
@@ -241,7 +242,7 @@ across: that one \code{\link[=efa_fit]{efa_fit()}} object is returned instead, w
 }
 \description{
 Not all EFA procedures always arrive at the same solution. This function allows
-you perform a number of EFAs from different methods (e.g., Maximum Likelihood
+you perform a number of EFAs from different estimators (e.g., Maximum Likelihood
 and Principal Axis Factoring), with different implementations (e.g., the SPSS
 and psych implementations of Principal Axis Factoring), and across different
 rotations of the same type (e.g., multiple oblique rotations, like promax and
@@ -278,7 +279,7 @@ would be included in the grid and run only once. We include here a list
 of arguments that are only evaluated under specific conditions:
 
 The arguments \code{init_comm}, \code{criterion}, \code{criterion_type},
-\code{abs_eigen} are only evaluated if "PAF" is included in \code{method}
+\code{abs_eigen} are only evaluated if "PAF" is included in \code{estimator}
 and "none" is included in \code{type}.
 
 The argument \code{varimax_type} is only evaluated if "varimax", "promax",
@@ -296,7 +297,7 @@ The arguments \code{k_promax} and \code{p_type} are only evaluated if
 in \code{type}.
 
 The argument \code{start_method} is only evaluated if "ML" is included in
-\code{method}.
+\code{estimator}.
 
 To avoid a bias in the averaged factor solutions from problematic solutions,
 these are excluded prior to averaging. A solution is deemed problematic if
@@ -339,9 +340,9 @@ chi-square-based indices (the chi-square statistic and its significance, CFI,
 TLI, RMSEA, AIC, BIC, and ECVI) are NA. The common part accounted for (CAF)
 index (Lorenzo-Seva, Timmerman, & Kiers, 2011) and the residual-based SRMR and
 RMSR are still computed for PAF. As a consequence, if only "PAF" is included in
-the \code{method} argument, averaging is performed for the CAF, SRMR, and RMSR, while
+the \code{estimator} argument, averaging is performed for the CAF, SRMR, and RMSR, while
 the chi-square-based indices are NA. If a combination of "PAF" and "ML" and/or
-"ULS" are included in the \code{method} argument, the CAF, SRMR, and RMSR are
+"ULS" are included in the \code{estimator} argument, the CAF, SRMR, and RMSR are
 averaged across all non-problematic factor solutions, while the chi-square-based
 indices are only averaged across the ML and ULS solutions. The user should
 therefore keep in mind that the number of EFAs across which the fit indices are
@@ -366,18 +367,18 @@ Aver_PAF_md <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
 # Averaging across different implementations of PAF and promax rotation,
 # and across ULS and different versions of ML (108 EFAs)
 Aver_meth_ext <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
-                             method = c("PAF", "ULS", "ML"))
+                             estimator = c("PAF", "ULS", "ML"))
 
 # Averaging across one implementation each of PAF (EFAtools type), ULS, and
 # ML with one implementation of promax (EFAtools type) (3 EFAs)
 Aver_meth <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
-                         method = c("PAF", "ULS", "ML"), type = "EFAtools",
+                         estimator = c("PAF", "ULS", "ML"), type = "EFAtools",
                          start_method = "psych")
 
 # Averaging across different oblique rotation methods, using one implementation
 # of ML and one implementation of promax (EFAtools type) (7 EFAs)
 Aver_rot <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
-                         method = "ML", rotation = "oblique", type = "EFAtools",
+                         estimator = "ML", rotation = "oblique", type = "EFAtools",
                          start_method = "psych")
 }
 
@@ -387,7 +388,7 @@ Aver_rot <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
 # averaged across the grid of EFAs.
 x_miss <- GRiPS_raw
 x_miss[cbind(1:20, 1)] <- NA
-Aver_fiml <- efa_average(x_miss, n_factors = 1, method = c("PAF", "ML"),
+Aver_fiml <- efa_average(x_miss, n_factors = 1, estimator = c("PAF", "ML"),
                          cor_method = "fiml")
 }
 

@@ -40,6 +40,20 @@
 #     whether to let it reach the old name or to pin the old behaviour inside the
 #     wrapper, and document that decision.
 
+# Reject the successor-only `estimator` name when it lands in a wrapper's `...`: the
+# wrappers with a frozen `method` formal splice their own `estimator = method` translation
+# into the do.call, so a caller's `estimator` dot would collide as an opaque base
+# "matched by multiple actual arguments" error instead of naming the mistake.
+.reject_estimator_dot <- function(nms, fn, successor) {
+  if (!"estimator" %in% nms) return(invisible(NULL))
+  cli::cli_abort(
+    c("{.arg estimator} is not an argument of {.fn {fn}}.",
+      "i" = "{.fn {fn}} selects the estimator with {.arg method}; {.arg estimator} is the
+             {.fn {successor}} argument."),
+    class = "efa_renamed_arg"
+  )
+}
+
 #' Bartlett's test of sphericity
 #'
 #' @description
@@ -190,6 +204,8 @@ KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
 #' keeps working.
 #'
 #' @inheritParams efa_hull
+#' @param method character. The estimator to use; passed to [efa_hull()] as its
+#'   `estimator` argument. One of `"PAF"`, `"ULS"`, or `"ML"`.
 #'
 #' @returns An object of class `efa_retention`, identical to the value of
 #'   [efa_hull()]; see there for the components.
@@ -207,8 +223,9 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
                  n_datasets = 1000, percent = 95,
                  decision_rule = c("means", "percentile", "crawford"),
                  n_factors = 1, ...) {
+  .reject_estimator_dot(...names(), "HULL", "efa_hull")
   do.call(efa_hull,
-          c(list(x, N = N, n_fac_theor = n_fac_theor, method = method, gof = gof,
+          c(list(x, N = N, n_fac_theor = n_fac_theor, estimator = method, gof = gof,
                  eigen_type = eigen_type, use = use, cor_method = cor_method,
                  n_datasets = n_datasets, percent = percent,
                  decision_rule = decision_rule, n_factors = n_factors),
@@ -359,6 +376,14 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
 #' keeps working.
 #'
 #' @inheritParams efa_retain
+#' @param criteria character. A vector with the factor retention methods to
+#'   perform. Possible inputs are: `"CD"`, `"EKC"`, `"HULL"`, `"KGC"`, `"MAP"`,
+#'   `"NEST"`, `"PARALLEL"`, `"SCREE"`, and `"SMT"` (see the details in
+#'   [efa_retain()]). By default, a subset of often used, well-performing
+#'   methods are performed.
+#' @param method character. The estimator to use in the criteria that fit EFA models;
+#'   passed to [efa_retain()] as its `estimator` argument. One of `"ML"`, `"PAF"`, or
+#'   `"ULS"`.
 #'
 #' @returns A list of class `c("efa_retain", "N_FACTORS")`, identical to the
 #'   value of [efa_retain()]; see there for the components.
@@ -385,12 +410,13 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
                       n_datasets_nest = 1000, alpha_nest = .05,
                       show_progress = FALSE,
                       ...) {
+  .reject_estimator_dot(...names(), "N_FACTORS", "efa_retain")
   do.call(efa_retain,
           c(list(x, criteria = criteria, suitability = suitability, N = N,
                  use = use, cor_method = cor_method, n_factors_max = n_factors_max,
                  N_pop = N_pop, N_samples = N_samples, alpha = alpha,
                  max_iter_CD = max_iter_CD, n_fac_theor = n_fac_theor,
-                 method = method, gof = gof, eigen_type_HULL = eigen_type_HULL,
+                 estimator = method, gof = gof, eigen_type_HULL = eigen_type_HULL,
                  eigen_type_other = eigen_type_other, n_factors = n_factors,
                  n_datasets = n_datasets, percent = percent,
                  decision_rule = decision_rule, ekc_type = ekc_type,
@@ -412,6 +438,9 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
 #' @param type character. One of "EFAtools" (default), "psych", "SPSS", or "none". This is
 #'  used to control the procedure of the second-order factor analysis. In
 #'  [efa_schmid_leiman()] it is set through the `type` of the [estimate_control()] object.
+#' @param method character. The estimator for the second-order factor analysis; passed to
+#'  [efa_schmid_leiman()] as its `estimator` argument. One of `"PAF"`, `"ML"`, `"ULS"`, or
+#'  `"MINRES"`.
 #'
 #' @returns A list of class `c("efa_schmid_leiman", "SL")`, identical to the value
 #'   of [efa_schmid_leiman()]; see there for the components.
@@ -422,11 +451,12 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
 #' @export
 SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
                method = c("PAF", "ML", "ULS", "MINRES"), g_name = "g", ...) {
+  .reject_estimator_dot(...names(), "SL", "efa_schmid_leiman")
   # Resolve `type` once so the frozen preset argument, and any flat knob the dots carry, reach
   # the second-order fit through the control objects it now takes.
   type <- match.arg(type)
   do.call(efa_schmid_leiman,
-          c(list(x, Phi = Phi, method = method, g_name = g_name),
+          c(list(x, Phi = Phi, estimator = method, g_name = g_name),
             .repack_flat_dots(list(...), type = type)))
 }
 
@@ -527,6 +557,9 @@ PROCRUSTES <- function(A,
 #'
 #' @inheritParams efa_average
 #'
+#' @param method character vector. Any combination of `"PAF"`, `"ML"`, and `"ULS"`,
+#'   the estimators to average across; passed to [efa_average()] as its `estimator`
+#'   argument. Default is `"PAF"`.
 #' @param P_type character vector. Any combination of `"norm"` and `"unnorm"`.
 #'   How the promax target matrix P is computed if `"none"` is among the specified
 #'   types and `"promax"` or `"oblique"` is among the specified rotations:
@@ -561,7 +594,7 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
                         cor_method = c("pearson", "spearman", "kendall", "poly",
                                        "tetra", "fiml"),
                         show_progress = TRUE) {
-  efa_average(x, n_factors = n_factors, N = N, method = method,
+  efa_average(x, n_factors = n_factors, N = N, estimator = method,
               rotation = rotation, type = type, averaging = averaging,
               trim = trim, salience_threshold = salience_threshold,
               max_iter = max_iter, init_comm = init_comm, criterion = criterion,
@@ -591,6 +624,10 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
 #' before -- so existing code keeps running.
 #'
 #' @inheritParams efa_fit
+#' @param method character. The estimator used to fit the EFA; passed to [efa_fit()]
+#'  as its `estimator` argument. One of "PAF", "ML", "ULS", "MINRES" (an accepted
+#'  alias of "ULS"), or "DWLS"; see the [efa_fit()] documentation for their
+#'  properties and data requirements.
 #' @param type character. If one of "EFAtools" (default), "psych", or "SPSS" is
 #'  used, and the following arguments with default NA are left with
 #'  NA, these implementations are executed according to the respective program
@@ -695,19 +732,50 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
   # arguments and runs every input guard, so nothing else is resolved here.
   type <- match.arg(type)
 
-  efa_fit(x, n_factors = n_factors, N = N, method = method, rotation = rotation,
-          se = se, cor_method = cor_method, use = use, b_boot = b_boot, ci = ci,
-          seed = seed,
-          estimate_control = estimate_control(type = type, init_comm = init_comm,
-                                              criterion = criterion,
-                                              criterion_type = criterion_type,
-                                              max_iter = max_iter, abs_eigen = abs_eigen,
-                                              start_method = start_method),
-          rotate_control = rotate_control(type = type, normalize = normalize,
-                                          precision = precision, order_type = order_type,
-                                          varimax_type = varimax_type, p_type = p_type,
-                                          k = k, random_starts = random_starts),
-          ...)
+  # The flat interface always ignored a `...` argument its rotation engine could not consume;
+  # efa_fit() rejects such an argument. Keep the frozen contract by dropping the unconsumable
+  # dots -- by the exact names the engines read -- before efa_fit() sees them. `rotation` is
+  # resolved early only for this lookup (the same match.arg() efa_fit() runs); with
+  # rotation = "none" nothing is dropped, so efa_fit()'s empty-dots guard surfaces for EFA()
+  # exactly as it always has.
+  rotation <- match.arg(rotation)
+  dots <- list(...)
+  # The successor-only arguments must not ride through the frozen dots: `estimator`
+  # collides with the wrapper's own `estimator = method` translation, the control objects
+  # collide with the ones the wrapper builds below -- and with a rotation all three would
+  # instead be silently dropped by the ignore-unknown-dots contract, so the fit would
+  # quietly run the flat defaults. No pre-rename code could have passed these names
+  # meaningfully, so rejecting them breaks nothing frozen.
+  new_only <- intersect(names(dots), c("estimator", "estimate_control", "rotate_control"))
+  if (length(new_only) > 0L) {
+    cli::cli_abort(
+      c("{.arg {new_only}} {?is/are} not {?an argument/arguments} of {.fn EFA}.",
+        "i" = "{.fn EFA} selects the estimator with {.arg method} and takes the tuning
+               knobs flat; {.arg estimator} and the control objects belong to
+               {.fn efa_fit}."),
+      class = "efa_renamed_arg"
+    )
+  }
+  if (rotation != "none") dots <- dots[names(dots) %in% .rotation_dot_extras(rotation)]
+
+  args <- c(list(x = x, N = N, estimator = method, rotation = rotation,
+                 se = se, cor_method = cor_method, use = use, b_boot = b_boot, ci = ci,
+                 seed = seed,
+                 estimate_control = estimate_control(type = type, init_comm = init_comm,
+                                                     criterion = criterion,
+                                                     criterion_type = criterion_type,
+                                                     max_iter = max_iter, abs_eigen = abs_eigen,
+                                                     start_method = start_method),
+                 rotate_control = rotate_control(type = type, normalize = normalize,
+                                                 precision = precision, order_type = order_type,
+                                                 varimax_type = varimax_type, p_type = p_type,
+                                                 k = k, random_starts = random_starts)),
+            dots)
+  # `n_factors` has no default; do.call() would force it here and turn a call that omitted it
+  # (e.g. `EFA(1:5)`) into an eager missing-argument error before efa_fit()'s input checks
+  # run, so it is added only when supplied.
+  if (!missing(n_factors)) args$n_factors <- n_factors
+  do.call(efa_fit, args)
 }
 
 #' Exploratory factor analysis on multiple data imputations

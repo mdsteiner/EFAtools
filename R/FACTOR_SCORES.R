@@ -53,7 +53,7 @@
 #'
 #' @examples
 #' # Example with raw data with method "Bartlett"
-#' EFA_raw <- efa_fit(DOSPERT_raw, n_factors = 10, method = "PAF",
+#' EFA_raw <- efa_fit(DOSPERT_raw, n_factors = 10, estimator = "PAF",
 #'                    rotation = "oblimin",
 #'                    rotate_control = rotate_control(random_starts = 1))
 #' fac_scores_raw <- FACTOR_SCORES(DOSPERT_raw, f = EFA_raw, method = "Bartlett")
@@ -61,7 +61,7 @@
 #' # Same as above, but with raw data AND a correlation matrix
 #' cor_pearson <- cor(DOSPERT_raw)
 #' EFA_cor_pearson <- efa_fit(cor_pearson, n_factors = 10, N = nrow(DOSPERT_raw),
-#'                            method = "PAF", rotation = "oblimin",
+#'                            estimator = "PAF", rotation = "oblimin",
 #'                            rotate_control = rotate_control(random_starts = 1))
 #' fac_scores_cor_pearson <- FACTOR_SCORES(DOSPERT_raw, f = EFA_cor_pearson,
 #'                                         rho = cor_pearson,
@@ -73,7 +73,7 @@
 #'
 #' # Example with a correlation matrix only (does not return factor scores)
 #' EFA_cor <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
-#'                    method = "PAF", rotation = "oblimin")
+#'                    estimator = "PAF", rotation = "oblimin")
 #' fac_scores_cor <- FACTOR_SCORES(test_models$baseline$cormat, f = EFA_cor)
 #'
 FACTOR_SCORES <- function(x, f, Phi = NULL, rho = NULL,

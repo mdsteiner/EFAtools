@@ -19,10 +19,11 @@
   m
 }
 
-# Exact two-step polychoric for one pair, integrating each cell with mnormt's adaptive
-# bivariate-normal rule. This is the oracle in the near-collinear regime, where the
-# fixed-quadrature reference estimators (polycor / psych) themselves lose accuracy.
-.gold_polychor <- function(a, b) {
+# Exact two-step polychoric negative log-likelihood for one pair, integrating each cell with
+# mnormt's adaptive bivariate-normal rule. Returned as a closure over the fixed thresholds and
+# the contingency table, so a candidate estimate can be scored on the same objective
+# .gold_polychor maximises.
+.gold_nll <- function(a, b) {
   ai <- match(a, sort(unique(a))) - 1L; bi <- match(b, sort(unique(b))) - 1L
   Ki <- max(ai) + 1L; Kj <- max(bi) + 1L; N <- length(ai)
   ti <- stats::qnorm(cumsum(tabulate(ai + 1L, Ki)) / N)[-Ki]
@@ -30,14 +31,20 @@
   rc <- c(-Inf, ti, Inf); cc <- c(-Inf, tj, Inf)
   nab <- matrix(0, Ki, Kj)
   for (r in seq_len(N)) nab[ai[r] + 1L, bi[r] + 1L] <- nab[ai[r] + 1L, bi[r] + 1L] + 1
-  nll <- function(rho) {
+  function(rho) {
     V <- matrix(c(1, rho, rho, 1), 2L); s <- 0
     for (i in seq_len(Ki)) for (j in seq_len(Kj)) if (nab[i, j] > 0)
       s <- s + nab[i, j] * log(max(as.numeric(mnormt::sadmvn(
         c(rc[i], cc[j]), c(rc[i + 1L], cc[j + 1L]), c(0, 0), V)), 1e-300))
     -s
   }
-  stats::optimize(nll, c(-0.9999, 0.9999), tol = 1e-9)$minimum
+}
+
+# Exact two-step polychoric for one pair: the maximiser of .gold_nll. This is the oracle in the
+# near-collinear regime, where the fixed-quadrature reference estimators (polycor / psych)
+# themselves lose accuracy.
+.gold_polychor <- function(a, b) {
+  stats::optimize(.gold_nll(a, b), c(-0.9999, 0.9999), tol = 1e-9)$minimum
 }
 
 # Expand a contingency table of counts into raw two-column ordinal data (row, column codes).
@@ -245,15 +252,29 @@ test_that("a pair with no overlapping complete cases is rejected with a classed 
 test_that("an empty off-diagonal cell does not bias the estimate below the MLE", {
   skip_if_not_installed("mnormt")
   # A few extreme cells dominate the likelihood of a table with empty cells, and a low-order
-  # quadrature under-resolves its wide tail bands and mislocates the maximum. The estimate must
-  # still reach the interior MLE (~0.98), not the much lower value a coarse rule would give.
+  # quadrature under-resolves its wide tail bands and mislocates the maximum: the 12-node rule
+  # puts this pair near 0.90, well below the likelihood's true shoulder.
+  #
+  # This table is the comonotone coupling of its margins -- the Frechet upper bound (Frechet,
+  # 1951) -- so the two-step model reproduces it exactly at rho = 1: the likelihood climbs
+  # monotonically to the boundary and is numerically flat above ~0.977, every value there
+  # attaining the saturated (perfect-fit) log-likelihood to within a rounding unit. The estimate
+  # is therefore not identified on that plateau and must not be pinned against another
+  # optimiser's stopping point -- both land on the plateau, but exactly where is decided by
+  # floating-point detail and varies by platform. What is identified, and what the finer rule
+  # actually has to deliver, is the attained likelihood.
   x <- .expand_table(rbind(c(41, 0), c(13, 0), c(28, 0), c(171, 47)))
   ours <- .polychoric(x)$R[1, 2]
-  gold <- .gold_polychor(x[, 1], x[, 2])     # exact two-step MLE (mnormt)
-  # The estimate must reach the interior maximum (~0.98), not the low shoulder; the likelihood
-  # is flat near the maximum, so allow a modest tolerance around the gold MLE.
   expect_gt(ours, 0.95)
-  expect_equal(ours, gold, tolerance = 1e-2)
+  # The estimate must fit at least as well as the mnormt two-step gold. The 1e-6 slack is
+  # measured, not inherited from sadmvn's abseps: at a perfect fit every cell's n_ab / P_ab
+  # equals N, so an abseps-sized (1e-6) probability error would move this nll by as much as
+  # sum(n_ab / P_ab) * abseps = 1.5e-3. sadmvn is far more accurate than it promises on these
+  # smooth rectangles -- the measured spread over the whole plateau is ~6e-14 -- leaving 1e-6
+  # seven orders above the noise and three below the ~1.4e-3 an under-resolved estimate pays.
+  nll <- .gold_nll(x[, 1], x[, 2])
+  gold <- .gold_polychor(x[, 1], x[, 2])
+  expect_lte(nll(ours), nll(gold) + 1e-6)
 })
 
 test_that("a structurally empty cell warns when an asymptotic covariance is requested", {

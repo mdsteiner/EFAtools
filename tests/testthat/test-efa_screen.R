@@ -573,6 +573,19 @@ test_that("outlier diagnostics fall back to classical distances and degrade grac
   )
   expect_s3_class(o2, "efa_screen_no_outliers")
 
+  # near-collinear variables are skipped on the same terms as exactly collinear ones:
+  # the covariance is numerically singular (rcond far below the double-precision epsilon)
+  # even though it is positive definite, so it must not reach the distance step
+  set.seed(6)
+  Xn <- matrix(rnorm(8 * 4), 8, 4)
+  Xn[, 4] <- Xn[, 1] + Xn[, 2] + 1e-9 * rnorm(8)
+  expect_warning(
+    o3 <- EFAtools:::.screen_outliers(Xn, mcd_alpha = 0.5, outlier_cutoff = 0.975,
+                                      seed = 1),
+    class = "efa_screen_no_outliers"
+  )
+  expect_s3_class(o3, "efa_screen_no_outliers")
+
   # a correlation matrix reaching the helper aborts
   expect_error(
     EFAtools:::.screen_outliers(test_models$baseline$cormat, mcd_alpha = 0.5,

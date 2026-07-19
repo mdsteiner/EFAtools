@@ -38,6 +38,64 @@ You can install the development version from
 pak::pak("mdsteiner/EFAtools")
 ```
 
+## Package Overview
+
+The `efa_*` functions cover the steps of an EFA workflow:
+
+- **Screening and suitability**: `efa_screen()` checks the data for
+  multivariate normality, outliers, and suitability for factor analysis;
+  `efa_kmo()` and `efa_bartlett()` run the Kaiser-Meyer-Olkin criterion
+  and Bartlett’s test of sphericity individually.
+- **Factor retention**: `efa_retain()` runs several factor retention
+  criteria with a single call. They are also available on their own:
+  `efa_cd()`, `efa_ekc()`, `efa_hull()`, `efa_kgc()`, `efa_map()`,
+  `efa_nest()`, `efa_parallel()`, `efa_scree()`, and `efa_smt()`.
+- **Fitting**: `efa_fit()` fits the factor model. `estimate_control()`
+  and `rotate_control()` configure the estimation and rotation settings.
+- **Rotation and transformation**: `efa_procrustes()` rotates a solution
+  onto a target; `efa_schmid_leiman()` transforms an oblique solution
+  into a hierarchical one.
+- **Reliability**: `efa_reliability()` computes reliability and
+  common-variance coefficients for a factor solution.
+- **Factor scores**: `efa_scores()` estimates factor scores together
+  with score-quality diagnostics.
+- **Comparison**: `efa_compare()` compares two solutions (loadings or
+  communalities).
+- **Averaging**: `efa_average()` averages solutions across
+  implementations and methods to assess their stability.
+- **Multiple groups**: `efa_group()` fits a solution per group and
+  compares them.
+- **Multiple imputation**: `efa_mi()` fits and pools solutions across
+  multiply imputed data sets.
+- **Simulation**: `efa_simulate()` simulates data from a common-factor
+  population model.
+- **Power**: `efa_power()` performs analytic and simulation-based power
+  analysis.
+
+The uppercase names (`EFA()`, `N_FACTORS()`, …) are superseded by their
+`efa_*` equivalents, but remain exported and keep their arguments, so
+existing code keeps working.
+
+The following vignettes and articles cover these in detail:
+
+- [EFAtools](https://mdsteiner.github.io/EFAtools/articles/EFAtools.html):
+  a complete EFA workflow, from screening to reliability and factor
+  scores.
+- [Migrating to the efa\_\*
+  interface](https://mdsteiner.github.io/EFAtools/articles/Migrating_to_efa.html):
+  what the old names and arguments map to.
+- [EFA with ordinal and missing
+  data](https://mdsteiner.github.io/EFAtools/articles/Ordinal_and_missing_data.html):
+  polychoric and tetrachoric correlations, DWLS, FIML, and multiply
+  imputed data.
+- [Multigroup exploratory factor
+  analysis](https://mdsteiner.github.io/EFAtools/articles/Multigroup_EFA.html):
+  comparing solutions across groups and assessing approximate
+  invariance.
+- [Simulating data and power analysis for
+  EFA](https://mdsteiner.github.io/EFAtools/articles/Simulation_and_power.html):
+  simulating data and planning sample sizes.
+
 ## Examples
 
 Here are a few examples of EFAtools functionalities
@@ -145,12 +203,12 @@ correlations or two-stage FIML estimation of correlations.
 ``` r
 
 # ULS / MINRES estimation with oblimin rotation and sandwich SEs
-mod <- efa_fit(DOSPERT_raw, n_factors = 5, method = "ULS", rotation = "oblimin",
+mod <- efa_fit(DOSPERT_raw, n_factors = 5, estimator = "ULS", rotation = "oblimin",
            se = "sandwich")
 #> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
 mod
 #> 
-#> EFA performed with type = 'EFAtools', method = 'ULS', and rotation = 'oblimin'.
+#> EFA performed with estimator = 'ULS' and rotation = 'oblimin'.
 #> 
 #> ── Rotated Loadings ────────────────────────────────────────────────────────────
 #> 
@@ -222,7 +280,7 @@ mod
 # detailed output with summary()
 summary(mod)
 #> 
-#> EFA performed with type = 'EFAtools', method = 'ULS', and rotation = 'oblimin'.
+#> EFA performed with estimator = 'ULS' and rotation = 'oblimin'.
 #> 
 #> ── Model Diagnostics ───────────────────────────────────────────────────────────
 #> 
@@ -602,7 +660,7 @@ residuals(mod)
 #> socR_6 -0.058900218  0.0775383760 -0.048707612  0.1897359371  0.0000000000
 
 # DWLS estimation based on polychoric correlations, with robust sandwich SEs
-mod <- efa_fit(GRiPS_raw, n_factors = 1, method = "DWLS", cor_method = "poly",
+mod <- efa_fit(GRiPS_raw, n_factors = 1, estimator = "DWLS", cor_method = "poly",
            se = "sandwich")
 #> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
 #> Warning: Some response-category combinations are empty despite a non-negligible expected
@@ -612,7 +670,7 @@ mod <- efa_fit(GRiPS_raw, n_factors = 1, method = "DWLS", cor_method = "poly",
 #>   interpret them with caution.
 mod
 #> 
-#> EFA performed with type = 'EFAtools', method = 'DWLS', and rotation = 'none'.
+#> EFA performed with estimator = 'DWLS' and rotation = 'none'.
 #> 
 #> ── Unrotated Loadings ──────────────────────────────────────────────────────────
 #> 
@@ -649,7 +707,7 @@ mod
 #> SRMR: .02
 summary(mod)
 #> 
-#> EFA performed with type = 'EFAtools', method = 'DWLS', and rotation = 'none'.
+#> EFA performed with estimator = 'DWLS' and rotation = 'none'.
 #> 
 #> ── Model Diagnostics ───────────────────────────────────────────────────────────
 #> 
@@ -732,11 +790,11 @@ information SEs, but note that they assume multivariate normality.
 
 # ML estimation with oblimin rotation and information SEs, based on correlation
 # matrix and N
-mod <- efa_fit(test_models$baseline$cormat, N = 500,  n_factors = 3, method = "ML",
+mod <- efa_fit(test_models$baseline$cormat, N = 500,  n_factors = 3, estimator = "ML",
            rotation = "oblimin", se = "information")
 mod
 #> 
-#> EFA performed with type = 'EFAtools', method = 'ML', and rotation = 'oblimin'.
+#> EFA performed with estimator = 'ML' and rotation = 'oblimin'.
 #> 
 #> ── Rotated Loadings ────────────────────────────────────────────────────────────
 #> 
@@ -794,7 +852,7 @@ mod
 #> SRMR: .03
 summary(mod)
 #> 
-#> EFA performed with type = 'EFAtools', method = 'ML', and rotation = 'oblimin'.
+#> EFA performed with estimator = 'ML' and rotation = 'oblimin'.
 #> 
 #> ── Model Diagnostics ───────────────────────────────────────────────────────────
 #> 

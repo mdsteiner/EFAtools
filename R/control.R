@@ -71,6 +71,73 @@
   out
 }
 
+# ASCII-only upper-casing for case-folded matching. toupper() is locale-dependent -- under a
+# Turkish/Azeri locale toupper("i") is the dotted capital "İ", so an input like "minres"
+# or "oblimin" would fold to a string the (already-uppercase) choice can never equal. The
+# choice values are all ASCII, so folding both sides with a fixed a-z -> A-Z map keeps the
+# matching identical on every platform.
+.fold_upper <- function(x) chartr("abcdefghijklmnopqrstuvwxyz",
+                                  "ABCDEFGHIJKLMNOPQRSTUVWXYZ", x)
+
+# Case-insensitive match.arg(): resolve a choice-valued argument against its choices and
+# return the canonical spelling(s) from `choices`, so downstream code, stored settings, and
+# printed output always carry the canonical value. Values are compared case-folded, and an
+# exact (case-folded) match beats a prefix match, so unambiguous abbreviations still resolve
+# as they do under match.arg(). It is deliberately stricter than match.arg() in `several.ok`
+# mode: an unmatched element aborts here, whereas match.arg() silently drops it. Mirroring
+# match.arg(), an `arg` identical to `choices` selects the default -- the first choice, or
+# all of them when `several.ok` -- and a missing `choices` is taken from the caller's formal
+# default. Ambiguous or unmatched values are a classed abort listing the choices; `class`
+# lets a caller raise its own condition class (the control constructors reuse their
+# `efa_control_input`).
+.match_arg_ci <- function(arg, choices, several.ok = FALSE,
+                          arg_name = deparse1(substitute(arg)),
+                          class = "efa_bad_choice") {
+  if (missing(choices)) {
+    caller <- sys.parent()
+    choices <- eval(formals(sys.function(caller))[[arg_name]],
+                    envir = sys.frame(caller))
+  }
+  if (is.null(arg)) return(choices[1L])
+  if (identical(arg, choices)) return(if (several.ok) choices else choices[1L])
+
+  # charmatch(): NA = no match, 0 = ambiguous (a prefix of several choices)
+  idx <- if (is.character(arg)) charmatch(.fold_upper(arg), .fold_upper(choices)) else NA_integer_
+  len_ok <- if (several.ok) length(arg) >= 1L else length(arg) == 1L
+  if (!len_ok || anyNA(idx) || any(idx == 0L)) {
+    no_match <- if (is.character(arg)) unique(arg[is.na(idx)]) else character()
+    ambiguous <- if (is.character(arg)) unique(arg[!is.na(idx) & idx == 0L]) else character()
+    what <- if (several.ok) "one or more" else "one"
+    cli::cli_abort(
+      c("{.arg {arg_name}} must be {what} of {.val {choices}}.",
+        if (!is.character(arg)) c("x" = "You supplied {.obj_type_friendly {arg}}."),
+        if (!several.ok && is.character(arg) && length(arg) > 1L) {
+          c("x" = "You supplied {length(arg)} values.")
+        },
+        if (length(no_match) > 0L) {
+          c("x" = "{.val {no_match}} {?does/do} not match any of the choices.")
+        },
+        if (length(ambiguous) > 0L) {
+          c("x" = "{.val {ambiguous}} {?matches/match} more than one choice.")
+        }),
+      class = class
+    )
+  }
+  choices[idx]
+}
+
+# Case-insensitively map the elements of a vector-valued choice argument onto the canonical
+# spelling of `choices` (exact case-folded matches only -- no abbreviations, matching the
+# subset semantics of the callers). An element matching no choice is returned unchanged, so
+# the caller's subset assertion still rejects it with its usual message.
+.map_subset_ci <- function(x, choices) {
+  if (!is.character(x)) return(x)
+  idx <- match(.fold_upper(x), .fold_upper(choices))
+  found <- !is.na(idx)
+  x[found] <- choices[idx[found]]
+  x
+}
+
 # Validate a logical knob (or NA, when `na_ok`); classed abort otherwise.
 .assert_control_flag <- function(x, arg, na_ok = TRUE) {
   if (na_ok && .is_control_unset(x)) return(invisible(NULL))
@@ -126,7 +193,7 @@
 #'   optimiser: `"psych"` (default, the [psych::fa()] starts) or `"factanal"` (the
 #'   [stats::factanal()] starts); abbreviations are matched. Not governed by `type`.
 #'   Only maximum likelihood uses it, so `NA` leaves it unset and is rejected only by
-#'   a fit that is actually run with `method = "ML"`.
+#'   a fit that is actually run with `estimator = "ML"`.
 #'
 #' @returns `estimate_control()` returns a list of class `efa_estimate_control` with
 #'   the components `type`, `init_comm`, `criterion`, `criterion_type`, `max_iter`,
@@ -157,7 +224,9 @@ estimate_control <- function(type = c("EFAtools", "psych", "SPSS", "none"),
                              init_comm = NA, criterion = NA, criterion_type = NA,
                              max_iter = NA, abs_eigen = NA, start_method = "psych") {
 
-  type <- match.arg(type)
+  # Match `type` case-insensitively, but keep the constructor's own condition class so a bad
+  # `type` is caught alongside the other knobs (all `efa_control_input`).
+  type <- .match_arg_ci(type, class = "efa_control_input")
 
   .assert_control_choice(init_comm, c("smc", "mac", "unity"), "init_comm")
   # The convergence tolerance is compared against a change in communalities, so a value at or
@@ -168,7 +237,7 @@ estimate_control <- function(type = c("EFAtools", "psych", "SPSS", "none"),
   .assert_control_number(max_iter, "max_iter", int = TRUE)
   .assert_control_flag(abs_eigen, "abs_eigen")
   # `start_method` only governs the ML optimiser, so NA ("not needed here") is admissible and
-  # is rejected by the fit itself, and only when `method = "ML"`.
+  # is rejected by the fit itself, and only when `estimator = "ML"`.
   start_method <- .match_control_choice(start_method, c("psych", "factanal"), "start_method")
 
   structure(
@@ -205,12 +274,16 @@ estimate_control <- function(type = c("EFAtools", "psych", "SPSS", "none"),
 #'   criterion-based rotations to guard against local minima. A single whole number
 #'   of at least 0, where `0` runs the rotation from its warm start only; default
 #'   `100`.
-#' @param ... Additional arguments forwarded to the rotation engine (for example a
-#'   criterion-specific `gam` for oblimin or `delta` for geomin, or `maxit`). They
-#'   are stored in `extra_args` and passed on to the rotation engine when the
-#'   control is used to fit a model. An estimation knob (which belongs in
-#'   [estimate_control()]) or one of the former spellings `P_type` and
-#'   `randomStarts` is rejected here, because the fit would silently drop it.
+#' @param ... Additional arguments forwarded to the rotation engine. Only the names
+#'   a rotation engine can consume are accepted: `maxit` (the maximum number of
+#'   engine iterations), and the criterion parameters `gam` (oblimin) and `delta`
+#'   (geomin); anything else is rejected as a misspelling. They are stored in
+#'   `extra_args` and passed on to the rotation engine when the control is used to
+#'   fit a model; an extra a given fit's rotation does not consume is ignored by
+#'   that fit, so one control can serve fits with different rotations. An
+#'   estimation knob (which belongs in [estimate_control()]) or one of the former
+#'   spellings `P_type` and `randomStarts` is likewise rejected here, because the
+#'   fit would silently drop it.
 #'
 #' @examples
 #'
@@ -226,7 +299,7 @@ rotate_control <- function(type = c("EFAtools", "psych", "SPSS", "none"),
                            varimax_type = NA, p_type = NA, k = NA,
                            random_starts = 100, ...) {
 
-  type <- match.arg(type)
+  type <- .match_arg_ci(type, class = "efa_control_input")
 
   .assert_control_flag(normalize, "normalize", na_ok = FALSE)
   .assert_control_number(precision, "precision", upper = 1, na_ok = FALSE)
@@ -255,6 +328,29 @@ rotate_control <- function(type = c("EFAtools", "psych", "SPSS", "none"),
       class = "efa_control_input"
     )
   }
+  # Any other extra must be a name some rotation's engine can consume (the engines read their
+  # extras by exact name); an unknown one is a misspelling that the fit would silently drop.
+  # Deliberately validated against the across-rotation union, not a single rotation: a control
+  # is reusable across fits, so it may legitimately carry an extra that some of its fits (e.g.
+  # the unrotated or promax rows of an efa_average() grid) never consume.
+  extra_nms <- names(extra_args)
+  if (is.null(extra_nms)) extra_nms <- rep("", length(extra_args))
+  bad_extra <- unique(setdiff(extra_nms[nzchar(extra_nms)], .rotation_extra_union))
+  if (length(bad_extra) > 0L || any(!nzchar(extra_nms))) {
+    msg <- if (length(bad_extra) > 0L) {
+      "{.arg {bad_extra}} {?is/are} not {?a name/names} a rotation engine can consume."
+    } else {
+      "The extra engine arguments in {.arg ...} must be named."
+    }
+    cli::cli_abort(
+      c(msg,
+        "i" = "The accepted engine extras are {.arg {(.rotation_extra_union)}}.",
+        "i" = "Check for a misspelled engine argument (for example {.arg gam}, not
+               {.arg gamma}); the rotation tuning knobs are {.fn rotate_control}'s named
+               arguments."),
+      class = "efa_control_input"
+    )
+  }
 
   structure(
     list(type = type, normalize = normalize, precision = precision,
@@ -278,6 +374,10 @@ rotate_control <- function(type = c("EFAtools", "psych", "SPSS", "none"),
 # forced; `fn` names the function the caller actually reached, so the message points at the call
 # that has to change.
 .reject_flat_knobs <- function(nms, fn = "efa_fit") {
+  # The renamed `method` argument is checked first: it is the more specific mistake, and
+  # every function that must reject the flat knobs must reject the former estimator
+  # spelling too, so one call site covers both.
+  .reject_renamed_method(nms, fn = fn)
   bad <- intersect(nms, c("type", .flat_estimate_knobs, .flat_rotate_knobs,
                           "P_type", "randomStarts"))
   if (length(bad) == 0L) return(invisible(NULL))
@@ -293,6 +393,20 @@ rotate_control <- function(type = c("EFAtools", "psych", "SPSS", "none"),
              {.fn rotate_control}.",
       "i" = "For example: {.code {example}}."),
     class = "efa_flat_knob_in_dots"
+  )
+}
+
+# Reject the former `method` argument (the estimator is selected with `estimator`) when it
+# lands in a fit function's `...`: it would otherwise be forwarded into the rotation extras
+# or a criterion fit -- surfacing as an opaque downstream error or being silently ignored --
+# instead of selecting the estimator.
+.reject_renamed_method <- function(nms, fn = "efa_fit") {
+  if (!"method" %in% nms) return(invisible(NULL))
+  cli::cli_abort(
+    c("{.arg method} is not an argument of {.fn {fn}}.",
+      "i" = "The estimator is selected with {.arg estimator}, e.g.
+             {.code {fn}(x, ..., estimator = \"ML\")}."),
+    class = "efa_renamed_arg"
   )
 }
 
@@ -315,6 +429,23 @@ rotate_control <- function(type = c("EFAtools", "psych", "SPSS", "none"),
 # remaining dot (the genuine rotation extras, e.g. `maxit`/`gam`) unchanged. One `type` governs
 # both presets, exactly as the single flat `type` always did.
 .repack_flat_dots <- function(dots, type = NULL) {
+
+  # The flat interface selected the estimator with `method`; the fitting functions take
+  # `estimator`. Translate the name first -- unlike the knob repacking below it must happen
+  # even when a control object is passed alongside, because `method` never lives in a control.
+  # Both names at once is a half-migrated call: silently letting either win would fit with
+  # an estimator the caller did not (knowingly) choose, so it is rejected instead.
+  if ("method" %in% names(dots)) {
+    if ("estimator" %in% names(dots)) {
+      cli::cli_abort(
+        c("{.arg method} and {.arg estimator} cannot both be supplied.",
+          "i" = "{.arg method} is the former name of {.arg estimator}; pass only one."),
+        class = "efa_renamed_arg"
+      )
+    }
+    dots$estimator <- dots$method
+    dots$method <- NULL
+  }
 
   # A control object passed explicitly is the current interface; never second-guess it.
   if (any(c("estimate_control", "rotate_control") %in% names(dots))) return(dots)

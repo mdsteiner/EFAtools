@@ -1,0 +1,232 @@
+---
+title: "EFA with ordinal and missing data"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{EFA with ordinal and missing data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  message = FALSE,
+  fig.width = 7,
+  fig.align = "center"
+)
+
+# The multiple-imputation section uses mice to create the imputations. It is only
+# suggested by the package, so the imputation chunks are evaluated only when it is
+# installed.
+mice_ok <- requireNamespace("mice", quietly = TRUE)
+```
+
+Two features of real data complicate an exploratory factor analysis: items are often
+**ordinal** (a handful of Likert categories rather than a continuous scale), and some
+responses are usually **missing**. `EFAtools` handles both within the ordinary `efa_fit()`
+workflow, without switching packages. This vignette shows how. It assumes familiarity with
+the basic workflow covered in the [EFAtools](EFAtools.html) vignette and focuses on what
+changes for ordinal and incomplete data.
+
+```{r}
+library(EFAtools)
+```
+
+So that the examples are self-contained and reproducible, we generate the data with
+`efa_simulate()` from a known three-factor population (18 indicators, six per factor, with
+moderately correlated factors), using fixed seeds throughout.
+
+```{r}
+Lambda <- population_models$loadings$baseline  # 18 x 3 loading pattern
+Phi    <- population_models$phis_3$moderate    # moderate factor intercorrelations
+```
+
+## Ordinal Data
+
+Rating-scale items are not continuous: they take a few ordered values, and a Pearson
+correlation between two such items underestimates the association between the underlying
+constructs. The polychoric correlation instead estimates the correlation of the continuous
+latent variables assumed to underlie the observed categories, and pairing it with a
+categorical estimator removes the bias that treating the items as continuous introduces.
+
+We draw 400 responses on a four-category scale. `match = "polychoric"` sets the category
+thresholds so that the population *polychoric* correlation of the discretised data equals
+the target correlation.
+
+```{r}
+d_ord <- efa_simulate(N = 400, Lambda = Lambda, Phi = Phi,
+                      categories = 4, match = "polychoric", seed = 2024)$data
+d_ord[1:5, 1:6]
+```
+
+### Screening Ordinal Data
+
+`efa_screen()` reports, among its diagnostics, how many response categories each item has
+and whether the data are multivariate normal — the two things that decide whether an
+ordinal treatment is worthwhile.
+
+```{r, warning = FALSE}
+efa_screen(d_ord, seed = 2024)
+```
+
+The sampling adequacy (KMO) and sphericity checks confirm the data are factorable. The
+telling parts are the multivariate-normality section and the recommendations: Mardia's
+kurtosis and the Henze-Zirkler test reject normality, and the recommendations flag that every
+item has fewer than five response categories. Together these spell out the consequence — with
+few categories and non-normal data, a polychoric correlation with a categorical estimator
+such as DWLS is less biased than normal-theory maximum likelihood, and the normal-theory
+standard errors and fit indices are better replaced by robust (sandwich) versions.
+
+### Polychoric Correlations, DWLS, and Robust Standard Errors
+
+`efa_fit()` computes the polychoric correlation when `cor_method = "poly"` and fits it with
+diagonally weighted least squares when `estimator = "DWLS"` — the estimator recommended for
+ordinal data, which weights each correlation residual by the inverse asymptotic variance of
+the corresponding polychoric correlation. Requesting `se = "sandwich"` adds robust standard
+errors and a scaled (Satorra-Bentler) chi-square that stay valid under the non-normality
+these data show.
+
+```{r}
+efa_poly <- efa_fit(d_ord, n_factors = 3, cor_method = "poly", estimator = "DWLS",
+                    rotation = "oblimin", se = "sandwich")
+efa_poly
+```
+
+The pattern matrix recovers the three factors cleanly (six indicators each), and the model
+fit reports a **scaled** chi-square with its CFI, TLI, and RMSEA. Because the chi-square is
+a scaled statistic, the AIC and BIC (which are defined on the unscaled likelihood
+discrepancy) are left `NA`.
+
+For binary items, `cor_method = "tetra"` computes tetrachoric correlations and runs the same
+DWLS and sandwich machinery.
+
+The robust standard errors accompany each estimated quantity; for the rotated loadings, for
+example:
+
+```{r}
+round(efa_poly$SE$rot_loadings, 3)
+```
+
+The matching confidence intervals live in `efa_poly$CI`, and `summary(efa_poly)` prints them
+as a labelled table alongside the model diagnostics.
+
+### Why Not Just Treat the Items as Continuous?
+
+To see what the ordinal treatment buys, fit the same data as if they were continuous — a
+Pearson correlation with maximum likelihood — and compare the rotated loadings with
+`efa_compare()`.
+
+```{r}
+efa_cont <- efa_fit(d_ord, n_factors = 3, cor_method = "pearson", estimator = "ML",
+                    rotation = "oblimin")
+
+cmp <- efa_compare(efa_poly$rot_loadings, efa_cont$rot_loadings,
+                   x_labels = c("Polychoric / DWLS", "Pearson / ML"))
+cmp
+plot(cmp)
+```
+
+The two solutions agree on the structure, but the polychoric loadings are systematically a
+little larger: treating the items as continuous attenuates the loadings, because the Pearson
+correlation understates the latent associations. With only four categories here the gap is
+modest, but it widens as the number of categories drops (it is largest for binary items) and
+as the category thresholds grow more asymmetric (skewed items). This is why a polychoric or
+tetrachoric treatment is preferable for genuinely ordinal items with few categories.
+
+The polychoric route does make its own demands, though: it assumes a normal latent variable
+underlies each item, and it needs an adequate sample size and reasonably populated
+response-category combinations. When categories are very sparse (rare responses, small
+samples), the polychoric asymptotic covariance behind the DWLS weights and the robust
+standard errors becomes unreliable — `efa_fit()` warns when empty category combinations are
+present — and collapsing rare categories can help.
+
+## Missing Data
+
+When some responses are missing, dropping every incomplete case (listwise deletion) wastes
+data and can bias the results unless the values are missing completely at random. `EFAtools`
+offers two principled alternatives that assume only that the data are missing at random
+(MAR): a single-analysis route via full-information maximum likelihood, and a
+multiple-imputation route via `efa_mi()`.
+
+We simulate 250 continuous cases with about 15% of values missing at random, where each
+item's missingness depends on another item's value.
+
+```{r}
+d_miss <- efa_simulate(N = 250, Lambda = Lambda, Phi = Phi,
+                       missing = "MAR", missing_prop = 0.15, seed = 2024)$data
+round(mean(is.na(d_miss)), 3)          # overall proportion missing
+```
+
+### Two-Stage Full-Information Maximum Likelihood
+
+With `cor_method = "fiml"`, `efa_fit()` estimates the saturated mean and covariance from all
+the observed data by an EM algorithm (assuming the data are MAR) and analyses the resulting
+correlation — a single fit that uses every case rather than only the complete ones. The
+model fit is reported as corrected two-stage (Satorra-Bentler) statistics.
+
+```{r}
+efa_fiml <- efa_fit(d_miss, n_factors = 3, cor_method = "fiml", estimator = "ML",
+                    rotation = "oblimin")
+efa_fiml
+```
+
+The solution again recovers the three factors, and the printout records that the correlation
+was obtained by two-stage FIML. Standard errors are available here too: for `estimator = "ML"`
+or `"ULS"`, `se = "information"` or `"sandwich"` return the corrected two-stage standard
+errors, and `se = "np-boot"` works with any estimator.
+
+### Multiple Imputation with `efa_mi()`
+
+The alternative is to impute the missing values several times, fit each completed dataset,
+and pool the results. `EFAtools` does not impute the data itself — use a dedicated tool such
+as the [mice](https://CRAN.R-project.org/package=mice) package — but `efa_mi()` takes the
+list of completed datasets and does the factor-analytic pooling.
+
+Here we create five imputations with mice (a Bayesian linear-regression model, appropriate
+for these continuous items) and collect them into a list.
+
+```{r, eval = mice_ok}
+imp <- mice::mice(as.data.frame(d_miss), m = 5, method = "norm",
+                  printFlag = FALSE, seed = 123)
+dat_list <- lapply(seq_len(imp$m), function(i) mice::complete(imp, i))
+```
+
+`efa_mi()` fits the same `efa_fit()` model to each imputed dataset — the extraction,
+rotation, and standard-error options are passed through `...` — aligns the solutions to a
+common factor space (rotation is only identified up to reflection and permutation, so the
+imputations must be matched before averaging), and pools them.
+
+```{r, eval = mice_ok}
+efa_pooled <- efa_mi(dat_list, n_factors = 3, estimator = "ML", rotation = "oblimin")
+efa_pooled
+```
+
+The pooled loadings recover the three factors. Point estimates are averaged across the
+imputations after alignment. The model chi-square, and the RMSEA and AIC/BIC derived from
+it, are pooled with the D2 rule — which is why the printout labels the pooled chi-square as a
+D2 statistic with its own reference distribution — whereas the incremental CFI and TLI are
+averaged across the per-imputation fits. Requesting standard errors in the call (for
+example `se = "information"` or `se = "np-boot"`) additionally pools them with Rubin's rules,
+so the between-imputation variability inflates the pooled standard errors. Because multiple
+imputation propagates the extra uncertainty from the missing data, its pooled fit statistics
+are not directly comparable with the single FIML fit above; read them together with the
+per-imputation fits stored in the returned object.
+
+Multiple imputation is not limited to continuous data: since `efa_mi()` forwards its
+arguments to `efa_fit()`, imputed ordinal datasets can be pooled with `cor_method = "poly"`
+and `estimator = "DWLS"` in exactly the same way.
+
+Which route to prefer is largely practical. FIML is a single, efficient fit and is the
+simpler default when the analysis model is the whole story. Multiple imputation is more
+flexible when the imputation model should draw on auxiliary variables not in the factor
+model, or when the same imputations feed several downstream analyses.
+
+## Where to Next
+
+This vignette covered the ordinal and missing-data extensions of the workflow. For the core
+analysis — screening, factor retention, extraction and rotation, and the post-processing
+tools — see the [EFAtools](EFAtools.html) vignette, and the individual help pages for the
+statistical details and references. Run `browseVignettes("EFAtools")` for the vignettes
+installed with the package, or visit the
+[package website](https://mdsteiner.github.io/EFAtools/) for the full set of articles.

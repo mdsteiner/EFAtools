@@ -110,14 +110,14 @@ value), and the reported \code{guttman} follows from it.
 \examples{
 # Weights and score diagnostics from an EFA on a correlation matrix
 efa <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
-               method = "PAF", rotation = "oblimin")
+               estimator = "PAF", rotation = "oblimin")
 fs <- efa_scores(test_models$baseline$cormat, f = efa)
 fs
 summary(fs)
 
 # Factor scores from raw data (Bartlett method)
 \donttest{
-efa_raw <- efa_fit(GRiPS_raw, n_factors = 1, method = "PAF")
+efa_raw <- efa_fit(GRiPS_raw, n_factors = 1, estimator = "PAF")
 efa_scores(GRiPS_raw, f = efa_raw, method = "Bartlett")
 }
 

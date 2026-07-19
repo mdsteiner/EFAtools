@@ -11,42 +11,89 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
+  message = FALSE,
   fig.width = 7,
   fig.align = "center"
 )
-
-if (!requireNamespace("microbenchmark", quietly = TRUE)) {
-      stop("Package \"microbenchmark\" needed for this vignette to work. Please install it.",
-      call. = FALSE)
-}
-
 ```
 
+`EFAtools` provides a complete workflow for exploratory factor analysis (EFA). Starting
+from raw data or a correlation matrix, it takes you through every stage of a typical
+analysis:
 
+1. **Screening** the data for factorability, multicollinearity, non-normality, and
+   outliers (`efa_screen()`, with `efa_bartlett()` and `efa_kmo()` for the individual
+   measures).
+2. **Retention**: deciding how many factors to keep, with a comprehensive suite of factor
+   retention criteria (`efa_retain()` and the individual criteria it wraps).
+3. **Extraction and rotation** of the factor solution (`efa_fit()`), with a choice
+   of estimators and orthogonal or oblique rotations.
+4. **Post-processing**: comparing solutions (`efa_compare()`), averaging across analytic
+   choices (`efa_average()`), estimating factor scores (`efa_scores()`), a Schmid-Leiman
+   transformation (`efa_schmid_leiman()`), and reliability coefficients including
+   McDonald's omegas (`efa_reliability()`).
 
-This vignette provides an overview for the functionalities of the EFAtools package. The general aim of the package is to provide flexible implementations of different algorithms for an exploratory factor analyses (EFA) procedure, including factor retention methods, factor extraction and rotation methods, as well as the computation of a Schmid-Leiman solution and McDonald's omega coefficients.
+The computationally intensive routines are implemented in C++ for speed. This vignette
+walks through the whole workflow on a single data set; it is an overview rather than a
+tutorial on the methods themselves, so please consult the individual help pages for the
+statistical details and literature references.
 
-The package was first designed to enable a comparison of EFA (specifically, principal axis factoring with subsequent promax rotation) performed in R using the [**psych**](https://CRAN.R-project.org/package=psych) package and EFA performed in SPSS. That is why some functions allow the specification of a type, including `"psych"` and `"SPSS"`, such that the respective procedure will be executed to match the output of these implementations (which do not always lead to the same results; see separate vignette [**Replicate_SPSS_psych**](Replicate_SPSS_psych.html "Replicate SPSS and R psych results with EFAtools") for a demonstration of the replication of original results). This vignette will go through a complete example, that is, we will first show how to determine the number of factors to retain, then perform different factor extraction methods, run a Schmid-Leiman transformation and compute omegas.
-
-The package can be installed from CRAN using `install.packages("EFAtools")`, or from GitHub using `devtools::install_github("mdsteiner/EFAtools")`, and then loaded using:
+The package can be installed from CRAN using `install.packages("EFAtools")`, or from GitHub
+using `pak::pak("mdsteiner/EFAtools")`, and then loaded using:
 
 ```{r}
 library(EFAtools)
 ```
 
-In this vignette, we will use the `DOSPERT_raw` dataset, which contains responses to the Domain Specific Risk Taking Scale (DOSPERT) of 3123 participants. The dataset is contained in the `EFAtools` package, for details, see `?DOSPERT_raw`. Note that this vignette is to provide a general overview and it is beyond its scope to explain all methods and functions in detail. If you want to learn more on the details and methods, please see the respective help functions for explanations and literature references. However, the dataset is rather large, so, just to save time when building the vignette, we will only use the first 500 observations. When you normally do your analyses, you use the full dataset.
+We use the `DOSPERT_raw` data set throughout, which contains responses of 3123 participants
+to the Domain Specific Risk Taking Scale (DOSPERT); see `?DOSPERT_raw` for details. The
+data are rather large, so, purely to keep this vignette quick to build, we work with the
+first 500 observations. In a real analysis you would of course use the full data set.
 
 ```{r}
 # only use a subset to make analyses faster
-DOSPERT_sub <- DOSPERT_raw[1:500,]
+DOSPERT_sub <- DOSPERT_raw[1:500, ]
 ```
 
+## Screening the Data
 
-## Test Suitability of Data
+Before extracting factors it is worth checking whether the data are suitable for factor
+analysis, and whether they satisfy the assumptions of the estimator you plan to use.
+`efa_screen()` collects the relevant diagnostics in one place. From raw data it reports the
+Kaiser-Meyer-Olkin (KMO) measure of sampling adequacy (overall and per variable), Bartlett's
+test of sphericity, the determinant and condition number of the correlation matrix, the
+squared multiple correlation (SMC) and per-variable diagnostics for each item, tests of
+multivariate normality (Mardia and Henze-Zirkler), and multivariate outliers, and it closes
+with a set of recommendations.
 
-The first step in an EFA procedure is to test whether your data is suitable for factor analysis. To this end, the `EFAtools` package provides the `efa_bartlett()` and the `efa_kmo()` functions. The Bartlett's test of sphericity tests whether a correlation matrix is significantly different from an identity matrix (a correlation matrix with zero correlations between all variables). This test should thus be significant. The Kaiser-Meyer-Olkin criterion (KMO) represents the degree to which each observed variable is predicted by the other variables in the dataset and thus is another indicator for how correlated the different variables are.
+```{r, warning = FALSE}
+efa_screen(DOSPERT_sub, seed = 2)
+```
 
-We can test whether our `DOSPERT_sub` dataset is suitable for factor analysis as follows.
+The overall KMO is meritorious and Bartlett's test is clearly significant, so the data are
+factorable. The near-zero determinant flags some multicollinearity, which is expected for a
+scale with strongly related items within each risk domain. More interesting are the last few
+sections: three items have a sparse response category, and both the Mardia and the
+Henze-Zirkler tests reject multivariate normality. A consequence is that normal-theory
+standard errors and fit indices may be biased, so robust (sandwich) or bootstrapped standard
+errors are preferable, and Bartlett's test should be read with caution. For a fully ordinal
+treatment you would move to polychoric correlations with a categorical least-squares
+estimator.
+
+On the outlier section: The robust distances come from a minimum
+covariance determinant (MCD) estimate, whose random subset search is the reason
+`efa_screen()` takes a `seed`. The MCD assumes roughly elliptical data, and on markedly
+non-normal data like these, large robust distances are common. This is why almost half of
+the observations end up flagged (On such heavily discretised data the most robust 50%
+subset can also turn out singular, in which case `efa_screen()` falls back to classical
+Mahalanobis distances and labels the output accordingly). The flagged cases are therefore
+better understood as evidence of that non-normality than as genuine outliers to remove.
+Inspect them (via `$outliers$flagged`) rather than deleting them automatically.
+
+If you only want the two classic factorability tests, they are also available on their own.
+Bartlett's test of sphericity checks whether the correlation matrix differs from an identity
+matrix (it should be significant), and the KMO criterion summarises how strongly each variable
+is predicted by the others:
 
 ```{r}
 # Bartlett's test of sphericity
@@ -56,222 +103,204 @@ efa_bartlett(DOSPERT_sub)
 efa_kmo(DOSPERT_sub)
 ```
 
-Note that these tests can also be run in the `efa_retain()` function.
+Both tests can also be requested directly inside `efa_retain()`, alongside the factor
+retention criteria discussed next.
 
-## Factor Retention Methods
+## Deciding How Many Factors to Retain
 
-As the goal of EFA is to determine the underlying factors from a set of multiple variables, one of the most important decisions is how many factors can or should be extracted. There exists a plethora of factor retention methods to use for this decision. The problem is that there is no method that consistently outperforms all other methods. Rather, which factor retention method to use depends on the structure of the data: are there few or many indicators, are factors strong or weak, are the factor intercorrelations weak or strong. For rules on which methods to use, see, for example, [Auerswald and Moshagen, (2019)](https://doi.org/10.1037/met0000200).
+One of the most consequential decisions in an EFA is how many factors to extract. There is a
+large number of factor retention criteria, and no single one dominates the others: which
+criterion works best depends on the structure of the data — how many indicators there are,
+how strong the factors are, and how strongly they intercorrelate. The current recommendation
+is therefore to examine several criteria together and check whether they converge (see, for
+example, [Auerswald and Moshagen, 2019](https://doi.org/10.1037/met0000200)).
 
-There are multiple factor retention methods implemented in the `EFAtools` package. They can either be called with separate functions, or all (or a selection) of them using the `efa_retain()` function. 
+`EFAtools` implements a broad set of these criteria. They can be called individually, or all
+(or a selection) of them together through `efa_retain()`.
 
-### Calling Separate Functions
+### Calling Individual Criteria
 
-Let's first look at how to determine the number of factors to retain by calling separate functions. For example, if you would like to perform a parallel analysis based on squared multiple correlations (SMC; sometimes also called a parallel analysis with principal factors), you can do the following:
+Each criterion has its own function. For a parallel analysis based on squared multiple
+correlations (SMC; also called parallel analysis with principal factors), for example, you
+would run:
 
 ```{r}
-# determine the number of factors to retain using parallel analysis
-efa_parallel(DOSPERT_sub, eigen_type = "SMC")
+# parallel analysis based on SMC eigenvalues
+pa <- efa_parallel(DOSPERT_sub, eigen_type = "SMC")
+pa
 ```
 
-Generating the plot can also be suppressed if the output is printed explicitly:
+Printing the result reports the suggested number of factors. Each criterion also has a
+`plot()` method that draws the figure behind the decision — for a parallel analysis, the
+observed eigenvalues against the reference eigenvalues from the simulated data:
 
 ```{r}
-# determine the number of factors to retain using parallel analysis
-print(efa_parallel(DOSPERT_sub, eigen_type = "SMC"), plot = FALSE)
+plot(pa)
 ```
 
-
-Other factor retention methods can be used accordingly. For example, to use the empirical Kaiser criterion, use the `efa_ekc` function:
+Other criteria work the same way. The empirical Kaiser criterion, for instance:
 
 ```{r}
-# determine the number of factors to retain using the empirical Kaiser criterion
-print(efa_ekc(DOSPERT_sub), plot = FALSE)
+# empirical Kaiser criterion
+efa_ekc(DOSPERT_sub)
 ```
 
-The following factor retention methods are currently implemented: comparison data (`efa_cd()`), empirical Kaiser criterion (`efa_ekc()`), the hull method (`efa_hull()`), the Kaiser-Guttman criterion (`efa_kgc()`), the minimum average partial test (`efa_map()`), the next eigenvalue sufficiency test (`efa_nest()`), parallel analysis (`efa_parallel()`), scree test (`efa_scree()`), and sequential model tests (`efa_smt()`). Many of these functions have multiple versions of the respective factor retention method implemented, for example, the parallel analysis can be done based on eigenvalues found using unity (principal components) or SMCs, or on an EFA procedure. Another example is the hull method, which can be used with different fitting methods (principal axis factoring [PAF], maximum likelihood [ML], or unweighted least squares [ULS]), and different goodness of fit indices. Please see the respective function documentations for details.
+The following criteria are currently implemented: comparison data (`efa_cd()`), the empirical
+Kaiser criterion (`efa_ekc()`), the hull method (`efa_hull()`), the Kaiser-Guttman criterion
+(`efa_kgc()`), the minimum average partial test (`efa_map()`), the next eigenvalue sufficiency
+test (`efa_nest()`), parallel analysis (`efa_parallel()`), the scree test (`efa_scree()`), and
+sequential model tests (`efa_smt()`). Many of them offer several variants of the underlying
+method. For instance, parallel analysis, can be based on eigenvalues from unity (principal
+components), SMCs, or a full EFA. See the individual help pages for the options.
 
-### Run Multiple Factor Retention Methods With `efa_retain()`
+### Running Several Criteria at Once with `efa_retain()`
 
-If you want to use multiple factor retention methods, for example, to compare whether different methods suggest the same number of factors, it is easier to use the `efa_retain()` function. This is a wrapper around all the implemented factor retention methods. Moreover, it also enables to run the Bartlett's test of sphericity and compute the KMO criterion.
-
-For example, to test the suitability of the data for factor analysis and to determine the number of factors to retain based on parallel analysis (but only using eigen values based on SMCs and PCA), the EKC, and the sequential model test, we can run the following code:
+To compare criteria, it is easier to call `efa_retain()`, a wrapper around the implemented
+retention criteria that also runs Bartlett's test and computes the KMO. You can pick a subset
+with the `criteria` argument:
 
 ```{r}
-efa_retain(DOSPERT_sub, criteria = c("PARALLEL", "EKC", "SMT"),
+efa_retain(DOSPERT_sub,
+           criteria = c("PARALLEL", "EKC", "KGC", "SCREE", "SMT", "MAP"))
+```
+
+Omitting `criteria` runs the full suite, including the hull method, the next eigenvalue
+sufficiency test, and comparison data; the latter is computationally expensive and can be
+slow on larger data sets, which is why we leave it out here.
+
+This is the situation one would rather avoid, but it does happen: the criteria disagree, with
+suggestions ranging from four to well above ten factors. When there is no clear convergence,
+the choice becomes partly a matter of judgement. We proceed with six factors, consistent with the minimum average partial test and the RMSEA-based sequential model test above (note that this DOSPERT version assumes 5 factors, 6 factors splits the financial risk items into two factors).
+
+All criteria except comparison data (which needs raw data) can also be applied to a
+correlation matrix, in which case the sample size must be supplied. On a cleaner data set the
+criteria often agree:
+
+```{r}
+efa_retain(test_models$baseline$cormat, N = 500, estimator = "ULS",
+           criteria = c("PARALLEL", "EKC", "SMT"),
            eigen_type_other = c("SMC", "PCA"))
 ```
 
+Here the criteria agree on three factors, with only the conservative RMSEA lower-bound
+variant of the sequential model test suggesting two.
 
-If all possible factor retention methods should be used, it is sufficient to provide the data object (note that this takes a while, as the comparison data is computationally expensive and therefore relatively slow method, especially if larger datasets are used). We additionally specify the method argument to use unweighted least squares (ULS) estimation. This is a bit faster than using principle axis factoring (PAF) and it enables the computation of more goodness of fit indices:
+## Extracting Factors with `efa_fit()`
 
-```{r}
-efa_retain(DOSPERT_sub, method = "ULS")
-```
+`efa_fit()` performs the factor extraction and rotation. For extraction you can choose
+principal axis factoring (PAF), maximum likelihood (ML), or unweighted least squares (ULS,
+also known as MINRES); diagonally weighted least squares (DWLS) is additionally available
+for ordinal data analysed with polychoric or tetrachoric correlations (see the
+[EFA with ordinal and missing data](Ordinal_and_missing_data.html) vignette). For rotation
+the package offers varimax and promax as well as a range
+of further orthogonal and oblique rotations (e.g., quartimax, equamax, oblimin, quartimin,
+geomin, bentler, bifactor, and simplimax), all computed by rotation engines built into the
+package.
 
-Now, this is not the scenario one is happy about, but it still does happen: There is no obvious convergence between the methods and thus the choice of the number of factors to retain becomes rather difficult (and to some extent arbitrary). We will proceed with 6 factors, as it is what is typically used with DOSPERT data, but this does not mean that other number of factors are not just as plausible.
-
-Note that all factor retention methods, except comparison data (CD), can also be used with correlation matrices. We use `method = "ULS"` and `eigen_type_other = c("SMC", "PCA")` to skip the slower criteria. In this case, the sample size has to be specified:
-
-```{r}
-efa_retain(test_models$baseline$cormat, N = 500,
-           method = "ULS", eigen_type_other = c("SMC", "PCA"))
-```
-
-## Exploratory Factor Analysis: Factor Extraction
-
-Multiple algorithms to perform an EFA and to rotate the found solutions are implemented in the `EFAtools` package. All of them can be used using the `efa_fit()` function. To perform the EFA, you can use one of principal axis factoring (PAF), maximum likelihood estimation (ML), and unweighted least squares (ULS; also sometimes referred to as MINRES). To rotate the solutions, the `EFAtools` package offers varimax and promax rotations, as well as a range of other orthogonal and oblique rotations (e.g., quartimax, equamax, oblimin, quartimin, geomin, bentler, bifactor, and simplimax), all computed by rotation engines built into the package.
-
-You can run an EFA with PAF and no rotation like this:
+An EFA with PAF and no rotation is as simple as:
 
 ```{r}
 efa_fit(DOSPERT_sub, n_factors = 6)
 ```
 
-To rotate the loadings (e.g., using a promax rotation) adapt the `rotation` argument:
-
-```{r}
-efa_fit(DOSPERT_sub, n_factors = 6, rotation = "promax")
-```
-
-This now performed PAF with promax rotation with the specification, on average, we found to produce the most accurate results in a simulation analysis (see function documentation). If you want to replicate the implementation of the *psych* R package, you can supply the `"psych"` preset through `estimate_control()` and `rotate_control()`:
-
-```{r}
-efa_fit(DOSPERT_sub, n_factors = 6, rotation = "promax",
-        estimate_control = estimate_control(type = "psych"),
-        rotate_control = rotate_control(type = "psych"))
-```
-
-If you want to use the *SPSS* implementation, you can supply the `"SPSS"` preset through `estimate_control()` and `rotate_control()`:
-
-```{r}
-efa_fit(DOSPERT_sub, n_factors = 6, rotation = "promax",
-        estimate_control = estimate_control(type = "SPSS"),
-        rotate_control = rotate_control(type = "SPSS"))
-```
-
-This enables comparisons of different implementations. The `efa_compare()` function provides an easy way to compare how similar two loading (pattern) matrices are:
-
-```{r}
-efa_compare(
-  efa_fit(DOSPERT_sub, n_factors = 6, rotation = "promax",
-          estimate_control = estimate_control(type = "psych"),
-          rotate_control = rotate_control(type = "psych"))$rot_loadings,
-  efa_fit(DOSPERT_sub, n_factors = 6, rotation = "promax",
-          estimate_control = estimate_control(type = "SPSS"),
-          rotate_control = rotate_control(type = "SPSS"))$rot_loadings
-)
-
-```
-
-*Why would you want to do this?* One of us has had the experience that a reviewer asked whether the results can be reproduced in another statistical program than R. We therefore implemented this possibility in the package for an easy application of large scale, systematic comparisons.
-
-Note that the `type` preset only affects the implementations of principal axis factoring (PAF), varimax and promax rotations. The other procedures are not affected (except the order of the rotated factors for the other rotation methods).
-
-As indicated previously, it is also possible to use different estimation and rotation methods. For example, to perform an EFA with ULS and an oblimin rotation, you can use the following code:
-
-```{r}
-efa_fit(DOSPERT_sub, n_factors = 6, rotation = "oblimin", method = "ULS")
-```
-
-Of course, `efa_compare()` can also be used to compare results from different estimation or rotation methods (in fact, to compare any two matrices), not just from different implementations:
-
-```{r}
-efa_compare(
-  efa_fit(DOSPERT_sub, n_factors = 6, rotation = "promax")$rot_loadings,
-  efa_fit(DOSPERT_sub, n_factors = 6, rotation = "oblimin", method = "ULS")$rot_loadings,
-  x_labels = c("PAF and promax", "ULS and oblimin")
-)
-```
-
-Finally, if you are interested in factor scores from the EFA solution, these can be obtained with `efa_scores()`, which estimates the scores and their scoring weights directly from an `efa_fit()` output, together with score-quality diagnostics (determinacy, univocality, and the Guttman indeterminacy index):
-
-```{r}
-efa_mod <- efa_fit(DOSPERT_sub, n_factors = 6, rotation = "promax")
-fac_scores <- efa_scores(DOSPERT_sub, f = efa_mod)
-fac_scores
-```
-
-
-### Performance
-
-To improve performance of the iterative procedures (currently the parallel analysis, and the PAF, ML, and ULS methods) we implemented some of them in C++. For example, the following code compares the EFAtools parallel analysis with the corresponding one implemented in the psych package (the default of `efa_parallel()` is to use 1000 datasets, but 25 is enough to show the difference):
-
-```{r message=FALSE}
-microbenchmark::microbenchmark(
-  efa_parallel(DOSPERT_sub, eigen_type = "SMC", n_datasets = 25),
-  psych::fa.parallel(DOSPERT_sub, SMC = TRUE, plot = FALSE, n.iter = 25)
-)
-```
-
-
-Moreover, the following code compares the PAF implementation (of type "psych") of the EFAtools package with the one from the psych package: 
-
-```{r message=FALSE}
-microbenchmark::microbenchmark(
-  efa_fit(DOSPERT_raw, 6),
-  psych::fa(DOSPERT_raw, 6, rotate = "none", fm = "pa")
-)
-```
-
-While these differences are not large, they grow larger the more iterations the procedures need, which is usually the case if solutions are more tricky to find. Especially for simulations this might come in handy. For example, in one simulation analysis we ran over 10,000,000 EFAs, thus a difference of about 25 milliseconds per EFA leads to a difference in runtime of almost three days.
-
-### Model Averaging
-
-Instead of relying on one of the many possible implementations of, for example, PAF, and of using just one rotation (e.g., promax), it may be desirable to average different solutions to potentially arrive at a more robust, average solution. The `efa_average()` function provides this possibility. In addition to the average solution it provides the variation across solutions, a matrix indicating the robustness of indicator-to-factor correspondences, and a visualisation of the average solution and the variability across solutions. For example, to average across all available factor extraction methods and across all available oblique rotations, the following code can be run:
-
-```{r}
-# Average solution across many different EFAs with oblique rotations
-EFA_AV <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
-                      method = c("PAF", "ML", "ULS"), rotation = "oblique",
-                      show_progress = FALSE)
-
-# look at solution
-EFA_AV
-```
-
-
-The first matrix of the output tells us that the indicators are mostly allocated to the same factors. However, that some rowsums are larger than one also tells as that there likely are some cross loadings present in some solutions. Moreover, the relatively high percentages of salient pattern coefficients all loading on the first factor may indicate that some rotation methods failed to achieve simple structure and it might be desirable to exclude these from the model averaging procedure. The rest of the output is similar to the normal `efa_fit()` outputs shown above, only that in addition to the average coefficients their range is also shown. Finally, the plot shows the average pattern coefficients and their ranges. 
-
-**Important disclaimer:** While it is possible that this approach provides more robust results, we are unaware of simulation studies that have investigated and shown this. Therefore, it might make sense to for now use this approach mainly to test the robustness of the results obtained with one single EFA implementation.
-
-## Exploratory Factor Analysis: Schmid-Leiman transformation and McDonald's Omegas
-
-For the Schmid-Leiman transformation and computation of omegas, we will use PAF and promax rotation:
+To rotate the loadings, set the `rotation` argument. Here we use a promax rotation. We assign the
+result, as later sections reuse this solution:
 
 ```{r}
 efa_dospert <- efa_fit(DOSPERT_sub, n_factors = 6, rotation = "promax")
 efa_dospert
 ```
 
-The indicator names in the output (i.e., the rownames of the rotated loadings section) tell us which domain (out of ethical, financial, health, recreational, and social risks) an indicator stems from. From the pattern coefficients it can be seen that these theoretical domains are recovered relatively well in the six factor solution, that is, usually, the indicators from the same domain load onto the same factor. When we take a look at the factor intercorrelations, we can see that there are some strong and some weak correlations. It might be worthwhile to explore whether a general factor can be obtained, and which factors load more strongly on it. To this end, we will use a Schmid-Leiman (SL) transformation.
+We can also use a different estimator and rotation, here for example ULS and an oblimin rotation:
 
-## Schmid-Leiman Transformation
+```{r}
+efa_uls <- efa_fit(DOSPERT_sub, n_factors = 6, rotation = "oblimin", estimator = "ULS")
+efa_uls
+```
 
-The SL transformation or orthogonalization transforms an oblique solution into a hierarchical, orthogonalized solution. To do this, the `EFAtools` package provides the `efa_schmid_leiman()` function.
+## Comparing Solutions with `efa_compare()`
+
+`efa_compare()` provides a quick way to see how similar two loading (pattern) matrices are —
+whether they come from different implementations, different estimators, or different rotations.
+For instance, to compare the PAF/promax solution with the ULS/oblimin one:
+
+```{r}
+efa_compare(efa_dospert$rot_loadings, efa_uls$rot_loadings,
+            x_labels = c("PAF and promax", "ULS and oblimin"))
+```
+
+
+## Factor Scores with `efa_scores()`
+
+If you need factor scores, `efa_scores()` estimates them directly from an `efa_fit()` solution, and reports score-quality diagnostics (determinacy,
+univocality, and the Guttman indeterminacy index):
+
+```{r}
+fac_scores <- efa_scores(DOSPERT_sub, f = efa_dospert)
+fac_scores
+```
+
+## Schmid-Leiman Transformation and McDonald's Omegas
+
+For the Schmid-Leiman transformation and the omega coefficients we return to the PAF/promax
+solution (`efa_dospert`) from above. Its indicator names encode the risk domain each item
+belongs to (ethical, financial, health, recreational, and social), and its pattern
+coefficients recovered these theoretical domains fairly well: items from the same domain
+tend to load on the same factor. The factor intercorrelations also included some sizeable
+values, which raises the question of whether a general factor underlies the domains. A
+Schmid-Leiman transformation lets us examine that.
+
+### Schmid-Leiman Transformation
+
+The Schmid-Leiman (SL) transformation orthogonalises an oblique solution into a hierarchical
+one with a general factor and orthogonalised group factors. `efa_schmid_leiman()` performs it:
 
 ```{r}
 sl_dospert <- efa_schmid_leiman(efa_dospert)
 sl_dospert
 ```
 
-From the output, it can be seen that all, except the social domain indicators substantially load on the general factor. That is, the other domains covary substantially.
+The general-factor column shows that the items load substantially on the general factor
+across all domains except the social one, whose items load much less strongly on it — that
+is, the non-social domains covary considerably, while the social domain stands somewhat
+apart.
 
-## McDonald's Omegas
+### McDonald's Omegas
 
-Finally, we can compute omega estimates and additional indices of interpretive relevance based on the SL solution, using `efa_reliability()`. We can either specify the indicator-to-factor correspondences through the `factor_map` argument, or let them be determined automatically (in which case each indicator is assigned to its highest-loading factor, which might lead to a different solution than what is desired, in the presence of cross-loadings). Given that no cross-loadings are present here, it is easiest to let the function determine the correspondences automatically by leaving `factor_map` unspecified.
+Finally, `efa_reliability()` computes omega estimates and related indices from the SL solution.
+You can either specify the indicator-to-factor correspondences via the `factor_map` argument or
+let the function determine them automatically, in which case each indicator is assigned to its
+highest-loading factor. With no cross-loadings to worry about here, it is easiest to leave
+`factor_map` unspecified:
 
 ```{r}
 efa_reliability(sl_dospert)
 ```
 
-If we wanted to specify the indicator-to-factor correspondences explicitly (for example, according to theoretical expectations), we could pass them as a `factor_map` matrix:
+To set the correspondences explicitly instead — for example to match a theoretical assignment —
+pass a `factor_map` matrix:
 
 ```{r}
-efa_reliability(sl_dospert, factor_map = matrix(c(rep(0, 18), rep(1, 6), rep(0, 30), 
+efa_reliability(sl_dospert, factor_map = matrix(c(rep(0, 18), rep(1, 6), rep(0, 30),
                                          rep(1, 6), rep(0, 6), 1, 0, 1, 0, 1,
                                          rep(0, 19), rep(1, 6), rep(0, 31), 1, 0,
-                                         1, 0, 1, rep(0, 30), rep(1, 6), 
+                                         1, 0, 1, rep(0, 30), rep(1, 6),
                                          rep(0, 12)), ncol = 6, byrow = FALSE))
 ```
 
+## Where to Next
 
+This vignette covered the core workflow. `EFAtools` goes further in several directions, each
+of which has its own vignette or article:
+
+* [EFA with ordinal and missing data](Ordinal_and_missing_data.html): analysing ordinal
+  items with polychoric correlations and handling missing data.
+* [Migrating to the efa_* interface](Migrating_to_efa.html): a guide for users coming from
+  the older uppercase function names.
+* [Multigroup EFA](https://mdsteiner.github.io/EFAtools/articles/Multigroup_EFA.html)
+  (on the package website): comparing factor structures across groups.
+* [Simulation and power](https://mdsteiner.github.io/EFAtools/articles/Simulation_and_power.html)
+  (on the package website): simulating data and running power analyses for EFA.
+
+Run `browseVignettes("EFAtools")` to see the vignettes installed with the package, or visit
+the [package website](https://mdsteiner.github.io/EFAtools/) for the full set of articles.

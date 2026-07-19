@@ -1527,7 +1527,7 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
 
   me <- switch(
     method,
-    CB  = .model_error_cb(R_pop, L, psi, q, target_rmsea, force_pd),
+    CB  = .model_error_cb(R_pop, L, q, target_rmsea, force_pd),
     TKL = .model_error_tkl(R_pop, u, q, target_rmsea, target_cfi),
     WB  = .model_error_wb(R_pop, target_rmsea)
   )
@@ -1546,11 +1546,12 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
 
 
 # Cudeck & Browne (1992) model error: construct Sigma* = Omega + kappa E such that the q-factor
-# model (unrotated loadings `L`, uniquenesses `psi`) remains the minimizer of the ML discrepancy
-# and the minimum equals delta = df * target_rmsea^2, so the achieved RMSEA equals the target.
-# Follows MBESS::Sigma.2.SigmaStar at the correlation scale: numerically differentiate the
-# model-implied Sigma(theta) = Lt Lt' + diag(psi) with respect to theta = (vec(L), psi), form the
-# ML-metric Jacobian columns B[,i] = -d * vech(W^-1 dSigma_i W^-1) (W = Omega, d the vech weights
+# model (unrotated loadings `L`; its uniquenesses follow from `R_pop`) remains the minimizer of the
+# ML discrepancy and the minimum equals delta = df * target_rmsea^2, so the achieved RMSEA equals
+# the target.
+# Follows MBESS::Sigma.2.SigmaStar at the correlation scale: differentiate the model-implied
+# Sigma(theta) = Lt Lt' + diag(psi) with respect to theta = (vec(L), psi), form the ML-metric
+# Jacobian columns B[,i] = -d * vech(W^-1 dSigma_i W^-1) (W = Omega, d the vech weights
 # that make an ordinary residual orthogonal in the ML metric), and take E from the part of a
 # random symmetric matrix orthogonal to B. G = W^-1 E has the same eigenvalues s as the symmetric
 # W^{-1/2} E W^{-1/2}, so the discrepancy is kappa*sum(s) - sum(log(1 + kappa*s)); it is monotone
@@ -1561,8 +1562,8 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
 # approximation (a smaller RMSEA, with a warning), otherwise the call aborts.
 # Cudeck, R., & Browne, M. W. (1992). Constructing a covariance matrix that yields a specified
 # minimizer and a specified minimum discrepancy function value. Psychometrika, 57(3), 357-369.
-.model_error_cb <- function(R_pop, L, psi, q, target_rmsea, force_pd,
-                            max_tries = 50L, hstep = 1e-6) {
+.model_error_cb <- function(R_pop, L, q, target_rmsea, force_pd,
+                            max_tries = 50L) {
   p <- nrow(R_pop)
   df <- .efa_df(p, q)
   delta <- target_rmsea^2 * df
@@ -1576,22 +1577,37 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
   diag(wmat) <- 1
   dvec <- .vech(wmat)
 
-  sigma_theta <- function(theta) {
-    Lt <- matrix(theta[seq_len(p * q)], p, q)
-    tcrossprod(Lt) + diag(theta[p * q + seq_len(p)], p)
-  }
-  theta0 <- c(as.vector(L), psi)
-  # Difference each perturbed Sigma against the model at theta0 itself (which equals R_pop for a
-  # proper q-factor population, guarded in .apply_model_error), so the finite-difference Jacobian
-  # is exact regardless of any residual gap between the recovered model and R_pop.
-  sigma0 <- sigma_theta(theta0)
-  npar <- length(theta0)
+  # The Jacobian columns in closed form. Elementwise Sigma_ij(theta) = sum_k L_ik L_jk +
+  # [i == j] psi_i, so
+  #   dSigma / dL[a, b] = e_a t(L[, b]) + L[, b] t(e_a)     -> column (b - 1) * p + a
+  #   dSigma / dpsi[a]  = e_a t(e_a)                        -> column p * q + a,
+  # ordered to match theta = (vec(L), psi), which R fills column-major. Each ML sandwich is then
+  # a sum of outer products,
+  #   Wi (e_a t(y) + y t(e_a)) Wi = Wi[, a] t(t(Wi) y) + (Wi y) t(Wi[a, ]),
+  # whose vech picks x[ii] * y[jj] over the lower-triangle index pairs, so no p x p product is
+  # formed per column. Wi[, a] and Wi[a, ] are kept apart because solve() need not return an
+  # exactly symmetric inverse.
+  #
+  # Differentiating in closed form rather than by a finite difference is what keeps the draw
+  # below reproducible: differencing divides a cancelling subtraction by the step size, which
+  # lifts the q(q - 1)/2 rotational null directions of the model off zero to roughly eps/step.
+  # Their orientation is then set purely by rounding, qr() counts them as real columns, and
+  # qr.resid() projects them out -- so E, and with it the perturbed population, would swing by
+  # tens of percent between BLAS implementations for one and the same seed.
+  idx <- which(!upper.tri(matrix(0, p, p)), arr.ind = TRUE)   # the vech pairs, in .vech order
+  ii <- idx[, 1L]
+  jj <- idx[, 2L]
+  WL <- Wi %*% L            # columns: Wi %*% L[, b]
+  WtL <- crossprod(Wi, L)   # columns: t(Wi) %*% L[, b]
+  npar <- p * q + p
   B <- matrix(0, pstar, npar)
-  for (i in seq_len(npar)) {
-    step <- theta0
-    step[i] <- step[i] + hstep
-    dS <- (sigma_theta(step) - sigma0) / hstep
-    B[, i] <- -dvec * .vech(Wi %*% dS %*% Wi)
+  for (a in seq_len(p)) {
+    wi_i <- Wi[ii, a]       # (Wi e_a)[ii]
+    wi_j <- Wi[a, jj]       # (t(e_a) Wi)[jj]
+    for (b in seq_len(q)) {
+      B[, (b - 1L) * p + a] <- -dvec * (wi_i * WtL[jj, b] + WL[ii, b] * wi_j)
+    }
+    B[, p * q + a] <- -dvec * (wi_i * wi_j)
   }
   Bqr <- qr(B)
 

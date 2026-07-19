@@ -21,12 +21,23 @@ test_that("CD returns the correct values", {
   # whose lack of significant improvement stopped the search)
   expect_length(rec$y, cd_grips$n_factors[["CD"]] + 1)
   expect_length(rec$x, cd_grips$n_factors[["CD"]] + 1)
+})
 
+test_that("the comparison-data RMSE curve is unchanged (regression)", {
   # Regression pin on the comparison-data draw: CD generates its populations
   # through the shared Ruscio-Kaczetow kernel, so pin the mean RMSE-eigenvalue
-  # curve of the seeded run to catch any drift. Only the tested factor counts
-  # (1 and 2) are populated; later columns stay zero because the search stops
-  # after the first factor.
+  # curve of the seeded run to catch any drift.
+  #
+  # The kernel is a stochastic search whose accept-or-shrink step compares two
+  # floating-point RMSEs. Once the search plateaus that comparison is decided by
+  # rounding, so the trajectory -- and with it this curve -- is reproducible only
+  # within one BLAS; the retained factor count the method exists to report is
+  # stable regardless and is asserted above. The pin therefore runs where the
+  # BLAS is known rather than across every check flavour.
+  skip_on_cran()
+  rec <- .retention_record(cd_grips, "CD")
+  # Only the tested factor counts (1 and 2) are populated; later columns stay
+  # zero because the search stops after the first factor.
   expect_equal(
     colMeans(rec$rmse_eigenvalues),
     c(0.033821350175717364, 0.038807011125946637, 0, 0),

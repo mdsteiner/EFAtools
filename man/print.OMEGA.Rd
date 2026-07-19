@@ -34,8 +34,8 @@ captured into a file or stripped with \code{\link[cli:ansi_strip]{cli::ansi_stri
 }
 \examples{
 efa_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
-                   method = "PAF", rotation = "promax")
-sl_mod <- efa_schmid_leiman(efa_mod, method = "PAF")
+                   estimator = "PAF", rotation = "promax")
+sl_mod <- efa_schmid_leiman(efa_mod, estimator = "PAF")
 
 om <- OMEGA(sl_mod, type = "EFAtools",
             factor_corres = sl_mod$sl[, c("F1", "F2", "F3")] >= .2)

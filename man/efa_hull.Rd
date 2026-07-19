@@ -13,7 +13,7 @@ efa_hull(
   x,
   N = NA,
   n_fac_theor = NA,
-  method = c("PAF", "ULS", "ML"),
+  estimator = c("PAF", "ULS", "ML"),
   gof = c("CAF", "CFI", "RMSEA"),
   eigen_type = c("SMC", "PCA", "EFA"),
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
@@ -39,13 +39,14 @@ based on the dimensions of x.}
 the larger of this number and the number of factors suggested by \link{efa_parallel}
 is used as the upper bound \emph{J} of factors to extract in the Hull method.}
 
-\item{method}{character. The estimation method to use. One of  \code{"PAF"},
+\item{estimator}{character. The estimator to use. One of  \code{"PAF"},
 \code{"ULS"}, or  \code{"ML"}, for principal axis factoring, unweighted
-least squares, and maximum likelihood, respectively.}
+least squares, and maximum likelihood, respectively. The value is matched
+case-insensitively.}
 
 \item{gof}{character. The goodness of fit index to use. Either \code{"CAF"},
 \code{"CFI"}, or \code{"RMSEA"}, or any combination of them.
-If \code{method = "PAF"} is used, only
+With the \code{"PAF"} estimator, only
 the CAF can be used as goodness of fit index. For details on the CAF, see
 Lorenzo-Seva, Timmerman, and Kiers (2011).}
 
@@ -137,10 +138,10 @@ starting values. See also the \link{efa_fit} documentation.
 efa_hull(test_models$baseline$cormat, N = 500, gof = "CAF")
 
 # using ML with all available fit indices (CAF, CFI, and RMSEA)
-efa_hull(test_models$baseline$cormat, N = 500, method = "ML")
+efa_hull(test_models$baseline$cormat, N = 500, estimator = "ML")
 
 # using ULS with only RMSEA
-efa_hull(test_models$baseline$cormat, N = 500, method = "ULS", gof = "RMSEA")
+efa_hull(test_models$baseline$cormat, N = 500, estimator = "ULS", gof = "RMSEA")
 }
 
 \dontrun{

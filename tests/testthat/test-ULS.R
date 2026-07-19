@@ -67,7 +67,7 @@ test_that("MINRES is accepted as a synonym for ULS", {
   expect_equal(minres$h2, uls$h2)
   expect_equal(minres$fit_indices, uls$fit_indices)
   # the alias resolves to the canonical method name
-  expect_identical(minres$settings$method, "ULS")
+  expect_identical(minres$settings$estimator, "ULS")
 })
 
 test_that("SL() and EFA_AVERAGE() accept method = 'MINRES'", {

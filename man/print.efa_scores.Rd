@@ -46,7 +46,7 @@ example when captured into a file or stripped with \code{\link[cli:ansi_strip]{c
 }
 \examples{
 efa <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
-               method = "PAF", rotation = "oblimin")
+               estimator = "PAF", rotation = "oblimin")
 fs <- efa_scores(test_models$baseline$cormat, f = efa)
 fs
 summary(fs)

@@ -2,7 +2,7 @@ kgc_cor <- efa_kgc(test_models$baseline$cormat)
 kgc_cor_smc <- efa_kgc(test_models$baseline$cormat, eigen_type = "SMC")
 kgc_raw <- efa_kgc(GRiPS_raw)
 # Check with an argument passed to "EFA"
-kgc_efa_ml<- efa_kgc(test_models$baseline$cormat, eigen_type = "EFA", method = "ML")
+kgc_efa_ml<- efa_kgc(test_models$baseline$cormat, eigen_type = "EFA", estimator = "ML")
 
 test_that("output class and dimensions are correct", {
   expect_s3_class(kgc_cor, "efa_retention")

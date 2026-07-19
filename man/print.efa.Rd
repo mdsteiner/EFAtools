@@ -145,7 +145,7 @@ reports every finite interval.
 }
 \examples{
 mod <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
-               method = "PAF", rotation = "promax")
+               estimator = "PAF", rotation = "promax")
 mod
 
 # The full diagnostics, CI tables, and residual diagnostics:

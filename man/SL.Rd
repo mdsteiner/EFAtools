@@ -33,10 +33,9 @@ into \code{x}.}
 used to control the procedure of the second-order factor analysis. In
 \code{\link[=efa_schmid_leiman]{efa_schmid_leiman()}} it is set through the \code{type} of the \code{\link[=estimate_control]{estimate_control()}} object.}
 
-\item{method}{character. One of "PAF", "ML", or "ULS" to use
-principal axis factoring, maximum likelihood, or unweighted least squares,
-respectively, used in \code{\link[=efa_fit]{efa_fit()}} to find the second-order loadings. "MINRES" is
-accepted as a synonym for "ULS" (the same estimator).}
+\item{method}{character. The estimator for the second-order factor analysis; passed to
+\code{\link[=efa_schmid_leiman]{efa_schmid_leiman()}} as its \code{estimator} argument. One of \code{"PAF"}, \code{"ML"}, \code{"ULS"}, or
+\code{"MINRES"}.}
 
 \item{g_name}{character. The name of the general factor. This needs only be
 specified if \code{x} is a \code{lavaan} second-order solution. Default is "g".}

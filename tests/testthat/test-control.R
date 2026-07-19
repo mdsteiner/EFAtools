@@ -59,8 +59,9 @@ test_that("bad estimate_control inputs abort with a classed condition", {
   expect_error(estimate_control(criterion = 1), class = "efa_control_input")
   # the bound is exclusive at 1 only: anything below it is a legitimate tolerance
   expect_s3_class(estimate_control(criterion = 0.999), "efa_estimate_control")
-  # type is guarded by match.arg().
-  expect_error(estimate_control(type = "bogus"))
+  # an invalid `type` is rejected with the same class as the other knobs
+  expect_error(estimate_control(type = "bogus"), class = "efa_control_input")
+  expect_error(rotate_control(type = "bogus"), class = "efa_control_input")
 })
 
 test_that("efa_fit rejects unused dots when no rotation runs", {
@@ -75,6 +76,39 @@ test_that("efa_fit rejects unused dots when no rotation runs", {
     class = "efa_unused_dots")
 })
 
+test_that("efa_fit rejects a dot argument the selected rotation does not consume", {
+  cm <- test_models$baseline$cormat
+
+  # a misspelled criterion parameter would silently run the engine default (gam = 0)
+  expect_error(
+    efa_fit(cm, n_factors = 3, N = 500, rotation = "oblimin", gamma = 0.5),
+    class = "efa_unused_dots")
+  # another criterion's parameter is just as unconsumable as a misspelling
+  expect_error(
+    efa_fit(cm, n_factors = 3, N = 500, rotation = "geominT", gam = 0.5),
+    class = "efa_unused_dots")
+  # varimax and promax run outside the native engines and take no extras at all
+  expect_error(
+    efa_fit(cm, n_factors = 3, N = 500, rotation = "varimax", bogus_arg = 1),
+    class = "efa_unused_dots")
+  expect_error(
+    efa_fit(cm, n_factors = 3, N = 500, rotation = "promax", maxit = 100),
+    class = "efa_unused_dots")
+
+  # the consumable extras still reach the engine: oblimin's gam changes the criterion
+  fit_default <- efa_fit(cm, n_factors = 3, N = 500, rotation = "oblimin")
+  fit_gam <- efa_fit(cm, n_factors = 3, N = 500, rotation = "oblimin", gam = 0.5)
+  expect_false(identical(fit_default$rot_loadings, fit_gam$rot_loadings))
+  expect_no_error(efa_fit(cm, n_factors = 3, N = 500, rotation = "geominQ", delta = 0.05))
+
+  # a control-carried extra stays lenient per rotation: one control may serve fits whose
+  # rotation never consumes it (efa_average() carries maxit across its whole grid)
+  expect_no_error(efa_fit(cm, n_factors = 3, N = 500, rotation = "varimax",
+                          rotate_control = rotate_control(maxit = 5e4)))
+  expect_no_error(efa_fit(cm, n_factors = 3, N = 500, rotation = "none",
+                          rotate_control = rotate_control(maxit = 5e4)))
+})
+
 test_that("the fit stays the backstop for a control edited after construction", {
   # The constructor's bounds mirror the fit's, so a control it builds can never carry a value the
   # fit rejects. A control is a plain list, though, so it can be edited afterwards -- the fit
@@ -83,7 +117,7 @@ test_that("the fit stays the backstop for a control edited after construction", 
   ec$criterion <- 1
 
   expect_error(
-    efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500, method = "PAF",
+    efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500, estimator = "PAF",
             estimate_control = ec),
     class = "efa_criterion_too_large")
 })
@@ -99,6 +133,9 @@ test_that("estimate_control accepts the start_method spellings the flat interfac
 })
 
 test_that("bad rotate_control inputs abort with a classed condition", {
+  # an extra no rotation engine can consume is a misspelling; refuse to store it
+  expect_error(rotate_control(gamma = 0.5), class = "efa_control_input")
+  expect_error(rotate_control(eps = 1e-6), class = "efa_control_input")
   expect_error(rotate_control(order_type = "x"), class = "efa_control_input")
   expect_error(rotate_control(varimax_type = "x"), class = "efa_control_input")
   expect_error(rotate_control(p_type = "x"), class = "efa_control_input")

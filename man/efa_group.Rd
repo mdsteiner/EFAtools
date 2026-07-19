@@ -67,7 +67,7 @@ group pair from the Lorenzo-Seva and ten Berge (2006) congruence bands (see \emp
 Default is \code{FALSE}.}
 
 \item{...}{Additional arguments passed to \code{\link[=efa_fit]{efa_fit()}} for every group (for
-example \code{method}, \code{rotation}, \code{cor_method}, or an \code{\link[=estimate_control]{estimate_control()}} /
+example \code{estimator}, \code{rotation}, \code{cor_method}, or an \code{\link[=estimate_control]{estimate_control()}} /
 \code{\link[=rotate_control]{rotate_control()}} to select a preset).}
 }
 \value{
@@ -134,7 +134,7 @@ All groups must contain the same items in the same order; a different item set
 or order is an error rather than being silently reordered.
 
 Every group is fitted at the same \code{n_factors} (a common-\eqn{k} multigroup
-model). Extra arguments in \code{...} (for example \code{method}, \code{rotation}, \code{cor_method}, or an
+model). Extra arguments in \code{...} (for example \code{estimator}, \code{rotation}, \code{cor_method}, or an
 \code{\link[=estimate_control]{estimate_control()}} / \code{\link[=rotate_control]{rotate_control()}} carrying the tuning knobs) are forwarded
 unchanged to each \code{\link[=efa_fit]{efa_fit()}} call, so the estimator and rotation are common to all
 groups.

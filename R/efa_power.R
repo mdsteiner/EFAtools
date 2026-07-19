@@ -78,7 +78,7 @@
 #' @param mode character. The kind of power analysis: `"rmsea"` (the default; analytic
 #'   RMSEA power) or `"simulation"` (Monte-Carlo hit-rate and structure recovery). The
 #'   remaining arguments split by mode -- `type`/`eps0`/`eps1`/`df`/`alpha`/`power`/`group`
-#'   are RMSEA-only, and `Lambda`/`Phi`/`Psi`/`R`/`n_datasets`/`criteria`/`method`/`rotation`/`recovery_threshold`/`model_error`/`target_rmsea`/`target_cfi`/`seed`
+#'   are RMSEA-only, and `Lambda`/`Phi`/`Psi`/`R`/`n_datasets`/`criteria`/`estimator`/`rotation`/`recovery_threshold`/`model_error`/`target_rmsea`/`target_cfi`/`seed`
 #'   are simulation-only.
 #' @param type character. The RMSEA test: `"close"` (test of close fit) or
 #'   `"notclose"` (test of not-close fit). See *Details*.
@@ -121,11 +121,12 @@
 #' @param criteria character. Simulation mode. The factor-retention criteria to
 #'   evaluate the hit-rate for, any of `"CD"`, `"EKC"`, `"HULL"`, `"KGC"`, `"MAP"`,
 #'   `"NEST"`, `"PARALLEL"`, and `"SMT"` (see [efa_retain()]). Default is
-#'   `c("EKC", "MAP")`. Criteria that simulate internally (`"CD"`, `"HULL"`, `"NEST"`,
-#'   `"PARALLEL"`) make each run substantially slower.
-#' @param method character. Simulation mode. The estimation method (`"PAF"`, `"ML"`,
-#'   or `"ULS"`) used for the recovery fit and the retention criteria. Default is
-#'   `"PAF"`.
+#'   `c("EKC", "MAP")`. The values are matched case-insensitively. Criteria that
+#'   simulate internally (`"CD"`, `"HULL"`, `"NEST"`, `"PARALLEL"`) make each run
+#'   substantially slower.
+#' @param estimator character. Simulation mode. The estimator (`"PAF"`, `"ML"`,
+#'   or `"ULS"`) used for the recovery fit and the retention criteria; the value
+#'   is matched case-insensitively. Default is `"PAF"`.
 #' @param rotation character. Simulation mode. The rotation for the recovery fit,
 #'   passed to [efa_fit()]. Default is `NULL`, which matches the population: `"varimax"`
 #'   for orthogonal factors and `"promax"` for oblique ones (a single factor is left
@@ -235,7 +236,7 @@ efa_power <- function(mode = c("rmsea", "simulation"),
                       df = NULL, alpha = 0.05, power = NULL, group = 1,
                       Lambda = NULL, Phi = NULL, Psi = NULL, R = NULL,
                       n_datasets = 500, criteria = c("EKC", "MAP"),
-                      method = "PAF", rotation = NULL, recovery_threshold = 0.95,
+                      estimator = "PAF", rotation = NULL, recovery_threshold = 0.95,
                       model_error = c("TKL", "CB", "WB", "none"),
                       target_rmsea = NULL, target_cfi = NULL, seed = NULL) {
 
@@ -247,7 +248,7 @@ efa_power <- function(mode = c("rmsea", "simulation"),
   if (mode == "simulation") {
     return(.efa_power_simulation(
       N = N, Lambda = Lambda, Phi = Phi, Psi = Psi, R = R, p = p, k = k,
-      n_datasets = n_datasets, criteria = criteria, method = method,
+      n_datasets = n_datasets, criteria = criteria, estimator = estimator,
       rotation = rotation, recovery_threshold = recovery_threshold,
       model_error = model_error, target_rmsea = target_rmsea,
       target_cfi = target_cfi, seed = seed))
@@ -420,16 +421,16 @@ efa_power <- function(mode = c("rmsea", "simulation"),
 # the convergence/Heywood rate of the k_true-factor fit. Parallelised over
 # replicates with a per-replicate reproducible RNG stream.
 .efa_power_simulation <- function(N, Lambda, Phi, Psi, R, p, k, n_datasets,
-                                  criteria, method, rotation, recovery_threshold,
+                                  criteria, estimator, rotation, recovery_threshold,
                                   model_error, target_rmsea, target_cfi, seed) {
 
   model_error <- match.arg(model_error, c("TKL", "CB", "WB", "none"))
-  method <- match.arg(method, c("PAF", "ML", "ULS"))
+  estimator <- .match_arg_ci(estimator, c("PAF", "ML", "ULS"))
   # Only criteria that make a numeric suggestion can score a hit-rate; the visual
   # scree plot is excluded.
   valid_ids <- names(.retention_registry)[
     !vapply(.retention_registry, function(e) isTRUE(e$visual), logical(1))]
-  criteria <- match.arg(criteria, valid_ids, several.ok = TRUE)
+  criteria <- .match_arg_ci(criteria, valid_ids, several.ok = TRUE)
 
   checkmate::assert_count(N, positive = TRUE)
   checkmate::assert_count(n_datasets, positive = TRUE)
@@ -507,9 +508,9 @@ efa_power <- function(mode = c("rmsea", "simulation"),
   if (!is.list(datasets)) datasets <- list(datasets)
 
   # Shared retention control list: the N_FACTORS() defaults with the sample size `N`
-  # and estimation `method` threaded in (`gof` follows `method` inside
+  # and `estimator` threaded in (`gof` follows `estimator` inside
   # .n_factors_ctl(): PAF supports only the CAF), both fixed across replicates.
-  ctl <- .n_factors_ctl(N = N, method = method)
+  ctl <- .n_factors_ctl(N = N, estimator = estimator)
 
   # Analyse every replicate; future.seed = TRUE binds each to its own reproducible
   # L'Ecuyer stream, so criteria that simulate internally (PARALLEL, NEST, CD) are
@@ -519,7 +520,7 @@ efa_power <- function(mode = c("rmsea", "simulation"),
   per_rep <- future.apply::future_lapply(
     datasets, .efa_power_analyze_one,
     Lambda = Lambda, k_true = k_true, criteria = criteria, ctl = ctl,
-    method = method, rotation = rotation, future.seed = TRUE)
+    estimator = estimator, rotation = rotation, future.seed = TRUE)
 
   # --- Aggregate over replicates ---
   # Hit-rate: union the criterion/variant keys (a criterion can fail on a replicate,
@@ -580,7 +581,7 @@ efa_power <- function(mode = c("rmsea", "simulation"),
 
   settings <- list(mode = "simulation", N = as.integer(N),
                    n_datasets = as.integer(n_datasets), p = p, k = k_true,
-                   criteria = criteria, method = method, rotation = rotation,
+                   criteria = criteria, estimator = estimator, rotation = rotation,
                    recovery_threshold = recovery_threshold,
                    has_recovery = has_recovery, model_error = model_error,
                    target_rmsea = target_rmsea, target_cfi = target_cfi, seed = seed)
@@ -600,7 +601,7 @@ efa_power <- function(mode = c("rmsea", "simulation"),
 # k_true-factor EFA once (its convergence code and Heywood flag), and (iii) align the
 # fitted loadings to the population loadings and read the matched-factor Tucker
 # congruences (recovery). Returns a per-replicate record for aggregation.
-.efa_power_analyze_one <- function(dat, Lambda, k_true, criteria, ctl, method,
+.efa_power_analyze_one <- function(dat, Lambda, k_true, criteria, ctl, estimator,
                                    rotation) {
 
   # Retention: the registry funs take raw data (needs_raw criteria) or a correlation
@@ -624,7 +625,7 @@ efa_power <- function(mode = c("rmsea", "simulation"),
   # loadings recovery aligns against. EFA's own Heywood/non-convergence warnings are
   # muffled here; the flags are read off the returned object instead.
   fit <- suppressMessages(suppressWarnings(tryCatch(
-    efa_fit(dat, n_factors = k_true, method = method, rotation = rotation),
+    efa_fit(dat, n_factors = k_true, estimator = estimator, rotation = rotation),
     error = function(e) NULL)))
   fit_ok <- !is.null(fit)
   converged <- isTRUE(fit_ok && fit$convergence == 0)
@@ -772,7 +773,7 @@ format.efa_power <- function(x, digits = 3, ...) {
 
     cli::cli_text(
       "{s$p} variable{?s} \u00b7 {x$k_true} factor{?s} \u00b7 N = {s$N} \u00b7 {s$n_datasets} dataset{?s}")
-    cli::cli_text("Estimation: {s$method} \u00b7 rotation: {s$rotation}")
+    cli::cli_text("Estimation: {s$estimator} \u00b7 rotation: {s$rotation}")
     if (!is.null(x$model_error)) {
       me <- x$model_error
       me_rmsea <- .efa_num(me$rmsea, digits = digits, pad = FALSE)

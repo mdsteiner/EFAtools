@@ -136,11 +136,11 @@
 #' ## From an oblique EFA (correlated-factors) solution. With no factor_map, each
 #' ## item is auto-assigned to its highest-loading factor.
 #' efa_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
-#'                    method = "PAF", rotation = "promax")
+#'                    estimator = "PAF", rotation = "promax")
 #' efa_reliability(efa_mod)
 #'
 #' ## From a Schmid-Leiman solution, with an explicit indicator-to-factor map.
-#' sl_mod <- efa_schmid_leiman(efa_mod, method = "PAF")
+#' sl_mod <- efa_schmid_leiman(efa_mod, estimator = "PAF")
 #' fc <- sl_mod$sl[, c("F1", "F2", "F3")] >= .2
 #' efa_reliability(sl_mod, factor_map = fc)
 #'

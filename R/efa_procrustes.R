@@ -74,7 +74,7 @@
 #' ## unrotated three-factor model, then rotate its loadings toward the true
 #' ## population pattern.
 #' efa_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
-#'                    method = "PAF", rotation = "none")
+#'                    estimator = "PAF", rotation = "none")
 #' target <- population_models$loadings$baseline
 #'
 #' ## Orthogonal target rotation (rigid rotation/reflection):

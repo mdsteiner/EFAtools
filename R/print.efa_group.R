@@ -67,7 +67,7 @@ format.efa_group <- function(x, digits = 3, ...) {
     cli::cli_verbatim(paste0(
       m, " groups (", paste(groups, collapse = ", "), ") \u00b7 ",
       k, if (k == 1L) " factor" else " factors", " \u00b7 ",
-      settings$method, " extraction \u00b7 ", rot_txt))
+      settings$estimator, " extraction \u00b7 ", rot_txt))
     cli::cli_verbatim(if (identical(settings$alignment, "consensus")) {
       "Aligned to a symmetric consensus target."
     } else {

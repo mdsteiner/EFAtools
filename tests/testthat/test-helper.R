@@ -926,7 +926,7 @@ obl_grid_4 <- .oblq_grid("ML", NA, NA, NA, NA, c("psych", "factanal"),
 test_that(".oblq_grid works", {
   ### tests for arr_re_NA with phi = NA and extract_phi = FALSE
   expect_s3_class(obl_grid_1, "data.frame")
-  expect_named(obl_grid_1, c("method", "init_comm", "criterion", "criterion_type",
+  expect_named(obl_grid_1, c("estimator", "init_comm", "criterion", "criterion_type",
                             "abs_eigen", "start_method", "rotation", "k_promax",
                             "normalize", "P_type", "precision", "varimax_type",
                             "k_simplimax"))
@@ -937,7 +937,7 @@ test_that(".oblq_grid works", {
   expect_equal(unique(obl_grid_1$rotation), c("promax", "simplimax", "oblimin"))
 
   expect_s3_class(obl_grid_2, "data.frame")
-  expect_named(obl_grid_2, c("method", "init_comm", "criterion", "criterion_type",
+  expect_named(obl_grid_2, c("estimator", "init_comm", "criterion", "criterion_type",
                              "abs_eigen", "start_method", "rotation", "k_promax",
                              "normalize", "P_type", "precision", "varimax_type",
                              "k_simplimax"))
@@ -949,7 +949,7 @@ test_that(".oblq_grid works", {
   expect_equal(obl_grid_2, obl_grid_3)
 
   expect_s3_class(obl_grid_4, "data.frame")
-  expect_named(obl_grid_4, c("method", "init_comm", "criterion", "criterion_type",
+  expect_named(obl_grid_4, c("estimator", "init_comm", "criterion", "criterion_type",
                              "abs_eigen", "start_method", "rotation", "k_promax",
                              "normalize", "P_type", "precision", "varimax_type",
                              "k_simplimax"))
@@ -981,7 +981,7 @@ orth_grid_4 <- .orth_grid("ML", NA, NA, NA, NA, c("psych", "factanal"),
 test_that(".orth_grid works", {
   ### tests for arr_re_NA with phi = NA and extract_phi = FALSE
   expect_s3_class(orth_grid_1, "data.frame")
-  expect_named(orth_grid_1, c("method", "init_comm", "criterion", "criterion_type",
+  expect_named(orth_grid_1, c("estimator", "init_comm", "criterion", "criterion_type",
                              "abs_eigen", "start_method", "rotation", "k_promax",
                              "normalize", "P_type", "precision", "varimax_type",
                              "k_simplimax"))
@@ -991,7 +991,7 @@ test_that(".orth_grid works", {
   expect_equal(unique(orth_grid_1$rotation), c("varimax", "quartimax"))
 
   expect_s3_class(orth_grid_2, "data.frame")
-  expect_named(orth_grid_2, c("method", "init_comm", "criterion", "criterion_type",
+  expect_named(orth_grid_2, c("estimator", "init_comm", "criterion", "criterion_type",
                              "abs_eigen", "start_method", "rotation", "k_promax",
                              "normalize", "P_type", "precision", "varimax_type",
                              "k_simplimax"))
@@ -1003,7 +1003,7 @@ test_that(".orth_grid works", {
   expect_equal(orth_grid_2, orth_grid_3)
 
   expect_s3_class(orth_grid_4, "data.frame")
-  expect_named(orth_grid_4, c("method", "init_comm", "criterion", "criterion_type",
+  expect_named(orth_grid_4, c("estimator", "init_comm", "criterion", "criterion_type",
                              "abs_eigen", "start_method", "rotation", "k_promax",
                              "normalize", "P_type", "precision", "varimax_type",
                              "k_simplimax"))
@@ -1053,7 +1053,7 @@ test_that(".type_grid works", {
                class = "efa_rotation_mismatch")
 
   expect_s3_class(tg_ob, "data.frame")
-  expect_named(tg_ob, c("method", "init_comm", "criterion", "criterion_type",
+  expect_named(tg_ob, c("estimator", "init_comm", "criterion", "criterion_type",
                               "abs_eigen", "start_method", "rotation", "k_promax",
                               "normalize", "P_type", "precision", "varimax_type",
                               "k_simplimax"))
@@ -1071,7 +1071,7 @@ test_that(".type_grid works", {
                  "bentlerQ", "geominQ", "bifactorQ")))
 
   expect_s3_class(tg_ob2, "data.frame")
-  expect_named(tg_ob2, c("method", "init_comm", "criterion", "criterion_type",
+  expect_named(tg_ob2, c("estimator", "init_comm", "criterion", "criterion_type",
                         "abs_eigen", "start_method", "rotation", "k_promax",
                         "normalize", "P_type", "precision", "varimax_type",
                         "k_simplimax"))
@@ -1088,7 +1088,7 @@ test_that(".type_grid works", {
                c("promax", "oblimin"))
 
   expect_s3_class(tg_orth, "data.frame")
-  expect_named(tg_orth, c("method", "init_comm", "criterion", "criterion_type",
+  expect_named(tg_orth, c("estimator", "init_comm", "criterion", "criterion_type",
                         "abs_eigen", "start_method", "rotation", "k_promax",
                         "normalize", "P_type", "precision", "varimax_type",
                         "k_simplimax"))
@@ -1100,7 +1100,7 @@ test_that(".type_grid works", {
                       "bentlerT", "geominT", "bifactorT")))
 
   expect_s3_class(tg_orth2, "data.frame")
-  expect_named(tg_orth2, c("method", "init_comm", "criterion", "criterion_type",
+  expect_named(tg_orth2, c("estimator", "init_comm", "criterion", "criterion_type",
                          "abs_eigen", "start_method", "rotation", "k_promax",
                          "normalize", "P_type", "precision", "varimax_type",
                          "k_simplimax"))
@@ -1112,7 +1112,7 @@ test_that(".type_grid works", {
 
 
   expect_s3_class(tg_nn, "data.frame")
-  expect_named(tg_nn, c("method", "init_comm", "criterion", "criterion_type",
+  expect_named(tg_nn, c("estimator", "init_comm", "criterion", "criterion_type",
                            "abs_eigen", "start_method", "rotation", "k_promax",
                            "normalize", "P_type", "precision", "varimax_type",
                            "k_simplimax"))

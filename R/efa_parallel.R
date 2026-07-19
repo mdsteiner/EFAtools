@@ -44,8 +44,8 @@
 #'  `eigen_type`. `NULL` (default) uses the [efa_fit()] defaults. The fits are unrotated, so no
 #'  rotation settings apply.
 #' @param ... Additional arguments passed to [efa_fit()]. For example,
-#' the extraction method can be changed here (default is "PAF"). PAF is more
-#' robust, but it will take longer compared to the other estimation methods
+#' `estimator`, to change the estimator (default is "PAF"). PAF is more
+#' robust, but it will take longer compared to the other estimators
 #' available ("ML" and "ULS"). The estimation tuning knobs are not passed here; they live in
 #' `estimate_control`.
 #'
@@ -114,7 +114,7 @@
 #'
 #' # example with correlation matrix with all eigen_types and ML estimation
 #' # this will be faster than the above with PAF)
-#' pa_ml <- efa_parallel(test_models$case_11b$cormat, N = 500, method = "ML")
+#' pa_ml <- efa_parallel(test_models$case_11b$cormat, N = 500, estimator = "ML")
 #'}
 #'
 #'\dontrun{
@@ -148,7 +148,7 @@ efa_parallel <- function(x = NULL,
     )
 
   }
-  eigen_type <- match.arg(eigen_type, several.ok = TRUE)
+  eigen_type <- .match_arg_ci(eigen_type, several.ok = TRUE)
   use <- match.arg(use)
   cor_method <- match.arg(cor_method)
   .reject_poly_reference(cor_method, "PARALLEL")

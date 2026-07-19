@@ -20,7 +20,7 @@ pinned <- estimate_control(max_iter = 1)
 no_start <- estimate_control(start_method = NA)
 
 test_that("efa_hull() honours the estimation control", {
-  args <- list(cormat, N = 500, method = "PAF", gof = "CAF", n_datasets = 10)
+  args <- list(cormat, N = 500, estimator = "PAF", gof = "CAF", n_datasets = 10)
 
   set.seed(42L)
   default <- suppressWarnings(do.call(efa_hull, args))
@@ -32,7 +32,7 @@ test_that("efa_hull() honours the estimation control", {
 
   # the control reaches those fits on the ML route too
   expect_error(
-    efa_hull(cormat, N = 500, method = "ML", n_datasets = 10,
+    efa_hull(cormat, N = 500, estimator = "ML", n_datasets = 10,
              estimate_control = no_start),
     class = "efa_ml_start_missing")
 })
@@ -82,7 +82,7 @@ test_that("efa_nest() honours the estimation control", {
                                 .retention_record(tuned, "NEST")$reference)))
 
   expect_error(
-    do.call(efa_nest, c(args, list(method = "ML", estimate_control = no_start))),
+    do.call(efa_nest, c(args, list(estimator = "ML", estimate_control = no_start))),
     class = "efa_ml_start_missing")
 })
 
@@ -99,25 +99,25 @@ test_that("efa_smt() honours the estimation control", {
 })
 
 test_that("efa_schmid_leiman() honours the estimation control", {
-  efa_mod <- efa_fit(cormat, n_factors = 3, N = 500, method = "PAF",
+  efa_mod <- efa_fit(cormat, n_factors = 3, N = 500, estimator = "PAF",
                      rotation = "promax")
 
   # type = "none" resolves nothing from a preset, so the second-order fit only runs if the
   # knobs supplied in the control actually reach it
   expect_no_error(
-    efa_schmid_leiman(efa_mod, method = "PAF",
+    efa_schmid_leiman(efa_mod, estimator = "PAF",
                       estimate_control = estimate_control(
                         type = "none", init_comm = "smc", criterion = 1e-3,
                         criterion_type = "sum", max_iter = 300, abs_eigen = TRUE)))
 
   expect_error(
-    efa_schmid_leiman(efa_mod, method = "ML", estimate_control = no_start),
+    efa_schmid_leiman(efa_mod, estimator = "ML", estimate_control = no_start),
     class = "efa_ml_start_missing")
 })
 
 test_that("efa_retain() threads the estimation control into every criterion that fits", {
   ids <- c("KGC", "NEST", "PARALLEL", "SCREE")
-  args <- list(cormat, N = 500, suitability = FALSE, criteria = ids, method = "PAF",
+  args <- list(cormat, N = 500, suitability = FALSE, criteria = ids, estimator = "PAF",
                eigen_type_other = "EFA", n_datasets = 2, n_datasets_nest = 2)
 
   set.seed(42L)
@@ -181,7 +181,7 @@ test_that("a bare flat knob is rejected even when the call runs no fit", {
   expect_error(efa_hull(cormat, N = 500, gof = "CAF", abs_eigen = TRUE),
                class = "efa_flat_knob_in_dots")
   expect_error(
-    efa_schmid_leiman(efa_fit(cormat, n_factors = 3, N = 500, method = "PAF",
+    efa_schmid_leiman(efa_fit(cormat, n_factors = 3, N = 500, estimator = "PAF",
                               rotation = "promax"),
                       max_iter = 300),
     class = "efa_flat_knob_in_dots")
@@ -202,17 +202,21 @@ test_that("N_FACTORS() now tunes the criteria its dots always claimed to reach",
   # legacy call silently ran the default preset there. A coarse `criterion` ends the PAF
   # iterations almost at once; unlike `max_iter`, which R partial-matches to the frozen
   # `max_iter_CD` formal, it really does travel through the wrapper's dots.
+  # the frozen wrapper still selects the estimator with `method`; the successor takes
+  # `estimator`
   args <- list(cormat, N = 500, suitability = FALSE, criteria = "NEST",
-               method = "PAF", n_datasets_nest = 2)
+               n_datasets_nest = 2)
+  args_old <- c(args, list(method = "PAF"))
+  args_new <- c(args, list(estimator = "PAF"))
 
   set.seed(42L)
   old <- suppressWarnings(suppressMessages(
-    do.call(N_FACTORS, c(args, list(criterion = 0.5)))))
+    do.call(N_FACTORS, c(args_old, list(criterion = 0.5)))))
   set.seed(42L)
   new <- suppressWarnings(suppressMessages(
-    do.call(efa_retain, c(args, list(estimate_control = estimate_control(criterion = 0.5))))))
+    do.call(efa_retain, c(args_new, list(estimate_control = estimate_control(criterion = 0.5))))))
   set.seed(42L)
-  default <- suppressWarnings(suppressMessages(do.call(efa_retain, args)))
+  default <- suppressWarnings(suppressMessages(do.call(efa_retain, args_new)))
 
   expect_equal(old$outputs$NEST$results, new$outputs$NEST$results)
   expect_false(isTRUE(all.equal(old$outputs$NEST$results,

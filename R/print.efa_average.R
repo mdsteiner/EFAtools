@@ -71,7 +71,7 @@ format.efa_average <- function(x, stat = c("average", "range"), ...) {
 
   # extract settings
   settings <- x$settings
-  method <- settings$method
+  estimator <- settings$estimator
   N <- settings$N
   grid <- x$implementations_grid
   averaging <- settings$averaging
@@ -81,21 +81,24 @@ format.efa_average <- function(x, stat = c("average", "range"), ...) {
   # convergence, Heywood/admissibility flags, fit indices) are never part of the
   # settings list, so this excludes them without a column to maintain.
   varied_settings <- grid[, intersect(names(grid), names(settings)), drop = FALSE]
-  varied_settings <- apply(varied_settings, 2, function(x) unique(x[!is.na(x)]))
-  varied_settings <- sapply(varied_settings, length)
-  varied_settings <- names(varied_settings[varied_settings > 1])
+  # vapply keeps one count per column: apply() would simplify to a matrix when every
+  # column has the same number of distinct values, and the count would then run over
+  # the cells instead of the columns.
+  n_unique <- vapply(varied_settings, function(z) length(unique(z[!is.na(z)])),
+                     integer(1))
+  varied_settings <- names(n_unique[n_unique > 1])
+  # The grid and settings keep the historical key `P_type`; the argument is `p_type`, so
+  # display it under that name.
+  varied_settings[varied_settings == "P_type"] <- "p_type"
 
-  # quantities embedded in the summary sentences
+  # quantities embedded in the averaging sentence (the rates are built by
+  # .efa_emit_average_rates() from the grid alone)
   no_efas <- nrow(grid)
   averaging_method <- if (averaging == "median") {
     "median"
   } else {
     paste0("mean (trim = ", settings$trim, ")")
   }
-  error_pct <- paste0(round(mean(grid$errors, na.rm = TRUE) * 100), "%")
-  converged_pct <- paste0(round(mean(grid$converged == 0, na.rm = TRUE) * 100), "%")
-  heywood_pct <- paste0(round(mean(grid$heywood, na.rm = TRUE) * 100), "%")
-  admissible_pct <- paste0(round(mean(grid$admissible, na.rm = TRUE) * 100), "%")
 
   cli::cli_format_method({
 
@@ -105,7 +108,7 @@ format.efa_average <- function(x, stat = c("average", "range"), ...) {
     cli::cli_text("Averaging performed with averaging method {.strong {averaging_method}} across {.strong {no_efas}} EFAs, varying the following settings: {.strong {varied_settings}}.")
 
     cli::cli_text("")
-    cli::cli_text("The error rate is at {.strong {error_pct}}. Of the solutions that did not result in an error, {.strong {converged_pct}} converged, {.strong {heywood_pct}} contained Heywood cases, and {.strong {admissible_pct}} were admissible.")
+    .efa_emit_average_rates(grid)
 
     # If no solutions were achieved across which averaging could be performed, flag it and stop
     # after the summary (there are no loadings or fit indices to show). Otherwise show the full
@@ -155,7 +158,7 @@ format.efa_average <- function(x, stat = c("average", "range"), ...) {
       cli::cli_verbatim(paste0("       ", if (averaging == "mean") "M" else "Md",
                                " (SD) [Min; Max]"))
 
-      if (all(method == "PAF") || is.na(N)) {
+      if (all(estimator == "PAF") || is.na(N)) {
 
         lines <- .gof_lines(fit, ind = c("caf", "rmsr", "srmr"),
                             ind_name = c("CAF:  ", "RMSR: ", "SRMR: "),
@@ -193,6 +196,54 @@ format.efa_average <- function(x, stat = c("average", "range"), ...) {
 # format() (to flag it and stop after the summary) and print() (to suppress plotting).
 .efa_average_no_solutions <- function(grid) {
   all((grid$converged != 0 | grid$errors | grid$heywood) %in% TRUE)
+}
+
+# Emit the error/convergence/Heywood/admissibility summary for an implementations grid.
+#
+# Each conditional rate has its own denominator, because .extract_data() records an outcome
+# only once the preceding stage succeeded: `converged` is set for every solution that did not
+# error, while `heywood` and `admissible` are set only for those that then converged (the
+# unassessed entries stay NA and drop out of the rate). Name the denominator each rate is
+# conditioned on, and drop a clause when its denominator is empty: mean(<all NA>, na.rm =
+# TRUE) is NaN, and a rate over no solutions is undefined rather than 0%. Each rate is
+# therefore computed on the branch that reports it, which leaves an empty denominator no
+# variable to sit in.
+.efa_emit_average_rates <- function(grid) {
+
+  pct <- function(x) paste0(round(mean(x, na.rm = TRUE) * 100), "%")
+
+  error_pct <- pct(grid$errors)
+  clauses <- "The error rate is at {.strong {error_pct}}."
+
+  # `%in% TRUE` keeps an NA flag from propagating into the condition, as in
+  # .efa_average_no_solutions() above.
+  if (all(grid$errors %in% TRUE)) {
+
+    clauses <- c(clauses, "No solution could be fitted, so convergence, Heywood cases, and admissibility could not be assessed.")
+
+  } else {
+
+    converged_pct <- pct(grid$converged == 0)
+    clauses <- c(clauses, "Of the solutions that did not result in an error, {.strong {converged_pct}} converged.")
+
+    if (!any(grid$converged == 0, na.rm = TRUE)) {
+
+      clauses <- c(clauses, "No solution converged, so Heywood cases and admissibility could not be assessed.")
+
+    } else {
+
+      heywood_pct <- pct(grid$heywood)
+      admissible_pct <- pct(grid$admissible)
+      clauses <- c(clauses, "Of the solutions that converged, {.strong {heywood_pct}} contained Heywood cases and {.strong {admissible_pct}} were admissible.")
+
+    }
+
+  }
+
+  # A single cli_text() so the clauses wrap as one paragraph rather than one block each.
+  cli::cli_text(paste(clauses, collapse = " "))
+
+  invisible(NULL)
 }
 
 # Emit a double-ruled (==) header for a major efa_average section: a blank line followed by

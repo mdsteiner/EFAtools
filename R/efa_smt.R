@@ -130,7 +130,7 @@ efa_smt <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
     for (i in seq_len(max_fac)) {
 
       temp <- suppressWarnings(suppressMessages(
-        efa_fit(R, n_factors = i, method = "ML", rotation = "none", N = N,
+        efa_fit(R, n_factors = i, estimator = "ML", rotation = "none", N = N,
                 estimate_control = estimate_control)))
       ps[i] <- temp$fit_indices$p_chi
       RMSEA_LB[i] <- temp$fit_indices$RMSEA_LB

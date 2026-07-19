@@ -81,7 +81,7 @@ named \code{h2} vector is used in the supplied order.
 }
 \examples{
 EFAtools_PAF <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
-                        method = "PAF", rotation = "promax")
+                        estimator = "PAF", rotation = "promax")
 EFAtools_PAF
 
 }

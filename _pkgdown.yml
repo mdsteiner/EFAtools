@@ -3,6 +3,32 @@ url: https://mdsteiner.github.io/EFAtools/
 template:
   bootstrap: 5
 
+articles:
+# Every section carries a `navbar` key: if any section lacks one, pkgdown appends a
+# "More articles..." link to the dropdown. Get started is listed for the index only —
+# pkgdown always drops the intro vignette from the dropdown in favour of the
+# top-level "Get started" link.
+- title: Get started
+  navbar: ~
+  contents:
+  - EFAtools
+
+- title: Analysis guides
+  desc: >
+    Deeper dives into specific data situations and analyses.
+  navbar: ~
+  contents:
+  - Ordinal_and_missing_data
+  - articles/Multigroup_EFA
+  - articles/Simulation_and_power
+
+- title: Upgrading
+  desc: >
+    Moving code from the uppercase interface to the `efa_*` functions.
+  navbar: Upgrading
+  contents:
+  - Migrating_to_efa
+
 reference:
 - title: Fitting
   desc: >
@@ -105,3 +131,6 @@ reference:
   contents:
   - EFAtools-package
   - starts_with("\\.")
+
+redirects:
+- ["articles/Replicate_SPSS_psych.html", "articles/Migrating_to_efa.html"]

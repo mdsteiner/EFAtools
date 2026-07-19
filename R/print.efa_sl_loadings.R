@@ -22,8 +22,8 @@
 #'
 #' @examples
 #' EFA_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
-#'                    method = "PAF", rotation = "promax")
-#' efa_schmid_leiman(EFA_mod, method = "PAF")
+#'                    estimator = "PAF", rotation = "promax")
+#' efa_schmid_leiman(EFA_mod, estimator = "PAF")
 #'
 print.efa_sl_loadings <- function(x, cutoff = .2, digits = 3, color = TRUE, ...) {
 

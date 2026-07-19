@@ -39,6 +39,32 @@ You can install the development version from [GitHub](https://github.com/) with:
 pak::pak("mdsteiner/EFAtools")
 ```
 
+## Package Overview
+
+The `efa_*` functions cover the steps of an EFA workflow:
+
+* **Screening and suitability**: `efa_screen()` checks the data for multivariate normality, outliers, and suitability for factor analysis; `efa_kmo()` and `efa_bartlett()` run the Kaiser-Meyer-Olkin criterion and Bartlett's test of sphericity individually.
+* **Factor retention**: `efa_retain()` runs several factor retention criteria with a single call. They are also available on their own: `efa_cd()`, `efa_ekc()`, `efa_hull()`, `efa_kgc()`, `efa_map()`, `efa_nest()`, `efa_parallel()`, `efa_scree()`, and `efa_smt()`.
+* **Fitting**: `efa_fit()` fits the factor model. `estimate_control()` and `rotate_control()` configure the estimation and rotation settings.
+* **Rotation and transformation**: `efa_procrustes()` rotates a solution onto a target; `efa_schmid_leiman()` transforms an oblique solution into a hierarchical one.
+* **Reliability**: `efa_reliability()` computes reliability and common-variance coefficients for a factor solution.
+* **Factor scores**: `efa_scores()` estimates factor scores together with score-quality diagnostics.
+* **Comparison**: `efa_compare()` compares two solutions (loadings or communalities).
+* **Averaging**: `efa_average()` averages solutions across implementations and methods to assess their stability.
+* **Multiple groups**: `efa_group()` fits a solution per group and compares them.
+* **Multiple imputation**: `efa_mi()` fits and pools solutions across multiply imputed data sets.
+* **Simulation**: `efa_simulate()` simulates data from a common-factor population model.
+* **Power**: `efa_power()` performs analytic and simulation-based power analysis.
+
+The uppercase names (`EFA()`, `N_FACTORS()`, ...) are superseded by their `efa_*` equivalents, but remain exported and keep their arguments, so existing code keeps working.
+
+The following vignettes and articles cover these in detail:
+
+* [EFAtools](https://mdsteiner.github.io/EFAtools/articles/EFAtools.html): a complete EFA workflow, from screening to reliability and factor scores.
+* [Migrating to the efa_* interface](https://mdsteiner.github.io/EFAtools/articles/Migrating_to_efa.html): what the old names and arguments map to.
+* [EFA with ordinal and missing data](https://mdsteiner.github.io/EFAtools/articles/Ordinal_and_missing_data.html): polychoric and tetrachoric correlations, DWLS, FIML, and multiply imputed data.
+* [Multigroup exploratory factor analysis](https://mdsteiner.github.io/EFAtools/articles/Multigroup_EFA.html): comparing solutions across groups and assessing approximate invariance.
+* [Simulating data and power analysis for EFA](https://mdsteiner.github.io/EFAtools/articles/Simulation_and_power.html): simulating data and planning sample sizes.
 
 ## Examples
 
@@ -79,7 +105,7 @@ With raw-data input, you can use all functionalities, including sandwich and boo
 ```{r fig.height=3}
 
 # ULS / MINRES estimation with oblimin rotation and sandwich SEs
-mod <- efa_fit(DOSPERT_raw, n_factors = 5, method = "ULS", rotation = "oblimin",
+mod <- efa_fit(DOSPERT_raw, n_factors = 5, estimator = "ULS", rotation = "oblimin",
            se = "sandwich")
 mod
 # detailed output with summary()
@@ -89,7 +115,7 @@ summary(mod)
 residuals(mod)
 
 # DWLS estimation based on polychoric correlations, with robust sandwich SEs
-mod <- efa_fit(GRiPS_raw, n_factors = 1, method = "DWLS", cor_method = "poly",
+mod <- efa_fit(GRiPS_raw, n_factors = 1, estimator = "DWLS", cor_method = "poly",
            se = "sandwich")
 mod
 summary(mod)
@@ -104,7 +130,7 @@ When you don't have raw data available, you can enter a correlation matrix and s
 
 # ML estimation with oblimin rotation and information SEs, based on correlation
 # matrix and N
-mod <- efa_fit(test_models$baseline$cormat, N = 500,  n_factors = 3, method = "ML",
+mod <- efa_fit(test_models$baseline$cormat, N = 500,  n_factors = 3, estimator = "ML",
            rotation = "oblimin", se = "information")
 mod
 summary(mod)

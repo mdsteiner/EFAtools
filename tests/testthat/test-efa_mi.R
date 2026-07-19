@@ -5,9 +5,9 @@ cormat <- test_models$baseline$cormat
 p_vars <- ncol(cormat)
 cormat_list <- list(cormat, cormat, cormat)
 
-pooled_obl <- efa_mi(cormat_list, n_factors = 3, N = 500, method = "PAF",
+pooled_obl <- efa_mi(cormat_list, n_factors = 3, N = 500, estimator = "PAF",
                          rotation = "promax")
-pooled_orth <- efa_mi(cormat_list, n_factors = 3, N = 500, method = "PAF",
+pooled_orth <- efa_mi(cormat_list, n_factors = 3, N = 500, estimator = "PAF",
                           rotation = "varimax")
 
 set.seed(42)
@@ -15,7 +15,7 @@ grips_list <- lapply(1:3, function(i) {
   GRiPS_raw[sample(seq_len(nrow(GRiPS_raw)), replace = TRUE), ]
 })
 pooled_none <- suppressMessages(
-  efa_mi(grips_list, n_factors = 1, method = "ML")
+  efa_mi(grips_list, n_factors = 1, estimator = "ML")
 )
 
 test_that("efa_mi returns a well-formed pooled object", {
@@ -97,7 +97,7 @@ test_that("rotation variants include exactly the applicable components", {
 test_that("alignment variants produce well-formed pooled objects", {
   # first_target: align every imputation to the first rotated solution rather
   # than to an iteratively updated consensus target
-  ft <- efa_mi(cormat_list, n_factors = 3, N = 500, method = "PAF",
+  ft <- efa_mi(cormat_list, n_factors = 3, N = 500, estimator = "PAF",
                    rotation = "promax", target_method = "first_target")
   expect_s3_class(ft, c("efa_mi", "EFA_POOLED", "efa", "EFA"), exact = TRUE)
   expect_identical(ft$settings$target_method, "first_target")
@@ -106,14 +106,14 @@ test_that("alignment variants produce well-formed pooled objects", {
   expect_identical(dim(ft$Phi), c(3L, 3L))
 
   # align_unrotated = "procrustes": orthogonal Procrustes of the unrotated axes
-  pr <- efa_mi(cormat_list, n_factors = 3, N = 500, method = "PAF",
+  pr <- efa_mi(cormat_list, n_factors = 3, N = 500, estimator = "PAF",
                    rotation = "none", align_unrotated = "procrustes")
   expect_identical(pr$settings$align_unrotated, "procrustes")
   expect_s3_class(pr$unrot_loadings, "LOADINGS")
 
   # align_unrotated = "none": average the unrotated loadings as returned. With
   # identical imputations the pooled result must equal the single fit.
-  nn <- efa_mi(cormat_list, n_factors = 3, N = 500, method = "PAF",
+  nn <- efa_mi(cormat_list, n_factors = 3, N = 500, estimator = "PAF",
                    rotation = "none", align_unrotated = "none")
   expect_identical(nn$settings$align_unrotated, "none")
   single <- EFA(cormat, n_factors = 3, N = 500, method = "PAF",
@@ -198,17 +198,17 @@ test_that(".efa_pooled_D2 ARIV matches the Li et al. (1991) formula", {
 
 test_that("efa_mi validates its arguments with classed conditions", {
   expect_error(
-    efa_mi(cormat_list, p = 0, n_factors = 3, N = 500, method = "PAF",
+    efa_mi(cormat_list, p = 0, n_factors = 3, N = 500, estimator = "PAF",
                rotation = "none"),
     class = "efa_pooled_bad_p"
   )
   expect_error(
     efa_mi(cormat_list, rmsea_ci_level = 1, n_factors = 3, N = 500,
-               method = "PAF", rotation = "none"),
+               estimator = "PAF", rotation = "none"),
     class = "efa_pooled_bad_ci_level"
   )
   expect_warning(
-    efa_mi(cormat_list, ci = .8, n_factors = 3, N = 500, method = "PAF",
+    efa_mi(cormat_list, ci = .8, n_factors = 3, N = 500, estimator = "PAF",
                rotation = "none"),
     class = "efa_pooled_ci_ignored"
   )
@@ -217,7 +217,7 @@ test_that("efa_mi validates its arguments with classed conditions", {
 test_that("efa_mi rejects non-conformable imputations", {
   expect_error(
     efa_mi(list(cormat, cormat[1:(p_vars - 1), 1:(p_vars - 1)]),
-               n_factors = 3, N = 500, method = "PAF", rotation = "none"),
+               n_factors = 3, N = 500, estimator = "PAF", rotation = "none"),
     class = "efa_pooled_dim_mismatch"
   )
 
@@ -225,7 +225,7 @@ test_that("efa_mi rejects non-conformable imputations", {
   dimnames(renamed) <- list(paste0("X", seq_len(p_vars)),
                             paste0("X", seq_len(p_vars)))
   expect_error(
-    efa_mi(list(cormat, renamed), n_factors = 3, N = 500, method = "PAF",
+    efa_mi(list(cormat, renamed), n_factors = 3, N = 500, estimator = "PAF",
                rotation = "none"),
     class = "efa_pooled_var_mismatch"
   )
@@ -235,7 +235,7 @@ test_that("efa_mi warns when imputations have different N", {
   expect_warning(
     suppressMessages(
       efa_mi(list(GRiPS_raw[1:300, ], GRiPS_raw[1:400, ]), n_factors = 1,
-                 method = "PAF", rotation = "none")
+                 estimator = "PAF", rotation = "none")
     ),
     class = "efa_pooled_unequal_n"
   )
@@ -248,7 +248,7 @@ test_that("efa_mi warns when N cannot be recovered", {
   suppressWarnings(
     expect_warning(
       suppressMessages(
-        efa_mi(cormat_list, n_factors = 3, method = "ML", rotation = "none")
+        efa_mi(cormat_list, n_factors = 3, estimator = "ML", rotation = "none")
       ),
       class = "efa_pooled_no_n"
     )
@@ -258,7 +258,7 @@ test_that("efa_mi warns when N cannot be recovered", {
   expect_warning(
     suppressMessages(
       efa_mi(list(GRiPS_raw, stats::cor(GRiPS_raw)), n_factors = 1,
-                 method = "PAF", rotation = "none")
+                 estimator = "PAF", rotation = "none")
     ),
     class = "efa_pooled_partial_n"
   )
@@ -273,7 +273,7 @@ test_that("bootstrap arrays are pooled into MI SEs and CIs", {
     GRiPS_raw[sample(seq_len(nrow(GRiPS_raw)), 250, replace = TRUE), ]
   })
   pooled_boot <- suppressMessages(
-    efa_mi(boot_list, n_factors = 1, method = "ML",
+    efa_mi(boot_list, n_factors = 1, estimator = "ML",
                se = "np-boot", b_boot = 6)
   )
 
@@ -336,7 +336,7 @@ test_that("oblique bootstrap pooling produces rotated SEs, CIs, and Phi", {
     GRiPS_raw[sample(seq_len(nrow(GRiPS_raw)), 250, replace = TRUE), ]
   })
   pooled_boot <- suppressWarnings(suppressMessages(
-    efa_mi(boot_list, n_factors = 2, method = "PAF", rotation = "promax",
+    efa_mi(boot_list, n_factors = 2, estimator = "PAF", rotation = "promax",
                se = "np-boot", b_boot = 6)
   ))
 

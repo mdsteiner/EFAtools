@@ -139,13 +139,15 @@
 #' \deqn{\tilde\Gamma = \Gamma_W + \left(1 + \frac{1}{m}\right)\Gamma_B,}
 #' and a single `EFA` model is fitted to the pooled correlation with
 #' \eqn{\tilde\Gamma} as the robust meat (its diagonal as the weights for
-#' `method = "DWLS"`). Because there is only one fit and one rotational gauge, this
+#' `estimator = "DWLS"`). Because there is only one fit and one rotational gauge, this
 #' route bypasses the per-imputation alignment: `target_method` and
 #' `align_unrotated` do not apply. The fitted object carries native scaled-shifted
 #' chi-square statistics and sandwich SEs that already reflect the
 #' multiple-imputation uncertainty, so the chi-square is not D2-pooled and the
 #' likelihood-ratio-based AIC/BIC/ECVI are `NA`; it is returned in the `mi_fit`
-#' slot, with the per-imputation `fits` retained for diagnostics. At least 20
+#' slot, with the per-imputation `fits` retained for diagnostics. The pooled fit
+#' uses the same [estimate_control()] and [rotate_control()] tuning (including
+#' any rotation-engine extras) as the per-imputation fits. At least 20
 #' imputations are recommended for the scaled-shifted statistic, and more (around
 #' 100) at higher rates of missingness (Sriutaisuk et al. 2025). The
 #' polychoric/tetrachoric (ordinal) case is the primary, best-evaluated target; the
@@ -153,8 +155,9 @@
 #'
 #' @section Conditions:
 #' All conditions are classed (prefix `efa_pooled_`, or `efa_consensus_` for the
-#' consensus target) so they can be caught by class. The ones most likely to be
-#' encountered:
+#' consensus target; the dots validation shared with [efa_fit()] signals
+#' `efa_flat_knob_in_dots` and `efa_renamed_arg`) so they can be caught by
+#' class. The ones most likely to be encountered:
 #'
 #' - **Inputs.** `efa_pooled_min_fits` (at least two fits are required);
 #'   `efa_pooled_mixed_se` (every imputation must use the same `se`).
@@ -204,7 +207,7 @@
 #' @param rmsr_upper Logical. If `TRUE`, compute RMSR from the unique
 #' off-diagonal residual correlations. If `FALSE`, use the full off-diagonal
 #' matrix.
-#' @param ... Additional arguments passed to [efa_fit()] (e.g. `method`, `rotation`, `se`,
+#' @param ... Additional arguments passed to [efa_fit()] (e.g. `estimator`, `rotation`, `se`,
 #' `n_factors`, `N`). These select the estimator, rotation, standard-error method, and
 #' fit indices used for every imputation; see [efa_fit()] for the available options, their
 #' properties, and which combinations are valid.
@@ -309,12 +312,12 @@
 #' # create a list of three datasets, mimicking a list you would obtain from
 #' # e.g. mice.
 #' dat_list <- lapply(1:3, function(x) GRiPS_raw[sample(1:nrow(GRiPS_raw), replace = TRUE),])
-#' mod <- efa_mi(dat_list, n_factors = 1, method = "ML")
+#' mod <- efa_mi(dat_list, n_factors = 1, estimator = "ML")
 #' mod
 #'
 #' \donttest{
 #' # add computation of standard errors and CIs
-#' mod <- efa_mi(dat_list, n_factors = 1, method = "ML", se = "np-boot")
+#' mod <- efa_mi(dat_list, n_factors = 1, estimator = "ML", se = "np-boot")
 #' mod
 #' }
 efa_mi <- function(data_list,
@@ -329,6 +332,24 @@ efa_mi <- function(data_list,
                    ...) {
 
   efa_args <- list(...)
+
+  # A flat tuning knob or the former `method` spelling in the dots would only surface from
+  # inside the first per-imputation fit, with the error attributed to efa_fit(); reject it
+  # here so the message names the function the user called.
+  .reject_flat_knobs(...names(), fn = "efa_mi")
+
+  # The per-imputation do.call(efa_fit, ...) binds the dots by R's argument matching,
+  # which accepts unique abbreviations of efa_fit()'s formals (e.g. `rotate_c =` for
+  # `rotate_control`), but the pooling routes below read `efa_args` by exact name.
+  # Canonicalize abbreviated names up front with the same exact-first, unique-prefix
+  # matching do.call() applies; ambiguous or unknown names are left untouched for
+  # efa_fit() to reject.
+  arg_names <- names(efa_args)
+  if (length(arg_names)) {
+    efa_fit_formals <- setdiff(names(formals(efa_fit)), "...")
+    canonical <- pmatch(arg_names, efa_fit_formals)
+    names(efa_args)[!is.na(canonical)] <- efa_fit_formals[canonical[!is.na(canonical)]]
+  }
 
   checkmate::assert_list(data_list, min.len = 2, null.ok = FALSE)
   lapply(data_list, checkmate::assert_multi_class, c("matrix", "data.frame"))
@@ -380,7 +401,7 @@ efa_mi <- function(data_list,
   }
 
   settings <- fits[[1]]$settings
-  method <- settings$method
+  estimator <- settings$estimator
   rotation <- settings$rotation
   var_names <- rownames(fits[[1]]$orig_R)
   if (is.null(var_names)) {
@@ -401,7 +422,7 @@ efa_mi <- function(data_list,
   if (identical(route, "sandwich")) {
     return(.efa_pooled_mi2s(
       fits = fits, data_list = data_list, efa_args = efa_args,
-      settings = settings, method = method, rotation = rotation,
+      settings = settings, estimator = estimator, rotation = rotation,
       rotation_type = rotation_type, target_method = target_method,
       align_unrotated = align_unrotated, fit_pool_method = fit_pool_method,
       p = p, rmsea_ci_level = rmsea_ci_level, rmsr_upper = rmsr_upper
@@ -603,7 +624,7 @@ efa_mi <- function(data_list,
   Ns_ok <- Ns[is.finite(Ns)]
   if (length(Ns_ok) == 0L) {
     N_pool <- NA_real_
-    if (!identical(method, "PAF")) {
+    if (!identical(estimator, "PAF")) {
       cli::cli_warn(
         c("N could not be recovered for any imputation.",
           "i" = "Chi-square-based fit indices cannot be computed."),
@@ -635,7 +656,7 @@ efa_mi <- function(data_list,
     RMSR = RMSR,
     N = N_pool,
     Ns = Ns,
-    method = method,
+    method = estimator,
     pool_method = fit_pool_method,
     rmsea_ci_level = rmsea_ci_level
   )
@@ -708,7 +729,7 @@ efa_mi <- function(data_list,
       residuals = residuals,
       pooled_orig_R = pooled_orig_R,
       N = N_pool,
-      method = method,
+      method = estimator,
       pool_method = fit_pool_method,
       rmsea_ci_level = rmsea_ci_level,
       alpha = p,
@@ -917,7 +938,7 @@ efa_mi <- function(data_list,
   list(r_bar = r_bar, Gamma_tilde = Gamma_tilde, m = m)
 }
 
-.efa_pooled_mi2s <- function(fits, data_list, efa_args, settings, method,
+.efa_pooled_mi2s <- function(fits, data_list, efa_args, settings, estimator,
                              rotation, rotation_type, target_method,
                              align_unrotated, fit_pool_method, p,
                              rmsea_ci_level, rmsr_upper) {
@@ -941,9 +962,20 @@ efa_mi <- function(data_list,
       length(unique(cor_methods)) != 1L ||
       !cor_methods[[1L]] %in% c("poly", "tetra", "pearson") ||
       !all(gamma_ok)) {
+    # The settings can be perfectly consistent and still unsupported here (e.g.
+    # cor_method = "fiml", whose sandwich carries no poolable correlation ACOV);
+    # advising the user to "re-fit with the same settings" would then be wrong.
+    unsupported_cor <- !anyNA(ses) && all(ses == "sandwich") &&
+      length(unique(cor_methods)) == 1L &&
+      !cor_methods[[1L]] %in% c("poly", "tetra", "pearson")
+    hint <- if (unsupported_cor) {
+      c("i" = "The imputations were fitted with {.code cor_method = \"{cor_methods[[1L]]}\"}, which carries no poolable asymptotic correlation covariance; use {.code se = \"np-boot\"} to pool such fits.")
+    } else {
+      c("i" = "Re-fit every imputation with the same {.code se = \"sandwich\"} setting and {.arg cor_method}.")
+    }
     cli::cli_abort(
       c("MI2S pooling requires every imputation to be fitted with {.code se = \"sandwich\"} and the same {.arg cor_method} ({.val poly}, {.val tetra}, or {.val pearson}), each carrying a valid asymptotic covariance.",
-        "i" = "Re-fit every imputation with the same {.code se = \"sandwich\"} setting and {.arg cor_method}."),
+        hint),
       class = "efa_pooled_mi2s_inputs_inconsistent"
     )
   }
@@ -951,8 +983,6 @@ efa_mi <- function(data_list,
   n_factors <- settings$n_factors
   use_setting <- settings$use
   if (is.null(use_setting)) use_setting <- "pairwise.complete.obs"
-  type_setting <- settings$type
-  if (is.null(type_setting)) type_setting <- "EFAtools"
 
   ## ---- Sample size -------------------------------------------------------
   Ns <- .efa_pooled_get_Ns(data_list, fits, efa_args)
@@ -997,7 +1027,7 @@ efa_mi <- function(data_list,
   r_bar <- pooled$r_bar
   Gamma_tilde <- pooled$Gamma_tilde
 
-  weights <- if (method == "DWLS") {
+  weights <- if (estimator == "DWLS") {
     # A non-positive pooled asymptotic variance makes .poly_weight_matrix() abort
     # with the low-level efa_dwls_degenerate_weight; relabel it to the documented
     # MI2S condition with the "increase imputations" remediation.
@@ -1015,21 +1045,39 @@ efa_mi <- function(data_list,
     NULL
   }
 
-  # Reuse the same estimate -> rotate -> SE pipeline EFA() runs, defaulting the
-  # estimation/rotation tuning to whatever the component fits used (the extra
-  # arguments forwarded through `...`); .efa_core()'s argument defaults supply the
-  # rest. The arguments resolved explicitly here are dropped to avoid passing them
-  # twice through do.call().
-  drop_args <- c("x", "data", "n_factors", "N", "method", "rotation", "se",
-                 "type", "use", "cor_method", "ci", "seed")
-  extra_args <- efa_args[setdiff(names(efa_args), drop_args)]
-  mi_fit <- do.call(.efa_core, c(
-    list(R = r_bar, N = N_pool, weights = weights, Gamma = Gamma_tilde,
-         np_boot = FALSE, method = method, rotation = rotation,
-         type = type_setting, n_factors = n_factors, se = "sandwich",
-         ci = 1 - p, use = use_setting, cor_method = cor_method),
-    extra_args
-  ))
+  # Reuse the same estimate -> rotate -> SE pipeline efa_fit() runs, with the same
+  # estimation/rotation tuning the component fits used: unbundle the two control
+  # objects from the component call (defaulting to the constructors' presets,
+  # exactly as efa_fit() does) and pass the knobs to .efa_core() under its
+  # historical formal names. The arguments resolved explicitly here are dropped
+  # from the dots to avoid passing them twice through do.call(); the remaining
+  # dots are merged over the rotation-engine extras stored in rotate_control(),
+  # with the dots winning on a name clash (mirroring efa_fit()).
+  ec <- efa_args$estimate_control
+  if (is.null(ec)) ec <- estimate_control()
+  rc <- efa_args$rotate_control
+  if (is.null(rc)) rc <- rotate_control()
+  drop_args <- c("n_factors", "N", "estimator", "rotation", "se", "use",
+                 "cor_method", "ci", "seed",
+                 "estimate_control", "rotate_control")
+  extra_args <- modifyList(rc$extra_args,
+                           efa_args[setdiff(names(efa_args), drop_args)])
+  core_args <- list(R = r_bar, N = N_pool, weights = weights, Gamma = Gamma_tilde,
+                    np_boot = FALSE, estimator = estimator, rotation = rotation,
+                    type = ec$type, rot_type = rc$type, n_factors = n_factors,
+                    se = "sandwich", ci = 1 - p, use = use_setting,
+                    cor_method = cor_method, max_iter = ec$max_iter,
+                    init_comm = ec$init_comm, criterion = ec$criterion,
+                    criterion_type = ec$criterion_type, abs_eigen = ec$abs_eigen,
+                    start_method = ec$start_method, normalize = rc$normalize,
+                    precision = rc$precision, order_type = rc$order_type,
+                    varimax_type = rc$varimax_type, P_type = rc$p_type, k = rc$k,
+                    randomStarts = rc$random_starts)
+  # Mirror efa_fit()'s extras splice: an extra whose name is already an explicit
+  # core argument would abort do.call() with "matched by multiple actual
+  # arguments", so drop it (the resolved value wins).
+  extra_args <- extra_args[setdiff(names(extra_args), names(core_args))]
+  mi_fit <- do.call(.efa_core, c(core_args, extra_args))
 
   # .efa_core()/EFA() compute RMSEA confidence bounds at a fixed 90% level; honor
   # the requested rmsea_ci_level on the pooled object by recomputing the bounds
@@ -1132,7 +1180,7 @@ efa_mi <- function(data_list,
     cli::cli_abort("All imputations must contain the same variables in the same order.", class = "efa_pooled_var_mismatch")
   }
 
-  for (nm in c("method", "rotation", "n_factors")) {
+  for (nm in c("estimator", "rotation", "n_factors")) {
     vals <- vapply(fits, .efa_pooled_setting_chr, character(1), name = nm)
     vals <- vals[!is.na(vals)]
     if (length(unique(vals)) > 1L) {

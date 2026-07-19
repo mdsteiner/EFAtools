@@ -87,8 +87,8 @@ one and thus tends to retain more factors than the more conservative
 rotation settings apply.}
 
 \item{...}{Additional arguments passed to \code{\link[=efa_fit]{efa_fit()}}. For example,
-the extraction method can be changed here (default is "PAF"). PAF is more
-robust, but it will take longer compared to the other estimation methods
+\code{estimator}, to change the estimator (default is "PAF"). PAF is more
+robust, but it will take longer compared to the other estimators
 available ("ML" and "ULS"). The estimation tuning knobs are not passed here; they live in
 \code{estimate_control}.}
 }
@@ -143,7 +143,7 @@ pa_paf <- efa_parallel(test_models$case_11b$cormat, N = 500)
 
 # example with correlation matrix with all eigen_types and ML estimation
 # this will be faster than the above with PAF)
-pa_ml <- efa_parallel(test_models$case_11b$cormat, N = 500, method = "ML")
+pa_ml <- efa_parallel(test_models$case_11b$cormat, N = 500, estimator = "ML")
 }
 
 \dontrun{

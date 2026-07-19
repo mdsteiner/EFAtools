@@ -31,8 +31,8 @@ disabled (for example when captured into a file or stripped with
 }
 \examples{
 EFA_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
-                   method = "PAF", rotation = "promax")
-sl_mod <- efa_schmid_leiman(EFA_mod, method = "PAF")
+                   estimator = "PAF", rotation = "promax")
+sl_mod <- efa_schmid_leiman(EFA_mod, estimator = "PAF")
 sl_mod
 
 # format() returns the same lines as plain text:

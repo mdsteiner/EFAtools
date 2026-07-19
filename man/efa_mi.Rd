@@ -57,7 +57,7 @@ for fixed-target alignment.}
 off-diagonal residual correlations. If \code{FALSE}, use the full off-diagonal
 matrix.}
 
-\item{...}{Additional arguments passed to \code{\link[=efa_fit]{efa_fit()}} (e.g. \code{method}, \code{rotation}, \code{se},
+\item{...}{Additional arguments passed to \code{\link[=efa_fit]{efa_fit()}} (e.g. \code{estimator}, \code{rotation}, \code{se},
 \code{n_factors}, \code{N}). These select the estimator, rotation, standard-error method, and
 fit indices used for every imputation; see \code{\link[=efa_fit]{efa_fit()}} for the available options, their
 properties, and which combinations are valid.}
@@ -240,13 +240,15 @@ entries are Rubin-pooled across imputations,
 \deqn{\tilde\Gamma = \Gamma_W + \left(1 + \frac{1}{m}\right)\Gamma_B,}
 and a single \code{EFA} model is fitted to the pooled correlation with
 \eqn{\tilde\Gamma} as the robust meat (its diagonal as the weights for
-\code{method = "DWLS"}). Because there is only one fit and one rotational gauge, this
+\code{estimator = "DWLS"}). Because there is only one fit and one rotational gauge, this
 route bypasses the per-imputation alignment: \code{target_method} and
 \code{align_unrotated} do not apply. The fitted object carries native scaled-shifted
 chi-square statistics and sandwich SEs that already reflect the
 multiple-imputation uncertainty, so the chi-square is not D2-pooled and the
 likelihood-ratio-based AIC/BIC/ECVI are \code{NA}; it is returned in the \code{mi_fit}
-slot, with the per-imputation \code{fits} retained for diagnostics. At least 20
+slot, with the per-imputation \code{fits} retained for diagnostics. The pooled fit
+uses the same \code{\link[=estimate_control]{estimate_control()}} and \code{\link[=rotate_control]{rotate_control()}} tuning (including
+any rotation-engine extras) as the per-imputation fits. At least 20
 imputations are recommended for the scaled-shifted statistic, and more (around
 100) at higher rates of missingness (Sriutaisuk et al. 2025). The
 polychoric/tetrachoric (ordinal) case is the primary, best-evaluated target; the
@@ -256,8 +258,9 @@ continuous-Pearson case uses the same recipe but is less benchmarked.
 \section{Conditions}{
 
 All conditions are classed (prefix \code{efa_pooled_}, or \code{efa_consensus_} for the
-consensus target) so they can be caught by class. The ones most likely to be
-encountered:
+consensus target; the dots validation shared with \code{\link[=efa_fit]{efa_fit()}} signals
+\code{efa_flat_knob_in_dots} and \code{efa_renamed_arg}) so they can be caught by
+class. The ones most likely to be encountered:
 \itemize{
 \item \strong{Inputs.} \code{efa_pooled_min_fits} (at least two fits are required);
 \code{efa_pooled_mixed_se} (every imputation must use the same \code{se}).
@@ -283,12 +286,12 @@ and unequal sample sizes across imputations.
 # create a list of three datasets, mimicking a list you would obtain from
 # e.g. mice.
 dat_list <- lapply(1:3, function(x) GRiPS_raw[sample(1:nrow(GRiPS_raw), replace = TRUE),])
-mod <- efa_mi(dat_list, n_factors = 1, method = "ML")
+mod <- efa_mi(dat_list, n_factors = 1, estimator = "ML")
 mod
 
 \donttest{
 # add computation of standard errors and CIs
-mod <- efa_mi(dat_list, n_factors = 1, method = "ML", se = "np-boot")
+mod <- efa_mi(dat_list, n_factors = 1, estimator = "ML", se = "np-boot")
 mod
 }
 }

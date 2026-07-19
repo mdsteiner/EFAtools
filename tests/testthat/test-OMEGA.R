@@ -129,8 +129,12 @@ test_that("OMEGA lavaan numbers are unchanged (regression)", {
   fit_mg <- suppressWarnings(lavaan::cfa(lav_mod,
     sample.cov = list(test_models$baseline$cormat, test_models$baseline$cormat),
     sample.nobs = c(500, 500), estimator = "ml", orthogonal = TRUE))
+  # Looser than the single-group pins above: these coefficients come out of lavaan's
+  # multigroup ML optimizer, which settles on a slightly different point under a
+  # different BLAS and moves them by about 1e-6. Drift in the omega arithmetic itself
+  # would move them by orders of magnitude more.
   expect_equal(OMEGA(fit_mg, g_name = "g", group_names = c("A", "B")), ref_mg,
-               tolerance = 1e-6)
+               tolerance = 1e-4)
 })
 
 test_that("the general-factor row is labelled with g_name, not a hardcoded 'g'", {

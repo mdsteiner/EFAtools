@@ -26,14 +26,14 @@ expect_no_se_unavailable <- function(expr) {
 }
 
 # Minimal EFA-shaped fit mock: enough for .efa_pooled_check_fits() and
-# .efa_pooled_route() to run (loadings/orig_R dims + names, matching method /
+# .efa_pooled_route() to run (loadings/orig_R dims + names, matching estimator /
 # rotation / n_factors settings, and the se under test).
 .route_mock_fit <- function(se, p = 4L, kk = 1L) {
   R <- diag(p)
   dimnames(R) <- list(paste0("v", seq_len(p)), paste0("v", seq_len(p)))
   L <- matrix(0.5, p, kk)
   list(unrot_loadings = L, orig_R = R,
-       settings = list(se = se, method = "ML", rotation = "none",
+       settings = list(se = se, estimator = "ML", rotation = "none",
                        n_factors = kk))
 }
 
@@ -64,7 +64,7 @@ test_that(".efa_pooled_route maps identical component se and flags mixed se", {
 
   # A NULL/absent se is treated as non-conformable (mixed), not silently coerced.
   missing_se <- list(.route_mock_fit("information"),
-                     list(settings = list(method = "ML")))
+                     list(settings = list(estimator = "ML")))
   expect_identical(EFAtools:::.efa_pooled_route(missing_se), "mixed")
 })
 

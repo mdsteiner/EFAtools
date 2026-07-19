@@ -123,53 +123,53 @@ test_that("output class and dimensions are correct", {
 })
 
 test_that("settings are returned correctly", {
-  expect_named(efa_cor$settings, c("method", "rotation", "type", "n_factors",
+  expect_named(efa_cor$settings, c("estimator", "method", "rotation", "type", "n_factors",
                                    "N", "use", "cor_method", "se", "b_boot", "ci", "max_iter",
                                    "init_comm", "criterion", "criterion_type",
                                    "abs_eigen"))
-  expect_named(efa_raw$settings, c("method", "rotation", "type", "n_factors",
+  expect_named(efa_raw$settings, c("estimator", "method", "rotation", "type", "n_factors",
                                    "N", "use", "cor_method", "se", "b_boot", "ci", "max_iter",
                                    "init_comm", "criterion", "criterion_type",
                                    "abs_eigen"))
-  expect_named(efa_psych$settings, c("method", "rotation", "type", "n_factors",
+  expect_named(efa_psych$settings, c("estimator", "method", "rotation", "type", "n_factors",
                                      "N", "use", "cor_method", "se", "b_boot", "ci", "max_iter",
                                      "init_comm", "criterion", "criterion_type",
                                      "abs_eigen", "normalize", "P_type", "precision",
                                      "order_type", "varimax_type", "k"))
-  expect_named(efa_spss$settings, c("method", "rotation", "type", "n_factors",
+  expect_named(efa_spss$settings, c("estimator", "method", "rotation", "type", "n_factors",
                                     "N", "use", "cor_method", "se", "b_boot", "ci", "max_iter",
                                     "init_comm", "criterion", "criterion_type",
                                     "abs_eigen", "normalize", "P_type", "precision",
                                     "order_type", "varimax_type", "k"))
-  expect_named(efa_ml$settings, c("method", "rotation", "type", "n_factors",
+  expect_named(efa_ml$settings, c("estimator", "method", "rotation", "type", "n_factors",
                                     "N", "use", "cor_method", "se", "b_boot", "ci", "start_method"))
-  expect_named(efa_uls$settings, c("method", "rotation", "type", "n_factors",
+  expect_named(efa_uls$settings, c("estimator", "method", "rotation", "type", "n_factors",
                                    "N", "use", "cor_method", "se", "b_boot", "ci"))
-  expect_named(efa_equa$settings, c("method", "rotation", "type", "n_factors",
+  expect_named(efa_equa$settings, c("estimator", "method", "rotation", "type", "n_factors",
                                    "N", "use", "cor_method", "se", "b_boot", "ci", "max_iter",
                                    "init_comm", "criterion", "criterion_type",
                                    "abs_eigen", "normalize", "precision",
                                    "order_type", "randomStarts", "rotation_diagnostics"))
-  expect_named(efa_quart$settings, c("method", "rotation", "type", "n_factors",
+  expect_named(efa_quart$settings, c("estimator", "method", "rotation", "type", "n_factors",
                                    "N", "use", "cor_method", "se", "b_boot", "ci", "max_iter",
                                    "init_comm", "criterion", "criterion_type",
                                    "abs_eigen", "normalize", "precision",
                                    "order_type", "k", "randomStarts", "rotation_diagnostics"))
-  expect_named(efa_none$settings, c("method", "rotation", "type", "n_factors",
+  expect_named(efa_none$settings, c("estimator", "method", "rotation", "type", "n_factors",
                                    "N", "use", "cor_method", "se", "b_boot", "ci", "max_iter",
                                    "init_comm", "criterion", "criterion_type",
                                    "abs_eigen", "normalize", "P_type", "precision",
                                    "order_type", "varimax_type", "k"))
 
-  expect_equal(efa_cor$settings$method, "PAF")
-  expect_equal(efa_raw$settings$method, "PAF")
-  expect_equal(efa_psych$settings$method, "PAF")
-  expect_equal(efa_spss$settings$method, "PAF")
-  expect_equal(efa_ml$settings$method, "ML")
-  expect_equal(efa_uls$settings$method, "ULS")
-  expect_equal(efa_equa$settings$method, "PAF")
-  expect_equal(efa_quart$settings$method, "PAF")
-  expect_equal(efa_none$settings$method, "PAF")
+  expect_equal(efa_cor$settings$estimator, "PAF")
+  expect_equal(efa_raw$settings$estimator, "PAF")
+  expect_equal(efa_psych$settings$estimator, "PAF")
+  expect_equal(efa_spss$settings$estimator, "PAF")
+  expect_equal(efa_ml$settings$estimator, "ML")
+  expect_equal(efa_uls$settings$estimator, "ULS")
+  expect_equal(efa_equa$settings$estimator, "PAF")
+  expect_equal(efa_quart$settings$estimator, "PAF")
+  expect_equal(efa_none$settings$estimator, "PAF")
 
   expect_equal(efa_cor$settings$rotation, "none")
   expect_equal(efa_raw$settings$rotation, "none")

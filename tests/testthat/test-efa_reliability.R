@@ -3,7 +3,7 @@
 
 efa_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
                type = "EFAtools", method = "PAF", rotation = "promax")
-sl_mod <- efa_schmid_leiman(efa_mod, estimate_control = estimate_control(type = "EFAtools"), method = "PAF")
+sl_mod <- efa_schmid_leiman(efa_mod, estimate_control = estimate_control(type = "EFAtools"), estimator = "PAF")
 fc <- sl_mod$sl[, c("F1", "F2", "F3")] >= .2
 
 test_that("efa_reliability wires the SL adapter, core, and result builder together", {

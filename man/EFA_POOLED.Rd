@@ -57,7 +57,7 @@ for fixed-target alignment.}
 off-diagonal residual correlations. If \code{FALSE}, use the full off-diagonal
 matrix.}
 
-\item{...}{Additional arguments passed to \code{\link[=efa_fit]{efa_fit()}} (e.g. \code{method}, \code{rotation}, \code{se},
+\item{...}{Additional arguments passed to \code{\link[=efa_fit]{efa_fit()}} (e.g. \code{estimator}, \code{rotation}, \code{se},
 \code{n_factors}, \code{N}). These select the estimator, rotation, standard-error method, and
 fit indices used for every imputation; see \code{\link[=efa_fit]{efa_fit()}} for the available options, their
 properties, and which combinations are valid.}

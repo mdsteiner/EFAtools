@@ -43,10 +43,9 @@ data.}
 correlation matrix is used. If input is a correlation matrix and \code{N} = NA
 (default), not all fit indices can be computed.}
 
-\item{method}{character vector. Any combination of  "PAF", "ML", and "ULS",
-to use principal axis factoring, maximum likelihood, or unweighted least
-squares, respectively, to fit the EFAs. "MINRES" is accepted as a synonym for
-"ULS" (the same estimator). Default is "PAF".}
+\item{method}{character vector. Any combination of \code{"PAF"}, \code{"ML"}, and \code{"ULS"},
+the estimators to average across; passed to \code{\link[=efa_average]{efa_average()}} as its \code{estimator}
+argument. Default is \code{"PAF"}.}
 
 \item{rotation}{character vector. Either perform no rotation ("none"),
 any combination of orthogonal rotations ("varimax", "equamax", "quartimax", "geominT",

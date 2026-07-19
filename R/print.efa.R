@@ -74,7 +74,7 @@
 #'
 #' @examples
 #' mod <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
-#'                method = "PAF", rotation = "promax")
+#'                estimator = "PAF", rotation = "promax")
 #' mod
 #'
 #' # The full diagnostics, CI tables, and residual diagnostics:
@@ -311,10 +311,9 @@ format.summary.efa <- function(x, ...) {
   is_pooled <- inherits(x, "EFA_POOLED") || isTRUE(settings$pooled)
 
   list(
-    method = settings$method,
+    estimator = settings$estimator,
     rotation = settings$rotation,
     rotation_diagnostics = settings$rotation_diagnostics,
-    type = settings$type,
     cor_method = settings$cor_method,
     se = se,
     N = settings$N,
@@ -347,9 +346,8 @@ format.summary.efa <- function(x, ...) {
     # Emitted verbatim (not via cli_text) so the "setting = 'value'" tokens are never split
     # across a line break; the bold values therefore use style_bold() rather than {.strong}.
     cli::cli_verbatim(paste0(
-      "EFA performed with type = '", cli::style_bold(spec$type),
-      "', method = '", cli::style_bold(spec$method),
-      "', and rotation = '", cli::style_bold(spec$rotation), "'."
+      "EFA performed with estimator = '", cli::style_bold(spec$estimator),
+      "' and rotation = '", cli::style_bold(spec$rotation), "'."
     ))
   }
 
@@ -362,7 +360,7 @@ format.summary.efa <- function(x, ...) {
 
   if (.efa_iteration_nonconvergence(spec)) {
     cli::cli_text("")
-    cli::cli_alert_danger(.efa_nonconvergence_banner(spec$method))
+    cli::cli_alert_danger(.efa_nonconvergence_banner(spec$estimator))
   }
 
   invisible(NULL)
@@ -380,9 +378,9 @@ format.summary.efa <- function(x, ...) {
 
   # Verbatim, for the same reason as the unpooled header above.
   cli::cli_verbatim(paste0(
-    "Pooled EFA", across, " performed with type = '", cli::style_bold(spec$type),
-    "', method = '", cli::style_bold(spec$method),
-    "', and rotation = '", cli::style_bold(spec$rotation), "'."
+    "Pooled EFA", across, " performed with estimator = '",
+    cli::style_bold(spec$estimator),
+    "' and rotation = '", cli::style_bold(spec$rotation), "'."
   ))
 
   pooling_settings <- .efa_pooled_settings_text(spec)
@@ -644,12 +642,12 @@ format.summary.efa <- function(x, ...) {
   }
   is_finite_fit <- function(key) is.finite(.efa_fit_scalar(fit, key))
 
-  method <- .efa_setting_text(spec$method)
+  estimator <- .efa_setting_text(spec$estimator)
   df <- .efa_fit_scalar(fit, "df")
   chi <- .efa_fit_scalar(fit, "chi")
   p_chi <- .efa_fit_scalar(fit, "p_chi")
 
-  if (identical(method, "PAF") || .efa_is_missing_number(spec$N) ||
+  if (identical(estimator, "PAF") || .efa_is_missing_number(spec$N) ||
       !is.finite(chi) || !is.finite(df)) {
     lines <- fit_line("CAF", "CAF")
     if (is_finite_fit("SRMR")) {
@@ -1483,8 +1481,8 @@ format.summary.efa <- function(x, ...) {
 # print.efa_schmid_leiman()).
 # PAF non-convergence always means the iteration cap was hit; the optimiser-based
 # estimators report a convergence code that need not be an iteration limit.
-.efa_nonconvergence_banner <- function(method) {
-  if (identical(method, "PAF")) {
+.efa_nonconvergence_banner <- function(estimator) {
+  if (identical(estimator, "PAF")) {
     "Maximum number of iterations reached without convergence"
   } else {
     "The optimiser did not converge"

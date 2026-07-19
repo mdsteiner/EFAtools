@@ -15,11 +15,11 @@
 #' (default), not all fit indices can be computed. When raw data with missing
 #' values are entered and `use` is `"complete.obs"` or `"na.or.complete"`, rows
 #' are deleted listwise, so `N` is taken as the number of complete cases.
-#' @param method character. The estimator used to fit the EFA: "PAF" (principal axis
+#' @param estimator character. The estimator used to fit the EFA: "PAF" (principal axis
 #' factoring), "ML" (maximum likelihood), "ULS" (unweighted least squares; "MINRES" is an
 #' accepted alias returning identical results), or "DWLS" (diagonally weighted least
 #' squares, for ordinal data). See the *Estimators* section in Details for their
-#' properties and data requirements.
+#' properties and data requirements. The value is matched case-insensitively.
 #' @param rotation character. Either perform no rotation ("none"; default),
 #' an orthogonal rotation ("varimax", "equamax", "quartimax", "geominT",
 #' "bentlerT", or "bifactorT"), or an oblique rotation ("promax", "oblimin",
@@ -66,14 +66,16 @@
 #'  workers (see Details); the caller's random-number stream is restored afterwards,
 #'  so supplying a seed leaves no lasting effect on it. Default is `NULL`, which uses
 #'  (and advances) the current state of the generator.
-#' @param ... Additional arguments forwarded to the rotation procedure (for example
-#'  `maxit` for the maximum number of iterations, or a criterion-specific `gam` / `delta`).
-#'  They are merged with, and take precedence over, the extra arguments stored in
-#'  `rotate_control()`. An estimation or rotation tuning knob (such as `type`, `max_iter`,
-#'  or `k`) is *not* accepted here: it belongs to [estimate_control()] or
-#'  [rotate_control()], and passing it directly is an error rather than a setting that is
-#'  silently ignored. With `rotation = "none"` the dots must be empty, as no rotation
-#'  engine runs to consume them.
+#' @param ... Additional arguments forwarded to the rotation engine. Only the arguments the
+#'  selected `rotation` consumes are accepted: `maxit` (the maximum number of engine
+#'  iterations) for the GPArotation-style rotations, plus the selected criterion's parameter
+#'  (`gam` for "oblimin", `delta` for "geominT" and "geominQ"). Anything else -- a misspelled
+#'  name, another criterion's parameter, or any extra with "varimax", "promax", or "none",
+#'  which consume no extras -- is an error rather than a setting that is silently ignored.
+#'  The accepted arguments are merged with, and take precedence over, the extra arguments
+#'  stored in `rotate_control()`. An estimation or rotation tuning knob (such as `type`,
+#'  `max_iter`, or `k`) is likewise *not* accepted here: it belongs to [estimate_control()]
+#'  or [rotate_control()].
 #'
 #' @details There are two main ways to use this function. The easiest way is to
 #' use it with a specified `type` (see above), which sets most of the other
@@ -85,7 +87,7 @@
 #'
 #' ## Estimators
 #'
-#' The estimator is chosen with `method`.
+#' The estimator is chosen with `estimator`.
 #'
 #' - **PAF** (principal axis factoring) iteratively estimates the communalities and makes
 #'   no distributional assumptions, which makes it robust and a good general-purpose
@@ -137,8 +139,8 @@
 #'   estimates are not expected to match the latter. The model fit indices are corrected
 #'   two-stage statistics (see *Fit indices*). `"fiml"` uses every case and handles the
 #'   missingness itself, so `use` is ignored; it supplies a continuous (Pearson-type)
-#'   correlation only and is therefore not compatible with `method = "DWLS"`. Standard
-#'   errors are available analytically for `method = "ML"` or `"ULS"` and, for any method,
+#'   correlation only and is therefore not compatible with `estimator = "DWLS"`. Standard
+#'   errors are available analytically for `estimator = "ML"` or `"ULS"` and, for any estimator,
 #'   by the non-parametric bootstrap (see *Standard errors*). For multiply imputed data,
 #'   [efa_mi()] is the alternative route to handling missingness.
 #'
@@ -198,7 +200,7 @@
 #' - **"none"** (default) computes no standard errors.
 #' - **"information"** returns analytic standard errors from the expected (Fisher)
 #'   information matrix of the maximum-likelihood solution, and therefore requires
-#'   `method = "ML"`. The rotated standard errors are obtained by propagating the
+#'   `estimator = "ML"`. The rotated standard errors are obtained by propagating the
 #'   unrotated-loading covariance through the rotation by the delta method (Jennrich,
 #'   1973); because rotated quantities are identification-invariant they are directly
 #'   comparable across programs. Unlike the bootstrap it also works from a correlation
@@ -214,19 +216,19 @@
 #'   combining the estimator weight with an asymptotic-distribution-free covariance of the
 #'   correlations, so it stays valid under non-normality and weight misspecification
 #'   (Browne, 1984; Satorra & Bentler, 1994). It is available either for ordinal data with
-#'   `cor_method = "poly"` or `"tetra"` and `method` one of `"ML"`, `"ULS"`, or `"DWLS"`
+#'   `cor_method = "poly"` or `"tetra"` and `estimator` one of `"ML"`, `"ULS"`, or `"DWLS"`
 #'   (the meat is the polychoric / tetrachoric asymptotic covariance), or for continuous
-#'   data with `cor_method = "pearson"` and `method = "ML"` or `"ULS"` (the meat is the
+#'   data with `cor_method = "pearson"` and `estimator = "ML"` or `"ULS"` (the meat is the
 #'   fourth-moment ADF covariance of the sample correlations, the basis of the MLM / MLR
 #'   robust statistics). It reports the same standard errors as `"information"`, propagated
 #'   by the same delta method, and additionally fills the model fit's chi-square block with
 #'   a scaled (Satorra-Bentler / scaled-and-shifted) chi-square (see *Fit indices*).
 #'   Because the asymptotic covariance must describe the same cases as the correlation
-#'   matrix, the sandwich (like `method = "DWLS"`) is computed on the listwise-complete
+#'   matrix, the sandwich (like `estimator = "DWLS"`) is computed on the listwise-complete
 #'   cases; on data with missing values the reported `N`, the correlation matrix, and the
 #'   point estimate therefore reflect the complete cases regardless of `use`.
 #' - **"np-boot"** draws a non-parametric (case-resampling) bootstrap and needs raw data.
-#'   It is the most general method -- available for any `method`, `rotation`, and
+#'   It is the most general method -- available for any `estimator`, `rotation`, and
 #'   `cor_method` -- and the most robust to non-normality and misfit, at the cost of speed;
 #'   its intervals are bootstrap percentile intervals. The replicate fits are run across
 #'   replicates with the `future` framework. By default they run sequentially; to run them
@@ -240,12 +242,12 @@
 #' The analytic methods (`"information"` and `"sandwich"`) are not available with the
 #' `"promax"` or `"simplimax"` rotations, which have no usable analytic rotation Jacobian;
 #' use `"np-boot"` there. Under `cor_method = "fiml"`, `"information"` and `"sandwich"`
-#' instead return, for `method = "ML"` or `"ULS"`, the corrected two-stage (Yuan & Bentler,
+#' instead return, for `estimator = "ML"` or `"ULS"`, the corrected two-stage (Yuan & Bentler,
 #' 2000; Savalei & Bentler, 2009) sandwich standard errors, built on the saturated FIML
 #' asymptotic covariance with the estimator's own Stage-2 weight: the model is fitted to
 #' the EM-estimated correlation, so the naive Stage-2 standard errors (treating that
 #' correlation as complete data) are inconsistent under missingness and are not reported
-#' (`method = "PAF"` carries no Stage-2 weight, so use `se = "np-boot"` there).
+#' (`estimator = "PAF"` carries no Stage-2 weight, so use `se = "np-boot"` there).
 #'
 #' ## Fit indices
 #'
@@ -299,10 +301,10 @@
 #'
 #' Not every estimator, rotation, standard-error, and correlation method can be combined:
 #'
-#' - **Estimator and correlation method.** `method = "DWLS"` requires ordinal data with
+#' - **Estimator and correlation method.** `estimator = "DWLS"` requires ordinal data with
 #'   `cor_method = "poly"` or `"tetra"`. `cor_method = "fiml"` works with PAF, ML, and ULS
 #'   (not DWLS) and needs raw data with missing values.
-#' - **Standard errors.** `se = "information"` requires `method = "ML"` and can be computed
+#' - **Standard errors.** `se = "information"` requires `estimator = "ML"` and can be computed
 #'   from a correlation matrix when `N` is supplied. `se = "sandwich"` requires raw data,
 #'   with either a polychoric/tetrachoric `cor_method` (ML, ULS, or DWLS) or a Pearson
 #'   `cor_method` (ML or ULS); it is not available for PAF. Under `cor_method = "fiml"`,
@@ -537,7 +539,7 @@
 #'
 #' # ML estimation with oblimin rotation
 #' mod_oblimin <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
-#'                        method = "ML", rotation = "oblimin")
+#'                        estimator = "ML", rotation = "oblimin")
 #' mod_oblimin
 #' summary(mod_oblimin)
 #'
@@ -551,22 +553,22 @@
 #'
 #' # Analytic (expected-information) standard errors for the above
 #' ML_info <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
-#'                    method = "ML", rotation = "oblimin", se = "information")
+#'                    estimator = "ML", rotation = "oblimin", se = "information")
 #' ML_info
 #' summary(ML_info)
 #'
 #' \donttest{
 #' # Robust (sandwich) standard errors and a scaled chi-square for ordinal raw data.
-#' # These need a polychoric/tetrachoric correlation method and method ML, ULS, or DWLS.
+#' # These need a polychoric/tetrachoric correlation method and estimator ML, ULS, or DWLS.
 #' DWLS_rob <- efa_fit(DOSPERT_raw, n_factors = 6, cor_method = "poly",
-#'                     method = "DWLS", rotation = "oblimin", se = "sandwich")
+#'                     estimator = "DWLS", rotation = "oblimin", se = "sandwich")
 #' DWLS_rob
 #' summary(DWLS_rob)
 #'
 #' # The same robust SEs and scaled chi-square for continuous data: a Pearson
-#' # correlation with method ML or ULS (the fourth-moment ADF covariance).
+#' # correlation with estimator ML or ULS (the fourth-moment ADF covariance).
 #' ML_rob <- efa_fit(GRiPS_raw, n_factors = 1, cor_method = "pearson",
-#'                   method = "ML", rotation = "none", se = "sandwich")
+#'                   estimator = "ML", rotation = "none", se = "sandwich")
 #' ML_rob
 #' summary(ML_rob)
 #' }
@@ -577,7 +579,7 @@
 #' # random) and the standardized covariance is analysed.
 #' x_miss <- GRiPS_raw
 #' x_miss[cbind(1:20, 1)] <- NA
-#' efa_fiml <- efa_fit(x_miss, n_factors = 1, method = "ML", cor_method = "fiml")
+#' efa_fiml <- efa_fit(x_miss, n_factors = 1, estimator = "ML", cor_method = "fiml")
 #' efa_fiml
 #' }
 #'
@@ -585,13 +587,13 @@
 #' # Bootstrap standard errors from raw data, reproducible via a fixed seed and run
 #' # in parallel across replicates.
 #' future::plan(future::multisession, workers = 2)
-#' efa_boot <- efa_fit(GRiPS_raw, n_factors = 1, method = "PAF", rotation = "none",
+#' efa_boot <- efa_fit(GRiPS_raw, n_factors = 1, estimator = "PAF", rotation = "none",
 #'                     se = "np-boot", b_boot = 1000, seed = 42)
 #' future::plan(future::sequential)
 #' }
 #'
 efa_fit <- function(x, n_factors, N = NA,
-                    method = c("PAF", "ML", "ULS", "MINRES", "DWLS"),
+                    estimator = c("PAF", "ML", "ULS", "MINRES", "DWLS"),
                     rotation = c("none", "varimax", "equamax", "quartimax", "geominT",
                                  "bentlerT", "bifactorT", "promax", "oblimin",
                                  "quartimin", "simplimax", "bentlerQ", "geominQ",
@@ -616,36 +618,58 @@ efa_fit <- function(x, n_factors, N = NA,
   .reject_flat_knobs(...names())
   .assert_cor_input(x)
 
-  method <- match.arg(method)
+  estimator <- .match_arg_ci(estimator)
   # "MINRES" is a synonym for "ULS" (same estimator); resolve it once here so the
   # rest of efa_fit() and the reported settings use the single canonical name.
-  if (method == "MINRES") method <- "ULS"
-  rotation <- match.arg(rotation)
+  if (estimator == "MINRES") estimator <- "ULS"
+  rotation <- .match_arg_ci(rotation)
   se <- match.arg(se)
   np_boot <- se == "np-boot"
   use <- match.arg(use)
   cor_method <- match.arg(cor_method)
 
-  # The dots only carry extras for the rotation engine. With no rotation there is no engine,
-  # so nothing can consume them: a leftover dot is a misspelled argument (e.g.
-  # `estimate_controls = `) or a stray engine extra, and carrying it on would silently do
-  # nothing.
-  if (rotation == "none" && ...length() > 0L) {
+  # The dots only carry extras for the rotation engine, which reads them by exact name:
+  # `maxit` for the GPArotation-style engines, plus the selected criterion's parameter
+  # (`gam` for oblimin, `delta` for geomin). Any other dot -- a misspelled name (e.g.
+  # `gamma` for `gam`), another criterion's parameter, or any extra with varimax/promax,
+  # which take none -- would be silently dropped and the fit would quietly run the engine
+  # defaults instead, so it is rejected here. With no rotation there is no engine, so
+  # nothing can consume the dots at all.
+  if (...length() > 0L) {
+    allowed <- .rotation_dot_extras(rotation)
     nms <- ...names()
-    nms <- if (is.null(nms)) character(0) else nms[nzchar(nms)]
-    msg <- if (length(nms) > 0L) {
-      "{.arg {nms}} {?is/are} not used: with {.code rotation = \"none\"} no rotation engine
-       runs, so {.arg ...} must be empty."
-    } else {
-      "{.arg ...} must be empty with {.code rotation = \"none\"}: no rotation engine runs,
-       so the extra arguments are not used."
+    if (is.null(nms)) nms <- rep("", ...length())
+    bad <- unique(setdiff(nms[nzchar(nms)], allowed))
+    if (length(bad) > 0L || any(!nzchar(nms))) {
+      if (rotation == "none") {
+        msg <- if (length(bad) > 0L) {
+          "{.arg {bad}} {?is/are} not used: with {.code rotation = \"none\"} no rotation engine
+           runs, so {.arg ...} must be empty."
+        } else {
+          "{.arg ...} must be empty with {.code rotation = \"none\"}: no rotation engine runs,
+           so the extra arguments are not used."
+        }
+        info <- c("i" = "Check for a misspelled argument name (for example {.arg estimate_control}
+                         or {.arg rotate_control}).")
+      } else {
+        msg <- if (length(bad) > 0L) {
+          "{.arg {bad}} {?is/are} not consumed by the {.val {rotation}} rotation."
+        } else {
+          "The arguments in {.arg ...} must be named; the {.val {rotation}} rotation engine
+           reads its extras by exact name."
+        }
+        info <- c(
+          if (length(allowed) > 0L) {
+            c("i" = "The {.val {rotation}} rotation accepts {.arg {allowed}} through {.arg ...}.")
+          } else {
+            c("i" = "The {.val {rotation}} rotation takes no extra arguments through {.arg ...}.")
+          },
+          "i" = "Check for a misspelled engine argument; the rotation tuning knobs live in
+                 {.fn rotate_control}."
+        )
+      }
+      cli::cli_abort(c(msg, info), class = "efa_unused_dots")
     }
-    cli::cli_abort(
-      c(msg,
-        "i" = "Check for a misspelled argument name (for example {.arg estimate_control}
-               or {.arg rotate_control})."),
-      class = "efa_unused_dots"
-    )
   }
 
   .assert_estimate_control(estimate_control)
@@ -679,9 +703,9 @@ efa_fit <- function(x, n_factors, N = NA,
   random_starts <- rotate_control$random_starts
   rot_extra_args <- modifyList(rotate_control$extra_args, list(...))
 
-  if (is.na(start_method) && method == "ML") {
+  if (is.na(start_method) && estimator == "ML") {
     cli::cli_abort(
-      c("{.arg start_method} must be set when {.code method = \"ML\"}.",
+      c("{.arg start_method} must be set when {.code estimator = \"ML\"}.",
         "i" = "Set {.arg start_method} to {.val psych} or {.val factanal}."),
       class = "efa_ml_start_missing"
     )
@@ -708,22 +732,22 @@ efa_fit <- function(x, n_factors, N = NA,
         class = "efa_fiml_needs_raw"
       )
     }
-    if (method == "DWLS") {
+    if (estimator == "DWLS") {
       cli::cli_abort(
-        c("{.code method = \"DWLS\"} is not compatible with {.code cor_method = \"fiml\"}.",
+        c("{.code estimator = \"DWLS\"} is not compatible with {.code cor_method = \"fiml\"}.",
           "x" = "DWLS needs a polychoric asymptotic covariance, which the continuous FIML correlation does not provide.",
-          "i" = "Use {.code method = \"ML\"}, {.val ULS}, or {.val PAF}, or {.code cor_method = \"poly\"}/{.val tetra} for DWLS."),
+          "i" = "Use {.code estimator = \"ML\"}, {.val ULS}, or {.val PAF}, or {.code cor_method = \"poly\"}/{.val tetra} for DWLS."),
         class = "efa_fiml_unsupported_method"
       )
     }
     # The corrected two-stage sandwich (.se_fiml()) reuses the Stage-2 ML/ULS weight; PAF minimises
     # no discrepancy and so carries no weight for it, exactly as the polychoric/continuous sandwich
     # rejects PAF. Reject the analytic-SE request here (the bootstrap stays available for PAF).
-    if (se %in% c("information", "sandwich") && !(method %in% c("ML", "ULS"))) {
+    if (se %in% c("information", "sandwich") && !(estimator %in% c("ML", "ULS"))) {
       cli::cli_abort(
-        c("Analytic standard errors under {.code cor_method = \"fiml\"} require {.code method = \"ML\"} or {.val ULS}.",
-          "x" = "You requested {.code method = {.val {method}}}.",
-          "i" = "{.val PAF} minimises no discrepancy, so it has no weight for the two-stage sandwich; use {.code se = \"np-boot\"} for {.val {method}}."),
+        c("Analytic standard errors under {.code cor_method = \"fiml\"} require {.code estimator = \"ML\"} or {.val ULS}.",
+          "x" = "You requested {.code estimator = {.val {estimator}}}.",
+          "i" = "{.val PAF} minimises no discrepancy, so it has no weight for the two-stage sandwich; use {.code se = \"np-boot\"} for {.val {estimator}}."),
         class = "efa_se_unsupported"
       )
     }
@@ -739,20 +763,20 @@ efa_fit <- function(x, n_factors, N = NA,
   # Analytic standard errors cover only a subset of estimators and rotations. Reject the
   # unsupported combinations here, before any computation, with a clear pointer to the
   # bootstrap. Information-matrix SEs are derived from the ML discrepancy and so require
-  # method = "ML"; promax (a two-step target rotation) and simplimax (a non-smooth, piecewise
+  # estimator = "ML"; promax (a two-step target rotation) and simplimax (a non-smooth, piecewise
   # criterion) have no usable analytic rotation Jacobian; PAF has no discrepancy-based information
   # from which a sandwich could be built.
-  if (se == "information" && method != "ML" && cor_method != "fiml") {
+  if (se == "information" && estimator != "ML" && cor_method != "fiml") {
     cli::cli_abort(
-      c("{.code se = \"information\"} is only available for {.code method = \"ML\"}.",
-        "x" = "You requested {.code method = {.val {method}}}.",
-        "i" = "Use {.code se = \"np-boot\"} for {.val {method}}."),
+      c("{.code se = \"information\"} is only available for {.code estimator = \"ML\"}.",
+        "x" = "You requested {.code estimator = {.val {estimator}}}.",
+        "i" = "Use {.code se = \"np-boot\"} for {.val {estimator}}."),
       class = "efa_se_unsupported"
     )
   }
-  if (se == "sandwich" && method == "PAF" && cor_method != "fiml") {
+  if (se == "sandwich" && estimator == "PAF" && cor_method != "fiml") {
     cli::cli_abort(
-      c("{.code se = \"sandwich\"} is not available for {.code method = \"PAF\"}.",
+      c("{.code se = \"sandwich\"} is not available for {.code estimator = \"PAF\"}.",
         "i" = "Use {.code se = \"np-boot\"} for {.val PAF}."),
       class = "efa_se_unsupported"
     )
@@ -768,14 +792,14 @@ efa_fit <- function(x, n_factors, N = NA,
   # covariance of the correlations (the robust meat), so they require raw data (enforced once N
   # is resolved below) to estimate that covariance. Two paths supply it: the polychoric/
   # tetrachoric asymptotic covariance for ordinal data (any estimator), or the fourth-moment
-  # (Browne, 1984) covariance for continuous data with cor_method = "pearson" and method ML or
-  # ULS. Spearman/Kendall correlations and continuous DWLS have no such covariance.
+  # (Browne, 1984) covariance for continuous data with cor_method = "pearson" and estimator ML
+  # or ULS. Spearman/Kendall correlations and continuous DWLS have no such covariance.
   if (se == "sandwich" && cor_method != "fiml" && !.is_poly_cor(cor_method) &&
-      !(cor_method == "pearson" && method %in% c("ML", "ULS"))) {
+      !(cor_method == "pearson" && estimator %in% c("ML", "ULS"))) {
     cli::cli_abort(
       c("{.code se = \"sandwich\"} is not available for this correlation/estimator combination.",
-        "x" = "You requested {.code cor_method = {.val {cor_method}}} with {.code method = {.val {method}}}.",
-        "i" = "Use {.code cor_method = \"poly\"}/{.val tetra} (any estimator), or {.code cor_method = \"pearson\"} with {.code method = \"ML\"} or {.val ULS}; otherwise use {.code se = \"np-boot\"}."),
+        "x" = "You requested {.code cor_method = {.val {cor_method}}} with {.code estimator = {.val {estimator}}}.",
+        "i" = "Use {.code cor_method = \"poly\"}/{.val tetra} (any estimator), or {.code cor_method = \"pearson\"} with {.code estimator = \"ML\"} or {.val ULS}; otherwise use {.code se = \"np-boot\"}."),
       class = "efa_se_unsupported"
     )
   }
@@ -824,9 +848,9 @@ efa_fit <- function(x, n_factors, N = NA,
   # available from raw ordinal data with cor_method = "poly" or "tetra"; there is no
   # fallback to unit weights. Resolve this before any computation so an unsupported
   # request fails with a single clear error rather than downstream.
-  if (method == "DWLS" && !(.is_poly_cor(cor_method) && !is_cormat)) {
+  if (estimator == "DWLS" && !(.is_poly_cor(cor_method) && !is_cormat)) {
     cli::cli_abort(
-      c("{.code method = \"DWLS\"} requires a polychoric asymptotic covariance.",
+      c("{.code estimator = \"DWLS\"} requires a polychoric asymptotic covariance.",
         "x" = if (is_cormat) {
           "You supplied a correlation matrix, so no asymptotic covariance can be estimated."
         } else {
@@ -866,8 +890,8 @@ efa_fit <- function(x, n_factors, N = NA,
                              # there (the sandwich is rejected just below); requesting it would
                              # only draw a spurious "acov ignored" warning before that abort.
                              acov = if (se == "sandwich" && !is_cormat && cor_method != "fiml") "full"
-                                    else if (method == "DWLS") "diag" else "none",
-                             dwls = method == "DWLS",
+                                    else if (estimator == "DWLS") "diag" else "none",
+                             dwls = estimator == "DWLS",
                              check_singular = est_type != "psych",
                              posdef_abort = est_type == "SPSS")
   R <- prep$R
@@ -943,7 +967,7 @@ efa_fit <- function(x, n_factors, N = NA,
     # -- not all nrow(x) positions -- keeps each replicate's sample size equal to N.
     rows <- if (cor_method == "fiml") {
       which(rowSums(!is.na(x)) > 0L)
-    } else if (.is_listwise_use(use) || method == "DWLS") {
+    } else if (.is_listwise_use(use) || estimator == "DWLS") {
       which(stats::complete.cases(x))
     } else {
       seq_len(nrow(x))
@@ -957,7 +981,7 @@ efa_fit <- function(x, n_factors, N = NA,
     poly_cor <- .is_poly_cor(cor_method)
     tetra_cor <- cor_method == "tetra"
     fiml_cor <- cor_method == "fiml"
-    dwls <- method == "DWLS"
+    dwls <- estimator == "DWLS"
 
     # DWLS reweights each replicate by the inverse of its own polychoric asymptotic
     # variances, so the per-element weights are recomputed alongside the matrix and
@@ -1032,7 +1056,7 @@ efa_fit <- function(x, n_factors, N = NA,
     R_boot_array = if (isTRUE(np_boot)) R_boot_array else NULL,
     W_boot_array = if (isTRUE(np_boot)) W_boot_array else NULL,
     fiml = fiml_pt, fiml_boot = if (isTRUE(np_boot)) fiml_boot else NULL,
-    np_boot = np_boot, b_boot = b_boot, method = method, rotation = rotation,
+    np_boot = np_boot, b_boot = b_boot, estimator = estimator, rotation = rotation,
     type = est_type, rot_type = rot_type, n_factors = n_factors, se = se, ci = ci,
     use = use, cor_method = cor_method, max_iter = max_iter, init_comm = init_comm,
     criterion = criterion, criterion_type = criterion_type,
@@ -1065,7 +1089,7 @@ efa_fit <- function(x, n_factors, N = NA,
 .efa_core <- function(R, N, weights = NULL, Gamma = NULL,
                       R_boot_array = NULL, W_boot_array = NULL,
                       fiml = NULL, fiml_boot = NULL,
-                      np_boot = FALSE, b_boot = 1000, method, rotation, type,
+                      np_boot = FALSE, b_boot = 1000, estimator, rotation, type,
                       rot_type = type,
                       n_factors, se = "none", ci = .95,
                       use = "pairwise.complete.obs", cor_method = "pearson",
@@ -1099,15 +1123,15 @@ efa_fit <- function(x, n_factors, N = NA,
 
   }
 
-  # run factor analysis with respective fit method
+  # run factor analysis with the respective estimator
 
-  if (method %in% c("ML", "ULS", "DWLS")) {
+  if (estimator %in% c("ML", "ULS", "DWLS")) {
 
     if (type == "SPSS") {
 
       cli::cli_warn(
         c("Only {.val PAF} is validated against the SPSS implementation.",
-          "i" = "{.val {method}} results may differ from those returned by SPSS."),
+          "i" = "{.val {estimator}} results may differ from those returned by SPSS."),
         class = "efa_spss_method_untested"
       )
 
@@ -1125,7 +1149,7 @@ efa_fit <- function(x, n_factors, N = NA,
 
   }
 
-  fit_out <- .estimate_model(R, method = method, n_factors = n_factors, N = N,
+  fit_out <- .estimate_model(R, method = estimator, n_factors = n_factors, N = N,
                              type = type, max_iter = max_iter,
                              init_comm = init_comm, criterion = criterion,
                              criterion_type = criterion_type,
@@ -1153,9 +1177,9 @@ efa_fit <- function(x, n_factors, N = NA,
   # raises its own non-convergence warning from inside .PAF(). This fires once per
   # efa_fit() call; the bootstrap replicates suppress their per-fit warnings and are
   # tallied separately in .boot_fun().
-  if (method %in% c("ML", "ULS", "DWLS") && isTRUE(fit_out$convergence != 0)) {
+  if (estimator %in% c("ML", "ULS", "DWLS") && isTRUE(fit_out$convergence != 0)) {
     cli::cli_warn(
-      c("The {.val {method}} optimiser did not converge (convergence code {fit_out$convergence}).",
+      c("The {.val {estimator}} optimiser did not converge (convergence code {fit_out$convergence}).",
         "i" = paste("It stopped before meeting the convergence tolerance (typically the maximum",
                     "number of iterations was reached); the results may not be interpretable.")),
       class = "efa_nonconvergence"
@@ -1168,7 +1192,7 @@ efa_fit <- function(x, n_factors, N = NA,
 
     boot_fits <- .boot_fun(R_boot_array, b_boot, .estimate_model,
                            # .estimate_model arguments:
-                           method = method, n_factors = n_factors, N = N,
+                           method = estimator, n_factors = n_factors, N = N,
                            type = type, max_iter = max_iter,
                            init_comm = init_comm, criterion = criterion,
                            criterion_type = criterion_type,
@@ -1215,7 +1239,7 @@ efa_fit <- function(x, n_factors, N = NA,
 
   if (rotation != "none"){
 
-    if(method %in% c("ULS", "DWLS")){
+    if(estimator %in% c("ULS", "DWLS")){
 
       settings <- rot_out$settings
       output <- c(fit_out, within(rot_out, rm(settings)),
@@ -1233,7 +1257,10 @@ efa_fit <- function(x, n_factors, N = NA,
 
   # Add settings used to output
   settings_EFA <- list(
-    method = method,
+    estimator = estimator,
+    # back-compat alias: the output settings keep the former field name alongside the
+    # current one, as they do for the frozen P_type/randomStarts rotate keys
+    method = estimator,
     rotation = rotation,
     type = type,
     n_factors = n_factors,
@@ -1245,7 +1272,7 @@ efa_fit <- function(x, n_factors, N = NA,
     ci = ci
   )
 
-  if(method %in% c("ULS", "DWLS") & rotation == "none"){
+  if(estimator %in% c("ULS", "DWLS") & rotation == "none"){
 
     output <- c(output, settings = list(settings_EFA))
 
@@ -1291,7 +1318,7 @@ efa_fit <- function(x, n_factors, N = NA,
     boot_out <- .compute_se_ci(fit_out, L_rot, se_method = se,
                                boot_fits = boot_fits, boot_rot = boot_rot,
                                ci = ci, b = b_boot, N = N, rot_info = rot_info,
-                               gamma = Gamma, method = method, fiml = fiml)
+                               gamma = Gamma, method = estimator, fiml = fiml)
     # The sandwich also returns the robust scaled chi-square block; it is patched into the
     # fit indices below rather than carried in the SE schema, so strip it before merging.
     scaled_test <- boot_out$scaled_test

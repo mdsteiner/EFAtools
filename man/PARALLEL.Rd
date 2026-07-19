@@ -65,8 +65,8 @@ one and thus tends to retain more factors than the more conservative
 \code{eigen_type}. Default is 1.}
 
 \item{...}{Additional arguments passed to \code{\link[=efa_fit]{efa_fit()}}. For example,
-the extraction method can be changed here (default is "PAF"). PAF is more
-robust, but it will take longer compared to the other estimation methods
+\code{estimator}, to change the estimator (default is "PAF"). PAF is more
+robust, but it will take longer compared to the other estimators
 available ("ML" and "ULS"). The estimation tuning knobs are not passed here; they live in
 \code{estimate_control}.}
 }

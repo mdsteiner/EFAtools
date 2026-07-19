@@ -9,7 +9,7 @@ p <- ncol(cmat)
 
 test_that("efa_group fits every group at a common k and returns an efa_group object", {
   bands <- list(a = cmat, b = cmat, c = cmat)
-  mg <- efa_group(bands, n_factors = 3, N = 500, rotation = "varimax", method = "PAF")
+  mg <- efa_group(bands, n_factors = 3, N = 500, rotation = "varimax", estimator = "PAF")
 
   expect_s3_class(mg, "efa_group")
   expect_length(mg$loadings, 3)
@@ -267,7 +267,7 @@ test_that("a bootstrap adds percentile CIs to the matched congruences", {
   g <- rep(c("g1", "g2"), length.out = nrow(GRiPS_raw))
   mg <- suppressMessages(suppressWarnings(
     efa_group(GRiPS_raw, groups = g, n_factors = 2, rotation = "varimax",
-              method = "PAF", b_boot = 60, seed = 2024)))
+              estimator = "PAF", b_boot = 60, seed = 2024)))
 
   cong <- mg$congruence
   expect_named(cong, c("matrices", "matched", "degenerate",
@@ -295,7 +295,7 @@ test_that("the bootstrap CIs bracket the point congruence", {
   g <- rep(c("g1", "g2"), length.out = nrow(GRiPS_raw))
   mg <- suppressMessages(suppressWarnings(
     efa_group(GRiPS_raw, groups = g, n_factors = 2, rotation = "varimax",
-              method = "PAF", b_boot = 300, seed = 2024)))
+              estimator = "PAF", b_boot = 300, seed = 2024)))
 
   pt <- mg$congruence$matched
   lo <- mg$congruence$matched_ci$lower
@@ -324,7 +324,7 @@ test_that("np-boot congruence CIs are reproducible at 1 vs 2 workers", {
   g <- rep(c("g1", "g2"), length.out = nrow(GRiPS_raw))
   run <- function() suppressMessages(suppressWarnings(
     efa_group(GRiPS_raw, groups = g, n_factors = 2, rotation = "varimax",
-              method = "PAF", b_boot = 12, seed = 2024)))
+              estimator = "PAF", b_boot = 12, seed = 2024)))
 
   future::plan(future::sequential)
   one <- run()
@@ -342,7 +342,7 @@ test_that("a supplied seed makes the CIs reproducible and restores the RNG", {
   g <- rep(c("g1", "g2"), length.out = nrow(GRiPS_raw))
   boot <- function() suppressMessages(suppressWarnings(
     efa_group(GRiPS_raw, groups = g, n_factors = 2, rotation = "varimax",
-              method = "PAF", b_boot = 30, seed = 99)))
+              estimator = "PAF", b_boot = 30, seed = 99)))
 
   set.seed(1)
   state_before <- get(".Random.seed", envir = globalenv(), inherits = FALSE)
@@ -581,7 +581,7 @@ test_that("a bootstrap fills the flag CIs and the point difference sits inside t
   g <- rep(c("g1", "g2"), length.out = nrow(GRiPS_raw))
   mg <- suppressMessages(suppressWarnings(
     efa_group(GRiPS_raw, groups = g, n_factors = 2, rotation = "promax",
-              method = "PAF", b_boot = 60, seed = 2024)))
+              estimator = "PAF", b_boot = 60, seed = 2024)))
 
   expect_identical(mg$settings$alignment, "reference")
 
@@ -662,7 +662,7 @@ test_that("the bootstrap congruence plot builds", {
   g <- rep(c("g1", "g2"), length.out = nrow(GRiPS_raw))
   mg <- suppressMessages(suppressWarnings(
     efa_group(GRiPS_raw, groups = g, n_factors = 2, rotation = "promax",
-              method = "PAF", b_boot = 30, seed = 7)))
+              estimator = "PAF", b_boot = 30, seed = 7)))
   # with a bootstrap the congruence plot carries a point-range (CI) layer; smoke only
   expect_s3_class(plot(mg, type = "congruence"), "ggplot")
   expect_s3_class(plot(mg, type = "differences"), "ggplot")

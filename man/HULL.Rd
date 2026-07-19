@@ -33,13 +33,12 @@ based on the dimensions of x.}
 the larger of this number and the number of factors suggested by \link{efa_parallel}
 is used as the upper bound \emph{J} of factors to extract in the Hull method.}
 
-\item{method}{character. The estimation method to use. One of  \code{"PAF"},
-\code{"ULS"}, or  \code{"ML"}, for principal axis factoring, unweighted
-least squares, and maximum likelihood, respectively.}
+\item{method}{character. The estimator to use; passed to \code{\link[=efa_hull]{efa_hull()}} as its
+\code{estimator} argument. One of \code{"PAF"}, \code{"ULS"}, or \code{"ML"}.}
 
 \item{gof}{character. The goodness of fit index to use. Either \code{"CAF"},
 \code{"CFI"}, or \code{"RMSEA"}, or any combination of them.
-If \code{method = "PAF"} is used, only
+With the \code{"PAF"} estimator, only
 the CAF can be used as goodness of fit index. For details on the CAF, see
 Lorenzo-Seva, Timmerman, and Kiers (2011).}
 

@@ -267,8 +267,8 @@
 #'
 #' ## Use with an output from the SL function, with type EFAtools
 #' efa_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
-#'                    method = "PAF", rotation = "promax")
-#' sl_mod <- efa_schmid_leiman(efa_mod, method = "PAF")
+#'                    estimator = "PAF", rotation = "promax")
+#' sl_mod <- efa_schmid_leiman(efa_mod, estimator = "PAF")
 #'
 #' # Two examples how to specify the indicator-to-factor correspondences:
 #'
@@ -297,8 +297,8 @@
 #' ## the same results as in the second example above.
 #'
 #' efa_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
-#'                    method = "PAF", rotation = "promax")
-#' sl_mod <- efa_schmid_leiman(efa_mod, method = "PAF")
+#'                    estimator = "PAF", rotation = "promax")
+#' sl_mod <- efa_schmid_leiman(efa_mod, estimator = "PAF")
 #'
 #' factor_corres <- matrix(c(rep(0, 12), rep(1, 6), rep(0, 6), rep(1, 6),
 #'                         rep(0, 6), rep(1, 6), rep(0, 12)), ncol = 3,

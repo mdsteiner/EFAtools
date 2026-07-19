@@ -2,7 +2,7 @@ scree_cor <- efa_scree(test_models$baseline$cormat)
 scree_cor_smc <- efa_scree(test_models$baseline$cormat, eigen_type = "SMC")
 scree_raw <- efa_scree(GRiPS_raw)
 # Check with an argument passed to "EFA"
-scree_efa_ml<- efa_scree(test_models$baseline$cormat, eigen_type = "EFA", method = "ML")
+scree_efa_ml<- efa_scree(test_models$baseline$cormat, eigen_type = "EFA", estimator = "ML")
 
 test_that("output class and dimensions are correct", {
   expect_s3_class(scree_cor, "efa_retention")

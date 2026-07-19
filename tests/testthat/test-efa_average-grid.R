@@ -1,4 +1,4 @@
-# Guards .build_avg_grid() against the previous explicit, per-(method, type)
+# Guards .build_avg_grid() against the previous explicit, per-(estimator, type)
 # construction of the efa_average implementation grid. `ref_build_avg_grid()` is
 # the earlier construction kept verbatim; the test asserts the current builder
 # produces a byte-identical grid (values, column types, and row names) for every
@@ -6,17 +6,17 @@
 # user arguments. Both implementations call the same .type_grid() helper, so any
 # difference can only come from the arguments assembled per cell.
 
-ref_build_avg_grid <- function(method, type, rotation, init_comm, criterion,
+ref_build_avg_grid <- function(estimator, type, rotation, init_comm, criterion,
                                criterion_type, abs_eigen, start_method, k_promax,
                                normalize, P_type, precision, varimax_type,
                                k_simplimax) {
 
   grid_list <- list()
 
-  if ("PAF" %in% method) {
+  if ("PAF" %in% estimator) {
 
     if ("EFAtools" %in% type) {
-      grid_list[["ftls_pf"]] <- .type_grid(method = "PAF", init_comm = "smc",
+      grid_list[["ftls_pf"]] <- .type_grid(estimator = "PAF", init_comm = "smc",
                                            criterion = 1e-3, criterion_type = "sum",
                                            abs_eigen = TRUE, start_method = NA,
                                            rotation = rotation, k_promax = 4,
@@ -27,7 +27,7 @@ ref_build_avg_grid <- function(method, type, rotation, init_comm, criterion,
     }
 
     if ("psych" %in% type) {
-      grid_list[["psch_pf"]] <- .type_grid(method = "PAF", init_comm = "smc",
+      grid_list[["psch_pf"]] <- .type_grid(estimator = "PAF", init_comm = "smc",
                                            criterion = 1e-3, criterion_type = "sum",
                                            abs_eigen = FALSE, start_method = NA,
                                            rotation = rotation, k_promax = 4,
@@ -38,7 +38,7 @@ ref_build_avg_grid <- function(method, type, rotation, init_comm, criterion,
     }
 
     if ("SPSS" %in% type) {
-      grid_list[["spss_pf"]] <- .type_grid(method = "PAF", init_comm = "smc",
+      grid_list[["spss_pf"]] <- .type_grid(estimator = "PAF", init_comm = "smc",
                                            criterion = 1e-3, criterion_type = "max_individual",
                                            abs_eigen = TRUE, start_method = NA,
                                            rotation = rotation, k_promax = 4,
@@ -50,7 +50,7 @@ ref_build_avg_grid <- function(method, type, rotation, init_comm, criterion,
 
     if ("none" %in% type) {
 
-        grid_list[["nn_pf"]] <- .type_grid(method = "PAF", init_comm = init_comm,
+        grid_list[["nn_pf"]] <- .type_grid(estimator = "PAF", init_comm = init_comm,
                                            criterion = criterion, criterion_type = criterion_type,
                                            abs_eigen = abs_eigen, start_method = NA,
                                            rotation = rotation, k_promax = k_promax,
@@ -61,10 +61,10 @@ ref_build_avg_grid <- function(method, type, rotation, init_comm, criterion,
     }
   }
 
-    if ("ML" %in% method) {
+    if ("ML" %in% estimator) {
 
       if ("EFAtools" %in% type) {
-        grid_list[["ftls_ml"]] <- .type_grid(method = "ML", init_comm = NA,
+        grid_list[["ftls_ml"]] <- .type_grid(estimator = "ML", init_comm = NA,
                                              criterion = NA, criterion_type = NA,
                                              abs_eigen = NA, start_method = "psych",
                                              rotation = rotation, k_promax = 4,
@@ -75,7 +75,7 @@ ref_build_avg_grid <- function(method, type, rotation, init_comm, criterion,
       }
 
       if ("psych" %in% type) {
-        grid_list[["psch_ml"]] <- .type_grid(method = "ML", init_comm = NA,
+        grid_list[["psch_ml"]] <- .type_grid(estimator = "ML", init_comm = NA,
                                              criterion = NA, criterion_type = NA,
                                              abs_eigen = NA, start_method = "psych",
                                              rotation = rotation, k_promax = 4,
@@ -86,7 +86,7 @@ ref_build_avg_grid <- function(method, type, rotation, init_comm, criterion,
       }
 
       if ("SPSS" %in% type) {
-        grid_list[["spss_ml"]] <- .type_grid(method = "ML", init_comm = NA,
+        grid_list[["spss_ml"]] <- .type_grid(estimator = "ML", init_comm = NA,
                                              criterion = NA, criterion_type = NA,
                                              abs_eigen = NA, start_method = "psych",
                                              rotation = rotation, k_promax = 4,
@@ -97,7 +97,7 @@ ref_build_avg_grid <- function(method, type, rotation, init_comm, criterion,
       }
 
       if ("none" %in% type) {
-          grid_list[["nn_ml"]] <- .type_grid(method = "ML", init_comm = NA,
+          grid_list[["nn_ml"]] <- .type_grid(estimator = "ML", init_comm = NA,
                                              criterion = NA, criterion_type = NA,
                                              abs_eigen = NA, start_method = start_method,
                                              rotation = rotation, k_promax = k_promax,
@@ -109,10 +109,10 @@ ref_build_avg_grid <- function(method, type, rotation, init_comm, criterion,
       }
     }
 
-      if ("ULS" %in% method) {
+      if ("ULS" %in% estimator) {
 
         if ("EFAtools" %in% type) {
-          grid_list[["ftls_ls"]] <- .type_grid(method = "ULS", init_comm = NA,
+          grid_list[["ftls_ls"]] <- .type_grid(estimator = "ULS", init_comm = NA,
                                                criterion = NA, criterion_type = NA,
                                                abs_eigen = NA, start_method = NA,
                                                rotation = rotation, k_promax = 4,
@@ -123,7 +123,7 @@ ref_build_avg_grid <- function(method, type, rotation, init_comm, criterion,
         }
 
         if ("psych" %in% type) {
-          grid_list[["psch_ls"]] <- .type_grid(method = "ULS", init_comm = NA,
+          grid_list[["psch_ls"]] <- .type_grid(estimator = "ULS", init_comm = NA,
                                                criterion = NA, criterion_type = NA,
                                                abs_eigen = NA, start_method = NA,
                                                rotation = rotation, k_promax = 4,
@@ -134,7 +134,7 @@ ref_build_avg_grid <- function(method, type, rotation, init_comm, criterion,
         }
 
         if ("SPSS" %in% type) {
-          grid_list[["spss_ls"]] <- .type_grid(method = "ULS", init_comm = NA,
+          grid_list[["spss_ls"]] <- .type_grid(estimator = "ULS", init_comm = NA,
                                                criterion = NA, criterion_type = NA,
                                                abs_eigen = NA, start_method = NA,
                                                rotation = rotation, k_promax = 4,
@@ -146,7 +146,7 @@ ref_build_avg_grid <- function(method, type, rotation, init_comm, criterion,
 
         if ("none" %in% type) {
 
-            grid_list[["nn_ls"]] <- .type_grid(method = "ULS", init_comm = NA,
+            grid_list[["nn_ls"]] <- .type_grid(estimator = "ULS", init_comm = NA,
                                                criterion = NA, criterion_type = NA,
                                                abs_eigen = NA, start_method = NA,
                                                rotation = rotation, k_promax = k_promax,
@@ -163,7 +163,7 @@ ref_build_avg_grid <- function(method, type, rotation, init_comm, criterion,
 
 test_that(".build_avg_grid reproduces the original grid construction", {
 
-  method_sets <- list("PAF", "ML", "ULS", c("PAF", "ML", "ULS"))
+  estimator_sets <- list("PAF", "ML", "ULS", c("PAF", "ML", "ULS"))
   type_sets   <- list("EFAtools", "psych", "SPSS", "none",
                       c("EFAtools", "psych", "SPSS", "none"))
   # Each set is a single rotation kind (none / oblique / orthogonal), as required.
@@ -176,10 +176,10 @@ test_that(".build_avg_grid reproduces the original grid construction", {
                     normalize = TRUE, P_type = "norm", precision = 1e-5,
                     varimax_type = "kaiser", k_simplimax = 1e-6)
 
-  for (mm in method_sets) {
+  for (mm in estimator_sets) {
     for (tt in type_sets) {
       for (rr in rot_sets) {
-        args <- c(list(method = mm, type = tt, rotation = rr), base_args)
+        args <- c(list(estimator = mm, type = tt, rotation = rr), base_args)
         desc <- paste(paste(mm, collapse = "+"), "|", paste(tt, collapse = "+"),
                       "|", paste(rr, collapse = "+"))
         expect_equal(do.call(.build_avg_grid, args),
@@ -190,7 +190,7 @@ test_that(".build_avg_grid reproduces the original grid construction", {
 
   # Vector-valued user arguments are only forwarded by type "none"; they must
   # expand to the same multi-row grid through both implementations.
-  vec_args <- list(method = c("PAF", "ML", "ULS"), type = "none",
+  vec_args <- list(estimator = c("PAF", "ML", "ULS"), type = "none",
                    rotation = c("oblimin", "geominQ"),
                    init_comm = c("smc", "mac"), criterion = c(1e-3, 1e-4),
                    criterion_type = "sum", abs_eigen = TRUE,

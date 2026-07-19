@@ -952,7 +952,10 @@ test_that("model error is reproducible and shared across replicates", {
                     target_rmsea = 0.05, n_datasets = 2, seed = 7)
   b <- efa_simulate(N = 150, Lambda = Lambda_me, Phi = Phi_me,
                     target_rmsea = 0.05, n_datasets = 2, seed = 7)
-  expect_identical(a, b)
+  # Compared numerically rather than bit for bit: every step from the population
+  # perturbation to the draw runs through the BLAS, and a threaded BLAS need not return
+  # identical bits for two identical calls within one session.
+  expect_equal(a, b)
   # One population perturbation is shared by all replicates, which still differ.
   expect_equal(a$model_error$rmsea, 0.05, tolerance = 1e-6)
   expect_false(isTRUE(all.equal(a$data[[1]], a$data[[2]])))

@@ -39,9 +39,10 @@ correlations. If \code{"CD"} is included as a criterion, x must be raw
 data.}
 
 \item{criteria}{character. A vector with the factor retention methods to
-perform. Possible inputs are: \code{"CD"}, \code{"EKC"}, \code{"HULL"},
-\code{"KGC"}, \code{"MAP"}, \code{"NEST"},\code{"PARALLEL"}, \code{"SCREE"}, and \code{"SMT"}
-(see details). By default, a subset of often used, well-performing methods are performed.}
+perform. Possible inputs are: \code{"CD"}, \code{"EKC"}, \code{"HULL"}, \code{"KGC"}, \code{"MAP"},
+\code{"NEST"}, \code{"PARALLEL"}, \code{"SCREE"}, and \code{"SMT"} (see the details in
+\code{\link[=efa_retain]{efa_retain()}}). By default, a subset of often used, well-performing
+methods are performed.}
 
 \item{suitability}{logical. Whether the data should be checked for suitability
 for factor analysis using the Bartlett's test of sphericity and the
@@ -86,16 +87,13 @@ Default is 50.}
 of factors to retain. The maximum of this number and the number of factors
 suggested by \code{\link[=efa_parallel]{efa_parallel()}} plus one will be used in the Hull method.}
 
-\item{method}{character. Passed to \code{\link[=efa_fit]{efa_fit()}} in \code{\link[=efa_hull]{efa_hull()}},
-\code{\link[=efa_kgc]{efa_kgc()}}, \code{\link[=efa_scree]{efa_scree()}}, \code{\link[=efa_parallel]{efa_parallel()}}, and \code{\link[=efa_nest]{efa_nest()}}. The
-estimation method to use. One of  \code{"PAF"}, \code{"ULS"}, or  \code{"ML"},
-for principal axis factoring, unweighted least squares, and maximum
-likelihood, respectively. In \code{\link[=efa_kgc]{efa_kgc()}}, \code{\link[=efa_scree]{efa_scree()}}, and \code{\link[=efa_parallel]{efa_parallel()}} it only
-takes effect when the respective \code{eigen_type} includes \code{"EFA"}.}
+\item{method}{character. The estimator to use in the criteria that fit EFA models;
+passed to \code{\link[=efa_retain]{efa_retain()}} as its \code{estimator} argument. One of \code{"ML"}, \code{"PAF"}, or
+\code{"ULS"}.}
 
 \item{gof}{character. Passed to \code{\link[=efa_hull]{efa_hull()}}. The goodness of fit index
 to use. Either \code{"CAF"}, \code{"CFI"}, or \code{"RMSEA"}, or any
-combination of them. If \code{method = "PAF"} is used, only
+combination of them. With the \code{"PAF"} estimator, only
 the CAF can be used as goodness of fit index. For details on the CAF, see
 Lorenzo-Seva, Timmerman, and Kiers (2011).}
 

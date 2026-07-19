@@ -4,7 +4,7 @@
       print(efa)
     Output
       
-      EFA performed with type = 'EFAtools', method = 'ML', and rotation = 'none'.
+      EFA performed with estimator = 'ML' and rotation = 'none'.
       Correlations: FIML (two-stage, missing data)
       
       -- Unrotated Loadings ----------------------------------------------------------

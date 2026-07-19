@@ -36,7 +36,7 @@ narrow, the table is split into stacked column blocks so the output stays readab
 }
 \examples{
 EFA_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
-                   method = "PAF", rotation = "promax")
-efa_schmid_leiman(EFA_mod, method = "PAF")
+                   estimator = "PAF", rotation = "promax")
+efa_schmid_leiman(EFA_mod, estimator = "PAF")
 
 }

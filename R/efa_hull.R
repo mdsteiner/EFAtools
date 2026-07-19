@@ -12,12 +12,13 @@
 #' @param n_fac_theor numeric. Theoretical number of factors to retain. One plus
 #'   the larger of this number and the number of factors suggested by [efa_parallel]
 #'   is used as the upper bound *J* of factors to extract in the Hull method.
-#' @param method character. The estimation method to use. One of  `"PAF"`,
+#' @param estimator character. The estimator to use. One of  `"PAF"`,
 #'    `"ULS"`, or  `"ML"`, for principal axis factoring, unweighted
-#'    least squares, and maximum likelihood, respectively.
+#'    least squares, and maximum likelihood, respectively. The value is matched
+#'    case-insensitively.
 #' @param gof character. The goodness of fit index to use. Either `"CAF"`,
 #'   `"CFI"`, or `"RMSEA"`, or any combination of them.
-#'   If `method = "PAF"` is used, only
+#'   With the `"PAF"` estimator, only
 #'   the CAF can be used as goodness of fit index. For details on the CAF, see
 #'   Lorenzo-Seva, Timmerman, and Kiers (2011).
 #' @param eigen_type character. On what the eigenvalues should be found in the
@@ -104,10 +105,10 @@
 #' efa_hull(test_models$baseline$cormat, N = 500, gof = "CAF")
 #'
 #' # using ML with all available fit indices (CAF, CFI, and RMSEA)
-#' efa_hull(test_models$baseline$cormat, N = 500, method = "ML")
+#' efa_hull(test_models$baseline$cormat, N = 500, estimator = "ML")
 #'
 #' # using ULS with only RMSEA
-#' efa_hull(test_models$baseline$cormat, N = 500, method = "ULS", gof = "RMSEA")
+#' efa_hull(test_models$baseline$cormat, N = 500, estimator = "ULS", gof = "RMSEA")
 #'}
 #'
 #'\dontrun{
@@ -117,7 +118,7 @@
 #' efa_hull(test_models$baseline$cormat, N = 500, gof = "CAF")
 #' }
 efa_hull <- function(x, N = NA, n_fac_theor = NA,
-                 method = c("PAF", "ULS", "ML"), gof = c("CAF", "CFI", "RMSEA"),
+                 estimator = c("PAF", "ULS", "ML"), gof = c("CAF", "CFI", "RMSEA"),
                  eigen_type = c("SMC", "PCA", "EFA"),
                  use = c("pairwise.complete.obs", "all.obs", "complete.obs",
                          "everything", "na.or.complete"),
@@ -130,15 +131,15 @@ efa_hull <- function(x, N = NA, n_fac_theor = NA,
   .reject_flat_knobs(...names(), fn = "efa_hull")
   .assert_cor_input(x)
 
-  method <- match.arg(method)
+  estimator <- .match_arg_ci(estimator)
   use <- match.arg(use)
   cor_method <- match.arg(cor_method)
   # The Hull method derives its factor-search bound from an internal parallel
   # analysis, whose reference data are continuous; poly/tetra are therefore not
   # supported, consistent with PARALLEL/NEST/CD.
   .reject_poly_reference(cor_method, "HULL")
-  gof <- match.arg(gof, several.ok = TRUE)
-  eigen_type <- match.arg(eigen_type)
+  gof <- .match_arg_ci(gof, several.ok = TRUE)
+  eigen_type <- .match_arg_ci(eigen_type)
   checkmate::assert_count(n_fac_theor, na.ok = TRUE)
   checkmate::assert_count(N, na.ok = TRUE)
   decision_rule <- match.arg(decision_rule)
@@ -155,8 +156,11 @@ efa_hull <- function(x, N = NA, n_fac_theor = NA,
     )
   }
 
-  if (method == "PAF" && !all(gof == "CAF")) {
-    cli::cli_alert_info(cli::col_cyan('Only CAF can be used as gof if method "PAF" is used. Setting gof to "CAF"\n'))
+  if (estimator == "PAF" && !all(gof == "CAF")) {
+    cli::cli_inform(
+      c("i" = 'Only CAF can be used as gof if estimator "PAF" is used. Setting gof to "CAF"'),
+      class = "efa_hull_gof_caf"
+    )
     gof <- "CAF"
   }
 
@@ -171,7 +175,7 @@ efa_hull <- function(x, N = NA, n_fac_theor = NA,
   m <- ncol(R)
 
   # 1) perform parallel analysis to find J as n_fac_theor + 1
-  par_res <- efa_parallel(R, N = N, eigen_type = eigen_type, method = method,
+  par_res <- efa_parallel(R, N = N, eigen_type = eigen_type, estimator = estimator,
                       n_datasets = n_datasets, percent = percent,
                       decision_rule = decision_rule, n_factors = n_factors,
                       estimate_control = estimate_control, ...)
@@ -257,13 +261,13 @@ efa_hull <- function(x, N = NA, n_fac_theor = NA,
   # Calculate loadings with the EFA function
   loadings <- suppressWarnings(future.apply::future_lapply(seq_len(J), efa_fit,
                                                            x = R,
-                                                           method = method,
+                                                           estimator = estimator,
                                                            N = N,
                                                            estimate_control = estimate_control,
                                                            ...,
                                                            future.seed = FALSE))
 
-  # then for 1 to J factors. method == "PAF" forces gof to "CAF" above, so the
+  # then for 1 to J factors. estimator == "PAF" forces gof to "CAF" above, so the
   # gof-keyed blocks already cover it; the df is the same for every index (Eq 4
   # gives the free parameters, and the difference in df equals the difference in
   # free parameters).
@@ -354,14 +358,16 @@ efa_hull <- function(x, N = NA, n_fac_theor = NA,
     "HULL",
     results = unname(results),
     settings = list(N = N,
-                    method = method,
+                    estimator = estimator,
+                    # back-compat alias, as for the frozen P_type key
+                    method = estimator,
                     gof = gof,
                     n_fac_theor = n_fac_theor,
                     eigen_type = eigen_type,
                     use = use,
                     cor_method = cor_method,
                     n_fac_max = J),
-    subtitle = paste0("Estimation method: ", method)
+    subtitle = paste0("Estimation method: ", estimator)
   )
 
   out$n_fac_CAF <- unname(out$n_factors["CAF"])

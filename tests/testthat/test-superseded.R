@@ -19,25 +19,25 @@
 test_that("EFA() and efa_fit() return byte-identical objects", {
   cormat <- test_models$baseline$cormat
   combos <- expand.grid(
-    method = c("PAF", "ML", "ULS"),
+    estimator = c("PAF", "ML", "ULS"),
     rotation = c("none", "varimax", "promax", "oblimin"),
     type = c("EFAtools", "psych", "SPSS"),
     stringsAsFactors = FALSE
   )
   for (i in seq_len(nrow(combos))) {
-    m <- combos$method[i]
+    m <- combos$estimator[i]
     r <- combos$rotation[i]
     ty <- combos$type[i]
     set.seed(42L)
     old <- suppressWarnings(EFA(cormat, n_factors = 3, N = 500, method = m,
                                 rotation = r, type = ty))
     set.seed(42L)
-    new <- suppressWarnings(efa_fit(cormat, n_factors = 3, N = 500, method = m,
+    new <- suppressWarnings(efa_fit(cormat, n_factors = 3, N = 500, estimator = m,
                                     rotation = r,
                                     estimate_control = estimate_control(type = ty),
                                     rotate_control = rotate_control(type = ty)))
     expect_identical(old, new,
-                     info = paste("method =", m, "; rotation =", r, "; type =", ty))
+                     info = paste("estimator =", m, "; rotation =", r, "; type =", ty))
   }
 })
 
@@ -87,6 +87,32 @@ test_that("efa_fit() rejects a former flat knob forwarded through `...`, keeps r
   via_ctrl <- efa_fit(cm, n_factors = 3, N = 500, rotation = "geominQ",
                       rotate_control = rotate_control(maxit = 3000))
   expect_identical(via_dots$rot_loadings, via_ctrl$rot_loadings)
+})
+
+test_that("EFA() keeps silently ignoring a rotation extra its engine cannot consume", {
+  cm <- test_models$baseline$cormat
+
+  # the flat interface froze the silent-ignore contract: promax consumes no engine extras,
+  # so the call that is an error in efa_fit() still runs through EFA() -- and runs
+  # identically to the call without the extra
+  expect_error(efa_fit(cm, n_factors = 3, N = 500, rotation = "promax", maxit = 100),
+               class = "efa_unused_dots")
+  set.seed(1)
+  with_extra <- EFA(cm, n_factors = 3, N = 500, rotation = "promax", maxit = 100)
+  set.seed(1)
+  without_extra <- EFA(cm, n_factors = 3, N = 500, rotation = "promax")
+  expect_identical(with_extra$rot_loadings, without_extra$rot_loadings)
+
+  # a consumable extra still reaches the engine through EFA()'s dots
+  set.seed(1)
+  old <- EFA(cm, n_factors = 3, N = 500, rotation = "oblimin", maxit = 750)
+  set.seed(1)
+  new <- efa_fit(cm, n_factors = 3, N = 500, rotation = "oblimin", maxit = 750)
+  expect_identical(old$rot_loadings, new$rot_loadings)
+
+  # with rotation = "none" the dots pass through unfiltered, so EFA() keeps surfacing
+  # efa_fit()'s empty-dots guard exactly as before
+  expect_error(EFA(cm, n_factors = 3, N = 500, bogus = 1), class = "efa_unused_dots")
 })
 
 test_that("EFA() stays transparent to efa_fit()'s conditions", {
@@ -195,7 +221,7 @@ oblique_efa <- function() {
 test_that("SL() forwards to efa_schmid_leiman() identically", {
   efa_mod <- oblique_efa()
   old <- SL(efa_mod, type = "EFAtools", method = "PAF")
-  new <- efa_schmid_leiman(efa_mod, method = "PAF",
+  new <- efa_schmid_leiman(efa_mod, estimator = "PAF",
                            estimate_control = estimate_control(type = "EFAtools"))
 
   expect_identical(old, new)
@@ -218,7 +244,7 @@ test_that("SL() adds no condition and stays transparent", {
 # implementation, output shape, and class. They must gain no runtime signal.
 
 test_that("OMEGA() adds no condition and keeps its class", {
-  sl_mod <- efa_schmid_leiman(oblique_efa(), method = "PAF",
+  sl_mod <- efa_schmid_leiman(oblique_efa(), estimator = "PAF",
                               estimate_control = estimate_control(type = "EFAtools"))
   fc <- sl_mod$sl[, c("F1", "F2", "F3")] >= .2
 
@@ -290,16 +316,19 @@ test_that("PROCRUSTES() adds no condition and stays transparent", {
 # resolve. Two grid cells (PAF and ML, both the EFAtools implementation) are enough to
 # average over, and every EFA in them is deterministic, so identity is exact.
 
-average_grid <- function(f) {
-  f(test_models$baseline$cormat, n_factors = 3, N = 500,
-    method = c("PAF", "ML"), type = "EFAtools", start_method = "psych",
-    show_progress = FALSE)
+# The frozen wrapper still selects the estimators with `method`; the successor takes
+# `estimator`, so the helper places the shared grid under the caller's argument name.
+average_grid <- function(f, estimator_arg = "estimator") {
+  args <- list(test_models$baseline$cormat, n_factors = 3, N = 500,
+               type = "EFAtools", start_method = "psych", show_progress = FALSE)
+  args[[estimator_arg]] <- c("PAF", "ML")
+  do.call(f, args)
 }
 
 # Averaging a grid is the most expensive wrapper check in this file, so the silence
 # assertion rides along with the identity one rather than fitting the grid a third time.
 test_that("EFA_AVERAGE() forwards to efa_average() identically and adds no condition", {
-  expect_no_condition(old <- average_grid(EFA_AVERAGE))
+  expect_no_condition(old <- average_grid(EFA_AVERAGE, estimator_arg = "method"))
   new <- average_grid(efa_average)
 
   expect_identical(old, new)
@@ -326,7 +355,7 @@ test_that("EFA_POOLED() forwards to efa_mi() identically and adds no condition",
   expect_no_condition(
     old <- EFA_POOLED(imps, n_factors = 3, N = 500, method = "PAF", rotation = "promax")
   )
-  new <- efa_mi(imps, n_factors = 3, N = 500, method = "PAF", rotation = "promax")
+  new <- efa_mi(imps, n_factors = 3, N = 500, estimator = "PAF", rotation = "promax")
 
   expect_identical(old, new)
   expect_identical(class(old), c("efa_mi", "EFA_POOLED", "efa", "EFA"))
@@ -408,8 +437,9 @@ superseded_contract <- list(
                 "plot", "plot_red")),
   EFA_AVERAGE = list(
     callee = "efa_average",
-    # the frozen `P_type` formal forwards to the successor's renamed `p_type`.
-    renamed = c(P_type = "p_type"),
+    # the frozen `method` and `P_type` formals forward to the successor's renamed
+    # `estimator` and `p_type`.
+    renamed = c(method = "estimator", P_type = "p_type"),
     formals = c("x", "n_factors", "N", "method", "rotation", "type", "averaging",
                 "trim", "salience_threshold", "max_iter", "init_comm", "criterion",
                 "criterion_type", "abs_eigen", "varimax_type", "normalize",
@@ -504,6 +534,14 @@ test_that(".repack_flat_dots() splits the flat knobs into the two controls", {
   expect_identical(ren$rotate_control$p_type, "norm")
   expect_equal(ren$rotate_control$random_starts, 7)
 
+  # the former `method` argument lands on `estimator`, even alongside an explicit
+  # control object (it is a renamed argument, not a knob a control could carry)
+  expect_identical(.repack_flat_dots(list(method = "ML")), list(estimator = "ML"))
+  with_ctl <- .repack_flat_dots(list(method = "ML",
+                                     estimate_control = estimate_control()))
+  expect_identical(with_ctl$estimator, "ML")
+  expect_false("method" %in% names(with_ctl))
+
   # a knob named without a `type` resolves against the preset the flat interface defaulted to
   expect_identical(.repack_flat_dots(list(k = 2))$rotate_control$type, "EFAtools")
 
@@ -517,16 +555,19 @@ test_that(".repack_flat_dots() splits the flat knobs into the two controls", {
 
 test_that("EFA_POOLED() still tunes the fit through its dots", {
   imps <- list(test_models$baseline$cormat, test_models$baseline$cormat)
-  args <- list(n_factors = 3, N = 500, method = "PAF", rotation = "promax")
+  # the frozen interface still selects the estimator with `method`; the successor takes
+  # `estimator`
+  args_old <- list(n_factors = 3, N = 500, method = "PAF", rotation = "promax")
+  args_new <- list(n_factors = 3, N = 500, estimator = "PAF", rotation = "promax")
 
-  old <- do.call(EFA_POOLED, c(list(imps), args, list(type = "psych")))
-  new <- do.call(efa_mi, c(list(imps), args,
+  old <- do.call(EFA_POOLED, c(list(imps), args_old, list(type = "psych")))
+  new <- do.call(efa_mi, c(list(imps), args_new,
                            list(estimate_control = estimate_control(type = "psych"),
                                 rotate_control = rotate_control(type = "psych"))))
   expect_equal(old$rot_loadings, new$rot_loadings)
 
   # the knob is honoured, not merely ignored in both calls: psych is not the default preset
-  default <- do.call(efa_mi, c(list(imps), args))
+  default <- do.call(efa_mi, c(list(imps), args_new))
   expect_false(isTRUE(all.equal(old$rot_loadings, default$rot_loadings)))
 })
 
@@ -551,12 +592,12 @@ test_that("SL() still routes a non-default `type` into the second-order fit", {
   # second-order fit if the wrapper repacks it into the estimation control. A default-valued
   # `type` would pass either way, so the preset pinned here has to be a non-default one.
   old <- SL(efa_mod, type = "SPSS", method = "ULS")
-  new <- efa_schmid_leiman(efa_mod, method = "ULS",
+  new <- efa_schmid_leiman(efa_mod, estimator = "ULS",
                            estimate_control = estimate_control(type = "SPSS"))
   expect_identical(old, new)
 
   # and it is honoured, not merely accepted: SPSS is not the preset the fit defaults to
-  default <- efa_schmid_leiman(efa_mod, method = "ULS")
+  default <- efa_schmid_leiman(efa_mod, estimator = "ULS")
   expect_false(isTRUE(all.equal(old$settings, default$settings)))
 })
 
@@ -573,13 +614,16 @@ test_that("SL() can still supply the PAF knobs that type = 'none' requires", {
 
 test_that("HULL() still tunes the fit through its dots", {
   cormat <- test_models$baseline$cormat
-  args <- list(N = 500, method = "PAF", gof = "CAF")
+  # the frozen wrapper still selects the estimator with `method`; the successor takes
+  # `estimator`
+  args_old <- list(N = 500, method = "PAF", gof = "CAF")
+  args_new <- list(N = 500, estimator = "PAF", gof = "CAF")
 
   # HULL() fits every 1..J model through the estimation engine, so a flat knob passed
   # through its dots has to reach that fit. It is repacked into the control objects, and
   # efa_hull() must be able to take the controls it is handed.
-  old <- do.call(HULL, c(list(cormat), args, list(type = "psych")))
-  new <- do.call(efa_hull, c(list(cormat), args,
+  old <- do.call(HULL, c(list(cormat), args_old, list(type = "psych")))
+  new <- do.call(efa_hull, c(list(cormat), args_new,
                              list(estimate_control = estimate_control(type = "psych"),
                                   rotate_control = rotate_control(type = "psych"))))
   expect_identical(old, new)
@@ -587,9 +631,9 @@ test_that("HULL() still tunes the fit through its dots", {
   # the knob is honoured, not merely accepted: max_iter = 1 halts PAF after a single
   # iteration, so the goodness-of-fit values the hull is built from must change
   pinned <- suppressWarnings(
-    do.call(efa_hull, c(list(cormat), args,
+    do.call(efa_hull, c(list(cormat), args_new,
                         list(estimate_control = estimate_control(max_iter = 1)))))
-  default <- do.call(efa_hull, c(list(cormat), args))
+  default <- do.call(efa_hull, c(list(cormat), args_new))
   expect_false(isTRUE(all.equal(pinned$results, default$results)))
 })
 
@@ -635,7 +679,7 @@ test_that("efa_fit() rejects a flat tuning knob passed as a bare dot", {
                     list(p_type = "norm"), list(k = 3), list(random_starts = 2),
                     list(P_type = "norm"), list(randomStarts = 2))) {
     expect_error(
-      do.call(efa_fit, c(list(cormat, n_factors = 3, N = 500, method = "PAF",
+      do.call(efa_fit, c(list(cormat, n_factors = 3, N = 500, estimator = "PAF",
                               rotation = "promax"), knob)),
       class = "efa_flat_knob_in_dots")
   }
@@ -644,7 +688,7 @@ test_that("efa_fit() rejects a flat tuning knob passed as a bare dot", {
   # than an opaque "criterion could not be run"
   expect_error(efa_retain(cormat, N = 500, criteria = "HULL", type = "psych"),
                class = "efa_flat_knob_in_dots")
-  expect_error(efa_hull(cormat, N = 500, method = "PAF", gof = "CAF", max_iter = 500),
+  expect_error(efa_hull(cormat, N = 500, estimator = "PAF", gof = "CAF", max_iter = 500),
                class = "efa_flat_knob_in_dots")
   expect_error(efa_kgc(cormat, eigen_type = "EFA", init_comm = "mac"),
                class = "efa_flat_knob_in_dots")
@@ -653,16 +697,66 @@ test_that("efa_fit() rejects a flat tuning knob passed as a bare dot", {
 
   # arguments that really are efa_fit() formals still pass through the same dots
   expect_no_error(suppressWarnings(
-    efa_retain(cormat, N = 500, criteria = "HULL", method = "PAF")))
+    efa_retain(cormat, N = 500, criteria = "HULL", estimator = "PAF")))
 
   # a genuine rotation extra is still forwarded, not rejected
-  expect_no_error(efa_fit(cormat, n_factors = 3, N = 500, method = "PAF",
+  expect_no_error(efa_fit(cormat, n_factors = 3, N = 500, estimator = "PAF",
                           rotation = "oblimin", maxit = 750))
   # and the control objects remain the supported route (pinning a knob alongside a `type`
   # raises the usual preset-override notice, which is not what this test is about)
   expect_no_error(suppressWarnings(
-    efa_fit(cormat, n_factors = 3, N = 500, method = "PAF", rotation = "promax",
+    efa_fit(cormat, n_factors = 3, N = 500, estimator = "PAF", rotation = "promax",
             estimate_control = estimate_control(type = "SPSS", max_iter = 500))))
+})
+
+test_that("the former `method` argument is rejected with a pointer to `estimator`", {
+  cormat <- test_models$baseline$cormat
+
+  # Forwarded bare, `method` would either be rejected as an unconsumed rotation extra
+  # (efa_fit) or travel into the per-criterion fits and surface as an opaque failure
+  # (efa_retain); both name the rename instead.
+  expect_error(efa_fit(cormat, n_factors = 3, N = 500, method = "ML"),
+               class = "efa_renamed_arg")
+  expect_error(efa_retain(cormat, N = 500, criteria = "EKC", method = "ML"),
+               class = "efa_renamed_arg")
+  expect_error(efa_schmid_leiman(oblique_efa(), method = "PAF"),
+               class = "efa_renamed_arg")
+  # the functions that fit through their dots reject it at their own boundary, so the
+  # message names the function the user called (not efa_fit, and in efa_group's case not
+  # a spurious per-group fit failure)
+  expect_error(efa_mi(list(cormat, cormat), n_factors = 2, method = "ML"),
+               class = "efa_renamed_arg")
+  expect_error(efa_group(list(a = cormat, b = cormat), n_factors = 2, N = 500,
+                         method = "ML"),
+               class = "efa_renamed_arg")
+
+  # the superseded names keep selecting the estimator with `method`
+  expect_no_error(suppressWarnings(
+    EFA(cormat, n_factors = 3, N = 500, method = "ML", rotation = "none")))
+})
+
+test_that("the successor-only names are rejected in the superseded wrappers' dots", {
+  cormat <- test_models$baseline$cormat
+
+  # `estimator` (and the control objects, for EFA()) would either collide with the
+  # wrapper's own translation as an opaque base duplicate-argument error, or -- with a
+  # rotation, under EFA()'s frozen ignore-unknown-dots contract -- be silently dropped so
+  # the fit quietly runs the defaults. Rejected with a pointer to the frozen names.
+  expect_error(EFA(cormat, n_factors = 3, N = 500, rotation = "promax",
+                   estimator = "ML"),
+               class = "efa_renamed_arg")
+  expect_error(EFA(cormat, n_factors = 3, N = 500, rotation = "none",
+                   estimate_control = estimate_control(type = "psych")),
+               class = "efa_renamed_arg")
+  expect_error(HULL(cormat, N = 500, estimator = "ML"), class = "efa_renamed_arg")
+  expect_error(N_FACTORS(cormat, N = 500, criteria = "EKC", estimator = "ML"),
+               class = "efa_renamed_arg")
+  expect_error(SL(oblique_efa(), estimator = "PAF"), class = "efa_renamed_arg")
+
+  # both spellings at once through a repacking wrapper is a half-migrated call; neither
+  # may silently win
+  expect_error(.repack_flat_dots(list(method = "ML", estimator = "ULS")),
+               class = "efa_renamed_arg")
 })
 
 test_that("the superseded names still tune the fit despite the flat-knob guard", {
@@ -673,7 +767,7 @@ test_that("the superseded names still tune the fit despite the flat-knob guard",
     EFA(cormat, n_factors = 3, N = 500, method = "PAF", rotation = "promax",
         type = "SPSS", max_iter = 500)))
   new <- suppressWarnings(
-    efa_fit(cormat, n_factors = 3, N = 500, method = "PAF", rotation = "promax",
+    efa_fit(cormat, n_factors = 3, N = 500, estimator = "PAF", rotation = "promax",
             estimate_control = estimate_control(type = "SPSS", max_iter = 500),
             rotate_control = rotate_control(type = "SPSS")))
   expect_identical(old$rot_loadings, new$rot_loadings)

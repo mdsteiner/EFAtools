@@ -4,7 +4,7 @@
       print(SL_EFAtools)
     Output
       
-      EFA for second-order loadings performed with type = 'EFAtools' and method = 'PAF'
+      EFA for second-order loadings performed with estimator = 'PAF'
       
       -- Schmid-Leiman Solution ------------------------------------------------------
       

@@ -1,7 +1,7 @@
-#' Model averaging across different EFA methods and types
+#' Model averaging across different EFA estimators and types
 #'
 #' Not all EFA procedures always arrive at the same solution. This function allows
-#' you perform a number of EFAs from different methods (e.g., Maximum Likelihood
+#' you perform a number of EFAs from different estimators (e.g., Maximum Likelihood
 #' and Principal Axis Factoring), with different implementations (e.g., the SPSS
 #' and psych implementations of Principal Axis Factoring), and across different
 #' rotations of the same type (e.g., multiple oblique rotations, like promax and
@@ -15,10 +15,11 @@
 #' @param N numeric. The number of observations. Needs only be specified if a
 #' correlation matrix is used. If input is a correlation matrix and `N` = NA
 #' (default), not all fit indices can be computed.
-#' @param method character vector. Any combination of  "PAF", "ML", and "ULS",
+#' @param estimator character vector. Any combination of  "PAF", "ML", and "ULS",
 #' to use principal axis factoring, maximum likelihood, or unweighted least
 #' squares, respectively, to fit the EFAs. "MINRES" is accepted as a synonym for
-#' "ULS" (the same estimator). Default is "PAF".
+#' "ULS" (the same estimator). The values are matched case-insensitively.
+#' Default is "PAF".
 #' @param rotation character vector. Either perform no rotation ("none"),
 #' any combination of orthogonal rotations ("varimax", "equamax", "quartimax", "geominT",
 #' "bentlerT", and "bifactorT"; using "orthogonal" runs all of these), or of
@@ -155,7 +156,7 @@
 #' of arguments that are only evaluated under specific conditions:
 #'
 #' The arguments `init_comm`, `criterion`, `criterion_type`,
-#' `abs_eigen` are only evaluated if "PAF" is included in `method`
+#' `abs_eigen` are only evaluated if "PAF" is included in `estimator`
 #' and "none" is included in `type`.
 #'
 #' The argument `varimax_type` is only evaluated if "varimax", "promax",
@@ -173,7 +174,7 @@
 #' in `type`.
 #'
 #' The argument `start_method` is only evaluated if "ML" is included in
-#' `method`.
+#' `estimator`.
 #'
 #' To avoid a bias in the averaged factor solutions from problematic solutions,
 #' these are excluded prior to averaging. A solution is deemed problematic if
@@ -216,9 +217,9 @@
 #' TLI, RMSEA, AIC, BIC, and ECVI) are NA. The common part accounted for (CAF)
 #' index (Lorenzo-Seva, Timmerman, & Kiers, 2011) and the residual-based SRMR and
 #' RMSR are still computed for PAF. As a consequence, if only "PAF" is included in
-#' the `method` argument, averaging is performed for the CAF, SRMR, and RMSR, while
+#' the `estimator` argument, averaging is performed for the CAF, SRMR, and RMSR, while
 #' the chi-square-based indices are NA. If a combination of "PAF" and "ML" and/or
-#' "ULS" are included in the `method` argument, the CAF, SRMR, and RMSR are
+#' "ULS" are included in the `estimator` argument, the CAF, SRMR, and RMSR are
 #' averaged across all non-problematic factor solutions, while the chi-square-based
 #' indices are only averaged across the ML and ULS solutions. The user should
 #' therefore keep in mind that the number of EFAs across which the fit indices are
@@ -252,7 +253,7 @@
 #' or only one factor was extracted, otherwise on the rotated loadings.}
 #' \item{fit_indices}{A matrix containing the average, standard deviation,
 #' minimum, maximum, and range for all applicable fit indices across the respective
-#' factor solutions, and the degrees of freedom (df). If the method argument
+#' factor solutions, and the degrees of freedom (df). If the estimator argument
 #' contains ML or ULS: Fit indices derived
 #' from the unrotated factor loadings: Chi Square (chisq), including significance
 #' level, Comparative Fit Index (CFI), Tucker-Lewis Index (TLI), Root Mean Square
@@ -307,18 +308,18 @@
 #' # Averaging across different implementations of PAF and promax rotation,
 #' # and across ULS and different versions of ML (108 EFAs)
 #' Aver_meth_ext <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
-#'                              method = c("PAF", "ULS", "ML"))
+#'                              estimator = c("PAF", "ULS", "ML"))
 #'
 #' # Averaging across one implementation each of PAF (EFAtools type), ULS, and
 #' # ML with one implementation of promax (EFAtools type) (3 EFAs)
 #' Aver_meth <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
-#'                          method = c("PAF", "ULS", "ML"), type = "EFAtools",
+#'                          estimator = c("PAF", "ULS", "ML"), type = "EFAtools",
 #'                          start_method = "psych")
 #'
 #' # Averaging across different oblique rotation methods, using one implementation
 #' # of ML and one implementation of promax (EFAtools type) (7 EFAs)
 #' Aver_rot <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
-#'                          method = "ML", rotation = "oblique", type = "EFAtools",
+#'                          estimator = "ML", rotation = "oblique", type = "EFAtools",
 #'                          start_method = "psych")
 #'}
 #'
@@ -328,11 +329,11 @@
 #' # averaged across the grid of EFAs.
 #' x_miss <- GRiPS_raw
 #' x_miss[cbind(1:20, 1)] <- NA
-#' Aver_fiml <- efa_average(x_miss, n_factors = 1, method = c("PAF", "ML"),
+#' Aver_fiml <- efa_average(x_miss, n_factors = 1, estimator = c("PAF", "ML"),
 #'                          cor_method = "fiml")
 #' }
 #'
-efa_average <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax",
+efa_average <- function(x, n_factors, N = NA, estimator = "PAF", rotation = "promax",
                         type = "none", averaging = c("mean", "median"), trim = 0,
                         salience_threshold = .3,
                         max_iter = 1e4,
@@ -361,19 +362,29 @@ efa_average <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
 
   checkmate::assert_count(n_factors)
   checkmate::assert_count(N, na.ok = TRUE)
-  checkmate::assert_subset(method, c("PAF", "ML", "ULS", "MINRES"),
+  # The vector-valued choice arguments are case-insensitive: map them onto the
+  # canonical spellings first, so the subset checks and the type grid below only
+  # ever see the canonical values.
+  estimator <- .map_subset_ci(estimator, c("PAF", "ML", "ULS", "MINRES"))
+  checkmate::assert_subset(estimator, c("PAF", "ML", "ULS", "MINRES"),
                            empty.ok = FALSE)
   # "MINRES" is a synonym for "ULS" (same estimator); resolve to the canonical
   # name so the type grid below is keyed once per requested estimator.
-  method[method == "MINRES"] <- "ULS"
-  method <- unique(method)
-  checkmate::assert_subset(rotation, c("none", "orthogonal", "oblique", "varimax",
-                                       "equamax", "quartimax", "geominT", "bentlerT",
-                                       "bifactorT", "promax", "oblimin", "quartimin",
-                                       "simplimax", "bentlerQ", "geominQ", "bifactorQ"),
-                           empty.ok = FALSE)
+  estimator[estimator == "MINRES"] <- "ULS"
+  estimator <- unique(estimator)
+  rotation_choices <- c("none", "orthogonal", "oblique", "varimax",
+                        "equamax", "quartimax", "geominT", "bentlerT",
+                        "bifactorT", "promax", "oblimin", "quartimin",
+                        "simplimax", "bentlerQ", "geominQ", "bifactorQ")
+  rotation <- .map_subset_ci(rotation, rotation_choices)
+  checkmate::assert_subset(rotation, rotation_choices, empty.ok = FALSE)
+  # Drop duplicates the case-folding may have collapsed (e.g. "promax" and "Promax"), as for
+  # the estimators above, so the averaging grid runs each requested rotation and type once.
+  rotation <- unique(rotation)
+  type <- .map_subset_ci(type, c("none", "EFAtools", "psych", "SPSS"))
   checkmate::assert_subset(type, c("none", "EFAtools", "psych", "SPSS"),
                            empty.ok = FALSE)
+  type <- unique(type)
   averaging <- match.arg(averaging)
   checkmate::assert_number(trim, lower = 0, upper = 0.5)
   checkmate::assert_number(salience_threshold, lower = 0, upper = 1)
@@ -449,7 +460,7 @@ efa_average <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
   ### create the grid with all combinations of the input arguments
 
   arg_grid <- .build_avg_grid(
-    method = method, type = type, rotation = rotation, init_comm = init_comm,
+    estimator = estimator, type = type, rotation = rotation, init_comm = init_comm,
     criterion = criterion, criterion_type = criterion_type, abs_eigen = abs_eigen,
     start_method = start_method, k_promax = k_promax, normalize = normalize,
     P_type = p_type, precision = precision, varimax_type = varimax_type,
@@ -467,7 +478,7 @@ efa_average <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
     cli::cli_warn("There was only one combination of arguments; returning a normal EFA output.",
                   class = "efa_avg_single_combination")
 
-    return(efa_fit(R, n_factors, N = N, method = arg_grid$method,
+    return(efa_fit(R, n_factors, N = N, estimator = arg_grid$estimator,
         rotation = arg_grid$rotation,
         estimate_control = estimate_control(type = "none",
             init_comm = arg_grid$init_comm, criterion = arg_grid$criterion,
@@ -505,7 +516,7 @@ efa_average <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
     efa_progress_bar <- progressr::progressor(steps = n_efa / stepsize)
     efa_progress_bar("Running EFAs:", class = "sticky", amount = 0)
     efa_list <- future.apply::future_lapply(1:n_efa,
-                                            function(i, methods, rotations,
+                                            function(i, estimators, rotations,
                                                      init_comms, criteria,
                                                      criterion_types, abs_eigens,
                                                      varimax_types, k_ps, k_ss,
@@ -522,7 +533,7 @@ efa_average <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
       # Per-EFA warnings (e.g. Heywood cases) are summarised once after the grid
       # is run, so they are suppressed here to avoid one warning per model.
       try(suppressWarnings(
-          efa_fit(R, n_factors, N = N, method = methods[i], rotation = rotations[i],
+          efa_fit(R, n_factors, N = N, estimator = estimators[i], rotation = rotations[i],
               estimate_control = estimate_control(type = "none", init_comm = init_comms[i],
                   criterion = criteria[i], criterion_type = criterion_types[i],
                   max_iter = max_iter, abs_eigen = abs_eigens[i],
@@ -540,7 +551,7 @@ efa_average <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
                   # unrotated rows never consume it, and bare dots are rejected there
                   maxit = 5e4))),
           silent = TRUE)
-    }, methods = arg_grid$method, rotations = arg_grid$rotation,
+    }, estimators = arg_grid$estimator, rotations = arg_grid$rotation,
     init_comms = arg_grid$init_comm, criteria = arg_grid$criterion,
     criterion_types = arg_grid$criterion_type, abs_eigens = arg_grid$abs_eigen,
     varimax_types = arg_grid$varimax_type, k_ps = arg_grid$k_promax,
@@ -619,7 +630,9 @@ efa_average <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
 
 
   settings <- list(
-    method = method,
+    estimator = estimator,
+    # back-compat alias, as for the frozen P_type key
+    method = estimator,
     rotation = rotation,
     type = type,
     n_factors = n_factors,

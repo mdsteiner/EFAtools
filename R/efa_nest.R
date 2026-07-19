@@ -20,8 +20,8 @@
 #'  [efa_fit()] reference-model fits. `NULL` (default) uses the [efa_fit()] defaults. The
 #'  reference models are unrotated, so no rotation settings apply.
 #' @param ... Additional arguments passed to [efa_fit()]. For example,
-#' the extraction method can be changed here (default is "PAF"). PAF is more
-#' robust, but it will take longer compared to the other estimation methods
+#' `estimator`, to change the estimator (default is "PAF"). PAF is more
+#' robust, but it will take longer compared to the other estimators
 #' available ("ML" and "ULS"). The estimation tuning knobs are not passed here; they
 #' live in `estimate_control`.
 #'
@@ -143,7 +143,7 @@ efa_nest <- function(x, N = NA,
 
       # For further factors, use a model with nf - 1 factors as reference. The fit is an
       # internal step run once per tested factor; suppress its warnings so a forwarded
-      # estimator (e.g. method = "ML") cannot turn per-model Heywood or non-convergence
+      # estimator (e.g. estimator = "ML") cannot turn per-model Heywood or non-convergence
       # warnings into one warning per loop iteration. A Heywood case is handled
       # explicitly below.
       mm <- suppressWarnings(efa_fit(R, N = N, n_factors = nf - 1,
@@ -159,7 +159,7 @@ efa_nest <- function(x, N = NA,
         cli::cli_abort(
           c("A Heywood case occurred in the {nf - 1}-factor reference model used by NEST.",
             "x" = "A communality at or above 1 leaves no unique variance to simulate the reference data from.",
-            "i" = "Try a different extraction {.arg method} (e.g. {.val ML} or {.val ULS}) or fewer indicators."),
+            "i" = "Try a different {.arg estimator} (e.g. {.val ML} or {.val ULS}) or fewer indicators."),
           class = "efa_nest_heywood"
         )
       }
