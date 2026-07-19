@@ -305,8 +305,10 @@ test_that("FIML aborts on unsupported input/option combinations", {
 # Independent reference: the two-stage sandwich with the gauge-constraint Jacobian taken by CENTRAL
 # FINITE DIFFERENCES of the orientation function, sharing no code with .se_fiml_core()'s analytic
 # constraint (.se_sandwich_constraint). H is the normal-theory ML weight; the meat is the FIML
-# saturated covariance, used directly (it is already Var(r-hat)).
-.ref_fiml_loading_se <- function(L, Omega, gauge, weight = "ML") {
+# saturated covariance Omega (already on the variance scale Var(r-hat)), put on the unit
+# asymptotic-variance scale by N and the covariance divided by N - 1, the package-wide small-sample
+# convention shared with the expected-information and polychoric/ADF sandwich paths.
+.ref_fiml_loading_se <- function(L, Omega, gauge, N, weight = "ML") {
   p <- nrow(L); k <- ncol(L); pk <- p * k
   pr <- utils::combn(p, 2L); pii <- pr[1, ]; pjj <- pr[2, ]; n <- ncol(pr)
   Delta <- matrix(0, n, pk)
@@ -333,7 +335,7 @@ test_that("FIML aborts on unsupported input/option combinations", {
   Aug <- if (nc > 0) rbind(cbind(A, t(Cmat)), cbind(Cmat, matrix(0, nc, nc))) else A
   Ab <- solve(Aug)[seq_len(pk), seq_len(pk)]
   HD <- H %*% Delta
-  V_AA <- Ab %*% crossprod(HD, Omega %*% HD) %*% Ab
+  V_AA <- Ab %*% crossprod(HD, (N * Omega) %*% HD) %*% Ab / (N - 1)
   matrix(sqrt(diag(V_AA)), p, k)
 }
 
@@ -373,7 +375,7 @@ test_that("FIML two-stage loading SEs match an independent reference sandwich", 
   Omega <- .fiml_saturated_acov(X, em$mu, em$sigma)$cor
   # ML reports loadings in the Lambda' Psi^-1 Lambda orientation; the reference takes its gauge
   # constraint by central differences, sharing no code with .se_fiml_core().
-  ref <- .ref_fiml_loading_se(L, Omega, "LtPiL")
+  ref <- .ref_fiml_loading_se(L, Omega, "LtPiL", N = nrow(X))
   expect_equal(unclass(efa$SE$unrot_loadings), ref, tolerance = 1e-5, ignore_attr = TRUE)
 })
 
@@ -459,11 +461,11 @@ test_that("FIML ULS uses the estimator's own (identity) Stage-2 weight, not the 
   Omega <- .fiml_saturated_acov(X, em$mu, em$sigma)$cor
   # ULS reports loadings in the Lambda' Lambda orientation and weights the discrepancy by the
   # identity, so the reference sandwich uses the identity weight in that same gauge.
-  ref_uls <- .ref_fiml_loading_se(L, Omega, "LtL", weight = "ULS")
+  ref_uls <- .ref_fiml_loading_se(L, Omega, "LtL", N = nrow(X), weight = "ULS")
   expect_equal(unclass(efa_u$SE$unrot_loadings), ref_uls, tolerance = 1e-5, ignore_attr = TRUE)
   # In the same gauge, the ML-weighted sandwich differs: the SE follows the estimator's weight,
   # not a hardcoded ML weight.
-  ref_ml <- .ref_fiml_loading_se(L, Omega, "LtL", weight = "ML")
+  ref_ml <- .ref_fiml_loading_se(L, Omega, "LtL", N = nrow(X), weight = "ML")
   expect_gt(max(abs(unclass(efa_u$SE$unrot_loadings) - ref_ml)), 1e-4)
 
   # 'information' and 'sandwich' coincide for ULS too (both route to the corrected sandwich).

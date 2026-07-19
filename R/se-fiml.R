@@ -82,7 +82,7 @@
 # Robust two-stage loading covariance V_AA (p*k x p*k), the unrotated loading/uniqueness SEs, and a
 # reliability flag, from the fitted loadings and the FIML moments. Returns NA SEs (reliable = FALSE)
 # at a singular bordered system, a degenerate saturated covariance, or a non-PSD V_AA.
-.se_fiml_core <- function(fit_out, fiml, method) {
+.se_fiml_core <- function(fit_out, fiml, N, method) {
 
   L <- unclass(fit_out$unrot_loadings)
   p <- nrow(L)
@@ -109,13 +109,17 @@
   }
   if (is.null(Omega) || anyNA(Omega) || nrow(Omega) != p * (p - 1L) / 2L) return(na_core)
 
-  # Two-stage sandwich V = A^- (V D)' Omega_delta (V D) A^-. Omega_delta is already the covariance of
-  # the saturated estimates (inverse observed information), so it enters directly -- no N scaling
-  # (contrast the polychoric/ADF sandwich, whose Gamma enters on the unit asymptotic-variance scale).
+  # Two-stage sandwich V = A^- (V D)' Omega_delta (V D) A^- / (N - 1). Omega_delta is the covariance
+  # of the saturated estimates (the inverse observed information, so on the variance scale
+  # Var(r-hat)); it is put on the unit asymptotic-variance scale by N and the covariance divided by
+  # N - 1, exactly as the polychoric/ADF sandwich and the expected information do. That N - 1 is the
+  # package-wide small-sample convention (it is also the scale `.gof()` and `.fiml_scaled_test()`
+  # work on), and it makes the complete-data limit of this sandwich agree with the Pearson path
+  # instead of differing from it by a systematic factor of N / (N - 1).
   VD <- pieces$VD
   Abread <- pieces$Abread
-  meat <- crossprod(VD, Omega %*% VD)
-  V_AA <- Abread %*% meat %*% Abread
+  meat <- crossprod(VD, (N * Omega) %*% VD)
+  V_AA <- Abread %*% meat %*% Abread / (N - 1)
   V_AA <- (V_AA + t(V_AA)) / 2
 
   # The covariance must be positive semidefinite; a non-finite entry or negative eigenvalue would
@@ -141,7 +145,7 @@
 # efa_se_unreliable warning at a Heywood case / non-PSD covariance.
 .se_fiml <- function(fit_out, rot_info, N, ci, fiml, method) {
 
-  core <- .se_fiml_core(fit_out, fiml, method)
+  core <- .se_fiml_core(fit_out, fiml, N, method)
 
   if (is.null(rot_info)) {
     .se_sandwich_unrotated(fit_out, core, ci)

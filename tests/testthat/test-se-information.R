@@ -1,42 +1,49 @@
-# Analytic expected-information standard errors for the unrotated ML solution.
+# Analytic expected-information standard errors for the ML solution.
 
-# Independent reference: the unit expected information assembled densely as
-# 1/2 tr(W dSigma_i W dSigma_j), the identification constraint off-diag(Lambda' Psi^-1
-# Lambda) = 0 differentiated by central finite differences, bordered, inverted and scaled
-# by 1 / (N - 1). This shares no code with the package's closed-form assembly.
+# Independent reference for the correlation-structure information. theta = vec(Lambda) alone (the
+# analysed diagonal is fixed at 1, so the uniquenesses are a function of Lambda, not free
+# parameters): Gamma is assembled by an elementwise double loop over the pair index using the
+# Olkin-Siotani formula, the model Jacobian Delta and the constraint Jacobian by central finite
+# differences, and the information Delta' Gamma^-1 Delta is bordered, inverted and scaled by
+# 1 / (N - 1). This shares no code with the package's vectorised assembly.
 .ref_se_information <- function(L, psi, N) {
-  p <- nrow(L); k <- ncol(L); pk <- p * k; q <- pk + p
-  Sigma <- tcrossprod(L); diag(Sigma) <- diag(Sigma) + psi
-  W <- solve(Sigma)
+  p <- nrow(L); k <- ncol(L); pk <- p * k
+  Sigma <- tcrossprod(L); diag(Sigma) <- 1
+  prs <- utils::combn(p, 2L); n <- ncol(prs)
 
-  dS <- vector("list", q); idx <- 0
-  for (b in seq_len(k)) for (a in seq_len(p)) {
-    idx <- idx + 1; M <- matrix(0, p, p); M[a, ] <- L[, b]; M[, a] <- L[, b]; M[a, a] <- 2 * L[a, b]
-    dS[[idx]] <- M
-  }
-  for (c in seq_len(p)) { idx <- idx + 1; M <- matrix(0, p, p); M[c, c] <- 1; dS[[idx]] <- M }
-  WdS <- lapply(dS, function(M) W %*% M)
-  A <- matrix(0, q, q)
-  for (i in seq_len(q)) for (j in i:q) {
-    v <- 0.5 * sum(WdS[[i]] * t(WdS[[j]])); A[i, j] <- v; A[j, i] <- v
-  }
-
-  g <- function(th) {
-    Lm <- matrix(th[seq_len(pk)], p, k); ps <- th[pk + seq_len(p)]
-    M <- crossprod(Lm, Lm / ps)
-    M[upper.tri(M)]
-  }
-  th0 <- c(as.vector(L), psi); nc <- k * (k - 1L) / 2L
-  Cmat <- matrix(0, nc, q); h <- 1e-6
-  for (j in seq_len(q)) {
-    tp <- th0; tp[j] <- tp[j] + h; tm <- th0; tm[j] <- tm[j] - h
-    Cmat[, j] <- (g(tp) - g(tm)) / (2 * h)
+  # N Cov(r_ij, r_kl) under normality, one pair combination at a time.
+  G <- matrix(0, n, n)
+  for (s in seq_len(n)) for (t in seq_len(n)) {
+    i <- prs[1, s]; j <- prs[2, s]; kk <- prs[1, t]; l <- prs[2, t]
+    G[s, t] <- 0.5 * Sigma[i, j] * Sigma[kk, l] *
+      (Sigma[i, kk]^2 + Sigma[i, l]^2 + Sigma[j, kk]^2 + Sigma[j, l]^2) +
+      Sigma[i, kk] * Sigma[j, l] + Sigma[i, l] * Sigma[j, kk] -
+      Sigma[i, j] * (Sigma[i, kk] * Sigma[i, l] + Sigma[j, kk] * Sigma[j, l]) -
+      Sigma[kk, l] * (Sigma[i, kk] * Sigma[j, kk] + Sigma[i, l] * Sigma[j, l])
   }
 
-  Aug <- rbind(cbind(A, t(Cmat)), cbind(Cmat, matrix(0, nc, nc)))
-  V <- solve(Aug)[seq_len(q), seq_len(q)] / (N - 1)
+  # sigma_offdiag(vec Lambda) and the gauge constraint off-diag(Lambda' Psi^-1 Lambda) = 0, both
+  # differentiated by central finite differences.
+  sig <- function(th) { Lm <- matrix(th, p, k); tcrossprod(Lm)[t(prs)] }
+  g <- function(th) { Lm <- matrix(th, p, k); ps <- 1 - rowSums(Lm^2)
+                      M <- crossprod(Lm, Lm / ps); M[upper.tri(M)] }
+  th0 <- as.vector(L); nc <- k * (k - 1L) / 2L
+  Delta <- matrix(0, n, pk); Cmat <- matrix(0, nc, pk); h <- 1e-6
+  for (jj in seq_len(pk)) {
+    tp <- th0; tp[jj] <- tp[jj] + h; tm <- th0; tm[jj] <- tm[jj] - h
+    Delta[, jj] <- (sig(tp) - sig(tm)) / (2 * h)
+    if (nc > 0) Cmat[, jj] <- (g(tp) - g(tm)) / (2 * h)
+  }
+
+  A <- crossprod(Delta, solve(G, Delta))
+  Aug <- if (nc > 0) rbind(cbind(A, t(Cmat)), cbind(Cmat, matrix(0, nc, nc))) else A
+  V <- solve(Aug)[seq_len(pk), seq_len(pk), drop = FALSE] / (N - 1)
   se <- sqrt(diag(V))
-  list(loadings_se = matrix(se[seq_len(pk)], p, k), uniquenesses_se = se[pk + seq_len(p)])
+  # h2_i = rowSums(Lambda^2)_i has gradient 2 Lambda[i, ]; psi_i = 1 - h2_i shares its SE.
+  G_h <- matrix(0, p, pk)
+  for (i in seq_len(p)) G_h[i, (seq_len(k) - 1L) * p + i] <- 2 * L[i, ]
+  list(loadings_se = matrix(se, p, k),
+       uniquenesses_se = sqrt(rowSums((G_h %*% V) * G_h)))
 }
 
 
@@ -55,60 +62,93 @@
 }
 
 
-test_that("closed-form information SEs match an independent dense reference", {
+test_that("information SEs match an independent correlation-structure reference", {
   L <- matrix(c(0.70, 0.60, 0.50, 0.10, 0.00, 0.20,
                 0.10, 0.05, 0.20, 0.70, 0.60, 0.50), 6, 2)
   psi <- 1 - rowSums(L^2)
+  fit_out <- list(unrot_loadings = L)
 
-  ours <- EFAtools:::.se_information_ml(L, psi, N = 250)
+  ours <- EFAtools:::.se_information(fit_out, rot_info = NULL, N = 250, ci = 0.95,
+                                     method = "ML")
   ref <- .ref_se_information(L, psi, N = 250)
 
-  expect_equal(ours$loadings_se, ref$loadings_se, tolerance = 1e-5)
-  expect_equal(ours$uniquenesses_se, ref$uniquenesses_se, tolerance = 1e-5)
+  expect_equal(unname(ours$SE$unrot_loadings), ref$loadings_se, tolerance = 1e-5)
+  expect_equal(unname(ours$SE$uniquenesses), ref$uniquenesses_se, tolerance = 1e-5)
 })
 
 
-test_that("information uniqueness SEs match lavaan", {
-  skip_on_cran()
-  skip_if_not_installed("lavaan")
-
+test_that("the normal-theory Gamma reproduces the known variance of a correlation", {
+  # The diagonal of the Olkin-Siotani covariance is the classical asymptotic variance of a
+  # Pearson correlation, N Var(r_ij) = (1 - rho_ij^2)^2, which pins the formula's scale and its
+  # pair ordering independently of the off-diagonal terms.
   R <- test_models$baseline$cormat
-  N <- 500
-  fit <- EFA(R, n_factors = 3, N = N, method = "ML", rotation = "none", se = "information")
+  prs <- utils::combn(ncol(R), 2L)
+  G <- EFAtools:::.normal_theory_gamma(R, prs)
 
-  lav <- lavaan::efa(sample.cov = R, sample.nobs = N, nfactors = 3,
-                     rotation = "none", estimator = "ML")
-  lav_fit <- Filter(function(e) inherits(e, "lavaan"), lav)[[1]]
-  pe <- lavaan::parameterEstimates(lav_fit)
-  uq <- pe[pe$op == "~~" & pe$lhs == pe$rhs & pe$lhs %in% rownames(R), ]
-  uq <- uq[match(rownames(R), uq$lhs), ]
-
-  # Uniquenesses are rotation-invariant, so they are directly comparable across the two
-  # packages' identifications. The small gap is the N vs N - 1 scaling.
-  expect_equal(unname(fit$SE$uniquenesses), uq$se, tolerance = 0.02)
+  expect_equal(unname(diag(G)), unname((1 - R[t(prs)]^2)^2), tolerance = 1e-12)
+  expect_true(isSymmetric(G, tol = 1e-12))
+  # It is the covariance of the sample correlations, so it must be positive definite at a
+  # positive-definite Sigma -- the information Delta' Gamma^-1 Delta is built by inverting it.
+  expect_gt(min(eigen(G, symmetric = TRUE, only.values = TRUE)$values), 0)
 })
 
 
-test_that("single-factor information loading and uniqueness SEs match lavaan", {
+test_that("information uniqueness and loading SEs agree with the robust sandwich", {
+  skip_on_cran()
+
+  # `information` and `sandwich` build the same correlation-structure covariance from different
+  # meats -- the normal-theory Gamma at the model-implied Sigma versus the fourth-moment (ADF)
+  # Gamma of the observed correlations -- so on multivariate normal data they estimate the same
+  # quantity and agree up to finite-sample meat noise. That makes the sandwich an independent
+  # check on the uniqueness SEs within the correlation metric. lavaan's default fit is NOT the
+  # comparator here: it analyses a covariance structure, so its uniqueness SEs carry the sampling
+  # variability of a diagonal that is fixed at 1 in the model EFAtools fits (and under
+  # `correlation = TRUE` lavaan derives the uniquenesses and reports their SE as 0).
+  set.seed(11)
+  R0 <- test_models$baseline$cormat
+  X <- matrix(stats::rnorm(3000 * ncol(R0)), 3000) %*% chol(R0)
+  colnames(X) <- colnames(R0)
+
+  fi <- EFA(X, n_factors = 3, method = "ML", rotation = "none", se = "information")
+  fs <- EFA(X, n_factors = 3, method = "ML", rotation = "none", se = "sandwich")
+
+  expect_lt(abs(stats::median(fi$SE$uniquenesses / fs$SE$uniquenesses) - 1), 0.1)
+  expect_lt(abs(stats::median(fi$SE$unrot_loadings / fs$SE$unrot_loadings) - 1), 0.1)
+  expect_gt(stats::cor(c(fi$SE$unrot_loadings), c(fs$SE$unrot_loadings)), 0.9)
+})
+
+
+test_that("single-factor information loading SEs match lavaan's correlation structure", {
   skip_on_cran()
   skip_if_not_installed("lavaan")
 
-  # With one factor there is no rotational indeterminacy, so the loadings are identified
-  # (up to sign) the same way in both packages and their SEs are directly comparable.
+  # With one factor there is no rotational indeterminacy, so the loadings are identified (up to
+  # sign) the same way in both packages and their SEs are directly comparable. lavaan must be
+  # asked for a CORRELATION structure (`correlation = TRUE`): its default fits a covariance
+  # structure, which treats the analysed diagonal as carrying sampling variability and returns
+  # loading SEs roughly twice as large. The residual gap is the N vs N - 1 scaling plus lavaan
+  # evaluating its weight at the sample rather than the model-implied matrix.
   R <- stats::cor(GRiPS_raw)
   N <- nrow(GRiPS_raw)
   fit <- EFA(GRiPS_raw, n_factors = 1, method = "ML", rotation = "none", se = "information")
 
-  lav <- lavaan::efa(sample.cov = R, sample.nobs = N, nfactors = 1,
-                     rotation = "none", estimator = "ML")
-  lav_fit <- Filter(function(e) inherits(e, "lavaan"), lav)[[1]]
+  mod <- paste0("f =~ ", paste(colnames(R), collapse = " + "))
+  lav_fit <- lavaan::cfa(mod, data = as.data.frame(GRiPS_raw), std.lv = TRUE,
+                         correlation = TRUE)
   pe <- lavaan::parameterEstimates(lav_fit)
   ld <- pe[pe$op == "=~", ]; ld <- ld[match(colnames(R), ld$rhs), ]
-  uq <- pe[pe$op == "~~" & pe$lhs == pe$rhs & pe$lhs %in% colnames(R), ]
-  uq <- uq[match(colnames(R), uq$lhs), ]
 
-  expect_equal(as.vector(fit$SE$unrot_loadings), ld$se, tolerance = 0.01)
-  expect_equal(unname(fit$SE$uniquenesses), uq$se, tolerance = 0.01)
+  # The residual few percent is the evaluation point: EFAtools uses the EXPECTED information, so
+  # Gamma is taken at the model-implied Sigma, whereas lavaan evaluates it at the sample matrix.
+  expect_equal(as.vector(fit$SE$unrot_loadings), ld$se, tolerance = 0.08)
+
+  # ... and NOT lavaan's covariance-structure SEs, which are materially larger. Pinned as a
+  # direction so a regression back to the covariance-structure information cannot pass silently.
+  lav_cov <- lavaan::cfa(mod, data = as.data.frame(GRiPS_raw), std.lv = TRUE)
+  se_cov <- lavaan::parameterEstimates(lav_cov)
+  se_cov <- se_cov[se_cov$op == "=~", ]
+  se_cov <- se_cov[match(colnames(R), se_cov$rhs), "se"]
+  expect_gt(stats::median(se_cov / as.vector(fit$SE$unrot_loadings)), 1.2)
 })
 
 
@@ -187,9 +227,9 @@ test_that("information SEs populate the rotated SE/CI schema under an oblique ro
 
 test_that("information communality SEs equal the uniqueness SEs (one estimand)", {
   # h2_i = 1 - psi_i exactly, so the communality and uniqueness are a single estimand up to sign
-  # and must carry the same standard error (and a mirrored Wald interval). The reported SE is the
-  # psi-block value; a loading-gradient delta on the expected-information covariance is a second,
-  # less accurate route that overstates Var(h2_i) against the sampling distribution.
+  # and must carry the same standard error (and a mirrored Wald interval). Both are the ordinary
+  # delta method on the loading covariance, so they now agree by construction -- under the former
+  # covariance-structure information the two routes disagreed by up to 18%.
   R <- test_models$baseline$cormat
   fit <- EFA(R, n_factors = 3, N = 500, method = "ML", rotation = "oblimin", se = "information")
 
@@ -197,6 +237,33 @@ test_that("information communality SEs equal the uniqueness SEs (one estimand)",
   # The Wald intervals mirror: communality upper = 1 - uniqueness lower (and lower = 1 - upper).
   expect_equal(unname(fit$CI$communalities$upper), unname(1 - fit$CI$uniquenesses$lower))
   expect_equal(unname(fit$CI$communalities$lower), unname(1 - fit$CI$uniquenesses$upper))
+})
+
+
+test_that("an unusable covariance NAs the communality SEs along with the uniqueness SEs", {
+  # The post-solve PSD gate leaves a FINITE covariance next to NA marginal SEs (only the marginals
+  # are NA-filled). The communalities are a delta method on that covariance, so they must fail
+  # closed with it -- otherwise the object ships a finite `SE$communalities` beside an all-NA
+  # `SE$uniquenesses` and an all-NA `vcov_unrot_loadings`, contradicting both the one-estimand
+  # contract and the "no finite SE next to an NA covariance" invariant.
+  R <- test_models$baseline$cormat
+  fit <- EFA(R, n_factors = 3, N = 500, method = "ML", rotation = "oblimin", se = "none")
+  fit_out <- list(unrot_loadings = fit$unrot_loadings)
+  rot_info <- list(rotation = "oblimin", rotmat = fit$rotmat, rot_loadings = fit$rot_loadings,
+                   Phi = fit$Phi, normalize = fit$settings$normalize,
+                   crit_args = list(gam = 0, delta = 0.01))
+
+  out <- testthat::with_mocked_bindings(
+    suppressWarnings(
+      EFAtools:::.se_information(fit_out, rot_info, N = 500, ci = 0.95, method = "ML")),
+    .is_psd = function(M) FALSE,
+    .package = "EFAtools"
+  )
+
+  expect_true(all(is.na(out$SE$uniquenesses)))
+  expect_true(all(is.na(out$SE$communalities)))
+  expect_true(all(is.na(out$SE$rot_loadings)))
+  expect_true(all(is.na(out$vcov_unrot_loadings)))
 })
 
 
@@ -291,10 +358,19 @@ test_that("rotated information loading and Phi SEs match lavaan's delta method",
 
   # Both packages reach the same (identification-invariant) rotated solution.
   expect_equal(max(abs(Lt_a - Ll)), 0, tolerance = 0.01)
-  # Their delta-method loading SEs agree to finite-sample noise: lavaan scales by N and EFAtools by
-  # N - 1, and the optima differ at O(1 / sqrt(N)).
-  expect_gt(stats::cor(c(SEt_a), c(SEl)), 0.97)
+  # Their delta-method loading SEs agree closely overall -- the same rotation Jacobian applied to
+  # the same solution -- but not exactly, because `lavaan::efa()` propagates a COVARIANCE-structure
+  # unrotated covariance (it has no correlation-structure EFA path) while EFAtools propagates the
+  # correlation-structure one.
+  expect_gt(stats::cor(c(SEt_a), c(SEl)), 0.93)
   expect_lt(mean(abs(SEt_a - SEl)), 0.004)
+
+  # That difference has a signature, and it is the one that would disappear if the unrotated
+  # covariance regressed to a covariance structure: it is confined to the SALIENT loadings (where
+  # the spurious standardisation variance accumulates) and leaves the near-zero loadings alone.
+  salient <- abs(Ll) > 0.4
+  expect_lt(max((SEt_a / SEl)[salient]), 0.98)
+  expect_lt(abs(stats::median((SEt_a / SEl)[!salient]) - 1), 0.05)
 
   # Factor-correlation SEs, matched by correlation value (the two packages order factors differently
   # so the off-diagonal positions do not line up).
@@ -333,7 +409,7 @@ test_that("rotated information SEs track the bootstrap", {
   expect_lt(abs(stats::median(fa$SE$Structure / SEs_b) - 1), 0.3)
 
   # Communalities are rotation-invariant (no alignment), so they are compared cell by cell. The
-  # analytic communality SE is the uniqueness-block (psi-block) value it shares with the uniqueness
+  # analytic communality SE is the delta-method value it shares with the uniqueness
   # (h2 = 1 - psi); the bootstrap has no communality slot, so the reference is recomputed from the
   # replicate loadings. The two agree in magnitude (median ratio near 1); the normal-theory SE and
   # the bootstrap are different finite-sample estimators, so the per-variable pattern correlation is
@@ -346,8 +422,9 @@ test_that("rotated information SEs track the bootstrap", {
 
 
 test_that("a Heywood case under a rotation yields NA rotated SEs with a classed warning", {
-  # A communality above one drives a uniqueness below its zero boundary, where the expected
-  # information is undefined, so no analytic SE -- rotated or unrotated -- exists.
+  # A communality above one drives a uniqueness below its zero boundary, where the solution sits
+  # on the parameter-space boundary and the Wald intervals this path reports are not valid, so no
+  # analytic SE -- rotated or unrotated -- is offered.
   L <- matrix(c(sqrt(1.11), 0.6, 0.5, 0.4, 0.2, 0.7,
                 0.1, 0.05, 0.2, 0.3, 0.15, 0.25), 6, 2)   # h2[1] > 1, so psi[1] < 0
   fit_out <- list(unrot_loadings = L)
@@ -355,7 +432,7 @@ test_that("a Heywood case under a rotation yields NA rotated SEs with a classed 
                    Phi = diag(2), normalize = FALSE, crit_args = list(gam = 0, delta = 0.01))
 
   expect_warning(
-    out <- EFAtools:::.se_information_rotated(fit_out, rot_info, N = 200, ci = 0.95),
+    out <- EFAtools:::.se_information(fit_out, rot_info, N = 200, ci = 0.95, method = "ML"),
     class = "efa_se_unreliable"
   )
   expect_true(anyNA(out$SE$rot_loadings))
@@ -380,13 +457,15 @@ test_that("information SEs are available from a correlation matrix and match the
 
 
 test_that("a Heywood case yields NA SEs with a classed warning", {
-  # A communality above one drives a uniqueness below its zero boundary, where Psi^-1 and
-  # the Lambda' Psi^-1 Lambda identification are no longer defined, so no analytic SE exists.
+  # A communality above one drives a uniqueness below its zero boundary. The correlation-structure
+  # information is still assembleable there, but the solution sits on the parameter-space boundary,
+  # where a Wald interval is not valid, so the path declines to report one.
   L <- matrix(c(sqrt(1.11), 0.6, 0.5, 0.4), 4, 1)   # h2[1] = 1.11 > 1, so psi[1] < 0
   fit_out <- list(unrot_loadings = L)
 
   expect_warning(
-    out <- EFAtools:::.se_information(fit_out, N = 200, ci = 0.95),
+    out <- EFAtools:::.se_information(fit_out, rot_info = NULL, N = 200, ci = 0.95,
+                                      method = "ML"),
     class = "efa_se_unreliable"
   )
   expect_true(anyNA(out$SE$unrot_loadings))
@@ -426,6 +505,31 @@ test_that("unsupported se combinations abort early with a clear class", {
   expect_error(
     EFA(R, n_factors = 3, method = "ML", rotation = "none", se = "information"),
     class = "efa_se_no_n"
+  )
+})
+
+
+test_that("information SEs are rejected for non-Pearson correlation methods", {
+  # The expected information is built from the normal-theory covariance of Pearson correlations.
+  # A polychoric correlation additionally carries first-stage threshold estimation error and a rank
+  # correlation is not a Pearson moment at all, so neither may reach this path silently -- the
+  # sandwich is the supported route for both.
+  x <- DOSPERT_raw[1:300, 1:8]
+
+  for (cm in c("poly", "tetra", "spearman", "kendall")) {
+    expect_error(
+      EFA(x, n_factors = 2, method = "ML", rotation = "none", se = "information",
+          cor_method = cm),
+      class = "efa_se_unsupported",
+      info = cm
+    )
+  }
+
+  # Pearson and fiml stay available.
+  expect_s3_class(
+    EFA(x, n_factors = 2, method = "ML", rotation = "none", se = "information",
+        cor_method = "pearson"),
+    "EFA"
   )
 })
 

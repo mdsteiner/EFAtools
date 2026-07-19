@@ -120,9 +120,9 @@ test_that("se = 'sandwich' under rotation also persists the unrotated block", {
 
 
 test_that("an unreliable information fit yields an NA-filled vcov of the correct shape, not NULL", {
-  # Drive `.se_information_ml()` straight into its `na_out` branch with a synthetic loading
-  # whose first communality exceeds one (psi[1] < 0 -> Psi^{-1} and the identification
-  # constraint Lambda' Psi^{-1} Lambda are no longer defined). Going through EFA() is not a
+  # Drive `.se_information()` straight into its Heywood branch with a synthetic loading whose
+  # first communality exceeds one (psi[1] < 0), where the solution sits on the parameter-space
+  # boundary and the Wald intervals this path reports are not valid. Going through EFA() is not a
   # reliable route here because the optimiser pulls the boundary off zero (e.g. psi[1] ~ 0.005
   # at the .999-loading fixture), so the SE path completes with finite numbers; the storage
   # contract under genuine unreliability is the one we need to pin.
@@ -130,7 +130,8 @@ test_that("an unreliable information fit yields an NA-filled vcov of the correct
   fit_out <- list(unrot_loadings = L)
   p <- nrow(L); k <- ncol(L); pk <- p * k
 
-  out <- suppressWarnings(EFAtools:::.se_information(fit_out, N = 200, ci = 0.95))
+  out <- suppressWarnings(
+    EFAtools:::.se_information(fit_out, rot_info = NULL, N = 200, ci = 0.95, method = "ML"))
 
   expect_true("vcov_unrot_loadings" %in% names(out))
   V <- out$vcov_unrot_loadings
@@ -165,32 +166,24 @@ test_that("an unreliable sandwich fit yields an NA-filled V_AA of the correct sh
 
 
 test_that("a finite-but-not-PSD information vcov is NA-filled to match the marginal SEs", {
-  # `.se_information_ml()` has TWO unreliability paths: (i) early Heywood / singular return
-  # already covered above (matrix-of-NAs vcov); (ii) post-solve sqrt-gate where the bordered
-  # inverse succeeds but yields a V whose diagonal carries a small negative variance, so the
-  # marginal SEs are NA but `vcov = V` stays finite. The persisted slot must NA-fill on the
-  # second path too, so a non-PSD V never ships next to NA marginal SEs and silently
-  # propagates `sqrt(NaN)` downstream.
+  # The information path has TWO unreliability routes: (i) the Heywood early return already
+  # covered above; (ii) the post-solve PSD gate, where the bordered inverse succeeds but yields a
+  # covariance carrying a negative eigenvalue, so the marginal SEs are NA while the covariance
+  # itself stays finite. The persisted slot must NA-fill on the second route too, so a non-PSD
+  # covariance never ships next to NA marginal SEs and silently propagates `sqrt(NaN)` downstream.
+  # Forcing `.is_psd()` to fail isolates that gate on a fit that is otherwise perfectly healthy.
   L <- matrix(c(.7, .65, .6, .55, .5, .6), 6, 1)
   fit_out <- list(unrot_loadings = L)
   p <- nrow(L); k <- ncol(L); pk <- p * k
-  q <- pk + p
-
-  # Simulate the post-solve gate output: a finite (non-NA) bordered vcov alongside NA marginal
-  # SEs. The persistence wrapper should still ship an all-NA pk x pk slot.
-  fake_ml <- function(L, psi, N, R = NULL) {
-    list(
-      vcov = matrix(1.0, q, q),         # finite, deliberately non-PSD-looking
-      loadings_se = matrix(NA_real_, p, k),
-      uniquenesses_se = rep(NA_real_, p)
-    )
-  }
 
   out <- testthat::with_mocked_bindings(
-    suppressWarnings(EFAtools:::.se_information(fit_out, N = 200, ci = 0.95)),
-    .se_information_ml = fake_ml,
+    suppressWarnings(
+      EFAtools:::.se_information(fit_out, rot_info = NULL, N = 200, ci = 0.95, method = "ML")),
+    .is_psd = function(M) FALSE,
     .package = "EFAtools"
   )
+
+  expect_true(anyNA(out$SE$unrot_loadings))
 
   V <- out$vcov_unrot_loadings
   expect_false(is.null(V))

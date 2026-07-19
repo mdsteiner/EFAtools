@@ -22,9 +22,13 @@ factor analysis. Psychometrika, 23, 187–200. doi: 10.1007/BF02289233
 Lawley, D. N., & Maxwell, A. E. (1971). Factor analysis as a statistical
 method (2nd ed.). Butterworths.
 
-Jennrich, R. I., & Thayer, D. T. (1973). A note on Lawley's formulas for
-standard errors in maximum likelihood factor analysis. Psychometrika, 38, 571–580.
-doi: 10.1007/BF02291495
+Cudeck, R. (1989). Analysis of correlation matrices using covariance
+structure models. Psychological Bulletin, 105, 317–327.
+doi: 10.1037/0033-2909.105.2.317
+
+Olkin, I., & Siotani, M. (1976). Asymptotic distribution of functions of a
+correlation matrix. In S. Ikeda (Ed.), Essays in probability and statistics
+(pp. 235–251). Shinko Tsusho.
 
 Jennrich, R. I. (1973). Standard errors for obliquely rotated factor
 loadings. Psychometrika, 38, 593–604. doi: 10.1007/BF02291497
@@ -392,18 +396,30 @@ Value).
 \item \strong{"none"} (default) computes no standard errors.
 \item \strong{"information"} returns analytic standard errors from the expected (Fisher)
 information matrix of the maximum-likelihood solution, and therefore requires
-\code{estimator = "ML"}. The rotated standard errors are obtained by propagating the
-unrotated-loading covariance through the rotation by the delta method (Jennrich,
-1973); because rotated quantities are identification-invariant they are directly
-comparable across programs. Unlike the bootstrap it also works from a correlation
-matrix as long as \code{N} is supplied. The covariance is the inverse expected information
-under the identification constraint that \eqn{\Lambda' \Psi^{-1} \Lambda} is diagonal,
-scaled by \eqn{1 / (N - 1)}; the confidence intervals are Wald intervals (estimate
-\eqn{\pm} z * SE). These standard errors assume multivariate normality and a correctly
-specified model; under heavy-tailed data or model misfit they can understate the
-sampling variability, where a bootstrap is more robust. The rotated
-structure-coefficient intervals are somewhat conservative for
-high-communality variables, where \code{"sandwich"} or \code{"np-boot"} give sharper intervals.
+\code{estimator = "ML"} and \code{cor_method = "pearson"} (or \code{"fiml"}, see below). The rotated
+standard errors are obtained by propagating the unrotated-loading covariance through
+the rotation by the delta method (Jennrich, 1973); because rotated quantities are
+identification-invariant they are directly comparable across programs. Unlike the
+bootstrap it also works from a correlation matrix as long as \code{N} is supplied.
+
+\code{\link[=efa_fit]{efa_fit()}} analyses a \emph{correlation} structure -- the diagonal of the analysed matrix
+is fixed at 1 and the uniquenesses \eqn{\psi_i = 1 - \sum_j \lambda_{ij}^2} are a
+function of the loadings rather than free parameters -- so the information is the
+correlation-structure one, \eqn{\Delta' \Gamma^{-1} \Delta} over the off-diagonal
+correlations, with \eqn{\Gamma} the normal-theory asymptotic covariance of the sample
+correlations (Olkin & Siotani, 1976) at the model-implied \eqn{\Sigma}
+(Cudeck, 1989). It is scaled by \eqn{1 / (N - 1)} and
+the confidence intervals are Wald intervals (estimate \eqn{\pm} z * SE). These
+standard errors assume multivariate normality and a correctly specified model; under
+heavy-tailed data or model misfit they can understate the sampling variability, where
+\code{"sandwich"} or \code{"np-boot"} are more robust.
+
+The \emph{rotated} quantities, the uniquenesses, and the communalities are
+identification-invariant and so are comparable across programs. The \strong{unrotated}
+loading standard errors are not: they are reported in the orientation the solution
+itself is identified in (for ML, \eqn{\Lambda' \Psi^{-1} \Lambda} diagonal), and a
+program using a different identification will report different unrotated loading
+standard errors for the same fit.
 \item \strong{"sandwich"} returns robust (Godambe sandwich) standard errors from raw data,
 combining the estimator weight with an asymptotic-distribution-free covariance of the
 correlations, so it stays valid under non-normality and weight misspecification
@@ -412,7 +428,7 @@ correlations, so it stays valid under non-normality and weight misspecification
 (the meat is the polychoric / tetrachoric asymptotic covariance), or for continuous
 data with \code{cor_method = "pearson"} and \code{estimator = "ML"} or \code{"ULS"} (the meat is the
 fourth-moment ADF covariance of the sample correlations, the basis of the MLM / MLR
-robust statistics). It reports the same standard errors as \code{"information"}, propagated
+robust statistics). It reports the same coverage as \code{"information"}, propagated
 by the same delta method, and additionally fills the model fit's chi-square block with
 a scaled (Satorra-Bentler / scaled-and-shifted) chi-square (see \emph{Fit indices}).
 Because the asymptotic covariance must describe the same cases as the correlation
@@ -501,8 +517,9 @@ Not every estimator, rotation, standard-error, and correlation method can be com
 \item \strong{Estimator and correlation method.} \code{estimator = "DWLS"} requires ordinal data with
 \code{cor_method = "poly"} or \code{"tetra"}. \code{cor_method = "fiml"} works with PAF, ML, and ULS
 (not DWLS) and needs raw data with missing values.
-\item \strong{Standard errors.} \code{se = "information"} requires \code{estimator = "ML"} and can be computed
-from a correlation matrix when \code{N} is supplied. \code{se = "sandwich"} requires raw data,
+\item \strong{Standard errors.} \code{se = "information"} requires \code{estimator = "ML"} and
+\code{cor_method = "pearson"} or \code{"fiml"}, and can be computed from a correlation matrix
+when \code{N} is supplied. \code{se = "sandwich"} requires raw data,
 with either a polychoric/tetrachoric \code{cor_method} (ML, ULS, or DWLS) or a Pearson
 \code{cor_method} (ML or ULS); it is not available for PAF. Under \code{cor_method = "fiml"},
 \code{"information"} and \code{"sandwich"} are available for ML and ULS only and both return the

@@ -70,6 +70,30 @@ second-order fit is set with `estimate_control(type = ...)`. `SL()` keeps `type`
 
 ## Bug Fixes
 
+* `se = "information"` now returns correlation-structure standard errors. The expected
+information was assembled for a covariance structure — treating the uniquenesses as free
+parameters and so attributing sampling variability to a diagonal that is fixed at 1 — which
+made the loading standard errors conservative by up to a factor of two (most for the highest
+loadings), with a nominal 95% Wald interval covering at about 99.8%. Real loadings and
+cross-loadings could therefore be judged non-significant. The information is now built from
+the normal-theory asymptotic covariance of the correlations at the model-implied `Sigma`
+(Cudeck, 1989; Olkin & Siotani, 1976), which is Monte-Carlo calibrated and agrees with the
+`"sandwich"` and `"np-boot"` standard errors on normal data. Loading standard errors,
+confidence intervals, and the stored `vcov_unrot_loadings` (from which `efa_mi()` builds its
+within-imputation variances) all change; `Phi`, the uniquenesses, and the communalities are
+essentially unaffected.
+
+* `se = "information"` is now rejected for `cor_method` other than `"pearson"` and `"fiml"`.
+The formula presumes normal-theory sampling behaviour of the analysed matrix, which neither a
+polychoric correlation (it carries first-stage threshold estimation error) nor a rank
+correlation satisfies; both previously returned standard errors without comment. Use
+`se = "sandwich"`, which is built for exactly those inputs.
+
+* The corrected two-stage standard errors under `cor_method = "fiml"` now use the same
+`N - 1` small-sample scaling as the other analytic standard errors and as the fit statistics.
+They were previously scaled by `N`, so they differed from the complete-data Pearson path by a
+systematic factor of `sqrt(N / (N - 1))`. Reported standard errors change by under 0.2%.
+
 * Fixed a regression in `MAP()`: the revised (TR4) criterion was computed from
 the element-wise fourth powers of the partial correlations instead of the trace
 of the fourth matrix power, which could change the suggested number of factors.
