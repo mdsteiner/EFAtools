@@ -160,3 +160,7 @@
 
   list(PCA = eigen_R_PCA, SMC = eigen_R_SMC, EFA = eigen_R_EFA)
 }
+
+# Fall back to `y` when `x` is NULL. Defined here because the base R version was
+# only added in R 4.4.0, below the package's minimum.
+`%||%` <- function(x, y) if (is.null(x)) y else x

@@ -43,7 +43,9 @@ EFA(
 correlations. If raw data is entered, the correlation matrix is found from the
 data.}
 
-\item{n_factors}{numeric. Number of factors to extract.}
+\item{n_factors}{numeric. Number of factors to extract. Must be at least 1 and
+smaller than the number of variables (the common factor model is not identified
+otherwise). Use \code{\link[=efa_retain]{efa_retain()}} to decide on a value.}
 
 \item{N}{numeric. The number of observations. Needs only be specified if a
 correlation matrix is used. If input is a correlation matrix and \code{N} = NA

@@ -9,7 +9,9 @@
 #' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
 #' correlations. If raw data is entered, the correlation matrix is found from the
 #' data.
-#' @param n_factors numeric. Number of factors to extract.
+#' @param n_factors numeric. Number of factors to extract. Must be at least 1 and
+#' smaller than the number of variables (the common factor model is not identified
+#' otherwise). Use [efa_retain()] to decide on a value.
 #' @param N numeric. The number of observations. Needs only be specified if a
 #' correlation matrix is used. If input is a correlation matrix and `N` = NA
 #' (default), not all fit indices can be computed. When raw data with missing
@@ -398,7 +400,8 @@
 #' specified and will be passed to the rotation procedure (e.g., maxit to change the
 #' maximum number of iterations).
 #'
-#' The `type` argument has no effect on ULS and ML. For ULS, no additional
+#' The `type` tuning arguments have no effect on ULS and ML; `type` itself still
+#' governs the checks applied to the correlation matrix. For ULS, no additional
 #' arguments are needed. For ML, an additional argument
 #' `start_method` is needed to determine the starting values for the
 #' optimization procedure. Default for this argument is "psych" which takes
@@ -418,11 +421,13 @@
 #' \item{iter}{For PAF, the number of iterations until convergence. For ML, ULS, and
 #'  DWLS, the number of objective-function evaluations used by the optimiser (not the
 #'  number of optimiser iterations).}
-#' \item{convergence}{Integer convergence code (0 = converged). For ML, ULS, and
-#'  DWLS this is the convergence code from the bounded optimiser (the same codes as
-#'  [`stats::optim()`][stats::optim]'s "L-BFGS-B"); for PAF it is 1 if the maximum
-#'  number of iterations was reached without meeting the convergence criterion and 0
-#'  otherwise. A non-zero code is also reported with a warning.}
+#' \item{convergence}{Integer convergence code (0 = converged), using the codes of
+#'  [`stats::optim()`][stats::optim]. For ML and ULS it is the code from the bounded
+#'  optimiser; for DWLS the fit runs a bounded warm start followed by an
+#'  unconstrained polish, and the reported code is non-zero if *either* of them
+#'  stopped early. For PAF it is 1 if the maximum number of iterations was reached
+#'  without meeting the convergence criterion and 0 otherwise. A non-zero code is
+#'  also reported with a warning.}
 #' \item{heywood}{A named integer vector indicating which variables have a
 #'  Heywood (improper) case in the unrotated solution; empty if there are none.}
 #' \item{unrot_loadings}{Loading matrix containing the final unrotated loadings.}
@@ -617,6 +622,17 @@ efa_fit <- function(x, n_factors, N = NA,
   # Perform argument checks
   .reject_flat_knobs(...names())
   .assert_cor_input(x)
+
+  # n_factors has no default: catch its omission here so the most common first-call
+  # mistake gets a classed condition pointing at the function that answers it,
+  # rather than R's bare "argument is missing" error.
+  if (missing(n_factors)) {
+    cli::cli_abort(
+      c("{.arg n_factors} is required.",
+        "i" = "Use {.fn efa_retain} to decide how many factors to extract."),
+      class = "efa_missing_n_factors"
+    )
+  }
 
   estimator <- .match_arg_ci(estimator)
   # "MINRES" is a synonym for "ULS" (same estimator); resolve it once here so the
@@ -829,15 +845,30 @@ efa_fit <- function(x, n_factors, N = NA,
   checkmate::assert_number(ci, lower = 0, upper = 1)
   checkmate::assert_int(seed, null.ok = TRUE)
 
-  # The common-factor model requires fewer factors than variables; with
-  # n_factors >= n_variables it is not identified and the eigenvalue-based
-  # extraction in the ML, ULS, and PAF fitters reads past the available
-  # eigenvalues (undefined behaviour in an unchecked build).
+  # The common-factor model needs at least one factor and fewer factors than
+  # variables: with n_factors >= n_variables it is not identified and the
+  # eigenvalue-based extraction in the ML, ULS, and PAF fitters reads past the
+  # available eigenvalues (undefined behaviour in an unchecked build), and with
+  # n_factors = 0 there is no model to fit. Both bounds are checked here so the
+  # C++ kernels' own bound checks are never the user-facing error.
   n_vars <- ncol(x)
+  # With a single variable no number of factors is admissible, so only state the
+  # range when one exists (it would otherwise read "1 to 0").
+  range_hint <- if (n_vars > 1) " The admissible range is 1 to {n_vars - 1}." else ""
+  if (n_factors < 1) {
+    cli::cli_abort(
+      c("{.arg n_factors} must be at least 1.",
+        "x" = paste0("You requested {n_factors} factor{?s}.", range_hint),
+        "i" = "A factor retention criterion that returns 0 means no factor is worth
+               extracting, so there is no exploratory factor model to fit."),
+      class = "efa_too_few_factors"
+    )
+  }
   if (n_factors >= n_vars) {
     cli::cli_abort(
       c("{.arg n_factors} must be smaller than the number of variables.",
-        "x" = "You requested {n_factors} factor{?s} for {n_vars} variable{?s}.",
+        "x" = paste0("You requested {n_factors} factor{?s} for {n_vars} variable{?s}.",
+                     range_hint),
         "i" = "Extract fewer factors."),
       class = "efa_too_many_factors"
     )
@@ -892,7 +923,13 @@ efa_fit <- function(x, n_factors, N = NA,
                              acov = if (se == "sandwich" && !is_cormat && cor_method != "fiml") "full"
                                     else if (estimator == "DWLS") "diag" else "none",
                              dwls = estimator == "DWLS",
-                             check_singular = est_type != "psych",
+                             # The psych preset tolerates a singular correlation matrix only
+                             # for PAF, whose starting communalities fall back to a
+                             # pseudo-inverse. No other estimator has that fallback -- ML and
+                             # ULS solve R for their starting values and the ML discrepancy
+                             # needs log|R|, and DWLS would silently drop to a flat start --
+                             # so the check stays on for them under every preset.
+                             check_singular = !(est_type == "psych" && estimator == "PAF"),
                              posdef_abort = est_type == "SPSS")
   R <- prep$R
   N <- prep$N
@@ -1161,7 +1198,8 @@ efa_fit <- function(x, n_factors, N = NA,
   # which fits one EFA per grid cell, suppresses these per-model warnings and
   # reports a single summary instead.
   if (length(fit_out$heywood) > 0) {
-    heywood_vars <- names(fit_out$heywood)
+    # Fall back to the indices if the correlation matrix carried no variable names.
+    heywood_vars <- names(fit_out$heywood) %||% as.character(fit_out$heywood)
     cli::cli_warn(
       c(paste("{cli::qty(heywood_vars)}Heywood case{?s} detected for {.val {heywood_vars}}:",
               "the solution is improper (a communality at or above 1, or a uniqueness",
@@ -1181,7 +1219,9 @@ efa_fit <- function(x, n_factors, N = NA,
     cli::cli_warn(
       c("The {.val {estimator}} optimiser did not converge (convergence code {fit_out$convergence}).",
         "i" = paste("It stopped before meeting the convergence tolerance (typically the maximum",
-                    "number of iterations was reached); the results may not be interpretable.")),
+                    "number of iterations was reached); the results may not be interpretable."),
+        "i" = paste("Try extracting fewer factors, or check the correlation matrix for",
+                    "near-collinear variables.")),
       class = "efa_nonconvergence"
     )
   }

@@ -363,6 +363,32 @@ test_that("errors are thrown correctly", {
   expect_warning(EFA(test_models$baseline$cormat, n_factors = 3, rotation = "quartimax", N = 500, type = "SPSS"), class = "efa_spss_rotation_untested")
 })
 
+test_that("a singular correlation matrix is rejected for every type except psych + PAF", {
+  # The psych preset relaxes the singularity check because psych::smc() falls back
+  # to a pseudo-inverse for the PAF starting communalities. ML and ULS have no such
+  # fallback -- they solve R for their starting values, and the ML discrepancy needs
+  # log|R| -- so the check must stay on for them under every preset, and the abort
+  # must be the package's classed one rather than a raw LAPACK error.
+  for (ty in c("EFAtools", "psych", "SPSS")) {
+    for (est in c("PAF", "ML", "ULS")) {
+      if (ty == "psych" && est == "PAF") next
+      expect_error(
+        efa_fit(cor_sing, n_factors = 1, N = 10, estimator = est,
+                estimate_control = estimate_control(type = ty)),
+        class = "efa_cor_singular"
+      )
+    }
+  }
+
+  # psych + PAF keeps the documented pseudo-inverse behaviour and still fits.
+  expect_no_error(
+    suppressWarnings(
+      efa_fit(cor_sing, n_factors = 1, N = 10, estimator = "PAF",
+              estimate_control = estimate_control(type = "psych"))
+    )
+  )
+})
+
 test_that("EFA rejects n_factors >= number of variables", {
   dat <- matrix(rnorm(30), ncol = 3)  # 3 variables
 
@@ -377,6 +403,23 @@ test_that("EFA rejects n_factors >= number of variables", {
   # the bootstrap path reuses n_factors and is guarded before any resampling runs
   expect_error(EFA(dat, n_factors = 3, method = "ML", se = "np-boot"),
                class = "efa_too_many_factors")
+})
+
+test_that("EFA rejects n_factors below 1 and a missing n_factors", {
+  cm <- test_models$baseline$cormat
+
+  # Several factor retention criteria legitimately return 0 ("no factor worth
+  # extracting"), so the retain-then-fit idiom can hand efa_fit() a zero. It must
+  # be rejected in R with a classed condition, not by the C++ bound check.
+  for (est in c("PAF", "ML", "ULS")) {
+    expect_error(efa_fit(cm, n_factors = 0, N = 500, estimator = est),
+                 class = "efa_too_few_factors")
+  }
+  expect_error(EFA(cm, n_factors = 0, N = 500), class = "efa_too_few_factors")
+
+  # Omitting n_factors points at the function whose job is to answer it.
+  expect_error(efa_fit(cm, N = 500), class = "efa_missing_n_factors")
+  expect_error(EFA(cm, N = 500), class = "efa_missing_n_factors")
 })
 
 test_that("print.efa output is stable (PAF, promax)", {
@@ -524,6 +567,16 @@ test_that("residuals.efa is a pure extractor", {
   expect_error(residuals(efa_psych, "bogus"))
 })
 
+# A near-unit first loading pins item1's uniqueness at the ML/ULS estimation
+# boundary, giving a genuine improper solution with every communality still below 1.
+boundary_heywood_cormat <- function() {
+  L <- c(.999, .7, .6, .5)
+  R <- L %*% t(L)
+  diag(R) <- 1
+  dimnames(R) <- list(paste0("item", seq_along(L)), paste0("item", seq_along(L)))
+  R
+}
+
 test_that("Heywood cases are detected, warned, and recorded", {
   # Over-extracting the baseline model with PAF yields a Heywood case (V14).
   expect_warning(
@@ -543,20 +596,25 @@ test_that("Heywood cases are detected, warned, and recorded", {
   efa_clean <- suppressWarnings(EFA(test_models$baseline$cormat, 3, N = 500,
                                     method = "ML"))
   expect_length(efa_clean$heywood, 0)
+  # ... and it is still a named integer vector when empty, as documented
+  expect_named(efa_clean$heywood)
 
   # ML/ULS constrain the uniquenesses to a lower bound, so an improper solution
   # keeps the communality just below 1 and instead pins a uniqueness at that
   # bound. A near-unit first loading forces this boundary case; it must be flagged
   # for both estimators even though no communality reaches 1.
-  L_bnd <- c(.999, .7, .6, .5)
-  R_bnd <- L_bnd %*% t(L_bnd)
-  diag(R_bnd) <- 1
+  R_bnd <- boundary_heywood_cormat()
 
   for (m in c("ML", "ULS")) {
     expect_warning(EFA(R_bnd, 1, N = 200, method = m), class = "efa_heywood")
     efa_bnd <- suppressWarnings(EFA(R_bnd, 1, N = 200, method = m))
     expect_gt(length(efa_bnd$heywood), 0)
     expect_true(all(efa_bnd$h2[efa_bnd$heywood] < 1))
+    # heywood is documented as a *named* integer vector: the optimiser-based
+    # fitters return the uniquenesses as a one-column matrix, whose dim attribute
+    # would otherwise displace the variable names when the two criteria are
+    # combined, leaving the warning below with nothing to name.
+    expect_named(efa_bnd$heywood, "item1")
   }
 
   # The same matrix with a clearly proper structure is not flagged.
@@ -564,6 +622,26 @@ test_that("Heywood cases are detected, warned, and recorded", {
   R_ok <- L_ok %*% t(L_ok)
   diag(R_ok) <- 1
   expect_length(suppressWarnings(EFA(R_ok, 1, N = 200, method = "ML"))$heywood, 0)
+})
+
+test_that("the Heywood warning names the affected variables", {
+  local_reproducible_output()
+
+  R_bnd <- boundary_heywood_cormat()
+
+  # ML and ULS reach the Heywood case through a uniqueness pinned at the
+  # estimation boundary; the message must name the variable rather than report a
+  # bare count.
+  expect_snapshot({
+    for (est in c("ML", "ULS")) {
+      cat("--", est, "--\n")
+      withCallingHandlers(
+        efa_fit(R_bnd, 1, N = 200, estimator = est),
+        efa_heywood = function(w) cat(conditionMessage(w), "\n"),
+        warning = function(w) invokeRestart("muffleWarning")
+      )
+    }
+  })
 })
 
 test_that("point-estimate non-convergence is surfaced for the iterative estimators", {

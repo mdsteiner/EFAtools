@@ -105,8 +105,12 @@ protected:
                arma::mat& load) override {
     // One eigendecomposition of Rs = D^-1/2 R D^-1/2 (D = diag(psi)) feeds the
     // objective, gradient, and loadings.
-    arma::mat sc = arma::diagmat(1.0 / sqrt(psi));
-    arma::mat Rs = sc * R_ * sc;
+    // Scaling by a diagonal matrix is applied as row/column scaling (O(p^2))
+    // rather than as two dense matrix products (O(p^3)); the result is identical.
+    arma::vec sc = 1.0 / arma::sqrt(psi);
+    arma::mat Rs = R_;
+    Rs.each_col() %= sc;
+    Rs.each_row() %= sc.t();
     arma::vec eigval;
     arma::mat eigvec;
     eig_sym_checked(eigval, eigvec, Rs);
@@ -125,9 +129,10 @@ protected:
     load = arma::diagmat(arma::sqrt(psi)) *
       (V.head_cols(n_fac_) * arma::diagmat(arma::sqrt(top)));
 
-    // gradient of the objective with respect to psi
-    arma::mat gmat = load * load.t() + arma::diagmat(psi) - R_;
-    g = gmat.diag() / arma::pow(psi, 2);
+    // gradient of the objective with respect to psi: the diagonal of
+    // L L' + diag(psi) - R, read off directly as the row sums of squares of L
+    // instead of forming the full p x p product.
+    g = (arma::sum(arma::square(load), 1) + psi - R_.diag()) / arma::pow(psi, 2);
   }
 };
 
@@ -165,8 +170,8 @@ protected:
     arma::vec lam_g = lambda;
     lam_g.elem(arma::find(lam_g < 0)).zeros();
     arma::mat load_g = V * arma::diagmat(arma::sqrt(lam_g));
-    arma::mat gmat = load_g * load_g.t() + arma::diagmat(psi) - R_;
-    g = gmat.diag();
+    // diag(L L') is the row sums of squares of L; no need to form the p x p product
+    g = arma::sum(arma::square(load_g), 1) + psi - R_.diag();
 
     // objective: lift eigenvalues below machine epsilon to eps*100, then sum the
     // squared strictly-lower off-diagonal residuals (the diagonal, absorbed by the
@@ -411,6 +416,7 @@ Rcpp::List fit_dwls_cpp(const arma::mat& R, const int n_fac, const arma::mat& W)
   // weighted-ULS warm start over psi (numerical gradient; box [floor, 1])
   EigenPsiDwlsFunctor wf(R, W, n_fac);
   roptim::Roptim<EigenPsiDwlsFunctor> wopt("L-BFGS-B");
+  // same uniqueness floor as the ML/ULS fitters; see .uniqueness_floor in R/estimate_model.R
   wopt.set_lower(arma::vec(R.n_rows).fill(0.005));
   wopt.set_upper(arma::vec(R.n_rows).fill(1.0));
   wopt.control.maxit = 200;
@@ -451,7 +457,11 @@ Rcpp::List fit_dwls_cpp(const arma::mat& R, const int n_fac, const arma::mat& W)
     Rcpp::Named("loadings")    = Lc,
     Rcpp::Named("Fm")          = Fm,
     Rcpp::Named("iter")        = opt.fncount(),
-    Rcpp::Named("convergence") = opt.convergence());
+    // A warm start that exhausted its own budget may have left the polish outside the
+    // global basin -- the failure the warm start exists to prevent -- so report either
+    // optimiser stopping early as non-convergence rather than only the polish.
+    Rcpp::Named("convergence") = opt.convergence() != 0 ? opt.convergence()
+                                                        : wopt.convergence());
 }
 
 // DWLS objective and gradient exposed for the estimator guard tests; thin wrappers over

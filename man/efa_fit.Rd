@@ -108,7 +108,9 @@ efa_fit(
 correlations. If raw data is entered, the correlation matrix is found from the
 data.}
 
-\item{n_factors}{numeric. Number of factors to extract.}
+\item{n_factors}{numeric. Number of factors to extract. Must be at least 1 and
+smaller than the number of variables (the common factor model is not identified
+otherwise). Use \code{\link[=efa_retain]{efa_retain()}} to decide on a value.}
 
 \item{N}{numeric. The number of observations. Needs only be specified if a
 correlation matrix is used. If input is a correlation matrix and \code{N} = NA
@@ -202,11 +204,13 @@ with the final communality estimates as diagonal.}
 \item{iter}{For PAF, the number of iterations until convergence. For ML, ULS, and
 DWLS, the number of objective-function evaluations used by the optimiser (not the
 number of optimiser iterations).}
-\item{convergence}{Integer convergence code (0 = converged). For ML, ULS, and
-DWLS this is the convergence code from the bounded optimiser (the same codes as
-\code{\link[stats:optim]{stats::optim()}}'s "L-BFGS-B"); for PAF it is 1 if the maximum
-number of iterations was reached without meeting the convergence criterion and 0
-otherwise. A non-zero code is also reported with a warning.}
+\item{convergence}{Integer convergence code (0 = converged), using the codes of
+\code{\link[stats:optim]{stats::optim()}}. For ML and ULS it is the code from the bounded
+optimiser; for DWLS the fit runs a bounded warm start followed by an
+unconstrained polish, and the reported code is non-zero if \emph{either} of them
+stopped early. For PAF it is 1 if the maximum number of iterations was reached
+without meeting the convergence criterion and 0 otherwise. A non-zero code is
+also reported with a warning.}
 \item{heywood}{A named integer vector indicating which variables have a
 Heywood (improper) case in the unrotated solution; empty if there are none.}
 \item{unrot_loadings}{Loading matrix containing the final unrotated loadings.}
@@ -590,7 +594,8 @@ above for the varimax and promax rotations. Additional arguments can also be
 specified and will be passed to the rotation procedure (e.g., maxit to change the
 maximum number of iterations).
 
-The \code{type} argument has no effect on ULS and ML. For ULS, no additional
+The \code{type} tuning arguments have no effect on ULS and ML; \code{type} itself still
+governs the checks applied to the correlation matrix. For ULS, no additional
 arguments are needed. For ML, an additional argument
 \code{start_method} is needed to determine the starting values for the
 optimization procedure. Default for this argument is "psych" which takes

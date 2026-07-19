@@ -94,9 +94,12 @@
   # ML/ULS the optimiser constrains the uniquenesses to [floor, 1], so an improper
   # solution instead shows up as a uniqueness pinned at the lower floor (the
   # boundary case); flag those too so detection is consistent across estimators.
+  # The ML/ULS fitters return psi as a p x 1 matrix; `|` propagates a dim
+  # attribute in preference to names, which would strip the variable names off
+  # the result, so drop the dim with as.vector() before combining.
   heywood_comm <- h2 >= 1
   heywood_boundary <- if (!is.null(fit$psi)) {
-    fit$psi <= .uniqueness_floor + sqrt(.Machine$double.eps)
+    as.vector(fit$psi) <= .uniqueness_floor + sqrt(.Machine$double.eps)
   } else {
     rep(FALSE, length(h2))
   }

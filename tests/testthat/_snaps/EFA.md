@@ -455,3 +455,20 @@
       
       Inspect the residual matrix for details (e.g., with residuals()).
 
+# the Heywood warning names the affected variables
+
+    Code
+      for (est in c("ML", "ULS")) {
+        cat("--", est, "--\n")
+        withCallingHandlers(efa_fit(R_bnd, 1, N = 200, estimator = est), efa_heywood = function(
+          w) cat(conditionMessage(w), "\n"), warning = function(w) invokeRestart(
+          "muffleWarning"))
+      }
+    Output
+      -- ML --
+      Heywood case detected for "item1": the solution is improper (a communality at or above 1, or a uniqueness fixed at the estimation boundary).
+      i Interpret the affected loadings and uniquenesses with caution. 
+      -- ULS --
+      Heywood case detected for "item1": the solution is improper (a communality at or above 1, or a uniqueness fixed at the estimation boundary).
+      i Interpret the affected loadings and uniquenesses with caution. 
+

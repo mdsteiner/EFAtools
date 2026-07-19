@@ -65,7 +65,6 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
   arma::vec new_h2;
   arma::vec eigval;
   arma::mat eigvec;
-  arma::mat Lt;
 
   // One iterative loop parameterised on abs_eig, crit_type, and the n_fac == 1
   // special case. The per-iteration branches are loop-invariant and negligible
@@ -102,9 +101,9 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
       L = V * Lambda[0];
     }
 
-    // get the new communality estimates from the loadings
-    Lt = L * L.t();
-    new_h2 = Lt.diag();
+    // get the new communality estimates from the loadings; diag(L L') is the row
+    // sums of squares of L, so the full p x p product is never formed
+    new_h2 = arma::sum(arma::square(L), 1);
 
     // change in the communality estimates: the maximum individual change
     // (crit_type 1) or the change in their sum, as used by the psych package
