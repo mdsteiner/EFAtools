@@ -46,6 +46,7 @@ efa_average(
     "na.or.complete"),
   cor_method = c("pearson", "spearman", "kendall", "poly", "tetra", "fiml"),
   show_progress = TRUE,
+  seed = NULL,
   P_type = lifecycle::deprecated()
 )
 }
@@ -187,6 +188,13 @@ random and the standardized covariance is analysed, reproducing
 
 \item{show_progress}{logical. Whether a progress bar should be shown in the
 console. Default is TRUE.}
+
+\item{seed}{numeric or \code{NULL}. An optional seed making the averaging run
+reproducible and independent of the number of parallel workers (the grid runs with
+\link[future.apply:future_lapply]{future_lapply()}, for which a parallel plan can be set
+via \code{\link[future:plan]{future::plan()}}). It matters whenever a criterion-based rotation is included,
+since those draw random starts. When supplied, the caller's random-number stream is
+restored afterwards, leaving no side effect. Default is \code{NULL}.}
 
 \item{P_type}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#superseded}{\figure{lifecycle-superseded.svg}{options: alt='[Superseded]'}}}{\strong{[Superseded]}} Former name of \code{p_type}. Still
 accepted (silently) for backwards compatibility; please use \code{p_type}.}

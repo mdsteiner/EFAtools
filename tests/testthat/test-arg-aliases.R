@@ -7,8 +7,8 @@
 cormat <- test_models$baseline$cormat
 
 test_that("EFA() maps the old randomStarts onto random_starts identically", {
-  # The rotation random starts draw from the ambient RNG (the `seed` argument only
-  # seeds the bootstrap), so fix it identically before each call.
+  # The rotation random starts draw from the ambient RNG, so fix it identically before
+  # each call (passing `seed` to both calls would do the same).
   set.seed(1)
   new <- suppressWarnings(
     EFA(cormat, n_factors = 3, N = 500, rotation = "oblimin", type = "EFAtools",

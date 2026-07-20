@@ -67,6 +67,12 @@
 #'  the shared variance is already accounted in the first eigenvalue (e.g.,
 #'  Braeken & van Assen, 2017).
 #'
+#'  The reference eigenvalues are obtained from simulated data, so the suggested number
+#'  of factors varies slightly from run to run. Call [set.seed()] beforehand to make a
+#'  run reproducible; the result is then also independent of the parallel plan set via
+#'  [future::plan()], so it can be reproduced on a machine with a different number of
+#'  cores.
+#'
 #'  The `efa_parallel` function can also be called together with other factor
 #'  retention criteria in the [efa_retain()] function.
 #'
@@ -160,8 +166,16 @@ efa_parallel <- function(x = NULL,
   checkmate::assert_count(n_datasets)
   checkmate::assert_number(percent, lower = 0, upper = 100)
 
-  n_cores <- future::nbrOfWorkers()
-  size_vec <- .parallel_chunks(n_datasets, n_cores)
+  # The simulated datasets are drawn in chunks, one future per chunk, under
+  # future.seed = TRUE -- which assigns one L'Ecuyer stream per element of the chunk
+  # vector. The number of chunks therefore has to be independent of the number of
+  # workers: deriving it from nbrOfWorkers() would make the per-chunk streams, and hence
+  # the reference eigenvalues, differ between a sequential and a multisession plan for the
+  # same set.seed(). A fixed chunk count keeps a seeded run reproducible on any plan;
+  # future still load-balances the fixed chunks across whatever workers exist. The chunk
+  # count never exceeds n_datasets (no empty chunks) and never drops below one, which
+  # would divide by zero for the degenerate n_datasets = 0.
+  size_vec <- .parallel_chunks(n_datasets, max(1L, min(n_datasets, 20L)))
 
   # Prepare objects
   results_PCA <- NA
@@ -578,12 +592,12 @@ if (decision_rule == "crawford") {
   return(results)
 }
 
-# Split n_datasets into n_cores non-negative integer chunks that sum to n_datasets,
+# Split n_datasets into n_chunks non-negative integer chunks that sum to n_datasets,
 # distributing the remainder one per chunk. Avoids a negative final chunk when
-# n_datasets is not much larger than the number of workers.
-.parallel_chunks <- function(n_datasets, n_cores) {
-  size_vec <- rep(n_datasets %/% n_cores, n_cores)
-  rem <- n_datasets %% n_cores
+# n_datasets is not much larger than the number of chunks.
+.parallel_chunks <- function(n_datasets, n_chunks) {
+  size_vec <- rep(n_datasets %/% n_chunks, n_chunks)
+  rem <- n_datasets %% n_chunks
   if (rem > 0) size_vec[seq_len(rem)] <- size_vec[seq_len(rem)] + 1
   size_vec
 }

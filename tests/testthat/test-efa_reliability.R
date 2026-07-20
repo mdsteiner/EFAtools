@@ -259,6 +259,27 @@ test_that("a bifactor with an under-loaded item informs about too few loadings",
                  class = "efa_reliability_few_loadings")
 })
 
+test_that("efa_reliability handles an EFA whose rotation leaves the columns unlabelled", {
+  skip_if_not_installed("GPArotation")
+
+  # An oblimin fit carries no factor-column labels; it must still yield the same
+  # per-factor structure as a labelled (promax) fit of the same extraction.
+  efa_obl <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
+                     estimator = "PAF", rotation = "oblimin")
+  res <- efa_reliability(efa_obl)
+  ref <- efa_reliability(efa_mod)
+
+  expect_setequal(res$factor, c("g", "F1", "F2", "F3"))
+  for (cf in c("omega_subscale", "H")) {
+    expect_setequal(res$factor[res$coefficient == cf], c("F1", "F2", "F3"))
+  }
+  expect_setequal(res$coefficient, unique(ref$coefficient))
+
+  # The whole-scale omega total does not depend on which oblique rotation was used.
+  g_tot <- function(x) x$value[x$coefficient == "omega_total" & x$factor == "g"]
+  expect_equal(g_tot(res), g_tot(ref), tolerance = 1e-8)
+})
+
 test_that("print output is stable", {
   local_reproducible_output()
 

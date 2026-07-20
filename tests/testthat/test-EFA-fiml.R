@@ -561,7 +561,8 @@ test_that("FIML np-boot returns the full SE/CI schema with finite SEs (oblique)"
   # rotation adds the factor-correlation (Phi) and structure-coefficient blocks. The
   # replicate cube's last dimension indexes the bootstrap samples.
   expect_named(efa$SE, c("unrot_loadings", "rot_loadings", "Phi", "Structure",
-                         "fit_indices", "residuals", "valid_target_rotations"))
+                         "fit_indices", "residuals", "valid_replicates",
+                         "valid_target_rotations"))
   expect_named(efa$CI, c("unrot_loadings", "rot_loadings", "Phi", "Structure",
                          "fit_indices", "residuals"))
   expect_named(efa$replicates, c("unrot_loadings", "rot_loadings", "Phi", "Structure",

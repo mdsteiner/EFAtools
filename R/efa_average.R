@@ -122,6 +122,12 @@
 #'   [efa_fit()] and the details). Default is "pearson".
 #' @param show_progress logical. Whether a progress bar should be shown in the
 #' console. Default is TRUE.
+#' @param seed numeric or `NULL`. An optional seed making the averaging run
+#' reproducible and independent of the number of parallel workers (the grid runs with
+#' [future_lapply()][future.apply::future_lapply], for which a parallel plan can be set
+#' via [future::plan()]). It matters whenever a criterion-based rotation is included,
+#' since those draw random starts. When supplied, the caller's random-number stream is
+#' restored afterwards, leaving no side effect. Default is `NULL`.
 #' @param P_type `r lifecycle::badge("superseded")` Former name of `p_type`. Still
 #' accepted (silently) for backwards compatibility; please use `p_type`.
 #'
@@ -350,7 +356,7 @@ efa_average <- function(x, n_factors, N = NA, estimator = "PAF", rotation = "pro
                                 "complete.obs", "everything", "na.or.complete"),
                         cor_method = c("pearson", "spearman", "kendall", "poly",
                                        "tetra", "fiml"),
-                        show_progress = TRUE,
+                        show_progress = TRUE, seed = NULL,
                         P_type = lifecycle::deprecated()) {
 
   # Perform argument checks
@@ -472,6 +478,15 @@ efa_average <- function(x, n_factors, N = NA, estimator = "PAF", rotation = "pro
   default_precision <- 1e-5
 
   ### Run all efas
+
+  # A supplied `seed` makes the averaging run reproducible and leaves the caller's RNG
+  # stream untouched: it is saved and restored on exit (or, if none existed, the state
+  # set.seed() creates is removed again). The grid's fits are stochastic whenever a
+  # criterion-based rotation draws random starts, and future_lapply(future.seed = TRUE)
+  # derives its per-fit L'Ecuyer streams from the state set here, which also makes the
+  # grid independent of the number of parallel workers. Set before the single-combination
+  # branch below so that shortcut is covered too. Mirrors the seed handling in efa_fit().
+  .set_local_seed(seed)
 
   if (nrow(arg_grid) == 1) {
 

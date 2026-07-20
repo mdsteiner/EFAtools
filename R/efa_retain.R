@@ -130,6 +130,10 @@
 #' (see [efa_smt()])}
 #' }
 #'
+#' The comparison data, parallel analysis, and NEST criteria compare the data against
+#' simulated reference data, so their suggested numbers of factors vary slightly from run
+#' to run; call [set.seed()] before `efa_retain()` to make them reproducible.
+#'
 #' @returns A list of class `c("efa_retain", "N_FACTORS")`, the trailing class
 #'   keeping `inherits(x, "N_FACTORS")` working for code written against the
 #'   superseded name. It contains
@@ -154,6 +158,8 @@
 #' \donttest{
 #' # Default criteria, with correlation matrix and estimator "ML" (where needed)
 #' # This will throw a warning for CD, as no raw data were specified
+#' # The simulation-based criteria are seeded to make the run reproducible
+#' set.seed(42)
 #' nfac_all <- efa_retain(test_models$baseline$cormat, N = 500, estimator = "ML")
 #'
 #' # The same as above, but without "CD"

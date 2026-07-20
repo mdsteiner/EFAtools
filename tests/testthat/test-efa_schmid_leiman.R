@@ -300,6 +300,65 @@ test_that("a second-order Heywood case raises a classed error", {
                class = "efa_sl_heywood")
 })
 
+test_that("oblique solutions with unlabelled factor columns keep all factors", {
+
+  # The GPArotation-based rotations return loadings without column labels, so the
+  # first-order factors must be taken in the order they come in. Reordering them
+  # by a factor number parsed from absent labels used to subset the loadings and
+  # Phi down to zero columns, which made the second-order EFA see no variables.
+  cormat <- test_models$baseline$cormat
+  cormat_list <- list(cormat, cormat, cormat)
+
+  for (k in c(3L, 4L)) {
+
+    fitted <- suppressMessages(efa_fit(cormat, N = 500, n_factors = k,
+                                       estimator = "PAF", rotation = "oblimin"))
+    pooled <- suppressMessages(efa_mi(cormat_list, N = 500, n_factors = k,
+                                      estimator = "PAF", rotation = "oblimin"))
+
+    # the fixtures only test what they are meant to if the columns are unlabelled
+    expect_null(colnames(fitted$rot_loadings))
+    expect_null(colnames(pooled$rot_loadings))
+
+    for (obj in list(fitted, pooled)) {
+
+      sl <- efa_schmid_leiman(obj, estimator = "PAF")
+
+      expect_s3_class(sl, "efa_schmid_leiman")
+      expect_identical(colnames(sl$sl),
+                       c("g", paste0("F", seq_len(k)), "h2", "u2"))
+      expect_identical(nrow(sl$sl), ncol(cormat))
+      expect_false(anyNA(sl$sl))
+
+      # the second-order EFA saw all k first-order factors: this is what the
+      # zero-column subset destroyed, so it is the assertion that pins the bug
+      expect_identical(dim(sl$L2), c(k, 1L))
+
+      # loadings are real rather than the all-zero block a collapsed L1 produces
+      expect_true(all(abs(sl$sl[, "g"]) > 0))
+      expect_true(all(sl$sl[, "h2"] > 0 & sl$sl[, "h2"] < 1))
+
+    }
+
+  }
+
+})
+
+test_that("labelled factor columns are still ordered by factor number", {
+
+  # The fallback for unlabelled columns must not disable the reordering when the
+  # labels are present but out of order.
+  L1 <- EFA_mod$rot_loadings[, c(2, 3, 1)]
+  Phi_1 <- EFA_mod$Phi[c(2, 3, 1), c(2, 3, 1)]
+  colnames(L1) <- c("F2", "F3", "F1")
+
+  sl_scrambled <- efa_schmid_leiman(L1, Phi = Phi_1, estimator = "PAF",
+                                    estimate_control = estimate_control(type = "EFAtools"))
+
+  expect_equal(sl_scrambled$sl, SL_EFAtools$sl)
+
+})
+
 test_that("print output is stable", {
   local_reproducible_output()
 

@@ -68,7 +68,98 @@ working.
 * `efa_schmid_leiman()` has no `type` argument; the estimation preset for the
 second-order fit is set with `estimate_control(type = ...)`. `SL()` keeps `type`.
 
+## Reproducibility
+
+* `seed` now governs the whole fit, not only the bootstrap. In `efa_fit()` it covers the
+rotation's random starts on the point estimate as well as the case resampling and the
+replicate fits, so `efa_fit(..., rotation = "simplimax", seed = 1)` is now reproducible
+at any `se`. Previously `seed` was silently a no-op at the default `se = "none"`, and a
+criterion-based rotation could reach a different optimum on every call. Seeded
+`se = "np-boot"` results are unchanged: there the point fit already drew from the seeded
+stream, so only the previously unreachable case is affected. `EFA()` forwards `seed` to
+`efa_fit()` and inherits the wider coverage. `efa_group()` likewise applies `seed` to the
+per-group fits whether or not a congruence bootstrap is requested, where it previously
+applied it only with `b_boot > 0`.
+
+* `efa_average()` gains a `seed` argument with the same contract: it makes the averaging
+grid reproducible and independent of the number of parallel workers, and the caller's
+random-number stream is restored afterwards.
+
+* `efa_parallel()` results no longer depend on the number of parallel workers. The
+simulated datasets were split into as many chunks as there were workers, and each chunk
+drew its own random-number stream, so the reference eigenvalues from a single
+`set.seed()` differed between a sequential and a multisession plan. The number of chunks
+is now fixed, which makes a seeded run reproducible on any plan but changes the reference
+eigenvalues a given seed produces. `efa_retain()` and `efa_hull()` inherit this.
+
+* `efa_hull()` now runs its fits with a managed random-number stream, so a hull analysis
+with a criterion-based rotation (such as `oblimin`) is reproducible from `set.seed()`
+under a parallel plan. This changes the results a given seed produces for those
+rotations.
+
 ## Bug Fixes
+
+* `efa_fit(se = "information")` no longer reports enormous standard errors for the
+unrotated loadings of a weakly determined solution. Two safeguards that were meant to
+catch this never fired. The first withholds the analytic covariance at a Heywood case, but
+tested for a uniqueness at or below zero — which the ML, ULS and DWLS fitters cannot
+produce, because they constrain the uniquenesses to a small positive floor. An improper
+solution is pinned *at* that floor rather than below zero, so it passed the check and was
+reported with a Wald standard error taken at a boundary where the interval is not valid.
+It is now recognised at the boundary the fitters can actually reach, the same one a
+Heywood case is flagged by elsewhere. The second safeguard is new: when two of a solution's
+canonical variances nearly coincide, the orientation of the unrotated loadings within that
+plane is arbitrary and the constraint that identifies them stops pinning it down. The
+parameter covariance stays finite and positive semidefinite, so nothing downstream flagged
+it, yet the standard errors diverge along that direction — reaching 80 for a loading
+bounded in [-1, 1]. Both cases now return `NA` for the affected standard errors and raise
+the classed `efa_se_unreliable` warning. On a simulated design with a weak third factor at
+N = 400, the 99th percentile of the mean unrotated loading standard error falls from 11.3
+to 0.72, while the median is unchanged at 0.07.
+
+Only the unrotated loadings are affected by the second case. The rotated loadings, the
+factor correlations, the structure coefficients and the communalities do not depend on the
+orientation and keep their standard errors, as does `$vcov_unrot_loadings`, so `efa_mi()`
+continues to pool them. A Heywood case, where the Wald approximation fails altogether,
+still withholds every analytic standard error as before. Where the unrotated loadings
+themselves are the quantity of interest, `se = "np-boot"` remains available.
+
+* `efa_mi()` no longer returns a different unrotated solution depending on the order of
+`data_list`. The unrotated loadings were matched up to factor reordering and sign against
+whichever imputation came first, and where that matching is ambiguous — a weakly
+determined factor, or two factors of near-equal strength — a different first imputation
+produced a different pooled unrotated solution, by up to 0.84 in a single loading. The
+match is now anchored on the imputation closest to all the others, which is a property of
+the set and so does not move when the list is reordered. Because the anchor has moved,
+this changes the pooled unrotated solution for everyone, not only for those who reorder
+their imputations, and with it everything computed from it: with `rotation = "none"` that
+includes the communalities, the model-implied correlation matrix, the residuals, RMSR,
+SRMR and CAF. On a weakly determined three-factor fit a communality moved by up to 0.14
+and RMSR from 0.150 to 0.094. Chi-square, CFI, TLI and RMSEA are pooled from the
+per-imputation fit indices and are unaffected. A whole factor column may also come back
+with the opposite sign; a column sign is arbitrary in an unrotated solution and carries no
+substantive meaning.
+
+* The unrotated loadings pooled by `efa_mi()` are now returned in the same gauge the
+extraction itself uses, so they can be compared with an `efa_fit()` solution
+element-by-element. Averaging several aligned solutions does not preserve the constraint
+that identifies the unrotated loadings — diagonal `L'L` for a principal-axis extraction,
+diagonal `L' Psi^-1 L` for maximum likelihood — which left the pooled matrix in a gauge no
+single fit uses. How far out of gauge the average drifts depends on how well separated the
+factors are: on well-determined three-factor solutions the constraint was violated by well
+under 1%, rising to 28% on a weakly determined one. This second correction, unlike the
+change of anchor above, is an orthogonal rotation shared by all imputations, so on its own
+it leaves the communalities, the total variance accounted for, the model-implied
+correlation matrix, the residuals, RMSR, SRMR and every fit index exactly unchanged. What
+it does move is the pooled *unrotated* loadings, their standard errors, confidence
+intervals and MI diagnostics (RIV, FMI), and the unrotated per-factor variance table. The
+standard errors move considerably more than the loadings do — typically by under 2%, but
+by up to a factor of three where a factor is weakly determined.
+
+* Neither change affects a rotated solution. If `efa_mi()` is called with a rotation, the
+rotated loadings, `Phi`, `Structure`, the communalities, the rotated variance table and
+every fit index are numerically identical to before; only the unrotated block that
+`efa_fit()` also reports has changed.
 
 * `se = "information"` now returns correlation-structure standard errors. The expected
 information was assembled for a covariance structure — treating the uniquenesses as free

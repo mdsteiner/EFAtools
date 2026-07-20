@@ -258,14 +258,17 @@ efa_hull <- function(x, N = NA, n_fac_theor = NA,
 
   }
 
-  # Calculate loadings with the EFA function
+  # Calculate loadings with the EFA function. future.seed = TRUE because a
+  # criterion-based rotation passed through `...` (e.g. oblimin) draws random starts, so
+  # the workers need a managed random-number stream; without one an oblique HULL run
+  # would not be reproducible from set.seed() under a parallel plan.
   loadings <- suppressWarnings(future.apply::future_lapply(seq_len(J), efa_fit,
                                                            x = R,
                                                            estimator = estimator,
                                                            N = N,
                                                            estimate_control = estimate_control,
                                                            ...,
-                                                           future.seed = FALSE))
+                                                           future.seed = TRUE))
 
   # then for 1 to J factors. estimator == "PAF" forces gof to "CAF" above, so the
   # gof-keyed blocks already cover it; the df is the same for every index (Eq 4

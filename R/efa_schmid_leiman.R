@@ -160,9 +160,9 @@ efa_schmid_leiman <- function(x, Phi = NULL,
 
     }
 
-    n_order <- order(as.numeric(gsub("F", "", colnames(L1))))
-    L1 <- L1[, n_order]
-    Phi <- Phi[n_order, n_order]
+    n_order <- .sl_factor_order(colnames(L1), n_first_fac)
+    L1 <- L1[, n_order, drop = FALSE]
+    Phi <- Phi[n_order, n_order, drop = FALSE]
 
   } else if(inherits(x, "fa")) {
 
@@ -192,9 +192,9 @@ efa_schmid_leiman <- function(x, Phi = NULL,
 
     }
 
-    n_order <- suppressWarnings(order(as.numeric(gsub("[^0-9]", "", colnames(L1)))))
-    L1 <- L1[, n_order]
-    Phi <- Phi[n_order, n_order]
+    n_order <- .sl_factor_order(colnames(L1), n_first_fac)
+    L1 <- L1[, n_order, drop = FALSE]
+    Phi <- Phi[n_order, n_order, drop = FALSE]
 
   } else if(inherits(x, "lavaan")){
 
@@ -273,12 +273,10 @@ efa_schmid_leiman <- function(x, Phi = NULL,
 
     }
 
-    if (!is.null(colnames(x))) {
-      n_order <- suppressWarnings(order(as.numeric(gsub("[^0-9]", "", colnames(x)))))
-      x <- x[, n_order]
-      # Phi is guaranteed non-NULL here (the abort above fires otherwise).
-      Phi <- Phi[n_order, n_order]
-    }
+    n_order <- .sl_factor_order(colnames(x), ncol(x))
+    x <- x[, n_order, drop = FALSE]
+    # Phi is guaranteed non-NULL here (the abort above fires otherwise).
+    Phi <- Phi[n_order, n_order, drop = FALSE]
 
     L1 <- x
     n_first_fac <- ncol(x)
@@ -378,5 +376,25 @@ efa_schmid_leiman <- function(x, Phi = NULL,
   class(output) <- c("efa_schmid_leiman", "SL")
 
   output
+
+}
+
+# Column order of the first-order factors. The loadings are sorted by the factor
+# number embedded in the column labels so that, e.g., "F10" follows "F2" rather
+# than "F1". Factor columns are not always labelled (the GPArotation-based
+# rotations return unnamed loadings) and labels need not carry a number, so fall
+# back to the order the columns already have unless the labels yield a complete
+# permutation of seq_len(n).
+.sl_factor_order <- function(nms, n) {
+
+  # covers unlabelled columns too: length(NULL) is 0, so absent labels take the
+  # fallback rather than reaching the parse below
+  if (length(nms) != n) return(seq_len(n))
+
+  num <- suppressWarnings(as.numeric(gsub("[^0-9]", "", nms)))
+
+  if (anyNA(num)) return(seq_len(n))
+
+  order(num)
 
 }

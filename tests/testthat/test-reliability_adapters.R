@@ -94,6 +94,42 @@ test_that(".rel_adapt_efa gives model-appropriate correlated-factors coefficient
   expect_no_error(.reliability_core(.rel_adapt_efa(efa2), "correlation"))
 })
 
+test_that(".rel_adapt_efa handles rotations that leave the loading columns unlabelled", {
+  skip_if_not_installed("GPArotation")
+
+  # Only varimax and promax name their factor columns; the GPArotation-backed
+  # rotations return unlabelled loadings, which must not cost the adapter its
+  # group factors.
+  efa_obl <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
+                     estimator = "PAF", rotation = "oblimin")
+  expect_null(colnames(efa_obl$rot_loadings))
+
+  spec <- .rel_adapt_efa(efa_obl)
+
+  # All three factors survive, and every group factor still gets a row label.
+  expect_identical(dim(spec$s_load), c(18L, 3L))
+  expect_identical(spec$fac_names, c("F1", "F2", "F3"))
+  expect_identical(spec$s_load, unclass(efa_obl$rot_loadings))
+
+  # Communalities come from the real pattern, not from an empty loading matrix.
+  expect_true(all(spec$u2 > 0 & spec$u2 < 1))
+
+  om <- .reliability_core(spec, "correlation")
+  expect_identical(rownames(om), c("g", "F1", "F2", "F3"))
+  # Each group factor scores a real congeneric omega. Tested on the group rows
+  # only: the g row carries a "sub" value whether or not the group factors
+  # survived, so it cannot discriminate a lost factor.
+  expect_true(all(om[c("F1", "F2", "F3"), "sub"] > 0 &
+                    om[c("F1", "F2", "F3"), "sub"] < 1))
+
+  # Whole-scale omega total is 1 - sum(u2) / 1'R1, and L Phi L' -- hence u2 -- is
+  # invariant to the choice of oblique rotation, so the promax fit of the same
+  # extraction must agree on it.
+  om_pro <- .reliability_core(.rel_adapt_efa(efa_mod), "correlation")
+  expect_equal(unname(om["g", "tot"]), unname(om_pro["g", "tot"]),
+               tolerance = 1e-8)
+})
+
 test_that(".rel_adapt_bifactor reproduces the manual OMEGA path", {
   # A raw orthogonal-bifactor loading matrix: g in the first column.
   g_load <- rep(0.5, 6)

@@ -207,11 +207,17 @@ documentations for details):
 \item{Sequential chi-square model tests, RMSEA lower bound, and AIC
 (see \code{\link[=efa_smt]{efa_smt()}})}
 }
+
+The comparison data, parallel analysis, and NEST criteria compare the data against
+simulated reference data, so their suggested numbers of factors vary slightly from run
+to run; call \code{\link[=set.seed]{set.seed()}} before \code{efa_retain()} to make them reproducible.
 }
 \examples{
 \donttest{
 # Default criteria, with correlation matrix and estimator "ML" (where needed)
 # This will throw a warning for CD, as no raw data were specified
+# The simulation-based criteria are seeded to make the run reproducible
+set.seed(42)
 nfac_all <- efa_retain(test_models$baseline$cormat, N = 500, estimator = "ML")
 
 # The same as above, but without "CD"

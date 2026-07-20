@@ -2,8 +2,9 @@
 # se = "information" path: rotated loadings, communalities (h2), and (oblique)
 # factor correlations (Phi) and structure coefficients.
 #
-# A rotated-loading SE is conditional on the rotation criterion (Jennrich 1973,
-# 1974; Browne 2001; Zhang & Preacher 2015), so for ORTHOGONAL and OBLIQUE
+# A rotated-loading SE is conditional on the rotation criterion (Archer &
+# Jennrich 1973; Jennrich 1973, 1974; Zhang, Preacher, & Jennrich 2012; Zhang &
+# Preacher 2015), so for ORTHOGONAL and OBLIQUE
 # rotations alike the within-imputation variance is each fit's own criterion-aware
 # delta-method rotated SE (the quantity EFA() returns), reused after a
 # signed-permutation alignment to the MI target; the between-imputation variance

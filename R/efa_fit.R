@@ -61,13 +61,15 @@
 #'  estimation, so a smaller value may be advisable.
 #' @param ci numeric. The confidence interval to create from the bootstrap samples.
 #'  Must be between 0 and 1. Default is .95 for 95% CIs.
-#' @param seed numeric. An optional seed for the random-number generator used by the
-#'  non-parametric bootstrap (`se = "np-boot"`), i.e. for the case resampling, the
-#'  rotation random starts, and the Procrustes random starts. Setting it makes the
-#'  bootstrap reproducible and independent of the number of parallel
-#'  workers (see Details); the caller's random-number stream is restored afterwards,
-#'  so supplying a seed leaves no lasting effect on it. Default is `NULL`, which uses
-#'  (and advances) the current state of the generator.
+#' @param seed numeric. An optional seed for the random-number generator, governing every
+#'  stochastic part of the fit: the rotation's random starts on the point estimate (the
+#'  criterion-based rotations draw `random_starts` random starts; see *Rotations*) and,
+#'  under `se = "np-boot"`, the case resampling, the replicate rotations, and the
+#'  Procrustes random starts. Setting it makes the fit reproducible and the bootstrap
+#'  additionally independent of the number of parallel workers (see Details); the
+#'  caller's random-number stream is restored afterwards, so supplying a seed leaves no
+#'  lasting effect on it. Default is `NULL`, which uses (and advances) the current state
+#'  of the generator.
 #' @param ... Additional arguments forwarded to the rotation engine. Only the arguments the
 #'  selected `rotation` consumes are accepted: `maxit` (the maximum number of engine
 #'  iterations) for the GPArotation-style rotations, plus the selected criterion's parameter
@@ -188,16 +190,23 @@
 #' The criterion-based rotations (all except varimax and promax) are fitted by gradient
 #' projection with `random_starts` random starts to guard against local minima; the
 #' complexity criteria (simplimax and geominQ in particular) are the most multimodal. The
+#' starts are drawn from the random-number generator, so different starts can reach
+#' genuinely different optima and such a fit is reproducible only when the generator is
+#' controlled: pass `seed`, or call [set.seed()] beforehand. The
 #' `type` argument changes the varimax and promax settings (see *Using the type presets*)
 #' and, for every rotation, the factor `order_type`. A single factor cannot be rotated.
 #'
 #' ## Standard errors
 #'
 #' `se` selects whether and how standard errors (and matching confidence intervals) are
-#' computed. They cover the unrotated loadings and uniquenesses and, when a rotation is
-#' applied, the rotated loadings, the communalities, and -- for oblique rotations -- the
-#' factor correlations and the structure coefficients (see the `SE` and `CI` entries in
-#' Value).
+#' computed. Which quantities they cover depends on the method. The analytic methods
+#' (`"information"` and `"sandwich"`) cover the unrotated loadings, the uniquenesses and
+#' the communalities and, when a rotation is applied, the rotated loadings and -- for
+#' oblique rotations -- the factor correlations and the structure coefficients. The
+#' bootstrap (`"np-boot"`) covers the unrotated loadings, the residuals, and the fit
+#' indices and, when a rotation is applied, the rotated loadings and -- for oblique
+#' rotations -- the factor correlations and the structure coefficients; it reports no
+#' uniqueness or communality standard errors (see the `SE` and `CI` entries in Value).
 #'
 #' - **"none"** (default) computes no standard errors.
 #' - **"information"** returns analytic standard errors from the expected (Fisher)
@@ -226,6 +235,21 @@
 #'   itself is identified in (for ML, \eqn{\Lambda' \Psi^{-1} \Lambda} diagonal), and a
 #'   program using a different identification will report different unrotated loading
 #'   standard errors for the same fit.
+#'
+#'   That orientation can also fail to be determined. When two of the canonical variances
+#'   \eqn{\mathrm{diag}(\Lambda' \Psi^{-1} \Lambda)} nearly coincide -- which happens with
+#'   a weakly determined factor, or two factors of near-equal strength -- the loadings can
+#'   be rotated within that plane without leaving the identifying constraint, so the
+#'   unrotated loadings have no well-defined sampling distribution and their standard
+#'   errors diverge. `efa_fit()` detects this and returns `NA` for the unrotated loading
+#'   standard errors with an `efa_se_unreliable` warning, rather than reporting a number
+#'   that looks like a standard error but is an artefact of the orientation. Everything
+#'   that does not depend on the orientation -- the rotated loadings, `Phi`, the structure
+#'   coefficients, the uniquenesses and the communalities -- is unaffected and still
+#'   reported. Use those, or `se = "np-boot"`, when the unrotated loadings themselves are
+#'   the quantity of interest. A Heywood case (a uniqueness at its lower boundary) is
+#'   separate: the Wald approximation fails there for every parameter, so no analytic
+#'   standard error is reported at all.
 #' - **"sandwich"** returns robust (Godambe sandwich) standard errors from raw data,
 #'   combining the estimator weight with an asymptotic-distribution-free covariance of the
 #'   correlations, so it stays valid under non-normality and weight misspecification
@@ -236,12 +260,19 @@
 #'   fourth-moment ADF covariance of the sample correlations, the basis of the MLM / MLR
 #'   robust statistics). It reports the same coverage as `"information"`, propagated
 #'   by the same delta method, and additionally fills the model fit's chi-square block with
-#'   a scaled (Satorra-Bentler / scaled-and-shifted) chi-square (see *Fit indices*).
+#'   a scaled (Satorra-Bentler / scaled-and-shifted) chi-square (see *Fit indices*). The
+#'   statistic reported as `chi` is always the scaled-and-shifted one (the WLSMV default,
+#'   flagged by `chi_scaled_type`), for the continuous Pearson path as well as the ordinal
+#'   one; the mean-adjusted statistic that \pkg{lavaan}'s `MLM` reports for continuous data
+#'   is returned alongside it as `chi_mean_adjusted`.
 #'   Because the asymptotic covariance must describe the same cases as the correlation
 #'   matrix, the sandwich (like `estimator = "DWLS"`) is computed on the listwise-complete
 #'   cases; on data with missing values the reported `N`, the correlation matrix, and the
 #'   point estimate therefore reflect the complete cases regardless of `use`.
 #' - **"np-boot"** draws a non-parametric (case-resampling) bootstrap and needs raw data.
+#'   A correlation matrix carries no cases to resample; alone among the unsupported
+#'   combinations this one does not error but warns (condition class `"efa_boot_cormat"`)
+#'   and downgrades `se` to `"none"`, so the fit is returned without an `SE` slot.
 #'   It is the most general method -- available for any `estimator`, `rotation`, and
 #'   `cor_method` -- and the most robust to non-normality and misfit, at the cost of speed;
 #'   its intervals are bootstrap percentile intervals. The replicate fits are run across
@@ -477,11 +508,11 @@
 #' loadings. Based on rotated loadings and, for oblique rotations, the factor
 #' intercorrelations.}
 #' \item{settings}{A list of the settings used.}
-#' \item{SE}{A named list of standard error matrices. For `se = "np-boot"`: bootstrap standard deviations of the unrotated and (when a rotation is applied) rotated loadings, the residuals, and the fit indices, plus -- for oblique rotations -- the factor correlations (`Phi`) and the structure coefficients. For `se = "information"`: Wald standard errors from the expected (Fisher) information matrix for the unrotated loadings and the uniquenesses and, when a rotation is applied, the rotated loadings and the communalities (and, for oblique rotations, `Phi` and the structure coefficients). For `se = "sandwich"`: robust Godambe sandwich standard errors with the same coverage as `"information"`, robust to non-normality and weight misspecification. Only returned if `se` is not `"none"`.}
+#' \item{SE}{A named list of standard error matrices. For `se = "np-boot"`: bootstrap standard deviations of the unrotated and (when a rotation is applied) rotated loadings, the residuals, and the fit indices, plus -- for oblique rotations -- the factor correlations (`Phi`) and the structure coefficients; it additionally carries `valid_replicates`, the number of bootstrap replicates that were fitted and aligned successfully and that every entry above is therefore based on (replicates that failed are excluded and warned about), and, when a rotation is applied, `valid_target_rotations`, the number of those replicates that could also be aligned to the rotated point estimate and that the rotated entries (`rot_loadings`, `Phi`, `Structure`) are based on. For `se = "information"`: Wald standard errors from the expected (Fisher) information matrix for the unrotated loadings, the uniquenesses, and the communalities and, when a rotation is applied, the rotated loadings (and, for oblique rotations, `Phi` and the structure coefficients). Because \eqn{h^2_i = 1 - \psi_i} exactly, the communality and uniqueness standard errors are identical. For `se = "sandwich"`: robust Godambe sandwich standard errors with the same coverage as `"information"`, robust to non-normality and weight misspecification. Only returned if `se` is not `"none"`.}
 #' \item{CI}{A named list of confidence intervals of width `ci`. For `se = "np-boot"`: percentile intervals matching the components of `SE`. For `se = "information"` and `se = "sandwich"`: Wald intervals matching the components of `SE`. Only returned if `se` is not `"none"`.}
-#' \item{replicates}{A named list of bootstrap replicate cubes for the aligned unrotated and (where applicable) rotated loadings, structure coefficients, factor correlations (`Phi`), residuals, and fit indices. Each cube's last dimension indexes the replicate. Populated only for `se = "np-boot"`; `NULL` for the analytic SE methods.}
-#' \item{vcov_unrot_loadings}{The full unrotated loading covariance matrix the marginal `SE$unrot_loadings` were derived from: a `p * n_factors` by `p * n_factors` numeric matrix in column-major `vec(Lambda)` order. Populated for `se = "information"` (expected-information block) and `se = "sandwich"` (robust V_AA), even when a rotation is applied (the persisted block is always the unrotated one); NA-filled if the analytic covariance is unreliable (a Heywood case or a singular bordered information matrix); `NULL` for `se = "np-boot"` and `se = "none"`.}
-#' \item{Gamma}{The asymptotic covariance of the off-diagonal sample correlations -- the meat of the robust sandwich SEs -- on the variance scale (`Var(rho-hat)`; lavaan's correlation NACOV is `N * Gamma`). A `p (p - 1) / 2` by `p (p - 1) / 2` numeric matrix; rows and columns ordered by [utils::combn()] over the column pairs and labelled `"<var_i>-<var_j>"`. Populated only for `se = "sandwich"`; `NULL` otherwise.}
+#' \item{replicates}{A named list of bootstrap replicate arrays for the aligned unrotated and (where applicable) rotated loadings, structure coefficients, factor correlations (`Phi`), residuals, and fit indices. The replicate is the last dimension of the loading, residual, `Phi`, and structure cubes, and the first dimension of the `fit_indices` matrix (whose columns are named after the fit indices). Replicates that failed are left `NA`. Populated only for `se = "np-boot"`; `NULL` for the analytic SE methods.}
+#' \item{vcov_unrot_loadings}{The full unrotated loading covariance matrix the marginal `SE$unrot_loadings` were derived from: a `p * n_factors` by `p * n_factors` numeric matrix in column-major `vec(Lambda)` order. Populated for `se = "information"` (expected-information block) and `se = "sandwich"` (robust V_AA), even when a rotation is applied (the persisted block is always the unrotated one); NA-filled if the analytic covariance is unreliable (a Heywood case or a singular bordered information matrix); `NULL` for `se = "np-boot"` and `se = "none"`. A weakly determined rotational orientation is the one case where this matrix is populated while `SE$unrot_loadings` is `NA`: the covariance itself is finite and valid, and only its gauge-dependent marginals are not (see *Standard errors*).}
+#' \item{Gamma}{The asymptotic covariance of the off-diagonal sample correlations -- the meat of the robust sandwich SEs -- on the variance scale (`Var(rho-hat)`; lavaan's correlation NACOV is `N * Gamma`). A `p (p - 1) / 2` by `p (p - 1) / 2` numeric matrix; rows and columns ordered by [utils::combn()] over the column pairs and labelled `"<var_i>-<var_j>"`. Populated for `se = "sandwich"` on the polychoric/tetrachoric and Pearson paths; `NULL` otherwise, including under `cor_method = "fiml"`, whose meat is the saturated FIML asymptotic covariance and is not returned.}
 #'
 #' @source Grieder, S., & Steiner, M. D. (2022). Algorithmic jingle jungle: A comparison
 #' of implementations of principal axis factoring and promax rotation in R and SPSS.
@@ -937,13 +968,29 @@ efa_fit <- function(x, n_factors, N = NA,
     cli::cli_warn(
       c("Cannot compute bootstrap standard errors from correlation matrix.",
       "x" = "You've supplied {.var se} = {.val {se}}, but {.var x} is a correlation matrix.",
-      "i" = "Setting {.var se} to {.val none}. Rerun with raw data to calculate bootstrap SEs.")
+      "i" = "Setting {.var se} to {.val none}. Rerun with raw data to calculate bootstrap SEs."),
+      class = "efa_boot_cormat"
     )
 
     np_boot <- FALSE
     se <- "none"
 
   }
+
+  # A fixed seed makes the whole fit reproducible: every stochastic step downstream of
+  # this point draws from the state it sets. That covers the rotation's random starts on
+  # the point estimate -- the criterion rotations draw `random_starts` random orthogonal
+  # starts from the ambient stream, so without a seed a simplimax or geominQ fit is not
+  # reproducible run to run -- and, when `se = "np-boot"`, the case resampling, the
+  # replicate rotations, and the Procrustes random starts as well. The bootstrap is also
+  # independent of the number of parallel workers: the case resampling advances the
+  # global RNG by a b_boot-dependent amount, and the parallel replicate fit then adds a
+  # fixed, worker-count-independent step when future.seed = TRUE derives a per-replicate
+  # L'Ecuyer stream. Both advances are deterministic given the seed, so the downstream
+  # draws -- and the result -- are identical at any number of workers. The caller's RNG
+  # stream is saved and restored afterwards -- or, if none existed yet, the state
+  # set.seed() creates is removed again -- so efa_fit() leaves no side effect on it.
+  .set_local_seed(seed)
 
   # Detect or compute the correlation matrix, check it, and smooth it if needed
   prep <- .prepare_cor_input(x, N = N, use = use, cor_method = cor_method,
@@ -1017,18 +1064,6 @@ efa_fit <- function(x, n_factors, N = NA,
   }
 
   if (!is_cormat && isTRUE(np_boot)) {
-
-    # A fixed seed makes the whole bootstrap reproducible and independent of the
-    # number of parallel workers: the case resampling, the rotation random starts,
-    # and the Procrustes random starts all run from this state. The case resampling
-    # advances the global RNG by a b_boot-dependent amount; the parallel replicate
-    # fit then adds a fixed, worker-count-independent step when future.seed = TRUE
-    # derives a per-replicate L'Ecuyer stream. Both advances are deterministic given
-    # the seed, so the downstream draws -- and the result -- are identical at any
-    # number of workers. The caller's RNG stream is saved and restored afterwards --
-    # or, if none existed yet, the seed set.seed() creates is removed again -- so
-    # efa_fit() leaves no side effect on it.
-    .set_local_seed(seed)
 
     m <- ncol(R)
     # Resample the cases the correlation matrix was actually built from. Under
@@ -1601,11 +1636,15 @@ efa_fit <- function(x, n_factors, N = NA,
   L <- unclass(fit_out$unrot_loadings)
   psi <- 1 - rowSums(L^2)
 
-  # At a Heywood case (a uniqueness at or below its zero boundary) the solution sits on the
-  # parameter-space boundary, where the Wald intervals this path reports are not valid. Withhold the
-  # covariance so the core NA-fills through its usual unusable-Gamma branch and the shared
-  # efa_se_unreliable warning fires, rather than reporting a boundary standard error.
-  Gamma <- if (anyNA(psi) || any(psi <= 0)) {
+  # At a Heywood case (a uniqueness at its lower boundary) the solution sits on the parameter-space
+  # boundary, where the Wald intervals this path reports are not valid. Withhold the covariance so
+  # the core NA-fills through its usual unusable-Gamma branch and the shared efa_se_unreliable
+  # warning fires, rather than reporting a boundary standard error. The ML/ULS/DWLS fitters
+  # constrain the uniquenesses to [.uniqueness_floor, 1], so an improper solution is pinned AT that
+  # floor and never reaches zero: testing `psi <= 0` would fire only for a hand-built covariance and
+  # never for a fitted one. Test the same boundary `.finalize_fit()` flags as a Heywood case, so a
+  # fitted boundary solution is withheld rather than reported with a hugely inflated standard error.
+  Gamma <- if (anyNA(psi) || any(psi <= .uniqueness_floor + sqrt(.Machine$double.eps))) {
     NULL
   } else {
     # Model-implied correlation matrix (unit diagonal by construction).
@@ -1710,6 +1749,16 @@ efa_fit <- function(x, n_factors, N = NA,
   info_reliable <- !anyNA(SE_unrot)
   if (!info_reliable) V[] <- NA_real_
 
+  # A degenerate rotational gauge is a strictly weaker signal: it diverges only along the gauge
+  # directions, which the rotation Jacobian annihilates, so the rotated loadings, Phi, the structure
+  # coefficients and the communalities all stay valid and V must NOT be NA'd here. Withhold the
+  # unrotated loadings alone -- and only after `info_reliable` has been read, so a degenerate gauge
+  # cannot masquerade as an unusable covariance and take the rotated quantities down with it.
+  # Absent (rather than FALSE) means the path supplied no gauge diagnostic, e.g. the two-stage FIML
+  # sandwich in R/se-fiml.R, which builds its own `se0`; those paths keep their previous behaviour.
+  gauge_degenerate <- isFALSE(se0$gauge_reliable)
+  if (gauge_degenerate) SE_unrot[] <- NA_real_
+
   spec <- .rotation_se_method(rot_info$rotation, p, k, rot_info$crit_args)
   rotmat <- rot_info$rotmat
   L_rot <- unclass(rot_info$rot_loadings)
@@ -1810,7 +1859,11 @@ efa_fit <- function(x, n_factors, N = NA,
       (oblique && (anyNA(SE_Phi) || anyNA(SE_S)))) {
     cli::cli_warn(
       c("Analytic standard errors could not be computed for all parameters.",
-        "i" = "This occurs at a Heywood case (a uniqueness at or below its zero boundary), when the parameter covariance is singular, or when the rotation could not be reproduced for the standard-error Jacobian."),
+        "i" = if (gauge_degenerate && info_reliable) {
+          "The factor solution's rotational orientation is only weakly determined (two canonical variances nearly coincide), so the unrotated loadings have no well-defined standard error. The rotated loadings and communalities are gauge-invariant and unaffected."
+        } else {
+          "This occurs at a Heywood case (a uniqueness at its lower boundary), when the parameter covariance is singular, or when the rotation could not be reproduced for the standard-error Jacobian."
+        }),
       class = "efa_se_unreliable"
     )
   }
@@ -1818,7 +1871,9 @@ efa_fit <- function(x, n_factors, N = NA,
   # Surface the pk x pk unrotated loading vcov (whichever analytic covariance `se0` carried) so it
   # can be persisted on the EFA object alongside the rotated SEs. It was already NA-filled above
   # when the unrotated SEs were unreliable, so the slot is consistent with the marginal SEs and
-  # downstream consumers can fail closed on `anyNA()`.
+  # downstream consumers can fail closed on `anyNA()`. A degenerate gauge deliberately does NOT
+  # NA-fill it: the covariance is finite, PSD and correct, and only its gauge-dependent marginals
+  # are unusable (see the matching note in `.se_sandwich_unrotated()`).
   list(SE = SE, CI = CI, replicates = NULL, vcov_unrot_loadings = V)
 }
 
@@ -1852,7 +1907,8 @@ efa_fit <- function(x, n_factors, N = NA,
     # identification-invariant and do not depend on which bordering constraint produced V_AA.
     se0 <- list(vcov = core$V_AA,
                 loadings_se = core$loadings_se,
-                uniquenesses_se = core$uniquenesses_se)
+                uniquenesses_se = core$uniquenesses_se,
+                gauge_reliable = core$gauge_reliable)
     .se_information_rotated(fit_out, rot_info, N, ci, se0 = se0)
   }
 
@@ -1892,6 +1948,72 @@ efa_fit <- function(x, n_factors, N = NA,
     }
   }
   Cmat
+}
+
+# Smallest gauge-transversal conditioning a solution can have before its rotational orientation is
+# treated as degenerate. The quantity `.gauge_transversal()` returns is a cosine in [0, 1] -- the
+# smallest principal angle between the gauge-fixing constraint's row space and the gauge directions
+# it has to pin down -- so this is a dimensionless angle, not a parameter scale. Blow-ups in the
+# reported standard errors set in below about 0.05 and well-determined solutions sit above 0.2, so
+# the floor flags only a clearly degenerate orientation.
+.gauge_transversal_floor <- 0.05
+
+# Conditioning of the gauge-fixing constraint as a transversal to the rotational gauge orbit.
+#
+# The bordered inverse of `A` under the constraint `Cmat` is the constrained (reflexive generalised)
+# inverse (Rao & Mitra, 1971, ch. 3; Silvey, 1959)
+#   A^- = (I - Z (C Z)^-1 C) A^+ (I - C' (C Z)^-1' Z'),
+# where Z spans null(A). The whole conditioning of the augmented system therefore sits in the
+# k(k-1)/2 x k(k-1)/2 matrix C Z, and the reported unrotated loading covariance is amplified by
+# ||(C Z)^-1||. The null space is available in closed form: the gauge directions are dLambda =
+# Lambda S for antisymmetric S, since d(Lambda Lambda') = Lambda (S + S') Lambda' = 0, so no
+# eigendecomposition of A is needed.
+#
+# C Z degenerates when the canonical orientation is not pinned down. Dropping the chain-rule term,
+# C Z is diagonal with entries (d_u - d_v) for d = diag(Lambda' Psi^-1 Lambda): when two of the
+# canonical variances that identify the ML solution collide (Lawley & Maxwell, 1971, sec. 2.3), the
+# orientation within that two-plane is arbitrary and the unrotated loadings have no well-defined
+# limiting distribution -- the classic rotational indeterminacy of the unrotated factor solution.
+# The divergence is genuine, not a numerical artefact -- but it is confined to the gauge, so it must
+# be reported rather than reported around: the rotated loadings, Phi and the structure coefficients
+# are gauge-invariant (the rotation Jacobian annihilates these directions) and the communalities
+# rowSums(Lambda^2) are likewise invariant, so all of them stay valid and are left untouched by the
+# caller.
+#
+# Returns the smallest singular value of the row-normalised constraint restricted to the gauge
+# directions -- dimensionless and in [0, 1] -- or Inf when there is no gauge freedom to fix (k = 1).
+.gauge_transversal <- function(L, Cmat) {
+
+  k <- ncol(L)
+  if (nrow(Cmat) == 0L || k < 2L) return(Inf)
+  if (!all(is.finite(L)) || !all(is.finite(Cmat))) return(0)
+
+  # Z = [vec(L S_uv)] over the antisymmetric basis, in the same (u, v) order as the constraint rows.
+  # L %*% S_uv is just two sign-flipped column copies (column u becomes -L[, v], column v becomes
+  # L[, u]), so fill it directly rather than forming S and multiplying.
+  Z <- matrix(0, length(L), nrow(Cmat))
+  col <- 0L
+  for (v in 2:k) {
+    for (u in seq_len(v - 1L)) {
+      col <- col + 1L
+      Zc <- matrix(0, nrow(L), k)
+      Zc[, u] <- -L[, v]
+      Zc[, v] <- L[, u]
+      Z[, col] <- as.vector(Zc)
+    }
+  }
+  # A rank-deficient Z means the loadings themselves are collinear across factors, so the gauge is
+  # not even a well-defined orbit; treat it as maximally degenerate.
+  qrZ <- qr(Z)
+  if (qrZ$rank < ncol(Z)) return(0)
+  Z <- qr.Q(qrZ)
+
+  # Normalise the constraint rows so the singular values measure orientation only: the constraint is
+  # a set of equations fixed at zero, so its overall row scaling is arbitrary and must not enter.
+  rn <- sqrt(rowSums(Cmat^2))
+  if (any(rn <= 0)) return(0)
+
+  min(svd((Cmat / rn) %*% Z)$d)
 }
 
 # Normal-theory asymptotic covariance of the off-diagonal Pearson correlations, on the unit scale
@@ -1956,12 +2078,15 @@ efa_fit <- function(x, n_factors, N = NA,
   k <- ncol(L)
   pk <- p * k
 
+  # `gauge_reliable = TRUE` on the NA path: everything is already withheld, and the gauge is not
+  # what withheld it, so the caller's gauge-specific message must not be attached to this branch.
   na_core <- list(
     V_AA = matrix(NA_real_, pk, pk),
     loadings_se = matrix(NA_real_, p, k),
     uniquenesses_se = rep(NA_real_, p),
     scaled_test = NULL,
-    reliable = FALSE
+    reliable = FALSE,
+    gauge_reliable = TRUE
   )
 
   if (is.null(Gamma) || anyNA(Gamma) || nrow(Gamma) != p * (p - 1L) / 2L) {
@@ -2033,11 +2158,20 @@ efa_fit <- function(x, n_factors, N = NA,
   # while the other is O(0.01-1), so the smaller ratio identifies the gauge -- and detecting keeps it
   # tied to the actual solution, so a future estimator with either identification is handled without
   # special-casing. Two cases the loadings cannot resolve fall back to a fixed choice: the
-  # Lambda'Psi^-1 Lambda gauge needs Psi^-1, so it is unavailable at a Heywood case (psi <= 0) or a
-  # non-finite solution -- routed to Lambda'Lambda; and homogeneous uniquenesses (Psi proportional to
-  # I) make BOTH orientations diagonal, so the gauge is undetermined by the loadings (yet the two
-  # still give different SEs through the chain-rule term), broken by the estimator's identification.
-  # A single factor has no rotational freedom (the constraint is empty either way).
+  # Lambda'Psi^-1 Lambda gauge needs Psi^-1, so it is unavailable where that is undefined (psi <= 0)
+  # or at a non-finite solution -- routed to Lambda'Lambda; and homogeneous uniquenesses (Psi
+  # proportional to I) make BOTH orientations diagonal, so the gauge is undetermined by the loadings
+  # (yet the two still give different SEs through the chain-rule term), broken by the estimator's
+  # identification. A single factor has no rotational freedom (the constraint is empty either way).
+  #
+  # The test here is psi <= 0 and deliberately NOT the `.uniqueness_floor` boundary that
+  # `.se_information()` treats as a Heywood case. The two ask different questions: that one asks
+  # whether the solution sits on the parameter-space boundary (where a Wald interval is invalid),
+  # this one only whether Psi^-1 exists. At a uniqueness pinned at the floor Psi^-1 is large but
+  # perfectly well defined, and the solution is still oriented Lambda'Psi^-1 Lambda-diagonal -- so
+  # forcing the Lambda'Lambda constraint there would mismatch the orientation the loadings are
+  # reported in and hand `.gauge_transversal()` a near-tangent transversal (0.002 against 0.16 for
+  # the matching constraint on a boundary ML fit), withholding standard errors that are fine.
   psi <- 1 - rowSums(L^2)
   use_ltpil_gauge <- if (k < 2L || anyNA(psi) || any(psi <= 0)) {
     FALSE
@@ -2056,6 +2190,15 @@ efa_fit <- function(x, n_factors, N = NA,
   }
   Abread <- .bordered_inverse_block(A, Cmat, pk)
   if (is.null(Abread)) return(na_core)
+
+  # Conditioning of that constraint as a transversal to the gauge orbit. A near-degenerate
+  # transversal amplifies the unrotated loading covariance by ||(C Z)^-1|| without making it
+  # non-finite or non-PSD, so it passes the `.is_psd()` gate below and would otherwise ship a
+  # silently meaningless standard error. Flagged separately from `reliable` because the divergence
+  # lives purely in the gauge: everything gauge-invariant the caller derives from V_AA stays valid.
+  # Computed after the bordered inverse so an exactly singular augmented system -- which returns
+  # through `na_core` and discards this flag -- does not pay for the decomposition.
+  gauge_reliable <- .gauge_transversal(L, Cmat) >= .gauge_transversal_floor
 
   # Meat Delta' V Gamma V Delta = (V Delta)' Gamma (V Delta); robust covariance A^- meat A^- /(N-1).
   Gamma_theta <- crossprod(VD, Gamma %*% VD)
@@ -2079,7 +2222,8 @@ efa_fit <- function(x, n_factors, N = NA,
     loadings_se = matrix(loadings_se, p, k),
     uniquenesses_se = uniq_se,
     scaled_test = scaled_test,
-    reliable = reliable
+    reliable = reliable,
+    gauge_reliable = gauge_reliable
   )
 }
 
@@ -2184,29 +2328,54 @@ efa_fit <- function(x, n_factors, N = NA,
   dimnames(SE_L) <- dimnames(L)
   names(SE_psi) <- rownames(L)
 
+  # A degenerate rotational gauge inflates the unrotated loading SEs without bound while leaving
+  # every gauge-invariant quantity intact, so withhold the unrotated loadings alone and keep the
+  # communalities and uniquenesses, which are invariant under Lambda -> Lambda T and unaffected.
+  gauge_degenerate <- isFALSE(core$gauge_reliable)
+  if (gauge_degenerate) SE_L[] <- NA_real_
+
   if (anyNA(SE_L) || anyNA(SE_psi)) {
     cli::cli_warn(
       c("Analytic standard errors could not be computed for all parameters.",
-        "i" = "This occurs at a Heywood case (a uniqueness at or below its zero boundary), when the bordered information matrix is singular, or when the asymptotic covariance is not usable."),
+        "i" = if (gauge_degenerate) {
+          "The factor solution's rotational orientation is only weakly determined (two canonical variances nearly coincide), so the unrotated loadings have no well-defined standard error. The communalities and uniquenesses are unaffected; apply a rotation, or use {.code se = \"np-boot\"}, for loading-level uncertainty."
+        } else {
+          "This occurs at a Heywood case (a uniqueness at its lower boundary), when the bordered information matrix is singular, or when the asymptotic covariance is not usable."
+        }),
       class = "efa_se_unreliable"
     )
   }
 
-  psi <- 1 - rowSums(L^2)
-  names(psi) <- rownames(L)
+  # h2_i = 1 - psi_i exactly, so the communality is the uniqueness up to sign and shares its
+  # standard error verbatim (the delta method the core already ran through the gradient
+  # 2 L[i, ]). Report it here too, so an unrotated fit does not force the user to know the
+  # identity to obtain communality intervals.
+  h2 <- rowSums(L^2)
+  names(h2) <- rownames(L)
+  psi <- 1 - h2
+  SE_h2 <- SE_psi
   z <- stats::qnorm(1 - (1 - ci) / 2)
 
   # `.se_sandwich_core()` always returns a numeric V_AA, even when `reliable = FALSE` (it is
   # only the marginal `loadings_se` that gets NA-filled in the unreliable branch). NA-fill the
   # persisted covariance to match, so a finite-but-not-PSD V_AA does not silently ship next to
   # NA SEs and propagate sqrt(NaN) into downstream pooling.
+  # A degenerate gauge does NOT NA-fill the persisted block. The documented contract for that slot
+  # is "NA-filled if the analytic covariance is unreliable (a Heywood case or a singular bordered
+  # information matrix)", and a weakly determined orientation is neither: the covariance is finite,
+  # PSD and -- verified against the closed-form reflexive inverse -- correct. What is unusable is
+  # reading its diagonal as the standard error of a parameter the gauge does not pin down. Keeping
+  # it finite also leaves consumers that pool in a COMMON gauge across fits (`efa_mi()`) able to
+  # recover the gauge-invariant quantities, which a wholesale NA fill would take down with it.
   V_AA <- core$V_AA
   if (!isTRUE(core$reliable)) V_AA[] <- NA_real_
 
   list(
-    SE = list(unrot_loadings = SE_L, uniquenesses = SE_psi),
+    SE = list(unrot_loadings = SE_L, uniquenesses = SE_psi,
+              communalities = SE_h2),
     CI = list(unrot_loadings = .wald_ci(L, SE_L, z),
-              uniquenesses = .wald_ci(psi, SE_psi, z)),
+              uniquenesses = .wald_ci(psi, SE_psi, z),
+              communalities = .wald_ci(h2, SE_h2, z)),
     replicates = NULL,
     vcov_unrot_loadings = V_AA
   )
@@ -2280,7 +2449,12 @@ efa_fit <- function(x, n_factors, N = NA,
   # there rather than shifting every column.
   gof_names <- names(fit_target$fit_indices)[
     vapply(fit_target$fit_indices, is.numeric, logical(1))]
-  gof_boot <- matrix(NA_real_, ncol = length(gof_names), nrow = b)
+  # The RMSEA confidence bounds are dropped: the replicate fits are run with ci = FALSE, so
+  # they are NA in every replicate, and a bootstrap standard error of an interval bound is
+  # not a meaningful quantity in the first place.
+  gof_names <- setdiff(gof_names, c("RMSEA_LB", "RMSEA_UB"))
+  gof_boot <- matrix(NA_real_, ncol = length(gof_names), nrow = b,
+                     dimnames = list(NULL, gof_names))
   residuals_boot <- array(NA_real_, c(nrow_L, nrow_L, b),
                           dimnames = list(rownam_L, rownam_L,
                                           NULL))
@@ -2314,6 +2488,9 @@ efa_fit <- function(x, n_factors, N = NA,
   }
 
   n_failed <- sum(failed)
+  # Reported on the object so the effective B behind the standard errors stays recoverable
+  # from a saved fit, not only from the warning below.
+  valid_reps <- b - n_failed
   if (n_failed == b) {
     cli::cli_abort(
       c("All {b} bootstrap replicates failed; no bootstrap standard errors could be computed.",
@@ -2402,6 +2579,7 @@ efa_fit <- function(x, n_factors, N = NA,
         Structure = Structure_se_ci$se,
         fit_indices = gof_se_ci$se,
         residuals = residuals_se_ci$se,
+        valid_replicates = valid_reps,
         valid_target_rotations = valid_rot
       ),
       CI = list(
@@ -2462,6 +2640,7 @@ efa_fit <- function(x, n_factors, N = NA,
         rot_loadings = L_rot_se_ci$se,
         fit_indices = gof_se_ci$se,
         residuals = residuals_se_ci$se,
+        valid_replicates = valid_reps,
         valid_target_rotations = valid_rot
       ),
       CI = list(
@@ -2485,7 +2664,8 @@ efa_fit <- function(x, n_factors, N = NA,
       SE = list(
         unrot_loadings = L_unrot_se_ci$se,
         fit_indices = gof_se_ci$se,
-        residuals = residuals_se_ci$se
+        residuals = residuals_se_ci$se,
+        valid_replicates = valid_reps
       ),
       CI = list(
         unrot_loadings = L_unrot_se_ci$ci,

@@ -80,7 +80,8 @@ test_that("oblique np-boot output has the expected structure", {
   arr <- boot_promax$replicates
 
   expect_named(se, c("unrot_loadings", "rot_loadings", "Phi", "Structure",
-                     "fit_indices", "residuals", "valid_target_rotations"))
+                     "fit_indices", "residuals", "valid_replicates",
+                     "valid_target_rotations"))
   expect_named(ci, c("unrot_loadings", "rot_loadings", "Phi", "Structure",
                      "fit_indices", "residuals"))
   expect_named(arr, c("unrot_loadings", "rot_loadings", "Phi", "Structure",
@@ -92,9 +93,10 @@ test_that("oblique np-boot output has the expected structure", {
   expect_equal(dim(se$Phi), c(ncol(L), ncol(L)))
   expect_identical(dim(arr$rot_loadings)[3], 12L)
 
-  # the number of usable target rotations is reported and within bounds
+  # the effective B, and the number of usable target rotations, are reported and in bounds
+  expect_true(se$valid_replicates >= 1 && se$valid_replicates <= 12)
   expect_true(se$valid_target_rotations >= 1 &&
-                se$valid_target_rotations <= 12)
+                se$valid_target_rotations <= se$valid_replicates)
 })
 
 test_that("np-boot standard errors and confidence intervals are valid", {
@@ -180,11 +182,53 @@ test_that("a supplied seed leaves the caller's RNG stream unchanged", {
                    state_before)
 })
 
+test_that("seed makes a criterion rotation reproducible without a bootstrap", {
+  # `seed` governs the whole fit, not just the bootstrap: the criterion-based rotations
+  # draw random starts from the RNG, so two seeded calls at the default se = "none" must
+  # agree. simplimax is used because its criterion is only piecewise smooth, making it
+  # the most prone to landing in different optima from different starts -- unseeded, two
+  # calls disagree by a wide margin, so this would fail if `seed` were ignored.
+  fit <- function(s) suppressWarnings(
+    efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500, estimator = "PAF",
+            rotation = "simplimax", seed = s))
+
+  a <- fit(42)
+  b <- fit(42)
+  expect_identical(unclass(a$rot_loadings), unclass(b$rot_loadings))
+  expect_identical(a$Phi, b$Phi)
+
+  # A different seed explores different starts, so the argument is doing something
+  # rather than the fit being deterministic to begin with.
+  set.seed(1)
+  unseeded_1 <- suppressWarnings(
+    efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500, estimator = "PAF",
+            rotation = "simplimax"))
+  set.seed(2)
+  unseeded_2 <- suppressWarnings(
+    efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500, estimator = "PAF",
+            rotation = "simplimax"))
+  expect_false(identical(unclass(unseeded_1$rot_loadings),
+                         unclass(unseeded_2$rot_loadings)))
+})
+
+test_that("seed leaves the caller's RNG stream unchanged without a bootstrap", {
+  # The restore-on-exit contract holds on the non-bootstrap path too.
+  set.seed(1)
+  state_before <- get(".Random.seed", envir = globalenv(), inherits = FALSE)
+
+  invisible(suppressWarnings(
+    efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500, estimator = "PAF",
+            rotation = "simplimax", seed = 99)))
+
+  expect_identical(get(".Random.seed", envir = globalenv(), inherits = FALSE),
+                   state_before)
+})
+
 test_that("np-boot on a correlation matrix warns and disables the bootstrap", {
   expect_warning(
     res <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
                method = "PAF", rotation = "promax", se = "np-boot"),
-    "Cannot compute bootstrap standard errors"
+    class = "efa_boot_cormat"
   )
   expect_s3_class(res, "EFA")
   expect_identical(res$settings$se, "none")
@@ -223,6 +267,8 @@ test_that("a failed bootstrap replicate is skipped with a warning", {
   # the failed replicate's slice stays NA; SEs from the rest are finite
   expect_true(all(is.na(res$replicates$unrot_loadings[, , 2])))
   expect_true(all(is.finite(res$SE$unrot_loadings)))
+  # the effective B is recorded on the object, not only in the warning
+  expect_equal(res$SE$valid_replicates, b - 1)
 })
 
 test_that(".boot_fun records a real failed replicate as NULL without dropping it", {
@@ -425,8 +471,14 @@ test_that("ML np-boot drops only the analytic RMSEA bounds from the fit-index SE
 
   se_fit <- res$SE$fit_indices
   ci_fit <- res$CI$fit_indices
-  # the per-replicate analytic RMSEA bounds are not bootstrapped
-  expect_true(all(is.na(se_fit[c("RMSEA_LB", "RMSEA_UB")])))
+  # The replicates are fitted with ci = FALSE, so the analytic RMSEA bounds carry no
+  # per-replicate value: they are dropped rather than shipped as guaranteed-NA entries.
+  expect_false(any(c("RMSEA_LB", "RMSEA_UB") %in% names(se_fit)))
+  expect_false(any(c("RMSEA_LB", "RMSEA_UB") %in% names(ci_fit$lower)))
+  expect_false(anyNA(se_fit))
+  # the replicate matrix labels its columns, and the replicate is its FIRST dimension
+  expect_identical(colnames(res$replicates$fit_indices), names(se_fit))
+  expect_identical(nrow(res$replicates$fit_indices), 10L)
   # the bootstrapped fit indices that are aggregated stay finite
   expect_true(all(is.finite(se_fit[c("CAF", "RMSR", "SRMR", "TLI", "ECVI")])))
   expect_true(all(is.finite(ci_fit$lower[c("SRMR", "TLI", "ECVI")])))

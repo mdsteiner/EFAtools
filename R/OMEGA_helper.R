@@ -610,8 +610,10 @@
   L1 <- unclass(model$rot_loadings)
   Phi <- model$Phi
 
-  # Order the factor columns by number, as SL() does, for stable labels.
-  n_order <- order(as.numeric(gsub("F", "", colnames(L1))))
+  # Order the factor columns by number, as SL() does, for stable labels. Only some
+  # rotations label their loading columns, so the order falls back to the columns'
+  # own order when the labels are absent or carry no factor number.
+  n_order <- .sl_factor_order(colnames(L1), ncol(L1))
   s_load <- L1[, n_order, drop = FALSE]
   Phi <- Phi[n_order, n_order, drop = FALSE]
 
@@ -626,7 +628,11 @@
     cormat <- .rel_check_cormat(cormat)
   }
 
-  if (is.null(fac_names)) fac_names <- colnames(s_load)
+  if (is.null(fac_names)) {
+    fac_names <- colnames(s_load)
+    # Unlabelled loading columns still need one row label per group factor.
+    if (is.null(fac_names)) fac_names <- paste0("F", seq_len(ncol(s_load)))
+  }
 
   list(g_load = rep(0, nrow(s_load)), s_load = s_load, u2 = u2,
        map = .rel_map(s_load, factor_corres, type),

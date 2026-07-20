@@ -83,8 +83,10 @@
 #'   correlation-matrix input.
 #' @param ci numeric. The confidence level for the bootstrap congruence intervals, a
 #'   single value in `(0, 1)`. Default is `0.95`.
-#' @param seed numeric or `NULL`. An optional seed making the bootstrap reproducible
-#'   and independent of the number of parallel workers (the replicate fits run with
+#' @param seed numeric or `NULL`. An optional seed making the analysis reproducible. It
+#'   covers the per-group fits -- whose rotation may draw random starts -- whether or not
+#'   a bootstrap is run, and additionally makes the bootstrap independent of the number of
+#'   parallel workers (the replicate fits run with
 #'   [future_lapply()][future.apply::future_lapply], for which a parallel plan can be
 #'   set via [future::plan()]). When supplied, the caller's random-number stream is
 #'   restored afterwards, leaving no side effect. Default is `NULL`.
@@ -265,14 +267,16 @@ efa_group <- function(x, groups = NULL, n_factors, N = NA,
   # correlation matrices (scalar recycled or one value per group).
   Ns_in <- .efa_group_resolve_N(N, m, input_type)
 
-  # A supplied `seed` makes the whole congruence bootstrap reproducible and
-  # independent of the number of parallel workers, and leaves the caller's RNG stream
-  # untouched: it is saved and restored on exit (or, if none existed, the state
-  # set.seed() creates is removed again). The per-group efa_fit() fits are called with
-  # seed = NULL so they advance this one seeded stream in sequence rather than each
-  # resetting it; efa_fit()'s own future.seed = TRUE keeps the replicate fits
-  # worker-count-independent. Mirrors the seed handling in efa_fit().
-  if (do_boot) .set_local_seed(seed)
+  # A supplied `seed` makes the whole analysis reproducible and leaves the caller's RNG
+  # stream untouched: it is saved and restored on exit (or, if none existed, the state
+  # set.seed() creates is removed again). It is set regardless of `do_boot`, because the
+  # per-group fits are stochastic on their own whenever the rotation draws random starts;
+  # with a bootstrap it additionally makes the congruence intervals independent of the
+  # number of parallel workers. The per-group efa_fit() fits are called with seed = NULL
+  # so they advance this one seeded stream in sequence rather than each resetting it;
+  # efa_fit()'s own future.seed = TRUE keeps the replicate fits worker-count-independent.
+  # Mirrors the seed handling in efa_fit().
+  .set_local_seed(seed)
 
   # Fit every group at the common number of factors. A degenerate group (too few
   # cases, a constant item, a non-computable matrix) makes efa_fit abort; re-raise it

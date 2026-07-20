@@ -249,8 +249,58 @@ test_that(".parallel_chunks splits exactly into non-negative integer chunks", {
     }
   }
 
-  # a single worker (the sequential default) takes all datasets
+  # a single chunk takes all datasets
   expect_equal(.parallel_chunks(1000, 1), 1000)
+})
+
+
+test_that("the chunk vector does not depend on the number of workers", {
+  # The simulated datasets are split into chunks, one future per chunk, and
+  # future.seed = TRUE assigns one random-number stream per chunk. If the chunk count
+  # tracked the worker count, the streams -- and hence the reference eigenvalues -- would
+  # differ between parallel plans for the same set.seed(). This asserts the chunk vector
+  # itself, which is what determines the streams, so it holds without starting workers.
+  chunks <- .parallel_chunks(60, min(60, 20L))
+  expect_length(chunks, 20)
+  expect_equal(sum(chunks), 60)
+
+  # fewer datasets than the fixed chunk count: one chunk each, never an empty chunk
+  expect_equal(.parallel_chunks(5, max(1L, min(5, 20L))), rep(1, 5))
+
+  # the degenerate n_datasets = 0 must not divide by a zero chunk count
+  expect_equal(.parallel_chunks(0, max(1L, min(0, 20L))), 0)
+})
+
+
+test_that("a seeded efa_parallel run is invariant to the number of workers", {
+  skip_on_cran()
+  # End-to-end counterpart to the chunk-vector test above: the same set.seed() must give
+  # the same reference eigenvalues sequentially and on a two-worker multisession plan.
+  # The multisession workers are fresh R processes that load the *installed* package, so
+  # run this under devtools::check() / after devtools::install() for the worker code to
+  # match the main process (multicore is unavailable on Windows).
+  old_plan <- future::plan()
+  on.exit(future::plan(old_plan), add = TRUE)
+
+  run <- function() {
+    set.seed(2024)
+    suppressWarnings(suppressMessages(
+      efa_parallel(N = 300, n_vars = 8, n_datasets = 60, eigen_type = "PCA")))
+  }
+
+  future::plan(future::sequential)
+  one <- run()
+
+  future::plan(future::multisession, workers = 2)
+  two <- run()
+
+  # `results[[1]]$references` holds the simulated reference eigenvalues (means and
+  # percentiles), which is what the chunk streams determine. Bit-for-bit equality is not
+  # asserted: the workers are separate processes whose BLAS/LAPACK may sum in a different
+  # order.
+  expect_equal(one$results[[1]]$references, two$results[[1]]$references,
+               tolerance = 1e-10)
+  expect_equal(one$n_factors, two$n_factors)
 })
 
 

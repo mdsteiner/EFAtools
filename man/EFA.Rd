@@ -163,13 +163,15 @@ Must be between 0 and 1. Default is .95 for 95\% CIs.}
 \item{random_starts}{numeric. The number of random starts to use in the
 rotation to guard against local minima. Default is 100.}
 
-\item{seed}{numeric. An optional seed for the random-number generator used by the
-non-parametric bootstrap (\code{se = "np-boot"}), i.e. for the case resampling, the
-rotation random starts, and the Procrustes random starts. Setting it makes the
-bootstrap reproducible and independent of the number of parallel
-workers (see Details); the caller's random-number stream is restored afterwards,
-so supplying a seed leaves no lasting effect on it. Default is \code{NULL}, which uses
-(and advances) the current state of the generator.}
+\item{seed}{numeric. An optional seed for the random-number generator, governing every
+stochastic part of the fit: the rotation's random starts on the point estimate (the
+criterion-based rotations draw \code{random_starts} random starts; see \emph{Rotations}) and,
+under \code{se = "np-boot"}, the case resampling, the replicate rotations, and the
+Procrustes random starts. Setting it makes the fit reproducible and the bootstrap
+additionally independent of the number of parallel workers (see Details); the
+caller's random-number stream is restored afterwards, so supplying a seed leaves no
+lasting effect on it. Default is \code{NULL}, which uses (and advances) the current state
+of the generator.}
 
 \item{P_type, randomStarts}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#superseded}{\figure{lifecycle-superseded.svg}{options: alt='[Superseded]'}}}{\strong{[Superseded]}} Former names of
 \code{p_type} and \code{random_starts}. Still accepted (silently) for backwards

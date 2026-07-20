@@ -33,9 +33,10 @@ Generalized Procrustes Analysis (orthogonal rotations only). See \emph{Aligning 
 across imputations} in Details.}
 
 \item{align_unrotated}{Character. How unrotated loadings are aligned before pooling:
-\code{"signed_tucker_congruence"} (the default; sign/permutation via Tucker congruence),
-\code{"procrustes"} (orthogonal Procrustes to the first imputation), or \code{"none"}. See
-\emph{Aligning solutions across imputations} in Details.}
+\code{"signed_tucker_congruence"} (the default; sign/permutation via Tucker congruence,
+anchored on the medoid imputation and returned in the extraction's canonical
+gauge), \code{"procrustes"} (orthogonal Procrustes to the first imputation), or
+\code{"none"}. See \emph{Aligning solutions across imputations} in Details.}
 
 \item{fit_pool_method}{Character. Currently only \code{"D2"} is implemented
 for chi-square-type fit. If no chi-square is available, only residual-based

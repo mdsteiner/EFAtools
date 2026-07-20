@@ -49,8 +49,10 @@ correlation-matrix input.}
 \item{ci}{numeric. The confidence level for the bootstrap congruence intervals, a
 single value in \verb{(0, 1)}. Default is \code{0.95}.}
 
-\item{seed}{numeric or \code{NULL}. An optional seed making the bootstrap reproducible
-and independent of the number of parallel workers (the replicate fits run with
+\item{seed}{numeric or \code{NULL}. An optional seed making the analysis reproducible. It
+covers the per-group fits -- whose rotation may draw random starts -- whether or not
+a bootstrap is run, and additionally makes the bootstrap independent of the number of
+parallel workers (the replicate fits run with
 \link[future.apply:future_lapply]{future_lapply()}, for which a parallel plan can be
 set via \code{\link[future:plan]{future::plan()}}). When supplied, the caller's random-number stream is
 restored afterwards, leaving no side effect. Default is \code{NULL}.}

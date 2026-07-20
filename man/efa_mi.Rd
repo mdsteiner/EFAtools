@@ -33,9 +33,10 @@ Generalized Procrustes Analysis (orthogonal rotations only). See \emph{Aligning 
 across imputations} in Details.}
 
 \item{align_unrotated}{Character. How unrotated loadings are aligned before pooling:
-\code{"signed_tucker_congruence"} (the default; sign/permutation via Tucker congruence),
-\code{"procrustes"} (orthogonal Procrustes to the first imputation), or \code{"none"}. See
-\emph{Aligning solutions across imputations} in Details.}
+\code{"signed_tucker_congruence"} (the default; sign/permutation via Tucker congruence,
+anchored on the medoid imputation and returned in the extraction's canonical
+gauge), \code{"procrustes"} (orthogonal Procrustes to the first imputation), or
+\code{"none"}. See \emph{Aligning solutions across imputations} in Details.}
 
 \item{fit_pool_method}{Character. Currently only \code{"D2"} is implemented
 for chi-square-type fit. If no chi-square is available, only residual-based
@@ -156,6 +157,26 @@ imputation (van Ginkel & Kroonenberg 2014).
 and sign changes, \code{"procrustes"} aligns them to the first imputation by
 orthogonal Procrustes rotation, and \code{"none"} averages them as returned by
 \code{\link[=efa_fit]{efa_fit()}}.
+
+The default anchors that matching on the \emph{medoid} imputation -- the one closest
+in aligned squared distance to all the others -- rather than on whichever
+imputation happens to come first, so the pooled \emph{unrotated} solution does not
+depend on the order of \code{data_list}. The rotated solution is aligned separately,
+against a reference chosen by \code{target_method}, and still depends on that
+reference. The pooled matrix is then returned in the same gauge every
+component fit uses, by restoring the constraint that identifies the unrotated
+solution: diagonal \eqn{L'L} for a principal-axis extraction, diagonal
+\eqn{L' \Psi^{-1} L} for maximum likelihood (Anderson & Rubin 1956; Lawley &
+Maxwell 1971). Which one
+applies is read off the component fits themselves, and a solution in neither
+gauge -- an improper one, say -- is left as aligned. Without this step the
+average of several aligned solutions sits in a gauge no single fit uses and
+cannot be compared element-by-element with an \code{\link[=efa_fit]{efa_fit()}} solution. The
+rotation is orthogonal and
+common to all imputations, so communalities, the total variance accounted for,
+the model-implied correlation matrix, the residuals and RMSR are unchanged by
+it; only the split of variance across factors moves. \code{"procrustes"} and
+\code{"none"} keep their first-imputation anchor and are returned as aligned.
 }
 
 \subsection{Pooling point estimates}{
@@ -215,10 +236,14 @@ structure coefficients are pooled as well; residual SE pooling is available only
 on the bootstrap path. Under \code{align_unrotated = "procrustes"} the full unrotated
 covariance \code{vcov_unrot_loadings} (populated by \code{se = "information"}) is
 propagated through the alignment, so it must be present and reliable on every
-fit.
+fit. The default alignment also mixes loading columns, through the common
+canonical-gauge rotation, and so propagates the same covariance; where a fit
+does not carry it, the unrotated standard errors are returned as \code{NA} rather
+than aborting, and the remaining families still pool.
 
 A rotated-loading standard error is conditional on the rotation criterion
-(Jennrich 1973, 1974; Browne 2001; Zhang & Preacher 2015). For both orthogonal
+(Archer & Jennrich 1973; Jennrich 1973, 1974; Zhang, Preacher, & Jennrich
+2012; Zhang & Preacher 2015). For both orthogonal
 and oblique rotations the within-imputation variance is therefore each fit's own
 criterion-aware delta-method rotated SE (the quantity \code{efa_fit()} returns), reused
 after a signed-permutation alignment to the MI target, and the
@@ -296,14 +321,18 @@ mod
 }
 }
 \references{
+Anderson, T. W., & Rubin, H. (1956). Statistical inference in factor analysis.
+In \emph{Proceedings of the Third Berkeley Symposium on Mathematical Statistics and
+Probability} (Vol. 5, pp. 111-150). University of California Press.
+
+Archer, C. O., & Jennrich, R. I. (1973). Standard errors for rotated factor
+loadings. \emph{Psychometrika}, 38(4), 581-592.
+
 Barnard, J., & Rubin, D. B. (1999). Small-sample degrees of freedom with
 multiple imputation. \emph{Biometrika}, 86(4), 948-955.
 
 Bentler, P. M. (1990). Comparative fit indexes in structural models.
 \emph{Psychological Bulletin}, 107(2), 238-246.
-
-Browne, M. W. (2001). An overview of analytic rotation in exploratory factor
-analysis. \emph{Multivariate Behavioral Research}, 36(1), 111-150.
 
 Chan, K. W., & Meng, X.-L. (2022). Multiple improvements of multiple
 imputation likelihood ratio tests. \emph{Statistica Sinica}, 32, 1489-1514.
@@ -350,6 +379,9 @@ Classification}, 31(2), 242-269.
 Zhang, G., & Preacher, K. J. (2015). Factor rotation and standard errors in
 exploratory factor analysis. \emph{Journal of Educational and Behavioral
 Statistics}, 40(6), 579-603.
+
+Zhang, G., Preacher, K. J., & Jennrich, R. I. (2012). The infinitesimal
+jackknife with exploratory factor analysis. \emph{Psychometrika}, 77(4), 634-648.
 }
 \seealso{
 Other factor analysis:

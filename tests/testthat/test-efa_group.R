@@ -356,6 +356,28 @@ test_that("a supplied seed makes the CIs reproducible and restores the RNG", {
 })
 
 
+test_that("a supplied seed covers the per-group fits without a bootstrap", {
+  # `seed` applies whether or not congruence intervals are requested: the per-group fits
+  # are stochastic on their own when the rotation draws random starts. simplimax is the
+  # most multimodal criterion, so two seeded runs agreeing is meaningful.
+  g <- rep(c("g1", "g2"), length.out = nrow(GRiPS_raw))
+  run <- function() suppressMessages(suppressWarnings(
+    efa_group(GRiPS_raw, groups = g, n_factors = 2, rotation = "simplimax",
+              estimator = "PAF", seed = 7)))
+
+  set.seed(1)
+  state_before <- get(".Random.seed", envir = globalenv(), inherits = FALSE)
+  one <- run()
+  # The restore-on-exit contract holds on the non-bootstrap path too.
+  expect_identical(state_before,
+                   get(".Random.seed", envir = globalenv(), inherits = FALSE))
+
+  two <- run()
+  expect_equal(one$loadings, two$loadings)
+  expect_equal(one$congruence$matched, two$congruence$matched)
+})
+
+
 test_that("bootstrap replicate failures are dropped with a classed warning", {
   set.seed(1)
   p <- 6L; k <- 2L; b <- 10L

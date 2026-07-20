@@ -175,13 +175,15 @@ estimation, so a smaller value may be advisable.}
 \item{ci}{numeric. The confidence interval to create from the bootstrap samples.
 Must be between 0 and 1. Default is .95 for 95\% CIs.}
 
-\item{seed}{numeric. An optional seed for the random-number generator used by the
-non-parametric bootstrap (\code{se = "np-boot"}), i.e. for the case resampling, the
-rotation random starts, and the Procrustes random starts. Setting it makes the
-bootstrap reproducible and independent of the number of parallel
-workers (see Details); the caller's random-number stream is restored afterwards,
-so supplying a seed leaves no lasting effect on it. Default is \code{NULL}, which uses
-(and advances) the current state of the generator.}
+\item{seed}{numeric. An optional seed for the random-number generator, governing every
+stochastic part of the fit: the rotation's random starts on the point estimate (the
+criterion-based rotations draw \code{random_starts} random starts; see \emph{Rotations}) and,
+under \code{se = "np-boot"}, the case resampling, the replicate rotations, and the
+Procrustes random starts. Setting it makes the fit reproducible and the bootstrap
+additionally independent of the number of parallel workers (see Details); the
+caller's random-number stream is restored afterwards, so supplying a seed leaves no
+lasting effect on it. Default is \code{NULL}, which uses (and advances) the current state
+of the generator.}
 
 \item{...}{Additional arguments forwarded to the rotation engine. Only the arguments the
 selected \code{rotation} consumes are accepted: \code{maxit} (the maximum number of engine
@@ -251,11 +253,11 @@ rotations.}
 loadings. Based on rotated loadings and, for oblique rotations, the factor
 intercorrelations.}
 \item{settings}{A list of the settings used.}
-\item{SE}{A named list of standard error matrices. For \code{se = "np-boot"}: bootstrap standard deviations of the unrotated and (when a rotation is applied) rotated loadings, the residuals, and the fit indices, plus -- for oblique rotations -- the factor correlations (\code{Phi}) and the structure coefficients. For \code{se = "information"}: Wald standard errors from the expected (Fisher) information matrix for the unrotated loadings and the uniquenesses and, when a rotation is applied, the rotated loadings and the communalities (and, for oblique rotations, \code{Phi} and the structure coefficients). For \code{se = "sandwich"}: robust Godambe sandwich standard errors with the same coverage as \code{"information"}, robust to non-normality and weight misspecification. Only returned if \code{se} is not \code{"none"}.}
+\item{SE}{A named list of standard error matrices. For \code{se = "np-boot"}: bootstrap standard deviations of the unrotated and (when a rotation is applied) rotated loadings, the residuals, and the fit indices, plus -- for oblique rotations -- the factor correlations (\code{Phi}) and the structure coefficients; it additionally carries \code{valid_replicates}, the number of bootstrap replicates that were fitted and aligned successfully and that every entry above is therefore based on (replicates that failed are excluded and warned about), and, when a rotation is applied, \code{valid_target_rotations}, the number of those replicates that could also be aligned to the rotated point estimate and that the rotated entries (\code{rot_loadings}, \code{Phi}, \code{Structure}) are based on. For \code{se = "information"}: Wald standard errors from the expected (Fisher) information matrix for the unrotated loadings, the uniquenesses, and the communalities and, when a rotation is applied, the rotated loadings (and, for oblique rotations, \code{Phi} and the structure coefficients). Because \eqn{h^2_i = 1 - \psi_i} exactly, the communality and uniqueness standard errors are identical. For \code{se = "sandwich"}: robust Godambe sandwich standard errors with the same coverage as \code{"information"}, robust to non-normality and weight misspecification. Only returned if \code{se} is not \code{"none"}.}
 \item{CI}{A named list of confidence intervals of width \code{ci}. For \code{se = "np-boot"}: percentile intervals matching the components of \code{SE}. For \code{se = "information"} and \code{se = "sandwich"}: Wald intervals matching the components of \code{SE}. Only returned if \code{se} is not \code{"none"}.}
-\item{replicates}{A named list of bootstrap replicate cubes for the aligned unrotated and (where applicable) rotated loadings, structure coefficients, factor correlations (\code{Phi}), residuals, and fit indices. Each cube's last dimension indexes the replicate. Populated only for \code{se = "np-boot"}; \code{NULL} for the analytic SE methods.}
-\item{vcov_unrot_loadings}{The full unrotated loading covariance matrix the marginal \code{SE$unrot_loadings} were derived from: a \code{p * n_factors} by \code{p * n_factors} numeric matrix in column-major \code{vec(Lambda)} order. Populated for \code{se = "information"} (expected-information block) and \code{se = "sandwich"} (robust V_AA), even when a rotation is applied (the persisted block is always the unrotated one); NA-filled if the analytic covariance is unreliable (a Heywood case or a singular bordered information matrix); \code{NULL} for \code{se = "np-boot"} and \code{se = "none"}.}
-\item{Gamma}{The asymptotic covariance of the off-diagonal sample correlations -- the meat of the robust sandwich SEs -- on the variance scale (\code{Var(rho-hat)}; lavaan's correlation NACOV is \code{N * Gamma}). A \code{p (p - 1) / 2} by \code{p (p - 1) / 2} numeric matrix; rows and columns ordered by \code{\link[utils:combn]{utils::combn()}} over the column pairs and labelled \code{"<var_i>-<var_j>"}. Populated only for \code{se = "sandwich"}; \code{NULL} otherwise.}
+\item{replicates}{A named list of bootstrap replicate arrays for the aligned unrotated and (where applicable) rotated loadings, structure coefficients, factor correlations (\code{Phi}), residuals, and fit indices. The replicate is the last dimension of the loading, residual, \code{Phi}, and structure cubes, and the first dimension of the \code{fit_indices} matrix (whose columns are named after the fit indices). Replicates that failed are left \code{NA}. Populated only for \code{se = "np-boot"}; \code{NULL} for the analytic SE methods.}
+\item{vcov_unrot_loadings}{The full unrotated loading covariance matrix the marginal \code{SE$unrot_loadings} were derived from: a \code{p * n_factors} by \code{p * n_factors} numeric matrix in column-major \code{vec(Lambda)} order. Populated for \code{se = "information"} (expected-information block) and \code{se = "sandwich"} (robust V_AA), even when a rotation is applied (the persisted block is always the unrotated one); NA-filled if the analytic covariance is unreliable (a Heywood case or a singular bordered information matrix); \code{NULL} for \code{se = "np-boot"} and \code{se = "none"}. A weakly determined rotational orientation is the one case where this matrix is populated while \code{SE$unrot_loadings} is \code{NA}: the covariance itself is finite and valid, and only its gauge-dependent marginals are not (see \emph{Standard errors}).}
+\item{Gamma}{The asymptotic covariance of the off-diagonal sample correlations -- the meat of the robust sandwich SEs -- on the variance scale (\code{Var(rho-hat)}; lavaan's correlation NACOV is \code{N * Gamma}). A \code{p (p - 1) / 2} by \code{p (p - 1) / 2} numeric matrix; rows and columns ordered by \code{\link[utils:combn]{utils::combn()}} over the column pairs and labelled \code{"<var_i>-<var_j>"}. Populated for \code{se = "sandwich"} on the polychoric/tetrachoric and Pearson paths; \code{NULL} otherwise, including under \code{cor_method = "fiml"}, whose meat is the saturated FIML asymptotic covariance and is not returned.}
 }
 \description{
 This function does an EFA with either \code{PAF}, \code{ML}, \code{ULS}/\code{MINRES},
@@ -381,6 +383,9 @@ more thorough multi-start search internally).
 The criterion-based rotations (all except varimax and promax) are fitted by gradient
 projection with \code{random_starts} random starts to guard against local minima; the
 complexity criteria (simplimax and geominQ in particular) are the most multimodal. The
+starts are drawn from the random-number generator, so different starts can reach
+genuinely different optima and such a fit is reproducible only when the generator is
+controlled: pass \code{seed}, or call \code{\link[=set.seed]{set.seed()}} beforehand. The
 \code{type} argument changes the varimax and promax settings (see \emph{Using the type presets})
 and, for every rotation, the factor \code{order_type}. A single factor cannot be rotated.
 }
@@ -388,10 +393,14 @@ and, for every rotation, the factor \code{order_type}. A single factor cannot be
 \subsection{Standard errors}{
 
 \code{se} selects whether and how standard errors (and matching confidence intervals) are
-computed. They cover the unrotated loadings and uniquenesses and, when a rotation is
-applied, the rotated loadings, the communalities, and -- for oblique rotations -- the
-factor correlations and the structure coefficients (see the \code{SE} and \code{CI} entries in
-Value).
+computed. Which quantities they cover depends on the method. The analytic methods
+(\code{"information"} and \code{"sandwich"}) cover the unrotated loadings, the uniquenesses and
+the communalities and, when a rotation is applied, the rotated loadings and -- for
+oblique rotations -- the factor correlations and the structure coefficients. The
+bootstrap (\code{"np-boot"}) covers the unrotated loadings, the residuals, and the fit
+indices and, when a rotation is applied, the rotated loadings and -- for oblique
+rotations -- the factor correlations and the structure coefficients; it reports no
+uniqueness or communality standard errors (see the \code{SE} and \code{CI} entries in Value).
 \itemize{
 \item \strong{"none"} (default) computes no standard errors.
 \item \strong{"information"} returns analytic standard errors from the expected (Fisher)
@@ -420,6 +429,21 @@ loading standard errors are not: they are reported in the orientation the soluti
 itself is identified in (for ML, \eqn{\Lambda' \Psi^{-1} \Lambda} diagonal), and a
 program using a different identification will report different unrotated loading
 standard errors for the same fit.
+
+That orientation can also fail to be determined. When two of the canonical variances
+\eqn{\mathrm{diag}(\Lambda' \Psi^{-1} \Lambda)} nearly coincide -- which happens with
+a weakly determined factor, or two factors of near-equal strength -- the loadings can
+be rotated within that plane without leaving the identifying constraint, so the
+unrotated loadings have no well-defined sampling distribution and their standard
+errors diverge. \code{efa_fit()} detects this and returns \code{NA} for the unrotated loading
+standard errors with an \code{efa_se_unreliable} warning, rather than reporting a number
+that looks like a standard error but is an artefact of the orientation. Everything
+that does not depend on the orientation -- the rotated loadings, \code{Phi}, the structure
+coefficients, the uniquenesses and the communalities -- is unaffected and still
+reported. Use those, or \code{se = "np-boot"}, when the unrotated loadings themselves are
+the quantity of interest. A Heywood case (a uniqueness at its lower boundary) is
+separate: the Wald approximation fails there for every parameter, so no analytic
+standard error is reported at all.
 \item \strong{"sandwich"} returns robust (Godambe sandwich) standard errors from raw data,
 combining the estimator weight with an asymptotic-distribution-free covariance of the
 correlations, so it stays valid under non-normality and weight misspecification
@@ -430,12 +454,19 @@ data with \code{cor_method = "pearson"} and \code{estimator = "ML"} or \code{"UL
 fourth-moment ADF covariance of the sample correlations, the basis of the MLM / MLR
 robust statistics). It reports the same coverage as \code{"information"}, propagated
 by the same delta method, and additionally fills the model fit's chi-square block with
-a scaled (Satorra-Bentler / scaled-and-shifted) chi-square (see \emph{Fit indices}).
+a scaled (Satorra-Bentler / scaled-and-shifted) chi-square (see \emph{Fit indices}). The
+statistic reported as \code{chi} is always the scaled-and-shifted one (the WLSMV default,
+flagged by \code{chi_scaled_type}), for the continuous Pearson path as well as the ordinal
+one; the mean-adjusted statistic that \pkg{lavaan}'s \code{MLM} reports for continuous data
+is returned alongside it as \code{chi_mean_adjusted}.
 Because the asymptotic covariance must describe the same cases as the correlation
 matrix, the sandwich (like \code{estimator = "DWLS"}) is computed on the listwise-complete
 cases; on data with missing values the reported \code{N}, the correlation matrix, and the
 point estimate therefore reflect the complete cases regardless of \code{use}.
 \item \strong{"np-boot"} draws a non-parametric (case-resampling) bootstrap and needs raw data.
+A correlation matrix carries no cases to resample; alone among the unsupported
+combinations this one does not error but warns (condition class \code{"efa_boot_cormat"})
+and downgrades \code{se} to \code{"none"}, so the fit is returned without an \code{SE} slot.
 It is the most general method -- available for any \code{estimator}, \code{rotation}, and
 \code{cor_method} -- and the most robust to non-normality and misfit, at the cost of speed;
 its intervals are bootstrap percentile intervals. The replicate fits are run across

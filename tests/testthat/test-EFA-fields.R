@@ -40,8 +40,8 @@ test_that("information SEs fill the schema across all rotation families", {
                   se = "information")
   expect_field_contract(
     fit_none,
-    expected_SE = c("unrot_loadings", "uniquenesses"),
-    expected_CI = c("unrot_loadings", "uniquenesses"),
+    expected_SE = c("unrot_loadings", "uniquenesses", "communalities"),
+    expected_CI = c("unrot_loadings", "uniquenesses", "communalities"),
     expected_replicates = NULL,
     info = "information / none"
   )
@@ -82,8 +82,8 @@ test_that("sandwich SEs fill the same schema as information across rotations", {
                   se = "sandwich")
   expect_field_contract(
     fit_none,
-    expected_SE = c("unrot_loadings", "uniquenesses"),
-    expected_CI = c("unrot_loadings", "uniquenesses"),
+    expected_SE = c("unrot_loadings", "uniquenesses", "communalities"),
+    expected_CI = c("unrot_loadings", "uniquenesses", "communalities"),
     expected_replicates = NULL,
     info = "sandwich / none"
   )
@@ -129,15 +129,17 @@ test_that("np-boot fills `replicates` and adds fit_indices/residuals SEs", {
   ))
   expect_field_contract(
     fit_none,
-    expected_SE = c("unrot_loadings", "fit_indices", "residuals"),
+    expected_SE = c("unrot_loadings", "fit_indices", "residuals",
+                    "valid_replicates"),
     expected_CI = c("unrot_loadings", "fit_indices", "residuals"),
     expected_replicates = c("unrot_loadings", "fit_indices", "residuals"),
     info = "np-boot / none"
   )
   expect_identical(dim(fit_none$replicates$unrot_loadings)[3L], b)
 
-  # Orthogonal: adds rot_loadings; SE also reports valid_target_rotations (the
-  # CI list does not). `replicates` mirrors SE minus that integer counter.
+  # Orthogonal: adds rot_loadings; SE also reports valid_replicates and
+  # valid_target_rotations (the CI list does not). `replicates` mirrors SE minus
+  # those two integer counters.
   set.seed(42)
   fit_orth <- suppressWarnings(suppressMessages(
     EFA(dat, n_factors = 2, method = "ML", rotation = "varimax",
@@ -145,8 +147,8 @@ test_that("np-boot fills `replicates` and adds fit_indices/residuals SEs", {
   ))
   expect_field_contract(
     fit_orth,
-    expected_SE = c("unrot_loadings", "rot_loadings",
-                    "fit_indices", "residuals", "valid_target_rotations"),
+    expected_SE = c("unrot_loadings", "rot_loadings", "fit_indices", "residuals",
+                    "valid_replicates", "valid_target_rotations"),
     expected_CI = c("unrot_loadings", "rot_loadings",
                     "fit_indices", "residuals"),
     expected_replicates = c("unrot_loadings", "rot_loadings",
@@ -164,7 +166,8 @@ test_that("np-boot fills `replicates` and adds fit_indices/residuals SEs", {
   expect_field_contract(
     fit_oblq,
     expected_SE = c("unrot_loadings", "rot_loadings", "Phi", "Structure",
-                    "fit_indices", "residuals", "valid_target_rotations"),
+                    "fit_indices", "residuals", "valid_replicates",
+                    "valid_target_rotations"),
     expected_CI = c("unrot_loadings", "rot_loadings", "Phi", "Structure",
                     "fit_indices", "residuals"),
     expected_replicates = c("unrot_loadings", "rot_loadings", "Phi",

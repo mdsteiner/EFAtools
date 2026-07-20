@@ -464,3 +464,200 @@ test_that("format.efa_mi matches the printed output", {
   expect_identical(format(pooled_obl),
                    utils::capture.output(print(pooled_obl)))
 })
+
+# ---- Default unrotated alignment: medoid anchor and canonical gauge ---------
+
+# These use resampled imputations on purpose. A `list(cormat, cormat, cormat)`
+# fixture has no between-imputation variance, so the aligned solutions are
+# identical, their average is still in the extraction's gauge, and neither the
+# anchor choice nor the re-gauging can be detected.
+
+make_resamples <- function(dat, n = 5, seed = 42) {
+  set.seed(seed)
+  lapply(seq_len(n), function(i) {
+    dat[sample.int(nrow(dat), replace = TRUE), , drop = FALSE]
+  })
+}
+
+test_that("pooled unrotated loadings do not depend on the order of data_list", {
+  # A weakly determined second factor makes the column matching ambiguous, which
+  # is precisely when the anchor choice matters: with a first-imputation anchor
+  # the pooled loadings move by up to 0.84 across orderings of this fixture.
+  # Where the factors are well separated the matching is unambiguous and every
+  # anchor already agrees, so such a fixture could not detect the difference.
+  imps <- make_resamples(GRiPS_raw)
+  base <- suppressWarnings(suppressMessages(
+    efa_mi(imps, n_factors = 2, estimator = "ML", rotation = "none")))
+
+  set.seed(7)
+  for (i in seq_len(3)) {
+    permuted <- suppressWarnings(suppressMessages(
+      efa_mi(imps[sample(length(imps))], n_factors = 2, estimator = "ML",
+             rotation = "none")))
+    expect_equal(unclass(permuted$unrot_loadings),
+                 unclass(base$unrot_loadings), tolerance = 1e-8)
+    expect_equal(as.numeric(permuted$h2), as.numeric(base$h2), tolerance = 1e-8)
+    expect_equal(permuted$fit_indices$RMSR, base$fit_indices$RMSR,
+                 tolerance = 1e-8)
+  }
+})
+
+test_that("pooled unrotated loadings are returned in the extraction's gauge", {
+  imps <- make_resamples(DOSPERT_raw)
+
+  # ML identifies the unrotated solution by diagonal L' Psi^-1 L ...
+  ml <- suppressWarnings(suppressMessages(
+    efa_mi(imps, n_factors = 3, estimator = "ML", rotation = "none")))
+  L <- unclass(ml$unrot_loadings)
+  A <- crossprod(L, L / pmax(1 - rowSums(L^2), 1e-6))
+  expect_lt(sum(abs(A[upper.tri(A)])) / sum(abs(diag(A))), 1e-8)
+
+  # ... a principal-axis extraction by diagonal L'L, and the pooled solution
+  # must follow whichever its component fits use.
+  paf <- suppressWarnings(suppressMessages(
+    efa_mi(imps, n_factors = 3, estimator = "PAF", rotation = "none")))
+  Lp <- unclass(paf$unrot_loadings)
+  G <- crossprod(Lp)
+  expect_lt(sum(abs(G[upper.tri(G)])) / sum(abs(diag(G))), 1e-8)
+})
+
+test_that("the canonical re-gauging leaves gauge-invariant quantities alone", {
+  imps <- make_resamples(DOSPERT_raw)
+  fits <- lapply(imps, function(d) suppressWarnings(suppressMessages(
+    efa_fit(d, n_factors = 3, estimator = "ML", rotation = NULL))))
+  Ls <- lapply(fits, function(f) unclass(f$unrot_loadings))
+
+  aligned <- .efa_pooled_align_unrotated_list(
+    Ls, align_unrotated = "signed_tucker_congruence", return_meta = TRUE)
+  C <- aligned$meta[[1]]$C
+  expect_false(is.null(C))
+  expect_equal(crossprod(C), diag(ncol(C)), tolerance = 1e-10)
+
+  # Undo the common rotation to recover the pre-canonical average, then check
+  # that the quantities a rotation cannot change are indeed unchanged.
+  M <- .average_matrices(aligned$loadings)
+  raw <- M %*% t(C)
+  expect_equal(rowSums(M^2), rowSums(raw^2), tolerance = 1e-10)
+  expect_equal(M %*% t(M), raw %*% t(raw), tolerance = 1e-10)
+})
+
+test_that("analytic SEs survive the column-mixing gauge rotation", {
+  imps <- make_resamples(DOSPERT_raw)
+  pooled <- suppressWarnings(suppressMessages(
+    efa_mi(imps, n_factors = 3, estimator = "ML", rotation = "none",
+           se = "information")))
+
+  se <- pooled$SE$unrot_loadings
+  expect_false(is.null(se))
+  expect_true(all(is.finite(as.matrix(se))))
+  expect_true(all(as.matrix(se) > 0))
+
+  # Wald intervals stay centred on the pooled estimate they belong to.
+  est <- unclass(pooled$unrot_loadings)
+  lo <- pooled$CI$unrot_loadings$lower
+  hi <- pooled$CI$unrot_loadings$upper
+  expect_equal(unname((lo + hi) / 2), unname(est), tolerance = 1e-8)
+})
+
+test_that("an unreliable per-imputation SE still blanks the pooled element", {
+  # The re-gauging reads the full covariance block rather than the marginal SEs,
+  # so the marginal NA mask has to be applied explicitly. Because the rotation
+  # mixes columns, one NA contaminates its whole row.
+  imps <- make_resamples(DOSPERT_raw)
+  pooled <- suppressWarnings(suppressMessages(
+    efa_mi(imps, n_factors = 3, estimator = "ML", rotation = "none",
+           se = "information")))
+
+  fits <- pooled$fits
+  fits[[3]]$SE$unrot_loadings[2, 1] <- NA_real_
+  Ls <- lapply(fits, function(f) unclass(f$unrot_loadings))
+  aligned <- .efa_pooled_align_unrotated_list(
+    Ls, align_unrotated = "signed_tucker_congruence", return_meta = TRUE)
+  na_pool <- .efa_pooled_analytic_pool(
+    fits = fits, unrot_loadings_aligned = aligned$loadings,
+    align_meta = aligned$meta, ci = 0.95)
+
+  expect_true(all(is.na(na_pool$SE$unrot_loadings[2, ])))
+  expect_true(all(is.finite(na_pool$SE$unrot_loadings[3, ])))
+})
+
+test_that("the medoid anchor is order-invariant with only two imputations", {
+  # Two imputations are tied by construction -- each is exactly as far from the
+  # other -- so the anchor has to be settled on the candidates' own content
+  # rather than on list position, or the tie puts the order dependence back.
+  set.seed(42)
+  imps <- lapply(seq_len(2), function(i) {
+    GRiPS_raw[sample.int(nrow(GRiPS_raw), replace = TRUE), , drop = FALSE]
+  })
+  a <- suppressWarnings(suppressMessages(
+    efa_mi(imps, n_factors = 2, estimator = "ML", rotation = "none")))
+  b <- suppressWarnings(suppressMessages(
+    efa_mi(rev(imps), n_factors = 2, estimator = "ML", rotation = "none")))
+
+  expect_equal(unclass(a$unrot_loadings), unclass(b$unrot_loadings),
+               tolerance = 1e-10)
+  expect_equal(as.numeric(a$h2), as.numeric(b$h2), tolerance = 1e-10)
+
+  Ls <- lapply(a$fits, function(x) unclass(x$unrot_loadings))
+  expect_identical(.efa_pooled_medoid_anchor(Ls), 1L)
+  expect_identical(.efa_pooled_medoid_anchor(rev(Ls)), 2L)
+})
+
+test_that("re-gauging stands down when the gauge is not identified", {
+  Ls <- lapply(1:3, function(i) unclass(
+    efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
+            estimator = "ML", rotation = NULL)$unrot_loadings))
+
+  # An improper average would enter Psi^-1 at the clamp and let one variable
+  # decide the gauge, so it is left alone.
+  heywood <- Ls[[1]]
+  heywood[1, ] <- heywood[1, ] / sqrt(sum(heywood[1, ]^2)) * 1.05
+  expect_identical(.efa_pooled_canonical_gauge(heywood, Ls[[1]]),
+                   diag(ncol(heywood)))
+
+  # So is one whose canonical values are tied, where any rotation inside the
+  # tied subspace diagonalises equally well.
+  tied <- matrix(0, 6, 2)
+  tied[1:3, 1] <- 0.6
+  tied[4:6, 2] <- 0.6
+  expect_identical(.efa_pooled_canonical_gauge(tied, tied), diag(2))
+})
+
+test_that("re-gauging still fires when a uniqueness sits on the estimation floor", {
+  # Psi is reconstructed from the pooled loadings, and maximum likelihood pins a
+  # uniqueness at .uniqueness_floor. There 1 - rowSums(L^2) lands a whisker below
+  # the value that actually diagonalised the fit, and Psi^-1 multiplies that gap
+  # by ~1/floor. Reconstructing with a smaller floor pushes the measured defect
+  # past the detection tolerance, which would silently switch the re-gauging off
+  # for exactly the boundary solutions.
+  set.seed(5)
+  imps <- lapply(seq_len(5), function(i) {
+    UPPS_raw[sample.int(nrow(UPPS_raw), 60, replace = TRUE), 1:12, drop = FALSE]
+  })
+  fits <- lapply(imps, function(d) suppressWarnings(suppressMessages(
+    efa_fit(d, n_factors = 4, estimator = "ML", rotation = NULL))))
+
+  # precondition: at least one fit really is on the floor, or the test is vacuous
+  min_psi <- min(vapply(fits, function(f) min(1 - as.numeric(f$h2)), numeric(1)))
+  expect_lte(min_psi, .uniqueness_floor + 1e-9)
+
+  Ls <- lapply(fits, function(f) unclass(f$unrot_loadings))
+  anchor <- Ls[[.efa_pooled_medoid_anchor(Ls)]]
+  defect <- function(A) sum(abs(A[upper.tri(A)])) / sum(abs(diag(A)))
+  wgram <- function(L, floor) crossprod(L, L / pmax(1 - rowSums(L^2), floor))
+
+  # too small a floor makes the anchor look like it is in no recognised gauge ...
+  expect_gt(defect(wgram(anchor, 1e-6)), 1e-4)
+  # ... while the estimation floor recovers the constraint the fit satisfies
+  expect_lt(defect(wgram(anchor, .uniqueness_floor)), 1e-4)
+
+  # so detection must fire and the pooled matrix must come back canonical
+  aligned <- .efa_pooled_align_unrotated_list(
+    Ls, align_unrotated = "signed_tucker_congruence", return_meta = TRUE)
+  expect_false(is.null(aligned$meta[[1]]$C))
+
+  pooled <- suppressWarnings(suppressMessages(
+    efa_mi(imps, n_factors = 4, estimator = "ML", rotation = "none")))
+  L <- unclass(pooled$unrot_loadings)
+  expect_lt(defect(wgram(L, .uniqueness_floor)), 1e-8)
+})

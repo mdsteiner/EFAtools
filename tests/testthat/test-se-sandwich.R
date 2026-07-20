@@ -104,6 +104,14 @@ test_that("sandwich SEs propagate through an oblique rotation", {
   # Communalities are rotation-invariant, so their SEs equal the unrotated uniqueness SEs.
   expect_equal(unname(fit$SE$communalities), unname(fit$SE$uniquenesses),
                tolerance = 1e-8)
+
+  # TODO: the ROTATED sandwich SEs are asserted for shape and finiteness only -- no external
+  # oracle. `lavaan::efa()` offers no robust rotated standard errors for a polychoric EFA, so the
+  # nearest reference would be a bootstrap, which is what the (slow-gated) comparison in
+  # "continuous sandwich SEs are in the same ballpark as the bootstrap" does on the unrotated
+  # continuous path. The rotation Jacobian these SEs pass through is shared verbatim with
+  # `se = "information"` (`.se_information_rotated()`), which IS validated against lavaan's delta
+  # method in test-se-information.R, so what stays unvalidated is the covariance handed to it.
 })
 
 

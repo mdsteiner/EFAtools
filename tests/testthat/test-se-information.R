@@ -63,8 +63,13 @@
 
 
 test_that("information SEs match an independent correlation-structure reference", {
-  L <- matrix(c(0.70, 0.60, 0.50, 0.10, 0.00, 0.20,
-                0.10, 0.05, 0.20, 0.70, 0.60, 0.50), 6, 2)
+  # The two factors carry deliberately different strengths, so the ML canonical variances
+  # diag(Lambda' Psi^-1 Lambda) are well separated (4.23 vs 1.16) and the rotational gauge is
+  # firmly identified. Equal strengths leave the orientation unpinned, and the unrotated loading
+  # SEs then diverge along the gauge -- a regime the path deliberately withholds (see the gauge
+  # tests below), which would leave nothing here to compare against the reference.
+  L <- matrix(c(0.80, 0.75, 0.70, 0.10, 0.00, 0.20,
+                0.10, 0.05, 0.20, 0.55, 0.50, 0.45), 6, 2)
   psi <- 1 - rowSums(L^2)
   fit_out <- list(unrot_loadings = L)
 
@@ -180,13 +185,19 @@ test_that("information SEs populate the bootstrap SE/CI schema", {
   R <- test_models$baseline$cormat
   fit <- EFA(R, n_factors = 3, N = 500, method = "ML", rotation = "none", se = "information")
 
-  expect_setequal(names(fit$SE), c("unrot_loadings", "uniquenesses"))
-  expect_setequal(names(fit$CI), c("unrot_loadings", "uniquenesses"))
+  expect_setequal(names(fit$SE), c("unrot_loadings", "uniquenesses", "communalities"))
+  expect_setequal(names(fit$CI), c("unrot_loadings", "uniquenesses", "communalities"))
   expect_null(fit$replicates)
 
   expect_equal(dim(fit$SE$unrot_loadings), dim(fit$unrot_loadings))
   expect_length(fit$SE$uniquenesses, ncol(R))
   expect_false(anyNA(fit$SE$unrot_loadings))
+
+  # h2 = 1 - psi exactly, so the unrotated path reports the communality SEs it already holds,
+  # with the mirrored Wald interval.
+  expect_equal(unname(fit$SE$communalities), unname(fit$SE$uniquenesses))
+  expect_equal(unname(fit$CI$communalities$upper), unname(1 - fit$CI$uniquenesses$lower))
+  expect_equal(unname(fit$CI$communalities$lower), unname(1 - fit$CI$uniquenesses$upper))
 
   # Wald intervals bracket the point estimates.
   expect_true(all(fit$CI$unrot_loadings$lower <= fit$unrot_loadings))
@@ -283,15 +294,20 @@ test_that("information SEs under an orthogonal rotation omit Phi and the structu
 
 test_that("information SEs are produced for every supported native rotation", {
   # The lavaan oracle below validates the SE magnitude for a representative rotation; this guards
-  # the remaining native criteria against a wrong criterion mapping in `.rotation_se_method` or a
-  # warm-start reproduction failure that would silently degrade their rotated SEs to NA.
-  # One representative per family: a smooth CF / oblimin path (quartimax / quartimin) and the
-  # bifactor general-factor-exempt path (bifactorT / bifactorQ). The bifactor REORDER path is
-  # exercised by the next block; this block covers the non-reorder case.
+  # every native criterion against a wrong criterion mapping in `.rotation_se_method` or a
+  # warm-start reproduction failure that would silently degrade its rotated SEs to NA. All eleven
+  # mapped rotations are covered: equamax (param = k / (2 p)) and geominT/geominQ (param = delta)
+  # are the only entries whose Jacobian parameter is COMPUTED rather than fixed, so a transposed
+  # k / p or a drifted delta default would hide there. The bifactor REORDER path is exercised by
+  # the next block; this block covers the non-reorder case.
   R <- test_models$baseline$cormat
-  orth <- c("quartimax", "bifactorT")
-  oblq <- c("quartimin", "bifactorQ")
+  orth <- c("varimax", "quartimax", "equamax", "bentlerT", "geominT", "bifactorT")
+  oblq <- c("oblimin", "quartimin", "bentlerQ", "geominQ", "bifactorQ")
   for (rot in c(orth, oblq)) {
+    # The native criterion rotations run `random_starts` random starts, so without a seed inside
+    # the loop which local optimum is tested depends on the RNG state left by the preceding
+    # iteration (and by preceding test blocks).
+    set.seed(51)
     fit <- EFA(R, n_factors = 3, N = 500, method = "ML", rotation = rot, se = "information")
     expect_false(anyNA(fit$SE$rot_loadings), info = rot)
     expect_equal(dim(fit$SE$rot_loadings), dim(fit$rot_loadings), info = rot)
@@ -381,6 +397,12 @@ test_that("rotated information loading and Phi SEs match lavaan's delta method",
   ours <- ours[order(ours$corr), ]
   fc <- fc[order(fc$est), ]
   expect_lt(max(abs(ours$se - fc$se)), 0.01)
+
+  # TODO: `SE$Structure` has no external oracle here. `lavaan::efa()` reports no standard error
+  # for the structure matrix, so validating it against lavaan would mean re-deriving
+  # J_S = (Phi' (x) I_p) J_L + (I_k (x) L) J_Phi from lavaan's own parameter covariance inside the
+  # test -- i.e. re-implementing the code under test. It is currently checked for magnitude
+  # against a 300-replicate bootstrap in the block below (slow-gated) only.
 })
 
 
@@ -469,6 +491,189 @@ test_that("a Heywood case yields NA SEs with a classed warning", {
     class = "efa_se_unreliable"
   )
   expect_true(anyNA(out$SE$unrot_loadings))
+})
+
+
+test_that("a uniqueness pinned at the fitter's floor is treated as a Heywood case", {
+  # The ML/ULS/DWLS fitters constrain the uniquenesses to [.uniqueness_floor, 1], so an improper
+  # solution is pinned AT that floor and never reaches zero. A gate keyed on `psi <= 0` therefore
+  # fires only for a hand-built covariance and never for a fitted one, letting a boundary solution
+  # report a hugely inflated Wald standard error. Pin the boundary the fitters can actually reach.
+  L <- matrix(c(sqrt(1 - EFAtools:::.uniqueness_floor), 0.6, 0.5, 0.4,
+                0.00, 0.05, 0.20, 0.30), 4, 2)
+  psi <- 1 - rowSums(L^2)
+  expect_lte(min(psi), EFAtools:::.uniqueness_floor + sqrt(.Machine$double.eps))
+  expect_gt(min(psi), 0)                       # strictly interior to the old psi <= 0 gate
+
+  expect_warning(
+    out <- EFAtools:::.se_information(list(unrot_loadings = L), rot_info = NULL,
+                                      N = 250, ci = 0.95, method = "ML"),
+    class = "efa_se_unreliable"
+  )
+  expect_true(all(is.na(out$SE$unrot_loadings)))
+  expect_true(all(is.na(out$SE$uniquenesses)))
+})
+
+
+test_that("a Heywood case from an actual fit withholds the analytic SEs", {
+  # The companion test above drives `.se_information()` with a hand-built psi, which bypasses the
+  # optimiser -- and the optimiser is precisely what makes the boundary reachable only AT the floor
+  # rather than below zero. Drive the public path on data that fits an improper solution, so the
+  # gate is exercised against a uniqueness the fitter actually produced.
+  set.seed(2)
+  Lh <- matrix(0, 6, 2)
+  Lh[1:3, 1] <- c(.95, .55, .50)
+  Lh[4:6, 2] <- c(.90, .50, .45)
+  Rh <- tcrossprod(Lh)
+  diag(Rh) <- 1
+  x <- matrix(stats::rnorm(150 * 6), 150, 6) %*% chol(Rh)
+  colnames(x) <- paste0("V", seq_len(6))
+
+  fit <- suppressMessages(suppressWarnings(
+    efa_fit(x, n_factors = 2, estimator = "ML", rotation = "none", se = "information")
+  ))
+  skip_if(length(fit$heywood) == 0L, "this platform's optimiser did not land on the boundary")
+
+  # The uniqueness is pinned AT the floor, strictly above the zero the old gate tested for.
+  psi <- 1 - rowSums(unclass(fit$unrot_loadings)^2)
+  expect_lte(min(psi), EFAtools:::.uniqueness_floor + sqrt(.Machine$double.eps))
+  expect_gt(min(psi), 0)
+
+  expect_true(all(is.na(fit$SE$unrot_loadings)))
+  expect_true(all(is.na(fit$SE$uniquenesses)))
+  expect_true(anyNA(fit$vcov_unrot_loadings))
+})
+
+
+test_that("a weakly determined rotational gauge withholds only the unrotated loading SEs", {
+  # When two ML canonical variances diag(Lambda' Psi^-1 Lambda) coincide, the orientation within
+  # that two-plane is arbitrary: the gauge-fixing constraint stops being a transversal to the gauge
+  # orbit, the reflexive inverse is amplified by ||(C Z)^-1||, and the unrotated loadings have no
+  # well-defined limiting distribution. The covariance stays finite and PSD, so it passes the
+  # PSD gate -- without the transversal check the path would report a standard error of order 10 or
+  # 100 for a parameter bounded in [-1, 1].
+  L <- matrix(c(0.70, 0.60, 0.50, 0.10, 0.00, 0.20,
+                0.10, 0.05, 0.20, 0.70, 0.60, 0.50), 6, 2)
+  psi <- 1 - rowSums(L^2)
+  canon <- diag(crossprod(L, L / psi))
+  expect_lt(abs(diff(canon)) / max(canon), 1e-2)       # the two-plane really is degenerate
+
+  Cmat <- EFAtools:::.se_sandwich_constraint(L, psi = psi)
+  expect_lt(EFAtools:::.gauge_transversal(L, Cmat), EFAtools:::.gauge_transversal_floor)
+
+  expect_warning(
+    out <- EFAtools:::.se_information(list(unrot_loadings = L), rot_info = NULL,
+                                      N = 250, ci = 0.95, method = "ML"),
+    class = "efa_se_unreliable"
+  )
+  expect_true(all(is.na(out$SE$unrot_loadings)))
+  # The communalities rowSums(Lambda^2) are invariant under Lambda -> Lambda T, so they survive.
+  expect_false(anyNA(out$SE$communalities))
+  expect_equal(unname(out$SE$uniquenesses), unname(out$SE$communalities))
+  # The covariance itself is correct; only its gauge-dependent marginals are unusable.
+  expect_false(anyNA(out$vcov_unrot_loadings))
+})
+
+
+test_that("a weakly determined gauge leaves the rotated SEs intact", {
+  # The rotation Jacobian annihilates the gauge directions, so the rotated loadings, Phi and the
+  # structure coefficients are gauge-invariant and must NOT be withheld along with the unrotated
+  # ones -- otherwise the gate would destroy the very quantities that remain trustworthy.
+  # Drive the whole public path so the rotation, its Jacobian and the gauge diagnostic all come
+  # from the same fitted solution rather than a hand-built rot_info. Two disjoint blocks make
+  # Lambda' Psi^-1 Lambda exactly diagonal, so the population solution IS the canonical one; the
+  # 0.98 scaling puts the two canonical variances close together (2.371 / 2.203) without making
+  # them equal, which is the near-degenerate regime the gate targets. At exactly equal strengths
+  # the bordered matrix is exactly singular and the pre-existing singular-information path takes
+  # over instead.
+  Lp <- matrix(0, 6, 2)
+  Lp[1:3, 1] <- c(0.72, 0.65, 0.60)
+  Lp[4:6, 2] <- c(0.72, 0.65, 0.60) * 0.98
+  R <- tcrossprod(Lp)
+  diag(R) <- 1
+  colnames(R) <- rownames(R) <- paste0("V", seq_len(6))
+
+  expect_warning(
+    fit <- efa_fit(R, n_factors = 2, N = 250, estimator = "ML", rotation = "oblimin",
+                   se = "information"),
+    class = "efa_se_unreliable"
+  )
+  expect_true(all(is.na(fit$SE$unrot_loadings)))
+  expect_false(anyNA(fit$SE$rot_loadings))
+  expect_false(anyNA(fit$SE$communalities))
+  expect_false(anyNA(fit$SE$Phi))
+  # ... and the surviving rotated SEs are of a plausible magnitude, not gauge-inflated.
+  expect_lt(max(fit$SE$rot_loadings), 0.5)
+  # The covariance the rotated SEs were propagated from stays intact, so consumers that pool in a
+  # common gauge across fits (efa_mi) keep the gauge-invariant quantities.
+  expect_false(anyNA(fit$vcov_unrot_loadings))
+})
+
+
+test_that("a well-separated gauge is not flagged and reports finite SEs", {
+  # Guard the other direction: the transversal check must not fire on an ordinary solution.
+  L <- matrix(c(0.80, 0.75, 0.70, 0.10, 0.00, 0.20,
+                0.10, 0.05, 0.20, 0.55, 0.50, 0.45), 6, 2)
+  psi <- 1 - rowSums(L^2)
+  Cmat <- EFAtools:::.se_sandwich_constraint(L, psi = psi)
+  expect_gt(EFAtools:::.gauge_transversal(L, Cmat), EFAtools:::.gauge_transversal_floor)
+
+  expect_no_warning(
+    out <- EFAtools:::.se_information(list(unrot_loadings = L), rot_info = NULL,
+                                      N = 250, ci = 0.95, method = "ML"),
+    class = "efa_se_unreliable"
+  )
+  expect_false(anyNA(out$SE$unrot_loadings))
+  expect_lt(max(out$SE$unrot_loadings), 0.5)
+})
+
+
+test_that("the gauge transversal is the exact conditioning of the bordered inverse", {
+  # `.gauge_transversal()` restricts the constraint to null(A) = {vec(Lambda S) : S antisymmetric},
+  # using that basis in closed form rather than decomposing A. The claim rests on the gauge
+  # direction leaving the modelled off-diagonal of Sigma = Lambda Lambda' unchanged, which is
+  # checked here directly: the change along Lambda S must be second order in the step, so the
+  # information A = Delta' Gamma^-1 Delta annihilates it whatever Gamma is.
+  L <- matrix(c(0.70, 0.60, 0.50, 0.10, 0.00, 0.20,
+                0.10, 0.05, 0.20, 0.66, 0.58, 0.47), 6, 2)
+  psi <- 1 - rowSums(L^2)
+  k <- ncol(L)
+  nc <- k * (k - 1L) / 2L
+
+  S <- matrix(c(0, -1, 1, 0), 2, 2)
+  off <- function(M) { diag(M) <- 0; max(abs(M)) }
+  step <- vapply(c(1e-2, 1e-3), function(e) off(tcrossprod(L + e * (L %*% S)) - tcrossprod(L)),
+                 numeric(1))
+  # Halving the step ten-fold cuts the deviation a hundred-fold: second order, no first-order part.
+  expect_equal(step[1] / step[2], 100, tolerance = 1e-3)
+
+  # The value agrees with a basis obtained by decomposing the information matrix instead. Build A
+  # through the package's own assembly via the sandwich core at the efficient weight, then read its
+  # null space off the smallest `nc` eigenvectors.
+  Sigma <- tcrossprod(L); diag(Sigma) <- 1
+  prs <- utils::combn(nrow(L), 2L)
+  Gamma <- EFAtools:::.normal_theory_gamma(Sigma, prs)
+  Delta <- t(vapply(seq_len(ncol(prs)), function(s) {
+    G <- matrix(0, nrow(L), k)
+    G[prs[1, s], ] <- L[prs[2, s], ]
+    G[prs[2, s], ] <- G[prs[2, s], ] + L[prs[1, s], ]
+    as.vector(G)
+  }, numeric(length(L))))
+  A <- crossprod(Delta, solve(Gamma) %*% Delta)
+  ev <- eigen((A + t(A)) / 2, symmetric = TRUE)
+  Z_eig <- ev$vectors[, seq(ncol(A) - nc + 1L, ncol(A)), drop = FALSE]
+
+  Cmat <- EFAtools:::.se_sandwich_constraint(L, psi = psi)
+  rn <- sqrt(rowSums(Cmat^2))
+  expect_equal(EFAtools:::.gauge_transversal(L, Cmat),
+               min(svd((Cmat / rn) %*% Z_eig)$d), tolerance = 1e-8)
+
+  # A single factor has no rotational freedom, so there is no transversal to condition.
+  expect_identical(
+    EFAtools:::.gauge_transversal(L[, 1, drop = FALSE],
+                                  EFAtools:::.se_sandwich_constraint(L[, 1, drop = FALSE])),
+    Inf
+  )
 })
 
 
