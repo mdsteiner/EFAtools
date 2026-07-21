@@ -78,7 +78,7 @@ A 14 x 14 matrix of bivariate correlations
 Grieder, S., & Grob, A. (2019). Exploratory factor analyses of the
 intelligence and development scales–2: Implications for theory and
 practice. Assessment. Advance online publication.
-doi:10.1177/10731911198450
+doi:10.1177/1073191119845051
 
 Grob, A., & Hagmann-von Arx, P. (2018). Intelligence and Development
 Scales–2 (IDS-2). Intelligenz- und Entwicklungsskalen für Kinder und

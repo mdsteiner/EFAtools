@@ -59,10 +59,10 @@ EFA_AVERAGE(
 
 - method:
 
-  character vector. Any combination of "PAF", "ML", and "ULS", to use
-  principal axis factoring, maximum likelihood, or unweighted least
-  squares, respectively, to fit the EFAs. "MINRES" is accepted as a
-  synonym for "ULS" (the same estimator). Default is "PAF".
+  character vector. Any combination of `"PAF"`, `"ML"`, and `"ULS"`, the
+  estimators to average across; passed to
+  [`efa_average()`](https://mdsteiner.github.io/EFAtools/reference/efa_average.md)
+  as its `estimator` argument. Default is `"PAF"`.
 
 - rotation:
 
@@ -114,8 +114,11 @@ EFA_AVERAGE(
 
   numeric. The maximum number of iterations to perform after which the
   iterative PAF procedure is halted with a warning. Default is 10,000.
-  Note that non-converged procedures are excluded from the averaging
-  procedure.
+  It is only evaluated for the "PAF" solutions run under `type` "none":
+  a named `type` brings the iteration cap that defines it ("SPSS" 25,
+  "psych" 50, and "EFAtools" 300), and "ML" and "ULS" do not iterate
+  this way. Note that non-converged procedures are excluded from the
+  averaging procedure.
 
 - init_comm:
 

@@ -394,7 +394,7 @@ efa_screen(GRiPS_raw)
 #> 
 #> ── Outliers ────────────────────────────────────────────────────────────────────
 #> 
-#> ℹ 214 of 810 observations were flagged as multivariate outliers (robust distance > 4.19).
+#> ℹ 217 of 810 observations were flagged as multivariate outliers (robust distance > 4.19).
 #> 
 #> ── Recommendations ─────────────────────────────────────────────────────────────
 #> 
@@ -407,6 +407,6 @@ efa_screen(GRiPS_raw)
 #> ! 3 variables have a sparse response category (< 5 responses): enjoy, hurt, and
 #>   attracted; a low-frequency category can destabilise polychoric estimates -
 #>   consider collapsing it into an adjacent category.
-#> ! 214 observations were flagged as potential multivariate outliers; inspect
+#> ! 217 observations were flagged as potential multivariate outliers; inspect
 #>   them (see `$outliers$flagged`) before down-weighting or excluding.
 ```

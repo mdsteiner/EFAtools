@@ -86,8 +86,8 @@ determining the number of components to retain. Psychological Bulletin,
 
   Additional arguments passed to
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md).
-  For example, to change the extraction method (PAF is default). The
-  estimation tuning knobs are not passed here; they live in
+  For example, `estimator`, to change the estimator (PAF is default).
+  The estimation tuning knobs are not passed here; they live in
   `estimate_control`.
 
 ## Value

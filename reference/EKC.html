@@ -23,7 +23,12 @@ going forward. It remains available and unchanged so existing code keeps working
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Replicate_SPSS_psych.html">Replicate SPSS and R psych results with EFAtools</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Ordinal_and_missing_data.html">EFA with ordinal and missing data</a></li>
+    <li><a class="dropdown-item" href="../articles/Multigroup_EFA.html">Multigroup exploratory factor analysis</a></li>
+    <li><a class="dropdown-item" href="../articles/Simulation_and_power.html">Simulating data and power analysis for EFA</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Upgrading</h6></li>
+    <li><a class="dropdown-item" href="../articles/Migrating_to_efa.html">Migrating to the efa_* interface</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -65,7 +70,7 @@ going forward. It remains available and unchanged so existing code keeps working
 
 
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
-<dd><p>data.frame or matrix. data.frame or matrix of raw data or matrix with
+<dd><p>data.frame or matrix. Dataframe or matrix of raw data or matrix with
 correlations.</p></dd>
 
 
@@ -76,7 +81,7 @@ matrix.</p></dd>
 
 <dt id="arg-use">use<a class="anchor" aria-label="anchor" href="#arg-use"></a></dt>
 <dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code> if raw
-data is given as input. Default is  <code>"pairwise.complete.obs"</code>.</p></dd>
+data is given as input. Default is "pairwise.complete.obs".</p></dd>
 
 
 <dt id="arg-cor-method">cor_method<a class="anchor" aria-label="anchor" href="#arg-cor-method"></a></dt>
@@ -84,7 +89,7 @@ data is given as input. Default is  <code>"pairwise.complete.obs"</code>.</p></d
 <code>"spearman"</code>, or <code>"kendall"</code> (passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>), or <code>"poly"</code> /
 <code>"tetra"</code> for polychoric / tetrachoric correlations of ordinal / binary data
 (a two-step estimator with no empty-cell continuity correction).
-Default is  <code>"pearson"</code>.</p></dd>
+Default is "pearson".</p></dd>
 
 
 <dt id="arg-type">type<a class="anchor" aria-label="anchor" href="#arg-type"></a></dt>

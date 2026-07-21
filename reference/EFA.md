@@ -63,7 +63,11 @@ EFA(
 
 - n_factors:
 
-  numeric. Number of factors to extract.
+  numeric. Number of factors to extract. Must be at least 1 and smaller
+  than the number of variables (the common factor model is not
+  identified otherwise). Use
+  [`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)
+  to decide on a value.
 
 - N:
 
@@ -76,12 +80,12 @@ EFA(
 
 - method:
 
-  character. The estimator used to fit the EFA: "PAF" (principal axis
-  factoring), "ML" (maximum likelihood), "ULS" (unweighted least
-  squares; "MINRES" is an accepted alias returning identical results),
-  or "DWLS" (diagonally weighted least squares, for ordinal data). See
-  the *Estimators* section in Details for their properties and data
-  requirements.
+  character. The estimator used to fit the EFA; passed to
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  as its `estimator` argument. One of "PAF", "ML", "ULS", "MINRES" (an
+  accepted alias of "ULS"), or "DWLS"; see the
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  documentation for their properties and data requirements.
 
 - rotation:
 
@@ -242,14 +246,16 @@ EFA(
 
 - seed:
 
-  numeric. An optional seed for the random-number generator used by the
-  non-parametric bootstrap (`se = "np-boot"`), i.e. for the case
-  resampling, the rotation random starts, and the Procrustes random
-  starts. Setting it makes the bootstrap reproducible and independent of
-  the number of parallel workers (see Details); the caller's
-  random-number stream is restored afterwards, so supplying a seed
-  leaves no lasting effect on it. Default is `NULL`, which uses (and
-  advances) the current state of the generator.
+  numeric. An optional seed for the random-number generator, governing
+  every stochastic part of the fit: the rotation's random starts on the
+  point estimate (the criterion-based rotations draw `random_starts`
+  random starts; see *Rotations*) and, under `se = "np-boot"`, the case
+  resampling, the replicate rotations, and the Procrustes random starts.
+  Setting it makes the fit reproducible and the bootstrap additionally
+  independent of the number of parallel workers (see Details); the
+  caller's random-number stream is restored afterwards, so supplying a
+  seed leaves no lasting effect on it. Default is `NULL`, which uses
+  (and advances) the current state of the generator.
 
 - P_type, randomStarts:
 

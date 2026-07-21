@@ -27,7 +27,12 @@ activities and technologies."></head><body>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Replicate_SPSS_psych.html">Replicate SPSS and R psych results with EFAtools</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Ordinal_and_missing_data.html">EFA with ordinal and missing data</a></li>
+    <li><a class="dropdown-item" href="../articles/Multigroup_EFA.html">Multigroup exploratory factor analysis</a></li>
+    <li><a class="dropdown-item" href="../articles/Simulation_and_power.html">Simulating data and power analysis for EFA</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Upgrading</h6></li>
+    <li><a class="dropdown-item" href="../articles/Migrating_to_efa.html">Migrating to the efa_* interface</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -61,8 +66,37 @@ activities and technologies.</p>
 
     <div class="section level2">
     <h2 id="format">Format<a class="anchor" aria-label="anchor" href="#format"></a></h2>
-    <p>An object of class <code>list</code> of length 2.</p>
-    </div>
+    <p>A list of 2 with elements "cormat" (9 x 9 matrix of bivariate
+correlations) and "N" (scalar). The correlation matrix contains the following
+risk dimensions:</p><dl><dt>Voluntariness</dt>
+<dd><p>(numeric) - Voluntariness of exposure to the risk.</p></dd>
+
+<dt>Immediacy</dt>
+<dd><p>(numeric) - Immediacy of the risk's effect.</p></dd>
+
+<dt>Known to exposed</dt>
+<dd><p>(numeric) - How well the risk is known to those exposed to it.</p></dd>
+
+<dt>Known to science</dt>
+<dd><p>(numeric) - How well the risk is known to science.</p></dd>
+
+<dt>Controllability</dt>
+<dd><p>(numeric) - Controllability of the risk.</p></dd>
+
+<dt>Newness</dt>
+<dd><p>(numeric) - Newness of the risk.</p></dd>
+
+<dt>Chronic</dt>
+<dd><p>(numeric) - Whether the risk is chronic rather than catastrophic.</p></dd>
+
+<dt>Common</dt>
+<dd><p>(numeric) - Whether the risk is common rather than dreaded.</p></dd>
+
+<dt>Severity of consequences</dt>
+<dd><p>(numeric) - Severity of the consequences.</p></dd>
+
+
+</dl></div>
     <div class="section level2">
     <h2 id="source">Source<a class="anchor" aria-label="anchor" href="#source"></a></h2>
     <p>Fischhoff, B, Slovic, P, Lichtenstein, S, Read, S, and Combs, B. (1978). How safe is safe enough? A psychometric study of attitudes towards technological risks and benefits. Policy Sciences, 9, 127-152. doi: 10.1007/BF00143739</p>

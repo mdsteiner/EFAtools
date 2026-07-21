@@ -31,7 +31,12 @@ before – so existing code keeps running."></head><body>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Replicate_SPSS_psych.html">Replicate SPSS and R psych results with EFAtools</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Ordinal_and_missing_data.html">EFA with ordinal and missing data</a></li>
+    <li><a class="dropdown-item" href="../articles/Multigroup_EFA.html">Multigroup exploratory factor analysis</a></li>
+    <li><a class="dropdown-item" href="../articles/Simulation_and_power.html">Simulating data and power analysis for EFA</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Upgrading</h6></li>
+    <li><a class="dropdown-item" href="../articles/Migrating_to_efa.html">Migrating to the efa_* interface</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -108,7 +113,9 @@ data.</p></dd>
 
 
 <dt id="arg-n-factors">n_factors<a class="anchor" aria-label="anchor" href="#arg-n-factors"></a></dt>
-<dd><p>numeric. Number of factors to extract.</p></dd>
+<dd><p>numeric. Number of factors to extract. Must be at least 1 and
+smaller than the number of variables (the common factor model is not identified
+otherwise). Use <code><a href="efa_retain.html">efa_retain()</a></code> to decide on a value.</p></dd>
 
 
 <dt id="arg-n">N<a class="anchor" aria-label="anchor" href="#arg-n"></a></dt>
@@ -120,10 +127,9 @@ are deleted listwise, so <code>N</code> is taken as the number of complete cases
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
-<dd><p>character. The estimator used to fit the EFA: "PAF" (principal axis
-factoring), "ML" (maximum likelihood), "ULS" (unweighted least squares; "MINRES" is an
-accepted alias returning identical results), or "DWLS" (diagonally weighted least
-squares, for ordinal data). See the <em>Estimators</em> section in Details for their
+<dd><p>character. The estimator used to fit the EFA; passed to <code><a href="efa_fit.html">efa_fit()</a></code>
+as its <code>estimator</code> argument. One of "PAF", "ML", "ULS", "MINRES" (an accepted
+alias of "ULS"), or "DWLS"; see the <code><a href="efa_fit.html">efa_fit()</a></code> documentation for their
 properties and data requirements.</p></dd>
 
 
@@ -273,13 +279,15 @@ rotation to guard against local minima. Default is 100.</p></dd>
 
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
-<dd><p>numeric. An optional seed for the random-number generator used by the
-non-parametric bootstrap (<code>se = "np-boot"</code>), i.e. for the case resampling, the
-rotation random starts, and the Procrustes random starts. Setting it makes the
-bootstrap reproducible and independent of the number of parallel
-workers (see Details); the caller's random-number stream is restored afterwards,
-so supplying a seed leaves no lasting effect on it. Default is <code>NULL</code>, which uses
-(and advances) the current state of the generator.</p></dd>
+<dd><p>numeric. An optional seed for the random-number generator, governing every
+stochastic part of the fit: the rotation's random starts on the point estimate (the
+criterion-based rotations draw <code>random_starts</code> random starts; see <em>Rotations</em>) and,
+under <code>se = "np-boot"</code>, the case resampling, the replicate rotations, and the
+Procrustes random starts. Setting it makes the fit reproducible and the bootstrap
+additionally independent of the number of parallel workers (see Details); the
+caller's random-number stream is restored afterwards, so supplying a seed leaves no
+lasting effect on it. Default is <code>NULL</code>, which uses (and advances) the current state
+of the generator.</p></dd>
 
 
 <dt id="arg-p-type-randomstarts">P_type, randomStarts<a class="anchor" aria-label="anchor" href="#arg-p-type-randomstarts"></a></dt>

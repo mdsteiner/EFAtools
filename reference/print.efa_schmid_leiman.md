@@ -45,11 +45,11 @@ theme; plain when colours are disabled).
 
 ``` r
 EFA_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
-                   method = "PAF", rotation = "promax")
-sl_mod <- efa_schmid_leiman(EFA_mod, method = "PAF")
+                   estimator = "PAF", rotation = "promax")
+sl_mod <- efa_schmid_leiman(EFA_mod, estimator = "PAF")
 sl_mod
 #> 
-#> EFA for second-order loadings performed with type = 'EFAtools' and method = 'PAF'
+#> EFA for second-order loadings performed with estimator = 'PAF'
 #> 
 #> ── Schmid-Leiman Solution ──────────────────────────────────────────────────────
 #> 
@@ -85,7 +85,7 @@ sl_mod
 # format() returns the same lines as plain text:
 writeLines(format(sl_mod))
 #> 
-#> EFA for second-order loadings performed with type = 'EFAtools' and method = 'PAF'
+#> EFA for second-order loadings performed with estimator = 'PAF'
 #> 
 #> ── Schmid-Leiman Solution ──────────────────────────────────────────────────────
 #> 

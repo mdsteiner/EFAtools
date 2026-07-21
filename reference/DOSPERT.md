@@ -16,7 +16,18 @@ DOSPERT
 
 ## Format
 
-An object of class `list` of length 2.
+A list of 2 with elements "cormat" (40 x 40 matrix of bivariate
+correlations) and "N" (scalar).
+
+- cormat:
+
+  (matrix) - Bivariate correlations of the 40 DOSPERT items, which span
+  the six risk domains (social, recreational, gambling, health/safety,
+  investment, and ethical).
+
+- N:
+
+  (numeric) - The sample size the correlations are based on.
 
 ## Source
 

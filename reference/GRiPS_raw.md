@@ -13,12 +13,46 @@ GRiPS_raw
 
 ## Format
 
-An object of class `data.frame` with 810 rows and 8 columns.
+A data.frame with 810 rows (participants) and 8 columns, one per GRiPS
+item. Each item is a self-report indicator of general risk propensity,
+labelled by a keyword from the item:
+
+- fun:
+
+  (numeric) - Risk-taking makes life more fun.
+
+- friends:
+
+  (numeric) - Friends would describe the respondent as a risk taker.
+
+- enjoy:
+
+  (numeric) - Enjoyment of taking risks.
+
+- hurt:
+
+  (numeric) - Willingness to take a risk even if it might hurt.
+
+- part:
+
+  (numeric) - Risk-taking as an important part of life.
+
+- commonly:
+
+  (numeric) - Commonly takes risks.
+
+- chances:
+
+  (numeric) - Belief in taking chances.
+
+- attracted:
+
+  (numeric) - Attracted, rather than scared, by risk.
 
 ## Source
 
-Zhang, D. C., Highhouse, S., & Nye, C. D. (2018). Development and
-validation of the general risk propensity scale (GRiPS).Journal of
+Zhang, D. C., Highhouse, S., & Nye, C. D. (2019). Development and
+validation of the general risk propensity scale (GRiPS). Journal of
 Behavioral Decision Making, 32, 152–167. doi: 10.1002/bdm.2102
 
 Steiner, M., & Frey, R. (2020). Representative design in psychological

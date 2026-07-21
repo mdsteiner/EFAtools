@@ -52,8 +52,9 @@ N_FACTORS(
 
   character. A vector with the factor retention methods to perform.
   Possible inputs are: `"CD"`, `"EKC"`, `"HULL"`, `"KGC"`, `"MAP"`,
-  `"NEST"`,`"PARALLEL"`, `"SCREE"`, and `"SMT"` (see details). By
-  default, a subset of often used, well-performing methods are
+  `"NEST"`, `"PARALLEL"`, `"SCREE"`, and `"SMT"` (see the details in
+  [`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)).
+  By default, a subset of often used, well-performing methods are
   performed.
 
 - suitability:
@@ -131,31 +132,17 @@ N_FACTORS(
 
 - method:
 
-  character. Passed to
-  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-  in
-  [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md),
-  [`efa_kgc()`](https://mdsteiner.github.io/EFAtools/reference/efa_kgc.md),
-  [`efa_scree()`](https://mdsteiner.github.io/EFAtools/reference/efa_scree.md),
-  [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md),
-  and
-  [`efa_nest()`](https://mdsteiner.github.io/EFAtools/reference/efa_nest.md).
-  The estimation method to use. One of `"PAF"`, `"ULS"`, or `"ML"`, for
-  principal axis factoring, unweighted least squares, and maximum
-  likelihood, respectively. In
-  [`efa_kgc()`](https://mdsteiner.github.io/EFAtools/reference/efa_kgc.md),
-  [`efa_scree()`](https://mdsteiner.github.io/EFAtools/reference/efa_scree.md),
-  and
-  [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
-  it only takes effect when the respective `eigen_type` includes
-  `"EFA"`.
+  character. The estimator to use in the criteria that fit EFA models;
+  passed to
+  [`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)
+  as its `estimator` argument. One of `"ML"`, `"PAF"`, or `"ULS"`.
 
 - gof:
 
   character. Passed to
   [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md).
   The goodness of fit index to use. Either `"CAF"`, `"CFI"`, or
-  `"RMSEA"`, or any combination of them. If `method = "PAF"` is used,
+  `"RMSEA"`, or any combination of them. With the `"PAF"` estimator,
   only the CAF can be used as goodness of fit index. For details on the
   CAF, see Lorenzo-Seva, Timmerman, and Kiers (2011).
 
@@ -252,21 +239,16 @@ N_FACTORS(
 
 - ...:
 
-  Further arguments passed to
+  Further arguments passed on to the
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-  in
-  [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
-  (also within
-  [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md)),
-  [`efa_kgc()`](https://mdsteiner.github.io/EFAtools/reference/efa_kgc.md),
-  [`efa_scree()`](https://mdsteiner.github.io/EFAtools/reference/efa_scree.md),
-  and
-  [`efa_nest()`](https://mdsteiner.github.io/EFAtools/reference/efa_nest.md).
-  The estimation tuning knobs are not passed here; they live in
-  `estimate_control`. Note that the arguments listed after `...` must be
-  given by their full name (R matches an abbreviated name only against
-  the arguments before `...`), so that a tuning knob such as `max_iter`
-  cannot be mistaken for `max_iter_CD`.
+  fits, including the estimation tuning knobs (`type`, `init_comm`,
+  `criterion`, `criterion_type`, `abs_eigen`, `start_method`), which are
+  repacked into an
+  [`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
+  object so that they tune the fits exactly as they always did. The
+  estimator is selected with `method`; `max_iter` is taken by the
+  `max_iter_CD` argument (R matches an abbreviated name against the
+  arguments before `...`) and so does not reach the fits.
 
 ## Value
 

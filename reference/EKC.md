@@ -24,7 +24,7 @@ EKC(
 
 - x:
 
-  data.frame or matrix. data.frame or matrix of raw data or matrix with
+  data.frame or matrix. Dataframe or matrix of raw data or matrix with
   correlations.
 
 - N:
@@ -36,7 +36,7 @@ EKC(
 
   character. Passed to
   [`stats::cor()`](https://rdrr.io/r/stats/cor.html) if raw data is
-  given as input. Default is `"pairwise.complete.obs"`.
+  given as input. Default is "pairwise.complete.obs".
 
 - cor_method:
 
@@ -45,7 +45,7 @@ EKC(
   [`stats::cor()`](https://rdrr.io/r/stats/cor.html)), or `"poly"` /
   `"tetra"` for polychoric / tetrachoric correlations of ordinal /
   binary data (a two-step estimator with no empty-cell continuity
-  correction). Default is `"pearson"`.
+  correction). Default is "pearson".
 
 - type:
 

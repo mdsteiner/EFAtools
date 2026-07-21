@@ -51,9 +51,10 @@ efa_mi(
 
   Character. How unrotated loadings are aligned before pooling:
   `"signed_tucker_congruence"` (the default; sign/permutation via Tucker
-  congruence), `"procrustes"` (orthogonal Procrustes to the first
-  imputation), or `"none"`. See *Aligning solutions across imputations*
-  in Details.
+  congruence, anchored on the medoid imputation and returned in the
+  extraction's canonical gauge), `"procrustes"` (orthogonal Procrustes
+  to the first imputation), or `"none"`. See *Aligning solutions across
+  imputations* in Details.
 
 - fit_pool_method:
 
@@ -89,9 +90,9 @@ efa_mi(
 
   Additional arguments passed to
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-  (e.g. `method`, `rotation`, `se`, `n_factors`, `N`). These select the
-  estimator, rotation, standard-error method, and fit indices used for
-  every imputation; see
+  (e.g. `estimator`, `rotation`, `se`, `n_factors`, `N`). These select
+  the estimator, rotation, standard-error method, and fit indices used
+  for every imputation; see
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
   for the available options, their properties, and which combinations
   are valid.
@@ -214,6 +215,28 @@ first imputation by orthogonal Procrustes rotation, and `"none"`
 averages them as returned by
 [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md).
 
+The default anchors that matching on the *medoid* imputation – the one
+closest in aligned squared distance to all the others – rather than on
+whichever imputation happens to come first, so the pooled *unrotated*
+solution does not depend on the order of `data_list`. The rotated
+solution is aligned separately, against a reference chosen by
+`target_method`, and still depends on that reference. The pooled matrix
+is then returned in the same gauge every component fit uses, by
+restoring the constraint that identifies the unrotated solution:
+diagonal \\L'L\\ for a principal-axis extraction, diagonal \\L'
+\Psi^{-1} L\\ for maximum likelihood (Anderson & Rubin 1956; Lawley &
+Maxwell 1971). Which one applies is read off the component fits
+themselves, and a solution in neither gauge – an improper one, say – is
+left as aligned. Without this step the average of several aligned
+solutions sits in a gauge no single fit uses and cannot be compared
+element-by-element with an
+[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+solution. The rotation is orthogonal and common to all imputations, so
+communalities, the total variance accounted for, the model-implied
+correlation matrix, the residuals and RMSR are unchanged by it; only the
+split of variance across factors moves. `"procrustes"` and `"none"` keep
+their first-imputation anchor and are returned as aligned.
+
 ### Pooling point estimates
 
 Point estimates are pooled by arithmetic averaging after alignment. For
@@ -242,9 +265,14 @@ the out-of-range values that separately pooling the model and baseline
 noncentralities (as `lavaan.mi`/`semTools` do) can produce; those
 separately pooled noncentralities remain available in `mi_diagnostics`.
 AIC and BIC, if returned, are chi-square-derived descriptive quantities
-and are not likelihood-based MI information criteria. On the
-sandwich/MI2S route the chi-square is the single fit's scaled statistic
-rather than a D2 pool.
+and are not likelihood-based MI information criteria. They are reported
+only where the component fits report them: whenever a component
+withholds them – any `cor_method = "fiml"` fit, and any fit whose
+chi-square is a scaled statistic, such as `se = "sandwich"` – the pooled
+AIC, BIC, and ECVI are `NA` too, matching what
+[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+returns for a single such fit. On the sandwich/MI2S route the chi-square
+is the single fit's scaled statistic rather than a D2 pool.
 
 ### Bootstrap pooling (np-boot)
 
@@ -276,12 +304,16 @@ well; residual SE pooling is available only on the bootstrap path. Under
 `align_unrotated = "procrustes"` the full unrotated covariance
 `vcov_unrot_loadings` (populated by `se = "information"`) is propagated
 through the alignment, so it must be present and reliable on every fit.
+The default alignment also mixes loading columns, through the common
+canonical-gauge rotation, and so propagates the same covariance; where a
+fit does not carry it, the unrotated standard errors are returned as
+`NA` rather than aborting, and the remaining families still pool.
 
 A rotated-loading standard error is conditional on the rotation
-criterion (Jennrich 1973, 1974; Browne 2001; Zhang & Preacher 2015). For
-both orthogonal and oblique rotations the within-imputation variance is
-therefore each fit's own criterion-aware delta-method rotated SE (the
-quantity
+criterion (Archer & Jennrich 1973; Jennrich 1973, 1974; Zhang, Preacher,
+& Jennrich 2012; Zhang & Preacher 2015). For both orthogonal and oblique
+rotations the within-imputation variance is therefore each fit's own
+criterion-aware delta-method rotated SE (the quantity
 [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
 returns), reused after a signed-permutation alignment to the MI target,
 and the between-imputation variance is the sample variance of the
@@ -302,25 +334,32 @@ covariance of its off-diagonal entries are Rubin-pooled across
 imputations, \$\$\tilde\Gamma = \Gamma_W + \left(1 +
 \frac{1}{m}\right)\Gamma_B,\$\$ and a single `EFA` model is fitted to
 the pooled correlation with \\\tilde\Gamma\\ as the robust meat (its
-diagonal as the weights for `method = "DWLS"`). Because there is only
+diagonal as the weights for `estimator = "DWLS"`). Because there is only
 one fit and one rotational gauge, this route bypasses the per-imputation
 alignment: `target_method` and `align_unrotated` do not apply. The
 fitted object carries native scaled-shifted chi-square statistics and
 sandwich SEs that already reflect the multiple-imputation uncertainty,
 so the chi-square is not D2-pooled and the likelihood-ratio-based
 AIC/BIC/ECVI are `NA`; it is returned in the `mi_fit` slot, with the
-per-imputation `fits` retained for diagnostics. At least 20 imputations
-are recommended for the scaled-shifted statistic, and more (around 100)
-at higher rates of missingness (Sriutaisuk et al. 2025). The
-polychoric/tetrachoric (ordinal) case is the primary, best-evaluated
-target; the continuous-Pearson case uses the same recipe but is less
-benchmarked.
+per-imputation `fits` retained for diagnostics. The pooled fit uses the
+same
+[`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
+and
+[`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
+tuning (including any rotation-engine extras) as the per-imputation
+fits. At least 20 imputations are recommended for the scaled-shifted
+statistic, and more (around 100) at higher rates of missingness
+(Sriutaisuk et al. 2025). The polychoric/tetrachoric (ordinal) case is
+the primary, best-evaluated target; the continuous-Pearson case uses the
+same recipe but is less benchmarked.
 
 ## Conditions
 
 All conditions are classed (prefix `efa_pooled_`, or `efa_consensus_`
-for the consensus target) so they can be caught by class. The ones most
-likely to be encountered:
+for the consensus target; the dots validation shared with
+[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+signals `efa_flat_knob_in_dots` and `efa_renamed_arg`) so they can be
+caught by class. The ones most likely to be encountered:
 
 - **Inputs.** `efa_pooled_min_fits` (at least two fits are required);
   `efa_pooled_mixed_se` (every imputation must use the same `se`).
@@ -347,14 +386,19 @@ replicates and unequal sample sizes across imputations.
 
 ## References
 
+Anderson, T. W., & Rubin, H. (1956). Statistical inference in factor
+analysis. In *Proceedings of the Third Berkeley Symposium on
+Mathematical Statistics and Probability* (Vol. 5, pp. 111-150).
+University of California Press.
+
+Archer, C. O., & Jennrich, R. I. (1973). Standard errors for rotated
+factor loadings. *Psychometrika*, 38(4), 581-592.
+
 Barnard, J., & Rubin, D. B. (1999). Small-sample degrees of freedom with
 multiple imputation. *Biometrika*, 86(4), 948-955.
 
 Bentler, P. M. (1990). Comparative fit indexes in structural models.
 *Psychological Bulletin*, 107(2), 238-246.
-
-Browne, M. W. (2001). An overview of analytic rotation in exploratory
-factor analysis. *Multivariate Behavioral Research*, 36(1), 111-150.
 
 Chan, K. W., & Meng, X.-L. (2022). Multiple improvements of multiple
 imputation likelihood ratio tests. *Statistica Sinica*, 32, 1489-1514.
@@ -403,6 +447,10 @@ Zhang, G., & Preacher, K. J. (2015). Factor rotation and standard errors
 in exploratory factor analysis. *Journal of Educational and Behavioral
 Statistics*, 40(6), 579-603.
 
+Zhang, G., Preacher, K. J., & Jennrich, R. I. (2012). The infinitesimal
+jackknife with exploratory factor analysis. *Psychometrika*, 77(4),
+634-648.
+
 ## See also
 
 Other factor analysis:
@@ -423,26 +471,26 @@ Andreas Soteriades, Markus Steiner
 # create a list of three datasets, mimicking a list you would obtain from
 # e.g. mice.
 dat_list <- lapply(1:3, function(x) GRiPS_raw[sample(1:nrow(GRiPS_raw), replace = TRUE),])
-mod <- efa_mi(dat_list, n_factors = 1, method = "ML")
+mod <- efa_mi(dat_list, n_factors = 1, estimator = "ML")
 #> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
 #> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
 #> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
 mod
 #> 
-#> Pooled EFA across 3 imputations performed with type = 'EFAtools', method = 'ML', and rotation = 'none'.
+#> Pooled EFA across 3 imputations performed with estimator = 'ML' and rotation = 'none'.
 #> Pooling settings: align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.
 #> 
 #> ── Unrotated Loadings ──────────────────────────────────────────────────────────
 #> 
 #>             F1    h2    u2
-#> fun        .799  .638  .362
-#> friends    .843  .710  .290
-#> enjoy      .879  .773  .227
-#> hurt       .764  .584  .416
-#> part       .821  .674  .326
-#> commonly   .836  .699  .301
-#> chances    .796  .634  .366
-#> attracted  .844  .712  .288
+#> fun        .786  .618  .382
+#> friends    .856  .732  .268
+#> enjoy      .869  .756  .244
+#> hurt       .758  .574  .426
+#> part       .815  .665  .335
+#> commonly   .830  .689  .311
+#> chances    .787  .620  .380
+#> attracted  .849  .720  .280
 #> 
 #> Legend:
 #>   bold = |loading| >= .300
@@ -452,45 +500,45 @@ mod
 #> ── Variances Accounted for ─────────────────────────────────────────────────────
 #> 
 #>                 F1
-#> SS loadings   5.423
-#> Prop Tot Var   .678
+#> SS loadings   5.374
+#> Prop Tot Var   .672
 #> 
 #> ── Model Fit ───────────────────────────────────────────────────────────────────
 #> 
 #> D2-pooled χ²(20) = 0.00, p = 1.000
-#> CFI: .98
+#> CFI: .99
 #> TLI: .98
 #> RMSEA [90% CI]: .00 [.00; .00]
 #> AIC: -40.00
 #> BIC: -133.94
 #> ECVI: 0.04
 #> CAF: .50
-#> SRMR: .02
-#> Note: the pooled χ² is the D2 statistic; its p uses the D2 reference F(20, .2),
+#> SRMR: .01
+#> Note: the pooled χ² is the D2 statistic; its p uses the D2 reference F(20, .1),
 #> not the χ²(20) tail.
 
 # \donttest{
 # add computation of standard errors and CIs
-mod <- efa_mi(dat_list, n_factors = 1, method = "ML", se = "np-boot")
+mod <- efa_mi(dat_list, n_factors = 1, estimator = "ML", se = "np-boot")
 #> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
 #> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
 #> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
 mod
 #> 
-#> Pooled EFA across 3 imputations performed with type = 'EFAtools', method = 'ML', and rotation = 'none'.
+#> Pooled EFA across 3 imputations performed with estimator = 'ML' and rotation = 'none'.
 #> Pooling settings: align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.
 #> 
 #> ── Unrotated Loadings ──────────────────────────────────────────────────────────
 #> 
 #>             F1    h2    u2
-#> fun        .799  .638  .362
-#> friends    .843  .710  .290
-#> enjoy      .879  .773  .227
-#> hurt       .764  .584  .416
-#> part       .821  .674  .326
-#> commonly   .836  .699  .301
-#> chances    .796  .634  .366
-#> attracted  .844  .712  .288
+#> fun        .786  .618  .382
+#> friends    .856  .732  .268
+#> enjoy      .869  .756  .244
+#> hurt       .758  .574  .426
+#> part       .815  .665  .335
+#> commonly   .830  .689  .311
+#> chances    .787  .620  .380
+#> attracted  .849  .720  .280
 #> 
 #> Legend:
 #>   bold = |loading| >= .300
@@ -500,21 +548,21 @@ mod
 #> ── Variances Accounted for ─────────────────────────────────────────────────────
 #> 
 #>                 F1
-#> SS loadings   5.423
-#> Prop Tot Var   .678
+#> SS loadings   5.374
+#> Prop Tot Var   .672
 #> 
 #> ── Model Fit ───────────────────────────────────────────────────────────────────
 #> 
 #> D2-pooled χ²(20) = 0.00, p = 1.000
-#> CFI [95% bootstrap/MI-CI]: .98 [.96, 1.01]
-#> TLI [95% bootstrap/MI-CI]: .98 [.94, 1.01]
-#> RMSEA [90% CI] [95% bootstrap/MI-CI]: .00 [.00; .00] [.02, .12]
-#> AIC [95% bootstrap/MI-CI]: -40.00 [-49.60, 186.84]
-#> BIC [95% bootstrap/MI-CI]: -133.94 [-143.54, 92.90]
-#> ECVI [95% bootstrap/MI-CI]: 0.04 [.03, .32]
+#> CFI [95% bootstrap/MI-CI]: .99 [.96, 1.02]
+#> TLI [95% bootstrap/MI-CI]: .98 [.94, 1.02]
+#> RMSEA [90% CI] [95% bootstrap/MI-CI]: .00 [.00; .00] [.00, .13]
+#> AIC [95% bootstrap/MI-CI]: -40.00 [-81.22, 172.11]
+#> BIC [95% bootstrap/MI-CI]: -133.94 [-175.16, 78.17]
+#> ECVI [95% bootstrap/MI-CI]: 0.04 [-.01, .30]
 #> CAF [95% bootstrap/MI-CI]: .50 [.46, .53]
-#> SRMR [95% bootstrap/MI-CI]: .02 [.01, .03]
-#> Note: the pooled χ² is the D2 statistic; its p uses the D2 reference F(20, .2),
+#> SRMR [95% bootstrap/MI-CI]: .01 [.00, .04]
+#> Note: the pooled χ² is the D2 statistic; its p uses the D2 reference F(20, .1),
 #> not the χ²(20) tail.
 #> 
 #> Note: Bootstrap/MI CIs based on 1000 bootstrap samples per imputation.

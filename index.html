@@ -11,8 +11,8 @@
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Fast and Flexible Implementations of Exploratory Factor Analysis Tools">
-<meta name="description" content="Provides functions to perform exploratory factor analysis (EFA) procedures and compare their solutions. The goal is to provide state-of-the-art factor retention methods and a high degree of flexibility in the EFA procedures. This way, for example, implementations from R psych and SPSS can be compared. Moreover, functions for Schmid-Leiman transformation and the computation of omegas are provided. To speed up the analyses, some of the iterative procedures, like principal axis factoring (PAF), are implemented in C++.">
-<meta property="og:description" content="Provides functions to perform exploratory factor analysis (EFA) procedures and compare their solutions. The goal is to provide state-of-the-art factor retention methods and a high degree of flexibility in the EFA procedures. This way, for example, implementations from R psych and SPSS can be compared. Moreover, functions for Schmid-Leiman transformation and the computation of omegas are provided. To speed up the analyses, some of the iterative procedures, like principal axis factoring (PAF), are implemented in C++.">
+<meta name="description" content="Provides a complete workflow for exploratory factor analysis (EFA). It covers data screening and factorability checks, a suite of factor retention criteria for choosing the number of factors, and factor extraction by principal axis factoring, maximum likelihood, unweighted least squares, or diagonally weighted least squares from Pearson, Spearman, Kendall, polychoric, tetrachoric, or two-stage full-information maximum likelihood correlations. A built-in rotation engine offers a range of orthogonal and oblique rotations, and standard errors for loadings and related quantities can be obtained by analytic, robust, or bootstrap methods. Further tools support model averaging across analytic choices, multigroup EFA with factor congruence, EFA on multiply imputed data, Schmid-Leiman transformation, reliability coefficients (including McDonalds omegas), factor score estimation, data simulation, and power analysis. Computationally intensive procedures are implemented in C++' for speed.">
+<meta property="og:description" content="Provides a complete workflow for exploratory factor analysis (EFA). It covers data screening and factorability checks, a suite of factor retention criteria for choosing the number of factors, and factor extraction by principal axis factoring, maximum likelihood, unweighted least squares, or diagonally weighted least squares from Pearson, Spearman, Kendall, polychoric, tetrachoric, or two-stage full-information maximum likelihood correlations. A built-in rotation engine offers a range of orthogonal and oblique rotations, and standard errors for loadings and related quantities can be obtained by analytic, robust, or bootstrap methods. Further tools support model averaging across analytic choices, multigroup EFA with factor congruence, EFA on multiply imputed data, Schmid-Leiman transformation, reliability coefficients (including McDonalds omegas), factor score estimation, data simulation, and power analysis. Computationally intensive procedures are implemented in C++' for speed.">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -36,7 +36,12 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="articles/Replicate_SPSS_psych.html">Replicate SPSS and R psych results with EFAtools</a></li>
+<li><a class="dropdown-item" href="articles/Ordinal_and_missing_data.html">EFA with ordinal and missing data</a></li>
+    <li><a class="dropdown-item" href="articles/Multigroup_EFA.html">Multigroup exploratory factor analysis</a></li>
+    <li><a class="dropdown-item" href="articles/Simulation_and_power.html">Simulating data and power analysis for EFA</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Upgrading</h6></li>
+    <li><a class="dropdown-item" href="articles/Migrating_to_efa.html">Migrating to the efa_* interface</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
@@ -70,6 +75,51 @@
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("pak")</span></span>
 <span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"mdsteiner/EFAtools"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="package-overview">Package Overview<a class="anchor" aria-label="anchor" href="#package-overview"></a>
+</h2>
+<p>The <code>efa_*</code> functions cover the steps of an EFA workflow:</p>
+<ul>
+<li>
+<strong>Screening and suitability</strong>: <code><a href="reference/efa_screen.html">efa_screen()</a></code> checks the data for multivariate normality, outliers, and suitability for factor analysis; <code><a href="reference/efa_kmo.html">efa_kmo()</a></code> and <code><a href="reference/efa_bartlett.html">efa_bartlett()</a></code> run the Kaiser-Meyer-Olkin criterion and Bartlett’s test of sphericity individually.</li>
+<li>
+<strong>Factor retention</strong>: <code><a href="reference/efa_retain.html">efa_retain()</a></code> runs several factor retention criteria with a single call. They are also available on their own: <code><a href="reference/efa_cd.html">efa_cd()</a></code>, <code><a href="reference/efa_ekc.html">efa_ekc()</a></code>, <code><a href="reference/efa_hull.html">efa_hull()</a></code>, <code><a href="reference/efa_kgc.html">efa_kgc()</a></code>, <code><a href="reference/efa_map.html">efa_map()</a></code>, <code><a href="reference/efa_nest.html">efa_nest()</a></code>, <code><a href="reference/efa_parallel.html">efa_parallel()</a></code>, <code><a href="reference/efa_scree.html">efa_scree()</a></code>, and <code><a href="reference/efa_smt.html">efa_smt()</a></code>.</li>
+<li>
+<strong>Fitting</strong>: <code><a href="reference/efa_fit.html">efa_fit()</a></code> fits the factor model. <code><a href="reference/estimate_control.html">estimate_control()</a></code> and <code><a href="reference/estimate_control.html">rotate_control()</a></code> configure the estimation and rotation settings.</li>
+<li>
+<strong>Rotation and transformation</strong>: <code><a href="reference/efa_procrustes.html">efa_procrustes()</a></code> rotates a solution onto a target; <code><a href="reference/efa_schmid_leiman.html">efa_schmid_leiman()</a></code> transforms an oblique solution into a hierarchical one.</li>
+<li>
+<strong>Reliability</strong>: <code><a href="reference/efa_reliability.html">efa_reliability()</a></code> computes reliability and common-variance coefficients for a factor solution.</li>
+<li>
+<strong>Factor scores</strong>: <code><a href="reference/efa_scores.html">efa_scores()</a></code> estimates factor scores together with score-quality diagnostics.</li>
+<li>
+<strong>Comparison</strong>: <code><a href="reference/efa_compare.html">efa_compare()</a></code> compares two solutions (loadings or communalities).</li>
+<li>
+<strong>Averaging</strong>: <code><a href="reference/efa_average.html">efa_average()</a></code> averages solutions across implementations and methods to assess their stability.</li>
+<li>
+<strong>Multiple groups</strong>: <code><a href="reference/efa_group.html">efa_group()</a></code> fits a solution per group and compares them.</li>
+<li>
+<strong>Multiple imputation</strong>: <code><a href="reference/efa_mi.html">efa_mi()</a></code> fits and pools solutions across multiply imputed data sets.</li>
+<li>
+<strong>Simulation</strong>: <code><a href="reference/efa_simulate.html">efa_simulate()</a></code> simulates data from a common-factor population model.</li>
+<li>
+<strong>Power</strong>: <code><a href="reference/efa_power.html">efa_power()</a></code> performs analytic and simulation-based power analysis.</li>
+</ul>
+<p>The uppercase names (<code><a href="reference/EFA.html">EFA()</a></code>, <code><a href="reference/N_FACTORS.html">N_FACTORS()</a></code>, …) are superseded by their <code>efa_*</code> equivalents, but remain exported and keep their arguments, so existing code keeps working.</p>
+<p>The following vignettes and articles cover these in detail:</p>
+<ul>
+<li>
+<a href="https://mdsteiner.github.io/EFAtools/articles/EFAtools.html">EFAtools</a>: a complete EFA workflow, from screening to reliability and factor scores.</li>
+<li>
+<a href="https://mdsteiner.github.io/EFAtools/articles/Migrating_to_efa.html">Migrating to the efa_* interface</a>: what the old names and arguments map to.</li>
+<li>
+<a href="https://mdsteiner.github.io/EFAtools/articles/Ordinal_and_missing_data.html">EFA with ordinal and missing data</a>: polychoric and tetrachoric correlations, DWLS, FIML, and multiply imputed data.</li>
+<li>
+<a href="https://mdsteiner.github.io/EFAtools/articles/Multigroup_EFA.html">Multigroup exploratory factor analysis</a>: comparing solutions across groups and assessing approximate invariance.</li>
+<li>
+<a href="https://mdsteiner.github.io/EFAtools/articles/Simulation_and_power.html">Simulating data and power analysis for EFA</a>: simulating data and planning sample sizes.</li>
+</ul>
 </div>
 <div class="section level2">
 <h2 id="examples">Examples<a class="anchor" aria-label="anchor" href="#examples"></a>
@@ -165,15 +215,16 @@
 <h4 id="raw-data-input">Raw-Data Input<a class="anchor" aria-label="anchor" href="#raw-data-input"></a>
 </h4>
 <p>With raw-data input, you can use all functionalities, including sandwich and bootstrap standard errors and DWLS estimation with polychoric correlations or two-stage FIML estimation of correlations.</p>
+<p>The bootstrap intervals below are percentile intervals over refitted resamples. For the loadings and factor correlations they are centred on the point estimate as you would expect; for the indices derived from the chi-square (RMSEA, AIC, BIC, ECVI) they sit above it, because each resample carries the sample’s own misfit <em>plus</em> fresh sampling noise. A point estimate lying below its own lower bound there is that shift, not a miscomputed interval. CFI and TLI are unaffected, being ratios in which the baseline chi-square shifts along with the model one.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
-<span><span class="co"># ULS / MINRES estimation with oblimin rotation and sandwich SEs</span></span>
-<span><span class="va">mod</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">DOSPERT_raw</span>, n_factors <span class="op">=</span> <span class="fl">5</span>, method <span class="op">=</span> <span class="st">"ULS"</span>, rotation <span class="op">=</span> <span class="st">"oblimin"</span>,</span>
-<span>           se <span class="op">=</span> <span class="st">"sandwich"</span><span class="op">)</span></span>
+<span><span class="co"># ULS / MINRES estimation with oblimin rotation and bootstrap SEs</span></span>
+<span><span class="va">mod</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">DOSPERT_raw</span>, n_factors <span class="op">=</span> <span class="fl">5</span>, estimator <span class="op">=</span> <span class="st">"uls"</span>, rotation <span class="op">=</span> <span class="st">"oblimin"</span>,</span>
+<span>               se <span class="op">=</span> <span class="st">"np-boot"</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="co">#&gt; ℹ `x` is not a correlation matrix; computing correlations from the raw data.</span></span>
 <span><span class="va">mod</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; EFA performed with type = 'EFAtools', method = 'ULS', and rotation = 'oblimin'.</span></span>
+<span><span class="co">#&gt; EFA performed with estimator = 'ULS' and rotation = 'oblimin'.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Rotated Loadings ────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -209,11 +260,6 @@
 <span><span class="co">#&gt; socR_5   .049   .103  -.045   .379   .051  .185  .815</span></span>
 <span><span class="co">#&gt; socR_6   .004  -.008   .016   .549   .041  .308  .692</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Legend:</span></span>
-<span><span class="co">#&gt;   bold = |loading| &gt;= .300</span></span>
-<span><span class="co">#&gt;   grey = below cutoff</span></span>
-<span><span class="co">#&gt;   red h2/u2 = Heywood-relevant value</span></span>
-<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Factor Intercorrelations ────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;       F1     F2     F3     F4     F5</span></span>
@@ -234,25 +280,30 @@
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Model Fit ───────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; scaled χ²(295) = 2912.75, p &lt; .001</span></span>
-<span><span class="co">#&gt; CFI: .90</span></span>
-<span><span class="co">#&gt; TLI: .86</span></span>
-<span><span class="co">#&gt; RMSEA [90% CI]: .05 [.05; .06]</span></span>
-<span><span class="co">#&gt; AIC: NA</span></span>
-<span><span class="co">#&gt; BIC: NA</span></span>
-<span><span class="co">#&gt; CAF: .43</span></span>
-<span><span class="co">#&gt; SRMR: .03</span></span>
+<span><span class="co">#&gt; χ²(295) = 3604.54, p &lt; .001</span></span>
+<span><span class="co">#&gt; CFI [95% bootstrap-CI]: .90 [.88, .90]</span></span>
+<span><span class="co">#&gt; TLI [95% bootstrap-CI]: .85 [.82, .85]</span></span>
+<span><span class="co">#&gt; RMSEA [90% CI] [95% bootstrap-CI]: .06 [.06; .06] [.06, .07]</span></span>
+<span><span class="co">#&gt; AIC [95% bootstrap-CI]: 3014.54 [3034.98, 3700.48]</span></span>
+<span><span class="co">#&gt; BIC [95% bootstrap-CI]: 1230.81 [1251.25, 1916.74]</span></span>
+<span><span class="co">#&gt; ECVI [95% bootstrap-CI]: 1.26 [1.27, 1.48]</span></span>
+<span><span class="co">#&gt; CAF [95% bootstrap-CI]: .43 [.43, .45]</span></span>
+<span><span class="co">#&gt; SRMR [95% bootstrap-CI]: .03 [.03, .04]</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Note: Bootstrap CIs based on 1000 bootstrap samples.</span></span>
 <span><span class="co"># detailed output with summary()</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mod</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; EFA performed with type = 'EFAtools', method = 'ULS', and rotation = 'oblimin'.</span></span>
+<span><span class="co">#&gt; EFA performed with estimator = 'ULS' and rotation = 'oblimin'.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Model Diagnostics ───────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Factors: 5</span></span>
 <span><span class="co">#&gt; Variables: 30</span></span>
 <span><span class="co">#&gt; N: 3123</span></span>
-<span><span class="co">#&gt; Rotation local optima: 1 distinct from 100 random starts</span></span>
+<span><span class="co">#&gt; Bootstrap samples: 1000</span></span>
+<span><span class="co">#&gt; Valid target-rotated samples: 1000 out of 1000</span></span>
+<span><span class="co">#&gt; Rotation local optima: 1 distinct from 6 of 101 starts</span></span>
 <span><span class="co">#&gt; Heywood cases: 0</span></span>
 <span><span class="co">#&gt; Cross-loading items (|loading| &gt;= .300): 0</span></span>
 <span><span class="co">#&gt; Items without salient loading (|loading| &gt;= .300): 0</span></span>
@@ -295,44 +346,39 @@
 <span><span class="co">#&gt; socR_5   .049   .103  -.045   .379   .051  .185  .815</span></span>
 <span><span class="co">#&gt; socR_6   .004  -.008   .016   .549   .041  .308  .692</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Legend:</span></span>
-<span><span class="co">#&gt;   bold = |loading| &gt;= .300</span></span>
-<span><span class="co">#&gt;   grey = below cutoff</span></span>
-<span><span class="co">#&gt;   red h2/u2 = Heywood-relevant value</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; ── 95% Wald CIs for salient rotated loadings ───────────────────────────────────</span></span>
+<span><span class="co">#&gt; ── 95% bootstrap CIs for salient rotated loadings ──────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Variable  Factor  est    lower  upper</span></span>
-<span><span class="co">#&gt; ethR_1    F1       .513   .469   .557</span></span>
-<span><span class="co">#&gt; ethR_2    F1       .518   .473   .562</span></span>
-<span><span class="co">#&gt; ethR_3    F1       .639   .600   .679</span></span>
-<span><span class="co">#&gt; ethR_4    F1       .586   .541   .630</span></span>
-<span><span class="co">#&gt; ethR_5    F1       .477   .431   .522</span></span>
-<span><span class="co">#&gt; ethR_6    F1       .621   .581   .661</span></span>
-<span><span class="co">#&gt; heaR_1    F1       .426   .382   .471</span></span>
-<span><span class="co">#&gt; heaR_2    F1       .453   .409   .497</span></span>
-<span><span class="co">#&gt; heaR_3    F1       .415   .366   .463</span></span>
-<span><span class="co">#&gt; heaR_4    F1       .362   .313   .411</span></span>
-<span><span class="co">#&gt; heaR_5    F1       .382   .335   .428</span></span>
-<span><span class="co">#&gt; heaR_6    F1       .430   .385   .475</span></span>
-<span><span class="co">#&gt; recR_1    F2       .407   .369   .445</span></span>
-<span><span class="co">#&gt; recR_2    F2       .531   .491   .572</span></span>
-<span><span class="co">#&gt; recR_3    F2       .619   .584   .655</span></span>
-<span><span class="co">#&gt; recR_4    F2       .861   .838   .885</span></span>
-<span><span class="co">#&gt; recR_5    F2       .805   .778   .832</span></span>
-<span><span class="co">#&gt; recR_6    F2       .637   .602   .672</span></span>
-<span><span class="co">#&gt; finR_1    F3       .840   .805   .876</span></span>
-<span><span class="co">#&gt; finR_3    F3       .856   .823   .888</span></span>
-<span><span class="co">#&gt; finR_5    F3       .873   .843   .903</span></span>
-<span><span class="co">#&gt; socR_1    F4       .646   .612   .679</span></span>
-<span><span class="co">#&gt; socR_2    F4       .679   .651   .707</span></span>
-<span><span class="co">#&gt; socR_3    F4       .640   .605   .675</span></span>
-<span><span class="co">#&gt; socR_4    F4       .614   .582   .646</span></span>
-<span><span class="co">#&gt; socR_5    F4       .379   .341   .416</span></span>
-<span><span class="co">#&gt; socR_6    F4       .549   .512   .585</span></span>
-<span><span class="co">#&gt; finR_2    F5       .688   .652   .723</span></span>
-<span><span class="co">#&gt; finR_4    F5       .710   .674   .747</span></span>
-<span><span class="co">#&gt; finR_6    F5       .683   .647   .720</span></span>
+<span><span class="co">#&gt; ethR_1    F1       .513   .465   .553</span></span>
+<span><span class="co">#&gt; ethR_2    F1       .518   .472   .558</span></span>
+<span><span class="co">#&gt; ethR_3    F1       .639   .589   .677</span></span>
+<span><span class="co">#&gt; ethR_4    F1       .586   .532   .630</span></span>
+<span><span class="co">#&gt; ethR_5    F1       .477   .431   .523</span></span>
+<span><span class="co">#&gt; ethR_6    F1       .621   .572   .662</span></span>
+<span><span class="co">#&gt; heaR_1    F1       .426   .381   .472</span></span>
+<span><span class="co">#&gt; heaR_2    F1       .453   .407   .497</span></span>
+<span><span class="co">#&gt; heaR_3    F1       .415   .361   .472</span></span>
+<span><span class="co">#&gt; heaR_4    F1       .362   .306   .419</span></span>
+<span><span class="co">#&gt; heaR_5    F1       .382   .326   .435</span></span>
+<span><span class="co">#&gt; heaR_6    F1       .430   .382   .475</span></span>
+<span><span class="co">#&gt; recR_1    F2       .407   .366   .447</span></span>
+<span><span class="co">#&gt; recR_2    F2       .531   .487   .572</span></span>
+<span><span class="co">#&gt; recR_3    F2       .619   .578   .654</span></span>
+<span><span class="co">#&gt; recR_4    F2       .861   .825   .891</span></span>
+<span><span class="co">#&gt; recR_5    F2       .805   .771   .835</span></span>
+<span><span class="co">#&gt; recR_6    F2       .637   .600   .669</span></span>
+<span><span class="co">#&gt; finR_1    F3       .840   .801   .868</span></span>
+<span><span class="co">#&gt; finR_3    F3       .856   .819   .881</span></span>
+<span><span class="co">#&gt; finR_5    F3       .873   .837   .899</span></span>
+<span><span class="co">#&gt; socR_1    F4       .646   .612   .680</span></span>
+<span><span class="co">#&gt; socR_2    F4       .679   .648   .708</span></span>
+<span><span class="co">#&gt; socR_3    F4       .640   .602   .674</span></span>
+<span><span class="co">#&gt; socR_4    F4       .614   .581   .648</span></span>
+<span><span class="co">#&gt; socR_5    F4       .379   .339   .418</span></span>
+<span><span class="co">#&gt; socR_6    F4       .549   .511   .587</span></span>
+<span><span class="co">#&gt; finR_2    F5       .688   .646   .723</span></span>
+<span><span class="co">#&gt; finR_4    F5       .710   .667   .740</span></span>
+<span><span class="co">#&gt; finR_6    F5       .683   .642   .715</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Factor Intercorrelations ────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -343,19 +389,19 @@
 <span><span class="co">#&gt; F4   .006   .200  -.042  1.000</span></span>
 <span><span class="co">#&gt; F5   .154   .290   .344   .145  1.000</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; ── 95% Wald CIs for factor intercorrelations ───────────────────────────────────</span></span>
+<span><span class="co">#&gt; ── 95% bootstrap CIs for factor intercorrelations ──────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Factors   est    lower  upper</span></span>
-<span><span class="co">#&gt; F1 ~~ F2   .372   .341   .402</span></span>
-<span><span class="co">#&gt; F1 ~~ F3   .448   .412   .485</span></span>
-<span><span class="co">#&gt; F1 ~~ F4   .006  -.028   .039</span></span>
-<span><span class="co">#&gt; F1 ~~ F5   .154   .104   .204</span></span>
-<span><span class="co">#&gt; F2 ~~ F3   .319   .277   .362</span></span>
-<span><span class="co">#&gt; F2 ~~ F4   .200   .169   .230</span></span>
-<span><span class="co">#&gt; F2 ~~ F5   .290   .234   .346</span></span>
-<span><span class="co">#&gt; F3 ~~ F4  -.042  -.091   .007</span></span>
-<span><span class="co">#&gt; F3 ~~ F5   .344   .298   .390</span></span>
-<span><span class="co">#&gt; F4 ~~ F5   .145   .099   .191</span></span>
+<span><span class="co">#&gt; F1 ~~ F2   .372   .327   .405</span></span>
+<span><span class="co">#&gt; F1 ~~ F3   .448   .400   .481</span></span>
+<span><span class="co">#&gt; F1 ~~ F4   .006  -.037   .049</span></span>
+<span><span class="co">#&gt; F1 ~~ F5   .154   .108   .196</span></span>
+<span><span class="co">#&gt; F2 ~~ F3   .319   .270   .359</span></span>
+<span><span class="co">#&gt; F2 ~~ F4   .200   .160   .236</span></span>
+<span><span class="co">#&gt; F2 ~~ F5   .290   .241   .326</span></span>
+<span><span class="co">#&gt; F3 ~~ F4  -.042  -.082   .002</span></span>
+<span><span class="co">#&gt; F3 ~~ F5   .344   .293   .373</span></span>
+<span><span class="co">#&gt; F4 ~~ F5   .145   .098   .185</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Structure Matrix ────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -409,14 +455,17 @@
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Model Fit ───────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; scaled χ²(295) = 2912.75, p &lt; .001</span></span>
-<span><span class="co">#&gt; CFI: .90</span></span>
-<span><span class="co">#&gt; TLI: .86</span></span>
-<span><span class="co">#&gt; RMSEA [90% CI]: .05 [.05; .06]</span></span>
-<span><span class="co">#&gt; AIC: NA</span></span>
-<span><span class="co">#&gt; BIC: NA</span></span>
-<span><span class="co">#&gt; CAF: .43</span></span>
-<span><span class="co">#&gt; SRMR: .03</span></span>
+<span><span class="co">#&gt; χ²(295) = 3604.54, p &lt; .001</span></span>
+<span><span class="co">#&gt; CFI [95% bootstrap-CI]: .90 [.88, .90]</span></span>
+<span><span class="co">#&gt; TLI [95% bootstrap-CI]: .85 [.82, .85]</span></span>
+<span><span class="co">#&gt; RMSEA [90% CI] [95% bootstrap-CI]: .06 [.06; .06] [.06, .07]</span></span>
+<span><span class="co">#&gt; AIC [95% bootstrap-CI]: 3014.54 [3034.98, 3700.48]</span></span>
+<span><span class="co">#&gt; BIC [95% bootstrap-CI]: 1230.81 [1251.25, 1916.74]</span></span>
+<span><span class="co">#&gt; ECVI [95% bootstrap-CI]: 1.26 [1.27, 1.48]</span></span>
+<span><span class="co">#&gt; CAF [95% bootstrap-CI]: .43 [.43, .45]</span></span>
+<span><span class="co">#&gt; SRMR [95% bootstrap-CI]: .03 [.03, .04]</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Note: Bootstrap CIs based on 1000 bootstrap samples.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Residual Diagnostics ────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -625,8 +674,8 @@
 <span><span class="co">#&gt; socR_6 -0.058900218  0.0775383760 -0.048707612  0.1897359371  0.0000000000</span></span>
 <span></span>
 <span><span class="co"># DWLS estimation based on polychoric correlations, with robust sandwich SEs</span></span>
-<span><span class="va">mod</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">GRiPS_raw</span>, n_factors <span class="op">=</span> <span class="fl">1</span>, method <span class="op">=</span> <span class="st">"DWLS"</span>, cor_method <span class="op">=</span> <span class="st">"poly"</span>,</span>
-<span>           se <span class="op">=</span> <span class="st">"sandwich"</span><span class="op">)</span></span>
+<span><span class="va">mod</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">GRiPS_raw</span>, n_factors <span class="op">=</span> <span class="fl">1</span>, estimator <span class="op">=</span> <span class="st">"dwls"</span>, cor_method <span class="op">=</span> <span class="st">"poly"</span>,</span>
+<span>               se <span class="op">=</span> <span class="st">"sandwich"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; ℹ `x` is not a correlation matrix; computing correlations from the raw data.</span></span>
 <span><span class="co">#&gt; Warning: Some response-category combinations are empty despite a non-negligible expected</span></span>
 <span><span class="co">#&gt; count.</span></span>
@@ -635,7 +684,7 @@
 <span><span class="co">#&gt;   interpret them with caution.</span></span>
 <span><span class="va">mod</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; EFA performed with type = 'EFAtools', method = 'DWLS', and rotation = 'none'.</span></span>
+<span><span class="co">#&gt; EFA performed with estimator = 'DWLS' and rotation = 'none'.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Unrotated Loadings ──────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -648,11 +697,6 @@
 <span><span class="co">#&gt; commonly   .843  .711  .289</span></span>
 <span><span class="co">#&gt; chances    .817  .668  .332</span></span>
 <span><span class="co">#&gt; attracted  .859  .738  .262</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Legend:</span></span>
-<span><span class="co">#&gt;   bold = |loading| &gt;= .300</span></span>
-<span><span class="co">#&gt;   grey = below cutoff</span></span>
-<span><span class="co">#&gt;   red h2/u2 = Heywood-relevant value</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Variances Accounted for ─────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -672,7 +716,7 @@
 <span><span class="co">#&gt; SRMR: .02</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mod</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; EFA performed with type = 'EFAtools', method = 'DWLS', and rotation = 'none'.</span></span>
+<span><span class="co">#&gt; EFA performed with estimator = 'DWLS' and rotation = 'none'.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Model Diagnostics ───────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -697,11 +741,6 @@
 <span><span class="co">#&gt; commonly   .843  .711  .289</span></span>
 <span><span class="co">#&gt; chances    .817  .668  .332</span></span>
 <span><span class="co">#&gt; attracted  .859  .738  .262</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Legend:</span></span>
-<span><span class="co">#&gt;   bold = |loading| &gt;= .300</span></span>
-<span><span class="co">#&gt;   grey = below cutoff</span></span>
-<span><span class="co">#&gt;   red h2/u2 = Heywood-relevant value</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── 95% Wald CIs for salient unrotated loadings ─────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -752,11 +791,11 @@
 <code class="sourceCode R"><span></span>
 <span><span class="co"># ML estimation with oblimin rotation and information SEs, based on correlation</span></span>
 <span><span class="co"># matrix and N</span></span>
-<span><span class="va">mod</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>,  n_factors <span class="op">=</span> <span class="fl">3</span>, method <span class="op">=</span> <span class="st">"ML"</span>,</span>
+<span><span class="va">mod</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>,  n_factors <span class="op">=</span> <span class="fl">3</span>, estimator <span class="op">=</span> <span class="st">"ml"</span>,</span>
 <span>           rotation <span class="op">=</span> <span class="st">"oblimin"</span>, se <span class="op">=</span> <span class="st">"information"</span><span class="op">)</span></span>
 <span><span class="va">mod</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; EFA performed with type = 'EFAtools', method = 'ML', and rotation = 'oblimin'.</span></span>
+<span><span class="co">#&gt; EFA performed with estimator = 'ML' and rotation = 'oblimin'.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Rotated Loadings ────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -779,11 +818,6 @@
 <span><span class="co">#&gt; V16   .550  -.039   .092  .345  .655</span></span>
 <span><span class="co">#&gt; V17   .652  -.035  -.013  .390  .610</span></span>
 <span><span class="co">#&gt; V18   .549   .012   .052  .349  .651</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Legend:</span></span>
-<span><span class="co">#&gt;   bold = |loading| &gt;= .300</span></span>
-<span><span class="co">#&gt;   grey = below cutoff</span></span>
-<span><span class="co">#&gt;   red h2/u2 = Heywood-relevant value</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Factor Intercorrelations ────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -814,14 +848,14 @@
 <span><span class="co">#&gt; SRMR: .03</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mod</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; EFA performed with type = 'EFAtools', method = 'ML', and rotation = 'oblimin'.</span></span>
+<span><span class="co">#&gt; EFA performed with estimator = 'ML' and rotation = 'oblimin'.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Model Diagnostics ───────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Factors: 3</span></span>
 <span><span class="co">#&gt; Variables: 18</span></span>
 <span><span class="co">#&gt; N: 500</span></span>
-<span><span class="co">#&gt; Rotation local optima: 1 distinct from 100 random starts</span></span>
+<span><span class="co">#&gt; Rotation local optima: 1 distinct from 6 of 101 starts</span></span>
 <span><span class="co">#&gt; Heywood cases: 0</span></span>
 <span><span class="co">#&gt; Cross-loading items (|loading| &gt;= .300): 0</span></span>
 <span><span class="co">#&gt; Items without salient loading (|loading| &gt;= .300): 0</span></span>
@@ -852,32 +886,27 @@
 <span><span class="co">#&gt; V17   .652  -.035  -.013  .390  .610</span></span>
 <span><span class="co">#&gt; V18   .549   .012   .052  .349  .651</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Legend:</span></span>
-<span><span class="co">#&gt;   bold = |loading| &gt;= .300</span></span>
-<span><span class="co">#&gt;   grey = below cutoff</span></span>
-<span><span class="co">#&gt;   red h2/u2 = Heywood-relevant value</span></span>
-<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── 95% Wald CIs for salient rotated loadings ───────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Variable  Factor  est    lower  upper</span></span>
-<span><span class="co">#&gt; V13       F1       .612   .476   .748</span></span>
-<span><span class="co">#&gt; V14       F1       .540   .401   .679</span></span>
-<span><span class="co">#&gt; V15       F1       .552   .413   .691</span></span>
-<span><span class="co">#&gt; V16       F1       .550   .411   .689</span></span>
-<span><span class="co">#&gt; V17       F1       .652   .521   .784</span></span>
-<span><span class="co">#&gt; V18       F1       .549   .410   .689</span></span>
-<span><span class="co">#&gt; V7        F2       .524   .385   .662</span></span>
-<span><span class="co">#&gt; V8        F2       .562   .427   .697</span></span>
-<span><span class="co">#&gt; V9        F2       .535   .398   .671</span></span>
-<span><span class="co">#&gt; V10       F2       .661   .533   .788</span></span>
-<span><span class="co">#&gt; V11       F2       .352   .208   .497</span></span>
-<span><span class="co">#&gt; V12       F2       .649   .515   .783</span></span>
-<span><span class="co">#&gt; V1        F3       .607   .463   .750</span></span>
-<span><span class="co">#&gt; V2        F3       .458   .307   .610</span></span>
-<span><span class="co">#&gt; V3        F3       .430   .276   .584</span></span>
-<span><span class="co">#&gt; V4        F3       .536   .387   .686</span></span>
-<span><span class="co">#&gt; V5        F3       .418   .264   .572</span></span>
-<span><span class="co">#&gt; V6        F3       .687   .554   .821</span></span>
+<span><span class="co">#&gt; V13       F1       .612   .488   .736</span></span>
+<span><span class="co">#&gt; V14       F1       .540   .411   .669</span></span>
+<span><span class="co">#&gt; V15       F1       .552   .423   .681</span></span>
+<span><span class="co">#&gt; V16       F1       .550   .421   .679</span></span>
+<span><span class="co">#&gt; V17       F1       .652   .535   .769</span></span>
+<span><span class="co">#&gt; V18       F1       .549   .420   .679</span></span>
+<span><span class="co">#&gt; V7        F2       .524   .394   .653</span></span>
+<span><span class="co">#&gt; V8        F2       .562   .437   .687</span></span>
+<span><span class="co">#&gt; V9        F2       .535   .407   .662</span></span>
+<span><span class="co">#&gt; V10       F2       .661   .548   .773</span></span>
+<span><span class="co">#&gt; V11       F2       .352   .211   .493</span></span>
+<span><span class="co">#&gt; V12       F2       .649   .529   .770</span></span>
+<span><span class="co">#&gt; V1        F3       .607   .474   .739</span></span>
+<span><span class="co">#&gt; V2        F3       .458   .313   .604</span></span>
+<span><span class="co">#&gt; V3        F3       .430   .282   .578</span></span>
+<span><span class="co">#&gt; V4        F3       .536   .395   .677</span></span>
+<span><span class="co">#&gt; V5        F3       .418   .269   .567</span></span>
+<span><span class="co">#&gt; V6        F3       .687   .570   .805</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Factor Intercorrelations ────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>

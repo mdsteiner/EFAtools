@@ -32,8 +32,10 @@ solutions.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+# \donttest{
 EFA_aver <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500)
+#>                                                                                                                                                                  🏃 Extracting data...                                                                                                                                                                 🚶 Reordering factors...                                                                                                                                                                 🏃 Averaging data...                                                                                                                                                                 Done!
 plot(EFA_aver)
-} # }
+
+# }
 ```

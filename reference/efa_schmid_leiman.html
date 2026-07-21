@@ -33,7 +33,12 @@ second-order confirmatory factor analysis (CFA) solution from lavaan."></head><b
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Replicate_SPSS_psych.html">Replicate SPSS and R psych results with EFAtools</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Ordinal_and_missing_data.html">EFA with ordinal and missing data</a></li>
+    <li><a class="dropdown-item" href="../articles/Multigroup_EFA.html">Multigroup exploratory factor analysis</a></li>
+    <li><a class="dropdown-item" href="../articles/Simulation_and_power.html">Simulating data and power analysis for EFA</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Upgrading</h6></li>
+    <li><a class="dropdown-item" href="../articles/Migrating_to_efa.html">Migrating to the efa_* interface</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -68,7 +73,7 @@ second-order confirmatory factor analysis (CFA) solution from lavaan.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">efa_schmid_leiman</span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
 <span>  Phi <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PAF"</span>, <span class="st">"ML"</span>, <span class="st">"ULS"</span>, <span class="st">"MINRES"</span><span class="op">)</span>,</span>
+<span>  estimator <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PAF"</span>, <span class="st">"ML"</span>, <span class="st">"ULS"</span>, <span class="st">"MINRES"</span><span class="op">)</span>,</span>
 <span>  g_name <span class="op">=</span> <span class="st">"g"</span>,</span>
 <span>  estimate_control <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
@@ -95,9 +100,7 @@ intercorrelations are taken from this object. If class <code><a href="https://rd
 it must be a second-order CFA solution. In this case first-order and second-order
 factor loadings are taken from this object and the <code>g_name</code> argument has
 to be specified.
-x can also be a pattern matrix from an oblique factor solution (see <code>Phi</code>)
-or a matrix of first-order factor loadings from a higher-order confirmatory factor
-analysis (see <code>L2</code>).</p></dd>
+x can also be a pattern matrix from an oblique factor solution (see <code>Phi</code>).</p></dd>
 
 
 <dt id="arg-phi">Phi<a class="anchor" aria-label="anchor" href="#arg-phi"></a></dt>
@@ -106,11 +109,12 @@ solution. Only needs to be specified if a pattern matrix is entered directly
 into <code>x</code>.</p></dd>
 
 
-<dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
+<dt id="arg-estimator">estimator<a class="anchor" aria-label="anchor" href="#arg-estimator"></a></dt>
 <dd><p>character. One of "PAF", "ML", or "ULS" to use
 principal axis factoring, maximum likelihood, or unweighted least squares,
 respectively, used in <code><a href="efa_fit.html">efa_fit()</a></code> to find the second-order loadings. "MINRES" is
-accepted as a synonym for "ULS" (the same estimator).</p></dd>
+accepted as a synonym for "ULS" (the same estimator). The value is matched
+case-insensitively.</p></dd>
 
 
 <dt id="arg-g-name">g_name<a class="anchor" aria-label="anchor" href="#arg-g-name"></a></dt>
@@ -181,15 +185,15 @@ calculation of McDonald's omegas (see <code><a href="efa_reliability.html">efa_r
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co">## Use with an output from the EFAtools::efa_fit function, both with type EFAtools</span></span></span>
 <span class="r-in"><span><span class="va">EFA_mod</span> <span class="op">&lt;-</span> <span class="fu"><a href="efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, n_factors <span class="op">=</span> <span class="fl">3</span>,</span></span>
-<span class="r-in"><span>                   method <span class="op">=</span> <span class="st">"PAF"</span>, rotation <span class="op">=</span> <span class="st">"promax"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">SL_EFAtools</span> <span class="op">&lt;-</span> <span class="fu">efa_schmid_leiman</span><span class="op">(</span><span class="va">EFA_mod</span>, method <span class="op">=</span> <span class="st">"PAF"</span>,</span></span>
+<span class="r-in"><span>                   estimator <span class="op">=</span> <span class="st">"PAF"</span>, rotation <span class="op">=</span> <span class="st">"promax"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">SL_EFAtools</span> <span class="op">&lt;-</span> <span class="fu">efa_schmid_leiman</span><span class="op">(</span><span class="va">EFA_mod</span>, estimator <span class="op">=</span> <span class="st">"PAF"</span>,</span></span>
 <span class="r-in"><span>                                 estimate_control <span class="op">=</span> <span class="fu"><a href="estimate_control.html">estimate_control</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"EFAtools"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="co">## Use with an output from the psych::fa function with type psych</span></span></span>
 <span class="r-in"><span><span class="va">fa_mod</span> <span class="op">&lt;-</span> <span class="fu">psych</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">fa</a></span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, nfactors <span class="op">=</span> <span class="fl">3</span>, n.obs <span class="op">=</span> <span class="fl">500</span>,</span></span>
 <span class="r-in"><span>                    fm <span class="op">=</span> <span class="st">"pa"</span>, rotate <span class="op">=</span> <span class="st">"Promax"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">SL_psych</span> <span class="op">&lt;-</span> <span class="fu">efa_schmid_leiman</span><span class="op">(</span><span class="va">fa_mod</span>, method <span class="op">=</span> <span class="st">"PAF"</span>,</span></span>
+<span class="r-in"><span><span class="va">SL_psych</span> <span class="op">&lt;-</span> <span class="fu">efa_schmid_leiman</span><span class="op">(</span><span class="va">fa_mod</span>, estimator <span class="op">=</span> <span class="st">"PAF"</span>,</span></span>
 <span class="r-in"><span>                              estimate_control <span class="op">=</span> <span class="fu"><a href="estimate_control.html">estimate_control</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"psych"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
@@ -200,8 +204,8 @@ calculation of McDonald's omegas (see <code><a href="efa_reliability.html">efa_r
 <span class="r-in"><span><span class="co">## For demonstration, take pattern matrix and phi from an EFA output</span></span></span>
 <span class="r-in"><span><span class="co">## This gives the same solution as the first example</span></span></span>
 <span class="r-in"><span><span class="va">EFA_mod</span> <span class="op">&lt;-</span> <span class="fu"><a href="efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, n_factors <span class="op">=</span> <span class="fl">3</span>,</span></span>
-<span class="r-in"><span>                   method <span class="op">=</span> <span class="st">"PAF"</span>, rotation <span class="op">=</span> <span class="st">"promax"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">SL_flex</span> <span class="op">&lt;-</span> <span class="fu">efa_schmid_leiman</span><span class="op">(</span><span class="va">EFA_mod</span><span class="op">$</span><span class="va">rot_loadings</span>, Phi <span class="op">=</span> <span class="va">EFA_mod</span><span class="op">$</span><span class="va">Phi</span>, method <span class="op">=</span> <span class="st">"PAF"</span>,</span></span>
+<span class="r-in"><span>                   estimator <span class="op">=</span> <span class="st">"PAF"</span>, rotation <span class="op">=</span> <span class="st">"promax"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">SL_flex</span> <span class="op">&lt;-</span> <span class="fu">efa_schmid_leiman</span><span class="op">(</span><span class="va">EFA_mod</span><span class="op">$</span><span class="va">rot_loadings</span>, Phi <span class="op">=</span> <span class="va">EFA_mod</span><span class="op">$</span><span class="va">Phi</span>, estimator <span class="op">=</span> <span class="st">"PAF"</span>,</span></span>
 <span class="r-in"><span>                             estimate_control <span class="op">=</span> <span class="fu"><a href="estimate_control.html">estimate_control</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"EFAtools"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># \donttest{</span></span></span>

@@ -115,7 +115,9 @@ format(x, ...)
 - show_loading_legend:
 
   logical. Whether to print a short legend for the loading-table
-  styling. Default is `TRUE`.
+  styling. Default is `TRUE`. The legend is only printed when that
+  styling is actually rendered (a colour-capable console); in plain
+  output it is omitted and this argument has no effect.
 
 - max_factors_per_block:
 
@@ -212,10 +214,10 @@ reports every finite interval.
 
 ``` r
 mod <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
-               method = "PAF", rotation = "promax")
+               estimator = "PAF", rotation = "promax")
 mod
 #> 
-#> EFA performed with type = 'EFAtools', method = 'PAF', and rotation = 'promax'.
+#> EFA performed with estimator = 'PAF' and rotation = 'promax'.
 #> 
 #> ── Rotated Loadings ────────────────────────────────────────────────────────────
 #> 
@@ -269,7 +271,7 @@ mod
 # The full diagnostics, CI tables, and residual diagnostics:
 summary(mod)
 #> 
-#> EFA performed with type = 'EFAtools', method = 'PAF', and rotation = 'promax'.
+#> EFA performed with estimator = 'PAF' and rotation = 'promax'.
 #> 
 #> ── Model Diagnostics ───────────────────────────────────────────────────────────
 #> 
@@ -374,7 +376,7 @@ summary(mod)
 # format() returns plain text, e.g. for embedding in a report:
 writeLines(format(mod))
 #> 
-#> EFA performed with type = 'EFAtools', method = 'PAF', and rotation = 'promax'.
+#> EFA performed with estimator = 'PAF' and rotation = 'promax'.
 #> 
 #> ── Rotated Loadings ────────────────────────────────────────────────────────────
 #> 

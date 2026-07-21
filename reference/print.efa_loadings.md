@@ -33,8 +33,8 @@ format(x, ...)
 
 - cutoff:
 
-  numeric. The number above which to print loadings in bold default is
-  .3.
+  numeric. The value at or above which loadings are emphasized; default
+  is .3.
 
 - digits:
 
@@ -85,7 +85,10 @@ format(x, ...)
 - legend:
 
   logical. Whether to append a short explanation of the styling. Default
-  is `FALSE` for standalone loading matrices.
+  is `FALSE` for standalone loading matrices. The legend is only printed
+  when the styling it describes is actually rendered (`color = TRUE` and
+  a colour-capable console); in plain output it is omitted and this
+  argument has no effect.
 
 - ...:
 
@@ -109,10 +112,10 @@ names, a named `h2` vector is used in the supplied order.
 
 ``` r
 EFAtools_PAF <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
-                        method = "PAF", rotation = "promax")
+                        estimator = "PAF", rotation = "promax")
 EFAtools_PAF
 #> 
-#> EFA performed with type = 'EFAtools', method = 'PAF', and rotation = 'promax'.
+#> EFA performed with estimator = 'PAF' and rotation = 'promax'.
 #> 
 #> ── Rotated Loadings ────────────────────────────────────────────────────────────
 #> 

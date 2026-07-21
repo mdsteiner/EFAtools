@@ -26,7 +26,7 @@ NEST(
 
 - x:
 
-  data.frame or matrix. data.frame or matrix of raw data or matrix with
+  data.frame or matrix. Dataframe or matrix of raw data or matrix with
   correlations.
 
 - N:
@@ -43,7 +43,7 @@ NEST(
 
   character. Passed to
   [`stats::cor()`](https://rdrr.io/r/stats/cor.html) if raw data is
-  given as input. Default is `"pairwise.complete.obs"`.
+  given as input. Default is "pairwise.complete.obs".
 
 - cor_method:
 
@@ -58,12 +58,14 @@ NEST(
 
 - ...:
 
-  Additional arguments passed to
-  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md).
-  For example, the extraction method can be changed here (default is
-  "PAF"). PAF is more robust, but it will take longer compared to the
-  other estimation methods available ("ML" and "ULS"). The estimation
-  tuning knobs are not passed here; they live in `estimate_control`.
+  Further arguments passed on to the
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  fits. For example, `estimator`, to change the estimator (PAF is
+  default), or one of the estimation tuning knobs (`type`, `init_comm`,
+  `criterion`, `criterion_type`, `max_iter`, `abs_eigen`,
+  `start_method`), which are repacked into an
+  [`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
+  object so that they tune the fits exactly as they always did.
 
 ## Value
 

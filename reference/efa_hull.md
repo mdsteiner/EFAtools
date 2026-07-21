@@ -11,7 +11,7 @@ efa_hull(
   x,
   N = NA,
   n_fac_theor = NA,
-  method = c("PAF", "ULS", "ML"),
+  estimator = c("PAF", "ULS", "ML"),
   gof = c("CAF", "CFI", "RMSEA"),
   eigen_type = c("SMC", "PCA", "EFA"),
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
@@ -54,16 +54,16 @@ Behavioral Research, 46(2), 340-364.
   is used as the upper bound *J* of factors to extract in the Hull
   method.
 
-- method:
+- estimator:
 
-  character. The estimation method to use. One of `"PAF"`, `"ULS"`, or
-  `"ML"`, for principal axis factoring, unweighted least squares, and
-  maximum likelihood, respectively.
+  character. The estimator to use. One of `"PAF"`, `"ULS"`, or `"ML"`,
+  for principal axis factoring, unweighted least squares, and maximum
+  likelihood, respectively. The value is matched case-insensitively.
 
 - gof:
 
   character. The goodness of fit index to use. Either `"CAF"`, `"CFI"`,
-  or `"RMSEA"`, or any combination of them. If `method = "PAF"` is used,
+  or `"RMSEA"`, or any combination of them. With the `"PAF"` estimator,
   only the CAF can be used as goodness of fit index. For details on the
   CAF, see Lorenzo-Seva, Timmerman, and Kiers (2011).
 
@@ -132,7 +132,9 @@ Behavioral Research, 46(2), 340-364.
   [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
   call. `NULL` (default) uses the
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-  defaults. The fits are unrotated, so no rotation settings apply.
+  defaults. This object carries estimation settings only; the fits are
+  always unrotated, which the hull statistics (CFI, RMSEA, CAF) do not
+  depend on.
 
 - ...:
 
@@ -141,7 +143,8 @@ Behavioral Research, 46(2), 340-364.
   also in
   [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md).
   The estimation tuning knobs are not passed here; they live in
-  `estimate_control`.
+  `estimate_control`, and a rotation setting is not accepted because the
+  fits are unrotated.
 
 ## Value
 
@@ -186,6 +189,15 @@ factors can be parallelized using the future framework, by calling the
 function. The examples provide example code on how to enable parallel
 processing.
 
+The upper bound *J* comes from
+[`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md),
+which compares against simulated data, so the suggested number of
+factors varies slightly from run to run; a criterion-based rotation
+passed through `...` adds its own random starts. Call
+[`set.seed()`](https://rdrr.io/r/base/Random.html) beforehand to make a
+run reproducible; the result is then also independent of the parallel
+plan.
+
 Note that if `gof = "RMSEA"` is used, 1 - RMSEA is actually used to
 compare the different solutions. Thus, the threshold of .05 is then .95.
 This is necessary due to how the heuristic to locate the elbow of the
@@ -226,7 +238,7 @@ efa_hull(test_models$baseline$cormat, N = 500, gof = "CAF")
 #> • CAF: 3
 
 # using ML with all available fit indices (CAF, CFI, and RMSEA)
-efa_hull(test_models$baseline$cormat, N = 500, method = "ML")
+efa_hull(test_models$baseline$cormat, N = 500, estimator = "ML")
 #> ── Hull method ─────────────────────────────────────────────────────────────────
 #> Estimation method: ML
 #> 
@@ -235,7 +247,7 @@ efa_hull(test_models$baseline$cormat, N = 500, method = "ML")
 #> • RMSEA: 1
 
 # using ULS with only RMSEA
-efa_hull(test_models$baseline$cormat, N = 500, method = "ULS", gof = "RMSEA")
+efa_hull(test_models$baseline$cormat, N = 500, estimator = "ULS", gof = "RMSEA")
 #> ── Hull method ─────────────────────────────────────────────────────────────────
 #> Estimation method: ULS
 #> 

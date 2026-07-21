@@ -3,8 +3,10 @@
 [`print()`](https://rdrr.io/r/base/print.html) shows a summarised output
 of the
 [`efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/efa_compare.md)
-function: the mean (with its range), median, the number of decimals to
-which all numbers agree, and the minimum number of decimals provided,
+function: the mean (with its range), median, and root mean squared
+distance (RMSE) of the differences, the number of decimals to which all
+numbers agree, the minimum number of decimals provided, and (for
+matrices) the number of differing indicator-to-factor correspondences,
 followed (optionally) by the table of elementwise differences.
 [`format()`](https://rdrr.io/r/base/format.html) assembles the same
 report and returns it as a character vector;
@@ -63,8 +65,10 @@ comp <- efa_compare(EFA_SPSS_5$unrot_loadings, EFA_psych_5$unrot_loadings,
 comp
 #> Mean [min, max] absolute difference:  0.0017 [ 0.0000,  0.0090]
 #> Median absolute difference:  0.0009
-#> Max decimals where all numbers are equal: 1
+#> Root mean squared distance (RMSE):  0.0025
+#> Max decimals where all numbers agree in absolute value: 1
 #> Minimum number of decimals provided: 17
+#> Differing indicator-to-factor correspondences: 0 (highest loading), 0 (all |loadings| >= 0.3)
 #> 
 #>        F1      F2      F3      F4      F5
 #> GS    .0004   .0002  -.0002   .0002  -.0034
@@ -86,8 +90,10 @@ comp
 writeLines(format(comp))
 #> Mean [min, max] absolute difference:  0.0017 [ 0.0000,  0.0090]
 #> Median absolute difference:  0.0009
-#> Max decimals where all numbers are equal: 1
+#> Root mean squared distance (RMSE):  0.0025
+#> Max decimals where all numbers agree in absolute value: 1
 #> Minimum number of decimals provided: 17
+#> Differing indicator-to-factor correspondences: 0 (highest loading), 0 (all |loadings| >= 0.3)
 #> 
 #>        F1      F2      F3      F4      F5
 #> GS    .0004   .0002  -.0002   .0002  -.0034

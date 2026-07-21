@@ -23,7 +23,12 @@ parallelization."></head><body>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Replicate_SPSS_psych.html">Replicate SPSS and R psych results with EFAtools</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Ordinal_and_missing_data.html">EFA with ordinal and missing data</a></li>
+    <li><a class="dropdown-item" href="../articles/Multigroup_EFA.html">Multigroup exploratory factor analysis</a></li>
+    <li><a class="dropdown-item" href="../articles/Simulation_and_power.html">Simulating data and power analysis for EFA</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Upgrading</h6></li>
+    <li><a class="dropdown-item" href="../articles/Migrating_to_efa.html">Migrating to the efa_* interface</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -54,7 +59,7 @@ parallelization.</p>
 <span>  <span class="va">x</span>,</span>
 <span>  N <span class="op">=</span> <span class="cn">NA</span>,</span>
 <span>  n_fac_theor <span class="op">=</span> <span class="cn">NA</span>,</span>
-<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PAF"</span>, <span class="st">"ULS"</span>, <span class="st">"ML"</span><span class="op">)</span>,</span>
+<span>  estimator <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PAF"</span>, <span class="st">"ULS"</span>, <span class="st">"ML"</span><span class="op">)</span>,</span>
 <span>  gof <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CAF"</span>, <span class="st">"CFI"</span>, <span class="st">"RMSEA"</span><span class="op">)</span>,</span>
 <span>  eigen_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SMC"</span>, <span class="st">"PCA"</span>, <span class="st">"EFA"</span><span class="op">)</span>,</span>
 <span>  use <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pairwise.complete.obs"</span>, <span class="st">"all.obs"</span>, <span class="st">"complete.obs"</span>, <span class="st">"everything"</span>,</span>
@@ -96,16 +101,17 @@ the larger of this number and the number of factors suggested by <a href="efa_pa
 is used as the upper bound <em>J</em> of factors to extract in the Hull method.</p></dd>
 
 
-<dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
-<dd><p>character. The estimation method to use. One of  <code>"PAF"</code>,
+<dt id="arg-estimator">estimator<a class="anchor" aria-label="anchor" href="#arg-estimator"></a></dt>
+<dd><p>character. The estimator to use. One of  <code>"PAF"</code>,
 <code>"ULS"</code>, or  <code>"ML"</code>, for principal axis factoring, unweighted
-least squares, and maximum likelihood, respectively.</p></dd>
+least squares, and maximum likelihood, respectively. The value is matched
+case-insensitively.</p></dd>
 
 
 <dt id="arg-gof">gof<a class="anchor" aria-label="anchor" href="#arg-gof"></a></dt>
 <dd><p>character. The goodness of fit index to use. Either <code>"CAF"</code>,
 <code>"CFI"</code>, or <code>"RMSEA"</code>, or any combination of them.
-If <code>method = "PAF"</code> is used, only
+With the <code>"PAF"</code> estimator, only
 the CAF can be used as goodness of fit index. For details on the CAF, see
 Lorenzo-Seva, Timmerman, and Kiers (2011).</p></dd>
 
@@ -161,14 +167,15 @@ included in <code>eigen_type</code>. Default is 1. This is passed to
 <dt id="arg-estimate-control">estimate_control<a class="anchor" aria-label="anchor" href="#arg-estimate-control"></a></dt>
 <dd><p>an <code><a href="estimate_control.html">estimate_control()</a></code> object with the estimation settings for the
 <code><a href="efa_fit.html">efa_fit()</a></code> fits of the 0 to <em>J</em> factor solutions, and for the fit inside the internal
-<code><a href="efa_parallel.html">efa_parallel()</a></code> call. <code>NULL</code> (default) uses the <code><a href="efa_fit.html">efa_fit()</a></code> defaults. The fits are unrotated,
-so no rotation settings apply.</p></dd>
+<code><a href="efa_parallel.html">efa_parallel()</a></code> call. <code>NULL</code> (default) uses the <code><a href="efa_fit.html">efa_fit()</a></code> defaults. This object carries
+estimation settings only; the fits are always unrotated, which the hull statistics (CFI,
+RMSEA, CAF) do not depend on.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Further arguments passed to <code><a href="efa_fit.html">efa_fit()</a></code>, also in
 <code><a href="efa_parallel.html">efa_parallel()</a></code>. The estimation tuning knobs are not passed here; they live in
-<code>estimate_control</code>.</p></dd>
+<code>estimate_control</code>, and a rotation setting is not accepted because the fits are unrotated.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -203,6 +210,11 @@ one at the sharpest elbow, i.e. with the highest <em>st</em> value.</p>
 different number of factors can be parallelized using the future framework,
 by calling the <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future::plan()</a></code> function. The examples
 provide example code on how to enable parallel processing.</p>
+<p>The upper bound <em>J</em> comes from <code><a href="efa_parallel.html">efa_parallel()</a></code>, which compares against simulated
+data, so the suggested number of factors varies slightly from run to run; a
+criterion-based rotation passed through <code>...</code> adds its own random starts. Call
+<code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> beforehand to make a run reproducible; the result is then also
+independent of the parallel plan.</p>
 <p>Note that if <code>gof = "RMSEA"</code> is used, 1 - RMSEA is actually used to
 compare the different solutions. Thus, the threshold of .05 is then .95. This
 is necessary due to how the heuristic to locate the elbow of the hull works.</p>
@@ -237,7 +249,7 @@ retention criteria.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> • CAF: 3</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># using ML with all available fit indices (CAF, CFI, and RMSEA)</span></span></span>
-<span class="r-in"><span><span class="fu">efa_hull</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, method <span class="op">=</span> <span class="st">"ML"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">efa_hull</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, estimator <span class="op">=</span> <span class="st">"ML"</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── Hull method ─────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Estimation method: ML</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -246,7 +258,7 @@ retention criteria.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> • RMSEA: 1</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># using ULS with only RMSEA</span></span></span>
-<span class="r-in"><span><span class="fu">efa_hull</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, method <span class="op">=</span> <span class="st">"ULS"</span>, gof <span class="op">=</span> <span class="st">"RMSEA"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">efa_hull</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, estimator <span class="op">=</span> <span class="st">"ULS"</span>, gof <span class="op">=</span> <span class="st">"RMSEA"</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── Hull method ─────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Estimation method: ULS</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>

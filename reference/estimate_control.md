@@ -86,7 +86,7 @@ rotate_control(
   [`stats::factanal()`](https://rdrr.io/r/stats/factanal.html) starts);
   abbreviations are matched. Not governed by `type`. Only maximum
   likelihood uses it, so `NA` leaves it unset and is rejected only by a
-  fit that is actually run with `method = "ML"`.
+  fit that is actually run with `estimator = "ML"`.
 
 - normalize:
 
@@ -138,13 +138,17 @@ rotate_control(
 
 - ...:
 
-  Additional arguments forwarded to the rotation engine (for example a
-  criterion-specific `gam` for oblimin or `delta` for geomin, or
-  `maxit`). They are stored in `extra_args` and passed on to the
-  rotation engine when the control is used to fit a model. An estimation
-  knob (which belongs in `estimate_control()`) or one of the former
-  spellings `P_type` and `randomStarts` is rejected here, because the
-  fit would silently drop it.
+  Additional arguments forwarded to the rotation engine. Only the names
+  a rotation engine can consume are accepted: `maxit` (the maximum
+  number of engine iterations), and the criterion parameters `gam`
+  (oblimin) and `delta` (geomin); anything else is rejected as a
+  misspelling. They are stored in `extra_args` and passed on to the
+  rotation engine when the control is used to fit a model; an extra a
+  given fit's rotation does not consume is ignored by that fit, so one
+  control can serve fits with different rotations. An estimation knob
+  (which belongs in `estimate_control()`) or one of the former spellings
+  `P_type` and `randomStarts` is likewise rejected here, because the fit
+  would silently drop it.
 
 ## Value
 

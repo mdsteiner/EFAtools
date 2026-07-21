@@ -14,7 +14,45 @@ RiskDimensions
 
 ## Format
 
-An object of class `list` of length 2.
+A list of 2 with elements "cormat" (9 x 9 matrix of bivariate
+correlations) and "N" (scalar). The correlation matrix contains the
+following risk dimensions:
+
+- Voluntariness:
+
+  (numeric) - Voluntariness of exposure to the risk.
+
+- Immediacy:
+
+  (numeric) - Immediacy of the risk's effect.
+
+- Known to exposed:
+
+  (numeric) - How well the risk is known to those exposed to it.
+
+- Known to science:
+
+  (numeric) - How well the risk is known to science.
+
+- Controllability:
+
+  (numeric) - Controllability of the risk.
+
+- Newness:
+
+  (numeric) - Newness of the risk.
+
+- Chronic:
+
+  (numeric) - Whether the risk is chronic rather than catastrophic.
+
+- Common:
+
+  (numeric) - Whether the risk is common rather than dreaded.
+
+- Severity of consequences:
+
+  (numeric) - Severity of the consequences.
 
 ## Source
 

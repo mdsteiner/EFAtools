@@ -37,9 +37,7 @@ SL(
   must be a second-order CFA solution. In this case first-order and
   second-order factor loadings are taken from this object and the
   `g_name` argument has to be specified. x can also be a pattern matrix
-  from an oblique factor solution (see `Phi`) or a matrix of first-order
-  factor loadings from a higher-order confirmatory factor analysis (see
-  `L2`).
+  from an oblique factor solution (see `Phi`).
 
 - Phi:
 
@@ -59,12 +57,11 @@ SL(
 
 - method:
 
-  character. One of "PAF", "ML", or "ULS" to use principal axis
-  factoring, maximum likelihood, or unweighted least squares,
-  respectively, used in
-  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-  to find the second-order loadings. "MINRES" is accepted as a synonym
-  for "ULS" (the same estimator).
+  character. The estimator for the second-order factor analysis; passed
+  to
+  [`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md)
+  as its `estimator` argument. One of `"PAF"`, `"ML"`, `"ULS"`, or
+  `"MINRES"`.
 
 - g_name:
 
@@ -73,10 +70,14 @@ SL(
 
 - ...:
 
-  Arguments to be passed to
-  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md).
-  The estimation tuning knobs are not passed here; they live in
-  `estimate_control`.
+  Further arguments passed on to the second-order
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md),
+  including the estimation tuning knobs (`init_comm`, `criterion`,
+  `criterion_type`, `max_iter`, `abs_eigen`, `start_method`), which are
+  repacked, together with `type`, into an
+  [`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
+  object so that they tune that fit exactly as they always did. The
+  estimator is selected with `method`.
 
 ## Value
 

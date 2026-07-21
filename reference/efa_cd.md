@@ -140,6 +140,6 @@ efa_cd(GRiPS_raw)
 efa_cd(DOSPERT_raw)
 #> ── Comparison data ─────────────────────────────────────────────────────────────
 #> 
-#> • Suggested number of factors: 10
+#> • Suggested number of factors: 9
 # }
 ```

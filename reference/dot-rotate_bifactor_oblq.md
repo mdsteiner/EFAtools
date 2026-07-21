@@ -38,7 +38,7 @@ criterion using a gradient-projection optimizer along the oblique
 
 - random_starts:
 
-  Integer scalar. Number of additional random starts.
+  Integer scalar. Number of additional random orthogonal starts.
 
 - maxit:
 

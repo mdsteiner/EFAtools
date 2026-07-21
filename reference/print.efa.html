@@ -39,7 +39,12 @@ cli::ansi_strip()).'></head><body>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Replicate_SPSS_psych.html">Replicate SPSS and R psych results with EFAtools</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Ordinal_and_missing_data.html">EFA with ordinal and missing data</a></li>
+    <li><a class="dropdown-item" href="../articles/Multigroup_EFA.html">Multigroup exploratory factor analysis</a></li>
+    <li><a class="dropdown-item" href="../articles/Simulation_and_power.html">Simulating data and power analysis for EFA</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Upgrading</h6></li>
+    <li><a class="dropdown-item" href="../articles/Migrating_to_efa.html">Migrating to the efa_* interface</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -162,7 +167,9 @@ See <code><a href="print.efa_loadings.html">print.efa_loadings()</a></code>.</p>
 
 <dt id="arg-show-loading-legend">show_loading_legend<a class="anchor" aria-label="anchor" href="#arg-show-loading-legend"></a></dt>
 <dd><p>logical. Whether to print a short legend for the
-loading-table styling. Default is <code>TRUE</code>.</p></dd>
+loading-table styling. Default is <code>TRUE</code>. The legend is only printed when
+that styling is actually rendered (a colour-capable console); in plain
+output it is omitted and this argument has no effect.</p></dd>
 
 
 <dt id="arg-max-factors-per-block">max_factors_per_block<a class="anchor" aria-label="anchor" href="#arg-max-factors-per-block"></a></dt>
@@ -246,10 +253,10 @@ reports every finite interval.</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">mod</span> <span class="op">&lt;-</span> <span class="fu"><a href="efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, N <span class="op">=</span> <span class="fl">500</span>,</span></span>
-<span class="r-in"><span>               method <span class="op">=</span> <span class="st">"PAF"</span>, rotation <span class="op">=</span> <span class="st">"promax"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>               estimator <span class="op">=</span> <span class="st">"PAF"</span>, rotation <span class="op">=</span> <span class="st">"promax"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">mod</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with type = '<span style="font-weight: bold;">EFAtools</span>', method = '<span style="font-weight: bold;">PAF</span>', and rotation = '<span style="font-weight: bold;">promax</span>'.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with estimator = '<span style="font-weight: bold;">PAF</span>' and rotation = '<span style="font-weight: bold;">promax</span>'.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Rotated Loadings</span> ────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -303,7 +310,7 @@ reports every finite interval.</p>
 <span class="r-in"><span><span class="co"># The full diagnostics, CI tables, and residual diagnostics:</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mod</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with type = '<span style="font-weight: bold;">EFAtools</span>', method = '<span style="font-weight: bold;">PAF</span>', and rotation = '<span style="font-weight: bold;">promax</span>'.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with estimator = '<span style="font-weight: bold;">PAF</span>' and rotation = '<span style="font-weight: bold;">promax</span>'.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Model Diagnostics</span> ───────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -408,7 +415,7 @@ reports every finite interval.</p>
 <span class="r-in"><span><span class="co"># format() returns plain text, e.g. for embedding in a report:</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/writeLines.html" class="external-link">writeLines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="va">mod</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with type = '<span style="font-weight: bold;">EFAtools</span>', method = '<span style="font-weight: bold;">PAF</span>', and rotation = '<span style="font-weight: bold;">promax</span>'.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with estimator = '<span style="font-weight: bold;">PAF</span>' and rotation = '<span style="font-weight: bold;">promax</span>'.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Rotated Loadings</span> ────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>

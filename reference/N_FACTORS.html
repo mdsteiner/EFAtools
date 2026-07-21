@@ -25,7 +25,12 @@ keeps working."></head><body>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Replicate_SPSS_psych.html">Replicate SPSS and R psych results with EFAtools</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Ordinal_and_missing_data.html">EFA with ordinal and missing data</a></li>
+    <li><a class="dropdown-item" href="../articles/Multigroup_EFA.html">Multigroup exploratory factor analysis</a></li>
+    <li><a class="dropdown-item" href="../articles/Simulation_and_power.html">Simulating data and power analysis for EFA</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Upgrading</h6></li>
+    <li><a class="dropdown-item" href="../articles/Migrating_to_efa.html">Migrating to the efa_* interface</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -95,9 +100,10 @@ data.</p></dd>
 
 <dt id="arg-criteria">criteria<a class="anchor" aria-label="anchor" href="#arg-criteria"></a></dt>
 <dd><p>character. A vector with the factor retention methods to
-perform. Possible inputs are: <code>"CD"</code>, <code>"EKC"</code>, <code>"HULL"</code>,
-<code>"KGC"</code>, <code>"MAP"</code>, <code>"NEST"</code>,<code>"PARALLEL"</code>, <code>"SCREE"</code>, and <code>"SMT"</code>
-(see details). By default, a subset of often used, well-performing methods are performed.</p></dd>
+perform. Possible inputs are: <code>"CD"</code>, <code>"EKC"</code>, <code>"HULL"</code>, <code>"KGC"</code>, <code>"MAP"</code>,
+<code>"NEST"</code>, <code>"PARALLEL"</code>, <code>"SCREE"</code>, and <code>"SMT"</code> (see the details in
+<code><a href="efa_retain.html">efa_retain()</a></code>). By default, a subset of often used, well-performing
+methods are performed.</p></dd>
 
 
 <dt id="arg-suitability">suitability<a class="anchor" aria-label="anchor" href="#arg-suitability"></a></dt>
@@ -164,18 +170,15 @@ suggested by <code><a href="efa_parallel.html">efa_parallel()</a></code> plus on
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
-<dd><p>character. Passed to <code><a href="efa_fit.html">efa_fit()</a></code> in <code><a href="efa_hull.html">efa_hull()</a></code>,
-<code><a href="efa_kgc.html">efa_kgc()</a></code>, <code><a href="efa_scree.html">efa_scree()</a></code>, <code><a href="efa_parallel.html">efa_parallel()</a></code>, and <code><a href="efa_nest.html">efa_nest()</a></code>. The
-estimation method to use. One of  <code>"PAF"</code>, <code>"ULS"</code>, or  <code>"ML"</code>,
-for principal axis factoring, unweighted least squares, and maximum
-likelihood, respectively. In <code><a href="efa_kgc.html">efa_kgc()</a></code>, <code><a href="efa_scree.html">efa_scree()</a></code>, and <code><a href="efa_parallel.html">efa_parallel()</a></code> it only
-takes effect when the respective <code>eigen_type</code> includes <code>"EFA"</code>.</p></dd>
+<dd><p>character. The estimator to use in the criteria that fit EFA models;
+passed to <code><a href="efa_retain.html">efa_retain()</a></code> as its <code>estimator</code> argument. One of <code>"ML"</code>, <code>"PAF"</code>, or
+<code>"ULS"</code>.</p></dd>
 
 
 <dt id="arg-gof">gof<a class="anchor" aria-label="anchor" href="#arg-gof"></a></dt>
 <dd><p>character. Passed to <code><a href="efa_hull.html">efa_hull()</a></code>. The goodness of fit index
 to use. Either <code>"CAF"</code>, <code>"CFI"</code>, or <code>"RMSEA"</code>, or any
-combination of them. If <code>method = "PAF"</code> is used, only
+combination of them. With the <code>"PAF"</code> estimator, only
 the CAF can be used as goodness of fit index. For details on the CAF, see
 Lorenzo-Seva, Timmerman, and Kiers (2011).</p></dd>
 
@@ -248,12 +251,12 @@ console. Default is FALSE.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Further arguments passed to <code><a href="efa_fit.html">efa_fit()</a></code> in
-<code><a href="efa_parallel.html">efa_parallel()</a></code> (also within <code><a href="efa_hull.html">efa_hull()</a></code>), <code><a href="efa_kgc.html">efa_kgc()</a></code>, <code><a href="efa_scree.html">efa_scree()</a></code>, and <code><a href="efa_nest.html">efa_nest()</a></code>.
-The estimation tuning knobs are not passed here; they live in <code>estimate_control</code>. Note that
-the arguments listed after <code>...</code> must be given by their full name (R matches an abbreviated
-name only against the arguments before <code>...</code>), so that a tuning knob such as <code>max_iter</code> cannot
-be mistaken for <code>max_iter_CD</code>.</p></dd>
+<dd><p>Further arguments passed on to the <code><a href="efa_fit.html">efa_fit()</a></code> fits, including the
+estimation tuning knobs (<code>type</code>, <code>init_comm</code>, <code>criterion</code>, <code>criterion_type</code>,
+<code>abs_eigen</code>, <code>start_method</code>), which are repacked into an <code><a href="estimate_control.html">estimate_control()</a></code> object
+so that they tune the fits exactly as they always did. The estimator is selected with
+<code>method</code>; <code>max_iter</code> is taken by the <code>max_iter_CD</code> argument (R matches an abbreviated
+name against the arguments before <code>...</code>) and so does not reach the fits.</p></dd>
 
 </dl></div>
     <div class="section level2">

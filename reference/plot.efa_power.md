@@ -3,7 +3,7 @@
 Draws the analytic RMSEA power (MacCallum, Browne, & Sugawara, 1996) of
 an
 [`efa_power()`](https://mdsteiner.github.io/EFAtools/reference/efa_power.md)
-result as a function of the (per-group) sample size, mirroring
+result as a function of the total sample size, mirroring
 [`semTools::plotRMSEApower()`](https://rdrr.io/pkg/semTools/man/plotRMSEApower.html)
 but returning a
 [ggplot2::ggplot](https://ggplot2.tidyverse.org/reference/ggplot.html)
@@ -29,9 +29,8 @@ plot(x, n = NULL, df = NULL, eps1 = NULL, ...)
 
 - n:
 
-  numeric. The (per-group) sample sizes to evaluate. If `NULL` (the
-  default) a sequence bracketing the object's sample size is chosen
-  automatically.
+  numeric. The total sample sizes to evaluate. If `NULL` (the default) a
+  sequence bracketing the object's sample size is chosen automatically.
 
 - df:
 

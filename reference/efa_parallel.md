@@ -127,10 +127,10 @@ factor analysis. Psychometrika, 30(2), 179–185. doi: 10.1007/BF02289447
 
   Additional arguments passed to
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md).
-  For example, the extraction method can be changed here (default is
-  "PAF"). PAF is more robust, but it will take longer compared to the
-  other estimation methods available ("ML" and "ULS"). The estimation
-  tuning knobs are not passed here; they live in `estimate_control`.
+  For example, `estimator`, to change the estimator (default is "PAF").
+  PAF is more robust, but it will take longer compared to the other
+  estimators available ("ML" and "ULS"). The estimation tuning knobs are
+  not passed here; they live in `estimate_control`.
 
 ## Value
 
@@ -179,6 +179,14 @@ eigenvalues are conditional on the earlier ones in the sequence and thus
 the shared variance is already accounted in the first eigenvalue (e.g.,
 Braeken & van Assen, 2017).
 
+The reference eigenvalues are obtained from simulated data, so the
+suggested number of factors varies slightly from run to run. Call
+[`set.seed()`](https://rdrr.io/r/base/Random.html) beforehand to make a
+run reproducible; the result is then also independent of the parallel
+plan set via
+[`future::plan()`](https://future.futureverse.org/reference/plan.html),
+so it can be reproduced on a machine with a different number of cores.
+
 The `efa_parallel` function can also be called together with other
 factor retention criteria in the
 [`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)
@@ -212,7 +220,7 @@ pa_paf <- efa_parallel(test_models$case_11b$cormat, N = 500)
 
 # example with correlation matrix with all eigen_types and ML estimation
 # this will be faster than the above with PAF)
-pa_ml <- efa_parallel(test_models$case_11b$cormat, N = 500, method = "ML")
+pa_ml <- efa_parallel(test_models$case_11b$cormat, N = 500, estimator = "ML")
 # }
 
 if (FALSE) { # \dontrun{

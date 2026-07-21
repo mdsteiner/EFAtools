@@ -52,9 +52,10 @@ EFA_POOLED(
 
   Character. How unrotated loadings are aligned before pooling:
   `"signed_tucker_congruence"` (the default; sign/permutation via Tucker
-  congruence), `"procrustes"` (orthogonal Procrustes to the first
-  imputation), or `"none"`. See *Aligning solutions across imputations*
-  in Details.
+  congruence, anchored on the medoid imputation and returned in the
+  extraction's canonical gauge), `"procrustes"` (orthogonal Procrustes
+  to the first imputation), or `"none"`. See *Aligning solutions across
+  imputations* in Details.
 
 - fit_pool_method:
 
@@ -90,9 +91,9 @@ EFA_POOLED(
 
   Additional arguments passed to
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-  (e.g. `method`, `rotation`, `se`, `n_factors`, `N`). These select the
-  estimator, rotation, standard-error method, and fit indices used for
-  every imputation; see
+  (e.g. `estimator`, `rotation`, `se`, `n_factors`, `N`). These select
+  the estimator, rotation, standard-error method, and fit indices used
+  for every imputation; see
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
   for the available options, their properties, and which combinations
   are valid.

@@ -27,7 +27,12 @@ or to a chosen reference group (see Alignment)."></head><body>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Replicate_SPSS_psych.html">Replicate SPSS and R psych results with EFAtools</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Ordinal_and_missing_data.html">EFA with ordinal and missing data</a></li>
+    <li><a class="dropdown-item" href="../articles/Multigroup_EFA.html">Multigroup exploratory factor analysis</a></li>
+    <li><a class="dropdown-item" href="../articles/Simulation_and_power.html">Simulating data and power analysis for EFA</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Upgrading</h6></li>
+    <li><a class="dropdown-item" href="../articles/Migrating_to_efa.html">Migrating to the efa_* interface</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -120,8 +125,10 @@ single value in <code>(0, 1)</code>. Default is <code>0.95</code>.</p></dd>
 
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
-<dd><p>numeric or <code>NULL</code>. An optional seed making the bootstrap reproducible
-and independent of the number of parallel workers (the replicate fits run with
+<dd><p>numeric or <code>NULL</code>. An optional seed making the analysis reproducible. It
+covers the per-group fits – whose rotation may draw random starts – whether or not
+a bootstrap is run, and additionally makes the bootstrap independent of the number of
+parallel workers (the replicate fits run with
 <a href="https://future.apply.futureverse.org/reference/future_lapply.html" class="external-link">future_lapply()</a>, for which a parallel plan can be
 set via <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future::plan()</a></code>). When supplied, the caller's random-number stream is
 restored afterwards, leaving no side effect. Default is <code>NULL</code>.</p></dd>
@@ -144,7 +151,7 @@ Default is <code>FALSE</code>.</p></dd>
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Additional arguments passed to <code><a href="efa_fit.html">efa_fit()</a></code> for every group (for
-example <code>method</code>, <code>rotation</code>, <code>cor_method</code>, or an <code><a href="estimate_control.html">estimate_control()</a></code> /
+example <code>estimator</code>, <code>rotation</code>, <code>cor_method</code>, or an <code><a href="estimate_control.html">estimate_control()</a></code> /
 <code><a href="estimate_control.html">rotate_control()</a></code> to select a preset).</p></dd>
 
 </dl></div>
@@ -206,13 +213,20 @@ diagnostics, e.g. <code>heywood</code>).</p></dd>
 <dt>alignment</dt>
 <dd><p>The alignment result: the consensus object (see
 <code><a href="efa_procrustes.html">efa_procrustes()</a></code>), or a list with the reference group, the target, and the
-per-group Procrustes results.</p></dd>
+per-group Procrustes results. On the consensus path this is the raw record of
+the Generalized Procrustes iteration, so its <code>target</code> and <code>aligned_loadings</code>
+are in the orientation that iteration converged to, before the gauge described
+under <em>Alignment</em> is applied; the gauged matrices are <code>target</code> and <code>loadings</code>
+above.</p></dd>
 
 <dt>settings</dt>
 <dd><p>A list of the settings used, including the per-group <code>N</code>, the
-alignment method, the rotation, the estimator, the input type, and whether a
-bootstrap is available (<code>can_bootstrap</code>, <code>FALSE</code> for correlation-matrix
-input).</p></dd>
+alignment method, the group that seeded the consensus frame (<code>alignment_start</code>,
+<code>NULL</code> on the reference path), the orientation the shared frame was put in
+(<code>gauge</code>: the rotation's own name, <code>"principal_axes"</code>, or <code>"identity"</code> for a
+single factor; <code>NULL</code> on the reference path), the rotation, the estimator, the
+input type, and whether a bootstrap is available (<code>can_bootstrap</code>, <code>FALSE</code> for
+correlation-matrix input).</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -229,7 +243,7 @@ data frames or correlation matrices (supply <code>N</code>), but not a mix of th
 All groups must contain the same items in the same order; a different item set
 or order is an error rather than being silently reordered.</p>
 <p>Every group is fitted at the same <code>n_factors</code> (a common-\(k\) multigroup
-model). Extra arguments in <code>...</code> (for example <code>method</code>, <code>rotation</code>, <code>cor_method</code>, or an
+model). Extra arguments in <code>...</code> (for example <code>estimator</code>, <code>rotation</code>, <code>cor_method</code>, or an
 <code><a href="estimate_control.html">estimate_control()</a></code> / <code><a href="estimate_control.html">rotate_control()</a></code> carrying the tuning knobs) are forwarded
 unchanged to each <code><a href="efa_fit.html">efa_fit()</a></code> call, so the estimator and rotation are common to all
 groups.</p>
@@ -250,7 +264,18 @@ loadings can be compared. Two strategies are available and are chosen
 automatically:</p><ul><li><p><strong>Consensus</strong> (the default for orthogonal rotations and for unrotated
 solutions): a symmetric Generalized Procrustes Analysis target is built
 across all groups (Gower, 1975), and every group's loadings are rotated to
-it. No group is privileged.</p></li>
+it. The consensus frame is only identified up to a global rotation of its
+factors, so it is then rotated into a fixed gauge and the same transform is
+applied to every group. The gauge is the simple structure of the rotation
+that was requested, evaluated on the consensus target itself, so the shared
+loadings are in the same kind of frame as the per-group solutions they
+summarise. Where no criterion identifies a frame – an unrotated solution,
+and a <code>"bifactorT"</code> request with two factors, whose criterion is identically
+zero with a single group factor – the principal-axes orientation of the
+target is used instead. Either way the columns are ordered by decreasing sum
+of squares and signed by their column sums, and the shared orientation, and
+hence every reported congruence, difference, and flag, is independent of the
+order in which the groups are supplied.</p></li>
 <li><p><strong>Reference</strong>: every group's loadings are aligned by Procrustes rotation to
 one reference group's loadings, which are kept fixed. This path is used when
 <code>reference_group</code> is given, and is used automatically for oblique rotations
@@ -399,15 +424,15 @@ doi: 10.1027/1614-2241.2.2.57</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Tucker's congruence between the aligned group loadings (matched factors):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                        <span style="font-weight: bold;">F1</span>    <span style="font-weight: bold;">F3</span>    <span style="font-weight: bold;">F2</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> age_6_8 vs age_14_19  .983  .995  .989</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        <span style="font-weight: bold;">F1</span>    <span style="font-weight: bold;">F2</span>    <span style="font-weight: bold;">F3</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> age_6_8 vs age_14_19  .981  .989  .995</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Loading differences</span> ─────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Absolute loading differences by group pair (salience threshold |Δ| ≥ .1):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                       <span style="font-weight: bold;">mean</span>  <span style="font-weight: bold;">median</span>   <span style="font-weight: bold;">min</span>   <span style="font-weight: bold;">max</span>  <span style="font-weight: bold;">rmse</span>  <span style="font-weight: bold;">flagged</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> age_6_8 vs age_14_19  .049    .036  .000  .198  .065   16/141</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> age_6_8 vs age_14_19  .048    .033  .001  .206  .065   20/141</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># An oblique rotation aligns to a reference group (reported via a message)</span></span></span>
 <span class="r-in"><span><span class="fu">efa_group</span><span class="op">(</span><span class="va">bands</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, N <span class="op">=</span> <span class="va">Ns</span>, rotation <span class="op">=</span> <span class="st">"promax"</span><span class="op">)</span></span></span>

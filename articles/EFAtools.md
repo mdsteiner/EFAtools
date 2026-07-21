@@ -1,80 +1,197 @@
 # EFAtools
 
-This vignette provides an overview for the functionalities of the
-EFAtools package. The general aim of the package is to provide flexible
-implementations of different algorithms for an exploratory factor
-analyses (EFA) procedure, including factor retention methods, factor
-extraction and rotation methods, as well as the computation of a
-Schmid-Leiman solution and McDonald’s omega coefficients.
+`EFAtools` provides a complete workflow for exploratory factor analysis
+(EFA). Starting from raw data or a correlation matrix, it takes you
+through every stage of a typical analysis:
 
-The package was first designed to enable a comparison of EFA
-(specifically, principal axis factoring with subsequent promax rotation)
-performed in R using the
-[**psych**](https://CRAN.R-project.org/package=psych) package and EFA
-performed in SPSS. That is why some functions allow the specification of
-a type, including `"psych"` and `"SPSS"`, such that the respective
-procedure will be executed to match the output of these implementations
-(which do not always lead to the same results; see separate vignette
-[**Replicate_SPSS_psych**](https://mdsteiner.github.io/EFAtools/articles/Replicate_SPSS_psych.md "Replicate SPSS and R psych results with EFAtools")
-for a demonstration of the replication of original results). This
-vignette will go through a complete example, that is, we will first show
-how to determine the number of factors to retain, then perform different
-factor extraction methods, run a Schmid-Leiman transformation and
-compute omegas.
+1.  **Screening** the data for factorability, multicollinearity,
+    non-normality, and outliers
+    ([`efa_screen()`](https://mdsteiner.github.io/EFAtools/reference/efa_screen.md),
+    with
+    [`efa_bartlett()`](https://mdsteiner.github.io/EFAtools/reference/efa_bartlett.md)
+    and
+    [`efa_kmo()`](https://mdsteiner.github.io/EFAtools/reference/efa_kmo.md)
+    for the individual measures).
+2.  **Retention**: deciding how many factors to keep, with a
+    comprehensive suite of factor retention criteria
+    ([`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)
+    and the individual criteria it wraps).
+3.  **Extraction and rotation** of the factor solution
+    ([`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)),
+    with a choice of estimators and orthogonal or oblique rotations.
+4.  **Post-processing**: comparing solutions
+    ([`efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/efa_compare.md)),
+    averaging across analytic choices
+    ([`efa_average()`](https://mdsteiner.github.io/EFAtools/reference/efa_average.md)),
+    estimating factor scores
+    ([`efa_scores()`](https://mdsteiner.github.io/EFAtools/reference/efa_scores.md)),
+    a Schmid-Leiman transformation
+    ([`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md)),
+    and reliability coefficients including McDonald’s omegas
+    ([`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md)).
+
+The computationally intensive routines are implemented in C++ for speed.
+This vignette walks through the whole workflow on a single data set; it
+is an overview rather than a tutorial on the methods themselves, so
+please consult the individual help pages for the statistical details and
+literature references.
 
 The package can be installed from CRAN using
 `install.packages("EFAtools")`, or from GitHub using
-`devtools::install_github("mdsteiner/EFAtools")`, and then loaded using:
+`pak::pak("mdsteiner/EFAtools")`, and then loaded using:
 
 ``` r
 
 library(EFAtools)
 ```
 
-In this vignette, we will use the `DOSPERT_raw` dataset, which contains
-responses to the Domain Specific Risk Taking Scale (DOSPERT) of 3123
-participants. The dataset is contained in the `EFAtools` package, for
-details, see
-[`?DOSPERT_raw`](https://mdsteiner.github.io/EFAtools/reference/DOSPERT_raw.md).
-Note that this vignette is to provide a general overview and it is
-beyond its scope to explain all methods and functions in detail. If you
-want to learn more on the details and methods, please see the respective
-help functions for explanations and literature references. However, the
-dataset is rather large, so, just to save time when building the
-vignette, we will only use the first 500 observations. When you normally
-do your analyses, you use the full dataset.
+We use the `DOSPERT_raw` data set throughout, which contains responses
+of 3123 participants to the Domain Specific Risk Taking Scale (DOSPERT);
+see
+[`?DOSPERT_raw`](https://mdsteiner.github.io/EFAtools/reference/DOSPERT_raw.md)
+for details. The data are rather large, so, purely to keep this vignette
+quick to build, we work with the first 500 observations. In a real
+analysis you would of course use the full data set.
 
 ``` r
 
 # only use a subset to make analyses faster
-DOSPERT_sub <- DOSPERT_raw[1:500,]
+DOSPERT_sub <- DOSPERT_raw[1:500, ]
 ```
 
-## Test Suitability of Data
+## Screening the Data
 
-The first step in an EFA procedure is to test whether your data is
-suitable for factor analysis. To this end, the `EFAtools` package
-provides the
-[`efa_bartlett()`](https://mdsteiner.github.io/EFAtools/reference/efa_bartlett.md)
-and the
-[`efa_kmo()`](https://mdsteiner.github.io/EFAtools/reference/efa_kmo.md)
-functions. The Bartlett’s test of sphericity tests whether a correlation
-matrix is significantly different from an identity matrix (a correlation
-matrix with zero correlations between all variables). This test should
-thus be significant. The Kaiser-Meyer-Olkin criterion (KMO) represents
-the degree to which each observed variable is predicted by the other
-variables in the dataset and thus is another indicator for how
-correlated the different variables are.
+Before extracting factors it is worth checking whether the data are
+suitable for factor analysis, and whether they satisfy the assumptions
+of the estimator you plan to use.
+[`efa_screen()`](https://mdsteiner.github.io/EFAtools/reference/efa_screen.md)
+collects the relevant diagnostics in one place. From raw data it reports
+the Kaiser-Meyer-Olkin (KMO) measure of sampling adequacy (overall and
+per variable), Bartlett’s test of sphericity, the determinant and
+condition number of the correlation matrix, the squared multiple
+correlation (SMC) and per-variable diagnostics for each item, tests of
+multivariate normality (Mardia and Henze-Zirkler), and multivariate
+outliers, and it closes with a set of recommendations.
 
-We can test whether our `DOSPERT_sub` dataset is suitable for factor
-analysis as follows.
+``` r
+
+efa_screen(DOSPERT_sub, seed = 2)
+#> 
+#> ── Sampling adequacy and sphericity ────────────────────────────────────────────
+#> 
+#> ✔ The overall KMO value for your data is meritorious (Overall KMO = 0.87).
+#> These data are probably suitable for factor analysis.
+#> 
+#> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05.
+#> These data are probably suitable for factor analysis.
+#> 𝜒²(435) = 5843.05, p < .001
+#> 
+#> ── Multicollinearity ───────────────────────────────────────────────────────────
+#> 
+#> ✖ Determinant: 0.00000634. Multicollinearity likely (a value near 0 signals it).
+#> ✔ Condition number: 46.561. No concern (large values signal near-collinear variables).
+#> 
+#> ── Per-variable diagnostics ────────────────────────────────────────────────────
+#> 
+#>        variance missing   SMC   MSA  flags
+#> ethR_1    2.785       0 0.428 0.908       
+#> ethR_2    2.469       0 0.312 0.927       
+#> ethR_3    1.274       0 0.444 0.906 sparse
+#> ethR_4    2.011       0 0.317 0.818 sparse
+#> ethR_5    2.202       0 0.310 0.926       
+#> ethR_6    3.457       0 0.398 0.837       
+#> finR_1    1.962       0 0.683 0.880       
+#> finR_2    3.223       0 0.319 0.816       
+#> finR_3    2.356       0 0.716 0.853       
+#> finR_4    2.874       0 0.519 0.857       
+#> finR_5    2.458       0 0.760 0.853       
+#> finR_6    3.118       0 0.515 0.861       
+#> heaR_1    4.016       0 0.296 0.912       
+#> heaR_2    4.532       0 0.277 0.898       
+#> heaR_3    2.888       0 0.366 0.892       
+#> heaR_4    2.185       0 0.423 0.889       
+#> heaR_5    4.099       0 0.254 0.882       
+#> heaR_6    3.356       0 0.313 0.935       
+#> recR_1    4.570       0 0.374 0.888       
+#> recR_2    2.829       0 0.465 0.927       
+#> recR_3    3.664       0 0.511 0.905       
+#> recR_4    4.362       0 0.687 0.849       
+#> recR_5    3.741       0 0.685 0.840       
+#> recR_6    4.076       0 0.541 0.920       
+#> socR_1    1.237       0 0.351 0.714 sparse
+#> socR_2    2.774       0 0.434 0.784       
+#> socR_3    2.148       0 0.343 0.735       
+#> socR_4    2.751       0 0.359 0.791       
+#> socR_5    3.562       0 0.284 0.840       
+#> socR_6    2.529       0 0.379 0.786       
+#> 
+#> ── Multivariate normality ──────────────────────────────────────────────────────
+#> 
+#> ✖ Mardia's skewness: 𝜒²(4960) = 11585.82, p < .001.
+#> ✖ Mardia's kurtosis: z = 43.84, p < .001.
+#> ✖ Henze-Zirkler: HZ = 1.03, p < .001.
+#> These data depart from multivariate normality.
+#> 
+#> ── Outliers ────────────────────────────────────────────────────────────────────
+#> 
+#> ℹ 240 of 500 observations were flagged as multivariate outliers (robust distance > 6.85).
+#> 
+#> ── Recommendations ─────────────────────────────────────────────────────────────
+#> 
+#> ! These data depart from multivariate normality; normal-theory standard errors
+#>   and fit statistics may be biased - prefer robust (sandwich) or bootstrapped
+#>   standard errors.
+#> ! Bartlett's test is significant, but it assumes multivariate normality and
+#>   grows more sensitive as N increases; because these data are non-normal, treat
+#>   it as uninformative here and rely on the KMO.
+#> ! A near-zero determinant or high condition number indicates multicollinearity;
+#>   look for redundant or linearly dependent items (r > .8) and consider removing
+#>   them.
+#> ! 3 variables have a sparse response category (< 5 responses): ethR_3, ethR_4,
+#>   and socR_1; a low-frequency category can destabilise polychoric estimates -
+#>   consider collapsing it into an adjacent category.
+#> ! 240 observations were flagged as potential multivariate outliers; inspect
+#>   them (see `$outliers$flagged`) before down-weighting or excluding.
+```
+
+The overall KMO is meritorious and Bartlett’s test is clearly
+significant, so the data are factorable. The near-zero determinant flags
+some multicollinearity, which is expected for a scale with strongly
+related items within each risk domain. More interesting are the last few
+sections: three items have a sparse response category, and both the
+Mardia and the Henze-Zirkler tests reject multivariate normality. A
+consequence is that normal-theory standard errors and fit indices may be
+biased, so robust (sandwich) or bootstrapped standard errors are
+preferable, and Bartlett’s test should be read with caution. For a fully
+ordinal treatment you would move to polychoric correlations with a
+categorical least-squares estimator.
+
+On the outlier section: The robust distances come from a minimum
+covariance determinant (MCD) estimate, whose random subset search is the
+reason
+[`efa_screen()`](https://mdsteiner.github.io/EFAtools/reference/efa_screen.md)
+takes a `seed`. The MCD assumes roughly elliptical data, and on markedly
+non-normal data like these, large robust distances are common. This is
+why almost half of the observations end up flagged (On such heavily
+discretised data the most robust 50% subset can also turn out singular,
+in which case
+[`efa_screen()`](https://mdsteiner.github.io/EFAtools/reference/efa_screen.md)
+falls back to classical Mahalanobis distances and labels the output
+accordingly). The flagged cases are therefore better understood as
+evidence of that non-normality than as genuine outliers to remove.
+Inspect them (via `$outliers$flagged`) rather than deleting them
+automatically.
+
+If you only want the two classic factorability tests, they are also
+available on their own. Bartlett’s test of sphericity checks whether the
+correlation matrix differs from an identity matrix (it should be
+significant), and the KMO criterion summarises how strongly each
+variable is predicted by the others:
 
 ``` r
 
 # Bartlett's test of sphericity
 efa_bartlett(DOSPERT_sub)
-#> ℹ `x` is not a correlation matrix; computing correlations from
-#> the raw data.
 #> 
 #> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05.
 #> These data are probably suitable for factor analysis.
@@ -83,8 +200,6 @@ efa_bartlett(DOSPERT_sub)
 
 # KMO criterion
 efa_kmo(DOSPERT_sub)
-#> ℹ `x` is not a correlation matrix; computing correlations from
-#> the raw data.
 #> 
 #> ── Kaiser-Meyer-Olkin criterion (KMO) ──────────────────────────────────────────
 #> 
@@ -102,43 +217,36 @@ efa_kmo(DOSPERT_sub)
 #>  0.840  0.920  0.714  0.784  0.735  0.791  0.840  0.786
 ```
 
-Note that these tests can also be run in the
-[`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)
-function.
+Both tests can also be requested directly inside
+[`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md),
+alongside the factor retention criteria discussed next.
 
-## Factor Retention Methods
+## Deciding How Many Factors to Retain
 
-As the goal of EFA is to determine the underlying factors from a set of
-multiple variables, one of the most important decisions is how many
-factors can or should be extracted. There exists a plethora of factor
-retention methods to use for this decision. The problem is that there is
-no method that consistently outperforms all other methods. Rather, which
-factor retention method to use depends on the structure of the data: are
-there few or many indicators, are factors strong or weak, are the factor
-intercorrelations weak or strong. For rules on which methods to use,
-see, for example, [Auerswald and Moshagen,
-(2019)](https://doi.org/10.1037/met0000200).
+One of the most consequential decisions in an EFA is how many factors to
+extract. There is a large number of factor retention criteria, and no
+single one dominates the others: which criterion works best depends on
+the structure of the data — how many indicators there are, how strong
+the factors are, and how strongly they intercorrelate. The current
+recommendation is therefore to examine several criteria together and
+check whether they converge (see, for example, [Auerswald and Moshagen,
+2019](https://doi.org/10.1037/met0000200)).
 
-There are multiple factor retention methods implemented in the
-`EFAtools` package. They can either be called with separate functions,
-or all (or a selection) of them using the
-[`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)
-function.
+`EFAtools` implements a broad set of these criteria. They can be called
+individually, or all (or a selection) of them together through
+[`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md).
 
-### Calling Separate Functions
+### Calling Individual Criteria
 
-Let’s first look at how to determine the number of factors to retain by
-calling separate functions. For example, if you would like to perform a
-parallel analysis based on squared multiple correlations (SMC; sometimes
-also called a parallel analysis with principal factors), you can do the
-following:
+Each criterion has its own function. For a parallel analysis based on
+squared multiple correlations (SMC; also called parallel analysis with
+principal factors), for example, you would run:
 
 ``` r
 
-# determine the number of factors to retain using parallel analysis
-efa_parallel(DOSPERT_sub, eigen_type = "SMC")
-#> ℹ `x` is not a correlation matrix; computing correlations from
-#> the raw data.
+# parallel analysis based on SMC eigenvalues
+pa <- efa_parallel(DOSPERT_sub, eigen_type = "smc")
+pa
 #> ── Parallel analysis ───────────────────────────────────────────────────────────
 #> Eigenvalues found using SMC; 1000 simulated datasets.
 #> 
@@ -147,32 +255,27 @@ efa_parallel(DOSPERT_sub, eigen_type = "SMC")
 #> ℹ Number of factors retained using the "means" decision rule.
 ```
 
-Generating the plot can also be suppressed if the output is printed
-explicitly:
+Printing the result reports the suggested number of factors. Each
+criterion also has a
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html) method that
+draws the figure behind the decision — for a parallel analysis, the
+observed eigenvalues against the reference eigenvalues from the
+simulated data:
 
 ``` r
 
-# determine the number of factors to retain using parallel analysis
-print(efa_parallel(DOSPERT_sub, eigen_type = "SMC"), plot = FALSE)
-#> ℹ `x` is not a correlation matrix; computing correlations from
-#> the raw data.
-#> ── Parallel analysis ───────────────────────────────────────────────────────────
-#> Eigenvalues found using SMC; 1000 simulated datasets.
-#> 
-#> • SMC eigenvalues: 10
-#> 
-#> ℹ Number of factors retained using the "means" decision rule.
+plot(pa)
 ```
 
-Other factor retention methods can be used accordingly. For example, to
-use the empirical Kaiser criterion, use the `efa_ekc` function:
+![](EFAtools_files/figure-html/unnamed-chunk-7-1.png)
+
+Other criteria work the same way. The empirical Kaiser criterion, for
+instance:
 
 ``` r
 
-# determine the number of factors to retain using the empirical Kaiser criterion
-print(efa_ekc(DOSPERT_sub), plot = FALSE)
-#> ℹ `x` is not a correlation matrix; computing correlations from
-#> the raw data.
+# empirical Kaiser criterion
+efa_ekc(DOSPERT_sub)
 #> ── Empirical Kaiser Criterion ──────────────────────────────────────────────────
 #> 
 #> • Original implementation (Braeken & van Assen, 2017): 8
@@ -180,10 +283,9 @@ print(efa_ekc(DOSPERT_sub), plot = FALSE)
 #> ℹ Multiple implementations of EKC exist; make sure to report which one you used (see the efa_ekc help page for details).
 ```
 
-The following factor retention methods are currently implemented:
-comparison data
+The following criteria are currently implemented: comparison data
 ([`efa_cd()`](https://mdsteiner.github.io/EFAtools/reference/efa_cd.md)),
-empirical Kaiser criterion
+the empirical Kaiser criterion
 ([`efa_ekc()`](https://mdsteiner.github.io/EFAtools/reference/efa_ekc.md)),
 the hull method
 ([`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md)),
@@ -195,38 +297,28 @@ the next eigenvalue sufficiency test
 ([`efa_nest()`](https://mdsteiner.github.io/EFAtools/reference/efa_nest.md)),
 parallel analysis
 ([`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)),
-scree test
+the scree test
 ([`efa_scree()`](https://mdsteiner.github.io/EFAtools/reference/efa_scree.md)),
 and sequential model tests
 ([`efa_smt()`](https://mdsteiner.github.io/EFAtools/reference/efa_smt.md)).
-Many of these functions have multiple versions of the respective factor
-retention method implemented, for example, the parallel analysis can be
-done based on eigenvalues found using unity (principal components) or
-SMCs, or on an EFA procedure. Another example is the hull method, which
-can be used with different fitting methods (principal axis factoring
-\[PAF\], maximum likelihood \[ML\], or unweighted least squares
-\[ULS\]), and different goodness of fit indices. Please see the
-respective function documentations for details.
+Many of them offer several variants of the underlying method. For
+instance, parallel analysis, can be based on eigenvalues from unity
+(principal components), SMCs, or a full EFA. See the individual help
+pages for the options.
 
-### Run Multiple Factor Retention Methods With `efa_retain()`
+### Running Several Criteria at Once with `efa_retain()`
 
-If you want to use multiple factor retention methods, for example, to
-compare whether different methods suggest the same number of factors, it
-is easier to use the
-[`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)
-function. This is a wrapper around all the implemented factor retention
-methods. Moreover, it also enables to run the Bartlett’s test of
-sphericity and compute the KMO criterion.
-
-For example, to test the suitability of the data for factor analysis and
-to determine the number of factors to retain based on parallel analysis
-(but only using eigen values based on SMCs and PCA), the EKC, and the
-sequential model test, we can run the following code:
+To compare criteria, it is easier to call
+[`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md),
+a wrapper around the implemented retention criteria that also runs
+Bartlett’s test and computes the KMO. You can pick a subset with the
+`criteria` argument:
 
 ``` r
 
-efa_retain(DOSPERT_sub, criteria = c("PARALLEL", "EKC", "SMT"),
-           eigen_type_other = c("SMC", "PCA"))
+ret <- efa_retain(DOSPERT_sub,
+                  criteria = c("parallel", "ekc", "kgc", "smt", "map"))
+ret
 #> ── Tests for the suitability of the data for factor analysis ───────────────────
 #> 
 #> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05:
@@ -240,8 +332,14 @@ efa_retain(DOSPERT_sub, criteria = c("PARALLEL", "EKC", "SMT"),
 #> Empirical Kaiser Criterion
 #> • Original implementation (Braeken & van Assen, 2017): 8
 #> 
+#> Kaiser-Guttman criterion
+#> • SMC eigenvalues: 4
+#> 
+#> Minimum average partial
+#> • Original implementation (TR2): 6
+#> • Revised implementation (TR4): 6
+#> 
 #> Parallel analysis
-#> • PCA eigenvalues: 5
 #> • SMC eigenvalues: 10
 #> 
 #> Sequential model tests
@@ -250,68 +348,51 @@ efa_retain(DOSPERT_sub, criteria = c("PARALLEL", "EKC", "SMT"),
 #> • Akaike Information Criterion: 13
 ```
 
-If all possible factor retention methods should be used, it is
-sufficient to provide the data object (note that this takes a while, as
-the comparison data is computationally expensive and therefore
-relatively slow method, especially if larger datasets are used). We
-additionally specify the method argument to use unweighted least squares
-(ULS) estimation. This is a bit faster than using principle axis
-factoring (PAF) and it enables the computation of more goodness of fit
-indices:
+The printed summary is text only, so the scree test’s suggestion to
+inspect the plot needs an explicit call.
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html) on the result
+draws the figure for every criterion that has one:
 
 ``` r
 
-efa_retain(DOSPERT_sub, method = "ULS")
-#> ── Tests for the suitability of the data for factor analysis ───────────────────
-#> 
-#> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05:
-#>   χ²(435) = 5843.05, p < .001. These data are probably suitable for factor
-#>   analysis.
-#> ✔ The Kaiser-Meyer-Olkin criterion is meritorious (KMO = 0.87). These data are
-#>   probably suitable for factor analysis.
-#> 
-#> ── Number of factors suggested by the factor retention criteria ────────────────
-#> 
-#> Comparison data
-#> • Suggested number of factors: 10
-#> 
-#> Empirical Kaiser Criterion
-#> • Original implementation (Braeken & van Assen, 2017): 8
-#> 
-#> Hull method
-#> • CAF: 1
-#> • CFI: 1
-#> • RMSEA: 1
-#> 
-#> Minimum average partial
-#> • Original implementation (TR2): 6
-#> • Revised implementation (TR4): 6
-#> 
-#> Next Eigenvalue Sufficiency Test
-#> • Suggested number of factors: 10
-#> 
-#> Parallel analysis
-#> • SMC eigenvalues: 10
+plot(ret)
+#> $EKC
 ```
 
-Now, this is not the scenario one is happy about, but it still does
-happen: There is no obvious convergence between the methods and thus the
-choice of the number of factors to retain becomes rather difficult (and
-to some extent arbitrary). We will proceed with 6 factors, as it is what
-is typically used with DOSPERT data, but this does not mean that other
-number of factors are not just as plausible.
+![](EFAtools_files/figure-html/unnamed-chunk-10-1.png)
 
-Note that all factor retention methods, except comparison data (CD), can
-also be used with correlation matrices. We use `method = "ULS"` and
-`eigen_type_other = c("SMC", "PCA")` to skip the slower criteria. In
-this case, the sample size has to be specified:
+    #> 
+    #> $KGC
+
+![](EFAtools_files/figure-html/unnamed-chunk-10-2.png)
+
+    #> 
+    #> $PARALLEL
+
+![](EFAtools_files/figure-html/unnamed-chunk-10-3.png)
+
+Omitting `criteria` runs the full suite, including the hull method, the
+next eigenvalue sufficiency test, and comparison data; the latter is
+computationally expensive and can be slow on larger data sets, which is
+why we leave it out here.
+
+This is the situation one would rather avoid, but it does happen: the
+criteria disagree, with suggestions ranging from four to well above ten
+factors. When there is no clear convergence, the choice becomes partly a
+matter of judgement. We proceed with six factors, consistent with the
+minimum average partial test and the RMSEA-based sequential model test
+above (note that this DOSPERT version assumes 5 factors, 6 factors
+splits the financial risk items into two factors).
+
+All criteria except comparison data (which needs raw data) can also be
+applied to a correlation matrix, in which case the sample size must be
+supplied. On a cleaner data set the criteria often agree:
 
 ``` r
 
-efa_retain(test_models$baseline$cormat, N = 500,
-           method = "ULS", eigen_type_other = c("SMC", "PCA"))
-#> Warning: `x` is a correlation matrix, but "CD" needs raw data.
-#> ℹ Skipping "CD".
+efa_retain(test_models$baseline$cormat, N = 500, estimator = "uls",
+           criteria = c("parallel", "ekc", "smt"),
+           eigen_type_other = c("smc", "pca"))
 #> ── Tests for the suitability of the data for factor analysis ───────────────────
 #> 
 #> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05:
@@ -325,50 +406,41 @@ efa_retain(test_models$baseline$cormat, N = 500,
 #> Empirical Kaiser Criterion
 #> • Original implementation (Braeken & van Assen, 2017): 3
 #> 
-#> Hull method
-#> • CAF: 3
-#> • CFI: 1
-#> • RMSEA: 1
-#> 
-#> Minimum average partial
-#> • Original implementation (TR2): 1
-#> • Revised implementation (TR4): 3
-#> 
-#> Next Eigenvalue Sufficiency Test
-#> • Suggested number of factors: 3
-#> 
 #> Parallel analysis
 #> • PCA eigenvalues: 3
 #> • SMC eigenvalues: 3
 #> 
-#> ── Criteria that could not be run ──────────────────────────────────────────────
-#> 
-#> ! CD: needs raw data, but a correlation matrix was supplied
+#> Sequential model tests
+#> • Sequential chi-square model tests: 3
+#> • Lower bound of RMSEA 90% CI: 2
+#> • Akaike Information Criterion: 3
 ```
 
-## Exploratory Factor Analysis: Factor Extraction
+Here the criteria agree on three factors, with only the conservative
+RMSEA lower-bound variant of the sequential model test suggesting two.
 
-Multiple algorithms to perform an EFA and to rotate the found solutions
-are implemented in the `EFAtools` package. All of them can be used using
-the
+## Extracting Factors with `efa_fit()`
+
 [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-function. To perform the EFA, you can use one of principal axis
-factoring (PAF), maximum likelihood estimation (ML), and unweighted
-least squares (ULS; also sometimes referred to as MINRES). To rotate the
-solutions, the `EFAtools` package offers varimax and promax rotations,
-as well as a range of other orthogonal and oblique rotations (e.g.,
-quartimax, equamax, oblimin, quartimin, geomin, bentler, bifactor, and
-simplimax), all computed by rotation engines built into the package.
+performs the factor extraction and rotation. For extraction you can
+choose principal axis factoring (PAF), maximum likelihood (ML), or
+unweighted least squares (ULS, also known as MINRES); diagonally
+weighted least squares (DWLS) is additionally available for ordinal data
+analysed with polychoric or tetrachoric correlations (see the [EFA with
+ordinal and missing
+data](https://mdsteiner.github.io/EFAtools/articles/Ordinal_and_missing_data.md)
+vignette). For rotation the package offers varimax and promax as well as
+a range of further orthogonal and oblique rotations (e.g., quartimax,
+equamax, oblimin, quartimin, geomin, bentler, bifactor, and simplimax),
+all computed by rotation engines built into the package.
 
-You can run an EFA with PAF and no rotation like this:
+An EFA with PAF and no rotation is as simple as:
 
 ``` r
 
 efa_fit(DOSPERT_sub, n_factors = 6)
-#> ℹ `x` is not a correlation matrix; computing correlations from
-#> the raw data.
 #> 
-#> EFA performed with type = 'EFAtools', method = 'PAF', and rotation = 'none'.
+#> EFA performed with estimator = 'PAF' and rotation = 'none'.
 #> 
 #> ── Unrotated Loadings ──────────────────────────────────────────────────────────
 #> 
@@ -425,20 +497,20 @@ efa_fit(DOSPERT_sub, n_factors = 6)
 #> df: 270
 ```
 
-To rotate the loadings (e.g., using a promax rotation) adapt the
-`rotation` argument:
+To rotate the loadings, set the `rotation` argument. Here we use a
+promax rotation. We assign the result, as later sections reuse this
+solution:
 
 ``` r
 
-efa_fit(DOSPERT_sub, n_factors = 6, rotation = "promax")
-#> ℹ `x` is not a correlation matrix; computing correlations from
-#> the raw data.
+efa_dospert <- efa_fit(DOSPERT_sub, n_factors = 6, rotation = "promax")
+efa_dospert
 #> 
-#> EFA performed with type = 'EFAtools', method = 'PAF', and rotation = 'promax'.
+#> EFA performed with estimator = 'PAF' and rotation = 'promax'.
 #> 
 #> ── Rotated Loadings ────────────────────────────────────────────────────────────
 #> 
-#>           F1     F4     F3     F6     F2     F5    h2    u2
+#>           F1     F2     F3     F4     F5     F6    h2    u2
 #> ethR_1   .547  -.025  -.020   .130   .009   .122  .442  .558
 #> ethR_2   .447  -.055   .132   .098   .115  -.043  .316  .684
 #> ethR_3   .532   .045   .068   .117  -.212   .030  .470  .530
@@ -487,7 +559,7 @@ efa_fit(DOSPERT_sub, n_factors = 6, rotation = "promax")
 #> 
 #> ── Variances Accounted for ─────────────────────────────────────────────────────
 #> 
-#>                      F1     F4     F3     F6     F2     F5
+#>                      F1     F2     F3     F4     F5     F6
 #> SS loadings        2.565  2.518  2.457  2.225  2.213  1.717
 #> Prop Tot Var        .086   .084   .082   .074   .074   .057
 #> Cum Prop Tot Var    .086   .169   .251   .326   .399   .457
@@ -501,248 +573,15 @@ efa_fit(DOSPERT_sub, n_factors = 6, rotation = "promax")
 #> df: 270
 ```
 
-This now performed PAF with promax rotation with the specification, on
-average, we found to produce the most accurate results in a simulation
-analysis (see function documentation). If you want to replicate the
-implementation of the *psych* R package, you can supply the `"psych"`
-preset through
-[`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
-and
-[`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md):
+We can also use a different estimator and rotation, here for example ULS
+and an oblimin rotation:
 
 ``` r
 
-efa_fit(DOSPERT_sub, n_factors = 6, rotation = "promax",
-        estimate_control = estimate_control(type = "psych"),
-        rotate_control = rotate_control(type = "psych"))
-#> ℹ `x` is not a correlation matrix; computing correlations from
-#> the raw data.
+efa_uls <- efa_fit(DOSPERT_sub, n_factors = 6, rotation = "oblimin", estimator = "uls")
+efa_uls
 #> 
-#> EFA performed with type = 'psych', method = 'PAF', and rotation = 'promax'.
-#> 
-#> ── Rotated Loadings ────────────────────────────────────────────────────────────
-#> 
-#>           F1     F3     F4     F6     F2     F5    h2    u2
-#> ethR_1   .554  -.024   .116  -.029  -.002   .136  .442  .558
-#> ethR_2   .441   .124   .088  -.054   .119  -.035  .316  .684
-#> ethR_3   .556   .063   .113   .052  -.227   .048  .470  .530
-#> ethR_4   .704  -.042  -.195   .003  -.005  -.006  .356  .644
-#> ethR_5   .395  -.052   .131   .156  -.111   .044  .292  .708
-#> ethR_6   .677  -.007  -.109   .117  -.070  -.047  .405  .595
-#> finR_1  -.002   .827   .040  -.018   .017   .029  .730  .270
-#> finR_2  -.034  -.041  -.229   .116   .103   .593  .359  .641
-#> finR_3   .057   .868  -.082   .050   .079   .000  .778  .222
-#> finR_4   .078   .096   .026  -.100  -.134   .801  .633  .367
-#> finR_5   .013   .860   .042  -.010  -.027   .081  .842  .158
-#> finR_6   .005   .023   .051  -.088   .003   .801  .635  .365
-#> heaR_1   .315   .105   .087   .038   .093   .024  .244  .756
-#> heaR_2   .401  -.007   .082   .018   .197  -.083  .252  .748
-#> heaR_3   .125  -.072   .700  -.210  -.044   .036  .409  .591
-#> heaR_4   .068  -.009   .732  -.103  -.074  -.032  .455  .545
-#> heaR_5   .367  -.056   .162  -.048   .201  -.068  .240  .760
-#> heaR_6   .036  -.028   .477   .008   .054   .071  .307  .693
-#> recR_1  -.086  -.059   .233   .215   .250   .089  .322  .678
-#> recR_2  -.051   .085   .618   .170  -.049  -.065  .493  .507
-#> recR_3  -.160   .051   .464   .348   .032   .019  .507  .493
-#> recR_4   .051  -.010  -.063   .933  -.002  -.059  .774  .226
-#> recR_5   .102   .033  -.087   .961  -.069  -.100  .784  .216
-#> recR_6  -.018  -.065   .236   .476   .044   .147  .534  .466
-#> socR_1  -.043   .022  -.155   .032   .713  -.200  .400  .600
-#> socR_2   .007   .097   .062  -.057   .627  -.034  .401  .599
-#> socR_3  -.123   .028  -.217   .061   .580   .079  .348  .652
-#> socR_4  -.144   .020   .197  -.121   .608  -.065  .372  .628
-#> socR_5   .070  -.085   .068   .010   .377   .109  .234  .766
-#> socR_6   .094  -.073  -.104  -.044   .583   .122  .363  .637
-#> 
-#> Legend:
-#>   bold = |loading| >= .300
-#>   grey = below cutoff
-#>   red h2/u2 = Heywood-relevant value
-#> 
-#> ── Factor Intercorrelations ────────────────────────────────────────────────────
-#> 
-#>       F1     F2     F3     F4     F5     F6
-#> F1  1.000
-#> F2   .435  1.000
-#> F3   .585   .463  1.000
-#> F4   .333   .316   .637  1.000
-#> F5   .149   .083   .387   .398  1.000
-#> F6   .306   .422   .483   .501   .436  1.000
-#> 
-#> ── Variances Accounted for ─────────────────────────────────────────────────────
-#> 
-#>                      F1     F3     F4     F6     F2     F5
-#> SS loadings        2.612  2.364  2.353  2.332  2.256  1.778
-#> Prop Tot Var        .087   .079   .078   .078   .075   .059
-#> Cum Prop Tot Var    .087   .166   .244   .322   .397   .457
-#> Prop Comm Var       .191   .173   .172   .170   .165   .130
-#> Cum Prop Comm Var   .191   .363   .535   .705   .870  1.000
-#> 
-#> ── Model Fit ───────────────────────────────────────────────────────────────────
-#> 
-#> CAF: .48
-#> SRMR: .03
-#> df: 270
-```
-
-If you want to use the *SPSS* implementation, you can supply the
-`"SPSS"` preset through
-[`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
-and
-[`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md):
-
-``` r
-
-efa_fit(DOSPERT_sub, n_factors = 6, rotation = "promax",
-        estimate_control = estimate_control(type = "SPSS"),
-        rotate_control = rotate_control(type = "SPSS"))
-#> ℹ `x` is not a correlation matrix; computing correlations from
-#> the raw data.
-#> 
-#> EFA performed with type = 'SPSS', method = 'PAF', and rotation = 'promax'.
-#> 
-#> ── Rotated Loadings ────────────────────────────────────────────────────────────
-#> 
-#>           F1     F4     F3     F2     F6     F5    h2    u2
-#> ethR_1   .547  -.025  -.020   .009   .130   .122  .442  .558
-#> ethR_2   .447  -.055   .132   .115   .098  -.043  .316  .684
-#> ethR_3   .532   .045   .068  -.212   .117   .030  .470  .530
-#> ethR_4   .695  -.035  -.039   .000  -.162  -.002  .356  .644
-#> ethR_5   .382   .159  -.051  -.100   .130   .036  .292  .708
-#> ethR_6   .664   .086  -.003  -.063  -.089  -.044  .405  .595
-#> finR_1  -.015  -.019   .853   .003   .022   .008  .730  .270
-#> finR_2  -.050   .121  -.044   .120  -.211   .599  .359  .641
-#> finR_3   .046   .035   .895   .061  -.094  -.011  .778  .222
-#> finR_4   .039  -.071   .098  -.102   .035   .768  .633  .367
-#> finR_5  -.006  -.010   .887  -.038   .023   .057  .842  .158
-#> finR_6  -.022  -.051   .023   .031   .061   .774  .635  .365
-#> heaR_1   .318   .042   .111   .092   .091   .019  .244  .756
-#> heaR_2   .416   .020  -.003   .191   .093  -.081  .252  .748
-#> heaR_3   .133  -.140  -.071  -.036   .674  -.009  .409  .591
-#> heaR_4   .074  -.031  -.006  -.067   .697  -.074  .455  .545
-#> heaR_5   .385  -.037  -.053   .197   .170  -.072  .240  .760
-#> heaR_6   .044   .062  -.026   .059   .455   .048  .307  .693
-#> recR_1  -.067   .253  -.060   .247   .219   .094  .322  .678
-#> recR_2  -.046   .231   .089  -.046   .574  -.090  .493  .507
-#> recR_3  -.155   .402   .053   .035   .423   .011  .507  .493
-#> recR_4   .042   .926  -.010   .002  -.089  -.017  .774  .226
-#> recR_5   .088   .945   .034  -.065  -.114  -.058  .784  .216
-#> recR_6  -.020   .510  -.067   .053   .212   .154  .534  .466
-#> socR_1   .016   .029   .025   .679  -.137  -.162  .400  .600
-#> socR_2   .057  -.035   .103   .602   .072  -.020  .401  .599
-#> socR_3  -.084   .061   .029   .559  -.199   .110  .348  .652
-#> socR_4  -.090  -.082   .023   .583   .197  -.057  .372  .628
-#> socR_5   .097   .032  -.086   .370   .077   .117  .234  .766
-#> socR_6   .134  -.035  -.072   .568  -.079   .142  .363  .637
-#> 
-#> Legend:
-#>   bold = |loading| >= .300
-#>   grey = below cutoff
-#>   red h2/u2 = Heywood-relevant value
-#> 
-#> ── Factor Intercorrelations ────────────────────────────────────────────────────
-#> 
-#>       F1     F2     F3     F4     F5     F6
-#> F1  1.000
-#> F2   .357  1.000
-#> F3   .455   .349  1.000
-#> F4   .031   .316   .046  1.000
-#> F5   .567   .594   .502   .287  1.000
-#> F6   .329   .441   .463   .324   .486  1.000
-#> 
-#> ── Variances Accounted for ─────────────────────────────────────────────────────
-#> 
-#>                      F1     F4     F3     F2     F6     F5
-#> SS loadings        2.565  2.518  2.457  2.213  2.225  1.717
-#> Prop Tot Var        .086   .084   .082   .074   .074   .057
-#> Cum Prop Tot Var    .086   .169   .251   .325   .399   .457
-#> Prop Comm Var       .187   .184   .179   .162   .162   .125
-#> Cum Prop Comm Var   .187   .371   .551   .712   .875  1.000
-#> 
-#> ── Model Fit ───────────────────────────────────────────────────────────────────
-#> 
-#> CAF: .48
-#> SRMR: .03
-#> df: 270
-```
-
-This enables comparisons of different implementations. The
-[`efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/efa_compare.md)
-function provides an easy way to compare how similar two loading
-(pattern) matrices are:
-
-``` r
-
-efa_compare(
-  efa_fit(DOSPERT_sub, n_factors = 6, rotation = "promax",
-          estimate_control = estimate_control(type = "psych"),
-          rotate_control = rotate_control(type = "psych"))$rot_loadings,
-  efa_fit(DOSPERT_sub, n_factors = 6, rotation = "promax",
-          estimate_control = estimate_control(type = "SPSS"),
-          rotate_control = rotate_control(type = "SPSS"))$rot_loadings
-)
-#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
-#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
-#> Mean [min, max] absolute difference:  0.0159 [ 0.0001,  0.0712]
-#> Median absolute difference:  0.0102
-#> Max decimals where all numbers are equal: 0
-#> Minimum number of decimals provided: 18
-#> 
-#>           F1      F3      F4      F6      F2      F5
-#> ethR_1   .0078  -.0035  -.0138  -.0042  -.0106   .0148
-#> ethR_2  -.0058  -.0078  -.0100   .0008   .0038   .0082
-#> ethR_3   .0245  -.0052  -.0037   .0066  -.0146   .0186
-#> ethR_4   .0090  -.0028  -.0325   .0375  -.0055  -.0045
-#> ethR_5   .0128  -.0011   .0007  -.0035  -.0116   .0073
-#> ethR_6   .0129  -.0038  -.0208   .0315  -.0067  -.0033
-#> finR_1   .0131  -.0257   .0183   .0012   .0143   .0209
-#> finR_2   .0162   .0025  -.0177  -.0048  -.0171  -.0055
-#> finR_3   .0110  -.0272   .0121   .0150   .0182   .0107
-#> finR_4   .0392  -.0023  -.0093  -.0286  -.0319   .0331
-#> finR_5   .0191  -.0266   .0192   .0007   .0113   .0243
-#> finR_6   .0265  -.0002  -.0097  -.0376  -.0279   .0271
-#> heaR_1  -.0024  -.0062  -.0038  -.0042   .0009   .0053
-#> heaR_2  -.0153  -.0039  -.0105  -.0011   .0059  -.0020
-#> heaR_3  -.0075  -.0012   .0258  -.0703  -.0086   .0450
-#> heaR_4  -.0063  -.0028   .0356  -.0712  -.0065   .0424
-#> heaR_5  -.0182  -.0024  -.0087  -.0112   .0048   .0034
-#> heaR_6  -.0085  -.0015   .0222  -.0537  -.0045   .0230
-#> recR_1  -.0191   .0004   .0146  -.0382   .0028  -.0053
-#> recR_2  -.0045  -.0046   .0439  -.0615  -.0025   .0251
-#> recR_3  -.0054  -.0024   .0413  -.0546  -.0023   .0080
-#> recR_4   .0091   .0001   .0262   .0078  -.0036  -.0421
-#> recR_5   .0148  -.0012   .0270   .0154  -.0042  -.0418
-#> recR_6   .0021   .0011   .0247  -.0342  -.0090  -.0068
-#> socR_1  -.0595  -.0031  -.0180   .0032   .0346  -.0379
-#> socR_2  -.0493  -.0061  -.0095  -.0217   .0255  -.0144
-#> socR_3  -.0390  -.0017  -.0185   .0001   .0208  -.0311
-#> socR_4  -.0543  -.0032  -.0005  -.0381   .0254  -.0083
-#> socR_5  -.0270   .0003  -.0092  -.0213   .0071  -.0082
-#> socR_6  -.0401  -.0005  -.0251  -.0089   .0156  -.0205
-```
-
-*Why would you want to do this?* One of us has had the experience that a
-reviewer asked whether the results can be reproduced in another
-statistical program than R. We therefore implemented this possibility in
-the package for an easy application of large scale, systematic
-comparisons.
-
-Note that the `type` preset only affects the implementations of
-principal axis factoring (PAF), varimax and promax rotations. The other
-procedures are not affected (except the order of the rotated factors for
-the other rotation methods).
-
-As indicated previously, it is also possible to use different estimation
-and rotation methods. For example, to perform an EFA with ULS and an
-oblimin rotation, you can use the following code:
-
-``` r
-
-efa_fit(DOSPERT_sub, n_factors = 6, rotation = "oblimin", method = "ULS")
-#> ℹ `x` is not a correlation matrix; computing correlations from
-#> the raw data.
-#> 
-#> EFA performed with type = 'EFAtools', method = 'ULS', and rotation = 'oblimin'.
+#> EFA performed with estimator = 'ULS' and rotation = 'oblimin'.
 #> 
 #> ── Rotated Loadings ────────────────────────────────────────────────────────────
 #> 
@@ -815,27 +654,26 @@ efa_fit(DOSPERT_sub, n_factors = 6, rotation = "oblimin", method = "ULS")
 #> SRMR: .03
 ```
 
-Of course,
+## Comparing Solutions with `efa_compare()`
+
 [`efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/efa_compare.md)
-can also be used to compare results from different estimation or
-rotation methods (in fact, to compare any two matrices), not just from
-different implementations:
+provides a quick way to see how similar two loading (pattern) matrices
+are — whether they come from different implementations, different
+estimators, or different rotations. For instance, to compare the
+PAF/promax solution with the ULS/oblimin one:
 
 ``` r
 
-efa_compare(
-  efa_fit(DOSPERT_sub, n_factors = 6, rotation = "promax")$rot_loadings,
-  efa_fit(DOSPERT_sub, n_factors = 6, rotation = "oblimin", method = "ULS")$rot_loadings,
-  x_labels = c("PAF and promax", "ULS and oblimin")
-)
-#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
-#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
+efa_compare(efa_dospert$rot_loadings, efa_uls$rot_loadings,
+            x_labels = c("PAF and promax", "ULS and oblimin"))
 #> Mean [min, max] absolute difference:  0.0278 [ 0.0001,  0.1262]
 #> Median absolute difference:  0.0226
-#> Max decimals where all numbers are equal: 0
-#> Minimum number of decimals provided: 18
+#> Root mean squared distance (RMSE):  0.0359
+#> Max decimals where all numbers agree in absolute value: 0
+#> Minimum number of decimals provided: 17
+#> Differing indicator-to-factor correspondences: 1 (highest loading), 0 (all |loadings| >= 0.3)
 #> 
-#>           F1      F4      F3      F6      F2      F5
+#>           F1      F2      F3      F4      F5      F6
 #> ethR_1   .0244  -.0335  -.0590  -.0073   .0157  -.0248
 #> ethR_2   .0274  -.0299  -.0345   .0006   .0153  -.0348
 #> ethR_3   .0208  -.0194  -.0522   .0025   .0073  -.0224
@@ -868,20 +706,216 @@ efa_compare(
 #> socR_6   .0199  -.0179  -.0076  -.0427   .0257  -.0124
 ```
 
-Finally, if you are interested in factor scores from the EFA solution,
-these can be obtained with
-[`efa_scores()`](https://mdsteiner.github.io/EFAtools/reference/efa_scores.md),
-which estimates the scores and their scoring weights directly from an
+## Averaging Across Analytic Choices with `efa_average()`
+
+Comparing two solutions by hand answers the question for those two.
+[`efa_average()`](https://mdsteiner.github.io/EFAtools/reference/efa_average.md)
+asks it across a whole grid at once: it runs an EFA for every
+combination of the settings you allow it to vary, averages the loadings
+across the solutions that converged, and reports the range each loading
+spans. That range is the useful part — it shows how much of the result
+is the data and how much is the analytic choice. Here we vary only the
+estimator, keeping one implementation each of PAF, ULS, and ML with a
+promax rotation:
+
+``` r
+
+avg_dospert <- efa_average(DOSPERT_sub, n_factors = 6,
+                           estimator = c("paf", "uls", "ml"),
+                           type = "EFAtools", start_method = "psych")
+#>                                                                                                                                                                  🏃 Extracting data...                                                                                                                                                                 🚶 Reordering factors...                                                                                                                                                                 🏃 Averaging data...                                                                                                                                                                 Done!
+avg_dospert
+#> 
+#> Averaging performed with averaging method mean (trim = 0) across 3 EFAs,
+#> varying the following settings: estimator.
+#> 
+#> The error rate is at 0%. Of the solutions that did not result in an error, 100%
+#> converged. Of the solutions that converged, 0% contained Heywood cases and 100%
+#> were admissible.
+#> 
+#> ══ Indicator-to-Factor Correspondences ═════════════════════════════════════════
+#> 
+#> For each cell, the proportion of solutions including the respective
+#> indicator-to-factor correspondence. A salience threshold of 0.3 was used to
+#> determine indicator-to-factor correspondences.
+#> 
+#>          F1    F2    F3    F4    F5    F6
+#> ethR_1  1.00   .00   .00   .00   .00   .00
+#> ethR_2  1.00   .00   .00   .00   .00   .00
+#> ethR_3  1.00   .00   .00   .00   .00   .00
+#> ethR_4  1.00   .00   .00   .00   .00   .00
+#> ethR_5  1.00   .00   .00   .00   .00   .00
+#> ethR_6  1.00   .00   .00   .00   .00   .00
+#> finR_1   .00   .00  1.00   .00   .00   .00
+#> finR_2   .00   .00   .00   .00   .00  1.00
+#> finR_3   .00   .00  1.00   .00   .00   .00
+#> finR_4   .00   .00   .00   .00   .00  1.00
+#> finR_5   .00   .00  1.00   .00   .00   .00
+#> finR_6   .00   .00   .00   .00   .00  1.00
+#> heaR_1  1.00   .00   .00   .00   .00   .00
+#> heaR_2  1.00   .00   .00   .00   .00   .00
+#> heaR_3   .00   .00   .00  1.00   .00   .00
+#> heaR_4   .00   .00   .00  1.00   .00   .00
+#> heaR_5  1.00   .00   .00   .00   .00   .00
+#> heaR_6   .00   .00   .00  1.00   .00   .00
+#> recR_1   .00   .00   .00   .33   .00   .00
+#> recR_2   .00   .00   .00  1.00   .00   .00
+#> recR_3   .00   .67   .00  1.00   .00   .00
+#> recR_4   .00  1.00   .00   .00   .00   .00
+#> recR_5   .00  1.00   .00   .00   .00   .00
+#> recR_6   .00  1.00   .00   .00   .00   .00
+#> socR_1   .00   .00   .00   .00  1.00   .00
+#> socR_2   .00   .00   .00   .00  1.00   .00
+#> socR_3   .00   .00   .00   .00  1.00   .00
+#> socR_4   .00   .00   .00   .00  1.00   .00
+#> socR_5   .00   .00   .00   .00  1.00   .00
+#> socR_6   .00   .00   .00   .00  1.00   .00
+#> 
+#> ══ Loadings ════════════════════════════════════════════════════════════════════
+#> 
+#> ── Mean ────────────────────────────────────────────────────────────────────────
+#> 
+#>           F1     F2     F3     F4     F5     F6
+#> ethR_1   .548  -.039  -.024   .142   .011   .117
+#> ethR_2   .454  -.048   .133   .081   .117  -.042
+#> ethR_3   .535   .038   .064   .122  -.213   .030
+#> ethR_4   .691  -.018  -.038  -.173   .001  -.006
+#> ethR_5   .395   .160  -.051   .119  -.094   .035
+#> ethR_6   .672   .089  -.003  -.100  -.058  -.043
+#> finR_1  -.017  -.022   .850   .035   .002   .004
+#> finR_2  -.060   .116  -.045  -.193   .120   .597
+#> finR_3   .044   .037   .893  -.087   .062  -.011
+#> finR_4   .041  -.064   .095   .026  -.103   .771
+#> finR_5  -.004  -.008   .886   .022  -.037   .056
+#> finR_6  -.018  -.052   .020   .057   .032   .777
+#> heaR_1   .312   .034   .106   .104   .088   .023
+#> heaR_2   .417   .024  -.004   .084   .191  -.076
+#> heaR_3   .148  -.144  -.065   .649  -.037  -.006
+#> heaR_4   .095  -.032  -.001   .665  -.067  -.070
+#> heaR_5   .383  -.041  -.052   .175   .194  -.074
+#> heaR_6   .053   .040  -.024   .461   .058   .049
+#> recR_1  -.079   .216  -.065   .273   .242   .089
+#> recR_2  -.049   .196   .085   .617  -.054  -.096
+#> recR_3  -.160   .357   .052   .478   .030   .004
+#> recR_4   .041   .916  -.010  -.065   .004  -.013
+#> recR_5   .086   .929   .034  -.082  -.062  -.055
+#> recR_6  -.012   .495  -.063   .220   .056   .157
+#> socR_1   .013   .025   .024  -.128   .679  -.160
+#> socR_2   .068  -.031   .098   .062   .604  -.015
+#> socR_3  -.087   .065   .035  -.196   .560   .109
+#> socR_4  -.084  -.089   .018   .201   .579  -.053
+#> socR_5   .094   .023  -.081   .094   .368   .106
+#> socR_6   .132  -.029  -.068  -.077   .564   .138
+#> 
+#> ── Range ───────────────────────────────────────────────────────────────────────
+#> 
+#>          F1    F2    F3    F4    F5    F6
+#> ethR_1  .004  .044  .011  .037  .006  .015
+#> ethR_2  .022  .022  .005  .051  .006  .003
+#> ethR_3  .010  .021  .013  .015  .002  .001
+#> ethR_4  .011  .051  .003  .032  .004  .013
+#> ethR_5  .038  .002  .002  .033  .017  .005
+#> ethR_6  .025  .011  .000  .034  .015  .002
+#> finR_1  .008  .010  .009  .040  .005  .012
+#> finR_2  .029  .015  .003  .053  .001  .004
+#> finR_3  .008  .004  .007  .022  .005  .002
+#> finR_4  .006  .022  .009  .026  .003  .010
+#> finR_5  .007  .006  .002  .000  .002  .001
+#> finR_6  .012  .005  .008  .010  .004  .007
+#> heaR_1  .016  .024  .015  .039  .011  .012
+#> heaR_2  .003  .015  .004  .027  .001  .015
+#> heaR_3  .045  .013  .017  .074  .005  .010
+#> heaR_4  .063  .002  .015  .094  .000  .013
+#> heaR_5  .006  .011  .005  .013  .008  .008
+#> heaR_6  .026  .064  .006  .016  .003  .003
+#> recR_1  .037  .112  .016  .162  .014  .016
+#> recR_2  .007  .106  .012  .128  .022  .018
+#> recR_3  .015  .136  .003  .163  .013  .021
+#> recR_4  .003  .029  .001  .072  .006  .014
+#> recR_5  .006  .052  .002  .097  .009  .008
+#> recR_6  .027  .046  .011  .024  .011  .007
+#> socR_1  .010  .012  .002  .027  .003  .008
+#> socR_2  .034  .012  .015  .028  .006  .016
+#> socR_3  .009  .014  .018  .008  .001  .004
+#> socR_4  .018  .018  .015  .012  .012  .012
+#> socR_5  .010  .025  .013  .049  .006  .035
+#> socR_6  .008  .017  .012  .005  .010  .014
+#> 
+#> ══ Factor Intercorrelations from Oblique Solutions ═════════════════════════════
+#> 
+#> ── Mean ────────────────────────────────────────────────────────────────────────
+#> 
+#>       F1     F2     F3     F4     F5     F6
+#> F1  1.000
+#> F2   .342  1.000
+#> F3   .456   .334  1.000
+#> F4   .565   .592   .496  1.000
+#> F5   .026   .307   .040   .291  1.000
+#> F6   .331   .429   .463   .493   .320  1.000
+#> 
+#> ── Range ───────────────────────────────────────────────────────────────────────
+#> 
+#>      F1    F2    F3    F4    F5    F6
+#> F1  .000
+#> F2  .045  .000
+#> F3  .003  .045  .000
+#> F4  .005  .005  .017  .000
+#> F5  .016  .027  .017  .013  .000
+#> F6  .005  .036  .000  .019  .011  .000
+#> 
+#> ══ Variances Accounted for ═════════════════════════════════════════════════════
+#> 
+#> ── Mean ────────────────────────────────────────────────────────────────────────
+#> 
+#>                  F1     F2     F3     F4     F5     F6
+#> SS loadings    2.599  2.405  2.447  2.320  2.206  1.716
+#> Prop Tot Var    .087   .080   .082   .077   .074   .057
+#> Prop Comm Var   .190   .176   .179   .169   .161   .125
+#> 
+#> ── Range ───────────────────────────────────────────────────────────────────────
+#> 
+#>                 F1    F2    F3    F4    F5    F6
+#> SS loadings    .099  .336  .030  .284  .022  .005
+#> Prop Tot Var   .003  .011  .001  .009  .001  .000
+#> Prop Comm Var  .007  .024  .002  .021  .001  .000
+#> 
+#> ══ Model Fit ═══════════════════════════════════════════════════════════════════
+#> 
+#>        M (SD) [Min; Max]
+#> 𝜒²: 613.61 ( 6.30) [609.15; 618.06]
+#> df: 270
+#> p: .000 (.000) [.000; .000]
+#> CFI: .93 (.00) [.93; .94]
+#> TLI: .89 (.00) [.89; .90]
+#> RMSEA: .05 (.00) [.05; .05]
+#> AIC: 73.61 ( 6.30) [69.15; 78.06]
+#> BIC: -1064.34 ( 6.30) [-1068.80; -1059.88]
+#> ECVI:  2.01 ( 0.01) [ 2.00;  2.02]
+#> CAF: .48 (.00) [.48; .48]
+#> RMSR: .03 (.00) [.03; .03]
+#> SRMR: .03 (.00) [.03; .03]
+```
+
+Left unrestricted, the defaults sweep the different implementations of
+principal axis factoring and promax rotation instead, which is
+considerably more work; see
+[`?efa_average`](https://mdsteiner.github.io/EFAtools/reference/efa_average.md)
+for the settings that can be varied and for
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html), which shows
+the minimum, maximum, and average loading of every indicator.
+
+## Factor Scores with `efa_scores()`
+
+If you need factor scores,
+[`efa_scores()`](https://mdsteiner.github.io/EFAtools/reference/efa_scores.md)
+estimates them directly from an
 [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-output, together with score-quality diagnostics (determinacy,
+solution, and reports score-quality diagnostics (determinacy,
 univocality, and the Guttman indeterminacy index):
 
 ``` r
 
-efa_mod <- efa_fit(DOSPERT_sub, n_factors = 6, rotation = "promax")
-#> ℹ `x` is not a correlation matrix; computing correlations from
-#> the raw data.
-fac_scores <- efa_scores(DOSPERT_sub, f = efa_mod)
+fac_scores <- efa_scores(DOSPERT_sub, f = efa_dospert)
 fac_scores
 #> 
 #> ── Factor scores (regression) ──────────────────────────────────────────────────
@@ -892,500 +926,105 @@ fac_scores
 #> 
 #>      rho  rho2 guttman
 #> F1 0.903 0.815   0.629
-#> F4 0.951 0.905   0.810
+#> F2 0.951 0.905   0.810
 #> F3 0.961 0.923   0.846
-#> F6 0.910 0.829   0.658
-#> F2 0.887 0.787   0.574
-#> F5 0.907 0.822   0.644
+#> F4 0.910 0.829   0.658
+#> F5 0.887 0.787   0.574
+#> F6 0.907 0.822   0.644
 ```
 
-### Performance
+## Schmid-Leiman Transformation and McDonald’s Omegas
 
-To improve performance of the iterative procedures (currently the
-parallel analysis, and the PAF, ML, and ULS methods) we implemented some
-of them in C++. For example, the following code compares the EFAtools
-parallel analysis with the corresponding one implemented in the psych
-package (the default of
-[`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
-is to use 1000 datasets, but 25 is enough to show the difference):
+For the Schmid-Leiman transformation and the omega coefficients we
+return to the PAF/promax solution (`efa_dospert`) from above. Its
+indicator names encode the risk domain each item belongs to (ethical,
+financial, health, recreational, and social), and its pattern
+coefficients recovered these theoretical domains fairly well: items from
+the same domain tend to load on the same factor. The factor
+intercorrelations also included some sizeable values, which raises the
+question of whether a general factor underlies the domains. A
+Schmid-Leiman transformation lets us examine that.
 
-``` r
+### Schmid-Leiman Transformation
 
-microbenchmark::microbenchmark(
-  efa_parallel(DOSPERT_sub, eigen_type = "SMC", n_datasets = 25),
-  psych::fa.parallel(DOSPERT_sub, SMC = TRUE, plot = FALSE, n.iter = 25)
-)
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  5 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4 
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Parallel analysis suggests that the number of factors =  10  and the number of components =  4
-#> Unit: milliseconds
-#>                                                                    expr
-#>          efa_parallel(DOSPERT_sub, eigen_type = "SMC", n_datasets = 25)
-#>  psych::fa.parallel(DOSPERT_sub, SMC = TRUE, plot = FALSE, n.iter = 25)
-#>       min       lq     mean   median       uq      max neval
-#>  101.7306 124.0934 133.1380 126.6526 142.9834 226.3888   100
-#>  113.0272 119.6717 126.9424 125.2425 131.5727 180.6947   100
-```
-
-Moreover, the following code compares the PAF implementation (of type
-“psych”) of the EFAtools package with the one from the psych package:
-
-``` r
-
-microbenchmark::microbenchmark(
-  efa_fit(DOSPERT_raw, 6),
-  psych::fa(DOSPERT_raw, 6, rotate = "none", fm = "pa")
-)
-#> Unit: milliseconds
-#>                                                   expr      min       lq
-#>                                efa_fit(DOSPERT_raw, 6) 15.29864 15.54146
-#>  psych::fa(DOSPERT_raw, 6, rotate = "none", fm = "pa") 22.00119 22.44153
-#>      mean   median       uq       max neval
-#>  15.82454 15.68703 15.89799  19.89316   100
-#>  25.15466 23.33760 26.12161 111.08977   100
-```
-
-While these differences are not large, they grow larger the more
-iterations the procedures need, which is usually the case if solutions
-are more tricky to find. Especially for simulations this might come in
-handy. For example, in one simulation analysis we ran over 10,000,000
-EFAs, thus a difference of about 25 milliseconds per EFA leads to a
-difference in runtime of almost three days.
-
-### Model Averaging
-
-Instead of relying on one of the many possible implementations of, for
-example, PAF, and of using just one rotation (e.g., promax), it may be
-desirable to average different solutions to potentially arrive at a more
-robust, average solution. The
-[`efa_average()`](https://mdsteiner.github.io/EFAtools/reference/efa_average.md)
-function provides this possibility. In addition to the average solution
-it provides the variation across solutions, a matrix indicating the
-robustness of indicator-to-factor correspondences, and a visualisation
-of the average solution and the variability across solutions. For
-example, to average across all available factor extraction methods and
-across all available oblique rotations, the following code can be run:
-
-``` r
-
-# Average solution across many different EFAs with oblique rotations
-EFA_AV <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
-                      method = c("PAF", "ML", "ULS"), rotation = "oblique",
-                      show_progress = FALSE)
-
-# look at solution
-EFA_AV
-#> 
-#> Averaging performed with averaging method mean (trim = 0) across 162 EFAs,
-#> varying the following settings: method, init_comm, criterion_type,
-#> start_method, rotation, k_promax, P_type, and varimax_type.
-#> 
-#> The error rate is at 0%. Of the solutions that did not result in an error, 100%
-#> converged, 0% contained Heywood cases, and 100% were admissible.
-#> 
-#> ══ Indicator-to-Factor Correspondences ═════════════════════════════════════════
-#> 
-#> For each cell, the proportion of solutions including the respective
-#> indicator-to-factor correspondence. A salience threshold of 0.3 was used to
-#> determine indicator-to-factor correspondences.
-#> 
-#>       F1    F2    F3
-#> V1    .00   .02  1.00
-#> V2    .00   .02  1.00
-#> V3    .00   .02  1.00
-#> V4    .00   .02  1.00
-#> V5    .00   .02  1.00
-#> V6    .00   .02  1.00
-#> V7    .00  1.00   .09
-#> V8    .00  1.00   .09
-#> V9    .00  1.00   .09
-#> V10   .00  1.00   .09
-#> V11   .00   .92   .09
-#> V12   .00  1.00   .09
-#> V13  1.00   .00   .06
-#> V14   .94   .00   .06
-#> V15   .99   .00   .06
-#> V16   .94   .00   .06
-#> V17  1.00   .00   .06
-#> V18   .94   .00   .06
-#> 
-#> ══ Loadings ════════════════════════════════════════════════════════════════════
-#> 
-#> ── Mean ────────────────────────────────────────────────────────────────────────
-#> 
-#>        F1     F2     F3
-#> V1   -.039   .062   .592
-#> V2    .006   .090   .468
-#> V3    .063   .079   .444
-#> V4    .100   .023   .537
-#> V5    .152   .012   .430
-#> V6   -.063  -.014   .669
-#> V7    .018   .510   .139
-#> V8    .002   .550   .084
-#> V9    .051   .522   .056
-#> V10  -.004   .636  -.005
-#> V11   .027   .349   .258
-#> V12   .038   .620   .050
-#> V13   .582   .098  -.010
-#> V14   .515  -.043   .120
-#> V15   .531   .136  -.013
-#> V16   .523  -.027   .126
-#> V17   .624  -.018   .023
-#> V18   .524   .023   .091
-#> 
-#> ── Range ───────────────────────────────────────────────────────────────────────
-#> 
-#>       F1    F2    F3
-#> V1   .280  .654  .131
-#> V2   .230  .517  .126
-#> V3   .242  .476  .127
-#> V4   .304  .557  .123
-#> V5   .278  .435  .166
-#> V6   .303  .736  .173
-#> V7   .092  .243  .495
-#> V8   .087  .199  .536
-#> V9   .074  .170  .511
-#> V10  .099  .205  .637
-#> V11  .147  .335  .353
-#> V12  .093  .210  .615
-#> V13  .343  .154  .669
-#> V14  .341  .080  .521
-#> V15  .317  .147  .646
-#> V16  .345  .079  .529
-#> V17  .389  .134  .635
-#> V18  .336  .077  .558
-#> 
-#> ══ Factor Intercorrelations from Oblique Solutions ═════════════════════════════
-#> 
-#> ── Mean ────────────────────────────────────────────────────────────────────────
-#> 
-#>       F1     F2     F3
-#> F1  1.000
-#> F2   .512  1.000
-#> F3   .543   .491  1.000
-#> 
-#> ── Range ───────────────────────────────────────────────────────────────────────
-#> 
-#>      F1    F2    F3
-#> F1  .000
-#> F2  .690  .000
-#> F3  .702  .963  .000
-#> 
-#> ══ Variances Accounted for ═════════════════════════════════════════════════════
-#> 
-#> ── Mean ────────────────────────────────────────────────────────────────────────
-#> 
-#>                  F1     F2     F3
-#> SS loadings    2.110  2.014  2.183
-#> Prop Tot Var    .117   .112   .121
-#> Prop Comm Var   .335   .319   .346
-#> 
-#> ── Range ───────────────────────────────────────────────────────────────────────
-#> 
-#>                  F1     F2     F3
-#> SS loadings    1.652  2.461  3.762
-#> Prop Tot Var    .092   .137   .209
-#> Prop Comm Var   .262   .390   .596
-#> 
-#> ══ Model Fit ═══════════════════════════════════════════════════════════════════
-#> 
-#>        M (SD) [Min; Max]
-#> 𝜒²: 123.80 ( 0.08) [123.75; 123.92]
-#> df: 102
-#> p: .070 (.001) [.069; .070]
-#> CFI: .99 (.00) [.99; .99]
-#> TLI: .98 (.00) [.98; .98]
-#> RMSEA: .02 (.00) [.02; .02]
-#> AIC: -80.20 ( 0.08) [-80.25; -80.08]
-#> BIC: -510.09 ( 0.08) [-510.14; -509.97]
-#> ECVI:  0.52 ( 0.00) [ 0.52;  0.52]
-#> CAF: .50 (.00) [.50; .50]
-#> RMSR: .03 (.00) [.03; .03]
-#> SRMR: .02 (.00) [.02; .03]
-```
-
-The first matrix of the output tells us that the indicators are mostly
-allocated to the same factors. However, that some rowsums are larger
-than one also tells as that there likely are some cross loadings present
-in some solutions. Moreover, the relatively high percentages of salient
-pattern coefficients all loading on the first factor may indicate that
-some rotation methods failed to achieve simple structure and it might be
-desirable to exclude these from the model averaging procedure. The rest
-of the output is similar to the normal
-[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-outputs shown above, only that in addition to the average coefficients
-their range is also shown. Finally, the plot shows the average pattern
-coefficients and their ranges.
-
-**Important disclaimer:** While it is possible that this approach
-provides more robust results, we are unaware of simulation studies that
-have investigated and shown this. Therefore, it might make sense to for
-now use this approach mainly to test the robustness of the results
-obtained with one single EFA implementation.
-
-## Exploratory Factor Analysis: Schmid-Leiman transformation and McDonald’s Omegas
-
-For the Schmid-Leiman transformation and computation of omegas, we will
-use PAF and promax rotation:
-
-``` r
-
-efa_dospert <- efa_fit(DOSPERT_sub, n_factors = 6, rotation = "promax")
-#> ℹ `x` is not a correlation matrix; computing correlations from
-#> the raw data.
-efa_dospert
-#> 
-#> EFA performed with type = 'EFAtools', method = 'PAF', and rotation = 'promax'.
-#> 
-#> ── Rotated Loadings ────────────────────────────────────────────────────────────
-#> 
-#>           F1     F4     F3     F6     F2     F5    h2    u2
-#> ethR_1   .547  -.025  -.020   .130   .009   .122  .442  .558
-#> ethR_2   .447  -.055   .132   .098   .115  -.043  .316  .684
-#> ethR_3   .532   .045   .068   .117  -.212   .030  .470  .530
-#> ethR_4   .695  -.035  -.039  -.162   .000  -.002  .356  .644
-#> ethR_5   .382   .159  -.051   .130  -.100   .036  .292  .708
-#> ethR_6   .664   .086  -.003  -.089  -.063  -.044  .405  .595
-#> finR_1  -.015  -.019   .853   .022   .003   .008  .730  .270
-#> finR_2  -.050   .121  -.044  -.211   .120   .599  .359  .641
-#> finR_3   .046   .035   .895  -.094   .061  -.011  .778  .222
-#> finR_4   .039  -.071   .098   .035  -.102   .768  .633  .367
-#> finR_5  -.006  -.010   .887   .023  -.038   .057  .842  .158
-#> finR_6  -.022  -.051   .023   .061   .031   .774  .635  .365
-#> heaR_1   .318   .042   .111   .091   .092   .019  .244  .756
-#> heaR_2   .416   .020  -.003   .093   .191  -.081  .252  .748
-#> heaR_3   .133  -.140  -.071   .674  -.036  -.009  .409  .591
-#> heaR_4   .074  -.031  -.006   .697  -.067  -.074  .455  .545
-#> heaR_5   .385  -.037  -.053   .170   .197  -.072  .240  .760
-#> heaR_6   .044   .062  -.026   .455   .059   .048  .307  .693
-#> recR_1  -.067   .253  -.060   .219   .247   .094  .322  .678
-#> recR_2  -.046   .231   .089   .574  -.046  -.090  .493  .507
-#> recR_3  -.155   .402   .053   .423   .035   .011  .507  .493
-#> recR_4   .042   .926  -.010  -.089   .002  -.017  .774  .226
-#> recR_5   .088   .945   .034  -.114  -.065  -.058  .784  .216
-#> recR_6  -.020   .510  -.067   .212   .053   .154  .534  .466
-#> socR_1   .016   .029   .025  -.137   .679  -.162  .400  .600
-#> socR_2   .057  -.035   .103   .072   .602  -.020  .401  .599
-#> socR_3  -.084   .061   .029  -.199   .559   .110  .348  .652
-#> socR_4  -.090  -.082   .023   .197   .583  -.057  .372  .628
-#> socR_5   .097   .032  -.086   .077   .370   .117  .234  .766
-#> socR_6   .134  -.035  -.072  -.079   .568   .142  .363  .637
-#> 
-#> Legend:
-#>   bold = |loading| >= .300
-#>   grey = below cutoff
-#>   red h2/u2 = Heywood-relevant value
-#> 
-#> ── Factor Intercorrelations ────────────────────────────────────────────────────
-#> 
-#>       F1     F2     F3     F4     F5     F6
-#> F1  1.000
-#> F2   .357  1.000
-#> F3   .455   .349  1.000
-#> F4   .567   .594   .502  1.000
-#> F5   .031   .316   .046   .287  1.000
-#> F6   .329   .441   .463   .486   .324  1.000
-#> 
-#> ── Variances Accounted for ─────────────────────────────────────────────────────
-#> 
-#>                      F1     F4     F3     F6     F2     F5
-#> SS loadings        2.565  2.518  2.457  2.225  2.213  1.717
-#> Prop Tot Var        .086   .084   .082   .074   .074   .057
-#> Cum Prop Tot Var    .086   .169   .251   .326   .399   .457
-#> Prop Comm Var       .187   .184   .179   .162   .162   .125
-#> Cum Prop Comm Var   .187   .371   .551   .713   .875  1.000
-#> 
-#> ── Model Fit ───────────────────────────────────────────────────────────────────
-#> 
-#> CAF: .48
-#> SRMR: .03
-#> df: 270
-```
-
-The indicator names in the output (i.e., the rownames of the rotated
-loadings section) tell us which domain (out of ethical, financial,
-health, recreational, and social risks) an indicator stems from. From
-the pattern coefficients it can be seen that these theoretical domains
-are recovered relatively well in the six factor solution, that is,
-usually, the indicators from the same domain load onto the same factor.
-When we take a look at the factor intercorrelations, we can see that
-there are some strong and some weak correlations. It might be worthwhile
-to explore whether a general factor can be obtained, and which factors
-load more strongly on it. To this end, we will use a Schmid-Leiman (SL)
-transformation.
-
-## Schmid-Leiman Transformation
-
-The SL transformation or orthogonalization transforms an oblique
-solution into a hierarchical, orthogonalized solution. To do this, the
-`EFAtools` package provides the
+The Schmid-Leiman (SL) transformation orthogonalises an oblique solution
+into a hierarchical one with a general factor and orthogonalised group
+factors.
 [`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md)
-function.
+performs it:
 
 ``` r
 
 sl_dospert <- efa_schmid_leiman(efa_dospert)
 sl_dospert
 #> 
-#> EFA for second-order loadings performed with type = 'EFAtools' and method = 'PAF'
+#> EFA for second-order loadings performed with estimator = 'PAF'
 #> 
 #> ── Schmid-Leiman Solution ──────────────────────────────────────────────────────
 #> 
 #>           g     F1     F2     F3     F4     F5     F6    h2    u2
-#> ethR_1  .487   .440   .009  -.016  -.018   .093   .067  .445  .555
-#> ethR_2  .400   .360   .110   .104  -.041  -.033   .050  .318  .682
-#> ethR_3  .441   .428  -.202   .054   .033   .023   .060  .427  .573
-#> ethR_4  .225   .559   .000  -.031  -.026  -.001  -.084  .372  .628
-#> ethR_5  .406   .308  -.095  -.041   .119   .028   .067  .290  .710
-#> ethR_6  .325   .534  -.060  -.003   .064  -.034  -.046  .402  .598
-#> finR_1  .523  -.012   .003   .676  -.014   .006   .011  .731  .269
-#> finR_2  .266  -.041   .114  -.035   .090   .458  -.109  .316  .684
-#> finR_3  .528   .037   .058   .709   .026  -.008  -.049  .789  .211
-#> finR_4  .529   .032  -.097   .078  -.053   .587   .018  .643  .357
-#> finR_5  .574  -.005  -.036   .703  -.008   .043   .012  .827  .173
-#> finR_6  .528  -.018   .029   .018  -.038   .592   .031  .633  .367
-#> heaR_1  .403   .256   .088   .088   .031   .014   .047  .246  .754
-#> heaR_2  .344   .335   .182  -.002   .015  -.062   .048  .270  .730
-#> heaR_3  .503   .107  -.034  -.056  -.104  -.007   .347  .400  .600
-#> heaR_4  .548   .060  -.064  -.005  -.023  -.057   .359  .441  .559
-#> heaR_5  .331   .310   .187  -.042  -.028  -.055   .088  .254  .746
-#> heaR_6  .491   .036   .056  -.021   .046   .037   .235  .304  .696
-#> recR_1  .417  -.054   .235  -.047   .189   .072   .113  .288  .712
-#> recR_2  .601  -.037  -.044   .071   .172  -.069   .296  .492  .508
-#> recR_3  .589  -.125   .033   .042   .299   .008   .218  .503  .497
-#> recR_4  .550   .034   .002  -.008   .689  -.013  -.046  .780  .220
-#> recR_5  .549   .071  -.062   .027   .704  -.044  -.059  .812  .188
-#> recR_6  .585  -.016   .050  -.053   .380   .118   .109  .518  .482
-#> socR_1  .030   .013   .646   .020   .021  -.124  -.071  .439  .561
-#> socR_2  .306   .046   .573   .081  -.026  -.015   .037  .433  .567
-#> socR_3  .081  -.068   .532   .023   .045   .084  -.103  .315  .685
-#> socR_4  .217  -.073   .555   .018  -.061  -.044   .102  .376  .624
-#> socR_5  .282   .078   .352  -.068   .023   .090   .040  .225  .775
-#> socR_6  .211   .108   .540  -.057  -.026   .109  -.040  .366  .634
+#> ethR_1  .487   .440  -.018  -.016   .067   .009   .093  .445  .555
+#> ethR_2  .400   .360  -.041   .104   .050   .110  -.033  .318  .682
+#> ethR_3  .441   .428   .033   .054   .060  -.202   .023  .427  .573
+#> ethR_4  .225   .559  -.026  -.031  -.084   .000  -.001  .372  .628
+#> ethR_5  .406   .308   .119  -.041   .067  -.095   .028  .290  .710
+#> ethR_6  .325   .534   .064  -.003  -.046  -.060  -.034  .402  .598
+#> finR_1  .523  -.012  -.014   .676   .011   .003   .006  .731  .269
+#> finR_2  .266  -.041   .090  -.035  -.109   .114   .458  .316  .684
+#> finR_3  .528   .037   .026   .709  -.049   .058  -.008  .789  .211
+#> finR_4  .529   .032  -.053   .078   .018  -.097   .587  .643  .357
+#> finR_5  .574  -.005  -.008   .703   .012  -.036   .043  .827  .173
+#> finR_6  .528  -.018  -.038   .018   .031   .029   .592  .633  .367
+#> heaR_1  .403   .256   .031   .088   .047   .088   .014  .246  .754
+#> heaR_2  .344   .335   .015  -.002   .048   .182  -.062  .270  .730
+#> heaR_3  .503   .107  -.104  -.056   .347  -.034  -.007  .400  .600
+#> heaR_4  .548   .060  -.023  -.005   .359  -.064  -.057  .441  .559
+#> heaR_5  .331   .310  -.028  -.042   .088   .187  -.055  .254  .746
+#> heaR_6  .491   .036   .046  -.021   .235   .056   .037  .304  .696
+#> recR_1  .417  -.054   .189  -.047   .113   .235   .072  .288  .712
+#> recR_2  .601  -.037   .172   .071   .296  -.044  -.069  .492  .508
+#> recR_3  .589  -.125   .299   .042   .218   .033   .008  .503  .497
+#> recR_4  .550   .034   .689  -.008  -.046   .002  -.013  .780  .220
+#> recR_5  .549   .071   .704   .027  -.059  -.062  -.044  .812  .188
+#> recR_6  .585  -.016   .380  -.053   .109   .050   .118  .518  .482
+#> socR_1  .030   .013   .021   .020  -.071   .646  -.124  .439  .561
+#> socR_2  .306   .046  -.026   .081   .037   .573  -.015  .433  .567
+#> socR_3  .081  -.068   .045   .023  -.103   .532   .084  .315  .685
+#> socR_4  .217  -.073  -.061   .018   .102   .555  -.044  .376  .624
+#> socR_5  .282   .078   .023  -.068   .040   .352   .090  .225  .775
+#> socR_6  .211   .108  -.026  -.057  -.040   .540   .109  .366  .634
 #> 
 #> ── Variances Accounted for ─────────────────────────────────────────────────────
 #> 
-#>                      g      F1     F2     F3     F4     F5     F6
-#> SS loadings        5.710  1.550  1.994  1.518  1.327  1.000   .553
-#> Prop Tot Var        .190   .052   .066   .051   .044   .033   .018
-#> Cum Prop Tot Var    .190   .242   .308   .359   .403   .437   .455
-#> Prop Comm Var       .418   .113   .146   .111   .097   .073   .040
-#> Cum Prop Comm Var   .418   .532   .678   .789   .886   .960  1.000
+#>                      g      F1     F2     F3    F4     F5     F6
+#> SS loadings        5.710  1.550  1.327  1.518  .553  1.994  1.000
+#> Prop Tot Var        .190   .052   .044   .051  .018   .066   .033
+#> Cum Prop Tot Var    .190   .242   .286   .337  .355   .422   .455
+#> Prop Comm Var       .418   .113   .097   .111  .040   .146   .073
+#> Cum Prop Comm Var   .418   .532   .629   .740  .781   .927  1.000
 ```
 
-From the output, it can be seen that all, except the social domain
-indicators substantially load on the general factor. That is, the other
-domains covary substantially.
+The general-factor column shows that the items load substantially on the
+general factor across all domains except the social one, whose items
+load least strongly on it on average (mean general-factor loading around
+.19, against roughly .38 to .55 in the other domains) — that is, the
+non-social domains covary considerably, while the social domain stands
+somewhat apart. Individual social items vary considerably around that
+average, so this is a statement about the domain and not about every
+item in it.
 
-## McDonald’s Omegas
+### McDonald’s Omegas
 
-Finally, we can compute omega estimates and additional indices of
-interpretive relevance based on the SL solution, using
-[`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md).
-We can either specify the indicator-to-factor correspondences through
-the `factor_map` argument, or let them be determined automatically (in
-which case each indicator is assigned to its highest-loading factor,
-which might lead to a different solution than what is desired, in the
-presence of cross-loadings). Given that no cross-loadings are present
-here, it is easiest to let the function determine the correspondences
-automatically by leaving `factor_map` unspecified.
+Finally,
+[`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md)
+computes omega estimates and related indices from the SL solution. You
+can either specify the indicator-to-factor correspondences via the
+`factor_map` argument or let the function determine them automatically,
+in which case each indicator is assigned to its highest-loading factor.
+With a reasonably simple structure here, it is easiest to leave
+`factor_map` unspecified — a few items do land on a neighbouring
+domain’s factor, which is exactly what motivates the explicit map shown
+afterwards:
 
 ``` r
 
@@ -1398,11 +1037,11 @@ efa_reliability(sl_dospert)
 #>      tot  hier   sub  alpha    H
 #> g   .922  .718  .177   .886  .886
 #> F1  .791  .377  .415   .788  .652
-#> F2  .739  .124  .615   .741  .726
+#> F2  .867  .474  .393   .845  .683
 #> F3  .912  .344  .568   .914  .739
-#> F4  .867  .474  .393   .845  .683
-#> F5  .745  .295  .451   .742  .571
-#> F6  .709  .531  .177   .716  .305
+#> F4  .709  .531  .177   .716  .305
+#> F5  .739  .124  .615   .741  .726
+#> F6  .745  .295  .451   .742  .571
 #> 
 #> ── Common-variance indices ─────────────────────────────────────────────────────
 #> 
@@ -1410,33 +1049,69 @@ efa_reliability(sl_dospert)
 #> g  .418  .828
 ```
 
-If we wanted to specify the indicator-to-factor correspondences
-explicitly (for example, according to theoretical expectations), we
-could pass them as a `factor_map` matrix:
+To set the correspondences explicitly instead — for example to match a
+theoretical assignment — pass a `factor_map` matrix:
 
 ``` r
 
-efa_reliability(sl_dospert, factor_map = matrix(c(rep(0, 18), rep(1, 6), rep(0, 30), 
-                                         rep(1, 6), rep(0, 6), 1, 0, 1, 0, 1,
-                                         rep(0, 19), rep(1, 6), rep(0, 31), 1, 0,
-                                         1, 0, 1, rep(0, 30), rep(1, 6), 
-                                         rep(0, 12)), ncol = 6, byrow = FALSE))
+efa_reliability(sl_dospert,
+  factor_map = matrix(c(rep(1, 6), rep(0, 24),                  # F1: ethical
+                        rep(0, 18), rep(1, 6), rep(0, 6),       # F2: recreational
+                        rep(0, 6), 1, 0, 1, 0, 1, rep(0, 19),   # F3: financial (1, 3, 5)
+                        rep(0, 12), rep(1, 6), rep(0, 12),      # F4: health
+                        rep(0, 24), rep(1, 6),                  # F5: social
+                        rep(0, 7), 1, 0, 1, 0, 1, rep(0, 18)),  # F6: financial (2, 4, 6)
+                      ncol = 6, byrow = FALSE))
 #> 
 #> Total variance from the correlation matrix.
 #> 
 #> ── Reliability coefficients ────────────────────────────────────────────────────
 #> 
 #>      tot  hier   sub  alpha    H
-#> g   .922  .718  .089   .886  .886
-#> F1  .536  .535  .001   .844  .026
-#> F2  .742  .082  .660   .735  .722
+#> g   .922  .718  .150   .886  .886
+#> F1  .737  .317  .420   .763  .611
+#> F2  .828  .535  .292   .844  .689
 #> F3  .912  .344  .568   .914  .739
-#> F4  .318  .317  .001   .763  .022
-#> F5  .745  .295  .451   .742  .571
-#> F6  .567  .479  .088   .697  .262
+#> F4  .567  .479  .088   .697  .262
+#> F5  .742  .082  .660   .735  .722
+#> F6  .745  .295  .451   .742  .571
 #> 
 #> ── Common-variance indices ─────────────────────────────────────────────────────
 #> 
 #>     ECV   PUC
 #> g  .418  .848
 ```
+
+The columns of `factor_map` are matched to the group factors **by
+position**, so the assignment has to be read off the solution rather
+than assumed: a column naming the wrong set of items yields a
+well-formed but meaningless subscale omega instead of an error.
+Comparing the two tables, the health row is the one that moves most:
+three of the six health items load higher on the ethical factor than on
+the health one, so pinning all six to F4 lowers that subscale’s omega
+relative to the automatic assignment.
+
+## Where to Next
+
+This vignette covered the core workflow. `EFAtools` goes further in
+several directions, each of which has its own vignette or article:
+
+- [EFA with ordinal and missing
+  data](https://mdsteiner.github.io/EFAtools/articles/Ordinal_and_missing_data.md):
+  analysing ordinal items with polychoric correlations and handling
+  missing data.
+- [Migrating to the efa\_\*
+  interface](https://mdsteiner.github.io/EFAtools/articles/Migrating_to_efa.md):
+  a guide for users coming from the older uppercase function names.
+- [Multigroup
+  EFA](https://mdsteiner.github.io/EFAtools/articles/Multigroup_EFA.html)
+  (on the package website): comparing factor structures across groups.
+- [Simulation and
+  power](https://mdsteiner.github.io/EFAtools/articles/Simulation_and_power.html)
+  (on the package website): simulating data and running power analyses
+  for EFA.
+
+Run `browseVignettes("EFAtools")` to see the vignettes installed with
+the package, or visit the [package
+website](https://mdsteiner.github.io/EFAtools/) for the full set of
+articles.

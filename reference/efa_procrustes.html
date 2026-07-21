@@ -25,7 +25,12 @@ averaging or comparing solutions."></head><body>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Replicate_SPSS_psych.html">Replicate SPSS and R psych results with EFAtools</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Ordinal_and_missing_data.html">EFA with ordinal and missing data</a></li>
+    <li><a class="dropdown-item" href="../articles/Multigroup_EFA.html">Multigroup exploratory factor analysis</a></li>
+    <li><a class="dropdown-item" href="../articles/Simulation_and_power.html">Simulating data and power analysis for EFA</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Upgrading</h6></li>
+    <li><a class="dropdown-item" href="../articles/Migrating_to_efa.html">Migrating to the efa_* interface</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -181,6 +186,203 @@ instead of calling the oblique optimizer.</p>
 <code><a href="efa_schmid_leiman.html">efa_schmid_leiman()</a></code></p></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co">## Align an estimated loading matrix to a known target pattern: fit an</span></span></span>
+<span class="r-in"><span><span class="co">## unrotated three-factor model, then rotate its loadings toward the true</span></span></span>
+<span class="r-in"><span><span class="co">## population pattern.</span></span></span>
+<span class="r-in"><span><span class="va">efa_mod</span> <span class="op">&lt;-</span> <span class="fu"><a href="efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, n_factors <span class="op">=</span> <span class="fl">3</span>,</span></span>
+<span class="r-in"><span>                   estimator <span class="op">=</span> <span class="st">"PAF"</span>, rotation <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">target</span> <span class="op">&lt;-</span> <span class="va">population_models</span><span class="op">$</span><span class="va">loadings</span><span class="op">$</span><span class="va">baseline</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">## Orthogonal target rotation (rigid rotation/reflection):</span></span></span>
+<span class="r-in"><span><span class="fu">efa_procrustes</span><span class="op">(</span><span class="va">efa_mod</span><span class="op">$</span><span class="va">unrot_loadings</span>, <span class="va">target</span>, rotation <span class="op">=</span> <span class="st">"orthogonal"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $loadings</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            F1        F2        F3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V1  0.5448962 0.2170358 0.1513942</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V2  0.4507236 0.2171357 0.1636118</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V3  0.4405048 0.2148779 0.2065093</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V4  0.5233425 0.1997234 0.2542341</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V5  0.4375023 0.1708336 0.2686071</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V6  0.5957496 0.1625323 0.1322423</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V7  0.2312446 0.5184359 0.1852262</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V8  0.1828320 0.5369116 0.1648273</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V9  0.1636529 0.5147575 0.1955207</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V10 0.1158044 0.5877527 0.1564727</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V11 0.3114658 0.4055499 0.1874302</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V12 0.1771391 0.5986127 0.2057337</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V13 0.1575023 0.2359492 0.5603540</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V14 0.2326733 0.1257311 0.5018375</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V15 0.1493127 0.2578064 0.5233723</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V16 0.2423249 0.1444833 0.5137624</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V17 0.1742742 0.1498759 0.5806916</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V18 0.2205114 0.1813649 0.5177058</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $T</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            F1         F2         F3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F1  0.5659121  0.5803081  0.5856501</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F2 -0.0559094  0.7357153 -0.6749794</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F3  0.8225677 -0.3492357 -0.4487949</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Phi</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    F1 F2 F3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F1  1  0  0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F2  0  1  0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F3  0  0  1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $value</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.7816832</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $convergence</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $valid</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $iterations</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $kappa_T</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Table</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      iter         f log10_s step</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1,]    0 0.7816832      NA   NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $method</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "orthogonal_procrustes"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $best_start_index</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $all_start_indices</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $all_values</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   start_1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.7816832 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $all_converged</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> start_1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    TRUE </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $all_iterations</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> start_1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       0 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $line_search_failed</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">## Oblique target rotation (lets the aligned factors correlate):</span></span></span>
+<span class="r-in"><span><span class="fu">efa_procrustes</span><span class="op">(</span><span class="va">efa_mod</span><span class="op">$</span><span class="va">unrot_loadings</span>, <span class="va">target</span>, rotation <span class="op">=</span> <span class="st">"oblique"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $loadings</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>              F1           F2           F3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V1   0.61910495  0.051825776 -0.073905972</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V2   0.48598086  0.080089984 -0.021446271</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V3   0.45721811  0.066707991  0.041017771</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V4   0.55804160  0.003034360  0.078530704</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V5   0.44494565 -0.010503571  0.140003527</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V6   0.71323921 -0.031245260 -0.101702122</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V7   0.08033421  0.545581338 -0.004957233</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V8   0.01556974  0.593065667 -0.019863392</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V9  -0.01454789  0.560424060  0.035954147</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V10 -0.08951131  0.685715730 -0.021788946</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V11  0.22583866  0.368529478  0.003522170</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V12 -0.02708029  0.663209734  0.017679319</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V13 -0.06443691  0.076426030  0.619539738</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V14  0.09528966 -0.075731827  0.547236063</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V15 -0.06933901  0.120036105  0.565808245</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V16  0.09806205 -0.058127457  0.553608593</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V17 -0.02090578 -0.049484472  0.668138357</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V18  0.05484079 -0.003288976  0.555443773</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $T</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             F1         F2         F3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F1  0.87686430  0.8689951  0.8785807</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F2 -0.04217862  0.4487928 -0.4042665</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F3  0.47888408 -0.2084050 -0.2542923</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Phi</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           F1        F2        F3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F1 1.0000000 0.6432594 0.6656709</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F2 0.6432594 1.0000000 0.6350462</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F3 0.6656709 0.6350462 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $value</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.1727218</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $convergence</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $valid</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $iterations</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 10</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $kappa_T</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 2.623131</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Table</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       iter         f    log10_s      step</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [1,]    0 0.7816832  0.2411910 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [2,]    1 0.3275075 -0.1609113 0.2500000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [3,]    2 0.1846550 -0.5678217 0.4074261</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [4,]    3 0.1987034 -0.1883165 0.6394707</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [5,]    4 0.1755404 -0.8040980 0.1900866</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [6,]    5 0.1729979 -1.3026785 0.1575771</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [7,]    6 0.1727250 -2.2207728 0.2204627</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [8,]    7 0.1727220 -2.7769860 0.2160014</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [9,]    8 0.1727218 -3.9808669 0.1736397</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [10,]    9 0.1727218 -4.9404047 0.1653971</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [11,]   10 0.1727218 -5.5246516 0.1702069</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $line_search_failed</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $method</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "oblique_procrustes"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $best_start_index</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $all_start_indices</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $all_values</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   start_1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.1727218 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $all_converged</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> start_1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $all_iterations</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> start_1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      10 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $screen_start_indices</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> integer(0)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $screen_values</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> numeric(0)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $n_random_starts</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $n_screened</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $n_triaged</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $n_fully_optimized</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-in"><span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

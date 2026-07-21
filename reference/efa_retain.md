@@ -25,7 +25,7 @@ efa_retain(
   ...,
   max_iter_CD = 50,
   n_fac_theor = NA,
-  method = c("ML", "PAF", "ULS"),
+  estimator = c("ML", "PAF", "ULS"),
   gof = c("CAF", "CFI", "RMSEA"),
   eigen_type_HULL = c("SMC", "PCA", "EFA"),
   eigen_type_other = c("SMC"),
@@ -53,9 +53,9 @@ efa_retain(
 
   character. A vector with the factor retention methods to perform.
   Possible inputs are: `"CD"`, `"EKC"`, `"HULL"`, `"KGC"`, `"MAP"`,
-  `"NEST"`,`"PARALLEL"`, `"SCREE"`, and `"SMT"` (see details). By
-  default, a subset of often used, well-performing methods are
-  performed.
+  `"NEST"`,`"PARALLEL"`, `"SCREE"`, and `"SMT"` (see details). The
+  values are matched case-insensitively. By default, a subset of often
+  used, well-performing methods are performed.
 
 - suitability:
 
@@ -148,7 +148,7 @@ efa_retain(
   [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
   plus one will be used in the Hull method.
 
-- method:
+- estimator:
 
   character. Passed to
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
@@ -159,9 +159,9 @@ efa_retain(
   [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md),
   and
   [`efa_nest()`](https://mdsteiner.github.io/EFAtools/reference/efa_nest.md).
-  The estimation method to use. One of `"PAF"`, `"ULS"`, or `"ML"`, for
+  The estimator to use. One of `"PAF"`, `"ULS"`, or `"ML"`, for
   principal axis factoring, unweighted least squares, and maximum
-  likelihood, respectively. In
+  likelihood, respectively. The value is matched case-insensitively. In
   [`efa_kgc()`](https://mdsteiner.github.io/EFAtools/reference/efa_kgc.md),
   [`efa_scree()`](https://mdsteiner.github.io/EFAtools/reference/efa_scree.md),
   and
@@ -174,7 +174,7 @@ efa_retain(
   character. Passed to
   [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md).
   The goodness of fit index to use. Either `"CAF"`, `"CFI"`, or
-  `"RMSEA"`, or any combination of them. If `method = "PAF"` is used,
+  `"RMSEA"`, or any combination of them. With the `"PAF"` estimator,
   only the CAF can be used as goodness of fit index. For details on the
   CAF, see Lorenzo-Seva, Timmerman, and Kiers (2011).
 
@@ -371,7 +371,21 @@ respective documentations for details):
 - Sequential chi-square model tests, RMSEA lower bound, and AIC (see
   [`efa_smt()`](https://mdsteiner.github.io/EFAtools/reference/efa_smt.md))
 
+The comparison data, parallel analysis, and NEST criteria compare the
+data against simulated reference data, so their suggested numbers of
+factors vary slightly from run to run; the Hull method does too, because
+it calls
+[`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
+to set its upper bound. Call
+[`set.seed()`](https://rdrr.io/r/base/Random.html) before `efa_retain()`
+to make them reproducible.
+
 ## See also
+
+[`efa_screen()`](https://mdsteiner.github.io/EFAtools/reference/efa_screen.md)
+for data screening before retention, and
+[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+to extract the chosen number of factors.
 
 Other factor retention criteria:
 [`efa_cd()`](https://mdsteiner.github.io/EFAtools/reference/efa_cd.md),
@@ -388,30 +402,32 @@ Other factor retention criteria:
 
 ``` r
 # \donttest{
-# Default criteria, with correlation matrix and fit method "ML" (where needed)
+# Default criteria, with correlation matrix and estimator "ML" (where needed)
 # This will throw a warning for CD, as no raw data were specified
-nfac_all <- efa_retain(test_models$baseline$cormat, N = 500, method = "ML")
+# The simulation-based criteria are seeded to make the run reproducible
+set.seed(42)
+nfac_all <- efa_retain(test_models$baseline$cormat, N = 500, estimator = "ML")
 #> Warning: `x` is a correlation matrix, but "CD" needs raw data.
 #> ℹ Skipping "CD".
 
 # The same as above, but without "CD"
 nfac_wo_CD <- efa_retain(test_models$baseline$cormat, criteria = c("EKC",
                          "HULL", "PARALLEL", "NEST"), N = 500,
-                         method = "ML")
+                         estimator = "ML")
 
 # Use PAF instead of ML (this will take longer). For this, gof has
 # to be set to "CAF" for the Hull method.
 nfac_PAF <- efa_retain(test_models$baseline$cormat, criteria = c("EKC",
                        "HULL", "PARALLEL", "NEST"), N = 500,
-                       method = "PAF", gof = "CAF")
+                       estimator = "PAF", gof = "CAF")
 
 # Do KGC and PARALLEL with only "PCA" type of eigenvalues
 nfac_PCA <- efa_retain(test_models$baseline$cormat, criteria = c("EKC",
                        "HULL", "PARALLEL", "NEST"), N = 500,
-                       method = "ML", eigen_type_other = "PCA")
+                       estimator = "ML", eigen_type_other = "PCA")
 
 # Use raw data, such that CD can also be performed
-nfac_raw <- efa_retain(GRiPS_raw, method = "ML")
+nfac_raw <- efa_retain(GRiPS_raw, estimator = "ML")
 #> Warning: The suggested maximum number of factors was 2, but the Hull method needs at
 #> least 3.
 #> ℹ Setting it to 3.

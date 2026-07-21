@@ -40,7 +40,7 @@ efa_power(
   R = NULL,
   n_datasets = 500,
   criteria = c("EKC", "MAP"),
-  method = "PAF",
+  estimator = "PAF",
   rotation = NULL,
   recovery_threshold = 0.95,
   model_error = c("TKL", "CB", "WB", "none"),
@@ -58,13 +58,14 @@ efa_power(
   analytic RMSEA power) or `"simulation"` (Monte-Carlo hit-rate and
   structure recovery). The remaining arguments split by mode –
   `type`/`eps0`/`eps1`/`df`/`alpha`/`power`/`group` are RMSEA-only, and
-  `Lambda`/`Phi`/`Psi`/`R`/`n_datasets`/`criteria`/`method`/`rotation`/`recovery_threshold`/`model_error`/`target_rmsea`/`target_cfi`/`seed`
-  are simulation-only.
+  `Lambda`/`Phi`/`Psi`/`R`/`n_datasets`/`criteria`/`estimator`/`rotation`/`recovery_threshold`/`model_error`/`target_rmsea`/`target_cfi`/`seed`
+  are simulation-only. The value is matched case-insensitively.
 
 - type:
 
   character. The RMSEA test: `"close"` (test of close fit) or
-  `"notclose"` (test of not-close fit). See *Details*.
+  `"notclose"` (test of not-close fit). The value is matched
+  case-insensitively. See *Details*.
 
 - eps0:
 
@@ -78,8 +79,11 @@ efa_power(
 
 - N:
 
-  numeric. The (per-group) sample size. Give `N` to compute power; leave
-  it `NULL` to solve for the required `N` at a target `power`.
+  numeric. In `"rmsea"` mode, the total sample size across groups (the
+  plain sample size when `group` is `1`): give `N` to compute power, or
+  leave it `NULL` to solve for the required `N` at a target `power`. In
+  `"simulation"` mode `N` is required and is the size of each drawn
+  sample, with no sample size solved for and no `group` division.
 
 - p:
 
@@ -113,7 +117,8 @@ efa_power(
 
 - group:
 
-  numeric. The number of groups. Default is `1`. See *Details*.
+  numeric. The number of groups. Default is `1`. `N` is the total across
+  all `group` groups, not the size of each one. See *Details*.
 
 - Lambda:
 
@@ -155,15 +160,15 @@ efa_power(
   the hit-rate for, any of `"CD"`, `"EKC"`, `"HULL"`, `"KGC"`, `"MAP"`,
   `"NEST"`, `"PARALLEL"`, and `"SMT"` (see
   [`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)).
-  Default is `c("EKC", "MAP")`. Criteria that simulate internally
-  (`"CD"`, `"HULL"`, `"NEST"`, `"PARALLEL"`) make each run substantially
-  slower.
+  Default is `c("EKC", "MAP")`. The values are matched
+  case-insensitively. Criteria that simulate internally (`"CD"`,
+  `"HULL"`, `"NEST"`, `"PARALLEL"`) make each run substantially slower.
 
-- method:
+- estimator:
 
-  character. Simulation mode. The estimation method (`"PAF"`, `"ML"`, or
-  `"ULS"`) used for the recovery fit and the retention criteria. Default
-  is `"PAF"`.
+  character. Simulation mode. The estimator (`"PAF"`, `"ML"`, or
+  `"ULS"`) used for the recovery fit and the retention criteria; the
+  value is matched case-insensitively. Default is `"PAF"`.
 
 - rotation:
 
@@ -229,8 +234,13 @@ An object of class `efa_power`. For `mode = "rmsea"`, a list containing:
 
 - N:
 
-  The (per-group) sample size: the supplied `N`, or the solved required
-  sample size.
+  The total sample size across groups: the supplied `N`, or the solved
+  required sample size.
+
+- N_per_group:
+
+  The per-group sample size `N / group`, equal to `N` when `group` is
+  `1`.
 
 - crit:
 
@@ -333,9 +343,11 @@ When `eps0` and `eps1` are ordered the wrong way round for the chosen
 Equal `eps0` and `eps1` leave nothing to detect and are an error.
 
 Power increases monotonically with `N`, so the required sample size (the
-smallest `N` reaching `power`) is found by bisection. It is a per-group
-sample size: with `group > 1` the noncentrality carries the `1 / group`
-factor above.
+smallest `N` reaching `power`) is found by bisection. `N` is the
+**total** sample size across groups: with `group > 1` the noncentrality
+above carries the `1 / group` factor, so a fixed total spread over more
+groups buys less power. The corresponding per-group sample size
+`N / group` is returned as `N_per_group`.
 
 ## Simulation mode
 
@@ -422,7 +434,7 @@ efa_power(p = 20, k = 3, N = 200)
 #> Power = .986 at N = 200.
 #> Critical value χ²(133) = 238.428 · noncentrality H0 = 66.168, H1 = 169.389.
 
-# Required (per-group) sample size for 80% power
+# Required total sample size for 80% power
 efa_power(df = 100, power = 0.80)
 #> 
 #> ── RMSEA power analysis ────────────────────────────────────────────────────────
@@ -464,8 +476,9 @@ efa_power("simulation", Lambda = population_models$loadings$baseline,
 #> • MAP_TR4: 1.000 (n = 50)
 #> 
 #> Structure recovery (Tucker congruence ≥ .950)
-#> • min congruence: 1.000 (n = 50)
-#> • mean congruence: 1.000 (n = 50)
+#> • recovery rate (min congruence): 1.000 (n = 50)
+#> • recovery rate (mean congruence): 1.000 (n = 50)
+#> • median min congruence: .987
 #> 
 #> Convergence
 #> • fits completed: 1.000 (50/50)

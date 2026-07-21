@@ -64,12 +64,11 @@ the Psychometric Society, Iowa City, IA.
 
 - cor_method:
 
-  character. Correlation computed from raw data: `"pearson"`,
-  `"spearman"`, or `"kendall"` (passed to
-  [`stats::cor()`](https://rdrr.io/r/stats/cor.html)), or `"poly"` /
-  `"tetra"` for polychoric / tetrachoric correlations of ordinal /
-  binary data (a two-step estimator with no empty-cell continuity
-  correction). Default is "pearson".
+  character. One of `"pearson"`, `"spearman"`, or `"kendall"`, passed to
+  [`stats::cor()`](https://rdrr.io/r/stats/cor.html). `"poly"` and
+  `"tetra"` are not supported because `SMT` rests on a normal-theory
+  chi-square test that is not valid for polychoric / tetrachoric
+  correlations. Default is `"pearson"`.
 
 - estimate_control:
 

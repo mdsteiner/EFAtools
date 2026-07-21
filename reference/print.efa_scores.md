@@ -73,7 +73,7 @@ Other factor scoring:
 
 ``` r
 efa <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
-               method = "PAF", rotation = "oblimin")
+               estimator = "PAF", rotation = "oblimin")
 fs <- efa_scores(test_models$baseline$cormat, f = efa)
 #> ℹ `x` is a correlation matrix; factor scores cannot be computed. Only factor
 #>   weights and score diagnostics are returned. Enter raw data to get factor

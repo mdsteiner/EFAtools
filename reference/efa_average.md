@@ -1,7 +1,7 @@
-# Model averaging across different EFA methods and types
+# Model averaging across different EFA estimators and types
 
 Not all EFA procedures always arrive at the same solution. This function
-allows you perform a number of EFAs from different methods (e.g.,
+allows you perform a number of EFAs from different estimators (e.g.,
 Maximum Likelihood and Principal Axis Factoring), with different
 implementations (e.g., the SPSS and psych implementations of Principal
 Axis Factoring), and across different rotations of the same type (e.g.,
@@ -17,7 +17,7 @@ efa_average(
   x,
   n_factors,
   N = NA,
-  method = "PAF",
+  estimator = "PAF",
   rotation = "promax",
   type = "none",
   averaging = c("mean", "median"),
@@ -39,6 +39,7 @@ efa_average(
     "na.or.complete"),
   cor_method = c("pearson", "spearman", "kendall", "poly", "tetra", "fiml"),
   show_progress = TRUE,
+  seed = NULL,
   P_type = lifecycle::deprecated()
 )
 ```
@@ -79,12 +80,13 @@ factor analysis. Psychometrika, 23, 187–200. doi: 10.1007/BF02289233
   correlation matrix is used. If input is a correlation matrix and `N` =
   NA (default), not all fit indices can be computed.
 
-- method:
+- estimator:
 
   character vector. Any combination of "PAF", "ML", and "ULS", to use
   principal axis factoring, maximum likelihood, or unweighted least
   squares, respectively, to fit the EFAs. "MINRES" is accepted as a
-  synonym for "ULS" (the same estimator). Default is "PAF".
+  synonym for "ULS" (the same estimator). The values are matched
+  case-insensitively. Default is "PAF".
 
 - rotation:
 
@@ -136,8 +138,11 @@ factor analysis. Psychometrika, 23, 187–200. doi: 10.1007/BF02289233
 
   numeric. The maximum number of iterations to perform after which the
   iterative PAF procedure is halted with a warning. Default is 10,000.
-  Note that non-converged procedures are excluded from the averaging
-  procedure.
+  It is only evaluated for the "PAF" solutions run under `type` "none":
+  a named `type` brings the iteration cap that defines it ("SPSS" 25,
+  "psych" 50, and "EFAtools" 300), and "ML" and "ULS" do not iterate
+  this way. Note that non-converged procedures are excluded from the
+  averaging procedure.
 
 - init_comm:
 
@@ -267,6 +272,19 @@ factor analysis. Psychometrika, 23, 187–200. doi: 10.1007/BF02289233
   logical. Whether a progress bar should be shown in the console.
   Default is TRUE.
 
+- seed:
+
+  numeric or `NULL`. An optional seed making the averaging run
+  reproducible and independent of the number of parallel workers (the
+  grid runs with
+  [future_lapply()](https://future.apply.futureverse.org/reference/future_lapply.html),
+  for which a parallel plan can be set via
+  [`future::plan()`](https://future.futureverse.org/reference/plan.html)).
+  It matters whenever a criterion-based rotation is included, since
+  those draw random starts. When supplied, the caller's random-number
+  stream is restored afterwards, leaving no side effect. Default is
+  `NULL`.
+
 - P_type:
 
   **\[superseded\]** Former name of `p_type`. Still accepted (silently)
@@ -317,7 +335,7 @@ A list of class `c("efa_average", "EFA_AVERAGE")` containing
 
   A matrix containing the average, standard deviation, minimum, maximum,
   and range for all applicable fit indices across the respective factor
-  solutions, and the degrees of freedom (df). If the method argument
+  solutions, and the degrees of freedom (df). If the estimator argument
   contains ML or ULS: Fit indices derived from the unrotated factor
   loadings: Chi Square (chisq), including significance level,
   Comparative Fit Index (CFI), Tucker-Lewis Index (TLI), Root Mean
@@ -385,16 +403,19 @@ BIC are finite here rather than `NA`.
 
 The grid containing the setting combinations is produced based on the
 entries to the respective arguments. To this end, all possible
-combinations resulting in unique EFA models are considered. That is, if,
-for example, the `type` argument was set to `c("none", "SPSS")` and one
-combination of the specific settings entered was identical to the SPSS
-combination, this combination would be included in the grid and run only
-once. We include here a list of arguments that are only evaluated under
-specific conditions:
+combinations resulting in unique EFA models are considered: combinations
+that resolve to the same model are run only once. Two combinations are
+the same model only if every setting the fit consumes agrees, and for
+"PAF" that includes the iteration cap `max_iter`. Since a named `type`
+brings its own cap, a `type` of `c("none", "SPSS")` whose specific
+settings match the SPSS combination in every other respect still gives
+two "PAF" models, unless `max_iter` is also set to the cap of the SPSS
+implementation. We include here a list of arguments that are only
+evaluated under specific conditions:
 
-The arguments `init_comm`, `criterion`, `criterion_type`, `abs_eigen`
-are only evaluated if "PAF" is included in `method` and "none" is
-included in `type`.
+The arguments `init_comm`, `criterion`, `criterion_type`, `abs_eigen`,
+and `max_iter` are only evaluated if "PAF" is included in `estimator`
+and "none" is included in `type`.
 
 The argument `varimax_type` is only evaluated if "varimax", "promax",
 "oblique", or "orthogonal" is included in `rotation` and "none" is
@@ -410,7 +431,7 @@ The arguments `k_promax` and `p_type` are only evaluated if "promax" or
 "oblique" is included in `rotation` and "none" is included in `type`.
 
 The argument `start_method` is only evaluated if "ML" is included in
-`method`.
+`estimator`.
 
 To avoid a bias in the averaged factor solutions from problematic
 solutions, these are excluded prior to averaging. A solution is deemed
@@ -454,12 +475,12 @@ while for PAF the chi-square-based indices (the chi-square statistic and
 its significance, CFI, TLI, RMSEA, AIC, BIC, and ECVI) are NA. The
 common part accounted for (CAF) index (Lorenzo-Seva, Timmerman, & Kiers,
 2011) and the residual-based SRMR and RMSR are still computed for PAF.
-As a consequence, if only "PAF" is included in the `method` argument,
+As a consequence, if only "PAF" is included in the `estimator` argument,
 averaging is performed for the CAF, SRMR, and RMSR, while the
 chi-square-based indices are NA. If a combination of "PAF" and "ML"
-and/or "ULS" are included in the `method` argument, the CAF, SRMR, and
-RMSR are averaged across all non-problematic factor solutions, while the
-chi-square-based indices are only averaged across the ML and ULS
+and/or "ULS" are included in the `estimator` argument, the CAF, SRMR,
+and RMSR are averaged across all non-problematic factor solutions, while
+the chi-square-based indices are only averaged across the ML and ULS
 solutions. The user should therefore keep in mind that the number of
 EFAs across which the fit indices are averaged can diverge for the CAF,
 SRMR, and RMSR compared to the chi-square-based indices.
@@ -483,39 +504,48 @@ Other factor analysis:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+# Averaging across one implementation each of PAF (EFAtools type), ULS, and
+# ML with one implementation of promax (EFAtools type) (3 EFAs)
+Aver_meth <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
+                         estimator = c("PAF", "ULS", "ML"), type = "EFAtools",
+                         start_method = "psych")
+#>                                                                                                                                                                  🏃 Extracting data...                                                                                                                                                                 🚶 Reordering factors...                                                                                                                                                                 🏃 Averaging data...                                                                                                                                                                 Done!
+
+# \donttest{
 # Averaging across different implementations of PAF and promax rotation (72 EFAs)
 Aver_PAF <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500)
+#>                                                                                                                                                                  🏃 Extracting data...                                                                                                                                                                 🚶 Reordering factors...                                                                                                                                                                 🏃 Averaging data...                                                                                                                                                                 Done!
 
 # Use median instead of mean for averaging (72 EFAs)
 Aver_PAF_md <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
                            averaging = "median")
+#>                                                                                                                                                                  🏃 Extracting data...                                                                                                                                                                 🚶 Reordering factors...                                                                                                                                                                 🏃 Averaging data...                                                                                                                                                                 Done!
 
 # Averaging across different implementations of PAF and promax rotation,
 # and across ULS and different versions of ML (108 EFAs)
 Aver_meth_ext <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
-                             method = c("PAF", "ULS", "ML"))
-
-# Averaging across one implementation each of PAF (EFAtools type), ULS, and
-# ML with one implementation of promax (EFAtools type) (3 EFAs)
-Aver_meth <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
-                         method = c("PAF", "ULS", "ML"), type = "EFAtools",
-                         start_method = "psych")
+                             estimator = c("PAF", "ULS", "ML"))
+#>                                                                                                                                                                  🏃 Extracting data...                                                                                                                                                                 🚶 Reordering factors...                                                                                                                                                                 🏃 Averaging data...                                                                                                                                                                 Done!
 
 # Averaging across different oblique rotation methods, using one implementation
 # of ML and one implementation of promax (EFAtools type) (7 EFAs)
 Aver_rot <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
-                         method = "ML", rotation = "oblique", type = "EFAtools",
+                         estimator = "ML", rotation = "oblique", type = "EFAtools",
                          start_method = "psych")
-} # }
+#>                                                                                                                                                                  🏃 Extracting data...                                                                                                                                                                 🚶 Reordering factors...                                                                                                                                                                 🏃 Averaging data...                                                                                                                                                                 Done!
+# }
 
-if (FALSE) { # \dontrun{
+# \donttest{
 # Two-stage FIML correlations from raw data with missing values: the EM
 # saturated moments are estimated once and the resulting correlation is
 # averaged across the grid of EFAs.
 x_miss <- GRiPS_raw
 x_miss[cbind(1:20, 1)] <- NA
-Aver_fiml <- efa_average(x_miss, n_factors = 1, method = c("PAF", "ML"),
+Aver_fiml <- efa_average(x_miss, n_factors = 1, estimator = c("PAF", "ML"),
                          cor_method = "fiml")
-} # }
+#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
+#> ℹ `n_factors` is 1 but `rotation` is not "none"; setting `rotation` to "none",
+#>   as single-factor solutions cannot be rotated.
+#>                                                                                                                                                                  🏃 Extracting data...                                                                                                                                                                 🏃 Averaging data...                                                                                                                                                                 Done!
+# }
 ```

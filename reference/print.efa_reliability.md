@@ -55,7 +55,7 @@ Other reliability coefficients:
 
 ``` r
 efa_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
-                   method = "PAF", rotation = "promax")
+                   estimator = "PAF", rotation = "promax")
 rel <- efa_reliability(efa_mod)
 rel
 #> 

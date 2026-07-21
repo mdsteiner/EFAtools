@@ -168,6 +168,13 @@ differences of x and y.
 
   List of the settings used.
 
+## See also
+
+[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+for the solutions being compared, and
+[`efa_procrustes()`](https://mdsteiner.github.io/EFAtools/reference/efa_procrustes.md)
+to rotate one solution onto another before comparing.
+
 ## Examples
 
 ``` r
@@ -188,8 +195,10 @@ efa_compare(EFA_SPSS_6$unrot_loadings, EFA_psych_6$unrot_loadings,
             x_labels = c("SPSS", "psych"))
 #> Mean [min, max] absolute difference:  0.0025 [ 0.0000,  0.0215]
 #> Median absolute difference:  0.0008
-#> Max decimals where all numbers are equal: 0
+#> Root mean squared distance (RMSE):  0.0048
+#> Max decimals where all numbers agree in absolute value: 0
 #> Minimum number of decimals provided: 17
+#> Differing indicator-to-factor correspondences: 0 (highest loading), 0 (all |loadings| >= 0.3)
 #> 
 #>        F1      F2      F3      F4      F5      F6
 #> V1    .0000  -.0001  -.0003  -.0053  -.0015  -.0012

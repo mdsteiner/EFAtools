@@ -52,14 +52,14 @@ HULL(
 
 - method:
 
-  character. The estimation method to use. One of `"PAF"`, `"ULS"`, or
-  `"ML"`, for principal axis factoring, unweighted least squares, and
-  maximum likelihood, respectively.
+  character. The estimator to use; passed to
+  [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md)
+  as its `estimator` argument. One of `"PAF"`, `"ULS"`, or `"ML"`.
 
 - gof:
 
   character. The goodness of fit index to use. Either `"CAF"`, `"CFI"`,
-  or `"RMSEA"`, or any combination of them. If `method = "PAF"` is used,
+  or `"RMSEA"`, or any combination of them. With the `"PAF"` estimator,
   only the CAF can be used as goodness of fit index. For details on the
   CAF, see Lorenzo-Seva, Timmerman, and Kiers (2011).
 
@@ -119,12 +119,14 @@ HULL(
 
 - ...:
 
-  Further arguments passed to
-  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md),
-  also in
-  [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md).
-  The estimation tuning knobs are not passed here; they live in
-  `estimate_control`.
+  Further arguments passed on to the
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  fits, including the estimation tuning knobs (`type`, `init_comm`,
+  `criterion`, `criterion_type`, `max_iter`, `abs_eigen`,
+  `start_method`), which are repacked into an
+  [`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
+  object so that they tune the fits exactly as they always did. The
+  estimator is selected with `method`.
 
 ## Value
 

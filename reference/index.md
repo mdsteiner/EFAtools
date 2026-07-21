@@ -9,7 +9,7 @@ rotation engines.
 - [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
   : Exploratory factor analysis (EFA)
 - [`efa_average()`](https://mdsteiner.github.io/EFAtools/reference/efa_average.md)
-  : Model averaging across different EFA methods and types
+  : Model averaging across different EFA estimators and types
 - [`efa_group()`](https://mdsteiner.github.io/EFAtools/reference/efa_group.md)
   : Multigroup exploratory factor analysis
 - [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)

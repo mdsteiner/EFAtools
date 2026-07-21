@@ -23,7 +23,12 @@ efa_compare containing summary information of the differences of the objects."><
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Replicate_SPSS_psych.html">Replicate SPSS and R psych results with EFAtools</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Ordinal_and_missing_data.html">EFA with ordinal and missing data</a></li>
+    <li><a class="dropdown-item" href="../articles/Multigroup_EFA.html">Multigroup exploratory factor analysis</a></li>
+    <li><a class="dropdown-item" href="../articles/Simulation_and_power.html">Simulating data and power analysis for EFA</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Upgrading</h6></li>
+    <li><a class="dropdown-item" href="../articles/Migrating_to_efa.html">Migrating to the efa_* interface</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -196,6 +201,11 @@ between x and y when all loadings <code>&gt;= thresh</code> are considered.</p><
 <dd><p>List of the settings used.</p></dd>
 
 </dl></div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p><code><a href="efa_fit.html">efa_fit()</a></code> for the solutions being compared, and <code><a href="efa_procrustes.html">efa_procrustes()</a></code> to rotate
+one solution onto another before comparing.</p></div>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
@@ -216,8 +226,10 @@ between x and y when all loadings <code>&gt;= thresh</code> are considered.</p><
 <span class="r-in"><span>            x_labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SPSS"</span>, <span class="st">"psych"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Mean [min, max] absolute difference: <span style="color: #BB0000; font-weight: bold;"> 0.0025</span> [<span style="color: #BB0000; font-weight: bold;"> 0.0000</span>, <span style="color: #BB0000; font-weight: bold;"> 0.0215</span>]</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Median absolute difference: <span style="color: #00BB00; font-weight: bold;"> 0.0008</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Max decimals where all numbers are equal: <span style="color: #BB0000; font-weight: bold;">0</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Root mean squared distance (RMSE): <span style="font-weight: bold;"> 0.0048</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Max decimals where all numbers agree in absolute value: <span style="color: #BB0000; font-weight: bold;">0</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Minimum number of decimals provided: <span style="font-weight: bold;">17</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Differing indicator-to-factor correspondences: <span style="color: #00BB00; font-weight: bold;">0</span> (highest loading), <span style="color: #00BB00; font-weight: bold;">0</span> (all |loadings| &gt;= 0.3)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>        <span style="font-weight: bold;">F1</span>      <span style="font-weight: bold;">F2</span>      <span style="font-weight: bold;">F3</span>      <span style="font-weight: bold;">F4</span>      <span style="font-weight: bold;">F5</span>      <span style="font-weight: bold;">F6</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> V1    .0000  -.0001  -.0003  <span style="color: #BB0000;">-.0053</span>  <span style="color: #BB0000;">-.0015</span>  <span style="color: #BB0000;">-.0012</span></span>

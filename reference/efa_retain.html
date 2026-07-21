@@ -27,7 +27,12 @@ can be checked for their suitability for factor analysis."></head><body>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Replicate_SPSS_psych.html">Replicate SPSS and R psych results with EFAtools</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Ordinal_and_missing_data.html">EFA with ordinal and missing data</a></li>
+    <li><a class="dropdown-item" href="../articles/Multigroup_EFA.html">Multigroup exploratory factor analysis</a></li>
+    <li><a class="dropdown-item" href="../articles/Simulation_and_power.html">Simulating data and power analysis for EFA</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Upgrading</h6></li>
+    <li><a class="dropdown-item" href="../articles/Migrating_to_efa.html">Migrating to the efa_* interface</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -71,7 +76,7 @@ can be checked for their suitability for factor analysis.</p>
 <span>  <span class="va">...</span>,</span>
 <span>  max_iter_CD <span class="op">=</span> <span class="fl">50</span>,</span>
 <span>  n_fac_theor <span class="op">=</span> <span class="cn">NA</span>,</span>
-<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ML"</span>, <span class="st">"PAF"</span>, <span class="st">"ULS"</span><span class="op">)</span>,</span>
+<span>  estimator <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ML"</span>, <span class="st">"PAF"</span>, <span class="st">"ULS"</span><span class="op">)</span>,</span>
 <span>  gof <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CAF"</span>, <span class="st">"CFI"</span>, <span class="st">"RMSEA"</span><span class="op">)</span>,</span>
 <span>  eigen_type_HULL <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SMC"</span>, <span class="st">"PCA"</span>, <span class="st">"EFA"</span><span class="op">)</span>,</span>
 <span>  eigen_type_other <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SMC"</span><span class="op">)</span>,</span>
@@ -101,7 +106,8 @@ data.</p></dd>
 <dd><p>character. A vector with the factor retention methods to
 perform. Possible inputs are: <code>"CD"</code>, <code>"EKC"</code>, <code>"HULL"</code>,
 <code>"KGC"</code>, <code>"MAP"</code>, <code>"NEST"</code>,<code>"PARALLEL"</code>, <code>"SCREE"</code>, and <code>"SMT"</code>
-(see details). By default, a subset of often used, well-performing methods are performed.</p></dd>
+(see details). The values are matched case-insensitively. By default, a subset
+of often used, well-performing methods are performed.</p></dd>
 
 
 <dt id="arg-suitability">suitability<a class="anchor" aria-label="anchor" href="#arg-suitability"></a></dt>
@@ -176,19 +182,20 @@ of factors to retain. The maximum of this number and the number of factors
 suggested by <code><a href="efa_parallel.html">efa_parallel()</a></code> plus one will be used in the Hull method.</p></dd>
 
 
-<dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
+<dt id="arg-estimator">estimator<a class="anchor" aria-label="anchor" href="#arg-estimator"></a></dt>
 <dd><p>character. Passed to <code><a href="efa_fit.html">efa_fit()</a></code> in <code><a href="efa_hull.html">efa_hull()</a></code>,
 <code><a href="efa_kgc.html">efa_kgc()</a></code>, <code><a href="efa_scree.html">efa_scree()</a></code>, <code><a href="efa_parallel.html">efa_parallel()</a></code>, and <code><a href="efa_nest.html">efa_nest()</a></code>. The
-estimation method to use. One of  <code>"PAF"</code>, <code>"ULS"</code>, or  <code>"ML"</code>,
+estimator to use. One of  <code>"PAF"</code>, <code>"ULS"</code>, or  <code>"ML"</code>,
 for principal axis factoring, unweighted least squares, and maximum
-likelihood, respectively. In <code><a href="efa_kgc.html">efa_kgc()</a></code>, <code><a href="efa_scree.html">efa_scree()</a></code>, and <code><a href="efa_parallel.html">efa_parallel()</a></code> it only
+likelihood, respectively. The value is matched case-insensitively. In
+<code><a href="efa_kgc.html">efa_kgc()</a></code>, <code><a href="efa_scree.html">efa_scree()</a></code>, and <code><a href="efa_parallel.html">efa_parallel()</a></code> it only
 takes effect when the respective <code>eigen_type</code> includes <code>"EFA"</code>.</p></dd>
 
 
 <dt id="arg-gof">gof<a class="anchor" aria-label="anchor" href="#arg-gof"></a></dt>
 <dd><p>character. Passed to <code><a href="efa_hull.html">efa_hull()</a></code>. The goodness of fit index
 to use. Either <code>"CAF"</code>, <code>"CFI"</code>, or <code>"RMSEA"</code>, or any
-combination of them. If <code>method = "PAF"</code> is used, only
+combination of them. With the <code>"PAF"</code> estimator, only
 the CAF can be used as goodness of fit index. For details on the CAF, see
 Lorenzo-Seva, Timmerman, and Kiers (2011).</p></dd>
 
@@ -312,10 +319,16 @@ documentations for details):</p><ul><li><p>Comparison data (see <code><a href="e
 <li><p>Scree plot (see <code><a href="efa_scree.html">efa_scree()</a></code>)</p></li>
 <li><p>Sequential chi-square model tests, RMSEA lower bound, and AIC
 (see <code><a href="efa_smt.html">efa_smt()</a></code>)</p></li>
-</ul></div>
+</ul><p>The comparison data, parallel analysis, and NEST criteria compare the data against
+simulated reference data, so their suggested numbers of factors vary slightly from run
+to run; the Hull method does too, because it calls <code><a href="efa_parallel.html">efa_parallel()</a></code> to set its upper
+bound. Call <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> before <code>efa_retain()</code> to make them reproducible.</p>
+    </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p>Other factor retention criteria:
+    <div class="dont-index"><p><code><a href="efa_screen.html">efa_screen()</a></code> for data screening before retention, and <code><a href="efa_fit.html">efa_fit()</a></code> to extract
+the chosen number of factors.</p>
+<p>Other factor retention criteria:
 <code><a href="efa_cd.html">efa_cd()</a></code>,
 <code><a href="efa_ekc.html">efa_ekc()</a></code>,
 <code><a href="efa_hull.html">efa_hull()</a></code>,
@@ -330,30 +343,32 @@ documentations for details):</p><ul><li><p>Comparison data (see <code><a href="e
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
-<span class="r-in"><span><span class="co"># Default criteria, with correlation matrix and fit method "ML" (where needed)</span></span></span>
+<span class="r-in"><span><span class="co"># Default criteria, with correlation matrix and estimator "ML" (where needed)</span></span></span>
 <span class="r-in"><span><span class="co"># This will throw a warning for CD, as no raw data were specified</span></span></span>
-<span class="r-in"><span><span class="va">nfac_all</span> <span class="op">&lt;-</span> <span class="fu">efa_retain</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, method <span class="op">=</span> <span class="st">"ML"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># The simulation-based criteria are seeded to make the run reproducible</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">nfac_all</span> <span class="op">&lt;-</span> <span class="fu">efa_retain</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, estimator <span class="op">=</span> <span class="st">"ML"</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>`x` is a correlation matrix, but <span style="color: #0000BB;">"CD"</span> needs raw data.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Skipping <span style="color: #0000BB;">"CD"</span>.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># The same as above, but without "CD"</span></span></span>
 <span class="r-in"><span><span class="va">nfac_wo_CD</span> <span class="op">&lt;-</span> <span class="fu">efa_retain</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, criteria <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"EKC"</span>,</span></span>
 <span class="r-in"><span>                         <span class="st">"HULL"</span>, <span class="st">"PARALLEL"</span>, <span class="st">"NEST"</span><span class="op">)</span>, N <span class="op">=</span> <span class="fl">500</span>,</span></span>
-<span class="r-in"><span>                         method <span class="op">=</span> <span class="st">"ML"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>                         estimator <span class="op">=</span> <span class="st">"ML"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Use PAF instead of ML (this will take longer). For this, gof has</span></span></span>
 <span class="r-in"><span><span class="co"># to be set to "CAF" for the Hull method.</span></span></span>
 <span class="r-in"><span><span class="va">nfac_PAF</span> <span class="op">&lt;-</span> <span class="fu">efa_retain</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, criteria <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"EKC"</span>,</span></span>
 <span class="r-in"><span>                       <span class="st">"HULL"</span>, <span class="st">"PARALLEL"</span>, <span class="st">"NEST"</span><span class="op">)</span>, N <span class="op">=</span> <span class="fl">500</span>,</span></span>
-<span class="r-in"><span>                       method <span class="op">=</span> <span class="st">"PAF"</span>, gof <span class="op">=</span> <span class="st">"CAF"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>                       estimator <span class="op">=</span> <span class="st">"PAF"</span>, gof <span class="op">=</span> <span class="st">"CAF"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Do KGC and PARALLEL with only "PCA" type of eigenvalues</span></span></span>
 <span class="r-in"><span><span class="va">nfac_PCA</span> <span class="op">&lt;-</span> <span class="fu">efa_retain</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, criteria <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"EKC"</span>,</span></span>
 <span class="r-in"><span>                       <span class="st">"HULL"</span>, <span class="st">"PARALLEL"</span>, <span class="st">"NEST"</span><span class="op">)</span>, N <span class="op">=</span> <span class="fl">500</span>,</span></span>
-<span class="r-in"><span>                       method <span class="op">=</span> <span class="st">"ML"</span>, eigen_type_other <span class="op">=</span> <span class="st">"PCA"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>                       estimator <span class="op">=</span> <span class="st">"ML"</span>, eigen_type_other <span class="op">=</span> <span class="st">"PCA"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Use raw data, such that CD can also be performed</span></span></span>
-<span class="r-in"><span><span class="va">nfac_raw</span> <span class="op">&lt;-</span> <span class="fu">efa_retain</span><span class="op">(</span><span class="va">GRiPS_raw</span>, method <span class="op">=</span> <span class="st">"ML"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">nfac_raw</span> <span class="op">&lt;-</span> <span class="fu">efa_retain</span><span class="op">(</span><span class="va">GRiPS_raw</span>, estimator <span class="op">=</span> <span class="st">"ML"</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The suggested maximum number of factors was 2, but the Hull method needs at</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> least 3.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Setting it to 3.</span>

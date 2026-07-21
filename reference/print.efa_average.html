@@ -33,7 +33,12 @@ captured into a file or stripped with cli::ansi_strip()).'></head><body>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Replicate_SPSS_psych.html">Replicate SPSS and R psych results with EFAtools</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Ordinal_and_missing_data.html">EFA with ordinal and missing data</a></li>
+    <li><a class="dropdown-item" href="../articles/Multigroup_EFA.html">Multigroup exploratory factor analysis</a></li>
+    <li><a class="dropdown-item" href="../articles/Simulation_and_power.html">Simulating data and power analysis for EFA</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Upgrading</h6></li>
+    <li><a class="dropdown-item" href="../articles/Migrating_to_efa.html">Migrating to the efa_* interface</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -105,13 +110,254 @@ plain when colours are disabled).</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="va">EFA_aver</span> <span class="op">&lt;-</span> <span class="fu"><a href="efa_average.html">efa_average</a></span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, N <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                                                                                                                  🏃 Extracting data...                                                                                                                                                                 🚶 Reordering factors...                                                                                                                                                                 🏃 Averaging data...                                                                                                                                                                 Done!</span>
 <span class="r-in"><span><span class="va">EFA_aver</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Averaging performed with averaging method <span style="font-weight: bold;">mean (trim = 0)</span> across <span style="font-weight: bold;">72</span> EFAs,</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> varying the following settings: <span style="font-weight: bold;">init_comm</span>, <span style="font-weight: bold;">criterion_type</span>, <span style="font-weight: bold;">k_promax</span>, <span style="font-weight: bold;">p_type</span>,</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> and <span style="font-weight: bold;">varimax_type</span>.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> The error rate is at <span style="font-weight: bold;">0%</span>. Of the solutions that did not result in an error, <span style="font-weight: bold;">100%</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> converged. Of the solutions that converged, <span style="font-weight: bold;">0%</span> contained Heywood cases and <span style="font-weight: bold;">100%</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> were admissible.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ══ <span style="font-weight: bold;">Indicator-to-Factor Correspondences</span> ═════════════════════════════════════════</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> For each cell, the proportion of solutions including the respective</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> indicator-to-factor correspondence. A salience threshold of <span style="font-weight: bold;">0.3</span> was used to</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> determine indicator-to-factor correspondences.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       <span style="font-weight: bold;">F1</span>    <span style="font-weight: bold;">F2</span>    <span style="font-weight: bold;">F3</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V1   <span style="color: #555555;"> .00</span>  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V2   <span style="color: #555555;"> .00</span>  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V3   <span style="color: #555555;"> .00</span>  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V4   <span style="color: #555555;"> .00</span>  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V5   <span style="color: #555555;"> .00</span>  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V6   <span style="color: #555555;"> .00</span>  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V7   <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V8   <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V9   <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V10  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V11  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V12  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V13  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span>  <span style="color: #555555;"> .00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V14  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span>  <span style="color: #555555;"> .00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V15  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span>  <span style="color: #555555;"> .00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V16  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span>  <span style="color: #555555;"> .00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V17  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span>  <span style="color: #555555;"> .00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V18  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span>  <span style="color: #555555;"> .00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ══ <span style="font-weight: bold;">Loadings</span> ════════════════════════════════════════════════════════════════════</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Mean</span> ────────────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        <span style="font-weight: bold;">F1</span>     <span style="font-weight: bold;">F2</span>     <span style="font-weight: bold;">F3</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V1   <span style="color: #555555;">-.019</span>  <span style="color: #555555;"> .056</span>  <span style="font-weight: bold;"> .588</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V2   <span style="color: #555555;"> .022</span>  <span style="color: #555555;"> .083</span>  <span style="font-weight: bold;"> .466</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V3   <span style="color: #555555;"> .079</span>  <span style="color: #555555;"> .073</span>  <span style="font-weight: bold;"> .440</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V4   <span style="color: #555555;"> .119</span>  <span style="color: #555555;"> .017</span>  <span style="font-weight: bold;"> .532</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V5   <span style="color: #555555;"> .169</span>  <span style="color: #555555;"> .006</span>  <span style="font-weight: bold;"> .426</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V6   <span style="color: #555555;">-.042</span>  <span style="color: #555555;">-.023</span>  <span style="font-weight: bold;"> .672</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V7   <span style="color: #555555;"> .027</span>  <span style="font-weight: bold;"> .515</span>  <span style="color: #555555;"> .110</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V8   <span style="color: #555555;"> .010</span>  <span style="font-weight: bold;"> .558</span>  <span style="color: #555555;"> .051</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V9   <span style="color: #555555;"> .060</span>  <span style="font-weight: bold;"> .530</span>  <span style="color: #555555;"> .022</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V10  <span style="color: #555555;"> .004</span>  <span style="font-weight: bold;"> .644</span>  <span style="color: #555555;">-.043</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V11  <span style="color: #555555;"> .039</span>  <span style="font-weight: bold;"> .351</span>  <span style="color: #555555;"> .237</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V12  <span style="color: #555555;"> .046</span>  <span style="font-weight: bold;"> .625</span>  <span style="color: #555555;"> .016</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V13  <span style="font-weight: bold;"> .590</span>  <span style="color: #555555;"> .105</span>  <span style="color: #555555;">-.035</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V14  <span style="font-weight: bold;"> .527</span>  <span style="color: #555555;">-.039</span>  <span style="color: #555555;"> .104</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V15  <span style="font-weight: bold;"> .540</span>  <span style="color: #555555;"> .143</span>  <span style="color: #555555;">-.039</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V16  <span style="font-weight: bold;"> .534</span>  <span style="color: #555555;">-.022</span>  <span style="color: #555555;"> .108</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V17  <span style="font-weight: bold;"> .634</span>  <span style="color: #555555;">-.010</span>  <span style="color: #555555;"> .000</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V18  <span style="font-weight: bold;"> .535</span>  <span style="color: #555555;"> .029</span>  <span style="color: #555555;"> .071</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Range</span> ───────────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       <span style="font-weight: bold;">F1</span>    <span style="font-weight: bold;">F2</span>    <span style="font-weight: bold;">F3</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V1   .098  .077  .092</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V2   .076  .061  .063</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V3   .064  .064  .052</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V4   .069  .087  .069</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V5   .046  .079  .047</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V6   .108  .097  .121</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V7   .059  .043  .052</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V8   .059  .057  .064</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V9   .048  .052  .072</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V10  .059  .079  .090</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V11  .061  .011  .015</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V12  .058  .067  .084</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V13  .072  .044  .099</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V14  .056  .071  .049</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V15  .062  .035  .098</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V16  .055  .071  .052</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V17  .081  .064  .084</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V18  .055  .060  .064</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ══ <span style="font-weight: bold;">Factor Intercorrelations from Oblique Solutions</span> ═════════════════════════════</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Mean</span> ────────────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       <span style="font-weight: bold;">F1</span>     <span style="font-weight: bold;">F2</span>     <span style="font-weight: bold;">F3</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F1  1.000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F2   .536  1.000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F3   .568   .553  1.000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Range</span> ───────────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      <span style="font-weight: bold;">F1</span>    <span style="font-weight: bold;">F2</span>    <span style="font-weight: bold;">F3</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F1  .000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F2  .204  .000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F3  .255  .248  .000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ══ <span style="font-weight: bold;">Variances Accounted for</span> ═════════════════════════════════════════════════════</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Mean</span> ────────────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                  <span style="font-weight: bold;">F1</span>     <span style="font-weight: bold;">F2</span>     <span style="font-weight: bold;">F3</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> SS loadings    2.195  2.074  2.038</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Prop Tot Var    .122   .115   .113</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Prop Comm Var   .348   .329   .323</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Range</span> ───────────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                 <span style="font-weight: bold;">F1</span>    <span style="font-weight: bold;">F2</span>    <span style="font-weight: bold;">F3</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> SS loadings    .036  .052  .063</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Prop Tot Var   .002  .003  .003</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Prop Comm Var  .006  .008  .010</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ══ <span style="font-weight: bold;">Model Fit</span> ═══════════════════════════════════════════════════════════════════</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        M (SD) [Min; Max]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CAF:  .50 (.00) [.50; .50]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> RMSR: .03 (.00) [.03; .03]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> SRMR: .02 (.00) [.02; .02]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> df: 102</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># format() returns the same lines as plain text:</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/writeLines.html" class="external-link">writeLines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="va">EFA_aver</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Averaging performed with averaging method <span style="font-weight: bold;">mean (trim = 0)</span> across <span style="font-weight: bold;">72</span> EFAs,</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> varying the following settings: <span style="font-weight: bold;">init_comm</span>, <span style="font-weight: bold;">criterion_type</span>, <span style="font-weight: bold;">k_promax</span>, <span style="font-weight: bold;">p_type</span>,</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> and <span style="font-weight: bold;">varimax_type</span>.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> The error rate is at <span style="font-weight: bold;">0%</span>. Of the solutions that did not result in an error, <span style="font-weight: bold;">100%</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> converged. Of the solutions that converged, <span style="font-weight: bold;">0%</span> contained Heywood cases and <span style="font-weight: bold;">100%</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> were admissible.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ══ <span style="font-weight: bold;">Indicator-to-Factor Correspondences</span> ═════════════════════════════════════════</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> For each cell, the proportion of solutions including the respective</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> indicator-to-factor correspondence. A salience threshold of <span style="font-weight: bold;">0.3</span> was used to</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> determine indicator-to-factor correspondences.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       <span style="font-weight: bold;">F1</span>    <span style="font-weight: bold;">F2</span>    <span style="font-weight: bold;">F3</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V1   <span style="color: #555555;"> .00</span>  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V2   <span style="color: #555555;"> .00</span>  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V3   <span style="color: #555555;"> .00</span>  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V4   <span style="color: #555555;"> .00</span>  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V5   <span style="color: #555555;"> .00</span>  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V6   <span style="color: #555555;"> .00</span>  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V7   <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V8   <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V9   <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V10  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V11  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V12  <span style="color: #555555;"> .00</span>  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V13  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span>  <span style="color: #555555;"> .00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V14  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span>  <span style="color: #555555;"> .00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V15  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span>  <span style="color: #555555;"> .00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V16  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span>  <span style="color: #555555;"> .00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V17  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span>  <span style="color: #555555;"> .00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V18  <span style="font-weight: bold;">1.00</span>  <span style="color: #555555;"> .00</span>  <span style="color: #555555;"> .00</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ══ <span style="font-weight: bold;">Loadings</span> ════════════════════════════════════════════════════════════════════</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Mean</span> ────────────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        <span style="font-weight: bold;">F1</span>     <span style="font-weight: bold;">F2</span>     <span style="font-weight: bold;">F3</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V1   <span style="color: #555555;">-.019</span>  <span style="color: #555555;"> .056</span>  <span style="font-weight: bold;"> .588</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V2   <span style="color: #555555;"> .022</span>  <span style="color: #555555;"> .083</span>  <span style="font-weight: bold;"> .466</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V3   <span style="color: #555555;"> .079</span>  <span style="color: #555555;"> .073</span>  <span style="font-weight: bold;"> .440</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V4   <span style="color: #555555;"> .119</span>  <span style="color: #555555;"> .017</span>  <span style="font-weight: bold;"> .532</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V5   <span style="color: #555555;"> .169</span>  <span style="color: #555555;"> .006</span>  <span style="font-weight: bold;"> .426</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V6   <span style="color: #555555;">-.042</span>  <span style="color: #555555;">-.023</span>  <span style="font-weight: bold;"> .672</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V7   <span style="color: #555555;"> .027</span>  <span style="font-weight: bold;"> .515</span>  <span style="color: #555555;"> .110</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V8   <span style="color: #555555;"> .010</span>  <span style="font-weight: bold;"> .558</span>  <span style="color: #555555;"> .051</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V9   <span style="color: #555555;"> .060</span>  <span style="font-weight: bold;"> .530</span>  <span style="color: #555555;"> .022</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V10  <span style="color: #555555;"> .004</span>  <span style="font-weight: bold;"> .644</span>  <span style="color: #555555;">-.043</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V11  <span style="color: #555555;"> .039</span>  <span style="font-weight: bold;"> .351</span>  <span style="color: #555555;"> .237</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V12  <span style="color: #555555;"> .046</span>  <span style="font-weight: bold;"> .625</span>  <span style="color: #555555;"> .016</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V13  <span style="font-weight: bold;"> .590</span>  <span style="color: #555555;"> .105</span>  <span style="color: #555555;">-.035</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V14  <span style="font-weight: bold;"> .527</span>  <span style="color: #555555;">-.039</span>  <span style="color: #555555;"> .104</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V15  <span style="font-weight: bold;"> .540</span>  <span style="color: #555555;"> .143</span>  <span style="color: #555555;">-.039</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V16  <span style="font-weight: bold;"> .534</span>  <span style="color: #555555;">-.022</span>  <span style="color: #555555;"> .108</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V17  <span style="font-weight: bold;"> .634</span>  <span style="color: #555555;">-.010</span>  <span style="color: #555555;"> .000</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V18  <span style="font-weight: bold;"> .535</span>  <span style="color: #555555;"> .029</span>  <span style="color: #555555;"> .071</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Range</span> ───────────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       <span style="font-weight: bold;">F1</span>    <span style="font-weight: bold;">F2</span>    <span style="font-weight: bold;">F3</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V1   .098  .077  .092</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V2   .076  .061  .063</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V3   .064  .064  .052</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V4   .069  .087  .069</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V5   .046  .079  .047</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V6   .108  .097  .121</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V7   .059  .043  .052</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V8   .059  .057  .064</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V9   .048  .052  .072</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V10  .059  .079  .090</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V11  .061  .011  .015</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V12  .058  .067  .084</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V13  .072  .044  .099</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V14  .056  .071  .049</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V15  .062  .035  .098</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V16  .055  .071  .052</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V17  .081  .064  .084</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V18  .055  .060  .064</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ══ <span style="font-weight: bold;">Factor Intercorrelations from Oblique Solutions</span> ═════════════════════════════</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Mean</span> ────────────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       <span style="font-weight: bold;">F1</span>     <span style="font-weight: bold;">F2</span>     <span style="font-weight: bold;">F3</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F1  1.000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F2   .536  1.000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F3   .568   .553  1.000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Range</span> ───────────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      <span style="font-weight: bold;">F1</span>    <span style="font-weight: bold;">F2</span>    <span style="font-weight: bold;">F3</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F1  .000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F2  .204  .000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F3  .255  .248  .000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ══ <span style="font-weight: bold;">Variances Accounted for</span> ═════════════════════════════════════════════════════</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Mean</span> ────────────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                  <span style="font-weight: bold;">F1</span>     <span style="font-weight: bold;">F2</span>     <span style="font-weight: bold;">F3</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> SS loadings    2.195  2.074  2.038</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Prop Tot Var    .122   .115   .113</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Prop Comm Var   .348   .329   .323</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Range</span> ───────────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                 <span style="font-weight: bold;">F1</span>    <span style="font-weight: bold;">F2</span>    <span style="font-weight: bold;">F3</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> SS loadings    .036  .052  .063</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Prop Tot Var   .002  .003  .003</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Prop Comm Var  .006  .008  .010</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ══ <span style="font-weight: bold;">Model Fit</span> ═══════════════════════════════════════════════════════════════════</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        M (SD) [Min; Max]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CAF:  .50 (.00) [.50; .50]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> RMSR: .03 (.00) [.03; .03]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> SRMR: .02 (.00) [.02; .02]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> df: 102</span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -2,47 +2,205 @@
 
 ## EFAtools 0.8.0.9000
 
-- The public interface of the package is now the lowercase `efa_*`
-  functions, configured through
+### New Interface
+
+- The recommended interface now consists of lowercase `efa_*` functions,
+  with estimation and rotation settings defined through
   [`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
   and
   [`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md).
-  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-  fits the factor models,
-  [`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)
-  and the individual retention criteria determine the number of factors,
-  and the other steps of an analysis are covered by
-  [`efa_screen()`](https://mdsteiner.github.io/EFAtools/reference/efa_screen.md),
-  [`efa_average()`](https://mdsteiner.github.io/EFAtools/reference/efa_average.md),
-  [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md),
-  [`efa_group()`](https://mdsteiner.github.io/EFAtools/reference/efa_group.md),
-  [`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md),
-  [`efa_procrustes()`](https://mdsteiner.github.io/EFAtools/reference/efa_procrustes.md),
-  [`efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/efa_compare.md),
-  [`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md),
-  [`efa_scores()`](https://mdsteiner.github.io/EFAtools/reference/efa_scores.md),
-  [`efa_simulate()`](https://mdsteiner.github.io/EFAtools/reference/efa_simulate.md),
+
+- The existing uppercase functions remain available without warnings, so
+  current scripts continue to work, but new features will generally be
+  added only to the `efa_*` interface.
+
+- Estimators, rotations, retention criteria, scoring methods, and
+  presets can now be specified without matching capitalization exactly,
+  while results continue to store and display the standard spelling.
+
+### Changes When Using the `efa_*` Interface
+
+- The `efa_*` functions now report an error for unused, misspelled, or
+  misplaced arguments instead of silently ignoring them.
+
+- Estimation and rotation options such as convergence settings,
+  iteration limits, and rotation parameters should now be supplied
+  through
+  [`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
+  or
+  [`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md).
+
+- Factor-retention functions always fit unrotated models and therefore
+  reject rotation settings that would not affect the retention result.
+
+- The estimator argument is now named `estimator` rather than `method`,
+  and rotation arguments use the names `p_type` and `random_starts`
+  rather than `P_type` and `randomStarts`.
+
+- [`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)
+  requires the full argument name `max_iter_CD`, because the shorter
+  form `max_iter` is no longer matched automatically.
+
+- The second-order estimation preset for
+  [`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md)
+  is now specified with `estimate_control(type = ...)`.
+
+- Control objects are validated when they are created, allowing invalid
+  settings to be detected before a model is fitted.
+
+### Reproducibility
+
+- A supplied `seed` now controls the complete analysis, including random
+  rotation starts, bootstrap samples, group-specific fits, and model
+  averaging where applicable.
+
+- [`efa_average()`](https://mdsteiner.github.io/EFAtools/reference/efa_average.md)
+  now has a `seed` argument and produces the same result regardless of
+  the number of parallel workers.
+
+- Seeded results from
+  [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
   and
-  [`efa_power()`](https://mdsteiner.github.io/EFAtools/reference/efa_power.md).
+  [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md)
+  no longer depend on the parallel-processing setup.
 
-- The uppercase function names are superseded by their `efa_*`
-  equivalents. They remain exported, keep their arguments, and emit no
-  warning, so existing code needs no changes. New arguments and features
-  are added to the `efa_*` functions only, which are the recommended
-  interface for new code.
+- Because random-number handling and several calculations were
+  corrected, the same seed may produce different results than in earlier
+  versions for
+  [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md),
+  [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md),
+  [`efa_average()`](https://mdsteiner.github.io/EFAtools/reference/efa_average.md),
+  [`efa_group()`](https://mdsteiner.github.io/EFAtools/reference/efa_group.md),
+  and some
+  [`efa_simulate()`](https://mdsteiner.github.io/EFAtools/reference/efa_simulate.md)
+  settings.
 
-- The rotation arguments `P_type` and `randomStarts` are now named
-  `p_type` and `random_starts`.
-  [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md) still
-  accepts the former names silently, and
-  [`EFA_AVERAGE()`](https://mdsteiner.github.io/EFAtools/reference/EFA_AVERAGE-superseded.md)
-  keeps `P_type` as its argument name, so existing code keeps working.
+### Standard Errors and Fit Statistics
 
-- Fixed a regression in
-  [`MAP()`](https://mdsteiner.github.io/EFAtools/reference/MAP.md): the
-  revised (TR4) criterion was computed from the element-wise fourth
-  powers of the partial correlations instead of the trace of the fourth
-  matrix power, which could change the suggested number of factors.
+- `efa_fit(se = "information")` now returns `NA` with an
+  `efa_se_unreliable` warning when standard errors for unrotated
+  loadings cannot be estimated reliably, such as for Heywood cases or
+  poorly distinguished factors.
+
+- Information-based standard errors are now calculated for correlation
+  matrices rather than covariance matrices, improving their accuracy and
+  agreement with sandwich and bootstrap estimates.
+
+- Information-based standard errors are now supported only with Pearson
+  correlations and FIML; use `se = "sandwich"` for polychoric,
+  tetrachoric, or rank correlations.
+
+- FIML-based analytic standard errors now use the same small-sample
+  scaling as the package’s other standard errors and fit statistics.
+
+- [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
+  no longer reports AIC, BIC, or ECVI when these measures are not
+  meaningful for the underlying fitted models.
+
+### Multiple Imputation and Group Comparisons
+
+- The pooled unrotated solution from
+  [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
+  no longer depends on the order of the imputed datasets.
+
+- Pooled unrotated loadings from
+  [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
+  now use the same orientation conventions as a regular
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  result, making the two easier to compare.
+
+- These changes can affect unrotated loadings, their standard errors,
+  and statistics derived from them, but rotated solutions and their fit
+  indices remain unchanged.
+
+- Consensus results from
+  [`efa_group()`](https://mdsteiner.github.io/EFAtools/reference/efa_group.md)
+  no longer depend on the order in which groups are supplied, so
+  congruences, loading differences, salience classifications, and
+  invariance conclusions are now stable across group orderings.
+
+### Factor Retention and Rotation
+
+- Fixed a regression in the revised MAP criterion, which could
+  previously suggest an incorrect number of factors.
+
+- [`efa_smt()`](https://mdsteiner.github.io/EFAtools/reference/efa_smt.md)
+  now rejects polychoric and tetrachoric correlations because its tests
+  and fit measures are not valid for these inputs.
+
+- Rotated factors are now labelled `F1`, `F2`, and so forth according to
+  the variance they explain, rather than inheriting labels that could
+  change with the random seed.
+
+- Rotation diagnostics now distinguish between the total number of
+  starting solutions and the number that were fully optimized; code
+  using `n_starts` should use `n_starts_total` or `n_optimized` instead.
+
+- Criterion-based rotations now respect the specified `maxit` limit
+  during every stage of the optimization.
+
+### Model Averaging
+
+- [`efa_average()`](https://mdsteiner.github.io/EFAtools/reference/efa_average.md)
+  no longer prints `NaN%` when no models converge and now clearly states
+  which fitted models are included in each reported rate.
+
+- Named presets such as `"SPSS"`, `"psych"`, and `"EFAtools"` now use
+  their intended iteration limits, so models that exceed those limits
+  are marked as non-converged and excluded from the average.
+
+### Data Simulation
+
+- Cudeck–Browne model-error simulations are now reproducible across
+  computing platforms and numerical libraries, although a given seed
+  will produce different populations than in earlier versions.
+
+- With `marginals = "VM"`, categorized data now reproduce the requested
+  category proportions more accurately, with a warning when the
+  requested thresholds cannot be transformed safely.
+
+- The documentation now clarifies that `match = "thresholds"` and
+  `match = "polychoric"` produce the same data for normal marginals, and
+  the selected value is now stored in the result settings.
+
+- The documentation now explains the missing-data mechanism produced by
+  `missing = "MAR"` and the residual bias it may create for analyses
+  based only on the observed data.
+
+- The documentation now explains that `model_error = "WB"` generally
+  produces a larger RMSEA for the generating model than the requested
+  target.
+
+### Input Validation and Correlation Handling
+
+- [`efa_screen()`](https://mdsteiner.github.io/EFAtools/reference/efa_screen.md)
+  now handles collinear or nearly collinear variables without failing
+  during its outlier checks.
+
+- Polychoric covariance calculations now handle sparse or nearly
+  perfectly associated response tables more consistently, allowing DWLS
+  analyses to continue while warning about problematic variable pairs.
+
+- Covariance matrices supplied where raw data or a correlation matrix is
+  expected are now rejected with a message suggesting
+  [`cov2cor()`](https://rdrr.io/r/stats/cor.html).
+
+- Polychoric and tetrachoric correlations now require ordered factors or
+  numeric response codes, preventing character or unordered-factor
+  levels from being interpreted in alphabetical order.
+
+### Power Analysis and Factor Scores
+
+- [`efa_power()`](https://mdsteiner.github.io/EFAtools/reference/efa_power.md)
+  now clearly documents that `N` is the total sample size across groups
+  and returns the corresponding sample size per group in `N_per_group`.
+
+- Simulation-based power summaries now distinguish structure-recovery
+  rates from the underlying Tucker congruence values.
+
+- The documentation for
+  [`FACTOR_SCORES()`](https://mdsteiner.github.io/EFAtools/reference/FACTOR_SCORES.md)
+  now correctly describes `R2` as squared factor-score determinacy.
 
 ## EFAtools 0.8.0
 

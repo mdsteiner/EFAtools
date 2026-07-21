@@ -29,7 +29,12 @@ by one."></head><body>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Replicate_SPSS_psych.html">Replicate SPSS and R psych results with EFAtools</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Ordinal_and_missing_data.html">EFA with ordinal and missing data</a></li>
+    <li><a class="dropdown-item" href="../articles/Multigroup_EFA.html">Multigroup exploratory factor analysis</a></li>
+    <li><a class="dropdown-item" href="../articles/Simulation_and_power.html">Simulating data and power analysis for EFA</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Upgrading</h6></li>
+    <li><a class="dropdown-item" href="../articles/Migrating_to_efa.html">Migrating to the efa_* interface</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -129,7 +134,7 @@ iterations use: <code>FALSE</code> computes the loadings from the eigenvalues (a
 optimiser: <code>"psych"</code> (default, the <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code> starts) or <code>"factanal"</code> (the
 <code><a href="https://rdrr.io/r/stats/factanal.html" class="external-link">stats::factanal()</a></code> starts); abbreviations are matched. Not governed by <code>type</code>.
 Only maximum likelihood uses it, so <code>NA</code> leaves it unset and is rejected only by
-a fit that is actually run with <code>method = "ML"</code>.</p></dd>
+a fit that is actually run with <code>estimator = "ML"</code>.</p></dd>
 
 
 <dt id="arg-normalize">normalize<a class="anchor" aria-label="anchor" href="#arg-normalize"></a></dt>
@@ -178,12 +183,16 @@ of at least 0, where <code>0</code> runs the rotation from its warm start only; 
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Additional arguments forwarded to the rotation engine (for example a
-criterion-specific <code>gam</code> for oblimin or <code>delta</code> for geomin, or <code>maxit</code>). They
-are stored in <code>extra_args</code> and passed on to the rotation engine when the
-control is used to fit a model. An estimation knob (which belongs in
-<code>estimate_control()</code>) or one of the former spellings <code>P_type</code> and
-<code>randomStarts</code> is rejected here, because the fit would silently drop it.</p></dd>
+<dd><p>Additional arguments forwarded to the rotation engine. Only the names
+a rotation engine can consume are accepted: <code>maxit</code> (the maximum number of
+engine iterations), and the criterion parameters <code>gam</code> (oblimin) and <code>delta</code>
+(geomin); anything else is rejected as a misspelling. They are stored in
+<code>extra_args</code> and passed on to the rotation engine when the control is used to
+fit a model; an extra a given fit's rotation does not consume is ignored by
+that fit, so one control can serve fits with different rotations. An
+estimation knob (which belongs in <code>estimate_control()</code>) or one of the former
+spellings <code>P_type</code> and <code>randomStarts</code> is likewise rejected here, because the
+fit would silently drop it.</p></dd>
 
 </dl></div>
     <div class="section level2">

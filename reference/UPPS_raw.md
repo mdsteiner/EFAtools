@@ -14,7 +14,24 @@ UPPS_raw
 
 ## Format
 
-An object of class `data.frame` with 645 rows and 45 columns.
+A data.frame with 645 rows (participants) and 45 columns, named by a
+subscale prefix and item number, covering the four UPPS subscales:
+
+- perseverance_1 to perseverance_10:
+
+  (numeric) - Perseverance-subscale items.
+
+- premeditation_1 to premeditation_11:
+
+  (numeric) - Premeditation-subscale items.
+
+- ss_1 to ss_12:
+
+  (numeric) - Sensation-seeking-subscale items.
+
+- urgency_1 to urgency_12:
+
+  (numeric) - Urgency-subscale items.
 
 ## Source
 

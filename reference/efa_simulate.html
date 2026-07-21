@@ -51,7 +51,12 @@ factor model fits it only approximately (a more realistic simulation target)."><
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Replicate_SPSS_psych.html">Replicate SPSS and R psych results with EFAtools</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Ordinal_and_missing_data.html">EFA with ordinal and missing data</a></li>
+    <li><a class="dropdown-item" href="../articles/Multigroup_EFA.html">Multigroup exploratory factor analysis</a></li>
+    <li><a class="dropdown-item" href="../articles/Simulation_and_power.html">Simulating data and power analysis for EFA</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Upgrading</h6></li>
+    <li><a class="dropdown-item" href="../articles/Migrating_to_efa.html">Migrating to the efa_* interface</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -230,13 +235,16 @@ returns the continuous data.</p></dd>
 
 
 <dt id="arg-match">match<a class="anchor" aria-label="anchor" href="#arg-match"></a></dt>
-<dd><p>character. Only used with <code>categories</code>: how the categorization
-relates to the population correlation. <code>"thresholds"</code> cuts the drawn data at the
-standard-normal-scale thresholds (for <code>marginals</code> <code>"normal"</code>, <code>"VM"</code>, or <code>"IG"</code>;
-not <code>"empirical"</code>), with an attenuated ordinal Pearson correlation;
-<code>"polychoric"</code> requires normal latents (<code>marginals = "normal"</code>) and
-makes the population polychoric correlation of the categorized data equal the
-target correlation. Default is <code>NULL</code> (<code>"thresholds"</code> when <code>categories</code> is set).</p></dd>
+<dd><p>character. Only used with <code>categories</code>: an assertion about how the
+categorization relates to the population correlation. With a normal latent, cutting
+at the normal-scale thresholds already leaves the population polychoric correlation
+of the categorized data equal to the target correlation, so both values compute the
+same thresholds and produce identical data whenever both are legal. <code>"thresholds"</code>
+(the default) also cuts the <code>"VM"</code> and <code>"IG"</code> draws, whose ordinal Pearson and
+polychoric correlations then both depart from the population; <code>"polychoric"</code> states
+that the polychoric match is required and therefore rejects non-normal marginals.
+Not available with <code>marginals = "empirical"</code>. The value is matched
+case-insensitively. Default is <code>NULL</code> (<code>"thresholds"</code> when <code>categories</code> is set).</p></dd>
 
 
 <dt id="arg-missing">missing<a class="anchor" aria-label="anchor" href="#arg-missing"></a></dt>
@@ -244,7 +252,9 @@ target correlation. Default is <code>NULL</code> (<code>"thresholds"</code> when
 data: one of <code>"none"</code> (the default, complete data), <code>"MCAR"</code> (missing completely at
 random), <code>"MAR"</code> (missing at random, depending on another variable), or <code>"MNAR"</code>
 (missing not at random, depending on the variable's own value). Introduced values
-become <code>NA</code>.</p></dd>
+become <code>NA</code>. Every variable is holed, so under <code>"MAR"</code> each variable's predictor is
+itself subject to missingness: the mechanism is MAR given the <em>complete</em> data and is
+not ignorable for an analyst who sees only the observed data (see Details).</p></dd>
 
 
 <dt id="arg-missing-prop">missing_prop<a class="anchor" aria-label="anchor" href="#arg-missing-prop"></a></dt>
@@ -294,7 +304,9 @@ matrix and draw no data. Default is <code>FALSE</code>.</p></dd>
 data – an <code>N</code> by <code>p</code> numeric matrix, an integer matrix of category codes when <code>categories</code>
 is set, or a length-<code>n_datasets</code> list of these when <code>n_datasets &gt; 1</code>; <code>NULL</code> when
 <code>return_pop = TRUE</code>), <code>population</code> (the <code>p</code> by <code>p</code> population correlation matrix drawn from,
-model-error-perturbed when requested), <code>model_error</code> (<code>NULL</code>, or a list of the method and
+model-error-perturbed when requested; with <code>force_pd = TRUE</code> and <code>marginals = "VM"</code> it stays
+the target matrix, from which the realized correlations of the draw can drift), <code>model_error</code>
+(<code>NULL</code>, or a list of the method and
 the target and achieved RMSEA/CFI when model error was applied), and <code>settings</code>. Printing
 the object shows a compact summary.</p>
     </div>
@@ -333,20 +345,26 @@ to the nearest correlation matrix (via <code><a href="https://rdrr.io/pkg/psych/
 <p>With <code>categories</code>, the drawn data are discretized into ordered categories (an
 integer code <code>1</code> to <code>K</code>). <code>categories</code> gives either the number of equally probable
 categories (one count for every variable, or one per variable) or, as a list of
-proportion vectors, the marginal category proportions per variable. Two matching
-modes set what the categorization preserves. With <code>match = "thresholds"</code> (the
-default) the data are cut at normal-scale thresholds (Olsson, 1979) that reproduce
-the requested proportions exactly for normal marginals and approximately for the
-<code>"VM"</code> and <code>"IG"</code> marginals; because categorization attenuates product-moment
-correlations, the categorized data's Pearson correlation is smaller in magnitude
-than the population correlation (and, under non-normal marginals, its polychoric
-correlation departs from the population as well). With <code>match = "polychoric"</code> the
-latent is required to be normal (<code>marginals = "normal"</code>) and the cases are drawn
-multivariate-normal and thresholded, so the population polychoric correlation of
-the categorized data equals the target; combining it with non-normal marginals is
-rejected. Ordinal output is not available with <code>marginals = "empirical"</code>. Empty
-categories left by a draw are reported with a warning, as they destabilize the
-polychoric correlation and the factor analysis.</p>
+proportion vectors, the marginal category proportions per variable. The cut points are
+the thresholds that reproduce the requested proportions (Olsson, 1979): the
+standard-normal quantiles for <code>marginals = "normal"</code>, and for <code>marginals = "VM"</code> those
+quantiles mapped through the same Fleishman cubic the draw uses, so the requested
+proportions are reproduced on the non-normal scale too. Under <code>marginals = "IG"</code> the
+thresholds stay on the standard-normal scale while the data do not, so the achieved
+proportions depart from the request systematically rather than by sampling noise; the
+departure grows with the non-normality, and only the <em>number</em> of categories is
+guaranteed. The same holds for a <code>"VM"</code> variable whose Fleishman cubic is not increasing
+over its own thresholds and the tails beyond them, which keeps the normal-scale ones and
+is reported with a warning; this arises when a turning point of the cubic sits at or
+near an outer threshold – under a strongly platykurtic marginal, or under substantial
+skewness or kurtosis combined with a small outer-category proportion.
+Because categorization attenuates product-moment correlations, the
+categorized data's Pearson correlation is smaller in magnitude than the population
+correlation; under non-normal marginals its polychoric correlation departs from the
+population as well. <code>match</code> changes none of this – it asserts an intent rather than
+selecting a computation, as described under that argument. Ordinal output is not
+available with <code>marginals = "empirical"</code>. Empty categories left by a draw are reported
+with a warning, as they destabilize the polychoric correlation and the factor analysis.</p>
 <p>With <code>missing</code>, missing values are introduced into the drawn data under a chosen
 mechanism (Rubin, 1976), each variable holed at a target expected rate
 <code>missing_prop</code>. <code>"MCAR"</code> draws an independent mask, so missingness is unrelated to
@@ -355,9 +373,15 @@ model of a standardized predictor: another variable for <code>"MAR"</code> (chos
 <code>missing_predictor</code>) or the variable's own value for <code>"MNAR"</code>, with slope
 <code>missing_strength</code>. The mechanism acts on the drawn (latent) values, so when
 <code>categories</code> also discretizes the data the missingness is keyed on the underlying
-value, not the category code. For <code>"MAR"</code> the predictor uses the complete drawn
-values. The returned matrix carries the <code>NA</code>s, which the correlation estimators
-handle downstream.</p>
+value, not the category code. For <code>"MAR"</code> the predictor is evaluated on the complete
+drawn values, but every variable is holed at rate <code>missing_prop</code>, so a variable's MAR
+predictor is itself missing for roughly a <code>missing_prop</code> fraction of the cases whose
+missingness it drove. The mechanism is therefore MAR conditional on the <em>complete</em>
+data, and <strong>not</strong> ignorable for an analyst who sees only the observed data: estimators
+that are consistent under ignorable MAR, such as <code>cor_method = "fiml"</code> in <code><a href="efa_fit.html">efa_fit()</a></code>
+and the multiple imputation behind <code><a href="efa_mi.html">efa_mi()</a></code>, keep a residual bias here that grows
+with <code>missing_prop</code> and <code>missing_strength</code>. The returned matrix carries the <code>NA</code>s,
+which the correlation estimators handle downstream.</p>
 <p>With <code>model_error</code>, the population is perturbed away from the exact factor
 structure so the <code>q</code>-factor model (<code>q = ncol(Lambda)</code>) fits it only approximately,
 at a prescribed misfit; exact factor structures are unrealistic and overstate
@@ -373,9 +397,11 @@ model the exact minimizer (the CFI follows as a derived quantity). <code>"TKL"</
 Koopman &amp; Linn, 1969) adds minor common factors tuned so the achieved RMSEA – and,
 optionally, CFI – match the target(s); with a single target the match is close,
 with both it is a compromise. <code>"WB"</code> (Wu &amp; Browne, 2015) draws the population from
-an inverse-Wishart distribution around the model-implied correlation; being a
-single random draw, its realized RMSEA varies around the target (and tends to
-exceed it), so the realized value is reported rather than guaranteed. <code>"CB"</code> and
+an inverse-Wishart distribution around the model-implied correlation; its calibration
+applies to the <em>best-fitting</em> model, so the reported misfit of the <em>generating</em> model
+is systematically larger than the target – by roughly \(\sqrt{(p(p-1)/2)/df}\),
+about 1.4 times for 12 variables and 3 factors. Use <code>"CB"</code> when the reported RMSEA
+must equal the target. <code>"CB"</code> and
 <code>"WB"</code> target the RMSEA only; <code>"TKL"</code> can target the RMSEA and/or the CFI. The
 reported RMSEA/CFI is the misfit of the specified generating model.</p>
 <p>Replicated draws (<code>n_datasets &gt; 1</code>) are generated in parallel across
@@ -474,7 +500,7 @@ structure as a random effect. Psychometrika, 80(3), 571-600.
 <span class="r-in"><span><span class="va">sim_me</span> <span class="op">&lt;-</span> <span class="fu">efa_simulate</span><span class="op">(</span>N <span class="op">=</span> <span class="fl">500</span>, Lambda <span class="op">=</span> <span class="va">Lambda</span>, Phi <span class="op">=</span> <span class="va">Phi</span>,</span></span>
 <span class="r-in"><span>                       target_rmsea <span class="op">=</span> <span class="fl">0.05</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">sim_me</span><span class="op">$</span><span class="va">model_error</span><span class="op">$</span><span class="va">rmsea</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.04999999</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.05</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

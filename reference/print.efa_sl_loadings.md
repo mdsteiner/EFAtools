@@ -20,8 +20,8 @@ format(x, ...)
 
 - cutoff:
 
-  numeric. The number above which to print loadings in bold (default is
-  .2).
+  numeric. The value at or above which loadings are emphasized (default
+  is .2).
 
 - digits:
 
@@ -52,10 +52,10 @@ readable.
 
 ``` r
 EFA_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
-                   method = "PAF", rotation = "promax")
-efa_schmid_leiman(EFA_mod, method = "PAF")
+                   estimator = "PAF", rotation = "promax")
+efa_schmid_leiman(EFA_mod, estimator = "PAF")
 #> 
-#> EFA for second-order loadings performed with type = 'EFAtools' and method = 'PAF'
+#> EFA for second-order loadings performed with estimator = 'PAF'
 #> 
 #> ── Schmid-Leiman Solution ──────────────────────────────────────────────────────
 #> 

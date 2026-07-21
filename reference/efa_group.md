@@ -72,9 +72,11 @@ efa_group(
 
 - seed:
 
-  numeric or `NULL`. An optional seed making the bootstrap reproducible
-  and independent of the number of parallel workers (the replicate fits
-  run with
+  numeric or `NULL`. An optional seed making the analysis reproducible.
+  It covers the per-group fits – whose rotation may draw random starts –
+  whether or not a bootstrap is run, and additionally makes the
+  bootstrap independent of the number of parallel workers (the replicate
+  fits run with
   [future_lapply()](https://future.apply.futureverse.org/reference/future_lapply.html),
   for which a parallel plan can be set via
   [`future::plan()`](https://future.futureverse.org/reference/plan.html)).
@@ -102,7 +104,8 @@ efa_group(
 
   Additional arguments passed to
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-  for every group (for example `method`, `rotation`, `cor_method`, or an
+  for every group (for example `estimator`, `rotation`, `cor_method`, or
+  an
   [`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
   /
   [`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
@@ -183,12 +186,20 @@ An object of class `efa_group`, a list containing:
   The alignment result: the consensus object (see
   [`efa_procrustes()`](https://mdsteiner.github.io/EFAtools/reference/efa_procrustes.md)),
   or a list with the reference group, the target, and the per-group
-  Procrustes results.
+  Procrustes results. On the consensus path this is the raw record of
+  the Generalized Procrustes iteration, so its `target` and
+  `aligned_loadings` are in the orientation that iteration converged to,
+  before the gauge described under *Alignment* is applied; the gauged
+  matrices are `target` and `loadings` above.
 
 - settings:
 
   A list of the settings used, including the per-group `N`, the
-  alignment method, the rotation, the estimator, the input type, and
+  alignment method, the group that seeded the consensus frame
+  (`alignment_start`, `NULL` on the reference path), the orientation the
+  shared frame was put in (`gauge`: the rotation's own name,
+  `"principal_axes"`, or `"identity"` for a single factor; `NULL` on the
+  reference path), the rotation, the estimator, the input type, and
   whether a bootstrap is available (`can_bootstrap`, `FALSE` for
   correlation-matrix input).
 
@@ -205,7 +216,7 @@ same order; a different item set or order is an error rather than being
 silently reordered.
 
 Every group is fitted at the same `n_factors` (a common-\\k\\ multigroup
-model). Extra arguments in `...` (for example `method`, `rotation`,
+model). Extra arguments in `...` (for example `estimator`, `rotation`,
 `cor_method`, or an
 [`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
 /
@@ -232,7 +243,19 @@ chosen automatically:
 - **Consensus** (the default for orthogonal rotations and for unrotated
   solutions): a symmetric Generalized Procrustes Analysis target is
   built across all groups (Gower, 1975), and every group's loadings are
-  rotated to it. No group is privileged.
+  rotated to it. The consensus frame is only identified up to a global
+  rotation of its factors, so it is then rotated into a fixed gauge and
+  the same transform is applied to every group. The gauge is the simple
+  structure of the rotation that was requested, evaluated on the
+  consensus target itself, so the shared loadings are in the same kind
+  of frame as the per-group solutions they summarise. Where no criterion
+  identifies a frame – an unrotated solution, and a `"bifactorT"`
+  request with two factors, whose criterion is identically zero with a
+  single group factor – the principal-axes orientation of the target is
+  used instead. Either way the columns are ordered by decreasing sum of
+  squares and signed by their column sums, and the shared orientation,
+  and hence every reported congruence, difference, and flag, is
+  independent of the order in which the groups are supplied.
 
 - **Reference**: every group's loadings are aligned by Procrustes
   rotation to one reference group's loadings, which are kept fixed. This
@@ -383,15 +406,15 @@ efa_group(bands, n_factors = 3, N = Ns, rotation = "varimax")
 #> 
 #> Tucker's congruence between the aligned group loadings (matched factors):
 #> 
-#>                        F1    F3    F2
-#> age_6_8 vs age_14_19  .983  .995  .989
+#>                        F1    F2    F3
+#> age_6_8 vs age_14_19  .981  .989  .995
 #> 
 #> ── Loading differences ─────────────────────────────────────────────────────────
 #> 
 #> Absolute loading differences by group pair (salience threshold |Δ| ≥ .1):
 #> 
 #>                       mean  median   min   max  rmse  flagged
-#> age_6_8 vs age_14_19  .049    .036  .000  .198  .065   16/141
+#> age_6_8 vs age_14_19  .048    .033  .001  .206  .065   20/141
 
 # An oblique rotation aligns to a reference group (reported via a message)
 efa_group(bands, n_factors = 3, N = Ns, rotation = "promax")

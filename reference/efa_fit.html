@@ -27,7 +27,12 @@ then handled according to the specified type (see details).'></head><body>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Replicate_SPSS_psych.html">Replicate SPSS and R psych results with EFAtools</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Ordinal_and_missing_data.html">EFA with ordinal and missing data</a></li>
+    <li><a class="dropdown-item" href="../articles/Multigroup_EFA.html">Multigroup exploratory factor analysis</a></li>
+    <li><a class="dropdown-item" href="../articles/Simulation_and_power.html">Simulating data and power analysis for EFA</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Upgrading</h6></li>
+    <li><a class="dropdown-item" href="../articles/Migrating_to_efa.html">Migrating to the efa_* interface</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -60,7 +65,7 @@ then handled according to the specified type (see details).</p>
 <span>  <span class="va">x</span>,</span>
 <span>  <span class="va">n_factors</span>,</span>
 <span>  N <span class="op">=</span> <span class="cn">NA</span>,</span>
-<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PAF"</span>, <span class="st">"ML"</span>, <span class="st">"ULS"</span>, <span class="st">"MINRES"</span>, <span class="st">"DWLS"</span><span class="op">)</span>,</span>
+<span>  estimator <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PAF"</span>, <span class="st">"ML"</span>, <span class="st">"ULS"</span>, <span class="st">"MINRES"</span>, <span class="st">"DWLS"</span><span class="op">)</span>,</span>
 <span>  rotation <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"varimax"</span>, <span class="st">"equamax"</span>, <span class="st">"quartimax"</span>, <span class="st">"geominT"</span>, <span class="st">"bentlerT"</span>,</span>
 <span>    <span class="st">"bifactorT"</span>, <span class="st">"promax"</span>, <span class="st">"oblimin"</span>, <span class="st">"quartimin"</span>, <span class="st">"simplimax"</span>, <span class="st">"bentlerQ"</span>, <span class="st">"geominQ"</span>,</span>
 <span>    <span class="st">"bifactorQ"</span><span class="op">)</span>,</span>
@@ -79,7 +84,10 @@ then handled according to the specified type (see details).</p>
 
     <div class="section level2">
     <h2 id="source">Source<a class="anchor" aria-label="anchor" href="#source"></a></h2>
-    <p>Grieder, S., &amp; Steiner, M. D. (2022). Algorithmic jingle jungle: A comparison
+    <p>Bollen, K. A., &amp; Stine, R. A. (1992). Bootstrapping goodness-of-fit measures
+in structural equation models. Sociological Methods &amp; Research, 21, 205–229.
+doi: 10.1177/0049124192021002004</p>
+<p>Grieder, S., &amp; Steiner, M. D. (2022). Algorithmic jingle jungle: A comparison
 of implementations of principal axis factoring and promax rotation in R and SPSS.
 Behavior Research Methods, 54, 54–74. doi: 10.3758/s13428-021-01581-x</p>
 <p>Hendrickson, A. E., &amp; White, P. O. (1964). Promax: A quick method for
@@ -92,9 +100,12 @@ Research, 46, 340-364, doi: 10.1080/00273171.2011.564527</p>
 factor analysis. Psychometrika, 23, 187–200. doi: 10.1007/BF02289233</p>
 <p>Lawley, D. N., &amp; Maxwell, A. E. (1971). Factor analysis as a statistical
 method (2nd ed.). Butterworths.</p>
-<p>Jennrich, R. I., &amp; Thayer, D. T. (1973). A note on Lawley's formulas for
-standard errors in maximum likelihood factor analysis. Psychometrika, 38, 571–580.
-doi: 10.1007/BF02291495</p>
+<p>Cudeck, R. (1989). Analysis of correlation matrices using covariance
+structure models. Psychological Bulletin, 105, 317–327.
+doi: 10.1037/0033-2909.105.2.317</p>
+<p>Olkin, I., &amp; Siotani, M. (1976). Asymptotic distribution of functions of a
+correlation matrix. In S. Ikeda (Ed.), Essays in probability and statistics
+(pp. 235–251). Shinko Tsusho.</p>
 <p>Jennrich, R. I. (1973). Standard errors for obliquely rotated factor
 loadings. Psychometrika, 38, 593–604. doi: 10.1007/BF02291497</p>
 <p>Zhang, G., &amp; Preacher, K. J. (2015). Factor rotation and standard errors
@@ -147,7 +158,9 @@ data.</p></dd>
 
 
 <dt id="arg-n-factors">n_factors<a class="anchor" aria-label="anchor" href="#arg-n-factors"></a></dt>
-<dd><p>numeric. Number of factors to extract.</p></dd>
+<dd><p>numeric. Number of factors to extract. Must be at least 1 and
+smaller than the number of variables (the common factor model is not identified
+otherwise). Use <code><a href="efa_retain.html">efa_retain()</a></code> to decide on a value.</p></dd>
 
 
 <dt id="arg-n">N<a class="anchor" aria-label="anchor" href="#arg-n"></a></dt>
@@ -158,12 +171,12 @@ values are entered and <code>use</code> is <code>"complete.obs"</code> or <code>
 are deleted listwise, so <code>N</code> is taken as the number of complete cases.</p></dd>
 
 
-<dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
+<dt id="arg-estimator">estimator<a class="anchor" aria-label="anchor" href="#arg-estimator"></a></dt>
 <dd><p>character. The estimator used to fit the EFA: "PAF" (principal axis
 factoring), "ML" (maximum likelihood), "ULS" (unweighted least squares; "MINRES" is an
 accepted alias returning identical results), or "DWLS" (diagonally weighted least
 squares, for ordinal data). See the <em>Estimators</em> section in Details for their
-properties and data requirements.</p></dd>
+properties and data requirements. The value is matched case-insensitively.</p></dd>
 
 
 <dt id="arg-rotation">rotation<a class="anchor" aria-label="anchor" href="#arg-rotation"></a></dt>
@@ -230,24 +243,28 @@ Must be between 0 and 1. Default is .95 for 95% CIs.</p></dd>
 
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
-<dd><p>numeric. An optional seed for the random-number generator used by the
-non-parametric bootstrap (<code>se = "np-boot"</code>), i.e. for the case resampling, the
-rotation random starts, and the Procrustes random starts. Setting it makes the
-bootstrap reproducible and independent of the number of parallel
-workers (see Details); the caller's random-number stream is restored afterwards,
-so supplying a seed leaves no lasting effect on it. Default is <code>NULL</code>, which uses
-(and advances) the current state of the generator.</p></dd>
+<dd><p>numeric. An optional seed for the random-number generator, governing every
+stochastic part of the fit: the rotation's random starts on the point estimate (the
+criterion-based rotations draw <code>random_starts</code> random starts; see <em>Rotations</em>) and,
+under <code>se = "np-boot"</code>, the case resampling, the replicate rotations, and the
+Procrustes random starts. Setting it makes the fit reproducible and the bootstrap
+additionally independent of the number of parallel workers (see Details); the
+caller's random-number stream is restored afterwards, so supplying a seed leaves no
+lasting effect on it. Default is <code>NULL</code>, which uses (and advances) the current state
+of the generator.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Additional arguments forwarded to the rotation procedure (for example
-<code>maxit</code> for the maximum number of iterations, or a criterion-specific <code>gam</code> / <code>delta</code>).
-They are merged with, and take precedence over, the extra arguments stored in
-<code><a href="estimate_control.html">rotate_control()</a></code>. An estimation or rotation tuning knob (such as <code>type</code>, <code>max_iter</code>,
-or <code>k</code>) is <em>not</em> accepted here: it belongs to <code><a href="estimate_control.html">estimate_control()</a></code> or
-<code><a href="estimate_control.html">rotate_control()</a></code>, and passing it directly is an error rather than a setting that is
-silently ignored. With <code>rotation = "none"</code> the dots must be empty, as no rotation
-engine runs to consume them.</p></dd>
+<dd><p>Additional arguments forwarded to the rotation engine. Only the arguments the
+selected <code>rotation</code> consumes are accepted: <code>maxit</code> (the maximum number of engine
+iterations) for the GPArotation-style rotations, plus the selected criterion's parameter
+(<code>gam</code> for "oblimin", <code>delta</code> for "geominT" and "geominQ"). Anything else – a misspelled
+name, another criterion's parameter, or any extra with "varimax", "promax", or "none",
+which consume no extras – is an error rather than a setting that is silently ignored.
+The accepted arguments are merged with, and take precedence over, the extra arguments
+stored in <code><a href="estimate_control.html">rotate_control()</a></code>. An estimation or rotation tuning knob (such as <code>type</code>,
+<code>max_iter</code>, or <code>k</code>) is likewise <em>not</em> accepted here: it belongs to <code><a href="estimate_control.html">estimate_control()</a></code>
+or <code><a href="estimate_control.html">rotate_control()</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -279,11 +296,13 @@ DWLS, the number of objective-function evaluations used by the optimiser (not th
 number of optimiser iterations).</p></dd>
 
 <dt>convergence</dt>
-<dd><p>Integer convergence code (0 = converged). For ML, ULS, and
-DWLS this is the convergence code from the bounded optimiser (the same codes as
-<code><a href="https://rdrr.io/r/stats/optim.html" class="external-link">stats::optim()</a></code>'s "L-BFGS-B"); for PAF it is 1 if the maximum
-number of iterations was reached without meeting the convergence criterion and 0
-otherwise. A non-zero code is also reported with a warning.</p></dd>
+<dd><p>Integer convergence code (0 = converged), using the codes of
+<code><a href="https://rdrr.io/r/stats/optim.html" class="external-link">stats::optim()</a></code>. For ML and ULS it is the code from the bounded
+optimiser; for DWLS the fit runs a bounded warm start followed by an
+unconstrained polish, and the reported code is non-zero if <em>either</em> of them
+stopped early. For PAF it is 1 if the maximum number of iterations was reached
+without meeting the convergence criterion and 0 otherwise. A non-zero code is
+also reported with a warning.</p></dd>
 
 <dt>heywood</dt>
 <dd><p>A named integer vector indicating which variables have a
@@ -345,22 +364,35 @@ loadings. Based on rotated loadings and, for oblique rotations, the factor
 intercorrelations.</p></dd>
 
 <dt>settings</dt>
-<dd><p>A list of the settings used.</p></dd>
+<dd><p>A list of the settings used. For the criterion rotations fitted by
+gradient projection it additionally carries <code>rotation_diagnostics</code>, a list summarising
+the multi-start run: <code>n_starts_total</code> (the <code>random_starts</code> random starts plus the
+rational start), <code>n_optimized</code> (how many of those starts were actually optimized –
+fewer than <code>n_starts_total</code> whenever the solver screens the random starts and optimizes
+only the most promising ones), <code>n_converged</code> (how many optimized starts reached the
+convergence tolerance), <code>n_distinct_minima</code> (how many distinct local optima those
+converged starts found; more than one means the criterion is multimodal on these data),
+<code>criterion_spread</code> (the range of the criterion values they attained), and
+<code>criterion_best</code> (the criterion value of the returned solution). When
+<code>normalize = TRUE</code>, <code>criterion_best</code> and <code>criterion_spread</code> are evaluated on the
+Kaiser-normalized loadings the criterion is optimized on, not on the returned
+<code>rot_loadings</code>, so they are not directly comparable to a criterion recomputed from the
+returned loadings.</p></dd>
 
 <dt>SE</dt>
-<dd><p>A named list of standard error matrices. For <code>se = "np-boot"</code>: bootstrap standard deviations of the unrotated and (when a rotation is applied) rotated loadings, the residuals, and the fit indices, plus – for oblique rotations – the factor correlations (<code>Phi</code>) and the structure coefficients. For <code>se = "information"</code>: Wald standard errors from the expected (Fisher) information matrix for the unrotated loadings and the uniquenesses and, when a rotation is applied, the rotated loadings and the communalities (and, for oblique rotations, <code>Phi</code> and the structure coefficients). For <code>se = "sandwich"</code>: robust Godambe sandwich standard errors with the same coverage as <code>"information"</code>, robust to non-normality and weight misspecification. Only returned if <code>se</code> is not <code>"none"</code>.</p></dd>
+<dd><p>A named list of standard error matrices. For <code>se = "np-boot"</code>: bootstrap standard deviations of the unrotated and (when a rotation is applied) rotated loadings, the residuals, and the fit indices, plus – for oblique rotations – the factor correlations (<code>Phi</code>) and the structure coefficients; it additionally carries <code>valid_replicates</code>, the number of bootstrap replicates that were fitted and aligned successfully and that every entry above is therefore based on (replicates that failed are excluded and warned about), and, when a rotation is applied, <code>valid_target_rotations</code>, the number of those replicates that could also be aligned to the rotated point estimate and that the rotated entries (<code>rot_loadings</code>, <code>Phi</code>, <code>Structure</code>) are based on. For <code>se = "information"</code>: Wald standard errors from the expected (Fisher) information matrix for the unrotated loadings, the uniquenesses, and the communalities and, when a rotation is applied, the rotated loadings (and, for oblique rotations, <code>Phi</code> and the structure coefficients). Because \(h^2_i = 1 - \psi_i\) exactly, the communality and uniqueness standard errors are identical. For <code>se = "sandwich"</code>: robust Godambe sandwich standard errors with the same coverage as <code>"information"</code>, robust to non-normality and weight misspecification. Only returned if <code>se</code> is not <code>"none"</code>.</p></dd>
 
 <dt>CI</dt>
 <dd><p>A named list of confidence intervals of width <code>ci</code>. For <code>se = "np-boot"</code>: percentile intervals matching the components of <code>SE</code>. For <code>se = "information"</code> and <code>se = "sandwich"</code>: Wald intervals matching the components of <code>SE</code>. Only returned if <code>se</code> is not <code>"none"</code>.</p></dd>
 
 <dt>replicates</dt>
-<dd><p>A named list of bootstrap replicate cubes for the aligned unrotated and (where applicable) rotated loadings, structure coefficients, factor correlations (<code>Phi</code>), residuals, and fit indices. Each cube's last dimension indexes the replicate. Populated only for <code>se = "np-boot"</code>; <code>NULL</code> for the analytic SE methods.</p></dd>
+<dd><p>A named list of bootstrap replicate arrays for the aligned unrotated and (where applicable) rotated loadings, structure coefficients, factor correlations (<code>Phi</code>), residuals, and fit indices. The replicate is the last dimension of the loading, residual, <code>Phi</code>, and structure cubes, and the first dimension of the <code>fit_indices</code> matrix (whose columns are named after the fit indices). Replicates that failed are left <code>NA</code>. Populated only for <code>se = "np-boot"</code>; <code>NULL</code> for the analytic SE methods.</p></dd>
 
 <dt>vcov_unrot_loadings</dt>
-<dd><p>The full unrotated loading covariance matrix the marginal <code>SE$unrot_loadings</code> were derived from: a <code>p * n_factors</code> by <code>p * n_factors</code> numeric matrix in column-major <code>vec(Lambda)</code> order. Populated for <code>se = "information"</code> (expected-information block) and <code>se = "sandwich"</code> (robust V_AA), even when a rotation is applied (the persisted block is always the unrotated one); NA-filled if the analytic covariance is unreliable (a Heywood case or a singular bordered information matrix); <code>NULL</code> for <code>se = "np-boot"</code> and <code>se = "none"</code>.</p></dd>
+<dd><p>The full unrotated loading covariance matrix the marginal <code>SE$unrot_loadings</code> were derived from: a <code>p * n_factors</code> by <code>p * n_factors</code> numeric matrix in column-major <code>vec(Lambda)</code> order. Populated for <code>se = "information"</code> (expected-information block) and <code>se = "sandwich"</code> (robust V_AA), even when a rotation is applied (the persisted block is always the unrotated one); NA-filled if the analytic covariance is unreliable (a Heywood case or a singular bordered information matrix); <code>NULL</code> for <code>se = "np-boot"</code> and <code>se = "none"</code>. A weakly determined rotational orientation is the one case where this matrix is populated while <code>SE$unrot_loadings</code> is <code>NA</code>: the covariance itself is finite and valid, and only its gauge-dependent marginals are not (see <em>Standard errors</em>).</p></dd>
 
 <dt>Gamma</dt>
-<dd><p>The asymptotic covariance of the off-diagonal sample correlations – the meat of the robust sandwich SEs – on the variance scale (<code>Var(rho-hat)</code>; lavaan's correlation NACOV is <code>N * Gamma</code>). A <code>p (p - 1) / 2</code> by <code>p (p - 1) / 2</code> numeric matrix; rows and columns ordered by <code><a href="https://rdrr.io/r/utils/combn.html" class="external-link">utils::combn()</a></code> over the column pairs and labelled <code>"&lt;var_i&gt;-&lt;var_j&gt;"</code>. Populated only for <code>se = "sandwich"</code>; <code>NULL</code> otherwise.</p></dd>
+<dd><p>The asymptotic covariance of the off-diagonal sample correlations – the meat of the robust sandwich SEs – on the variance scale (<code>Var(rho-hat)</code>; lavaan's correlation NACOV is <code>N * Gamma</code>). A <code>p (p - 1) / 2</code> by <code>p (p - 1) / 2</code> numeric matrix; rows and columns ordered by <code><a href="https://rdrr.io/r/utils/combn.html" class="external-link">utils::combn()</a></code> over the column pairs and labelled <code>"&lt;var_i&gt;-&lt;var_j&gt;"</code>. Populated for <code>se = "sandwich"</code> on the polychoric/tetrachoric and Pearson paths; <code>NULL</code> otherwise, including under <code>cor_method = "fiml"</code>, whose meat is the saturated FIML asymptotic covariance and is not returned.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -375,7 +407,7 @@ deviations from the implementations according to the specified <code>type</code>
 <h3 id="estimators">Estimators<a class="anchor" aria-label="anchor" href="#estimators"></a></h3>
 
 
-<p>The estimator is chosen with <code>method</code>.</p><ul><li><p><strong>PAF</strong> (principal axis factoring) iteratively estimates the communalities and makes
+<p>The estimator is chosen with <code>estimator</code>.</p><ul><li><p><strong>PAF</strong> (principal axis factoring) iteratively estimates the communalities and makes
 no distributional assumptions, which makes it robust and a good general-purpose
 default. Because it minimises no likelihood or weighted discrepancy it provides no
 model chi-square, and hence no chi-square-based fit indices (see <em>Fit indices</em>). The
@@ -426,8 +458,8 @@ then analysed. This reproduces <code><a href="https://rdrr.io/pkg/psych/man/corF
 estimates are not expected to match the latter. The model fit indices are corrected
 two-stage statistics (see <em>Fit indices</em>). <code>"fiml"</code> uses every case and handles the
 missingness itself, so <code>use</code> is ignored; it supplies a continuous (Pearson-type)
-correlation only and is therefore not compatible with <code>method = "DWLS"</code>. Standard
-errors are available analytically for <code>method = "ML"</code> or <code>"ULS"</code> and, for any method,
+correlation only and is therefore not compatible with <code>estimator = "DWLS"</code>. Standard
+errors are available analytically for <code>estimator = "ML"</code> or <code>"ULS"</code> and, for any estimator,
 by the non-parametric bootstrap (see <em>Standard errors</em>). For multiply imputed data,
 <code><a href="efa_mi.html">efa_mi()</a></code> is the alternative route to handling missingness.</p></li>
 </ul></div>
@@ -471,6 +503,9 @@ more thorough multi-start search internally).</p></li>
 </ul><p>The criterion-based rotations (all except varimax and promax) are fitted by gradient
 projection with <code>random_starts</code> random starts to guard against local minima; the
 complexity criteria (simplimax and geominQ in particular) are the most multimodal. The
+starts are drawn from the random-number generator, so different starts can reach
+genuinely different optima and such a fit is reproducible only when the generator is
+controlled: pass <code>seed</code>, or call <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> beforehand. The
 <code>type</code> argument changes the varimax and promax settings (see <em>Using the type presets</em>)
 and, for every rotation, the factor <code>order_type</code>. A single factor cannot be rotated.</p>
 </div>
@@ -480,41 +515,78 @@ and, for every rotation, the factor <code>order_type</code>. A single factor can
 
 
 <p><code>se</code> selects whether and how standard errors (and matching confidence intervals) are
-computed. They cover the unrotated loadings and uniquenesses and, when a rotation is
-applied, the rotated loadings, the communalities, and – for oblique rotations – the
-factor correlations and the structure coefficients (see the <code>SE</code> and <code>CI</code> entries in
-Value).</p><ul><li><p><strong>"none"</strong> (default) computes no standard errors.</p></li>
+computed. Which quantities they cover depends on the method. The analytic methods
+(<code>"information"</code> and <code>"sandwich"</code>) cover the unrotated loadings, the uniquenesses and
+the communalities and, when a rotation is applied, the rotated loadings and – for
+oblique rotations – the factor correlations and the structure coefficients. The
+bootstrap (<code>"np-boot"</code>) covers the unrotated loadings, the residuals, and the fit
+indices and, when a rotation is applied, the rotated loadings and – for oblique
+rotations – the factor correlations and the structure coefficients; it reports no
+uniqueness or communality standard errors (see the <code>SE</code> and <code>CI</code> entries in Value).</p><ul><li><p><strong>"none"</strong> (default) computes no standard errors.</p></li>
 <li><p><strong>"information"</strong> returns analytic standard errors from the expected (Fisher)
 information matrix of the maximum-likelihood solution, and therefore requires
-<code>method = "ML"</code>. The rotated standard errors are obtained by propagating the
-unrotated-loading covariance through the rotation by the delta method (Jennrich,
-1973); because rotated quantities are identification-invariant they are directly
-comparable across programs. Unlike the bootstrap it also works from a correlation
-matrix as long as <code>N</code> is supplied. The covariance is the inverse expected information
-under the identification constraint that \(\Lambda' \Psi^{-1} \Lambda\) is diagonal,
-scaled by \(1 / (N - 1)\); the confidence intervals are Wald intervals (estimate
-\(\pm\) z * SE). These standard errors assume multivariate normality and a correctly
-specified model; under heavy-tailed data or model misfit they can understate the
-sampling variability, where a bootstrap is more robust. The rotated
-structure-coefficient intervals are somewhat conservative for
-high-communality variables, where <code>"sandwich"</code> or <code>"np-boot"</code> give sharper intervals.</p></li>
+<code>estimator = "ML"</code> and <code>cor_method = "pearson"</code> (or <code>"fiml"</code>, see below). The rotated
+standard errors are obtained by propagating the unrotated-loading covariance through
+the rotation by the delta method (Jennrich, 1973); because rotated quantities are
+identification-invariant they are directly comparable across programs. Unlike the
+bootstrap it also works from a correlation matrix as long as <code>N</code> is supplied.</p>
+<p><code>efa_fit()</code> analyses a <em>correlation</em> structure – the diagonal of the analysed matrix
+is fixed at 1 and the uniquenesses \(\psi_i = 1 - \sum_j \lambda_{ij}^2\) are a
+function of the loadings rather than free parameters – so the information is the
+correlation-structure one, \(\Delta' \Gamma^{-1} \Delta\) over the off-diagonal
+correlations, with \(\Gamma\) the normal-theory asymptotic covariance of the sample
+correlations (Olkin &amp; Siotani, 1976) at the model-implied \(\Sigma\)
+(Cudeck, 1989). It is scaled by \(1 / (N - 1)\) and
+the confidence intervals are Wald intervals (estimate \(\pm\) z * SE). These
+standard errors assume multivariate normality and a correctly specified model; under
+heavy-tailed data or model misfit they can understate the sampling variability, where
+<code>"sandwich"</code> or <code>"np-boot"</code> are more robust.</p>
+<p>The <em>rotated</em> quantities, the uniquenesses, and the communalities are
+identification-invariant and so are comparable across programs. The <strong>unrotated</strong>
+loading standard errors are not: they are reported in the orientation the solution
+itself is identified in (for ML, \(\Lambda' \Psi^{-1} \Lambda\) diagonal), and a
+program using a different identification will report different unrotated loading
+standard errors for the same fit.</p>
+<p>That orientation can also fail to be determined. When two of the canonical variances
+\(\mathrm{diag}(\Lambda' \Psi^{-1} \Lambda)\) nearly coincide – which happens with
+a weakly determined factor, or two factors of near-equal strength – the loadings can
+be rotated within that plane without leaving the identifying constraint, so the
+unrotated loadings have no well-defined sampling distribution and their standard
+errors diverge. <code>efa_fit()</code> detects this and returns <code>NA</code> for the unrotated loading
+standard errors with an <code>efa_se_unreliable</code> warning, rather than reporting a number
+that looks like a standard error but is an artefact of the orientation. Everything
+that does not depend on the orientation – the rotated loadings, <code>Phi</code>, the structure
+coefficients, the uniquenesses and the communalities – is unaffected and still
+reported. Use those, or <code>se = "np-boot"</code>, when the unrotated loadings themselves are
+the quantity of interest. The detection covers the Pearson and polychoric paths; the
+two-stage <code>cor_method = "fiml"</code> sandwich carries no such diagnostic, so a weakly
+determined orientation is not flagged there. A Heywood case (a uniqueness at its lower
+boundary) is separate: the Wald approximation fails there for every parameter, so no
+analytic standard error is reported at all.</p></li>
 <li><p><strong>"sandwich"</strong> returns robust (Godambe sandwich) standard errors from raw data,
 combining the estimator weight with an asymptotic-distribution-free covariance of the
 correlations, so it stays valid under non-normality and weight misspecification
 (Browne, 1984; Satorra &amp; Bentler, 1994). It is available either for ordinal data with
-<code>cor_method = "poly"</code> or <code>"tetra"</code> and <code>method</code> one of <code>"ML"</code>, <code>"ULS"</code>, or <code>"DWLS"</code>
+<code>cor_method = "poly"</code> or <code>"tetra"</code> and <code>estimator</code> one of <code>"ML"</code>, <code>"ULS"</code>, or <code>"DWLS"</code>
 (the meat is the polychoric / tetrachoric asymptotic covariance), or for continuous
-data with <code>cor_method = "pearson"</code> and <code>method = "ML"</code> or <code>"ULS"</code> (the meat is the
+data with <code>cor_method = "pearson"</code> and <code>estimator = "ML"</code> or <code>"ULS"</code> (the meat is the
 fourth-moment ADF covariance of the sample correlations, the basis of the MLM / MLR
-robust statistics). It reports the same standard errors as <code>"information"</code>, propagated
+robust statistics). It reports the same coverage as <code>"information"</code>, propagated
 by the same delta method, and additionally fills the model fit's chi-square block with
-a scaled (Satorra-Bentler / scaled-and-shifted) chi-square (see <em>Fit indices</em>).
+a scaled (Satorra-Bentler / scaled-and-shifted) chi-square (see <em>Fit indices</em>). The
+statistic reported as <code>chi</code> is always the scaled-and-shifted one (the WLSMV default,
+flagged by <code>chi_scaled_type</code>), for the continuous Pearson path as well as the ordinal
+one; the mean-adjusted statistic that <span class="pkg">lavaan</span>'s <code>MLM</code> reports for continuous data
+is returned alongside it as <code>chi_mean_adjusted</code>.
 Because the asymptotic covariance must describe the same cases as the correlation
-matrix, the sandwich (like <code>method = "DWLS"</code>) is computed on the listwise-complete
+matrix, the sandwich (like <code>estimator = "DWLS"</code>) is computed on the listwise-complete
 cases; on data with missing values the reported <code>N</code>, the correlation matrix, and the
 point estimate therefore reflect the complete cases regardless of <code>use</code>.</p></li>
 <li><p><strong>"np-boot"</strong> draws a non-parametric (case-resampling) bootstrap and needs raw data.
-It is the most general method – available for any <code>method</code>, <code>rotation</code>, and
+A correlation matrix carries no cases to resample; alone among the unsupported
+combinations this one does not error but warns (condition class <code>"efa_boot_cormat"</code>)
+and downgrades <code>se</code> to <code>"none"</code>, so the fit is returned without an <code>SE</code> slot.
+It is the most general method – available for any <code>estimator</code>, <code>rotation</code>, and
 <code>cor_method</code> – and the most robust to non-normality and misfit, at the cost of speed;
 its intervals are bootstrap percentile intervals. The replicate fits are run across
 replicates with the <code>future</code> framework. By default they run sequentially; to run them
@@ -523,16 +595,27 @@ in parallel, register a plan with <code><a href="https://future.futureverse.org/
 the bootstrap is reproducible and yields the same result regardless of the number of
 workers. Under <code>cor_method = "fiml"</code> each resample also
 re-runs the EM moment estimation and is therefore slow, so a smaller <code>b_boot</code> may be
-advisable.</p></li>
+advisable.</p>
+<p>The percentile intervals are centred on the point estimate for the loadings, the factor
+correlations, the structure coefficients and the residuals, but <strong>not</strong> for the indices
+derived from the chi-square (<code>RMSEA</code>, <code>AIC</code>, <code>BIC</code> and <code>ECVI</code>). A resample is drawn from
+the sample, which already carries the model's misfit, and is then refitted and evaluated
+against itself, so the replicate chi-square is on average about <code>chi + df</code> rather than
+<code>chi</code> and the whole interval rides upward with it – often far enough that the point
+estimate falls below its own lower bound. That is the shift, not a miscomputed interval:
+read those intervals as a spread rather than as a range for the point estimate.
+Correcting the location needs resampling from a population transformed to fit the model
+(Bollen &amp; Stine, 1992), which is not what this bootstrap does. <code>CFI</code> and <code>TLI</code> are not
+affected, being ratios in which the baseline chi-square shifts along with the model one.</p></li>
 </ul><p>The analytic methods (<code>"information"</code> and <code>"sandwich"</code>) are not available with the
 <code>"promax"</code> or <code>"simplimax"</code> rotations, which have no usable analytic rotation Jacobian;
 use <code>"np-boot"</code> there. Under <code>cor_method = "fiml"</code>, <code>"information"</code> and <code>"sandwich"</code>
-instead return, for <code>method = "ML"</code> or <code>"ULS"</code>, the corrected two-stage (Yuan &amp; Bentler,
+instead return, for <code>estimator = "ML"</code> or <code>"ULS"</code>, the corrected two-stage (Yuan &amp; Bentler,
 2000; Savalei &amp; Bentler, 2009) sandwich standard errors, built on the saturated FIML
 asymptotic covariance with the estimator's own Stage-2 weight: the model is fitted to
 the EM-estimated correlation, so the naive Stage-2 standard errors (treating that
 correlation as complete data) are inconsistent under missingness and are not reported
-(<code>method = "PAF"</code> carries no Stage-2 weight, so use <code>se = "np-boot"</code> there).</p>
+(<code>estimator = "PAF"</code> carries no Stage-2 weight, so use <code>se = "np-boot"</code> there).</p>
 </div>
 
 <div class="section">
@@ -587,11 +670,12 @@ matrix is set to 1s and then approximates 0.5 with close fit.</p>
 <h3 id="available-combinations">Available combinations<a class="anchor" aria-label="anchor" href="#available-combinations"></a></h3>
 
 
-<p>Not every estimator, rotation, standard-error, and correlation method can be combined:</p><ul><li><p><strong>Estimator and correlation method.</strong> <code>method = "DWLS"</code> requires ordinal data with
+<p>Not every estimator, rotation, standard-error, and correlation method can be combined:</p><ul><li><p><strong>Estimator and correlation method.</strong> <code>estimator = "DWLS"</code> requires ordinal data with
 <code>cor_method = "poly"</code> or <code>"tetra"</code>. <code>cor_method = "fiml"</code> works with PAF, ML, and ULS
 (not DWLS) and needs raw data with missing values.</p></li>
-<li><p><strong>Standard errors.</strong> <code>se = "information"</code> requires <code>method = "ML"</code> and can be computed
-from a correlation matrix when <code>N</code> is supplied. <code>se = "sandwich"</code> requires raw data,
+<li><p><strong>Standard errors.</strong> <code>se = "information"</code> requires <code>estimator = "ML"</code> and
+<code>cor_method = "pearson"</code> or <code>"fiml"</code>, and can be computed from a correlation matrix
+when <code>N</code> is supplied. <code>se = "sandwich"</code> requires raw data,
 with either a polychoric/tetrachoric <code>cor_method</code> (ML, ULS, or DWLS) or a Pearson
 <code>cor_method</code> (ML or ULS); it is not available for PAF. Under <code>cor_method = "fiml"</code>,
 <code>"information"</code> and <code>"sandwich"</code> are available for ML and ULS only and both return the
@@ -655,7 +739,9 @@ compared to the other setting combinations tested in simulation studies in
 Grieder &amp; Steiner (2022). Note that all <code>type</code> presets keep the EFAtools default
 Kaiser normalization (<code>normalize = TRUE</code>), whereas <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code> does not
 normalize before its promax target rotation; set <code>normalize = FALSE</code> to
-reproduce the <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code> promax result exactly.</p>
+reproduce the <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code> promax result to within the varimax convergence
+tolerance (the residual difference is the convergence noise of the underlying
+varimax base at <code>precision = 1e-5</code>, not an algorithmic difference).</p>
 <p>The <code>varimax_type</code> argument can take two values, "svd", and "kaiser". "svd" uses
 singular value decomposition, by calling <code><a href="https://rdrr.io/r/stats/varimax.html" class="external-link">stats::varimax()</a></code>. "kaiser"
 performs the varimax procedure as described in the SPSS Algorithms manual and by
@@ -666,8 +752,12 @@ number of indicators, and lambda is the Kaiser-normalized rotated loadings matri
 only controls the <code>order_type</code> argument with the same values as stated
 above for the varimax and promax rotations. Additional arguments can also be
 specified and will be passed to the rotation procedure (e.g., maxit to change the
-maximum number of iterations).</p>
-<p>The <code>type</code> argument has no effect on ULS and ML. For ULS, no additional
+maximum number of iterations). As for promax, every preset keeps the EFAtools
+default Kaiser normalization (<code>normalize = TRUE</code>), whereas <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code> and
+<span class="pkg">GPArotation</span> do not normalize before these criterion rotations; set
+<code>normalize = FALSE</code> to reproduce them.</p>
+<p>The <code>type</code> tuning arguments have no effect on ULS and ML; <code>type</code> itself still
+governs the checks applied to the correlation matrix. For ULS, no additional
 arguments are needed. For ML, an additional argument
 <code>start_method</code> is needed to determine the starting values for the
 optimization procedure. Default for this argument is "psych" which takes
@@ -678,7 +768,9 @@ the starting values specified in <code><a href="https://rdrr.io/pkg/psych/man/fa
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="estimate_control.html">estimate_control()</a></code> and <code><a href="estimate_control.html">rotate_control()</a></code> for the estimation and rotation
-tuning knobs.</p>
+tuning knobs. <code><a href="efa_retain.html">efa_retain()</a></code> for choosing <code>n_factors</code>, and <code><a href="efa_scores.html">efa_scores()</a></code>,
+<code><a href="efa_reliability.html">efa_reliability()</a></code>, <code><a href="efa_schmid_leiman.html">efa_schmid_leiman()</a></code>, and <code><a href="efa_compare.html">efa_compare()</a></code> for working with the
+fitted solution.</p>
 <p>Other factor analysis:
 <code><a href="efa_average.html">efa_average()</a></code>,
 <code><a href="efa_group.html">efa_group()</a></code>,
@@ -695,7 +787,7 @@ tuning knobs.</p>
 <span class="r-in"><span>                       rotation <span class="op">=</span> <span class="st">"oblimin"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">mod_oblimin</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with type = '<span style="font-weight: bold;">EFAtools</span>', method = '<span style="font-weight: bold;">PAF</span>', and rotation = '<span style="font-weight: bold;">oblimin</span>'.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with estimator = '<span style="font-weight: bold;">PAF</span>' and rotation = '<span style="font-weight: bold;">oblimin</span>'.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Rotated Loadings</span> ────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -747,14 +839,14 @@ tuning knobs.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> df: 102</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mod_oblimin</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with type = '<span style="font-weight: bold;">EFAtools</span>', method = '<span style="font-weight: bold;">PAF</span>', and rotation = '<span style="font-weight: bold;">oblimin</span>'.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with estimator = '<span style="font-weight: bold;">PAF</span>' and rotation = '<span style="font-weight: bold;">oblimin</span>'.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Model Diagnostics</span> ───────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Factors: 3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Variables: 18</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> N: 500</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Rotation local optima: 1 distinct from 100 random starts</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Rotation local optima: 1 distinct from 6 of 101 starts</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Heywood cases: 0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Cross-loading items (|loading| &gt;= .300): 0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Items without salient loading (|loading| &gt;= .300): 0</span>
@@ -852,10 +944,10 @@ tuning knobs.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># ML estimation with oblimin rotation</span></span></span>
 <span class="r-in"><span><span class="va">mod_oblimin</span> <span class="op">&lt;-</span> <span class="fu">efa_fit</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, N <span class="op">=</span> <span class="fl">500</span>,</span></span>
-<span class="r-in"><span>                       method <span class="op">=</span> <span class="st">"ML"</span>, rotation <span class="op">=</span> <span class="st">"oblimin"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>                       estimator <span class="op">=</span> <span class="st">"ML"</span>, rotation <span class="op">=</span> <span class="st">"oblimin"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">mod_oblimin</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with type = '<span style="font-weight: bold;">EFAtools</span>', method = '<span style="font-weight: bold;">ML</span>', and rotation = '<span style="font-weight: bold;">oblimin</span>'.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with estimator = '<span style="font-weight: bold;">ML</span>' and rotation = '<span style="font-weight: bold;">oblimin</span>'.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Rotated Loadings</span> ────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -913,14 +1005,14 @@ tuning knobs.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> SRMR: .03</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mod_oblimin</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with type = '<span style="font-weight: bold;">EFAtools</span>', method = '<span style="font-weight: bold;">ML</span>', and rotation = '<span style="font-weight: bold;">oblimin</span>'.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with estimator = '<span style="font-weight: bold;">ML</span>' and rotation = '<span style="font-weight: bold;">oblimin</span>'.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Model Diagnostics</span> ───────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Factors: 3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Variables: 18</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> N: 500</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Rotation local optima: 1 distinct from 100 random starts</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Rotation local optima: 1 distinct from 6 of 101 starts</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Heywood cases: 0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Cross-loading items (|loading| &gt;= .300): 0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Items without salient loading (|loading| &gt;= .300): 0</span>
@@ -1033,7 +1125,7 @@ tuning knobs.</p>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">•</span> max_iter = 500</span>
 <span class="r-in"><span><span class="va">mod_spss</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with type = '<span style="font-weight: bold;">SPSS</span>', method = '<span style="font-weight: bold;">PAF</span>', and rotation = '<span style="font-weight: bold;">promax</span>'.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with estimator = '<span style="font-weight: bold;">PAF</span>' and rotation = '<span style="font-weight: bold;">promax</span>'.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Rotated Loadings</span> ────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -1086,10 +1178,10 @@ tuning knobs.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Analytic (expected-information) standard errors for the above</span></span></span>
 <span class="r-in"><span><span class="va">ML_info</span> <span class="op">&lt;-</span> <span class="fu">efa_fit</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, N <span class="op">=</span> <span class="fl">500</span>,</span></span>
-<span class="r-in"><span>                   method <span class="op">=</span> <span class="st">"ML"</span>, rotation <span class="op">=</span> <span class="st">"oblimin"</span>, se <span class="op">=</span> <span class="st">"information"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>                   estimator <span class="op">=</span> <span class="st">"ML"</span>, rotation <span class="op">=</span> <span class="st">"oblimin"</span>, se <span class="op">=</span> <span class="st">"information"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">ML_info</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with type = '<span style="font-weight: bold;">EFAtools</span>', method = '<span style="font-weight: bold;">ML</span>', and rotation = '<span style="font-weight: bold;">oblimin</span>'.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with estimator = '<span style="font-weight: bold;">ML</span>' and rotation = '<span style="font-weight: bold;">oblimin</span>'.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Rotated Loadings</span> ────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -1147,14 +1239,14 @@ tuning knobs.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> SRMR: .03</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">ML_info</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with type = '<span style="font-weight: bold;">EFAtools</span>', method = '<span style="font-weight: bold;">ML</span>', and rotation = '<span style="font-weight: bold;">oblimin</span>'.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with estimator = '<span style="font-weight: bold;">ML</span>' and rotation = '<span style="font-weight: bold;">oblimin</span>'.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Model Diagnostics</span> ───────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Factors: 3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Variables: 18</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> N: 500</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Rotation local optima: 1 distinct from 100 random starts</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Rotation local optima: 1 distinct from 6 of 101 starts</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Heywood cases: 0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Cross-loading items (|loading| &gt;= .300): 0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Items without salient loading (|loading| &gt;= .300): 0</span>
@@ -1193,24 +1285,24 @@ tuning knobs.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">95% Wald CIs for salient rotated loadings</span> ───────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Variable  Factor  est    lower  upper</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> V13       F1      <span style="font-weight: bold;"> .612</span>   .476   .748</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> V14       F1      <span style="font-weight: bold;"> .540</span>   .401   .679</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> V15       F1      <span style="font-weight: bold;"> .552</span>   .413   .691</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> V16       F1      <span style="font-weight: bold;"> .550</span>   .411   .689</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> V17       F1      <span style="font-weight: bold;"> .652</span>   .521   .784</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> V18       F1      <span style="font-weight: bold;"> .549</span>   .410   .689</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> V7        F2      <span style="font-weight: bold;"> .524</span>   .385   .662</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> V8        F2      <span style="font-weight: bold;"> .562</span>   .427   .697</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> V9        F2      <span style="font-weight: bold;"> .535</span>   .398   .671</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> V10       F2      <span style="font-weight: bold;"> .661</span>   .533   .788</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> V11       F2      <span style="font-weight: bold;"> .352</span>   .208   .497</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> V12       F2      <span style="font-weight: bold;"> .649</span>   .515   .783</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> V1        F3      <span style="font-weight: bold;"> .607</span>   .463   .750</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> V2        F3      <span style="font-weight: bold;"> .458</span>   .307   .610</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> V3        F3      <span style="font-weight: bold;"> .430</span>   .276   .584</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> V4        F3      <span style="font-weight: bold;"> .536</span>   .387   .686</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> V5        F3      <span style="font-weight: bold;"> .418</span>   .264   .572</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> V6        F3      <span style="font-weight: bold;"> .687</span>   .554   .821</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V13       F1      <span style="font-weight: bold;"> .612</span>   .488   .736</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V14       F1      <span style="font-weight: bold;"> .540</span>   .411   .669</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V15       F1      <span style="font-weight: bold;"> .552</span>   .423   .681</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V16       F1      <span style="font-weight: bold;"> .550</span>   .421   .679</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V17       F1      <span style="font-weight: bold;"> .652</span>   .535   .769</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V18       F1      <span style="font-weight: bold;"> .549</span>   .420   .679</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V7        F2      <span style="font-weight: bold;"> .524</span>   .394   .653</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V8        F2      <span style="font-weight: bold;"> .562</span>   .437   .687</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V9        F2      <span style="font-weight: bold;"> .535</span>   .407   .662</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V10       F2      <span style="font-weight: bold;"> .661</span>   .548   .773</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V11       F2      <span style="font-weight: bold;"> .352</span>   .211   .493</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V12       F2      <span style="font-weight: bold;"> .649</span>   .529   .770</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V1        F3      <span style="font-weight: bold;"> .607</span>   .474   .739</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V2        F3      <span style="font-weight: bold;"> .458</span>   .313   .604</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V3        F3      <span style="font-weight: bold;"> .430</span>   .282   .578</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V4        F3      <span style="font-weight: bold;"> .536</span>   .395   .677</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V5        F3      <span style="font-weight: bold;"> .418</span>   .269   .567</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> V6        F3      <span style="font-weight: bold;"> .687</span>   .570   .805</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Factor Intercorrelations</span> ────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -1287,18 +1379,23 @@ tuning knobs.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="co"># Robust (sandwich) standard errors and a scaled chi-square for ordinal raw data.</span></span></span>
-<span class="r-in"><span><span class="co"># These need a polychoric/tetrachoric correlation method and method ML, ULS, or DWLS.</span></span></span>
+<span class="r-in"><span><span class="co"># These need a polychoric/tetrachoric correlation method and estimator ML, ULS, or DWLS.</span></span></span>
 <span class="r-in"><span><span class="va">DWLS_rob</span> <span class="op">&lt;-</span> <span class="fu">efa_fit</span><span class="op">(</span><span class="va">DOSPERT_raw</span>, n_factors <span class="op">=</span> <span class="fl">6</span>, cor_method <span class="op">=</span> <span class="st">"poly"</span>,</span></span>
-<span class="r-in"><span>                    method <span class="op">=</span> <span class="st">"DWLS"</span>, rotation <span class="op">=</span> <span class="st">"oblimin"</span>, se <span class="op">=</span> <span class="st">"sandwich"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>                    estimator <span class="op">=</span> <span class="st">"DWLS"</span>, rotation <span class="op">=</span> <span class="st">"oblimin"</span>, se <span class="op">=</span> <span class="st">"sandwich"</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from the raw data.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some response-category combinations are empty despite a non-negligible expected</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> count.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> The polychoric asymptotic covariance (and any DWLS weights or robust standard</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span>   errors derived from it) can be unreliable for such structurally sparse cells;</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span>   interpret them with caution.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Analytic standard errors could not be computed for all parameters.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> The factor solution's rotational orientation is only weakly determined (two</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   canonical variances nearly coincide), so the unrotated loadings have no</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   well-defined standard error. The rotated loadings and communalities are</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   gauge-invariant and unaffected.</span>
 <span class="r-in"><span><span class="va">DWLS_rob</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with type = '<span style="font-weight: bold;">EFAtools</span>', method = '<span style="font-weight: bold;">DWLS</span>', and rotation = '<span style="font-weight: bold;">oblimin</span>'.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with estimator = '<span style="font-weight: bold;">DWLS</span>' and rotation = '<span style="font-weight: bold;">oblimin</span>'.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Rotated Loadings</span> ────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -1370,14 +1467,14 @@ tuning knobs.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> SRMR: .03</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">DWLS_rob</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with type = '<span style="font-weight: bold;">EFAtools</span>', method = '<span style="font-weight: bold;">DWLS</span>', and rotation = '<span style="font-weight: bold;">oblimin</span>'.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with estimator = '<span style="font-weight: bold;">DWLS</span>' and rotation = '<span style="font-weight: bold;">oblimin</span>'.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Model Diagnostics</span> ───────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Factors: 6</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Variables: 30</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> N: 3123</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Rotation local optima: 1 distinct from 100 random starts</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Rotation local optima: 1 distinct from 6 of 101 starts</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Heywood cases: 0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Cross-loading items (|loading| &gt;= .300): 3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Items without salient loading (|loading| &gt;= .300): 0</span>
@@ -1576,13 +1673,13 @@ tuning knobs.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Inspect the residual matrix for details (e.g., with residuals()).</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># The same robust SEs and scaled chi-square for continuous data: a Pearson</span></span></span>
-<span class="r-in"><span><span class="co"># correlation with method ML or ULS (the fourth-moment ADF covariance).</span></span></span>
+<span class="r-in"><span><span class="co"># correlation with estimator ML or ULS (the fourth-moment ADF covariance).</span></span></span>
 <span class="r-in"><span><span class="va">ML_rob</span> <span class="op">&lt;-</span> <span class="fu">efa_fit</span><span class="op">(</span><span class="va">GRiPS_raw</span>, n_factors <span class="op">=</span> <span class="fl">1</span>, cor_method <span class="op">=</span> <span class="st">"pearson"</span>,</span></span>
-<span class="r-in"><span>                  method <span class="op">=</span> <span class="st">"ML"</span>, rotation <span class="op">=</span> <span class="st">"none"</span>, se <span class="op">=</span> <span class="st">"sandwich"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>                  estimator <span class="op">=</span> <span class="st">"ML"</span>, rotation <span class="op">=</span> <span class="st">"none"</span>, se <span class="op">=</span> <span class="st">"sandwich"</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from the raw data.</span>
 <span class="r-in"><span><span class="va">ML_rob</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with type = '<span style="font-weight: bold;">EFAtools</span>', method = '<span style="font-weight: bold;">ML</span>', and rotation = '<span style="font-weight: bold;">none</span>'.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with estimator = '<span style="font-weight: bold;">ML</span>' and rotation = '<span style="font-weight: bold;">none</span>'.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Unrotated Loadings</span> ──────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -1619,7 +1716,7 @@ tuning knobs.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> SRMR: .01</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">ML_rob</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with type = '<span style="font-weight: bold;">EFAtools</span>', method = '<span style="font-weight: bold;">ML</span>', and rotation = '<span style="font-weight: bold;">none</span>'.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with estimator = '<span style="font-weight: bold;">ML</span>' and rotation = '<span style="font-weight: bold;">none</span>'.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Model Diagnostics</span> ───────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -1698,11 +1795,11 @@ tuning knobs.</p>
 <span class="r-in"><span><span class="co"># random) and the standardized covariance is analysed.</span></span></span>
 <span class="r-in"><span><span class="va">x_miss</span> <span class="op">&lt;-</span> <span class="va">GRiPS_raw</span></span></span>
 <span class="r-in"><span><span class="va">x_miss</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">20</span>, <span class="fl">1</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span></span>
-<span class="r-in"><span><span class="va">efa_fiml</span> <span class="op">&lt;-</span> <span class="fu">efa_fit</span><span class="op">(</span><span class="va">x_miss</span>, n_factors <span class="op">=</span> <span class="fl">1</span>, method <span class="op">=</span> <span class="st">"ML"</span>, cor_method <span class="op">=</span> <span class="st">"fiml"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">efa_fiml</span> <span class="op">&lt;-</span> <span class="fu">efa_fit</span><span class="op">(</span><span class="va">x_miss</span>, n_factors <span class="op">=</span> <span class="fl">1</span>, estimator <span class="op">=</span> <span class="st">"ML"</span>, cor_method <span class="op">=</span> <span class="st">"fiml"</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from the raw data.</span>
 <span class="r-in"><span><span class="va">efa_fiml</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with type = '<span style="font-weight: bold;">EFAtools</span>', method = '<span style="font-weight: bold;">ML</span>', and rotation = '<span style="font-weight: bold;">none</span>'.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with estimator = '<span style="font-weight: bold;">ML</span>' and rotation = '<span style="font-weight: bold;">none</span>'.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Correlations: FIML (two-stage, missing data)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Unrotated Loadings</span> ──────────────────────────────────────────────────────────</span>
@@ -1744,7 +1841,7 @@ tuning knobs.</p>
 <span class="r-in"><span><span class="co"># Bootstrap standard errors from raw data, reproducible via a fixed seed and run</span></span></span>
 <span class="r-in"><span><span class="co"># in parallel across replicates.</span></span></span>
 <span class="r-in"><span><span class="fu">future</span><span class="fu">::</span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="fu">future</span><span class="fu">::</span><span class="va"><a href="https://future.futureverse.org/reference/multisession.html" class="external-link">multisession</a></span>, workers <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">efa_boot</span> <span class="op">&lt;-</span> <span class="fu">efa_fit</span><span class="op">(</span><span class="va">GRiPS_raw</span>, n_factors <span class="op">=</span> <span class="fl">1</span>, method <span class="op">=</span> <span class="st">"PAF"</span>, rotation <span class="op">=</span> <span class="st">"none"</span>,</span></span>
+<span class="r-in"><span><span class="va">efa_boot</span> <span class="op">&lt;-</span> <span class="fu">efa_fit</span><span class="op">(</span><span class="va">GRiPS_raw</span>, n_factors <span class="op">=</span> <span class="fl">1</span>, estimator <span class="op">=</span> <span class="st">"PAF"</span>, rotation <span class="op">=</span> <span class="st">"none"</span>,</span></span>
 <span class="r-in"><span>                    se <span class="op">=</span> <span class="st">"np-boot"</span>, b_boot <span class="op">=</span> <span class="fl">1000</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">future</span><span class="fu">::</span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="fu">future</span><span class="fu">::</span><span class="va"><a href="https://future.futureverse.org/reference/sequential.html" class="external-link">sequential</a></span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>

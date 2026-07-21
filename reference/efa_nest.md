@@ -44,7 +44,7 @@ publication. https://doi.org/10.1177/00131644241308528
 
 - x:
 
-  data.frame or matrix. data.frame or matrix of raw data or matrix with
+  data.frame or matrix. Dataframe or matrix of raw data or matrix with
   correlations.
 
 - N:
@@ -61,7 +61,7 @@ publication. https://doi.org/10.1177/00131644241308528
 
   character. Passed to
   [`stats::cor()`](https://rdrr.io/r/stats/cor.html) if raw data is
-  given as input. Default is `"pairwise.complete.obs"`.
+  given as input. Default is "pairwise.complete.obs".
 
 - cor_method:
 
@@ -89,10 +89,10 @@ publication. https://doi.org/10.1177/00131644241308528
 
   Additional arguments passed to
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md).
-  For example, the extraction method can be changed here (default is
-  "PAF"). PAF is more robust, but it will take longer compared to the
-  other estimation methods available ("ML" and "ULS"). The estimation
-  tuning knobs are not passed here; they live in `estimate_control`.
+  For example, `estimator`, to change the estimator (default is "PAF").
+  PAF is more robust, but it will take longer compared to the other
+  estimators available ("ML" and "ULS"). The estimation tuning knobs are
+  not passed here; they live in `estimate_control`.
 
 ## Value
 
@@ -164,7 +164,7 @@ Other factor retention criteria:
 ## Examples
 
 ``` r
-
+# \donttest{
 # with correlation matrix
 efa_nest(test_models$baseline$cormat, N = 500)
 #> ── Next Eigenvalue Sufficiency Test ────────────────────────────────────────────
@@ -177,4 +177,5 @@ efa_nest(GRiPS_raw)
 #> ── Next Eigenvalue Sufficiency Test ────────────────────────────────────────────
 #> 
 #> • Suggested number of factors: 1
+# }
 ```

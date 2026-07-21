@@ -170,13 +170,17 @@ efa_simulate(
 
 - match:
 
-  character. Only used with `categories`: how the categorization relates
-  to the population correlation. `"thresholds"` cuts the drawn data at
-  the standard-normal-scale thresholds (for `marginals` `"normal"`,
-  `"VM"`, or `"IG"`; not `"empirical"`), with an attenuated ordinal
-  Pearson correlation; `"polychoric"` requires normal latents
-  (`marginals = "normal"`) and makes the population polychoric
-  correlation of the categorized data equal the target correlation.
+  character. Only used with `categories`: an assertion about how the
+  categorization relates to the population correlation. With a normal
+  latent, cutting at the normal-scale thresholds already leaves the
+  population polychoric correlation of the categorized data equal to the
+  target correlation, so both values compute the same thresholds and
+  produce identical data whenever both are legal. `"thresholds"` (the
+  default) also cuts the `"VM"` and `"IG"` draws, whose ordinal Pearson
+  and polychoric correlations then both depart from the population;
+  `"polychoric"` states that the polychoric match is required and
+  therefore rejects non-normal marginals. Not available with
+  `marginals = "empirical"`. The value is matched case-insensitively.
   Default is `NULL` (`"thresholds"` when `categories` is set).
 
 - missing:
@@ -185,7 +189,11 @@ efa_simulate(
   data: one of `"none"` (the default, complete data), `"MCAR"` (missing
   completely at random), `"MAR"` (missing at random, depending on
   another variable), or `"MNAR"` (missing not at random, depending on
-  the variable's own value). Introduced values become `NA`.
+  the variable's own value). Introduced values become `NA`. Every
+  variable is holed, so under `"MAR"` each variable's predictor is
+  itself subject to missingness: the mechanism is MAR given the
+  *complete* data and is not ignorable for an analyst who sees only the
+  observed data (see Details).
 
 - missing_prop:
 
@@ -235,8 +243,10 @@ simulated data – an `N` by `p` numeric matrix, an integer matrix of
 category codes when `categories` is set, or a length-`n_datasets` list
 of these when `n_datasets > 1`; `NULL` when `return_pop = TRUE`),
 `population` (the `p` by `p` population correlation matrix drawn from,
-model-error-perturbed when requested), `model_error` (`NULL`, or a list
-of the method and the target and achieved RMSEA/CFI when model error was
+model-error-perturbed when requested; with `force_pd = TRUE` and
+`marginals = "VM"` it stays the target matrix, from which the realized
+correlations of the draw can drift), `model_error` (`NULL`, or a list of
+the method and the target and achieved RMSEA/CFI when model error was
 applied), and `settings`. Printing the object shows a compact summary.
 
 ## Details
@@ -285,22 +295,30 @@ With `categories`, the drawn data are discretized into ordered
 categories (an integer code `1` to `K`). `categories` gives either the
 number of equally probable categories (one count for every variable, or
 one per variable) or, as a list of proportion vectors, the marginal
-category proportions per variable. Two matching modes set what the
-categorization preserves. With `match = "thresholds"` (the default) the
-data are cut at normal-scale thresholds (Olsson, 1979) that reproduce
-the requested proportions exactly for normal marginals and approximately
-for the `"VM"` and `"IG"` marginals; because categorization attenuates
+category proportions per variable. The cut points are the thresholds
+that reproduce the requested proportions (Olsson, 1979): the
+standard-normal quantiles for `marginals = "normal"`, and for
+`marginals = "VM"` those quantiles mapped through the same Fleishman
+cubic the draw uses, so the requested proportions are reproduced on the
+non-normal scale too. Under `marginals = "IG"` the thresholds stay on
+the standard-normal scale while the data do not, so the achieved
+proportions depart from the request systematically rather than by
+sampling noise; the departure grows with the non-normality, and only the
+*number* of categories is guaranteed. The same holds for a `"VM"`
+variable whose Fleishman cubic is not increasing over its own thresholds
+and the tails beyond them, which keeps the normal-scale ones and is
+reported with a warning; this arises when a turning point of the cubic
+sits at or near an outer threshold – under a strongly platykurtic
+marginal, or under substantial skewness or kurtosis combined with a
+small outer-category proportion. Because categorization attenuates
 product-moment correlations, the categorized data's Pearson correlation
-is smaller in magnitude than the population correlation (and, under
-non-normal marginals, its polychoric correlation departs from the
-population as well). With `match = "polychoric"` the latent is required
-to be normal (`marginals = "normal"`) and the cases are drawn
-multivariate-normal and thresholded, so the population polychoric
-correlation of the categorized data equals the target; combining it with
-non-normal marginals is rejected. Ordinal output is not available with
-`marginals = "empirical"`. Empty categories left by a draw are reported
-with a warning, as they destabilize the polychoric correlation and the
-factor analysis.
+is smaller in magnitude than the population correlation; under
+non-normal marginals its polychoric correlation departs from the
+population as well. `match` changes none of this – it asserts an intent
+rather than selecting a computation, as described under that argument.
+Ordinal output is not available with `marginals = "empirical"`. Empty
+categories left by a draw are reported with a warning, as they
+destabilize the polychoric correlation and the factor analysis.
 
 With `missing`, missing values are introduced into the drawn data under
 a chosen mechanism (Rubin, 1976), each variable holed at a target
@@ -311,8 +329,19 @@ predictor: another variable for `"MAR"` (chosen by `missing_predictor`)
 or the variable's own value for `"MNAR"`, with slope `missing_strength`.
 The mechanism acts on the drawn (latent) values, so when `categories`
 also discretizes the data the missingness is keyed on the underlying
-value, not the category code. For `"MAR"` the predictor uses the
-complete drawn values. The returned matrix carries the `NA`s, which the
+value, not the category code. For `"MAR"` the predictor is evaluated on
+the complete drawn values, but every variable is holed at rate
+`missing_prop`, so a variable's MAR predictor is itself missing for
+roughly a `missing_prop` fraction of the cases whose missingness it
+drove. The mechanism is therefore MAR conditional on the *complete*
+data, and **not** ignorable for an analyst who sees only the observed
+data: estimators that are consistent under ignorable MAR, such as
+`cor_method = "fiml"` in
+[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+and the multiple imputation behind
+[`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md),
+keep a residual bias here that grows with `missing_prop` and
+`missing_strength`. The returned matrix carries the `NA`s, which the
 correlation estimators handle downstream.
 
 With `model_error`, the population is perturbed away from the exact
@@ -334,11 +363,14 @@ Linn, 1969) adds minor common factors tuned so the achieved RMSEA – and,
 optionally, CFI – match the target(s); with a single target the match is
 close, with both it is a compromise. `"WB"` (Wu & Browne, 2015) draws
 the population from an inverse-Wishart distribution around the
-model-implied correlation; being a single random draw, its realized
-RMSEA varies around the target (and tends to exceed it), so the realized
-value is reported rather than guaranteed. `"CB"` and `"WB"` target the
-RMSEA only; `"TKL"` can target the RMSEA and/or the CFI. The reported
-RMSEA/CFI is the misfit of the specified generating model.
+model-implied correlation; its calibration applies to the *best-fitting*
+model, so the reported misfit of the *generating* model is
+systematically larger than the target – by roughly
+\\\sqrt{(p(p-1)/2)/df}\\, about 1.4 times for 12 variables and 3
+factors. Use `"CB"` when the reported RMSEA must equal the target.
+`"CB"` and `"WB"` target the RMSEA only; `"TKL"` can target the RMSEA
+and/or the CFI. The reported RMSEA/CFI is the misfit of the specified
+generating model.
 
 Replicated draws (`n_datasets > 1`) are generated in parallel across
 replicates with future.apply; a parallel plan can be selected with
@@ -455,5 +487,5 @@ colMeans(is.na(dat_mar$data))
 sim_me <- efa_simulate(N = 500, Lambda = Lambda, Phi = Phi,
                        target_rmsea = 0.05, seed = 42)
 sim_me$model_error$rmsea
-#> [1] 0.04999999
+#> [1] 0.05
 ```
