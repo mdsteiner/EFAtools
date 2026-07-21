@@ -9,7 +9,7 @@
 #' narrow, the table is split into stacked column blocks so the output stays readable.
 #'
 #' @param x class efa_sl_loadings matrix.
-#' @param cutoff numeric. The number above which to print loadings in bold
+#' @param cutoff numeric. The value at or above which loadings are emphasized
 #'  (default is .2).
 #' @param digits numeric. Passed to \code{\link[base:Round]{round}}. Number of digits
 #'  to round the loadings to (default is 3).

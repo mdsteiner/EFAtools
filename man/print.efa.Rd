@@ -74,7 +74,9 @@ display; longer names are cut from the right.}
 See \code{\link[=print.efa_loadings]{print.efa_loadings()}}.}
 
 \item{show_loading_legend}{logical. Whether to print a short legend for the
-loading-table styling. Default is \code{TRUE}.}
+loading-table styling. Default is \code{TRUE}. The legend is only printed when
+that styling is actually rendered (a colour-capable console); in plain
+output it is omitted and this argument has no effect.}
 
 \item{max_factors_per_block}{numeric or \code{NULL}. Maximum number of factor
 columns per loading-table block. If \code{NULL}, chosen from the console width.}

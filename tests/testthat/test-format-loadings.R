@@ -65,8 +65,10 @@ test_that("format.efa_loadings aligns decimals and renders a plain table", {
   expect_snapshot(print(make_loadings()))
 })
 
-test_that("format.efa_loadings prints communalities and a legend", {
+test_that("format.efa_loadings prints communalities", {
   local_reproducible_output()
+  # local_reproducible_output() turns colours off, so the requested legend is omitted:
+  # it only describes styling, and none is rendered here (see the legend test below).
   h2 <- c(0.70, 0.58, 0.63, 1.18)
   expect_snapshot(print(make_loadings(), h2 = h2, legend = TRUE))
 })
@@ -90,6 +92,118 @@ test_that("color controls print styling while format() stays plain", {
   # format() returns only the rendered table lines, with no trailing blank element
   fmt <- format(L)
   expect_true(nzchar(fmt[length(fmt)]))
+})
+
+test_that("the loading legend is printed only when its styling is rendered", {
+  L <- make_loadings()
+  legend_shown <- function(...) {
+    any(grepl("Legend:", utils::capture.output(print(L, legend = TRUE, ...)),
+              fixed = TRUE))
+  }
+
+  # The legend names bold/grey marks, so it is worth printing only when those marks are
+  # actually rendered. That needs both the caller's `color` and a colour-capable target:
+  # cli emits no escapes at one colour, where a legend would describe invisible styling.
+  withr::with_options(list(cli.num_colors = 256), {
+    expect_true(legend_shown(color = TRUE))
+    expect_false(legend_shown(color = FALSE))
+  })
+  withr::with_options(list(cli.num_colors = 1), {
+    expect_false(legend_shown(color = TRUE))
+    expect_false(legend_shown(color = FALSE))
+  })
+
+  # Legend presence tracks ANSI presence exactly.
+  withr::with_options(list(cli.num_colors = 256), {
+    for (col in c(TRUE, FALSE)) {
+      styled <- cli::ansi_has_any(paste(
+        utils::capture.output(print(L, legend = TRUE, color = col)), collapse = ""))
+      expect_equal(legend_shown(color = col), styled)
+    }
+  })
+
+  # Suppressing the legend must not leave the spacer blank line behind: with no styling to
+  # describe, `legend = TRUE` renders exactly as `legend = FALSE`.
+  withr::with_options(list(cli.num_colors = 1), {
+    expect_identical(utils::capture.output(print(L, legend = TRUE)),
+                     utils::capture.output(print(L, legend = FALSE)))
+  })
+
+  # `format()` drops the styling, so it must drop the legend with it -- switching the
+  # colours off at the source rather than stripping the escapes afterwards, which would
+  # leave the legend naming marks that are no longer there.
+  withr::with_options(list(cli.num_colors = 256), {
+    out <- format(L, legend = TRUE)
+    expect_false(any(grepl("Legend:", out, fixed = TRUE)))
+    expect_false(cli::ansi_has_any(paste(out, collapse = "")))
+    expect_identical(out, format(L, legend = FALSE))
+  })
+})
+
+
+test_that("the loading legend names the marks it describes", {
+  local_reproducible_output()
+  L <- make_loadings()
+  withr::local_options(cli.num_colors = 8L)
+
+  # The legend's wording is the contract; the exact escape sequences are cli's business,
+  # so the assertion is on the stripped text. Nothing else pins these lines -- the printed
+  # snapshot is taken with colours off, where the legend is correctly absent.
+  out <- cli::ansi_strip(utils::capture.output(
+    print(L, h2 = c(0.70, 0.58, 0.63, 1.18), legend = TRUE, cutoff = .3)))
+  i <- which(out == "Legend:")
+  expect_length(i, 1L)
+  expect_false(nzchar(out[i - 1L]))                       # the spacer above it
+  expect_identical(out[i + 1:3],
+                   c("  bold = |loading| >= .300",
+                     "  grey = below cutoff",
+                     "  red h2/u2 = Heywood-relevant value"))
+})
+
+
+test_that("the efa report carries the loading legend through its nested capture", {
+  local_reproducible_output()
+
+  # print.efa()/summary.efa() render the loading table inside a capture.output() nested in
+  # cli::cli_format_method(). A sink makes cli report a single colour, so the legend would
+  # be lost -- except that cli_format_method reads the colour count *before* installing its
+  # sink and pins it for everything nested inside. Pinning `cli.num_colors` here would not
+  # test that: it is the first thing cli consults, so it short-circuits the sink question
+  # entirely and the assertion would hold with or without the outer cli_format_method.
+  # `cli.default_num_colors` is read on the same side of the sink check as a real terminal's
+  # isatty() detection, so it is the faithful stand-in. crayon.enabled and the environment
+  # variables have to be cleared because each of them is consulted first.
+  withr::local_envvar(c(NO_COLOR = NA, R_CLI_NUM_COLORS = NA))
+  withr::local_options(cli.num_colors = NULL, crayon.enabled = NULL,
+                       crayon.colors = NULL, knitr.in.progress = NULL,
+                       cli.default_num_colors = 256L)
+  skip_if_not(cli::num_ansi_colors() > 1L, "no colour-capable stand-in available")
+
+  fit <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
+                 estimator = "PAF", rotation = "promax")
+  has_legend <- function(lines) any(grepl("Legend:", lines, fixed = TRUE))
+
+  expect_true(has_legend(format(fit)))
+  expect_true(has_legend(format(summary(fit))))
+  expect_false(has_legend(format(fit, show_loading_legend = FALSE)))
+
+  # The guard that makes the assertion above meaningful: rendered outside the enclosing
+  # cli_format_method, the same table loses its legend, because there the sink really does
+  # drop cli to one colour.
+  expect_false(has_legend(
+    .efa_capture_loadings(fit$rot_loadings, h2 = fit$h2, legend = TRUE)))
+})
+
+
+test_that(".efa_styling_visible tracks both the caller and the target", {
+  withr::with_options(list(cli.num_colors = 256), {
+    expect_true(.efa_styling_visible(TRUE))
+    expect_false(.efa_styling_visible(FALSE))
+  })
+  withr::with_options(list(cli.num_colors = 1), {
+    expect_false(.efa_styling_visible(TRUE))
+    expect_false(.efa_styling_visible(FALSE))
+  })
 })
 
 test_that("wide matrices wrap into stacked blocks via max_factors_per_block", {

@@ -250,6 +250,7 @@
 #' Crawford, C. B., & Ferguson, G. A. (1970). A general rotation criterion and its use
 #' in orthogonal rotation. *Psychometrika*, 35, 321-332.
 #'
+#' @keywords internal
 .rotate_cf_orth <- function(L, kappa, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0, screen_keep = 5L, triage_maxit = 25L, triage_improve_tol = 0.0) {
     .Call(`_EFAtools_rotate_cf_orth`, L, kappa, eps, normalize, random_starts, maxit, max_line_search, step0, screen_keep, triage_maxit, triage_improve_tol)
 }
@@ -270,22 +271,8 @@
 #' starts, and fully optimizes only those that improve on the current incumbent by at
 #' least `triage_improve_tol`.
 #'
-#' @param L Numeric matrix. The unrotated loading matrix (variables by factors).
+#' @inheritParams .rotate_cf_orth
 #' @param gam Numeric scalar. The oblimin parameter; `gam = 0` is the quartimin criterion.
-#' @param eps Numeric scalar. Convergence tolerance for the projected-gradient norm.
-#' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before rotation
-#'   and reverse it afterwards.
-#' @param random_starts Integer scalar. Number of additional random starts.
-#' @param maxit Integer scalar. Maximum number of projected-gradient updates.
-#' @param max_line_search Integer scalar. Maximum number of step-halving attempts after
-#'   the initial trial step in each line-search phase.
-#' @param step0 Numeric scalar. Initial step size used in the projected-gradient update.
-#' @param screen_keep Integer scalar. Number of screened random starts retained for triage
-#'   optimization.
-#' @param triage_maxit Integer scalar. Number of short optimization iterations used in the
-#'   triage stage.
-#' @param triage_improve_tol Numeric scalar. Relative improvement required for a triaged
-#'   start to be promoted to full optimization.
 #'
 #' @returns A named list with the rotated loadings, the transformation matrix `Th`
 #'   (with `L %*% t(solve(Th))` reproducing the rotated loadings), the factor correlation
@@ -301,6 +288,7 @@
 #' Jennrich, R. I., & Sampson, P. F. (1966). Rotation for simple loadings.
 #' *Psychometrika*, 31, 313-323.
 #'
+#' @keywords internal
 .rotate_oblimin <- function(L, gam = 0.0, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0, screen_keep = 5L, triage_maxit = 25L, triage_improve_tol = 0.0) {
     .Call(`_EFAtools_rotate_oblimin`, L, gam, eps, normalize, random_starts, maxit, max_line_search, step0, screen_keep, triage_maxit, triage_improve_tol)
 }
@@ -323,23 +311,9 @@
 #' starts, and fully optimizes only those that improve on the current incumbent by at least
 #' `triage_improve_tol`.
 #'
-#' @param L Numeric matrix. The unrotated loading matrix (variables by factors).
+#' @inheritParams .rotate_cf_orth
 #' @param delta Numeric scalar. The geomin offset added to the squared loadings; must be a
 #'   positive finite scalar. `delta = 0.01` is the usual default.
-#' @param eps Numeric scalar. Convergence tolerance for the projected-gradient norm.
-#' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before rotation and
-#'   reverse it afterwards.
-#' @param random_starts Integer scalar. Number of additional random orthogonal starts.
-#' @param maxit Integer scalar. Maximum number of projected-gradient updates.
-#' @param max_line_search Integer scalar. Maximum number of step-halving attempts after the
-#'   initial trial step in each line-search phase.
-#' @param step0 Numeric scalar. Initial step size used in the projected-gradient update.
-#' @param screen_keep Integer scalar. Number of screened random starts retained for triage
-#'   optimization.
-#' @param triage_maxit Integer scalar. Number of short optimization iterations used in the
-#'   triage stage.
-#' @param triage_improve_tol Numeric scalar. Relative improvement required for a triaged start
-#'   to be promoted to full optimization.
 #'
 #' @returns A named list with the rotated loadings, the orthogonal rotation matrix `Th`
 #'   (with `L %*% Th` reproducing the rotated loadings), the attained criterion value, and the
@@ -354,6 +328,7 @@
 #' Browne, M. W. (2001). An overview of analytic rotation in exploratory factor analysis.
 #' *Multivariate Behavioral Research*, 36, 111-150.
 #'
+#' @keywords internal
 .rotate_geomin_orth <- function(L, delta = 0.01, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0, screen_keep = 5L, triage_maxit = 25L, triage_improve_tol = 0.0) {
     .Call(`_EFAtools_rotate_geomin_orth`, L, delta, eps, normalize, random_starts, maxit, max_line_search, step0, screen_keep, triage_maxit, triage_improve_tol)
 }
@@ -376,23 +351,9 @@
 #' fully optimizes only those that improve on the current incumbent by at least
 #' `triage_improve_tol`.
 #'
-#' @param L Numeric matrix. The unrotated loading matrix (variables by factors).
+#' @inheritParams .rotate_cf_orth
 #' @param delta Numeric scalar. The geomin offset added to the squared loadings; must be a
 #'   positive finite scalar. `delta = 0.01` is the usual default.
-#' @param eps Numeric scalar. Convergence tolerance for the projected-gradient norm.
-#' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before rotation and
-#'   reverse it afterwards.
-#' @param random_starts Integer scalar. Number of additional random starts.
-#' @param maxit Integer scalar. Maximum number of projected-gradient updates.
-#' @param max_line_search Integer scalar. Maximum number of step-halving attempts after the
-#'   initial trial step in each line-search phase.
-#' @param step0 Numeric scalar. Initial step size used in the projected-gradient update.
-#' @param screen_keep Integer scalar. Number of screened random starts retained for triage
-#'   optimization.
-#' @param triage_maxit Integer scalar. Number of short optimization iterations used in the
-#'   triage stage.
-#' @param triage_improve_tol Numeric scalar. Relative improvement required for a triaged start
-#'   to be promoted to full optimization.
 #'
 #' @returns A named list with the rotated loadings, the transformation matrix `Th`
 #'   (with `L %*% t(solve(Th))` reproducing the rotated loadings), the factor correlation
@@ -408,6 +369,7 @@
 #' Browne, M. W. (2001). An overview of analytic rotation in exploratory factor analysis.
 #' *Multivariate Behavioral Research*, 36, 111-150.
 #'
+#' @keywords internal
 .rotate_geomin_oblq <- function(L, delta = 0.01, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0, screen_keep = 5L, triage_maxit = 25L, triage_improve_tol = 0.0) {
     .Call(`_EFAtools_rotate_geomin_oblq`, L, delta, eps, normalize, random_starts, maxit, max_line_search, step0, screen_keep, triage_maxit, triage_improve_tol)
 }
@@ -429,21 +391,7 @@
 #' starts, and fully optimizes only those that improve on the current incumbent by at least
 #' `triage_improve_tol`.
 #'
-#' @param L Numeric matrix. The unrotated loading matrix (variables by factors).
-#' @param eps Numeric scalar. Convergence tolerance for the projected-gradient norm.
-#' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before rotation and
-#'   reverse it afterwards.
-#' @param random_starts Integer scalar. Number of additional random orthogonal starts.
-#' @param maxit Integer scalar. Maximum number of projected-gradient updates.
-#' @param max_line_search Integer scalar. Maximum number of step-halving attempts after the
-#'   initial trial step in each line-search phase.
-#' @param step0 Numeric scalar. Initial step size used in the projected-gradient update.
-#' @param screen_keep Integer scalar. Number of screened random starts retained for triage
-#'   optimization.
-#' @param triage_maxit Integer scalar. Number of short optimization iterations used in the
-#'   triage stage.
-#' @param triage_improve_tol Numeric scalar. Relative improvement required for a triaged start
-#'   to be promoted to full optimization.
+#' @inheritParams .rotate_cf_orth
 #'
 #' @returns A named list with the rotated loadings, the orthogonal rotation matrix `Th`
 #'   (with `L %*% Th` reproducing the rotated loadings), the attained criterion value, and the
@@ -458,6 +406,7 @@
 #' software for arbitrary rotation criteria in factor analysis. *Educational and
 #' Psychological Measurement*, 65, 676-696.
 #'
+#' @keywords internal
 .rotate_bentler_orth <- function(L, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0, screen_keep = 5L, triage_maxit = 25L, triage_improve_tol = 0.0) {
     .Call(`_EFAtools_rotate_bentler_orth`, L, eps, normalize, random_starts, maxit, max_line_search, step0, screen_keep, triage_maxit, triage_improve_tol)
 }
@@ -480,21 +429,7 @@
 #' fully optimizes only those that improve on the current incumbent by at least
 #' `triage_improve_tol`.
 #'
-#' @param L Numeric matrix. The unrotated loading matrix (variables by factors).
-#' @param eps Numeric scalar. Convergence tolerance for the projected-gradient norm.
-#' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before rotation and
-#'   reverse it afterwards.
-#' @param random_starts Integer scalar. Number of additional random starts.
-#' @param maxit Integer scalar. Maximum number of projected-gradient updates.
-#' @param max_line_search Integer scalar. Maximum number of step-halving attempts after the
-#'   initial trial step in each line-search phase.
-#' @param step0 Numeric scalar. Initial step size used in the projected-gradient update.
-#' @param screen_keep Integer scalar. Number of screened random starts retained for triage
-#'   optimization.
-#' @param triage_maxit Integer scalar. Number of short optimization iterations used in the
-#'   triage stage.
-#' @param triage_improve_tol Numeric scalar. Relative improvement required for a triaged start
-#'   to be promoted to full optimization.
+#' @inheritParams .rotate_cf_orth
 #'
 #' @returns A named list with the rotated loadings, the transformation matrix `Th`
 #'   (with `L %*% t(solve(Th))` reproducing the rotated loadings), the factor correlation
@@ -510,6 +445,7 @@
 #' software for arbitrary rotation criteria in factor analysis. *Educational and
 #' Psychological Measurement*, 65, 676-696.
 #'
+#' @keywords internal
 .rotate_bentler_oblq <- function(L, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0, screen_keep = 5L, triage_maxit = 25L, triage_improve_tol = 0.0) {
     .Call(`_EFAtools_rotate_bentler_oblq`, L, eps, normalize, random_starts, maxit, max_line_search, step0, screen_keep, triage_maxit, triage_improve_tol)
 }
@@ -533,21 +469,7 @@
 #' starts, and fully optimizes only those that improve on the current incumbent by at least
 #' `triage_improve_tol`.
 #'
-#' @param L Numeric matrix. The unrotated loading matrix (variables by factors).
-#' @param eps Numeric scalar. Convergence tolerance for the projected-gradient norm.
-#' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before rotation and
-#'   reverse it afterwards.
-#' @param random_starts Integer scalar. Number of additional random orthogonal starts.
-#' @param maxit Integer scalar. Maximum number of projected-gradient updates.
-#' @param max_line_search Integer scalar. Maximum number of step-halving attempts after the
-#'   initial trial step in each line-search phase.
-#' @param step0 Numeric scalar. Initial step size used in the projected-gradient update.
-#' @param screen_keep Integer scalar. Number of screened random starts retained for triage
-#'   optimization.
-#' @param triage_maxit Integer scalar. Number of short optimization iterations used in the
-#'   triage stage.
-#' @param triage_improve_tol Numeric scalar. Relative improvement required for a triaged start
-#'   to be promoted to full optimization.
+#' @inheritParams .rotate_cf_orth
 #'
 #' @returns A named list with the rotated loadings, the orthogonal rotation matrix `Th`
 #'   (with `L %*% Th` reproducing the rotated loadings), the attained criterion value, and the
@@ -562,6 +484,7 @@
 #' Jennrich, R. I., & Bentler, P. M. (2011). Exploratory bi-factor analysis. *Psychometrika*,
 #' 76, 537-549.
 #'
+#' @keywords internal
 .rotate_bifactor_orth <- function(L, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0, screen_keep = 5L, triage_maxit = 25L, triage_improve_tol = 0.0) {
     .Call(`_EFAtools_rotate_bifactor_orth`, L, eps, normalize, random_starts, maxit, max_line_search, step0, screen_keep, triage_maxit, triage_improve_tol)
 }
@@ -586,21 +509,7 @@
 #' fully optimizes only those that improve on the current incumbent by at least
 #' `triage_improve_tol`.
 #'
-#' @param L Numeric matrix. The unrotated loading matrix (variables by factors).
-#' @param eps Numeric scalar. Convergence tolerance for the projected-gradient norm.
-#' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before rotation and
-#'   reverse it afterwards.
-#' @param random_starts Integer scalar. Number of additional random starts.
-#' @param maxit Integer scalar. Maximum number of projected-gradient updates.
-#' @param max_line_search Integer scalar. Maximum number of step-halving attempts after the
-#'   initial trial step in each line-search phase.
-#' @param step0 Numeric scalar. Initial step size used in the projected-gradient update.
-#' @param screen_keep Integer scalar. Number of screened random starts retained for triage
-#'   optimization.
-#' @param triage_maxit Integer scalar. Number of short optimization iterations used in the
-#'   triage stage.
-#' @param triage_improve_tol Numeric scalar. Relative improvement required for a triaged start
-#'   to be promoted to full optimization.
+#' @inheritParams .rotate_cf_orth
 #'
 #' @returns A named list with the rotated loadings, the transformation matrix `Th`
 #'   (with `L %*% t(solve(Th))` reproducing the rotated loadings), the factor correlation
@@ -616,6 +525,7 @@
 #' Jennrich, R. I., & Bentler, P. M. (2011). Exploratory bi-factor analysis. *Psychometrika*,
 #' 76, 537-549.
 #'
+#' @keywords internal
 .rotate_bifactor_oblq <- function(L, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0, screen_keep = 5L, triage_maxit = 25L, triage_improve_tol = 0.0) {
     .Call(`_EFAtools_rotate_bifactor_oblq`, L, eps, normalize, random_starts, maxit, max_line_search, step0, screen_keep, triage_maxit, triage_improve_tol)
 }
@@ -644,21 +554,16 @@
 #' basin -- is the standard remedy for the local minima of complexity-based rotation criteria
 #' (Kiers, 1994; Browne, 2001).
 #'
-#' @param L Numeric matrix. The unrotated loading matrix (variables by factors).
+#' @inheritParams .rotate_cf_orth
 #' @param k Integer scalar. The number of "close-to-zero" loadings the criterion targets; must
 #'   be in `[1, nrow(L) * ncol(L)]`. `k = nrow(L)` is the usual default.
 #' @param eps Numeric scalar. Convergence tolerance for the projected-gradient norm. Because the
 #'   simplimax criterion is only piecewise smooth, the projected gradient need not reach this
 #'   tolerance at the optimum; convergence is then reported when the criterion value stalls (the
 #'   non-monotone search described above), so `eps` mainly governs the smooth phases of the search.
-#' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before rotation and
-#'   reverse it afterwards.
 #' @param random_starts Integer scalar. Number of random orthogonal starts fully optimized in
 #'   addition to the identity start.
 #' @param maxit Integer scalar. Maximum number of projected-gradient updates per start.
-#' @param max_line_search Integer scalar. Maximum number of step-halving attempts after the
-#'   initial trial step in each line-search phase.
-#' @param step0 Numeric scalar. Initial step size used in the projected-gradient update.
 #'
 #' @returns A named list with the rotated loadings, the transformation matrix `Th`
 #'   (with `L %*% t(solve(Th))` reproducing the rotated loadings), the factor correlation
@@ -680,6 +585,7 @@
 #' Kiers, H. A. L. (1994). Simplimax: Oblique rotation to an optimal target with simple
 #' structure. *Psychometrika*, 59, 567-579.
 #'
+#' @keywords internal
 .rotate_simplimax_oblq <- function(L, k, eps = 1e-5, normalize = TRUE, random_starts = 0L, maxit = 1000L, max_line_search = 10L, step0 = 1.0) {
     .Call(`_EFAtools_rotate_simplimax_oblq`, L, k, eps, normalize, random_starts, maxit, max_line_search, step0)
 }

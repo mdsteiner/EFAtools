@@ -2,7 +2,7 @@
 #'
 #' @description
 #' Draws the analytic RMSEA power (MacCallum, Browne, & Sugawara, 1996) of an
-#' [efa_power()] result as a function of the (per-group) sample size, mirroring
+#' [efa_power()] result as a function of the total sample size, mirroring
 #' `semTools::plotRMSEApower()` but returning a [ggplot2::ggplot] object rather than
 #' drawing to the active device. The test, its null and alternative RMSEA, the
 #' significance level, and the number of groups are taken from the object; only the
@@ -19,7 +19,7 @@
 #' curve, so the marks are then omitted.
 #'
 #' @param x An object of class `efa_power` (output from [efa_power()]).
-#' @param n numeric. The (per-group) sample sizes to evaluate. If `NULL` (the default) a
+#' @param n numeric. The total sample sizes to evaluate. If `NULL` (the default) a
 #'   sequence bracketing the object's sample size is chosen automatically.
 #' @param df numeric. The model degrees of freedom (must be positive). Defaults to the
 #'   object's `df`; a vector of length greater than one draws one curve per value.
@@ -137,7 +137,7 @@ plot.efa_power <- function(x, n = NULL, df = NULL, eps1 = NULL, ...) {
   dat$level <- factor(dat$level, levels = unique(levels_val))
 
   fit_lbl <- if (s$type == "close") "close fit" else "not-close fit"
-  n_lab <- if (s$group > 1) "Sample size (N) per group" else "Sample size (N)"
+  n_lab <- if (s$group > 1) "Total sample size (N)" else "Sample size (N)"
   # The null bounds RMSEA from above for close fit and from below for not-close fit,
   # matching the comparator in format.efa_power().
   cmp <- if (s$type == "close") "\u2264" else "\u2265"

@@ -13,7 +13,7 @@
 #' @method plot efa_average
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' EFA_aver <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500)
 #' plot(EFA_aver)
 #' }

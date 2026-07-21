@@ -50,11 +50,12 @@
 #' [efa_parallel()].
 #' @param estimate_control an [estimate_control()] object with the estimation settings for the
 #'  [efa_fit()] fits of the 0 to *J* factor solutions, and for the fit inside the internal
-#'  [efa_parallel()] call. `NULL` (default) uses the [efa_fit()] defaults. The fits are unrotated,
-#'  so no rotation settings apply.
+#'  [efa_parallel()] call. `NULL` (default) uses the [efa_fit()] defaults. This object carries
+#'  estimation settings only; the fits are always unrotated, which the hull statistics (CFI,
+#'  RMSEA, CAF) do not depend on.
 #' @param ... Further arguments passed to [efa_fit()], also in
 #' [efa_parallel()]. The estimation tuning knobs are not passed here; they live in
-#' `estimate_control`.
+#' `estimate_control`, and a rotation setting is not accepted because the fits are unrotated.
 #'
 #' @details The Hull method aims to find a model with an optimal balance between
 #'  model fit and number of parameters, retaining only major factors
@@ -68,6 +69,12 @@
 #'   different number of factors can be parallelized using the future framework,
 #'   by calling the [future::plan()] function. The examples
 #'    provide example code on how to enable parallel processing.
+#'
+#'   The upper bound *J* comes from [efa_parallel()], which compares against simulated
+#'   data, so the suggested number of factors varies slightly from run to run; a
+#'   criterion-based rotation passed through `...` adds its own random starts. Call
+#'   [set.seed()] beforehand to make a run reproducible; the result is then also
+#'   independent of the parallel plan.
 #'
 #'   Note that if `gof = "RMSEA"` is used, 1 - RMSEA is actually used to
 #'   compare the different solutions. Thus, the threshold of .05 is then .95. This
@@ -129,6 +136,8 @@ efa_hull <- function(x, N = NA, n_fac_theor = NA,
   # Perform hull method following Lorenzo-Seva, Timmerman, and Kiers (2011)
 
   .reject_flat_knobs(...names(), fn = "efa_hull")
+  .reject_unknown_fit_dots(...names(), fn = "efa_hull", unrotated = TRUE)
+  .reject_rotation_dots(list(...), fn = "efa_hull")
   .assert_cor_input(x)
 
   estimator <- .match_arg_ci(estimator)
@@ -137,7 +146,7 @@ efa_hull <- function(x, N = NA, n_fac_theor = NA,
   # The Hull method derives its factor-search bound from an internal parallel
   # analysis, whose reference data are continuous; poly/tetra are therefore not
   # supported, consistent with PARALLEL/NEST/CD.
-  .reject_poly_reference(cor_method, "HULL")
+  .reject_poly_reference(cor_method, "efa_hull")
   gof <- .match_arg_ci(gof, several.ok = TRUE)
   eigen_type <- .match_arg_ci(eigen_type)
   checkmate::assert_count(n_fac_theor, na.ok = TRUE)

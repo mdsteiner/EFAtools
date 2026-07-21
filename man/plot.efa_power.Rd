@@ -9,7 +9,7 @@
 \arguments{
 \item{x}{An object of class \code{efa_power} (output from \code{\link[=efa_power]{efa_power()}}).}
 
-\item{n}{numeric. The (per-group) sample sizes to evaluate. If \code{NULL} (the default) a
+\item{n}{numeric. The total sample sizes to evaluate. If \code{NULL} (the default) a
 sequence bracketing the object's sample size is chosen automatically.}
 
 \item{df}{numeric. The model degrees of freedom (must be positive). Defaults to the
@@ -26,7 +26,7 @@ A \link[ggplot2:ggplot]{ggplot2::ggplot} object.
 }
 \description{
 Draws the analytic RMSEA power (MacCallum, Browne, & Sugawara, 1996) of an
-\code{\link[=efa_power]{efa_power()}} result as a function of the (per-group) sample size, mirroring
+\code{\link[=efa_power]{efa_power()}} result as a function of the total sample size, mirroring
 \code{semTools::plotRMSEApower()} but returning a \link[ggplot2:ggplot]{ggplot2::ggplot} object rather than
 drawing to the active device. The test, its null and alternative RMSEA, the
 significance level, and the number of groups are taken from the object; only the

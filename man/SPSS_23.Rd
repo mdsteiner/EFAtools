@@ -24,7 +24,7 @@ Behavior Research Methods, 54, 54–74. doi: 10.3758/s13428-021-01581-x
 
 Wolff, H.G., & Preising, K. (2005). Exploring item and higher order factor structure with the Schmid-Leiman solution: Syntax codes for SPSS and SAS. Behavior Research Methods, 37, 48–58. doi: 10.3758/BF03206397
 
-Grieder, S., & Grob, A. (2019). Exploratory factor analyses of the intelligence and development scales–2: Implications for theory and practice. Assessment. Advance online publication. doi:10.1177/10731911198450
+Grieder, S., & Grob, A. (2019). Exploratory factor analyses of the intelligence and development scales–2: Implications for theory and practice. Assessment. Advance online publication. doi:10.1177/1073191119845051
 
 Grob, A., & Hagmann-von Arx, P. (2018). Intelligence and Development Scales--2 (IDS-2). Intelligenz- und Entwicklungsskalen für Kinder und Jugendliche.
 [Intelligence and Development Scales for Children and Adolescents.]. Bern, Switzerland: Hogrefe.

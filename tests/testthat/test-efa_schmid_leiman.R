@@ -302,10 +302,11 @@ test_that("a second-order Heywood case raises a classed error", {
 
 test_that("oblique solutions with unlabelled factor columns keep all factors", {
 
-  # The GPArotation-based rotations return loadings without column labels, so the
-  # first-order factors must be taken in the order they come in. Reordering them
-  # by a factor number parsed from absent labels used to subset the loadings and
-  # Phi down to zero columns, which made the second-order EFA see no variables.
+  # A loading matrix whose columns carry no labels leaves the first-order factors to be
+  # taken in the order they come in. Reordering them by a factor number parsed from
+  # absent labels used to subset the loadings and Phi down to zero columns, which made
+  # the second-order EFA see no variables. efa_fit() labels every rotation's columns, so
+  # strip the labels to reach the path an externally built or bare-matrix input takes.
   cormat <- test_models$baseline$cormat
   cormat_list <- list(cormat, cormat, cormat)
 
@@ -317,8 +318,10 @@ test_that("oblique solutions with unlabelled factor columns keep all factors", {
                                       estimator = "PAF", rotation = "oblimin"))
 
     # the fixtures only test what they are meant to if the columns are unlabelled
-    expect_null(colnames(fitted$rot_loadings))
-    expect_null(colnames(pooled$rot_loadings))
+    colnames(fitted$rot_loadings) <- NULL
+    colnames(pooled$rot_loadings) <- NULL
+    dimnames(fitted$Phi) <- NULL
+    dimnames(pooled$Phi) <- NULL
 
     for (obj in list(fitted, pooled)) {
 
@@ -357,6 +360,24 @@ test_that("labelled factor columns are still ordered by factor number", {
 
   expect_equal(sl_scrambled$sl, SL_EFAtools$sl)
 
+})
+
+test_that("efa_schmid_leiman runs on an oblique fit whose column labels are permuted", {
+  skip_if_not_installed("GPArotation")
+
+  # The first-order columns are reordered by the number in their labels, which the
+  # oblimin rotation returns permuted (F2, F1, F3). An unguarded reorder empties Phi,
+  # and the second-order fit then aborts on a model with no variables.
+  EFA_obl <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
+                     estimator = "PAF", rotation = "oblimin")
+  SL_obl <- efa_schmid_leiman(EFA_obl, estimator = "PAF",
+                              estimate_control = estimate_control(type = "EFAtools"))
+
+  expect_s3_class(SL_obl, "efa_schmid_leiman")
+  expect_identical(class(SL_obl$sl), c("efa_sl_loadings", "SLLOADINGS"))
+  expect_identical(dim(unclass(SL_obl$sl)), dim(unclass(SL_EFAtools$sl)))
+  expect_true(all(is.finite(SL_obl$L2)))
+  expect_length(SL_obl$L2, 3)
 })
 
 test_that("print output is stable", {

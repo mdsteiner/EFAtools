@@ -12,7 +12,7 @@
 \arguments{
 \item{x}{class efa_sl_loadings matrix.}
 
-\item{cutoff}{numeric. The number above which to print loadings in bold
+\item{cutoff}{numeric. The value at or above which loadings are emphasized
 (default is .2).}
 
 \item{digits}{numeric. Passed to \code{\link[base:Round]{round}}. Number of digits

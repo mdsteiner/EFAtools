@@ -156,11 +156,16 @@
 # matrix, and explained variances. The sign reflection and the factor ordering are
 # applied to the loadings, the rotation matrix, and the factor intercorrelations
 # alike, so the structure matrix and reported correlations stay consistent with the
-# loadings. `name_factors` controls whether the factor columns are labelled
-# (varimax labels them; the GPArotation engines leave them unnamed). Used by every
-# engine except promax.
-.reflect_and_order <- function(loadings, Phi = NULL, rotmat, L_unrot,
-                               name_factors, order_type) {
+# loadings. The factor columns are labelled "F1".."Fk" by their position in the
+# ordered solution, so every rotation returns labelled loadings, factor
+# intercorrelations, and structure coefficients. The labels deliberately do not
+# follow the unrotated columns: a rotation mixes all k factors, so a rotated column
+# corresponds to no single unrotated factor, and the engines return their columns in
+# an arbitrary order (for the multistart engines it depends on which random start
+# wins). Carrying the unrotated labels through the sort would therefore attach a
+# run-dependent permutation of "F1".."Fk" to an otherwise stable solution.
+# Used by every engine except promax.
+.reflect_and_order <- function(loadings, Phi = NULL, rotmat, L_unrot, order_type) {
 
   oblique <- !is.null(Phi)
   var_names <- rownames(L_unrot)
@@ -189,7 +194,7 @@
   ord <- order(ss, decreasing = TRUE)
   loadings <- loadings[, ord, drop = FALSE]
 
-  fac_names <- if (isTRUE(name_factors)) colnames(L_unrot)[ord] else NULL
+  fac_names <- colnames(L_unrot)
   dimnames(loadings) <- list(var_names, fac_names)
 
   # the rotation matrix follows the same sign reflection and factor ordering as
@@ -198,8 +203,8 @@
   rotmat <- (rotmat %*% diag(signs))[, ord, drop = FALSE]
 
   if (oblique) {
-    Phi <- Phi[ord, ord]
-    dimnames(Phi) <- NULL
+    Phi <- Phi[ord, ord, drop = FALSE]
+    dimnames(Phi) <- list(fac_names, fac_names)
   }
 
   vars_accounted_rot <- .compute_vars(L_unrot = L_unrot, L_rot = loadings, Phi = Phi)
@@ -257,19 +262,26 @@
   n
 }
 
-# Summarise a multistart rotation run for the output: the number of random starts
-# requested, how many converged to a genuine local optimum, how many distinct optima they
-# found, and the spread and best value of the attained criterion. `all_values` and
-# `all_converged` are the per-start criterion values and convergence flags returned by the
-# native rotation engines. The distinct-optima count and spread are taken over the
-# CONVERGED starts only: the screen-and-triage engine leaves the starts it does not promote
-# at a short, unconverged triage iterate, which is not a local optimum and must not be
-# counted as one (those starts have `all_converged == 0`). The best criterion value is the
+# Summarise a multistart rotation run for the output: how many starts were available in
+# total, how many of them were actually optimized, how many converged to a genuine local
+# optimum, how many distinct optima they found, and the spread and best value of the
+# attained criterion. `all_values` and `all_converged` are the per-start criterion values
+# and convergence flags returned by the native rotation engines, one entry per OPTIMIZED
+# start, so `length(all_values)` is the number of optimizations that actually ran. Under the
+# screen-and-triage strategy that is far fewer than the number of random starts: the starts
+# that are not among the best-screened have their objective evaluated at the start point and
+# are then discarded, so they can never yield a local optimum and are not counted here.
+# `n_starts_total` includes the rational (identity) start alongside the `randomStarts` random
+# ones, so it bounds `n_converged` from above. The distinct-optima count and spread are taken
+# over the CONVERGED starts only: the screen-and-triage engine leaves the starts it does not
+# promote at a short, unconverged triage iterate, which is not a local optimum and must not
+# be counted as one (those starts have `all_converged == 0`). The best criterion value is the
 # lowest attained over all finite starts (the selected solution).
 .rotation_diagnostics <- function(all_values, all_converged, randomStarts) {
   finite <- is.finite(all_values)
   converged <- all_values[finite & all_converged == 1L]
-  list(n_starts = randomStarts,
+  list(n_starts_total = as.integer(randomStarts) + 1L,
+       n_optimized = length(all_values),
        n_converged = length(converged),
        n_distinct_minima = .count_distinct_minima(converged),
        criterion_spread = if (length(converged) > 1L) max(converged) - min(converged) else 0,
@@ -305,7 +317,7 @@
       .VARIMAX_SPSS(L, normalize = resolved$normalize, precision = precision)
     }
     out <- .reflect_and_order(AV$loadings, rotmat = AV$rotmat, L_unrot = L,
-                              name_factors = TRUE, order_type = resolved$order_type)
+                              order_type = resolved$order_type)
     return(c(out, list(settings = settings)))
 
   }
@@ -353,7 +365,7 @@
     settings$rotation_diagnostics <- .rotation_diagnostics(AV$all_values,
                                                            AV$all_converged, randomStarts)
     out <- .reflect_and_order(AV$loadings, rotmat = AV$Th, L_unrot = L,
-                              name_factors = FALSE, order_type = resolved$order_type)
+                              order_type = resolved$order_type)
     return(c(out, list(settings = settings)))
 
   }
@@ -386,9 +398,10 @@
     settings$rotation_diagnostics <- .rotation_diagnostics(AV$all_values,
                                                            AV$all_converged, randomStarts)
     out <- .reflect_and_order(AV$loadings, Phi = AV$Phi, rotmat = AV$Th,
-                              L_unrot = L, name_factors = FALSE,
-                              order_type = resolved$order_type)
+                              L_unrot = L, order_type = resolved$order_type)
     return(c(out, list(settings = settings)))
 
   }
+
+  cli::cli_abort("Unknown rotation: {.val {rotation}}.", class = "efa_unknown_rotation")
 }

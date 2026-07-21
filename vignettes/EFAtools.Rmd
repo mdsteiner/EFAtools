@@ -126,7 +126,7 @@ would run:
 
 ```{r}
 # parallel analysis based on SMC eigenvalues
-pa <- efa_parallel(DOSPERT_sub, eigen_type = "SMC")
+pa <- efa_parallel(DOSPERT_sub, eigen_type = "smc")
 pa
 ```
 
@@ -160,8 +160,16 @@ retention criteria that also runs Bartlett's test and computes the KMO. You can 
 with the `criteria` argument:
 
 ```{r}
-efa_retain(DOSPERT_sub,
-           criteria = c("PARALLEL", "EKC", "KGC", "SCREE", "SMT", "MAP"))
+ret <- efa_retain(DOSPERT_sub,
+                  criteria = c("parallel", "ekc", "kgc", "smt", "map"))
+ret
+```
+
+The printed summary is text only, so the scree test's suggestion to inspect the plot needs an
+explicit call. `plot()` on the result draws the figure for every criterion that has one:
+
+```{r}
+plot(ret)
 ```
 
 Omitting `criteria` runs the full suite, including the hull method, the next eigenvalue
@@ -177,9 +185,9 @@ correlation matrix, in which case the sample size must be supplied. On a cleaner
 criteria often agree:
 
 ```{r}
-efa_retain(test_models$baseline$cormat, N = 500, estimator = "ULS",
-           criteria = c("PARALLEL", "EKC", "SMT"),
-           eigen_type_other = c("SMC", "PCA"))
+efa_retain(test_models$baseline$cormat, N = 500, estimator = "uls",
+           criteria = c("parallel", "ekc", "smt"),
+           eigen_type_other = c("smc", "pca"))
 ```
 
 Here the criteria agree on three factors, with only the conservative RMSEA lower-bound
@@ -214,7 +222,7 @@ efa_dospert
 We can also use a different estimator and rotation, here for example ULS and an oblimin rotation:
 
 ```{r}
-efa_uls <- efa_fit(DOSPERT_sub, n_factors = 6, rotation = "oblimin", estimator = "ULS")
+efa_uls <- efa_fit(DOSPERT_sub, n_factors = 6, rotation = "oblimin", estimator = "uls")
 efa_uls
 ```
 
@@ -229,6 +237,26 @@ efa_compare(efa_dospert$rot_loadings, efa_uls$rot_loadings,
             x_labels = c("PAF and promax", "ULS and oblimin"))
 ```
 
+## Averaging Across Analytic Choices with `efa_average()`
+
+Comparing two solutions by hand answers the question for those two. `efa_average()` asks it
+across a whole grid at once: it runs an EFA for every combination of the settings you allow it
+to vary, averages the loadings across the solutions that converged, and reports the range each
+loading spans. That range is the useful part — it shows how much of the result is the data and
+how much is the analytic choice. Here we vary only the estimator, keeping one implementation
+each of PAF, ULS, and ML with a promax rotation:
+
+```{r}
+avg_dospert <- efa_average(DOSPERT_sub, n_factors = 6,
+                           estimator = c("paf", "uls", "ml"),
+                           type = "EFAtools", start_method = "psych")
+avg_dospert
+```
+
+Left unrestricted, the defaults sweep the different implementations of principal axis
+factoring and promax rotation instead, which is considerably more work; see `?efa_average` for
+the settings that can be varied and for `plot()`, which shows the minimum, maximum, and
+average loading of every indicator.
 
 ## Factor Scores with `efa_scores()`
 
@@ -261,17 +289,20 @@ sl_dospert
 ```
 
 The general-factor column shows that the items load substantially on the general factor
-across all domains except the social one, whose items load much less strongly on it — that
-is, the non-social domains covary considerably, while the social domain stands somewhat
-apart.
+across all domains except the social one, whose items load least strongly on it on average
+(mean general-factor loading around .19, against roughly .38 to .55 in the other domains) —
+that is, the non-social domains covary considerably, while the social domain stands somewhat
+apart. Individual social items vary considerably around that average, so this is a statement
+about the domain and not about every item in it.
 
 ### McDonald's Omegas
 
 Finally, `efa_reliability()` computes omega estimates and related indices from the SL solution.
 You can either specify the indicator-to-factor correspondences via the `factor_map` argument or
 let the function determine them automatically, in which case each indicator is assigned to its
-highest-loading factor. With no cross-loadings to worry about here, it is easiest to leave
-`factor_map` unspecified:
+highest-loading factor. With a reasonably simple structure here, it is easiest to leave
+`factor_map` unspecified — a few items do land on a neighbouring domain's factor, which is
+exactly what motivates the explicit map shown afterwards:
 
 ```{r}
 efa_reliability(sl_dospert)
@@ -281,12 +312,22 @@ To set the correspondences explicitly instead — for example to match a theoret
 pass a `factor_map` matrix:
 
 ```{r}
-efa_reliability(sl_dospert, factor_map = matrix(c(rep(0, 18), rep(1, 6), rep(0, 30),
-                                         rep(1, 6), rep(0, 6), 1, 0, 1, 0, 1,
-                                         rep(0, 19), rep(1, 6), rep(0, 31), 1, 0,
-                                         1, 0, 1, rep(0, 30), rep(1, 6),
-                                         rep(0, 12)), ncol = 6, byrow = FALSE))
+efa_reliability(sl_dospert,
+  factor_map = matrix(c(rep(1, 6), rep(0, 24),                  # F1: ethical
+                        rep(0, 18), rep(1, 6), rep(0, 6),       # F2: recreational
+                        rep(0, 6), 1, 0, 1, 0, 1, rep(0, 19),   # F3: financial (1, 3, 5)
+                        rep(0, 12), rep(1, 6), rep(0, 12),      # F4: health
+                        rep(0, 24), rep(1, 6),                  # F5: social
+                        rep(0, 7), 1, 0, 1, 0, 1, rep(0, 18)),  # F6: financial (2, 4, 6)
+                      ncol = 6, byrow = FALSE))
 ```
+
+The columns of `factor_map` are matched to the
+group factors **by position**, so the assignment has to be read off the solution rather than
+assumed: a column naming the wrong set of items yields a well-formed but meaningless subscale
+omega instead of an error. Comparing the two tables, the health row is the one that moves most:
+three of the six health items load higher on the ethical factor than on the health one, so
+pinning all six to F4 lowers that subscale's omega relative to the automatic assignment.
 
 ## Where to Next
 

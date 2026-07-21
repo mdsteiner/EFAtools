@@ -1,10 +1,12 @@
 #' Print and format an efa_compare object
 #'
 #' `print()` shows a summarised output of the [efa_compare()] function: the mean
-#' (with its range), median, the number of decimals to which all numbers agree,
-#' and the minimum number of decimals provided, followed (optionally) by the
-#' table of elementwise differences. `format()` assembles the same report and
-#' returns it as a character vector; `print()` is `cat(format(x), sep = "\n")`.
+#' (with its range), median, and root mean squared distance (RMSE) of the
+#' differences, the number of decimals to which all numbers agree, the minimum
+#' number of decimals provided, and (for matrices) the number of differing
+#' indicator-to-factor correspondences, followed (optionally) by the table of
+#' elementwise differences. `format()` assembles the same report and returns it
+#' as a character vector; `print()` is `cat(format(x), sep = "\n")`.
 #' The lines follow the active console theme, so they are plain when colours are
 #' disabled (for example when captured into a file or stripped with
 #' [cli::ansi_strip()]).
@@ -55,9 +57,14 @@ format.efa_compare <- function(x, ...) {
   max_abs_diff <- x$max_abs_diff
   max_dec <- x$max_dec
   are_equal <- x$are_equal
+  g <- x$g
+  diff_corres <- x$diff_corres
+  diff_corres_cross <- x$diff_corres_cross
 
   # extract control settings
   digits <- x$settings$digits
+  corres <- x$settings$corres
+  thresh <- x$settings$thresh
   m_red <- x$settings$m_red
   range_red <- x$settings$range_red
   round_red <- x$settings$round_red
@@ -100,9 +107,30 @@ format.efa_compare <- function(x, ...) {
     cli::cli_verbatim(paste0("Mean [min, max] absolute difference: ",
                              mean_out, " [", min_out, ", ", max_out, "]"))
     cli::cli_verbatim(paste0("Median absolute difference: ", median_out))
-    cli::cli_verbatim(paste0("Max decimals where all numbers are equal: ", equal_out))
+    cli::cli_verbatim(paste0("Root mean squared distance (RMSE): ",
+                             .efa_style(.efa_num(g, digits, TRUE), "bold")))
+    cli::cli_verbatim(paste0("Max decimals where all numbers agree in absolute value: ",
+                             equal_out))
     cli::cli_verbatim(paste0("Minimum number of decimals provided: ",
                              .efa_style(max_dec, "bold")))
+
+    # Differing indicator-to-factor correspondences. Only reported when they were
+    # actually compared: they are undefined for vector input (NA), and both
+    # `corres = FALSE` and a single-factor matrix skip the comparison and leave a
+    # placeholder 0, which must not be printed as if the two solutions had been found to
+    # agree. The single-factor case is recognised the same way `.compare_loadings()`
+    # decides to skip it, on the number of columns compared. Green when they do agree
+    # (0 differing), red otherwise -- mirroring the "smaller difference reads as a closer
+    # match" colouring of the statistics above.
+    if (isTRUE(corres) && !is.na(diff_corres) && is.matrix(diff) && ncol(diff) > 1L) {
+      corres_style <- function(v) {
+        .efa_style(v, if (v == 0) c("green", "bold") else c("red", "bold"))
+      }
+      cli::cli_verbatim(paste0(
+        "Differing indicator-to-factor correspondences: ",
+        corres_style(diff_corres), " (highest loading), ",
+        corres_style(diff_corres_cross), " (all |loadings| >= ", format(thresh), ")"))
+    }
 
     if (isTRUE(print_diff)) {
       cli::cli_text("")

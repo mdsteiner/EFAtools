@@ -30,8 +30,6 @@
 
     AV$rotmat <- (AV$rotmat %*% diag(signs))[, ss_order, drop = FALSE]
 
-    dim_names[[2]] <- dim_names[[2]][ss_order]
-
   }
 
   # store the loading matrix in a separate object for use
@@ -101,11 +99,16 @@
     # in order there)
     U <- (U %*% diag(signs))[, eig_order, drop = FALSE]
 
-    dim_names[[2]] <- dim_names[[2]][eig_order]
-
   }
 
+  # the factor columns are labelled "F1".."Fk" by their position in the ordered
+  # pattern: promax mixes all k factors, so a rotated column corresponds to no single
+  # unrotated factor, and permuting the unrotated labels along with the reordering
+  # above would only attach an arbitrary permutation to a stable solution
   dimnames(AP) <- dim_names
+  # label the factor intercorrelations with the same factor names as the pattern, so
+  # every rotation returns labelled Phi/Structure columns
+  dimnames(Phi) <- list(colnames(AP), colnames(AP))
 
   vars_accounted_rot <- .compute_vars(L_unrot = L, L_rot = AP, Phi = Phi)
 

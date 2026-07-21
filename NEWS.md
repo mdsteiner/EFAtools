@@ -2,213 +2,108 @@
 
 ## New Interface
 
-* The public interface of the package is now the lowercase `efa_*` functions,
-configured through `estimate_control()` and `rotate_control()`. `efa_fit()` fits
-the factor models, `efa_retain()` and the individual retention criteria determine
-the number of factors, and the other steps of an analysis are covered by
-`efa_screen()`, `efa_average()`, `efa_mi()`, `efa_group()`,
-`efa_schmid_leiman()`, `efa_procrustes()`, `efa_compare()`, `efa_reliability()`,
-`efa_scores()`, `efa_simulate()`, and `efa_power()`.
+* The recommended interface now consists of lowercase `efa_*` functions, with estimation and rotation settings defined through `estimate_control()` and `rotate_control()`.
 
-* The uppercase function names are superseded by their `efa_*` equivalents. They
-remain exported, keep their arguments, and emit no warning, so existing code
-needs no changes. New arguments and features are added to the `efa_*` functions
-only, which are the recommended interface for new code.
+* The existing uppercase functions remain available without warnings, so current scripts continue to work, but new features will generally be added only to the `efa_*` interface.
 
-* The `efa_*` functions and the control constructors match the mixed-case choice
-values case-insensitively: the estimator, the rotation, the factor-retention
-criteria, the eigenvalue and goodness-of-fit types, the factor-score method, and
-the estimation and rotation presets (`type`). For example,
-`efa_fit(x, n_factors = 3, estimator = "ml", rotation = "geomint")` selects the
-`"ML"` estimator and the `"geominT"` rotation. The canonical spelling is always
-stored in the returned settings and used in the printed output.
+* Estimators, rotations, retention criteria, scoring methods, and presets can now be specified without matching capitalization exactly, while results continue to store and display the standard spelling.
 
-## Breaking Changes
+## Changes When Using the `efa_*` Interface
 
-Code written against the superseded uppercase functions keeps working. The
-following concern the `efa_*` interface.
+* The `efa_*` functions now report an error for unused, misspelled, or misplaced arguments instead of silently ignoring them.
 
-* Arguments that do not belong to a fitting function are now an error rather than
-silently ignored. `efa_fit()`, `efa_retain()`, `efa_schmid_leiman()`, and the
-retention criteria that fit a model (`efa_hull()`, `efa_kgc()`, `efa_nest()`,
-`efa_parallel()`, and `efa_scree()`) reject a tuning knob passed to them directly
-(such as `type`, `max_iter`, `criterion`, or `p_type`), as these now live in
-`estimate_control()` and `rotate_control()`. `efa_fit()` also rejects a `...`
-argument the selected rotation's engine cannot consume — accepted are `maxit`
-for the GPArotation-style rotations plus the selected criterion's parameter
-(`gam` for oblimin, `delta` for geomin), and none at all for varimax, promax,
-and `rotation = "none"`, where no engine runs. `rotate_control()` likewise
-validates its extra engine arguments when the control is created. A misspelling
-such as `gamma = 0.5` (for oblimin's `gam`) is therefore an immediate error
-instead of a fit that silently runs the engine defaults. `EFA()` keeps silently
-dropping an extra that its selected rotation cannot consume, so code written
-against it is unaffected.
+* Estimation and rotation options such as convergence settings, iteration limits, and rotation parameters should now be supplied through `estimate_control()` or `rotate_control()`.
 
-* `efa_retain()` takes the maximum number of comparison-data iterations as
-`max_iter_CD`, and this name has to be given in full. The argument sits behind
-`...`, where R no longer matches it from the abbreviation `max_iter`. Such a call
-is rejected as a misplaced estimation knob, rather than silently capping the
-comparison-data iterations as it does in `N_FACTORS()`.
+* Factor-retention functions always fit unrotated models and therefore reject rotation settings that would not affect the retention result.
 
-* `estimate_control()` validates its settings when the control object is created,
-so a convergence `criterion` of 1 or larger is now rejected there (a classed
-`efa_control_input` error) instead of inside the fit.
+* The estimator argument is now named `estimator` rather than `method`, and rotation arguments use the names `p_type` and `random_starts` rather than `P_type` and `randomStarts`.
 
-* The `efa_*` functions select the estimator with `estimator` (e.g.
-`efa_fit(x, n_factors = 3, estimator = "ML")`). Passing the former name `method`
-to one of them is an error rather than a silently ignored argument; the superseded
-uppercase functions keep their `method` argument, and the returned `settings` keep
-a `method` entry duplicating `estimator`, so existing code keeps working.
+* `efa_retain()` requires the full argument name `max_iter_CD`, because the shorter form `max_iter` is no longer matched automatically.
 
-* The rotation arguments `P_type` and `randomStarts` are now named `p_type` and
-`random_starts`. `EFA()` still accepts the former names silently, and
-`EFA_AVERAGE()` keeps `P_type` as its argument name, so existing code keeps
-working.
+* The second-order estimation preset for `efa_schmid_leiman()` is now specified with `estimate_control(type = ...)`.
 
-* `efa_schmid_leiman()` has no `type` argument; the estimation preset for the
-second-order fit is set with `estimate_control(type = ...)`. `SL()` keeps `type`.
+* Control objects are validated when they are created, allowing invalid settings to be detected before a model is fitted.
 
 ## Reproducibility
 
-* `seed` now governs the whole fit, not only the bootstrap. In `efa_fit()` it covers the
-rotation's random starts on the point estimate as well as the case resampling and the
-replicate fits, so `efa_fit(..., rotation = "simplimax", seed = 1)` is now reproducible
-at any `se`. Previously `seed` was silently a no-op at the default `se = "none"`, and a
-criterion-based rotation could reach a different optimum on every call. Seeded
-`se = "np-boot"` results are unchanged: there the point fit already drew from the seeded
-stream, so only the previously unreachable case is affected. `EFA()` forwards `seed` to
-`efa_fit()` and inherits the wider coverage. `efa_group()` likewise applies `seed` to the
-per-group fits whether or not a congruence bootstrap is requested, where it previously
-applied it only with `b_boot > 0`.
+* A supplied `seed` now controls the complete analysis, including random rotation starts, bootstrap samples, group-specific fits, and model averaging where applicable.
 
-* `efa_average()` gains a `seed` argument with the same contract: it makes the averaging
-grid reproducible and independent of the number of parallel workers, and the caller's
-random-number stream is restored afterwards.
+* `efa_average()` now has a `seed` argument and produces the same result regardless of the number of parallel workers.
 
-* `efa_parallel()` results no longer depend on the number of parallel workers. The
-simulated datasets were split into as many chunks as there were workers, and each chunk
-drew its own random-number stream, so the reference eigenvalues from a single
-`set.seed()` differed between a sequential and a multisession plan. The number of chunks
-is now fixed, which makes a seeded run reproducible on any plan but changes the reference
-eigenvalues a given seed produces. `efa_retain()` and `efa_hull()` inherit this.
+* Seeded results from `efa_parallel()` and `efa_hull()` no longer depend on the parallel-processing setup.
 
-* `efa_hull()` now runs its fits with a managed random-number stream, so a hull analysis
-with a criterion-based rotation (such as `oblimin`) is reproducible from `set.seed()`
-under a parallel plan. This changes the results a given seed produces for those
-rotations.
+* Because random-number handling and several calculations were corrected, the same seed may produce different results than in earlier versions for `efa_parallel()`, `efa_hull()`, `efa_average()`, `efa_group()`, and some `efa_simulate()` settings.
 
-## Bug Fixes
+## Standard Errors and Fit Statistics
 
-* `efa_fit(se = "information")` no longer reports enormous standard errors for the
-unrotated loadings of a weakly determined solution. Two safeguards that were meant to
-catch this never fired. The first withholds the analytic covariance at a Heywood case, but
-tested for a uniqueness at or below zero — which the ML, ULS and DWLS fitters cannot
-produce, because they constrain the uniquenesses to a small positive floor. An improper
-solution is pinned *at* that floor rather than below zero, so it passed the check and was
-reported with a Wald standard error taken at a boundary where the interval is not valid.
-It is now recognised at the boundary the fitters can actually reach, the same one a
-Heywood case is flagged by elsewhere. The second safeguard is new: when two of a solution's
-canonical variances nearly coincide, the orientation of the unrotated loadings within that
-plane is arbitrary and the constraint that identifies them stops pinning it down. The
-parameter covariance stays finite and positive semidefinite, so nothing downstream flagged
-it, yet the standard errors diverge along that direction — reaching 80 for a loading
-bounded in [-1, 1]. Both cases now return `NA` for the affected standard errors and raise
-the classed `efa_se_unreliable` warning. On a simulated design with a weak third factor at
-N = 400, the 99th percentile of the mean unrotated loading standard error falls from 11.3
-to 0.72, while the median is unchanged at 0.07.
+* `efa_fit(se = "information")` now returns `NA` with an `efa_se_unreliable` warning when standard errors for unrotated loadings cannot be estimated reliably, such as for Heywood cases or poorly distinguished factors.
 
-Only the unrotated loadings are affected by the second case. The rotated loadings, the
-factor correlations, the structure coefficients and the communalities do not depend on the
-orientation and keep their standard errors, as does `$vcov_unrot_loadings`, so `efa_mi()`
-continues to pool them. A Heywood case, where the Wald approximation fails altogether,
-still withholds every analytic standard error as before. Where the unrotated loadings
-themselves are the quantity of interest, `se = "np-boot"` remains available.
+* Information-based standard errors are now calculated for correlation matrices rather than covariance matrices, improving their accuracy and agreement with sandwich and bootstrap estimates.
 
-* `efa_mi()` no longer returns a different unrotated solution depending on the order of
-`data_list`. The unrotated loadings were matched up to factor reordering and sign against
-whichever imputation came first, and where that matching is ambiguous — a weakly
-determined factor, or two factors of near-equal strength — a different first imputation
-produced a different pooled unrotated solution, by up to 0.84 in a single loading. The
-match is now anchored on the imputation closest to all the others, which is a property of
-the set and so does not move when the list is reordered. Because the anchor has moved,
-this changes the pooled unrotated solution for everyone, not only for those who reorder
-their imputations, and with it everything computed from it: with `rotation = "none"` that
-includes the communalities, the model-implied correlation matrix, the residuals, RMSR,
-SRMR and CAF. On a weakly determined three-factor fit a communality moved by up to 0.14
-and RMSR from 0.150 to 0.094. Chi-square, CFI, TLI and RMSEA are pooled from the
-per-imputation fit indices and are unaffected. A whole factor column may also come back
-with the opposite sign; a column sign is arbitrary in an unrotated solution and carries no
-substantive meaning.
+* Information-based standard errors are now supported only with Pearson correlations and FIML; use `se = "sandwich"` for polychoric, tetrachoric, or rank correlations.
 
-* The unrotated loadings pooled by `efa_mi()` are now returned in the same gauge the
-extraction itself uses, so they can be compared with an `efa_fit()` solution
-element-by-element. Averaging several aligned solutions does not preserve the constraint
-that identifies the unrotated loadings — diagonal `L'L` for a principal-axis extraction,
-diagonal `L' Psi^-1 L` for maximum likelihood — which left the pooled matrix in a gauge no
-single fit uses. How far out of gauge the average drifts depends on how well separated the
-factors are: on well-determined three-factor solutions the constraint was violated by well
-under 1%, rising to 28% on a weakly determined one. This second correction, unlike the
-change of anchor above, is an orthogonal rotation shared by all imputations, so on its own
-it leaves the communalities, the total variance accounted for, the model-implied
-correlation matrix, the residuals, RMSR, SRMR and every fit index exactly unchanged. What
-it does move is the pooled *unrotated* loadings, their standard errors, confidence
-intervals and MI diagnostics (RIV, FMI), and the unrotated per-factor variance table. The
-standard errors move considerably more than the loadings do — typically by under 2%, but
-by up to a factor of three where a factor is weakly determined.
+* FIML-based analytic standard errors now use the same small-sample scaling as the package’s other standard errors and fit statistics.
 
-* Neither change affects a rotated solution. If `efa_mi()` is called with a rotation, the
-rotated loadings, `Phi`, `Structure`, the communalities, the rotated variance table and
-every fit index are numerically identical to before; only the unrotated block that
-`efa_fit()` also reports has changed.
+* `efa_mi()` no longer reports AIC, BIC, or ECVI when these measures are not meaningful for the underlying fitted models.
 
-* `se = "information"` now returns correlation-structure standard errors. The expected
-information was assembled for a covariance structure — treating the uniquenesses as free
-parameters and so attributing sampling variability to a diagonal that is fixed at 1 — which
-made the loading standard errors conservative by up to a factor of two (most for the highest
-loadings), with a nominal 95% Wald interval covering at about 99.8%. Real loadings and
-cross-loadings could therefore be judged non-significant. The information is now built from
-the normal-theory asymptotic covariance of the correlations at the model-implied `Sigma`
-(Cudeck, 1989; Olkin & Siotani, 1976), which is Monte-Carlo calibrated and agrees with the
-`"sandwich"` and `"np-boot"` standard errors on normal data. Loading standard errors,
-confidence intervals, and the stored `vcov_unrot_loadings` (from which `efa_mi()` builds its
-within-imputation variances) all change; `Phi`, the uniquenesses, and the communalities are
-essentially unaffected.
+## Multiple Imputation and Group Comparisons
 
-* `se = "information"` is now rejected for `cor_method` other than `"pearson"` and `"fiml"`.
-The formula presumes normal-theory sampling behaviour of the analysed matrix, which neither a
-polychoric correlation (it carries first-stage threshold estimation error) nor a rank
-correlation satisfies; both previously returned standard errors without comment. Use
-`se = "sandwich"`, which is built for exactly those inputs.
+* The pooled unrotated solution from `efa_mi()` no longer depends on the order of the imputed datasets.
 
-* The corrected two-stage standard errors under `cor_method = "fiml"` now use the same
-`N - 1` small-sample scaling as the other analytic standard errors and as the fit statistics.
-They were previously scaled by `N`, so they differed from the complete-data Pearson path by a
-systematic factor of `sqrt(N / (N - 1))`. Reported standard errors change by under 0.2%.
+* Pooled unrotated loadings from `efa_mi()` now use the same orientation conventions as a regular `efa_fit()` result, making the two easier to compare.
 
-* Fixed a regression in `MAP()`: the revised (TR4) criterion was computed from
-the element-wise fourth powers of the partial correlations instead of the trace
-of the fourth matrix power, which could change the suggested number of factors.
+* These changes can affect unrotated loadings, their standard errors, and statistics derived from them, but rotated solutions and their fit indices remain unchanged.
 
-* `efa_average()` no longer reports `NaN%` Heywood-case and admissibility rates
-when no solution converged (or every solution errored). The printed summary now
-names the denominator each rate is computed over — Heywood cases and
-admissibility are assessed only for the solutions that converged — and omits a
-rate when no solution reached that stage.
+* Consensus results from `efa_group()` no longer depend on the order in which groups are supplied, so congruences, loading differences, salience classifications, and invariance conclusions are now stable across group orderings.
 
-* `efa_simulate()` now reproduces its Cudeck-Browne model error across platforms. With
-`model_error = "CB"` and a `target_rmsea`, the population perturbation drawn for a given
-`seed` could differ by tens of percent between BLAS implementations, and between two
-identical calls on a threaded BLAS. The Jacobian defining the perturbation is now
-differentiated in closed form instead of by a finite difference, which removes the
-rounding noise responsible (and is faster). Populations drawn from a given seed therefore
-differ from those of earlier versions; the achieved RMSEA still equals the target.
+## Factor Retention and Rotation
 
-* `efa_screen()` no longer aborts with a `system is computationally singular` error
-from `solve()` when the outlier diagnostics fall back to the classical covariance
-and the variables are collinear or nearly so. Whether the abort happened depended on
-the platform's BLAS. The fallback now checks that the complete-case covariance is
-invertible on the same terms as the Mahalanobis step that consumes it, so such data
-reliably reach the documented `efa_screen_no_outliers` note instead.
+* Fixed a regression in the revised MAP criterion, which could previously suggest an incorrect number of factors.
+
+* `efa_smt()` now rejects polychoric and tetrachoric correlations because its tests and fit measures are not valid for these inputs.
+
+* Rotated factors are now labelled `F1`, `F2`, and so forth according to the variance they explain, rather than inheriting labels that could change with the random seed.
+
+* Rotation diagnostics now distinguish between the total number of starting solutions and the number that were fully optimized; code using `n_starts` should use `n_starts_total` or `n_optimized` instead.
+
+* Criterion-based rotations now respect the specified `maxit` limit during every stage of the optimization.
+
+## Model Averaging
+
+* `efa_average()` no longer prints `NaN%` when no models converge and now clearly states which fitted models are included in each reported rate.
+
+* Named presets such as `"SPSS"`, `"psych"`, and `"EFAtools"` now use their intended iteration limits, so models that exceed those limits are marked as non-converged and excluded from the average.
+
+## Data Simulation
+
+* Cudeck–Browne model-error simulations are now reproducible across computing platforms and numerical libraries, although a given seed will produce different populations than in earlier versions.
+
+* With `marginals = "VM"`, categorized data now reproduce the requested category proportions more accurately, with a warning when the requested thresholds cannot be transformed safely.
+
+* The documentation now clarifies that `match = "thresholds"` and `match = "polychoric"` produce the same data for normal marginals, and the selected value is now stored in the result settings.
+
+* The documentation now explains the missing-data mechanism produced by `missing = "MAR"` and the residual bias it may create for analyses based only on the observed data.
+
+* The documentation now explains that `model_error = "WB"` generally produces a larger RMSEA for the generating model than the requested target.
+
+## Input Validation and Correlation Handling
+
+* `efa_screen()` now handles collinear or nearly collinear variables without failing during its outlier checks.
+
+* Polychoric covariance calculations now handle sparse or nearly perfectly associated response tables more consistently, allowing DWLS analyses to continue while warning about problematic variable pairs.
+
+* Covariance matrices supplied where raw data or a correlation matrix is expected are now rejected with a message suggesting `cov2cor()`.
+
+* Polychoric and tetrachoric correlations now require ordered factors or numeric response codes, preventing character or unordered-factor levels from being interpreted in alphabetical order.
+
+## Power Analysis and Factor Scores
+
+* `efa_power()` now clearly documents that `N` is the total sample size across groups and returns the corresponding sample size per group in `N_per_group`.
+
+* Simulation-based power summaries now distinguish structure-recovery rates from the underlying Tucker congruence values.
+
+* The documentation for `FACTOR_SCORES()` now correctly describes `R2` as squared factor-score determinacy.
+
 
 # EFAtools 0.8.0
 

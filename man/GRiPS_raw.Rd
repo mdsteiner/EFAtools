@@ -20,7 +20,7 @@ by a keyword from the item:
 }
 }
 \source{
-Zhang, D. C., Highhouse, S., & Nye, C. D. (2018). Development and validation of the general risk propensity scale (GRiPS).Journal of Behavioral Decision Making, 32, 152–167. doi: 10.1002/bdm.2102
+Zhang, D. C., Highhouse, S., & Nye, C. D. (2019). Development and validation of the general risk propensity scale (GRiPS). Journal of Behavioral Decision Making, 32, 152–167. doi: 10.1002/bdm.2102
 
 Steiner, M., & Frey, R. (2020). Representative design in psychological assessment: A case study using the Balloon Analogue Risk Task (BART). PsyArXiv Preprint. doi:10.31234/osf.io/dg4ks
 }

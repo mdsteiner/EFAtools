@@ -13,7 +13,7 @@
       
       Tucker's congruence between the aligned group loadings (matched factors):
       
-                             F1 F3 F2
+                             F1 F2 F3
       age_6_8 vs age_14_19 <num> <num> <num>
       
       -- Loading differences ---------------------------------------------------------
@@ -27,7 +27,7 @@
       
       Congruence bands (Lorenzo-Seva & ten Berge, 2006: ≥ <num> equal, ≥ <num> fair):
       
-                              F1 F3 F2
+                              F1 F2 F3
       age_6_8 vs age_14_19  equal  equal  equal
 
 ---

@@ -78,7 +78,6 @@ test_that("format.efa_retain is the source of truth and honours the colour state
 })
 
 test_that("visual criteria and suitability = FALSE are handled", {
-  skip_if_not_slow()
   nf_scree <- efa_retain(test_models$baseline$cormat, suitability = FALSE,
                         criteria = c("MAP", "SCREE"))
 
@@ -93,7 +92,6 @@ test_that("visual criteria and suitability = FALSE are handled", {
 })
 
 test_that("missing N skips Bartlett's test but still runs N-free criteria", {
-  skip_if_not_slow()
   # A correlation matrix without N: Bartlett's test needs N and is skipped with a
   # classed warning, while KMO and the N-free retention criteria still run -
   # instead of the suitability check aborting the whole call.
@@ -108,7 +106,6 @@ test_that("missing N skips Bartlett's test but still runs N-free criteria", {
 })
 
 test_that("a failing criterion warns, is reported, and the others still run", {
-  skip_if_not_slow()
   # EKC needs N, which is missing for a correlation matrix; MAP still runs
   expect_warning(
     nf_fail <- efa_retain(test_models$baseline$cormat, suitability = FALSE,
@@ -123,9 +120,11 @@ test_that("a failing criterion warns, is reported, and the others still run", {
 })
 
 test_that("a skipped criterion is reported in not_run", {
-  skip_if_not_slow()
+  # CD needs raw data and is skipped on a correlation matrix; pairing it with the cheap MAP
+  # exercises the skip path without the simulating default criteria, so this runs on CRAN.
   expect_warning(
-    nf_skip <- efa_retain(test_models$baseline$cormat, N = 500),
+    nf_skip <- efa_retain(test_models$baseline$cormat, N = 500,
+                          criteria = c("CD", "MAP")),
     class = "efa_criterion_skipped"
   )
   # CD needs raw data and is skipped on a correlation matrix
@@ -134,7 +133,6 @@ test_that("a skipped criterion is reported in not_run", {
 })
 
 test_that("an all-failed run is a hard error", {
-  skip_if_not_slow()
   # CD is the only requested criterion and is skipped on a correlation matrix
   expect_error(
     suppressWarnings(efa_retain(test_models$baseline$cormat, suitability = FALSE,
@@ -163,12 +161,14 @@ burt <- matrix(c(1.00,  0.83,  0.81,  0.80,   0.71, 0.70, 0.54, 0.53,  0.59,  0.
                nrow = 11, ncol = 11)
 
 test_that("errors etc. are thrown correctly", {
-  skip_if_not_slow()
   expect_error(efa_retain(1:10), class = "efa_input_not_matrix")
   expect_warning(efa_retain(GRiPS_raw, N = 10, criteria = "MAP",
                            suitability = FALSE), class = "efa_n_from_data")
   expect_error(efa_retain(cbind(x, y, z, z + 1, y + 1, x + 1)), class = "efa_cor_singular")
-  expect_warning(efa_retain(test_models$baseline$cormat, N = 500), class = "efa_criterion_skipped")
+  # CD is skipped on a correlation matrix; a small criteria set keeps the skip-warning check
+  # off the simulating default criteria so it runs on CRAN.
+  expect_warning(efa_retain(test_models$baseline$cormat, N = 500,
+                            criteria = c("CD", "MAP")), class = "efa_criterion_skipped")
   # burt is near-singular: it is smoothed, and PARALLEL finds every real SMC
   # eigenvalue above its reference (no crossing), so both warnings are expected
   expect_warning(

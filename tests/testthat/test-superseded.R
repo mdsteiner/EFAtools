@@ -110,9 +110,115 @@ test_that("EFA() keeps silently ignoring a rotation extra its engine cannot cons
   new <- efa_fit(cm, n_factors = 3, N = 500, rotation = "oblimin", maxit = 750)
   expect_identical(old$rot_loadings, new$rot_loadings)
 
-  # with rotation = "none" the dots pass through unfiltered, so EFA() keeps surfacing
-  # efa_fit()'s empty-dots guard exactly as before
-  expect_error(EFA(cm, n_factors = 3, N = 500, bogus = 1), class = "efa_unused_dots")
+  # rotation = "none" -- EFA()'s own default -- runs no engine, so the flat interface
+  # consumed no extra there either and simply ignored it; the extra is still dropped
+  # silently, and the fit is the one the call without it returns
+  expect_no_condition(with_bogus <- EFA(cm, n_factors = 3, N = 500, bogus = 1))
+  expect_identical(with_bogus, EFA(cm, n_factors = 3, N = 500))
+  expect_no_condition(EFA(cm, n_factors = 3, N = 500, rotation = "none", maxit = 500))
+})
+
+test_that("the retention wrappers keep silently ignoring an unknown dot", {
+  cm <- test_models$baseline$cormat
+
+  # the flat interface always dropped a `...` name its fits could never consume; the
+  # successor functions reject such a name (see test-retention-controls.R), the frozen
+  # names must not -- and the result is the one the call without the extra returns
+  expect_no_condition(kgc_bogus <- KGC(cm, eigen_type = "PCA", bogus = 1))
+  expect_identical(kgc_bogus, KGC(cm, eigen_type = "PCA"))
+  expect_no_condition(SCREE(cm, eigen_type = "PCA", cor_methd = "poly"))
+  set.seed(1)
+  par_bogus <- PARALLEL(N = 500, n_vars = 18, n_datasets = 2, eigen_type = "PCA",
+                        bogus = 1)
+  set.seed(1)
+  par_plain <- PARALLEL(N = 500, n_vars = 18, n_datasets = 2, eigen_type = "PCA")
+  expect_identical(par_bogus, par_plain)
+  expect_no_condition(
+    nf_bogus <- N_FACTORS(cm, criteria = "EKC", N = 500, suitability = FALSE,
+                          bogus = 1))
+  expect_identical(nf_bogus,
+                   N_FACTORS(cm, criteria = "EKC", N = 500, suitability = FALSE))
+
+  # a rotation setting and the rotation-engine extras (maxit/gam/delta) were equally inert
+  # on the flat interface -- the criterion fits are always unrotated, so EFA() consumed
+  # neither -- and keep being dropped silently, where the successors refuse or reject them
+  expect_no_condition(N_FACTORS(cm, criteria = "EKC", N = 500, suitability = FALSE,
+                                rotation = "promax"))
+  expect_no_condition(N_FACTORS(cm, criteria = "EKC", N = 500, suitability = FALSE,
+                                maxit = 500))
+  # the drop also holds when a criterion fit actually runs (efa_fit() would hard-reject
+  # `maxit` under its unrotated per-rotation whitelist)
+  kgc_extra <- suppressWarnings(suppressMessages(
+    KGC(cm, eigen_type = "EFA", maxit = 10)))
+  kgc_noextra <- suppressWarnings(suppressMessages(KGC(cm, eigen_type = "EFA")))
+  expect_identical(kgc_extra, kgc_noextra)
+
+  # a junk value under a successor-only name is NOT dropped: no pre-rename code could have
+  # used the name, so the successor's loud classed validation is the right outcome (the
+  # same rule EFA() applies to the successor-only names)
+  expect_error(N_FACTORS(cm, criteria = "EKC", N = 500, suitability = FALSE,
+                         rotate_control = "SPSS"),
+               class = "efa_unused_dots")
+
+  # An ABBREVIATED name is not junk: the flat interface reached its target through
+  # do.call(), where R partial-matched it against the formals ahead of `...`, so dropping
+  # it would silently run a different fit. It travels on and fails loudly instead.
+  expect_error(KGC(cm, eigen_type = "EFA", meth = "ML"), class = "efa_unused_dots")
+  expect_error(N_FACTORS(cm, criteria = "EKC", N = 500, suitability = FALSE,
+                         estimat = "ML"),
+               class = "efa_unused_dots")
+})
+
+test_that("HULL(), NEST(), and EFA_POOLED() keep silently ignoring an unknown dot", {
+  cm <- test_models$baseline$cormat
+
+  # both forward their dots into fits that reject unknown names (efa_hull by its own new
+  # guard, efa_nest through efa_fit's), so the frozen filter has to drop the junk first
+  set.seed(1)
+  hull_bogus <- suppressWarnings(suppressMessages(
+    HULL(cm, N = 500, n_datasets = 2, bogus = 1)))
+  set.seed(1)
+  hull_plain <- suppressWarnings(suppressMessages(
+    HULL(cm, N = 500, n_datasets = 2)))
+  expect_identical(hull_bogus, hull_plain)
+
+  # method = "ULS" rides through the repack alongside the dropped junk name (with the PAF
+  # default and so few reference datasets the NEST walk runs deep enough to Heywood)
+  set.seed(1)
+  nest_bogus <- suppressWarnings(suppressMessages(
+    NEST(cm, N = 500, n_datasets = 50, method = "ULS", bogus = 1)))
+  set.seed(1)
+  nest_plain <- suppressWarnings(suppressMessages(
+    NEST(cm, N = 500, n_datasets = 50, method = "ULS")))
+  expect_identical(nest_bogus, nest_plain)
+
+  # EFA_POOLED()'s fits are rotated, so its filter is rotation-aware like EFA()'s: a junk
+  # name is dropped, and an extra its selected rotation consumes still reaches the engine
+  cm_list <- list(cm, cm)
+  pooled_bogus <- suppressWarnings(suppressMessages(
+    EFA_POOLED(cm_list, n_factors = 3, N = 500, bogus = 1)))
+  pooled_plain <- suppressWarnings(suppressMessages(
+    EFA_POOLED(cm_list, n_factors = 3, N = 500)))
+  expect_identical(pooled_bogus, pooled_plain)
+})
+
+test_that("SL() keeps silently ignoring an unknown dot and rejects the control objects", {
+  cm <- test_models$baseline$cormat
+  efa_prom <- suppressWarnings(suppressMessages(
+    efa_fit(cm, n_factors = 3, N = 500, rotation = "promax")))
+
+  # the flat interface's second-order EFA silently ignored an unconsumable dot
+  sl_bogus <- suppressWarnings(suppressMessages(SL(efa_prom, bogus = 1)))
+  sl_plain <- suppressWarnings(suppressMessages(SL(efa_prom)))
+  expect_identical(sl_bogus, sl_plain)
+
+  # a control object alongside the frozen `type` would silently win over it (the repack
+  # translates nothing when a control is present), so the successor-only names are
+  # rejected outright, as EFA() rejects them
+  expect_error(SL(efa_prom, type = "psych", estimate_control = estimate_control()),
+               class = "efa_renamed_arg")
+  expect_error(SL(efa_prom, rotate_control = rotate_control()),
+               class = "efa_renamed_arg")
 })
 
 test_that("EFA() stays transparent to efa_fit()'s conditions", {
@@ -363,7 +469,10 @@ test_that("EFA_POOLED() forwards to efa_mi() identically and adds no condition",
 })
 
 # Each old name is frozen: its argument list may never change. That half is checked
-# statically for all seventeen names below.
+# statically for all seventeen names below. `OMEGA()` and `FACTOR_SCORES()` are superseded
+# too, but they reshape their successor's output rather than forwarding to it, so -- like
+# `EFA()` -- they are pinned behaviourally (`test-OMEGA.R`, `test-FACTOR_SCORES.R`) instead
+# of statically, which is why twenty exported uppercase names yield seventeen table entries.
 #
 # A name marked `translating` also repacks the old flat tuning knobs its `...` may carry into
 # the control objects the fit now takes (`.repack_flat_dots()`), so it is not a one-line
@@ -739,9 +848,9 @@ test_that("the successor-only names are rejected in the superseded wrappers' dot
   cormat <- test_models$baseline$cormat
 
   # `estimator` (and the control objects, for EFA()) would either collide with the
-  # wrapper's own translation as an opaque base duplicate-argument error, or -- with a
-  # rotation, under EFA()'s frozen ignore-unknown-dots contract -- be silently dropped so
-  # the fit quietly runs the defaults. Rejected with a pointer to the frozen names.
+  # wrapper's own translation as an opaque base duplicate-argument error, or -- for EFA(),
+  # under its frozen ignore-unknown-dots contract -- be silently dropped so the fit quietly
+  # runs the defaults. Rejected with a pointer to the frozen names.
   expect_error(EFA(cormat, n_factors = 3, N = 500, rotation = "promax",
                    estimator = "ML"),
                class = "efa_renamed_arg")

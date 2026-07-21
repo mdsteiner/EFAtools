@@ -64,6 +64,9 @@
 #' \item{g}{The root mean squared distance (RMSE) between x and y.}
 #' \item{settings}{List of the settings used.}
 #'
+#' @seealso [efa_fit()] for the solutions being compared, and [efa_procrustes()] to rotate
+#'  one solution onto another before comparing.
+#'
 #' @family factor comparison
 #'
 #' @export

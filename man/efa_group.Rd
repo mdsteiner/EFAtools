@@ -112,11 +112,18 @@ the Lorenzo-Seva and ten Berge (2006) similarity bands: \code{phi >= 0.95} is "e
 diagnostics, e.g. \code{heywood}).}
 \item{alignment}{The alignment result: the consensus object (see
 \code{\link[=efa_procrustes]{efa_procrustes()}}), or a list with the reference group, the target, and the
-per-group Procrustes results.}
+per-group Procrustes results. On the consensus path this is the raw record of
+the Generalized Procrustes iteration, so its \code{target} and \code{aligned_loadings}
+are in the orientation that iteration converged to, before the gauge described
+under \emph{Alignment} is applied; the gauged matrices are \code{target} and \code{loadings}
+above.}
 \item{settings}{A list of the settings used, including the per-group \code{N}, the
-alignment method, the rotation, the estimator, the input type, and whether a
-bootstrap is available (\code{can_bootstrap}, \code{FALSE} for correlation-matrix
-input).}
+alignment method, the group that seeded the consensus frame (\code{alignment_start},
+\code{NULL} on the reference path), the orientation the shared frame was put in
+(\code{gauge}: the rotation's own name, \code{"principal_axes"}, or \code{"identity"} for a
+single factor; \code{NULL} on the reference path), the rotation, the estimator, the
+input type, and whether a bootstrap is available (\code{can_bootstrap}, \code{FALSE} for
+correlation-matrix input).}
 }
 \description{
 Fit an exploratory factor analysis in each of several groups at a common
@@ -158,7 +165,18 @@ automatically:
 \item \strong{Consensus} (the default for orthogonal rotations and for unrotated
 solutions): a symmetric Generalized Procrustes Analysis target is built
 across all groups (Gower, 1975), and every group's loadings are rotated to
-it. No group is privileged.
+it. The consensus frame is only identified up to a global rotation of its
+factors, so it is then rotated into a fixed gauge and the same transform is
+applied to every group. The gauge is the simple structure of the rotation
+that was requested, evaluated on the consensus target itself, so the shared
+loadings are in the same kind of frame as the per-group solutions they
+summarise. Where no criterion identifies a frame -- an unrotated solution,
+and a \code{"bifactorT"} request with two factors, whose criterion is identically
+zero with a single group factor -- the principal-axes orientation of the
+target is used instead. Either way the columns are ordered by decreasing sum
+of squares and signed by their column sums, and the shared orientation, and
+hence every reported congruence, difference, and flag, is independent of the
+order in which the groups are supplied.
 \item \strong{Reference}: every group's loadings are aligned by Procrustes rotation to
 one reference group's loadings, which are kept fixed. This path is used when
 \code{reference_group} is given, and is used automatically for oblique rotations

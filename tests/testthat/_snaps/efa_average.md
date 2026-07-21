@@ -130,9 +130,9 @@
       print(efa_all_none, stat = c("average", "sd", "min", "max"), plot = FALSE)
     Output
       
-      Averaging performed with averaging method mean (trim = 0) across 10 EFAs,
+      Averaging performed with averaging method mean (trim = 0) across 12 EFAs,
       varying the following settings: estimator, init_comm, criterion_type,
-      abs_eigen, and start_method.
+      abs_eigen, max_iter, and start_method.
       
       The error rate is at <pct>. Of the solutions that did not result in an error, <pct>
       converged. Of the solutions that converged, <pct> contained Heywood cases and <pct>
@@ -306,8 +306,8 @@
       print(efa_all_md, plot = FALSE)
     Output
       
-      Averaging performed with averaging method median across 169 EFAs, varying the
-      following settings: estimator, init_comm, criterion_type, abs_eigen,
+      Averaging performed with averaging method median across 183 EFAs, varying the
+      following settings: estimator, init_comm, criterion_type, abs_eigen, max_iter,
       start_method, rotation, k_promax, p_type, and varimax_type.
       
       The error rate is at <pct>. Of the solutions that did not result in an error, <pct>

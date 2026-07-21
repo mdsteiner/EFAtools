@@ -187,6 +187,76 @@ test_that("a bare flat knob is rejected even when the call runs no fit", {
     class = "efa_flat_knob_in_dots")
 })
 
+test_that("an unknown dot is rejected even when the call runs no fit", {
+  # the mirror of the flat-knob guard above: with eigen_type = "PCA" no model is fitted, so a
+  # misspelled name never reached efa_fit()'s guard and the criterion silently ran the default
+  expect_error(efa_kgc(cormat, eigen_type = "PCA", cor_methd = "poly"),
+               class = "efa_unused_dots")
+  expect_error(efa_scree(cormat, eigen_type = "PCA", percnt = 99),
+               class = "efa_unused_dots")
+  expect_error(efa_parallel(cormat, N = 500, eigen_type = "PCA", n_datasets = 2,
+                            cor_methd = "poly"),
+               class = "efa_unused_dots")
+  expect_error(efa_retain(cormat, N = 500, suitability = FALSE, criteria = "MAP",
+                          nfactors = 3),
+               class = "efa_unused_dots")
+
+  # a genuine efa_fit() argument still travels through untouched
+  expect_no_error(suppressWarnings(suppressMessages(
+    efa_kgc(cormat, eigen_type = "PCA", estimator = "ML"))))
+})
+
+test_that("the retention criteria refuse a rotation setting and its engine extras", {
+  # Every criterion fit is unrotated, so neither a rotation nor an engine extra can be
+  # consumed: a `rotation` made the fit run an engine whose result no retention statistic
+  # uses (and, for a criterion-based rotation, drew random starts from the caller's stream,
+  # moving the seeded result), while an extra reached the fit and aborted there, naming
+  # `rotation = "none"` instead of the function the user called. Both are refused at entry.
+  expect_error(efa_kgc(cormat, eigen_type = "EFA", rotation = "promax"),
+               class = "efa_unused_dots")
+  expect_error(efa_scree(cormat, eigen_type = "EFA", rotation = "promax"),
+               class = "efa_unused_dots")
+  expect_error(efa_parallel(cormat, N = 500, eigen_type = "EFA", n_datasets = 2,
+                            rotation = "promax"),
+               class = "efa_unused_dots")
+  expect_error(efa_nest(cormat, N = 500, n_datasets = 2, rotation = "promax"),
+               class = "efa_unused_dots")
+  expect_error(efa_hull(cormat, N = 500, rotation = "promax"),
+               class = "efa_unused_dots")
+
+  # the engine extras, refused at entry rather than deep inside the criterion's fit
+  expect_error(efa_kgc(cormat, eigen_type = "EFA", maxit = 10),
+               class = "efa_unused_dots")
+  expect_error(efa_hull(cormat, N = 500, maxit = 500), class = "efa_unused_dots")
+  expect_error(efa_retain(cormat, N = 500, suitability = FALSE, criteria = "HULL",
+                          maxit = 10),
+               class = "efa_unused_dots")
+
+  # a genuine efa_fit() argument still travels through untouched
+  expect_no_error(suppressWarnings(suppressMessages(
+    efa_kgc(cormat, eigen_type = "EFA", estimator = "ML"))))
+})
+
+test_that("efa_retain() refuses a rotation setting but keeps the wrappers' repacked control", {
+  # the criterion fits are always unrotated, so a rotation setting is meaningless here
+  expect_error(efa_retain(cormat, N = 500, suitability = FALSE, criteria = "MAP",
+                          rotation = "promax"),
+               class = "efa_unused_dots")
+  expect_error(efa_retain(cormat, N = 500, suitability = FALSE, criteria = "MAP",
+                          rotate_control = "SPSS"),
+               class = "efa_unused_dots")
+
+  # N_FACTORS() repacks a frozen `type` into a rotate_control() object that rides through
+  # these same dots, so a real control object -- and a NULL, efa_fit()'s "not supplied"
+  # default, which the repack passes through untouched -- must still be accepted
+  expect_no_error(suppressWarnings(suppressMessages(
+    efa_retain(cormat, N = 500, suitability = FALSE, criteria = "MAP",
+               rotate_control = rotate_control()))))
+  expect_no_error(suppressWarnings(suppressMessages(
+    efa_retain(cormat, N = 500, suitability = FALSE, criteria = "MAP",
+               rotate_control = NULL))))
+})
+
 test_that("an estimation control that is not a control object is rejected", {
   expect_error(efa_smt(cormat, N = 500, estimate_control = list(max_iter = 1)),
                class = "efa_control_input")

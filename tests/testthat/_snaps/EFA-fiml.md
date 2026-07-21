@@ -17,11 +17,6 @@
       V5 <num> <num> <num> <num>
       V6 <num> <num> <num> <num>
       
-      Legend:
-        bold = |loading| >= <num>
-        grey = below cutoff
-        red h2/u2 = Heywood-relevant value
-      
       -- Variances Accounted for -----------------------------------------------------
       
                            F1 F2

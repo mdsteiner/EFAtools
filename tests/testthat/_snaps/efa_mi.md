@@ -35,11 +35,6 @@
       chances <num> <num> <num>
       attracted <num> <num> <num>
       
-      Legend:
-        bold = |loading| >= <num>
-        grey = below cutoff
-        red h2/u2 = Heywood-relevant value
-      
       -- 95% bootstrap/MI CIs for salient unrotated loadings -------------------------
       
       Variable   Factor  est    lower  upper
@@ -122,11 +117,6 @@
       V17 <num> <num> <num> <num> <num>
       V18 <num> <num> <num> <num> <num>
       
-      Legend:
-        bold = |loading| >= <num>
-        grey = below cutoff
-        red h2/u2 = Heywood-relevant value
-      
       -- Factor Intercorrelations ----------------------------------------------------
       
             F1 F2 F3
@@ -169,11 +159,6 @@
       commonly <num> <num> <num>
       chances <num> <num> <num>
       attracted <num> <num> <num>
-      
-      Legend:
-        bold = |loading| >= <num>
-        grey = below cutoff
-        red h2/u2 = Heywood-relevant value
       
       -- Variances Accounted for -----------------------------------------------------
       
@@ -241,11 +226,6 @@
       V16 <num> <num> <num> <num> <num>
       V17 <num> <num> <num> <num> <num>
       V18 <num> <num> <num> <num> <num>
-      
-      Legend:
-        bold = |loading| >= <num>
-        grey = below cutoff
-        red h2/u2 = Heywood-relevant value
       
       -- Factor Intercorrelations ----------------------------------------------------
       
@@ -341,11 +321,6 @@
       commonly <num> <num> <num>
       chances <num> <num> <num>
       attracted <num> <num> <num>
-      
-      Legend:
-        bold = |loading| >= <num>
-        grey = below cutoff
-        red h2/u2 = Heywood-relevant value
       
       -- Variances Accounted for -----------------------------------------------------
       

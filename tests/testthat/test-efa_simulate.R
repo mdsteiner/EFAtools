@@ -518,6 +518,121 @@ test_that("polychoric matching recovers the requested category proportions", {
   expect_lt(max(abs(realized - props)), 0.01)
 })
 
+test_that("Vale-Maurelli thresholds recover the requested category proportions", {
+  skip_on_cran()
+  # A VM draw is X = f(Z) with f the monotone Fleishman cubic, so P(X <= f(tau)) =
+  # P(Z <= tau): cutting at the mapped thresholds f(tau) reproduces the proportions
+  # tau was built for, while the raw normal-scale tau would cut the wrong quantiles.
+  sk <- 1.5
+  ku <- 4
+  dat <- efa_simulate(N = 1e5, R = R_vm, marginals = "VM", skewness = sk, kurtosis = ku,
+                      categories = 5, seed = 7)$data
+  realized <- vapply(seq_len(ncol(dat)),
+                     function(j) tabulate(dat[, j], nbins = 5L) / nrow(dat),
+                     numeric(5L))
+  expect_lt(max(abs(realized - 0.2)), 0.01)
+
+  # Asymmetric requested proportions likewise.
+  props <- c(0.1, 0.2, 0.4, 0.3)
+  dat_p <- efa_simulate(N = 1e5, R = R_vm, marginals = "VM", skewness = sk, kurtosis = ku,
+                        categories = rep(list(props), ncol(R_vm)), seed = 7)$data
+  realized_p <- vapply(seq_len(ncol(dat_p)),
+                       function(j) tabulate(dat_p[, j], nbins = 4L) / nrow(dat_p),
+                       numeric(4L))
+  expect_lt(max(abs(realized_p - props)), 0.01)
+
+  # Platykurtic marginals (excess kurtosis below 0) are the case a global-monotonicity
+  # test would wrongly reject: d < 0 there, yet the cubic increases across the
+  # thresholds, so the proportions must come back just as exactly.
+  dat_f <- efa_simulate(N = 1e5, R = R_vm, marginals = "VM", skewness = 0, kurtosis = -1,
+                        categories = 5, seed = 7)$data
+  realized_f <- vapply(seq_len(ncol(dat_f)),
+                       function(j) tabulate(dat_f[, j], nbins = 5L) / nrow(dat_f),
+                       numeric(5L))
+  expect_lt(max(abs(realized_f - 0.2)), 0.01)
+
+  # The mapping is what buys this: cutting the same draw at the unmapped normal
+  # thresholds misses the request by far more than the Monte Carlo error above.
+  cont <- efa_simulate(N = 1e5, R = R_vm, marginals = "VM", skewness = sk,
+                       kurtosis = ku, seed = 7)$data
+  naive <- vapply(seq_len(ncol(cont)),
+                  function(j) tabulate(findInterval(cont[, j], stats::qnorm((1:4) / 5)) + 1L,
+                                       nbins = 5L) / nrow(cont),
+                  numeric(5L))
+  expect_gt(max(abs(naive - 0.2)), 0.05)
+})
+
+test_that(".vm_thresholds maps a cubic that increases across the thresholds", {
+  tau <- stats::qnorm((1:4) / 5)
+  # The normal marginal has coefficients (0, 1, 0, 0): an identity map that leaves the
+  # thresholds where they are, with no fallback reported.
+  norm_map <- .vm_thresholds(list(tau), matrix(c(0, 1, 0, 0), 1, 4))
+  expect_equal(norm_map$thresholds[[1]], tau)
+  expect_length(norm_map$non_monotone, 0L)
+
+  ft <- .fleishman_table(1.5, 4)
+  expect_equal(.vm_thresholds(list(tau), ft)$thresholds[[1]],
+               ft[1, 1L] + ft[1, 2L] * tau + ft[1, 3L] * tau^2 + ft[1, 4L] * tau^3)
+
+  # A platykurtic marginal has d < 0, so f' has real roots and the cubic is not monotone
+  # on the whole line -- but its turning points are far out in the tails, so it does
+  # increase across ordinary thresholds and must still be mapped.
+  ft_flat <- .fleishman_table(0, -1)
+  expect_lt(ft_flat[1, 4L], 0)
+  flat_map <- .vm_thresholds(list(tau), ft_flat)
+  expect_length(flat_map$non_monotone, 0L)
+  expect_false(is.unsorted(flat_map$thresholds[[1]]))
+
+  # Pushing a threshold past the turning point (|z| = 2.25 here) is what forces the
+  # fallback: the mapping would no longer preserve the category order.
+  far <- c(-2.6, tau)
+  fallback <- .vm_thresholds(list(far), ft_flat)
+  expect_equal(fallback$thresholds[[1]], far)
+  expect_identical(fallback$non_monotone, 1L)
+})
+
+test_that(".vm_thresholds falls back when the tail folds mass back below an outer cut", {
+  # A threshold just INSIDE the turning point passes the derivative screen, but the cubic
+  # re-crosses the mapped cut a little further out and the tail mass beyond that point
+  # lands in the wrong category: at excess kurtosis -1 the turning point is |z| = 2.25 and
+  # a top category of .014 (threshold 2.197) would come out near .0035 -- a factor of four
+  # off, silently, under the derivative screen alone. The mass screen catches it.
+  ft_flat <- .fleishman_table(0, -1)
+  tau_tail <- stats::qnorm(0.986)
+  expect_gt(ft_flat[1, 2L] + 2 * ft_flat[1, 3L] * tau_tail +
+              3 * ft_flat[1, 4L] * tau_tail^2, 0)   # derivative screen alone passes
+  fb <- .vm_thresholds(list(tau_tail), ft_flat)
+  expect_identical(fb$non_monotone, 1L)
+  expect_equal(fb$thresholds[[1]], tau_tail)
+
+  # Not a platykurtosis-only phenomenon: a skewed leptokurtic marginal dips on one side,
+  # and a 5% bottom category (threshold -1.645, turning point -1.69) folds back 84% of
+  # the requested mass. It must fall back too.
+  ft_skew <- .fleishman_table(1.5, 3)
+  fb_skew <- .vm_thresholds(list(stats::qnorm(0.05)), ft_skew)
+  expect_identical(fb_skew$non_monotone, 1L)
+
+  # The screen is a tolerance, not a monotonicity dogma: ordinary interior thresholds on
+  # the same platykurtic marginal still map (their re-crossings carry negligible mass).
+  ok <- .vm_thresholds(list(stats::qnorm((1:4) / 5)), ft_flat)
+  expect_length(ok$non_monotone, 0L)
+})
+
+test_that("thresholds that outrun the Fleishman cubic warn and keep the normal scale", {
+  # Same construction end to end: a strongly platykurtic marginal with a category
+  # boundary beyond the cubic's turning point falls back with a classed warning.
+  props <- rep(list(c(0.005, 0.7, 0.28, 0.015)), ncol(R_vm))
+  # The fallback empties that category too, and necessarily so: the untransformed
+  # threshold (-2.58) lies outside the range of the platykurtic draw, which is precisely
+  # why the normal-scale cut points do not reproduce the requested proportions.
+  expect_warning(
+    expect_warning(
+      efa_simulate(N = 5000, R = R_vm, marginals = "VM", skewness = 0, kurtosis = -1,
+                   categories = props, seed = 11),
+      class = "efa_simulate_threshold_fallback"),
+    class = "efa_simulate_empty_category")
+})
+
 test_that("match = 'thresholds' cuts non-normal marginals without error", {
   # The naive mode works with the standardized non-normal marginals: the
   # Vale-Maurelli draw is cut as is, yielding a valid integer ordinal matrix (its

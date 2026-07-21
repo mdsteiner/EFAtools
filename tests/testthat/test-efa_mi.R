@@ -661,3 +661,61 @@ test_that("re-gauging still fires when a uniqueness sits on the estimation floor
   L <- unclass(pooled$unrot_loadings)
   expect_lt(defect(wgram(L, .uniqueness_floor)), 1e-8)
 })
+
+test_that("pooled AIC/BIC/ECVI are withheld when the component fits are scaled", {
+  skip_if_not_installed("MASS")
+
+  # A missing-at-random fixture: column 1 is fully observed and drives the
+  # missingness in the others, so cor_method = "fiml" fits a genuine two-stage
+  # model and each component carries the corrected (scaled-shifted) statistic.
+  imps <- lapply(1:3, function(i) {
+    set.seed(100 + i)
+    L <- matrix(0, 6, 2)
+    L[1:3, 1] <- 0.7
+    L[4:6, 2] <- 0.7
+    S <- tcrossprod(L)
+    diag(S) <- 1
+    X <- MASS::mvrnorm(400, mu = rep(0, 6), Sigma = S)
+    colnames(X) <- paste0("V", seq_len(6))
+    X[X[, 1] > 0.8, 2] <- NA
+    X[X[, 1] < -0.8, 3] <- NA
+    X[X[, 1] > 1.2, 4] <- NA
+    X
+  })
+
+  pooled <- suppressMessages(suppressWarnings(
+    efa_mi(imps, n_factors = 2, estimator = "ML", rotation = "none",
+           cor_method = "fiml")
+  ))
+
+  # precondition: the components really are scaled and withhold the three indices
+  expect_true(all(vapply(pooled$fits,
+                         function(f) !is.null(f$fit_indices$chi_scaled_type),
+                         logical(1))))
+  expect_true(all(vapply(pooled$fits,
+                         function(f) is.na(f$fit_indices$AIC), logical(1))))
+
+  # so the D2 pool of those statistics must withhold them as well ...
+  expect_true(is.na(pooled$fit_indices$AIC))
+  expect_true(is.na(pooled$fit_indices$BIC))
+  expect_true(is.na(pooled$fit_indices$ECVI))
+
+  # ... while the pooled chi-square and the indices that remain interpretable stay
+  expect_true(is.finite(pooled$fit_indices$chi))
+  expect_true(is.finite(pooled$fit_indices$CFI))
+  expect_true(is.finite(pooled$fit_indices$RMSEA))
+})
+
+test_that("pooled AIC/BIC/ECVI are reported on an unscaled ML pool", {
+  # The guard is conditional, not a blanket suppression: with plain (unscaled)
+  # component statistics the descriptive criteria are still returned.
+  pooled_ml <- efa_mi(cormat_list, n_factors = 3, N = 500, estimator = "ML",
+                      rotation = "none")
+
+  expect_true(all(vapply(pooled_ml$fits,
+                         function(f) is.null(f$fit_indices$chi_scaled_type),
+                         logical(1))))
+  expect_true(is.finite(pooled_ml$fit_indices$AIC))
+  expect_true(is.finite(pooled_ml$fit_indices$BIC))
+  expect_true(is.finite(pooled_ml$fit_indices$ECVI))
+})

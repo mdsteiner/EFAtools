@@ -76,9 +76,11 @@ and the mean afterwards (based on Crawford et al, 2010). This is passed to \code
 included in \code{eigen_type}. Default is 1. This is passed to
 \code{\link[=efa_parallel]{efa_parallel()}}.}
 
-\item{...}{Further arguments passed to \code{\link[=efa_fit]{efa_fit()}}, also in
-\code{\link[=efa_parallel]{efa_parallel()}}. The estimation tuning knobs are not passed here; they live in
-\code{estimate_control}.}
+\item{...}{Further arguments passed on to the \code{\link[=efa_fit]{efa_fit()}} fits, including the
+estimation tuning knobs (\code{type}, \code{init_comm}, \code{criterion}, \code{criterion_type},
+\code{max_iter}, \code{abs_eigen}, \code{start_method}), which are repacked into an
+\code{\link[=estimate_control]{estimate_control()}} object so that they tune the fits exactly as they always did.
+The estimator is selected with \code{method}.}
 }
 \value{
 An object of class \code{efa_retention}, identical to the value of
@@ -94,4 +96,3 @@ keeps working.
 \seealso{
 \code{\link[=efa_hull]{efa_hull()}}
 }
-\keyword{internal}

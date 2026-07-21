@@ -421,6 +421,55 @@ test_that("acov diag/full are well-formed and mutually consistent", {
   expect_error(.polychoric(x, acov = "nope"))
 })
 
+test_that("acov diag equals diag(full) for a degenerate near-comonotone pair", {
+  # The near-comonotone coupling from above (rho ~ 0.98) has a structurally empty cell whose
+  # model probability underflows, so its dP/P overflows to Inf. The full scatter never touches
+  # that cell (it indexes observed cases only); the diagonal sum must skip it too, or it forms
+  # 0 * Inf = NaN and breaks diag == diag(full). The pair is barely identified, so its variance
+  # is legitimately huge -- but finite, which is what lets DWLS down-weight it instead of aborting.
+  x <- .expand_table(rbind(c(41, 0), c(13, 0), c(28, 0), c(171, 47)))
+  d <- suppressWarnings(.polychoric(x, acov = "diag"))$acov
+  f <- suppressWarnings(.polychoric(x, acov = "full"))$acov
+  expect_false(anyNA(d))
+  expect_true(all(is.finite(d)))
+  expect_equal(unname(d), unname(diag(f)), tolerance = 1e-6)
+  expect_gt(d[[1L]], 1)                                  # huge but finite: the degenerate pair
+})
+
+# Deterministic ordinal data whose alphabetical label order differs from the response order:
+# a bivariate normal (rho = 0.7) cut into four categories 1..4, then labelled in the TRUE
+# order never < rarely < often < always. Alphabetical sorting scrambles that to
+# always, never, often, rarely, so an unordered factor / character column would attenuate rho.
+.labelled_ordinal <- function() {
+  set.seed(123)
+  N <- 600L
+  z1 <- stats::rnorm(N)
+  z2 <- 0.7 * z1 + sqrt(1 - 0.7^2) * stats::rnorm(N)
+  br <- stats::qnorm(c(.25, .5, .75))
+  a <- findInterval(z1, br) + 1L
+  b <- findInterval(z2, br) + 1L
+  lab <- c("never", "rarely", "often", "always")        # the true response order
+  list(
+    num = data.frame(a = a, b = b),
+    ord = data.frame(a = ordered(lab[a], levels = lab), b = ordered(lab[b], levels = lab)),
+    uno = data.frame(a = factor(lab[a]), b = factor(lab[b])),
+    chr = data.frame(a = lab[a], b = lab[b], stringsAsFactors = FALSE)
+  )
+}
+
+test_that("ordered factors match numeric codes but unordered / character columns are rejected", {
+  d <- .labelled_ordinal()
+
+  # An ordered factor carries the response order, so it gives exactly the numeric-code answer.
+  expect_equal(.polychoric(d$ord)$R, .polychoric(d$num)$R)
+
+  # An unordered factor or character column has no response order; data.matrix() would rank it
+  # alphabetically and silently attenuate the correlation, so it is refused up front.
+  expect_error(.polychoric(d$uno), class = "efa_cor_unordered_factor")
+  expect_error(.polychoric(d$chr), class = "efa_cor_unordered_factor")
+  expect_error(.polychoric(as.matrix(d$chr)), class = "efa_cor_unordered_factor")
+})
+
 test_that("acov diag matches an independent influence-function computation", {
   # Simulated equicorrelated ordinal items with well-populated categories (so the threshold
   # bread is non-singular); compares the backend's diagonal to the from-scratch R reference.

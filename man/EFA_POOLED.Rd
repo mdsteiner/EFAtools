@@ -77,4 +77,3 @@ keeps working.
 \seealso{
 \code{\link[=efa_mi]{efa_mi()}}
 }
-\keyword{internal}

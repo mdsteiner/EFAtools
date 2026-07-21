@@ -70,6 +70,36 @@ efa_raw <- efa_average(GRiPS_raw, n_factors = 1, rotation = "none", show_progres
 efa_raw_p <- efa_average(GRiPS_raw, n_factors = 2, rotation = "promax", show_progress = FALSE)
 }  # is_slow_test()
 
+test_that("efa_average runs end to end on a cheap grid (smoke test)", {
+  # The rest of this file is gated behind EFATOOLS_TEST_SLOW, so without an
+  # always-on test CRAN would never run efa_average() end to end. A two-row grid
+  # (PAF and ML at the EFAtools preset, promax) fits in well under a second.
+  local_reproducible_output()
+  set.seed(42)
+  res <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
+                     estimator = c("PAF", "ML"), type = "EFAtools",
+                     rotation = "promax", start_method = "psych",
+                     show_progress = FALSE)
+
+  expect_s3_class(res, "efa_average")
+  # PAF and ML at one preset and one rotation collapse to exactly two rows.
+  expect_identical(nrow(res$implementations_grid), 2L)
+
+  # Slot shapes: variables x factors loadings (carrying the LOADINGS class), a
+  # square factor-correlation matrix from the oblique rotation, one communality
+  # per variable, and the same-shaped indicator-to-factor correspondence matrix.
+  m <- ncol(test_models$baseline$cormat)
+  expect_s3_class(res$loadings$average, "LOADINGS")
+  expect_identical(dim(res$loadings$average), c(m, 3L))
+  expect_identical(dim(res$Phi$average), c(3L, 3L))
+  expect_length(res$h2$average, m)
+  expect_identical(dim(res$ind_fac_corres), c(m, 3L))
+
+  # The averaging-rate sentence must never contain NaN (the empty-denominator guard).
+  expect_no_match(paste(cli::ansi_strip(format(res)), collapse = " "), "NaN",
+                  fixed = TRUE)
+})
+
 test_that("output class and dimensions are correct", {
   skip_if_not_slow()
   expect_s3_class(efa_def, "efa_average")
@@ -508,10 +538,18 @@ cor_nposdef <- matrix(c(1, 1, 0, 1, 1, 1, 0, 1, 1), ncol = 3)
 test_that("errors are thrown correctly", {
   skip_if_not_slow()
   expect_error(efa_average(1:5, show_progress = FALSE), class = "efa_input_not_matrix")
-  expect_message(efa_average(GRiPS_raw, n_factors = 2, estimator = "PAF", type = c("EFAtools", "psych"), show_progress = FALSE),
+  # Extracting two factors from the unidimensional GRiPS overshoots, and psych's
+  # 50-iteration cap now stops that solution short of convergence, so it is
+  # excluded with a warning; suppress that incidental warning to assert the target
+  # condition (as the n_factors = 1 cases below already do).
+  expect_message(suppressWarnings(
+    efa_average(GRiPS_raw, n_factors = 2, estimator = "PAF", type = c("EFAtools", "psych"), show_progress = FALSE),
+    classes = "efa_avg_excluded_solutions"),
                  class = "efa_cor_from_data")
-  expect_warning(efa_average(GRiPS_raw, n_factors = 2, estimator = "PAF", type = c("EFAtools", "psych"),
-                             N = 20, show_progress = FALSE),
+  expect_warning(suppressWarnings(
+    efa_average(GRiPS_raw, n_factors = 2, estimator = "PAF", type = c("EFAtools", "psych"),
+                N = 20, show_progress = FALSE),
+    classes = "efa_avg_excluded_solutions"),
                  class = "efa_n_from_data")
   expect_error(efa_average(dat_sing, n_factors = 1, show_progress = FALSE),
                class = "efa_cor_singular")

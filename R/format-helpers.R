@@ -242,6 +242,13 @@
   as.integer(width)
 }
 
+# Whether console styling will actually be rendered: the caller has to ask for it AND the
+# output target has to support it. cli emits no escapes at one colour (knitr, an active
+# sink, NO_COLOR, a non-tty target), so `color = TRUE` alone does not mean styling is visible.
+.efa_styling_visible <- function(color = TRUE) {
+  isTRUE(color) && cli::num_ansi_colors() > 1L
+}
+
 # Printed width of a block: row label + two spaces + value columns + inter-column gaps.
 .efa_table_width <- function(cols, row_width, col_widths) {
   row_width + 2L + sum(col_widths[cols]) + 2L * (length(cols) - 1L)

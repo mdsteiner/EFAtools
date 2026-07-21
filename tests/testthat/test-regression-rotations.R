@@ -309,9 +309,8 @@ test_that("the native oblimin engine generalizes to non-zero gamma", {
   skip_on_cran()
   skip_if_not_installed("GPArotation")
 
-  # The package only ever uses gam = 0 (oblimin == quartimin), but the native engine
-  # implements the full oblimin family parameterized by gamma. Exercise the gamma-centering
-  # path with gam = 0.5 (biquartimin) against GPArotation's oblimin at the same gamma, under
+  # Exercise the gamma-centering path of the native oblimin engine with gam = 0.5
+  # (biquartimin) against GPArotation's oblimin at the same gamma, under
   # the same relaxed-parity scheme (Q-dominance, aligned loadings, Phi fingerprint).
   set.seed(seed)
   native <- .rotate_oblimin(L, gam = 0.5, eps = 1e-5, normalize = TRUE, random_starts = 100)
@@ -490,6 +489,23 @@ test_that("promax reproduces stats::promax", {
   efa <- suppressWarnings(.rotate_model(unrot, rotation = "promax", type = "psych"))
   ref <- stats::promax(L, m = 4)
   expect_lt(aligned_max_diff(efa$rot_loadings, ref$loadings), 1e-4)
+})
+
+test_that("promax with normalize = FALSE reproduces psych's Promax", {
+  skip_on_cran()
+  skip_if_not_installed("psych")
+
+  # Pins the documented claim that switching off Kaiser normalization reproduces the
+  # psych promax solution "to within the varimax convergence tolerance". psych::Promax is
+  # what psych::fa(rotate = "Promax") calls. The residual is the convergence noise of the
+  # shared stats::varimax base at eps = 1e-5, not an algorithmic difference, so the
+  # equivalence is asserted at 1e-4 rather than at machine precision.
+  efa <- suppressWarnings(
+    .rotate_model(unrot, rotation = "promax", type = "psych", normalize = FALSE)
+  )
+  ref <- psych::Promax(L, m = 4)
+  expect_lt(aligned_max_diff(efa$rot_loadings, ref$loadings), 1e-4)
+  expect_equal(phi_fingerprint(efa$Phi), phi_fingerprint(ref$Phi), tolerance = 1e-4)
 })
 
 rm(aligned_max_diff, phi_fingerprint, unrot, L, seed, fixtures)

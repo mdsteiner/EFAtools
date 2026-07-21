@@ -28,11 +28,6 @@
       V17 <num> <num> <num> <num> <num>
       V18 <num> <num> <num> <num> <num>
       
-      Legend:
-        bold = |loading| >= <num>
-        grey = below cutoff
-        red h2/u2 = Heywood-relevant value
-      
       -- Factor Intercorrelations ----------------------------------------------------
       
             F1 F2 F3
@@ -65,7 +60,7 @@
       
       -- Rotated Loadings ------------------------------------------------------------
       
-            F1    F3    F2    h2    u2
+            F1    F2    F3    h2    u2
       V1 <num> <num> <num> <num> <num>
       V2 <num> <num> <num> <num> <num>
       V3 <num> <num> <num> <num> <num>
@@ -85,11 +80,6 @@
       V17 <num> <num> <num> <num> <num>
       V18 <num> <num> <num> <num> <num>
       
-      Legend:
-        bold = |loading| >= <num>
-        grey = below cutoff
-        red h2/u2 = Heywood-relevant value
-      
       -- Factor Intercorrelations ----------------------------------------------------
       
             F1 F2 F3
@@ -99,7 +89,7 @@
       
       -- Variances Accounted for -----------------------------------------------------
       
-                           F1 F3 F2
+                           F1 F2 F3
       SS loadings <num> <num> <num>
       Prop Tot Var <num> <num> <num>
       Cum Prop Tot Var <num> <num> <num>
@@ -160,11 +150,6 @@
       V16 <num> <num> <num> <num> <num>
       V17 <num> <num> <num> <num> <num>
       V18 <num> <num> <num> <num> <num>
-      
-      Legend:
-        bold = |loading| >= <num>
-        grey = below cutoff
-        red h2/u2 = Heywood-relevant value
       
       -- Factor Intercorrelations ----------------------------------------------------
       
@@ -249,7 +234,7 @@
       
       -- Rotated Loadings ------------------------------------------------------------
       
-            F1    F3    F2    h2    u2
+            F1    F2    F3    h2    u2
       V1 <num> <num> <num> <num> <num>
       V2 <num> <num> <num> <num> <num>
       V3 <num> <num> <num> <num> <num>
@@ -269,11 +254,6 @@
       V17 <num> <num> <num> <num> <num>
       V18 <num> <num> <num> <num> <num>
       
-      Legend:
-        bold = |loading| >= <num>
-        grey = below cutoff
-        red h2/u2 = Heywood-relevant value
-      
       -- Factor Intercorrelations ----------------------------------------------------
       
             F1 F2 F3
@@ -283,7 +263,7 @@
       
       -- Structure Matrix ------------------------------------------------------------
       
-            F1 F3 F2
+            F1 F2 F3
       V1 <num> <num> <num>
       V2 <num> <num> <num>
       V3 <num> <num> <num>
@@ -305,7 +285,7 @@
       
       -- Variances Accounted for -----------------------------------------------------
       
-                           F1 F3 F2
+                           F1 F2 F3
       SS loadings <num> <num> <num>
       Prop Tot Var <num> <num> <num>
       Cum Prop Tot Var <num> <num> <num>
@@ -364,11 +344,6 @@
       V17 <num> <num> <num>
       V18 <num> <num> <num>
       
-      Legend:
-        bold = |loading| >= <num>
-        grey = below cutoff
-        red h2/u2 = Heywood-relevant value
-      
       -- Variances Accounted for -----------------------------------------------------
       
       No variance-accounted table available.
@@ -420,11 +395,6 @@
       V16 <num> <num> <num>
       V17 <num> <num> <num>
       V18 <num> <num> <num>
-      
-      Legend:
-        bold = |loading| >= <num>
-        grey = below cutoff
-        red h2/u2 = Heywood-relevant value
       
       -- Variances Accounted for -----------------------------------------------------
       

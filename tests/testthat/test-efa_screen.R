@@ -190,13 +190,14 @@ test_that("raw-data flags separate sparse, empty, and continuous variables", {
 test_that("factor columns are coded (not corrupted) and an unused ordinal category is empty", {
   set.seed(1)
   n <- 120L
-  # ordered factors; f1 never uses its third level ("c"), leaving an interior gap
-  f1 <- factor(sample(c("a", "b", "d"), n, replace = TRUE),
-               levels = c("a", "b", "c", "d"))
-  f2 <- factor(sample(c("lo", "mid", "hi"), n, replace = TRUE),
-               levels = c("lo", "mid", "hi"))
-  f3 <- factor(sample(c("lo", "mid", "hi"), n, replace = TRUE),
-               levels = c("lo", "mid", "hi"))
+  # ordered factors carry the response order the polychoric path needs; f1 never uses its
+  # third level ("c"), leaving an interior gap
+  f1 <- ordered(sample(c("a", "b", "d"), n, replace = TRUE),
+                levels = c("a", "b", "c", "d"))
+  f2 <- ordered(sample(c("lo", "mid", "hi"), n, replace = TRUE),
+                levels = c("lo", "mid", "hi"))
+  f3 <- ordered(sample(c("lo", "mid", "hi"), n, replace = TRUE),
+                levels = c("lo", "mid", "hi"))
   dat <- data.frame(f1 = f1, f2 = f2, f3 = f3)
 
   scr <- suppressWarnings(efa_screen(dat, cor_method = "poly"))
@@ -251,15 +252,15 @@ test_that("large category codes are labelled as plain values, not scientific not
   expect_false("1e+08" %in% names(scr$categories$big))
 })
 
-test_that("a non-numeric (character) matrix is coded, not left as strings", {
+test_that("a non-numeric (character) matrix is rejected on the polychoric path", {
   set.seed(11)
   cm <- matrix(sample(c("lo", "mid", "hi"), 300L, replace = TRUE), nrow = 100L,
                dimnames = list(NULL, c("v1", "v2", "v3")))
-  scr <- suppressWarnings(efa_screen(cm, cor_method = "poly"))
-  # data.matrix() alone leaves a character matrix as strings; efa_screen codes it
-  # via as.data.frame() so the per-item diagnostics are computed on integer codes
-  expect_true(all(is.finite(scr$per_item$variance)))
-  expect_false(anyNA(scr$per_item$flags))
+  # A character matrix carries no response order: coding it would rank the labels
+  # alphabetically (hi < lo < mid), silently attenuating the polychoric correlations, so the
+  # polychoric path refuses it rather than returning a misleading screening report.
+  expect_error(suppressMessages(efa_screen(cm, cor_method = "poly")),
+               class = "efa_cor_unordered_factor")
 })
 
 test_that("a wide-span integer code is flagged empty without enumerating its range", {

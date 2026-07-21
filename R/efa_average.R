@@ -48,7 +48,10 @@
 #' based on this threshold. Note that this may not be meaningful if rotation = "none"
 #' and n_factors > 1 are used, as no simple structure is present there.
 #' @param max_iter numeric. The maximum number of iterations to perform after which
-#' the iterative PAF procedure is halted with a warning. Default is 10,000. Note
+#' the iterative PAF procedure is halted with a warning. Default is 10,000. It is
+#' only evaluated for the "PAF" solutions run under `type` "none": a named `type`
+#' brings the iteration cap that defines it ("SPSS" 25, "psych" 50, and
+#' "EFAtools" 300), and "ML" and "ULS" do not iterate this way. Note
 #' that non-converged procedures are excluded from the averaging procedure.
 #' @param init_comm character vector. Any combination of "smc", "mac", and "unity".
 #' Controls the methods to estimate the initial communalities in `PAF` if
@@ -155,15 +158,18 @@
 #'
 #' The grid containing the setting combinations is produced based on the entries
 #' to the respective arguments. To this end, all possible combinations resulting
-#' in unique EFA models are considered. That is, if, for example, the `type`
-#' argument was set to `c("none", "SPSS")` and one combination of the specific
-#' settings entered was identical to the SPSS combination, this combination
-#' would be included in the grid and run only once. We include here a list
+#' in unique EFA models are considered: combinations that resolve to the same
+#' model are run only once. Two combinations are the same model only if every
+#' setting the fit consumes agrees, and for "PAF" that includes the iteration cap
+#' `max_iter`. Since a named `type` brings its own cap, a `type` of
+#' `c("none", "SPSS")` whose specific settings match the SPSS combination in
+#' every other respect still gives two "PAF" models, unless `max_iter` is also
+#' set to the cap of the SPSS implementation. We include here a list
 #' of arguments that are only evaluated under specific conditions:
 #'
 #' The arguments `init_comm`, `criterion`, `criterion_type`,
-#' `abs_eigen` are only evaluated if "PAF" is included in `estimator`
-#' and "none" is included in `type`.
+#' `abs_eigen`, and `max_iter` are only evaluated if "PAF" is included in
+#' `estimator` and "none" is included in `type`.
 #'
 #' The argument `varimax_type` is only evaluated if "varimax", "promax",
 #' "oblique", or "orthogonal" is included in `rotation` and "none" is
@@ -303,7 +309,13 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' # Averaging across one implementation each of PAF (EFAtools type), ULS, and
+#' # ML with one implementation of promax (EFAtools type) (3 EFAs)
+#' Aver_meth <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
+#'                          estimator = c("PAF", "ULS", "ML"), type = "EFAtools",
+#'                          start_method = "psych")
+#'
+#' \donttest{
 #' # Averaging across different implementations of PAF and promax rotation (72 EFAs)
 #' Aver_PAF <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500)
 #'
@@ -316,12 +328,6 @@
 #' Aver_meth_ext <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
 #'                              estimator = c("PAF", "ULS", "ML"))
 #'
-#' # Averaging across one implementation each of PAF (EFAtools type), ULS, and
-#' # ML with one implementation of promax (EFAtools type) (3 EFAs)
-#' Aver_meth <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
-#'                          estimator = c("PAF", "ULS", "ML"), type = "EFAtools",
-#'                          start_method = "psych")
-#'
 #' # Averaging across different oblique rotation methods, using one implementation
 #' # of ML and one implementation of promax (EFAtools type) (7 EFAs)
 #' Aver_rot <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
@@ -329,7 +335,7 @@
 #'                          start_method = "psych")
 #'}
 #'
-#' \dontrun{
+#' \donttest{
 #' # Two-stage FIML correlations from raw data with missing values: the EM
 #' # saturated moments are estimated once and the resulting correlation is
 #' # averaged across the grid of EFAs.
@@ -468,9 +474,9 @@ efa_average <- function(x, n_factors, N = NA, estimator = "PAF", rotation = "pro
   arg_grid <- .build_avg_grid(
     estimator = estimator, type = type, rotation = rotation, init_comm = init_comm,
     criterion = criterion, criterion_type = criterion_type, abs_eigen = abs_eigen,
-    start_method = start_method, k_promax = k_promax, normalize = normalize,
-    P_type = p_type, precision = precision, varimax_type = varimax_type,
-    k_simplimax = k_simplimax)
+    max_iter = max_iter, start_method = start_method, k_promax = k_promax,
+    normalize = normalize, P_type = p_type, precision = precision,
+    varimax_type = varimax_type, k_simplimax = k_simplimax)
 
   # The grid leaves precision NA for unrotated rows, where it is not applicable;
   # those rows still need a valid tolerance to pass to EFA(), so fall back to its
@@ -497,7 +503,10 @@ efa_average <- function(x, n_factors, N = NA, estimator = "PAF", rotation = "pro
         rotation = arg_grid$rotation,
         estimate_control = estimate_control(type = "none",
             init_comm = arg_grid$init_comm, criterion = arg_grid$criterion,
-            criterion_type = arg_grid$criterion_type, max_iter = max_iter,
+            # The grid carries the row's iteration cap: the type's own on a named-type
+            # PAF row (SPSS 25, psych 50, EFAtools 300), the max_iter argument on a PAF
+            # row of type "none", and NA on an ML/ULS row that never uses it.
+            criterion_type = arg_grid$criterion_type, max_iter = arg_grid$max_iter,
             abs_eigen = arg_grid$abs_eigen,
             # The grid leaves start_method NA for the non-ML rows that ignore it; the
             # estimate control requires a concrete value, so fall back to the default.
@@ -507,6 +516,8 @@ efa_average <- function(x, n_factors, N = NA, estimator = "PAF", rotation = "pro
             # rotate control requires concrete values, so fall back to the defaults there.
             normalize = if (is.na(arg_grid$normalize)) TRUE else arg_grid$normalize,
             precision = if (is.na(arg_grid$precision)) default_precision else arg_grid$precision,
+            # order_type is fixed to "eigen" (the ordering only affects the factor
+            # order of this single returned fit, not any averaged quantity).
             order_type = "eigen", varimax_type = arg_grid$varimax_type,
             p_type = arg_grid$P_type,
             k = ifelse(arg_grid$rotation == "promax", arg_grid$k_promax, arg_grid$k_simplimax))))
@@ -534,9 +545,9 @@ efa_average <- function(x, n_factors, N = NA, estimator = "PAF", rotation = "pro
                                             function(i, estimators, rotations,
                                                      init_comms, criteria,
                                                      criterion_types, abs_eigens,
-                                                     varimax_types, k_ps, k_ss,
-                                                     normalizes, P_types, precisions,
-                                                     start_methods) {
+                                                     max_iters, varimax_types, k_ps,
+                                                     k_ss, normalizes, P_types,
+                                                     precisions, start_methods) {
       if (i %% stepsize == 0){
         efa_progress_bar(message = sprintf("Running EFA %g of %g", i, n_efa))
       }
@@ -551,7 +562,10 @@ efa_average <- function(x, n_factors, N = NA, estimator = "PAF", rotation = "pro
           efa_fit(R, n_factors, N = N, estimator = estimators[i], rotation = rotations[i],
               estimate_control = estimate_control(type = "none", init_comm = init_comms[i],
                   criterion = criteria[i], criterion_type = criterion_types[i],
-                  max_iter = max_iter, abs_eigen = abs_eigens[i],
+                  # Per-row iteration cap: the type's own on a named-type PAF row
+                  # (SPSS 25, psych 50, EFAtools 300), the max_iter argument on a PAF
+                  # row of type "none", and NA on the ML/ULS rows that never use it.
+                  max_iter = max_iters[i], abs_eigen = abs_eigens[i],
                   # The grid leaves start_method NA for the non-ML rows that ignore it; the
                   # estimate control requires a concrete value, so fall back to the default.
                   start_method = if (is.na(start_methods[i])) "psych" else start_methods[i]),
@@ -559,6 +573,8 @@ efa_average <- function(x, n_factors, N = NA, estimator = "PAF", rotation = "pro
                   # normalize is NA on the unrotated rows that ignore it; the rotate control
                   # requires a concrete value, so fall back to the default there.
                   normalize = if (is.na(normalizes[i])) TRUE else normalizes[i],
+                  # order_type is fixed to "eigen": the averaging re-aligns every solution
+                  # to the first by congruence, so the per-fit factor order is irrelevant.
                   precision = precision_i, order_type = "eigen",
                   varimax_type = varimax_types[i], p_type = P_types[i],
                   k = ifelse(rotations[i] == "promax", k_ps[i], k_ss[i]),
@@ -569,10 +585,10 @@ efa_average <- function(x, n_factors, N = NA, estimator = "PAF", rotation = "pro
     }, estimators = arg_grid$estimator, rotations = arg_grid$rotation,
     init_comms = arg_grid$init_comm, criteria = arg_grid$criterion,
     criterion_types = arg_grid$criterion_type, abs_eigens = arg_grid$abs_eigen,
-    varimax_types = arg_grid$varimax_type, k_ps = arg_grid$k_promax,
-    k_ss = arg_grid$k_simplimax, normalizes = arg_grid$normalize,
-    P_types = arg_grid$P_type, precisions = arg_grid$precision,
-    start_methods = arg_grid$start_method,
+    max_iters = arg_grid$max_iter, varimax_types = arg_grid$varimax_type,
+    k_ps = arg_grid$k_promax, k_ss = arg_grid$k_simplimax,
+    normalizes = arg_grid$normalize, P_types = arg_grid$P_type,
+    precisions = arg_grid$precision, start_methods = arg_grid$start_method,
     future.seed = TRUE)
 
     if (n_efa %% 10 != 0){

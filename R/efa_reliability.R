@@ -127,8 +127,8 @@
 #'   Psychological Methods, 21, 137-150.
 #'
 #' @family reliability coefficients
-#' @seealso [OMEGA()], the superseded function that returns these same
-#'   coefficients in a wide, per-factor layout.
+#' @seealso [efa_fit()] for the solution these are computed from, and [OMEGA()], the
+#'   superseded function that returns these same coefficients in a wide, per-factor layout.
 #'
 #' @export
 #'

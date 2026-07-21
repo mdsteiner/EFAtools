@@ -337,7 +337,15 @@ test_that("bifactor rotated SEs survive a general-factor reorder", {
   colnames(X) <- paste0("v", seq_len(p))
 
   for (rot in c("bifactorT", "bifactorQ")) {
-    fit <- EFA(X, n_factors = 3, method = "ML", rotation = rot, se = "information")
+    # The two group factors are equally strong by construction, so their canonical variances
+    # nearly coincide and the unrotated orientation is weakly determined. The fit therefore
+    # warns (`efa_se_unreliable`) and withholds the unrotated loading SEs -- that is the
+    # documented gauge behaviour, not a failure, and the point of this test is that it must
+    # not take the rotated SEs down with it. The warning is suppressed rather than asserted
+    # by class because it sits on a numeric threshold and need not fire identically on every
+    # BLAS; the substantive assertion below is what this test pins.
+    fit <- suppressWarnings(
+      EFA(X, n_factors = 3, method = "ML", rotation = rot, se = "information"))
     # the general factor (the column loading on every variable) is not in column 1 here
     expect_gt(which.max(apply(abs(unclass(fit$rot_loadings)), 2, min)), 1L)
     expect_false(anyNA(fit$SE$rot_loadings), info = rot)

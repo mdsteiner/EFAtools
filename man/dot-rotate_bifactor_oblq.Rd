@@ -22,26 +22,26 @@
 
 \item{eps}{Numeric scalar. Convergence tolerance for the projected-gradient norm.}
 
-\item{normalize}{Logical scalar. If \code{TRUE}, apply Kaiser normalization before rotation and
-reverse it afterwards.}
+\item{normalize}{Logical scalar. If \code{TRUE}, apply Kaiser normalization before
+rotation and reverse it afterwards.}
 
-\item{random_starts}{Integer scalar. Number of additional random starts.}
+\item{random_starts}{Integer scalar. Number of additional random orthogonal starts.}
 
 \item{maxit}{Integer scalar. Maximum number of projected-gradient updates.}
 
-\item{max_line_search}{Integer scalar. Maximum number of step-halving attempts after the
-initial trial step in each line-search phase.}
+\item{max_line_search}{Integer scalar. Maximum number of step-halving attempts after
+the initial trial step in each line-search phase.}
 
 \item{step0}{Numeric scalar. Initial step size used in the projected-gradient update.}
 
-\item{screen_keep}{Integer scalar. Number of screened random starts retained for triage
-optimization.}
+\item{screen_keep}{Integer scalar. Number of screened random starts retained for
+triage optimization.}
 
-\item{triage_maxit}{Integer scalar. Number of short optimization iterations used in the
-triage stage.}
+\item{triage_maxit}{Integer scalar. Number of short optimization iterations used in
+the triage stage.}
 
-\item{triage_improve_tol}{Numeric scalar. Relative improvement required for a triaged start
-to be promoted to full optimization.}
+\item{triage_improve_tol}{Numeric scalar. Relative improvement required for a triaged
+start to be promoted to full optimization.}
 }
 \value{
 A named list with the rotated loadings, the transformation matrix \code{Th}
@@ -78,3 +78,4 @@ Psychological Measurement}, 65, 676-696.
 Jennrich, R. I., & Bentler, P. M. (2011). Exploratory bi-factor analysis. \emph{Psychometrika},
 76, 537-549.
 }
+\keyword{internal}

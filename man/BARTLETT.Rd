@@ -42,4 +42,3 @@ keeps working.
 \seealso{
 \code{\link[=efa_bartlett]{efa_bartlett()}}
 }
-\keyword{internal}

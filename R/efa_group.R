@@ -36,7 +36,18 @@
 #' - **Consensus** (the default for orthogonal rotations and for unrotated
 #'   solutions): a symmetric Generalized Procrustes Analysis target is built
 #'   across all groups (Gower, 1975), and every group's loadings are rotated to
-#'   it. No group is privileged.
+#'   it. The consensus frame is only identified up to a global rotation of its
+#'   factors, so it is then rotated into a fixed gauge and the same transform is
+#'   applied to every group. The gauge is the simple structure of the rotation
+#'   that was requested, evaluated on the consensus target itself, so the shared
+#'   loadings are in the same kind of frame as the per-group solutions they
+#'   summarise. Where no criterion identifies a frame -- an unrotated solution,
+#'   and a `"bifactorT"` request with two factors, whose criterion is identically
+#'   zero with a single group factor -- the principal-axes orientation of the
+#'   target is used instead. Either way the columns are ordered by decreasing sum
+#'   of squares and signed by their column sums, and the shared orientation, and
+#'   hence every reported congruence, difference, and flag, is independent of the
+#'   order in which the groups are supplied.
 #' - **Reference**: every group's loadings are aligned by Procrustes rotation to
 #'   one reference group's loadings, which are kept fixed. This path is used when
 #'   `reference_group` is given, and is used automatically for oblique rotations
@@ -142,11 +153,18 @@
 #'   diagnostics, e.g. `heywood`).}
 #' \item{alignment}{The alignment result: the consensus object (see
 #'   [efa_procrustes()]), or a list with the reference group, the target, and the
-#'   per-group Procrustes results.}
+#'   per-group Procrustes results. On the consensus path this is the raw record of
+#'   the Generalized Procrustes iteration, so its `target` and `aligned_loadings`
+#'   are in the orientation that iteration converged to, before the gauge described
+#'   under *Alignment* is applied; the gauged matrices are `target` and `loadings`
+#'   above.}
 #' \item{settings}{A list of the settings used, including the per-group `N`, the
-#'   alignment method, the rotation, the estimator, the input type, and whether a
-#'   bootstrap is available (`can_bootstrap`, `FALSE` for correlation-matrix
-#'   input).}
+#'   alignment method, the group that seeded the consensus frame (`alignment_start`,
+#'   `NULL` on the reference path), the orientation the shared frame was put in
+#'   (`gauge`: the rotation's own name, `"principal_axes"`, or `"identity"` for a
+#'   single factor; `NULL` on the reference path), the rotation, the estimator, the
+#'   input type, and whether a bootstrap is available (`can_bootstrap`, `FALSE` for
+#'   correlation-matrix input).}
 #'
 #' @references
 #' Efron, B., & Tibshirani, R. J. (1993). *An Introduction to the Bootstrap*.
@@ -376,9 +394,33 @@ efa_group <- function(x, groups = NULL, n_factors, N = NA,
     )
     alignment_method <- "reference"
   } else {
+    # The gauge runs the requested criterion on the shared frame, so a criterion parameter
+    # the fits were tuned with has to reach it too -- `delta` changes what geomin optimizes,
+    # and gauging at the default while the groups were rotated at another value would put
+    # the shared frame in a different simple structure than the solutions it summarises. It
+    # is read off the rotate control, the only place it can be: `delta` is efa_group()'s own
+    # salience-flag argument, so a geomin delta can never arrive through the dots, and the
+    # fit settings do not record it. (`gam` is oblimin-only and so never reaches this path,
+    # which oblique rotations do not take.)
+    rc <- efa_args$rotate_control
+    gauge_args <- if (inherits(rc, "efa_rotate_control")) {
+      # The criterion parameters are the rotation's engine extras less `maxit`, which is a
+      # solver budget, not part of the criterion -- the gauge pins its own. Derived from
+      # .rotation_dot_extras() so a criterion parameter added there reaches the gauge too.
+      crit_extras <- setdiff(.rotation_dot_extras(rotation), "maxit")
+      rc$extra_args[intersect(names(rc$extra_args), crit_extras)]
+    } else {
+      list()
+    }
     aligned <- .efa_group_align_consensus(
       unrot_loadings = unrot_loadings, rot_loadings = rot_loadings,
-      rotation_type = rotation_type, group_names = group_names
+      rotation_type = rotation_type, group_names = group_names,
+      rotation = rotation,
+      # Kaiser normalization changes what the criterion optimizes just as `delta` does, so
+      # the gauge takes the setting the fits ran under. It is already resolved in the fit
+      # settings (through the type preset), unlike `delta`, which is not recorded there.
+      normalize = settings1$normalize %||% TRUE,
+      rotation_args = gauge_args
     )
     alignment_method <- "consensus"
   }
@@ -423,6 +465,15 @@ efa_group <- function(x, groups = NULL, n_factors, N = NA,
     N = Ns_used,
     reference_group = if (use_reference) group_names[[ref_idx]] else NULL,
     alignment = alignment_method,
+    # The consensus iteration records the seeding target as a position in the supplied
+    # list; report it as the group name, so it identifies a group the way its sibling
+    # `reference_group` does rather than being a bare index whose meaning changes with
+    # the order the groups were passed in.
+    alignment_start = if (use_reference) NULL else group_names[[aligned$alignment$start]],
+    # Which orientation the shared frame was put in. It is not always derivable from
+    # `rotation`: a criterion that degenerates at the requested number of factors, and a
+    # rotation engine that fails outright, both fall back to the principal axes silently.
+    gauge = aligned$gauge,
     rotation = rotation,
     rotation_family = rotation_type,
     estimator = settings1$estimator,
@@ -672,7 +723,9 @@ efa_group <- function(x, groups = NULL, n_factors, N = NA,
 # GPA-consensus target. Used for orthogonal and unrotated solutions only, so the
 # factor correlations are always the identity and are reported as NULL.
 .efa_group_align_consensus <- function(unrot_loadings, rot_loadings,
-                                       rotation_type, group_names) {
+                                       rotation_type, group_names,
+                                       rotation = "none", normalize = TRUE,
+                                       rotation_args = list()) {
   consensus <- .gpa_consensus_target(
     unrotated_list = unrot_loadings,
     init_targets = if (rotation_type == "none") NULL else rot_loadings,
@@ -687,11 +740,144 @@ efa_group <- function(x, groups = NULL, n_factors, N = NA,
     )
   }
 
-  loadings <- consensus$aligned_loadings
+  # The GPA-consensus objective mean_g ||A_g T_g - M||^2 is invariant under a global
+  # orthogonal rotation (M, T_g) -> (M Q, T_g Q), so the converged frame is oriented
+  # only up to Q -- fixed in practice by whichever group seeds the iteration. Rotate
+  # that frame into a canonical, order-invariant gauge and carry the identical
+  # transform through every aligned matrix, so the reported congruences, differences,
+  # and flags do not depend on the order the groups are supplied in. The column order
+  # is then fixed by descending sum of squares and the column signs by
+  # `.reflect_signs()`, as elsewhere.
+  M <- unname(consensus$target)
+  gauged <- .consensus_gauge(M, rotation, rotation_type, normalize, rotation_args)
+  Q <- gauged$Q
+  MQ <- M %*% Q
+  ord <- order(colSums(MQ^2), decreasing = TRUE)
+  signs <- .reflect_signs(MQ[, ord, drop = FALSE])
+  D <- diag(signs, nrow = length(signs))
+  gauge <- function(L) (unname(L) %*% Q)[, ord, drop = FALSE] %*% D
+
+  # gauge(consensus$target) would recompute M %*% Q; MQ already holds it
+  target <- MQ[, ord, drop = FALSE] %*% D
+  dimnames(target) <- dimnames(consensus$target)
+
+  loadings <- lapply(consensus$aligned_loadings, function(L) {
+    Lg <- gauge(L)
+    dimnames(Lg) <- dimnames(consensus$target)
+    Lg
+  })
   names(loadings) <- group_names
 
-  list(loadings = loadings, target = consensus$target, Phi = NULL,
-       alignment = consensus)
+  list(loadings = loadings, target = target, Phi = NULL,
+       alignment = consensus, gauge = gauged$gauge)
+}
+
+
+# Canonical orientation for the converged consensus frame M. Returns the transform `Q` that
+# puts M into the simple structure of the criterion the caller asked for -- so the shared
+# target looks like the per-group solutions it summarises instead of being reported in a
+# frame borrowed from a different criterion -- together with a `gauge` label naming what was
+# actually applied, which is not always derivable from the rotation (see the fallbacks below).
+#
+# Order-invariance comes from equivariance, not from luck: every orthogonal simple-structure
+# criterion depends on the loadings alone, so if R minimizes f(M R) then Q0' R minimizes
+# f(M Q0 R) and yields the SAME rotated matrix M R. A different group order hands the frame
+# over as M Q0, and the gauge undoes exactly that Q0. What can break the argument is an
+# optimizer that returns an inferior local optimum for one of the two orientations, which is
+# why the gauge is run harder than the fits are: at a tolerance of 1e-10 rather than the fit's
+# `precision`, and with a wider screen-and-triage budget than any criterion's own preset. The
+# geomin criterion needs it -- at the shipped preset a minority of orientations land in a basin
+# ~0.02 above the global optimum, which moves the reported frame by ~0.6 -- and the cost is
+# under a millisecond, so the strong setting is applied to every criterion rather than
+# special-cased. `random_starts` is pinned for the same reason: a user's `random_starts = 0`
+# would leave the gauge on a single rational start and break the invariance outright.
+#
+# Kaiser normalization, by contrast, IS taken from the fit: it changes what the criterion
+# optimizes exactly as `delta` does, so gauging with it on while the groups rotated with it
+# off would put the shared frame in a different simple structure than the solutions it
+# summarises. It does not put the invariance at risk, because the row weights are communalities
+# and those are unchanged by a global orthogonal rotation of M.
+#
+# The principal-axes orientation is used whenever no criterion identifies a frame. Its columns
+# are the eigenvectors of crossprod(M), which leaves t(M) %*% M diagonal with a decreasing
+# diagonal -- the gauge an unrotated extraction reports anyway. Three cases reach it: an
+# unrotated (or oblique) request, which has no criterion to borrow; a two-factor bifactor
+# request, where the Jennrich-Bentler criterion sums lambda_ij^2 lambda_il^2 over j != l with
+# j, l >= 2 and so is identically zero with a single group factor, making every rotation a
+# global optimum and the gauge a no-op; and any engine failure.
+.consensus_gauge <- function(M, rotation, rotation_type, normalize = TRUE,
+                             rotation_args = list()) {
+
+  # The engines require at least two factors, and SO(1) is trivial anyway: only the sign
+  # gauge applies to a single column.
+  if (ncol(M) < 2L) return(list(Q = diag(1), gauge = "identity"))
+
+  # One decomposition serves every path: the principal-axes fallback and the equivariant
+  # pre-rotation below read the same eigenvectors.
+  V <- eigen(crossprod(M), symmetric = TRUE)$vectors
+  principal_axes <- function(why) list(Q = V, gauge = why)
+
+  if (rotation_type != "orthogonal") return(principal_axes("principal_axes"))
+  if (rotation == "bifactorT" && ncol(M) < 3L) return(principal_axes("principal_axes"))
+
+  # Hand the criterion a frame that does not depend on the group order, rather than trusting
+  # it to reach the same optimum from two different orientations of the same loadings. The
+  # equivariance above is a statement about the criterion's global optimum; the solver only
+  # approximates it, and its random starts are drawn in the frame it is handed, so two
+  # orientations explore genuinely different points. On a five-factor fixture that was enough
+  # to leave geomin in an optimum 0.1% above the global one for one group order and not the
+  # other, moving the reported target by 0.15 and changing three salience flags. Pre-rotating
+  # to the principal axes -- themselves exactly equivariant, with the column order and signs
+  # already pinned -- makes both orders hand the solver the same matrix, so they agree whether
+  # or not it finds the global optimum. The returned gauge is the composition.
+  P <- V
+  MP <- M %*% P
+  P <- P %*% diag(.reflect_signs(MP), nrow = ncol(MP))
+  Mc <- M %*% P
+
+  # varimax runs through stats::varimax rather than a native engine, but it takes the same
+  # fallback: a degenerate frame (a row with no loading at all) makes Kaiser normalization
+  # divide by zero and the SVD abort, and there is no reason for that to be fatal here when
+  # the identical frame is gauged happily under every other criterion. `varimax_type` is
+  # deliberately not consulted: .VARIMAX_SPSS and stats::varimax optimize the identical
+  # normal-varimax criterion (the SPSS pairwise angle is its closed-form plane maximizer),
+  # so the gauged frame agrees to convergence tolerance under either variant.
+  engine <- if (rotation == "varimax") {
+    function(L, ...) list(Th = stats::varimax(L, normalize = normalize, eps = 1e-10)$rotmat)
+  } else {
+    .orth_engines[[rotation]]
+  }
+  if (is.null(engine)) return(principal_axes("principal_axes"))
+
+  Q <- tryCatch(
+    withCallingHandlers(
+      do.call(engine,
+              c(list(Mc, eps = 1e-10, normalize = normalize, randomStarts = 100L,
+                     screen_keep = 20L, triage_maxit = 100L,
+                     triage_improve_tol = 0),
+                rotation_args))$Th,
+      # A gauge that stalled short of the tolerance is still an orthogonal frame, and the
+      # fallback below catches a genuinely unusable one; the fits have already reported
+      # their own convergence, so do not warn a second time about this internal rotation.
+      efa_rotation_no_convergence = function(w) invokeRestart("muffleWarning")
+    ),
+    error = function(e) NULL
+  )
+
+  if (is.null(Q) || !is.matrix(Q) || !all(is.finite(Q))) {
+    # The fallback is sound but must not be invisible: the printed output does not show
+    # settings$gauge, so without a signal the user would read a principal-axes frame as the
+    # requested criterion's. The alignment itself has succeeded at this point.
+    cli::cli_warn(
+      c("The {.val {rotation}} gauge rotation of the shared consensus frame failed;
+         its principal-axes orientation is reported instead.",
+        "i" = "The group alignment itself succeeded; see {.code settings$gauge}."),
+      class = "efa_group_gauge_failed"
+    )
+    principal_axes("principal_axes")
+  } else {
+    list(Q = P %*% Q, gauge = rotation)
+  }
 }
 
 

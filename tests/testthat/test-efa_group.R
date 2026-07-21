@@ -35,6 +35,320 @@ test_that("identical groups align to a shared consensus target", {
 })
 
 
+test_that("consensus alignment is invariant to the order of the groups", {
+  skip_on_cran()
+  # The consensus frame is only identified up to a global rotation of its factors, so
+  # without a fixed gauge every reported statistic would depend on which group seeds the
+  # iteration -- i.e. on the order the groups are supplied in. The gauge is the simple
+  # structure of the requested rotation (varimax here) evaluated on the consensus target,
+  # and it removes that dependence: three genuinely different WJIV age bands are aligned
+  # in two group orders and must yield the same shared frame and statistics.
+  b1 <- WJIV_ages_6_8$cormat[1:12, 1:12]
+  b2 <- WJIV_ages_14_19$cormat[1:12, 1:12]
+  b3 <- WJIV_ages_20_39$cormat[1:12, 1:12]
+  Ns <- c(WJIV_ages_6_8$N, WJIV_ages_14_19$N, WJIV_ages_20_39$N)
+
+  fit <- function(o) {
+    efa_group(list(a = b1, b = b2, c = b3)[o], n_factors = 2, N = Ns[o],
+              rotation = "varimax", invariance = TRUE)
+  }
+  mg1 <- fit(c(1, 2, 3))
+  mg2 <- fit(c(3, 2, 1))
+
+  # The gauge fixes the shared frame, so each group's aligned loadings and the shared
+  # target match to the GPA convergence tolerance however the groups are ordered.
+  for (g in c("a", "b", "c")) {
+    expect_equal(mg1$loadings[[g]], mg2$loadings[[g]], tolerance = 1e-4,
+                 ignore_attr = TRUE)
+  }
+  expect_equal(mg1$target, mg2$target, tolerance = 1e-4, ignore_attr = TRUE)
+
+  # ... and hence every reported statistic. Matched congruences are indexed by group
+  # name, so they are directly comparable across orderings (and, being normalised, are
+  # tighter than the raw loadings).
+  for (pair in list(c("a", "b"), c("a", "c"), c("b", "c"))) {
+    expect_equal(mg1$congruence$matched[pair[1L], pair[2L], ],
+                 mg2$congruence$matched[pair[1L], pair[2L], ], tolerance = 1e-6)
+  }
+
+  # Salience flags compared per unordered pair, item, and factor: the absolute
+  # difference and the flag are orientation-independent (only the signed diff flips
+  # when a pair is listed the other way round).
+  flag_key <- function(fl) {
+    pair <- vapply(seq_len(nrow(fl)), function(i) {
+      paste(sort(c(fl$group_1[i], fl$group_2[i])), collapse = "|")
+    }, character(1L))
+    o <- order(paste(pair, fl$indicator, fl$factor, sep = "|"))
+    list(abs_diff = fl$abs_diff[o], flagged = fl$flagged[o])
+  }
+  k1 <- flag_key(mg1$flags)
+  k2 <- flag_key(mg2$flags)
+  expect_equal(k1$abs_diff, k2$abs_diff, tolerance = 1e-5)
+  expect_identical(k1$flagged, k2$flagged)
+
+  # The seeding group is surfaced by name so a frame can be reproduced; the reference
+  # path has none. It is the first group supplied, so it differs between the two orders.
+  expect_identical(mg1$settings$alignment_start, "a")
+  expect_identical(mg2$settings$alignment_start, "c")
+  expect_null(efa_group(list(a = b1, b = b2), n_factors = 2, N = Ns[1:2],
+                        rotation = "varimax",
+                        reference_group = "a")$settings$alignment_start)
+})
+
+
+test_that("an unrotated consensus solution uses the principal-axes gauge", {
+  skip_on_cran()
+  # With no requested rotation there is no simple structure to borrow, so the shared
+  # frame is fixed by the principal axes of the target: t(M) %*% M diagonal with a
+  # decreasing diagonal and non-negative column sums. That gauge is order-invariant too.
+  b1 <- WJIV_ages_6_8$cormat[1:12, 1:12]
+  b2 <- WJIV_ages_14_19$cormat[1:12, 1:12]
+  b3 <- WJIV_ages_20_39$cormat[1:12, 1:12]
+  Ns <- c(WJIV_ages_6_8$N, WJIV_ages_14_19$N, WJIV_ages_20_39$N)
+
+  fit <- function(o) {
+    efa_group(list(a = b1, b = b2, c = b3)[o], n_factors = 2, N = Ns[o],
+              rotation = "none")
+  }
+  mg1 <- fit(c(1, 2, 3))
+  mg2 <- fit(c(3, 2, 1))
+
+  expect_identical(mg1$settings$alignment, "consensus")
+
+  G <- crossprod(unclass(mg1$target))
+  expect_lt(max(abs(G[upper.tri(G)])), 1e-8)        # t(M) %*% M is diagonal
+  expect_false(is.unsorted(rev(diag(G))))           # ... with a decreasing diagonal
+  expect_true(all(colSums(unclass(mg1$target)) >= 0))
+
+  # ... and, as on the varimax path, the frame does not depend on the group order.
+  expect_equal(mg1$target, mg2$target, tolerance = 1e-4, ignore_attr = TRUE)
+  expect_equal(mg1$congruence$matched["a", "b", ],
+               mg2$congruence$matched["a", "b", ], tolerance = 1e-6)
+})
+
+
+# Best-|phi| column matching between two loading matrices. Needed because a group's OWN
+# rotated solution and the shared target need not be in the same column order, so the
+# question "is the shared frame the same kind of structure" is about the columns as a set.
+# This is not what efa_group reports: `congruence` is positional (`diag(cij)`), since the
+# groups have already been rotated into the shared frame by then.
+matched_phi <- function(A, B) {
+  P <- abs(.tucker_congruence(unclass(A), unclass(B)))
+  used <- integer(0)
+  vapply(seq_len(ncol(P)), function(j) {
+    cand <- setdiff(seq_len(ncol(P)), used)
+    i <- cand[which.max(P[j, cand])]
+    used <<- c(used, i)
+    P[j, i]
+  }, numeric(1))
+}
+
+
+test_that("the consensus gauge follows the requested rotation criterion", {
+  skip_on_cran()
+  # The shared frame is put in the simple structure of the rotation that was asked for, not
+  # in a borrowed one. bifactorT is the sharpest case: its per-group solutions carry a
+  # general factor loading on every variable, which a varimax gauge destroys -- that gauge
+  # returned a 9/4/6 salience split with a leading column whose smallest |loading| was .14,
+  # and matched congruences against the per-group solutions of only .74-.81.
+  b1 <- WJIV_ages_6_8$cormat[1:12, 1:12]
+  b2 <- WJIV_ages_14_19$cormat[1:12, 1:12]
+  b3 <- WJIV_ages_20_39$cormat[1:12, 1:12]
+  Ns <- c(WJIV_ages_6_8$N, WJIV_ages_14_19$N, WJIV_ages_20_39$N)
+
+  mg <- suppressWarnings(
+    efa_group(list(a = b1, b = b2, c = b3), n_factors = 3, N = Ns,
+              rotation = "bifactorT", seed = 11))
+  tgt <- unclass(mg$target)
+  expect_identical(mg$settings$gauge, "bifactorT")
+
+  # a general column loading saliently on every variable, and two sparse group columns
+  expect_identical(sum(abs(tgt[, 1L]) >= .3), nrow(tgt))
+  expect_gt(min(abs(tgt[, 1L])), .3)
+  expect_true(all(colSums(abs(tgt[, -1L, drop = FALSE]) >= .3) < nrow(tgt) / 2))
+
+  # and a frame the per-group solutions actually agree with
+  for (g in names(mg$efa)) {
+    expect_gt(mean(matched_phi(tgt, mg$efa[[g]]$rot_loadings)), .90)
+  }
+})
+
+
+test_that("the criterion gauge is invariant to the order of the groups", {
+  skip_on_cran()
+  # Order-invariance is not specific to varimax: every orthogonal criterion depends on the
+  # loadings alone, so rotating M and rotating M %*% Q0 reach the same rotated matrix and
+  # the gauge undoes whichever Q0 the group order produced. The residual is the consensus
+  # iteration's own convergence floor, not the gauge's, so the tolerance is set from that.
+  b1 <- WJIV_ages_6_8$cormat[1:12, 1:12]
+  b2 <- WJIV_ages_14_19$cormat[1:12, 1:12]
+  b3 <- WJIV_ages_20_39$cormat[1:12, 1:12]
+  Ns <- c(WJIV_ages_6_8$N, WJIV_ages_14_19$N, WJIV_ages_20_39$N)
+
+  fit <- function(o, rot) {
+    suppressWarnings(
+      efa_group(list(a = b1, b = b2, c = b3)[o], n_factors = 3, N = Ns[o],
+                rotation = rot, seed = 11))
+  }
+
+  for (rot in c("quartimax", "geominT", "bifactorT")) {
+    mg1 <- fit(c(1, 2, 3), rot)
+    mg2 <- fit(c(3, 2, 1), rot)
+    expect_equal(mg1$target, mg2$target, tolerance = 5e-4, ignore_attr = TRUE,
+                 info = rot)
+    for (g in c("a", "b", "c")) {
+      expect_equal(mg1$loadings[[g]], mg2$loadings[[g]], tolerance = 5e-4,
+                   ignore_attr = TRUE, info = paste(rot, g))
+    }
+    # the congruences are normalised, so they are tighter than the raw loadings -- but
+    # only by about an order of magnitude, not the two the varimax path gets: the worst
+    # observed here is 3e-5 (bifactorT), against 1e-6 for varimax above
+    expect_equal(mg1$congruence$matched["a", "b", ],
+                 mg2$congruence$matched["a", "b", ], tolerance = 1e-4, info = rot)
+  }
+})
+
+
+test_that("the gauge is equivariant: it undoes an arbitrary reorientation of the frame", {
+  skip_on_cran()
+  # The property the whole gauge rests on, tested directly on .consensus_gauge() rather than
+  # through efa_group(): gauging M and gauging a reoriented copy M %*% Q0 must land on the
+  # same frame, since that is exactly what a different group order hands over. It is not
+  # enough that the criterion's global optimum has this property -- the solver only
+  # approximates it, and it draws its random starts in whatever frame it is given, so two
+  # orientations explore different points. A five-factor frame with cross-loadings is where
+  # that bites: without the principal-axes pre-rotation the geomin gauge settled 0.1% above
+  # the global optimum for some orientations and not others, moving the frame by 0.15.
+  set.seed(4004)
+  p <- 20L; k <- 5L
+  M <- matrix(stats::rnorm(p * k, 0, 0.15), p, k)
+  M[cbind(seq_len(p), rep(seq_len(k), length.out = p))] <- stats::runif(p, 0.4, 0.85)
+  M <- M / sqrt(max(rowSums(M^2)) / 0.8)
+
+  canon <- function(L) {
+    ord <- order(colSums(L^2), decreasing = TRUE)
+    L <- L[, ord, drop = FALSE]
+    L %*% diag(.reflect_signs(L), nrow = ncol(L))
+  }
+
+  for (rot in c("varimax", "quartimax", "equamax", "geominT", "bentlerT", "bifactorT")) {
+    devs <- vapply(1:5, function(i) {
+      set.seed(700 + i)
+      Q0 <- qr.Q(qr(matrix(stats::rnorm(k * k), k, k)))
+      if (i %% 2L == 0L) Q0[, 1L] <- -Q0[, 1L]          # cover det(Q0) = -1 as well
+      set.seed(11)
+      A <- canon(M %*% .consensus_gauge(M, rot, "orthogonal")$Q)
+      set.seed(11)
+      B <- canon((M %*% Q0) %*% .consensus_gauge(M %*% Q0, rot, "orthogonal")$Q)
+      max(abs(A - B))
+    }, numeric(1))
+    expect_lt(max(devs), 1e-6, label = paste0("max gauge deviation for ", rot))
+  }
+})
+
+
+test_that("a criterion parameter set on the fits also reaches the gauge", {
+  skip_on_cran()
+  # `delta` changes what geomin optimizes, so gauging at the default while the groups were
+  # rotated at another value would leave the shared frame in a different simple structure
+  # than the solutions it summarises. It can only travel by the rotate control: `delta` is
+  # efa_group()'s own salience-flag argument, so it can never arrive through the dots, and
+  # the fit settings do not record it. Kaiser normalization is the same kind of setting and
+  # is taken from the fit settings, where it is recorded.
+  b1 <- WJIV_ages_6_8$cormat[1:12, 1:12]
+  b2 <- WJIV_ages_14_19$cormat[1:12, 1:12]
+  b3 <- WJIV_ages_20_39$cormat[1:12, 1:12]
+  Ns <- c(WJIV_ages_6_8$N, WJIV_ages_14_19$N, WJIV_ages_20_39$N)
+  bands <- list(a = b1, b = b2, c = b3)
+
+  fit <- function(...) {
+    suppressWarnings(efa_group(bands, n_factors = 3, N = Ns, rotation = "geominT",
+                               seed = 11, ...))
+  }
+  base <- fit()
+  wide <- fit(rotate_control = rotate_control(delta = 0.5))
+  expect_false(isTRUE(all.equal(unclass(base$target), unclass(wide$target),
+                                tolerance = 1e-3)))
+
+  # directly on the gauge, so the assertion does not depend on the fits also moving
+  M <- unname(base$alignment$target)
+  expect_false(isTRUE(all.equal(
+    .consensus_gauge(M, "geominT", "orthogonal")$Q,
+    .consensus_gauge(M, "geominT", "orthogonal",
+                     rotation_args = list(delta = 0.5))$Q,
+    tolerance = 1e-3)))
+
+  # normalization likewise reaches it, and from the fit settings rather than the control
+  expect_false(isTRUE(all.equal(
+    .consensus_gauge(M, "geominT", "orthogonal", normalize = TRUE)$Q,
+    .consensus_gauge(M, "geominT", "orthogonal", normalize = FALSE)$Q,
+    tolerance = 1e-3)))
+})
+
+
+test_that("a two-factor bifactor request falls back to the principal-axes gauge", {
+  skip_on_cran()
+  # The Jennrich-Bentler orthogonal bifactor criterion sums lambda_ij^2 lambda_il^2 over
+  # j != l with j, l >= 2, so with a single group factor the sum is empty and the criterion
+  # is identically zero: every rotation is a global optimum, the engine returns the identity,
+  # and the gauge would be a no-op leaving the frame wherever the iteration happened to stop
+  # (loadings moved by more than 1.0 between group orders). The principal-axes gauge takes
+  # over, which is both order-invariant and what the per-group solutions look like anyway.
+  b1 <- WJIV_ages_6_8$cormat[1:12, 1:12]
+  b2 <- WJIV_ages_14_19$cormat[1:12, 1:12]
+  b3 <- WJIV_ages_20_39$cormat[1:12, 1:12]
+  Ns <- c(WJIV_ages_6_8$N, WJIV_ages_14_19$N, WJIV_ages_20_39$N)
+
+  fit <- function(o) {
+    suppressWarnings(
+      efa_group(list(a = b1, b = b2, c = b3)[o], n_factors = 2, N = Ns[o],
+                rotation = "bifactorT", seed = 11))
+  }
+  mg1 <- fit(c(1, 2, 3))
+  mg2 <- fit(c(3, 2, 1))
+
+  # the fallback is reported, since `rotation` alone does not reveal it
+  expect_identical(mg1$settings$gauge, "principal_axes")
+
+  G <- crossprod(unclass(mg1$target))
+  expect_lt(max(abs(G[upper.tri(G)])), 1e-8)        # the principal-axes signature
+  expect_false(is.unsorted(rev(diag(G))))
+  expect_true(all(colSums(unclass(mg1$target)) >= 0))
+
+  expect_equal(mg1$target, mg2$target, tolerance = 1e-4, ignore_attr = TRUE)
+})
+
+
+test_that(".consensus_gauge falls back where no criterion identifies a frame", {
+  M <- matrix(c(0.8, 0.7, 0.6, 0.2, 0.1, -0.3, 0.5, 0.4), nrow = 4)
+  pa <- eigen(crossprod(M), symmetric = TRUE)$vectors
+
+  # a single factor: the engines require two, and SO(1) leaves only the sign gauge
+  one <- .consensus_gauge(M[, 1L, drop = FALSE], "quartimax", "orthogonal")
+  expect_identical(one$Q, diag(1))
+  expect_identical(one$gauge, "identity")
+
+  # nothing to borrow from an unrotated or an oblique request, and nothing to run for a
+  # rotation with no orthogonal engine of its own
+  for (args in list(list("none", "none"), list("promax", "oblique"),
+                    list("not_a_rotation", "orthogonal"))) {
+    g <- .consensus_gauge(M, args[[1L]], args[[2L]])
+    expect_equal(g$Q, pa, info = args[[1L]])
+    expect_identical(g$gauge, "principal_axes", info = args[[1L]])
+  }
+
+  # ... whereas a criterion rotation really runs its engine. Orthogonality alone would not
+  # show that -- the principal-axes fallback is orthogonal too -- so check that the frame
+  # differs from the fallback and that it lowers the criterion the caller asked for.
+  g <- .consensus_gauge(M, "quartimax", "orthogonal")
+  expect_identical(g$gauge, "quartimax")
+  expect_equal(crossprod(g$Q), diag(ncol(M)), tolerance = 1e-10, ignore_attr = TRUE)
+  expect_false(isTRUE(all.equal(unname(g$Q), unname(pa))))
+  quartimax_crit <- function(L) -sum(L^4)
+  expect_lt(quartimax_crit(M %*% g$Q), quartimax_crit(M %*% pa))
+})
+
+
 test_that("the alignment method follows the rotation and reference_group", {
   bands <- list(a = cmat, b = cmat)
   expect_identical(

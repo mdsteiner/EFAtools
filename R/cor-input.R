@@ -2,6 +2,13 @@
 # input type, smooth a non-positive-definite matrix, and resolve N. Shared by EFA and
 # the suitability/retention functions so these checks live in one place.
 
+# Unit diagonal on one shared tolerance: the correlation-vs-covariance classification
+# hinges on .is_cormat() and .is_covmat() applying the SAME test, so any matrix falls on
+# exactly one side of it.
+.has_unit_diag <- function(x, na.rm = FALSE) {
+  all(abs(diag(x) - 1) <= .Machine$double.eps * 100, na.rm = na.rm)
+}
+
 # Heuristically decide whether x is already a correlation matrix rather than raw data:
 # square, symmetric, all entries in [-1, 1], and a unit diagonal. This cannot distinguish a
 # correlation matrix from a (rare) raw-data matrix that happens to meet all four conditions,
@@ -13,7 +20,7 @@
      all(x >= (-1 + .Machine$double.eps * 100), na.rm = TRUE) &&
      all(x <= (1 + .Machine$double.eps * 100), na.rm = TRUE)){
 
-    if (all(abs(diag(x) - 1) <= .Machine$double.eps * 100, na.rm = TRUE) &&
+    if (.has_unit_diag(x, na.rm = TRUE) &&
         isSymmetric(unclass(unname(x)))) {
 
       if (any(is.na(x))) {
@@ -59,7 +66,61 @@
       call = error_call
     )
   }
+  if (.is_covmat(x)) {
+    # cov2cor() is the fix only for a caller that accepts a correlation matrix; one that
+    # needs raw data (raw_only) would just hit the correlation-matrix rejection next.
+    cov_lead <- if (raw_only) {
+      "{.arg x} looks like a covariance matrix, not a data frame/matrix of raw data."
+    } else {
+      "{.arg x} looks like a covariance matrix, not a correlation matrix or raw data."
+    }
+    cov_remedy <- if (raw_only) {
+      "Supply the raw observations the covariance matrix was computed from."
+    } else {
+      "Standardise it first: {.code cov2cor(x)}."
+    }
+    cli::cli_abort(
+      c(cov_lead,
+        "x" = "It is square and symmetric, with variances rather than ones on the diagonal.",
+        "i" = cov_remedy),
+      class = "efa_input_is_covmat", call = error_call
+    )
+  }
   invisible(x)
+}
+
+# Recognise a covariance matrix, which is neither a correlation matrix (its diagonal is not
+# all ones, so .is_cormat() returns FALSE) nor usable as raw data: passed on it would be fed
+# to stats::cor(), i.e. the correlation of the covariance matrix's own p columns over p
+# "cases", which is singular by construction and misdiagnoses the user's input. A square,
+# symmetric, all-finite numeric matrix with positive non-unit diagonal entries is never raw
+# data in practice -- symmetry alone is already decisive. Positive semi-definiteness is
+# deliberately NOT required: the covariance matrices this guard exists for -- built with
+# pairwise deletion, or transcribed from published tables at few decimals -- are routinely
+# indefinite, and an indefinite correlation matrix is likewise accepted (and smoothed
+# downstream), so demanding PSD of the covariance side only would send exactly the
+# problematic inputs down the raw-data misdiagnosis. The positive-diagonal test keeps
+# zero-diagonal distance/dissimilarity matrices out.
+.is_covmat <- function(x) {
+
+  # Cheapest test first, and before any coercion: raw data is almost never square, and
+  # as.matrix() on a data frame copies the whole thing -- which would otherwise be paid on
+  # every call for every raw-data input.
+  if (ncol(x) < 2L || nrow(x) != ncol(x)) return(FALSE)
+
+  if (is.data.frame(x)) {
+    if (!all(vapply(x, is.numeric, logical(1)))) return(FALSE)
+    x <- as.matrix(x)
+  }
+  if (!is.numeric(x) || !all(is.finite(x))) return(FALSE)
+
+  if (any(diag(x) <= 0)) return(FALSE)
+
+  # A unit diagonal (on the shared tolerance, so the two classifiers are exactly
+  # complementary) means this is a correlation matrix, handled by .is_cormat().
+  if (.has_unit_diag(x)) return(FALSE)
+
+  isSymmetric(unclass(unname(x)))
 }
 
 # Single source of truth for the correlation methods that are estimated from the
@@ -98,6 +159,39 @@
   idx <- utils::combn(p, 2L)
   W[t(idx)] <- 1 / acov_diag
   W + t(W)
+}
+
+# One shared degeneracy check on the diagonal of the asymptotic covariance, applied where it
+# is received so that every consumer -- the DWLS weights and the sandwich standard errors --
+# takes the same branch on the same data. A (near-)degenerate variable pair, e.g. one whose
+# contingency table is close to comonotone, is barely identified: its asymptotic variance
+# explodes (values of 1e+26 are reachable), which leaves the DWLS weight ~0 so the pair drops
+# out of the fit, but leaves the sandwich standard errors of that pair meaningless rather than
+# merely large. Neither outcome should be silent, so warn once and name the pairs. Analysis
+# proceeds: the variance is the honest answer for a pair the data cannot pin down. A variance
+# above 1 already implies a +/- 1 SE interval as wide as the whole [-1, 1] range of a
+# correlation, so it is the natural flag; non-finite and non-positive values are degenerate a
+# fortiori.
+.warn_acov_degenerate <- function(acov_diag, labels = names(acov_diag)) {
+  bad <- !is.finite(acov_diag) | acov_diag <= 0 | acov_diag > 1
+  if (!any(bad)) return(invisible(NULL))
+
+  pairs <- if (is.null(labels)) paste0("pair ", which(bad)) else labels[bad]
+  shown <- utils::head(pairs, 5L)
+  more <- if (length(pairs) > length(shown)) {
+    cli::format_inline(" and {length(pairs) - length(shown)} more")
+  } else {
+    ""
+  }
+
+  cli::cli_warn(
+    c("The polychoric asymptotic covariance is degenerate for {cli::qty(pairs)} variable pair{?s} {.val {shown}}{more}.",
+      "x" = "{cli::qty(pairs)} {?This pair is/These pairs are} barely identified (e.g. a near-empty or near-comonotone response table), so {?its/their} asymptotic variance is not usable.",
+      "i" = "Any DWLS weight or robust/sandwich standard error involving {cli::qty(pairs)} {?it/them} is unreliable; a DWLS fit down-weights {cli::qty(pairs)} {?it/them} out of the solution.",
+      "i" = "Consider collapsing rare response categories in the variables involved."),
+    class = "efa_acov_degenerate"
+  )
+  invisible(NULL)
 }
 
 # Asymptotic-distribution-free (ADF; Browne, 1984) covariance of the off-diagonal sample
@@ -310,6 +404,13 @@
       # DWLS weight matrix. The weights are the asymptotic variances of the observed
       # (un-projected) polychoric correlations, as in lavaan, and are kept on that scale even
       # if R is subsequently projected to positive definiteness below.
+      if (acov != "none") {
+        # Screen the asymptotic variances once, before either consumer uses them, so a
+        # degenerate pair is reported identically whether it reaches DWLS or the sandwich.
+        # The diagonal is the same quantity at both levels (diag(Gamma) == the "diag" vector),
+        # and .polychoric() has already labelled it by variable pair (diag() keeps those names).
+        .warn_acov_degenerate(if (acov == "diag") poly$acov else diag(poly$acov))
+      }
       if (acov == "diag") {
         weights <- .poly_weight_matrix(poly$acov, ncol(R))
       } else if (acov == "full") {
@@ -438,16 +539,26 @@
        fiml = fiml)
 }
 
-# Polychoric/tetrachoric correlations describe the observed data only. Criteria
-# that compare the data against a separately generated continuous reference (CD,
-# PARALLEL, NEST) cannot honour them, so they reject the request with one shared
-# classed condition rather than silently mixing an ordinal observed matrix with a
-# Pearson reference distribution.
-.reject_poly_reference <- function(cor_method, fn, error_call = rlang::caller_env()) {
+# Polychoric/tetrachoric correlations describe the observed data only. Criteria that cannot
+# honour them reject the request with one shared classed condition rather than returning a
+# silently invalid answer. `why` states which property fails: by default that the criterion
+# compares the data against a separately generated continuous reference (efa_cd(),
+# efa_parallel(), efa_nest(), efa_hull()), and for efa_smt() that its sequential tests rest on
+# a normal-theory ML chi-square (and the RMSEA and AIC derived from it), which is not valid for
+# such correlations. It is a cli template evaluated here, so it can interpolate `fn`.
+#
+# `fn` is the name the message shows, and every caller passes its own. Only a direct call
+# reaches this message -- efa_retain() screens the same combination off the registry's
+# `poly_ok` flag and reports it under the criterion id instead -- so naming the function the
+# user actually called is what identifies the problem, including through a superseded wrapper,
+# which forwards to the successor named here.
+.reject_poly_reference <- function(cor_method, fn,
+                                   why = "{.fn {fn}} compares the data against a reference computed with a continuous (Pearson) correlation.",
+                                   error_call = rlang::caller_env()) {
   if (.is_poly_cor(cor_method)) {
     cli::cli_abort(
       c("{.val {cor_method}} correlations are not supported by {.fn {fn}}.",
-        "x" = "{.fn {fn}} compares the data against a reference computed with a continuous (Pearson) correlation.",
+        "x" = why,
         "i" = "Use {.val pearson}, {.val spearman}, or {.val kendall}."),
       class = "efa_cor_method_unsupported", call = error_call)
   }

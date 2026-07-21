@@ -247,9 +247,11 @@
 #'   that does not depend on the orientation -- the rotated loadings, `Phi`, the structure
 #'   coefficients, the uniquenesses and the communalities -- is unaffected and still
 #'   reported. Use those, or `se = "np-boot"`, when the unrotated loadings themselves are
-#'   the quantity of interest. A Heywood case (a uniqueness at its lower boundary) is
-#'   separate: the Wald approximation fails there for every parameter, so no analytic
-#'   standard error is reported at all.
+#'   the quantity of interest. The detection covers the Pearson and polychoric paths; the
+#'   two-stage `cor_method = "fiml"` sandwich carries no such diagnostic, so a weakly
+#'   determined orientation is not flagged there. A Heywood case (a uniqueness at its lower
+#'   boundary) is separate: the Wald approximation fails there for every parameter, so no
+#'   analytic standard error is reported at all.
 #' - **"sandwich"** returns robust (Godambe sandwich) standard errors from raw data,
 #'   combining the estimator weight with an asymptotic-distribution-free covariance of the
 #'   correlations, so it stays valid under non-normality and weight misspecification
@@ -283,6 +285,18 @@
 #'   workers. Under `cor_method = "fiml"` each resample also
 #'   re-runs the EM moment estimation and is therefore slow, so a smaller `b_boot` may be
 #'   advisable.
+#'
+#'   The percentile intervals are centred on the point estimate for the loadings, the factor
+#'   correlations, the structure coefficients and the residuals, but **not** for the indices
+#'   derived from the chi-square (`RMSEA`, `AIC`, `BIC` and `ECVI`). A resample is drawn from
+#'   the sample, which already carries the model's misfit, and is then refitted and evaluated
+#'   against itself, so the replicate chi-square is on average about `chi + df` rather than
+#'   `chi` and the whole interval rides upward with it -- often far enough that the point
+#'   estimate falls below its own lower bound. That is the shift, not a miscomputed interval:
+#'   read those intervals as a spread rather than as a range for the point estimate.
+#'   Correcting the location needs resampling from a population transformed to fit the model
+#'   (Bollen & Stine, 1992), which is not what this bootstrap does. `CFI` and `TLI` are not
+#'   affected, being ratios in which the baseline chi-square shifts along with the model one.
 #'
 #' The analytic methods (`"information"` and `"sandwich"`) are not available with the
 #' `"promax"` or `"simplimax"` rotations, which have no usable analytic rotation Jacobian;
@@ -429,7 +443,9 @@
 #' Grieder & Steiner (2022). Note that all `type` presets keep the EFAtools default
 #' Kaiser normalization (`normalize = TRUE`), whereas [psych::fa()] does not
 #' normalize before its promax target rotation; set `normalize = FALSE` to
-#' reproduce the [psych::fa()] promax result exactly.
+#' reproduce the [psych::fa()] promax result to within the varimax convergence
+#' tolerance (the residual difference is the convergence noise of the underlying
+#' varimax base at `precision = 1e-5`, not an algorithmic difference).
 #'
 #' The `varimax_type` argument can take two values, "svd", and "kaiser". "svd" uses
 #' singular value decomposition, by calling [stats::varimax()]. "kaiser"
@@ -442,7 +458,10 @@
 #' only controls the `order_type` argument with the same values as stated
 #' above for the varimax and promax rotations. Additional arguments can also be
 #' specified and will be passed to the rotation procedure (e.g., maxit to change the
-#' maximum number of iterations).
+#' maximum number of iterations). As for promax, every preset keeps the EFAtools
+#' default Kaiser normalization (`normalize = TRUE`), whereas [psych::fa()] and
+#' \pkg{GPArotation} do not normalize before these criterion rotations; set
+#' `normalize = FALSE` to reproduce them.
 #'
 #' The `type` tuning arguments have no effect on ULS and ML; `type` itself still
 #' governs the checks applied to the correlation matrix. For ULS, no additional
@@ -507,13 +526,29 @@
 #' \item{vars_accounted_rot}{Matrix of explained variances and sums of squared
 #' loadings. Based on rotated loadings and, for oblique rotations, the factor
 #' intercorrelations.}
-#' \item{settings}{A list of the settings used.}
+#' \item{settings}{A list of the settings used. For the criterion rotations fitted by
+#' gradient projection it additionally carries `rotation_diagnostics`, a list summarising
+#' the multi-start run: `n_starts_total` (the `random_starts` random starts plus the
+#' rational start), `n_optimized` (how many of those starts were actually optimized --
+#' fewer than `n_starts_total` whenever the solver screens the random starts and optimizes
+#' only the most promising ones), `n_converged` (how many optimized starts reached the
+#' convergence tolerance), `n_distinct_minima` (how many distinct local optima those
+#' converged starts found; more than one means the criterion is multimodal on these data),
+#' `criterion_spread` (the range of the criterion values they attained), and
+#' `criterion_best` (the criterion value of the returned solution). When
+#' `normalize = TRUE`, `criterion_best` and `criterion_spread` are evaluated on the
+#' Kaiser-normalized loadings the criterion is optimized on, not on the returned
+#' `rot_loadings`, so they are not directly comparable to a criterion recomputed from the
+#' returned loadings.}
 #' \item{SE}{A named list of standard error matrices. For `se = "np-boot"`: bootstrap standard deviations of the unrotated and (when a rotation is applied) rotated loadings, the residuals, and the fit indices, plus -- for oblique rotations -- the factor correlations (`Phi`) and the structure coefficients; it additionally carries `valid_replicates`, the number of bootstrap replicates that were fitted and aligned successfully and that every entry above is therefore based on (replicates that failed are excluded and warned about), and, when a rotation is applied, `valid_target_rotations`, the number of those replicates that could also be aligned to the rotated point estimate and that the rotated entries (`rot_loadings`, `Phi`, `Structure`) are based on. For `se = "information"`: Wald standard errors from the expected (Fisher) information matrix for the unrotated loadings, the uniquenesses, and the communalities and, when a rotation is applied, the rotated loadings (and, for oblique rotations, `Phi` and the structure coefficients). Because \eqn{h^2_i = 1 - \psi_i} exactly, the communality and uniqueness standard errors are identical. For `se = "sandwich"`: robust Godambe sandwich standard errors with the same coverage as `"information"`, robust to non-normality and weight misspecification. Only returned if `se` is not `"none"`.}
 #' \item{CI}{A named list of confidence intervals of width `ci`. For `se = "np-boot"`: percentile intervals matching the components of `SE`. For `se = "information"` and `se = "sandwich"`: Wald intervals matching the components of `SE`. Only returned if `se` is not `"none"`.}
 #' \item{replicates}{A named list of bootstrap replicate arrays for the aligned unrotated and (where applicable) rotated loadings, structure coefficients, factor correlations (`Phi`), residuals, and fit indices. The replicate is the last dimension of the loading, residual, `Phi`, and structure cubes, and the first dimension of the `fit_indices` matrix (whose columns are named after the fit indices). Replicates that failed are left `NA`. Populated only for `se = "np-boot"`; `NULL` for the analytic SE methods.}
 #' \item{vcov_unrot_loadings}{The full unrotated loading covariance matrix the marginal `SE$unrot_loadings` were derived from: a `p * n_factors` by `p * n_factors` numeric matrix in column-major `vec(Lambda)` order. Populated for `se = "information"` (expected-information block) and `se = "sandwich"` (robust V_AA), even when a rotation is applied (the persisted block is always the unrotated one); NA-filled if the analytic covariance is unreliable (a Heywood case or a singular bordered information matrix); `NULL` for `se = "np-boot"` and `se = "none"`. A weakly determined rotational orientation is the one case where this matrix is populated while `SE$unrot_loadings` is `NA`: the covariance itself is finite and valid, and only its gauge-dependent marginals are not (see *Standard errors*).}
 #' \item{Gamma}{The asymptotic covariance of the off-diagonal sample correlations -- the meat of the robust sandwich SEs -- on the variance scale (`Var(rho-hat)`; lavaan's correlation NACOV is `N * Gamma`). A `p (p - 1) / 2` by `p (p - 1) / 2` numeric matrix; rows and columns ordered by [utils::combn()] over the column pairs and labelled `"<var_i>-<var_j>"`. Populated for `se = "sandwich"` on the polychoric/tetrachoric and Pearson paths; `NULL` otherwise, including under `cor_method = "fiml"`, whose meat is the saturated FIML asymptotic covariance and is not returned.}
 #'
+#' @source Bollen, K. A., & Stine, R. A. (1992). Bootstrapping goodness-of-fit measures
+#' in structural equation models. Sociological Methods & Research, 21, 205–229.
+#' doi: 10.1177/0049124192021002004
 #' @source Grieder, S., & Steiner, M. D. (2022). Algorithmic jingle jungle: A comparison
 #' of implementations of principal axis factoring and promax rotation in R and SPSS.
 #' Behavior Research Methods, 54, 54–74. doi: 10.3758/s13428-021-01581-x
@@ -577,7 +612,9 @@
 #' @family factor analysis
 #'
 #' @seealso [estimate_control()] and [rotate_control()] for the estimation and rotation
-#'  tuning knobs.
+#'  tuning knobs. [efa_retain()] for choosing `n_factors`, and [efa_scores()],
+#'  [efa_reliability()], [efa_schmid_leiman()], and [efa_compare()] for working with the
+#'  fitted solution.
 #'
 #' @export
 #'
@@ -1639,11 +1676,13 @@ efa_fit <- function(x, n_factors, N = NA,
   # At a Heywood case (a uniqueness at its lower boundary) the solution sits on the parameter-space
   # boundary, where the Wald intervals this path reports are not valid. Withhold the covariance so
   # the core NA-fills through its usual unusable-Gamma branch and the shared efa_se_unreliable
-  # warning fires, rather than reporting a boundary standard error. The ML/ULS/DWLS fitters
-  # constrain the uniquenesses to [.uniqueness_floor, 1], so an improper solution is pinned AT that
-  # floor and never reaches zero: testing `psi <= 0` would fire only for a hand-built covariance and
-  # never for a fitted one. Test the same boundary `.finalize_fit()` flags as a Heywood case, so a
-  # fitted boundary solution is withheld rather than reported with a hugely inflated standard error.
+  # warning fires, rather than reporting a boundary standard error. The ML and ULS fitters
+  # constrain the uniquenesses to [.uniqueness_floor, 1] (DWLS does not -- see R/DWLS.R -- but
+  # it never reaches this path, as se = "information" rejects it), so an improper solution is
+  # pinned AT that floor and never reaches zero: testing `psi <= 0` would fire only for a
+  # hand-built covariance and never for a fitted one. Test the same boundary `.finalize_fit()`
+  # flags as a Heywood case, so a fitted boundary solution is withheld rather than reported
+  # with a hugely inflated standard error.
   Gamma <- if (anyNA(psi) || any(psi <= .uniqueness_floor + sqrt(.Machine$double.eps))) {
     NULL
   } else {

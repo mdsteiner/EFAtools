@@ -108,7 +108,11 @@
 #' model and baseline noncentralities (as `lavaan.mi`/`semTools` do) can produce;
 #' those separately pooled noncentralities remain available in `mi_diagnostics`.
 #' AIC and BIC, if returned, are chi-square-derived descriptive quantities and are
-#' not likelihood-based MI information criteria. On the sandwich/MI2S route the
+#' not likelihood-based MI information criteria. They are reported only where the
+#' component fits report them: whenever a component withholds them -- any
+#' `cor_method = "fiml"` fit, and any fit whose chi-square is a scaled statistic,
+#' such as `se = "sandwich"` -- the pooled AIC, BIC, and ECVI are `NA` too, matching
+#' what [efa_fit()] returns for a single such fit. On the sandwich/MI2S route the
 #' chi-square is the single fit's scaled statistic rather than a D2 pool.
 #'
 #' ## Bootstrap pooling (np-boot)
@@ -406,7 +410,7 @@ efa_mi <- function(data_list,
 
   target_method <- match.arg(target_method)
   align_unrotated <- match.arg(align_unrotated)
-  fit_pool_method <- match.arg(fit_pool_method)
+  fit_pool_method <- .match_arg_ci(fit_pool_method)
 
   m_imp <- length(data_list)
 
@@ -1319,10 +1323,13 @@ efa_mi <- function(data_list,
   A <- if (is.finite(d_g) && d_g <= tol && d_g <= d_w) {
     gram(M)
   } else if (is.finite(d_w) && d_w <= tol) {
-    # A row at or past the Heywood boundary would enter Psi^-1 at the clamp,
-    # weighting that one variable by a factor of a million and letting it decide
-    # the gauge on its own. Leave an improper average in the gauge the alignment
-    # produced instead.
+    # A row at or past the Heywood boundary carries no usable uniqueness, so leave an
+    # improper average in the gauge the alignment produced rather than letting a
+    # degenerate row steer the weighting. `wgram()` floors psi at `.uniqueness_floor`,
+    # which already bounds the weight (at 1 / 0.005 = 200, not the unbounded blow-up an
+    # unfloored Psi^-1 would give), so this guard is the second line of defence and not
+    # the thing that keeps the weight finite -- do not remove the floor on the strength
+    # of it.
     if (any(1 - rowSums(M^2) <= 1e-6)) return(diag(k))
     wgram(M)
   } else {
@@ -1688,7 +1695,23 @@ efa_mi <- function(data_list,
     if (!is.null(D2_null_cfi)) chi_null_cfi <- D2_null_cfi$chi
   }
 
-  if (is.finite(chi) && is.finite(df) && is.finite(N) && N > 1) {
+  # AIC, BIC and ECVI are chi-square-derived information criteria with no standard
+  # interpretation once the component statistic is a scaled one (the Satorra-Bentler
+  # corrected two-stage statistic of Yuan, Marshall & Bentler, 2002, and its
+  # scaled-shifted variants), so .gof() withholds them from every fit that reports
+  # such a statistic. A D2 pool cannot rehabilitate them, so take the components'
+  # decision rather than recomputing from the pooled chi-square: a component that
+  # produced a chi-square but no AIC withheld it deliberately. Reading it off the
+  # returned indices covers the `chi_scaled_type` path (.apply_scaled_test() NAs all
+  # three) and the tagless FIML fallbacks alike -- the plain-LRT and just-identified
+  # cases at R/fit-indices.R:507-515 never reach .apply_scaled_test() and so carry no
+  # tag, but they withhold the criteria just the same. A fit with no chi-square at all
+  # (PAF, DWLS) is not a withholding: its pooled chi is NA, which zeroes these anyway.
+  withheld_components <- any(vapply(fit_list, function(x) {
+    !is.null(x$chi) && is.finite(x$chi) && (is.null(x$AIC) || !is.finite(x$AIC))
+  }, logical(1)))
+
+  if (!withheld_components && is.finite(chi) && is.finite(df) && is.finite(N) && N > 1) {
     n_params <- p_vars * (p_vars + 1) / 2 - df
     ECVI <- (chi + 2 * n_params) / (N - 1)
   } else {
@@ -1709,9 +1732,19 @@ efa_mi <- function(data_list,
   }
 
   # These mirror the chi-square-derived quantities used elsewhere in EFAtools.
-  # Under MI/D2 pooling they are descriptive only, not likelihood-based MI AIC/BIC.
-  AIC <- if (is.finite(chi) && is.finite(df)) chi - 2 * df else NA_real_
-  BIC <- if (is.finite(chi) && is.finite(df) && is.finite(N)) chi - log(N) * df else NA_real_
+  # Under MI/D2 pooling they are descriptive only, not likelihood-based MI AIC/BIC,
+  # and they are withheld entirely when the component fits withheld them (see
+  # `withheld_components` above).
+  AIC <- if (!withheld_components && is.finite(chi) && is.finite(df)) {
+    chi - 2 * df
+  } else {
+    NA_real_
+  }
+  BIC <- if (!withheld_components && is.finite(chi) && is.finite(df) && is.finite(N)) {
+    chi - log(N) * df
+  } else {
+    NA_real_
+  }
 
   ## CAF in EFAtools is 1 - KMO(delta_hat), with diagonal set to 1.
   # Ensure symmetry of residuals by (residuals + t(residuals)) / 2. Asymmetry

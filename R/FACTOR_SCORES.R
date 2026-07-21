@@ -4,8 +4,11 @@
 #' `r lifecycle::badge("superseded")`
 #'
 #' `FACTOR_SCORES()` has been superseded by [efa_scores()], which is the
-#' recommended interface going forward. It remains available and unchanged so
-#' existing code keeps working.
+#' recommended interface going forward. It remains available so existing code
+#' keeps working. Note that `R2` is now the squared factor-score determinacy
+#' (the value [psych::factor.scores()] returns with `Grice = TRUE`); earlier
+#' versions returned psych's default `Grice = FALSE` validity coefficient, so the
+#' slot is not comparable across versions.
 #'
 #' A convenience wrapper around [efa_scores()] that returns factor scores and
 #' weights in a compact list. Factor scores are calculated according to the

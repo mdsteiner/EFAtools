@@ -80,4 +80,3 @@ existing code keeps working.
 \seealso{
 \code{\link[=efa_procrustes]{efa_procrustes()}}
 }
-\keyword{internal}

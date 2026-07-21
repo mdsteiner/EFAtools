@@ -144,6 +144,8 @@ efa_parallel <- function(x = NULL,
                      ...) {
 
   .reject_flat_knobs(...names(), fn = "efa_parallel")
+  .reject_unknown_fit_dots(...names(), fn = "efa_parallel", unrotated = TRUE)
+  .reject_rotation_dots(list(...), fn = "efa_parallel")
 
   if(!is.null(x) && !inherits(x, c("matrix", "data.frame"))){
 
@@ -157,7 +159,7 @@ efa_parallel <- function(x = NULL,
   eigen_type <- .match_arg_ci(eigen_type, several.ok = TRUE)
   use <- match.arg(use)
   cor_method <- match.arg(cor_method)
-  .reject_poly_reference(cor_method, "PARALLEL")
+  .reject_poly_reference(cor_method, "efa_parallel")
   decision_rule <- match.arg(decision_rule)
   .assert_estimate_control(estimate_control)
   checkmate::assert_count(n_factors)
@@ -171,10 +173,13 @@ efa_parallel <- function(x = NULL,
   # vector. The number of chunks therefore has to be independent of the number of
   # workers: deriving it from nbrOfWorkers() would make the per-chunk streams, and hence
   # the reference eigenvalues, differ between a sequential and a multisession plan for the
-  # same set.seed(). A fixed chunk count keeps a seeded run reproducible on any plan;
-  # future still load-balances the fixed chunks across whatever workers exist. The chunk
-  # count never exceeds n_datasets (no empty chunks) and never drops below one, which
-  # would divide by zero for the degenerate n_datasets = 0.
+  # same set.seed(). A fixed chunk count keeps a seeded run reproducible on any plan. The
+  # trade-off is that the granularity no longer adapts to the pool: a plan with more than
+  # 20 workers leaves the surplus idle, so a very wide pool is slower than it would be with
+  # worker-matched chunking. 20 is the compromise -- enough chunks to keep a typical pool
+  # busy, few enough that the per-chunk dispatch stays negligible. The chunk count never
+  # exceeds n_datasets (no empty chunks) and never drops below one, which would divide by
+  # zero for the degenerate n_datasets = 0.
   size_vec <- .parallel_chunks(n_datasets, max(1L, min(n_datasets, 20L)))
 
   # Prepare objects
@@ -190,6 +195,8 @@ efa_parallel <- function(x = NULL,
   x_dat <- FALSE
 
   if (!is.null(x)){
+
+      .assert_cor_input(x)
 
       if (!is.na(n_vars)) {
         cli::cli_warn(

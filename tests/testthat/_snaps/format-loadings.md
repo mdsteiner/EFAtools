@@ -10,7 +10,7 @@
       hurt         .040  -.050  1.080
       
 
-# format.efa_loadings prints communalities and a legend
+# format.efa_loadings prints communalities
 
     Code
       print(make_loadings(), h2 = h2, legend = TRUE)
@@ -20,11 +20,6 @@
       friends_lo   .450   .600  -.020   .580   .420
       enjoy       -.300   .710   .123   .630   .370
       hurt         .040  -.050  1.080  1.180  -.180
-      
-      Legend:
-        bold = |loading| >= .300
-        grey = below cutoff
-        red h2/u2 = Heywood-relevant value
       
 
 # format.efa_loadings sorts rows when requested

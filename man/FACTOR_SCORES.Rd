@@ -55,8 +55,11 @@ See \code{\link[=efa_scores]{efa_scores()}} for the underlying score-quality dia
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#superseded}{\figure{lifecycle-superseded.svg}{options: alt='[Superseded]'}}}{\strong{[Superseded]}}
 
 \code{FACTOR_SCORES()} has been superseded by \code{\link[=efa_scores]{efa_scores()}}, which is the
-recommended interface going forward. It remains available and unchanged so
-existing code keeps working.
+recommended interface going forward. It remains available so existing code
+keeps working. Note that \code{R2} is now the squared factor-score determinacy
+(the value \code{\link[psych:factor.scores]{psych::factor.scores()}} returns with \code{Grice = TRUE}); earlier
+versions returned psych's default \code{Grice = FALSE} validity coefficient, so the
+slot is not comparable across versions.
 
 A convenience wrapper around \code{\link[=efa_scores]{efa_scores()}} that returns factor scores and
 weights in a compact list. Factor scores are calculated according to the

@@ -97,12 +97,13 @@ The \code{efa_nest} function can also be called together with other factor
 retention criteria in the \code{\link[=efa_retain]{efa_retain()}} function.
 }
 \examples{
-
+\donttest{
 # with correlation matrix
 efa_nest(test_models$baseline$cormat, N = 500)
 
 # with raw data
 efa_nest(GRiPS_raw)
+}
 }
 \seealso{
 \code{\link[=efa_retain]{efa_retain()}} as a wrapper function for this and the other factor

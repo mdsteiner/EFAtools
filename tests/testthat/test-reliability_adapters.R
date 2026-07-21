@@ -97,12 +97,14 @@ test_that(".rel_adapt_efa gives model-appropriate correlated-factors coefficient
 test_that(".rel_adapt_efa handles rotations that leave the loading columns unlabelled", {
   skip_if_not_installed("GPArotation")
 
-  # Only varimax and promax name their factor columns; the GPArotation-backed
-  # rotations return unlabelled loadings, which must not cost the adapter its
-  # group factors.
+  # efa_fit() labels the factor columns for every rotation, but the adapter also sees
+  # loading matrices from other sources (a bare pattern matrix, an externally built fit),
+  # where the labels can be missing. Unlabelled columns must not cost the adapter its
+  # group factors, so construct that state explicitly.
   efa_obl <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
                      estimator = "PAF", rotation = "oblimin")
-  expect_null(colnames(efa_obl$rot_loadings))
+  colnames(efa_obl$rot_loadings) <- NULL
+  dimnames(efa_obl$Phi) <- NULL
 
   spec <- .rel_adapt_efa(efa_obl)
 

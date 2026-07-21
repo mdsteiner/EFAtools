@@ -77,3 +77,4 @@ Psychological Measurement}, 65, 676-696.
 Crawford, C. B., & Ferguson, G. A. (1970). A general rotation criterion and its use
 in orthogonal rotation. \emph{Psychometrika}, 35, 321-332.
 }
+\keyword{internal}

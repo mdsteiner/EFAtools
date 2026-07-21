@@ -21,7 +21,7 @@
 #' of implementations of principal axis factoring and promax rotation in R and SPSS.
 #' Behavior Research Methods, 54, 54–74. doi: 10.3758/s13428-021-01581-x
 #' @source Wolff, H.G., & Preising, K. (2005). Exploring item and higher order factor structure with the Schmid-Leiman solution: Syntax codes for SPSS and SAS. Behavior Research Methods, 37, 48–58. doi: 10.3758/BF03206397
-#' @source Grieder, S., & Grob, A. (2019). Exploratory factor analyses of the intelligence and development scales–2: Implications for theory and practice. Assessment. Advance online publication. doi:10.1177/10731911198450
+#' @source Grieder, S., & Grob, A. (2019). Exploratory factor analyses of the intelligence and development scales–2: Implications for theory and practice. Assessment. Advance online publication. doi:10.1177/1073191119845051
 #' @source Grob, A., & Hagmann-von Arx, P. (2018). Intelligence and Development Scales--2 (IDS-2). Intelligenz- und Entwicklungsskalen für Kinder und Jugendliche.
 #' \[Intelligence and Development Scales for Children and Adolescents.\]. Bern, Switzerland: Hogrefe.
 #' @source Frey, R., Pedroni, A., Mata, R., Rieskamp, J., & Hertwig, R. (2017). Risk preference shares the psychometric structure of major psychological traits. Science Advances, 3, e1701381.

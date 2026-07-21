@@ -36,10 +36,11 @@ efa_power(
 RMSEA power) or \code{"simulation"} (Monte-Carlo hit-rate and structure recovery). The
 remaining arguments split by mode -- \code{type}/\code{eps0}/\code{eps1}/\code{df}/\code{alpha}/\code{power}/\code{group}
 are RMSEA-only, and \code{Lambda}/\code{Phi}/\code{Psi}/\code{R}/\code{n_datasets}/\code{criteria}/\code{estimator}/\code{rotation}/\code{recovery_threshold}/\code{model_error}/\code{target_rmsea}/\code{target_cfi}/\code{seed}
-are simulation-only.}
+are simulation-only. The value is matched case-insensitively.}
 
 \item{type}{character. The RMSEA test: \code{"close"} (test of close fit) or
-\code{"notclose"} (test of not-close fit). See \emph{Details}.}
+\code{"notclose"} (test of not-close fit). The value is matched case-insensitively.
+See \emph{Details}.}
 
 \item{eps0}{numeric. The null-hypothesis RMSEA. Default is \code{0.05}.}
 
@@ -47,8 +48,11 @@ are simulation-only.}
 evaluated at). Default is \code{0.08} for \code{type = "close"} and \code{0.01} for
 \code{type = "notclose"}.}
 
-\item{N}{numeric. The (per-group) sample size. Give \code{N} to compute power; leave
-it \code{NULL} to solve for the required \code{N} at a target \code{power}.}
+\item{N}{numeric. In \code{"rmsea"} mode, the total sample size across groups (the
+plain sample size when \code{group} is \code{1}): give \code{N} to compute power, or leave it
+\code{NULL} to solve for the required \code{N} at a target \code{power}. In \code{"simulation"}
+mode \code{N} is required and is the size of each drawn sample, with no sample size
+solved for and no \code{group} division.}
 
 \item{p}{numeric. The number of observed variables. Used with \code{k} to derive
 \code{df} when \code{df} is not given directly.}
@@ -69,7 +73,8 @@ positive.}
 \code{NULL} while giving \code{N} to compute power. Exactly one of \code{N} and \code{power} is
 solved for.}
 
-\item{group}{numeric. The number of groups. Default is \code{1}. See \emph{Details}.}
+\item{group}{numeric. The number of groups. Default is \code{1}. \code{N} is the total
+across all \code{group} groups, not the size of each one. See \emph{Details}.}
 
 \item{Lambda}{matrix. Simulation mode. A \code{p} by \code{k_true} population loading matrix.
 Supply this (optionally with \code{Phi}/\code{Psi}) to build a factor-model population;
@@ -139,8 +144,10 @@ restored afterwards. Default is \code{NULL}.}
 An object of class \code{efa_power}. For \code{mode = "rmsea"}, a list containing:
 \item{power}{The power of the test at \code{N} (the achieved power, which for a
 solved sample size is at least the target).}
-\item{N}{The (per-group) sample size: the supplied \code{N}, or the solved required
-sample size.}
+\item{N}{The total sample size across groups: the supplied \code{N}, or the solved
+required sample size.}
+\item{N_per_group}{The per-group sample size \code{N / group}, equal to \code{N} when
+\code{group} is \code{1}.}
 \item{crit}{The critical chi-square value the fit statistic is compared against.}
 \item{ncp}{The noncentrality parameters under the null (\code{H0}, from \code{eps0}) and
 the alternative (\code{H1}, from \code{eps1}).}
@@ -214,8 +221,10 @@ message is emitted but the requested test is still computed. Equal \code{eps0} a
 \code{eps1} leave nothing to detect and are an error.
 
 Power increases monotonically with \code{N}, so the required sample size (the
-smallest \code{N} reaching \code{power}) is found by bisection. It is a per-group sample
-size: with \code{group > 1} the noncentrality carries the \code{1 / group} factor above.
+smallest \code{N} reaching \code{power}) is found by bisection. \code{N} is the \strong{total}
+sample size across groups: with \code{group > 1} the noncentrality above carries the
+\code{1 / group} factor, so a fixed total spread over more groups buys less power.
+The corresponding per-group sample size \code{N / group} is returned as \code{N_per_group}.
 }
 
 \section{Simulation mode}{
@@ -255,7 +264,7 @@ efa_power(df = 100, N = 200)
 # Deriving df from the model dimensions instead of giving it directly
 efa_power(p = 20, k = 3, N = 200)
 
-# Required (per-group) sample size for 80\% power
+# Required total sample size for 80\% power
 efa_power(df = 100, power = 0.80)
 
 # Test of not-close fit

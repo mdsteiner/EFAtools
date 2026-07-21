@@ -551,11 +551,22 @@ static void poly_cross_info(int n_self_thr, int n_other, int stride_self, int st
     for (int o = 0; o < n_other; o++) {
       double band = colb[o + 1] - colb[o];
       std::size_t up = (std::size_t) k * stride_self + (std::size_t) o * stride_other;
-      double pu = pmat[up] < p_floor ? p_floor : pmat[up];
-      double term = nab[up] * dxr[up] / pu;
       std::size_t lo = up + stride_self;               // the adjacent row/column of band k
-      double pl = pmat[lo] < p_floor ? p_floor : pmat[lo];
-      term -= nab[lo] * dxr[lo] / pl;
+      // Empty cells carry no cases and so contribute nothing; skipping them rather than
+      // adding a 0 * ... term keeps A21 finite when such a cell sits at the probability
+      // floor, where dx.rho (already dP/P, divided by P once more here) can overflow to
+      // Inf and 0 * Inf = NaN -- same rationale as the A22 and diagonal accumulations.
+      // Unlike those, a NaN here would not stay local: it spreads through the threshold
+      // aggregates T into the influence of every cell of the pair, empty or not.
+      double term = 0.0;
+      if (nab[up] != 0.0) {
+        double pu = pmat[up] < p_floor ? p_floor : pmat[up];
+        term += nab[up] * dxr[up] / pu;
+      }
+      if (nab[lo] != 0.0) {
+        double pl = pmat[lo] < p_floor ? p_floor : pmat[lo];
+        term -= nab[lo] * dxr[lo] / pl;
+      }
       acc += band * term;
     }
     A21out[k] = phi_self[k] * acc;
@@ -845,7 +856,10 @@ Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
             double pf = pmat[idx] < p_floor ? p_floor : pmat[idx];
             double d = dpmat[idx] / pf;
             dxr[idx] = d;
-            A22 += nab[idx] * d * d;
+            // Empty cells contribute no cases, so skip them: at the probability floor d
+            // can overflow to Inf, and 0 * Inf = NaN would silently zero the variance via
+            // the invA22 guard below (same rationale as the diagonal accumulation).
+            if (nab[idx] != 0.0) A22 += nab[idx] * d * d;
           }
         }
 
@@ -878,7 +892,14 @@ Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
             std::size_t idx = (std::size_t) a * Kj + b;
             double v = (dxr[idx] - Ti[a] - Tj[b]) * invA22;
             cif[idx] = v;
-            vsum += nab[idx] * v * v;
+            // An empty cell carries no case and so contributes exactly nothing to the
+            // sum over cases of IF^2. Skipping it rather than adding 0 * v * v also keeps
+            // the diagonal finite for a (near-)degenerate pair, where a structurally empty
+            // cell has a model probability near the underflow floor, dP/P is astronomically
+            // large, and v * v overflows to Inf -- 0 * Inf being NaN in IEEE arithmetic.
+            // This is what the `full` scatter below already does implicitly by indexing
+            // observed cases only, and is what makes diag == diag(Gamma) hold everywhere.
+            if (nab[idx] != 0.0) vsum += nab[idx] * v * v;
           }
         }
         acov_diag[t] = vsum;

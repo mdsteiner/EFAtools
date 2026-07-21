@@ -26,26 +26,26 @@ positive finite scalar. \code{delta = 0.01} is the usual default.}
 
 \item{eps}{Numeric scalar. Convergence tolerance for the projected-gradient norm.}
 
-\item{normalize}{Logical scalar. If \code{TRUE}, apply Kaiser normalization before rotation and
-reverse it afterwards.}
+\item{normalize}{Logical scalar. If \code{TRUE}, apply Kaiser normalization before
+rotation and reverse it afterwards.}
 
 \item{random_starts}{Integer scalar. Number of additional random orthogonal starts.}
 
 \item{maxit}{Integer scalar. Maximum number of projected-gradient updates.}
 
-\item{max_line_search}{Integer scalar. Maximum number of step-halving attempts after the
-initial trial step in each line-search phase.}
+\item{max_line_search}{Integer scalar. Maximum number of step-halving attempts after
+the initial trial step in each line-search phase.}
 
 \item{step0}{Numeric scalar. Initial step size used in the projected-gradient update.}
 
-\item{screen_keep}{Integer scalar. Number of screened random starts retained for triage
-optimization.}
+\item{screen_keep}{Integer scalar. Number of screened random starts retained for
+triage optimization.}
 
-\item{triage_maxit}{Integer scalar. Number of short optimization iterations used in the
-triage stage.}
+\item{triage_maxit}{Integer scalar. Number of short optimization iterations used in
+the triage stage.}
 
-\item{triage_improve_tol}{Numeric scalar. Relative improvement required for a triaged start
-to be promoted to full optimization.}
+\item{triage_improve_tol}{Numeric scalar. Relative improvement required for a triaged
+start to be promoted to full optimization.}
 }
 \value{
 A named list with the rotated loadings, the orthogonal rotation matrix \code{Th}
@@ -79,3 +79,4 @@ Psychological Measurement}, 65, 676-696.
 Browne, M. W. (2001). An overview of analytic rotation in exploratory factor analysis.
 \emph{Multivariate Behavioral Research}, 36, 111-150.
 }
+\keyword{internal}

@@ -30,6 +30,11 @@
 #     PARALLEL, KGC, HULL, SCREE, NEST, SL, N_FACTORS and EFA_POOLED therefore translate rather
 #     than forward verbatim. SL also repacks its frozen `type` argument, which the successor no
 #     longer takes as a bare formal.
+#   * A repacking wrapper must carry its OWN `@param ...`; never let `@inheritParams` supply
+#     it. The successors tell their readers that the estimation knobs do not go in `...` --
+#     true for them, and the exact opposite of what a repacking wrapper does with a legacy
+#     flat call. Inheriting it documents the wrapper as breaking the code it exists to keep
+#     working. Check this whenever a wrapper's dots reach a fit.
 #   * Critical bug fixes in shared internals propagate through the wrapper -- this
 #     is allowed for superseded functions and is why the wrapper forwards rather
 #     than copies. Consciously admitted under this rule: the estimation control a
@@ -70,7 +75,6 @@
 #'
 #' @seealso [efa_bartlett()]
 #'
-#' @keywords internal
 #' @export
 BARTLETT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
                                         "complete.obs", "everything",
@@ -94,7 +98,6 @@ BARTLETT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
 #'
 #' @seealso [efa_kmo()]
 #'
-#' @keywords internal
 #' @export
 KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
                            "everything", "na.or.complete"),
@@ -112,13 +115,18 @@ KMO <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs",
 #' keeps working.
 #'
 #' @inheritParams efa_parallel
+#' @param ... Further arguments passed on to the [efa_fit()] fits. For example,
+#'  `estimator`, to change the estimator (default is "PAF"; PAF is more robust, but it
+#'  will take longer compared to "ML" and "ULS"), or one of the estimation tuning knobs
+#'  (`type`, `init_comm`, `criterion`, `criterion_type`, `max_iter`, `abs_eigen`,
+#'  `start_method`), which are repacked into an [estimate_control()] object so that they
+#'  tune the fits exactly as they always did.
 #'
 #' @returns An object of class `efa_retention`, identical to the value of
 #'   [efa_parallel()]; see there for the components.
 #'
 #' @seealso [efa_parallel()]
 #'
-#' @keywords internal
 #' @export
 PARALLEL <- function(x = NULL,
                      N = NA,
@@ -137,7 +145,7 @@ PARALLEL <- function(x = NULL,
                  percent = percent, eigen_type = eigen_type, use = use,
                  cor_method = cor_method, decision_rule = decision_rule,
                  n_factors = n_factors),
-            .repack_flat_dots(list(...))))
+            .repack_flat_dots(.drop_unknown_frozen_dots(list(...)))))
 }
 
 #' Empirical Kaiser criterion
@@ -155,7 +163,6 @@ PARALLEL <- function(x = NULL,
 #'
 #' @seealso [efa_ekc()]
 #'
-#' @keywords internal
 #' @export
 EKC <- function(x, N = NA,
                 use = c("pairwise.complete.obs", "all.obs",
@@ -175,13 +182,17 @@ EKC <- function(x, N = NA,
 #' going forward. It remains available and unchanged so existing code keeps working.
 #'
 #' @inheritParams efa_kgc
+#' @param ... Further arguments passed on to the [efa_fit()] fit. For example,
+#'  `estimator`, to change the estimator (PAF is default), or one of the estimation
+#'  tuning knobs (`type`, `init_comm`, `criterion`, `criterion_type`, `max_iter`,
+#'  `abs_eigen`, `start_method`), which are repacked into an [estimate_control()]
+#'  object so that they tune the fit exactly as they always did.
 #'
 #' @returns An object of class `efa_retention`, identical to the value of
 #'   [efa_kgc()]; see there for the components.
 #'
 #' @seealso [efa_kgc()]
 #'
-#' @keywords internal
 #' @export
 KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
                 use = c("pairwise.complete.obs", "all.obs", "complete.obs",
@@ -191,7 +202,7 @@ KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
   do.call(efa_kgc,
           c(list(x, eigen_type = eigen_type, use = use, cor_method = cor_method,
                  n_factors = n_factors),
-            .repack_flat_dots(list(...))))
+            .repack_flat_dots(.drop_unknown_frozen_dots(list(...)))))
 }
 
 #' Hull method
@@ -206,13 +217,17 @@ KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
 #' @inheritParams efa_hull
 #' @param method character. The estimator to use; passed to [efa_hull()] as its
 #'   `estimator` argument. One of `"PAF"`, `"ULS"`, or `"ML"`.
+#' @param ... Further arguments passed on to the [efa_fit()] fits, including the
+#'  estimation tuning knobs (`type`, `init_comm`, `criterion`, `criterion_type`,
+#'  `max_iter`, `abs_eigen`, `start_method`), which are repacked into an
+#'  [estimate_control()] object so that they tune the fits exactly as they always did.
+#'  The estimator is selected with `method`.
 #'
 #' @returns An object of class `efa_retention`, identical to the value of
 #'   [efa_hull()]; see there for the components.
 #'
 #' @seealso [efa_hull()]
 #'
-#' @keywords internal
 #' @export
 HULL <- function(x, N = NA, n_fac_theor = NA,
                  method = c("PAF", "ULS", "ML"), gof = c("CAF", "CFI", "RMSEA"),
@@ -229,7 +244,7 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
                  eigen_type = eigen_type, use = use, cor_method = cor_method,
                  n_datasets = n_datasets, percent = percent,
                  decision_rule = decision_rule, n_factors = n_factors),
-            .repack_flat_dots(list(...))))
+            .repack_flat_dots(.drop_unknown_frozen_dots(list(...)))))
 }
 
 #' Scree plot
@@ -242,13 +257,17 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
 #' keeps working.
 #'
 #' @inheritParams efa_scree
+#' @param ... Further arguments passed on to the [efa_fit()] fit. For example,
+#'  `estimator`, to change the estimator (PAF is default), or one of the estimation
+#'  tuning knobs (`type`, `init_comm`, `criterion`, `criterion_type`, `max_iter`,
+#'  `abs_eigen`, `start_method`), which are repacked into an [estimate_control()]
+#'  object so that they tune the fit exactly as they always did.
 #'
 #' @returns An object of class `efa_retention`, identical to the value of
 #'   [efa_scree()]; see there for the components.
 #'
 #' @seealso [efa_scree()]
 #'
-#' @keywords internal
 #' @export
 SCREE <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
                   use = c("pairwise.complete.obs", "all.obs", "complete.obs",
@@ -258,7 +277,7 @@ SCREE <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
   do.call(efa_scree,
           c(list(x, eigen_type = eigen_type, use = use, cor_method = cor_method,
                  n_factors = n_factors),
-            .repack_flat_dots(list(...))))
+            .repack_flat_dots(.drop_unknown_frozen_dots(list(...)))))
 }
 
 #' Minimum average partial
@@ -276,7 +295,6 @@ SCREE <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
 #'
 #' @seealso [efa_map()]
 #'
-#' @keywords internal
 #' @export
 MAP <- function(x,
                 use = c("pairwise.complete.obs", "all.obs",
@@ -296,13 +314,17 @@ MAP <- function(x,
 #' keeps working.
 #'
 #' @inheritParams efa_nest
+#' @param ... Further arguments passed on to the [efa_fit()] fits. For example,
+#'  `estimator`, to change the estimator (PAF is default), or one of the estimation
+#'  tuning knobs (`type`, `init_comm`, `criterion`, `criterion_type`, `max_iter`,
+#'  `abs_eigen`, `start_method`), which are repacked into an [estimate_control()]
+#'  object so that they tune the fits exactly as they always did.
 #'
 #' @returns An object of class `efa_retention`, identical to the value of
 #'   [efa_nest()]; see there for the components.
 #'
 #' @seealso [efa_nest()]
 #'
-#' @keywords internal
 #' @export
 NEST <- function(x, N = NA,
                  alpha = .05,
@@ -315,7 +337,7 @@ NEST <- function(x, N = NA,
   do.call(efa_nest,
           c(list(x, N = N, alpha = alpha, use = use, cor_method = cor_method,
                  n_datasets = n_datasets),
-            .repack_flat_dots(list(...))))
+            .repack_flat_dots(.drop_unknown_frozen_dots(list(...)))))
 }
 
 #' Sequential model tests
@@ -333,7 +355,6 @@ NEST <- function(x, N = NA,
 #'
 #' @seealso [efa_smt()]
 #'
-#' @keywords internal
 #' @export
 SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
                                    "complete.obs", "everything",
@@ -357,7 +378,6 @@ SMT <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
 #'
 #' @seealso [efa_cd()]
 #'
-#' @keywords internal
 #' @export
 CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .30,
                cor_method = c("pearson", "spearman", "kendall", "poly", "tetra"),
@@ -384,13 +404,18 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
 #' @param method character. The estimator to use in the criteria that fit EFA models;
 #'   passed to [efa_retain()] as its `estimator` argument. One of `"ML"`, `"PAF"`, or
 #'   `"ULS"`.
+#' @param ... Further arguments passed on to the [efa_fit()] fits, including the
+#'  estimation tuning knobs (`type`, `init_comm`, `criterion`, `criterion_type`,
+#'  `abs_eigen`, `start_method`), which are repacked into an [estimate_control()] object
+#'  so that they tune the fits exactly as they always did. The estimator is selected with
+#'  `method`; `max_iter` is taken by the `max_iter_CD` argument (R matches an abbreviated
+#'  name against the arguments before `...`) and so does not reach the fits.
 #'
 #' @returns A list of class `c("efa_retain", "N_FACTORS")`, identical to the
 #'   value of [efa_retain()]; see there for the components.
 #'
 #' @seealso [efa_retain()]
 #'
-#' @keywords internal
 #' @export
 N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARALLEL"),
                       suitability = TRUE, N = NA,
@@ -422,7 +447,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
                  decision_rule = decision_rule, ekc_type = ekc_type,
                  n_datasets_nest = n_datasets_nest, alpha_nest = alpha_nest,
                  show_progress = show_progress),
-            .repack_flat_dots(list(...))))
+            .repack_flat_dots(.drop_unknown_frozen_dots(list(...)))))
 }
 
 #' Schmid-Leiman transformation
@@ -441,23 +466,43 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
 #' @param method character. The estimator for the second-order factor analysis; passed to
 #'  [efa_schmid_leiman()] as its `estimator` argument. One of `"PAF"`, `"ML"`, `"ULS"`, or
 #'  `"MINRES"`.
+#' @param ... Further arguments passed on to the second-order [efa_fit()], including the
+#'  estimation tuning knobs (`init_comm`, `criterion`, `criterion_type`, `max_iter`,
+#'  `abs_eigen`, `start_method`), which are repacked, together with `type`, into an
+#'  [estimate_control()] object so that they tune that fit exactly as they always did.
+#'  The estimator is selected with `method`.
 #'
 #' @returns A list of class `c("efa_schmid_leiman", "SL")`, identical to the value
 #'   of [efa_schmid_leiman()]; see there for the components.
 #'
 #' @seealso [efa_schmid_leiman()]
 #'
-#' @keywords internal
 #' @export
 SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
                method = c("PAF", "ML", "ULS", "MINRES"), g_name = "g", ...) {
   .reject_estimator_dot(...names(), "SL", "efa_schmid_leiman")
+  # The successor-only control objects must not ride through the frozen dots: with a control
+  # present, .repack_flat_dots() translates nothing, so the wrapper's own `type` argument --
+  # and any flat knob alongside it -- would be silently discarded and the second-order fit
+  # would quietly run the control's preset instead of the requested one. No pre-rename code
+  # could have passed these names meaningfully, so rejecting them breaks nothing frozen (the
+  # same rule EFA() applies).
+  new_only <- intersect(...names(), c("estimate_control", "rotate_control"))
+  if (length(new_only) > 0L) {
+    cli::cli_abort(
+      c("{.arg {new_only}} {?is/are} not {?an argument/arguments} of {.fn SL}.",
+        "i" = "{.fn SL} takes the tuning knobs flat and selects the preset with
+               {.arg type}; the control objects belong to {.fn efa_schmid_leiman}."),
+      class = "efa_renamed_arg"
+    )
+  }
   # Resolve `type` once so the frozen preset argument, and any flat knob the dots carry, reach
-  # the second-order fit through the control objects it now takes.
+  # the second-order fit through the control objects it now takes. The second-order fit is
+  # always unrotated, so the frozen filter's retention defaults apply.
   type <- match.arg(type)
   do.call(efa_schmid_leiman,
           c(list(x, Phi = Phi, estimator = method, g_name = g_name),
-            .repack_flat_dots(list(...), type = type)))
+            .repack_flat_dots(.drop_unknown_frozen_dots(list(...)), type = type)))
 }
 
 #' Compare two vectors or matrices (communalities or loadings)
@@ -476,7 +521,6 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
 #'
 #' @seealso [efa_compare()]
 #'
-#' @keywords internal
 #' @export
 COMPARE <- function(x,
                     y,
@@ -514,7 +558,6 @@ COMPARE <- function(x,
 #'
 #' @seealso [efa_procrustes()]
 #'
-#' @keywords internal
 #' @export
 PROCRUSTES <- function(A,
                        Target,
@@ -574,7 +617,6 @@ PROCRUSTES <- function(A,
 #' @seealso [efa_average()]
 #'
 #' @rdname EFA_AVERAGE-superseded
-#' @keywords internal
 #' @export
 EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax",
                         type = "none", averaging = c("mean", "median"), trim = 0,
@@ -699,7 +741,6 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
 #'
 #' @seealso [efa_fit()], [estimate_control()], [rotate_control()]
 #'
-#' @keywords internal
 #' @export
 EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "DWLS"),
                 rotation = c("none", "varimax", "equamax", "quartimax", "geominT",
@@ -734,18 +775,23 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
 
   # The flat interface always ignored a `...` argument its rotation engine could not consume;
   # efa_fit() rejects such an argument. Keep the frozen contract by dropping the unconsumable
-  # dots -- by the exact names the engines read -- before efa_fit() sees them. `rotation` is
-  # resolved early only for this lookup (the same match.arg() efa_fit() runs); with
-  # rotation = "none" nothing is dropped, so efa_fit()'s empty-dots guard surfaces for EFA()
-  # exactly as it always has.
+  # dots -- by the exact names the engines read -- before efa_fit() sees them. With
+  # rotation = "none" no engine runs and the accepted set is empty, so the dots are dropped
+  # in full and the call stays silent, as it always has been.
+  #
+  # `rotation` is resolved here so the lookup gets a canonical name, and the frozen
+  # match.arg() is deliberate: efa_fit() matches its choices case-insensitively
+  # (`.match_arg_ci()`), a successor-only feature, so the wrapper keeps the case-sensitive
+  # matching its callers have always had. Forwarding the canonical value below also keeps
+  # the successor's wider matching from reaching the frozen argument list.
   rotation <- match.arg(rotation)
   dots <- list(...)
-  # The successor-only arguments must not ride through the frozen dots: `estimator`
-  # collides with the wrapper's own `estimator = method` translation, the control objects
-  # collide with the ones the wrapper builds below -- and with a rotation all three would
-  # instead be silently dropped by the ignore-unknown-dots contract, so the fit would
-  # quietly run the flat defaults. No pre-rename code could have passed these names
-  # meaningfully, so rejecting them breaks nothing frozen.
+  # The successor-only arguments must not ride through the frozen dots: none of the three is
+  # a name a rotation engine reads, so the ignore-unknown-dots contract would silently drop
+  # all of them and the fit would quietly run the flat defaults -- `estimator` losing out to
+  # the wrapper's own `estimator = method` translation, the control objects to the ones the
+  # wrapper builds below. No pre-rename code could have passed these names meaningfully, so
+  # rejecting them breaks nothing frozen.
   new_only <- intersect(names(dots), c("estimator", "estimate_control", "rotate_control"))
   if (length(new_only) > 0L) {
     cli::cli_abort(
@@ -756,7 +802,7 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
       class = "efa_renamed_arg"
     )
   }
-  if (rotation != "none") dots <- dots[names(dots) %in% .rotation_dot_extras(rotation)]
+  dots <- dots[names(dots) %in% .rotation_dot_extras(rotation)]
 
   args <- c(list(x = x, N = N, estimator = method, rotation = rotation,
                  se = se, cor_method = cor_method, use = use, b_boot = b_boot, ci = ci,
@@ -794,7 +840,6 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
 #'
 #' @seealso [efa_mi()]
 #'
-#' @keywords internal
 #' @export
 EFA_POOLED <- function(data_list,
                        p = 0.05,
@@ -806,10 +851,22 @@ EFA_POOLED <- function(data_list,
                        rmsea_ci_level = .90,
                        rmsr_upper = TRUE,
                        ...) {
+  # The per-imputation fits ARE rotated here, so the frozen filter keeps `rotation` and the
+  # extras the selected rotation's engine reads -- the same per-rotation contract EFA()
+  # froze. The rotation is read off the dots verbatim: pre-rename code always passed the
+  # canonical spelling (the flat interface matched case-sensitively), and an invalid value
+  # is rejected downstream by efa_mi() itself.
+  dots <- list(...)
+  rot <- if (is.character(dots$rotation) && length(dots$rotation) == 1L) {
+    dots$rotation
+  } else {
+    "none"
+  }
   do.call(efa_mi,
           c(list(data_list, p = p, target_method = target_method,
                  align_unrotated = align_unrotated, fit_pool_method = fit_pool_method,
                  consensus_args = consensus_args, procrustes_args = procrustes_args,
                  rmsea_ci_level = rmsea_ci_level, rmsr_upper = rmsr_upper),
-            .repack_flat_dots(list(...))))
+            .repack_flat_dots(.drop_unknown_frozen_dots(
+              dots, extras = .rotation_dot_extras(rot), unrotated = FALSE))))
 }

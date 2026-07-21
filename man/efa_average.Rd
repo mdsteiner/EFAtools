@@ -100,7 +100,10 @@ based on this threshold. Note that this may not be meaningful if rotation = "non
 and n_factors > 1 are used, as no simple structure is present there.}
 
 \item{max_iter}{numeric. The maximum number of iterations to perform after which
-the iterative PAF procedure is halted with a warning. Default is 10,000. Note
+the iterative PAF procedure is halted with a warning. Default is 10,000. It is
+only evaluated for the "PAF" solutions run under \code{type} "none": a named \code{type}
+brings the iteration cap that defines it ("SPSS" 25, "psych" 50, and
+"EFAtools" 300), and "ML" and "ULS" do not iterate this way. Note
 that non-converged procedures are excluded from the averaging procedure.}
 
 \item{init_comm}{character vector. Any combination of "smc", "mac", and "unity".
@@ -280,15 +283,18 @@ BIC are finite here rather than \code{NA}.
 
 The grid containing the setting combinations is produced based on the entries
 to the respective arguments. To this end, all possible combinations resulting
-in unique EFA models are considered. That is, if, for example, the \code{type}
-argument was set to \code{c("none", "SPSS")} and one combination of the specific
-settings entered was identical to the SPSS combination, this combination
-would be included in the grid and run only once. We include here a list
+in unique EFA models are considered: combinations that resolve to the same
+model are run only once. Two combinations are the same model only if every
+setting the fit consumes agrees, and for "PAF" that includes the iteration cap
+\code{max_iter}. Since a named \code{type} brings its own cap, a \code{type} of
+\code{c("none", "SPSS")} whose specific settings match the SPSS combination in
+every other respect still gives two "PAF" models, unless \code{max_iter} is also
+set to the cap of the SPSS implementation. We include here a list
 of arguments that are only evaluated under specific conditions:
 
 The arguments \code{init_comm}, \code{criterion}, \code{criterion_type},
-\code{abs_eigen} are only evaluated if "PAF" is included in \code{estimator}
-and "none" is included in \code{type}.
+\code{abs_eigen}, and \code{max_iter} are only evaluated if "PAF" is included in
+\code{estimator} and "none" is included in \code{type}.
 
 The argument \code{varimax_type} is only evaluated if "varimax", "promax",
 "oblique", or "orthogonal" is included in \code{rotation} and "none" is
@@ -364,7 +370,13 @@ of the per-solution values. This includes the chi-square significance level
 and is purely descriptive; it is not the p-value of any pooled chi-square test.
 }
 \examples{
-\dontrun{
+# Averaging across one implementation each of PAF (EFAtools type), ULS, and
+# ML with one implementation of promax (EFAtools type) (3 EFAs)
+Aver_meth <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
+                         estimator = c("PAF", "ULS", "ML"), type = "EFAtools",
+                         start_method = "psych")
+
+\donttest{
 # Averaging across different implementations of PAF and promax rotation (72 EFAs)
 Aver_PAF <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500)
 
@@ -377,12 +389,6 @@ Aver_PAF_md <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
 Aver_meth_ext <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
                              estimator = c("PAF", "ULS", "ML"))
 
-# Averaging across one implementation each of PAF (EFAtools type), ULS, and
-# ML with one implementation of promax (EFAtools type) (3 EFAs)
-Aver_meth <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
-                         estimator = c("PAF", "ULS", "ML"), type = "EFAtools",
-                         start_method = "psych")
-
 # Averaging across different oblique rotation methods, using one implementation
 # of ML and one implementation of promax (EFAtools type) (7 EFAs)
 Aver_rot <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
@@ -390,7 +396,7 @@ Aver_rot <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
                          start_method = "psych")
 }
 
-\dontrun{
+\donttest{
 # Two-stage FIML correlations from raw data with missing values: the EM
 # saturated moments are estimated once and the resulting correlation is
 # averaged across the grid of EFAs.

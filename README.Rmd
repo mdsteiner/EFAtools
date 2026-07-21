@@ -101,12 +101,13 @@ efa_retain(DOSPERT$cormat, N = DOSPERT$N)
 
 With raw-data input, you can use all functionalities, including sandwich and bootstrap standard errors and DWLS estimation with polychoric correlations or two-stage FIML estimation of correlations.
 
+The bootstrap intervals below are percentile intervals over refitted resamples. For the loadings and factor correlations they are centred on the point estimate as you would expect; for the indices derived from the chi-square (RMSEA, AIC, BIC, ECVI) they sit above it, because each resample carries the sample's own misfit *plus* fresh sampling noise. A point estimate lying below its own lower bound there is that shift, not a miscomputed interval. CFI and TLI are unaffected, being ratios in which the baseline chi-square shifts along with the model one.
 
 ```{r fig.height=3}
 
-# ULS / MINRES estimation with oblimin rotation and sandwich SEs
-mod <- efa_fit(DOSPERT_raw, n_factors = 5, estimator = "ULS", rotation = "oblimin",
-           se = "sandwich")
+# ULS / MINRES estimation with oblimin rotation and bootstrap SEs
+mod <- efa_fit(DOSPERT_raw, n_factors = 5, estimator = "uls", rotation = "oblimin",
+               se = "np-boot", seed = 1)
 mod
 # detailed output with summary()
 summary(mod)
@@ -115,8 +116,8 @@ summary(mod)
 residuals(mod)
 
 # DWLS estimation based on polychoric correlations, with robust sandwich SEs
-mod <- efa_fit(GRiPS_raw, n_factors = 1, estimator = "DWLS", cor_method = "poly",
-           se = "sandwich")
+mod <- efa_fit(GRiPS_raw, n_factors = 1, estimator = "dwls", cor_method = "poly",
+               se = "sandwich")
 mod
 summary(mod)
 ```
@@ -130,7 +131,7 @@ When you don't have raw data available, you can enter a correlation matrix and s
 
 # ML estimation with oblimin rotation and information SEs, based on correlation
 # matrix and N
-mod <- efa_fit(test_models$baseline$cormat, N = 500,  n_factors = 3, estimator = "ML",
+mod <- efa_fit(test_models$baseline$cormat, N = 500,  n_factors = 3, estimator = "ml",
            rotation = "oblimin", se = "information")
 mod
 summary(mod)

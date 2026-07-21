@@ -87,6 +87,8 @@
 #'   Grice, J. W. (2001). Computing and evaluating factor scores. *Psychological
 #'   Methods, 6*, 430-450.
 #'
+#' @seealso [efa_fit()] for the solution these are computed from.
+#'
 #' @family factor scoring
 #'
 #' @export

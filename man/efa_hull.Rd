@@ -86,12 +86,13 @@ included in \code{eigen_type}. Default is 1. This is passed to
 
 \item{estimate_control}{an \code{\link[=estimate_control]{estimate_control()}} object with the estimation settings for the
 \code{\link[=efa_fit]{efa_fit()}} fits of the 0 to \emph{J} factor solutions, and for the fit inside the internal
-\code{\link[=efa_parallel]{efa_parallel()}} call. \code{NULL} (default) uses the \code{\link[=efa_fit]{efa_fit()}} defaults. The fits are unrotated,
-so no rotation settings apply.}
+\code{\link[=efa_parallel]{efa_parallel()}} call. \code{NULL} (default) uses the \code{\link[=efa_fit]{efa_fit()}} defaults. This object carries
+estimation settings only; the fits are always unrotated, which the hull statistics (CFI,
+RMSEA, CAF) do not depend on.}
 
 \item{...}{Further arguments passed to \code{\link[=efa_fit]{efa_fit()}}, also in
 \code{\link[=efa_parallel]{efa_parallel()}}. The estimation tuning knobs are not passed here; they live in
-\code{estimate_control}.}
+\code{estimate_control}, and a rotation setting is not accepted because the fits are unrotated.}
 }
 \value{
 An object of class \code{efa_retention} (see \code{\link[=print.efa_retention]{print.efa_retention()}} and
@@ -123,6 +124,12 @@ The \link{efa_parallel} function and the principal axis factoring of the
 different number of factors can be parallelized using the future framework,
 by calling the \code{\link[future:plan]{future::plan()}} function. The examples
 provide example code on how to enable parallel processing.
+
+The upper bound \emph{J} comes from \code{\link[=efa_parallel]{efa_parallel()}}, which compares against simulated
+data, so the suggested number of factors varies slightly from run to run; a
+criterion-based rotation passed through \code{...} adds its own random starts. Call
+\code{\link[=set.seed]{set.seed()}} beforehand to make a run reproducible; the result is then also
+independent of the parallel plan.
 
 Note that if \code{gof = "RMSEA"} is used, 1 - RMSEA is actually used to
 compare the different solutions. Thus, the threshold of .05 is then .95. This

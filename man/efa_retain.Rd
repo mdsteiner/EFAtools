@@ -210,7 +210,8 @@ documentations for details):
 
 The comparison data, parallel analysis, and NEST criteria compare the data against
 simulated reference data, so their suggested numbers of factors vary slightly from run
-to run; call \code{\link[=set.seed]{set.seed()}} before \code{efa_retain()} to make them reproducible.
+to run; the Hull method does too, because it calls \code{\link[=efa_parallel]{efa_parallel()}} to set its upper
+bound. Call \code{\link[=set.seed]{set.seed()}} before \code{efa_retain()} to make them reproducible.
 }
 \examples{
 \donttest{
@@ -241,6 +242,9 @@ nfac_raw <- efa_retain(GRiPS_raw, estimator = "ML")
 }
 }
 \seealso{
+\code{\link[=efa_screen]{efa_screen()}} for data screening before retention, and \code{\link[=efa_fit]{efa_fit()}} to extract
+the chosen number of factors.
+
 Other factor retention criteria:
 \code{\link[=efa_cd]{efa_cd()}},
 \code{\link[=efa_ekc]{efa_ekc()}},

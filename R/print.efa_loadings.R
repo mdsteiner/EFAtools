@@ -14,7 +14,7 @@
 #' named `h2` vector is used in the supplied order.
 #'
 #' @param x a loading matrix of class `efa_loadings` (or the legacy `LOADINGS`).
-#' @param cutoff numeric. The number above which to print loadings in bold
+#' @param cutoff numeric. The value at or above which loadings are emphasized;
 #'  default is .3.
 #' @param digits numeric. Passed to \code{\link[base:Round]{round}}. Number of digits
 #'  to round the loadings to (default is 3).
@@ -39,7 +39,10 @@
 #'  absolute loading, and `"clustered"` additionally sorts within each
 #'  factor by the size of the primary loading.
 #' @param legend logical. Whether to append a short explanation of the styling.
-#'  Default is `FALSE` for standalone loading matrices.
+#'  Default is `FALSE` for standalone loading matrices. The legend is only printed
+#'  when the styling it describes is actually rendered (`color = TRUE` and a
+#'  colour-capable console); in plain output it is omitted and this argument has
+#'  no effect.
 #' @param ... additional arguments passed to print or format
 #'
 #' @method print efa_loadings
@@ -94,7 +97,10 @@ print.efa_loadings <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
       max_factors_per_block = max_factors_per_block
     ))
 
-    if (isTRUE(legend)) {
+    # The legend only describes console styling, so it is emitted only when that styling
+    # is actually rendered. In plain output the loadings themselves carry the information,
+    # and a legend naming marks the reader cannot see would be misleading.
+    if (isTRUE(legend) && .efa_styling_visible(color)) {
       cli::cli_verbatim("")
       cli::cli_verbatim(.efa_loadings_legend(cutoff, spec$has_h2, digits, color))
     }
@@ -108,6 +114,14 @@ print.efa_loadings <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
 #' @method format efa_loadings
 #' @export
 format.efa_loadings <- function(x, ...) {
+  # Render the table with styling switched off at the source rather than stripping the
+  # escapes afterwards. Stripping after the fact would leave `print()`'s legend -- which is
+  # emitted only when the styling is visible -- describing bold and grey marks that the
+  # strip has just removed. Pinning the colour count is what `print()` itself reads, so the
+  # marks and the legend that names them are dropped together.
+  old <- options(cli.num_colors = 1L)
+  on.exit(options(old), add = TRUE)
+
   # `print()` ends with a blank line for console spacing, which capture.output
   # records as a trailing empty element; drop it so format() returns only the
   # rendered table lines (plain, un-styled).

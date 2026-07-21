@@ -80,7 +80,10 @@ based on this threshold. Note that this may not be meaningful if rotation = "non
 and n_factors > 1 are used, as no simple structure is present there.}
 
 \item{max_iter}{numeric. The maximum number of iterations to perform after which
-the iterative PAF procedure is halted with a warning. Default is 10,000. Note
+the iterative PAF procedure is halted with a warning. Default is 10,000. It is
+only evaluated for the "PAF" solutions run under \code{type} "none": a named \code{type}
+brings the iteration cap that defines it ("SPSS" 25, "psych" 50, and
+"EFAtools" 300), and "ML" and "ULS" do not iterate this way. Note
 that non-converged procedures are excluded from the averaging procedure.}
 
 \item{init_comm}{character vector. Any combination of "smc", "mac", and "unity".
@@ -183,4 +186,3 @@ keeps working.
 \seealso{
 \code{\link[=efa_average]{efa_average()}}
 }
-\keyword{internal}

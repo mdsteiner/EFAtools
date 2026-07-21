@@ -46,10 +46,46 @@ test_that("the number of groups scales the noncentrality", {
   expect_equal(unname(g2$ncp), unname(g1$ncp) / 2)
 })
 
+test_that("the solved N is the total across groups, split by N_per_group", {
+  # The 1 / group factor in the noncentrality makes the solved N a total, so it
+  # grows linearly in `group` while the per-group requirement stays near-constant.
+  g1 <- efa_power(df = 102, power = 0.80, group = 1)
+  g2 <- efa_power(df = 102, power = 0.80, group = 2)
+  expect_equal(g1$N, 130L)
+  expect_equal(g2$N, 259L)
+  expect_equal(g2$N_per_group, 129.5)
+  expect_equal(g1$N_per_group, 130)
+})
+
+test_that("the solved total matches semTools::findRMSEAsamplesize per group", {
+  skip_if_not_installed("semTools")
+
+  # findRMSEAsamplesize() searches the same noncentrality but reports the per-group
+  # figure (its last line divides the solved total by `group`), so its value is the
+  # N_per_group counterpart of the total efa_power() returns.
+  # Compared as named vectors so a failure names the group count that broke.
+  groups <- c(1, 2, 3)
+  ref <- vapply(groups, function(g) {
+    semTools::findRMSEAsamplesize(rmsea0 = 0.05, rmseaA = 0.08, df = 102,
+                                  power = 0.80, group = g)
+  }, numeric(1))
+  pw <- vapply(groups, function(g) {
+    efa_power(df = 102, power = 0.80, group = g)$N_per_group
+  }, numeric(1))
+  tot <- vapply(groups, function(g) {
+    as.numeric(efa_power(df = 102, power = 0.80, group = g)$N)
+  }, numeric(1))
+  names(ref) <- names(pw) <- names(tot) <- paste0("group", groups)
+
+  expect_equal(pw, ref, tolerance = 1e-8)
+  expect_equal(tot, ref * groups, tolerance = 1e-8, ignore_attr = "names")
+})
+
 test_that("output has the expected class and structure", {
   x <- efa_power(df = 100, N = 200)
   expect_s3_class(x, "efa_power")
-  expect_named(x, c("power", "N", "crit", "ncp", "solve_for", "settings"))
+  expect_named(x, c("power", "N", "N_per_group", "crit", "ncp", "solve_for",
+                    "settings"))
   expect_named(x$settings, c("mode", "type", "eps0", "eps1", "df", "p", "k",
                              "alpha", "group", "power"))
 })

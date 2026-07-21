@@ -383,8 +383,8 @@
 
 ### create grid for oblique rotations in efa_average()
 .oblq_grid <- function(estimator, init_comm, criterion, criterion_type,
-                       abs_eigen, start_method, rotation, k_promax, normalize, P_type,
-                       precision, varimax_type, k_simplimax){
+                       abs_eigen, max_iter, start_method, rotation, k_promax, normalize,
+                       P_type, precision, varimax_type, k_simplimax){
 
   g_list <- list()
 
@@ -392,7 +392,8 @@
 
     g_list[["prmx"]] <- expand.grid(estimator = estimator, init_comm = init_comm,
                                     criterion = criterion, criterion_type = criterion_type,
-                                    abs_eigen = abs_eigen, start_method = start_method,
+                                    abs_eigen = abs_eigen, max_iter = max_iter,
+                                    start_method = start_method,
                                     rotation = "promax",
                                     k_promax = k_promax, normalize = normalize, P_type = P_type,
                                     precision = precision, varimax_type = varimax_type,
@@ -404,7 +405,8 @@
 
     g_list[["smplmx"]] <- expand.grid(estimator = estimator, init_comm = init_comm,
                                       criterion = criterion, criterion_type = criterion_type,
-                                      abs_eigen = abs_eigen, start_method = start_method,
+                                      abs_eigen = abs_eigen, max_iter = max_iter,
+                                      start_method = start_method,
                                       rotation = "simplimax",
                                       k_promax = NA, normalize = normalize, P_type = NA,
                                       precision = precision, varimax_type = NA,
@@ -417,7 +419,8 @@
   if (length(rotation_temp) > 0) {
     g_list[["oblq"]] <- expand.grid(estimator = estimator, init_comm = init_comm,
                                     criterion = criterion, criterion_type = criterion_type,
-                                    abs_eigen = abs_eigen, start_method = start_method,
+                                    abs_eigen = abs_eigen, max_iter = max_iter,
+                                    start_method = start_method,
                                     rotation = rotation_temp,
                                     k_promax = NA, normalize = normalize, P_type = NA,
                                     precision = precision, varimax_type = NA,
@@ -430,7 +433,7 @@
 
 ### create grid for orthogonal rotations in efa_average()
 .orth_grid <- function(estimator, init_comm, criterion, criterion_type,
-                       abs_eigen, start_method, rotation, normalize,
+                       abs_eigen, max_iter, start_method, rotation, normalize,
                        precision, varimax_type){
 
   g_list <- list()
@@ -439,7 +442,8 @@
 
     g_list[["vrmx"]] <- expand.grid(estimator = estimator, init_comm = init_comm,
                                     criterion = criterion, criterion_type = criterion_type,
-                                    abs_eigen = abs_eigen, start_method = start_method,
+                                    abs_eigen = abs_eigen, max_iter = max_iter,
+                                    start_method = start_method,
                                     rotation = "varimax",
                                     k_promax = NA, normalize = normalize, P_type = NA,
                                     precision = precision, varimax_type = varimax_type,
@@ -452,7 +456,8 @@
   if (length(rotation_temp) > 0) {
     g_list[["orth"]] <- expand.grid(estimator = estimator, init_comm = init_comm,
                                     criterion = criterion, criterion_type = criterion_type,
-                                    abs_eigen = abs_eigen, start_method = start_method,
+                                    abs_eigen = abs_eigen, max_iter = max_iter,
+                                    start_method = start_method,
                                     rotation = rotation_temp,
                                     k_promax = NA, normalize = normalize, P_type = NA,
                                     precision = precision, varimax_type = NA,
@@ -464,7 +469,7 @@
 }
 
 .type_grid <- function(estimator, init_comm, criterion, criterion_type,
-                       abs_eigen, start_method, rotation, k_promax, normalize,
+                       abs_eigen, max_iter, start_method, rotation, k_promax, normalize,
                        P_type, precision, varimax_type, k_simplimax) {
 
   t_grid_list <- list()
@@ -473,7 +478,8 @@
 
       t_grid_list[["nn"]] <- expand.grid(estimator = estimator, init_comm = init_comm,
                                          criterion = criterion, criterion_type = criterion_type,
-                                         abs_eigen = abs_eigen, start_method = start_method,
+                                         abs_eigen = abs_eigen, max_iter = max_iter,
+                                         start_method = start_method,
                                          rotation = "none",
                                          k_promax = NA, normalize = NA, P_type = NA,
                                          precision = NA, varimax_type = NA,
@@ -493,7 +499,8 @@
 
       t_grid_list[["blq"]] <- .oblq_grid(estimator = estimator, init_comm = init_comm,
                                          criterion = criterion, criterion_type = criterion_type,
-                                         abs_eigen = abs_eigen, start_method = start_method,
+                                         abs_eigen = abs_eigen, max_iter = max_iter,
+                                         start_method = start_method,
                                          rotation = .oblq_rotations,
                                          k_promax = k_promax, normalize = normalize,
                                          P_type = P_type, precision = precision,
@@ -515,7 +522,8 @@
 
       t_grid_list[["rth"]] <- .orth_grid(estimator = estimator, init_comm = init_comm,
                                          criterion = criterion, criterion_type = criterion_type,
-                                         abs_eigen = abs_eigen, start_method = start_method,
+                                         abs_eigen = abs_eigen, max_iter = max_iter,
+                                         start_method = start_method,
                                          rotation = .orth_rotations,
                                          normalize = normalize, precision = precision,
                                          varimax_type = varimax_type)
@@ -534,7 +542,8 @@
 
     t_grid_list[["blq2"]] <- .oblq_grid(estimator = estimator, init_comm = init_comm,
                                         criterion = criterion, criterion_type = criterion_type,
-                                        abs_eigen = abs_eigen, start_method = start_method,
+                                        abs_eigen = abs_eigen, max_iter = max_iter,
+                                        start_method = start_method,
                                         rotation = rotation,
                                         k_promax = k_promax, normalize = normalize,
                                         P_type = P_type, precision = precision,
@@ -544,7 +553,8 @@
 
     t_grid_list[["rth2"]] <- .orth_grid(estimator = estimator, init_comm = init_comm,
                                         criterion = criterion, criterion_type = criterion_type,
-                                        abs_eigen = abs_eigen, start_method = start_method,
+                                        abs_eigen = abs_eigen, max_iter = max_iter,
+                                        start_method = start_method,
                                         rotation = rotation,
                                         normalize = normalize, precision = precision,
                                         varimax_type = varimax_type)
@@ -573,8 +583,8 @@
 # in the order EFAtools, psych, SPSS, none, so the row order and names of the
 # assembled grid are stable.
 .build_avg_grid <- function(estimator, type, rotation, init_comm, criterion,
-                            criterion_type, abs_eigen, start_method, k_promax,
-                            normalize, P_type, precision, varimax_type,
+                            criterion_type, abs_eigen, max_iter, start_method,
+                            k_promax, normalize, P_type, precision, varimax_type,
                             k_simplimax) {
 
   # Tags used to build the grid-list names (e.g. "ftls_pf", "nn_ml"), kept
@@ -582,25 +592,33 @@
   estimator_tag <- c(PAF = "pf", ML = "ml", ULS = "ls")
   type_tag   <- c(EFAtools = "ftls", psych = "psch", SPSS = "spss", none = "nn")
 
-  # The communality/start arguments each estimator uses; the rest stay NA. For
-  # named types PAF's values come from the `.efa_presets` PAF block, for type
-  # "none" from the user.
+  # The communality/start arguments each estimator uses; the rest stay NA. The
+  # iteration cap (`max_iter`) is one of the PAF arguments, since only the
+  # principal-axis iterations consume it, so it is NA for ML and ULS just as the
+  # other PAF settings are. On a PAF row it comes from the `.efa_presets` PAF
+  # block for a named type (SPSS 25, psych 50, EFAtools 300) and from the user
+  # for type "none": the cap is part of what distinguishes the implementations,
+  # so two PAF rows differing only in it are genuinely different models. Leaving
+  # it NA elsewhere keeps an ML or ULS row that a named type and type "none"
+  # resolve to identically a single row, rather than the same fit repeated once
+  # per type.
   estimator_args <- function(m, from_user, paf = NULL) {
     switch(m,
       PAF = if (from_user) {
         list(init_comm = init_comm, criterion = criterion,
              criterion_type = criterion_type, abs_eigen = abs_eigen,
-             start_method = NA)
+             max_iter = max_iter, start_method = NA)
       } else {
         list(init_comm = paf$init_comm, criterion = paf$criterion,
              criterion_type = paf$criterion_type,
-             abs_eigen = paf$abs_eigen, start_method = NA)
+             abs_eigen = paf$abs_eigen, max_iter = paf$max_iter,
+             start_method = NA)
       },
       ML  = list(init_comm = NA, criterion = NA, criterion_type = NA,
-                 abs_eigen = NA,
+                 abs_eigen = NA, max_iter = NA,
                  start_method = if (from_user) start_method else "psych"),
       ULS = list(init_comm = NA, criterion = NA, criterion_type = NA,
-                 abs_eigen = NA, start_method = NA))
+                 abs_eigen = NA, max_iter = NA, start_method = NA))
   }
 
   grid_list <- list()
@@ -619,9 +637,14 @@
         # Resolve named-type tuning arguments through .resolve_settings() -- the
         # same resolver EFA() uses -- with EFA()'s default user arguments
         # (normalize on, everything else unset), so an averaged sub-analysis
-        # cannot drift from EFA(type = t): PAF's convergence settings come from
-        # the PAF block, the promax/varimax settings from the PROMAX block.
-        # `precision` is not a preset, so it keeps EFA()'s default.
+        # matches EFA(type = t) in its estimation and rotation tuning: PAF's
+        # convergence settings and iteration cap (max_iter) come from the PAF
+        # block, the promax/varimax settings from the PROMAX block. `precision`
+        # is not a preset, so it keeps EFA()'s default. The one deliberate
+        # exception is order_type, hard-coded "eigen" when the grid is run: the
+        # averaging re-aligns every solution to the first by congruence, so a
+        # per-fit factor order (SPSS's "ss_factors") would never survive into the
+        # averaged result anyway.
         paf <- .resolve_settings(
           type = t,
           user = list(init_comm = NA, criterion = NA, criterion_type = NA,
@@ -641,7 +664,7 @@
       grid_list[[paste0(type_tag[[t]], "_", estimator_tag[[m]])]] <- .type_grid(
         estimator = m, init_comm = ma$init_comm, criterion = ma$criterion,
         criterion_type = ma$criterion_type, abs_eigen = ma$abs_eigen,
-        start_method = ma$start_method, rotation = rotation,
+        max_iter = ma$max_iter, start_method = ma$start_method, rotation = rotation,
         k_promax = rest$k_promax, normalize = rest$normalize,
         P_type = rest$P_type, precision = rest$precision,
         varimax_type = rest$varimax_type, k_simplimax = k_simplimax)

@@ -86,4 +86,3 @@ keeps working.
 \seealso{
 \code{\link[=efa_compare]{efa_compare()}}
 }
-\keyword{internal}

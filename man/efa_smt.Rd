@@ -41,11 +41,11 @@ correlation matrix is used.}
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}} if raw
 data is given as input. Default is "pairwise.complete.obs".}
 
-\item{cor_method}{character. Correlation computed from raw data: \code{"pearson"},
-\code{"spearman"}, or \code{"kendall"} (passed to \code{\link[stats:cor]{stats::cor()}}), or \code{"poly"} /
-\code{"tetra"} for polychoric / tetrachoric correlations of ordinal / binary data
-(a two-step estimator with no empty-cell continuity correction).
-Default is "pearson".}
+\item{cor_method}{character. One of \code{"pearson"}, \code{"spearman"}, or \code{"kendall"},
+passed to \code{\link[stats:cor]{stats::cor()}}. \code{"poly"} and \code{"tetra"} are not supported because
+\code{SMT} rests on a normal-theory chi-square test that is not valid for
+polychoric / tetrachoric correlations.
+Default is \code{"pearson"}.}
 
 \item{estimate_control}{an \code{\link[=estimate_control]{estimate_control()}} object with the estimation settings for the
 sequential \code{\link[=efa_fit]{efa_fit()}} fits. \code{NULL} (default) uses the \code{\link[=efa_fit]{efa_fit()}} defaults. The sequential

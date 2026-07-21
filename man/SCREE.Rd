@@ -40,9 +40,11 @@ Default is "pearson".}
 \item{n_factors}{numeric. Number of factors to extract if "EFA" is included in
 \code{eigen_type}. Default is 1.}
 
-\item{...}{Additional arguments passed to \code{\link[=efa_fit]{efa_fit()}}. For example,
-\code{estimator}, to change the estimator (PAF is default). The estimation tuning knobs are not
-passed here; they live in \code{estimate_control}.}
+\item{...}{Further arguments passed on to the \code{\link[=efa_fit]{efa_fit()}} fit. For example,
+\code{estimator}, to change the estimator (PAF is default), or one of the estimation
+tuning knobs (\code{type}, \code{init_comm}, \code{criterion}, \code{criterion_type}, \code{max_iter},
+\code{abs_eigen}, \code{start_method}), which are repacked into an \code{\link[=estimate_control]{estimate_control()}}
+object so that they tune the fit exactly as they always did.}
 }
 \value{
 An object of class \code{efa_retention}, identical to the value of
@@ -58,4 +60,3 @@ keeps working.
 \seealso{
 \code{\link[=efa_scree]{efa_scree()}}
 }
-\keyword{internal}

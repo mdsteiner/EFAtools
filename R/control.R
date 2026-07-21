@@ -396,6 +396,62 @@ rotate_control <- function(type = c("EFAtools", "psych", "SPSS", "none"),
   )
 }
 
+# Reject a `...` name that no fit could ever consume. The retention criteria and their
+# orchestrator forward their `...` into efa_fit(), but only when a fit actually runs (e.g.
+# eigen_type includes "EFA", or a criterion that fits a model is selected). A misspelled name
+# is otherwise silently dropped and the criterion runs with the default it looks like it was
+# told to change. A name that is neither an efa_fit() formal nor a rotation-engine extra is
+# such a misspelling and is refused here, independently of whether a fit runs. Takes the
+# argument NAMES (`...names()`) so the dots are never forced; `fn` names the function reached.
+#
+# It must stay lenient for the superseded wrappers, which repack their flat tuning knobs into
+# `estimate_control` / `rotate_control` objects and splice those into these same dots: both
+# control names are efa_fit() formals, so they are in the accepted set by construction.
+.reject_unknown_fit_dots <- function(nms, fn, unrotated = FALSE) {
+  nms <- nms[nzchar(nms)]
+  if (length(nms) == 0L) return(invisible(NULL))
+  known <- c(setdiff(names(formals(efa_fit)), "..."), .rotation_extra_union)
+  # A caller whose fits are always unrotated runs no rotation engine, so an engine extra
+  # can never be consumed there. Refusing it here, rather than letting it reach the fit,
+  # is what makes the error name the function the user called and arrive before the
+  # criterion does its work (`rotation` itself is refused by .reject_rotation_dots()).
+  if (unrotated) known <- setdiff(known, .rotation_extra_union)
+  # setdiff() already returns unique values, so the offenders are named once each
+  bad <- setdiff(nms, known)
+  if (length(bad) == 0L) return(invisible(NULL))
+  cli::cli_abort(
+    c("{.arg {bad}} {?is/are} not {?an argument/arguments} of {.fn {fn}} or {.fn efa_fit}.",
+      "i" = "Check for a misspelled argument name."),
+    class = "efa_unused_dots"
+  )
+}
+
+# The retention criteria's fits are always unrotated, so a rotation setting passed through
+# their `...` is meaningless: a user's `rotation = ...` makes a criterion fit spin up a
+# rotation engine for nothing -- and a criterion-based rotation draws its random starts from
+# the caller's stream, so it silently moves a seeded result -- while a `rotate_control` is
+# simply ignored by the unrotated fit. Refuse
+# both. The superseded N_FACTORS() wrapper still repacks a frozen `type` (or a flat rotation
+# knob) into a rotate_control() object that legitimately rides through these dots, so a
+# `rotate_control` that IS such a control object is exempt, as is a `NULL` (efa_fit()'s own
+# "not supplied" default, which the repack passes through untouched) -- only some other value
+# under that name, or any `rotation`, is refused. Takes the dots by value for that check.
+.reject_rotation_dots <- function(dots, fn) {
+  nms <- names(dots)
+  if (is.null(nms)) return(invisible(NULL))
+  bad <- character(0)
+  if ("rotation" %in% nms) bad <- c(bad, "rotation")
+  rc <- dots[nms == "rotate_control"]
+  ok_rc <- vapply(rc, function(v) is.null(v) || inherits(v, "efa_rotate_control"), logical(1))
+  if (!all(ok_rc)) bad <- c(bad, "rotate_control")
+  if (length(bad) == 0L) return(invisible(NULL))
+  cli::cli_abort(
+    c("{.arg {bad}} cannot be passed to {.fn {fn}}.",
+      "i" = "The fits run by the retention criteria are always unrotated."),
+    class = "efa_unused_dots"
+  )
+}
+
 # Reject the former `method` argument (the estimator is selected with `estimator`) when it
 # lands in a fit function's `...`: it would otherwise be forwarded into the rotation extras
 # or a criterion fit -- surfacing as an opaque downstream error or being silently ignored --
@@ -419,6 +475,43 @@ rotate_control <- function(type = c("EFAtools", "psych", "SPSS", "none"),
     "{.arg estimate_control} must be a control object from {.fn estimate_control}.",
     class = "efa_control_input"
   )
+}
+
+# The legacy alias spellings .repack_flat_dots() translates rather than forwards. Kept as a
+# named constant so the drop filter below and the repack agree by construction.
+.flat_alias_names <- c("method", "type", "P_type", "randomStarts")
+
+# The frozen wrappers that forward their `...` (N_FACTORS(), PARALLEL(), KGC(), SCREE(),
+# HULL(), NEST(), EFA_POOLED()) keep the flat interface's silent-ignore contract: a name
+# that nothing on the old surface could ever consume was dropped without comment, so it is
+# dropped here too -- before .repack_flat_dots() translates the flat knobs and before the
+# successors' guards (.reject_unknown_fit_dots(), .reject_rotation_dots(), efa_fit()'s
+# per-rotation extras whitelist) would refuse it. The kept universe is everything the old
+# surface consumed: the efa_fit() formals, the flat tuning knobs, and the alias spellings.
+# Keeping the flat knobs matters when a control object rides alongside one (the repack then
+# translates nothing), so such a mixed call still fails loudly in the successor's flat-knob
+# guard instead of losing the knob here. The retention wrappers' criterion fits are always
+# unrotated (the default), so a `rotation` setting and the rotation-engine extras
+# (`maxit`/`gam`/`delta`) were never consumable there -- 0.8.0 ignored them without effect on
+# the result -- and are dropped with the junk; EFA_POOLED() instead passes `unrotated =
+# FALSE` plus the extras its selected rotation's engine reads, mirroring EFA()'s own
+# rotation-aware filter. A successor-only name carrying a malformed value (e.g.
+# `rotate_control = "SPSS"`) is deliberately KEPT: no pre-rename code could have used that
+# name, so the successor's loud classed validation is the right outcome, exactly as EFA()
+# rejects the successor-only names outright. Unnamed dots pass through untouched, as on the
+# reject side.
+.drop_unknown_frozen_dots <- function(dots, extras = character(), unrotated = TRUE) {
+  nms <- names(dots)
+  if (is.null(nms)) return(dots)
+  known <- c(setdiff(names(formals(efa_fit)), "..."),
+             .flat_estimate_knobs, .flat_rotate_knobs, .flat_alias_names, extras)
+  if (unrotated) known <- setdiff(known, "rotation")
+  # charmatch(), not %in%: the flat interface reached its target through do.call(), where R
+  # partial-matched an abbreviated name against the formals ahead of `...`, so an
+  # abbreviation was a name the old surface could consume. Dropping it here would turn such
+  # a call into a silently different fit; keeping it (an ambiguous abbreviation too, which
+  # base R would also have refused) lets it travel on and fail loudly instead.
+  dots[!nzchar(nms) | !is.na(charmatch(nms, known))]
 }
 
 # Repack the flat tuning knobs a call may still carry in its `...` into the control objects the

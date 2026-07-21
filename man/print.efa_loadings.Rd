@@ -25,7 +25,7 @@
 \arguments{
 \item{x}{a loading matrix of class \code{efa_loadings} (or the legacy \code{LOADINGS}).}
 
-\item{cutoff}{numeric. The number above which to print loadings in bold
+\item{cutoff}{numeric. The value at or above which loadings are emphasized;
 default is .3.}
 
 \item{digits}{numeric. Passed to \code{\link[base:Round]{round}}. Number of digits
@@ -59,7 +59,10 @@ absolute loading, and \code{"clustered"} additionally sorts within each
 factor by the size of the primary loading.}
 
 \item{legend}{logical. Whether to append a short explanation of the styling.
-Default is \code{FALSE} for standalone loading matrices.}
+Default is \code{FALSE} for standalone loading matrices. The legend is only printed
+when the styling it describes is actually rendered (\code{color = TRUE} and a
+colour-capable console); in plain output it is omitted and this argument has
+no effect.}
 
 \item{...}{additional arguments passed to print or format}
 }

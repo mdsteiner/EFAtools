@@ -46,4 +46,3 @@ going forward. It remains available and unchanged so existing code keeps working
 \seealso{
 \code{\link[=efa_ekc]{efa_ekc()}}
 }
-\keyword{internal}

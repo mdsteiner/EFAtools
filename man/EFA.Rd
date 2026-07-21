@@ -197,4 +197,3 @@ before -- so existing code keeps running.
 \seealso{
 \code{\link[=efa_fit]{efa_fit()}}, \code{\link[=estimate_control]{estimate_control()}}, \code{\link[=rotate_control]{rotate_control()}}
 }
-\keyword{internal}

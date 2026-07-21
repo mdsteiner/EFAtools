@@ -4,6 +4,10 @@
 \alias{efa_fit}
 \title{Exploratory factor analysis (EFA)}
 \source{
+Bollen, K. A., & Stine, R. A. (1992). Bootstrapping goodness-of-fit measures
+in structural equation models. Sociological Methods & Research, 21, 205–229.
+doi: 10.1177/0049124192021002004
+
 Grieder, S., & Steiner, M. D. (2022). Algorithmic jingle jungle: A comparison
 of implementations of principal axis factoring and promax rotation in R and SPSS.
 Behavior Research Methods, 54, 54–74. doi: 10.3758/s13428-021-01581-x
@@ -252,7 +256,20 @@ rotations.}
 \item{vars_accounted_rot}{Matrix of explained variances and sums of squared
 loadings. Based on rotated loadings and, for oblique rotations, the factor
 intercorrelations.}
-\item{settings}{A list of the settings used.}
+\item{settings}{A list of the settings used. For the criterion rotations fitted by
+gradient projection it additionally carries \code{rotation_diagnostics}, a list summarising
+the multi-start run: \code{n_starts_total} (the \code{random_starts} random starts plus the
+rational start), \code{n_optimized} (how many of those starts were actually optimized --
+fewer than \code{n_starts_total} whenever the solver screens the random starts and optimizes
+only the most promising ones), \code{n_converged} (how many optimized starts reached the
+convergence tolerance), \code{n_distinct_minima} (how many distinct local optima those
+converged starts found; more than one means the criterion is multimodal on these data),
+\code{criterion_spread} (the range of the criterion values they attained), and
+\code{criterion_best} (the criterion value of the returned solution). When
+\code{normalize = TRUE}, \code{criterion_best} and \code{criterion_spread} are evaluated on the
+Kaiser-normalized loadings the criterion is optimized on, not on the returned
+\code{rot_loadings}, so they are not directly comparable to a criterion recomputed from the
+returned loadings.}
 \item{SE}{A named list of standard error matrices. For \code{se = "np-boot"}: bootstrap standard deviations of the unrotated and (when a rotation is applied) rotated loadings, the residuals, and the fit indices, plus -- for oblique rotations -- the factor correlations (\code{Phi}) and the structure coefficients; it additionally carries \code{valid_replicates}, the number of bootstrap replicates that were fitted and aligned successfully and that every entry above is therefore based on (replicates that failed are excluded and warned about), and, when a rotation is applied, \code{valid_target_rotations}, the number of those replicates that could also be aligned to the rotated point estimate and that the rotated entries (\code{rot_loadings}, \code{Phi}, \code{Structure}) are based on. For \code{se = "information"}: Wald standard errors from the expected (Fisher) information matrix for the unrotated loadings, the uniquenesses, and the communalities and, when a rotation is applied, the rotated loadings (and, for oblique rotations, \code{Phi} and the structure coefficients). Because \eqn{h^2_i = 1 - \psi_i} exactly, the communality and uniqueness standard errors are identical. For \code{se = "sandwich"}: robust Godambe sandwich standard errors with the same coverage as \code{"information"}, robust to non-normality and weight misspecification. Only returned if \code{se} is not \code{"none"}.}
 \item{CI}{A named list of confidence intervals of width \code{ci}. For \code{se = "np-boot"}: percentile intervals matching the components of \code{SE}. For \code{se = "information"} and \code{se = "sandwich"}: Wald intervals matching the components of \code{SE}. Only returned if \code{se} is not \code{"none"}.}
 \item{replicates}{A named list of bootstrap replicate arrays for the aligned unrotated and (where applicable) rotated loadings, structure coefficients, factor correlations (\code{Phi}), residuals, and fit indices. The replicate is the last dimension of the loading, residual, \code{Phi}, and structure cubes, and the first dimension of the \code{fit_indices} matrix (whose columns are named after the fit indices). Replicates that failed are left \code{NA}. Populated only for \code{se = "np-boot"}; \code{NULL} for the analytic SE methods.}
@@ -441,9 +458,11 @@ that looks like a standard error but is an artefact of the orientation. Everythi
 that does not depend on the orientation -- the rotated loadings, \code{Phi}, the structure
 coefficients, the uniquenesses and the communalities -- is unaffected and still
 reported. Use those, or \code{se = "np-boot"}, when the unrotated loadings themselves are
-the quantity of interest. A Heywood case (a uniqueness at its lower boundary) is
-separate: the Wald approximation fails there for every parameter, so no analytic
-standard error is reported at all.
+the quantity of interest. The detection covers the Pearson and polychoric paths; the
+two-stage \code{cor_method = "fiml"} sandwich carries no such diagnostic, so a weakly
+determined orientation is not flagged there. A Heywood case (a uniqueness at its lower
+boundary) is separate: the Wald approximation fails there for every parameter, so no
+analytic standard error is reported at all.
 \item \strong{"sandwich"} returns robust (Godambe sandwich) standard errors from raw data,
 combining the estimator weight with an asymptotic-distribution-free covariance of the
 correlations, so it stays valid under non-normality and weight misspecification
@@ -477,6 +496,18 @@ the bootstrap is reproducible and yields the same result regardless of the numbe
 workers. Under \code{cor_method = "fiml"} each resample also
 re-runs the EM moment estimation and is therefore slow, so a smaller \code{b_boot} may be
 advisable.
+
+The percentile intervals are centred on the point estimate for the loadings, the factor
+correlations, the structure coefficients and the residuals, but \strong{not} for the indices
+derived from the chi-square (\code{RMSEA}, \code{AIC}, \code{BIC} and \code{ECVI}). A resample is drawn from
+the sample, which already carries the model's misfit, and is then refitted and evaluated
+against itself, so the replicate chi-square is on average about \code{chi + df} rather than
+\code{chi} and the whole interval rides upward with it -- often far enough that the point
+estimate falls below its own lower bound. That is the shift, not a miscomputed interval:
+read those intervals as a spread rather than as a range for the point estimate.
+Correcting the location needs resampling from a population transformed to fit the model
+(Bollen & Stine, 1992), which is not what this bootstrap does. \code{CFI} and \code{TLI} are not
+affected, being ratios in which the baseline chi-square shifts along with the model one.
 }
 
 The analytic methods (\code{"information"} and \code{"sandwich"}) are not available with the
@@ -627,7 +658,9 @@ compared to the other setting combinations tested in simulation studies in
 Grieder & Steiner (2022). Note that all \code{type} presets keep the EFAtools default
 Kaiser normalization (\code{normalize = TRUE}), whereas \code{\link[psych:fa]{psych::fa()}} does not
 normalize before its promax target rotation; set \code{normalize = FALSE} to
-reproduce the \code{\link[psych:fa]{psych::fa()}} promax result exactly.
+reproduce the \code{\link[psych:fa]{psych::fa()}} promax result to within the varimax convergence
+tolerance (the residual difference is the convergence noise of the underlying
+varimax base at \code{precision = 1e-5}, not an algorithmic difference).
 
 The \code{varimax_type} argument can take two values, "svd", and "kaiser". "svd" uses
 singular value decomposition, by calling \code{\link[stats:varimax]{stats::varimax()}}. "kaiser"
@@ -640,7 +673,10 @@ For all other rotations except varimax and promax, the \code{type} argument
 only controls the \code{order_type} argument with the same values as stated
 above for the varimax and promax rotations. Additional arguments can also be
 specified and will be passed to the rotation procedure (e.g., maxit to change the
-maximum number of iterations).
+maximum number of iterations). As for promax, every preset keeps the EFAtools
+default Kaiser normalization (\code{normalize = TRUE}), whereas \code{\link[psych:fa]{psych::fa()}} and
+\pkg{GPArotation} do not normalize before these criterion rotations; set
+\code{normalize = FALSE} to reproduce them.
 
 The \code{type} tuning arguments have no effect on ULS and ML; \code{type} itself still
 governs the checks applied to the correlation matrix. For ULS, no additional
@@ -716,7 +752,9 @@ future::plan(future::sequential)
 }
 \seealso{
 \code{\link[=estimate_control]{estimate_control()}} and \code{\link[=rotate_control]{rotate_control()}} for the estimation and rotation
-tuning knobs.
+tuning knobs. \code{\link[=efa_retain]{efa_retain()}} for choosing \code{n_factors}, and \code{\link[=efa_scores]{efa_scores()}},
+\code{\link[=efa_reliability]{efa_reliability()}}, \code{\link[=efa_schmid_leiman]{efa_schmid_leiman()}}, and \code{\link[=efa_compare]{efa_compare()}} for working with the
+fitted solution.
 
 Other factor analysis:
 \code{\link[=efa_average]{efa_average()}},

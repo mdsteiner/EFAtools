@@ -8,7 +8,33 @@
 
   acov <- match.arg(acov)
 
-  # Factor columns of a data frame become their integer codes; numeric data passes
+  # data.matrix() maps a factor to its LEVEL INDEX, so the level order silently becomes the
+  # response order. That is correct for an ordered factor (and for numeric codes, which pass
+  # through untouched), but an unordered factor built over character labels is ordered
+  # alphabetically -- "always" < "never" < "often" < "rarely" -- which scrambles the responses
+  # and attenuates the correlations badly (a true rho of 0.69 estimates as 0.33) without
+  # producing anything a user could notice: the result is still a clean, unit-diagonal matrix.
+  # Character columns take the same alphabetical route. Ordering is load-bearing here, so
+  # refuse to guess it rather than accept the input on a silently arbitrary order.
+  if (is.data.frame(x)) {
+    bad <- vapply(x, function(col) is.character(col) ||
+                    (is.factor(col) && !is.ordered(col)), logical(1))
+    if (any(bad)) {
+      nms_bad <- names(x)[bad]
+      cli::cli_abort(
+        c("Polychoric correlations need an explicit response order, but {cli::qty(nms_bad)} column{?s} {.val {nms_bad}} {?is/are} unordered.",
+          "x" = "An unordered factor or character column would be ranked by its level order, which is alphabetical unless you set it.",
+          "i" = "Supply numeric response codes, or convert with {.fun ordered} using the correct level order."),
+        class = "efa_cor_unordered_factor", call = error_call)
+    }
+  } else if (is.character(x)) {
+    cli::cli_abort(
+      c("Polychoric correlations need numeric response codes, but {.arg x} is a character matrix.",
+        "i" = "Supply numeric response codes, or convert the columns with {.fun ordered} using the correct level order."),
+      class = "efa_cor_unordered_factor", call = error_call)
+  }
+
+  # Ordered-factor columns of a data frame become their level indices; numeric data passes
   # through. The recoding below maps each column onto its own 0-based categories.
   x <- data.matrix(x)
   if (is.null(colnames(x))) {

@@ -54,6 +54,8 @@ efa_scree <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
 
   # Perform argument checks
   .reject_flat_knobs(...names(), fn = "efa_scree")
+  .reject_unknown_fit_dots(...names(), fn = "efa_scree", unrotated = TRUE)
+  .reject_rotation_dots(list(...), fn = "efa_scree")
   .assert_cor_input(x)
 
   eigen_type <- .match_arg_ci(eigen_type, several.ok = TRUE)

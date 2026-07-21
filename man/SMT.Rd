@@ -22,11 +22,11 @@ correlation matrix is used.}
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}} if raw
 data is given as input. Default is "pairwise.complete.obs".}
 
-\item{cor_method}{character. Correlation computed from raw data: \code{"pearson"},
-\code{"spearman"}, or \code{"kendall"} (passed to \code{\link[stats:cor]{stats::cor()}}), or \code{"poly"} /
-\code{"tetra"} for polychoric / tetrachoric correlations of ordinal / binary data
-(a two-step estimator with no empty-cell continuity correction).
-Default is "pearson".}
+\item{cor_method}{character. One of \code{"pearson"}, \code{"spearman"}, or \code{"kendall"},
+passed to \code{\link[stats:cor]{stats::cor()}}. \code{"poly"} and \code{"tetra"} are not supported because
+\code{SMT} rests on a normal-theory chi-square test that is not valid for
+polychoric / tetrachoric correlations.
+Default is \code{"pearson"}.}
 }
 \value{
 An object of class \code{efa_retention}, identical to the value of
@@ -41,4 +41,3 @@ going forward. It remains available and unchanged so existing code keeps working
 \seealso{
 \code{\link[=efa_smt]{efa_smt()}}
 }
-\keyword{internal}

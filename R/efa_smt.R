@@ -14,6 +14,11 @@
 #' where the AIC is lowest.
 #'
 #' @inheritParams efa_kgc
+#' @param cor_method character. One of `"pearson"`, `"spearman"`, or `"kendall"`,
+#'   passed to [stats::cor()]. `"poly"` and `"tetra"` are not supported because
+#'   `SMT` rests on a normal-theory chi-square test that is not valid for
+#'   polychoric / tetrachoric correlations.
+#'  Default is `"pearson"`.
 #' @param N numeric. The number of observations. Needs only be specified if a
 #' correlation matrix is used.
 #' @param estimate_control an [estimate_control()] object with the estimation settings for the
@@ -98,6 +103,9 @@ efa_smt <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   checkmate::assert_count(N, na.ok = TRUE)
   use <- match.arg(use)
   cor_method <- match.arg(cor_method)
+  .reject_poly_reference(
+    cor_method, "efa_smt",
+    why = "{.fn {fn}} rests on a normal-theory chi-square test that is not valid for such correlations.")
   .assert_estimate_control(estimate_control)
 
   # Detect or compute the correlation matrix, check it, and smooth it if needed

@@ -72,12 +72,13 @@
 #' @export
 #'
 #' @examples
-#'
+#' \donttest{
 #' # with correlation matrix
 #' efa_nest(test_models$baseline$cormat, N = 500)
 #'
 #' # with raw data
 #' efa_nest(GRiPS_raw)
+#' }
 efa_nest <- function(x, N = NA,
                  alpha = .05,
                  use = c("pairwise.complete.obs", "all.obs",
@@ -91,6 +92,8 @@ efa_nest <- function(x, N = NA,
 
   # Perform argument checks
   .reject_flat_knobs(...names(), fn = "efa_nest")
+  .reject_unknown_fit_dots(...names(), fn = "efa_nest", unrotated = TRUE)
+  .reject_rotation_dots(list(...), fn = "efa_nest")
   .assert_cor_input(x)
 
   checkmate::assert_count(N, na.ok = TRUE)
@@ -98,7 +101,7 @@ efa_nest <- function(x, N = NA,
   use <- match.arg(use)
   cor_method <- match.arg(cor_method)
   .assert_estimate_control(estimate_control)
-  .reject_poly_reference(cor_method, "NEST")
+  .reject_poly_reference(cor_method, "efa_nest")
   checkmate::assert_count(n_datasets, na.ok = FALSE,
                           positive = TRUE)
 

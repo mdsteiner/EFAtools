@@ -13,6 +13,9 @@ but they remain exported with unchanged arguments and emit no deprecation
 warning. Existing code therefore needs no changes, and neither do the reverse
 dependencies.
 
+The submission also includes various bug-fixes, including the 
+additional issues raised in the CRAN tests.
+
 ## Test environments
 
 * local Windows 11 installation, R 4.6.0
@@ -24,18 +27,3 @@ dependencies.
 ## R CMD check results
 
 0 errors | 0 warnings | 0 notes
-
-## Reverse dependencies
-
-We checked the 3 reverse dependencies on CRAN (EFA.dimensions, FAfA, and
-semanticfa) by running R CMD check on each of them against this version of
-EFAtools. We saw no new problems for FAfA and semanticfa.
-
-EFA.dimensions fails one `\donttest{}` example (`DIMTESTS()` with
-`tests = "CD"`), but this failure is not introduced by this release. It is the
-pre-existing issue already listed for EFA.dimensions under "Additional issues:
-donttest" against the current CRAN version of EFAtools: EFA.dimensions calls
-`CD(cor_method = c("pearson", "spearman", "kendall"))`, and `match.arg()` has
-rejected that vector ever since EFAtools 0.8.0 added "poly" and "tetra" to the
-choices for `cor_method`. The error is identical under the published version and
-under this one.

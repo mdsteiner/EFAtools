@@ -67,7 +67,6 @@ Imports:
     cli,
     Rcpp,
     future.apply,
-    future,
     checkmate,
     progressr,
     rlang,
@@ -77,6 +76,7 @@ LinkingTo:
     Rcpp, RcppArmadillo, roptim
 Suggests:
     testthat (>= 3.0.0),
+    future,
     GPArotation (>= 2022.4-1),
     lavaan,
     lavaan.mi,
@@ -88,6 +88,7 @@ Suggests:
     polycor,
     mnormt,
     fungible,
+    semTools,
     withr
 VignetteBuilder: knitr
 Config/testthat/edition: 3

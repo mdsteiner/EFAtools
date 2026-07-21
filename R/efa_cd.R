@@ -89,7 +89,7 @@ efa_cd <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha 
   }
 
   cor_method <- match.arg(cor_method)
-  .reject_poly_reference(cor_method, "CD")
+  .reject_poly_reference(cor_method, "efa_cd")
 
   checkmate::assert_count(n_factors_max, na.ok = TRUE)
   checkmate::assert_count(N_pop)

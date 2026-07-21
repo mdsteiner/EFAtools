@@ -207,7 +207,11 @@ component fits and avoids the out-of-range values that separately pooling the
 model and baseline noncentralities (as \code{lavaan.mi}/\code{semTools} do) can produce;
 those separately pooled noncentralities remain available in \code{mi_diagnostics}.
 AIC and BIC, if returned, are chi-square-derived descriptive quantities and are
-not likelihood-based MI information criteria. On the sandwich/MI2S route the
+not likelihood-based MI information criteria. They are reported only where the
+component fits report them: whenever a component withholds them -- any
+\code{cor_method = "fiml"} fit, and any fit whose chi-square is a scaled statistic,
+such as \code{se = "sandwich"} -- the pooled AIC, BIC, and ECVI are \code{NA} too, matching
+what \code{\link[=efa_fit]{efa_fit()}} returns for a single such fit. On the sandwich/MI2S route the
 chi-square is the single fit's scaled statistic rather than a D2 pool.
 }
 

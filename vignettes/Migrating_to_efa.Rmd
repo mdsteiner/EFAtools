@@ -16,10 +16,10 @@ knitr::opts_chunk$set(
 
 `EFAtools` exposes its functionality through a set of lowercase `efa_*` functions:
 `efa_screen()`, `efa_retain()`, `efa_fit()`, and so on. Earlier releases used uppercase
-names instead (`EFA()`, `N_FACTORS()`, `OMEGA()`, ...). The uppercase names have **not**
-still work, but the `efa_*` functions are now the recommended interface. This vignette explains the change, gives the full old-to-new
-mapping, and walks through the one migration that involves more than a rename: `EFA()` to
-`efa_fit()`.
+names instead (`EFA()`, `N_FACTORS()`, `OMEGA()`, ...). The uppercase names have **not** been
+removed — they still work — but the `efa_*` functions are now the recommended interface. This
+vignette explains the change, gives the full old-to-new mapping, and walks through the one
+migration that involves more than a rename: `EFA()` to `efa_fit()`.
 
 ```{r}
 library(EFAtools)

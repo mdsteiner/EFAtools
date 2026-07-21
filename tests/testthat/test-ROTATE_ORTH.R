@@ -45,6 +45,21 @@ test_that("output class and dimensions are correct", {
   expect_null(equa_1$vars_accounted_rot)
 })
 
+test_that("every orthogonal rotation labels its factor columns", {
+  # The oblique counterpart of this test lives in test-ROTATE_OBLQ.R; together they cover
+  # every rotation efa_fit() offers. Downstream consumers match factors by column name, so
+  # the labels must be present for the criterion rotations too, not just for varimax.
+  for (rot in .orth_rotations) {
+    set.seed(42)
+    fit <- suppressWarnings(
+      efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
+              estimator = "PAF", rotation = rot)
+    )
+    expect_equal(sort(colnames(fit$rot_loadings)), paste0("F", 1:3),
+                 label = paste0("sorted rot_loadings colnames for ", rot))
+  }
+})
+
 test_that("settings are returned correctly", {
   expect_named(equa$settings, c("normalize", "precision", "order_type", "randomStarts", "rotation_diagnostics"))
   expect_named(equa_1$settings,c("normalize", "precision", "order_type", "randomStarts"))
@@ -153,7 +168,7 @@ test_that("orthogonal loadings and rotmat are reflected/reordered consistently",
   raw_rotmat   <- bentT$rotmat %*% diag(neg)
 
   res <- .reflect_and_order(raw_loadings, rotmat = raw_rotmat, L_unrot = L,
-                            name_factors = FALSE, order_type = "eigen")
+                            order_type = "eigen")
 
   # the negative factor is reflected back to a non-negative column sum
   expect_true(all(colSums(unclass(res$rot_loadings)) >= 0))

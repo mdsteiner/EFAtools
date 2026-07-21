@@ -107,7 +107,13 @@ which one it used.
 
 * **Consensus** (the default for orthogonal and unrotated solutions) builds a single symmetric
   target across *all* groups by generalized Procrustes analysis and rotates every group to it.
-  No group is privileged -- this is what the fit above used.
+  That target is only identified up to a rotation of its factors, so `efa_group()` fixes it in a
+  canonical gauge -- the simple structure of the rotation you asked for, evaluated on the target
+  itself, so the shared loadings are the same kind of frame as the per-group solutions; or the
+  target's principal-axes orientation where no criterion identifies one, as for an unrotated
+  solution -- and applies the same transform to every group. The shared orientation, and hence
+  the congruences and flags below, therefore does not depend on the order the groups are listed
+  in. This is what the fit above used.
 * **Reference** keeps one group's loadings fixed and rotates every other group onto them. This
   path is used whenever you name a `reference_group`, and it is used *automatically* for
   oblique rotations, because the symmetric consensus target is not defined for oblique

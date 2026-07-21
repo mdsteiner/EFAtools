@@ -259,25 +259,40 @@ test_that("a bifactor with an under-loaded item informs about too few loadings",
                  class = "efa_reliability_few_loadings")
 })
 
-test_that("efa_reliability handles an EFA whose rotation leaves the columns unlabelled", {
+test_that("efa_reliability is invariant across the oblique rotations", {
   skip_if_not_installed("GPArotation")
 
-  # An oblimin fit carries no factor-column labels; it must still yield the same
-  # per-factor structure as a labelled (promax) fit of the same extraction.
-  efa_obl <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
-                     estimator = "PAF", rotation = "oblimin")
-  res <- efa_reliability(efa_obl)
+  # The factor columns are reordered by the number in their labels. A rotation whose
+  # labels are absent, or carry no number, must therefore fall back to the columns'
+  # own order: an unguarded reorder subscripts the loadings down to zero columns, and
+  # the whole-scale omega total then silently becomes a function of the correlation
+  # matrix alone while every per-factor row disappears. The whole-scale omega total is
+  # rotation-invariant, so all oblique rotations must reach the same one.
   ref <- efa_reliability(efa_mod)
-
-  expect_setequal(res$factor, c("g", "F1", "F2", "F3"))
-  for (cf in c("omega_subscale", "H")) {
-    expect_setequal(res$factor[res$coefficient == cf], c("F1", "F2", "F3"))
-  }
-  expect_setequal(res$coefficient, unique(ref$coefficient))
-
-  # The whole-scale omega total does not depend on which oblique rotation was used.
   g_tot <- function(x) x$value[x$coefficient == "omega_total" & x$factor == "g"]
-  expect_equal(g_tot(res), g_tot(ref), tolerance = 1e-8)
+
+  res_list <- lapply(.oblq_rotations, function(rot) {
+    fit <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
+                   estimator = "PAF", rotation = rot)
+    # bifactorQ leaves a group factor without salient items on this fixture, which is
+    # reported by the classed efa_omega_empty_factor warning and is not under test here.
+    suppressWarnings(efa_reliability(fit))
+  })
+  names(res_list) <- .oblq_rotations
+
+  expect_true(all(vapply(res_list, nrow, integer(1)) > 2))
+  expect_equal(vapply(res_list, g_tot, numeric(1)),
+               stats::setNames(rep(g_tot(ref), length(res_list)), names(res_list)),
+               tolerance = 1e-8)
+
+  # An oblimin fit additionally keeps the full per-factor structure of a promax fit
+  # of the same extraction.
+  res_obl <- res_list[["oblimin"]]
+  expect_setequal(res_obl$factor, c("g", "F1", "F2", "F3"))
+  for (cf in c("omega_subscale", "H")) {
+    expect_setequal(res_obl$factor[res_obl$coefficient == cf], c("F1", "F2", "F3"))
+  }
+  expect_setequal(res_obl$coefficient, unique(ref$coefficient))
 })
 
 test_that("print output is stable", {

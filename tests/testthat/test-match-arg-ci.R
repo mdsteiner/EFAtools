@@ -112,6 +112,75 @@ test_that("the control constructors match the type preset case-insensitively", {
   expect_identical(rotate_control(type = "efatools")$type, "EFAtools")
 })
 
+# The simulation-side choice arguments. `return_pop = TRUE` stops after the population is
+# built, which is all these need: the value is canonicalized before any data are drawn.
+sim_Lambda <- population_models$loadings$baseline
+sim_Phi <- population_models$phis_3$moderate
+
+test_that("efa_simulate matches marginals case-insensitively", {
+  sim <- efa_simulate(Lambda = sim_Lambda, Phi = sim_Phi,
+                      marginals = "vm", return_pop = TRUE)
+  expect_identical(sim$settings$marginals, "VM")
+  expect_error(efa_simulate(Lambda = sim_Lambda, marginals = "bogus", return_pop = TRUE),
+               class = "efa_bad_choice")
+})
+
+test_that("efa_simulate matches the model-error method case-insensitively", {
+  sim <- efa_simulate(Lambda = sim_Lambda, Phi = sim_Phi,
+                      model_error = "tkl", target_rmsea = 0.05, return_pop = TRUE)
+  expect_identical(sim$model_error$method, "TKL")
+  expect_error(efa_simulate(Lambda = sim_Lambda, model_error = "bogus",
+                            target_rmsea = 0.05, return_pop = TRUE),
+               class = "efa_bad_choice")
+})
+
+test_that("efa_simulate matches the missing-data mechanism case-insensitively", {
+  sim <- efa_simulate(Lambda = sim_Lambda, Phi = sim_Phi,
+                      missing = "mcar", missing_prop = 0.1, return_pop = TRUE)
+  expect_identical(sim$settings$missing, "MCAR")
+  expect_error(efa_simulate(Lambda = sim_Lambda, missing = "bogus",
+                            missing_prop = 0.1, return_pop = TRUE),
+               class = "efa_bad_choice")
+})
+
+test_that("efa_simulate matches the threshold-matching rule case-insensitively", {
+  sim <- efa_simulate(Lambda = sim_Lambda, Phi = sim_Phi, categories = 4,
+                      match = "Polychoric", return_pop = TRUE)
+  expect_identical(sim$settings$match, "polychoric")
+  expect_error(efa_simulate(Lambda = sim_Lambda, categories = 4, match = "bogus",
+                            return_pop = TRUE),
+               class = "efa_bad_choice")
+})
+
+test_that("efa_power matches mode and type case-insensitively", {
+  # the analytic path resolves both without any simulation
+  pw <- efa_power(mode = "RMSEA", type = "NotClose", p = 18, k = 3, N = 200)
+  expect_identical(pw$settings$mode, "rmsea")
+  expect_identical(pw$settings$type, "notclose")
+  expect_error(efa_power(mode = "bogus"), class = "efa_bad_choice")
+  expect_error(efa_power(type = "bogus", p = 18, k = 3, N = 200),
+               class = "efa_bad_choice")
+})
+
+test_that("efa_power matches the model-error method case-insensitively", {
+  pw <- efa_power("simulation", Lambda = sim_Lambda, Phi = sim_Phi, N = 150,
+                  n_datasets = 3, criteria = "EKC", model_error = "tkl",
+                  target_rmsea = 0.05, seed = 42)
+  expect_identical(pw$settings$model_error, "TKL")
+  expect_error(efa_power("simulation", Lambda = sim_Lambda, N = 150, n_datasets = 3,
+                         criteria = "EKC", model_error = "bogus", target_rmsea = 0.05),
+               class = "efa_bad_choice")
+})
+
+test_that("efa_mi matches the fit-pooling method case-insensitively", {
+  cmats <- list(test_models$baseline$cormat, test_models$baseline$cormat)
+  pooled <- efa_mi(cmats, n_factors = 3, N = 500, estimator = "PAF",
+                   rotation = "promax", fit_pool_method = "d2")
+  expect_identical(pooled$settings$fit_pool_method, "D2")
+  expect_error(efa_mi(cmats, n_factors = 3, N = 500, fit_pool_method = "bogus"),
+               class = "efa_bad_choice")
+})
+
 test_that("efa_scores matches the factor-score method case-insensitively", {
   fit <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500)
   expect_message(

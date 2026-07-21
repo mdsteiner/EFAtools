@@ -21,9 +21,7 @@ intercorrelations are taken from this object. If class \code{lavaan::lavaan()},
 it must be a second-order CFA solution. In this case first-order and second-order
 factor loadings are taken from this object and the \code{g_name} argument has
 to be specified.
-x can also be a pattern matrix from an oblique factor solution (see \code{Phi})
-or a matrix of first-order factor loadings from a higher-order confirmatory factor
-analysis (see \code{L2}).}
+x can also be a pattern matrix from an oblique factor solution (see \code{Phi}).}
 
 \item{Phi}{matrix. A matrix of factor intercorrelations from an oblique factor
 solution. Only needs to be specified if a pattern matrix is entered directly
@@ -40,8 +38,11 @@ used to control the procedure of the second-order factor analysis. In
 \item{g_name}{character. The name of the general factor. This needs only be
 specified if \code{x} is a \code{lavaan} second-order solution. Default is "g".}
 
-\item{...}{Arguments to be passed to \code{\link[=efa_fit]{efa_fit()}}. The estimation tuning knobs are not passed
-here; they live in \code{estimate_control}.}
+\item{...}{Further arguments passed on to the second-order \code{\link[=efa_fit]{efa_fit()}}, including the
+estimation tuning knobs (\code{init_comm}, \code{criterion}, \code{criterion_type}, \code{max_iter},
+\code{abs_eigen}, \code{start_method}), which are repacked, together with \code{type}, into an
+\code{\link[=estimate_control]{estimate_control()}} object so that they tune that fit exactly as they always did.
+The estimator is selected with \code{method}.}
 }
 \value{
 A list of class \code{c("efa_schmid_leiman", "SL")}, identical to the value
@@ -57,4 +58,3 @@ keeps working.
 \seealso{
 \code{\link[=efa_schmid_leiman]{efa_schmid_leiman()}}
 }
-\keyword{internal}

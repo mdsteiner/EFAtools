@@ -521,24 +521,31 @@ test_that("EFA records rotation diagnostics for multistart rotations", {
   )
   rd <- efa_geo$settings$rotation_diagnostics
   expect_type(rd, "list")
-  expect_named(rd, c("n_starts", "n_converged", "n_distinct_minima",
-                     "criterion_spread", "criterion_best"))
-  expect_equal(rd$n_starts, 100)
+  expect_named(rd, c("n_starts_total", "n_optimized", "n_converged",
+                     "n_distinct_minima", "criterion_spread", "criterion_best"))
+  # 100 random starts plus the rational (identity) start; only a few of them are ever
+  # optimized under the screen-and-triage strategy.
+  expect_equal(rd$n_starts_total, 101L)
+  expect_lte(rd$n_optimized, rd$n_starts_total)
   # The distinct-optima count is taken over the converged starts only, so it is at least
-  # one (the rational start converges here) and never exceeds the converged count.
+  # one (the rational start converges here) and never exceeds the converged count, which
+  # in turn can never exceed the number of optimized starts.
   expect_gte(rd$n_converged, 1L)
+  expect_lte(rd$n_converged, rd$n_optimized)
   expect_gte(rd$n_distinct_minima, 1L)
   expect_lte(rd$n_distinct_minima, rd$n_converged)
   expect_true(is.finite(rd$criterion_best))
   expect_gte(rd$criterion_spread, 0)
 
-  # simplimax also records diagnostics; the requested random starts are stored verbatim.
+  # simplimax also records diagnostics. It runs full multistart, so every requested random
+  # start is optimized and the two counts coincide.
   efa_simp <- suppressWarnings(
     EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
         rotation = "simplimax", randomStarts = 20)
   )
   rd_simp <- efa_simp$settings$rotation_diagnostics
-  expect_equal(rd_simp$n_starts, 20)
+  expect_equal(rd_simp$n_starts_total, 21L)
+  expect_equal(rd_simp$n_optimized, 21L)
   expect_true(is.finite(rd_simp$criterion_best))
 
   # Rotations that do not use random starts carry no diagnostics.
@@ -549,6 +556,12 @@ test_that("EFA records rotation diagnostics for multistart rotations", {
   local_reproducible_output()
   geo_summary <- utils::capture.output(print(summary(efa_geo)))
   expect_true(any(grepl("Rotation local optima", geo_summary, fixed = TRUE)))
+  # The line reports the starts that were actually optimized alongside the total, so it
+  # cannot overstate the evidence by counting screened-and-discarded starts as optima.
+  expect_true(any(grepl(
+    paste0(rd$n_distinct_minima, " distinct from ", rd$n_optimized,
+           " of ", rd$n_starts_total, " starts"),
+    geo_summary, fixed = TRUE)))
   promax_summary <- utils::capture.output(print(summary(efa_psych)))
   expect_false(any(grepl("Rotation local optima", promax_summary, fixed = TRUE)))
 })

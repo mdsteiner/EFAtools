@@ -96,6 +96,8 @@ efa_kgc <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
 
   # Perform argument checks
   .reject_flat_knobs(...names(), fn = "efa_kgc")
+  .reject_unknown_fit_dots(...names(), fn = "efa_kgc", unrotated = TRUE)
+  .reject_rotation_dots(list(...), fn = "efa_kgc")
   .assert_cor_input(x)
 
   eigen_type <- .match_arg_ci(eigen_type, several.ok = TRUE)

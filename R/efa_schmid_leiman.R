@@ -16,9 +16,7 @@
 #' it must be a second-order CFA solution. In this case first-order and second-order
 #'  factor loadings are taken from this object and the `g_name` argument has
 #'  to be specified.
-#' x can also be a pattern matrix from an oblique factor solution (see `Phi`)
-#' or a matrix of first-order factor loadings from a higher-order confirmatory factor
-#' analysis (see `L2`).
+#' x can also be a pattern matrix from an oblique factor solution (see `Phi`).
 #' @param Phi matrix. A matrix of factor intercorrelations from an oblique factor
 #' solution. Only needs to be specified if a pattern matrix is entered directly
 #' into `x`.

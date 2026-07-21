@@ -311,7 +311,7 @@ test_that("oblique Phi and Structure SE pooling: shapes, diag(Phi SE) = 0, symme
   # Phi SE: k x k, fixed unit diagonal -> zero SE, symmetric. (1e-3 headroom for
   # the iterative-oblique-Procrustes B injection, as in the previous group.)
   expect_identical(dim(pooled$SE$Phi), c(k, k))
-  expect_equal(diag(pooled$SE$Phi), rep(0, k), tolerance = 1e-12)
+  expect_equal(diag(pooled$SE$Phi), rep(0, k), tolerance = 1e-12, ignore_attr = TRUE)
   expect_equal(pooled$SE$Phi, t(pooled$SE$Phi), tolerance = 1e-12)
   expect_equal(unname(pooled$SE$Phi), unname(oracle$SE$Phi), tolerance = 1e-3)
   expect_identical(pooled$MI$Phi$method, "signed_permutation_approx")

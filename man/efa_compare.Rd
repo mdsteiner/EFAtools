@@ -116,4 +116,8 @@ EFA_psych_6 <- efa_fit(test_models$case_11b$cormat, n_factors = 6,
 efa_compare(EFA_SPSS_6$unrot_loadings, EFA_psych_6$unrot_loadings,
             x_labels = c("SPSS", "psych"))
 }
+\seealso{
+\code{\link[=efa_fit]{efa_fit()}} for the solutions being compared, and \code{\link[=efa_procrustes]{efa_procrustes()}} to rotate
+one solution onto another before comparing.
+}
 \concept{factor comparison}

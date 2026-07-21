@@ -254,16 +254,33 @@ test_that(".parallel_chunks splits exactly into non-negative integer chunks", {
 })
 
 
-test_that("the chunk vector does not depend on the number of workers", {
+test_that("efa_parallel does not size its chunks from the worker count", {
   # The simulated datasets are split into chunks, one future per chunk, and
   # future.seed = TRUE assigns one random-number stream per chunk. If the chunk count
   # tracked the worker count, the streams -- and hence the reference eigenvalues -- would
-  # differ between parallel plans for the same set.seed(). This asserts the chunk vector
-  # itself, which is what determines the streams, so it holds without starting workers.
-  chunks <- .parallel_chunks(60, min(60, 20L))
-  expect_length(chunks, 20)
-  expect_equal(sum(chunks), 60)
+  # differ between parallel plans for the same set.seed().
+  #
+  # Assert that through efa_parallel() itself rather than by re-computing the chunk
+  # formula here: a test that only restates the arithmetic would still pass if the call
+  # site were reverted to nbrOfWorkers(). Faking the reported worker count exercises the
+  # call site while keeping the run sequential, so no workers are started and the check
+  # runs on CRAN -- unlike the end-to-end test below.
+  skip_if_not_installed("testthat", "3.2.0")
 
+  run_reporting <- function(n_workers) {
+    testthat::local_mocked_bindings(nbrOfWorkers = function(...) n_workers,
+                                    .package = "future")
+    set.seed(2024)
+    suppressWarnings(suppressMessages(
+      efa_parallel(N = 250, n_vars = 6, n_datasets = 24, eigen_type = "PCA")))
+  }
+
+  expect_equal(run_reporting(1L)$results[[1]]$references,
+               run_reporting(4L)$results[[1]]$references)
+})
+
+
+test_that(".parallel_chunks is exact at the sizes efa_parallel asks for", {
   # fewer datasets than the fixed chunk count: one chunk each, never an empty chunk
   expect_equal(.parallel_chunks(5, max(1L, min(5, 20L))), rep(1, 5))
 

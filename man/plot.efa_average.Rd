@@ -19,7 +19,7 @@ maximum, and average (mean or median) loading across the averaged solutions.
 Plot method showing a summarized output of the \code{\link[=efa_average]{efa_average()}} function
 }
 \examples{
-\dontrun{
+\donttest{
 EFA_aver <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500)
 plot(EFA_aver)
 }

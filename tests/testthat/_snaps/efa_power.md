@@ -37,7 +37,7 @@
       Test of not-close fit: H0 RMSEA ≥ .050 vs. H1 RMSEA = .010.
       alpha = .050 · df = 100 · groups = 2
       
-      Power = .429 at N = 200.
+      Power = .429 at N = 200 (total; 100 per group).
       Critical value χ²(100) = 97.795 · noncentrality H0 = 24.875, H1 = .995.
 
 # simulation-mode printed output is stable
@@ -59,8 +59,9 @@
       * MAP_TR4: 1.000 (n = 10)
       
       Structure recovery (Tucker congruence ≥ .950)
-      * min congruence: 1.000 (n = 10)
-      * mean congruence: 1.000 (n = 10)
+      * recovery rate (min congruence): 1.000 (n = 10)
+      * recovery rate (mean congruence): 1.000 (n = 10)
+      * median min congruence: .981
       
       Convergence
       * fits completed: 1.000 (10/10)

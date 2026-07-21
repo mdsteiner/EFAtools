@@ -492,8 +492,10 @@ GpfSummary run_gpf_multistart(const Manifold& manifold,
     for (int i = 0; i < keep; ++i) {
       const GpfCandidate& cand = candidates[static_cast<std::size_t>(i)];
 
+      // The triage stage is capped by `maxit` as well as by its own short budget, so the
+      // documented per-start iteration cap holds for every optimization the solver runs.
       GpfFit triage_fit = run_single_gpf_fit(
-        manifold, cand.Tstart, eps, triage_maxit, max_line_search, step0
+        manifold, cand.Tstart, eps, std::min(triage_maxit, maxit), max_line_search, step0
       );
       ++n_triaged;
 

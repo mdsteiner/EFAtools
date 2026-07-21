@@ -42,8 +42,10 @@
 #' `eps1` leave nothing to detect and are an error.
 #'
 #' Power increases monotonically with `N`, so the required sample size (the
-#' smallest `N` reaching `power`) is found by bisection. It is a per-group sample
-#' size: with `group > 1` the noncentrality carries the `1 / group` factor above.
+#' smallest `N` reaching `power`) is found by bisection. `N` is the **total**
+#' sample size across groups: with `group > 1` the noncentrality above carries the
+#' `1 / group` factor, so a fixed total spread over more groups buys less power.
+#' The corresponding per-group sample size `N / group` is returned as `N_per_group`.
 #'
 #' # Simulation mode
 #'
@@ -79,15 +81,19 @@
 #'   RMSEA power) or `"simulation"` (Monte-Carlo hit-rate and structure recovery). The
 #'   remaining arguments split by mode -- `type`/`eps0`/`eps1`/`df`/`alpha`/`power`/`group`
 #'   are RMSEA-only, and `Lambda`/`Phi`/`Psi`/`R`/`n_datasets`/`criteria`/`estimator`/`rotation`/`recovery_threshold`/`model_error`/`target_rmsea`/`target_cfi`/`seed`
-#'   are simulation-only.
+#'   are simulation-only. The value is matched case-insensitively.
 #' @param type character. The RMSEA test: `"close"` (test of close fit) or
-#'   `"notclose"` (test of not-close fit). See *Details*.
+#'   `"notclose"` (test of not-close fit). The value is matched case-insensitively.
+#'   See *Details*.
 #' @param eps0 numeric. The null-hypothesis RMSEA. Default is `0.05`.
 #' @param eps1 numeric. The alternative-hypothesis RMSEA (the true RMSEA power is
 #'   evaluated at). Default is `0.08` for `type = "close"` and `0.01` for
 #'   `type = "notclose"`.
-#' @param N numeric. The (per-group) sample size. Give `N` to compute power; leave
-#'   it `NULL` to solve for the required `N` at a target `power`.
+#' @param N numeric. In `"rmsea"` mode, the total sample size across groups (the
+#'   plain sample size when `group` is `1`): give `N` to compute power, or leave it
+#'   `NULL` to solve for the required `N` at a target `power`. In `"simulation"`
+#'   mode `N` is required and is the size of each drawn sample, with no sample size
+#'   solved for and no `group` division.
 #' @param p numeric. The number of observed variables. Used with `k` to derive
 #'   `df` when `df` is not given directly.
 #' @param k numeric. The number of factors. In `"rmsea"` mode, used with `p` to
@@ -102,7 +108,8 @@
 #'   `N` `NULL`, defaulting to `0.80`) to solve for the required `N`; leave it
 #'   `NULL` while giving `N` to compute power. Exactly one of `N` and `power` is
 #'   solved for.
-#' @param group numeric. The number of groups. Default is `1`. See *Details*.
+#' @param group numeric. The number of groups. Default is `1`. `N` is the total
+#'   across all `group` groups, not the size of each one. See *Details*.
 #' @param Lambda matrix. Simulation mode. A `p` by `k_true` population loading matrix.
 #'   Supply this (optionally with `Phi`/`Psi`) to build a factor-model population;
 #'   structure recovery is available only with this form. Passed to [efa_simulate()].
@@ -158,8 +165,10 @@
 #' @returns An object of class `efa_power`. For `mode = "rmsea"`, a list containing:
 #' \item{power}{The power of the test at `N` (the achieved power, which for a
 #'   solved sample size is at least the target).}
-#' \item{N}{The (per-group) sample size: the supplied `N`, or the solved required
-#'   sample size.}
+#' \item{N}{The total sample size across groups: the supplied `N`, or the solved
+#'   required sample size.}
+#' \item{N_per_group}{The per-group sample size `N / group`, equal to `N` when
+#'   `group` is `1`.}
 #' \item{crit}{The critical chi-square value the fit statistic is compared against.}
 #' \item{ncp}{The noncentrality parameters under the null (`H0`, from `eps0`) and
 #'   the alternative (`H1`, from `eps1`).}
@@ -216,7 +225,7 @@
 #' # Deriving df from the model dimensions instead of giving it directly
 #' efa_power(p = 20, k = 3, N = 200)
 #'
-#' # Required (per-group) sample size for 80% power
+#' # Required total sample size for 80% power
 #' efa_power(df = 100, power = 0.80)
 #'
 #' # Test of not-close fit
@@ -240,7 +249,7 @@ efa_power <- function(mode = c("rmsea", "simulation"),
                       model_error = c("TKL", "CB", "WB", "none"),
                       target_rmsea = NULL, target_cfi = NULL, seed = NULL) {
 
-  mode <- match.arg(mode)
+  mode <- .match_arg_ci(mode)
 
   # Simulation mode is a self-contained Monte-Carlo path with its own inputs (the
   # population, the retention criteria, the recovery fit); the analytic RMSEA
@@ -254,7 +263,7 @@ efa_power <- function(mode = c("rmsea", "simulation"),
       target_cfi = target_cfi, seed = seed))
   }
 
-  type <- match.arg(type)
+  type <- .match_arg_ci(type)
 
   # RMSEA defaults: a common null of .05, tested against a worse (.08) alternative
   # for close fit or a better (.01) alternative for not-close fit.
@@ -347,6 +356,7 @@ efa_power <- function(mode = c("rmsea", "simulation"),
     list(
       power = res$power,
       N = N,
+      N_per_group = N / group,
       crit = res$crit,
       ncp = c(H0 = res$ncp0, H1 = res$ncp1),
       solve_for = solve_for,
@@ -424,7 +434,7 @@ efa_power <- function(mode = c("rmsea", "simulation"),
                                   criteria, estimator, rotation, recovery_threshold,
                                   model_error, target_rmsea, target_cfi, seed) {
 
-  model_error <- match.arg(model_error, c("TKL", "CB", "WB", "none"))
+  model_error <- .match_arg_ci(model_error, c("TKL", "CB", "WB", "none"))
   estimator <- .match_arg_ci(estimator, c("PAF", "ML", "ULS"))
   # Only criteria that make a numeric suggestion can score a hit-rate; the visual
   # scree plot is excluded.
@@ -736,11 +746,24 @@ format.efa_power <- function(x, digits = 3, ...) {
     }
     cli::cli_text("")
 
+    # With more than one group `N` is the total across them, which is the quantity a
+    # multiple-group study is most likely to misread as per-group; name it and give the
+    # per-group figure outright.
+    # A sample size, not a coefficient: format it as a count rather than through
+    # .efa_num(), whose fixed `digits` would render 100 as "100.000".
+    # An object serialized before `N_per_group` existed carries `group` but not the field;
+    # its `N` was per-group back then, so no note can be derived from it -- omit the note
+    # rather than erroring in round(NULL) or dividing a per-group N by `group` again.
+    n_note <- if (s$group > 1 && !is.null(x$N_per_group)) {
+      paste0(" (total; ", format(round(x$N_per_group, 1)), " per group)")
+    } else {
+      ""
+    }
     if (x$solve_for == "power") {
-      cli::cli_text("{.strong Power = {pw}} at N = {x$N}.")
+      cli::cli_text("{.strong Power = {pw}} at N = {x$N}{n_note}.")
     } else {
       tgt <- .efa_num(s$power, digits = digits, pad = FALSE)
-      cli::cli_text("{.strong Required N = {x$N}} for a power of {tgt} (achieved {pw}).")
+      cli::cli_text("{.strong Required N = {x$N}}{n_note} for a power of {tgt} (achieved {pw}).")
     }
     cli::cli_text(
       "Critical value \u03c7\u00b2({s$df}) = {crit} \u00b7 noncentrality H0 = {n0}, H1 = {n1}.")
@@ -799,10 +822,16 @@ format.efa_power <- function(x, digits = 3, ...) {
       thr <- .efa_num(r$threshold, digits = digits, pad = FALSE)
       min_rate <- .efa_num(r$min_rate, digits = digits, pad = FALSE)
       mean_rate <- .efa_num(r$mean_rate, digits = digits, pad = FALSE)
+      # min_rate/mean_rate are the proportions of replicates clearing the threshold,
+      # not congruences. The median raw congruence is added alongside them so a rate
+      # of .000 still says how far off the recovered structure was.
+      med_min <- .efa_num(stats::median(x$replicates$rec_min, na.rm = TRUE),
+                          digits = digits, pad = FALSE)
       cli::cli_text("{.strong Structure recovery} (Tucker congruence \u2265 {thr})")
       cli::cli_ul(c(
-        paste0("min congruence: ", min_rate, " (n = ", r$n_valid, ")"),
-        paste0("mean congruence: ", mean_rate, " (n = ", r$n_valid, ")")))
+        paste0("recovery rate (min congruence): ", min_rate, " (n = ", r$n_valid, ")"),
+        paste0("recovery rate (mean congruence): ", mean_rate, " (n = ", r$n_valid, ")"),
+        paste0("median min congruence: ", med_min)))
     } else {
       cli::cli_text(
         "{.strong Structure recovery}: not available (needs a factor-model population).")

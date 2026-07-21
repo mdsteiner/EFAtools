@@ -37,4 +37,3 @@ going forward. It remains available and unchanged so existing code keeps working
 \seealso{
 \code{\link[=efa_kmo]{efa_kmo()}}
 }
-\keyword{internal}

@@ -38,7 +38,7 @@ console theme, so they are plain when colours are disabled (for example when
 captured into a file or stripped with \code{\link[cli:ansi_strip]{cli::ansi_strip()}}).
 }
 \examples{
-\dontrun{
+\donttest{
 EFA_aver <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500)
 EFA_aver
 

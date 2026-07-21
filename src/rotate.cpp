@@ -207,8 +207,10 @@ struct BifactorCriterion : public RotationCriterion {
 // entries are smallest changes -- so the criterion is only piecewise smooth (its gradient jumps
 // as loadings cross the kth-smallest threshold). The k smallest are selected with the same
 // tie-breaking as R's order(L2)[1:k] (ascending squared loading; ties broken by ascending
-// column-major index), so the selected set matches GPArotation exactly. The criterion is finite
-// for any finite L, so no degenerate-state guard is needed.
+// column-major index), which selects exactly k entries; a boundary tie makes GPArotation's
+// sign(L^2 <= sort(L^2)[k]) select more than k, so the two can differ on exactly-tied loadings.
+// Selecting exactly k follows Kiers (1994). The criterion is finite for any finite L, so no
+// degenerate-state guard is needed.
 struct SimplimaxCriterion : public RotationCriterion {
   arma::uword k_;
   // Reusable index scratch for the partial_sort below, sized once and reused across the many
@@ -528,6 +530,7 @@ static Rcpp::List make_oblq_entry(const arma::mat& L, const Crit& crit,
 //' Crawford, C. B., & Ferguson, G. A. (1970). A general rotation criterion and its use
 //' in orthogonal rotation. *Psychometrika*, 35, 321-332.
 //'
+//' @keywords internal
 // [[Rcpp::export(.rotate_cf_orth)]]
 Rcpp::List rotate_cf_orth(const arma::mat& L,
                           double kappa,
@@ -569,22 +572,8 @@ Rcpp::List rotate_cf_orth(const arma::mat& L,
 //' starts, and fully optimizes only those that improve on the current incumbent by at
 //' least `triage_improve_tol`.
 //'
-//' @param L Numeric matrix. The unrotated loading matrix (variables by factors).
+//' @inheritParams .rotate_cf_orth
 //' @param gam Numeric scalar. The oblimin parameter; `gam = 0` is the quartimin criterion.
-//' @param eps Numeric scalar. Convergence tolerance for the projected-gradient norm.
-//' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before rotation
-//'   and reverse it afterwards.
-//' @param random_starts Integer scalar. Number of additional random starts.
-//' @param maxit Integer scalar. Maximum number of projected-gradient updates.
-//' @param max_line_search Integer scalar. Maximum number of step-halving attempts after
-//'   the initial trial step in each line-search phase.
-//' @param step0 Numeric scalar. Initial step size used in the projected-gradient update.
-//' @param screen_keep Integer scalar. Number of screened random starts retained for triage
-//'   optimization.
-//' @param triage_maxit Integer scalar. Number of short optimization iterations used in the
-//'   triage stage.
-//' @param triage_improve_tol Numeric scalar. Relative improvement required for a triaged
-//'   start to be promoted to full optimization.
 //'
 //' @returns A named list with the rotated loadings, the transformation matrix `Th`
 //'   (with `L %*% t(solve(Th))` reproducing the rotated loadings), the factor correlation
@@ -600,6 +589,7 @@ Rcpp::List rotate_cf_orth(const arma::mat& L,
 //' Jennrich, R. I., & Sampson, P. F. (1966). Rotation for simple loadings.
 //' *Psychometrika*, 31, 313-323.
 //'
+//' @keywords internal
 // [[Rcpp::export(.rotate_oblimin)]]
 Rcpp::List rotate_oblimin(const arma::mat& L,
                           double gam = 0.0,
@@ -643,23 +633,9 @@ Rcpp::List rotate_oblimin(const arma::mat& L,
 //' starts, and fully optimizes only those that improve on the current incumbent by at least
 //' `triage_improve_tol`.
 //'
-//' @param L Numeric matrix. The unrotated loading matrix (variables by factors).
+//' @inheritParams .rotate_cf_orth
 //' @param delta Numeric scalar. The geomin offset added to the squared loadings; must be a
 //'   positive finite scalar. `delta = 0.01` is the usual default.
-//' @param eps Numeric scalar. Convergence tolerance for the projected-gradient norm.
-//' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before rotation and
-//'   reverse it afterwards.
-//' @param random_starts Integer scalar. Number of additional random orthogonal starts.
-//' @param maxit Integer scalar. Maximum number of projected-gradient updates.
-//' @param max_line_search Integer scalar. Maximum number of step-halving attempts after the
-//'   initial trial step in each line-search phase.
-//' @param step0 Numeric scalar. Initial step size used in the projected-gradient update.
-//' @param screen_keep Integer scalar. Number of screened random starts retained for triage
-//'   optimization.
-//' @param triage_maxit Integer scalar. Number of short optimization iterations used in the
-//'   triage stage.
-//' @param triage_improve_tol Numeric scalar. Relative improvement required for a triaged start
-//'   to be promoted to full optimization.
 //'
 //' @returns A named list with the rotated loadings, the orthogonal rotation matrix `Th`
 //'   (with `L %*% Th` reproducing the rotated loadings), the attained criterion value, and the
@@ -674,6 +650,7 @@ Rcpp::List rotate_oblimin(const arma::mat& L,
 //' Browne, M. W. (2001). An overview of analytic rotation in exploratory factor analysis.
 //' *Multivariate Behavioral Research*, 36, 111-150.
 //'
+//' @keywords internal
 // [[Rcpp::export(.rotate_geomin_orth)]]
 Rcpp::List rotate_geomin_orth(const arma::mat& L,
                               double delta = 0.01,
@@ -717,23 +694,9 @@ Rcpp::List rotate_geomin_orth(const arma::mat& L,
 //' fully optimizes only those that improve on the current incumbent by at least
 //' `triage_improve_tol`.
 //'
-//' @param L Numeric matrix. The unrotated loading matrix (variables by factors).
+//' @inheritParams .rotate_cf_orth
 //' @param delta Numeric scalar. The geomin offset added to the squared loadings; must be a
 //'   positive finite scalar. `delta = 0.01` is the usual default.
-//' @param eps Numeric scalar. Convergence tolerance for the projected-gradient norm.
-//' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before rotation and
-//'   reverse it afterwards.
-//' @param random_starts Integer scalar. Number of additional random starts.
-//' @param maxit Integer scalar. Maximum number of projected-gradient updates.
-//' @param max_line_search Integer scalar. Maximum number of step-halving attempts after the
-//'   initial trial step in each line-search phase.
-//' @param step0 Numeric scalar. Initial step size used in the projected-gradient update.
-//' @param screen_keep Integer scalar. Number of screened random starts retained for triage
-//'   optimization.
-//' @param triage_maxit Integer scalar. Number of short optimization iterations used in the
-//'   triage stage.
-//' @param triage_improve_tol Numeric scalar. Relative improvement required for a triaged start
-//'   to be promoted to full optimization.
 //'
 //' @returns A named list with the rotated loadings, the transformation matrix `Th`
 //'   (with `L %*% t(solve(Th))` reproducing the rotated loadings), the factor correlation
@@ -749,6 +712,7 @@ Rcpp::List rotate_geomin_orth(const arma::mat& L,
 //' Browne, M. W. (2001). An overview of analytic rotation in exploratory factor analysis.
 //' *Multivariate Behavioral Research*, 36, 111-150.
 //'
+//' @keywords internal
 // [[Rcpp::export(.rotate_geomin_oblq)]]
 Rcpp::List rotate_geomin_oblq(const arma::mat& L,
                               double delta = 0.01,
@@ -791,21 +755,7 @@ Rcpp::List rotate_geomin_oblq(const arma::mat& L,
 //' starts, and fully optimizes only those that improve on the current incumbent by at least
 //' `triage_improve_tol`.
 //'
-//' @param L Numeric matrix. The unrotated loading matrix (variables by factors).
-//' @param eps Numeric scalar. Convergence tolerance for the projected-gradient norm.
-//' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before rotation and
-//'   reverse it afterwards.
-//' @param random_starts Integer scalar. Number of additional random orthogonal starts.
-//' @param maxit Integer scalar. Maximum number of projected-gradient updates.
-//' @param max_line_search Integer scalar. Maximum number of step-halving attempts after the
-//'   initial trial step in each line-search phase.
-//' @param step0 Numeric scalar. Initial step size used in the projected-gradient update.
-//' @param screen_keep Integer scalar. Number of screened random starts retained for triage
-//'   optimization.
-//' @param triage_maxit Integer scalar. Number of short optimization iterations used in the
-//'   triage stage.
-//' @param triage_improve_tol Numeric scalar. Relative improvement required for a triaged start
-//'   to be promoted to full optimization.
+//' @inheritParams .rotate_cf_orth
 //'
 //' @returns A named list with the rotated loadings, the orthogonal rotation matrix `Th`
 //'   (with `L %*% Th` reproducing the rotated loadings), the attained criterion value, and the
@@ -820,6 +770,7 @@ Rcpp::List rotate_geomin_oblq(const arma::mat& L,
 //' software for arbitrary rotation criteria in factor analysis. *Educational and
 //' Psychological Measurement*, 65, 676-696.
 //'
+//' @keywords internal
 // [[Rcpp::export(.rotate_bentler_orth)]]
 Rcpp::List rotate_bentler_orth(const arma::mat& L,
                                double eps = 1e-5,
@@ -859,21 +810,7 @@ Rcpp::List rotate_bentler_orth(const arma::mat& L,
 //' fully optimizes only those that improve on the current incumbent by at least
 //' `triage_improve_tol`.
 //'
-//' @param L Numeric matrix. The unrotated loading matrix (variables by factors).
-//' @param eps Numeric scalar. Convergence tolerance for the projected-gradient norm.
-//' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before rotation and
-//'   reverse it afterwards.
-//' @param random_starts Integer scalar. Number of additional random starts.
-//' @param maxit Integer scalar. Maximum number of projected-gradient updates.
-//' @param max_line_search Integer scalar. Maximum number of step-halving attempts after the
-//'   initial trial step in each line-search phase.
-//' @param step0 Numeric scalar. Initial step size used in the projected-gradient update.
-//' @param screen_keep Integer scalar. Number of screened random starts retained for triage
-//'   optimization.
-//' @param triage_maxit Integer scalar. Number of short optimization iterations used in the
-//'   triage stage.
-//' @param triage_improve_tol Numeric scalar. Relative improvement required for a triaged start
-//'   to be promoted to full optimization.
+//' @inheritParams .rotate_cf_orth
 //'
 //' @returns A named list with the rotated loadings, the transformation matrix `Th`
 //'   (with `L %*% t(solve(Th))` reproducing the rotated loadings), the factor correlation
@@ -889,6 +826,7 @@ Rcpp::List rotate_bentler_orth(const arma::mat& L,
 //' software for arbitrary rotation criteria in factor analysis. *Educational and
 //' Psychological Measurement*, 65, 676-696.
 //'
+//' @keywords internal
 // [[Rcpp::export(.rotate_bentler_oblq)]]
 Rcpp::List rotate_bentler_oblq(const arma::mat& L,
                                double eps = 1e-5,
@@ -929,21 +867,7 @@ Rcpp::List rotate_bentler_oblq(const arma::mat& L,
 //' starts, and fully optimizes only those that improve on the current incumbent by at least
 //' `triage_improve_tol`.
 //'
-//' @param L Numeric matrix. The unrotated loading matrix (variables by factors).
-//' @param eps Numeric scalar. Convergence tolerance for the projected-gradient norm.
-//' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before rotation and
-//'   reverse it afterwards.
-//' @param random_starts Integer scalar. Number of additional random orthogonal starts.
-//' @param maxit Integer scalar. Maximum number of projected-gradient updates.
-//' @param max_line_search Integer scalar. Maximum number of step-halving attempts after the
-//'   initial trial step in each line-search phase.
-//' @param step0 Numeric scalar. Initial step size used in the projected-gradient update.
-//' @param screen_keep Integer scalar. Number of screened random starts retained for triage
-//'   optimization.
-//' @param triage_maxit Integer scalar. Number of short optimization iterations used in the
-//'   triage stage.
-//' @param triage_improve_tol Numeric scalar. Relative improvement required for a triaged start
-//'   to be promoted to full optimization.
+//' @inheritParams .rotate_cf_orth
 //'
 //' @returns A named list with the rotated loadings, the orthogonal rotation matrix `Th`
 //'   (with `L %*% Th` reproducing the rotated loadings), the attained criterion value, and the
@@ -958,6 +882,7 @@ Rcpp::List rotate_bentler_oblq(const arma::mat& L,
 //' Jennrich, R. I., & Bentler, P. M. (2011). Exploratory bi-factor analysis. *Psychometrika*,
 //' 76, 537-549.
 //'
+//' @keywords internal
 // [[Rcpp::export(.rotate_bifactor_orth)]]
 Rcpp::List rotate_bifactor_orth(const arma::mat& L,
                                 double eps = 1e-5,
@@ -999,21 +924,7 @@ Rcpp::List rotate_bifactor_orth(const arma::mat& L,
 //' fully optimizes only those that improve on the current incumbent by at least
 //' `triage_improve_tol`.
 //'
-//' @param L Numeric matrix. The unrotated loading matrix (variables by factors).
-//' @param eps Numeric scalar. Convergence tolerance for the projected-gradient norm.
-//' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before rotation and
-//'   reverse it afterwards.
-//' @param random_starts Integer scalar. Number of additional random starts.
-//' @param maxit Integer scalar. Maximum number of projected-gradient updates.
-//' @param max_line_search Integer scalar. Maximum number of step-halving attempts after the
-//'   initial trial step in each line-search phase.
-//' @param step0 Numeric scalar. Initial step size used in the projected-gradient update.
-//' @param screen_keep Integer scalar. Number of screened random starts retained for triage
-//'   optimization.
-//' @param triage_maxit Integer scalar. Number of short optimization iterations used in the
-//'   triage stage.
-//' @param triage_improve_tol Numeric scalar. Relative improvement required for a triaged start
-//'   to be promoted to full optimization.
+//' @inheritParams .rotate_cf_orth
 //'
 //' @returns A named list with the rotated loadings, the transformation matrix `Th`
 //'   (with `L %*% t(solve(Th))` reproducing the rotated loadings), the factor correlation
@@ -1029,6 +940,7 @@ Rcpp::List rotate_bifactor_orth(const arma::mat& L,
 //' Jennrich, R. I., & Bentler, P. M. (2011). Exploratory bi-factor analysis. *Psychometrika*,
 //' 76, 537-549.
 //'
+//' @keywords internal
 // [[Rcpp::export(.rotate_bifactor_oblq)]]
 Rcpp::List rotate_bifactor_oblq(const arma::mat& L,
                                 double eps = 1e-5,
@@ -1074,21 +986,16 @@ Rcpp::List rotate_bifactor_oblq(const arma::mat& L,
 //' basin -- is the standard remedy for the local minima of complexity-based rotation criteria
 //' (Kiers, 1994; Browne, 2001).
 //'
-//' @param L Numeric matrix. The unrotated loading matrix (variables by factors).
+//' @inheritParams .rotate_cf_orth
 //' @param k Integer scalar. The number of "close-to-zero" loadings the criterion targets; must
 //'   be in `[1, nrow(L) * ncol(L)]`. `k = nrow(L)` is the usual default.
 //' @param eps Numeric scalar. Convergence tolerance for the projected-gradient norm. Because the
 //'   simplimax criterion is only piecewise smooth, the projected gradient need not reach this
 //'   tolerance at the optimum; convergence is then reported when the criterion value stalls (the
 //'   non-monotone search described above), so `eps` mainly governs the smooth phases of the search.
-//' @param normalize Logical scalar. If `TRUE`, apply Kaiser normalization before rotation and
-//'   reverse it afterwards.
 //' @param random_starts Integer scalar. Number of random orthogonal starts fully optimized in
 //'   addition to the identity start.
 //' @param maxit Integer scalar. Maximum number of projected-gradient updates per start.
-//' @param max_line_search Integer scalar. Maximum number of step-halving attempts after the
-//'   initial trial step in each line-search phase.
-//' @param step0 Numeric scalar. Initial step size used in the projected-gradient update.
 //'
 //' @returns A named list with the rotated loadings, the transformation matrix `Th`
 //'   (with `L %*% t(solve(Th))` reproducing the rotated loadings), the factor correlation
@@ -1110,6 +1017,7 @@ Rcpp::List rotate_bifactor_oblq(const arma::mat& L,
 //' Kiers, H. A. L. (1994). Simplimax: Oblique rotation to an optimal target with simple
 //' structure. *Psychometrika*, 59, 567-579.
 //'
+//' @keywords internal
 // [[Rcpp::export(.rotate_simplimax_oblq)]]
 Rcpp::List rotate_simplimax_oblq(const arma::mat& L,
                                  int k,

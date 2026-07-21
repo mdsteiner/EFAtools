@@ -29,9 +29,7 @@ intercorrelations are taken from this object. If class \code{lavaan::lavaan()},
 it must be a second-order CFA solution. In this case first-order and second-order
 factor loadings are taken from this object and the \code{g_name} argument has
 to be specified.
-x can also be a pattern matrix from an oblique factor solution (see \code{Phi})
-or a matrix of first-order factor loadings from a higher-order confirmatory factor
-analysis (see \code{L2}).}
+x can also be a pattern matrix from an oblique factor solution (see \code{Phi}).}
 
 \item{Phi}{matrix. A matrix of factor intercorrelations from an oblique factor
 solution. Only needs to be specified if a pattern matrix is entered directly

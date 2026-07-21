@@ -26,16 +26,16 @@ simplimax criterion is only piecewise smooth, the projected gradient need not re
 tolerance at the optimum; convergence is then reported when the criterion value stalls (the
 non-monotone search described above), so \code{eps} mainly governs the smooth phases of the search.}
 
-\item{normalize}{Logical scalar. If \code{TRUE}, apply Kaiser normalization before rotation and
-reverse it afterwards.}
+\item{normalize}{Logical scalar. If \code{TRUE}, apply Kaiser normalization before
+rotation and reverse it afterwards.}
 
 \item{random_starts}{Integer scalar. Number of random orthogonal starts fully optimized in
 addition to the identity start.}
 
 \item{maxit}{Integer scalar. Maximum number of projected-gradient updates per start.}
 
-\item{max_line_search}{Integer scalar. Maximum number of step-halving attempts after the
-initial trial step in each line-search phase.}
+\item{max_line_search}{Integer scalar. Maximum number of step-halving attempts after
+the initial trial step in each line-search phase.}
 
 \item{step0}{Numeric scalar. Initial step size used in the projected-gradient update.}
 }
@@ -84,3 +84,4 @@ Newton's method. \emph{SIAM Journal on Numerical Analysis}, 23, 707-716.
 Kiers, H. A. L. (1994). Simplimax: Oblique rotation to an optimal target with simple
 structure. \emph{Psychometrika}, 59, 567-579.
 }
+\keyword{internal}

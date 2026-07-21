@@ -14,6 +14,36 @@
   })
 }
 
+# Collect the class strings of every warning raised while evaluating `expr` (several fire on
+# the degenerate path), so a single expected class can be asserted without expect_warning
+# stopping at the first one.
+.warn_classes <- function(expr) {
+  classes <- character()
+  withCallingHandlers(
+    expr,
+    warning = function(w) { classes <<- c(classes, class(w)); invokeRestart("muffleWarning") }
+  )
+  classes
+}
+
+# A six-item ordinal set whose first pair is near-comonotone (rho ~ 0.98 with a structurally
+# empty cell), so that pair's polychoric asymptotic variance explodes; the other four items are
+# ordinary filler. Deterministic: a fixed contingency table expanded to raw data, plus seeded
+# filler.
+.degenerate_ordinal <- function() {
+  tab <- rbind(c(41, 0), c(13, 0), c(28, 0), c(171, 47))
+  pair <- do.call(rbind, lapply(which(tab > 0), function(k) {
+    a <- ((k - 1L) %% nrow(tab)) + 1L
+    b <- ((k - 1L) %/% nrow(tab)) + 1L
+    cbind(rep(a, tab[a, b]), rep(b, tab[a, b]))
+  }))
+  set.seed(11)
+  filler <- matrix(sample(1:4, nrow(pair) * 4L, TRUE), nrow(pair), 4L)
+  out <- cbind(pair, filler)
+  colnames(out) <- paste0("i", seq_len(ncol(out)))
+  out
+}
+
 test_that("EFA() runs ordinal factor analysis and matches psych::fa on a polychoric matrix", {
   skip_on_cran()
   skip_if_not_installed("psych")
@@ -63,6 +93,52 @@ test_that("cor_method = 'tetra' equals 'poly' on binary data", {
 test_that("cor_method = 'tetra' rejects variables with more than two categories", {
   expect_error(EFA(DOSPERT_raw, n_factors = 3, cor_method = "tetra"),
                class = "efa_cor_not_binary")
+})
+
+test_that("a degenerate polychoric pair warns, and DWLS and the sandwich both proceed", {
+  x <- .degenerate_ordinal()
+
+  # The degeneracy is reported once, by class, for both the DWLS-weight (diag) and the
+  # sandwich-meat (full) requests -- they screen the same asymptotic variances.
+  cl_diag <- .warn_classes(
+    .prepare_cor_input(x, cor_method = "poly", acov = "diag", dwls = TRUE,
+                       inform_from_data = FALSE))
+  expect_true("efa_acov_degenerate" %in% cl_diag)
+  cl_full <- .warn_classes(
+    .prepare_cor_input(x, cor_method = "poly", acov = "full", dwls = TRUE,
+                       inform_from_data = FALSE))
+  expect_true("efa_acov_degenerate" %in% cl_full)
+
+  # DWLS no longer aborts: the finite (huge) variance down-weights the pair out of the fit.
+  dwls <- suppressWarnings(
+    efa_fit(x, n_factors = 2, estimator = "DWLS", cor_method = "poly", rotation = "none"))
+  expect_s3_class(dwls, "efa")
+  # The ULS sandwich consumes the same covariance and also returns a fit.
+  sw <- suppressWarnings(
+    efa_fit(x, n_factors = 2, estimator = "ULS", cor_method = "poly",
+            se = "sandwich", rotation = "none"))
+  expect_s3_class(sw, "efa")
+
+  # Clean ordinal data raises no degeneracy warning.
+  cl_clean <- .warn_classes(suppressMessages(
+    .prepare_cor_input(DOSPERT_raw[stats::complete.cases(DOSPERT_raw), 1:6],
+                       cor_method = "poly", acov = "diag", dwls = TRUE,
+                       inform_from_data = FALSE)))
+  expect_false("efa_acov_degenerate" %in% cl_clean)
+})
+
+test_that("cor_method = 'poly' rejects unordered factor / character columns through efa_fit", {
+  set.seed(123)
+  N <- 400L
+  z1 <- stats::rnorm(N)
+  z2 <- 0.7 * z1 + sqrt(1 - 0.7^2) * stats::rnorm(N)
+  br <- stats::qnorm(c(.33, .66))
+  lab <- c("low", "mid", "high")
+  df <- data.frame(a = factor(lab[findInterval(z1, br) + 1L]),   # unordered
+                   b = factor(lab[findInterval(z2, br) + 1L]))
+  expect_error(
+    suppressMessages(efa_fit(df, n_factors = 1, cor_method = "poly")),
+    class = "efa_cor_unordered_factor")
 })
 
 test_that("method = 'DWLS' requires a polychoric asymptotic covariance", {

@@ -50,9 +50,11 @@ constructs. The polychoric correlation instead estimates the correlation of the 
 latent variables assumed to underlie the observed categories, and pairing it with a
 categorical estimator removes the bias that treating the items as continuous introduces.
 
-We draw 400 responses on a four-category scale. `match = "polychoric"` sets the category
-thresholds so that the population *polychoric* correlation of the discretised data equals
-the target correlation.
+We draw 400 responses on a four-category scale. Because the latent data are normal, cutting
+them at the standard-normal category thresholds already leaves the population *polychoric*
+correlation of the discretised data equal to the target correlation; `match = "polychoric"`
+records that this is what we are after, and would reject the request had we asked for
+non-normal marginals.
 
 ```{r}
 d_ord <- efa_simulate(N = 400, Lambda = Lambda, Phi = Phi,
@@ -67,7 +69,7 @@ and whether the data are multivariate normal — the two things that decide whet
 ordinal treatment is worthwhile.
 
 ```{r, warning = FALSE}
-efa_screen(d_ord, seed = 2024)
+efa_screen(d_ord, seed = 42)
 ```
 
 The sampling adequacy (KMO) and sphericity checks confirm the data are factorable. The
@@ -88,7 +90,7 @@ errors and a scaled (Satorra-Bentler) chi-square that stay valid under the non-n
 these data show.
 
 ```{r}
-efa_poly <- efa_fit(d_ord, n_factors = 3, cor_method = "poly", estimator = "DWLS",
+efa_poly <- efa_fit(d_ord, n_factors = 3, cor_method = "poly", estimator = "dwls",
                     rotation = "oblimin", se = "sandwich")
 efa_poly
 ```
@@ -150,7 +152,12 @@ offers two principled alternatives that assume only that the data are missing at
 multiple-imputation route via `efa_mi()`.
 
 We simulate 250 continuous cases with about 15% of values missing at random, where each
-item's missingness depends on another item's value.
+item's missingness depends on another item's value. `efa_simulate()` holes every column, so
+each item's MAR predictor is itself partly missing: the mechanism is MAR given the *complete*
+data, but it is not ignorable for an analyst who sees only the observed data. Estimators that
+are consistent under ignorable MAR therefore keep a residual bias on data from this generator
+— a property of the generator rather than of the estimators, negligible at the modest missing
+rate used here but growing with `missing_prop` and `missing_strength`.
 
 ```{r}
 d_miss <- efa_simulate(N = 250, Lambda = Lambda, Phi = Phi,
@@ -166,7 +173,7 @@ correlation — a single fit that uses every case rather than only the complete 
 model fit is reported as corrected two-stage (Satorra-Bentler) statistics.
 
 ```{r}
-efa_fiml <- efa_fit(d_miss, n_factors = 3, cor_method = "fiml", estimator = "ML",
+efa_fiml <- efa_fit(d_miss, n_factors = 3, cor_method = "fiml", estimator = "ml",
                     rotation = "oblimin")
 efa_fiml
 ```
@@ -198,7 +205,7 @@ common factor space (rotation is only identified up to reflection and permutatio
 imputations must be matched before averaging), and pools them.
 
 ```{r, eval = mice_ok}
-efa_pooled <- efa_mi(dat_list, n_factors = 3, estimator = "ML", rotation = "oblimin")
+efa_pooled <- efa_mi(dat_list, n_factors = 3, estimator = "ml", rotation = "oblimin")
 efa_pooled
 ```
 

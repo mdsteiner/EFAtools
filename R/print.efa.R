@@ -35,7 +35,9 @@
 #' @param sort_loadings character. Optional row sorting for the loading table.
 #'   See [print.efa_loadings()].
 #' @param show_loading_legend logical. Whether to print a short legend for the
-#'   loading-table styling. Default is `TRUE`.
+#'   loading-table styling. Default is `TRUE`. The legend is only printed when
+#'   that styling is actually rendered (a colour-capable console); in plain
+#'   output it is omitted and this argument has no effect.
 #' @param max_factors_per_block numeric or `NULL`. Maximum number of factor
 #'   columns per loading-table block. If `NULL`, chosen from the console width.
 #' @param ci character. Which confidence intervals [summary()] shows, if
@@ -1686,13 +1688,19 @@ format.summary.efa <- function(x, ...) {
 
   # Distinct local optima the rotation found across its random starts, counted over the
   # starts that converged (only present for the gradient-projection rotations that use
-  # random starts; omitted when none converged).
+  # random starts; omitted when none converged). Both counts are reported because the
+  # screen-and-triage strategy optimizes only a few of the available starts, and only an
+  # optimized start can yield a local optimum.
+  # The n_starts_total check keeps an object serialized before the two-count diagnostics
+  # existed (it carried a single `n_starts`) from rendering a garbled line: paste0() would
+  # silently drop the missing counts. Such an object omits the line instead.
   rot_diag <- spec$rotation_diagnostics
-  if (!is.null(rot_diag) && isTRUE(rot_diag$n_converged >= 1L)) {
+  if (!is.null(rot_diag) && isTRUE(rot_diag$n_converged >= 1L) &&
+      !is.null(rot_diag$n_starts_total)) {
     .efa_print_key_value(
       "Rotation local optima",
       paste0(rot_diag$n_distinct_minima, " distinct from ",
-             rot_diag$n_starts, " random starts")
+             rot_diag$n_optimized, " of ", rot_diag$n_starts_total, " starts")
     )
   }
 

@@ -132,7 +132,8 @@
 #'
 #' The comparison data, parallel analysis, and NEST criteria compare the data against
 #' simulated reference data, so their suggested numbers of factors vary slightly from run
-#' to run; call [set.seed()] before `efa_retain()` to make them reproducible.
+#' to run; the Hull method does too, because it calls [efa_parallel()] to set its upper
+#' bound. Call [set.seed()] before `efa_retain()` to make them reproducible.
 #'
 #' @returns A list of class `c("efa_retain", "N_FACTORS")`, the trailing class
 #'   keeping `inherits(x, "N_FACTORS")` working for code written against the
@@ -149,6 +150,9 @@
 #' \item{not_run}{A named character vector with the criteria that were skipped
 #'   or failed and the reason, or `NULL` if all requested criteria ran.}
 #' \item{settings}{A list of the settings used.}
+#'
+#' @seealso [efa_screen()] for data screening before retention, and [efa_fit()] to extract
+#'  the chosen number of factors.
 #'
 #' @family factor retention criteria
 #'
@@ -215,6 +219,13 @@ efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARA
   # model: each criterion is run under a tryCatch, so the knob would surface as an opaque
   # "criterion could not be run" instead of naming the control object it belongs to.
   .reject_flat_knobs(...names(), fn = "efa_retain")
+  # A dot the criteria cannot forward to a fit is a misspelling; reject it here rather than
+  # letting it be silently dropped (when the selected criteria run no fit) or surface as an
+  # opaque "criterion could not be run". The criterion fits are always unrotated, so a
+  # rotation setting is refused too (the N_FACTORS() wrapper's repacked rotate_control() object
+  # is exempt -- see .reject_rotation_dots()).
+  .reject_unknown_fit_dots(...names(), fn = "efa_retain", unrotated = TRUE)
+  .reject_rotation_dots(list(...), fn = "efa_retain")
   .assert_cor_input(x)
   .assert_estimate_control(estimate_control)
 
@@ -285,7 +296,10 @@ efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARA
   for (id in run) {
 
     if (isTRUE(show_progress)) {
-      cli::cli_progress_step("Running {id}")
+      # the message is a glue template evaluated when the bar is terminated -- by which time
+      # `id` has advanced to the next criterion -- so build the string eagerly and freeze the
+      # criterion name in it, or every completed step is labelled with its successor's name
+      cli::cli_progress_step(paste0("Running ", id))
     }
 
     entry <- .retention_registry[[id]]
@@ -319,9 +333,16 @@ efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARA
                   silent = TRUE)
 
     if (inherits(out_id, "try-error")) {
-      reason <- conditionMessage(attr(out_id, "condition"))
-      # keep the headline only; cli error bodies span several lines
-      reason <- strsplit(reason, "\n", fixed = TRUE)[[1]][1]
+      # `conditionMessage()` returns the message already wrapped to the console width, so its
+      # first line is only the first *wrapped* line -- truncating the reason mid-sentence at
+      # narrow widths. A cli condition keeps the unwrapped headline in `$message` (the bullets
+      # live in `$body`), so take that and squish the newlines the source string carries.
+      # A condition whose headline is absent or empty carries its text in `$body` instead, so
+      # fall back to the formatted message there rather than reporting an empty reason.
+      cnd <- attr(out_id, "condition")
+      reason <- trimws(paste(cnd$message, collapse = " "))
+      if (!nzchar(reason)) reason <- conditionMessage(cnd)
+      reason <- gsub("\\s+", " ", trimws(reason))
       cli::cli_warn(
         c("{.val {id}} could not be run and is excluded from the results.",
           "i" = "Error: {reason}"),

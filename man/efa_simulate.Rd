@@ -107,19 +107,24 @@ length-\code{p} list of numeric vectors giving the marginal category proportions
 variable (each strictly positive and summing to 1). Default is \code{NULL}, which
 returns the continuous data.}
 
-\item{match}{character. Only used with \code{categories}: how the categorization
-relates to the population correlation. \code{"thresholds"} cuts the drawn data at the
-standard-normal-scale thresholds (for \code{marginals} \code{"normal"}, \code{"VM"}, or \code{"IG"};
-not \code{"empirical"}), with an attenuated ordinal Pearson correlation;
-\code{"polychoric"} requires normal latents (\code{marginals = "normal"}) and
-makes the population polychoric correlation of the categorized data equal the
-target correlation. Default is \code{NULL} (\code{"thresholds"} when \code{categories} is set).}
+\item{match}{character. Only used with \code{categories}: an assertion about how the
+categorization relates to the population correlation. With a normal latent, cutting
+at the normal-scale thresholds already leaves the population polychoric correlation
+of the categorized data equal to the target correlation, so both values compute the
+same thresholds and produce identical data whenever both are legal. \code{"thresholds"}
+(the default) also cuts the \code{"VM"} and \code{"IG"} draws, whose ordinal Pearson and
+polychoric correlations then both depart from the population; \code{"polychoric"} states
+that the polychoric match is required and therefore rejects non-normal marginals.
+Not available with \code{marginals = "empirical"}. The value is matched
+case-insensitively. Default is \code{NULL} (\code{"thresholds"} when \code{categories} is set).}
 
 \item{missing}{character. An optional missing-data mechanism to impose on the drawn
 data: one of \code{"none"} (the default, complete data), \code{"MCAR"} (missing completely at
 random), \code{"MAR"} (missing at random, depending on another variable), or \code{"MNAR"}
 (missing not at random, depending on the variable's own value). Introduced values
-become \code{NA}.}
+become \code{NA}. Every variable is holed, so under \code{"MAR"} each variable's predictor is
+itself subject to missingness: the mechanism is MAR given the \emph{complete} data and is
+not ignorable for an analyst who sees only the observed data (see Details).}
 
 \item{missing_prop}{numeric. Only used when \code{missing} is not \code{"none"}, where it is
 required: the target marginal proportion of missing values per variable, a single
@@ -155,7 +160,9 @@ An object of class \code{efa_simulated}: a list with elements \code{data} (the s
 data -- an \code{N} by \code{p} numeric matrix, an integer matrix of category codes when \code{categories}
 is set, or a length-\code{n_datasets} list of these when \code{n_datasets > 1}; \code{NULL} when
 \code{return_pop = TRUE}), \code{population} (the \code{p} by \code{p} population correlation matrix drawn from,
-model-error-perturbed when requested), \code{model_error} (\code{NULL}, or a list of the method and
+model-error-perturbed when requested; with \code{force_pd = TRUE} and \code{marginals = "VM"} it stays
+the target matrix, from which the realized correlations of the draw can drift), \code{model_error}
+(\code{NULL}, or a list of the method and
 the target and achieved RMSEA/CFI when model error was applied), and \code{settings}. Printing
 the object shows a compact summary.
 }
@@ -215,20 +222,26 @@ to the nearest correlation matrix (via \code{\link[psych:cor.smooth]{psych::cor.
 With \code{categories}, the drawn data are discretized into ordered categories (an
 integer code \code{1} to \code{K}). \code{categories} gives either the number of equally probable
 categories (one count for every variable, or one per variable) or, as a list of
-proportion vectors, the marginal category proportions per variable. Two matching
-modes set what the categorization preserves. With \code{match = "thresholds"} (the
-default) the data are cut at normal-scale thresholds (Olsson, 1979) that reproduce
-the requested proportions exactly for normal marginals and approximately for the
-\code{"VM"} and \code{"IG"} marginals; because categorization attenuates product-moment
-correlations, the categorized data's Pearson correlation is smaller in magnitude
-than the population correlation (and, under non-normal marginals, its polychoric
-correlation departs from the population as well). With \code{match = "polychoric"} the
-latent is required to be normal (\code{marginals = "normal"}) and the cases are drawn
-multivariate-normal and thresholded, so the population polychoric correlation of
-the categorized data equals the target; combining it with non-normal marginals is
-rejected. Ordinal output is not available with \code{marginals = "empirical"}. Empty
-categories left by a draw are reported with a warning, as they destabilize the
-polychoric correlation and the factor analysis.
+proportion vectors, the marginal category proportions per variable. The cut points are
+the thresholds that reproduce the requested proportions (Olsson, 1979): the
+standard-normal quantiles for \code{marginals = "normal"}, and for \code{marginals = "VM"} those
+quantiles mapped through the same Fleishman cubic the draw uses, so the requested
+proportions are reproduced on the non-normal scale too. Under \code{marginals = "IG"} the
+thresholds stay on the standard-normal scale while the data do not, so the achieved
+proportions depart from the request systematically rather than by sampling noise; the
+departure grows with the non-normality, and only the \emph{number} of categories is
+guaranteed. The same holds for a \code{"VM"} variable whose Fleishman cubic is not increasing
+over its own thresholds and the tails beyond them, which keeps the normal-scale ones and
+is reported with a warning; this arises when a turning point of the cubic sits at or
+near an outer threshold -- under a strongly platykurtic marginal, or under substantial
+skewness or kurtosis combined with a small outer-category proportion.
+Because categorization attenuates product-moment correlations, the
+categorized data's Pearson correlation is smaller in magnitude than the population
+correlation; under non-normal marginals its polychoric correlation departs from the
+population as well. \code{match} changes none of this -- it asserts an intent rather than
+selecting a computation, as described under that argument. Ordinal output is not
+available with \code{marginals = "empirical"}. Empty categories left by a draw are reported
+with a warning, as they destabilize the polychoric correlation and the factor analysis.
 
 With \code{missing}, missing values are introduced into the drawn data under a chosen
 mechanism (Rubin, 1976), each variable holed at a target expected rate
@@ -238,9 +251,15 @@ model of a standardized predictor: another variable for \code{"MAR"} (chosen by
 \code{missing_predictor}) or the variable's own value for \code{"MNAR"}, with slope
 \code{missing_strength}. The mechanism acts on the drawn (latent) values, so when
 \code{categories} also discretizes the data the missingness is keyed on the underlying
-value, not the category code. For \code{"MAR"} the predictor uses the complete drawn
-values. The returned matrix carries the \code{NA}s, which the correlation estimators
-handle downstream.
+value, not the category code. For \code{"MAR"} the predictor is evaluated on the complete
+drawn values, but every variable is holed at rate \code{missing_prop}, so a variable's MAR
+predictor is itself missing for roughly a \code{missing_prop} fraction of the cases whose
+missingness it drove. The mechanism is therefore MAR conditional on the \emph{complete}
+data, and \strong{not} ignorable for an analyst who sees only the observed data: estimators
+that are consistent under ignorable MAR, such as \code{cor_method = "fiml"} in \code{\link[=efa_fit]{efa_fit()}}
+and the multiple imputation behind \code{\link[=efa_mi]{efa_mi()}}, keep a residual bias here that grows
+with \code{missing_prop} and \code{missing_strength}. The returned matrix carries the \code{NA}s,
+which the correlation estimators handle downstream.
 
 With \code{model_error}, the population is perturbed away from the exact factor
 structure so the \code{q}-factor model (\code{q = ncol(Lambda)}) fits it only approximately,
@@ -257,9 +276,11 @@ model the exact minimizer (the CFI follows as a derived quantity). \code{"TKL"} 
 Koopman & Linn, 1969) adds minor common factors tuned so the achieved RMSEA -- and,
 optionally, CFI -- match the target(s); with a single target the match is close,
 with both it is a compromise. \code{"WB"} (Wu & Browne, 2015) draws the population from
-an inverse-Wishart distribution around the model-implied correlation; being a
-single random draw, its realized RMSEA varies around the target (and tends to
-exceed it), so the realized value is reported rather than guaranteed. \code{"CB"} and
+an inverse-Wishart distribution around the model-implied correlation; its calibration
+applies to the \emph{best-fitting} model, so the reported misfit of the \emph{generating} model
+is systematically larger than the target -- by roughly \eqn{\sqrt{(p(p-1)/2)/df}},
+about 1.4 times for 12 variables and 3 factors. Use \code{"CB"} when the reported RMSEA
+must equal the target. \code{"CB"} and
 \code{"WB"} target the RMSEA only; \code{"TKL"} can target the RMSEA and/or the CFI. The
 reported RMSEA/CFI is the misfit of the specified generating model.
 

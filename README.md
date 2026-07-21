@@ -200,11 +200,20 @@ With raw-data input, you can use all functionalities, including sandwich
 and bootstrap standard errors and DWLS estimation with polychoric
 correlations or two-stage FIML estimation of correlations.
 
+The bootstrap intervals below are percentile intervals over refitted
+resamples. For the loadings and factor correlations they are centred on
+the point estimate as you would expect; for the indices derived from the
+chi-square (RMSEA, AIC, BIC, ECVI) they sit above it, because each
+resample carries the sample’s own misfit *plus* fresh sampling noise. A
+point estimate lying below its own lower bound there is that shift, not
+a miscomputed interval. CFI and TLI are unaffected, being ratios in
+which the baseline chi-square shifts along with the model one.
+
 ``` r
 
-# ULS / MINRES estimation with oblimin rotation and sandwich SEs
-mod <- efa_fit(DOSPERT_raw, n_factors = 5, estimator = "ULS", rotation = "oblimin",
-           se = "sandwich")
+# ULS / MINRES estimation with oblimin rotation and bootstrap SEs
+mod <- efa_fit(DOSPERT_raw, n_factors = 5, estimator = "uls", rotation = "oblimin",
+               se = "np-boot", seed = 1)
 #> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
 mod
 #> 
@@ -244,11 +253,6 @@ mod
 #> socR_5   .049   .103  -.045   .379   .051  .185  .815
 #> socR_6   .004  -.008   .016   .549   .041  .308  .692
 #> 
-#> Legend:
-#>   bold = |loading| >= .300
-#>   grey = below cutoff
-#>   red h2/u2 = Heywood-relevant value
-#> 
 #> ── Factor Intercorrelations ────────────────────────────────────────────────────
 #> 
 #>       F1     F2     F3     F4     F5
@@ -269,14 +273,17 @@ mod
 #> 
 #> ── Model Fit ───────────────────────────────────────────────────────────────────
 #> 
-#> scaled χ²(295) = 2912.75, p < .001
-#> CFI: .90
-#> TLI: .86
-#> RMSEA [90% CI]: .05 [.05; .06]
-#> AIC: NA
-#> BIC: NA
-#> CAF: .43
-#> SRMR: .03
+#> χ²(295) = 3604.54, p < .001
+#> CFI [95% bootstrap-CI]: .90 [.88, .90]
+#> TLI [95% bootstrap-CI]: .85 [.82, .85]
+#> RMSEA [90% CI] [95% bootstrap-CI]: .06 [.06; .06] [.06, .07]
+#> AIC [95% bootstrap-CI]: 3014.54 [3034.98, 3700.48]
+#> BIC [95% bootstrap-CI]: 1230.81 [1251.25, 1916.74]
+#> ECVI [95% bootstrap-CI]: 1.26 [1.27, 1.48]
+#> CAF [95% bootstrap-CI]: .43 [.43, .45]
+#> SRMR [95% bootstrap-CI]: .03 [.03, .04]
+#> 
+#> Note: Bootstrap CIs based on 1000 bootstrap samples.
 # detailed output with summary()
 summary(mod)
 #> 
@@ -287,7 +294,9 @@ summary(mod)
 #> Factors: 5
 #> Variables: 30
 #> N: 3123
-#> Rotation local optima: 1 distinct from 100 random starts
+#> Bootstrap samples: 1000
+#> Valid target-rotated samples: 1000 out of 1000
+#> Rotation local optima: 1 distinct from 6 of 101 starts
 #> Heywood cases: 0
 #> Cross-loading items (|loading| >= .300): 0
 #> Items without salient loading (|loading| >= .300): 0
@@ -330,44 +339,39 @@ summary(mod)
 #> socR_5   .049   .103  -.045   .379   .051  .185  .815
 #> socR_6   .004  -.008   .016   .549   .041  .308  .692
 #> 
-#> Legend:
-#>   bold = |loading| >= .300
-#>   grey = below cutoff
-#>   red h2/u2 = Heywood-relevant value
-#> 
-#> ── 95% Wald CIs for salient rotated loadings ───────────────────────────────────
+#> ── 95% bootstrap CIs for salient rotated loadings ──────────────────────────────
 #> 
 #> Variable  Factor  est    lower  upper
-#> ethR_1    F1       .513   .469   .557
-#> ethR_2    F1       .518   .473   .562
-#> ethR_3    F1       .639   .600   .679
-#> ethR_4    F1       .586   .541   .630
-#> ethR_5    F1       .477   .431   .522
-#> ethR_6    F1       .621   .581   .661
-#> heaR_1    F1       .426   .382   .471
-#> heaR_2    F1       .453   .409   .497
-#> heaR_3    F1       .415   .366   .463
-#> heaR_4    F1       .362   .313   .411
-#> heaR_5    F1       .382   .335   .428
-#> heaR_6    F1       .430   .385   .475
-#> recR_1    F2       .407   .369   .445
-#> recR_2    F2       .531   .491   .572
-#> recR_3    F2       .619   .584   .655
-#> recR_4    F2       .861   .838   .885
-#> recR_5    F2       .805   .778   .832
-#> recR_6    F2       .637   .602   .672
-#> finR_1    F3       .840   .805   .876
-#> finR_3    F3       .856   .823   .888
-#> finR_5    F3       .873   .843   .903
-#> socR_1    F4       .646   .612   .679
-#> socR_2    F4       .679   .651   .707
-#> socR_3    F4       .640   .605   .675
-#> socR_4    F4       .614   .582   .646
-#> socR_5    F4       .379   .341   .416
-#> socR_6    F4       .549   .512   .585
-#> finR_2    F5       .688   .652   .723
-#> finR_4    F5       .710   .674   .747
-#> finR_6    F5       .683   .647   .720
+#> ethR_1    F1       .513   .465   .553
+#> ethR_2    F1       .518   .472   .558
+#> ethR_3    F1       .639   .589   .677
+#> ethR_4    F1       .586   .532   .630
+#> ethR_5    F1       .477   .431   .523
+#> ethR_6    F1       .621   .572   .662
+#> heaR_1    F1       .426   .381   .472
+#> heaR_2    F1       .453   .407   .497
+#> heaR_3    F1       .415   .361   .472
+#> heaR_4    F1       .362   .306   .419
+#> heaR_5    F1       .382   .326   .435
+#> heaR_6    F1       .430   .382   .475
+#> recR_1    F2       .407   .366   .447
+#> recR_2    F2       .531   .487   .572
+#> recR_3    F2       .619   .578   .654
+#> recR_4    F2       .861   .825   .891
+#> recR_5    F2       .805   .771   .835
+#> recR_6    F2       .637   .600   .669
+#> finR_1    F3       .840   .801   .868
+#> finR_3    F3       .856   .819   .881
+#> finR_5    F3       .873   .837   .899
+#> socR_1    F4       .646   .612   .680
+#> socR_2    F4       .679   .648   .708
+#> socR_3    F4       .640   .602   .674
+#> socR_4    F4       .614   .581   .648
+#> socR_5    F4       .379   .339   .418
+#> socR_6    F4       .549   .511   .587
+#> finR_2    F5       .688   .646   .723
+#> finR_4    F5       .710   .667   .740
+#> finR_6    F5       .683   .642   .715
 #> 
 #> ── Factor Intercorrelations ────────────────────────────────────────────────────
 #> 
@@ -378,19 +382,19 @@ summary(mod)
 #> F4   .006   .200  -.042  1.000
 #> F5   .154   .290   .344   .145  1.000
 #> 
-#> ── 95% Wald CIs for factor intercorrelations ───────────────────────────────────
+#> ── 95% bootstrap CIs for factor intercorrelations ──────────────────────────────
 #> 
 #> Factors   est    lower  upper
-#> F1 ~~ F2   .372   .341   .402
-#> F1 ~~ F3   .448   .412   .485
-#> F1 ~~ F4   .006  -.028   .039
-#> F1 ~~ F5   .154   .104   .204
-#> F2 ~~ F3   .319   .277   .362
-#> F2 ~~ F4   .200   .169   .230
-#> F2 ~~ F5   .290   .234   .346
-#> F3 ~~ F4  -.042  -.091   .007
-#> F3 ~~ F5   .344   .298   .390
-#> F4 ~~ F5   .145   .099   .191
+#> F1 ~~ F2   .372   .327   .405
+#> F1 ~~ F3   .448   .400   .481
+#> F1 ~~ F4   .006  -.037   .049
+#> F1 ~~ F5   .154   .108   .196
+#> F2 ~~ F3   .319   .270   .359
+#> F2 ~~ F4   .200   .160   .236
+#> F2 ~~ F5   .290   .241   .326
+#> F3 ~~ F4  -.042  -.082   .002
+#> F3 ~~ F5   .344   .293   .373
+#> F4 ~~ F5   .145   .098   .185
 #> 
 #> ── Structure Matrix ────────────────────────────────────────────────────────────
 #> 
@@ -444,14 +448,17 @@ summary(mod)
 #> 
 #> ── Model Fit ───────────────────────────────────────────────────────────────────
 #> 
-#> scaled χ²(295) = 2912.75, p < .001
-#> CFI: .90
-#> TLI: .86
-#> RMSEA [90% CI]: .05 [.05; .06]
-#> AIC: NA
-#> BIC: NA
-#> CAF: .43
-#> SRMR: .03
+#> χ²(295) = 3604.54, p < .001
+#> CFI [95% bootstrap-CI]: .90 [.88, .90]
+#> TLI [95% bootstrap-CI]: .85 [.82, .85]
+#> RMSEA [90% CI] [95% bootstrap-CI]: .06 [.06; .06] [.06, .07]
+#> AIC [95% bootstrap-CI]: 3014.54 [3034.98, 3700.48]
+#> BIC [95% bootstrap-CI]: 1230.81 [1251.25, 1916.74]
+#> ECVI [95% bootstrap-CI]: 1.26 [1.27, 1.48]
+#> CAF [95% bootstrap-CI]: .43 [.43, .45]
+#> SRMR [95% bootstrap-CI]: .03 [.03, .04]
+#> 
+#> Note: Bootstrap CIs based on 1000 bootstrap samples.
 #> 
 #> ── Residual Diagnostics ────────────────────────────────────────────────────────
 #> 
@@ -660,8 +667,8 @@ residuals(mod)
 #> socR_6 -0.058900218  0.0775383760 -0.048707612  0.1897359371  0.0000000000
 
 # DWLS estimation based on polychoric correlations, with robust sandwich SEs
-mod <- efa_fit(GRiPS_raw, n_factors = 1, estimator = "DWLS", cor_method = "poly",
-           se = "sandwich")
+mod <- efa_fit(GRiPS_raw, n_factors = 1, estimator = "dwls", cor_method = "poly",
+               se = "sandwich")
 #> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
 #> Warning: Some response-category combinations are empty despite a non-negligible expected
 #> count.
@@ -683,11 +690,6 @@ mod
 #> commonly   .843  .711  .289
 #> chances    .817  .668  .332
 #> attracted  .859  .738  .262
-#> 
-#> Legend:
-#>   bold = |loading| >= .300
-#>   grey = below cutoff
-#>   red h2/u2 = Heywood-relevant value
 #> 
 #> ── Variances Accounted for ─────────────────────────────────────────────────────
 #> 
@@ -732,11 +734,6 @@ summary(mod)
 #> commonly   .843  .711  .289
 #> chances    .817  .668  .332
 #> attracted  .859  .738  .262
-#> 
-#> Legend:
-#>   bold = |loading| >= .300
-#>   grey = below cutoff
-#>   red h2/u2 = Heywood-relevant value
 #> 
 #> ── 95% Wald CIs for salient unrotated loadings ─────────────────────────────────
 #> 
@@ -790,7 +787,7 @@ information SEs, but note that they assume multivariate normality.
 
 # ML estimation with oblimin rotation and information SEs, based on correlation
 # matrix and N
-mod <- efa_fit(test_models$baseline$cormat, N = 500,  n_factors = 3, estimator = "ML",
+mod <- efa_fit(test_models$baseline$cormat, N = 500,  n_factors = 3, estimator = "ml",
            rotation = "oblimin", se = "information")
 mod
 #> 
@@ -817,11 +814,6 @@ mod
 #> V16   .550  -.039   .092  .345  .655
 #> V17   .652  -.035  -.013  .390  .610
 #> V18   .549   .012   .052  .349  .651
-#> 
-#> Legend:
-#>   bold = |loading| >= .300
-#>   grey = below cutoff
-#>   red h2/u2 = Heywood-relevant value
 #> 
 #> ── Factor Intercorrelations ────────────────────────────────────────────────────
 #> 
@@ -859,7 +851,7 @@ summary(mod)
 #> Factors: 3
 #> Variables: 18
 #> N: 500
-#> Rotation local optima: 1 distinct from 100 random starts
+#> Rotation local optima: 1 distinct from 6 of 101 starts
 #> Heywood cases: 0
 #> Cross-loading items (|loading| >= .300): 0
 #> Items without salient loading (|loading| >= .300): 0
@@ -890,32 +882,27 @@ summary(mod)
 #> V17   .652  -.035  -.013  .390  .610
 #> V18   .549   .012   .052  .349  .651
 #> 
-#> Legend:
-#>   bold = |loading| >= .300
-#>   grey = below cutoff
-#>   red h2/u2 = Heywood-relevant value
-#> 
 #> ── 95% Wald CIs for salient rotated loadings ───────────────────────────────────
 #> 
 #> Variable  Factor  est    lower  upper
-#> V13       F1       .612   .476   .748
-#> V14       F1       .540   .401   .679
-#> V15       F1       .552   .413   .691
-#> V16       F1       .550   .411   .689
-#> V17       F1       .652   .521   .784
-#> V18       F1       .549   .410   .689
-#> V7        F2       .524   .385   .662
-#> V8        F2       .562   .427   .697
-#> V9        F2       .535   .398   .671
-#> V10       F2       .661   .533   .788
-#> V11       F2       .352   .208   .497
-#> V12       F2       .649   .515   .783
-#> V1        F3       .607   .463   .750
-#> V2        F3       .458   .307   .610
-#> V3        F3       .430   .276   .584
-#> V4        F3       .536   .387   .686
-#> V5        F3       .418   .264   .572
-#> V6        F3       .687   .554   .821
+#> V13       F1       .612   .488   .736
+#> V14       F1       .540   .411   .669
+#> V15       F1       .552   .423   .681
+#> V16       F1       .550   .421   .679
+#> V17       F1       .652   .535   .769
+#> V18       F1       .549   .420   .679
+#> V7        F2       .524   .394   .653
+#> V8        F2       .562   .437   .687
+#> V9        F2       .535   .407   .662
+#> V10       F2       .661   .548   .773
+#> V11       F2       .352   .211   .493
+#> V12       F2       .649   .529   .770
+#> V1        F3       .607   .474   .739
+#> V2        F3       .458   .313   .604
+#> V3        F3       .430   .282   .578
+#> V4        F3       .536   .395   .677
+#> V5        F3       .418   .269   .567
+#> V6        F3       .687   .570   .805
 #> 
 #> ── Factor Intercorrelations ────────────────────────────────────────────────────
 #> 

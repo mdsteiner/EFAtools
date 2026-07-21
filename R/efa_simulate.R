@@ -55,20 +55,26 @@
 #' With `categories`, the drawn data are discretized into ordered categories (an
 #' integer code `1` to `K`). `categories` gives either the number of equally probable
 #' categories (one count for every variable, or one per variable) or, as a list of
-#' proportion vectors, the marginal category proportions per variable. Two matching
-#' modes set what the categorization preserves. With `match = "thresholds"` (the
-#' default) the data are cut at normal-scale thresholds (Olsson, 1979) that reproduce
-#' the requested proportions exactly for normal marginals and approximately for the
-#' `"VM"` and `"IG"` marginals; because categorization attenuates product-moment
-#' correlations, the categorized data's Pearson correlation is smaller in magnitude
-#' than the population correlation (and, under non-normal marginals, its polychoric
-#' correlation departs from the population as well). With `match = "polychoric"` the
-#' latent is required to be normal (`marginals = "normal"`) and the cases are drawn
-#' multivariate-normal and thresholded, so the population polychoric correlation of
-#' the categorized data equals the target; combining it with non-normal marginals is
-#' rejected. Ordinal output is not available with `marginals = "empirical"`. Empty
-#' categories left by a draw are reported with a warning, as they destabilize the
-#' polychoric correlation and the factor analysis.
+#' proportion vectors, the marginal category proportions per variable. The cut points are
+#' the thresholds that reproduce the requested proportions (Olsson, 1979): the
+#' standard-normal quantiles for `marginals = "normal"`, and for `marginals = "VM"` those
+#' quantiles mapped through the same Fleishman cubic the draw uses, so the requested
+#' proportions are reproduced on the non-normal scale too. Under `marginals = "IG"` the
+#' thresholds stay on the standard-normal scale while the data do not, so the achieved
+#' proportions depart from the request systematically rather than by sampling noise; the
+#' departure grows with the non-normality, and only the *number* of categories is
+#' guaranteed. The same holds for a `"VM"` variable whose Fleishman cubic is not increasing
+#' over its own thresholds and the tails beyond them, which keeps the normal-scale ones and
+#' is reported with a warning; this arises when a turning point of the cubic sits at or
+#' near an outer threshold -- under a strongly platykurtic marginal, or under substantial
+#' skewness or kurtosis combined with a small outer-category proportion.
+#' Because categorization attenuates product-moment correlations, the
+#' categorized data's Pearson correlation is smaller in magnitude than the population
+#' correlation; under non-normal marginals its polychoric correlation departs from the
+#' population as well. `match` changes none of this -- it asserts an intent rather than
+#' selecting a computation, as described under that argument. Ordinal output is not
+#' available with `marginals = "empirical"`. Empty categories left by a draw are reported
+#' with a warning, as they destabilize the polychoric correlation and the factor analysis.
 #'
 #' With `missing`, missing values are introduced into the drawn data under a chosen
 #' mechanism (Rubin, 1976), each variable holed at a target expected rate
@@ -78,9 +84,15 @@
 #' `missing_predictor`) or the variable's own value for `"MNAR"`, with slope
 #' `missing_strength`. The mechanism acts on the drawn (latent) values, so when
 #' `categories` also discretizes the data the missingness is keyed on the underlying
-#' value, not the category code. For `"MAR"` the predictor uses the complete drawn
-#' values. The returned matrix carries the `NA`s, which the correlation estimators
-#' handle downstream.
+#' value, not the category code. For `"MAR"` the predictor is evaluated on the complete
+#' drawn values, but every variable is holed at rate `missing_prop`, so a variable's MAR
+#' predictor is itself missing for roughly a `missing_prop` fraction of the cases whose
+#' missingness it drove. The mechanism is therefore MAR conditional on the *complete*
+#' data, and **not** ignorable for an analyst who sees only the observed data: estimators
+#' that are consistent under ignorable MAR, such as `cor_method = "fiml"` in [efa_fit()]
+#' and the multiple imputation behind [efa_mi()], keep a residual bias here that grows
+#' with `missing_prop` and `missing_strength`. The returned matrix carries the `NA`s,
+#' which the correlation estimators handle downstream.
 #'
 #' With `model_error`, the population is perturbed away from the exact factor
 #' structure so the `q`-factor model (`q = ncol(Lambda)`) fits it only approximately,
@@ -97,9 +109,11 @@
 #' Koopman & Linn, 1969) adds minor common factors tuned so the achieved RMSEA -- and,
 #' optionally, CFI -- match the target(s); with a single target the match is close,
 #' with both it is a compromise. `"WB"` (Wu & Browne, 2015) draws the population from
-#' an inverse-Wishart distribution around the model-implied correlation; being a
-#' single random draw, its realized RMSEA varies around the target (and tends to
-#' exceed it), so the realized value is reported rather than guaranteed. `"CB"` and
+#' an inverse-Wishart distribution around the model-implied correlation; its calibration
+#' applies to the *best-fitting* model, so the reported misfit of the *generating* model
+#' is systematically larger than the target -- by roughly \eqn{\sqrt{(p(p-1)/2)/df}},
+#' about 1.4 times for 12 variables and 3 factors. Use `"CB"` when the reported RMSEA
+#' must equal the target. `"CB"` and
 #' `"WB"` target the RMSEA only; `"TKL"` can target the RMSEA and/or the CFI. The
 #' reported RMSEA/CFI is the misfit of the specified generating model.
 #'
@@ -170,18 +184,23 @@
 #'   length-`p` list of numeric vectors giving the marginal category proportions per
 #'   variable (each strictly positive and summing to 1). Default is `NULL`, which
 #'   returns the continuous data.
-#' @param match character. Only used with `categories`: how the categorization
-#'   relates to the population correlation. `"thresholds"` cuts the drawn data at the
-#'   standard-normal-scale thresholds (for `marginals` `"normal"`, `"VM"`, or `"IG"`;
-#'   not `"empirical"`), with an attenuated ordinal Pearson correlation;
-#'   `"polychoric"` requires normal latents (`marginals = "normal"`) and
-#'   makes the population polychoric correlation of the categorized data equal the
-#'   target correlation. Default is `NULL` (`"thresholds"` when `categories` is set).
+#' @param match character. Only used with `categories`: an assertion about how the
+#'   categorization relates to the population correlation. With a normal latent, cutting
+#'   at the normal-scale thresholds already leaves the population polychoric correlation
+#'   of the categorized data equal to the target correlation, so both values compute the
+#'   same thresholds and produce identical data whenever both are legal. `"thresholds"`
+#'   (the default) also cuts the `"VM"` and `"IG"` draws, whose ordinal Pearson and
+#'   polychoric correlations then both depart from the population; `"polychoric"` states
+#'   that the polychoric match is required and therefore rejects non-normal marginals.
+#'   Not available with `marginals = "empirical"`. The value is matched
+#'   case-insensitively. Default is `NULL` (`"thresholds"` when `categories` is set).
 #' @param missing character. An optional missing-data mechanism to impose on the drawn
 #'   data: one of `"none"` (the default, complete data), `"MCAR"` (missing completely at
 #'   random), `"MAR"` (missing at random, depending on another variable), or `"MNAR"`
 #'   (missing not at random, depending on the variable's own value). Introduced values
-#'   become `NA`.
+#'   become `NA`. Every variable is holed, so under `"MAR"` each variable's predictor is
+#'   itself subject to missingness: the mechanism is MAR given the *complete* data and is
+#'   not ignorable for an analyst who sees only the observed data (see Details).
 #' @param missing_prop numeric. Only used when `missing` is not `"none"`, where it is
 #'   required: the target marginal proportion of missing values per variable, a single
 #'   number strictly between 0 and 1. This is the expected rate; the realized rate of a
@@ -210,7 +229,9 @@
 #'   data -- an `N` by `p` numeric matrix, an integer matrix of category codes when `categories`
 #'   is set, or a length-`n_datasets` list of these when `n_datasets > 1`; `NULL` when
 #'   `return_pop = TRUE`), `population` (the `p` by `p` population correlation matrix drawn from,
-#'   model-error-perturbed when requested), `model_error` (`NULL`, or a list of the method and
+#'   model-error-perturbed when requested; with `force_pd = TRUE` and `marginals = "VM"` it stays
+#'   the target matrix, from which the realized correlations of the draw can drift), `model_error`
+#'   (`NULL`, or a list of the method and
 #'   the target and achieved RMSEA/CFI when model error was applied), and `settings`. Printing
 #'   the object shows a compact summary.
 #'
@@ -326,14 +347,14 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
   checkmate::assert_count(n_datasets, positive = TRUE)
   checkmate::assert_int(seed, null.ok = TRUE)
 
-  marginals <- match.arg(marginals)
+  marginals <- .match_arg_ci(marginals)
 
   # `model_error` selects the method used to perturb the population so a factor model fits it
   # imperfectly; `target_rmsea`/`target_cfi` set the amount and activate it. A target is what
   # turns model error on -- without one the population is exact, whatever `model_error`. CB and
   # WB target the RMSEA only; TKL can target the RMSEA and/or the CFI. Compatibility is checked
   # here; the perturbation itself runs once the population is built (below).
-  model_error <- match.arg(model_error)
+  model_error <- .match_arg_ci(model_error)
   # The targets are strictly inside (0, 1): a target RMSEA of 0 (or CFI of 1) means no misfit,
   # which is the exact population -- omit the target instead of asking a model-error method to
   # inject zero error (which would only degenerate the solvers).
@@ -424,7 +445,7 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
       )
     }
   } else {
-    match <- match.arg(match, c("thresholds", "polychoric"))
+    match <- .match_arg_ci(match, c("thresholds", "polychoric"))
     # The polychoric correlation is defined by a bivariate-normal latent, so it can
     # only equal the target correlation when the latent is normal. Pairing it with
     # non-normal marginals is a contradiction rather than an approximation.
@@ -455,7 +476,7 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
   # dependence in MAR/MNAR, and `missing_predictor` the MAR predictor. Each companion
   # is meaningful only under the mechanisms that use it (compatibility is checked here;
   # value validation runs later, once the data dimension is known).
-  missing <- match.arg(missing)
+  missing <- .match_arg_ci(missing)
   if (missing == "none") {
     supplied <- c("missing_prop", "missing_strength", "missing_predictor")[
       c(!is.null(missing_prop), !is.null(missing_strength), !is.null(missing_predictor))]
@@ -693,7 +714,7 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
     return(.new_efa_simulated(
       data = NULL, population = R_pop, model_error = model_error_info,
       N = NA_integer_, n_datasets = NA_integer_, marginals = marginals,
-      categories = categories, missing = missing, seed = seed))
+      categories = categories, match = match, missing = missing, seed = seed))
   }
 
   checkmate::assert_count(N, positive = TRUE)
@@ -916,6 +937,24 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
   ord_thresholds <- if (!is.null(categories)) {
     .ordinal_thresholds(categories, p)
   }
+  # The Vale-Maurelli draw is a cubic map of a standard normal, so the normal-scale
+  # thresholds would cut it at the wrong quantiles; push them through the same cubic
+  # so the requested proportions are reproduced on the non-normal scale. A variable
+  # whose cubic does not increase across its own thresholds, or folds tail mass back
+  # below an outermost cut, cannot be mapped faithfully and keeps the normal ones.
+  if (!is.null(ord_thresholds) && marginals == "VM") {
+    mapped <- .vm_thresholds(ord_thresholds, vm_ftable)
+    ord_thresholds <- mapped$thresholds
+    if (length(mapped$non_monotone)) {
+      kept <- var_names[mapped$non_monotone]
+      cli::cli_warn(
+        c("{cli::qty(kept)}Variable{?s} {.val {kept}} kept standard-normal category thresholds.",
+          "x" = "{cli::qty(kept)}{?Its/Their} Fleishman polynomial{?s} {?is/are} not increasing over the requested thresholds and the tails beyond them, so mapping the thresholds would misassign category proportions.",
+          "i" = "The achieved category proportions of {cli::qty(kept)}{?this/these} variable{?s} depart from the request; less extreme category proportions or a milder {.arg skewness}/{.arg kurtosis} restore the mapping."),
+        class = "efa_simulate_threshold_fallback"
+      )
+    }
+  }
 
   # Draw each dataset in its own future; future.seed = TRUE assigns every
   # replicate a reproducible L'Ecuyer-CMRG stream, so the result is identical at
@@ -979,7 +1018,7 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
   .new_efa_simulated(
     data = data, population = R_pop, model_error = model_error_info,
     N = N, n_datasets = n_datasets, marginals = marginals,
-    categories = categories, missing = missing, seed = seed)
+    categories = categories, match = match, missing = missing, seed = seed)
 
 }
 
@@ -989,14 +1028,15 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
 # actually drawn from (model-error-perturbed when requested), the `model_error` record (NULL when
 # the population is exact), and a `settings` list for provenance and printing.
 .new_efa_simulated <- function(data, population, model_error, N, n_datasets,
-                               marginals, categories, missing, seed) {
+                               marginals, categories, match, missing, seed) {
   structure(
     list(
       data = data,
       population = population,
       model_error = model_error,
       settings = list(N = N, n_datasets = n_datasets, marginals = marginals,
-                      categories = categories, missing = missing, seed = seed)
+                      categories = categories, match = match, missing = missing,
+                      seed = seed)
     ),
     class = "efa_simulated"
   )
@@ -1345,6 +1385,92 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
     counts <- if (length(categories) == 1L) rep(categories, p) else categories
     lapply(counts, function(k) stats::qnorm(seq_len(k - 1L) / k))
   }
+}
+
+
+# Exact probability mass a Fleishman cubic f assigns at or below the cut f(t0): decompose
+# the real line at the real roots of f(z) = f(t0) and add the standard-normal mass of every
+# interval on which f - f(t0) <= 0 (sign tested at an interior point). Used to detect tail
+# fold-back: for a non-monotone cubic, P(f(Z) <= f(t0)) can differ from pnorm(t0) even when
+# f increases across the thresholds themselves, because a tail segment beyond t0 dips back
+# below the cut. Returns NA for a degenerate (constant) map.
+.vm_cut_mass <- function(t0, b, cc, d) {
+  # f(z) - f(t0) in increasing degree; the constant Fleishman term cancels
+  co <- c(-(b * t0 + cc * t0^2 + d * t0^3), b, cc, d)
+  while (length(co) > 1L && co[length(co)] == 0) co <- co[-length(co)]
+  if (length(co) <= 1L) return(NA_real_)
+  r <- polyroot(co)
+  re <- sort(unique(Re(r[abs(Im(r)) < 1e-8])))
+  cuts <- c(-Inf, re, Inf)
+  mass <- 0
+  for (i in seq_len(length(cuts) - 1L)) {
+    lo <- cuts[i]; hi <- cuts[i + 1L]
+    mid <- if (is.infinite(lo) && is.infinite(hi)) 0
+    else if (is.infinite(lo)) hi - 1
+    else if (is.infinite(hi)) lo + 1
+    else (lo + hi) / 2
+    if (b * mid + cc * mid^2 + d * mid^3 -
+        (b * t0 + cc * t0^2 + d * t0^3) <= 0) {
+      mass <- mass + (stats::pnorm(hi) - stats::pnorm(lo))
+    }
+  }
+  mass
+}
+
+# Map standard-normal ordinal thresholds onto the Vale-Maurelli scale. The VM draw is
+# X = f(Z) with f the per-variable Fleishman cubic a + bZ + cZ^2 + dZ^3, so where f is
+# order-preserving over (essentially) all the normal mass, P(X <= f(tau)) = P(Z <= tau) and
+# cutting X at f(tau) reproduces exactly the proportions tau was built for. Two screens
+# check this. First, f must increase across the requested thresholds themselves, or the cut
+# points come out of order: the derivative b + 2cz + 3dz^2 is a parabola, so its minimum
+# over the closed threshold range is attained at an endpoint or, when the parabola opens
+# upward (d > 0), at the vertex -c/(3d) if that falls inside. Second, the tails beyond the
+# outermost thresholds must not fold back below the cuts: a non-monotone cubic (every
+# platykurtic marginal has d < 0; a skewed one can dip on one side) re-crosses an outer cut
+# value at some more extreme z, and the mass beyond that re-crossing is silently assigned to
+# the wrong side -- 75% of a 1.4% top category at excess kurtosis -1, 84% of a 5% bottom
+# category at skewness 1.5 / excess kurtosis 3. The exact misassigned mass at the two
+# outermost thresholds is compared against the requested outer-category proportions
+# (checking the outermost cuts suffices: an interior cut's re-crossing lies further out and
+# folds strictly less mass) and a variable fails when it is off by more than 5% of the
+# proportion -- departures below that are negligible against the error the normal-scale
+# fallback itself incurs. The indices of the failing variables are returned; those keep
+# their normal-scale thresholds. Infinite thresholds are passed through: an increasing map
+# sends +-Inf to itself, and evaluating the polynomial there could produce a NaN cut point.
+# Fleishman, A. I. (1978). A method for simulating non-normal distributions.
+# Psychometrika, 43(4), 521-532.
+.vm_thresholds <- function(thresholds, ftable) {
+  non_monotone <- integer(0L)
+  for (j in seq_along(thresholds)) {
+    tau <- thresholds[[j]]
+    fin <- is.finite(tau)
+    if (!any(fin)) next                 # nothing to map
+    b <- ftable[j, 2L]; cc <- ftable[j, 3L]; d <- ftable[j, 4L]
+    rng <- range(tau[fin])
+    z <- rng
+    if (d > 0) {
+      zv <- -cc / (3 * d)
+      if (zv > z[1L] && zv < z[2L]) z <- c(z, zv)
+    }
+    if (any(b + 2 * cc * z + 3 * d * z^2 <= 0)) {
+      non_monotone <- c(non_monotone, j)
+      next
+    }
+    p_lo <- stats::pnorm(rng[1L])
+    p_hi <- 1 - stats::pnorm(rng[2L])
+    m_lo <- .vm_cut_mass(rng[1L], b, cc, d)
+    m_hi <- .vm_cut_mass(rng[2L], b, cc, d)
+    if (is.na(m_lo) || is.na(m_hi) ||
+        abs(m_lo - p_lo) > 0.05 * p_lo ||
+        abs((1 - m_hi) - p_hi) > 0.05 * p_hi) {
+      non_monotone <- c(non_monotone, j)
+      next
+    }
+    tau[fin] <- .fleishman_transform(matrix(tau[fin], ncol = 1L),
+                                     ftable[j, , drop = FALSE])[, 1L]
+    thresholds[[j]] <- tau
+  }
+  list(thresholds = thresholds, non_monotone = non_monotone)
 }
 
 

@@ -288,11 +288,14 @@ The test of not-close fit is selected with `type` (never by the ordering of `eps
 efa_power(p = 18, k = 3, N = 200, type = "notclose")
 ```
 
-For a multiple-group model, `group` divides the noncentrality across groups, and the reported
-sample size is then *per group*:
+For a multiple-group model, `group` divides the noncentrality across groups. The reported `N` is
+the *total* across groups -- 259 in all, about 130 per group -- and `N_per_group` carries that
+per-group figure:
 
 ```{r}
-efa_power(p = 18, k = 3, power = 0.80, group = 2)
+pw_2g <- efa_power(p = 18, k = 3, power = 0.80, group = 2)
+pw_2g
+pw_2g$N_per_group
 ```
 
 The `plot()` method draws power against sample size, marking the object's own result. When a
@@ -328,7 +331,7 @@ optimistic. The printed summary says so:
 
 ```{r}
 efa_power("simulation", Lambda = Lambda, Phi = Phi, N = 300,
-          n_datasets = 200, criteria = c("EKC", "MAP"), seed = 42)
+          n_datasets = 200, criteria = c("ekc", "map"), seed = 42)
 ```
 
 Supplying a misfit target makes the study realistic. In simulation mode a target on its own
@@ -338,7 +341,7 @@ minimizer):
 
 ```{r}
 efa_power("simulation", Lambda = Lambda, Phi = Phi, N = 300,
-          n_datasets = 200, criteria = c("EKC", "MAP"),
+          n_datasets = 200, criteria = c("ekc", "map"),
           target_rmsea = 0.05, seed = 42)
 ```
 

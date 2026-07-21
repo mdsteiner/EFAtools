@@ -180,6 +180,13 @@ test_that("errors are thrown correctly", {
   expect_error(efa_smt(matrix(rnorm(50), ncol = 2)), class = "efa_smt_underidentified") # underidentified case
   expect_error(efa_smt(matrix(rnorm(60), ncol = 3)), class = "efa_smt_underidentified") # just identified case
   # expect_warning(efa_smt(burt, N = 170), "Matrix was not positive definite, smoothing was done")
+
+  # SMT's sequential tests rest on a normal-theory chi-square that is not valid for
+  # polychoric / tetrachoric correlations, so they are rejected rather than run.
+  expect_error(efa_smt(GRiPS_raw, cor_method = "poly"),
+               class = "efa_cor_method_unsupported")
+  expect_error(efa_smt(GRiPS_raw, cor_method = "tetra"),
+               class = "efa_cor_method_unsupported")
 })
 
 rm(smt_cor, smt_raw, smt_zero, x, y, z, dat_sing, cor_sing, burt)

@@ -66,6 +66,49 @@ test_that("output class and dimensions are correct", {
   expect_null(obli_1$vars_accounted_rot)
 })
 
+test_that("every oblique rotation labels its factor columns", {
+  # Downstream consumers match factors by column name (reliability coefficients and the
+  # Schmid-Leiman transformation both reorder by the "F<j>" labels), so every rotation --
+  # not only the varimax-based ones -- must label the rotated pattern, the factor
+  # intercorrelations, and the structure matrix. The labels are the unrotated ones
+  # permuted into the new factor order, so they are a permutation of F1..Fk.
+  for (rot in .oblq_rotations) {
+    set.seed(42)
+    fit <- suppressWarnings(
+      efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
+              estimator = "PAF", rotation = rot)
+    )
+    fac_names <- colnames(fit$rot_loadings)
+    expect_equal(sort(fac_names), paste0("F", 1:3),
+                 label = paste0("sorted rot_loadings colnames for ", rot))
+    expect_equal(dimnames(fit$Phi), list(fac_names, fac_names),
+                 label = paste0("Phi dimnames for ", rot))
+    expect_equal(colnames(fit$Structure), fac_names,
+                 label = paste0("Structure colnames for ", rot))
+  }
+})
+
+test_that("maxit bounds every optimization the multistart solver runs", {
+  skip_on_cran()
+
+  # The screen-and-triage stage has its own short iteration budget, but it must still
+  # respect a user-supplied `maxit`: with maxit = 1 no start can converge, so the fit warns
+  # whether or not random starts are in play. Before the cap was applied to the triage
+  # stage, the random-start fit silently returned a fully converged triage solution and the
+  # two calls below disagreed about whether the same maxit had converged.
+  expect_warning(
+    efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500, estimator = "PAF",
+            rotation = "geominQ", maxit = 1),
+    class = "efa_rotation_no_convergence"
+  )
+  expect_warning(
+    efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500, estimator = "PAF",
+            rotation = "geominQ", maxit = 1,
+            rotate_control = rotate_control(random_starts = 0)),
+    class = "efa_rotation_no_convergence"
+  )
+})
+
 test_that("settings are returned correctly", {
   expect_named(obli$settings, c("normalize", "precision", "order_type", "k", "randomStarts", "rotation_diagnostics"))
   expect_named(obli_1$settings, c("normalize", "precision", "order_type", "k", "randomStarts"))
@@ -133,6 +176,11 @@ test_that("errors etc. are thrown correctly", {
                               order_type = "ss_factors"), class = "efa_type_override")
 
   expect_warning(.rotate_model(unrot_1, rotation = "oblimin", type = "EFAtools"), class = "efa_single_factor")
+
+  # A rotation name no engine table knows aborts rather than falling off the end of the
+  # dispatch and returning NULL, which would surface far downstream as a missing solution.
+  expect_error(.rotate_model(unrot, rotation = "obimin", type = "EFAtools"),
+               class = "efa_unknown_rotation")
 })
 
 test_that("order_type orders oblique factors by the requested key", {
@@ -174,9 +222,9 @@ test_that("order_type orders oblique factors by the requested key", {
                          order(diag(Phi %*% crossprod(L)), decreasing = TRUE)))
 
   eig2 <- .reflect_and_order(L, Phi = Phi, rotmat = diag(3), L_unrot = L,
-                             name_factors = FALSE, order_type = "eigen")
+                             order_type = "eigen")
   ss2 <- .reflect_and_order(L, Phi = Phi, rotmat = diag(3), L_unrot = L,
-                            name_factors = FALSE, order_type = "ss_factors")
+                            order_type = "ss_factors")
   expect_false(is.unsorted(rev(diag(eig2$Phi %*% crossprod(unclass(eig2$rot_loadings))))))
   expect_false(is.unsorted(rev(colSums(unclass(ss2$rot_loadings)^2))))
   expect_false(isTRUE(all.equal(unclass(eig2$rot_loadings), unclass(ss2$rot_loadings),
@@ -209,7 +257,7 @@ test_that("oblique Phi, structure, and rotmat are reflected/reordered with the l
   raw_rotmat   <- o$rotmat %*% diag(neg)
 
   res <- .reflect_and_order(raw_loadings, Phi = raw_Phi, rotmat = raw_rotmat,
-                            L_unrot = L, name_factors = FALSE, order_type = "eigen")
+                            L_unrot = L, order_type = "eigen")
 
   # the negative factor is reflected back to a non-negative column sum
   expect_true(all(colSums(unclass(res$rot_loadings)) >= 0))
@@ -240,7 +288,7 @@ test_that("the bentlerQ solution satisfies the oblique structure invariants", {
                ignore_attr = TRUE)
   expect_equal(unclass(L) %*% t(solve(bentQ$rotmat)), unclass(bentQ$rot_loadings),
                ignore_attr = TRUE, tolerance = 1e-6)
-  expect_equal(diag(bentQ$Phi), rep(1, ncol(bentQ$rot_loadings)))
+  expect_equal(diag(bentQ$Phi), rep(1, ncol(bentQ$rot_loadings)), ignore_attr = TRUE)
 })
 
 test_that("the bifactorQ solution satisfies the oblique structure invariants", {
@@ -257,7 +305,7 @@ test_that("the bifactorQ solution satisfies the oblique structure invariants", {
                ignore_attr = TRUE)
   expect_equal(unclass(L) %*% t(solve(bifacQ$rotmat)), unclass(bifacQ$rot_loadings),
                ignore_attr = TRUE, tolerance = 1e-6)
-  expect_equal(diag(bifacQ$Phi), rep(1, ncol(bifacQ$rot_loadings)))
+  expect_equal(diag(bifacQ$Phi), rep(1, ncol(bifacQ$rot_loadings)), ignore_attr = TRUE)
 })
 
 test_that("the simplimax solution satisfies the oblique structure invariants", {
@@ -274,7 +322,7 @@ test_that("the simplimax solution satisfies the oblique structure invariants", {
                ignore_attr = TRUE)
   expect_equal(unclass(L) %*% t(solve(simpli$rotmat)), unclass(simpli$rot_loadings),
                ignore_attr = TRUE, tolerance = 1e-6)
-  expect_equal(diag(simpli$Phi), rep(1, ncol(simpli$rot_loadings)))
+  expect_equal(diag(simpli$Phi), rep(1, ncol(simpli$rot_loadings)), ignore_attr = TRUE)
 })
 
 rm(unrot, obli, unrot_1, obli_1, quarti, simpli, bentQ, geoQ, bifacQ)

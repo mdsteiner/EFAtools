@@ -21,10 +21,12 @@ plain when colours are disabled).
 }
 \description{
 \code{print()} shows a summarised output of the \code{\link[=efa_compare]{efa_compare()}} function: the mean
-(with its range), median, the number of decimals to which all numbers agree,
-and the minimum number of decimals provided, followed (optionally) by the
-table of elementwise differences. \code{format()} assembles the same report and
-returns it as a character vector; \code{print()} is \code{cat(format(x), sep = "\\n")}.
+(with its range), median, and root mean squared distance (RMSE) of the
+differences, the number of decimals to which all numbers agree, the minimum
+number of decimals provided, and (for matrices) the number of differing
+indicator-to-factor correspondences, followed (optionally) by the table of
+elementwise differences. \code{format()} assembles the same report and returns it
+as a character vector; \code{print()} is \code{cat(format(x), sep = "\\n")}.
 The lines follow the active console theme, so they are plain when colours are
 disabled (for example when captured into a file or stripped with
 \code{\link[cli:ansi_strip]{cli::ansi_strip()}}).

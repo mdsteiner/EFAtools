@@ -144,12 +144,12 @@ Either \code{"BvA2017"} for the original implementation by Braeken and van Assen
 \item{show_progress}{logical. Whether a progress bar should be shown in the
 console. Default is FALSE.}
 
-\item{...}{Further arguments passed to \code{\link[=efa_fit]{efa_fit()}} in
-\code{\link[=efa_parallel]{efa_parallel()}} (also within \code{\link[=efa_hull]{efa_hull()}}), \code{\link[=efa_kgc]{efa_kgc()}}, \code{\link[=efa_scree]{efa_scree()}}, and \code{\link[=efa_nest]{efa_nest()}}.
-The estimation tuning knobs are not passed here; they live in \code{estimate_control}. Note that
-the arguments listed after \code{...} must be given by their full name (R matches an abbreviated
-name only against the arguments before \code{...}), so that a tuning knob such as \code{max_iter} cannot
-be mistaken for \code{max_iter_CD}.}
+\item{...}{Further arguments passed on to the \code{\link[=efa_fit]{efa_fit()}} fits, including the
+estimation tuning knobs (\code{type}, \code{init_comm}, \code{criterion}, \code{criterion_type},
+\code{abs_eigen}, \code{start_method}), which are repacked into an \code{\link[=estimate_control]{estimate_control()}} object
+so that they tune the fits exactly as they always did. The estimator is selected with
+\code{method}; \code{max_iter} is taken by the \code{max_iter_CD} argument (R matches an abbreviated
+name against the arguments before \code{...}) and so does not reach the fits.}
 }
 \value{
 A list of class \code{c("efa_retain", "N_FACTORS")}, identical to the
@@ -165,4 +165,3 @@ keeps working.
 \seealso{
 \code{\link[=efa_retain]{efa_retain()}}
 }
-\keyword{internal}

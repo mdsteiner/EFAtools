@@ -15,7 +15,7 @@
 #'   \item{recR_1 to recR_6}{(numeric) - Recreational-domain risk-taking items.}
 #'   \item{socR_1 to socR_6}{(numeric) - Social-domain risk-taking items.}
 #'  }
-#' @source Blais, A.-R., & Weber, E. U. (2002). A domain-specific risk-taking (DOSPERT) scale for adult populations. Judgment and Decision Making, 15(4), 263–290. doi: 10.1002/bdm.414
+#' @source Blais, A.-R., & Weber, E. U. (2006). A domain-specific risk-taking (DOSPERT) scale for adult populations. Judgment and Decision Making, 1(1), 33–47. doi: 10.1017/S1930297500000334
 #' @source Frey, R., Duncan, S. M., & Weber, E. U. (2020). Towards a typology of risk preference: Four risk profiles describe two thirds of individuals in a large sample of the U.S. population. PsyArXiv Preprint. doi:10.31234/osf.io/yjwr9
 #'
 "DOSPERT_raw"

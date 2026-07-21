@@ -132,3 +132,54 @@ test_that("a singular matrix aborts unless the check is disabled", {
     .prepare_cor_input(cor_sing, N = 10, check_singular = FALSE))
   expect_true(all(eigen(prep_ns$R, symmetric = TRUE, only.values = TRUE)$values > 0))
 })
+
+test_that("a covariance matrix is rejected with a pointer to cov2cor()", {
+  # A covariance matrix is square and symmetric but carries variances on its diagonal, so
+  # it is neither a correlation matrix nor raw data. Passed on, it would be fed to
+  # stats::cor() as if its columns were cases -- singular by construction and a wrong
+  # diagnosis -- so the shared input assertion rejects it up front.
+  sds <- seq(1, 5, length.out = ncol(cormat))
+  S <- diag(sds) %*% cormat %*% diag(sds)               # a valid covariance matrix
+
+  expect_error(.assert_cor_input(S), class = "efa_input_is_covmat")
+  # a diagonal (uncorrelated) covariance is caught too: variances on the diagonal
+  expect_error(.assert_cor_input(diag(c(2, 3, 4))), class = "efa_input_is_covmat")
+
+  # an INDEFINITE covariance matrix -- as arises from pairwise deletion or a table
+  # transcribed at few decimals -- is a covariance matrix too: PSD is deliberately not
+  # required (an indefinite correlation matrix is likewise accepted and smoothed), so
+  # exactly the problematic inputs do not fall through to the raw-data misdiagnosis
+  S_ind <- S
+  S_ind[1, 2] <- S_ind[2, 1] <- sqrt(S[1, 1] * S[2, 2]) * 1.05
+  expect_lt(min(eigen(S_ind, symmetric = TRUE, only.values = TRUE)$values), 0)
+  expect_error(.assert_cor_input(S_ind), class = "efa_input_is_covmat")
+
+  # a non-finite entry must not abort inside the classifier (eigen() is no longer called);
+  # the matrix is simply not classified as a covariance matrix
+  S_inf <- S
+  S_inf[1, 2] <- S_inf[2, 1] <- Inf
+  expect_false(.is_covmat(S_inf))
+  expect_silent(.assert_cor_input(S_inf))
+
+  # a zero diagonal (a distance-like matrix) is not a covariance matrix
+  expect_false(.is_covmat(as.matrix(stats::dist(t(cormat[1:4, 1:4])))))
+
+  # the rejection reaches every entry point that accepts a correlation matrix or raw data
+  expect_error(suppressMessages(efa_fit(S, n_factors = 2, N = 200)),
+               class = "efa_input_is_covmat")
+  expect_error(suppressMessages(efa_kmo(S)), class = "efa_input_is_covmat")
+  expect_error(suppressMessages(efa_screen(S)), class = "efa_input_is_covmat")
+  expect_error(suppressMessages(efa_bartlett(S, N = 200)), class = "efa_input_is_covmat")
+  # including the retention criteria, which reach the shared preparer by their own routes
+  expect_error(suppressMessages(efa_parallel(S, N = 200)), class = "efa_input_is_covmat")
+  expect_error(suppressMessages(efa_map(S)), class = "efa_input_is_covmat")
+
+  # a raw-data-only function points at the observations, not at cov2cor() (which would only
+  # produce a correlation matrix it rejects in turn)
+  expect_error(suppressMessages(efa_cd(S)), class = "efa_input_is_covmat")
+
+  # standardising first is accepted; a genuine correlation matrix and raw data still pass
+  expect_silent(.assert_cor_input(stats::cov2cor(S)))
+  expect_silent(.assert_cor_input(cormat))
+  expect_silent(.assert_cor_input(GRiPS_raw))
+})

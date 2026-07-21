@@ -126,6 +126,8 @@ efa_scores(test_models$baseline$cormat, f = efa$rot_loadings, Phi = efa$Phi)
 
 }
 \seealso{
+\code{\link[=efa_fit]{efa_fit()}} for the solution these are computed from.
+
 Other factor scoring:
 \code{\link[=print.efa_scores]{print.efa_scores()}}
 }
