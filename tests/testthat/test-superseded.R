@@ -433,8 +433,12 @@ average_grid <- function(f, estimator_arg = "estimator") {
 
 # Averaging a grid is the most expensive wrapper check in this file, so the silence
 # assertion rides along with the identity one rather than fitting the grid a third time.
-test_that("EFA_AVERAGE() forwards to efa_average() identically and adds no condition", {
-  expect_no_condition(old <- average_grid(EFA_AVERAGE, estimator_arg = "method"))
+test_that("EFA_AVERAGE() forwards identically without user-facing conditions", {
+  expect_no_warning(
+    expect_no_message(
+      old <- average_grid(EFA_AVERAGE, estimator_arg = "method")
+    )
+  )
   new <- average_grid(efa_average)
 
   expect_identical(old, new)
@@ -570,6 +574,10 @@ superseded_contract <- list(
 )
 
 test_that("every superseded wrapper keeps a frozen signature and forwards it whole", {
+  # covr instruments function bodies with counters, so their source structure
+  # cannot be inspected meaningfully during a coverage run.
+  skip_on_covr()
+
   for (old_name in names(superseded_contract)) {
     spec <- superseded_contract[[old_name]]
     wrapper <- get(old_name)

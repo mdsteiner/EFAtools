@@ -368,9 +368,16 @@ test_that("rotated information loading and Phi SEs match lavaan's delta method",
   fit <- suppressWarnings(
     EFA(X, n_factors = 3, method = "ML", rotation = "oblimin", normalize = FALSE,
         se = "information"))
-  ef <- lavaan::efa(sample.cov = stats::cor(X), sample.nobs = N, nfactors = 3,
-                    rotation = "oblimin", rotation.se = "delta",
-                    rotation.args = list(row.weights = "none"))
+  if (utils::packageVersion("lavaan") >= "0.7.0") {
+    ef <- lavaan::efa(sample.cov = stats::cor(X), sample.nobs = N, nfactors = 3,
+                      rotation = list("oblimin", row_weights = "none"),
+                      rotation.se = "delta")
+  } else {
+    # lavaan < 0.7 used a separate rotation.args argument.
+    ef <- lavaan::efa(sample.cov = stats::cor(X), sample.nobs = N, nfactors = 3,
+                      rotation = "oblimin", rotation.se = "delta",
+                      rotation.args = list(row.weights = "none"))
+  }
   lf <- Filter(function(e) inherits(e, "lavaan"), ef)[[1]]
   Ll <- lavaan::lavInspect(lf, "est")$lambda
   SEl <- lavaan::lavInspect(lf, "se")$lambda

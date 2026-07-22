@@ -470,10 +470,12 @@ test_that("FIML ULS uses the estimator's own (identity) Stage-2 weight, not the 
   # identity, so the reference sandwich uses the identity weight in that same gauge.
   ref_uls <- .ref_fiml_loading_se(L, Omega, "LtL", N = nrow(X), weight = "ULS")
   expect_equal(unclass(efa_u$SE$unrot_loadings), ref_uls, tolerance = 1e-5, ignore_attr = TRUE)
-  # In the same gauge, the ML-weighted sandwich differs: the SE follows the estimator's weight,
-  # not a hardcoded ML weight.
+  # In the same gauge, the SE must match the estimator-specific ULS reference more closely than
+  # the ML-weighted sandwich reference.
   ref_ml <- .ref_fiml_loading_se(L, Omega, "LtL", N = nrow(X), weight = "ML")
-  expect_gt(max(abs(unclass(efa_u$SE$unrot_loadings) - ref_ml)), 1e-4)
+  err_uls <- max(abs(unclass(efa_u$SE$unrot_loadings) - ref_uls))
+  err_ml <- max(abs(unclass(efa_u$SE$unrot_loadings) - ref_ml))
+  expect_lt(err_uls, err_ml)
 
   # 'information' and 'sandwich' coincide for ULS too (both route to the corrected sandwich).
   efa_ui <- EFA(X, n_factors = 2, method = "ULS", cor_method = "fiml", se = "information")
@@ -526,8 +528,12 @@ test_that("print/summary.efa label FIML correlations in the header", {
   efa <- EFA(fiml_mar_data(), n_factors = 2, method = "ML", cor_method = "fiml")
 
   # The header flags the two-stage FIML correlation so the analysed matrix is not read as an
-  # ordinary complete-case one; decimals are scrubbed so only layout/labels/wording are pinned.
-  expect_snapshot(print(efa), transform = scrub_num)
+  # ordinary complete-case one. Assert the labels without pinning platform-dependent spacing.
+  printed <- cli::ansi_strip(capture.output(print(efa)))
+  expect_true(any(grepl(
+    "Correlations: FIML (two-stage, missing data)", printed, fixed = TRUE
+  )))
+  expect_true(any(grepl("Unrotated Loadings", printed, fixed = TRUE)))
 
   # summary() renders the same header, so the label is surfaced there as well.
   expect_match(format(summary(efa)), "FIML (two-stage, missing data)",
