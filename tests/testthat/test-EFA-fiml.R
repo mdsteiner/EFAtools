@@ -390,8 +390,15 @@ test_that("FIML rotated loading SEs match lavaan two-stage under a supported rot
 
   # Match EFAtools' geominQ epsilon (default delta = 0.01) so the two rotations coincide; the
   # two-stage estimator carries the corrected rotated-loading SEs through standardizedSolution().
-  lf <- lavaan::efa(as.data.frame(X), nfactors = 2, rotation = "geomin",
-                    missing = "two.stage", rotation.args = list(geomin.epsilon = 0.01))
+  if (utils::packageVersion("lavaan") >= "0.7.0") {
+    lf <- lavaan::efa(as.data.frame(X), nfactors = 2,
+                      rotation = list("geomin", geomin_epsilon = 0.01),
+                      missing = "two.stage")
+  } else {
+    # lavaan < 0.7 used a separate rotation.args argument.
+    lf <- lavaan::efa(as.data.frame(X), nfactors = 2, rotation = "geomin",
+                      missing = "two.stage", rotation.args = list(geomin.epsilon = 0.01))
+  }
   lfit <- if (is.list(lf) && !inherits(lf, "lavaan")) lf[[1]] else lf
   lam <- lavaan::standardizedSolution(lfit)
   lam <- lam[lam$op == "=~", ]

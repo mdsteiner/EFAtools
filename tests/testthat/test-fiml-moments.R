@@ -53,7 +53,10 @@ test_that("FIML moments match lavaan two-stage (missing = 'ml') under MAR", {
   fit <- lavaan::lavCor(df, missing = "ml", output = "fit")
   ss <- lavaan::lavInspect(fit, "sampstat")
   expect_equal(em$sigma, ss$cov, tolerance = 1e-4, ignore_attr = TRUE)
-  expect_equal(em$mu, ss$mean, tolerance = 1e-4, ignore_attr = TRUE)
+  # testthat's numeric tolerance is relative, which is unstable for means close to zero.
+  # The two independent optimisers agree to a few 1e-5 across BLAS implementations, so
+  # assert the intended absolute tolerance explicitly.
+  expect_lt(max(abs(unname(em$mu) - unname(ss$mean))), 1e-4)
 
   Rml <- lavaan::lavCor(df, missing = "ml", output = "cor")
   expect_equal(stats::cov2cor(em$sigma), as.matrix(Rml),

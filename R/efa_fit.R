@@ -487,8 +487,8 @@
 #' \item{convergence}{Integer convergence code (0 = converged), using the codes of
 #'  [`stats::optim()`][stats::optim]. For ML and ULS it is the code from the bounded
 #'  optimiser; for DWLS the fit runs a bounded warm start followed by an
-#'  unconstrained polish, and the reported code is non-zero if *either* of them
-#'  stopped early. For PAF it is 1 if the maximum number of iterations was reached
+#'  unconstrained polish, and the reported code is from the final polish. For PAF
+#'  it is 1 if the maximum number of iterations was reached
 #'  without meeting the convergence criterion and 0 otherwise. A non-zero code is
 #'  also reported with a warning.}
 #' \item{heywood}{A named integer vector indicating which variables have a

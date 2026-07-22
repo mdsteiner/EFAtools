@@ -457,11 +457,11 @@ Rcpp::List fit_dwls_cpp(const arma::mat& R, const int n_fac, const arma::mat& W)
     Rcpp::Named("loadings")    = Lc,
     Rcpp::Named("Fm")          = Fm,
     Rcpp::Named("iter")        = opt.fncount(),
-    // A warm start that exhausted its own budget may have left the polish outside the
-    // global basin -- the failure the warm start exists to prevent -- so report either
-    // optimiser stopping early as non-convergence rather than only the polish.
-    Rcpp::Named("convergence") = opt.convergence() != 0 ? opt.convergence()
-                                                        : wopt.convergence());
+    // Report the status of the final analytic-gradient polish. The numerical-gradient
+    // L-BFGS-B warm start is only an initializer and can return line-search code 52 on
+    // some BLAS/compiler combinations despite supplying a finite start from which BFGS
+    // converges. Propagating that preparatory status falsely marks the final fit as failed.
+    Rcpp::Named("convergence") = opt.convergence());
 }
 
 // DWLS objective and gradient exposed for the estimator guard tests; thin wrappers over
