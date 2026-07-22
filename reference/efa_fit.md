@@ -314,10 +314,10 @@ following:
   [`stats::optim()`](https://rdrr.io/r/stats/optim.html). For ML and ULS
   it is the code from the bounded optimiser; for DWLS the fit runs a
   bounded warm start followed by an unconstrained polish, and the
-  reported code is non-zero if *either* of them stopped early. For PAF
-  it is 1 if the maximum number of iterations was reached without
-  meeting the convergence criterion and 0 otherwise. A non-zero code is
-  also reported with a warning.
+  reported code is from the final polish. For PAF it is 1 if the maximum
+  number of iterations was reached without meeting the convergence
+  criterion and 0 otherwise. A non-zero code is also reported with a
+  warning.
 
 - heywood:
 
