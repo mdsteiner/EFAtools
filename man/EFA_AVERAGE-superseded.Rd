@@ -155,7 +155,9 @@ How to specify the starting values for the optimization procedure for ML.
 \code{c("psych", "factanal")}.}
 
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}} if raw data
-is given as input. Default is "pairwise.complete.obs".}
+is given as input. Default is "pairwise.complete.obs". It is ignored when
+\code{cor_method = "fiml"}, which handles the missingness itself, so every case
+contributes.}
 
 \item{cor_method}{character. Correlation computed from raw data: \code{"pearson"},
 \code{"spearman"}, or \code{"kendall"} (passed to \code{\link[stats:cor]{stats::cor()}}), \code{"poly"} /

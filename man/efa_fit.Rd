@@ -124,7 +124,10 @@ otherwise). Use \code{\link[=efa_retain]{efa_retain()}} to decide on a value.}
 correlation matrix is used. If input is a correlation matrix and \code{N} = NA
 (default), not all fit indices can be computed. When raw data with missing
 values are entered and \code{use} is \code{"complete.obs"} or \code{"na.or.complete"}, rows
-are deleted listwise, so \code{N} is taken as the number of complete cases.}
+are deleted listwise, so \code{N} is taken as the number of complete cases. The same
+applies, whatever \code{use} asks for, whenever an asymptotic covariance is required
+(the "DWLS" estimator, or \code{se = "sandwich"}); with \code{cor_method = "fiml"}, \code{N} is
+instead the number of cases carrying at least one observed value.}
 
 \item{estimator}{character. The estimator used to fit the EFA: "PAF" (principal axis
 factoring), "ML" (maximum likelihood), "ULS" (unweighted least squares; "MINRES" is an
@@ -154,7 +157,11 @@ with missing values. See the \emph{Correlation methods} section in Details for t
 properties and the combinations they support. Default is "pearson".}
 
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}} if raw data
-is given as input. Default is "pairwise.complete.obs".}
+is given as input. Default is "pairwise.complete.obs". It is ignored when
+\code{cor_method = "fiml"} (which handles the missingness itself, so every case
+contributes), and it is overridden to listwise deletion whenever an asymptotic
+covariance is required (the "DWLS" estimator, or \code{se = "sandwich"}), because the
+covariance must describe the same cases as the correlation matrix.}
 
 \item{estimate_control}{a control object from \code{\link[=estimate_control]{estimate_control()}} bundling the
 estimation tuning knobs: the \code{type} preset; the principal-axis-factoring iteration
@@ -337,7 +344,13 @@ underlies both the DWLS weights and the scaled (sandwich) statistic relies on
 large-sample theory that degrades for empty or near-empty response-category
 combinations; with very sparse cells the resulting weights and standard errors can be
 unreliable (a warning is issued when empty cells are present), so interpret them with
-caution and consider collapsing rare categories.
+caution and consider collapsing rare categories. The response-category probabilities
+are integrated by Gauss-Legendre quadrature, and a strongly correlated pair -- at a
+lower correlation when its table has an empty response-category combination -- is
+re-integrated with a finer rule, because the base rule under-resolves the narrow
+conditional transition of such a pair. The resulting correlations agree with an exact
+bivariate-normal integrator to about \code{1e-5}, so no quadrature setting is exposed as an
+argument.
 \item \strong{"fiml"} estimates a two-stage full-information maximum-likelihood correlation. The
 saturated multivariate-normal mean and covariance are estimated from raw data with
 missing values by an EM algorithm assuming the data are missing at random (Yuan,

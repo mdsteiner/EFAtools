@@ -16,7 +16,10 @@
 #' correlation matrix is used. If input is a correlation matrix and `N` = NA
 #' (default), not all fit indices can be computed. When raw data with missing
 #' values are entered and `use` is `"complete.obs"` or `"na.or.complete"`, rows
-#' are deleted listwise, so `N` is taken as the number of complete cases.
+#' are deleted listwise, so `N` is taken as the number of complete cases. The same
+#' applies, whatever `use` asks for, whenever an asymptotic covariance is required
+#' (the "DWLS" estimator, or `se = "sandwich"`); with `cor_method = "fiml"`, `N` is
+#' instead the number of cases carrying at least one observed value.
 #' @param estimator character. The estimator used to fit the EFA: "PAF" (principal axis
 #' factoring), "ML" (maximum likelihood), "ULS" (unweighted least squares; "MINRES" is an
 #' accepted alias returning identical results), or "DWLS" (diagonally weighted least
@@ -35,7 +38,11 @@
 #'  estimator, rotation, and `cor_method` combinations they support; see the *Standard
 #'  errors* section in Details.
 #' @param use character. Passed to [stats::cor()] if raw data
-#' is given as input. Default is "pairwise.complete.obs".
+#' is given as input. Default is "pairwise.complete.obs". It is ignored when
+#' `cor_method = "fiml"` (which handles the missingness itself, so every case
+#' contributes), and it is overridden to listwise deletion whenever an asymptotic
+#' covariance is required (the "DWLS" estimator, or `se = "sandwich"`), because the
+#' covariance must describe the same cases as the correlation matrix.
 #' @param cor_method character. How the correlation is computed from raw data:
 #'   `"pearson"`, `"spearman"`, or `"kendall"` (passed to [stats::cor()]); `"poly"` /
 #'   `"tetra"` for polychoric / tetrachoric correlations of ordinal / binary data; or
@@ -133,7 +140,13 @@
 #'   large-sample theory that degrades for empty or near-empty response-category
 #'   combinations; with very sparse cells the resulting weights and standard errors can be
 #'   unreliable (a warning is issued when empty cells are present), so interpret them with
-#'   caution and consider collapsing rare categories.
+#'   caution and consider collapsing rare categories. The response-category probabilities
+#'   are integrated by Gauss-Legendre quadrature, and a strongly correlated pair -- at a
+#'   lower correlation when its table has an empty response-category combination -- is
+#'   re-integrated with a finer rule, because the base rule under-resolves the narrow
+#'   conditional transition of such a pair. The resulting correlations agree with an exact
+#'   bivariate-normal integrator to about `1e-5`, so no quadrature setting is exposed as an
+#'   argument.
 #' - **"fiml"** estimates a two-stage full-information maximum-likelihood correlation. The
 #'   saturated multivariate-normal mean and covariance are estimated from raw data with
 #'   missing values by an EM algorithm assuming the data are missing at random (Yuan,

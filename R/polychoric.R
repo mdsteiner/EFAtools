@@ -43,6 +43,15 @@
   nms <- colnames(x)
   p <- ncol(x)
 
+  # A single variable has no correlation to estimate. Caught here so the request fails with a
+  # classed condition; the C++ backend keeps the same check as unreachable defence.
+  if (p < 2L) {
+    cli::cli_abort(
+      c("Polychoric correlations need at least two variables.",
+        "x" = "{.arg x} has {p} column{?s}."),
+      class = "efa_cor_too_few_vars", call = error_call)
+  }
+
   # When an asymptotic covariance is requested, the point estimate, thresholds, and ACOV must
   # all come from the SAME cases: a sandwich covariance is only valid for the estimator that
   # produced the estimates, so a pairwise matrix paired with a listwise covariance is not the
@@ -107,8 +116,6 @@
 
   R <- res$R
   dimnames(R) <- list(nms, nms)
-  thresholds <- res$thresholds
-  names(thresholds) <- nms
 
   # A pair with no overlapping complete observations is uncomputable and comes back as
   # NA; abort with the same classed condition .prepare_cor_input() uses for an NA
@@ -131,7 +138,7 @@
       class = "efa_cor_smoothed")
   }
 
-  out <- list(R = R, thresholds = thresholds)
+  out <- list(R = R)
 
   # The asymptotic covariance of the off-diagonal correlations (Muthen, 1984; Joreskog,
   # 1994), at the requested level: a variance per element ("diag") or the full cross-pair
@@ -154,24 +161,44 @@
       # many-category table is not flagged. The covariance is still returned.
       n_obs <- nrow(codes)
       pairs_ij <- utils::combn(p, 2L)
-      # Stop at the first structurally-sparse pair instead of building every pair's table.
-      any_sparse <- FALSE
+      # Every pair is tabulated (rather than stopping at the first sparse one) so the warning
+      # can name the variables the user has to act on. Each table is a single tabulate() and
+      # this runs once per fit, not per bootstrap replicate (label_acov = FALSE skips it).
+      # Only the pair indices are collected here; .pair_labels() below supplies the names, so
+      # the warning and the covariance's dimnames cannot drift apart.
+      is_sparse <- logical(ncol(pairs_ij))
       for (k in seq_len(ncol(pairs_ij))) {
         i <- pairs_ij[1L, k]; j <- pairs_ij[2L, k]
         tab <- matrix(tabulate(codes[, i] * n_cat[j] + codes[, j] + 1L,
                                nbins = n_cat[i] * n_cat[j]),
                       n_cat[i], n_cat[j], byrow = TRUE)
         expected <- outer(rowSums(tab), colSums(tab)) / n_obs
-        if (any(tab == 0L & expected >= 5)) { any_sparse <- TRUE; break }
-      }
-      if (any_sparse) {
-        cli::cli_warn(
-          c("Some response-category combinations are empty despite a non-negligible expected count.",
-            "i" = "The polychoric asymptotic covariance (and any DWLS weights or robust standard errors derived from it) can be unreliable for such structurally sparse cells; interpret them with caution."),
-          class = "efa_cor_sparse_cells")
+        is_sparse[k] <- any(tab == 0L & expected >= 5)
       }
 
       labels <- .pair_labels(nms)
+
+      if (any(is_sparse)) {
+        sparse <- labels[is_sparse]
+        # Name the offending pairs, but cap the list: a heterogeneous ordinal set can have
+        # dozens, and a warning that prints them all is unreadable.
+        n_sparse <- length(sparse)
+        shown <- sparse[seq_len(min(5L, n_sparse))]
+        more <- n_sparse - length(shown)
+        # When the list is truncated, drop cli's "and" before the last shown pair so the
+        # trailing count closes the enumeration instead of adding a second conjunction.
+        rest <- ""
+        if (more > 0L) {
+          shown <- cli::cli_vec(shown, style = list("vec-last" = ", "))
+          rest <- paste0(", and ", more, " more")
+        }
+        cli::cli_warn(
+          c("{n_sparse} variable pair{?s} {?has/have} an empty response-category combination despite a non-negligible expected count.",
+            "x" = "Affected {cli::qty(n_sparse)}pair{?s}: {.val {shown}}{rest}.",
+            "i" = "The polychoric asymptotic covariance (and any DWLS weights or robust standard errors derived from it) can be unreliable for such structurally sparse cells; interpret them with caution and consider collapsing rare response categories in these variables."),
+          class = "efa_cor_sparse_cells")
+      }
+
       if (acov == "diag") {
         names(av) <- labels
       } else {

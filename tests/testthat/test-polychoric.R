@@ -193,7 +193,7 @@ test_that("tetrachoric (2 categories) matches polycor and psych", {
   expect_lt(max(abs(ours - unname(tet_rho))), 1e-4)
 })
 
-test_that("the matrix is a valid correlation matrix with named thresholds", {
+test_that("the matrix is a valid, named correlation matrix", {
   res <- poly_g
 
   expect_equal(dim(res$R), c(ncol(g), ncol(g)))
@@ -201,11 +201,6 @@ test_that("the matrix is a valid correlation matrix with named thresholds", {
   expect_equal(diag(res$R), rep(1, ncol(g)), ignore_attr = TRUE)
   expect_true(isSymmetric(res$R))
   expect_true(all(res$R >= -1 & res$R <= 1))
-
-  # one threshold vector per variable, length = (#categories - 1)
-  expect_named(res$thresholds, colnames(g))
-  n_cat <- apply(g, 2L, function(col) length(unique(col)))
-  expect_equal(lengths(res$thresholds), n_cat - 1L, ignore_attr = TRUE)
 })
 
 test_that("the result is deterministic", {
@@ -217,6 +212,12 @@ test_that("a constant column is rejected with a classed condition", {
   gx <- g
   gx[, 1L] <- 3L
   expect_error(.polychoric(gx), class = "efa_cor_constant_col")
+})
+
+test_that("a single variable is rejected at the R level with a classed condition", {
+  # The C++ backend keeps the same check, but it raises an unclassed Rcpp error, so the
+  # abort must happen in the wrapper.
+  expect_error(.polychoric(g[, 1L, drop = FALSE]), class = "efa_cor_too_few_vars")
 })
 
 test_that("a non-positive-definite matrix is left alone unless nearest_pd is requested", {
@@ -291,6 +292,37 @@ test_that("a structurally empty cell warns when an asymptotic covariance is requ
     .polychoric(sparse, acov = "diag", label_acov = FALSE),
     class = "efa_cor_sparse_cells"
   )
+})
+
+test_that("the sparse-cell warning names the offending pairs and caps the list", {
+  testthat::local_reproducible_output()
+
+  # The warning itself is the subject here, so catch it rather than snapshotting whatever
+  # else the fixture emits.
+  sparse_msg <- function(x) {
+    w <- tryCatch(.polychoric(x, acov = "diag"),
+                  efa_cor_sparse_cells = function(w) w)
+    expect_s3_class(w, "efa_cor_sparse_cells")
+    conditionMessage(w)
+  }
+
+  one <- .expand_table(rbind(c(41, 0), c(13, 0), c(28, 0), c(171, 47)))
+  colnames(one) <- c("risk", "gamble")
+  expect_snapshot(cat(sparse_msg(one)))
+
+  # Six three-category items: a common ordinal score nudged up by each item's own 0/1
+  # pattern and capped at the top category. Reaching the lowest category needs an unnudged
+  # zero score and the highest needs a nudged or already-top score, so no pair can combine
+  # them: cells (0, 2) and (2, 0) are structurally empty in all 15 tables, each with an
+  # expected count of 32. The nudges keep the pairs well short of perfect dependence
+  # (rho = 0.82, so the estimates stay off the Frechet-bound plateau), which the naive
+  # monotone construction would land on. The reported list is capped at five plus a count.
+  r <- 0:383L
+  u <- (r %/% 64L) %% 3L
+  nudged <- vapply(1:6, function(k) pmin(2L, u + bitwAnd(bitwShiftR(r, k - 1L), 1L)),
+                   integer(length(r)))
+  colnames(nudged) <- paste0("v", 1:6)
+  expect_snapshot(cat(sparse_msg(nudged)))
 })
 
 test_that("a likely-continuous (many-category) variable warns", {

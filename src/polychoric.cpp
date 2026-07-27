@@ -160,6 +160,9 @@ static void gauss_legendre(int n, std::vector<double>& x, std::vector<double>& w
 // Rectangle probability P(a0 < X <= a1, b0 < Y <= b1; rho) via 1-D conditioning on X.
 // Infinite Y-cuts are handled by std_norm_cdf directly; infinite X-cuts are clamped to
 // +/-POLY_CLAMP. Cancellation-free and non-negative by construction.
+// NOT the estimator's integrator: the likelihood accumulates cell probabilities through
+// poly_accum_node() below. This is reached only from .bvn_rect_cpp(), the entry point the
+// test suite uses to cross-check that integral against an external bivariate-normal rule.
 static double bvn_rect(double a0, double a1, double b0, double b1, double rho,
                        const std::vector<double>& gx, const std::vector<double>& gw) {
   double lo = a0 < -POLY_CLAMP ? -POLY_CLAMP : a0;
@@ -609,6 +612,7 @@ Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
   }
   const int nrow = x.nrow();
   const int p = x.ncol();
+  // Unreachable defence: .polychoric() rejects p < 2 at the R level with a classed condition.
   if (p < 2) {
     Rcpp::stop("At least two variables are required for a correlation matrix.");
   }
@@ -924,14 +928,8 @@ Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
     }
   }
 
-  Rcpp::List thr(p);
-  for (int j = 0; j < p; j++) {
-    thr[j] = Rcpp::NumericVector(tau[j].begin(), tau[j].end());
-  }
-
   return Rcpp::List::create(
     Rcpp::Named("R") = Rmat,
-    Rcpp::Named("thresholds") = thr,
     Rcpp::Named("pd_adjusted") = pd_adjusted,
     Rcpp::Named("acov") = acov_out);
 }

@@ -16,7 +16,14 @@
 # accept either input assume raw data unless these conditions hold.
 .is_cormat <- function(x){
 
+  # The all-numeric test guards the range comparisons that follow it: on a data frame with a
+  # factor column they would dispatch to Ops.factor and fail with an unclassed base error.
+  # It sits after the square test (and so is only paid by the rare square input), because
+  # raw data is almost never square -- the same ordering .is_covmat() documents. A
+  # non-numeric frame is not a correlation matrix, so it falls through to the raw-data path
+  # and is rejected there with a classed condition.
   if(nrow(x) == ncol(x) &&
+     (!is.data.frame(x) || all(vapply(x, is.numeric, logical(1)))) &&
      all(x >= (-1 + .Machine$double.eps * 100), na.rm = TRUE) &&
      all(x <= (1 + .Machine$double.eps * 100), na.rm = TRUE)){
 

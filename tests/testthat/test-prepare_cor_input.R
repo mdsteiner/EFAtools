@@ -120,6 +120,14 @@ test_that("non-numeric raw data aborts with a distinct classed error", {
                         d = c(4, 3, 2, 1))
   expect_error(suppressMessages(.prepare_cor_input(dat_chr)),
                class = "efa_cor_uncomputable")
+
+  # A SQUARE data frame reaches .is_cormat(), where a factor column would otherwise
+  # dispatch to Ops.factor and fail with an unclassed base error; it must take the same
+  # classed route as any other non-numeric raw data.
+  dat_fct <- data.frame(a = factor(c("x", "y", "z")), b = c(1, 2, 3), d = c(3, 1, 2))
+  expect_false(.is_cormat(dat_fct))
+  expect_error(suppressMessages(.prepare_cor_input(dat_fct)),
+               class = "efa_cor_uncomputable")
 })
 
 test_that("a singular matrix aborts unless the check is disabled", {

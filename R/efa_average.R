@@ -111,7 +111,9 @@
 #' [stats::factanal()] function. Default is
 #' `c("psych", "factanal")`.
 #' @param use character. Passed to [stats::cor()] if raw data
-#' is given as input. Default is "pairwise.complete.obs".
+#' is given as input. Default is "pairwise.complete.obs". It is ignored when
+#' `cor_method = "fiml"`, which handles the missingness itself, so every case
+#' contributes.
 #' @param cor_method character. Correlation computed from raw data: `"pearson"`,
 #'   `"spearman"`, or `"kendall"` (passed to [stats::cor()]), `"poly"` /
 #'   `"tetra"` for polychoric / tetrachoric correlations of ordinal / binary data

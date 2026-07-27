@@ -51,7 +51,10 @@ otherwise). Use \code{\link[=efa_retain]{efa_retain()}} to decide on a value.}
 correlation matrix is used. If input is a correlation matrix and \code{N} = NA
 (default), not all fit indices can be computed. When raw data with missing
 values are entered and \code{use} is \code{"complete.obs"} or \code{"na.or.complete"}, rows
-are deleted listwise, so \code{N} is taken as the number of complete cases.}
+are deleted listwise, so \code{N} is taken as the number of complete cases. The same
+applies, whatever \code{use} asks for, whenever an asymptotic covariance is required
+(the "DWLS" estimator, or \code{se = "sandwich"}); with \code{cor_method = "fiml"}, \code{N} is
+instead the number of cases carrying at least one observed value.}
 
 \item{method}{character. The estimator used to fit the EFA; passed to \code{\link[=efa_fit]{efa_fit()}}
 as its \code{estimator} argument. One of "PAF", "ML", "ULS", "MINRES" (an accepted
@@ -112,7 +115,11 @@ loadings are computed with the absolute eigenvalues as done by SPSS.
 Default is \code{NA}.}
 
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}} if raw data
-is given as input. Default is "pairwise.complete.obs".}
+is given as input. Default is "pairwise.complete.obs". It is ignored when
+\code{cor_method = "fiml"} (which handles the missingness itself, so every case
+contributes), and it is overridden to listwise deletion whenever an asymptotic
+covariance is required (the "DWLS" estimator, or \code{se = "sandwich"}), because the
+covariance must describe the same cases as the correlation matrix.}
 
 \item{varimax_type}{character. The type of the varimax rotation performed.
 If "svd", singular value decomposition is used, as \code{\link[stats:varimax]{stats::varimax()}} does. If
