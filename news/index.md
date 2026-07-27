@@ -1,6 +1,8 @@
 # Changelog
 
-## EFAtools 0.8.0.9000
+## EFAtools 1.0.0
+
+CRAN release: 2026-07-23
 
 ### New Interface
 

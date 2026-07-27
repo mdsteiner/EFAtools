@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EFAtools</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,15 +43,15 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.8.0.9000" id="efatools-0809000">EFAtools 0.8.0.9000<a class="anchor" aria-label="anchor" href="#efatools-0809000"></a></h2>
+<h2 class="pkg-version" data-toc-text="1.0.0" id="efatools-100">EFAtools 1.0.0<a class="anchor" aria-label="anchor" href="#efatools-100"></a></h2><p class="text-muted">CRAN release: 2026-07-23</p>
 <div class="section level3">
-<h3 id="new-interface-0-8-0-9000">New Interface<a class="anchor" aria-label="anchor" href="#new-interface-0-8-0-9000"></a></h3>
+<h3 id="new-interface-1-0-0">New Interface<a class="anchor" aria-label="anchor" href="#new-interface-1-0-0"></a></h3>
 <ul><li><p>The recommended interface now consists of lowercase <code>efa_*</code> functions, with estimation and rotation settings defined through <code><a href="../reference/estimate_control.html">estimate_control()</a></code> and <code><a href="../reference/estimate_control.html">rotate_control()</a></code>.</p></li>
 <li><p>The existing uppercase functions remain available without warnings, so current scripts continue to work, but new features will generally be added only to the <code>efa_*</code> interface.</p></li>
 <li><p>Estimators, rotations, retention criteria, scoring methods, and presets can now be specified without matching capitalization exactly, while results continue to store and display the standard spelling.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="changes-when-using-the-efa_-interface-0-8-0-9000">Changes When Using the <code>efa_*</code> Interface<a class="anchor" aria-label="anchor" href="#changes-when-using-the-efa_-interface-0-8-0-9000"></a></h3>
+<h3 id="changes-when-using-the-efa_-interface-1-0-0">Changes When Using the <code>efa_*</code> Interface<a class="anchor" aria-label="anchor" href="#changes-when-using-the-efa_-interface-1-0-0"></a></h3>
 <ul><li><p>The <code>efa_*</code> functions now report an error for unused, misspelled, or misplaced arguments instead of silently ignoring them.</p></li>
 <li><p>Estimation and rotation options such as convergence settings, iteration limits, and rotation parameters should now be supplied through <code><a href="../reference/estimate_control.html">estimate_control()</a></code> or <code><a href="../reference/estimate_control.html">rotate_control()</a></code>.</p></li>
 <li><p>Factor-retention functions always fit unrotated models and therefore reject rotation settings that would not affect the retention result.</p></li>
@@ -61,14 +61,14 @@
 <li><p>Control objects are validated when they are created, allowing invalid settings to be detected before a model is fitted.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="reproducibility-0-8-0-9000">Reproducibility<a class="anchor" aria-label="anchor" href="#reproducibility-0-8-0-9000"></a></h3>
+<h3 id="reproducibility-1-0-0">Reproducibility<a class="anchor" aria-label="anchor" href="#reproducibility-1-0-0"></a></h3>
 <ul><li><p>A supplied <code>seed</code> now controls the complete analysis, including random rotation starts, bootstrap samples, group-specific fits, and model averaging where applicable.</p></li>
 <li><p><code><a href="../reference/efa_average.html">efa_average()</a></code> now has a <code>seed</code> argument and produces the same result regardless of the number of parallel workers.</p></li>
 <li><p>Seeded results from <code><a href="../reference/efa_parallel.html">efa_parallel()</a></code> and <code><a href="../reference/efa_hull.html">efa_hull()</a></code> no longer depend on the parallel-processing setup.</p></li>
 <li><p>Because random-number handling and several calculations were corrected, the same seed may produce different results than in earlier versions for <code><a href="../reference/efa_parallel.html">efa_parallel()</a></code>, <code><a href="../reference/efa_hull.html">efa_hull()</a></code>, <code><a href="../reference/efa_average.html">efa_average()</a></code>, <code><a href="../reference/efa_group.html">efa_group()</a></code>, and some <code><a href="../reference/efa_simulate.html">efa_simulate()</a></code> settings.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="standard-errors-and-fit-statistics-0-8-0-9000">Standard Errors and Fit Statistics<a class="anchor" aria-label="anchor" href="#standard-errors-and-fit-statistics-0-8-0-9000"></a></h3>
+<h3 id="standard-errors-and-fit-statistics-1-0-0">Standard Errors and Fit Statistics<a class="anchor" aria-label="anchor" href="#standard-errors-and-fit-statistics-1-0-0"></a></h3>
 <ul><li><p><code>efa_fit(se = "information")</code> now returns <code>NA</code> with an <code>efa_se_unreliable</code> warning when standard errors for unrotated loadings cannot be estimated reliably, such as for Heywood cases or poorly distinguished factors.</p></li>
 <li><p>Information-based standard errors are now calculated for correlation matrices rather than covariance matrices, improving their accuracy and agreement with sandwich and bootstrap estimates.</p></li>
 <li><p>Information-based standard errors are now supported only with Pearson correlations and FIML; use <code>se = "sandwich"</code> for polychoric, tetrachoric, or rank correlations.</p></li>
@@ -76,14 +76,14 @@
 <li><p><code><a href="../reference/efa_mi.html">efa_mi()</a></code> no longer reports AIC, BIC, or ECVI when these measures are not meaningful for the underlying fitted models.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="multiple-imputation-and-group-comparisons-0-8-0-9000">Multiple Imputation and Group Comparisons<a class="anchor" aria-label="anchor" href="#multiple-imputation-and-group-comparisons-0-8-0-9000"></a></h3>
+<h3 id="multiple-imputation-and-group-comparisons-1-0-0">Multiple Imputation and Group Comparisons<a class="anchor" aria-label="anchor" href="#multiple-imputation-and-group-comparisons-1-0-0"></a></h3>
 <ul><li><p>The pooled unrotated solution from <code><a href="../reference/efa_mi.html">efa_mi()</a></code> no longer depends on the order of the imputed datasets.</p></li>
 <li><p>Pooled unrotated loadings from <code><a href="../reference/efa_mi.html">efa_mi()</a></code> now use the same orientation conventions as a regular <code><a href="../reference/efa_fit.html">efa_fit()</a></code> result, making the two easier to compare.</p></li>
 <li><p>These changes can affect unrotated loadings, their standard errors, and statistics derived from them, but rotated solutions and their fit indices remain unchanged.</p></li>
 <li><p>Consensus results from <code><a href="../reference/efa_group.html">efa_group()</a></code> no longer depend on the order in which groups are supplied, so congruences, loading differences, salience classifications, and invariance conclusions are now stable across group orderings.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="factor-retention-and-rotation-0-8-0-9000">Factor Retention and Rotation<a class="anchor" aria-label="anchor" href="#factor-retention-and-rotation-0-8-0-9000"></a></h3>
+<h3 id="factor-retention-and-rotation-1-0-0">Factor Retention and Rotation<a class="anchor" aria-label="anchor" href="#factor-retention-and-rotation-1-0-0"></a></h3>
 <ul><li><p>Fixed a regression in the revised MAP criterion, which could previously suggest an incorrect number of factors.</p></li>
 <li><p><code><a href="../reference/efa_smt.html">efa_smt()</a></code> now rejects polychoric and tetrachoric correlations because its tests and fit measures are not valid for these inputs.</p></li>
 <li><p>Rotated factors are now labelled <code>F1</code>, <code>F2</code>, and so forth according to the variance they explain, rather than inheriting labels that could change with the random seed.</p></li>
@@ -91,12 +91,12 @@
 <li><p>Criterion-based rotations now respect the specified <code>maxit</code> limit during every stage of the optimization.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="model-averaging-0-8-0-9000">Model Averaging<a class="anchor" aria-label="anchor" href="#model-averaging-0-8-0-9000"></a></h3>
+<h3 id="model-averaging-1-0-0">Model Averaging<a class="anchor" aria-label="anchor" href="#model-averaging-1-0-0"></a></h3>
 <ul><li><p><code><a href="../reference/efa_average.html">efa_average()</a></code> no longer prints <code>NaN%</code> when no models converge and now clearly states which fitted models are included in each reported rate.</p></li>
 <li><p>Named presets such as <code>"SPSS"</code>, <code>"psych"</code>, and <code>"EFAtools"</code> now use their intended iteration limits, so models that exceed those limits are marked as non-converged and excluded from the average.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="data-simulation-0-8-0-9000">Data Simulation<a class="anchor" aria-label="anchor" href="#data-simulation-0-8-0-9000"></a></h3>
+<h3 id="data-simulation-1-0-0">Data Simulation<a class="anchor" aria-label="anchor" href="#data-simulation-1-0-0"></a></h3>
 <ul><li><p>Cudeck–Browne model-error simulations are now reproducible across computing platforms and numerical libraries, although a given seed will produce different populations than in earlier versions.</p></li>
 <li><p>With <code>marginals = "VM"</code>, categorized data now reproduce the requested category proportions more accurately, with a warning when the requested thresholds cannot be transformed safely.</p></li>
 <li><p>The documentation now clarifies that <code>match = "thresholds"</code> and <code>match = "polychoric"</code> produce the same data for normal marginals, and the selected value is now stored in the result settings.</p></li>
@@ -104,14 +104,14 @@
 <li><p>The documentation now explains that <code>model_error = "WB"</code> generally produces a larger RMSEA for the generating model than the requested target.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="input-validation-and-correlation-handling-0-8-0-9000">Input Validation and Correlation Handling<a class="anchor" aria-label="anchor" href="#input-validation-and-correlation-handling-0-8-0-9000"></a></h3>
+<h3 id="input-validation-and-correlation-handling-1-0-0">Input Validation and Correlation Handling<a class="anchor" aria-label="anchor" href="#input-validation-and-correlation-handling-1-0-0"></a></h3>
 <ul><li><p><code><a href="../reference/efa_screen.html">efa_screen()</a></code> now handles collinear or nearly collinear variables without failing during its outlier checks.</p></li>
 <li><p>Polychoric covariance calculations now handle sparse or nearly perfectly associated response tables more consistently, allowing DWLS analyses to continue while warning about problematic variable pairs.</p></li>
 <li><p>Covariance matrices supplied where raw data or a correlation matrix is expected are now rejected with a message suggesting <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cov2cor()</a></code>.</p></li>
 <li><p>Polychoric and tetrachoric correlations now require ordered factors or numeric response codes, preventing character or unordered-factor levels from being interpreted in alphabetical order.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="power-analysis-and-factor-scores-0-8-0-9000">Power Analysis and Factor Scores<a class="anchor" aria-label="anchor" href="#power-analysis-and-factor-scores-0-8-0-9000"></a></h3>
+<h3 id="power-analysis-and-factor-scores-1-0-0">Power Analysis and Factor Scores<a class="anchor" aria-label="anchor" href="#power-analysis-and-factor-scores-1-0-0"></a></h3>
 <ul><li><p><code><a href="../reference/efa_power.html">efa_power()</a></code> now clearly documents that <code>N</code> is the total sample size across groups and returns the corresponding sample size per group in <code>N_per_group</code>.</p></li>
 <li><p>Simulation-based power summaries now distinguish structure-recovery rates from the underlying Tucker congruence values.</p></li>
 <li><p>The documentation for <code><a href="../reference/FACTOR_SCORES.html">FACTOR_SCORES()</a></code> now correctly describes <code>R2</code> as squared factor-score determinacy.</p></li>
