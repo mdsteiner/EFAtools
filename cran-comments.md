@@ -13,8 +13,7 @@ but they remain exported with unchanged arguments and emit no deprecation
 warning. Existing code therefore needs no changes, and neither do the reverse
 dependencies.
 
-The submission also includes various bug-fixes, including the 
-additional issues raised in the CRAN tests.
+The submission also includes various bug-fixes, including fixes for the additional issues raised in the CRAN tests.
 
 ## Test environments
 
