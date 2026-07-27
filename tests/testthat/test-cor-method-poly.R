@@ -95,21 +95,14 @@ test_that("cor_method = 'tetra' rejects variables with more than two categories"
                class = "efa_cor_not_binary")
 })
 
-test_that("a degenerate polychoric pair warns, and DWLS and the sandwich both proceed", {
+test_that("a near-comonotone polychoric pair stops neither DWLS nor the sandwich", {
   x <- .degenerate_ordinal()
 
-  # The degeneracy is reported once, by class, for both the DWLS-weight (diag) and the
-  # sandwich-meat (full) requests -- they screen the same asymptotic variances.
-  cl_diag <- .warn_classes(
-    .prepare_cor_input(x, cor_method = "poly", acov = "diag", dwls = TRUE,
-                       inform_from_data = FALSE))
-  expect_true("efa_acov_degenerate" %in% cl_diag)
-  cl_full <- .warn_classes(
-    .prepare_cor_input(x, cor_method = "poly", acov = "full", dwls = TRUE,
-                       inform_from_data = FALSE))
-  expect_true("efa_acov_degenerate" %in% cl_full)
-
-  # DWLS no longer aborts: the finite (huge) variance down-weights the pair out of the fit.
+  # DWLS does not abort: the pair's asymptotic variance stays finite and positive, so it has a
+  # usable inverse-variance weight. Its size is not asserted -- the pair sits on the
+  # Frechet-bound plateau, where the variance is numerically undetermined (see the acov block
+  # in test-polychoric.R); whether it is large enough to trip the degeneracy screen therefore
+  # varies by platform, so that screen is covered directly below instead.
   dwls <- suppressWarnings(
     efa_fit(x, n_factors = 2, estimator = "DWLS", cor_method = "poly", rotation = "none"))
   expect_s3_class(dwls, "efa")
@@ -125,6 +118,58 @@ test_that("a degenerate polychoric pair warns, and DWLS and the sandwich both pr
                        cor_method = "poly", acov = "diag", dwls = TRUE,
                        inform_from_data = FALSE)))
   expect_false("efa_acov_degenerate" %in% cl_clean)
+})
+
+test_that(".warn_acov_degenerate flags an unusable asymptotic variance and passes clean ones", {
+  # A variance above 1 already implies a +/- 1 SE interval as wide as the whole [-1, 1] range
+  # of a correlation; non-finite and non-positive values are unusable a fortiori. Asserted on
+  # supplied vectors rather than on an estimate, so the gate is exercised exactly rather than
+  # through whichever side of it a fitted pair happens to land on.
+  expect_warning(.warn_acov_degenerate(c(a = 0.01, b = 12, c = 0.02)),
+                 class = "efa_acov_degenerate")
+  expect_warning(.warn_acov_degenerate(c(a = 0.01, b = Inf, c = 0.02)),
+                 class = "efa_acov_degenerate")
+  expect_warning(.warn_acov_degenerate(c(a = 0.01, b = NaN, c = 0.02)),
+                 class = "efa_acov_degenerate")
+  expect_warning(.warn_acov_degenerate(c(a = 0.01, b = 0, c = 0.02)),
+                 class = "efa_acov_degenerate")
+  expect_warning(.warn_acov_degenerate(c(a = 0.01, b = -1, c = 0.02)),
+                 class = "efa_acov_degenerate")
+
+  # Ordinary variances pass, and an unnamed vector is reported positionally rather than failing
+  # on the missing labels.
+  expect_no_warning(.warn_acov_degenerate(c(a = 0.01, b = 0.5, c = 0.02)))
+  expect_warning(.warn_acov_degenerate(c(0.01, 12, 0.02)), class = "efa_acov_degenerate")
+})
+
+test_that("both acov requests screen the same pair-labelled asymptotic variances", {
+  # .prepare_cor_input() screens the variances once, before either consumer touches them, so a
+  # degenerate pair is reported identically whether it reaches the DWLS weights (acov = "diag")
+  # or the sandwich meat (acov = "full", whose diagonal is the same quantity). Captured from the
+  # screen itself: the value that decides the warning is undetermined for a boundary pair, so
+  # what is asserted is the routing -- that both paths screen, and screen the same labelled
+  # diagonal -- on clean data where the screen is silent either way.
+  seen <- list()
+  local_mocked_bindings(
+    .warn_acov_degenerate = function(acov_diag, labels = names(acov_diag)) {
+      seen[[length(seen) + 1L]] <<- acov_diag
+      invisible(NULL)
+    }
+  )
+  x <- DOSPERT_raw[stats::complete.cases(DOSPERT_raw), 1:5]
+  labels <- apply(utils::combn(colnames(x), 2L), 2L, paste, collapse = "-")
+
+  suppressMessages(.prepare_cor_input(x, cor_method = "poly", acov = "diag", dwls = TRUE,
+                                      inform_from_data = FALSE))
+  suppressMessages(.prepare_cor_input(x, cor_method = "poly", acov = "full", dwls = TRUE,
+                                      inform_from_data = FALSE))
+
+  expect_length(seen, 2L)
+  expect_named(seen[[1L]], labels)
+  expect_named(seen[[2L]], labels)
+  # The "full" path reaches the screen through diag(Gamma), which accumulates the same per-cell
+  # influences by a different route (scatter then crossprod) than the "diag" path's direct sum.
+  expect_equal(seen[[1L]], seen[[2L]], tolerance = 1e-6)
 })
 
 test_that("cor_method = 'poly' rejects unordered factor / character columns through efa_fit", {

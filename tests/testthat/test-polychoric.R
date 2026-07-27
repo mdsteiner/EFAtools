@@ -454,18 +454,28 @@ test_that("acov diag/full are well-formed and mutually consistent", {
 })
 
 test_that("acov diag equals diag(full) for a degenerate near-comonotone pair", {
-  # The near-comonotone coupling from above (rho ~ 0.98) has a structurally empty cell whose
-  # model probability underflows, so its dP/P overflows to Inf. The full scatter never touches
-  # that cell (it indexes observed cases only); the diagonal sum must skip it too, or it forms
-  # 0 * Inf = NaN and breaks diag == diag(full). The pair is barely identified, so its variance
-  # is legitimately huge -- but finite, which is what lets DWLS down-weight it instead of aborting.
+  # The near-comonotone coupling from above has a structurally empty cell whose model
+  # probability underflows, so its dP/P overflows to Inf. The full scatter never touches that
+  # cell (it indexes observed cases only); the diagonal sum must skip it too, or it forms
+  # 0 * Inf = NaN and breaks diag == diag(full). That skip is what this block guards.
+  #
+  # The *magnitude* is deliberately not asserted. This table is the comonotone coupling of its
+  # margins (the Frechet upper bound), so the likelihood is numerically flat above rho ~ 0.977
+  # and the estimate is not identified on that plateau (see the empty-cell block above). The
+  # asymptotic variance is far more sensitive to that than the estimate is: it is
+  # sum(n_ab IF^2) with IF = (dx.rho - T_i - T_j) / A22, and A22 -- the rho-information
+  # sum(n_ab (dP/P)^2) -- vanishes as the likelihood flattens, so the variance grows like
+  # 1/A22^2 in a quantity that is itself rounding noise there. Across the plateau it spans
+  # tens of orders of magnitude non-monotonically, and where it lands is decided by
+  # floating-point detail and varies by platform. What the empty-cell skip actually has to
+  # deliver is a finite, non-negative diagonal that equals diag(Gamma).
   x <- .expand_table(rbind(c(41, 0), c(13, 0), c(28, 0), c(171, 47)))
   d <- suppressWarnings(.polychoric(x, acov = "diag"))$acov
   f <- suppressWarnings(.polychoric(x, acov = "full"))$acov
   expect_false(anyNA(d))
   expect_true(all(is.finite(d)))
+  expect_true(all(d >= 0))                 # structural (a sum of squares); the magnitude is not
   expect_equal(unname(d), unname(diag(f)), tolerance = 1e-6)
-  expect_gt(d[[1L]], 1)                                  # huge but finite: the degenerate pair
 })
 
 # Deterministic ordinal data whose alphabetical label order differs from the response order:
