@@ -4,11 +4,16 @@
 \alias{plot.efa_compare}
 \title{Plot efa_compare object}
 \usage{
-\method{plot}{efa_compare}(x, ...)
+\method{plot}{efa_compare}(x, plot_red = NULL, ...)
 }
 \arguments{
 \item{x}{list. An object of class \code{efa_compare} (output from the
 \code{\link[=efa_compare]{efa_compare()}} function).}
+
+\item{plot_red}{numeric or \code{NULL}. Threshold above which to draw the absolute
+differences in red, documented in \code{\link[=efa_compare]{efa_compare()}}. \code{NULL} (default) uses the
+value recorded in \code{x$settings}; supplying one overrides it for this plot only,
+so the comparison need not be recomputed to redraw it at another threshold.}
 
 \item{...}{not used.}
 }

@@ -2,19 +2,6 @@
 # and align factors across runs by congruence, and aggregate loadings, communalities,
 # variances, and fit indices.
 
-# for progress bar in efa_average()
-.show_av_progress <- function(emoji, what, done = FALSE) {
-
-  cat("\r", rep(" ", ifelse(getOption("width") > 30, getOption("width"), 30)))
-  if (isFALSE(done)) {
-    cat("\r", emoji, what)
-  } else {
-    cat("\r", "Done!\n")
-  }
-
-}
-
-
 ### extract data from efa_list
 .extract_data <- function(efa_list, R, n_factors, n_efa, rotation, salience_threshold) {
 
@@ -107,11 +94,18 @@
             temp_corres <- abs(efa_temp[[load_ind]]) >= salience_threshold
             L_corres[,, row_i] <-temp_corres
 
+            # Admissible: no error, converged, no Heywood case, and at least two salient
+            # loadings on every factor. The first three hold on this branch, so only the
+            # salience count is left to check. The check lives here, where temp_corres was
+            # just assigned, rather than relying on `||` short-circuiting to keep it from
+            # reading the previous solution's correspondences.
+            admissible[row_i] <- all(colSums(temp_corres) >= 2)
+
+          } else {
+
+            admissible[row_i] <- FALSE
+
           }
-
-
-          admissible[row_i] <- ifelse(has_heywood || any(colSums(temp_corres) < 2),
-                                      FALSE, TRUE)
 
 
           if (isTRUE(extract_phi)) {
@@ -292,27 +286,14 @@
     phi_max <- apply(phi, 1:2, max, na.rm = TRUE)
     phi_range <- phi_max - phi_min
     phi_sd <- apply(phi, 1:2, stats::sd, na.rm = TRUE)
-    colnames(phi_av) <- paste0("F", 1:nf)
-    rownames(phi_av) <- paste0("F", 1:nf)
-    colnames(phi_min) <- paste0("F", 1:nf)
-    rownames(phi_min) <- paste0("F", 1:nf)
-    colnames(phi_max) <- paste0("F", 1:nf)
-    rownames(phi_max) <- paste0("F", 1:nf)
-    colnames(phi_range) <- paste0("F", 1:nf)
-    rownames(phi_range) <- paste0("F", 1:nf)
-    colnames(phi_sd) <- paste0("F", 1:nf)
-    rownames(phi_sd) <- paste0("F", 1:nf)
-  }
-
-
-  if (isTRUE(extract_phi)) {
-    phi_list <- list(
-      average = phi_av,
-      sd = phi_sd,
-      min = phi_min,
-      max = phi_max,
-      range = phi_range
-    )
+    # All five summaries are factor x factor, so they take the same dimnames.
+    phi_list <- lapply(
+      list(average = phi_av, sd = phi_sd, min = phi_min, max = phi_max,
+           range = phi_range),
+      function(p) {
+        dimnames(p) <- list(f_names, f_names)
+        p
+      })
   } else {
     phi_list <- NA
   }

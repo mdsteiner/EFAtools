@@ -172,7 +172,9 @@ test_that("efa_compare returns the correct values", {
   expect_equal(matr$min_abs_diff, 0)
   expect_equal(matr$max_abs_diff, 1)
   expect_equal(matr$max_dec, 0)
-  expect_equal(matr$are_equal, 0)
+  # 1 vs 2 in one cell: the two differ already in the integer part, so there is no
+  # decimal place they agree to -- NA, not the 0 that means "agree to zero decimals".
+  expect_true(is.na(matr$are_equal))
   expect_equal(matr$g, 0.5, tolerance = .01)
   expect_equal(matr$diff_corres, 1)
   expect_equal(matr$diff_corres_cross, 0)
@@ -243,6 +245,16 @@ test_that("are_equal counts decimal agreement without floating-point miscounts",
   # under-report. 0.6285 and 0.62851 agree to four decimals.
   expect_equal(efa_compare(c(0.6285, 0.1), c(0.62851, 0.1),
                        reorder = "none")$are_equal, 4)
+})
+
+
+test_that("are_equal separates disagreeing integer parts from zero-decimal agreement", {
+  # Both pairs disagree from the first decimal on, but only the first pair already
+  # disagrees in its integer part; are_equal must not report the same value for the two.
+  expect_true(is.na(efa_compare(c(1.5, 2.5, 3.5), c(9.5, 8.5, 7.5),
+                                reorder = "none")$are_equal))
+  expect_equal(efa_compare(c(0.5, 0.5, 0.5), c(0.9, 0.9, 0.9),
+                           reorder = "none")$are_equal, 0)
 })
 
 
@@ -368,11 +380,75 @@ test_that("print output is stable", {
   expect_snapshot(print(int))
 })
 
+test_that("display settings can be overridden at print time", {
+  local_reproducible_output()
+
+  # The recorded settings are unchanged; only this call's report differs.
+  plain <- cli::ansi_strip(format(matr))
+  two <- cli::ansi_strip(format(matr, digits = 2))
+  expect_match(paste(plain, collapse = " "), "0.2500", fixed = TRUE)
+  expect_match(paste(two, collapse = " "), "0.25", fixed = TRUE)
+  expect_no_match(paste(two, collapse = " "), "0.2500", fixed = TRUE)
+  expect_equal(matr$settings$digits, 4)
+
+  # print() forwards its dots to format(), so the same override works there.
+  expect_identical(cli::ansi_strip(utils::capture.output(print(matr, digits = 2))), two)
+
+  # print_diff drops the difference table.
+  expect_true(any(grepl("Elementwise differences", plain, fixed = TRUE)))
+  expect_false(any(grepl("Elementwise differences",
+                         cli::ansi_strip(format(matr, print_diff = FALSE)), fixed = TRUE)))
+
+  # The three colouring thresholds change only the green/red styling, so they are
+  # observable solely with colours on: each must flip the ANSI of its own line while
+  # leaving the reported numbers untouched. matr's mean and max are .25 and 1, so a
+  # threshold on either side of those is decisive; round_red is read against
+  # are_equal, which is NA for matr (always red) and 0 for int.
+  old <- options(cli.num_colors = 256)
+  on.exit(options(old), add = TRUE)
+  expect_false(identical(format(matr, m_red = 1), format(matr, m_red = 0)))
+  expect_false(identical(format(matr, range_red = 2), format(matr, range_red = 0)))
+  expect_false(identical(format(int, round_red = 0), format(int, round_red = 9)))
+  # ... and none of them alters the numbers themselves.
+  strip_matr <- function(...) cli::ansi_strip(format(matr, ...))
+  expect_identical(strip_matr(m_red = 1), strip_matr(m_red = 0))
+  expect_identical(strip_matr(range_red = 2), strip_matr(range_red = 0))
+  options(cli.num_colors = 1)
+
+  # An override is validated exactly as efa_compare() validates the argument.
+  expect_error(format(matr, digits = -1))
+
+  # omitting an argument leaves the recorded value in force
+  expect_identical(format(matr), format(matr, digits = matr$settings$digits))
+})
+
+test_that("the minimum-decimals line is dropped when it carries no information", {
+  local_reproducible_output()
+
+  # Two ordinary doubles carry full double precision, so the count says nothing.
+  full <- efa_compare(c(1/3, 2/7, 1/6), c(1/3, 2/7, 1/6 + 1e-4), reorder = "none")
+  expect_gte(full$max_dec, 15)
+  expect_no_match(paste(cli::ansi_strip(format(full)), collapse = " "),
+                  "Minimum number of decimals provided", fixed = TRUE)
+
+  # A rounded input bounds the comparison, so the line is informative and shown.
+  expect_match(paste(cli::ansi_strip(format(dec)), collapse = " "),
+               "Minimum number of decimals provided", fixed = TRUE)
+})
+
 test_that("plot returns a ggplot and guards too-few differences", {
   # Smoke-test only (no vdiffr baseline) because geom_jitter draws random positions,
   # so the rendered plot is not reproducible across runs.
   p <- plot(matr)
   expect_s3_class(p, "ggplot")
+
+  # plot_red is a drawing setting, overridable per call without recomputing: it
+  # decides which differences are flagged and is reported in the subtitle.
+  expect_true("large difference" %in% p$data$color)
+  p2 <- plot(matr, plot_red = 2)
+  expect_setequal(p2$data$color, "acceptable difference")
+  expect_match(p2$labels$subtitle, "difference coloring: 2", fixed = TRUE)
+  expect_equal(matr$settings$plot_red, 0.01)
 
   # too few differences to plot
   expect_error(plot(dec), class = "efa_compare_too_few_to_plot")
@@ -421,15 +497,14 @@ ref_compare_loadings <- function(x, y, thresh = 0.3, na.rm = FALSE, corres = TRU
   if (anyNA(diff) && (!na.rm || all(is.na(diff)))) {
     are_equal <- NA_real_
   } else {
-    are_equal <- 0
+    are_equal <- NA_real_
     for (d in 0:max_dec) {
       if (!isTRUE(all(trunc(signif(ax * 10^d, 13)) == trunc(signif(ay * 10^d, 13)),
                       na.rm = na.rm))) {
         break
       }
-      are_equal <- d
+      are_equal <- as.double(d)
     }
-    are_equal <- as.double(are_equal)
   }
 
   list(

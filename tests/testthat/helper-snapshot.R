@@ -18,8 +18,16 @@ scrub_num <- function(lines) {
   lines
 }
 
-# Like scrub_num, but also masks integer percentages. The efa_average() print reports
+# Like scrub_num, but also masks integer percentages and the effective number of solutions
+# each fit index is averaged over. The efa_average() print reports
 # error/convergence/Heywood/admissibility rates as `round(mean(...) * 100)` over many inner
-# solutions; those percentages can flip across BLAS implementations, so the snapshot pins the
-# wording but not the rate. (The deterministic "N EFAs" grid size is left verbatim.)
-scrub_num_pct <- function(lines) scrub_num(gsub("[0-9]+%", "<pct>", lines))
+# solutions, and the Model Fit block counts the solutions that reached a usable fit index;
+# both are driven by the same per-solution convergence and Heywood outcomes, which can flip
+# across BLAS implementations. The snapshot therefore pins the wording but not those counts.
+# (The deterministic grid size - the "N EFAs" sentence and the "of N" denominators - is left
+# verbatim.)
+scrub_num_pct <- function(lines) {
+  lines <- gsub("[0-9]+%", "<pct>", lines)
+  lines <- gsub("averaged over [0-9]+ of", "averaged over <n> of", lines)
+  scrub_num(lines)
+}

@@ -7,12 +7,25 @@
 \usage{
 \method{print}{efa_compare}(x, ...)
 
-\method{format}{efa_compare}(x, ...)
+\method{format}{efa_compare}(
+  x,
+  digits = NULL,
+  m_red = NULL,
+  range_red = NULL,
+  round_red = NULL,
+  print_diff = NULL,
+  ...
+)
 }
 \arguments{
 \item{x}{An object of class \code{efa_compare} (output from \code{\link[=efa_compare]{efa_compare()}}).}
 
-\item{...}{Not used; for consistency with the generic.}
+\item{...}{Passed from \code{print()} to \code{format()}; not otherwise used.}
+
+\item{digits, m_red, range_red, round_red, print_diff}{Display controls, documented
+in \code{\link[=efa_compare]{efa_compare()}}. Each defaults to \code{NULL}, meaning the value \code{efa_compare()}
+recorded in \code{x$settings} is used; supplying one overrides it for this call
+only, so the comparison need not be recomputed to change the printed report.}
 }
 \value{
 \code{print()} returns its argument \code{x} invisibly. \code{format()} returns a
@@ -30,6 +43,11 @@ as a character vector; \code{print()} is \code{cat(format(x), sep = "\\n")}.
 The lines follow the active console theme, so they are plain when colours are
 disabled (for example when captured into a file or stripped with
 \code{\link[cli:ansi_strip]{cli::ansi_strip()}}).
+}
+\details{
+The line reporting the minimum number of decimals provided is shown only when it
+carries information: two ordinary double matrices carry the full double precision,
+for which the count is uninformative and the line is omitted.
 }
 \examples{
 # A type SPSS EFA to mimick the SPSS implementation
@@ -49,5 +67,8 @@ comp
 
 # format() returns the same lines as plain text:
 writeLines(format(comp))
+
+# the display settings can be changed without recomputing the comparison:
+print(comp, digits = 2, print_diff = FALSE)
 
 }

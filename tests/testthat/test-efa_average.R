@@ -570,6 +570,109 @@ test_that("errors are thrown correctly", {
                  class = "efa_avg_single_combination")
 })
 
+test_that("the grid progress bar declares exactly the steps it signals", {
+  # progressr is inert in a non-interactive session and every other test in this file
+  # runs with show_progress = FALSE, so this is the only place the progress accounting
+  # is exercised. Sending more updates than the progressor declares makes
+  # with_progress() warn that it is "no longer listening to this progressor"; the
+  # warning then also styles the returned object's auto-printed output as warning
+  # output. Small grids are the exposed case: they report on every EFA, so the per-EFA
+  # updates alone complete the progressor.
+  withr::local_options(progressr.enable = TRUE)
+
+  # 3 EFAs (one per estimator at the EFAtools preset), the grid from @examples. Grids
+  # of ten or fewer report on every EFA, so stepsize is 1.
+  expect_no_warning(
+    efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
+                estimator = c("PAF", "ULS", "ML"), type = "EFAtools",
+                start_method = "psych"))
+
+  # 24 unrotated PAF EFAs, enough for stepsize to exceed 1 (round(24/10) = 2). That is
+  # the branch in which the declared steps stop being a whole number of updates, so it
+  # needs its own case; the cheap unrotated PAF grid keeps it fast.
+  expect_no_warning(
+    efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
+                estimator = "PAF", type = "none", rotation = "none",
+                init_comm = c("smc", "mac", "unity"),
+                criterion = c(1e-3, 1e-4),
+                criterion_type = c("sum", "max_individual"),
+                abs_eigen = c(TRUE, FALSE)))
+})
+
+test_that("the Model Fit block reports the effective n per index class", {
+  # The print snapshot masks these counts (they follow the per-solution convergence and
+  # Heywood outcomes, which move across BLAS implementations), so the wiring - which grid
+  # column feeds which printed line - is pinned here instead.
+  local_reproducible_output()
+  set.seed(42)
+
+  # PAF leaves the chi-square-based indices NA but still contributes CAF, RMSR, and SRMR,
+  # so the two index classes are averaged over different numbers of solutions.
+  mixed <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
+                       estimator = c("PAF", "ML"), type = "EFAtools",
+                       rotation = "promax", start_method = "psych",
+                       show_progress = FALSE)
+  grid <- mixed$implementations_grid
+  n_chisq <- sum(!is.na(grid$chisq))
+  n_resid <- sum(!is.na(grid$caf))
+  expect_gt(n_resid, n_chisq)
+
+  out <- paste(cli::ansi_strip(format(mixed)), collapse = " ")
+  expect_match(out, paste0("Chi-square-based indices averaged over ", n_chisq,
+                           " of ", nrow(grid), " solution"), fixed = TRUE)
+  expect_match(out, paste0("CAF, RMSR, and SRMR averaged over ", n_resid,
+                           " of ", nrow(grid), " solution"), fixed = TRUE)
+
+  # With PAF alone no chi-square-based index is reported at all, so that line is absent.
+  paf <- suppressWarnings(
+    efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
+                estimator = "PAF", type = c("EFAtools", "psych"),
+                rotation = "promax", show_progress = FALSE))
+  out_paf <- paste(cli::ansi_strip(format(paf)), collapse = " ")
+  expect_no_match(out_paf, "Chi-square-based indices", fixed = TRUE)
+  expect_match(out_paf, paste0("CAF, RMSR, and SRMR averaged over ",
+                               sum(!is.na(paf$implementations_grid$caf)), " of "),
+               fixed = TRUE)
+})
+
+test_that("the Model Fit block names the aggregation it reports", {
+  # The sentence introducing the block must agree with the M / Md header below it.
+  local_reproducible_output()
+  set.seed(42)
+  args <- list(test_models$baseline$cormat, n_factors = 3, N = 500,
+               estimator = c("PAF", "ML"), type = "EFAtools", rotation = "promax",
+               start_method = "psych", show_progress = FALSE)
+
+  mn <- paste(cli::ansi_strip(format(do.call(efa_average, args))), collapse = " ")
+  expect_match(mn, "the mean of the per-solution fit indices", fixed = TRUE)
+
+  md <- paste(cli::ansi_strip(format(do.call(efa_average, c(args, averaging = "median")))),
+              collapse = " ")
+  expect_match(md, "the median of the per-solution fit indices", fixed = TRUE)
+  expect_no_match(md, "the average of the per-solution fit indices", fixed = TRUE)
+})
+
+test_that("a trim that the median cannot use is flagged", {
+  # trim only reaches mean(), so a non-zero trim under averaging = "median" changes
+  # nothing; it must not be accepted silently. The message is raised during argument
+  # checking, before any EFA is fitted, so this needs no grid.
+  expect_message(
+    suppressWarnings(efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
+                                 estimator = "PAF", type = "EFAtools", rotation = "none",
+                                 averaging = "median", trim = 0.2,
+                                 show_progress = FALSE)),
+    class = "efa_avg_trim_ignored"
+  )
+  # ... and not raised when the trim is actually used.
+  expect_no_message(
+    suppressWarnings(efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
+                                 estimator = "PAF", type = "EFAtools", rotation = "none",
+                                 averaging = "mean", trim = 0.2,
+                                 show_progress = FALSE)),
+    class = "efa_avg_trim_ignored"
+  )
+})
+
 test_that("an all-failed averaging grid returns an empty (NA) result", {
   skip_if_not_slow()
   # When every solution fails (here all runs hit max_iter and do not converge),

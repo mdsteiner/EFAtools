@@ -6,6 +6,10 @@
 #'
 #' @param x list. An object of class `efa_compare` (output from the
 #'  [efa_compare()] function).
+#' @param plot_red numeric or `NULL`. Threshold above which to draw the absolute
+#'  differences in red, documented in [efa_compare()]. `NULL` (default) uses the
+#'  value recorded in `x$settings`; supplying one overrides it for this plot only,
+#'  so the comparison need not be recomputed to redraw it at another threshold.
 #' @param ... not used.
 #'
 #' @returns A ggplot object showing the absolute differences, with differences
@@ -30,10 +34,16 @@
 #' comp <- efa_compare(EFA_SPSS_5$unrot_loadings, EFA_psych_5$unrot_loadings,
 #'                     x_labels = c("SPSS", "psych"))
 #' plot(comp)
-plot.efa_compare <- function(x, ...) {
+plot.efa_compare <- function(x, plot_red = NULL, ...) {
 
   diff <- x$diff
-  plot_red <- x$settings$plot_red
+  # As for the printed report's display controls, the recorded threshold is a drawing
+  # setting: an argument supplied here overrides it for this plot, NULL falls back to it.
+  if (is.null(plot_red)) {
+    plot_red <- x$settings$plot_red
+  } else {
+    checkmate::assert_number(plot_red)
+  }
   x_labels <- x$settings$x_labels
 
   if (length(c(diff)) <= 2) {

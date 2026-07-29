@@ -39,7 +39,11 @@ matrix is entered.}
 
 \item{thresh}{numeric. The threshold to classify a pattern coefficient as substantial. Default is .3.}
 
-\item{digits}{numeric. Number of decimals to print in the output. Default is 4.}
+\item{digits}{numeric. Number of decimals to print in the output. Default is 4.
+Like \code{m_red}, \code{range_red}, \code{round_red}, and \code{print_diff}, it is recorded in
+\code{settings} but governs only the printed report, so it can be overridden per call
+in \code{\link[=print.efa_compare]{print.efa_compare()}} without recomputing the comparison. \code{plot_red} is a
+drawing setting and is overridden the same way in \code{\link[=plot.efa_compare]{plot.efa_compare()}}.}
 
 \item{m_red}{numeric. Number above which the mean and median should be printed
 in red (i.e., if .001 is used, the mean will be in red if it is larger than
@@ -66,8 +70,9 @@ and max functions. Default is FALSE.}
 labels for the two objects x and y that will be compared. These will be used
 as labels on the x-axis of the plot. Default is "x" and "y".}
 
-\item{plot}{logical. Retained for backwards compatibility; the difference plot
-is now drawn with \code{\link[=plot.efa_compare]{plot.efa_compare()}} rather than when printing. Default is TRUE.}
+\item{plot}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#superseded}{\figure{lifecycle-superseded.svg}{options: alt='[Superseded]'}}}{\strong{[Superseded]}} Accepted and validated, but
+without effect; retained for backwards compatibility. The difference plot is
+drawn by \code{\link[=plot.efa_compare]{plot.efa_compare()}}. Default is TRUE.}
 
 \item{plot_red}{numeric. Threshold above which to plot the absolute differences
 in red. Default is .01.}

@@ -17,6 +17,10 @@
 #'  matrix is entered.
 #' @param thresh numeric. The threshold to classify a pattern coefficient as substantial. Default is .3.
 #' @param digits numeric. Number of decimals to print in the output. Default is 4.
+#'  Like `m_red`, `range_red`, `round_red`, and `print_diff`, it is recorded in
+#'  `settings` but governs only the printed report, so it can be overridden per call
+#'  in [print.efa_compare()] without recomputing the comparison. `plot_red` is a
+#'  drawing setting and is overridden the same way in [plot.efa_compare()].
 #' @param m_red numeric. Number above which the mean and median should be printed
 #'  in red (i.e., if .001 is used, the mean will be in red if it is larger than
 #'  .001, otherwise it will be displayed in green.) Default is .001.
@@ -36,8 +40,9 @@
 #' @param x_labels character. A vector of length two containing identifying
 #'  labels for the two objects x and y that will be compared. These will be used
 #'  as labels on the x-axis of the plot. Default is "x" and "y".
-#' @param plot logical. Retained for backwards compatibility; the difference plot
-#'  is now drawn with [plot.efa_compare()] rather than when printing. Default is TRUE.
+#' @param plot `r lifecycle::badge("superseded")` Accepted and validated, but
+#'  without effect; retained for backwards compatibility. The difference plot is
+#'  drawn by [plot.efa_compare()]. Default is TRUE.
 #' @param plot_red numeric. Threshold above which to plot the absolute differences
 #'  in red. Default is .01.
 #'
@@ -56,7 +61,9 @@
 #'  agree in absolute value. The comparison is on magnitudes, so two elements that
 #'  are equal in size but opposite in sign count as agreeing; signed disagreements
 #'  are reflected in `diff` and the mean / median / min / max absolute differences.
-#'  `NA` if `na.rm = FALSE` and any element is missing.}
+#'  `0` means the two agree in their integer parts but in no decimal place. `NA`
+#'  means there is no agreement at all: either they already differ in their integer
+#'  parts, or `na.rm = FALSE` and an element is missing.}
 #' \item{diff_corres}{The number of differing variable-to-factor correspondences
 #'  between x and y, when only the highest loading is considered.}
 #' \item{diff_corres_cross}{The number of differing variable-to-factor correspondences
@@ -331,16 +338,18 @@ efa_compare <- function(x,
   } else {
     # Walk the decimal places from the integer part outwards, stopping at the
     # first one that differs: once a place disagrees no deeper place can count, so
-    # there is nothing to gain from testing the rest.
-    are_equal <- 0
+    # there is nothing to gain from testing the rest. The counter starts at NA and
+    # is only ever set to a place that was reached, so a comparison that already
+    # fails at d = 0 (the integer parts differ) stays NA and is distinguishable
+    # from one that succeeds at d = 0 but at no decimal place.
+    are_equal <- NA_real_
     for (d in 0:max_dec) {
       if (!isTRUE(all(trunc(signif(ax * 10^d, 13)) == trunc(signif(ay * 10^d, 13)),
                       na.rm = na.rm))) {
         break
       }
-      are_equal <- d
+      are_equal <- as.double(d)
     }
-    are_equal <- as.double(are_equal)
   }
 
   list(

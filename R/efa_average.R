@@ -19,7 +19,12 @@
 #' to use principal axis factoring, maximum likelihood, or unweighted least
 #' squares, respectively, to fit the EFAs. "MINRES" is accepted as a synonym for
 #' "ULS" (the same estimator). The values are matched case-insensitively.
-#' Default is "PAF".
+#' Default is "PAF". "DWLS", which [efa_fit()] does accept, is deliberately not
+#' offered here: it weights each residual correlation by the inverse of its
+#' asymptotic variance, which is only available from raw ordinal data analysed
+#' with `cor_method = "poly"` or `"tetra"`, whereas every EFA in the grid is fitted
+#' to the single correlation matrix computed once from `x`. Fit a DWLS solution
+#' with [efa_fit()] directly.
 #' @param rotation character vector. Either perform no rotation ("none"),
 #' any combination of orthogonal rotations ("varimax", "equamax", "quartimax", "geominT",
 #' "bentlerT", and "bifactorT"; using "orthogonal" runs all of these), or of
@@ -223,6 +228,14 @@
 #' The matrices containing the minimum and maximum factor solutions can
 #' therefore not be interpreted as whole factor solutions.
 #'
+#' The averaged loading matrix is likewise a cell-wise summary rather than a fitted
+#' solution: it is not itself the solution of any EFA, does not in general reproduce
+#' the correlation matrix, and need not reproduce the averaged communalities. The
+#' fit indices described below are correspondingly the mean (or, under
+#' `averaging = "median"`, the median) of the per-solution fit indices, not the fit
+#' of the averaged loadings, so the averaged loadings and the reported fit do not
+#' describe one and the same model.
+#'
 #' The output also includes information on the average, minimum, maximum, and
 #' variability of the fit indices across the non-problematic factor solutions.
 #' It is important to note that not all fit indices are computed for all fit
@@ -246,7 +259,10 @@
 #' (`p_chi`), which is therefore the mean (or median) of the per-solution p-values
 #' and is purely descriptive; it is not the p-value of any pooled chi-square test.
 #'
-#' @return A list of class `c("efa_average", "EFA_AVERAGE")` containing
+#' @return A list of class `c("efa_average", "EFA_AVERAGE")` containing the
+#' components below. Throughout, `range` is the width `maximum - minimum` of each
+#' cell across the factor solutions, not the interval `[minimum, maximum]`, and
+#' `average` is the (trimmed) mean or the median, following `averaging`.
 #' \item{orig_R}{Original correlation matrix.}
 #' \item{h2}{A list with the average, standard deviation, minimum, maximum, and
 #' range of the final communality estimates across the factor solutions.}
@@ -401,6 +417,14 @@ efa_average <- function(x, n_factors, N = NA, estimator = "PAF", rotation = "pro
   type <- unique(type)
   averaging <- match.arg(averaging)
   checkmate::assert_number(trim, lower = 0, upper = 0.5)
+  # `trim` only reaches mean(); the median has no trimming to do. Say so rather than
+  # silently recording a trim in the settings that never affected a single value.
+  if (averaging == "median" && trim > 0) {
+    cli::cli_inform(
+      c("i" = "{.arg trim} is only used when {.code averaging = \"mean\"}; it is ignored for the median."),
+      class = "efa_avg_trim_ignored"
+    )
+  }
   checkmate::assert_number(salience_threshold, lower = 0, upper = 1)
   checkmate::assert_count(max_iter)
   checkmate::assert_subset(init_comm, c("smc", "mac", "unity"),
@@ -485,6 +509,12 @@ efa_average <- function(x, n_factors, N = NA, estimator = "PAF", rotation = "pro
   # default. Kept as one constant so both the single- and multi-EFA paths agree.
   default_precision <- 1e-5
 
+  # Iteration budget handed to the rotation engine, well above its own default so a
+  # criterion-based rotation is not stopped short of the requested precision. Kept as one
+  # constant for the same reason as `default_precision`: a rotation that converges inside
+  # the grid must not fail to converge when the same settings collapse to a single row.
+  rotation_maxit <- 5e4
+
   ### Run all efas
 
   # A supplied `seed` makes the averaging run reproducible and leaves the caller's RNG
@@ -522,7 +552,10 @@ efa_average <- function(x, n_factors, N = NA, estimator = "PAF", rotation = "pro
             # order of this single returned fit, not any averaged quantity).
             order_type = "eigen", varimax_type = arg_grid$varimax_type,
             p_type = arg_grid$P_type,
-            k = ifelse(arg_grid$rotation == "promax", arg_grid$k_promax, arg_grid$k_simplimax))))
+            k = ifelse(arg_grid$rotation == "promax", arg_grid$k_promax, arg_grid$k_simplimax),
+            # engine extra carried in the control, not efa_fit()'s dots: the
+            # unrotated rows never consume it, and bare dots are rejected there
+            maxit = rotation_maxit)))
 
   }
 
@@ -541,7 +574,13 @@ efa_average <- function(x, n_factors, N = NA, estimator = "PAF", rotation = "pro
       stepsize <- round(n_efa / 100 * 10)
     }
 
-    efa_progress_bar <- progressr::progressor(steps = n_efa / stepsize)
+    # One declared step per update actually sent: the loop below reports on every
+    # stepsize-th EFA and on the last one, which is `ceiling(n_efa / stepsize)` updates,
+    # plus the closing message. Declaring fewer completes the bar while EFAs are still
+    # being fitted, and an update sent to an already-completed progressor is dropped
+    # (the closing message would never be shown) or makes with_progress() warn that it
+    # is no longer listening to this progressor.
+    efa_progress_bar <- progressr::progressor(steps = ceiling(n_efa / stepsize) + 1)
     efa_progress_bar("Running EFAs:", class = "sticky", amount = 0)
     efa_list <- future.apply::future_lapply(1:n_efa,
                                             function(i, estimators, rotations,
@@ -550,7 +589,9 @@ efa_average <- function(x, n_factors, N = NA, estimator = "PAF", rotation = "pro
                                                      max_iters, varimax_types, k_ps,
                                                      k_ss, normalizes, P_types,
                                                      precisions, start_methods) {
-      if (i %% stepsize == 0){
+      # Report every stepsize-th EFA, and the last one whatever its position, so the
+      # bar tracks the grid to its end instead of completing on the last whole group.
+      if (i %% stepsize == 0 || i == n_efa){
         efa_progress_bar(message = sprintf("Running EFA %g of %g", i, n_efa))
       }
 
@@ -582,7 +623,7 @@ efa_average <- function(x, n_factors, N = NA, estimator = "PAF", rotation = "pro
                   k = ifelse(rotations[i] == "promax", k_ps[i], k_ss[i]),
                   # engine extra carried in the control, not efa_fit()'s dots: the
                   # unrotated rows never consume it, and bare dots are rejected there
-                  maxit = 5e4))),
+                  maxit = rotation_maxit))),
           silent = TRUE)
     }, estimators = arg_grid$estimator, rotations = arg_grid$rotation,
     init_comms = arg_grid$init_comm, criteria = arg_grid$criterion,
@@ -593,16 +634,20 @@ efa_average <- function(x, n_factors, N = NA, estimator = "PAF", rotation = "pro
     precisions = arg_grid$precision, start_methods = arg_grid$start_method,
     future.seed = TRUE)
 
-    if (n_efa %% 10 != 0){
-      efa_progress_bar(message = "Done Running EFAs ")
-    }
+    # The last of the declared steps, so the bar completes on this message rather than
+    # on the final EFA. It has to consume a step: progressr drops an update sent to a
+    # progressor that has already reached its last one.
+    efa_progress_bar(message = "Done Running EFAs")
   })
 
   names(efa_list) <- rownames(arg_grid)
 
   ### Extract relevant information from EFA outputs
   if (isTRUE(show_progress)) {
-    .show_av_progress("\U0001f3c3", "Extracting data...")
+    # The post-grid stages run sequentially in this process, so they are reported with
+    # cli's own progress steps (each call ticks off the previous one). The grid above
+    # keeps progressr, which is what relays progress out of the future workers.
+    cli::cli_progress_step("Extracting data")
   }
   ext_list <- .extract_data(efa_list, R, n_factors, n_efa, rotation, salience_threshold)
 
@@ -635,7 +680,7 @@ efa_average <- function(x, n_factors, N = NA, estimator = "PAF", rotation = "pro
 
     if (n_factors > 1) {
       if (isTRUE(show_progress)) {
-        .show_av_progress("\U0001f6b6", "Reordering factors...")
+        cli::cli_progress_step("Reordering factors")
       }
 
       re_list <- .array_reorder(ext_list$vars_accounted, ext_list$L, ext_list$L_corres,
@@ -646,7 +691,7 @@ efa_average <- function(x, n_factors, N = NA, estimator = "PAF", rotation = "pro
 
 
     if (isTRUE(show_progress)) {
-      .show_av_progress("\U0001f3c3", "Averaging data...")
+      cli::cli_progress_step("Averaging data")
     }
     av_list <- suppressWarnings(
       .average_values(re_list$vars_accounted, re_list$L, re_list$L_corres,
@@ -706,7 +751,9 @@ efa_average <- function(x, n_factors, N = NA, estimator = "PAF", rotation = "pro
   class(output) <- c("efa_average", "EFA_AVERAGE")
 
   if (isTRUE(show_progress)) {
-    .show_av_progress("", "", done = TRUE)
+    # Ticks off the last step that was started; which one that is depends on how far
+    # the branches above got (no solution to average leaves it at "Extracting data").
+    cli::cli_progress_done()
   }
 
   return(output)

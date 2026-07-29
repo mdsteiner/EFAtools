@@ -155,10 +155,29 @@ format.efa_average <- function(x, stat = c("average", "range"), ...) {
 
       .efa_section_rule("Model Fit")
       cli::cli_text("")
+      # `averaging` is exactly "mean" or "median", so it names the aggregation the block
+      # actually reports (the header below abbreviates the same choice as M or Md).
+      cli::cli_text("The fit indices are the {averaging} of the per-solution fit indices, not the fit of the averaged loadings printed above, which are a cell-wise summary rather than a fitted solution.")
+
+      # Effective n per index class. .extract_data() records a solution's fit indices only
+      # once it converged without a Heywood case, and leaves the chi-square-based ones NA
+      # for PAF throughout, so the two classes can be averaged over different numbers of
+      # solutions. Each class is counted on the column that defines it (`chisq` for the
+      # chi-square-based indices, `caf` for the residual-based ones), which is exactly the
+      # non-missing count the averaging itself used.
+      n_resid <- sum(!is.na(grid$caf))
+      chisq_based <- !(all(estimator == "PAF") || is.na(N))
+      cli::cli_text("")
+      if (chisq_based) {
+        n_chisq <- sum(!is.na(grid$chisq))
+        cli::cli_text("Chi-square-based indices averaged over {n_chisq} of {no_efas} solution{?s}.")
+      }
+      cli::cli_text("CAF, RMSR, and SRMR averaged over {n_resid} of {no_efas} solution{?s}.")
+      cli::cli_text("")
       cli::cli_verbatim(paste0("       ", if (averaging == "mean") "M" else "Md",
                                " (SD) [Min; Max]"))
 
-      if (all(estimator == "PAF") || is.na(N)) {
+      if (!chisq_based) {
 
         lines <- .gof_lines(fit, ind = c("caf", "rmsr", "srmr"),
                             ind_name = c("CAF:  ", "RMSR: ", "SRMR: "),
@@ -274,29 +293,18 @@ format.efa_average <- function(x, stat = c("average", "range"), ...) {
     }
   }
 
-  if ("average" %in% stat) {
-    .print_efa_rule(if (averaging == "mean") "Mean" else "Median")
-    emit("average")
-  }
+  # Section title per statistic, in the order they are printed (which is fixed here, not
+  # taken from the order of `stat`). The range is labelled with its definition, since the
+  # cells are widths, not the [Min; Max] intervals the Model Fit block reports.
+  titles <- c(average = if (averaging == "mean") "Mean" else "Median",
+              sd = "Standard Deviation",
+              range = "Range (max \u2212 min)",
+              min = "Minimum",
+              max = "Maximum")
 
-  if ("sd" %in% stat) {
-    .print_efa_rule("Standard Deviation")
-    emit("sd")
-  }
-
-  if ("range" %in% stat) {
-    .print_efa_rule("Range")
-    emit("range")
-  }
-
-  if ("min" %in% stat) {
-    .print_efa_rule("Minimum")
-    emit("min")
-  }
-
-  if ("max" %in% stat) {
-    .print_efa_rule("Maximum")
-    emit("max")
+  for (stat_key in intersect(names(titles), stat)) {
+    .print_efa_rule(titles[[stat_key]])
+    emit(stat_key)
   }
 
   invisible(NULL)

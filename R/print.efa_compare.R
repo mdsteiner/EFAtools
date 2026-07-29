@@ -11,8 +11,16 @@
 #' disabled (for example when captured into a file or stripped with
 #' [cli::ansi_strip()]).
 #'
+#' The line reporting the minimum number of decimals provided is shown only when it
+#' carries information: two ordinary double matrices carry the full double precision,
+#' for which the count is uninformative and the line is omitted.
+#'
 #' @param x An object of class `efa_compare` (output from [efa_compare()]).
-#' @param ... Not used; for consistency with the generic.
+#' @param digits,m_red,range_red,round_red,print_diff Display controls, documented
+#'   in [efa_compare()]. Each defaults to `NULL`, meaning the value `efa_compare()`
+#'   recorded in `x$settings` is used; supplying one overrides it for this call
+#'   only, so the comparison need not be recomputed to change the printed report.
+#' @param ... Passed from `print()` to `format()`; not otherwise used.
 #'
 #' @returns `print()` returns its argument `x` invisibly. `format()` returns a
 #'   character vector with the report lines (styled to the active console theme;
@@ -39,6 +47,9 @@
 #' # format() returns the same lines as plain text:
 #' writeLines(format(comp))
 #'
+#' # the display settings can be changed without recomputing the comparison:
+#' print(comp, digits = 2, print_diff = FALSE)
+#'
 print.efa_compare <- function(x, ...) {
   cat(format(x, ...), sep = "\n")
   invisible(x)
@@ -47,7 +58,8 @@ print.efa_compare <- function(x, ...) {
 #' @rdname print.efa_compare
 #' @export
 #' @method format efa_compare
-format.efa_compare <- function(x, ...) {
+format.efa_compare <- function(x, digits = NULL, m_red = NULL, range_red = NULL,
+                               round_red = NULL, print_diff = NULL, ...) {
 
   # extract summary statistics
   diff <- x$diff
@@ -62,13 +74,18 @@ format.efa_compare <- function(x, ...) {
   diff_corres_cross <- x$diff_corres_cross
 
   # extract control settings
-  digits <- x$settings$digits
   corres <- x$settings$corres
   thresh <- x$settings$thresh
-  m_red <- x$settings$m_red
-  range_red <- x$settings$range_red
-  round_red <- x$settings$round_red
-  print_diff <- x$settings$print_diff
+
+  # The display controls are recorded at construction but govern only how the report
+  # reads, so an argument supplied here overrides the recorded value for this call and
+  # anything left NULL falls back to it. Supplied values are validated exactly as
+  # efa_compare() validates its own.
+  if (is.null(digits)) digits <- x$settings$digits else checkmate::assert_count(digits)
+  if (is.null(m_red)) m_red <- x$settings$m_red else checkmate::assert_number(m_red)
+  if (is.null(range_red)) range_red <- x$settings$range_red else checkmate::assert_number(range_red)
+  if (is.null(round_red)) round_red <- x$settings$round_red else checkmate::assert_number(round_red)
+  if (is.null(print_diff)) print_diff <- x$settings$print_diff else checkmate::assert_flag(print_diff)
 
   # Style each statistic green when it clears its reduction threshold and red otherwise
   # (so a smaller difference reads as a closer match). The values keep their decimal
@@ -102,6 +119,8 @@ format.efa_compare <- function(x, ...) {
   }
 
   cli::cli_format_method({
+    .print_efa_rule("Summary statistics")
+
     # Fixed-format statistic lines: the values carry decimal padding and conditional
     # green/red styling, so emit them verbatim (cli never reflows them mid-token).
     cli::cli_verbatim(paste0("Mean [min, max] absolute difference: ",
@@ -111,8 +130,17 @@ format.efa_compare <- function(x, ...) {
                              .efa_style(.efa_num(g, digits, TRUE), "bold")))
     cli::cli_verbatim(paste0("Max decimals where all numbers agree in absolute value: ",
                              equal_out))
-    cli::cli_verbatim(paste0("Minimum number of decimals provided: ",
-                             .efa_style(max_dec, "bold")))
+
+    # The decimals actually carried by the inputs only bound the comparison when one of
+    # them was rounded. `.decimals()` renders with `digits = 15`, so an unrounded double
+    # always reaches that many decimal places (more for magnitudes below 1), and the count
+    # then says nothing about the two solutions; only a smaller count is informative. The
+    # threshold therefore tracks the `digits =` argument of `.decimals()` in
+    # R/format-helpers.R and must be revisited with it.
+    if (max_dec < 15) {
+      cli::cli_verbatim(paste0("Minimum number of decimals provided: ",
+                               .efa_style(max_dec, "bold")))
+    }
 
     # Differing indicator-to-factor correspondences. Only reported when they were
     # actually compared: they are undefined for vector input (NA), and both
@@ -133,7 +161,7 @@ format.efa_compare <- function(x, ...) {
     }
 
     if (isTRUE(print_diff)) {
-      cli::cli_text("")
+      .print_efa_rule("Elementwise differences")
       .efa_emit_lines(.compare_diff_lines(diff, digits = digits, r_red = range_red))
     }
   })

@@ -62,7 +62,7 @@
       V17 <num> <num> <num>
       V18 <num> <num> <num>
       
-      -- Range -----------------------------------------------------------------------
+      -- Range (max − min) -----------------------------------------------------------
       
             F1 F2 F3
       V1 <num> <num> <num>
@@ -93,7 +93,7 @@
       F2 <num> <num>
       F3 <num> <num> <num>
       
-      -- Range -----------------------------------------------------------------------
+      -- Range (max − min) -----------------------------------------------------------
       
            F1 F2 F3
       F1 <num>
@@ -109,7 +109,7 @@
       Prop Tot Var <num> <num> <num>
       Prop Comm Var <num> <num> <num>
       
-      -- Range -----------------------------------------------------------------------
+      -- Range (max − min) -----------------------------------------------------------
       
                       F1 F2 F3
       SS loadings <num> <num> <num>
@@ -117,6 +117,12 @@
       Prop Comm Var <num> <num> <num>
       
       == Model Fit ===================================================================
+      
+      The fit indices are the mean of the per-solution fit indices, not the fit of
+      the averaged loadings printed above, which are a cell-wise summary rather than
+      a fitted solution.
+      
+      CAF, RMSR, and SRMR averaged over <n> of 72 solutions.
       
              M (SD) [Min; Max]
       CAF: <num> ( <num>) [ <num>; <num>]
@@ -286,6 +292,13 @@
       
       == Model Fit ===================================================================
       
+      The fit indices are the mean of the per-solution fit indices, not the fit of
+      the averaged loadings printed above, which are a cell-wise summary rather than
+      a fitted solution.
+      
+      Chi-square-based indices averaged over <n> of 12 solutions.
+      CAF, RMSR, and SRMR averaged over <n> of 12 solutions.
+      
              M (SD) [Min; Max]
       𝜒²: <num> ( <num>) [ <num>; <num>]
       df: 102
@@ -364,7 +377,7 @@
       V17 <num> <num> <num>
       V18 <num> <num> <num>
       
-      -- Range -----------------------------------------------------------------------
+      -- Range (max − min) -----------------------------------------------------------
       
             F1 F2 F3
       V1 <num> <num> <num>
@@ -395,7 +408,7 @@
       F2 <num> <num>
       F3 <num> <num> <num>
       
-      -- Range -----------------------------------------------------------------------
+      -- Range (max − min) -----------------------------------------------------------
       
            F1 F2 F3
       F1 <num>
@@ -411,7 +424,7 @@
       Prop Tot Var <num> <num> <num>
       Prop Comm Var <num> <num> <num>
       
-      -- Range -----------------------------------------------------------------------
+      -- Range (max − min) -----------------------------------------------------------
       
                        F1 F2 F3
       SS loadings <num> <num> <num>
@@ -419,6 +432,13 @@
       Prop Comm Var <num> <num> <num>
       
       == Model Fit ===================================================================
+      
+      The fit indices are the median of the per-solution fit indices, not the fit of
+      the averaged loadings printed above, which are a cell-wise summary rather than
+      a fitted solution.
+      
+      Chi-square-based indices averaged over <n> of 183 solutions.
+      CAF, RMSR, and SRMR averaged over <n> of 183 solutions.
       
              Md (SD) [Min; Max]
       𝜒²: <num> ( <num>) [ <num>; <num>]

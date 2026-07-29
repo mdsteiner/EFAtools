@@ -1,5 +1,23 @@
 # EFAtools 1.0.0.9000
 
+## Comparing and Averaging Solutions
+
+* The display settings of `efa_compare()` (`digits`, `m_red`, `range_red`, `round_red`, and `print_diff`) can now be passed to `print()` and `format()`, and `plot_red` to `plot()`, so the printed report or the plot can be changed without recomputing the comparison. Omitting them keeps the settings recorded when the comparison was made.
+
+* `are_equal` is now `NA` when two objects do not even agree in their integer parts, and the printed report shows "none" for it. Previously such a comparison returned `0`, the same value returned when the integer parts do agree but no decimal place does.
+
+* The `efa_compare()` report is now divided into a summary-statistics and an elementwise-differences section, and the line reporting the minimum number of decimals provided is shown only when the inputs were rounded; for two ordinary double matrices it carried no information.
+
+* The Model Fit section of `efa_average()` now states how many solutions each index was averaged over. Chi-square-based indices and the residual-based CAF, RMSR, and SRMR can rest on different numbers of solutions, because PAF contributes only the latter.
+
+* The printed `efa_average()` output now says that the fit indices summarise the individual solutions rather than the averaged loadings, which are a cell-wise summary and not themselves a fitted solution, and labels the range tables as `max - min` rather than as an interval.
+
+* `efa_average()` now points out that `trim` is ignored when `averaging = "median"` instead of recording a trim that never affected a value.
+
+* The progress bar of `efa_average()` now announces exactly as many steps as it reports, and reaches 100% when the last EFA has been fitted. Previously it reported one step too many for most grids of fewer than 15 EFAs, which raised a warning from `with_progress()`; because that warning was raised while the function ran, an unassigned call also had its printed output styled as part of it. Larger grids raised no warning but left the bar short of 100%.
+
+* The stages `efa_average()` reports after fitting the grid are now shown as `cli` progress steps. Previously they were written directly to the console, which left stray blank lines wherever the output was not a terminal, such as in rendered documents and check logs.
+
 ## Factor Retention
 
 * `efa_smt()` now warns when one of its three rules selects a solution with a Heywood case or a model that did not converge, matching what `efa_hull()` already reported. The suggestion is still returned, but it is flagged as unreliable rather than presented without comment.

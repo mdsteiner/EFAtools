@@ -65,7 +65,12 @@ correlation matrix is used. If input is a correlation matrix and \code{N} = NA
 to use principal axis factoring, maximum likelihood, or unweighted least
 squares, respectively, to fit the EFAs. "MINRES" is accepted as a synonym for
 "ULS" (the same estimator). The values are matched case-insensitively.
-Default is "PAF".}
+Default is "PAF". "DWLS", which \code{\link[=efa_fit]{efa_fit()}} does accept, is deliberately not
+offered here: it weights each residual correlation by the inverse of its
+asymptotic variance, which is only available from raw ordinal data analysed
+with \code{cor_method = "poly"} or \code{"tetra"}, whereas every EFA in the grid is fitted
+to the single correlation matrix computed once from \code{x}. Fit a DWLS solution
+with \code{\link[=efa_fit]{efa_fit()}} directly.}
 
 \item{rotation}{character vector. Either perform no rotation ("none"),
 any combination of orthogonal rotations ("varimax", "equamax", "quartimax", "geominT",
@@ -205,7 +210,10 @@ restored afterwards, leaving no side effect. Default is \code{NULL}.}
 accepted (silently) for backwards compatibility; please use \code{p_type}.}
 }
 \value{
-A list of class \code{c("efa_average", "EFA_AVERAGE")} containing
+A list of class \code{c("efa_average", "EFA_AVERAGE")} containing the
+components below. Throughout, \code{range} is the width \code{maximum - minimum} of each
+cell across the factor solutions, not the interval \verb{[minimum, maximum]}, and
+\code{average} is the (trimmed) mean or the median, following \code{averaging}.
 \item{orig_R}{Original correlation matrix.}
 \item{h2}{A list with the average, standard deviation, minimum, maximum, and
 range of the final communality estimates across the factor solutions.}
@@ -347,6 +355,14 @@ the minimum value in any of the factor solutions for each specific loading,
 and therefore most likely contains loadings from different factor solutions.
 The matrices containing the minimum and maximum factor solutions can
 therefore not be interpreted as whole factor solutions.
+
+The averaged loading matrix is likewise a cell-wise summary rather than a fitted
+solution: it is not itself the solution of any EFA, does not in general reproduce
+the correlation matrix, and need not reproduce the averaged communalities. The
+fit indices described below are correspondingly the mean (or, under
+\code{averaging = "median"}, the median) of the per-solution fit indices, not the fit
+of the averaged loadings, so the averaged loadings and the reported fit do not
+describe one and the same model.
 
 The output also includes information on the average, minimum, maximum, and
 variability of the fit indices across the non-problematic factor solutions.
