@@ -26,7 +26,7 @@ data is given as input. Default is "pairwise.complete.obs".}
 \item{cor_method}{character. Correlation computed from raw data: \code{"pearson"},
 \code{"spearman"}, or \code{"kendall"} (passed to \code{\link[stats:cor]{stats::cor()}}), or \code{"poly"} /
 \code{"tetra"} for polychoric / tetrachoric correlations of ordinal / binary data
-(a two-step estimator with no empty-cell continuity correction).
+(a two-step estimator).
 Default is "pearson".}
 
 \item{type}{character. The calculation of EKC. type \code{"BvA2017"} is the original implementation; type \code{"AM2019"} differs from the original implementation but was used in simulation studies (Auerswald & Moshagen, 2019; Caron, 2025). See details.

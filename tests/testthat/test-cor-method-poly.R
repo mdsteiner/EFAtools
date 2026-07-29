@@ -26,10 +26,10 @@
   classes
 }
 
-# A six-item ordinal set whose first pair is near-comonotone (rho ~ 0.98 with a structurally
-# empty cell), so that pair's polychoric asymptotic variance explodes; the other four items are
-# ordinary filler. Deterministic: a fixed contingency table expanded to raw data, plus seeded
-# filler.
+# A six-item ordinal set whose first pair is at a Frechet bound (its response table is the
+# comonotone coupling of its own margins), so that pair is estimated at the boundary of the
+# parameter space and has no asymptotic variance; the other four items are ordinary filler.
+# Deterministic: a fixed contingency table expanded to raw data, plus seeded filler.
 .degenerate_ordinal <- function() {
   tab <- rbind(c(41, 0), c(13, 0), c(28, 0), c(171, 47))
   pair <- do.call(rbind, lapply(which(tab > 0), function(k) {
@@ -95,22 +95,41 @@ test_that("cor_method = 'tetra' rejects variables with more than two categories"
                class = "efa_cor_not_binary")
 })
 
-test_that("a near-comonotone polychoric pair stops neither DWLS nor the sandwich", {
+test_that("a Frechet-bound polychoric pair refuses DWLS and withholds the sandwich SEs", {
   x <- .degenerate_ordinal()
 
-  # DWLS does not abort: the pair's asymptotic variance stays finite and positive, so it has a
-  # usable inverse-variance weight. Its size is not asserted -- the pair sits on the
-  # Frechet-bound plateau, where the variance is numerically undetermined (see the acov block
-  # in test-polychoric.R); whether it is large enough to trip the degeneracy screen therefore
-  # varies by platform, so that screen is covered directly below instead.
-  dwls <- suppressWarnings(
-    efa_fit(x, n_factors = 2, estimator = "DWLS", cor_method = "poly", rotation = "none"))
-  expect_s3_class(dwls, "efa")
-  # The ULS sandwich consumes the same covariance and also returns a fit.
-  sw <- suppressWarnings(
-    efa_fit(x, n_factors = 2, estimator = "ULS", cor_method = "poly",
-            se = "sandwich", rotation = "none"))
+  # The first pair's response table is at a Frechet bound, so it has no asymptotic variance (see
+  # test-polychoric.R). DWLS weights each element by the inverse of that variance, so it cannot be
+  # formed and the fit is refused rather than run on a weight invented from rounding noise -- which
+  # previously either dropped the pair from the solution or let it dominate, depending on the
+  # platform.
+  expect_error(
+    suppressWarnings(
+      efa_fit(x, n_factors = 2, estimator = "DWLS", cor_method = "poly", rotation = "none")),
+    class = "efa_dwls_degenerate_weight")
+
+  # The ULS sandwich consumes the same covariance. It still returns a fit -- the point estimates
+  # need no asymptotic covariance -- but the standard errors are withheld rather than reported from
+  # a contaminated meat matrix.
+  cl <- character()
+  sw <- withCallingHandlers(
+    suppressMessages(efa_fit(x, n_factors = 2, estimator = "ULS", cor_method = "poly",
+                             se = "sandwich", rotation = "none")),
+    warning = function(w) { cl <<- c(cl, class(w)); invokeRestart("muffleWarning") })
   expect_s3_class(sw, "efa")
+  expect_true(all(is.na(sw$SE$unrot_loadings)))
+  expect_true("efa_se_unreliable" %in% cl)
+
+  # The boundary pair is named, and reporting its correlation at the boundary makes this matrix
+  # indefinite, so it is smoothed. Both are asserted because both are consequences of the boundary
+  # estimate that a change to it would silently alter: at the old (lower) estimate this matrix was
+  # positive definite and no smoothing happened.
+  expect_true("efa_cor_boundary" %in% cl)
+  expect_true("efa_cor_smoothed" %in% cl)
+
+  # The degeneracy screen fires on this data, and does so on every platform: the variance reaches
+  # it as NA by construction rather than as a number whose size decided the branch.
+  expect_true("efa_acov_degenerate" %in% cl)
 
   # Clean ordinal data raises no degeneracy warning.
   cl_clean <- .warn_classes(suppressMessages(
@@ -118,6 +137,41 @@ test_that("a near-comonotone polychoric pair stops neither DWLS nor the sandwich
                        cor_method = "poly", acov = "diag", dwls = TRUE,
                        inform_from_data = FALSE)))
   expect_false("efa_acov_degenerate" %in% cl_clean)
+})
+
+test_that("a continuity-corrected binary pair still refuses DWLS", {
+  # The correction repairs the point estimate of a binary pair with an empty cell, but not its
+  # asymptotic variance: the sandwich would treat the nudged counts as if they were the observed
+  # data, and simulated coverage of an interval built that way is not trustworthy. So a corrected
+  # pair is withheld exactly like a boundary pair, and DWLS refuses the data rather than weighting
+  # by a number it cannot justify. This is the test that pins that decision.
+  #
+  # Six binary items that are monotone in one another, so every pair's 2x2 table has one empty
+  # cell and every pair is corrected.
+  x <- vapply(1:6, function(k) as.integer((0:239L) %% 7L >= k), integer(240L))
+  colnames(x) <- paste0("i", 1:6)
+
+  poly <- suppressWarnings(.polychoric(x, acov = "diag"))
+  expect_true(all(poly$zero_corrected))
+  expect_true(all(is.na(poly$acov)))
+
+  expect_error(
+    suppressWarnings(
+      efa_fit(x, n_factors = 1, estimator = "DWLS", cor_method = "tetra", rotation = "none")),
+    class = "efa_dwls_degenerate_weight")
+
+  # ULS needs no asymptotic covariance, so the corrected matrix still fits -- which is the point
+  # of the correction: these data are analysable now, where the boundary estimate made every
+  # correlation 0.9999.
+  cl <- character()
+  fit <- withCallingHandlers(
+    suppressMessages(efa_fit(x, n_factors = 1, estimator = "ULS", cor_method = "tetra",
+                             rotation = "none")),
+    warning = function(w) { cl <<- c(cl, class(w)); invokeRestart("muffleWarning") })
+  expect_s3_class(fit, "efa")
+  expect_true("efa_cor_zero_cell" %in% cl)
+  expect_false("efa_cor_boundary" %in% cl)
+  expect_true(all(abs(fit$orig_R[upper.tri(fit$orig_R)]) < 0.9999))
 })
 
 test_that(".warn_acov_degenerate flags an unusable asymptotic variance and passes clean ones", {

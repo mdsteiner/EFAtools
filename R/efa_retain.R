@@ -23,8 +23,8 @@
 #' data is given as input. Default is `"pairwise.complete.obs"`.
 #' @param cor_method character. Correlation computed from raw data: `"pearson"`,
 #'   `"spearman"`, or `"kendall"` (passed to [stats::cor()]), or `"poly"` /
-#'   `"tetra"` for polychoric / tetrachoric correlations (a two-step estimator
-#'   with no empty-cell continuity correction). `CD`, `PARALLEL`, `NEST`, and
+#'   `"tetra"` for polychoric / tetrachoric correlations (a two-step estimator).
+#'   `CD`, `PARALLEL`, `NEST`, and
 #'   `HULL` compare against simulated continuous data, and `SMT` relies on a
 #'   normal-theory chi-square test; none of these support `"poly"` / `"tetra"`,
 #'   so they are skipped in that case.

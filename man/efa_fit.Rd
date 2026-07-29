@@ -338,8 +338,15 @@ When raw data are supplied, \code{cor_method} selects how the correlation matrix
 \code{\link[stats:cor]{stats::cor()}} for continuous or rank data.
 \item \strong{"poly"} / \strong{"tetra"} compute polychoric / tetrachoric correlations for ordinal /
 binary data, assuming an underlying bivariate-normal latent variable. They use a
-two-step estimator with no empty-cell continuity correction, matching
-\code{polycor::polychor()} and \code{lavaan}. The polychoric asymptotic covariance that
+two-step estimator, matching \code{polycor::polychor()}. Every two-by-two response table
+with an empty cell is reproduced exactly by a correlation of 1 (or -1), so such a pair
+would otherwise be estimated at that boundary whatever the underlying correlation; a
+continuity correction of 0.5 is therefore added to the empty cell of a binary pair,
+preserving the table margins, as \code{lavaan} and \code{psych} do by default (Savalei, 2011).
+Larger tables get no correction: a response table showing a perfect ordering is instead
+reported at the boundary value, with a warning naming the pairs. Neither kind of pair
+has an asymptotic variance, so both are reported as \code{NA} and the \code{"DWLS"} estimator
+refuses data containing them. The polychoric asymptotic covariance that
 underlies both the DWLS weights and the scaled (sandwich) statistic relies on
 large-sample theory that degrades for empty or near-empty response-category
 combinations; with very sparse cells the resulting weights and standard errors can be

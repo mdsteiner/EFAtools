@@ -20,7 +20,7 @@
 #' @param cor_method character. Correlation computed from raw data: `"pearson"`,
 #'   `"spearman"`, or `"kendall"` (passed to [stats::cor()]), or `"poly"` /
 #'   `"tetra"` for polychoric / tetrachoric correlations of ordinal / binary data
-#'   (a two-step estimator with no empty-cell continuity correction).
+#'   (a two-step estimator).
 #' Default is "pearson".
 #' @param n_factors numeric. Number of factors to extract if "EFA" is included in
 #' `eigen_type`. Default is 1.

@@ -21,11 +21,16 @@
 // even return negatives - the rectangle is computed by conditioning on X:
 //   P(a0<X<=a1, b0<Y<=b1) = int_{a0}^{a1} phi(x) [Phi((b1-rho x)/s) - Phi((b0-rho x)/s)] dx,
 // with s = sqrt(1-rho^2) (Plackett, 1954; Genz & Bretz, 2009). The 1-D integral is a
-// sum of non-negative terms, so it keeps full relative accuracy for tiny cells with no
-// cancellation. It is evaluated by Gauss-Legendre quadrature, infinite X-cuts clamped to
-// a finite range where phi is negligible, and infinite Y-cuts handled directly by the
-// normal CDF (Phi(+/-Inf) = 1/0). The per-pair correlation maximises the log-likelihood by
-// Fisher scoring: the score is the closed-form derivative of each cell probability obtained by
+// sum of non-negative terms, so the OUTER integration cannot cancel. The inner conditional
+// band is still a difference of two normal CDFs, and in the far tails both of them round to
+// the same value, so it is taken from whichever tail is nearer to zero (see
+// std_norm_cdf_signed): the band, and hence the cell probability, then keeps full relative
+// accuracy however deep in the tail it lies. It is evaluated by Gauss-Legendre quadrature,
+// infinite X-cuts clamped to a finite range where phi is negligible, and infinite Y-cuts
+// handled directly by the normal CDF (Phi(+/-Inf) = 1/0).
+//
+// The per-pair correlation maximises the log-likelihood by Fisher scoring: the score is the
+// closed-form derivative of each cell probability obtained by
 // differentiating the same conditioning integral with respect to rho (so it is consistent with
 // the quadrature used for the probabilities), and the step is normalised by the expected
 // information of the cell-count multinomial (Olsson, 1979). The step is capped away from the
@@ -40,6 +45,7 @@
 //     Biometrika, 41, 351-360.
 //   Genz, A., & Bretz, F. (2009). Computation of Multivariate Normal and t Probabilities.
 //     Springer.
+//   Higham, N. J. (2002). Accuracy and Stability of Numerical Algorithms (2nd ed.). SIAM.
 //   Brent, R. P. (1973). Algorithms for Minimization without Derivatives. Prentice-Hall.
 //   Rebonato, R., & Jackel, P. (2000). The most general methodology to create a valid
 //     correlation matrix for risk management and option pricing purposes. Journal of Risk,
@@ -71,14 +77,72 @@ static const double POLY_REFINE_RHO = 0.95;
 // margin while keeping the finer rule off the many weakly-correlated sparse pairs of heterogeneous
 // ordinal data.
 static const double POLY_EMPTY_REFINE_RHO = 0.65;
+// Largest |rho| the estimator admits. The log-likelihood is maximised over the closed interval
+// [-POLY_MAXCOR, POLY_MAXCOR], bounded away from the singular endpoints as in polycor (whose
+// `maxcor` default is the same 0.9999), so the model never degenerates to a rank-one normal.
+// It is therefore also the estimate reported for a pair whose table is at a Frechet bound, where
+// the unconstrained maximiser is exactly +/-1 (see poly_frechet_bound).
+static const double POLY_MAXCOR = 0.9999;
+// Continuity correction added to the empty cell of a binary (2x2) pair before estimation. Every
+// 2x2 table with an empty cell sits on a Frechet bound of its own marginals, so its uncorrected
+// two-step estimate is the boundary +/-1 whatever the underlying correlation; nudging the empty
+// cell moves the estimate back into the interior. Savalei (2011) recommends adding 0.5 for two
+// categories (and nothing beyond two), which is also lavaan's default (`zero.add = c(0.5, 0)`) and
+// psych's (`correct = 0.5`). Choi, Kim, Chen, & Zhang (2025) compare 0.1 / 0.25 / 0.5 against four
+// ways of adding them and find the added value dominates while the manner is second-order, so the
+// manner below is chosen for consistency with the shared thresholds rather than for accuracy.
+// Changing this value also means changing the two literals in the `efa_cor_zero_cell` warning in
+// .polychoric(), which state it to the user, and the documented convention in efa_fit()'s
+// *Correlation methods* section.
+static const double POLY_ZERO_ADD = 0.5;
 
-// Standard normal CDF via the complementary error function (allocation-free, accurate to
-// floating-point precision). Phi(+/-Inf) evaluates cleanly to 1 / 0.
-static inline double std_norm_cdf(double z) {
-  return 0.5 * std::erfc(-z * POLY_INV_SQRT_2);
-}
 static inline double std_norm_pdf(double z) {
   return POLY_INV_SQRT_2PI * std::exp(-0.5 * z * z);
+}
+
+// Signed-tail normal CDF: Phi(z) for z < 0, and -(1 - Phi(z)) for z >= 0. Each branch is one
+// std::erfc call on a non-negative argument, so it costs the same as a plain Phi while always
+// returning the tail NEARER to zero, computed to full relative accuracy (erfc keeps it; the
+// same quantity formed as 1 - Phi(z) by subtraction would not). It is the form in which a
+// probability band Phi(z1) - Phi(z0) can be differenced without cancellation -- see
+// poly_signed_band, which does the differencing.
+//
+// Why relative accuracy is the requirement here, and not merely absolute: a band deep in a tail
+// is a cell probability of the ordinal model, and the log-likelihood, its score dP/P and the
+// asymptotic covariance are all assembled from that probability, so an error relative to its own
+// magnitude propagates undiminished however small the cell is (Genz & Bretz, 2009, on tail
+// accuracy for these integrals). Forming a small difference from two nearly equal quantities is
+// the textbook way to lose exactly that (Higham, 2002).
+//
+// Concretely: the upper-tail band of a strongly correlated pair is Phi(13.7) - Phi(10.4), and
+// both of those round to exactly 1.0, so the band -- and hence the cell probability -- comes out
+// 0 although its true value (~1e-25 here, ~1e-45 for the extreme corner cells) is hundreds of
+// orders of magnitude above the underflow floor. The cell's rho-derivative is built from
+// DENSITIES rather than a CDF difference and keeps its accuracy, so the score dP/P would be
+// inflated by those same hundreds of orders of magnitude.
+static inline double std_norm_cdf_signed(double z) {
+  return z < 0.0 ? 0.5 * std::erfc(-z * POLY_INV_SQRT_2)
+                 : -0.5 * std::erfc(z * POLY_INV_SQRT_2);
+}
+
+// One probability band from the signed-tail CDF of its two conditional cuts, q0 = q(z0) and
+// q1 = q(z1) (std_norm_cdf_signed). When both cuts lie on the same side of zero the band is just
+// q1 - q0 -- Phi(z1) - Phi(z0) in the lower tail, Phic(z0) - Phic(z1) in the upper, neither of
+// which cancels. When they straddle zero it is that difference PLUS ONE, since
+//   Phi(z1) - Phi(z0) = 1 - Phic(z1) - Phi(z0),
+// which subtracts from 1 two quantities that are each at most 0.5 and so loses at most one bit.
+// No straddling band lies in a tail, which is where the accuracy matters.
+//
+// The straddling band identifies itself from the SIGN BIT of q, with no cut index to track: q is
+// positive (or +0.0, when the lower tail underflows) exactly when z < 0, and negative (or -0.0,
+// since IEEE gives -0.5 * 0.0 = -0.0 when the upper tail underflows or z = +Inf) exactly when
+// z >= 0. Callers pass consecutive cuts of a sorted, +/-Inf-padded vector, so z is monotone and
+// at most one band per row can straddle; keeping the test local to the band rather than shared
+// across the row is what lets all three band consumers use one definition.
+static inline double poly_signed_band(double q0, double q1) {
+  double band = q1 - q0;
+  if (std::signbit(q1) && !std::signbit(q0)) band += 1.0;
+  return band;
 }
 
 // Standard normal quantile via Wichura's (1988) AS 241 (accurate to ~1e-16), allocation-free.
@@ -158,8 +222,9 @@ static void gauss_legendre(int n, std::vector<double>& x, std::vector<double>& w
 }
 
 // Rectangle probability P(a0 < X <= a1, b0 < Y <= b1; rho) via 1-D conditioning on X.
-// Infinite Y-cuts are handled by std_norm_cdf directly; infinite X-cuts are clamped to
-// +/-POLY_CLAMP. Cancellation-free and non-negative by construction.
+// The conditional Y band comes from poly_signed_band, so it is cancellation-free in either
+// tail (infinite Y-cuts included, q(-Inf) = +0 and q(+Inf) = -0); infinite X-cuts are clamped
+// to +/-POLY_CLAMP. Non-negative by construction.
 // NOT the estimator's integrator: the likelihood accumulates cell probabilities through
 // poly_accum_node() below. This is reached only from .bvn_rect_cpp(), the entry point the
 // test suite uses to cross-check that integral against an external bivariate-normal rule.
@@ -173,7 +238,9 @@ static double bvn_rect(double a0, double a1, double b0, double b1, double rho,
   double acc = 0.0;
   for (std::size_t k = 0; k < gx.size(); k++) {
     double x = mid + half * gx[k];
-    double inner = std_norm_cdf((b1 - rho * x) / s) - std_norm_cdf((b0 - rho * x) / s);
+    double rx = rho * x;
+    double inner = poly_signed_band(std_norm_cdf_signed((b0 - rx) / s),
+                                    std_norm_cdf_signed((b1 - rx) / s));
     acc += gw[k] * std_norm_pdf(x) * inner;
   }
   return half * acc;
@@ -250,17 +317,23 @@ static double brent_min(F f, double lo, double hi, double tol, int max_iter) {
 // contributes zero) are shared by the likelihood evaluation in polychoric_pair and the ACOV
 // cell probabilities in poly_cell_probs, so the formula lives in exactly one place. cut_j is
 // padded with +/-Inf; colcdf/coldcdf are scratch of length >= Kj+1.
+//
+// colcdf holds the SIGNED-TAIL CDF (std_norm_cdf_signed), which poly_signed_band differences
+// without cancellation in either tail. The derivative row needs no such care: coldcdf holds
+// densities, which decay to zero rather than to a common limit, so their difference does not
+// cancel.
 static inline void poly_accum_node(double x, double w, double rho, double s, double s3,
                                    const double* cut_j, int Kj, double* prow, double* dprow,
                                    double* colcdf, double* coldcdf) {
+  double rx = rho * x;
   for (int b = 0; b <= Kj; b++) {
     double c = cut_j[b];
-    double z = (c - rho * x) / s;
-    colcdf[b] = std_norm_cdf(z);
+    double z = (c - rx) / s;
+    colcdf[b] = std_norm_cdf_signed(z);
     coldcdf[b] = std::isfinite(c) ? std_norm_pdf(z) * (rho * c - x) / s3 : 0.0;
   }
   for (int b = 0; b < Kj; b++) {
-    prow[b]  += w * (colcdf[b + 1]  - colcdf[b]);
+    prow[b]  += w * poly_signed_band(colcdf[b], colcdf[b + 1]);
     dprow[b] += w * (coldcdf[b + 1] - coldcdf[b]);
   }
 }
@@ -288,6 +361,116 @@ static inline void poly_fix_thresholds(const std::vector<double>& tab, int Ki, i
   }
 }
 
+// Whether a contingency table is exactly one of the two Frechet bounds of its own marginals:
+// returns +1 for the upper (comonotone) bound, -1 for the lower (antimonotone) bound, 0 otherwise.
+//
+// The bounds are the extreme couplings of fixed marginals (Frechet, 1951): on the cumulative
+// scale the upper bound is M(u, v) = min(u, v) and the lower W(u, v) = max(u + v - 1, 0). These
+// are exactly the bivariate normal copulas at rho = +1 and rho = -1, and the two-step thresholds
+// fix the model's marginals to this table's marginals, so at rho = +/-1 the model cell
+// probabilities ARE the corresponding bound coupling of the observed marginals. A table equal to
+// that coupling is therefore reproduced exactly at the boundary: the log-likelihood attains its
+// saturated value there, the maximiser is exactly rho = +/-1, and the rho-information vanishes
+// (the score is driven by probability flux into the structurally empty cells, which decays like
+// exp(-c / (1 - rho^2))). Both the estimate and its asymptotic variance are then boundary
+// quantities, which is why the caller reports +/-POLY_MAXCOR and refuses to compute a variance.
+//
+// Every quantity here is a count: the cumulative marginals and the differenced bound couplings
+// are exact integers held in doubles (the table mass is at most the row count, far below 2^53),
+// so the comparisons are exact and the verdict is bit-identical on every platform - no floating
+// point enters the decision. Cost is O(Ki * Kj) per pair.
+//
+// A table with fewer than two populated rows or columns is reported as 0: there the two bounds
+// coincide (both reduce to the table itself) so the sign would be arbitrary, and such a pair
+// carries no information about rho in any case.
+//
+// Rc/Cc are caller-owned scratch of at least Ki + 1 / Kj + 1 elements, so the pair loop does not
+// allocate; they are overwritten with the cumulative marginals on every call.
+static int poly_frechet_bound(const std::vector<double>& tab, int Ki, int Kj,
+                              std::vector<double>& Rc, std::vector<double>& Cc) {
+  // Cumulative marginals R_a = sum_{a' <= a} row_a' and C_b likewise, with R_{-1} = C_{-1} = 0.
+  // A marginal with fewer than two populated categories leaves the sign of the bound arbitrary,
+  // so it is counted while the sums are formed rather than in a second pass.
+  int nz_row = 0, nz_col = 0;
+  Rc[0] = 0.0;
+  for (int a = 0; a < Ki; a++) {
+    double rs = 0.0;
+    for (int b = 0; b < Kj; b++) rs += tab[(std::size_t) a * Kj + b];
+    if (rs > 0.0) nz_row++;
+    Rc[(std::size_t) a + 1] = Rc[(std::size_t) a] + rs;
+  }
+  Cc[0] = 0.0;
+  for (int b = 0; b < Kj; b++) {
+    double cs = 0.0;
+    for (int a = 0; a < Ki; a++) cs += tab[(std::size_t) a * Kj + b];
+    if (cs > 0.0) nz_col++;
+    Cc[(std::size_t) b + 1] = Cc[(std::size_t) b] + cs;
+  }
+  if (nz_row < 2 || nz_col < 2) return 0;
+  const double N = Rc[(std::size_t) Ki];
+
+  // Recover each bound's cell counts from its cumulative table by inclusion-exclusion and compare.
+  bool upper = true, lower = true;
+  for (int a = 0; a < Ki && (upper || lower); a++) {
+    for (int b = 0; b < Kj && (upper || lower); b++) {
+      double obs = tab[(std::size_t) a * Kj + b];
+      if (upper) {
+        double cell = std::min(Rc[(std::size_t) a + 1], Cc[(std::size_t) b + 1])
+                    - std::min(Rc[(std::size_t) a + 1], Cc[(std::size_t) b])
+                    - std::min(Rc[(std::size_t) a],     Cc[(std::size_t) b + 1])
+                    + std::min(Rc[(std::size_t) a],     Cc[(std::size_t) b]);
+        if (cell != obs) upper = false;
+      }
+      if (lower) {
+        double cell = std::max(Rc[(std::size_t) a + 1] + Cc[(std::size_t) b + 1] - N, 0.0)
+                    - std::max(Rc[(std::size_t) a + 1] + Cc[(std::size_t) b]     - N, 0.0)
+                    - std::max(Rc[(std::size_t) a]     + Cc[(std::size_t) b + 1] - N, 0.0)
+                    + std::max(Rc[(std::size_t) a]     + Cc[(std::size_t) b]     - N, 0.0);
+        if (cell != obs) lower = false;
+      }
+    }
+  }
+  // A table cannot be both once each marginal has two populated categories (guarded above).
+  if (upper) return 1;
+  if (lower) return -1;
+  return 0;
+}
+
+// Continuity-correct a binary pair whose table has a single empty cell, in place; returns whether
+// it applied. Only 2x2 tables with exactly one empty cell qualify - Savalei (2011) recommends the
+// correction for two categories and against it beyond two, and with two or more empty cells the
+// table carries too little information for a nudge to mean anything.
+//
+// The correction is marginal-preserving: POLY_ZERO_ADD goes into the empty cell AND into the cell
+// diagonally opposite it, and comes back out of the two cells that share neither its row nor its
+// column. Every row and column sum - and hence the table total - is left exactly as it was. That
+// matters structurally here rather than only statistically: the thresholds are computed once per
+// VARIABLE from its full-column marginals and shared by every pair it appears in, so a correction
+// that moved this pair's margins would put the pair's own table out of step with the thresholds it
+// is scored against, and with every other pair built on the same variable. Preserving the margins
+// keeps the shared thresholds exactly valid, so nothing downstream needs recomputing. It is also
+// what lavaan does (`zero.keep.margins`), and Choi et al. (2025) find the manner of adding matters
+// far less than the value, so consistency is the right thing to optimise for.
+//
+// No feasibility check is needed: the table holds integer counts, so a 2x2 with exactly one empty
+// cell has all three other cells >= 1 > POLY_ZERO_ADD, and none can be driven negative.
+static bool poly_zero_correct_2x2(std::vector<double>& tab, int Ki, int Kj) {
+  if (Ki != 2 || Kj != 2) return false;
+  int zeros = 0, z = -1;
+  for (int k = 0; k < 4; k++) {
+    if (tab[(std::size_t) k] == 0.0) { zeros++; z = k; }
+  }
+  if (zeros != 1) return false;
+  // Row-major c(a, b, c, d): the diagonal opposite of index z is 3 - z (a<->d, b<->c), and the
+  // remaining two indices are the ones that lose the same amount.
+  const int opp = 3 - z;
+  for (int k = 0; k < 4; k++) {
+    if (k == z || k == opp) tab[(std::size_t) k] += POLY_ZERO_ADD;
+    else                    tab[(std::size_t) k] -= POLY_ZERO_ADD;
+  }
+  return true;
+}
+
 // Two-step polychoric correlation for one variable pair. Builds the contingency table from the
 // pairwise-complete rows, fixes the thresholds (the shared per-variable tau_i/tau_j, or - when
 // use_local is set, i.e. the data have missing values - this pair's own marginal thresholds),
@@ -303,8 +486,11 @@ static double polychoric_pair(const int* xp, int nrow, int ci, int cj,
                               std::vector<double>& dpmat, std::vector<double>& colcdf,
                               std::vector<double>& coldcdf, std::vector<double>& rcut,
                               std::vector<double>& ccut, std::vector<double>& xnode,
-                              std::vector<double>& wpdf, bool& had_empty) {
+                              std::vector<double>& wpdf, bool& had_empty, int& at_bound,
+                              bool& zero_corrected) {
   const int n = (int) gx.size();
+  at_bound = 0;
+  zero_corrected = false;
   std::fill(tab.begin(), tab.begin() + (std::size_t) Ki * Kj, 0.0);
   double total = 0.0;
   const int* coli = xp + (std::size_t) ci * nrow;
@@ -327,6 +513,37 @@ static double polychoric_pair(const int* xp, int nrow, int ci, int cj,
   had_empty = false;
   for (std::size_t idx = 0, ncell = (std::size_t) Ki * Kj; idx < ncell; idx++) {
     if (tab[idx] == 0.0) { had_empty = true; break; }
+  }
+
+  // A table at one of the Frechet bounds of its own marginals is reproduced exactly at
+  // rho = +/-1, so the maximiser over the estimator's domain is that domain's endpoint (see
+  // poly_frechet_bound). Return it directly: there is nothing for the iteration to find, the
+  // likelihood is numerically flat over the whole approach to the boundary - so an optimiser
+  // stops at an arbitrary point there, which is what made the estimate platform-dependent - and
+  // the quadrature would in any case under-resolve a conditional transition of width
+  // sqrt(1 - POLY_MAXCOR^2) = 0.014. The verdict comes from integer cell counts alone, so this
+  // branch is taken identically on every platform.
+  //
+  // colcdf/coldcdf serve as the detector's cumulative-marginal scratch: they are sized Kmax + 1,
+  // and nothing has written or read them at this point -- the quadrature below fills them from
+  // scratch on every node -- so borrowing them here keeps the pair loop allocation-free.
+  at_bound = poly_frechet_bound(tab, Ki, Kj, colcdf, coldcdf);
+  if (at_bound != 0) {
+    // A binary pair is the one case where the bound is repaired rather than reported: every 2x2
+    // table with an empty cell is at a bound, so without a correction no binary pair with a rare
+    // response combination could ever be estimated in the interior. Nudge the empty cell (see
+    // poly_zero_correct_2x2) and carry on into the ordinary iteration below; the correction
+    // preserves the marginals, so the thresholds padded below are still this table's own. Larger
+    // tables, and 2x2 tables with more than one empty cell, keep the boundary report.
+    if (poly_zero_correct_2x2(tab, Ki, Kj)) {
+      zero_corrected = true;
+      at_bound = 0;
+      // `had_empty` deliberately stays true: the corrected cell holds POLY_ZERO_ADD rather than a
+      // count, so the table is still effectively empty there and the finer quadrature rule is
+      // still needed once the estimate is at least moderately correlated.
+    } else {
+      return at_bound * POLY_MAXCOR;
+    }
   }
 
   // Pad the thresholds with +/-Inf so each ordinal cell is a (half-infinite) rectangle. With
@@ -364,8 +581,10 @@ static double polychoric_pair(const int* xp, int nrow, int ci, int cj,
     }
   }
 
-  // Smallest positive double, used only to keep log()/division finite for an utterly
-  // negligible (underflowing) cell; the conditioning integral is otherwise non-negative.
+  // Smallest positive double, used only to keep log()/division finite for a cell whose
+  // probability is genuinely below it - which, with the band taken from the nearer tail, means
+  // a truly unrepresentable probability rather than one lost to cancellation. The conditioning
+  // integral is otherwise non-negative.
   const double p_floor = std::numeric_limits<double>::min();
 
   // Evaluate the negative log-likelihood, the score dl/drho, and the expected (Fisher)
@@ -402,22 +621,22 @@ static double polychoric_pair(const int* xp, int nrow, int ci, int cj,
         double praw = pmat[pbase + b];
         double p = praw < p_floor ? p_floor : praw;
         double dP = dpmat[pbase + b];
-        // Expected (Fisher) information sum_ab (dP)^2/P. A near-impossible cell carries no
-        // information (dP^2/P -> 0 as P -> 0), but at |rho| near 1 its probability can underflow
-        // while its rho-derivative, divided by s^3 = (1 - rho^2)^{3/2}, stays O(1); the floored
-        // ratio would then explode and, through the Newton step score/info, fake a vanishing step
-        // that stops the iteration at the warm start far from the optimum. Skip the underflowed
-        // cells - their true contribution is negligible.
+        // Expected (Fisher) information sum_ab (dP)^2/P. A cell whose probability has
+        // underflowed carries no information: the floored ratio would be meaningless (the
+        // numerator is not floored with it) and, through the Newton step score/info, could
+        // fake a vanishing step that stops the iteration far from the optimum. Skip those
+        // cells - their true contribution is negligible. This bites only at |rho| within a
+        // rounding unit of 1, where the true probability really is below the smallest
+        // representable double; a merely tiny cell keeps its full relative accuracy and its
+        // (correspondingly tiny) information.
         if (praw > p_floor) iacc += dP * dP / praw;
         double nab = tab[pbase + b];
         if (nab != 0.0) {
           nll -= nab * std::log(p);
-          // The score must be the gradient of this nll. When the cell probability has
-          // underflowed (p held at p_floor), -nab*log(p) is locally constant in rho, so its
-          // gradient is zero; gating the score on the same condition as the information keeps
-          // the Newton step score/info consistent. Adding the unfloored derivative here would
-          // inject a spurious large term that pulls a strongly-correlated pair (one with an
-          // observed near-impossible off-diagonal cell) away from its optimum.
+          // The score must be the gradient of this nll. Once the probability underflows,
+          // -nab*log(p) is pinned at -nab*log(p_floor) and so locally constant in rho, giving
+          // it zero gradient; gating the score on the same condition as the information keeps
+          // the Newton step score/info consistent with the objective being minimised.
           if (praw > p_floor) score += nab * dP / p;
         }
       }
@@ -462,7 +681,7 @@ static double polychoric_pair(const int* xp, int nrow, int ci, int cj,
   // comparable scoring implementations); 1e-5 is far inside the accuracy of the estimate. The
   // same constant is reused as Brent's relative-x tolerance in the fallback (where it bounds
   // |rho - rho*| to ~1e-5 * |rho|), which is likewise far inside the estimate's accuracy.
-  const double maxcor = 0.9999;
+  const double maxcor = POLY_MAXCOR;
   const double tol = 1e-5;
   double rho = rho0 > maxcor ? maxcor : (rho0 < -maxcor ? -maxcor : rho0);
   double nll, score, info;
@@ -549,18 +768,24 @@ static void poly_cross_info(int n_self_thr, int n_other, int stride_self, int st
                             double p_floor, std::vector<double>& colb, double* A21out) {
   for (int k = 0; k < n_self_thr; k++) {
     double x = cut_self[k + 1];                       // tau_self[k]
-    for (int o = 0; o <= n_other; o++) colb[o] = std_norm_cdf((cut_other[o] - rho * x) / s);
+    // Signed-tail CDF, differenced by poly_signed_band exactly as in poly_accum_node: these far
+    // tails are the same near-impossible cells, and a band that cancelled to zero here would
+    // silently drop a threshold's share of the cross-information.
+    double rx = rho * x;
+    for (int o = 0; o <= n_other; o++) colb[o] = std_norm_cdf_signed((cut_other[o] - rx) / s);
     double acc = 0.0;
     for (int o = 0; o < n_other; o++) {
-      double band = colb[o + 1] - colb[o];
+      double band = poly_signed_band(colb[o], colb[o + 1]);
       std::size_t up = (std::size_t) k * stride_self + (std::size_t) o * stride_other;
       std::size_t lo = up + stride_self;               // the adjacent row/column of band k
       // Empty cells carry no cases and so contribute nothing; skipping them rather than
-      // adding a 0 * ... term keeps A21 finite when such a cell sits at the probability
-      // floor, where dx.rho (already dP/P, divided by P once more here) can overflow to
+      // adding a 0 * ... term keeps A21 finite should such a cell sit at the probability
+      // floor, where dx.rho (already dP/P, divided by P once more here) could overflow to
       // Inf and 0 * Inf = NaN -- same rationale as the A22 and diagonal accumulations.
       // Unlike those, a NaN here would not stay local: it spreads through the threshold
-      // aggregates T into the influence of every cell of the pair, empty or not.
+      // aggregates T into the influence of every cell of the pair, empty or not. Defensive
+      // rather than load-bearing: dP/P is bounded once the band keeps its relative accuracy
+      // (see std_norm_cdf_signed), because P and dP then underflow together.
       double term = 0.0;
       if (nab[up] != 0.0) {
         double pu = pmat[up] < p_floor ? p_floor : pmat[up];
@@ -687,6 +912,16 @@ Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
   // ACOV below can reuse the same rule rather than re-deriving it from the rounded estimate
   // (a refined value can land just the other side of POLY_REFINE_RHO).
   std::vector<char> used_hi((std::size_t) npairs, 0);
+  // Records, per pair, whether its contingency table is at a Frechet bound of its own marginals
+  // (+1 upper / -1 lower, 0 otherwise): a boundary solution whose estimate is the domain endpoint
+  // and whose asymptotic variance does not exist. Reported to R so the pairs can be named, and
+  // consumed by the ACOV block below.
+  std::vector<int> at_bound((std::size_t) npairs, 0);
+  // Records, per pair, whether a binary pair's empty cell was continuity-corrected before
+  // estimation (see poly_zero_correct_2x2). Such a pair IS estimated in the interior, so it is not
+  // at_bound, but the estimate comes from a nudged table rather than from the observed counts, so
+  // it has no asymptotic variance either and the ACOV block skips it alongside the bound pairs.
+  std::vector<int> zero_corrected((std::size_t) npairs, 0);
 
   {
     // Scratch reused across pairs (no allocation in the loop).
@@ -703,22 +938,34 @@ Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
       int i = pair_i[t];
       int j = pair_j[t];
       bool had_empty = false;
+      int bnd = 0;
+      bool zc = false;
       double r = polychoric_pair(xp, nrow, i, j, tau[i], tau[j], Kcat[i], Kcat[j],
                                  any_missing, gx, gw, tab, pmat, dpmat, colcdf, coldcdf,
-                                 rcut, ccut, xnode, wpdf, had_empty);
+                                 rcut, ccut, xnode, wpdf, had_empty, bnd, zc);
+      at_bound[t] = bnd;
+      zero_corrected[t] = zc ? 1 : 0;
       // The 12-node rule under-resolves the conditional transition near |rho| = 1, and the same
       // sharp transition over a wide tail band biases the estimate of a strongly-correlated table
       // with an empty cell -- where the 12-node estimate itself under-shoots, dropping below
       // POLY_REFINE_RHO so the near-collinear test alone would miss it. Re-estimate such pairs with
       // the finer rule: when the cheap estimate is near-collinear, or has an empty cell and is
       // already at least moderately correlated (POLY_EMPTY_REFINE_RHO). An empty cell at a low |rho|
-      // carries no quadrature bias, so it keeps the cheap rule.
-      if (std::isfinite(r) && (std::fabs(r) > POLY_REFINE_RHO ||
-                               (had_empty && std::fabs(r) > POLY_EMPTY_REFINE_RHO))) {
+      // carries no quadrature bias, so it keeps the cheap rule. A pair at a Frechet bound is
+      // exempt: its estimate is the domain endpoint by construction, not a quadrature result.
+      if (bnd == 0 && std::isfinite(r) &&
+          (std::fabs(r) > POLY_REFINE_RHO ||
+           (had_empty && std::fabs(r) > POLY_EMPTY_REFINE_RHO))) {
+        // The second pass re-derives `had_empty`, the bound verdict, and the zero-cell correction
+        // from the same table, so all three necessarily repeat what the first pass found; they are
+        // received into throwaways rather than allowed to overwrite the values the branch was
+        // chosen on.
         bool he2 = false;
+        int bnd2 = 0;
+        bool zc2 = false;
         r = polychoric_pair(xp, nrow, i, j, tau[i], tau[j], Kcat[i], Kcat[j],
                             any_missing, gx_hi, gw_hi, tab, pmat, dpmat, colcdf, coldcdf,
-                            rcut, ccut, xnode, wpdf, he2);
+                            rcut, ccut, xnode, wpdf, he2, bnd2, zc2);
         used_hi[t] = 1;
       }
       rho[t] = r;
@@ -816,7 +1063,11 @@ Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
 
     std::vector<double> acov_diag((std::size_t) npairs, 0.0);
     arma::mat IF_cor;
-    if (acov == "full") IF_cor.set_size(Nc, npairs);
+    // Zero-initialised, not merely sized: a pair at a Frechet bound is skipped below and never
+    // writes its column, and an uninitialised column would feed garbage into the crossprod and so
+    // into every OTHER pair's cross-covariances. Every estimable pair overwrites its own column in
+    // full, so the fill costs one pass and changes nothing for them.
+    if (acov == "full") IF_cor.zeros(Nc, npairs);
 
     {
       // Scratch reused across pairs.
@@ -829,6 +1080,29 @@ Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
       std::vector<double> Ti(Kmax), Tj(Kmax), A21i(Kmax), A21j(Kmax);
 
       for (int t = 0; t < npairs; t++) {
+        // A pair at a Frechet bound has no asymptotic variance to report. Its estimate is the
+        // boundary of the parameter space, where the rho-information vanishes identically, so the
+        // influence function (score - threshold correction) / A22 is 0/0: both parts underflow to
+        // zero well before the boundary is reached, and the limit of the ratio is infinite. Any
+        // finite value here would be an artefact of the probability floor rather than a variance -
+        // which is exactly what differed by 30-odd orders of magnitude between platforms - and the
+        // standard sandwich asymptotics do not apply at a boundary with singular information in any
+        // case (Self & Liang, 1987; Rotnitzky, Cox, Bottai, & Robins, 2000). Fail closed with NA so
+        // no consumer can silently weight or report noise; the DWLS weights refuse it and the
+        // sandwich withholds the affected standard errors. Its influence column stays at the zero it
+        // was initialised to, so the crossprod below stays finite for every OTHER pair, and this
+        // pair's own row and column of Gamma are set to NA afterwards.
+        //
+        // A continuity-corrected binary pair is withheld for a different reason: its estimate is
+        // interior, but it was computed from a nudged table rather than from the observed counts,
+        // and the sandwich below would treat those nudged counts as if they were the data. That
+        // approximation fails exactly where the correction is invoked -- simulated coverage of a
+        // nominal 95% interval built this way ranges from 0 to 1 depending on the marginals -- so
+        // the correction is a point-estimate device only and its variance is withheld too.
+        if (at_bound[t] != 0 || zero_corrected[t] != 0) {
+          acov_diag[t] = NA_REAL;
+          continue;
+        }
         int i = pair_i[t], j = pair_j[t];
         int Ki = Kcat[i], Kj = Kcat[j];
         double r = rho[t];
@@ -861,7 +1135,7 @@ Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
             double d = dpmat[idx] / pf;
             dxr[idx] = d;
             // Empty cells contribute no cases, so skip them: at the probability floor d
-            // can overflow to Inf, and 0 * Inf = NaN would silently zero the variance via
+            // could overflow to Inf, and 0 * Inf = NaN would silently zero the variance via
             // the invA22 guard below (same rationale as the diagonal accumulation).
             if (nab[idx] != 0.0) A22 += nab[idx] * d * d;
           }
@@ -898,11 +1172,18 @@ Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
             cif[idx] = v;
             // An empty cell carries no case and so contributes exactly nothing to the
             // sum over cases of IF^2. Skipping it rather than adding 0 * v * v also keeps
-            // the diagonal finite for a (near-)degenerate pair, where a structurally empty
-            // cell has a model probability near the underflow floor, dP/P is astronomically
-            // large, and v * v overflows to Inf -- 0 * Inf being NaN in IEEE arithmetic.
-            // This is what the `full` scatter below already does implicitly by indexing
-            // observed cases only, and is what makes diag == diag(Gamma) hold everywhere.
+            // the diagonal finite should a structurally empty cell of a (near-)degenerate
+            // pair have a model probability at the underflow floor, where dP/P would be
+            // astronomically large and v * v would overflow to Inf -- 0 * Inf being NaN in
+            // IEEE arithmetic. This is what the `full` scatter below already does implicitly
+            // by indexing observed cases only, and is what makes diag == diag(Gamma) hold
+            // everywhere.
+            //
+            // Keep this skip (and its A22 and A21 counterparts) even though no table now
+            // reaches the overflow. With the band taken from the nearer tail, P and dP
+            // underflow together and dP/P stays O(1e5) even in the deepest reachable tail, so
+            // the skip is defensive: it is what makes the invariant hold by construction
+            // rather than by the accident of a particular quadrature rule.
             if (nab[idx] != 0.0) vsum += nab[idx] * v * v;
           }
         }
@@ -924,14 +1205,46 @@ Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
     } else {
       arma::mat Gamma = IF_cor.t() * IF_cor;           // pstar x pstar, variance scale
       Gamma = 0.5 * (Gamma + Gamma.t());               // symmetrise away round-off
+      // A withheld pair's covariance with every other pair is as unavailable as its own variance,
+      // so NA its whole row and column rather than let the zeroed influence column pass them off
+      // as exact zeros. Done after the crossprod so the NAs cannot propagate into the pairs that
+      // ARE estimable. This keeps diag(Gamma) equal to the "diag" vector, NA entries included.
+      for (int t = 0; t < npairs; t++) {
+        if (at_bound[t] != 0 || zero_corrected[t] != 0) {
+          Gamma.row(t).fill(NA_REAL);
+          Gamma.col(t).fill(NA_REAL);
+        }
+      }
       acov_out = Rcpp::wrap(Gamma);
     }
+  }
+
+  // `at_bound` and `zero_corrected` are reported as logicals over the pairs (utils::combn order,
+  // i.e. this function's own pair loop) so the R wrapper can name the affected variable pairs in
+  // its two diagnostics. They are mutually exclusive: a corrected pair is estimated in the interior
+  // and so is not at a bound.
+  //
+  // `bound_rho` carries the boundary estimate itself, signed, for the pairs that are at one (0
+  // elsewhere). The R warning has to state the value it reported, and the sign cannot be recovered
+  // from the returned matrix: with `nearest_pd` the matrix is projected afterwards, so the entry is
+  // no longer +/-POLY_MAXCOR. Carrying it here also keeps the constant in one place instead of
+  // repeating it as a literal in the message.
+  Rcpp::LogicalVector bound_out(npairs);
+  Rcpp::LogicalVector corrected_out(npairs);
+  Rcpp::NumericVector bound_rho_out(npairs);
+  for (int t = 0; t < npairs; t++) {
+    bound_out[t] = (at_bound[t] != 0);
+    corrected_out[t] = (zero_corrected[t] != 0);
+    bound_rho_out[t] = at_bound[t] * POLY_MAXCOR;
   }
 
   return Rcpp::List::create(
     Rcpp::Named("R") = Rmat,
     Rcpp::Named("pd_adjusted") = pd_adjusted,
-    Rcpp::Named("acov") = acov_out);
+    Rcpp::Named("acov") = acov_out,
+    Rcpp::Named("at_bound") = bound_out,
+    Rcpp::Named("zero_corrected") = corrected_out,
+    Rcpp::Named("bound_rho") = bound_rho_out);
 }
 
 // Bivariate normal rectangle probability P(a0 < X <= a1, b0 < Y <= b1; rho), exposed only

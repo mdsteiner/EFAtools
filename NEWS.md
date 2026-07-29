@@ -1,5 +1,15 @@
 # EFAtools 1.0.0.9000
 
+## Ordinal Correlations
+
+* A polychoric or tetrachoric pair whose response table shows a perfect ordering is only bounded, not identified, by the data, and is now reported at 0.9999 (or -0.9999 for a perfectly reversed table) with a warning naming the affected pairs, instead of at an operating-system-dependent value.
+
+* Binary pairs with a single empty response cell instead receive a 0.5 continuity correction that preserves the table margins, matching `lavaan` and `psych`, which avoids the boundary estimate and makes the correlation matrix positive definite far more often.
+
+* Neither kind of pair has an asymptotic variance, so `NA` is reported: `DWLS` estimation gives an actionable error rather than fitting with an unusable weight, and robust standard errors involving these pairs are withheld.
+
+* The response combinations that a strongly correlated pair makes all but impossible are now computed from the complementary tail of the normal distribution, which keeps them accurate down to the smallest representable probability instead of losing them to rounding. When such a combination is nevertheless observed (a handful of careless or extreme responses is enough) this both sharpens the correlation of the pair and gives it an asymptotic variance. Previously that variance came out missing, which refused `DWLS` estimation for the whole data set and withheld every robust standard error involving the pair.
+
 # EFAtools 1.0.0
 
 ## New Interface

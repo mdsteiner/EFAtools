@@ -18,7 +18,7 @@
 #' @param cor_method character. Correlation computed from raw data: `"pearson"`,
 #'   `"spearman"`, or `"kendall"` (passed to [stats::cor()]), or `"poly"` /
 #'   `"tetra"` for polychoric / tetrachoric correlations of ordinal / binary data
-#'   (a two-step estimator with no empty-cell continuity correction). Default is
+#'   (a two-step estimator). Default is
 #'   `"pearson"`.
 #' @param mcd_alpha numeric. The proportion of observations covered by the minimum
 #'   covariance determinant (MCD) subset used for the robust outlier diagnostics, in

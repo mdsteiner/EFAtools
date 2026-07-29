@@ -104,6 +104,42 @@ test_that(".bvn_rect_cpp matches mnormt::sadmvn rectangle probabilities", {
   expect_lt(worst, 1e-6)
 })
 
+test_that(".bvn_rect_cpp keeps its relative accuracy in the far tails", {
+  # The absolute check above cannot see a 1e-45 rectangle collapse to zero, and that is exactly
+  # what the opposite-corner cells of a strongly correlated pair are. Such a cell can be
+  # OBSERVED -- a few careless or extreme responses put it there -- and then its probability
+  # enters the log-likelihood and its score the asymptotic covariance, so what matters is
+  # relative accuracy at magnitudes far below any absolute tolerance. The upper-tail rectangle
+  # is the demanding one: its conditional band has to be taken from the complementary tail,
+  # since as a plain difference of normal CDFs it is 1 - 1 = 0 and the rectangle vanishes
+  # however large it really is.
+  #
+  # The oracle is the (X, Y) -> (-X, -Y) symmetry of the bivariate normal, which maps an
+  # upper-tail rectangle onto its mirror image in the LOWER tail -- where a CDF difference
+  # cannot cancel, because both terms are small. The identity is exact, needs no external
+  # integrator (mnormt itself returns 0 for some of these rectangles), and holds to machine
+  # precision here because the two sides are the same quadrature rule on mirrored bands.
+  #
+  # Compared as a RATIO, not as two values: expect_equal() on quantities this small would
+  # compare them absolutely -- any two numbers below 1e-45 are within any usable tolerance of
+  # each other -- and the assertion would hold whatever the upper tail returned. On the ratio the
+  # tolerance means what it says, and the pre-fix values fail it by 6e-11 at rho = 0.9 and by
+  # 7.7e-06 at rho = 0.95, where the cancelled band is inaccurate rather than absent.
+  cut7 <- stats::qnorm(seq_len(6) / 7)
+  # rho and the corner offset k; deeper than (0.999, 2) the rectangle genuinely underflows,
+  # and at |rho| > 0.95 the finer quadrature rule is used, so both rules are covered.
+  grid <- list(c(0.9, 1), c(0.9, 2), c(0.95, 1), c(0.95, 2),
+               c(0.99, 1), c(0.99, 2), c(0.999, 2))
+  for (gr in grid) {
+    rho <- gr[1]; k <- gr[2]
+    a <- cut7[k]; b <- cut7[7L - k]
+    up <- .bvn_rect_cpp(-Inf, a, b, Inf, rho)          # X <= a, Y > b   (upper Y tail)
+    lo <- .bvn_rect_cpp(-a, Inf, -Inf, -b, rho)        # X > -a, Y <= -b (its mirror image)
+    expect_gt(up, 0)                                   # the cancelled band collapses to exactly 0
+    expect_equal(up / lo, 1, tolerance = 1e-12)
+  }
+})
+
 test_that("near-collinear pairs match the exact two-step estimate", {
   skip_on_cran()
   skip_if_not_installed("mnormt")
@@ -158,13 +194,31 @@ test_that("an observed near-impossible cell does not bias a strongly-correlated 
   L <- chol(matrix(c(1, 0.995, 0.995, 1), 2L))
   Z <- matrix(stats::rnorm(2 * N), N, 2L) %*% L
   a <- findInterval(Z[, 1], cut7); b <- findInterval(Z[, 2], cut7)
-  # A few careless responses fall in the near-impossible opposite corners, whose model
-  # probability underflows at the optimum. The score must drop those cells consistently with
-  # the information; otherwise their spurious gradient drags the pair off its true correlation
-  # (the unfixed estimate is biased ~0.02; with the gated score it tracks the gold to ~4e-3).
+  # A few careless responses fall in the two opposite corners, whose model probabilities at the
+  # optimum are about 3e-45 and 1e-44. Both are far above the smallest representable double, but
+  # the upper-right one is reached only from the complementary tail: taken as a plain difference
+  # of normal CDFs its band is 1 - 1 = 0 exactly, which annihilates the cell and biases the pair
+  # by ~4e-3 (the two mirror-image corners then contribute quite differently despite carrying the
+  # same three cases each). Computed from the nearer tail, both corners contribute and the pair
+  # tracks the exact two-step value to ~1e-5.
   a[1:3] <- 0L; b[1:3] <- 6L
   a[4:6] <- 6L; b[4:6] <- 0L
-  expect_equal(.polychoric(cbind(a, b))$R[1, 2], .gold_polychor(a, b), tolerance = 8e-3)
+
+  # The asymptotic variance of this pair is available too: it is estimated in the interior, so it
+  # is neither a boundary nor a continuity-corrected pair, and nothing in its influence function
+  # overflows once the corner probabilities are accurate. Before that it came out NaN, which made
+  # the pair unusable for DWLS and withheld every robust standard error involving it.
+  # (The empty interior cells of this table trip the separate sparse-cell diagnostic, which is
+  # computed from the observed counts and is not what is under test here.)
+  d <- suppressWarnings(.polychoric(cbind(a, b), acov = "diag"),
+                        classes = "efa_cor_sparse_cells")
+  f <- suppressWarnings(.polychoric(cbind(a, b), acov = "full"),
+                        classes = "efa_cor_sparse_cells")
+  expect_equal(d$R[1, 2], .gold_polychor(a, b), tolerance = 1e-4)
+  expect_false(d$at_bound[[1]])
+  expect_false(d$zero_corrected[[1]])
+  expect_true(is.finite(d$acov[[1]]) && d$acov[[1]] > 0)
+  expect_equal(unname(d$acov), unname(diag(f$acov)), tolerance = 1e-10)
 })
 
 test_that("polychoric matrix matches polycor and psych on GRiPS", {
@@ -184,8 +238,13 @@ test_that("tetrachoric (2 categories) matches polycor and psych", {
   skip_on_cran()
   skip_if_not_installed("polycor")
 
+  # Pinned against the UNcorrected references even though binary pairs are continuity-corrected:
+  # no pair of this median split has an empty cell, so the correction never fires and the two
+  # conventions coincide here (psych gives the identical matrix for correct = 0.5 and FALSE).
   gb <- apply(g, 2L, function(col) as.integer(col > stats::median(col)))
-  ours <- .polychoric(gb)$R
+  poly_gb <- .polychoric(gb)
+  expect_false(any(poly_gb$zero_corrected))
+  ours <- poly_gb$R
 
   expect_lt(max(abs(ours - .ref_polychor(gb))), 1e-4)
 
@@ -250,38 +309,213 @@ test_that("a pair with no overlapping complete cases is rejected with a classed 
   expect_error(.polychoric(m), class = "efa_cor_na")
 })
 
-test_that("an empty off-diagonal cell does not bias the estimate below the MLE", {
+test_that("the boundary estimate of a Frechet-bound pair attains the maximum likelihood", {
   skip_if_not_installed("mnormt")
-  # A few extreme cells dominate the likelihood of a table with empty cells, and a low-order
-  # quadrature under-resolves its wide tail bands and mislocates the maximum: the 12-node rule
-  # puts this pair near 0.90, well below the likelihood's true shoulder.
-  #
   # This table is the comonotone coupling of its margins -- the Frechet upper bound (Frechet,
-  # 1951) -- so the two-step model reproduces it exactly at rho = 1: the likelihood climbs
-  # monotonically to the boundary and is numerically flat above ~0.977, every value there
-  # attaining the saturated (perfect-fit) log-likelihood to within a rounding unit. The estimate
-  # is therefore not identified on that plateau and must not be pinned against another
-  # optimiser's stopping point -- both land on the plateau, but exactly where is decided by
-  # floating-point detail and varies by platform. What is identified, and what the finer rule
-  # actually has to deliver, is the attained likelihood.
+  # 1951). On the cumulative scale that bound is the copula M(u, v) = min(u, v), which is exactly
+  # the bivariate normal copula at rho = 1, and the two-step thresholds fix the model's margins to
+  # this table's margins. So at rho = 1 the model reproduces the table exactly, the log-likelihood
+  # attains its saturated value, and the maximiser is the boundary of the parameter space. The
+  # estimator reports the boundary of the domain it maximises over (+/- 0.9999, as in polycor);
+  # the likelihood is numerically flat over the whole approach to it, so an optimiser left to
+  # search there stops at an arbitrary, platform-dependent point instead.
+  #
+  # What is checked here is the statistical claim behind that: the reported value fits at least as
+  # well as the mnormt two-step gold, i.e. it really is a maximiser and not merely a bound. The
+  # 1e-6 slack is measured, not inherited from sadmvn's abseps: at a perfect fit every cell's
+  # n_ab / P_ab equals N, so an abseps-sized (1e-6) probability error would move this nll by as
+  # much as sum(n_ab / P_ab) * abseps = 1.5e-3. sadmvn is far more accurate than it promises on
+  # these smooth rectangles -- the measured spread over the whole plateau is ~6e-14 -- leaving
+  # 1e-6 seven orders above the noise and three below the ~1.4e-3 a mislocated estimate pays.
   x <- .expand_table(rbind(c(41, 0), c(13, 0), c(28, 0), c(171, 47)))
-  ours <- .polychoric(x)$R[1, 2]
-  expect_gt(ours, 0.95)
-  # The estimate must fit at least as well as the mnormt two-step gold. The 1e-6 slack is
-  # measured, not inherited from sadmvn's abseps: at a perfect fit every cell's n_ab / P_ab
-  # equals N, so an abseps-sized (1e-6) probability error would move this nll by as much as
-  # sum(n_ab / P_ab) * abseps = 1.5e-3. sadmvn is far more accurate than it promises on these
-  # smooth rectangles -- the measured spread over the whole plateau is ~6e-14 -- leaving 1e-6
-  # seven orders above the noise and three below the ~1.4e-3 an under-resolved estimate pays.
+  ours <- suppressWarnings(.polychoric(x))$R[1, 2]
+  expect_identical(ours, 0.9999)
   nll <- .gold_nll(x[, 1], x[, 2])
   gold <- .gold_polychor(x[, 1], x[, 2])
   expect_lte(nll(ours), nll(gold) + 1e-6)
 })
 
+test_that("a Frechet-bound pair is detected exactly and reported at the boundary", {
+  # The detector compares the table cell-by-cell against both bound couplings of its own
+  # marginals, built from the cumulative margins by inclusion-exclusion. Every quantity is an
+  # integer count, so the verdict involves no floating point and is identical on every platform --
+  # which is the whole point: the estimate and the asymptotic variance of such a pair are boundary
+  # quantities that an optimiser cannot pin down (the variance of this fixture has been observed
+  # anywhere between 1e-13 and 1e+26 depending on the platform).
+  upper <- rbind(c(41, 0), c(13, 0), c(28, 0), c(171, 47))
+
+  # Upper bound (perfectly ordered) and its mirror, the lower bound (perfectly reversed): the
+  # sign of the estimate follows the bound, and neither has an asymptotic variance.
+  for (case in list(list(tab = upper,          rho = 0.9999),
+                    list(tab = upper[, 2:1],   rho = -0.9999))) {
+    res <- suppressWarnings(.polychoric(.expand_table(case$tab), acov = "diag"))
+    expect_identical(res$R[1, 2], case$rho)
+    expect_true(res$at_bound[[1L]])
+    expect_identical(unname(res$acov), NA_real_)
+  }
+
+  # A 2x2 table with a zero cell is at a bound too, but it is repaired by the continuity
+  # correction rather than reported (see the tetrachoric tests below). Two empty cells leave
+  # nothing to repair -- the correction is defined for a single empty cell -- so those tables
+  # stay on the boundary path, in both directions.
+  for (case in list(list(tab = rbind(c(40, 0), c(0, 200)), rho = 0.9999),
+                    list(tab = rbind(c(0, 40), c(200, 0)), rho = -0.9999))) {
+    res <- suppressWarnings(.polychoric(.expand_table(case$tab), acov = "diag"))
+    expect_identical(res$R[1, 2], case$rho)
+    expect_true(res$at_bound[[1L]])
+    expect_false(res$zero_corrected[[1L]])
+    expect_identical(unname(res$acov), NA_real_)
+  }
+
+  # One count off the bound and the pair is ordinary again: not flagged, estimated in the
+  # interior, and with a finite positive variance. There is no grey zone between the two.
+  off <- suppressWarnings(.polychoric(.expand_table(rbind(c(40, 2), c(60, 198))), acov = "diag"))
+  expect_false(off$at_bound[[1L]])
+  expect_false(off$zero_corrected[[1L]])
+  expect_lt(abs(off$R[1, 2]), 0.95)
+  expect_true(is.finite(off$acov[[1L]]) && off$acov[[1L]] > 0)
+})
+
+test_that("a Frechet-bound pair is reproducible under a one-count perturbation", {
+  # Moving a single observation between populated cells leaves the table at the bound (the
+  # marginals change, but the monotone rearrangement of the new marginals is again this table), so
+  # every member of this family is the same boundary problem. It is precisely where the old
+  # arbitrary-stopping-point estimate made the asymptotic variance vary by 39 orders of magnitude
+  # across the family, non-monotonically, and differ between platforms. All of them must now give
+  # the identical answer. The probe is only meaningful among perturbations that stay on the same
+  # side of the bound -- one that moved a count INTO a structurally empty cell would leave the
+  # family, and is expected to be estimated in the interior instead (covered above).
+  tab <- rbind(c(41, 0), c(13, 0), c(28, 0), c(171, 47))
+  for (k in which(tab > 0)) {
+    for (step in c(-1L, 1L)) {
+      t2 <- tab
+      t2[k] <- t2[k] + step
+      res <- suppressWarnings(.polychoric(.expand_table(t2), acov = "diag"))
+      expect_identical(res$R[1, 2], 0.9999)
+      expect_identical(unname(res$acov), NA_real_)
+    }
+  }
+})
+
+test_that("a binary pair with one empty cell is continuity-corrected, not reported at the bound", {
+  # Every 2x2 table with an empty cell is the extreme coupling of its own margins, so without a
+  # correction its estimate would be +/-1 whatever the underlying correlation -- which for binary
+  # data is the common case, not a corner case. A continuity correction of 0.5 is added to the
+  # empty cell instead, so the pair is estimated in the interior. The sign still follows the
+  # corner the empty cell sits in.
+  for (case in list(list(tab = rbind(c(40, 0), c(60, 200)),  sign = 1),
+                    list(tab = rbind(c(0, 40), c(200, 60)),  sign = -1),
+                    list(tab = rbind(c(150, 50), c(100, 0)), sign = -1))) {
+    res <- suppressWarnings(.polychoric(.expand_table(case$tab), acov = "diag"))
+    expect_false(res$at_bound[[1L]])
+    expect_true(res$zero_corrected[[1L]])
+    expect_identical(sign(res$R[1, 2]), case$sign)
+    expect_lt(abs(res$R[1, 2]), 0.9999)
+    # The correction repairs the point estimate only: the sandwich would treat the nudged counts
+    # as data, and its coverage in this regime is not trustworthy, so no variance is reported.
+    expect_identical(unname(res$acov), NA_real_)
+  }
+
+  # The mirror image must give the mirrored estimate, so the correction cannot depend on which
+  # corner is empty. Compared numerically rather than bit-wise: the two tables put the correction
+  # in different cells and so take slightly different routes through the iteration, which leaves
+  # them a single ulp apart.
+  up <- suppressWarnings(.polychoric(.expand_table(rbind(c(40, 0), c(60, 200)))))$R[1, 2]
+  dn <- suppressWarnings(.polychoric(.expand_table(rbind(c(0, 40), c(200, 60)))))$R[1, 2]
+  expect_equal(up, -dn, tolerance = 1e-12)
+})
+
+test_that("the continuity correction preserves the table margins", {
+  # The correction adds 0.5 to the empty cell AND to its diagonal opposite, and takes 0.5 out of
+  # the other two, so every row and column sum is unchanged. That is what keeps the shared
+  # per-variable thresholds valid, and it is checked here independently: with the margins fixed a
+  # 2x2 has one degree of freedom, so the two-step estimate is the rho solving
+  # Phi2(t1, t2, rho) = (a - 0.5) / N with t1, t2 taken from the ORIGINAL margins. Agreement to
+  # quadrature accuracy shows the margins -- hence the thresholds -- really were left alone.
+  tab <- rbind(c(40, 0), c(60, 200))
+  N <- sum(tab)
+  t1 <- stats::qnorm(sum(tab[1, ]) / N)
+  t2 <- stats::qnorm(sum(tab[, 1]) / N)
+  target <- (tab[1, 1] - 0.5) / N
+  gold <- stats::uniroot(function(rho) .bvn_rect_cpp(-Inf, t1, -Inf, t2, rho) - target,
+                         c(-0.9999, 0.9999), tol = 1e-10)$root
+  expect_equal(suppressWarnings(.polychoric(.expand_table(tab)))$R[1, 2], gold, tolerance = 1e-4)
+})
+
+test_that("the continuity correction preserves the margins under missing data too", {
+  # With missing data each pair uses the thresholds of its OWN pairwise-complete cases, derived
+  # from the contingency table -- the corrected one. That is the case the margin-preserving design
+  # exists for: a correction that shifted the margins would move the thresholds with them. Build a
+  # pair whose complete cases form a 2x2 with one empty cell, add missing values in a third
+  # variable so the local-threshold branch is taken, and check the pair still matches the estimate
+  # implied by its ORIGINAL margins.
+  tab <- rbind(c(40, 0), c(60, 200))
+  xy <- .expand_table(tab)
+  x <- cbind(xy, rep(c(1L, 2L, NA), length.out = nrow(xy)))
+  colnames(x) <- c("a", "b", "z")
+
+  res <- suppressWarnings(.polychoric(x))
+  expect_true(res$zero_corrected[["a-b"]])
+
+  N <- sum(tab)
+  t1 <- stats::qnorm(sum(tab[1, ]) / N)
+  t2 <- stats::qnorm(sum(tab[, 1]) / N)
+  gold <- stats::uniroot(
+    function(rho) .bvn_rect_cpp(-Inf, t1, -Inf, t2, rho) - (tab[1, 1] - 0.5) / N,
+    c(-0.9999, 0.9999), tol = 1e-10)$root
+  expect_equal(res$R[1, 2], gold, tolerance = 1e-4)
+})
+
+test_that("the corrected tetrachoric matches lavaan, which applies the same correction", {
+  skip_on_cran()
+  skip_if_not_installed("lavaan")
+  # lavaan corrects a 2x2 zero cell by default (`zero.add = c(0.5, 0)`) and keeps the margins
+  # (`zero.keep.margins`), which is exactly the convention implemented here -- so the estimates
+  # must agree. With `zero.add = 0` lavaan instead returns its own `maxcor` of 0.999, confirming
+  # that the two estimators differ only by the correction and not in the estimator itself.
+  tab <- rbind(c(40, 0), c(60, 200))
+  d <- as.data.frame(.expand_table(tab))
+  names(d) <- c("a", "b")
+  d[] <- lapply(d, ordered)
+
+  ours <- suppressWarnings(.polychoric(.expand_table(tab)))$R[1, 2]
+  ref <- lavaan::lavCor(d, ordered = names(d), output = "cor")[1, 2]
+  expect_equal(ours, ref, tolerance = 1e-4)
+  # Regression pin, so a change in the correction is caught even without lavaan installed.
+  expect_equal(ours, 0.9276913, tolerance = 1e-6)
+})
+
+# Collect the class strings of every warning raised while evaluating `expr`, so one expected class
+# can be asserted (and another denied) when several conditions fire on the same data.
+.poly_warn_classes <- function(expr) {
+  cls <- character()
+  withCallingHandlers(
+    expr,
+    warning = function(w) { cls <<- c(cls, class(w)); invokeRestart("muffleWarning") }
+  )
+  cls
+}
+
+# Variables with structurally empty cells whose expected counts are large (32), estimated well
+# inside the interior (rho = 0.82) rather than at a Frechet bound: a common ordinal score nudged up
+# by each variable's own 0/1 pattern and capped at the top category. Reaching the lowest category
+# needs an unnudged zero score and the highest a nudged or already-top score, so cells (0, 2) and
+# (2, 0) are both empty in every pair's table -- a pattern no extreme coupling has, which is what
+# keeps the pairs off the bound.
+.sparse_interior <- function(n_var = 2L) {
+  r <- 0:383L
+  u <- (r %/% 64L) %% 3L
+  out <- vapply(seq_len(n_var),
+                function(k) pmin(2L, u + bitwAnd(bitwShiftR(r, k - 1L), 1L)),
+                integer(length(r)))
+  colnames(out) <- paste0("v", seq_len(n_var))
+  out
+}
+
 test_that("a structurally empty cell warns when an asymptotic covariance is requested", {
-  # An empty cell with a non-negligible expected count (~6 here) is flagged; an otherwise dense
-  # ordinal set whose only empty cells are rare corners is not. The covariance is still returned.
-  sparse <- .expand_table(rbind(c(41, 0), c(13, 0), c(28, 0), c(171, 47)))
+  # An empty cell with a non-negligible expected count is flagged; an otherwise dense ordinal set
+  # whose only empty cells are rare corners is not. The covariance is still returned.
+  sparse <- .sparse_interior()
   expect_warning(.polychoric(sparse, acov = "diag"), class = "efa_cor_sparse_cells")
   expect_no_warning(
     .polychoric(DOSPERT_raw[, 1:8], acov = "diag"),
@@ -292,6 +526,16 @@ test_that("a structurally empty cell warns when an asymptotic covariance is requ
     .polychoric(sparse, acov = "diag", label_acov = FALSE),
     class = "efa_cor_sparse_cells"
   )
+  # A pair at a Frechet bound has empty cells too, but it is reported as a boundary solution
+  # instead: that warning says strictly more (there is no asymptotic covariance at all, rather
+  # than an unreliable one), so repeating the weaker sparse-cell diagnosis for it would only
+  # obscure the diagnosis.
+  bound <- .expand_table(rbind(c(41, 0), c(13, 0), c(28, 0), c(171, 47)))
+  cls <- .poly_warn_classes(.polychoric(bound, acov = "diag"))
+  expect_true("efa_cor_boundary" %in% cls)
+  expect_false("efa_cor_sparse_cells" %in% cls)
+  # The bootstrap recompute is silent about the boundary too.
+  expect_no_warning(.polychoric(bound, acov = "diag", label_acov = FALSE))
 })
 
 test_that("the sparse-cell warning names the offending pairs and caps the list", {
@@ -306,23 +550,90 @@ test_that("the sparse-cell warning names the offending pairs and caps the list",
     conditionMessage(w)
   }
 
-  one <- .expand_table(rbind(c(41, 0), c(13, 0), c(28, 0), c(171, 47)))
+  one <- .sparse_interior()
   colnames(one) <- c("risk", "gamble")
   expect_snapshot(cat(sparse_msg(one)))
 
-  # Six three-category items: a common ordinal score nudged up by each item's own 0/1
-  # pattern and capped at the top category. Reaching the lowest category needs an unnudged
-  # zero score and the highest needs a nudged or already-top score, so no pair can combine
-  # them: cells (0, 2) and (2, 0) are structurally empty in all 15 tables, each with an
-  # expected count of 32. The nudges keep the pairs well short of perfect dependence
-  # (rho = 0.82, so the estimates stay off the Frechet-bound plateau), which the naive
-  # monotone construction would land on. The reported list is capped at five plus a count.
-  r <- 0:383L
-  u <- (r %/% 64L) %% 3L
-  nudged <- vapply(1:6, function(k) pmin(2L, u + bitwAnd(bitwShiftR(r, k - 1L), 1L)),
-                   integer(length(r)))
-  colnames(nudged) <- paste0("v", 1:6)
+  # The same construction over six items: cells (0, 2) and (2, 0) are structurally empty in all
+  # 15 tables, each with an expected count of 32, and the nudges keep every pair well short of
+  # perfect dependence (rho = 0.82) so none of them lands on a Frechet bound -- which the naive
+  # monotone construction would. The reported list is capped at five plus a count.
+  nudged <- .sparse_interior(6L)
   expect_snapshot(cat(sparse_msg(nudged)))
+})
+
+test_that("the boundary warning names the offending pairs and caps the list", {
+  testthat::local_reproducible_output()
+
+  boundary_msg <- function(x) {
+    w <- tryCatch(.polychoric(x, acov = "diag"), efa_cor_boundary = function(w) w)
+    expect_s3_class(w, "efa_cor_boundary")
+    conditionMessage(w)
+  }
+
+  upper <- rbind(c(41, 0), c(13, 0), c(28, 0), c(171, 47))
+  one <- .expand_table(upper)
+  colnames(one) <- c("risk", "gamble")
+  expect_snapshot(cat(boundary_msg(one)))
+
+  # A perfectly REVERSED table is estimated at the negative endpoint, so the snapshot must show
+  # -0.9999. Reporting the positive value here, or describing the pair as perfectly ordered, would
+  # contradict the correlation the same call returns.
+  rev <- .expand_table(upper[, 2:1])
+  colnames(rev) <- c("risk", "gamble")
+  expect_snapshot(cat(boundary_msg(rev)))
+
+  # Both directions in one matrix: the report names both values rather than picking one. `gamble`
+  # is monotone increasing in `risk` and `mirror` is its reverse, so the two pairs involving
+  # `mirror` sit on the opposite bound from the `risk`-`gamble` pair (the `gamble`-`mirror` table
+  # has two empty cells, so it is not continuity-corrected and stays a boundary pair).
+  both <- cbind(one, mirror = max(one[, 2L]) - one[, 2L])
+  expect_snapshot(cat(boundary_msg(both)))
+})
+
+test_that("the boundary warning quotes the estimate, not the nearest-PD projection of it", {
+  # The reported value comes from the backend's own boundary estimate rather than from the returned
+  # matrix, because `nearest_pd` projects the matrix afterwards and moves the entry off the
+  # endpoint. Without this the message would quote the projected value (measured here: 0.9954538
+  # instead of 0.9999), so the check is what keeps the estimate and the message from drifting apart.
+  x <- cbind(.expand_table(rbind(c(41, 0), c(13, 0), c(28, 0), c(171, 47))),
+             .sparse_interior(2L)[seq_len(300L), ])
+  colnames(x) <- paste0("v", 1:4)
+
+  projected <- suppressWarnings(.polychoric(x, nearest_pd = TRUE))$R[1, 2]
+  expect_lt(projected, 0.9999)                      # the projection really did move it
+
+  # The projection also warns that it happened; that is asserted elsewhere, so muffle it here and
+  # let only the boundary report through.
+  w <- tryCatch(
+    suppressWarnings(.polychoric(x, nearest_pd = TRUE), classes = "efa_cor_smoothed"),
+    efa_cor_boundary = function(w) w)
+  expect_s3_class(w, "efa_cor_boundary")
+  expect_snapshot(cat(conditionMessage(w)))
+})
+
+test_that("the continuity-correction warning names the offending pairs and caps the list", {
+  testthat::local_reproducible_output()
+
+  zero_cell_msg <- function(x) {
+    w <- tryCatch(.polychoric(x, acov = "diag"), efa_cor_zero_cell = function(w) w)
+    expect_s3_class(w, "efa_cor_zero_cell")
+    conditionMessage(w)
+  }
+
+  # Seven binary items that are all monotone in one another (an item is answered 1 only if every
+  # easier item is), so every one of the 21 tables has a single empty cell. Being 2x2 they take
+  # the continuity correction rather than the boundary report, which is what separates this case
+  # from the larger table above. The reported list is capped at five plus a count.
+  guttman <- vapply(1:7, function(k) as.integer((0:279L) %% 8L >= k), integer(280L))
+  colnames(guttman) <- paste0("i", 1:7)
+  expect_snapshot(cat(zero_cell_msg(guttman)))
+
+  # The pairs are corrected, not bounded, and none of them carries a variance.
+  res <- suppressWarnings(.polychoric(guttman, acov = "diag"))
+  expect_true(all(res$zero_corrected))
+  expect_false(any(res$at_bound))
+  expect_true(all(is.na(res$acov)))
 })
 
 test_that("a likely-continuous (many-category) variable warns", {
@@ -453,29 +764,91 @@ test_that("acov diag/full are well-formed and mutually consistent", {
   expect_error(.polychoric(x, acov = "nope"))
 })
 
-test_that("acov diag equals diag(full) for a degenerate near-comonotone pair", {
-  # The near-comonotone coupling from above has a structurally empty cell whose model
-  # probability underflows, so its dP/P overflows to Inf. The full scatter never touches that
-  # cell (it indexes observed cases only); the diagonal sum must skip it too, or it forms
-  # 0 * Inf = NaN and breaks diag == diag(full). That skip is what this block guards.
+test_that("a Frechet-bound pair has no asymptotic covariance and contaminates no other pair", {
+  # A boundary pair has no asymptotic variance to report: the rho-information vanishes identically
+  # at the bound, so the influence function (score - threshold correction) / A22 is 0/0 -- both
+  # parts underflow to zero well before the boundary is reached, and the limit of the ratio is
+  # infinite. Recomputed from scratch at high accuracy, A22 falls from 1.6e-03 at rho = 0.90 to
+  # 3.8e-16 at 0.97 and to exactly 0 beyond, so any finite value here is an artefact of the
+  # probability floor rather than a variance. It is fail-closed to NA at both levels, which is what
+  # makes the branch every consumer takes independent of the platform.
   #
-  # The *magnitude* is deliberately not asserted. This table is the comonotone coupling of its
-  # margins (the Frechet upper bound), so the likelihood is numerically flat above rho ~ 0.977
-  # and the estimate is not identified on that plateau (see the empty-cell block above). The
-  # asymptotic variance is far more sensitive to that than the estimate is: it is
-  # sum(n_ab IF^2) with IF = (dx.rho - T_i - T_j) / A22, and A22 -- the rho-information
-  # sum(n_ab (dP/P)^2) -- vanishes as the likelihood flattens, so the variance grows like
-  # 1/A22^2 in a quantity that is itself rounding noise there. Across the plateau it spans
-  # tens of orders of magnitude non-monotonically, and where it lands is decided by
-  # floating-point detail and varies by platform. What the empty-cell skip actually has to
-  # deliver is a finite, non-negative diagonal that equals diag(Gamma).
-  x <- .expand_table(rbind(c(41, 0), c(13, 0), c(28, 0), c(171, 47)))
-  d <- suppressWarnings(.polychoric(x, acov = "diag"))$acov
+  # The other five pairs are ordinary and must come through untouched: the boundary pair's
+  # influence column is zeroed before the crossprod precisely so its NAs cannot spread into them.
+  x <- cbind(.expand_table(rbind(c(41, 0), c(13, 0), c(28, 0), c(171, 47))),
+             .sparse_interior(2L)[seq_len(300L), ])
+  colnames(x) <- paste0("v", 1:4)
+  d <- suppressWarnings(.polychoric(x, acov = "diag"))
   f <- suppressWarnings(.polychoric(x, acov = "full"))$acov
-  expect_false(anyNA(d))
-  expect_true(all(is.finite(d)))
-  expect_true(all(d >= 0))                 # structural (a sum of squares); the magnitude is not
-  expect_equal(unname(d), unname(diag(f)), tolerance = 1e-6)
+
+  bnd <- d$at_bound
+  expect_identical(unname(which(bnd)), 1L)                 # the v1-v2 pair, in combn order
+  expect_true(all(is.na(d$acov[bnd])))
+  expect_true(all(is.finite(d$acov[!bnd]) & d$acov[!bnd] > 0))
+
+  # The full level withholds the boundary pair's whole row and column -- its covariance with every
+  # other pair rests on the same vanishing information -- and leaves the rest estimable.
+  expect_true(all(is.na(f[bnd, ])) && all(is.na(f[, bnd])))
+  expect_true(all(is.finite(f[!bnd, !bnd])))
+
+  # The cheap diagonal still equals diag(full), NA entries included: the two are computed by
+  # different routes (a direct cell sum versus scatter-then-crossprod).
+  expect_equal(unname(d$acov), unname(diag(f)), tolerance = 1e-6)
+})
+
+test_that("a continuity-corrected pair has no asymptotic covariance at either level", {
+  # A corrected pair is withheld for a different reason than a boundary pair -- its estimate is
+  # interior, but it comes from a nudged table the sandwich would treat as data -- and it is
+  # withheld at BOTH levels, not just the cheap diagonal. The other pairs must still come through
+  # estimable, which is what the zeroed influence column before the crossprod is for.
+  x <- cbind(.expand_table(rbind(c(40, 0), c(60, 200))),
+             .sparse_interior(2L)[seq_len(300L), ])
+  colnames(x) <- paste0("v", 1:4)
+  d <- suppressWarnings(.polychoric(x, acov = "diag"))
+  f <- suppressWarnings(.polychoric(x, acov = "full"))$acov
+
+  zc <- d$zero_corrected
+  expect_identical(unname(which(zc)), 1L)                  # the v1-v2 pair, in combn order
+  expect_false(any(d$at_bound))
+  expect_true(all(is.na(d$acov[zc])))
+  expect_true(all(is.finite(d$acov[!zc]) & d$acov[!zc] > 0))
+
+  expect_true(all(is.na(f[zc, ])) && all(is.na(f[, zc])))
+  expect_true(all(is.finite(f[!zc, !zc])))
+  expect_equal(unname(d$acov), unname(diag(f)), tolerance = 1e-6)
+})
+
+test_that("a near-collinear pair with structurally empty tail cells still has a variance", {
+  skip_on_cran()
+
+  # A pair correlated this strongly has empty cells whose model probability is astronomically
+  # small -- at rho = 0.999 some are below the smallest representable double outright. Those
+  # cells carry no cases, so they must contribute exactly nothing to the influence function: the
+  # asymptotic variance has to come out finite and positive, and the cheap diagonal has to agree
+  # with the crossprod route. The pair is estimated in the interior (its table is off both
+  # Frechet bounds and it is not binary), so nothing upstream withholds the variance and the
+  # whole assembly is exercised. The estimates themselves are pinned against the exact two-step
+  # value elsewhere; this covers the ACOV those same tables never requested.
+  #
+  # Same seed and same four rt values as that estimate test, so these are the same four tables:
+  # each draw depends on the ones before it, and a shorter loop would silently substitute
+  # different data.
+  cut7 <- stats::qnorm(seq_len(6) / 7)
+  set.seed(101)
+  N <- 4000
+  for (rt in c(0.97, 0.99, 0.995, 0.999)) {
+    L <- chol(matrix(c(1, rt, rt, 1), 2L))
+    Z <- matrix(stats::rnorm(2 * N), N, 2L) %*% L
+    a <- findInterval(Z[, 1], cut7); b <- findInterval(Z[, 2], cut7)
+    d <- suppressWarnings(.polychoric(cbind(a, b), acov = "diag"),
+                          classes = "efa_cor_sparse_cells")
+    f <- suppressWarnings(.polychoric(cbind(a, b), acov = "full"),
+                          classes = "efa_cor_sparse_cells")
+    expect_false(d$at_bound[[1]])
+    expect_false(d$zero_corrected[[1]])
+    expect_true(is.finite(d$acov[[1]]) && d$acov[[1]] > 0)
+    expect_equal(unname(d$acov), unname(diag(f$acov)), tolerance = 1e-10)
+  }
 })
 
 # Deterministic ordinal data whose alphabetical label order differs from the response order:

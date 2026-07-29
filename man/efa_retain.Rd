@@ -57,8 +57,8 @@ data is given as input. Default is \code{"pairwise.complete.obs"}.}
 
 \item{cor_method}{character. Correlation computed from raw data: \code{"pearson"},
 \code{"spearman"}, or \code{"kendall"} (passed to \code{\link[stats:cor]{stats::cor()}}), or \code{"poly"} /
-\code{"tetra"} for polychoric / tetrachoric correlations (a two-step estimator
-with no empty-cell continuity correction). \code{CD}, \code{PARALLEL}, \code{NEST}, and
+\code{"tetra"} for polychoric / tetrachoric correlations (a two-step estimator).
+\code{CD}, \code{PARALLEL}, \code{NEST}, and
 \code{HULL} compare against simulated continuous data, and \code{SMT} relies on a
 normal-theory chi-square test; none of these support \code{"poly"} / \code{"tetra"},
 so they are skipped in that case.

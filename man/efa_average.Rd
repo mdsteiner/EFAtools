@@ -182,7 +182,7 @@ contributes.}
 \item{cor_method}{character. Correlation computed from raw data: \code{"pearson"},
 \code{"spearman"}, or \code{"kendall"} (passed to \code{\link[stats:cor]{stats::cor()}}), \code{"poly"} /
 \code{"tetra"} for polychoric / tetrachoric correlations of ordinal / binary data
-(a two-step estimator with no empty-cell continuity correction), or \code{"fiml"}
+(a two-step estimator), or \code{"fiml"}
 for a two-stage full-information maximum-likelihood correlation from raw data
 with missing values. With \code{"fiml"} the saturated multivariate-normal mean and
 covariance are estimated by an EM algorithm assuming the data are missing at

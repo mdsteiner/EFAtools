@@ -37,8 +37,7 @@
 #' @param cor_method Character string specifying the correlation coefficient to be computed if raw
 #'   data are supplied. One of `"pearson"`, `"spearman"`, or `"kendall"` (passed to
 #'   [stats::cor()]), or `"poly"` / `"tetra"` for polychoric / tetrachoric correlations
-#'   of ordinal / binary data (a two-step estimator with no empty-cell continuity
-#'   correction). Defaults to `"pearson"`.
+#'   of ordinal / binary data (a two-step estimator). Defaults to `"pearson"`.
 #'
 #' @returns An object of class `efa_retention` (see [print.efa_retention()] for the
 #'   print method) with the following main elements:

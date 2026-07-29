@@ -138,6 +138,55 @@
       class = "efa_cor_smoothed")
   }
 
+  # Pair labels are needed only by the diagnostics and by the labelled covariance, both of which
+  # are skipped for the per-replicate bootstrap recompute, so they are not built for it either.
+  labels <- if (label_acov) .pair_labels(nms) else NULL
+
+  # A binary pair whose table has a single empty cell is at a Frechet bound of its own marginals,
+  # but it is repaired rather than reported: the empty cell is nudged by a continuity correction so
+  # the pair can be estimated in the interior (see poly_zero_correct_2x2 in src/polychoric.cpp).
+  # Name those pairs anyway -- the estimate is not a plain function of the observed counts, and the
+  # correction is the reason the pair has no asymptotic variance -- but keep it a separate, milder
+  # condition from the boundary report below, because these pairs DO get a usable correlation. The
+  # 0.5 below states the POLY_ZERO_ADD constant the backend actually applies; the two must be
+  # changed together. `label_acov = FALSE` keeps the per-replicate bootstrap recompute silent, as
+  # for the boundary and sparse-cell diagnostics.
+  if (label_acov && any(res$zero_corrected)) {
+    n_zc <- sum(res$zero_corrected)
+    cap <- .cap_pair_list(labels[res$zero_corrected])
+    cli::cli_warn(
+      c("{n_zc} binary variable pair{?s} {?has/have} a response combination that never occurs, so a continuity correction of {.val {0.5}} was applied before estimating {?its/their} correlation.",
+        "x" = "Affected {cli::qty(n_zc)}pair{?s}: {.val {cap$shown}}{cap$rest}.",
+        "i" = "Every two-by-two table with an empty cell is reproduced exactly by a correlation of 1 (or -1), so without the correction the estimate would be the boundary value whatever the underlying correlation. The correction adds {.val {0.5}} to the empty cell while preserving the table margins, as {.pkg lavaan} and {.pkg psych} do by default.",
+        "i" = "The corrected correlation is a point estimate only: no asymptotic variance or standard error is available for {cli::qty(n_zc)} {?this pair/these pairs}."),
+      class = "efa_cor_zero_cell")
+  }
+
+  # A pair whose response table is one of the two Frechet bounds of its own marginals (perfectly
+  # ordered, or perfectly reversed, with no discordant observations) and that the correction above
+  # does not cover is reproduced exactly by the model at rho = +/-1: the estimate is the boundary of
+  # the parameter space, reported as the largest correlation the estimator admits. The likelihood is
+  # numerically flat over the whole approach to that boundary, so this is the only value that is
+  # reproducible -- an optimiser left to search there stops at an arbitrary point. Report it,
+  # because the pair's estimate is a bound rather than an interior maximum, and because it usually
+  # means two items are redundant.
+  if (label_acov && any(res$at_bound)) {
+    n_bnd <- sum(res$at_bound)
+    cap <- .cap_pair_list(labels[res$at_bound])
+    # A table at the LOWER bound is estimated at the negative endpoint, so the message quotes the
+    # values actually reported (both, when the two directions occur together) rather than naming the
+    # positive one for every pair. They come from the backend's own boundary estimates: the returned
+    # matrix cannot be used because `nearest_pd` may have projected the entry away from the
+    # endpoint. Sorted decreasing so a mixed report reads "0.9999 and -0.9999".
+    bnd_vals <- sort(unique(res$bound_rho[res$at_bound]), decreasing = TRUE)
+    cli::cli_warn(
+      c("{n_bnd} variable pair{?s} {?has/have} a perfectly monotone response table, so {?its/their} correlation is estimated at the boundary {cli::qty(length(bnd_vals))}value{?s} {.val {bnd_vals}}.",
+        "x" = "Affected {cli::qty(n_bnd)}pair{?s}: {.val {cap$shown}}{cap$rest}.",
+        "i" = "The two variables are never observed out of order -- either they always vary together, or (for a negative estimate) they always vary in opposite directions -- which the model can reproduce only with a correlation of 1 or -1, so the data put no limit on how close to that boundary the correlation lies and no asymptotic variance or standard error is available.",
+        "i" = "Consider collapsing rare response categories in the variables involved, or dropping one item of a redundant pair."),
+      class = "efa_cor_boundary")
+  }
+
   out <- list(R = R)
 
   # The asymptotic covariance of the off-diagonal correlations (Muthen, 1984; Joreskog,
@@ -145,7 +194,10 @@
   # matrix ("full"), on the variance scale (Var(rho-hat)). It is the covariance of the
   # (un-projected) two-step estimates computed on the listwise-complete rows; `nearest_pd`
   # only smooths the returned R, it does not change the covariance. Pairs follow column order
-  # of the upper triangle (i < j), so the labels match utils::combn(nms, 2).
+  # of the upper triangle (i < j), so the labels match utils::combn(nms, 2). A pair at a Frechet
+  # bound, and a binary pair whose empty cell was continuity-corrected, both have no asymptotic
+  # variance and come back as NA (their whole row and column at the "full" level); `at_bound` and
+  # `zero_corrected` name those pairs.
   if (acov != "none") {
     av <- res$acov
     # The point estimate names the asymptotic covariance by variable pair and runs the
@@ -175,26 +227,19 @@
         expected <- outer(rowSums(tab), colSums(tab)) / n_obs
         is_sparse[k] <- any(tab == 0L & expected >= 5)
       }
-
-      labels <- .pair_labels(nms)
+      # A boundary or continuity-corrected pair is reported by the warnings above, which say
+      # strictly more: its covariance is not "unreliable" but absent. Reporting the same pair
+      # twice, the second time with a weaker diagnosis, would only obscure that -- so drop those
+      # pairs here. A pair that is sparse without being either is unaffected and still warns
+      # exactly as before.
+      is_sparse <- is_sparse & !res$at_bound & !res$zero_corrected
 
       if (any(is_sparse)) {
-        sparse <- labels[is_sparse]
-        # Name the offending pairs, but cap the list: a heterogeneous ordinal set can have
-        # dozens, and a warning that prints them all is unreadable.
-        n_sparse <- length(sparse)
-        shown <- sparse[seq_len(min(5L, n_sparse))]
-        more <- n_sparse - length(shown)
-        # When the list is truncated, drop cli's "and" before the last shown pair so the
-        # trailing count closes the enumeration instead of adding a second conjunction.
-        rest <- ""
-        if (more > 0L) {
-          shown <- cli::cli_vec(shown, style = list("vec-last" = ", "))
-          rest <- paste0(", and ", more, " more")
-        }
+        n_sparse <- sum(is_sparse)
+        cap <- .cap_pair_list(labels[is_sparse])
         cli::cli_warn(
           c("{n_sparse} variable pair{?s} {?has/have} an empty response-category combination despite a non-negligible expected count.",
-            "x" = "Affected {cli::qty(n_sparse)}pair{?s}: {.val {shown}}{rest}.",
+            "x" = "Affected {cli::qty(n_sparse)}pair{?s}: {.val {cap$shown}}{cap$rest}.",
             "i" = "The polychoric asymptotic covariance (and any DWLS weights or robust standard errors derived from it) can be unreliable for such structurally sparse cells; interpret them with caution and consider collapsing rare response categories in these variables."),
           class = "efa_cor_sparse_cells")
       }
@@ -206,6 +251,18 @@
       }
     }
     out$acov <- av
+  }
+
+  # Which pairs are at a bound, and which had a binary empty cell continuity-corrected, in the same
+  # pair order, so a consumer can name them without re-deriving the structural test. Returned for
+  # every call, not only when an asymptotic covariance was requested: the flags explain the estimate
+  # as much as the missing variance, and the warnings above name those pairs on the plain matrix
+  # path too.
+  out$at_bound <- if (label_acov) stats::setNames(res$at_bound, labels) else res$at_bound
+  out$zero_corrected <- if (label_acov) {
+    stats::setNames(res$zero_corrected, labels)
+  } else {
+    res$zero_corrected
   }
 
   out

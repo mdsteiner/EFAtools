@@ -143,6 +143,21 @@
   paste(nms[idx[1L, ]], nms[idx[2L, ]], sep = "-")
 }
 
+# Cap a list of affected variable-pair labels for a condition message at the first five plus a
+# count of the rest: a heterogeneous ordinal set can have dozens, and a message that prints them
+# all is unreadable. Returns the pieces rather than a finished string so each caller keeps its own
+# cli template. When the list is truncated, `shown` is a cli_vec whose "and" is dropped so the
+# trailing count closes the enumeration instead of adding a second conjunction. Shared by every
+# condition that names affected pairs (the boundary and sparse-cell diagnostics, the asymptotic
+# covariance screen, and the DWLS weight abort) so their wording cannot drift apart.
+.cap_pair_list <- function(labels) {
+  shown <- utils::head(labels, 5L)
+  more <- length(labels) - length(shown)
+  if (more == 0L) return(list(shown = shown, rest = ""))
+  list(shown = cli::cli_vec(shown, style = list("vec-last" = ", ")),
+       rest = paste0(", and ", more, " more"))
+}
+
 # Build the symmetric per-element DWLS weight matrix W (W_ij = 1 / Var(rho_hat_ij), zero
 # diagonal) from the diagonal polychoric asymptotic covariance returned by .polychoric():
 # a length p(p - 1)/2 vector of off-diagonal variances ordered by the upper triangle
@@ -151,14 +166,23 @@
 # rather than `W[upper.tri(W)] <- ...`. Shared by the DWLS point estimate and the per-
 # replicate bootstrap recompute.
 .poly_weight_matrix <- function(acov_diag, p) {
-  # A non-positive or non-finite asymptotic variance means a (near-)degenerate variable pair
-  # whose inverse-variance weight is undefined; refuse rather than emit Inf/NaN weights that
-  # would silently corrupt the fit. (The bootstrap recompute catches this and drops the
-  # replicate.)
-  if (any(!is.finite(acov_diag)) || any(acov_diag <= 0)) {
+  # A non-positive or non-finite asymptotic variance means a variable pair whose inverse-variance
+  # weight is undefined; refuse rather than emit Inf/NaN weights that would silently corrupt the
+  # fit. NA arrives for a pair estimated at the boundary of the parameter space, which has no
+  # asymptotic variance at all (see .polychoric()), so this refusal is deterministic rather than
+  # dependent on which side of zero a floating-point artefact happened to land. (The bootstrap
+  # recompute catches this and drops the replicate.)
+  bad <- !is.finite(acov_diag) | acov_diag <= 0
+  if (any(bad)) {
+    n_bad <- sum(bad)
+    pairs <- if (is.null(names(acov_diag))) paste0("pair ", which(bad)) else names(acov_diag)[bad]
+    cap <- .cap_pair_list(pairs)
     cli::cli_abort(
-      c("A polychoric asymptotic variance was not positive, so the inverse-variance weights are undefined.",
-        "i" = "A variable pair is (near-)degenerate (e.g. an empty or near-empty response category)."),
+      c("DWLS needs an inverse-variance weight for every variable pair, but {n_bad} pair{?s} {?has/have} no usable asymptotic variance.",
+        "x" = "Affected {cli::qty(n_bad)}pair{?s}: {.val {cap$shown}}{cap$rest}.",
+        "i" = "The most common cause with binary variables is a response combination that never occurs: the correlation of such a pair is estimated with a continuity correction, which repairs the estimate but leaves it without a variance.",
+        "i" = "Otherwise the pair carries too little information about its correlation to have one: its responses are perfectly ordered (never observed in reversed order), so the correlation sits on the boundary of the parameter space, or a response category is (near-)empty.",
+        "i" = "Fit with {.code estimator = \"ULS\"} instead, which needs no such weights. Collapsing rare response categories in the variables involved, or dropping one item of a redundant pair, also resolves the cases that are genuinely under-identified."),
       class = "efa_dwls_degenerate_weight"
     )
   }
@@ -170,32 +194,31 @@
 
 # One shared degeneracy check on the diagonal of the asymptotic covariance, applied where it
 # is received so that every consumer -- the DWLS weights and the sandwich standard errors --
-# takes the same branch on the same data. A (near-)degenerate variable pair, e.g. one whose
-# contingency table is close to comonotone, is barely identified: its asymptotic variance
-# explodes (values of 1e+26 are reachable), which leaves the DWLS weight ~0 so the pair drops
-# out of the fit, but leaves the sandwich standard errors of that pair meaningless rather than
-# merely large. Neither outcome should be silent, so warn once and name the pairs. Analysis
-# proceeds: the variance is the honest answer for a pair the data cannot pin down. A variance
-# above 1 already implies a +/- 1 SE interval as wide as the whole [-1, 1] range of a
-# correlation, so it is the natural flag; non-finite and non-positive values are degenerate a
-# fortiori.
+# takes the same branch on the same data. A variable pair whose asymptotic variance is unusable
+# leaves the DWLS weight meaningless and the sandwich standard errors of that pair meaningless
+# rather than merely large, and neither outcome should be silent, so warn once and name the pairs.
+#
+# The main case is a pair estimated at the boundary of the parameter space (a contingency table at
+# a Frechet bound, i.e. perfectly ordered), which has no asymptotic variance at all and reaches
+# this screen as NA by construction -- see .polychoric(). That is caught by the non-finite clause,
+# so the branch taken here does not depend on the platform. The `> 1` clause is a residual net for
+# any remaining pair whose variance is finite but useless: a variance above 1 already implies a
+# +/- 1 SE interval as wide as the whole [-1, 1] range of a correlation. (Searches over
+# strongly-correlated tables found no table off a Frechet bound that reaches it -- the largest was
+# ~0.008 -- so it is expected to be inert, but it costs nothing to keep.) Non-positive values are
+# degenerate a fortiori.
 .warn_acov_degenerate <- function(acov_diag, labels = names(acov_diag)) {
   bad <- !is.finite(acov_diag) | acov_diag <= 0 | acov_diag > 1
   if (!any(bad)) return(invisible(NULL))
 
   pairs <- if (is.null(labels)) paste0("pair ", which(bad)) else labels[bad]
-  shown <- utils::head(pairs, 5L)
-  more <- if (length(pairs) > length(shown)) {
-    cli::format_inline(" and {length(pairs) - length(shown)} more")
-  } else {
-    ""
-  }
+  cap <- .cap_pair_list(pairs)
 
   cli::cli_warn(
-    c("The polychoric asymptotic covariance is degenerate for {cli::qty(pairs)} variable pair{?s} {.val {shown}}{more}.",
-      "x" = "{cli::qty(pairs)} {?This pair is/These pairs are} barely identified (e.g. a near-empty or near-comonotone response table), so {?its/their} asymptotic variance is not usable.",
-      "i" = "Any DWLS weight or robust/sandwich standard error involving {cli::qty(pairs)} {?it/them} is unreliable; a DWLS fit down-weights {cli::qty(pairs)} {?it/them} out of the solution.",
-      "i" = "Consider collapsing rare response categories in the variables involved."),
+    c("The polychoric asymptotic covariance is unavailable for {cli::qty(pairs)} variable pair{?s} {.val {cap$shown}}{cap$rest}.",
+      "x" = "{cli::qty(pairs)} {?This pair was/These pairs were} either estimated with a continuity correction for a response combination that never occurs -- which repairs the correlation but leaves it without a variance -- or {?is/are} not identified well enough to have a usable one (e.g. a perfectly ordered or near-empty response table).",
+      "i" = "Any robust/sandwich standard error involving {cli::qty(pairs)} {?it/them} is withheld. A DWLS fit refuses the data outright when the variance is missing or non-positive, and down-weights {cli::qty(pairs)} {?it/them} out of the solution when it is merely far too large.",
+      "i" = "Fitting with {.code estimator = \"ULS\"} avoids the weights entirely; collapsing rare response categories in the variables involved resolves the under-identified cases."),
     class = "efa_acov_degenerate"
   )
   invisible(NULL)

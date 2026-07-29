@@ -117,7 +117,7 @@
 #' @param cor_method character. Correlation computed from raw data: `"pearson"`,
 #'   `"spearman"`, or `"kendall"` (passed to [stats::cor()]), `"poly"` /
 #'   `"tetra"` for polychoric / tetrachoric correlations of ordinal / binary data
-#'   (a two-step estimator with no empty-cell continuity correction), or `"fiml"`
+#'   (a two-step estimator), or `"fiml"`
 #'   for a two-stage full-information maximum-likelihood correlation from raw data
 #'   with missing values. With `"fiml"` the saturated multivariate-normal mean and
 #'   covariance are estimated by an EM algorithm assuming the data are missing at
