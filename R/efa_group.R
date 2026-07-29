@@ -132,7 +132,9 @@
 #'   elements are added: `matched_se`, the bootstrap standard error of each
 #'   matched congruence; `matched_ci`, a list of `lower` and `upper` percentile
 #'   confidence limits (each a groups-by-groups-by-factors array); and `n_boot`,
-#'   the number of bootstrap replicates the intervals are based on.}
+#'   the number of bootstrap replicates that aligned in every group and so
+#'   contributed to the intervals (a replicate whose fit did not converge is
+#'   retained, as in [efa_fit()]).}
 #' \item{diffs}{A data frame with one row per group pair summarising the differences
 #'   between their aligned loadings: the mean, median, minimum, and maximum absolute
 #'   difference, the root-mean-square difference (`rmse`), and `n_flagged`, the number of
@@ -148,7 +150,10 @@
 #'   the Lorenzo-Seva and ten Berge (2006) similarity bands: `phi >= 0.95` is "equal" and
 #'   `[0.85, 0.95)` is "fair"; congruences `< 0.85`, below their bands, are labelled
 #'   "incongruent". The verdict is read from `phi_lower` when a bootstrap is available
-#'   (conservative) and from `phi` otherwise. `NULL` when `invariance = FALSE`.}
+#'   (conservative) and from `phi` otherwise. Tucker's congruence is invariant to a
+#'   proportional rescaling of a factor's loadings, so a factor can be graded "equal"
+#'   even when one group's loadings on it are uniformly stronger; read the verdict
+#'   alongside `diffs`. `NULL` when `invariance = FALSE`.}
 #' \item{efa}{The named list of per-group [efa_fit()] objects (each retains its own
 #'   diagnostics, e.g. `heywood`).}
 #' \item{alignment}{The alignment result: the consensus object (see
@@ -1137,9 +1142,10 @@ efa_group <- function(x, groups = NULL, n_factors, N = NA,
 # Cross-group loading differences on the already-aligned per-group loadings: a per-pair
 # magnitude summary and a per-item, per-factor flag table. `loadings` is the named list of
 # aligned matrices (all p x k, sharing the target's orientation), so the pairwise comparison
-# is a pure difference -- the printless `.compare_loadings()` core does no reordering. A cell
-# is flagged when its absolute loading difference reaches `delta` (a descriptive salience
-# heuristic, not a test). When `diff_ci` (bootstrap percentile limits from
+# is a pure difference -- the printless `.compare_loadings()` core does no reordering, and
+# `decimals = FALSE` skips its decimal-agreement scan, which only the printed comparison
+# reports. A cell is flagged when its absolute loading difference reaches `delta` (a
+# descriptive salience heuristic, not a test). When `diff_ci` (bootstrap percentile limits from
 # .efa_group_boot_congruence()) is supplied, each flag is paired with whether that cell's
 # difference interval excludes zero.
 .efa_group_diffs <- function(loadings, delta, diff_ci = NULL) {
@@ -1164,7 +1170,8 @@ efa_group <- function(x, groups = NULL, n_factors, N = NA,
   for (g in seq_len(m - 1L)) {
     for (h in (g + 1L):m) {
       r <- r + 1L
-      cmp <- .compare_loadings(loadings[[g]], loadings[[h]], corres = FALSE)
+      cmp <- .compare_loadings(loadings[[g]], loadings[[h]], corres = FALSE,
+                               decimals = FALSE)
       d <- cmp$diff
       ad <- abs(d)
       flagged <- ad >= delta

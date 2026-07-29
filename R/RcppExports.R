@@ -109,6 +109,8 @@
 #' Browne, M. W. (2001). An overview of analytic rotation in exploratory factor
 #' analysis. *Multivariate Behavioral Research*, 36, 111-150.
 #'
+#' @keywords internal
+#'
 .oblique_procrustes <- function(A, B, S_r = NULL, T_init_r = NULL, eps = 1e-5, maxit = 1000L, max_line_search = 10L, step0 = 1.0, normalize = FALSE, random_starts = 0L, screen_keep = 2L, triage_maxit = 25L, triage_improve_tol = 0.0) {
     .Call(`_EFAtools_oblique_procrustes`, A, B, S_r, T_init_r, eps, maxit, max_line_search, step0, normalize, random_starts, screen_keep, triage_maxit, triage_improve_tol)
 }
@@ -160,6 +162,8 @@
 #'   the factor-correlation array `Phi` (`m x m x b`), and the per-slice
 #'   diagnostics `valid`, `convergence`, `value`, `iterations`, and
 #'   `line_search_failed`.
+#'
+#' @keywords internal
 #'
 .oblique_procrustes_batch <- function(A, B, eps = 1e-5, maxit = 1000L, max_line_search = 10L, step0 = 1.0, normalize = FALSE, random_starts = 0L, screen_keep = 2L, triage_maxit = 25L, triage_improve_tol = 0.0) {
     .Call(`_EFAtools_oblique_procrustes_batch`, A, B, eps, maxit, max_line_search, step0, normalize, random_starts, screen_keep, triage_maxit, triage_improve_tol)

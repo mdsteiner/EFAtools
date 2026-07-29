@@ -8,6 +8,7 @@
 #'
 #' @returns A matrix with the same dimensions as the inputs.
 #'
+#' @noRd
 .average_matrices <- function(x) {
   if (!is.list(x) || length(x) < 1L) {
     cli::cli_abort("{.arg x} must be a non-empty list of conformable matrices.",
@@ -300,6 +301,8 @@
 #'   being in the hyperplane.
 #'
 #' @returns A list with the total hyperplane count and counts by factor and item.
+#'
+#' @noRd
 .hyperplane_count <- function(L, cutoff = 0.15) {
   L <- .procrustes_as_matrix(L, "L")
   cutoff <- .procrustes_check_numeric_scalar(cutoff, "cutoff", lower = 0)
@@ -320,6 +323,7 @@
 #'
 #' @returns Mean sum of squared deviations from the target across matrices.
 #'
+#' @noRd
 .consensus_loss <- function(aligned_loadings, target) {
   # Inputs are validated by the public/internal Procrustes entry points. Keeping
   # this inner-loop helper allocation-light matters for consensus and bootstrap
@@ -352,6 +356,8 @@
 #' @references
 #' Schoenemann, P. H. (1966). A generalized solution of the orthogonal
 #' Procrustes problem. *Psychometrika*, 31, 1-10.
+#'
+#' @keywords internal
 .orthogonal_procrustes <- function(A, B) {
   mats <- .procrustes_validate_matrix_pair(A, B)
   A <- mats$A
@@ -394,12 +400,13 @@
 #'
 #' @inheritParams .gpa_consensus_target
 #'
+#' @keywords internal
 .consensus_target_procrustes_single <- function(unrotated_list,
                                                 init_targets = NULL,
                                                 rotation = c("orthogonal", "oblique"),
                                                 start = 1,
                                                 tol = 1e-3,
-                                                loss_tol = 1e-7,
+                                                loss_tol = 1e-6,
                                                 loss_patience = 5,
                                                 convergence = c("either", "target", "loss", "both"),
                                                 min_iter = 2,

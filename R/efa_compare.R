@@ -279,7 +279,8 @@ efa_compare <- function(x,
 # aligned loading/communality objects. Kept free of coercion, reordering, and
 # printing so a caller that has aligned x and y to a shared target can reuse it
 # without triggering a second alignment.
-.compare_loadings <- function(x, y, thresh = 0.3, na.rm = FALSE, corres = TRUE) {
+.compare_loadings <- function(x, y, thresh = 0.3, na.rm = FALSE, corres = TRUE,
+                              decimals = TRUE) {
 
   # factor correspondences are only defined for matrices; a single factor or a
   # disabled comparison leaves nothing to disagree on, and vectors report NA.
@@ -323,32 +324,40 @@ efa_compare <- function(x,
   # inflate the count. signif() strips the floating-point representation noise
   # before truncating, so a value such as 0.57 (held as 0.5699999999999999) is
   # not mis-truncated to 0.56 at the second decimal.
-  max_dec <- min(c(.decimals(x), .decimals(y)))
+  #
+  # The two are the only non-trivial work in this function -- a decimal-place scan
+  # of every element, then a truncation loop over the decimal places -- and only
+  # the printed comparison reports them, so `decimals = FALSE` skips both (leaving
+  # them NA) for a caller that needs the difference summaries alone.
+  max_dec <- NA_real_
+  are_equal <- NA_real_
+  if (isTRUE(decimals)) {
+    max_dec <- min(c(.decimals(x), .decimals(y)))
 
-  ax <- abs(x)
-  ay <- abs(y)
-  if (anyNA(diff) && (!na.rm || all(is.na(diff)))) {
-    # are_equal is undefined when there is nothing to compare: under na.rm = FALSE
-    # any missing element poisons the comparison, and under na.rm = TRUE a fully
-    # missing overlap leaves no comparable pair (the loop's all(logical(0)) would
-    # otherwise spuriously report agreement to every decimal place). Report NA (the
-    # printed "none"), mirroring how mean_abs_diff and g propagate NA, and matching
-    # max_dec, which ignores missings.
-    are_equal <- NA_real_
-  } else {
-    # Walk the decimal places from the integer part outwards, stopping at the
-    # first one that differs: once a place disagrees no deeper place can count, so
-    # there is nothing to gain from testing the rest. The counter starts at NA and
-    # is only ever set to a place that was reached, so a comparison that already
-    # fails at d = 0 (the integer parts differ) stays NA and is distinguishable
-    # from one that succeeds at d = 0 but at no decimal place.
-    are_equal <- NA_real_
-    for (d in 0:max_dec) {
-      if (!isTRUE(all(trunc(signif(ax * 10^d, 13)) == trunc(signif(ay * 10^d, 13)),
-                      na.rm = na.rm))) {
-        break
+    ax <- abs(x)
+    ay <- abs(y)
+    if (anyNA(diff) && (!na.rm || all(is.na(diff)))) {
+      # are_equal is undefined when there is nothing to compare: under na.rm = FALSE
+      # any missing element poisons the comparison, and under na.rm = TRUE a fully
+      # missing overlap leaves no comparable pair (the loop's all(logical(0)) would
+      # otherwise spuriously report agreement to every decimal place). Report NA (the
+      # printed "none"), mirroring how mean_abs_diff and g propagate NA, and matching
+      # max_dec, which ignores missings.
+      are_equal <- NA_real_
+    } else {
+      # Walk the decimal places from the integer part outwards, stopping at the
+      # first one that differs: once a place disagrees no deeper place can count, so
+      # there is nothing to gain from testing the rest. The counter starts at NA and
+      # is only ever set to a place that was reached, so a comparison that already
+      # fails at d = 0 (the integer parts differ) stays NA and is distinguishable
+      # from one that succeeds at d = 0 but at no decimal place.
+      for (d in 0:max_dec) {
+        if (!isTRUE(all(trunc(signif(ax * 10^d, 13)) == trunc(signif(ay * 10^d, 13)),
+                        na.rm = na.rm))) {
+          break
+        }
+        are_equal <- as.double(d)
       }
-      are_equal <- as.double(d)
     }
   }
 

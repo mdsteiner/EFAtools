@@ -96,3 +96,4 @@ and software for arbitrary rotation criteria in factor analysis.
 Browne, M. W. (2001). An overview of analytic rotation in exploratory factor
 analysis. \emph{Multivariate Behavioral Research}, 36, 111-150.
 }
+\keyword{internal}

@@ -10,7 +10,7 @@
   rotation = c("orthogonal", "oblique"),
   start = 1,
   tol = 0.001,
-  loss_tol = 1e-07,
+  loss_tol = 1e-06,
   loss_patience = 5,
   convergence = c("either", "target", "loss", "both"),
   min_iter = 2,
@@ -70,3 +70,4 @@ loop.}
 Performs a single GPA-consensus run from one starting target. The
 multi-start wrapper \code{\link[=.gpa_consensus_target]{.gpa_consensus_target()}} dispatches here.
 }
+\keyword{internal}

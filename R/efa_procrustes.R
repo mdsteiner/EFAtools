@@ -249,6 +249,7 @@ efa_procrustes <- function(A,
 #' missing values in exploratory factor analysis of multidimensional scales:
 #' estimating latent trait scores. *Anales de Psicologia*, 32, 596-608.
 #'
+#' @keywords internal
 .gpa_consensus_target <- function(unrotated_list,
                                  init_targets = NULL,
                                  rotation = c("orthogonal", "oblique"),

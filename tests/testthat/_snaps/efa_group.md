@@ -129,3 +129,99 @@
                   F1
       g1 vs g2  equal
 
+# print points out an 'equal' verdict that rests on scale-invariance
+
+    Code
+      print(mg)
+    Output
+      -- Multigroup exploratory factor analysis --------------------------------------
+      
+      2 groups (g1, g2) · 2 factors · PAF extraction · varimax rotation
+      Aligned to a symmetric consensus target.
+      N: g1 = 500, g2 = 500
+      
+      -- Factor congruence -----------------------------------------------------------
+      
+      Tucker's congruence between the aligned group loadings (matched factors):
+      
+                  F1 F2
+      g1 vs g2 <num> <num>
+      
+      -- Loading differences ---------------------------------------------------------
+      
+      Absolute loading differences by group pair (salience threshold |Δ| ≥ <num>):
+      
+                mean  median   min   max  rmse  flagged
+      g1 vs g2 <num> <num> <num> <num> <num>     <flagged>
+      
+      -- Approximate invariance ------------------------------------------------------
+      
+      Congruence bands (Lorenzo-Seva & ten Berge, 2006: ≥ <num> equal, ≥ <num> fair):
+      
+                  F1 F2
+      g1 vs g2  equal  equal
+      
+      i Every factor is graded "equal" while the aligned loadings differ by up to
+       <num> on average: Tucker's congruence is invariant to a proportional rescaling
+      of a factor's loadings, so read the verdicts alongside `$diffs`.
+
+# the report wraps its header and splits its tables to the console width
+
+    Code
+      print(mg)
+    Output
+      -- Multigroup exploratory factor analysis ------------------
+      
+      4 groups (age_6_8, age_9_13, age_14_19, age_20_39) · 3
+        factors · PAF extraction · varimax rotation
+      Aligned to a symmetric consensus target.
+      N: age_6_8 = 825, age_9_13 = 1572, age_14_19 = 1685,
+        age_20_39 = 1251
+      
+      -- Factor congruence ---------------------------------------
+      
+      Tucker's congruence between the aligned group loadings
+      (matched factors):
+      
+                               F1 F2 F3
+      age_6_8 vs age_9_13 <num> <num> <num>
+      age_6_8 vs age_14_19 <num> <num> <num>
+      age_6_8 vs age_20_39 <num> <num> <num>
+      age_9_13 vs age_14_19 <num> <num> <num>
+      age_9_13 vs age_20_39 <num> <num> <num>
+      age_14_19 vs age_20_39 <num> <num> <num>
+      
+      -- Loading differences -------------------------------------
+      
+      Absolute loading differences by group pair (salience
+      threshold |Δ| ≥ <num>):
+      
+                              mean  median   min   max  rmse
+      age_6_8 vs age_9_13 <num> <num> <num> <num> <num>
+      age_6_8 vs age_14_19 <num> <num> <num> <num> <num>
+      age_6_8 vs age_20_39 <num> <num> <num> <num> <num>
+      age_9_13 vs age_14_19 <num> <num> <num> <num> <num>
+      age_9_13 vs age_20_39 <num> <num> <num> <num> <num>
+      age_14_19 vs age_20_39 <num> <num> <num> <num> <num>
+      
+                              flagged
+      age_6_8 vs age_9_13       <flagged>
+      age_6_8 vs age_14_19     <flagged>
+      age_6_8 vs age_20_39     <flagged>
+      age_9_13 vs age_14_19     <flagged>
+      age_9_13 vs age_20_39    <flagged>
+      age_14_19 vs age_20_39    <flagged>
+      
+      -- Approximate invariance ----------------------------------
+      
+      Congruence bands (Lorenzo-Seva & ten Berge, 2006: ≥ <num>
+      equal, ≥ <num> fair):
+      
+                                F1 F2 F3
+      age_6_8 vs age_9_13     equal  equal  equal
+      age_6_8 vs age_14_19    equal  equal  equal
+      age_6_8 vs age_20_39    equal  equal  equal
+      age_9_13 vs age_14_19   equal  equal  equal
+      age_9_13 vs age_20_39   equal  equal  equal
+      age_14_19 vs age_20_39  equal  equal  equal
+

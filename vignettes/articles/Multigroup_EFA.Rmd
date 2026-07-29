@@ -145,7 +145,9 @@ the factor is defined by the same items, in the same relative proportions, in bo
 With raw data you can attach a percentile bootstrap confidence interval to each congruence by
 setting `b_boot`. The bootstrap resamples cases within each group, refits, re-aligns every
 replicate to the frozen target, and recomputes the congruences; a `seed` makes it reproducible
-and independent of any parallel backend.
+and independent of any parallel backend. Should some replicate fits stop short of
+convergence -- a handful out of several hundred is common -- a warning reports how many; as
+in `efa_fit()` those replicates are kept rather than discarded, so `n_boot` counts them too.
 
 ```{r}
 mg_ci <- efa_group(groups, n_factors = 3, rotation = "varimax",

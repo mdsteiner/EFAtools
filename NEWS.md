@@ -18,6 +18,10 @@
 
 * The stages `efa_average()` reports after fitting the grid are now shown as `cli` progress steps. Previously they were written directly to the console, which left stray blank lines wherever the output was not a terminal, such as in rendered documents and check logs.
 
+* The `efa_group()` report now points out when every factor is graded "equal" although the groups' loadings differ substantially: Tucker's congruence is unchanged by a proportional rescaling of a factor's loadings, so uniformly stronger loadings in one group still reach the highest band.
+
+* The header lines of the `efa_group()` report are now wrapped to the console width, and its loading-difference and invariance tables are split into stacked blocks when they are wider than the console, as the congruence table already was.
+
 ## Factor Retention
 
 * `efa_smt()` now warns when one of its three rules selects a solution with a Heywood case or a model that did not converge, matching what `efa_hull()` already reported. The suggestion is still returned, but it is flagged as unreliable rather than presented without comment.

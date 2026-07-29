@@ -23,3 +23,4 @@ Rotate \code{A} to the orthogonal target \code{B} by minimizing
 Schoenemann, P. H. (1966). A generalized solution of the orthogonal
 Procrustes problem. \emph{Psychometrika}, 31, 1-10.
 }
+\keyword{internal}

@@ -152,6 +152,8 @@
 #' Lorenzo-Seva, U., and ten Berge, J. M. F. (2006). Tucker's congruence
 #' coefficient as a meaningful index of factor similarity. *Methodology*, 2,
 #' 57-64.
+#'
+#' @keywords internal
 .tucker_congruence <- function(L1, L2) {
   L1 <- .procrustes_as_matrix(L1, "L1")
   L2 <- .procrustes_as_matrix(L2, "L2")

@@ -981,6 +981,106 @@ test_that("print reports the bootstrap congruence intervals and verdicts", {
 })
 
 
+test_that("print points out an 'equal' verdict that rests on scale-invariance", {
+  local_reproducible_output()
+
+  # Tucker's congruence is invariant to a proportional rescaling of a factor's loadings,
+  # so a group whose loadings are uniformly 0.55x another's is graded "equal" on every
+  # factor while every cell differs. Build that case exactly: two correlation matrices
+  # implied by proportional loading patterns.
+  L <- matrix(c(.8, .8, .8, 0, 0, 0,
+                0, 0, 0, .8, .8, .8), nrow = 6, ncol = 2,
+              dimnames = list(paste0("V", 1:6), c("F1", "F2")))
+  implied <- function(L) {
+    R <- tcrossprod(L)
+    diag(R) <- 1
+    dimnames(R) <- list(rownames(L), rownames(L))
+    R
+  }
+  scaled <- list(g1 = implied(L), g2 = implied(0.55 * L))
+
+  mg <- efa_group(scaled, n_factors = 2, N = c(500, 500), rotation = "varimax",
+                  invariance = TRUE, seed = 42)
+  # the premise: perfect congruence, but substantial cell-wise differences
+  expect_equal(unname(mg$congruence$matched["g1", "g2", ]), c(1, 1), tolerance = 1e-6)
+  expect_true(all(mg$invariance$verdict == "equal"))
+  expect_gt(mg$diffs$mean_abs_diff, 0.1)
+
+  expect_snapshot(print(mg), transform = scrub_group)
+
+  # The pointer is keyed off the salience threshold, so it stays silent when `delta = 0`
+  # (which flags every cell by construction) and when the groups genuinely agree.
+  shows_pointer <- function(x) {
+    any(grepl("proportional rescaling", format(x), fixed = TRUE))
+  }
+  expect_true(shows_pointer(mg))
+
+  mg_d0 <- efa_group(scaled, n_factors = 2, N = c(500, 500), rotation = "varimax",
+                     invariance = TRUE, delta = 0, seed = 42)
+  expect_false(shows_pointer(mg_d0))
+
+  bands <- list(age_6_8 = WJIV_ages_6_8$cormat, age_14_19 = WJIV_ages_14_19$cormat)
+  mg_bands <- efa_group(bands, n_factors = 3, invariance = TRUE, rotation = "varimax",
+                        N = c(WJIV_ages_6_8$N, WJIV_ages_14_19$N), seed = 42)
+  expect_true(all(mg_bands$invariance$verdict == "equal"))
+  expect_lt(max(mg_bands$diffs$mean_abs_diff), 0.1)
+  expect_false(shows_pointer(mg_bands))
+})
+
+
+test_that("the report wraps its header and splits its tables to the console width", {
+  # A narrow console with four groups: the header no longer fits on one line and the
+  # six-column difference table no longer fits in one block.
+  local_reproducible_output(width = 60)
+  withr::local_options(cli.width = 60)
+
+  bands <- list(age_6_8 = WJIV_ages_6_8$cormat, age_9_13 = WJIV_ages_9_13$cormat,
+                age_14_19 = WJIV_ages_14_19$cormat, age_20_39 = WJIV_ages_20_39$cormat)
+  Ns <- c(WJIV_ages_6_8$N, WJIV_ages_9_13$N, WJIV_ages_14_19$N, WJIV_ages_20_39$N)
+  mg <- efa_group(bands, n_factors = 3, N = Ns, rotation = "varimax",
+                  invariance = TRUE, seed = 42)
+
+  lines <- format(mg)
+  # nothing overruns the console (the rules are drawn to exactly that width)
+  expect_lte(max(cli::ansi_nchar(lines, type = "width")), 60L)
+  expect_snapshot(print(mg), transform = scrub_group)
+
+  # the same holds for the report that carries the scale-invariance pointer, which is
+  # long enough to overrun any console unless it is wrapped
+  L <- matrix(c(.8, .8, .8, 0, 0, 0,
+                0, 0, 0, .8, .8, .8), nrow = 6, ncol = 2,
+              dimnames = list(paste0("V", 1:6), c("F1", "F2")))
+  R <- tcrossprod(0.55 * L)
+  diag(R) <- 1
+  R2 <- tcrossprod(L)
+  diag(R2) <- 1
+  dimnames(R) <- dimnames(R2) <- list(rownames(L), rownames(L))
+  mg_scaled <- efa_group(list(g1 = R2, g2 = R), n_factors = 2, N = c(500, 500),
+                         rotation = "varimax", invariance = TRUE, seed = 42)
+  expect_lte(max(cli::ansi_nchar(format(mg_scaled), type = "width")), 60L)
+})
+
+
+test_that(".compare_loadings can skip the decimal-agreement scan", {
+  x <- matrix(c(0.57, 0.20, 0.31, 0.44), 2, 2)
+  y <- matrix(c(0.57, 0.21, 0.31, 0.44), 2, 2)
+
+  full <- .compare_loadings(x, y)
+  quick <- .compare_loadings(x, y, decimals = FALSE)
+
+  # the difference summaries are untouched ...
+  expect_equal(full[c("diff", "mean_abs_diff", "median_abs_diff",
+                      "min_abs_diff", "max_abs_diff", "g")],
+               quick[c("diff", "mean_abs_diff", "median_abs_diff",
+                       "min_abs_diff", "max_abs_diff", "g")])
+  # ... and only the two decimal-place statistics are dropped
+  expect_equal(full$max_dec, 2)
+  expect_equal(full$are_equal, 1)
+  expect_true(is.na(quick$max_dec))
+  expect_true(is.na(quick$are_equal))
+})
+
+
 test_that("plot methods return ggplot objects", {
   bands <- list(age_6_8 = WJIV_ages_6_8$cormat, age_14_19 = WJIV_ages_14_19$cormat)
   Ns <- c(WJIV_ages_6_8$N, WJIV_ages_14_19$N)

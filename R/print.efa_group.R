@@ -64,16 +64,16 @@ format.efa_group <- function(x, digits = 3, ...) {
       paste0(settings$rotation, " rotation")
     }
     # Emitted verbatim so arbitrary group names are never interpreted as cli/glue markup.
-    cli::cli_verbatim(paste0(
+    .efa_group_verbatim(paste0(
       m, " groups (", paste(groups, collapse = ", "), ") \u00b7 ",
       k, if (k == 1L) " factor" else " factors", " \u00b7 ",
       settings$estimator, " extraction \u00b7 ", rot_txt))
-    cli::cli_verbatim(if (identical(settings$alignment, "consensus")) {
+    .efa_group_verbatim(if (identical(settings$alignment, "consensus")) {
       "Aligned to a symmetric consensus target."
     } else {
       paste0("Aligned to reference group ", settings$reference_group, ".")
     })
-    cli::cli_verbatim(paste0(
+    .efa_group_verbatim(paste0(
       "N: ", paste0(names(settings$N), " = ",
                     format(settings$N, trim = TRUE), collapse = ", ")))
 
@@ -152,6 +152,27 @@ format.efa_group <- function(x, digits = 3, ...) {
       verdicts[is.na(verdicts)] <- "NA"
       .efa_emit_lines(.efa_group_table(
         pairs, fac_names, verdicts, style = .efa_group_verdict_style))
+
+      # Tucker's congruence is invariant to a proportional rescaling of a factor's
+      # loadings, so uniformly stronger loadings in one group are still graded "equal"
+      # -- a verdict grid that then sits directly above a difference table contradicting
+      # it. Point at the differences when that gap is actually present: every factor
+      # graded equal, yet some pair's *average* absolute difference already reaches the
+      # threshold set for a single salient cell. `delta = 0` flags every cell by
+      # construction and so says nothing about the size of the gap.
+      max_mad <- max(d$mean_abs_diff)
+      if (settings$delta > 0 && !anyNA(x$invariance$verdict) &&
+          all(x$invariance$verdict == "equal") && max_mad >= settings$delta) {
+        # At least two decimals whatever `digits` is: a difference that rounds to "0"
+        # would contradict the sentence it is quoted in.
+        mad_str <- .efa_num(max_mad, digits = max(digits, 2L), pad = FALSE)
+        cli::cli_text("")
+        # cli_alert_*() does not wrap by default, and this pointer is long enough to
+        # overrun any console; the rest of the report is width-managed, so wrap it too.
+        cli::cli_alert_info(
+          "Every factor is graded {.val equal} while the aligned loadings differ by up to {mad_str} on average: Tucker's congruence is invariant to a proportional rescaling of a factor's loadings, so read the verdicts alongside {.code $diffs}.",
+          wrap = TRUE)
+      }
     }
 
   })
@@ -159,9 +180,12 @@ format.efa_group <- function(x, digits = 3, ...) {
 
 # Render a small labelled table (left-aligned row labels, centred bold headers,
 # right-aligned cells) into console lines, following the column maths of
-# .efa_format_matrix() without its block-splitting or role machinery. `cells` is an
-# already-formatted character matrix; `style(padded, raw)` optionally restyles a cell
-# (the raw, unpadded value drives the styling; the padded cell keeps the column aligned).
+# .efa_format_matrix() without its role machinery. `cells` is an already-formatted
+# character matrix; `style(padded, raw)` optionally restyles a cell (the raw, unpadded
+# value drives the styling; the padded cell keeps the column aligned). A table wider
+# than the console is split into vertically stacked column blocks by the same helper
+# .efa_format_matrix() uses; there are no auxiliary columns here, so every block repeats
+# only the row labels and its own header row.
 .efa_group_table <- function(row_labels, headers, cells, style = NULL) {
   cells <- as.matrix(cells)
   n_col <- ncol(cells)
@@ -172,25 +196,46 @@ format.efa_group <- function(x, digits = 3, ...) {
         max(cli::ansi_nchar(cells[, j], type = "width")))
   }, integer(1L))
 
-  header_cells <- vapply(seq_len(n_col), function(j) {
-    as.character(cli::ansi_align(cli::style_bold(headers[j]),
-                                 width = col_widths[j], align = "center"))
-  }, character(1L))
-  header <- paste0(strrep(" ", row_width), "  ",
-                   paste(header_cells, collapse = "  "))
+  blocks <- .efa_matrix_blocks(seq_len(n_col), integer(0), row_width, col_widths)
 
-  body <- vapply(seq_len(nrow(cells)), function(i) {
-    row_cells <- vapply(seq_len(n_col), function(j) {
-      padded <- as.character(cli::ansi_align(cells[i, j], width = col_widths[j],
-                                             align = "right"))
-      if (is.null(style)) padded else style(padded, cells[i, j])
+  out <- character(0)
+  for (bb in seq_along(blocks)) {
+    cols <- blocks[[bb]]
+
+    header_cells <- vapply(cols, function(j) {
+      as.character(cli::ansi_align(cli::style_bold(headers[j]),
+                                   width = col_widths[j], align = "center"))
     }, character(1L))
-    label <- as.character(cli::ansi_align(row_labels[i], width = row_width,
-                                          align = "left"))
-    paste0(label, "  ", paste(row_cells, collapse = "  "))
-  }, character(1L))
+    header <- paste0(strrep(" ", row_width), "  ",
+                     paste(header_cells, collapse = "  "))
 
-  sub("[ ]+$", "", c(header, body))
+    body <- vapply(seq_len(nrow(cells)), function(i) {
+      row_cells <- vapply(cols, function(j) {
+        padded <- as.character(cli::ansi_align(cells[i, j], width = col_widths[j],
+                                               align = "right"))
+        if (is.null(style)) padded else style(padded, cells[i, j])
+      }, character(1L))
+      label <- as.character(cli::ansi_align(row_labels[i], width = row_width,
+                                            align = "left"))
+      paste0(label, "  ", paste(row_cells, collapse = "  "))
+    }, character(1L))
+
+    # A blank line separates stacked blocks; the repeated header row names their columns.
+    out <- c(out, if (bb > 1L) "", header, body)
+  }
+
+  sub("[ ]+$", "", out)
+}
+
+# Emit a header line verbatim, wrapped to the console width with continuation lines
+# indented: cli_verbatim() keeps arbitrary group names out of cli/glue markup, but it also
+# does no wrapping of its own. strwrap() breaks *below* its `width`, so it is given one
+# column more than the console has in order to fill it exactly. It wraps on display width
+# (so wide characters are counted correctly) but it also normalises runs of whitespace and
+# breaks only at spaces, so a group name carrying doubled spaces prints with single ones
+# and a name longer than the console still overruns it.
+.efa_group_verbatim <- function(txt) {
+  cli::cli_verbatim(strwrap(txt, width = .efa_console_width() + 1L, exdent = 2L))
 }
 
 # Colour an approximate-invariance verdict cell by its band (a no-op when colour is off,

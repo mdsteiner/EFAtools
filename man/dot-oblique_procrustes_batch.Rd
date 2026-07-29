@@ -78,3 +78,4 @@ linear-algebra exception) is reported with \code{valid = FALSE} and \code{NA} fo
 loadings, factor correlations, and all other per-slice diagnostics, rather than
 aborting the whole call, so one degenerate replicate does not discard the rest.
 }
+\keyword{internal}

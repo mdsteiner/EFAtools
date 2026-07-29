@@ -91,7 +91,9 @@ corresponding entries are \code{NA}. When \code{b_boot > 0} (raw data), three fu
 elements are added: \code{matched_se}, the bootstrap standard error of each
 matched congruence; \code{matched_ci}, a list of \code{lower} and \code{upper} percentile
 confidence limits (each a groups-by-groups-by-factors array); and \code{n_boot},
-the number of bootstrap replicates the intervals are based on.}
+the number of bootstrap replicates that aligned in every group and so
+contributed to the intervals (a replicate whose fit did not converge is
+retained, as in \code{\link[=efa_fit]{efa_fit()}}).}
 \item{diffs}{A data frame with one row per group pair summarising the differences
 between their aligned loadings: the mean, median, minimum, and maximum absolute
 difference, the root-mean-square difference (\code{rmse}), and \code{n_flagged}, the number of
@@ -107,7 +109,10 @@ factor giving the matched Tucker congruence (\code{phi}), its bootstrap CI lower
 the Lorenzo-Seva and ten Berge (2006) similarity bands: \code{phi >= 0.95} is "equal" and
 \verb{[0.85, 0.95)} is "fair"; congruences \verb{< 0.85}, below their bands, are labelled
 "incongruent". The verdict is read from \code{phi_lower} when a bootstrap is available
-(conservative) and from \code{phi} otherwise. \code{NULL} when \code{invariance = FALSE}.}
+(conservative) and from \code{phi} otherwise. Tucker's congruence is invariant to a
+proportional rescaling of a factor's loadings, so a factor can be graded "equal"
+even when one group's loadings on it are uniformly stronger; read the verdict
+alongside \code{diffs}. \code{NULL} when \code{invariance = FALSE}.}
 \item{efa}{The named list of per-group \code{\link[=efa_fit]{efa_fit()}} objects (each retains its own
 diagnostics, e.g. \code{heywood}).}
 \item{alignment}{The alignment result: the consensus object (see

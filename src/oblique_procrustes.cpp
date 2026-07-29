@@ -180,6 +180,8 @@ static arma::vec kaiser_normalize_rows(arma::mat& A_work) {
 //' Browne, M. W. (2001). An overview of analytic rotation in exploratory factor
 //' analysis. *Multivariate Behavioral Research*, 36, 111-150.
 //'
+//' @keywords internal
+//'
 // [[Rcpp::export(.oblique_procrustes)]]
 Rcpp::List oblique_procrustes(const arma::mat& A,
                               const arma::mat& B,
@@ -341,6 +343,8 @@ Rcpp::List oblique_procrustes(const arma::mat& A,
 //'   the factor-correlation array `Phi` (`m x m x b`), and the per-slice
 //'   diagnostics `valid`, `convergence`, `value`, `iterations`, and
 //'   `line_search_failed`.
+//'
+//' @keywords internal
 //'
 // [[Rcpp::export(.oblique_procrustes_batch)]]
 Rcpp::List oblique_procrustes_batch(const arma::cube& A,

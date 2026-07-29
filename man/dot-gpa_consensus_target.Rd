@@ -122,3 +122,4 @@ Lorenzo-Seva, U., & Van Ginkel, J. R. (2016). Multiple Imputation of
 missing values in exploratory factor analysis of multidimensional scales:
 estimating latent trait scores. \emph{Anales de Psicologia}, 32, 596-608.
 }
+\keyword{internal}

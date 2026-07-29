@@ -24,3 +24,4 @@ Lorenzo-Seva, U., and ten Berge, J. M. F. (2006). Tucker's congruence
 coefficient as a meaningful index of factor similarity. \emph{Methodology}, 2,
 57-64.
 }
+\keyword{internal}
