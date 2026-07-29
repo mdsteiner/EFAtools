@@ -76,7 +76,10 @@ EFA(
   NA (default), not all fit indices can be computed. When raw data with
   missing values are entered and `use` is `"complete.obs"` or
   `"na.or.complete"`, rows are deleted listwise, so `N` is taken as the
-  number of complete cases.
+  number of complete cases. The same applies, whatever `use` asks for,
+  whenever an asymptotic covariance is required (the "DWLS" estimator,
+  or `se = "sandwich"`); with `cor_method = "fiml"`, `N` is instead the
+  number of cases carrying at least one observed value.
 
 - method:
 
@@ -165,7 +168,12 @@ EFA(
 
   character. Passed to
   [`stats::cor()`](https://rdrr.io/r/stats/cor.html) if raw data is
-  given as input. Default is "pairwise.complete.obs".
+  given as input. Default is "pairwise.complete.obs". It is ignored when
+  `cor_method = "fiml"` (which handles the missingness itself, so every
+  case contributes), and it is overridden to listwise deletion whenever
+  an asymptotic covariance is required (the "DWLS" estimator, or
+  `se = "sandwich"`), because the covariance must describe the same
+  cases as the correlation matrix.
 
 - varimax_type:
 

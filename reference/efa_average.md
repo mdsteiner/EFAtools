@@ -246,7 +246,9 @@ factor analysis. Psychometrika, 23, 187–200. doi: 10.1007/BF02289233
 
   character. Passed to
   [`stats::cor()`](https://rdrr.io/r/stats/cor.html) if raw data is
-  given as input. Default is "pairwise.complete.obs".
+  given as input. Default is "pairwise.complete.obs". It is ignored when
+  `cor_method = "fiml"`, which handles the missingness itself, so every
+  case contributes.
 
 - cor_method:
 
@@ -254,12 +256,12 @@ factor analysis. Psychometrika, 23, 187–200. doi: 10.1007/BF02289233
   `"spearman"`, or `"kendall"` (passed to
   [`stats::cor()`](https://rdrr.io/r/stats/cor.html)), `"poly"` /
   `"tetra"` for polychoric / tetrachoric correlations of ordinal /
-  binary data (a two-step estimator with no empty-cell continuity
-  correction), or `"fiml"` for a two-stage full-information
-  maximum-likelihood correlation from raw data with missing values. With
-  `"fiml"` the saturated multivariate-normal mean and covariance are
-  estimated by an EM algorithm assuming the data are missing at random
-  and the standardized covariance is analysed, reproducing
+  binary data (a two-step estimator), or `"fiml"` for a two-stage
+  full-information maximum-likelihood correlation from raw data with
+  missing values. With `"fiml"` the saturated multivariate-normal mean
+  and covariance are estimated by an EM algorithm assuming the data are
+  missing at random and the standardized covariance is analysed,
+  reproducing
   [`psych::corFiml()`](https://rdrr.io/pkg/psych/man/corFiml.html)
   followed by [`psych::fa()`](https://rdrr.io/pkg/psych/man/fa.html) and
   `lavaan(missing = "two.stage")`, *not* `lavaan::efa(missing = "ml")`

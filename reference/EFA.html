@@ -19,7 +19,7 @@ before – so existing code keeps running."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">EFAtools</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -51,7 +51,7 @@ before – so existing code keeps running."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Exploratory factor analysis (EFA)</h1>
-      <small class="dont-index">Source: <a href="https://github.com/mdsteiner/EFAtools/blob/v.1.0.0/R/EFAtools-superseded.R" class="external-link"><code>R/EFAtools-superseded.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/mdsteiner/EFAtools/blob/master/R/EFAtools-superseded.R" class="external-link"><code>R/EFAtools-superseded.R</code></a></small>
       <div class="d-none name"><code>EFA.Rd</code></div>
     </div>
 
@@ -123,7 +123,10 @@ otherwise). Use <code><a href="efa_retain.html">efa_retain()</a></code> to decid
 correlation matrix is used. If input is a correlation matrix and <code>N</code> = NA
 (default), not all fit indices can be computed. When raw data with missing
 values are entered and <code>use</code> is <code>"complete.obs"</code> or <code>"na.or.complete"</code>, rows
-are deleted listwise, so <code>N</code> is taken as the number of complete cases.</p></dd>
+are deleted listwise, so <code>N</code> is taken as the number of complete cases. The same
+applies, whatever <code>use</code> asks for, whenever an asymptotic covariance is required
+(the "DWLS" estimator, or <code>se = "sandwich"</code>); with <code>cor_method = "fiml"</code>, <code>N</code> is
+instead the number of cases carrying at least one observed value.</p></dd>
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
@@ -204,7 +207,11 @@ Default is <code>NA</code>.</p></dd>
 
 <dt id="arg-use">use<a class="anchor" aria-label="anchor" href="#arg-use"></a></dt>
 <dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code> if raw data
-is given as input. Default is "pairwise.complete.obs".</p></dd>
+is given as input. Default is "pairwise.complete.obs". It is ignored when
+<code>cor_method = "fiml"</code> (which handles the missingness itself, so every case
+contributes), and it is overridden to listwise deletion whenever an asymptotic
+covariance is required (the "DWLS" estimator, or <code>se = "sandwich"</code>), because the
+covariance must describe the same cases as the correlation matrix.</p></dd>
 
 
 <dt id="arg-varimax-type">varimax_type<a class="anchor" aria-label="anchor" href="#arg-varimax-type"></a></dt>

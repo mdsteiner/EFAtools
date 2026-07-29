@@ -28,7 +28,7 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/mdsteiner/EFAtools/blob/v.1.0.0/inst/CITATION)
+[`inst/CITATION`](https://github.com/mdsteiner/EFAtools/blob/master/inst/CITATION)
 
 Steiner, M.D., & Grieder, S.G. (2020). EFAtools: An R package with fast
 and flexible implementations of exploratory factor analysis tools.

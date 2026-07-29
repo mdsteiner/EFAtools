@@ -146,7 +146,10 @@ Multivariate Software.
   NA (default), not all fit indices can be computed. When raw data with
   missing values are entered and `use` is `"complete.obs"` or
   `"na.or.complete"`, rows are deleted listwise, so `N` is taken as the
-  number of complete cases.
+  number of complete cases. The same applies, whatever `use` asks for,
+  whenever an asymptotic covariance is required (the "DWLS" estimator,
+  or `se = "sandwich"`); with `cor_method = "fiml"`, `N` is instead the
+  number of cases carrying at least one observed value.
 
 - estimator:
 
@@ -193,7 +196,12 @@ Multivariate Software.
 
   character. Passed to
   [`stats::cor()`](https://rdrr.io/r/stats/cor.html) if raw data is
-  given as input. Default is "pairwise.complete.obs".
+  given as input. Default is "pairwise.complete.obs". It is ignored when
+  `cor_method = "fiml"` (which handles the missingness itself, so every
+  case contributes), and it is overridden to listwise deletion whenever
+  an asymptotic covariance is required (the "DWLS" estimator, or
+  `se = "sandwich"`), because the covariance must describe the same
+  cases as the correlation matrix.
 
 - estimate_control:
 
@@ -541,16 +549,31 @@ directly).
 
 - **"poly"** / **"tetra"** compute polychoric / tetrachoric correlations
   for ordinal / binary data, assuming an underlying bivariate-normal
-  latent variable. They use a two-step estimator with no empty-cell
-  continuity correction, matching
-  [`polycor::polychor()`](https://rdrr.io/pkg/polycor/man/polychor.html)
-  and `lavaan`. The polychoric asymptotic covariance that underlies both
-  the DWLS weights and the scaled (sandwich) statistic relies on
-  large-sample theory that degrades for empty or near-empty
-  response-category combinations; with very sparse cells the resulting
-  weights and standard errors can be unreliable (a warning is issued
-  when empty cells are present), so interpret them with caution and
-  consider collapsing rare categories.
+  latent variable. They use a two-step estimator, matching
+  [`polycor::polychor()`](https://rdrr.io/pkg/polycor/man/polychor.html).
+  Every two-by-two response table with an empty cell is reproduced
+  exactly by a correlation of 1 (or -1), so such a pair would otherwise
+  be estimated at that boundary whatever the underlying correlation; a
+  continuity correction of 0.5 is therefore added to the empty cell of a
+  binary pair, preserving the table margins, as `lavaan` and `psych` do
+  by default (Savalei, 2011). Larger tables get no correction: a
+  response table showing a perfect ordering is instead reported at the
+  boundary value, with a warning naming the pairs. Neither kind of pair
+  has an asymptotic variance, so both are reported as `NA` and the
+  `"DWLS"` estimator refuses data containing them. The polychoric
+  asymptotic covariance that underlies both the DWLS weights and the
+  scaled (sandwich) statistic relies on large-sample theory that
+  degrades for empty or near-empty response-category combinations; with
+  very sparse cells the resulting weights and standard errors can be
+  unreliable (a warning is issued when empty cells are present), so
+  interpret them with caution and consider collapsing rare categories.
+  The response-category probabilities are integrated by Gauss-Legendre
+  quadrature, and a strongly correlated pair – at a lower correlation
+  when its table has an empty response-category combination – is
+  re-integrated with a finer rule, because the base rule under-resolves
+  the narrow conditional transition of such a pair. The resulting
+  correlations agree with an exact bivariate-normal integrator to about
+  `1e-5`, so no quadrature setting is exposed as an argument.
 
 - **"fiml"** estimates a two-stage full-information maximum-likelihood
   correlation. The saturated multivariate-normal mean and covariance are
@@ -1602,11 +1625,14 @@ summary(ML_info)
 DWLS_rob <- efa_fit(DOSPERT_raw, n_factors = 6, cor_method = "poly",
                     estimator = "DWLS", rotation = "oblimin", se = "sandwich")
 #> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
-#> Warning: Some response-category combinations are empty despite a non-negligible expected
-#> count.
+#> Warning: 18 variable pairs have an empty response-category combination despite a
+#> non-negligible expected count.
+#> ✖ Affected pairs: "ethR_3-recR_3", "ethR_5-heaR_2", "finR_3-finR_6",
+#>   "finR_3-heaR_1", "finR_3-socR_3", and 13 more.
 #> ℹ The polychoric asymptotic covariance (and any DWLS weights or robust standard
 #>   errors derived from it) can be unreliable for such structurally sparse cells;
-#>   interpret them with caution.
+#>   interpret them with caution and consider collapsing rare response categories
+#>   in these variables.
 #> Warning: Analytic standard errors could not be computed for all parameters.
 #> ℹ The factor solution's rotational orientation is only weakly determined (two
 #>   canonical variances nearly coincide), so the unrotated loadings have no

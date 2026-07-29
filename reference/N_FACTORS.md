@@ -80,11 +80,10 @@ N_FACTORS(
   `"spearman"`, or `"kendall"` (passed to
   [`stats::cor()`](https://rdrr.io/r/stats/cor.html)), or `"poly"` /
   `"tetra"` for polychoric / tetrachoric correlations (a two-step
-  estimator with no empty-cell continuity correction). `CD`, `PARALLEL`,
-  `NEST`, and `HULL` compare against simulated continuous data, and
-  `SMT` relies on a normal-theory chi-square test; none of these support
-  `"poly"` / `"tetra"`, so they are skipped in that case. Default is
-  `"pearson"`.
+  estimator). `CD`, `PARALLEL`, `NEST`, and `HULL` compare against
+  simulated continuous data, and `SMT` relies on a normal-theory
+  chi-square test; none of these support `"poly"` / `"tetra"`, so they
+  are skipped in that case. Default is `"pearson"`.
 
 - n_factors_max:
 

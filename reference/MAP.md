@@ -40,8 +40,7 @@ MAP(
   `"kendall"` (passed to
   [`stats::cor()`](https://rdrr.io/r/stats/cor.html)), or `"poly"` /
   `"tetra"` for polychoric / tetrachoric correlations of ordinal /
-  binary data (a two-step estimator with no empty-cell continuity
-  correction). Defaults to `"pearson"`.
+  binary data (a two-step estimator). Defaults to `"pearson"`.
 
 ## Value
 

@@ -13,7 +13,7 @@ keeps working."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">EFAtools</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -45,7 +45,7 @@ keeps working."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Model averaging across different EFA methods and types</h1>
-      <small class="dont-index">Source: <a href="https://github.com/mdsteiner/EFAtools/blob/v.1.0.0/R/EFAtools-superseded.R" class="external-link"><code>R/EFAtools-superseded.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/mdsteiner/EFAtools/blob/master/R/EFAtools-superseded.R" class="external-link"><code>R/EFAtools-superseded.R</code></a></small>
       <div class="d-none name"><code>EFA_AVERAGE-superseded.Rd</code></div>
     </div>
 
@@ -256,14 +256,16 @@ How to specify the starting values for the optimization procedure for ML.
 
 <dt id="arg-use">use<a class="anchor" aria-label="anchor" href="#arg-use"></a></dt>
 <dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code> if raw data
-is given as input. Default is "pairwise.complete.obs".</p></dd>
+is given as input. Default is "pairwise.complete.obs". It is ignored when
+<code>cor_method = "fiml"</code>, which handles the missingness itself, so every case
+contributes.</p></dd>
 
 
 <dt id="arg-cor-method">cor_method<a class="anchor" aria-label="anchor" href="#arg-cor-method"></a></dt>
 <dd><p>character. Correlation computed from raw data: <code>"pearson"</code>,
 <code>"spearman"</code>, or <code>"kendall"</code> (passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>), <code>"poly"</code> /
 <code>"tetra"</code> for polychoric / tetrachoric correlations of ordinal / binary data
-(a two-step estimator with no empty-cell continuity correction), or <code>"fiml"</code>
+(a two-step estimator), or <code>"fiml"</code>
 for a two-stage full-information maximum-likelihood correlation from raw data
 with missing values. With <code>"fiml"</code> the saturated multivariate-normal mean and
 covariance are estimated by an EM algorithm assuming the data are missing at

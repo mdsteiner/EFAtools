@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EFAtools</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,9 +39,19 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/mdsteiner/EFAtools/blob/v.1.0.0/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/mdsteiner/EFAtools/blob/master/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.0.0.9000" id="efatools-1009000">EFAtools 1.0.0.9000<a class="anchor" aria-label="anchor" href="#efatools-1009000"></a></h2>
+<div class="section level3">
+<h3 id="ordinal-correlations-1-0-0-9000">Ordinal Correlations<a class="anchor" aria-label="anchor" href="#ordinal-correlations-1-0-0-9000"></a></h3>
+<ul><li><p>A polychoric or tetrachoric pair whose response table shows a perfect ordering is only bounded, not identified, by the data, and is now reported at 0.9999 (or -0.9999 for a perfectly reversed table) with a warning naming the affected pairs, instead of at an operating-system-dependent value.</p></li>
+<li><p>Binary pairs with a single empty response cell instead receive a 0.5 continuity correction that preserves the table margins, matching <code>lavaan</code> and <code>psych</code>, which avoids the boundary estimate and makes the correlation matrix positive definite far more often.</p></li>
+<li><p>Neither kind of pair has an asymptotic variance, so <code>NA</code> is reported: <code>DWLS</code> estimation gives an actionable error rather than fitting with an unusable weight, and robust standard errors involving these pairs are withheld.</p></li>
+<li><p>The response combinations that a strongly correlated pair makes all but impossible are now computed from the complementary tail of the normal distribution, which keeps them accurate down to the smallest representable probability instead of losing them to rounding. When such a combination is nevertheless observed (a handful of careless or extreme responses is enough) this both sharpens the correlation of the pair and gives it an asymptotic variance. Previously that variance came out missing, which refused <code>DWLS</code> estimation for the whole data set and withheld every robust standard error involving the pair.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.0" id="efatools-100">EFAtools 1.0.0<a class="anchor" aria-label="anchor" href="#efatools-100"></a></h2><p class="text-muted">CRAN release: 2026-07-23</p>
 <div class="section level3">

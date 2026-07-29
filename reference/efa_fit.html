@@ -15,7 +15,7 @@ then handled according to the specified type (see details).'></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">EFAtools</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,7 +47,7 @@ then handled according to the specified type (see details).'></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Exploratory factor analysis (EFA)</h1>
-      <small class="dont-index">Source: <a href="https://github.com/mdsteiner/EFAtools/blob/v.1.0.0/R/efa_fit.R" class="external-link"><code>R/efa_fit.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/mdsteiner/EFAtools/blob/master/R/efa_fit.R" class="external-link"><code>R/efa_fit.R</code></a></small>
       <div class="d-none name"><code>efa_fit.Rd</code></div>
     </div>
 
@@ -168,7 +168,10 @@ otherwise). Use <code><a href="efa_retain.html">efa_retain()</a></code> to decid
 correlation matrix is used. If input is a correlation matrix and <code>N</code> = NA
 (default), not all fit indices can be computed. When raw data with missing
 values are entered and <code>use</code> is <code>"complete.obs"</code> or <code>"na.or.complete"</code>, rows
-are deleted listwise, so <code>N</code> is taken as the number of complete cases.</p></dd>
+are deleted listwise, so <code>N</code> is taken as the number of complete cases. The same
+applies, whatever <code>use</code> asks for, whenever an asymptotic covariance is required
+(the "DWLS" estimator, or <code>se = "sandwich"</code>); with <code>cor_method = "fiml"</code>, <code>N</code> is
+instead the number of cases carrying at least one observed value.</p></dd>
 
 
 <dt id="arg-estimator">estimator<a class="anchor" aria-label="anchor" href="#arg-estimator"></a></dt>
@@ -208,7 +211,11 @@ properties and the combinations they support. Default is "pearson".</p></dd>
 
 <dt id="arg-use">use<a class="anchor" aria-label="anchor" href="#arg-use"></a></dt>
 <dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code> if raw data
-is given as input. Default is "pairwise.complete.obs".</p></dd>
+is given as input. Default is "pairwise.complete.obs". It is ignored when
+<code>cor_method = "fiml"</code> (which handles the missingness itself, so every case
+contributes), and it is overridden to listwise deletion whenever an asymptotic
+covariance is required (the "DWLS" estimator, or <code>se = "sandwich"</code>), because the
+covariance must describe the same cases as the correlation matrix.</p></dd>
 
 
 <dt id="arg-estimate-control">estimate_control<a class="anchor" aria-label="anchor" href="#arg-estimate-control"></a></dt>
@@ -442,13 +449,26 @@ listwise-complete cases. Its fit-index behaviour is described under <em>Fit indi
 <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code> for continuous or rank data.</p></li>
 <li><p><strong>"poly"</strong> / <strong>"tetra"</strong> compute polychoric / tetrachoric correlations for ordinal /
 binary data, assuming an underlying bivariate-normal latent variable. They use a
-two-step estimator with no empty-cell continuity correction, matching
-<code><a href="https://rdrr.io/pkg/polycor/man/polychor.html" class="external-link">polycor::polychor()</a></code> and <code>lavaan</code>. The polychoric asymptotic covariance that
+two-step estimator, matching <code><a href="https://rdrr.io/pkg/polycor/man/polychor.html" class="external-link">polycor::polychor()</a></code>. Every two-by-two response table
+with an empty cell is reproduced exactly by a correlation of 1 (or -1), so such a pair
+would otherwise be estimated at that boundary whatever the underlying correlation; a
+continuity correction of 0.5 is therefore added to the empty cell of a binary pair,
+preserving the table margins, as <code>lavaan</code> and <code>psych</code> do by default (Savalei, 2011).
+Larger tables get no correction: a response table showing a perfect ordering is instead
+reported at the boundary value, with a warning naming the pairs. Neither kind of pair
+has an asymptotic variance, so both are reported as <code>NA</code> and the <code>"DWLS"</code> estimator
+refuses data containing them. The polychoric asymptotic covariance that
 underlies both the DWLS weights and the scaled (sandwich) statistic relies on
 large-sample theory that degrades for empty or near-empty response-category
 combinations; with very sparse cells the resulting weights and standard errors can be
 unreliable (a warning is issued when empty cells are present), so interpret them with
-caution and consider collapsing rare categories.</p></li>
+caution and consider collapsing rare categories. The response-category probabilities
+are integrated by Gauss-Legendre quadrature, and a strongly correlated pair – at a
+lower correlation when its table has an empty response-category combination – is
+re-integrated with a finer rule, because the base rule under-resolves the narrow
+conditional transition of such a pair. The resulting correlations agree with an exact
+bivariate-normal integrator to about <code>1e-5</code>, so no quadrature setting is exposed as an
+argument.</p></li>
 <li><p><strong>"fiml"</strong> estimates a two-stage full-information maximum-likelihood correlation. The
 saturated multivariate-normal mean and covariance are estimated from raw data with
 missing values by an EM algorithm assuming the data are missing at random (Yuan,
@@ -1383,11 +1403,14 @@ fitted solution.</p>
 <span class="r-in"><span><span class="va">DWLS_rob</span> <span class="op">&lt;-</span> <span class="fu">efa_fit</span><span class="op">(</span><span class="va">DOSPERT_raw</span>, n_factors <span class="op">=</span> <span class="fl">6</span>, cor_method <span class="op">=</span> <span class="st">"poly"</span>,</span></span>
 <span class="r-in"><span>                    estimator <span class="op">=</span> <span class="st">"DWLS"</span>, rotation <span class="op">=</span> <span class="st">"oblimin"</span>, se <span class="op">=</span> <span class="st">"sandwich"</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from the raw data.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some response-category combinations are empty despite a non-negligible expected</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> count.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>18 variable pairs have an empty response-category combination despite a</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> non-negligible expected count.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #BB0000;">✖</span> Affected pairs: <span style="color: #0000BB;">"ethR_3-recR_3"</span>, <span style="color: #0000BB;">"ethR_5-heaR_2"</span>, <span style="color: #0000BB;">"finR_3-finR_6"</span>,</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   <span style="color: #0000BB;">"finR_3-heaR_1"</span>, <span style="color: #0000BB;">"finR_3-socR_3"</span>, and 13 more.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> The polychoric asymptotic covariance (and any DWLS weights or robust standard</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span>   errors derived from it) can be unreliable for such structurally sparse cells;</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span>   interpret them with caution.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   interpret them with caution and consider collapsing rare response categories</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   in these variables.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Analytic standard errors could not be computed for all parameters.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> The factor solution's rotational orientation is only weakly determined (two</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span>   canonical variances nearly coincide), so the unrotated loadings have no</span>

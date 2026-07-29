@@ -15,7 +15,7 @@ can be checked for their suitability for factor analysis."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">EFAtools</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,7 +47,7 @@ can be checked for their suitability for factor analysis."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Various factor retention criteria</h1>
-      <small class="dont-index">Source: <a href="https://github.com/mdsteiner/EFAtools/blob/v.1.0.0/R/efa_retain.R" class="external-link"><code>R/efa_retain.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/mdsteiner/EFAtools/blob/master/R/efa_retain.R" class="external-link"><code>R/efa_retain.R</code></a></small>
       <div class="d-none name"><code>efa_retain.Rd</code></div>
     </div>
 
@@ -129,8 +129,8 @@ data is given as input. Default is <code>"pairwise.complete.obs"</code>.</p></dd
 <dt id="arg-cor-method">cor_method<a class="anchor" aria-label="anchor" href="#arg-cor-method"></a></dt>
 <dd><p>character. Correlation computed from raw data: <code>"pearson"</code>,
 <code>"spearman"</code>, or <code>"kendall"</code> (passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>), or <code>"poly"</code> /
-<code>"tetra"</code> for polychoric / tetrachoric correlations (a two-step estimator
-with no empty-cell continuity correction). <code>CD</code>, <code>PARALLEL</code>, <code>NEST</code>, and
+<code>"tetra"</code> for polychoric / tetrachoric correlations (a two-step estimator).
+<code>CD</code>, <code>PARALLEL</code>, <code>NEST</code>, and
 <code>HULL</code> compare against simulated continuous data, and <code>SMT</code> relies on a
 normal-theory chi-square test; none of these support <code>"poly"</code> / <code>"tetra"</code>,
 so they are skipped in that case.
