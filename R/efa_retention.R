@@ -134,7 +134,7 @@
 # top-level `n_factors` named vector is derived from the records. `subtitle` is an
 # optional one-line context string (e.g. the estimation method); `note` is an
 # optional vector of cli info lines.
-.new_efa_retention <- function(id, results, settings, status = "ok",
+.new_efa_retention <- function(id, results, settings,
                                subtitle = NULL, note = NULL) {
 
   if (!id %in% names(.retention_registry)) {
@@ -154,8 +154,7 @@
       results = results,
       subtitle = subtitle,
       note = note,
-      settings = settings,
-      status = status
+      settings = settings
     ),
     class = "efa_retention"
   )

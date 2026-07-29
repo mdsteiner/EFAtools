@@ -3,9 +3,9 @@ map_raw <- efa_map(GRiPS_raw)
 
 test_that("output class and dimensions are correct", {
   expect_s3_class(map_cor, "efa_retention")
-  expect_length(map_cor, 7)
+  expect_length(map_cor, 6)
   expect_s3_class(map_raw, "efa_retention")
-  expect_length(map_raw, 7)
+  expect_length(map_raw, 6)
 
   expect_named(map_cor$n_factors, c("TR2", "TR4"))
   expect_equal(.retention_record(map_cor, "TR2")$plot_type, "none")
@@ -23,6 +23,26 @@ test_that("criterion series are returned", {
   expect_equal(tr2$x[1], 0)
   # the suggested m minimizes the criterion
   expect_equal(tr2$x[which.min(tr2$y)], map_cor$n_factors[["TR2"]])
+})
+
+test_that("the TR2 criterion series matches psych::vss", {
+  skip_if_not_installed("psych")
+  # Velicer's original MAP is TR2, which psych::vss returns as $map. EFAtools
+  # additionally reports m = 0 (part of Velicer's procedure, omitted by psych), and
+  # returns NA once the partialling degenerates at the largest m, where psych
+  # substitutes 1; compare the m >= 1 values both report. `n.obs` feeds psych's
+  # other statistics only -- MAP is a function of the correlation matrix alone --
+  # so one nominal value covers both matrices.
+  for (cmat in list(test_models$baseline$cormat, stats::cor(GRiPS_raw))) {
+    ours <- .retention_record(efa_map(cmat), "TR2")$y[-1]
+    theirs <- psych::vss(cmat, n = ncol(cmat) - 1, n.obs = 500,
+                         plot = FALSE)$map
+
+    compared <- !is.na(ours)
+    # guard against a vacuously passing comparison
+    expect_gt(sum(compared), 0.5 * length(ours))
+    expect_equal(ours[compared], theirs[compared], tolerance = 1e-12)
+  }
 })
 
 test_that("settings are returned correctly", {

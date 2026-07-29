@@ -1,3 +1,16 @@
+# Number of factors a sequential SMT rule suggests. `values` runs over the 0, 1, ...,
+# max_fac factor models and `rule` maps that series to a logical "this model satisfies
+# the rule" (taken as a function rather than a second vector so the series cannot be
+# passed twice inconsistently). The search stops at the first model that satisfies the
+# rule, or at the first undefined value: an NA breaks the strictly sequential test, so
+# the search stops there rather than skipping ahead to a later model that satisfies it,
+# and no number can be suggested. Shared by the chi-square and the RMSEA rule so the
+# two cannot drift apart.
+.smt_sequential_stop <- function(values, rule) {
+  stop_at <- which(rule(values) | is.na(values))[1]
+  if (is.na(stop_at) || is.na(values[stop_at])) NA_integer_ else stop_at - 1L
+}
+
 #' Sequential chi square model tests, RMSEA lower bound, and AIC
 #'
 #' Sequential chi square model tests (SMT) are a factor retention method where
@@ -50,6 +63,12 @@
 #' Regarding the AIC, the suggested number of factors is the number of factors
 #' for the model with the lowest AIC.
 #'
+#' The sequential models are fitted without inequality constraints, so a solution
+#' can be inadmissible (a Heywood case, or a fit that did not converge). Only the
+#' models the three rules actually select are checked for this; if one of them is
+#' inadmissible a warning is raised and the corresponding suggestion should be
+#' interpreted with caution.
+#'
 #' In comparison with other prominent factor retention criteria, SMT performed
 #' well at determining the number of factors to extract in EFA (Auerswald &
 #' Moshagen, 2019). The RMSEA lower bound also performed well at determining the true
@@ -57,7 +76,8 @@
 #' most generalizable model (Preacher, Zhang, Kim, & Mels, 2013).
 #'
 #' @returns An object of class `efa_retention` (see [print.efa_retention()] for
-#'   the print method). Its main fields are:
+#'   the print method). SMT has no plot; [plot.efa_retention()] returns `NULL`
+#'   with a message for it. Its main fields are:
 #' \item{n_factors}{A named numeric vector (`"chi"`, `"RMSEA"`, `"AIC"`) with the
 #'   suggested number of factors from the sequential chi-square model tests, the
 #'   RMSEA lower bound, and the AIC.}
@@ -130,9 +150,9 @@ efa_smt <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   ps <- vector("double", max_fac)
   RMSEA_LB <- vector("double", max_fac)
   AIC <- vector("double", max_fac)
-  nfac_chi <- NA
-  nfac_RMSEA <- NA
-  nfac_AIC <- NA
+  # admissibility of each fitted model; only the selected ones are reported on below
+  n_heywood <- vector("integer", max_fac)
+  converged <- vector("logical", max_fac)
 
     # sequentially perform EFAs with 1 to the maximum number of factors
     for (i in seq_len(max_fac)) {
@@ -143,6 +163,8 @@ efa_smt <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
       ps[i] <- temp$fit_indices$p_chi
       RMSEA_LB[i] <- temp$fit_indices$RMSEA_LB
       AIC[i] <- temp$fit_indices$AIC
+      n_heywood[i] <- length(temp$heywood)
+      converged[i] <- !isTRUE(temp$convergence != 0)
 
     }
 
@@ -162,23 +184,11 @@ efa_smt <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   df_null <- (m^2 - m) / 2
   p_null <- stats::pchisq(chi_null, df_null, lower.tail = FALSE)
 
-  # Walk the sequence (0, 1, ..., max_fac factors) and stop at the first model
-  # that is either non-significant (retain that number of factors) or has an
-  # undefined chi-square p value. An NA p (e.g. a non-converged / Heywood model)
-  # breaks the strictly sequential test, so the search stops there rather than
-  # skipping ahead to a later non-significant model, in which case no number can
-  # be suggested.
+  # Retain the number of factors of the first model whose chi square is
+  # non-significant. An NA p (e.g. a non-converged / Heywood model) stops the search
+  # with no suggestion, as does a sequence in which every model is significant.
   p_seq <- c(p_null, ps)
-  stop_at <- which(p_seq > 0.05 | is.na(p_seq))[1]
-  if (is.na(stop_at)) {
-    # every model was significant: no non-significant model in range
-    nfac_chi <- NA
-  } else if (is.na(p_seq[stop_at])) {
-    # the sequence was broken by an undefined p value
-    nfac_chi <- NA
-  } else {
-    nfac_chi <- stop_at - 1L
-  }
+  nfac_chi <- .smt_sequential_stop(p_seq, \(p) p > 0.05)
 
   # Calculate RMSEA (incl. lower bound of 90% CI) and AIC for the null model. The
   # RMSEA noncentrality is built on the uncorrected (N - 1) discrepancy scale (as in
@@ -196,24 +206,10 @@ efa_smt <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
 
   AIC_null <- chi_null - 2 * df_null
 
-  # With which number of factors does the RMSEA lower bound first fall below .05?
-  if(isTRUE(RMSEA_LB_null < .05)){
-
-    nfac_RMSEA <- 0
-
-  } else {
-
-    if(any(RMSEA_LB < .05, na.rm = TRUE)){
-
-      nfac_RMSEA <- which(RMSEA_LB < .05)[1]
-
-    } else {
-
-      nfac_RMSEA <- NA
-
-    }
-
-  }
+  # Retain the number of factors of the first model whose RMSEA lower bound falls
+  # below .05, under the same sequential convention as the chi-square rule above.
+  RMSEA_seq <- c(RMSEA_LB_null, RMSEA_LB)
+  nfac_RMSEA <- .smt_sequential_stop(RMSEA_seq, \(r) r < .05)
 
   # With which number of factors is the AIC lowest? (which.min returns the first
   # minimum, so ties yield a single, well-defined suggestion). which.min()
@@ -222,6 +218,33 @@ efa_smt <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   # keeps a length-1 suggestion.
   AIC_all <- c(AIC_null, AIC)
   nfac_AIC <- if (all(is.na(AIC_all))) NA_integer_ else which.min(AIC_all) - 1
+
+  # The models at the upper end of the sequence over-extract and may be
+  # inadmissible, so flag only the solutions the three rules actually select (as
+  # efa_hull() does). The null model is not fitted and cannot be inadmissible.
+  suggested <- c(chi = nfac_chi, RMSEA = nfac_RMSEA, AIC = nfac_AIC)
+  inadmissible <- character(0)
+  for (rule in names(suggested)) {
+    k <- suggested[[rule]]
+    if (is.na(k) || k < 1) next
+    issues <- c(if (n_heywood[k] > 0) "Heywood case",
+                if (!converged[k]) "non-convergence")
+    if (length(issues) > 0) {
+      inadmissible <- c(
+        inadmissible,
+        paste0(rule, ": ", k, " factor", if (k != 1) "s" else "",
+               " (", paste(issues, collapse = ", "), ")")
+      )
+    }
+  }
+
+  if (length(inadmissible) > 0) {
+    cli::cli_warn(
+      c("The sequential model tests selected an inadmissible solution: {inadmissible}.",
+        "i" = "The selected solution has a Heywood case or did not converge, so the suggested number of factors may be unreliable; interpret it with caution and cross-check with other criteria."),
+      class = "efa_smt_inadmissible"
+    )
+  }
 
   # one record per criterion (values for the null model through max_fac factors)
   results <- list(

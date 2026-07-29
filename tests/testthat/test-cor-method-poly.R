@@ -14,17 +14,9 @@
   })
 }
 
-# Collect the class strings of every warning raised while evaluating `expr` (several fire on
-# the degenerate path), so a single expected class can be asserted without expect_warning
-# stopping at the first one.
-.warn_classes <- function(expr) {
-  classes <- character()
-  withCallingHandlers(
-    expr,
-    warning = function(w) { classes <<- c(classes, class(w)); invokeRestart("muffleWarning") }
-  )
-  classes
-}
+# `.warn_classes()` -- which collects the class strings of every warning raised while
+# evaluating an expression, so a single expected class can be asserted without
+# expect_warning stopping at the first one -- lives in helper-efa_retention.R.
 
 # A six-item ordinal set whose first pair is at a Frechet bound (its response table is the
 # comonotone coupling of its own margins), so that pair is estimated at the boundary of the

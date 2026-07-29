@@ -36,7 +36,7 @@ test_that("output class and dimensions are correct", {
                hull_raw_uls_CFI)
   for (obj in objs) {
     expect_s3_class(obj, "efa_retention")
-    expect_length(obj, 10)
+    expect_length(obj, 9)
     expect_length(obj$settings, 9)
   }
 })
@@ -181,18 +181,7 @@ z <- x + y
 dat_sing <- matrix(c(x, y, z, rnorm(10), rnorm(10), rnorm(10)), ncol = 6)
 cor_sing <- stats::cor(dat_sing)
 
-burt <- matrix(c(1.00,  0.83,  0.81,  0.80,   0.71, 0.70, 0.54, 0.53,  0.59,  0.24, 0.13,
-                 0.83,  1.00,  0.87,  0.62,   0.59, 0.44, 0.58, 0.44,  0.23,  0.45,  0.21,
-                 0.81,  0.87,  1.00,  0.63,   0.37, 0.31, 0.30, 0.12,  0.33,  0.33,  0.36,
-                 0.80,  0.62,  0.63,  1.00,   0.49, 0.54, 0.30, 0.28,  0.42,  0.29, -0.06,
-                 0.71,  0.59,  0.37,  0.49,   1.00, 0.54, 0.34, 0.55,  0.40,  0.19, -0.10,
-                 0.70,  0.44,  0.31,  0.54,   0.54, 1.00, 0.50, 0.51,  0.31,  0.11,  0.10,
-                 0.54,  0.58,  0.30,  0.30,   0.34, 0.50, 1.00, 0.38,  0.29,  0.21,  0.08,
-                 0.53,  0.44,  0.12,  0.28,   0.55, 0.51, 0.38, 1.00,  0.53,  0.10, -0.16,
-                 0.59,  0.23,  0.33,  0.42,   0.40, 0.31, 0.29, 0.53,  1.00, -0.09, -0.10,
-                 0.24,  0.45,  0.33,  0.29,   0.19, 0.11, 0.21, 0.10, -0.09,  1.00,  0.41,
-                 0.13,  0.21,  0.36, -0.06,  -0.10, 0.10, 0.08, -0.16, -0.10, 0.41,  1.00),
-               nrow = 11, ncol = 11)
+burt <- .burt_cormat()
 
 test_that("errors etc are thrown correctly", {
   skip_if_not_slow()
@@ -225,12 +214,36 @@ test_that("errors etc are thrown correctly", {
   expect_message(suppressWarnings(efa_hull(GRiPS_raw)), class = "efa_hull_gof_caf")
 
   expect_warning(efa_hull(test_models$baseline$cormat, n_fac_theor = 13, N = 500), class = "efa_hull_max_factors")
-  # the burt matrix is smoothed and selects an inadmissible/few-solution hull;
-  # assert the smoothing warning and muffle the other (incidental) warnings
-  suppressWarnings(
-    expect_warning(efa_hull(burt, N = 20, estimator = "ML"), class = "efa_cor_smoothed"))
-  suppressWarnings(
-    expect_warning(efa_hull(burt, N = 20, estimator = "ML", n_fac_theor = 1), class = "efa_cor_smoothed"))
+})
+
+test_that("a non-positive-definite input is smoothed and its hull flagged", {
+  # burt has to be smoothed, its hull collapses below three solutions, and the
+  # selected solution is inadmissible. Several warnings fire, so collect their
+  # classes rather than stopping at the first one (or muffling them wholesale).
+  # An explicit n_fac_theor is not varied here: the internal parallel analysis
+  # already suggests more factors than any small theoretical value, so the search
+  # bound J -- and with it the whole result -- is the same either way.
+  #
+  # efa_hull() derives J from a simulated parallel analysis, so seed it rather than
+  # inheriting whatever state the preceding tests left (which differs between the
+  # default and the slow gate).
+  set.seed(42)
+  classes <- .warn_classes(efa_hull(burt, N = 20, estimator = "ML"))
+
+  expect_true("efa_cor_smoothed" %in% classes)
+  expect_true("efa_hull_few_solutions" %in% classes)
+  expect_true("efa_hull_inadmissible" %in% classes)
+})
+
+test_that("a hull with no finite goodness-of-fit value aborts", {
+  # Every solution has an undefined fit value, so nothing can lie on the hull; the
+  # elimination must abort with a classed condition instead of indexing an empty
+  # matrix. The excluded-solutions warning fires first.
+  s <- cbind(0:3, rep(NA_real_, 4), c(10, 6, 3, 1), 0)
+  expect_error(
+    suppressWarnings(.hull_calc(s, J = 3, gof_t = "CFI")),
+    class = "efa_hull_no_fit"
+  )
 })
 
 if (is_slow_test()) {

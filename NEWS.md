@@ -1,5 +1,13 @@
 # EFAtools 1.0.0.9000
 
+## Factor Retention
+
+* `efa_smt()` now warns when one of its three rules selects a solution with a Heywood case or a model that did not converge, matching what `efa_hull()` already reported. The suggestion is still returned, but it is flagged as unreliable rather than presented without comment.
+
+* The RMSEA rule of `efa_smt()` now stops at the first model whose lower bound cannot be computed, as the sequential chi-square rule already did. Previously it skipped past such a model to a later one, which is not a valid continuation of a sequential test.
+
+* `efa_nest()` results can now be plotted: the plot shows the empirical eigenvalues together with the reference eigenvalues NEST compared them against, with the retained number of factors marked.
+
 ## Ordinal Correlations
 
 * A polychoric or tetrachoric pair whose response table shows a perfect ordering is only bounded, not identified, by the data, and is now reported at 0.9999 (or -0.9999 for a perfectly reversed table) with a warning naming the affected pairs, instead of at an operating-system-dependent value.

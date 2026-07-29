@@ -4,11 +4,20 @@
 \alias{efa_map}
 \title{Velicer's minimum average partial (MAP) criterion}
 \source{
+Auerswald, M., & Moshagen, M. (2019). How to determine the number of
+factors to retain in exploratory factor analysis: A comparison of extraction
+methods under realistic conditions. \emph{Psychological Methods, 24}(4), 468--491.
+https://doi.org/10.1037/met0000200
+
 Velicer, W. F. (1976). Determining the number of components from the matrix of partial correlations.
 \emph{Psychometrika, 41}, 321--327.
 
 Velicer, W. F., Eaton, C. A., & Fava, J. L. (2000). Construct explication through factor or component analysis: A review and evaluation of alternative procedures for determining the number of factors or components. In Goffin, R. D. & Helmes, E. (Eds.), \emph{Problems and Solutions in
 Human Assessment: Honoring Douglas N. Jackson at Seventy} (pp. 41--71). Boston: Kluwer.
+
+Zwick, W. R., & Velicer, W. F. (1986). Comparison of five rules for
+determining the number of components to retain. \emph{Psychological Bulletin, 99},
+432--442. http://dx.doi.org/10.1037/0033-2909.99.3.432
 }
 \usage{
 efa_map(
@@ -32,7 +41,8 @@ of ordinal / binary data (a two-step estimator). Defaults to \code{"pearson"}.}
 }
 \value{
 An object of class \code{efa_retention} (see \code{\link[=print.efa_retention]{print.efa_retention()}} for the
-print method) with the following main elements:
+print method). MAP has no plot; \code{\link[=plot.efa_retention]{plot.efa_retention()}} returns \code{NULL} with a
+message for it. Its main elements are:
 \itemize{
 \item \code{n_factors}: A named numeric vector (\code{"TR2"}, \code{"TR4"}) with the index
 \eqn{m} that minimizes the original (TR2) and revised (TR4) MAP criterion.
@@ -65,7 +75,17 @@ fourth-power summary, formed from the trace of the fourth matrix power,
 \deqn{\mathrm{TR4}_m = \frac{\mathrm{tr}(M^4) - p}{p(p-1)}.}
 Moving from the squared to the fourth power downweights the small partial
 correlations relative to the large ones, which can sharpen the minimum.
+Unlike TR2, \eqn{\mathrm{tr}(M^4)} is \emph{not} the sum of the fourth powers of the
+individual partial correlations; the matrix power is intended and is what
+Velicer, Eaton, and Fava (2000) describe.
 }
+
+MAP is most dependable when the components are well determined, that is with many
+indicators per factor and substantial loadings. It has a well-documented tendency
+to under-extract, particularly with few indicators per factor or weak loadings
+(Zwick & Velicer, 1986; Auerswald & Moshagen, 2019), so it is best read as a lower
+bound and paired with a criterion that errs in the other direction, such as the
+Kaiser-Guttman criterion (\code{\link[=efa_kgc]{efa_kgc()}}).
 
 A non-positive-definite input correlation matrix (e.g. from sampling error) is
 smoothed with \code{\link[psych:cor.smooth]{psych::cor.smooth()}}.

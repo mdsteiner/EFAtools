@@ -42,7 +42,10 @@ either "SMC", "PCA", or "EFA". If using "SMC", the diagonal of the correlation
 matrix is replaced by the squared multiple correlations (SMCs) of the
 indicators. If using "PCA", the diagonal values of the correlation matrices
 are left to be 1. If using "EFA", eigenvalues are found on the correlation
-matrices with the final communalities of an EFA solution as diagonal.}
+matrices with the final communalities of an EFA solution as diagonal. Default
+is \code{c("PCA", "SMC", "EFA")}, i.e. all three, which costs roughly six times a
+single non-EFA type: \code{"EFA"} fits an EFA to every simulated dataset and
+dominates that total. Pass a single type if the run is time-critical.}
 
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}} if raw data
 is given as input. Default is "pairwise.complete.obs".}

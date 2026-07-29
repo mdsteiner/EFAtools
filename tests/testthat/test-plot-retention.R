@@ -40,12 +40,29 @@ test_that("efa_retention plot methods return ggplot objects", {
 })
 
 test_that("plot-less criteria return NULL with a message", {
-  for (obj in list(NEST(test_models$baseline$cormat, N = 500),
-                   MAP(test_models$baseline$cormat),
+  for (obj in list(MAP(test_models$baseline$cormat),
                    SMT(test_models$baseline$cormat, N = 500))) {
     expect_message(p <- plot(obj), "No plot is available")
     expect_null(p)
   }
+})
+
+test_that("NEST plots its empirical eigenvalues against the reference series", {
+  # few simulated datasets: the plot only needs a well-formed record
+  set.seed(42)
+  nest <- efa_nest(test_models$baseline$cormat, N = 500, n_datasets = 50)
+
+  expect_s3_class(plot(nest), "ggplot")
+
+  rec <- .retention_record(nest, "NEST")
+  expect_equal(rec$plot_type, "eigen")
+  # the shared eigenvalue plotter binds the series into one data frame, so the
+  # reference has to be as long as the empirical eigenvalues
+  expect_length(rec$reference, length(rec$y))
+  # the retained solution is marked, as in the other eigenvalue plots (the record
+  # carries no highlight when nothing is retained, so pin that there is one)
+  expect_gte(nest$n_factors[["NEST"]], 1)
+  expect_equal(rec$highlight, nest$n_factors[["NEST"]])
 })
 
 test_that("eigen plot of an empty record returns NULL with a message", {

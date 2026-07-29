@@ -6,9 +6,9 @@ kgc_efa_ml<- efa_kgc(test_models$baseline$cormat, eigen_type = "EFA", estimator 
 
 test_that("output class and dimensions are correct", {
   expect_s3_class(kgc_cor, "efa_retention")
-  expect_length(kgc_cor, 7)
+  expect_length(kgc_cor, 6)
   expect_s3_class(kgc_cor_smc, "efa_retention")
-  expect_length(kgc_cor_smc, 7)
+  expect_length(kgc_cor_smc, 6)
   expect_s3_class(kgc_raw, "efa_retention")
   expect_s3_class(kgc_efa_ml, "efa_retention")
 
@@ -52,6 +52,18 @@ test_that("identified number of factors is correct", {
 
   expect_equal(kgc_efa_ml$n_factors[["EFA"]], 1)
   expect_false(any(c("PCA", "SMC") %in% names(kgc_efa_ml$n_factors)))
+})
+
+test_that("the PCA suggestion matches nFactors::nScree", {
+  skip_if_not_installed("nFactors")
+  # nScree's nkaiser is the eigenvalues-greater-than-one count on the unaltered
+  # correlation matrix, i.e. the PCA variant of the Kaiser-Guttman criterion.
+  for (cmat in list(test_models$baseline$cormat, stats::cor(GRiPS_raw))) {
+    expect_equal(
+      efa_kgc(cmat, eigen_type = "PCA")$n_factors[["PCA"]],
+      nFactors::nScree(cmat, model = "components")$Components$nkaiser
+    )
+  }
 })
 
 # Create singular correlation matrix for tests

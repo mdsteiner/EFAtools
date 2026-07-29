@@ -22,7 +22,10 @@
 #'  matrix is replaced by the squared multiple correlations (SMCs) of the
 #'  indicators. If using "PCA", the diagonal values of the correlation matrices
 #'  are left to be 1. If using "EFA", eigenvalues are found on the correlation
-#'  matrices with the final communalities of an EFA solution as diagonal.
+#'  matrices with the final communalities of an EFA solution as diagonal. Default
+#'  is `c("PCA", "SMC", "EFA")`, i.e. all three, which costs roughly six times a
+#'  single non-EFA type: `"EFA"` fits an EFA to every simulated dataset and
+#'  dominates that total. Pass a single type if the run is time-critical.
 #' @param use character. Passed to [stats::cor()] if raw data
 #' is given as input. Default is "pairwise.complete.obs".
 #' @param cor_method character. One of `"pearson"`, `"spearman"`, or `"kendall"`,
@@ -224,7 +227,7 @@ efa_parallel <- function(x = NULL,
       if ("SMC" %in% eigen_type) {
         # compute smcs
         R_SMC <- R
-        diag(R_SMC) <- 1 - (1 / diag(solve(R)))
+        diag(R_SMC) <- .smc_start(R)
         eigvals_real_SMC <- matrix(eigen(R_SMC, symmetric = TRUE,
                                      only.values = TRUE)$values, ncol = 1)
         colnames(eigvals_real_SMC) <- "Real Eigenvalues"

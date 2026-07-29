@@ -14,7 +14,8 @@
 #'  of the indicators. If using "EFA", eigenvalues are found on the correlation
 #'  matrices with the final communalities of an exploratory factor analysis
 #'  solution (default is principal axis factoring extracting 1 factor) as
-#'  diagonal.
+#'  diagonal. Default is `c("PCA", "SMC", "EFA")`, i.e. all three; `"EFA"` is the
+#'  only one that fits a model.
 #' @param use character. Passed to [stats::cor()] if raw
 #'  data is given as input. Default is "pairwise.complete.obs".
 #' @param cor_method character. Correlation computed from raw data: `"pearson"`,

@@ -18,9 +18,9 @@ pa_perc <- efa_parallel(test_models$baseline$cormat, N = 500, eigen_type = "PCA"
 test_that("output class and dimensions are correct", {
   skip_if_not_slow()
   expect_s3_class(pa_cor, "efa_retention")
-  expect_length(pa_cor, 7)
+  expect_length(pa_cor, 6)
   expect_s3_class(pa_raw, "efa_retention")
-  expect_length(pa_raw, 7)
+  expect_length(pa_raw, 6)
   expect_s3_class(pa_cor_pca, "efa_retention")
   expect_s3_class(pa_nodat, "efa_retention")
   expect_s3_class(pa_craw, "efa_retention")
@@ -197,18 +197,7 @@ z <- x + y
 dat_sing <- matrix(c(x, y, z), ncol = 3)
 cor_sing <- stats::cor(dat_sing)
 
-burt <- matrix(c(1.00,  0.83,  0.81,  0.80,   0.71, 0.70, 0.54, 0.53,  0.59,  0.24, 0.13,
-                 0.83,  1.00,  0.87,  0.62,   0.59, 0.44, 0.58, 0.44,  0.23,  0.45,  0.21,
-                 0.81,  0.87,  1.00,  0.63,   0.37, 0.31, 0.30, 0.12,  0.33,  0.33,  0.36,
-                 0.80,  0.62,  0.63,  1.00,   0.49, 0.54, 0.30, 0.28,  0.42,  0.29, -0.06,
-                 0.71,  0.59,  0.37,  0.49,   1.00, 0.54, 0.34, 0.55,  0.40,  0.19, -0.10,
-                 0.70,  0.44,  0.31,  0.54,   0.54, 1.00, 0.50, 0.51,  0.31,  0.11,  0.10,
-                 0.54,  0.58,  0.30,  0.30,   0.34, 0.50, 1.00, 0.38,  0.29,  0.21,  0.08,
-                 0.53,  0.44,  0.12,  0.28,   0.55, 0.51, 0.38, 1.00,  0.53,  0.10, -0.16,
-                 0.59,  0.23,  0.33,  0.42,   0.40, 0.31, 0.29, 0.53,  1.00, -0.09, -0.10,
-                 0.24,  0.45,  0.33,  0.29,   0.19, 0.11, 0.21, 0.10, -0.09,  1.00,  0.41,
-                 0.13,  0.21,  0.36, -0.06,  -0.10, 0.10, 0.08, -0.16, -0.10, 0.41,  1.00),
-               nrow = 11, ncol = 11)
+burt <- .burt_cormat()
 
 
 #sim_NA <- data.frame(rnorm(30), rnorm(30), rnorm(30), rep("a", 30))
@@ -229,6 +218,28 @@ test_that("errors are thrown correctly", {
   expect_warning(efa_parallel(burt, N = 100, eigen_type = "PCA"), class = "efa_cor_smoothed")
   expect_error(efa_parallel(test_models$baseline$cormat, N = 15), class = "efa_n_too_small")
   expect_error(efa_parallel(test_models$baseline$cormat, N = 18), class = "efa_n_too_small")
+})
+
+test_that("the simulated PCA reference matches psych::fa.parallel", {
+  skip_if_not_slow()
+  skip_if_not_installed("psych")
+  # Both draw their reference eigenvalues from independent random normal data, so
+  # they agree only up to Monte-Carlo error; 2000 datasets bring that well inside
+  # the tolerance (observed max absolute difference ~0.0013).
+  R <- test_models$baseline$cormat
+
+  set.seed(42)
+  ours <- efa_parallel(R, N = 500, n_datasets = 2000, eigen_type = "PCA")
+
+  # fa.parallel reports its suggestion with cat(), so capture that output
+  invisible(utils::capture.output(
+    theirs <- suppressWarnings(psych::fa.parallel(R, n.obs = 500, fa = "pc",
+                                                  n.iter = 2000, plot = FALSE))
+  ))
+
+  expect_equal(.retention_record(ours, "PCA")$references$Means, theirs$pc.sim,
+               tolerance = 0.01)
+  expect_equal(ours$n_factors[["PCA"]], theirs$ncomp)
 })
 
 test_that(".parallel_chunks splits exactly into non-negative integer chunks", {

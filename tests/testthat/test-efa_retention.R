@@ -17,7 +17,6 @@ test_that(".new_efa_retention builds the documented shape for a known id", {
   expect_equal(unname(out$criterion["label"]), "Empirical Kaiser Criterion")
   expect_named(out$n_factors, c("BvA2017", "AM2019"))
   expect_equal(unname(out$n_factors), c(3, 2))
-  expect_equal(out$status, "ok")
 })
 
 test_that("format.efa_retention is the source of truth and honours the colour state", {

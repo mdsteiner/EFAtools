@@ -36,7 +36,8 @@ correlation matrices is replaced by the squared multiple correlations (SMCs)
 of the indicators. If using "EFA", eigenvalues are found on the correlation
 matrices with the final communalities of an exploratory factor analysis
 solution (default is principal axis factoring extracting 1 factor) as
-diagonal.}
+diagonal. Default is \code{c("PCA", "SMC", "EFA")}, i.e. all three; \code{"EFA"} is the
+only one that fits a model.}
 
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}} if raw
 data is given as input. Default is "pairwise.complete.obs".}

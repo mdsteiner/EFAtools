@@ -54,12 +54,14 @@ available ("ML" and "ULS"). The estimation tuning knobs are not passed here; the
 live in \code{estimate_control}.}
 }
 \value{
-An object of class \code{efa_retention} (see \code{\link[=print.efa_retention]{print.efa_retention()}} for
-the print method). Its main fields are:
+An object of class \code{efa_retention} (see \code{\link[=print.efa_retention]{print.efa_retention()}} and
+\code{\link[=plot.efa_retention]{plot.efa_retention()}} for the print and plot methods). Its main fields are:
 \item{n_factors}{A named numeric vector (\code{"NEST"}) with the suggested number of
 factors according to the NEST procedure.}
 \item{results}{A list with a single record holding the empirical eigenvalues
-and the reference eigenvalues.}
+and the reference eigenvalues. Only the positions the search actually tested
+carry a reference value; beyond the position at which it stopped the series is
+\code{NA}.}
 \item{settings}{A list of control settings used.}
 }
 \description{
@@ -89,6 +91,18 @@ that the \eqn{(k - 1)}-factor reference model used at each step stays
 over-identified. If no empirical eigenvalue falls at or below its reference
 within this range, every tested factor is accepted and this capped number is
 returned.
+
+Because each reference model carries the factors already retained, NEST does not
+lose accuracy for the strongly correlated factor structures where parallel
+analysis tends to under-extract, and it was among the more accurate criteria in
+the simulation studies of Brandenburg and Papenberg (2024) and Caron (2025). The
+price is runtime: a fresh set of \code{n_datasets} reference datasets is drawn and
+eigen-decomposed at every candidate factor count, which makes NEST one of the
+slowest criteria available here.
+
+The reference models are fitted without inequality constraints. A Heywood case in
+one of them leaves no unique variance to simulate the reference data from, so
+NEST aborts rather than continuing from an inadmissible reference.
 
 For details on the method, including simulation studies, see Achim (2017),
 Brandenburg and Papenberg (2024), and Caron (2025).

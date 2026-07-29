@@ -53,9 +53,9 @@ test_that("print and plot work on the aggregate object", {
   expect_match(txt, "Kaiser-Meyer-Olkin", fixed = TRUE)
   expect_match(txt, "marvellous", fixed = TRUE)
 
-  # one ggplot per plottable criterion that was run (MAP/NEST have no plot)
+  # one ggplot per plottable criterion that was run (MAP has no plot)
   p <- plot(nf_grips)
-  expect_named(p, c("CD", "EKC", "HULL", "PARALLEL"))
+  expect_named(p, c("CD", "EKC", "HULL", "NEST", "PARALLEL"))
   for (p_i in p) {
     expect_s3_class(p_i, "ggplot")
   }

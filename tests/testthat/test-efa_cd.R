@@ -4,7 +4,7 @@ cd_grips <- efa_cd(GRiPS_raw, N_pop = 1000, N_samples = 100)
 
 test_that("output class and dimensions are correct", {
   expect_s3_class(cd_grips, "efa_retention")
-  expect_length(cd_grips, 7)
+  expect_length(cd_grips, 6)
   expect_named(cd_grips$n_factors, "CD")
 
   rec <- .retention_record(cd_grips, "CD")
@@ -53,6 +53,11 @@ test_that("errors etc. are thrown correctly", {
 
   expect_warning(efa_cd(GRiPS_raw, n_factors_max = 5, N_pop = 500, N_samples = 20), class = "efa_cd_max_factors")
   expect_warning(efa_cd(grips_na, n_factors_max = 3, N_pop = 500, N_samples = 20), class = "efa_cd_missing_removed")
+
+  # With three indicators the one-factor model is just identified (df = 0), so no
+  # over-identified model exists to compare against and CD must abort rather than
+  # silently return zero factors. The check runs before any data are generated.
+  expect_error(efa_cd(GRiPS_raw[, 1:3]), class = "efa_cd_min_indicators")
 })
 
 rm(cd_grips, grips_na)

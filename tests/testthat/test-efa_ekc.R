@@ -6,9 +6,9 @@ ekc_both <- efa_ekc(test_models$baseline$cormat, N = 500,
 
 test_that("output class and dimensions are correct", {
   expect_s3_class(ekc_cor, "efa_retention")
-  expect_length(ekc_cor, 7)
+  expect_length(ekc_cor, 6)
   expect_s3_class(ekc_raw, "efa_retention")
-  expect_length(ekc_raw, 7)
+  expect_length(ekc_raw, 6)
 
   expect_equal(unname(ekc_cor$criterion["id"]), "EKC")
   expect_length(ekc_cor$results, 1)
@@ -38,6 +38,31 @@ test_that("reference eigenvalues are correct", {
 test_that("identified number of factors is correct", {
   expect_equal(ekc_cor$n_factors[["BvA2017"]], 3)
   expect_equal(ekc_raw$n_factors[["BvA2017"]], 1)
+})
+
+test_that("the BvA2017 reference series reproduces the published equation", {
+  # Braeken and van Assen (2017, p. 454) define the j-th reference eigenvalue as
+  # max(((J - sum_{i < j} lambda_i) / (J - j + 1)) * (1 + sqrt(J / N))^2, 1),
+  # transcribed here as an explicit loop -- an independent expression of the
+  # equation the vectorised cumsum form in efa_ekc() implements. The equation holds
+  # for any N, so one nominal value is used for both matrices.
+  N <- 500
+  for (cmat in list(test_models$baseline$cormat, stats::cor(GRiPS_raw))) {
+    lambda <- eigen(cmat, symmetric = TRUE, only.values = TRUE)$values
+    J <- ncol(cmat)
+
+    ref <- numeric(J)
+    for (j in seq_len(J)) {
+      used <- if (j == 1) 0 else sum(lambda[seq_len(j - 1)])
+      ref[j] <- max((J - used) / (J - j + 1) * (1 + sqrt(J / N))^2, 1)
+    }
+
+    out <- efa_ekc(cmat, N = N)
+    expect_equal(.retention_record(out, "BvA2017")$reference, ref)
+    # the paper's stopping rule: retain the leading run of eigenvalues above their
+    # reference value
+    expect_equal(out$n_factors[["BvA2017"]], sum(cumprod(lambda > ref)))
+  }
 })
 
 test_that("AM2019 yields a well-defined (non-NA) number of factors", {

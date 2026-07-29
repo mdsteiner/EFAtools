@@ -6,9 +6,9 @@ scree_efa_ml<- efa_scree(test_models$baseline$cormat, eigen_type = "EFA", estima
 
 test_that("output class and dimensions are correct", {
   expect_s3_class(scree_cor, "efa_retention")
-  expect_length(scree_cor, 7)
+  expect_length(scree_cor, 6)
   expect_s3_class(scree_cor_smc, "efa_retention")
-  expect_length(scree_cor_smc, 7)
+  expect_length(scree_cor_smc, 6)
   expect_s3_class(scree_raw, "efa_retention")
   expect_s3_class(scree_efa_ml, "efa_retention")
 

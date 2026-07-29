@@ -44,6 +44,18 @@
 #'  within this range, every tested factor is accepted and this capped number is
 #'  returned.
 #'
+#'  Because each reference model carries the factors already retained, NEST does not
+#'  lose accuracy for the strongly correlated factor structures where parallel
+#'  analysis tends to under-extract, and it was among the more accurate criteria in
+#'  the simulation studies of Brandenburg and Papenberg (2024) and Caron (2025). The
+#'  price is runtime: a fresh set of `n_datasets` reference datasets is drawn and
+#'  eigen-decomposed at every candidate factor count, which makes NEST one of the
+#'  slowest criteria available here.
+#'
+#'  The reference models are fitted without inequality constraints. A Heywood case in
+#'  one of them leaves no unique variance to simulate the reference data from, so
+#'  NEST aborts rather than continuing from an inadmissible reference.
+#'
 #'  For details on the method, including simulation studies, see Achim (2017),
 #'  Brandenburg and Papenberg (2024), and Caron (2025).
 #'
@@ -51,12 +63,14 @@
 #'   retention criteria in the [efa_retain()] function.
 #'
 #'
-#' @returns An object of class `efa_retention` (see [print.efa_retention()] for
-#'   the print method). Its main fields are:
+#' @returns An object of class `efa_retention` (see [print.efa_retention()] and
+#'   [plot.efa_retention()] for the print and plot methods). Its main fields are:
 #' \item{n_factors}{A named numeric vector (`"NEST"`) with the suggested number of
 #'   factors according to the NEST procedure.}
 #' \item{results}{A list with a single record holding the empirical eigenvalues
-#'   and the reference eigenvalues.}
+#'   and the reference eigenvalues. Only the positions the search actually tested
+#'   carry a reference value; beyond the position at which it stopped the series is
+#'   `NA`.}
 #' \item{settings}{A list of control settings used.}
 #'
 #' @source Achim, A. (2017). Testing the number of required dimensions in exploratory factor analysis. The Quantitative Methods for Psychology, 13(1), 64–74. https://doi.org/10.20982/tqmp.13.1.p064
@@ -189,16 +203,23 @@ efa_nest <- function(x, N = NA,
   # range) every tested factor was accepted, so the last tested model
   # (`nf == max_fac`) is retained rather than the just-past index.
   n_factors <- if (stopped) nf - 1L else nf
-  references <- references[seq_len(nf)]
+  # Only the tested positions have a reference; pad the rest with NA so the series
+  # aligns with the empirical eigenvalues (the shared eigenvalue plot binds the two
+  # into one data frame and drops the NAs).
+  references <- c(references[seq_len(nf)],
+                  rep(NA_real_, length(emp_eigen) - nf))
 
   results <- list(list(
     name = "NEST",
     label = "Suggested number of factors",
     n_factors = n_factors,
-    plot_type = "none",
+    plot_type = "eigen",
     x = seq_along(emp_eigen),
     y = emp_eigen,
-    reference = references
+    reference = references,
+    # mark the retained solution in the plot, as the other eigenvalue-based
+    # criteria do; there is nothing to mark when no factor is retained
+    highlight = if (n_factors >= 1) n_factors else NULL
   ))
 
   out <- .new_efa_retention(

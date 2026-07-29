@@ -4,11 +4,11 @@ smt_raw <- efa_smt(GRiPS_raw)
 
 test_that("output class and dimensions are correct", {
   expect_s3_class(smt_cor, "efa_retention")
-  expect_length(smt_cor, 7)
+  expect_length(smt_cor, 6)
   expect_s3_class(smt_raw, "efa_retention")
-  expect_length(smt_raw, 7)
+  expect_length(smt_raw, 6)
   expect_s3_class(smt_zero, "efa_retention")
-  expect_length(smt_zero, 7)
+  expect_length(smt_zero, 6)
 
   expect_named(smt_cor$n_factors, c("chi", "RMSEA", "AIC"))
   expect_equal(.retention_record(smt_cor, "chi")$plot_type, "none")
@@ -129,6 +129,51 @@ test_that("SMT propagates NA null statistics (no crash) for tiny N", {
   expect_s3_class(smt_tiny, "efa_retention")
   expect_true(is.na(.retention_record(smt_tiny, "chi")$y[1]))
   expect_true(is.na(.retention_record(smt_tiny, "RMSEA")$y[1]))
+
+  # Both sequential rules share one convention: an undefined value breaks the
+  # strictly sequential test, so the search stops there and no number is suggested
+  # rather than skipping ahead to a later model that meets the rule. Here that
+  # happens at the very first (null) model.
+  expect_true(is.na(smt_tiny$n_factors[["chi"]]))
+  expect_true(is.na(smt_tiny$n_factors[["RMSEA"]]))
+})
+
+test_that("the chi-square sequence matches stats::factanal", {
+  # Two independent ML optimisers on the same matrix: the agreement is tight but
+  # not exact, and how tight depends on the BLAS/LAPACK the two share. Pin it
+  # where the numerical environment is known rather than across every check
+  # flavour (as the comparison-data pin in test-efa_cd.R does).
+  skip_on_cran()
+  R <- test_models$baseline$cormat
+  N <- 500
+  # the chi record's y is c(p_null, p_1, ..., p_max_fac)
+  ps <- .retention_record(smt_cor, "chi")$y
+
+  compared <- 0L
+  for (k in seq_len(.det_max_factors(ncol(R)))) {
+    fa <- stats::factanal(covmat = R, factors = k, n.obs = N)
+    # Solutions with a uniqueness at the lower bound are boundary solutions: the
+    # two optimisers can then attain different local optima (EFAtools reaches the
+    # lower discrepancy on this matrix), so only interior solutions are comparable.
+    if (min(fa$uniquenesses) <= .uniqueness_floor + 1e-8) next
+    expect_equal(ps[k + 1], fa$PVAL[[1]], tolerance = 1e-6)
+    compared <- compared + 1L
+  }
+  # guard against a vacuously passing loop
+  expect_gt(compared, 0)
+})
+
+test_that("an inadmissible selected solution raises a classed warning", {
+  # On this matrix the chi-square and AIC rules both select a 6-factor model that
+  # has Heywood cases, while the RMSEA rule selects an admissible 4-factor model.
+  expect_warning(smt_bad <- efa_smt(test_models$case_11b$cormat, N = 500),
+                 class = "efa_smt_inadmissible")
+  expect_equal(smt_bad$n_factors[["chi"]], 6)
+  expect_equal(smt_bad$n_factors[["AIC"]], 6)
+
+  # a clean sequence stays silent
+  expect_no_warning(efa_smt(test_models$baseline$cormat, N = 500),
+                    class = "efa_smt_inadmissible")
 })
 
 test_that("settings are returned correctly", {
@@ -157,19 +202,6 @@ z <- x + y
 dat_sing <- matrix(c(x, y, z), ncol = 3)
 cor_sing <- stats::cor(dat_sing)
 
-burt <- matrix(c(1.00,  0.83,  0.81,  0.80,   0.71, 0.70, 0.54, 0.53,  0.59,  0.24, 0.13,
-                 0.83,  1.00,  0.87,  0.62,   0.59, 0.44, 0.58, 0.44,  0.23,  0.45,  0.21,
-                 0.81,  0.87,  1.00,  0.63,   0.37, 0.31, 0.30, 0.12,  0.33,  0.33,  0.36,
-                 0.80,  0.62,  0.63,  1.00,   0.49, 0.54, 0.30, 0.28,  0.42,  0.29, -0.06,
-                 0.71,  0.59,  0.37,  0.49,   1.00, 0.54, 0.34, 0.55,  0.40,  0.19, -0.10,
-                 0.70,  0.44,  0.31,  0.54,   0.54, 1.00, 0.50, 0.51,  0.31,  0.11,  0.10,
-                 0.54,  0.58,  0.30,  0.30,   0.34, 0.50, 1.00, 0.38,  0.29,  0.21,  0.08,
-                 0.53,  0.44,  0.12,  0.28,   0.55, 0.51, 0.38, 1.00,  0.53,  0.10, -0.16,
-                 0.59,  0.23,  0.33,  0.42,   0.40, 0.31, 0.29, 0.53,  1.00, -0.09, -0.10,
-                 0.24,  0.45,  0.33,  0.29,   0.19, 0.11, 0.21, 0.10, -0.09,  1.00,  0.41,
-                 0.13,  0.21,  0.36, -0.06,  -0.10, 0.10, 0.08, -0.16, -0.10, 0.41,  1.00),
-               nrow = 11, ncol = 11)
-
 test_that("errors are thrown correctly", {
   expect_error(efa_smt(1:5), class = "efa_input_not_matrix")
   expect_error(efa_smt(test_models$baseline$cormat), class = "efa_n_required")
@@ -179,7 +211,6 @@ test_that("errors are thrown correctly", {
   expect_error(efa_smt(cor_sing, N = 10), class = "efa_cor_singular")
   expect_error(efa_smt(matrix(rnorm(50), ncol = 2)), class = "efa_smt_underidentified") # underidentified case
   expect_error(efa_smt(matrix(rnorm(60), ncol = 3)), class = "efa_smt_underidentified") # just identified case
-  # expect_warning(efa_smt(burt, N = 170), "Matrix was not positive definite, smoothing was done")
 
   # SMT's sequential tests rest on a normal-theory chi-square that is not valid for
   # polychoric / tetrachoric correlations, so they are rejected rather than run.
@@ -189,4 +220,4 @@ test_that("errors are thrown correctly", {
                class = "efa_cor_method_unsupported")
 })
 
-rm(smt_cor, smt_raw, smt_zero, x, y, z, dat_sing, cor_sing, burt)
+rm(smt_cor, smt_raw, smt_zero, x, y, z, dat_sing, cor_sing)

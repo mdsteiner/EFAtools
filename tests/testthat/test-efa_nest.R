@@ -11,10 +11,10 @@ nest_raw <- efa_nest(GRiPS_raw)
 test_that("output class and dimensions are correct", {
   skip_if_not_slow()
   expect_s3_class(nest_cor, "efa_retention")
-  expect_length(nest_cor, 7)
+  expect_length(nest_cor, 6)
   expect_s3_class(nest_raw, "efa_retention")
-  expect_length(nest_raw, 7)
-  expect_equal(.retention_record(nest_cor, "NEST")$plot_type, "none")
+  expect_length(nest_raw, 6)
+  expect_equal(.retention_record(nest_cor, "NEST")$plot_type, "eigen")
 })
 
 
@@ -37,8 +37,12 @@ test_that("reference eigenvalues are correct", {
   eig_raw <- .retention_record(nest_raw, "NEST")$y
   ref_raw <- .retention_record(nest_raw, "NEST")$reference
 
-  expect_length(ref_cor, nf_cor + 1)
-  expect_length(ref_raw, nf_raw + 1)
+  # the reference series is padded with NA to the length of the empirical
+  # eigenvalues; only the tested positions carry a value
+  expect_length(ref_cor, length(eig_cor))
+  expect_length(ref_raw, length(eig_raw))
+  expect_equal(sum(!is.na(ref_cor)), nf_cor + 1)
+  expect_equal(sum(!is.na(ref_raw)), nf_raw + 1)
   expect_lte(eig_cor[nf_cor + 1], ref_cor[nf_cor + 1])
   expect_true(all(eig_cor[1:nf_cor] > ref_cor[1:nf_cor]))
   expect_lte(eig_raw[nf_raw + 1], ref_raw[nf_raw + 1])
@@ -104,8 +108,11 @@ test_that("the last accepted model is retained at the no-stop boundary", {
 
   expect_equal(nest_bound$n_factors[["NEST"]], 2)
   # every tested empirical eigenvalue exceeded its reference (no rejection), so
-  # the reference series has one entry per retained factor (not n_factors + 1)
-  expect_length(rec_bound$reference, nest_bound$n_factors[["NEST"]])
+  # the reference series has one value per retained factor (not n_factors + 1),
+  # padded with NA up to the number of empirical eigenvalues
+  expect_length(rec_bound$reference, length(rec_bound$y))
+  expect_equal(sum(!is.na(rec_bound$reference)),
+               nest_bound$n_factors[["NEST"]])
   expect_true(all(rec_bound$y[seq_len(nest_bound$n_factors[["NEST"]])] >
                     rec_bound$reference[seq_len(nest_bound$n_factors[["NEST"]])]))
 

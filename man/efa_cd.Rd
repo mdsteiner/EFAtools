@@ -76,6 +76,15 @@ the smallest number for which adding a further factor no longer significantly
 improves the reproduction of the observed eigenvalues is retained (Ruscio &
 Roche, 2012).
 
+Because it reproduces the observed correlation structure instead of a null model,
+CD was among the more accurate criteria across a broad range of conditions in
+Ruscio and Roche (2012). It is, however, the only criterion in this family that
+requires raw data, and by some margin the most computationally intensive one: a
+finite population of \code{N_pop} cases is generated and \code{N_samples} samples are drawn
+from it at every candidate factor count. It is therefore a good choice when the
+raw data are at hand and the runtime is acceptable, and a poor one for a quick
+look at a correlation matrix.
+
 Note that if the data contains missing values, these will be removed for the
 comparison data procedure using \code{\link[stats:na.fail]{stats::na.omit()}}. If
 missing data should be treated differently, e.g., by imputation, do this outside
