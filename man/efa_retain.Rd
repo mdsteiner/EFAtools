@@ -159,9 +159,11 @@ console. Default is FALSE.}
 \item{estimate_control}{an \code{\link[=estimate_control]{estimate_control()}} object with the estimation settings for the
 \code{\link[=efa_fit]{efa_fit()}} fits run by the criteria that fit a model (\code{\link[=efa_hull]{efa_hull()}}, \code{\link[=efa_kgc]{efa_kgc()}},
 \code{\link[=efa_scree]{efa_scree()}}, \code{\link[=efa_parallel]{efa_parallel()}}, \code{\link[=efa_nest]{efa_nest()}}, and \code{\link[=efa_smt]{efa_smt()}}). \code{NULL} (default) uses the
-\code{\link[=efa_fit]{efa_fit()}} defaults. \code{\link[=efa_cd]{efa_cd()}}, \code{\link[=efa_ekc]{efa_ekc()}}, and \code{\link[=efa_map]{efa_map()}} fit no model, so it does not
-apply to them, and \code{\link[=efa_smt]{efa_smt()}} fits with maximum likelihood by definition, so only
-\code{start_method} takes effect there. All fits are unrotated, so no rotation settings apply.}
+\code{\link[=efa_fit]{efa_fit()}} defaults. \code{\link[=efa_cd]{efa_cd()}}, \code{\link[=efa_ekc]{efa_ekc()}}, and \code{\link[=efa_map]{efa_map()}} run no \code{\link[=efa_fit]{efa_fit()}} model, so
+it does not apply to them. In \code{\link[=efa_kgc]{efa_kgc()}}, \code{\link[=efa_scree]{efa_scree()}}, and \code{\link[=efa_parallel]{efa_parallel()}} it only takes
+effect when the respective \code{eigen_type} includes \code{"EFA"}, since no model is fitted otherwise,
+and \code{\link[=efa_smt]{efa_smt()}} fits with maximum likelihood by definition, so only \code{start_method} takes
+effect there. All fits are unrotated, so no rotation settings apply.}
 }
 \value{
 A list of class \code{c("efa_retain", "N_FACTORS")}, the trailing class
@@ -178,7 +180,9 @@ per criterion and, where a criterion has several variants, per variant
 suggestion (the scree plot) are not included.}
 \item{not_run}{A named character vector with the criteria that were skipped
 or failed and the reason, or \code{NULL} if all requested criteria ran.}
-\item{settings}{A list of the settings used.}
+\item{settings}{A list of the settings used. Its \code{criteria} element records the
+requested criteria, in the order they were given, while \code{outputs} and \code{n_factors}
+are in the order in which the criteria were run.}
 }
 \description{
 Among the most important decisions for an exploratory factor analysis (EFA) is

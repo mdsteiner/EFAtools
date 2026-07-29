@@ -8,6 +8,8 @@
 
 * `efa_nest()` results can now be plotted: the plot shows the empirical eigenvalues together with the reference eigenvalues NEST compared them against, with the retained number of factors marked.
 
+* `efa_retain()` now summarises its results in one line under the section heading: how many suggestions how many criteria made, the range they span, and the most common number of factors.
+
 ## Ordinal Correlations
 
 * A polychoric or tetrachoric pair whose response table shows a perfect ordering is only bounded, not identified, by the data, and is now reported at 0.9999 (or -0.9999 for a perfectly reversed table) with a warning naming the affected pairs, instead of at an operating-system-dependent value.

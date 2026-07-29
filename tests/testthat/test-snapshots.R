@@ -113,3 +113,16 @@ test_that("print.efa_retain output is stable", {
                    eigen_type_other = c("PCA", "SMC"))
   expect_snapshot(print(nf))
 })
+
+test_that("print.efa_retain summarises the criteria's suggestions", {
+  local_reproducible_output()
+
+  # A cheap deterministic set whose criteria disagree, pinning the summary line under
+  # the section rule. The modal value is counted one vote per criterion: the empirical
+  # Kaiser criterion and the Kaiser-Guttman criterion both suggest 3, while the
+  # internally tied minimum average partial (1 and 3) is undecided and casts no vote
+  # rather than casting two.
+  nf <- efa_retain(test_models$baseline$cormat, N = 500, suitability = FALSE,
+                   criteria = c("EKC", "KGC", "MAP"), eigen_type_other = "PCA")
+  expect_snapshot(print(nf))
+})

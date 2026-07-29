@@ -10,9 +10,9 @@
 # that fits a model through efa_fit() (HULL, KGC, PARALLEL, SCREE, NEST, SMT)
 # receives `ctl$estimate_control`, so the estimation settings reach all of them
 # and not just some; those that also forward arguments to efa_fit() receive them
-# via `ctl$dots`. CD, EKC and MAP fit no model (CD's `max_iter` caps its own
-# comparison-data generation, not an EFA), so neither applies to them. `poly_ok =
-# FALSE` marks the criteria that do not support polychoric/tetrachoric
+# via `ctl$dots`. CD, EKC and MAP run no efa_fit() model (CD's `max_iter` caps
+# its own comparison-data generation, not an EFA), so neither applies to them.
+# `poly_ok = FALSE` marks the criteria that do not support polychoric/tetrachoric
 # correlations -- either because they compare the data against continuous
 # reference data (CD, PARALLEL, NEST, HULL) or because their normal-theory
 # chi-square test is not valid for such correlations (SMT); these are skipped

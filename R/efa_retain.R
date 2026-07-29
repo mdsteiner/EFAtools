@@ -99,9 +99,11 @@
 #' @param estimate_control an [estimate_control()] object with the estimation settings for the
 #'  [efa_fit()] fits run by the criteria that fit a model ([efa_hull()], [efa_kgc()],
 #'  [efa_scree()], [efa_parallel()], [efa_nest()], and [efa_smt()]). `NULL` (default) uses the
-#'  [efa_fit()] defaults. [efa_cd()], [efa_ekc()], and [efa_map()] fit no model, so it does not
-#'  apply to them, and [efa_smt()] fits with maximum likelihood by definition, so only
-#'  `start_method` takes effect there. All fits are unrotated, so no rotation settings apply.
+#'  [efa_fit()] defaults. [efa_cd()], [efa_ekc()], and [efa_map()] run no [efa_fit()] model, so
+#'  it does not apply to them. In [efa_kgc()], [efa_scree()], and [efa_parallel()] it only takes
+#'  effect when the respective `eigen_type` includes `"EFA"`, since no model is fitted otherwise,
+#'  and [efa_smt()] fits with maximum likelihood by definition, so only `start_method` takes
+#'  effect there. All fits are unrotated, so no rotation settings apply.
 #' @param ... Further arguments passed to [efa_fit()] in
 #' [efa_parallel()] (also within [efa_hull()]), [efa_kgc()], [efa_scree()], and [efa_nest()].
 #' The estimation tuning knobs are not passed here; they live in `estimate_control`. Note that
@@ -149,7 +151,9 @@
 #'   suggestion (the scree plot) are not included.}
 #' \item{not_run}{A named character vector with the criteria that were skipped
 #'   or failed and the reason, or `NULL` if all requested criteria ran.}
-#' \item{settings}{A list of the settings used.}
+#' \item{settings}{A list of the settings used. Its `criteria` element records the
+#'   requested criteria, in the order they were given, while `outputs` and `n_factors`
+#'   are in the order in which the criteria were run.}
 #'
 #' @seealso [efa_screen()] for data screening before retention, and [efa_fit()] to extract
 #'  the chosen number of factors.
@@ -292,6 +296,9 @@ efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARA
   run <- intersect(names(.retention_registry), criteria)
   outputs <- list()
   not_run <- character(0)   # id -> reason it was skipped or failed
+  # the first criterion error, chained into the all-failed abort below so the underlying
+  # cause travels with it (a criterion that was skipped raises no condition to chain)
+  first_cnd <- NULL
 
   for (id in run) {
 
@@ -343,6 +350,7 @@ efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARA
       reason <- trimws(paste(cnd$message, collapse = " "))
       if (!nzchar(reason)) reason <- conditionMessage(cnd)
       reason <- gsub("\\s+", " ", trimws(reason))
+      if (is.null(first_cnd)) first_cnd <- cnd
       cli::cli_warn(
         c("{.val {id}} could not be run and is excluded from the results.",
           "i" = "Error: {reason}"),
@@ -366,7 +374,10 @@ efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARA
       c("None of the requested factor retention criteria could be run.",
         "x" = "Could not run: {.val {names(not_run)}}.",
         "i" = "See the warnings above for the reason in each case."),
-      class = "efa_no_criteria"
+      class = "efa_no_criteria",
+      # chains the first criterion error onto the abort, so the cause is reported with it
+      # rather than only in the warning that has already scrolled past
+      parent = first_cnd
     )
   }
 
@@ -469,10 +480,9 @@ format.efa_retain <- function(x, ...) {
       bart <- x$suitability$bartlett
       pval <- bart$p_value
       if (!is.null(pval) && !is.na(pval)) {
-        p_text <- if (pval < .001) "p < .001" else paste0("p = ", round(pval, 3))
         stats_text <- paste0("\u03c7\u00b2(", bart$df, ") = ",
-                             round(bart$chisq, 2), ", ", p_text, ".")
-        if (pval < .05) {
+                             round(bart$chisq, 2), ", p", .screen_p_str(pval), ".")
+        if (.screen_is_sig(pval)) {
           cli::cli_bullets(c("v" = paste0(
             "The Bartlett's test of sphericity was significant at an alpha level of .05: ",
             stats_text,
@@ -490,31 +500,13 @@ format.efa_retain <- function(x, ...) {
 
       kmo <- x$suitability$kmo$KMO
       if (!is.null(kmo) && !is.na(kmo)) {
-        # Kaiser's verbal labels for the KMO ranges
-        kmo_label <- if (kmo >= .9) {
-          "marvellous"
-        } else if (kmo >= .8) {
-          "meritorious"
-        } else if (kmo >= .7) {
-          "middling"
-        } else if (kmo >= .6) {
-          "mediocre"
-        } else if (kmo >= .5) {
-          "miserable"
-        } else {
-          "unacceptable"
-        }
-        verdict <- if (kmo < .5) {
-          "These data are not suitable for factor analysis."
-        } else if (kmo < .6) {
-          "These data are hardly suitable for factor analysis."
-        } else {
-          "These data are probably suitable for factor analysis."
-        }
-        kmo_text <- paste0("The Kaiser-Meyer-Olkin criterion is ", kmo_label,
-                           " (KMO = ", round(kmo, 3), "). ", verdict)
-        kmo_symbol <- if (kmo >= .7) "v" else if (kmo >= .5) "!" else "x"
-        cli::cli_bullets(stats::setNames(kmo_text, kmo_symbol))
+        # Kaiser's verbal bands, shared with efa_kmo() and efa_screen() so that the same
+        # value is never reported at two different severities
+        band <- .kmo_band(kmo)
+        kmo_text <- paste0("The Kaiser-Meyer-Olkin criterion is ", band$label,
+                           " (KMO = ", round(kmo, 3), "). These data are ",
+                           band$suitability, " suitable for factor analysis.")
+        cli::cli_bullets(stats::setNames(kmo_text, band$symbol))
       } else {
         cli::cli_bullets(c("!" =
           "The overall KMO value for your data is not available."))
@@ -523,11 +515,20 @@ format.efa_retain <- function(x, ...) {
       cli::cli_text("")
     }
 
-    cli::cli_rule(left = "Number of factors suggested by the factor retention criteria")
-
     is_visual <- vapply(names(x$outputs),
                         function(id) isTRUE(.retention_registry[[id]]$visual),
                         logical(1))
+
+    cli::cli_rule(left = "Suggested number of factors")
+
+    # one line answering "how many factors, and how much do the criteria disagree?"
+    # before the per-criterion detail; interpolated as a variable so that cli
+    # substitutes the value instead of re-parsing it as a template
+    summary_line <- .retention_summary(x$outputs[!is_visual])
+    if (!is.null(summary_line)) {
+      cli::cli_text("")
+      cli::cli_text("{summary_line}")
+    }
 
     # criteria with a numeric suggestion: one group with one bullet per variant
     # (a variant the criterion could not determine shows as "not applicable"),
@@ -558,6 +559,64 @@ format.efa_retain <- function(x, ...) {
     }
 
   })
+}
+
+# One-line summary of the criteria's suggestions for format.efa_retain(): how many
+# suggestions how many criteria made, the range they span, and, when they disagree, the
+# most common suggestion. The most common value is counted with ONE VOTE PER CRITERION --
+# each criterion's own modal variant -- and never per variant, so that a criterion with
+# several variants (e.g. the Hull method with three goodness-of-fit indices) does not
+# outvote a single-variant one. A criterion whose variants have no single modal value is
+# undecided and casts no vote. `outputs` are the criterion results with a numeric
+# suggestion (the visual ones are excluded by the caller); returns NULL when none of them
+# determined a number, or when a single suggestion would only restate the bullet below.
+.retention_summary <- function(outputs) {
+
+  # per criterion, the numbers it determined (a variant that came out NA determined none)
+  per_crit <- lapply(outputs, function(o) o$n_factors[!is.na(o$n_factors)])
+  per_crit <- per_crit[lengths(per_crit) > 0]
+  if (length(per_crit) == 0) return(NULL)
+
+  nf <- unlist(per_crit, use.names = FALSE)
+  n_sug <- length(nf)
+  n_crit <- length(per_crit)
+  # there is nothing to summarise about a lone suggestion; the bullet below already
+  # carries the number
+  if (n_sug == 1L) return(NULL)
+
+  counts <- paste0(n_sug, " ", .screen_plural(n_sug, "suggestion", "suggestions"),
+                   " from ", n_crit, " ",
+                   .screen_plural(n_crit, "criterion", "criteria"))
+
+  if (min(nf) == max(nf)) {
+    return(paste0(counts, ", all suggesting ", nf[1], " ",
+                  .screen_plural(nf[1], "factor", "factors"), "."))
+  }
+
+  # the most frequent value(s) of a vector, with how often the winner occurred; table()
+  # names its cells in ascending numeric order, so tied values come out sorted
+  modal <- function(v) {
+    tab <- table(v)
+    list(values = as.numeric(names(tab))[tab == max(tab)], n = max(tab))
+  }
+  votes <- unlist(lapply(per_crit, function(v) {
+    m <- modal(v)
+    if (length(m$values) == 1L) m$values else NULL
+  }))
+
+  spread <- paste0(counts, ", ranging from ", min(nf), " to ", max(nf), " factors")
+  if (is.null(votes)) return(paste0(spread, "."))
+
+  # a most common value only means something once some value was chosen by more than one
+  # criterion. Where every deciding criterion picked a different number there is none, and
+  # listing them all under "most common" would read as agreement where there is the
+  # maximum possible disagreement, so the range is left to speak for itself.
+  best <- modal(votes)
+  if (best$n == 1L) return(paste0(spread, "."))
+
+  paste0(spread, " (most common: ",
+         .screen_and_list(as.character(best$values)), ").")
+
 }
 
 #' Plot method for efa_retain objects

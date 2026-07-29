@@ -205,15 +205,17 @@ format.efa_screen <- function(x, digits = 3, ...) {
 
 # Kaiser & Rice (1974) verbal bands for the overall KMO value, reproduced from
 # format.efa_kmo: the highest band the value clears gives its label, the suitability it
-# implies, and the alert style (success >= .7, warning >= .6, danger below).
+# implies, and the severity (success >= .7, warning >= .6, danger below) as both an alert
+# function and the equivalent cli_bullets() symbol, so that callers reporting the value as
+# an alert and as a bullet cannot drift apart.
 .kmo_band <- function(kmo) {
   bands <- list(
-    list(min = .9,   label = "marvellous",   alert = cli::cli_alert_success, suitability = "probably"),
-    list(min = .8,   label = "meritorious",  alert = cli::cli_alert_success, suitability = "probably"),
-    list(min = .7,   label = "middling",     alert = cli::cli_alert_success, suitability = "probably"),
-    list(min = .6,   label = "mediocre",     alert = cli::cli_alert_warning, suitability = "probably"),
-    list(min = .5,   label = "miserable",    alert = cli::cli_alert_danger,  suitability = "hardly"),
-    list(min = -Inf, label = "unacceptable", alert = cli::cli_alert_danger,  suitability = "not")
+    list(min = .9,   label = "marvellous",   alert = cli::cli_alert_success, symbol = "v", suitability = "probably"),
+    list(min = .8,   label = "meritorious",  alert = cli::cli_alert_success, symbol = "v", suitability = "probably"),
+    list(min = .7,   label = "middling",     alert = cli::cli_alert_success, symbol = "v", suitability = "probably"),
+    list(min = .6,   label = "mediocre",     alert = cli::cli_alert_warning, symbol = "!", suitability = "probably"),
+    list(min = .5,   label = "miserable",    alert = cli::cli_alert_danger,  symbol = "x", suitability = "hardly"),
+    list(min = -Inf, label = "unacceptable", alert = cli::cli_alert_danger,  symbol = "x", suitability = "not")
   )
   Find(function(b) kmo >= b$min, bands)
 }

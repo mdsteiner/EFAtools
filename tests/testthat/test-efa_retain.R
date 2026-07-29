@@ -139,6 +139,16 @@ test_that("an all-failed run is a hard error", {
                                criteria = "CD")),
     class = "efa_no_criteria"
   )
+
+  # when a criterion failed with an error rather than being skipped, its condition is
+  # chained onto the abort, so the cause is reported with it
+  err <- tryCatch(
+    suppressWarnings(efa_retain(test_models$baseline$cormat, suitability = FALSE,
+                                criteria = "EKC")),
+    error = function(e) e
+  )
+  expect_s3_class(err, "efa_no_criteria")
+  expect_s3_class(err$parent, "efa_n_required")
 })
 
 x <- rnorm(100)

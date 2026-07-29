@@ -19,6 +19,20 @@ test_that(".new_efa_retention builds the documented shape for a known id", {
   expect_equal(unname(out$n_factors), c(3, 2))
 })
 
+test_that(".n_factors_ctl() defaults mirror efa_retain()'s", {
+  # efa_power() calls .n_factors_ctl() relying on its defaults, so a default drifting from
+  # efa_retain()'s would silently retain factors under undocumented settings.
+  ctl <- .n_factors_ctl()
+  shared <- intersect(names(ctl), names(formals(efa_retain)))
+  ret <- lapply(formals(efa_retain)[shared], eval)
+  # efa_retain() resolves these with a single-choice match.arg(), so its effective default
+  # is the first element; every other default (including the several.ok ones, whose whole
+  # vector is the default) has to match .n_factors_ctl()'s in full
+  single <- c("use", "cor_method", "estimator", "eigen_type_HULL", "decision_rule")
+  ret[single] <- lapply(ret[single], `[`, 1L)
+  expect_equal(ctl[shared], ret[shared])
+})
+
 test_that("format.efa_retention is the source of truth and honours the colour state", {
   ekc <- EKC(test_models$baseline$cormat, N = 500)
 

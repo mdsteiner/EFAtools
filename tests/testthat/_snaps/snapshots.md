@@ -160,7 +160,9 @@
     Code
       print(nf)
     Output
-      -- Number of factors suggested by the factor retention criteria ----------------
+      -- Suggested number of factors -------------------------------------------------
+      
+      8 suggestions from 4 criteria, ranging from 1 to 3 factors (most common: 3).
       
       Empirical Kaiser Criterion
       * Original implementation (Braeken & van Assen, 2017): 3
@@ -177,4 +179,23 @@
       * Sequential chi-square model tests: 3
       * Lower bound of RMSEA 90% CI: 2
       * Akaike Information Criterion: 3
+
+# print.efa_retain summarises the criteria's suggestions
+
+    Code
+      print(nf)
+    Output
+      -- Suggested number of factors -------------------------------------------------
+      
+      4 suggestions from 3 criteria, ranging from 1 to 3 factors (most common: 3).
+      
+      Empirical Kaiser Criterion
+      * Original implementation (Braeken & van Assen, 2017): 3
+      
+      Kaiser-Guttman criterion
+      * PCA eigenvalues: 3
+      
+      Minimum average partial
+      * Original implementation (TR2): 1
+      * Revised implementation (TR4): 3
 
