@@ -53,7 +53,7 @@
 #'  suitability for factor analysis.
 #'
 #'  [efa_retain()] as a wrapper function for this function,
-#'  [EFAtools::efa_kmo()] and several factor retention criteria.
+#'  [efa_kmo()] and several factor retention criteria.
 #'
 #' @export
 #'

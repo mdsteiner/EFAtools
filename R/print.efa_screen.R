@@ -117,17 +117,22 @@ format.efa_screen <- function(x, digits = 3, ...) {
 
     cond <- x$condition
     cstr <- formatC(cond, format = "f", digits = digits)
-    ci <- sqrt(cond)   # Belsley-Kuh-Welsch condition index
+    # The 10/30 cut-offs are Belsley-Kuh-Welsch thresholds for the condition *index*, the
+    # square root of the condition number, so the index is shown alongside the number the
+    # section reports: quoting the rule without the quantity it governs invites the value
+    # to be read against the wrong scale.
+    ci <- sqrt(cond)
+    cistr <- formatC(ci, format = "f", digits = digits)
     ci_strong <- !is.na(ci) && ci > 30
     if (ci_strong) {
       cli::cli_alert_danger(
-        "Condition number: {cstr}. Strong multicollinearity (large values signal near-collinear variables).")
+        "Condition number: {cstr} (condition index {cistr}). Strong multicollinearity (index above 30; Belsley, Kuh & Welsch, 1980).")
     } else if (!is.na(ci) && ci > 10) {
       cli::cli_alert_warning(
-        "Condition number: {cstr}. Moderate multicollinearity (large values signal near-collinear variables).")
+        "Condition number: {cstr} (condition index {cistr}). Moderate multicollinearity (index 10 to 30; Belsley, Kuh & Welsch, 1980).")
     } else {
       cli::cli_alert_success(
-        "Condition number: {cstr}. No concern (large values signal near-collinear variables).")
+        "Condition number: {cstr} (condition index {cistr}). No concern (index below 10; Belsley, Kuh & Welsch, 1980).")
     }
 
     # -- Per-variable diagnostics ----------------------------------------------
@@ -170,13 +175,24 @@ format.efa_screen <- function(x, digits = 3, ...) {
       .print_efa_rule("Outliers")
       o <- x$outliers
       if (inherits(o, "efa_screen_no_outliers")) {
-        cli::cli_alert_warning(
-          "Outlier diagnostics were skipped (singular complete-case covariance).")
+        cli::cli_alert_warning("Outlier diagnostics were skipped.")
+        # The recorded reason, as in the classical-fallback branch below: which of the
+        # three ways the complete-case covariance failed decides what the user should do,
+        # and "singular" alone points at collinearity even when the cause is missingness.
+        if (!is.null(o$reason)) cli::cli_text(o$reason)
       } else {
         if (identical(o$method, "classical")) {
           cli::cli_alert_warning(paste(
             "A robust (MCD) covariance could not be computed; classical Mahalanobis",
             "distances were used."))
+          # The recorded reason (too few complete cases, or an exact fit) and the
+          # consequence of the fallback: the classical covariance is computed from every
+          # observation, outliers included, so the diagnostic no longer has the
+          # high-breakdown property the MCD gives it.
+          if (!is.null(o$fallback_reason)) cli::cli_text(o$fallback_reason)
+          cli::cli_text(paste(
+            "These distances come from a covariance the outliers themselves inflate, so",
+            "the diagnostic is no longer high-breakdown and tends to under-flag."))
         }
         nf <- length(o$flagged)
         cstr_o <- format(o$cutoff, digits = digits, scientific = FALSE)
@@ -203,19 +219,19 @@ format.efa_screen <- function(x, digits = 3, ...) {
   })
 }
 
-# Kaiser & Rice (1974) verbal bands for the overall KMO value, reproduced from
-# format.efa_kmo: the highest band the value clears gives its label, the suitability it
-# implies, and the severity (success >= .7, warning >= .6, danger below) as both an alert
-# function and the equivalent cli_bullets() symbol, so that callers reporting the value as
-# an alert and as a bullet cannot drift apart.
+# Kaiser & Rice (1974) verbal bands for the overall KMO value, and the single place they
+# are written down: the highest band the value clears gives its label, the suitability it
+# implies, and the severity (success >= .7, warning >= .6, danger below) as an alert
+# function, the matching colour, and the equivalent cli_bullets() symbol, so that callers
+# reporting the same value as an alert, a coloured label, or a bullet cannot drift apart.
 .kmo_band <- function(kmo) {
   bands <- list(
-    list(min = .9,   label = "marvellous",   alert = cli::cli_alert_success, symbol = "v", suitability = "probably"),
-    list(min = .8,   label = "meritorious",  alert = cli::cli_alert_success, symbol = "v", suitability = "probably"),
-    list(min = .7,   label = "middling",     alert = cli::cli_alert_success, symbol = "v", suitability = "probably"),
-    list(min = .6,   label = "mediocre",     alert = cli::cli_alert_warning, symbol = "!", suitability = "probably"),
-    list(min = .5,   label = "miserable",    alert = cli::cli_alert_danger,  symbol = "x", suitability = "hardly"),
-    list(min = -Inf, label = "unacceptable", alert = cli::cli_alert_danger,  symbol = "x", suitability = "not")
+    list(min = .9,   label = "marvellous",   colour = cli::col_green,  alert = cli::cli_alert_success, symbol = "v", suitability = "probably"),
+    list(min = .8,   label = "meritorious",  colour = cli::col_green,  alert = cli::cli_alert_success, symbol = "v", suitability = "probably"),
+    list(min = .7,   label = "middling",     colour = cli::col_green,  alert = cli::cli_alert_success, symbol = "v", suitability = "probably"),
+    list(min = .6,   label = "mediocre",     colour = cli::col_yellow, alert = cli::cli_alert_warning, symbol = "!", suitability = "probably"),
+    list(min = .5,   label = "miserable",    colour = cli::col_red,    alert = cli::cli_alert_danger,  symbol = "x", suitability = "hardly"),
+    list(min = -Inf, label = "unacceptable", colour = cli::col_red,    alert = cli::cli_alert_danger,  symbol = "x", suitability = "not")
   )
   Find(function(b) kmo >= b$min, bands)
 }
@@ -223,7 +239,7 @@ format.efa_screen <- function(x, digits = 3, ...) {
 # TRUE when a p-value is present and below .05 (guards NA / NULL p-values).
 .screen_is_sig <- function(p) !is.null(p) && !is.na(p) && p < .05
 
-# p-value tail formatting shared by the Bartlett and MVN lines (matches format.efa_bartlett).
+# p-value tail formatting shared by the Bartlett and MVN lines and by format.efa_bartlett.
 .screen_p_str <- function(p) {
   if (is.null(p) || is.na(p)) " = NA" else if (p < .001) " < .001" else paste0(" = ", round(p, 3))
 }
@@ -254,6 +270,14 @@ format.efa_screen <- function(x, digits = 3, ...) {
     disp[num] <- lapply(disp[num], round, digits)
     names(disp)[names(disp) == "smc"] <- "SMC"
     names(disp)[names(disp) == "kmo_i"] <- "MSA"
+    # `missing` is a percentage; the bare header reads as a count next to `variance`,
+    # which is on the data's own scale.
+    names(disp)[names(disp) == "missing"] <- "missing%"
+    # A `flags` entry is NA for a variable treated as continuous, i.e. "no category
+    # screening applies". Printed as <NA> that reads as a failed computation, so drop
+    # the column when it says nothing at all and render the remaining NAs as a dash.
+    if (all(is.na(disp$flags))) disp$flags <- NULL
+    else disp$flags[is.na(disp$flags)] <- "-"
     disp
   } else {
     # make.unique() guards against duplicate variable names (a correlation matrix with
@@ -355,7 +379,25 @@ format.efa_screen <- function(x, digits = 3, ...) {
     }
     if (!inherits(x$outliers, "efa_screen_no_outliers")) {
       nf <- length(x$outliers$flagged)
-      if (nf > 0L) {
+      nominal <- 1 - (x$settings$outlier_cutoff %||% 0.975)
+      frac <- nf / x$outliers$n_complete
+      # Far more flags than the cutoff nominally admits is not a contamination count to
+      # work through: a high-breakdown estimate fitted to the most concentrated half of a
+      # clustered or mixture sample legitimately calls the rest distant, so the excess is
+      # evidence that the data are not elliptically distributed. The rate alone is not
+      # enough to draw that conclusion - at a tight cutoff, or in a small sample, a couple
+      # of genuine outliers clear it - so the flagged set must also be too long to work
+      # through case by case, which is what makes the ordinary advice below unhelpful.
+      if (nf >= 10L && frac > 5 * nominal) {
+        push("!", paste0(nf, " of ", x$outliers$n_complete, " observations (",
+                         round(100 * frac), "%) exceed the outlier cutoff, far above the ",
+                         # keep a significant digit: a tight cutoff has a nominal rate well
+                         # below 0.1%, which rounds to a self-defeating "0%"
+                         format(signif(100 * nominal, 2), trim = TRUE, scientific = FALSE),
+                         "% expected under multivariate normality; this usually means the",
+                         " data are not elliptically distributed (subgroups or a mixture)",
+                         " rather than that this many cases are contaminated."))
+      } else if (nf > 0L) {
         push("!", paste0(nf, " ", .screen_plural(nf, "observation was", "observations were"),
                          " flagged as ",
                          .screen_plural(nf, "a potential multivariate outlier", "potential multivariate outliers"),

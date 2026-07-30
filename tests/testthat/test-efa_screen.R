@@ -117,10 +117,11 @@ test_that("Bartlett's test is skipped with a note when N is unavailable", {
 })
 
 test_that("settings are returned correctly", {
-  expect_named(scr_cor$settings, c("N", "n_obs", "use", "cor_method"))
+  expect_named(scr_cor$settings, c("N", "n_obs", "use", "cor_method", "outlier_cutoff"))
   expect_equal(scr_cor$settings$N, 500)
   expect_equal(scr_cor$settings$use, "pairwise.complete.obs")
   expect_equal(scr_cor$settings$cor_method, "pearson")
+  expect_equal(scr_cor$settings$outlier_cutoff, 0.975)
 
   # n_obs is the number of supplied raw rows (NA for a correlation-matrix input)
   expect_true(is.na(scr_cor$settings$n_obs))
@@ -208,6 +209,12 @@ test_that("factor columns are coded (not corrupted) and an unused ordinal catego
                tolerance = 1e-10, ignore_attr = TRUE)
   # f1's unused middle level (c -> code 3, between b = 2 and d = 4) is an empty category
   expect_match(scr$per_item["f1", "flags"], "empty")
+
+  # the category counts are labelled by the original levels, not by the integer codes,
+  # and only the observed levels appear (f1 never uses "c")
+  expect_equal(names(scr$categories$f1), c("a", "b", "d"))
+  expect_equal(names(scr$categories$f2), c("lo", "mid", "hi"))
+  expect_equal(scr$categories$f1, table(dat$f1)[c("a", "b", "d")], ignore_attr = TRUE)
 })
 
 test_that("raw data with duplicate column names is handled positionally, not by name", {
@@ -403,8 +410,10 @@ scr_out <- efa_screen(X_out, seed = 1)
 test_that("robust outlier diagnostics have the expected structure", {
   o <- scr_out$outliers
   expect_named(o, c("distances", "cutoff", "flagged", "center", "cov", "method",
-                    "n_complete"))
+                    "fallback_reason", "n_complete"))
   expect_equal(o$method, "mcd")
+  # nothing to explain when the robust estimate was available
+  expect_null(o$fallback_reason)
   expect_equal(o$n_complete, n_out)
   expect_length(o$distances, n_out)
   # cutoff is on the distance scale (comparable to `distances`), and `flagged` is exactly
@@ -561,6 +570,9 @@ test_that("outlier diagnostics fall back to classical distances and degrade grac
   )
   expect_equal(o$method, "classical")
   expect_length(o$distances, 8L)
+  # the recorded reason names the branch actually taken: n <= 2p is decided before
+  # .fast_mcd() runs, so this case is "too few complete cases", never an exact fit
+  expect_match(o$fallback_reason, "too few complete cases")
 
   # collinear variables with too few cases: even the classical covariance is singular,
   # so the diagnostic is skipped with a classed note
@@ -573,6 +585,29 @@ test_that("outlier diagnostics fall back to classical distances and degrade grac
     class = "efa_screen_no_outliers"
   )
   expect_s3_class(o2, "efa_screen_no_outliers")
+  # each of the three ways the complete-case covariance can fail names itself, so the
+  # report never sends a reader after collinearity when the cause is missingness or a
+  # non-finite value
+  expect_match(o2$reason, "linearly dependent")
+
+  set.seed(6)
+  Xnf <- matrix(rnorm(8 * 4), 8, 4)
+  Xnf[3, 2] <- Inf
+  expect_warning(
+    o4 <- EFAtools:::.screen_outliers(Xnf, mcd_alpha = 0.5, outlier_cutoff = 0.975,
+                                      seed = 1),
+    class = "efa_screen_no_outliers"
+  )
+  expect_match(o4$reason, "not finite")
+
+  X0 <- matrix(rnorm(5 * 4), 5, 4)
+  X0[, 1] <- NA                              # no complete case at all
+  expect_warning(
+    o5 <- EFAtools:::.screen_outliers(X0, mcd_alpha = 0.5, outlier_cutoff = 0.975,
+                                      seed = 1),
+    class = "efa_screen_no_outliers"
+  )
+  expect_match(o5$reason, "too few complete cases")
 
   # near-collinear variables are skipped on the same terms as exactly collinear ones:
   # the covariance is numerically singular (rcond far below the double-precision epsilon)
@@ -595,14 +630,35 @@ test_that("outlier diagnostics fall back to classical distances and degrade grac
   )
 })
 
-test_that("collinear raw data falls back to classical distances (GRiPS)", {
-  # GRiPS has an exact collinearity: 'enjoy' and 'commonly' are equal for most respondents,
-  # so at least h observations lie on a hyperplane and the robust MCD covariance is singular.
-  # The outlier diagnostic then falls back to classical Mahalanobis distances with a warning.
+test_that("tied responses on coarse items fall back to classical distances (GRiPS)", {
+  # GRiPS items are 6-point and heavily tied: more than h respondents give the same answer
+  # on at least one item pair, so an h-subset sits exactly on the hyperplane x_i = x_j and
+  # no robust MCD covariance exists. The outlier diagnostic then falls back to classical
+  # Mahalanobis distances with a warning.
   expect_warning(scr <- efa_screen(GRiPS_raw, seed = 1), class = "efa_screen_mcd_fallback")
   expect_equal(scr$outliers$method, "classical")
   expect_length(scr$outliers$distances, nrow(GRiPS_raw))
   expect_equal(scr$outliers$cutoff, sqrt(qchisq(0.975, ncol(GRiPS_raw))))
+
+  # with n = 810 well above 2p = 16 the cause cannot be too few complete cases, and the
+  # correlation matrix is well conditioned, so the reported reason must be the exact fit
+  expect_gt(nrow(GRiPS_raw), 2 * ncol(GRiPS_raw))
+  expect_lt(sqrt(scr$condition), 10)
+  expect_match(scr$outliers$fallback_reason, "exact fit")
+})
+
+test_that("outlier_cutoff is bounded to the range in which it defines a cutoff", {
+  # 0 puts the threshold at zero (everything flagged) and 1 at infinity (nothing
+  # flagged); neither is an outlier diagnostic. The argument check runs before anything
+  # is computed, so the cheap correlation-matrix input reaches it - and pinning both
+  # endpoints against the values just outside them fixes where the bound sits, which the
+  # error class alone (a checkmate assertion carries no package class) cannot do
+  R <- test_models$baseline$cormat
+  expect_no_error(efa_screen(R, N = 500, outlier_cutoff = 0.5))
+  expect_no_error(efa_screen(R, N = 500, outlier_cutoff = 0.9999))
+  expect_error(efa_screen(R, N = 500, outlier_cutoff = 0.4999), class = "simpleError")
+  expect_error(efa_screen(R, N = 500, outlier_cutoff = 1), class = "simpleError")
+  expect_error(efa_screen(R, N = 500, outlier_cutoff = 0), class = "simpleError")
 })
 
 # singular / non-positive-definite inputs
@@ -619,6 +675,59 @@ test_that("errors and warnings are thrown correctly", {
   expect_error(efa_screen(dat_sing), class = "efa_cor_singular")
   expect_error(efa_screen(cor_sing, N = 10), class = "efa_cor_singular")
   expect_warning(efa_screen(cor_nposdef, N = 10), class = "efa_cor_smoothed")
+})
+
+test_that("a flag rate far above the nominal one is reported as a calibration issue", {
+  # iris is three species clusters, so it is not elliptically distributed: a high-breakdown
+  # estimate fitted to the most concentrated half legitimately calls a large share of the
+  # rest distant. Far more flags than the 2.5% cutoff admits is evidence of that, not a list
+  # of contaminated cases to work through.
+  recs <- EFAtools:::.screen_recommendations(scr_iris, raw = TRUE,
+                                             kmo = scr_iris$kmo$KMO, bart_sig = TRUE,
+                                             mvn_nonnormal = TRUE, multicollinear = FALSE,
+                                             digits = 3)
+  nf <- length(scr_iris$outliers$flagged)
+  expect_gt(nf / scr_iris$outliers$n_complete, 5 * (1 - scr_iris$settings$outlier_cutoff))
+  expect_true(any(grepl("not elliptically distributed", recs$message, fixed = TRUE)))
+  expect_false(any(grepl("before down-weighting or excluding", recs$message, fixed = TRUE)))
+
+  # a rate in line with the cutoff keeps the ordinary inspect-them advice
+  recs_ok <- EFAtools:::.screen_recommendations(scr_out, raw = TRUE,
+                                                kmo = scr_out$kmo$KMO, bart_sig = TRUE,
+                                                mvn_nonnormal = FALSE, multicollinear = FALSE,
+                                                digits = 3)
+  expect_true(any(grepl("before down-weighting or excluding", recs_ok$message, fixed = TRUE)))
+
+  # the rate alone does not license the conclusion: a short flagged list is a list to
+  # inspect however far above the nominal rate it sits (here 3 of 20 = 15% against 2.5%)
+  few <- scr_iris
+  few$outliers$flagged <- scr_iris$outliers$flagged[1:3]
+  few$outliers$n_complete <- 20L
+  recs_few <- EFAtools:::.screen_recommendations(few, raw = TRUE, kmo = few$kmo$KMO,
+                                                 bart_sig = TRUE, mvn_nonnormal = TRUE,
+                                                 multicollinear = FALSE, digits = 3)
+  expect_gt(3 / 20, 5 * (1 - few$settings$outlier_cutoff))
+  expect_true(any(grepl("before down-weighting or excluding", recs_few$message, fixed = TRUE)))
+  expect_false(any(grepl("not elliptically distributed", recs_few$message, fixed = TRUE)))
+})
+
+test_that("the per-variable display marks the missing percentage and hides an empty flags column", {
+  # `missing` is a percentage; the display says so
+  expect_true("missing%" %in% names(EFAtools:::.screen_per_item_display(scr_raw, 3)))
+
+  # all-continuous data: every flags entry is NA ("no category screening applies"), which
+  # prints as a column of <NA>, so the column is dropped instead
+  expect_true(all(is.na(scr_iris$per_item$flags)))
+  expect_false("flags" %in% names(EFAtools:::.screen_per_item_display(scr_iris, 3)))
+
+  # with some categorical variables the column stays and the NAs render as a dash
+  set.seed(12)
+  dat <- data.frame(cont = rnorm(80), cat = sample(1:5, 80, replace = TRUE),
+                    v3 = rnorm(80))
+  scr <- efa_screen(dat, seed = 1)
+  disp <- EFAtools:::.screen_per_item_display(scr, 3)
+  expect_true("flags" %in% names(disp))
+  expect_equal(disp["cont", "flags"], "-")
 })
 
 test_that("print output is stable", {

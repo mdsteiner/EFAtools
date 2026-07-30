@@ -77,6 +77,12 @@ cor_sing <- stats::cor(dat_sing)
 
 cor_nposdef <- matrix(c(1, 1, 0, 1, 1, 1, 0, 1, 1), ncol = 3)
 
+test_that("the chi-square is NA when N is too small for the Bartlett correction", {
+  # the documented guard: the multiplier N - 1 - (2p + 5)/6 turns non-positive at
+  # N = 5 for these p = 18 variables, so no statistic is reported
+  expect_true(is.na(efa_bartlett(test_models$baseline$cormat, N = 5)$chisq))
+})
+
 test_that("errors are thrown correctly", {
   expect_error(efa_bartlett(1:5), class = "efa_input_not_matrix")
   expect_error(efa_bartlett(test_models$baseline$cormat), class = "efa_n_required")

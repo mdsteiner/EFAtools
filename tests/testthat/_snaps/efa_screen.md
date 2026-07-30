@@ -16,7 +16,7 @@
       -- Multicollinearity -----------------------------------------------------------
       
       v Determinant: <num>. No concern (a value near 0 signals multicollinearity).
-      v Condition number: <num>. No concern (large values signal near-collinear variables).
+      v Condition number: <num> (condition index <num>). No concern (index below 10; Belsley, Kuh & Welsch, 1980).
       
       -- Per-variable diagnostics ----------------------------------------------------
       
@@ -64,19 +64,19 @@
       -- Multicollinearity -----------------------------------------------------------
       
       v Determinant: <num>. No concern (a value near 0 signals multicollinearity).
-      v Condition number: <num>. No concern (large values signal near-collinear variables).
+      v Condition number: <num> (condition index <num>). No concern (index below 10; Belsley, Kuh & Welsch, 1980).
       
       -- Per-variable diagnostics ----------------------------------------------------
       
-                variance missing   SMC   MSA  flags
-      fun <num>       0 <num> <num>       
-      friends <num>       0 <num> <num>       
-      enjoy <num>       0 <num> <num> sparse
-      hurt <num>       0 <num> <num> sparse
-      part <num>       0 <num> <num>       
-      commonly <num>       0 <num> <num>       
-      chances <num>       0 <num> <num>       
-      attracted <num>       0 <num> <num> sparse
+                variance missing%   SMC   MSA  flags
+      fun <num>        0 <num> <num>       
+      friends <num>        0 <num> <num>       
+      enjoy <num>        0 <num> <num> sparse
+      hurt <num>        0 <num> <num> sparse
+      part <num>        0 <num> <num>       
+      commonly <num>        0 <num> <num>       
+      chances <num>        0 <num> <num>       
+      attracted <num>        0 <num> <num> sparse
       
       -- Multivariate normality ------------------------------------------------------
       
@@ -88,6 +88,12 @@
       -- Outliers --------------------------------------------------------------------
       
       ! A robust (MCD) covariance could not be computed; classical Mahalanobis distances were used.
+      At least half the complete cases lie exactly on a lower-dimensional hyperplane
+      (an "exact fit"). This is common with coarse discrete items, where many
+      respondents give identical answers on an item pair; it does not mean the data
+      are collinear at the correlation level.
+      These distances come from a covariance the outliers themselves inflate, so the
+      diagnostic is no longer high-breakdown and tends to under-flag.
       i 71 of 810 observations were flagged as multivariate outliers (Mahalanobis distance > <num>).
       
       -- Recommendations -------------------------------------------------------------
@@ -120,7 +126,7 @@
       -- Multicollinearity -----------------------------------------------------------
       
       v Determinant: <num>. No concern (a value near 0 signals multicollinearity).
-      v Condition number: <num>. No concern (large values signal near-collinear variables).
+      v Condition number: <num> (condition index <num>). No concern (index below 10; Belsley, Kuh & Welsch, 1980).
       
       -- Per-variable diagnostics ----------------------------------------------------
       

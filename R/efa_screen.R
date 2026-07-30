@@ -26,8 +26,8 @@
 #'   larger values trade robustness for efficiency. Only used when raw data are supplied.
 #' @param outlier_cutoff numeric. The probability defining the chi-square cutoff for
 #'   flagging a multivariate outlier: an observation is flagged when its squared robust
-#'   distance exceeds `qchisq(outlier_cutoff, p)` for `p` variables. Default is `0.975`.
-#'   Only used when raw data are supplied.
+#'   distance exceeds `qchisq(outlier_cutoff, p)` for `p` variables, in \[0.5, 0.9999\].
+#'   Default is `0.975`. Only used when raw data are supplied.
 #' @param seed integer. Optional seed for the random subsets drawn by the MCD algorithm,
 #'   making the outlier diagnostics reproducible; the caller's random-number-generator
 #'   state is left unchanged. Default is `NULL`. Only used when raw data are supplied.
@@ -57,7 +57,10 @@
 #'     others, \eqn{1 - 1/(R^{-1})_{ii}}. A low SMC flags a variable that shares
 #'     little variance with the rest of the set.}
 #'   \item{Variance and missing data}{The variance of each variable (over its
-#'     available values) and the percentage of missing values. These, and the
+#'     available values) and the percentage of missing values. Factor and character
+#'     columns are recoded to their integer level codes, so `variance` and the
+#'     empty-category check below refer to those codes (the category counts
+#'     themselves are labelled by the original levels). These, and the
 #'     category tabulation below, are computed column by column from the supplied
 #'     data using every non-missing value, and so do not depend on `use`, which
 #'     governs only the correlation matrix. Under a listwise `use`
@@ -86,11 +89,15 @@
 #'     complete cases with the fast minimum covariance determinant (MCD) algorithm
 #'     (Rousseeuw & Van Driessen, 1999), using a subset covering a proportion
 #'     `mcd_alpha` of the observations; an observation whose squared robust distance
-#'     exceeds `qchisq(outlier_cutoff, p)` is flagged. With too few complete cases
-#'     (\eqn{n \le 2p}) or collinear variables the robust covariance is undefined, so
-#'     the classical Mahalanobis distance is used instead with a warning; if even that
-#'     covariance is singular the diagnostic is skipped with a note. Available only
-#'     from raw data.}
+#'     exceeds `qchisq(outlier_cutoff, p)` is flagged. The robust covariance is
+#'     undefined with too few complete cases (\eqn{n \le 2p}), and also when a whole
+#'     covering subset lies exactly on a lower-dimensional hyperplane (an *exact fit*,
+#'     common with coarse discrete items on which many respondents answer an item pair
+#'     identically). In both cases the classical Mahalanobis distance is used instead,
+#'     with a warning naming which of the two applies; those distances are computed
+#'     from a covariance the outliers themselves inflate, so the diagnostic is no
+#'     longer high-breakdown and tends to under-flag. If even the classical covariance
+#'     is singular the diagnostic is skipped with a note. Available only from raw data.}
 #' }
 #'
 #' @returns An object of class `efa_screen`, a list containing:
@@ -127,17 +134,20 @@
 #'   `flagged` (the row numbers, in the supplied data, whose robust distance exceeds
 #'   `cutoff`), `center` and `cov` (the robust location and scatter underlying the
 #'   distances), `method` (`"mcd"` for the robust estimate, or `"classical"` when the
-#'   fallback was used), and `n_complete` (the number of complete cases). When neither a
-#'   robust nor a classical covariance can be formed a classed note (of class
-#'   `efa_screen_no_outliers`) is returned instead. `NULL` when a correlation matrix is
-#'   supplied.}
+#'   fallback was used), `fallback_reason` (why the robust estimate was unavailable, or
+#'   `NULL` when `method` is `"mcd"`), and `n_complete` (the number of complete cases).
+#'   When neither a robust nor a classical covariance can be formed a classed note (of
+#'   class `efa_screen_no_outliers`) is returned instead. `NULL` when a correlation
+#'   matrix is supplied.}
 #' \item{categories}{A named list with, for each variable treated as categorical,
-#'   the response-category counts (in category order); `NA` for a variable treated
-#'   as continuous. `NULL` when a correlation matrix is supplied.}
+#'   the response-category counts (in category order, labelled by the original levels
+#'   for a factor or character column and by the value itself otherwise); `NA` for a
+#'   variable treated as continuous. `NULL` when a correlation matrix is supplied.}
 #' \item{note}{A classed note explaining that the raw-data diagnostics need raw
 #'   data; `NULL` when raw data are supplied.}
 #' \item{settings}{A list of the settings used, including `n_obs`, the number of
-#'   rows in the supplied raw data (`NA` for a correlation-matrix input).}
+#'   rows in the supplied raw data (`NA` for a correlation-matrix input), and
+#'   `outlier_cutoff`, the probability behind the outlier flagging threshold.}
 #'
 #' @source Bartlett, M. S. (1951). The effect of standardization on a Chi-square
 #'   approximation in factor analysis. Biometrika, 38, 337-344.
@@ -179,8 +189,9 @@
 #' # From a correlation matrix (supply N for Bartlett's test of sphericity)
 #' efa_screen(test_models$baseline$cormat, N = 500)
 #'
-#' # From raw data (N is taken from the data)
-#' efa_screen(GRiPS_raw)
+#' # From raw data (N is taken from the data; the seed makes the outlier
+#' # diagnostics reproducible)
+#' efa_screen(GRiPS_raw, seed = 1)
 #'
 efa_screen <- function(x, N = NA,
                        use = c("pairwise.complete.obs", "all.obs", "complete.obs",
@@ -196,7 +207,11 @@ efa_screen <- function(x, N = NA,
   cor_method <- match.arg(cor_method)
   checkmate::assert_count(N, na.ok = TRUE)
   checkmate::assert_number(mcd_alpha, lower = 0.5, upper = 1)
-  checkmate::assert_number(outlier_cutoff, lower = 0, upper = 1)
+  # The endpoints of the natural [0, 1] range are degenerate rather than extreme: a
+  # cutoff of 0 flags every observation and a cutoff of 1 puts the threshold at
+  # infinity, so neither yields an outlier diagnostic. Bound the probability to the
+  # usable range instead.
+  checkmate::assert_number(outlier_cutoff, lower = 0.5, upper = 0.9999)
   checkmate::assert_int(seed, null.ok = TRUE)
 
   # Retain the raw data (when supplied) for the raw-data screening diagnostics;
@@ -213,6 +228,10 @@ efa_screen <- function(x, N = NA,
   } else {
     data.matrix(x)
   }
+
+  # The level labels behind that coding, so the category tabulation can name its
+  # counts by the responses the user supplied rather than by their integer codes.
+  xl <- if (is.null(xr)) NULL else .screen_levels(x)
 
   # Detect or compute the correlation matrix, check it, and smooth it if needed.
   # N_policy = "optional" keeps N as NA for a correlation matrix without N (only
@@ -284,7 +303,7 @@ efa_screen <- function(x, N = NA,
       class = "efa_screen_no_raw"
     )
   } else {
-    raw <- .screen_raw_diagnostics(xr, nms)
+    raw <- .screen_raw_diagnostics(xr, nms, xl)
     # The helper's vectors, smc, and kmo$KMO_i are all in column (nms) order, so the
     # columns are assembled positionally. make.unique() guards against duplicate
     # variable names (which base data.frame() row names would reject) and keys the
@@ -335,7 +354,8 @@ efa_screen <- function(x, N = NA,
   settings <- list(N = N,
                    n_obs = if (is.null(xr)) NA_integer_ else nrow(xr),
                    use = use,
-                   cor_method = cor_method)
+                   cor_method = cor_method,
+                   outlier_cutoff = outlier_cutoff)
 
   output <- list(
     kmo = kmo,
@@ -358,19 +378,36 @@ efa_screen <- function(x, N = NA,
 
 }
 
+# Level labels of each column of a raw-data input, in column order: the character
+# labels behind the integer codes data.matrix() assigns to a factor or character
+# column, and NULL for a column it leaves numeric. A character column is coded via
+# factor(), so its labels are its sorted distinct values.
+.screen_levels <- function(x) {
+  if (is.matrix(x) && is.numeric(x)) return(vector("list", ncol(x)))
+  d <- if (is.matrix(x)) as.data.frame(x) else x
+  lapply(d, function(col) {
+    if (is.factor(col)) levels(col)
+    else if (is.character(col)) levels(factor(col))
+    else NULL
+  })
+}
+
 # Per-item raw-data descriptive diagnostics from the coded raw matrix `xr`
 # (data.matrix() output, so factor columns are their integer level codes). Every
 # statistic is computed column by column on the values as supplied - using each
 # column's non-missing values - and named by `nms`, which shares the raw matrix's
-# column order. Returns variance, percentage missing, category counts, and the
-# sparse/empty-category flags.
-.screen_raw_diagnostics <- function(xr, nms) {
+# column order. `levels_list` (from .screen_levels()) supplies the labels behind
+# those codes so the category counts can be named by the original responses.
+# Returns variance, percentage missing, category counts, and the sparse/empty-category
+# flags.
+.screen_raw_diagnostics <- function(xr, nms, levels_list = NULL) {
 
   p <- ncol(xr)
   variance <- numeric(p)
   missing <- numeric(p)
   flags <- character(p)
   categories <- vector("list", p)
+  if (is.null(levels_list)) levels_list <- vector("list", p)
 
   for (j in seq_len(p)) {
     col <- xr[, j]
@@ -393,11 +430,19 @@ efa_screen <- function(x, N = NA,
     }
 
     # Marginal category counts in level order (tabulate over the recoded levels, as
-    # in .polychoric(); table() would key by value-as-string and drop NA). The names
-    # use a non-scientific format so a large code labels its category as the plain
-    # value rather than, e.g., "1e+08".
+    # in .polychoric(); table() would key by value-as-string and drop NA). A column
+    # that came in as a factor or character is labelled by its original levels, so the
+    # tabulation is readable without re-mapping the codes; otherwise the names use a
+    # non-scientific format so a large code labels its category as the plain value
+    # rather than, e.g., "1e+08".
     counts <- tabulate(match(col, lv), nbins = n_cat)
-    names(counts) <- format(lv, scientific = FALSE, trim = TRUE)
+    labs <- levels_list[[j]]
+    names(counts) <- if (!is.null(labs) && all(lv == floor(lv)) &&
+                         min(lv) >= 1L && max(lv) <= length(labs)) {
+      labs[lv]
+    } else {
+      format(lv, scientific = FALSE, trim = TRUE)
+    }
     categories[[j]] <- counts
 
     # Sparse: an observed category with fewer than five responses (the >= 5
@@ -555,10 +600,11 @@ efa_screen <- function(x, N = NA,
 # high-breakdown location and scatter from the complete cases with FAST-MCD, scales it to
 # consistency at the normal model with a small-sample correction, reweights it, and flags
 # observations whose squared robust distance exceeds the chi-square cutoff. Degrades
-# gracefully: too few complete cases or collinear variables fall back to the classical
-# Mahalanobis distance with a classed warning, and a fully singular covariance yields a
-# classed note. The random subsets are reproducible via `seed`, and the caller's RNG state
-# is preserved. Aborts on a correlation-matrix input.
+# gracefully: too few complete cases or an exact fit fall back to the classical
+# Mahalanobis distance with a classed warning naming which of the two applies, and a
+# fully singular covariance yields a classed note. The random subsets are reproducible
+# via `seed`, and the caller's RNG state is preserved. Aborts on a correlation-matrix
+# input.
 .screen_outliers <- function(xr, mcd_alpha, outlier_cutoff, nsamp = 500L,
                              seed = NULL) {
 
@@ -647,25 +693,50 @@ efa_screen <- function(x, N = NA,
   )
 
   if (is.null(robust)) {
+    # Name the condition that actually defeated the classical covariance in the handler
+    # above, which gates on all three of n > p, a finite scatter, and its conditioning.
+    reason <- if (n <= p) {
+      "There are too few complete cases (n <= p) to form a covariance of full rank."
+    } else if (!all(is.finite(stats::cov(X)))) {
+      # the same quantity the handler's finiteness gate rejected, recomputed here rather
+      # than threaded out of it; this is a cold path, so the second cov() costs nothing
+      paste("The complete-case covariance is not finite; the data contain non-finite",
+            "or extreme values.")
+    } else {
+      paste("The complete-case covariance is singular: the variables are exactly or",
+            "near-exactly linearly dependent.")
+    }
     cli::cli_warn(
-      c("Outlier diagnostics were skipped.",
-        "i" = "The complete-case covariance is singular (too few complete cases or collinear variables)."),
+      c("Outlier diagnostics were skipped.", "i" = reason),
       class = "efa_screen_no_outliers"
     )
     return(structure(
-      list(message = paste(
-        "Robust outlier diagnostics require an invertible complete-case covariance; it was",
-        "singular (too few complete cases or collinear variables).")),
+      list(message = paste("Robust outlier diagnostics require an invertible",
+                           "complete-case covariance.", reason),
+           reason = reason),
       class = "efa_screen_no_outliers"
     ))
   }
 
   # A classed warning when the robust estimate was unavailable and classical distances
-  # were used instead.
+  # were used instead, naming the reason. The two are distinguishable at this point: the
+  # n <= 2p check above is made before .fast_mcd() runs, so anything that reaches the
+  # handler from .fast_mcd() is an exact fit - at least h observations lying on a
+  # lower-dimensional hyperplane, which on coarse discrete items is produced by tied
+  # responses rather than by correlation-level collinearity.
+  fallback_reason <- NULL
   if (identical(robust$method, "classical")) {
+    fallback_reason <- if (n <= 2L * p) {
+      "There are too few complete cases (n <= 2p) for a robust covariance."
+    } else {
+      paste("At least half the complete cases lie exactly on a lower-dimensional",
+            "hyperplane (an \"exact fit\"). This is common with coarse discrete items,",
+            "where many respondents give identical answers on an item pair; it does not",
+            "mean the data are collinear at the correlation level.")
+    }
     cli::cli_warn(
       c("A robust (MCD) covariance could not be computed; classical Mahalanobis distances were used.",
-        "i" = "There are too few complete cases (n <= 2p) or the data are collinear."),
+        "i" = fallback_reason),
       class = "efa_screen_mcd_fallback"
     )
   }
@@ -685,6 +756,7 @@ efa_screen <- function(x, N = NA,
        center = robust$center,
        cov = robust$cov,
        method = robust$method,
+       fallback_reason = fallback_reason,
        n_complete = n)
 }
 
@@ -849,9 +921,12 @@ efa_screen <- function(x, N = NA,
     cli::cli_abort("No stable MCD subset could be formed (exact fit).",
                    class = "efa_screen_mcd_unusable")
   }
-  # A near-singular best subset likewise marks a (near-)exact fit (collinear variables), so
-  # the robust distances would be dominated by the near-null direction; fall back to the
-  # classical distances (the correlation-matrix condition number already flags collinearity).
+  # A near-singular best subset likewise marks a (near-)exact fit, so the robust distances
+  # would be dominated by the near-null direction; fall back to the classical distances.
+  # Note this is a property of the h-subset, not of the variables as a whole: coarse
+  # discrete items routinely put more than h respondents on a hyperplane x_i = x_j while
+  # the correlation matrix stays well conditioned, so the reported condition number is not
+  # a proxy for it.
   if (rcond(best$cov) < 1e-3) {
     cli::cli_abort("The MCD scatter is near-singular (collinear variables / exact fit).",
                    class = "efa_screen_mcd_unusable")

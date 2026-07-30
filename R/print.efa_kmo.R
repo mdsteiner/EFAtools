@@ -44,25 +44,11 @@ format.efa_kmo <- function(x, ...) {
 
     if (!is.null(KMO) && !is.na(KMO)) {
 
-      # Kaiser's verbal bands for the KMO value. Each band carries its verdict styling (green =
-      # suitable, yellow = mediocre, red = unsuitable; Kaiser, 1970; Kaiser & Rice, 1974) and the
-      # suitability it implies, so the cutoffs are written once. Ordered high to low; the first
-      # band the value clears applies.
-      bands <- list(
-        list(min = .9,   label = "marvellous",   colour = cli::col_green,
-             alert = cli::cli_alert_success, suitability = "probably"),
-        list(min = .8,   label = "meritorious",  colour = cli::col_green,
-             alert = cli::cli_alert_success, suitability = "probably"),
-        list(min = .7,   label = "middling",     colour = cli::col_green,
-             alert = cli::cli_alert_success, suitability = "probably"),
-        list(min = .6,   label = "mediocre",     colour = cli::col_yellow,
-             alert = cli::cli_alert_warning, suitability = "probably"),
-        list(min = .5,   label = "miserable",    colour = cli::col_red,
-             alert = cli::cli_alert_danger,  suitability = "hardly"),
-        list(min = -Inf, label = "unacceptable", colour = cli::col_red,
-             alert = cli::cli_alert_danger,  suitability = "not")
-      )
-      band <- Find(function(b) KMO >= b$min, bands)
+      # Kaiser's verbal bands for the KMO value (Kaiser, 1970; Kaiser & Rice, 1974). The band
+      # carries its label, its verdict styling (green = suitable, yellow = mediocre, red =
+      # unsuitable) and the suitability it implies; .kmo_band() holds the cut-offs, so this
+      # report and efa_screen()'s cannot band the same value differently.
+      band <- .kmo_band(KMO)
 
       label <- band$colour(cli::style_bold(band$label))
       band$alert("The overall KMO value for your data is {label}.")

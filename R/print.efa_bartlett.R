@@ -60,16 +60,11 @@ format.efa_bartlett <- function(x, ...) {
     }
 
     # The chi-square line is shown for every object, including the "no result" case above, so
-    # render the statistic and p-value defensively when they are NA/NULL. It is a fixed-format
+    # render the statistic and p-value defensively when they are NA/NULL (.screen_p_str()
+    # handles the p-value tail, shared with the screening report). It is a fixed-format
     # statistic line, emitted verbatim so cli never reflows it mid-token.
     chisq_str <- if (is.null(x$chisq) || is.na(x$chisq)) "NA" else round(x$chisq, 2)
-    p_str <- if (is.null(pval) || is.na(pval)) {
-      " = NA"
-    } else if (pval < .001) {
-      " < .001"
-    } else {
-      paste0(" = ", round(pval, 3))
-    }
+    p_str <- .screen_p_str(pval)
 
     cli::cli_text("")
     cli::cli_verbatim(paste0("\U1D712\U00B2(", x$df, ") = ", chisq_str, ", ",

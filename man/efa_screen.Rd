@@ -81,8 +81,8 @@ larger values trade robustness for efficiency. Only used when raw data are suppl
 
 \item{outlier_cutoff}{numeric. The probability defining the chi-square cutoff for
 flagging a multivariate outlier: an observation is flagged when its squared robust
-distance exceeds \code{qchisq(outlier_cutoff, p)} for \code{p} variables. Default is \code{0.975}.
-Only used when raw data are supplied.}
+distance exceeds \code{qchisq(outlier_cutoff, p)} for \code{p} variables, in [0.5, 0.9999].
+Default is \code{0.975}. Only used when raw data are supplied.}
 
 \item{seed}{integer. Optional seed for the random subsets drawn by the MCD algorithm,
 making the outlier diagnostics reproducible; the caller's random-number-generator
@@ -123,17 +123,20 @@ distance scale, \code{sqrt(qchisq(outlier_cutoff, p))}, directly comparable to \
 \code{flagged} (the row numbers, in the supplied data, whose robust distance exceeds
 \code{cutoff}), \code{center} and \code{cov} (the robust location and scatter underlying the
 distances), \code{method} (\code{"mcd"} for the robust estimate, or \code{"classical"} when the
-fallback was used), and \code{n_complete} (the number of complete cases). When neither a
-robust nor a classical covariance can be formed a classed note (of class
-\code{efa_screen_no_outliers}) is returned instead. \code{NULL} when a correlation matrix is
-supplied.}
+fallback was used), \code{fallback_reason} (why the robust estimate was unavailable, or
+\code{NULL} when \code{method} is \code{"mcd"}), and \code{n_complete} (the number of complete cases).
+When neither a robust nor a classical covariance can be formed a classed note (of
+class \code{efa_screen_no_outliers}) is returned instead. \code{NULL} when a correlation
+matrix is supplied.}
 \item{categories}{A named list with, for each variable treated as categorical,
-the response-category counts (in category order); \code{NA} for a variable treated
-as continuous. \code{NULL} when a correlation matrix is supplied.}
+the response-category counts (in category order, labelled by the original levels
+for a factor or character column and by the value itself otherwise); \code{NA} for a
+variable treated as continuous. \code{NULL} when a correlation matrix is supplied.}
 \item{note}{A classed note explaining that the raw-data diagnostics need raw
 data; \code{NULL} when raw data are supplied.}
 \item{settings}{A list of the settings used, including \code{n_obs}, the number of
-rows in the supplied raw data (\code{NA} for a correlation-matrix input).}
+rows in the supplied raw data (\code{NA} for a correlation-matrix input), and
+\code{outlier_cutoff}, the probability behind the outlier flagging threshold.}
 }
 \description{
 Computes a set of diagnostics describing how suitable a correlation matrix (or
@@ -167,7 +170,10 @@ index above 30 is a conventional sign of strong multicollinearity, and 10 to
 others, \eqn{1 - 1/(R^{-1})_{ii}}. A low SMC flags a variable that shares
 little variance with the rest of the set.}
 \item{Variance and missing data}{The variance of each variable (over its
-available values) and the percentage of missing values. These, and the
+available values) and the percentage of missing values. Factor and character
+columns are recoded to their integer level codes, so \code{variance} and the
+empty-category check below refer to those codes (the category counts
+themselves are labelled by the original levels). These, and the
 category tabulation below, are computed column by column from the supplied
 data using every non-missing value, and so do not depend on \code{use}, which
 governs only the correlation matrix. Under a listwise \code{use}
@@ -196,19 +202,24 @@ distance. A high-breakdown robust location and scatter are estimated from the
 complete cases with the fast minimum covariance determinant (MCD) algorithm
 (Rousseeuw & Van Driessen, 1999), using a subset covering a proportion
 \code{mcd_alpha} of the observations; an observation whose squared robust distance
-exceeds \code{qchisq(outlier_cutoff, p)} is flagged. With too few complete cases
-(\eqn{n \le 2p}) or collinear variables the robust covariance is undefined, so
-the classical Mahalanobis distance is used instead with a warning; if even that
-covariance is singular the diagnostic is skipped with a note. Available only
-from raw data.}
+exceeds \code{qchisq(outlier_cutoff, p)} is flagged. The robust covariance is
+undefined with too few complete cases (\eqn{n \le 2p}), and also when a whole
+covering subset lies exactly on a lower-dimensional hyperplane (an \emph{exact fit},
+common with coarse discrete items on which many respondents answer an item pair
+identically). In both cases the classical Mahalanobis distance is used instead,
+with a warning naming which of the two applies; those distances are computed
+from a covariance the outliers themselves inflate, so the diagnostic is no
+longer high-breakdown and tends to under-flag. If even the classical covariance
+is singular the diagnostic is skipped with a note. Available only from raw data.}
 }
 }
 \examples{
 # From a correlation matrix (supply N for Bartlett's test of sphericity)
 efa_screen(test_models$baseline$cormat, N = 500)
 
-# From raw data (N is taken from the data)
-efa_screen(GRiPS_raw)
+# From raw data (N is taken from the data; the seed makes the outlier
+# diagnostics reproducible)
+efa_screen(GRiPS_raw, seed = 1)
 
 }
 \seealso{
