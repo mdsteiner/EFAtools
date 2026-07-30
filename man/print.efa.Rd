@@ -117,8 +117,7 @@ pooled objects.}
 \value{
 \code{print()} and the print method for \code{summary.efa} objects return their
 argument invisibly. \code{format()} returns a character vector with the report
-lines (styled to the active console theme; plain when colours are disabled).
-\code{summary()} returns an object of class \code{summary.efa}.
+lines. \code{summary()} returns an object of class \code{summary.efa}.
 }
 \description{
 \code{print()} shows a concise overview of an \code{\link[=efa_fit]{efa_fit()}} or \code{\link[=efa_mi]{efa_mi()}} solution:

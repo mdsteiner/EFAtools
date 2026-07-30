@@ -29,14 +29,14 @@ test_that("the analytic score matches a numerical gradient of the log-likelihood
   pstar <- p * (p + 1L) / 2L
 
   loglik <- function(theta) {
-    sig <- .efa_pooled_unvech(theta[p + seq_len(pstar)], p)
+    sig <- .unvech(theta[p + seq_len(pstar)], p)
     .fiml_loglik(X, theta[seq_len(p)], sig)
   }
 
   # Evaluate away from the EM fixed point (where the score is ~0), keeping sigma posdef.
   set.seed(9)
-  theta <- c(em$mu, .efa_pooled_vech(em$sigma)) + 0.02 * stats::rnorm(p + pstar)
-  sig <- .efa_pooled_unvech(theta[p + seq_len(pstar)], p)
+  theta <- c(em$mu, .vech(em$sigma)) + 0.02 * stats::rnorm(p + pstar)
+  sig <- .unvech(theta[p + seq_len(pstar)], p)
   skip_if(any(eigen(sig, symmetric = TRUE, only.values = TRUE)$values < 1e-6))
 
   ana <- .fiml_saturated_score(X, theta[seq_len(p)], sig)
@@ -169,10 +169,10 @@ test_that("the correlation-scale ACOV equals a finite-difference standardisation
   # Off-diagonal correlations of cov2cor(sigma), in combn order, as a function of vech(sigma).
   pairs <- utils::combn(p, 2L)
   cor_off <- function(vs) {
-    R <- stats::cov2cor(.efa_pooled_unvech(vs, p))
+    R <- stats::cov2cor(.unvech(vs, p))
     R[cbind(pairs[1L, ], pairs[2L, ])]
   }
-  vs0 <- .efa_pooled_vech(em$sigma)
+  vs0 <- .vech(em$sigma)
   h <- 1e-6
   Jn <- vapply(seq_len(pstar), function(k) {
     vp <- vs0; vp[k] <- vp[k] + h

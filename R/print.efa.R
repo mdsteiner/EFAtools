@@ -67,8 +67,7 @@
 #'
 #' @returns `print()` and the print method for `summary.efa` objects return their
 #'   argument invisibly. `format()` returns a character vector with the report
-#'   lines (styled to the active console theme; plain when colours are disabled).
-#'   `summary()` returns an object of class `summary.efa`.
+#'   lines. `summary()` returns an object of class `summary.efa`.
 #'
 #' @export
 #'
@@ -430,70 +429,40 @@ format.summary.efa <- function(x, ...) {
                                         sort_loadings, show_loading_legend,
                                         max_factors_per_block, ...) {
   if (identical(spec$rotation, "none")) {
-    .print_efa_rule("Unrotated Loadings")
-
-    if (is.null(x$unrot_loadings)) {
-      cli::cli_text("No unrotated loading matrix available.")
-      return(invisible(NULL))
-    }
-
-    # format.efa_loadings() renders the styled table (h2/sorting/legend/column blocks) and
-    # returns it as report lines, which .efa_emit_lines() embeds without reflowing. The
-    # loading matrices are classed `efa_loadings`, so the generic dispatches there.
-    .efa_emit_lines(format(x$unrot_loadings,
-      cutoff = cutoff,
-      digits = digits,
-      max_name_length = max_name_length,
-      h2 = x$h2,
-      sort_loadings = sort_loadings,
-      legend = show_loading_legend,
-      max_factors_per_block = max_factors_per_block,
-      ...
-    ))
-    .print_efa_heywood_warning(spec$heywood, spec$h2)
-    .print_efa_loading_ci_section(x, spec,
+    .print_efa_loading_block(x, spec,
       component = "unrot_loadings",
-      loadings = x$unrot_loadings,
-      loading_label = "unrotated",
+      label = "unrotated",
+      title = "Unrotated Loadings",
       cutoff = cutoff,
       digits = digits,
       max_name_length = max_name_length,
       ci = ci,
       ci_filter = ci_filter,
-      sort_loadings = sort_loadings
+      sort_loadings = sort_loadings,
+      show_loading_legend = show_loading_legend,
+      max_factors_per_block = max_factors_per_block,
+      ...
     )
     return(invisible(NULL))
   }
 
-  .print_efa_rule("Rotated Loadings")
-
-  if (is.null(x$rot_loadings)) {
-    cli::cli_text("No rotated loading matrix available.")
-    return(invisible(NULL))
-  }
-
-  .efa_emit_lines(format(x$rot_loadings,
-    cutoff = cutoff,
-    digits = digits,
-    max_name_length = max_name_length,
-    h2 = x$h2,
-    sort_loadings = sort_loadings,
-    legend = show_loading_legend,
-    max_factors_per_block = max_factors_per_block,
-    ...
-  ))
-  .print_efa_heywood_warning(spec$heywood, spec$h2)
-  .print_efa_loading_ci_section(x, spec,
+  shown <- .print_efa_loading_block(x, spec,
     component = "rot_loadings",
-    loadings = x$rot_loadings,
-    loading_label = "rotated",
+    label = "rotated",
+    title = "Rotated Loadings",
     cutoff = cutoff,
     digits = digits,
     max_name_length = max_name_length,
     ci = ci,
     ci_filter = ci_filter,
-    sort_loadings = sort_loadings
+    sort_loadings = sort_loadings,
+    show_loading_legend = show_loading_legend,
+    max_factors_per_block = max_factors_per_block,
+    ...
   )
+  if (!shown) {
+    return(invisible(NULL))
+  }
 
   if (!is.null(x$Phi)) {
     phi <- as.matrix(x$Phi)
@@ -517,6 +486,56 @@ format.summary.efa <- function(x, ...) {
   }
 
   invisible(NULL)
+}
+
+# Render one loading block -- its rule, the styled table, the Heywood warning, and the
+# loading confidence intervals -- for either the unrotated or the rotated matrix.
+# `component` names the slot on `x` and `label` the adjective used in the messages.
+# Returns TRUE when a matrix was rendered, FALSE when the slot was empty, so the rotated
+# caller knows whether to continue with the Phi and Structure blocks.
+#
+# Both call sites must pass every formal *by name*. The print methods forward the user's
+# `...` down to here unfiltered, so an exactly-matched formal is what stops an abbreviated
+# user argument (`ti =`, `lab =`) from partial-matching `title` or `label` instead of being
+# passed on to format().
+.print_efa_loading_block <- function(x, spec, component, label, title, cutoff, digits,
+                                     max_name_length, ci, ci_filter, sort_loadings,
+                                     show_loading_legend, max_factors_per_block, ...) {
+  .print_efa_rule(title)
+
+  loadings <- x[[component]]
+  if (is.null(loadings)) {
+    cli::cli_text("No {label} loading matrix available.")
+    return(FALSE)
+  }
+
+  # format.efa_loadings() renders the styled table (h2/sorting/legend/column blocks) and
+  # returns it as report lines, which .efa_emit_lines() embeds without reflowing. The
+  # loading matrices are classed `efa_loadings`, so the generic dispatches there.
+  .efa_emit_lines(format(loadings,
+    cutoff = cutoff,
+    digits = digits,
+    max_name_length = max_name_length,
+    h2 = x$h2,
+    sort_loadings = sort_loadings,
+    legend = show_loading_legend,
+    max_factors_per_block = max_factors_per_block,
+    ...
+  ))
+  .print_efa_heywood_warning(spec$heywood, spec$h2)
+  .print_efa_loading_ci_section(x, spec,
+    component = component,
+    loadings = loadings,
+    loading_label = label,
+    cutoff = cutoff,
+    digits = digits,
+    max_name_length = max_name_length,
+    ci = ci,
+    ci_filter = ci_filter,
+    sort_loadings = sort_loadings
+  )
+
+  TRUE
 }
 
 .print_efa_variances_section <- function(x, spec, digits = 3) {
@@ -1202,14 +1221,26 @@ format.summary.efa <- function(x, ...) {
   "bootstrap"
 }
 
-.efa_target_rotation_note <- function(x, spec) {
+# Reportable valid target-rotation counts: the non-NA counts as integers, or NULL when
+# there is nothing to report. Shared by the CI-source note and the diagnostics summary,
+# which pass the same counts through different wording.
+.efa_valid_target_rotation_counts <- function(x) {
   counts <- .efa_valid_target_rotations(x)
   if (is.null(counts) || length(counts) < 1L || all(is.na(counts))) {
-    return("")
+    return(NULL)
   }
 
   counts <- as.integer(stats::na.omit(counts))
   if (length(counts) < 1L) {
+    return(NULL)
+  }
+
+  counts
+}
+
+.efa_target_rotation_note <- function(x, spec) {
+  counts <- .efa_valid_target_rotation_counts(x)
+  if (is.null(counts)) {
     return("")
   }
 
@@ -1820,13 +1851,8 @@ format.summary.efa <- function(x, ...) {
 }
 
 .efa_valid_target_rotation_summary <- function(x, spec) {
-  counts <- .efa_valid_target_rotations(x)
-  if (is.null(counts) || length(counts) < 1L || all(is.na(counts))) {
-    return("")
-  }
-
-  counts <- as.integer(stats::na.omit(counts))
-  if (length(counts) < 1L) {
+  counts <- .efa_valid_target_rotation_counts(x)
+  if (is.null(counts)) {
     return("")
   }
 
@@ -1901,41 +1927,37 @@ format.summary.efa <- function(x, ...) {
 
   .print_efa_rule("Simple Structure Diagnostics")
 
-  if (length(summary$no_salient) > 0L) {
-    .efa_print_limited_bullets(
-      heading = paste0("Items with no salient loading, |loading| >= ",
-                       .efa_format_plain_number(cutoff, digits), ":"),
-      values = summary$no_salient,
-      top_n = diagnostics_top_n
-    )
-  }
+  # The diagnostics print as bulleted lists in this fixed order, each under its own
+  # heading and each omitted when it has no entries. Only the weak-factor list is never
+  # truncated: it holds at most one entry per factor.
+  blocks <- list(
+    list(values = summary$no_salient,
+         top_n = diagnostics_top_n,
+         heading = paste0("Items with no salient loading, |loading| >= ",
+                          .efa_format_plain_number(cutoff, digits), ":")),
+    list(values = summary$cross_loadings,
+         top_n = diagnostics_top_n,
+         heading = paste0("Items with cross-loadings, |loading| >= ",
+                          .efa_format_plain_number(cross_loading_cutoff, digits),
+                          " on multiple factors:")),
+    list(values = summary$small_gaps,
+         top_n = diagnostics_top_n,
+         heading = paste0("Items with primary-loading gap < ",
+                          .efa_format_plain_number(min_primary_gap, digits), ":")),
+    list(values = summary$weak_factors,
+         top_n = Inf,
+         heading = paste0("Factors with fewer than ", min_salient_per_factor,
+                          " salient indicators:"))
+  )
 
-  if (length(summary$cross_loadings) > 0L) {
-    .efa_print_limited_bullets(
-      heading = paste0("Items with cross-loadings, |loading| >= ",
-                       .efa_format_plain_number(cross_loading_cutoff, digits),
-                       " on multiple factors:"),
-      values = summary$cross_loadings,
-      top_n = diagnostics_top_n
-    )
-  }
-
-  if (length(summary$small_gaps) > 0L) {
-    .efa_print_limited_bullets(
-      heading = paste0("Items with primary-loading gap < ",
-                       .efa_format_plain_number(min_primary_gap, digits), ":"),
-      values = summary$small_gaps,
-      top_n = diagnostics_top_n
-    )
-  }
-
-  if (length(summary$weak_factors) > 0L) {
-    .efa_print_limited_bullets(
-      heading = paste0("Factors with fewer than ", min_salient_per_factor,
-                       " salient indicators:"),
-      values = summary$weak_factors,
-      top_n = Inf
-    )
+  for (block in blocks) {
+    if (length(block$values) > 0L) {
+      .efa_print_limited_bullets(
+        heading = block$heading,
+        values = block$values,
+        top_n = block$top_n
+      )
+    }
   }
 
   invisible(NULL)

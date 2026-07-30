@@ -1735,11 +1735,6 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
 }
 
 
-# vech of a symmetric matrix: its lower triangle (including the diagonal) in column-major
-# order (matching MBESS's vech and .duplication-weighted inner product used below).
-.vech <- function(x) x[!upper.tri(x)]
-
-
 # Perturb a population correlation matrix so a `q`-factor model fits it with a prescribed
 # discrepancy, injecting "model error" (all models are approximations, so an exact-fit
 # population overstates recovery; MacCallum, 2003). Recovers the model's unrotated orthogonal

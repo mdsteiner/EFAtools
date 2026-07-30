@@ -19,8 +19,7 @@ Default is 3.}
 }
 \value{
 \code{print()} returns its argument \code{x} invisibly. \code{format()} returns a character vector
-with the summary lines (styled to the active console theme; plain when colours are
-disabled).
+with the summary lines.
 }
 \description{
 \code{print()} shows a compact summary of the data simulated by \code{\link[=efa_simulate]{efa_simulate()}}: how many

@@ -2,22 +2,10 @@
 // [[Rcpp::depends(roptim)]]
 #include <RcppArmadillo.h>
 #include <roptim.h>
+#include "eig_utils.h"
 
 using namespace Rcpp;
 using namespace arma;
-
-// Symmetric eigendecomposition that fails loudly instead of silently leaving the
-// outputs empty (which the callers would then index out of bounds). During the
-// optimization the decomposition is taken on a rescaled matrix that can go
-// non-finite or non-symmetric for a pathological correlation matrix, so turn a
-// failed arma::eig_sym into a catchable R error rather than undefined behaviour.
-static void eig_sym_checked(arma::vec& eigval, arma::mat& eigvec,
-                            const arma::mat& X) {
-  if (!arma::eig_sym(eigval, eigvec, X)) {
-    Rcpp::stop("Eigendecomposition failed during factor extraction; the "
-               "correlation matrix is not finite or not symmetric.");
-  }
-}
 
 // Shared constructor guard: the eigen-extraction reads the largest n_fac eigenpairs and
 // would index past the available eigenvalues if n_fac is out of range, so reject that up

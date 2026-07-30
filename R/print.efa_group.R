@@ -17,8 +17,7 @@
 #' @param ... Not used; for consistency with the generic.
 #'
 #' @returns `print()` returns its argument `x` invisibly. `format()` returns a character
-#'   vector with the report lines (styled to the active console theme; plain when colours
-#'   are disabled).
+#'   vector with the report lines.
 #'
 #' @family factor analysis
 #'

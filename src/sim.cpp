@@ -1,5 +1,6 @@
 // [[Rcpp::depends(RcppArmadillo)]]
 #include <RcppArmadillo.h>
+#include "eig_utils.h"
 
 using namespace Rcpp;
 using namespace arma;
@@ -21,16 +22,6 @@ static inline arma::mat cfm_draw(const int N, const arma::mat& M) {
     return arma::randn(N, M.n_rows);
   }
   return arma::randn(N, M.n_rows) * M;
-}
-
-// Symmetric eigendecomposition that fails loudly instead of leaving the output empty
-// (which the caller would then index out of bounds). A degenerate simulated matrix can
-// make arma::eig_sym return false, so turn that into a catchable R error.
-static void eig_sym_checked(arma::vec& eigval, const arma::mat& X) {
-  if (!arma::eig_sym(eigval, X)) {
-    Rcpp::stop("Eigendecomposition failed during the reference simulation; the "
-               "simulated correlation matrix is not finite or not symmetric.");
-  }
 }
 
 //' Draw multivariate-normal data from a population correlation matrix.
@@ -127,7 +118,8 @@ arma::vec simulate_cfm_eigen(const int nf, const int N, const arma::mat& Lambda,
   arma::vec ref_values(nreps);
 
   for (arma::uword i = 0; i < static_cast<arma::uword>(nreps); i++) {
-    eig_sym_checked(eigvals, arma::cor(cfm_draw(N, M)));
+    eig_sym_values_checked(eigvals, arma::cor(cfm_draw(N, M)),
+                           "the reference simulation");
     ref_values(i) = eigvals(ind);
   }
 

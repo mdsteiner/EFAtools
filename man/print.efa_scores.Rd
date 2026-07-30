@@ -30,8 +30,7 @@ Default is 3.}
 \value{
 \code{print()} and the print method for \code{summary.efa_scores} objects return
 their argument invisibly. \code{format()} returns a character vector with the
-report lines (styled to the active console theme; plain when colours are
-disabled). \code{summary()} returns an object of class \code{summary.efa_scores}.
+report lines. \code{summary()} returns an object of class \code{summary.efa_scores}.
 }
 \description{
 \code{print()} shows a concise overview of an \code{\link[=efa_scores]{efa_scores()}} result: a header naming

@@ -104,6 +104,23 @@
   return(x)
 }
 
+# Vectorize the lower triangle of a symmetric matrix (diagonal included) in column-major
+# order, dropping the duplicated upper triangle. This is the standard vech() ordering (the
+# one MBESS::vech() returns), which callers rely on when they pair the vectorized entries
+# with duplication-matrix weights.
+.vech <- function(M) {
+  M <- as.matrix(M)
+  M[lower.tri(M, diag = TRUE)]
+}
+
+# Reconstruct a symmetric matrix from .vech() output.
+.unvech <- function(v, k) {
+  M <- matrix(NA_real_, k, k)
+  M[lower.tri(M, diag = TRUE)] <- v
+  M[upper.tri(M)] <- t(M)[upper.tri(M)]
+  M
+}
+
 # Varimax simplicity criterion monitored for convergence by .VARIMAX_SPSS(); the
 # rotation stops once it stabilises. This is the criterion SV given in the SPSS
 # Statistics Algorithms manual (FACTOR, "Orthogonal Rotations (Harman, 1976)"),

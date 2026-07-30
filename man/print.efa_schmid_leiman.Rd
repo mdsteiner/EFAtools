@@ -17,8 +17,7 @@
 }
 \value{
 \code{print()} returns its argument \code{x} invisibly. \code{format()} returns a
-character vector with the report lines (styled to the active console theme;
-plain when colours are disabled).
+character vector with the report lines.
 }
 \description{
 \code{print()} shows a summarised output of the \code{\link[=efa_schmid_leiman]{efa_schmid_leiman()}} function: a

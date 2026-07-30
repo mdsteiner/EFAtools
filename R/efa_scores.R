@@ -339,8 +339,7 @@ efa_scores <- function(x, f, Phi = NULL, rho = NULL,
 #'
 #' @returns `print()` and the print method for `summary.efa_scores` objects return
 #'   their argument invisibly. `format()` returns a character vector with the
-#'   report lines (styled to the active console theme; plain when colours are
-#'   disabled). `summary()` returns an object of class `summary.efa_scores`.
+#'   report lines. `summary()` returns an object of class `summary.efa_scores`.
 #'
 #' @family factor scoring
 #'

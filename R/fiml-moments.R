@@ -248,7 +248,7 @@
 
 # Analytic gradient (score) of the saturated observed-data log-likelihood with respect to
 # theta = (mu, vech(sigma)), accumulated per missingness pattern; vech is the column-major
-# lower triangle including the diagonal (the .efa_pooled_vech() convention). The covariance
+# lower triangle including the diagonal (the .vech() convention). The covariance
 # block is returned with respect to the distinct free parameters: an off-diagonal sigma_ij
 # appears in both Sigma[i, j] and Sigma[j, i], so its derivative carries the factor 2 from the
 # duplication-matrix chain rule. Differentiating this score gives the observed information.
@@ -298,7 +298,7 @@
   # (chain rule), leave the diagonal as is.
   Gpar <- 2 * Gfull
   diag(Gpar) <- diag(Gfull)
-  c(mu_grad, .efa_pooled_vech(Gpar))
+  c(mu_grad, .vech(Gpar))
 }
 
 # Asymptotic covariance of the Stage-1 saturated FIML estimates: the inverse observed
@@ -338,9 +338,9 @@
   }
 
   pstar <- p * (p + 1L) / 2L
-  theta0 <- c(mu, .efa_pooled_vech(sigma))
+  theta0 <- c(mu, .vech(sigma))
   score_at <- function(theta) {
-    sig <- .efa_pooled_unvech(theta[p + seq_len(pstar)], p)
+    sig <- .unvech(theta[p + seq_len(pstar)], p)
     .fiml_saturated_score(Y, theta[seq_len(p)], sig, patterns = patterns)
   }
 

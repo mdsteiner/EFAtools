@@ -1,21 +1,9 @@
 // [[Rcpp::depends(RcppArmadillo)]]
 #include <RcppArmadillo.h>
+#include "eig_utils.h"
 
 using namespace Rcpp;
 using namespace arma;
-
-// Symmetric eigendecomposition that fails loudly instead of silently leaving
-// eigval/eigvec empty (which the callers would then index out of bounds). A
-// non-finite or non-symmetric matrix - e.g. a degenerate bootstrap correlation
-// matrix - makes arma::eig_sym return false, so turn that into a catchable R
-// error rather than undefined behaviour.
-static void eig_sym_checked(arma::vec& eigval, arma::mat& eigvec,
-                            const arma::mat& X) {
-  if (!arma::eig_sym(eigval, eigvec, X)) {
-    Rcpp::stop("Eigendecomposition failed during factor extraction; the "
-               "correlation matrix is not finite or not symmetric.");
-  }
-}
 
 //' Perform the iterative PAF procedure
 //'

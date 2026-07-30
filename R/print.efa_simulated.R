@@ -15,8 +15,7 @@
 #' @param ... Not used; for consistency with the generic.
 #'
 #' @returns `print()` returns its argument `x` invisibly. `format()` returns a character vector
-#'   with the summary lines (styled to the active console theme; plain when colours are
-#'   disabled).
+#'   with the summary lines.
 #'
 #' @family data simulation
 #'

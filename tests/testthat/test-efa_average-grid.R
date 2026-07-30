@@ -216,3 +216,234 @@ test_that(".build_avg_grid reproduces the original grid construction", {
   expect_equal(do.call(.build_avg_grid, vec_args),
                do.call(ref_build_avg_grid, vec_args))
 })
+
+
+### test .oblq_grid
+
+obl_grid_1 <- .oblq_grid(c("PAF"), c("smc", "mac"), .001,
+                         c("sum", "max_individual"), c(FALSE, TRUE),
+                         500, NA, c("promax", "simplimax", "oblimin"),
+                         c(3, 4), TRUE, c("norm", "unnorm"), 1e-5, c("kaiser", "svd"),
+                         30)
+obl_grid_2 <- .oblq_grid(c("PAF"), c("smc", "mac"), .001,
+                         c("sum", "max_individual"), c(FALSE, TRUE),
+                         500, NA, c("simplimax", "oblimin"),
+                         c(3, 4), TRUE, c("norm", "unnorm"), 1e-5, c("kaiser", "svd"),
+                         30)
+obl_grid_3 <- .oblq_grid(c("PAF"), c("smc", "mac"), .001,
+                         c("sum", "max_individual"), c(FALSE, TRUE),
+                         500, NA, c("simplimax", "oblimin"),
+                         NA, TRUE, NA, 1e-5, NA, 30)
+obl_grid_4 <- .oblq_grid("ML", NA, NA, NA, NA, 500, c("psych", "factanal"),
+                         "oblimin", NA, TRUE, NA, 1e-5, NA, NA)
+
+test_that(".oblq_grid works", {
+  ### tests for obl_grid_1 with vector-valued PAF arguments
+  expect_s3_class(obl_grid_1, "data.frame")
+  expect_named(obl_grid_1, c("estimator", "init_comm", "criterion", "criterion_type",
+                            "abs_eigen", "max_iter", "start_method", "rotation", "k_promax",
+                            "normalize", "P_type", "precision", "varimax_type",
+                            "k_simplimax"))
+  expect_equal(nrow(obl_grid_1), 80)
+  expect_equal(sum(is.na(obl_grid_1$k_simplimax)), 72)
+  expect_equal(sum(is.na(obl_grid_1$k_promax)), 16)
+  expect_equal(sum(is.na(obl_grid_1$varimax_type)), 16)
+  expect_equal(unique(obl_grid_1$rotation), c("promax", "simplimax", "oblimin"))
+
+  expect_s3_class(obl_grid_2, "data.frame")
+  expect_named(obl_grid_2, c("estimator", "init_comm", "criterion", "criterion_type",
+                             "abs_eigen", "max_iter", "start_method", "rotation", "k_promax",
+                             "normalize", "P_type", "precision", "varimax_type",
+                             "k_simplimax"))
+  expect_equal(nrow(obl_grid_2), 16)
+  expect_equal(sum(is.na(obl_grid_2$k_promax)), 16)
+  expect_equal(sum(is.na(obl_grid_2$varimax_type)), 16)
+  expect_equal(unique(obl_grid_2$rotation), c("simplimax", "oblimin"))
+
+  expect_equal(obl_grid_2, obl_grid_3)
+
+  expect_s3_class(obl_grid_4, "data.frame")
+  expect_named(obl_grid_4, c("estimator", "init_comm", "criterion", "criterion_type",
+                             "abs_eigen", "max_iter", "start_method", "rotation", "k_promax",
+                             "normalize", "P_type", "precision", "varimax_type",
+                             "k_simplimax"))
+  expect_equal(nrow(obl_grid_4), 2)
+  expect_equal(sum(is.na(obl_grid_4$k_simplimax)), 2)
+  expect_equal(sum(is.na(obl_grid_4$k_promax)), 2)
+  expect_equal(sum(is.na(obl_grid_4$varimax_type)), 2)
+  expect_equal(unique(obl_grid_4$rotation), c("oblimin"))
+  expect_equal(sum(is.na(obl_grid_4$init_comm)), 2)
+
+
+})
+### test .orth_grid
+
+orth_grid_1 <- .orth_grid(c("PAF"), c("smc", "mac"), .001,
+                         c("sum", "max_individual"), c(FALSE, TRUE),
+                         500, NA, c("varimax", "quartimax"),
+                         TRUE, 1e-5, c("kaiser", "svd"))
+orth_grid_2 <- .orth_grid(c("PAF"), c("smc", "mac"), .001,
+                          c("sum", "max_individual"), c(FALSE, TRUE),
+                          500, NA, c("quartimax"), TRUE, 1e-5,
+                          c("kaiser", "svd"))
+orth_grid_3 <- .orth_grid(c("PAF"), c("smc", "mac"), .001,
+                          c("sum", "max_individual"), c(FALSE, TRUE),
+                          500, NA, c("quartimax"), TRUE, 1e-5, NA)
+orth_grid_4 <- .orth_grid("ML", NA, NA, NA, NA, 500, c("psych", "factanal"),
+                         "quartimax", TRUE, 1e-5, NA)
+
+test_that(".orth_grid works", {
+  ### tests for orth_grid_1 with vector-valued PAF arguments
+  expect_s3_class(orth_grid_1, "data.frame")
+  expect_named(orth_grid_1, c("estimator", "init_comm", "criterion", "criterion_type",
+                             "abs_eigen", "max_iter", "start_method", "rotation", "k_promax",
+                             "normalize", "P_type", "precision", "varimax_type",
+                             "k_simplimax"))
+  expect_equal(nrow(orth_grid_1), 24)
+  expect_equal(sum(is.na(orth_grid_1$varimax_type)), 8)
+  expect_equal(sum(is.na(orth_grid_1$k_promax)), 24)
+  expect_equal(unique(orth_grid_1$rotation), c("varimax", "quartimax"))
+
+  expect_s3_class(orth_grid_2, "data.frame")
+  expect_named(orth_grid_2, c("estimator", "init_comm", "criterion", "criterion_type",
+                             "abs_eigen", "max_iter", "start_method", "rotation", "k_promax",
+                             "normalize", "P_type", "precision", "varimax_type",
+                             "k_simplimax"))
+  expect_equal(nrow(orth_grid_2), 8)
+  expect_equal(sum(is.na(orth_grid_2$varimax_type)), 8)
+  expect_equal(sum(is.na(orth_grid_2$k_promax)), 8)
+  expect_equal(unique(orth_grid_2$rotation), c("quartimax"))
+
+  expect_equal(orth_grid_2, orth_grid_3)
+
+  expect_s3_class(orth_grid_4, "data.frame")
+  expect_named(orth_grid_4, c("estimator", "init_comm", "criterion", "criterion_type",
+                             "abs_eigen", "max_iter", "start_method", "rotation", "k_promax",
+                             "normalize", "P_type", "precision", "varimax_type",
+                             "k_simplimax"))
+  expect_equal(nrow(orth_grid_4), 2)
+  expect_equal(sum(is.na(orth_grid_4$k_simplimax)), 2)
+  expect_equal(sum(is.na(orth_grid_4$k_promax)), 2)
+  expect_equal(sum(is.na(orth_grid_4$varimax_type)), 2)
+  expect_equal(unique(orth_grid_4$rotation), c("quartimax"))
+  expect_equal(sum(is.na(orth_grid_4$init_comm)), 2)
+
+})
+
+
+### test .type_grid
+
+tg_ob <- .type_grid("PAF", c("smc", "mac"), .001,
+                   c("sum", "max_individual"), c(FALSE, TRUE),
+                   500, NA, "oblique", c(3, 4), TRUE, c("norm", "unnorm"),
+                   1e-5, c("kaiser", "svd"), 30)
+tg_ob2 <- .type_grid("PAF", c("smc", "mac"), .001,
+                    c("sum", "max_individual"), c(FALSE, TRUE),
+                    500, NA, c("oblimin", "promax"), c(3, 4), TRUE, c("norm", "unnorm"),
+                    1e-5, c("kaiser", "svd"), 30)
+tg_orth <- .type_grid("PAF", c("smc", "mac"), .001,
+                    c("sum", "max_individual"), c(FALSE, TRUE),
+                    500, NA, "orthogonal", c(3, 4), TRUE, c("norm", "unnorm"),
+                    1e-5, c("kaiser", "svd"), 30)
+tg_orth2 <- .type_grid("PAF", c("smc", "mac"), .001,
+                      c("sum", "max_individual"), c(FALSE, TRUE),
+                      500, NA, c("varimax", "quartimax"), c(3, 4), TRUE,
+                      c("norm", "unnorm"), 1e-5, c("kaiser", "svd"), 30)
+tg_nn <- .type_grid("PAF", c("smc", "mac"), .001,
+                      c("sum", "max_individual"), c(FALSE, TRUE),
+                      500, NA, "none", c(3, 4), TRUE, c("norm", "unnorm"),
+                      1e-5, c("kaiser", "svd"), 30)
+
+test_that(".type_grid works", {
+  ### test errors
+  expect_error(.type_grid("PAF", NA, NA, NA, NA, NA, NA, c("oblique", "none"), NA,
+                          NA, NA, NA, NA, NA),
+               class = "efa_rotation_length")
+  expect_error(.type_grid("PAF", NA, NA, NA, NA, NA, NA, c("oblique", "varimax"), NA,
+                          NA, NA, NA, NA, NA),
+               class = "efa_rotation_length")
+  expect_error(.type_grid("PAF", NA, NA, NA, NA, NA, NA, c("orthogonal", "varimax"),
+                          NA, NA, NA, NA, NA, NA),
+               class = "efa_rotation_length")
+  expect_error(.type_grid("PAF", NA, NA, NA, NA, NA, NA, c("promax", "varimax"),
+                          NA, NA, NA, NA, NA, NA),
+               class = "efa_rotation_mismatch")
+
+  expect_s3_class(tg_ob, "data.frame")
+  expect_named(tg_ob, c("estimator", "init_comm", "criterion", "criterion_type",
+                              "abs_eigen", "max_iter", "start_method", "rotation", "k_promax",
+                              "normalize", "P_type", "precision", "varimax_type",
+                              "k_simplimax"))
+  expect_equal(nrow(tg_ob), 112)
+  expect_equal(sum(is.na(tg_ob$varimax_type)),
+               nrow(tg_ob) - sum(tg_ob$rotation == "promax"))
+  expect_equal(sum(is.na(tg_ob$k_promax)),
+               nrow(tg_ob) - sum(tg_ob$rotation == "promax"))
+  expect_equal(sum(is.na(tg_ob$P_type)),
+               nrow(tg_ob) - sum(tg_ob$rotation == "promax"))
+  expect_equal(sum(is.na(tg_ob$k_simplimax)),
+               nrow(tg_ob) - sum(tg_ob$rotation == "simplimax"))
+  expect_equal(sort(unique(tg_ob$rotation)),
+               sort(c("promax", "oblimin", "quartimin", "simplimax",
+                 "bentlerQ", "geominQ", "bifactorQ")))
+
+  expect_s3_class(tg_ob2, "data.frame")
+  expect_named(tg_ob2, c("estimator", "init_comm", "criterion", "criterion_type",
+                        "abs_eigen", "max_iter", "start_method", "rotation", "k_promax",
+                        "normalize", "P_type", "precision", "varimax_type",
+                        "k_simplimax"))
+  expect_equal(nrow(tg_ob2), 72)
+  expect_equal(sum(is.na(tg_ob2$varimax_type)),
+               nrow(tg_ob2) - sum(tg_ob2$rotation == "promax"))
+  expect_equal(sum(is.na(tg_ob2$k_promax)),
+               nrow(tg_ob2) - sum(tg_ob2$rotation == "promax"))
+  expect_equal(sum(is.na(tg_ob2$P_type)),
+               nrow(tg_ob2) - sum(tg_ob2$rotation == "promax"))
+  expect_equal(sum(is.na(tg_ob2$k_simplimax)),
+               nrow(tg_ob2) - sum(tg_ob2$rotation == "simplimax"))
+  expect_equal(unique(tg_ob2$rotation),
+               c("promax", "oblimin"))
+
+  expect_s3_class(tg_orth, "data.frame")
+  expect_named(tg_orth, c("estimator", "init_comm", "criterion", "criterion_type",
+                        "abs_eigen", "max_iter", "start_method", "rotation", "k_promax",
+                        "normalize", "P_type", "precision", "varimax_type",
+                        "k_simplimax"))
+  expect_equal(nrow(tg_orth), 56)
+  expect_equal(sum(is.na(tg_orth$varimax_type)),
+               nrow(tg_orth) - sum(tg_orth$rotation == "varimax"))
+  expect_equal(sort(unique(tg_orth$rotation)),
+               sort(c("varimax", "quartimax", "equamax",
+                      "bentlerT", "geominT", "bifactorT")))
+
+  expect_s3_class(tg_orth2, "data.frame")
+  expect_named(tg_orth2, c("estimator", "init_comm", "criterion", "criterion_type",
+                         "abs_eigen", "max_iter", "start_method", "rotation", "k_promax",
+                         "normalize", "P_type", "precision", "varimax_type",
+                         "k_simplimax"))
+  expect_equal(nrow(tg_orth2), 24)
+  expect_equal(sum(is.na(tg_orth2$varimax_type)),
+               nrow(tg_orth2) - sum(tg_orth2$rotation == "varimax"))
+  expect_equal(unique(tg_orth2$rotation),
+               c("varimax", "quartimax"))
+
+
+  expect_s3_class(tg_nn, "data.frame")
+  expect_named(tg_nn, c("estimator", "init_comm", "criterion", "criterion_type",
+                           "abs_eigen", "max_iter", "start_method", "rotation", "k_promax",
+                           "normalize", "P_type", "precision", "varimax_type",
+                           "k_simplimax"))
+  expect_equal(nrow(tg_nn), 8)
+  expect_true(all(is.na(tg_nn$varimax_type)))
+  expect_true(all(tg_nn$rotation == "none"))
+  expect_true(all(is.na(tg_nn$k_promax)))
+  expect_true(all(is.na(tg_nn$normalize)))
+  expect_true(all(is.na(tg_nn$P_type)))
+  expect_true(all(is.na(tg_nn$precision)))
+  expect_true(all(is.na(tg_nn$k_simplimax)))
+
+})
+
+
+rm(obl_grid_1, obl_grid_2, obl_grid_3, obl_grid_4, orth_grid_1, orth_grid_2,
+   orth_grid_3, orth_grid_4, tg_ob, tg_ob2, tg_orth, tg_orth2, tg_nn)

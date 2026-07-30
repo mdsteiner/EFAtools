@@ -23,8 +23,7 @@
 #' @param ... Passed from `print()` to `format()`; not otherwise used.
 #'
 #' @returns `print()` returns its argument `x` invisibly. `format()` returns a
-#'   character vector with the report lines (styled to the active console theme;
-#'   plain when colours are disabled).
+#'   character vector with the report lines.
 #'
 #' @export
 #' @method print efa_compare
