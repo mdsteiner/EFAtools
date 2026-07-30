@@ -281,6 +281,23 @@ test_that("empirical-path inputs are validated", {
     class = "efa_simulate_input")
 })
 
+test_that("a resample that comes out constant is reported with a classed error", {
+  # The source column is non-normal but legal (two distinct values), so it passes the
+  # boundary check; its rare category is rare enough that a small draw almost never
+  # includes it, leaving a constant resample that has no correlation to match.
+  p <- nrow(Lambda_pop)
+  set.seed(9)
+  x_rare <- matrix(stats::rnorm(2000 * p), nrow = 2000, ncol = p)
+  x_rare[, 1] <- c(1, rep(0, 1999))
+  # The draw runs in a future, which re-raises the error but also emits its own
+  # cancellation warning; only the classed error is of interest here.
+  expect_error(
+    suppressWarnings(
+      efa_simulate(N = 10, Lambda = Lambda_pop, Phi = Phi_pop, marginals = "empirical",
+                   marginal_data = x_rare, seed = 1)),
+    class = "efa_simulate_degenerate_marginal")
+})
+
 test_that("empirical n_datasets > 1 returns a reproducible list", {
   p <- nrow(Lambda_pop)
   set.seed(7)
@@ -377,6 +394,12 @@ test_that("unattainable target moments raise a classed error", {
   expect_error(
     efa_simulate(N = 10, R = R_vm, marginals = "VM", skewness = 0, kurtosis = -1.4),
     class = "efa_simulate_infeasible_moments")
+  # Skewness alone: Fleishman's region leaves the zero-kurtosis line at skewness ~0.855,
+  # so the most obvious "give me skewed data" call is infeasible via the defaulted
+  # kurtosis rather than via the requested skewness.
+  expect_error(
+    efa_simulate(N = 10, R = R_vm, marginals = "VM", skewness = 1),
+    class = "efa_simulate_infeasible_moments")
   # The independent-generator moments can be infeasible even when the requested
   # marginal moments are attainable, because they depend on the population.
   expect_error(
@@ -410,6 +433,43 @@ test_that("a non-positive-definite Vale-Maurelli intermediate matrix is guarded"
                         kurtosis = 10, force_pd = TRUE, seed = 1),
     class = "efa_simulate_pd_forced")
   expect_equal(dim(dat$data), c(500, 3))
+  # The projected intermediate matrix no longer solves the Vale-Maurelli cubic for the
+  # target, so `population` reports the population the draw actually attains -- which
+  # differs from the target and keeps a unit diagonal and the variable names.
+  expect_false(isTRUE(all.equal(dat$population, R_bad, check.attributes = FALSE)))
+  expect_equal(diag(dat$population), rep(1, 3), ignore_attr = TRUE)
+  expect_equal(dimnames(dat$population), list(paste0("V", 1:3), paste0("V", 1:3)))
+})
+
+test_that(".vm_achieved_cor inverts the intermediate-correlation cubic", {
+  # Where the intermediate matrix is not projected, the achieved population must be the
+  # target: the two helpers are the two directions of the same Vale-Maurelli equation.
+  ftab <- .fleishman_table(rep(1, ncol(R_vm)), rep(2, ncol(R_vm)))
+  expect_equal(.vm_achieved_cor(.vm_intermediate_cor(R_vm, ftab), ftab),
+               R_vm, ignore_attr = TRUE, tolerance = 1e-10)
+})
+
+test_that("the forced-PD Vale-Maurelli population is the one the draw converges to", {
+  skip_on_cran()
+  skip_if_not_slow()
+  # Strongly correlated variables with heavy, mixed-sign non-normality: the intermediate
+  # matrix is far outside the positive-definite cone, so the projection moves the
+  # population it implies a long way from the target (here by about 0.21).
+  R_bad <- diag(5)
+  R_bad[lower.tri(R_bad)] <- c(0.8606, -0.5258, 0.8610, 0.5717, -0.8367, 0.9447,
+                               0.8524, -0.7903, -0.9634, 0.8094)
+  R_bad <- R_bad + t(R_bad) - diag(5)
+  sim <- suppressWarnings(
+    efa_simulate(N = 5e4, R = R_bad, marginals = "VM",
+                 skewness = c(2.20, 2.39, -1.91, -0.13, 0.30),
+                 kurtosis = c(27.6, 8.5, 29.7, 28.7, 7.1),
+                 force_pd = TRUE, seed = 3))
+  emp <- stats::cor(sim$data)
+  off <- function(x) x[lower.tri(x)]
+  # The realized correlations converge on the reported population, not on the target the
+  # projection abandoned -- the drift is a population property, not sampling noise.
+  expect_lt(max(abs(off(emp) - off(sim$population))), 0.02)
+  expect_gt(max(abs(off(sim$population) - off(R_bad))), 0.1)
 })
 
 test_that("the independent generator requires a positive-definite population", {
@@ -838,11 +898,125 @@ test_that(".apply_missing reads predictors from the complete draw", {
   expect_equal(mean(miss2), 0.3, tolerance = 0.03)
 })
 
+test_that("missing_vars restricts the holed columns and leaves the rest complete", {
+  p <- ncol(R_vm)
+  dat <- efa_simulate(N = 4000, R = R_vm, missing = "MAR", missing_prop = 0.2,
+                      missing_vars = 1:3, missing_predictor = 4:6, seed = 41)$data
+  # Only the named columns carry NAs, and they carry them at the target rate.
+  expect_true(all(colMeans(is.na(dat))[1:3] > 0))
+  expect_equal(unname(colSums(is.na(dat))[4:6]), rep(0L, 3L))
+  expect_lt(max(abs(colMeans(is.na(dat))[1:3] - 0.2)), 0.03)
+
+  # Names select the same columns as indices.
+  R_named <- R_vm
+  nm <- paste0("v", seq_len(p))
+  dimnames(R_named) <- list(nm, nm)
+  by_name <- efa_simulate(N = 400, R = R_named, missing = "MCAR", missing_prop = 0.2,
+                          missing_vars = nm[c(1, 3)], seed = 42)$data
+  by_idx <- efa_simulate(N = 400, R = R_named, missing = "MCAR", missing_prop = 0.2,
+                         missing_vars = c(1, 3), seed = 42)$data
+  expect_identical(is.na(by_name), is.na(by_idx))
+
+  # The default (NULL) is the all-columns behaviour, byte for byte.
+  all_cols <- efa_simulate(N = 400, R = R_vm, missing = "MCAR", missing_prop = 0.2,
+                           seed = 43)
+  explicit <- efa_simulate(N = 400, R = R_vm, missing = "MCAR", missing_prop = 0.2,
+                           missing_vars = seq_len(p), seed = 43)
+  expect_identical(all_cols$data, explicit$data)
+})
+
+test_that("missing_vars is validated and gated", {
+  p <- ncol(R_vm)
+  # Only meaningful with a mechanism.
+  expect_error(efa_simulate(N = 100, R = R_vm, missing_vars = 1:3),
+               class = "efa_simulate_input")
+  # Out-of-range, duplicated, empty, non-integer, and unknown-name specs.
+  expect_error(efa_simulate(N = 100, R = R_vm, missing = "MCAR", missing_prop = 0.1,
+                            missing_vars = c(1, 99)),
+               class = "efa_simulate_input")
+  expect_error(efa_simulate(N = 100, R = R_vm, missing = "MCAR", missing_prop = 0.1,
+                            missing_vars = c(1, 1)),
+               class = "efa_simulate_input")
+  expect_error(efa_simulate(N = 100, R = R_vm, missing = "MCAR", missing_prop = 0.1,
+                            missing_vars = integer(0)),
+               class = "efa_simulate_input")
+  expect_error(efa_simulate(N = 100, R = R_vm, missing = "MCAR", missing_prop = 0.1,
+                            missing_vars = 1.5),
+               class = "efa_simulate_input")
+  expect_error(efa_simulate(N = 100, R = R_vm, missing = "MCAR", missing_prop = 0.1,
+                            missing_vars = "nope"),
+               class = "efa_simulate_input")
+  # An index beyond the integer range is caught on the supplied value: coercing it first
+  # would give NA and leave the range test an `if (NA)` base error. Same for the predictor.
+  expect_error(efa_simulate(N = 100, R = R_vm, missing = "MCAR", missing_prop = 0.1,
+                            missing_vars = 3e9),
+               class = "efa_simulate_input")
+  expect_error(efa_simulate(N = 100, R = R_vm, missing = "MAR", missing_prop = 0.1,
+                            missing_predictor = rep(3e9, p)),
+               class = "efa_simulate_input")
+  # missing_vars applies to every mechanism, not just MAR.
+  d_mnar <- efa_simulate(N = 2000, R = R_vm, missing = "MNAR", missing_prop = 0.2,
+                         missing_vars = c(2L, 5L), seed = 44)$data
+  expect_true(all(colMeans(is.na(d_mnar))[c(2, 5)] > 0))
+  expect_equal(unname(colSums(is.na(d_mnar))[c(1, 3, 4, 6)]), rep(0L, 4L))
+  # missing_predictor is now one entry per holed variable, not per variable.
+  expect_error(efa_simulate(N = 100, R = R_vm, missing = "MAR", missing_prop = 0.1,
+                            missing_vars = 1:3, missing_predictor = seq_len(p)),
+               class = "efa_simulate_input")
+  # ... and still may not point a holed variable at itself.
+  expect_error(efa_simulate(N = 100, R = R_vm, missing = "MAR", missing_prop = 0.1,
+                            missing_vars = 1:3, missing_predictor = c(4L, 2L, 6L)),
+               class = "efa_simulate_input")
+})
+
+test_that("a strictly MAR design leaves FIML moments unbiased", {
+  skip_on_cran()
+  skip_if_not_slow()
+  # With the holed variables disjoint from their predictors, every predictor is fully
+  # observed, so the mechanism is ignorably MAR and FIML -- which is consistent under
+  # ignorable MAR -- recovers the population correlations. Holing every column instead
+  # leaves the predictors partly missing, which is only MAR given the complete data and
+  # biases FIML noticeably at this rate and strength. The tolerances are loose: this
+  # pins the direction and the order of magnitude, not a Monte-Carlo estimate.
+  ign <- efa_simulate(N = 2e4, Lambda = Lambda_pop, Phi = Phi_pop, missing = "MAR",
+                      missing_prop = 0.3, missing_strength = 3,
+                      missing_vars = 1:9, missing_predictor = 10:18, seed = 71)$data
+  all_holed <- efa_simulate(N = 2e4, Lambda = Lambda_pop, Phi = Phi_pop,
+                            missing = "MAR", missing_prop = 0.3,
+                            missing_strength = 3, seed = 71)$data
+
+  # Mask placement: the ignorable design holes exactly the first nine columns.
+  expect_true(all(colMeans(is.na(ign))[1:9] > 0))
+  expect_equal(unname(colSums(is.na(ign))[10:18]), rep(0L, 9L))
+  expect_true(all(colMeans(is.na(all_holed)) > 0))
+
+  off <- function(x) x[lower.tri(x)]
+  R_ign <- stats::cov2cor(.fiml_em_moments(ign)$sigma)
+  R_all <- stats::cov2cor(.fiml_em_moments(all_holed)$sigma)
+  bias_ign <- mean(off(R_ign) - off(R_pop))
+  bias_all <- mean(off(R_all) - off(R_pop))
+
+  # The ignorable design is unbiased on the mean off-diagonal correlation; holing every
+  # column attenuates it by an order of magnitude more.
+  expect_lt(abs(bias_ign), 0.005)
+  expect_lt(bias_all, -0.01)
+  expect_lt(abs(bias_ign), abs(bias_all) / 3)
+})
+
 test_that(".resolve_missing_predictor resolves and validates specs", {
   p <- 5L
   vn <- paste0("v", seq_len(p))
   # NULL gives the cyclic next neighbour.
   expect_identical(.resolve_missing_predictor(NULL, p, vn), c(2L, 3L, 4L, 5L, 1L))
+  # Restricted to a subset of holed variables, the cyclic default and an explicit spec
+  # both give one predictor per holed variable.
+  expect_identical(.resolve_missing_predictor(NULL, p, vn, c(1L, 3L)), c(2L, 4L))
+  expect_identical(.resolve_missing_predictor(c(4L, 5L), p, vn, c(1L, 3L)), c(4L, 5L))
+  # A spec of the wrong length for the holed subset, or one that self-predicts, errors.
+  expect_error(.resolve_missing_predictor(c(2L, 3L, 4L, 5L, 1L), p, vn, c(1L, 3L)),
+               class = "efa_simulate_input")
+  expect_error(.resolve_missing_predictor(c(2L, 3L), p, vn, c(1L, 3L)),
+               class = "efa_simulate_input")
   # Names resolve to indices.
   expect_identical(.resolve_missing_predictor(vn[c(2:5, 1)], p, vn),
                    c(2L, 3L, 4L, 5L, 1L))
@@ -1030,6 +1204,24 @@ test_that("TKL matches a single RMSEA target closely and both targets approximat
                      target_rmsea = 0.05, target_cfi = 0.95, return_pop = TRUE, seed = 4)
   expect_lt(abs(s2$model_error$rmsea - 0.05), 0.02)
   expect_lt(abs(s2$model_error$cfi - 0.95), 0.02)
+})
+
+test_that("TKL warns when the two targets are jointly unattainable", {
+  skip_on_cran()
+  # A high target CFI dominates the weighted objective, so the two knobs cannot honour a
+  # target RMSEA of .05 alongside it: the achieved RMSEA comes out about half the target.
+  # The compromise is otherwise only visible by reading the achieved values back off the
+  # result, so it is flagged.
+  expect_warning(
+    s <- efa_simulate(Lambda = Lambda_me, Phi = Phi_me, model_error = "TKL",
+                      target_rmsea = 0.05, target_cfi = 0.99, return_pop = TRUE,
+                      seed = 6),
+    class = "efa_simulate_model_error_compromise")
+  expect_lt(s$model_error$rmsea, 0.04)
+  # A single target is matched closely, so nothing is flagged there.
+  expect_no_warning(
+    efa_simulate(Lambda = Lambda_me, Phi = Phi_me, model_error = "TKL",
+                 target_rmsea = 0.05, return_pop = TRUE, seed = 6))
 })
 
 test_that("TKL can target the CFI alone", {

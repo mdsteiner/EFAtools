@@ -5,18 +5,9 @@
 #' `R`, or assembled from a loading matrix `Lambda`, the factor intercorrelations
 #' `Phi`, and the unique variances `Psi` as
 #' \eqn{R = Lambda\, Phi\, Lambda' + Psi}, standardized to a correlation matrix.
-#' By default (`marginals = "normal"`) cases are drawn with normal marginals via
-#' a matrix square root of the population correlation (a Cholesky factor, or a
-#' symmetric eigen square root for a positive-semidefinite but singular
-#' population). With `marginals = "empirical"` the cases instead reproduce the
-#' population correlation while carrying the empirical marginal distributions of
-#' a supplied data set. With `marginals = "VM"` or `"IG"` the cases reproduce the
-#' population correlation while carrying non-normal marginals with a prescribed
-#' `skewness` and `kurtosis`. Setting `categories` additionally discretizes the
-#' drawn data into ordered categories, optionally so that the population polychoric
-#' correlation of the categorized data equals the target correlation. Setting
-#' `target_rmsea` or `target_cfi` perturbs the population with model error, so the
-#' factor model fits it only approximately (a more realistic simulation target).
+#' `marginals` chooses the marginal distribution of the drawn cases, `categories`
+#' discretizes them into ordered categories, `missing` imposes a missing-data mechanism,
+#' and a misfit target perturbs the population with model error; see *Details*.
 #'
 #' @details
 #' Provide the population either as a ready correlation matrix in `R`, or through
@@ -29,7 +20,9 @@
 #' matrix. With the default `Psi`, a factor model whose implied communalities
 #' exceed 1 (a Heywood case) leaves no unique variance and is rejected; a `Psi`
 #' you supply is instead only required to give positive variances and a
-#' positive-semidefinite population.
+#' positive-semidefinite population. Cases with normal marginals (the default) are drawn
+#' through a matrix square root of the population correlation: a Cholesky factor, or a
+#' symmetric eigen square root for a positive-semidefinite but singular population.
 #'
 #' With `marginals = "empirical"`, the iterative rank-matching algorithm of Ruscio
 #' and Kaczetow (2008) reproduces the population correlation while each variable
@@ -43,38 +36,30 @@
 #' while carrying non-normal marginals with the target `skewness` and (excess)
 #' `kurtosis`. The Vale-Maurelli family does not span every valid non-normal
 #' distribution (Foldnes & Grønneberg, 2015); `"IG"` covers distributions `"VM"`
-#' cannot. Both accept `skewness` and `kurtosis` as a single value (used for every
-#' variable) or one value per variable, defaulting the unset one to 0. Not every
-#' (`skewness`, `kurtosis`) pair is attainable: every distribution needs excess
-#' kurtosis of at least `skewness^2 - 2`, and the method covers a smaller region
-#' still, so an unreachable request is rejected. For `marginals = "VM"`, the
-#' intermediate correlation matrix used for the draw can itself be
-#' non-positive-definite; it is rejected unless `force_pd = TRUE`, which projects it
-#' to the nearest correlation matrix (via [psych::cor.smooth()]) with a warning.
+#' cannot. Not every (`skewness`, `kurtosis`) pair is attainable -- every distribution
+#' needs excess kurtosis of at least `skewness^2 - 2`, and either method covers a smaller
+#' region still -- so an unreachable request is rejected, as is a `"VM"` intermediate
+#' correlation matrix that is not positive definite unless `force_pd` allows it.
 #'
-#' With `categories`, the drawn data are discretized into ordered categories (an
-#' integer code `1` to `K`). `categories` gives either the number of equally probable
-#' categories (one count for every variable, or one per variable) or, as a list of
-#' proportion vectors, the marginal category proportions per variable. The cut points are
-#' the thresholds that reproduce the requested proportions (Olsson, 1979): the
-#' standard-normal quantiles for `marginals = "normal"`, and for `marginals = "VM"` those
-#' quantiles mapped through the same Fleishman cubic the draw uses, so the requested
-#' proportions are reproduced on the non-normal scale too. Under `marginals = "IG"` the
-#' thresholds stay on the standard-normal scale while the data do not, so the achieved
-#' proportions depart from the request systematically rather than by sampling noise; the
-#' departure grows with the non-normality, and only the *number* of categories is
-#' guaranteed. The same holds for a `"VM"` variable whose Fleishman cubic is not increasing
-#' over its own thresholds and the tails beyond them, which keeps the normal-scale ones and
-#' is reported with a warning; this arises when a turning point of the cubic sits at or
-#' near an outer threshold -- under a strongly platykurtic marginal, or under substantial
-#' skewness or kurtosis combined with a small outer-category proportion.
-#' Because categorization attenuates product-moment correlations, the
-#' categorized data's Pearson correlation is smaller in magnitude than the population
-#' correlation; under non-normal marginals its polychoric correlation departs from the
-#' population as well. `match` changes none of this -- it asserts an intent rather than
-#' selecting a computation, as described under that argument. Ordinal output is not
-#' available with `marginals = "empirical"`. Empty categories left by a draw are reported
-#' with a warning, as they destabilize the polychoric correlation and the factor analysis.
+#' With `categories`, the drawn data are discretized into ordered categories (an integer
+#' code `1` to `K`) at the thresholds that reproduce the requested category proportions
+#' (Olsson, 1979): the standard-normal quantiles for `marginals = "normal"`, and for
+#' `marginals = "VM"` those quantiles mapped through the same Fleishman cubic the draw
+#' uses, so the requested proportions are reproduced on the non-normal scale too. Under
+#' `marginals = "IG"` the thresholds stay on the standard-normal scale while the data do
+#' not, so the achieved proportions depart from the request systematically rather than by
+#' sampling noise, and only the *number* of categories is guaranteed; the same holds for a
+#' `"VM"` variable whose Fleishman cubic is not increasing over its own thresholds and the
+#' tails beyond them, which keeps the normal-scale thresholds and is reported with a
+#' warning. That happens when a turning point of the cubic sits at or near an outer
+#' threshold -- under a strongly platykurtic marginal, or under substantial skewness or
+#' kurtosis combined with a small outer-category proportion.
+#' Because categorization attenuates product-moment correlations, the categorized
+#' data's Pearson correlation is smaller in magnitude than the population correlation;
+#' under non-normal marginals its polychoric correlation departs from the population as
+#' well. Ordinal output is not available with `marginals = "empirical"`. Empty categories
+#' left by a draw are reported with a warning, as they destabilize the polychoric
+#' correlation and the factor analysis.
 #'
 #' With `missing`, missing values are introduced into the drawn data under a chosen
 #' mechanism (Rubin, 1976), each variable holed at a target expected rate
@@ -85,37 +70,39 @@
 #' `missing_strength`. The mechanism acts on the drawn (latent) values, so when
 #' `categories` also discretizes the data the missingness is keyed on the underlying
 #' value, not the category code. For `"MAR"` the predictor is evaluated on the complete
-#' drawn values, but every variable is holed at rate `missing_prop`, so a variable's MAR
-#' predictor is itself missing for roughly a `missing_prop` fraction of the cases whose
-#' missingness it drove. The mechanism is therefore MAR conditional on the *complete*
-#' data, and **not** ignorable for an analyst who sees only the observed data: estimators
-#' that are consistent under ignorable MAR, such as `cor_method = "fiml"` in [efa_fit()]
-#' and the multiple imputation behind [efa_mi()], keep a residual bias here that grows
-#' with `missing_prop` and `missing_strength`. The returned matrix carries the `NA`s,
-#' which the correlation estimators handle downstream.
+#' drawn values, so whether the mechanism is *ignorably* MAR depends on which variables
+#' carry missing values. By default every variable is holed, which leaves a variable's MAR
+#' predictor itself missing for roughly a `missing_prop` fraction of the cases whose
+#' missingness it drove: the mechanism is then MAR conditional on the *complete* data and
+#' **not** ignorable for an analyst who sees only the observed data, so estimators that are
+#' consistent under ignorable MAR -- `cor_method = "fiml"` in [efa_fit()], or the multiple
+#' imputation behind [efa_mi()] -- keep a residual bias that grows with `missing_prop` and
+#' `missing_strength`. Restricting the holed variables with `missing_vars` and pointing
+#' `missing_predictor` at variables outside that set makes every predictor fully observed,
+#' which is ignorably MAR and recovers the unbiasedness those estimators are advertised
+#' with. The returned matrix carries the `NA`s, which the correlation estimators handle
+#' downstream.
 #'
 #' With `model_error`, the population is perturbed away from the exact factor
 #' structure so the `q`-factor model (`q = ncol(Lambda)`) fits it only approximately,
 #' at a prescribed misfit; exact factor structures are unrealistic and overstate
-#' recovery in simulation studies (MacCallum, 2003). The perturbation is applied once
-#' to the population, and the achieved fit is computed with the same fit-index
-#' formulas [efa_fit()] uses and returned in the `model_error` element. It is applied only
-#' when a target is supplied (`target_rmsea` and/or `target_cfi`), needs a
-#' factor-model population (`Lambda`) with residual degrees of freedom and an exact
-#' factor structure (a diagonal `Psi`), and is orthogonal to the marginal, ordinal,
+#' recovery in simulation studies (MacCallum, 2003). The perturbation is applied once to
+#' the population, and the achieved misfit of the specified generating model is computed
+#' with the same fit-index formulas [efa_fit()] uses and returned in the `model_error`
+#' element. It needs a factor-model population with residual degrees of freedom and an
+#' exact factor structure (a diagonal `Psi`), and is orthogonal to the marginal, ordinal,
 #' and missing-data options. Three methods are available. `"CB"` (Cudeck & Browne,
 #' 1992) matches the target RMSEA to numerical precision and keeps the `q`-factor
 #' model the exact minimizer (the CFI follows as a derived quantity). `"TKL"` (Tucker,
 #' Koopman & Linn, 1969) adds minor common factors tuned so the achieved RMSEA -- and,
-#' optionally, CFI -- match the target(s); with a single target the match is close,
-#' with both it is a compromise. `"WB"` (Wu & Browne, 2015) draws the population from
+#' optionally, CFI -- match the target(s); with a single target the match is close, with
+#' both it is a compromise, reported with a warning when the two cannot be reconciled.
+#' `"WB"` (Wu & Browne, 2015) draws the population from
 #' an inverse-Wishart distribution around the model-implied correlation; its calibration
 #' applies to the *best-fitting* model, so the reported misfit of the *generating* model
 #' is systematically larger than the target -- by roughly \eqn{\sqrt{(p(p-1)/2)/df}},
 #' about 1.4 times for 12 variables and 3 factors. Use `"CB"` when the reported RMSEA
-#' must equal the target. `"CB"` and
-#' `"WB"` target the RMSEA only; `"TKL"` can target the RMSEA and/or the CFI. The
-#' reported RMSEA/CFI is the misfit of the specified generating model.
+#' must equal the target.
 #'
 #' Replicated draws (`n_datasets > 1`) are generated in parallel across
 #' replicates with \pkg{future.apply}; a parallel plan can be selected with
@@ -141,7 +128,10 @@
 #'   fits it imperfectly ("model error"): one of `"CB"` (Cudeck-Browne, the default), `"TKL"`
 #'   (Tucker-Koopman-Linn), `"WB"` (Wu-Browne), or `"none"`. Model error is only applied when a
 #'   target is supplied in `target_rmsea` or `target_cfi`; without one the population is exact,
-#'   whatever `model_error`. Only used with a factor-model population (`Lambda`).
+#'   whatever `model_error`. Only used with a factor-model population (`Lambda`). Note that
+#'   [efa_power()] defaults to `"TKL"` instead, because its minor common factors degrade
+#'   factor recovery as well as the fit, so passing the same target to the two functions
+#'   perturbs the population differently unless `model_error` is set explicitly.
 #' @param target_rmsea numeric. The population RMSEA the factor model should have relative to
 #'   the perturbed population, a single number strictly in `(0, 1)`. Supplying it activates model
 #'   error. Simulating from an exact population overstates recovery, so a realistic value (around
@@ -174,10 +164,13 @@
 #'   target marginal excess kurtosis (0 for a normal marginal), as a single value
 #'   applied to every variable or a length-`p` vector. Default is `NULL` (0).
 #' @param force_pd logical. Used with `marginals = "VM"` and with Cudeck-Browne model error
-#'   (`model_error = "CB"`). If the Vale-Maurelli intermediate correlation matrix (or, for CB,
-#'   the perturbed population at a large `target_rmsea`) is not positive definite, `FALSE` (the
-#'   default) rejects it with an error, while `TRUE` projects it to the nearest correlation
-#'   matrix (with a warning). Has no effect for the `"TKL"` or `"WB"` methods.
+#'   (`model_error = "CB"`), where `FALSE` (the default) rejects a population or intermediate
+#'   matrix that is not positive definite. What `TRUE` accepts instead differs by path, in
+#'   both cases with a warning: for `marginals = "VM"` the intermediate correlation matrix is
+#'   projected to the nearest correlation matrix (via [psych::cor.smooth()]), and the returned
+#'   `population` becomes the one the projected draw attains; for `model_error = "CB"` there is
+#'   no such projection -- the closest positive-definite perturbation is kept instead, whose
+#'   achieved RMSEA is **below** the target. Has no effect for the `"TKL"` or `"WB"` methods.
 #' @param categories numeric or list. Requests ordinal output by discretizing each
 #'   variable into ordered categories. Either a count of equally probable categories
 #'   (a single value applied to every variable or a length-`p` vector), or a
@@ -198,9 +191,10 @@
 #'   data: one of `"none"` (the default, complete data), `"MCAR"` (missing completely at
 #'   random), `"MAR"` (missing at random, depending on another variable), or `"MNAR"`
 #'   (missing not at random, depending on the variable's own value). Introduced values
-#'   become `NA`. Every variable is holed, so under `"MAR"` each variable's predictor is
-#'   itself subject to missingness: the mechanism is MAR given the *complete* data and is
-#'   not ignorable for an analyst who sees only the observed data (see Details).
+#'   become `NA`. By default every variable is holed, so under `"MAR"` each variable's
+#'   predictor is itself subject to missingness and the mechanism is MAR given the
+#'   *complete* data rather than ignorably MAR; `missing_vars` and `missing_predictor`
+#'   together give an ignorable design (see Details).
 #' @param missing_prop numeric. Only used when `missing` is not `"none"`, where it is
 #'   required: the target marginal proportion of missing values per variable, a single
 #'   number strictly between 0 and 1. This is the expected rate; the realized rate of a
@@ -211,28 +205,40 @@
 #'   `0` removes the dependence (equivalent to MCAR at the same rate) and large
 #'   magnitudes make missingness nearly deterministic.
 #' @param missing_predictor integer or character. Only used with `missing = "MAR"`:
-#'   which variable drives each variable's missingness, as one column index or variable
-#'   name per variable. Each must reference another variable, not itself (so a single
+#'   which variable drives each holed variable's missingness, as one column index or
+#'   variable name per variable in `missing_vars` (so one per variable by default), in
+#'   that order. Each must reference another variable, not itself (so a single
 #'   shared predictor is not allowed -- it would predict its own missingness). Default is
 #'   `NULL`, in which case each variable's missingness is driven by the next variable
 #'   cyclically (so variable order matters; supply this explicitly when the order is
-#'   arbitrary).
+#'   arbitrary). Predictors outside `missing_vars` are fully observed, which is what makes
+#'   the mechanism ignorably MAR.
+#' @param missing_vars integer or character. Only used when `missing` is not `"none"`:
+#'   which variables carry missing values, as column indices or variable names. Default is
+#'   `NULL`, in which case every variable is holed. Restricting it leaves the remaining
+#'   variables complete, which under `missing = "MAR"` is how a fully observed
+#'   `missing_predictor` -- and with it an ignorably MAR design -- is obtained.
 #' @param n_datasets numeric. The number of datasets to draw. Default is 1. With
 #'   more than one, a list of datasets is returned.
 #' @param seed numeric. Optional seed for reproducible draws. When supplied, the
 #'   caller's random-number stream is saved and restored, so the call leaves the
 #'   global RNG state unchanged. Default is `NULL` (no seeding).
 #' @param return_pop logical. If `TRUE`, return only the population correlation
-#'   matrix and draw no data. Default is `FALSE`.
+#'   matrix and draw no data. Default is `FALSE`. Because no data are drawn, the
+#'   Vale-Maurelli intermediate correlation matrix is never formed, so its
+#'   positive-definiteness (and any `force_pd` projection of it) is neither checked nor
+#'   reflected in the returned population.
 #'
 #' @returns An object of class `efa_simulated`: a list with elements `data` (the simulated
 #'   data -- an `N` by `p` numeric matrix, an integer matrix of category codes when `categories`
 #'   is set, or a length-`n_datasets` list of these when `n_datasets > 1`; `NULL` when
 #'   `return_pop = TRUE`), `population` (the `p` by `p` population correlation matrix drawn from,
-#'   model-error-perturbed when requested; with `force_pd = TRUE` and `marginals = "VM"` it stays
-#'   the target matrix, from which the realized correlations of the draw can drift), `model_error`
-#'   (`NULL`, or a list of the method and
-#'   the target and achieved RMSEA/CFI when model error was applied), and `settings`. Printing
+#'   model-error-perturbed when requested; when `force_pd = TRUE` and `marginals = "VM"` project
+#'   the intermediate matrix, it is the population the projected draw actually attains, which
+#'   differs from the target by the drift the warning reports), `model_error` (`NULL`, or, when
+#'   model error was applied, a list of the method, the target and achieved RMSEA/CFI, the model
+#'   degrees of freedom `df`, and the method's tuning parameter -- `kappa` for `"CB"`, `v` and
+#'   `eps` for `"TKL"`, `m` for `"WB"`), and `settings`. Printing
 #'   the object shows a compact summary.
 #'
 #' @references Cudeck, R., & Browne, M. W. (1992). Constructing a covariance matrix
@@ -320,6 +326,13 @@
 #'                         missing_prop = 0.15, seed = 42)
 #' colMeans(is.na(dat_mar$data))
 #'
+#' # An ignorably MAR design: only the first nine items are holed, each driven by one of
+#' # the last nine, which stay complete
+#' dat_ign <- efa_simulate(N = 500, Lambda = Lambda, Phi = Phi, missing = "MAR",
+#'                         missing_prop = 0.15, missing_vars = 1:9,
+#'                         missing_predictor = 10:18, seed = 42)
+#' colMeans(is.na(dat_ign$data))
+#'
 #' # Add realistic model error: a population the model fits with RMSEA of about .05
 #' # (Cudeck-Browne, the default method; the achieved fit is reported)
 #' sim_me <- efa_simulate(N = 500, Lambda = Lambda, Phi = Phi,
@@ -335,7 +348,7 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
                          categories = NULL, match = NULL,
                          missing = c("none", "MCAR", "MAR", "MNAR"),
                          missing_prop = NULL, missing_strength = NULL,
-                         missing_predictor = NULL,
+                         missing_predictor = NULL, missing_vars = NULL,
                          n_datasets = 1L, seed = NULL, return_pop = FALSE) {
 
   # Eigenvalues below -tol mark the population as indefinite (not a valid
@@ -473,13 +486,16 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
 
   # `missing` selects an optional missing-data mechanism; `missing_prop` sets the
   # target marginal missing rate, `missing_strength` the strength of the value
-  # dependence in MAR/MNAR, and `missing_predictor` the MAR predictor. Each companion
-  # is meaningful only under the mechanisms that use it (compatibility is checked here;
-  # value validation runs later, once the data dimension is known).
+  # dependence in MAR/MNAR, `missing_predictor` the MAR predictor, and `missing_vars`
+  # which variables are holed at all. Each companion is meaningful only under the
+  # mechanisms that use it (compatibility is checked here; value validation runs later,
+  # once the data dimension is known).
   missing <- .match_arg_ci(missing)
   if (missing == "none") {
-    supplied <- c("missing_prop", "missing_strength", "missing_predictor")[
-      c(!is.null(missing_prop), !is.null(missing_strength), !is.null(missing_predictor))]
+    supplied <- c("missing_prop", "missing_strength", "missing_predictor",
+                  "missing_vars")[
+      c(!is.null(missing_prop), !is.null(missing_strength),
+        !is.null(missing_predictor), !is.null(missing_vars))]
     if (length(supplied)) {
       cli::cli_abort(
         c("Missing-data settings only apply when {.arg missing} requests a mechanism.",
@@ -798,6 +814,7 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
   # recycle to length p, and precompute the Fleishman transform once. None of the
   # solves below draw random numbers, so they live outside the replicate loop.
   vm_ftable <- vm_Rinter <- ig_ftable <- ig_L <- ig_Lt <- NULL
+  kurt_default <- FALSE
   if (marginals %in% c("VM", "IG")) {
     if (is.null(skewness) && is.null(kurtosis)) {
       cli::cli_abort(
@@ -806,6 +823,9 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
         class = "efa_simulate_input"
       )
     }
+    # Recorded before the recycling below turns an unset moment into zeros, so an
+    # infeasible-moment abort can name the default as the likely cause.
+    kurt_default <- is.null(kurtosis)
     skewness <- .moment_vec(skewness, p, "skewness")
     kurtosis <- .moment_vec(kurtosis, p, "kurtosis")
     # Universal moment bound (Pearson, 1916): every distribution has excess
@@ -826,7 +846,7 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
   if (marginals == "VM") {
     # Vale-Maurelli (1983): draw normal deviates at an intermediate correlation
     # chosen so the per-variable Fleishman cubic reproduces the target correlation.
-    vm_ftable <- .fleishman_table(skewness, kurtosis)
+    vm_ftable <- .fleishman_table(skewness, kurtosis, kurt_default)
     vm_Rinter <- .vm_intermediate_cor(R_pop, vm_ftable)
     # The pairwise cubic solves ignore joint positive-definiteness, so the
     # intermediate matrix can be indefinite even when R_pop is not. Reject it, or
@@ -851,9 +871,19 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
         }
       )
       vm_Rinter <- (vm_Rinter + t(vm_Rinter)) / 2
+      # The projected intermediate matrix no longer solves the Vale-Maurelli cubic, so the
+      # data are drawn from a population other than the target. Push the projected
+      # intermediate correlations back through that same cubic to obtain the population
+      # actually drawn from in closed form (no simulation), and report it in `population`
+      # so a recovery or bias study measures against the right target.
+      R_ach <- .vm_achieved_cor(vm_Rinter, vm_ftable)
+      drift <- max(abs(R_ach - R_pop)[lower.tri(R_pop)])
+      R_pop <- R_ach
+      dimnames(R_pop) <- list(var_names, var_names)
       cli::cli_warn(
         c("The Vale-Maurelli intermediate correlation matrix was not positive definite; it has been projected to the nearest correlation matrix.",
-          "i" = "Projection was applied via {.fun psych::cor.smooth}; the achieved correlations may drift from the target."),
+          "i" = "Projection was applied via {.fun psych::cor.smooth}; the population drawn from therefore drifts from the target by up to {.val {round(drift, 4)}} (largest absolute correlation difference).",
+          "i" = "The returned {.field population} is the population actually drawn from, not the target."),
         class = "efa_simulate_pd_forced"
       )
     }
@@ -898,10 +928,12 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
 
   # Resolve and validate the missing-data settings once (they draw no random numbers).
   # The mask itself is applied per replicate inside the draw so it shares each
-  # replicate's reproducible stream. `miss_b` is the logistic slope (MAR/MNAR) and
-  # `pred_idx` the per-variable MAR predictor column; both stay NULL when unused.
+  # replicate's reproducible stream. `miss_b` is the logistic slope (MAR/MNAR),
+  # `miss_vars` the columns to hole, and `pred_idx` their MAR predictor columns; all
+  # stay NULL when unused.
   miss_b <- NULL
   pred_idx <- NULL
+  miss_vars <- NULL
   if (missing != "none") {
     # A proportion strictly inside (0, 1): 0 or 1 is not a mechanism to calibrate, and
     # the boundary would send qlogis() to +-Inf and break the intercept root-find.
@@ -925,8 +957,10 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
         )
       }
     }
+    miss_vars <- .resolve_missing_vars(missing_vars, p, var_names)
     if (missing == "MAR") {
-      pred_idx <- .resolve_missing_predictor(missing_predictor, p, var_names)
+      pred_idx <- .resolve_missing_predictor(missing_predictor, p, var_names,
+                                            miss_vars)
     }
   }
 
@@ -979,7 +1013,8 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
       # so the mask draws from this replicate's stream (reproducible across worker
       # counts). When `categories` is set, the NAs propagate into the codes below.
       if (missing != "none") {
-        dat <- .apply_missing(dat, missing, missing_prop, miss_b, pred_idx)
+        dat <- .apply_missing(dat, missing, missing_prop, miss_b, pred_idx,
+                              miss_vars)
       }
       dat
     },
@@ -1063,14 +1098,38 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
                                     max_iter = 100) {
 
   k <- ncol(x)
+  # The reproduction correlates the drawn cases, which needs at least two of them; with
+  # fewer there is no correlation to match and the row indexing below has nothing to read.
+  # efa_simulate() gates this at its own boundary, so this catches the CD path.
+  if (N < 2L) {
+    cli::cli_abort(
+      c("At least 2 cases must be drawn to reproduce the population correlation.",
+        "x" = "You asked for {N}."),
+      class = "efa_simulate_degenerate_marginal"
+    )
+  }
   sim_dat <- matrix(0, nrow = N, ncol = k)         # Simulated data
   dists <- matrix(0, nrow = N, ncol = k)           # Each variable's marginal
   best_RMSE <- 1                                    # Lowest RMSE correlation
   t_no_impr <- 0                                    # Trial counter
 
-  # Resample the supplied empirical marginals (sorted) for each variable.
+  # Resample the supplied empirical marginals (sorted) for each variable. A resample can
+  # come out constant even from a non-constant source -- a category rare enough that N
+  # draws miss all but one of its values -- and a constant column has no correlation, so
+  # the RMSE below would be NA and the acceptance test would fail on a missing value.
+  # Report it here instead (the sorted column makes the check its two extremes).
   for (i in 1:k) {
     dists[, i] <- sort(sample(x[, i], size = N, replace = TRUE))
+  }
+  constant <- dists[1L, ] == dists[N, ]
+  if (any(constant)) {
+    bad <- as.character(which(constant))
+    cli::cli_abort(
+      c("{cli::qty(bad)}Resampling the empirical marginals produced {?a constant column/constant columns} ({bad}).",
+        "x" = "A constant column has no correlation, so the population cannot be reproduced.",
+        "i" = "Draw more cases, or use a marginal whose rarest category is less rare."),
+      class = "efa_simulate_degenerate_marginal"
+    )
   }
 
   # The target correlation is supplied; keep a working and a best-so-far copy so
@@ -1209,10 +1268,13 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
 # standard normal Z into a unit-variance variable with the target skewness and
 # excess kurtosis via a + bZ + cZ^2 + dZ^3. The three power-method equations are
 # minimised as a sum of squares (as in lavaan/semTools); a non-zero minimum means
-# the target lies outside Fleishman's feasible region and is rejected.
+# the target lies outside Fleishman's feasible region and is rejected. Fleishman's region
+# leaves the zero-kurtosis line at a skewness of about 0.855, so `kurtosis_default` marks
+# a request that only became infeasible through the unset moment defaulting to 0 -- the
+# most likely cause of a rejection, and one the moments alone do not reveal.
 # Fleishman, A. I. (1978). A method for simulating non-normal distributions.
 # Psychometrika, 43(4), 521-532.
-.fleishman_coef <- function(skewness, kurtosis) {
+.fleishman_coef <- function(skewness, kurtosis, kurtosis_default = FALSE) {
   sys <- function(x) {
     b. <- x[1L]; c. <- x[2L]; d. <- x[3L]
     eq1 <- b.^2 + 6 * b. * d. + 2 * c.^2 + 15 * d.^2 - 1
@@ -1226,6 +1288,9 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
   if (out$objective > 1e-6) {
     cli::cli_abort(
       c("The marginal moments (skewness {.val {skewness}}, excess kurtosis {.val {kurtosis}}) are not representable by a Fleishman polynomial.",
+        if (isTRUE(kurtosis_default)) {
+          c("x" = "{.arg kurtosis} was not supplied and defaulted to 0, which a skewness of {.val {skewness}} needs more excess kurtosis than.")
+        },
         "i" = "Fleishman's cubic covers a smaller region than excess kurtosis >= skewness^2 - 2; choose moments further inside it."),
       class = "efa_simulate_infeasible_moments"
     )
@@ -1235,9 +1300,9 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
 }
 
 # Fleishman coefficients for every variable as a p x 4 matrix of (a, b, c, d).
-.fleishman_table <- function(skewness, kurtosis) {
+.fleishman_table <- function(skewness, kurtosis, kurtosis_default = FALSE) {
   t(vapply(seq_along(skewness),
-           function(i) .fleishman_coef(skewness[i], kurtosis[i]),
+           function(i) .fleishman_coef(skewness[i], kurtosis[i], kurtosis_default),
            numeric(4L)))
 }
 
@@ -1252,27 +1317,36 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
   Z
 }
 
+# Pairwise coefficients of the Vale-Maurelli (1983, equation 11) cubic relating the
+# intermediate normal correlation rho to the attained correlation of the two Fleishman
+# cubics: cor = k1 rho + k2 rho^2 + k3 rho^3. Returned as three p x p matrices, so
+# .vm_intermediate_cor() (which solves the cubic for rho) and .vm_achieved_cor() (which
+# evaluates it at a given rho) cannot drift apart.
+# Vale, C. D., & Maurelli, V. A. (1983). Simulating multivariate nonnormal
+# distributions. Psychometrika, 48(3), 465-471.
+.vm_cubic_coefs <- function(ftable) {
+  b <- ftable[, 2L]; cc <- ftable[, 3L]; d <- ftable[, 4L]
+  list(k1 = outer(b, b) + 3 * outer(b, d) + 3 * outer(d, b) + 9 * outer(d, d),
+       k2 = 2 * outer(cc, cc),
+       k3 = 6 * outer(d, d))
+}
+
 # Vale-Maurelli (1983) intermediate normal correlation for each variable pair:
 # solve the cubic in rho relating the intermediate normal correlation to the
 # target correlation R_ij given the two variables' Fleishman coefficients. The
 # cubic can admit several real roots in [-1, 1]; take the one nearest the target
 # (Olvera Astivia & Zumbo, 2019). Base polyroot() is used rather than a numeric
 # minimiser so all roots are found explicitly.
-# Vale, C. D., & Maurelli, V. A. (1983). Simulating multivariate nonnormal
-# distributions. Psychometrika, 48(3), 465-471.
 .vm_intermediate_cor <- function(R, ftable) {
   p <- ncol(R)
-  b <- ftable[, 2L]; cc <- ftable[, 3L]; d <- ftable[, 4L]
+  kk <- .vm_cubic_coefs(ftable)
   ICOR <- diag(p)
   for (j in seq_len(p - 1L)) {
     for (i in (j + 1L):p) {
       target <- R[i, j]
       if (target == 0) next                # an uncorrelated pair stays at rho = 0
       # coefficients of c0 + c1 rho + c2 rho^2 + c3 rho^3
-      coefs <- c(-target,
-                 b[i] * b[j] + 3 * b[i] * d[j] + 3 * d[i] * b[j] + 9 * d[i] * d[j],
-                 2 * cc[i] * cc[j],
-                 6 * d[i] * d[j])
+      coefs <- c(-target, kk$k1[i, j], kk$k2[i, j], kk$k3[i, j])
       # drop trailing zero coefficients so polyroot sees the true polynomial degree
       while (length(coefs) > 1L && coefs[length(coefs)] == 0) {
         coefs <- coefs[-length(coefs)]
@@ -1290,6 +1364,18 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
     }
   }
   ICOR
+}
+
+# The population correlation a Vale-Maurelli draw at intermediate correlation `Rinter`
+# actually attains: the forward direction of the cubic .vm_intermediate_cor() inverts,
+# evaluated at `Rinter` with the shared coefficients. Needed when the intermediate matrix
+# has been projected to positive definiteness and therefore no longer solves the cubic for
+# the target correlation.
+.vm_achieved_cor <- function(Rinter, ftable) {
+  kk <- .vm_cubic_coefs(ftable)
+  R <- Rinter * kk$k1 + Rinter^2 * kk$k2 + Rinter^3 * kk$k3
+  diag(R) <- 1
+  (R + t(R)) / 2
 }
 
 # Independent-generator moments (Foldnes & Olsson, 2016). With X = L Z, L the
@@ -1350,17 +1436,17 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
           class = "efa_simulate_input"
         )
       }
-      # Renormalize onto the exact simplex: floating-point slack in `prop` (within
-      # the tolerance above) could otherwise push an interior cumulative proportion
-      # to or past 1, which qnorm would turn into a NaN/Inf threshold. The outer gate
-      # has already rejected any genuine mismatch.
+      # Renormalize onto the exact simplex: floating-point slack in `prop` (within the
+      # tolerance above) could otherwise push an interior cumulative proportion past 1,
+      # which qnorm would turn into a NaN threshold. The outer gate has already rejected
+      # any genuine mismatch. An interior cumulative of exactly 1 survives this and gives
+      # a +Inf threshold, which is legal -- findInterval() handles it and the category
+      # above is simply always empty, which the empty-category warning reports.
       prop <- prop / sum(prop)
       stats::qnorm(cumsum(prop)[-length(prop)])
     })
   } else {
-    # Reject a dimensioned object (matrix/array): it passes is.numeric() and, with p
-    # entries, the length check below, so it would be flattened column-major into
-    # per-variable counts (mirrors the guard in .moment_vec()).
+    # Reject a dimensioned object, as for the proportion-vector branch above.
     if (!is.numeric(categories) || !is.null(dim(categories)) ||
         !all(is.finite(categories)) || any(categories != round(categories))) {
       cli::cli_abort(
@@ -1487,15 +1573,81 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
 }
 
 
-# Resolve the MAR predictor specification to a length-p vector of column indices: for
-# each variable, which other variable's value drives its missingness. NULL defaults to
-# the next variable cyclically (variable p is driven by variable 1), so every variable
-# has a distinct, observed predictor. A supplied spec (column indices or names, one per
-# variable) must reference existing columns other than the variable itself -- a variable
-# predicting its own missingness would be MNAR, not MAR (which also rules out a single
-# recycled predictor, as it would predict itself). The cyclic default is order-dependent,
-# so an explicit spec is preferable when the column order is arbitrary.
-.resolve_missing_predictor <- function(spec, p, var_names) {
+# Resolve a column specification (variable names, or column indices) to a vector of
+# column indices in 1..p, shared by `missing_vars` and `missing_predictor` so both report
+# the same failures under their own argument name. The range is tested on the supplied
+# values rather than on as.integer() of them: coercing first turns an index beyond
+# .Machine$integer.max into NA, which would leave the range test an `if (NA)` and abort
+# with an unclassed base error. A dimensioned or fractional spec is rejected rather than
+# flattened column-major or rounded silently (mirrors the guard in .moment_vec()).
+.resolve_column_spec <- function(spec, p, var_names, arg) {
+  if (is.character(spec)) {
+    idx <- match(spec, var_names)
+    if (anyNA(idx)) {
+      bad <- spec[is.na(idx)]
+      cli::cli_abort(
+        c("{.arg {arg}} names a variable not in the data.",
+          "x" = "{cli::qty(bad)}Unknown name{?s}: {.val {bad}}."),
+        class = "efa_simulate_input"
+      )
+    }
+    return(idx)
+  }
+  if (!is.numeric(spec) || !is.null(dim(spec)) || !all(is.finite(spec)) ||
+      any(spec != round(spec))) {
+    cli::cli_abort(
+      "{.arg {arg}} must be whole-number column indices or variable names.",
+      class = "efa_simulate_input"
+    )
+  }
+  out_of_range <- spec < 1 | spec > p
+  if (any(out_of_range)) {
+    # Formatted to character before interpolation, and given an explicit `cli::qty()`:
+    # a numeric vector supplies no usable quantity for the plural marker, so leaving it
+    # numeric aborts inside cli once more than one value is out of range.
+    bad <- as.character(unique(spec[out_of_range]))
+    cli::cli_abort(
+      c("{.arg {arg}} indexes a column outside 1 to {p}.",
+        "x" = "{cli::qty(bad)}It has value{?s} {.val {bad}}."),
+      class = "efa_simulate_input"
+    )
+  }
+  as.integer(spec)
+}
+
+
+# Resolve the `missing_vars` specification to the vector of column indices to hole.
+# NULL means every column (the default: the mechanism applies to the whole data set). A
+# supplied spec must reference existing, distinct columns; the order is kept, as
+# `missing_predictor` is aligned to it element by element. Restricting the holed columns
+# is what makes a strictly ignorable MAR design possible: a predictor outside
+# `missing_vars` is fully observed, so the missingness depends only on data the analyst
+# sees.
+.resolve_missing_vars <- function(spec, p, var_names) {
+  if (is.null(spec)) return(seq_len(p))
+  idx <- .resolve_column_spec(spec, p, var_names, "missing_vars")
+  if (length(idx) == 0L || anyDuplicated(idx) > 0L) {
+    cli::cli_abort(
+      c("{.arg missing_vars} must name at least one variable, each at most once.",
+        "i" = "Leave it {.code NULL} to hole every variable."),
+      class = "efa_simulate_input"
+    )
+  }
+  idx
+}
+
+
+# Resolve the MAR predictor specification to one column index per holed variable (the
+# columns in `vars`, in that order): which other variable's value drives that variable's
+# missingness. NULL defaults to the next variable cyclically (variable p is driven by
+# variable 1), so every variable has a distinct predictor. A supplied spec (one index or
+# name per holed variable) must reference existing columns other than the variable itself
+# -- a variable predicting its own missingness would be MNAR, not MAR (which also rules
+# out a single recycled predictor, as it would predict itself). The cyclic default is
+# order-dependent, so an explicit spec is preferable when the column order is arbitrary;
+# it is also the way to keep the predictors outside `vars`, which is what makes the
+# mechanism ignorably MAR.
+.resolve_missing_predictor <- function(spec, p, var_names, vars = seq_len(p)) {
   if (p < 2L) {
     cli::cli_abort(
       c("{.code missing = \"MAR\"} needs at least two variables.",
@@ -1504,48 +1656,22 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
       class = "efa_simulate_input"
     )
   }
-  # Cyclic next variable: 2, 3, ..., p, 1 (never a variable's own position).
-  if (is.null(spec)) return(c(seq_len(p)[-1L], 1L))
+  # Cyclic next variable: 2, 3, ..., p, 1 (never a variable's own position), taken for
+  # the holed columns only.
+  if (is.null(spec)) return(c(seq_len(p)[-1L], 1L)[vars])
 
-  if (is.character(spec)) {
-    idx <- match(spec, var_names)
-    if (anyNA(idx)) {
-      bad <- spec[is.na(idx)]
-      cli::cli_abort(
-        c("{.arg missing_predictor} names a variable not in the data.",
-          "x" = "{cli::qty(bad)}Unknown name{?s}: {.val {bad}}."),
-        class = "efa_simulate_input"
-      )
-    }
-  } else {
-    # Reject a dimensioned or non-integer spec rather than flatten/round it silently.
-    if (!is.numeric(spec) || !is.null(dim(spec)) || !all(is.finite(spec)) ||
-        any(spec != round(spec))) {
-      cli::cli_abort(
-        "{.arg missing_predictor} must be whole-number column indices or variable names.",
-        class = "efa_simulate_input"
-      )
-    }
-    idx <- as.integer(spec)
-    if (any(idx < 1L | idx > p)) {
-      cli::cli_abort(
-        c("{.arg missing_predictor} indexes a column outside 1 to {p}.",
-          "x" = "It has value{?s} {.val {idx[idx < 1L | idx > p]}}."),
-        class = "efa_simulate_input"
-      )
-    }
-  }
+  idx <- .resolve_column_spec(spec, p, var_names, "missing_predictor")
 
-  if (length(idx) != p) {
+  if (length(idx) != length(vars)) {
     cli::cli_abort(
-      c("{.arg missing_predictor} must give one predictor per variable ({p}).",
+      c("{.arg missing_predictor} must give one predictor per variable it applies to ({length(vars)}).",
         "x" = "It has length {length(idx)}.",
         "i" = "A single predictor for every variable is not allowed, as that variable would predict its own missingness (MNAR)."),
       class = "efa_simulate_input"
     )
   }
-  if (any(idx == seq_len(p))) {
-    self <- as.character(which(idx == seq_len(p)))
+  if (any(idx == vars)) {
+    self <- as.character(vars[idx == vars])
     cli::cli_abort(
       c("{.arg missing_predictor} must reference another variable, not the variable itself.",
         "x" = "{cli::qty(self)}Variable{?s} {self} {?is/are} set to predict {?its/their} own missingness, which is MNAR rather than MAR.",
@@ -1574,27 +1700,30 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
 
 
 # Introduce missing values into a drawn data matrix under a chosen mechanism (Rubin,
-# 1976). Each variable is holed at (in expectation) `prop` of its cases. MCAR draws a
-# Bernoulli(prop) mask independent of the data. MAR and MNAR set each case's missing
-# probability by a logistic model, logit(p_i) = a + b * z_i, where z standardizes a
-# predictor: another variable (MAR, given by `pred_idx`) or the variable's own value
-# (MNAR). The intercept a is calibrated per variable so the mean missing probability is
-# `prop`; the slope b (`strength`) sets the dependence. Predictors are read from a single
-# pre-loop copy of the complete draw so an earlier column's holes cannot corrupt a later
-# column's predictor (R copy-on-modify leaves `complete` untouched once `dat` is written).
-# A constant predictor (sd 0) contributes z = 0, degrading that variable to MCAR. Exactly
-# one runif(n) is drawn per column in fixed order, never short-circuited, so the RNG
-# stream -- and hence the reproducibility across worker counts -- does not depend on the
-# mechanism or the achieved probabilities.
+# 1976). Each variable in `vars` (every column by default) is holed at (in expectation)
+# `prop` of its cases; columns outside `vars` stay complete. MCAR draws a Bernoulli(prop)
+# mask independent of the data. MAR and MNAR set each case's missing probability by a
+# logistic model, logit(p_i) = a + b * z_i, where z standardizes a predictor: another
+# variable (MAR, given by `pred_idx`, one entry per element of `vars`) or the variable's
+# own value (MNAR). The intercept a is calibrated per variable so the mean missing
+# probability is `prop`; the slope b (`strength`) sets the dependence. Predictors are read
+# from a single pre-loop copy of the complete draw so an earlier column's holes cannot
+# corrupt a later column's predictor (R copy-on-modify leaves `complete` untouched once
+# `dat` is written). A constant predictor (sd 0) contributes z = 0, degrading that
+# variable to MCAR. Exactly one runif(n) is drawn per holed column in fixed order, never
+# short-circuited, so the RNG stream -- and hence the reproducibility across worker
+# counts -- does not depend on the mechanism or the achieved probabilities.
 # Rubin, D. B. (1976). Inference and missing data. Biometrika, 63(3), 581-592.
-.apply_missing <- function(dat, mechanism, prop, strength, pred_idx) {
+.apply_missing <- function(dat, mechanism, prop, strength, pred_idx,
+                           vars = seq_len(ncol(dat))) {
   n <- nrow(dat)
   complete <- dat
-  for (j in seq_len(ncol(dat))) {
+  for (i in seq_along(vars)) {
+    j <- vars[i]
     prob <- if (mechanism == "MCAR") {
       prop                                 # recycled against runif(n) below
     } else {
-      xk <- complete[, if (mechanism == "MAR") pred_idx[j] else j]
+      xk <- complete[, if (mechanism == "MAR") pred_idx[i] else j]
       s <- stats::sd(xk)
       z <- if (s > 0) (xk - mean(xk)) / s else rep(0, n)
       a <- .calibrate_missing_intercept(z, strength, prop)
@@ -1658,9 +1787,8 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
     WB  = .model_error_wb(R_pop, target_rmsea)
   )
 
-  # Achieved fit of the major q-factor model on the perturbed population, on the same
-  # (population-limit) scale a fit would report. For CB this returns the target to machine
-  # precision (the model is the minimizer by construction); for TKL/WB it is the realized value.
+  # Achieved fit of the major q-factor model on the perturbed population (see the header
+  # above for what each method's value means).
   fit <- .efa_population_fit(L, me$population)
   model_error <- c(
     list(method = method, target_rmsea = target_rmsea, target_cfi = target_cfi,
@@ -1822,7 +1950,7 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
     rmsea <- sqrt(max(0, Ft) / df)
     cfi <- 1 - Ft / Fb
     if (return_vals) {
-      return(list(population = RpopME, v = v, eps = eps))
+      return(list(population = RpopME, v = v, eps = eps, rmsea = rmsea, cfi = cfi))
     }
     val <- 0
     if (has_r) val <- val + (rmsea - target_rmsea)^2 / target_rmsea^2
@@ -1852,6 +1980,25 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
       class = "efa_simulate_model_error")
   }
   res <- obj(best_par, return_vals = TRUE)
+  # `best_val` is the sum of the squared relative deviations from the requested target(s),
+  # so its square root is the relative miss. Two targets over two knobs need not both be
+  # reachable -- a high target CFI dominates the weighted objective and can halve the
+  # achieved RMSEA -- and the compromise is otherwise only visible by reading the achieved
+  # values back off the result. Flag a miss of more than 20% of the target: an ordinary
+  # two-target compromise (say .05/.95, which lands within a tenth of both) is close
+  # enough to be the intended answer, while a jointly infeasible pair misses by 50% or
+  # more, so the threshold sits between the two rather than at the edge of the former.
+  if (sqrt(best_val) > 0.2) {
+    # Name the target(s) actually requested, so a CFI-only run is not told about an RMSEA
+    # target it never set; both achieved values are reported either way.
+    requested <- c(if (has_r) "RMSEA" else NULL, if (has_c) "CFI" else NULL)
+    targets <- c(if (has_r) target_rmsea else NULL, if (has_c) target_cfi else NULL)
+    cli::cli_warn(
+      c("The Tucker-Koopman-Linn minor factors could not reach the requested {requested} target{?s} of {.val {targets}}.",
+        "x" = "The closest compromise achieves an RMSEA of {.val {round(res$rmsea, 4)}} and a CFI of {.val {round(res$cfi, 4)}}.",
+        "i" = "The targets are not jointly attainable by the two minor-factor knobs for this population; relax one of them, supply a single target, or use {.code model_error = \"CB\"} to match the RMSEA exactly."),
+      class = "efa_simulate_model_error_compromise")
+  }
   list(population = res$population, params = list(v = res$v, eps = res$eps))
 }
 

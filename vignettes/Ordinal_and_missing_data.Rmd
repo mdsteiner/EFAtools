@@ -152,17 +152,24 @@ offers two principled alternatives that assume only that the data are missing at
 multiple-imputation route via `efa_mi()`.
 
 We simulate 250 continuous cases with about 15% of values missing at random, where each
-item's missingness depends on another item's value. `efa_simulate()` holes every column, so
-each item's MAR predictor is itself partly missing: the mechanism is MAR given the *complete*
-data, but it is not ignorable for an analyst who sees only the observed data. Estimators that
-are consistent under ignorable MAR therefore keep a residual bias on data from this generator
-— a property of the generator rather than of the estimators, negligible at the modest missing
-rate used here but growing with `missing_prop` and `missing_strength`.
+item's missingness depends on another item's value. By default `efa_simulate()` holes every
+column, so each item's MAR predictor would itself be partly missing: the mechanism is then
+MAR given the *complete* data, but not ignorable for an analyst who sees only the observed
+data, and estimators that are consistent under ignorable MAR keep a residual bias — a
+property of the generator rather than of the estimators, growing with `missing_prop` and
+`missing_strength`.
+
+`missing_vars` avoids that. Here the first nine items carry the missing values and each is
+driven by one of the last nine, which stay complete. Every predictor is therefore fully
+observed, which is ignorably MAR — exactly the assumption the two routes below rely on.
 
 ```{r}
 d_miss <- efa_simulate(N = 250, Lambda = Lambda, Phi = Phi,
-                       missing = "MAR", missing_prop = 0.15, seed = 2024)$data
+                       missing = "MAR", missing_prop = 0.15,
+                       missing_vars = 1:9, missing_predictor = 10:18,
+                       seed = 2024)$data
 round(mean(is.na(d_miss)), 3)          # overall proportion missing
+round(colMeans(is.na(d_miss)), 3)      # holed items only
 ```
 
 ### Two-Stage Full-Information Maximum Likelihood

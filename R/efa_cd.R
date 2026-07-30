@@ -121,6 +121,22 @@ efa_cd <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha 
   n_cases <- nrow(x)
   k <- ncol(x)
 
+  # A constant variable has no correlation, so its row and column of R are NA and the
+  # eigenvalue decomposition below would abort with a base-R error. It also cannot be
+  # reproduced by the comparison-data generation. Reject it here, naming the columns.
+  # Checked after the listwise deletion above, which can leave a variable constant.
+  n_distinct <- apply(x, 2L, function(col) length(unique(col)))
+  if (any(n_distinct < 2L)) {
+    bad <- colnames(x)[n_distinct < 2L]
+    if (is.null(bad)) bad <- as.character(which(n_distinct < 2L))
+    cli::cli_abort(
+      c("Every variable must have at least two distinct values.",
+        "x" = "{cli::qty(bad)}Constant variable{?s}: {.val {bad}}.",
+        "i" = "{cli::qty(bad)}Remove {?it/them}; comparison data cannot reproduce a variable with no variance."),
+      class = "efa_cd_constant_variable"
+    )
+  }
+
   m_possible <- .det_max_factors(k)
 
   # Comparison data needs at least one over-identified model (df > 0) to compare
@@ -163,8 +179,19 @@ efa_cd <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha 
 
   while (n_factors <= n_factors_max && isTRUE(sig)) {
 
-    pop <- .simulate_cfm_empirical(R = R, x = x, n_factors = n_factors, N = N_pop,
-                                   cor_method = cor_method, max_iter = max_iter)
+    # The comparison-data generator is the shared Ruscio-Kaczetow kernel, which reports a
+    # degenerate resample under its own name; re-raise it as an efa_cd condition, naming
+    # the argument that controls the population size here.
+    pop <- tryCatch(
+      .simulate_cfm_empirical(R = R, x = x, n_factors = n_factors, N = N_pop,
+                              cor_method = cor_method, max_iter = max_iter),
+      efa_simulate_degenerate_marginal = function(e) {
+        cli::cli_abort(
+          c("The comparison-data population could not be generated from these data.",
+            "i" = "Increase {.arg N_pop} (currently {N_pop}), or collapse response categories too rare to be drawn."),
+          class = "efa_cd_degenerate_population", parent = e
+        )
+      })
 
     for (j in 1:N_samples) {
 

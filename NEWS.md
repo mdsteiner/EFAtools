@@ -22,7 +22,19 @@
 
 * The header lines of the `efa_group()` report are now wrapped to the console width, and its loading-difference and invariance tables are split into stacked blocks when they are wider than the console, as the congruence table already was.
 
+## Data Simulation
+
+* `efa_simulate()` gains a `missing_vars` argument selecting which variables carry missing values; the remaining ones stay complete. With `missing = "MAR"` and a `missing_predictor` outside `missing_vars`, every predictor of the missingness is fully observed, which is the ignorably missing-at-random design that full-information maximum likelihood and multiple imputation assume. Leaving `missing_vars` unset holes every variable, as before.
+
+* When `marginals = "VM"` and `force_pd = TRUE` project the intermediate correlation matrix, the returned `population` is now the population the projected draw actually attains rather than the requested target, and the warning reports how far the two differ. Previously the target was returned although the realized correlations of the draw could depart from it substantially, which understated the bias in a recovery study measuring against it. `return_pop = TRUE` draws no data and therefore never reaches the projection, so it continues to return the target unchanged.
+
+* `efa_simulate()` now warns when `target_rmsea` and `target_cfi` cannot both be met by `model_error = "TKL"`, naming the achieved values, instead of silently returning the closest compromise.
+
+* A degenerate resample under `marginals = "empirical"` — a marginal with a category too rare to be drawn more than once at the requested sample size — now raises an actionable error instead of failing inside the reproduction loop.
+
 ## Factor Retention
+
+* `efa_cd()` now rejects data with a constant variable, which the comparison-data generation cannot reproduce, instead of failing inside its eigenvalue decomposition.
 
 * `efa_smt()` now warns when one of its three rules selects a solution with a Heywood case or a model that did not converge, matching what `efa_hull()` already reported. The suggestion is still returned, but it is flagged as unreliable rather than presented without comment.
 
@@ -41,6 +53,12 @@
 * Neither kind of pair has an asymptotic variance, so `NA` is reported: `DWLS` estimation gives an actionable error rather than fitting with an unusable weight, and robust standard errors involving these pairs are withheld.
 
 * The response combinations that a strongly correlated pair makes all but impossible are now computed from the complementary tail of the normal distribution, which keeps them accurate down to the smallest representable probability instead of losing them to rounding. When such a combination is nevertheless observed (a handful of careless or extreme responses is enough) this both sharpens the correlation of the pair and gives it an asymptotic variance. Previously that variance came out missing, which refused `DWLS` estimation for the whole data set and withheld every robust standard error involving the pair.
+
+## Power Analysis
+
+* `efa_power(mode = "simulation")` now warns when a requested factor-retention criterion produced no suggestion on any replicate, and reports it with a missing hit-rate over zero valid replicates. Previously such a criterion was dropped from the results without comment, although the request was still recorded in the settings.
+
+* A missing or invalid `N` or `n_datasets` in simulation mode is now reported with an actionable, catchable error stating that `N` is required there, rather than a bare assertion message.
 
 ## Reliability and Factor Scores
 

@@ -58,6 +58,26 @@ test_that("errors etc. are thrown correctly", {
   # over-identified model exists to compare against and CD must abort rather than
   # silently return zero factors. The check runs before any data are generated.
   expect_error(efa_cd(GRiPS_raw[, 1:3]), class = "efa_cd_min_indicators")
+
+  # A constant variable has no correlation, which would abort the eigenvalue
+  # decomposition with a base-R error; it is reported as a classed condition instead.
+  grips_const <- GRiPS_raw
+  grips_const[, 2] <- 3
+  expect_error(efa_cd(grips_const), class = "efa_cd_constant_variable")
+  # Listwise deletion can be what leaves a variable constant, so the check runs on the
+  # complete cases: here only the rows kept below are non-constant in column 2.
+  grips_late <- GRiPS_raw
+  grips_late[, 2] <- c(1, rep(3, nrow(GRiPS_raw) - 1L))
+  grips_late[1, 3] <- NA
+  expect_error(suppressWarnings(efa_cd(grips_late)),
+               class = "efa_cd_constant_variable")
+
+  # A comparison-data population too small to carry a correlation is reported under
+  # efa_cd's own class, naming N_pop, rather than as a condition from the shared kernel.
+  expect_error(efa_cd(GRiPS_raw[1:60, ], N_pop = 1, N_samples = 2),
+               class = "efa_cd_degenerate_population")
+  expect_error(efa_cd(GRiPS_raw[1:60, ], N_pop = 0, N_samples = 2),
+               class = "efa_cd_degenerate_population")
 })
 
 rm(cd_grips, grips_na)

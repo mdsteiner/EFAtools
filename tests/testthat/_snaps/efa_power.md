@@ -40,6 +40,32 @@
       Power = .429 at N = 200 (total; 100 per group).
       Critical value χ²(100) = 97.795 · noncentrality H0 = 24.875, H1 = .995.
 
+# a criterion that fails on every replicate is reported, not dropped
+
+    Code
+      print(sim)
+    Output
+      
+      -- EFA power simulation --------------------------------------------------------
+      
+      18 variables · 3 factors · N = 6 · 3 datasets
+      Estimation: PAF · rotation: varimax
+      Model error: none. The population is exact, so the hit-rate and recovery are
+      optimistic; set `target_rmsea` for realism.
+      
+      Retention hit-rate P(k-hat = 3)
+      * MAP: NA (n = 0)
+      
+      Structure recovery (Tucker congruence ≥ .950)
+      * recovery rate (min congruence): NA (n = 0)
+      * recovery rate (mean congruence): NA (n = 0)
+      * median min congruence: NA
+      
+      Convergence
+      * fits completed: .000 (0/3)
+      * converged (of completed): NA
+      * Heywood cases (of completed): NA
+
 # simulation-mode printed output is stable
 
     Code

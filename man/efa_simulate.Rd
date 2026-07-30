@@ -25,6 +25,7 @@ efa_simulate(
   missing_prop = NULL,
   missing_strength = NULL,
   missing_predictor = NULL,
+  missing_vars = NULL,
   n_datasets = 1L,
   seed = NULL,
   return_pop = FALSE
@@ -54,7 +55,10 @@ directly. Supply this instead of \code{Lambda}/\code{Phi}/\code{Psi}.}
 fits it imperfectly ("model error"): one of \code{"CB"} (Cudeck-Browne, the default), \code{"TKL"}
 (Tucker-Koopman-Linn), \code{"WB"} (Wu-Browne), or \code{"none"}. Model error is only applied when a
 target is supplied in \code{target_rmsea} or \code{target_cfi}; without one the population is exact,
-whatever \code{model_error}. Only used with a factor-model population (\code{Lambda}).}
+whatever \code{model_error}. Only used with a factor-model population (\code{Lambda}). Note that
+\code{\link[=efa_power]{efa_power()}} defaults to \code{"TKL"} instead, because its minor common factors degrade
+factor recovery as well as the fit, so passing the same target to the two functions
+perturbs the population differently unless \code{model_error} is set explicitly.}
 
 \item{target_rmsea}{numeric. The population RMSEA the factor model should have relative to
 the perturbed population, a single number strictly in \verb{(0, 1)}. Supplying it activates model
@@ -95,10 +99,13 @@ target marginal excess kurtosis (0 for a normal marginal), as a single value
 applied to every variable or a length-\code{p} vector. Default is \code{NULL} (0).}
 
 \item{force_pd}{logical. Used with \code{marginals = "VM"} and with Cudeck-Browne model error
-(\code{model_error = "CB"}). If the Vale-Maurelli intermediate correlation matrix (or, for CB,
-the perturbed population at a large \code{target_rmsea}) is not positive definite, \code{FALSE} (the
-default) rejects it with an error, while \code{TRUE} projects it to the nearest correlation
-matrix (with a warning). Has no effect for the \code{"TKL"} or \code{"WB"} methods.}
+(\code{model_error = "CB"}), where \code{FALSE} (the default) rejects a population or intermediate
+matrix that is not positive definite. What \code{TRUE} accepts instead differs by path, in
+both cases with a warning: for \code{marginals = "VM"} the intermediate correlation matrix is
+projected to the nearest correlation matrix (via \code{\link[psych:cor.smooth]{psych::cor.smooth()}}), and the returned
+\code{population} becomes the one the projected draw attains; for \code{model_error = "CB"} there is
+no such projection -- the closest positive-definite perturbation is kept instead, whose
+achieved RMSEA is \strong{below} the target. Has no effect for the \code{"TKL"} or \code{"WB"} methods.}
 
 \item{categories}{numeric or list. Requests ordinal output by discretizing each
 variable into ordered categories. Either a count of equally probable categories
@@ -122,9 +129,10 @@ case-insensitively. Default is \code{NULL} (\code{"thresholds"} when \code{categ
 data: one of \code{"none"} (the default, complete data), \code{"MCAR"} (missing completely at
 random), \code{"MAR"} (missing at random, depending on another variable), or \code{"MNAR"}
 (missing not at random, depending on the variable's own value). Introduced values
-become \code{NA}. Every variable is holed, so under \code{"MAR"} each variable's predictor is
-itself subject to missingness: the mechanism is MAR given the \emph{complete} data and is
-not ignorable for an analyst who sees only the observed data (see Details).}
+become \code{NA}. By default every variable is holed, so under \code{"MAR"} each variable's
+predictor is itself subject to missingness and the mechanism is MAR given the
+\emph{complete} data rather than ignorably MAR; \code{missing_vars} and \code{missing_predictor}
+together give an ignorable design (see Details).}
 
 \item{missing_prop}{numeric. Only used when \code{missing} is not \code{"none"}, where it is
 required: the target marginal proportion of missing values per variable, a single
@@ -138,12 +146,20 @@ probability depends on the predictor. Default is \code{NULL} (1, a moderate depe
 magnitudes make missingness nearly deterministic.}
 
 \item{missing_predictor}{integer or character. Only used with \code{missing = "MAR"}:
-which variable drives each variable's missingness, as one column index or variable
-name per variable. Each must reference another variable, not itself (so a single
+which variable drives each holed variable's missingness, as one column index or
+variable name per variable in \code{missing_vars} (so one per variable by default), in
+that order. Each must reference another variable, not itself (so a single
 shared predictor is not allowed -- it would predict its own missingness). Default is
 \code{NULL}, in which case each variable's missingness is driven by the next variable
 cyclically (so variable order matters; supply this explicitly when the order is
-arbitrary).}
+arbitrary). Predictors outside \code{missing_vars} are fully observed, which is what makes
+the mechanism ignorably MAR.}
+
+\item{missing_vars}{integer or character. Only used when \code{missing} is not \code{"none"}:
+which variables carry missing values, as column indices or variable names. Default is
+\code{NULL}, in which case every variable is holed. Restricting it leaves the remaining
+variables complete, which under \code{missing = "MAR"} is how a fully observed
+\code{missing_predictor} -- and with it an ignorably MAR design -- is obtained.}
 
 \item{n_datasets}{numeric. The number of datasets to draw. Default is 1. With
 more than one, a list of datasets is returned.}
@@ -153,17 +169,22 @@ caller's random-number stream is saved and restored, so the call leaves the
 global RNG state unchanged. Default is \code{NULL} (no seeding).}
 
 \item{return_pop}{logical. If \code{TRUE}, return only the population correlation
-matrix and draw no data. Default is \code{FALSE}.}
+matrix and draw no data. Default is \code{FALSE}. Because no data are drawn, the
+Vale-Maurelli intermediate correlation matrix is never formed, so its
+positive-definiteness (and any \code{force_pd} projection of it) is neither checked nor
+reflected in the returned population.}
 }
 \value{
 An object of class \code{efa_simulated}: a list with elements \code{data} (the simulated
 data -- an \code{N} by \code{p} numeric matrix, an integer matrix of category codes when \code{categories}
 is set, or a length-\code{n_datasets} list of these when \code{n_datasets > 1}; \code{NULL} when
 \code{return_pop = TRUE}), \code{population} (the \code{p} by \code{p} population correlation matrix drawn from,
-model-error-perturbed when requested; with \code{force_pd = TRUE} and \code{marginals = "VM"} it stays
-the target matrix, from which the realized correlations of the draw can drift), \code{model_error}
-(\code{NULL}, or a list of the method and
-the target and achieved RMSEA/CFI when model error was applied), and \code{settings}. Printing
+model-error-perturbed when requested; when \code{force_pd = TRUE} and \code{marginals = "VM"} project
+the intermediate matrix, it is the population the projected draw actually attains, which
+differs from the target by the drift the warning reports), \code{model_error} (\code{NULL}, or, when
+model error was applied, a list of the method, the target and achieved RMSEA/CFI, the model
+degrees of freedom \code{df}, and the method's tuning parameter -- \code{kappa} for \code{"CB"}, \code{v} and
+\code{eps} for \code{"TKL"}, \code{m} for \code{"WB"}), and \code{settings}. Printing
 the object shows a compact summary.
 }
 \description{
@@ -172,18 +193,9 @@ built from a factor model. The population correlation is either supplied in
 \code{R}, or assembled from a loading matrix \code{Lambda}, the factor intercorrelations
 \code{Phi}, and the unique variances \code{Psi} as
 \eqn{R = Lambda\, Phi\, Lambda' + Psi}, standardized to a correlation matrix.
-By default (\code{marginals = "normal"}) cases are drawn with normal marginals via
-a matrix square root of the population correlation (a Cholesky factor, or a
-symmetric eigen square root for a positive-semidefinite but singular
-population). With \code{marginals = "empirical"} the cases instead reproduce the
-population correlation while carrying the empirical marginal distributions of
-a supplied data set. With \code{marginals = "VM"} or \code{"IG"} the cases reproduce the
-population correlation while carrying non-normal marginals with a prescribed
-\code{skewness} and \code{kurtosis}. Setting \code{categories} additionally discretizes the
-drawn data into ordered categories, optionally so that the population polychoric
-correlation of the categorized data equals the target correlation. Setting
-\code{target_rmsea} or \code{target_cfi} perturbs the population with model error, so the
-factor model fits it only approximately (a more realistic simulation target).
+\code{marginals} chooses the marginal distribution of the drawn cases, \code{categories}
+discretizes them into ordered categories, \code{missing} imposes a missing-data mechanism,
+and a misfit target perturbs the population with model error; see \emph{Details}.
 }
 \details{
 Provide the population either as a ready correlation matrix in \code{R}, or through
@@ -196,7 +208,9 @@ Lambda')}); the assembled covariance is standardized with
 matrix. With the default \code{Psi}, a factor model whose implied communalities
 exceed 1 (a Heywood case) leaves no unique variance and is rejected; a \code{Psi}
 you supply is instead only required to give positive variances and a
-positive-semidefinite population.
+positive-semidefinite population. Cases with normal marginals (the default) are drawn
+through a matrix square root of the population correlation: a Cholesky factor, or a
+symmetric eigen square root for a positive-semidefinite but singular population.
 
 With \code{marginals = "empirical"}, the iterative rank-matching algorithm of Ruscio
 and Kaczetow (2008) reproduces the population correlation while each variable
@@ -210,38 +224,30 @@ method; Foldnes & Olsson, 2016), the cases reproduce the population correlation
 while carrying non-normal marginals with the target \code{skewness} and (excess)
 \code{kurtosis}. The Vale-Maurelli family does not span every valid non-normal
 distribution (Foldnes & Grønneberg, 2015); \code{"IG"} covers distributions \code{"VM"}
-cannot. Both accept \code{skewness} and \code{kurtosis} as a single value (used for every
-variable) or one value per variable, defaulting the unset one to 0. Not every
-(\code{skewness}, \code{kurtosis}) pair is attainable: every distribution needs excess
-kurtosis of at least \code{skewness^2 - 2}, and the method covers a smaller region
-still, so an unreachable request is rejected. For \code{marginals = "VM"}, the
-intermediate correlation matrix used for the draw can itself be
-non-positive-definite; it is rejected unless \code{force_pd = TRUE}, which projects it
-to the nearest correlation matrix (via \code{\link[psych:cor.smooth]{psych::cor.smooth()}}) with a warning.
+cannot. Not every (\code{skewness}, \code{kurtosis}) pair is attainable -- every distribution
+needs excess kurtosis of at least \code{skewness^2 - 2}, and either method covers a smaller
+region still -- so an unreachable request is rejected, as is a \code{"VM"} intermediate
+correlation matrix that is not positive definite unless \code{force_pd} allows it.
 
-With \code{categories}, the drawn data are discretized into ordered categories (an
-integer code \code{1} to \code{K}). \code{categories} gives either the number of equally probable
-categories (one count for every variable, or one per variable) or, as a list of
-proportion vectors, the marginal category proportions per variable. The cut points are
-the thresholds that reproduce the requested proportions (Olsson, 1979): the
-standard-normal quantiles for \code{marginals = "normal"}, and for \code{marginals = "VM"} those
-quantiles mapped through the same Fleishman cubic the draw uses, so the requested
-proportions are reproduced on the non-normal scale too. Under \code{marginals = "IG"} the
-thresholds stay on the standard-normal scale while the data do not, so the achieved
-proportions depart from the request systematically rather than by sampling noise; the
-departure grows with the non-normality, and only the \emph{number} of categories is
-guaranteed. The same holds for a \code{"VM"} variable whose Fleishman cubic is not increasing
-over its own thresholds and the tails beyond them, which keeps the normal-scale ones and
-is reported with a warning; this arises when a turning point of the cubic sits at or
-near an outer threshold -- under a strongly platykurtic marginal, or under substantial
-skewness or kurtosis combined with a small outer-category proportion.
-Because categorization attenuates product-moment correlations, the
-categorized data's Pearson correlation is smaller in magnitude than the population
-correlation; under non-normal marginals its polychoric correlation departs from the
-population as well. \code{match} changes none of this -- it asserts an intent rather than
-selecting a computation, as described under that argument. Ordinal output is not
-available with \code{marginals = "empirical"}. Empty categories left by a draw are reported
-with a warning, as they destabilize the polychoric correlation and the factor analysis.
+With \code{categories}, the drawn data are discretized into ordered categories (an integer
+code \code{1} to \code{K}) at the thresholds that reproduce the requested category proportions
+(Olsson, 1979): the standard-normal quantiles for \code{marginals = "normal"}, and for
+\code{marginals = "VM"} those quantiles mapped through the same Fleishman cubic the draw
+uses, so the requested proportions are reproduced on the non-normal scale too. Under
+\code{marginals = "IG"} the thresholds stay on the standard-normal scale while the data do
+not, so the achieved proportions depart from the request systematically rather than by
+sampling noise, and only the \emph{number} of categories is guaranteed; the same holds for a
+\code{"VM"} variable whose Fleishman cubic is not increasing over its own thresholds and the
+tails beyond them, which keeps the normal-scale thresholds and is reported with a
+warning. That happens when a turning point of the cubic sits at or near an outer
+threshold -- under a strongly platykurtic marginal, or under substantial skewness or
+kurtosis combined with a small outer-category proportion.
+Because categorization attenuates product-moment correlations, the categorized
+data's Pearson correlation is smaller in magnitude than the population correlation;
+under non-normal marginals its polychoric correlation departs from the population as
+well. Ordinal output is not available with \code{marginals = "empirical"}. Empty categories
+left by a draw are reported with a warning, as they destabilize the polychoric
+correlation and the factor analysis.
 
 With \code{missing}, missing values are introduced into the drawn data under a chosen
 mechanism (Rubin, 1976), each variable holed at a target expected rate
@@ -252,37 +258,39 @@ model of a standardized predictor: another variable for \code{"MAR"} (chosen by
 \code{missing_strength}. The mechanism acts on the drawn (latent) values, so when
 \code{categories} also discretizes the data the missingness is keyed on the underlying
 value, not the category code. For \code{"MAR"} the predictor is evaluated on the complete
-drawn values, but every variable is holed at rate \code{missing_prop}, so a variable's MAR
-predictor is itself missing for roughly a \code{missing_prop} fraction of the cases whose
-missingness it drove. The mechanism is therefore MAR conditional on the \emph{complete}
-data, and \strong{not} ignorable for an analyst who sees only the observed data: estimators
-that are consistent under ignorable MAR, such as \code{cor_method = "fiml"} in \code{\link[=efa_fit]{efa_fit()}}
-and the multiple imputation behind \code{\link[=efa_mi]{efa_mi()}}, keep a residual bias here that grows
-with \code{missing_prop} and \code{missing_strength}. The returned matrix carries the \code{NA}s,
-which the correlation estimators handle downstream.
+drawn values, so whether the mechanism is \emph{ignorably} MAR depends on which variables
+carry missing values. By default every variable is holed, which leaves a variable's MAR
+predictor itself missing for roughly a \code{missing_prop} fraction of the cases whose
+missingness it drove: the mechanism is then MAR conditional on the \emph{complete} data and
+\strong{not} ignorable for an analyst who sees only the observed data, so estimators that are
+consistent under ignorable MAR -- \code{cor_method = "fiml"} in \code{\link[=efa_fit]{efa_fit()}}, or the multiple
+imputation behind \code{\link[=efa_mi]{efa_mi()}} -- keep a residual bias that grows with \code{missing_prop} and
+\code{missing_strength}. Restricting the holed variables with \code{missing_vars} and pointing
+\code{missing_predictor} at variables outside that set makes every predictor fully observed,
+which is ignorably MAR and recovers the unbiasedness those estimators are advertised
+with. The returned matrix carries the \code{NA}s, which the correlation estimators handle
+downstream.
 
 With \code{model_error}, the population is perturbed away from the exact factor
 structure so the \code{q}-factor model (\code{q = ncol(Lambda)}) fits it only approximately,
 at a prescribed misfit; exact factor structures are unrealistic and overstate
-recovery in simulation studies (MacCallum, 2003). The perturbation is applied once
-to the population, and the achieved fit is computed with the same fit-index
-formulas \code{\link[=efa_fit]{efa_fit()}} uses and returned in the \code{model_error} element. It is applied only
-when a target is supplied (\code{target_rmsea} and/or \code{target_cfi}), needs a
-factor-model population (\code{Lambda}) with residual degrees of freedom and an exact
-factor structure (a diagonal \code{Psi}), and is orthogonal to the marginal, ordinal,
+recovery in simulation studies (MacCallum, 2003). The perturbation is applied once to
+the population, and the achieved misfit of the specified generating model is computed
+with the same fit-index formulas \code{\link[=efa_fit]{efa_fit()}} uses and returned in the \code{model_error}
+element. It needs a factor-model population with residual degrees of freedom and an
+exact factor structure (a diagonal \code{Psi}), and is orthogonal to the marginal, ordinal,
 and missing-data options. Three methods are available. \code{"CB"} (Cudeck & Browne,
 1992) matches the target RMSEA to numerical precision and keeps the \code{q}-factor
 model the exact minimizer (the CFI follows as a derived quantity). \code{"TKL"} (Tucker,
 Koopman & Linn, 1969) adds minor common factors tuned so the achieved RMSEA -- and,
-optionally, CFI -- match the target(s); with a single target the match is close,
-with both it is a compromise. \code{"WB"} (Wu & Browne, 2015) draws the population from
+optionally, CFI -- match the target(s); with a single target the match is close, with
+both it is a compromise, reported with a warning when the two cannot be reconciled.
+\code{"WB"} (Wu & Browne, 2015) draws the population from
 an inverse-Wishart distribution around the model-implied correlation; its calibration
 applies to the \emph{best-fitting} model, so the reported misfit of the \emph{generating} model
 is systematically larger than the target -- by roughly \eqn{\sqrt{(p(p-1)/2)/df}},
 about 1.4 times for 12 variables and 3 factors. Use \code{"CB"} when the reported RMSEA
-must equal the target. \code{"CB"} and
-\code{"WB"} target the RMSEA only; \code{"TKL"} can target the RMSEA and/or the CFI. The
-reported RMSEA/CFI is the misfit of the specified generating model.
+must equal the target.
 
 Replicated draws (\code{n_datasets > 1}) are generated in parallel across
 replicates with \pkg{future.apply}; a parallel plan can be selected with
@@ -324,6 +332,13 @@ dat_ord <- efa_simulate(N = 500, Lambda = Lambda, Phi = Phi,
 dat_mar <- efa_simulate(N = 500, Lambda = Lambda, Phi = Phi, missing = "MAR",
                         missing_prop = 0.15, seed = 42)
 colMeans(is.na(dat_mar$data))
+
+# An ignorably MAR design: only the first nine items are holed, each driven by one of
+# the last nine, which stay complete
+dat_ign <- efa_simulate(N = 500, Lambda = Lambda, Phi = Phi, missing = "MAR",
+                        missing_prop = 0.15, missing_vars = 1:9,
+                        missing_predictor = 10:18, seed = 42)
+colMeans(is.na(dat_ign$data))
 
 # Add realistic model error: a population the model fits with RMSEA of about .05
 # (Cudeck-Browne, the default method; the achieved fit is reported)

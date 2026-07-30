@@ -33,10 +33,10 @@ efa_power(
 }
 \arguments{
 \item{mode}{character. The kind of power analysis: \code{"rmsea"} (the default; analytic
-RMSEA power) or \code{"simulation"} (Monte-Carlo hit-rate and structure recovery). The
-remaining arguments split by mode -- \code{type}/\code{eps0}/\code{eps1}/\code{df}/\code{alpha}/\code{power}/\code{group}
-are RMSEA-only, and \code{Lambda}/\code{Phi}/\code{Psi}/\code{R}/\code{n_datasets}/\code{criteria}/\code{estimator}/\code{rotation}/\code{recovery_threshold}/\code{model_error}/\code{target_rmsea}/\code{target_cfi}/\code{seed}
-are simulation-only. The value is matched case-insensitively.}
+RMSEA power) or \code{"simulation"} (Monte-Carlo hit-rate and structure recovery).
+\code{type}, \code{eps0}, \code{eps1}, \code{df}, \code{alpha}, \code{power}, and \code{group} apply to RMSEA mode only;
+the arguments marked \emph{Simulation mode} below apply to the other; \code{N}, \code{p}, and \code{k} are
+used in both. The value is matched case-insensitively.}
 
 \item{type}{character. The RMSEA test: \code{"close"} (test of close fit) or
 \code{"notclose"} (test of not-close fit). The value is matched case-insensitively.
@@ -127,7 +127,11 @@ population. It takes effect only when a target is supplied (\code{target_rmsea} 
 factor-model population can be perturbed. \code{"TKL"} adds minor common factors, so it
 degrades both the retention hit-rate and structure recovery realistically; \code{"CB"}
 and \code{"WB"} target the RMSEA only, and \code{"CB"} keeps the fitted loadings the exact
-minimizer so structure recovery stays near-perfect.}
+minimizer so structure recovery stays near-perfect. That is why the default here is
+\code{"TKL"} while \code{\link[=efa_simulate]{efa_simulate()}} defaults to \code{"CB"}: the same target passed to the two
+functions perturbs the population differently unless \code{model_error} is set explicitly,
+and the difference is material -- a \code{"CB"} population can leave recovery near 1 where
+the same target under \code{"TKL"} does not.}
 
 \item{target_rmsea}{numeric. Simulation mode. The population RMSEA the model should
 have relative to the perturbed population, activating model error. Default is
@@ -158,10 +162,8 @@ the alternative (\code{H1}, from \code{eps1}).}
 
 For \code{mode = "simulation"}, a list containing:
 \item{hit_rate}{A named numeric vector of the retention hit-rate per criterion (and,
-where a criterion has several variants, per variant). The denominator is the number
-of replicates on which the criterion returned a definite factor count (\code{n_valid}
-below), so replicates where it errored or was undecided are excluded rather than
-counted as misses.}
+where a criterion has several variants, per variant); \code{NA} for a criterion that
+returned no suggestion on any replicate.}
 \item{hits}{A data frame with, per criterion, the number of replicates it returned a
 definite suggestion on (\code{n_valid}), the number of those that matched \code{k_true}
 (\code{hits}), and the \code{hit_rate} (\code{hits / n_valid}).}
@@ -196,6 +198,10 @@ reports how often each factor-retention criterion recovers the true number of
 factors (the \emph{hit-rate}), how often the fitted loadings recover the population
 structure (\emph{structure recovery}, by Tucker congruence), and the convergence and
 Heywood-case rate of the fit.
+
+The model dimensions follow the notation of MacCallum, Browne and Sugawara (1996):
+\code{p} is the number of observed variables (the \code{n_vars} of the rest of the package) and
+\code{k} the number of factors (\code{n_factors} elsewhere).
 }
 \section{RMSEA mode}{
 The RMSEA fit statistic is referred to a noncentral chi-square distribution.
@@ -228,15 +234,11 @@ The corresponding per-group sample size \code{N / group} is returned as \code{N_
 }
 
 \section{Simulation mode}{
-The population is supplied either as a factor model (\code{Lambda}, with optional \code{Phi}
-and \code{Psi}) or as a ready correlation matrix \code{R}, and passed to \code{\link[=efa_simulate]{efa_simulate()}},
-which draws \code{n_datasets} samples of size \code{N}. By default the population fits the
-factor model exactly, which overstates how well the criteria and the fit recover
-the structure; supplying a misfit target (\code{target_rmsea} and/or \code{target_cfi})
-perturbs it with model error (\code{model_error}, \code{"TKL"} by default) so the model fits
-only approximately -- a more realistic target (MacCallum, 2003). The true number
-of factors \code{k_true} is \code{ncol(Lambda)} for a factor-model population, or \code{k} for a
-bare \code{R}.
+The population is passed to \code{\link[=efa_simulate]{efa_simulate()}}, which draws \code{n_datasets} samples of size
+\code{N}. Its true number of factors \code{k_true} is \code{ncol(Lambda)} for a factor-model
+population, or \code{k} for a bare \code{R}. By default the population fits the factor model
+exactly, which overstates how well the criteria and the fit recover the structure; a
+misfit target makes it a more realistic one (MacCallum, 2003).
 
 Each replicate is analysed three ways. \strong{Hit-rate}: every criterion in \code{criteria}
 is run and its suggested number of factors compared with \code{k_true}; the hit-rate is

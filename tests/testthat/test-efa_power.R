@@ -282,16 +282,30 @@ test_that("simulation mode muffles the per-replicate fit messages", {
               n_datasets = 3, criteria = "EKC", seed = 1))
 })
 
-test_that("simulation mode degrades gracefully when every criterion fails", {
+test_that("a criterion that fails on every replicate is reported, not dropped", {
   # N < p makes each replicate's correlation matrix singular, so MAP errors on every
-  # replicate; the hit-rate aggregation must return an empty result, not abort.
-  sim <- efa_power("simulation", Lambda = sim_Lambda, N = 6, n_datasets = 3,
-                   criteria = "MAP", seed = 1)
+  # replicate. The criterion must still appear in the results -- with no valid replicates
+  # and an NA hit-rate -- and be named in a classed warning, rather than vanishing while
+  # the settings still record the request.
+  expect_warning(
+    sim <- efa_power("simulation", Lambda = sim_Lambda, N = 6, n_datasets = 3,
+                     criteria = "MAP", seed = 1),
+    class = "efa_power_criterion_failed")
   expect_s3_class(sim, "efa_power")
-  expect_length(sim$hit_rate, 0)
-  expect_equal(nrow(sim$hits), 0)
-  # The formatter reports the empty case rather than erroring.
-  expect_no_error(print(sim))
+  expect_named(sim$hit_rate, "MAP")
+  expect_true(is.na(sim$hit_rate[["MAP"]]))
+  expect_equal(sim$hits$n_valid, 0L, ignore_attr = TRUE)
+  expect_equal(sim$hits$hits, 0, ignore_attr = TRUE)
+  expect_identical(sim$settings$criteria, "MAP")
+  # The formatter reports the missing rate rather than dropping the line or erroring.
+  local_reproducible_output()
+  expect_snapshot(print(sim))
+})
+
+test_that("a criterion that decides on every replicate raises no failure warning", {
+  expect_no_warning(
+    efa_power("simulation", Lambda = sim_Lambda, Phi = sim_Phi, N = 150,
+              n_datasets = 4, criteria = "EKC", seed = 3))
 })
 
 test_that("simulation mode: R-only population turns recovery off but keeps the hit-rate", {
@@ -317,6 +331,13 @@ test_that("simulation-mode classed conditions fire as expected", {
                class = "efa_power_missing_k")
   expect_error(efa_power("simulation", Lambda = sim_Lambda, k = 2, N = 200,
                          n_datasets = 2), class = "efa_power_bad_k")
+  # N is required in simulation mode (it is optional in RMSEA mode, where it is solved
+  # for), and both N and n_datasets must be positive whole numbers.
+  expect_error(efa_power("simulation", Lambda = sim_Lambda), class = "efa_power_input")
+  expect_error(efa_power("simulation", Lambda = sim_Lambda, N = -5, n_datasets = 2),
+               class = "efa_power_input")
+  expect_error(efa_power("simulation", Lambda = sim_Lambda, N = 200, n_datasets = 0),
+               class = "efa_power_input")
   # Out-of-range recovery threshold.
   expect_error(efa_power("simulation", Lambda = sim_Lambda, N = 200, n_datasets = 2,
                          recovery_threshold = 0), class = "efa_power_bad_threshold")

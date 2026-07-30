@@ -16,6 +16,10 @@
 #' structure (*structure recovery*, by Tucker congruence), and the convergence and
 #' Heywood-case rate of the fit.
 #'
+#' The model dimensions follow the notation of MacCallum, Browne and Sugawara (1996):
+#' `p` is the number of observed variables (the `n_vars` of the rest of the package) and
+#' `k` the number of factors (`n_factors` elsewhere).
+#'
 #' @details
 #' # RMSEA mode
 #'
@@ -49,15 +53,11 @@
 #'
 #' # Simulation mode
 #'
-#' The population is supplied either as a factor model (`Lambda`, with optional `Phi`
-#' and `Psi`) or as a ready correlation matrix `R`, and passed to [efa_simulate()],
-#' which draws `n_datasets` samples of size `N`. By default the population fits the
-#' factor model exactly, which overstates how well the criteria and the fit recover
-#' the structure; supplying a misfit target (`target_rmsea` and/or `target_cfi`)
-#' perturbs it with model error (`model_error`, `"TKL"` by default) so the model fits
-#' only approximately -- a more realistic target (MacCallum, 2003). The true number
-#' of factors `k_true` is `ncol(Lambda)` for a factor-model population, or `k` for a
-#' bare `R`.
+#' The population is passed to [efa_simulate()], which draws `n_datasets` samples of size
+#' `N`. Its true number of factors `k_true` is `ncol(Lambda)` for a factor-model
+#' population, or `k` for a bare `R`. By default the population fits the factor model
+#' exactly, which overstates how well the criteria and the fit recover the structure; a
+#' misfit target makes it a more realistic one (MacCallum, 2003).
 #'
 #' Each replicate is analysed three ways. **Hit-rate**: every criterion in `criteria`
 #' is run and its suggested number of factors compared with `k_true`; the hit-rate is
@@ -78,10 +78,10 @@
 #' workers, and the caller's random-number state is left unchanged.
 #'
 #' @param mode character. The kind of power analysis: `"rmsea"` (the default; analytic
-#'   RMSEA power) or `"simulation"` (Monte-Carlo hit-rate and structure recovery). The
-#'   remaining arguments split by mode -- `type`/`eps0`/`eps1`/`df`/`alpha`/`power`/`group`
-#'   are RMSEA-only, and `Lambda`/`Phi`/`Psi`/`R`/`n_datasets`/`criteria`/`estimator`/`rotation`/`recovery_threshold`/`model_error`/`target_rmsea`/`target_cfi`/`seed`
-#'   are simulation-only. The value is matched case-insensitively.
+#'   RMSEA power) or `"simulation"` (Monte-Carlo hit-rate and structure recovery).
+#'   `type`, `eps0`, `eps1`, `df`, `alpha`, `power`, and `group` apply to RMSEA mode only;
+#'   the arguments marked *Simulation mode* below apply to the other; `N`, `p`, and `k` are
+#'   used in both. The value is matched case-insensitively.
 #' @param type character. The RMSEA test: `"close"` (test of close fit) or
 #'   `"notclose"` (test of not-close fit). The value is matched case-insensitively.
 #'   See *Details*.
@@ -152,7 +152,11 @@
 #'   factor-model population can be perturbed. `"TKL"` adds minor common factors, so it
 #'   degrades both the retention hit-rate and structure recovery realistically; `"CB"`
 #'   and `"WB"` target the RMSEA only, and `"CB"` keeps the fitted loadings the exact
-#'   minimizer so structure recovery stays near-perfect.
+#'   minimizer so structure recovery stays near-perfect. That is why the default here is
+#'   `"TKL"` while [efa_simulate()] defaults to `"CB"`: the same target passed to the two
+#'   functions perturbs the population differently unless `model_error` is set explicitly,
+#'   and the difference is material -- a `"CB"` population can leave recovery near 1 where
+#'   the same target under `"TKL"` does not.
 #' @param target_rmsea numeric. Simulation mode. The population RMSEA the model should
 #'   have relative to the perturbed population, activating model error. Default is
 #'   `NULL`. Passed to [efa_simulate()].
@@ -179,10 +183,8 @@
 #'
 #' For `mode = "simulation"`, a list containing:
 #' \item{hit_rate}{A named numeric vector of the retention hit-rate per criterion (and,
-#'   where a criterion has several variants, per variant). The denominator is the number
-#'   of replicates on which the criterion returned a definite factor count (`n_valid`
-#'   below), so replicates where it errored or was undecided are excluded rather than
-#'   counted as misses.}
+#'   where a criterion has several variants, per variant); `NA` for a criterion that
+#'   returned no suggestion on any replicate.}
 #' \item{hits}{A data frame with, per criterion, the number of replicates it returned a
 #'   definite suggestion on (`n_valid`), the number of those that matched `k_true`
 #'   (`hits`), and the `hit_rate` (`hits / n_valid`).}
@@ -442,8 +444,28 @@ efa_power <- function(mode = c("rmsea", "simulation"),
     !vapply(.retention_registry, function(e) isTRUE(e$visual), logical(1))]
   criteria <- .match_arg_ci(criteria, valid_ids, several.ok = TRUE)
 
-  checkmate::assert_count(N, positive = TRUE)
-  checkmate::assert_count(n_datasets, positive = TRUE)
+  # `N` is optional in RMSEA mode (it is solved for at a target power), which makes
+  # omitting it the most likely simulation-mode mistake; there is nothing to solve for
+  # here, so report it as a requirement rather than as a bare type assertion.
+  if (is.null(N)) {
+    cli::cli_abort(
+      c("{.arg N} is required in simulation mode.",
+        "x" = "It is the size of each drawn sample; no sample size is solved for here.",
+        "i" = "Set {.arg N}, e.g. {.code N = 300}, or use {.code mode = \"rmsea\"} to solve for the required sample size."),
+      class = "efa_power_input")
+  }
+  if (!checkmate::test_count(N, positive = TRUE)) {
+    cli::cli_abort(
+      c("{.arg N} must be a single positive whole number.",
+        "x" = "It is the number of cases in each drawn sample."),
+      class = "efa_power_input")
+  }
+  if (!checkmate::test_count(n_datasets, positive = TRUE)) {
+    cli::cli_abort(
+      c("{.arg n_datasets} must be a single positive whole number.",
+        "x" = "It is the number of samples drawn and analysed."),
+      class = "efa_power_input")
+  }
   if (!checkmate::test_number(recovery_threshold) ||
       recovery_threshold <= 0 || recovery_threshold > 1) {
     cli::cli_abort("{.arg recovery_threshold} must be a single number in (0, 1].",
@@ -536,33 +558,47 @@ efa_power <- function(mode = c("rmsea", "simulation"),
   # Hit-rate: union the criterion/variant keys (a criterion can fail on a replicate,
   # or emit several variants), then score each against k_true over the replicates
   # where it produced a suggestion.
-  keys <- unique(unlist(lapply(per_rep, function(r) names(r$n_hat))))
-  if (length(keys) == 0L) {
-    # No criterion produced a suggestion on any replicate (e.g. every criterion errored
-    # on a degenerate draw). Report an empty hit-rate rather than aborting: `keys` empty
-    # would otherwise make the per-key extraction below return NULL and abort vapply.
-    hit_mat <- matrix(numeric(0), nrow = 0L, ncol = length(per_rep))
-    hit_rate <- stats::setNames(numeric(0), character(0))
-    hits <- data.frame(criterion = character(0), n_valid = integer(0),
-                       hits = integer(0), hit_rate = numeric(0))
-  } else {
-    # Extract this replicate's suggestion for every key; a replicate where a criterion
-    # failed (its key absent) contributes NA there.
-    pull <- function(r) {
-      v <- r$n_hat[keys]
-      if (length(v) != length(keys)) v <- rep(NA_real_, length(keys))
-      v
-    }
-    hit_mat <- matrix(
-      vapply(per_rep, pull, numeric(length(keys))),
-      nrow = length(keys), dimnames = list(keys, NULL))
-    hit_n_valid <- rowSums(!is.na(hit_mat))
-    hit_hits <- rowSums(hit_mat == k_true, na.rm = TRUE)
-    hit_rate <- ifelse(hit_n_valid > 0, hit_hits / hit_n_valid, NA_real_)
-    names(hit_rate) <- keys
-    hits <- data.frame(criterion = keys, n_valid = hit_n_valid, hits = hit_hits,
-                       hit_rate = hit_rate, row.names = NULL)
+  # unlist() drops the NULLs a failed criterion contributes, and returns NULL when every
+  # criterion failed on every replicate, so coerce to a character vector before matching.
+  observed <- as.character(unique(unlist(lapply(per_rep, function(r) names(r$n_hat)))))
+  # A criterion that failed on *every* replicate contributes no key at all, so without
+  # this it would silently vanish from the results while `settings$criteria` still records
+  # the request -- worst for the internally-simulating criteria on a hard population,
+  # where a long run would quietly drop the criterion the user was paying for. Seed the
+  # missing ids so each gets a row with n_valid = 0 (and, via the guard below, an NA
+  # hit-rate), and say so. A key is a criterion's own id or `id_variant`
+  # (see .retention_key()).
+  failed <- criteria[!vapply(criteria, function(id) {
+    any(observed == id | startsWith(observed, paste0(id, "_")))
+  }, logical(1))]
+  if (length(failed)) {
+    cli::cli_warn(
+      c("{cli::qty(failed)}Criteri{?on/a} {.val {failed}} produced no suggestion on any of the {n_datasets} replicate{?s}.",
+        "x" = "{cli::qty(failed)}{?It is/They are} reported with a missing hit-rate over zero valid replicates.",
+        "i" = "Such a criterion errored or was undecided throughout; a larger {.arg N}, a different {.arg estimator}, or a less demanding population may let it decide."),
+      class = "efa_power_criterion_failed")
   }
+  # `criteria` always holds at least one id, so seeding the failed ones leaves `keys`
+  # non-empty even when no criterion decided anywhere: that case now runs the ordinary
+  # path and comes out as n_valid = 0 with an NA hit-rate.
+  keys <- c(observed, failed)
+  # Extract this replicate's suggestion for every key; a replicate where a criterion
+  # failed (its key absent) contributes NA there, and one where all of them failed has a
+  # NULL `n_hat` whose indexing gives the wrong length.
+  pull <- function(r) {
+    v <- r$n_hat[keys]
+    if (length(v) != length(keys)) v <- rep(NA_real_, length(keys))
+    v
+  }
+  hit_mat <- matrix(
+    vapply(per_rep, pull, numeric(length(keys))),
+    nrow = length(keys), dimnames = list(keys, NULL))
+  hit_n_valid <- rowSums(!is.na(hit_mat))
+  hit_hits <- rowSums(hit_mat == k_true, na.rm = TRUE)
+  hit_rate <- ifelse(hit_n_valid > 0, hit_hits / hit_n_valid, NA_real_)
+  names(hit_rate) <- keys
+  hits <- data.frame(criterion = keys, n_valid = hit_n_valid, hits = hit_hits,
+                     hit_rate = hit_rate, row.names = NULL)
 
   rec_min <- vapply(per_rep, function(r) r$rec_min, numeric(1))
   rec_mean <- vapply(per_rep, function(r) r$rec_mean, numeric(1))
@@ -810,6 +846,9 @@ format.efa_power <- function(x, digits = 3, ...) {
     cli::cli_text("")
 
     cli::cli_text("{.strong Retention hit-rate} P(k-hat = {x$k_true})")
+    # Every requested criterion now gets a row, so a fresh object always has lines here;
+    # an object serialized before that carries no row for a criterion that failed on every
+    # replicate, and prints this instead of an empty section (as for `N_per_group` above).
     if (length(hit_lines) > 0) {
       cli::cli_ul(hit_lines)
     } else {
