@@ -147,8 +147,7 @@ test_that("procrustes pool over a signed-permutation orbit returns the anchor SE
   unrot_list <- lapply(gauge_fits, function(f) unclass(f$unrot_loadings))
   aligned <- EFAtools:::.efa_pooled_align_unrotated_list(
     unrot_list,
-    align_unrotated = "procrustes",
-    return_meta = TRUE
+    align_unrotated = "procrustes"
   )
 
   pool <- EFAtools:::.efa_pooled_analytic_pool(
@@ -220,8 +219,7 @@ test_that("procrustes pool recovers the anchor SE under a continuous rotation ga
   unrot_list <- lapply(gauge_fits, function(f) unclass(f$unrot_loadings))
   aligned <- EFAtools:::.efa_pooled_align_unrotated_list(
     unrot_list,
-    align_unrotated = "procrustes",
-    return_meta = TRUE
+    align_unrotated = "procrustes"
   )
 
   pool <- EFAtools:::.efa_pooled_analytic_pool(
@@ -256,7 +254,7 @@ test_that("procrustes pool and signed_tucker_congruence pool agree on the signed
   unrot_list <- lapply(gauge_fits, function(f) unclass(f$unrot_loadings))
 
   aligned_stc <- EFAtools:::.efa_pooled_align_unrotated_list(
-    unrot_list, align_unrotated = "signed_tucker_congruence", return_meta = TRUE
+    unrot_list, align_unrotated = "signed_tucker_congruence"
   )
   pool_stc <- EFAtools:::.efa_pooled_analytic_pool(
     fits = gauge_fits,
@@ -267,7 +265,7 @@ test_that("procrustes pool and signed_tucker_congruence pool agree on the signed
   )
 
   aligned_pr <- EFAtools:::.efa_pooled_align_unrotated_list(
-    unrot_list, align_unrotated = "procrustes", return_meta = TRUE
+    unrot_list, align_unrotated = "procrustes"
   )
   pool_pr <- EFAtools:::.efa_pooled_analytic_pool(
     fits = gauge_fits,
@@ -303,7 +301,7 @@ test_that("NA-filled vcov_unrot_loadings on any imputation aborts with classed c
 
   unrot_list <- lapply(gauge_fits, function(f) unclass(f$unrot_loadings))
   aligned <- EFAtools:::.efa_pooled_align_unrotated_list(
-    unrot_list, align_unrotated = "procrustes", return_meta = TRUE
+    unrot_list, align_unrotated = "procrustes"
   )
 
   expect_error(
@@ -348,7 +346,7 @@ test_that("missing vcov_unrot_loadings under align_unrotated = 'procrustes' abor
 
   unrot_list <- lapply(gauge_fits, function(f) unclass(f$unrot_loadings))
   aligned <- EFAtools:::.efa_pooled_align_unrotated_list(
-    unrot_list, align_unrotated = "procrustes", return_meta = TRUE
+    unrot_list, align_unrotated = "procrustes"
   )
 
   expect_error(

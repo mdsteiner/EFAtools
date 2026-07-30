@@ -370,7 +370,12 @@ missingness itself, so \code{use} is ignored; it supplies a continuous (Pearson-
 correlation only and is therefore not compatible with \code{estimator = "DWLS"}. Standard
 errors are available analytically for \code{estimator = "ML"} or \code{"ULS"} and, for any estimator,
 by the non-parametric bootstrap (see \emph{Standard errors}). For multiply imputed data,
-\code{\link[=efa_mi]{efa_mi()}} is the alternative route to handling missingness.
+\code{\link[=efa_mi]{efa_mi()}} is the alternative route to handling missingness. Both routes assume
+the values are missing at random (MAR), and which one to prefer is largely
+practical: FIML is a single, efficient fit and is the simpler default when the
+analysis model is the whole story, whereas multiple imputation is more flexible when
+the imputation model should draw on auxiliary variables not in the factor model, or
+when the same imputations feed several downstream analyses.
 }
 }
 

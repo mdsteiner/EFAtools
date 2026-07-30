@@ -697,9 +697,22 @@ format.summary.efa <- function(x, ...) {
   # styling survives and the line is not reflowed.
   lines <- paste0(chi_prefix, "\u03c7\u00b2(", df_text, ") = ", chi_text, ", ",
                   cli::style_italic("p"), p_text)
-  lines <- c(lines, fit_line("CFI", "CFI"))
+  # A D2-pooled fit reports CFI and TLI as the average of the per-imputation indices
+  # rather than from the pooled statistic on the line above, so label them: they are the
+  # quantities that will not reconcile against a reference which pools the model and
+  # baseline noncentralities separately (see the note below). Only an index that is
+  # actually reported is labelled, so an undefined one is not described as an average.
+  inc_averaged <- if (is_d2) {
+    c("CFI", "TLI")[c(is_finite_fit("CFI"), is_finite_fit("TLI"))]
+  } else {
+    character(0)
+  }
+  inc_tag <- function(key) {
+    if (key %in% inc_averaged) " (avg. over imputations)" else ""
+  }
+  lines <- c(lines, fit_line(paste0("CFI", inc_tag("CFI")), "CFI"))
   if (is_finite_fit("TLI")) {
-    lines <- c(lines, fit_line("TLI", "TLI"))
+    lines <- c(lines, fit_line(paste0("TLI", inc_tag("TLI")), "TLI"))
   }
   lines <- c(lines, paste0(rmsea_label, fit_ci$label, ": ", rmsea_value, fit_ci$RMSEA))
   lines <- c(lines,
@@ -721,11 +734,20 @@ format.summary.efa <- function(x, ...) {
   # references coincide only as df2 -> Inf (no between-imputation variance), so the note is
   # shown when df2 is finite.
   if (is_d2) {
-    d2_df2 <- if (is.null(fit$mi_diagnostics)) NA_real_ else fit$mi_diagnostics$D2_df2
+    d2_df2 <- if (is.null(x$mi_diagnostics)) NA_real_ else x$mi_diagnostics$D2_df2
     if (is.finite(d2_df2)) {
       d2_df2_text <- .efa_format_plain_number(d2_df2, digits = 1)
       cli::cli_text(
         "{.emph Note:} the pooled \u03c7\u00b2 is the D2 statistic; its {.emph p} uses the D2 reference F({df_text}, {d2_df2_text}), not the \u03c7\u00b2({df_text}) tail."
+      )
+    }
+    # The incremental indices are averaged over the imputations rather than formed from
+    # separately pooled model and baseline statistics, which is what lavaan.mi / semTools
+    # do; say so, because these are the indices a reader is most likely to cross-check.
+    # Names only the indices that were reported above.
+    if (length(inc_averaged) > 0L) {
+      cli::cli_text(
+        "{.emph Note:} {inc_averaged} {?is/are} averaged over the imputations, not formed from the separately pooled model and baseline statistics in {.code mi_diagnostics}."
       )
     }
   }

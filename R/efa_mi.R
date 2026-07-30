@@ -17,6 +17,13 @@
 #' FIML is intentionally not routed through `efa_mi()`, which is a multi-fit
 #' pooler by construction.
 #'
+#' Both routes assume the values are missing at random (MAR). Which one to prefer
+#' is largely practical: FIML is a single, efficient fit and is the simpler
+#' default when the analysis model is the whole story, whereas multiple imputation
+#' is more flexible when the imputation model should draw on auxiliary variables
+#' not in the factor model, or when the same imputations feed several downstream
+#' analyses.
+#'
 #' ## Standard-error pooling routes
 #'
 #' The pooling pathway is selected automatically from the `se` method recorded on
@@ -96,9 +103,16 @@
 #'
 #' ## Pooling the model chi-square and fit indices
 #'
-#' The model chi-square and the indices derived from it (RMSEA, ECVI, and the
-#' descriptive AIC/BIC) are pooled with the D2 rule (Li, Meng, Raghunathan &
-#' Rubin, 1991), not arithmetically averaged. Because D2 shrinks the pooled
+#' The model chi-square and the indices derived from it (ECVI and the descriptive
+#' AIC/BIC) are pooled with the D2 rule (Li, Meng, Raghunathan &
+#' Rubin, 1991), not arithmetically averaged. RMSEA is pooled by the same rule but
+#' from a second D2 pool of the per-imputation discrepancies taken on the
+#' uncorrected \eqn{N - 1} scale, because RMSEA places the model noncentrality on
+#' the scale on which it is defined, so the Bartlett small-sample correction enters
+#' only the chi-square test and not this approximate-fit index (as in
+#' [efa_fit()]). The printed RMSEA therefore does not reconcile by hand with the
+#' printed chi-square; the statistic it is formed from is `chi_cfi` in
+#' `mi_diagnostics`. Because D2 shrinks the pooled
 #' chi-square in proportion to the between-imputation variability, the pooled RMSEA
 #' can fall below the mean of the per-imputation RMSEAs (as it does in
 #' `lavaan.mi`); read it together with the per-imputation fit. The incremental
@@ -106,7 +120,8 @@
 #' average of the per-imputation indices, which keeps them consistent with the
 #' component fits and avoids the out-of-range values that separately pooling the
 #' model and baseline noncentralities (as `lavaan.mi`/`semTools` do) can produce;
-#' those separately pooled noncentralities remain available in `mi_diagnostics`.
+#' the separately pooled model and baseline chi-squares those indices would be
+#' formed from remain available in `mi_diagnostics`.
 #' AIC and BIC, if returned, are chi-square-derived descriptive quantities and are
 #' not likelihood-based MI information criteria. They are reported only where the
 #' component fits report them: whenever a component withholds them -- any
@@ -233,9 +248,15 @@
 #' @param procrustes_args List of additional arguments passed to [efa_procrustes()]
 #' for fixed-target alignment.
 #' @param rmsea_ci_level Numeric. Confidence level for the RMSEA CI.
-#' @param rmsr_upper Logical. If `TRUE`, compute RMSR from the unique
-#' off-diagonal residual correlations. If `FALSE`, use the full off-diagonal
-#' matrix.
+#' @param rmsr_upper `r lifecycle::badge("deprecated")` Accepted and ignored. It
+#' selected between computing RMSR from the unique off-diagonal residual correlations
+#' and from the full off-diagonal matrix. The two element sets hold each residual pair
+#' once and twice respectively, so their sums and counts double together and the mean
+#' square is the same number whenever the residual matrix is symmetric, which the pooled
+#' residuals always are. RMSR is therefore always the root mean square of the unique
+#' off-diagonal residuals; SRMR, which divides the same sum by the number of
+#' non-redundant elements, is reported alongside it. Supplying it to [efa_mi()]
+#' signals a deprecation warning; the superseded [EFA_POOLED()] accepts it silently.
 #' @param ... Additional arguments passed to [efa_fit()] (e.g. `estimator`, `rotation`, `se`,
 #' `n_factors`, `N`). These select the estimator, rotation, standard-error method, and
 #' fit indices used for every imputation; see [efa_fit()] for the available options, their
@@ -273,6 +294,40 @@
 #' is \eqn{\tilde\Gamma}; the pooled `SE`, `CI`, and `fit_indices` are taken
 #' from it. `MI` is `NULL` on this path because the imputation uncertainty is
 #' carried by \eqn{\tilde\Gamma} rather than by per-parameter Rubin pooling.}
+#' \item{mi_diagnostics}{Diagnostics for the pooled model fit, `NULL` on the
+#' `se = "sandwich"` (MI2S) path, where there is one fit and no D2 pool. `m` is the
+#' number of imputations that entered the pool. `D2_F`, `D2_df1`, `D2_df2`,
+#' `D2_chi_asymptotic`, `ARIV` and `FMI` describe the D2 pool of the model
+#' chi-square (the average relative increase in variance and the fraction of
+#' missing information it implies), and `chi_bar_naive` is the plain mean of the
+#' per-imputation statistics for comparison; the `*_null` entries are the same
+#' quantities for the independence baseline. `chi_cfi` and `chi_null_cfi` are the
+#' pooled model and baseline **chi-squares** on the common \eqn{N - 1}
+#' noncentrality scale. `chi_cfi` is the statistic the reported RMSEA is formed
+#' from; the pair is also the basis on which `lavaan.mi`/`semTools` form pooled
+#' incremental indices, so the reference CFI is
+#' `1 - (chi_cfi - df) / (chi_null_cfi - df_null)` (and analogously for TLI) --
+#' a different quantity from the reported CFI/TLI, which average the
+#' per-imputation indices.}
+#' \item{fits}{The list of \eqn{m} component [efa_fit()] fits, in the order of
+#' `data_list`, kept for per-imputation diagnostics. On the MI2S path these are the
+#' per-imputation fits whose inputs were pooled, not the pooled fit itself (which
+#' is `mi_fit`).}
+#' \item{alignment}{Metadata from aligning the rotated solutions, `NULL` when no
+#' rotation was requested or on the MI2S path (one fit, one gauge). Under
+#' `target_method = "first_target"`: the `method` used, the `target` it aligned to,
+#' the per-imputation `target_rotations`, the indices of any
+#' `point_rotation_failures`, and whether every inner alignment `converged`. Under
+#' `target_method = "consensus"` it is the full [efa_procrustes()]-based GPA record:
+#' the converged `target`, the `aligned_loadings` and `aligned_phi`, the iteration
+#' `history`, convergence flags, and the multi-start summary.}
+#' \item{settings}{The component fits' [efa_fit()] settings with the pooling
+#' settings added: `pooled` (always `TRUE`), `pooled_N` and `N` (the mean N across
+#' imputations), `n_imputations`, `component_se` (the `se` the component fits
+#' used), `target_method`, `align_unrotated`, `fit_pool_method`, `p`, `ci` and
+#' `rmsea_ci_level`. `se` records what was actually pooled, so it
+#' is `"none"` when pooled standard errors could not be produced although the
+#' component fits computed them (`component_se` keeps the request).}
 #' }
 #'
 #'
@@ -364,7 +419,7 @@ efa_mi <- function(data_list,
                    consensus_args = list(),
                    procrustes_args = list(),
                    rmsea_ci_level = .90,
-                   rmsr_upper = TRUE,
+                   rmsr_upper = lifecycle::deprecated(),
                    ...) {
 
   efa_args <- list(...)
@@ -387,13 +442,38 @@ efa_mi <- function(data_list,
     names(efa_args)[!is.na(canonical)] <- efa_fit_formals[canonical[!is.na(canonical)]]
   }
 
-  checkmate::assert_list(data_list, min.len = 2, null.ok = FALSE)
+  checkmate::assert_list(data_list, null.ok = FALSE)
+  # Arity is asserted here rather than through checkmate's `min.len`, so that too few
+  # imputations signal the documented `efa_pooled_min_fits` condition instead of a
+  # plain checkmate error.
+  if (length(data_list) < 2L) {
+    cli::cli_abort(
+      c("At least two imputations are required for MI pooling.",
+        "i" = "{.arg data_list} has {length(data_list)} element{?s}."),
+      class = "efa_pooled_min_fits"
+    )
+  }
   lapply(data_list, checkmate::assert_multi_class, c("matrix", "data.frame"))
   checkmate::assert_number(p, na.ok = FALSE, lower = 0, upper = 1)
   checkmate::assert_list(consensus_args, null.ok = FALSE)
   checkmate::assert_list(procrustes_args, null.ok = FALSE)
   checkmate::assert_number(rmsea_ci_level, na.ok = FALSE, lower = 0, upper = 1)
-  checkmate::assert_flag(rmsr_upper)
+
+  # `rmsr_upper` never changed a returned value; the argument's documentation gives the
+  # argument, and the warning below repeats it for the caller.
+  if (lifecycle::is_present(rmsr_upper)) {
+    lifecycle::deprecate_warn(
+      when = "1.1.0",
+      what = "efa_mi(rmsr_upper)",
+      details = c(
+        "i" = paste("It selected between two RMSR conventions that coincide for a symmetric",
+                    "residual matrix, so it never affected the reported RMSR."),
+        "i" = paste("RMSR is the root mean square of the unique off-diagonal residuals; SRMR,",
+                    "which divides the same sum by the non-redundant elements, is reported",
+                    "alongside it.")
+      )
+    )
+  }
 
   if (p <= 0 || p >= 1) {
     cli::cli_abort("{.arg p} must be strictly between 0 and 1.", class = "efa_pooled_bad_p")
@@ -461,7 +541,7 @@ efa_mi <- function(data_list,
       settings = settings, estimator = estimator, rotation = rotation,
       rotation_type = rotation_type, target_method = target_method,
       align_unrotated = align_unrotated, fit_pool_method = fit_pool_method,
-      p = p, rmsea_ci_level = rmsea_ci_level, rmsr_upper = rmsr_upper
+      p = p, rmsea_ci_level = rmsea_ci_level
     ))
   }
 
@@ -474,8 +554,7 @@ efa_mi <- function(data_list,
 
   aligned_unrot <- .efa_pooled_align_unrotated_list(
     unrot_loadings = unrot_loadings,
-    align_unrotated = align_unrotated,
-    return_meta = TRUE
+    align_unrotated = align_unrotated
   )
   unrot_loadings_aligned <- aligned_unrot$loadings
   unrot_align_meta       <- aligned_unrot$meta
@@ -624,7 +703,7 @@ efa_mi <- function(data_list,
   diag(residuals) <- 0
   dimnames(residuals) <- list(var_names, var_names)
 
-  RMSR <- .rmsr(residuals, upper = rmsr_upper)
+  RMSR <- .rmsr(residuals)
 
   ## -------------------------------------------------------------------------
   ## Variance-accounted tables
@@ -685,17 +764,18 @@ efa_mi <- function(data_list,
     N_pool <- mean(Ns_ok)
   }
 
-  fit_indices <- .efa_pooled_fit_indices(
+  pooled_fit <- .efa_pooled_fit_indices(
     fits = fits,
     pooled_R = pooled_orig_R,
     residuals = residuals,
     RMSR = RMSR,
     N = N_pool,
     Ns = Ns,
-    method = estimator,
     pool_method = fit_pool_method,
     rmsea_ci_level = rmsea_ci_level
   )
+  fit_indices <- pooled_fit$fit_indices
+  mi_diagnostics <- pooled_fit$mi_diagnostics
 
   ## -------------------------------------------------------------------------
   ## SEs and CIs for pooled MI estimates. Two routes: a bootstrap pool that
@@ -763,13 +843,7 @@ efa_mi <- function(data_list,
       procrustes_args = procrustes_args,
       h2 = h2,
       residuals = residuals,
-      pooled_orig_R = pooled_orig_R,
-      N = N_pool,
-      method = estimator,
-      pool_method = fit_pool_method,
-      rmsea_ci_level = rmsea_ci_level,
-      alpha = p,
-      rmsr_upper = rmsr_upper
+      alpha = p
     )
   }
 
@@ -818,7 +892,6 @@ efa_mi <- function(data_list,
   settings_pooled$p <- p
   settings_pooled$ci <- 1 - p
   settings_pooled$rmsea_ci_level <- rmsea_ci_level
-  settings_pooled$rmsr_upper <- rmsr_upper
   if (!is.null(boot_pooled) && !is.null(boot_pooled$n_boot)) {
     settings_pooled$b_boot <- boot_pooled$n_boot
   }
@@ -834,7 +907,7 @@ efa_mi <- function(data_list,
     settings = settings_pooled,
     fits = fits,
     alignment = alignment,
-    mi_diagnostics = fit_indices$mi_diagnostics
+    mi_diagnostics = mi_diagnostics
   )
 
   if (rotation_type != "none") {
@@ -977,7 +1050,7 @@ efa_mi <- function(data_list,
 .efa_pooled_mi2s <- function(fits, data_list, efa_args, settings, estimator,
                              rotation, rotation_type, target_method,
                              align_unrotated, fit_pool_method, p,
-                             rmsea_ci_level, rmsr_upper) {
+                             rmsea_ci_level) {
   # Two-stage (MI2S) pooled-inputs route for component fits carrying sandwich
   # (robust) SEs. Pools the correlation matrix and its asymptotic covariance
   # across imputations (.efa_pooled_mi2s_inputs), then fits the model once on the
@@ -1141,7 +1214,6 @@ efa_mi <- function(data_list,
   settings_pooled$p <- p
   settings_pooled$ci <- 1 - p
   settings_pooled$rmsea_ci_level <- rmsea_ci_level
-  settings_pooled$rmsr_upper <- rmsr_upper
 
   results <- list(
     h2 = mi_fit$h2,
@@ -1199,11 +1271,8 @@ efa_mi <- function(data_list,
 
 .efa_pooled_check_fits <- function(fits) {
   # Fail early if the fitted EFA objects are not conformable. Pooling only makes
-  # sense when all imputations estimate the same model on the same variables.
-  if (length(fits) < 2L) {
-    cli::cli_abort("At least two EFA fits are required for MI pooling.", class = "efa_pooled_min_fits")
-  }
-
+  # sense when all imputations estimate the same model on the same variables. The
+  # arity of the list is already asserted on `data_list` by the caller.
   dims <- vapply(fits, function(x) {
     paste(dim(as.matrix(x$unrot_loadings)), collapse = "x")
   }, character(1))
@@ -1366,23 +1435,21 @@ efa_mi <- function(data_list,
 }
 
 .efa_pooled_align_unrotated_list <- function(unrot_loadings,
-                                             align_unrotated = c("signed_tucker_congruence", "none", "procrustes"),
-                                             return_meta = FALSE) {
+                                             align_unrotated = c("signed_tucker_congruence", "none", "procrustes")) {
   # Unrotated factor axes are arbitrary up to ordering and signs. This helper
   # puts them into a common orientation before simple arithmetic averaging.
   # Unlike the rotated solution below, this step should not seek simple
   # structure; it only removes indeterminacy in the unrotated axes.
   #
-  # When return_meta = TRUE, a parallel list of per-imputation alignment metadata
-  # is returned alongside the aligned loadings so that downstream consumers can
-  # apply the same column permutation (and, when signed gauges matter, sign
-  # vector) to other per-imputation matrices that share the loading gauge, e.g.
-  # marginal-SE matrices used by Rubin's-rules pooling of analytic SEs.
+  # Returns the aligned loadings together with a parallel list of per-imputation
+  # alignment metadata, so that downstream consumers can apply the same column
+  # permutation (and, when signed gauges matter, sign vector) to other
+  # per-imputation matrices that share the loading gauge, e.g. marginal-SE
+  # matrices used by Rubin's-rules pooling of analytic SEs.
   align_unrotated <- match.arg(align_unrotated)
 
   D <- length(unrot_loadings)
   if (align_unrotated == "none") {
-    if (!return_meta) return(unrot_loadings)
     k_first <- if (D > 0L) ncol(as.matrix(unrot_loadings[[1]])) else 0L
     identity_meta <- list(type         = "none",
                           factor_order = seq_len(k_first),
@@ -1457,52 +1524,29 @@ efa_mi <- function(data_list,
     }
   }
 
-  if (!return_meta) return(out)
   list(loadings = out, meta = meta)
 }
 
 .efa_pooled_rmsea_ci <- function(chi, df, N, level = .90) {
-  # RMSEA CI from the noncentral chi-square inversion used by EFAtools.
-  # The chi-square supplied here should already be the pooled test statistic.
+  # RMSEA confidence bounds for a pooled test statistic: the same noncentral
+  # chi-square inversion .chi_fit_indices() uses for a single fit (.rmsea_lambda();
+  # Browne & Cudeck, 1992), at an arbitrary confidence `level` and on the pooled
+  # (N - 1) scale. The chi-square supplied here should already be the pooled
+  # statistic. An undefined bound is reported as NA rather than aborting.
   if (is.na(chi) || is.na(df) || is.na(N) || df <= 0 || N <= 1) {
     return(c(lower = NA_real_, upper = NA_real_))
-  }
-
-  alpha <- 1 - level
-  lower_goal <- 1 - alpha / 2
-  upper_goal <- alpha / 2
-
-  pfun <- function(lambda, goal) {
-    goal - stats::pchisq(chi, df = df, ncp = lambda)
-  }
-
-  lambda_l <- 0
-  lambda_u <- 0
-
-  if (stats::pchisq(chi, df = df, ncp = 0) >= lower_goal) {
-    lambda_l <- tryCatch(
-      stats::uniroot(pfun, interval = c(1e-10, 10000), goal = lower_goal,
-                     extendInt = "upX", maxiter = 100L)$root,
-      error = function(e) NA_real_
-    )
-  }
-
-  if (stats::pchisq(chi, df = df, ncp = 0) >= upper_goal) {
-    lambda_u <- tryCatch(
-      stats::uniroot(pfun, interval = c(1e-10, 10000), goal = upper_goal,
-                     extendInt = "upX", maxiter = 100L)$root,
-      error = function(e) NA_real_
-    )
   }
 
   denom <- df * (N - 1)
   if (!is.finite(denom) || denom <= 0) {
     return(c(lower = NA_real_, upper = NA_real_))
   }
+
+  alpha <- 1 - level
   # Cap the bounds at 1 like the non-pooled .chi_fit_indices() RMSEA CI, so all
   # pooled routes (information, bootstrap, MI2S) report RMSEA in [0, 1].
-  c(lower = min(sqrt(lambda_l / denom), 1),
-    upper = min(sqrt(lambda_u / denom), 1))
+  c(lower = min(sqrt(.rmsea_lambda(chi, df, 1 - alpha / 2) / denom), 1),
+    upper = min(sqrt(.rmsea_lambda(chi, df, alpha / 2) / denom), 1))
 }
 
 .efa_pooled_D2 <- function(chis, df) {
@@ -1568,8 +1612,7 @@ efa_mi <- function(data_list,
                                     residuals,
                                     RMSR,
                                     N,
-                                    Ns = NULL,
-                                    method,
+                                    Ns,
                                     pool_method = "D2",
                                     rmsea_ci_level = .90) {
 
@@ -1581,7 +1624,7 @@ efa_mi <- function(data_list,
   # computed in .gof() with that imputation's own N, so the rescaling to the
   # common (N - 1) scale used by the CFI/TLI diagnostics below must use the same
   # per-imputation N.
-  Ns_kept <- if (is.null(Ns)) rep(NA_real_, length(fit_list)) else as.numeric(Ns)[keep]
+  Ns_kept <- as.numeric(Ns)[keep]
 
   p_vars <- nrow(pooled_R)
   df <- NA_real_
@@ -1753,32 +1796,33 @@ efa_mi <- function(data_list,
   diag(delta_hat) <- 1
   CAF <- .compute_caf(delta_hat)
 
-  ## SRMR (standardized RMR; Bentler, 1995) over the pooled residuals: the
-  ## model-implied diagonal is 1, so only the off-diagonal residuals contribute,
-  ## divided by the count of non-redundant elements p(p + 1)/2. Distinct from RMSR
-  ## (off-diagonal mean), which uses the p(p - 1)/2 denominator.
-  SRMR <- sqrt(sum(residuals[upper.tri(residuals)]^2) /
-                 (nrow(residuals) * (nrow(residuals) + 1) / 2))
+  ## SRMR (standardized RMR; Bentler, 1995) over the pooled residuals
+  SRMR <- .srmr(residuals)
 
-  out <- list(
-    chi = chi,
-    df = df,
-    p_chi = p_chi,
-    CAF = CAF,
-    CFI = CFI,
-    TLI = TLI,
-    RMSEA = RMSEA,
-    RMSEA_LB = rmsea_ci[["lower"]],
-    RMSEA_UB = rmsea_ci[["upper"]],
-    AIC = AIC,
-    BIC = BIC,
-    ECVI = ECVI,
-    RMSR = RMSR,
-    SRMR = SRMR,
-    chi_null = chi_null,
-    df_null = df_null,
-    p_null = p_null,
-    pool_method = pool_method,
+  # The fit indices and the pooling diagnostics are returned separately: the pooled
+  # object carries the diagnostics in its own top-level `mi_diagnostics` slot, so the
+  # `fit_indices` slot keeps the same all-scalar shape a single efa_fit() returns.
+  list(
+    fit_indices = list(
+      chi = chi,
+      df = df,
+      p_chi = p_chi,
+      CAF = CAF,
+      CFI = CFI,
+      TLI = TLI,
+      RMSEA = RMSEA,
+      RMSEA_LB = rmsea_ci[["lower"]],
+      RMSEA_UB = rmsea_ci[["upper"]],
+      AIC = AIC,
+      BIC = BIC,
+      ECVI = ECVI,
+      RMSR = RMSR,
+      SRMR = SRMR,
+      chi_null = chi_null,
+      df_null = df_null,
+      p_null = p_null,
+      pool_method = pool_method
+    ),
     mi_diagnostics = list(
       D2_F = if (!is.null(D2)) D2$F else NA_real_,
       D2_df1 = if (!is.null(D2)) D2$df1 else NA_real_,
@@ -1804,12 +1848,10 @@ efa_mi <- function(data_list,
       m = if (!is.null(D2)) D2$M else length(fits)
     )
   )
-
-  out
 }
 
 ## -----------------------------------------------------------------------------
-## Bootstrap pooling helpers
+## Rubin pooling helpers, shared by the analytic and bootstrap routes
 ## -----------------------------------------------------------------------------
 
 .efa_pooled_has_replicates <- function(fits) {
@@ -1948,6 +1990,12 @@ efa_mi <- function(data_list,
   #        (1999, Biometrika 86) adjustment is applied:
   #           ν_obs = ((ν_com + 1)/(ν_com + 3)) ν_com (1 - λ),  ν_com = N_pool - 1
   #           ν_BR  = 1 / (1/ν_old + 1/ν_obs)
+  #        Every pooling route in the package reports the asymptotically normal
+  #        reference and so passes N_pool = Inf; the finite-N_pool branch is a
+  #        tested extension point, kept because it is the only place the
+  #        small-sample reference is implemented. It reproduces
+  #        mice::pool.scalar(n = N_pool) up to the documented lambda-vs-gamma FMI
+  #        convention below, and is exercised by the test suite.
   # alpha 1 - confidence level for the Wald interval.
   #
   # Returns a list(se, ci, RIV, FMI, df). Bootstrap callers receive the same
@@ -2020,11 +2068,7 @@ efa_mi <- function(data_list,
 
   U_diag_mat <- do.call(rbind, lapply(boot_mat_list, .efa_pooled_col_vars))
   U_bar <- colMeans(U_diag_mat)
-  B_mi <- if (m > 1L) {
-    .efa_pooled_col_vars(q_mat)
-  } else {
-    rep(0, ncol(q_mat))
-  }
+  B_mi <- .efa_pooled_col_vars(q_mat)
 
   est <- if (is.null(est_override)) q_bar else est_override
   core <- .efa_pooled_rubin_core(est, U_bar, B_mi, m, N_pool = Inf, alpha = alpha)
@@ -2083,7 +2127,7 @@ efa_mi <- function(data_list,
   # the per-imputation values.
   Qbar <- .efa_pooled_col_means(q_mat)
   Ubar <- .efa_pooled_col_means(se_mat^2)
-  B    <- if (m > 1L) .efa_pooled_col_vars(q_mat) else rep(0, ncol(q_mat))
+  B    <- .efa_pooled_col_vars(q_mat)
 
   na <- apply(is.na(q_mat) | is.na(se_mat), 2, any)
   Qbar[na] <- NA_real_; Ubar[na] <- NA_real_; B[na] <- NA_real_
@@ -2546,38 +2590,19 @@ efa_mi <- function(data_list,
   )
 }
 
-.efa_pooled_rubin_matrix_result <- function(pool, nrow, ncol, dimnames = NULL) {
-  # Convert vectorized Rubin output back into matrix-shaped estimates.
-  est <- matrix(pool$est, nrow = nrow, ncol = ncol)
-  se <- matrix(pool$se, nrow = nrow, ncol = ncol)
-  lower <- matrix(pool$ci$lower, nrow = nrow, ncol = ncol)
-  upper <- matrix(pool$ci$upper, nrow = nrow, ncol = ncol)
-
-  if (!is.null(dimnames)) {
-    dimnames(est) <- dimnames
-    dimnames(se) <- dimnames
-    dimnames(lower) <- dimnames
-    dimnames(upper) <- dimnames
+.efa_pooled_rubin_result <- function(pool, reshape, dimnames = NULL) {
+  # Convert vectorized Rubin output (estimate, SE, and Wald CI bounds) back into one
+  # parameter family's own shape with a single `reshape` function -- a rectangular
+  # matrix or a vech-to-symmetric expansion -- the way .efa_pooled_assemble_family()
+  # does for the analytic route's SE/CI/MI triple.
+  shape <- function(v) {
+    out <- reshape(v)
+    if (!is.null(dimnames)) dimnames(out) <- dimnames
+    out
   }
 
-  list(est = est, se = se, ci = list(lower = lower, upper = upper))
-}
-
-.efa_pooled_rubin_symmetric_result <- function(pool, k, dimnames = NULL) {
-  # Convert vech-based Rubin output back into symmetric matrix form.
-  est <- .efa_pooled_unvech(pool$est, k)
-  se <- .efa_pooled_unvech(pool$se, k)
-  lower <- .efa_pooled_unvech(pool$ci$lower, k)
-  upper <- .efa_pooled_unvech(pool$ci$upper, k)
-
-  if (!is.null(dimnames)) {
-    dimnames(est) <- dimnames
-    dimnames(se) <- dimnames
-    dimnames(lower) <- dimnames
-    dimnames(upper) <- dimnames
-  }
-
-  list(est = est, se = se, ci = list(lower = lower, upper = upper))
+  list(est = shape(pool$est), se = shape(pool$se),
+       ci = list(lower = shape(pool$ci$lower), upper = shape(pool$ci$upper)))
 }
 
 .efa_pooled_bootstrap_pool <- function(fits,
@@ -2594,13 +2619,7 @@ efa_mi <- function(data_list,
                                        procrustes_args = list(),
                                        h2,
                                        residuals,
-                                       pooled_orig_R,
-                                       N,
-                                       method,
-                                       pool_method = "D2",
-                                       rmsea_ci_level = .90,
-                                       alpha = 0.05,
-                                       rmsr_upper = TRUE) {
+                                       alpha = 0.05) {
 
   rotation_type <- match.arg(rotation_type)
   align_unrotated <- match.arg(align_unrotated)
@@ -2784,11 +2803,14 @@ efa_mi <- function(data_list,
     est_override = .efa_pooled_vec(residuals)
   )
 
-  unrot_res <- .efa_pooled_rubin_matrix_result(
-    pool_unrot, p_vars, k, loading_dimnames
-  )
-  residual_res <- .efa_pooled_rubin_matrix_result(
-    pool_residuals, p_vars, p_vars, dimnames(as.matrix(residuals))
+  # Reshapers for the two rectangular families pooled below (loading-shaped and
+  # correlation-matrix-shaped); Phi is expanded from its vech instead.
+  as_loading <- \(v) matrix(v, nrow = p_vars, ncol = k)
+
+  unrot_res <- .efa_pooled_rubin_result(pool_unrot, as_loading, loading_dimnames)
+  residual_res <- .efa_pooled_rubin_result(
+    pool_residuals, \(v) matrix(v, nrow = p_vars, ncol = p_vars),
+    dimnames(as.matrix(residuals))
   )
 
   SE <- list(
@@ -2825,7 +2847,7 @@ efa_mi <- function(data_list,
 
   if (rotation_type != "none") {
     pool_rot <- .efa_pooled_rubin_pool(q_rot, boot_rot, alpha = alpha)
-    rot_res <- .efa_pooled_rubin_matrix_result(pool_rot, p_vars, k, loading_dimnames)
+    rot_res <- .efa_pooled_rubin_result(pool_rot, as_loading, loading_dimnames)
     SE$rot_loadings <- rot_res$se
     CI$rot_loadings <- rot_res$ci
     arrays$rot_loadings <- boot_rot
@@ -2834,8 +2856,8 @@ efa_mi <- function(data_list,
 
   if (oblique) {
     pool_phi <- .efa_pooled_rubin_pool(q_phi, boot_phi, alpha = alpha)
-    phi_res <- .efa_pooled_rubin_symmetric_result(
-      pool_phi, k, dimnames(as.matrix(phis[[1]]))
+    phi_res <- .efa_pooled_rubin_result(
+      pool_phi, \(v) .efa_pooled_unvech(v, k), dimnames(as.matrix(phis[[1]]))
     )
     SE$Phi <- phi_res$se
     CI$Phi <- phi_res$ci
@@ -2846,8 +2868,8 @@ efa_mi <- function(data_list,
       q_structure, boot_structure, alpha = alpha,
       est_override = .efa_pooled_vec(mean_structure_loadings)
     )
-    structure_res <- .efa_pooled_rubin_matrix_result(
-      pool_structure, p_vars, k, loading_dimnames
+    structure_res <- .efa_pooled_rubin_result(
+      pool_structure, as_loading, loading_dimnames
     )
     SE$Structure <- structure_res$se
     CI$Structure <- structure_res$ci

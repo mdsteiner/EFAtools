@@ -200,6 +200,28 @@ test_that(".gof guards the Bartlett multiplier against tiny N (no negative chi)"
   # if(NA), and an undefined chi-square has no RMSEA noncentrality bound.
   expect_true(is.na(.null_chisq(efa_ml$orig_R, N = NA_real_)))
   expect_true(is.na(.rmsea_lambda(NA_real_, df = 10, goal = .95)))
+  # An undefined df has no bound either, and must not reach the `if (pchisq(NA) >= goal)`
+  # comparison.
+  expect_true(is.na(.rmsea_lambda(20, df = NA_real_, goal = .95)))
+})
+
+
+test_that("an unlocatable RMSEA noncentrality bound is NA, not an error", {
+  # A statistic whose tail probability never crosses the target quantile leaves the
+  # noncentrality root unbracketed even after extendInt: the bound is undefined, so it is
+  # reported as NA rather than aborting the fit. chi = Inf makes goal - pchisq(Inf, df, ncp)
+  # negative for every ncp, which is exactly that case.
+  expect_true(is.na(.rmsea_lambda(Inf, df = 10, goal = .95)))
+
+  # An undefined common-scale statistic must survive the caps in .chi_fit_indices() as NA
+  # rather than failing an `if (NA > 1)` comparison, for the point estimate and both
+  # bounds. The reported chi-square stays finite here, so only the RMSEA block is undefined.
+  idx <- .chi_fit_indices(chi = 30, df = 10, chi_null = 300, df_null = 45, N = 200,
+                          m = 10, ci = TRUE, chi_cfi = NA_real_, chi_null_cfi = 300)
+  expect_true(is.na(idx$RMSEA))
+  expect_true(is.na(idx$RMSEA_LB))
+  expect_true(is.na(idx$RMSEA_UB))
+  expect_true(is.finite(idx$p_chi))
 })
 
 

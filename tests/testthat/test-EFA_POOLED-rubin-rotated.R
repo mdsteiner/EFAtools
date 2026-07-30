@@ -385,7 +385,7 @@ test_that("an unreliable per-imputation rotated SE warns and NA-blanks the poole
 
   unrot_list <- lapply(fits, function(f) unclass(f$unrot_loadings))
   aligned <- EFAtools:::.efa_pooled_align_unrotated_list(
-    unrot_list, align_unrotated = "signed_tucker_congruence", return_meta = TRUE
+    unrot_list, align_unrotated = "signed_tucker_congruence"
   )
   rot_list <- lapply(fits, function(f) unclass(f$rot_loadings))
   phi_list <- lapply(fits, function(f) f$Phi)

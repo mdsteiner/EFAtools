@@ -217,10 +217,12 @@ efa_pooled
 ```
 
 The pooled loadings recover the three factors. Point estimates are averaged across the
-imputations after alignment. The model chi-square, and the RMSEA and AIC/BIC derived from
-it, are pooled with the D2 rule — which is why the printout labels the pooled chi-square as a
-D2 statistic with its own reference distribution — whereas the incremental CFI and TLI are
-averaged across the per-imputation fits. Requesting standard errors in the call (for
+imputations after alignment. The model chi-square, and the AIC/BIC derived from it, are
+pooled with the D2 rule — which is why the printout labels the pooled chi-square as a
+D2 statistic with its own reference distribution. RMSEA is pooled by the same rule, but
+from the discrepancies on the uncorrected N - 1 scale on which it is defined, so it
+does not reconcile by hand with the printed chi-square. The incremental CFI and TLI are
+instead averaged across the per-imputation fits. Requesting standard errors in the call (for
 example `se = "information"` or `se = "np-boot"`) additionally pools them with Rubin's rules,
 so the between-imputation variability inflates the pooled standard errors. Because multiple
 imputation propagates the extra uncertainty from the missing data, its pooled fit statistics

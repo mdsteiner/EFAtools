@@ -56,8 +56,8 @@
       -- Model Fit -------------------------------------------------------------------
       
       D2-pooled χ²(20) = <num>, p = <num>
-      CFI [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
-      TLI [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
+      CFI (avg. over imputations) [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
+      TLI (avg. over imputations) [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
       RMSEA [90% CI] [95% bootstrap/MI-CI]: <num> [ <num>; <num>] [ <num>, <num>]
       AIC [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
       BIC [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
@@ -66,6 +66,8 @@
       SRMR [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
       Note: the pooled χ² is the D2 statistic; its p uses the D2 reference F(20, <num>),
       not the χ²(20) tail.
+      Note: CFI and TLI are averaged over the imputations, not formed from the
+      separately pooled model and baseline statistics in `mi_diagnostics`.
       
       Note: Bootstrap/MI CIs based on 6 bootstrap samples per imputation.
       
@@ -169,8 +171,8 @@
       -- Model Fit -------------------------------------------------------------------
       
       D2-pooled χ²(20) = <num>, p = <num>
-      CFI: <num>
-      TLI: <num>
+      CFI (avg. over imputations): <num>
+      TLI (avg. over imputations): <num>
       RMSEA [90% CI]: <num> [ <num>; <num>]
       AIC: <num>
       BIC: <num>
@@ -179,6 +181,8 @@
       SRMR: <num>
       Note: the pooled χ² is the D2 statistic; its p uses the D2 reference F(20, <num>),
       not the χ²(20) tail.
+      Note: CFI and TLI are averaged over the imputations, not formed from the
+      separately pooled model and baseline statistics in `mi_diagnostics`.
 
 # summary.efa_mi output is stable (PAF, promax)
 
@@ -331,8 +335,8 @@
       -- Model Fit -------------------------------------------------------------------
       
       D2-pooled χ²(20) = <num>, p = <num>
-      CFI: <num>
-      TLI: <num>
+      CFI (avg. over imputations): <num>
+      TLI (avg. over imputations): <num>
       RMSEA [90% CI]: <num> [ <num>; <num>]
       AIC: <num>
       BIC: <num>
@@ -341,6 +345,8 @@
       SRMR: <num>
       Note: the pooled χ² is the D2 statistic; its p uses the D2 reference F(20, <num>),
       not the χ²(20) tail.
+      Note: CFI and TLI are averaged over the imputations, not formed from the
+      separately pooled model and baseline statistics in `mi_diagnostics`.
       
       -- Residual Diagnostics --------------------------------------------------------
       

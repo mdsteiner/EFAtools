@@ -152,6 +152,45 @@ test_that("pooled components are internally consistent", {
   expect_equal(pooled_obl$residuals, res, ignore_attr = TRUE)
 })
 
+test_that("RMSR is the root mean square of the unique off-diagonal residuals", {
+  for (pooled in list(pooled_obl, pooled_orth, pooled_none)) {
+    res <- pooled$residuals
+    expect_equal(pooled$fit_indices$RMSR,
+                 sqrt(mean(res[upper.tri(res)]^2)))
+    # The pooled residual matrix is symmetric, which is why counting each residual
+    # pair twice instead of once cannot change that mean square.
+    expect_equal(res, t(res), ignore_attr = TRUE)
+    expect_equal(pooled$fit_indices$RMSR,
+                 sqrt(mean(res[row(res) != col(res)]^2)))
+  }
+})
+
+test_that("the deprecated rmsr_upper is accepted, warned about, and ignored", {
+  expect_warning(
+    deprecated <- efa_mi(cormat_list, n_factors = 3, N = 500, estimator = "PAF",
+                         rotation = "promax", rmsr_upper = TRUE),
+    class = "lifecycle_warning_deprecated"
+  )
+  expect_equal(deprecated$fit_indices$RMSR, pooled_obl$fit_indices$RMSR)
+
+  expect_warning(
+    flipped <- efa_mi(cormat_list, n_factors = 3, N = 500, estimator = "PAF",
+                      rotation = "promax", rmsr_upper = FALSE),
+    class = "lifecycle_warning_deprecated"
+  )
+  expect_equal(flipped$fit_indices$RMSR, pooled_obl$fit_indices$RMSR)
+
+  # It no longer records a setting, and the frozen wrapper still accepts it without
+  # passing it on, so legacy calls stay silent.
+  expect_null(pooled_obl$settings$rmsr_upper)
+  expect_no_warning(
+    legacy <- EFA_POOLED(cormat_list, n_factors = 3, N = 500, method = "PAF",
+                         rotation = "promax", rmsr_upper = TRUE),
+    class = "lifecycle_warning_deprecated"
+  )
+  expect_equal(legacy$fit_indices$RMSR, pooled_obl$fit_indices$RMSR)
+})
+
 test_that("pooled fit indices D2-pool the imputation chi-squares", {
   fi <- pooled_none$fit_indices
   md <- pooled_none$mi_diagnostics
@@ -176,6 +215,13 @@ test_that("pooled fit indices D2-pool the imputation chi-squares", {
   n_vars <- ncol(pooled_none$orig_R)
   n_params <- n_vars * (n_vars + 1) / 2 - fi$df
   expect_equal(fi$ECVI, (fi$chi + 2 * n_params) / (N_used - 1))
+
+  # The diagnostics live in the top-level slot only; `fit_indices` holds scalars, the
+  # same shape a single efa_fit() returns.
+  expect_null(fi$mi_diagnostics)
+  expect_true(all(vapply(fi, function(v) {
+    (is.numeric(v) || is.character(v)) && length(v) == 1L
+  }, logical(1))))
 
   expect_identical(md$m, 3L)
   expect_gte(md$ARIV, 0)
@@ -211,6 +257,17 @@ test_that("efa_mi validates its arguments with classed conditions", {
     efa_mi(cormat_list, ci = .8, n_factors = 3, N = 500, estimator = "PAF",
                rotation = "none"),
     class = "efa_pooled_ci_ignored"
+  )
+  # Too few imputations signals the documented condition class, not a bare
+  # assertion error, and does so before any component fit is run.
+  expect_error(
+    efa_mi(list(cormat), n_factors = 3, N = 500, estimator = "PAF",
+               rotation = "none"),
+    class = "efa_pooled_min_fits"
+  )
+  expect_error(
+    efa_mi(list(), n_factors = 3, N = 500, estimator = "PAF", rotation = "none"),
+    class = "efa_pooled_min_fits"
   )
 })
 
@@ -321,7 +378,9 @@ test_that("bootstrap arrays are pooled into MI SEs and CIs", {
   summary_lines <- cli::ansi_strip(format(summary(pooled_boot)))
   expect_false(any(grepl("^RMSR\\b", summary_lines)))
   expect_true(any(grepl("^SRMR \\[95% bootstrap/MI-CI\\]:", summary_lines)))
-  expect_true(any(grepl("^TLI \\[95% bootstrap/MI-CI\\]:", summary_lines)))
+  # The incremental indices carry the averaged-over-imputations label ahead of the CI tag
+  expect_true(any(grepl("^TLI \\(avg\\. over imputations\\) \\[95% bootstrap/MI-CI\\]:",
+                        summary_lines)))
   expect_true(any(grepl("^ECVI \\[95% bootstrap/MI-CI\\]:", summary_lines)))
 
   # summary() additionally shows the MI uncertainty summary
@@ -399,9 +458,7 @@ test_that("a failed bootstrap replicate is skipped, not fatal", {
     unrot_loadings_aligned = replicate(m, L, simplify = FALSE),
     mean_unrot_loadings = L, rotation_type = "none",
     align_unrotated = "signed_tucker_congruence",
-    h2 = rep(0.36, p), residuals = matrix(0, p, p),
-    pooled_orig_R = orig_R[[1]],
-    N = 250, method = "ML"
+    h2 = rep(0.36, p), residuals = matrix(0, p, p)
   )
 
   expect_warning(
@@ -463,6 +520,42 @@ test_that("format.efa_mi matches the printed output", {
 
   expect_identical(format(pooled_obl),
                    utils::capture.output(print(pooled_obl)))
+})
+
+test_that("the averaged-index flag names only the indices that were reported", {
+  local_reproducible_output()
+
+  inc_lines <- function(x) {
+    lines <- cli::ansi_strip(format(x))
+    lines[grepl("^CFI|^TLI|averaged over the imputations", lines)]
+  }
+
+  # Both incremental indices defined: both are labelled and the note is plural.
+  both <- inc_lines(pooled_none)
+  expect_true(any(grepl("^CFI \\(avg\\. over imputations\\):", both)))
+  expect_true(any(grepl("^TLI \\(avg\\. over imputations\\):", both)))
+  expect_true(any(grepl("CFI and TLI are averaged over the imputations", both)))
+
+  # A degenerate baseline leaves TLI undefined: its line is dropped, so the note must
+  # name CFI alone and in the singular rather than claiming a TLI that was not printed.
+  one <- pooled_none
+  one$fit_indices$TLI <- NA_real_
+  one_lines <- inc_lines(one)
+  expect_true(any(grepl("^CFI \\(avg\\. over imputations\\):", one_lines)))
+  expect_false(any(grepl("^TLI", one_lines)))
+  expect_true(any(grepl("CFI is averaged over the imputations", one_lines)))
+
+  # Neither index defined: no label on the bare CFI line and no note at all.
+  none <- pooled_none
+  none$fit_indices$CFI <- NA_real_
+  none$fit_indices$TLI <- NA_real_
+  none_lines <- cli::ansi_strip(format(none))
+  expect_true(any(grepl("^CFI: ", none_lines)))
+  expect_false(any(grepl("avg\\. over imputations", none_lines)))
+  expect_false(any(grepl("averaged over the imputations", none_lines)))
+
+  # The D2 chi-square note is independent of the incremental-index note.
+  expect_true(any(grepl("the pooled .* is the D2 statistic", none_lines)))
 })
 
 # ---- Default unrotated alignment: medoid anchor and canonical gauge ---------
@@ -528,7 +621,7 @@ test_that("the canonical re-gauging leaves gauge-invariant quantities alone", {
   Ls <- lapply(fits, function(f) unclass(f$unrot_loadings))
 
   aligned <- .efa_pooled_align_unrotated_list(
-    Ls, align_unrotated = "signed_tucker_congruence", return_meta = TRUE)
+    Ls, align_unrotated = "signed_tucker_congruence")
   C <- aligned$meta[[1]]$C
   expect_false(is.null(C))
   expect_equal(crossprod(C), diag(ncol(C)), tolerance = 1e-10)
@@ -572,7 +665,7 @@ test_that("an unreliable per-imputation SE still blanks the pooled element", {
   fits[[3]]$SE$unrot_loadings[2, 1] <- NA_real_
   Ls <- lapply(fits, function(f) unclass(f$unrot_loadings))
   aligned <- .efa_pooled_align_unrotated_list(
-    Ls, align_unrotated = "signed_tucker_congruence", return_meta = TRUE)
+    Ls, align_unrotated = "signed_tucker_congruence")
   na_pool <- .efa_pooled_analytic_pool(
     fits = fits, unrot_loadings_aligned = aligned$loadings,
     align_meta = aligned$meta, ci = 0.95)
@@ -653,7 +746,7 @@ test_that("re-gauging still fires when a uniqueness sits on the estimation floor
 
   # so detection must fire and the pooled matrix must come back canonical
   aligned <- .efa_pooled_align_unrotated_list(
-    Ls, align_unrotated = "signed_tucker_congruence", return_meta = TRUE)
+    Ls, align_unrotated = "signed_tucker_congruence")
   expect_false(is.null(aligned$meta[[1]]$C))
 
   pooled <- suppressWarnings(suppressMessages(

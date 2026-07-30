@@ -862,11 +862,15 @@ EFA_POOLED <- function(data_list,
   } else {
     "none"
   }
+  # `rmsr_upper` stays a formal (the frozen signature) but is not forwarded: it is deprecated
+  # on efa_mi(), and passing the frozen default on would fire that deprecation for every
+  # legacy call. It never selected anything -- see the argument's documentation -- so dropping
+  # it here leaves the result identical.
   do.call(efa_mi,
           c(list(data_list, p = p, target_method = target_method,
                  align_unrotated = align_unrotated, fit_pool_method = fit_pool_method,
                  consensus_args = consensus_args, procrustes_args = procrustes_args,
-                 rmsea_ci_level = rmsea_ci_level, rmsr_upper = rmsr_upper),
+                 rmsea_ci_level = rmsea_ci_level),
             .repack_flat_dots(.drop_unknown_frozen_dots(
               dots, extras = .rotation_dot_extras(rot), unrotated = FALSE))))
 }

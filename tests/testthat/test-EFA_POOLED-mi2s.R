@@ -377,7 +377,7 @@ test_that("continuous Pearson imputations run through MI2S (ML and ULS)", {
     settings = fits[[1L]]$settings, estimator = "ULS", rotation = "none",
     rotation_type = "none", target_method = "first_target",
     align_unrotated = "signed_tucker_congruence", fit_pool_method = "D2",
-    p = 0.05, rmsea_ci_level = 0.90, rmsr_upper = TRUE
+    p = 0.05, rmsea_ci_level = 0.90
   )
 }
 

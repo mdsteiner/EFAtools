@@ -89,8 +89,7 @@ test_that("aligned-pool SEs are invariant to per-imputation sign flips and colum
   unrot_list <- lapply(permuted_fits, function(f) unclass(f$unrot_loadings))
   aligned <- EFAtools:::.efa_pooled_align_unrotated_list(
     unrot_list,
-    align_unrotated = "signed_tucker_congruence",
-    return_meta = TRUE
+    align_unrotated = "signed_tucker_congruence"
   )
 
   pool <- EFAtools:::.efa_pooled_analytic_pool(
@@ -295,7 +294,7 @@ test_that("FMI is in [0,1], RIV >= 0; per-element NA in any imputation propagate
 
   unrot_list <- lapply(fits, function(f) unclass(f$unrot_loadings))
   aligned <- EFAtools:::.efa_pooled_align_unrotated_list(
-    unrot_list, align_unrotated = "signed_tucker_congruence", return_meta = TRUE
+    unrot_list, align_unrotated = "signed_tucker_congruence"
   )
   na_pool <- EFAtools:::.efa_pooled_analytic_pool(
     fits = fits,

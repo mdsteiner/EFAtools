@@ -46,14 +46,30 @@
   vars_explained
 }
 
-.rmsr <- function(residuals, upper = TRUE) {
+# RMSR (root mean square residual; Harman, 1976) from a residual matrix: the root mean square
+# of the p(p - 1)/2 unique off-diagonal residuals. The diagonal carries no residual information
+# for a correlation-structure model and is excluded. Note that psych's `rms` (psych:::fa.stats)
+# divides that same one-per-pair sum by p(p - 1), the count of *both* triangles, and so reports
+# this value divided by sqrt(2); the two are not directly comparable. Shared by .gof() and the
+# multiple-imputation pooler.
+.rmsr <- function(residuals) {
   E <- as.matrix(residuals)
-  if (isTRUE(upper)) {
-    vals <- E[upper.tri(E, diag = FALSE)]
-  } else {
-    vals <- E[row(E) != col(E)]
+  sqrt(mean(E[upper.tri(E, diag = FALSE)]^2, na.rm = TRUE))
+}
+
+# SRMR (standardized root mean square residual; Bentler, 1995) from a residual matrix whose
+# model-implied diagonal is 1, so only the off-diagonal residuals contribute; the denominator
+# is the count of non-redundant elements p(p + 1)/2. Distinct from .rmsr() (off-diagonal mean,
+# p(p - 1)/2 denominator). Shared by .gof() and the multiple-imputation pooler.
+.srmr <- function(residuals) {
+  E <- as.matrix(residuals)
+  # The denominator counts the non-redundant elements of a p x p matrix, so a non-square
+  # block would not match the elements upper.tri() selects.
+  if (nrow(E) != ncol(E)) {
+    cli::cli_abort("{.arg residuals} must be a square matrix.",
+                   class = "efa_srmr_not_square")
   }
-  sqrt(mean(vals^2, na.rm = TRUE))
+  sqrt(sum(E[upper.tri(E)]^2) / (nrow(E) * (nrow(E) + 1) / 2))
 }
 
 .compute_caf <- function(delta_hat) {
@@ -108,16 +124,26 @@
 # Noncentrality parameter for an RMSEA confidence bound: solve pchisq(chi, df, ncp) = goal
 # for ncp via stats::uniroot (the 90% CI lower bound uses goal = .95, the upper bound goal =
 # .05; Browne & Cudeck, 1992). Returns 0 when the model chi-square already lies below the
-# target quantile, so the bound collapses to 0. Shared by .gof() and SMT().
+# target quantile, so the bound collapses to 0. Shared by .gof(), SMT(), and the pooled
+# .efa_pooled_rmsea_ci(), so the inversion lives in one place.
 .rmsea_lambda <- function(chi, df, goal) {
-  # An undefined chi-square (e.g. the null model for a tiny N, where .null_chisq()
+  # An undefined chi-square or df (e.g. the null model for a tiny N, where .null_chisq()
   # returns NA) has no noncentrality bound; propagate NA rather than failing the
   # `if (pchisq(NA) >= goal)` test with "missing value where TRUE/FALSE needed".
-  if (is.na(chi)) return(NA_real_)
+  if (!is.finite(chi) || !is.finite(df)) return(NA_real_)
   if (stats::pchisq(chi, df = df, ncp = 0) >= goal) {
     p_chi_fun <- function(x, val, df, goal) goal - stats::pchisq(val, df, ncp = x)
-    stats::uniroot(f = p_chi_fun, interval = c(1e-10, 10000), val = chi, df = df,
-                   goal = goal, extendInt = "upX", maxiter = 100L)$root
+    # Defensive: for the finite inputs the guard above admits, a sign change always
+    # exists -- the gate forces f(0) <= 0 and pchisq(chi, df, ncp) -> 0 as ncp -> Inf --
+    # and extendInt = "upX" locates it (verified up to chi = 1e8). Should a root
+    # nonetheless prove unbracketable, the bound is undefined rather than an estimation
+    # failure, so report NA instead of aborting the whole fit. Callers must therefore keep
+    # NA out of `if` conditions (see the min() caps in .chi_fit_indices()).
+    tryCatch(
+      stats::uniroot(f = p_chi_fun, interval = c(1e-10, 10000), val = chi, df = df,
+                     goal = goal, extendInt = "upX", maxiter = 100L)$root,
+      error = function(e) NA_real_
+    )
   } else {
     0
   }
@@ -201,8 +227,9 @@
     # Browne-Cudeck quantity and shares one noncentrality scale with CFI/TLI. The Bartlett
     # small-sample multiplier is applied only to the reported model chi-square test (matching
     # stats::factanal), not to this approximation index, for which it has no role.
-    RMSEA <- .rmsea_point(chi_cfi, df, N)
-    if (RMSEA > 1) RMSEA <- 1
+    # Capped at 1 with min(), so an undefined statistic propagates as NA instead of
+    # failing the comparison (see the bounds below).
+    RMSEA <- min(.rmsea_point(chi_cfi, df, N), 1)
 
     if (isTRUE(ci)) {
 
@@ -211,11 +238,10 @@
       lambda_l <- .rmsea_lambda(chi_cfi, df, .95)
       lambda_u <- .rmsea_lambda(chi_cfi, df, .05)
 
-      RMSEA_LB <- sqrt(lambda_l / (df * (N - 1)))
-      RMSEA_UB <- sqrt(lambda_u / (df * (N - 1)))
-
-      if (RMSEA_LB > 1) RMSEA_LB <- 1
-      if (RMSEA_UB > 1) RMSEA_UB <- 1
+      # Capped at 1 with min(), which passes an undefined bound through: .rmsea_lambda()
+      # returns NA when the noncentrality root cannot be located.
+      RMSEA_LB <- min(sqrt(lambda_l / (df * (N - 1))), 1)
+      RMSEA_UB <- min(sqrt(lambda_u / (df * (N - 1))), 1)
 
     } else {
 
@@ -394,10 +420,8 @@
   ### compute RMSR
   RMSR <- .rmsr(delta_hat)
 
-  ### compute SRMR (standardized root mean square residual; Bentler, 1995). The
-  ### model-implied diagonal is 1, so only the off-diagonal residuals contribute; the
-  ### denominator is the count of non-redundant elements p(p + 1)/2.
-  SRMR <- sqrt(sum(delta_hat[upper.tri(delta_hat)] ^ 2) / (m * (m + 1) / 2))
+  ### compute SRMR (standardized root mean square residual; Bentler, 1995)
+  SRMR <- .srmr(delta_hat)
 
   # Model and baseline chi-square. For cor_method = "fiml" both are likelihood-ratio statistics
   # computed from the EM moments and the raw data (.gof_fiml_chisq); otherwise the Bartlett-

@@ -54,9 +54,15 @@ for fixed-target alignment.}
 
 \item{rmsea_ci_level}{Numeric. Confidence level for the RMSEA CI.}
 
-\item{rmsr_upper}{Logical. If \code{TRUE}, compute RMSR from the unique
-off-diagonal residual correlations. If \code{FALSE}, use the full off-diagonal
-matrix.}
+\item{rmsr_upper}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Accepted and ignored. It
+selected between computing RMSR from the unique off-diagonal residual correlations
+and from the full off-diagonal matrix. The two element sets hold each residual pair
+once and twice respectively, so their sums and counts double together and the mean
+square is the same number whenever the residual matrix is symmetric, which the pooled
+residuals always are. RMSR is therefore always the root mean square of the unique
+off-diagonal residuals; SRMR, which divides the same sum by the number of
+non-redundant elements, is reported alongside it. Supplying it to \code{\link[=efa_mi]{efa_mi()}}
+signals a deprecation warning; the superseded \code{\link[=EFA_POOLED]{EFA_POOLED()}} accepts it silently.}
 
 \item{...}{Additional arguments passed to \code{\link[=efa_fit]{efa_fit()}} (e.g. \code{estimator}, \code{rotation}, \code{se},
 \code{n_factors}, \code{N}). These select the estimator, rotation, standard-error method, and

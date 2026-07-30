@@ -198,7 +198,7 @@ test_that("the reliability gate aborts on an NA-filled vcov under any alignment"
 
   unrot_list <- lapply(fits, function(f) unclass(f$unrot_loadings))
   aligned <- EFAtools:::.efa_pooled_align_unrotated_list(
-    unrot_list, align_unrotated = "signed_tucker_congruence", return_meta = TRUE
+    unrot_list, align_unrotated = "signed_tucker_congruence"
   )
 
   # The default alignment now aborts too (previously only "procrustes" did), so
@@ -225,7 +225,7 @@ test_that("the reliability gate signals a classed abort (not a bare error) for >
   unrot_list <- lapply(replicate(4L, base_fit, simplify = FALSE),
                        function(f) unclass(f$unrot_loadings))
   aligned <- EFAtools:::.efa_pooled_align_unrotated_list(
-    unrot_list, align_unrotated = "signed_tucker_congruence", return_meta = TRUE
+    unrot_list, align_unrotated = "signed_tucker_congruence"
   )
 
   for (bad in list(2L, c(2L, 3L), c(1L, 2L, 4L))) {

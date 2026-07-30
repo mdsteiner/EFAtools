@@ -44,6 +44,14 @@
 
 * `efa_retain()` now summarises its results in one line under the section heading: how many suggestions how many criteria made, the range they span, and the most common number of factors.
 
+## Missing Data and Multiple Imputation
+
+* The `rmsr_upper` argument of `efa_mi()` is deprecated and ignored. It selected between computing RMSR from the unique off-diagonal residual correlations and from the full off-diagonal matrix, but the two element sets hold each residual pair once and twice respectively, so their sums and counts double together and the mean square is the same number whenever the residual matrix is symmetric — which the pooled residuals always are. The argument therefore never changed the reported RMSR. SRMR, the index that divides the same sum by the number of non-redundant elements, continues to be reported alongside it. `EFA_POOLED()` still accepts the argument without a warning.
+
+* The printed `efa_mi()` model fit now marks CFI and TLI as averaged over the imputations and says that they are not formed from separately pooled model and baseline statistics. Only the D2-pooled chi-square carried such a note before, which invited the reading that the incremental indices were conventionally pooled ones.
+
+* The help page of `efa_mi()` now documents the `mi_diagnostics`, `fits`, `alignment`, and `settings` slots of the returned object, including how to form the `lavaan.mi`-style reference CFI from the pooled chi-squares in `mi_diagnostics`. 
+
 ## Ordinal Correlations
 
 * A polychoric or tetrachoric pair whose response table shows a perfect ordering is only bounded, not identified, by the data, and is now reported at 0.9999 (or -0.9999 for a perfectly reversed table) with a warning naming the affected pairs, instead of at an operating-system-dependent value.
