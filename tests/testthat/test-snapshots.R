@@ -114,6 +114,56 @@ test_that("print.efa_retain output is stable", {
   expect_snapshot(print(nf))
 })
 
+test_that("every print method is exactly cat(format(x), sep = \"\\n\")", {
+  skip_on_cran()
+  local_reproducible_output()
+
+  cm <- test_models$baseline$cormat
+  fit <- efa_fit(cm, n_factors = 3, N = 500, estimator = "PAF", rotation = "promax")
+  fit_ml <- efa_fit(cm, n_factors = 3, N = 500, estimator = "ML", rotation = "promax")
+  sl <- efa_schmid_leiman(fit, estimator = "PAF")
+  # correlation-matrix input, so efa_scores() notes that it returns weights only
+  scores <- suppressMessages(efa_scores(cm, f = fit))
+
+  # One object per printable class whose fixture is cheap to build. The three that are
+  # not - efa_average, efa_group, and efa_mi - assert the same identity alongside their
+  # own fixtures. The two loading tables print a trailing blank line for console spacing,
+  # which is the only documented departure from the rule.
+  fixtures <- list(
+    efa                  = fit,
+    summary.efa          = summary(fit),
+    efa_loadings         = fit$rot_loadings,
+    efa_sl_loadings      = sl$sl,
+    efa_schmid_leiman    = sl,
+    OMEGA                = OMEGA(sl, type = "EFAtools",
+                                 factor_corres = sl$sl[, c("F1", "F2", "F3")] >= .2),
+    efa_reliability      = efa_reliability(fit),
+    efa_scores           = scores,
+    summary.efa_scores   = summary(scores),
+    efa_compare          = efa_compare(fit$unrot_loadings, fit_ml$unrot_loadings),
+    efa_retention        = efa_ekc(cm, N = 500),
+    efa_retain           = efa_retain(cm, N = 500, suitability = FALSE,
+                                      criteria = c("EKC", "KGC")),
+    efa_screen           = efa_screen(cm, N = 500),
+    efa_kmo              = efa_kmo(cm),
+    efa_bartlett         = efa_bartlett(cm, N = 500),
+    efa_power            = efa_power(df = 100, N = 200),
+    efa_simulated        = efa_simulate(N = 100, Lambda = population_models$loadings$baseline,
+                                        seed = 42),
+    efa_estimate_control = estimate_control(type = "SPSS"),
+    efa_rotate_control   = rotate_control(type = "SPSS")
+  )
+  # trailing blank line, see above
+  spacer <- c("efa_loadings", "efa_sl_loadings")
+
+  for (nm in names(fixtures)) {
+    obj <- fixtures[[nm]]
+    expected <- format(obj)
+    if (nm %in% spacer) expected <- c(expected, "")
+    expect_identical(utils::capture.output(print(obj)), expected, info = nm)
+  }
+})
+
 test_that("print.efa_retain summarises the criteria's suggestions", {
   local_reproducible_output()
 

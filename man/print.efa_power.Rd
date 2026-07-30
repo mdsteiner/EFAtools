@@ -39,7 +39,7 @@ stripped with \code{\link[cli:ansi_strip]{cli::ansi_strip()}}).
 pw <- efa_power(df = 100, N = 200)
 pw
 
-# format() returns the same lines as plain text:
+# format() returns the same lines as a character vector:
 writeLines(format(pw))
 
 }

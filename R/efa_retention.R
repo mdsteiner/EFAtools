@@ -217,7 +217,7 @@ format.efa_retention <- function(x, ...) {
     if (!is.null(x$note)) {
       cli::cli_text("")
       for (msg in x$note) {
-        cli::cli_alert_info("{msg}")
+        cli::cli_alert_info("{msg}", wrap = TRUE)
       }
     }
   })

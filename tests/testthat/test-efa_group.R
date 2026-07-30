@@ -951,8 +951,8 @@ test_that("print and format render the efa_group report", {
                   invariance = TRUE)
   expect_snapshot(print(mg), transform = scrub_group)
 
-  # print() is cat(format()); format() returns a plain character vector
-  expect_type(format(mg), "character")
+  # print() is exactly cat(format(x), sep = "\n"), so the two agree line for line
+  expect_identical(utils::capture.output(print(mg)), format(mg))
 
   # three groups -> one row per pair; identical groups -> perfect congruence
   cmat <- test_models$baseline$cormat

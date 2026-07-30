@@ -65,7 +65,7 @@ comp <- efa_compare(EFA_SPSS_5$unrot_loadings, EFA_psych_5$unrot_loadings,
                     x_labels = c("SPSS", "psych"))
 comp
 
-# format() returns the same lines as plain text:
+# format() returns the same lines as a character vector:
 writeLines(format(comp))
 
 # the display settings can be changed without recomputing the comparison:

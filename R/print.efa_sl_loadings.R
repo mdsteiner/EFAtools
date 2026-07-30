@@ -17,6 +17,11 @@
 #'  Default is `TRUE`.
 #' @param ... additional arguments passed to print or format.
 #'
+#' @returns `print()` returns its argument `x` invisibly; it is
+#'   `cat(format(x, ...), sep = "\n")` followed by a blank line for console
+#'   spacing. `format()` returns a character vector with the table lines (styled
+#'   to the active console theme; plain when colours are disabled).
+#'
 #' @method print efa_sl_loadings
 #' @export
 #'
@@ -25,7 +30,19 @@
 #'                    estimator = "PAF", rotation = "promax")
 #' efa_schmid_leiman(EFA_mod, estimator = "PAF")
 #'
-print.efa_sl_loadings <- function(x, cutoff = .2, digits = 3, color = TRUE, ...) {
+print.efa_sl_loadings <- function(x, ...) {
+  cat(format(x, ...), sep = "\n")
+  # a trailing blank line, so a loading table printed at the console is set off from
+  # whatever follows it
+  cat("\n")
+
+  invisible(x)
+}
+
+#' @rdname print.efa_sl_loadings
+#' @method format efa_sl_loadings
+#' @export
+format.efa_sl_loadings <- function(x, cutoff = .2, digits = 3, color = TRUE, ...) {
 
   mat <- unclass(x)
   n_col <- ncol(mat)
@@ -56,7 +73,7 @@ print.efa_sl_loadings <- function(x, cutoff = .2, digits = 3, color = TRUE, ...)
       (!is.na(mat[, n_col - 1L]) & mat[, n_col - 1L] > 1) |
       (!is.na(mat[, n_col]) & mat[, n_col] < 0))
 
-  cat(cli::cli_format_method({
+  cli::cli_format_method({
     cli::cli_verbatim(.efa_format_matrix(
       values = mat,
       row_labels = var_names,
@@ -75,19 +92,5 @@ print.efa_sl_loadings <- function(x, cutoff = .2, digits = 3, color = TRUE, ...)
         cli::cli_alert_warning("Results contain {n_heywood} Heywood cases!")
       }
     }
-  }), sep = "\n")
-  cat("\n")
-
-  invisible(x)
-}
-
-#' @rdname print.efa_sl_loadings
-#' @method format efa_sl_loadings
-#' @export
-format.efa_sl_loadings <- function(x, ...) {
-  # `print()` ends with a blank line for console spacing, which capture.output
-  # records as a trailing empty element; drop it so format() returns only the
-  # rendered table lines (plain, un-styled).
-  out <- cli::ansi_strip(utils::capture.output(print(x, ...)))
-  if (length(out) > 0L && !nzchar(out[length(out)])) out[-length(out)] else out
+  })
 }

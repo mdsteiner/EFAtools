@@ -45,6 +45,11 @@
 #'  no effect.
 #' @param ... additional arguments passed to print or format
 #'
+#' @returns `print()` returns its argument `x` invisibly; it is
+#'   `cat(format(x, ...), sep = "\n")` followed by a blank line for console
+#'   spacing. `format()` returns a character vector with the table lines (styled
+#'   to the active console theme; plain when colours are disabled).
+#'
 #' @method print efa_loadings
 #' @export
 #'
@@ -53,7 +58,22 @@
 #'                         estimator = "PAF", rotation = "promax")
 #' EFAtools_PAF
 #'
-print.efa_loadings <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
+#' # format() returns the same lines as a character vector:
+#' writeLines(format(EFAtools_PAF$rot_loadings))
+#'
+print.efa_loadings <- function(x, ...) {
+  cat(format(x, ...), sep = "\n")
+  # a trailing blank line, so a loading table printed at the console is set off from
+  # whatever follows it
+  cat("\n")
+
+  invisible(x)
+}
+
+#' @rdname print.efa_loadings
+#' @method format efa_loadings
+#' @export
+format.efa_loadings <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
                            h2 = NULL, color = TRUE,
                            name_style = c("truncate", "abbreviate", "full"),
                            max_factor_name_length = NULL,
@@ -85,7 +105,7 @@ print.efa_loadings <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
     sort_loadings = sort_loadings
   )
 
-  cat(cli::cli_format_method({
+  cli::cli_format_method({
     cli::cli_verbatim(.efa_format_matrix(
       values = spec$values,
       row_labels = spec$var_names,
@@ -104,29 +124,7 @@ print.efa_loadings <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
       cli::cli_verbatim("")
       cli::cli_verbatim(.efa_loadings_legend(cutoff, spec$has_h2, digits, color))
     }
-  }), sep = "\n")
-  cat("\n")
-
-  invisible(x)
-}
-
-#' @rdname print.efa_loadings
-#' @method format efa_loadings
-#' @export
-format.efa_loadings <- function(x, ...) {
-  # Render the table with styling switched off at the source rather than stripping the
-  # escapes afterwards. Stripping after the fact would leave `print()`'s legend -- which is
-  # emitted only when the styling is visible -- describing bold and grey marks that the
-  # strip has just removed. Pinning the colour count is what `print()` itself reads, so the
-  # marks and the legend that names them are dropped together.
-  old <- options(cli.num_colors = 1L)
-  on.exit(options(old), add = TRUE)
-
-  # `print()` ends with a blank line for console spacing, which capture.output
-  # records as a trailing empty element; drop it so format() returns only the
-  # rendered table lines (plain, un-styled).
-  out <- cli::ansi_strip(utils::capture.output(print(x, ...)))
-  if (length(out) > 0L && !nzchar(out[length(out)])) out[-length(out)] else out
+  })
 }
 
 .validate_loadings_print_args <- function(x, cutoff, digits, max_name_length,
@@ -142,50 +140,16 @@ format.efa_loadings <- function(x, ...) {
                    class = "efa_print_invalid_x")
   }
 
-  if (!is.numeric(cutoff) || length(cutoff) != 1L ||
-      !is.finite(cutoff) || cutoff < 0) {
-    cli::cli_abort("{.arg cutoff} must be a single finite non-negative number.",
-                   class = "efa_print_invalid_cutoff")
-  }
-
-  if (!is.numeric(digits) || length(digits) != 1L || !is.finite(digits) ||
-      digits < 0 || digits != as.integer(digits)) {
-    cli::cli_abort("{.arg digits} must be a single finite non-negative integer.",
-                   class = "efa_print_invalid_digits")
-  }
-
-  if (!is.numeric(max_name_length) || length(max_name_length) != 1L ||
-      !is.finite(max_name_length) || max_name_length < 1 ||
-      max_name_length != as.integer(max_name_length)) {
-    cli::cli_abort("{.arg max_name_length} must be a single finite positive integer.",
-                   class = "efa_print_invalid_max_name_length")
-  }
-
-  if (!is.null(max_factor_name_length) &&
-      (!is.numeric(max_factor_name_length) || length(max_factor_name_length) != 1L ||
-       !is.finite(max_factor_name_length) || max_factor_name_length < 1 ||
-       max_factor_name_length != as.integer(max_factor_name_length))) {
-    cli::cli_abort("{.arg max_factor_name_length} must be {.val NULL} or a single finite positive integer.",
-                   class = "efa_print_invalid_max_factor_name_length")
-  }
-
-  if (!is.null(max_factors_per_block) &&
-      (!is.numeric(max_factors_per_block) || length(max_factors_per_block) != 1L ||
-       !is.finite(max_factors_per_block) || max_factors_per_block < 1 ||
-       max_factors_per_block != as.integer(max_factors_per_block))) {
-    cli::cli_abort("{.arg max_factors_per_block} must be {.val NULL} or a single finite positive integer.",
-                   class = "efa_print_invalid_max_factors_per_block")
-  }
-
-  if (!is.logical(color) || length(color) != 1L || is.na(color)) {
-    cli::cli_abort("{.arg color} must be {.val TRUE} or {.val FALSE}.",
-                   class = "efa_print_invalid_color")
-  }
-
-  if (!is.logical(legend) || length(legend) != 1L || is.na(legend)) {
-    cli::cli_abort("{.arg legend} must be {.val TRUE} or {.val FALSE}.",
-                   class = "efa_print_invalid_legend")
-  }
+  .efa_check_nonneg_number(cutoff, "cutoff", "efa_print_invalid_cutoff")
+  .efa_check_nonneg_int(digits, "digits", "efa_print_invalid_digits")
+  .efa_check_pos_int(max_name_length, "max_name_length",
+                     "efa_print_invalid_max_name_length")
+  .efa_check_opt_pos_int(max_factor_name_length, "max_factor_name_length",
+                         "efa_print_invalid_max_factor_name_length")
+  .efa_check_opt_pos_int(max_factors_per_block, "max_factors_per_block",
+                         "efa_print_invalid_max_factors_per_block")
+  .efa_check_flag(color, "color", "efa_print_invalid_color")
+  .efa_check_flag(legend, "legend", "efa_print_invalid_legend")
 
   if (!is.null(h2)) {
     if (!is.numeric(h2) || length(h2) != nrow(x)) {

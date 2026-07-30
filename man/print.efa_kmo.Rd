@@ -32,7 +32,7 @@ example when captured into a file or stripped with \code{\link[cli:ansi_strip]{c
 KMO_base <- efa_kmo(test_models$baseline$cormat)
 KMO_base
 
-# format() returns the same lines as plain text:
+# format() returns the same lines as a character vector:
 writeLines(format(KMO_base))
 
 }

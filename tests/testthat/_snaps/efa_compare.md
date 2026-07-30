@@ -6,9 +6,9 @@
       
       -- Summary statistics ----------------------------------------------------------
       
-      Mean [min, max] absolute difference:  0.2500 [ 0.0000,  1.0000]
-      Median absolute difference:  0.0000
-      Root mean squared distance (RMSE):  0.5000
+      Mean [min, max] absolute difference:  .2500 [ .0000, 1.0000]
+      Median absolute difference:  .0000
+      Root mean squared distance (RMSE):  .5000
       Max decimals where all numbers agree in absolute value: none
       Minimum number of decimals provided: 0
       Differing indicator-to-factor correspondences: 1 (highest loading), 0 (all |loadings| >= 0.3)
@@ -27,9 +27,9 @@
       
       -- Summary statistics ----------------------------------------------------------
       
-      Mean [min, max] absolute difference:  0.0000 [ 0.0000,  0.0000]
-      Median absolute difference:  0.0000
-      Root mean squared distance (RMSE):  0.0000
+      Mean [min, max] absolute difference:  .0000 [ .0000,  .0000]
+      Median absolute difference:  .0000
+      Root mean squared distance (RMSE):  .0000
       Max decimals where all numbers agree in absolute value: 0
       Minimum number of decimals provided: 0
       

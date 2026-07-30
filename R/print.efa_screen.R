@@ -37,7 +37,7 @@
 #' # From a correlation matrix (supply N for Bartlett's test of sphericity)
 #' efa_screen(test_models$baseline$cormat, N = 500)
 #'
-#' # format() returns the same lines as plain text:
+#' # format() returns the same lines as a character vector:
 #' writeLines(format(efa_screen(test_models$baseline$cormat, N = 500)))
 #'
 print.efa_screen <- function(x, digits = 3, ...) {
@@ -69,10 +69,12 @@ format.efa_screen <- function(x, digits = 3, ...) {
     if (!is.null(kmo) && !is.na(kmo)) {
       band <- .kmo_band(kmo)
       kval <- round(kmo, digits)
-      band$alert("The overall KMO value for your data is {band$label} (Overall KMO = {kval}).")
+      band$alert("The overall KMO value for your data is {band$label} (Overall KMO = {kval}).",
+                 wrap = TRUE)
       cli::cli_text("These data are {band$suitability} suitable for factor analysis.")
     } else {
-      cli::cli_alert_warning("The overall KMO value for your data is not available.")
+      cli::cli_alert_warning("The overall KMO value for your data is not available.",
+                             wrap = TRUE)
     }
 
     cli::cli_text("")
@@ -80,22 +82,26 @@ format.efa_screen <- function(x, digits = 3, ...) {
     bart <- x$bartlett
     if (is.null(bart)) {
       cli::cli_alert_warning(
-        "Bartlett's test of sphericity was not computed; no sample size (N) was supplied.")
+        "Bartlett's test of sphericity was not computed; no sample size (N) was supplied.",
+        wrap = TRUE)
     } else if (!is.null(bart$p_value) && !is.na(bart$p_value)) {
       # Bartlett significance wording reused verbatim from format.efa_bartlett.
       if (bart$p_value < .05) {
         cli::cli_alert_success(
-          "The Bartlett's test of sphericity was significant at an alpha level of .05.")
+          "The Bartlett's test of sphericity was significant at an alpha level of .05.",
+          wrap = TRUE)
         cli::cli_text("These data are probably suitable for factor analysis.")
       } else {
         cli::cli_alert_danger(
-          "The Bartlett's test of sphericity was not significant at an alpha level of .05.")
+          "The Bartlett's test of sphericity was not significant at an alpha level of .05.",
+          wrap = TRUE)
         cli::cli_text("These data are probably not suitable for factor analysis.")
       }
-      cli::cli_verbatim(paste0("\U1D712\U00B2(", bart$df, ") = ", round(bart$chisq, 2),
+      cli::cli_verbatim(paste0("\U03C7\U00B2(", bart$df, ") = ", round(bart$chisq, 2),
                                ", ", cli::style_italic("p"), .screen_p_str(bart$p_value)))
     } else {
-      cli::cli_alert_warning("The Bartlett's test of sphericity did not render a result.")
+      cli::cli_alert_warning("The Bartlett's test of sphericity did not render a result.",
+                             wrap = TRUE)
     }
 
     # -- Multicollinearity -----------------------------------------------------
@@ -109,10 +115,12 @@ format.efa_screen <- function(x, digits = 3, ...) {
     dstr <- format(det_R, digits = digits, scientific = FALSE)
     if (det_low) {
       cli::cli_alert_danger(
-        "Determinant: {dstr}. Multicollinearity likely (a value near 0 signals it).")
+        "Determinant: {dstr}. Multicollinearity likely (a value near 0 signals it).",
+        wrap = TRUE)
     } else {
       cli::cli_alert_success(
-        "Determinant: {dstr}. No concern (a value near 0 signals multicollinearity).")
+        "Determinant: {dstr}. No concern (a value near 0 signals multicollinearity).",
+        wrap = TRUE)
     }
 
     cond <- x$condition
@@ -126,13 +134,16 @@ format.efa_screen <- function(x, digits = 3, ...) {
     ci_strong <- !is.na(ci) && ci > 30
     if (ci_strong) {
       cli::cli_alert_danger(
-        "Condition number: {cstr} (condition index {cistr}). Strong multicollinearity (index above 30; Belsley, Kuh & Welsch, 1980).")
+        "Condition number: {cstr} (condition index {cistr}). Strong multicollinearity (index above 30; Belsley, Kuh & Welsch, 1980).",
+        wrap = TRUE)
     } else if (!is.na(ci) && ci > 10) {
       cli::cli_alert_warning(
-        "Condition number: {cstr} (condition index {cistr}). Moderate multicollinearity (index 10 to 30; Belsley, Kuh & Welsch, 1980).")
+        "Condition number: {cstr} (condition index {cistr}). Moderate multicollinearity (index 10 to 30; Belsley, Kuh & Welsch, 1980).",
+        wrap = TRUE)
     } else {
       cli::cli_alert_success(
-        "Condition number: {cstr} (condition index {cistr}). No concern (index below 10; Belsley, Kuh & Welsch, 1980).")
+        "Condition number: {cstr} (condition index {cistr}). No concern (index below 10; Belsley, Kuh & Welsch, 1980).",
+        wrap = TRUE)
     }
 
     # -- Per-variable diagnostics ----------------------------------------------
@@ -140,7 +151,10 @@ format.efa_screen <- function(x, digits = 3, ...) {
     # The standard display names are MSA (the per-variable measure of sampling adequacy,
     # stored as kmo_i) and SMC (the squared multiple correlation). The per-variable
     # values are laid out as base R's data-frame print, emitted verbatim so cli does not
-    # reflow the aligned columns (as format.efa_kmo does for the KMO vector).
+    # reflow the aligned columns (as format.efa_kmo does for the KMO vector). This is the
+    # one table not routed through .efa_num(), so it is also the one place a leading zero
+    # is kept: the frame mixes bounded coefficients with variances and missing-data
+    # percentages on the data's own scale, for which the leading zero is not redundant.
     disp <- .screen_per_item_display(x, digits)
     cli::cli_verbatim(utils::capture.output(print(disp)))
 
@@ -150,11 +164,12 @@ format.efa_screen <- function(x, digits = 3, ...) {
       nm <- x$normality
       if (inherits(nm, "efa_screen_no_mvn")) {
         cli::cli_alert_warning(
-          "Multivariate normality tests were skipped (singular complete-case covariance).")
+          "Multivariate normality tests were skipped (singular complete-case covariance).",
+          wrap = TRUE)
       } else {
         md <- nm$mardia
         .screen_mvn_line(.screen_is_sig(md$skewness_p),
-                         paste0("Mardia's skewness: \U1D712\U00B2(", md$skewness_df, ") = ",
+                         paste0("Mardia's skewness: \U03C7\U00B2(", md$skewness_df, ") = ",
                                 round(md$skewness, 2), ", p", .screen_p_str(md$skewness_p), "."))
         .screen_mvn_line(.screen_is_sig(md$kurtosis_p),
                          paste0("Mardia's kurtosis: z = ", round(md$kurtosis, 2),
@@ -184,7 +199,7 @@ format.efa_screen <- function(x, digits = 3, ...) {
         if (identical(o$method, "classical")) {
           cli::cli_alert_warning(paste(
             "A robust (MCD) covariance could not be computed; classical Mahalanobis",
-            "distances were used."))
+            "distances were used."), wrap = TRUE)
           # The recorded reason (too few complete cases, or an exact fit) and the
           # consequence of the fallback: the classical covariance is computed from every
           # observation, outliers included, so the diagnostic no longer has the
@@ -203,7 +218,7 @@ format.efa_screen <- function(x, digits = 3, ...) {
           nf, " of ", o$n_complete, " observations ",
           .screen_plural(nf, "was", "were"), " flagged as ",
           .screen_plural(nf, "a multivariate outlier", "multivariate outliers"),
-          " (", dist_label, " > ", cstr_o, ")."))
+          " (", dist_label, " > ", cstr_o, ")."), wrap = TRUE)
       }
     }
 
@@ -248,7 +263,9 @@ format.efa_screen <- function(x, digits = 3, ...) {
 .screen_plural <- function(n, singular, plural) if (n == 1L) singular else plural
 
 # One multivariate-normality test line: a danger alert when significant, a success alert
-# otherwise. `text` already carries the test statistic and p-value (no cli braces).
+# otherwise. `text` already carries the test statistic and p-value (no cli braces). Left
+# unwrapped, unlike the prose alerts around it: it is a fixed-format statistic line, and
+# wrapping would let a break fall inside the statistic.
 .screen_mvn_line <- function(sig, text) {
   if (sig) cli::cli_alert_danger(text) else cli::cli_alert_success(text)
 }

@@ -30,7 +30,7 @@
 #' mg <- efa_group(GRiPS_raw, groups = g, n_factors = 1)
 #' mg
 #'
-#' # format() returns the same lines as plain text:
+#' # format() returns the same lines as a character vector:
 #' writeLines(format(mg))
 #'
 print.efa_group <- function(x, digits = 3, ...) {
@@ -98,12 +98,14 @@ format.efa_group <- function(x, digits = 3, ...) {
     if (any(x$congruence$degenerate)) {
       cli::cli_text("")
       cli::cli_alert_info(
-        "{.val NA}: a near-zero factor left the congruence undefined for that pair (see {.code $congruence$degenerate}).")
+        "{.val NA}: a near-zero factor left the congruence undefined for that pair (see {.code $congruence$degenerate}).",
+        wrap = TRUE)
     }
     if (boot) {
       cli::cli_text("")
       cli::cli_alert_info(
-        "{round(settings$ci * 100)}% percentile bootstrap CIs ({n_boot} replicate{?s}) are in {.code $congruence$matched_ci}.")
+        "{round(settings$ci * 100)}% percentile bootstrap CIs ({n_boot} replicate{?s}) are in {.code $congruence$matched_ci}.",
+        wrap = TRUE)
     }
 
     # -- Loading differences ---------------------------------------------------
@@ -129,7 +131,8 @@ format.efa_group <- function(x, digits = 3, ...) {
       if (n_exc > 0L) {
         cli::cli_text("")
         cli::cli_alert_info(
-          "{n_exc} loading{?s} {?has/have} a bootstrap CI excluding 0 (see {.code $flags}).")
+          "{n_exc} loading{?s} {?has/have} a bootstrap CI excluding 0 (see {.code $flags}).",
+          wrap = TRUE)
       }
     }
 
@@ -167,8 +170,6 @@ format.efa_group <- function(x, digits = 3, ...) {
         # would contradict the sentence it is quoted in.
         mad_str <- .efa_num(max_mad, digits = max(digits, 2L), pad = FALSE)
         cli::cli_text("")
-        # cli_alert_*() does not wrap by default, and this pointer is long enough to
-        # overrun any console; the rest of the report is width-managed, so wrap it too.
         cli::cli_alert_info(
           "Every factor is graded {.val equal} while the aligned loadings differ by up to {mad_str} on average: Tucker's congruence is invariant to a proportional rescaling of a factor's loadings, so read the verdicts alongside {.code $diffs}.",
           wrap = TRUE)

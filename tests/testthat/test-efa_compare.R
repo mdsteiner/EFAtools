@@ -386,9 +386,12 @@ test_that("display settings can be overridden at print time", {
   # The recorded settings are unchanged; only this call's report differs.
   plain <- cli::ansi_strip(format(matr))
   two <- cli::ansi_strip(format(matr, digits = 2))
-  expect_match(paste(plain, collapse = " "), "0.2500", fixed = TRUE)
-  expect_match(paste(two, collapse = " "), "0.25", fixed = TRUE)
-  expect_no_match(paste(two, collapse = " "), "0.2500", fixed = TRUE)
+  # ".2500" is a substring of "0.2500", so the leading zero has to be excluded
+  # explicitly: the statistics follow the package's number convention and drop it.
+  expect_match(paste(plain, collapse = " "), ".2500", fixed = TRUE)
+  expect_no_match(paste(plain, collapse = " "), "0.2500", fixed = TRUE)
+  expect_match(paste(two, collapse = " "), ".25", fixed = TRUE)
+  expect_no_match(paste(two, collapse = " "), ".2500", fixed = TRUE)
   expect_equal(matr$settings$digits, 4)
 
   # print() forwards its dots to format(), so the same override works there.

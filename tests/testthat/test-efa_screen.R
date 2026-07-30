@@ -746,5 +746,16 @@ test_that("print output is stable", {
   expect_snapshot(print(scr_non), transform = scrub_num)
 })
 
+test_that("the report tracks a narrow console", {
+  # Every other print snapshot in the package is recorded at the default width 80, so
+  # nothing pins the behaviour of the report's advisory lines once the console is
+  # narrower than they are. efa_screen() is the widest report in the package (banded
+  # verdicts with a parenthetical rule attached to each), so it is the one that has to
+  # reflow rather than overflow.
+  local_reproducible_output(width = 60)
+
+  expect_snapshot(print(scr_cor), transform = scrub_num)
+})
+
 rm(scr_cor, scr_raw, scr_iris, scr_nona, scr_non, dat_nonames, x, y, z, dat_sing,
    cor_sing, cor_nposdef, scr_out, X_out, Sig_out, n_out, p_out, inj)

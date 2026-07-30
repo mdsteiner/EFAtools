@@ -45,7 +45,7 @@ efa_screen(iris[, 1:4])
 # From a correlation matrix (supply N for Bartlett's test of sphericity)
 efa_screen(test_models$baseline$cormat, N = 500)
 
-# format() returns the same lines as plain text:
+# format() returns the same lines as a character vector:
 writeLines(format(efa_screen(test_models$baseline$cormat, N = 500)))
 
 }

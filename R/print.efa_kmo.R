@@ -23,7 +23,7 @@
 #' KMO_base <- efa_kmo(test_models$baseline$cormat)
 #' KMO_base
 #'
-#' # format() returns the same lines as plain text:
+#' # format() returns the same lines as a character vector:
 #' writeLines(format(KMO_base))
 #'
 print.efa_kmo <- function(x, ...) {
@@ -51,7 +51,7 @@ format.efa_kmo <- function(x, ...) {
       band <- .kmo_band(KMO)
 
       label <- band$colour(cli::style_bold(band$label))
-      band$alert("The overall KMO value for your data is {label}.")
+      band$alert("The overall KMO value for your data is {label}.", wrap = TRUE)
       cli::cli_text("These data are {band$suitability} suitable for factor analysis.")
 
       cli::cli_text("")
@@ -65,7 +65,8 @@ format.efa_kmo <- function(x, ...) {
       cli::cli_verbatim(utils::capture.output(print(round(x$KMO_i, 3))))
 
     } else {
-      cli::cli_alert_warning("Sorry, the KMO value for your data is not available.")
+      cli::cli_alert_warning("Sorry, the KMO value for your data is not available.",
+                             wrap = TRUE)
     }
   })
 }

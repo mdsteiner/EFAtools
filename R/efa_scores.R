@@ -355,7 +355,7 @@ efa_scores <- function(x, f, Phi = NULL, rho = NULL,
 #' fs
 #' summary(fs)
 #'
-#' # format() returns the same lines as plain text:
+#' # format() returns the same lines as a character vector:
 #' writeLines(format(fs))
 #'
 print.efa_scores <- function(x, digits = 3, ...) {
@@ -405,9 +405,11 @@ format.summary.efa_scores <- function(x, digits = x$opts$digits, ...) {
   method <- x$settings$method
   title <- paste0("Factor scores (", method, ")")
 
-  # Pre-format the tables outside the cli container (base print, not reflowed).
-  det_lines <- utils::capture.output(print(round(x$determinacy, digits)))
-
+  # Every table here holds bounded coefficients or correlations, so all four go through
+  # the shared renderer and print in the package's number convention (leading zero
+  # dropped), matching the coefficient tables of efa_reliability() and the loading
+  # tables. The renderer also splits a table wider than the console into stacked column
+  # blocks, which the weight matrix reaches on a wide solution.
   cli::cli_format_method({
     cli::cli_text("")
     cli::cli_rule(left = "{.strong {title}}")
@@ -424,25 +426,25 @@ format.summary.efa_scores <- function(x, digits = x$opts$digits, ...) {
     cli::cli_text("")
     cli::cli_rule(left = "{.strong Score determinacy}")
     cli::cli_text("")
-    cli::cli_verbatim(det_lines)
+    .efa_emit_lines(.efa_corr_lines(as.matrix(x$determinacy), digits = digits))
 
     if (full) {
       cli::cli_text("")
       cli::cli_rule(left = "{.strong Factor weights}")
       cli::cli_text("")
-      cli::cli_verbatim(utils::capture.output(print(round(x$weights, digits))))
+      .efa_emit_lines(.efa_corr_lines(x$weights, digits = digits))
 
       cli::cli_text("")
       cli::cli_rule(left = "{.strong Score validity and univocality}")
       cli::cli_text("")
       cli::cli_text("Diagonal: validity (score-factor correlation). Off-diagonal: univocality.")
       cli::cli_text("")
-      cli::cli_verbatim(utils::capture.output(print(round(x$score_cor, digits))))
+      .efa_emit_lines(.efa_corr_lines(x$score_cor, digits = digits))
 
       cli::cli_text("")
       cli::cli_rule(left = "{.strong Score intercorrelations}")
       cli::cli_text("")
-      cli::cli_verbatim(utils::capture.output(print(round(x$r.scores, digits))))
+      .efa_emit_lines(.efa_corr_lines(x$r.scores, digits = digits))
     }
   })
 }

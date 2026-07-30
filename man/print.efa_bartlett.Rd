@@ -33,7 +33,7 @@ disabled (for example when captured into a file or stripped with
 bart <- efa_bartlett(test_models$baseline$cormat, N = 500)
 bart
 
-# format() returns the same lines as plain text:
+# format() returns the same lines as a character vector:
 writeLines(format(bart))
 
 }

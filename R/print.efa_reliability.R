@@ -30,7 +30,7 @@
 #' rel <- efa_reliability(efa_mod)
 #' rel
 #'
-#' # format() returns the same lines as plain text:
+#' # format() returns the same lines as a character vector:
 #' writeLines(format(rel))
 #'
 print.efa_reliability <- function(x, digits = 3, ...) {

@@ -82,7 +82,7 @@
 #' # The full diagnostics, CI tables, and residual diagnostics:
 #' summary(mod)
 #'
-#' # format() returns plain text, e.g. for embedding in a report:
+#' # format() returns the same lines as a character vector, e.g. for a report file:
 #' writeLines(format(mod))
 #'
 print.efa <- function(x, ...) {
@@ -437,7 +437,10 @@ format.summary.efa <- function(x, ...) {
       return(invisible(NULL))
     }
 
-    .efa_emit_lines(.efa_capture_loadings(x$unrot_loadings,
+    # format.efa_loadings() renders the styled table (h2/sorting/legend/column blocks) and
+    # returns it as report lines, which .efa_emit_lines() embeds without reflowing. The
+    # loading matrices are classed `efa_loadings`, so the generic dispatches there.
+    .efa_emit_lines(format(x$unrot_loadings,
       cutoff = cutoff,
       digits = digits,
       max_name_length = max_name_length,
@@ -469,7 +472,7 @@ format.summary.efa <- function(x, ...) {
     return(invisible(NULL))
   }
 
-  .efa_emit_lines(.efa_capture_loadings(x$rot_loadings,
+  .efa_emit_lines(format(x$rot_loadings,
     cutoff = cutoff,
     digits = digits,
     max_name_length = max_name_length,
@@ -553,16 +556,6 @@ format.summary.efa <- function(x, ...) {
   )
 }
 
-# Capture an already-styled loading/structure table as verbatim lines for embedding in the
-# cli report. Reuses all of `print.efa_loadings`' formatting (h2/sorting/legend/column blocks)
-# and preserves colour; the trailing blank line `print.efa_loadings` adds for console spacing is
-# dropped so the surrounding cli layout controls the spacing.
-.efa_capture_loadings <- function(x, ...) {
-  out <- utils::capture.output(print(x, ...))
-  if (length(out) > 0L && !nzchar(out[length(out)])) out <- out[-length(out)]
-  out
-}
-
 # Emit pre-formatted table lines into the cli report. `cli::cli_verbatim()` silently drops
 # interior empty-string elements, which would erase the blank line a loading table puts
 # before its legend and the blank separators between column blocks of a wide table. So emit
@@ -607,7 +600,8 @@ format.summary.efa <- function(x, ...) {
   if (df == 0) {
     cli::cli_text("")
     cli::cli_alert_warning(
-      "The model is just identified (df = 0). Goodness of fit indices may not be interpretable."
+      "The model is just identified (df = 0). Goodness of fit indices may not be interpretable.",
+      wrap = TRUE
     )
     return(TRUE)
   }
@@ -615,7 +609,8 @@ format.summary.efa <- function(x, ...) {
   if (df < 0) {
     cli::cli_text("")
     cli::cli_alert_warning(
-      "The model is underidentified (df < 0). No goodness of fit indices were calculated."
+      "The model is underidentified (df < 0). No goodness of fit indices were calculated.",
+      wrap = TRUE
     )
     return(FALSE)
   }
@@ -1393,6 +1388,70 @@ format.summary.efa <- function(x, ...) {
 }
 
 
+# Argument checks shared by the print/format methods (print.efa() and its summary, and
+# print.efa_loadings()), which validate the same display options with the same wording.
+# `arg` names the offender and `class` carries its condition class, both of which are part
+# of each method's contract; `call` defaults to the calling validator's frame, so routing
+# the abort through a helper reports the same call as an inline check would.
+#
+# The whole-number tests below compare against `round()` rather than `as.integer()`: a
+# value beyond the integer range coerces to NA with a warning, and the resulting NA in the
+# `||` chain aborts with "missing value where TRUE/FALSE needed" instead of the classed
+# condition each caller documents. `round()` is exact for every finite double, and the
+# separate integer-range bound then rejects the out-of-range value through the proper
+# condition (no display option has a legitimate use above 2^31).
+
+# A single finite number, zero or greater.
+.efa_check_nonneg_number <- function(value, arg, class, call = rlang::caller_env()) {
+  if (!is.numeric(value) || length(value) != 1L || !is.finite(value) || value < 0) {
+    cli::cli_abort("{.arg {arg}} must be a single finite non-negative number.",
+                   class = class, call = call)
+  }
+  invisible(TRUE)
+}
+
+# A single finite whole number, zero or greater.
+.efa_check_nonneg_int <- function(value, arg, class, call = rlang::caller_env()) {
+  if (!.efa_is_whole_number(value) || value < 0) {
+    cli::cli_abort("{.arg {arg}} must be a single finite non-negative integer.",
+                   class = class, call = call)
+  }
+  invisible(TRUE)
+}
+
+# A single finite whole number, one or greater.
+.efa_check_pos_int <- function(value, arg, class, call = rlang::caller_env()) {
+  if (!.efa_is_whole_number(value) || value < 1) {
+    cli::cli_abort("{.arg {arg}} must be a single finite positive integer.",
+                   class = class, call = call)
+  }
+  invisible(TRUE)
+}
+
+# As .efa_check_pos_int(), but `NULL` (the "choose it from the console width" default) passes.
+.efa_check_opt_pos_int <- function(value, arg, class, call = rlang::caller_env()) {
+  if (!is.null(value) && (!.efa_is_whole_number(value) || value < 1)) {
+    cli::cli_abort("{.arg {arg}} must be {.val NULL} or a single finite positive integer.",
+                   class = class, call = call)
+  }
+  invisible(TRUE)
+}
+
+# TRUE for a single finite whole number inside the integer range; never NA.
+.efa_is_whole_number <- function(value) {
+  is.numeric(value) && length(value) == 1L && is.finite(value) &&
+    abs(value) <= .Machine$integer.max && value == round(value)
+}
+
+# A single non-missing TRUE/FALSE.
+.efa_check_flag <- function(value, arg, class, call = rlang::caller_env()) {
+  if (!is.logical(value) || length(value) != 1L || is.na(value)) {
+    cli::cli_abort("{.arg {arg}} must be {.val TRUE} or {.val FALSE}.",
+                   class = class, call = call)
+  }
+  invisible(TRUE)
+}
+
 .efa_validate_print_options <- function(cutoff, digits, max_name_length,
                                         diagnostics_top_n,
                                         residual_cutoff, residual_top_n,
@@ -1401,79 +1460,36 @@ format.summary.efa <- function(x, ...) {
                                         min_salient_per_factor,
                                         max_factors_per_block,
                                         show_mi_diagnostics) {
-  if (!is.numeric(cutoff) || length(cutoff) != 1L ||
-      !is.finite(cutoff) || cutoff < 0) {
-    cli::cli_abort("{.arg cutoff} must be a single finite non-negative number.",
-                   class = "efa_print_invalid_cutoff")
-  }
-
-  if (!is.numeric(digits) || length(digits) != 1L || !is.finite(digits) ||
-      digits < 0 || digits != as.integer(digits)) {
-    cli::cli_abort("{.arg digits} must be a single finite non-negative integer.",
-                   class = "efa_print_invalid_digits")
-  }
-
-  if (!is.numeric(max_name_length) || length(max_name_length) != 1L ||
-      !is.finite(max_name_length) || max_name_length < 1 ||
-      max_name_length != as.integer(max_name_length)) {
-    cli::cli_abort("{.arg max_name_length} must be a single finite positive integer.",
-                   class = "efa_print_invalid_max_name_length")
-  }
+  .efa_check_nonneg_number(cutoff, "cutoff", "efa_print_invalid_cutoff")
+  .efa_check_nonneg_int(digits, "digits", "efa_print_invalid_digits")
+  .efa_check_pos_int(max_name_length, "max_name_length",
+                     "efa_print_invalid_max_name_length")
 
   if (!.efa_is_top_n(diagnostics_top_n)) {
     cli::cli_abort("{.arg diagnostics_top_n} must be a positive integer or {.val Inf}.",
                    class = "efa_print_invalid_diagnostics_top_n")
   }
 
-  if (!is.numeric(residual_cutoff) || length(residual_cutoff) != 1L ||
-      !is.finite(residual_cutoff) || residual_cutoff < 0) {
-    cli::cli_abort("{.arg residual_cutoff} must be a single finite non-negative number.",
-                   class = "efa_print_invalid_residual_cutoff")
-  }
+  .efa_check_nonneg_number(residual_cutoff, "residual_cutoff",
+                           "efa_print_invalid_residual_cutoff")
 
   if (!.efa_is_top_n(residual_top_n)) {
     cli::cli_abort("{.arg residual_top_n} must be a positive integer or {.val Inf}.",
                    class = "efa_print_invalid_residual_top_n")
   }
 
-  if (!is.logical(show_structure) || length(show_structure) != 1L ||
-      is.na(show_structure)) {
-    cli::cli_abort("{.arg show_structure} must be {.val TRUE} or {.val FALSE}.",
-                   class = "efa_print_invalid_show_structure")
-  }
-
-  if (!is.logical(show_loading_legend) || length(show_loading_legend) != 1L ||
-      is.na(show_loading_legend)) {
-    cli::cli_abort("{.arg show_loading_legend} must be {.val TRUE} or {.val FALSE}.",
-                   class = "efa_print_invalid_show_loading_legend")
-  }
-
-  if (!is.numeric(cross_loading_cutoff) || length(cross_loading_cutoff) != 1L ||
-      !is.finite(cross_loading_cutoff) || cross_loading_cutoff < 0) {
-    cli::cli_abort("{.arg cross_loading_cutoff} must be a single finite non-negative number.",
-                   class = "efa_print_invalid_cross_loading_cutoff")
-  }
-
-  if (!is.numeric(min_primary_gap) || length(min_primary_gap) != 1L ||
-      !is.finite(min_primary_gap) || min_primary_gap < 0) {
-    cli::cli_abort("{.arg min_primary_gap} must be a single finite non-negative number.",
-                   class = "efa_print_invalid_min_primary_gap")
-  }
-
-  if (!is.numeric(min_salient_per_factor) || length(min_salient_per_factor) != 1L ||
-      !is.finite(min_salient_per_factor) || min_salient_per_factor < 1 ||
-      min_salient_per_factor != as.integer(min_salient_per_factor)) {
-    cli::cli_abort("{.arg min_salient_per_factor} must be a single finite positive integer.",
-                   class = "efa_print_invalid_min_salient_per_factor")
-  }
-
-  if (!is.null(max_factors_per_block) &&
-      (!is.numeric(max_factors_per_block) || length(max_factors_per_block) != 1L ||
-       !is.finite(max_factors_per_block) || max_factors_per_block < 1 ||
-       max_factors_per_block != as.integer(max_factors_per_block))) {
-    cli::cli_abort("{.arg max_factors_per_block} must be {.val NULL} or a single finite positive integer.",
-                   class = "efa_print_invalid_max_factors_per_block")
-  }
+  .efa_check_flag(show_structure, "show_structure",
+                  "efa_print_invalid_show_structure")
+  .efa_check_flag(show_loading_legend, "show_loading_legend",
+                  "efa_print_invalid_show_loading_legend")
+  .efa_check_nonneg_number(cross_loading_cutoff, "cross_loading_cutoff",
+                           "efa_print_invalid_cross_loading_cutoff")
+  .efa_check_nonneg_number(min_primary_gap, "min_primary_gap",
+                           "efa_print_invalid_min_primary_gap")
+  .efa_check_pos_int(min_salient_per_factor, "min_salient_per_factor",
+                     "efa_print_invalid_min_salient_per_factor")
+  .efa_check_opt_pos_int(max_factors_per_block, "max_factors_per_block",
+                         "efa_print_invalid_max_factors_per_block")
 
   if (!is.null(show_mi_diagnostics) &&
       (!is.logical(show_mi_diagnostics) || length(show_mi_diagnostics) != 1L ||
@@ -1559,6 +1575,10 @@ format.summary.efa <- function(x, ...) {
            print_zero = print_zero, pad = pad)
 }
 
+# Fit indices are reported to two decimals, not the three the loading, correlation and
+# coefficient tables use. That is deliberate: CFI/TLI/RMSEA/SRMR/CAF are conventionally
+# reported to two decimals in the literature, and the third digit is well inside the
+# sampling error of any of them. The leading-zero convention is shared (via .efa_num()).
 .efa_format_fit_value <- function(fit, name, digits = 2,
                                   print_zero = FALSE, pad = TRUE) {
   .efa_format_number(
@@ -2039,7 +2059,7 @@ format.summary.efa <- function(x, ...) {
                                          sort_loadings, max_factors_per_block,
                                          ...) {
   .print_efa_rule("Structure Matrix")
-  .efa_emit_lines(.efa_capture_loadings(x$Structure,
+  .efa_emit_lines(format(x$Structure,
     cutoff = cutoff,
     digits = digits,
     max_name_length = max_name_length,

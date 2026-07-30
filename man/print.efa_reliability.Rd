@@ -39,7 +39,7 @@ efa_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
 rel <- efa_reliability(efa_mod)
 rel
 
-# format() returns the same lines as plain text:
+# format() returns the same lines as a character vector:
 writeLines(format(rel))
 
 }

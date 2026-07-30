@@ -51,7 +51,7 @@ fs <- efa_scores(test_models$baseline$cormat, f = efa)
 fs
 summary(fs)
 
-# format() returns the same lines as plain text:
+# format() returns the same lines as a character vector:
 writeLines(format(fs))
 
 }

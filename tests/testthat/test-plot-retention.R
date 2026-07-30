@@ -109,3 +109,19 @@ test_that("SCREE eigen plot is visually stable", {
   scree <- SCREE(test_models$baseline$cormat)
   vdiffr::expect_doppelganger("SCREE eigen plot", plot(scree))
 })
+
+test_that("plot.efa_retain's deterministic members are visually stable", {
+  skip_if_not_installed("vdiffr")
+
+  # plot.efa_retain() dispatches one plot per plottable criterion that was run. Only the
+  # deterministic ones carry a baseline: CD, PARALLEL, and NEST simulate, so their
+  # reference series depend on the RNG state and no SVG baseline would be portable.
+  nf <- efa_retain(test_models$baseline$cormat, N = 500, suitability = FALSE,
+                   criteria = c("EKC", "KGC", "SCREE"), eigen_type_other = "PCA")
+  p <- plot(nf)
+
+  expect_named(p, c("EKC", "KGC", "SCREE"))
+  for (id in names(p)) {
+    vdiffr::expect_doppelganger(paste("efa_retain", id, "plot"), p[[id]])
+  }
+})

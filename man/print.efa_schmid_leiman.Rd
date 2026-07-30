@@ -35,7 +35,7 @@ EFA_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
 sl_mod <- efa_schmid_leiman(EFA_mod, estimator = "PAF")
 sl_mod
 
-# format() returns the same lines as plain text:
+# format() returns the same lines as a character vector:
 writeLines(format(sl_mod))
 
 }

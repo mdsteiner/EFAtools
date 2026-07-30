@@ -31,7 +31,7 @@
 #' EFA_aver <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500)
 #' EFA_aver
 #'
-#' # format() returns the same lines as plain text:
+#' # format() returns the same lines as a character vector:
 #' writeLines(format(EFA_aver))
 #' }
 print.efa_average <- function(x, stat = c("average", "range"),
@@ -116,7 +116,8 @@ format.efa_average <- function(x, stat = c("average", "range"), ...) {
     if (.efa_average_no_solutions(grid)) {
 
       cli::cli_text("")
-      cli::cli_alert_warning("No solutions were achieved across which averaging was possible. Best try again with a different number of factors.")
+      cli::cli_alert_warning("No solutions were achieved across which averaging was possible. Best try again with a different number of factors.",
+                             wrap = TRUE)
 
     } else {
 
@@ -129,7 +130,7 @@ format.efa_average <- function(x, stat = c("average", "range"), ...) {
       cli::cli_text("")
       cli::cli_text("For each cell, the proportion of solutions including the respective indicator-to-factor correspondence. A salience threshold of {.strong {salience_threshold}} was used to determine indicator-to-factor correspondences.")
       cli::cli_text("")
-      .efa_emit_lines(.efa_capture_loadings(
+      .efa_emit_lines(format(
         structure(x$ind_fac_corres, class = c("efa_loadings", "LOADINGS")),
         cutoff = 1e-4, digits = 2))
 
@@ -150,7 +151,8 @@ format.efa_average <- function(x, stat = c("average", "range"), ...) {
       # Model fit
       if (fit["df", "average"] == 0) {
         cli::cli_text("")
-        cli::cli_alert_warning("The model is just identified (df = 0). Goodness of fit indices may not be interpretable.")
+        cli::cli_alert_warning("The model is just identified (df = 0). Goodness of fit indices may not be interpretable.",
+                               wrap = TRUE)
       }
 
       .efa_section_rule("Model Fit")
@@ -189,7 +191,7 @@ format.efa_average <- function(x, stat = c("average", "range"), ...) {
 
       } else {
 
-        chisq <- .gof_lines(fit, ind = "chisq", ind_name = "\U1D712\U00B2: ",
+        chisq <- .gof_lines(fit, ind = "chisq", ind_name = "\U03C7\U00B2: ",
                             print_zero = TRUE, digits = 2)
         df_line <- paste0("df: ",
                           .efa_num(fit["df", "average"], 0, print_zero = TRUE))
@@ -283,7 +285,7 @@ format.efa_average <- function(x, stat = c("average", "range"), ...) {
   # only its lower triangle shows.
   emit <- function(stat_key) {
     if (what == "loadings" && stat_key %in% c("average", "min", "max")) {
-      .efa_emit_lines(.efa_capture_loadings(x$loadings[[stat_key]]))
+      .efa_emit_lines(format(x$loadings[[stat_key]]))
     } else if (what == "Phi") {
       .efa_emit_lines(.efa_corr_lines(x$Phi[[stat_key]], lower_only = TRUE))
     } else if (what == "loadings") {

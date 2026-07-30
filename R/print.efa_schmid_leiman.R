@@ -25,7 +25,7 @@
 #' sl_mod <- efa_schmid_leiman(EFA_mod, estimator = "PAF")
 #' sl_mod
 #'
-#' # format() returns the same lines as plain text:
+#' # format() returns the same lines as a character vector:
 #' writeLines(format(sl_mod))
 #'
 print.efa_schmid_leiman <- function(x, ...) {
@@ -64,7 +64,7 @@ format.efa_schmid_leiman <- function(x, ...) {
 
     # print the loadings and the variances
     .print_efa_rule("Schmid-Leiman Solution")
-    .efa_emit_lines(.efa_capture_loadings(x$sl))
+    .efa_emit_lines(format(x$sl))
 
     .print_efa_rule("Variances Accounted for")
     .efa_emit_lines(.efa_corr_lines(x$vars_accounted, digits = 3))

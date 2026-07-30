@@ -41,7 +41,7 @@ om <- OMEGA(sl_mod, type = "EFAtools",
             factor_corres = sl_mod$sl[, c("F1", "F2", "F3")] >= .2)
 om
 
-# format() returns the same lines as plain text:
+# format() returns the same lines as a character vector:
 writeLines(format(om))
 
 }

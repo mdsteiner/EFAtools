@@ -78,17 +78,25 @@ test_that("format.efa_loadings sorts rows when requested", {
   expect_snapshot(print(make_loadings(), sort_loadings = "clustered"))
 })
 
-test_that("color controls print styling while format() stays plain", {
-  withr::local_options(cli.num_colors = 256)
+test_that("format.efa_loadings is the source of truth and honours the colour state", {
   L <- make_loadings()
-  # styling is controlled by `color` in print(), which embeds ANSI when colours are on
+
+  # print() is cat(format(x), sep = "\n") plus one blank line for console spacing
+  expect_identical(utils::capture.output(print(L)), c(format(L), ""))
+
+  withr::local_options(cli.num_colors = 256)
+  # styling is controlled by `color`, in format() exactly as in print()
   expect_true(cli::ansi_has_any(paste(
     utils::capture.output(print(L, color = TRUE)), collapse = "")))
   expect_false(cli::ansi_has_any(paste(
     utils::capture.output(print(L, color = FALSE)), collapse = "")))
-  # format() is the plain-text representation regardless of `color`
-  expect_false(cli::ansi_has_any(paste(format(L, color = TRUE), collapse = "")))
+  expect_true(cli::ansi_has_any(paste(format(L, color = TRUE), collapse = "")))
   expect_false(cli::ansi_has_any(paste(format(L, color = FALSE), collapse = "")))
+
+  # with colours off the table is plain whatever the caller asked for
+  withr::local_options(cli.num_colors = 1)
+  expect_false(cli::ansi_has_any(paste(format(L, color = TRUE), collapse = "")))
+
   # format() returns only the rendered table lines, with no trailing blank element
   fmt <- format(L)
   expect_true(nzchar(fmt[length(fmt)]))
@@ -129,13 +137,16 @@ test_that("the loading legend is printed only when its styling is rendered", {
                      utils::capture.output(print(L, legend = FALSE)))
   })
 
-  # `format()` drops the styling, so it must drop the legend with it -- switching the
-  # colours off at the source rather than stripping the escapes afterwards, which would
-  # leave the legend naming marks that are no longer there.
+  # `format()` follows the same rule, since it is what `print()` renders: the legend
+  # travels with the marks it names, and is dropped with them when colours are off.
   withr::with_options(list(cli.num_colors = 256), {
     out <- format(L, legend = TRUE)
+    expect_true(any(grepl("Legend:", out, fixed = TRUE)))
+    expect_true(cli::ansi_has_any(paste(out, collapse = "")))
+  })
+  withr::with_options(list(cli.num_colors = 1), {
+    out <- format(L, legend = TRUE)
     expect_false(any(grepl("Legend:", out, fixed = TRUE)))
-    expect_false(cli::ansi_has_any(paste(out, collapse = "")))
     expect_identical(out, format(L, legend = FALSE))
   })
 })
@@ -161,11 +172,12 @@ test_that("the loading legend names the marks it describes", {
 })
 
 
-test_that("the efa report carries the loading legend through its nested capture", {
+test_that("the efa report carries the loading legend through its nested render", {
   local_reproducible_output()
 
-  # print.efa()/summary.efa() render the loading table inside a capture.output() nested in
-  # cli::cli_format_method(). A sink makes cli report a single colour, so the legend would
+  # print.efa()/summary.efa() render the loading table through a format.efa_loadings()
+  # call nested in their own cli::cli_format_method(), i.e. one cli_format_method inside
+  # another. A sink makes cli report a single colour, so the legend would
   # be lost -- except that cli_format_method reads the colour count *before* installing its
   # sink and pins it for everything nested inside. Pinning `cli.num_colors` here would not
   # test that: it is the first thing cli consults, so it short-circuits the sink question
@@ -187,11 +199,17 @@ test_that("the efa report carries the loading legend through its nested capture"
   expect_true(has_legend(format(summary(fit))))
   expect_false(has_legend(format(fit, show_loading_legend = FALSE)))
 
-  # The guard that makes the assertion above meaningful: rendered outside the enclosing
-  # cli_format_method, the same table loses its legend, because there the sink really does
-  # drop cli to one colour.
+  # The same table rendered on its own reaches the same verdict as it does nested in the
+  # report: the legend is a property of the console theme, not of the call depth.
+  expect_true(has_legend(
+    format(fit$rot_loadings, h2 = fit$h2, legend = TRUE)))
+
+  # The guard that makes the assertions above meaningful: nothing renders a legend once
+  # the target cannot show the marks it names, whether the table is nested or standalone.
+  withr::local_options(cli.num_colors = 1)
+  expect_false(has_legend(format(fit)))
   expect_false(has_legend(
-    .efa_capture_loadings(fit$rot_loadings, h2 = fit$h2, legend = TRUE)))
+    format(fit$rot_loadings, h2 = fit$h2, legend = TRUE)))
 })
 
 
@@ -229,10 +247,10 @@ test_that("block wrapping stacks blocks and never folds a row", {
 
 test_that("wide non-loading tables wrap into stacked blocks", {
   local_reproducible_output() # console width 80
-  # a rectangular variances-accounted table and a symmetric Phi (lower triangle only)
-  expect_snapshot(.print_efa_matrix(make_wide_vars(), role = "corr"))
-  expect_snapshot(.print_efa_matrix(make_wide_phi(), role = "corr",
-                                    lower_only = TRUE))
+  # a rectangular variances-accounted table and a symmetric Phi (lower triangle only),
+  # through .efa_corr_lines(): the wrapper the reports actually use for these tables
+  expect_snapshot(writeLines(.efa_corr_lines(make_wide_vars())))
+  expect_snapshot(writeLines(.efa_corr_lines(make_wide_phi(), lower_only = TRUE)))
 })
 
 test_that("non-loading block wrapping splits columns without folding rows", {
@@ -283,14 +301,23 @@ test_that("format.efa_sl_loadings counts a communality-only Heywood item once", 
   expect_false(any(grepl("Heywood cases", out, fixed = TRUE)))
 })
 
-test_that("format.efa_sl_loadings returns plain text even when styling is enabled", {
+test_that("format.efa_sl_loadings is the source of truth and honours the colour state", {
+  sl <- make_sl(heywood = TRUE)
+
+  # print() is cat(format(x), sep = "\n") plus one blank line for console spacing
+  expect_identical(utils::capture.output(print(sl)), c(format(sl), ""))
+
   old <- options(cli.num_colors = 256)
   on.exit(options(old), add = TRUE)
+  expect_true(any(grepl("\033", format(sl), fixed = TRUE)))
+  # `color = FALSE` governs the table cells, not the Heywood alert below them, which
+  # cli styles from the active theme -- so it is not an ANSI switch for the whole block.
+  # The table is the header row plus one row per item; the alert follows a blank line.
+  table_lines <- seq_len(nrow(sl) + 1L)
+  expect_false(any(grepl("\033", format(sl, color = FALSE)[table_lines], fixed = TRUE)))
 
-  styled <- utils::capture.output(print(make_sl(heywood = TRUE)))
-  plain <- format(make_sl(heywood = TRUE))
-
-  expect_true(any(grepl("\033", styled, fixed = TRUE)))
+  options(cli.num_colors = 1)
+  plain <- format(sl)
   expect_false(any(grepl("\033", plain, fixed = TRUE)))
   # no trailing blank element
   expect_true(nzchar(plain[length(plain)]))
@@ -322,6 +349,30 @@ test_that("print.efa_loadings argument validators raise classed conditions", {
   expect_error(do.call(.validate_loadings_print_args,
                        c(list(x = matrix(numeric(0), 0, 0)), valid_args)),
                class = "efa_print_invalid_x")
+})
+
+test_that("the shared argument checks keep their caller's frame and reject huge values", {
+  L <- make_loadings()
+
+  # The checks are shared helpers, so each abort has to report the validator that ran it
+  # rather than the helper itself -- otherwise every message names the same internal
+  # function whatever argument was wrong.
+  cnd <- tryCatch(print(L, digits = -1), error = function(e) e)
+  expect_s3_class(cnd, "efa_print_invalid_digits")
+  expect_match(deparse(conditionCall(cnd))[1], ".validate_loadings_print_args",
+               fixed = TRUE)
+
+  # A whole number beyond the integer range must still reach the classed condition: an
+  # as.integer() comparison would make it NA and abort with a bare "missing value where
+  # TRUE/FALSE needed" instead.
+  expect_error(print(L, digits = 1e10), class = "efa_print_invalid_digits")
+  expect_error(print(L, max_name_length = 1e10),
+               class = "efa_print_invalid_max_name_length")
+  expect_error(print(L, max_factors_per_block = 3e9),
+               class = "efa_print_invalid_max_factors_per_block")
+  expect_error(format(efa_fit(test_models$baseline$cormat, n_factors = 2, N = 500,
+                              estimator = "PAF"), digits = 1e10),
+               class = "efa_print_invalid_digits")
 })
 
 test_that("a named h2 that omits a row name raises a classed condition", {

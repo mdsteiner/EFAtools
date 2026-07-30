@@ -24,7 +24,7 @@
 #' bart <- efa_bartlett(test_models$baseline$cormat, N = 500)
 #' bart
 #'
-#' # format() returns the same lines as plain text:
+#' # format() returns the same lines as a character vector:
 #' writeLines(format(bart))
 #'
 print.efa_bartlett <- function(x, ...) {
@@ -45,18 +45,21 @@ format.efa_bartlett <- function(x, ...) {
       if (pval < .05) {
         significant <- cli::col_green(cli::style_bold("significant"))
         cli::cli_alert_success(
-          "The {.strong Bartlett's test of sphericity} was {significant} at an alpha level of .05."
+          "The {.strong Bartlett's test of sphericity} was {significant} at an alpha level of .05.",
+          wrap = TRUE
         )
         cli::cli_text("These data are probably suitable for factor analysis.")
       } else {
         not_significant <- cli::col_red(cli::style_bold("not significant"))
         cli::cli_alert_danger(
-          "The Bartlett's test of sphericity was {not_significant} at an alpha level of .05."
+          "The Bartlett's test of sphericity was {not_significant} at an alpha level of .05.",
+          wrap = TRUE
         )
         cli::cli_text("These data are probably not suitable for factor analysis.")
       }
     } else {
-      cli::cli_alert_warning("The Bartlett's test of sphericity did not render a result.")
+      cli::cli_alert_warning("The Bartlett's test of sphericity did not render a result.",
+                             wrap = TRUE)
     }
 
     # The chi-square line is shown for every object, including the "no result" case above, so
@@ -67,7 +70,7 @@ format.efa_bartlett <- function(x, ...) {
     p_str <- .screen_p_str(pval)
 
     cli::cli_text("")
-    cli::cli_verbatim(paste0("\U1D712\U00B2(", x$df, ") = ", chisq_str, ", ",
+    cli::cli_verbatim(paste0("\U03C7\U00B2(", x$df, ") = ", chisq_str, ", ",
                              cli::style_italic("p"), p_str))
   })
 }

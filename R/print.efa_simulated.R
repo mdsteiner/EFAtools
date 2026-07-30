@@ -44,7 +44,7 @@ format.efa_simulated <- function(x, digits = 3, ...) {
 
   cli::cli_format_method({
 
-    cli::cli_text("{.strong Simulated data} ({.cls efa_simulated})")
+    cli::cli_rule(left = "{.strong Simulated data}")
     cli::cli_text("")
 
     if (is.null(x$data)) {

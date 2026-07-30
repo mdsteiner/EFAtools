@@ -180,14 +180,17 @@ test_that("print and summary output are stable", {
   skip_on_cran()
   testthat::local_reproducible_output()
 
+  # The printed values are eigen- and inverse-derived, so their last digits can drift
+  # across BLAS implementations; scrub_num pins the layout, headers, and wording instead.
+
   # Brief print, raw-data scores.
-  expect_snapshot(print(fs_grips))
+  expect_snapshot(print(fs_grips), transform = scrub_num)
 
   # Brief print, correlation input (weights only).
-  expect_snapshot(print(fs_ob_cor))
+  expect_snapshot(print(fs_ob_cor), transform = scrub_num)
 
   # Full summary: weight matrix, validity/univocality, and score intercorrelations.
-  expect_snapshot(print(summary(fs_ob_cor)))
+  expect_snapshot(print(summary(fs_ob_cor)), transform = scrub_num)
 })
 
 

@@ -81,7 +81,7 @@
 # wide non-loading tables wrap into stacked blocks
 
     Code
-      .print_efa_matrix(make_wide_vars(), role = "corr")
+      writeLines(.efa_corr_lines(make_wide_vars()))
     Output
       Factors F1-F9 (block 1/2)
                      F1     F2     F3     F4     F5     F6     F7     F8     F9
@@ -94,12 +94,11 @@
       SS loadings   .964   .682   .400
       Prop Var      .071   .045   .020
       Cum Var      1.855  1.900  1.920
-      
 
 ---
 
     Code
-      .print_efa_matrix(make_wide_phi(), role = "corr", lower_only = TRUE)
+      writeLines(.efa_corr_lines(make_wide_phi(), lower_only = TRUE))
     Output
       Factors F1-F11 (block 1/2)
              F1     F2     F3     F4     F5     F6     F7     F8     F9    F10    F11
@@ -119,7 +118,6 @@
       Factors F12 (block 2/2)
             F12
       F12  1.000
-      
 
 # format.efa_sl_loadings flags a Heywood case
 

@@ -153,7 +153,7 @@ mod
 # The full diagnostics, CI tables, and residual diagnostics:
 summary(mod)
 
-# format() returns plain text, e.g. for embedding in a report:
+# format() returns the same lines as a character vector, e.g. for a report file:
 writeLines(format(mod))
 
 }

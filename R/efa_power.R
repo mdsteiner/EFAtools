@@ -738,7 +738,7 @@ efa_power <- function(mode = c("rmsea", "simulation"),
 #' pw <- efa_power(df = 100, N = 200)
 #' pw
 #'
-#' # format() returns the same lines as plain text:
+#' # format() returns the same lines as a character vector:
 #' writeLines(format(pw))
 #'
 print.efa_power <- function(x, digits = 3, ...) {

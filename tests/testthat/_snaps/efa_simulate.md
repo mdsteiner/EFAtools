@@ -3,7 +3,7 @@
     Code
       print(sim)
     Output
-      Simulated data (<efa_simulated>)
+      -- Simulated data --------------------------------------------------------------
       
       100 cases by 18 variables (continuous).
       Marginals: normal.
@@ -17,7 +17,7 @@
     Code
       print(rp)
     Output
-      Simulated data (<efa_simulated>)
+      -- Simulated data --------------------------------------------------------------
       
       Population correlation matrix only (18 variables); no data drawn.
       Marginals: normal.

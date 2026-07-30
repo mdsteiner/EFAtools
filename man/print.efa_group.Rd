@@ -39,7 +39,7 @@ g <- rep(c("g1", "g2"), length.out = nrow(GRiPS_raw))
 mg <- efa_group(GRiPS_raw, groups = g, n_factors = 1)
 mg
 
-# format() returns the same lines as plain text:
+# format() returns the same lines as a character vector:
 writeLines(format(mg))
 
 }

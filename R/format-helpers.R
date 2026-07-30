@@ -266,37 +266,6 @@
   }
 }
 
-# Render a numeric matrix through the shared renderer and print it (with a trailing blank
-# line), deriving row/column labels from its dimnames. `role` fills every column: "corr"
-# (factor-correlation/variance tables) is plain; "compare" (efa_compare difference tables)
-# colours cells with |x| > `cutoff` red. `lower_only` blanks the strictly-upper triangle
-# (symmetric matrices); `header = FALSE` drops the column-header row (e.g. an unlabelled
-# single-column vector difference). This is the one consumer-facing wrapper around
-# `.efa_format_matrix()` for non-loading tables.
-.print_efa_matrix <- function(values, role = "corr", digits = 3, cutoff = 0,
-                              lower_only = FALSE, header = TRUE) {
-  values <- as.matrix(values)
-
-  lines <- .efa_format_matrix(
-    values = values,
-    row_labels = .efa_variable_names(values),
-    col_labels = .efa_factor_names(values),
-    col_roles = rep(role, ncol(values)),
-    cutoff = cutoff,
-    digits = digits,
-    lower_only = lower_only
-  )
-
-  if (isFALSE(header)) {
-    lines <- lines[-1L]
-  }
-
-  cat(lines, sep = "\n")
-  cat("\n")
-
-  invisible(NULL)
-}
-
 .decimals <- function(x) {
 
   if ((is.null(dim(x)) && !(inherits(x, c("numeric", "integer")))) ||

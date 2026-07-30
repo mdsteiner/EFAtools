@@ -5,12 +5,14 @@
 \alias{format.efa_sl_loadings}
 \title{Print an efa_sl_loadings object}
 \usage{
-\method{print}{efa_sl_loadings}(x, cutoff = 0.2, digits = 3, color = TRUE, ...)
+\method{print}{efa_sl_loadings}(x, ...)
 
-\method{format}{efa_sl_loadings}(x, ...)
+\method{format}{efa_sl_loadings}(x, cutoff = 0.2, digits = 3, color = TRUE, ...)
 }
 \arguments{
 \item{x}{class efa_sl_loadings matrix.}
+
+\item{...}{additional arguments passed to print or format.}
 
 \item{cutoff}{numeric. The value at or above which loadings are emphasized
 (default is .2).}
@@ -20,8 +22,12 @@ to round the loadings to (default is 3).}
 
 \item{color}{logical. Whether to apply console styling using \pkg{cli}.
 Default is \code{TRUE}.}
-
-\item{...}{additional arguments passed to print or format.}
+}
+\value{
+\code{print()} returns its argument \code{x} invisibly; it is
+\code{cat(format(x, ...), sep = "\\n")} followed by a blank line for console
+spacing. \code{format()} returns a character vector with the table lines (styled
+to the active console theme; plain when colours are disabled).
 }
 \description{
 Print an efa_sl_loadings object

@@ -42,7 +42,7 @@ captured into a file or stripped with \code{\link[cli:ansi_strip]{cli::ansi_stri
 EFA_aver <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500)
 EFA_aver
 
-# format() returns the same lines as plain text:
+# format() returns the same lines as a character vector:
 writeLines(format(EFA_aver))
 }
 }

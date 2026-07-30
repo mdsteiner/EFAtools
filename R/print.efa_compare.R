@@ -44,7 +44,7 @@
 #'                     x_labels = c("SPSS", "psych"))
 #' comp
 #'
-#' # format() returns the same lines as plain text:
+#' # format() returns the same lines as a character vector:
 #' writeLines(format(comp))
 #'
 #' # the display settings can be changed without recomputing the comparison:
@@ -89,25 +89,27 @@ format.efa_compare <- function(x, digits = NULL, m_red = NULL, range_red = NULL,
 
   # Style each statistic green when it clears its reduction threshold and red otherwise
   # (so a smaller difference reads as a closer match). The values keep their decimal
-  # padding, so the lines are emitted verbatim below.
+  # padding, so the lines are emitted verbatim below. They are differences between
+  # loadings, i.e. bounded coefficients, so they follow the package's number convention
+  # and drop the leading zero; the two decimal *counts* below are integers and do not.
   if (mean_abs_diff <= m_red) {
-    mean_out <- .efa_style(.efa_num(mean_abs_diff, digits, TRUE), c("green", "bold"))
+    mean_out <- .efa_style(.efa_num(mean_abs_diff, digits), c("green", "bold"))
   } else {
-    mean_out <- .efa_style(.efa_num(mean_abs_diff, digits, TRUE), c("red", "bold"))
+    mean_out <- .efa_style(.efa_num(mean_abs_diff, digits), c("red", "bold"))
   }
 
   if (median_abs_diff <= m_red) {
-    median_out <- .efa_style(.efa_num(median_abs_diff, digits, TRUE), c("green", "bold"))
+    median_out <- .efa_style(.efa_num(median_abs_diff, digits), c("green", "bold"))
   } else {
-    median_out <- .efa_style(.efa_num(median_abs_diff, digits, TRUE), c("red", "bold"))
+    median_out <- .efa_style(.efa_num(median_abs_diff, digits), c("red", "bold"))
   }
 
   if (max_abs_diff <= range_red) {
-    max_out <- .efa_style(.efa_num(max_abs_diff, digits, TRUE), c("green", "bold"))
-    min_out <- .efa_style(.efa_num(min_abs_diff, digits, TRUE), c("green", "bold"))
+    max_out <- .efa_style(.efa_num(max_abs_diff, digits), c("green", "bold"))
+    min_out <- .efa_style(.efa_num(min_abs_diff, digits), c("green", "bold"))
   } else {
-    max_out <- .efa_style(.efa_num(max_abs_diff, digits, TRUE), c("red", "bold"))
-    min_out <- .efa_style(.efa_num(min_abs_diff, digits, TRUE), c("red", "bold"))
+    max_out <- .efa_style(.efa_num(max_abs_diff, digits), c("red", "bold"))
+    min_out <- .efa_style(.efa_num(min_abs_diff, digits), c("red", "bold"))
   }
 
   if (is.na(are_equal)) {
@@ -127,7 +129,7 @@ format.efa_compare <- function(x, digits = NULL, m_red = NULL, range_red = NULL,
                              mean_out, " [", min_out, ", ", max_out, "]"))
     cli::cli_verbatim(paste0("Median absolute difference: ", median_out))
     cli::cli_verbatim(paste0("Root mean squared distance (RMSE): ",
-                             .efa_style(.efa_num(g, digits, TRUE), "bold")))
+                             .efa_style(.efa_num(g, digits), "bold")))
     cli::cli_verbatim(paste0("Max decimals where all numbers agree in absolute value: ",
                              equal_out))
 

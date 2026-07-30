@@ -69,7 +69,8 @@
       -- Parallel analysis -----------------------------------------------------------
       Eigenvalues found using PCA, SMC, and EFA; 1000 simulated datasets.
       
-      i No data were entered; showing the simulated eigenvalues only. No number of factors is suggested.
+      i No data were entered; showing the simulated eigenvalues only. No number of
+      factors is suggested.
 
 # print.efa_retention output is stable for KGC
 
@@ -109,7 +110,8 @@
       
       * Original implementation (Braeken & van Assen, 2017): 3
       
-      i Multiple implementations of EKC exist; make sure to report which one you used (see the efa_ekc help page for details).
+      i Multiple implementations of EKC exist; make sure to report which one you used
+      (see the efa_ekc help page for details).
 
 ---
 
@@ -121,7 +123,8 @@
       * Original implementation (Braeken & van Assen, 2017): 3
       * Adapted implementation (Auerswald & Moshagen, 2019): 2
       
-      i Multiple implementations of EKC exist; make sure to report which one you used (see the efa_ekc help page for details).
+      i Multiple implementations of EKC exist; make sure to report which one you used
+      (see the efa_ekc help page for details).
 
 # print.efa_retention output is stable for HULL
 

@@ -14,6 +14,9 @@
 \value{
 A ggplot object showing, for each indicator and factor, the minimum,
 maximum, and average (mean or median) loading across the averaged solutions.
+Each panel carries a point at the average, a bar spanning the minimum to the
+maximum with a tick at each endpoint, and a grey band marking the loadings
+that fall below the salience threshold; the caption names the four marks.
 }
 \description{
 Plot method showing a summarized output of the \code{\link[=efa_average]{efa_average()}} function

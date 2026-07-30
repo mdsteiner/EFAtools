@@ -300,7 +300,7 @@
       CAF, RMSR, and SRMR averaged over <n> of 12 solutions.
       
              M (SD) [Min; Max]
-      𝜒²: <num> ( <num>) [ <num>; <num>]
+      χ²: <num> ( <num>) [ <num>; <num>]
       df: 102
       p: <num> ( <num>) [ <num>; <num>]
       CFI: <num> ( <num>) [ <num>; <num>]
@@ -441,7 +441,7 @@
       CAF, RMSR, and SRMR averaged over <n> of 183 solutions.
       
              Md (SD) [Min; Max]
-      𝜒²: <num> ( <num>) [ <num>; <num>]
+      χ²: <num> ( <num>) [ <num>; <num>]
       df: 102
       p: <num> ( <num>) [ <num>; <num>]
       CFI: <num> ( <num>) [ <num>; <num>]

@@ -718,10 +718,41 @@ test_that("print output is stable", {
   expect_snapshot(print(efa_all_md, plot = FALSE), transform = scrub_num_pct)
 })
 
+test_that("format.efa_average is the source of truth", {
+  skip_on_cran()
+  skip_if_not_slow()
+  local_reproducible_output()
+
+  # print() is exactly cat(format(x), sep = "\n") (with plot = FALSE, the default, so
+  # nothing is drawn), so the two agree line for line.
+  expect_identical(utils::capture.output(print(efa_def)), format(efa_def))
+})
+
 test_that("plot returns a ggplot", {
   skip_on_cran()
   skip_if_not_slow()
   expect_s3_class(plot(efa_def), "ggplot")
+})
+
+test_that("the average-loading plot is visually stable", {
+  skip_if_not_installed("vdiffr")
+
+  # A literal fixture: plot.efa_average() reads only the average/min/max loading
+  # matrices and the two settings below, so hand-chosen values keep the baseline
+  # deterministic (the fitted fixtures above are grids of many EFAs).
+  L <- matrix(c( 0.82, -0.11,
+                 0.45,  0.60,
+                -0.30,  0.71,
+                 0.04, -0.05),
+              nrow = 4, byrow = TRUE,
+              dimnames = list(paste0("V", 1:4), c("F1", "F2")))
+  avg <- structure(
+    list(loadings = list(average = L, min = L - 0.08, max = L + 0.12),
+         settings = list(averaging = "mean", salience_threshold = 0.2)),
+    class = "efa_average")
+
+  # the axis title, the caption naming the four marks, and the marks themselves
+  vdiffr::expect_doppelganger("efa_average loading plot", plot(avg))
 })
 
 test_that("a vector-valued precision is recycled across the grid", {

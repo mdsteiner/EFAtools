@@ -11,12 +11,13 @@
       
       v The Bartlett's test of sphericity was significant at an alpha level of <num>.
       These data are probably suitable for factor analysis.
-      𝜒²(153) = <num>, p < <num>
+      χ²(153) = <num>, p < <num>
       
       -- Multicollinearity -----------------------------------------------------------
       
       v Determinant: <num>. No concern (a value near 0 signals multicollinearity).
-      v Condition number: <num> (condition index <num>). No concern (index below 10; Belsley, Kuh & Welsch, 1980).
+      v Condition number: <num> (condition index <num>). No concern (index below 10;
+      Belsley, Kuh & Welsch, 1980).
       
       -- Per-variable diagnostics ----------------------------------------------------
       
@@ -59,12 +60,13 @@
       
       v The Bartlett's test of sphericity was significant at an alpha level of <num>.
       These data are probably suitable for factor analysis.
-      𝜒²(28) = <num>, p < <num>
+      χ²(28) = <num>, p < <num>
       
       -- Multicollinearity -----------------------------------------------------------
       
       v Determinant: <num>. No concern (a value near 0 signals multicollinearity).
-      v Condition number: <num> (condition index <num>). No concern (index below 10; Belsley, Kuh & Welsch, 1980).
+      v Condition number: <num> (condition index <num>). No concern (index below 10;
+      Belsley, Kuh & Welsch, 1980).
       
       -- Per-variable diagnostics ----------------------------------------------------
       
@@ -80,21 +82,23 @@
       
       -- Multivariate normality ------------------------------------------------------
       
-      x Mardia's skewness: 𝜒²(120) = <num>, p < <num>.
+      x Mardia's skewness: χ²(120) = <num>, p < <num>.
       x Mardia's kurtosis: z = <num>, p < <num>.
       x Henze-Zirkler: HZ = <num>, p < <num>.
       These data depart from multivariate normality.
       
       -- Outliers --------------------------------------------------------------------
       
-      ! A robust (MCD) covariance could not be computed; classical Mahalanobis distances were used.
+      ! A robust (MCD) covariance could not be computed; classical Mahalanobis
+      distances were used.
       At least half the complete cases lie exactly on a lower-dimensional hyperplane
       (an "exact fit"). This is common with coarse discrete items, where many
       respondents give identical answers on an item pair; it does not mean the data
       are collinear at the correlation level.
       These distances come from a covariance the outliers themselves inflate, so the
       diagnostic is no longer high-breakdown and tends to under-flag.
-      i 71 of 810 observations were flagged as multivariate outliers (Mahalanobis distance > <num>).
+      i 71 of 810 observations were flagged as multivariate outliers (Mahalanobis
+      distance > <num>).
       
       -- Recommendations -------------------------------------------------------------
       
@@ -121,12 +125,14 @@
       v The overall KMO value for your data is marvellous (Overall KMO = <num>).
       These data are probably suitable for factor analysis.
       
-      ! Bartlett's test of sphericity was not computed; no sample size (N) was supplied.
+      ! Bartlett's test of sphericity was not computed; no sample size (N) was
+      supplied.
       
       -- Multicollinearity -----------------------------------------------------------
       
       v Determinant: <num>. No concern (a value near 0 signals multicollinearity).
-      v Condition number: <num> (condition index <num>). No concern (index below 10; Belsley, Kuh & Welsch, 1980).
+      v Condition number: <num> (condition index <num>). No concern (index below 10;
+      Belsley, Kuh & Welsch, 1980).
       
       -- Per-variable diagnostics ----------------------------------------------------
       
@@ -155,4 +161,57 @@
       v The data appear suitable for factor analysis.
       i Per-item variance, missing-data, category, normality, and outlier diagnostics
         require raw data; only a correlation matrix was supplied.
+
+# the report tracks a narrow console
+
+    Code
+      print(scr_cor)
+    Output
+      
+      -- Sampling adequacy and sphericity ------------------------
+      
+      v The overall KMO value for your data is marvellous
+      (Overall KMO = <num>).
+      These data are probably suitable for factor analysis.
+      
+      v The Bartlett's test of sphericity was significant at an
+      alpha level of <num>.
+      These data are probably suitable for factor analysis.
+      χ²(153) = <num>, p < <num>
+      
+      -- Multicollinearity ---------------------------------------
+      
+      v Determinant: <num>. No concern (a value near 0 signals
+      multicollinearity).
+      v Condition number: <num> (condition index <num>). No
+      concern (index below 10; Belsley, Kuh & Welsch, 1980).
+      
+      -- Per-variable diagnostics --------------------------------
+      
+            MSA   SMC
+      V1 <num> <num>
+      V2 <num> <num>
+      V3 <num> <num>
+      V4 <num> <num>
+      V5 <num> <num>
+      V6 <num> <num>
+      V7 <num> <num>
+      V8 <num> <num>
+      V9 <num> <num>
+      V10 <num> <num>
+      V11 <num> <num>
+      V12 <num> <num>
+      V13 <num> <num>
+      V14 <num> <num>
+      V15 <num> <num>
+      V16 <num> <num>
+      V17 <num> <num>
+      V18 <num> <num>
+      
+      -- Recommendations -----------------------------------------
+      
+      v The data appear suitable for factor analysis.
+      i Per-item variance, missing-data, category, normality, and
+        outlier diagnostics require raw data; only a correlation
+        matrix was supplied.
 

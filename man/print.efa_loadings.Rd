@@ -5,7 +5,9 @@
 \alias{format.efa_loadings}
 \title{Print a loading matrix}
 \usage{
-\method{print}{efa_loadings}(
+\method{print}{efa_loadings}(x, ...)
+
+\method{format}{efa_loadings}(
   x,
   cutoff = 0.3,
   digits = 3,
@@ -19,11 +21,11 @@
   legend = FALSE,
   ...
 )
-
-\method{format}{efa_loadings}(x, ...)
 }
 \arguments{
 \item{x}{a loading matrix of class \code{efa_loadings} (or the legacy \code{LOADINGS}).}
+
+\item{...}{additional arguments passed to print or format}
 
 \item{cutoff}{numeric. The value at or above which loadings are emphasized;
 default is .3.}
@@ -63,8 +65,12 @@ Default is \code{FALSE} for standalone loading matrices. The legend is only prin
 when the styling it describes is actually rendered (\code{color = TRUE} and a
 colour-capable console); in plain output it is omitted and this argument has
 no effect.}
-
-\item{...}{additional arguments passed to print or format}
+}
+\value{
+\code{print()} returns its argument \code{x} invisibly; it is
+\code{cat(format(x, ...), sep = "\\n")} followed by a blank line for console
+spacing. \code{format()} returns a character vector with the table lines (styled
+to the active console theme; plain when colours are disabled).
 }
 \description{
 Print a loading matrix
@@ -86,5 +92,8 @@ named \code{h2} vector is used in the supplied order.
 EFAtools_PAF <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
                         estimator = "PAF", rotation = "promax")
 EFAtools_PAF
+
+# format() returns the same lines as a character vector:
+writeLines(format(EFAtools_PAF$rot_loadings))
 
 }
