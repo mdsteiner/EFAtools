@@ -45,6 +45,7 @@ writeLines(format(rel))
 }
 \seealso{
 Other reliability coefficients:
-\code{\link[=efa_reliability]{efa_reliability()}}
+\code{\link[=efa_reliability]{efa_reliability()}},
+\code{\link[=efa_schmid_leiman]{efa_schmid_leiman()}}
 }
 \concept{reliability coefficients}

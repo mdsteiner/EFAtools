@@ -336,6 +336,7 @@
   if (!is.null(factor_corres)) {
     checkmate::assert_matrix(factor_corres, nrows = nrow(s_load),
                              ncols = ncol(s_load))
+    .rel_check_map(s_load, factor_corres)
     return(factor_corres)
   }
 
@@ -352,6 +353,54 @@
     map[i, which.max(abs(s_load[i, ]))] <- 1
   }
   map
+
+}
+
+# Sanity-check a user-supplied item-to-factor map against the loadings it will be
+# applied to. The map's columns are matched to the group factors by position, so a map
+# written in a different factor order than the solution yields well-formed but
+# meaningless subscale coefficients rather than an error. Flag each column whose
+# assigned items barely load on it (mean |loading| below `min_load`) while the same
+# items do load on some other column -- the signature of a permuted or mistranscribed
+# map. Requiring a better home for the items keeps the check to that signature: a map
+# whose items load on nothing is a weak solution, not a misaligned map, and is left
+# alone. `min_load` is deliberately far below the salience conventions used elsewhere
+# in the package (`salience_threshold`, .3 by default): a deliberate map may well
+# disagree with the loadings, so only assignments that are essentially unsupported are
+# flagged. Silent by construction for a map derived by .rel_map(): there each item is
+# assigned to its own largest |loading|, so a column's assigned mean can never fall
+# below another column's mean for those items. `arg` names the user-facing argument the
+# map came from, so the message points at the right one for each front-end. A map that
+# does not conform to the loadings is left to the caller, which validates the dimensions.
+.rel_check_map <- function(s_load, map, min_load = 0.1, arg = "factor_map") {
+
+  s_load <- abs(as.matrix(s_load))
+  map <- as.matrix(map)
+  if (!identical(dim(map), dim(s_load))) return(invisible(NULL))
+  assigned <- map == 1
+
+  labs <- colnames(s_load)
+  if (is.null(labs)) labs <- as.character(seq_len(ncol(s_load)))
+
+  implausible <- vapply(seq_len(ncol(assigned)), function(j) {
+    idx <- which(assigned[, j])
+    # An empty column carries no items to judge; the core reports it separately.
+    if (length(idx) == 0L) return(FALSE)
+    own <- mean(s_load[idx, j])
+    others <- colMeans(s_load[idx, -j, drop = FALSE])
+    isTRUE(own < min_load) && any(others > min_load, na.rm = TRUE)
+  }, logical(1))
+
+  if (any(implausible)) {
+    bad <- labs[implausible]
+    cli::cli_warn(
+      c("{cli::qty(bad)}The items assigned to {.arg {arg}} column{?s} {.val {bad}} hardly load on {?that/those} group factor{?s}, but do load on another one.",
+        "i" = "The columns of {.arg {arg}} are matched to the group factors by position; check that they are in the column order of the solution."),
+      class = "efa_reliability_implausible_map"
+    )
+  }
+
+  invisible(NULL)
 
 }
 
@@ -594,8 +643,9 @@
 # almost always have (Flora, 2020, Adv. Methods Pract. Psychol. Sci.; Mansolf &
 # Reise, 2016, Multivariate Behav. Res.) -- the spec carries a zero general factor
 # and the oblique pattern as the group loadings. The core then returns omega total
-# (1' L Phi L' 1 / 1' R 1) and per-factor congeneric omega/H, with omega
-# hierarchical / ECV / PUC 0.
+# as (1'R1 - sum(u2)) / 1'R1 with u2 = 1 - diag(L Phi L'), and per-factor congeneric
+# omega/H, with omega hierarchical / ECV / PUC 0. That total equals the model-implied
+# 1' L Phi L' 1 / 1'R1 only under exact fit; the two diverge as misfit grows.
 .rel_adapt_efa <- function(model, factor_corres = NULL, type = "psych",
                            cormat = NULL, fac_names = NULL) {
 
@@ -657,6 +707,14 @@
 
   if (is.null(factor_corres)) {
     factor_corres <- abs(s_load) > .Machine$double.eps * 100
+  } else {
+    # This adapter does not route through .rel_map(), so a supplied map gets the same
+    # dimension check and plausibility check here. Without the dimension check a map
+    # with too few rows is recycled against the group loadings and returns coefficients
+    # above 1 rather than an error.
+    checkmate::assert_matrix(factor_corres, nrows = nrow(s_load),
+                             ncols = ncol(s_load))
+    .rel_check_map(s_load, factor_corres)
   }
 
   if (is.null(cormat)) {

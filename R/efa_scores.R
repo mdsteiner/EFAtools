@@ -201,6 +201,24 @@ efa_scores <- function(x, f, Phi = NULL, rho = NULL,
     )
   }
 
+  # Anderson-Rubin scores are defined for orthogonal factors: the weights force the
+  # score intercorrelations to the identity, so for a model whose factors are
+  # correlated they report uncorrelated scores for factors that are not. Warn when Phi
+  # is not diagonal up to rounding -- an orthogonal or unrotated solution carries no
+  # Phi and resolves to an exact identity above, so this fires only on a genuinely
+  # oblique solution (or a hand-supplied Phi).
+  if (method == "Anderson") {
+    off <- abs(Phi[upper.tri(Phi)])
+    if (any(off > sqrt(.Machine$double.eps), na.rm = TRUE)) {
+      cli::cli_warn(
+        c("Anderson-Rubin scores are defined for orthogonal factors, but the factors of {.arg f} are correlated (largest {.code |r|} = {round(max(off, na.rm = TRUE), 3)}).",
+          "i" = "The scores are orthogonalised regardless, so they are uncorrelated even though the factors of the model are not.",
+          "i" = "Use {.code method = \"tenBerge\"} to preserve the factor intercorrelations."),
+        class = "efa_scores_anderson_oblique"
+      )
+    }
+  }
+
   # Align raw `x` to the model variables. The weight matrix `W` (and the structure
   # products it is built from) combines variables by column position, but `W`, like
   # `Lambda`, carries the fitted model's variable names in the model's order. A raw

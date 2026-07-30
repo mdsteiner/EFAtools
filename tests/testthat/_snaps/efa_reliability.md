@@ -44,6 +44,9 @@
       
       Total variance from the correlation matrix.
       
+      Correlated-factors solution: with no general factor, each factor's subscale
+      omega equals its total omega.
+      
       -- Reliability coefficients ----------------------------------------------------
       
            tot   sub  alpha    H

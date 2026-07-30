@@ -57,7 +57,11 @@
 #'   multiple-group fit. Its length must match the number of groups.
 #' @param factor_map matrix. A logical or 0/1 matrix indicating which variable
 #'   corresponds to which group factor, with the same dimensions as the group
-#'   loading matrix (cross-loadings are allowed). If `NULL` (default), each
+#'   loading matrix (cross-loadings are allowed). Its columns are matched to the
+#'   group factors by position, so a map in a different factor order than the
+#'   solution yields well-formed but meaningless subscale coefficients; a map whose
+#'   assigned items hardly load on the factor they are assigned to while loading on
+#'   another one is warned about. If `NULL` (default), each
 #'   variable is assigned to the group factor on which it loads most strongly. Not
 #'   used for `lavaan` input.
 #' @param variance character. The total-variance denominator for the coefficients:
@@ -94,7 +98,8 @@
 #'   \item{value}{the coefficient value.}
 #'   Structurally undefined cells (for example ECV and PUC on a group factor) are
 #'   omitted. The object carries a `settings` attribute (the total-variance
-#'   convention used) and a `kind` attribute tagging each coefficient as a
+#'   convention used, and whether the solution has a general factor) and a
+#'   `kind` attribute tagging each coefficient as a
 #'   reliability coefficient or a common-variance index, and has a [print()]
 #'   method.
 #'
@@ -199,6 +204,8 @@ efa_reliability <- function(model = NULL,
   # shared reliability core (add_rel = TRUE so standardized alpha is available;
   # the registry drops the core's CR/AVE columns). lavaan input is scored per
   # group with the model-implied composite variance.
+  no_general <- FALSE
+
   if (inherits(model, "lavaan")) {
 
     .require_lavaan()
@@ -325,7 +332,8 @@ efa_reliability <- function(model = NULL,
 
   }
 
-  res <- .reliability_result(x, settings = list(variance = used_variance))
+  res <- .reliability_result(x, settings = list(variance = used_variance,
+                                                no_general = no_general))
 
   if (!is.null(coefficients)) {
     # Note any requested coefficient this solution does not define (e.g. omega

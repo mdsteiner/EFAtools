@@ -65,6 +65,7 @@
 #' SAS. Behavior Research Methods, 37 , 48–58. doi:10.3758/BF03206397
 #'
 #' @family factor rotation
+#' @family reliability coefficients
 #'
 #' @export
 #'
@@ -89,8 +90,6 @@
 #'
 #' ## For demonstration, take pattern matrix and phi from an EFA output
 #' ## This gives the same solution as the first example
-#' EFA_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
-#'                    estimator = "PAF", rotation = "promax")
 #' SL_flex <- efa_schmid_leiman(EFA_mod$rot_loadings, Phi = EFA_mod$Phi, estimator = "PAF",
 #'                              estimate_control = estimate_control(type = "EFAtools"))
 #'

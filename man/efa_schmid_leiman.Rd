@@ -108,8 +108,6 @@ SL_psych <- efa_schmid_leiman(fa_mod, estimator = "PAF",
 
 ## For demonstration, take pattern matrix and phi from an EFA output
 ## This gives the same solution as the first example
-EFA_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
-                   estimator = "PAF", rotation = "promax")
 SL_flex <- efa_schmid_leiman(EFA_mod$rot_loadings, Phi = EFA_mod$Phi, estimator = "PAF",
                              estimate_control = estimate_control(type = "EFAtools"))
 
@@ -133,5 +131,10 @@ SL_lav <- efa_schmid_leiman(fit, g_name = "g")
 \seealso{
 Other factor rotation:
 \code{\link[=efa_procrustes]{efa_procrustes()}}
+
+Other reliability coefficients:
+\code{\link[=efa_reliability]{efa_reliability()}},
+\code{\link[=print.efa_reliability]{print.efa_reliability()}}
 }
 \concept{factor rotation}
+\concept{reliability coefficients}

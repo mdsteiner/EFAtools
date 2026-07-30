@@ -172,12 +172,8 @@ can be reproduced.
 \details{
 \subsection{What this function does}{
 
-This function calculates McDonald's omegas (McDonald, 1978, 1985, 1999),
-the H index (Hancock & Mueller, 2001), the explained common variance (ECV;
-Rodriguez et al., 2016a, 2016b), and the percent of uncontaminated
-correlations (PUC; Bonifay et al., 2015; Reise et al., 2013).
-
-All types of omegas (total, hierarchical, and subscale) are calculated for
+All types of McDonald's omegas (total, hierarchical, and subscale; McDonald,
+1978, 1985, 1999) are calculated for
 the general factor as well as for the subscales / group factors (see, e.g.,
 Gignac, 2014; Rodriguez et al., 2016a, 2016b). Omegas refer to the correlation
 between a factor and a unit-weighted composite score and thus the
@@ -262,13 +258,9 @@ variable-to-factor correspondences are found by taking the highest
 group factor loading for each variable as the relevant group factor loading.
 To do this, \code{factor_corres} must be left \code{NULL}.
 
-The \code{variance} argument controls how the total variances (for the whole scale
-and the subscale composites) are computed. \code{"correlation"} (default) finds them
-from the correlation matrix -- the observed-variance form of omega, which
-reproduces \code{\link[psych:omega]{psych::omega()}}. \code{"sums_load"} instead uses the model-implied
-variances from the squared sums of the general and group factor loadings and the
-sum of the uniquenesses, so the whole-scale omega total is McDonald's
-model-implied total and partitions exactly into omega hierarchical plus omega
+\code{variance = "correlation"} gives the observed-variance form of omega, which
+reproduces \code{\link[psych:omega]{psych::omega()}}; \code{"sums_load"} gives McDonald's model-implied
+total, which partitions exactly into omega hierarchical plus omega
 subscale. The two settings agree on the whole-scale omega total and omega
 hierarchical up to model misfit, and differ mainly in the whole-scale omega
 subscale, which counts all group-factor variance under \code{"sums_load"} but only the
@@ -314,15 +306,8 @@ efa_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
                    estimator = "PAF", rotation = "promax")
 sl_mod <- efa_schmid_leiman(efa_mod, estimator = "PAF")
 
-# Two examples how to specify the indicator-to-factor correspondences:
-
-# Based on a specific salience threshold for the loadings (here: .20):
+# Indicator-to-factor correspondences from a salience threshold (here: .20):
 factor_corres_1 <- sl_mod$sl[, c("F1", "F2", "F3")] >= .2
-
-# Or more flexibly (could also be TRUE and FALSE instead of 0 and 1):
-factor_corres_2 <- matrix(c(rep(0, 12), rep(1, 6), rep(0, 6), rep(1, 6),
-                         rep(0, 6), rep(1, 6), rep(0, 12)), ncol = 3,
-                         byrow = FALSE)
 
 OMEGA(sl_mod, type = "EFAtools", factor_corres = factor_corres_1)
 
@@ -339,10 +324,6 @@ OMEGA(schmid_mod, type = "psych", cormat = test_models$baseline$cormat)
 ## or bifactor solution found with another program)
 ## As an example, we extract the elements from an SL output here. This gives
 ## the same results as in the second example above.
-
-efa_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
-                   estimator = "PAF", rotation = "promax")
-sl_mod <- efa_schmid_leiman(efa_mod, estimator = "PAF")
 
 factor_corres <- matrix(c(rep(0, 12), rep(1, 6), rep(0, 6), rep(1, 6),
                         rep(0, 6), rep(1, 6), rep(0, 12)), ncol = 3,

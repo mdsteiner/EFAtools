@@ -6,10 +6,20 @@ efa_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
 sl_mod <- efa_schmid_leiman(efa_mod, estimate_control = estimate_control(type = "EFAtools"), estimator = "PAF")
 fc <- sl_mod$sl[, c("F1", "F2", "F3")] >= .2
 
+# The map efa_reliability derives when factor_map is omitted: each item on its highest
+# |group loading|.
+auto <- local({
+  s <- sl_mod$sl[, c("F1", "F2", "F3")]
+  m <- matrix(0, nrow(s), ncol(s))
+  for (i in seq_len(nrow(s))) m[i, which.max(abs(s[i, ]))] <- 1
+  m
+})
+
 test_that("efa_reliability wires the SL adapter, core, and result builder together", {
   spec <- .rel_adapt_SL(sl_mod, factor_corres = fc, type = "EFAtools")
   core <- .reliability_core(spec, "correlation", add_ind = TRUE, add_rel = TRUE)
-  expected <- .reliability_result(core, settings = list(variance = "correlation"))
+  expected <- .reliability_result(core, settings = list(variance = "correlation",
+                                                        no_general = FALSE))
 
   res <- efa_reliability(sl_mod, factor_map = fc)
   expect_s3_class(res, "efa_reliability")
@@ -118,10 +128,43 @@ test_that("a correlated-factors manual input needs a correlation matrix (sums_lo
 test_that("omitting factor_map auto-maps each item to its highest-loading factor", {
   # No factor_map: each item is assigned to its highest |group loading|, so the
   # result matches supplying that same 0/1 assignment explicitly.
-  s <- sl_mod$sl[, c("F1", "F2", "F3")]
-  auto <- matrix(0, nrow(s), ncol(s))
-  for (i in seq_len(nrow(s))) auto[i, which.max(abs(s[i, ]))] <- 1
   expect_equal(efa_reliability(sl_mod), efa_reliability(sl_mod, factor_map = auto))
+})
+
+test_that("a factor_map whose columns are in the wrong order is flagged", {
+  # The columns of factor_map are matched to the group factors by position, so a
+  # permuted map assigns each factor the items of another one -- well-formed, but
+  # meaningless. The items then hardly load on the factor they are mapped to while
+  # loading substantially on another, which is what the check picks up.
+  expect_warning(efa_reliability(sl_mod, factor_map = auto[, c(2, 3, 1)]),
+                 class = "efa_reliability_implausible_map")
+  # A sound map -- explicit or auto-derived -- stays silent.
+  expect_no_warning(efa_reliability(sl_mod, factor_map = fc))
+  expect_no_warning(efa_reliability(sl_mod, factor_map = auto))
+  expect_no_warning(efa_reliability(sl_mod))
+
+  # The check belongs to the efa_reliability front-end; OMEGA()'s behaviour is
+  # unchanged (it derives and validates its map in its own worker).
+  expect_no_warning(OMEGA(sl_mod, type = "EFAtools",
+                          factor_corres = auto[, c(2, 3, 1)]),
+                    class = "efa_reliability_implausible_map")
+})
+
+test_that("a bifactor loading matrix validates and checks a supplied factor_map", {
+  L <- cbind(g = rep(0.5, 6),
+             F1 = c(rep(0.5, 3), rep(0, 3)),
+             F2 = c(rep(0, 3), rep(0.5, 3)))
+  rownames(L) <- paste0("V", 1:6)
+  map <- cbind(c(rep(1, 3), rep(0, 3)), c(rep(0, 3), rep(1, 3)))
+
+  expect_no_warning(efa_reliability(L, factor_map = map))
+  # Swapping the columns points each factor at the other one's items.
+  expect_warning(efa_reliability(L, factor_map = map[, c(2, 1)]),
+                 class = "efa_reliability_implausible_map")
+  # A map that does not conform to the group loadings is an error, not coefficients
+  # above 1 from a recycled map.
+  expect_error(efa_reliability(L, factor_map = map[1:3, , drop = FALSE]))
+  expect_error(efa_reliability(L, factor_map = cbind(map, 0)))
 })
 
 test_that("an oblique EFA is scored as a correlated-factors model (no general factor)", {
@@ -153,7 +196,8 @@ test_that("sums_load on an oblique EFA warns and falls back to correlation", {
   expect_no_warning(efa_reliability(efa_mod))
   expect_warning(res <- efa_reliability(efa_mod, variance = "sums_load"),
                  class = "efa_reliability_variance_override")
-  expect_identical(attr(res, "settings"), list(variance = "correlation"))
+  expect_identical(attr(res, "settings"), list(variance = "correlation",
+                                               no_general = TRUE))
   # The fallback yields the same numbers as an explicit correlation request.
   expect_equal(res$value, suppressWarnings(efa_reliability(efa_mod))$value)
 })
@@ -193,7 +237,8 @@ test_that("a lavaan bifactor fit matches OMEGA and yields one block", {
   om <- OMEGA(fit, g_name = "g")
 
   expect_true(all(is.na(res$group)))       # single ungrouped fit
-  expect_identical(attr(res, "settings"), list(variance = "sums_load"))
+  expect_identical(attr(res, "settings"), list(variance = "sums_load",
+                                               no_general = FALSE))
   get <- function(coef, fac) res$value[res$coefficient == coef & res$factor == fac]
   expect_equal(get("omega_total", "g"), unname(om["g", "tot"]))
   expect_equal(get("H", "F1"), unname(om["F1", "H"]))
@@ -308,8 +353,20 @@ test_that("print output is stable", {
                   transform = scrub_num)
 
   # oblique EFA (no general factor): the g row omits omega subscale and H, which print
-  # blank rather than as "NA".
+  # blank rather than as "NA", and the context line explains why tot equals sub.
   expect_snapshot(print(efa_reliability(efa_mod)), transform = scrub_num)
 })
 
-rm(efa_mod, sl_mod, fc)
+test_that("the correlated-factors context line follows the printed columns", {
+  # It explains why the tot and sub columns agree, so it is shown only when both are
+  # printed -- not for a selection that drops omega subscale, nor for a solution that
+  # has a general factor.
+  expect_match(format(efa_reliability(efa_mod)), "Correlated-factors", all = FALSE)
+  sub_dropped <- suppressMessages(
+    efa_reliability(efa_mod, coefficients = c("omega_total", "alpha")))
+  expect_false(any(grepl("Correlated-factors", format(sub_dropped))))
+  expect_false(any(grepl("Correlated-factors",
+                         format(efa_reliability(sl_mod, factor_map = fc)))))
+})
+
+rm(efa_mod, sl_mod, fc, auto)

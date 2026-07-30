@@ -74,6 +74,16 @@ test_that("classed conditions fire as expected", {
   # Anderson-Rubin is undefined for a single factor.
   expect_error(efa_scores(GRiPS_raw, f = efa_grips, method = "Anderson"),
                class = "efa_scores_anderson_single")
+
+  # Anderson-Rubin forces uncorrelated scores, so it is inappropriate for an oblique
+  # solution: warn there, but not for an orthogonal one (whose Phi is the identity).
+  expect_warning(
+    suppressMessages(efa_scores(test_models$baseline$cormat, f = efa_ob,
+                                method = "Anderson")),
+    class = "efa_scores_anderson_oblique")
+  expect_no_warning(
+    suppressMessages(efa_scores(test_models$baseline$cormat, f = efa_or,
+                                method = "Anderson")))
 })
 
 test_that("loadings with missing or duplicate factor names are relabelled F1..Fm", {

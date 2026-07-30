@@ -42,6 +42,16 @@
 
 * The response combinations that a strongly correlated pair makes all but impossible are now computed from the complementary tail of the normal distribution, which keeps them accurate down to the smallest representable probability instead of losing them to rounding. When such a combination is nevertheless observed (a handful of careless or extreme responses is enough) this both sharpens the correlation of the pair and gives it an asymptotic variance. Previously that variance came out missing, which refused `DWLS` estimation for the whole data set and withheld every robust standard error involving the pair.
 
+## Reliability and Factor Scores
+
+* `efa_reliability()` now warns when the items a `factor_map` column assigns to a group factor hardly load on it although they do load on another one.
+
+* `efa_scores(method = "Anderson")`, and `FACTOR_SCORES()` with it, now warn when the factors of the solution are correlated. Anderson-Rubin scores are defined for orthogonal factors and are orthogonalised regardless, so they were reported as uncorrelated for factors the model says are correlated.
+
+* A `factor_map` for a bifactor loading matrix is now checked against the dimensions of the group-factor loadings, as it already was for every other input. A map with too few rows was recycled against the loadings and returned coefficients above 1 instead of an error.
+
+* The `efa_reliability()` report of a correlated-factors solution now states that subscale omega equals total omega for each factor, which follows from the absence of a general factor. The two columns previously printed identical values with no explanation.
+
 # EFAtools 1.0.0
 
 ## New Interface

@@ -77,7 +77,11 @@ multiple-group fit. Its length must match the number of groups.}
 
 \item{factor_map}{matrix. A logical or 0/1 matrix indicating which variable
 corresponds to which group factor, with the same dimensions as the group
-loading matrix (cross-loadings are allowed). If \code{NULL} (default), each
+loading matrix (cross-loadings are allowed). Its columns are matched to the
+group factors by position, so a map in a different factor order than the
+solution yields well-formed but meaningless subscale coefficients; a map whose
+assigned items hardly load on the factor they are assigned to while loading on
+another one is warned about. If \code{NULL} (default), each
 variable is assigned to the group factor on which it loads most strongly. Not
 used for \code{lavaan} input.}
 
@@ -123,7 +127,8 @@ one row per computed coefficient, with columns
 \item{value}{the coefficient value.}
 Structurally undefined cells (for example ECV and PUC on a group factor) are
 omitted. The object carries a \code{settings} attribute (the total-variance
-convention used) and a \code{kind} attribute tagging each coefficient as a
+convention used, and whether the solution has a general factor) and a
+\code{kind} attribute tagging each coefficient as a
 reliability coefficient or a common-variance index, and has a \code{\link[=print]{print()}}
 method.
 }
@@ -210,6 +215,7 @@ efa_reliability(fit, g_name = "g")
 superseded function that returns these same coefficients in a wide, per-factor layout.
 
 Other reliability coefficients:
+\code{\link[=efa_schmid_leiman]{efa_schmid_leiman()}},
 \code{\link[=print.efa_reliability]{print.efa_reliability()}}
 }
 \concept{reliability coefficients}

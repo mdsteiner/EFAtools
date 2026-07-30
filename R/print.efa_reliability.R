@@ -81,6 +81,16 @@ format.efa_reliability <- function(x, digits = 3, ...) {
       cli::cli_text("Total variance from {vtext}.")
     }
 
+    # A correlated-factors solution has no general factor, so a group factor's omega
+    # hierarchical is zero and its omega total and omega subscale coincide exactly.
+    # Say so, rather than print two identical columns unexplained. Only when both
+    # columns are actually shown (a coefficients = subset may drop one).
+    if (isTRUE(settings$no_general) &&
+        all(c("omega_total", "omega_subscale") %in% x$coefficient)) {
+      cli::cli_text("")
+      cli::cli_text("Correlated-factors solution: with no general factor, each factor's subscale omega equals its total omega.")
+    }
+
     for (grp in groups) {
       sub <- x[x$group %in% grp, , drop = FALSE]
 
