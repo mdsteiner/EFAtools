@@ -287,6 +287,9 @@
 #'   structure as a random effect. Psychometrika, 80(3), 571-600.
 #'   \doi{10.1007/s11336-015-9451-3}
 #'
+#' @seealso [efa_power()], whose simulation mode draws its replicate data sets with this
+#'   function, and [efa_fit()] for analysing the simulated data.
+#'
 #' @family data simulation
 #'
 #' @export

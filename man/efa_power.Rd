@@ -294,6 +294,9 @@ meaningful index of factor similarity. \emph{Methodology, 2}(2), 57-64.
 \doi{10.1027/1614-2241.2.2.57}
 }
 \seealso{
+\code{\link[=efa_simulate]{efa_simulate()}}, which draws the replicate data sets in simulation mode, and
+\code{\link[=efa_retain]{efa_retain()}} for the retention criteria whose hit rates that mode reports.
+
 Other power analysis:
 \code{\link[=plot.efa_power]{plot.efa_power()}},
 \code{\link[=print.efa_power]{print.efa_power()}}

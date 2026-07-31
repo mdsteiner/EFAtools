@@ -120,9 +120,19 @@ which one it used.
   transformations with more than one factor.
 
 When an oblique rotation triggers the reference path without an explicit choice, `efa_group()`
-reports which group it used and leaves the requested rotation untouched:
+leaves the requested rotation untouched and reports which group it used. The call below emits
 
-```{r, message = TRUE}
+<!-- Quoted from the efa_group_oblique_reference message in R/efa_group.R; keep in sync. -->
+
+```
+Oblique rotations are aligned to a reference group, not a symmetric consensus target.
+ℹ The consensus target is undefined for oblique rotations with more than one factor.
+ℹ Group "control" is used as the reference; set `reference_group` to choose another.
+```
+
+before returning, and records the choice in the settings:
+
+```{r}
 mg_obl <- efa_group(groups, n_factors = 3, rotation = "oblimin")
 mg_obl$settings$alignment
 ```
@@ -187,13 +197,18 @@ have an interval spanning zero (salient but uncertain), or small yet reliably no
 mg_ci$diffs
 ```
 
-The factor-3 cells for `V7` and `V9` stand out. Restricting `$flags` to the flagged cells
-shows where the two notions of "different" line up:
+Nine cells clear the salience threshold for this pair, and the largest difference among them
+is 0.47 -- several times `delta`. Restricting `$flags` to the flagged cells shows which cells
+those are, and where the two notions of "different" line up:
 
 ```{r}
 flagged <- mg_ci$flags[mg_ci$flags$flagged, ]
 flagged[, c("indicator", "factor", "diff", "ci_excludes_0")]
 ```
+
+The factor-3 cells for `V7` and `V9` stand out -- the two largest differences in absolute
+value, and both with intervals that exclude zero. That is exactly the difference we built in.
+Several of the remaining flagged cells are salient without being reliably non-zero.
 
 The `"differences"` plot lays the signed differences out as a heatmap, one panel per group
 pair, outlining the cells that reach `delta`.

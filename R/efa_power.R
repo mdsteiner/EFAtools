@@ -216,6 +216,9 @@
 #' meaningful index of factor similarity. *Methodology, 2*(2), 57-64.
 #' \doi{10.1027/1614-2241.2.2.57}
 #'
+#' @seealso [efa_simulate()], which draws the replicate data sets in simulation mode, and
+#'   [efa_retain()] for the retention criteria whose hit rates that mode reports.
+#'
 #' @family power analysis
 #'
 #' @export

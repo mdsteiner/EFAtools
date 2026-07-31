@@ -133,4 +133,4 @@ reference:
   - starts_with("\\.")
 
 redirects:
-- ["articles/Replicate_SPSS_psych.html", "articles/Migrating_to_efa.html"]
+- ["articles/Replicate_SPSS_psych.html", "articles/Migrating_to_efa.html#what-the-type-presets-replicate"]

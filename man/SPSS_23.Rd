@@ -5,16 +5,16 @@
 \alias{SPSS_23}
 \title{Various outputs from SPSS (version 23) FACTOR}
 \format{
-A list of 9 containing EFA results for each of the data sets mentioned above. Each of these nine entries is a list of 4 or 8 (see details), of the following structure:
+A list of 9 containing EFA results for each of the data sets mentioned above. Each of these nine entries is a list of 4, 6, or 8 (see details), of the following structure:
 \describe{
 \item{paf_comm}{(vector) - The final communalities obtained with the FACTOR algorithm with PAF and no rotation. For details, see Grieder and Grob (2019).}
-\item{paf_load}{(matrix) - F1 to FN = unrotated factor loadings obtained with the FACTOR algorithm with PAF. Rownames are the abbreviated subtest names.}
+\item{paf_load}{(matrix) - F1 to FN = unrotated factor loadings obtained with the FACTOR algorithm with PAF. Rownames are the abbreviated subtest or item names, and generic variable labels (V1 to VN) for the simulated datasets.}
 \item{paf_iter}{(numeric) - Number of iterations needed for the principal axis factoring to converge.}
-\item{var_load}{(matrix) - F1 to FN = varimax rotated factor loadings obtained with the FACTOR algorithm with PAF. Rownames are the abbreviated subtest names.}
-\item{pro_load}{(matrix) - F1 to FN = promax rotated factor loadings obtained with the FACTOR algorithm with PAF. Rownames are the abbreviated subtest names.}
+\item{var_load}{(matrix) - F1 to FN = varimax rotated factor loadings obtained with the FACTOR algorithm with PAF. Rownames are the abbreviated subtest or item names, and generic variable labels (V1 to VN) for the simulated datasets.}
+\item{pro_load}{(matrix) - F1 to FN = promax rotated factor loadings obtained with the FACTOR algorithm with PAF. Rownames are the abbreviated subtest or item names, and generic variable labels (V1 to VN) for the simulated datasets.}
 \item{pro_phi}{(matrix) - F1 to FN = intercorrelations of the promax rotated loadings.}
 \item{sl}{(matrix) - g = General / second order factor of the Schmid-Leiman solution. F1 to FN  = First order factors of the Schmid-Leiman solution. h2 = Communalities of the Schmid-Leiman solution. This Schmid-Leiman solution was found using the SPSS Syntax provided by Wolff and Preising (2005).}
-\item{L2}{(matrix) - Second order loadings used for the Schmid-Leiman transformation. This Schmid-Leiman solution was found using the SPSS Syntax provided by Wolff and Preising (2005).}
+\item{L2}{(matrix or numeric) - Second order loadings used for the Schmid-Leiman transformation. This Schmid-Leiman solution was found using the SPSS Syntax provided by Wolff and Preising (2005).}
 }
 }
 \source{
@@ -47,6 +47,6 @@ Various outputs from SPSS (version 23) FACTOR for the IDS-2 (Grob & Hagmann-von 
 Blais, & Betz, 2002), the NEO-PI-R (Costa, & McCrae, 1992), and four simulated datasets (baseline, case_1a, case_6b, and case_11b, see \link{test_models} and \link{population_models}) used in Grieder and Steiner (2022).
 }
 \details{
-The IDS-2, the two WJIV, the DOSPERT, and the NEO-PI-R contain all the above entries, while the four simulated datasets contain only paf_load, var_load, pro_load, and pro_phi.
+The IDS-2, the two WJIV, and the DOSPERT contain all the above entries. The NEO-PI-R contains all of them except L2 and sl, while the four simulated datasets contain only paf_load, var_load, pro_load, and pro_phi.
 }
 \keyword{datasets}

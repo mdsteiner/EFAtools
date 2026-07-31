@@ -394,6 +394,9 @@ structure as a random effect. Psychometrika, 80(3), 571-600.
 \doi{10.1007/s11336-015-9451-3}
 }
 \seealso{
+\code{\link[=efa_power]{efa_power()}}, whose simulation mode draws its replicate data sets with this
+function, and \code{\link[=efa_fit]{efa_fit()}} for analysing the simulated data.
+
 Other data simulation:
 \code{\link[=print.efa_simulated]{print.efa_simulated()}}
 }
