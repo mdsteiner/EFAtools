@@ -82,6 +82,7 @@ Suggests:
     lavaan.mi,
     MASS,
     mice,
+    nFactors,
     knitr,
     rmarkdown,
     vdiffr,
