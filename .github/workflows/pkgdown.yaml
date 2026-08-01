@@ -42,7 +42,9 @@ jobs:
         shell: Rscript {0}
 
       - name: Deploy to GitHub pages 🚀
-        if: github.event_name != 'pull_request'
+        # Only master deploys. `clean: true` mirrors docs/, so a run triggered from a
+        # tag or an older branch would otherwise delete pages that only master builds.
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
         uses: JamesIves/github-pages-deploy-action@v4.5.0
         with:
           clean: true
