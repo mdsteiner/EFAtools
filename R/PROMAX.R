@@ -10,7 +10,7 @@
 
   # perform the varimax rotation
   if (varimax_type == "svd") {
-    AV <- stats::varimax(L, normalize = normalize, eps = precision)
+    AV <- .varimax_svd(L, normalize = normalize, precision = precision)
   } else if (varimax_type == "kaiser") {
     AV <- .VARIMAX_SPSS(L, normalize = normalize, precision = precision)
   }

@@ -276,13 +276,15 @@ estimate_control <- function(type = c("EFAtools", "psych", "SPSS", "none"),
 #'   `100`.
 #' @param ... Additional arguments forwarded to the rotation engine. Only the names
 #'   a rotation engine can consume are accepted: `maxit` (the maximum number of
-#'   engine iterations), and the criterion parameters `gam` (oblimin) and `delta`
-#'   (geomin); anything else is rejected as a misspelling. They are stored in
-#'   `extra_args` and passed on to the rotation engine when the control is used to
-#'   fit a model; an extra a given fit's rotation does not consume is ignored by
-#'   that fit, so one control can serve fits with different rotations. An
-#'   estimation knob (which belongs in [estimate_control()]) or one of the former
-#'   spellings `P_type` and `randomStarts` is likewise rejected here, because the
+#'   engine iterations), and the criterion parameters `gam` (oblimin; `gam = 0` is the
+#'   recommended default, and larger values increasingly reward correlated factors and
+#'   can drive the solution toward factor collapse, so inspect `Phi` before interpreting
+#'   a fit with `gam > 0`) and `delta` (geomin); anything else is rejected as a
+#'   misspelling. They are stored in `extra_args` and passed on to the rotation engine
+#'   when the control is used to fit a model; an extra a given fit's rotation does not
+#'   consume is ignored by that fit, so one control can serve fits with different
+#'   rotations. An estimation knob (which belongs in [estimate_control()]) or one of the
+#'   former spellings `P_type` and `randomStarts` is likewise rejected here, because the
 #'   fit would silently drop it.
 #'
 #' @examples

@@ -37,6 +37,36 @@
   }
 }
 
+# Warn when an oblique rotation returns near-collinear factors. A factor correlation
+# above `tol` in absolute value means two rotated factors are barely distinguishable,
+# which is the usual signature of extracting more factors than the data support (and,
+# for oblimin, of a large `gam`). The solution is still returned -- an extreme
+# correlation is a property of the fit rather than a failure of the rotation -- but it
+# should not be interpreted without inspecting the factor intercorrelations. The 0.9
+# cut-off follows the extreme-correlation diagnostic GPArotation reports from its own
+# oblique rotations (Bernaards & Jennrich, 2005).
+#
+# The reported value is TRUNCATED, not rounded: a correlation of 0.9999 must not print as
+# "1.00", which is the perfectly collinear state a rejected singular transformation would
+# have produced, and a correlation of 0.905 must not print as "0.90", which reads as
+# sitting at the cut-off rather than above it.
+.warn_extreme_phi <- function(Phi, tol = 0.9) {
+
+  if (is.null(Phi) || !is.matrix(Phi) || nrow(Phi) < 2L) return(invisible(NULL))
+
+  off <- abs(Phi[upper.tri(Phi)])
+  off <- off[is.finite(off)]
+  if (length(off) == 0L || max(off) <= tol) return(invisible(NULL))
+
+  max_r <- formatC(trunc(max(off) * 1000) / 1000, format = "f", digits = 3)
+  cli::cli_warn(
+    c("Extreme factor correlations (max |r| = {max_r}).",
+      "i" = "This usually indicates factor over-extraction; inspect {.field Phi}."),
+    class = "efa_rotation_extreme_phi"
+  )
+  invisible(NULL)
+}
+
 # Read an overridable criterion parameter (the geomin `delta`, the oblimin `gam`) from a
 # rotation engine's `...` by EXACT name, falling back to `default`. Looking the value up by
 # exact name -- rather than declaring the parameter as a named formal before `...` -- keeps
@@ -312,7 +342,7 @@
     if (ncol(L) < 2) return(.rotate_single_factor(L, settings, oblique = FALSE))
 
     AV <- if (resolved$varimax_type == "svd") {
-      stats::varimax(L, normalize = resolved$normalize, eps = precision)
+      .varimax_svd(L, normalize = resolved$normalize, precision = precision)
     } else {
       .VARIMAX_SPSS(L, normalize = resolved$normalize, precision = precision)
     }
@@ -339,6 +369,7 @@
     out <- .rotate_promax(L, normalize = resolved$normalize, P_type = resolved$P_type,
                           precision = precision, order_type = resolved$order_type,
                           varimax_type = resolved$varimax_type, k = resolved$k)
+    .warn_extreme_phi(out$Phi)
     return(c(out, list(settings = settings)))
 
   }
@@ -399,6 +430,7 @@
                                                            AV$all_converged, randomStarts)
     out <- .reflect_and_order(AV$loadings, Phi = AV$Phi, rotmat = AV$Th,
                               L_unrot = L, order_type = resolved$order_type)
+    .warn_extreme_phi(out$Phi)
     return(c(out, list(settings = settings)))
 
   }

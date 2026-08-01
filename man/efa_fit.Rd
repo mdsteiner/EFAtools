@@ -199,9 +199,11 @@ of the generator.}
 \item{...}{Additional arguments forwarded to the rotation engine. Only the arguments the
 selected \code{rotation} consumes are accepted: \code{maxit} (the maximum number of engine
 iterations) for the GPArotation-style rotations, plus the selected criterion's parameter
-(\code{gam} for "oblimin", \code{delta} for "geominT" and "geominQ"). Anything else -- a misspelled
-name, another criterion's parameter, or any extra with "varimax", "promax", or "none",
-which consume no extras -- is an error rather than a setting that is silently ignored.
+(\code{gam} for "oblimin", where \code{gam = 0} is the recommended default and larger values can
+drive the solution toward factor collapse; \code{delta} for "geominT" and "geominQ").
+Anything else -- a misspelled name, another criterion's parameter, or any extra with
+"varimax", "promax", or "none", which consume no extras -- is an error rather than a
+setting that is silently ignored.
 The accepted arguments are merged with, and take precedence over, the extra arguments
 stored in \code{rotate_control()}. An estimation or rotation tuning knob (such as \code{type},
 \code{max_iter}, or \code{k}) is likewise \emph{not} accepted here: it belongs to \code{\link[=estimate_control]{estimate_control()}}
@@ -410,7 +412,9 @@ Oblique rotations:
 (controlled by \code{k} and \code{p_type}) to form a target that is then fitted obliquely. It is
 the common, inexpensive oblique default.
 \item \strong{oblimin} is a flexible oblique family controlled by \code{gam} (default 0); a good
-general-purpose criterion.
+general-purpose criterion. \code{gam = 0} (quartimin) is the recommended setting: larger
+values increasingly reward correlated factors and can drive the solution toward
+factor collapse, so inspect \code{Phi} before interpreting a fit with \code{gam > 0}.
 \item \strong{quartimin} is oblimin pinned at \code{gam = 0}; a robust default oblique criterion.
 \item \strong{simplimax} drives the \code{k} smallest loadings toward zero. Its criterion is only
 piecewise smooth, so it is the most prone to local minima and relies on several

@@ -183,6 +183,93 @@ test_that("errors etc. are thrown correctly", {
                class = "efa_unknown_rotation")
 })
 
+test_that("a singular oblique transformation is rejected rather than pseudo-inverted", {
+  # The oblique manifold evaluates a candidate transformation T through its inverse, so a
+  # rank-deficient candidate has to be rejected: substituting an approximate
+  # (pseudo-inverse) solution returns something that is not a rotation at all, with a
+  # rank-deficient Phi and pattern coefficients many orders of magnitude too large. The
+  # oblique Procrustes entry exposes the same checked inverse directly through its T_init
+  # nonsingularity check, which is the deterministic way to exercise the guard. (The
+  # rejection is raised by the compiled entry, so it carries no efa_* class.)
+  set.seed(1)
+  A <- matrix(stats::rnorm(12), 6, 2)
+  B <- matrix(stats::rnorm(12), 6, 2)
+
+  # rank 1: column normalization maps both columns to (1, 0)
+  expect_error(.oblique_procrustes(A, B, T_init = cbind(c(1, 0), c(2, 0))),
+               class = "Rcpp::exception")
+  expect_type(.oblique_procrustes(A, B, T_init = diag(2)), "list")
+})
+
+test_that("oblimin at a degenerate gam returns a valid rotation and reports the collapse", {
+  # gam > 0 increasingly rewards correlated factors, and by gam = 1 the oblimin solution
+  # on this fixture collapses toward a single factor: the transformation goes singular.
+  # Rejecting the singular candidate keeps the returned solution a genuine rotation --
+  # Phi positive definite with off-diagonals strictly inside (-1, 1) -- instead of the
+  # pseudo-inverse artefact (Phi off-diagonals of exactly 1, pattern coefficients of order
+  # 1e16). The solution is still degenerate, so it must not be returned silently.
+  set.seed(42)
+  res <- suppressWarnings(.rotate_model(unrot, rotation = "oblimin", type = "EFAtools",
+                                        gam = 1))
+  Phi <- res$Phi
+
+  expect_true(all(is.finite(unclass(res$rot_loadings))))
+  expect_lt(max(abs(unclass(res$rot_loadings))), 1e3)
+  expect_lt(max(abs(Phi[upper.tri(Phi)])), 1)
+  expect_gt(min(eigen(Phi, symmetric = TRUE, only.values = TRUE)$values), 0)
+
+  set.seed(42)
+  expect_warning(
+    withCallingHandlers(
+      .rotate_model(unrot, rotation = "oblimin", type = "EFAtools", gam = 1),
+      efa_rotation_no_convergence = function(w) invokeRestart("muffleWarning")),
+    class = "efa_rotation_extreme_phi"
+  )
+})
+
+test_that("an oblique rotation warns when the factors are near-collinear", {
+  # A factor correlation above .9 in absolute value means two rotated factors are barely
+  # distinguishable, which is the usual signature of extracting more factors than the data
+  # support. The fit is still returned -- an extreme correlation is a property of the
+  # solution, not a failure of the rotation -- so only the interpretation is flagged.
+  expect_warning(.warn_extreme_phi(matrix(c(1, -.95, -.95, 1), 2, 2)),
+                 class = "efa_rotation_extreme_phi")
+  expect_silent(.warn_extreme_phi(matrix(c(1, .6, .6, 1), 2, 2)))
+
+  # the unit diagonal never triggers the check, and a single-factor solution carries no
+  # factor correlations at all
+  expect_silent(.warn_extreme_phi(matrix(1, 1, 1)))
+  expect_silent(.warn_extreme_phi(NULL))
+
+  # The reported correlation is truncated, not rounded. A near-collapse must not print as
+  # "1.000" -- that is the perfectly collinear Phi a rejected singular transformation would
+  # have produced, and reporting it would undo the distinction. A value just above the
+  # cut-off must likewise not print as "0.900", which reads as sitting at the cut-off.
+  # (The condition is identified by class; only the number it carries is read back.)
+  reported <- function(r) {
+    w <- tryCatch(.warn_extreme_phi(matrix(c(1, r, r, 1), 2, 2)),
+                  efa_rotation_extreme_phi = function(w) conditionMessage(w))
+    sub(".*max \\|r\\| = ([0-9.]+).*", "\\1", w)
+  }
+  expect_equal(reported(0.9999846784), "0.999")
+  expect_equal(reported(0.905), "0.905")
+
+  # a well-conditioned oblique fit is not flagged. Asserted on this class alone rather
+  # than with expect_silent(): the multistart rotation's own convergence flag is
+  # BLAS-sensitive, and that warning is not what this test is about.
+  set.seed(42)
+  expect_no_warning(.rotate_model(unrot, rotation = "oblimin", type = "EFAtools"),
+                    class = "efa_rotation_extreme_phi")
+
+  # the check sits on both oblique return paths: promax finalizes its own solution and is
+  # flagged the same way when its two factors are all but the same factor
+  L <- cbind(c(.80, .75, .70, .65, .60, .55),
+             c(.78, .74, .69, .66, .58, .56))
+  expect_warning(.rotate_model(list(unrot_loadings = L), rotation = "promax",
+                               type = "EFAtools"),
+                 class = "efa_rotation_extreme_phi")
+})
+
 test_that("order_type orders oblique factors by the requested key", {
   # "eigen" orders by the reported SS loadings (the factor-intercorrelation-weighted
   # sum of squares diag(Phi L'L)); "ss_factors" orders by the unweighted pattern sum

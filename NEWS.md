@@ -78,6 +78,10 @@
 
 * The `efa_reliability()` report of a correlated-factors solution now states that subscale omega equals total omega for each factor, which follows from the absence of a general factor. The two columns previously printed identical values with no explanation.
 
+## Rotation
+
+* Every oblique rotation fitted by `efa_fit()` now warns when two factors correlate above .9 in absolute value, which usually indicates that more factors were extracted than the data support. The solution is still returned; only its interpretation is flagged.
+
 # EFAtools 1.0.0
 
 ## New Interface

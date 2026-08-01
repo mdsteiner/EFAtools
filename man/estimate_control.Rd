@@ -93,13 +93,15 @@ of at least 0, where \code{0} runs the rotation from its warm start only; defaul
 
 \item{...}{Additional arguments forwarded to the rotation engine. Only the names
 a rotation engine can consume are accepted: \code{maxit} (the maximum number of
-engine iterations), and the criterion parameters \code{gam} (oblimin) and \code{delta}
-(geomin); anything else is rejected as a misspelling. They are stored in
-\code{extra_args} and passed on to the rotation engine when the control is used to
-fit a model; an extra a given fit's rotation does not consume is ignored by
-that fit, so one control can serve fits with different rotations. An
-estimation knob (which belongs in \code{\link[=estimate_control]{estimate_control()}}) or one of the former
-spellings \code{P_type} and \code{randomStarts} is likewise rejected here, because the
+engine iterations), and the criterion parameters \code{gam} (oblimin; \code{gam = 0} is the
+recommended default, and larger values increasingly reward correlated factors and
+can drive the solution toward factor collapse, so inspect \code{Phi} before interpreting
+a fit with \code{gam > 0}) and \code{delta} (geomin); anything else is rejected as a
+misspelling. They are stored in \code{extra_args} and passed on to the rotation engine
+when the control is used to fit a model; an extra a given fit's rotation does not
+consume is ignored by that fit, so one control can serve fits with different
+rotations. An estimation knob (which belongs in \code{\link[=estimate_control]{estimate_control()}}) or one of the
+former spellings \code{P_type} and \code{randomStarts} is likewise rejected here, because the
 fit would silently drop it.}
 }
 \value{

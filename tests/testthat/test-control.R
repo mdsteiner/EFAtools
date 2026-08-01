@@ -95,9 +95,12 @@ test_that("efa_fit rejects a dot argument the selected rotation does not consume
     efa_fit(cm, n_factors = 3, N = 500, rotation = "promax", maxit = 100),
     class = "efa_unused_dots")
 
-  # the consumable extras still reach the engine: oblimin's gam changes the criterion
+  # the consumable extras still reach the engine: oblimin's gam changes the criterion.
+  # gam = 0.5 rewards correlated factors strongly enough to trip the extreme-Phi check on
+  # this fixture, which is beside the point here -- only that the extra reaches the engine.
   fit_default <- efa_fit(cm, n_factors = 3, N = 500, rotation = "oblimin")
-  fit_gam <- efa_fit(cm, n_factors = 3, N = 500, rotation = "oblimin", gam = 0.5)
+  fit_gam <- suppressWarnings(
+    efa_fit(cm, n_factors = 3, N = 500, rotation = "oblimin", gam = 0.5))
   expect_false(identical(fit_default$rot_loadings, fit_gam$rot_loadings))
   expect_no_error(efa_fit(cm, n_factors = 3, N = 500, rotation = "geominQ", delta = 0.05))
 

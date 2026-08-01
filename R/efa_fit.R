@@ -80,9 +80,11 @@
 #' @param ... Additional arguments forwarded to the rotation engine. Only the arguments the
 #'  selected `rotation` consumes are accepted: `maxit` (the maximum number of engine
 #'  iterations) for the GPArotation-style rotations, plus the selected criterion's parameter
-#'  (`gam` for "oblimin", `delta` for "geominT" and "geominQ"). Anything else -- a misspelled
-#'  name, another criterion's parameter, or any extra with "varimax", "promax", or "none",
-#'  which consume no extras -- is an error rather than a setting that is silently ignored.
+#'  (`gam` for "oblimin", where `gam = 0` is the recommended default and larger values can
+#'  drive the solution toward factor collapse; `delta` for "geominT" and "geominQ").
+#'  Anything else -- a misspelled name, another criterion's parameter, or any extra with
+#'  "varimax", "promax", or "none", which consume no extras -- is an error rather than a
+#'  setting that is silently ignored.
 #'  The accepted arguments are merged with, and take precedence over, the extra arguments
 #'  stored in `rotate_control()`. An estimation or rotation tuning knob (such as `type`,
 #'  `max_iter`, or `k`) is likewise *not* accepted here: it belongs to [estimate_control()]
@@ -201,7 +203,9 @@
 #'   (controlled by `k` and `p_type`) to form a target that is then fitted obliquely. It is
 #'   the common, inexpensive oblique default.
 #' - **oblimin** is a flexible oblique family controlled by `gam` (default 0); a good
-#'   general-purpose criterion.
+#'   general-purpose criterion. `gam = 0` (quartimin) is the recommended setting: larger
+#'   values increasingly reward correlated factors and can drive the solution toward
+#'   factor collapse, so inspect `Phi` before interpreting a fit with `gam > 0`.
 #' - **quartimin** is oblimin pinned at `gam = 0`; a robust default oblique criterion.
 #' - **simplimax** drives the `k` smallest loadings toward zero. Its criterion is only
 #'   piecewise smooth, so it is the most prone to local minima and relies on several

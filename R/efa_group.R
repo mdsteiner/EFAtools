@@ -840,15 +840,15 @@ efa_group <- function(x, groups = NULL, n_factors, N = NA,
   P <- P %*% diag(.reflect_signs(MP), nrow = ncol(MP))
   Mc <- M %*% P
 
-  # varimax runs through stats::varimax rather than a native engine, but it takes the same
-  # fallback: a degenerate frame (a row with no loading at all) makes Kaiser normalization
-  # divide by zero and the SVD abort, and there is no reason for that to be fatal here when
-  # the identical frame is gauged happily under every other criterion. `varimax_type` is
-  # deliberately not consulted: .VARIMAX_SPSS and stats::varimax optimize the identical
-  # normal-varimax criterion (the SPSS pairwise angle is its closed-form plane maximizer),
-  # so the gauged frame agrees to convergence tolerance under either variant.
+  # varimax runs through .varimax_svd() rather than a native engine, so a degenerate frame
+  # (a row with no loading at all) is gauged rather than lost: the floored Kaiser weights
+  # keep the zero row from dividing by zero and aborting the SVD, as they do on every other
+  # rotation path. The shared fallback below still catches a genuinely unusable frame.
+  # `varimax_type` is deliberately not consulted: .VARIMAX_SPSS and stats::varimax optimize
+  # the identical normal-varimax criterion (the SPSS pairwise angle is its closed-form plane
+  # maximizer), so the gauged frame agrees to convergence tolerance under either variant.
   engine <- if (rotation == "varimax") {
-    function(L, ...) list(Th = stats::varimax(L, normalize = normalize, eps = 1e-10)$rotmat)
+    function(L, ...) list(Th = .varimax_svd(L, normalize = normalize, precision = 1e-10)$rotmat)
   } else {
     .orth_engines[[rotation]]
   }

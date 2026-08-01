@@ -48,7 +48,11 @@ inline arma::mat normalize_cols_cpp(const arma::mat& X, double eps = 1e-15) {
 // Solve X * invX = I for a square, finite X, returning false (leaving invX untouched)
 // if X is non-square, non-finite, or the solve fails or yields a non-finite result, so
 // callers can reject a singular transformation rather than evaluate it through a
-// pseudo-inverse.
+// pseudo-inverse. `no_approx` is what makes the rejection real: without it Armadillo
+// falls back to an approximate (pseudo-inverse) solution for a rank-deficient X and
+// still reports success, so a collapsed oblique transformation would be accepted and
+// evaluated. `fast` additionally skips the iterative refinement that this check, which
+// only asks whether an inverse exists at all, does not need.
 inline bool inverse_checked_cpp(const arma::mat& X, arma::mat& invX) {
   if (X.n_rows != X.n_cols || !all_finite_cpp(X)) {
     return false;
@@ -59,7 +63,7 @@ inline bool inverse_checked_cpp(const arma::mat& X, arma::mat& invX) {
       invX,
       X,
       arma::eye<arma::mat>(X.n_rows, X.n_cols),
-      arma::solve_opts::fast
+      arma::solve_opts::fast + arma::solve_opts::no_approx
     );
     return ok && all_finite_cpp(invX);
   } catch (...) {

@@ -21,7 +21,10 @@
 \arguments{
 \item{L}{Numeric matrix. The unrotated loading matrix (variables by factors).}
 
-\item{gam}{Numeric scalar. The oblimin parameter; \code{gam = 0} is the quartimin criterion.}
+\item{gam}{Numeric scalar. The oblimin parameter; \code{gam = 0} is the quartimin criterion
+and the recommended setting. Larger values increasingly reward correlated factors and
+can drive the solution toward factor collapse, where the rotation may also fail to
+converge; inspect \code{Phi} before interpreting a fit with \code{gam > 0}.}
 
 \item{eps}{Numeric scalar. Convergence tolerance for the projected-gradient norm.}
 

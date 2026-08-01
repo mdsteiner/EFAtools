@@ -73,3 +73,26 @@
   list(rotmat = rotmat, loadings = x, iter = it)
 
 }
+
+# SVD-based varimax (stats::varimax) with the Kaiser-weight floor the other rotation
+# paths use. stats::varimax() normalises by dividing each row by sqrt(h2) without a
+# floor, so a zero-communality row (h2 = 0) injects NaN and the rotation dies inside
+# La.svd with an uninformative, unclassed error. Normalising here with the floored
+# weights instead -- and handing stats::varimax() an already-normalised matrix -- puts
+# the guard where .VARIMAX_SPSS() and .rotate_promax() have it. stats::varimax()
+# returns loadings = x %*% rotmat, so scaling the rows by 1/w before and by w after
+# reproduces its own normalise-rotate-denormalise sequence exactly, leaving loadings
+# with no zero-communality row unchanged.
+.varimax_svd <- function(x, normalize = TRUE, precision = 1e-5) {
+
+  if (!isTRUE(normalize)) {
+    return(stats::varimax(x, normalize = FALSE, eps = precision))
+  }
+
+  w <- sqrt(rowSums(x^2))
+  w[!is.finite(w) | w < 1e-15] <- 1
+
+  AV <- stats::varimax(x / w, normalize = FALSE, eps = precision)
+  AV$loadings <- AV$loadings * w
+  AV
+}

@@ -573,7 +573,10 @@ Rcpp::List rotate_cf_orth(const arma::mat& L,
 //' least `triage_improve_tol`.
 //'
 //' @inheritParams .rotate_cf_orth
-//' @param gam Numeric scalar. The oblimin parameter; `gam = 0` is the quartimin criterion.
+//' @param gam Numeric scalar. The oblimin parameter; `gam = 0` is the quartimin criterion
+//'   and the recommended setting. Larger values increasingly reward correlated factors and
+//'   can drive the solution toward factor collapse, where the rotation may also fail to
+//'   converge; inspect `Phi` before interpreting a fit with `gam > 0`.
 //'
 //' @returns A named list with the rotated loadings, the transformation matrix `Th`
 //'   (with `L %*% t(solve(Th))` reproducing the rotated loadings), the factor correlation

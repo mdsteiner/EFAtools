@@ -85,5 +85,45 @@ test_that(".VARIMAX_SPSS tolerates a zero-communality row (Kaiser normalisation)
   expect_equal(res$loadings[3, ], c(0, 0))
 })
 
+test_that("the svd varimax path tolerates a zero-communality row (Kaiser normalisation)", {
+  # stats::varimax() Kaiser-normalises by dividing each row by sqrt(h2) without a floor,
+  # so the same zero-communality row that .VARIMAX_SPSS() handles above makes the
+  # rotation die inside La.svd with an uninformative, unclassed error. .varimax_svd()
+  # normalises with the floored weights instead, so both varimax_type values accept the
+  # same data rather than the choice of `type` deciding whether it errors or succeeds.
+  L <- matrix(c(0.8, 0.1,
+                0.7, 0.2,
+                0.0, 0.0,
+                0.1, 0.9,
+                0.2, 0.8), ncol = 2, byrow = TRUE)
+
+  res <- .varimax_svd(L, normalize = TRUE)
+  expect_false(anyNA(res$loadings))
+  expect_equal(unclass(res$loadings)[3, ], c(0, 0))
+  # the reproduction identity loadings == L %*% rotmat survives the pre/post scaling
+  expect_equal(unclass(res$loadings), L %*% res$rotmat, ignore_attr = TRUE)
+
+  # the floor is arithmetically neutral: with no zero-communality row the floored path
+  # reproduces stats::varimax() exactly
+  L2 <- L
+  L2[3, ] <- c(0.6, 0.3)
+  expect_equal(unclass(.varimax_svd(L2, normalize = TRUE)$loadings),
+               unclass(stats::varimax(L2, normalize = TRUE, eps = 1e-5)$loadings))
+
+  # normalize = FALSE skips Kaiser normalisation entirely, so it must reach
+  # stats::varimax() unnormalized rather than picking up the floored weights
+  expect_equal(unclass(.varimax_svd(L2, normalize = FALSE)$loadings),
+               unclass(stats::varimax(L2, normalize = FALSE, eps = 1e-5)$loadings))
+  expect_false(isTRUE(all.equal(unclass(.varimax_svd(L2, normalize = FALSE)$loadings),
+                                unclass(.varimax_svd(L2, normalize = TRUE)$loadings))))
+
+  # the guard reaches both rotations that build on the svd varimax
+  for (rn in c("varimax", "promax")) {
+    out <- .rotate_model(list(unrot_loadings = L), rotation = rn, type = "psych")
+    expect_false(anyNA(out$rot_loadings))
+    expect_equal(unclass(out$rot_loadings)[3, ], c(0, 0), ignore_attr = TRUE)
+  }
+})
+
 rm(unrot, vari, unrot_1, vari_1, vari_psych, vari_spss)
 
