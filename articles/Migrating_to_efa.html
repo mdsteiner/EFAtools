@@ -384,6 +384,30 @@ object in place of the loose estimation arguments; and
 <code>P_type</code>.</p>
 </div>
 <div class="section level2">
+<h2 id="what-the-type-presets-replicate">What the <code>type</code> Presets Replicate<a class="anchor" aria-label="anchor" href="#what-the-type-presets-replicate"></a>
+</h2>
+<p>The <code>type</code> presets are more than shorthand for a bundle of
+defaults. <code>"SPSS"</code> and <code>"psych"</code> follow how SPSS’s
+FACTOR procedure and <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code> implement principal axis
+factoring and promax rotation, down to the details those implementations
+differ in — the iteration limit, the convergence criterion, whether
+eigenvalues are taken in absolute value, and which formula builds the
+promax target. <code>"EFAtools"</code>, the default, combines the
+settings that came out best across those comparisons. The presets and
+the differences they encode come from <a href="https://doi.org/10.3758/s13428-021-01581-x" class="external-link">Grieder and Steiner
+(2022)</a>, and the reference outputs of that study ship with the
+package: <code>test_models</code> holds correlation matrices for four
+<code>population_models</code> cases, and <code>SPSS_23</code> and
+<code>SPSS_27</code> hold what SPSS FACTOR returned for those matrices —
+and for several real data sets — under the two SPSS versions, so a
+preset can be checked against the program it emulates.
+<code><a href="../reference/efa_fit.html">?efa_fit</a></code> lists the exact settings each preset selects,
+along with the one place a preset alone is not enough:
+<code>"psych"</code> also needs <code>normalize = FALSE</code> to match
+<code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code>‘s promax, because every preset keeps EFAtools’
+Kaiser normalization.</p>
+</div>
+<div class="section level2">
 <h2 id="returned-objects-keep-their-legacy-classes">Returned Objects Keep Their Legacy Classes<a class="anchor" aria-label="anchor" href="#returned-objects-keep-their-legacy-classes"></a>
 </h2>
 <p>Migrating a call does not break code that inspects or dispatches on

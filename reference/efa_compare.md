@@ -59,7 +59,14 @@ efa_compare(
 
 - digits:
 
-  numeric. Number of decimals to print in the output. Default is 4.
+  numeric. Number of decimals to print in the output. Default is 4. Like
+  `m_red`, `range_red`, `round_red`, and `print_diff`, it is recorded in
+  `settings` but governs only the printed report, so it can be
+  overridden per call in
+  [`print.efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/print.efa_compare.md)
+  without recomputing the comparison. `plot_red` is a drawing setting
+  and is overridden the same way in
+  [`plot.efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/plot.efa_compare.md).
 
 - m_red:
 
@@ -100,10 +107,10 @@ efa_compare(
 
 - plot:
 
-  logical. Retained for backwards compatibility; the difference plot is
-  now drawn with
-  [`plot.efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/plot.efa_compare.md)
-  rather than when printing. Default is TRUE.
+  **\[superseded\]** Accepted and validated, but without effect;
+  retained for backwards compatibility. The difference plot is drawn by
+  [`plot.efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/plot.efa_compare.md).
+  Default is TRUE.
 
 - plot_red:
 
@@ -147,8 +154,10 @@ differences of x and y.
   in absolute value. The comparison is on magnitudes, so two elements
   that are equal in size but opposite in sign count as agreeing; signed
   disagreements are reflected in `diff` and the mean / median / min /
-  max absolute differences. `NA` if `na.rm = FALSE` and any element is
-  missing.
+  max absolute differences. `0` means the two agree in their integer
+  parts but in no decimal place. `NA` means there is no agreement at
+  all: either they already differ in their integer parts, or
+  `na.rm = FALSE` and an element is missing.
 
 - diff_corres:
 
@@ -193,12 +202,16 @@ EFA_psych_6 <- efa_fit(test_models$case_11b$cormat, n_factors = 6,
 # compare the two
 efa_compare(EFA_SPSS_6$unrot_loadings, EFA_psych_6$unrot_loadings,
             x_labels = c("SPSS", "psych"))
-#> Mean [min, max] absolute difference:  0.0025 [ 0.0000,  0.0215]
-#> Median absolute difference:  0.0008
-#> Root mean squared distance (RMSE):  0.0048
+#> 
+#> ── Summary statistics ──────────────────────────────────────────────────────────
+#> 
+#> Mean [min, max] absolute difference:  .0025 [ .0000,  .0215]
+#> Median absolute difference:  .0008
+#> Root mean squared distance (RMSE):  .0048
 #> Max decimals where all numbers agree in absolute value: 0
-#> Minimum number of decimals provided: 17
 #> Differing indicator-to-factor correspondences: 0 (highest loading), 0 (all |loadings| >= 0.3)
+#> 
+#> ── Elementwise differences ─────────────────────────────────────────────────────
 #> 
 #>        F1      F2      F3      F4      F5      F6
 #> V1    .0000  -.0001  -.0003  -.0053  -.0015  -.0012

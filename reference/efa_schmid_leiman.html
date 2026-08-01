@@ -178,7 +178,10 @@ calculation of McDonald's omegas (see <code><a href="efa_reliability.html">efa_r
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p>Other factor rotation:
-<code><a href="efa_procrustes.html">efa_procrustes()</a></code></p></div>
+<code><a href="efa_procrustes.html">efa_procrustes()</a></code></p>
+<p>Other reliability coefficients:
+<code><a href="efa_reliability.html">efa_reliability()</a></code>,
+<code><a href="print.efa_reliability.html">print.efa_reliability()</a></code></p></div>
     </div>
 
     <div class="section level2">
@@ -203,8 +206,6 @@ calculation of McDonald's omegas (see <code><a href="efa_reliability.html">efa_r
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## For demonstration, take pattern matrix and phi from an EFA output</span></span></span>
 <span class="r-in"><span><span class="co">## This gives the same solution as the first example</span></span></span>
-<span class="r-in"><span><span class="va">EFA_mod</span> <span class="op">&lt;-</span> <span class="fu"><a href="efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, n_factors <span class="op">=</span> <span class="fl">3</span>,</span></span>
-<span class="r-in"><span>                   estimator <span class="op">=</span> <span class="st">"PAF"</span>, rotation <span class="op">=</span> <span class="st">"promax"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">SL_flex</span> <span class="op">&lt;-</span> <span class="fu">efa_schmid_leiman</span><span class="op">(</span><span class="va">EFA_mod</span><span class="op">$</span><span class="va">rot_loadings</span>, Phi <span class="op">=</span> <span class="va">EFA_mod</span><span class="op">$</span><span class="va">Phi</span>, estimator <span class="op">=</span> <span class="st">"PAF"</span>,</span></span>
 <span class="r-in"><span>                             estimate_control <span class="op">=</span> <span class="fu"><a href="estimate_control.html">estimate_control</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"EFAtools"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>

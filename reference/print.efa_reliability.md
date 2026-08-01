@@ -43,13 +43,13 @@ format(x, digits = 3, ...)
 
 [`print()`](https://rdrr.io/r/base/print.html) returns its argument `x`
 invisibly. [`format()`](https://rdrr.io/r/base/format.html) returns a
-character vector with the report lines (styled to the active console
-theme; plain when colours are disabled).
+character vector with the report lines.
 
 ## See also
 
 Other reliability coefficients:
-[`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md)
+[`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md),
+[`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md)
 
 ## Examples
 
@@ -61,6 +61,9 @@ rel
 #> 
 #> Total variance from the correlation matrix.
 #> 
+#> Correlated-factors solution: with no general factor, each factor's subscale
+#> omega equals its total omega.
+#> 
 #> ── Reliability coefficients ────────────────────────────────────────────────────
 #> 
 #>      tot   sub  alpha    H
@@ -69,10 +72,13 @@ rel
 #> F2  .680  .680   .763  .753
 #> F3  .667  .667   .743  .738
 
-# format() returns the same lines as plain text:
+# format() returns the same lines as a character vector:
 writeLines(format(rel))
 #> 
 #> Total variance from the correlation matrix.
+#> 
+#> Correlated-factors solution: with no general factor, each factor's subscale
+#> omega equals its total omega.
 #> 
 #> ── Reliability coefficients ────────────────────────────────────────────────────
 #> 

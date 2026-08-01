@@ -19,8 +19,8 @@ SPSS_23
 ## Format
 
 A list of 9 containing EFA results for each of the data sets mentioned
-above. Each of these nine entries is a list of 4 or 8 (see details), of
-the following structure:
+above. Each of these nine entries is a list of 4, 6, or 8 (see details),
+of the following structure:
 
 - paf_comm:
 
@@ -30,7 +30,9 @@ the following structure:
 - paf_load:
 
   (matrix) - F1 to FN = unrotated factor loadings obtained with the
-  FACTOR algorithm with PAF. Rownames are the abbreviated subtest names.
+  FACTOR algorithm with PAF. Rownames are the abbreviated subtest or
+  item names, and generic variable labels (V1 to VN) for the simulated
+  datasets.
 
 - paf_iter:
 
@@ -40,13 +42,16 @@ the following structure:
 - var_load:
 
   (matrix) - F1 to FN = varimax rotated factor loadings obtained with
-  the FACTOR algorithm with PAF. Rownames are the abbreviated subtest
-  names.
+  the FACTOR algorithm with PAF. Rownames are the abbreviated subtest or
+  item names, and generic variable labels (V1 to VN) for the simulated
+  datasets.
 
 - pro_load:
 
   (matrix) - F1 to FN = promax rotated factor loadings obtained with the
-  FACTOR algorithm with PAF. Rownames are the abbreviated subtest names.
+  FACTOR algorithm with PAF. Rownames are the abbreviated subtest or
+  item names, and generic variable labels (V1 to VN) for the simulated
+  datasets.
 
 - pro_phi:
 
@@ -63,7 +68,7 @@ the following structure:
 
 - L2:
 
-  (matrix) - Second order loadings used for the Schmid-Leiman
+  (matrix or numeric) - Second order loadings used for the Schmid-Leiman
   transformation. This Schmid-Leiman solution was found using the SPSS
   Syntax provided by Wolff and Preising (2005).
 
@@ -103,6 +108,7 @@ Odessa, FL: Psychological Assessment Resources, Inc.
 
 ## Details
 
-The IDS-2, the two WJIV, the DOSPERT, and the NEO-PI-R contain all the
-above entries, while the four simulated datasets contain only paf_load,
-var_load, pro_load, and pro_phi.
+The IDS-2, the two WJIV, and the DOSPERT contain all the above entries.
+The NEO-PI-R contains all of them except L2 and sl, while the four
+simulated datasets contain only paf_load, var_load, pro_load, and
+pro_phi.

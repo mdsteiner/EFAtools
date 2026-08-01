@@ -48,8 +48,7 @@ format(x, digits = 3, ...)
 
 [`print()`](https://rdrr.io/r/base/print.html) returns its argument `x`
 invisibly. [`format()`](https://rdrr.io/r/base/format.html) returns a
-character vector with the report lines (styled to the active console
-theme; plain when colours are disabled).
+character vector with the report lines.
 
 ## See also
 
@@ -71,7 +70,7 @@ pw
 #> Power = .955 at N = 200.
 #> Critical value χ²(100) = 183.967 · noncentrality H0 = 49.750, H1 = 127.360.
 
-# format() returns the same lines as plain text:
+# format() returns the same lines as a character vector:
 writeLines(format(pw))
 #> 
 #> ── RMSEA power analysis ────────────────────────────────────────────────────────

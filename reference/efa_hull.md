@@ -28,6 +28,11 @@ efa_hull(
 
 ## Source
 
+Auerswald, M., & Moshagen, M. (2019). How to determine the number of
+factors to retain in exploratory factor analysis: A comparison of
+extraction methods under realistic conditions. Psychological Methods,
+24(4), 468–491. https://doi.org/10.1037/met0000200
+
 Lorenzo-Seva, U., Timmerman, M. E., & Kiers, H. A. (2011). The Hull
 method for selecting the number of common factors. Multivariate
 Behavioral Research, 46(2), 340-364.
@@ -181,6 +186,15 @@ upper boundary of the convex hull of goodness-of-fit against degrees of
 freedom, and selects the one at the sharpest elbow, i.e. with the
 highest *st* value.
 
+Because it trades fit against parsimony instead of testing against a
+null model of uncorrelated variables, the Hull method does not lose
+accuracy for the correlated-factor structures where parallel analysis
+([`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md))
+tends to under-extract; the CAF variant in particular was among the more
+accurate criteria in Auerswald and Moshagen (2019). It needs at least
+six indicators and fits a model at every candidate factor count, so it
+is comparatively slow and is not an option for very short scales.
+
 The
 [efa_parallel](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
 function and the principal axis factoring of the different number of
@@ -199,9 +213,14 @@ run reproducible; the result is then also independent of the parallel
 plan.
 
 Note that if `gof = "RMSEA"` is used, 1 - RMSEA is actually used to
-compare the different solutions. Thus, the threshold of .05 is then .95.
-This is necessary due to how the heuristic to locate the elbow of the
-hull works.
+compare the different solutions. This is necessary due to how the
+heuristic to locate the elbow of the hull works.
+
+The solutions are fitted without inequality constraints, so a solution
+can be inadmissible (a Heywood case, or a fit that did not converge).
+Only the selected solution is checked for this; if it is inadmissible a
+warning is raised and the retained number of factors should be
+interpreted with caution.
 
 The ML estimation method uses the
 [`psych::fa()`](https://rdrr.io/pkg/psych/man/fa.html) starting values.

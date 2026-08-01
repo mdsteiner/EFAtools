@@ -46,8 +46,7 @@ format(x, digits = 3, ...)
 
 [`print()`](https://rdrr.io/r/base/print.html) returns its argument `x`
 invisibly. [`format()`](https://rdrr.io/r/base/format.html) returns a
-character vector with the report lines (styled to the active console
-theme; plain when colours are disabled).
+character vector with the report lines.
 
 ## Examples
 
@@ -69,7 +68,7 @@ om
 #> F2 0.763 0.494 0.270 0.472            
 #> F3 0.744 0.519 0.225 0.408            
 
-# format() returns the same lines as plain text:
+# format() returns the same lines as a character vector:
 writeLines(format(om))
 #> Omega total, omega hierarchical, omega subscale, H index, explained common
 #> variance (ECV), and percent of uncontaminated correlations (PUC) for the

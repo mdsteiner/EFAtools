@@ -61,7 +61,14 @@ COMPARE(
 
 - digits:
 
-  numeric. Number of decimals to print in the output. Default is 4.
+  numeric. Number of decimals to print in the output. Default is 4. Like
+  `m_red`, `range_red`, `round_red`, and `print_diff`, it is recorded in
+  `settings` but governs only the printed report, so it can be
+  overridden per call in
+  [`print.efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/print.efa_compare.md)
+  without recomputing the comparison. `plot_red` is a drawing setting
+  and is overridden the same way in
+  [`plot.efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/plot.efa_compare.md).
 
 - m_red:
 
@@ -102,10 +109,10 @@ COMPARE(
 
 - plot:
 
-  logical. Retained for backwards compatibility; the difference plot is
-  now drawn with
-  [`plot.efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/plot.efa_compare.md)
-  rather than when printing. Default is TRUE.
+  **\[superseded\]** Accepted and validated, but without effect;
+  retained for backwards compatibility. The difference plot is drawn by
+  [`plot.efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/plot.efa_compare.md).
+  Default is TRUE.
 
 - plot_red:
 

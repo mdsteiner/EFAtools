@@ -27,14 +27,25 @@ plot(x, ...)
 
 A ggplot object showing, for each indicator and factor, the minimum,
 maximum, and average (mean or median) loading across the averaged
-solutions.
+solutions. Each panel carries a point at the average, a bar spanning the
+minimum to the maximum with a tick at each endpoint, and a grey band
+marking the loadings that fall below the salience threshold; the caption
+names the four marks.
 
 ## Examples
 
 ``` r
 # \donttest{
 EFA_aver <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500)
-#>                                                                                                                                                                  🏃 Extracting data...                                                                                                                                                                 🚶 Reordering factors...                                                                                                                                                                 🏃 Averaging data...                                                                                                                                                                 Done!
+#> ℹ Extracting data
+#> ✔ Extracting data [11ms]
+#> 
+#> ℹ Reordering factors
+#> ✔ Reordering factors [19ms]
+#> 
+#> ℹ Averaging data
+#> ✔ Averaging data [16ms]
+#> 
 plot(EFA_aver)
 
 # }

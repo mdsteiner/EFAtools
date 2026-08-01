@@ -49,8 +49,7 @@ format(x, digits = 3, ...)
 
 [`print()`](https://rdrr.io/r/base/print.html) returns its argument `x`
 invisibly. [`format()`](https://rdrr.io/r/base/format.html) returns a
-character vector with the report lines (styled to the active console
-theme; plain when colours are disabled).
+character vector with the report lines.
 
 ## See also
 
@@ -89,7 +88,7 @@ mg
 #>           mean  median   min   max  rmse  flagged
 #> g1 vs g2  .025    .017  .002  .075  .033      0/8
 
-# format() returns the same lines as plain text:
+# format() returns the same lines as a character vector:
 writeLines(format(mg))
 #> ── Multigroup exploratory factor analysis ──────────────────────────────────────
 #> 

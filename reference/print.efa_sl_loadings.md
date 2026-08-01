@@ -6,10 +6,10 @@ Print an efa_sl_loadings object
 
 ``` r
 # S3 method for class 'efa_sl_loadings'
-print(x, cutoff = 0.2, digits = 3, color = TRUE, ...)
+print(x, ...)
 
 # S3 method for class 'efa_sl_loadings'
-format(x, ...)
+format(x, cutoff = 0.2, digits = 3, color = TRUE, ...)
 ```
 
 ## Arguments
@@ -17,6 +17,10 @@ format(x, ...)
 - x:
 
   class efa_sl_loadings matrix.
+
+- ...:
+
+  additional arguments passed to print or format.
 
 - cutoff:
 
@@ -33,9 +37,14 @@ format(x, ...)
   logical. Whether to apply console styling using cli. Default is
   `TRUE`.
 
-- ...:
+## Value
 
-  additional arguments passed to print or format.
+[`print()`](https://rdrr.io/r/base/print.html) returns its argument `x`
+invisibly; it is `cat(format(x, ...), sep = "\n")` followed by a blank
+line for console spacing.
+[`format()`](https://rdrr.io/r/base/format.html) returns a character
+vector with the table lines (styled to the active console theme; plain
+when colours are disabled).
 
 ## Details
 

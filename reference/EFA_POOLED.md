@@ -84,8 +84,18 @@ EFA_POOLED(
 
 - rmsr_upper:
 
-  Logical. If `TRUE`, compute RMSR from the unique off-diagonal residual
-  correlations. If `FALSE`, use the full off-diagonal matrix.
+  **\[deprecated\]** Accepted and ignored. It selected between computing
+  RMSR from the unique off-diagonal residual correlations and from the
+  full off-diagonal matrix. The two element sets hold each residual pair
+  once and twice respectively, so their sums and counts double together
+  and the mean square is the same number whenever the residual matrix is
+  symmetric, which the pooled residuals always are. RMSR is therefore
+  always the root mean square of the unique off-diagonal residuals;
+  SRMR, which divides the same sum by the number of non-redundant
+  elements, is reported alongside it. Supplying it to
+  [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
+  signals a deprecation warning; the superseded `EFA_POOLED()` accepts
+  it silently.
 
 - ...:
 

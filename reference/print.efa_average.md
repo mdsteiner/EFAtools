@@ -53,15 +53,22 @@ format(x, stat = c("average", "range"), ...)
 
 [`print()`](https://rdrr.io/r/base/print.html) returns its argument `x`
 invisibly. [`format()`](https://rdrr.io/r/base/format.html) returns a
-character vector with the report lines (styled to the active console
-theme; plain when colours are disabled).
+character vector with the report lines.
 
 ## Examples
 
 ``` r
 # \donttest{
 EFA_aver <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500)
-#>                                                                                                                                                                  🏃 Extracting data...                                                                                                                                                                 🚶 Reordering factors...                                                                                                                                                                 🏃 Averaging data...                                                                                                                                                                 Done!
+#> ℹ Extracting data
+#> ✔ Extracting data [10ms]
+#> 
+#> ℹ Reordering factors
+#> ✔ Reordering factors [19ms]
+#> 
+#> ℹ Averaging data
+#> ✔ Averaging data [17ms]
+#> 
 EFA_aver
 #> 
 #> Averaging performed with averaging method mean (trim = 0) across 72 EFAs,
@@ -122,7 +129,7 @@ EFA_aver
 #> V17   .634  -.010   .000
 #> V18   .535   .029   .071
 #> 
-#> ── Range ───────────────────────────────────────────────────────────────────────
+#> ── Range (max − min) ───────────────────────────────────────────────────────────
 #> 
 #>       F1    F2    F3
 #> V1   .098  .077  .092
@@ -153,7 +160,7 @@ EFA_aver
 #> F2   .536  1.000
 #> F3   .568   .553  1.000
 #> 
-#> ── Range ───────────────────────────────────────────────────────────────────────
+#> ── Range (max − min) ───────────────────────────────────────────────────────────
 #> 
 #>      F1    F2    F3
 #> F1  .000
@@ -169,7 +176,7 @@ EFA_aver
 #> Prop Tot Var    .122   .115   .113
 #> Prop Comm Var   .348   .329   .323
 #> 
-#> ── Range ───────────────────────────────────────────────────────────────────────
+#> ── Range (max − min) ───────────────────────────────────────────────────────────
 #> 
 #>                 F1    F2    F3
 #> SS loadings    .036  .052  .063
@@ -178,13 +185,19 @@ EFA_aver
 #> 
 #> ══ Model Fit ═══════════════════════════════════════════════════════════════════
 #> 
+#> The fit indices are the mean of the per-solution fit indices, not the fit of
+#> the averaged loadings printed above, which are a cell-wise summary rather than
+#> a fitted solution.
+#> 
+#> CAF, RMSR, and SRMR averaged over 72 of 72 solutions.
+#> 
 #>        M (SD) [Min; Max]
 #> CAF:  .50 (.00) [.50; .50]
 #> RMSR: .03 (.00) [.03; .03]
 #> SRMR: .02 (.00) [.02; .02]
 #> df: 102
 
-# format() returns the same lines as plain text:
+# format() returns the same lines as a character vector:
 writeLines(format(EFA_aver))
 #> 
 #> Averaging performed with averaging method mean (trim = 0) across 72 EFAs,
@@ -245,7 +258,7 @@ writeLines(format(EFA_aver))
 #> V17   .634  -.010   .000
 #> V18   .535   .029   .071
 #> 
-#> ── Range ───────────────────────────────────────────────────────────────────────
+#> ── Range (max − min) ───────────────────────────────────────────────────────────
 #> 
 #>       F1    F2    F3
 #> V1   .098  .077  .092
@@ -276,7 +289,7 @@ writeLines(format(EFA_aver))
 #> F2   .536  1.000
 #> F3   .568   .553  1.000
 #> 
-#> ── Range ───────────────────────────────────────────────────────────────────────
+#> ── Range (max − min) ───────────────────────────────────────────────────────────
 #> 
 #>      F1    F2    F3
 #> F1  .000
@@ -292,7 +305,7 @@ writeLines(format(EFA_aver))
 #> Prop Tot Var    .122   .115   .113
 #> Prop Comm Var   .348   .329   .323
 #> 
-#> ── Range ───────────────────────────────────────────────────────────────────────
+#> ── Range (max − min) ───────────────────────────────────────────────────────────
 #> 
 #>                 F1    F2    F3
 #> SS loadings    .036  .052  .063
@@ -300,6 +313,12 @@ writeLines(format(EFA_aver))
 #> Prop Comm Var  .006  .008  .010
 #> 
 #> ══ Model Fit ═══════════════════════════════════════════════════════════════════
+#> 
+#> The fit indices are the mean of the per-solution fit indices, not the fit of
+#> the averaged loadings printed above, which are a cell-wise summary rather than
+#> a fitted solution.
+#> 
+#> CAF, RMSR, and SRMR averaged over 72 of 72 solutions.
 #> 
 #>        M (SD) [Min; Max]
 #> CAF:  .50 (.00) [.50; .50]

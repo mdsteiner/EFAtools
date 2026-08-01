@@ -86,7 +86,16 @@ factor analysis. Psychometrika, 23, 187–200. doi: 10.1007/BF02289233
   principal axis factoring, maximum likelihood, or unweighted least
   squares, respectively, to fit the EFAs. "MINRES" is accepted as a
   synonym for "ULS" (the same estimator). The values are matched
-  case-insensitively. Default is "PAF".
+  case-insensitively. Default is "PAF". "DWLS", which
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  does accept, is deliberately not offered here: it weights each
+  residual correlation by the inverse of its asymptotic variance, which
+  is only available from raw ordinal data analysed with
+  `cor_method = "poly"` or `"tetra"`, whereas every EFA in the grid is
+  fitted to the single correlation matrix computed once from `x`. Fit a
+  DWLS solution with
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  directly.
 
 - rotation:
 
@@ -294,7 +303,11 @@ factor analysis. Psychometrika, 23, 187–200. doi: 10.1007/BF02289233
 
 ## Value
 
-A list of class `c("efa_average", "EFA_AVERAGE")` containing
+A list of class `c("efa_average", "EFA_AVERAGE")` containing the
+components below. Throughout, `range` is the width `maximum - minimum`
+of each cell across the factor solutions, not the interval
+`[minimum, maximum]`, and `average` is the (trimmed) mean or the median,
+following `averaging`.
 
 - orig_R:
 
@@ -469,6 +482,15 @@ likely contains loadings from different factor solutions. The matrices
 containing the minimum and maximum factor solutions can therefore not be
 interpreted as whole factor solutions.
 
+The averaged loading matrix is likewise a cell-wise summary rather than
+a fitted solution: it is not itself the solution of any EFA, does not in
+general reproduce the correlation matrix, and need not reproduce the
+averaged communalities. The fit indices described below are
+correspondingly the mean (or, under `averaging = "median"`, the median)
+of the per-solution fit indices, not the fit of the averaged loadings,
+so the averaged loadings and the reported fit do not describe one and
+the same model.
+
 The output also includes information on the average, minimum, maximum,
 and variability of the fit indices across the non-problematic factor
 solutions. It is important to note that not all fit indices are computed
@@ -511,30 +533,70 @@ Other factor analysis:
 Aver_meth <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
                          estimator = c("PAF", "ULS", "ML"), type = "EFAtools",
                          start_method = "psych")
-#>                                                                                                                                                                  🏃 Extracting data...                                                                                                                                                                 🚶 Reordering factors...                                                                                                                                                                 🏃 Averaging data...                                                                                                                                                                 Done!
+#> ℹ Extracting data
+#> ✔ Extracting data [9ms]
+#> 
+#> ℹ Reordering factors
+#> ✔ Reordering factors [27ms]
+#> 
+#> ℹ Averaging data
+#> ✔ Averaging data [23ms]
+#> 
 
 # \donttest{
 # Averaging across different implementations of PAF and promax rotation (72 EFAs)
 Aver_PAF <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500)
-#>                                                                                                                                                                  🏃 Extracting data...                                                                                                                                                                 🚶 Reordering factors...                                                                                                                                                                 🏃 Averaging data...                                                                                                                                                                 Done!
+#> ℹ Extracting data
+#> ✔ Extracting data [11ms]
+#> 
+#> ℹ Reordering factors
+#> ✔ Reordering factors [21ms]
+#> 
+#> ℹ Averaging data
+#> ✔ Averaging data [18ms]
+#> 
 
 # Use median instead of mean for averaging (72 EFAs)
 Aver_PAF_md <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
                            averaging = "median")
-#>                                                                                                                                                                  🏃 Extracting data...                                                                                                                                                                 🚶 Reordering factors...                                                                                                                                                                 🏃 Averaging data...                                                                                                                                                                 Done!
+#> ℹ Extracting data
+#> ✔ Extracting data [11ms]
+#> 
+#> ℹ Reordering factors
+#> ✔ Reordering factors [27ms]
+#> 
+#> ℹ Averaging data
+#> ✔ Averaging data [20ms]
+#> 
 
 # Averaging across different implementations of PAF and promax rotation,
 # and across ULS and different versions of ML (108 EFAs)
 Aver_meth_ext <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
                              estimator = c("PAF", "ULS", "ML"))
-#>                                                                                                                                                                  🏃 Extracting data...                                                                                                                                                                 🚶 Reordering factors...                                                                                                                                                                 🏃 Averaging data...                                                                                                                                                                 Done!
+#> ℹ Extracting data
+#> ✔ Extracting data [14ms]
+#> 
+#> ℹ Reordering factors
+#> ✔ Reordering factors [26ms]
+#> 
+#> ℹ Averaging data
+#> ✔ Averaging data [19ms]
+#> 
 
 # Averaging across different oblique rotation methods, using one implementation
 # of ML and one implementation of promax (EFAtools type) (7 EFAs)
 Aver_rot <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
                          estimator = "ML", rotation = "oblique", type = "EFAtools",
                          start_method = "psych")
-#>                                                                                                                                                                  🏃 Extracting data...                                                                                                                                                                 🚶 Reordering factors...                                                                                                                                                                 🏃 Averaging data...                                                                                                                                                                 Done!
+#> ℹ Extracting data
+#> ✔ Extracting data [8ms]
+#> 
+#> ℹ Reordering factors
+#> ✔ Reordering factors [14ms]
+#> 
+#> ℹ Averaging data
+#> ✔ Averaging data [16ms]
+#> 
 # }
 
 # \donttest{
@@ -548,6 +610,11 @@ Aver_fiml <- efa_average(x_miss, n_factors = 1, estimator = c("PAF", "ML"),
 #> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
 #> ℹ `n_factors` is 1 but `rotation` is not "none"; setting `rotation` to "none",
 #>   as single-factor solutions cannot be rotated.
-#>                                                                                                                                                                  🏃 Extracting data...                                                                                                                                                                 🏃 Averaging data...                                                                                                                                                                 Done!
+#> ℹ Extracting data
+#> ✔ Extracting data [7ms]
+#> 
+#> ℹ Averaging data
+#> ✔ Averaging data [15ms]
+#> 
 # }
 ```

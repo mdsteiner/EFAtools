@@ -152,7 +152,11 @@ multiple-group fit. Its length must match the number of groups.</p></dd>
 <dt id="arg-factor-map">factor_map<a class="anchor" aria-label="anchor" href="#arg-factor-map"></a></dt>
 <dd><p>matrix. A logical or 0/1 matrix indicating which variable
 corresponds to which group factor, with the same dimensions as the group
-loading matrix (cross-loadings are allowed). If <code>NULL</code> (default), each
+loading matrix (cross-loadings are allowed). Its columns are matched to the
+group factors by position, so a map in a different factor order than the
+solution yields well-formed but meaningless subscale coefficients; a map whose
+assigned items hardly load on the factor they are assigned to while loading on
+another one is warned about. If <code>NULL</code> (default), each
 variable is assigned to the group factor on which it loads most strongly. Not
 used for <code>lavaan</code> input.</p></dd>
 
@@ -228,7 +232,8 @@ one row per computed coefficient, with columns</p>
 
 </dl><p>Structurally undefined cells (for example ECV and PUC on a group factor) are
 omitted. The object carries a <code>settings</code> attribute (the total-variance
-convention used) and a <code>kind</code> attribute tagging each coefficient as a
+convention used, and whether the solution has a general factor) and a
+<code>kind</code> attribute tagging each coefficient as a
 reliability coefficient or a common-variance index, and has a <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code>
 method.</p>
     </div>
@@ -279,6 +284,7 @@ group.</p>
     <div class="dont-index"><p><code><a href="efa_fit.html">efa_fit()</a></code> for the solution these are computed from, and <code><a href="OMEGA.html">OMEGA()</a></code>, the
 superseded function that returns these same coefficients in a wide, per-factor layout.</p>
 <p>Other reliability coefficients:
+<code><a href="efa_schmid_leiman.html">efa_schmid_leiman()</a></code>,
 <code><a href="print.efa_reliability.html">print.efa_reliability()</a></code></p></div>
     </div>
 
@@ -291,6 +297,9 @@ superseded function that returns these same coefficients in a wide, per-factor l
 <span class="r-in"><span><span class="fu">efa_reliability</span><span class="op">(</span><span class="va">efa_mod</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Total variance from the correlation matrix.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Correlated-factors solution: with no general factor, each factor's subscale</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> omega equals its total omega.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Reliability coefficients</span> ────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>

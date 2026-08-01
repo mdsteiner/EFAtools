@@ -182,7 +182,9 @@ corresponding entries are <code>NA</code>. When <code>b_boot &gt; 0</code> (raw 
 elements are added: <code>matched_se</code>, the bootstrap standard error of each
 matched congruence; <code>matched_ci</code>, a list of <code>lower</code> and <code>upper</code> percentile
 confidence limits (each a groups-by-groups-by-factors array); and <code>n_boot</code>,
-the number of bootstrap replicates the intervals are based on.</p></dd>
+the number of bootstrap replicates that aligned in every group and so
+contributed to the intervals (a replicate whose fit did not converge is
+retained, as in <code><a href="efa_fit.html">efa_fit()</a></code>).</p></dd>
 
 <dt>diffs</dt>
 <dd><p>A data frame with one row per group pair summarising the differences
@@ -204,7 +206,10 @@ factor giving the matched Tucker congruence (<code>phi</code>), its bootstrap CI
 the Lorenzo-Seva and ten Berge (2006) similarity bands: <code>phi &gt;= 0.95</code> is "equal" and
 <code>[0.85, 0.95)</code> is "fair"; congruences <code>&lt; 0.85</code>, below their bands, are labelled
 "incongruent". The verdict is read from <code>phi_lower</code> when a bootstrap is available
-(conservative) and from <code>phi</code> otherwise. <code>NULL</code> when <code>invariance = FALSE</code>.</p></dd>
+(conservative) and from <code>phi</code> otherwise. Tucker's congruence is invariant to a
+proportional rescaling of a factor's loadings, so a factor can be graded "equal"
+even when one group's loadings on it are uniformly stronger; read the verdict
+alongside <code>diffs</code>. <code>NULL</code> when <code>invariance = FALSE</code>.</p></dd>
 
 <dt>efa</dt>
 <dd><p>The named list of per-group <code><a href="efa_fit.html">efa_fit()</a></code> objects (each retains its own

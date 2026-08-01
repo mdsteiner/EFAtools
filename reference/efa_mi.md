@@ -18,7 +18,7 @@ efa_mi(
   consensus_args = list(),
   procrustes_args = list(),
   rmsea_ci_level = 0.9,
-  rmsr_upper = TRUE,
+  rmsr_upper = lifecycle::deprecated(),
   ...
 )
 ```
@@ -83,8 +83,18 @@ efa_mi(
 
 - rmsr_upper:
 
-  Logical. If `TRUE`, compute RMSR from the unique off-diagonal residual
-  correlations. If `FALSE`, use the full off-diagonal matrix.
+  **\[deprecated\]** Accepted and ignored. It selected between computing
+  RMSR from the unique off-diagonal residual correlations and from the
+  full off-diagonal matrix. The two element sets hold each residual pair
+  once and twice respectively, so their sums and counts double together
+  and the mean square is the same number whenever the residual matrix is
+  symmetric, which the pooled residuals always are. RMSR is therefore
+  always the root mean square of the unique off-diagonal residuals;
+  SRMR, which divides the same sum by the number of non-redundant
+  elements, is reported alongside it. Supplying it to `efa_mi()` signals
+  a deprecation warning; the superseded
+  [`EFA_POOLED()`](https://mdsteiner.github.io/EFAtools/reference/EFA_POOLED.md)
+  accepts it silently.
 
 - ...:
 
@@ -146,6 +156,58 @@ object carries:
   uncertainty is carried by \\\tilde\Gamma\\ rather than by
   per-parameter Rubin pooling.
 
+- mi_diagnostics:
+
+  Diagnostics for the pooled model fit, `NULL` on the `se = "sandwich"`
+  (MI2S) path, where there is one fit and no D2 pool. `m` is the number
+  of imputations that entered the pool. `D2_F`, `D2_df1`, `D2_df2`,
+  `D2_chi_asymptotic`, `ARIV` and `FMI` describe the D2 pool of the
+  model chi-square (the average relative increase in variance and the
+  fraction of missing information it implies), and `chi_bar_naive` is
+  the plain mean of the per-imputation statistics for comparison; the
+  `*_null` entries are the same quantities for the independence
+  baseline. `chi_cfi` and `chi_null_cfi` are the pooled model and
+  baseline **chi-squares** on the common \\N - 1\\ noncentrality scale.
+  `chi_cfi` is the statistic the reported RMSEA is formed from; the pair
+  is also the basis on which `lavaan.mi`/`semTools` form pooled
+  incremental indices, so the reference CFI is
+  `1 - (chi_cfi - df) / (chi_null_cfi - df_null)` (and analogously for
+  TLI) – a different quantity from the reported CFI/TLI, which average
+  the per-imputation indices.
+
+- fits:
+
+  The list of \\m\\ component
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  fits, in the order of `data_list`, kept for per-imputation
+  diagnostics. On the MI2S path these are the per-imputation fits whose
+  inputs were pooled, not the pooled fit itself (which is `mi_fit`).
+
+- alignment:
+
+  Metadata from aligning the rotated solutions, `NULL` when no rotation
+  was requested or on the MI2S path (one fit, one gauge). Under
+  `target_method = "first_target"`: the `method` used, the `target` it
+  aligned to, the per-imputation `target_rotations`, the indices of any
+  `point_rotation_failures`, and whether every inner alignment
+  `converged`. Under `target_method = "consensus"` it is the full
+  [`efa_procrustes()`](https://mdsteiner.github.io/EFAtools/reference/efa_procrustes.md)-based
+  GPA record: the converged `target`, the `aligned_loadings` and
+  `aligned_phi`, the iteration `history`, convergence flags, and the
+  multi-start summary.
+
+- settings:
+
+  The component fits'
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  settings with the pooling settings added: `pooled` (always `TRUE`),
+  `pooled_N` and `N` (the mean N across imputations), `n_imputations`,
+  `component_se` (the `se` the component fits used), `target_method`,
+  `align_unrotated`, `fit_pool_method`, `p`, `ci` and `rmsea_ci_level`.
+  `se` records what was actually pooled, so it is `"none"` when pooled
+  standard errors could not be produced although the component fits
+  computed them (`component_se` keeps the request).
+
 ## Details
 
 `efa_mi()` is the multiple-imputation route to handling missing data:
@@ -159,6 +221,13 @@ from one raw dataset with missing values. Both feed the same
 correlation-scale EFA core and differ only in how the missingness is
 handled; FIML is intentionally not routed through `efa_mi()`, which is a
 multi-fit pooler by construction.
+
+Both routes assume the values are missing at random (MAR). Which one to
+prefer is largely practical: FIML is a single, efficient fit and is the
+simpler default when the analysis model is the whole story, whereas
+multiple imputation is more flexible when the imputation model should
+draw on auxiliary variables not in the factor model, or when the same
+imputations feed several downstream analyses.
 
 ### Standard-error pooling routes
 
@@ -252,24 +321,34 @@ summary methods show SRMR only.
 
 ### Pooling the model chi-square and fit indices
 
-The model chi-square and the indices derived from it (RMSEA, ECVI, and
-the descriptive AIC/BIC) are pooled with the D2 rule (Li, Meng,
-Raghunathan & Rubin, 1991), not arithmetically averaged. Because D2
-shrinks the pooled chi-square in proportion to the between-imputation
-variability, the pooled RMSEA can fall below the mean of the
-per-imputation RMSEAs (as it does in `lavaan.mi`); read it together with
-the per-imputation fit. The incremental indices CFI (Bentler, 1990) and
-TLI (Tucker & Lewis, 1973) are instead the average of the per-imputation
-indices, which keeps them consistent with the component fits and avoids
-the out-of-range values that separately pooling the model and baseline
-noncentralities (as `lavaan.mi`/`semTools` do) can produce; those
-separately pooled noncentralities remain available in `mi_diagnostics`.
-AIC and BIC, if returned, are chi-square-derived descriptive quantities
-and are not likelihood-based MI information criteria. They are reported
-only where the component fits report them: whenever a component
-withholds them – any `cor_method = "fiml"` fit, and any fit whose
-chi-square is a scaled statistic, such as `se = "sandwich"` – the pooled
-AIC, BIC, and ECVI are `NA` too, matching what
+The model chi-square and the indices derived from it (ECVI and the
+descriptive AIC/BIC) are pooled with the D2 rule (Li, Meng, Raghunathan
+& Rubin, 1991), not arithmetically averaged. RMSEA is pooled by the same
+rule but from a second D2 pool of the per-imputation discrepancies taken
+on the uncorrected \\N - 1\\ scale, because RMSEA places the model
+noncentrality on the scale on which it is defined, so the Bartlett
+small-sample correction enters only the chi-square test and not this
+approximate-fit index (as in
+[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)).
+The printed RMSEA therefore does not reconcile by hand with the printed
+chi-square; the statistic it is formed from is `chi_cfi` in
+`mi_diagnostics`. Because D2 shrinks the pooled chi-square in proportion
+to the between-imputation variability, the pooled RMSEA can fall below
+the mean of the per-imputation RMSEAs (as it does in `lavaan.mi`); read
+it together with the per-imputation fit. The incremental indices CFI
+(Bentler, 1990) and TLI (Tucker & Lewis, 1973) are instead the average
+of the per-imputation indices, which keeps them consistent with the
+component fits and avoids the out-of-range values that separately
+pooling the model and baseline noncentralities (as
+`lavaan.mi`/`semTools` do) can produce; the separately pooled model and
+baseline chi-squares those indices would be formed from remain available
+in `mi_diagnostics`. AIC and BIC, if returned, are chi-square-derived
+descriptive quantities and are not likelihood-based MI information
+criteria. They are reported only where the component fits report them:
+whenever a component withholds them – any `cor_method = "fiml"` fit, and
+any fit whose chi-square is a scaled statistic, such as
+`se = "sandwich"` – the pooled AIC, BIC, and ECVI are `NA` too, matching
+what
 [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
 returns for a single such fit. On the sandwich/MI2S route the chi-square
 is the single fit's scaled statistic rather than a D2 pool.
@@ -506,8 +585,8 @@ mod
 #> ── Model Fit ───────────────────────────────────────────────────────────────────
 #> 
 #> D2-pooled χ²(20) = 0.00, p = 1.000
-#> CFI: .99
-#> TLI: .98
+#> CFI (avg. over imputations): .99
+#> TLI (avg. over imputations): .98
 #> RMSEA [90% CI]: .00 [.00; .00]
 #> AIC: -40.00
 #> BIC: -133.94
@@ -516,6 +595,8 @@ mod
 #> SRMR: .01
 #> Note: the pooled χ² is the D2 statistic; its p uses the D2 reference F(20, .1),
 #> not the χ²(20) tail.
+#> Note: CFI and TLI are averaged over the imputations, not formed from the
+#> separately pooled model and baseline statistics in `mi_diagnostics`.
 
 # \donttest{
 # add computation of standard errors and CIs
@@ -554,8 +635,8 @@ mod
 #> ── Model Fit ───────────────────────────────────────────────────────────────────
 #> 
 #> D2-pooled χ²(20) = 0.00, p = 1.000
-#> CFI [95% bootstrap/MI-CI]: .99 [.96, 1.02]
-#> TLI [95% bootstrap/MI-CI]: .98 [.94, 1.02]
+#> CFI (avg. over imputations) [95% bootstrap/MI-CI]: .99 [.96, 1.02]
+#> TLI (avg. over imputations) [95% bootstrap/MI-CI]: .98 [.94, 1.02]
 #> RMSEA [90% CI] [95% bootstrap/MI-CI]: .00 [.00; .00] [.00, .13]
 #> AIC [95% bootstrap/MI-CI]: -40.00 [-81.22, 172.11]
 #> BIC [95% bootstrap/MI-CI]: -133.94 [-175.16, 78.17]
@@ -564,6 +645,8 @@ mod
 #> SRMR [95% bootstrap/MI-CI]: .01 [.00, .04]
 #> Note: the pooled χ² is the D2 statistic; its p uses the D2 reference F(20, .1),
 #> not the χ²(20) tail.
+#> Note: CFI and TLI are averaged over the imputations, not formed from the
+#> separately pooled model and baseline statistics in `mi_diagnostics`.
 #> 
 #> Note: Bootstrap/MI CIs based on 1000 bootstrap samples per imputation.
 # }

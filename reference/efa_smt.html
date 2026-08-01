@@ -147,7 +147,8 @@ settings apply either.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>An object of class <code>efa_retention</code> (see <code><a href="print.efa_retention.html">print.efa_retention()</a></code> for
-the print method). Its main fields are:</p>
+the print method). SMT has no plot; <code><a href="plot.efa_retention.html">plot.efa_retention()</a></code> returns <code>NULL</code>
+with a message for it. Its main fields are:</p>
 <dl><dt>n_factors</dt>
 <dd><p>A named numeric vector (<code>"chi"</code>, <code>"RMSEA"</code>, <code>"AIC"</code>) with the
 suggested number of factors from the sequential chi-square model tests, the
@@ -180,6 +181,11 @@ for the model where the lower bound of the 90% confidence interval of the
 RMSEA first falls below the .05 threshold.</p>
 <p>Regarding the AIC, the suggested number of factors is the number of factors
 for the model with the lowest AIC.</p>
+<p>The sequential models are fitted without inequality constraints, so a solution
+can be inadmissible (a Heywood case, or a fit that did not converge). Only the
+models the three rules actually select are checked for this; if one of them is
+inadmissible a warning is raised and the corresponding suggestion should be
+interpreted with caution.</p>
 <p>In comparison with other prominent factor retention criteria, SMT performed
 well at determining the number of factors to extract in EFA (Auerswald &amp;
 Moshagen, 2019). The RMSEA lower bound also performed well at determining the true

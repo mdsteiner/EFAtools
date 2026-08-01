@@ -84,57 +84,60 @@ efa_screen(DOSPERT_sub, seed = 2)
 #> 
 #> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05.
 #> These data are probably suitable for factor analysis.
-#> 𝜒²(435) = 5843.05, p < .001
+#> χ²(435) = 5843.05, p < .001
 #> 
 #> ── Multicollinearity ───────────────────────────────────────────────────────────
 #> 
-#> ✖ Determinant: 0.00000634. Multicollinearity likely (a value near 0 signals it).
-#> ✔ Condition number: 46.561. No concern (large values signal near-collinear variables).
+#> ✖ Determinant: 0.00000634. Multicollinearity likely (a value near 0 signals
+#> it).
+#> ✔ Condition number: 46.561 (condition index 6.824). No concern (index below 10;
+#> Belsley, Kuh & Welsch, 1980).
 #> 
 #> ── Per-variable diagnostics ────────────────────────────────────────────────────
 #> 
-#>        variance missing   SMC   MSA  flags
-#> ethR_1    2.785       0 0.428 0.908       
-#> ethR_2    2.469       0 0.312 0.927       
-#> ethR_3    1.274       0 0.444 0.906 sparse
-#> ethR_4    2.011       0 0.317 0.818 sparse
-#> ethR_5    2.202       0 0.310 0.926       
-#> ethR_6    3.457       0 0.398 0.837       
-#> finR_1    1.962       0 0.683 0.880       
-#> finR_2    3.223       0 0.319 0.816       
-#> finR_3    2.356       0 0.716 0.853       
-#> finR_4    2.874       0 0.519 0.857       
-#> finR_5    2.458       0 0.760 0.853       
-#> finR_6    3.118       0 0.515 0.861       
-#> heaR_1    4.016       0 0.296 0.912       
-#> heaR_2    4.532       0 0.277 0.898       
-#> heaR_3    2.888       0 0.366 0.892       
-#> heaR_4    2.185       0 0.423 0.889       
-#> heaR_5    4.099       0 0.254 0.882       
-#> heaR_6    3.356       0 0.313 0.935       
-#> recR_1    4.570       0 0.374 0.888       
-#> recR_2    2.829       0 0.465 0.927       
-#> recR_3    3.664       0 0.511 0.905       
-#> recR_4    4.362       0 0.687 0.849       
-#> recR_5    3.741       0 0.685 0.840       
-#> recR_6    4.076       0 0.541 0.920       
-#> socR_1    1.237       0 0.351 0.714 sparse
-#> socR_2    2.774       0 0.434 0.784       
-#> socR_3    2.148       0 0.343 0.735       
-#> socR_4    2.751       0 0.359 0.791       
-#> socR_5    3.562       0 0.284 0.840       
-#> socR_6    2.529       0 0.379 0.786       
+#>        variance missing%   SMC   MSA  flags
+#> ethR_1    2.785        0 0.428 0.908       
+#> ethR_2    2.469        0 0.312 0.927       
+#> ethR_3    1.274        0 0.444 0.906 sparse
+#> ethR_4    2.011        0 0.317 0.818 sparse
+#> ethR_5    2.202        0 0.310 0.926       
+#> ethR_6    3.457        0 0.398 0.837       
+#> finR_1    1.962        0 0.683 0.880       
+#> finR_2    3.223        0 0.319 0.816       
+#> finR_3    2.356        0 0.716 0.853       
+#> finR_4    2.874        0 0.519 0.857       
+#> finR_5    2.458        0 0.760 0.853       
+#> finR_6    3.118        0 0.515 0.861       
+#> heaR_1    4.016        0 0.296 0.912       
+#> heaR_2    4.532        0 0.277 0.898       
+#> heaR_3    2.888        0 0.366 0.892       
+#> heaR_4    2.185        0 0.423 0.889       
+#> heaR_5    4.099        0 0.254 0.882       
+#> heaR_6    3.356        0 0.313 0.935       
+#> recR_1    4.570        0 0.374 0.888       
+#> recR_2    2.829        0 0.465 0.927       
+#> recR_3    3.664        0 0.511 0.905       
+#> recR_4    4.362        0 0.687 0.849       
+#> recR_5    3.741        0 0.685 0.840       
+#> recR_6    4.076        0 0.541 0.920       
+#> socR_1    1.237        0 0.351 0.714 sparse
+#> socR_2    2.774        0 0.434 0.784       
+#> socR_3    2.148        0 0.343 0.735       
+#> socR_4    2.751        0 0.359 0.791       
+#> socR_5    3.562        0 0.284 0.840       
+#> socR_6    2.529        0 0.379 0.786       
 #> 
 #> ── Multivariate normality ──────────────────────────────────────────────────────
 #> 
-#> ✖ Mardia's skewness: 𝜒²(4960) = 11585.82, p < .001.
+#> ✖ Mardia's skewness: χ²(4960) = 11585.82, p < .001.
 #> ✖ Mardia's kurtosis: z = 43.84, p < .001.
 #> ✖ Henze-Zirkler: HZ = 1.03, p < .001.
 #> These data depart from multivariate normality.
 #> 
 #> ── Outliers ────────────────────────────────────────────────────────────────────
 #> 
-#> ℹ 240 of 500 observations were flagged as multivariate outliers (robust distance > 6.85).
+#> ℹ 240 of 500 observations were flagged as multivariate outliers (robust
+#> distance > 6.85).
 #> 
 #> ── Recommendations ─────────────────────────────────────────────────────────────
 #> 
@@ -150,8 +153,10 @@ efa_screen(DOSPERT_sub, seed = 2)
 #> ! 3 variables have a sparse response category (< 5 responses): ethR_3, ethR_4,
 #>   and socR_1; a low-frequency category can destabilise polychoric estimates -
 #>   consider collapsing it into an adjacent category.
-#> ! 240 observations were flagged as potential multivariate outliers; inspect
-#>   them (see `$outliers$flagged`) before down-weighting or excluding.
+#> ! 240 of 500 observations (48%) exceed the outlier cutoff, far above the 2.5%
+#>   expected under multivariate normality; this usually means the data are not
+#>   elliptically distributed (subgroups or a mixture) rather than that this many
+#>   cases are contaminated.
 ```
 
 The overall KMO is meritorious and Bartlett’s test is clearly
@@ -196,7 +201,7 @@ efa_bartlett(DOSPERT_sub)
 #> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05.
 #> These data are probably suitable for factor analysis.
 #> 
-#> 𝜒²(435) = 5843.05, p < .001
+#> χ²(435) = 5843.05, p < .001
 
 # KMO criterion
 efa_kmo(DOSPERT_sub)
@@ -280,7 +285,8 @@ efa_ekc(DOSPERT_sub)
 #> 
 #> • Original implementation (Braeken & van Assen, 2017): 8
 #> 
-#> ℹ Multiple implementations of EKC exist; make sure to report which one you used (see the efa_ekc help page for details).
+#> ℹ Multiple implementations of EKC exist; make sure to report which one you used
+#> (see the efa_ekc help page for details).
 ```
 
 The following criteria are currently implemented: comparison data
@@ -318,6 +324,11 @@ Bartlett’s test and computes the KMO. You can pick a subset with the
 
 ret <- efa_retain(DOSPERT_sub,
                   criteria = c("parallel", "ekc", "kgc", "smt", "map"))
+#> Warning: The sequential model tests selected an inadmissible solution: chi: 13 factors
+#> (Heywood case) and AIC: 13 factors (Heywood case).
+#> ℹ The selected solution has a Heywood case or did not converge, so the
+#>   suggested number of factors may be unreliable; interpret it with caution and
+#>   cross-check with other criteria.
 ret
 #> ── Tests for the suitability of the data for factor analysis ───────────────────
 #> 
@@ -327,7 +338,9 @@ ret
 #> ✔ The Kaiser-Meyer-Olkin criterion is meritorious (KMO = 0.87). These data are
 #>   probably suitable for factor analysis.
 #> 
-#> ── Number of factors suggested by the factor retention criteria ────────────────
+#> ── Suggested number of factors ─────────────────────────────────────────────────
+#> 
+#> 8 suggestions from 5 criteria, ranging from 4 to 13 factors.
 #> 
 #> Empirical Kaiser Criterion
 #> • Original implementation (Braeken & van Assen, 2017): 8
@@ -401,7 +414,9 @@ efa_retain(test_models$baseline$cormat, N = 500, estimator = "uls",
 #> ✔ The Kaiser-Meyer-Olkin criterion is marvellous (KMO = 0.916). These data are
 #>   probably suitable for factor analysis.
 #> 
-#> ── Number of factors suggested by the factor retention criteria ────────────────
+#> ── Suggested number of factors ─────────────────────────────────────────────────
+#> 
+#> 6 suggestions from 3 criteria, ranging from 2 to 3 factors (most common: 3).
 #> 
 #> Empirical Kaiser Criterion
 #> • Original implementation (Braeken & van Assen, 2017): 3
@@ -666,12 +681,16 @@ PAF/promax solution with the ULS/oblimin one:
 
 efa_compare(efa_dospert$rot_loadings, efa_uls$rot_loadings,
             x_labels = c("PAF and promax", "ULS and oblimin"))
-#> Mean [min, max] absolute difference:  0.0278 [ 0.0001,  0.1262]
-#> Median absolute difference:  0.0226
-#> Root mean squared distance (RMSE):  0.0359
+#> 
+#> ── Summary statistics ──────────────────────────────────────────────────────────
+#> 
+#> Mean [min, max] absolute difference:  .0278 [ .0001,  .1262]
+#> Median absolute difference:  .0226
+#> Root mean squared distance (RMSE):  .0359
 #> Max decimals where all numbers agree in absolute value: 0
-#> Minimum number of decimals provided: 17
 #> Differing indicator-to-factor correspondences: 1 (highest loading), 0 (all |loadings| >= 0.3)
+#> 
+#> ── Elementwise differences ─────────────────────────────────────────────────────
 #> 
 #>           F1      F2      F3      F4      F5      F6
 #> ethR_1   .0244  -.0335  -.0590  -.0073   .0157  -.0248
@@ -723,7 +742,6 @@ promax rotation:
 avg_dospert <- efa_average(DOSPERT_sub, n_factors = 6,
                            estimator = c("paf", "uls", "ml"),
                            type = "EFAtools", start_method = "psych")
-#>                                                                                                                                                                  🏃 Extracting data...                                                                                                                                                                 🚶 Reordering factors...                                                                                                                                                                 🏃 Averaging data...                                                                                                                                                                 Done!
 avg_dospert
 #> 
 #> Averaging performed with averaging method mean (trim = 0) across 3 EFAs,
@@ -807,7 +825,7 @@ avg_dospert
 #> socR_5   .094   .023  -.081   .094   .368   .106
 #> socR_6   .132  -.029  -.068  -.077   .564   .138
 #> 
-#> ── Range ───────────────────────────────────────────────────────────────────────
+#> ── Range (max − min) ───────────────────────────────────────────────────────────
 #> 
 #>          F1    F2    F3    F4    F5    F6
 #> ethR_1  .004  .044  .011  .037  .006  .015
@@ -853,7 +871,7 @@ avg_dospert
 #> F5   .026   .307   .040   .291  1.000
 #> F6   .331   .429   .463   .493   .320  1.000
 #> 
-#> ── Range ───────────────────────────────────────────────────────────────────────
+#> ── Range (max − min) ───────────────────────────────────────────────────────────
 #> 
 #>      F1    F2    F3    F4    F5    F6
 #> F1  .000
@@ -872,7 +890,7 @@ avg_dospert
 #> Prop Tot Var    .087   .080   .082   .077   .074   .057
 #> Prop Comm Var   .190   .176   .179   .169   .161   .125
 #> 
-#> ── Range ───────────────────────────────────────────────────────────────────────
+#> ── Range (max − min) ───────────────────────────────────────────────────────────
 #> 
 #>                 F1    F2    F3    F4    F5    F6
 #> SS loadings    .099  .336  .030  .284  .022  .005
@@ -881,8 +899,15 @@ avg_dospert
 #> 
 #> ══ Model Fit ═══════════════════════════════════════════════════════════════════
 #> 
+#> The fit indices are the mean of the per-solution fit indices, not the fit of
+#> the averaged loadings printed above, which are a cell-wise summary rather than
+#> a fitted solution.
+#> 
+#> Chi-square-based indices averaged over 2 of 3 solutions.
+#> CAF, RMSR, and SRMR averaged over 3 of 3 solutions.
+#> 
 #>        M (SD) [Min; Max]
-#> 𝜒²: 613.61 ( 6.30) [609.15; 618.06]
+#> χ²: 613.61 ( 6.30) [609.15; 618.06]
 #> df: 270
 #> p: .000 (.000) [.000; .000]
 #> CFI: .93 (.00) [.93; .94]
@@ -924,13 +949,13 @@ fac_scores
 #> 
 #> ── Score determinacy ───────────────────────────────────────────────────────────
 #> 
-#>      rho  rho2 guttman
-#> F1 0.903 0.815   0.629
-#> F2 0.951 0.905   0.810
-#> F3 0.961 0.923   0.846
-#> F4 0.910 0.829   0.658
-#> F5 0.887 0.787   0.574
-#> F6 0.907 0.822   0.644
+#>      rho  rho2  guttman
+#> F1  .903  .815     .629
+#> F2  .951  .905     .810
+#> F3  .961  .923     .846
+#> F4  .910  .829     .658
+#> F5  .887  .787     .574
+#> F6  .907  .822     .644
 ```
 
 ## Schmid-Leiman Transformation and McDonald’s Omegas

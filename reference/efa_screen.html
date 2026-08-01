@@ -143,8 +143,8 @@ larger values trade robustness for efficiency. Only used when raw data are suppl
 <dt id="arg-outlier-cutoff">outlier_cutoff<a class="anchor" aria-label="anchor" href="#arg-outlier-cutoff"></a></dt>
 <dd><p>numeric. The probability defining the chi-square cutoff for
 flagging a multivariate outlier: an observation is flagged when its squared robust
-distance exceeds <code>qchisq(outlier_cutoff, p)</code> for <code>p</code> variables. Default is <code>0.975</code>.
-Only used when raw data are supplied.</p></dd>
+distance exceeds <code>qchisq(outlier_cutoff, p)</code> for <code>p</code> variables, in [0.5, 0.9999].
+Default is <code>0.975</code>. Only used when raw data are supplied.</p></dd>
 
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
@@ -204,15 +204,17 @@ distance scale, <code>sqrt(qchisq(outlier_cutoff, p))</code>, directly comparabl
 <code>flagged</code> (the row numbers, in the supplied data, whose robust distance exceeds
 <code>cutoff</code>), <code>center</code> and <code>cov</code> (the robust location and scatter underlying the
 distances), <code>method</code> (<code>"mcd"</code> for the robust estimate, or <code>"classical"</code> when the
-fallback was used), and <code>n_complete</code> (the number of complete cases). When neither a
-robust nor a classical covariance can be formed a classed note (of class
-<code>efa_screen_no_outliers</code>) is returned instead. <code>NULL</code> when a correlation matrix is
-supplied.</p></dd>
+fallback was used), <code>fallback_reason</code> (why the robust estimate was unavailable, or
+<code>NULL</code> when <code>method</code> is <code>"mcd"</code>), and <code>n_complete</code> (the number of complete cases).
+When neither a robust nor a classical covariance can be formed a classed note (of
+class <code>efa_screen_no_outliers</code>) is returned instead. <code>NULL</code> when a correlation
+matrix is supplied.</p></dd>
 
 <dt>categories</dt>
 <dd><p>A named list with, for each variable treated as categorical,
-the response-category counts (in category order); <code>NA</code> for a variable treated
-as continuous. <code>NULL</code> when a correlation matrix is supplied.</p></dd>
+the response-category counts (in category order, labelled by the original levels
+for a factor or character column and by the value itself otherwise); <code>NA</code> for a
+variable treated as continuous. <code>NULL</code> when a correlation matrix is supplied.</p></dd>
 
 <dt>note</dt>
 <dd><p>A classed note explaining that the raw-data diagnostics need raw
@@ -220,7 +222,8 @@ data; <code>NULL</code> when raw data are supplied.</p></dd>
 
 <dt>settings</dt>
 <dd><p>A list of the settings used, including <code>n_obs</code>, the number of
-rows in the supplied raw data (<code>NA</code> for a correlation-matrix input).</p></dd>
+rows in the supplied raw data (<code>NA</code> for a correlation-matrix input), and
+<code>outlier_cutoff</code>, the probability behind the outlier flagging threshold.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -258,7 +261,10 @@ little variance with the rest of the set.</p></dd>
 
 <dt>Variance and missing data</dt>
 <dd><p>The variance of each variable (over its
-available values) and the percentage of missing values. These, and the
+available values) and the percentage of missing values. Factor and character
+columns are recoded to their integer level codes, so <code>variance</code> and the
+empty-category check below refer to those codes (the category counts
+themselves are labelled by the original levels). These, and the
 category tabulation below, are computed column by column from the supplied
 data using every non-missing value, and so do not depend on <code>use</code>, which
 governs only the correlation matrix. Under a listwise <code>use</code>
@@ -293,11 +299,15 @@ distance. A high-breakdown robust location and scatter are estimated from the
 complete cases with the fast minimum covariance determinant (MCD) algorithm
 (Rousseeuw &amp; Van Driessen, 1999), using a subset covering a proportion
 <code>mcd_alpha</code> of the observations; an observation whose squared robust distance
-exceeds <code>qchisq(outlier_cutoff, p)</code> is flagged. With too few complete cases
-(\(n \le 2p\)) or collinear variables the robust covariance is undefined, so
-the classical Mahalanobis distance is used instead with a warning; if even that
-covariance is singular the diagnostic is skipped with a note. Available only
-from raw data.</p></dd>
+exceeds <code>qchisq(outlier_cutoff, p)</code> is flagged. The robust covariance is
+undefined with too few complete cases (\(n \le 2p\)), and also when a whole
+covering subset lies exactly on a lower-dimensional hyperplane (an <em>exact fit</em>,
+common with coarse discrete items on which many respondents answer an item pair
+identically). In both cases the classical Mahalanobis distance is used instead,
+with a warning naming which of the two applies; those distances are computed
+from a covariance the outliers themselves inflate, so the diagnostic is no
+longer high-breakdown and tends to under-flag. If even the classical covariance
+is singular the diagnostic is skipped with a note. Available only from raw data.</p></dd>
 
 
 </dl></div>
@@ -323,12 +333,13 @@ from raw data.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> The Bartlett's test of sphericity was significant at an alpha level of .05.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> These data are probably suitable for factor analysis.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 𝜒²(153) = 2173.28, <span style="font-style: italic;">p</span> &lt; .001</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> χ²(153) = 2173.28, <span style="font-style: italic;">p</span> &lt; .001</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Multicollinearity</span> ───────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Determinant: 0.0121. No concern (a value near 0 signals multicollinearity).</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Condition number: 11.680. No concern (large values signal near-collinear variables).</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Condition number: 11.680 (condition index 3.418). No concern (index below 10;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Belsley, Kuh &amp; Welsch, 1980).</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Per-variable diagnostics</span> ────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -358,8 +369,15 @@ from raw data.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Per-item variance, missing-data, category, normality, and outlier diagnostics</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   require raw data; only a correlation matrix was supplied.</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># From raw data (N is taken from the data)</span></span></span>
-<span class="r-in"><span><span class="fu">efa_screen</span><span class="op">(</span><span class="va">GRiPS_raw</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># From raw data (N is taken from the data; the seed makes the outlier</span></span></span>
+<span class="r-in"><span><span class="co"># diagnostics reproducible)</span></span></span>
+<span class="r-in"><span><span class="fu">efa_screen</span><span class="op">(</span><span class="va">GRiPS_raw</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>A robust (MCD) covariance could not be computed; classical Mahalanobis</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> distances were used.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> At least half the complete cases lie exactly on a lower-dimensional</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   hyperplane (an "exact fit"). This is common with coarse discrete items, where</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   many respondents give identical answers on an item pair; it does not mean the</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   data are collinear at the correlation level.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Sampling adequacy and sphericity</span> ────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -368,35 +386,45 @@ from raw data.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> The Bartlett's test of sphericity was significant at an alpha level of .05.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> These data are probably suitable for factor analysis.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 𝜒²(28) = 5054.06, <span style="font-style: italic;">p</span> &lt; .001</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> χ²(28) = 5054.06, <span style="font-style: italic;">p</span> &lt; .001</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Multicollinearity</span> ───────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Determinant: 0.00188. No concern (a value near 0 signals multicollinearity).</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Condition number: 24.340. No concern (large values signal near-collinear variables).</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Condition number: 24.340 (condition index 4.934). No concern (index below 10;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Belsley, Kuh &amp; Welsch, 1980).</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Per-variable diagnostics</span> ────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           variance missing   SMC   MSA  flags</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fun          1.427       0 0.609 0.955       </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> friends      1.309       0 0.685 0.950       </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> enjoy        1.154       0 0.715 0.947 sparse</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> hurt         1.136       0 0.557 0.968 sparse</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> part         1.271       0 0.636 0.955       </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> commonly     1.099       0 0.653 0.958       </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> chances      1.389       0 0.592 0.961       </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> attracted    1.259       0 0.679 0.950 sparse</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           variance missing%   SMC   MSA  flags</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fun          1.427        0 0.609 0.955       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> friends      1.309        0 0.685 0.950       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> enjoy        1.154        0 0.715 0.947 sparse</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> hurt         1.136        0 0.557 0.968 sparse</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> part         1.271        0 0.636 0.955       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> commonly     1.099        0 0.653 0.958       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> chances      1.389        0 0.592 0.961       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> attracted    1.259        0 0.679 0.950 sparse</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Multivariate normality</span> ──────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BB0000;">✖</span> Mardia's skewness: 𝜒²(120) = 910.1, p &lt; .001.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BB0000;">✖</span> Mardia's skewness: χ²(120) = 910.1, p &lt; .001.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BB0000;">✖</span> Mardia's kurtosis: z = 49.32, p &lt; .001.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BB0000;">✖</span> Henze-Zirkler: HZ = 11.65, p &lt; .001.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> These data depart from multivariate normality.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Outliers</span> ────────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> 217 of 810 observations were flagged as multivariate outliers (robust distance &gt; 4.19).</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> A robust (MCD) covariance could not be computed; classical Mahalanobis</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> distances were used.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> At least half the complete cases lie exactly on a lower-dimensional hyperplane</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (an "exact fit"). This is common with coarse discrete items, where many</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> respondents give identical answers on an item pair; it does not mean the data</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> are collinear at the correlation level.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> These distances come from a covariance the outliers themselves inflate, so the</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> diagnostic is no longer high-breakdown and tends to under-flag.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> 71 of 810 observations were flagged as multivariate outliers (Mahalanobis</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> distance &gt; 4.19).</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Recommendations</span> ─────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -409,8 +437,8 @@ from raw data.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 3 variables have a sparse response category (&lt; 5 responses): enjoy, hurt, and</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   attracted; a low-frequency category can destabilise polychoric estimates -</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   consider collapsing it into an adjacent category.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 217 observations were flagged as potential multivariate outliers; inspect</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   them (see `$outliers$flagged`) before down-weighting or excluding.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 71 observations were flagged as potential multivariate outliers; inspect them</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   (see `$outliers$flagged`) before down-weighting or excluding.</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

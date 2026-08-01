@@ -134,15 +134,17 @@ live in <code>estimate_control</code>.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>An object of class <code>efa_retention</code> (see <code><a href="print.efa_retention.html">print.efa_retention()</a></code> for
-the print method). Its main fields are:</p>
+    <p>An object of class <code>efa_retention</code> (see <code><a href="print.efa_retention.html">print.efa_retention()</a></code> and
+<code><a href="plot.efa_retention.html">plot.efa_retention()</a></code> for the print and plot methods). Its main fields are:</p>
 <dl><dt>n_factors</dt>
 <dd><p>A named numeric vector (<code>"NEST"</code>) with the suggested number of
 factors according to the NEST procedure.</p></dd>
 
 <dt>results</dt>
 <dd><p>A list with a single record holding the empirical eigenvalues
-and the reference eigenvalues.</p></dd>
+and the reference eigenvalues. Only the positions the search actually tested
+carry a reference value; beyond the position at which it stopped the series is
+<code>NA</code>.</p></dd>
 
 <dt>settings</dt>
 <dd><p>A list of control settings used.</p></dd>
@@ -167,6 +169,16 @@ that the \((k - 1)\)-factor reference model used at each step stays
 over-identified. If no empirical eigenvalue falls at or below its reference
 within this range, every tested factor is accepted and this capped number is
 returned.</p>
+<p>Because each reference model carries the factors already retained, NEST does not
+lose accuracy for the strongly correlated factor structures where parallel
+analysis tends to under-extract, and it was among the more accurate criteria in
+the simulation studies of Brandenburg and Papenberg (2024) and Caron (2025). The
+price is runtime: a fresh set of <code>n_datasets</code> reference datasets is drawn and
+eigen-decomposed at every candidate factor count, which makes NEST one of the
+slowest criteria available here.</p>
+<p>The reference models are fitted without inequality constraints. A Heywood case in
+one of them leaves no unique variance to simulate the reference data from, so
+NEST aborts rather than continuing from an inadmissible reference.</p>
 <p>For details on the method, including simulation studies, see Achim (2017),
 Brandenburg and Papenberg (2024), and Caron (2025).</p>
 <p>The <code>efa_nest</code> function can also be called together with other factor

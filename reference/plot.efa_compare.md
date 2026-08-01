@@ -10,7 +10,7 @@ Differences above the threshold are highlighted.
 
 ``` r
 # S3 method for class 'efa_compare'
-plot(x, ...)
+plot(x, plot_red = NULL, ...)
 ```
 
 ## Arguments
@@ -20,6 +20,15 @@ plot(x, ...)
   list. An object of class `efa_compare` (output from the
   [`efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/efa_compare.md)
   function).
+
+- plot_red:
+
+  numeric or `NULL`. Threshold above which to draw the absolute
+  differences in red, documented in
+  [`efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/efa_compare.md).
+  `NULL` (default) uses the value recorded in `x$settings`; supplying
+  one overrides it for this plot only, so the comparison need not be
+  recomputed to redraw it at another threshold.
 
 - ...:
 

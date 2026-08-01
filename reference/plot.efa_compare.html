@@ -56,7 +56,7 @@ jittered points. Differences above the threshold are highlighted.</p>
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># S3 method for class 'efa_compare'</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">x</span>, plot_red <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -66,6 +66,13 @@ jittered points. Differences above the threshold are highlighted.</p>
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
 <dd><p>list. An object of class <code>efa_compare</code> (output from the
 <code><a href="efa_compare.html">efa_compare()</a></code> function).</p></dd>
+
+
+<dt id="arg-plot-red">plot_red<a class="anchor" aria-label="anchor" href="#arg-plot-red"></a></dt>
+<dd><p>numeric or <code>NULL</code>. Threshold above which to draw the absolute
+differences in red, documented in <code><a href="efa_compare.html">efa_compare()</a></code>. <code>NULL</code> (default) uses the
+value recorded in <code>x$settings</code>; supplying one overrides it for this plot only,
+so the comparison need not be recomputed to redraw it at another threshold.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

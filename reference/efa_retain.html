@@ -271,9 +271,11 @@ console. Default is FALSE.</p></dd>
 <dd><p>an <code><a href="estimate_control.html">estimate_control()</a></code> object with the estimation settings for the
 <code><a href="efa_fit.html">efa_fit()</a></code> fits run by the criteria that fit a model (<code><a href="efa_hull.html">efa_hull()</a></code>, <code><a href="efa_kgc.html">efa_kgc()</a></code>,
 <code><a href="efa_scree.html">efa_scree()</a></code>, <code><a href="efa_parallel.html">efa_parallel()</a></code>, <code><a href="efa_nest.html">efa_nest()</a></code>, and <code><a href="efa_smt.html">efa_smt()</a></code>). <code>NULL</code> (default) uses the
-<code><a href="efa_fit.html">efa_fit()</a></code> defaults. <code><a href="efa_cd.html">efa_cd()</a></code>, <code><a href="efa_ekc.html">efa_ekc()</a></code>, and <code><a href="efa_map.html">efa_map()</a></code> fit no model, so it does not
-apply to them, and <code><a href="efa_smt.html">efa_smt()</a></code> fits with maximum likelihood by definition, so only
-<code>start_method</code> takes effect there. All fits are unrotated, so no rotation settings apply.</p></dd>
+<code><a href="efa_fit.html">efa_fit()</a></code> defaults. <code><a href="efa_cd.html">efa_cd()</a></code>, <code><a href="efa_ekc.html">efa_ekc()</a></code>, and <code><a href="efa_map.html">efa_map()</a></code> run no <code><a href="efa_fit.html">efa_fit()</a></code> model, so
+it does not apply to them. In <code><a href="efa_kgc.html">efa_kgc()</a></code>, <code><a href="efa_scree.html">efa_scree()</a></code>, and <code><a href="efa_parallel.html">efa_parallel()</a></code> it only takes
+effect when the respective <code>eigen_type</code> includes <code>"EFA"</code>, since no model is fitted otherwise,
+and <code><a href="efa_smt.html">efa_smt()</a></code> fits with maximum likelihood by definition, so only <code>start_method</code> takes
+effect there. All fits are unrotated, so no rotation settings apply.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -301,7 +303,9 @@ suggestion (the scree plot) are not included.</p></dd>
 or failed and the reason, or <code>NULL</code> if all requested criteria ran.</p></dd>
 
 <dt>settings</dt>
-<dd><p>A list of the settings used.</p></dd>
+<dd><p>A list of the settings used. Its <code>criteria</code> element records the
+requested criteria, in the order they were given, while <code>outputs</code> and <code>n_factors</code>
+are in the order in which the criteria were run.</p></dd>
 
 </dl></div>
     <div class="section level2">

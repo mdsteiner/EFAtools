@@ -144,7 +144,10 @@ An object of class `efa_group`, a list containing:
   standard error of each matched congruence; `matched_ci`, a list of
   `lower` and `upper` percentile confidence limits (each a
   groups-by-groups-by-factors array); and `n_boot`, the number of
-  bootstrap replicates the intervals are based on.
+  bootstrap replicates that aligned in every group and so contributed to
+  the intervals (a replicate whose fit did not converge is retained, as
+  in
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)).
 
 - diffs:
 
@@ -172,8 +175,11 @@ An object of class `efa_group`, a list containing:
   Berge (2006) similarity bands: `phi >= 0.95` is "equal" and
   `[0.85, 0.95)` is "fair"; congruences `< 0.85`, below their bands, are
   labelled "incongruent". The verdict is read from `phi_lower` when a
-  bootstrap is available (conservative) and from `phi` otherwise. `NULL`
-  when `invariance = FALSE`.
+  bootstrap is available (conservative) and from `phi` otherwise.
+  Tucker's congruence is invariant to a proportional rescaling of a
+  factor's loadings, so a factor can be graded "equal" even when one
+  group's loadings on it are uniformly stronger; read the verdict
+  alongside `diffs`. `NULL` when `invariance = FALSE`.
 
 - efa:
 

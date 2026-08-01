@@ -97,8 +97,7 @@ Default is 3.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p><code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> returns its argument <code>x</code> invisibly. <code><a href="https://rdrr.io/r/base/format.html" class="external-link">format()</a></code> returns a character vector
-with the summary lines (styled to the active console theme; plain when colours are
-disabled).</p>
+with the summary lines.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -111,7 +110,7 @@ disabled).</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">Lambda</span> <span class="op">&lt;-</span> <span class="va">population_models</span><span class="op">$</span><span class="va">loadings</span><span class="op">$</span><span class="va">baseline</span></span></span>
 <span class="r-in"><span><span class="va">Phi</span> <span class="op">&lt;-</span> <span class="va">population_models</span><span class="op">$</span><span class="va">phis_3</span><span class="op">$</span><span class="va">moderate</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="efa_simulate.html">efa_simulate</a></span><span class="op">(</span>N <span class="op">=</span> <span class="fl">500</span>, Lambda <span class="op">=</span> <span class="va">Lambda</span>, Phi <span class="op">=</span> <span class="va">Phi</span>, target_rmsea <span class="op">=</span> <span class="fl">0.05</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Simulated data</span> (<span style="color: #0000BB;">&lt;efa_simulated&gt;</span>)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Simulated data</span> ──────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 500 cases by 18 variables (continuous).</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Marginals: normal.</span>

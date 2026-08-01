@@ -199,19 +199,18 @@ tells you which one it used.
 When an oblique rotation triggers the reference path without an explicit
 choice,
 [`efa_group()`](https://mdsteiner.github.io/EFAtools/reference/efa_group.md)
-reports which group it used and leaves the requested rotation untouched:
+leaves the requested rotation untouched and reports which group it used.
+The call below emits
+
+    Oblique rotations are aligned to a reference group, not a symmetric consensus target.
+    ℹ The consensus target is undefined for oblique rotations with more than one factor.
+    ℹ Group "control" is used as the reference; set `reference_group` to choose another.
+
+before returning, and records the choice in the settings:
 
 ``` r
 
 mg_obl <- efa_group(groups, n_factors = 3, rotation = "oblimin")
-#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
-#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
-#> Oblique rotations are aligned to a reference group, not a symmetric consensus
-#> target.
-#> ℹ The consensus target is undefined for oblique rotations with more than one
-#>   factor.
-#> ℹ Group "control" is used as the reference; set `reference_group` to choose
-#>   another.
 mg_obl$settings$alignment
 #> [1] "reference"
 ```
@@ -238,7 +237,12 @@ With raw data you can attach a percentile bootstrap confidence interval
 to each congruence by setting `b_boot`. The bootstrap resamples cases
 within each group, refits, re-aligns every replicate to the frozen
 target, and recomputes the congruences; a `seed` makes it reproducible
-and independent of any parallel backend.
+and independent of any parallel backend. Should some replicate fits stop
+short of convergence – a handful out of several hundred is common – a
+warning reports how many; as in
+[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+those replicates are kept rather than discarded, so `n_boot` counts them
+too.
 
 ``` r
 
@@ -301,8 +305,10 @@ mg_ci$diffs
 #> 1 0.1285639         9
 ```
 
-The factor-3 cells for `V7` and `V9` stand out. Restricting `$flags` to
-the flagged cells shows where the two notions of “different” line up:
+Nine cells clear the salience threshold for this pair, and the largest
+difference among them is 0.47 – several times `delta`. Restricting
+`$flags` to the flagged cells shows which cells those are, and where the
+two notions of “different” line up:
 
 ``` r
 
@@ -319,6 +325,11 @@ flagged[, c("indicator", "factor", "diff", "ci_excludes_0")]
 #> 26        V8     F3 -0.1318978         FALSE
 #> 27        V9     F3 -0.2511814          TRUE
 ```
+
+The factor-3 cells for `V7` and `V9` stand out – the two largest
+differences in absolute value, and both with intervals that exclude
+zero. That is exactly the difference we built in. Several of the
+remaining flagged cells are salient without being reliably non-zero.
 
 The `"differences"` plot lays the signed differences out as a heatmap,
 one panel per group pair, outlining the cells that reach `delta`.

@@ -113,9 +113,7 @@ the unrotated solutions of an orthogonal rotation, or use
 
 - hyper_cutoff:
 
-  Non-negative cutoff used by
-  [`.hyperplane_count()`](https://mdsteiner.github.io/EFAtools/reference/dot-hyperplane_count.md)
-  for summary output.
+  Non-negative cutoff used by `.hyperplane_count()` for summary output.
 
 - verbose:
 

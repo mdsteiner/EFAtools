@@ -19,6 +19,11 @@ often the fitted loadings recover the population structure (*structure
 recovery*, by Tucker congruence), and the convergence and Heywood-case
 rate of the fit.
 
+The model dimensions follow the notation of MacCallum, Browne and
+Sugawara (1996): `p` is the number of observed variables (the `n_vars`
+of the rest of the package) and `k` the number of factors (`n_factors`
+elsewhere).
+
 ## Usage
 
 ``` r
@@ -56,10 +61,10 @@ efa_power(
 
   character. The kind of power analysis: `"rmsea"` (the default;
   analytic RMSEA power) or `"simulation"` (Monte-Carlo hit-rate and
-  structure recovery). The remaining arguments split by mode –
-  `type`/`eps0`/`eps1`/`df`/`alpha`/`power`/`group` are RMSEA-only, and
-  `Lambda`/`Phi`/`Psi`/`R`/`n_datasets`/`criteria`/`estimator`/`rotation`/`recovery_threshold`/`model_error`/`target_rmsea`/`target_cfi`/`seed`
-  are simulation-only. The value is matched case-insensitively.
+  structure recovery). `type`, `eps0`, `eps1`, `df`, `alpha`, `power`,
+  and `group` apply to RMSEA mode only; the arguments marked *Simulation
+  mode* below apply to the other; `N`, `p`, and `k` are used in both.
+  The value is matched case-insensitively.
 
 - type:
 
@@ -202,7 +207,13 @@ efa_power(
   factors, so it degrades both the retention hit-rate and structure
   recovery realistically; `"CB"` and `"WB"` target the RMSEA only, and
   `"CB"` keeps the fitted loadings the exact minimizer so structure
-  recovery stays near-perfect.
+  recovery stays near-perfect. That is why the default here is `"TKL"`
+  while
+  [`efa_simulate()`](https://mdsteiner.github.io/EFAtools/reference/efa_simulate.md)
+  defaults to `"CB"`: the same target passed to the two functions
+  perturbs the population differently unless `model_error` is set
+  explicitly, and the difference is material – a `"CB"` population can
+  leave recovery near 1 where the same target under `"TKL"` does not.
 
 - target_rmsea:
 
@@ -266,10 +277,8 @@ For `mode = "simulation"`, a list containing:
 - hit_rate:
 
   A named numeric vector of the retention hit-rate per criterion (and,
-  where a criterion has several variants, per variant). The denominator
-  is the number of replicates on which the criterion returned a definite
-  factor count (`n_valid` below), so replicates where it errored or was
-  undecided are excluded rather than counted as misses.
+  where a criterion has several variants, per variant); `NA` for a
+  criterion that returned no suggestion on any replicate.
 
 - hits:
 
@@ -351,18 +360,13 @@ groups buys less power. The corresponding per-group sample size
 
 ## Simulation mode
 
-The population is supplied either as a factor model (`Lambda`, with
-optional `Phi` and `Psi`) or as a ready correlation matrix `R`, and
-passed to
+The population is passed to
 [`efa_simulate()`](https://mdsteiner.github.io/EFAtools/reference/efa_simulate.md),
-which draws `n_datasets` samples of size `N`. By default the population
-fits the factor model exactly, which overstates how well the criteria
-and the fit recover the structure; supplying a misfit target
-(`target_rmsea` and/or `target_cfi`) perturbs it with model error
-(`model_error`, `"TKL"` by default) so the model fits only approximately
-– a more realistic target (MacCallum, 2003). The true number of factors
+which draws `n_datasets` samples of size `N`. Its true number of factors
 `k_true` is `ncol(Lambda)` for a factor-model population, or `k` for a
-bare `R`.
+bare `R`. By default the population fits the factor model exactly, which
+overstates how well the criteria and the fit recover the structure; a
+misfit target makes it a more realistic one (MacCallum, 2003).
 
 Each replicate is analysed three ways. **Hit-rate**: every criterion in
 `criteria` is run and its suggested number of factors compared with
@@ -404,6 +408,11 @@ coefficient as a meaningful index of factor similarity. *Methodology,
 [doi:10.1027/1614-2241.2.2.57](https://doi.org/10.1027/1614-2241.2.2.57)
 
 ## See also
+
+[`efa_simulate()`](https://mdsteiner.github.io/EFAtools/reference/efa_simulate.md),
+which draws the replicate data sets in simulation mode, and
+[`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)
+for the retention criteria whose hit rates that mode reports.
 
 Other power analysis:
 [`plot.efa_power()`](https://mdsteiner.github.io/EFAtools/reference/plot.efa_power.md),

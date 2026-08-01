@@ -248,23 +248,20 @@ for oblique rotations, because the symmetric consensus target is not
 defined for oblique transformations with more than one factor.</li>
 </ul>
 <p>When an oblique rotation triggers the reference path without an
-explicit choice, <code><a href="../reference/efa_group.html">efa_group()</a></code> reports which group it used
-and leaves the requested rotation untouched:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+explicit choice, <code><a href="../reference/efa_group.html">efa_group()</a></code> leaves the requested rotation
+untouched and reports which group it used. The call below emits</p>
+<!-- Quoted from the efa_group_oblique_reference message in R/efa_group.R; keep in sync. -->
+<pre><code>Oblique rotations are aligned to a reference group, not a symmetric consensus target.
+ℹ The consensus target is undefined for oblique rotations with more than one factor.
+ℹ Group "control" is used as the reference; set `reference_group` to choose another.</code></pre>
+<p>before returning, and records the choice in the settings:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mg_obl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_group.html">efa_group</a></span><span class="op">(</span><span class="va">groups</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, rotation <span class="op">=</span> <span class="st">"oblimin"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from the raw data.</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from the raw data.</span></span>
-<span><span class="co">#&gt; Oblique rotations are aligned to a reference group, not a symmetric consensus</span></span>
-<span><span class="co">#&gt; target.</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> The consensus target is undefined for oblique rotations with more than one</span></span>
-<span><span class="co">#&gt;   factor.</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Group <span style="color: #0000BB;">"control"</span> is used as the reference; set `reference_group` to choose</span></span>
-<span><span class="co">#&gt;   another.</span></span>
 <span><span class="va">mg_obl</span><span class="op">$</span><span class="va">settings</span><span class="op">$</span><span class="va">alignment</span></span>
 <span><span class="co">#&gt; [1] "reference"</span></span></code></pre></div>
 <p>Supplying <code>reference_group</code> forces the reference path and
 chooses the anchor yourself – by name or by position:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mg_ref</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_group.html">efa_group</a></span><span class="op">(</span><span class="va">groups</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, rotation <span class="op">=</span> <span class="st">"varimax"</span>,</span>
 <span>                    reference_group <span class="op">=</span> <span class="st">"control"</span><span class="op">)</span></span>
 <span><span class="va">mg_ref</span><span class="op">$</span><span class="va">settings</span><span class="op">$</span><span class="va">alignment</span></span>
@@ -282,8 +279,11 @@ interval to each congruence by setting <code>b_boot</code>. The
 bootstrap resamples cases within each group, refits, re-aligns every
 replicate to the frozen target, and recomputes the congruences; a
 <code>seed</code> makes it reproducible and independent of any parallel
-backend.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+backend. Should some replicate fits stop short of convergence – a
+handful out of several hundred is common – a warning reports how many;
+as in <code><a href="../reference/efa_fit.html">efa_fit()</a></code> those replicates are kept rather than
+discarded, so <code>n_boot</code> counts them too.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mg_ci</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_group.html">efa_group</a></span><span class="op">(</span><span class="va">groups</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, rotation <span class="op">=</span> <span class="st">"varimax"</span>,</span>
 <span>                   b_boot <span class="op">=</span> <span class="fl">500</span>, seed <span class="op">=</span> <span class="fl">2026</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: 7 of 500 bootstrap replicates did not converge.</span></span>
@@ -304,7 +304,7 @@ the Lorenzo-Seva and ten Berge (2006) similarity bands –
 <code>.95</code> as “fair” – so a factor’s cross-group similarity can be
 judged at a glance. With a bootstrap the points carry their confidence
 intervals.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mg_ci</span>, type <span class="op">=</span> <span class="st">"congruence"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="Multigroup_EFA_files/figure-html/unnamed-chunk-10-1.png" class="r-plt" alt="" width="672" style="display: block; margin: auto;"></p>
 <p>Factors 1 and 2 sit at the top of the scale; factor 3, whose
@@ -327,16 +327,18 @@ additionally carries a confidence interval, and
 the closest thing to a significance statement. The two need not agree: a
 difference can be large enough to flag yet have an interval spanning
 zero (salient but uncertain), or small yet reliably non-zero.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mg_ci</span><span class="op">$</span><span class="va">diffs</span></span>
 <span><span class="co">#&gt;   group_1   group_2 mean_abs_diff median_abs_diff min_abs_diff max_abs_diff</span></span>
 <span><span class="co">#&gt; 1 control treatment    0.08894307       0.0553482   0.01150575    0.4687179</span></span>
 <span><span class="co">#&gt;        rmse n_flagged</span></span>
 <span><span class="co">#&gt; 1 0.1285639         9</span></span></code></pre></div>
-<p>The factor-3 cells for <code>V7</code> and <code>V9</code> stand out.
-Restricting <code>$flags</code> to the flagged cells shows where the two
-notions of “different” line up:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<p>Nine cells clear the salience threshold for this pair, and the
+largest difference among them is 0.47 – several times
+<code>delta</code>. Restricting <code>$flags</code> to the flagged cells
+shows which cells those are, and where the two notions of “different”
+line up:</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">flagged</span> <span class="op">&lt;-</span> <span class="va">mg_ci</span><span class="op">$</span><span class="va">flags</span><span class="op">[</span><span class="va">mg_ci</span><span class="op">$</span><span class="va">flags</span><span class="op">$</span><span class="va">flagged</span>, <span class="op">]</span></span>
 <span><span class="va">flagged</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"indicator"</span>, <span class="st">"factor"</span>, <span class="st">"diff"</span>, <span class="st">"ci_excludes_0"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt;    indicator factor       diff ci_excludes_0</span></span>
@@ -349,10 +351,15 @@ notions of “different” line up:</p>
 <span><span class="co">#&gt; 25        V7     F3  0.4687179          TRUE</span></span>
 <span><span class="co">#&gt; 26        V8     F3 -0.1318978         FALSE</span></span>
 <span><span class="co">#&gt; 27        V9     F3 -0.2511814          TRUE</span></span></code></pre></div>
+<p>The factor-3 cells for <code>V7</code> and <code>V9</code> stand out
+– the two largest differences in absolute value, and both with intervals
+that exclude zero. That is exactly the difference we built in. Several
+of the remaining flagged cells are salient without being reliably
+non-zero.</p>
 <p>The <code>"differences"</code> plot lays the signed differences out
 as a heatmap, one panel per group pair, outlining the cells that reach
 <code>delta</code>.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mg_ci</span>, type <span class="op">=</span> <span class="st">"differences"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="Multigroup_EFA_files/figure-html/unnamed-chunk-13-1.png" class="r-plt" alt="" width="672" style="display: block; margin: auto;"></p>
 </div>
@@ -364,7 +371,7 @@ factor’s congruence against the Lorenzo-Seva and ten Berge (2006) bands
 and returns a per-factor verdict: <code>"equal"</code> for a congruence
 of at least <code>.95</code>, <code>"fair"</code> for <code>.85</code>
 to <code>.95</code>, and <code>"incongruent"</code> below that.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mg_inv</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_group.html">efa_group</a></span><span class="op">(</span><span class="va">groups</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, rotation <span class="op">=</span> <span class="st">"varimax"</span>,</span>
 <span>                    b_boot <span class="op">=</span> <span class="fl">500</span>, seed <span class="op">=</span> <span class="fl">2026</span>, invariance <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: 7 of 500 bootstrap replicates did not converge.</span></span>

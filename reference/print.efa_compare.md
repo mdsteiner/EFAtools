@@ -23,7 +23,15 @@ into a file or stripped with
 print(x, ...)
 
 # S3 method for class 'efa_compare'
-format(x, ...)
+format(
+  x,
+  digits = NULL,
+  m_red = NULL,
+  range_red = NULL,
+  round_red = NULL,
+  print_diff = NULL,
+  ...
+)
 ```
 
 ## Arguments
@@ -35,14 +43,31 @@ format(x, ...)
 
 - ...:
 
-  Not used; for consistency with the generic.
+  Passed from [`print()`](https://rdrr.io/r/base/print.html) to
+  [`format()`](https://rdrr.io/r/base/format.html); not otherwise used.
+
+- digits, m_red, range_red, round_red, print_diff:
+
+  Display controls, documented in
+  [`efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/efa_compare.md).
+  Each defaults to `NULL`, meaning the value
+  [`efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/efa_compare.md)
+  recorded in `x$settings` is used; supplying one overrides it for this
+  call only, so the comparison need not be recomputed to change the
+  printed report.
 
 ## Value
 
 [`print()`](https://rdrr.io/r/base/print.html) returns its argument `x`
 invisibly. [`format()`](https://rdrr.io/r/base/format.html) returns a
-character vector with the report lines (styled to the active console
-theme; plain when colours are disabled).
+character vector with the report lines.
+
+## Details
+
+The line reporting the minimum number of decimals provided is shown only
+when it carries information: two ordinary double matrices carry the full
+double precision, for which the count is uninformative and the line is
+omitted.
 
 ## Examples
 
@@ -63,12 +88,16 @@ EFA_psych_5 <- efa_fit(IDS2_R, n_factors = 5,
 comp <- efa_compare(EFA_SPSS_5$unrot_loadings, EFA_psych_5$unrot_loadings,
                     x_labels = c("SPSS", "psych"))
 comp
-#> Mean [min, max] absolute difference:  0.0017 [ 0.0000,  0.0090]
-#> Median absolute difference:  0.0009
-#> Root mean squared distance (RMSE):  0.0025
+#> 
+#> ── Summary statistics ──────────────────────────────────────────────────────────
+#> 
+#> Mean [min, max] absolute difference:  .0017 [ .0000,  .0090]
+#> Median absolute difference:  .0009
+#> Root mean squared distance (RMSE):  .0025
 #> Max decimals where all numbers agree in absolute value: 1
-#> Minimum number of decimals provided: 17
 #> Differing indicator-to-factor correspondences: 0 (highest loading), 0 (all |loadings| >= 0.3)
+#> 
+#> ── Elementwise differences ─────────────────────────────────────────────────────
 #> 
 #>        F1      F2      F3      F4      F5
 #> GS    .0004   .0002  -.0002   .0002  -.0034
@@ -86,14 +115,18 @@ comp
 #> RS   -.0001   .0012  -.0013  -.0032  -.0010
 #> DP   -.0001   .0009   .0004  -.0024  -.0009
 
-# format() returns the same lines as plain text:
+# format() returns the same lines as a character vector:
 writeLines(format(comp))
-#> Mean [min, max] absolute difference:  0.0017 [ 0.0000,  0.0090]
-#> Median absolute difference:  0.0009
-#> Root mean squared distance (RMSE):  0.0025
+#> 
+#> ── Summary statistics ──────────────────────────────────────────────────────────
+#> 
+#> Mean [min, max] absolute difference:  .0017 [ .0000,  .0090]
+#> Median absolute difference:  .0009
+#> Root mean squared distance (RMSE):  .0025
 #> Max decimals where all numbers agree in absolute value: 1
-#> Minimum number of decimals provided: 17
 #> Differing indicator-to-factor correspondences: 0 (highest loading), 0 (all |loadings| >= 0.3)
+#> 
+#> ── Elementwise differences ─────────────────────────────────────────────────────
 #> 
 #>        F1      F2      F3      F4      F5
 #> GS    .0004   .0002  -.0002   .0002  -.0034
@@ -110,4 +143,15 @@ writeLines(format(comp))
 #> OP   -.0001   .0007  -.0016  -.0025   .0008
 #> RS   -.0001   .0012  -.0013  -.0032  -.0010
 #> DP   -.0001   .0009   .0004  -.0024  -.0009
+
+# the display settings can be changed without recomputing the comparison:
+print(comp, digits = 2, print_diff = FALSE)
+#> 
+#> ── Summary statistics ──────────────────────────────────────────────────────────
+#> 
+#> Mean [min, max] absolute difference:  .00 [ .00,  .01]
+#> Median absolute difference:  .00
+#> Root mean squared distance (RMSE):  .00
+#> Max decimals where all numbers agree in absolute value: 1
+#> Differing indicator-to-factor correspondences: 0 (highest loading), 0 (all |loadings| >= 0.3)
 ```

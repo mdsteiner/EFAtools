@@ -88,7 +88,9 @@ the Psychometric Society, Iowa City, IA.
 
 An object of class `efa_retention` (see
 [`print.efa_retention()`](https://mdsteiner.github.io/EFAtools/reference/print.efa_retention.md)
-for the print method). Its main fields are:
+for the print method). SMT has no plot;
+[`plot.efa_retention()`](https://mdsteiner.github.io/EFAtools/reference/plot.efa_retention.md)
+returns `NULL` with a message for it. Its main fields are:
 
 - n_factors:
 
@@ -128,6 +130,12 @@ interval of the RMSEA first falls below the .05 threshold.
 
 Regarding the AIC, the suggested number of factors is the number of
 factors for the model with the lowest AIC.
+
+The sequential models are fitted without inequality constraints, so a
+solution can be inadmissible (a Heywood case, or a fit that did not
+converge). Only the models the three rules actually select are checked
+for this; if one of them is inadmissible a warning is raised and the
+corresponding suggestion should be interpreted with caution.
 
 In comparison with other prominent factor retention criteria, SMT
 performed well at determining the number of factors to extract in EFA

@@ -64,7 +64,7 @@ and selected fit quantities across imputations.</p>
 <span>  consensus_args <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  procrustes_args <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  rmsea_ci_level <span class="op">=</span> <span class="fl">0.9</span>,</span>
-<span>  rmsr_upper <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  rmsr_upper <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -126,9 +126,15 @@ for fixed-target alignment.</p></dd>
 
 
 <dt id="arg-rmsr-upper">rmsr_upper<a class="anchor" aria-label="anchor" href="#arg-rmsr-upper"></a></dt>
-<dd><p>Logical. If <code>TRUE</code>, compute RMSR from the unique
-off-diagonal residual correlations. If <code>FALSE</code>, use the full off-diagonal
-matrix.</p></dd>
+<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Accepted and ignored. It
+selected between computing RMSR from the unique off-diagonal residual correlations
+and from the full off-diagonal matrix. The two element sets hold each residual pair
+once and twice respectively, so their sums and counts double together and the mean
+square is the same number whenever the residual matrix is symmetric, which the pooled
+residuals always are. RMSR is therefore always the root mean square of the unique
+off-diagonal residuals; SRMR, which divides the same sum by the number of
+non-redundant elements, is reported alongside it. Supplying it to <code>efa_mi()</code>
+signals a deprecation warning; the superseded <code><a href="EFA_POOLED.html">EFA_POOLED()</a></code> accepts it silently.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -174,6 +180,48 @@ is \(\tilde\Gamma\); the pooled <code>SE</code>, <code>CI</code>, and <code>fit_
 from it. <code>MI</code> is <code>NULL</code> on this path because the imputation uncertainty is
 carried by \(\tilde\Gamma\) rather than by per-parameter Rubin pooling.</p></dd>
 
+<dt>mi_diagnostics</dt>
+<dd><p>Diagnostics for the pooled model fit, <code>NULL</code> on the
+<code>se = "sandwich"</code> (MI2S) path, where there is one fit and no D2 pool. <code>m</code> is the
+number of imputations that entered the pool. <code>D2_F</code>, <code>D2_df1</code>, <code>D2_df2</code>,
+<code>D2_chi_asymptotic</code>, <code>ARIV</code> and <code>FMI</code> describe the D2 pool of the model
+chi-square (the average relative increase in variance and the fraction of
+missing information it implies), and <code>chi_bar_naive</code> is the plain mean of the
+per-imputation statistics for comparison; the <code>*_null</code> entries are the same
+quantities for the independence baseline. <code>chi_cfi</code> and <code>chi_null_cfi</code> are the
+pooled model and baseline <strong>chi-squares</strong> on the common \(N - 1\)
+noncentrality scale. <code>chi_cfi</code> is the statistic the reported RMSEA is formed
+from; the pair is also the basis on which <code>lavaan.mi</code>/<code>semTools</code> form pooled
+incremental indices, so the reference CFI is
+<code>1 - (chi_cfi - df) / (chi_null_cfi - df_null)</code> (and analogously for TLI) –
+a different quantity from the reported CFI/TLI, which average the
+per-imputation indices.</p></dd>
+
+<dt>fits</dt>
+<dd><p>The list of \(m\) component <code><a href="efa_fit.html">efa_fit()</a></code> fits, in the order of
+<code>data_list</code>, kept for per-imputation diagnostics. On the MI2S path these are the
+per-imputation fits whose inputs were pooled, not the pooled fit itself (which
+is <code>mi_fit</code>).</p></dd>
+
+<dt>alignment</dt>
+<dd><p>Metadata from aligning the rotated solutions, <code>NULL</code> when no
+rotation was requested or on the MI2S path (one fit, one gauge). Under
+<code>target_method = "first_target"</code>: the <code>method</code> used, the <code>target</code> it aligned to,
+the per-imputation <code>target_rotations</code>, the indices of any
+<code>point_rotation_failures</code>, and whether every inner alignment <code>converged</code>. Under
+<code>target_method = "consensus"</code> it is the full <code><a href="efa_procrustes.html">efa_procrustes()</a></code>-based GPA record:
+the converged <code>target</code>, the <code>aligned_loadings</code> and <code>aligned_phi</code>, the iteration
+<code>history</code>, convergence flags, and the multi-start summary.</p></dd>
+
+<dt>settings</dt>
+<dd><p>The component fits' <code><a href="efa_fit.html">efa_fit()</a></code> settings with the pooling
+settings added: <code>pooled</code> (always <code>TRUE</code>), <code>pooled_N</code> and <code>N</code> (the mean N across
+imputations), <code>n_imputations</code>, <code>component_se</code> (the <code>se</code> the component fits
+used), <code>target_method</code>, <code>align_unrotated</code>, <code>fit_pool_method</code>, <code>p</code>, <code>ci</code> and
+<code>rmsea_ci_level</code>. <code>se</code> records what was actually pooled, so it
+is <code>"none"</code> when pooled standard errors could not be produced although the
+component fits computed them (<code>component_se</code> keeps the request).</p></dd>
+
 
 </dl></div>
     <div class="section level2">
@@ -185,7 +233,13 @@ directly in <code><a href="efa_fit.html">efa_fit()</a></code> as <code>cor_metho
 correlation from one raw dataset with missing values. Both feed the same
 correlation-scale EFA core and differ only in how the missingness is handled;
 FIML is intentionally not routed through <code>efa_mi()</code>, which is a multi-fit
-pooler by construction.</p><div class="section">
+pooler by construction.</p>
+<p>Both routes assume the values are missing at random (MAR). Which one to prefer
+is largely practical: FIML is a single, efficient fit and is the simpler
+default when the analysis model is the whole story, whereas multiple imputation
+is more flexible when the imputation model should draw on auxiliary variables
+not in the factor model, or when the same imputations feed several downstream
+analyses.</p><div class="section">
 <h3 id="standard-error-pooling-routes">Standard-error pooling routes<a class="anchor" aria-label="anchor" href="#standard-error-pooling-routes"></a></h3>
 
 
@@ -269,9 +323,16 @@ show SRMR only.</p>
 <h3 id="pooling-the-model-chi-square-and-fit-indices">Pooling the model chi-square and fit indices<a class="anchor" aria-label="anchor" href="#pooling-the-model-chi-square-and-fit-indices"></a></h3>
 
 
-<p>The model chi-square and the indices derived from it (RMSEA, ECVI, and the
-descriptive AIC/BIC) are pooled with the D2 rule (Li, Meng, Raghunathan &amp;
-Rubin, 1991), not arithmetically averaged. Because D2 shrinks the pooled
+<p>The model chi-square and the indices derived from it (ECVI and the descriptive
+AIC/BIC) are pooled with the D2 rule (Li, Meng, Raghunathan &amp;
+Rubin, 1991), not arithmetically averaged. RMSEA is pooled by the same rule but
+from a second D2 pool of the per-imputation discrepancies taken on the
+uncorrected \(N - 1\) scale, because RMSEA places the model noncentrality on
+the scale on which it is defined, so the Bartlett small-sample correction enters
+only the chi-square test and not this approximate-fit index (as in
+<code><a href="efa_fit.html">efa_fit()</a></code>). The printed RMSEA therefore does not reconcile by hand with the
+printed chi-square; the statistic it is formed from is <code>chi_cfi</code> in
+<code>mi_diagnostics</code>. Because D2 shrinks the pooled
 chi-square in proportion to the between-imputation variability, the pooled RMSEA
 can fall below the mean of the per-imputation RMSEAs (as it does in
 <code>lavaan.mi</code>); read it together with the per-imputation fit. The incremental
@@ -279,7 +340,8 @@ indices CFI (Bentler, 1990) and TLI (Tucker &amp; Lewis, 1973) are instead the
 average of the per-imputation indices, which keeps them consistent with the
 component fits and avoids the out-of-range values that separately pooling the
 model and baseline noncentralities (as <code>lavaan.mi</code>/<code>semTools</code> do) can produce;
-those separately pooled noncentralities remain available in <code>mi_diagnostics</code>.
+the separately pooled model and baseline chi-squares those indices would be
+formed from remain available in <code>mi_diagnostics</code>.
 AIC and BIC, if returned, are chi-square-derived descriptive quantities and are
 not likelihood-based MI information criteria. They are reported only where the
 component fits report them: whenever a component withholds them – any
@@ -489,8 +551,8 @@ jackknife with exploratory factor analysis. <em>Psychometrika</em>, 77(4), 634-6
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Model Fit</span> ───────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> D2-pooled χ²(20) = 0.00, <span style="font-style: italic;">p</span> = 1.000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CFI: .99</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> TLI: .98</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFI (avg. over imputations): .99</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> TLI (avg. over imputations): .98</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> RMSEA [90% CI]: .00 [.00; .00]</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -40.00</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -133.94</span>
@@ -499,6 +561,8 @@ jackknife with exploratory factor analysis. <em>Psychometrika</em>, 77(4), 634-6
 <span class="r-out co"><span class="r-pr">#&gt;</span> SRMR: .01</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-style: italic;">Note:</span> the pooled χ² is the D2 statistic; its <span style="font-style: italic;">p</span> uses the D2 reference F(20, .1),</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> not the χ²(20) tail.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-style: italic;">Note:</span> CFI and TLI are averaged over the imputations, not formed from the</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> separately pooled model and baseline statistics in `mi_diagnostics`.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="co"># add computation of standard errors and CIs</span></span></span>
@@ -537,8 +601,8 @@ jackknife with exploratory factor analysis. <em>Psychometrika</em>, 77(4), 634-6
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Model Fit</span> ───────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> D2-pooled χ²(20) = 0.00, <span style="font-style: italic;">p</span> = 1.000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CFI [95% bootstrap/MI-CI]: .99 [.96, 1.02]</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> TLI [95% bootstrap/MI-CI]: .98 [.94, 1.02]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFI (avg. over imputations) [95% bootstrap/MI-CI]: .99 [.96, 1.02]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> TLI (avg. over imputations) [95% bootstrap/MI-CI]: .98 [.94, 1.02]</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> RMSEA [90% CI] [95% bootstrap/MI-CI]: .00 [.00; .00] [.00, .13]</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> AIC [95% bootstrap/MI-CI]: -40.00 [-81.22, 172.11]</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> BIC [95% bootstrap/MI-CI]: -133.94 [-175.16, 78.17]</span>
@@ -547,6 +611,8 @@ jackknife with exploratory factor analysis. <em>Psychometrika</em>, 77(4), 634-6
 <span class="r-out co"><span class="r-pr">#&gt;</span> SRMR [95% bootstrap/MI-CI]: .01 [.00, .04]</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-style: italic;">Note:</span> the pooled χ² is the D2 statistic; its <span style="font-style: italic;">p</span> uses the D2 reference F(20, .1),</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> not the χ²(20) tail.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-style: italic;">Note:</span> CFI and TLI are averaged over the imputations, not formed from the</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> separately pooled model and baseline statistics in `mi_diagnostics`.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-style: italic;">Note:</span> Bootstrap/MI CIs based on 1000 bootstrap samples per imputation.</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>

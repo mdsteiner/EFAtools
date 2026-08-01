@@ -81,7 +81,10 @@ factor analysis. Psychometrika, 30(2), 179–185. doi: 10.1007/BF02289447
   (SMCs) of the indicators. If using "PCA", the diagonal values of the
   correlation matrices are left to be 1. If using "EFA", eigenvalues are
   found on the correlation matrices with the final communalities of an
-  EFA solution as diagonal.
+  EFA solution as diagonal. Default is `c("PCA", "SMC", "EFA")`, i.e.
+  all three, which costs roughly six times a single non-EFA type:
+  `"EFA"` fits an EFA to every simulated dataset and dominates that
+  total. Pass a single type if the run is time-critical.
 
 - use:
 

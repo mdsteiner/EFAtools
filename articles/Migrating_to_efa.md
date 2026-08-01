@@ -238,6 +238,29 @@ object in place of the loose estimation arguments; and
 [`efa_average()`](https://mdsteiner.github.io/EFAtools/reference/efa_average.md)
 takes `p_type` in place of `P_type`.
 
+## What the `type` Presets Replicate
+
+The `type` presets are more than shorthand for a bundle of defaults.
+`"SPSS"` and `"psych"` follow how SPSS’s FACTOR procedure and
+[`psych::fa()`](https://rdrr.io/pkg/psych/man/fa.html) implement
+principal axis factoring and promax rotation, down to the details those
+implementations differ in — the iteration limit, the convergence
+criterion, whether eigenvalues are taken in absolute value, and which
+formula builds the promax target. `"EFAtools"`, the default, combines
+the settings that came out best across those comparisons. The presets
+and the differences they encode come from [Grieder and Steiner
+(2022)](https://doi.org/10.3758/s13428-021-01581-x), and the reference
+outputs of that study ship with the package: `test_models` holds
+correlation matrices for four `population_models` cases, and `SPSS_23`
+and `SPSS_27` hold what SPSS FACTOR returned for those matrices — and
+for several real data sets — under the two SPSS versions, so a preset
+can be checked against the program it emulates.
+[`?efa_fit`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+lists the exact settings each preset selects, along with the one place a
+preset alone is not enough: `"psych"` also needs `normalize = FALSE` to
+match [`psych::fa()`](https://rdrr.io/pkg/psych/man/fa.html)‘s promax,
+because every preset keeps EFAtools’ Kaiser normalization.
+
 ## Returned Objects Keep Their Legacy Classes
 
 Migrating a call does not break code that inspects or dispatches on the

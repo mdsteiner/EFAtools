@@ -108,7 +108,11 @@ matrix is entered.</p></dd>
 
 
 <dt id="arg-digits">digits<a class="anchor" aria-label="anchor" href="#arg-digits"></a></dt>
-<dd><p>numeric. Number of decimals to print in the output. Default is 4.</p></dd>
+<dd><p>numeric. Number of decimals to print in the output. Default is 4.
+Like <code>m_red</code>, <code>range_red</code>, <code>round_red</code>, and <code>print_diff</code>, it is recorded in
+<code>settings</code> but governs only the printed report, so it can be overridden per call
+in <code><a href="print.efa_compare.html">print.efa_compare()</a></code> without recomputing the comparison. <code>plot_red</code> is a
+drawing setting and is overridden the same way in <code><a href="plot.efa_compare.html">plot.efa_compare()</a></code>.</p></dd>
 
 
 <dt id="arg-m-red">m_red<a class="anchor" aria-label="anchor" href="#arg-m-red"></a></dt>
@@ -149,8 +153,9 @@ as labels on the x-axis of the plot. Default is "x" and "y".</p></dd>
 
 
 <dt id="arg-plot">plot<a class="anchor" aria-label="anchor" href="#arg-plot"></a></dt>
-<dd><p>logical. Retained for backwards compatibility; the difference plot
-is now drawn with <code><a href="plot.efa_compare.html">plot.efa_compare()</a></code> rather than when printing. Default is TRUE.</p></dd>
+<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#superseded" class="external-link"><img src="figures/lifecycle-superseded.svg" alt="[Superseded]"></a> Accepted and validated, but
+without effect; retained for backwards compatibility. The difference plot is
+drawn by <code><a href="plot.efa_compare.html">plot.efa_compare()</a></code>. Default is TRUE.</p></dd>
 
 
 <dt id="arg-plot-red">plot_red<a class="anchor" aria-label="anchor" href="#arg-plot-red"></a></dt>

@@ -115,8 +115,7 @@ rounded to. Default is 3.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p><code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> returns its argument <code>x</code> invisibly. <code><a href="https://rdrr.io/r/base/format.html" class="external-link">format()</a></code> returns a
-character vector with the report lines (styled to the active console theme;
-plain when colours are disabled).</p>
+character vector with the report lines.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -138,31 +137,33 @@ plain when colours are disabled).</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> The Bartlett's test of sphericity was significant at an alpha level of .05.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> These data are probably suitable for factor analysis.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 𝜒²(6) = 706.96, <span style="font-style: italic;">p</span> &lt; .001</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> χ²(6) = 706.96, <span style="font-style: italic;">p</span> &lt; .001</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Multicollinearity</span> ───────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Determinant: 0.00811. No concern (a value near 0 signals multicollinearity).</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> Condition number: 140.889. Moderate multicollinearity (large values signal near-collinear variables).</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> Condition number: 140.889 (condition index 11.870). Moderate</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> multicollinearity (index 10 to 30; Belsley, Kuh &amp; Welsch, 1980).</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Per-variable diagnostics</span> ────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>              variance missing   SMC   MSA flags</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Sepal.Length    0.686       0 0.859 0.584  &lt;NA&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Sepal.Width     0.190       0 0.524 0.270  &lt;NA&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Petal.Length    3.116       0 0.968 0.531  &lt;NA&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Petal.Width     0.581       0 0.938 0.634  &lt;NA&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>              variance missing%   SMC   MSA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Sepal.Length    0.686        0 0.859 0.584</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Sepal.Width     0.190        0 0.524 0.270</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Petal.Length    3.116        0 0.968 0.531</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Petal.Width     0.581        0 0.938 0.634</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Multivariate normality</span> ──────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BB0000;">✖</span> Mardia's skewness: 𝜒²(20) = 67.43, p &lt; .001.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BB0000;">✖</span> Mardia's skewness: χ²(20) = 67.43, p &lt; .001.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Mardia's kurtosis: z = -0.23, p = 0.818.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BB0000;">✖</span> Henze-Zirkler: HZ = 2.34, p &lt; .001.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> These data depart from multivariate normality.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Outliers</span> ────────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> 55 of 150 observations were flagged as multivariate outliers (robust distance &gt; 3.34).</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> 55 of 150 observations were flagged as multivariate outliers (robust distance</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &gt; 3.34).</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Recommendations</span> ─────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -176,8 +177,10 @@ plain when colours are disabled).</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> Bartlett's test is significant, but it assumes multivariate normality and</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   grows more sensitive as N increases; because these data are non-normal, treat</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   it as uninformative here and rely on the KMO.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 55 observations were flagged as potential multivariate outliers; inspect them</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   (see `$outliers$flagged`) before down-weighting or excluding.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 55 of 150 observations (37%) exceed the outlier cutoff, far above the 2.5%</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   expected under multivariate normality; this usually means the data are not</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   elliptically distributed (subgroups or a mixture) rather than that this many</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   cases are contaminated.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># From a correlation matrix (supply N for Bartlett's test of sphericity)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="efa_screen.html">efa_screen</a></span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span></span>
@@ -189,12 +192,13 @@ plain when colours are disabled).</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> The Bartlett's test of sphericity was significant at an alpha level of .05.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> These data are probably suitable for factor analysis.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 𝜒²(153) = 2173.28, <span style="font-style: italic;">p</span> &lt; .001</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> χ²(153) = 2173.28, <span style="font-style: italic;">p</span> &lt; .001</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Multicollinearity</span> ───────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Determinant: 0.0121. No concern (a value near 0 signals multicollinearity).</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Condition number: 11.680. No concern (large values signal near-collinear variables).</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Condition number: 11.680 (condition index 3.418). No concern (index below 10;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Belsley, Kuh &amp; Welsch, 1980).</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Per-variable diagnostics</span> ────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -224,7 +228,7 @@ plain when colours are disabled).</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Per-item variance, missing-data, category, normality, and outlier diagnostics</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   require raw data; only a correlation matrix was supplied.</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># format() returns the same lines as plain text:</span></span></span>
+<span class="r-in"><span><span class="co"># format() returns the same lines as a character vector:</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/writeLines.html" class="external-link">writeLines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="efa_screen.html">efa_screen</a></span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Sampling adequacy and sphericity</span> ────────────────────────────────────────────</span>
@@ -234,12 +238,13 @@ plain when colours are disabled).</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> The Bartlett's test of sphericity was significant at an alpha level of .05.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> These data are probably suitable for factor analysis.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 𝜒²(153) = 2173.28, <span style="font-style: italic;">p</span> &lt; .001</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> χ²(153) = 2173.28, <span style="font-style: italic;">p</span> &lt; .001</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Multicollinearity</span> ───────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Determinant: 0.0121. No concern (a value near 0 signals multicollinearity).</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Condition number: 11.680. No concern (large values signal near-collinear variables).</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Condition number: 11.680 (condition index 3.418). No concern (index below 10;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Belsley, Kuh &amp; Welsch, 1980).</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Per-variable diagnostics</span> ────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>

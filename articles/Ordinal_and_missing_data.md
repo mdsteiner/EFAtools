@@ -75,45 +75,47 @@ efa_screen(d_ord, seed = 42)
 #> 
 #> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05.
 #> These data are probably suitable for factor analysis.
-#> 𝜒²(153) = 1306.76, p < .001
+#> χ²(153) = 1306.76, p < .001
 #> 
 #> ── Multicollinearity ───────────────────────────────────────────────────────────
 #> 
 #> ✔ Determinant: 0.0357. No concern (a value near 0 signals multicollinearity).
-#> ✔ Condition number: 7.919. No concern (large values signal near-collinear variables).
+#> ✔ Condition number: 7.919 (condition index 2.814). No concern (index below 10;
+#> Belsley, Kuh & Welsch, 1980).
 #> 
 #> ── Per-variable diagnostics ────────────────────────────────────────────────────
 #> 
-#>     variance missing   SMC   MSA flags
-#> V1     1.248       0 0.218 0.830      
-#> V2     1.298       0 0.241 0.817      
-#> V3     1.222       0 0.278 0.793      
-#> V4     1.223       0 0.225 0.829      
-#> V5     1.211       0 0.228 0.801      
-#> V6     1.266       0 0.297 0.810      
-#> V7     1.260       0 0.242 0.839      
-#> V8     1.187       0 0.239 0.836      
-#> V9     1.182       0 0.259 0.832      
-#> V10    1.153       0 0.257 0.835      
-#> V11    1.150       0 0.282 0.806      
-#> V12    1.193       0 0.244 0.852      
-#> V13    1.373       0 0.227 0.819      
-#> V14    1.317       0 0.290 0.851      
-#> V15    1.206       0 0.224 0.853      
-#> V16    1.193       0 0.227 0.859      
-#> V17    1.282       0 0.311 0.832      
-#> V18    1.223       0 0.274 0.804      
+#>     variance missing%   SMC   MSA flags
+#> V1     1.248        0 0.218 0.830      
+#> V2     1.298        0 0.241 0.817      
+#> V3     1.222        0 0.278 0.793      
+#> V4     1.223        0 0.225 0.829      
+#> V5     1.211        0 0.228 0.801      
+#> V6     1.266        0 0.297 0.810      
+#> V7     1.260        0 0.242 0.839      
+#> V8     1.187        0 0.239 0.836      
+#> V9     1.182        0 0.259 0.832      
+#> V10    1.153        0 0.257 0.835      
+#> V11    1.150        0 0.282 0.806      
+#> V12    1.193        0 0.244 0.852      
+#> V13    1.373        0 0.227 0.819      
+#> V14    1.317        0 0.290 0.851      
+#> V15    1.206        0 0.224 0.853      
+#> V16    1.193        0 0.227 0.859      
+#> V17    1.282        0 0.311 0.832      
+#> V18    1.223        0 0.274 0.804      
 #> 
 #> ── Multivariate normality ──────────────────────────────────────────────────────
 #> 
-#> ✔ Mardia's skewness: 𝜒²(1140) = 1008.24, p = 0.998.
+#> ✔ Mardia's skewness: χ²(1140) = 1008.24, p = 0.998.
 #> ✖ Mardia's kurtosis: z = -6.11, p < .001.
 #> ✖ Henze-Zirkler: HZ = 1, p < .001.
 #> These data depart from multivariate normality.
 #> 
 #> ── Outliers ────────────────────────────────────────────────────────────────────
 #> 
-#> ℹ 4 of 400 observations were flagged as multivariate outliers (robust distance > 5.61).
+#> ℹ 4 of 400 observations were flagged as multivariate outliers (robust distance
+#> > 5.61).
 #> 
 #> ── Recommendations ─────────────────────────────────────────────────────────────
 #> 
@@ -266,12 +268,16 @@ efa_cont <- efa_fit(d_ord, n_factors = 3, cor_method = "pearson", estimator = "M
 cmp <- efa_compare(efa_poly$rot_loadings, efa_cont$rot_loadings,
                    x_labels = c("Polychoric / DWLS", "Pearson / ML"))
 cmp
-#> Mean [min, max] absolute difference:  0.0171 [ 0.0000,  0.0539]
-#> Median absolute difference:  0.0064
-#> Root mean squared distance (RMSE):  0.0252
+#> 
+#> ── Summary statistics ──────────────────────────────────────────────────────────
+#> 
+#> Mean [min, max] absolute difference:  .0171 [ .0000,  .0539]
+#> Median absolute difference:  .0064
+#> Root mean squared distance (RMSE):  .0252
 #> Max decimals where all numbers agree in absolute value: 0
-#> Minimum number of decimals provided: 17
 #> Differing indicator-to-factor correspondences: 0 (highest loading), 0 (all |loadings| >= 0.3)
+#> 
+#> ── Elementwise differences ─────────────────────────────────────────────────────
 #> 
 #>        F1      F2      F3
 #> V1    .0066   .0024   .0317
@@ -328,21 +334,33 @@ likelihood, and a multiple-imputation route via
 
 We simulate 250 continuous cases with about 15% of values missing at
 random, where each item’s missingness depends on another item’s value.
+By default
 [`efa_simulate()`](https://mdsteiner.github.io/EFAtools/reference/efa_simulate.md)
-holes every column, so each item’s MAR predictor is itself partly
-missing: the mechanism is MAR given the *complete* data, but it is not
-ignorable for an analyst who sees only the observed data. Estimators
-that are consistent under ignorable MAR therefore keep a residual bias
-on data from this generator — a property of the generator rather than of
-the estimators, negligible at the modest missing rate used here but
-growing with `missing_prop` and `missing_strength`.
+holes every column, so each item’s MAR predictor would itself be partly
+missing: the mechanism is then MAR given the *complete* data, but not
+ignorable for an analyst who sees only the observed data, and estimators
+that are consistent under ignorable MAR keep a residual bias — a
+property of the generator rather than of the estimators, growing with
+`missing_prop` and `missing_strength`.
+
+`missing_vars` avoids that. Here the first nine items carry the missing
+values and each is driven by one of the last nine, which stay complete.
+Every predictor is therefore fully observed, which is ignorably MAR —
+exactly the assumption the two routes below rely on.
 
 ``` r
 
 d_miss <- efa_simulate(N = 250, Lambda = Lambda, Phi = Phi,
-                       missing = "MAR", missing_prop = 0.15, seed = 2024)$data
+                       missing = "MAR", missing_prop = 0.15,
+                       missing_vars = 1:9, missing_predictor = 10:18,
+                       seed = 2024)$data
 round(mean(is.na(d_miss)), 3)          # overall proportion missing
-#> [1] 0.151
+#> [1] 0.078
+round(colMeans(is.na(d_miss)), 3)      # holed items only
+#>    V1    V2    V3    V4    V5    V6    V7    V8    V9   V10   V11   V12   V13 
+#> 0.172 0.132 0.184 0.160 0.140 0.152 0.156 0.156 0.144 0.000 0.000 0.000 0.000 
+#>   V14   V15   V16   V17   V18 
+#> 0.000 0.000 0.000 0.000 0.000
 ```
 
 ### Two-Stage Full-Information Maximum Likelihood
@@ -367,24 +385,24 @@ efa_fiml
 #> ── Rotated Loadings ────────────────────────────────────────────────────────────
 #> 
 #>        F1     F2     F3    h2    u2
-#> V1   -.066  -.003   .552  .284  .716
-#> V2    .080  -.079   .578  .361  .639
-#> V3   -.010  -.005   .631  .393  .607
-#> V4    .169   .050   .503  .353  .647
-#> V5   -.029   .001   .531  .273  .727
-#> V6   -.014   .031   .605  .367  .633
-#> V7   -.113   .606   .062  .355  .645
-#> V8    .000   .683  -.026  .462  .538
-#> V9    .180   .500   .001  .329  .671
-#> V10   .028   .527  -.004  .285  .715
-#> V11   .037   .624  -.045  .395  .605
-#> V12  -.046   .597  -.005  .344  .656
-#> V13   .546   .151  -.028  .351  .649
-#> V14   .422   .107   .226  .334  .666
-#> V15   .702  -.101  -.068  .442  .558
-#> V16   .595   .001  -.024  .345  .655
-#> V17   .645  -.031   .063  .438  .562
-#> V18   .558   .015   .072  .349  .651
+#> V1   -.029   .554  -.029  .293  .707
+#> V2    .069   .613  -.092  .402  .598
+#> V3   -.008   .630  -.018  .391  .609
+#> V4    .194   .515   .051  .388  .612
+#> V5   -.044   .575   .013  .316  .684
+#> V6   -.044   .647   .095  .423  .577
+#> V7   -.034   .028   .578  .330  .670
+#> V8   -.022   .006   .684  .462  .538
+#> V9    .163   .022   .511  .335  .665
+#> V10   .021   .001   .550  .309  .691
+#> V11   .008  -.008   .589  .348  .652
+#> V12  -.057  -.041   .577  .317  .683
+#> V13   .590  -.061   .115  .371  .629
+#> V14   .471   .185   .090  .351  .649
+#> V15   .688  -.056  -.097  .427  .573
+#> V16   .627  -.044   .003  .376  .624
+#> V17   .677   .073  -.044  .485  .515
+#> V18   .546   .072   .027  .340  .660
 #> 
 #> Legend:
 #>   bold = |loading| >= .300
@@ -395,24 +413,24 @@ efa_fiml
 #> 
 #>       F1     F2     F3
 #> F1  1.000
-#> F2   .251  1.000
-#> F3   .336   .140  1.000
+#> F2   .358  1.000
+#> F3   .247   .129  1.000
 #> 
 #> ── Variances Accounted for ─────────────────────────────────────────────────────
 #> 
 #>                      F1     F2     F3
-#> SS loadings        2.212  2.182  2.064
-#> Prop Tot Var        .123   .121   .115
-#> Cum Prop Tot Var    .123   .244   .359
-#> Prop Comm Var       .342   .338   .320
-#> Cum Prop Comm Var   .342   .680  1.000
+#> SS loadings        2.339  2.206  2.119
+#> Prop Tot Var        .130   .123   .118
+#> Cum Prop Tot Var    .130   .252   .370
+#> Prop Comm Var       .351   .331   .318
+#> Cum Prop Comm Var   .351   .682  1.000
 #> 
 #> ── Model Fit ───────────────────────────────────────────────────────────────────
 #> 
-#> scaled χ²(102) = 101.71, p = .489
-#> CFI: 1.00
-#> TLI: 1.00
-#> RMSEA [90% CI]: .00 [.00; .03]
+#> scaled χ²(102) = 111.53, p = .244
+#> CFI: .99
+#> TLI: .99
+#> RMSEA [90% CI]: .02 [.00; .04]
 #> AIC: NA
 #> BIC: NA
 #> CAF: .52
@@ -466,24 +484,24 @@ efa_pooled
 #> ── Rotated Loadings ────────────────────────────────────────────────────────────
 #> 
 #>        F1     F2     F3    h2    u2
-#> V1    .000  -.091   .582  .312  .688
-#> V2   -.062   .087   .550  .333  .667
-#> V3    .004  -.001   .602  .363  .637
-#> V4    .052   .152   .508  .347  .653
-#> V5    .010  -.004   .525  .276  .724
-#> V6    .025  -.033   .620  .376  .624
-#> V7    .587  -.091   .044  .332  .668
-#> V8    .679  -.036   .012  .452  .548
-#> V9    .503   .170  -.014  .322  .678
-#> V10   .511   .002   .018  .265  .735
-#> V11   .621   .038  -.042  .393  .607
-#> V12   .601  -.037  -.040  .346  .654
-#> V13   .148   .529  -.014  .336  .664
-#> V14   .106   .390   .247  .317  .683
-#> V15  -.065   .687  -.065  .428  .572
-#> V16  -.014   .585   .010  .342  .658
-#> V17  -.044   .634   .073  .426  .574
-#> V18   .018   .562   .066  .351  .649
+#> V1   -.018   .573  -.013  .320  .680
+#> V2    .058   .605  -.082  .385  .615
+#> V3    .019   .604  -.019  .370  .630
+#> V4    .209   .494  -.005  .359  .641
+#> V5   -.076   .610   .002  .346  .654
+#> V6   -.044   .640   .095  .415  .585
+#> V7   -.011  -.003   .550  .299  .701
+#> V8   -.013   .022   .654  .428  .572
+#> V9    .162   .045   .512  .340  .660
+#> V10   .027  -.002   .553  .313  .687
+#> V11   .018  -.011   .577  .336  .664
+#> V12  -.054  -.042   .581  .323  .677
+#> V13   .587  -.054   .116  .368  .632
+#> V14   .471   .181   .097  .349  .651
+#> V15   .692  -.071  -.086  .431  .569
+#> V16   .630  -.051   .007  .379  .621
+#> V17   .668   .079  -.031  .480  .520
+#> V18   .545   .082   .040  .347  .653
 #> 
 #> Legend:
 #>   bold = |loading| >= .300
@@ -494,46 +512,50 @@ efa_pooled
 #> 
 #>       F1     F2     F3
 #> F1  1.000
-#> F2   .256  1.000
-#> F3   .143   .332  1.000
+#> F2   .349  1.000
+#> F3   .227   .136  1.000
 #> 
 #> ── Variances Accounted for ─────────────────────────────────────────────────────
 #> 
 #>                      F1     F2     F3
-#> SS loadings        2.133  2.119  2.066
-#> Prop Tot Var        .119   .118   .115
-#> Cum Prop Tot Var    .119   .236   .351
-#> Prop Comm Var       .338   .335   .327
-#> Cum Prop Comm Var   .338   .673  1.000
+#> SS loadings        2.347  2.197  2.044
+#> Prop Tot Var        .130   .122   .114
+#> Cum Prop Tot Var    .130   .252   .366
+#> Prop Comm Var       .356   .333   .310
+#> Cum Prop Comm Var   .356   .690  1.000
 #> 
 #> ── Model Fit ───────────────────────────────────────────────────────────────────
 #> 
-#> D2-pooled χ²(102) = 182.80, p = .005
-#> CFI: .89
-#> TLI: .83
-#> RMSEA [90% CI]: .06 [.05; .07]
-#> AIC: -21.20
-#> BIC: -380.38
-#> ECVI: 1.29
-#> CAF: .51
+#> D2-pooled χ²(102) = 111.01, p = .488
+#> CFI (avg. over imputations): .93
+#> TLI (avg. over imputations): .90
+#> RMSEA [90% CI]: .02 [.00; .04]
+#> AIC: -92.99
+#> BIC: -452.18
+#> ECVI: 1.00
+#> CAF: .52
 #> SRMR: .04
 #> Note: the pooled χ² is the D2 statistic; its p uses the D2 reference F(102,
-#> 69.6), not the χ²(102) tail.
+#> 9.0), not the χ²(102) tail.
+#> Note: CFI and TLI are averaged over the imputations, not formed from the
+#> separately pooled model and baseline statistics in `mi_diagnostics`.
 ```
 
 The pooled loadings recover the three factors. Point estimates are
 averaged across the imputations after alignment. The model chi-square,
-and the RMSEA and AIC/BIC derived from it, are pooled with the D2 rule —
-which is why the printout labels the pooled chi-square as a D2 statistic
-with its own reference distribution — whereas the incremental CFI and
-TLI are averaged across the per-imputation fits. Requesting standard
-errors in the call (for example `se = "information"` or
-`se = "np-boot"`) additionally pools them with Rubin’s rules, so the
-between-imputation variability inflates the pooled standard errors.
-Because multiple imputation propagates the extra uncertainty from the
-missing data, its pooled fit statistics are not directly comparable with
-the single FIML fit above; read them together with the per-imputation
-fits stored in the returned object.
+and the AIC/BIC derived from it, are pooled with the D2 rule — which is
+why the printout labels the pooled chi-square as a D2 statistic with its
+own reference distribution. RMSEA is pooled by the same rule, but from
+the discrepancies on the uncorrected N - 1 scale on which it is defined,
+so it does not reconcile by hand with the printed chi-square. The
+incremental CFI and TLI are instead averaged across the per-imputation
+fits. Requesting standard errors in the call (for example
+`se = "information"` or `se = "np-boot"`) additionally pools them with
+Rubin’s rules, so the between-imputation variability inflates the pooled
+standard errors. Because multiple imputation propagates the extra
+uncertainty from the missing data, its pooled fit statistics are not
+directly comparable with the single FIML fit above; read them together
+with the per-imputation fits stored in the returned object.
 
 Multiple imputation is not limited to continuous data: since
 [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)

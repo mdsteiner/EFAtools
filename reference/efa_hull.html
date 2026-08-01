@@ -76,7 +76,11 @@ parallelization.</p>
 
     <div class="section level2">
     <h2 id="source">Source<a class="anchor" aria-label="anchor" href="#source"></a></h2>
-    <p>Lorenzo-Seva, U., Timmerman, M. E., &amp; Kiers, H. A. (2011).
+    <p>Auerswald, M., &amp; Moshagen, M. (2019). How to determine the number of
+factors to retain in exploratory factor analysis: A comparison of extraction
+methods under realistic conditions. Psychological Methods, 24(4), 468–491.
+https://doi.org/10.1037/met0000200</p>
+<p>Lorenzo-Seva, U., Timmerman, M. E., &amp; Kiers, H. A. (2011).
 The Hull method for selecting the number of common factors. Multivariate
 Behavioral Research, 46(2), 340-364.</p>
     </div>
@@ -206,6 +210,13 @@ model fit and number of parameters, retaining only major factors
 if that is larger), plus one – keeps the solutions on the upper boundary of
 the convex hull of goodness-of-fit against degrees of freedom, and selects the
 one at the sharpest elbow, i.e. with the highest <em>st</em> value.</p>
+<p>Because it trades fit against parsimony instead of testing against a null model
+of uncorrelated variables, the Hull method does not lose accuracy for the
+correlated-factor structures where parallel analysis (<code><a href="efa_parallel.html">efa_parallel()</a></code>) tends to
+under-extract; the CAF variant in particular was among the more accurate criteria
+in Auerswald and Moshagen (2019). It needs at least six indicators and fits a
+model at every candidate factor count, so it is comparatively slow and is not an
+option for very short scales.</p>
 <p>The <a href="efa_parallel.html">efa_parallel</a> function and the principal axis factoring of the
 different number of factors can be parallelized using the future framework,
 by calling the <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future::plan()</a></code> function. The examples
@@ -216,8 +227,12 @@ criterion-based rotation passed through <code>...</code> adds its own random sta
 <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> beforehand to make a run reproducible; the result is then also
 independent of the parallel plan.</p>
 <p>Note that if <code>gof = "RMSEA"</code> is used, 1 - RMSEA is actually used to
-compare the different solutions. Thus, the threshold of .05 is then .95. This
-is necessary due to how the heuristic to locate the elbow of the hull works.</p>
+compare the different solutions. This is necessary due to how the heuristic to
+locate the elbow of the hull works.</p>
+<p>The solutions are fitted without inequality constraints, so a solution can be
+inadmissible (a Heywood case, or a fit that did not converge). Only the selected
+solution is checked for this; if it is inadmissible a warning is raised and the
+retained number of factors should be interpreted with caution.</p>
 <p>The ML estimation method uses the <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code>
 starting values. See also the <a href="efa_fit.html">efa_fit</a> documentation.</p>
     </div>

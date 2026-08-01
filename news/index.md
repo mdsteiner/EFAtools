@@ -2,6 +2,171 @@
 
 ## EFAtools 1.0.0.9000
 
+### Comparing and Averaging Solutions
+
+- The display settings of
+  [`efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/efa_compare.md)
+  (`digits`, `m_red`, `range_red`, `round_red`, and `print_diff`) can
+  now be passed to [`print()`](https://rdrr.io/r/base/print.html) and
+  [`format()`](https://rdrr.io/r/base/format.html), and `plot_red` to
+  [`plot()`](https://rdrr.io/r/graphics/plot.default.html), so the
+  printed report or the plot can be changed without recomputing the
+  comparison. Omitting them keeps the settings recorded when the
+  comparison was made.
+
+- `are_equal` is now `NA` when two objects do not even agree in their
+  integer parts, and the printed report shows “none” for it. Previously
+  such a comparison returned `0`, the same value returned when the
+  integer parts do agree but no decimal place does.
+
+- The
+  [`efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/efa_compare.md)
+  report is now divided into a summary-statistics and an
+  elementwise-differences section, and the line reporting the minimum
+  number of decimals provided is shown only when the inputs were
+  rounded; for two ordinary double matrices it carried no information.
+
+- The Model Fit section of
+  [`efa_average()`](https://mdsteiner.github.io/EFAtools/reference/efa_average.md)
+  now states how many solutions each index was averaged over.
+  Chi-square-based indices and the residual-based CAF, RMSR, and SRMR
+  can rest on different numbers of solutions, because PAF contributes
+  only the latter.
+
+- The printed
+  [`efa_average()`](https://mdsteiner.github.io/EFAtools/reference/efa_average.md)
+  output now says that the fit indices summarise the individual
+  solutions rather than the averaged loadings, which are a cell-wise
+  summary and not themselves a fitted solution, and labels the range
+  tables as `max - min` rather than as an interval.
+
+- [`efa_average()`](https://mdsteiner.github.io/EFAtools/reference/efa_average.md)
+  now points out that `trim` is ignored when `averaging = "median"`
+  instead of recording a trim that never affected a value.
+
+- The progress bar of
+  [`efa_average()`](https://mdsteiner.github.io/EFAtools/reference/efa_average.md)
+  now announces exactly as many steps as it reports, and reaches 100%
+  when the last EFA has been fitted. Previously it reported one step too
+  many for most grids of fewer than 15 EFAs, which raised a warning from
+  `with_progress()`; because that warning was raised while the function
+  ran, an unassigned call also had its printed output styled as part of
+  it. Larger grids raised no warning but left the bar short of 100%.
+
+- The stages
+  [`efa_average()`](https://mdsteiner.github.io/EFAtools/reference/efa_average.md)
+  reports after fitting the grid are now shown as `cli` progress steps.
+  Previously they were written directly to the console, which left stray
+  blank lines wherever the output was not a terminal, such as in
+  rendered documents and check logs.
+
+- The
+  [`efa_group()`](https://mdsteiner.github.io/EFAtools/reference/efa_group.md)
+  report now points out when every factor is graded “equal” although the
+  groups’ loadings differ substantially: Tucker’s congruence is
+  unchanged by a proportional rescaling of a factor’s loadings, so
+  uniformly stronger loadings in one group still reach the highest band.
+
+- The header lines of the
+  [`efa_group()`](https://mdsteiner.github.io/EFAtools/reference/efa_group.md)
+  report are now wrapped to the console width, and its
+  loading-difference and invariance tables are split into stacked blocks
+  when they are wider than the console, as the congruence table already
+  was.
+
+### Data Simulation
+
+- [`efa_simulate()`](https://mdsteiner.github.io/EFAtools/reference/efa_simulate.md)
+  gains a `missing_vars` argument selecting which variables carry
+  missing values; the remaining ones stay complete. With
+  `missing = "MAR"` and a `missing_predictor` outside `missing_vars`,
+  every predictor of the missingness is fully observed, which is the
+  ignorably missing-at-random design that full-information maximum
+  likelihood and multiple imputation assume. Leaving `missing_vars`
+  unset holes every variable, as before.
+
+- When `marginals = "VM"` and `force_pd = TRUE` project the intermediate
+  correlation matrix, the returned `population` is now the population
+  the projected draw actually attains rather than the requested target,
+  and the warning reports how far the two differ. Previously the target
+  was returned although the realized correlations of the draw could
+  depart from it substantially, which understated the bias in a recovery
+  study measuring against it. `return_pop = TRUE` draws no data and
+  therefore never reaches the projection, so it continues to return the
+  target unchanged.
+
+- [`efa_simulate()`](https://mdsteiner.github.io/EFAtools/reference/efa_simulate.md)
+  now warns when `target_rmsea` and `target_cfi` cannot both be met by
+  `model_error = "TKL"`, naming the achieved values, instead of silently
+  returning the closest compromise.
+
+- A degenerate resample under `marginals = "empirical"` — a marginal
+  with a category too rare to be drawn more than once at the requested
+  sample size — now raises an actionable error instead of failing inside
+  the reproduction loop.
+
+### Factor Retention
+
+- [`efa_cd()`](https://mdsteiner.github.io/EFAtools/reference/efa_cd.md)
+  now rejects data with a constant variable, which the comparison-data
+  generation cannot reproduce, instead of failing inside its eigenvalue
+  decomposition.
+
+- [`efa_smt()`](https://mdsteiner.github.io/EFAtools/reference/efa_smt.md)
+  now warns when one of its three rules selects a solution with a
+  Heywood case or a model that did not converge, matching what
+  [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md)
+  already reported. The suggestion is still returned, but it is flagged
+  as unreliable rather than presented without comment.
+
+- The RMSEA rule of
+  [`efa_smt()`](https://mdsteiner.github.io/EFAtools/reference/efa_smt.md)
+  now stops at the first model whose lower bound cannot be computed, as
+  the sequential chi-square rule already did. Previously it skipped past
+  such a model to a later one, which is not a valid continuation of a
+  sequential test.
+
+- [`efa_nest()`](https://mdsteiner.github.io/EFAtools/reference/efa_nest.md)
+  results can now be plotted: the plot shows the empirical eigenvalues
+  together with the reference eigenvalues NEST compared them against,
+  with the retained number of factors marked.
+
+- [`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)
+  now summarises its results in one line under the section heading: how
+  many suggestions how many criteria made, the range they span, and the
+  most common number of factors.
+
+### Missing Data and Multiple Imputation
+
+- The `rmsr_upper` argument of
+  [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
+  is deprecated and ignored. It selected between computing RMSR from the
+  unique off-diagonal residual correlations and from the full
+  off-diagonal matrix, but the two element sets hold each residual pair
+  once and twice respectively, so their sums and counts double together
+  and the mean square is the same number whenever the residual matrix is
+  symmetric — which the pooled residuals always are. The argument
+  therefore never changed the reported RMSR. SRMR, the index that
+  divides the same sum by the number of non-redundant elements,
+  continues to be reported alongside it.
+  [`EFA_POOLED()`](https://mdsteiner.github.io/EFAtools/reference/EFA_POOLED.md)
+  still accepts the argument without a warning.
+
+- The printed
+  [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
+  model fit now marks CFI and TLI as averaged over the imputations and
+  says that they are not formed from separately pooled model and
+  baseline statistics. Only the D2-pooled chi-square carried such a note
+  before, which invited the reading that the incremental indices were
+  conventionally pooled ones.
+
+- The help page of
+  [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
+  now documents the `mi_diagnostics`, `fits`, `alignment`, and
+  `settings` slots of the returned object, including how to form the
+  `lavaan.mi`-style reference CFI from the pooled chi-squares in
+  `mi_diagnostics`.
+
 ### Ordinal Correlations
 
 - A polychoric or tetrachoric pair whose response table shows a perfect
@@ -29,6 +194,43 @@
   pair and gives it an asymptotic variance. Previously that variance
   came out missing, which refused `DWLS` estimation for the whole data
   set and withheld every robust standard error involving the pair.
+
+### Power Analysis
+
+- `efa_power(mode = "simulation")` now warns when a requested
+  factor-retention criterion produced no suggestion on any replicate,
+  and reports it with a missing hit-rate over zero valid replicates.
+  Previously such a criterion was dropped from the results without
+  comment, although the request was still recorded in the settings.
+
+- A missing or invalid `N` or `n_datasets` in simulation mode is now
+  reported with an actionable, catchable error stating that `N` is
+  required there, rather than a bare assertion message.
+
+### Reliability and Factor Scores
+
+- [`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md)
+  now warns when the items a `factor_map` column assigns to a group
+  factor hardly load on it although they do load on another one.
+
+- `efa_scores(method = "Anderson")`, and
+  [`FACTOR_SCORES()`](https://mdsteiner.github.io/EFAtools/reference/FACTOR_SCORES.md)
+  with it, now warn when the factors of the solution are correlated.
+  Anderson-Rubin scores are defined for orthogonal factors and are
+  orthogonalised regardless, so they were reported as uncorrelated for
+  factors the model says are correlated.
+
+- A `factor_map` for a bifactor loading matrix is now checked against
+  the dimensions of the group-factor loadings, as it already was for
+  every other input. A map with too few rows was recycled against the
+  loadings and returned coefficients above 1 instead of an error.
+
+- The
+  [`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md)
+  report of a correlated-factors solution now states that subscale omega
+  equals total omega for each factor, which follows from the absence of
+  a general factor. The two columns previously printed identical values
+  with no explanation.
 
 ## EFAtools 1.0.0
 

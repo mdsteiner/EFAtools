@@ -51,8 +51,7 @@ format(x, digits = 3, ...)
 
 [`print()`](https://rdrr.io/r/base/print.html) returns its argument `x`
 invisibly. [`format()`](https://rdrr.io/r/base/format.html) returns a
-character vector with the report lines (styled to the active console
-theme; plain when colours are disabled).
+character vector with the report lines.
 
 ## See also
 
@@ -74,31 +73,33 @@ efa_screen(iris[, 1:4])
 #> 
 #> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05.
 #> These data are probably suitable for factor analysis.
-#> 𝜒²(6) = 706.96, p < .001
+#> χ²(6) = 706.96, p < .001
 #> 
 #> ── Multicollinearity ───────────────────────────────────────────────────────────
 #> 
 #> ✔ Determinant: 0.00811. No concern (a value near 0 signals multicollinearity).
-#> ! Condition number: 140.889. Moderate multicollinearity (large values signal near-collinear variables).
+#> ! Condition number: 140.889 (condition index 11.870). Moderate
+#> multicollinearity (index 10 to 30; Belsley, Kuh & Welsch, 1980).
 #> 
 #> ── Per-variable diagnostics ────────────────────────────────────────────────────
 #> 
-#>              variance missing   SMC   MSA flags
-#> Sepal.Length    0.686       0 0.859 0.584  <NA>
-#> Sepal.Width     0.190       0 0.524 0.270  <NA>
-#> Petal.Length    3.116       0 0.968 0.531  <NA>
-#> Petal.Width     0.581       0 0.938 0.634  <NA>
+#>              variance missing%   SMC   MSA
+#> Sepal.Length    0.686        0 0.859 0.584
+#> Sepal.Width     0.190        0 0.524 0.270
+#> Petal.Length    3.116        0 0.968 0.531
+#> Petal.Width     0.581        0 0.938 0.634
 #> 
 #> ── Multivariate normality ──────────────────────────────────────────────────────
 #> 
-#> ✖ Mardia's skewness: 𝜒²(20) = 67.43, p < .001.
+#> ✖ Mardia's skewness: χ²(20) = 67.43, p < .001.
 #> ✔ Mardia's kurtosis: z = -0.23, p = 0.818.
 #> ✖ Henze-Zirkler: HZ = 2.34, p < .001.
 #> These data depart from multivariate normality.
 #> 
 #> ── Outliers ────────────────────────────────────────────────────────────────────
 #> 
-#> ℹ 55 of 150 observations were flagged as multivariate outliers (robust distance > 3.34).
+#> ℹ 55 of 150 observations were flagged as multivariate outliers (robust distance
+#> > 3.34).
 #> 
 #> ── Recommendations ─────────────────────────────────────────────────────────────
 #> 
@@ -112,8 +113,10 @@ efa_screen(iris[, 1:4])
 #> ! Bartlett's test is significant, but it assumes multivariate normality and
 #>   grows more sensitive as N increases; because these data are non-normal, treat
 #>   it as uninformative here and rely on the KMO.
-#> ! 55 observations were flagged as potential multivariate outliers; inspect them
-#>   (see `$outliers$flagged`) before down-weighting or excluding.
+#> ! 55 of 150 observations (37%) exceed the outlier cutoff, far above the 2.5%
+#>   expected under multivariate normality; this usually means the data are not
+#>   elliptically distributed (subgroups or a mixture) rather than that this many
+#>   cases are contaminated.
 
 # From a correlation matrix (supply N for Bartlett's test of sphericity)
 efa_screen(test_models$baseline$cormat, N = 500)
@@ -125,12 +128,13 @@ efa_screen(test_models$baseline$cormat, N = 500)
 #> 
 #> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05.
 #> These data are probably suitable for factor analysis.
-#> 𝜒²(153) = 2173.28, p < .001
+#> χ²(153) = 2173.28, p < .001
 #> 
 #> ── Multicollinearity ───────────────────────────────────────────────────────────
 #> 
 #> ✔ Determinant: 0.0121. No concern (a value near 0 signals multicollinearity).
-#> ✔ Condition number: 11.680. No concern (large values signal near-collinear variables).
+#> ✔ Condition number: 11.680 (condition index 3.418). No concern (index below 10;
+#> Belsley, Kuh & Welsch, 1980).
 #> 
 #> ── Per-variable diagnostics ────────────────────────────────────────────────────
 #> 
@@ -160,7 +164,7 @@ efa_screen(test_models$baseline$cormat, N = 500)
 #> ℹ Per-item variance, missing-data, category, normality, and outlier diagnostics
 #>   require raw data; only a correlation matrix was supplied.
 
-# format() returns the same lines as plain text:
+# format() returns the same lines as a character vector:
 writeLines(format(efa_screen(test_models$baseline$cormat, N = 500)))
 #> 
 #> ── Sampling adequacy and sphericity ────────────────────────────────────────────
@@ -170,12 +174,13 @@ writeLines(format(efa_screen(test_models$baseline$cormat, N = 500)))
 #> 
 #> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05.
 #> These data are probably suitable for factor analysis.
-#> 𝜒²(153) = 2173.28, p < .001
+#> χ²(153) = 2173.28, p < .001
 #> 
 #> ── Multicollinearity ───────────────────────────────────────────────────────────
 #> 
 #> ✔ Determinant: 0.0121. No concern (a value near 0 signals multicollinearity).
-#> ✔ Condition number: 11.680. No concern (large values signal near-collinear variables).
+#> ✔ Condition number: 11.680 (condition index 3.418). No concern (index below 10;
+#> Belsley, Kuh & Welsch, 1980).
 #> 
 #> ── Per-variable diagnostics ────────────────────────────────────────────────────
 #> 

@@ -593,7 +593,13 @@ directly).
   and, for any estimator, by the non-parametric bootstrap (see *Standard
   errors*). For multiply imputed data,
   [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
-  is the alternative route to handling missingness.
+  is the alternative route to handling missingness. Both routes assume
+  the values are missing at random (MAR), and which one to prefer is
+  largely practical: FIML is a single, efficient fit and is the simpler
+  default when the analysis model is the whole story, whereas multiple
+  imputation is more flexible when the imputation model should draw on
+  auxiliary variables not in the factor model, or when the same
+  imputations feed several downstream analyses.
 
 ### Rotations
 

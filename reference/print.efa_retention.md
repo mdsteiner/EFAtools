@@ -36,5 +36,6 @@ efa_ekc(test_models$baseline$cormat, N = 500)
 #> 
 #> • Original implementation (Braeken & van Assen, 2017): 3
 #> 
-#> ℹ Multiple implementations of EKC exist; make sure to report which one you used (see the efa_ekc help page for details).
+#> ℹ Multiple implementations of EKC exist; make sure to report which one you used
+#> (see the efa_ekc help page for details).
 ```

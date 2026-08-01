@@ -289,7 +289,15 @@ efa_retain(
   [`efa_ekc()`](https://mdsteiner.github.io/EFAtools/reference/efa_ekc.md),
   and
   [`efa_map()`](https://mdsteiner.github.io/EFAtools/reference/efa_map.md)
-  fit no model, so it does not apply to them, and
+  run no
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  model, so it does not apply to them. In
+  [`efa_kgc()`](https://mdsteiner.github.io/EFAtools/reference/efa_kgc.md),
+  [`efa_scree()`](https://mdsteiner.github.io/EFAtools/reference/efa_scree.md),
+  and
+  [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
+  it only takes effect when the respective `eigen_type` includes
+  `"EFA"`, since no model is fitted otherwise, and
   [`efa_smt()`](https://mdsteiner.github.io/EFAtools/reference/efa_smt.md)
   fits with maximum likelihood by definition, so only `start_method`
   takes effect there. All fits are unrotated, so no rotation settings
@@ -329,7 +337,9 @@ superseded name. It contains
 
 - settings:
 
-  A list of the settings used.
+  A list of the settings used. Its `criteria` element records the
+  requested criteria, in the order they were given, while `outputs` and
+  `n_factors` are in the order in which the criteria were run.
 
 ## Details
 

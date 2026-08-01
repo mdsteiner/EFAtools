@@ -38,8 +38,7 @@ format(x, ...)
 
 [`print()`](https://rdrr.io/r/base/print.html) returns its argument `x`
 invisibly. [`format()`](https://rdrr.io/r/base/format.html) returns a
-character vector with the report lines (styled to the active console
-theme; plain when colours are disabled).
+character vector with the report lines.
 
 ## Examples
 
@@ -82,7 +81,7 @@ sl_mod
 #> Prop Comm Var       .652  .122  .124   .102
 #> Cum Prop Comm Var   .652  .774  .898  1.000
 
-# format() returns the same lines as plain text:
+# format() returns the same lines as a character vector:
 writeLines(format(sl_mod))
 #> 
 #> EFA for second-order loadings performed with estimator = 'PAF'

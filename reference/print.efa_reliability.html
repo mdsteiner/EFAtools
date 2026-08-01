@@ -100,13 +100,13 @@ rounded to. Default is 3.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p><code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> returns its argument <code>x</code> invisibly. <code><a href="https://rdrr.io/r/base/format.html" class="external-link">format()</a></code> returns a
-character vector with the report lines (styled to the active console theme;
-plain when colours are disabled).</p>
+character vector with the report lines.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p>Other reliability coefficients:
-<code><a href="efa_reliability.html">efa_reliability()</a></code></p></div>
+<code><a href="efa_reliability.html">efa_reliability()</a></code>,
+<code><a href="efa_schmid_leiman.html">efa_schmid_leiman()</a></code></p></div>
     </div>
 
     <div class="section level2">
@@ -118,6 +118,9 @@ plain when colours are disabled).</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Total variance from the correlation matrix.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Correlated-factors solution: with no general factor, each factor's subscale</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> omega equals its total omega.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Reliability coefficients</span> ────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      <span style="font-weight: bold;">tot</span>   <span style="font-weight: bold;">sub</span>  <span style="font-weight: bold;">alpha</span>    <span style="font-weight: bold;">H</span></span>
@@ -126,10 +129,13 @@ plain when colours are disabled).</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> F2  .680  .680   .763  .753</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> F3  .667  .667   .743  .738</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># format() returns the same lines as plain text:</span></span></span>
+<span class="r-in"><span><span class="co"># format() returns the same lines as a character vector:</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/writeLines.html" class="external-link">writeLines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="va">rel</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Total variance from the correlation matrix.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Correlated-factors solution: with no general factor, each factor's subscale</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> omega equals its total omega.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Reliability coefficients</span> ────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>

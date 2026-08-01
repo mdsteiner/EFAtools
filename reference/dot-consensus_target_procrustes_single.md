@@ -14,7 +14,7 @@ dispatches here.
   rotation = c("orthogonal", "oblique"),
   start = 1,
   tol = 0.001,
-  loss_tol = 1e-07,
+  loss_tol = 1e-06,
   loss_patience = 5,
   convergence = c("either", "target", "loss", "both"),
   min_iter = 2,
@@ -92,9 +92,7 @@ dispatches here.
 
 - hyper_cutoff:
 
-  Non-negative cutoff used by
-  [`.hyperplane_count()`](https://mdsteiner.github.io/EFAtools/reference/dot-hyperplane_count.md)
-  for summary output.
+  Non-negative cutoff used by `.hyperplane_count()` for summary output.
 
 - verbose:
 

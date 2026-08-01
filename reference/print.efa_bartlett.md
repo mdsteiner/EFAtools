@@ -38,8 +38,7 @@ format(x, ...)
 
 [`print()`](https://rdrr.io/r/base/print.html) returns its argument `x`
 invisibly. [`format()`](https://rdrr.io/r/base/format.html) returns a
-character vector with the report lines (styled to the active console
-theme; plain when colours are disabled).
+character vector with the report lines.
 
 ## Examples
 
@@ -50,13 +49,13 @@ bart
 #> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05.
 #> These data are probably suitable for factor analysis.
 #> 
-#> 𝜒²(153) = 2173.28, p < .001
+#> χ²(153) = 2173.28, p < .001
 
-# format() returns the same lines as plain text:
+# format() returns the same lines as a character vector:
 writeLines(format(bart))
 #> 
 #> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05.
 #> These data are probably suitable for factor analysis.
 #> 
-#> 𝜒²(153) = 2173.28, p < .001
+#> χ²(153) = 2173.28, p < .001
 ```

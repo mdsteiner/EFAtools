@@ -105,7 +105,11 @@ matrix is entered.</p></dd>
 
 
 <dt id="arg-digits">digits<a class="anchor" aria-label="anchor" href="#arg-digits"></a></dt>
-<dd><p>numeric. Number of decimals to print in the output. Default is 4.</p></dd>
+<dd><p>numeric. Number of decimals to print in the output. Default is 4.
+Like <code>m_red</code>, <code>range_red</code>, <code>round_red</code>, and <code>print_diff</code>, it is recorded in
+<code>settings</code> but governs only the printed report, so it can be overridden per call
+in <code><a href="print.efa_compare.html">print.efa_compare()</a></code> without recomputing the comparison. <code>plot_red</code> is a
+drawing setting and is overridden the same way in <code><a href="plot.efa_compare.html">plot.efa_compare()</a></code>.</p></dd>
 
 
 <dt id="arg-m-red">m_red<a class="anchor" aria-label="anchor" href="#arg-m-red"></a></dt>
@@ -146,8 +150,9 @@ as labels on the x-axis of the plot. Default is "x" and "y".</p></dd>
 
 
 <dt id="arg-plot">plot<a class="anchor" aria-label="anchor" href="#arg-plot"></a></dt>
-<dd><p>logical. Retained for backwards compatibility; the difference plot
-is now drawn with <code><a href="plot.efa_compare.html">plot.efa_compare()</a></code> rather than when printing. Default is TRUE.</p></dd>
+<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#superseded" class="external-link"><img src="figures/lifecycle-superseded.svg" alt="[Superseded]"></a> Accepted and validated, but
+without effect; retained for backwards compatibility. The difference plot is
+drawn by <code><a href="plot.efa_compare.html">plot.efa_compare()</a></code>. Default is TRUE.</p></dd>
 
 
 <dt id="arg-plot-red">plot_red<a class="anchor" aria-label="anchor" href="#arg-plot-red"></a></dt>
@@ -184,7 +189,9 @@ normal double, max_dec will be three.</p></dd>
 agree in absolute value. The comparison is on magnitudes, so two elements that
 are equal in size but opposite in sign count as agreeing; signed disagreements
 are reflected in <code>diff</code> and the mean / median / min / max absolute differences.
-<code>NA</code> if <code>na.rm = FALSE</code> and any element is missing.</p></dd>
+<code>0</code> means the two agree in their integer parts but in no decimal place. <code>NA</code>
+means there is no agreement at all: either they already differ in their integer
+parts, or <code>na.rm = FALSE</code> and an element is missing.</p></dd>
 
 <dt>diff_corres</dt>
 <dd><p>The number of differing variable-to-factor correspondences
@@ -224,12 +231,16 @@ one solution onto another before comparing.</p></div>
 <span class="r-in"><span><span class="co"># compare the two</span></span></span>
 <span class="r-in"><span><span class="fu">efa_compare</span><span class="op">(</span><span class="va">EFA_SPSS_6</span><span class="op">$</span><span class="va">unrot_loadings</span>, <span class="va">EFA_psych_6</span><span class="op">$</span><span class="va">unrot_loadings</span>,</span></span>
 <span class="r-in"><span>            x_labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SPSS"</span>, <span class="st">"psych"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Mean [min, max] absolute difference: <span style="color: #BB0000; font-weight: bold;"> 0.0025</span> [<span style="color: #BB0000; font-weight: bold;"> 0.0000</span>, <span style="color: #BB0000; font-weight: bold;"> 0.0215</span>]</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Median absolute difference: <span style="color: #00BB00; font-weight: bold;"> 0.0008</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Root mean squared distance (RMSE): <span style="font-weight: bold;"> 0.0048</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Summary statistics</span> ──────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Mean [min, max] absolute difference: <span style="color: #BB0000; font-weight: bold;"> .0025</span> [<span style="color: #BB0000; font-weight: bold;"> .0000</span>, <span style="color: #BB0000; font-weight: bold;"> .0215</span>]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Median absolute difference: <span style="color: #00BB00; font-weight: bold;"> .0008</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Root mean squared distance (RMSE): <span style="font-weight: bold;"> .0048</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Max decimals where all numbers agree in absolute value: <span style="color: #BB0000; font-weight: bold;">0</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Minimum number of decimals provided: <span style="font-weight: bold;">17</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Differing indicator-to-factor correspondences: <span style="color: #00BB00; font-weight: bold;">0</span> (highest loading), <span style="color: #00BB00; font-weight: bold;">0</span> (all |loadings| &gt;= 0.3)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Elementwise differences</span> ─────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>        <span style="font-weight: bold;">F1</span>      <span style="font-weight: bold;">F2</span>      <span style="font-weight: bold;">F3</span>      <span style="font-weight: bold;">F4</span>      <span style="font-weight: bold;">F5</span>      <span style="font-weight: bold;">F6</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> V1    .0000  -.0001  -.0003  <span style="color: #BB0000;">-.0053</span>  <span style="color: #BB0000;">-.0015</span>  <span style="color: #BB0000;">-.0012</span></span>

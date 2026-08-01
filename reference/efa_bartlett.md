@@ -118,5 +118,5 @@ efa_bartlett(test_models$baseline$cormat, N = 500)
 #> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05.
 #> These data are probably suitable for factor analysis.
 #> 
-#> 𝜒²(153) = 2173.28, p < .001
+#> χ²(153) = 2173.28, p < .001
 ```

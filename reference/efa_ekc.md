@@ -64,7 +64,12 @@ determining the number of components to retain. Psychological Bulletin,
   `"spearman"`, or `"kendall"` (passed to
   [`stats::cor()`](https://rdrr.io/r/stats/cor.html)), or `"poly"` /
   `"tetra"` for polychoric / tetrachoric correlations of ordinal /
-  binary data (a two-step estimator). Default is "pearson".
+  binary data (a two-step estimator). Default is `"pearson"`. Note that
+  the EKC reference values rest on the Marchenko-Pastur law for the
+  eigenvalues of a sample correlation matrix of independent variables,
+  which assumes the sampling behaviour of product-moment correlations;
+  with `"poly"` / `"tetra"` (and, to a lesser degree, the rank-based
+  methods) the reference series is therefore an approximation.
 
 - type:
 
@@ -172,5 +177,6 @@ efa_ekc(test_models$baseline$cormat, N = 500)
 #> 
 #> • Original implementation (Braeken & van Assen, 2017): 3
 #> 
-#> ℹ Multiple implementations of EKC exist; make sure to report which one you used (see the efa_ekc help page for details).
+#> ℹ Multiple implementations of EKC exist; make sure to report which one you used
+#> (see the efa_ekc help page for details).
 ```

@@ -40,7 +40,9 @@ writeLines(format(nf))
 #> ✔ The Kaiser-Meyer-Olkin criterion is marvellous (KMO = 0.916). These data are
 #>   probably suitable for factor analysis.
 #> 
-#> ── Number of factors suggested by the factor retention criteria ────────────────
+#> ── Suggested number of factors ─────────────────────────────────────────────────
+#> 
+#> 4 suggestions from 2 criteria, ranging from 2 to 3 factors (most common: 3).
 #> 
 #> Empirical Kaiser Criterion
 #> • Original implementation (Braeken & van Assen, 2017): 3

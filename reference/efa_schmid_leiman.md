@@ -149,6 +149,10 @@ of McDonald's omegas (see
 Other factor rotation:
 [`efa_procrustes()`](https://mdsteiner.github.io/EFAtools/reference/efa_procrustes.md)
 
+Other reliability coefficients:
+[`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md),
+[`print.efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/print.efa_reliability.md)
+
 ## Examples
 
 ``` r
@@ -172,8 +176,6 @@ SL_psych <- efa_schmid_leiman(fa_mod, estimator = "PAF",
 
 ## For demonstration, take pattern matrix and phi from an EFA output
 ## This gives the same solution as the first example
-EFA_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
-                   estimator = "PAF", rotation = "promax")
 SL_flex <- efa_schmid_leiman(EFA_mod$rot_loadings, Phi = EFA_mod$Phi, estimator = "PAF",
                              estimate_control = estimate_control(type = "EFAtools"))
 

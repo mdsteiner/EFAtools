@@ -190,8 +190,7 @@ format(x, ...)
 [`print()`](https://rdrr.io/r/base/print.html) and the print method for
 `summary.efa` objects return their argument invisibly.
 [`format()`](https://rdrr.io/r/base/format.html) returns a character
-vector with the report lines (styled to the active console theme; plain
-when colours are disabled).
+vector with the report lines.
 [`summary()`](https://rdrr.io/r/base/summary.html) returns an object of
 class `summary.efa`.
 
@@ -373,7 +372,7 @@ summary(mod)
 #> 
 #> Inspect the residual matrix for details (e.g., with residuals()).
 
-# format() returns plain text, e.g. for embedding in a report:
+# format() returns the same lines as a character vector, e.g. for a report file:
 writeLines(format(mod))
 #> 
 #> EFA performed with estimator = 'PAF' and rotation = 'promax'.

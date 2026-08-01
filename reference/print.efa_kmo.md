@@ -39,8 +39,7 @@ format(x, ...)
 
 [`print()`](https://rdrr.io/r/base/print.html) returns its argument `x`
 invisibly. [`format()`](https://rdrr.io/r/base/format.html) returns a
-character vector with the report lines (styled to the active console
-theme; plain when colours are disabled).
+character vector with the report lines.
 
 ## Examples
 
@@ -61,7 +60,7 @@ KMO_base
 #>   V14   V15   V16   V17   V18 
 #> 0.905 0.924 0.934 0.907 0.923 
 
-# format() returns the same lines as plain text:
+# format() returns the same lines as a character vector:
 writeLines(format(KMO_base))
 #> 
 #> ── Kaiser-Meyer-Olkin criterion (KMO) ──────────────────────────────────────────

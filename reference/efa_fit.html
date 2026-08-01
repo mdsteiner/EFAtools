@@ -481,7 +481,12 @@ missingness itself, so <code>use</code> is ignored; it supplies a continuous (Pe
 correlation only and is therefore not compatible with <code>estimator = "DWLS"</code>. Standard
 errors are available analytically for <code>estimator = "ML"</code> or <code>"ULS"</code> and, for any estimator,
 by the non-parametric bootstrap (see <em>Standard errors</em>). For multiply imputed data,
-<code><a href="efa_mi.html">efa_mi()</a></code> is the alternative route to handling missingness.</p></li>
+<code><a href="efa_mi.html">efa_mi()</a></code> is the alternative route to handling missingness. Both routes assume
+the values are missing at random (MAR), and which one to prefer is largely
+practical: FIML is a single, efficient fit and is the simpler default when the
+analysis model is the whole story, whereas multiple imputation is more flexible when
+the imputation model should draw on auxiliary variables not in the factor model, or
+when the same imputations feed several downstream analyses.</p></li>
 </ul></div>
 
 <div class="section">

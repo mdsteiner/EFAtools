@@ -105,8 +105,9 @@ minimum covariance determinant estimator. Technometrics, 41, 212-223.
 
   numeric. The probability defining the chi-square cutoff for flagging a
   multivariate outlier: an observation is flagged when its squared
-  robust distance exceeds `qchisq(outlier_cutoff, p)` for `p` variables.
-  Default is `0.975`. Only used when raw data are supplied.
+  robust distance exceeds `qchisq(outlier_cutoff, p)` for `p` variables,
+  in \[0.5, 0.9999\]. Default is `0.975`. Only used when raw data are
+  supplied.
 
 - seed:
 
@@ -178,17 +179,20 @@ An object of class `efa_screen`, a list containing:
   `distances`), `flagged` (the row numbers, in the supplied data, whose
   robust distance exceeds `cutoff`), `center` and `cov` (the robust
   location and scatter underlying the distances), `method` (`"mcd"` for
-  the robust estimate, or `"classical"` when the fallback was used), and
-  `n_complete` (the number of complete cases). When neither a robust nor
-  a classical covariance can be formed a classed note (of class
-  `efa_screen_no_outliers`) is returned instead. `NULL` when a
-  correlation matrix is supplied.
+  the robust estimate, or `"classical"` when the fallback was used),
+  `fallback_reason` (why the robust estimate was unavailable, or `NULL`
+  when `method` is `"mcd"`), and `n_complete` (the number of complete
+  cases). When neither a robust nor a classical covariance can be formed
+  a classed note (of class `efa_screen_no_outliers`) is returned
+  instead. `NULL` when a correlation matrix is supplied.
 
 - categories:
 
   A named list with, for each variable treated as categorical, the
-  response-category counts (in category order); `NA` for a variable
-  treated as continuous. `NULL` when a correlation matrix is supplied.
+  response-category counts (in category order, labelled by the original
+  levels for a factor or character column and by the value itself
+  otherwise); `NA` for a variable treated as continuous. `NULL` when a
+  correlation matrix is supplied.
 
 - note:
 
@@ -198,7 +202,9 @@ An object of class `efa_screen`, a list containing:
 - settings:
 
   A list of the settings used, including `n_obs`, the number of rows in
-  the supplied raw data (`NA` for a correlation-matrix input).
+  the supplied raw data (`NA` for a correlation-matrix input), and
+  `outlier_cutoff`, the probability behind the outlier flagging
+  threshold.
 
 ## Details
 
@@ -247,7 +253,10 @@ The diagnostics are computed from the analysis correlation matrix \\R\\:
 - Variance and missing data:
 
   The variance of each variable (over its available values) and the
-  percentage of missing values. These, and the category tabulation
+  percentage of missing values. Factor and character columns are recoded
+  to their integer level codes, so `variance` and the empty-category
+  check below refer to those codes (the category counts themselves are
+  labelled by the original levels). These, and the category tabulation
   below, are computed column by column from the supplied data using
   every non-missing value, and so do not depend on `use`, which governs
   only the correlation matrix. Under a listwise `use` (`"complete.obs"`
@@ -287,11 +296,16 @@ The diagnostics are computed from the analysis correlation matrix \\R\\:
   algorithm (Rousseeuw & Van Driessen, 1999), using a subset covering a
   proportion `mcd_alpha` of the observations; an observation whose
   squared robust distance exceeds `qchisq(outlier_cutoff, p)` is
-  flagged. With too few complete cases (\\n \le 2p\\) or collinear
-  variables the robust covariance is undefined, so the classical
-  Mahalanobis distance is used instead with a warning; if even that
-  covariance is singular the diagnostic is skipped with a note.
-  Available only from raw data.
+  flagged. The robust covariance is undefined with too few complete
+  cases (\\n \le 2p\\), and also when a whole covering subset lies
+  exactly on a lower-dimensional hyperplane (an *exact fit*, common with
+  coarse discrete items on which many respondents answer an item pair
+  identically). In both cases the classical Mahalanobis distance is used
+  instead, with a warning naming which of the two applies; those
+  distances are computed from a covariance the outliers themselves
+  inflate, so the diagnostic is no longer high-breakdown and tends to
+  under-flag. If even the classical covariance is singular the
+  diagnostic is skipped with a note. Available only from raw data.
 
 ## See also
 
@@ -320,12 +334,13 @@ efa_screen(test_models$baseline$cormat, N = 500)
 #> 
 #> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05.
 #> These data are probably suitable for factor analysis.
-#> 𝜒²(153) = 2173.28, p < .001
+#> χ²(153) = 2173.28, p < .001
 #> 
 #> ── Multicollinearity ───────────────────────────────────────────────────────────
 #> 
 #> ✔ Determinant: 0.0121. No concern (a value near 0 signals multicollinearity).
-#> ✔ Condition number: 11.680. No concern (large values signal near-collinear variables).
+#> ✔ Condition number: 11.680 (condition index 3.418). No concern (index below 10;
+#> Belsley, Kuh & Welsch, 1980).
 #> 
 #> ── Per-variable diagnostics ────────────────────────────────────────────────────
 #> 
@@ -355,8 +370,15 @@ efa_screen(test_models$baseline$cormat, N = 500)
 #> ℹ Per-item variance, missing-data, category, normality, and outlier diagnostics
 #>   require raw data; only a correlation matrix was supplied.
 
-# From raw data (N is taken from the data)
-efa_screen(GRiPS_raw)
+# From raw data (N is taken from the data; the seed makes the outlier
+# diagnostics reproducible)
+efa_screen(GRiPS_raw, seed = 1)
+#> Warning: A robust (MCD) covariance could not be computed; classical Mahalanobis
+#> distances were used.
+#> ℹ At least half the complete cases lie exactly on a lower-dimensional
+#>   hyperplane (an "exact fit"). This is common with coarse discrete items, where
+#>   many respondents give identical answers on an item pair; it does not mean the
+#>   data are collinear at the correlation level.
 #> 
 #> ── Sampling adequacy and sphericity ────────────────────────────────────────────
 #> 
@@ -365,35 +387,45 @@ efa_screen(GRiPS_raw)
 #> 
 #> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05.
 #> These data are probably suitable for factor analysis.
-#> 𝜒²(28) = 5054.06, p < .001
+#> χ²(28) = 5054.06, p < .001
 #> 
 #> ── Multicollinearity ───────────────────────────────────────────────────────────
 #> 
 #> ✔ Determinant: 0.00188. No concern (a value near 0 signals multicollinearity).
-#> ✔ Condition number: 24.340. No concern (large values signal near-collinear variables).
+#> ✔ Condition number: 24.340 (condition index 4.934). No concern (index below 10;
+#> Belsley, Kuh & Welsch, 1980).
 #> 
 #> ── Per-variable diagnostics ────────────────────────────────────────────────────
 #> 
-#>           variance missing   SMC   MSA  flags
-#> fun          1.427       0 0.609 0.955       
-#> friends      1.309       0 0.685 0.950       
-#> enjoy        1.154       0 0.715 0.947 sparse
-#> hurt         1.136       0 0.557 0.968 sparse
-#> part         1.271       0 0.636 0.955       
-#> commonly     1.099       0 0.653 0.958       
-#> chances      1.389       0 0.592 0.961       
-#> attracted    1.259       0 0.679 0.950 sparse
+#>           variance missing%   SMC   MSA  flags
+#> fun          1.427        0 0.609 0.955       
+#> friends      1.309        0 0.685 0.950       
+#> enjoy        1.154        0 0.715 0.947 sparse
+#> hurt         1.136        0 0.557 0.968 sparse
+#> part         1.271        0 0.636 0.955       
+#> commonly     1.099        0 0.653 0.958       
+#> chances      1.389        0 0.592 0.961       
+#> attracted    1.259        0 0.679 0.950 sparse
 #> 
 #> ── Multivariate normality ──────────────────────────────────────────────────────
 #> 
-#> ✖ Mardia's skewness: 𝜒²(120) = 910.1, p < .001.
+#> ✖ Mardia's skewness: χ²(120) = 910.1, p < .001.
 #> ✖ Mardia's kurtosis: z = 49.32, p < .001.
 #> ✖ Henze-Zirkler: HZ = 11.65, p < .001.
 #> These data depart from multivariate normality.
 #> 
 #> ── Outliers ────────────────────────────────────────────────────────────────────
 #> 
-#> ℹ 217 of 810 observations were flagged as multivariate outliers (robust distance > 4.19).
+#> ! A robust (MCD) covariance could not be computed; classical Mahalanobis
+#> distances were used.
+#> At least half the complete cases lie exactly on a lower-dimensional hyperplane
+#> (an "exact fit"). This is common with coarse discrete items, where many
+#> respondents give identical answers on an item pair; it does not mean the data
+#> are collinear at the correlation level.
+#> These distances come from a covariance the outliers themselves inflate, so the
+#> diagnostic is no longer high-breakdown and tends to under-flag.
+#> ℹ 71 of 810 observations were flagged as multivariate outliers (Mahalanobis
+#> distance > 4.19).
 #> 
 #> ── Recommendations ─────────────────────────────────────────────────────────────
 #> 
@@ -406,6 +438,6 @@ efa_screen(GRiPS_raw)
 #> ! 3 variables have a sparse response category (< 5 responses): enjoy, hurt, and
 #>   attracted; a low-frequency category can destabilise polychoric estimates -
 #>   consider collapsing it into an adjacent category.
-#> ! 217 observations were flagged as potential multivariate outliers; inspect
-#>   them (see `$outliers$flagged`) before down-weighting or excluding.
+#> ! 71 observations were flagged as potential multivariate outliers; inspect them
+#>   (see `$outliers$flagged`) before down-weighting or excluding.
 ```

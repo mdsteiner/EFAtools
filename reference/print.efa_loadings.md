@@ -6,7 +6,10 @@ Print a loading matrix
 
 ``` r
 # S3 method for class 'efa_loadings'
-print(
+print(x, ...)
+
+# S3 method for class 'efa_loadings'
+format(
   x,
   cutoff = 0.3,
   digits = 3,
@@ -20,9 +23,6 @@ print(
   legend = FALSE,
   ...
 )
-
-# S3 method for class 'efa_loadings'
-format(x, ...)
 ```
 
 ## Arguments
@@ -30,6 +30,10 @@ format(x, ...)
 - x:
 
   a loading matrix of class `efa_loadings` (or the legacy `LOADINGS`).
+
+- ...:
+
+  additional arguments passed to print or format
 
 - cutoff:
 
@@ -90,9 +94,14 @@ format(x, ...)
   a colour-capable console); in plain output it is omitted and this
   argument has no effect.
 
-- ...:
+## Value
 
-  additional arguments passed to print or format
+[`print()`](https://rdrr.io/r/base/print.html) returns its argument `x`
+invisibly; it is `cat(format(x, ...), sep = "\n")` followed by a blank
+line for console spacing.
+[`format()`](https://rdrr.io/r/base/format.html) returns a character
+vector with the table lines (styled to the active console theme; plain
+when colours are disabled).
 
 ## Details
 
@@ -165,4 +174,26 @@ EFAtools_PAF
 #> CAF: .50
 #> SRMR: .02
 #> df: 102
+
+# format() returns the same lines as a character vector:
+writeLines(format(EFAtools_PAF$rot_loadings))
+#>        F1     F2     F3
+#> V1   -.048   .035   .613
+#> V2   -.001   .067   .482
+#> V3    .060   .056   .453
+#> V4    .101  -.009   .551
+#> V5    .157  -.018   .438
+#> V6   -.072  -.049   .704
+#> V7    .001   .533   .093
+#> V8   -.016   .581   .030
+#> V9    .038   .550  -.001
+#> V10  -.021   .674  -.071
+#> V11   .015   .356   .232
+#> V12   .020   .651  -.010
+#> V13   .614   .086  -.067
+#> V14   .548  -.068   .088
+#> V15   .561   .128  -.070
+#> V16   .555  -.050   .091
+#> V17   .664  -.037  -.027
+#> V18   .555   .004   .050
 ```

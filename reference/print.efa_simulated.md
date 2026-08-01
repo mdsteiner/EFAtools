@@ -44,8 +44,7 @@ format(x, digits = 3, ...)
 
 [`print()`](https://rdrr.io/r/base/print.html) returns its argument `x`
 invisibly. [`format()`](https://rdrr.io/r/base/format.html) returns a
-character vector with the summary lines (styled to the active console
-theme; plain when colours are disabled).
+character vector with the summary lines.
 
 ## See also
 
@@ -58,7 +57,7 @@ Other data simulation:
 Lambda <- population_models$loadings$baseline
 Phi <- population_models$phis_3$moderate
 efa_simulate(N = 500, Lambda = Lambda, Phi = Phi, target_rmsea = 0.05, seed = 42)
-#> Simulated data (<efa_simulated>)
+#> ── Simulated data ──────────────────────────────────────────────────────────────
 #> 
 #> 500 cases by 18 variables (continuous).
 #> Marginals: normal.

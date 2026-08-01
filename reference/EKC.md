@@ -44,7 +44,12 @@ EKC(
   `"spearman"`, or `"kendall"` (passed to
   [`stats::cor()`](https://rdrr.io/r/stats/cor.html)), or `"poly"` /
   `"tetra"` for polychoric / tetrachoric correlations of ordinal /
-  binary data (a two-step estimator). Default is "pearson".
+  binary data (a two-step estimator). Default is `"pearson"`. Note that
+  the EKC reference values rest on the Marchenko-Pastur law for the
+  eigenvalues of a sample correlation matrix of independent variables,
+  which assumes the sampling behaviour of product-moment correlations;
+  with `"poly"` / `"tetra"` (and, to a lesser degree, the rank-based
+  methods) the reference series is therefore an approximation.
 
 - type:
 

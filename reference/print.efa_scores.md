@@ -59,8 +59,7 @@ format(x, digits = x$opts$digits, ...)
 [`print()`](https://rdrr.io/r/base/print.html) and the print method for
 `summary.efa_scores` objects return their argument invisibly.
 [`format()`](https://rdrr.io/r/base/format.html) returns a character
-vector with the report lines (styled to the active console theme; plain
-when colours are disabled).
+vector with the report lines.
 [`summary()`](https://rdrr.io/r/base/summary.html) returns an object of
 class `summary.efa_scores`.
 
@@ -86,10 +85,10 @@ fs
 #> 
 #> ── Score determinacy ───────────────────────────────────────────────────────────
 #> 
-#>      rho  rho2 guttman
-#> F1 0.894 0.798   0.597
-#> F2 0.888 0.788   0.576
-#> F3 0.883 0.780   0.561
+#>      rho  rho2  guttman
+#> F1  .894  .798     .597
+#> F2  .888  .788     .576
+#> F3  .883  .780     .561
 summary(fs)
 #> 
 #> ── Factor scores (regression) ──────────────────────────────────────────────────
@@ -98,50 +97,50 @@ summary(fs)
 #> 
 #> ── Score determinacy ───────────────────────────────────────────────────────────
 #> 
-#>      rho  rho2 guttman
-#> F1 0.894 0.798   0.597
-#> F2 0.888 0.788   0.576
-#> F3 0.883 0.780   0.561
+#>      rho  rho2  guttman
+#> F1  .894  .798     .597
+#> F2  .888  .788     .576
+#> F3  .883  .780     .561
 #> 
 #> ── Factor weights ──────────────────────────────────────────────────────────────
 #> 
-#>        F1    F2     F3
-#> V1  0.016 0.037  0.206
-#> V2  0.023 0.036  0.146
-#> V3  0.038 0.033  0.140
-#> V4  0.060 0.025  0.194
-#> V5  0.062 0.014  0.138
-#> V6  0.009 0.013  0.247
-#> V7  0.024 0.177  0.053
-#> V8  0.017 0.187  0.031
-#> V9  0.031 0.173  0.020
-#> V10 0.016 0.222 -0.002
-#> V11 0.026 0.115  0.084
-#> V12 0.035 0.240  0.030
-#> V13 0.202 0.051  0.010
-#> V14 0.163 0.002  0.050
-#> V15 0.177 0.059  0.007
-#> V16 0.170 0.006  0.050
-#> V17 0.214 0.013  0.016
-#> V18 0.173 0.025  0.041
+#>       F1    F2     F3
+#> V1   .016  .037   .206
+#> V2   .023  .036   .146
+#> V3   .038  .033   .140
+#> V4   .060  .025   .194
+#> V5   .062  .014   .138
+#> V6   .009  .013   .247
+#> V7   .024  .177   .053
+#> V8   .017  .187   .031
+#> V9   .031  .173   .020
+#> V10  .016  .222  -.002
+#> V11  .026  .115   .084
+#> V12  .035  .240   .030
+#> V13  .202  .051   .010
+#> V14  .163  .002   .050
+#> V15  .177  .059   .007
+#> V16  .170  .006   .050
+#> V17  .214  .013   .016
+#> V18  .173  .025   .041
 #> 
 #> ── Score validity and univocality ──────────────────────────────────────────────
 #> 
 #> Diagonal: validity (score-factor correlation). Off-diagonal: univocality.
 #> 
-#>       F1    F2    F3
-#> F1 0.894 0.638 0.668
-#> F2 0.643 0.888 0.650
-#> F3 0.676 0.653 0.883
+#>      F1    F2    F3
+#> F1  .894  .638  .668
+#> F2  .643  .888  .650
+#> F3  .676  .653  .883
 #> 
 #> ── Score intercorrelations ─────────────────────────────────────────────────────
 #> 
-#>       F1    F2    F3
-#> F1 1.000 0.719 0.756
-#> F2 0.719 1.000 0.735
-#> F3 0.756 0.735 1.000
+#>       F1     F2     F3
+#> F1  1.000   .719   .756
+#> F2   .719  1.000   .735
+#> F3   .756   .735  1.000
 
-# format() returns the same lines as plain text:
+# format() returns the same lines as a character vector:
 writeLines(format(fs))
 #> 
 #> ── Factor scores (regression) ──────────────────────────────────────────────────
@@ -150,8 +149,8 @@ writeLines(format(fs))
 #> 
 #> ── Score determinacy ───────────────────────────────────────────────────────────
 #> 
-#>      rho  rho2 guttman
-#> F1 0.894 0.798   0.597
-#> F2 0.888 0.788   0.576
-#> F3 0.883 0.780   0.561
+#>      rho  rho2  guttman
+#> F1  .894  .798     .597
+#> F2  .888  .788     .576
+#> F3  .883  .780     .561
 ```

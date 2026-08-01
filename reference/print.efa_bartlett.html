@@ -92,8 +92,7 @@ disabled (for example when captured into a file or stripped with
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p><code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> returns its argument <code>x</code> invisibly. <code><a href="https://rdrr.io/r/base/format.html" class="external-link">format()</a></code> returns a
-character vector with the report lines (styled to the active console theme;
-plain when colours are disabled).</p>
+character vector with the report lines.</p>
     </div>
 
     <div class="section level2">
@@ -104,15 +103,15 @@ plain when colours are disabled).</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> The <span style="font-weight: bold;">Bartlett's test of sphericity</span> was <span style="color: #00BB00; font-weight: bold;">significant</span> at an alpha level of .05.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> These data are probably suitable for factor analysis.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 𝜒²(153) = 2173.28, <span style="font-style: italic;">p</span> &lt; .001</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> χ²(153) = 2173.28, <span style="font-style: italic;">p</span> &lt; .001</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># format() returns the same lines as plain text:</span></span></span>
+<span class="r-in"><span><span class="co"># format() returns the same lines as a character vector:</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/writeLines.html" class="external-link">writeLines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="va">bart</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> The <span style="font-weight: bold;">Bartlett's test of sphericity</span> was <span style="color: #00BB00; font-weight: bold;">significant</span> at an alpha level of .05.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> These data are probably suitable for factor analysis.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 𝜒²(153) = 2173.28, <span style="font-style: italic;">p</span> &lt; .001</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> χ²(153) = 2173.28, <span style="font-style: italic;">p</span> &lt; .001</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

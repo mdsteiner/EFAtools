@@ -129,9 +129,15 @@ for fixed-target alignment.</p></dd>
 
 
 <dt id="arg-rmsr-upper">rmsr_upper<a class="anchor" aria-label="anchor" href="#arg-rmsr-upper"></a></dt>
-<dd><p>Logical. If <code>TRUE</code>, compute RMSR from the unique
-off-diagonal residual correlations. If <code>FALSE</code>, use the full off-diagonal
-matrix.</p></dd>
+<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Accepted and ignored. It
+selected between computing RMSR from the unique off-diagonal residual correlations
+and from the full off-diagonal matrix. The two element sets hold each residual pair
+once and twice respectively, so their sums and counts double together and the mean
+square is the same number whenever the residual matrix is symmetric, which the pooled
+residuals always are. RMSR is therefore always the root mean square of the unique
+off-diagonal residuals; SRMR, which divides the same sum by the number of
+non-redundant elements, is reported alongside it. Supplying it to <code><a href="efa_mi.html">efa_mi()</a></code>
+signals a deprecation warning; the superseded <code>EFA_POOLED()</code> accepts it silently.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

@@ -126,7 +126,10 @@ either "SMC", "PCA", or "EFA". If using "SMC", the diagonal of the correlation
 matrix is replaced by the squared multiple correlations (SMCs) of the
 indicators. If using "PCA", the diagonal values of the correlation matrices
 are left to be 1. If using "EFA", eigenvalues are found on the correlation
-matrices with the final communalities of an EFA solution as diagonal.</p></dd>
+matrices with the final communalities of an EFA solution as diagonal. Default
+is <code>c("PCA", "SMC", "EFA")</code>, i.e. all three, which costs roughly six times a
+single non-EFA type: <code>"EFA"</code> fits an EFA to every simulated dataset and
+dominates that total. Pass a single type if the run is time-critical.</p></dd>
 
 
 <dt id="arg-use">use<a class="anchor" aria-label="anchor" href="#arg-use"></a></dt>

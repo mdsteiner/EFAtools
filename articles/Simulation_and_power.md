@@ -48,7 +48,7 @@ population a correlation matrix.
 
 sim <- efa_simulate(N = 500, Lambda = Lambda, Phi = Phi, seed = 42)
 sim
-#> Simulated data (<efa_simulated>)
+#> ── Simulated data ──────────────────────────────────────────────────────────────
 #> 
 #> 500 cases by 18 variables (continuous).
 #> Marginals: normal.
@@ -107,7 +107,7 @@ uses and returned in `$model_error`.
 sim_me <- efa_simulate(N = 500, Lambda = Lambda, Phi = Phi,
                        target_rmsea = 0.05, seed = 42)
 sim_me
-#> Simulated data (<efa_simulated>)
+#> ── Simulated data ──────────────────────────────────────────────────────────────
 #> 
 #> 500 cases by 18 variables (continuous).
 #> Marginals: normal.

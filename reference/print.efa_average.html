@@ -104,15 +104,22 @@ created. Only used by <code><a href="https://rdrr.io/r/base/print.html" class="e
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p><code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> returns its argument <code>x</code> invisibly. <code><a href="https://rdrr.io/r/base/format.html" class="external-link">format()</a></code> returns a
-character vector with the report lines (styled to the active console theme;
-plain when colours are disabled).</p>
+character vector with the report lines.</p>
     </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="va">EFA_aver</span> <span class="op">&lt;-</span> <span class="fu"><a href="efa_average.html">efa_average</a></span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, N <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                                                                                                                  🏃 Extracting data...                                                                                                                                                                 🚶 Reordering factors...                                                                                                                                                                 🏃 Averaging data...                                                                                                                                                                 Done!</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Extracting data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Extracting data <span style="color: #B2B2B2;">[10ms]</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Reordering factors</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Reordering factors <span style="color: #B2B2B2;">[19ms]</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Averaging data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Averaging data <span style="color: #B2B2B2;">[17ms]</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span><span class="va">EFA_aver</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Averaging performed with averaging method <span style="font-weight: bold;">mean (trim = 0)</span> across <span style="font-weight: bold;">72</span> EFAs,</span>
@@ -173,7 +180,7 @@ plain when colours are disabled).</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> V17  <span style="font-weight: bold;"> .634</span>  <span style="color: #555555;">-.010</span>  <span style="color: #555555;"> .000</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> V18  <span style="font-weight: bold;"> .535</span>  <span style="color: #555555;"> .029</span>  <span style="color: #555555;"> .071</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Range</span> ───────────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Range (max − min)</span> ───────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       <span style="font-weight: bold;">F1</span>    <span style="font-weight: bold;">F2</span>    <span style="font-weight: bold;">F3</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> V1   .098  .077  .092</span>
@@ -204,7 +211,7 @@ plain when colours are disabled).</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> F2   .536  1.000</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> F3   .568   .553  1.000</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Range</span> ───────────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Range (max − min)</span> ───────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      <span style="font-weight: bold;">F1</span>    <span style="font-weight: bold;">F2</span>    <span style="font-weight: bold;">F3</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> F1  .000</span>
@@ -220,7 +227,7 @@ plain when colours are disabled).</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Prop Tot Var    .122   .115   .113</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Prop Comm Var   .348   .329   .323</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Range</span> ───────────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Range (max − min)</span> ───────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                 <span style="font-weight: bold;">F1</span>    <span style="font-weight: bold;">F2</span>    <span style="font-weight: bold;">F3</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> SS loadings    .036  .052  .063</span>
@@ -229,13 +236,19 @@ plain when colours are disabled).</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ══ <span style="font-weight: bold;">Model Fit</span> ═══════════════════════════════════════════════════════════════════</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> The fit indices are the mean of the per-solution fit indices, not the fit of</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> the averaged loadings printed above, which are a cell-wise summary rather than</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> a fitted solution.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CAF, RMSR, and SRMR averaged over 72 of 72 solutions.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>        M (SD) [Min; Max]</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> CAF:  .50 (.00) [.50; .50]</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> RMSR: .03 (.00) [.03; .03]</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> SRMR: .02 (.00) [.02; .02]</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> df: 102</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># format() returns the same lines as plain text:</span></span></span>
+<span class="r-in"><span><span class="co"># format() returns the same lines as a character vector:</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/writeLines.html" class="external-link">writeLines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="va">EFA_aver</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Averaging performed with averaging method <span style="font-weight: bold;">mean (trim = 0)</span> across <span style="font-weight: bold;">72</span> EFAs,</span>
@@ -296,7 +309,7 @@ plain when colours are disabled).</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> V17  <span style="font-weight: bold;"> .634</span>  <span style="color: #555555;">-.010</span>  <span style="color: #555555;"> .000</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> V18  <span style="font-weight: bold;"> .535</span>  <span style="color: #555555;"> .029</span>  <span style="color: #555555;"> .071</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Range</span> ───────────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Range (max − min)</span> ───────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       <span style="font-weight: bold;">F1</span>    <span style="font-weight: bold;">F2</span>    <span style="font-weight: bold;">F3</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> V1   .098  .077  .092</span>
@@ -327,7 +340,7 @@ plain when colours are disabled).</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> F2   .536  1.000</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> F3   .568   .553  1.000</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Range</span> ───────────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Range (max − min)</span> ───────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      <span style="font-weight: bold;">F1</span>    <span style="font-weight: bold;">F2</span>    <span style="font-weight: bold;">F3</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> F1  .000</span>
@@ -343,7 +356,7 @@ plain when colours are disabled).</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Prop Tot Var    .122   .115   .113</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Prop Comm Var   .348   .329   .323</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Range</span> ───────────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Range (max − min)</span> ───────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                 <span style="font-weight: bold;">F1</span>    <span style="font-weight: bold;">F2</span>    <span style="font-weight: bold;">F3</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> SS loadings    .036  .052  .063</span>
@@ -351,6 +364,12 @@ plain when colours are disabled).</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Prop Comm Var  .006  .008  .010</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ══ <span style="font-weight: bold;">Model Fit</span> ═══════════════════════════════════════════════════════════════════</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> The fit indices are the mean of the per-solution fit indices, not the fit of</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> the averaged loadings printed above, which are a cell-wise summary rather than</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> a fitted solution.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CAF, RMSR, and SRMR averaged over 72 of 72 solutions.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>        M (SD) [Min; Max]</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> CAF:  .50 (.00) [.50; .50]</span>
