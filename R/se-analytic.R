@@ -87,6 +87,40 @@
   is.finite(ev) && ev >= -1e-8 * max(d, 1)
 }
 
+# TRUE when the solution sits on the parameter-space boundary: a uniqueness at (or below) its lower
+# boundary, i.e. the Heywood case `.finalize_fit()` flags. The Wald approximation every analytic
+# standard error rests on is not valid there, so this is the single gate on which the analytic paths
+# withhold. The ML and ULS fitters constrain the uniquenesses to [.uniqueness_floor, 1] (DWLS does
+# not -- see R/DWLS.R -- and can land below zero), so an improper solution from those fitters is
+# pinned AT that floor and never reaches zero: a gate keyed on `psi <= 0` would fire only for a
+# hand-built covariance and never for a fitted one. Test the boundary the fitters can actually
+# reach.
+.at_uniqueness_boundary <- function(L) {
+  psi <- 1 - rowSums(unclass(L)^2)
+  anyNA(psi) || any(psi <= .uniqueness_floor + sqrt(.Machine$double.eps))
+}
+
+# The hint the analytic paths attach to `efa_se_unreliable` when the boundary above is what withheld
+# the standard errors. Held next to the predicate, and shared by the rotated and unrotated message
+# sites, so the wording cannot drift between them. It states a total withholding, so a caller must
+# only reach for it once it has established that nothing was reported.
+.se_boundary_hint <- paste0(
+  "The solution is a Heywood case -- a uniqueness sits at its lower boundary -- where the Wald ",
+  "approximation these standard errors rest on is not valid, so none is reported. Use ",
+  "{.code se = \"np-boot\"}, or extract fewer factors."
+)
+
+# Row/column labels for a vec(Lambda)-ordered loading covariance: "<variable>_<factor>" in the same
+# column-major order the block is assembled in, so the documented ordering can be read off the
+# object. NULL when the loadings carry no dimnames, in which case the block ships unlabelled rather
+# than mislabelled.
+.vec_loading_labels <- function(L) {
+  rn <- rownames(L)
+  cn <- colnames(L)
+  if (is.null(rn) || is.null(cn)) return(NULL)
+  as.vector(outer(rn, cn, paste, sep = "_"))
+}
+
 
 # Analytic expected-information SEs and Wald CIs for the ML solution, rotated or unrotated.
 #
@@ -115,19 +149,14 @@
 .se_information <- function(fit_out, rot_info, N, ci, method) {
 
   L <- unclass(fit_out$unrot_loadings)
-  psi <- 1 - rowSums(L^2)
 
-  # At a Heywood case (a uniqueness at its lower boundary) the solution sits on the parameter-space
-  # boundary, where the Wald intervals this path reports are not valid. Withhold the covariance so
-  # the core NA-fills through its usual unusable-Gamma branch and the shared efa_se_unreliable
-  # warning fires, rather than reporting a boundary standard error. The ML and ULS fitters
-  # constrain the uniquenesses to [.uniqueness_floor, 1] (DWLS does not -- see R/DWLS.R -- but
-  # it never reaches this path, as se = "information" rejects it), so an improper solution is
-  # pinned AT that floor and never reaches zero: testing `psi <= 0` would fire only for a
-  # hand-built covariance and never for a fitted one. Test the same boundary `.finalize_fit()`
-  # flags as a Heywood case, so a fitted boundary solution is withheld rather than reported
-  # with a hugely inflated standard error.
-  Gamma <- if (anyNA(psi) || any(psi <= .uniqueness_floor + sqrt(.Machine$double.eps))) {
+  # At a boundary solution (`.at_uniqueness_boundary()`) the Wald intervals this path reports are
+  # not valid, so withhold the covariance: the core then NA-fills through its usual unusable-Gamma
+  # branch and the shared efa_se_unreliable warning fires, rather than reporting a boundary standard
+  # error. Short-circuiting here also skips assembling and inverting an n x n Gamma the fit would
+  # never use; `.se_sandwich_dispatch()` applies the same gate for the paths that still need the
+  # core (it builds the scaled chi-square, which stays reportable at a boundary fit).
+  Gamma <- if (.at_uniqueness_boundary(L)) {
     NULL
   } else {
     # Model-implied correlation matrix (unit diagonal by construction).
@@ -266,7 +295,11 @@
     m
   }
   SE_rot <- na_mat()
-  SE_Phi <- if (oblique) matrix(NA_real_, k, k) else NULL
+  SE_Phi <- if (oblique) {
+    matrix(NA_real_, k, k, dimnames = dimnames(Phi_pt))
+  } else {
+    NULL
+  }
   SE_S <- if (oblique) na_mat() else NULL
   S_pt <- if (oblique) `dimnames<-`(L_rot %*% Phi_pt, dimnames(L_rot)) else NULL
 
@@ -309,6 +342,7 @@
         SE_Phi <- matrix(sqrt(pmax(rowSums((J_Phi %*% V) * J_Phi), 0)), k, k)
         diag(SE_Phi) <- 0       # the unit diagonal of Phi is fixed, so it has no variance
         SE_Phi <- (SE_Phi + t(SE_Phi)) / 2
+        dimnames(SE_Phi) <- dimnames(Phi_pt)
         # Structure S = L Phi: dvec(S) = (Phi' (x) I_p) dvec(L) + (I_k (x) L) dvec(Phi); the
         # rotation matrices are the re-rotated point estimates, consistent with the Jacobians.
         L0 <- jac$base_loadings
@@ -344,8 +378,16 @@
       c("Analytic standard errors could not be computed for all parameters.",
         "i" = if (gauge_degenerate && info_reliable) {
           "The factor solution's rotational orientation is only weakly determined (two canonical variances nearly coincide), so the unrotated loadings have no well-defined standard error. The rotated loadings and communalities are gauge-invariant and unaffected."
+        } else if (!info_reliable && .at_uniqueness_boundary(A)) {
+          # Named rather than listed among the possible causes: `.se_sandwich_dispatch()` withholds
+          # on exactly this test, so when it holds it can be reported as a fact about the solution.
+          # `!info_reliable` is what makes that attribution safe: the two-stage FIML sandwich builds
+          # its own `se0` and carries no boundary gate, so a boundary FIML fit can arrive here with
+          # finite unrotated SEs and only the rotation Jacobian failed -- the hint's claim that
+          # nothing was reported would be false, and the last clause is the one that applies.
+          .se_boundary_hint
         } else {
-          "This occurs at a Heywood case (a uniqueness at its lower boundary), when the parameter covariance is singular, or when the rotation could not be reproduced for the standard-error Jacobian."
+          "This occurs when the parameter covariance is singular, or when the rotation could not be reproduced for the standard-error Jacobian."
         }),
       class = "efa_se_unreliable"
     )
@@ -357,6 +399,9 @@
   # downstream consumers can fail closed on `anyNA()`. A degenerate gauge deliberately does NOT
   # NA-fill it: the covariance is finite, PSD and correct, and only its gauge-dependent marginals
   # are unusable (see the matching note in `.se_sandwich_unrotated()`).
+  lab <- .vec_loading_labels(A)
+  if (!is.null(lab)) dimnames(V) <- list(lab, lab)
+
   list(SE = SE, CI = CI, replicates = NULL, vcov_unrot_loadings = V)
 }
 
@@ -380,6 +425,23 @@
                                   optimal_weight = FALSE, scaled = TRUE) {
 
   core <- .se_sandwich_core(fit_out, N, Gamma, method, optimal_weight, scaled)
+
+  # A boundary solution invalidates the Wald interval however the covariance was estimated, so the
+  # robust path withholds on the same test the expected-information path uses. The gate sits here
+  # rather than inside the core for two reasons. The core's own `psi <= 0` test asks a different
+  # question -- whether Psi^-1 exists for the gauge constraint -- and must not be moved to the floor
+  # (see the note there). And the scaled chi-square the core builds is a discrepancy-function
+  # quantity rather than a Wald one: the boundary does not invalidate it, and for DWLS it is the
+  # only chi-square block the fit has, so the standard errors are withheld and it is kept. The
+  # persisted covariance follows from these flags -- both consumers NA-fill it when the marginal SEs
+  # are unusable -- and `gauge_reliable` is reset because the gauge is not what withheld them, so
+  # the caller must not attach its gauge-specific message.
+  if (.at_uniqueness_boundary(fit_out$unrot_loadings)) {
+    core$loadings_se[] <- NA_real_
+    core$uniquenesses_se[] <- NA_real_
+    core$reliable <- FALSE
+    core$gauge_reliable <- TRUE
+  }
 
   res <- if (is.null(rot_info)) {
     .se_sandwich_unrotated(fit_out, core, ci)
@@ -822,8 +884,14 @@
       c("Analytic standard errors could not be computed for all parameters.",
         "i" = if (gauge_degenerate) {
           "The factor solution's rotational orientation is only weakly determined (two canonical variances nearly coincide), so the unrotated loadings have no well-defined standard error. The communalities and uniquenesses are unaffected; apply a rotation, or use {.code se = \"np-boot\"}, for loading-level uncertainty."
+        } else if (anyNA(SE_L) && .at_uniqueness_boundary(L)) {
+          # As in `.se_information_rotated()`: the hint claims a total withholding, so it is only
+          # attached once the loading SEs are actually gone. They and the uniqueness SEs are
+          # all-or-nothing together today, but a path that withheld only one of them would
+          # otherwise be described by a hint that its own output contradicts.
+          .se_boundary_hint
         } else {
-          "This occurs at a Heywood case (a uniqueness at its lower boundary), when the bordered information matrix is singular, or when the asymptotic covariance is not usable."
+          "This occurs when the bordered information matrix is singular, or when the asymptotic covariance is not usable."
         }),
       class = "efa_se_unreliable"
     )
@@ -852,6 +920,8 @@
   # recover the gauge-invariant quantities, which a wholesale NA fill would take down with it.
   V_AA <- core$V_AA
   if (!isTRUE(core$reliable)) V_AA[] <- NA_real_
+  lab <- .vec_loading_labels(L)
+  if (!is.null(lab)) dimnames(V_AA) <- list(lab, lab)
 
   list(
     SE = list(unrot_loadings = SE_L, uniquenesses = SE_psi,
@@ -988,6 +1058,17 @@
       class = "efa_boot_replicate_failed"
     )
   }
+  # A bootstrap standard error is the dispersion across replicates, so fewer than two leaves it
+  # undefined (`sd()` of a single value is NA) and collapses the percentile interval onto that one
+  # replicate. `b_boot` is bounded below at 2, so this is reachable only when replicates fail at
+  # run time -- including the extreme case where all but one of a large `b_boot` do.
+  if (valid_reps < 2L) {
+    cli::cli_warn(
+      c("Bootstrap standard errors are not defined from {valid_reps} usable replicate{?s}.",
+        "i" = "The standard errors are {.val {NA}} and the confidence bounds collapse onto the single replicate; raise {.arg b_boot}, or check why the replicate fits failed."),
+      class = "efa_se_unreliable"
+    )
+  }
 
   # se = sd of bootstrap replications (Zhang, 2014, Estimating Standard Errors
   # in Exploratory Factor Analysis)
@@ -1047,7 +1128,8 @@
     valid_rot <- b - n_failed - failed_rot
     if (failed_rot > 0) {
       cli::cli_warn(c("{failed_rot} target rotation{?s} in the bootstrap procedure could not be aligned.",
-                    "i" = "Bootstrap SE and CI of rotated loadings, factor correlations and structure coefficients are based on {valid_rot} bootstrap sample{?s}."))
+                    "i" = "Bootstrap SE and CI of rotated loadings, factor correlations and structure coefficients are based on {valid_rot} bootstrap sample{?s}."),
+                    class = "efa_boot_rotation_failed")
     }
 
     L_rot_se_ci <- .array_se_ci(L_rot_boot, ps)
@@ -1112,7 +1194,8 @@
     valid_rot <- b - n_failed - failed_rot
     if (failed_rot > 0) {
       cli::cli_warn(c("{failed_rot} target rotation{?s} in the bootstrap procedure could not be aligned.",
-                    "i" = "Bootstrap SE and CI of rotated loadings are based on {valid_rot} bootstrap sample{?s}."))
+                    "i" = "Bootstrap SE and CI of rotated loadings are based on {valid_rot} bootstrap sample{?s}."),
+                    class = "efa_boot_rotation_failed")
     }
 
     L_rot_se_ci <- .array_se_ci(L_rot_boot, ps)

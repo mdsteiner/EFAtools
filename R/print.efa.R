@@ -851,7 +851,7 @@ format.summary.efa <- function(x, ...) {
 
   note <- note_label
 
-  b_text <- .efa_bootstrap_sample_text(spec)
+  b_text <- .efa_bootstrap_sample_text(x, spec)
   if (nzchar(b_text)) {
     note <- paste0(note, " based on ", b_text)
   }
@@ -1620,7 +1620,7 @@ format.summary.efa <- function(x, ...) {
   )
 }
 
-.efa_bootstrap_sample_text <- function(spec) {
+.efa_bootstrap_sample_text <- function(x, spec) {
   b_boot <- .efa_as_scalar_number(spec$b_boot)
   if (!is.finite(b_boot)) {
     return("")
@@ -1632,7 +1632,46 @@ format.summary.efa <- function(x, ...) {
     "bootstrap samples"
   }
 
-  paste(as.integer(b_boot), label)
+  paste0(as.integer(b_boot), " ", label, .efa_usable_replicate_text(x, spec))
+}
+
+# " (n usable)" whenever fewer replicates survived than were requested, else "". The count is the
+# one the unrotated-loading, residual and fit-index statistics are actually based on, so without it
+# the printed sample count claims a precision the intervals do not have. The rotated block carries
+# its own count (`valid_target_rotations`) and is reported separately. The requested total is
+# resolved here rather than by the caller, so both call sites mean the same number by it.
+.efa_usable_replicate_text <- function(x, spec) {
+  counts <- .efa_valid_replicate_counts(x)
+  total <- .efa_total_bootstrap_samples(x, spec)
+  if (is.null(counts) || !is.finite(total) || !any(counts < total)) {
+    return("")
+  }
+
+  scope <- if (isTRUE(spec$is_pooled)) " per imputation" else ""
+  paste0(" (", .efa_valid_target_rotation_count_text(counts, spec), " usable", scope, ")")
+}
+
+# Replicates that were fitted and aligned successfully, as an integer vector (one entry per
+# imputation for a pooled fit, one entry otherwise), or NULL when the object records none. A single
+# fit stores the count; the pooled bootstrap route stores per-imputation FAILURE counts instead, so
+# they are subtracted from the requested total there. Mirrors `.efa_valid_target_rotations()`, which
+# resolves the rotated block's count from the same two places.
+.efa_valid_replicate_counts <- function(x) {
+  if (!is.null(x$SE$valid_replicates)) {
+    counts <- x$SE$valid_replicates
+  } else if (!is.null(x$MI$bootstrap_source_failures) &&
+             !is.null(x$settings$b_boot)) {
+    counts <- x$settings$b_boot[1] - x$MI$bootstrap_source_failures
+  } else {
+    return(NULL)
+  }
+
+  counts <- suppressWarnings(as.integer(stats::na.omit(as.numeric(counts))))
+  if (length(counts) < 1L) {
+    return(NULL)
+  }
+
+  counts
 }
 
 .efa_alignment_summary <- function(x) {
@@ -1751,7 +1790,18 @@ format.summary.efa <- function(x, ...) {
     } else {
       "Bootstrap samples"
     }
-    .efa_print_key_value(sample_label, spec$b_boot)
+    # Take the requested count from the same resolver the "(n usable)" suffix compares against, so
+    # the two can never disagree about what was asked for or render it differently.
+    b_total <- .efa_total_bootstrap_samples(x, spec)
+    b_text <- if (is.na(b_total)) {
+      .efa_setting_text(spec$b_boot)
+    } else {
+      as.character(b_total)
+    }
+    .efa_print_key_value(
+      sample_label,
+      paste0(b_text, .efa_usable_replicate_text(x, spec))
+    )
 
     valid_text <- .efa_valid_target_rotation_summary(x, spec)
     if (nzchar(valid_text)) {

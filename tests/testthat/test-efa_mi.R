@@ -491,6 +491,32 @@ test_that("a failed bootstrap replicate is skipped, not fatal", {
   expect_null(pooled_fail)
 })
 
+test_that("the pooled bootstrap sample count reports the usable replicates when they differ", {
+  # A pooled fit records per-imputation FAILURE counts rather than a survivor count, so without a
+  # fallback the printed sample count states the requested b_boot whatever the survival rate -- the
+  # same claim of an unearned precision that a single fit used to make.
+  spec <- list(b_boot = 4L, is_pooled = TRUE, np_boot = TRUE)
+  x <- list(MI = list(bootstrap_source_failures = c(1L, 0L)),
+            settings = list(b_boot = 4L))
+
+  expect_identical(EFAtools:::.efa_valid_replicate_counts(x), c(3L, 4L))
+  expect_identical(EFAtools:::.efa_usable_replicate_text(x, spec),
+                   " (between 3 and 4 usable per imputation)")
+
+  # A run in which every replicate survived, in either shape, says nothing extra.
+  x_clean <- list(MI = list(bootstrap_source_failures = c(0L, 0L)),
+                  settings = list(b_boot = 4L))
+  expect_identical(EFAtools:::.efa_usable_replicate_text(x_clean, spec), "")
+  expect_identical(
+    EFAtools:::.efa_usable_replicate_text(list(SE = list(valid_replicates = 4L)), spec), "")
+
+  # A single fit keeps the unqualified wording.
+  expect_identical(
+    EFAtools:::.efa_usable_replicate_text(list(SE = list(valid_replicates = 3L)),
+                                          list(b_boot = 4L)),
+    " (3 usable)")
+})
+
 test_that("print.efa_mi output is stable (PAF, promax)", {
   local_reproducible_output()
 

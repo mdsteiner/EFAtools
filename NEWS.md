@@ -94,6 +94,18 @@
 
 * Every oblique rotation fitted by `efa_fit()` now warns when two factors correlate above .9 in absolute value, which usually indicates that more factors were extracted than the data support. The solution is still returned; only its interpretation is flagged.
 
+## Standard Errors
+
+* `efa_fit(se = "sandwich")` now withholds its standard errors and confidence intervals at a Heywood case, as `se = "information"` already did. 
+
+* The printed output of a bootstrap fit now reports how many replicates were actually usable whenever fewer survived than were requested (`20 bootstrap samples (4 usable)`), for a pooled `efa_mi()` fit as well as a single one. 
+
+* `b_boot` must now be at least 2. At `b_boot = 1` every bootstrap standard error is the standard deviation of a single value and came back `NA` with no message of any kind, and the confidence bounds collapsed onto that one replicate.
+
+* A bootstrap that leaves fewer than two usable replicates now warns (`efa_se_unreliable`).
+
+* The analytic `SE$Phi` now carries the factor names, the one component of the analytic standard-error list that shipped without them, and `vcov_unrot_loadings` labels its rows and columns `"<variable>_<factor>"` so its documented column-major ordering can be read off the object.
+
 # EFAtools 1.0.0
 
 ## New Interface

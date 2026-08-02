@@ -93,9 +93,10 @@ test_that("sandwich SEs propagate through an oblique rotation", {
 
   expect_equal(dim(fit$SE$rot_loadings), c(8L, 2L))
   expect_true(all(is.finite(fit$SE$rot_loadings)))
-  # Factor correlations: a symmetric SE matrix with a fixed (zero-variance) unit diagonal.
+  # Factor correlations: a symmetric SE matrix with a fixed (zero-variance) unit diagonal. It
+  # carries the factor names, so compare the diagonal on its values alone.
   expect_equal(dim(fit$SE$Phi), c(2L, 2L))
-  expect_equal(diag(fit$SE$Phi), c(0, 0))
+  expect_equal(unname(diag(fit$SE$Phi)), c(0, 0))
   expect_equal(fit$SE$Phi, t(fit$SE$Phi))
   expect_true(is.finite(fit$SE$Phi[1, 2]))
   # Structure coefficients and communalities are reported for the oblique solution.
@@ -308,7 +309,7 @@ test_that("continuous Pearson sandwich SEs propagate through an oblique rotation
   expect_equal(dim(fit$SE$rot_loadings), c(8L, 2L))
   expect_true(all(is.finite(fit$SE$rot_loadings)))
   expect_equal(dim(fit$SE$Phi), c(2L, 2L))
-  expect_equal(diag(fit$SE$Phi), c(0, 0))
+  expect_equal(unname(diag(fit$SE$Phi)), c(0, 0))
   expect_equal(fit$SE$Phi, t(fit$SE$Phi))
   expect_true(is.finite(fit$SE$Phi[1, 2]))
   expect_equal(dim(fit$SE$Structure), c(8L, 2L))
@@ -595,3 +596,99 @@ test_that("the sandwich core degrades gracefully when the gauge is undefined or 
   expect_no_error(EFAtools:::.se_sandwich_core(fo_tie, N = 300, Gamma = G_tie, method = "ML"))
   expect_no_error(EFAtools:::.se_sandwich_core(fo_tie, N = 300, Gamma = G_tie, method = "ULS"))
 })
+
+
+test_that("the sandwich withholds standard errors at a uniqueness pinned at the fitter's floor", {
+  # The robust path reports the same Wald quantities as the expected-information path, from a
+  # different covariance, so it must withhold on the same boundary test: on the parameter-space
+  # boundary the Wald approximation fails for every parameter regardless of how the covariance was
+  # estimated. The boundary the ML/ULS fitters can actually reach is the uniqueness floor, not zero,
+  # so the solution below is strictly interior to the core's own `psi <= 0` gauge test.
+  L <- matrix(0, 6, 2)
+  L[, 1] <- c(sqrt(1 - EFAtools:::.uniqueness_floor), 0.6, 0.5, 0.1, 0.15, 0.2)
+  L[, 2] <- c(0.00, 0.05, 0.20, 0.70, 0.60, 0.55)
+  psi <- 1 - rowSums(L^2)
+  expect_lte(min(psi), EFAtools:::.uniqueness_floor + sqrt(.Machine$double.eps))
+  expect_gt(min(psi), 0)
+
+  Sigma <- tcrossprod(L)
+  diag(Sigma) <- 1
+  Gamma <- EFAtools:::.normal_theory_gamma(Sigma, utils::combn(6L, 2L)) / 300
+  fit_out <- list(unrot_loadings = L, orig_R = Sigma, fit_indices = list(df = 4))
+
+  # Without the gate this covariance is perfectly usable, so what withholds the SEs below is the
+  # boundary test and not a degenerate covariance.
+  core <- EFAtools:::.se_sandwich_core(fit_out, N = 300, Gamma = Gamma, method = "ULS")
+  expect_true(core$reliable)
+  expect_true(all(is.finite(core$loadings_se)))
+
+  expect_warning(
+    out <- EFAtools:::.se_sandwich_dispatch(fit_out, rot_info = NULL, N = 300, ci = 0.95,
+                                            Gamma = Gamma, method = "ULS"),
+    class = "efa_se_unreliable"
+  )
+  expect_true(all(is.na(out$SE$unrot_loadings)))
+  expect_true(all(is.na(out$SE$uniquenesses)))
+  expect_true(all(is.na(out$SE$communalities)))
+  expect_true(all(is.na(out$vcov_unrot_loadings)))
+  expect_true(all(is.na(unlist(out$CI))))
+
+  # The scaled chi-square is a discrepancy-function quantity, not a Wald one, so the boundary does
+  # not invalidate it and it is deliberately kept when the standard errors are withheld.
+  expect_false(is.null(out$scaled_test))
+  expect_true(is.finite(out$scaled_test$chi))
+
+  # Under a rotation the withholding has to reach the rotated quantities as well: they are
+  # propagated from the same loading covariance, which the gate leaves unusable.
+  rot_info <- list(rotation = "oblimin", rotmat = diag(2), rot_loadings = L,
+                   Phi = diag(2), normalize = FALSE, crit_args = list(gam = 0, delta = 0.01))
+  expect_warning(
+    rot <- EFAtools:::.se_sandwich_dispatch(fit_out, rot_info, N = 300, ci = 0.95,
+                                            Gamma = Gamma, method = "ULS"),
+    class = "efa_se_unreliable"
+  )
+  expect_true(all(is.na(rot$SE$rot_loadings)))
+  expect_true(all(is.na(rot$SE$Phi)))
+  expect_true(all(is.na(rot$SE$Structure)))
+  expect_true(all(is.na(rot$SE$communalities)))
+  expect_true(all(is.na(rot$vcov_unrot_loadings)))
+  expect_false(is.null(rot$scaled_test))
+})
+
+
+test_that("a Heywood case from an actual fit withholds the sandwich SEs but keeps the fit indices", {
+  # The companion test above drives the dispatcher with a hand-built psi. Drive the public path on
+  # data that fits an improper solution, so the gate is exercised against a uniqueness the fitter
+  # actually produced -- the case a user meets, where the sandwich previously reported a standard
+  # error of 0.42 for a uniqueness of 0.005.
+  set.seed(2)
+  Lh <- matrix(0, 6, 2)
+  Lh[1:3, 1] <- c(.95, .55, .50)
+  Lh[4:6, 2] <- c(.90, .50, .45)
+  Rh <- tcrossprod(Lh)
+  diag(Rh) <- 1
+  x <- matrix(stats::rnorm(150 * 6), 150, 6) %*% chol(Rh)
+  colnames(x) <- paste0("V", seq_len(6))
+
+  fit <- suppressMessages(suppressWarnings(
+    efa_fit(x, n_factors = 2, estimator = "ML", rotation = "none", se = "sandwich",
+            cor_method = "pearson")
+  ))
+  skip_if(length(fit$heywood) == 0L, "this platform's optimiser did not land on the boundary")
+
+  psi <- 1 - rowSums(unclass(fit$unrot_loadings)^2)
+  expect_lte(min(psi), EFAtools:::.uniqueness_floor + sqrt(.Machine$double.eps))
+
+  expect_true(all(is.na(fit$SE$unrot_loadings)))
+  expect_true(all(is.na(fit$SE$uniquenesses)))
+  expect_true(all(is.na(fit$SE$communalities)))
+  expect_true(anyNA(fit$vcov_unrot_loadings))
+
+  # The scaled statistic and everything derived from it survive the boundary: for a DWLS fit it is
+  # the only chi-square block there is, so withholding it would take the fit indices down with the
+  # standard errors.
+  expect_identical(fit$fit_indices$chi_scaled_type, "scaled.shifted")
+  expect_true(all(is.finite(c(fit$fit_indices$chi, fit$fit_indices$CFI,
+                              fit$fit_indices$TLI, fit$fit_indices$RMSEA))))
+})
+

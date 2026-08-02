@@ -767,3 +767,63 @@ test_that("an analytic-SE fit prints and summarises without error", {
   expect_false(any(grepl("Wald", testthat::capture_output(print(fit)), fixed = TRUE)))
   expect_false(any(grepl("Wald", testthat::capture_output(print(summary(fit, ci = "none"))), fixed = TRUE)))
 })
+
+
+test_that("every component of the analytic SE schema carries the point estimate's dimnames", {
+  # The SEs are subset by name as routinely as the estimates they belong to, so an unlabelled
+  # component is an inconsistency a reader trips over -- and at k = 6+ leaves them counting columns.
+  fit <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500, method = "ML",
+             rotation = "oblimin", se = "information")
+
+  expect_identical(dimnames(fit$SE$unrot_loadings), dimnames(unclass(fit$unrot_loadings)))
+  expect_identical(dimnames(fit$SE$rot_loadings), dimnames(unclass(fit$rot_loadings)))
+  expect_identical(dimnames(fit$SE$Structure), dimnames(unclass(fit$rot_loadings)))
+  expect_identical(dimnames(fit$SE$Phi), dimnames(fit$Phi))
+  expect_identical(names(fit$SE$uniquenesses), rownames(unclass(fit$unrot_loadings)))
+  expect_identical(names(fit$SE$communalities), rownames(unclass(fit$unrot_loadings)))
+
+  # A withheld (all-NA) SE must be labelled the same way, so it stays subsettable by name.
+  L <- matrix(c(sqrt(1.11), 0.6, 0.5, 0.4, 0.2, 0.7,
+                0.1, 0.05, 0.2, 0.3, 0.15, 0.25), 6, 2,
+              dimnames = list(paste0("V", 1:6), c("F1", "F2")))
+  Phi <- matrix(c(1, 0.3, 0.3, 1), 2, dimnames = list(c("F1", "F2"), c("F1", "F2")))
+  rot_info <- list(rotation = "oblimin", rotmat = diag(2), rot_loadings = L, Phi = Phi,
+                   normalize = FALSE, crit_args = list(gam = 0, delta = 0.01))
+  expect_warning(
+    na_out <- EFAtools:::.se_information(list(unrot_loadings = L), rot_info, N = 200,
+                                         ci = 0.95, method = "ML"),
+    class = "efa_se_unreliable"
+  )
+  expect_true(all(is.na(na_out$SE$Phi)))
+  expect_identical(dimnames(na_out$SE$Phi), dimnames(Phi))
+})
+
+
+test_that("a boundary solution can still report unrotated SEs when only the rotation failed", {
+  # The two-stage FIML sandwich builds its own `se0` and reaches the rotation propagation without
+  # passing through the boundary gate, so a Heywood solution can arrive here with a perfectly usable
+  # loading covariance and lose only the rotated quantities. The withholding hint must not then be
+  # attributed to the boundary: the unrotated loadings and uniquenesses ARE reported.
+  L <- matrix(c(sqrt(1 - EFAtools:::.uniqueness_floor), 0.6, 0.5, 0.4,
+                0.00, 0.05, 0.20, 0.30), 4, 2,
+              dimnames = list(paste0("V", 1:4), c("F1", "F2")))
+  expect_true(EFAtools:::.at_uniqueness_boundary(L))
+
+  pk <- length(L)
+  se0 <- list(vcov = diag(pk) * 1e-3,
+              loadings_se = matrix(0.05, 4, 2),
+              uniquenesses_se = rep(0.05, 4))
+  # An unusable rotation matrix is what strands the rotated block while the unrotated one stands.
+  rot_info <- list(rotation = "oblimin", rotmat = matrix(NA_real_, 2, 2), rot_loadings = L,
+                   Phi = diag(2), normalize = FALSE, crit_args = list(gam = 0, delta = 0.01))
+
+  expect_warning(
+    out <- EFAtools:::.se_information_rotated(list(unrot_loadings = L), rot_info,
+                                              N = 250, ci = 0.95, se0 = se0),
+    class = "efa_se_unreliable"
+  )
+  expect_true(all(is.finite(out$SE$unrot_loadings)))
+  expect_true(all(is.finite(out$SE$uniquenesses)))
+  expect_true(all(is.finite(out$SE$communalities)))
+  expect_true(all(is.na(out$SE$rot_loadings)))
+})

@@ -226,6 +226,19 @@ efa_group <- function(x, groups = NULL, n_factors, N = NA,
   checkmate::assert_count(n_factors, positive = TRUE)
   checkmate::assert_count(b_boot)
   b_boot <- as.integer(b_boot)
+  # 0 switches the bootstrap off; from 1 upward it is a request for congruence intervals, and those
+  # need at least two replicates to have a spread. Rejected here rather than by the per-group
+  # efa_fit(), whose abort would be re-raised as a failure of whichever group happened to be fitted
+  # first and so would name a group instead of the argument at fault.
+  if (b_boot == 1L) {
+    cli::cli_abort(
+      c("{.arg b_boot} must be 0 (no bootstrap) or at least 2.",
+        "x" = "You supplied {.arg b_boot} = {b_boot}.",
+        "i" = "A bootstrap confidence interval is built from the spread across replicates and is
+               undefined below two of them."),
+      class = "efa_group_bad_b_boot"
+    )
+  }
   if (!checkmate::test_number(ci) || ci <= 0 || ci >= 1) {
     cli::cli_abort("{.arg ci} must be a single number strictly between 0 and 1.",
                    class = "efa_group_bad_ci")

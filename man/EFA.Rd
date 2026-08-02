@@ -161,6 +161,7 @@ with missing values. See the \emph{Correlation methods} section in Details for t
 properties and the combinations they support. Default is "pearson".}
 
 \item{b_boot}{numeric. The number of bootstrap samples to draw. Default is 1000.
+Must be at least 2, the smallest number from which a standard error is defined.
 Under \code{cor_method = "fiml"} each bootstrap sample re-runs the EM moment
 estimation, so a smaller value may be advisable.}
 

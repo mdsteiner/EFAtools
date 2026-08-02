@@ -429,8 +429,9 @@ test_that("FIML sandwich SEs fill the analytic SE/CI schema (oblique)", {
   expect_true(all(efa$SE$unrot_loadings > 0))
   expect_length(efa$SE$uniquenesses, 6L)
   expect_true(all(is.finite(efa$SE$uniquenesses)))
-  # Factor correlations: symmetric SE matrix with a fixed (zero-variance) unit diagonal.
-  expect_equal(diag(efa$SE$Phi), c(0, 0))
+  # Factor correlations: symmetric SE matrix with a fixed (zero-variance) unit diagonal. It carries
+  # the factor names, so compare the diagonal on its values alone.
+  expect_equal(unname(diag(efa$SE$Phi)), c(0, 0))
   expect_equal(efa$SE$Phi, t(efa$SE$Phi))
   expect_true(is.finite(efa$SE$Phi[1, 2]))
   # Communalities are rotation-invariant, so their SEs equal the unrotated uniqueness SEs.

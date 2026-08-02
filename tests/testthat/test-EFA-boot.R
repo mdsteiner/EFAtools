@@ -99,6 +99,22 @@ test_that("oblique np-boot output has the expected structure", {
                 se$valid_target_rotations <= se$valid_replicates)
 })
 
+test_that("the printed bootstrap sample count reports the usable replicates when they differ", {
+  # The effective B is what the unrotated-loading, residual and fit-index intervals rest on. Without
+  # it the output asserts the requested b_boot whatever the survival rate, so an interval built from
+  # 4 order statistics reads as one built from 20 -- and states a number that is wrong.
+  degraded <- boot_promax
+  degraded$SE$valid_replicates <- 4L
+
+  body <- cli::ansi_strip(format(summary(degraded)))
+  expect_true(any(grepl("Bootstrap samples: 12 (4 usable)", body, fixed = TRUE)))
+  expect_true(any(grepl("12 bootstrap samples (4 usable)", body, fixed = TRUE)))
+
+  # A run in which every replicate survived says nothing extra.
+  clean <- cli::ansi_strip(format(summary(boot_promax)))
+  expect_false(any(grepl("usable", clean, fixed = TRUE)))
+})
+
 test_that("np-boot standard errors and confidence intervals are valid", {
   se <- boot_promax$SE
   ci <- boot_promax$CI
@@ -331,6 +347,120 @@ test_that("np-boot aborts when every replicate fails", {
                 ci = 0.95, b = b),
     class = "efa_boot_all_failed"
   )
+})
+
+test_that("a replicate that cannot be target-rotated warns with its own class", {
+  # The rotated block has a survival count of its own: a replicate can fit and align to the
+  # unrotated point estimate and still fail the target rotation. A non-finite target forces that on
+  # the orthogonal branch; the oblique branch signals the same class from its batched aligner.
+  set.seed(11)
+  x <- GRiPS_raw
+  R <- stats::cor(x)
+  N <- nrow(x)
+  m <- ncol(R)
+  b <- 4
+
+  R_boot <- array(NA_real_, c(m, m, b))
+  for (i in seq_len(b)) {
+    ind <- sample(N, size = N, replace = TRUE)
+    R_boot[, , i] <- stats::cor(x[ind, ])
+  }
+
+  fit_target <- suppressWarnings(
+    .estimate_model(R, method = "PAF", n_factors = 2, N = N, type = "EFAtools"))
+  boot_fit <- suppressWarnings(
+    .boot_fun(R_boot, b, .estimate_model, method = "PAF", n_factors = 2,
+              N = N, type = "EFAtools"))
+
+  bad_target <- unclass(fit_target$unrot_loadings)
+  bad_target[1, 1] <- NaN
+
+  expect_warning(
+    res <- .boot_se_ci(fit_target, L_rot = bad_target, boot_fit,
+                       boot_rot = "orthogonal", ci = 0.95, b = b),
+    class = "efa_boot_rotation_failed"
+  )
+  expect_equal(res$SE$valid_target_rotations, 0)
+  expect_true(all(is.na(res$SE$rot_loadings)))
+  # the unrotated block is unaffected: only the target rotation failed
+  expect_equal(res$SE$valid_replicates, b)
+  expect_true(all(is.finite(res$SE$unrot_loadings)))
+})
+
+test_that("b_boot below two is rejected", {
+  # A bootstrap standard error is the dispersion across replicates: at b_boot = 1 every SE is the
+  # sd() of a single value and comes back NA, and the interval collapses onto that replicate. That
+  # used to happen silently -- the only route on which an SE returned NA with no condition at all.
+  expect_error(
+    efa_fit(GRiPS_raw, n_factors = 1, estimator = "PAF", rotation = "none",
+            se = "np-boot", b_boot = 1),
+    class = "efa_b_boot_too_small"
+  )
+  expect_error(
+    efa_fit(GRiPS_raw, n_factors = 1, estimator = "PAF", rotation = "none",
+            se = "np-boot", b_boot = 0),
+    class = "efa_b_boot_too_small"
+  )
+  expect_error(
+    efa_fit(GRiPS_raw, n_factors = 1, estimator = "PAF", rotation = "none",
+            se = "np-boot", b_boot = -5),
+    class = "efa_b_boot_too_small"
+  )
+})
+
+test_that("fewer than two surviving replicates is flagged as unreliable", {
+  # The input bound cannot see this one: b_boot is legal, but the replicates fail at run time and
+  # leave a single usable draw behind. Without a condition the object returns all-NA SEs and a
+  # collapsed interval that print as though the requested b_boot had stood.
+  set.seed(11)
+  x <- GRiPS_raw
+  R <- stats::cor(x)
+  N <- nrow(x)
+  m <- ncol(R)
+  b <- 6
+
+  R_boot <- array(NA_real_, c(m, m, b))
+  for (i in seq_len(b)) {
+    ind <- sample(N, size = N, replace = TRUE)
+    R_boot[, , i] <- stats::cor(x[ind, ])
+  }
+
+  fit_target <- suppressWarnings(
+    .estimate_model(R, method = "PAF", n_factors = 1, N = N, type = "EFAtools"))
+  boot_fit <- suppressWarnings(
+    .boot_fun(R_boot, b, .estimate_model, method = "PAF", n_factors = 1,
+              N = N, type = "EFAtools"))
+  one_left <- boot_fit
+  one_left[2:b] <- rep(list(NULL), b - 1L)     # a single survivor
+
+  expect_warning(
+    expect_warning(
+      res <- .boot_se_ci(fit_target, L_rot = NULL, one_left, boot_rot = "none",
+                         ci = 0.95, b = b),
+      class = "efa_boot_replicate_failed"
+    ),
+    class = "efa_se_unreliable"
+  )
+  expect_equal(res$SE$valid_replicates, 1L)
+  expect_true(all(is.na(res$SE$unrot_loadings)))
+  expect_equal(res$CI$unrot_loadings$lower, res$CI$unrot_loadings$upper)
+
+  # Two survivors are enough for a defined (if very wide) standard error: the failed-replicate
+  # warning still fires there, but the unreliability warning must not.
+  two_left <- boot_fit
+  two_left[3:b] <- rep(list(NULL), b - 2L)
+  seen <- character(0)
+  withCallingHandlers(
+    res2 <- .boot_se_ci(fit_target, L_rot = NULL, two_left, boot_rot = "none",
+                        ci = 0.95, b = b),
+    warning = function(w) {
+      seen <<- c(seen, class(w)[1])
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_false("efa_se_unreliable" %in% seen)
+  expect_equal(res2$SE$valid_replicates, 2L)
+  expect_true(all(is.finite(res2$SE$unrot_loadings)))
 })
 
 # Count how many signalled warnings carry a given condition class, muffling all

@@ -64,6 +64,7 @@
 #'  are independent, so `estimate_control()` and `rotate_control()` may carry different
 #'  `type`s. See [rotate_control()] for the individual knobs.
 #' @param b_boot numeric. The number of bootstrap samples to draw. Default is 1000.
+#'  Must be at least 2, the smallest number from which a standard error is defined.
 #'  Under `cor_method = "fiml"` each bootstrap sample re-runs the EM moment
 #'  estimation, so a smaller value may be advisable.
 #' @param ci numeric. The confidence interval to create from the bootstrap samples.
@@ -279,8 +280,10 @@
 #'   the quantity of interest. The detection covers the Pearson and polychoric paths; the
 #'   two-stage `cor_method = "fiml"` sandwich carries no such diagnostic, so a weakly
 #'   determined orientation is not flagged there. A Heywood case (a uniqueness at its lower
-#'   boundary) is separate: the Wald approximation fails there for every parameter, so no
-#'   analytic standard error is reported at all.
+#'   boundary) is separate: the Wald approximation fails there for every parameter, so
+#'   neither analytic method reports a standard error at all -- the whole `SE`/`CI` block is
+#'   `NA` with an `efa_se_unreliable` warning. The `"sandwich"` scaled chi-square is not a
+#'   Wald quantity and is still reported, so the fit indices are unaffected.
 #' - **"sandwich"** returns robust (Godambe sandwich) standard errors from raw data,
 #'   combining the estimator weight with an asymptotic-distribution-free covariance of the
 #'   correlations, so it stays valid under non-normality and weight misspecification
@@ -572,7 +575,7 @@
 #' \item{SE}{A named list of standard error matrices. For `se = "np-boot"`: bootstrap standard deviations of the unrotated and (when a rotation is applied) rotated loadings, the residuals, and the fit indices, plus -- for oblique rotations -- the factor correlations (`Phi`) and the structure coefficients; it additionally carries `valid_replicates`, the number of bootstrap replicates that were fitted and aligned successfully and that every entry above is therefore based on (replicates that failed are excluded and warned about), and, when a rotation is applied, `valid_target_rotations`, the number of those replicates that could also be aligned to the rotated point estimate and that the rotated entries (`rot_loadings`, `Phi`, `Structure`) are based on. For `se = "information"`: Wald standard errors from the expected (Fisher) information matrix for the unrotated loadings, the uniquenesses, and the communalities and, when a rotation is applied, the rotated loadings (and, for oblique rotations, `Phi` and the structure coefficients). Because \eqn{h^2_i = 1 - \psi_i} exactly, the communality and uniqueness standard errors are identical. For `se = "sandwich"`: robust Godambe sandwich standard errors with the same coverage as `"information"`, robust to non-normality and weight misspecification. Only returned if `se` is not `"none"`.}
 #' \item{CI}{A named list of confidence intervals of width `ci`. For `se = "np-boot"`: percentile intervals matching the components of `SE`. For `se = "information"` and `se = "sandwich"`: Wald intervals matching the components of `SE`. Only returned if `se` is not `"none"`.}
 #' \item{replicates}{A named list of bootstrap replicate arrays for the aligned unrotated and (where applicable) rotated loadings, structure coefficients, factor correlations (`Phi`), residuals, and fit indices. The replicate is the last dimension of the loading, residual, `Phi`, and structure cubes, and the first dimension of the `fit_indices` matrix (whose columns are named after the fit indices). Replicates that failed are left `NA`. Populated only for `se = "np-boot"`; `NULL` for the analytic SE methods.}
-#' \item{vcov_unrot_loadings}{The full unrotated loading covariance matrix the marginal `SE$unrot_loadings` were derived from: a `p * n_factors` by `p * n_factors` numeric matrix in column-major `vec(Lambda)` order. Populated for `se = "information"` (expected-information block) and `se = "sandwich"` (robust V_AA), even when a rotation is applied (the persisted block is always the unrotated one); NA-filled if the analytic covariance is unreliable (a Heywood case or a singular bordered information matrix); `NULL` for `se = "np-boot"` and `se = "none"`. A weakly determined rotational orientation is the one case where this matrix is populated while `SE$unrot_loadings` is `NA`: the covariance itself is finite and valid, and only its gauge-dependent marginals are not (see *Standard errors*).}
+#' \item{vcov_unrot_loadings}{The full unrotated loading covariance matrix the marginal `SE$unrot_loadings` were derived from: a `p * n_factors` by `p * n_factors` numeric matrix in column-major `vec(Lambda)` order, with rows and columns labelled `"<variable>_<factor>"` so that ordering can be read off the object. Populated for `se = "information"` (expected-information block) and `se = "sandwich"` (robust V_AA), even when a rotation is applied (the persisted block is always the unrotated one); NA-filled if the analytic covariance is unreliable (a Heywood case or a singular bordered information matrix); `NULL` for `se = "np-boot"` and `se = "none"`. A weakly determined rotational orientation is the one case where this matrix is populated while `SE$unrot_loadings` is `NA`: the covariance itself is finite and valid, and only its gauge-dependent marginals are not (see *Standard errors*).}
 #' \item{Gamma}{The asymptotic covariance of the off-diagonal sample correlations -- the meat of the robust sandwich SEs -- on the variance scale (`Var(rho-hat)`; lavaan's correlation NACOV is `N * Gamma`). A `p (p - 1) / 2` by `p (p - 1) / 2` numeric matrix; rows and columns ordered by [utils::combn()] over the column pairs and labelled `"<var_i>-<var_j>"`. Populated for `se = "sandwich"` on the polychoric/tetrachoric and Pearson paths; `NULL` otherwise, including under `cor_method = "fiml"`, whose meat is the saturated FIML asymptotic covariance and is not returned.}
 #'
 #' @source Bollen, K. A., & Stine, R. A. (1992). Bootstrapping goodness-of-fit measures
@@ -975,6 +978,18 @@ efa_fit <- function(x, n_factors, N = NA,
   checkmate::assert_number(precision, lower = 0, upper = 1)
   checkmate::assert_choice(order_type, c("eigen", "ss_factors", NA))
   checkmate::assert_integerish(b_boot, len = 1, any.missing = FALSE)
+  # A bootstrap standard error is the dispersion across replicates, so two is the smallest number
+  # from which one is defined at all: at b_boot = 1 every SE is the sd() of a single value and comes
+  # back NA, and the percentile interval collapses onto that replicate.
+  if (b_boot < 2) {
+    cli::cli_abort(
+      c("{.arg b_boot} must be at least 2.",
+        "x" = "You supplied {.arg b_boot} = {b_boot}.",
+        "i" = "A bootstrap standard error is the spread across replicates and is undefined below
+               two of them. The default is {.val {1000}}."),
+      class = "efa_b_boot_too_small"
+    )
+  }
   checkmate::assert_number(ci, lower = 0, upper = 1)
   checkmate::assert_int(seed, null.ok = TRUE)
 

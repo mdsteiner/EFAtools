@@ -230,6 +230,32 @@ test_that("the top-level name vector under analytic SE is pinned", {
 })
 
 
+test_that("vcov_unrot_loadings labels its column-major vec(Lambda) ordering", {
+  # The documented ordering is otherwise only stated in prose, leaving the user of a 54 x 54 matrix
+  # to take it on trust. The labels make it readable off the object -- and pin that the block really
+  # is column-major (all variables for factor 1, then factor 2, ...).
+  cormat <- test_models$baseline$cormat
+  p <- nrow(cormat); k <- 3L
+
+  fit <- EFA(cormat, n_factors = k, N = 500, method = "ML", rotation = "oblimin",
+             se = "information")
+  vars <- rownames(unclass(fit$unrot_loadings))
+  facs <- colnames(unclass(fit$unrot_loadings))
+  expected <- as.vector(outer(vars, facs, paste, sep = "_"))
+
+  expect_identical(rownames(fit$vcov_unrot_loadings), expected)
+  expect_identical(colnames(fit$vcov_unrot_loadings), expected)
+  expect_identical(expected[1:2], paste0(vars[1:2], "_", facs[1]))
+  expect_identical(expected[p + 1L], paste0(vars[1], "_", facs[2]))
+
+  # The unrotated path assembles the block in a different function; it must label it identically.
+  unrot <- EFA(cormat, n_factors = k, N = 500, method = "ML", rotation = "none",
+               se = "information")
+  expect_identical(rownames(unrot$vcov_unrot_loadings), expected)
+  expect_identical(colnames(unrot$vcov_unrot_loadings), expected)
+})
+
+
 test_that("se = 'none' leaves vcov_unrot_loadings present but NULL", {
   fit <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500, method = "ML",
              rotation = "none", se = "none")
