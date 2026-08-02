@@ -634,9 +634,21 @@ test_that("tied responses on coarse items fall back to classical distances (GRiP
   # GRiPS items are 6-point and heavily tied: more than h respondents give the same answer
   # on at least one item pair, so an h-subset sits exactly on the hyperplane x_i = x_j and
   # no robust MCD covariance exists. The outlier diagnostic then falls back to classical
-  # Mahalanobis distances with a warning.
-  expect_warning(scr <- efa_screen(GRiPS_raw, seed = 1), class = "efa_screen_mcd_fallback")
-  expect_equal(scr$outliers$method, "classical")
+  # Mahalanobis distances with a warning. A covering subset of determinant zero is the
+  # smallest one there can be, so which random subsets the search happens to draw cannot
+  # change that conclusion: the verdict, and the whole diagnostic behind it, must come out
+  # the same at every seed rather than depending on one.
+  seeds <- c(1L, 2L, 4L, 7L, 12L)
+  scrs <- lapply(seeds, function(s) {
+    expect_warning(scr <- efa_screen(GRiPS_raw, seed = s), class = "efa_screen_mcd_fallback")
+    scr
+  })
+  outs <- lapply(scrs, `[[`, "outliers")
+  expect_true(all(vapply(outs, function(o) o$method, character(1)) == "classical"))
+  expect_true(all(vapply(outs, function(o) identical(o$flagged, outs[[1]]$flagged),
+                         logical(1))))
+
+  scr <- scrs[[1]]
   expect_length(scr$outliers$distances, nrow(GRiPS_raw))
   expect_equal(scr$outliers$cutoff, sqrt(qchisq(0.975, ncol(GRiPS_raw))))
 
@@ -645,6 +657,65 @@ test_that("tied responses on coarse items fall back to classical distances (GRiP
   expect_gt(nrow(GRiPS_raw), 2 * ncol(GRiPS_raw))
   expect_lt(sqrt(scr$condition), 10)
   expect_match(scr$outliers$fallback_reason, "exact fit")
+})
+
+test_that("the outlier diagnostic does not depend on the variables' units", {
+  # The Mahalanobis distance, and the MCD location and scatter behind it, are affine
+  # equivariant: recording a variable in cents rather than in euros cannot make anyone an
+  # outlier who was not one before. Multiplying one column by 100 - a narrower spread of
+  # units than an income variable beside a Likert item - must therefore leave the verdict,
+  # the flagged rows and the distances where they were, and must carry the reported centre
+  # and scatter into the new units exactly.
+  set.seed(1809)
+  X <- matrix(stats::rnorm(300 * 4), 300, 4)
+  X[1:6, ] <- X[1:6, ] + 5                      # a block of genuine outliers
+  colnames(X) <- paste0("V", seq_len(4))
+  d <- c(100, 1, 1, 1)
+  Xs <- sweep(X, 2L, d, "*", check.margin = FALSE)
+
+  o <- efa_screen(X, seed = 1)$outliers
+  os <- efa_screen(Xs, seed = 1)$outliers
+
+  expect_equal(o$method, "mcd")
+  expect_equal(os$method, "mcd")
+  expect_identical(os$flagged, o$flagged)
+  expect_equal(os$distances, o$distances, tolerance = 1e-8)
+  expect_equal(os$center, o$center * d, tolerance = 1e-8)
+  expect_equal(os$cov, o$cov * outer(d, d), tolerance = 1e-8)
+
+  # a scale far enough apart to make the scatter singular once it is back in the supplied
+  # units: the distances have to be taken where the conditioning was checked, or the
+  # inversion inside mahalanobis() refuses a scatter that was passed as usable
+  dw <- c(1e9, 1, 1, 1)
+  ow <- efa_screen(sweep(X, 2L, dw, "*", check.margin = FALSE), seed = 1)$outliers
+  expect_equal(ow$method, "mcd")
+  expect_identical(ow$flagged, o$flagged)
+
+  # the rescaling is taken from the complete cases, so an incomplete row cannot leave a
+  # column unscaled - the median absolute deviation of a column holding a missing value is
+  # itself missing - and quietly put the diagnostic back at the mercy of the units
+  Xm <- Xs
+  Xm[c(50, 120, 200), 1] <- NA
+  expect_equal(efa_screen(Xm, seed = 1)$outliers$method, "mcd")
+})
+
+test_that("a near-collinear fallback is reported as collinearity, not as an exact fit", {
+  # The robust scatter can be unusable for reasons that send a reader to quite different
+  # places: near-collinear variables are dealt with by dropping a redundant item, while an
+  # exact fit is a property of a covering subset of the respondents (tied answers on coarse
+  # items) with nothing wrong with the variables at all. Here the fourth variable is a
+  # near-exact sum of the first two, so the complete-case covariance is itself
+  # ill-conditioned and the recorded reason has to say so.
+  set.seed(12)
+  Xc <- matrix(stats::rnorm(300 * 4), 300, 4)
+  Xc[, 4] <- Xc[, 1] + Xc[, 2] + 0.01 * stats::rnorm(300)
+  expect_warning(
+    o <- EFAtools:::.screen_outliers(Xc, mcd_alpha = 0.5, outlier_cutoff = 0.975, seed = 1),
+    class = "efa_screen_mcd_fallback"
+  )
+  expect_equal(o$method, "classical")
+  expect_match(o$fallback_reason, "ill-conditioned")
+  expect_false(grepl("exact fit", o$fallback_reason, fixed = TRUE))
 })
 
 test_that("outlier_cutoff is bounded to the range in which it defines a cutoff", {

@@ -22,6 +22,12 @@
 
 * The header lines of the `efa_group()` report are now wrapped to the console width, and its loading-difference and invariance tables are split into stacked blocks when they are wider than the console, as the congruence table already was.
 
+## Data Screening
+
+* The multivariate-outlier diagnostic of `efa_screen()` now reports an exact fit as soon as its search reaches a covering subset whose covariance is singular. Such a subset minimises the minimum-covariance-determinant criterion, so no other subset can improve on it; it was previously discarded and a strictly worse, non-degenerate subset returned in its place under the label `method = "mcd"`. 
+
+* `efa_screen()` now searches for the robust covariance on robustly rescaled columns and returns the estimate in the units it was given, so the outlier diagnostic no longer depends on how the variables happen to be measured. Previously a change of measurement unit on a single variable (e.g., an income column beside a Likert item) could be enough to drop the robust estimate for classical Mahalanobis distances, which under-flags, because they are computed from a covariance the outliers themselves inflate.
+
 ## Data Simulation
 
 * `efa_simulate()` gains a `missing_vars` argument selecting which variables carry missing values; the remaining ones stay complete. With `missing = "MAR"` and a `missing_predictor` outside `missing_vars`, every predictor of the missingness is fully observed, which is the ignorably missing-at-random design that full-information maximum likelihood and multiple imputation assume. Leaving `missing_vars` unset holes every variable, as before.

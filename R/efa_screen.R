@@ -89,15 +89,19 @@
 #'     complete cases with the fast minimum covariance determinant (MCD) algorithm
 #'     (Rousseeuw & Van Driessen, 1999), using a subset covering a proportion
 #'     `mcd_alpha` of the observations; an observation whose squared robust distance
-#'     exceeds `qchisq(outlier_cutoff, p)` is flagged. The robust covariance is
-#'     undefined with too few complete cases (\eqn{n \le 2p}), and also when a whole
-#'     covering subset lies exactly on a lower-dimensional hyperplane (an *exact fit*,
-#'     common with coarse discrete items on which many respondents answer an item pair
-#'     identically). In both cases the classical Mahalanobis distance is used instead,
-#'     with a warning naming which of the two applies; those distances are computed
-#'     from a covariance the outliers themselves inflate, so the diagnostic is no
-#'     longer high-breakdown and tends to under-flag. If even the classical covariance
-#'     is singular the diagnostic is skipped with a note. Available only from raw data.}
+#'     exceeds `qchisq(outlier_cutoff, p)` is flagged. The search runs on columns
+#'     divided by a robust scale and the estimate is returned to the supplied units, so
+#'     the diagnostic does not depend on how the variables happen to be measured. The
+#'     robust covariance is undefined with too few complete cases (\eqn{n \le 2p}), when
+#'     the variables are so nearly linearly dependent that no covering subset has a
+#'     usable covariance, and when a whole covering subset lies exactly on a
+#'     lower-dimensional hyperplane (an *exact fit*, common with coarse discrete items on
+#'     which many respondents answer an item pair identically). In all three cases the
+#'     classical Mahalanobis distance is used instead, with a warning naming which of the
+#'     three applies; those distances are computed from a covariance the outliers
+#'     themselves inflate, so the diagnostic is no longer high-breakdown and tends to
+#'     under-flag. If even the classical covariance is singular the diagnostic is skipped
+#'     with a note. Available only from raw data.}
 #' }
 #'
 #' @returns An object of class `efa_screen`, a list containing:
@@ -597,14 +601,14 @@ efa_screen <- function(x, N = NA,
 }
 
 # Robust-Mahalanobis outlier diagnostics from the coded raw matrix `xr`. Estimates a
-# high-breakdown location and scatter from the complete cases with FAST-MCD, scales it to
-# consistency at the normal model with a small-sample correction, reweights it, and flags
-# observations whose squared robust distance exceeds the chi-square cutoff. Degrades
-# gracefully: too few complete cases or an exact fit fall back to the classical
-# Mahalanobis distance with a classed warning naming which of the two applies, and a
-# fully singular covariance yields a classed note. The random subsets are reproducible
-# via `seed`, and the caller's RNG state is preserved. Aborts on a correlation-matrix
-# input.
+# high-breakdown location and scatter from the robustly rescaled complete cases with
+# FAST-MCD, scales it to consistency at the normal model with a small-sample correction,
+# reweights it, returns it to the supplied units, and flags observations whose squared
+# robust distance exceeds the chi-square cutoff. Degrades gracefully: too few complete
+# cases, near-collinear variables, or an exact fit fall back to the classical Mahalanobis
+# distance with a classed warning naming which of the three applies, and a fully singular
+# covariance yields a classed note. The random subsets are reproducible via `seed`, and the
+# caller's RNG state is preserved. Aborts on a correlation-matrix input.
 .screen_outliers <- function(xr, mcd_alpha, outlier_cutoff, nsamp = 500L,
                              seed = NULL) {
 
@@ -623,6 +627,25 @@ efa_screen <- function(x, N = NA,
   rows <- which(cc)
   n <- nrow(X)
   p <- ncol(X)
+
+  # The MCD estimator is affine equivariant -- det(A S A') = det(A)^2 det(S), so ranking
+  # covering subsets by the determinant of their covariance, and the Mahalanobis distance
+  # built from the winning one, are unchanged by any nonsingular A (Rousseeuw & Van Driessen,
+  # 1999). The rcond() gates that decide whether a subset is usable are not: on a covariance
+  # they measure how far apart the variables' units are as much as how close the data lie to
+  # a lower-dimensional hyperplane, and on four well-conditioned variables a scale ratio of
+  # about twenty already tips them. Running the search on columns divided by a robust scale
+  # turns them into a test of the subset's *correlation* matrix instead, which is the rank
+  # test they were always meant to be. The median absolute deviation is itself
+  # high-breakdown, so the scale cannot be set by the very outliers it exists to find; a
+  # column with no spread about its median falls back to the standard deviation, and one
+  # with no spread at all to 1.
+  sc <- apply(X, 2L, stats::mad)
+  bad <- !is.finite(sc) | sc <= 0
+  if (any(bad)) sc[bad] <- apply(X[, bad, drop = FALSE], 2L, stats::sd)
+  bad <- !is.finite(sc) | sc <= 0
+  sc[bad] <- 1
+  Z <- sweep(X, 2L, sc, "/", check.margin = FALSE)
 
   # Reproducible random subsets without side effects on the caller's RNG: save the current
   # .Random.seed (or arrange to remove a freshly created one) and restore it on exit, then
@@ -650,10 +673,12 @@ efa_screen <- function(x, N = NA,
                        class = "efa_screen_mcd_unusable")
       }
       h <- .mcd_hsize(n, p, mcd_alpha)
-      fit <- .fast_mcd(X, h, nsamp = nsamp)
+      fit <- .fast_mcd(Z, h, nsamp = nsamp)
       # Consistency (Croux & Haesbroeck, 1999) and small-sample (Pison et al., 2002)
       # scaling of the raw MCD scatter. The consistency factor uses the realised coverage
       # h/n; the small-sample correction uses the nominal `mcd_alpha` (as in its calibration).
+      # Both are scalars in (p, n, mcd_alpha) alone, so they commute with the rescaling and
+      # can be applied here, before the estimate is put back on the supplied scale.
       raw_center <- fit$center
       raw_cov <- .mcd_consistency(p, h / n) *
         .mcd_cnp2(p, n, mcd_alpha, reweighted = FALSE) * fit$cov
@@ -661,11 +686,11 @@ efa_screen <- function(x, N = NA,
       # the mean/scatter, and rescale it (consistency at the 0.975 retention plus the
       # reweighted small-sample correction). Fall back to the raw fit if the reweighted
       # scatter would be singular.
-      d2_raw <- stats::mahalanobis(X, raw_center, raw_cov)
+      d2_raw <- stats::mahalanobis(Z, raw_center, raw_cov)
       w <- d2_raw <= stats::qchisq(0.975, p)
-      rew_cov_sub <- if (sum(w) > p) stats::cov(X[w, , drop = FALSE]) else NULL
+      rew_cov_sub <- if (sum(w) > p) stats::cov(Z[w, , drop = FALSE]) else NULL
       if (!is.null(rew_cov_sub) && rcond(rew_cov_sub) >= 1e-12) {
-        list(center = colMeans(X[w, , drop = FALSE]),
+        list(center = colMeans(Z[w, , drop = FALSE]),
              cov = .mcd_consistency(p, 0.975) *
                .mcd_cnp2(p, n, mcd_alpha, reweighted = TRUE) * rew_cov_sub,
              method = "mcd")
@@ -683,9 +708,9 @@ efa_screen <- function(x, N = NA,
       # Cholesky on the sign of a rounding-level pivot (and does on some BLAS
       # implementations) yet still abort in `solve()`. A non-finite covariance is screened
       # off first: it has no condition number, and `rcond()` would abort on it.
-      cov_cl <- stats::cov(X)
+      cov_cl <- stats::cov(Z)
       if (n > p && all(is.finite(cov_cl)) && rcond(cov_cl) >= 1e-12) {
-        list(center = colMeans(X), cov = cov_cl, method = "classical")
+        list(center = colMeans(Z), cov = cov_cl, method = "classical")
       } else {
         NULL
       }
@@ -697,7 +722,7 @@ efa_screen <- function(x, N = NA,
     # above, which gates on all three of n > p, a finite scatter, and its conditioning.
     reason <- if (n <= p) {
       "There are too few complete cases (n <= p) to form a covariance of full rank."
-    } else if (!all(is.finite(stats::cov(X)))) {
+    } else if (!all(is.finite(stats::cov(Z)))) {
       # the same quantity the handler's finiteness gate rejected, recomputed here rather
       # than threaded out of it; this is a cold path, so the second cov() costs nothing
       paste("The complete-case covariance is not finite; the data contain non-finite",
@@ -718,16 +743,28 @@ efa_screen <- function(x, N = NA,
     ))
   }
 
-  # A classed warning when the robust estimate was unavailable and classical distances
-  # were used instead, naming the reason. The two are distinguishable at this point: the
-  # n <= 2p check above is made before .fast_mcd() runs, so anything that reaches the
-  # handler from .fast_mcd() is an exact fit - at least h observations lying on a
-  # lower-dimensional hyperplane, which on coarse discrete items is produced by tied
-  # responses rather than by correlation-level collinearity.
+  # A classed warning when the robust estimate was unavailable and classical distances were
+  # used instead, naming the reason. Which of the three ways the search can fail applies is
+  # read off the data rather than off whichever internal gate happened to fire first, since
+  # the same gate is reachable from more than one cause: variables that are near-collinear
+  # as a set starve the search of well-conditioned starting subsets, which is the same abort
+  # a genuine exact fit produces. Too few complete cases is settled before the search runs;
+  # a complete-case covariance that is itself ill-conditioned means the variables are
+  # near-collinear; and a well-conditioned one that still admits no usable covering subset
+  # means at least h of the cases lie on a lower-dimensional hyperplane. That distinction is
+  # the whole of what a reader acts on -- a redundant item to drop, against tied answers
+  # that are no fault of the variables -- so it is worth deciding on the evidence. The
+  # threshold is the one the robust scatter itself has to clear in .fast_mcd(), on the same
+  # rescaled columns.
   fallback_reason <- NULL
   if (identical(robust$method, "classical")) {
     fallback_reason <- if (n <= 2L * p) {
       "There are too few complete cases (n <= 2p) for a robust covariance."
+    } else if (rcond(stats::cov(Z)) < 1e-3) {
+      paste("The complete-case covariance is ill-conditioned: the variables are so nearly",
+            "linearly dependent that no covering subset has a covariance stable enough to",
+            "measure distances with. Look for redundant items rather than for outlying",
+            "respondents.")
     } else {
       paste("At least half the complete cases lie exactly on a lower-dimensional",
             "hyperplane (an \"exact fit\"). This is common with coarse discrete items,",
@@ -745,10 +782,21 @@ efa_screen <- function(x, N = NA,
   # `distances` and `flagged` share the supplied-data row numbers as their identifier: the
   # distances are named by row number (of the complete cases) and `flagged` holds the row
   # numbers whose distance exceeds the cutoff, so the two align even with incomplete rows.
-  d2 <- stats::mahalanobis(X, robust$center, robust$cov)
+  # The distances are taken on the rescaled columns, which is where the conditioning gates
+  # above did their work: the Mahalanobis distance is the same either way, but putting the
+  # scatter back on the supplied scale first can spoil its conditioning by as much as the
+  # square of the ratio of the column scales, and `solve()` inside `mahalanobis()` would
+  # then refuse a scatter the gates had already passed as usable.
+  d2 <- stats::mahalanobis(Z, robust$center, robust$cov)
   distances <- sqrt(d2)
   names(distances) <- as.character(rows)
   flagged <- rows[d2 > crit]
+
+  # The reported centre and scatter go back onto the supplied scale, so that they are in the
+  # variables' own units; they describe the distances above, which the rescaling leaves
+  # unchanged.
+  robust$center <- robust$center * sc
+  robust$cov <- outer(sc, sc) * robust$cov
 
   list(distances = distances,
        cutoff = sqrt(crit),
@@ -843,9 +891,12 @@ efa_screen <- function(x, N = NA,
 # smallest determinant. From `nsamp` random (p + 1)-subsets (enlarged until non-singular),
 # take two concentration steps each, keep the ten lowest-determinant candidates, and iterate
 # those to convergence; return the best subset's mean and covariance. Aborts (classed,
-# triggering the classical fallback) when no non-singular starting subset can be formed or
-# the minimum-determinant subset is singular (an exact fit: at least h observations lie on a
-# lower-dimensional hyperplane, so a usable robust covariance does not exist).
+# triggering the classical fallback) when no non-singular starting subset can be formed, when
+# the minimum-determinant subset turns out to be singular (an exact fit: at least h
+# observations lie on a lower-dimensional hyperplane, so a usable robust covariance does not
+# exist), or when the winning subset's covariance is too ill-conditioned to give stable
+# distances. Expects columns already on a common scale, so that its rcond() gates test rank
+# rather than the variables' units.
 .fast_mcd <- function(X, h, nsamp = 500L, maxit = 100L) {
   n <- nrow(X)
   p <- ncol(X)
@@ -890,10 +941,7 @@ efa_screen <- function(x, N = NA,
   }
 
   # Iterate the ten lowest-determinant candidates and keep the overall best that reaches a
-  # stable fixed point (its determinant stops decreasing, i.e. the subset stabilises). A
-  # candidate whose concentration instead terminates by hitting a degenerate subset is
-  # heading onto a lower-dimensional hyperplane (an exact fit) and is discarded, so its
-  # stopped-early, over-tight scatter is never returned as the robust estimate.
+  # stable fixed point (its determinant stops decreasing, i.e. the subset stabilises).
   keep <- ran[order(dets[ran])][seq_len(min(10L, length(ran)))]
   best <- NULL
   best_ld <- Inf
@@ -903,7 +951,18 @@ efa_screen <- function(x, N = NA,
     stabilised <- FALSE
     for (it in seq_len(maxit)) {
       nxt <- .mcd_cstep(X, st$center, st$cov, h)
-      if (is.null(nxt)) break
+      # A concentration step that lands on a singular h-subset has found a covering subset
+      # of determinant zero, and no subset can have a smaller determinant than that: the
+      # objective is minimised, and its minimiser is degenerate (an exact fit). Reaching
+      # one therefore settles the question whichever candidate got there, and the search
+      # stops. Dropping that candidate instead and returning the best non-degenerate fixed
+      # point would label an estimate "MCD" that is demonstrably not the minimum-covariance-
+      # determinant one, and would make the verdict depend on which random starts happened
+      # to be drawn (Rousseeuw & Van Driessen, 1999, sec. 3).
+      if (is.null(nxt)) {
+        cli::cli_abort("The minimum-determinant subset is singular (exact fit).",
+                       class = "efa_screen_mcd_unusable")
+      }
       cur <- logdet(nxt$cov)
       st <- nxt
       if (cur >= prev - 1e-12) { prev <- cur; stabilised <- TRUE; break }
@@ -915,10 +974,12 @@ efa_screen <- function(x, N = NA,
     }
   }
 
-  # No candidate converged to a stable non-degenerate subset: at least h observations lie on
-  # (or near) a lower-dimensional hyperplane (an exact fit). Signal the classical fallback.
+  # No candidate settled within `maxit` concentration steps. Each step lowers the
+  # determinant and there are finitely many h-subsets, so the iteration must reach a fixed
+  # point eventually; exhausting the limit is a numerical stalemate rather than a statement
+  # about the data. Signal the classical fallback.
   if (is.null(best)) {
-    cli::cli_abort("No stable MCD subset could be formed (exact fit).",
+    cli::cli_abort("No MCD subset settled within the concentration-step limit.",
                    class = "efa_screen_mcd_unusable")
   }
   # A near-singular best subset likewise marks a (near-)exact fit, so the robust distances

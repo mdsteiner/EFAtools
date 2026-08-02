@@ -199,10 +199,10 @@ format.efa_screen <- function(x, digits = 3, ...) {
           cli::cli_alert_warning(paste(
             "A robust (MCD) covariance could not be computed; classical Mahalanobis",
             "distances were used."), wrap = TRUE)
-          # The recorded reason (too few complete cases, or an exact fit) and the
-          # consequence of the fallback: the classical covariance is computed from every
-          # observation, outliers included, so the diagnostic no longer has the
-          # high-breakdown property the MCD gives it.
+          # The recorded reason (too few complete cases, near-collinear variables, or an
+          # exact fit) and the consequence of the fallback: the classical covariance is
+          # computed from every observation, outliers included, so the diagnostic no longer
+          # has the high-breakdown property the MCD gives it.
           if (!is.null(o$fallback_reason)) cli::cli_text(o$fallback_reason)
           cli::cli_text(paste(
             "These distances come from a covariance the outliers themselves inflate, so",
