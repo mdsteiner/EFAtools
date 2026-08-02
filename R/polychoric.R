@@ -153,7 +153,7 @@
   # for the boundary and sparse-cell diagnostics.
   if (label_acov && any(res$zero_corrected)) {
     n_zc <- sum(res$zero_corrected)
-    cap <- .cap_pair_list(labels[res$zero_corrected])
+    cap <- .cap_label_list(labels[res$zero_corrected])
     cli::cli_warn(
       c("{n_zc} binary variable pair{?s} {?has/have} a response combination that never occurs, so a continuity correction of {.val {0.5}} was applied before estimating {?its/their} correlation.",
         "x" = "Affected {cli::qty(n_zc)}pair{?s}: {.val {cap$shown}}{cap$rest}.",
@@ -172,7 +172,7 @@
   # means two items are redundant.
   if (label_acov && any(res$at_bound)) {
     n_bnd <- sum(res$at_bound)
-    cap <- .cap_pair_list(labels[res$at_bound])
+    cap <- .cap_label_list(labels[res$at_bound])
     # A table at the LOWER bound is estimated at the negative endpoint, so the message quotes the
     # values actually reported (both, when the two directions occur together) rather than naming the
     # positive one for every pair. They come from the backend's own boundary estimates: the returned
@@ -236,7 +236,7 @@
 
       if (any(is_sparse)) {
         n_sparse <- sum(is_sparse)
-        cap <- .cap_pair_list(labels[is_sparse])
+        cap <- .cap_label_list(labels[is_sparse])
         cli::cli_warn(
           c("{n_sparse} variable pair{?s} {?has/have} an empty response-category combination despite a non-negligible expected count.",
             "x" = "Affected {cli::qty(n_sparse)}pair{?s}: {.val {cap$shown}}{cap$rest}.",

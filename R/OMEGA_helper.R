@@ -405,7 +405,14 @@
 }
 
 # Abort (classed) when a supplied correlation matrix fails the .is_cormat() check;
-# shared guard for the adapters that accept a user cormat.
+# shared guard for the adapters that accept a user cormat. A correlation matrix supplied as a
+# data frame -- what read.csv() returns for a published correlation table -- is accepted and
+# handed back as a matrix, as .prepare_cor_input() does on the other input route. The coercion
+# is load-bearing for one operation only: the standardized-alpha branch of .reliability_core()
+# takes diag() of a subset of it, which a data frame does not support. The omega quantities
+# only sum and subset it, which a data frame does support -- so without the coercion they
+# would return correct numbers and only add_rel = TRUE would fail. Keep the coercion here
+# rather than at the one operation, so the spec carries a single type.
 .rel_check_cormat <- function(cormat) {
   if (!.is_cormat(cormat)) {
     cli::cli_abort(
@@ -414,7 +421,7 @@
       class = "efa_reliability_not_cormat"
     )
   }
-  cormat
+  as.matrix(cormat)
 }
 
 # Adapter: normalize an SL() object to the reliability spec. Mirrors the SL branch of

@@ -169,6 +169,29 @@ test_that("adapters reject a non-correlation cormat via .is_cormat", {
   expect_error(.rel_adapt_bifactor(cbind(rep(0.5, 6), matrix(0.4, 6, 1)),
                                    cormat = bad),
                class = "efa_reliability_not_cormat")
+  # the guard runs before the coercion, so a data frame that is not a correlation matrix is
+  # still rejected rather than silently coerced
+  expect_error(.rel_adapt_SL(sl_mod, factor_corres = fc, cormat = as.data.frame(bad)),
+               class = "efa_reliability_not_cormat")
+})
+
+test_that("a cormat supplied as a data frame is accepted and handed on as a matrix", {
+  # read.csv(file, row.names = 1) returns a data frame, and this guard is the only check a
+  # user-supplied cormat passes on the reliability route -- it does not go through
+  # .prepare_cor_input(). Without the coercion the omega columns still come out right (they
+  # only sum and subset the matrix) and only the standardized-alpha branch fails, on diag();
+  # efa_reliability() always requests that branch, so the whole call breaks.
+  cm <- test_models$baseline$cormat
+  cdf <- as.data.frame(cm)
+
+  expect_true(is.matrix(.rel_check_cormat(cdf)))
+  expect_identical(.rel_check_cormat(cdf), cm)
+
+  # the adapters, and the exported entry point, give the matrix route's answer
+  expect_equal(.rel_adapt_SL(sl_mod, factor_corres = fc, cormat = cdf),
+               .rel_adapt_SL(sl_mod, factor_corres = fc, cormat = cm))
+  expect_equal(efa_reliability(efa_mod, cormat = cdf),
+               efa_reliability(efa_mod, cormat = cm))
 })
 
 test_that(".rel_adapt_efa requires an oblique solution", {

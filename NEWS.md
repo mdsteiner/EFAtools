@@ -44,6 +44,12 @@
 
 * `efa_retain()` now summarises its results in one line under the section heading: how many suggestions how many criteria made, the range they span, and the most common number of factors.
 
+## Input Validation and Correlation Handling
+
+* A correlation matrix supplied as a data frame is now recognised as one and analysed.
+
+* When a correlation matrix cannot be computed from raw data, the error now names the columns responsible and separates non-numeric, infinite, and constant ones, pointing at `cor_method = "poly"` for ordinal items stored as factors or character strings.
+
 ## Missing Data and Multiple Imputation
 
 * The `rmsr_upper` argument of `efa_mi()` is deprecated and ignored. It selected between computing RMSR from the unique off-diagonal residual correlations and from the full off-diagonal matrix, but the two element sets hold each residual pair once and twice respectively, so their sums and counts double together and the mean square is the same number whenever the residual matrix is symmetric — which the pooled residuals always are. The argument therefore never changed the reported RMSR. SRMR, the index that divides the same sum by the number of non-redundant elements, continues to be reported alongside it. `EFA_POOLED()` still accepts the argument without a warning.

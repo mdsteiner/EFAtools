@@ -108,7 +108,7 @@ column order of the loadings. Taken from the input if \code{NULL}.}
 \item{u2}{numeric. Uniquenesses. Only needed when \code{model} is \code{NULL} (or to
 override the communality-based default for a raw bifactor matrix).}
 
-\item{cormat}{matrix. A correlation matrix used when \code{variance = "correlation"}. If \code{NULL}, it is taken from the input object or reconstructed
+\item{cormat}{matrix or data.frame. A correlation matrix used when \code{variance = "correlation"}. If \code{NULL}, it is taken from the input object or reconstructed
 from \code{pattern} and \code{Phi} where possible.}
 
 \item{pattern}{matrix. Pattern coefficients from an oblique solution, used with

@@ -24,6 +24,112 @@ test_that("a correlation matrix is detected and returned unchanged", {
   expect_silent(.prepare_cor_input(cormat, N = 500))
 })
 
+test_that("a correlation matrix supplied as a data frame is detected and coerced", {
+  # read.csv(file, row.names = 1) is how a published correlation table usually reaches R, and
+  # it yields a data frame. It has to be classified as a correlation matrix -- diag() on a data
+  # frame is a hard base error, so the classifier coerces first -- and the preparer has to hand
+  # a real matrix downstream, since determinant(), the eigendecompositions and the compiled
+  # estimators all reject a data frame.
+  cormat_df <- as.data.frame(cormat)
+
+  expect_true(.is_cormat(cormat_df))
+  expect_silent(.assert_cor_input(cormat_df))
+
+  prep_df <- .prepare_cor_input(cormat_df, N = 500)
+  expect_true(prep_df$is_cormat)
+  expect_true(is.matrix(prep_df$R))
+  expect_equal(prep_df$R, cormat)
+  expect_equal(prep_df$N, 500)
+  expect_silent(.prepare_cor_input(cormat_df, N = 500))       # not mistaken for raw data
+
+  # every entry point that accepts a correlation matrix returns what the matrix route returns
+  expect_equal(efa_kmo(cormat_df), efa_kmo(cormat))
+  expect_equal(efa_bartlett(cormat_df, N = 500), efa_bartlett(cormat, N = 500))
+  expect_equal(efa_map(cormat_df), efa_map(cormat))
+  expect_equal(efa_kgc(cormat_df), efa_kgc(cormat))
+  expect_equal(efa_scree(cormat_df), efa_scree(cormat))
+  expect_equal(efa_ekc(cormat_df, N = 500), efa_ekc(cormat, N = 500))
+  expect_equal(efa_fit(cormat_df, n_factors = 3, N = 500),
+               efa_fit(cormat, n_factors = 3, N = 500))
+  expect_equal(efa_screen(cormat_df, N = 500), efa_screen(cormat, N = 500))
+  expect_equal(efa_retain(cormat_df, N = 500, criteria = c("KGC", "MAP")),
+               efa_retain(cormat, N = 500, criteria = c("KGC", "MAP")))
+  # including the superseded wrappers, which forward to the same preparer
+  expect_equal(EFA(cormat_df, n_factors = 3, N = 500), EFA(cormat, n_factors = 3, N = 500))
+  expect_equal(KMO(cormat_df), KMO(cormat))
+
+  # a non-numeric square data frame is still not a correlation matrix, and a covariance data
+  # frame is still rejected as one
+  expect_false(.is_cormat(data.frame(a = factor(c("x", "y")), b = c(1, 2))))
+  expect_error(.assert_cor_input(as.data.frame(diag(c(2, 3, 4)))),
+               class = "efa_input_is_covmat")
+})
+
+test_that("a 1x1 input is not classified as a correlation matrix", {
+  # .is_covmat() has always required at least two columns; .is_cormat() applies the same guard,
+  # so a 1x1 input takes the raw-data route and is rejected there rather than being accepted
+  # and failing somewhere downstream.
+  expect_false(.is_cormat(matrix(1)))
+  expect_false(.is_covmat(matrix(1)))
+})
+
+test_that("a non-symmetric correlation matrix is named rather than reported as singular", {
+  # Neither classifier accepts an asymmetric matrix, so without this branch it reaches
+  # stats::cor() as if its p columns were p cases and is reported as singular -- sending the
+  # user after collinearity that does not exist.
+  Rl <- cormat
+  Rl[upper.tri(Rl)] <- 0                       # a lower triangle transcribed on its own
+  expect_error(.assert_cor_input(Rl), class = "efa_input_not_symmetric")
+
+  Ra <- cormat
+  Ra[1, 2] <- Ra[1, 2] + 1e-7                  # values that do not mirror to machine precision
+  expect_error(.assert_cor_input(Ra), class = "efa_input_not_symmetric")
+
+  # an empty (NA) upper triangle is the same transcription error, and must take the same route
+  # rather than the missing-values one
+  Rna <- cormat
+  Rna[upper.tri(Rna)] <- NA
+  expect_error(.assert_cor_input(Rna), class = "efa_input_not_symmetric")
+
+  # a data frame is classified identically
+  expect_error(.assert_cor_input(as.data.frame(Rl)), class = "efa_input_not_symmetric")
+
+  # the rejection reaches every entry point, including the raw-data-only route, which points
+  # at the observations instead of at mirroring
+  expect_error(suppressMessages(efa_kmo(Rl)), class = "efa_input_not_symmetric")
+  expect_error(suppressMessages(efa_fit(Rl, n_factors = 3, N = 500)),
+               class = "efa_input_not_symmetric")
+  expect_error(suppressMessages(efa_screen(Rl)), class = "efa_input_not_symmetric")
+  expect_error(suppressMessages(efa_map(Rl)), class = "efa_input_not_symmetric")
+  expect_error(suppressMessages(efa_cd(Rl)), class = "efa_input_not_symmetric")
+
+  # the suggested repair is accepted and recovers the original matrix
+  Rl[upper.tri(Rl)] <- t(Rl)[upper.tri(Rl)]
+  expect_silent(.assert_cor_input(Rl))
+  expect_equal(Rl, cormat)
+
+  # The hint has to name the triangle that is actually empty. Mirroring the lower triangle
+  # onto the upper one is the repair for a lower-triangle transcription and DESTROYS an
+  # upper-triangle one -- it overwrites every entered correlation with the empty triangle and
+  # leaves the identity matrix, which passes every later check and analyses silently.
+  Ru <- cormat
+  Ru[lower.tri(Ru)] <- 0                       # only the UPPER triangle was entered
+  expect_error(.assert_cor_input(Ru), class = "efa_input_not_symmetric")
+  Ru[lower.tri(Ru)] <- t(Ru)[lower.tri(Ru)]    # the repair this input needs
+  expect_silent(.assert_cor_input(Ru))
+  expect_equal(Ru, cormat)
+  # the other direction really would have wiped it
+  Rwipe <- cormat
+  Rwipe[lower.tri(Rwipe)] <- 0
+  Rwipe[upper.tri(Rwipe)] <- t(Rwipe)[upper.tri(Rwipe)]
+  expect_equal(unname(Rwipe), diag(ncol(cormat)))
+
+  # square raw data is untouched: it is asymmetric but not unit-diagonal
+  set.seed(3)
+  expect_silent(.assert_cor_input(matrix(stats::runif(9, -1, 1), 3)))
+  expect_silent(.assert_cor_input(GRiPS_raw))
+})
+
 test_that("raw data is converted to a correlation matrix", {
   expect_message(prep <- .prepare_cor_input(GRiPS_raw), class = "efa_cor_from_data")
 
@@ -128,6 +234,147 @@ test_that("non-numeric raw data aborts with a distinct classed error", {
   expect_false(.is_cormat(dat_fct))
   expect_error(suppressMessages(.prepare_cor_input(dat_fct)),
                class = "efa_cor_uncomputable")
+
+  # A constant column takes the same classed route. stats::cor() warns about it in base R's
+  # own words, which are neither classed nor translated; that warning must not escape ahead
+  # of the abort that diagnoses the same column.
+  dat_const <- cbind(x, y, const = 1)
+  expect_no_warning(
+    expect_error(suppressMessages(.prepare_cor_input(dat_const)),
+                 class = "efa_cor_uncomputable"))
+  # every correlation method routes through the same abort
+  for (m in c("pearson", "spearman", "kendall")) {
+    expect_no_warning(
+      expect_error(suppressMessages(.prepare_cor_input(dat_const, cor_method = m)),
+                   class = "efa_cor_uncomputable"))
+  }
+
+  # A column the constancy test cannot judge must not turn the classed abort into an unclassed
+  # base error: sd() is NaN for a column carrying an infinity and NA for fewer than two
+  # values, and a single NA in that test would make the branch selection itself fail.
+  expect_error(
+    suppressMessages(.prepare_cor_input(cbind(a = c(1, 2, 3, 4), b = c(Inf, 1, 2, 3),
+                                              d = c(4, 3, 2, 1)))),
+    class = "efa_cor_uncomputable")
+  expect_error(suppressMessages(.prepare_cor_input(matrix(c(1, 2, 3), nrow = 1))),
+               class = "efa_cor_uncomputable")
+  expect_error(suppressMessages(.prepare_cor_input(matrix(numeric(0), ncol = 3))),
+               class = "efa_cor_uncomputable")
+  # the 1x1 input the ncol < 2 guard sends down this route is rejected here, as claimed
+  expect_error(suppressMessages(.prepare_cor_input(matrix(1))),
+               class = "efa_cor_uncomputable")
+
+  # Logical columns are usable: stats::cor() accepts is.numeric() OR is.logical(), so
+  # dichotomous TRUE/FALSE items must not be blamed as non-numeric while the column that
+  # actually broke the correlation goes unnamed.
+  # (the wording is pinned by the snapshots below, which show only the constant column named)
+  dat_lgl <- data.frame(a = c(TRUE, FALSE, TRUE, FALSE), b = rep(1, 4), d = c(4, 1, 3, 2))
+  expect_error(suppressMessages(.prepare_cor_input(dat_lgl)),
+               class = "efa_cor_uncomputable")
+  # and an all-logical data set correlates without reaching this branch at all
+  dat_lgl2 <- data.frame(a = c(TRUE, FALSE, TRUE, FALSE), b = c(TRUE, TRUE, FALSE, FALSE))
+  expect_no_error(suppressMessages(.prepare_cor_input(dat_lgl2)))
+})
+
+test_that("the uncomputable-correlation abort names the offending columns", {
+  local_reproducible_output()
+
+  # Which column is at fault, and what to do about it, is the whole content of this message:
+  # a factor or character column is what an ordinal item read from a file looks like, and
+  # cor_method = "poly" is the fix rather than a reason to drop it.
+  dat_fct <- data.frame(item_1 = factor(c("x", "y", "z")), item_2 = c(1, 2, 3),
+                        item_3 = c(3, 1, 2))
+  expect_snapshot(error = TRUE,
+                  .prepare_cor_input(dat_fct, inform_from_data = FALSE))
+
+  # a constant column has a different remedy, and both causes can be present at once
+  dat_const <- data.frame(item_1 = c(1, 2, 3, 4), item_2 = rep(2, 4), item_3 = c(4, 1, 3, 2))
+  expect_snapshot(error = TRUE,
+                  .prepare_cor_input(dat_const, inform_from_data = FALSE))
+
+  dat_both <- data.frame(item_1 = letters[1:4], item_2 = rep(2, 4), item_3 = c(4, 1, 3, 2))
+  expect_snapshot(error = TRUE,
+                  .prepare_cor_input(dat_both, inform_from_data = FALSE))
+
+  # an unnamed matrix falls back to positional labels
+  expect_snapshot(error = TRUE,
+                  .prepare_cor_input(cbind(c(1, 2, 3, 4), rep(2, 4), c(4, 1, 3, 2)),
+                                     inform_from_data = FALSE))
+
+  # a logical column is usable, so only the constant column is named and the polychoric hint
+  # is not offered for a column that needs nothing done to it
+  dat_lgl <- data.frame(a = c(TRUE, FALSE, TRUE, FALSE), b = rep(1, 4), d = c(4, 1, 3, 2))
+  expect_snapshot(error = TRUE,
+                  .prepare_cor_input(dat_lgl, inform_from_data = FALSE))
+
+  # an infinite value is its own cause, with its own remedy
+  dat_inf <- data.frame(item_1 = c(1, 2, 3, 4), item_2 = c(Inf, 1, 2, 3),
+                        item_3 = c(4, 3, 2, 1))
+  expect_snapshot(error = TRUE,
+                  .prepare_cor_input(dat_inf, inform_from_data = FALSE))
+
+  # fewer than two observations leaves no column judgeable, so the generic bullet stands
+  expect_snapshot(error = TRUE,
+                  .prepare_cor_input(matrix(c(1, 2, 3), nrow = 1), inform_from_data = FALSE))
+
+  # An asymptotic covariance reduces the data to its listwise-complete rows before the
+  # correlation is attempted, so a column can be constant there and vary in the data the user
+  # supplied. The verdict has to say which rows it describes rather than advising a drop.
+  set.seed(9)
+  dat_lw <- cbind(a = stats::rnorm(60), b = stats::rnorm(60), c = stats::rnorm(60))
+  keep <- c(3, 11, 25, 40)
+  dat_lw[-keep, "a"] <- NA                    # only these rows are complete
+  dat_lw[keep, "c"] <- 7                      # constant among the complete rows only
+  expect_gt(stats::sd(dat_lw[, "c"]), 0)      # but not in the data as supplied
+  expect_snapshot(error = TRUE,
+                  .prepare_cor_input(dat_lw, acov = "full", inform_from_data = FALSE))
+
+  # the plural forms of both bullets, and the five-name cap on the list
+  dat_many <- data.frame(a = letters[1:4], b = LETTERS[1:4],
+                         c1 = rep(2, 4), c2 = rep(3, 4), ok = 1:4)
+  expect_snapshot(error = TRUE,
+                  .prepare_cor_input(dat_many, inform_from_data = FALSE))
+
+  dat_wide <- as.data.frame(matrix(rep(1, 35), nrow = 5))
+  dat_wide$ok <- 1:5
+  expect_snapshot(error = TRUE,
+                  .prepare_cor_input(dat_wide, inform_from_data = FALSE))
+})
+
+test_that("the non-symmetric abort names the triangle that is actually empty", {
+  local_reproducible_output()
+
+  # Which triangle to mirror is read off the data: printing the lower-triangle repair for an
+  # upper-triangle transcription would tell the user to overwrite everything they entered.
+  R_lower <- cormat[1:5, 1:5]
+  R_lower[upper.tri(R_lower)] <- 0
+  expect_snapshot(error = TRUE, .assert_cor_input(R_lower))
+
+  R_upper <- cormat[1:5, 1:5]
+  R_upper[lower.tri(R_upper)] <- 0
+  expect_snapshot(error = TRUE, .assert_cor_input(R_upper))
+
+  # an empty triangle entered as NA rather than 0 is the same transcription, and the message
+  # must not claim the missing cells were checked and found to be in range
+  R_na <- cormat[1:5, 1:5]
+  R_na[upper.tri(R_na)] <- NA
+  expect_snapshot(error = TRUE, .assert_cor_input(R_na))
+
+  # both triangles filled but disagreeing: neither is authoritative, so no mirroring is offered
+  R_mismatch <- cormat[1:5, 1:5]
+  R_mismatch[1, 2] <- R_mismatch[1, 2] + 1e-7
+  expect_snapshot(error = TRUE, .assert_cor_input(R_mismatch))
+
+  # neither triangle filled in (a table pre-allocated but never transcribed): mirroring an
+  # empty triangle onto the other would silently produce the identity matrix, so it must not
+  # be suggested
+  R_none <- cormat[1:5, 1:5]
+  R_none[upper.tri(R_none)] <- NA
+  R_none[lower.tri(R_none)] <- 0
+  expect_snapshot(error = TRUE, .assert_cor_input(R_none))
+
+  # the raw-data-only route points at the observations instead
+  expect_snapshot(error = TRUE, .assert_cor_input(R_lower, raw_only = TRUE))
 })
 
 test_that("a singular matrix aborts unless the check is disabled", {
@@ -139,6 +386,27 @@ test_that("a singular matrix aborts unless the check is disabled", {
   prep_ns <- suppressWarnings(
     .prepare_cor_input(cor_sing, N = 10, check_singular = FALSE))
   expect_true(all(eigen(prep_ns$R, symmetric = TRUE, only.values = TRUE)$values > 0))
+
+  # The 3x3 fixture above cannot exercise the regime that matters: LAPACK returns the
+  # eigenvalues of a rank-deficient matrix with absolute error of order eps * ||R||, so at a
+  # realistic p the smallest computed eigenvalue IS that rounding error and a rank tolerance
+  # of a bare eps decides by coin flip. This is the archetypal EFA singularity -- a composite
+  # entered alongside its components -- and it must be refused rather than inverted downstream.
+  set.seed(1)
+  X_comp <- matrix(stats::rnorm(400 * 9), 400)
+  X_comp <- cbind(X_comp, X_comp[, 1] + X_comp[, 2])
+  R_comp <- stats::cor(X_comp)
+  expect_equal(qr(R_comp, tol = 1e-10)$rank, 9L)          # rank deficient by one
+  expect_error(.prepare_cor_input(R_comp, N = 400), class = "efa_cor_singular")
+  expect_error(suppressMessages(.prepare_cor_input(X_comp)), class = "efa_cor_singular")
+  expect_error(suppressMessages(efa_fit(R_comp, n_factors = 2, N = 400)),
+               class = "efa_cor_singular")
+
+  # and a well-conditioned matrix is nowhere near the threshold
+  ev_ok <- eigen(cormat, symmetric = TRUE, only.values = TRUE)$values
+  expect_gt(min(abs(ev_ok)) / max(abs(ev_ok)),
+            1e6 * ncol(cormat) * .Machine$double.eps)
+  expect_silent(.prepare_cor_input(cormat, N = 500))
 })
 
 test_that("a covariance matrix is rejected with a pointer to cov2cor()", {

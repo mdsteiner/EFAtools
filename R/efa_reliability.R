@@ -81,7 +81,7 @@
 #'   `NULL`.
 #' @param u2 numeric. Uniquenesses. Only needed when `model` is `NULL` (or to
 #'   override the communality-based default for a raw bifactor matrix).
-#' @param cormat matrix. A correlation matrix used when `variance =
+#' @param cormat matrix or data.frame. A correlation matrix used when `variance =
 #'   "correlation"`. If `NULL`, it is taken from the input object or reconstructed
 #'   from `pattern` and `Phi` where possible.
 #' @param pattern matrix. Pattern coefficients from an oblique solution, used with
