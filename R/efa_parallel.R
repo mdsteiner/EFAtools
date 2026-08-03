@@ -50,7 +50,8 @@
 #' `estimator`, to change the estimator (default is "PAF"). PAF is more
 #' robust, but it will take longer compared to the other estimators
 #' available ("ML" and "ULS"). The estimation tuning knobs are not passed here; they live in
-#' `estimate_control`.
+#' `estimate_control`, and the standard-error arguments (`se`, `b_boot`, `ci`, `seed`) are
+#' not accepted because the fits are internal steps that keep only their eigenvalues.
 #'
 #' @details Parallel analysis (Horn, 1965) compares the eigenvalues obtained from
 #' the sample

@@ -39,6 +39,10 @@
 #' raw data are at hand and the runtime is acceptable, and a poor one for a quick
 #' look at a correlation matrix.
 #'
+#' The comparison data are obtained by simulation, so the suggested number of factors
+#' varies slightly from run to run. Call [set.seed()] beforehand to make a run
+#' reproducible.
+#'
 #' Note that if the data contains missing values, these will be removed for the
 #' comparison data procedure using [`stats::na.omit()`][stats::na.fail]. If
 #' missing data should be treated differently, e.g., by imputation, do this outside

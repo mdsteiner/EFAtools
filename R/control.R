@@ -369,6 +369,12 @@ rotate_control <- function(type = c("EFAtools", "psych", "SPSS", "none"),
 .flat_rotate_knobs <- c("normalize", "precision", "order_type", "varimax_type", "p_type",
                         "k", "random_starts")
 
+# The efa_fit() arguments that govern its inference machinery (standard errors and the
+# random-number stream feeding them). They are efa_fit() formals, so a caller forwarding
+# `...` into a fit accepts them by construction -- which is wrong wherever the fit is only
+# an internal step whose standard errors are discarded (see .reject_inference_dots()).
+.fit_inference_args <- c("se", "b_boot", "ci", "seed")
+
 # Reject a flat tuning knob that reached a fit as a bare dot. No fitting function has a formal
 # for any of these any more -- they live in the control objects -- so a bare copy would be taken
 # for a rotation extra and dropped, and the fit would quietly run the default preset instead
@@ -417,7 +423,12 @@ rotate_control <- function(type = c("EFAtools", "psych", "SPSS", "none"),
   # can never be consumed there. Refusing it here, rather than letting it reach the fit,
   # is what makes the error name the function the user called and arrive before the
   # criterion does its work (`rotation` itself is refused by .reject_rotation_dots()).
-  if (unrotated) known <- setdiff(known, .rotation_extra_union)
+  # efa_fit()'s inference arguments are refused for the same reason, but with a message of
+  # their own: they ARE efa_fit() arguments, so "check for a misspelled name" would be wrong.
+  if (unrotated) {
+    known <- setdiff(known, .rotation_extra_union)
+    .reject_inference_dots(nms, fn = fn)
+  }
   # setdiff() already returns unique values, so the offenders are named once each
   bad <- setdiff(nms, known)
   if (length(bad) == 0L) return(invisible(NULL))
@@ -426,6 +437,40 @@ rotate_control <- function(type = c("EFAtools", "psych", "SPSS", "none"),
       "i" = "Check for a misspelled argument name."),
     class = "efa_unused_dots"
   )
+}
+
+# Reject efa_fit()'s inference arguments in the `...` of a caller whose fits are internal
+# steps. Two distinct hazards, both silent before this guard:
+#   * `se`, `b_boot`, `ci`: the fit does compute the standard errors -- they are efa_fit()
+#     formals, so they pass any whitelist built from them -- but the caller keeps only a few
+#     quantities from the fit and never reports its standard errors, so the result is
+#     identical and the work is thrown away (measurably: an information-based SE roughly
+#     doubles an efa_kgc() run).
+#   * `seed`: efa_fit() seeds itself with .set_local_seed(), which restores the caller's
+#     stream when the fit returns, so the seed is spent on a fit that draws no random
+#     numbers. Where the caller draws at all, that draw still comes from the caller's stream.
+#     The name therefore looks like it pins the run and pins nothing at all; set.seed() is
+#     what governs it.
+# The hints must hold for every caller, so neither claims that this particular call fits, or
+# simulates, or is a retention criterion: efa_retain() with a criterion such as MAP fits no
+# model at all, efa_kgc() and efa_scree() fit one but simulate nothing, and
+# efa_schmid_leiman() is not a criterion and keeps its internal fit's loadings rather than
+# eigenvalues.
+# Takes the argument NAMES (`...names()`), so the dots are never forced.
+.reject_inference_dots <- function(nms, fn) {
+  bad <- intersect(nms, .fit_inference_args)
+  if (length(bad) == 0L) return(invisible(NULL))
+  msg <- c("{.arg {bad}} cannot be passed to {.fn {fn}}.")
+  if (any(c("se", "b_boot", "ci") %in% bad)) {
+    msg <- c(msg, "i" = "Any fit run here is an internal step whose standard errors are not
+                         reported, so they would be computed and then discarded.")
+  }
+  if ("seed" %in% bad) {
+    msg <- c(msg, "i" = "The fits run here draw no random numbers, so {.arg seed} has
+                         nothing to govern. Whatever else the call draws comes from the
+                         caller's stream: call {.fn set.seed} before {.fn {fn}}.")
+  }
+  cli::cli_abort(msg, class = "efa_unused_dots")
 }
 
 # The retention criteria's fits are always unrotated, so a rotation setting passed through
@@ -497,7 +542,17 @@ rotate_control <- function(type = c("EFAtools", "psych", "SPSS", "none"),
 # (`maxit`/`gam`/`delta`) were never consumable there -- 0.8.0 ignored them without effect on
 # the result -- and are dropped with the junk; EFA_POOLED() instead passes `unrotated =
 # FALSE` plus the extras its selected rotation's engine reads, mirroring EFA()'s own
-# rotation-aware filter. A successor-only name carrying a malformed value (e.g.
+# rotation-aware filter. Keeping a name here is not the same as accepting it: efa_fit()'s
+# inference arguments (`se`/`b_boot`/`ci`/`seed`) pass this filter as efa_fit() formals and
+# are then refused by .reject_inference_dots() in the retention successors. That is a
+# DELIBERATE exception to the silent-ignore rule above, not an instance of it: unlike the
+# rotation extras, the flat EFA() did take all four and a pre-rename call could name them.
+# It changes no legacy result, because on this path they were inert -- these wrappers hand
+# EFA() a correlation matrix, which never reached its seeding branch at all, and a standard
+# error the fit computed was thrown away by the criterion (`se` even aborted outright through
+# some of them: "sandwich" for want of an acov, "information" through KGC()/SCREE() for want
+# of an N). See .reject_inference_dots() for the two hazards themselves.
+# A successor-only name carrying a malformed value (e.g.
 # `rotate_control = "SPSS"`) is deliberately KEPT: no pre-rename code could have used that
 # name, so the successor's loud classed validation is the right outcome, exactly as EFA()
 # rejects the successor-only names outright. Unnamed dots pass through untouched, as on the

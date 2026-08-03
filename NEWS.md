@@ -50,6 +50,8 @@
 
 * `efa_retain()` now summarises its results in one line under the section heading: how many suggestions how many criteria made, the range they span, and the most common number of factors.
 
+* The factor retention criteria and `efa_retain()` now reject `seed`, `se`, `b_boot`, and `ci` in their `...` and point at `set.seed()`. These are arguments of `efa_fit()`, so they were previously accepted and forwarded to the criteria's internal fits, where nothing could come of them.
+
 ## Input Validation and Correlation Handling
 
 * A correlation matrix supplied as a data frame is now recognised as one and analysed.
@@ -89,6 +91,8 @@
 * A `factor_map` for a bifactor loading matrix is now checked against the dimensions of the group-factor loadings, as it already was for every other input. A map with too few rows was recycled against the loadings and returned coefficients above 1 instead of an error.
 
 * The `efa_reliability()` report of a correlated-factors solution now states that subscale omega equals total omega for each factor, which follows from the absence of a general factor. The two columns previously printed identical values with no explanation.
+
+* `efa_schmid_leiman()`, and the superseded `SL()` with it, now reject `se`, `b_boot`, `ci`, and `seed` in their `...`. These are arguments of `efa_fit()`, so they were previously forwarded to the second-order fit, which is an internal step run against a placeholder sample size and reports none of them.
 
 ## Rotation
 

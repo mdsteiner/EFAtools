@@ -283,6 +283,41 @@ test_that("errors are thrown correctly", {
   expect_error(efa_schmid_leiman(lav_fit_bifactor, g_name = "g"), class = "efa_sl_not_second_order")
 })
 
+test_that("efa_fit()'s inference arguments are refused", {
+  # They are efa_fit() formals, so they used to ride through the dots into the second-order
+  # fit -- which runs against a placeholder N and reports none of them, so a standard error
+  # was computed from a sample size that is not the data's and then thrown away, and `seed`
+  # governed a fit that draws no random numbers. Only `settings` ever recorded them.
+  args <- list(EFA_mod, estimate_control = estimate_control(type = "EFAtools"),
+               estimator = "ML")
+  expect_error(do.call(efa_schmid_leiman, c(args, list(se = "information"))),
+               class = "efa_unused_dots")
+  expect_error(do.call(efa_schmid_leiman, c(args, list(seed = 42))),
+               class = "efa_unused_dots")
+  expect_error(do.call(efa_schmid_leiman, c(args, list(b_boot = 10, ci = .90))),
+               class = "efa_unused_dots")
+
+  # the frozen wrapper forwards its dots into the same fit, so the refusal reaches it too
+  expect_error(SL(EFA_mod, type = "EFAtools", method = "ML", se = "information"),
+               class = "efa_unused_dots")
+
+  # An abbreviation must be refused as well: the dots are spliced into the second-order fit
+  # with do.call(), where R partial-matches them against efa_fit()'s formals, so `b_b` would
+  # arrive there as `b_boot` without ever matching the refused name exactly. Only the
+  # whitelist, which spells every accepted name in full, closes that route.
+  expect_error(do.call(efa_schmid_leiman, c(args, list(b_b = 10))),
+               class = "efa_unused_dots")
+  expect_error(do.call(efa_schmid_leiman, c(args, list(see = 42))),
+               class = "efa_unused_dots")
+  expect_error(SL(EFA_mod, type = "EFAtools", method = "ML", b_b = 10),
+               class = "efa_unused_dots")
+
+  # a genuine efa_fit() argument still travels through the dots untouched -- `use` is an
+  # efa_fit() formal and not one of efa_schmid_leiman()'s, so it really does go through `...`
+  expect_no_error(suppressWarnings(suppressMessages(
+    do.call(efa_schmid_leiman, c(args, list(use = "complete.obs"))))))
+})
+
 test_that("a second-order Heywood case raises a classed error", {
   # A pattern matrix with a highly (and unevenly) intercorrelated factor space
   # makes the single second-order factor improper: a second-order communality

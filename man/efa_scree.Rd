@@ -58,7 +58,9 @@ apply.}
 
 \item{...}{Additional arguments passed to \code{\link[=efa_fit]{efa_fit()}}. For example,
 \code{estimator}, to change the estimator (PAF is default). The estimation tuning knobs are not
-passed here; they live in \code{estimate_control}.}
+passed here; they live in \code{estimate_control}, and the standard-error arguments (\code{se},
+\code{b_boot}, \code{ci}, \code{seed}) are not accepted because the fit is an internal step that keeps
+only its communalities.}
 }
 \value{
 An object of class \code{efa_retention} (see \code{\link[=print.efa_retention]{print.efa_retention()}} and

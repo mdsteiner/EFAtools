@@ -31,7 +31,9 @@
 #'  apply.
 #' @param ... Additional arguments passed to [efa_fit()]. For example,
 #' `estimator`, to change the estimator (PAF is default). The estimation tuning knobs are not
-#' passed here; they live in `estimate_control`.
+#' passed here; they live in `estimate_control`, and the standard-error arguments (`se`,
+#' `b_boot`, `ci`, `seed`) are not accepted because the fit is an internal step that keeps
+#' only its communalities.
 #'
 #' @details Originally, the Kaiser-Guttman criterion was intended for the use
 #' with principal components, hence with eigenvalues derived from the original

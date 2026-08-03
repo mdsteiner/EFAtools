@@ -55,7 +55,9 @@
 #'  RMSEA, CAF) do not depend on.
 #' @param ... Further arguments passed to [efa_fit()], also in
 #' [efa_parallel()]. The estimation tuning knobs are not passed here; they live in
-#' `estimate_control`, and a rotation setting is not accepted because the fits are unrotated.
+#' `estimate_control`, a rotation setting is not accepted because the fits are unrotated, and
+#' neither are the standard-error arguments (`se`, `b_boot`, `ci`, `seed`), because the fits
+#' are internal steps whose standard errors are not reported.
 #'
 #' @details The Hull method aims to find a model with an optimal balance between
 #'  model fit and number of parameters, retaining only major factors

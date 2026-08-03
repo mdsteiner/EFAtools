@@ -51,7 +51,8 @@ reference models are unrotated, so no rotation settings apply.}
 \code{estimator}, to change the estimator (default is "PAF"). PAF is more
 robust, but it will take longer compared to the other estimators
 available ("ML" and "ULS"). The estimation tuning knobs are not passed here; they
-live in \code{estimate_control}.}
+live in \code{estimate_control}, and the standard-error arguments (\code{se}, \code{b_boot}, \code{ci},
+\code{seed}) are not accepted because the reference-model fits are internal steps.}
 }
 \value{
 An object of class \code{efa_retention} (see \code{\link[=print.efa_retention]{print.efa_retention()}} and
@@ -103,6 +104,10 @@ slowest criteria available here.
 The reference models are fitted without inequality constraints. A Heywood case in
 one of them leaves no unique variance to simulate the reference data from, so
 NEST aborts rather than continuing from an inadmissible reference.
+
+The reference eigenvalues are obtained from simulated data, so the suggested number
+of factors varies slightly from run to run. Call \code{\link[=set.seed]{set.seed()}} beforehand to make a
+run reproducible.
 
 For details on the method, including simulation studies, see Achim (2017),
 Brandenburg and Papenberg (2024), and Caron (2025).

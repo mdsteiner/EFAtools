@@ -49,7 +49,9 @@ second-order \code{\link[=efa_fit]{efa_fit()}} fit, including the \code{type} pr
 \code{\link[=efa_fit]{efa_fit()}} defaults. The second-order fit is unrotated, so no rotation settings apply.}
 
 \item{...}{Arguments to be passed to \code{\link[=efa_fit]{efa_fit()}}. The estimation tuning knobs are not passed
-here; they live in \code{estimate_control}.}
+here; they live in \code{estimate_control}, and the standard-error arguments (\code{se}, \code{b_boot},
+\code{ci}, \code{seed}) are not accepted because the second-order fit is an internal step run against
+a placeholder sample size and only its loadings are kept.}
 }
 \value{
 A list of class \code{c("efa_schmid_leiman", "SL")} containing the following

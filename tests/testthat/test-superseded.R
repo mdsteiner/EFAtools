@@ -141,7 +141,13 @@ test_that("the retention wrappers keep silently ignoring an unknown dot", {
 
   # a rotation setting and the rotation-engine extras (maxit/gam/delta) were equally inert
   # on the flat interface -- the criterion fits are always unrotated, so EFA() consumed
-  # neither -- and keep being dropped silently, where the successors refuse or reject them
+  # neither -- and keep being dropped silently, where the successors refuse or reject them.
+  # efa_fit()'s inference arguments (se/b_boot/ci/seed) are the one DELIBERATE exception to
+  # this rule rather than another instance of it: the flat EFA() took all four, so they are
+  # not junk, but they were inert on this path (it computed a standard error the criterion
+  # discarded, and never reached its seeding branch at all for a correlation matrix) and are
+  # now refused at the old names too -- see .drop_unknown_frozen_dots() and
+  # .reject_inference_dots() in R/control.R
   expect_no_condition(N_FACTORS(cm, criteria = "EKC", N = 500, suitability = FALSE,
                                 rotation = "promax"))
   expect_no_condition(N_FACTORS(cm, criteria = "EKC", N = 500, suitability = FALSE,

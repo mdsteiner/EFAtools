@@ -106,8 +106,10 @@
 #'  effect there. All fits are unrotated, so no rotation settings apply.
 #' @param ... Further arguments passed to [efa_fit()] in
 #' [efa_parallel()] (also within [efa_hull()]), [efa_kgc()], [efa_scree()], and [efa_nest()].
-#' The estimation tuning knobs are not passed here; they live in `estimate_control`. Note that
-#' the arguments listed after `...` must be given by their full name (R matches an abbreviated
+#' The estimation tuning knobs are not passed here; they live in `estimate_control`, and the
+#' standard-error arguments (`se`, `b_boot`, `ci`, `seed`) are not accepted because the
+#' criterion fits are internal steps whose standard errors are not reported. Note
+#' that the arguments listed after `...` must be given by their full name (R matches an abbreviated
 #' name only against the arguments before `...`), so that a tuning knob such as `max_iter` cannot
 #' be mistaken for `max_iter_CD`.
 #'
@@ -227,7 +229,9 @@ efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARA
   # letting it be silently dropped (when the selected criteria run no fit) or surface as an
   # opaque "criterion could not be run". The criterion fits are always unrotated, so a
   # rotation setting is refused too (the N_FACTORS() wrapper's repacked rotate_control() object
-  # is exempt -- see .reject_rotation_dots()).
+  # is exempt -- see .reject_rotation_dots()), as are efa_fit()'s inference arguments
+  # (`se`/`b_boot`/`ci`/`seed`), which a criterion fit computes and then discards -- see
+  # .reject_inference_dots().
   .reject_unknown_fit_dots(...names(), fn = "efa_retain", unrotated = TRUE)
   .reject_rotation_dots(list(...), fn = "efa_retain")
   .assert_cor_input(x)

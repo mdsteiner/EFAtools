@@ -82,8 +82,10 @@ Default is .30.}
 
 \item{...}{Further arguments passed to \code{\link[=efa_fit]{efa_fit()}} in
 \code{\link[=efa_parallel]{efa_parallel()}} (also within \code{\link[=efa_hull]{efa_hull()}}), \code{\link[=efa_kgc]{efa_kgc()}}, \code{\link[=efa_scree]{efa_scree()}}, and \code{\link[=efa_nest]{efa_nest()}}.
-The estimation tuning knobs are not passed here; they live in \code{estimate_control}. Note that
-the arguments listed after \code{...} must be given by their full name (R matches an abbreviated
+The estimation tuning knobs are not passed here; they live in \code{estimate_control}, and the
+standard-error arguments (\code{se}, \code{b_boot}, \code{ci}, \code{seed}) are not accepted because the
+criterion fits are internal steps whose standard errors are not reported. Note
+that the arguments listed after \code{...} must be given by their full name (R matches an abbreviated
 name only against the arguments before \code{...}), so that a tuning knob such as \code{max_iter} cannot
 be mistaken for \code{max_iter_CD}.}
 

@@ -93,7 +93,8 @@ rotation settings apply.}
 \code{estimator}, to change the estimator (default is "PAF"). PAF is more
 robust, but it will take longer compared to the other estimators
 available ("ML" and "ULS"). The estimation tuning knobs are not passed here; they live in
-\code{estimate_control}.}
+\code{estimate_control}, and the standard-error arguments (\code{se}, \code{b_boot}, \code{ci}, \code{seed}) are
+not accepted because the fits are internal steps that keep only their eigenvalues.}
 }
 \value{
 An object of class \code{efa_retention} (see \code{\link[=print.efa_retention]{print.efa_retention()}} and

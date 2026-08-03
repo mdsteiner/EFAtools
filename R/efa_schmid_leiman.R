@@ -31,7 +31,9 @@
 #'  second-order [efa_fit()] fit, including the `type` preset. `NULL` (default) uses the
 #'  [efa_fit()] defaults. The second-order fit is unrotated, so no rotation settings apply.
 #' @param ... Arguments to be passed to [efa_fit()]. The estimation tuning knobs are not passed
-#' here; they live in `estimate_control`.
+#' here; they live in `estimate_control`, and the standard-error arguments (`se`, `b_boot`,
+#' `ci`, `seed`) are not accepted because the second-order fit is an internal step run against
+#' a placeholder sample size and only its loadings are kept.
 #'
 #' @details
 #' The SL transformation (also called SL orthogonalization) is a procedure with
@@ -115,6 +117,17 @@ efa_schmid_leiman <- function(x, Phi = NULL,
 
   # Perform argument checks
   .reject_flat_knobs(...names(), fn = "efa_schmid_leiman")
+  # The second-order fit is an internal step: of its output only the loadings, the iteration
+  # count, the convergence flag and the recorded settings are kept, and it runs against a
+  # placeholder N, so a standard error asked for through these dots would be computed from a
+  # sample size that is not the data's and then discarded -- reaching nothing but that
+  # settings record. It is also unrotated with no bootstrap, so `seed` governs nothing there.
+  # The guard must be the same one the retention criteria use rather than a bare
+  # .reject_inference_dots(): the dots are spliced into the second-order fit with do.call(),
+  # where R partial-matches them against efa_fit()'s formals, so an abbreviation such as
+  # `b_b` would arrive as `b_boot` without ever matching the refused names exactly. It is the
+  # whitelist here -- every accepted name spelled in full -- that closes that route.
+  .reject_unknown_fit_dots(...names(), fn = "efa_schmid_leiman", unrotated = TRUE)
   checkmate::assert_matrix(Phi, null.ok = TRUE)
   .assert_estimate_control(estimate_control)
   estimator <- .match_arg_ci(estimator)

@@ -97,7 +97,9 @@ RMSEA, CAF) do not depend on.}
 
 \item{...}{Further arguments passed to \code{\link[=efa_fit]{efa_fit()}}, also in
 \code{\link[=efa_parallel]{efa_parallel()}}. The estimation tuning knobs are not passed here; they live in
-\code{estimate_control}, and a rotation setting is not accepted because the fits are unrotated.}
+\code{estimate_control}, a rotation setting is not accepted because the fits are unrotated, and
+neither are the standard-error arguments (\code{se}, \code{b_boot}, \code{ci}, \code{seed}), because the fits
+are internal steps whose standard errors are not reported.}
 }
 \value{
 An object of class \code{efa_retention} (see \code{\link[=print.efa_retention]{print.efa_retention()}} and

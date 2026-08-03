@@ -237,6 +237,70 @@ test_that("the retention criteria refuse a rotation setting and its engine extra
     efa_kgc(cormat, eigen_type = "EFA", estimator = "ML"))))
 })
 
+test_that("the retention criteria refuse efa_fit()'s inference arguments", {
+  # `se`, `b_boot`, `ci` and `seed` are efa_fit() formals, so they used to pass the dots
+  # whitelist and reach the criterion fits, where nothing can come of them: the criteria keep
+  # only eigenvalues and fit measures from those fits, so a standard error is computed and
+  # discarded, and `seed` is spent on a fit that draws no random numbers while the simulated
+  # reference data -- the only stochastic part -- are still drawn from the caller's stream.
+  expect_error(efa_parallel(cormat, N = 500, eigen_type = "PCA", n_datasets = 2, seed = 42),
+               class = "efa_unused_dots")
+  expect_error(efa_nest(cormat, N = 500, n_datasets = 2, seed = 42),
+               class = "efa_unused_dots")
+  expect_error(efa_hull(cormat, N = 500, gof = "CAF", n_datasets = 2, seed = 42),
+               class = "efa_unused_dots")
+  expect_error(efa_kgc(cormat, eigen_type = "EFA", seed = 42), class = "efa_unused_dots")
+  expect_error(efa_scree(cormat, eigen_type = "EFA", seed = 42), class = "efa_unused_dots")
+  expect_error(efa_retain(cormat, N = 500, suitability = FALSE, criteria = "PARALLEL",
+                          n_datasets = 2, seed = 42),
+               class = "efa_unused_dots")
+
+  # refused even when the selected criteria run no fit at all -- that is the case the old
+  # whitelist dropped in total silence, so it is the one a regression would restore first
+  expect_error(efa_retain(cormat, N = 500, suitability = FALSE, criteria = "MAP", seed = 42),
+               class = "efa_unused_dots")
+  expect_error(efa_kgc(cormat, eigen_type = "PCA", se = "information"),
+               class = "efa_unused_dots")
+
+  # the refused set is a hand-written mirror of four efa_fit() formals: if one is ever
+  # renamed there, the guard stops matching and the name is silently forwarded again
+  expect_true(all(.fit_inference_args %in% names(formals(efa_fit))))
+
+  # An abbreviation must not slip past either: the dots are spliced into the fits with
+  # do.call(), where R partial-matches them against efa_fit()'s formals, so `b_b` would
+  # arrive as `b_boot` without matching the refused name exactly. The whitelist, which spells
+  # every accepted name in full, is what refuses it -- with the misspelling message, since an
+  # abbreviation is not one of this function's arguments either.
+  expect_error(efa_kgc(cormat, eigen_type = "EFA", b_b = 10), class = "efa_unused_dots")
+  expect_error(efa_parallel(cormat, N = 500, eigen_type = "PCA", n_datasets = 2, see = 42),
+               class = "efa_unused_dots")
+
+  # the standard-error group, refused at entry rather than doing discarded work in the fit
+  expect_error(efa_kgc(cormat, eigen_type = "EFA", estimator = "ML", se = "information"),
+               class = "efa_unused_dots")
+  expect_error(efa_nest(cormat, N = 500, n_datasets = 2, se = "np-boot", b_boot = 10),
+               class = "efa_unused_dots")
+  expect_error(efa_retain(cormat, N = 500, suitability = FALSE, criteria = "KGC",
+                          eigen_type_other = "EFA", ci = .90),
+               class = "efa_unused_dots")
+
+  # the frozen wrappers forward their dots into these same functions, so the refusal reaches
+  # the old names too. The flat interface did take all four, but they were inert on this path
+  # (a correlation matrix never reached EFA()'s seeding branch, and a computed standard error
+  # was discarded by the criterion), so refusing them changes no legacy result.
+  expect_error(PARALLEL(cormat, N = 500, eigen_type = "PCA", n_datasets = 2, seed = 42),
+               class = "efa_unused_dots")
+  expect_error(N_FACTORS(cormat, N = 500, criteria = "PARALLEL", n_datasets = 2, seed = 42),
+               class = "efa_unused_dots")
+
+  # what replaces it: set.seed() beforehand, which pins the simulation the criterion draws
+  set.seed(42L)
+  a <- efa_parallel(cormat, N = 500, eigen_type = "PCA", n_datasets = 5)
+  set.seed(42L)
+  b <- efa_parallel(cormat, N = 500, eigen_type = "PCA", n_datasets = 5)
+  expect_equal(a$results, b$results)
+})
+
 test_that("efa_retain() refuses a rotation setting but keeps the wrappers' repacked control", {
   # the criterion fits are always unrotated, so a rotation setting is meaningless here
   expect_error(efa_retain(cormat, N = 500, suitability = FALSE, criteria = "MAP",

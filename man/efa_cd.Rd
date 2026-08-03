@@ -85,6 +85,10 @@ from it at every candidate factor count. It is therefore a good choice when the
 raw data are at hand and the runtime is acceptable, and a poor one for a quick
 look at a correlation matrix.
 
+The comparison data are obtained by simulation, so the suggested number of factors
+varies slightly from run to run. Call \code{\link[=set.seed]{set.seed()}} beforehand to make a run
+reproducible.
+
 Note that if the data contains missing values, these will be removed for the
 comparison data procedure using \code{\link[stats:na.fail]{stats::na.omit()}}. If
 missing data should be treated differently, e.g., by imputation, do this outside
