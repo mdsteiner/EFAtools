@@ -36,11 +36,10 @@ efa_power(
 RMSEA power) or \code{"simulation"} (Monte-Carlo hit-rate and structure recovery).
 \code{type}, \code{eps0}, \code{eps1}, \code{df}, \code{alpha}, \code{power}, and \code{group} apply to RMSEA mode only;
 the arguments marked \emph{Simulation mode} below apply to the other; \code{N}, \code{p}, and \code{k} are
-used in both. The value is matched case-insensitively.}
+used in both.}
 
 \item{type}{character. The RMSEA test: \code{"close"} (test of close fit) or
-\code{"notclose"} (test of not-close fit). The value is matched case-insensitively.
-See \emph{Details}.}
+\code{"notclose"} (test of not-close fit). See \emph{Details}.}
 
 \item{eps0}{numeric. The null-hypothesis RMSEA. Default is \code{0.05}.}
 
@@ -99,13 +98,12 @@ analyse. Default is \code{500}.}
 \item{criteria}{character. Simulation mode. The factor-retention criteria to
 evaluate the hit-rate for, any of \code{"CD"}, \code{"EKC"}, \code{"HULL"}, \code{"KGC"}, \code{"MAP"},
 \code{"NEST"}, \code{"PARALLEL"}, and \code{"SMT"} (see \code{\link[=efa_retain]{efa_retain()}}). Default is
-\code{c("EKC", "MAP")}. The values are matched case-insensitively. Criteria that
-simulate internally (\code{"CD"}, \code{"HULL"}, \code{"NEST"}, \code{"PARALLEL"}) make each run
-substantially slower.}
+\code{c("EKC", "MAP")}. Criteria that simulate internally (\code{"CD"}, \code{"HULL"},
+\code{"NEST"}, \code{"PARALLEL"}) make each run substantially slower.}
 
 \item{estimator}{character. Simulation mode. The estimator (\code{"PAF"}, \code{"ML"},
-or \code{"ULS"}) used for the recovery fit and the retention criteria; the value
-is matched case-insensitively. Default is \code{"PAF"}.}
+or \code{"ULS"}) used for the recovery fit and the retention criteria. Default
+is \code{"PAF"}.}
 
 \item{rotation}{character. Simulation mode. The rotation for the recovery fit,
 passed to \code{\link[=efa_fit]{efa_fit()}}. Default is \code{NULL}, which matches the population: \code{"varimax"}

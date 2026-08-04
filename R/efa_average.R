@@ -18,8 +18,8 @@
 #' @param estimator character vector. Any combination of  "PAF", "ML", and "ULS",
 #' to use principal axis factoring, maximum likelihood, or unweighted least
 #' squares, respectively, to fit the EFAs. "MINRES" is accepted as a synonym for
-#' "ULS" (the same estimator). The values are matched case-insensitively.
-#' Default is "PAF". "DWLS", which [efa_fit()] does accept, is deliberately not
+#' "ULS" (the same estimator). Default is "PAF".
+#' "DWLS", which [efa_fit()] does accept, is deliberately not
 #' offered here: it weights each residual correlation by the inverse of its
 #' asymptotic variance, which is only available from raw ordinal data analysed
 #' with `cor_method = "poly"` or `"tetra"`, whereas every EFA in the grid is fitted
@@ -415,7 +415,7 @@ efa_average <- function(x, n_factors, N = NA, estimator = "PAF", rotation = "pro
   checkmate::assert_subset(type, c("none", "EFAtools", "psych", "SPSS"),
                            empty.ok = FALSE)
   type <- unique(type)
-  averaging <- match.arg(averaging)
+  averaging <- .match_arg_ci(averaging)
   checkmate::assert_number(trim, lower = 0, upper = 0.5)
   # `trim` only reaches mean(); the median has no trimming to do. Say so rather than
   # silently recording a trim in the settings that never affected a single value.
@@ -427,32 +427,42 @@ efa_average <- function(x, n_factors, N = NA, estimator = "PAF", rotation = "pro
   }
   checkmate::assert_number(salience_threshold, lower = 0, upper = 1)
   checkmate::assert_count(max_iter)
+  init_comm <- .map_subset_ci(init_comm, c("smc", "mac", "unity"))
   checkmate::assert_subset(init_comm, c("smc", "mac", "unity"),
                            empty.ok = FALSE)
+  init_comm <- unique(init_comm)
   checkmate::assert_vector(criterion, strict = TRUE, any.missing = FALSE,
                            min.len = 1)
   checkmate::assert_true(all(criterion > 0 & criterion < 1))
+  criterion_type <- .map_subset_ci(criterion_type, c("max_individual", "sum"))
   checkmate::assert_subset(criterion_type, c("max_individual", "sum"),
                            empty.ok = FALSE)
+  criterion_type <- unique(criterion_type)
   checkmate::assert_subset(abs_eigen, c(TRUE, FALSE),
                            empty.ok = FALSE)
+  varimax_type <- .map_subset_ci(varimax_type, c("svd", "kaiser"))
   checkmate::assert_subset(varimax_type, c("svd", "kaiser"),
                            empty.ok = FALSE)
+  varimax_type <- unique(varimax_type)
   checkmate::assert_subset(normalize, c(TRUE, FALSE),
                            empty.ok = FALSE)
   checkmate::assert_vector(k_promax, strict = TRUE, any.missing = FALSE,
                            min.len = 1)
   checkmate::assert_vector(k_simplimax, strict = TRUE, any.missing = FALSE,
                            min.len = 1)
+  p_type <- .map_subset_ci(p_type, c("unnorm", "norm"))
   checkmate::assert_subset(p_type, c("unnorm", "norm"),
                            empty.ok = FALSE)
+  p_type <- unique(p_type)
   checkmate::assert_vector(precision, strict = TRUE, any.missing = FALSE,
                            min.len = 1)
   checkmate::assert_true(all(precision > 0 & precision < 1))
+  start_method <- .map_subset_ci(start_method, c("psych", "factanal"))
   checkmate::assert_subset(start_method, c("psych", "factanal"),
                            empty.ok = FALSE)
-  use <- match.arg(use)
-  cor_method <- match.arg(cor_method)
+  start_method <- unique(start_method)
+  use <- .match_arg_ci(use)
+  cor_method <- .match_arg_ci(cor_method)
   checkmate::assert_flag(show_progress)
 
 

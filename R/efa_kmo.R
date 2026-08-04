@@ -71,8 +71,8 @@ efa_kmo <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs
   # Perform argument checks
   .assert_cor_input(x)
 
-  use <- match.arg(use)
-  cor_method <- match.arg(cor_method)
+  use <- .match_arg_ci(use)
+  cor_method <- .match_arg_ci(cor_method)
 
   # Detect or compute the correlation matrix, check it, and smooth it if needed
   prep <- .prepare_cor_input(x, use = use, cor_method = cor_method,

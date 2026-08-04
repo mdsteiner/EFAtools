@@ -23,8 +23,7 @@
 #' @param estimator character. One of "PAF", "ML", or "ULS" to use
 #' principal axis factoring, maximum likelihood, or unweighted least squares,
 #' respectively, used in [efa_fit()] to find the second-order loadings. "MINRES" is
-#' accepted as a synonym for "ULS" (the same estimator). The value is matched
-#' case-insensitively.
+#' accepted as a synonym for "ULS" (the same estimator).
 #' @param g_name character. The name of the general factor. This needs only be
 #' specified if `x` is a `lavaan` second-order solution. Default is "g".
 #' @param estimate_control an [estimate_control()] object with the estimation settings for the

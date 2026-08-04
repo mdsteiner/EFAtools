@@ -38,8 +38,7 @@ into \code{x}.}
 \item{estimator}{character. One of "PAF", "ML", or "ULS" to use
 principal axis factoring, maximum likelihood, or unweighted least squares,
 respectively, used in \code{\link[=efa_fit]{efa_fit()}} to find the second-order loadings. "MINRES" is
-accepted as a synonym for "ULS" (the same estimator). The value is matched
-case-insensitively.}
+accepted as a synonym for "ULS" (the same estimator).}
 
 \item{g_name}{character. The name of the general factor. This needs only be
 specified if \code{x} is a \code{lavaan} second-order solution. Default is "g".}

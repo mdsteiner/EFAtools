@@ -81,10 +81,9 @@
 #'   RMSEA power) or `"simulation"` (Monte-Carlo hit-rate and structure recovery).
 #'   `type`, `eps0`, `eps1`, `df`, `alpha`, `power`, and `group` apply to RMSEA mode only;
 #'   the arguments marked *Simulation mode* below apply to the other; `N`, `p`, and `k` are
-#'   used in both. The value is matched case-insensitively.
+#'   used in both.
 #' @param type character. The RMSEA test: `"close"` (test of close fit) or
-#'   `"notclose"` (test of not-close fit). The value is matched case-insensitively.
-#'   See *Details*.
+#'   `"notclose"` (test of not-close fit). See *Details*.
 #' @param eps0 numeric. The null-hypothesis RMSEA. Default is `0.05`.
 #' @param eps1 numeric. The alternative-hypothesis RMSEA (the true RMSEA power is
 #'   evaluated at). Default is `0.08` for `type = "close"` and `0.01` for
@@ -128,12 +127,11 @@
 #' @param criteria character. Simulation mode. The factor-retention criteria to
 #'   evaluate the hit-rate for, any of `"CD"`, `"EKC"`, `"HULL"`, `"KGC"`, `"MAP"`,
 #'   `"NEST"`, `"PARALLEL"`, and `"SMT"` (see [efa_retain()]). Default is
-#'   `c("EKC", "MAP")`. The values are matched case-insensitively. Criteria that
-#'   simulate internally (`"CD"`, `"HULL"`, `"NEST"`, `"PARALLEL"`) make each run
-#'   substantially slower.
+#'   `c("EKC", "MAP")`. Criteria that simulate internally (`"CD"`, `"HULL"`,
+#'   `"NEST"`, `"PARALLEL"`) make each run substantially slower.
 #' @param estimator character. Simulation mode. The estimator (`"PAF"`, `"ML"`,
-#'   or `"ULS"`) used for the recovery fit and the retention criteria; the value
-#'   is matched case-insensitively. Default is `"PAF"`.
+#'   or `"ULS"`) used for the recovery fit and the retention criteria. Default
+#'   is `"PAF"`.
 #' @param rotation character. Simulation mode. The rotation for the recovery fit,
 #'   passed to [efa_fit()]. Default is `NULL`, which matches the population: `"varimax"`
 #'   for orthogonal factors and `"promax"` for oblique ones (a single factor is left
@@ -445,6 +443,10 @@ efa_power <- function(mode = c("rmsea", "simulation"),
   # scree plot is excluded.
   valid_ids <- names(.retention_registry)[
     !vapply(.retention_registry, function(e) isTRUE(e$visual), logical(1))]
+  # `criteria` is always passed on from efa_power(), so this function's own formal carries no
+  # default for .match_arg_ci() to fall back on when the caller supplied NULL. Read it off
+  # efa_power() instead of restating it, so the documented default stays in one place.
+  if (is.null(criteria)) criteria <- eval(formals(efa_power)$criteria)
   criteria <- .match_arg_ci(criteria, valid_ids, several.ok = TRUE)
 
   # `N` is optional in RMSEA mode (it is solved for at a target power), which makes

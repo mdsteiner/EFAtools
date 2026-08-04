@@ -81,8 +81,8 @@ format.efa_loadings <- function(x, cutoff = .3, digits = 3, max_name_length = 10
                            sort_loadings = c("none", "primary", "clustered"),
                            legend = FALSE, ...) {
 
-  name_style <- match.arg(name_style)
-  sort_loadings <- match.arg(sort_loadings)
+  name_style <- .match_arg_ci(name_style)
+  sort_loadings <- .match_arg_ci(sort_loadings)
 
   .validate_loadings_print_args(
     x = x,

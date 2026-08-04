@@ -59,8 +59,8 @@ efa_scree <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
   .assert_cor_input(x)
 
   eigen_type <- .match_arg_ci(eigen_type, several.ok = TRUE)
-  use <- match.arg(use)
-  cor_method <- match.arg(cor_method)
+  use <- .match_arg_ci(use)
+  cor_method <- .match_arg_ci(cor_method)
   checkmate::assert_count(n_factors)
   .assert_estimate_control(estimate_control)
 

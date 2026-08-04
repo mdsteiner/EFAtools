@@ -104,8 +104,8 @@ efa_ekc <- function(x, N = NA,
   .assert_cor_input(x)
 
   checkmate::assert_count(N, na.ok = TRUE)
-  use <- match.arg(use)
-  cor_method <- match.arg(cor_method)
+  use <- .match_arg_ci(use)
+  cor_method <- .match_arg_ci(cor_method)
   type <- .match_arg_ci(type, choices = c("BvA2017", "AM2019"), several.ok = TRUE)
 
   # Detect or compute the correlation matrix, check it, and smooth it if needed

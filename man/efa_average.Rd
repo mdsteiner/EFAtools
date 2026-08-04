@@ -64,8 +64,8 @@ correlation matrix is used. If input is a correlation matrix and \code{N} = NA
 \item{estimator}{character vector. Any combination of  "PAF", "ML", and "ULS",
 to use principal axis factoring, maximum likelihood, or unweighted least
 squares, respectively, to fit the EFAs. "MINRES" is accepted as a synonym for
-"ULS" (the same estimator). The values are matched case-insensitively.
-Default is "PAF". "DWLS", which \code{\link[=efa_fit]{efa_fit()}} does accept, is deliberately not
+"ULS" (the same estimator). Default is "PAF".
+"DWLS", which \code{\link[=efa_fit]{efa_fit()}} does accept, is deliberately not
 offered here: it weights each residual correlation by the inverse of its
 asymptotic variance, which is only available from raw ordinal data analysed
 with \code{cor_method = "poly"} or \code{"tetra"}, whereas every EFA in the grid is fitted

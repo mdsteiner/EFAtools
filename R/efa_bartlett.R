@@ -68,8 +68,8 @@ efa_bartlett <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   # Perform argument checks
   .assert_cor_input(x)
 
-  use <- match.arg(use)
-  cor_method <- match.arg(cor_method)
+  use <- .match_arg_ci(use)
+  cor_method <- .match_arg_ci(cor_method)
   checkmate::assert_count(N, na.ok = TRUE)
 
   # Detect or compute the correlation matrix, check it, and smooth it if needed

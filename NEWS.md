@@ -54,7 +54,11 @@
 
 ## Input Validation and Correlation Handling
 
+* Every argument of the `efa_*` interface that takes a fixed set of values is now matched without regard to capitalization, and the canonical spelling is what the result stores and prints. For an argument that takes a single value, an unambiguous abbreviation is accepted as well, and an unmatched value raises an error that names the argument, lists the choices, and carries the condition class `efa_bad_choice` (`efa_control_input` for the tuning knobs of `estimate_control()` and `rotate_control()`). 
+
 * A correlation matrix supplied as a data frame is now recognised as one and analysed.
+
+* Passing `NULL` to a choice-valued argument now selects the documented default, as leaving the argument out does. It previously selected the first admissible value.
 
 * When a correlation matrix cannot be computed from raw data, the error now names the columns responsible and separates non-numeric, infinite, and constant ones, pointing at `cor_method = "poly"` for ordinal items stored as factors or character strings.
 

@@ -117,8 +117,8 @@ efa_nest <- function(x, N = NA,
 
   checkmate::assert_count(N, na.ok = TRUE)
   checkmate::assert_number(alpha, lower = 0, upper = 1)
-  use <- match.arg(use)
-  cor_method <- match.arg(cor_method)
+  use <- .match_arg_ci(use)
+  cor_method <- .match_arg_ci(cor_method)
   .assert_estimate_control(estimate_control)
   .reject_poly_reference(cor_method, "efa_nest")
   checkmate::assert_count(n_datasets, na.ok = FALSE,

@@ -24,7 +24,7 @@
 #' factoring), "ML" (maximum likelihood), "ULS" (unweighted least squares; "MINRES" is an
 #' accepted alias returning identical results), or "DWLS" (diagonally weighted least
 #' squares, for ordinal data). See the *Estimators* section in Details for their
-#' properties and data requirements. The value is matched case-insensitively.
+#' properties and data requirements.
 #' @param rotation character. Either perform no rotation ("none"; default),
 #' an orthogonal rotation ("varimax", "equamax", "quartimax", "geominT",
 #' "bentlerT", or "bifactorT"), or an oblique rotation ("promax", "oblimin",
@@ -755,10 +755,10 @@ efa_fit <- function(x, n_factors, N = NA,
   # rest of efa_fit() and the reported settings use the single canonical name.
   if (estimator == "MINRES") estimator <- "ULS"
   rotation <- .match_arg_ci(rotation)
-  se <- match.arg(se)
+  se <- .match_arg_ci(se)
   np_boot <- se == "np-boot"
-  use <- match.arg(use)
-  cor_method <- match.arg(cor_method)
+  use <- .match_arg_ci(use)
+  cor_method <- .match_arg_ci(cor_method)
 
   # The dots only carry extras for the rotation engine, which reads them by exact name:
   # `maxit` for the GPArotation-style engines, plus the selected criterion's parameter

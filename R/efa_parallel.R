@@ -161,10 +161,10 @@ efa_parallel <- function(x = NULL,
 
   }
   eigen_type <- .match_arg_ci(eigen_type, several.ok = TRUE)
-  use <- match.arg(use)
-  cor_method <- match.arg(cor_method)
+  use <- .match_arg_ci(use)
+  cor_method <- .match_arg_ci(cor_method)
   .reject_poly_reference(cor_method, "efa_parallel")
-  decision_rule <- match.arg(decision_rule)
+  decision_rule <- .match_arg_ci(decision_rule)
   .assert_estimate_control(estimate_control)
   checkmate::assert_count(n_factors)
   checkmate::assert_count(N, na.ok = TRUE)

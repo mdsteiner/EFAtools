@@ -15,17 +15,30 @@
 # stray NaN falls through to the type check and is rejected rather than silently stored.
 .is_control_unset <- function(x) length(x) == 1L && is.na(x) && !is.nan(x)
 
-# Validate a choice-valued knob (or NA, when `na_ok`); classed abort otherwise.
+# Index of a single knob value among its choices, case-folded and allowing unambiguous
+# abbreviations. NA marks "no usable match": a non-string input, no match at all, or -- from
+# charmatch()'s 0 -- an abbreviation that prefixes several choices.
+.control_choice_index <- function(x, choices) {
+  if (!checkmate::test_string(x)) return(NA_integer_)
+  idx <- charmatch(.fold_upper(x), .fold_upper(choices))
+  if (!is.na(idx) && idx == 0L) NA_integer_ else idx
+}
+
+# Resolve a choice-valued knob (or NA, when `na_ok`) against its choices, case-insensitively
+# and allowing unambiguous abbreviations as everywhere else on the interface, and return the
+# canonical spelling so the stored knob and the printed control always carry it. Classed abort
+# otherwise.
 .assert_control_choice <- function(x, choices, arg, na_ok = TRUE) {
-  if (na_ok && .is_control_unset(x)) return(invisible(NULL))
-  if (!checkmate::test_string(x) || !checkmate::test_choice(x, choices)) {
+  if (na_ok && .is_control_unset(x)) return(x)
+  idx <- .control_choice_index(x, choices)
+  if (is.na(idx)) {
     na_txt <- if (na_ok) " (or NA to resolve from the type preset)" else ""
     cli::cli_abort(
       "{.arg {arg}} must be one of {.val {choices}}{na_txt}.",
       class = "efa_control_input"
     )
   }
-  invisible(NULL)
+  choices[idx]
 }
 
 # Validate a numeric knob against its admissible range (optionally a whole number, optionally
@@ -61,14 +74,15 @@
 # convenience: an abbreviation resolves to the full value and NA stays unset (it means "not
 # needed by this estimator"). Returns the resolved value; classed abort otherwise.
 .match_control_choice <- function(x, choices, arg) {
-  out <- tryCatch(checkmate::matchArg(x, c(choices, NA)), error = function(e) e)
-  if (inherits(out, "error")) {
+  if (.is_control_unset(x)) return(x)
+  idx <- .control_choice_index(x, choices)
+  if (is.na(idx)) {
     cli::cli_abort(
       "{.arg {arg}} must be one of {.val {choices}} (or NA to leave it unset).",
       class = "efa_control_input"
     )
   }
-  out
+  choices[idx]
 }
 
 # ASCII-only upper-casing for case-folded matching. toupper() is locale-dependent -- under a
@@ -87,18 +101,45 @@
 # mode: an unmatched element aborts here, whereas match.arg() silently drops it. Mirroring
 # match.arg(), an `arg` identical to `choices` selects the default -- the first choice, or
 # all of them when `several.ok` -- and a missing `choices` is taken from the caller's formal
-# default. Ambiguous or unmatched values are a classed abort listing the choices; `class`
-# lets a caller raise its own condition class (the control constructors reuse their
+# default; a NULL `arg` selects the documented default too, see the comment on that branch.
+# Ambiguous or unmatched values are a classed abort listing the choices; `class` lets a
+# caller raise its own condition class (the control constructors reuse their
 # `efa_control_input`).
 .match_arg_ci <- function(arg, choices, several.ok = FALSE,
                           arg_name = deparse1(substitute(arg)),
                           class = "efa_bad_choice") {
-  if (missing(choices)) {
-    caller <- sys.parent()
+  caller <- sys.parent()
+  from_formals <- missing(choices)
+  if (from_formals) {
     choices <- eval(formals(sys.function(caller))[[arg_name]],
                     envir = sys.frame(caller))
   }
-  if (is.null(arg)) return(choices[1L])
+  # NULL means "use the default", as in match.arg(), but the default is the caller's formal
+  # default, NOT choices[1L]: the two part company under `several.ok` whenever the formal
+  # default is a whole vector (efa_hull()'s `gof`, efa_kgc()'s `eigen_type`), and wherever an
+  # explicit `choices` is a superset of the formal default (efa_retain()'s `criteria`) or
+  # orders it differently (`eigen_type_other`). Taking choices[1L] there silently runs
+  # something narrower than the help page documents, with no condition raised. A formal
+  # without a default, or one that is itself NULL (efa_simulate()'s `match`, documented as
+  # resolving to "thresholds"), falls back to choices[1L].
+  if (is.null(arg)) {
+    if (from_formals) {
+      # `choices` already is that default -- no need to look it up a second time
+      arg <- choices
+    } else {
+      # Keep the default inside a length-one list while testing it: a formal without a
+      # default is the empty symbol, and binding that to a variable (or passing it on)
+      # forces it into R's "argument is missing" error. Comparing the enclosing list never
+      # evaluates it.
+      default <- formals(sys.function(caller))[arg_name]
+      arg <- if (identical(unname(as.list(default)), list(quote(expr = )))) {
+        NULL
+      } else {
+        eval(default[[1L]], envir = sys.frame(caller))
+      }
+    }
+    if (is.null(arg)) return(choices[1L])
+  }
   if (identical(arg, choices)) return(if (several.ok) choices else choices[1L])
 
   # charmatch(): NA = no match, 0 = ambiguous (a prefix of several choices)
@@ -228,12 +269,13 @@ estimate_control <- function(type = c("EFAtools", "psych", "SPSS", "none"),
   # `type` is caught alongside the other knobs (all `efa_control_input`).
   type <- .match_arg_ci(type, class = "efa_control_input")
 
-  .assert_control_choice(init_comm, c("smc", "mac", "unity"), "init_comm")
+  init_comm <- .assert_control_choice(init_comm, c("smc", "mac", "unity"), "init_comm")
   # The convergence tolerance is compared against a change in communalities, so a value at or
   # above 1 stops the iterations immediately; the fit rejects it (see .PAF()), and the control
   # must not be able to carry a value the fit would go on to reject.
   .assert_control_number(criterion, "criterion", upper = 1, upper_strict = TRUE)
-  .assert_control_choice(criterion_type, c("max_individual", "sum"), "criterion_type")
+  criterion_type <- .assert_control_choice(criterion_type, c("max_individual", "sum"),
+                                           "criterion_type")
   .assert_control_number(max_iter, "max_iter", int = TRUE)
   .assert_control_flag(abs_eigen, "abs_eigen")
   # `start_method` only governs the ML optimiser, so NA ("not needed here") is admissible and
@@ -305,9 +347,9 @@ rotate_control <- function(type = c("EFAtools", "psych", "SPSS", "none"),
 
   .assert_control_flag(normalize, "normalize", na_ok = FALSE)
   .assert_control_number(precision, "precision", upper = 1, na_ok = FALSE)
-  .assert_control_choice(order_type, c("eigen", "ss_factors"), "order_type")
-  .assert_control_choice(varimax_type, c("svd", "kaiser"), "varimax_type")
-  .assert_control_choice(p_type, c("norm", "unnorm"), "p_type")
+  order_type <- .assert_control_choice(order_type, c("eigen", "ss_factors"), "order_type")
+  varimax_type <- .assert_control_choice(varimax_type, c("svd", "kaiser"), "varimax_type")
+  p_type <- .assert_control_choice(p_type, c("norm", "unnorm"), "p_type")
   .assert_control_number(k, "k")
   # 0 is a meaningful setting, not a missing one: it runs the rotation from its warm start
   # only, with no random restarts.

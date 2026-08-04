@@ -107,7 +107,7 @@ efa_compare <- function(x,
                         plot = TRUE,
                         plot_red = .01)  {
 
-  reorder <- match.arg(reorder)
+  reorder <- .match_arg_ci(reorder)
   checkmate::assert_flag(corres)
   checkmate::assert_number(thresh)
   checkmate::assert_count(digits)

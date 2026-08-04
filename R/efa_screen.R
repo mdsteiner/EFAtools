@@ -207,8 +207,8 @@ efa_screen <- function(x, N = NA,
   # Perform argument checks
   .assert_cor_input(x)
 
-  use <- match.arg(use)
-  cor_method <- match.arg(cor_method)
+  use <- .match_arg_ci(use)
+  cor_method <- .match_arg_ci(cor_method)
   checkmate::assert_count(N, na.ok = TRUE)
   checkmate::assert_number(mcd_alpha, lower = 0.5, upper = 1)
   # The endpoints of the natural [0, 1] range are degenerate rather than extreme: a

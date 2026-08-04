@@ -14,8 +14,7 @@
 #'   is used as the upper bound *J* of factors to extract in the Hull method.
 #' @param estimator character. The estimator to use. One of  `"PAF"`,
 #'    `"ULS"`, or  `"ML"`, for principal axis factoring, unweighted
-#'    least squares, and maximum likelihood, respectively. The value is matched
-#'    case-insensitively.
+#'    least squares, and maximum likelihood, respectively.
 #' @param gof character. The goodness of fit index to use. Either `"CAF"`,
 #'   `"CFI"`, or `"RMSEA"`, or any combination of them.
 #'   With the `"PAF"` estimator, only
@@ -161,8 +160,8 @@ efa_hull <- function(x, N = NA, n_fac_theor = NA,
   .assert_cor_input(x)
 
   estimator <- .match_arg_ci(estimator)
-  use <- match.arg(use)
-  cor_method <- match.arg(cor_method)
+  use <- .match_arg_ci(use)
+  cor_method <- .match_arg_ci(cor_method)
   # The Hull method derives its factor-search bound from an internal parallel
   # analysis, whose reference data are continuous; poly/tetra are therefore not
   # supported, consistent with PARALLEL/NEST/CD.
@@ -171,7 +170,7 @@ efa_hull <- function(x, N = NA, n_fac_theor = NA,
   eigen_type <- .match_arg_ci(eigen_type)
   checkmate::assert_count(n_fac_theor, na.ok = TRUE)
   checkmate::assert_count(N, na.ok = TRUE)
-  decision_rule <- match.arg(decision_rule)
+  decision_rule <- .match_arg_ci(decision_rule)
   .assert_estimate_control(estimate_control)
   checkmate::assert_count(n_factors)
   checkmate::assert_count(n_datasets)

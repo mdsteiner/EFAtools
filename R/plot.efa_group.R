@@ -39,7 +39,7 @@
 #' # Per-item cross-group loading-difference heatmap
 #' plot(mg, type = "differences")
 plot.efa_group <- function(x, type = c("congruence", "differences"), ...) {
-  type <- match.arg(type)
+  type <- .match_arg_ci(type)
   if (type == "congruence") .gg_group_congruence(x) else .gg_group_differences(x)
 }
 

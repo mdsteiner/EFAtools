@@ -20,7 +20,7 @@
 #' efa <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500)
 #' residuals(efa)
 residuals.efa <- function(object, type = c("raw", "standardized"), ...) {
-  type <- match.arg(type)
+  type <- .match_arg_ci(type)
 
   if (identical(type, "standardized")) {
     if (is.null(object$standardized_residuals)) {

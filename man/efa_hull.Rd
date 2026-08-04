@@ -46,8 +46,7 @@ is used as the upper bound \emph{J} of factors to extract in the Hull method.}
 
 \item{estimator}{character. The estimator to use. One of  \code{"PAF"},
 \code{"ULS"}, or  \code{"ML"}, for principal axis factoring, unweighted
-least squares, and maximum likelihood, respectively. The value is matched
-case-insensitively.}
+least squares, and maximum likelihood, respectively.}
 
 \item{gof}{character. The goodness of fit index to use. Either \code{"CAF"},
 \code{"CFI"}, or \code{"RMSEA"}, or any combination of them.

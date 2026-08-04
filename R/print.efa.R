@@ -103,7 +103,7 @@ format.efa <- function(x, cutoff = .3, digits = 3, max_name_length = 10,
                        sort_loadings = c("none", "primary", "clustered"),
                        show_loading_legend = TRUE,
                        max_factors_per_block = NULL, ...) {
-  sort_loadings <- match.arg(sort_loadings)
+  sort_loadings <- .match_arg_ci(sort_loadings)
 
   .render_efa(x,
     view = "brief",
@@ -141,9 +141,9 @@ summary.efa <- function(object, cutoff = .3, digits = 3, max_name_length = 10,
                         min_salient_per_factor = 3,
                         max_factors_per_block = NULL,
                         show_mi_diagnostics = NULL, ...) {
-  ci <- match.arg(ci)
-  ci_filter <- match.arg(ci_filter)
-  sort_loadings <- match.arg(sort_loadings)
+  ci <- .match_arg_ci(ci)
+  ci_filter <- .match_arg_ci(ci_filter)
+  sort_loadings <- .match_arg_ci(sort_loadings)
 
   opts <- list(
     cutoff = cutoff,
@@ -209,10 +209,10 @@ format.summary.efa <- function(x, ...) {
                         min_salient_per_factor = 3,
                         max_factors_per_block = NULL,
                         show_mi_diagnostics = NULL, ...) {
-  view <- match.arg(view)
-  ci <- match.arg(ci)
-  ci_filter <- match.arg(ci_filter)
-  sort_loadings <- match.arg(sort_loadings)
+  view <- .match_arg_ci(view)
+  ci <- .match_arg_ci(ci)
+  ci_filter <- .match_arg_ci(ci_filter)
+  sort_loadings <- .match_arg_ci(sort_loadings)
   full <- identical(view, "full")
 
   .efa_validate_print_options(
@@ -954,7 +954,7 @@ format.summary.efa <- function(x, ...) {
                                           cutoff, digits, max_name_length,
                                           ci, ci_filter,
                                           sort_loadings = c("none", "primary", "clustered")) {
-  sort_loadings <- match.arg(sort_loadings)
+  sort_loadings <- .match_arg_ci(sort_loadings)
 
   if (!.efa_should_print_ci(x, ci)) {
     return(invisible(NULL))
@@ -2212,7 +2212,7 @@ format.summary.efa <- function(x, ...) {
 }
 
 .efa_loading_row_order <- function(x, sort_loadings = c("none", "primary", "clustered")) {
-  sort_loadings <- match.arg(sort_loadings)
+  sort_loadings <- .match_arg_ci(sort_loadings)
 
   if (identical(sort_loadings, "none") || nrow(x) < 2L || ncol(x) < 1L) {
     return(seq_len(nrow(x)))

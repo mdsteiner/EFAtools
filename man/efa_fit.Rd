@@ -133,7 +133,7 @@ instead the number of cases carrying at least one observed value.}
 factoring), "ML" (maximum likelihood), "ULS" (unweighted least squares; "MINRES" is an
 accepted alias returning identical results), or "DWLS" (diagonally weighted least
 squares, for ordinal data). See the \emph{Estimators} section in Details for their
-properties and data requirements. The value is matched case-insensitively.}
+properties and data requirements.}
 
 \item{rotation}{character. Either perform no rotation ("none"; default),
 an orthogonal rotation ("varimax", "equamax", "quartimax", "geominT",

@@ -398,7 +398,7 @@ format.summary.efa_scores <- function(x, digits = x$opts$digits, ...) {
 # intercorrelations. Assembled inside a single cli container so prose wraps to the
 # console width; the aligned tables are emitted verbatim (no reflow).
 .render_efa_scores <- function(x, view = c("brief", "full"), digits = 3) {
-  view <- match.arg(view)
+  view <- .match_arg_ci(view)
   full <- identical(view, "full")
 
   method <- x$settings$method

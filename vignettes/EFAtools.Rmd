@@ -226,6 +226,14 @@ efa_uls <- efa_fit(DOSPERT_sub, n_factors = 6, rotation = "oblimin", estimator =
 efa_uls
 ```
 
+Note that `estimator = "uls"` was written in lowercase although the canonical spelling is
+`"ULS"`. This holds throughout the `efa_*` interface: wherever an argument takes a fixed set
+of values, capitalization does not matter, while the result stores and prints the canonical
+spelling. For an argument that takes a single value an unambiguous abbreviation is enough as
+well, and a value matching nothing raises an error naming the argument and listing the
+choices. Arguments that take several values at once, such as the analytic choices
+`efa_average()` averages over, need the full spelling of each value.
+
 ## Comparing Solutions with `efa_compare()`
 
 `efa_compare()` provides a quick way to see how similar two loading (pattern) matrices are —

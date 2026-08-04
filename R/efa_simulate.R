@@ -185,8 +185,8 @@
 #'   (the default) also cuts the `"VM"` and `"IG"` draws, whose ordinal Pearson and
 #'   polychoric correlations then both depart from the population; `"polychoric"` states
 #'   that the polychoric match is required and therefore rejects non-normal marginals.
-#'   Not available with `marginals = "empirical"`. The value is matched
-#'   case-insensitively. Default is `NULL` (`"thresholds"` when `categories` is set).
+#'   Not available with `marginals = "empirical"`. Default is `NULL`
+#'   (`"thresholds"` when `categories` is set).
 #' @param missing character. An optional missing-data mechanism to impose on the drawn
 #'   data: one of `"none"` (the default, complete data), `"MCAR"` (missing completely at
 #'   random), `"MAR"` (missing at random, depending on another variable), or `"MNAR"`

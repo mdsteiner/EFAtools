@@ -182,7 +182,7 @@ efa_reliability <- function(model = NULL,
                             pattern = NULL,
                             Phi = NULL) {
 
-  variance <- match.arg(variance)
+  variance <- .match_arg_ci(variance)
   checkmate::assert_string(g_name)
   checkmate::assert_character(group_names, null.ok = TRUE)
 

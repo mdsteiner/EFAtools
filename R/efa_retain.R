@@ -12,8 +12,8 @@
 #' @param criteria character. A vector with the factor retention methods to
 #' perform. Possible inputs are: `"CD"`, `"EKC"`, `"HULL"`,
 #' `"KGC"`, `"MAP"`, `"NEST"`,`"PARALLEL"`, `"SCREE"`, and `"SMT"`
-#' (see details). The values are matched case-insensitively. By default, a subset
-#' of often used, well-performing methods are performed.
+#' (see details). By default, a subset of often used, well-performing methods
+#' are performed.
 #' @param suitability logical. Whether the data should be checked for suitability
 #' for factor analysis using the Bartlett's test of sphericity and the
 #' Kaiser-Meyer-Olkin criterion (see details). Default is `TRUE`.
@@ -51,8 +51,7 @@
 #' [efa_kgc()], [efa_scree()], [efa_parallel()], and [efa_nest()]. The
 #' estimator to use. One of  `"PAF"`, `"ULS"`, or  `"ML"`,
 #' for principal axis factoring, unweighted least squares, and maximum
-#' likelihood, respectively. The value is matched case-insensitively. In
-#' [efa_kgc()], [efa_scree()], and [efa_parallel()] it only
+#' likelihood, respectively. In [efa_kgc()], [efa_scree()], and [efa_parallel()] it only
 #' takes effect when the respective `eigen_type` includes `"EFA"`.
 #' @param gof character. Passed to [efa_hull()]. The goodness of fit index
 #' to use. Either `"CAF"`, `"CFI"`, or `"RMSEA"`, or any
@@ -246,10 +245,10 @@ efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARA
   eigen_type_other <- .match_arg_ci(eigen_type_other, several.ok = TRUE,
                                     choices = c("PCA", "SMC", "EFA"))
   gof <- .match_arg_ci(gof, several.ok = TRUE, choices = c("CAF", "CFI", "RMSEA"))
-  cor_method <- match.arg(cor_method)
-  use <- match.arg(use)
+  cor_method <- .match_arg_ci(cor_method)
+  use <- .match_arg_ci(use)
   estimator <- .match_arg_ci(estimator)
-  decision_rule <- match.arg(decision_rule)
+  decision_rule <- .match_arg_ci(decision_rule)
   ekc_type <- .match_arg_ci(ekc_type, c("BvA2017", "AM2019"), several.ok = TRUE)
   checkmate::assert_number(alpha_nest, lower = 0, upper = 1)
   checkmate::assert_count(n_datasets_nest, na.ok = FALSE, positive = TRUE)

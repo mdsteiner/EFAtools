@@ -122,8 +122,8 @@ same thresholds and produce identical data whenever both are legal. \code{"thres
 (the default) also cuts the \code{"VM"} and \code{"IG"} draws, whose ordinal Pearson and
 polychoric correlations then both depart from the population; \code{"polychoric"} states
 that the polychoric match is required and therefore rejects non-normal marginals.
-Not available with \code{marginals = "empirical"}. The value is matched
-case-insensitively. Default is \code{NULL} (\code{"thresholds"} when \code{categories} is set).}
+Not available with \code{marginals = "empirical"}. Default is \code{NULL}
+(\code{"thresholds"} when \code{categories} is set).}
 
 \item{missing}{character. An optional missing-data mechanism to impose on the drawn
 data: one of \code{"none"} (the default, complete data), \code{"MCAR"} (missing completely at

@@ -1089,7 +1089,7 @@ test_that("plot methods return ggplot objects", {
   expect_s3_class(plot(mg, type = "congruence"), "ggplot")
   expect_s3_class(plot(mg, type = "differences"), "ggplot")
   expect_s3_class(plot(mg), "ggplot")            # default is "congruence"
-  expect_error(plot(mg, type = "nope"))          # match.arg rejects an unknown type
+  expect_error(plot(mg, type = "nope"), class = "efa_bad_choice")
 })
 
 

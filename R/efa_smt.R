@@ -121,8 +121,8 @@ efa_smt <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   .assert_cor_input(x)
 
   checkmate::assert_count(N, na.ok = TRUE)
-  use <- match.arg(use)
-  cor_method <- match.arg(cor_method)
+  use <- .match_arg_ci(use)
+  cor_method <- .match_arg_ci(cor_method)
   .reject_poly_reference(
     cor_method, "efa_smt",
     why = "{.fn {fn}} rests on a normal-theory chi-square test that is not valid for such correlations.")

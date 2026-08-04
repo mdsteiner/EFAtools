@@ -42,8 +42,8 @@ data.}
 \item{criteria}{character. A vector with the factor retention methods to
 perform. Possible inputs are: \code{"CD"}, \code{"EKC"}, \code{"HULL"},
 \code{"KGC"}, \code{"MAP"}, \code{"NEST"},\code{"PARALLEL"}, \code{"SCREE"}, and \code{"SMT"}
-(see details). The values are matched case-insensitively. By default, a subset
-of often used, well-performing methods are performed.}
+(see details). By default, a subset of often used, well-performing methods
+are performed.}
 
 \item{suitability}{logical. Whether the data should be checked for suitability
 for factor analysis using the Bartlett's test of sphericity and the
@@ -101,8 +101,7 @@ suggested by \code{\link[=efa_parallel]{efa_parallel()}} plus one will be used i
 \code{\link[=efa_kgc]{efa_kgc()}}, \code{\link[=efa_scree]{efa_scree()}}, \code{\link[=efa_parallel]{efa_parallel()}}, and \code{\link[=efa_nest]{efa_nest()}}. The
 estimator to use. One of  \code{"PAF"}, \code{"ULS"}, or  \code{"ML"},
 for principal axis factoring, unweighted least squares, and maximum
-likelihood, respectively. The value is matched case-insensitively. In
-\code{\link[=efa_kgc]{efa_kgc()}}, \code{\link[=efa_scree]{efa_scree()}}, and \code{\link[=efa_parallel]{efa_parallel()}} it only
+likelihood, respectively. In \code{\link[=efa_kgc]{efa_kgc()}}, \code{\link[=efa_scree]{efa_scree()}}, and \code{\link[=efa_parallel]{efa_parallel()}} it only
 takes effect when the respective \code{eigen_type} includes \code{"EFA"}.}
 
 \item{gof}{character. Passed to \code{\link[=efa_hull]{efa_hull()}}. The goodness of fit index

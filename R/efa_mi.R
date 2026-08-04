@@ -488,8 +488,8 @@ efa_mi <- function(data_list,
                   class = "efa_pooled_ci_ignored")
   }
 
-  target_method <- match.arg(target_method)
-  align_unrotated <- match.arg(align_unrotated)
+  target_method <- .match_arg_ci(target_method)
+  align_unrotated <- .match_arg_ci(align_unrotated)
   fit_pool_method <- .match_arg_ci(fit_pool_method)
 
   m_imp <- length(data_list)

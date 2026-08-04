@@ -97,7 +97,7 @@ efa_procrustes <- function(A,
                            oblique_screen_keep = 2,
                            oblique_triage_maxit = 25,
                            oblique_triage_improve_tol = 0) {
-  rotation <- match.arg(rotation)
+  rotation <- .match_arg_ci(rotation)
 
   mats <- .procrustes_validate_matrix_pair(A, Target)
   A <- mats$A
