@@ -85,8 +85,8 @@ factor analysis. Psychometrika, 23, 187–200. doi: 10.1007/BF02289233
   character vector. Any combination of "PAF", "ML", and "ULS", to use
   principal axis factoring, maximum likelihood, or unweighted least
   squares, respectively, to fit the EFAs. "MINRES" is accepted as a
-  synonym for "ULS" (the same estimator). The values are matched
-  case-insensitively. Default is "PAF". "DWLS", which
+  synonym for "ULS" (the same estimator). Default is "PAF". "DWLS",
+  which
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
   does accept, is deliberately not offered here: it weights each
   residual correlation by the inverse of its asymptotic variance, which
@@ -537,10 +537,10 @@ Aver_meth <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
 #> ✔ Extracting data [9ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [27ms]
+#> ✔ Reordering factors [26ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [23ms]
+#> ✔ Averaging data [22ms]
 #> 
 
 # \donttest{
@@ -550,10 +550,10 @@ Aver_PAF <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500)
 #> ✔ Extracting data [11ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [21ms]
+#> ✔ Reordering factors [19ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [18ms]
+#> ✔ Averaging data [16ms]
 #> 
 
 # Use median instead of mean for averaging (72 EFAs)
@@ -563,10 +563,10 @@ Aver_PAF_md <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
 #> ✔ Extracting data [11ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [27ms]
+#> ✔ Reordering factors [19ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [20ms]
+#> ✔ Averaging data [19ms]
 #> 
 
 # Averaging across different implementations of PAF and promax rotation,
@@ -574,13 +574,13 @@ Aver_PAF_md <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
 Aver_meth_ext <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
                              estimator = c("PAF", "ULS", "ML"))
 #> ℹ Extracting data
-#> ✔ Extracting data [14ms]
+#> ✔ Extracting data [12ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [26ms]
+#> ✔ Reordering factors [29ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [19ms]
+#> ✔ Averaging data [15ms]
 #> 
 
 # Averaging across different oblique rotation methods, using one implementation
@@ -589,13 +589,13 @@ Aver_rot <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
                          estimator = "ML", rotation = "oblique", type = "EFAtools",
                          start_method = "psych")
 #> ℹ Extracting data
-#> ✔ Extracting data [8ms]
+#> ✔ Extracting data [7ms]
 #> 
 #> ℹ Reordering factors
 #> ✔ Reordering factors [14ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [16ms]
+#> ✔ Averaging data [15ms]
 #> 
 # }
 

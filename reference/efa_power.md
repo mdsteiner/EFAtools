@@ -64,13 +64,11 @@ efa_power(
   structure recovery). `type`, `eps0`, `eps1`, `df`, `alpha`, `power`,
   and `group` apply to RMSEA mode only; the arguments marked *Simulation
   mode* below apply to the other; `N`, `p`, and `k` are used in both.
-  The value is matched case-insensitively.
 
 - type:
 
   character. The RMSEA test: `"close"` (test of close fit) or
-  `"notclose"` (test of not-close fit). The value is matched
-  case-insensitively. See *Details*.
+  `"notclose"` (test of not-close fit). See *Details*.
 
 - eps0:
 
@@ -165,15 +163,15 @@ efa_power(
   the hit-rate for, any of `"CD"`, `"EKC"`, `"HULL"`, `"KGC"`, `"MAP"`,
   `"NEST"`, `"PARALLEL"`, and `"SMT"` (see
   [`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)).
-  Default is `c("EKC", "MAP")`. The values are matched
-  case-insensitively. Criteria that simulate internally (`"CD"`,
-  `"HULL"`, `"NEST"`, `"PARALLEL"`) make each run substantially slower.
+  Default is `c("EKC", "MAP")`. Criteria that simulate internally
+  (`"CD"`, `"HULL"`, `"NEST"`, `"PARALLEL"`) make each run substantially
+  slower.
 
 - estimator:
 
   character. Simulation mode. The estimator (`"PAF"`, `"ML"`, or
-  `"ULS"`) used for the recovery fit and the retention criteria; the
-  value is matched case-insensitively. Default is `"PAF"`.
+  `"ULS"`) used for the recovery fit and the retention criteria. Default
+  is `"PAF"`.
 
 - rotation:
 

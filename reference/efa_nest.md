@@ -92,7 +92,9 @@ publication. https://doi.org/10.1177/00131644241308528
   For example, `estimator`, to change the estimator (default is "PAF").
   PAF is more robust, but it will take longer compared to the other
   estimators available ("ML" and "ULS"). The estimation tuning knobs are
-  not passed here; they live in `estimate_control`.
+  not passed here; they live in `estimate_control`, and the
+  standard-error arguments (`se`, `b_boot`, `ci`, `seed`) are not
+  accepted because the reference-model fits are internal steps.
 
 ## Value
 
@@ -154,6 +156,11 @@ The reference models are fitted without inequality constraints. A
 Heywood case in one of them leaves no unique variance to simulate the
 reference data from, so NEST aborts rather than continuing from an
 inadmissible reference.
+
+The reference eigenvalues are obtained from simulated data, so the
+suggested number of factors varies slightly from run to run. Call
+[`set.seed()`](https://rdrr.io/r/base/Random.html) beforehand to make a
+run reproducible.
 
 For details on the method, including simulation studies, see Achim
 (2017), Brandenburg and Papenberg (2024), and Caron (2025).

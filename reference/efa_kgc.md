@@ -95,7 +95,9 @@ determining the number of components to retain. Psychological Bulletin,
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md).
   For example, `estimator`, to change the estimator (PAF is default).
   The estimation tuning knobs are not passed here; they live in
-  `estimate_control`.
+  `estimate_control`, and the standard-error arguments (`se`, `b_boot`,
+  `ci`, `seed`) are not accepted because the fit is an internal step
+  that keeps only its communalities.
 
 ## Value
 

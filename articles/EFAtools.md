@@ -136,7 +136,15 @@ efa_screen(DOSPERT_sub, seed = 2)
 #> 
 #> ── Outliers ────────────────────────────────────────────────────────────────────
 #> 
-#> ℹ 240 of 500 observations were flagged as multivariate outliers (robust
+#> ! A robust (MCD) covariance could not be computed; classical Mahalanobis
+#> distances were used.
+#> At least half the complete cases lie exactly on a lower-dimensional hyperplane
+#> (an "exact fit"). This is common with coarse discrete items, where many
+#> respondents give identical answers on an item pair; it does not mean the data
+#> are collinear at the correlation level.
+#> These distances come from a covariance the outliers themselves inflate, so the
+#> diagnostic is no longer high-breakdown and tends to under-flag.
+#> ℹ 60 of 500 observations were flagged as multivariate outliers (Mahalanobis
 #> distance > 6.85).
 #> 
 #> ── Recommendations ─────────────────────────────────────────────────────────────
@@ -153,10 +161,8 @@ efa_screen(DOSPERT_sub, seed = 2)
 #> ! 3 variables have a sparse response category (< 5 responses): ethR_3, ethR_4,
 #>   and socR_1; a low-frequency category can destabilise polychoric estimates -
 #>   consider collapsing it into an adjacent category.
-#> ! 240 of 500 observations (48%) exceed the outlier cutoff, far above the 2.5%
-#>   expected under multivariate normality; this usually means the data are not
-#>   elliptically distributed (subgroups or a mixture) rather than that this many
-#>   cases are contaminated.
+#> ! 60 observations were flagged as potential multivariate outliers; inspect them
+#>   (see `$outliers$flagged`) before down-weighting or excluding.
 ```
 
 The overall KMO is meritorious and Bartlett’s test is clearly
@@ -668,6 +674,17 @@ efa_uls
 #> CAF: .48
 #> SRMR: .03
 ```
+
+Note that `estimator = "uls"` was written in lowercase although the
+canonical spelling is `"ULS"`. This holds throughout the `efa_*`
+interface: wherever an argument takes a fixed set of values,
+capitalization does not matter, while the result stores and prints the
+canonical spelling. For an argument that takes a single value an
+unambiguous abbreviation is enough as well, and a value matching nothing
+raises an error naming the argument and listing the choices. Arguments
+that take several values at once, such as the analytic choices
+[`efa_average()`](https://mdsteiner.github.io/EFAtools/reference/efa_average.md)
+averages over, need the full spelling of each value.
 
 ## Comparing Solutions with `efa_compare()`
 

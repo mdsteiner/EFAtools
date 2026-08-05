@@ -179,7 +179,7 @@ instead the number of cases carrying at least one observed value.</p></dd>
 factoring), "ML" (maximum likelihood), "ULS" (unweighted least squares; "MINRES" is an
 accepted alias returning identical results), or "DWLS" (diagonally weighted least
 squares, for ordinal data). See the <em>Estimators</em> section in Details for their
-properties and data requirements. The value is matched case-insensitively.</p></dd>
+properties and data requirements.</p></dd>
 
 
 <dt id="arg-rotation">rotation<a class="anchor" aria-label="anchor" href="#arg-rotation"></a></dt>
@@ -240,6 +240,7 @@ are independent, so <code><a href="estimate_control.html">estimate_control()</a>
 
 <dt id="arg-b-boot">b_boot<a class="anchor" aria-label="anchor" href="#arg-b-boot"></a></dt>
 <dd><p>numeric. The number of bootstrap samples to draw. Default is 1000.
+Must be at least 2, the smallest number from which a standard error is defined.
 Under <code>cor_method = "fiml"</code> each bootstrap sample re-runs the EM moment
 estimation, so a smaller value may be advisable.</p></dd>
 
@@ -265,9 +266,11 @@ of the generator.</p></dd>
 <dd><p>Additional arguments forwarded to the rotation engine. Only the arguments the
 selected <code>rotation</code> consumes are accepted: <code>maxit</code> (the maximum number of engine
 iterations) for the GPArotation-style rotations, plus the selected criterion's parameter
-(<code>gam</code> for "oblimin", <code>delta</code> for "geominT" and "geominQ"). Anything else – a misspelled
-name, another criterion's parameter, or any extra with "varimax", "promax", or "none",
-which consume no extras – is an error rather than a setting that is silently ignored.
+(<code>gam</code> for "oblimin", where <code>gam = 0</code> is the recommended default and larger values can
+drive the solution toward factor collapse; <code>delta</code> for "geominT" and "geominQ").
+Anything else – a misspelled name, another criterion's parameter, or any extra with
+"varimax", "promax", or "none", which consume no extras – is an error rather than a
+setting that is silently ignored.
 The accepted arguments are merged with, and take precedence over, the extra arguments
 stored in <code><a href="estimate_control.html">rotate_control()</a></code>. An estimation or rotation tuning knob (such as <code>type</code>,
 <code>max_iter</code>, or <code>k</code>) is likewise <em>not</em> accepted here: it belongs to <code><a href="estimate_control.html">estimate_control()</a></code>
@@ -396,7 +399,7 @@ returned loadings.</p></dd>
 <dd><p>A named list of bootstrap replicate arrays for the aligned unrotated and (where applicable) rotated loadings, structure coefficients, factor correlations (<code>Phi</code>), residuals, and fit indices. The replicate is the last dimension of the loading, residual, <code>Phi</code>, and structure cubes, and the first dimension of the <code>fit_indices</code> matrix (whose columns are named after the fit indices). Replicates that failed are left <code>NA</code>. Populated only for <code>se = "np-boot"</code>; <code>NULL</code> for the analytic SE methods.</p></dd>
 
 <dt>vcov_unrot_loadings</dt>
-<dd><p>The full unrotated loading covariance matrix the marginal <code>SE$unrot_loadings</code> were derived from: a <code>p * n_factors</code> by <code>p * n_factors</code> numeric matrix in column-major <code>vec(Lambda)</code> order. Populated for <code>se = "information"</code> (expected-information block) and <code>se = "sandwich"</code> (robust V_AA), even when a rotation is applied (the persisted block is always the unrotated one); NA-filled if the analytic covariance is unreliable (a Heywood case or a singular bordered information matrix); <code>NULL</code> for <code>se = "np-boot"</code> and <code>se = "none"</code>. A weakly determined rotational orientation is the one case where this matrix is populated while <code>SE$unrot_loadings</code> is <code>NA</code>: the covariance itself is finite and valid, and only its gauge-dependent marginals are not (see <em>Standard errors</em>).</p></dd>
+<dd><p>The full unrotated loading covariance matrix the marginal <code>SE$unrot_loadings</code> were derived from: a <code>p * n_factors</code> by <code>p * n_factors</code> numeric matrix in column-major <code>vec(Lambda)</code> order, with rows and columns labelled <code>"&lt;variable&gt;_&lt;factor&gt;"</code> so that ordering can be read off the object. Populated for <code>se = "information"</code> (expected-information block) and <code>se = "sandwich"</code> (robust V_AA), even when a rotation is applied (the persisted block is always the unrotated one); NA-filled if the analytic covariance is unreliable (a Heywood case or a singular bordered information matrix); <code>NULL</code> for <code>se = "np-boot"</code> and <code>se = "none"</code>. A weakly determined rotational orientation is the one case where this matrix is populated while <code>SE$unrot_loadings</code> is <code>NA</code>: the covariance itself is finite and valid, and only its gauge-dependent marginals are not (see <em>Standard errors</em>).</p></dd>
 
 <dt>Gamma</dt>
 <dd><p>The asymptotic covariance of the off-diagonal sample correlations – the meat of the robust sandwich SEs – on the variance scale (<code>Var(rho-hat)</code>; lavaan's correlation NACOV is <code>N * Gamma</code>). A <code>p (p - 1) / 2</code> by <code>p (p - 1) / 2</code> numeric matrix; rows and columns ordered by <code><a href="https://rdrr.io/r/utils/combn.html" class="external-link">utils::combn()</a></code> over the column pairs and labelled <code>"&lt;var_i&gt;-&lt;var_j&gt;"</code>. Populated for <code>se = "sandwich"</code> on the polychoric/tetrachoric and Pearson paths; <code>NULL</code> otherwise, including under <code>cor_method = "fiml"</code>, whose meat is the saturated FIML asymptotic covariance and is not returned.</p></dd>
@@ -515,7 +518,9 @@ plus group factors (bifactor simple structure).</p></li>
 (controlled by <code>k</code> and <code>p_type</code>) to form a target that is then fitted obliquely. It is
 the common, inexpensive oblique default.</p></li>
 <li><p><strong>oblimin</strong> is a flexible oblique family controlled by <code>gam</code> (default 0); a good
-general-purpose criterion.</p></li>
+general-purpose criterion. <code>gam = 0</code> (quartimin) is the recommended setting: larger
+values increasingly reward correlated factors and can drive the solution toward
+factor collapse, so inspect <code>Phi</code> before interpreting a fit with <code>gam &gt; 0</code>.</p></li>
 <li><p><strong>quartimin</strong> is oblimin pinned at <code>gam = 0</code>; a robust default oblique criterion.</p></li>
 <li><p><strong>simplimax</strong> drives the <code>k</code> smallest loadings toward zero. Its criterion is only
 piecewise smooth, so it is the most prone to local minima and relies on several
@@ -586,8 +591,10 @@ reported. Use those, or <code>se = "np-boot"</code>, when the unrotated loadings
 the quantity of interest. The detection covers the Pearson and polychoric paths; the
 two-stage <code>cor_method = "fiml"</code> sandwich carries no such diagnostic, so a weakly
 determined orientation is not flagged there. A Heywood case (a uniqueness at its lower
-boundary) is separate: the Wald approximation fails there for every parameter, so no
-analytic standard error is reported at all.</p></li>
+boundary) is separate: the Wald approximation fails there for every parameter, so
+neither analytic method reports a standard error at all – the whole <code>SE</code>/<code>CI</code> block is
+<code>NA</code> with an <code>efa_se_unreliable</code> warning. The <code>"sandwich"</code> scaled chi-square is not a
+Wald quantity and is still reported, so the fit indices are unaffected.</p></li>
 <li><p><strong>"sandwich"</strong> returns robust (Godambe sandwich) standard errors from raw data,
 combining the estimator weight with an asymptotic-distribution-free covariance of the
 correlations, so it stays valid under non-normality and weight misspecification

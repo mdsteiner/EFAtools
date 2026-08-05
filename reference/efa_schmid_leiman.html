@@ -113,8 +113,7 @@ into <code>x</code>.</p></dd>
 <dd><p>character. One of "PAF", "ML", or "ULS" to use
 principal axis factoring, maximum likelihood, or unweighted least squares,
 respectively, used in <code><a href="efa_fit.html">efa_fit()</a></code> to find the second-order loadings. "MINRES" is
-accepted as a synonym for "ULS" (the same estimator). The value is matched
-case-insensitively.</p></dd>
+accepted as a synonym for "ULS" (the same estimator).</p></dd>
 
 
 <dt id="arg-g-name">g_name<a class="anchor" aria-label="anchor" href="#arg-g-name"></a></dt>
@@ -130,7 +129,9 @@ second-order <code><a href="efa_fit.html">efa_fit()</a></code> fit, including th
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Arguments to be passed to <code><a href="efa_fit.html">efa_fit()</a></code>. The estimation tuning knobs are not passed
-here; they live in <code>estimate_control</code>.</p></dd>
+here; they live in <code>estimate_control</code>, and the standard-error arguments (<code>se</code>, <code>b_boot</code>,
+<code>ci</code>, <code>seed</code>) are not accepted because the second-order fit is an internal step run against
+a placeholder sample size and only its loadings are kept.</p></dd>
 
 </dl></div>
     <div class="section level2">

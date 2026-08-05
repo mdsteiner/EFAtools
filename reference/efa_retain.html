@@ -106,8 +106,8 @@ data.</p></dd>
 <dd><p>character. A vector with the factor retention methods to
 perform. Possible inputs are: <code>"CD"</code>, <code>"EKC"</code>, <code>"HULL"</code>,
 <code>"KGC"</code>, <code>"MAP"</code>, <code>"NEST"</code>,<code>"PARALLEL"</code>, <code>"SCREE"</code>, and <code>"SMT"</code>
-(see details). The values are matched case-insensitively. By default, a subset
-of often used, well-performing methods are performed.</p></dd>
+(see details). By default, a subset of often used, well-performing methods
+are performed.</p></dd>
 
 
 <dt id="arg-suitability">suitability<a class="anchor" aria-label="anchor" href="#arg-suitability"></a></dt>
@@ -164,8 +164,10 @@ Default is .30.</p></dd>
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Further arguments passed to <code><a href="efa_fit.html">efa_fit()</a></code> in
 <code><a href="efa_parallel.html">efa_parallel()</a></code> (also within <code><a href="efa_hull.html">efa_hull()</a></code>), <code><a href="efa_kgc.html">efa_kgc()</a></code>, <code><a href="efa_scree.html">efa_scree()</a></code>, and <code><a href="efa_nest.html">efa_nest()</a></code>.
-The estimation tuning knobs are not passed here; they live in <code>estimate_control</code>. Note that
-the arguments listed after <code>...</code> must be given by their full name (R matches an abbreviated
+The estimation tuning knobs are not passed here; they live in <code>estimate_control</code>, and the
+standard-error arguments (<code>se</code>, <code>b_boot</code>, <code>ci</code>, <code>seed</code>) are not accepted because the
+criterion fits are internal steps whose standard errors are not reported. Note
+that the arguments listed after <code>...</code> must be given by their full name (R matches an abbreviated
 name only against the arguments before <code>...</code>), so that a tuning knob such as <code>max_iter</code> cannot
 be mistaken for <code>max_iter_CD</code>.</p></dd>
 
@@ -187,8 +189,7 @@ suggested by <code><a href="efa_parallel.html">efa_parallel()</a></code> plus on
 <code><a href="efa_kgc.html">efa_kgc()</a></code>, <code><a href="efa_scree.html">efa_scree()</a></code>, <code><a href="efa_parallel.html">efa_parallel()</a></code>, and <code><a href="efa_nest.html">efa_nest()</a></code>. The
 estimator to use. One of  <code>"PAF"</code>, <code>"ULS"</code>, or  <code>"ML"</code>,
 for principal axis factoring, unweighted least squares, and maximum
-likelihood, respectively. The value is matched case-insensitively. In
-<code><a href="efa_kgc.html">efa_kgc()</a></code>, <code><a href="efa_scree.html">efa_scree()</a></code>, and <code><a href="efa_parallel.html">efa_parallel()</a></code> it only
+likelihood, respectively. In <code><a href="efa_kgc.html">efa_kgc()</a></code>, <code><a href="efa_scree.html">efa_scree()</a></code>, and <code><a href="efa_parallel.html">efa_parallel()</a></code> it only
 takes effect when the respective <code>eigen_type</code> includes <code>"EFA"</code>.</p></dd>
 
 

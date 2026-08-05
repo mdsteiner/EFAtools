@@ -76,7 +76,10 @@ gradient-projection optimizer along the oblique (column-normalized) manifold.</p
 
 
 <dt id="arg-gam">gam<a class="anchor" aria-label="anchor" href="#arg-gam"></a></dt>
-<dd><p>Numeric scalar. The oblimin parameter; <code>gam = 0</code> is the quartimin criterion.</p></dd>
+<dd><p>Numeric scalar. The oblimin parameter; <code>gam = 0</code> is the quartimin criterion
+and the recommended setting. Larger values increasingly reward correlated factors and
+can drive the solution toward factor collapse, where the rotation may also fail to
+converge; inspect <code>Phi</code> before interpreting a fit with <code>gam &gt; 0</code>.</p></dd>
 
 
 <dt id="arg-eps">eps<a class="anchor" aria-label="anchor" href="#arg-eps"></a></dt>

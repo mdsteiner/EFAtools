@@ -114,6 +114,11 @@ candidate factor count. It is therefore a good choice when the raw data
 are at hand and the runtime is acceptable, and a poor one for a quick
 look at a correlation matrix.
 
+The comparison data are obtained by simulation, so the suggested number
+of factors varies slightly from run to run. Call
+[`set.seed()`](https://rdrr.io/r/base/Random.html) beforehand to make a
+run reproducible.
+
 Note that if the data contains missing values, these will be removed for
 the comparison data procedure using
 [`stats::na.omit()`](https://rdrr.io/r/stats/na.fail.html). If missing

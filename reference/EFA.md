@@ -239,8 +239,9 @@ EFA(
 - b_boot:
 
   numeric. The number of bootstrap samples to draw. Default is 1000.
-  Under `cor_method = "fiml"` each bootstrap sample re-runs the EM
-  moment estimation, so a smaller value may be advisable.
+  Must be at least 2, the smallest number from which a standard error is
+  defined. Under `cor_method = "fiml"` each bootstrap sample re-runs the
+  EM moment estimation, so a smaller value may be advisable.
 
 - ci:
 

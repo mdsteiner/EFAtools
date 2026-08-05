@@ -108,8 +108,7 @@ is used as the upper bound <em>J</em> of factors to extract in the Hull method.<
 <dt id="arg-estimator">estimator<a class="anchor" aria-label="anchor" href="#arg-estimator"></a></dt>
 <dd><p>character. The estimator to use. One of  <code>"PAF"</code>,
 <code>"ULS"</code>, or  <code>"ML"</code>, for principal axis factoring, unweighted
-least squares, and maximum likelihood, respectively. The value is matched
-case-insensitively.</p></dd>
+least squares, and maximum likelihood, respectively.</p></dd>
 
 
 <dt id="arg-gof">gof<a class="anchor" aria-label="anchor" href="#arg-gof"></a></dt>
@@ -179,7 +178,9 @@ RMSEA, CAF) do not depend on.</p></dd>
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Further arguments passed to <code><a href="efa_fit.html">efa_fit()</a></code>, also in
 <code><a href="efa_parallel.html">efa_parallel()</a></code>. The estimation tuning knobs are not passed here; they live in
-<code>estimate_control</code>, and a rotation setting is not accepted because the fits are unrotated.</p></dd>
+<code>estimate_control</code>, a rotation setting is not accepted because the fits are unrotated, and
+neither are the standard-error arguments (<code>se</code>, <code>b_boot</code>, <code>ci</code>, <code>seed</code>), because the fits
+are internal steps whose standard errors are not reported.</p></dd>
 
 </dl></div>
     <div class="section level2">

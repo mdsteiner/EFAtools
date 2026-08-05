@@ -156,9 +156,9 @@ Psychological Methods, 21, 137-150.
 
 - cormat:
 
-  matrix. A correlation matrix used when `variance = "correlation"`. If
-  `NULL`, it is taken from the input object or reconstructed from
-  `pattern` and `Phi` where possible.
+  matrix or data.frame. A correlation matrix used when
+  `variance = "correlation"`. If `NULL`, it is taken from the input
+  object or reconstructed from `pattern` and `Phi` where possible.
 
 - pattern:
 

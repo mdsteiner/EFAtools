@@ -185,13 +185,15 @@ of at least 0, where <code>0</code> runs the rotation from its warm start only; 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Additional arguments forwarded to the rotation engine. Only the names
 a rotation engine can consume are accepted: <code>maxit</code> (the maximum number of
-engine iterations), and the criterion parameters <code>gam</code> (oblimin) and <code>delta</code>
-(geomin); anything else is rejected as a misspelling. They are stored in
-<code>extra_args</code> and passed on to the rotation engine when the control is used to
-fit a model; an extra a given fit's rotation does not consume is ignored by
-that fit, so one control can serve fits with different rotations. An
-estimation knob (which belongs in <code>estimate_control()</code>) or one of the former
-spellings <code>P_type</code> and <code>randomStarts</code> is likewise rejected here, because the
+engine iterations), and the criterion parameters <code>gam</code> (oblimin; <code>gam = 0</code> is the
+recommended default, and larger values increasingly reward correlated factors and
+can drive the solution toward factor collapse, so inspect <code>Phi</code> before interpreting
+a fit with <code>gam &gt; 0</code>) and <code>delta</code> (geomin); anything else is rejected as a
+misspelling. They are stored in <code>extra_args</code> and passed on to the rotation engine
+when the control is used to fit a model; an extra a given fit's rotation does not
+consume is ignored by that fit, so one control can serve fits with different
+rotations. An estimation knob (which belongs in <code>estimate_control()</code>) or one of the
+former spellings <code>P_type</code> and <code>randomStarts</code> is likewise rejected here, because the
 fit would silently drop it.</p></dd>
 
 </dl></div>

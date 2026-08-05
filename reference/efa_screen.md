@@ -296,12 +296,16 @@ The diagnostics are computed from the analysis correlation matrix \\R\\:
   algorithm (Rousseeuw & Van Driessen, 1999), using a subset covering a
   proportion `mcd_alpha` of the observations; an observation whose
   squared robust distance exceeds `qchisq(outlier_cutoff, p)` is
-  flagged. The robust covariance is undefined with too few complete
-  cases (\\n \le 2p\\), and also when a whole covering subset lies
+  flagged. The search runs on columns divided by a robust scale and the
+  estimate is returned to the supplied units, so the diagnostic does not
+  depend on how the variables happen to be measured. The robust
+  covariance is undefined with too few complete cases (\\n \le 2p\\),
+  when the variables are so nearly linearly dependent that no covering
+  subset has a usable covariance, and when a whole covering subset lies
   exactly on a lower-dimensional hyperplane (an *exact fit*, common with
   coarse discrete items on which many respondents answer an item pair
-  identically). In both cases the classical Mahalanobis distance is used
-  instead, with a warning naming which of the two applies; those
+  identically). In all three cases the classical Mahalanobis distance is
+  used instead, with a warning naming which of the three applies; those
   distances are computed from a covariance the outliers themselves
   inflate, so the diagnostic is no longer high-breakdown and tends to
   under-flag. If even the classical covariance is singular the

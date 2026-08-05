@@ -128,13 +128,12 @@ Heywood-case rate of the fit.</p>
 RMSEA power) or <code>"simulation"</code> (Monte-Carlo hit-rate and structure recovery).
 <code>type</code>, <code>eps0</code>, <code>eps1</code>, <code>df</code>, <code>alpha</code>, <code>power</code>, and <code>group</code> apply to RMSEA mode only;
 the arguments marked <em>Simulation mode</em> below apply to the other; <code>N</code>, <code>p</code>, and <code>k</code> are
-used in both. The value is matched case-insensitively.</p></dd>
+used in both.</p></dd>
 
 
 <dt id="arg-type">type<a class="anchor" aria-label="anchor" href="#arg-type"></a></dt>
 <dd><p>character. The RMSEA test: <code>"close"</code> (test of close fit) or
-<code>"notclose"</code> (test of not-close fit). The value is matched case-insensitively.
-See <em>Details</em>.</p></dd>
+<code>"notclose"</code> (test of not-close fit). See <em>Details</em>.</p></dd>
 
 
 <dt id="arg-eps-">eps0<a class="anchor" aria-label="anchor" href="#arg-eps-"></a></dt>
@@ -223,15 +222,14 @@ analyse. Default is <code>500</code>.</p></dd>
 <dd><p>character. Simulation mode. The factor-retention criteria to
 evaluate the hit-rate for, any of <code>"CD"</code>, <code>"EKC"</code>, <code>"HULL"</code>, <code>"KGC"</code>, <code>"MAP"</code>,
 <code>"NEST"</code>, <code>"PARALLEL"</code>, and <code>"SMT"</code> (see <code><a href="efa_retain.html">efa_retain()</a></code>). Default is
-<code>c("EKC", "MAP")</code>. The values are matched case-insensitively. Criteria that
-simulate internally (<code>"CD"</code>, <code>"HULL"</code>, <code>"NEST"</code>, <code>"PARALLEL"</code>) make each run
-substantially slower.</p></dd>
+<code>c("EKC", "MAP")</code>. Criteria that simulate internally (<code>"CD"</code>, <code>"HULL"</code>,
+<code>"NEST"</code>, <code>"PARALLEL"</code>) make each run substantially slower.</p></dd>
 
 
 <dt id="arg-estimator">estimator<a class="anchor" aria-label="anchor" href="#arg-estimator"></a></dt>
 <dd><p>character. Simulation mode. The estimator (<code>"PAF"</code>, <code>"ML"</code>,
-or <code>"ULS"</code>) used for the recovery fit and the retention criteria; the value
-is matched case-insensitively. Default is <code>"PAF"</code>.</p></dd>
+or <code>"ULS"</code>) used for the recovery fit and the retention criteria. Default
+is <code>"PAF"</code>.</p></dd>
 
 
 <dt id="arg-rotation">rotation<a class="anchor" aria-label="anchor" href="#arg-rotation"></a></dt>

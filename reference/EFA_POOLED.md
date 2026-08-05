@@ -32,6 +32,8 @@ EFA_POOLED(
   list element is a data frame or matrix of raw data, or a correlation
   matrix. See argument `x` in
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md).
+  A `mids` object from mice must be converted first, with
+  `mice::complete(x, "all")`.
 
 - p:
 

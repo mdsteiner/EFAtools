@@ -181,8 +181,8 @@ efa_simulate(
   and polychoric correlations then both depart from the population;
   `"polychoric"` states that the polychoric match is required and
   therefore rejects non-normal marginals. Not available with
-  `marginals = "empirical"`. The value is matched case-insensitively.
-  Default is `NULL` (`"thresholds"` when `categories` is set).
+  `marginals = "empirical"`. Default is `NULL` (`"thresholds"` when
+  `categories` is set).
 
 - missing:
 

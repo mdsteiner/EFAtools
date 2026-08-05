@@ -53,9 +53,9 @@ efa_retain(
 
   character. A vector with the factor retention methods to perform.
   Possible inputs are: `"CD"`, `"EKC"`, `"HULL"`, `"KGC"`, `"MAP"`,
-  `"NEST"`,`"PARALLEL"`, `"SCREE"`, and `"SMT"` (see details). The
-  values are matched case-insensitively. By default, a subset of often
-  used, well-performing methods are performed.
+  `"NEST"`,`"PARALLEL"`, `"SCREE"`, and `"SMT"` (see details). By
+  default, a subset of often used, well-performing methods are
+  performed.
 
 - suitability:
 
@@ -126,10 +126,12 @@ efa_retain(
   and
   [`efa_nest()`](https://mdsteiner.github.io/EFAtools/reference/efa_nest.md).
   The estimation tuning knobs are not passed here; they live in
-  `estimate_control`. Note that the arguments listed after `...` must be
-  given by their full name (R matches an abbreviated name only against
-  the arguments before `...`), so that a tuning knob such as `max_iter`
-  cannot be mistaken for `max_iter_CD`.
+  `estimate_control`, and the standard-error arguments (`se`, `b_boot`,
+  `ci`, `seed`) are not accepted because the criterion fits are internal
+  steps whose standard errors are not reported. Note that the arguments
+  listed after `...` must be given by their full name (R matches an
+  abbreviated name only against the arguments before `...`), so that a
+  tuning knob such as `max_iter` cannot be mistaken for `max_iter_CD`.
 
 - max_iter_CD:
 
@@ -160,7 +162,7 @@ efa_retain(
   [`efa_nest()`](https://mdsteiner.github.io/EFAtools/reference/efa_nest.md).
   The estimator to use. One of `"PAF"`, `"ULS"`, or `"ML"`, for
   principal axis factoring, unweighted least squares, and maximum
-  likelihood, respectively. The value is matched case-insensitively. In
+  likelihood, respectively. In
   [`efa_kgc()`](https://mdsteiner.github.io/EFAtools/reference/efa_kgc.md),
   [`efa_scree()`](https://mdsteiner.github.io/EFAtools/reference/efa_scree.md),
   and

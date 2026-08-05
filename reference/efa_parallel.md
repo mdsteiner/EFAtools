@@ -133,7 +133,10 @@ factor analysis. Psychometrika, 30(2), 179–185. doi: 10.1007/BF02289447
   For example, `estimator`, to change the estimator (default is "PAF").
   PAF is more robust, but it will take longer compared to the other
   estimators available ("ML" and "ULS"). The estimation tuning knobs are
-  not passed here; they live in `estimate_control`.
+  not passed here; they live in `estimate_control`, and the
+  standard-error arguments (`se`, `b_boot`, `ci`, `seed`) are not
+  accepted because the fits are internal steps that keep only their
+  eigenvalues.
 
 ## Value
 

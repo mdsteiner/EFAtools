@@ -63,7 +63,7 @@ Behavioral Research, 46(2), 340-364.
 
   character. The estimator to use. One of `"PAF"`, `"ULS"`, or `"ML"`,
   for principal axis factoring, unweighted least squares, and maximum
-  likelihood, respectively. The value is matched case-insensitively.
+  likelihood, respectively.
 
 - gof:
 
@@ -148,8 +148,10 @@ Behavioral Research, 46(2), 340-364.
   also in
   [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md).
   The estimation tuning knobs are not passed here; they live in
-  `estimate_control`, and a rotation setting is not accepted because the
-  fits are unrotated.
+  `estimate_control`, a rotation setting is not accepted because the
+  fits are unrotated, and neither are the standard-error arguments
+  (`se`, `b_boot`, `ci`, `seed`), because the fits are internal steps
+  whose standard errors are not reported.
 
 ## Value
 

@@ -155,6 +155,9 @@ finite population of <code>N_pop</code> cases is generated and <code>N_samples</
 from it at every candidate factor count. It is therefore a good choice when the
 raw data are at hand and the runtime is acceptable, and a poor one for a quick
 look at a correlation matrix.</p>
+<p>The comparison data are obtained by simulation, so the suggested number of factors
+varies slightly from run to run. Call <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> beforehand to make a run
+reproducible.</p>
 <p>Note that if the data contains missing values, these will be removed for the
 comparison data procedure using <code><a href="https://rdrr.io/r/stats/na.fail.html" class="external-link">stats::na.omit()</a></code>. If
 missing data should be treated differently, e.g., by imputation, do this outside

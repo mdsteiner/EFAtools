@@ -31,7 +31,10 @@ manifold.
 - gam:
 
   Numeric scalar. The oblimin parameter; `gam = 0` is the quartimin
-  criterion.
+  criterion and the recommended setting. Larger values increasingly
+  reward correlated factors and can drive the solution toward factor
+  collapse, where the rotation may also fail to converge; inspect `Phi`
+  before interpreting a fit with `gam > 0`.
 
 - eps:
 

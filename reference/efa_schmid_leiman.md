@@ -66,8 +66,7 @@ and SAS. Behavior Research Methods, 37 , 48–58. doi:10.3758/BF03206397
   respectively, used in
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
   to find the second-order loadings. "MINRES" is accepted as a synonym
-  for "ULS" (the same estimator). The value is matched
-  case-insensitively.
+  for "ULS" (the same estimator).
 
 - g_name:
 
@@ -90,7 +89,10 @@ and SAS. Behavior Research Methods, 37 , 48–58. doi:10.3758/BF03206397
   Arguments to be passed to
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md).
   The estimation tuning knobs are not passed here; they live in
-  `estimate_control`.
+  `estimate_control`, and the standard-error arguments (`se`, `b_boot`,
+  `ci`, `seed`) are not accepted because the second-order fit is an
+  internal step run against a placeholder sample size and only its
+  loadings are kept.
 
 ## Value
 

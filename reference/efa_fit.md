@@ -158,7 +158,7 @@ Multivariate Software.
   squares; "MINRES" is an accepted alias returning identical results),
   or "DWLS" (diagonally weighted least squares, for ordinal data). See
   the *Estimators* section in Details for their properties and data
-  requirements. The value is matched case-insensitively.
+  requirements.
 
 - rotation:
 
@@ -239,8 +239,9 @@ Multivariate Software.
 - b_boot:
 
   numeric. The number of bootstrap samples to draw. Default is 1000.
-  Under `cor_method = "fiml"` each bootstrap sample re-runs the EM
-  moment estimation, so a smaller value may be advisable.
+  Must be at least 2, the smallest number from which a standard error is
+  defined. Under `cor_method = "fiml"` each bootstrap sample re-runs the
+  EM moment estimation, so a smaller value may be advisable.
 
 - ci:
 
@@ -266,12 +267,13 @@ Multivariate Software.
   arguments the selected `rotation` consumes are accepted: `maxit` (the
   maximum number of engine iterations) for the GPArotation-style
   rotations, plus the selected criterion's parameter (`gam` for
-  "oblimin", `delta` for "geominT" and "geominQ"). Anything else – a
-  misspelled name, another criterion's parameter, or any extra with
-  "varimax", "promax", or "none", which consume no extras – is an error
-  rather than a setting that is silently ignored. The accepted arguments
-  are merged with, and take precedence over, the extra arguments stored
-  in
+  "oblimin", where `gam = 0` is the recommended default and larger
+  values can drive the solution toward factor collapse; `delta` for
+  "geominT" and "geominQ"). Anything else – a misspelled name, another
+  criterion's parameter, or any extra with "varimax", "promax", or
+  "none", which consume no extras – is an error rather than a setting
+  that is silently ignored. The accepted arguments are merged with, and
+  take precedence over, the extra arguments stored in
   [`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md).
   An estimation or rotation tuning knob (such as `type`, `max_iter`, or
   `k`) is likewise *not* accepted here: it belongs to
@@ -465,8 +467,10 @@ following:
 
   The full unrotated loading covariance matrix the marginal
   `SE$unrot_loadings` were derived from: a `p * n_factors` by
-  `p * n_factors` numeric matrix in column-major `vec(Lambda)` order.
-  Populated for `se = "information"` (expected-information block) and
+  `p * n_factors` numeric matrix in column-major `vec(Lambda)` order,
+  with rows and columns labelled `"<variable>_<factor>"` so that
+  ordering can be read off the object. Populated for
+  `se = "information"` (expected-information block) and
   `se = "sandwich"` (robust V_AA), even when a rotation is applied (the
   persisted block is always the unrotated one); NA-filled if the
   analytic covariance is unreliable (a Heywood case or a singular
@@ -639,7 +643,10 @@ Oblique rotations:
   then fitted obliquely. It is the common, inexpensive oblique default.
 
 - **oblimin** is a flexible oblique family controlled by `gam` (default
-  0); a good general-purpose criterion.
+  0); a good general-purpose criterion. `gam = 0` (quartimin) is the
+  recommended setting: larger values increasingly reward correlated
+  factors and can drive the solution toward factor collapse, so inspect
+  `Phi` before interpreting a fit with `gam > 0`.
 
 - **quartimin** is oblimin pinned at `gam = 0`; a robust default oblique
   criterion.
@@ -737,8 +744,11 @@ coefficients; it reports no uniqueness or communality standard errors
   paths; the two-stage `cor_method = "fiml"` sandwich carries no such
   diagnostic, so a weakly determined orientation is not flagged there. A
   Heywood case (a uniqueness at its lower boundary) is separate: the
-  Wald approximation fails there for every parameter, so no analytic
-  standard error is reported at all.
+  Wald approximation fails there for every parameter, so neither
+  analytic method reports a standard error at all – the whole `SE`/`CI`
+  block is `NA` with an `efa_se_unreliable` warning. The `"sandwich"`
+  scaled chi-square is not a Wald quantity and is still reported, so the
+  fit indices are unaffected.
 
 - **"sandwich"** returns robust (Godambe sandwich) standard errors from
   raw data, combining the estimator weight with an

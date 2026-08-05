@@ -76,7 +76,8 @@ and selected fit quantities across imputations.</p>
 <dl><dt id="arg-data-list">data_list<a class="anchor" aria-label="anchor" href="#arg-data-list"></a></dt>
 <dd><p>A list of length \(m\), where \(m\) is the number of
 imputations. Each list element is a data frame or matrix of raw data, or a
-correlation matrix. See argument <code>x</code> in <code><a href="efa_fit.html">efa_fit()</a></code>.</p></dd>
+correlation matrix. See argument <code>x</code> in <code><a href="efa_fit.html">efa_fit()</a></code>. A <code>mids</code> object from
+<span class="pkg">mice</span> must be converted first, with <code>mice::complete(x, "all")</code>.</p></dd>
 
 
 <dt id="arg-p">p<a class="anchor" aria-label="anchor" href="#arg-p"></a></dt>

@@ -190,7 +190,15 @@ closes with a set of recommendations.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Outliers</span> ────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> 240 of 500 observations were flagged as multivariate outliers (robust</span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> A robust (MCD) covariance could not be computed; classical Mahalanobis</span></span>
+<span><span class="co">#&gt; distances were used.</span></span>
+<span><span class="co">#&gt; At least half the complete cases lie exactly on a lower-dimensional hyperplane</span></span>
+<span><span class="co">#&gt; (an "exact fit"). This is common with coarse discrete items, where many</span></span>
+<span><span class="co">#&gt; respondents give identical answers on an item pair; it does not mean the data</span></span>
+<span><span class="co">#&gt; are collinear at the correlation level.</span></span>
+<span><span class="co">#&gt; These distances come from a covariance the outliers themselves inflate, so the</span></span>
+<span><span class="co">#&gt; diagnostic is no longer high-breakdown and tends to under-flag.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> 60 of 500 observations were flagged as multivariate outliers (Mahalanobis</span></span>
 <span><span class="co">#&gt; distance &gt; 6.85).</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Recommendations</span> ─────────────────────────────────────────────────────────────</span></span>
@@ -207,10 +215,8 @@ closes with a set of recommendations.</p>
 <span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> 3 variables have a sparse response category (&lt; 5 responses): ethR_3, ethR_4,</span></span>
 <span><span class="co">#&gt;   and socR_1; a low-frequency category can destabilise polychoric estimates -</span></span>
 <span><span class="co">#&gt;   consider collapsing it into an adjacent category.</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> 240 of 500 observations (48%) exceed the outlier cutoff, far above the 2.5%</span></span>
-<span><span class="co">#&gt;   expected under multivariate normality; this usually means the data are not</span></span>
-<span><span class="co">#&gt;   elliptically distributed (subgroups or a mixture) rather than that this many</span></span>
-<span><span class="co">#&gt;   cases are contaminated.</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> 60 observations were flagged as potential multivariate outliers; inspect them</span></span>
+<span><span class="co">#&gt;   (see `$outliers$flagged`) before down-weighting or excluding.</span></span></code></pre></div>
 <p>The overall KMO is meritorious and Bartlett’s test is clearly
 significant, so the data are factorable. The near-zero determinant flags
 some multicollinearity, which is expected for a scale with strongly
@@ -656,6 +662,16 @@ ULS and an oblimin rotation:</p>
 <span><span class="co">#&gt; ECVI: 2.02</span></span>
 <span><span class="co">#&gt; CAF: .48</span></span>
 <span><span class="co">#&gt; SRMR: .03</span></span></code></pre></div>
+<p>Note that <code>estimator = "uls"</code> was written in lowercase
+although the canonical spelling is <code>"ULS"</code>. This holds
+throughout the <code>efa_*</code> interface: wherever an argument takes
+a fixed set of values, capitalization does not matter, while the result
+stores and prints the canonical spelling. For an argument that takes a
+single value an unambiguous abbreviation is enough as well, and a value
+matching nothing raises an error naming the argument and listing the
+choices. Arguments that take several values at once, such as the
+analytic choices <code><a href="../reference/efa_average.html">efa_average()</a></code> averages over, need the full
+spelling of each value.</p>
 </div>
 <div class="section level2">
 <h2 id="comparing-solutions-with-efa_compare">Comparing Solutions with <code>efa_compare()</code><a class="anchor" aria-label="anchor" href="#comparing-solutions-with-efa_compare"></a>

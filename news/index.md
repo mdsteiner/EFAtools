@@ -74,6 +74,27 @@
   when they are wider than the console, as the congruence table already
   was.
 
+### Data Screening
+
+- The multivariate-outlier diagnostic of
+  [`efa_screen()`](https://mdsteiner.github.io/EFAtools/reference/efa_screen.md)
+  now reports an exact fit as soon as its search reaches a covering
+  subset whose covariance is singular. Such a subset minimises the
+  minimum-covariance-determinant criterion, so no other subset can
+  improve on it; it was previously discarded and a strictly worse,
+  non-degenerate subset returned in its place under the label
+  `method = "mcd"`.
+
+- [`efa_screen()`](https://mdsteiner.github.io/EFAtools/reference/efa_screen.md)
+  now searches for the robust covariance on robustly rescaled columns
+  and returns the estimate in the units it was given, so the outlier
+  diagnostic no longer depends on how the variables happen to be
+  measured. Previously a change of measurement unit on a single variable
+  (e.g., an income column beside a Likert item) could be enough to drop
+  the robust estimate for classical Mahalanobis distances, which
+  under-flags, because they are computed from a covariance the outliers
+  themselves inflate.
+
 ### Data Simulation
 
 - [`efa_simulate()`](https://mdsteiner.github.io/EFAtools/reference/efa_simulate.md)
@@ -136,6 +157,40 @@
   many suggestions how many criteria made, the range they span, and the
   most common number of factors.
 
+- The factor retention criteria and
+  [`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)
+  now reject `seed`, `se`, `b_boot`, and `ci` in their `...` and point
+  at [`set.seed()`](https://rdrr.io/r/base/Random.html). These are
+  arguments of
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md),
+  so they were previously accepted and forwarded to the criteria’s
+  internal fits, where nothing could come of them.
+
+### Input Validation and Correlation Handling
+
+- Every argument of the `efa_*` interface that takes a fixed set of
+  values is now matched without regard to capitalization, and the
+  canonical spelling is what the result stores and prints. For an
+  argument that takes a single value, an unambiguous abbreviation is
+  accepted as well, and an unmatched value raises an error that names
+  the argument, lists the choices, and carries the condition class
+  `efa_bad_choice` (`efa_control_input` for the tuning knobs of
+  [`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
+  and
+  [`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)).
+
+- A correlation matrix supplied as a data frame is now recognised as one
+  and analysed.
+
+- Passing `NULL` to a choice-valued argument now selects the documented
+  default, as leaving the argument out does. It previously selected the
+  first admissible value.
+
+- When a correlation matrix cannot be computed from raw data, the error
+  now names the columns responsible and separates non-numeric, infinite,
+  and constant ones, pointing at `cor_method = "poly"` for ordinal items
+  stored as factors or character strings.
+
 ### Missing Data and Multiple Imputation
 
 - The `rmsr_upper` argument of
@@ -166,6 +221,14 @@
   `settings` slots of the returned object, including how to form the
   `lavaan.mi`-style reference CFI from the pooled chi-squares in
   `mi_diagnostics`.
+
+- A `mids` object from `mice` passed to
+  [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
+  is now rejected with an error that names it and gives the conversion,
+  `mice::complete(x, "all")`, and that carries the condition class
+  `efa_pooled_mids_input`. A `mids` object is itself a list, so it
+  previously passed the argument checks and failed inside the
+  per-imputation one, with a message naming an internal loop variable.
 
 ### Ordinal Correlations
 
@@ -222,8 +285,21 @@
 
 - A `factor_map` for a bifactor loading matrix is now checked against
   the dimensions of the group-factor loadings, as it already was for
-  every other input. A map with too few rows was recycled against the
-  loadings and returned coefficients above 1 instead of an error.
+  every other input, and the error carries the condition class
+  `efa_reliability_map_dim`. A map with too few rows was recycled
+  against the loadings and returned coefficients above 1 instead of an
+  error.
+
+- The conditions
+  [`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md)
+  raises about its item-to-factor map now name `factor_map`. They
+  previously named `factor_corres`, which is the corresponding argument
+  of
+  [`OMEGA()`](https://mdsteiner.github.io/EFAtools/reference/OMEGA.md)
+  and does not exist on
+  [`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md).
+  [`OMEGA()`](https://mdsteiner.github.io/EFAtools/reference/OMEGA.md)
+  continues to name `factor_corres`.
 
 - The
   [`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md)
@@ -231,6 +307,51 @@
   equals total omega for each factor, which follows from the absence of
   a general factor. The two columns previously printed identical values
   with no explanation.
+
+- [`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md),
+  and the superseded
+  [`SL()`](https://mdsteiner.github.io/EFAtools/reference/SL.md) with
+  it, now reject `se`, `b_boot`, `ci`, and `seed` in their `...`. These
+  are arguments of
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md),
+  so they were previously forwarded to the second-order fit, which is an
+  internal step run against a placeholder sample size and reports none
+  of them.
+
+### Rotation
+
+- Every oblique rotation fitted by
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  now warns when two factors correlate above .9 in absolute value, which
+  usually indicates that more factors were extracted than the data
+  support. The solution is still returned; only its interpretation is
+  flagged.
+
+### Standard Errors
+
+- `efa_fit(se = "sandwich")` now withholds its standard errors and
+  confidence intervals at a Heywood case, as `se = "information"`
+  already did.
+
+- The printed output of a bootstrap fit now reports how many replicates
+  were actually usable whenever fewer survived than were requested
+  (`20 bootstrap samples (4 usable)`), for a pooled
+  [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
+  fit as well as a single one.
+
+- `b_boot` must now be at least 2. At `b_boot = 1` every bootstrap
+  standard error is the standard deviation of a single value and came
+  back `NA` with no message of any kind, and the confidence bounds
+  collapsed onto that one replicate.
+
+- A bootstrap that leaves fewer than two usable replicates now warns
+  (`efa_se_unreliable`).
+
+- The analytic `SE$Phi` now carries the factor names, the one component
+  of the analytic standard-error list that shipped without them, and
+  `vcov_unrot_loadings` labels its rows and columns
+  `"<variable>_<factor>"` so its documented column-major ordering can be
+  read off the object.
 
 ## EFAtools 1.0.0
 

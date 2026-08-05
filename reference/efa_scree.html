@@ -138,7 +138,9 @@ apply.</p></dd>
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Additional arguments passed to <code><a href="efa_fit.html">efa_fit()</a></code>. For example,
 <code>estimator</code>, to change the estimator (PAF is default). The estimation tuning knobs are not
-passed here; they live in <code>estimate_control</code>.</p></dd>
+passed here; they live in <code>estimate_control</code>, and the standard-error arguments (<code>se</code>,
+<code>b_boot</code>, <code>ci</code>, <code>seed</code>) are not accepted because the fit is an internal step that keeps
+only its communalities.</p></dd>
 
 </dl></div>
     <div class="section level2">

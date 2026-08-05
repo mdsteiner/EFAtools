@@ -129,7 +129,8 @@ reference models are unrotated, so no rotation settings apply.</p></dd>
 <code>estimator</code>, to change the estimator (default is "PAF"). PAF is more
 robust, but it will take longer compared to the other estimators
 available ("ML" and "ULS"). The estimation tuning knobs are not passed here; they
-live in <code>estimate_control</code>.</p></dd>
+live in <code>estimate_control</code>, and the standard-error arguments (<code>se</code>, <code>b_boot</code>, <code>ci</code>,
+<code>seed</code>) are not accepted because the reference-model fits are internal steps.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -179,6 +180,9 @@ slowest criteria available here.</p>
 <p>The reference models are fitted without inequality constraints. A Heywood case in
 one of them leaves no unique variance to simulate the reference data from, so
 NEST aborts rather than continuing from an inadmissible reference.</p>
+<p>The reference eigenvalues are obtained from simulated data, so the suggested number
+of factors varies slightly from run to run. Call <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> beforehand to make a
+run reproducible.</p>
 <p>For details on the method, including simulation studies, see Achim (2017),
 Brandenburg and Papenberg (2024), and Caron (2025).</p>
 <p>The <code>efa_nest</code> function can also be called together with other factor
