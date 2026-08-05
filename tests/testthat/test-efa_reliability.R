@@ -163,8 +163,13 @@ test_that("a bifactor loading matrix validates and checks a supplied factor_map"
                  class = "efa_reliability_implausible_map")
   # A map that does not conform to the group loadings is an error, not coefficients
   # above 1 from a recycled map.
-  expect_error(efa_reliability(L, factor_map = map[1:3, , drop = FALSE]))
-  expect_error(efa_reliability(L, factor_map = cbind(map, 0)))
+  expect_error(efa_reliability(L, factor_map = map[1:3, , drop = FALSE]),
+               class = "efa_reliability_map_dim")
+  expect_error(efa_reliability(L, factor_map = cbind(map, 0)),
+               class = "efa_reliability_map_dim")
+  # a map of the right shape that is not a matrix is rejected by the same check
+  expect_error(efa_reliability(L, factor_map = as.data.frame(map)),
+               class = "efa_reliability_map_dim")
 })
 
 test_that("an oblique EFA is scored as a correlated-factors model (no general factor)", {

@@ -956,42 +956,44 @@ efa_fit <- function(x, n_factors, N = NA,
     )
   }
 
-  checkmate::assert_count(n_factors)
-  checkmate::assert_count(N, na.ok = TRUE)
-  checkmate::assert_count(max_iter, na.ok = TRUE)
-  checkmate::assert_choice(init_comm, c("smc", "mac", "unity", NA))
-  checkmate::assert_number(criterion, lower = 0, upper = 1, na.ok = TRUE)
-  if (!is.na(criterion) && criterion >= 1) {
-    cli::cli_abort(
-      c("{.arg criterion} must be smaller than 1.",
-        "x" = "You supplied {.arg criterion} = {criterion}.",
-        "i" = "Use a small positive convergence tolerance such as {.val 0.001}."),
-      class = "efa_criterion_too_large"
-    )
-  }
-  checkmate::assert_choice(criterion_type, c("max_individual", "sum", NA))
-  checkmate::assert_flag(abs_eigen, na.ok = TRUE)
-  checkmate::assert_number(k, na.ok = TRUE)
-  checkmate::assert_choice(varimax_type, c("svd", "kaiser", NA))
-  checkmate::assert_flag(normalize, na.ok = TRUE)
-  checkmate::assert_choice(p_type, c("unnorm", "norm", NA))
-  checkmate::assert_number(precision, lower = 0, upper = 1)
-  checkmate::assert_choice(order_type, c("eigen", "ss_factors", NA))
-  checkmate::assert_integerish(b_boot, len = 1, any.missing = FALSE)
-  # A bootstrap standard error is the dispersion across replicates, so two is the smallest number
-  # from which one is defined at all: at b_boot = 1 every SE is the sd() of a single value and comes
-  # back NA, and the percentile interval collapses onto that replicate.
-  if (b_boot < 2) {
-    cli::cli_abort(
-      c("{.arg b_boot} must be at least 2.",
-        "x" = "You supplied {.arg b_boot} = {b_boot}.",
-        "i" = "A bootstrap standard error is the spread across replicates and is undefined below
-               two of them. The default is {.val {1000}}."),
-      class = "efa_b_boot_too_small"
-    )
-  }
-  checkmate::assert_number(ci, lower = 0, upper = 1)
-  checkmate::assert_int(seed, null.ok = TRUE)
+  .assert_args({
+    checkmate::assert_count(n_factors)
+    checkmate::assert_count(N, na.ok = TRUE)
+    checkmate::assert_count(max_iter, na.ok = TRUE)
+    checkmate::assert_choice(init_comm, c("smc", "mac", "unity", NA))
+    checkmate::assert_number(criterion, lower = 0, upper = 1, na.ok = TRUE)
+    if (!is.na(criterion) && criterion >= 1) {
+      cli::cli_abort(
+        c("{.arg criterion} must be smaller than 1.",
+          "x" = "You supplied {.arg criterion} = {criterion}.",
+          "i" = "Use a small positive convergence tolerance such as {.val 0.001}."),
+        class = "efa_criterion_too_large"
+      )
+    }
+    checkmate::assert_choice(criterion_type, c("max_individual", "sum", NA))
+    checkmate::assert_flag(abs_eigen, na.ok = TRUE)
+    checkmate::assert_number(k, na.ok = TRUE)
+    checkmate::assert_choice(varimax_type, c("svd", "kaiser", NA))
+    checkmate::assert_flag(normalize, na.ok = TRUE)
+    checkmate::assert_choice(p_type, c("unnorm", "norm", NA))
+    checkmate::assert_number(precision, lower = 0, upper = 1)
+    checkmate::assert_choice(order_type, c("eigen", "ss_factors", NA))
+    checkmate::assert_integerish(b_boot, len = 1, any.missing = FALSE)
+    # A bootstrap standard error is the dispersion across replicates, so two is the smallest number
+    # from which one is defined at all: at b_boot = 1 every SE is the sd() of a single value and comes
+    # back NA, and the percentile interval collapses onto that replicate.
+    if (b_boot < 2) {
+      cli::cli_abort(
+        c("{.arg b_boot} must be at least 2.",
+          "x" = "You supplied {.arg b_boot} = {b_boot}.",
+          "i" = "A bootstrap standard error is the spread across replicates and is undefined below
+                 two of them. The default is {.val {1000}}."),
+        class = "efa_b_boot_too_small"
+      )
+    }
+    checkmate::assert_number(ci, lower = 0, upper = 1)
+    checkmate::assert_int(seed, null.ok = TRUE)
+  })
 
   # The common-factor model needs at least one factor and fewer factors than
   # variables: with n_factors >= n_variables it is not identified and the

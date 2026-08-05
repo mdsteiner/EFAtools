@@ -43,9 +43,14 @@
 # Joreskog, 1971; Raykov, 2001) and the average variance extracted (AVE, a convergent-validity
 # index rather than a reliability; Fornell & Larcker, 1981). The function is purely
 # computational: `spec` is assumed already normalized by the calling adapter, which owns all
-# front-end input handling.
+# front-end input handling. `arg` names the user-facing map argument of the calling
+# front-end, so the empty-factor warning points at the right one: `factor_map` for
+# efa_reliability(), `factor_corres` on the frozen OMEGA() surface. Both front-ends pass
+# it explicitly; the default is the frozen spelling so that a caller who forgets leaves
+# OMEGA()'s wording as it has always been rather than silently changing it.
 .reliability_core <- function(spec, variance = c("correlation", "sums_load"),
-                              add_ind = TRUE, add_rel = FALSE) {
+                              add_ind = TRUE, add_rel = FALSE,
+                              arg = "factor_corres") {
 
   variance <- match.arg(variance)
 
@@ -137,7 +142,7 @@
     omega_h_sub[empty_fac] <- NA
     omega_sub_sub[empty_fac] <- NA
     cli::cli_warn(
-      c("Some group factors have no assigned items in {.arg factor_corres}.",
+      c("Some group factors have no assigned items in {.arg {arg}}.",
         "i" = "Their omega coefficients and H index are returned as {.val NA}."),
       class = "efa_omega_empty_factor"
     )
@@ -327,22 +332,23 @@
 # `factor_corres`/`type` (SL, schmid, manual, efa): with a supplied `factor_corres`,
 # validate its dimensions and use it; otherwise, for `type = "psych"`, assign each
 # item to its highest-|loading| group factor (as psych::omega does); `type =
-# "EFAtools"` requires an explicit `factor_corres`.
-.rel_map <- function(s_load, factor_corres = NULL, type = c("EFAtools", "psych")) {
+# "EFAtools"` requires an explicit `factor_corres`. `arg` names the user-facing
+# argument the map came from, as in .rel_check_map().
+.rel_map <- function(s_load, factor_corres = NULL, type = c("EFAtools", "psych"),
+                     arg = "factor_map") {
 
   type <- match.arg(type)
   s_load <- as.matrix(s_load)
 
   if (!is.null(factor_corres)) {
-    checkmate::assert_matrix(factor_corres, nrows = nrow(s_load),
-                             ncols = ncol(s_load))
-    .rel_check_map(s_load, factor_corres)
+    .rel_assert_map_dim(factor_corres, s_load, arg = arg)
+    .rel_check_map(s_load, factor_corres, arg = arg)
     return(factor_corres)
   }
 
   if (type == "EFAtools") {
     cli::cli_abort(
-      "Specify {.arg factor_corres}, or set {.code type = \"psych\"} to derive variable-to-factor correspondences from the highest group-factor loading per variable.",
+      "Specify {.arg {arg}}, or set {.code type = \"psych\"} to derive variable-to-factor correspondences from the highest group-factor loading per variable.",
       class = "efa_reliability_need_corres"
     )
   }
@@ -353,6 +359,33 @@
     map[i, which.max(abs(s_load[i, ]))] <- 1
   }
   map
+
+}
+
+# Abort when a user-supplied item-to-factor map does not conform to the group loadings
+# it will be applied to: one row per variable and one column per group factor. Without
+# this check a map with too few rows is recycled against the loadings and returns
+# coefficients above 1 rather than an error. `arg` names the user-facing argument the map
+# came from, as in .rel_check_map().
+.rel_assert_map_dim <- function(map, s_load, arg = "factor_map") {
+
+  s_load <- as.matrix(s_load)
+
+  if (!is.matrix(map) || !identical(dim(map), dim(s_load))) {
+    got <- if (is.matrix(map)) {
+      "{.arg {arg}} has {nrow(map)} row{?s} and {ncol(map)} column{?s}."
+    } else {
+      "{.arg {arg}} is not a matrix."
+    }
+    cli::cli_abort(
+      c("{.arg {arg}} must have one row per variable and one column per group factor.",
+        "x" = got,
+        "i" = "The solution has {nrow(s_load)} variable{?s} and {ncol(s_load)} group factor{?s}."),
+      class = "efa_reliability_map_dim"
+    )
+  }
+
+  invisible(map)
 
 }
 
@@ -716,12 +749,10 @@
     factor_corres <- abs(s_load) > .Machine$double.eps * 100
   } else {
     # This adapter does not route through .rel_map(), so a supplied map gets the same
-    # dimension check and plausibility check here. Without the dimension check a map
-    # with too few rows is recycled against the group loadings and returns coefficients
-    # above 1 rather than an error.
-    checkmate::assert_matrix(factor_corres, nrows = nrow(s_load),
-                             ncols = ncol(s_load))
-    .rel_check_map(s_load, factor_corres)
+    # dimension check and plausibility check here. Only efa_reliability() reaches this
+    # adapter, so the map is always its `factor_map`.
+    .rel_assert_map_dim(factor_corres, s_load, arg = "factor_map")
+    .rel_check_map(s_load, factor_corres, arg = "factor_map")
   }
 
   if (is.null(cormat)) {
@@ -966,7 +997,8 @@
   spec <- list(g_load = g_load, s_load = s_load, u2 = u2, map = factor_corres,
                cormat = cormat, var_names = var_names, fac_names = fac_names_out)
 
-  .reliability_core(spec, variance = variance, add_ind = add_ind)
+  .reliability_core(spec, variance = variance, add_ind = add_ind,
+                    arg = "factor_corres")
 
 }
 
@@ -1036,7 +1068,8 @@
       # storing the unclassed matrix -- the OMEGA class is attached to the whole
       # output below, matching the historical list-of-matrices shape. The core
       # labels the general-factor row "g"; restore the user's general-factor name.
-      mat <- unclass(.reliability_core(grp, "sums_load", add_ind = add_ind))
+      mat <- unclass(.reliability_core(grp, "sums_load", add_ind = add_ind,
+                                       arg = "factor_corres"))
       rownames(mat)[1] <- g_name
       omegas[[i]] <- mat
 

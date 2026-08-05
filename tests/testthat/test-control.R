@@ -125,6 +125,20 @@ test_that("the fit stays the backstop for a control edited after construction", 
     class = "efa_criterion_too_large")
 })
 
+test_that("efa_fit's argument assertions abort with a classed condition", {
+  cm <- test_models$baseline$cormat
+
+  expect_error(efa_fit(cm, n_factors = 3, N = -5), class = "efa_invalid_argument")
+  expect_error(efa_fit(cm, n_factors = -1, N = 500), class = "efa_invalid_argument")
+
+  # a value routed through a control reaches the same guard
+  ec <- estimate_control()
+  ec$max_iter <- -1
+  expect_error(
+    efa_fit(cm, n_factors = 3, N = 500, estimator = "PAF", estimate_control = ec),
+    class = "efa_invalid_argument")
+})
+
 test_that("estimate_control accepts the start_method spellings the flat interface took", {
   # start_method only governs the ML optimiser, so NA ("not needed here") is admissible; the
   # fit rejects it, and only when the estimator really is ML.

@@ -651,7 +651,8 @@ plot.efa_retain <- function(x, ...) {
   plots <- Filter(Negate(is.null), plots)
 
   if (length(plots) == 0) {
-    cli::cli_inform("No plot is available for the criteria that were run.")
+    cli::cli_inform("No plot is available for the criteria that were run.",
+                    class = "efa_no_plot")
     return(invisible(NULL))
   }
 

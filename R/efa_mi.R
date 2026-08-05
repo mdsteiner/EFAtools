@@ -222,7 +222,8 @@
 #'
 #' @param data_list A list of length \eqn{m}, where \eqn{m} is the number of
 #' imputations. Each list element is a data frame or matrix of raw data, or a
-#' correlation matrix. See argument `x` in [efa_fit()].
+#' correlation matrix. See argument `x` in [efa_fit()]. A `mids` object from
+#' \pkg{mice} must be converted first, with `mice::complete(x, "all")`.
 #' @param p Numeric in \eqn{(0, 1)}. One minus the confidence level used for
 #' pooled Wald-type bootstrap/MI confidence intervals when bootstrap replicates
 #' are available. For example, `p = .05` gives 95% intervals.
@@ -440,6 +441,17 @@ efa_mi <- function(data_list,
     efa_fit_formals <- setdiff(names(formals(efa_fit)), "...")
     canonical <- pmatch(arg_names, efa_fit_formals)
     names(efa_args)[!is.na(canonical)] <- efa_fit_formals[canonical[!is.na(canonical)]]
+  }
+
+  # A mids object is itself a list, so it passes the checks below and only fails deep in
+  # the per-dataset assertion with a message naming the lapply variable. It is the most
+  # likely wrong input here, so name it and give the conversion.
+  if (inherits(data_list, "mids")) {
+    cli::cli_abort(
+      c("{.arg data_list} must be a list of completed datasets, not a {.cls mids} object.",
+        "i" = "Convert it first with {.code mice::complete(x, \"all\")}."),
+      class = "efa_pooled_mids_input"
+    )
   }
 
   checkmate::assert_list(data_list, null.ok = FALSE)

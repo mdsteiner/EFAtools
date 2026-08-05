@@ -269,6 +269,13 @@ test_that("efa_mi validates its arguments with classed conditions", {
     efa_mi(list(), n_factors = 3, N = 500, estimator = "PAF", rotation = "none"),
     class = "efa_pooled_min_fits"
   )
+  # A mids object is itself a list, so without the dedicated check it would fail deep
+  # inside the per-dataset assertion instead of naming the conversion.
+  expect_error(
+    efa_mi(structure(list(data = cormat, m = 2L), class = "mids"),
+               n_factors = 3, N = 500, estimator = "PAF", rotation = "none"),
+    class = "efa_pooled_mids_input"
+  )
 })
 
 test_that("efa_mi rejects non-conformable imputations", {

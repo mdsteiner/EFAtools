@@ -70,6 +70,8 @@
 
 * The help page of `efa_mi()` now documents the `mi_diagnostics`, `fits`, `alignment`, and `settings` slots of the returned object, including how to form the `lavaan.mi`-style reference CFI from the pooled chi-squares in `mi_diagnostics`. 
 
+* A `mids` object from `mice` passed to `efa_mi()` is now rejected with an error that names it and gives the conversion, `mice::complete(x, "all")`, and that carries the condition class `efa_pooled_mids_input`. A `mids` object is itself a list, so it previously passed the argument checks and failed inside the per-imputation one, with a message naming an internal loop variable.
+
 ## Ordinal Correlations
 
 * A polychoric or tetrachoric pair whose response table shows a perfect ordering is only bounded, not identified, by the data, and is now reported at 0.9999 (or -0.9999 for a perfectly reversed table) with a warning naming the affected pairs, instead of at an operating-system-dependent value.
@@ -92,7 +94,9 @@
 
 * `efa_scores(method = "Anderson")`, and `FACTOR_SCORES()` with it, now warn when the factors of the solution are correlated. Anderson-Rubin scores are defined for orthogonal factors and are orthogonalised regardless, so they were reported as uncorrelated for factors the model says are correlated.
 
-* A `factor_map` for a bifactor loading matrix is now checked against the dimensions of the group-factor loadings, as it already was for every other input. A map with too few rows was recycled against the loadings and returned coefficients above 1 instead of an error.
+* A `factor_map` for a bifactor loading matrix is now checked against the dimensions of the group-factor loadings, as it already was for every other input, and the error carries the condition class `efa_reliability_map_dim`. A map with too few rows was recycled against the loadings and returned coefficients above 1 instead of an error.
+
+* The conditions `efa_reliability()` raises about its item-to-factor map now name `factor_map`. They previously named `factor_corres`, which is the corresponding argument of `OMEGA()` and does not exist on `efa_reliability()`. `OMEGA()` continues to name `factor_corres`.
 
 * The `efa_reliability()` report of a correlated-factors solution now states that subscale omega equals total omega for each factor, which follows from the absence of a general factor. The two columns previously printed identical values with no explanation.
 

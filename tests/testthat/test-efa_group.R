@@ -569,6 +569,35 @@ test_that("efa_group guards its inputs with classed conditions", {
   # N length neither 1 nor one-per-group (correlation-matrix input).
   expect_error(efa_group(list(a = cmat, b = cmat), n_factors = 3, N = c(100, 200, 300)),
                class = "efa_group_bad_n")
+
+  # A single bootstrap replicate has no spread to build an interval from.
+  expect_error(efa_group(list(a = cmat, b = cmat), n_factors = 3, N = 500, b_boot = 1),
+               class = "efa_group_bad_b_boot")
+
+  # A grouping vector shorter than the data it splits.
+  expect_error(efa_group(GRiPS_raw, groups = rep(1:2, length.out = 50), n_factors = 1),
+               class = "efa_group_groups_length")
+
+  # A list element that is neither a matrix nor a data frame.
+  expect_error(efa_group(list(a = cmat, b = 1:5), n_factors = 3, N = 500),
+               class = "efa_group_input")
+
+  # Neither raw data with `groups` nor a list of per-group data sets.
+  expect_error(efa_group(1:5, n_factors = 3, N = 500),
+               class = "efa_group_input")
+})
+
+
+test_that("rows with a missing group value are dropped with a classed warning", {
+  x <- GRiPS_raw[1:200, ]
+  g <- rep(c("a", "b"), each = 100)
+  g[1:2] <- NA
+
+  expect_warning(mg <- efa_group(x, groups = g, n_factors = 1),
+                 class = "efa_group_na_group")
+  # the two rows are dropped, not assigned to a phantom third group
+  expect_length(mg$loadings, 2)
+  expect_named(mg$loadings, c("a", "b"))
 })
 
 

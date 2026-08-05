@@ -247,7 +247,8 @@ plot.efa_retention <- function(x, ...) {
   plot_types <- setdiff(plot_types, "none")
 
   if (length(plot_types) == 0) {
-    cli::cli_inform("No plot is available for {x$criterion[['label']]}.")
+    cli::cli_inform("No plot is available for {x$criterion[['label']]}.",
+                    class = "efa_no_plot")
     return(invisible(NULL))
   }
 
@@ -268,7 +269,8 @@ plot.efa_retention <- function(x, ...) {
   # drop records with no plottable points (e.g. CD when it suggests 0 factors)
   records <- Filter(function(r) length(r$x) > 0, x$results)
   if (length(records) == 0) {
-    cli::cli_inform("No plot is available for {x$criterion[['label']]}.")
+    cli::cli_inform("No plot is available for {x$criterion[['label']]}.",
+                    class = "efa_no_plot")
     return(invisible(NULL))
   }
 

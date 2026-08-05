@@ -20,7 +20,8 @@ EFA_POOLED(
 \arguments{
 \item{data_list}{A list of length \eqn{m}, where \eqn{m} is the number of
 imputations. Each list element is a data frame or matrix of raw data, or a
-correlation matrix. See argument \code{x} in \code{\link[=efa_fit]{efa_fit()}}.}
+correlation matrix. See argument \code{x} in \code{\link[=efa_fit]{efa_fit()}}. A \code{mids} object from
+\pkg{mice} must be converted first, with \code{mice::complete(x, "all")}.}
 
 \item{p}{Numeric in \eqn{(0, 1)}. One minus the confidence level used for
 pooled Wald-type bootstrap/MI confidence intervals when bootstrap replicates

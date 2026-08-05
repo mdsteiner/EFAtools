@@ -118,4 +118,42 @@ test_that("oblique multi-start selection keeps the lowest objective, not the con
 })
 
 
+test_that("efa_procrustes rejects invalid matrices and oblique controls", {
+  A <- rot_loadings[[1]]
+
+  expect_error(efa_procrustes("a", A), class = "efa_not_matrix")
+  expect_error(efa_procrustes(A, replace(A, 1, NA)), class = "efa_nonfinite")
+  expect_error(efa_procrustes(matrix(numeric(0), 0, 0), A), class = "efa_empty_matrix")
+
+  # the oblique control checks run only on the oblique branch
+  ob <- function(...) efa_procrustes(A, A, rotation = "oblique", ...)
+  expect_error(ob(oblique_maxit = 2.5), class = "efa_not_integer")
+  expect_error(ob(oblique_eps = -1), class = "efa_out_of_range")
+  expect_error(ob(oblique_eps = c(1, 2)), class = "efa_not_scalar")
+  expect_error(ob(oblique_normalize = "y"), class = "efa_not_flag")
+
+  k <- ncol(A)
+  T_zero <- diag(k)
+  T_zero[, 1] <- 0
+  expect_error(ob(T_init = T_zero), class = "efa_zero_column")
+  # nonzero columns throughout, but rank k - 1
+  T_sing <- diag(k)
+  T_sing[, k] <- T_sing[, 1]
+  expect_error(ob(T_init = T_sing), class = "efa_singular")
+})
+
+
+test_that("an asymmetric S warns but still rotates", {
+  A <- unrot_loadings[[2]]
+  S <- crossprod(A)
+  S[1, 2] <- S[1, 2] + 1
+
+  # S should normally be crossprod(A); an asymmetric one is almost always a mistake,
+  # but it is a legal weight matrix, so the rotation proceeds after the warning.
+  expect_warning(fit <- efa_procrustes(A, rot_loadings[[1]], rotation = "oblique", S = S),
+                 class = "efa_not_symmetric")
+  expect_identical(dim(unclass(fit$loadings)), dim(unclass(A)))
+})
+
+
 rm(efa_list, unrot_loadings, rot_loadings)

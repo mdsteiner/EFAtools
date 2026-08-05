@@ -42,7 +42,7 @@ test_that("efa_retention plot methods return ggplot objects", {
 test_that("plot-less criteria return NULL with a message", {
   for (obj in list(MAP(test_models$baseline$cormat),
                    SMT(test_models$baseline$cormat, N = 500))) {
-    expect_message(p <- plot(obj), "No plot is available")
+    expect_message(p <- plot(obj), class = "efa_no_plot")
     expect_null(p)
   }
 })
@@ -74,7 +74,16 @@ test_that("eigen plot of an empty record returns NULL with a message", {
                         x = integer(0), y = numeric(0))),
     settings = list()
   )
-  expect_message(p <- plot(obj), "No plot is available")
+  expect_message(p <- plot(obj), class = "efa_no_plot")
+  expect_null(p)
+})
+
+test_that("efa_retain reports when none of its criteria has a plot", {
+  # plot.efa_retain() drops the per-criterion NULLs; with MAP and SMT the only
+  # criteria run, nothing is left to return.
+  nf <- efa_retain(test_models$baseline$cormat, N = 500, suitability = FALSE,
+                   criteria = c("MAP", "SMT"))
+  expect_message(p <- plot(nf), class = "efa_no_plot")
   expect_null(p)
 })
 

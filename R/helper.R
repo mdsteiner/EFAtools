@@ -74,6 +74,26 @@
   }
 }
 
+# Evaluate a block of argument checks and re-raise checkmate's assertion failures under
+# `efa_invalid_argument`. checkmate's assert_*() functions signal a plain `simpleError`,
+# which leaves an invalid argument as the one condition in the package that cannot be
+# caught or tested by class; this keeps checkmate's wording but gives it the class the
+# rest of the package guarantees. cli_abort() raises an rlang condition rather than a
+# `simpleError`, so classed checks inside the block pass through untouched. Only messages
+# carrying checkmate's `mstop()` prefix are relabelled: an "object not found" or any other
+# unclassed error from the block is an internal fault, not a user input problem, and is
+# rethrown unchanged rather than disguised as one. `call` is forwarded so the error points
+# at the user's call, not at this helper.
+.assert_args <- function(expr, call = rlang::caller_env()) {
+  tryCatch(
+    expr,
+    simpleError = function(e) {
+      if (!startsWith(conditionMessage(e), "Assertion on ")) stop(e)
+      cli::cli_abort("{conditionMessage(e)}", class = "efa_invalid_argument", call = call)
+    }
+  )
+}
+
 # Second-order Schmid-Leiman group-factor loadings: scale the first-order factor
 # loadings by the residual standard deviations of the first-order factors. Only
 # the psi diagonal is used (off-diagonal first-order disturbance covariances are

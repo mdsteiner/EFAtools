@@ -255,7 +255,7 @@ efa_reliability <- function(model = NULL,
                             dimnames = list("g", c("tot", "H")))
       } else {
         mats[[i]] <- .reliability_core(grp, used_variance, add_ind = TRUE,
-                                       add_rel = TRUE)
+                                       add_rel = TRUE, arg = "factor_map")
       }
     }
 
@@ -311,7 +311,8 @@ efa_reliability <- function(model = NULL,
     }
 
     used_variance <- variance
-    x <- .reliability_core(spec, variance, add_ind = TRUE, add_rel = TRUE)
+    x <- .reliability_core(spec, variance, add_ind = TRUE, add_rel = TRUE,
+                           arg = "factor_map")
 
     # A correlated-factors solution (no general factor) does not identify the
     # general-factor decomposition, so the bifactor-specific indices are dropped: omega
