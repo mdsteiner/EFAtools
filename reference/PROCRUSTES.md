@@ -52,10 +52,13 @@ PROCRUSTES(
 
 - T_init:
 
-  Optional `k x k` nonsingular starting transformation matrix for the
-  oblique solver. Its columns are normalized internally. If `NULL` (the
-  default), the oblique solver is warm-started from the closed-form
-  orthogonal Procrustes solution.
+  Optional `k x k` starting transformation matrix for the oblique
+  solver. Its columns are normalized internally, and the normalized
+  matrix must be well enough conditioned to define a proper factor
+  correlation matrix: its smallest singular value must be at least
+  `1e-4`, the same floor the solver applies to every candidate it
+  evaluates. If `NULL` (the default), the oblique solver is warm-started
+  from the closed-form orthogonal Procrustes solution.
 
 - oblique_eps:
 
