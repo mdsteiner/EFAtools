@@ -45,15 +45,36 @@ inline arma::mat normalize_cols_cpp(const arma::mat& X, double eps = 1e-15) {
   return Y;
 }
 
+// Smallest singular value an oblique transformation T must retain to be evaluated.
+//
+// T carries the factor correlations, Phi = t(T) %*% T with unit diagonal, so
+// min eig(Phi) = sigma_min(T)^2 and this floor keeps Phi positive definite by a margin of
+// 1e-8: no two rotated factors may be collinear to within eight decimals. That margin sits
+// seven orders above the ~ncol(T) * .Machine$double.eps rounding of a symmetric
+// eigendecomposition, so whether a candidate is rejected does not depend on the LAPACK
+// build -- unlike an exact-singularity test, whose verdict is decided by whether the LU
+// happens to produce a bit-exact zero pivot. It also sits far below any admissible
+// solution: a factor correlation of .9, which the fit already flags as extreme, leaves
+// min eig(Phi) near .1. Rejecting the candidate bounds the rotated pattern, which is
+// A %*% t(solve(T)), by ||A|| / sigma_min.
+inline constexpr double oblq_min_sigma = 1e-4;
+
 // Solve X * invX = I for a square, finite X, returning false (leaving invX untouched)
 // if X is non-square, non-finite, or the solve fails or yields a non-finite result, so
 // callers can reject a singular transformation rather than evaluate it through a
 // pseudo-inverse. `no_approx` is what makes the rejection real: without it Armadillo
 // falls back to an approximate (pseudo-inverse) solution for a rank-deficient X and
 // still reports success, so a collapsed oblique transformation would be accepted and
-// evaluated. `fast` additionally skips the iterative refinement that this check, which
-// only asks whether an inverse exists at all, does not need.
-inline bool inverse_checked_cpp(const arma::mat& X, arma::mat& invX) {
+// evaluated. It must not be paired with `solve_opts::fast`, which suppresses the
+// reciprocal-condition estimate the rejection is read from and so reduces the check to
+// LAPACK's exact-zero-pivot test.
+//
+// `min_sigma` additionally requires sigma_min(X) >= min_sigma, read off the computed
+// inverse through the bound sigma_min(X) >= 1 / ||X^-1||_F. The bound is exact up to a
+// factor of at most sqrt(ncol(X)) and errs toward rejection, and it needs no second
+// factorization. The default of zero asks only that an inverse exist.
+inline bool inverse_checked_cpp(const arma::mat& X, arma::mat& invX,
+                                double min_sigma = 0.0) {
   if (X.n_rows != X.n_cols || !all_finite_cpp(X)) {
     return false;
   }
@@ -63,12 +84,16 @@ inline bool inverse_checked_cpp(const arma::mat& X, arma::mat& invX) {
       invX,
       X,
       arma::eye<arma::mat>(X.n_rows, X.n_cols),
-      arma::solve_opts::fast + arma::solve_opts::no_approx
+      arma::solve_opts::no_approx
     );
-    return ok && all_finite_cpp(invX);
+    if (!ok || !all_finite_cpp(invX)) {
+      return false;
+    }
   } catch (...) {
     return false;
   }
+
+  return min_sigma <= 0.0 || arma::norm(invX, "fro") * min_sigma <= 1.0;
 }
 
 // Project the raw gradient G onto the tangent space of the oblique column-normalized

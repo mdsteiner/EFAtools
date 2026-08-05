@@ -263,7 +263,10 @@ test_that("the matrix is a valid, named correlation matrix", {
 })
 
 test_that("the result is deterministic", {
-  expect_identical(.polychoric(g)$R, .polychoric(g)$R)
+  # Compared against the file-top `poly_g`, an independent earlier call with the same
+  # arguments on the same object: two invocations separated by other work are a stronger
+  # determinism probe than two adjacent ones, and one matrix fewer is built.
+  expect_identical(poly_g$R, .polychoric(g)$R)
 })
 
 test_that("a constant column is rejected with a classed condition", {

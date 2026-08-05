@@ -3,12 +3,15 @@
 # cross-checked against lavaan's two-stage / FIML moments (missing = "ml").
 
 # A missing-at-random fixture: column 1 is fully observed and drives the missingness in the
-# others, so the mechanism depends only on observed data.
+# others, so the mechanism depends only on observed data. The normal deviates are coloured by
+# the Cholesky factor rather than by an eigendecomposition, because chol() is unique for a
+# positive definite matrix (the positive-diagonal convention pins it) whereas eigenvector signs
+# are not, so the same seed reproduces the same sample on every LAPACK build.
 make_mar_data <- function(n = 600, seed = 456) {
   set.seed(seed)
   p <- 5
   Sig <- 0.5 ^ abs(outer(seq_len(p), seq_len(p), "-"))     # AR(1)-type positive-definite cov
-  X <- MASS::mvrnorm(n, mu = rep(0, p), Sigma = Sig)
+  X <- matrix(stats::rnorm(n * p), n) %*% chol(Sig)
   colnames(X) <- paste0("V", seq_len(p))
   X[X[, 1] >  0.7, 2] <- NA
   X[X[, 1] < -0.7, 3] <- NA
@@ -19,12 +22,11 @@ make_mar_data <- function(n = 600, seed = 456) {
 
 test_that("complete data reproduces the MLE covariance and the Pearson correlation", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
 
   set.seed(123)
   p <- 5
   Sig <- 0.5 ^ abs(outer(seq_len(p), seq_len(p), "-"))
-  X <- MASS::mvrnorm(400, mu = rep(0, p), Sigma = Sig)
+  X <- matrix(stats::rnorm(400 * p), 400) %*% chol(Sig)
   colnames(X) <- paste0("V", seq_len(p))
 
   em <- .fiml_em_moments(X)
@@ -42,7 +44,6 @@ test_that("complete data reproduces the MLE covariance and the Pearson correlati
 test_that("FIML moments match lavaan two-stage (missing = 'ml') under MAR", {
   skip_on_cran()
   skip_if_not_installed("lavaan")
-  skip_if_not_installed("MASS")
 
   X <- make_mar_data()
   df <- as.data.frame(X)
@@ -65,7 +66,6 @@ test_that("FIML moments match lavaan two-stage (missing = 'ml') under MAR", {
 
 test_that("the saturated log-likelihood matches a direct per-case computation", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
 
   X <- make_mar_data()
   em <- .fiml_em_moments(X)
@@ -101,7 +101,6 @@ test_that("structural guards raise classed errors", {
 
 test_that("hitting max_iter warns and reports non-convergence", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
 
   X <- make_mar_data()
   expect_warning(em <- .fiml_em_moments(X, max_iter = 1L),
@@ -112,7 +111,6 @@ test_that("hitting max_iter warns and reports non-convergence", {
 
 test_that("the missing-data EM fixed point is stationary under an independent E-M step", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
 
   # The complete-data and log-likelihood tests do not pin the missing-data E-step (the
   # conditional-mean completion and the missing-by-missing covariance correction) to an
@@ -152,7 +150,6 @@ test_that("the missing-data EM fixed point is stationary under an independent E-
 
 test_that("the FIML correlation is invariant to per-column rescaling", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
 
   # FIML correlations must not depend on the variables' measurement scale; an absolute
   # convergence tolerance would stop early on small-variance columns and return a wrong
@@ -175,12 +172,12 @@ test_that("a non-positive-definite covariance aborts with a classed error", {
 
 test_that("the diagonal-init fallback (too few complete cases) still converges", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
 
   set.seed(202)
   p <- 4
   n <- 300
-  Z <- MASS::mvrnorm(n, rep(0, p), 0.4 ^ abs(outer(seq_len(p), seq_len(p), "-")))
+  Z <- matrix(stats::rnorm(n * p), n) %*%
+    chol(0.4 ^ abs(outer(seq_len(p), seq_len(p), "-")))
   colnames(Z) <- paste0("V", seq_len(p))
   # One NA per row (rotating column) leaves only two complete rows (< p + 1), forcing the
   # diagonal-init fallback, while every pair keeps ample joint coverage.
@@ -194,7 +191,6 @@ test_that("the diagonal-init fallback (too few complete cases) still converges",
 
 test_that("fully-missing rows are dropped from n and the log-likelihood", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
 
   X <- make_mar_data()
   Xd <- rbind(X, NA)                                      # append an all-NA row

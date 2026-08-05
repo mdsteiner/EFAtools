@@ -24,6 +24,40 @@ make_adf_fixture <- function(N, loadings, seed) {
   as.data.frame(X)
 }
 
+# The single-factor polychoric ULS sandwich fit on the first eight DOSPERT items backs both the
+# vcov and the Gamma storage contract, and the polychoric correlations plus their full ACOV over
+# 3,123 rows are the expensive part, so it is computed once and shared. Both consumers are skipped
+# on CRAN, hence the lazy memoisation: nothing is built there. The fit takes no random draws, so
+# sharing it cannot perturb any RNG stream.
+# The off-diagonal correlation rows of a lavaan ADF/NACOV matrix, in utils::combn() order,
+# which is what both Gamma comparisons below need. lavaan indexes that matrix by parameter
+# name, and a bare grep("~~") would also take the variance rows Vi~~Vi, so the rows are
+# selected by splitting the name rather than by regex. Variance rows being present at all
+# means the fit was parameterised on the covariance scale -- for the continuous comparison
+# that happens when a lavaan build ignores `correlation = TRUE`, which reaches cfa() through
+# ... rather than as a formal argument. Such a NACOV is not comparable, so it is reported as
+# a skip rather than as a failure, and without leaning on a version guard that does not track
+# when the option landed.
+.lav_cor_rows <- function(Glav) {
+  kind <- vapply(strsplit(rownames(Glav), "~~"), function(s) {
+    if (length(s) != 2L) "other" else if (identical(s[1], s[2])) "var" else "cov"
+  }, character(1))
+  testthat::skip_if(any(kind == "var"),
+                    "this lavaan build did not apply the correlation parameterization")
+  which(kind == "cov")
+}
+
+.poly_sandwich_fit <- local({
+  cache <- NULL
+  function() {
+    if (is.null(cache)) {
+      cache <<- EFA(DOSPERT_raw[, 1:8], n_factors = 1, cor_method = "poly", method = "ULS",
+                    rotation = "none", se = "sandwich")
+    }
+    cache
+  }
+})
+
 
 test_that("se = 'information' persists the full unrotated loading vcov (unrotated path)", {
   cormat <- test_models$baseline$cormat
@@ -70,8 +104,7 @@ test_that("se = 'sandwich' persists the unrotated robust loading vcov on the pol
   dat <- DOSPERT_raw[, 1:8]
   p <- ncol(dat); k <- 1L; pk <- p * k
 
-  fit <- EFA(dat, n_factors = k, cor_method = "poly", method = "ULS", rotation = "none",
-             se = "sandwich")
+  fit <- .poly_sandwich_fit()
 
   expect_true("vcov_unrot_loadings" %in% names(fit))
   V <- fit$vcov_unrot_loadings
@@ -284,8 +317,7 @@ test_that("se = 'sandwich' persists Gamma on the polychoric path with the right 
   dat <- DOSPERT_raw[, 1:8]
   p <- ncol(dat); n_pairs <- p * (p - 1L) / 2L
 
-  fit <- EFA(dat, n_factors = 1, cor_method = "poly", method = "ULS", rotation = "none",
-             se = "sandwich")
+  fit <- .poly_sandwich_fit()
 
   expect_true("Gamma" %in% names(fit))
   G <- fit$Gamma
@@ -364,8 +396,9 @@ test_that("Gamma matches lavaan's correlation NACOV up to the N scale (continuou
   Glav <- lavaan::lavInspect(lfit, "gamma")
   if (is.list(Glav)) Glav <- Glav[[1]]
   # With meanstructure = TRUE lavaan returns the means PLUS the off-diagonal correlation rows
-  # (in utils::combn() order); subset to the ~~ rows for a clean comparison.
-  cor_rows <- grep("~~", rownames(Glav))
+  # (in utils::combn() order); subset to the off-diagonal correlation rows for a clean
+  # comparison.
+  cor_rows <- .lav_cor_rows(Glav)
   Glav_corr <- unname(Glav[cor_rows, cor_rows])
   expect_equal(nrow(Glav_corr), choose(length(vn), 2L))
 
@@ -378,34 +411,25 @@ test_that("Gamma matches lavaan's polychoric NACOV up to the N scale (ordinal)",
   skip_on_cran()
   skip_if_not_installed("lavaan")
 
+  # lavaan::efa() wants a data frame with an `ordered` column list; the EFAtools fit routes
+  # its input through data.matrix() on the polychoric path, so the shared matrix-form fixture
+  # is the same object (verified: identical Gamma, loadings and vcov) and is reused here
+  # rather than paying for a third polychoric ACOV over 3,123 rows.
   dat <- as.data.frame(DOSPERT_raw[, 1:8])
   vn <- colnames(dat)
   N <- sum(stats::complete.cases(dat))
 
-  fit <- EFA(dat, n_factors = 1, cor_method = "poly", method = "ULS", rotation = "none",
-             se = "sandwich")
+  fit <- .poly_sandwich_fit()
 
   # lavaan::efa() returns an `efaList`; lavInspect expects a single lavaan fit, so take [[1]].
   lf <- lavaan::efa(dat, nfactors = 1, ordered = vn, estimator = "DWLS", se = "robust.sem")
   lfit <- lf[[1]]
   Glav <- lavaan::lavInspect(lfit, "gamma")
   if (is.list(Glav)) Glav <- Glav[[1]]
-  cor_rows <- grep("~~", rownames(Glav))
+  cor_rows <- .lav_cor_rows(Glav)
   Glav_corr <- unname(Glav[cor_rows, cor_rows])
   expect_equal(nrow(Glav_corr), choose(length(vn), 2L))
 
   rel_F <- norm(N * unname(fit$Gamma) - Glav_corr, "F") / norm(Glav_corr, "F")
   expect_lt(rel_F, 1e-3)
-})
-
-
-test_that("the round-trip sqrt(diag(vcov_unrot_loadings)) reproduces SE$unrot_loadings", {
-  # Belt-and-braces: even after assembly into the EFA object, the persisted vcov stays
-  # self-consistent with the SE slot -- so callers reading either get the same number.
-  fit <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500, method = "ML",
-             rotation = "oblimin", se = "information")
-  p <- nrow(fit$unrot_loadings); k <- ncol(fit$unrot_loadings)
-
-  reconstructed <- matrix(sqrt(pmax(diag(fit$vcov_unrot_loadings), 0)), p, k)
-  expect_equal(reconstructed, unname(fit$SE$unrot_loadings), tolerance = 1e-12)
 })

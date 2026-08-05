@@ -332,7 +332,7 @@ struct OblqCriterionManifold {
 
   GpfState compute(const arma::mat& Tmat) const {
     arma::mat invT;
-    if (!inverse_checked_cpp(Tmat, invT)) {
+    if (!inverse_checked_cpp(Tmat, invT, oblq_min_sigma)) {
       return gpf_invalid_state();
     }
     arma::mat L = A * invT.t();

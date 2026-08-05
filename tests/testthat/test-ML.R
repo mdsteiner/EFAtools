@@ -39,21 +39,8 @@ test_that("fit indices are returned correctly", {
   expect_type(ML_test$fit_indices$chi_null, "double")
   expect_type(ML_test$fit_indices$df_null, "double")
   expect_type(ML_test$fit_indices$p_null, "double")
-
-  expect_type(ML_test_2$fit_indices$chi, "double")
-  expect_type(ML_test_2$fit_indices$df, "double")
-  expect_type(ML_test_2$fit_indices$p_chi, "double")
-  expect_type(ML_test_2$fit_indices$CAF, "double")
-  expect_type(ML_test_2$fit_indices$CFI, "double")
-  expect_type(ML_test_2$fit_indices$RMSEA, "double")
-  expect_type(ML_test_2$fit_indices$RMSEA_LB, "double")
-  expect_type(ML_test_2$fit_indices$RMSEA_UB, "double")
-  expect_type(ML_test_2$fit_indices$AIC, "double")
-  expect_type(ML_test_2$fit_indices$BIC, "double")
-  expect_type(ML_test_2$fit_indices$Fm, "double")
-  expect_type(ML_test_2$fit_indices$chi_null, "double")
-  expect_type(ML_test_2$fit_indices$df_null, "double")
-  expect_type(ML_test_2$fit_indices$p_null, "double")
+  # ML_test_2 differs only in where the optimiser is started; both fits are assembled by
+  # the same fit-index code on the same model, so the storage types are checked once.
 })
 
 test_that("settings are returned correctly", {

@@ -33,10 +33,12 @@
 #'   is useful when the same `A` is rotated repeatedly. `S` is used only when
 #'   `oblique_normalize = FALSE`; if Kaiser normalization is requested, the
 #'   cross-product must be recomputed on the normalized matrix.
-#' @param T_init Optional `k x k` nonsingular starting transformation matrix for
-#'   the oblique solver. Its columns are normalized internally. If `NULL` (the
-#'   default), the oblique solver is warm-started from the closed-form orthogonal
-#'   Procrustes solution.
+#' @param T_init Optional `k x k` starting transformation matrix for the oblique
+#'   solver. Its columns are normalized internally, and the normalized matrix must
+#'   be well enough conditioned to define a proper factor correlation matrix: its
+#'   smallest singular value must be at least `1e-4`, the same floor the solver
+#'   applies to every candidate it evaluates. If `NULL` (the default), the oblique
+#'   solver is warm-started from the closed-form orthogonal Procrustes solution.
 #' @param oblique_eps Positive convergence tolerance for the projected-gradient
 #'   norm in the oblique solver.
 #' @param oblique_maxit Non-negative integer. Maximum number of projected-gradient

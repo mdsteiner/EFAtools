@@ -199,24 +199,45 @@ test_that("a singular oblique transformation is rejected rather than pseudo-inve
   expect_error(.oblique_procrustes(A, B, T_init = cbind(c(1, 0), c(2, 0))),
                class = "Rcpp::exception")
   expect_type(.oblique_procrustes(A, B, T_init = diag(2)), "list")
+
+  # Rejection has to be decided by conditioning, not by exact rank. A candidate that is
+  # merely near-singular still inverts -- every LAPACK returns a finite inverse for it --
+  # but the inverse amplifies by 1 / sigma_min, so evaluating it yields the same collapsed
+  # pseudo-rotation that an exactly rank-deficient candidate would. Whether such a
+  # candidate is caught must not be left to whether the LU happens to produce a bit-exact
+  # zero pivot, which differs between LAPACK builds. Two unit columns separated by an
+  # angle of d have sigma_min ~ d / sqrt(2), so d straddles the 1e-4 floor here.
+  near_singular <- function(d) cbind(c(1, 0), c(sqrt(1 - d^2), d))
+  expect_error(.oblique_procrustes(A, B, T_init = near_singular(1e-8)),
+               class = "Rcpp::exception")
+  expect_error(.oblique_procrustes(A, B, T_init = near_singular(1e-5)),
+               class = "Rcpp::exception")
+  expect_type(.oblique_procrustes(A, B, T_init = near_singular(1e-2)), "list")
 })
 
 test_that("oblimin at a degenerate gam returns a valid rotation and reports the collapse", {
   # gam > 0 increasingly rewards correlated factors, and by gam = 1 the oblimin solution
-  # on this fixture collapses toward a single factor: the transformation goes singular.
-  # Rejecting the singular candidate keeps the returned solution a genuine rotation --
-  # Phi positive definite with off-diagonals strictly inside (-1, 1) -- instead of the
-  # pseudo-inverse artefact (Phi off-diagonals of exactly 1, pattern coefficients of order
-  # 1e16). The solution is still degenerate, so it must not be returned silently.
+  # on this fixture collapses toward a single factor: the transformation degenerates.
+  # Rejecting a candidate whose smallest singular value falls below the 1e-4 floor keeps
+  # the returned solution a genuine rotation instead of the collapsed artefact (Phi
+  # off-diagonals of 1 to working precision, a negative smallest eigenvalue, pattern
+  # coefficients of order 1e16). The solution is still degenerate, so it must not be
+  # returned silently.
+  #
+  # The bounds below are the ones that floor guarantees -- min eig(Phi) = sigma_min^2 and
+  # |A| / sigma_min for the pattern -- asserted an order of magnitude loose, because how
+  # far past the floor a run actually stops depends on the rounding of the platform's
+  # LAPACK. Where exactly the collapse is caught is not the contract; that it is caught
+  # before Phi stops being a correlation matrix is.
   set.seed(42)
   res <- suppressWarnings(.rotate_model(unrot, rotation = "oblimin", type = "EFAtools",
                                         gam = 1))
   Phi <- res$Phi
 
   expect_true(all(is.finite(unclass(res$rot_loadings))))
-  expect_lt(max(abs(unclass(res$rot_loadings))), 1e3)
-  expect_lt(max(abs(Phi[upper.tri(Phi)])), 1)
-  expect_gt(min(eigen(Phi, symmetric = TRUE, only.values = TRUE)$values), 0)
+  expect_lt(max(abs(unclass(res$rot_loadings))), 1e6)
+  expect_lt(max(abs(Phi[upper.tri(Phi)])), 1 - 1e-9)
+  expect_gt(min(eigen(Phi, symmetric = TRUE, only.values = TRUE)$values), 1e-9)
 
   set.seed(42)
   expect_warning(
@@ -361,55 +382,28 @@ test_that("oblique Phi, structure, and rotmat are reflected/reordered with the l
                ignore_attr = TRUE, tolerance = 1e-6)
 })
 
-test_that("the bentlerQ solution satisfies the oblique structure invariants", {
+test_that("the native oblique solutions satisfy the oblique structure invariants", {
   skip_on_cran()
 
-  # bentlerQ is computed by the native gradient-projection engine. These invariants hold for any
-  # valid oblique solution and need no reference package (so coverage survives the criterion
-  # moving off GPArotation): the structure matrix equals pattern %*% Phi, the rotation matrix
-  # reproduces the rotated pattern via the documented identity L_unrot %*% t(solve(Th)), and the
-  # factor correlation matrix has a unit diagonal.
+  # bentlerQ, bifactorQ, and simplimax are computed by the native gradient-projection engine.
+  # These invariants hold for any valid oblique solution and need no reference package (so
+  # coverage survives a criterion moving off GPArotation): the structure matrix equals
+  # pattern %*% Phi, the rotation matrix reproduces the rotated pattern via the documented
+  # identity L_unrot %*% t(solve(Th)), and the factor correlation matrix has a unit diagonal.
+  # The three solutions are checked in one loop, labelled by criterion so a failure still
+  # names the engine that produced it.
   L <- unrot$unrot_loadings
+  solutions <- list(bentlerQ = bentQ, bifactorQ = bifacQ, simplimax = simpli)
 
-  expect_equal(unclass(bentQ$Structure), unclass(bentQ$rot_loadings) %*% bentQ$Phi,
-               ignore_attr = TRUE)
-  expect_equal(unclass(L) %*% t(solve(bentQ$rotmat)), unclass(bentQ$rot_loadings),
-               ignore_attr = TRUE, tolerance = 1e-6)
-  expect_equal(diag(bentQ$Phi), rep(1, ncol(bentQ$rot_loadings)), ignore_attr = TRUE)
-})
-
-test_that("the bifactorQ solution satisfies the oblique structure invariants", {
-  skip_on_cran()
-
-  # bifactorQ is computed by the native gradient-projection engine. These invariants hold for any
-  # valid oblique solution and need no reference package (so coverage survives the criterion moving
-  # off GPArotation): the structure matrix equals pattern %*% Phi, the rotation matrix reproduces
-  # the rotated pattern via the documented identity L_unrot %*% t(solve(Th)), and the factor
-  # correlation matrix has a unit diagonal.
-  L <- unrot$unrot_loadings
-
-  expect_equal(unclass(bifacQ$Structure), unclass(bifacQ$rot_loadings) %*% bifacQ$Phi,
-               ignore_attr = TRUE)
-  expect_equal(unclass(L) %*% t(solve(bifacQ$rotmat)), unclass(bifacQ$rot_loadings),
-               ignore_attr = TRUE, tolerance = 1e-6)
-  expect_equal(diag(bifacQ$Phi), rep(1, ncol(bifacQ$rot_loadings)), ignore_attr = TRUE)
-})
-
-test_that("the simplimax solution satisfies the oblique structure invariants", {
-  skip_on_cran()
-
-  # simplimax is computed by the native gradient-projection engine. These invariants hold for any
-  # valid oblique solution and need no reference package (so coverage survives the criterion moving
-  # off GPArotation): the structure matrix equals pattern %*% Phi, the rotation matrix reproduces
-  # the rotated pattern via the documented identity L_unrot %*% t(solve(Th)), and the factor
-  # correlation matrix has a unit diagonal.
-  L <- unrot$unrot_loadings
-
-  expect_equal(unclass(simpli$Structure), unclass(simpli$rot_loadings) %*% simpli$Phi,
-               ignore_attr = TRUE)
-  expect_equal(unclass(L) %*% t(solve(simpli$rotmat)), unclass(simpli$rot_loadings),
-               ignore_attr = TRUE, tolerance = 1e-6)
-  expect_equal(diag(simpli$Phi), rep(1, ncol(simpli$rot_loadings)), ignore_attr = TRUE)
+  for (nm in names(solutions)) {
+    res <- solutions[[nm]]
+    expect_equal(unclass(res$Structure), unclass(res$rot_loadings) %*% res$Phi,
+                 ignore_attr = TRUE, info = nm)
+    expect_equal(unclass(L) %*% t(solve(res$rotmat)), unclass(res$rot_loadings),
+                 ignore_attr = TRUE, tolerance = 1e-6, info = nm)
+    expect_equal(diag(res$Phi), rep(1, ncol(res$rot_loadings)), ignore_attr = TRUE,
+                 info = nm)
+  }
 })
 
 rm(unrot, obli, unrot_1, obli_1, quarti, simpli, bentQ, geoQ, bifacQ)

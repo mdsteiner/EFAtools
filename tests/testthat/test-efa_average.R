@@ -354,18 +354,6 @@ test_that("settings are returned correctly", {
   expect_equal(efa_raw$settings$abs_eigen, TRUE)
   expect_equal(efa_raw_p$settings$abs_eigen, TRUE)
 
-  expect_equal(efa_def$settings$abs_eigen, TRUE)
-  expect_equal(efa_ml$settings$abs_eigen, TRUE)
-  expect_equal(efa_uls$settings$abs_eigen, TRUE)
-  expect_equal(efa_all$settings$abs_eigen, TRUE)
-  expect_equal(efa_all_oblq$settings$abs_eigen, TRUE)
-  expect_equal(efa_all_orth$settings$abs_eigen, TRUE)
-  expect_equal(efa_all_none$settings$abs_eigen, TRUE)
-  expect_equal(efa_all_md$settings$abs_eigen, TRUE)
-  expect_equal(efa_all_tm$settings$abs_eigen, TRUE)
-  expect_equal(efa_raw$settings$abs_eigen, TRUE)
-  expect_equal(efa_raw_p$settings$abs_eigen, TRUE)
-
   expect_equal(efa_def$settings$varimax_type, c("svd", "kaiser"))
   expect_equal(efa_ml$settings$varimax_type, c("svd", "kaiser"))
   expect_equal(efa_uls$settings$varimax_type, c("svd", "kaiser"))
@@ -526,15 +514,6 @@ test_that("settings are returned correctly", {
 })
 
 
-# Create singular correlation matrix for tests
-x <- rnorm(10)
-y <- rnorm(10)
-z <- x + y
-dat_sing <- matrix(c(x, y, z), ncol = 3)
-cor_sing <- stats::cor(dat_sing)
-
-cor_nposdef <- matrix(c(1, 1, 0, 1, 1, 1, 0, 1, 1), ncol = 3)
-
 test_that("errors are thrown correctly", {
   skip_if_not_slow()
   expect_error(efa_average(1:5, show_progress = FALSE), class = "efa_input_not_matrix")
@@ -551,9 +530,9 @@ test_that("errors are thrown correctly", {
                 N = 20, show_progress = FALSE),
     classes = "efa_avg_excluded_solutions"),
                  class = "efa_n_from_data")
-  expect_error(efa_average(dat_sing, n_factors = 1, show_progress = FALSE),
+  expect_error(efa_average(sing_raw, n_factors = 1, show_progress = FALSE),
                class = "efa_cor_singular")
-  expect_error(efa_average(cor_sing, N = 10, n_factors = 1, show_progress = FALSE),
+  expect_error(efa_average(sing_cor, N = sing_N, n_factors = 1, show_progress = FALSE),
                class = "efa_cor_singular")
   expect_error(efa_average(matrix(rnorm(30), ncol = 3), n_factors = 2, show_progress = FALSE),
                class = "efa_underidentified")

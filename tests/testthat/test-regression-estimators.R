@@ -21,6 +21,44 @@ reg_fixtures <- list(
   list(R = stats::cor(GRiPS_raw, use = "pairwise.complete.obs"), N = 810, k = 1)
 )
 
+# Several blocks below read different quantities -- uniquenesses, reproduced correlations,
+# chi-square, SRMR, the closed-form fit indices -- off what is argument for argument the
+# same fit, so each (fixture, estimator) pair is estimated once and cached. The cache is
+# filled on first request rather than eagerly, so the skip gates in each block still
+# short-circuit before any estimation is paid for. Extraction is deterministic and draws no
+# random numbers, so caching cannot perturb the RNG stream.
+reg_fit <- local({
+  cache <- list()
+  function(i, method) {
+    key <- paste(i, method)
+    if (!key %in% names(cache)) {
+      fx <- reg_fixtures[[i]]
+      cache[[key]] <<- suppressWarnings(EFA(fx$R, n_factors = fx$k, N = fx$N,
+                                            method = method))
+    }
+    cache[[key]]
+  }
+})
+
+# The same holds for the lavaan reference: the three lavaan blocks below fit an identical
+# model per fixture and inspect different measures on it, so it too is fitted once and
+# cached. A fit that errors is cached as NULL, which each consumer turns into its own skip
+# exactly as an inline failure would.
+lav_efa_fit <- local({
+  cache <- list()
+  function(i) {
+    key <- as.character(i)
+    if (!key %in% names(cache)) {
+      fx <- reg_fixtures[[i]]
+      cache[key] <<- list(tryCatch(
+        lavaan::efa(sample.cov = fx$R, sample.nobs = fx$N, nfactors = fx$k,
+                    rotation = "none", estimator = "ML", se = "none")[[1]],
+        error = function(e) NULL))
+    }
+    cache[[key]]
+  }
+})
+
 test_that("PAF reproduces psych::fa(fm = 'pa')", {
   skip_on_cran()
   skip_if_not_installed("psych")
@@ -42,8 +80,9 @@ test_that("PAF reproduces psych::fa(fm = 'pa')", {
 test_that("ML reproduces stats::factanal", {
   skip_on_cran()
 
-  for (fx in reg_fixtures) {
-    efa <- suppressWarnings(EFA(fx$R, n_factors = fx$k, N = fx$N, method = "ML"))
+  for (i in seq_along(reg_fixtures)) {
+    fx <- reg_fixtures[[i]]
+    efa <- reg_fit(i, "ML")
     ref <- stats::factanal(covmat = fx$R, factors = fx$k, n.obs = fx$N,
                            rotation = "none")
 
@@ -58,8 +97,9 @@ test_that("ULS reproduces psych::fa(fm = 'minres')", {
   skip_on_cran()
   skip_if_not_installed("psych")
 
-  for (fx in reg_fixtures) {
-    efa <- suppressWarnings(EFA(fx$R, n_factors = fx$k, N = fx$N, method = "ULS"))
+  for (i in seq_along(reg_fixtures)) {
+    fx <- reg_fixtures[[i]]
+    efa <- reg_fit(i, "ULS")
     ref <- suppressMessages(suppressWarnings(
       psych::fa(fx$R, nfactors = fx$k, n.obs = fx$N, fm = "minres",
                 rotate = "none")))
@@ -79,8 +119,9 @@ test_that("ML chi-square reproduces stats::factanal and psych::fa(fm = 'ml')", {
   skip_on_cran()
   skip_if_not_installed("psych")
 
-  for (fx in reg_fixtures) {
-    efa <- suppressWarnings(EFA(fx$R, n_factors = fx$k, N = fx$N, method = "ML"))
+  for (i in seq_along(reg_fixtures)) {
+    fx <- reg_fixtures[[i]]
+    efa <- reg_fit(i, "ML")
     ref_fa <- stats::factanal(covmat = fx$R, factors = fx$k, n.obs = fx$N,
                               rotation = "none")
     ref_ps <- suppressMessages(suppressWarnings(
@@ -97,8 +138,9 @@ test_that("ULS chi-square reproduces psych::fa(fm = 'minres')", {
   skip_on_cran()
   skip_if_not_installed("psych")
 
-  for (fx in reg_fixtures) {
-    efa <- suppressWarnings(EFA(fx$R, n_factors = fx$k, N = fx$N, method = "ULS"))
+  for (i in seq_along(reg_fixtures)) {
+    fx <- reg_fixtures[[i]]
+    efa <- reg_fit(i, "ULS")
     ref <- suppressMessages(suppressWarnings(
       psych::fa(fx$R, nfactors = fx$k, n.obs = fx$N, fm = "minres", rotate = "none")))
 
@@ -111,17 +153,16 @@ test_that("ML chi-square relates to lavaan's via the documented Bartlett factor"
   skip_on_cran()
   skip_if_not_installed("lavaan")
 
-  for (fx in reg_fixtures) {
+  for (i in seq_along(reg_fixtures)) {
+    fx <- reg_fixtures[[i]]
     p <- ncol(fx$R)
     bart <- fx$N - 1 - (2 * p + 5) / 6 - (2 * fx$k) / 3
-    efa <- suppressWarnings(EFA(fx$R, n_factors = fx$k, N = fx$N, method = "ML"))
+    efa <- reg_fit(i, "ML")
 
     # lavaan::efa()'s baseline / robust paths can fail on a covariance-matrix input;
     # take the standard test statistic from the fitted model and skip if unavailable.
     lav_stat <- tryCatch({
-      fit <- lavaan::efa(sample.cov = fx$R, sample.nobs = fx$N, nfactors = fx$k,
-                         rotation = "none", estimator = "ML", se = "none")[[1]]
-      lavaan::lavInspect(fit, "test")$standard$stat
+      lavaan::lavInspect(lav_efa_fit(i), "test")$standard$stat
     }, error = function(e) NA_real_)
     skip_if(is.na(lav_stat), "lavaan::efa() did not return a standard test statistic")
 
@@ -133,13 +174,11 @@ test_that("SRMR reproduces lavaan", {
   skip_on_cran()
   skip_if_not_installed("lavaan")
 
-  for (fx in reg_fixtures) {
-    efa <- suppressWarnings(EFA(fx$R, n_factors = fx$k, N = fx$N, method = "ML"))
+  for (i in seq_along(reg_fixtures)) {
+    efa <- reg_fit(i, "ML")
 
     lav_srmr <- tryCatch({
-      fit <- lavaan::efa(sample.cov = fx$R, sample.nobs = fx$N, nfactors = fx$k,
-                         rotation = "none", estimator = "ML", se = "none")[[1]]
-      unname(lavaan::fitMeasures(fit, "srmr"))
+      unname(lavaan::fitMeasures(lav_efa_fit(i), "srmr"))
     }, error = function(e) NA_real_)
     skip_if(is.na(lav_srmr), "lavaan::efa() did not return SRMR")
 
@@ -149,11 +188,11 @@ test_that("SRMR reproduces lavaan", {
 })
 
 test_that("TLI equals its (N - 1)-scale closed form; ECVI uses the Bartlett-corrected chi", {
-  for (fx in reg_fixtures) {
+  for (i in seq_along(reg_fixtures)) {
+    fx <- reg_fixtures[[i]]
     p <- ncol(fx$R)
     for (mth in c("ML", "ULS")) {
-      fi <- suppressWarnings(EFA(fx$R, n_factors = fx$k, N = fx$N,
-                                 method = mth))$fit_indices
+      fi <- reg_fit(i, mth)$fit_indices
 
       # CFI/TLI compare the model and baseline noncentralities on a common (N - 1) scale,
       # so the reported (Bartlett-corrected) model and baseline chi-squares are rescaled
@@ -214,10 +253,9 @@ test_that("PAF variant paths reproduce psych::fa(fm = 'pa')", {
 test_that("CFI, RMSEA, AIC, and BIC match their references on the baseline", {
   skip_on_cran()
 
-  R <- test_models$baseline$cormat
-  N <- 500
-  k <- 3
-  fi <- suppressWarnings(EFA(R, n_factors = k, N = N, method = "ML"))$fit_indices
+  # the baseline fixture, whose ML fit and lavaan reference are shared with the blocks above
+  N <- reg_fixtures[[1]]$N
+  fi <- reg_fit(1L, "ML")$fit_indices
 
   expect_equal(fi$AIC, fi$chi - 2 * fi$df, tolerance = 1e-8)
   expect_equal(fi$BIC, fi$chi - log(N) * fi$df, tolerance = 1e-8)
@@ -225,9 +263,8 @@ test_that("CFI, RMSEA, AIC, and BIC match their references on the baseline", {
   skip_if_not_installed("lavaan")
 
   lav <- tryCatch({
-    fit <- lavaan::efa(sample.cov = R, sample.nobs = N, nfactors = k,
-                       rotation = "none", estimator = "ML", se = "none")[[1]]
-    lavaan::fitMeasures(fit, c("chisq", "df", "baseline.chisq", "baseline.df"))
+    lavaan::fitMeasures(lav_efa_fit(1L),
+                        c("chisq", "df", "baseline.chisq", "baseline.df"))
   }, error = function(e) NULL)
   skip_if(is.null(lav), "lavaan::efa() did not return the baseline fit measures")
 
@@ -288,4 +325,4 @@ test_that("DWLS reproduces lavaan::efa(estimator = 'DWLS') on UPPS_raw", {
   expect_equal(unname(efa$h2), unname(diag(tcrossprod(L_ref))), tolerance = 1e-3)
 })
 
-rm(repro_offdiag, reg_fixtures)
+rm(repro_offdiag, reg_fixtures, reg_fit, lav_efa_fit)

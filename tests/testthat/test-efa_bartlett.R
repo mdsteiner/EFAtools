@@ -66,17 +66,6 @@ test_that("settings are returned correctly", {
   expect_equal(bart_rand$settings$cor_method, "pearson")
 })
 
-# Create singular correlation matrix for tests
-set.seed(7)
-x <- rnorm(10)
-y <- rnorm(10)
-z <- x + y
-
-dat_sing <- matrix(c(x, y, z), ncol = 3)
-cor_sing <- stats::cor(dat_sing)
-
-cor_nposdef <- matrix(c(1, 1, 0, 1, 1, 1, 0, 1, 1), ncol = 3)
-
 test_that("the chi-square is NA when N is too small for the Bartlett correction", {
   # the documented guard: the multiplier N - 1 - (2p + 5)/6 turns non-positive at
   # N = 5 for these p = 18 variables, so no statistic is reported
@@ -88,8 +77,8 @@ test_that("errors are thrown correctly", {
   expect_error(efa_bartlett(test_models$baseline$cormat), class = "efa_n_required")
   expect_message(efa_bartlett(GRiPS_raw), class = "efa_cor_from_data")
   expect_warning(efa_bartlett(GRiPS_raw, N = 20), class = "efa_n_from_data")
-  expect_error(efa_bartlett(dat_sing), class = "efa_cor_singular")
-  expect_error(efa_bartlett(cor_sing, N = 10), class = "efa_cor_singular")
+  expect_error(efa_bartlett(sing_raw), class = "efa_cor_singular")
+  expect_error(efa_bartlett(sing_cor, N = sing_N), class = "efa_cor_singular")
   expect_warning(efa_bartlett(cor_nposdef, N = 10), class = "efa_cor_smoothed")
 })
 
@@ -132,6 +121,6 @@ test_that("print output is stable", {
   expect_snapshot(print(bart_null), transform = scrub_num)
 })
 
-rm(bart_cor, bart_raw, bart_rand, x, y, z, dat_sing, cor_sing, cor_nposdef)
+rm(bart_cor, bart_raw, bart_rand)
 
 

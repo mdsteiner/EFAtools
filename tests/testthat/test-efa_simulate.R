@@ -1361,7 +1361,15 @@ test_that(".efa_population_fit reports the population-limit fit reused from EFA(
   ev <- eigen(Cstd, symmetric = TRUE)
   L <- ev$vectors[, seq_len(q_me)] %*% diag(sqrt(ev$values[seq_len(q_me)]))
   pf <- .efa_population_fit(L, R)
-  expect_equal(pf$rmsea, 0, tolerance = 1e-8)
+  # The discrepancy is analytically zero here, so what the ML criterion actually returns is
+  # the rounding of an 18-term trace against two log-determinants -- of order eps * cond(R).
+  # RMSEA takes the square root of that dust, which lifts it to ~1e-8, and the max(0, .)
+  # clamp on the criterion hands the assertion a free pass whenever the dust happens to
+  # come out negative. Comparing against exactly 0 therefore tests the sign of the last
+  # bit. Bound it instead at a level no genuine misfit could reach: 1e-6 still proves a
+  # discrepancy below 1e-10, i.e. a perfect population fit, with a hundredfold margin over
+  # the dust. CFI is safe as it stands -- its target of 1 makes waldo compare relatively.
+  expect_lt(pf$rmsea, 1e-6)
   expect_equal(pf$cfi, 1, tolerance = 1e-8)
   expect_equal(pf$df, df_me)
 })

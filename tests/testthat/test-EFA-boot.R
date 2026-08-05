@@ -251,13 +251,16 @@ test_that("np-boot on a correlation matrix warns and disables the bootstrap", {
   expect_null(res$SE)
 })
 
-test_that("a failed bootstrap replicate is skipped with a warning", {
+# A healthy PAF point-estimate fit on GRiPS_raw together with the matching list of `b`
+# replicate fits. The failure-mode blocks below all start from this pair and damage it in
+# different ways, so it is built by one helper rather than retyped. The seed lives inside the
+# helper so every call draws the same resamples from the same stream whatever ran before it.
+make_boot_pair <- function(b, n_factors) {
   set.seed(11)
   x <- GRiPS_raw
   R <- stats::cor(x)
   N <- nrow(x)
   m <- ncol(R)
-  b <- 6
 
   R_boot <- array(NA_real_, c(m, m, b))
   for (i in seq_len(b)) {
@@ -265,17 +268,25 @@ test_that("a failed bootstrap replicate is skipped with a warning", {
     R_boot[, , i] <- stats::cor(x[ind, ])
   }
 
-  fit_target <- suppressWarnings(
-    .estimate_model(R, method = "PAF", n_factors = 2, N = N, type = "EFAtools"))
-  boot_fit <- suppressWarnings(
-    .boot_fun(R_boot, b, .estimate_model, method = "PAF", n_factors = 2,
-              N = N, type = "EFAtools"))
+  list(
+    fit_target = suppressWarnings(
+      .estimate_model(R, method = "PAF", n_factors = n_factors, N = N, type = "EFAtools")),
+    boot_fit = suppressWarnings(
+      .boot_fun(R_boot, b, .estimate_model, method = "PAF", n_factors = n_factors,
+                N = N, type = "EFAtools"))
+  )
+}
+
+test_that("a failed bootstrap replicate is skipped with a warning", {
+  b <- 6
+  pair <- make_boot_pair(b, n_factors = 2)
+  boot_fit <- pair$boot_fit
 
   # inject a failed replicate without dropping the list element
   boot_fit[2] <- list(NULL)
 
   expect_warning(
-    res <- .boot_se_ci(fit_target, L_rot = NULL, boot_fit,
+    res <- .boot_se_ci(pair$fit_target, L_rot = NULL, boot_fit,
                        boot_rot = "none", ci = 0.95, b = b),
     class = "efa_boot_replicate_failed"
   )
@@ -353,30 +364,14 @@ test_that("a replicate that cannot be target-rotated warns with its own class", 
   # The rotated block has a survival count of its own: a replicate can fit and align to the
   # unrotated point estimate and still fail the target rotation. A non-finite target forces that on
   # the orthogonal branch; the oblique branch signals the same class from its batched aligner.
-  set.seed(11)
-  x <- GRiPS_raw
-  R <- stats::cor(x)
-  N <- nrow(x)
-  m <- ncol(R)
   b <- 4
+  pair <- make_boot_pair(b, n_factors = 2)
 
-  R_boot <- array(NA_real_, c(m, m, b))
-  for (i in seq_len(b)) {
-    ind <- sample(N, size = N, replace = TRUE)
-    R_boot[, , i] <- stats::cor(x[ind, ])
-  }
-
-  fit_target <- suppressWarnings(
-    .estimate_model(R, method = "PAF", n_factors = 2, N = N, type = "EFAtools"))
-  boot_fit <- suppressWarnings(
-    .boot_fun(R_boot, b, .estimate_model, method = "PAF", n_factors = 2,
-              N = N, type = "EFAtools"))
-
-  bad_target <- unclass(fit_target$unrot_loadings)
+  bad_target <- unclass(pair$fit_target$unrot_loadings)
   bad_target[1, 1] <- NaN
 
   expect_warning(
-    res <- .boot_se_ci(fit_target, L_rot = bad_target, boot_fit,
+    res <- .boot_se_ci(pair$fit_target, L_rot = bad_target, pair$boot_fit,
                        boot_rot = "orthogonal", ci = 0.95, b = b),
     class = "efa_boot_rotation_failed"
   )
@@ -412,24 +407,11 @@ test_that("fewer than two surviving replicates is flagged as unreliable", {
   # The input bound cannot see this one: b_boot is legal, but the replicates fail at run time and
   # leave a single usable draw behind. Without a condition the object returns all-NA SEs and a
   # collapsed interval that print as though the requested b_boot had stood.
-  set.seed(11)
-  x <- GRiPS_raw
-  R <- stats::cor(x)
-  N <- nrow(x)
-  m <- ncol(R)
   b <- 6
+  pair <- make_boot_pair(b, n_factors = 1)
+  fit_target <- pair$fit_target
+  boot_fit <- pair$boot_fit
 
-  R_boot <- array(NA_real_, c(m, m, b))
-  for (i in seq_len(b)) {
-    ind <- sample(N, size = N, replace = TRUE)
-    R_boot[, , i] <- stats::cor(x[ind, ])
-  }
-
-  fit_target <- suppressWarnings(
-    .estimate_model(R, method = "PAF", n_factors = 1, N = N, type = "EFAtools"))
-  boot_fit <- suppressWarnings(
-    .boot_fun(R_boot, b, .estimate_model, method = "PAF", n_factors = 1,
-              N = N, type = "EFAtools"))
   one_left <- boot_fit
   one_left[2:b] <- rep(list(NULL), b - 1L)     # a single survivor
 

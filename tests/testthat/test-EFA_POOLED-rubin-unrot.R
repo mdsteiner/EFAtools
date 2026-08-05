@@ -19,27 +19,34 @@ k      <- 3L
 m_id   <- 5L
 identical_list <- replicate(m_id, cormat, simplify = FALSE)
 
+# The identity-imputation pool and the corresponding single fit are needed by
+# several groups below with byte-identical arguments, so they are built once
+# here. Both are read-only at every use (the gauge variants in Group 2 are
+# copy-on-modify replicas), and the ML / rotation = "none" / analytic-SE path is
+# deterministic and consumes no RNG, so sharing them cannot move the stream that
+# the seeded groups draw from.
+pooled_info <- suppressMessages(EFA_POOLED(
+  identical_list, n_factors = k, N = N_id, method = "ML",
+  rotation = "none", se = "information"
+))
+single_fit <- EFA(cormat, n_factors = k, N = N_id, method = "ML",
+                  rotation = "none", se = "information")
+
 # ---- Group 1 ---------------------------------------------------------------
 
 test_that("identity imputations: pooled SE equals the per-fit SE and FMI is zero", {
-  pooled <- suppressMessages(EFA_POOLED(
-    identical_list, n_factors = k, N = N_id, method = "ML",
-    rotation = "none", se = "information"
-  ))
+  expect_identical(pooled_info$settings$se, "information")
+  expect_identical(pooled_info$settings$component_se, "information")
 
-  oracle <- EFA(cormat, n_factors = k, N = N_id, method = "ML",
-                rotation = "none", se = "information")
-
-  expect_identical(pooled$settings$se, "information")
-  expect_identical(pooled$settings$component_se, "information")
-
-  expect_equal(pooled$SE$unrot_loadings, oracle$SE$unrot_loadings, tolerance = 1e-10)
-  expect_equal(pooled$SE$uniquenesses, oracle$SE$uniquenesses, tolerance = 1e-10)
-  expect_equal(unclass(pooled$unrot_loadings), unclass(oracle$unrot_loadings),
+  expect_equal(pooled_info$SE$unrot_loadings, single_fit$SE$unrot_loadings,
                tolerance = 1e-10)
+  expect_equal(pooled_info$SE$uniquenesses, single_fit$SE$uniquenesses,
+               tolerance = 1e-10)
+  expect_equal(unclass(pooled_info$unrot_loadings),
+               unclass(single_fit$unrot_loadings), tolerance = 1e-10)
 
-  fmi <- pooled$MI$unrot_loadings$FMI
-  riv <- pooled$MI$unrot_loadings$RIV
+  fmi <- pooled_info$MI$unrot_loadings$FMI
+  riv <- pooled_info$MI$unrot_loadings$RIV
   expect_true(all(fmi[is.finite(fmi)] == 0))
   expect_true(all(riv[is.finite(riv)] == 0))
 
@@ -47,18 +54,16 @@ test_that("identity imputations: pooled SE equals the per-fit SE and FMI is zero
   # relative increase in variance r = 0 and nu_old = (m - 1)(1 + 1/r)^2 -> Inf.
   # Every element's df is therefore Inf (the Wald interval reduces to the normal
   # reference), matching lavaan.mi's df -> Inf for asymptotically-normal estimates.
-  df <- pooled$MI$unrot_loadings$df
+  df <- pooled_info$MI$unrot_loadings$df
   expect_true(all(is.infinite(df)))
 })
 
 # ---- Group 2 ---------------------------------------------------------------
 
 test_that("aligned-pool SEs are invariant to per-imputation sign flips and column permutations", {
-  base_fit <- EFA(cormat, n_factors = k, N = N_id, method = "ML",
-                  rotation = "none", se = "information")
-  L_base  <- unclass(base_fit$unrot_loadings)
-  SE_base <- base_fit$SE$unrot_loadings
-  psi_se  <- base_fit$SE$uniquenesses
+  L_base  <- unclass(single_fit$unrot_loadings)
+  SE_base <- single_fit$SE$unrot_loadings
+  psi_se  <- single_fit$SE$uniquenesses
 
   # The first entry is the anchor (identity gauge); the rest are deliberate
   # column-permutation + sign-flip variants of the same fit. Marginal SEs are
@@ -74,12 +79,12 @@ test_that("aligned-pool SEs are invariant to per-imputation sign flips and colum
   )
 
   permuted_fits <- lapply(gauges, function(g) {
-    fit <- base_fit
+    fit <- single_fit
     L_g  <- L_base[, g$perm, drop = FALSE]
     L_g  <- sweep(L_g, 2, g$signs, `*`)
     fit$unrot_loadings <- structure(L_g,
-      class    = class(base_fit$unrot_loadings),
-      dimnames = dimnames(base_fit$unrot_loadings)
+      class    = class(single_fit$unrot_loadings),
+      dimnames = dimnames(single_fit$unrot_loadings)
     )
     fit$SE$unrot_loadings <- SE_base[, g$perm, drop = FALSE]
     fit$SE$uniquenesses   <- psi_se
@@ -116,7 +121,6 @@ test_that("Rubin pooling of marginal SEs matches lavaan.mi when fed identical pe
   skip_on_cran()
   skip_if_not_installed("lavaan")
   skip_if_not_installed("lavaan.mi")
-  skip_if_not_installed("MASS")
 
   set.seed(20260621)
   p_lav <- 6L
@@ -125,9 +129,15 @@ test_that("Rubin pooling of marginal SEs matches lavaan.mi when fed identical pe
   L_true <- matrix(c(0.70, 0.80, 0.65, 0.55, 0.75, 0.60), p_lav, 1)
   Sigma  <- tcrossprod(L_true)
   diag(Sigma) <- 1
+  # All uniquenesses are strictly positive, so Sigma is positive definite and
+  # chol() is unique (positive-diagonal convention). Drawing through the
+  # Cholesky factor therefore reproduces the same sample from the same seed on
+  # every LAPACK build, which an eigen-based draw would not: eigenvector signs
+  # are not pinned by the decomposition.
+  Rt <- chol(Sigma)
 
   imps <- lapply(seq_len(m_lav), function(i) {
-    X <- MASS::mvrnorm(N_lav, mu = rep(0, p_lav), Sigma = Sigma)
+    X <- matrix(stats::rnorm(N_lav * p_lav), N_lav, p_lav) %*% Rt
     colnames(X) <- paste0("V", seq_len(p_lav))
     as.data.frame(X)
   })
@@ -233,17 +243,12 @@ test_that(".efa_pooled_rubin_core: BR fmi = 1 (Ubar = 0, B > 0) falls back to pl
 # ---- Group 5 ---------------------------------------------------------------
 
 test_that("uniqueness pooling has correct length, is non-negative and identity-invariant", {
-  pooled <- suppressMessages(EFA_POOLED(
-    identical_list, n_factors = k, N = N_id, method = "ML",
-    rotation = "none", se = "information"
+  expect_length(pooled_info$SE$uniquenesses, p_vars)
+  expect_true(all(
+    pooled_info$SE$uniquenesses[!is.na(pooled_info$SE$uniquenesses)] >= 0
   ))
-  oracle <- EFA(cormat, n_factors = k, N = N_id, method = "ML",
-                rotation = "none", se = "information")
-
-  expect_length(pooled$SE$uniquenesses, p_vars)
-  expect_true(all(pooled$SE$uniquenesses[!is.na(pooled$SE$uniquenesses)] >= 0))
-  expect_equal(unname(pooled$SE$uniquenesses), unname(oracle$SE$uniquenesses),
-               tolerance = 1e-10)
+  expect_equal(unname(pooled_info$SE$uniquenesses),
+               unname(single_fit$SE$uniquenesses), tolerance = 1e-10)
 })
 
 # ---- Group 6 ---------------------------------------------------------------
@@ -318,49 +323,40 @@ test_that("FMI is in [0,1], RIV >= 0; per-element NA in any imputation propagate
 # ---- Group 8 ---------------------------------------------------------------
 
 test_that("analytic-pool output has correct slot shapes and preserves se = 'information'", {
-  pooled <- suppressMessages(EFA_POOLED(
-    identical_list, n_factors = k, N = N_id, method = "ML",
-    rotation = "none", se = "information"
-  ))
+  loading_dn <- dimnames(unclass(pooled_info$unrot_loadings))
 
-  loading_dn <- dimnames(unclass(pooled$unrot_loadings))
+  expect_identical(dim(pooled_info$SE$unrot_loadings),         c(p_vars, k))
+  expect_identical(dimnames(pooled_info$SE$unrot_loadings),    loading_dn)
+  expect_identical(dim(pooled_info$CI$unrot_loadings$lower),   c(p_vars, k))
+  expect_identical(dim(pooled_info$CI$unrot_loadings$upper),   c(p_vars, k))
+  expect_identical(dimnames(pooled_info$CI$unrot_loadings$lower), loading_dn)
 
-  expect_identical(dim(pooled$SE$unrot_loadings),         c(p_vars, k))
-  expect_identical(dimnames(pooled$SE$unrot_loadings),    loading_dn)
-  expect_identical(dim(pooled$CI$unrot_loadings$lower),   c(p_vars, k))
-  expect_identical(dim(pooled$CI$unrot_loadings$upper),   c(p_vars, k))
-  expect_identical(dimnames(pooled$CI$unrot_loadings$lower), loading_dn)
+  expect_setequal(names(pooled_info$MI$unrot_loadings), c("RIV", "FMI", "df"))
+  expect_identical(dim(pooled_info$MI$unrot_loadings$RIV), c(p_vars, k))
+  expect_identical(dim(pooled_info$MI$unrot_loadings$FMI), c(p_vars, k))
+  expect_identical(dim(pooled_info$MI$unrot_loadings$df),  c(p_vars, k))
 
-  expect_setequal(names(pooled$MI$unrot_loadings), c("RIV", "FMI", "df"))
-  expect_identical(dim(pooled$MI$unrot_loadings$RIV), c(p_vars, k))
-  expect_identical(dim(pooled$MI$unrot_loadings$FMI), c(p_vars, k))
-  expect_identical(dim(pooled$MI$unrot_loadings$df),  c(p_vars, k))
-
-  expect_length(pooled$SE$uniquenesses,             p_vars)
-  expect_length(pooled$CI$uniquenesses$lower,       p_vars)
-  expect_length(pooled$CI$uniquenesses$upper,       p_vars)
-  expect_setequal(names(pooled$MI$uniquenesses),    c("RIV", "FMI", "df"))
-  expect_length(pooled$MI$uniquenesses$RIV,         p_vars)
-  expect_length(pooled$MI$uniquenesses$FMI,         p_vars)
-  expect_length(pooled$MI$uniquenesses$df,          p_vars)
+  expect_length(pooled_info$SE$uniquenesses,             p_vars)
+  expect_length(pooled_info$CI$uniquenesses$lower,       p_vars)
+  expect_length(pooled_info$CI$uniquenesses$upper,       p_vars)
+  expect_setequal(names(pooled_info$MI$uniquenesses),    c("RIV", "FMI", "df"))
+  expect_length(pooled_info$MI$uniquenesses$RIV,         p_vars)
+  expect_length(pooled_info$MI$uniquenesses$FMI,         p_vars)
+  expect_length(pooled_info$MI$uniquenesses$df,          p_vars)
 
   # Analytic path: replicates slot is present-but-NULL (matches the EFA() schema
   # contract: `expect_true("replicates" %in% names(fit));
   # expect_null(fit$replicates)`), no rotation-failure counters.
-  expect_true("replicates" %in% names(pooled))
-  expect_null(pooled$replicates)
-  expect_null(pooled$MI$unrot_loadings$bootstrap_rotation_failures)
-  expect_null(pooled$MI$unrot_loadings$bootstrap_rotation_valid)
+  expect_true("replicates" %in% names(pooled_info))
+  expect_null(pooled_info$replicates)
+  expect_null(pooled_info$MI$unrot_loadings$bootstrap_rotation_failures)
+  expect_null(pooled_info$MI$unrot_loadings$bootstrap_rotation_valid)
 })
 
 test_that("analytic-pooled summary note advertises Wald-from-information CIs, not bootstrap", {
-  pooled <- suppressMessages(EFA_POOLED(
-    identical_list, n_factors = k, N = N_id, method = "ML",
-    rotation = "none", se = "information"
-  ))
   # summary() exercises the full view that emits the provenance note; the brief
   # print() view suppresses it (passes ci = "none" to .print_efa_bootstrap_note).
-  out <- testthat::capture_output(print(summary(pooled)))
+  out <- testthat::capture_output(print(summary(pooled_info)))
   expect_match(out, "Wald CIs from the expected information matrix",
                fixed = TRUE)
   expect_false(grepl("Bootstrap/MI CIs", out, fixed = TRUE))

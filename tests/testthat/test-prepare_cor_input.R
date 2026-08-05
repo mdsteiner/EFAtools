@@ -2,13 +2,9 @@
 # detection, the N-handling policy, and the singular / non-positive-definite
 # branches.
 
-set.seed(7)                                            # keep the singular fixture deterministic
-x <- rnorm(10)
-y <- rnorm(10)
-z <- x + y
-dat_sing <- matrix(c(x, y, z), ncol = 3)               # raw, collinear -> singular
-cor_sing <- stats::cor(dat_sing)                       # correlation matrix, singular
-cor_nposdef <- matrix(c(1, 1, 0, 1, 1, 1, 0, 1, 1), ncol = 3)  # invertible but non-PD
+set.seed(7)                                            # keep the drawn columns deterministic
+x <- rnorm(10)                                         # two varying columns for the
+y <- rnorm(10)                                         # constant-column fixture below
 cormat <- test_models$baseline$cormat                  # well-behaved correlation matrix
 
 test_that("a correlation matrix is detected and returned unchanged", {
@@ -378,29 +374,22 @@ test_that("the non-symmetric abort names the triangle that is actually empty", {
 })
 
 test_that("a singular matrix aborts unless the check is disabled", {
-  expect_error(.prepare_cor_input(cor_sing, N = 10), class = "efa_cor_singular")
-  expect_error(suppressMessages(.prepare_cor_input(dat_sing)),
+  # LAPACK returns the eigenvalues of a rank-deficient matrix with absolute error of order
+  # eps * ||R||, so the smallest computed eigenvalue IS that rounding error and a rank
+  # tolerance of a bare eps decides by coin flip. The shared fixture is sized so the ratio
+  # sits well below ncol(R) * eps; it is the archetypal EFA singularity -- a composite
+  # entered alongside its components -- and must be refused rather than inverted downstream.
+  expect_equal(qr(sing_cor, tol = 1e-10)$rank, 9L)         # rank deficient by one
+  expect_error(.prepare_cor_input(sing_cor, N = sing_N), class = "efa_cor_singular")
+  expect_error(suppressMessages(.prepare_cor_input(sing_raw)),
+               class = "efa_cor_singular")
+  expect_error(suppressMessages(efa_fit(sing_cor, n_factors = 2, N = sing_N)),
                class = "efa_cor_singular")
 
   # check_singular = FALSE skips the abort; the matrix is smoothed instead
   prep_ns <- suppressWarnings(
-    .prepare_cor_input(cor_sing, N = 10, check_singular = FALSE))
+    .prepare_cor_input(sing_cor, N = sing_N, check_singular = FALSE))
   expect_true(all(eigen(prep_ns$R, symmetric = TRUE, only.values = TRUE)$values > 0))
-
-  # The 3x3 fixture above cannot exercise the regime that matters: LAPACK returns the
-  # eigenvalues of a rank-deficient matrix with absolute error of order eps * ||R||, so at a
-  # realistic p the smallest computed eigenvalue IS that rounding error and a rank tolerance
-  # of a bare eps decides by coin flip. This is the archetypal EFA singularity -- a composite
-  # entered alongside its components -- and it must be refused rather than inverted downstream.
-  set.seed(1)
-  X_comp <- matrix(stats::rnorm(400 * 9), 400)
-  X_comp <- cbind(X_comp, X_comp[, 1] + X_comp[, 2])
-  R_comp <- stats::cor(X_comp)
-  expect_equal(qr(R_comp, tol = 1e-10)$rank, 9L)          # rank deficient by one
-  expect_error(.prepare_cor_input(R_comp, N = 400), class = "efa_cor_singular")
-  expect_error(suppressMessages(.prepare_cor_input(X_comp)), class = "efa_cor_singular")
-  expect_error(suppressMessages(efa_fit(R_comp, n_factors = 2, N = 400)),
-               class = "efa_cor_singular")
 
   # and a well-conditioned matrix is nowhere near the threshold
   ev_ok <- eigen(cormat, symmetric = TRUE, only.values = TRUE)$values

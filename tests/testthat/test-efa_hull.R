@@ -132,7 +132,6 @@ test_that("n_factors are correctly returned", {
 })
 
 test_that("the convex-hull elimination tests every interior triplet", {
-  skip_if_not_slow()
   # Hand-built fit table (columns: nfactors, goodness-of-fit, df, st). The fit
   # values increase monotonically, so the boundary step removes nothing; the
   # geometry is set so the last interior solution (two factors) lies below the
@@ -160,7 +159,6 @@ test_that("the convex-hull elimination tests every interior triplet", {
 })
 
 test_that("a non-finite goodness-of-fit value is dropped with a classed warning", {
-  skip_if_not_slow()
   # A model with an undefined fit value (e.g. an NA CFI for a Heywood or
   # near-singular solution) cannot lie on the hull; it must be excluded with a
   # classed warning instead of crashing the elimination comparisons.
@@ -172,14 +170,6 @@ test_that("a non-finite goodness-of-fit value is dropped with a classed warning"
   expect_true(is.na(out$s_complete[3, 4]))
 })
 
-
-# Create singular correlation matrix for tests
-set.seed(7)
-x <- rnorm(10)
-y <- rnorm(10)
-z <- x + y
-dat_sing <- matrix(c(x, y, z, rnorm(10), rnorm(10), rnorm(10)), ncol = 6)
-cor_sing <- stats::cor(dat_sing)
 
 burt <- .burt_cormat()
 
@@ -206,8 +196,9 @@ test_that("errors etc are thrown correctly", {
   expect_error(efa_hull(test_models$baseline$cormat, estimator = "ML"), class = "efa_n_required")
   expect_error(efa_hull(test_models$baseline$cormat, estimator = "ULS"), class = "efa_n_required")
 
-  expect_error(efa_hull(dat_sing, estimator = "ML"), class = "efa_cor_singular")
-  expect_error(efa_hull(cor_sing, N = 20, estimator = "ML"), class = "efa_cor_singular")
+  expect_error(efa_hull(sing_raw, estimator = "ML"), class = "efa_cor_singular")
+  expect_error(efa_hull(sing_cor, N = sing_N, estimator = "ML"),
+               class = "efa_cor_singular")
 
   expect_error(efa_hull(matrix(rnorm(50), ncol = 5)), class = "efa_hull_min_indicators")
 
@@ -251,4 +242,4 @@ if (is_slow_test()) {
      hull_raw_ml, hull_raw_uls, hull_raw_uls_CFI, hull_raw_ml_nf, hull_cor_ml_nf,
      hull_PCA, hull_EFA)
 }
-rm(x, y, z, dat_sing, cor_sing, burt)
+rm(burt)

@@ -55,24 +55,14 @@ test_that("identified number of factors is correct", {
   expect_equal(nest_raw$n_factors[["NEST"]], 1)
 })
 
-# Create singular correlation matrix for tests
-set.seed(7)
-x <- rnorm(10)
-y <- rnorm(10)
-z <- x + y
-dat_sing <- matrix(c(x, y, z, rnorm(10), rnorm(10), rnorm(10)), ncol = 6)
-cor_sing <- stats::cor(dat_sing)
-
-cor_nposdef <- matrix(c(1, 1, 0, 1, 1, 1, 0, 1, 1), ncol = 3)
-
 test_that("errors are thrown correctly", {
   skip_if_not_slow()
   expect_error(efa_nest(1:5), class = "efa_input_not_matrix")
   expect_error(efa_nest(test_models$baseline$cormat), class = "efa_n_required")
   expect_message(efa_nest(GRiPS_raw), class = "efa_cor_from_data")
   expect_warning(efa_nest(GRiPS_raw, N = 20), class = "efa_n_from_data")
-  expect_error(efa_nest(dat_sing), class = "efa_cor_singular")
-  expect_error(efa_nest(cor_sing, N = 20), class = "efa_cor_singular")
+  expect_error(efa_nest(sing_raw), class = "efa_cor_singular")
+  expect_error(efa_nest(sing_cor, N = sing_N), class = "efa_cor_singular")
 })
 
 test_that("a Heywood case in the reference model raises a classed error", {
@@ -202,4 +192,3 @@ test_that("NEST recovers a clear two-factor structure end to end", {
 })
 
 if (is_slow_test()) rm(nest_cor, nest_raw)
-rm(x, y, z, dat_sing, cor_sing, cor_nposdef)

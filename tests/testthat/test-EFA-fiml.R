@@ -17,10 +17,14 @@ fiml_pop_cov <- function(p = 6) {
 }
 
 # A missing-at-random fixture: column 1 is fully observed and drives the missingness in the
-# others, so the mechanism depends only on observed data.
+# others, so the mechanism depends only on observed data. The multivariate normal draw goes
+# through the Cholesky factor rather than an eigendecomposition: the population covariance
+# below has repeated eigenvalues, whose eigenvector basis is mathematically undetermined and
+# therefore settled by rounding, while chol() is unique for a positive definite matrix, so the
+# same seed yields the same sample on every LAPACK build.
 fiml_mar_data <- function(n = 800, seed = 456) {
   set.seed(seed)
-  X <- MASS::mvrnorm(n, mu = rep(0, 6), Sigma = fiml_pop_cov(6))
+  X <- matrix(stats::rnorm(n * 6), n) %*% chol(fiml_pop_cov(6))
   colnames(X) <- paste0("V", seq_len(6))
   X[X[, 1] >  0.8, 2] <- NA
   X[X[, 1] < -0.8, 3] <- NA
@@ -34,7 +38,7 @@ fiml_mar_data_1f <- function(n = 1000, p = 6, load = 0.65, seed = 11) {
   set.seed(seed)
   L <- matrix(load, p, 1)
   S <- tcrossprod(L); diag(S) <- 1
-  X <- MASS::mvrnorm(n, mu = rep(0, p), Sigma = S)
+  X <- matrix(stats::rnorm(n * p), n) %*% chol(S)
   colnames(X) <- paste0("V", seq_len(p))
   X[X[, 1] >  0.8, 2] <- NA
   X[X[, 1] < -0.8, 3] <- NA
@@ -45,10 +49,9 @@ fiml_mar_data_1f <- function(n = 1000, p = 6, load = 0.65, seed = 11) {
 
 test_that("complete data: FIML loadings equal the Pearson-correlation loadings", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
 
   set.seed(123)
-  X <- MASS::mvrnorm(500, mu = rep(0, 6), Sigma = fiml_pop_cov(6))
+  X <- matrix(stats::rnorm(500 * 6), 500) %*% chol(fiml_pop_cov(6))
   colnames(X) <- paste0("V", seq_len(6))
 
   fiml <- EFA(X, n_factors = 2, method = "ML", cor_method = "fiml")
@@ -62,7 +65,6 @@ test_that("complete data: FIML loadings equal the Pearson-correlation loadings",
 
 test_that("MAR-missing data: FIML loadings match psych::fa(corFiml)", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
   skip_if_not_installed("psych")
 
   X <- fiml_mar_data()
@@ -87,7 +89,6 @@ test_that("MAR-missing data: FIML loadings match psych::fa(corFiml)", {
 
 test_that("FIML resolves N to the EM case count (rows with any observed value)", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
 
   X <- fiml_mar_data()
   Xd <- rbind(X, NA)                                     # an all-missing row carries no info
@@ -105,7 +106,6 @@ test_that("FIML resolves N to the EM case count (rows with any observed value)",
 test_that("the FIML correlation matches lavaan two-stage (missing = 'ml')", {
   skip_on_cran()
   skip_if_not_installed("lavaan")
-  skip_if_not_installed("MASS")
 
   X <- fiml_mar_data()
   efa <- EFA(X, n_factors = 2, method = "ML", cor_method = "fiml")
@@ -118,7 +118,6 @@ test_that("the FIML correlation matches lavaan two-stage (missing = 'ml')", {
 
 test_that("FIML fit indices are the corrected (Satorra-Bentler) two-stage statistic", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
 
   X <- fiml_mar_data()
   k <- 2L
@@ -144,7 +143,6 @@ test_that("FIML fit indices are the corrected (Satorra-Bentler) two-stage statis
 test_that("FIML fit indices match lavaan two-stage (Satorra-Bentler)", {
   skip_on_cran()
   skip_if_not_installed("lavaan")
-  skip_if_not_installed("MASS")
 
   # A single-factor model: a clean oracle where EFAtools' quadratic-form statistic is close to
   # lavaan's exact two-stage likelihood ratio (the gap widens with misfit, so a saturated-ish
@@ -175,7 +173,6 @@ test_that("FIML fit indices match lavaan two-stage (Satorra-Bentler)", {
 
 test_that("FIML leaves the chi-square NA for PAF but keeps the residual indices", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
 
   X <- fiml_mar_data()
   efa <- EFA(X, n_factors = 2, method = "PAF", cor_method = "fiml")
@@ -193,7 +190,6 @@ test_that("FIML leaves the chi-square NA for PAF but keeps the residual indices"
 
 test_that("FIML leaves AIC/BIC/ECVI NA for a just-identified (df = 0) fit", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
 
   # A one-factor model on three indicators is just-identified (df = 0), so the corrected two-stage
   # statistic is not formed and .gof() falls back to the plain likelihood-ratio chi-square. AIC,
@@ -203,7 +199,7 @@ test_that("FIML leaves AIC/BIC/ECVI NA for a just-identified (df = 0) fit", {
   set.seed(77)
   L <- matrix(0.7, 3, 1)
   S <- tcrossprod(L); diag(S) <- 1
-  X <- MASS::mvrnorm(500, mu = rep(0, 3), Sigma = S)
+  X <- matrix(stats::rnorm(500 * 3), 500) %*% chol(S)
   colnames(X) <- paste0("V", seq_len(3))
   X[X[, 1] >  0.8, 2] <- NA
   X[X[, 1] < -0.8, 3] <- NA
@@ -220,7 +216,6 @@ test_that("FIML leaves AIC/BIC/ECVI NA for a just-identified (df = 0) fit", {
 
 test_that("FIML NA's the whole chi-square block for a non-PD model-implied matrix", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
 
   X  <- fiml_mar_data()
   em <- .fiml_em_moments(X)
@@ -242,7 +237,6 @@ test_that("FIML NA's the whole chi-square block for a non-PD model-implied matri
 
 test_that("FIML fit indices ignore a fully-missing row (point-estimate filter)", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
 
   X  <- fiml_mar_data()
   Xd <- rbind(X, NA)                                    # an all-missing row carries no information
@@ -260,7 +254,6 @@ test_that("FIML fit indices ignore a fully-missing row (point-estimate filter)",
 
 test_that("FIML np-boot fit-index SEs come from the corrected two-stage chi-square", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
 
   X <- fiml_mar_data()
   efa <- suppressWarnings(suppressMessages(
@@ -342,7 +335,6 @@ test_that("FIML aborts on unsupported input/option combinations", {
 test_that("FIML unrotated loading and uniqueness SEs match lavaan two-stage", {
   skip_on_cran()
   skip_if_not_installed("lavaan")
-  skip_if_not_installed("MASS")
 
   X <- fiml_mar_data_1f()
   efa <- EFA(X, n_factors = 1, method = "ML", cor_method = "fiml", se = "sandwich")
@@ -365,7 +357,6 @@ test_that("FIML unrotated loading and uniqueness SEs match lavaan two-stage", {
 
 test_that("FIML two-stage loading SEs match an independent reference sandwich", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
 
   X <- fiml_mar_data()
   efa <- EFA(X, n_factors = 2, method = "ML", cor_method = "fiml", se = "sandwich")
@@ -382,7 +373,6 @@ test_that("FIML two-stage loading SEs match an independent reference sandwich", 
 test_that("FIML rotated loading SEs match lavaan two-stage under a supported rotation", {
   skip_on_cran()
   skip_if_not_installed("lavaan")
-  skip_if_not_installed("MASS")
 
   X <- fiml_mar_data()
   efa <- EFA(X, n_factors = 2, method = "ML", rotation = "geominQ",
@@ -415,7 +405,6 @@ test_that("FIML rotated loading SEs match lavaan two-stage under a supported rot
 
 test_that("FIML sandwich SEs fill the analytic SE/CI schema (oblique)", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
 
   X <- fiml_mar_data()
   efa <- EFA(X, n_factors = 2, method = "ML", rotation = "oblimin",
@@ -443,7 +432,6 @@ test_that("FIML sandwich SEs fill the analytic SE/CI schema (oblique)", {
 
 test_that("FIML 'information' and 'sandwich' give the same corrected two-stage SEs", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
 
   X <- fiml_mar_data()
   fit_i <- EFA(X, n_factors = 2, method = "ML", cor_method = "fiml", se = "information")
@@ -457,7 +445,6 @@ test_that("FIML 'information' and 'sandwich' give the same corrected two-stage S
 
 test_that("FIML ULS uses the estimator's own (identity) Stage-2 weight, not the ML weight", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
 
   X <- fiml_mar_data()
   efa_u <- EFA(X, n_factors = 2, method = "ULS", cor_method = "fiml", se = "sandwich")
@@ -485,7 +472,6 @@ test_that("FIML ULS uses the estimator's own (identity) Stage-2 weight, not the 
 
 test_that("FIML analytic SEs NA-fill with a classed warning when the covariance is unusable", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
 
   X <- fiml_mar_data()
   em <- .fiml_em_moments(X)
@@ -508,7 +494,6 @@ test_that("FIML analytic SEs NA-fill with a classed warning when the covariance 
 
 test_that("the FIML CI-provenance note names the corrected two-stage sandwich", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
   local_reproducible_output()
 
   efa <- EFA(fiml_mar_data_1f(), n_factors = 1, method = "ML",
@@ -523,7 +508,6 @@ test_that("the FIML CI-provenance note names the corrected two-stage sandwich", 
 
 test_that("print/summary.efa label FIML correlations in the header", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
   local_reproducible_output()
 
   efa <- EFA(fiml_mar_data(), n_factors = 2, method = "ML", cor_method = "fiml")
@@ -559,7 +543,6 @@ test_that("use is ignored under cor_method = 'fiml' (classed warning)", {
 
 test_that("FIML np-boot returns the full SE/CI schema with finite SEs (oblique)", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
 
   X <- fiml_mar_data()
   b <- 20L
@@ -595,7 +578,6 @@ test_that("FIML np-boot returns the full SE/CI schema with finite SEs (oblique)"
 
 test_that("FIML np-boot is reproducible given a fixed seed", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
 
   X <- fiml_mar_data()
   run <- function() suppressWarnings(suppressMessages(
@@ -614,7 +596,6 @@ test_that("FIML np-boot is reproducible given a fixed seed", {
 
 test_that("a degenerate FIML resample is dropped rather than aborting np-boot", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
 
   X <- fiml_mar_data()
   b <- 10L
@@ -648,7 +629,6 @@ test_that("a degenerate FIML resample is dropped rather than aborting np-boot", 
 
 test_that("FIML np-boot resamples the informative rows when a row is fully missing", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
 
   # A fully-missing row carries no information and is excluded from the EM case count
   # (N = em$n < nrow), so the bootstrap must resample the rows with at least one

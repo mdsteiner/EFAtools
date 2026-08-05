@@ -1,10 +1,25 @@
 # Robust (Godambe sandwich) standard errors and the scaled (Satorra-Bentler) chi-square for the
 # ordinal/polychoric path (method ML/ULS/DWLS, cor_method poly/tetra).
 
+# The unrotated two-factor polychoric DWLS fit on the first eight DOSPERT items is the reference
+# sandwich fit for the SE/CI schema, the CI-provenance note and the unscaled statistic alike. Its
+# cost is the polychoric correlations and their full 28 x 28 ACOV over 3,123 rows, so it is built
+# once and shared. The memoisation is lazy because one of the three consumers is skipped on CRAN,
+# where building it would be wasted work; the fit takes no random draws, so sharing it cannot
+# perturb any RNG stream.
+.dwls_sandwich_fit <- local({
+  cache <- NULL
+  function() {
+    if (is.null(cache)) {
+      cache <<- EFA(DOSPERT_raw[, 1:8], n_factors = 2, cor_method = "poly", method = "DWLS",
+                    rotation = "none", se = "sandwich")
+    }
+    cache
+  }
+})
+
 test_that("sandwich SEs fill the unrotated SE/CI schema and a scaled chi-square", {
-  dat <- DOSPERT_raw[, 1:8]
-  fit <- EFA(dat, n_factors = 2, cor_method = "poly", method = "DWLS",
-             rotation = "none", se = "sandwich")
+  fit <- .dwls_sandwich_fit()
 
   # Unrotated loading and uniqueness SEs are present, finite, and positive.
   expect_equal(dim(fit$SE$unrot_loadings), c(8L, 2L))
@@ -35,9 +50,7 @@ test_that("sandwich SEs fill the unrotated SE/CI schema and a scaled chi-square"
 test_that("the unrotated sandwich CI-provenance note names the robust sandwich, not the information matrix", {
   skip_on_cran()
 
-  dat <- DOSPERT_raw[, 1:8]
-  fit <- EFA(dat, n_factors = 2, cor_method = "poly", method = "DWLS",
-             rotation = "none", se = "sandwich")
+  fit <- .dwls_sandwich_fit()
 
   # The full summary carries the CI-provenance note; for a robust (Godambe sandwich) fit it must
   # describe the sandwich covariance, not the expected information matrix (which is correct only
@@ -65,9 +78,7 @@ test_that(".chi_fit_indices is robust to an undefined (NA) baseline chi-square",
 
 
 test_that("the unscaled sandwich statistic equals the DWLS objective Fm", {
-  dat <- DOSPERT_raw[, 1:8]
-  fit <- EFA(dat, n_factors = 2, cor_method = "poly", method = "DWLS",
-             rotation = "none", se = "sandwich")
+  fit <- .dwls_sandwich_fit()
   # T = N (s - sigma)' V (s - sigma) with V = 1/diag(Gamma) equals the weighted off-diagonal
   # objective the DWLS backend minimised, because the variance-scale weights absorb the N.
   expect_equal(fit$fit_indices$chi_unscaled, fit$fit_indices$Fm, tolerance = 1e-8)

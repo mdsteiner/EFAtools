@@ -6,10 +6,27 @@
 cmat <- test_models$baseline$cormat
 p <- ncol(cmat)
 
+# Three copies of one correlation matrix: the identical-group case, where every aligned
+# solution must collapse onto the shared target and every congruence must be one. PAF and
+# varimax are both deterministic and neither draws a random start, so one fit serves every
+# block that reads it -- and a second one with the invariance verdict switched on, since
+# that adds tables without changing anything that is fitted.
+ident_bands <- list(a = cmat, b = cmat, c = cmat)
+ident_fit <- efa_group(ident_bands, n_factors = 3, N = 500, rotation = "varimax")
+ident_fit_inv <- efa_group(ident_bands, n_factors = 3, N = 500, rotation = "varimax",
+                           invariance = TRUE)
+
+# The three WJIV age bands cut to their twelve leading variables: genuinely different
+# correlation matrices over one item set, which is what an order- or gauge-invariance claim
+# has to be demonstrated on (identical groups would satisfy it trivially).
+wj_trio <- list(a = WJIV_ages_6_8$cormat[1:12, 1:12],
+                b = WJIV_ages_14_19$cormat[1:12, 1:12],
+                c = WJIV_ages_20_39$cormat[1:12, 1:12])
+wj_trio_N <- c(WJIV_ages_6_8$N, WJIV_ages_14_19$N, WJIV_ages_20_39$N)
+
 
 test_that("efa_group fits every group at a common k and returns an efa_group object", {
-  bands <- list(a = cmat, b = cmat, c = cmat)
-  mg <- efa_group(bands, n_factors = 3, N = 500, rotation = "varimax", estimator = "PAF")
+  mg <- ident_fit
 
   expect_s3_class(mg, "efa_group")
   expect_length(mg$loadings, 3)
@@ -25,8 +42,7 @@ test_that("efa_group fits every group at a common k and returns an efa_group obj
 
 
 test_that("identical groups align to a shared consensus target", {
-  bands <- list(a = cmat, b = cmat, c = cmat)
-  mg <- efa_group(bands, n_factors = 3, N = 500, rotation = "varimax")
+  mg <- ident_fit
 
   # With identical inputs every aligned solution collapses onto the target.
   expect_equal(mg$loadings$a, mg$loadings$b, tolerance = 1e-6, ignore_attr = TRUE)
@@ -43,13 +59,8 @@ test_that("consensus alignment is invariant to the order of the groups", {
   # structure of the requested rotation (varimax here) evaluated on the consensus target,
   # and it removes that dependence: three genuinely different WJIV age bands are aligned
   # in two group orders and must yield the same shared frame and statistics.
-  b1 <- WJIV_ages_6_8$cormat[1:12, 1:12]
-  b2 <- WJIV_ages_14_19$cormat[1:12, 1:12]
-  b3 <- WJIV_ages_20_39$cormat[1:12, 1:12]
-  Ns <- c(WJIV_ages_6_8$N, WJIV_ages_14_19$N, WJIV_ages_20_39$N)
-
   fit <- function(o) {
-    efa_group(list(a = b1, b = b2, c = b3)[o], n_factors = 2, N = Ns[o],
+    efa_group(wj_trio[o], n_factors = 2, N = wj_trio_N[o],
               rotation = "varimax", invariance = TRUE)
   }
   mg1 <- fit(c(1, 2, 3))
@@ -90,7 +101,7 @@ test_that("consensus alignment is invariant to the order of the groups", {
   # path has none. It is the first group supplied, so it differs between the two orders.
   expect_identical(mg1$settings$alignment_start, "a")
   expect_identical(mg2$settings$alignment_start, "c")
-  expect_null(efa_group(list(a = b1, b = b2), n_factors = 2, N = Ns[1:2],
+  expect_null(efa_group(wj_trio[1:2], n_factors = 2, N = wj_trio_N[1:2],
                         rotation = "varimax",
                         reference_group = "a")$settings$alignment_start)
 })
@@ -101,14 +112,8 @@ test_that("an unrotated consensus solution uses the principal-axes gauge", {
   # With no requested rotation there is no simple structure to borrow, so the shared
   # frame is fixed by the principal axes of the target: t(M) %*% M diagonal with a
   # decreasing diagonal and non-negative column sums. That gauge is order-invariant too.
-  b1 <- WJIV_ages_6_8$cormat[1:12, 1:12]
-  b2 <- WJIV_ages_14_19$cormat[1:12, 1:12]
-  b3 <- WJIV_ages_20_39$cormat[1:12, 1:12]
-  Ns <- c(WJIV_ages_6_8$N, WJIV_ages_14_19$N, WJIV_ages_20_39$N)
-
   fit <- function(o) {
-    efa_group(list(a = b1, b = b2, c = b3)[o], n_factors = 2, N = Ns[o],
-              rotation = "none")
+    efa_group(wj_trio[o], n_factors = 2, N = wj_trio_N[o], rotation = "none")
   }
   mg1 <- fit(c(1, 2, 3))
   mg2 <- fit(c(3, 2, 1))
@@ -151,13 +156,8 @@ test_that("the consensus gauge follows the requested rotation criterion", {
   # general factor loading on every variable, which a varimax gauge destroys -- that gauge
   # returned a 9/4/6 salience split with a leading column whose smallest |loading| was .14,
   # and matched congruences against the per-group solutions of only .74-.81.
-  b1 <- WJIV_ages_6_8$cormat[1:12, 1:12]
-  b2 <- WJIV_ages_14_19$cormat[1:12, 1:12]
-  b3 <- WJIV_ages_20_39$cormat[1:12, 1:12]
-  Ns <- c(WJIV_ages_6_8$N, WJIV_ages_14_19$N, WJIV_ages_20_39$N)
-
   mg <- suppressWarnings(
-    efa_group(list(a = b1, b = b2, c = b3), n_factors = 3, N = Ns,
+    efa_group(wj_trio, n_factors = 3, N = wj_trio_N,
               rotation = "bifactorT", seed = 11))
   tgt <- unclass(mg$target)
   expect_identical(mg$settings$gauge, "bifactorT")
@@ -180,14 +180,9 @@ test_that("the criterion gauge is invariant to the order of the groups", {
   # loadings alone, so rotating M and rotating M %*% Q0 reach the same rotated matrix and
   # the gauge undoes whichever Q0 the group order produced. The residual is the consensus
   # iteration's own convergence floor, not the gauge's, so the tolerance is set from that.
-  b1 <- WJIV_ages_6_8$cormat[1:12, 1:12]
-  b2 <- WJIV_ages_14_19$cormat[1:12, 1:12]
-  b3 <- WJIV_ages_20_39$cormat[1:12, 1:12]
-  Ns <- c(WJIV_ages_6_8$N, WJIV_ages_14_19$N, WJIV_ages_20_39$N)
-
   fit <- function(o, rot) {
     suppressWarnings(
-      efa_group(list(a = b1, b = b2, c = b3)[o], n_factors = 3, N = Ns[o],
+      efa_group(wj_trio[o], n_factors = 3, N = wj_trio_N[o],
                 rotation = rot, seed = 11))
   }
 
@@ -255,15 +250,9 @@ test_that("a criterion parameter set on the fits also reaches the gauge", {
   # efa_group()'s own salience-flag argument, so it can never arrive through the dots, and
   # the fit settings do not record it. Kaiser normalization is the same kind of setting and
   # is taken from the fit settings, where it is recorded.
-  b1 <- WJIV_ages_6_8$cormat[1:12, 1:12]
-  b2 <- WJIV_ages_14_19$cormat[1:12, 1:12]
-  b3 <- WJIV_ages_20_39$cormat[1:12, 1:12]
-  Ns <- c(WJIV_ages_6_8$N, WJIV_ages_14_19$N, WJIV_ages_20_39$N)
-  bands <- list(a = b1, b = b2, c = b3)
-
   fit <- function(...) {
-    suppressWarnings(efa_group(bands, n_factors = 3, N = Ns, rotation = "geominT",
-                               seed = 11, ...))
+    suppressWarnings(efa_group(wj_trio, n_factors = 3, N = wj_trio_N,
+                               rotation = "geominT", seed = 11, ...))
   }
   base <- fit()
   wide <- fit(rotate_control = rotate_control(delta = 0.5))
@@ -294,14 +283,9 @@ test_that("a two-factor bifactor request falls back to the principal-axes gauge"
   # and the gauge would be a no-op leaving the frame wherever the iteration happened to stop
   # (loadings moved by more than 1.0 between group orders). The principal-axes gauge takes
   # over, which is both order-invariant and what the per-group solutions look like anyway.
-  b1 <- WJIV_ages_6_8$cormat[1:12, 1:12]
-  b2 <- WJIV_ages_14_19$cormat[1:12, 1:12]
-  b3 <- WJIV_ages_20_39$cormat[1:12, 1:12]
-  Ns <- c(WJIV_ages_6_8$N, WJIV_ages_14_19$N, WJIV_ages_20_39$N)
-
   fit <- function(o) {
     suppressWarnings(
-      efa_group(list(a = b1, b = b2, c = b3)[o], n_factors = 2, N = Ns[o],
+      efa_group(wj_trio[o], n_factors = 2, N = wj_trio_N[o],
                 rotation = "bifactorT", seed = 11))
   }
   mg1 <- fit(c(1, 2, 3))
@@ -380,14 +364,13 @@ test_that("reference alignment keeps the reference group fixed", {
 test_that("an oblique rotation routes to reference-Procrustes with a note", {
   bands <- list(a = cmat, b = cmat)
 
-  # The note fires and the requested rotation is not silently changed.
+  # The note fires and the requested rotation is not silently changed. The fit it announces
+  # is captured from that same call, so the routing is read off the run that was asserted on.
   expect_message(
-    efa_group(bands, n_factors = 3, N = 500, rotation = "promax"),
+    mg <- efa_group(bands, n_factors = 3, N = 500, rotation = "promax"),
     class = "efa_group_oblique_reference"
   )
 
-  mg <- suppressMessages(
-    efa_group(bands, n_factors = 3, N = 500, rotation = "promax"))
   expect_identical(mg$settings$alignment, "reference")
   expect_identical(mg$settings$rotation, "promax")
   expect_false(is.null(mg$Phi))
@@ -478,8 +461,7 @@ test_that("Tucker congruence matches psych::factor.congruence and is symmetric",
 
 
 test_that("identical groups have matched congruence of one", {
-  bands <- list(a = cmat, b = cmat, c = cmat)
-  mg <- efa_group(bands, n_factors = 3, N = 500, rotation = "varimax")
+  mg <- ident_fit
 
   # Matched-factor congruence between identical groups is 1 across every pair.
   expect_equal(as.numeric(mg$congruence$matched), rep(1, 3 * 3 * 3),
@@ -905,9 +887,7 @@ test_that(".efa_group_invariance reads the verdict conservatively off the CI low
 
 
 test_that("efa_group always returns diffs/flags and gates the invariance verdict", {
-  bands <- list(a = cmat, b = cmat, c = cmat)
-
-  mg <- efa_group(bands, n_factors = 3, N = 500, rotation = "varimax", invariance = TRUE)
+  mg <- ident_fit_inv
 
   expect_s3_class(mg$diffs, "data.frame")
   expect_s3_class(mg$flags, "data.frame")
@@ -930,7 +910,7 @@ test_that("efa_group always returns diffs/flags and gates the invariance verdict
   expect_true(mg$settings$invariance)
 
   # The verdict is gated: off by default, and diffs/flags are still present.
-  mg0 <- efa_group(bands, n_factors = 3, N = 500, rotation = "varimax")
+  mg0 <- ident_fit
   expect_null(mg0$invariance)
   expect_false(mg0$settings$invariance)
   expect_s3_class(mg0$diffs, "data.frame")
@@ -969,15 +949,22 @@ test_that("a bootstrap fills the flag CIs and the point difference sits inside t
 # and wording, not the fragile count.
 scrub_group <- function(lines) sub("[0-9]+/[0-9]+", "<flagged>", scrub_num(lines))
 
+# Two full WJIV age bands are the standard report fixture: two genuinely different groups
+# over the whole item set, so every section of the printout has something to say. varimax
+# draws no random start and the consensus gauge is closed form, so the fit is deterministic
+# and the blocks below share one -- with the invariance verdict on and off, which changes
+# which tables are printed but nothing that is fitted.
+wj_pair <- list(age_6_8 = WJIV_ages_6_8$cormat, age_14_19 = WJIV_ages_14_19$cormat)
+wj_pair_N <- c(WJIV_ages_6_8$N, WJIV_ages_14_19$N)
+wj_pair_fit <- efa_group(wj_pair, n_factors = 3, N = wj_pair_N, rotation = "varimax")
+wj_pair_fit_inv <- efa_group(wj_pair, n_factors = 3, N = wj_pair_N,
+                             rotation = "varimax", invariance = TRUE)
+
 test_that("print and format render the efa_group report", {
   local_reproducible_output()
 
-  bands <- list(age_6_8 = WJIV_ages_6_8$cormat, age_14_19 = WJIV_ages_14_19$cormat)
-  Ns <- c(WJIV_ages_6_8$N, WJIV_ages_14_19$N)
-
   # consensus alignment, orthogonal rotation, invariance verdicts, no bootstrap
-  mg <- efa_group(bands, n_factors = 3, N = Ns, rotation = "varimax",
-                  invariance = TRUE)
+  mg <- wj_pair_fit_inv
   expect_snapshot(print(mg), transform = scrub_group)
 
   # print() is exactly cat(format(x), sep = "\n"), so the two agree line for line
@@ -991,7 +978,7 @@ test_that("print and format render the efa_group report", {
 
   # oblique rotation -> reference-alignment header, no invariance section
   mg_ob <- suppressMessages(suppressWarnings(
-    efa_group(bands, n_factors = 3, N = Ns, rotation = "promax")))
+    efa_group(wj_pair, n_factors = 3, N = wj_pair_N, rotation = "promax")))
   expect_snapshot(print(mg_ob), transform = scrub_group)
 })
 
@@ -1048,9 +1035,7 @@ test_that("print points out an 'equal' verdict that rests on scale-invariance", 
                      invariance = TRUE, delta = 0, seed = 42)
   expect_false(shows_pointer(mg_d0))
 
-  bands <- list(age_6_8 = WJIV_ages_6_8$cormat, age_14_19 = WJIV_ages_14_19$cormat)
-  mg_bands <- efa_group(bands, n_factors = 3, invariance = TRUE, rotation = "varimax",
-                        N = c(WJIV_ages_6_8$N, WJIV_ages_14_19$N), seed = 42)
+  mg_bands <- wj_pair_fit_inv
   expect_true(all(mg_bands$invariance$verdict == "equal"))
   expect_lt(max(mg_bands$diffs$mean_abs_diff), 0.1)
   expect_false(shows_pointer(mg_bands))
@@ -1111,9 +1096,7 @@ test_that(".compare_loadings can skip the decimal-agreement scan", {
 
 
 test_that("plot methods return ggplot objects", {
-  bands <- list(age_6_8 = WJIV_ages_6_8$cormat, age_14_19 = WJIV_ages_14_19$cormat)
-  Ns <- c(WJIV_ages_6_8$N, WJIV_ages_14_19$N)
-  mg <- efa_group(bands, n_factors = 3, N = Ns, rotation = "varimax")
+  mg <- wj_pair_fit
 
   expect_s3_class(plot(mg, type = "congruence"), "ggplot")
   expect_s3_class(plot(mg, type = "differences"), "ggplot")
@@ -1136,9 +1119,7 @@ test_that("the bootstrap congruence plot builds", {
 
 test_that("the deterministic plots match their vdiffr baselines", {
   skip_if_not_installed("vdiffr")
-  bands <- list(age_6_8 = WJIV_ages_6_8$cormat, age_14_19 = WJIV_ages_14_19$cormat)
-  Ns <- c(WJIV_ages_6_8$N, WJIV_ages_14_19$N)
-  mg <- efa_group(bands, n_factors = 3, N = Ns, rotation = "varimax")
+  mg <- wj_pair_fit
 
   vdiffr::expect_doppelganger("efa_group congruence plot",
                               plot(mg, type = "congruence"))

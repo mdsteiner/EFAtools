@@ -34,47 +34,52 @@ k      <- 2L
 m_id   <- 5L
 identical_list <- replicate(m_id, cormat, simplify = FALSE)
 
+# The orthogonal (varimax) identity-imputation pool and its single-fit oracle
+# are needed by several groups below with byte-identical arguments, so they are
+# built once here and only ever read. Varimax is the closed-form SVD path with
+# no random start, so neither object consumes RNG and sharing them cannot move
+# the stream the oblique groups below draw from. The oblique fixtures are
+# deliberately NOT shared: an oblique engine draws random starts, so each of
+# those groups seeds and fits its own solution.
+pooled_varimax <- suppressMessages(EFA_POOLED(
+  identical_list, n_factors = k, N = N_id, method = "ML",
+  rotation = "varimax", se = "information"
+))
+oracle_varimax <- EFA(cormat, n_factors = k, N = N_id, method = "ML",
+                      rotation = "varimax", se = "information")
+
 # ---- Group 1 ---------------------------------------------------------------
 
 test_that("identity imputations (orthogonal): pooled rotated SE equals the per-fit criterion-aware delta SE, B = 0", {
-  pooled <- suppressMessages(EFA_POOLED(
-    identical_list, n_factors = k, N = N_id, method = "ML",
-    rotation = "varimax", se = "information"
-  ))
-
-  oracle <- EFA(cormat, n_factors = k, N = N_id, method = "ML",
-                rotation = "varimax", se = "information")
-
-  expect_identical(pooled$settings$se, "information")
+  expect_identical(pooled_varimax$settings$se, "information")
 
   # Pooled point estimate is the MI target (= the single fit's varimax solution).
-  expect_equal(unclass(pooled$rot_loadings), unclass(oracle$rot_loadings),
-               tolerance = 1e-8)
+  expect_equal(unclass(pooled_varimax$rot_loadings),
+               unclass(oracle_varimax$rot_loadings), tolerance = 1e-8)
 
   # The within-imputation variance is each fit's criterion-aware delta-method
   # rotated SE (the quantity EFA() returns); with identical imputations the
   # signed-permutation alignment is the identity and B = 0, so the pooled rotated
   # SE equals the single-fit rotated SE exactly.
-  expect_equal(unname(pooled$SE$rot_loadings), unname(oracle$SE$rot_loadings),
-               tolerance = 1e-6)
+  expect_equal(unname(pooled_varimax$SE$rot_loadings),
+               unname(oracle_varimax$SE$rot_loadings), tolerance = 1e-6)
 
-  fmi <- pooled$MI$rot_loadings$FMI
-  riv <- pooled$MI$rot_loadings$RIV
+  fmi <- pooled_varimax$MI$rot_loadings$FMI
+  riv <- pooled_varimax$MI$rot_loadings$RIV
   expect_true(all(abs(fmi[is.finite(fmi)]) < 1e-6))
   expect_true(all(abs(riv[is.finite(riv)]) < 1e-6))
 
   # Provenance flag: the criterion-aware signed-permutation reuse (orthogonal and
   # oblique alike).
-  expect_identical(pooled$MI$rot_loadings$method, "signed_permutation_approx")
+  expect_identical(pooled_varimax$MI$rot_loadings$method,
+                   "signed_permutation_approx")
 })
 
 # ---- Group 2 ---------------------------------------------------------------
 
 test_that("orthogonal point estimate: L_d^unrot Q_d reproduces the aligned rotated loadings", {
-  fit <- EFA(cormat, n_factors = k, N = N_id, method = "ML",
-             rotation = "varimax", se = "information")
-  A      <- unclass(fit$unrot_loadings)
-  target <- unclass(fit$rot_loadings)
+  A      <- unclass(oracle_varimax$unrot_loadings)
+  target <- unclass(oracle_varimax$rot_loadings)
   Q      <- EFAtools:::.procrustes_orthogonal_T(A, target)
 
   # Q recovers the orthogonal rotation, so A Q reproduces the rotated loadings.
@@ -86,16 +91,9 @@ test_that("orthogonal point estimate: L_d^unrot Q_d reproduces the aligned rotat
 # ---- Group 3 ---------------------------------------------------------------
 
 test_that("orthogonal rotated SE is the criterion-aware delta SE, not the inflated fixed-Q propagation", {
-  pooled <- suppressMessages(EFA_POOLED(
-    identical_list, n_factors = k, N = N_id, method = "ML",
-    rotation = "varimax", se = "information"
-  ))
-  oracle <- EFA(cormat, n_factors = k, N = N_id, method = "ML",
-                rotation = "varimax", se = "information")
-
   # The pooled orthogonal rotated SE is the per-fit criterion-aware delta SE.
-  expect_equal(unname(pooled$SE$rot_loadings), unname(oracle$SE$rot_loadings),
-               tolerance = 1e-6)
+  expect_equal(unname(pooled_varimax$SE$rot_loadings),
+               unname(oracle_varimax$SE$rot_loadings), tolerance = 1e-6)
 
   # Regression guard: the former fixed-Q Kronecker propagation of the
   # unrotated covariance is a DISTINCT matrix from the reported (criterion-aware)
@@ -104,36 +102,29 @@ test_that("orthogonal rotated SE is the criterion-aware delta SE, not the inflat
   # never smaller). Confirm the reported SE is not that propagated quantity; the
   # gap grows from modest on this well-separated structure to several-fold when
   # factors are weakly separated.
-  A      <- unclass(oracle$unrot_loadings)
-  V      <- oracle$vcov_unrot_loadings
-  target <- unclass(oracle$rot_loadings)
+  A      <- unclass(oracle_varimax$unrot_loadings)
+  V      <- oracle_varimax$vcov_unrot_loadings
+  target <- unclass(oracle_varimax$rot_loadings)
   Q      <- EFAtools:::.procrustes_orthogonal_T(A, target)
   kron_se <- EFAtools:::.efa_pooled_propagate_procrustes_vcov(V, Q, p_vars, k)
 
-  reported <- unclass(pooled$SE$rot_loadings)
+  reported <- unclass(pooled_varimax$SE$rot_loadings)
   expect_gt(max(abs(kron_se - reported)), 1e-3)
 })
 
 # ---- Group 4 ---------------------------------------------------------------
 
 test_that("communalities (h2) pool is gauge-invariant: Rubin's rules on per-fit communality SEs, no alignment", {
-  pooled <- suppressMessages(EFA_POOLED(
-    identical_list, n_factors = k, N = N_id, method = "ML",
-    rotation = "varimax", se = "information"
-  ))
-  oracle <- EFA(cormat, n_factors = k, N = N_id, method = "ML",
-                rotation = "varimax", se = "information")
-
   # Identical imputations -> B = 0 -> pooled h2 SE equals the per-fit communality
   # SE exactly (no alignment is applied; communalities are rotation-invariant).
-  expect_length(pooled$SE$h2, p_vars)
-  expect_equal(unname(pooled$SE$h2), unname(oracle$SE$communalities),
-               tolerance = 1e-10)
-  expect_true(all(pooled$SE$h2[!is.na(pooled$SE$h2)] >= 0))
+  expect_length(pooled_varimax$SE$h2, p_vars)
+  expect_equal(unname(pooled_varimax$SE$h2),
+               unname(oracle_varimax$SE$communalities), tolerance = 1e-10)
+  expect_true(all(pooled_varimax$SE$h2[!is.na(pooled_varimax$SE$h2)] >= 0))
 
-  fmi <- pooled$MI$h2$FMI
+  fmi <- pooled_varimax$MI$h2$FMI
   expect_true(all(abs(fmi[is.finite(fmi)]) < 1e-12))
-  expect_identical(pooled$MI$h2$method, "gauge_invariant")
+  expect_identical(pooled_varimax$MI$h2$method, "gauge_invariant")
 })
 
 # ---- Group 4b --------------------------------------------------------------
@@ -222,7 +213,6 @@ test_that("distinct imputations (B > 0): pooled rotated-loading and h2 SEs match
 test_that("np-boot cross-check: analytic and bootstrap pooled orthogonal rotated SEs agree to within ~order of magnitude (informational)", {
   skip_on_cran()
   skip_if_not_slow()
-  skip_if_not_installed("MASS")
 
   set.seed(20260621)
   p_syn <- 6L
@@ -234,9 +224,13 @@ test_that("np-boot cross-check: analytic and bootstrap pooled orthogonal rotated
   L_true[4:6, 2] <- c(0.75, 0.70, 0.65)
   Sigma <- tcrossprod(L_true)
   diag(Sigma) <- 1
+  # As in the block above, draw through the Cholesky factor: every uniqueness is
+  # positive so Sigma is positive definite, chol() is then unique, and the seeded
+  # sample is reproduced on every LAPACK build.
+  Rt <- chol(Sigma)
 
   imps <- lapply(seq_len(m_syn), function(i) {
-    X <- MASS::mvrnorm(N_syn, mu = rep(0, p_syn), Sigma = Sigma)
+    X <- matrix(stats::rnorm(N_syn * p_syn), N_syn, p_syn) %*% Rt
     colnames(X) <- paste0("V", seq_len(p_syn))
     as.data.frame(X)
   })
@@ -331,27 +325,23 @@ test_that("oblique Phi and Structure SE pooling: shapes, diag(Phi SE) = 0, symme
 
 test_that("se = 'information' + rotation fills the rotated SE/CI/MI slots with correct shapes", {
   # Orthogonal: rot_loadings + h2; no Phi/Structure.
-  pooled_orth <- suppressMessages(EFA_POOLED(
-    identical_list, n_factors = k, N = N_id, method = "ML",
-    rotation = "varimax", se = "information"
-  ))
-  rot_dn <- dimnames(unclass(pooled_orth$rot_loadings))
+  rot_dn <- dimnames(unclass(pooled_varimax$rot_loadings))
 
-  expect_identical(dim(pooled_orth$SE$rot_loadings), c(p_vars, k))
-  expect_identical(dimnames(pooled_orth$SE$rot_loadings), rot_dn)
-  expect_identical(dim(pooled_orth$CI$rot_loadings$lower), c(p_vars, k))
-  expect_identical(dim(pooled_orth$CI$rot_loadings$upper), c(p_vars, k))
-  expect_setequal(names(pooled_orth$MI$rot_loadings),
+  expect_identical(dim(pooled_varimax$SE$rot_loadings), c(p_vars, k))
+  expect_identical(dimnames(pooled_varimax$SE$rot_loadings), rot_dn)
+  expect_identical(dim(pooled_varimax$CI$rot_loadings$lower), c(p_vars, k))
+  expect_identical(dim(pooled_varimax$CI$rot_loadings$upper), c(p_vars, k))
+  expect_setequal(names(pooled_varimax$MI$rot_loadings),
                   c("RIV", "FMI", "df", "method"))
-  expect_identical(dim(pooled_orth$MI$rot_loadings$df), c(p_vars, k))
+  expect_identical(dim(pooled_varimax$MI$rot_loadings$df), c(p_vars, k))
 
-  expect_length(pooled_orth$SE$h2, p_vars)
-  expect_length(pooled_orth$CI$h2$lower, p_vars)
-  expect_setequal(names(pooled_orth$MI$h2), c("RIV", "FMI", "df", "method"))
+  expect_length(pooled_varimax$SE$h2, p_vars)
+  expect_length(pooled_varimax$CI$h2$lower, p_vars)
+  expect_setequal(names(pooled_varimax$MI$h2), c("RIV", "FMI", "df", "method"))
 
-  expect_null(pooled_orth$SE$Phi)
-  expect_null(pooled_orth$SE$Structure)
-  expect_null(pooled_orth$replicates)
+  expect_null(pooled_varimax$SE$Phi)
+  expect_null(pooled_varimax$SE$Structure)
+  expect_null(pooled_varimax$replicates)
 
   # Oblique: adds Phi and Structure.
   pooled_oblq <- suppressMessages(EFA_POOLED(

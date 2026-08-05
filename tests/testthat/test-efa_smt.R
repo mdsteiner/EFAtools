@@ -195,20 +195,13 @@ test_that("settings are returned correctly", {
 
 })
 
-# Create singular correlation matrix for tests
-x <- rnorm(10)
-y <- rnorm(10)
-z <- x + y
-dat_sing <- matrix(c(x, y, z), ncol = 3)
-cor_sing <- stats::cor(dat_sing)
-
 test_that("errors are thrown correctly", {
   expect_error(efa_smt(1:5), class = "efa_input_not_matrix")
   expect_error(efa_smt(test_models$baseline$cormat), class = "efa_n_required")
   expect_message(efa_smt(GRiPS_raw), class = "efa_cor_from_data")
   expect_warning(efa_smt(GRiPS_raw, N = 20), class = "efa_n_from_data")
-  expect_error(efa_smt(dat_sing), class = "efa_cor_singular")
-  expect_error(efa_smt(cor_sing, N = 10), class = "efa_cor_singular")
+  expect_error(efa_smt(sing_raw), class = "efa_cor_singular")
+  expect_error(efa_smt(sing_cor, N = sing_N), class = "efa_cor_singular")
   expect_error(efa_smt(matrix(rnorm(50), ncol = 2)), class = "efa_smt_underidentified") # underidentified case
   expect_error(efa_smt(matrix(rnorm(60), ncol = 3)), class = "efa_smt_underidentified") # just identified case
 
@@ -220,4 +213,4 @@ test_that("errors are thrown correctly", {
                class = "efa_cor_method_unsupported")
 })
 
-rm(smt_cor, smt_raw, smt_zero, x, y, z, dat_sing, cor_sing)
+rm(smt_cor, smt_raw, smt_zero)

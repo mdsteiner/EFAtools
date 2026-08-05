@@ -190,13 +190,6 @@ test_that("settings are returned correctly", {
 
 })
 
-# Create singular correlation matrix for tests
-x <- rnorm(10)
-y <- rnorm(10)
-z <- x + y
-dat_sing <- matrix(c(x, y, z), ncol = 3)
-cor_sing <- stats::cor(dat_sing)
-
 burt <- .burt_cormat()
 
 
@@ -213,8 +206,8 @@ test_that("errors are thrown correctly", {
   expect_warning(efa_parallel(test_models$baseline$cormat, N = 500,
                           eigen_type = "PCA", decision_rule = "crawford",
                           percent = 80), class = "efa_parallel_crawford")
-  expect_error(efa_parallel(dat_sing), class = "efa_cor_singular")
-  expect_error(efa_parallel(cor_sing, N = 10), class = "efa_cor_singular")
+  expect_error(efa_parallel(sing_raw), class = "efa_cor_singular")
+  expect_error(efa_parallel(sing_cor, N = sing_N), class = "efa_cor_singular")
   expect_warning(efa_parallel(burt, N = 100, eigen_type = "PCA"), class = "efa_cor_smoothed")
   expect_error(efa_parallel(test_models$baseline$cormat, N = 15), class = "efa_n_too_small")
   expect_error(efa_parallel(test_models$baseline$cormat, N = 18), class = "efa_n_too_small")
@@ -460,4 +453,4 @@ test_that(".parallel_EFA_sim draws its reference from the shared kernel", {
 if (is_slow_test()) {
   rm(pa_cor, pa_cor_pca, pa_raw, pa_nodat, pa_craw, pa_perc)
 }
-rm(x, y, z, dat_sing, cor_sing, burt)
+rm(burt)

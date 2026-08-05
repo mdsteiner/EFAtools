@@ -40,20 +40,11 @@ test_that("found eigenvalues are correct", {
 })
 
 
-# Create singular correlation matrix for tests
-x <- rnorm(10)
-y <- rnorm(10)
-z <- x + y
-dat_sing <- matrix(c(x, y, z), ncol = 3)
-cor_sing <- stats::cor(dat_sing)
-
-cor_nposdef <- matrix(c(1, 1, 0, 1, 1, 1, 0, 1, 1), ncol = 3)
-
 test_that("errors are thrown correctly", {
   expect_error(efa_scree(1:5), class = "efa_input_not_matrix")
   expect_message(efa_scree(GRiPS_raw, eigen_type = "PCA"), class = "efa_cor_from_data")
-  expect_error(efa_scree(dat_sing), class = "efa_cor_singular")
-  expect_error(efa_scree(cor_sing, N = 10), class = "efa_cor_singular")
+  expect_error(efa_scree(sing_raw), class = "efa_cor_singular")
+  expect_error(efa_scree(sing_cor, N = sing_N), class = "efa_cor_singular")
   expect_warning(efa_scree(cor_nposdef, N = 10), class = "efa_cor_smoothed")
 })
 
@@ -89,5 +80,4 @@ test_that("settings are returned correctly", {
 
 })
 
-rm(scree_cor, scree_cor_smc, scree_raw, scree_efa_ml, x, y, z, dat_sing, cor_sing,
-   cor_nposdef)
+rm(scree_cor, scree_cor_smc, scree_raw, scree_efa_ml)

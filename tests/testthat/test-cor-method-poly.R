@@ -246,7 +246,10 @@ test_that("method = 'DWLS' requires a polychoric asymptotic covariance", {
 })
 
 test_that("KMO() and BARTLETT() honour cor_method = 'poly'", {
-  x <- DOSPERT_raw[stats::complete.cases(DOSPERT_raw), ]
+  # Six items rather than all thirty: what is asserted is the routing, an exact identity
+  # that holds for any item set, and six items make each polychoric matrix 15 pairs instead
+  # of 435. The rows are still the complete cases of the full data, so N is unchanged.
+  x <- DOSPERT_raw[stats::complete.cases(DOSPERT_raw), 1:6]
   N <- nrow(x)
   Rp <- .polychoric(x)$R
 

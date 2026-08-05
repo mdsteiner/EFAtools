@@ -26,25 +26,35 @@ efa_uls <- suppressWarnings(EFA(cbind(rnorm(100), rnorm(100), rnorm(100), rnorm(
 efa_paf <- suppressWarnings(EFA(cbind(rnorm(100), rnorm(100), rnorm(100), rnorm(100),
                     rnorm(100), rnorm(100)), 3, method = "PAF"))
 
-gof_ml <- .gof(efa_ml$unrot_loadings, efa_ml$orig_R, efa_ml$settings$N,
-               "ML", efa_ml$fit_indices$Fm)
-w_ml <- tryCatch(.gof(efa_ml$unrot_loadings, efa_ml$orig_R, efa_ml$settings$N,
-                      "ML", efa_ml$fit_indices$Fm),
-                  error=function(e) e,
-                  warning=function(w) w)
-gof_uls <- .gof(efa_uls$unrot_loadings, efa_uls$orig_R, efa_uls$settings$N,
-               "ULS", efa_uls$fit_indices$Fm)
-w_uls <- tryCatch(.gof(efa_uls$unrot_loadings, efa_uls$orig_R, efa_uls$settings$N,
-                    "ULS", efa_uls$fit_indices$Fm),
-               error=function(e) e,
-               warning=function(w) w)
+# .gof() derives CAF from a KMO on the residual matrix and signals the classed
+# efa_caf_failed warning when that solve is unusable, in which case CAF falls back to 0
+# instead of the ~.5 these near-null fixtures otherwise give. Which of the two branches ran
+# is therefore part of what the expectations below need to know, so record it alongside the
+# value. withCallingHandlers reads the condition without unwinding, so one evaluation yields
+# both; tryCatch(warning = ) aborts the call and would force .gof() to be run a second time.
+# Keying the handler on the class rather than on "warning" means an unrelated warning cannot
+# silently divert the CAF expectation to the wrong branch.
+.gof_caf <- function(...) {
+  caf_failed <- FALSE
+  gof <- withCallingHandlers(
+    .gof(...),
+    efa_caf_failed = function(w) {
+      caf_failed <<- TRUE
+      invokeRestart("muffleWarning")
+    }
+  )
+  list(gof = gof, caf_failed = caf_failed)
+}
 
-gof_paf <- .gof(efa_paf$unrot_loadings, efa_paf$orig_R, efa_paf$settings$N,
-               "PAF", NA)
-w_paf <- tryCatch(.gof(efa_paf$unrot_loadings, efa_paf$orig_R, efa_paf$settings$N,
-                       "PAF", NA),
-                  error=function(e) e,
-                  warning=function(w) w)
+res_ml <- .gof_caf(efa_ml$unrot_loadings, efa_ml$orig_R, efa_ml$settings$N,
+                   "ML", efa_ml$fit_indices$Fm)
+gof_ml <- res_ml$gof
+res_uls <- .gof_caf(efa_uls$unrot_loadings, efa_uls$orig_R, efa_uls$settings$N,
+                    "ULS", efa_uls$fit_indices$Fm)
+gof_uls <- res_uls$gof
+res_paf <- .gof_caf(efa_paf$unrot_loadings, efa_paf$orig_R, efa_paf$settings$N,
+                    "PAF", NA)
+gof_paf <- res_paf$gof
 m <- 6 # n variables
 q <- 3 # n factors
 test_that(".gof works", {
@@ -56,7 +66,7 @@ test_that(".gof works", {
   expect_true(is.na(gof_ml$p_chi))    # df == 0: the chi-square test is undefined
   expect_equal(gof_ml$CFI, 1)
   expect_equal(gof_ml$RMSEA, 0)
-  if (inherits(w_ml, "warning")) {
+  if (res_ml$caf_failed) {
     expect_equal(gof_ml$CAF, 0, tolerance = .01)
   } else {
     expect_equal(gof_ml$CAF, .5, tolerance = .1)
@@ -71,7 +81,7 @@ test_that(".gof works", {
   expect_true(is.na(gof_uls$p_chi))   # df == 0: the chi-square test is undefined
   expect_equal(gof_uls$CFI, 1)
   expect_equal(gof_uls$RMSEA, 0)
-  if (inherits(w_uls, "warning")) {
+  if (res_uls$caf_failed) {
     expect_equal(gof_uls$CAF, 0, tolerance = .01)
   } else {
     expect_equal(gof_uls$CAF, .5, tolerance = .1)
@@ -88,7 +98,7 @@ test_that(".gof works", {
   expect_equal(gof_paf$p_chi, NA_real_)
   expect_equal(gof_paf$CFI, NA_real_)
   expect_equal(gof_paf$RMSEA, NA_real_)
-  if (inherits(w_paf, "warning")) {
+  if (res_paf$caf_failed) {
     expect_equal(gof_paf$CAF, 0, tolerance = .01)
   } else {
     expect_equal(gof_paf$CAF, .5, tolerance = .1)
@@ -179,4 +189,4 @@ test_that(".compute_caf returns 0 (with warning) when KMO is not computable", {
 
 
 rm(efa_pro, efa_temp, efa_ml, efa_uls, efa_paf, gof_ml, gof_uls, gof_paf,
-   w_ml, w_uls, w_paf, m, q)
+   res_ml, res_uls, res_paf, .gof_caf, m, q)

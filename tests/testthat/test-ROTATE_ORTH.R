@@ -117,36 +117,28 @@ test_that("errors etc. are thrown correctly", {
   expect_warning(.rotate_model(unrot_1, rotation = "equamax", type = "EFAtools"), class = "efa_single_factor")
 })
 
-test_that("the bentlerT rotation matrix is orthogonal and reproduces the rotated loadings", {
+test_that("the native orthogonal rotation matrices are orthogonal and reproduce the loadings", {
   skip_on_cran()
 
-  # bentlerT is computed by the native gradient-projection engine. These invariants hold for any
-  # valid orthogonal solution and need no reference package (so coverage survives the criterion
-  # moving off GPArotation): the rotation matrix is orthogonal (t(Th) %*% Th == I), and it
-  # reproduces the rotated loadings via the documented identity L_unrot %*% Th == rot_loadings.
-  # The sign-reflection/reordering of the rotation matrix is exercised deterministically by the
+  # bentlerT and bifactorT are computed by the native gradient-projection engine. These
+  # invariants hold for any valid orthogonal solution and need no reference package (so
+  # coverage survives a criterion moving off GPArotation): the rotation matrix is orthogonal
+  # (t(Th) %*% Th == I), and it reproduces the rotated loadings via the documented identity
+  # L_unrot %*% Th == rot_loadings. Both solutions are checked in one loop, labelled by
+  # criterion so a failure still names the engine that produced it. The
+  # sign-reflection/reordering of the rotation matrix is exercised deterministically by the
   # orthogonal reflect-and-order test below.
   L <- unrot$unrot_loadings
   k <- ncol(L)
+  solutions <- list(bentlerT = bentT, bifactorT = bifacT)
 
-  expect_equal(crossprod(bentT$rotmat), diag(k), ignore_attr = TRUE, tolerance = 1e-6)
-  expect_equal(unclass(L) %*% bentT$rotmat, unclass(bentT$rot_loadings),
-               ignore_attr = TRUE, tolerance = 1e-6)
-})
-
-test_that("the bifactorT rotation matrix is orthogonal and reproduces the rotated loadings", {
-  skip_on_cran()
-
-  # bifactorT is computed by the native gradient-projection engine. These invariants hold for any
-  # valid orthogonal solution and need no reference package (so coverage survives the criterion
-  # moving off GPArotation): the rotation matrix is orthogonal (t(Th) %*% Th == I), and it
-  # reproduces the rotated loadings via the documented identity L_unrot %*% Th == rot_loadings.
-  L <- unrot$unrot_loadings
-  k <- ncol(L)
-
-  expect_equal(crossprod(bifacT$rotmat), diag(k), ignore_attr = TRUE, tolerance = 1e-6)
-  expect_equal(unclass(L) %*% bifacT$rotmat, unclass(bifacT$rot_loadings),
-               ignore_attr = TRUE, tolerance = 1e-6)
+  for (nm in names(solutions)) {
+    res <- solutions[[nm]]
+    expect_equal(crossprod(res$rotmat), diag(k), ignore_attr = TRUE, tolerance = 1e-6,
+                 info = nm)
+    expect_equal(unclass(L) %*% res$rotmat, unclass(res$rot_loadings),
+                 ignore_attr = TRUE, tolerance = 1e-6, info = nm)
+  }
 })
 
 test_that("orthogonal loadings and rotmat are reflected/reordered consistently", {

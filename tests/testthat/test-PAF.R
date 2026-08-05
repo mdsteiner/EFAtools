@@ -65,14 +65,19 @@ test_that("original correlation matrix and eigenvalues are correct", {
   expect_equal(sum(paf_F1_t$orig_eigen), ncol(test_models$baseline$cormat))
   expect_equal(sum(paf_F1_f$orig_eigen), ncol(test_models$baseline$cormat))
 
+  # The initial eigenvalues are taken from the correlation matrix after its diagonal has
+  # been replaced by the initial communalities, so their sum is the trace of the reduced
+  # matrix. Every init_comm rule that estimates communalities (smc, mac) puts something
+  # below 1 on the diagonal and the sum therefore falls short of p; init_comm = "unity"
+  # leaves the unit diagonal in place, so there the sum is exactly p.
   expect_lt(sum(paf_efatools$init_eigen), ncol(test_models$baseline$cormat))
   expect_lt(sum(paf_psych$init_eigen), ncol(test_models$baseline$cormat))
   expect_lt(sum(paf_spss$init_eigen), ncol(test_models$baseline$cormat))
-  expect_equal(sum(paf_none$orig_eigen), ncol(test_models$baseline$cormat))
-  expect_equal(sum(paf_mac_t$orig_eigen), ncol(test_models$baseline$cormat))
-  expect_equal(sum(paf_mac_f$orig_eigen), ncol(test_models$baseline$cormat))
-  expect_equal(sum(paf_F1_t$orig_eigen), ncol(test_models$baseline$cormat))
-  expect_equal(sum(paf_F1_f$orig_eigen), ncol(test_models$baseline$cormat))
+  expect_equal(sum(paf_none$init_eigen), ncol(test_models$baseline$cormat))
+  expect_lt(sum(paf_mac_t$init_eigen), ncol(test_models$baseline$cormat))
+  expect_lt(sum(paf_mac_f$init_eigen), ncol(test_models$baseline$cormat))
+  expect_lt(sum(paf_F1_t$init_eigen), ncol(test_models$baseline$cormat))
+  expect_lt(sum(paf_F1_f$init_eigen), ncol(test_models$baseline$cormat))
 
   expect_lt(sum(paf_efatools$final_eigen), ncol(test_models$baseline$cormat))
   expect_lt(sum(paf_psych$final_eigen), ncol(test_models$baseline$cormat))
@@ -94,62 +99,22 @@ test_that("fit indices are returned correctly", {
   expect_output(str(paf_F1_t$fit_indices), "List of 18")
   expect_output(str(paf_F1_f$fit_indices), "List of 18")
 
-  expect_equal(paf_efatools$fit_indices[c("chi", "p_chi", "CFI", "RMSEA",
-                                          "RMSEA_LB", "RMSEA_UB", "AIC", "BIC",
-                                          "Fm", "chi_null", "df_null", "p_null")],
-               list(chi = NA_real_, p_chi = NA_real_, CFI = NA_real_,
-                    RMSEA = NA_real_, RMSEA_LB = NA_real_, RMSEA_UB = NA_real_,
-                    AIC = NA_real_, BIC = NA_real_, Fm = NA_real_,
-                    chi_null = NA_real_, df_null = NA_real_, p_null = NA_real_))
-  expect_equal(paf_psych$fit_indices[c("chi", "p_chi", "CFI", "RMSEA",
-                                       "RMSEA_LB", "RMSEA_UB", "AIC", "BIC",
-                                       "Fm", "chi_null", "df_null", "p_null")],
-               list(chi = NA_real_, p_chi = NA_real_, CFI = NA_real_,
-                    RMSEA = NA_real_, RMSEA_LB = NA_real_, RMSEA_UB = NA_real_,
-                    AIC = NA_real_, BIC = NA_real_, Fm = NA_real_,
-                    chi_null = NA_real_, df_null = NA_real_, p_null = NA_real_))
-  expect_equal(paf_spss$fit_indices[c("chi", "p_chi", "CFI", "RMSEA",
-                                      "RMSEA_LB", "RMSEA_UB", "AIC", "BIC",
-                                      "Fm", "chi_null", "df_null", "p_null")],
-               list(chi = NA_real_, p_chi = NA_real_, CFI = NA_real_,
-                    RMSEA = NA_real_, RMSEA_LB = NA_real_, RMSEA_UB = NA_real_,
-                    AIC = NA_real_, BIC = NA_real_, Fm = NA_real_,
-                    chi_null = NA_real_, df_null = NA_real_, p_null = NA_real_))
-  expect_equal(paf_none$fit_indices[c("chi", "p_chi", "CFI", "RMSEA",
-                                      "RMSEA_LB", "RMSEA_UB", "AIC", "BIC",
-                                      "Fm", "chi_null", "df_null", "p_null")],
-               list(chi = NA_real_, p_chi = NA_real_, CFI = NA_real_,
-                    RMSEA = NA_real_, RMSEA_LB = NA_real_, RMSEA_UB = NA_real_,
-                    AIC = NA_real_, BIC = NA_real_, Fm = NA_real_,
-                    chi_null = NA_real_, df_null = NA_real_, p_null = NA_real_))
-  expect_equal(paf_mac_t$fit_indices[c("chi", "p_chi", "CFI", "RMSEA",
-                                       "RMSEA_LB", "RMSEA_UB", "AIC", "BIC",
-                                       "Fm", "chi_null", "df_null", "p_null")],
-               list(chi = NA_real_, p_chi = NA_real_, CFI = NA_real_,
-                    RMSEA = NA_real_, RMSEA_LB = NA_real_, RMSEA_UB = NA_real_,
-                    AIC = NA_real_, BIC = NA_real_, Fm = NA_real_,
-                    chi_null = NA_real_, df_null = NA_real_, p_null = NA_real_))
-  expect_equal(paf_mac_f$fit_indices[c("chi", "p_chi", "CFI", "RMSEA",
-                                       "RMSEA_LB", "RMSEA_UB", "AIC", "BIC",
-                                       "Fm", "chi_null", "df_null", "p_null")],
-               list(chi = NA_real_, p_chi = NA_real_, CFI = NA_real_,
-                    RMSEA = NA_real_, RMSEA_LB = NA_real_, RMSEA_UB = NA_real_,
-                    AIC = NA_real_, BIC = NA_real_, Fm = NA_real_,
-                    chi_null = NA_real_, df_null = NA_real_, p_null = NA_real_))
-  expect_equal(paf_F1_t$fit_indices[c("chi", "p_chi", "CFI", "RMSEA",
-                                      "RMSEA_LB", "RMSEA_UB", "AIC", "BIC",
-                                      "Fm", "chi_null", "df_null", "p_null")],
-               list(chi = NA_real_, p_chi = NA_real_, CFI = NA_real_,
-                    RMSEA = NA_real_, RMSEA_LB = NA_real_, RMSEA_UB = NA_real_,
-                    AIC = NA_real_, BIC = NA_real_, Fm = NA_real_,
-                    chi_null = NA_real_, df_null = NA_real_, p_null = NA_real_))
-  expect_equal(paf_F1_f$fit_indices[c("chi", "p_chi", "CFI", "RMSEA",
-                                      "RMSEA_LB", "RMSEA_UB", "AIC", "BIC",
-                                      "Fm", "chi_null", "df_null", "p_null")],
-               list(chi = NA_real_, p_chi = NA_real_, CFI = NA_real_,
-                    RMSEA = NA_real_, RMSEA_LB = NA_real_, RMSEA_UB = NA_real_,
-                    AIC = NA_real_, BIC = NA_real_, Fm = NA_real_,
-                    chi_null = NA_real_, df_null = NA_real_, p_null = NA_real_))
+  # PAF has no discrepancy function, so the likelihood-based indices are undefined for
+  # every one of these fits: they all reach the same branch of the fit-index assembly,
+  # which sets the whole block to NA_real_. Neither the type preset, the initial
+  # communalities, nor the number of factors enters any of these keys, so the eight
+  # configurations are checked against one shared expectation, labelled so a failure still
+  # names the configuration that produced it.
+  paf_fits <- list(EFAtools = paf_efatools, psych = paf_psych, SPSS = paf_spss,
+                   none = paf_none, mac_t = paf_mac_t, mac_f = paf_mac_f,
+                   F1_t = paf_F1_t, F1_f = paf_F1_f)
+  na_indices <- list(chi = NA_real_, p_chi = NA_real_, CFI = NA_real_,
+                     RMSEA = NA_real_, RMSEA_LB = NA_real_, RMSEA_UB = NA_real_,
+                     AIC = NA_real_, BIC = NA_real_, Fm = NA_real_,
+                     chi_null = NA_real_, df_null = NA_real_, p_null = NA_real_)
+  for (nm in names(paf_fits)) {
+    expect_equal(paf_fits[[nm]]$fit_indices[names(na_indices)], na_indices, info = nm)
+  }
 
   expect_type(paf_efatools$fit_indices$df, "double")
   expect_type(paf_psych$fit_indices$df, "double")

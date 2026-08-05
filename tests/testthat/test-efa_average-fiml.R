@@ -6,13 +6,17 @@
 
 # A missing-at-random fixture: a clean two-factor population, with column 1 fully observed
 # and driving the missingness in the others (so the mechanism depends only on observed data).
+# The deviates are coloured by the Cholesky factor rather than by an eigendecomposition: this
+# population covariance has repeated eigenvalues, whose eigenvector basis is undetermined and
+# hence settled by rounding, while chol() is unique for a positive definite matrix, so the same
+# seed reproduces the same sample on every LAPACK build.
 avg_fiml_mar_data <- function(n = 800, seed = 4242) {
   set.seed(seed)
   L <- matrix(0, 6, 2)
   L[1:3, 1] <- 0.7
   L[4:6, 2] <- 0.7
   S <- tcrossprod(L); diag(S) <- 1
-  X <- MASS::mvrnorm(n, mu = rep(0, 6), Sigma = S)
+  X <- matrix(stats::rnorm(n * 6), n) %*% chol(S)
   colnames(X) <- paste0("V", seq_len(6))
   X[X[, 1] >  0.8, 2] <- NA
   X[X[, 1] < -0.8, 3] <- NA
@@ -23,7 +27,6 @@ avg_fiml_mar_data <- function(n = 800, seed = 4242) {
 
 test_that("efa_average with cor_method = 'fiml' analyses the two-stage FIML correlation", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
 
   X <- avg_fiml_mar_data()
 
@@ -54,7 +57,6 @@ test_that("efa_average with cor_method = 'fiml' analyses the two-stage FIML corr
 
 test_that("efa_average runs the FIML EM once for the whole grid, not per solution", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
 
   X <- avg_fiml_mar_data()
 
@@ -83,7 +85,10 @@ test_that("efa_average runs the FIML EM once for the whole grid, not per solutio
 test_that("retention and suitability functions reject cor_method = 'fiml'", {
   # FIML is a single-fit missing-data correlation; the simulation-/eigenvalue-based
   # retention and suitability criteria do not support it, so it is left out of their
-  # cor_method choices and rejected up front (before any computation).
-  expect_error(N_FACTORS(GRiPS_raw, cor_method = "fiml"))
-  expect_error(KMO(GRiPS_raw, cor_method = "fiml"))
+  # cor_method choices and rejected up front (before any computation) by the shared
+  # choice-matching layer. Asserting that layer's condition class, rather than merely that
+  # something failed, is what keeps the test tied to the rejection it is named for: any other
+  # abort would otherwise satisfy it silently.
+  expect_error(N_FACTORS(GRiPS_raw, cor_method = "fiml"), class = "efa_bad_choice")
+  expect_error(KMO(GRiPS_raw, cor_method = "fiml"), class = "efa_bad_choice")
 })

@@ -32,6 +32,23 @@ fixtures <- list(
   DOSPERT  = list(R = stats::cor(DOSPERT_raw),      N = nrow(DOSPERT_raw),  nf = 4)
 )
 
+# Every block below rotates the same unrotated solution per fixture, so each fixture is
+# extracted once and cached. The cache is filled on first request rather than eagerly:
+# every consuming block is skip_on_cran(), so on CRAN no extraction is paid for at all.
+# Unrotated PAF extraction is deterministic and draws no random numbers, and each site
+# re-seeds immediately before the rotation, so caching cannot perturb the random-start
+# stream the engines below share with their oracles.
+unrot_fixture <- local({
+  cache <- list()
+  function(fx_name) {
+    if (!fx_name %in% names(cache)) {
+      fx <- fixtures[[fx_name]]
+      cache[[fx_name]] <<- suppressWarnings(EFA(fx$R, n_factors = fx$nf, N = fx$N))
+    }
+    cache[[fx_name]]
+  }
+})
+
 test_that("quartimax and equamax route through the native CF rotation engine", {
   skip_on_cran()
   skip_if_not_installed("GPArotation")
@@ -48,8 +65,7 @@ test_that("quartimax and equamax route through the native CF rotation engine", {
   # a single baseline fixture is enough to catch one; cross-fixture coverage is kept
   # for the multimodal/flat criteria below.
   for (fx_name in "baseline") {
-    fx <- fixtures[[fx_name]]
-    unrot_fx <- suppressWarnings(EFA(fx$R, n_factors = fx$nf, N = fx$N))
+    unrot_fx <- unrot_fixture(fx_name)
     Lx <- unclass(unrot_fx$unrot_loadings)
     p <- nrow(Lx)
     k <- ncol(Lx)
@@ -97,8 +113,7 @@ test_that("geominT routes through the native geomin GPF engine", {
   expect_equal(formals(GPArotation::geominT)$delta, 0.01)
 
   for (fx_name in names(fixtures)) {
-    fx <- fixtures[[fx_name]]
-    unrot_fx <- suppressWarnings(EFA(fx$R, n_factors = fx$nf, N = fx$N))
+    unrot_fx <- unrot_fixture(fx_name)
     Lx <- unclass(unrot_fx$unrot_loadings)
 
     set.seed(seed)
@@ -134,8 +149,7 @@ test_that("bentlerT routes through the native GPF engine", {
   # native$value. On these fixtures the criterion is well identified at randomStarts = 100, so the
   # aligned loadings also agree to ~1e-4.
   for (fx_name in names(fixtures)) {
-    fx <- fixtures[[fx_name]]
-    unrot_fx <- suppressWarnings(EFA(fx$R, n_factors = fx$nf, N = fx$N))
+    unrot_fx <- unrot_fixture(fx_name)
     Lx <- unclass(unrot_fx$unrot_loadings)
 
     set.seed(seed)
@@ -173,8 +187,7 @@ test_that("bifactorT routes through the native GPF engine", {
   # randomStarts = 100, so the aligned loadings also agree to ~1e-4; where an environment settles
   # on a different but equal-Q minimum, the Q-dominance check still holds.
   for (fx_name in names(fixtures)) {
-    fx <- fixtures[[fx_name]]
-    unrot_fx <- suppressWarnings(EFA(fx$R, n_factors = fx$nf, N = fx$N))
+    unrot_fx <- unrot_fixture(fx_name)
     Lx <- unclass(unrot_fx$unrot_loadings)
 
     set.seed(seed)
@@ -223,8 +236,7 @@ test_that("simplimax routes through the native oblique GPF engine", {
   # native$value. Aligned-loadings parity is NOT asserted: at equal-or-better Q the two engines may
   # settle on different, equally valid simple-structure rotations.
   for (fx_name in names(fixtures)) {
-    fx <- fixtures[[fx_name]]
-    unrot_fx <- suppressWarnings(EFA(fx$R, n_factors = fx$nf, N = fx$N))
+    unrot_fx <- unrot_fixture(fx_name)
     Lx <- unclass(unrot_fx$unrot_loadings)
 
     set.seed(seed)
@@ -277,8 +289,7 @@ test_that("oblimin and quartimin route through the native oblique GPF engine", {
   # A single baseline fixture is enough to catch any rotation-engine regression here;
   # cross-fixture coverage is kept for the multimodal/flat criteria below.
   for (fx_name in "baseline") {
-    fx <- fixtures[[fx_name]]
-    unrot_fx <- suppressWarnings(EFA(fx$R, n_factors = fx$nf, N = fx$N))
+    unrot_fx <- unrot_fixture(fx_name)
     Lx <- unclass(unrot_fx$unrot_loadings)
 
     set.seed(seed)
@@ -340,8 +351,7 @@ test_that("geominQ routes through the native geomin GPF engine", {
   expect_equal(formals(GPArotation::geominQ)$delta, 0.01)
 
   for (fx_name in names(fixtures)) {
-    fx <- fixtures[[fx_name]]
-    unrot_fx <- suppressWarnings(EFA(fx$R, n_factors = fx$nf, N = fx$N))
+    unrot_fx <- unrot_fixture(fx_name)
     Lx <- unclass(unrot_fx$unrot_loadings)
 
     # geominQ uses a wider multistart by default than the bare compiled entry (the oblique geomin
@@ -386,8 +396,7 @@ test_that("bentlerQ routes through the native GPF engine", {
   # correspondingly looser ~1e-3 tolerance; a genuine rotation regression shifts loadings by
   # >= 1e-2.
   for (fx_name in names(fixtures)) {
-    fx <- fixtures[[fx_name]]
-    unrot_fx <- suppressWarnings(EFA(fx$R, n_factors = fx$nf, N = fx$N))
+    unrot_fx <- unrot_fixture(fx_name)
     Lx <- unclass(unrot_fx$unrot_loadings)
 
     set.seed(seed)
@@ -428,8 +437,7 @@ test_that("bifactorQ routes through the native GPF engine", {
   # correlations are checked at a looser ~1e-3 tolerance; a genuine rotation regression shifts
   # loadings by >= 1e-2.
   for (fx_name in names(fixtures)) {
-    fx <- fixtures[[fx_name]]
-    unrot_fx <- suppressWarnings(EFA(fx$R, n_factors = fx$nf, N = fx$N))
+    unrot_fx <- unrot_fixture(fx_name)
     Lx <- unclass(unrot_fx$unrot_loadings)
 
     set.seed(seed)
@@ -508,4 +516,4 @@ test_that("promax with normalize = FALSE reproduces psych's Promax", {
   expect_equal(phi_fingerprint(efa$Phi), phi_fingerprint(ref$Phi), tolerance = 1e-4)
 })
 
-rm(aligned_max_diff, phi_fingerprint, unrot, L, seed, fixtures)
+rm(aligned_max_diff, phi_fingerprint, unrot, L, seed, fixtures, unrot_fixture)

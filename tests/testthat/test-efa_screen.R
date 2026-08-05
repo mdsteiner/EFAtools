@@ -362,12 +362,14 @@ test_that("normality tests abort on a correlation matrix and on a singular covar
 })
 
 test_that("efa_screen skips the normality tests when the covariance is singular", {
-  skip_if_not_installed("MASS")
-
   set.seed(3)
   Sig <- matrix(0.35, 4, 4)
   diag(Sig) <- 1
-  dat <- MASS::mvrnorm(200, rep(0, 4), Sig)
+  # Drawn through the Cholesky factor: for a positive definite Sigma that factor is unique
+  # (the positive-diagonal convention fixes it), so the seeded sample is reproducible to
+  # rounding on any LAPACK build, which an eigen-based draw is not -- eigenvector signs and
+  # the basis of a repeated eigenspace are left free by the decomposition.
+  dat <- matrix(stats::rnorm(200 * 4), 200) %*% chol(Sig)
   colnames(dat) <- paste0("v", seq_len(4))
   # a rotating block of missing values leaves no complete case (so the MVN tests cannot
   # run) while every pair of variables stays well observed (so the pairwise correlation
@@ -733,18 +735,13 @@ test_that("outlier_cutoff is bounded to the range in which it defines a cutoff",
 })
 
 # singular / non-positive-definite inputs
-set.seed(42)
-x <- rnorm(10)
-y <- rnorm(10)
-z <- x + y
-dat_sing <- matrix(c(x, y, z), ncol = 3)
-cor_sing <- stats::cor(dat_sing)
-cor_nposdef <- matrix(c(1, 1, 0, 1, 1, 1, 0, 1, 1), ncol = 3)
-
 test_that("errors and warnings are thrown correctly", {
+  # The rank-deficient raw data and its correlation matrix (`sing_raw` / `sing_cor`, with
+  # `sing_N` rows) and the invertible-but-indefinite `cor_nposdef` come from
+  # helper-singular.R, so both branches are exercised on the same inputs everywhere.
   expect_error(efa_screen(1:5), class = "efa_input_not_matrix")
-  expect_error(efa_screen(dat_sing), class = "efa_cor_singular")
-  expect_error(efa_screen(cor_sing, N = 10), class = "efa_cor_singular")
+  expect_error(efa_screen(sing_raw), class = "efa_cor_singular")
+  expect_error(efa_screen(sing_cor, N = sing_N), class = "efa_cor_singular")
   expect_warning(efa_screen(cor_nposdef, N = 10), class = "efa_cor_smoothed")
 })
 
@@ -828,5 +825,5 @@ test_that("the report tracks a narrow console", {
   expect_snapshot(print(scr_cor), transform = scrub_num)
 })
 
-rm(scr_cor, scr_raw, scr_iris, scr_nona, scr_non, dat_nonames, x, y, z, dat_sing,
-   cor_sing, cor_nposdef, scr_out, X_out, Sig_out, n_out, p_out, inj)
+rm(scr_cor, scr_raw, scr_iris, scr_nona, scr_non, dat_nonames, scr_out, X_out, Sig_out,
+   n_out, p_out, inj)

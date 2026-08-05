@@ -82,22 +82,13 @@ test_that("AM2019 yields a well-defined (non-NA) number of factors", {
   expect_lte(nf_raw, ncol(GRiPS_raw))
 })
 
-# Create singular correlation matrix for tests
-x <- rnorm(10)
-y <- rnorm(10)
-z <- x + y
-dat_sing <- matrix(c(x, y, z, rnorm(10), rnorm(10), rnorm(10)), ncol = 6)
-cor_sing <- stats::cor(dat_sing)
-
-cor_nposdef <- matrix(c(1, 1, 0, 1, 1, 1, 0, 1, 1), ncol = 3)
-
 test_that("errors are thrown correctly", {
   expect_error(efa_ekc(1:5), class = "efa_input_not_matrix")
   expect_error(efa_ekc(test_models$baseline$cormat), class = "efa_n_required")
   expect_message(efa_ekc(GRiPS_raw), class = "efa_cor_from_data")
   expect_warning(efa_ekc(GRiPS_raw, N = 20), class = "efa_n_from_data")
-  expect_error(efa_ekc(dat_sing), class = "efa_cor_singular")
-  expect_error(efa_ekc(cor_sing, N = 20), class = "efa_cor_singular")
+  expect_error(efa_ekc(sing_raw), class = "efa_cor_singular")
+  expect_error(efa_ekc(sing_cor, N = sing_N), class = "efa_cor_singular")
   expect_warning(efa_ekc(cor_nposdef, N = 20), class = "efa_cor_smoothed")
 })
 
@@ -115,4 +106,4 @@ test_that("settings are returned correctly", {
   expect_equal(ekc_raw$settings$cor_method, "pearson")
 })
 
-rm(ekc_cor, ekc_raw, ekc_both, x, y, z, dat_sing, cor_sing, cor_nposdef)
+rm(ekc_cor, ekc_raw, ekc_both)

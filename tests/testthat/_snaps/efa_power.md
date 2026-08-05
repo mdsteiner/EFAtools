@@ -80,17 +80,17 @@
       optimistic; set `target_rmsea` for realism.
       
       Retention hit-rate P(k-hat = 3)
-      * EKC_BvA2017: 1.000 (n = 10)
-      * MAP_TR2: 1.000 (n = 10)
-      * MAP_TR4: 1.000 (n = 10)
+      * EKC_BvA2017: <num> (n = 10)
+      * MAP_TR2: <num> (n = 10)
+      * MAP_TR4: <num> (n = 10)
       
-      Structure recovery (Tucker congruence ≥ .950)
-      * recovery rate (min congruence): 1.000 (n = 10)
-      * recovery rate (mean congruence): 1.000 (n = 10)
-      * median min congruence: .981
+      Structure recovery (Tucker congruence ≥ <num>)
+      * recovery rate (min congruence): <num> (n = 10)
+      * recovery rate (mean congruence): <num> (n = 10)
+      * median min congruence: <num>
       
       Convergence
-      * fits completed: 1.000 (10/10)
-      * converged (of completed): 1.000
-      * Heywood cases (of completed): .000
+      * fits completed: <num> (10/10)
+      * converged (of completed): <num>
+      * Heywood cases (of completed): <num>
 

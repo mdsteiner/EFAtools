@@ -10,6 +10,11 @@ pooled_obl <- efa_mi(cormat_list, n_factors = 3, N = 500, estimator = "PAF",
 pooled_orth <- efa_mi(cormat_list, n_factors = 3, N = 500, estimator = "PAF",
                           rotation = "varimax")
 
+# The single-solution counterpart of `pooled_obl`: pooling identical imputations must
+# reproduce it, so several blocks below compare against the same fit. PAF extraction and
+# promax rotation are deterministic, so one fit serves all of them.
+single_obl <- EFA(cormat, n_factors = 3, N = 500, method = "PAF", rotation = "promax")
+
 set.seed(42)
 grips_list <- lapply(1:3, function(i) {
   GRiPS_raw[sample(seq_len(nrow(GRiPS_raw)), replace = TRUE), ]
@@ -55,8 +60,7 @@ test_that("pooled CAF reproduces the single-solution CAF on identical imputation
   # Pooling identical correlation matrices reproduces the single EFA solution, so
   # the pooled CAF (computed on the residual matrix with a unit diagonal) must
   # equal the CAF that EFA() reports for that solution.
-  single <- EFA(cormat, n_factors = 3, N = 500, method = "PAF", rotation = "promax")
-  expect_equal(pooled_obl$fit_indices$CAF, single$fit_indices$CAF, tolerance = 1e-6)
+  expect_equal(pooled_obl$fit_indices$CAF, single_obl$fit_indices$CAF, tolerance = 1e-6)
   expect_gt(pooled_obl$fit_indices$CAF, 0)
   expect_lt(pooled_obl$fit_indices$CAF, 1)
 })
@@ -123,19 +127,16 @@ test_that("alignment variants produce well-formed pooled objects", {
 })
 
 test_that("pooling identical imputations reproduces the single fit", {
-  single <- EFA(cormat, n_factors = 3, N = 500, method = "PAF",
-                rotation = "promax")
-
   # unrotated alignment is a pure sign/permutation step, so it must be exact
   expect_equal(unclass(pooled_obl$unrot_loadings),
-               unclass(single$unrot_loadings),
+               unclass(single_obl$unrot_loadings),
                tolerance = 1e-10, ignore_attr = TRUE)
   # rotated solutions are re-derived by oblique Procrustes alignment, which
   # recovers the promax solution up to the solver tolerance
   expect_equal(unclass(pooled_obl$rot_loadings),
-               unclass(single$rot_loadings),
+               unclass(single_obl$rot_loadings),
                tolerance = 1e-4, ignore_attr = TRUE)
-  expect_equal(pooled_obl$Phi, single$Phi, tolerance = 1e-4,
+  expect_equal(pooled_obl$Phi, single_obl$Phi, tolerance = 1e-4,
                ignore_attr = TRUE)
   expect_equal(pooled_obl$orig_R, cormat, ignore_attr = TRUE)
 })
@@ -789,8 +790,6 @@ test_that("re-gauging still fires when a uniqueness sits on the estimation floor
 })
 
 test_that("pooled AIC/BIC/ECVI are withheld when the component fits are scaled", {
-  skip_if_not_installed("MASS")
-
   # A missing-at-random fixture: column 1 is fully observed and drives the
   # missingness in the others, so cor_method = "fiml" fits a genuine two-stage
   # model and each component carries the corrected (scaled-shifted) statistic.
@@ -801,7 +800,11 @@ test_that("pooled AIC/BIC/ECVI are withheld when the component fits are scaled",
     L[4:6, 2] <- 0.7
     S <- tcrossprod(L)
     diag(S) <- 1
-    X <- MASS::mvrnorm(400, mu = rep(0, 6), Sigma = S)
+    # Colour the deviates with the Cholesky factor, not an eigendecomposition: this population
+    # covariance has repeated eigenvalues, whose eigenvector basis is undetermined and settled
+    # by rounding, whereas chol() is unique for a positive definite matrix, so the seed above
+    # reproduces the same imputation on every LAPACK build.
+    X <- matrix(stats::rnorm(400 * 6), 400) %*% chol(S)
     colnames(X) <- paste0("V", seq_len(6))
     X[X[, 1] > 0.8, 2] <- NA
     X[X[, 1] < -0.8, 3] <- NA

@@ -62,6 +62,34 @@
 }
 
 
+# The three-factor information-SE fits on the baseline correlation matrix -- one unrotated, one
+# oblimin -- are each needed by more than one block below, and each assembles and inverts a
+# 54 x 54 bordered information matrix, so each is computed once and shared. The memoisation is
+# lazy so that a block skipped before it asks never pays for the fit, and so that the oblimin fit's
+# random rotation starts are drawn at the point in the RNG stream where the first consumer runs.
+.info_fit_unrot <- local({
+  cache <- NULL
+  function() {
+    if (is.null(cache)) {
+      cache <<- EFA(test_models$baseline$cormat, n_factors = 3, N = 500, method = "ML",
+                    rotation = "none", se = "information")
+    }
+    cache
+  }
+})
+
+.info_fit_oblq <- local({
+  cache <- NULL
+  function() {
+    if (is.null(cache)) {
+      cache <<- EFA(test_models$baseline$cormat, n_factors = 3, N = 500, method = "ML",
+                    rotation = "oblimin", se = "information")
+    }
+    cache
+  }
+})
+
+
 test_that("information SEs match an independent correlation-structure reference", {
   # The two factors carry deliberately different strengths, so the ML canonical variances
   # diag(Lambda' Psi^-1 Lambda) are well separated (4.23 vs 1.16) and the rotational gauge is
@@ -183,7 +211,7 @@ test_that("information loading SEs track the bootstrap on an identifiable soluti
 
 test_that("information SEs populate the bootstrap SE/CI schema", {
   R <- test_models$baseline$cormat
-  fit <- EFA(R, n_factors = 3, N = 500, method = "ML", rotation = "none", se = "information")
+  fit <- .info_fit_unrot()
 
   expect_setequal(names(fit$SE), c("unrot_loadings", "uniquenesses", "communalities"))
   expect_setequal(names(fit$CI), c("unrot_loadings", "uniquenesses", "communalities"))
@@ -208,7 +236,7 @@ test_that("information SEs populate the bootstrap SE/CI schema", {
 
 test_that("information SEs populate the rotated SE/CI schema under an oblique rotation", {
   R <- test_models$baseline$cormat
-  fit <- EFA(R, n_factors = 3, N = 500, method = "ML", rotation = "oblimin", se = "information")
+  fit <- .info_fit_oblq()
 
   expect_setequal(names(fit$SE),
                   c("unrot_loadings", "uniquenesses", "rot_loadings",
@@ -233,19 +261,13 @@ test_that("information SEs populate the rotated SE/CI schema under an oblique ro
   expect_true(all(fit$CI$Structure$lower <= fit$Structure &
                     fit$Structure <= fit$CI$Structure$upper))
   expect_named(fit$CI$Phi, c("lower", "upper"))
-})
 
-
-test_that("information communality SEs equal the uniqueness SEs (one estimand)", {
   # h2_i = 1 - psi_i exactly, so the communality and uniqueness are a single estimand up to sign
   # and must carry the same standard error (and a mirrored Wald interval). Both are the ordinary
-  # delta method on the loading covariance, so they now agree by construction -- under the former
-  # covariance-structure information the two routes disagreed by up to 18%.
-  R <- test_models$baseline$cormat
-  fit <- EFA(R, n_factors = 3, N = 500, method = "ML", rotation = "oblimin", se = "information")
-
+  # delta method on the loading covariance, so they agree by construction -- under a
+  # covariance-structure information the two routes disagreed by up to 18%. The unrotated
+  # assembly path is a different one, and pins the same contract in the block above.
   expect_equal(unname(fit$SE$communalities), unname(fit$SE$uniquenesses))
-  # The Wald intervals mirror: communality upper = 1 - uniqueness lower (and lower = 1 - upper).
   expect_equal(unname(fit$CI$communalities$upper), unname(1 - fit$CI$uniquenesses$lower))
   expect_equal(unname(fit$CI$communalities$lower), unname(1 - fit$CI$uniquenesses$upper))
 })
@@ -755,8 +777,7 @@ test_that("information SEs are rejected for non-Pearson correlation methods", {
 
 
 test_that("an analytic-SE fit prints and summarises without error", {
-  R <- test_models$baseline$cormat
-  fit <- EFA(R, n_factors = 3, N = 500, method = "ML", rotation = "none", se = "information")
+  fit <- .info_fit_unrot()
 
   expect_no_error(testthat::capture_output(print(fit)))
   expect_no_error(testthat::capture_output(print(summary(fit))))
@@ -772,8 +793,7 @@ test_that("an analytic-SE fit prints and summarises without error", {
 test_that("every component of the analytic SE schema carries the point estimate's dimnames", {
   # The SEs are subset by name as routinely as the estimates they belong to, so an unlabelled
   # component is an inconsistency a reader trips over -- and at k = 6+ leaves them counting columns.
-  fit <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500, method = "ML",
-             rotation = "oblimin", se = "information")
+  fit <- .info_fit_oblq()
 
   expect_identical(dimnames(fit$SE$unrot_loadings), dimnames(unclass(fit$unrot_loadings)))
   expect_identical(dimnames(fit$SE$rot_loadings), dimnames(unclass(fit$rot_loadings)))

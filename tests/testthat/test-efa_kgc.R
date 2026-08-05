@@ -66,20 +66,11 @@ test_that("the PCA suggestion matches nFactors::nScree", {
   }
 })
 
-# Create singular correlation matrix for tests
-x <- rnorm(10)
-y <- rnorm(10)
-z <- x + y
-dat_sing <- matrix(c(x, y, z), ncol = 3)
-cor_sing <- stats::cor(dat_sing)
-
-cor_nposdef <- matrix(c(1, 1, 0, 1, 1, 1, 0, 1, 1), ncol = 3)
-
 test_that("errors are thrown correctly", {
   expect_error(efa_kgc(1:5), class = "efa_input_not_matrix")
   expect_message(efa_kgc(GRiPS_raw, eigen_type = "PCA"), class = "efa_cor_from_data")
-  expect_error(efa_kgc(dat_sing), class = "efa_cor_singular")
-  expect_error(efa_kgc(cor_sing, N = 10), class = "efa_cor_singular")
+  expect_error(efa_kgc(sing_raw), class = "efa_cor_singular")
+  expect_error(efa_kgc(sing_cor, N = sing_N), class = "efa_cor_singular")
   expect_warning(efa_kgc(cor_nposdef, N = 10), class = "efa_cor_smoothed")
 })
 
@@ -111,5 +102,4 @@ test_that("settings are returned correctly", {
 
 })
 
-rm(kgc_cor, kgc_cor_smc, kgc_raw, kgc_efa_ml, x, y, z, dat_sing, cor_sing,
-   cor_nposdef)
+rm(kgc_cor, kgc_cor_smc, kgc_raw, kgc_efa_ml)

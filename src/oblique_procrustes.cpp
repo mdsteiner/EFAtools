@@ -28,7 +28,7 @@ struct ProcrustesManifold {
 
   GpfState compute(const arma::mat& Tmat) const {
     arma::mat invT;
-    if (!inverse_checked_cpp(Tmat, invT)) {
+    if (!inverse_checked_cpp(Tmat, invT, oblq_min_sigma)) {
       return gpf_invalid_state();
     }
 
@@ -252,8 +252,9 @@ Rcpp::List oblique_procrustes(const arma::mat& A,
     T_primary = normalize_cols_cpp(T_primary);
 
     arma::mat tmp_inv;
-    if (!inverse_checked_cpp(T_primary, tmp_inv)) {
-      Rcpp::stop("T_init must be nonsingular after column normalization.");
+    if (!inverse_checked_cpp(T_primary, tmp_inv, oblq_min_sigma)) {
+      Rcpp::stop("T_init must be well enough conditioned after column normalization: "
+                 "its smallest singular value must be at least %g.", oblq_min_sigma);
     }
   }
 

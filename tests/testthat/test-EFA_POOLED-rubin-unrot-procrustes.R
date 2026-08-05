@@ -98,31 +98,40 @@ identical_list <- replicate(m_id, cormat, simplify = FALSE)
   S
 }
 
+# -- Shared fixtures ----------------------------------------------------------
+
+# The single unrotated analytic-SE fit is the anchor for every gauge orbit below
+# and the oracle for Group 1, always with the same arguments, so it is fitted
+# once here. `.gauge_fit()` copies before it writes, so no group can mutate the
+# shared object, and the ML / rotation = "none" path is deterministic and draws
+# no random numbers, so sharing it cannot move the stream the seeded groups use.
+base_fit <- EFA(cormat, n_factors = k, N = N_id, method = "ML",
+                rotation = "none", se = "information")
+
+pooled_pr <- suppressMessages(EFA_POOLED(
+  identical_list, n_factors = k, N = N_id, method = "ML",
+  rotation = "none", se = "information",
+  align_unrotated = "procrustes"
+))
+
 # ---- Group 1 ---------------------------------------------------------------
 
 test_that("identity imputations: procrustes pool equals the per-fit SE and FMI is zero", {
-  pooled <- suppressMessages(EFA_POOLED(
-    identical_list, n_factors = k, N = N_id, method = "ML",
-    rotation = "none", se = "information",
-    align_unrotated = "procrustes"
-  ))
+  expect_identical(pooled_pr$settings$align_unrotated, "procrustes")
+  expect_identical(pooled_pr$settings$se, "information")
 
-  oracle <- EFA(cormat, n_factors = k, N = N_id, method = "ML",
-                rotation = "none", se = "information")
-
-  expect_identical(pooled$settings$align_unrotated, "procrustes")
-  expect_identical(pooled$settings$se, "information")
-
-  expect_equal(pooled$SE$unrot_loadings, oracle$SE$unrot_loadings, tolerance = 1e-10)
-  expect_equal(pooled$SE$uniquenesses,   oracle$SE$uniquenesses,   tolerance = 1e-10)
-  expect_equal(unclass(pooled$unrot_loadings), unclass(oracle$unrot_loadings),
+  expect_equal(pooled_pr$SE$unrot_loadings, base_fit$SE$unrot_loadings,
                tolerance = 1e-10)
+  expect_equal(pooled_pr$SE$uniquenesses,   base_fit$SE$uniquenesses,
+               tolerance = 1e-10)
+  expect_equal(unclass(pooled_pr$unrot_loadings),
+               unclass(base_fit$unrot_loadings), tolerance = 1e-10)
 
   # Q_d = I_k under identical imputations only up to LAPACK SVD numerical
   # noise. Tolerate that noise; the signed_tucker_congruence pool gives an
   # exact 0 because it permutes integer column indices, not floats.
-  fmi <- pooled$MI$unrot_loadings$FMI
-  riv <- pooled$MI$unrot_loadings$RIV
+  fmi <- pooled_pr$MI$unrot_loadings$FMI
+  riv <- pooled_pr$MI$unrot_loadings$RIV
   expect_true(all(abs(fmi[is.finite(fmi)]) < 1e-10))
   expect_true(all(abs(riv[is.finite(riv)]) < 1e-10))
 })
@@ -130,8 +139,6 @@ test_that("identity imputations: procrustes pool equals the per-fit SE and FMI i
 # ---- Group 2 ---------------------------------------------------------------
 
 test_that("procrustes pool over a signed-permutation orbit returns the anchor SE", {
-  base_fit <- EFA(cormat, n_factors = k, N = N_id, method = "ML",
-                  rotation = "none", se = "information")
   SE_base <- base_fit$SE$unrot_loadings
   psi_se  <- base_fit$SE$uniquenesses
 
@@ -165,12 +172,11 @@ test_that("procrustes pool over a signed-permutation orbit returns the anchor SE
 # ---- Group 3 ---------------------------------------------------------------
 
 test_that(".efa_pooled_propagate_procrustes_vcov matches the full kronecker formula and a Monte-Carlo estimate", {
-  skip_if_not_installed("MASS")
   set.seed(20260621)
   p <- 4L
   kk <- 2L
 
-  # PSD V of dimension (p k) x (p k); rescaling keeps numbers in O(1e-2) so
+  # Positive definite V of dimension (p k) x (p k); rescaling keeps numbers in O(1e-2) so
   # the MC variances do not get drowned by row-block magnitude mismatches.
   A <- matrix(stats::rnorm((p * kk)^2), p * kk, p * kk)
   V <- crossprod(A) / (p * kk)
@@ -191,7 +197,7 @@ test_that(".efa_pooled_propagate_procrustes_vcov matches the full kronecker form
   # row-marginal variance. Use a sample of 5e4; the MC standard error of a
   # variance estimate is sqrt(2 / n) ~ 6e-3, so 2e-2 is a safe tolerance.
   n_draws <- 50000L
-  draws <- MASS::mvrnorm(n_draws, mu = rep(0, p * kk), Sigma = V)
+  draws <- matrix(stats::rnorm(n_draws * p * kk), n_draws) %*% chol(V)
   mc_var <- matrix(0, p, kk)
   for (b in seq_len(n_draws)) {
     L_b <- matrix(draws[b, ], p, kk)
@@ -204,8 +210,6 @@ test_that(".efa_pooled_propagate_procrustes_vcov matches the full kronecker form
 # ---- Group 4 ---------------------------------------------------------------
 
 test_that("procrustes pool recovers the anchor SE under a continuous rotation gauge", {
-  base_fit <- EFA(cormat, n_factors = k, N = N_id, method = "ML",
-                  rotation = "none", se = "information")
   SE_base <- base_fit$SE$unrot_loadings
 
   rotations <- list(
@@ -239,9 +243,6 @@ test_that("procrustes pool recovers the anchor SE under a continuous rotation ga
 # ---- Group 5 ---------------------------------------------------------------
 
 test_that("procrustes pool and signed_tucker_congruence pool agree on the signed-permutation orbit", {
-  base_fit <- EFA(cormat, n_factors = k, N = N_id, method = "ML",
-                  rotation = "none", se = "information")
-
   gauges <- list(
     diag(k),
     .signed_perm(c(2L, 1L, 3L), c(-1,  1,  1)),
@@ -284,9 +285,6 @@ test_that("procrustes pool and signed_tucker_congruence pool agree on the signed
 # ---- Group 6 ---------------------------------------------------------------
 
 test_that("NA-filled vcov_unrot_loadings on any imputation aborts with classed condition", {
-  base_fit <- EFA(cormat, n_factors = k, N = N_id, method = "ML",
-                  rotation = "none", se = "information")
-
   gauges <- list(diag(k),
                  .signed_perm(c(2L, 1L, 3L), c(-1, 1, 1)),
                  .signed_perm(c(1L, 3L, 2L), c( 1, 1,-1)))
@@ -337,9 +335,6 @@ test_that(".efa_pooled_propagate_procrustes_vcov NA-fills rows whose vcov block 
 # ---- Group 7 ---------------------------------------------------------------
 
 test_that("missing vcov_unrot_loadings under align_unrotated = 'procrustes' aborts with classed condition", {
-  base_fit <- EFA(cormat, n_factors = k, N = N_id, method = "ML",
-                  rotation = "none", se = "information")
-
   gauges <- list(diag(k), .signed_perm(c(2L, 1L, 3L), c(-1, 1, 1)))
   gauge_fits <- lapply(gauges, .gauge_fit, base_fit = base_fit)
   gauge_fits[[2]]$vcov_unrot_loadings <- NULL
@@ -362,29 +357,23 @@ test_that("missing vcov_unrot_loadings under align_unrotated = 'procrustes' abor
 })
 
 test_that("procrustes pool returns correctly shaped slots", {
-  pooled <- suppressMessages(EFA_POOLED(
-    identical_list, n_factors = k, N = N_id, method = "ML",
-    rotation = "none", se = "information",
-    align_unrotated = "procrustes"
-  ))
+  loading_dn <- dimnames(unclass(pooled_pr$unrot_loadings))
 
-  loading_dn <- dimnames(unclass(pooled$unrot_loadings))
+  expect_identical(dim(pooled_pr$SE$unrot_loadings),         c(p_vars, k))
+  expect_identical(dimnames(pooled_pr$SE$unrot_loadings),    loading_dn)
+  expect_identical(dim(pooled_pr$CI$unrot_loadings$lower),   c(p_vars, k))
+  expect_identical(dim(pooled_pr$CI$unrot_loadings$upper),   c(p_vars, k))
+  expect_identical(dimnames(pooled_pr$CI$unrot_loadings$lower), loading_dn)
 
-  expect_identical(dim(pooled$SE$unrot_loadings),         c(p_vars, k))
-  expect_identical(dimnames(pooled$SE$unrot_loadings),    loading_dn)
-  expect_identical(dim(pooled$CI$unrot_loadings$lower),   c(p_vars, k))
-  expect_identical(dim(pooled$CI$unrot_loadings$upper),   c(p_vars, k))
-  expect_identical(dimnames(pooled$CI$unrot_loadings$lower), loading_dn)
+  expect_setequal(names(pooled_pr$MI$unrot_loadings), c("RIV", "FMI", "df"))
+  expect_identical(dim(pooled_pr$MI$unrot_loadings$RIV), c(p_vars, k))
+  expect_identical(dim(pooled_pr$MI$unrot_loadings$FMI), c(p_vars, k))
+  expect_identical(dim(pooled_pr$MI$unrot_loadings$df),  c(p_vars, k))
 
-  expect_setequal(names(pooled$MI$unrot_loadings), c("RIV", "FMI", "df"))
-  expect_identical(dim(pooled$MI$unrot_loadings$RIV), c(p_vars, k))
-  expect_identical(dim(pooled$MI$unrot_loadings$FMI), c(p_vars, k))
-  expect_identical(dim(pooled$MI$unrot_loadings$df),  c(p_vars, k))
+  expect_length(pooled_pr$SE$uniquenesses,             p_vars)
+  expect_length(pooled_pr$CI$uniquenesses$lower,       p_vars)
+  expect_length(pooled_pr$CI$uniquenesses$upper,       p_vars)
+  expect_setequal(names(pooled_pr$MI$uniquenesses),    c("RIV", "FMI", "df"))
 
-  expect_length(pooled$SE$uniquenesses,             p_vars)
-  expect_length(pooled$CI$uniquenesses$lower,       p_vars)
-  expect_length(pooled$CI$uniquenesses$upper,       p_vars)
-  expect_setequal(names(pooled$MI$uniquenesses),    c("RIV", "FMI", "df"))
-
-  expect_null(pooled$replicates)
+  expect_null(pooled_pr$replicates)
 })

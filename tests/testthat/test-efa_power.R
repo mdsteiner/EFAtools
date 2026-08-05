@@ -365,5 +365,10 @@ test_that("simulation-mode printed output is stable", {
   local_reproducible_output()
   sim <- efa_power("simulation", Lambda = sim_Lambda, Phi = sim_Phi, N = 200,
                    n_datasets = 10, criteria = c("EKC", "MAP"), seed = 42)
-  expect_snapshot(print(sim))
+  # Every decimal here -- the retention hit rates and the median minimum congruence alike --
+  # is averaged over ten simulated fits and moves with the BLAS, so all of them are masked.
+  # What this snapshot holds fixed is the layout, the section order, the criterion labels and
+  # the integer replicate counts. The rates themselves are pinned numerically instead, by the
+  # expect_gte() bounds at lines 268 and 361.
+  expect_snapshot(print(sim), transform = scrub_num)
 })

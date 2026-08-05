@@ -91,7 +91,7 @@ inline void finalize_oblique(const GpfFit& best_fit, const arma::mat& A_work,
                              arma::mat& Lrot, arma::mat& Phi) {
   arma::mat invT;
   arma::mat U;
-  if (best_fit.valid && inverse_checked_cpp(best_fit.T, invT)) {
+  if (best_fit.valid && inverse_checked_cpp(best_fit.T, invT, oblq_min_sigma)) {
     U = invT.t();
   } else {
     U.zeros(best_fit.T.n_rows, best_fit.T.n_cols);

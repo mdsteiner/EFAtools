@@ -71,7 +71,6 @@ test_that("pooled CFI/TLI equal the mean of the per-imputation indices", {
 
 test_that("pooled CFI/TLI stay in range and consistent under multi-imputation fits", {
   skip_on_cran()
-  skip_if_not_installed("MASS")
 
   # A 9-variable population with no clean two-factor structure: a k = 2 EFA
   # underfits, so each imputation lands at a moderate CFI/TLI well inside (0, 1).
@@ -81,6 +80,12 @@ test_that("pooled CFI/TLI stay in range and consistent under multi-imputation fi
   set.seed(1)
   p <- 9L
   Sigma <- stats::cov2cor(tcrossprod(matrix(stats::rnorm(p * 4), p)) + diag(p))
+  # Draw through the Cholesky factor: chol() is unique for a positive definite
+  # matrix because the positive-diagonal convention pins it, so the same seed
+  # yields the same sample on every LAPACK build. An eigen-based draw would not,
+  # since eigenvector signs (and the basis of a repeated eigenspace) are left
+  # undetermined by the decomposition.
+  Rt <- chol(Sigma)
 
   check_in_range <- function(data_list, k) {
     pooled <- suppressWarnings(suppressMessages(
@@ -104,7 +109,7 @@ test_that("pooled CFI/TLI stay in range and consistent under multi-imputation fi
 
   # Homogeneous N.
   imps_hom <- lapply(1:5, function(i) {
-    as.data.frame(MASS::mvrnorm(300, rep(0, p), Sigma))
+    as.data.frame(matrix(stats::rnorm(300 * p), 300, p) %*% Rt)
   })
   check_in_range(imps_hom, k = 2)
 
@@ -112,7 +117,7 @@ test_that("pooled CFI/TLI stay in range and consistent under multi-imputation fi
   # floored to zero, returning the self-contradictory CFI = 1 / TLI = 0.
   Ns <- c(200, 400, 600, 250, 550)
   imps_het <- lapply(Ns, function(n) {
-    as.data.frame(MASS::mvrnorm(n, rep(0, p), Sigma))
+    as.data.frame(matrix(stats::rnorm(n * p), n, p) %*% Rt)
   })
   check_in_range(imps_het, k = 2)
 })

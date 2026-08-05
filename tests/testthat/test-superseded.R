@@ -83,7 +83,12 @@ test_that("efa_fit() rejects a former flat knob forwarded through `...`, keeps r
   )
 
   # Genuine rotation extras still reach the rotation engine, via `...` or via rotate_control().
+  # geominQ screens a hundred random starts drawn from the ambient stream, so the two routes
+  # are seeded alike: unseeded they would search different candidate sets and could land in
+  # different minima, which says nothing about whether the extra arrived.
+  set.seed(1)
   via_dots <- efa_fit(cm, n_factors = 3, N = 500, rotation = "geominQ", maxit = 3000)
+  set.seed(1)
   via_ctrl <- efa_fit(cm, n_factors = 3, N = 500, rotation = "geominQ",
                       rotate_control = rotate_control(maxit = 3000))
   expect_identical(via_dots$rot_loadings, via_ctrl$rot_loadings)
@@ -325,13 +330,14 @@ test_that("N_FACTORS() adds no condition and stays transparent", {
 # "SLLOADINGS")`, and the OMEGA() / efa_reliability() input branches keyed on them
 # all still resolve. An oblique EFA is the input every Schmid-Leiman path needs.
 
-oblique_efa <- function() {
-  EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
-      type = "EFAtools", method = "PAF", rotation = "promax")
-}
+# Every path below is handed the same fit: promax rotates outside the random-start engines,
+# so this is deterministic and no site that reads it can be told apart from one that fitted
+# its own copy.
+oblique_efa <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
+                   type = "EFAtools", method = "PAF", rotation = "promax")
 
 test_that("SL() forwards to efa_schmid_leiman() identically", {
-  efa_mod <- oblique_efa()
+  efa_mod <- oblique_efa
   old <- SL(efa_mod, type = "EFAtools", method = "PAF")
   new <- efa_schmid_leiman(efa_mod, estimator = "PAF",
                            estimate_control = estimate_control(type = "EFAtools"))
@@ -342,7 +348,7 @@ test_that("SL() forwards to efa_schmid_leiman() identically", {
 })
 
 test_that("SL() adds no condition and stays transparent", {
-  efa_mod <- oblique_efa()
+  efa_mod <- oblique_efa
 
   expect_no_condition(SL(efa_mod, type = "EFAtools", method = "PAF"))
 
@@ -356,7 +362,7 @@ test_that("SL() adds no condition and stays transparent", {
 # implementation, output shape, and class. They must gain no runtime signal.
 
 test_that("OMEGA() adds no condition and keeps its class", {
-  sl_mod <- efa_schmid_leiman(oblique_efa(), estimator = "PAF",
+  sl_mod <- efa_schmid_leiman(oblique_efa, estimator = "PAF",
                               estimate_control = estimate_control(type = "EFAtools"))
   fc <- sl_mod$sl[, c("F1", "F2", "F3")] >= .2
 
@@ -365,7 +371,7 @@ test_that("OMEGA() adds no condition and keeps its class", {
 })
 
 test_that("FACTOR_SCORES() adds no condition and keeps its class", {
-  efa_mod <- oblique_efa()
+  efa_mod <- oblique_efa
 
   # the correlation-matrix path signals that only weights can be returned; the
   # wrapper neither swallows that message nor adds one of its own
@@ -709,7 +715,7 @@ test_that("PARALLEL() still tunes the EFA eigenvalues through its dots", {
 })
 
 test_that("SL() still routes a non-default `type` into the second-order fit", {
-  efa_mod <- oblique_efa()
+  efa_mod <- oblique_efa
 
   # `efa_schmid_leiman()` has no `type` formal any more, so the frozen argument only reaches the
   # second-order fit if the wrapper repacks it into the estimation control. A default-valued
@@ -725,7 +731,7 @@ test_that("SL() still routes a non-default `type` into the second-order fit", {
 })
 
 test_that("SL() can still supply the PAF knobs that type = 'none' requires", {
-  efa_mod <- oblique_efa()
+  efa_mod <- oblique_efa
 
   # forwarded bare these knobs were dropped, leaving type = "none" with nothing to resolve
   expect_no_error(
@@ -775,16 +781,15 @@ test_that("the retention criteria wrappers add no condition", {
 })
 
 test_that("CD() adds no condition and stays transparent", {
+  # Comparison data is the most expensive call in this file, so the silence assertion is
+  # made on the very run whose result is then compared rather than on a second one.
   set.seed(42L)
-  old <- CD(GRiPS_raw, N_pop = 500, N_samples = 50)
+  expect_no_condition(old <- CD(GRiPS_raw, N_pop = 500, N_samples = 50))
   set.seed(42L)
   new <- efa_cd(GRiPS_raw, N_pop = 500, N_samples = 50)
 
   expect_identical(old, new)
   expect_identical(class(old), "efa_retention")
-
-  set.seed(42L)
-  expect_no_condition(CD(GRiPS_raw, N_pop = 500, N_samples = 50))
 })
 
 # A flat tuning knob no longer has an efa_fit() formal, so a bare copy would land in the
@@ -842,7 +847,7 @@ test_that("the former `method` argument is rejected with a pointer to `estimator
                class = "efa_renamed_arg")
   expect_error(efa_retain(cormat, N = 500, criteria = "EKC", method = "ML"),
                class = "efa_renamed_arg")
-  expect_error(efa_schmid_leiman(oblique_efa(), method = "PAF"),
+  expect_error(efa_schmid_leiman(oblique_efa, method = "PAF"),
                class = "efa_renamed_arg")
   # the functions that fit through their dots reject it at their own boundary, so the
   # message names the function the user called (not efa_fit, and in efa_group's case not
@@ -874,7 +879,7 @@ test_that("the successor-only names are rejected in the superseded wrappers' dot
   expect_error(HULL(cormat, N = 500, estimator = "ML"), class = "efa_renamed_arg")
   expect_error(N_FACTORS(cormat, N = 500, criteria = "EKC", estimator = "ML"),
                class = "efa_renamed_arg")
-  expect_error(SL(oblique_efa(), estimator = "PAF"), class = "efa_renamed_arg")
+  expect_error(SL(oblique_efa, estimator = "PAF"), class = "efa_renamed_arg")
 
   # both spellings at once through a repacking wrapper is a half-migrated call; neither
   # may silently win

@@ -33,10 +33,12 @@ is useful when the same \code{A} is rotated repeatedly. \code{S} is used only wh
 \code{oblique_normalize = FALSE}; if Kaiser normalization is requested, the
 cross-product must be recomputed on the normalized matrix.}
 
-\item{T_init}{Optional \verb{k x k} nonsingular starting transformation matrix for
-the oblique solver. Its columns are normalized internally. If \code{NULL} (the
-default), the oblique solver is warm-started from the closed-form orthogonal
-Procrustes solution.}
+\item{T_init}{Optional \verb{k x k} starting transformation matrix for the oblique
+solver. Its columns are normalized internally, and the normalized matrix must
+be well enough conditioned to define a proper factor correlation matrix: its
+smallest singular value must be at least \code{1e-4}, the same floor the solver
+applies to every candidate it evaluates. If \code{NULL} (the default), the oblique
+solver is warm-started from the closed-form orthogonal Procrustes solution.}
 
 \item{oblique_eps}{Positive convergence tolerance for the projected-gradient
 norm in the oblique solver.}

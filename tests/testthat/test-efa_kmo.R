@@ -50,21 +50,11 @@ test_that("settings are returned correctly", {
   expect_equal(kmo_nona$settings$cor_method, "pearson")
 })
 
-# Create singular correlation matrix for tests
-set.seed(42)
-x <- rnorm(10)
-y <- rnorm(10)
-z <- x + y
-dat_sing <- matrix(c(x, y, z), ncol = 3)
-cor_sing <- stats::cor(dat_sing)
-
-cor_nposdef <- matrix(c(1, 1, 0, 1, 1, 1, 0, 1, 1), ncol = 3)
-
 test_that("errors are thrown correctly", {
   expect_error(efa_kmo(1:5), class = "efa_input_not_matrix")
   expect_message(efa_kmo(GRiPS_raw), class = "efa_cor_from_data")
-  expect_error(efa_kmo(dat_sing), class = "efa_cor_singular")
-  expect_error(efa_kmo(cor_sing), class = "efa_cor_singular")
+  expect_error(efa_kmo(sing_raw), class = "efa_cor_singular")
+  expect_error(efa_kmo(sing_cor), class = "efa_cor_singular")
   expect_warning(efa_kmo(cor_nposdef), class = "efa_cor_smoothed")
 })
 
@@ -85,4 +75,4 @@ test_that("print output is stable", {
   expect_snapshot(print(kmo_na), transform = scrub_num)
 })
 
-rm(kmo_cor, kmo_raw, dat_nonames, kmo_nona, x, y, z, dat_sing, cor_sing, cor_nposdef)
+rm(kmo_cor, kmo_raw, dat_nonames, kmo_nona)

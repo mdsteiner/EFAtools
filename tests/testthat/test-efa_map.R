@@ -41,7 +41,14 @@ test_that("the TR2 criterion series matches psych::vss", {
     compared <- !is.na(ours)
     # guard against a vacuously passing comparison
     expect_gt(sum(compared), 0.5 * length(ours))
-    expect_equal(ours[compared], theirs[compared], tolerance = 1e-12)
+    # The two sides compute the same quantity through different operation sequences --
+    # ours partials with A = V sqrt(Lambda) and takes the trace of a matrix product,
+    # psych's sums the squared residuals elementwise off its own principal() fit -- so
+    # their rounding does not cancel. The partial matrix is standardised by
+    # 1 / sqrt(d_i d_j), which at the largest m amplifies those last-digit differences
+    # before they are squared and summed. A definitional divergence (a wrong partialling
+    # order, a missing offset) moves the criterion by ~1e-2, so 1e-8 still catches one.
+    expect_equal(ours[compared], theirs[compared], tolerance = 1e-8)
   }
 })
 

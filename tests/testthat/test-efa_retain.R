@@ -151,12 +151,6 @@ test_that("an all-failed run is a hard error", {
   expect_s3_class(err$parent, "efa_n_required")
 })
 
-x <- rnorm(100)
-y <- rnorm(100)
-z <- x + y
-
-
-
 burt <- matrix(c(1.00,  0.83,  0.81,  0.80,   0.71, 0.70, 0.54, 0.53,  0.59,  0.24, 0.13,
                  0.83,  1.00,  0.87,  0.62,   0.59, 0.44, 0.58, 0.44,  0.23,  0.45,  0.21,
                  0.81,  0.87,  1.00,  0.63,   0.37, 0.31, 0.30, 0.12,  0.33,  0.33,  0.36,
@@ -174,13 +168,17 @@ test_that("errors etc. are thrown correctly", {
   expect_error(efa_retain(1:10), class = "efa_input_not_matrix")
   expect_warning(efa_retain(GRiPS_raw, N = 10, criteria = "MAP",
                            suitability = FALSE), class = "efa_n_from_data")
-  expect_error(efa_retain(cbind(x, y, z, z + 1, y + 1, x + 1)), class = "efa_cor_singular")
+  expect_error(efa_retain(sing_raw), class = "efa_cor_singular")
   # CD is skipped on a correlation matrix; a small criteria set keeps the skip-warning check
   # off the simulating default criteria so it runs on CRAN.
   expect_warning(efa_retain(test_models$baseline$cormat, N = 500,
                             criteria = c("CD", "MAP")), class = "efa_criterion_skipped")
   # burt is near-singular: it is smoothed, and PARALLEL finds every real SMC
-  # eigenvalue above its reference (no crossing), so both warnings are expected
+  # eigenvalue above its reference (no crossing), so both warnings are expected.
+  # PARALLEL's verdict comes out of a simulation, so seed it rather than inheriting
+  # whatever state the preceding tests left (which differs between the default and the
+  # slow gate, because the gated bodies return before drawing).
+  set.seed(42)
   expect_warning(
     expect_warning(efa_retain(burt, N = 170, criteria = c("PARALLEL", "EKC")),
                    class = "efa_parallel_no_crossing"),
@@ -188,4 +186,4 @@ test_that("errors etc. are thrown correctly", {
 })
 
 if (is_slow_test()) rm(nf_grips)
-rm(x, y, z, burt)
+rm(burt)

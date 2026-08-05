@@ -325,29 +325,32 @@ test_that("factor analyses are performed correctly", {
                                    plot = FALSE)$diff)), 0, tolerance = .01)
 })
 
-# Create singular correlation matrix for tests
-x <- rnorm(10)
-y <- rnorm(10)
-z <- x + y
-dat_sing <- matrix(c(x, y, z), ncol = 3)
-cor_sing <- stats::cor(dat_sing)
-
-cor_nposdef <- matrix(c(1, 1, 0, 1, 1, 1, 0, 1, 1), ncol = 3)
-
 test_that("errors are thrown correctly", {
   expect_error(EFA(1:5), class = "efa_input_not_matrix")
   expect_error(EFA(cor_nposdef, n_factors = 1, N = 10, type = "SPSS"), class = "efa_cor_not_posdef")
   expect_message(EFA(GRiPS_raw, n_factors = 1), class = "efa_cor_from_data")
   expect_warning(EFA(GRiPS_raw, N = 20, n_factors = 1), class = "efa_n_from_data")
-  expect_error(EFA(dat_sing, n_factors = 1), class = "efa_cor_singular")
-  expect_error(EFA(cor_sing, N = 10, n_factors = 1), class = "efa_cor_singular")
+  expect_error(EFA(sing_raw, n_factors = 1), class = "efa_cor_singular")
+  expect_error(EFA(sing_cor, N = sing_N, n_factors = 1), class = "efa_cor_singular")
   # a criterion of 1 is not a convergence tolerance. EFA() repacks it into the estimation
   # control, which rejects it up front -- as it already did for any larger value -- so the
   # invalid call is caught at the argument rather than deep inside the fit.
   expect_error(EFA(test_models$baseline$cormat, n_factors = 3, N = 500, method = "PAF", criterion = 1),
                class = "efa_control_input")
-  expect_warning(EFA(matrix(rnorm(30), ncol = 3), n_factors = 2), class = "efa_underidentified")
-  expect_warning(EFA(matrix(rnorm(30), ncol = 3), n_factors = 1), class = "efa_just_identified")
+  # Identification is a property of the dimensions, not of the values, but fitting a
+  # 10 x 3 sample does depend on the draw: whether the extraction Heywoods or runs out of
+  # iterations varies from one realization to the next. Seed the fixture and let those two
+  # incidental conditions through, so the assertion stays about identification alone.
+  set.seed(1)
+  dat_ident <- matrix(rnorm(30), ncol = 3)
+  expect_warning(EFA(dat_ident, n_factors = 2), class = "efa_underidentified")
+  expect_warning(
+    suppressWarnings(
+      EFA(dat_ident, n_factors = 1),
+      classes = c("efa_heywood", "efa_paf_nonconvergence")
+    ),
+    class = "efa_just_identified"
+  )
   expect_warning(EFA(test_models$baseline$cormat, n_factors = 3, method = "ML"), class = "efa_fit_na_n")
   expect_warning(EFA(test_models$baseline$cormat, n_factors = 3, method = "ULS"), class = "efa_fit_na_n")
   expect_warning(
@@ -373,7 +376,7 @@ test_that("a singular correlation matrix is rejected for every type except psych
     for (est in c("PAF", "ML", "ULS")) {
       if (ty == "psych" && est == "PAF") next
       expect_error(
-        efa_fit(cor_sing, n_factors = 1, N = 10, estimator = est,
+        efa_fit(sing_cor, n_factors = 1, N = sing_N, estimator = est,
                 estimate_control = estimate_control(type = ty)),
         class = "efa_cor_singular"
       )
@@ -383,7 +386,7 @@ test_that("a singular correlation matrix is rejected for every type except psych
   # psych + PAF keeps the documented pseudo-inverse behaviour and still fits.
   expect_no_error(
     suppressWarnings(
-      efa_fit(cor_sing, n_factors = 1, N = 10, estimator = "PAF",
+      efa_fit(sing_cor, n_factors = 1, N = sing_N, estimator = "PAF",
               estimate_control = estimate_control(type = "psych"))
     )
   )
@@ -746,8 +749,7 @@ test_that("the print banner reports optimiser non-convergence", {
 
 rm(efa_cor, efa_raw, efa_psych, efa_spss, efa_ml, efa_uls, efa_equa, efa_quart,
    efa_none, cormat_zero, cormat_moderate, efa_paf_zero, efa_ml_zero, efa_uls_zero,
-   efa_paf_moderate, efa_ml_moderate, efa_uls_moderate, x, y, z, dat_sing, cor_sing,
-   cor_nposdef)
+   efa_paf_moderate, efa_ml_moderate, efa_uls_moderate)
 
 test_that("print.efa argument validators raise classed conditions", {
   efa <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500)
