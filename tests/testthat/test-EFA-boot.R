@@ -2,6 +2,17 @@
 # (se = "np-boot"): end-to-end coverage, output structure and validity,
 # reproducibility, and graceful handling of degenerate bootstrap replicates.
 
+# The reproducibility assertions below compare two separate invocations, so they use
+# expect_equal() with an explicit tolerance rather than expect_identical(): a threaded BLAS
+# (Apple's Accelerate, for one) is free to vary its GEMM reduction order between calls, so
+# one function on one input can differ in the last ulp, and an iterative rotation carries
+# that into the reported loadings. waldo still compares S3 classes, names, attributes and
+# structure exactly, so only numeric values are given slack -- a seed that was ignored moves
+# the compared values by orders of magnitude more than this and still fails loudly. (A set
+# tolerance does relax integer against double, so where the storage mode is itself part of
+# the contract it is asserted separately.)
+fp_tol <- 1e-8
+
 # A clean oblique (promax) bootstrap fit reused by several structure/validity
 # tests. GRiPS_raw is well conditioned, so all replicates should succeed.
 set.seed(42)
@@ -210,8 +221,8 @@ test_that("seed makes a criterion rotation reproducible without a bootstrap", {
 
   a <- fit(42)
   b <- fit(42)
-  expect_identical(unclass(a$rot_loadings), unclass(b$rot_loadings))
-  expect_identical(a$Phi, b$Phi)
+  expect_equal(unclass(a$rot_loadings), unclass(b$rot_loadings), tolerance = fp_tol)
+  expect_equal(a$Phi, b$Phi, tolerance = fp_tol)
 
   # A different seed explores different starts, so the argument is doing something
   # rather than the fit being deterministic to begin with.

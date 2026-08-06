@@ -2,11 +2,23 @@
 # implementations: identical result, no added condition, and the old class string kept so
 # `inherits(x, "OLD")` and old S3 dispatch still resolve.
 
+# The comparisons below use expect_equal() with an explicit tolerance rather than
+# expect_identical(). The wrapper contract is that the old name runs the SAME fit, not that a
+# fit is reproducible bit for bit: a threaded BLAS (Apple's Accelerate, for one) is free to
+# vary its reduction order between two calls, so two invocations of one function on one input
+# can differ in the last ulp, and an iterative oblique rotation carries that into the reported
+# loadings. waldo still compares S3 classes, names, attributes and structure exactly, so only
+# numeric values are given slack -- a wrapper that reached a different fit moves loadings in
+# the second or third decimal and still fails loudly. The tolerance is deliberately not
+# tightened further: `rotation_diagnostics$criterion_spread` is O(1e-12), and below the
+# tolerance all.equal() compares such values absolutely rather than relatively.
+fp_tol <- 1e-8
+
 # `EFA()` is the *translating* wrapper of record: efa_fit() collects the estimation and
 # rotation tuning knobs into estimate_control() / rotate_control(), so EFA() repacks its frozen
 # flat argument list into those objects rather than forwarding it verbatim. It is therefore not
 # part of the static `superseded_contract` below; its contract is that the old flat call and
-# the new control-object call return byte-identical objects, across several type / method /
+# the new control-object call return the same fit, across several type / method /
 # rotation combinations, and that EFA() adds no condition of its own. A shared seed pins the
 # random-start rotations so the two calls draw from the same RNG state.
 #
@@ -16,7 +28,7 @@
 # pins only their frozen signature and the knob-forwarding tests at the end of this file pin
 # their behaviour.
 
-test_that("EFA() and efa_fit() return byte-identical objects", {
+test_that("EFA() and efa_fit() return the same fit", {
   cormat <- test_models$baseline$cormat
   combos <- expand.grid(
     estimator = c("PAF", "ML", "ULS"),
@@ -36,8 +48,8 @@ test_that("EFA() and efa_fit() return byte-identical objects", {
                                     rotation = r,
                                     estimate_control = estimate_control(type = ty),
                                     rotate_control = rotate_control(type = ty)))
-    expect_identical(old, new,
-                     info = paste("estimator =", m, "; rotation =", r, "; type =", ty))
+    expect_equal(old, new, tolerance = fp_tol,
+                 info = paste("estimator =", m, "; rotation =", r, "; type =", ty))
   }
 })
 
@@ -91,7 +103,7 @@ test_that("efa_fit() rejects a former flat knob forwarded through `...`, keeps r
   set.seed(1)
   via_ctrl <- efa_fit(cm, n_factors = 3, N = 500, rotation = "geominQ",
                       rotate_control = rotate_control(maxit = 3000))
-  expect_identical(via_dots$rot_loadings, via_ctrl$rot_loadings)
+  expect_equal(via_dots$rot_loadings, via_ctrl$rot_loadings, tolerance = fp_tol)
 })
 
 test_that("EFA() keeps silently ignoring a rotation extra its engine cannot consume", {
@@ -106,20 +118,20 @@ test_that("EFA() keeps silently ignoring a rotation extra its engine cannot cons
   with_extra <- EFA(cm, n_factors = 3, N = 500, rotation = "promax", maxit = 100)
   set.seed(1)
   without_extra <- EFA(cm, n_factors = 3, N = 500, rotation = "promax")
-  expect_identical(with_extra$rot_loadings, without_extra$rot_loadings)
+  expect_equal(with_extra$rot_loadings, without_extra$rot_loadings, tolerance = fp_tol)
 
   # a consumable extra still reaches the engine through EFA()'s dots
   set.seed(1)
   old <- EFA(cm, n_factors = 3, N = 500, rotation = "oblimin", maxit = 750)
   set.seed(1)
   new <- efa_fit(cm, n_factors = 3, N = 500, rotation = "oblimin", maxit = 750)
-  expect_identical(old$rot_loadings, new$rot_loadings)
+  expect_equal(old$rot_loadings, new$rot_loadings, tolerance = fp_tol)
 
   # rotation = "none" -- EFA()'s own default -- runs no engine, so the flat interface
   # consumed no extra there either and simply ignored it; the extra is still dropped
   # silently, and the fit is the one the call without it returns
   expect_no_condition(with_bogus <- EFA(cm, n_factors = 3, N = 500, bogus = 1))
-  expect_identical(with_bogus, EFA(cm, n_factors = 3, N = 500))
+  expect_equal(with_bogus, EFA(cm, n_factors = 3, N = 500), tolerance = fp_tol)
   expect_no_condition(EFA(cm, n_factors = 3, N = 500, rotation = "none", maxit = 500))
 })
 
@@ -130,19 +142,20 @@ test_that("the retention wrappers keep silently ignoring an unknown dot", {
   # successor functions reject such a name (see test-retention-controls.R), the frozen
   # names must not -- and the result is the one the call without the extra returns
   expect_no_condition(kgc_bogus <- KGC(cm, eigen_type = "PCA", bogus = 1))
-  expect_identical(kgc_bogus, KGC(cm, eigen_type = "PCA"))
+  expect_equal(kgc_bogus, KGC(cm, eigen_type = "PCA"), tolerance = fp_tol)
   expect_no_condition(SCREE(cm, eigen_type = "PCA", cor_methd = "poly"))
   set.seed(1)
   par_bogus <- PARALLEL(N = 500, n_vars = 18, n_datasets = 2, eigen_type = "PCA",
                         bogus = 1)
   set.seed(1)
   par_plain <- PARALLEL(N = 500, n_vars = 18, n_datasets = 2, eigen_type = "PCA")
-  expect_identical(par_bogus, par_plain)
+  expect_equal(par_bogus, par_plain, tolerance = fp_tol)
   expect_no_condition(
     nf_bogus <- N_FACTORS(cm, criteria = "EKC", N = 500, suitability = FALSE,
                           bogus = 1))
-  expect_identical(nf_bogus,
-                   N_FACTORS(cm, criteria = "EKC", N = 500, suitability = FALSE))
+  expect_equal(nf_bogus,
+               N_FACTORS(cm, criteria = "EKC", N = 500, suitability = FALSE),
+               tolerance = fp_tol)
 
   # a rotation setting and the rotation-engine extras (maxit/gam/delta) were equally inert
   # on the flat interface -- the criterion fits are always unrotated, so EFA() consumed
@@ -162,7 +175,7 @@ test_that("the retention wrappers keep silently ignoring an unknown dot", {
   kgc_extra <- suppressWarnings(suppressMessages(
     KGC(cm, eigen_type = "EFA", maxit = 10)))
   kgc_noextra <- suppressWarnings(suppressMessages(KGC(cm, eigen_type = "EFA")))
-  expect_identical(kgc_extra, kgc_noextra)
+  expect_equal(kgc_extra, kgc_noextra, tolerance = fp_tol)
 
   # a junk value under a successor-only name is NOT dropped: no pre-rename code could have
   # used the name, so the successor's loud classed validation is the right outcome (the
@@ -191,7 +204,7 @@ test_that("HULL(), NEST(), and EFA_POOLED() keep silently ignoring an unknown do
   set.seed(1)
   hull_plain <- suppressWarnings(suppressMessages(
     HULL(cm, N = 500, n_datasets = 2)))
-  expect_identical(hull_bogus, hull_plain)
+  expect_equal(hull_bogus, hull_plain, tolerance = fp_tol)
 
   # method = "ULS" rides through the repack alongside the dropped junk name (with the PAF
   # default and so few reference datasets the NEST walk runs deep enough to Heywood)
@@ -201,7 +214,7 @@ test_that("HULL(), NEST(), and EFA_POOLED() keep silently ignoring an unknown do
   set.seed(1)
   nest_plain <- suppressWarnings(suppressMessages(
     NEST(cm, N = 500, n_datasets = 50, method = "ULS")))
-  expect_identical(nest_bogus, nest_plain)
+  expect_equal(nest_bogus, nest_plain, tolerance = fp_tol)
 
   # EFA_POOLED()'s fits are rotated, so its filter is rotation-aware like EFA()'s: a junk
   # name is dropped, and an extra its selected rotation consumes still reaches the engine
@@ -210,7 +223,7 @@ test_that("HULL(), NEST(), and EFA_POOLED() keep silently ignoring an unknown do
     EFA_POOLED(cm_list, n_factors = 3, N = 500, bogus = 1)))
   pooled_plain <- suppressWarnings(suppressMessages(
     EFA_POOLED(cm_list, n_factors = 3, N = 500)))
-  expect_identical(pooled_bogus, pooled_plain)
+  expect_equal(pooled_bogus, pooled_plain, tolerance = fp_tol)
 })
 
 test_that("SL() keeps silently ignoring an unknown dot and rejects the control objects", {
@@ -221,7 +234,7 @@ test_that("SL() keeps silently ignoring an unknown dot and rejects the control o
   # the flat interface's second-order EFA silently ignored an unconsumable dot
   sl_bogus <- suppressWarnings(suppressMessages(SL(efa_prom, bogus = 1)))
   sl_plain <- suppressWarnings(suppressMessages(SL(efa_prom)))
-  expect_identical(sl_bogus, sl_plain)
+  expect_equal(sl_bogus, sl_plain, tolerance = fp_tol)
 
   # a control object alongside the frozen `type` would silently win over it (the repack
   # translates nothing when a control is present), so the successor-only names are
@@ -245,7 +258,7 @@ test_that("BARTLETT() forwards to efa_bartlett() identically", {
   old <- BARTLETT(test_models$baseline$cormat, N = 500)
   new <- efa_bartlett(test_models$baseline$cormat, N = 500)
 
-  expect_identical(old, new)
+  expect_equal(old, new, tolerance = fp_tol)
   expect_identical(class(old), c("efa_bartlett", "BARTLETT"))
   expect_true(inherits(old, "BARTLETT"))
 })
@@ -263,7 +276,7 @@ test_that("KMO() forwards to efa_kmo() identically", {
   old <- KMO(test_models$baseline$cormat)
   new <- efa_kmo(test_models$baseline$cormat)
 
-  expect_identical(old, new)
+  expect_equal(old, new, tolerance = fp_tol)
   expect_identical(class(old), c("efa_kmo", "KMO"))
   expect_true(inherits(old, "KMO"))
 })
@@ -274,15 +287,15 @@ test_that("KMO() adds no condition and stays transparent", {
 })
 
 # The retention criteria share the lowercase `efa_retention` class and gain no
-# extra class string on the old name, so the wrapper must return a byte-identical
+# extra class string on the old name, so the wrapper must return the same
 # object with that single class and raise no condition of its own. EKC and MAP
-# stand in for the family: both are deterministic, so identity is exact.
+# stand in for the family.
 
 test_that("EKC() forwards to efa_ekc() identically", {
   old <- EKC(test_models$baseline$cormat, N = 500)
   new <- efa_ekc(test_models$baseline$cormat, N = 500)
 
-  expect_identical(old, new)
+  expect_equal(old, new, tolerance = fp_tol)
   expect_identical(class(old), "efa_retention")
 })
 
@@ -295,7 +308,7 @@ test_that("MAP() forwards to efa_map() identically", {
   old <- MAP(test_models$baseline$cormat)
   new <- efa_map(test_models$baseline$cormat)
 
-  expect_identical(old, new)
+  expect_equal(old, new, tolerance = fp_tol)
   expect_identical(class(old), "efa_retention")
 })
 
@@ -306,8 +319,8 @@ test_that("MAP() adds no condition and stays transparent", {
 
 # The retention orchestrator keeps the dual class its efa_retain() successor
 # carries (so both `inherits(x, "N_FACTORS")` and the new S3 dispatch resolve),
-# forwards byte-identically, and raises no condition of its own. EKC and MAP
-# stand in for the criteria it runs: both are deterministic, so identity is exact.
+# forwards the same result, and raises no condition of its own. EKC and MAP
+# stand in for the criteria it runs.
 
 test_that("N_FACTORS() forwards to efa_retain() identically", {
   old <- N_FACTORS(test_models$baseline$cormat, N = 500, suitability = FALSE,
@@ -315,7 +328,7 @@ test_that("N_FACTORS() forwards to efa_retain() identically", {
   new <- efa_retain(test_models$baseline$cormat, N = 500, suitability = FALSE,
                     criteria = c("EKC", "MAP"))
 
-  expect_identical(old, new)
+  expect_equal(old, new, tolerance = fp_tol)
   expect_identical(class(old), c("efa_retain", "N_FACTORS"))
   expect_true(inherits(old, "N_FACTORS"))
 })
@@ -342,7 +355,7 @@ test_that("SL() forwards to efa_schmid_leiman() identically", {
   new <- efa_schmid_leiman(efa_mod, estimator = "PAF",
                            estimate_control = estimate_control(type = "EFAtools"))
 
-  expect_identical(old, new)
+  expect_equal(old, new, tolerance = fp_tol)
   expect_identical(class(old), c("efa_schmid_leiman", "SL"))
   expect_identical(class(old$sl), c("efa_sl_loadings", "SLLOADINGS"))
 })
@@ -389,7 +402,7 @@ test_that("COMPARE() forwards to efa_compare() identically", {
   old <- COMPARE(matrix(c(1, 1, 1, 2), ncol = 2), matrix(c(1, 1, 1, 1), ncol = 2))
   new <- efa_compare(matrix(c(1, 1, 1, 2), ncol = 2), matrix(c(1, 1, 1, 1), ncol = 2))
 
-  expect_identical(old, new)
+  expect_equal(old, new, tolerance = fp_tol)
   expect_identical(class(old), c("efa_compare", "COMPARE"))
   expect_true(inherits(old, "COMPARE"))
 })
@@ -417,7 +430,7 @@ test_that("PROCRUSTES() forwards to efa_procrustes() identically", {
   old <- PROCRUSTES(procrustes_A, Target = procrustes_target)
   new <- efa_procrustes(procrustes_A, Target = procrustes_target)
 
-  expect_identical(old, new)
+  expect_equal(old, new, tolerance = fp_tol)
   expect_identical(class(old), "list")
 })
 
@@ -432,7 +445,7 @@ test_that("PROCRUSTES() adds no condition and stays transparent", {
 # Model averaging keeps the dual class its efa_average() successor carries, so
 # `inherits(x, "EFA_AVERAGE")` and the old print / format / plot dispatch all still
 # resolve. Two grid cells (PAF and ML, both the EFAtools implementation) are enough to
-# average over, and every EFA in them is deterministic, so identity is exact.
+# average over.
 
 # The frozen wrapper still selects the estimators with `method`; the successor takes
 # `estimator`, so the helper places the shared grid under the caller's argument name.
@@ -453,7 +466,7 @@ test_that("EFA_AVERAGE() forwards identically without user-facing conditions", {
   )
   new <- average_grid(efa_average)
 
-  expect_identical(old, new)
+  expect_equal(old, new, tolerance = fp_tol)
   expect_identical(class(old), c("efa_average", "EFA_AVERAGE"))
   expect_true(inherits(old, "EFA_AVERAGE"))
 })
@@ -468,8 +481,8 @@ test_that("EFA_AVERAGE() stays transparent to efa_average()'s conditions", {
 
 # EFA_POOLED() keeps the dual class its efa_mi() successor carries (so both
 # `inherits(x, "EFA_POOLED")` and the new S3 dispatch resolve), forwards
-# byte-identically, and raises no condition of its own. A two-imputation list of
-# identical correlation matrices is deterministic (se = "none"), so identity is exact.
+# faithfully, and raises no condition of its own. A two-imputation list of
+# identical correlation matrices needs no resampling here (se = "none").
 
 test_that("EFA_POOLED() forwards to efa_mi() identically and adds no condition", {
   imps <- list(test_models$baseline$cormat, test_models$baseline$cormat)
@@ -479,7 +492,7 @@ test_that("EFA_POOLED() forwards to efa_mi() identically and adds no condition",
   )
   new <- efa_mi(imps, n_factors = 3, N = 500, estimator = "PAF", rotation = "promax")
 
-  expect_identical(old, new)
+  expect_equal(old, new, tolerance = fp_tol)
   expect_identical(class(old), c("efa_mi", "EFA_POOLED", "efa", "EFA"))
   expect_true(inherits(old, "EFA_POOLED"))
 })
@@ -723,7 +736,7 @@ test_that("SL() still routes a non-default `type` into the second-order fit", {
   old <- SL(efa_mod, type = "SPSS", method = "ULS")
   new <- efa_schmid_leiman(efa_mod, estimator = "ULS",
                            estimate_control = estimate_control(type = "SPSS"))
-  expect_identical(old, new)
+  expect_equal(old, new, tolerance = fp_tol)
 
   # and it is honoured, not merely accepted: SPSS is not the preset the fit defaults to
   default <- efa_schmid_leiman(efa_mod, estimator = "ULS")
@@ -755,7 +768,7 @@ test_that("HULL() still tunes the fit through its dots", {
   new <- do.call(efa_hull, c(list(cormat), args_new,
                              list(estimate_control = estimate_control(type = "psych"),
                                   rotate_control = rotate_control(type = "psych"))))
-  expect_identical(old, new)
+  expect_equal(old, new, tolerance = fp_tol)
 
   # the knob is honoured, not merely accepted: max_iter = 1 halts PAF after a single
   # iteration, so the goodness-of-fit values the hull is built from must change
@@ -788,7 +801,7 @@ test_that("CD() adds no condition and stays transparent", {
   set.seed(42L)
   new <- efa_cd(GRiPS_raw, N_pop = 500, N_samples = 50)
 
-  expect_identical(old, new)
+  expect_equal(old, new, tolerance = fp_tol)
   expect_identical(class(old), "efa_retention")
 })
 
@@ -898,7 +911,7 @@ test_that("the superseded names still tune the fit despite the flat-knob guard",
     efa_fit(cormat, n_factors = 3, N = 500, estimator = "PAF", rotation = "promax",
             estimate_control = estimate_control(type = "SPSS", max_iter = 500),
             rotate_control = rotate_control(type = "SPSS")))
-  expect_identical(old$rot_loadings, new$rot_loadings)
+  expect_equal(old$rot_loadings, new$rot_loadings, tolerance = fp_tol)
 
   # the same holds for the wrappers whose dots reach a fit
   expect_no_error(HULL(cormat, N = 500, method = "PAF", gof = "CAF", max_iter = 500))

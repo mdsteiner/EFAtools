@@ -4,6 +4,17 @@ Lambda_pop <- population_models$loadings$baseline
 Phi_pop <- population_models$phis_3$moderate
 R_pop <- efa_simulate(Lambda = Lambda_pop, Phi = Phi_pop, return_pop = TRUE)$population
 
+# The same-seed reproducibility assertions below compare two separate invocations, so they use
+# expect_equal() with an explicit tolerance rather than expect_identical(): the draw's core is
+# a Cholesky (or eigen) factor times a normal deviate matrix, and a threaded BLAS (Apple's
+# Accelerate, for one) is free to vary its GEMM reduction order between calls, so one function
+# on one input can differ in the last ulp. waldo still compares S3 classes, names, attributes
+# and structure exactly -- including where the NAs sit -- so only numeric values are given
+# slack; a seed that was ignored draws wholly different data and still fails loudly. A set
+# tolerance does relax integer against double, so the ordinal paths, whose category codes are
+# integer by contract, assert their storage mode separately.
+fp_tol <- 1e-8
+
 test_that("return_pop yields the population correlation matrix", {
   expect_true(is.matrix(R_pop))
   expect_equal(dim(R_pop), c(nrow(Lambda_pop), nrow(Lambda_pop)))
@@ -56,7 +67,7 @@ test_that("a positive-semidefinite but singular population uses the eigen fallba
 test_that("a fixed seed is reproducible and leaves the RNG stream unchanged", {
   a <- efa_simulate(N = 100, R = R_pop, seed = 123)
   b <- efa_simulate(N = 100, R = R_pop, seed = 123)
-  expect_identical(a, b)
+  expect_equal(a, b, tolerance = fp_tol)
 
   # A supplied seed must not have a lasting side effect on the caller's stream.
   set.seed(1)
@@ -316,7 +327,7 @@ test_that("empirical n_datasets > 1 returns a reproducible list", {
   expect_equal(dim(sims1$data[[1]]), c(300, p))
   # A fixed seed is reproducible; each replicate has its own stream, so the two
   # datasets differ.
-  expect_identical(sims1, sims2)
+  expect_equal(sims1, sims2, tolerance = fp_tol)
   expect_false(isTRUE(all.equal(sims1$data[[1]], sims1$data[[2]])))
 })
 
@@ -513,14 +524,14 @@ test_that("VM/IG draws are reproducible and support multiple datasets", {
                     seed = 11)
   b <- efa_simulate(N = 200, R = R_vm, marginals = "VM", skewness = 1, kurtosis = 2,
                     seed = 11)
-  expect_identical(a, b)
+  expect_equal(a, b, tolerance = fp_tol)
   expect_equal(colnames(a$data), colnames(R_vm))
 
   ig_a <- efa_simulate(N = 200, R = R_vm, marginals = "IG", skewness = 1, kurtosis = 2,
                        seed = 11)
   ig_b <- efa_simulate(N = 200, R = R_vm, marginals = "IG", skewness = 1, kurtosis = 2,
                        seed = 11)
-  expect_identical(ig_a, ig_b)
+  expect_equal(ig_a, ig_b, tolerance = fp_tol)
 
   sims <- efa_simulate(N = 200, R = R_vm, marginals = "VM", skewness = 1,
                        kurtosis = 2, n_datasets = 3, seed = 11)$data
@@ -705,6 +716,8 @@ test_that("match = 'thresholds' cuts non-normal marginals without error", {
   expect_true(all(dat %in% 1:4))
   dat2 <- efa_simulate(N = 2000, R = R_vm, marginals = "VM", skewness = 1,
                        kurtosis = 2, categories = 4, match = "thresholds", seed = 3)$data
+  # Category codes, not floating-point values: expect_identical() is the right comparison
+  # and a tolerance would buy nothing.
   expect_identical(dat, dat2)
 })
 
@@ -797,7 +810,8 @@ test_that("empty categories are reported with a warning", {
 test_that("ordinal draws are reproducible and support multiple datasets", {
   a <- efa_simulate(N = 500, R = R_vm, categories = 4, seed = 11)
   b <- efa_simulate(N = 500, R = R_vm, categories = 4, seed = 11)
-  expect_identical(a, b)
+  expect_equal(a, b, tolerance = fp_tol)
+  expect_type(a$data, "integer")
 
   sims <- efa_simulate(N = 500, R = R_vm, categories = 4, n_datasets = 3, seed = 11)$data
   expect_type(sims, "list")
@@ -917,12 +931,12 @@ test_that("missing_vars restricts the holed columns and leaves the rest complete
                          missing_vars = c(1, 3), seed = 42)$data
   expect_identical(is.na(by_name), is.na(by_idx))
 
-  # The default (NULL) is the all-columns behaviour, byte for byte.
+  # The default (NULL) is the all-columns behaviour.
   all_cols <- efa_simulate(N = 400, R = R_vm, missing = "MCAR", missing_prop = 0.2,
                            seed = 43)
   explicit <- efa_simulate(N = 400, R = R_vm, missing = "MCAR", missing_prop = 0.2,
                            missing_vars = seq_len(p), seed = 43)
-  expect_identical(all_cols$data, explicit$data)
+  expect_equal(all_cols$data, explicit$data, tolerance = fp_tol)
 })
 
 test_that("missing_vars is validated and gated", {
@@ -1035,7 +1049,7 @@ test_that(".resolve_missing_predictor resolves and validates specs", {
 test_that("missingness is reproducible and supports multiple datasets", {
   a <- efa_simulate(N = 300, R = R_vm, missing = "MAR", missing_prop = 0.2, seed = 5)
   b <- efa_simulate(N = 300, R = R_vm, missing = "MAR", missing_prop = 0.2, seed = 5)
-  expect_identical(a, b)
+  expect_equal(a, b, tolerance = fp_tol)
 
   sims <- efa_simulate(N = 300, R = R_vm, missing = "MCAR", missing_prop = 0.2,
                        n_datasets = 3, seed = 5)$data

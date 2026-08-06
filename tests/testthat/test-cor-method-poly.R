@@ -5,6 +5,15 @@
 # tetrachoric binary assertion, and the clean rejection by the criteria whose
 # reference data are continuous (CD, PARALLEL, NEST, HULL).
 
+# The bootstrap reproducibility assertions below compare two separate invocations, so they
+# use expect_equal() with an explicit tolerance rather than expect_identical(): a threaded
+# BLAS (Apple's Accelerate, for one) is free to vary its GEMM reduction order between calls,
+# so one function on one input can differ in the last ulp. waldo still compares S3 classes,
+# names, attributes and structure exactly, so only numeric values are given slack -- a seed
+# that was ignored resamples different cases entirely and still fails loudly. (A set tolerance
+# does relax integer against double, which these floating-point SEs never are.)
+fp_tol <- 1e-8
+
 # Muffle only the named warning classes, letting any other (unexpected) warning
 # surface so it is not silently hidden by a blanket suppressWarnings().
 .muffle <- function(expr, ...) {
@@ -427,11 +436,11 @@ test_that("the polychoric bootstrap is reproducible and positive definite under 
   b2 <- EFA(g, n_factors = 1, method = "ULS", cor_method = "poly",
             se = "np-boot", b_boot = 6, seed = 42)
 
-  # Same seed -> identical bootstrap SEs, independent of how many replicates were fit.
-  expect_identical(b1$boot$SE$unrot_loadings, b2$boot$SE$unrot_loadings)
+  # Same seed -> the same bootstrap SEs, independent of how many replicates were fit.
+  expect_equal(b1$SE$unrot_loadings, b2$SE$unrot_loadings, tolerance = fp_tol)
   # Replicate matrices are recomputed per resample (degenerate ones are dropped at
   # the fit), so the surviving replicates yield finite SEs.
-  expect_true(all(is.finite(b1$boot$SE$unrot_loadings)))
+  expect_true(all(is.finite(b1$SE$unrot_loadings)))
 })
 
 test_that("the DWLS polychoric bootstrap is reproducible and positive definite under resampling", {
@@ -442,10 +451,10 @@ test_that("the DWLS polychoric bootstrap is reproducible and positive definite u
   b2 <- suppressWarnings(EFA(g, n_factors = 1, method = "DWLS", cor_method = "poly",
                              se = "np-boot", b_boot = 6, seed = 42))
 
-  # Same seed -> identical bootstrap SEs; each replicate recomputes its own polychoric
+  # Same seed -> the same bootstrap SEs; each replicate recomputes its own polychoric
   # matrix and diagonal-ACOV weights, and the surviving replicates yield finite SEs.
-  expect_identical(b1$boot$SE$unrot_loadings, b2$boot$SE$unrot_loadings)
-  expect_true(all(is.finite(b1$boot$SE$unrot_loadings)))
+  expect_equal(b1$SE$unrot_loadings, b2$SE$unrot_loadings, tolerance = fp_tol)
+  expect_true(all(is.finite(b1$SE$unrot_loadings)))
 })
 
 test_that("the polychoric bootstrap on DOSPERT_raw completes (timed)", {
@@ -460,5 +469,5 @@ test_that("the polychoric bootstrap on DOSPERT_raw completes (timed)", {
   elapsed <- unname(t["elapsed"])
   cli::cli_inform(
     "Polychoric bootstrap: {b_boot} replicates on DOSPERT_raw in {round(elapsed, 1)}s ({round(elapsed / b_boot, 3)}s/replicate).")
-  expect_true(all(is.finite(fit$boot$SE$unrot_loadings)))
+  expect_true(all(is.finite(fit$SE$unrot_loadings)))
 })

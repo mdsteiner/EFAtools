@@ -1,6 +1,17 @@
 # Each efa_parallel() call simulates ~100 datasets and eigen-decomposes them, so this
 # fixture block dominates the file (~50s). Skipped by default; opt in with
 # `Sys.setenv(EFATOOLS_TEST_SLOW = "true")` to run. See helper-slow.R.
+
+# The kernel-routing check below compares two separate eigen-decomposition runs, so it uses
+# expect_equal() with an explicit tolerance rather than expect_identical(): a threaded BLAS
+# (Apple's Accelerate, for one) is free to vary its GEMM reduction order between calls, so
+# one function on one input can differ in the last ulp. waldo still compares S3 classes,
+# names, attributes and structure exactly, so only numeric values are given slack -- a draw
+# that did not route through the shared kernel consumes a different random-number stream and
+# produces wholly different eigenvalues, so it still fails loudly. (A set tolerance does relax
+# integer against double, which these eigenvalues never are.)
+fp_tol <- 1e-8
+
 if (is_slow_test()) {
 # seed the parallel-analysis simulation so the retained-factor counts are
 # reproducible (future_lapply uses future.seed = TRUE under the sequential plan)
@@ -414,9 +425,9 @@ test_that("the null-model reference draw matches the compiled fast path", {
 })
 
 test_that(".parallel_sim_eig draws its rank-method reference from the shared kernel", {
-  # The rank-method PCA path never rejects a draw, so its reference eigenvalues must be
-  # identical to a direct per-draw recompute through the shared kernel under the same
-  # random-number stream -- a guard that the draw routes through .simulate_cfm_mvn().
+  # The rank-method PCA path never rejects a draw, so its reference eigenvalues must match a
+  # direct per-draw recompute through the shared kernel under the same random-number stream
+  # -- a guard that the draw routes through .simulate_cfm_mvn().
   N <- 60; p <- 5; nd <- 4
 
   set.seed(202)
@@ -429,7 +440,7 @@ test_that(".parallel_sim_eig draws its rank-method reference from the shared ker
           symmetric = TRUE, only.values = TRUE)$values
   }, numeric(p)))
 
-  expect_identical(got, want)
+  expect_equal(got, want, tolerance = fp_tol)
 })
 
 test_that(".parallel_EFA_sim draws its reference from the shared kernel", {

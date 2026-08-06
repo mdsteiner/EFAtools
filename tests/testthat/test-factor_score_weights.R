@@ -3,6 +3,15 @@
 # two weight matrices must agree regardless of the fit quality.
 R_mat <- test_models$baseline$cormat
 
+# The alias check below compares two separate invocations, so it uses expect_equal() with an
+# explicit tolerance rather than expect_identical(): a threaded BLAS (Apple's Accelerate, for
+# one) is free to vary its GEMM reduction order between calls, so one function on one input
+# can differ in the last ulp. waldo still compares S3 classes, names, attributes and structure
+# exactly, so only numeric values are given slack -- an alias resolved to a different weight
+# formula moves the weights in the second or third decimal and still fails loudly. (A set
+# tolerance does relax integer against double, which these weights never are.)
+fp_tol <- 1e-8
+
 efa_ob <- suppressMessages(suppressWarnings(
   EFA(R_mat, n_factors = 3, N = 500, type = "EFAtools", method = "PAF",
       rotation = "oblimin")))
@@ -45,7 +54,7 @@ test_that("regression is an alias of Thurstone", {
                                             method = "Thurstone")
   W_reg <- EFAtools:::.factor_score_weights(Lambda_ob, Phi_ob, R_mat, h2_ob,
                                             method = "regression")
-  expect_identical(W_thu, W_reg)
+  expect_equal(W_thu, W_reg, tolerance = fp_tol)
 })
 
 test_that("orthogonal regression weights reproduce the SMC validity coefficients", {
