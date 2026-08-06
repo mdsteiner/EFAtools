@@ -947,7 +947,13 @@ test_that("a bootstrap fills the flag CIs and the point difference sits inside t
 # threshold count over BLAS-sensitive aligned loadings, so it can drift by one across
 # platforms, and scrub_num leaves it verbatim (it carries no decimal point). Pin the layout
 # and wording, not the fragile count.
-scrub_group <- function(lines) sub("[0-9]+/[0-9]+", "<flagged>", scrub_num(lines))
+#
+# The mask has to swallow the whitespace ahead of the count as well, and replace it with a
+# single space: the count is printed right-aligned in its column, so a drift that changes its
+# NUMBER OF DIGITS (6/12 to 12/12) moves the padding rather than the digits and would otherwise
+# still change the scrubbed line. scrub_num cannot absorb that padding on its own -- it only
+# eats leading whitespace for tokens that carry a decimal point.
+scrub_group <- function(lines) sub("\\s*[0-9]+/[0-9]+", " <flagged>", scrub_num(lines))
 
 # Two full WJIV age bands are the standard report fixture: two genuinely different groups
 # over the whole item set, so every section of the printout has something to say. varimax

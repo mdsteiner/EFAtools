@@ -186,7 +186,11 @@ test_that("a non-positive-definite matrix is smoothed, or aborts under posdef_ab
   expect_warning(prep_sm <- .prepare_cor_input(cor_nposdef, N = 10),
                  class = "efa_cor_smoothed")
   expect_true(prep_sm$is_cormat)
-  expect_true(all(eigen(prep_sm$R, symmetric = TRUE, only.values = TRUE)$values > 0))
+  # Positive definite with a margin, not merely positive: the smallest eigenvalue of a smoothed
+  # matrix sits on the projection's own floor (about 1e-10), so asserting a floor of 1e-12
+  # states the guarantee the warning makes. Asserting only "> 0" would instead be satisfied by
+  # an unsmoothed matrix whose smallest eigenvalue happens to be a positive rounding artefact.
+  expect_gt(min(eigen(prep_sm$R, symmetric = TRUE, only.values = TRUE)$values), 1e-12)
 
   # posdef_abort = TRUE turns the same input into an error instead
   expect_error(.prepare_cor_input(cor_nposdef, N = 10, posdef_abort = TRUE),
@@ -198,6 +202,41 @@ test_that("a non-positive-definite matrix is smoothed, or aborts under posdef_ab
   smoothed <- prep_sm$R
   expect_no_warning(prep_again <- .prepare_cor_input(smoothed, N = 10))
   expect_equal(prep_again$R, smoothed)
+})
+
+test_that("the positive-definite projection floors the spectrum and keeps the correlation form", {
+  # The fallback for a matrix psych::cor.smooth() declines to act on. It has to return a
+  # correlation matrix -- unit diagonal, symmetric, dimnames intact -- whose smallest
+  # eigenvalue is clear of the boundary rather than sitting at the rounding floor.
+  R_pd <- .project_cor_pd(cor_nposdef)
+  expect_gt(min(eigen(R_pd, symmetric = TRUE, only.values = TRUE)$values), 1e-12)
+  expect_equal(diag(R_pd), rep(1, ncol(cor_nposdef)))
+  expect_true(isSymmetric(R_pd))
+
+  # the eigendecomposition drops dimnames, so they are restored explicitly
+  named <- cor_nposdef
+  dimnames(named) <- list(letters[1:3], letters[1:3])
+  expect_equal(dimnames(.project_cor_pd(named)), dimnames(named))
+
+  # an already positive definite matrix passes through: no eigenvalue is floored, so the
+  # spectrum is unchanged and the rebuild returns the input up to rounding
+  expect_equal(.project_cor_pd(cormat), cormat, tolerance = 1e-8)
+})
+
+test_that("a matrix psych::cor.smooth() leaves untouched is projected anyway", {
+  # cor.smooth() re-decides whether to act on its own eigendecomposition, which asks for the
+  # eigenvectors where the gate that calls it reads a values-only one; LAPACK runs a different
+  # driver for each, so on a matrix that is singular to working precision the two verdicts
+  # disagree and cor.smooth() returns the matrix untouched. Which side of that a build lands
+  # on cannot be arranged from the data, so the branch is driven by standing in for
+  # cor.smooth() with the no-op it becomes when it declines. The matrix must still come back
+  # positive definite, under the same classed warning.
+  local_mocked_bindings(cor.smooth = function(x, ...) x, .package = "psych")
+
+  expect_warning(prep <- .prepare_cor_input(cor_nposdef, N = 10),
+                 class = "efa_cor_smoothed")
+  expect_gt(min(eigen(prep$R, symmetric = TRUE, only.values = TRUE)$values), 1e-12)
+  expect_equal(diag(prep$R), rep(1, ncol(cor_nposdef)))
 })
 
 test_that("NA in the raw-data correlation matrix aborts with a classed error", {
@@ -386,10 +425,22 @@ test_that("a singular matrix aborts unless the check is disabled", {
   expect_error(suppressMessages(efa_fit(sing_cor, n_factors = 2, N = sing_N)),
                class = "efa_cor_singular")
 
-  # check_singular = FALSE skips the abort; the matrix is smoothed instead
+  # check_singular = FALSE skips the abort. Whether the smoothing branch is entered at all is a
+  # property of the build rather than of the data: for an exactly rank-deficient matrix the
+  # smallest computed eigenvalue IS the eigensolver's rounding, so its sign -- and with it the
+  # verdict of a gate at .Machine$double.eps -- differs between LAPACK implementations. What
+  # holds on every build is that nothing is refused and the matrix that comes back is a
+  # correlation matrix that is not materially indefinite; the positive definiteness that
+  # smoothing guarantees is pinned above on `cor_nposdef`, whose smallest eigenvalue is -0.41
+  # and which therefore takes the branch everywhere.
+  # The two outcomes are asserted as the disjunction they are, rather than as a bound loose
+  # enough to admit both: either the branch was not entered and the matrix comes back exactly
+  # as it went in, or it was and the result is positive definite with the projection's margin.
   prep_ns <- suppressWarnings(
     .prepare_cor_input(sing_cor, N = sing_N, check_singular = FALSE))
-  expect_true(all(eigen(prep_ns$R, symmetric = TRUE, only.values = TRUE)$values > 0))
+  expect_true(
+    identical(prep_ns$R, sing_cor) ||
+      min(eigen(prep_ns$R, symmetric = TRUE, only.values = TRUE)$values) > 1e-12)
 
   # and a well-conditioned matrix is nowhere near the threshold
   ev_ok <- eigen(cormat, symmetric = TRUE, only.values = TRUE)$values

@@ -333,6 +333,23 @@
 # complete cases and resampling/correlation run on complete data).
 .is_listwise_use <- function(use) use %in% c("complete.obs", "na.or.complete")
 
+# Project a symmetric matrix onto the positive definite correlation matrices: floor the
+# eigenvalues, rescale the spectrum to keep the trace at p, rebuild, and standardise back to a
+# unit diagonal. Same construction and same floor as psych::cor.smooth(), so the two agree
+# wherever both act; used where cor.smooth() declines to act on a matrix that is still not
+# positive definite (see .prepare_cor_input()).
+.project_cor_pd <- function(R) {
+  eig_tol <- 1e-12                       # cor.smooth()'s own `eig.tol`, and its 100x floor
+  e <- eigen(R, symmetric = TRUE)
+  ev <- e$values
+  ev[ev < eig_tol] <- 100 * eig_tol
+  ev <- ev * ncol(R) / sum(ev)
+  # ev * t(V) scales row i of t(V) by ev[i], i.e. diag(ev) %*% t(V) without forming diag(ev).
+  out <- stats::cov2cor(e$vectors %*% (ev * t(e$vectors)))
+  dimnames(out) <- dimnames(R)
+  out
+}
+
 # Detect or compute the correlation matrix, check invertibility, and smooth a
 # non-positive-definite matrix. Assumes `x` has already been validated as a
 # matrix or data frame (see .assert_cor_input()). Shared by EFA and the
@@ -754,9 +771,27 @@
         }
       }
     )
+
+    # cor.smooth() decides for itself whether to act, and it decides from an eigendecomposition
+    # that asks for the eigenvectors, whereas the eigenvalues above are values-only. LAPACK runs
+    # a different driver for each, so their smallest eigenvalues differ by the rounding of the
+    # decomposition itself (of order eps * ||R||). For a matrix that is singular to working
+    # precision that rounding IS the eigenvalue, so the two verdicts disagree on a substantial
+    # share of such matrices -- measured at two in five over a sweep of exactly rank-deficient
+    # correlation matrices of order 5 to 40 -- and cor.smooth() then returns the matrix
+    # untouched, leaving a matrix reported as smoothed still indefinite. Which side of the
+    # disagreement a build lands on is a property of its LAPACK, so verify the result here and
+    # project it on the same eigenvalue floor when it was left alone.
+    if (min(eigen(R, symmetric = TRUE, only.values = TRUE)$values) <
+        .Machine$double.eps) {
+      R <- .project_cor_pd(R)
+    }
+
+    # The remedy is named as the eigenvalue floor rather than as cor.smooth(), because on the
+    # branch above it is .project_cor_pd() that applies it.
     cli::cli_warn(
       c("The correlation matrix was not positive definite; it has been smoothed.",
-        "i" = "Smoothing was applied via {.fun psych::cor.smooth}; inspect the results carefully."),
+        "i" = "Its smallest eigenvalues were floored, as in {.fun psych::cor.smooth}; inspect the results carefully."),
       class = "efa_cor_smoothed"
     )
 

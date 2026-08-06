@@ -21,7 +21,7 @@
       Absolute loading differences by group pair (salience threshold |Δ| ≥ <num>):
       
                             mean  median   min   max  rmse  flagged
-      age_6_8 vs age_14_19 <num> <num> <num> <num> <num>   <flagged>
+      age_6_8 vs age_14_19 <num> <num> <num> <num> <num> <flagged>
       
       -- Approximate invariance ------------------------------------------------------
       
@@ -55,9 +55,9 @@
       Absolute loading differences by group pair (salience threshold |Δ| ≥ <num>):
       
               mean  median   min   max  rmse  flagged
-      a vs b <num> <num> <num> <num> <num>     <flagged>
-      a vs c <num> <num> <num> <num> <num>     <flagged>
-      b vs c <num> <num> <num> <num> <num>     <flagged>
+      a vs b <num> <num> <num> <num> <num> <flagged>
+      a vs c <num> <num> <num> <num> <num> <flagged>
+      b vs c <num> <num> <num> <num> <num> <flagged>
       
       -- Approximate invariance ------------------------------------------------------
       
@@ -91,7 +91,7 @@
       Absolute loading differences by group pair (salience threshold |Δ| ≥ <num>):
       
                             mean  median   min   max  rmse  flagged
-      age_6_8 vs age_14_19 <num> <num> <num> <num> <num>   <flagged>
+      age_6_8 vs age_14_19 <num> <num> <num> <num> <num> <flagged>
 
 # print reports the bootstrap congruence intervals and verdicts
 
@@ -118,7 +118,7 @@
       Absolute loading differences by group pair (salience threshold |Δ| ≥ <num>):
       
                 mean  median   min   max  rmse  flagged
-      g1 vs g2 <num> <num> <num> <num> <num>      <flagged>
+      g1 vs g2 <num> <num> <num> <num> <num> <flagged>
       
       i 1 loading has a bootstrap CI excluding 0 (see `$flags`).
       
@@ -152,7 +152,7 @@
       Absolute loading differences by group pair (salience threshold |Δ| ≥ <num>):
       
                 mean  median   min   max  rmse  flagged
-      g1 vs g2 <num> <num> <num> <num> <num>     <flagged>
+      g1 vs g2 <num> <num> <num> <num> <num> <flagged>
       
       -- Approximate invariance ------------------------------------------------------
       
@@ -205,12 +205,12 @@
       age_14_19 vs age_20_39 <num> <num> <num> <num> <num>
       
                               flagged
-      age_6_8 vs age_9_13       <flagged>
-      age_6_8 vs age_14_19     <flagged>
-      age_6_8 vs age_20_39     <flagged>
-      age_9_13 vs age_14_19     <flagged>
-      age_9_13 vs age_20_39    <flagged>
-      age_14_19 vs age_20_39    <flagged>
+      age_6_8 vs age_9_13 <flagged>
+      age_6_8 vs age_14_19 <flagged>
+      age_6_8 vs age_20_39 <flagged>
+      age_9_13 vs age_14_19 <flagged>
+      age_9_13 vs age_20_39 <flagged>
+      age_14_19 vs age_20_39 <flagged>
       
       -- Approximate invariance ----------------------------------
       
