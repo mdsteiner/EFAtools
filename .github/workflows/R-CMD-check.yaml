@@ -14,17 +14,19 @@ jobs:
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
 
-    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
+    name: ${{ matrix.config.os }} (${{ matrix.config.r }}${{ matrix.config.blas && format(', {0}', matrix.config.blas) || '' }})
 
     strategy:
       fail-fast: false
       matrix:
         config:
-          - {os: macos-latest,   r: 'release'}
-          - {os: windows-latest, r: 'release'}
-          - {os: ubuntu-latest,  r: 'devel', http-user-agent: 'release'}
-          - {os: ubuntu-latest,  r: 'release'}
-          - {os: ubuntu-latest,  r: 'oldrel-1'}
+          - {os: macos-latest,     r: 'release'}
+          - {os: macos-15-intel,   r: 'release'}
+          - {os: macos-15-intel,   r: 'release', blas: 'vecLib'}
+          - {os: windows-latest,   r: 'release'}
+          - {os: ubuntu-latest,    r: 'devel', http-user-agent: 'release'}
+          - {os: ubuntu-latest,    r: 'release'}
+          - {os: ubuntu-latest,    r: 'oldrel-1'}
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
@@ -40,6 +42,33 @@ jobs:
           r-version: ${{ matrix.config.r }}
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
+
+      # macOS x86_64 is covered twice: once as installed, which is the reference BLAS the CRAN
+      # macOS binaries ship by default, and once switched to Apple's Accelerate (vecLib), which
+      # uses different drivers. CRAN does not document which BLAS its macOS check machines use, so
+      # neither configuration is assumed to be the CRAN one -- the pair brackets it, and a result
+      # that differs between the two jobs localizes the sensitivity to the BLAS.
+      - name: Use Accelerate (vecLib) BLAS on macOS x86_64
+        if: matrix.config.blas == 'vecLib'
+        shell: bash
+        run: |
+          rlib="$(Rscript -e 'cat(R.home("lib"))')"
+          if [ ! -f "$rlib/libRblas.vecLib.dylib" ]; then
+            echo "::error::libRblas.vecLib.dylib not found in $rlib"
+            ls -l "$rlib"
+            exit 1
+          fi
+          ln -sf "$rlib/libRblas.vecLib.dylib" "$rlib/libRblas.dylib"
+          # Verified on the filesystem rather than from sessionInfo()$BLAS: that path comes from
+          # dladdr on the loaded image and may report the symlink that was opened rather than its
+          # target, so it is logged for diagnostics but not used as the gate.
+          target="$(readlink "$rlib/libRblas.dylib")"
+          echo "libRblas.dylib -> $target"
+          case "$target" in
+            *libRblas.vecLib.dylib) ;;
+            *) echo "::error::libRblas.dylib does not point at vecLib (got '$target')"; exit 1 ;;
+          esac
+          Rscript -e 'si <- sessionInfo(); cat(si$BLAS, si$LAPACK, sep = "\n")'
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:

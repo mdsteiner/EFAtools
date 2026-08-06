@@ -227,14 +227,25 @@ test_that("simplimax routes through the native oblique GPF engine", {
   # heuristic the smooth criteria use.
   #
   # Because the criterion is multimodal, native and GPArotation draw independent restart sequences
-  # and need not reach the SAME minimizer; the well-defined contract is the attained criterion
-  # VALUE. At a matched restart budget where both searches have converged, the native engine
-  # reaches an as-good-or-better minimum than GPArotation (on these fixtures strictly deeper on
-  # two and an exact tie on the third), so the PRIMARY check is best-Q dominance. simplimax's
-  # Table column 2 is the criterion value on the
-  # same Kaiser-normalized loadings the native engine reports, so it is directly comparable to
-  # native$value. Aligned-loadings parity is NOT asserted: at equal-or-better Q the two engines may
-  # settle on different, equally valid simple-structure rotations.
+  # and need not reach the SAME minimizer -- and neither engine's attained VALUE is a stable
+  # target either. The minima are dense: on DOSPERT an exact variable relabelling (a permutation
+  # under which every reported statistic is invariant by construction, with the seed fixed so the
+  # same starts are drawn) moves GPArotation's attained value by ~45% (0.004373 to 0.006397 over
+  # 20 relabellings) while the native engine's moves ~6% (0.005571 to 0.005881). The oracle's own
+  # value is therefore not identified to the precision a direct engine-to-engine comparison would
+  # need, so no dominance claim is asserted here.
+  #
+  # What is identified is asserted instead: (a) the reported value really is the simplimax
+  # criterion of the reported rotation; (b) the rotation descends from its unrotated start;
+  # (c) the two engines agree in order of magnitude, which is the scale on which a genuine
+  # regression in the engine shows up. Aligned-loadings parity is NOT asserted: at comparable Q the
+  # two engines may settle on different, equally valid simple-structure rotations.
+  #
+  # The criterion is evaluated here from its definition rather than taken from the engine or from
+  # GPArotation: the sum of the k smallest squared loadings (Kiers, 1994, Psychometrika, 59(4),
+  # 567-579, doi:10.1007/BF02294392).
+  simplimax_Q <- function(L, k) sum(sort(as.vector(unclass(L))^2)[seq_len(k)])
+
   for (fx_name in names(fixtures)) {
     unrot_fx <- unrot_fixture(fx_name)
     Lx <- unclass(unrot_fx$unrot_loadings)
@@ -247,15 +258,24 @@ test_that("simplimax routes through the native oblique GPF engine", {
                                                    eps = 1e-5, randomStarts = 300))
     ref_Q <- ref$Table[nrow(ref$Table), 2]
 
-    # both engines get the same generous restart budget (300), enough for this multimodal
-    # criterion to reach the global basin; at a matched budget the native engine attains an
-    # as-good-or-better minimum -- on these fixtures strictly deeper on two (baseline, DOSPERT)
-    # and an exact tie on the third (GRiPS). The 1e-3 slack is generous headroom -- native is at
-    # or below the reference (up to 1.4e-3 below), and the converged basin is R-RNG-deterministic
-    # -- so the check is robust to cross-platform BLAS/basin variation while still catching a
-    # genuine regression (which shifts the value by orders of magnitude more). Aligned-loadings
-    # parity is not asserted (see above).
-    expect_lte(native$value, ref_Q + 1e-3)
+    # (a) the reported value is the criterion of the reported rotation. normalize = TRUE optimizes
+    # on the Kaiser-normalized loadings and un-normalizes the returned ones, so the comparison is
+    # made back on the scale the engine optimizes. Both sides evaluate one closed form on one
+    # matrix, so this holds to machine precision on any platform.
+    h <- sqrt(rowSums(Lx^2))
+    expect_equal(native$value, simplimax_Q(native$loadings / h, nrow(Lx)), tolerance = 1e-10)
+
+    # (b) the rotation descends from its unrotated start
+    expect_lt(native$value, simplimax_Q(Lx / h, nrow(Lx)))
+
+    # (c) both engines land on the same scale. The factor is set from measurement in both
+    # directions: at the intended 300 starts the worst native/ref_Q ratio seen on any fixture,
+    # including the 20 relabellings, is 1.27, while collapsing the multistart search to a single
+    # start -- the regression this block guards -- drives the ratio to 1.95 (GRiPS), 4.04 (DOSPERT)
+    # and 5.14 (baseline). 1.5 sits between the two, so it catches a restart regression on every
+    # fixture without pinning the labelling-induced spread. GRiPS is the binding fixture; a factor
+    # of 2 would let a single-start collapse pass there unnoticed.
+    expect_lt(native$value, 1.5 * ref_Q)
     # the native solution is a valid oblique rotation (unit-diagonal factor correlations)
     expect_equal(diag(native$Phi), rep(1, ncol(Lx)))
   }
