@@ -41,10 +41,10 @@ EFA_aver <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500)
 #> ✔ Extracting data [10ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [19ms]
+#> ✔ Reordering factors [17ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [15ms]
+#> ✔ Averaging data [23ms]
 #> 
 plot(EFA_aver)
 
