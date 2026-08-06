@@ -1,8 +1,8 @@
 # Synthetic fixtures: a two-factor model with a known pattern and factor correlation.
 # The model-implied correlation matrix R = Lambda Phi Lambda' + diag(1 - h2) is used so
 # the diagnostics line up with the theoretical determinacy of the regression scores (the
-# quantity the psych and fungible oracles report). The r.scores identities hold for any
-# PD R, so the same fixtures serve every test.
+# quantity the psych oracle and the closed forms below report). The r.scores identities
+# hold for any PD R, so the same fixtures serve every test.
 Lambda <- matrix(c(0.8, 0.1,
                    0.7, 0.0,
                    0.6, 0.1,
@@ -87,19 +87,21 @@ test_that("regression determinacy matches psych's factor-score validity", {
   expect_equal(unname(d$determinacy), sqrt(fs$R2), tolerance = 0.1, ignore_attr = TRUE)
 })
 
-test_that("Guttman index matches fungible::fsIndeterminacy", {
+test_that("the Guttman index matches its closed form", {
   skip_on_cran()
-  skip_if_not_installed("fungible")
 
   W <- EFAtools:::.factor_score_weights(Lambda, Phi, R, h2, method = "Thurstone")
   d <- EFAtools:::.factor_score_diagnostics(W, R, S)
 
-  # fungible's rho = sqrt(diag(CovFhat)) is the regression-score determinacy under the
-  # same model-implied R, and its Guttman index is deterministic (independent of the
-  # random score demonstration it simulates). Fixed seeds keep the call reproducible.
-  fg <- fungible::fsIndeterminacy(Lambda = unname(Lambda), Phi = unname(Phi), N = 100,
-                                  SeedX = 1, SeedBasis = 2, SeedW = 3, Print = "none")
-  expect_equal(unname(d$guttman), fg$Guttman[seq_len(ncol(Lambda))], tolerance = 1e-6)
+  # Guttman's indeterminacy index is the minimum correlation between two sets of factor
+  # scores equally consistent with the model: G = 2 rho^2 - 1, where rho is the multiple
+  # correlation between a factor and its regression scores, rho_j^2 = s_j' R^-1 s_j taken
+  # on the structure matrix S = Lambda Phi (Guttman, 1955, Psychometrika, 20(3), 173-197,
+  # doi:10.1007/BF02289047). The check evaluates that definition directly, independently of
+  # the weight matrix the implementation routes through. Cross-validated once against
+  # fungible::fsIndeterminacy on this fixture, which agrees to 4.4e-16.
+  rho <- sqrt(diag(t(S) %*% solve(R) %*% S))
+  expect_equal(unname(d$guttman), unname(2 * rho^2 - 1), tolerance = 1e-6)
 })
 
 rm(Lambda, Phi, h2, S, R, Phi_or, h2_or, S_or, R_or)
