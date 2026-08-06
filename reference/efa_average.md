@@ -537,36 +537,36 @@ Aver_meth <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
 #> ✔ Extracting data [9ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [27ms]
+#> ✔ Reordering factors [25ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [23ms]
+#> ✔ Averaging data [21ms]
 #> 
 
 # \donttest{
 # Averaging across different implementations of PAF and promax rotation (72 EFAs)
 Aver_PAF <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500)
 #> ℹ Extracting data
-#> ✔ Extracting data [11ms]
+#> ✔ Extracting data [10ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [19ms]
+#> ✔ Reordering factors [18ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [16ms]
+#> ✔ Averaging data [15ms]
 #> 
 
 # Use median instead of mean for averaging (72 EFAs)
 Aver_PAF_md <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
                            averaging = "median")
 #> ℹ Extracting data
-#> ✔ Extracting data [11ms]
+#> ✔ Extracting data [10ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [19ms]
+#> ✔ Reordering factors [17ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [20ms]
+#> ✔ Averaging data [18ms]
 #> 
 
 # Averaging across different implementations of PAF and promax rotation,
@@ -577,10 +577,10 @@ Aver_meth_ext <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500
 #> ✔ Extracting data [12ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [29ms]
+#> ✔ Reordering factors [27ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [16ms]
+#> ✔ Averaging data [15ms]
 #> 
 
 # Averaging across different oblique rotation methods, using one implementation
@@ -589,13 +589,13 @@ Aver_rot <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
                          estimator = "ML", rotation = "oblique", type = "EFAtools",
                          start_method = "psych")
 #> ℹ Extracting data
-#> ✔ Extracting data [11ms]
+#> ✔ Extracting data [10ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [20ms]
+#> ✔ Reordering factors [17ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [23ms]
+#> ✔ Averaging data [20ms]
 #> 
 # }
 
@@ -611,10 +611,10 @@ Aver_fiml <- efa_average(x_miss, n_factors = 1, estimator = c("PAF", "ML"),
 #> ℹ `n_factors` is 1 but `rotation` is not "none"; setting `rotation` to "none",
 #>   as single-factor solutions cannot be rotated.
 #> ℹ Extracting data
-#> ✔ Extracting data [8ms]
+#> ✔ Extracting data [7ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [15ms]
+#> ✔ Averaging data [14ms]
 #> 
 # }
 ```

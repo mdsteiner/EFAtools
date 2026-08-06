@@ -191,6 +191,12 @@
   and constant ones, pointing at `cor_method = "poly"` for ordinal items
   stored as factors or character strings.
 
+- A correlation matrix reported as smoothed is now positive definite on
+  every platform. For a matrix that is singular to working precision,
+  whether the smoothing was carried out could previously depend on the
+  linear algebra library R was built against, and on some builds the
+  warning was raised although the matrix was returned unchanged.
+
 ### Missing Data and Multiple Imputation
 
 - The `rmsr_upper` argument of

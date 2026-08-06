@@ -84,6 +84,7 @@
 <li><p>A correlation matrix supplied as a data frame is now recognised as one and analysed.</p></li>
 <li><p>Passing <code>NULL</code> to a choice-valued argument now selects the documented default, as leaving the argument out does. It previously selected the first admissible value.</p></li>
 <li><p>When a correlation matrix cannot be computed from raw data, the error now names the columns responsible and separates non-numeric, infinite, and constant ones, pointing at <code>cor_method = "poly"</code> for ordinal items stored as factors or character strings.</p></li>
+<li><p>A correlation matrix reported as smoothed is now positive definite on every platform. For a matrix that is singular to working precision, whether the smoothing was carried out could previously depend on the linear algebra library R was built against, and on some builds the warning was raised although the matrix was returned unchanged.</p></li>
 </ul></div>
 <div class="section level3">
 <h3 id="missing-data-and-multiple-imputation-1-0-0-9000">Missing Data and Multiple Imputation<a class="anchor" aria-label="anchor" href="#missing-data-and-multiple-imputation-1-0-0-9000"></a></h3>
