@@ -537,7 +537,7 @@ Aver_meth <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
 #> ✔ Extracting data [9ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [28ms]
+#> ✔ Reordering factors [27ms]
 #> 
 #> ℹ Averaging data
 #> ✔ Averaging data [24ms]
@@ -563,7 +563,7 @@ Aver_PAF_md <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
 #> ✔ Extracting data [11ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [20ms]
+#> ✔ Reordering factors [21ms]
 #> 
 #> ℹ Averaging data
 #> ✔ Averaging data [21ms]
@@ -574,13 +574,13 @@ Aver_PAF_md <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
 Aver_meth_ext <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
                              estimator = c("PAF", "ULS", "ML"))
 #> ℹ Extracting data
-#> ✔ Extracting data [13ms]
+#> ✔ Extracting data [12ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [31ms]
+#> ✔ Reordering factors [29ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [17ms]
+#> ✔ Averaging data [16ms]
 #> 
 
 # Averaging across different oblique rotation methods, using one implementation
@@ -589,13 +589,13 @@ Aver_rot <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
                          estimator = "ML", rotation = "oblique", type = "EFAtools",
                          start_method = "psych")
 #> ℹ Extracting data
-#> ✔ Extracting data [12ms]
+#> ✔ Extracting data [11ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [23ms]
+#> ✔ Reordering factors [20ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [25ms]
+#> ✔ Averaging data [23ms]
 #> 
 # }
 
@@ -614,7 +614,7 @@ Aver_fiml <- efa_average(x_miss, n_factors = 1, estimator = c("PAF", "ML"),
 #> ✔ Extracting data [8ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [16ms]
+#> ✔ Averaging data [15ms]
 #> 
 # }
 ```
