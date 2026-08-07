@@ -252,14 +252,14 @@ Other factor retention criteria:
 # \donttest{
 # using PAF (this will throw a warning if gof is not specified manually
 # and CAF will be used automatically)
-efa_hull(test_models$baseline$cormat, N = 500, gof = "CAF")
+efa_hull(test_models$baseline$cormat, N = 500, gof = "CAF", n_datasets = 100)
 #> ── Hull method ─────────────────────────────────────────────────────────────────
 #> Estimation method: PAF
 #> 
 #> • CAF: 3
 
 # using ML with all available fit indices (CAF, CFI, and RMSEA)
-efa_hull(test_models$baseline$cormat, N = 500, estimator = "ML")
+efa_hull(test_models$baseline$cormat, N = 500, estimator = "ML", n_datasets = 100)
 #> ── Hull method ─────────────────────────────────────────────────────────────────
 #> Estimation method: ML
 #> 
@@ -268,7 +268,8 @@ efa_hull(test_models$baseline$cormat, N = 500, estimator = "ML")
 #> • RMSEA: 1
 
 # using ULS with only RMSEA
-efa_hull(test_models$baseline$cormat, N = 500, estimator = "ULS", gof = "RMSEA")
+efa_hull(test_models$baseline$cormat, N = 500, estimator = "ULS", gof = "RMSEA",
+         n_datasets = 100)
 #> ── Hull method ─────────────────────────────────────────────────────────────────
 #> Estimation method: ULS
 #> 

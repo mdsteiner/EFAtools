@@ -61,13 +61,13 @@ character vector with the report lines.
 # \donttest{
 EFA_aver <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500)
 #> ℹ Extracting data
-#> ✔ Extracting data [10ms]
+#> ✔ Extracting data [11ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [18ms]
+#> ✔ Reordering factors [20ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [17ms]
+#> ✔ Averaging data [16ms]
 #> 
 EFA_aver
 #> 

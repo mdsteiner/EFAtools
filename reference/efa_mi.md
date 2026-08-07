@@ -564,14 +564,14 @@ mod
 #> ── Unrotated Loadings ──────────────────────────────────────────────────────────
 #> 
 #>             F1    h2    u2
-#> fun        .786  .618  .382
-#> friends    .856  .732  .268
-#> enjoy      .869  .756  .244
-#> hurt       .758  .574  .426
-#> part       .815  .665  .335
-#> commonly   .830  .689  .311
-#> chances    .787  .620  .380
-#> attracted  .849  .720  .280
+#> fun        .808  .652  .348
+#> friends    .837  .701  .299
+#> enjoy      .871  .759  .241
+#> hurt       .757  .573  .427
+#> part       .814  .662  .338
+#> commonly   .818  .669  .331
+#> chances    .783  .613  .387
+#> attracted  .844  .713  .287
 #> 
 #> Legend:
 #>   bold = |loading| >= .300
@@ -581,8 +581,8 @@ mod
 #> ── Variances Accounted for ─────────────────────────────────────────────────────
 #> 
 #>                 F1
-#> SS loadings   5.374
-#> Prop Tot Var   .672
+#> SS loadings   5.343
+#> Prop Tot Var   .668
 #> 
 #> ── Model Fit ───────────────────────────────────────────────────────────────────
 #> 
@@ -594,7 +594,7 @@ mod
 #> BIC: -133.94
 #> ECVI: 0.04
 #> CAF: .50
-#> SRMR: .01
+#> SRMR: .02
 #> Note: the pooled χ² is the D2 statistic; its p uses the D2 reference F(20, .1),
 #> not the χ²(20) tail.
 #> Note: CFI and TLI are averaged over the imputations, not formed from the
@@ -614,14 +614,14 @@ mod
 #> ── Unrotated Loadings ──────────────────────────────────────────────────────────
 #> 
 #>             F1    h2    u2
-#> fun        .786  .618  .382
-#> friends    .856  .732  .268
-#> enjoy      .869  .756  .244
-#> hurt       .758  .574  .426
-#> part       .815  .665  .335
-#> commonly   .830  .689  .311
-#> chances    .787  .620  .380
-#> attracted  .849  .720  .280
+#> fun        .808  .652  .348
+#> friends    .837  .701  .299
+#> enjoy      .871  .759  .241
+#> hurt       .757  .573  .427
+#> part       .814  .662  .338
+#> commonly   .818  .669  .331
+#> chances    .783  .613  .387
+#> attracted  .844  .713  .287
 #> 
 #> Legend:
 #>   bold = |loading| >= .300
@@ -631,20 +631,20 @@ mod
 #> ── Variances Accounted for ─────────────────────────────────────────────────────
 #> 
 #>                 F1
-#> SS loadings   5.374
-#> Prop Tot Var   .672
+#> SS loadings   5.343
+#> Prop Tot Var   .668
 #> 
 #> ── Model Fit ───────────────────────────────────────────────────────────────────
 #> 
 #> D2-pooled χ²(20) = 0.00, p = 1.000
 #> CFI (avg. over imputations) [95% bootstrap/MI-CI]: .99 [.96, 1.02]
 #> TLI (avg. over imputations) [95% bootstrap/MI-CI]: .98 [.94, 1.02]
-#> RMSEA [90% CI] [95% bootstrap/MI-CI]: .00 [.00; .00] [.00, .13]
-#> AIC [95% bootstrap/MI-CI]: -40.00 [-81.22, 172.11]
-#> BIC [95% bootstrap/MI-CI]: -133.94 [-175.16, 78.17]
-#> ECVI [95% bootstrap/MI-CI]: 0.04 [-.01, .30]
-#> CAF [95% bootstrap/MI-CI]: .50 [.46, .53]
-#> SRMR [95% bootstrap/MI-CI]: .01 [.00, .04]
+#> RMSEA [90% CI] [95% bootstrap/MI-CI]: .00 [.00; .00] [-.01, .14]
+#> AIC [95% bootstrap/MI-CI]: -40.00 [-93.87, 197.52]
+#> BIC [95% bootstrap/MI-CI]: -133.94 [-187.82, 103.58]
+#> ECVI [95% bootstrap/MI-CI]: 0.04 [-.03, .33]
+#> CAF [95% bootstrap/MI-CI]: .50 [.48, .52]
+#> SRMR [95% bootstrap/MI-CI]: .02 [.00, .03]
 #> Note: the pooled χ² is the D2 statistic; its p uses the D2 reference F(20, .1),
 #> not the χ²(20) tail.
 #> Note: CFI and TLI are averaged over the imputations, not formed from the

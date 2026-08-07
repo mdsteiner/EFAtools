@@ -183,16 +183,16 @@ retention criteria.</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="co"># determine n factors of the GRiPS</span></span></span>
-<span class="r-in"><span><span class="fu">efa_cd</span><span class="op">(</span><span class="va">GRiPS_raw</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">efa_cd</span><span class="op">(</span><span class="va">GRiPS_raw</span>, N_pop <span class="op">=</span> <span class="fl">500</span>, N_samples <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── Comparison data ─────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> • Suggested number of factors: 1</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># determine n factors of the DOSPERT risk subscale</span></span></span>
-<span class="r-in"><span><span class="fu">efa_cd</span><span class="op">(</span><span class="va">DOSPERT_raw</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">efa_cd</span><span class="op">(</span><span class="va">DOSPERT_raw</span>, N_pop <span class="op">=</span> <span class="fl">500</span>, N_samples <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── Comparison data ─────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> • Suggested number of factors: 9</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Suggested number of factors: 5</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

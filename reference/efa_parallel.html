@@ -78,7 +78,7 @@ be selected. To do so, call <code><a href="https://future.futureverse.org" class
     <div class="section level2">
     <h2 id="source">Source<a class="anchor" aria-label="anchor" href="#source"></a></h2>
     <p>Braeken, J., &amp; van Assen, M. A. (2017). An empirical Kaiser criterion.
-Psychological Methods, 22, 450 – 466. http://dx.doi.org/10.1037/ met0000074</p>
+Psychological Methods, 22, 450–466. https://doi.org/10.1037/met0000074</p>
 <p>Crawford, A. V., Green, S. B., Levy, R., Lo, W. J., Scott, L.,
 Svetina, D., &amp; Thompson, M. S. (2010). Evaluation of parallel analysis methods
 for determining the number of factors. Educational and Psychological
@@ -87,7 +87,7 @@ Measurement, 70(6), 885-901.</p>
 methodology for selecting the correct number of factors to retain. Educational
 and Psychological Measurement, 55(3), 377-393.</p>
 <p>Horn, J. L. (1965). A rationale and test for the number of factors in
-factor analysis. Psychometrika, 30(2), 179–185. doi: 10.1007/BF02289447</p>
+factor analysis. Psychometrika, 30(2), 179–185. https://doi.org/10.1007/BF02289447</p>
     </div>
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
@@ -242,14 +242,15 @@ retention criteria.</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="co"># example without real data</span></span></span>
-<span class="r-in"><span><span class="va">pa_unreal</span> <span class="op">&lt;-</span> <span class="fu">efa_parallel</span><span class="op">(</span>N <span class="op">=</span> <span class="fl">500</span>, n_vars <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">pa_unreal</span> <span class="op">&lt;-</span> <span class="fu">efa_parallel</span><span class="op">(</span>N <span class="op">=</span> <span class="fl">500</span>, n_vars <span class="op">=</span> <span class="fl">10</span>, n_datasets <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># example with correlation matrix with all eigen_types and PAF estimation</span></span></span>
-<span class="r-in"><span><span class="va">pa_paf</span> <span class="op">&lt;-</span> <span class="fu">efa_parallel</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">case_11b</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">pa_paf</span> <span class="op">&lt;-</span> <span class="fu">efa_parallel</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">case_11b</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, n_datasets <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># example with correlation matrix with all eigen_types and ML estimation</span></span></span>
 <span class="r-in"><span><span class="co"># this will be faster than the above with PAF)</span></span></span>
-<span class="r-in"><span><span class="va">pa_ml</span> <span class="op">&lt;-</span> <span class="fu">efa_parallel</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">case_11b</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, estimator <span class="op">=</span> <span class="st">"ML"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">pa_ml</span> <span class="op">&lt;-</span> <span class="fu">efa_parallel</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">case_11b</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, estimator <span class="op">=</span> <span class="st">"ML"</span>,</span></span>
+<span class="r-in"><span>                      n_datasets <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>

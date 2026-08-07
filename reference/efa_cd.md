@@ -146,15 +146,15 @@ Other factor retention criteria:
 ``` r
 # \donttest{
 # determine n factors of the GRiPS
-efa_cd(GRiPS_raw)
+efa_cd(GRiPS_raw, N_pop = 500, N_samples = 20)
 #> ── Comparison data ─────────────────────────────────────────────────────────────
 #> 
 #> • Suggested number of factors: 1
 
 # determine n factors of the DOSPERT risk subscale
-efa_cd(DOSPERT_raw)
+efa_cd(DOSPERT_raw, N_pop = 500, N_samples = 20)
 #> ── Comparison data ─────────────────────────────────────────────────────────────
 #> 
-#> • Suggested number of factors: 9
+#> • Suggested number of factors: 5
 # }
 ```

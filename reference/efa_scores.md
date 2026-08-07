@@ -54,7 +54,9 @@ Grice, J. W. (2001). Computing and evaluating factor scores.
   correlation matrix (yields weights and diagnostics only). When raw
   data carry column names, they are matched to the model variables by
   name (any extra columns are ignored, and a model variable missing from
-  `x` is an error); unnamed data are matched by position.
+  `x` is an error). A named correlation matrix is likewise matched to
+  the loading rows by name; its row and column names must use the same
+  order. Unnamed input is matched by position.
 
 - f:
 
@@ -65,8 +67,10 @@ Grice, J. W. (2001). Computing and evaluating factor scores.
 - Phi:
 
   matrix. Factor intercorrelations. Only used when a loading matrix is
-  supplied directly in `f`; taken from the `efa` object otherwise.
-  Default is `NULL`, in which case the factors are assumed uncorrelated.
+  supplied directly in `f`; taken from the `efa` object otherwise. Named
+  rows and columns are matched to the loading columns and must use the
+  same order. Default is `NULL`, in which case the factors are assumed
+  uncorrelated.
 
 - rho:
 
@@ -74,6 +78,8 @@ Grice, J. W. (2001). Computing and evaluating factor scores.
   Defaults to `NULL`, in which case `f$orig_R` is used for an `efa`
   object and `cor(x, use = "pairwise")` otherwise. Pass a matrix here to
   score against a correlation other than the one implied by `f`/`x`.
+  Named rows and columns are matched to the loading rows; row and column
+  names must use the same order.
 
 - method:
 

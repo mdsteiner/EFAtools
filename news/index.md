@@ -289,31 +289,6 @@
   orthogonalised regardless, so they were reported as uncorrelated for
   factors the model says are correlated.
 
-- A `factor_map` for a bifactor loading matrix is now checked against
-  the dimensions of the group-factor loadings, as it already was for
-  every other input, and the error carries the condition class
-  `efa_reliability_map_dim`. A map with too few rows was recycled
-  against the loadings and returned coefficients above 1 instead of an
-  error.
-
-- The conditions
-  [`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md)
-  raises about its item-to-factor map now name `factor_map`. They
-  previously named `factor_corres`, which is the corresponding argument
-  of
-  [`OMEGA()`](https://mdsteiner.github.io/EFAtools/reference/OMEGA.md)
-  and does not exist on
-  [`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md).
-  [`OMEGA()`](https://mdsteiner.github.io/EFAtools/reference/OMEGA.md)
-  continues to name `factor_corres`.
-
-- The
-  [`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md)
-  report of a correlated-factors solution now states that subscale omega
-  equals total omega for each factor, which follows from the absence of
-  a general factor. The two columns previously printed identical values
-  with no explanation.
-
 - [`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md),
   and the superseded
   [`SL()`](https://mdsteiner.github.io/EFAtools/reference/SL.md) with
@@ -323,15 +298,6 @@
   so they were previously forwarded to the second-order fit, which is an
   internal step run against a placeholder sample size and reports none
   of them.
-
-### Rotation
-
-- Every oblique rotation fitted by
-  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-  now warns when two factors correlate above .9 in absolute value, which
-  usually indicates that more factors were extracted than the data
-  support. The solution is still returned; only its interpretation is
-  flagged.
 
 ### Standard Errors
 
@@ -344,14 +310,6 @@
   (`20 bootstrap samples (4 usable)`), for a pooled
   [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
   fit as well as a single one.
-
-- `b_boot` must now be at least 2. At `b_boot = 1` every bootstrap
-  standard error is the standard deviation of a single value and came
-  back `NA` with no message of any kind, and the confidence bounds
-  collapsed onto that one replicate.
-
-- A bootstrap that leaves fewer than two usable replicates now warns
-  (`efa_se_unreliable`).
 
 - The analytic `SE$Phi` now carries the factor names, the one component
   of the analytic standard-error list that shipped without them, and

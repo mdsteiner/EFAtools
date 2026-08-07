@@ -103,8 +103,10 @@ Methods, 6</em>, 430-450.</p>
 <dd><p>data.frame or matrix. Raw data (needed to obtain factor scores) or a
 correlation matrix (yields weights and diagnostics only). When raw data carry
 column names, they are matched to the model variables by name (any extra
-columns are ignored, and a model variable missing from <code>x</code> is an error);
-unnamed data are matched by position.</p></dd>
+columns are ignored, and a model variable missing from <code>x</code> is an error).
+A named correlation matrix is likewise matched to the loading rows by name;
+its row and column names must use the same order. Unnamed input is matched
+by position.</p></dd>
 
 
 <dt id="arg-f">f<a class="anchor" aria-label="anchor" href="#arg-f"></a></dt>
@@ -114,15 +116,17 @@ loadings.</p></dd>
 
 <dt id="arg-phi">Phi<a class="anchor" aria-label="anchor" href="#arg-phi"></a></dt>
 <dd><p>matrix. Factor intercorrelations. Only used when a loading matrix is
-supplied directly in <code>f</code>; taken from the <code>efa</code> object otherwise. Default is
-<code>NULL</code>, in which case the factors are assumed uncorrelated.</p></dd>
+supplied directly in <code>f</code>; taken from the <code>efa</code> object otherwise. Named rows
+and columns are matched to the loading columns and must use the same order.
+Default is <code>NULL</code>, in which case the factors are assumed uncorrelated.</p></dd>
 
 
 <dt id="arg-rho">rho<a class="anchor" aria-label="anchor" href="#arg-rho"></a></dt>
 <dd><p>matrix. Correlation matrix used to derive the scoring weights.
 Defaults to <code>NULL</code>, in which case <code>f$orig_R</code> is used for an <code>efa</code> object and
 <code>cor(x, use = "pairwise")</code> otherwise. Pass a matrix here to score against a
-correlation other than the one implied by <code>f</code>/<code>x</code>.</p></dd>
+correlation other than the one implied by <code>f</code>/<code>x</code>. Named rows and columns
+are matched to the loading rows; row and column names must use the same order.</p></dd>
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>

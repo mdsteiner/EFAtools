@@ -29,8 +29,7 @@ efa_parallel(
 ## Source
 
 Braeken, J., & van Assen, M. A. (2017). An empirical Kaiser criterion.
-Psychological Methods, 22, 450 – 466. http://dx.doi.org/10.1037/
-met0000074
+Psychological Methods, 22, 450–466. https://doi.org/10.1037/met0000074
 
 Crawford, A. V., Green, S. B., Levy, R., Lo, W. J., Scott, L., Svetina,
 D., & Thompson, M. S. (2010). Evaluation of parallel analysis methods
@@ -42,7 +41,8 @@ methodology for selecting the correct number of factors to retain.
 Educational and Psychological Measurement, 55(3), 377-393.
 
 Horn, J. L. (1965). A rationale and test for the number of factors in
-factor analysis. Psychometrika, 30(2), 179–185. doi: 10.1007/BF02289447
+factor analysis. Psychometrika, 30(2), 179–185.
+https://doi.org/10.1007/BF02289447
 
 ## Arguments
 
@@ -219,14 +219,15 @@ Other factor retention criteria:
 ``` r
 # \donttest{
 # example without real data
-pa_unreal <- efa_parallel(N = 500, n_vars = 10)
+pa_unreal <- efa_parallel(N = 500, n_vars = 10, n_datasets = 100)
 
 # example with correlation matrix with all eigen_types and PAF estimation
-pa_paf <- efa_parallel(test_models$case_11b$cormat, N = 500)
+pa_paf <- efa_parallel(test_models$case_11b$cormat, N = 500, n_datasets = 100)
 
 # example with correlation matrix with all eigen_types and ML estimation
 # this will be faster than the above with PAF)
-pa_ml <- efa_parallel(test_models$case_11b$cormat, N = 500, estimator = "ML")
+pa_ml <- efa_parallel(test_models$case_11b$cormat, N = 500, estimator = "ML",
+                      n_datasets = 100)
 # }
 
 if (FALSE) { # \dontrun{

@@ -417,28 +417,34 @@ Other factor retention criteria:
 # This will throw a warning for CD, as no raw data were specified
 # The simulation-based criteria are seeded to make the run reproducible
 set.seed(42)
-nfac_all <- efa_retain(test_models$baseline$cormat, N = 500, estimator = "ML")
+nfac_all <- efa_retain(test_models$baseline$cormat, N = 500, estimator = "ML",
+                       n_datasets = 100, n_datasets_nest = 100)
 #> Warning: `x` is a correlation matrix, but "CD" needs raw data.
 #> ℹ Skipping "CD".
 
 # The same as above, but without "CD"
 nfac_wo_CD <- efa_retain(test_models$baseline$cormat, criteria = c("EKC",
                          "HULL", "PARALLEL", "NEST"), N = 500,
-                         estimator = "ML")
+                         estimator = "ML", n_datasets = 100,
+                         n_datasets_nest = 100)
 
 # Use PAF instead of ML (this will take longer). For this, gof has
 # to be set to "CAF" for the Hull method.
 nfac_PAF <- efa_retain(test_models$baseline$cormat, criteria = c("EKC",
                        "HULL", "PARALLEL", "NEST"), N = 500,
-                       estimator = "PAF", gof = "CAF")
+                       estimator = "PAF", gof = "CAF", n_datasets = 100,
+                       n_datasets_nest = 100)
 
 # Do KGC and PARALLEL with only "PCA" type of eigenvalues
 nfac_PCA <- efa_retain(test_models$baseline$cormat, criteria = c("EKC",
                        "HULL", "PARALLEL", "NEST"), N = 500,
-                       estimator = "ML", eigen_type_other = "PCA")
+                       estimator = "ML", eigen_type_other = "PCA",
+                       n_datasets = 100, n_datasets_nest = 100)
 
 # Use raw data, such that CD can also be performed
-nfac_raw <- efa_retain(GRiPS_raw, estimator = "ML")
+nfac_raw <- efa_retain(GRiPS_raw, estimator = "ML", N_pop = 500,
+                        N_samples = 20, n_datasets = 100,
+                        n_datasets_nest = 100)
 #> Warning: The suggested maximum number of factors was 2, but the Hull method needs at
 #> least 3.
 #> ℹ Setting it to 3.

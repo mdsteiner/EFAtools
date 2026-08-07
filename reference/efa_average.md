@@ -540,7 +540,7 @@ Aver_meth <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
 #> ✔ Reordering factors [27ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [24ms]
+#> ✔ Averaging data [23ms]
 #> 
 
 # \donttest{
@@ -550,23 +550,23 @@ Aver_PAF <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500)
 #> ✔ Extracting data [11ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [20ms]
+#> ✔ Reordering factors [19ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [17ms]
+#> ✔ Averaging data [16ms]
 #> 
 
 # Use median instead of mean for averaging (72 EFAs)
 Aver_PAF_md <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
                            averaging = "median")
 #> ℹ Extracting data
-#> ✔ Extracting data [11ms]
+#> ✔ Extracting data [10ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [21ms]
+#> ✔ Reordering factors [19ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [21ms]
+#> ✔ Averaging data [20ms]
 #> 
 
 # Averaging across different implementations of PAF and promax rotation,
@@ -577,7 +577,7 @@ Aver_meth_ext <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500
 #> ✔ Extracting data [12ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [29ms]
+#> ✔ Reordering factors [30ms]
 #> 
 #> ℹ Averaging data
 #> ✔ Averaging data [16ms]
@@ -589,7 +589,7 @@ Aver_rot <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
                          estimator = "ML", rotation = "oblique", type = "EFAtools",
                          start_method = "psych")
 #> ℹ Extracting data
-#> ✔ Extracting data [11ms]
+#> ✔ Extracting data [10ms]
 #> 
 #> ℹ Reordering factors
 #> ✔ Reordering factors [20ms]

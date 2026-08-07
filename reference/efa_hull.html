@@ -258,14 +258,14 @@ retention criteria.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="co"># using PAF (this will throw a warning if gof is not specified manually</span></span></span>
 <span class="r-in"><span><span class="co"># and CAF will be used automatically)</span></span></span>
-<span class="r-in"><span><span class="fu">efa_hull</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, gof <span class="op">=</span> <span class="st">"CAF"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">efa_hull</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, gof <span class="op">=</span> <span class="st">"CAF"</span>, n_datasets <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── Hull method ─────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Estimation method: PAF</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> • CAF: 3</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># using ML with all available fit indices (CAF, CFI, and RMSEA)</span></span></span>
-<span class="r-in"><span><span class="fu">efa_hull</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, estimator <span class="op">=</span> <span class="st">"ML"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">efa_hull</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, estimator <span class="op">=</span> <span class="st">"ML"</span>, n_datasets <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── Hull method ─────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Estimation method: ML</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -274,7 +274,8 @@ retention criteria.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> • RMSEA: 1</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># using ULS with only RMSEA</span></span></span>
-<span class="r-in"><span><span class="fu">efa_hull</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, estimator <span class="op">=</span> <span class="st">"ULS"</span>, gof <span class="op">=</span> <span class="st">"RMSEA"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">efa_hull</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, estimator <span class="op">=</span> <span class="st">"ULS"</span>, gof <span class="op">=</span> <span class="st">"RMSEA"</span>,</span></span>
+<span class="r-in"><span>         n_datasets <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── Hull method ─────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Estimation method: ULS</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>

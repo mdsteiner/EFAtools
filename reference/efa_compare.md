@@ -96,8 +96,10 @@ efa_compare(
 
 - na.rm:
 
-  logical. Whether NAs should be removed in the mean, median, min, and
-  max functions. Default is FALSE.
+  logical. Whether NAs should be removed from the difference summaries
+  and factor-correspondence classifications. With `FALSE`, a missing
+  loading makes the correspondence counts undefined (`NA`). Default is
+  FALSE.
 
 - x_labels:
 
