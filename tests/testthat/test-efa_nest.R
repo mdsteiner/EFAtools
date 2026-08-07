@@ -65,6 +65,13 @@ test_that("errors are thrown correctly", {
   expect_error(efa_nest(sing_cor, N = sing_N), class = "efa_cor_singular")
 })
 
+test_that("the NEST reference simulation requires at least two cases", {
+  R <- diag(5)
+  expect_error(efa_nest(R, N = 0, n_datasets = 1), "Must be >= 1")
+  expect_error(efa_nest(R, N = 1, n_datasets = 1), class = "efa_n_too_small")
+  expect_s3_class(efa_nest(R, N = 2, n_datasets = 1), "efa_retention")
+})
+
 test_that("a Heywood case in the reference model raises a classed error", {
   skip_if_not_slow()
   # a positive-definite matrix whose one-factor model has a communality above 1:

@@ -37,17 +37,21 @@
 #' @param x data.frame or matrix. Raw data (needed to obtain factor scores) or a
 #'   correlation matrix (yields weights and diagnostics only). When raw data carry
 #'   column names, they are matched to the model variables by name (any extra
-#'   columns are ignored, and a model variable missing from `x` is an error);
-#'   unnamed data are matched by position.
+#'   columns are ignored, and a model variable missing from `x` is an error).
+#'   A named correlation matrix is likewise matched to the loading rows by name;
+#'   its row and column names must use the same order. Unnamed input is matched
+#'   by position.
 #' @param f object of class [efa_fit()], an `efa_loadings` object, or a matrix of factor
 #'   loadings.
 #' @param Phi matrix. Factor intercorrelations. Only used when a loading matrix is
-#'   supplied directly in `f`; taken from the `efa` object otherwise. Default is
-#'   `NULL`, in which case the factors are assumed uncorrelated.
+#'   supplied directly in `f`; taken from the `efa` object otherwise. Named rows
+#'   and columns are matched to the loading columns and must use the same order.
+#'   Default is `NULL`, in which case the factors are assumed uncorrelated.
 #' @param rho matrix. Correlation matrix used to derive the scoring weights.
 #'   Defaults to `NULL`, in which case `f$orig_R` is used for an `efa` object and
 #'   `cor(x, use = "pairwise")` otherwise. Pass a matrix here to score against a
-#'   correlation other than the one implied by `f`/`x`.
+#'   correlation other than the one implied by `f`/`x`. Named rows and columns
+#'   are matched to the loading rows; row and column names must use the same order.
 #' @param method character. The factor-score method: one of `"regression"`
 #'   (default), `"Bartlett"`, `"Anderson"`, `"tenBerge"`, `"Harman"`, or
 #'   `"components"`.
@@ -170,13 +174,43 @@ efa_scores <- function(x, f, Phi = NULL, rho = NULL,
 
   }
 
+  if (!is.matrix(Lambda) || !is.numeric(Lambda) ||
+      nrow(Lambda) < 1L || ncol(Lambda) < 1L || any(!is.finite(Lambda))) {
+    cli::cli_abort(
+      "{.arg f} must provide a non-empty numeric loading matrix with only finite values.",
+      class = "efa_scores_bad_loadings"
+    )
+  }
+
   # Label the factor dimension (F1..Fm) when the loadings carry no usable factor
   # names, so the weights, diagnostics, scores, and determinacy table are
   # self-describing (the same factor naming the EFA print methods use). Duplicate
   # names are treated as unusable too: they would otherwise abort the determinacy
   # table below with an opaque base-R "duplicate row.names" error.
-  if (is.null(colnames(Lambda)) || anyDuplicated(colnames(Lambda)) > 0L) {
+  factor_names <- colnames(Lambda)
+  if (is.null(factor_names) || anyNA(factor_names) ||
+      !all(nzchar(factor_names)) || anyDuplicated(factor_names) > 0L) {
     colnames(Lambda) <- paste0("F", seq_len(ncol(Lambda)))
+  }
+
+  if (!is_cmat) {
+    raw_columns_ok <- if (is.data.frame(x)) {
+      all(vapply(x, function(z) is.numeric(z) || is.logical(z), logical(1)))
+    } else {
+      is.numeric(x) || is.logical(x)
+    }
+    if (!raw_columns_ok) {
+      cli::cli_abort(
+        "Raw {.arg x} must contain only numeric or logical variables.",
+        class = "efa_scores_bad_x"
+      )
+    }
+    # Logical variables represent binary 0/1 observations and are valid inputs,
+    # but matrix algebra and stats::cor() should see numeric storage explicitly.
+    if (is.logical(x) || (is.data.frame(x) && any(vapply(x, is.logical, logical(1))))) {
+      x <- as.matrix(x)
+      storage.mode(x) <- "double"
+    }
   }
 
   # Uncorrelated factors when no Phi is available (EFA with an orthogonal/unrotated
@@ -184,6 +218,10 @@ efa_scores <- function(x, f, Phi = NULL, rho = NULL,
   if (is.null(Phi)) {
     Phi <- diag(ncol(Lambda))
   }
+
+  Phi <- .align_correlation_axis(
+    Phi, n = ncol(Lambda), target_names = colnames(Lambda), arg = "Phi"
+  )
 
   # A directly supplied loading matrix carries no stored communalities, so derive
   # them from the (now resolved) model: h2 = diag(Lambda Phi Lambda').
@@ -231,8 +269,15 @@ efa_scores <- function(x, f, Phi = NULL, rho = NULL,
   if (!is_cmat) {
     model_vars <- rownames(Lambda)
     x_names <- colnames(x)
-    if (!is.null(model_vars) && !is.null(x_names) &&
-        anyDuplicated(model_vars) == 0L && anyDuplicated(x_names) == 0L) {
+    usable_model_vars <- !is.null(model_vars) && !anyNA(model_vars) &&
+      all(nzchar(model_vars)) && anyDuplicated(model_vars) == 0L
+    if (usable_model_vars && !is.null(x_names)) {
+      if (anyNA(x_names) || !all(nzchar(x_names)) || anyDuplicated(x_names) > 0L) {
+        cli::cli_abort(
+          "The column names of {.arg x} must be complete, non-empty, and unique for name-based alignment.",
+          class = "efa_scores_x_names"
+        )
+      }
       missing_vars <- setdiff(model_vars, x_names)
       if (length(missing_vars) > 0L) {
         cli::cli_abort(
@@ -258,6 +303,11 @@ efa_scores <- function(x, f, Phi = NULL, rho = NULL,
   } else {
     R <- stats::cor(x, use = "pairwise")
   }
+
+  R_source <- if (!is.null(rho)) "rho" else if (!is.null(orig_R)) "f$orig_R" else "x"
+  R <- .align_correlation_axis(
+    R, n = nrow(Lambda), target_names = rownames(Lambda), arg = R_source
+  )
 
   # A non-Pearson EFA scored on raw data with rho = NULL: the weights and
   # diagnostics correctly use the fitted correlation (f$orig_R), but the scores are
@@ -316,6 +366,75 @@ efa_scores <- function(x, f, Phi = NULL, rho = NULL,
 
   output
 
+}
+
+# Validate a factor- or variable-correlation matrix and, when both dimensions and
+# the corresponding model axis carry unique names, align it to the model by name.
+# A wholly unnamed matrix keeps the documented positional semantics; partially
+# named or duplicate-named input cannot be aligned safely and is rejected.
+.align_correlation_axis <- function(x, n, target_names, arg) {
+  if (!is.matrix(x) || !is.numeric(x) || !identical(dim(x), c(n, n))) {
+    cli::cli_abort(
+      "{.arg {arg}} must be a numeric {n} by {n} correlation matrix.",
+      class = "efa_scores_matrix_dim"
+    )
+  }
+  if (any(!is.finite(x))) {
+    cli::cli_abort(
+      "{.arg {arg}} must contain only finite values.",
+      class = "efa_scores_matrix_nonfinite"
+    )
+  }
+
+  usable_target <- !is.null(target_names) && !anyNA(target_names) &&
+    all(nzchar(target_names)) && anyDuplicated(target_names) == 0L
+  if (usable_target) {
+    rn <- rownames(x)
+    cn <- colnames(x)
+    wholly_unnamed <- is.null(rn) && is.null(cn)
+
+    if (!wholly_unnamed) {
+      usable_names <- !is.null(rn) && !is.null(cn) && identical(rn, cn) &&
+        !anyNA(rn) && !anyNA(cn) && all(nzchar(rn)) && all(nzchar(cn)) &&
+        anyDuplicated(rn) == 0L && anyDuplicated(cn) == 0L
+      same_names <- usable_names && setequal(rn, target_names) &&
+        setequal(cn, target_names)
+      if (!same_names) {
+        cli::cli_abort(
+          c("The row and column names of {.arg {arg}} do not identify the model axis unambiguously.",
+            "i" = "Use the same unique names as the corresponding loading matrix dimension, or remove both sets of names to match by position."),
+          class = "efa_scores_matrix_names"
+        )
+      }
+      x <- x[target_names, target_names, drop = FALSE]
+    }
+  }
+
+  # Validate after name alignment. Requiring the two labelled axes to use the same
+  # order above also prevents a numerically symmetric matrix with one mislabelled
+  # axis from becoming invalid only after subsetting.
+  tol <- sqrt(.Machine$double.eps)
+  if (max(abs(x - t(x))) > tol * max(1, max(abs(x)))) {
+    cli::cli_abort(
+      "{.arg {arg}} must be symmetric.",
+      class = "efa_scores_matrix_symmetric"
+    )
+  }
+  # Canonicalize accepted round-off asymmetry so symmetric eigensolvers and general
+  # matrix operations consume the same matrix on every BLAS/LAPACK implementation.
+  x <- x / 2 + t(x) / 2
+  range_tol <- 100 * .Machine$double.eps
+  if (max(abs(diag(x) - 1)) > range_tol || any(abs(x) > 1 + range_tol)) {
+    cli::cli_abort(
+      "{.arg {arg}} must have a unit diagonal and entries between -1 and 1.",
+      class = "efa_scores_matrix_correlation"
+    )
+  }
+  diag(x) <- 1
+  x[x > 1] <- 1
+  x[x < -1] <- -1
+
+  x
 }
 
 
@@ -525,19 +644,29 @@ format.summary.efa_scores <- function(x, digits = x$opts$digits, ...) {
   }
 
   # Psi^-1 = diag(1 / (1 - h2)), the model-uniqueness weighting shared by the
-  # Bartlett and Anderson methods. A Heywood case (a communality at or above 1)
-  # leaves a non-positive uniqueness and makes the weighting undefined/unstable;
-  # warn (psych proceeds silently) and continue.
+  # Bartlett and Anderson methods. A non-positive uniqueness makes the weighting
+  # undefined; abort instead of dividing by zero or returning finite-looking output
+  # from an invalid negative weight. A very small positive uniqueness is defined but
+  # ill-conditioned, so retain the existing warning for that distinct case.
   psi_inverse <- function() {
     u2 <- 1 - h2
-    heywood <- u2 < .Machine$double.eps
-    if (any(heywood)) {
-      bad <- rownames(Lambda)[heywood]
-      if (is.null(bad)) bad <- which(heywood)
+    nonpositive <- u2 <= 0
+    if (any(nonpositive)) {
+      bad <- rownames(Lambda)[nonpositive]
+      if (is.null(bad)) bad <- which(nonpositive)
+      cli::cli_abort(
+        c("Non-positive uniqueness values make the {method} factor-score weights undefined (affected variables: {.val {bad}}).",
+          "i" = "Use a scoring method that does not invert uniquenesses, or revise the factor model."),
+        class = "efa_scores_nonpositive_uniqueness"
+      )
+    }
+    near_zero <- u2 < .Machine$double.eps
+    if (any(near_zero)) {
+      bad <- rownames(Lambda)[near_zero]
+      if (is.null(bad)) bad <- which(near_zero)
       cli::cli_warn(
-        c(paste("{cli::qty(bad)}Heywood case{?s} detected for {.val {bad}}:",
-                "a communality at or above 1 leaves a non-positive uniqueness."),
-          "i" = "The {method} factor-score weights for the affected variable{?s} are unstable."),
+        c("Near-zero uniqueness values were detected for {.val {bad}}.",
+          "i" = "The affected {method} factor-score weights are unstable."),
         class = "efa_scores_heywood"
       )
     }

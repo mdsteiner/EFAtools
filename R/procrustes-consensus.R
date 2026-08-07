@@ -200,7 +200,10 @@
     cli::cli_warn("{.arg S} is not symmetric; it should normally be {.code crossprod(A)}.",
                   class = "efa_not_symmetric")
   }
-  S
+  # The quadratic form depends only on the symmetric part of S, and its analytic
+  # gradient assumes that same matrix. Make the two agree for a warned-but-allowed
+  # asymmetric input; divide before adding to avoid overflow near double.xmax.
+  S / 2 + t(S) / 2
 }
 
 .procrustes_validate_t_init <- function(T_init, k) {

@@ -169,6 +169,9 @@ efa_schmid_leiman <- function(x, Phi = NULL,
 
     }
 
+    Phi <- .align_correlation_axis(
+      Phi, n = n_first_fac, target_names = colnames(L1), arg = "Phi"
+    )
     n_order <- .sl_factor_order(colnames(L1), n_first_fac)
     L1 <- L1[, n_order, drop = FALSE]
     Phi <- Phi[n_order, n_order, drop = FALSE]
@@ -201,6 +204,9 @@ efa_schmid_leiman <- function(x, Phi = NULL,
 
     }
 
+    Phi <- .align_correlation_axis(
+      Phi, n = n_first_fac, target_names = colnames(L1), arg = "Phi"
+    )
     n_order <- .sl_factor_order(colnames(L1), n_first_fac)
     L1 <- L1[, n_order, drop = FALSE]
     Phi <- Phi[n_order, n_order, drop = FALSE]
@@ -282,6 +288,9 @@ efa_schmid_leiman <- function(x, Phi = NULL,
 
     }
 
+    Phi <- .align_correlation_axis(
+      Phi, n = ncol(x), target_names = colnames(x), arg = "Phi"
+    )
     n_order <- .sl_factor_order(colnames(x), ncol(x))
     x <- x[, n_order, drop = FALSE]
     # Phi is guaranteed non-NULL here (the abort above fires otherwise).

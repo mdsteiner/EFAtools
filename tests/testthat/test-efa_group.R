@@ -637,6 +637,7 @@ test_that("the bootstrap CIs bracket the point congruence", {
 
 test_that("np-boot congruence CIs are reproducible at 1 vs 2 workers", {
   skip_on_cran()
+  skip_if_not_slow()
   # The replicate fits are parallelised across workers inside each per-group EFA() with
   # future.apply (future.seed = TRUE), while efa_group's re-alignment is deterministic,
   # so a fixed `seed` must return the same intervals regardless of the number of

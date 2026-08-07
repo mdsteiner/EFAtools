@@ -57,7 +57,7 @@ inline arma::mat normalize_cols_cpp(const arma::mat& X, double eps = 1e-15) {
 // solution: a factor correlation of .9, which the fit already flags as extreme, leaves
 // min eig(Phi) near .1. Rejecting the candidate bounds the rotated pattern, which is
 // A %*% t(solve(T)), by ||A|| / sigma_min.
-inline constexpr double oblq_min_sigma = 1e-4;
+static constexpr double oblq_min_sigma = 1e-4;
 
 // Solve X * invX = I for a square, finite X, returning false (leaving invX untouched)
 // if X is non-square, non-finite, or the solve fails or yields a non-finite result, so

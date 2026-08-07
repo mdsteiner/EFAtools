@@ -194,17 +194,19 @@ inline void validate_gpf_input(const arma::mat& L, const char* family) {
 // squared loadings at every evaluation, so it is only piecewise smooth and a strictly monotone
 // search stalls short of the minimum). Because such a search may end on an up-step and its
 // projected-gradient norm need not reach `eps`, the engine (a) reports the lowest-objective iterate
-// it visited and (b) reports convergence when that best objective has stopped improving for
-// `kNonmonotoneWindow` consecutive iterations by the end of the run (it has stalled at the
-// optimum) -- the projected-gradient tolerance is not the right convergence signal there. The
-// search still runs to `maxit` (its non-monotone steps can cross a kink to a deeper basin).
+// it visited and (b), only when `allow_stall_convergence` is enabled for such a criterion, reports
+// convergence when that best objective has stopped improving for `kNonmonotoneWindow` consecutive
+// updates by the end of the run. Smooth criteria leave that option disabled and converge only by
+// their documented projected-gradient tolerance. The search still runs to `maxit` (its
+// non-monotone steps can cross a kink to a deeper basin).
 template <typename Manifold>
 GpfFit run_single_gpf_fit(const Manifold& manifold,
                           arma::mat Tmat,
                           double eps,
                           int maxit,
                           int max_line_search,
-                          double step0) {
+                          double step0,
+                          bool allow_stall_convergence = false) {
   // Number of recent iterations over which the non-monotone line search takes its reference
   // objective, and the stall length that signals convergence at a piecewise-smooth optimum
   // (Grippo, Lampariello & Lucidi, 1986).
@@ -256,12 +258,14 @@ GpfFit run_single_gpf_fit(const Manifold& manifold,
       }
       // The improvement threshold scales with the current best level (unit floor), so the stall
       // test is appropriate to the criterion's magnitude rather than pinned to the starting value.
-      const double ftol = 1e-8 * std::max(1.0, std::abs(stall_ref_f));
-      if (state.f < stall_ref_f - ftol) {
-        stall_ref_f = state.f;
-        iters_since_improve = 0;
-      } else {
-        ++iters_since_improve;
+      if (iter > 0) {
+        const double ftol = 1e-8 * std::max(1.0, std::abs(stall_ref_f));
+        if (state.f < stall_ref_f - ftol) {
+          stall_ref_f = state.f;
+          iters_since_improve = 0;
+        } else {
+          ++iters_since_improve;
+        }
       }
     }
 
@@ -366,7 +370,8 @@ GpfFit run_single_gpf_fit(const Manifold& manifold,
   // not the right convergence signal there. The search itself still runs to maxit (the non-monotone
   // steps can cross a kink to a deeper basin, so terminating early would forfeit the lower minima
   // those crossings find). A genuine line-search failure is never reclassified as converged.
-  if (!line_search_failed && iters_since_improve >= kNonmonotoneWindow) {
+  if (allow_stall_convergence && !line_search_failed &&
+      iters_since_improve >= kNonmonotoneWindow) {
     convergence = true;
   }
 
@@ -416,12 +421,13 @@ GpfSummary run_gpf_multistart(const Manifold& manifold,
                               int screen_keep,
                               int triage_maxit,
                               double triage_improve_tol,
-                              bool full_multistart = false) {
+                              bool full_multistart = false,
+                              bool allow_stall_convergence = false) {
   const arma::uword k = T_primary.n_cols;
 
   GpfSummary summary;
   GpfFit best_fit = run_single_gpf_fit(manifold, T_primary, eps, maxit, max_line_search,
-                                       step0);
+                                       step0, allow_stall_convergence);
 
   summary.all_values.reserve(static_cast<std::size_t>(1 + std::max(0, random_starts)));
   summary.all_converged.reserve(static_cast<std::size_t>(1 + std::max(0, random_starts)));
@@ -450,7 +456,8 @@ GpfSummary run_gpf_multistart(const Manifold& manifold,
     // path and stay empty/zero in this mode (the rotation entry points read only best_fit).
     for (int s = 0; s < random_starts; ++s) {
       arma::mat Tstart = random_orthogonal_start_cpp(k);
-      GpfFit fit = run_single_gpf_fit(manifold, Tstart, eps, maxit, max_line_search, step0);
+      GpfFit fit = run_single_gpf_fit(manifold, Tstart, eps, maxit, max_line_search,
+                                      step0, allow_stall_convergence);
       ++n_fully_optimized;
       summary.all_values.push_back(fit.value);
       summary.all_converged.push_back(fit.convergence ? 1 : 0);
@@ -495,7 +502,8 @@ GpfSummary run_gpf_multistart(const Manifold& manifold,
       // The triage stage is capped by `maxit` as well as by its own short budget, so the
       // documented per-start iteration cap holds for every optimization the solver runs.
       GpfFit triage_fit = run_single_gpf_fit(
-        manifold, cand.Tstart, eps, std::min(triage_maxit, maxit), max_line_search, step0
+        manifold, cand.Tstart, eps, std::min(triage_maxit, maxit), max_line_search,
+        step0, allow_stall_convergence
       );
       ++n_triaged;
 
@@ -515,7 +523,8 @@ GpfSummary run_gpf_multistart(const Manifold& manifold,
 
       if (triage_fit.valid && rel_improve >= triage_improve_tol) {
         GpfFit full_fit = run_single_gpf_fit(
-          manifold, triage_fit.T, eps, maxit, max_line_search, step0
+          manifold, triage_fit.T, eps, maxit, max_line_search, step0,
+          allow_stall_convergence
         );
         ++n_fully_optimized;
 

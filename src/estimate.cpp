@@ -2,6 +2,7 @@
 // [[Rcpp::depends(roptim)]]
 #include <RcppArmadillo.h>
 #include <roptim.h>
+#include <algorithm>
 #include "eig_utils.h"
 
 using namespace Rcpp;
@@ -19,11 +20,28 @@ static void check_n_fac(int n_fac, arma::uword n_cols) {
 }
 
 // Shared constructor guard for the weighted estimators: the per-element weight matrix must
-// match the correlation matrix.
+// match the correlation matrix and have finite, non-negative symmetric off-diagonals.
+// The diagonal is ignored. The weighted objectives and their analytic gradients rely
+// on one weight per undirected pair, so accepted round-off asymmetry is canonicalized
+// by the owning functors below.
 static void check_weights(const arma::mat& W, const arma::mat& R) {
   if (W.n_rows != R.n_rows || W.n_cols != R.n_cols) {
     Rcpp::stop("The weight matrix must be square and match the correlation "
-               "matrix dimensions.");
+                "matrix dimensions.");
+  }
+  // The diagonal is not part of the DWLS objective. Remove it before validating
+  // so the longstanding "ignored regardless of value" contract remains literal.
+  arma::mat W_off = W;
+  W_off.diag().zeros();
+  if (!W_off.is_finite()) {
+    Rcpp::stop("The off-diagonal weight matrix must contain only finite values.");
+  }
+  if (arma::any(arma::vectorise(W_off) < 0.0)) {
+    Rcpp::stop("The off-diagonal weight matrix must contain only non-negative values.");
+  }
+  const double scale = std::max(1.0, arma::abs(W_off).max());
+  if (arma::abs(W_off - W_off.t()).max() > 1e-10 * scale) {
+    Rcpp::stop("The weight matrix must be symmetric.");
   }
 }
 
@@ -189,6 +207,8 @@ public:
       : R_(R), W_(W), n_fac_(n_fac) {
     check_n_fac(n_fac, R.n_cols);
     check_weights(W, R);
+    W_.diag().zeros();
+    W_ = W_ / 2.0 + W_.t() / 2.0;
   }
 
   double operator()(const arma::vec& psi) override {
@@ -215,7 +235,7 @@ public:
 
 private:
   const arma::mat& R_;
-  const arma::mat& W_;
+  arma::mat W_;
   const int n_fac_;
 };
 
@@ -239,6 +259,8 @@ public:
       : R_(R), W_(W), p_(R.n_rows), n_fac_(n_fac) {
     check_n_fac(n_fac, R.n_cols);
     check_weights(W, R);
+    W_.diag().zeros();
+    W_ = W_ / 2.0 + W_.t() / 2.0;
   }
 
   double operator()(const arma::vec& par) override {
@@ -253,6 +275,11 @@ public:
 
 private:
   void refresh(const arma::vec& par) {
+    const arma::uword expected = p_ * static_cast<arma::uword>(n_fac_);
+    if (par.n_elem != expected) {
+      Rcpp::stop("par must have length %d (nrow(R) * n_fac), not %d.",
+                 static_cast<int>(expected), static_cast<int>(par.n_elem));
+    }
     if (valid_ && par.n_elem == cached_par_.n_elem &&
         arma::all(par == cached_par_)) {
       return;
@@ -268,7 +295,7 @@ private:
   }
 
   const arma::mat& R_;
-  const arma::mat& W_;
+  arma::mat W_;
   const arma::uword p_;
   const int n_fac_;
   arma::vec cached_par_;
@@ -433,7 +460,9 @@ Rcpp::List fit_dwls_cpp(const arma::mat& R, const int n_fac, const arma::mat& W)
   arma::mat U;
   arma::vec s;
   arma::mat V;
-  arma::svd_econ(U, s, V, L);
+  if (!arma::svd_econ(U, s, V, L)) {
+    Rcpp::stop("The singular-value decomposition failed while identifying the DWLS loadings.");
+  }
   arma::mat Lc = U * arma::diagmat(s);
 
   arma::mat E  = R - Lc * Lc.t();

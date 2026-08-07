@@ -35,8 +35,9 @@
 #'  3, otherwise it will be displayed in green). Default is 3.
 #' @param print_diff logical. Whether the difference vector or matrix should be
 #'  printed or not. Default is TRUE.
-#' @param na.rm logical. Whether NAs should be removed in the mean, median, min,
-#'  and max functions. Default is FALSE.
+#' @param na.rm logical. Whether NAs should be removed from the difference
+#'  summaries and factor-correspondence classifications. With `FALSE`, a missing
+#'  loading makes the correspondence counts undefined (`NA`). Default is FALSE.
 #' @param x_labels character. A vector of length two containing identifying
 #'  labels for the two objects x and y that will be compared. These will be used
 #'  as labels on the x-axis of the plot. Default is "x" and "y".
@@ -109,7 +110,7 @@ efa_compare <- function(x,
 
   reorder <- .match_arg_ci(reorder)
   checkmate::assert_flag(corres)
-  checkmate::assert_number(thresh)
+  checkmate::assert_number(thresh, lower = 0)
   checkmate::assert_count(digits)
   checkmate::assert_number(m_red)
   checkmate::assert_number(range_red)
@@ -131,6 +132,13 @@ efa_compare <- function(x,
 
     if (inherits(y, c("loadings", "LOADINGS", "SLLOADINGS"))) {
       y <- unclass(y)
+    }
+
+    if (!is.numeric(x) || !is.numeric(y)) {
+      cli::cli_abort(
+        "{.arg x} and {.arg y} must be numeric vectors or matrices.",
+        class = "efa_compare_bad_input"
+      )
     }
 
     # check if dimensions match:
@@ -156,6 +164,21 @@ efa_compare <- function(x,
     cli::cli_abort("{.arg x} ({.cls {class(x)}}) and {.arg y} ({.cls {class(y)}}) must be numeric vectors or matrices.",
                    class = "efa_compare_bad_input")
 
+  }
+
+  if (length(x) == 0L) {
+    cli::cli_abort(
+      "{.arg x} and {.arg y} must contain at least one value.",
+      class = "efa_compare_empty"
+    )
+  }
+
+  if ((any(is.infinite(x)) || any(is.infinite(y))) &&
+      !(is.matrix(x) && ncol(x) > 1L && identical(reorder, "congruence"))) {
+    cli::cli_abort(
+      "{.arg x} and {.arg y} must not contain infinite values.",
+      class = "efa_compare_nonfinite"
+    )
   }
 
   if (inherits(x, "matrix")) {
@@ -286,9 +309,14 @@ efa_compare <- function(x,
   # disabled comparison leaves nothing to disagree on, and vectors report NA.
   if (inherits(x, "matrix")) {
     if (ncol(x) > 1 && isTRUE(corres)) {
-      corres_list <- .factor_corres(x, y, thresh = thresh)
-      diff_corres <- corres_list$diff_corres
-      diff_corres_cross <- corres_list$diff_corres_cross
+      if (!na.rm && (anyNA(x) || anyNA(y))) {
+        diff_corres <- NA_integer_
+        diff_corres_cross <- NA_integer_
+      } else {
+        corres_list <- .factor_corres(x, y, thresh = thresh)
+        diff_corres <- corres_list$diff_corres
+        diff_corres_cross <- corres_list$diff_corres_cross
+      }
     } else {
       diff_corres <- 0
       diff_corres_cross <- 0
@@ -307,14 +335,15 @@ efa_compare <- function(x,
   # full element count) without forming t(diff) %*% diff.
   sq <- diff ^ 2
   n_ok <- if (na.rm) sum(!is.na(diff)) else length(diff)
-  g <- sqrt(sum(sq, na.rm = na.rm) / n_ok)
-
-
-  mean_abs_diff <- mean(abs(diff), na.rm = na.rm)
-  median_abs_diff <- stats::median(abs(diff), na.rm = na.rm)
-
-  min_abs_diff <- min(abs(diff), na.rm = na.rm)
-  max_abs_diff <- max(abs(diff), na.rm = na.rm)
+  if (na.rm && n_ok == 0L) {
+    g <- mean_abs_diff <- median_abs_diff <- min_abs_diff <- max_abs_diff <- NA_real_
+  } else {
+    g <- sqrt(sum(sq, na.rm = na.rm) / n_ok)
+    mean_abs_diff <- mean(abs(diff), na.rm = na.rm)
+    median_abs_diff <- stats::median(abs(diff), na.rm = na.rm)
+    min_abs_diff <- min(abs(diff), na.rm = na.rm)
+    max_abs_diff <- max(abs(diff), na.rm = na.rm)
+  }
 
   # max_dec: the most decimal places at which a comparison is meaningful (the
   # fewest decimals carried by either input). are_equal: the most decimal places

@@ -161,6 +161,7 @@ test_that("np-boot is reproducible with a fixed seed", {
 
 test_that("np-boot with a fixed seed is reproducible at 1 vs 2 workers", {
   skip_on_cran()
+  skip_if_not_slow()
   # The replicate fits are parallelised across workers with future.apply, and
   # future.seed = TRUE binds each replicate's RNG stream to its index. With a fixed
   # `seed` the bootstrap must therefore return the same result regardless of the

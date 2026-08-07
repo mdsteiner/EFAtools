@@ -397,6 +397,24 @@ test_that("labelled factor columns are still ordered by factor number", {
 
 })
 
+test_that("a named Phi is aligned to the loading factors before reordering", {
+  L1 <- unclass(EFA_mod$rot_loadings)
+  Phi <- EFA_mod$Phi
+  base <- efa_schmid_leiman(
+    L1, Phi = Phi, estimator = "PAF",
+    estimate_control = estimate_control(type = "EFAtools")
+  )
+
+  perm <- c(3L, 1L, 2L)
+  aligned <- efa_schmid_leiman(
+    L1, Phi = Phi[perm, perm], estimator = "PAF",
+    estimate_control = estimate_control(type = "EFAtools")
+  )
+
+  expect_equal(aligned$sl, base$sl)
+  expect_equal(aligned$L2, base$L2)
+})
+
 test_that("efa_schmid_leiman runs on an oblique fit whose column labels are permuted", {
   skip_if_not_installed("GPArotation")
 

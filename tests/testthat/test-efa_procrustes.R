@@ -169,11 +169,43 @@ test_that("an asymmetric S warns but still rotates", {
   S <- crossprod(A)
   S[1, 2] <- S[1, 2] + 1
 
-  # S should normally be crossprod(A); an asymmetric one is almost always a mistake,
-  # but it is a legal weight matrix, so the rotation proceeds after the warning.
+  # S should normally be crossprod(A); an asymmetric one is almost always a mistake.
+  # The quadratic form depends only on its symmetric part, so the warned input must
+  # follow the same objective and gradient as that part explicitly.
+  S_sym <- S / 2 + t(S) / 2
   expect_warning(fit <- efa_procrustes(A, rot_loadings(1), rotation = "oblique", S = S),
                  class = "efa_not_symmetric")
-  expect_identical(dim(unclass(fit$loadings)), dim(unclass(A)))
+  fit_sym <- efa_procrustes(A, rot_loadings(1), rotation = "oblique", S = S_sym)
+  expect_equal(fit$value, fit_sym$value)
+  expect_equal(fit$loadings, fit_sym$loadings)
+
+  # The registered native entry point enforces the same objective/gradient contract
+  # even when called directly without the R validator.
+  native <- .oblique_procrustes(A, rot_loadings(1), S_r = S)
+  native_sym <- .oblique_procrustes(A, rot_loadings(1), S_r = S_sym)
+  expect_equal(native$value, native_sym$value)
+  expect_equal(native$loadings, native_sym$loadings)
+})
+
+test_that("smooth Procrustes does not use objective stalling as convergence", {
+  set.seed(1)
+  A <- matrix(stats::rnorm(24), 8, 3)
+  B <- A + matrix(stats::rnorm(24), 8, 3) * 1e-7
+
+  fit <- .oblique_procrustes(A, B, T_init_r = diag(3), eps = 1e-30,
+                             maxit = 10L)
+
+  expect_false(fit$convergence)
+  expect_gt(10^tail(fit$Table[, "log10_s"], 1), 1e-30)
+})
+
+test_that("piecewise-smooth simplimax retains objective-stall convergence", {
+  set.seed(1)
+  L <- matrix(stats::rnorm(24), 8, 3)
+  fit <- .rotate_simplimax_oblq(L, k = nrow(L), eps = 1e-30,
+                                normalize = FALSE, random_starts = 0L,
+                                maxit = 100L)
+  expect_true(fit$convergence)
 })
 
 

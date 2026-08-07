@@ -39,20 +39,24 @@ efa_scores(
 \item{x}{data.frame or matrix. Raw data (needed to obtain factor scores) or a
 correlation matrix (yields weights and diagnostics only). When raw data carry
 column names, they are matched to the model variables by name (any extra
-columns are ignored, and a model variable missing from \code{x} is an error);
-unnamed data are matched by position.}
+columns are ignored, and a model variable missing from \code{x} is an error).
+A named correlation matrix is likewise matched to the loading rows by name;
+its row and column names must use the same order. Unnamed input is matched
+by position.}
 
 \item{f}{object of class \code{\link[=efa_fit]{efa_fit()}}, an \code{efa_loadings} object, or a matrix of factor
 loadings.}
 
 \item{Phi}{matrix. Factor intercorrelations. Only used when a loading matrix is
-supplied directly in \code{f}; taken from the \code{efa} object otherwise. Default is
-\code{NULL}, in which case the factors are assumed uncorrelated.}
+supplied directly in \code{f}; taken from the \code{efa} object otherwise. Named rows
+and columns are matched to the loading columns and must use the same order.
+Default is \code{NULL}, in which case the factors are assumed uncorrelated.}
 
 \item{rho}{matrix. Correlation matrix used to derive the scoring weights.
 Defaults to \code{NULL}, in which case \code{f$orig_R} is used for an \code{efa} object and
 \code{cor(x, use = "pairwise")} otherwise. Pass a matrix here to score against a
-correlation other than the one implied by \code{f}/\code{x}.}
+correlation other than the one implied by \code{f}/\code{x}. Named rows and columns
+are matched to the loading rows; row and column names must use the same order.}
 
 \item{method}{character. The factor-score method: one of \code{"regression"}
 (default), \code{"Bartlett"}, \code{"Anderson"}, \code{"tenBerge"}, \code{"Harman"}, or

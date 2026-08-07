@@ -93,7 +93,7 @@
 #' \item{settings}{A list of the settings used.}
 #'
 #' @source Braeken, J., & van Assen, M. A. (2017). An empirical Kaiser criterion.
-#' Psychological Methods, 22, 450 – 466. http://dx.doi.org/10.1037/ met0000074
+#' Psychological Methods, 22, 450--466. https://doi.org/10.1037/met0000074
 #'
 #' @source Crawford, A. V., Green, S. B., Levy, R., Lo, W. J., Scott, L.,
 #' Svetina, D., & Thompson, M. S. (2010). Evaluation of parallel analysis methods
@@ -105,7 +105,7 @@
 #' and Psychological Measurement, 55(3), 377-393.
 #'
 #' @source Horn, J. L. (1965). A rationale and test for the number of factors in
-#' factor analysis. Psychometrika, 30(2), 179–185. doi: 10.1007/BF02289447
+#' factor analysis. Psychometrika, 30(2), 179--185. https://doi.org/10.1007/BF02289447
 #'
 #' @family factor retention criteria
 #'
@@ -117,14 +117,15 @@
 #' @examples
 #' \donttest{
 #' # example without real data
-#' pa_unreal <- efa_parallel(N = 500, n_vars = 10)
+#' pa_unreal <- efa_parallel(N = 500, n_vars = 10, n_datasets = 100)
 #'
 #' # example with correlation matrix with all eigen_types and PAF estimation
-#' pa_paf <- efa_parallel(test_models$case_11b$cormat, N = 500)
+#' pa_paf <- efa_parallel(test_models$case_11b$cormat, N = 500, n_datasets = 100)
 #'
 #' # example with correlation matrix with all eigen_types and ML estimation
 #' # this will be faster than the above with PAF)
-#' pa_ml <- efa_parallel(test_models$case_11b$cormat, N = 500, estimator = "ML")
+#' pa_ml <- efa_parallel(test_models$case_11b$cormat, N = 500, estimator = "ML",
+#'                       n_datasets = 100)
 #'}
 #'
 #'\dontrun{
@@ -166,10 +167,10 @@ efa_parallel <- function(x = NULL,
   .reject_poly_reference(cor_method, "efa_parallel")
   decision_rule <- .match_arg_ci(decision_rule)
   .assert_estimate_control(estimate_control)
-  checkmate::assert_count(n_factors)
-  checkmate::assert_count(N, na.ok = TRUE)
-  checkmate::assert_count(n_vars, na.ok = TRUE)
-  checkmate::assert_count(n_datasets)
+  checkmate::assert_count(n_factors, positive = TRUE)
+  checkmate::assert_count(N, na.ok = TRUE, positive = TRUE)
+  checkmate::assert_count(n_vars, na.ok = TRUE, positive = TRUE)
+  checkmate::assert_count(n_datasets, positive = TRUE)
   checkmate::assert_number(percent, lower = 0, upper = 100)
 
   # The simulated datasets are drawn in chunks, one future per chunk, under

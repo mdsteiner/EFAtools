@@ -224,6 +224,13 @@ test_that("errors are thrown correctly", {
   expect_error(efa_parallel(test_models$baseline$cormat, N = 18), class = "efa_n_too_small")
 })
 
+test_that("parallel-analysis simulation counts must be positive", {
+  expect_error(efa_parallel(N = 0, n_vars = 4, n_datasets = 1), "Must be >= 1")
+  expect_error(efa_parallel(N = 20, n_vars = 0, n_datasets = 1), "Must be >= 1")
+  expect_error(efa_parallel(N = 20, n_vars = 4, n_datasets = 0), "Must be >= 1")
+  expect_error(efa_parallel(N = 20, n_vars = 4, n_factors = 0), "Must be >= 1")
+})
+
 test_that("the simulated PCA reference matches psych::fa.parallel", {
   skip_if_not_slow()
   skip_if_not_installed("psych")
@@ -306,6 +313,7 @@ test_that(".parallel_chunks is exact at the sizes efa_parallel asks for", {
 
 test_that("a seeded efa_parallel run is invariant to the number of workers", {
   skip_on_cran()
+  skip_if_not_slow()
   # End-to-end counterpart to the chunk-vector test above: the same set.seed() must give
   # the same reference eigenvalues sequentially and on a two-worker multisession plan.
   # The multisession workers are fresh R processes that load the *installed* package, so

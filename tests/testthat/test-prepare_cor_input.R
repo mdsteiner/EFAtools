@@ -20,6 +20,12 @@ test_that("a correlation matrix is detected and returned unchanged", {
   expect_silent(.prepare_cor_input(cormat, N = 500))
 })
 
+test_that("an exact -1 correlation is within the accepted range", {
+  R <- matrix(c(1, -1, -1, 1), 2, 2)
+  expect_true(.is_cormat(R))
+  expect_silent(.assert_cor_input(R))
+})
+
 test_that("a correlation matrix supplied as a data frame is detected and coerced", {
   # read.csv(file, row.names = 1) is how a published correlation table usually reaches R, and
   # it yields a data frame. It has to be classified as a correlation matrix -- diag() on a data

@@ -439,15 +439,17 @@ static Rcpp::List make_orth_entry(const arma::mat& L, const Crit& crit,
 // Kaiser weights again cancel and the rotated loadings reproduce L %*% t(solve(Th)); the rotated
 // loadings and the factor correlations Phi are reconstructed from the winning transformation by
 // finalize_oblique() (shared with the Procrustes oblique entry point). `full_multistart` selects
-// the full-multistart strategy that the strongly multimodal simplimax criterion needs; it defaults
-// to the smooth-criterion screen-and-triage multi-start.
+// the full-multistart strategy that the strongly multimodal simplimax criterion needs;
+// `allow_stall_convergence` separately enables its piecewise-smooth objective-stall rule. Both
+// default off for the smooth criteria.
 template <typename Crit>
 static Rcpp::List make_oblq_entry(const arma::mat& L, const Crit& crit,
                                   double eps, bool normalize, int random_starts,
                                   int maxit, int max_line_search, double step0,
                                   int screen_keep, int triage_maxit,
                                   double triage_improve_tol,
-                                  bool full_multistart = false) {
+                                  bool full_multistart = false,
+                                  bool allow_stall_convergence = false) {
   const arma::uword k = L.n_cols;
 
   arma::mat A_work = L;
@@ -463,7 +465,7 @@ static Rcpp::List make_oblq_entry(const arma::mat& L, const Crit& crit,
   GpfSummary summary = run_gpf_multistart(
     manifold, T_primary, eps, maxit, max_line_search, step0,
     random_starts, screen_keep, triage_maxit, triage_improve_tol,
-    full_multistart
+    full_multistart, allow_stall_convergence
   );
   const GpfFit& best_fit = summary.best_fit;
 
@@ -1046,7 +1048,8 @@ Rcpp::List rotate_simplimax_oblq(const arma::mat& L,
   SimplimaxCriterion crit(static_cast<arma::uword>(k));
   return make_oblq_entry(L, crit, eps, normalize, random_starts, maxit,
                          max_line_search, step0, /*screen_keep=*/0, /*triage_maxit=*/0,
-                         /*triage_improve_tol=*/0.0, /*full_multistart=*/true);
+                         /*triage_improve_tol=*/0.0, /*full_multistart=*/true,
+                         /*allow_stall_convergence=*/true);
 }
 
 // Rotated solution of a single warm-started re-rotation (loadings, and Phi when oblique).

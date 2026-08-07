@@ -78,6 +78,11 @@ test_that("errors etc. are thrown correctly", {
                class = "efa_cd_degenerate_population")
   expect_error(efa_cd(GRiPS_raw[1:60, ], N_pop = 0, N_samples = 2),
                class = "efa_cd_degenerate_population")
+
+  # Zero-length loops used to fall through to invalid indexing/replacement errors.
+  expect_error(efa_cd(GRiPS_raw, n_factors_max = 0), "Must be >= 1")
+  expect_error(efa_cd(GRiPS_raw, N_samples = 0), "Must be >= 1")
+  expect_error(efa_cd(GRiPS_raw, max_iter = 0), "Must be >= 1")
 })
 
 rm(cd_grips, grips_na)

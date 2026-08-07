@@ -231,6 +231,7 @@ test_that("simulation mode is reproducible and leaves the RNG stream unchanged",
 
 test_that("simulation mode is reproducible at 1 vs 2 workers", {
   skip_on_cran()
+  skip_if_not_slow()
   # Each replicate is analysed in its own future, and future.seed = TRUE binds its RNG
   # stream to its index, so the result must be identical regardless of the number of
   # workers. The multisession workers are fresh R processes that load the installed

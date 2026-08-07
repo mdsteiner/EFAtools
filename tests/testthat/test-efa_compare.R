@@ -289,8 +289,17 @@ test_that("congruence reordering yields a true permutation when columns collide"
 
 test_that("errors etc. are thrown correctly", {
   expect_error(efa_compare(c(1, 2), 1), class = "efa_compare_dim_mismatch")
+  expect_error(efa_compare(numeric(), numeric(), reorder = "none"),
+               class = "efa_compare_empty")
   expect_error(efa_compare(c(1, 2), c("1", "2")), class = "efa_compare_bad_input")
   expect_error(efa_compare(c(1, 2), data.frame(x = "1", y = "2")), class = "efa_compare_bad_input")
+  expect_error(efa_compare(matrix("x"), matrix("x"), reorder = "none"),
+               class = "efa_compare_bad_input")
+  expect_error(efa_compare(c(1, Inf), c(1, 2), reorder = "none"),
+               class = "efa_compare_nonfinite")
+  expect_error(efa_compare(matrix(Inf), matrix(Inf)),
+               class = "efa_compare_nonfinite")
+  expect_error(efa_compare(c(1, 2), c(1, 2), thresh = -0.1), "not >= 0")
 
   expect_error(efa_compare(matrix(c(0, 0, 0, 1), ncol = 2),
                        matrix(c(0, 0, 0, 1), ncol = 1)), class = "efa_compare_dim_mismatch")
@@ -362,6 +371,24 @@ test_that("efa_compare is NA-safe and honours na.rm (vector and matrix)", {
   # which is unrelated to are_equal, so it is suppressed here.
   expect_true(is.na(suppressWarnings(
     efa_compare(c(1.234, NA), c(NA, 5.678), reorder = "none", na.rm = TRUE))$are_equal))
+
+  # With no comparable pair all numerical summaries are undefined, not NaN/Inf,
+  # and the print method still produces a report.
+  all_missing <- efa_compare(c(1.234, NA), c(NA, 5.678),
+                             reorder = "none", na.rm = TRUE)
+  expect_true(all(is.na(unlist(all_missing[c("mean_abs_diff", "median_abs_diff",
+                                              "min_abs_diff", "max_abs_diff", "g")]))))
+  expect_silent(capture.output(print(all_missing)))
+
+  # Missing cells are ignored for correspondences only when requested; retaining
+  # them leaves the correspondence comparison undefined.
+  mx <- rbind(c(.8, NA), c(.1, .7))
+  my <- rbind(c(.8, .1), c(.1, .7))
+  cmp_keep <- efa_compare(mx, my, reorder = "none", na.rm = FALSE)
+  cmp_drop <- efa_compare(mx, my, reorder = "none", na.rm = TRUE)
+  expect_true(is.na(cmp_keep$diff_corres))
+  expect_identical(cmp_drop$diff_corres, 0L)
+  expect_identical(cmp_drop$diff_corres_cross, 0L)
 
   # Near-zero values render in scientific notation, which used to crash the
   # decimal-count helper that drives max_dec; efa_compare must still return.
@@ -469,9 +496,14 @@ ref_compare_loadings <- function(x, y, thresh = 0.3, na.rm = FALSE, corres = TRU
 
   if (inherits(x, "matrix")) {
     if (ncol(x) > 1 && isTRUE(corres)) {
-      corres_list <- .factor_corres(x, y, thresh = thresh)
-      diff_corres <- corres_list$diff_corres
-      diff_corres_cross <- corres_list$diff_corres_cross
+      if (!na.rm && (anyNA(x) || anyNA(y))) {
+        diff_corres <- NA_integer_
+        diff_corres_cross <- NA_integer_
+      } else {
+        corres_list <- .factor_corres(x, y, thresh = thresh)
+        diff_corres <- corres_list$diff_corres
+        diff_corres_cross <- corres_list$diff_corres_cross
+      }
     } else {
       diff_corres <- 0
       diff_corres_cross <- 0
@@ -485,13 +517,15 @@ ref_compare_loadings <- function(x, y, thresh = 0.3, na.rm = FALSE, corres = TRU
 
   sq <- diff ^ 2
   n_ok <- if (na.rm) sum(!is.na(diff)) else length(diff)
-  g <- sqrt(sum(sq, na.rm = na.rm) / n_ok)
-
-  mean_abs_diff <- mean(abs(diff), na.rm = na.rm)
-  median_abs_diff <- stats::median(abs(diff), na.rm = na.rm)
-
-  min_abs_diff <- min(abs(diff), na.rm = na.rm)
-  max_abs_diff <- max(abs(diff), na.rm = na.rm)
+  if (na.rm && n_ok == 0L) {
+    g <- mean_abs_diff <- median_abs_diff <- min_abs_diff <- max_abs_diff <- NA_real_
+  } else {
+    g <- sqrt(sum(sq, na.rm = na.rm) / n_ok)
+    mean_abs_diff <- mean(abs(diff), na.rm = na.rm)
+    median_abs_diff <- stats::median(abs(diff), na.rm = na.rm)
+    min_abs_diff <- min(abs(diff), na.rm = na.rm)
+    max_abs_diff <- max(abs(diff), na.rm = na.rm)
+  }
 
   max_dec <- min(c(.decimals(x), .decimals(y)))
 
@@ -549,7 +583,7 @@ test_that(".compare_loadings reproduces efa_compare's pre-extraction computation
   # near-zero value renders in scientific notation (drives the .decimals path).
   scix <- c(0.5, 0.00003, 0.4)
   sciy <- c(0.5, 0.4, 0.4)
-  # every pair missing under na.rm = TRUE -> are_equal NA, min()/max() warn.
+  # every pair missing under na.rm = TRUE -> all summaries are NA.
   allmiss_x <- c(1.234, NA)
   allmiss_y <- c(NA, 5.678)
 
@@ -569,8 +603,8 @@ test_that(".compare_loadings reproduces efa_compare's pre-extraction computation
   )
 
   for (cs in cases) {
-    got <- suppressWarnings(do.call(.compare_loadings, cs))
-    ref <- suppressWarnings(do.call(ref_compare_loadings, cs))
+    got <- do.call(.compare_loadings, cs)
+    ref <- do.call(ref_compare_loadings, cs)
     expect_identical(got, ref)
   }
 })

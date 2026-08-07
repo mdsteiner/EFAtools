@@ -176,6 +176,136 @@ test_that("alignment holds for the loadings-matrix path and multiple factors", {
   }
 })
 
+test_that("named scoring and factor correlations are aligned to the loadings", {
+  L <- unclass(efa_ob$rot_loadings)
+  R <- test_models$baseline$cormat
+  Phi <- efa_ob$Phi
+
+  base <- suppressMessages(efa_scores(R, f = L, Phi = Phi))
+
+  var_perm <- rev(seq_len(nrow(R)))
+  R_perm <- R[var_perm, var_perm]
+  from_permuted_R <- suppressMessages(efa_scores(R_perm, f = L, Phi = Phi))
+  expect_equal(from_permuted_R$weights, base$weights)
+  expect_equal(from_permuted_R$score_cor, base$score_cor)
+
+  # A correlation matrix must use the same variable order on its two labelled axes.
+  col_perm <- c(seq.int(2L, ncol(R)), 1L)
+  R_axis_perm <- R[var_perm, col_perm]
+  expect_error(
+    suppressMessages(efa_scores(R, f = L, Phi = Phi, rho = R_axis_perm)),
+    class = "efa_scores_matrix_names"
+  )
+
+  fac_perm <- c(3L, 1L, 2L)
+  Phi_perm <- Phi[fac_perm, fac_perm]
+  from_permuted_Phi <- suppressMessages(efa_scores(R, f = L, Phi = Phi_perm))
+  expect_equal(from_permuted_Phi$weights, base$weights)
+  expect_equal(from_permuted_Phi$score_cor, base$score_cor)
+
+  # rho follows the same name alignment when raw observations are scored.
+  R_grips <- stats::cor(GRiPS_raw)
+  rho_base <- suppressMessages(
+    efa_scores(GRiPS_raw, f = efa_grips, rho = R_grips, method = "regression"))
+  grips_perm <- rev(seq_len(nrow(R_grips)))
+  rho_perm <- suppressMessages(
+    efa_scores(GRiPS_raw, f = efa_grips,
+               rho = R_grips[grips_perm, grips_perm],
+               method = "regression"))
+  expect_equal(rho_perm$weights, rho_base$weights)
+  expect_equal(rho_perm$scores, rho_base$scores)
+})
+
+test_that("invalid scoring-correlation matrices fail before matrix algebra", {
+  L <- unclass(efa_ob$rot_loadings)
+  R <- test_models$baseline$cormat
+
+  expect_error(
+    suppressMessages(efa_scores(R, f = L, Phi = efa_ob$Phi,
+                                rho = diag(nrow(R) - 1L))),
+    class = "efa_scores_matrix_dim")
+
+  R_asym <- R
+  R_asym[1, 2] <- R_asym[1, 2] + 0.1
+  expect_error(
+    suppressMessages(efa_scores(R, f = L, Phi = efa_ob$Phi, rho = R_asym)),
+    class = "efa_scores_matrix_symmetric")
+
+  R_bad_names <- R
+  dimnames(R_bad_names) <- list(paste0("bad", seq_len(nrow(R))),
+                                paste0("bad", seq_len(ncol(R))))
+  expect_error(
+    suppressMessages(efa_scores(R_bad_names, f = L, Phi = efa_ob$Phi)),
+    class = "efa_scores_matrix_names")
+
+  # Matching name sets do not excuse inconsistent labels on the two axes.
+  R_bad_axes <- R
+  colnames(R_bad_axes) <- rev(colnames(R_bad_axes))
+  expect_error(
+    suppressMessages(efa_scores(R_bad_axes, f = L, Phi = efa_ob$Phi)),
+    class = "efa_scores_matrix_names")
+})
+
+test_that("score labels and uniqueness inputs fail or fall back cleanly", {
+  R2 <- diag(2)
+  dimnames(R2) <- list(c("v1", "v2"), c("v1", "v2"))
+
+  # Missing factor labels are not valid data-frame row names; replace the whole
+  # factor axis with deterministic labels before diagnostics are constructed.
+  L_bad_factor_names <- matrix(c(.6, .2, .1, .5), 2, 2,
+                               dimnames = list(c("v1", "v2"), c("F1", NA)))
+  relabelled <- suppressMessages(efa_scores(R2, f = L_bad_factor_names))
+  expect_identical(colnames(relabelled$weights), c("F1", "F2"))
+
+  # Named raw data can only be aligned when its labels identify columns uniquely.
+  x_bad_names <- GRiPS_raw
+  colnames(x_bad_names)[2] <- colnames(x_bad_names)[1]
+  expect_error(
+    suppressMessages(efa_scores(x_bad_names, f = efa_grips)),
+    class = "efa_scores_x_names"
+  )
+
+  # Bartlett/Anderson uniqueness weighting is undefined at exactly zero; do not
+  # continue into 1 / 0 and return non-finite weights or an eigensolver error.
+  L_zero_u2 <- matrix(c(1, .5), 2, 1,
+                      dimnames = list(c("v1", "v2"), "F1"))
+  expect_error(
+    suppressMessages(efa_scores(R2, f = L_zero_u2, method = "Bartlett")),
+    class = "efa_scores_nonpositive_uniqueness"
+  )
+
+  expect_error(
+    suppressMessages(efa_scores(R2, f = matrix("x", 2, 1))),
+    class = "efa_scores_bad_loadings"
+  )
+  L_nonfinite <- matrix(c(.5, Inf), 2, 1)
+  expect_error(
+    suppressMessages(efa_scores(R2, f = L_nonfinite)),
+    class = "efa_scores_bad_loadings"
+  )
+  expect_error(
+    suppressMessages(efa_scores(matrix("x", 4, 2), f = L_zero_u2)),
+    class = "efa_scores_bad_x"
+  )
+})
+
+test_that("accepted correlation round-off is canonicalized", {
+  R_near <- diag(3)
+  R_near[1, 2] <- .2 + 1e-10
+  R_near[2, 1] <- .2
+  dimnames(R_near) <- list(letters[1:3], letters[1:3])
+  out <- .align_correlation_axis(R_near, 3L, letters[1:3], "rho")
+  expect_identical(out, t(out))
+  expect_identical(unname(diag(out)), rep(1, 3))
+
+  R_outside <- R_near
+  R_outside[1, 2] <- R_outside[2, 1] <- 1 + 1e-12
+  expect_error(
+    .align_correlation_axis(R_outside, 3L, letters[1:3], "rho"),
+    class = "efa_scores_matrix_correlation"
+  )
+})
+
 test_that("print and summary output are stable", {
   skip_on_cran()
   testthat::local_reproducible_output()

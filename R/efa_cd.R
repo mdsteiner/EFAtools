@@ -80,10 +80,10 @@
 #' @examples
 #' \donttest{
 #' # determine n factors of the GRiPS
-#' efa_cd(GRiPS_raw)
+#' efa_cd(GRiPS_raw, N_pop = 500, N_samples = 20)
 #'
 #' # determine n factors of the DOSPERT risk subscale
-#' efa_cd(DOSPERT_raw)
+#' efa_cd(DOSPERT_raw, N_pop = 500, N_samples = 20)
 #'}
 efa_cd <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .30,
                cor_method = c("pearson", "spearman", "kendall", "poly", "tetra"),
@@ -104,11 +104,19 @@ efa_cd <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha 
   cor_method <- .match_arg_ci(cor_method)
   .reject_poly_reference(cor_method, "efa_cd")
 
-  checkmate::assert_count(n_factors_max, na.ok = TRUE)
+  checkmate::assert_count(n_factors_max, na.ok = TRUE, positive = TRUE)
   checkmate::assert_count(N_pop)
-  checkmate::assert_count(N_samples)
+  checkmate::assert_count(N_samples, positive = TRUE)
   checkmate::assert_number(alpha, lower = 0, upper = 1)
-  checkmate::assert_count(max_iter)
+  checkmate::assert_count(max_iter, positive = TRUE)
+
+  if (N_pop < 2L) {
+    cli::cli_abort(
+      c("The comparison-data population needs at least 2 cases.",
+        "x" = "{.arg N_pop} is {N_pop}."),
+      class = "efa_cd_degenerate_population"
+    )
+  }
 
   if (any(is.na(x))) {
     n_row_complete <- nrow(x)
@@ -197,9 +205,9 @@ efa_cd <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha 
         )
       })
 
-    for (j in 1:N_samples) {
+    for (j in seq_len(N_samples)) {
 
-      samp <- pop[sample(1:N_pop, size = n_cases, replace = TRUE),]
+      samp <- pop[sample.int(N_pop, size = n_cases, replace = TRUE),]
       R_samp <- stats::cor(samp, method = cor_method)
       eigvals_samp <- eigen(R_samp, symmetric = TRUE, only.values = TRUE)$values
       RMSE_eigvals[j,n_factors] <- sqrt(sum((eigvals_samp - eigvals_real) *

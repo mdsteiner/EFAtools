@@ -17,7 +17,26 @@ using namespace arma;
 //' @param maxit numeric. Maximum iterations to perform after which to abort.
 // [[Rcpp::export(.parallel_sim)]]
 arma::mat parallel_sim(const int n_datasets, const int n_vars, const int N,
-                         const int eigen_type, const int maxit = 10000) {
+                          const int eigen_type, const int maxit = 10000) {
+  if (n_datasets < 1) {
+    stop("n_datasets must be at least 1.");
+  }
+  if (n_vars < 1) {
+    stop("n_vars must be at least 1.");
+  }
+  if (N < 2) {
+    stop("N must be at least 2.");
+  }
+  if (eigen_type != 1 && eigen_type != 2) {
+    stop("eigen_type must be 1 (PCA) or 2 (SMC).");
+  }
+  if (maxit < 1) {
+    stop("maxit must be at least 1.");
+  }
+  if (eigen_type == 2 && N <= n_vars) {
+    stop("N must be larger than n_vars for SMC simulation.");
+  }
+
   // initialize needed objects
   arma::vec eigval(n_vars);
   arma::mat eig_vals(n_datasets, n_vars);

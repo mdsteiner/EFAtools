@@ -35,7 +35,7 @@
   }
   if (!is.numeric(x)) return(NULL)
 
-  if (!all(x >= (-1 + .Machine$double.eps * 100), na.rm = TRUE) ||
+  if (!all(x >= (-1 - .Machine$double.eps * 100), na.rm = TRUE) ||
       !all(x <= (1 + .Machine$double.eps * 100), na.rm = TRUE)) return(NULL)
 
   if (!.has_unit_diag(x, na.rm = TRUE)) return(NULL)

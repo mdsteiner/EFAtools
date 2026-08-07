@@ -97,10 +97,10 @@ missing data should be treated differently, e.g., by imputation, do this outside
 \examples{
 \donttest{
 # determine n factors of the GRiPS
-efa_cd(GRiPS_raw)
+efa_cd(GRiPS_raw, N_pop = 500, N_samples = 20)
 
 # determine n factors of the DOSPERT risk subscale
-efa_cd(DOSPERT_raw)
+efa_cd(DOSPERT_raw, N_pop = 500, N_samples = 20)
 }
 }
 \seealso{

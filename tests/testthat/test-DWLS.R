@@ -73,6 +73,13 @@ test_that("the DWLS gradient matches finite differences", {
   }, numeric(1))
 
   expect_equal(ga, gn, tolerance = 1e-5)
+
+  expect_error(.grad_dwls(par[-1], Rg, m, Wg), "must have length")
+  expect_error(.dwls_residuals(c(par, 0), Rg, m, Wg), "must have length")
+
+  W_asym <- Wg
+  W_asym[1, 2] <- W_asym[1, 2] + 1
+  expect_error(.grad_dwls(par, Rg, m, W_asym), "must be symmetric")
 })
 
 test_that("the DWLS objective equals the weighted off-diagonal residual sum", {
@@ -145,11 +152,26 @@ test_that("DWLS ignores the weight matrix diagonal", {
   W0 <- matrix(stats::runif(p * p, 0.5, 5), p, p)
   W0 <- (W0 + t(W0)) / 2
   diag(W0) <- 0
-  W1 <- W0; diag(W1) <- 10
+  W1 <- W0; diag(W1) <- c(-1, Inf, NA, NaN, -Inf)
   par <- stats::rnorm(p * m, 0, 0.3)
 
   expect_equal(.dwls_residuals(par, Rg, m, W1), .dwls_residuals(par, Rg, m, W0))
   expect_equal(as.vector(.grad_dwls(par, Rg, m, W1)), as.vector(.grad_dwls(par, Rg, m, W0)))
+})
+
+test_that("DWLS canonicalizes accepted round-off asymmetry", {
+  R <- diag(3)
+  W <- matrix(0, 3, 3)
+  W[1, 2] <- 1e9
+  W[2, 1] <- 0
+  W[1, 3] <- W[3, 1] <- 1e20
+  W_sym <- W / 2 + t(W) / 2
+  par <- c(.2, .3, 0)
+
+  expect_equal(.dwls_residuals(par, R, 1L, W),
+               .dwls_residuals(par, R, 1L, W_sym))
+  expect_equal(.grad_dwls(par, R, 1L, W),
+               .grad_dwls(par, R, 1L, W_sym))
 })
 
 rm(x_dwls, pc_dwls, R_dwls, W_dwls, DWLS_test, DWLS_test_1)

@@ -119,7 +119,7 @@ test_that("the singular-matrix pseudo-inverse fallback works", {
                tolerance = 1e-10, ignore_attr = TRUE)
 })
 
-test_that("a Heywood case warns for Bartlett and Anderson but a proper solution does not", {
+test_that("non-positive uniquenesses abort for Bartlett and Anderson", {
   Lambda <- matrix(c(0.9, 0.4,
                      0.5, 0.3,
                      0.4, 0.8), nrow = 3, byrow = TRUE)
@@ -129,12 +129,12 @@ test_that("a Heywood case warns for Bartlett and Anderson but a proper solution 
                 0.20, 0.25, 1),    nrow = 3)
   h2 <- c(1.02, 0.4, 0.5)  # first communality > 1 -> non-positive uniqueness
 
-  expect_warning(
+  expect_error(
     EFAtools:::.factor_score_weights(Lambda, Phi, R, h2, method = "Bartlett"),
-    class = "efa_scores_heywood")
-  expect_warning(
+    class = "efa_scores_nonpositive_uniqueness")
+  expect_error(
     EFAtools:::.factor_score_weights(Lambda, Phi, R, h2, method = "Anderson"),
-    class = "efa_scores_heywood")
+    class = "efa_scores_nonpositive_uniqueness")
 
   # A proper solution (all uniquenesses positive) does not warn.
   Lambda_ok <- matrix(c(0.7, 0.1,

@@ -63,8 +63,9 @@ all corresponding elements of x and y are still equal are displayed in red
 \item{print_diff}{logical. Whether the difference vector or matrix should be
 printed or not. Default is TRUE.}
 
-\item{na.rm}{logical. Whether NAs should be removed in the mean, median, min,
-and max functions. Default is FALSE.}
+\item{na.rm}{logical. Whether NAs should be removed from the difference
+summaries and factor-correspondence classifications. With \code{FALSE}, a missing
+loading makes the correspondence counts undefined (\code{NA}). Default is FALSE.}
 
 \item{x_labels}{character. A vector of length two containing identifying
 labels for the two objects x and y that will be compared. These will be used

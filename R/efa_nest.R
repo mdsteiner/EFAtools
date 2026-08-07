@@ -115,7 +115,7 @@ efa_nest <- function(x, N = NA,
   .reject_rotation_dots(list(...), fn = "efa_nest")
   .assert_cor_input(x)
 
-  checkmate::assert_count(N, na.ok = TRUE)
+  checkmate::assert_count(N, na.ok = TRUE, positive = TRUE)
   checkmate::assert_number(alpha, lower = 0, upper = 1)
   use <- .match_arg_ci(use)
   cor_method <- .match_arg_ci(cor_method)
@@ -129,6 +129,14 @@ efa_nest <- function(x, N = NA,
                              N_policy = "required")
   R <- prep$R
   N <- prep$N
+
+  if (N < 2L) {
+    cli::cli_abort(
+      c("{.arg N} must be at least 2 for the NEST reference simulation.",
+        "x" = "You supplied {N}."),
+      class = "efa_n_too_small"
+    )
+  }
 
   emp_eigen <- eigen(R, symmetric = TRUE, only.values = TRUE)$values
   nvar <- ncol(R)

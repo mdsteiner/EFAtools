@@ -232,6 +232,10 @@ Rcpp::List oblique_procrustes(const arma::mat& A,
     if (!all_finite_cpp(S)) {
       Rcpp::stop("S must contain only finite values.");
     }
+    // Only the symmetric part contributes to U' S U. Canonicalize it here so
+    // the native objective and its symmetry-derived analytic gradient agree even
+    // when this registered entry point is called without the R wrapper.
+    S = S / 2.0 + S.t() / 2.0;
   }
 
   arma::mat C = A_work.t() * B;

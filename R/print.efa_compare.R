@@ -91,19 +91,19 @@ format.efa_compare <- function(x, digits = NULL, m_red = NULL, range_red = NULL,
   # padding, so the lines are emitted verbatim below. They are differences between
   # loadings, i.e. bounded coefficients, so they follow the package's number convention
   # and drop the leading zero; the two decimal *counts* below are integers and do not.
-  if (mean_abs_diff <= m_red) {
+  if (isTRUE(mean_abs_diff <= m_red)) {
     mean_out <- .efa_style(.efa_num(mean_abs_diff, digits), c("green", "bold"))
   } else {
     mean_out <- .efa_style(.efa_num(mean_abs_diff, digits), c("red", "bold"))
   }
 
-  if (median_abs_diff <= m_red) {
+  if (isTRUE(median_abs_diff <= m_red)) {
     median_out <- .efa_style(.efa_num(median_abs_diff, digits), c("green", "bold"))
   } else {
     median_out <- .efa_style(.efa_num(median_abs_diff, digits), c("red", "bold"))
   }
 
-  if (max_abs_diff <= range_red) {
+  if (isTRUE(max_abs_diff <= range_red)) {
     max_out <- .efa_style(.efa_num(max_abs_diff, digits), c("green", "bold"))
     min_out <- .efa_style(.efa_num(min_abs_diff, digits), c("green", "bold"))
   } else {

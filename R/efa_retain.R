@@ -116,21 +116,22 @@
 #' By default, the entered data are checked for suitability for factor analysis
 #' using the following methods (see respective documentations for details):
 #' \itemize{
-#' \item{Bartlett's test of sphericity (see [efa_bartlett()])}
-#' \item{Kaiser-Meyer-Olkin criterion (see [efa_kmo()])}}
+#'   \item Bartlett's test of sphericity (see [efa_bartlett()])
+#'   \item Kaiser-Meyer-Olkin criterion (see [efa_kmo()])
+#' }
 #'
 #' The available factor retention criteria are the following (see respective
 #'  documentations for details):
 #'  \itemize{
-#' \item{Comparison data (see [efa_cd()])}
-#' \item{Empirical Kaiser criterion (see [efa_ekc()])}
-#' \item{Hull method (see [efa_hull()])}
-#' \item{Kaiser-Guttman criterion (see [efa_kgc()])}
-#' \item{Parallel analysis (see [efa_parallel()])}
-#' \item{Next Eigenvalue Sufficiency Test, NEST (see [efa_nest()])}
-#' \item{Scree plot (see [efa_scree()])}
-#' \item{Sequential chi-square model tests, RMSEA lower bound, and AIC
-#' (see [efa_smt()])}
+#'   \item Comparison data (see [efa_cd()])
+#'   \item Empirical Kaiser criterion (see [efa_ekc()])
+#'   \item Hull method (see [efa_hull()])
+#'   \item Kaiser-Guttman criterion (see [efa_kgc()])
+#'   \item Parallel analysis (see [efa_parallel()])
+#'   \item Next Eigenvalue Sufficiency Test, NEST (see [efa_nest()])
+#'   \item Scree plot (see [efa_scree()])
+#'   \item Sequential chi-square model tests, RMSEA lower bound, and AIC
+#'     (see [efa_smt()])
 #' }
 #'
 #' The comparison data, parallel analysis, and NEST criteria compare the data against
@@ -169,26 +170,32 @@
 #' # This will throw a warning for CD, as no raw data were specified
 #' # The simulation-based criteria are seeded to make the run reproducible
 #' set.seed(42)
-#' nfac_all <- efa_retain(test_models$baseline$cormat, N = 500, estimator = "ML")
+#' nfac_all <- efa_retain(test_models$baseline$cormat, N = 500, estimator = "ML",
+#'                        n_datasets = 100, n_datasets_nest = 100)
 #'
 #' # The same as above, but without "CD"
 #' nfac_wo_CD <- efa_retain(test_models$baseline$cormat, criteria = c("EKC",
 #'                          "HULL", "PARALLEL", "NEST"), N = 500,
-#'                          estimator = "ML")
+#'                          estimator = "ML", n_datasets = 100,
+#'                          n_datasets_nest = 100)
 #'
 #' # Use PAF instead of ML (this will take longer). For this, gof has
 #' # to be set to "CAF" for the Hull method.
 #' nfac_PAF <- efa_retain(test_models$baseline$cormat, criteria = c("EKC",
 #'                        "HULL", "PARALLEL", "NEST"), N = 500,
-#'                        estimator = "PAF", gof = "CAF")
+#'                        estimator = "PAF", gof = "CAF", n_datasets = 100,
+#'                        n_datasets_nest = 100)
 #'
 #' # Do KGC and PARALLEL with only "PCA" type of eigenvalues
 #' nfac_PCA <- efa_retain(test_models$baseline$cormat, criteria = c("EKC",
 #'                        "HULL", "PARALLEL", "NEST"), N = 500,
-#'                        estimator = "ML", eigen_type_other = "PCA")
+#'                        estimator = "ML", eigen_type_other = "PCA",
+#'                        n_datasets = 100, n_datasets_nest = 100)
 #'
 #' # Use raw data, such that CD can also be performed
-#' nfac_raw <- efa_retain(GRiPS_raw, estimator = "ML")
+#' nfac_raw <- efa_retain(GRiPS_raw, estimator = "ML", N_pop = 500,
+#'                         N_samples = 20, n_datasets = 100,
+#'                         n_datasets_nest = 100)
 #'}
 efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARALLEL"),
                        suitability = TRUE, N = NA,

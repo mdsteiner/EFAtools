@@ -52,6 +52,20 @@ test_that("the TR2 criterion series matches psych::vss", {
   }
 })
 
+test_that("TR4 is the trace of the fourth matrix power", {
+  # For a three-variable equicorrelation matrix with r = .2, the eigenvalues
+  # are 1.4, .8, .8. Hence tr(R^4) = 1.4^4 + 2 * .8^4 and the m = 0
+  # revised-MAP value has the following closed form. It is far from the
+  # element-wise fourth-power average (.2^4), so this guards that distinction.
+  R <- matrix(.2, 3, 3)
+  diag(R) <- 1
+  tr4_expected <- (1.4^4 + 2 * .8^4 - 3) / (3 * 2)
+
+  tr4 <- .retention_record(efa_map(R), "TR4")$y[1]
+  expect_equal(tr4, tr4_expected, tolerance = 1e-14)
+  expect_gt(abs(tr4 - .2^4), .1)
+})
+
 test_that("settings are returned correctly", {
   expect_named(map_cor$settings, c("use", "cor_method"))
   expect_equal(map_cor$settings$use, "pairwise.complete.obs")

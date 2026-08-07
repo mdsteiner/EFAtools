@@ -15,3 +15,4 @@
 ^_pkgdown\.yml$
 ^docs$
 ^vignettes/articles$
+^vignettes/.*[.]html$

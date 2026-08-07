@@ -841,6 +841,37 @@ Rcpp::List polychoric_cpp(Rcpp::IntegerMatrix x, std::string acov,
   if (p < 2) {
     Rcpp::stop("At least two variables are required for a correlation matrix.");
   }
+  if (nrow < 2) {
+    Rcpp::stop("At least two observations are required for polychoric correlations.");
+  }
+
+  // The R wrapper supplies 0-based consecutive codes. Keep that contract at the
+  // registered native boundary as well: malformed negative or gapped codes would
+  // otherwise index the frequency and contingency buffers out of bounds. A valid
+  // maximum is necessarily below nrow because every consecutive category occurs.
+  for (int j = 0; j < p; ++j) {
+    std::vector<char> seen(static_cast<std::size_t>(nrow), 0);
+    int maxc = -1;
+    int n_seen = 0;
+    for (int r = 0; r < nrow; ++r) {
+      const int v = x(r, j);
+      if (v == NA_INTEGER) continue;
+      if (v < 0 || v >= nrow) {
+        Rcpp::stop("Category codes must be non-negative, consecutive, and smaller than the number of observations.");
+      }
+      if (!seen[static_cast<std::size_t>(v)]) {
+        seen[static_cast<std::size_t>(v)] = 1;
+        ++n_seen;
+      }
+      if (v > maxc) maxc = v;
+    }
+    if (n_seen < 2) {
+      Rcpp::stop("Every variable must have at least two observed categories.");
+    }
+    if (maxc + 1 != n_seen) {
+      Rcpp::stop("Category codes must be consecutive from 0 within each variable.");
+    }
+  }
 
   const int* xp = x.begin();
 

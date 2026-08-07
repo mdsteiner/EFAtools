@@ -86,6 +86,7 @@ test_that("a fixed seed is reproducible and leaves the RNG stream unchanged", {
 
 test_that("a fixed seed is reproducible at 1 vs 2 workers", {
   skip_on_cran()
+  skip_if_not_slow()
   # Each dataset is drawn in its own future, and future.seed = TRUE binds every
   # replicate's RNG stream to its index. With a fixed `seed` the draws must
   # therefore be identical regardless of the number of workers. The multisession
