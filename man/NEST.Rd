@@ -20,7 +20,7 @@ NEST(
 correlations.}
 
 \item{N}{numeric. The number of observations. Only needed if x is a correlation
-matrix.}
+matrix. Must be larger than the number of variables.}
 
 \item{alpha}{numeric. The alpha level to use (i.e., 1-alpha percentile of eigenvalues is used for reference values).}
 

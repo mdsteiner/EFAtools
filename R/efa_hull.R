@@ -35,8 +35,8 @@
 #'   `HULL` derives its factor-search bound from an internal parallel analysis
 #'   against continuous reference data.
 #'  Default is  `"pearson"`.
-#' @param n_datasets numeric. The number of datasets to simulate. Default is 1000.
-#'   This is passed to [efa_parallel()].
+#' @param n_datasets numeric. The number of datasets to simulate. Must be at
+#'   least 1. Default is 1000. This is passed to [efa_parallel()].
 #' @param percent numeric. The percentile to take from the simulated eigenvalues.
 #'  Default is 95. This is passed to [efa_parallel()].
 #' @param decision_rule character. Which rule to use to determine the number of
@@ -169,13 +169,15 @@ efa_hull <- function(x, N = NA, n_fac_theor = NA,
   .reject_poly_reference(cor_method, "efa_hull")
   gof <- .match_arg_ci(gof, several.ok = TRUE)
   eigen_type <- .match_arg_ci(eigen_type)
-  checkmate::assert_count(n_fac_theor, na.ok = TRUE)
-  checkmate::assert_count(N, na.ok = TRUE)
-  decision_rule <- .match_arg_ci(decision_rule)
-  .assert_estimate_control(estimate_control)
-  checkmate::assert_count(n_factors)
-  checkmate::assert_count(n_datasets)
-  checkmate::assert_number(percent, lower = 0, upper = 100)
+  .assert_args({
+    checkmate::assert_count(n_fac_theor, na.ok = TRUE)
+    checkmate::assert_count(N, na.ok = TRUE)
+    decision_rule <- .match_arg_ci(decision_rule)
+    .assert_estimate_control(estimate_control)
+    checkmate::assert_count(n_factors)
+    checkmate::assert_count(n_datasets, positive = TRUE)
+    checkmate::assert_number(percent, lower = 0, upper = 100)
+  })
 
   if (ncol(x) < 6) {
     cli::cli_abort(

@@ -7,7 +7,7 @@
 #'
 #' @inheritParams efa_kgc
 #' @param N numeric. The number of observations. Only needed if x is a correlation
-#'  matrix.
+#'  matrix. Must be larger than the number of variables.
 #' @param cor_method character. Correlation computed from raw data: `"pearson"`,
 #'   `"spearman"`, or `"kendall"` (passed to [stats::cor()]), or `"poly"` /
 #'   `"tetra"` for polychoric / tetrachoric correlations of ordinal / binary data
@@ -113,6 +113,7 @@ efa_ekc <- function(x, N = NA,
                              N_policy = "required")
   R <- prep$R
   N <- prep$N
+  .assert_n_gt_vars(N, ncol(R))
 
   # eigenvalues of the correlation matrix (shared by both implementations)
   lambda <- eigen(R, symmetric = TRUE, only.values = TRUE)$values

@@ -2,109 +2,109 @@
 
 ## Comparing and Averaging Solutions
 
-* The display settings of `efa_compare()` (`digits`, `m_red`, `range_red`, `round_red`, and `print_diff`) can now be passed to `print()` and `format()`, and `plot_red` to `plot()`, so the printed report or the plot can be changed without recomputing the comparison. Omitting them keeps the settings recorded when the comparison was made.
+* `efa_compare()` display settings can now be changed through the corresponding `print()`, `format()`, and `plot()` methods without rerunning the comparison. Otherwise, the saved settings are used.
 
-* `are_equal` is now `NA` when two objects do not even agree in their integer parts, and the printed report shows "none" for it. Previously such a comparison returned `0`, the same value returned when the integer parts do agree but no decimal place does.
+* In `efa_compare()`, `are_equal` is now `NA` (printed as "none") when the integer parts differ. A value of `0` is reserved for values whose integer parts agree but decimal places do not.
 
-* The `efa_compare()` report is now divided into a summary-statistics and an elementwise-differences section, and the line reporting the minimum number of decimals provided is shown only when the inputs were rounded; for two ordinary double matrices it carried no information.
+* The `efa_compare()` report now separates summary statistics from elementwise differences. The minimum number of supplied decimal places is shown only for rounded inputs.
 
-* The Model Fit section of `efa_average()` now states how many solutions each index was averaged over. Chi-square-based indices and the residual-based CAF, RMSR, and SRMR can rest on different numbers of solutions, because PAF contributes only the latter.
+* The Model Fit section of `efa_average()` now shows how many solutions contributed to each index. Counts may differ because PAF contributes residual-based, but not chi-square-based, fit indices.
 
-* The printed `efa_average()` output now says that the fit indices summarise the individual solutions rather than the averaged loadings, which are a cell-wise summary and not themselves a fitted solution, and labels the range tables as `max - min` rather than as an interval.
+* `efa_average()` now clarifies that fit indices summarise the individual fitted solutions, not the averaged loading matrix. Range tables are labelled `max - min`.
 
-* `efa_average()` now points out that `trim` is ignored when `averaging = "median"` instead of recording a trim that never affected a value.
+* `efa_average()` now points out that `trim` is ignored when `averaging = "median"`, instead of recording a trim that never affected a value.
 
-* The progress bar of `efa_average()` now announces exactly as many steps as it reports, and reaches 100% when the last EFA has been fitted. Previously it reported one step too many for most grids of fewer than 15 EFAs, which raised a warning from `with_progress()`; because that warning was raised while the function ran, an unassigned call also had its printed output styled as part of it. Larger grids raised no warning but left the bar short of 100%.
+* The `efa_average()` progress bar now uses the correct number of steps and reaches 100%, avoiding spurious warnings.
 
-* The stages `efa_average()` reports after fitting the grid are now shown as `cli` progress steps. Previously they were written directly to the console, which left stray blank lines wherever the output was not a terminal, such as in rendered documents and check logs.
+* Post-fitting stages in `efa_average()` now use progress output that avoids stray blank lines in rendered documents and check logs.
 
-* The `efa_group()` report now points out when every factor is graded "equal" although the groups' loadings differ substantially: Tucker's congruence is unchanged by a proportional rescaling of a factor's loadings, so uniformly stronger loadings in one group still reach the highest band.
+* The `efa_group()` report now notes when all factors are rated "equal" despite substantial loading differences. Tucker's congruence does not detect proportional differences in loading magnitude.
 
-* The header lines of the `efa_group()` report are now wrapped to the console width, and its loading-difference and invariance tables are split into stacked blocks when they are wider than the console, as the congruence table already was.
+* Wide `efa_group()` output is now wrapped or split into blocks to fit the console.
 
 ## Data Screening
 
-* The multivariate-outlier diagnostic of `efa_screen()` now reports an exact fit as soon as its search reaches a covering subset whose covariance is singular. Such a subset minimises the minimum-covariance-determinant criterion, so no other subset can improve on it; it was previously discarded and a strictly worse, non-degenerate subset returned in its place under the label `method = "mcd"`. 
+* The multivariate-outlier check in `efa_screen()` now correctly handles robust subsets with singular covariance matrices instead of discarding the best solution.
 
-* `efa_screen()` now searches for the robust covariance on robustly rescaled columns and returns the estimate in the units it was given, so the outlier diagnostic no longer depends on how the variables happen to be measured. Previously a change of measurement unit on a single variable (e.g., an income column beside a Likert item) could be enough to drop the robust estimate for classical Mahalanobis distances, which under-flags, because they are computed from a covariance the outliers themselves inflate.
+* Robust covariance estimation in `efa_screen()` no longer depends on the variables' measurement units, preventing unnecessary fallback to classical Mahalanobis distances when scales differ greatly.
 
 ## Data Simulation
 
-* `efa_simulate()` gains a `missing_vars` argument selecting which variables carry missing values; the remaining ones stay complete. With `missing = "MAR"` and a `missing_predictor` outside `missing_vars`, every predictor of the missingness is fully observed, which is the ignorably missing-at-random design that full-information maximum likelihood and multiple imputation assume. Leaving `missing_vars` unset holes every variable, as before.
+* `efa_simulate()` gains `missing_vars` to restrict missingness to selected variables. With `missing = "MAR"`, a `missing_predictor` outside this set remains complete. If omitted, all variables can contain missing values as before.
 
-* When `marginals = "VM"` and `force_pd = TRUE` project the intermediate correlation matrix, the returned `population` is now the population the projected draw actually attains rather than the requested target, and the warning reports how far the two differ. Previously the target was returned although the realized correlations of the draw could depart from it substantially, which understated the bias in a recovery study measuring against it. `return_pop = TRUE` draws no data and therefore never reaches the projection, so it continues to return the target unchanged.
+* With `marginals = "VM"` and `force_pd = TRUE`, the returned `population` now reflects the projected correlations used to generate the data, and a warning reports their deviation from the target. `return_pop = TRUE` still returns the target because no data are generated.
 
-* `efa_simulate()` now warns when `target_rmsea` and `target_cfi` cannot both be met by `model_error = "TKL"`, naming the achieved values, instead of silently returning the closest compromise.
+* With `model_error = "TKL"`, `efa_simulate()` now warns when the requested RMSEA and CFI cannot both be achieved and reports the attained values.
 
-* A degenerate resample under `marginals = "empirical"` — a marginal with a category too rare to be drawn more than once at the requested sample size — now raises an actionable error instead of failing inside the reproduction loop.
+* With empirical marginals, `efa_simulate()` now gives a clear error when a category is too rare to be reproduced at the requested sample size.
 
 ## Factor Retention
 
-* `efa_cd()` now rejects data with a constant variable, which the comparison-data generation cannot reproduce, instead of failing inside its eigenvalue decomposition.
+* `efa_cd()` now reports a clear error when the data contain constant variables.
 
-* `efa_smt()` now warns when one of its three rules selects a solution with a Heywood case or a model that did not converge, matching what `efa_hull()` already reported. The suggestion is still returned, but it is flagged as unreliable rather than presented without comment.
+* `efa_smt()` now warns when a recommended model has a Heywood case or has not converged. The recommendation is still returned but should be treated cautiously.
 
-* The RMSEA rule of `efa_smt()` now stops at the first model whose lower bound cannot be computed, as the sequential chi-square rule already did. Previously it skipped past such a model to a later one, which is not a valid continuation of a sequential test.
+* The RMSEA rule in `efa_smt()` now stops when the lower bound of the RMSEA confidence interval cannot be computed instead of continuing to later models.
 
-* `efa_nest()` results can now be plotted: the plot shows the empirical eigenvalues together with the reference eigenvalues NEST compared them against, with the retained number of factors marked.
+* `efa_nest()` results can now be plotted, showing the empirical and reference eigenvalues and the retained number of factors.
 
-* `efa_retain()` now summarises its results in one line under the section heading: how many suggestions how many criteria made, the range they span, and the most common number of factors.
+* `efa_retain()` now prints a one-line overview of the number and range of numeric recommendations, the number of contributing criteria, and the most common factor count.
 
-* The factor retention criteria and `efa_retain()` now reject `seed`, `se`, `b_boot`, and `ci` in their `...` and point at `set.seed()`. These are arguments of `efa_fit()`, so they were previously accepted and forwarded to the criteria's internal fits, where nothing could come of them.
+* Factor-retention functions now reject the unsupported arguments `seed`, `se`, `b_boot`, and `ci`. Use `set.seed()` to control randomness.
 
 ## Input Validation and Correlation Handling
 
-* Every argument of the `efa_*` interface that takes a fixed set of values is now matched without regard to capitalization, and the canonical spelling is what the result stores and prints. For an argument that takes a single value, an unambiguous abbreviation is accepted as well, and an unmatched value raises an error that names the argument, lists the choices, and carries the condition class `efa_bad_choice` (`efa_control_input` for the tuning knobs of `estimate_control()` and `rotate_control()`). 
+* `efa_*` arguments with fixed choices are now case-insensitive. Those accepting one choice also allow unambiguous abbreviations, invalid choices produce clearer errors, and results use the standard spelling.
 
-* A correlation matrix supplied as a data frame is now recognised as one and analysed.
+* Correlation matrices supplied as data frames are now recognised and analysed correctly.
 
-* Passing `NULL` to a choice-valued argument now selects the documented default, as leaving the argument out does. It previously selected the first admissible value.
+* Passing `NULL` to a choice-valued argument now uses its documented default.
 
-* When a correlation matrix cannot be computed from raw data, the error now names the columns responsible and separates non-numeric, infinite, and constant ones, pointing at `cor_method = "poly"` for ordinal items stored as factors or character strings.
+* Errors when computing correlations from raw data now identify non-numeric, infinite, and constant columns, and recommend `cor_method = "poly"` for ordinal factors or character variables.
 
-* A correlation matrix reported as smoothed is now positive definite on every platform. For a matrix that is singular to working precision, whether the smoothing was carried out could previously depend on the linear algebra library R was built against, and on some builds the warning was raised although the matrix was returned unchanged.
+* Correlation-matrix smoothing now consistently returns a positive-definite matrix, including for nearly singular matrices.
 
 ## Missing Data and Multiple Imputation
 
-* The `rmsr_upper` argument of `efa_mi()` is deprecated and ignored. It selected between computing RMSR from the unique off-diagonal residual correlations and from the full off-diagonal matrix, but the two element sets hold each residual pair once and twice respectively, so their sums and counts double together and the mean square is the same number whenever the residual matrix is symmetric — which the pooled residuals always are. The argument therefore never changed the reported RMSR. SRMR, the index that divides the same sum by the number of non-redundant elements, continues to be reported alongside it. `EFA_POOLED()` still accepts the argument without a warning.
+* The `rmsr_upper` argument of `efa_mi()` is deprecated and ignored because it never changed the reported RMSR. `EFA_POOLED()` continues to accept it without a warning.
 
-* The printed `efa_mi()` model fit now marks CFI and TLI as averaged over the imputations and says that they are not formed from separately pooled model and baseline statistics. Only the D2-pooled chi-square carried such a note before, which invited the reading that the incremental indices were conventionally pooled ones.
+* Printed `efa_mi()` output now identifies CFI and TLI as averages across imputations rather than indices calculated from separately pooled model and baseline statistics.
 
-* The help page of `efa_mi()` now documents the `mi_diagnostics`, `fits`, `alignment`, and `settings` slots of the returned object, including how to form the `lavaan.mi`-style reference CFI from the pooled chi-squares in `mi_diagnostics`. 
+* The `efa_mi()` documentation now describes the `mi_diagnostics`, `fits`, `alignment`, and `settings` components, including how to calculate a `lavaan.mi`-style reference CFI from the pooled chi-square statistics.
 
-* A `mids` object from `mice` passed to `efa_mi()` is now rejected with an error that names it and gives the conversion, `mice::complete(x, "all")`, and that carries the condition class `efa_pooled_mids_input`. A `mids` object is itself a list, so it previously passed the argument checks and failed inside the per-imputation one, with a message naming an internal loop variable.
+* `efa_mi()` now rejects `mids` objects from `mice` with guidance to convert them first using `mice::complete(x, "all")`.
 
 ## Ordinal Correlations
 
-* A polychoric or tetrachoric pair whose response table shows a perfect ordering is only bounded, not identified, by the data, and is now reported at 0.9999 (or -0.9999 for a perfectly reversed table) with a warning naming the affected pairs, instead of at an operating-system-dependent value.
+* Perfectly ordered polychoric or tetrachoric pairs are now reported as `0.9999` or `-0.9999`, with a warning listing the affected pairs.
 
-* Binary pairs with a single empty response cell instead receive a 0.5 continuity correction that preserves the table margins, matching `lavaan` and `psych`, which avoids the boundary estimate and makes the correlation matrix positive definite far more often.
+* Binary pairs with one empty response cell now use a margin-preserving 0.5 continuity correction, avoiding boundary estimates and making a positive-definite correlation matrix more likely.
 
-* Neither kind of pair has an asymptotic variance, so `NA` is reported: `DWLS` estimation gives an actionable error rather than fitting with an unusable weight, and robust standard errors involving these pairs are withheld.
+* For both kinds of pair, unavailable asymptotic variances are reported as `NA`; `DWLS` now stops with a clear error, and affected robust standard errors are withheld.
 
-* The response combinations that a strongly correlated pair makes all but impossible are now computed from the complementary tail of the normal distribution, which keeps them accurate down to the smallest representable probability instead of losing them to rounding. When such a combination is nevertheless observed (a handful of careless or extreme responses is enough) this both sharpens the correlation of the pair and gives it an asymptotic variance. Previously that variance came out missing, which refused `DWLS` estimation for the whole data set and withheld every robust standard error involving the pair.
+* Rare response combinations in strongly correlated pairs are now handled more accurately, preventing such pairs from unnecessarily blocking `DWLS` estimation or robust standard errors.
 
 ## Power Analysis
 
-* `efa_power(mode = "simulation")` now warns when a requested factor-retention criterion produced no suggestion on any replicate, and reports it with a missing hit-rate over zero valid replicates. Previously such a criterion was dropped from the results without comment, although the request was still recorded in the settings.
+* In simulation mode, `efa_power()` now warns when a requested factor-retention criterion never produces a suggestion and reports an `NA` hit rate over zero valid replicates.
 
-* A missing or invalid `N` or `n_datasets` in simulation mode is now reported with an actionable, catchable error stating that `N` is required there, rather than a bare assertion message.
+* Simulation mode now gives clear errors for missing or invalid `N` and `n_datasets`.
 
 ## Reliability and Factor Scores
 
-* `efa_reliability()` now warns when the items a `factor_map` column assigns to a group factor hardly load on it although they do load on another one.
+* `efa_reliability()` now warns when a `factor_map` assigns items to a group factor on which they load weakly while loading on another factor.
 
-* `efa_scores(method = "Anderson")`, and `FACTOR_SCORES()` with it, now warn when the factors of the solution are correlated. Anderson-Rubin scores are defined for orthogonal factors and are orthogonalised regardless, so they were reported as uncorrelated for factors the model says are correlated.
+* `efa_scores(method = "Anderson")` and `FACTOR_SCORES(method = "Anderson")` now warn when the fitted factors are correlated, because Anderson-Rubin scores are uncorrelated even when the fitted factors are not.
 
-* `efa_schmid_leiman()`, and the superseded `SL()` with it, now reject `se`, `b_boot`, `ci`, and `seed` in their `...`. These are arguments of `efa_fit()`, so they were previously forwarded to the second-order fit, which is an internal step run against a placeholder sample size and reports none of them.
+* `efa_schmid_leiman()` and `SL()` now reject the unsupported `se`, `b_boot`, `ci`, and `seed` arguments.
 
 ## Standard Errors
 
-* `efa_fit(se = "sandwich")` now withholds its standard errors and confidence intervals at a Heywood case, as `se = "information"` already did. 
+* `efa_fit(se = "sandwich")` now withholds standard errors and confidence intervals when a Heywood case occurs.
 
-* The printed output of a bootstrap fit now reports how many replicates were actually usable whenever fewer survived than were requested (`20 bootstrap samples (4 usable)`), for a pooled `efa_mi()` fit as well as a single one. 
+* Bootstrap output now reports the number of usable replicates whenever fewer than requested are available, for both single fits and pooled `efa_mi()` fits.
 
-* The analytic `SE$Phi` now carries the factor names, the one component of the analytic standard-error list that shipped without them, and `vcov_unrot_loadings` labels its rows and columns `"<variable>_<factor>"` so its documented column-major ordering can be read off the object.
+* Analytic standard-error outputs now include factor names in `SE$Phi` and variable-factor labels in `vcov_unrot_loadings`.
 
 # EFAtools 1.0.0
 

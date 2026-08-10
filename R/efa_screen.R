@@ -150,8 +150,10 @@
 #' \item{note}{A classed note explaining that the raw-data diagnostics need raw
 #'   data; `NULL` when raw data are supplied.}
 #' \item{settings}{A list of the settings used, including `n_obs`, the number of
-#'   rows in the supplied raw data (`NA` for a correlation-matrix input), and
-#'   `outlier_cutoff`, the probability behind the outlier flagging threshold.}
+#'   rows in the supplied raw data (`NA` for a correlation-matrix input),
+#'   `outlier_cutoff`, the probability behind the outlier flagging threshold,
+#'   `mcd_alpha`, the coverage of the minimum covariance determinant subset, and
+#'   `seed` (`NULL` when none was supplied).}
 #'
 #' @source Bartlett, M. S. (1951). The effect of standardization on a Chi-square
 #'   approximation in factor analysis. Biometrika, 38, 337-344.
@@ -359,7 +361,9 @@ efa_screen <- function(x, N = NA,
                    n_obs = if (is.null(xr)) NA_integer_ else nrow(xr),
                    use = use,
                    cor_method = cor_method,
-                   outlier_cutoff = outlier_cutoff)
+                   mcd_alpha = mcd_alpha,
+                   outlier_cutoff = outlier_cutoff,
+                   seed = seed)
 
   output <- list(
     kmo = kmo,

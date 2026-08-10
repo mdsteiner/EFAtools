@@ -567,6 +567,25 @@ test_that("efa_group guards its inputs with classed conditions", {
   # Neither raw data with `groups` nor a list of per-group data sets.
   expect_error(efa_group(1:5, n_factors = 3, N = 500),
                class = "efa_group_input")
+
+  # A misspelled argument in the dots is refused before any group is fitted, so it is
+  # not reported as a statistical failure of whichever group happened to be fitted first.
+  expect_error(efa_group(list(a = cmat, b = cmat), n_factors = 3, N = 500, bogus = 1),
+               class = "efa_unused_dots")
+
+  # the guard reads the names only, so the rejection wins over evaluating the value
+  expect_error(efa_group(list(a = cmat, b = cmat), n_factors = 3, N = 500,
+                         bogus = stop("must not be evaluated")),
+               class = "efa_unused_dots")
+})
+
+test_that("efa_group forwards genuine efa_fit arguments and rotation extras", {
+  # the guard above must not refuse what the per-group fits legitimately consume
+  expect_s3_class(
+    efa_group(list(a = cmat, b = cmat), n_factors = 3, N = 500,
+              estimator = "ML", rotation = "oblimin", maxit = 750),
+    "efa_group"
+  )
 })
 
 
@@ -679,6 +698,12 @@ test_that("a supplied seed makes the CIs reproducible and restores the RNG", {
 
   two <- boot()
   expect_equal(one$congruence$matched_ci, two$congruence$matched_ci)
+
+  # the seed is part of the record, so a saved object says how it was seeded
+  expect_equal(one$settings$seed, 99)
+  expect_null(suppressMessages(suppressWarnings(
+    efa_group(GRiPS_raw, groups = g, n_factors = 2, rotation = "varimax",
+              estimator = "PAF")))$settings$seed)
 })
 
 

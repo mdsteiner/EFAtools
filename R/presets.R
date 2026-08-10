@@ -88,6 +88,20 @@
     return(user[setting_names])
   }
 
+  # A `type` that names no block of this preset slice would make `defaults` NULL, and
+  # `resolved[[nm]] <- defaults[[nm]]` then DELETES the element instead of filling it --
+  # handing the engine a settings list with holes rather than failing. Every public caller
+  # matches `type` against the four supported names first, so reaching this is an internal
+  # fault: a preset slice added without one of the type names.
+  if (!type %in% names(preset)) {
+    cli::cli_abort(
+      c("No {.val {type}} preset is defined for this function.",
+        "i" = "Available presets: {.val {names(preset)}}."),
+      class = "efa_preset_undefined",
+      .internal = TRUE
+    )
+  }
+
   defaults <- preset[[type]]
   resolved <- user[setting_names]
   pinned <- character(0)

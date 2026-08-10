@@ -68,7 +68,10 @@ signals a deprecation warning; the superseded \code{\link[=EFA_POOLED]{EFA_POOLE
 \item{...}{Additional arguments passed to \code{\link[=efa_fit]{efa_fit()}} (e.g. \code{estimator}, \code{rotation}, \code{se},
 \code{n_factors}, \code{N}). These select the estimator, rotation, standard-error method, and
 fit indices used for every imputation; see \code{\link[=efa_fit]{efa_fit()}} for the available options, their
-properties, and which combinations are valid.}
+properties, and which combinations are valid. The \code{\link[=estimate_control]{estimate_control()}} and
+\code{\link[=rotate_control]{rotate_control()}} objects are accepted through \code{...} as well, although they are not
+declared formals: pass them as \verb{estimate_control =} / \verb{rotate_control =} exactly as you
+would to \code{\link[=efa_fit]{efa_fit()}}.}
 }
 \value{
 The value of \code{\link[=efa_mi]{efa_mi()}}, normally a list of class

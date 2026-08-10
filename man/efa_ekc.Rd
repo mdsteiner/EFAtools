@@ -34,7 +34,7 @@ efa_ekc(
 correlations.}
 
 \item{N}{numeric. The number of observations. Only needed if x is a correlation
-matrix.}
+matrix. Must be larger than the number of variables.}
 
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}} if raw
 data is given as input. Default is "pairwise.complete.obs".}

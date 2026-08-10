@@ -9,7 +9,7 @@
 #'
 #' @inheritParams efa_kgc
 #' @param N numeric. The number of observations. Only needed if x is a correlation
-#'  matrix.
+#'  matrix. Must be larger than the number of variables.
 #' @param alpha numeric. The alpha level to use (i.e., 1-alpha percentile of eigenvalues is used for reference values).
 #' @param cor_method character. One of `"pearson"`, `"spearman"`, or `"kendall"`,
 #'   passed to [stats::cor()]. `"poly"` and `"tetra"` are not supported because
@@ -130,13 +130,7 @@ efa_nest <- function(x, N = NA,
   R <- prep$R
   N <- prep$N
 
-  if (N < 2L) {
-    cli::cli_abort(
-      c("{.arg N} must be at least 2 for the NEST reference simulation.",
-        "x" = "You supplied {N}."),
-      class = "efa_n_too_small"
-    )
-  }
+  .assert_n_gt_vars(N, ncol(R))
 
   emp_eigen <- eigen(R, symmetric = TRUE, only.values = TRUE)$values
   nvar <- ncol(R)

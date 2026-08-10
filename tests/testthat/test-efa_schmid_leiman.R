@@ -149,17 +149,21 @@ test_that("sl loadings reproduce psych::schmid", {
 test_that("settings are returned correctly", {
   skip_if_not_installed("lavaan")
   expect_named(SL_EFAtools$settings, c("estimator", "method", "rotation", "type", "n_factors",
-                                   "N", "use", "cor_method", "se", "b_boot", "ci", "max_iter",
+                                   "N", "use", "cor_method", "input_type",
+                                   "cor_method_used", "se", "b_boot", "ci", "seed", "max_iter",
                                    "init_comm", "criterion", "criterion_type",
                                    "abs_eigen"))
   expect_named(SL_SPSS$settings, c("estimator", "method", "rotation", "type", "n_factors",
-                                   "N", "use", "cor_method", "se", "b_boot", "ci"))
+                                   "N", "use", "cor_method", "input_type",
+                                   "cor_method_used", "se", "b_boot", "ci", "seed"))
   expect_named(SL_psych$settings, c("estimator", "method", "rotation", "type", "n_factors",
-                                       "N", "use", "cor_method", "se", "b_boot", "ci", "max_iter",
+                                       "N", "use", "cor_method", "input_type",
+                                       "cor_method_used", "se", "b_boot", "ci", "seed", "max_iter",
                                        "init_comm", "criterion", "criterion_type",
                                        "abs_eigen"))
   expect_named(SL_flex$settings, c("estimator", "method", "rotation", "type", "n_factors",
-                                  "N", "use", "cor_method", "se", "b_boot", "ci", "start_method"))
+                                  "N", "use", "cor_method", "input_type",
+                                  "cor_method_used", "se", "b_boot", "ci", "seed", "start_method"))
   expect_equal(SL_lav$settings, NA)
 
   expect_equal(SL_EFAtools$settings$estimator, "PAF")

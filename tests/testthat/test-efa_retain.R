@@ -36,11 +36,83 @@ test_that("output class and dimensions are correct", {
   expect_named(nf_grips$settings, c("criteria", "suitability", "N", "use",
                                     "n_factors_max", "N_pop", "N_samples", "alpha",
                                     "cor_method", "max_iter_CD", "n_fac_theor",
-                                    "estimator", "method", "gof", "eigen_type_HULL",
+                                    "estimator", "method", "gof", "gof_used",
+                                    "eigen_type_HULL",
                                     "eigen_type_other", "n_factors", "n_datasets",
                                     "percent", "decision_rule",
                                     "ekc_type", "n_datasets_nest",
                                     "alpha_nest", "estimate_control"))
+})
+
+test_that("the summary line counts one vote per criterion", {
+  # `outputs` elements are efa_retention objects; only their $n_factors is read
+  crit <- function(...) list(n_factors = c(...))
+
+  # nothing to summarise: no criterion determined a number, or a lone suggestion is
+  # already carried by the bullet printed below the line
+  expect_null(.retention_summary(list(A = crit(A = NA_real_))))
+  expect_null(.retention_summary(list(A = crit(A = 3))))
+
+  expect_equal(.retention_summary(list(A = crit(A = 3), B = crit(B = 3))),
+               "2 suggestions from 2 criteria, all suggesting 3 factors.")
+
+  # a three-variant criterion casts one vote, so it cannot outvote two single-variant
+  # criteria that agree
+  expect_equal(
+    .retention_summary(list(HULL = crit(HULL_CAF = 4, HULL_CFI = 4, HULL_RMSEA = 4),
+                            EKC = crit(EKC = 2), MAP = crit(MAP = 2))),
+    "5 suggestions from 3 criteria, ranging from 2 to 4 factors (most common: 2).")
+
+  # that one vote is the criterion's own modal variant
+  expect_equal(
+    .retention_summary(list(HULL = crit(HULL_CAF = 2, HULL_CFI = 2, HULL_RMSEA = 5),
+                            EKC = crit(EKC = 2))),
+    "4 suggestions from 2 criteria, ranging from 2 to 5 factors (most common: 2).")
+
+  # a criterion whose variants tie has no modal value and abstains: here 3 is the mode
+  # of the per-variant vector, but only SMT decides, so no value wins more than one vote
+  expect_equal(
+    .retention_summary(list(EKC = crit(EKC_BvA2017 = 3, EKC_AM2019 = 2),
+                            KGC = crit(KGC_PCA = 3, KGC_SMC = 1),
+                            SMT = crit(SMT_chi = 3, SMT_RMSEA = 3))),
+    "6 suggestions from 3 criteria, ranging from 1 to 3 factors.")
+
+  # every deciding criterion picked a different number: the range speaks for itself
+  expect_equal(
+    .retention_summary(list(A = crit(A = 1), B = crit(B = 2), C = crit(C = 3))),
+    "3 suggestions from 3 criteria, ranging from 1 to 3 factors.")
+
+  # tied winners among the voters are both reported
+  expect_equal(
+    .retention_summary(list(A = crit(A = 2), B = crit(B = 2),
+                            C = crit(C = 4), D = crit(D = 4))),
+    "4 suggestions from 4 criteria, ranging from 2 to 4 factors (most common: 2 and 4).")
+
+  # a variant that could not determine a number contributes nothing to either count
+  expect_equal(
+    .retention_summary(list(A = crit(A_x = 2, A_y = NA_real_), B = crit(B = 3))),
+    "2 suggestions from 2 criteria, ranging from 2 to 3 factors.")
+})
+
+test_that("settings record the Hull goodness-of-fit indices that actually ran", {
+  skip_if_not_slow()
+  cormat <- test_models$baseline$cormat
+
+  # PAF supports only the CAF, so the Hull method reduces the requested set to it
+  r_paf <- suppressMessages(
+    efa_retain(cormat, N = 500, suitability = FALSE, criteria = "HULL", estimator = "PAF"))
+  expect_equal(r_paf$settings$gof, c("CAF", "CFI", "RMSEA"))
+  expect_equal(r_paf$settings$gof_used, "CAF")
+  expect_named(r_paf$n_factors, "HULL_CAF")
+
+  # with an estimator that supports all three, requested and used coincide
+  r_ml <- efa_retain(cormat, N = 500, suitability = FALSE, criteria = "HULL",
+                     estimator = "ML")
+  expect_equal(r_ml$settings$gof_used, r_ml$settings$gof)
+
+  # no HULL result to read it off
+  r_no_hull <- efa_retain(cormat, N = 500, suitability = FALSE, criteria = "EKC")
+  expect_identical(r_no_hull$settings$gof_used, NA_character_)
 })
 
 test_that("print and plot work on the aggregate object", {

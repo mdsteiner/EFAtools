@@ -92,6 +92,13 @@ test_that("errors are thrown correctly", {
   expect_warning(efa_ekc(cor_nposdef, N = 20), class = "efa_cor_smoothed")
 })
 
+test_that("EKC requires more observations than variables", {
+  # the EKC reference series (1 + sqrt(J / N))^2 is only defined above that boundary
+  R8 <- stats::cor(GRiPS_raw)  # 8 variables
+  expect_error(efa_ekc(R8, N = 8), class = "efa_n_too_small")
+  expect_s3_class(efa_ekc(R8, N = 9), "efa_retention")
+})
+
 test_that("settings are returned correctly", {
   expect_named(ekc_cor$settings, c("use", "cor_method", "N", "type"))
   expect_named(ekc_raw$settings, c("use", "cor_method", "N", "type"))

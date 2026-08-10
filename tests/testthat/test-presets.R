@@ -98,6 +98,30 @@ test_that("type = 'none' errors when a required argument is missing", {
   ))
 })
 
+test_that("a type that names no preset block errors instead of dropping settings", {
+  # Assigning a NULL default deletes the element rather than filling it, so an
+  # unmatched type would silently hand the engine a settings list with holes.
+  expect_error(
+    .resolve_settings(
+      type = "SPPS",
+      user = list(normalize = TRUE, order_type = NA, varimax_type = NA),
+      preset = .efa_presets$VARIMAX
+    ),
+    class = "efa_preset_undefined"
+  )
+
+  # every supported type still resolves to a complete settings list
+  for (tp in names(.efa_presets$VARIMAX)) {
+    res <- .resolve_settings(
+      type = tp,
+      user = list(normalize = TRUE, order_type = NA, varimax_type = NA),
+      preset = .efa_presets$VARIMAX
+    )
+    expect_named(res, c("normalize", "order_type", "varimax_type"))
+    expect_false(anyNA(unlist(res)))
+  }
+})
+
 test_that("preset tables hold the documented defaults", {
   expect_equal(.efa_presets$PAF$SPSS$max_iter, 25)
   expect_equal(.efa_presets$PAF$psych$abs_eigen, FALSE)

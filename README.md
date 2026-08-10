@@ -128,7 +128,9 @@ efa_retain(GRiPS_raw)
 #> ✔ The Kaiser-Meyer-Olkin criterion is marvellous (KMO = 0.955). These data are
 #>   probably suitable for factor analysis.
 #> 
-#> ── Number of factors suggested by the factor retention criteria ────────────────
+#> ── Suggested number of factors ─────────────────────────────────────────────────
+#> 
+#> 9 suggestions from 6 criteria, all suggesting 1 factor.
 #> 
 #> Comparison data
 #> • Suggested number of factors: 1
@@ -167,7 +169,9 @@ efa_retain(DOSPERT$cormat, N = DOSPERT$N)
 #> ✔ The Kaiser-Meyer-Olkin criterion is meritorious (KMO = 0.9). These data are
 #>   probably suitable for factor analysis.
 #> 
-#> ── Number of factors suggested by the factor retention criteria ────────────────
+#> ── Suggested number of factors ─────────────────────────────────────────────────
+#> 
+#> 8 suggestions from 5 criteria, ranging from 1 to 12 factors (most common: 10).
 #> 
 #> Empirical Kaiser Criterion
 #> • Original implementation (Braeken & van Assen, 2017): 10
@@ -670,11 +674,14 @@ residuals(mod)
 mod <- efa_fit(GRiPS_raw, n_factors = 1, estimator = "dwls", cor_method = "poly",
                se = "sandwich")
 #> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
-#> Warning: Some response-category combinations are empty despite a non-negligible expected
-#> count.
+#> Warning: 22 variable pairs have an empty response-category combination despite a
+#> non-negligible expected count.
+#> ✖ Affected pairs: "fun-friends", "fun-attracted", "friends-enjoy",
+#>   "friends-hurt", "friends-part", and 17 more.
 #> ℹ The polychoric asymptotic covariance (and any DWLS weights or robust standard
 #>   errors derived from it) can be unreliable for such structurally sparse cells;
-#>   interpret them with caution.
+#>   interpret them with caution and consider collapsing rare response categories
+#>   in these variables.
 mod
 #> 
 #> EFA performed with estimator = 'DWLS' and rotation = 'none'.

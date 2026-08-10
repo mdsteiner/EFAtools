@@ -261,7 +261,10 @@
 #' @param ... Additional arguments passed to [efa_fit()] (e.g. `estimator`, `rotation`, `se`,
 #' `n_factors`, `N`). These select the estimator, rotation, standard-error method, and
 #' fit indices used for every imputation; see [efa_fit()] for the available options, their
-#' properties, and which combinations are valid.
+#' properties, and which combinations are valid. The [estimate_control()] and
+#' [rotate_control()] objects are accepted through `...` as well, although they are not
+#' declared formals: pass them as `estimate_control =` / `rotate_control =` exactly as you
+#' would to [efa_fit()].
 #'
 #' @return A list of class `c("efa_mi", "EFA_POOLED", "efa", "EFA")` containing
 #' pooled estimates, residuals, fit indices, the individual fits, and MI

@@ -111,8 +111,11 @@
 #'   group pair from the Lorenzo-Seva and ten Berge (2006) congruence bands (see *Value*).
 #'   Default is `FALSE`.
 #' @param ... Additional arguments passed to [efa_fit()] for every group (for
-#'   example `estimator`, `rotation`, `cor_method`, or an [estimate_control()] /
-#'   [rotate_control()] to select a preset).
+#'   example `estimator`, `rotation`, or `cor_method`). The [estimate_control()] and
+#'   [rotate_control()] objects are accepted through `...` as well, although they are not
+#'   declared formals: pass them as `estimate_control =` / `rotate_control =` exactly
+#'   as you would to [efa_fit()]. A name that is neither an [efa_fit()] argument nor a
+#'   rotation-engine extra is rejected.
 #'
 #' @returns An object of class `efa_group`, a list containing:
 #' \item{loadings}{A named list of the aligned per-group loading matrices. Their
@@ -168,8 +171,8 @@
 #'   `NULL` on the reference path), the orientation the shared frame was put in
 #'   (`gauge`: the rotation's own name, `"principal_axes"`, or `"identity"` for a
 #'   single factor; `NULL` on the reference path), the rotation, the estimator, the
-#'   input type, and whether a bootstrap is available (`can_bootstrap`, `FALSE` for
-#'   correlation-matrix input).}
+#'   input type, whether a bootstrap is available (`can_bootstrap`, `FALSE` for
+#'   correlation-matrix input), and `seed` (`NULL` when none was supplied).}
 #'
 #' @references
 #' Efron, B., & Tibshirani, R. J. (1993). *An Introduction to the Bootstrap*.
@@ -218,11 +221,18 @@ efa_group <- function(x, groups = NULL, n_factors, N = NA,
                       reference_group = NULL, b_boot = 0L, ci = 0.95,
                       seed = NULL, delta = 0.1, invariance = FALSE, ...) {
 
-  efa_args <- list(...)
+  # Both guards read `...names()` and so run before the dots are forced: a rejected name
+  # is reported as such even when its value would itself have errored.
   # A flat tuning knob or the former `method` spelling in the dots would only surface from
   # inside the first per-group fit, re-wrapped as an efa_group_fit_failed "fit failed for
   # group X" error; reject it here so the message names the actual mistake.
   .reject_flat_knobs(...names(), fn = "efa_group")
+  # Same reason for an unknown name: the per-group fits run inside a tryCatch that
+  # re-labels their errors, so a misspelled argument would be reported as a statistical
+  # failure of whichever group was fitted first. The fits are rotated, so a rotation
+  # engine extra is a legitimate name here.
+  .reject_unknown_fit_dots(...names(), fn = "efa_group")
+  efa_args <- list(...)
   checkmate::assert_count(n_factors, positive = TRUE)
   checkmate::assert_count(b_boot)
   b_boot <- as.integer(b_boot)
@@ -502,6 +512,7 @@ efa_group <- function(x, groups = NULL, n_factors, N = NA,
     ci = ci,
     delta = delta,
     invariance = invariance,
+    seed = seed,
     groups = group_names,
     efa_args = efa_args
   )

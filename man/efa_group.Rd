@@ -69,8 +69,11 @@ group pair from the Lorenzo-Seva and ten Berge (2006) congruence bands (see \emp
 Default is \code{FALSE}.}
 
 \item{...}{Additional arguments passed to \code{\link[=efa_fit]{efa_fit()}} for every group (for
-example \code{estimator}, \code{rotation}, \code{cor_method}, or an \code{\link[=estimate_control]{estimate_control()}} /
-\code{\link[=rotate_control]{rotate_control()}} to select a preset).}
+example \code{estimator}, \code{rotation}, or \code{cor_method}). The \code{\link[=estimate_control]{estimate_control()}} and
+\code{\link[=rotate_control]{rotate_control()}} objects are accepted through \code{...} as well, although they are not
+declared formals: pass them as \verb{estimate_control =} / \verb{rotate_control =} exactly
+as you would to \code{\link[=efa_fit]{efa_fit()}}. A name that is neither an \code{\link[=efa_fit]{efa_fit()}} argument nor a
+rotation-engine extra is rejected.}
 }
 \value{
 An object of class \code{efa_group}, a list containing:
@@ -127,8 +130,8 @@ alignment method, the group that seeded the consensus frame (\code{alignment_sta
 \code{NULL} on the reference path), the orientation the shared frame was put in
 (\code{gauge}: the rotation's own name, \code{"principal_axes"}, or \code{"identity"} for a
 single factor; \code{NULL} on the reference path), the rotation, the estimator, the
-input type, and whether a bootstrap is available (\code{can_bootstrap}, \code{FALSE} for
-correlation-matrix input).}
+input type, whether a bootstrap is available (\code{can_bootstrap}, \code{FALSE} for
+correlation-matrix input), and \code{seed} (\code{NULL} when none was supplied).}
 }
 \description{
 Fit an exploratory factor analysis in each of several groups at a common

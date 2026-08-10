@@ -117,7 +117,8 @@ test_that("Bartlett's test is skipped with a note when N is unavailable", {
 })
 
 test_that("settings are returned correctly", {
-  expect_named(scr_cor$settings, c("N", "n_obs", "use", "cor_method", "outlier_cutoff"))
+  expect_named(scr_cor$settings, c("N", "n_obs", "use", "cor_method", "mcd_alpha",
+                                   "outlier_cutoff", "seed"))
   expect_equal(scr_cor$settings$N, 500)
   expect_equal(scr_cor$settings$use, "pairwise.complete.obs")
   expect_equal(scr_cor$settings$cor_method, "pearson")
@@ -126,6 +127,17 @@ test_that("settings are returned correctly", {
   # n_obs is the number of supplied raw rows (NA for a correlation-matrix input)
   expect_true(is.na(scr_cor$settings$n_obs))
   expect_equal(scr_raw$settings$n_obs, nrow(GRiPS_raw))
+
+  # the MCD arguments that govern the outlier diagnostics are recorded, so a saved
+  # object says how its robust distances were obtained
+  expect_equal(scr_cor$settings$mcd_alpha, 0.5)
+  expect_null(scr_cor$settings$seed)
+  # on the raw path both are the values the outlier diagnostics actually ran with
+  expect_equal(scr_raw$settings$seed, 1)
+  expect_equal(scr_raw$settings$mcd_alpha, 0.5)
+  expect_equal(
+    efa_screen(test_models$baseline$cormat, N = 500, mcd_alpha = 0.75)$settings$mcd_alpha,
+    0.75)
 })
 
 test_that("raw-data per-item diagnostics: variance, missing, and category flags (GRiPS)", {

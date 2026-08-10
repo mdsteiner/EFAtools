@@ -305,10 +305,12 @@
 #' indices.}
 #' \item{efa_list}{A list containing the outputs of all performed EFAs. The names
 #' correspond to the rownames from the implementations_grid.}
-#' \item{settings}{A list of the settings used.}
+#' \item{settings}{A list of the settings used, including `seed` (`NULL` when none was
+#'   supplied).}
 #'
 #' If the supplied arguments admit only a single EFA, there is nothing to average
-#' across: that one [efa_fit()] object is returned instead, with a warning.
+#' across: that one [efa_fit()] object is returned instead, with a warning. Its
+#' `settings` are that fit's, with `seed` recording the seed the run was governed by.
 #'
 #' @source Grieder, S., & Steiner, M. D. (2022). Algorithmic jingle jungle: A comparison
 #' of implementations of principal axis factoring and promax rotation in R and SPSS.
@@ -541,7 +543,7 @@ efa_average <- function(x, n_factors, N = NA, estimator = "PAF", rotation = "pro
     cli::cli_warn("There was only one combination of arguments; returning a normal EFA output.",
                   class = "efa_avg_single_combination")
 
-    return(efa_fit(R, n_factors, N = N, estimator = arg_grid$estimator,
+    single <- efa_fit(R, n_factors, N = N, estimator = arg_grid$estimator,
         rotation = arg_grid$rotation,
         estimate_control = estimate_control(type = "none",
             init_comm = arg_grid$init_comm, criterion = arg_grid$criterion,
@@ -565,7 +567,15 @@ efa_average <- function(x, n_factors, N = NA, estimator = "PAF", rotation = "pro
             k = ifelse(arg_grid$rotation == "promax", arg_grid$k_promax, arg_grid$k_simplimax),
             # engine extra carried in the control, not efa_fit()'s dots: the
             # unrotated rows never consume it, and bare dots are rejected there
-            maxit = rotation_maxit)))
+            maxit = rotation_maxit))
+    # The fit drew from the stream .set_local_seed() just seeded, so this shortcut
+    # result was produced under `seed` even though efa_fit() was not handed it; record
+    # it, or the one documented return path that is not an efa_average object would be
+    # the only one that cannot say how it was seeded.
+    # (single-bracket assignment: `$<-` with a NULL value would DELETE the field
+    # rather than set it, dropping it from the schema whenever no seed was supplied)
+    single$settings["seed"] <- list(seed)
+    return(single)
 
   }
 
@@ -741,7 +751,8 @@ efa_average <- function(x, n_factors, N = NA, estimator = "PAF", rotation = "pro
     max_iter = max_iter,
     averaging = averaging,
     trim = trim,
-    salience_threshold = salience_threshold
+    salience_threshold = salience_threshold,
+    seed = seed
   )
 
   # Create output

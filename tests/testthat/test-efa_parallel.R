@@ -225,10 +225,16 @@ test_that("errors are thrown correctly", {
 })
 
 test_that("parallel-analysis simulation counts must be positive", {
-  expect_error(efa_parallel(N = 0, n_vars = 4, n_datasets = 1), "Must be >= 1")
-  expect_error(efa_parallel(N = 20, n_vars = 0, n_datasets = 1), "Must be >= 1")
-  expect_error(efa_parallel(N = 20, n_vars = 4, n_datasets = 0), "Must be >= 1")
-  expect_error(efa_parallel(N = 20, n_vars = 4, n_factors = 0), "Must be >= 1")
+  # all four are refused at the R boundary with the package's argument class,
+  # rather than reaching the simulation and answering from an empty reference
+  expect_error(efa_parallel(N = 0, n_vars = 4, n_datasets = 1),
+               class = "efa_invalid_argument")
+  expect_error(efa_parallel(N = 20, n_vars = 0, n_datasets = 1),
+               class = "efa_invalid_argument")
+  expect_error(efa_parallel(N = 20, n_vars = 4, n_datasets = 0),
+               class = "efa_invalid_argument")
+  expect_error(efa_parallel(N = 20, n_vars = 4, n_factors = 0),
+               class = "efa_invalid_argument")
 })
 
 test_that("the simulated PCA reference matches psych::fa.parallel", {

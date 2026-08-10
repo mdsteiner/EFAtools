@@ -10,11 +10,13 @@
 #'  correlation matrix or raw data.
 #' @param N numeric. The number of cases / observations to simulate. Only has to
 #'  be specified if `x` is either a correlation matrix or `NULL`. If
-#'  x contains raw data, `N` is found from the dimensions of `x`.
+#'  x contains raw data, `N` is found from the dimensions of `x`. Must be larger
+#'  than the number of variables.
 #' @param n_vars numeric. The number of variables / indicators to simulate.
 #' Only has to be specified if `x` is left as `NULL` as otherwise the
 #' dimensions are taken from `x`.
-#' @param n_datasets numeric. The number of datasets to simulate. Default is 1000.
+#' @param n_datasets numeric. The number of datasets to simulate. Must be at
+#'  least 1. Default is 1000.
 #' @param percent numeric. The percentile to take from the simulated eigenvalues.
 #'  Default is 95.
 #' @param eigen_type character. On what the eigenvalues should be found. Can be
@@ -167,11 +169,13 @@ efa_parallel <- function(x = NULL,
   .reject_poly_reference(cor_method, "efa_parallel")
   decision_rule <- .match_arg_ci(decision_rule)
   .assert_estimate_control(estimate_control)
-  checkmate::assert_count(n_factors, positive = TRUE)
-  checkmate::assert_count(N, na.ok = TRUE, positive = TRUE)
-  checkmate::assert_count(n_vars, na.ok = TRUE, positive = TRUE)
-  checkmate::assert_count(n_datasets, positive = TRUE)
-  checkmate::assert_number(percent, lower = 0, upper = 100)
+  .assert_args({
+    checkmate::assert_count(n_factors, positive = TRUE)
+    checkmate::assert_count(N, na.ok = TRUE, positive = TRUE)
+    checkmate::assert_count(n_vars, na.ok = TRUE, positive = TRUE)
+    checkmate::assert_count(n_datasets, positive = TRUE)
+    checkmate::assert_number(percent, lower = 0, upper = 100)
+  })
 
   # The simulated datasets are drawn in chunks, one future per chunk, under
   # future.seed = TRUE -- which assigns one L'Ecuyer stream per element of the chunk
@@ -183,8 +187,8 @@ efa_parallel <- function(x = NULL,
   # 20 workers leaves the surplus idle, so a very wide pool is slower than it would be with
   # worker-matched chunking. 20 is the compromise -- enough chunks to keep a typical pool
   # busy, few enough that the per-chunk dispatch stays negligible. The chunk count never
-  # exceeds n_datasets (no empty chunks) and never drops below one, which would divide by
-  # zero for the degenerate n_datasets = 0.
+  # exceeds n_datasets, so no chunk is empty; the lower bound of one is a backstop only,
+  # since n_datasets is refused above unless it is at least one.
   size_vec <- .parallel_chunks(n_datasets, max(1L, min(n_datasets, 20L)))
 
   # Prepare objects
@@ -265,10 +269,7 @@ efa_parallel <- function(x = NULL,
 
   }
 
-  if (N <= n_vars) {
-    cli::cli_abort("{.arg N} must be larger than the number of variables.",
-                   class = "efa_n_too_small")
-  }
+  .assert_n_gt_vars(N, n_vars)
 
     if ("PCA" %in% eigen_type) {
 

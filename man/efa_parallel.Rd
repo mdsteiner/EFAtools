@@ -43,13 +43,15 @@ correlation matrix or raw data.}
 
 \item{N}{numeric. The number of cases / observations to simulate. Only has to
 be specified if \code{x} is either a correlation matrix or \code{NULL}. If
-x contains raw data, \code{N} is found from the dimensions of \code{x}.}
+x contains raw data, \code{N} is found from the dimensions of \code{x}. Must be larger
+than the number of variables.}
 
 \item{n_vars}{numeric. The number of variables / indicators to simulate.
 Only has to be specified if \code{x} is left as \code{NULL} as otherwise the
 dimensions are taken from \code{x}.}
 
-\item{n_datasets}{numeric. The number of datasets to simulate. Default is 1000.}
+\item{n_datasets}{numeric. The number of datasets to simulate. Must be at
+least 1. Default is 1000.}
 
 \item{percent}{numeric. The percentile to take from the simulated eigenvalues.
 Default is 95.}

@@ -51,8 +51,11 @@
 #' [efa_kgc()], [efa_scree()], [efa_parallel()], and [efa_nest()]. The
 #' estimator to use. One of  `"PAF"`, `"ULS"`, or  `"ML"`,
 #' for principal axis factoring, unweighted least squares, and maximum
-#' likelihood, respectively. In [efa_kgc()], [efa_scree()], and [efa_parallel()] it only
-#' takes effect when the respective `eigen_type` includes `"EFA"`.
+#' likelihood, respectively. The default here is `"ML"`, which is not
+#' the default of every criterion called standalone (for example [efa_hull()] defaults to
+#' `"PAF"`), so a criterion run through `efa_retain()` can differ from the same criterion
+#' called directly unless `estimator` is set to match. In [efa_kgc()], [efa_scree()], and
+#' [efa_parallel()] it only takes effect when the respective `eigen_type` includes `"EFA"`.
 #' @param gof character. Passed to [efa_hull()]. The goodness of fit index
 #' to use. Either `"CAF"`, `"CFI"`, or `"RMSEA"`, or any
 #' combination of them. With the `"PAF"` estimator, only
@@ -104,7 +107,10 @@
 #'  and [efa_smt()] fits with maximum likelihood by definition, so only `start_method` takes
 #'  effect there. All fits are unrotated, so no rotation settings apply.
 #' @param ... Further arguments passed to [efa_fit()] in
-#' [efa_parallel()] (also within [efa_hull()]), [efa_kgc()], [efa_scree()], and [efa_nest()].
+#' [efa_parallel()], [efa_kgc()], [efa_scree()], and [efa_nest()]. They also reach
+#' [efa_hull()], both through the parallel analysis it runs to set its upper bound and
+#' through its own candidate fits, so an argument that [efa_fit()] rejects stops the Hull
+#' method even when its `eigen_type_HULL` fits no model.
 #' The estimation tuning knobs are not passed here; they live in `estimate_control`, and the
 #' standard-error arguments (`se`, `b_boot`, `ci`, `seed`) are not accepted because the
 #' criterion fits are internal steps whose standard errors are not reported. Note
@@ -150,12 +156,21 @@
 #' \item{n_factors}{A named numeric vector with the suggested number of factors
 #'   per criterion and, where a criterion has several variants, per variant
 #'   (e.g. `EKC_BvA2017` or `PARALLEL_SMC`). Criteria without a numeric
-#'   suggestion (the scree plot) are not included.}
+#'   suggestion (the scree plot) are not included. The "most common" value the printed
+#'   summary line reports is counted with one vote per *criterion* -- each criterion's own
+#'   modal variant -- so that a criterion with several variants cannot outvote a
+#'   single-variant one. A criterion whose variants tie has no modal value and abstains
+#'   rather than casting a vote for each of them, and a value that no two criteria agree on
+#'   is not reported as most common. Tallying this vector directly counts one vote per
+#'   *variant* and can therefore have a different mode.}
 #' \item{not_run}{A named character vector with the criteria that were skipped
 #'   or failed and the reason, or `NULL` if all requested criteria ran.}
 #' \item{settings}{A list of the settings used. Its `criteria` element records the
 #'   requested criteria, in the order they were given, while `outputs` and `n_factors`
-#'   are in the order in which the criteria were run.}
+#'   are in the order in which the criteria were run. `gof` records the requested Hull
+#'   goodness-of-fit indices and `gof_used` the ones the Hull method actually computed
+#'   (it reduces them to `"CAF"` for the PAF estimator); `gof_used` is `NA` when HULL was
+#'   not requested, was skipped, or failed.}
 #'
 #' @seealso [efa_screen()] for data screening before retention, and [efa_fit()] to extract
 #'  the chosen number of factors.
@@ -407,6 +422,12 @@ efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARA
                    # back-compat alias, as for the frozen P_type key
                    method = estimator,
                    gof = gof,
+                   # `gof` above is what was requested; the Hull method reduces it to CAF
+                   # whenever the PAF estimator is used, so record what actually ran
+                   # alongside it. NA when HULL was not among the criteria, was skipped, or
+                   # failed -- no Hull goodness-of-fit index was computed in those cases.
+                   gof_used = if (is.null(outputs[["HULL"]])) NA_character_
+                              else outputs[["HULL"]]$settings$gof,
                    eigen_type_HULL = eigen_type_HULL,
                    eigen_type_other = eigen_type_other,
                    n_factors = n_factors,

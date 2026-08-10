@@ -33,7 +33,7 @@
 #'   polychoric / tetrachoric correlations.
 #'  Default is `"pearson"`.
 #' @param N numeric. The number of observations. Needs only be specified if a
-#' correlation matrix is used.
+#' correlation matrix is used. Must be larger than the number of variables.
 #' @param estimate_control an [estimate_control()] object with the estimation settings for the
 #'  sequential [efa_fit()] fits. `NULL` (default) uses the [efa_fit()] defaults. The sequential
 #'  models are fitted with maximum likelihood (the chi-square, RMSEA, and AIC the SMT is built on
@@ -135,6 +135,7 @@ efa_smt <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
                        "i" = "Provide {.arg N} or raw data."))
   R <- prep$R
   N <- prep$N
+  .assert_n_gt_vars(N, ncol(R))
 
   # Prepare objects for sequential tests
   max_fac <- .det_max_factors(ncol(R))

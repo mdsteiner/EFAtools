@@ -65,11 +65,15 @@ test_that("errors are thrown correctly", {
   expect_error(efa_nest(sing_cor, N = sing_N), class = "efa_cor_singular")
 })
 
-test_that("the NEST reference simulation requires at least two cases", {
+test_that("NEST requires more observations than variables", {
+  # the accepted call below simulates reference data, so pin the stream: the RNG
+  # state reaching this test otherwise depends on which earlier blocks were skipped
+  set.seed(321)
   R <- diag(5)
   expect_error(efa_nest(R, N = 0, n_datasets = 1), "Must be >= 1")
   expect_error(efa_nest(R, N = 1, n_datasets = 1), class = "efa_n_too_small")
-  expect_s3_class(efa_nest(R, N = 2, n_datasets = 1), "efa_retention")
+  expect_error(efa_nest(R, N = 5, n_datasets = 1), class = "efa_n_too_small")
+  expect_s3_class(efa_nest(R, N = 6, n_datasets = 1), "efa_retention")
 })
 
 test_that("a Heywood case in the reference model raises a classed error", {

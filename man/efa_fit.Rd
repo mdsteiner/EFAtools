@@ -266,7 +266,11 @@ rotations.}
 \item{vars_accounted_rot}{Matrix of explained variances and sums of squared
 loadings. Based on rotated loadings and, for oblique rotations, the factor
 intercorrelations.}
-\item{settings}{A list of the settings used. For the criterion rotations fitted by
+\item{settings}{A list of the settings used, including \code{seed} (\code{NULL} when none was
+supplied), \code{input_type} (\code{"raw"} or \code{"correlation"}, what \code{x} was), and
+\code{cor_method_used} (the correlation method that actually ran, \code{NA_character_} for a
+correlation-matrix input, which consumes none). \code{cor_method} keeps the requested value
+whether or not it was used. For the criterion rotations fitted by
 gradient projection it additionally carries \code{rotation_diagnostics}, a list summarising
 the multi-start run: \code{n_starts_total} (the \code{random_starts} random starts plus the
 rational start), \code{n_optimized} (how many of those starts were actually optimized --

@@ -5,8 +5,13 @@
 # equivalents. Each old name is a thin, silent bridge to its `efa_*` implementation:
 # no message, no warning, no runtime signal. Most simply forward their arguments; the
 # ones whose dots reach a fit repack the old flat tuning knobs into the control objects
-# first (see the discipline below). Either way existing code keeps running byte-for-byte,
-# so scripts that predate the rename never break.
+# first (see the discipline below). Either way scripts that predate the rename keep
+# working. The one deliberate exception is an ABBREVIATED tuning-knob name in a forwarded
+# `...` (e.g. `max_it` for `max_iter`, `typ` for `type`): the old wrappers reached EFA()
+# through do.call(), where R partial-matched such a name against the formals ahead of
+# `...`, and it now aborts with `efa_unused_dots` instead. Silently running a different
+# fit is worse than a loud error, so .drop_unknown_frozen_dots() lets it travel on to
+# fail (see the comment there).
 #
 # SUPERSEDED DISCIPLINE (freeze the CONTRACT, not the implementation) -- every
 # later wrapper added here MUST follow it, so the `superseded` badge stays honest:

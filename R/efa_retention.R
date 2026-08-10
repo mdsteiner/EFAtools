@@ -122,6 +122,27 @@
        estimate_control = estimate_control, dots = dots)
 }
 
+# One sample-size rule for the criteria that need more observations than
+# variables: parallel analysis and NEST draw reference data with N cases, and
+# EKC and SMT rest on normal-theory quantities ((1 + sqrt(J / N))^2 and the
+# Bartlett-corrected chi-square) that are not defined below that boundary. Kept
+# in one place so the contract, the message, and the condition class stay
+# identical across the four criteria. Both arguments must already be resolved:
+# call it after the N-required guard (.prepare_cor_input(N_policy = "required"),
+# or the caller's own check), because an NA would make the comparison itself fail
+# instead of raising the classed condition.
+.assert_n_gt_vars <- function(N, n_vars, error_call = rlang::caller_env()) {
+  if (N <= n_vars) {
+    cli::cli_abort(
+      c("{.arg N} must be larger than the number of variables.",
+        "x" = "You supplied {.arg N} = {N} for {n_vars} variable{?s}."),
+      class = "efa_n_too_small",
+      call = error_call
+    )
+  }
+  invisible(N)
+}
+
 # Name a criterion's suggested factor counts the way efa_retain() aggregates
 # them: a single-variant suggestion keeps the bare id, a multi-variant one
 # becomes "<id>_<variant>".

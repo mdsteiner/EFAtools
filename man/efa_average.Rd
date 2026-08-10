@@ -256,10 +256,12 @@ solution was admissible (logical, see details for definition), and the fit
 indices.}
 \item{efa_list}{A list containing the outputs of all performed EFAs. The names
 correspond to the rownames from the implementations_grid.}
-\item{settings}{A list of the settings used.}
+\item{settings}{A list of the settings used, including \code{seed} (\code{NULL} when none was
+supplied).}
 
 If the supplied arguments admit only a single EFA, there is nothing to average
-across: that one \code{\link[=efa_fit]{efa_fit()}} object is returned instead, with a warning.
+across: that one \code{\link[=efa_fit]{efa_fit()}} object is returned instead, with a warning. Its
+\code{settings} are that fit's, with \code{seed} recording the seed the run was governed by.
 }
 \description{
 Not all EFA procedures always arrive at the same solution. This function allows

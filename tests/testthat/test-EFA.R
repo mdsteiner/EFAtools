@@ -124,39 +124,48 @@ test_that("output class and dimensions are correct", {
 
 test_that("settings are returned correctly", {
   expect_named(efa_cor$settings, c("estimator", "method", "rotation", "type", "n_factors",
-                                   "N", "use", "cor_method", "se", "b_boot", "ci", "max_iter",
+                                   "N", "use", "cor_method", "input_type",
+                                   "cor_method_used", "se", "b_boot", "ci", "seed", "max_iter",
                                    "init_comm", "criterion", "criterion_type",
                                    "abs_eigen"))
   expect_named(efa_raw$settings, c("estimator", "method", "rotation", "type", "n_factors",
-                                   "N", "use", "cor_method", "se", "b_boot", "ci", "max_iter",
+                                   "N", "use", "cor_method", "input_type",
+                                   "cor_method_used", "se", "b_boot", "ci", "seed", "max_iter",
                                    "init_comm", "criterion", "criterion_type",
                                    "abs_eigen"))
   expect_named(efa_psych$settings, c("estimator", "method", "rotation", "type", "n_factors",
-                                     "N", "use", "cor_method", "se", "b_boot", "ci", "max_iter",
+                                     "N", "use", "cor_method", "input_type",
+                                     "cor_method_used", "se", "b_boot", "ci", "seed", "max_iter",
                                      "init_comm", "criterion", "criterion_type",
                                      "abs_eigen", "normalize", "P_type", "precision",
                                      "order_type", "varimax_type", "k"))
   expect_named(efa_spss$settings, c("estimator", "method", "rotation", "type", "n_factors",
-                                    "N", "use", "cor_method", "se", "b_boot", "ci", "max_iter",
+                                    "N", "use", "cor_method", "input_type",
+                                    "cor_method_used", "se", "b_boot", "ci", "seed", "max_iter",
                                     "init_comm", "criterion", "criterion_type",
                                     "abs_eigen", "normalize", "P_type", "precision",
                                     "order_type", "varimax_type", "k"))
   expect_named(efa_ml$settings, c("estimator", "method", "rotation", "type", "n_factors",
-                                    "N", "use", "cor_method", "se", "b_boot", "ci", "start_method"))
+                                    "N", "use", "cor_method", "input_type",
+                                    "cor_method_used", "se", "b_boot", "ci", "seed", "start_method"))
   expect_named(efa_uls$settings, c("estimator", "method", "rotation", "type", "n_factors",
-                                   "N", "use", "cor_method", "se", "b_boot", "ci"))
+                                   "N", "use", "cor_method", "input_type",
+                                   "cor_method_used", "se", "b_boot", "ci", "seed"))
   expect_named(efa_equa$settings, c("estimator", "method", "rotation", "type", "n_factors",
-                                   "N", "use", "cor_method", "se", "b_boot", "ci", "max_iter",
+                                   "N", "use", "cor_method", "input_type",
+                                   "cor_method_used", "se", "b_boot", "ci", "seed", "max_iter",
                                    "init_comm", "criterion", "criterion_type",
                                    "abs_eigen", "normalize", "precision",
                                    "order_type", "randomStarts", "rotation_diagnostics"))
   expect_named(efa_quart$settings, c("estimator", "method", "rotation", "type", "n_factors",
-                                   "N", "use", "cor_method", "se", "b_boot", "ci", "max_iter",
+                                   "N", "use", "cor_method", "input_type",
+                                   "cor_method_used", "se", "b_boot", "ci", "seed", "max_iter",
                                    "init_comm", "criterion", "criterion_type",
                                    "abs_eigen", "normalize", "precision",
                                    "order_type", "k", "randomStarts", "rotation_diagnostics"))
   expect_named(efa_none$settings, c("estimator", "method", "rotation", "type", "n_factors",
-                                   "N", "use", "cor_method", "se", "b_boot", "ci", "max_iter",
+                                   "N", "use", "cor_method", "input_type",
+                                   "cor_method_used", "se", "b_boot", "ci", "seed", "max_iter",
                                    "init_comm", "criterion", "criterion_type",
                                    "abs_eigen", "normalize", "P_type", "precision",
                                    "order_type", "varimax_type", "k"))
@@ -302,6 +311,31 @@ test_that("settings are returned correctly", {
   expect_equal(efa_none$settings$k, 3)
 
   expect_equal(efa_ml$settings$start_method, "psych")
+})
+
+test_that("settings record the seed and how the correlations were obtained", {
+  cormat <- test_models$baseline$cormat
+
+  # a correlation matrix consumes no correlation method, so the resolved record is NA
+  # while the requested value is kept unchanged
+  s_cor <- efa_fit(cormat, n_factors = 3, N = 500)$settings
+  expect_identical(s_cor$input_type, "correlation")
+  expect_identical(s_cor$cor_method_used, NA_character_)
+  expect_identical(s_cor$cor_method, "pearson")
+  expect_null(s_cor$seed)
+
+  # a method requested but never run is still echoed as requested, and still not
+  # reported as the one that ran
+  s_tetra <- efa_fit(cormat, n_factors = 3, N = 500, cor_method = "tetra")$settings
+  expect_identical(s_tetra$cor_method, "tetra")
+  expect_identical(s_tetra$cor_method_used, NA_character_)
+
+  # raw data records the method that actually produced the correlations, and the seed
+  s_raw <- suppressMessages(
+    efa_fit(GRiPS_raw, n_factors = 1, cor_method = "spearman", seed = 42))$settings
+  expect_identical(s_raw$input_type, "raw")
+  expect_identical(s_raw$cor_method_used, "spearman")
+  expect_equal(s_raw$seed, 42)
 })
 
 test_that("factor analyses are performed correctly", {

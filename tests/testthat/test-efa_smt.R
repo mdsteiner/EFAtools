@@ -119,23 +119,28 @@ test_that("null-model statistics are computed from R and N, not the fitted model
   expect_false(anyNA(null_out))
 })
 
-test_that("SMT propagates NA null statistics (no crash) for tiny N", {
-  # When N is small relative to the number of variables the Bartlett null
-  # multiplier N - 1 - (2p + 5)/6 is non-positive, so .null_chisq() is NA. SMT
-  # must carry that through to NA null statistics instead of crashing in the
-  # RMSEA noncentrality search (.rmsea_lambda) with an opaque base error.
-  R <- stats::cor(GRiPS_raw)  # 8 variables -> null multiplier <= 0 for N <= 4
-  smt_tiny <- suppressWarnings(efa_smt(R, N = 4))
-  expect_s3_class(smt_tiny, "efa_retention")
-  expect_true(is.na(.retention_record(smt_tiny, "chi")$y[1]))
-  expect_true(is.na(.retention_record(smt_tiny, "RMSEA")$y[1]))
+test_that("SMT requires more observations than variables", {
+  # The sequential tests rest on normal-theory chi-squares whose Bartlett
+  # multiplier N - 1 - (2p + 5)/6 is only positive above that boundary.
+  R <- stats::cor(GRiPS_raw)  # 8 variables
+  expect_error(efa_smt(R, N = 8), class = "efa_n_too_small")
+  expect_s3_class(suppressWarnings(efa_smt(R, N = 9)), "efa_retention")
+})
 
+test_that("an undefined value stops both sequential rules with no suggestion", {
   # Both sequential rules share one convention: an undefined value breaks the
-  # strictly sequential test, so the search stops there and no number is suggested
-  # rather than skipping ahead to a later model that meets the rule. Here that
-  # happens at the very first (null) model.
-  expect_true(is.na(smt_tiny$n_factors[["chi"]]))
-  expect_true(is.na(smt_tiny$n_factors[["RMSEA"]]))
+  # strictly sequential test, so the search stops there and no number is
+  # suggested rather than skipping ahead to a later model that meets the rule.
+  chi_rule <- \(p) p > 0.05
+  expect_equal(.smt_sequential_stop(c(NA, 0.9, 0.9), chi_rule), NA_integer_)
+  expect_equal(.smt_sequential_stop(c(0.01, NA, 0.9), chi_rule), NA_integer_)
+  expect_equal(.smt_sequential_stop(c(0.01, 0.9, 0.9), chi_rule), 1L)
+  # every model significant: no number can be suggested either
+  expect_equal(.smt_sequential_stop(c(0.01, 0.01), chi_rule), NA_integer_)
+
+  rmsea_rule <- \(r) r < .05
+  expect_equal(.smt_sequential_stop(c(NA, .01, .01), rmsea_rule), NA_integer_)
+  expect_equal(.smt_sequential_stop(c(.2, .01, .01), rmsea_rule), 1L)
 })
 
 test_that("the chi-square sequence matches stats::factanal", {

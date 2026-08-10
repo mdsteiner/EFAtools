@@ -81,7 +81,10 @@ the significance of the improvement added by an additional factor.
 Default is .30.}
 
 \item{...}{Further arguments passed to \code{\link[=efa_fit]{efa_fit()}} in
-\code{\link[=efa_parallel]{efa_parallel()}} (also within \code{\link[=efa_hull]{efa_hull()}}), \code{\link[=efa_kgc]{efa_kgc()}}, \code{\link[=efa_scree]{efa_scree()}}, and \code{\link[=efa_nest]{efa_nest()}}.
+\code{\link[=efa_parallel]{efa_parallel()}}, \code{\link[=efa_kgc]{efa_kgc()}}, \code{\link[=efa_scree]{efa_scree()}}, and \code{\link[=efa_nest]{efa_nest()}}. They also reach
+\code{\link[=efa_hull]{efa_hull()}}, both through the parallel analysis it runs to set its upper bound and
+through its own candidate fits, so an argument that \code{\link[=efa_fit]{efa_fit()}} rejects stops the Hull
+method even when its \code{eigen_type_HULL} fits no model.
 The estimation tuning knobs are not passed here; they live in \code{estimate_control}, and the
 standard-error arguments (\code{se}, \code{b_boot}, \code{ci}, \code{seed}) are not accepted because the
 criterion fits are internal steps whose standard errors are not reported. Note
@@ -101,8 +104,11 @@ suggested by \code{\link[=efa_parallel]{efa_parallel()}} plus one will be used i
 \code{\link[=efa_kgc]{efa_kgc()}}, \code{\link[=efa_scree]{efa_scree()}}, \code{\link[=efa_parallel]{efa_parallel()}}, and \code{\link[=efa_nest]{efa_nest()}}. The
 estimator to use. One of  \code{"PAF"}, \code{"ULS"}, or  \code{"ML"},
 for principal axis factoring, unweighted least squares, and maximum
-likelihood, respectively. In \code{\link[=efa_kgc]{efa_kgc()}}, \code{\link[=efa_scree]{efa_scree()}}, and \code{\link[=efa_parallel]{efa_parallel()}} it only
-takes effect when the respective \code{eigen_type} includes \code{"EFA"}.}
+likelihood, respectively. The default here is \code{"ML"}, which is not
+the default of every criterion called standalone (for example \code{\link[=efa_hull]{efa_hull()}} defaults to
+\code{"PAF"}), so a criterion run through \code{efa_retain()} can differ from the same criterion
+called directly unless \code{estimator} is set to match. In \code{\link[=efa_kgc]{efa_kgc()}}, \code{\link[=efa_scree]{efa_scree()}}, and
+\code{\link[=efa_parallel]{efa_parallel()}} it only takes effect when the respective \code{eigen_type} includes \code{"EFA"}.}
 
 \item{gof}{character. Passed to \code{\link[=efa_hull]{efa_hull()}}. The goodness of fit index
 to use. Either \code{"CAF"}, \code{"CFI"}, or \code{"RMSEA"}, or any
@@ -178,12 +184,21 @@ retention criterion that was run (see, e.g., \code{\link[=efa_ekc]{efa_ekc()}}).
 \item{n_factors}{A named numeric vector with the suggested number of factors
 per criterion and, where a criterion has several variants, per variant
 (e.g. \code{EKC_BvA2017} or \code{PARALLEL_SMC}). Criteria without a numeric
-suggestion (the scree plot) are not included.}
+suggestion (the scree plot) are not included. The "most common" value the printed
+summary line reports is counted with one vote per \emph{criterion} -- each criterion's own
+modal variant -- so that a criterion with several variants cannot outvote a
+single-variant one. A criterion whose variants tie has no modal value and abstains
+rather than casting a vote for each of them, and a value that no two criteria agree on
+is not reported as most common. Tallying this vector directly counts one vote per
+\emph{variant} and can therefore have a different mode.}
 \item{not_run}{A named character vector with the criteria that were skipped
 or failed and the reason, or \code{NULL} if all requested criteria ran.}
 \item{settings}{A list of the settings used. Its \code{criteria} element records the
 requested criteria, in the order they were given, while \code{outputs} and \code{n_factors}
-are in the order in which the criteria were run.}
+are in the order in which the criteria were run. \code{gof} records the requested Hull
+goodness-of-fit indices and \code{gof_used} the ones the Hull method actually computed
+(it reduces them to \code{"CAF"} for the PAF estimator); \code{gof_used} is \code{NA} when HULL was
+not requested, was skipped, or failed.}
 }
 \description{
 Among the most important decisions for an exploratory factor analysis (EFA) is

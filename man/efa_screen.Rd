@@ -135,8 +135,10 @@ variable treated as continuous. \code{NULL} when a correlation matrix is supplie
 \item{note}{A classed note explaining that the raw-data diagnostics need raw
 data; \code{NULL} when raw data are supplied.}
 \item{settings}{A list of the settings used, including \code{n_obs}, the number of
-rows in the supplied raw data (\code{NA} for a correlation-matrix input), and
-\code{outlier_cutoff}, the probability behind the outlier flagging threshold.}
+rows in the supplied raw data (\code{NA} for a correlation-matrix input),
+\code{outlier_cutoff}, the probability behind the outlier flagging threshold,
+\code{mcd_alpha}, the coverage of the minimum covariance determinant subset, and
+\code{seed} (\code{NULL} when none was supplied).}
 }
 \description{
 Computes a set of diagnostics describing how suitable a correlation matrix (or

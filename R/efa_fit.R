@@ -558,7 +558,11 @@
 #' \item{vars_accounted_rot}{Matrix of explained variances and sums of squared
 #' loadings. Based on rotated loadings and, for oblique rotations, the factor
 #' intercorrelations.}
-#' \item{settings}{A list of the settings used. For the criterion rotations fitted by
+#' \item{settings}{A list of the settings used, including `seed` (`NULL` when none was
+#' supplied), `input_type` (`"raw"` or `"correlation"`, what `x` was), and
+#' `cor_method_used` (the correlation method that actually ran, `NA_character_` for a
+#' correlation-matrix input, which consumes none). `cor_method` keeps the requested value
+#' whether or not it was used. For the criterion rotations fitted by
 #' gradient projection it additionally carries `rotation_diagnostics`, a list summarising
 #' the multi-start run: `n_starts_total` (the `random_starts` random starts plus the
 #' rational start), `n_optimized` (how many of those starts were actually optimized --
@@ -1265,7 +1269,20 @@ efa_fit <- function(x, n_factors, N = NA,
   # is silently ignored); genuine rotation extras such as `maxit` or `gam` are not core_args and
   # pass through untouched.
   extra <- rot_extra_args[setdiff(names(rot_extra_args), names(core_args))]
-  do.call(.efa_core, c(core_args, extra))
+  out <- do.call(.efa_core, c(core_args, extra))
+
+  # Provenance .efa_core() cannot record: it starts from an already-prepared correlation
+  # matrix, so it can see neither what `x` was nor how the run was seeded. `cor_method`
+  # keeps the requested value (a correlation-matrix input ignores it, and the settings
+  # echo has always reported it either way); `cor_method_used` says what actually ran.
+  out$settings <- append(
+    out$settings,
+    list(input_type = if (is_cormat) "correlation" else "raw",
+         cor_method_used = if (is_cormat) NA_character_ else cor_method),
+    after = match("cor_method", names(out$settings)))
+  out$settings <- append(out$settings, list(seed = seed),
+                         after = match("ci", names(out$settings)))
+  out
 }
 
 # Fit the common-factor model from already-prepared inputs: a correlation matrix R, the

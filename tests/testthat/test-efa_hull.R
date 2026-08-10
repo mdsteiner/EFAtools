@@ -207,6 +207,13 @@ test_that("errors etc are thrown correctly", {
   expect_warning(efa_hull(test_models$baseline$cormat, n_fac_theor = 13, N = 500), class = "efa_hull_max_factors")
 })
 
+test_that("the Hull method needs at least one simulated dataset", {
+  # refused at the argument boundary before anything is fitted, so this stays
+  # outside the slow gate above
+  expect_error(efa_hull(test_models$baseline$cormat, N = 500, n_datasets = 0),
+               class = "efa_invalid_argument")
+})
+
 test_that("a non-positive-definite input is smoothed and its hull flagged", {
   # burt has to be smoothed, its hull collapses below three solutions, and the
   # selected solution is inadmissible. Several warnings fire, so collect their

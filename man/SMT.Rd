@@ -17,7 +17,7 @@ SMT(
 correlations.}
 
 \item{N}{numeric. The number of observations. Needs only be specified if a
-correlation matrix is used.}
+correlation matrix is used. Must be larger than the number of variables.}
 
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}} if raw
 data is given as input. Default is "pairwise.complete.obs".}

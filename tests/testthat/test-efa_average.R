@@ -173,78 +173,87 @@ test_that("settings are returned correctly", {
                                    "k_promax", "k_simplimax", "P_type",
                                    "precision", "start_method", "use",
                                    "cor_method", "max_iter", "averaging",
-                                   "trim", "salience_threshold"))
+                                   "trim", "salience_threshold", "seed"))
   expect_named(efa_ml$settings, c("estimator", "method", "rotation", "type", "n_factors", "N",
                                   "init_comm", "criterion", "criterion_type",
                                   "abs_eigen", "varimax_type", "normalize",
                                   "k_promax", "k_simplimax", "P_type",
                                   "precision", "start_method", "use",
                                   "cor_method", "max_iter", "averaging",
-                                  "trim", "salience_threshold"))
+                                  "trim", "salience_threshold", "seed"))
   expect_named(efa_uls$settings, c("estimator", "method", "rotation", "type", "n_factors", "N",
                                    "init_comm", "criterion", "criterion_type",
                                    "abs_eigen", "varimax_type", "normalize",
                                    "k_promax", "k_simplimax", "P_type",
                                    "precision", "start_method", "use",
                                    "cor_method", "max_iter", "averaging",
-                                   "trim", "salience_threshold"))
+                                   "trim", "salience_threshold", "seed"))
   expect_named(efa_all$settings, c("estimator", "method", "rotation", "type", "n_factors", "N",
                                    "init_comm", "criterion", "criterion_type",
                                    "abs_eigen", "varimax_type", "normalize",
                                    "k_promax", "k_simplimax", "P_type",
                                    "precision", "start_method", "use",
                                    "cor_method", "max_iter", "averaging",
-                                   "trim", "salience_threshold"))
+                                   "trim", "salience_threshold", "seed"))
   expect_named(efa_all_oblq$settings, c("estimator", "method", "rotation", "type", "n_factors", "N",
                                         "init_comm", "criterion", "criterion_type",
                                         "abs_eigen", "varimax_type", "normalize",
                                         "k_promax", "k_simplimax", "P_type",
                                         "precision", "start_method", "use",
                                         "cor_method", "max_iter", "averaging",
-                                        "trim", "salience_threshold"))
+                                        "trim", "salience_threshold", "seed"))
   expect_named(efa_all_orth$settings, c("estimator", "method", "rotation", "type", "n_factors", "N",
                                         "init_comm", "criterion", "criterion_type",
                                         "abs_eigen", "varimax_type", "normalize",
                                         "k_promax", "k_simplimax", "P_type",
                                         "precision", "start_method", "use",
                                         "cor_method", "max_iter", "averaging",
-                                        "trim", "salience_threshold"))
+                                        "trim", "salience_threshold", "seed"))
   expect_named(efa_all_none$settings, c("estimator", "method", "rotation", "type", "n_factors", "N",
                                         "init_comm", "criterion", "criterion_type",
                                         "abs_eigen", "varimax_type", "normalize",
                                         "k_promax", "k_simplimax", "P_type",
                                         "precision", "start_method", "use",
                                         "cor_method", "max_iter", "averaging",
-                                        "trim", "salience_threshold"))
+                                        "trim", "salience_threshold", "seed"))
   expect_named(efa_all_md$settings, c("estimator", "method", "rotation", "type", "n_factors", "N",
                                       "init_comm", "criterion", "criterion_type",
                                       "abs_eigen", "varimax_type", "normalize",
                                       "k_promax", "k_simplimax", "P_type",
                                       "precision", "start_method", "use",
                                       "cor_method", "max_iter", "averaging",
-                                      "trim", "salience_threshold"))
+                                      "trim", "salience_threshold", "seed"))
   expect_named(efa_all_tm$settings, c("estimator", "method", "rotation", "type", "n_factors", "N",
                                       "init_comm", "criterion", "criterion_type",
                                       "abs_eigen", "varimax_type", "normalize",
                                       "k_promax", "k_simplimax", "P_type",
                                       "precision", "start_method", "use",
                                       "cor_method", "max_iter", "averaging",
-                                      "trim", "salience_threshold"))
+                                      "trim", "salience_threshold", "seed"))
   expect_named(efa_raw$settings, c("estimator", "method", "rotation", "type", "n_factors", "N",
                                    "init_comm", "criterion", "criterion_type",
                                    "abs_eigen", "varimax_type", "normalize",
                                    "k_promax", "k_simplimax", "P_type",
                                    "precision", "start_method", "use",
                                    "cor_method", "max_iter", "averaging",
-                                   "trim", "salience_threshold"))
+                                   "trim", "salience_threshold", "seed"))
   expect_named(efa_raw_p$settings, c("estimator", "method", "rotation", "type", "n_factors", "N",
                                      "init_comm", "criterion", "criterion_type",
                                      "abs_eigen", "varimax_type", "normalize",
                                      "k_promax", "k_simplimax", "P_type",
                                      "precision", "start_method", "use",
                                      "cor_method", "max_iter", "averaging",
-                                     "trim", "salience_threshold"))
+                                     "trim", "salience_threshold", "seed"))
 
+
+  # the seed is part of the record, so a saved object says how its grid was seeded
+  expect_null(efa_def$settings$seed)
+  expect_equal(
+    efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
+                estimator = c("PAF", "ML"), rotation = "none", init_comm = "smc",
+                criterion_type = "sum", start_method = "psych", show_progress = FALSE,
+                seed = 11)$settings$seed,
+    11)
 
   expect_equal(efa_def$settings$estimator, "PAF")
   expect_equal(efa_ml$settings$estimator, "ML")
@@ -547,6 +556,20 @@ test_that("errors are thrown correctly", {
   expect_warning(efa_average(GRiPS_raw, n_factors = 1, estimator = "PAF", type = c("EFAtools"),
                              rotation = "none", show_progress = FALSE),
                  class = "efa_avg_single_combination")
+})
+
+test_that("the single-combination shortcut still records the seed", {
+  single <- function(seed) suppressMessages(suppressWarnings(
+    efa_average(GRiPS_raw, n_factors = 1, estimator = "PAF", type = "EFAtools",
+                rotation = "none", show_progress = FALSE, seed = seed)))
+
+  # the shortcut returns an efa_fit() object rather than an efa_average one, but the
+  # run was still governed by `seed`, so the record must say so
+  expect_equal(single(11)$settings$seed, 11)
+  # and the field stays in the schema when no seed was supplied
+  s <- single(NULL)$settings
+  expect_true("seed" %in% names(s))
+  expect_null(s$seed)
 })
 
 test_that("the grid progress bar declares exactly the steps it signals", {

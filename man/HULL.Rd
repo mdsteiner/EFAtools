@@ -60,8 +60,8 @@ passed to \code{\link[stats:cor]{stats::cor()}}. \code{"poly"} and \code{"tetra"
 against continuous reference data.
 Default is  \code{"pearson"}.}
 
-\item{n_datasets}{numeric. The number of datasets to simulate. Default is 1000.
-This is passed to \code{\link[=efa_parallel]{efa_parallel()}}.}
+\item{n_datasets}{numeric. The number of datasets to simulate. Must be at
+least 1. Default is 1000. This is passed to \code{\link[=efa_parallel]{efa_parallel()}}.}
 
 \item{percent}{numeric. The percentile to take from the simulated eigenvalues.
 Default is 95. This is passed to \code{\link[=efa_parallel]{efa_parallel()}}.}
