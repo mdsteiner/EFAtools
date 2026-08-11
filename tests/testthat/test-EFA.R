@@ -753,6 +753,45 @@ test_that("point-estimate non-convergence is surfaced for the iterative estimato
   expect_false("efa_nonconvergence" %in% paf_classes)
 })
 
+test_that("the non-convergence explanation is branched on the convergence code", {
+  # Code 1 is the optimiser's iteration limit; 51 and 52 come from L-BFGS-B's line
+  # search and mean something different, so they must not be explained as an iteration
+  # limit. Anything else falls back to the generic explanation.
+  cap <- .nonconvergence_cause(1L)
+  line_search <- .nonconvergence_cause(52L)
+  generic <- .nonconvergence_cause(10L)
+
+  for (msg in list(cap, line_search, generic)) {
+    expect_type(msg, "character")
+    expect_length(msg, 1L)
+    expect_true(nzchar(msg))
+  }
+
+  # the two L-BFGS-B line-search codes share one explanation, distinct from the others
+  expect_identical(.nonconvergence_cause(51L), line_search)
+  expect_false(identical(cap, line_search))
+  expect_false(identical(cap, generic))
+  expect_false(identical(line_search, generic))
+
+  # the branch is what the warning carries: a mocked code-52 fit must not be explained
+  # with the iteration-limit text. The message is compared with its line breaks
+  # collapsed, so console wrapping cannot decide the assertion.
+  testthat::local_reproducible_output()
+  squash <- function(x) gsub("\\s+", " ", paste(x, collapse = " "))
+
+  R <- test_models$baseline$cormat
+  fit <- suppressWarnings(.estimate_model(R, method = "ULS", n_factors = 3, N = 500))
+  fit$heywood <- integer(0)
+  fit$convergence <- 52L
+  testthat::local_mocked_bindings(.estimate_model = function(...) fit)
+
+  w <- expect_warning(EFA(R, 3, N = 500, method = "ULS"),
+                      class = "efa_nonconvergence")
+  msg <- squash(conditionMessage(w))
+  expect_true(grepl(squash(line_search), msg, fixed = TRUE))
+  expect_false(grepl(squash(cap), msg, fixed = TRUE))
+})
+
 test_that("the print banner reports optimiser non-convergence", {
   testthat::local_reproducible_output()
   R <- test_models$baseline$cormat

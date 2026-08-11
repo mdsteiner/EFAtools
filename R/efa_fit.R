@@ -128,6 +128,15 @@
 #'   asymptotic covariance, the matrix and the weights are estimated on the
 #'   listwise-complete cases. Its fit-index behaviour is described under *Fit indices*.
 #'
+#' ML and ULS are fitted by a bounded L-BFGS-B optimiser over the uniquenesses, capped at
+#' 100 iterations. DWLS runs a bounded warm start capped at 200 iterations and then
+#' polishes the loadings with an unconstrained quasi-Newton optimiser capped at 500; the
+#' reported convergence code is the polish's. None of these caps is user-adjustable --
+#' `max_iter` governs the PAF iteration only -- so a fit that stops at its cap
+#' (convergence code 1) calls for a simpler model or a better-conditioned correlation
+#' matrix rather than a longer run. Codes 51 and 52 come from L-BFGS-B's line search and
+#' are not iteration limits at all.
+#'
 #' ## Correlation methods
 #'
 #' When raw data are supplied, `cor_method` selects how the correlation matrix is computed
@@ -540,7 +549,18 @@
 #' `chi_shift` (b), `chi_unscaled` (the unscaled statistic T), and the alternative
 #' `chi_mean_adjusted` and `chi_mean_var` statistics with their `df_mean_var`.
 #' RMSR is retained for programmatic use and backward compatibility, although the
-#' print and summary methods display SRMR. See the *Fit indices* section in
+#' print and summary methods display SRMR. The list also carries `Fm`, the value of
+#' the estimator's own objective at the solution, which is on an estimator-specific
+#' scale and is not the discrepancy the Chi Square is built from: for ML the
+#' maximum-likelihood discrepancy (there the two do coincide, up to the Bartlett
+#' multiplier), for ULS half the squared Frobenius norm of the residual
+#' \eqn{R - \Psi - \Lambda\Lambda'}, whose diagonal vanishes at an interior optimum
+#' and there leaves the sum of squared residual correlations over the unique variable
+#' pairs (equal there to the criterion [psych::fa()] reports for `fm = "minres"`, and
+#' half the one it reports for `fm = "uls"`, which sums each pair twice), for DWLS the
+#' weighted residual sum of squares over those same unique
+#' pairs, and `NA` for PAF, which minimises no explicit objective. See the
+#' *Fit indices* section in
 #' Details for how each index is defined, scaled, and referenced.}
 #' \item{model_implied_R}{The model implied correlation
 #' matrix.}
@@ -1285,6 +1305,21 @@ efa_fit <- function(x, n_factors, N = NA,
   out
 }
 
+# Explanation for a non-zero optimiser convergence code, branched on what the code means:
+# 1 is the fixed iteration limit, 51 and 52 are L-BFGS-B's line-search warning and error
+# (which are not iteration limits and are not fixed by running longer).
+.nonconvergence_cause <- function(convergence) {
+  if (isTRUE(convergence == 1)) {
+    paste("It reached the optimiser's fixed iteration limit before meeting the",
+          "convergence tolerance; that limit is not user-adjustable.")
+  } else if (isTRUE(convergence %in% c(51, 52))) {
+    paste("The bounded optimiser's line search failed, which typically means the",
+          "objective is flat or ill-conditioned near the point it stopped at.")
+  } else {
+    "It stopped before meeting the convergence tolerance."
+  }
+}
+
 # Fit the common-factor model from already-prepared inputs: a correlation matrix R, the
 # sample size N, optional DWLS weights, the optional sandwich meat Gamma, and -- for the
 # bootstrap -- pre-resampled correlation/weight arrays. Split out from efa_fit() so multiple-
@@ -1389,8 +1424,8 @@ efa_fit <- function(x, n_factors, N = NA,
   if (estimator %in% c("ML", "ULS", "DWLS") && isTRUE(fit_out$convergence != 0)) {
     cli::cli_warn(
       c("The {.val {estimator}} optimiser did not converge (convergence code {fit_out$convergence}).",
-        "i" = paste("It stopped before meeting the convergence tolerance (typically the maximum",
-                    "number of iterations was reached); the results may not be interpretable."),
+        "i" = paste(.nonconvergence_cause(fit_out$convergence),
+                    "The results may not be interpretable."),
         "i" = paste("Try extracting fewer factors, or check the correlation matrix for",
                     "near-collinear variables.")),
       class = "efa_nonconvergence"

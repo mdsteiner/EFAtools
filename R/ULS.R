@@ -13,8 +13,8 @@
   h2 <- rowSums(L^2)
   diag(R) <- h2
 
-  # raw fit, finalized by .estimate_model(). `Fm` is the ULS objective (sum of squared
-  # off-diagonal residuals) the C++ backend already minimised and returned.
+  # raw fit, finalized by .estimate_model(). `Fm` is the ULS objective (half the squared
+  # Frobenius norm of the reduced residual) the C++ backend already minimised and returned.
   list(
     L = L,
     h2 = h2,

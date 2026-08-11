@@ -89,6 +89,26 @@ test_that("original correlation matrix and eigenvalues are correct", {
   expect_lt(sum(paf_F1_f$final_eigen), ncol(test_models$baseline$cormat))
 })
 
+test_that("the PAF kernel extracts the leading eigenpairs", {
+  # One pass of the kernel must reproduce the R-side extraction: the n_fac largest
+  # eigenvalues in descending order with their eigenvectors. Eigenvector signs are free,
+  # so the comparison uses the reproduced matrix and the communalities it implies.
+  R <- test_models$baseline$cormat
+  h2 <- .smc_start(R)
+  R_red <- R
+  diag(R_red) <- h2
+  ev <- eigen(R_red, symmetric = TRUE)
+
+  for (k in c(1L, 3L)) {
+    out <- .paf_iter(h2, 1e-3, R_red, k, TRUE, 2L, 1L)
+    lam <- abs(ev$values[seq_len(k)])
+    L_ref <- ev$vectors[, seq_len(k), drop = FALSE] %*% diag(sqrt(lam), nrow = k)
+
+    expect_equal(tcrossprod(out$L), tcrossprod(L_ref), info = paste("k =", k))
+    expect_equal(as.vector(out$h2), rowSums(L_ref^2), info = paste("k =", k))
+  }
+})
+
 test_that("fit indices are returned correctly", {
   expect_output(str(paf_efatools$fit_indices), "List of 18")
   expect_output(str(paf_psych$fit_indices), "List of 18")

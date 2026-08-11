@@ -153,7 +153,45 @@ rm(x_base, y_base, q_p)
 
 test_that(".smc_start returns the squared multiple correlations", {
   R <- test_models$baseline$cormat
-  expect_equal(.smc_start(R), 1 - 1 / diag(solve(R)))
+  # unnamed, so the return shape does not depend on which inverse route ran
+  expect_equal(.smc_start(R), unname(1 - 1 / diag(solve(R))))
+  expect_null(names(.smc_start(R)))
+})
+
+test_that(".smc_start clamps squared multiple correlations to [0, 1]", {
+  # A squared multiple correlation cannot leave [0, 1], but 1 - 1/diag(R^-1) does as soon
+  # as R is not positive definite -- and the value is written straight onto a correlation
+  # diagonal (.three_eigen) or handed to the optimiser as a starting uniqueness.
+
+  # indefinite, invertible: the unclamped expression returns 1.8 for every variable
+  R_ind <- matrix(c(1, .6, .6, .6, 1, -.6, .6, -.6, 1), 3)
+  raw_ind <- 1 - 1 / diag(solve(R_ind))
+  expect_true(any(raw_ind > 1))
+  expect_equal(.smc_start(R_ind), pmin(pmax(raw_ind, 0), 1))
+
+  # the shared non-positive-definite fixture escapes both bounds (-Inf and 2)
+  raw_np <- 1 - 1 / diag(solve(cor_nposdef))
+  expect_true(any(raw_np < 0) && any(raw_np > 1))
+  expect_equal(.smc_start(cor_nposdef), pmin(pmax(raw_np, 0), 1))
+
+  # what .three_eigen() puts on the diagonal is the clamped value
+  R_smc <- R_ind
+  diag(R_smc) <- .smc_start(R_ind)
+  expect_true(all(diag(R_smc) >= 0 & diag(R_smc) <= 1))
+  expect_equal(.three_eigen(R_ind, "SMC")$SMC,
+               eigen(R_smc, symmetric = TRUE, only.values = TRUE)$values)
+})
+
+test_that(".smc_start errors on a singular matrix and only on a singular matrix", {
+  # .parallel_sim_eig() rejects a simulated draw precisely when .smc_start() errors, so
+  # the positive-definite route must neither turn a singular matrix into a silent result
+  # nor start rejecting matrices that are merely not positive definite. Both halves of
+  # that boundary are asserted here. The error comes from base solve() and carries no
+  # condition class.
+  expect_error(.smc_start(sing_cor))
+
+  expect_no_error(.smc_start(cor_nposdef))                    # invertible, not PD
+  expect_no_error(.smc_start(test_models$baseline$cormat))    # positive definite
 })
 
 test_that(".three_eigen returns eigenvalues per requested diagonal convention", {

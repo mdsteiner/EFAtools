@@ -1875,7 +1875,7 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
     E <- matrix(0, p, p)
     E[lower.tri(E, diag = TRUE)] <- e
     E <- E + t(E) - diag(diag(E))
-    s <- eigen(Wih %*% E %*% Wih, symmetric = TRUE)$values
+    s <- eigen(Wih %*% E %*% Wih, symmetric = TRUE, only.values = TRUE)$values
     trG <- sum(s)
     fdisc <- function(k) k * trG - sum(log1p(k * s)) - delta
     hi <- if (min(s) < 0) -1 / min(s) * (1 - 1e-9) else 1e6

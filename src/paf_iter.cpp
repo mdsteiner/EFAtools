@@ -38,6 +38,14 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
                "changes).");
   }
 
+  // With a non-positive budget the loop below never runs and the loading matrix is
+  // returned default-constructed (0 x 0), which the caller would read as a
+  // zero-factor solution. estimate_control() rejects such a budget at the R layer;
+  // this keeps the kernel safe on its own side of the boundary.
+  if (max_iter < 1) {
+    Rcpp::stop("max_iter must be at least 1 (got %d).", max_iter);
+  }
+
   // iter counts completed iterations: start at 0 and stop once max_iter passes
   // have run, so a run that converges on the Nth pass reports N (not N + 1).
   int iter = 0;
@@ -70,8 +78,7 @@ Rcpp::List paf_iter(arma::vec h2, double criterion, arma::mat R,
       Lambda = arma::abs(Lambda);
     }
     Lambda = Lambda.head(n_fac);
-    V = fliplr(eigvec);
-    V = V.head_cols(n_fac);
+    V = top_eigvec(eigvec, n_fac);
 
     // Negative eigenvalues make the loadings (square roots of the eigenvalues)
     // undefined; only the signed branch can hit this, so flag and stop there.

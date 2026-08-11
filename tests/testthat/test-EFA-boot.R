@@ -551,6 +551,23 @@ test_that("over-extraction guards turn n_fac >= ncol into errors", {
   expect_error(.uls_residuals(psi, R, m), "smaller than the number of variables")
 })
 
+test_that("the PAF kernel rejects a non-positive iteration budget", {
+  # With max_iter < 1 the iteration never runs and the kernel would return an empty
+  # loading matrix, which .finalize_fit() would read as a zero-factor solution. The
+  # R-side control validation is the normal user-facing path and keeps its condition
+  # class; this asserts the backstop on the other side of the boundary.
+  m <- 6L
+  R <- matrix(0.3, m, m)
+  diag(R) <- 1
+  h2 <- rep(0.5, m)
+
+  expect_error(.paf_iter(h2, 0.001, R, 2L, TRUE, 2L, 0L), "at least 1")
+  expect_error(.paf_iter(h2, 0.001, R, 2L, TRUE, 2L, -5L), "at least 1")
+
+  expect_error(estimate_control(max_iter = 0), class = "efa_control_input")
+  expect_error(estimate_control(max_iter = -5), class = "efa_control_input")
+})
+
 test_that(".estimate_model(lean = TRUE) returns only the bootstrap-aggregated quantities", {
   # The bootstrap replicate fitter computes just the loadings, fit indices, and
   # residuals that .boot_se_ci() aggregates. Those must match the full fit

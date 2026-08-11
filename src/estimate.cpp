@@ -121,9 +121,10 @@ protected:
     arma::mat eigvec;
     eig_sym_checked(eigval, eigvec, Rs);
 
-    // descending order (largest eigenvalue first), matching R's eigen()
+    // descending order (largest eigenvalue first), matching R's eigen(). The objective
+    // reads the whole spectrum, so the eigenvalues are reversed in full; only n_fac
+    // eigenvectors are ever used, so those are taken without copying the p x p reversal.
     arma::vec lambda = arma::flipud(eigval);
-    arma::mat V = arma::fliplr(eigvec);
 
     // objective: -sum(log(e) - e) over the smallest p - n_fac eigenvalues
     arma::vec e = lambda.tail(lambda.n_elem - n_fac_);
@@ -133,7 +134,7 @@ protected:
     arma::vec top = lambda.head(n_fac_) - 1.0;
     top.elem(arma::find(top < 0)).zeros();
     load = arma::diagmat(arma::sqrt(psi)) *
-      (V.head_cols(n_fac_) * arma::diagmat(arma::sqrt(top)));
+      (top_eigvec(eigvec, n_fac_) * arma::diagmat(arma::sqrt(top)));
 
     // gradient of the objective with respect to psi: the diagonal of
     // L L' + diag(psi) - R, read off directly as the row sums of squares of L
@@ -142,16 +143,23 @@ protected:
   }
 };
 
-// Unweighted-least-squares (minres) factor model. The objective is the sum of
-// squared strictly-lower off-diagonal residuals of the reproduced correlation
-// matrix (the diagonal is absorbed by the free uniquenesses); the gradient is the
-// diagonal of the full residual (adapted from the psych package).
+// Unweighted-least-squares (minres) factor model. With Rs = R - diag(psi) and L the
+// top-n_fac eigen extraction of Rs (negative eigenvalues clipped to zero, the
+// extraction stats::eigen() would give), the criterion is half the squared Frobenius
+// norm of the reduced residual,
+//   F(psi) = 0.5 * || Rs - L L' ||_F^2,
+// and its derivative with respect to psi is the negated diagonal of that residual,
+//   dF/dpsi_i = -(Rs - L L')_ii = h2_i + psi_i - R_ii,
+// because the eigen extraction is itself optimal in L (envelope theorem), so the term
+// through L vanishes. Value and gradient therefore come from one residual matrix.
 //
-// The objective and gradient eigen-floor the shared decomposition differently (the
-// gradient clips negative eigenvalues to 0; the objective lifts eigenvalues below
-// machine epsilon to eps*100), so compute() forms a loading matrix for each. The
-// gradient's floor-at-0 loadings are also the reported solution, the extraction
-// stats::eigen() would give at the optimum.
+// Half the full Frobenius sum is also, up to the vanishing diagonal, the strictly-lower
+// off-diagonal residual sum of squares that Harman and Jones (1966) minimise and that the
+// psych package reports as the minres objective: the two agree at any stationary point,
+// where the residual diagonal is zero.
+//
+// Harman, H. H., & Jones, W. H. (1966). Factor analysis by minimizing residuals (minres).
+//   Psychometrika, 31, 351-368.
 class UlsFunctor : public FactorFunctor {
 public:
   using FactorFunctor::FactorFunctor;
@@ -160,35 +168,20 @@ protected:
   void compute(const arma::vec& psi, double& f, arma::vec& g,
                arma::mat& load) override {
     // One eigendecomposition of Rs = R with diagonal replaced by 1 - psi
-    // (= R - diag(psi) since R is a correlation matrix) feeds both criteria.
+    // (= R - diag(psi) since R is a correlation matrix) feeds value and gradient.
     arma::mat Rs = R_;
     Rs.diag() -= psi;
     arma::vec eigval;
     arma::mat eigvec;
     eig_sym_checked(eigval, eigvec, Rs);
 
-    // descending order (largest eigenvalue first), matching R's eigen(); keep the
-    // leading n_fac eigenpairs
-    arma::vec lambda = arma::vec(arma::flipud(eigval)).head(n_fac_);
-    arma::mat V = arma::mat(arma::fliplr(eigvec)).head_cols(n_fac_);
+    // the leading n_fac eigenpairs, with negative eigenvalues clipped to zero
+    load = top_eigen_loadings(eigval, eigvec, n_fac_);
 
-    // gradient: clip negative eigenvalues to 0; gradient is diag(LL' + diag(psi) - R)
-    arma::vec lam_g = lambda;
-    lam_g.elem(arma::find(lam_g < 0)).zeros();
-    arma::mat load_g = V * arma::diagmat(arma::sqrt(lam_g));
-    // diag(L L') is the row sums of squares of L; no need to form the p x p product
-    g = arma::sum(arma::square(load_g), 1) + psi - R_.diag();
-
-    // objective: lift eigenvalues below machine epsilon to eps*100, then sum the
-    // squared strictly-lower off-diagonal residuals (the diagonal, absorbed by the
-    // uniquenesses, is excluded so objective and gradient stay consistent)
-    arma::vec lam_f = lambda;
-    lam_f.elem(arma::find(lam_f < arma::datum::eps)).fill(arma::datum::eps * 100);
-    arma::mat load_f = V * arma::diagmat(arma::sqrt(lam_f));
-    arma::mat resid = arma::trimatl(Rs - load_f * load_f.t(), -1);
-    f = arma::accu(arma::square(resid));
-
-    load = std::move(load_g);
+    // the reduced residual, from which both the objective and its gradient are read
+    arma::mat resid = Rs - load * load.t();
+    f = 0.5 * arma::accu(arma::square(resid));
+    g = -arma::vec(resid.diag());
   }
 };
 
@@ -227,10 +220,7 @@ public:
     arma::vec eigval;
     arma::mat eigvec;
     eig_sym_checked(eigval, eigvec, A);
-    arma::vec lam = arma::vec(arma::flipud(eigval)).head(n_fac_);
-    arma::mat V = arma::mat(arma::fliplr(eigvec)).head_cols(n_fac_);
-    lam.elem(arma::find(lam < 0)).zeros();
-    return V * arma::diagmat(arma::sqrt(lam));
+    return top_eigen_loadings(eigval, eigvec, n_fac_);
   }
 
 private:

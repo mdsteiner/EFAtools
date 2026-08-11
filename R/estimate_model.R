@@ -15,8 +15,34 @@
 
 # Squared multiple correlations (1 - 1/diag(R^-1)) used as starting communalities by the
 # estimators. Shared by the PAF, ML, and ULS fitters so the start has one source.
+#
+# A squared multiple correlation is a squared correlation and so lies in [0, 1], but the
+# expression only respects that bound for a positive definite R: on an indefinite or
+# ill-conditioned matrix (an unsmoothed bootstrap resample, say) it escapes the range and
+# would otherwise be written straight onto a correlation diagonal or handed to the
+# optimiser as a start outside its box. Clamp it, as psych::smc() does.
+#
+# The inverse diagonal comes from a Cholesky factorisation, which uses the symmetry and
+# positive definiteness that solve()'s LU ignores. Two cases fall back to solve(): a
+# matrix the Cholesky rejects (not positive definite), and one whose implied uniqueness
+# 1/diag(R^-1) has underflowed to p^2 * eps, where the Cholesky still succeeds but the
+# matrix is singular to working precision. Both then reach solve()'s own singularity
+# error, which callers rely on -- .parallel_sim_eig() rejects a simulated draw on it.
+# The p^2 factor is deliberately more generous than the p * eps rank tolerance used on
+# eigenvalue ratios elsewhere (.prepare_cor_input()): the two quantities are not on the
+# same scale, and the asymmetry favours caution, because a needless fallback only repeats
+# the calculation solve() would have done anyway while a missed one turns a rejected draw
+# into an accepted degenerate one.
+#
+# The result is unnamed on both routes (chol2inv() drops dimnames, solve() keeps them), so
+# the return shape does not depend on which one ran. Callers that surface the values name
+# them from the correlation matrix themselves.
 .smc_start <- function(R) {
-  1 - 1 / diag(solve(R))
+  d <- tryCatch(diag(chol2inv(chol(R))), error = function(e) NULL)
+  if (is.null(d) || min(1 / d) <= ncol(R)^2 * .Machine$double.eps) {
+    d <- diag(solve(R))
+  }
+  unname(pmin(pmax(1 - 1 / d, 0), 1))
 }
 
 # Sign convention shared by the unrotated (.finalize_fit) and rotated (.reflect_and_order)
@@ -108,8 +134,10 @@
   list(
     orig_R = orig_R,
     h2 = h2,
-    orig_eigen = eigen(orig_R, symmetric = TRUE)$values,
-    final_eigen = eigen(fit$R_final, symmetric = TRUE)$values,
+    # only the eigenvalues are reported, so skip the eigenvectors LAPACK would
+    # otherwise be asked for
+    orig_eigen = eigen(orig_R, symmetric = TRUE, only.values = TRUE)$values,
+    final_eigen = eigen(fit$R_final, symmetric = TRUE, only.values = TRUE)$values,
     iter = fit$iter,
     convergence = fit$convergence,
     heywood = heywood,

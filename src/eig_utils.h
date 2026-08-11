@@ -32,4 +32,33 @@ inline void eig_sym_values_checked(arma::vec& eigval, const arma::mat& X,
   }
 }
 
+// The leading n_fac eigenvectors, in descending eigenvalue order. arma::eig_sym returns
+// ascending eigenvalues, so the trailing n_fac columns are the leading eigenpairs and
+// reversing just those gives the same columns in the same order as reversing the whole
+// matrix would -- without allocating and copying the full p x p reversal on every call,
+// which matters because the callers sit in optimiser inner loops. The bound is checked
+// here, beside the indexing it protects: an out-of-range n_fac would read past the
+// available columns (undefined behaviour in an unchecked build), and n_fac is signed
+// while the subview index is not. Callers validate their own n_fac up front and report
+// it in their own terms; this is the backstop.
+inline arma::mat top_eigvec(const arma::mat& eigvec, int n_fac) {
+  if (n_fac < 1 || static_cast<arma::uword>(n_fac) > eigvec.n_cols) {
+    Rcpp::stop("n_fac must be at least 1 and at most the number of variables "
+               "(got n_fac = %d for %d variables).",
+               n_fac, static_cast<int>(eigvec.n_cols));
+  }
+  return arma::fliplr(eigvec.tail_cols(n_fac));
+}
+
+// Loadings from the leading n_fac eigenpairs with negative eigenvalues clipped to zero:
+// the least-squares extraction shared by the ULS objective and the DWLS warm start, and
+// the extraction stats::eigen() would give at the optimum.
+inline arma::mat top_eigen_loadings(const arma::vec& eigval, const arma::mat& eigvec,
+                                    int n_fac) {
+  arma::mat V = top_eigvec(eigvec, n_fac);   // checks the bound for the tail() below
+  arma::vec lambda = arma::reverse(eigval.tail(n_fac));
+  lambda.elem(arma::find(lambda < 0)).zeros();
+  return V * arma::diagmat(arma::sqrt(lambda));
+}
+
 #endif

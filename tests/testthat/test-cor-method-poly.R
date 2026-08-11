@@ -56,19 +56,20 @@ test_that("EFA() runs ordinal factor analysis and matches psych::fa on a polycho
   efa <- EFA(x, n_factors = k, method = "ULS", cor_method = "poly",
              rotation = "none")
 
-  # Reference: psych's minres factor analysis (ULS is the same estimator) of psych's
-  # own polychoric matrix, with correct = FALSE so psych applies no empty-cell
-  # continuity correction, matching .polychoric().
+  # Reference: psych's unweighted least squares factor analysis of psych's own
+  # polychoric matrix, with correct = FALSE so psych applies no empty-cell continuity
+  # correction, matching .polychoric(). fm = "uls" minimises the same criterion as this
+  # package's ULS.
   Rp <- suppressWarnings(psych::polychoric(x, correct = FALSE, global = FALSE)$rho)
-  fa_ref <- suppressWarnings(psych::fa(Rp, nfactors = k, fm = "minres",
+  fa_ref <- suppressWarnings(psych::fa(Rp, nfactors = k, fm = "uls",
                                        rotate = "none", n.obs = N))
   L_ref <- unclass(fa_ref$loadings)
   L <- efa$unrot_loadings
 
   # Compare via the reproduced common-factor correlations (L %*% t(L)), which are
   # invariant to factor sign and column order, so no fragile per-column alignment
-  # is needed. The two polychoric matrices agree to ~1e-4 and ULS == minres, so the
-  # common parts and communalities agree well within 1e-3.
+  # is needed. The tolerance is dominated by the two polychoric matrices, which agree
+  # to ~1e-4, not by the extraction, so it stays at 1e-3.
   expect_lt(max(abs(tcrossprod(L) - tcrossprod(L_ref))), 1e-3)
   expect_lt(max(abs(efa$h2 - fa_ref$communality)), 1e-3)
 })

@@ -93,7 +93,17 @@ test_that("ML reproduces stats::factanal", {
   }
 })
 
-test_that("ULS reproduces psych::fa(fm = 'minres')", {
+# The reference for ULS is psych::fa(fm = "uls"), which minimises the same criterion:
+# the squared Frobenius norm of the reduced residual, unhalved (psych sums the full
+# residual matrix where `Fm` halves it). psych's fm = "minres" is the same optimiser on
+# the same gradient but sums only the strictly lower triangle, a function that gradient
+# does not differentiate, so it terminates short of its own optimum -- on the baseline
+# model its solution sits 5.7e-6 from fm = "uls" and 6.3e-6 from fm = "ols", which is
+# psych's internal spread rather than a property of this package. Tolerance stays at 1e-4:
+# the observed agreement of ~1e-15 reflects a shared optimiser path, not an algebraic
+# identity, so it is not a bound that would hold across BLAS implementations or a future
+# psych release.
+test_that("ULS reproduces psych::fa(fm = 'uls')", {
   skip_on_cran()
   skip_if_not_installed("psych")
 
@@ -101,19 +111,28 @@ test_that("ULS reproduces psych::fa(fm = 'minres')", {
     fx <- reg_fixtures[[i]]
     efa <- reg_fit(i, "ULS")
     ref <- suppressMessages(suppressWarnings(
-      psych::fa(fx$R, nfactors = fx$k, n.obs = fx$N, fm = "minres",
+      psych::fa(fx$R, nfactors = fx$k, n.obs = fx$N, fm = "uls",
                 rotate = "none")))
 
-    # observed agreement on the baseline model: ~6e-6
+    # observed agreement on the baseline model: ~8e-15
     expect_equal(unname(1 - efa$h2), unname(1 - ref$communality), tolerance = 1e-4)
     expect_equal(repro_offdiag(efa$unrot_loadings),
                  repro_offdiag(ref$loadings), tolerance = 1e-4)
+
+    # `Fm` is the ULS objective at the solution, half the squared Frobenius norm of the
+    # reduced residual. Its diagonal vanishes at an interior optimum, so it reduces to
+    # the squared residual correlations summed over the unique variable pairs -- half
+    # the criterion psych minimises, which counts each pair twice. Observed agreement on
+    # the baseline model: ~1e-11 relative -- looser than the loadings above because `Fm`
+    # also carries the residual diagonal, which is only zero in the limit.
+    res_pairs <- fx$R[upper.tri(fx$R)] - repro_offdiag(ref$loadings)
+    expect_equal(efa$fit_indices$Fm, sum(res_pairs^2), tolerance = 1e-4)
   }
 })
 
 # Fit-index parity: the model chi-square is the Bartlett-corrected ML discrepancy at the
 # model-implied matrix. For ML this reproduces stats::factanal / psych::fa(fm = "ml"); for
-# ULS it reproduces psych::fa(fm = "minres"). lavaan uses the multiplier N (no Bartlett
+# ULS it reproduces psych::fa(fm = "uls"). lavaan uses the multiplier N (no Bartlett
 # correction) but the same fit function, so its statistic differs by exactly bart / N.
 test_that("ML chi-square reproduces stats::factanal and psych::fa(fm = 'ml')", {
   skip_on_cran()
@@ -134,7 +153,7 @@ test_that("ML chi-square reproduces stats::factanal and psych::fa(fm = 'ml')", {
   }
 })
 
-test_that("ULS chi-square reproduces psych::fa(fm = 'minres')", {
+test_that("ULS chi-square reproduces psych::fa(fm = 'uls')", {
   skip_on_cran()
   skip_if_not_installed("psych")
 
@@ -142,9 +161,9 @@ test_that("ULS chi-square reproduces psych::fa(fm = 'minres')", {
     fx <- reg_fixtures[[i]]
     efa <- reg_fit(i, "ULS")
     ref <- suppressMessages(suppressWarnings(
-      psych::fa(fx$R, nfactors = fx$k, n.obs = fx$N, fm = "minres", rotate = "none")))
+      psych::fa(fx$R, nfactors = fx$k, n.obs = fx$N, fm = "uls", rotate = "none")))
 
-    # observed agreement on the baseline model: ~1e-5
+    # observed agreement on the baseline model: ~1e-14 relative
     expect_equal(efa$fit_indices$chi, unname(ref$STATISTIC), tolerance = 1e-3)
   }
 })

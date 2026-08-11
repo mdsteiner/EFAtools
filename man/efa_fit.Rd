@@ -248,7 +248,18 @@ components: \code{chi_scaling} (the multiplier a in the scaled-and-shifted stati
 \code{chi_shift} (b), \code{chi_unscaled} (the unscaled statistic T), and the alternative
 \code{chi_mean_adjusted} and \code{chi_mean_var} statistics with their \code{df_mean_var}.
 RMSR is retained for programmatic use and backward compatibility, although the
-print and summary methods display SRMR. See the \emph{Fit indices} section in
+print and summary methods display SRMR. The list also carries \code{Fm}, the value of
+the estimator's own objective at the solution, which is on an estimator-specific
+scale and is not the discrepancy the Chi Square is built from: for ML the
+maximum-likelihood discrepancy (there the two do coincide, up to the Bartlett
+multiplier), for ULS half the squared Frobenius norm of the residual
+\eqn{R - \Psi - \Lambda\Lambda'}, whose diagonal vanishes at an interior optimum
+and there leaves the sum of squared residual correlations over the unique variable
+pairs (equal there to the criterion \code{\link[psych:fa]{psych::fa()}} reports for \code{fm = "minres"}, and
+half the one it reports for \code{fm = "uls"}, which sums each pair twice), for DWLS the
+weighted residual sum of squares over those same unique
+pairs, and \code{NA} for PAF, which minimises no explicit objective. See the
+\emph{Fit indices} section in
 Details for how each index is defined, scaled, and referenced.}
 \item{model_implied_R}{The model implied correlation
 matrix.}
@@ -334,6 +345,15 @@ matrix or a continuous \code{cor_method}. Because the weighting follows the poly
 asymptotic covariance, the matrix and the weights are estimated on the
 listwise-complete cases. Its fit-index behaviour is described under \emph{Fit indices}.
 }
+
+ML and ULS are fitted by a bounded L-BFGS-B optimiser over the uniquenesses, capped at
+100 iterations. DWLS runs a bounded warm start capped at 200 iterations and then
+polishes the loadings with an unconstrained quasi-Newton optimiser capped at 500; the
+reported convergence code is the polish's. None of these caps is user-adjustable --
+\code{max_iter} governs the PAF iteration only -- so a fit that stops at its cap
+(convergence code 1) calls for a simpler model or a better-conditioned correlation
+matrix rather than a longer run. Codes 51 and 52 come from L-BFGS-B's line search and
+are not iteration limits at all.
 }
 
 \subsection{Correlation methods}{
