@@ -202,8 +202,9 @@ lasting effect on it. Default is \code{NULL}, which uses (and advances) the curr
 of the generator.}
 
 \item{...}{Additional arguments forwarded to the rotation engine. Only the arguments the
-selected \code{rotation} consumes are accepted: \code{maxit} (the maximum number of engine
-iterations) for the GPArotation-style rotations, plus the selected criterion's parameter
+selected \code{rotation} consumes are accepted: \code{maxit} (the iteration bound on a single
+gradient-projection optimization, see \code{\link[=rotate_control]{rotate_control()}}) for the criterion rotations,
+plus the selected criterion's parameter
 (\code{gam} for "oblimin", where \code{gam = 0} is the recommended default and larger values can
 drive the solution toward factor collapse; \code{delta} for "geominT" and "geominQ").
 Anything else -- a misspelled name, another criterion's parameter, or any extra with
@@ -277,10 +278,14 @@ matrix.}
 \item{residuals}{Residual correlations, i.e., orig_R - model_implied_R}
 \item{standardized_residuals}{Residual correlations standardized by their
 bootstrap standard errors. Only returned, if \code{se = "np-boot"}.}
-\item{rot_loadings}{Loading matrix containing the final rotated loadings
-(pattern matrix).}
+\item{rot_loadings}{Loading matrix containing the final rotated loadings. For an oblique
+rotation this is the pattern matrix -- each variable's unique contribution from each
+factor, with the other factors partialled out -- and is the matrix normally interpreted
+(see \emph{Rotations}).}
 \item{Phi}{The factor intercorrelations (only for oblique rotations).}
-\item{Structure}{The structure matrix (only for oblique rotations).}
+\item{Structure}{The structure matrix \code{rot_loadings \%*\% Phi}, holding the plain
+variable-factor correlations, which are inflated by the factor intercorrelations (only
+for oblique rotations).}
 \item{rotmat}{The rotation matrix. The rotated loadings are recovered from the
 unrotated loadings as \code{unrot_loadings \%*\% rotmat} for orthogonal rotations and
 for promax, and as \code{unrot_loadings \%*\% t(solve(rotmat))} for the other oblique
@@ -296,7 +301,10 @@ supplied), \code{input_type} (\code{"raw"} or \code{"correlation"}, what \code{x
 correlation-matrix input, which consumes none). \code{cor_method} keeps the requested value
 whether or not it was used. For the criterion rotations fitted by
 gradient projection it additionally carries \code{rotation_diagnostics}, a list summarising
-the multi-start run: \code{n_starts_total} (the \code{random_starts} random starts plus the
+the multi-start run: \code{converged} (whether the start whose solution is returned reached the
+convergence tolerance -- reported separately from the count below because the returned
+solution is the one with the lowest criterion value, which need not be a converged one),
+\code{n_starts_total} (the \code{random_starts} random starts plus the
 rational start), \code{n_optimized} (how many of those starts were actually optimized --
 fewer than \code{n_starts_total} whenever the solver screens the random starts and optimizes
 only the most promising ones), \code{n_converged} (how many optimized starts reached the
@@ -424,6 +432,13 @@ Orthogonal rotations keep the factors uncorrelated, whereas oblique rotations le
 correlate (returning a pattern matrix, a structure matrix, and the factor
 intercorrelations \code{Phi}) and are usually more realistic for psychological constructs.
 
+For an oblique solution the \strong{pattern} matrix (\code{rot_loadings}) holds each variable's
+unique contribution from each factor, with the other factors partialled out; it is what
+is normally interpreted and reported. The \strong{structure} matrix
+(\code{Structure = rot_loadings \%*\% Phi}) holds the plain variable-factor correlations, which
+are inflated by the factor intercorrelations. The two coincide only when \code{Phi} is the
+identity, which is why an orthogonal rotation returns \code{rot_loadings} alone.
+
 Orthogonal rotations:
 \itemize{
 \item \strong{varimax} maximises the variance of the squared loadings within each factor (column
@@ -438,35 +453,54 @@ tolerates variables with cross-loadings; a smaller offset \code{delta} gives a s
 solution but sharper local minima.
 \item \strong{bentlerT} uses Bentler's invariant pattern simplicity criterion.
 \item \strong{bifactorT} is the Jennrich-Bentler orthogonal bifactor criterion: a general factor
-plus group factors (bifactor simple structure).
+plus group factors (bifactor simple structure). It needs at least two group factors
+(\code{n_factors >= 3}): with two factors the criterion is identically zero, so no rotation
+is performed and the unrotated loadings are returned with a warning.
 }
 
 Oblique rotations:
 \itemize{
 \item \strong{promax} is a fast two-step rotation: a varimax solution is raised to a power
 (controlled by \code{k} and \code{p_type}) to form a target that is then fitted obliquely. It is
-the common, inexpensive oblique default.
-\item \strong{oblimin} is a flexible oblique family controlled by \code{gam} (default 0); a good
-general-purpose criterion. \code{gam = 0} (quartimin) is the recommended setting: larger
-values increasingly reward correlated factors and can drive the solution toward
-factor collapse, so inspect \code{Phi} before interpreting a fit with \code{gam > 0}.
-\item \strong{quartimin} is oblimin pinned at \code{gam = 0}; a robust default oblique criterion.
+the historical, inexpensive oblique rotation, kept for comparability with SPSS and with
+the older literature.
+\item \strong{oblimin} is the general family \strong{quartimin} belongs to, controlled by \code{gam}
+(default 0); use it when you specifically want \code{gam != 0}. Larger values increasingly
+reward correlated factors and can drive the solution toward factor collapse, so
+inspect \code{Phi} before interpreting a fit with \code{gam > 0}.
+\item \strong{quartimin} is oblimin pinned at \code{gam = 0}, and is the recommended general-purpose
+oblique criterion.
 \item \strong{simplimax} drives the \code{k} smallest loadings toward zero. Its criterion is only
-piecewise smooth, so it is the most prone to local minima and relies on several
-\code{random_starts}.
+piecewise smooth and strongly multimodal, which makes it by far the most
+start-dependent rotation offered here: different random starts reach genuinely
+different optima rather than the same one to within a tolerance. On a 30-variable,
+four-factor solution the attained criterion varies by half again or more across seeds
+at the default \code{random_starts = 100}, and the corresponding loadings can differ by 0.6
+or more after matching factors and signs. Because every start is fully optimised (there
+is no screening stage), raising \code{random_starts} to several hundred costs proportionally
+more time but buys a better optimum; always fix the generator with \code{seed} (or
+\code{\link[=set.seed]{set.seed()}}) when reporting a simplimax solution.
 \item \strong{bentlerQ} is the oblique Bentler invariant pattern simplicity criterion.
 \item \strong{geominQ} is the oblique geomin criterion; it handles complex (cross-loading)
 structure well but is multimodal, so it benefits from more \code{random_starts} (and uses a
 more thorough multi-start search internally).
-\item \strong{bifactorQ} is the oblique (correlated) Jennrich-Bentler bifactor criterion.
+\item \strong{bifactorQ} is the oblique (correlated) Jennrich-Bentler bifactor criterion, with the
+same two-group-factor requirement as \strong{bifactorT}.
 }
+
+Prefer an oblique rotation unless there is a substantive reason to force the factors to
+be uncorrelated: if \code{Phi} comes back near zero the oblique solution is essentially the
+orthogonal one anyway, whereas imposing orthogonality on genuinely correlated factors
+distorts the pattern.
 
 The criterion-based rotations (all except varimax and promax) are fitted by gradient
 projection with \code{random_starts} random starts to guard against local minima; the
 complexity criteria (simplimax and geominQ in particular) are the most multimodal. The
 starts are drawn from the random-number generator, so different starts can reach
 genuinely different optima and such a fit is reproducible only when the generator is
-controlled: pass \code{seed}, or call \code{\link[=set.seed]{set.seed()}} beforehand. The
+controlled: pass \code{seed}, or call \code{\link[=set.seed]{set.seed()}} beforehand. \code{precision} and \code{maxit} govern
+different stages of a rotation and are described with the arguments themselves in
+\code{\link[=rotate_control]{rotate_control()}}. The
 \code{type} argument changes the varimax and promax settings (see \emph{Using the type presets})
 and, for every rotation, the factor \code{order_type}. A single factor cannot be rotated.
 }
@@ -728,17 +762,18 @@ the \code{type} argument.
 \code{type = "SPSS"} will use the following argument specification:
 \verb{varimax_type = "kaiser", order_type = "ss_factors"}.
 
-For promax, the values of \code{p_type},
-\code{order_type}, and \code{k} depend on the \code{type} argument.
+For promax, the values of \code{p_type}, \code{order_type}, \code{k}, \code{varimax_type}, and \code{normalize}
+depend on the \code{type} argument. Promax rotates a varimax base, so it takes the same
+\code{varimax_type} its \code{type} selects for varimax above.
 
 \code{type = "EFAtools"} will use the following argument specification:
-\verb{p_type = "norm", order_type = "eigen", k = 4}.
+\verb{p_type = "norm", order_type = "eigen", k = 4, varimax_type = "kaiser", normalize = TRUE}.
 
 \code{type = "psych"} will use the following argument specification:
-\verb{p_type = "unnorm", order_type = "eigen", k = 4}.
+\verb{p_type = "unnorm", order_type = "eigen", k = 4, varimax_type = "svd", normalize = TRUE}.
 
 \code{type = "SPSS"} will use the following argument specification:
-\verb{p_type = "norm", order_type = "ss_factors", k = 4}.
+\verb{p_type = "norm", order_type = "ss_factors", k = 4, varimax_type = "kaiser", normalize = TRUE}.
 
 The \code{p_type} argument can take two values, "unnorm" and "norm". It controls
 which formula is used to compute the target matrix P in the promax rotation.
@@ -753,9 +788,13 @@ compared to the other setting combinations tested in simulation studies in
 Grieder & Steiner (2022). Note that all \code{type} presets keep the EFAtools default
 Kaiser normalization (\code{normalize = TRUE}), whereas \code{\link[psych:fa]{psych::fa()}} does not
 normalize before its promax target rotation; set \code{normalize = FALSE} to
-reproduce the \code{\link[psych:fa]{psych::fa()}} promax result to within the varimax convergence
-tolerance (the residual difference is the convergence noise of the underlying
-varimax base at \code{precision = 1e-5}, not an algorithmic difference).
+reproduce the \code{\link[psych:fa]{psych::fa()}} promax result. What is left after that is the convergence
+noise of the underlying varimax base rather than an algorithmic difference -- it shrinks
+monotonically as \code{precision} is tightened -- but it is \emph{not} bounded by \code{precision}
+itself: the tolerance is on the varimax criterion, and near a flat optimum the
+corresponding gap in the loadings is far larger. On an awkward correlation matrix it can
+reach the second decimal at the default \code{precision = 1e-5}, so tighten \code{precision} if you
+need the comparison to be exact.
 
 The \code{varimax_type} argument can take two values, "svd", and "kaiser". "svd" uses
 singular value decomposition, by calling \code{\link[stats:varimax]{stats::varimax()}}. "kaiser"
@@ -763,6 +802,11 @@ performs the varimax procedure as described in the SPSS Algorithms manual and by
 Kaiser (1958). The varimax simplicity criterion monitored for convergence is
 \code{sum(n*colSums(lambda ^ 4) - colSums(lambda ^ 2) ^ 2) / n ^ 2}, where n is the
 number of indicators, and lambda is the Kaiser-normalized rotated loadings matrix.
+\code{precision} is the tolerance on the \emph{absolute} change in that criterion (see
+\code{\link[=rotate_control]{rotate_control()}}), and it is what limits how closely \code{type = "SPSS"} reproduces SPSS
+FACTOR: on the bundled reference solutions (see \link{SPSS_23}) the largest deviations are
+dominated by convergence slack rather than by an algorithmic difference, and tightening
+\code{precision} to \code{1e-8} reduces the worst of them by an order of magnitude.
 
 For all other rotations except varimax and promax, the \code{type} argument
 only controls the \code{order_type} argument with the same values as stated

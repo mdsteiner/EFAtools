@@ -67,6 +67,72 @@
   invisible(NULL)
 }
 
+# Warn when a bifactor criterion is requested for a two-factor solution. The
+# Jennrich-Bentler bifactor criterion sums the products of squared loadings over pairs of
+# distinct GROUP factors (Jennrich & Bentler, 2011, 2012), so with a general factor and a
+# single group factor there is no such pair: the criterion is identically zero, every
+# rotation attains it, and the identity start wins the tie. The returned "rotated" loadings
+# are then the unrotated ones, while the multistart diagnostics -- one distinct optimum, zero
+# criterion spread -- read exactly like a well-identified solution. The solution is still
+# returned, so the situation is signalled rather than turned into an error.
+.warn_bifactor_trivial <- function(rotation, n_factors) {
+  if (!rotation %in% c("bifactorT", "bifactorQ") || n_factors != 2L) {
+    return(invisible(NULL))
+  }
+  cli::cli_warn(
+    c("The bifactor criterion is identically zero with only one group factor.",
+      "i" = "With two factors every rotation is optimal, so the returned loadings are the
+             unrotated ones.",
+      "i" = "Extract at least three factors for a bifactor rotation."),
+    class = "efa_bifactor_trivial"
+  )
+  invisible(NULL)
+}
+
+# Validate the arguments the compiled rotation entries take, in R, before the entry is
+# called. The compiled entries check the same quantities and stay in place as backstops for
+# direct internal callers, but they raise unclassed exceptions whose messages name neither
+# the function nor the argument, and a non-numeric value never reaches them at all (the
+# numeric coercion at the boundary fails first, with a message naming only the C type).
+# Checking here gives every one of them the `efa_rotation_arg` class and the argument name
+# the user typed. `crit` carries only the criterion parameter of the entry actually being
+# run, so a criterion is never held to another criterion's contract; `maxit` is checked for
+# every criterion because every entry takes it.
+.assert_rotation_args <- function(crit, maxit, L) {
+
+  bad_arg <- function(arg, requirement) {
+    cli::cli_abort("{.arg {arg}} must be {requirement}.", class = "efa_rotation_arg")
+  }
+
+  # A fractional `maxit` is truncated at the C boundary, so the engine would run a different
+  # budget from the one the non-convergence warning reports.
+  if (!isTRUE(checkmate::test_int(maxit, lower = 0))) {
+    bad_arg("maxit", "a single whole number of at least 0")
+  }
+
+  if ("gam" %in% names(crit) && !isTRUE(checkmate::test_number(crit$gam, finite = TRUE))) {
+    bad_arg("gam", "a single finite number")
+  }
+
+  if ("delta" %in% names(crit) &&
+      !(isTRUE(checkmate::test_number(crit$delta, finite = TRUE)) && crit$delta > 0)) {
+    bad_arg("delta", "a single positive finite number")
+  }
+
+  # simplimax counts the loadings it drives toward zero, so its upper bound is the number of
+  # loadings in the solution; the message quotes that bound rather than leaving the user to
+  # work it out.
+  if ("k" %in% names(crit)) {
+    n_loadings <- nrow(L) * ncol(L)
+    if (!isTRUE(checkmate::test_int(crit$k, lower = 1, upper = n_loadings))) {
+      bad_arg("k", paste0("a single whole number between 1 and ", n_loadings,
+                          ", the number of loadings"))
+    }
+  }
+
+  invisible(NULL)
+}
+
 # Read an overridable criterion parameter (the geomin `delta`, the oblimin `gam`) from a
 # rotation engine's `...` by EXACT name, falling back to `default`. Looking the value up by
 # exact name -- rather than declaring the parameter as a named formal before `...` -- keeps
@@ -97,6 +163,7 @@
                         randomStarts = 100, maxit = 1000L,
                         screen_keep = NULL, triage_maxit = NULL,
                         triage_improve_tol = NULL, ...) {
+  .assert_rotation_args(crit, maxit, L)
   args <- list(eps = eps, normalize = normalize,
                random_starts = randomStarts, maxit = maxit)
   if (!is.null(screen_keep)) args$screen_keep <- screen_keep
@@ -104,7 +171,10 @@
   if (!is.null(triage_improve_tol)) args$triage_improve_tol <- triage_improve_tol
   res <- do.call(entry, c(list(unclass(L)), crit, args))
   .warn_rotation_no_convergence(res$convergence, maxit)
-  out <- list(loadings = res$loadings, Th = res$Th,
+  # `converged` is the flag of the start whose solution is RETURNED, which the aggregate
+  # per-start counts below cannot reconstruct: the winner is chosen by lowest criterion
+  # value, so a non-converged start with a lower value beats a converged one.
+  out <- list(loadings = res$loadings, Th = res$Th, converged = isTRUE(res$convergence),
               all_values = res$all_values, all_converged = res$all_converged)
   if (!is.null(res$Phi)) out$Phi <- res$Phi
   out
@@ -307,14 +377,20 @@
 # promote at a short, unconverged triage iterate, which is not a local optimum and must not
 # be counted as one (those starts have `all_converged == 0`). The best criterion value is the
 # lowest attained over all finite starts (the selected solution).
-.rotation_diagnostics <- function(all_values, all_converged, randomStarts) {
+# `converged` is the convergence flag of the start that WON, i.e. of the solution actually
+# returned. It is reported separately from `n_converged` because the two can disagree: the
+# winner is the lowest-criterion start, and a start that stopped short of the tolerance at a
+# lower criterion value beats a converged start at a higher one. Collapsing the two would
+# present such a solution as converged because its rivals were.
+.rotation_diagnostics <- function(all_values, all_converged, randomStarts, converged) {
   finite <- is.finite(all_values)
-  converged <- all_values[finite & all_converged == 1L]
-  list(n_starts_total = as.integer(randomStarts) + 1L,
+  converged_values <- all_values[finite & all_converged == 1L]
+  list(converged = isTRUE(converged),
+       n_starts_total = as.integer(randomStarts) + 1L,
        n_optimized = length(all_values),
-       n_converged = length(converged),
-       n_distinct_minima = .count_distinct_minima(converged),
-       criterion_spread = if (length(converged) > 1L) max(converged) - min(converged) else 0,
+       n_converged = length(converged_values),
+       n_distinct_minima = .count_distinct_minima(converged_values),
+       criterion_spread = if (length(converged_values) > 1L) diff(range(converged_values)) else 0,
        criterion_best = if (any(finite)) min(all_values[finite]) else NA_real_)
 }
 
@@ -386,6 +462,8 @@
 
     if (ncol(L) < 2) return(.rotate_single_factor(L, settings, oblique = FALSE))
 
+    .warn_bifactor_trivial(rotation, ncol(L))
+
     ms <- .gpf_multistart_defaults[[rotation]]
     AV <- .orth_engines[[rotation]](L, eps = precision,
                                     normalize = resolved$normalize,
@@ -394,7 +472,8 @@
                                     triage_maxit = ms$triage_maxit,
                                     triage_improve_tol = ms$triage_improve_tol, ...)
     settings$rotation_diagnostics <- .rotation_diagnostics(AV$all_values,
-                                                           AV$all_converged, randomStarts)
+                                                           AV$all_converged, randomStarts,
+                                                           AV$converged)
     out <- .reflect_and_order(AV$loadings, rotmat = AV$Th, L_unrot = L,
                               order_type = resolved$order_type)
     return(c(out, list(settings = settings)))
@@ -414,6 +493,8 @@
 
     if (ncol(L) < 2) return(.rotate_single_factor(L, settings, oblique = TRUE))
 
+    .warn_bifactor_trivial(rotation, ncol(L))
+
     if (rotation == "simplimax" && is.na(k)) {
       k <- nrow(L)
       settings$k <- k
@@ -427,7 +508,8 @@
                                     triage_maxit = ms$triage_maxit,
                                     triage_improve_tol = ms$triage_improve_tol, ...)
     settings$rotation_diagnostics <- .rotation_diagnostics(AV$all_values,
-                                                           AV$all_converged, randomStarts)
+                                                           AV$all_converged, randomStarts,
+                                                           AV$converged)
     out <- .reflect_and_order(AV$loadings, Phi = AV$Phi, rotmat = AV$Th,
                               L_unrot = L, order_type = resolved$order_type)
     .warn_extreme_phi(out$Phi)

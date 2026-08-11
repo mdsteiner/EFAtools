@@ -117,6 +117,62 @@ test_that("errors etc. are thrown correctly", {
   expect_warning(.rotate_model(unrot_1, rotation = "equamax", type = "EFAtools"), class = "efa_single_factor")
 })
 
+test_that("a two-factor bifactorT request warns that the criterion is degenerate", {
+  # The Jennrich-Bentler criterion sums the products of squared loadings over pairs of
+  # distinct group factors, so with a general factor and a single group factor there is no
+  # such pair: the criterion is identically zero, every rotation attains it, and the
+  # identity start wins the tie. The returned solution is then the unrotated one, while the
+  # multistart diagnostics (one distinct optimum, zero spread) read like a perfectly
+  # identified rotation -- so the degeneracy has to be signalled. The oblique counterpart of
+  # this test lives in test-ROTATE_OBLQ.R.
+  unrot_2 <- EFA(test_models$baseline$cormat, 2, N = 500)
+
+  expect_warning(.rotate_model(unrot_2, rotation = "bifactorT", type = "EFAtools"),
+                 class = "efa_bifactor_trivial")
+
+  # the warning reaches the public surface too, not just the rotation core
+  expect_warning(
+    efa_fit(test_models$baseline$cormat, n_factors = 2, N = 500, estimator = "PAF",
+            rotation = "bifactorT"),
+    class = "efa_bifactor_trivial"
+  )
+
+  res <- suppressWarnings(.rotate_model(unrot_2, rotation = "bifactorT",
+                                        type = "EFAtools"))
+  expect_equal(res$settings$rotation_diagnostics$criterion_best, 0)
+  expect_equal(res$settings$rotation_diagnostics$criterion_spread, 0)
+
+  # no rotation was performed: the returned loadings are the unrotated ones put through the
+  # shared sign/order post-processing, i.e. exactly what an identity rotation produces
+  ident <- .reflect_and_order(unclass(unrot_2$unrot_loadings), rotmat = diag(2),
+                              L_unrot = unrot_2$unrot_loadings, order_type = "eigen")
+  expect_equal(unclass(res$rot_loadings), unclass(ident$rot_loadings), ignore_attr = TRUE)
+
+  # with three factors there are two group factors, so the criterion is non-degenerate
+  set.seed(42)
+  expect_no_warning(.rotate_model(unrot, rotation = "bifactorT", type = "EFAtools"),
+                    class = "efa_bifactor_trivial")
+})
+
+test_that("the orthogonal engines validate their arguments before the compiled entry", {
+  # The compiled entries check the same quantities, but they raise unclassed exceptions
+  # whose messages name neither the function nor the argument, and a non-numeric value never
+  # reaches them at all (the numeric coercion at the C boundary fails first). Validating in
+  # R gives all of them one class that user code can catch. The oblique criterion parameters
+  # are covered in test-ROTATE_OBLQ.R.
+  cm <- test_models$baseline$cormat
+  fit <- function(...) efa_fit(cm, n_factors = 3, N = 500, estimator = "PAF", ...)
+
+  expect_error(fit(rotation = "geominT", delta = 0), class = "efa_rotation_arg")
+  expect_error(fit(rotation = "geominT", delta = -0.01), class = "efa_rotation_arg")
+  expect_error(fit(rotation = "geominT", delta = "a"), class = "efa_rotation_arg")
+
+  expect_error(fit(rotation = "quartimax", maxit = -1), class = "efa_rotation_arg")
+  # a fractional maxit was truncated at the C boundary, so the engine ran a different
+  # budget from the one the non-convergence warning quoted
+  expect_error(fit(rotation = "bentlerT", maxit = 2.7), class = "efa_rotation_arg")
+})
+
 test_that("the native orthogonal rotation matrices are orthogonal and reproduce the loadings", {
   skip_on_cran()
 

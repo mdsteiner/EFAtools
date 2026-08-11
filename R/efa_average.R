@@ -99,7 +99,9 @@
 #' or "oblique" is among the specified rotations. Default is `2:4`.
 #' @param k_simplimax numeric. The number of 'close to zero loadings' for the
 #' simplimax rotation if "simplimax" or "oblique" is among the specified rotations. Default
-#' is `ncol(x)`, where x is the entered data.
+#' is `ncol(x)`, where x is the entered data. It counts loadings, so each value must be a
+#' whole number no larger than the number of loadings in the solution; a simplimax fit
+#' given anything else fails and is reported as an errored solution in the grid.
 #' @param p_type character vector. Any combination of "norm" and "unnorm".
 #' This specifies how the target matrix P is computed in promax rotation if
 #' "none" is among the specified types and "promax" or "oblique" is among the

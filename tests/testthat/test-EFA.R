@@ -604,8 +604,11 @@ test_that("EFA records rotation diagnostics for multistart rotations", {
   )
   rd <- efa_geo$settings$rotation_diagnostics
   expect_type(rd, "list")
-  expect_named(rd, c("n_starts_total", "n_optimized", "n_converged",
+  expect_named(rd, c("converged", "n_starts_total", "n_optimized", "n_converged",
                      "n_distinct_minima", "criterion_spread", "criterion_best"))
+  # the convergence status of the solution that is actually returned, so a saved fit can be
+  # audited for it after the fact rather than only through the transient warning
+  expect_true(rd$converged)
   # 100 random starts plus the rational (identity) start; only a few of them are ever
   # optimized under the screen-and-triage strategy.
   expect_equal(rd$n_starts_total, 101L)
@@ -647,6 +650,28 @@ test_that("EFA records rotation diagnostics for multistart rotations", {
     geo_summary, fixed = TRUE)))
   promax_summary <- utils::capture.output(print(summary(efa_psych)))
   expect_false(any(grepl("Rotation local optima", promax_summary, fixed = TRUE)))
+})
+
+test_that("the rotation diagnostics record the returned solution's own convergence", {
+  # The returned solution is the start with the lowest criterion value, which need not be a
+  # converged one: a start that stopped short of the tolerance at a lower value beats a
+  # converged start at a higher one. `converged` therefore has to be carried through from
+  # the winning start rather than read off the aggregate count, or such a solution would be
+  # presented as converged because its rivals were. Exercised on the helper so the
+  # disagreement is deterministic instead of depending on which start a seed happens to win.
+  rd <- .rotation_diagnostics(all_values = c(0.5, 0.1), all_converged = c(1L, 0L),
+                              randomStarts = 1, converged = FALSE)
+  expect_false(rd$converged)
+  expect_equal(rd$n_converged, 1L)
+  expect_equal(rd$criterion_best, 0.1)
+
+  # end to end: with a one-iteration budget no start can converge, and the object records
+  # that instead of leaving it in the transient warning only
+  capped <- suppressWarnings(
+    EFA(test_models$baseline$cormat, n_factors = 3, N = 500, rotation = "geominQ",
+        maxit = 1)
+  )
+  expect_false(capped$settings$rotation_diagnostics$converged)
 })
 
 test_that("residuals.efa is a pure extractor", {

@@ -83,8 +83,9 @@
 #'  lasting effect on it. Default is `NULL`, which uses (and advances) the current state
 #'  of the generator.
 #' @param ... Additional arguments forwarded to the rotation engine. Only the arguments the
-#'  selected `rotation` consumes are accepted: `maxit` (the maximum number of engine
-#'  iterations) for the GPArotation-style rotations, plus the selected criterion's parameter
+#'  selected `rotation` consumes are accepted: `maxit` (the iteration bound on a single
+#'  gradient-projection optimization, see [rotate_control()]) for the criterion rotations,
+#'  plus the selected criterion's parameter
 #'  (`gam` for "oblimin", where `gam = 0` is the recommended default and larger values can
 #'  drive the solution toward factor collapse; `delta` for "geominT" and "geominQ").
 #'  Anything else -- a misspelled name, another criterion's parameter, or any extra with
@@ -194,6 +195,13 @@
 #' correlate (returning a pattern matrix, a structure matrix, and the factor
 #' intercorrelations `Phi`) and are usually more realistic for psychological constructs.
 #'
+#' For an oblique solution the **pattern** matrix (`rot_loadings`) holds each variable's
+#' unique contribution from each factor, with the other factors partialled out; it is what
+#' is normally interpreted and reported. The **structure** matrix
+#' (`Structure = rot_loadings %*% Phi`) holds the plain variable-factor correlations, which
+#' are inflated by the factor intercorrelations. The two coincide only when `Phi` is the
+#' identity, which is why an orthogonal rotation returns `rot_loadings` alone.
+#'
 #' Orthogonal rotations:
 #' - **varimax** maximises the variance of the squared loadings within each factor (column
 #'   simplicity). It is the most widely used orthogonal rotation and spreads variance
@@ -207,32 +215,51 @@
 #'   solution but sharper local minima.
 #' - **bentlerT** uses Bentler's invariant pattern simplicity criterion.
 #' - **bifactorT** is the Jennrich-Bentler orthogonal bifactor criterion: a general factor
-#'   plus group factors (bifactor simple structure).
+#'   plus group factors (bifactor simple structure). It needs at least two group factors
+#'   (`n_factors >= 3`): with two factors the criterion is identically zero, so no rotation
+#'   is performed and the unrotated loadings are returned with a warning.
 #'
 #' Oblique rotations:
 #' - **promax** is a fast two-step rotation: a varimax solution is raised to a power
 #'   (controlled by `k` and `p_type`) to form a target that is then fitted obliquely. It is
-#'   the common, inexpensive oblique default.
-#' - **oblimin** is a flexible oblique family controlled by `gam` (default 0); a good
-#'   general-purpose criterion. `gam = 0` (quartimin) is the recommended setting: larger
-#'   values increasingly reward correlated factors and can drive the solution toward
-#'   factor collapse, so inspect `Phi` before interpreting a fit with `gam > 0`.
-#' - **quartimin** is oblimin pinned at `gam = 0`; a robust default oblique criterion.
+#'   the historical, inexpensive oblique rotation, kept for comparability with SPSS and with
+#'   the older literature.
+#' - **oblimin** is the general family **quartimin** belongs to, controlled by `gam`
+#'   (default 0); use it when you specifically want `gam != 0`. Larger values increasingly
+#'   reward correlated factors and can drive the solution toward factor collapse, so
+#'   inspect `Phi` before interpreting a fit with `gam > 0`.
+#' - **quartimin** is oblimin pinned at `gam = 0`, and is the recommended general-purpose
+#'   oblique criterion.
 #' - **simplimax** drives the `k` smallest loadings toward zero. Its criterion is only
-#'   piecewise smooth, so it is the most prone to local minima and relies on several
-#'   `random_starts`.
+#'   piecewise smooth and strongly multimodal, which makes it by far the most
+#'   start-dependent rotation offered here: different random starts reach genuinely
+#'   different optima rather than the same one to within a tolerance. On a 30-variable,
+#'   four-factor solution the attained criterion varies by half again or more across seeds
+#'   at the default `random_starts = 100`, and the corresponding loadings can differ by 0.6
+#'   or more after matching factors and signs. Because every start is fully optimised (there
+#'   is no screening stage), raising `random_starts` to several hundred costs proportionally
+#'   more time but buys a better optimum; always fix the generator with `seed` (or
+#'   [set.seed()]) when reporting a simplimax solution.
 #' - **bentlerQ** is the oblique Bentler invariant pattern simplicity criterion.
 #' - **geominQ** is the oblique geomin criterion; it handles complex (cross-loading)
 #'   structure well but is multimodal, so it benefits from more `random_starts` (and uses a
 #'   more thorough multi-start search internally).
-#' - **bifactorQ** is the oblique (correlated) Jennrich-Bentler bifactor criterion.
+#' - **bifactorQ** is the oblique (correlated) Jennrich-Bentler bifactor criterion, with the
+#'   same two-group-factor requirement as **bifactorT**.
+#'
+#' Prefer an oblique rotation unless there is a substantive reason to force the factors to
+#' be uncorrelated: if `Phi` comes back near zero the oblique solution is essentially the
+#' orthogonal one anyway, whereas imposing orthogonality on genuinely correlated factors
+#' distorts the pattern.
 #'
 #' The criterion-based rotations (all except varimax and promax) are fitted by gradient
 #' projection with `random_starts` random starts to guard against local minima; the
 #' complexity criteria (simplimax and geominQ in particular) are the most multimodal. The
 #' starts are drawn from the random-number generator, so different starts can reach
 #' genuinely different optima and such a fit is reproducible only when the generator is
-#' controlled: pass `seed`, or call [set.seed()] beforehand. The
+#' controlled: pass `seed`, or call [set.seed()] beforehand. `precision` and `maxit` govern
+#' different stages of a rotation and are described with the arguments themselves in
+#' [rotate_control()]. The
 #' `type` argument changes the varimax and promax settings (see *Using the type presets*)
 #' and, for every rotation, the factor `order_type`. A single factor cannot be rotated.
 #'
@@ -489,17 +516,21 @@
 #' `type = "SPSS"` will use the following argument specification:
 #' `varimax_type = "kaiser", order_type = "ss_factors"`.
 #'
-#' For promax, the values of `p_type`,
-#' `order_type`, and `k` depend on the `type` argument.
+#' For promax, the values of `p_type`, `order_type`, `k`, `varimax_type`, and `normalize`
+#' depend on the `type` argument. Promax rotates a varimax base, so it takes the same
+#' `varimax_type` its `type` selects for varimax above.
 #'
 #' `type = "EFAtools"` will use the following argument specification:
-#' `p_type = "norm", order_type = "eigen", k = 4`.
+#' `p_type = "norm", order_type = "eigen", k = 4, varimax_type = "kaiser",
+#' normalize = TRUE`.
 #'
 #' `type = "psych"` will use the following argument specification:
-#' `p_type = "unnorm", order_type = "eigen", k = 4`.
+#' `p_type = "unnorm", order_type = "eigen", k = 4, varimax_type = "svd",
+#' normalize = TRUE`.
 #'
 #' `type = "SPSS"` will use the following argument specification:
-#' `p_type = "norm", order_type = "ss_factors", k = 4`.
+#' `p_type = "norm", order_type = "ss_factors", k = 4, varimax_type = "kaiser",
+#' normalize = TRUE`.
 #'
 #' The `p_type` argument can take two values, "unnorm" and "norm". It controls
 #' which formula is used to compute the target matrix P in the promax rotation.
@@ -514,9 +545,13 @@
 #' Grieder & Steiner (2022). Note that all `type` presets keep the EFAtools default
 #' Kaiser normalization (`normalize = TRUE`), whereas [psych::fa()] does not
 #' normalize before its promax target rotation; set `normalize = FALSE` to
-#' reproduce the [psych::fa()] promax result to within the varimax convergence
-#' tolerance (the residual difference is the convergence noise of the underlying
-#' varimax base at `precision = 1e-5`, not an algorithmic difference).
+#' reproduce the [psych::fa()] promax result. What is left after that is the convergence
+#' noise of the underlying varimax base rather than an algorithmic difference -- it shrinks
+#' monotonically as `precision` is tightened -- but it is *not* bounded by `precision`
+#' itself: the tolerance is on the varimax criterion, and near a flat optimum the
+#' corresponding gap in the loadings is far larger. On an awkward correlation matrix it can
+#' reach the second decimal at the default `precision = 1e-5`, so tighten `precision` if you
+#' need the comparison to be exact.
 #'
 #' The `varimax_type` argument can take two values, "svd", and "kaiser". "svd" uses
 #' singular value decomposition, by calling [stats::varimax()]. "kaiser"
@@ -524,6 +559,11 @@
 #' Kaiser (1958). The varimax simplicity criterion monitored for convergence is
 #' `sum(n*colSums(lambda ^ 4) - colSums(lambda ^ 2) ^ 2) / n ^ 2`, where n is the
 #' number of indicators, and lambda is the Kaiser-normalized rotated loadings matrix.
+#' `precision` is the tolerance on the *absolute* change in that criterion (see
+#' [rotate_control()]), and it is what limits how closely `type = "SPSS"` reproduces SPSS
+#' FACTOR: on the bundled reference solutions (see [SPSS_23]) the largest deviations are
+#' dominated by convergence slack rather than by an algorithmic difference, and tightening
+#' `precision` to `1e-8` reduces the worst of them by an order of magnitude.
 #'
 #' For all other rotations except varimax and promax, the `type` argument
 #' only controls the `order_type` argument with the same values as stated
@@ -604,10 +644,14 @@
 #' \item{residuals}{Residual correlations, i.e., orig_R - model_implied_R}
 #' \item{standardized_residuals}{Residual correlations standardized by their
 #'  bootstrap standard errors. Only returned, if `se = "np-boot"`.}
-#' \item{rot_loadings}{Loading matrix containing the final rotated loadings
-#' (pattern matrix).}
+#' \item{rot_loadings}{Loading matrix containing the final rotated loadings. For an oblique
+#' rotation this is the pattern matrix -- each variable's unique contribution from each
+#' factor, with the other factors partialled out -- and is the matrix normally interpreted
+#' (see *Rotations*).}
 #' \item{Phi}{The factor intercorrelations (only for oblique rotations).}
-#' \item{Structure}{The structure matrix (only for oblique rotations).}
+#' \item{Structure}{The structure matrix `rot_loadings %*% Phi`, holding the plain
+#' variable-factor correlations, which are inflated by the factor intercorrelations (only
+#' for oblique rotations).}
 #' \item{rotmat}{The rotation matrix. The rotated loadings are recovered from the
 #' unrotated loadings as `unrot_loadings %*% rotmat` for orthogonal rotations and
 #' for promax, and as `unrot_loadings %*% t(solve(rotmat))` for the other oblique
@@ -623,7 +667,10 @@
 #' correlation-matrix input, which consumes none). `cor_method` keeps the requested value
 #' whether or not it was used. For the criterion rotations fitted by
 #' gradient projection it additionally carries `rotation_diagnostics`, a list summarising
-#' the multi-start run: `n_starts_total` (the `random_starts` random starts plus the
+#' the multi-start run: `converged` (whether the start whose solution is returned reached the
+#' convergence tolerance -- reported separately from the count below because the returned
+#' solution is the one with the lowest criterion value, which need not be a converged one),
+#' `n_starts_total` (the `random_starts` random starts plus the
 #' rational start), `n_optimized` (how many of those starts were actually optimized --
 #' fewer than `n_starts_total` whenever the solver screens the random starts and optimizes
 #' only the most promising ones), `n_converged` (how many optimized starts reached the

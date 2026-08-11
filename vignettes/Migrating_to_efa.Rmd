@@ -190,10 +190,13 @@ across those comparisons. The presets and the differences they encode come from
 outputs of that study ship with the package: `test_models` holds correlation matrices for four
 `population_models` cases, and `SPSS_23` and `SPSS_27` hold what SPSS FACTOR returned for
 those matrices — and for several real data sets — under the two SPSS versions, so a preset can
-be checked against the program it emulates. `?efa_fit` lists the exact settings each preset
-selects, along with the one place a preset alone is not enough: `"psych"` also needs
-`normalize = FALSE` to match `psych::fa()`'s promax, because every preset keeps EFAtools'
-Kaiser normalization.
+be checked against the program it emulates (`?SPSS_23` records what such a check needs beyond
+the preset: those references were produced with the PAF iteration limit raised above SPSS's
+default of 25). `?efa_fit` lists the exact settings each preset
+selects, along with the one place a preset alone is not enough: because every preset keeps
+EFAtools' Kaiser normalization, `"psych"` also needs `normalize = FALSE` to reproduce
+`psych::fa()`'s promax — and even then a residual difference remains, which `?efa_fit`
+explains.
 
 ## Returned Objects Keep Their Legacy Classes
 

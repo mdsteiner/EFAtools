@@ -48,5 +48,13 @@ Blais, & Betz, 2002), the NEO-PI-R (Costa, & McCrae, 1992), and four simulated d
 }
 \details{
 The IDS-2, the two WJIV, and the DOSPERT contain all the above entries. The NEO-PI-R contains all of them except L2 and sl, while the four simulated datasets contain only paf_load, var_load, pro_load, and pro_phi.
+
+The principal axis factoring was run with the iteration limit raised above SPSS's own
+default of 25, so reproducing these solutions requires the same: \code{case_1a} needs 60
+iterations and \code{case_11b} needs 33, and at \code{max_iter = 25} both stop short of
+convergence and differ from the stored loadings in the second decimal. Use
+\code{estimate_control(type = "SPSS", max_iter = 500)} when checking a preset against these
+references; the other two simulated cases converge in six iterations and are
+unaffected.
 }
 \keyword{datasets}

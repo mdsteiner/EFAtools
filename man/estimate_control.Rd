@@ -65,7 +65,17 @@ performed before the rotation. The one knob that is always on unless you turn
 it off with \code{FALSE}.}
 
 \item{precision}{numeric. The convergence tolerance of the rotation procedure. A
-single number greater than 0 and at most 1; default \code{1e-5}.}
+single number greater than 0 and at most 1; default \code{1e-5}. Each rotation stage
+monitors its own quantity, so the same number is not the same tolerance everywhere:
+\code{varimax_type = "kaiser"} stops on the \emph{absolute} change in the varimax simplicity
+criterion, which is an average over variables (and so does not scale with how many
+there are) but rises with the number of factors, roughly toward
+\code{1 - 1 / n_factors}, so a fixed value is a relatively weaker tolerance the more
+factors are extracted; \code{varimax_type = "svd"} stops on the \emph{relative} change in the
+singular values (as in \code{\link[stats:varimax]{stats::varimax()}}); and the criterion rotations fitted by
+gradient projection stop when the \emph{projected-gradient norm} falls below it. Promax
+inherits whichever of the two varimax tests its \code{varimax_type} selects, because it
+rotates a varimax base.}
 
 \item{order_type}{character. How the factors are ordered: \code{"eigen"} (by
 descending sum of squared loadings, as in \code{\link[psych:fa]{psych::fa()}}) or \code{"ss_factors"} (by
@@ -84,19 +94,27 @@ resolves from \code{type}.}
 \item{k}{numeric. The promax power (for the target matrix) or the number of
 near-zero loadings for simplimax. A single number greater than 0; \code{NA}
 (default) leaves it to the fit (the \code{type}-dependent promax value, or
-\code{nrow(loadings)} for simplimax).}
+\code{nrow(loadings)} for simplimax). Simplimax counts loadings, so a fit using it
+additionally requires a whole number no larger than the number of loadings in
+the solution; promax's power has no such restriction.}
 
 \item{random_starts}{numeric. The number of random starts used by the
 criterion-based rotations to guard against local minima. A single whole number
 of at least 0, where \code{0} runs the rotation from its warm start only; default
-\code{100}.}
+\code{100}. The default suffices for the smooth criteria; \code{simplimax} remains
+materially start-dependent at it, so raise it there (see the \emph{Rotations} section
+of \code{\link[=efa_fit]{efa_fit()}}).}
 
 \item{...}{Additional arguments forwarded to the rotation engine. Only the names
-a rotation engine can consume are accepted: \code{maxit} (the maximum number of
-engine iterations), and the criterion parameters \code{gam} (oblimin; \code{gam = 0} is the
+a rotation engine can consume are accepted: \code{maxit} (a whole number of at least 0
+bounding a \emph{single} gradient-projection optimization -- the multi-start search runs
+several of them and each is bounded separately, so it is not a budget for the run as a
+whole; varimax and promax have no such stage and take only \code{precision}), and the
+criterion parameters \code{gam} (oblimin; \code{gam = 0} is the
 recommended default, and larger values increasingly reward correlated factors and
 can drive the solution toward factor collapse, so inspect \code{Phi} before interpreting
-a fit with \code{gam > 0}) and \code{delta} (geomin); anything else is rejected as a
+a fit with \code{gam > 0}) and \code{delta} (geomin; a positive number, default \code{0.01});
+anything else is rejected as a
 misspelling. They are stored in \code{extra_args} and passed on to the rotation engine
 when the control is used to fit a model; an extra a given fit's rotation does not
 consume is ignored by that fit, so one control can serve fits with different

@@ -38,4 +38,13 @@ SPSS_27
 Various outputs from SPSS (version 27) FACTOR for the IDS-2 (Grob & Hagmann-von Arx, 2018), the WJIV (3 to 5 and 20 to 39 years; McGrew, LaForte, & Schrank, 2014), the DOSPERT (Frey et al., 2017; Weber,
 Blais, & Betz, 2002), and four simulated datasets (baseline, case_1a, case_6b, and case_11b, see \link{test_models} and \link{population_models}) used in Grieder and Steiner (2022).
 }
+\details{
+The principal axis factoring was run with the iteration limit raised above
+SPSS's own default of 25, so reproducing these solutions requires the same: \code{case_1a}
+needs 60 iterations and \code{case_11b} needs 33, and at \code{max_iter = 25} both stop short of
+convergence and differ from the stored loadings in the second decimal. Use
+\code{estimate_control(type = "SPSS", max_iter = 500)} when checking a preset against these
+references; the other two simulated cases converge in six iterations and are
+unaffected.
+}
 \keyword{datasets}

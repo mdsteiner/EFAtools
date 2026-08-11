@@ -70,8 +70,8 @@ test_that("every oblique rotation labels its factor columns", {
   # Downstream consumers match factors by column name (reliability coefficients and the
   # Schmid-Leiman transformation both reorder by the "F<j>" labels), so every rotation --
   # not only the varimax-based ones -- must label the rotated pattern, the factor
-  # intercorrelations, and the structure matrix. The labels are the unrotated ones
-  # permuted into the new factor order, so they are a permutation of F1..Fk.
+  # intercorrelations, and the structure matrix. The labels are positional: the j-th column
+  # of the ordered solution is always Fj (see .reflect_and_order).
   for (rot in .oblq_rotations) {
     set.seed(42)
     fit <- suppressWarnings(
@@ -181,6 +181,62 @@ test_that("errors etc. are thrown correctly", {
   # dispatch and returning NULL, which would surface far downstream as a missing solution.
   expect_error(.rotate_model(unrot, rotation = "obimin", type = "EFAtools"),
                class = "efa_unknown_rotation")
+})
+
+test_that("a two-factor bifactorQ request warns that the criterion is degenerate", {
+  # The oblique counterpart of the bifactorT test in test-ROTATE_ORTH.R, which carries the
+  # reasoning: with a single group factor the Jennrich-Bentler criterion is identically
+  # zero, so the identity start wins and no rotation is performed.
+  unrot_2 <- EFA(test_models$baseline$cormat, 2, N = 500)
+
+  expect_warning(.rotate_model(unrot_2, rotation = "bifactorQ", type = "EFAtools"),
+                 class = "efa_bifactor_trivial")
+
+  res <- suppressWarnings(.rotate_model(unrot_2, rotation = "bifactorQ",
+                                        type = "EFAtools"))
+  expect_equal(res$settings$rotation_diagnostics$criterion_best, 0)
+  # the identity transformation leaves the factors uncorrelated, i.e. the oblique solution
+  # is the unrotated one
+  expect_equal(res$Phi, diag(2), ignore_attr = TRUE)
+
+  set.seed(42)
+  expect_no_warning(.rotate_model(unrot, rotation = "bifactorQ", type = "EFAtools"),
+                    class = "efa_bifactor_trivial")
+})
+
+test_that("the oblique engines validate their criterion arguments before the compiled entry", {
+  # The oblique counterpart of the argument-validation test in test-ROTATE_ORTH.R, which
+  # carries the reasoning: the compiled entries raise unclassed exceptions, so the contract
+  # is enforced in R where the class and the argument name are both available.
+  cm <- test_models$baseline$cormat
+  fit <- function(...) efa_fit(cm, n_factors = 3, N = 500, estimator = "PAF", ...)
+
+  expect_error(fit(rotation = "oblimin", gam = NA), class = "efa_rotation_arg")
+  expect_error(fit(rotation = "oblimin", gam = "a"), class = "efa_rotation_arg")
+  expect_error(fit(rotation = "oblimin", gam = c(0, 1)), class = "efa_rotation_arg")
+  expect_error(fit(rotation = "oblimin", gam = Inf), class = "efa_rotation_arg")
+
+  expect_error(fit(rotation = "geominQ", delta = 0), class = "efa_rotation_arg")
+  expect_error(fit(rotation = "geominQ", delta = "a"), class = "efa_rotation_arg")
+
+  expect_error(fit(rotation = "oblimin", maxit = -1), class = "efa_rotation_arg")
+  expect_error(fit(rotation = "quartimin", maxit = 2.7), class = "efa_rotation_arg")
+
+  # simplimax counts the loadings it drives toward zero, so `k` is a whole number bounded by
+  # the number of loadings (18 * 3 here). `rotate_control()` already refuses a non-positive
+  # `k` with its own class, so the lower bound is exercised on the engine directly.
+  expect_error(
+    efa_fit(cm, n_factors = 3, N = 500, estimator = "PAF", rotation = "simplimax",
+            rotate_control = rotate_control(k = 55)),
+    class = "efa_rotation_arg"
+  )
+  expect_error(
+    efa_fit(cm, n_factors = 3, N = 500, estimator = "PAF", rotation = "simplimax",
+            rotate_control = rotate_control(k = 2.5)),
+    class = "efa_rotation_arg"
+  )
+  expect_error(.rotate_model(unrot, rotation = "simplimax", type = "EFAtools", k = 0),
+               class = "efa_rotation_arg")
 })
 
 test_that("a singular oblique transformation is rejected rather than pseudo-inverted", {

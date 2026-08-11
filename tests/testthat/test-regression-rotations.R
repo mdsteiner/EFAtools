@@ -281,6 +281,55 @@ test_that("simplimax routes through the native oblique GPF engine", {
   }
 })
 
+test_that("simplimax holds its contract at the released default random-start budget", {
+  skip_on_cran()
+
+  # The block above compares the engines at a raised, matched budget. What a user actually
+  # gets is the shipped default, and simplimax is materially start-dependent there, so the
+  # properties that ARE identified at that budget are pinned here.
+  #
+  # No particular optimum and no cross-engine value is asserted: the criterion is
+  # multimodal and its minima are dense, so neither engine's attained value is a stable
+  # target (see the reasoning in the block above). What is identified is that every start is
+  # optimized, that the reported value really is the criterion of the returned rotation,
+  # that the starts disagree at this budget, and that spending more starts cannot cost
+  # anything -- the engine draws its random starts serially in a fixed order, so at one seed
+  # a larger budget optimizes a superset of the same starts.
+  simplimax_Q <- function(M, k) sum(sort(as.vector(unclass(M))^2)[seq_len(k)])
+  h <- sqrt(rowSums(L^2))
+
+  # the released budget itself, on both surfaces that carry it: raising either silently
+  # would make everything below vacuous
+  expect_equal(formals(rotate_control)$random_starts, 100)
+  expect_equal(formals(.rotate_model)$randomStarts, 100)
+
+  set.seed(seed)
+  def <- suppressWarnings(.rotate_model(unrot, rotation = "simplimax", type = "EFAtools"))
+  rd <- def$settings$rotation_diagnostics
+
+  # (a) simplimax runs full multistart: every requested start is optimized, none screened
+  expect_equal(rd$n_starts_total, 101L)
+  expect_equal(rd$n_optimized, rd$n_starts_total)
+
+  # (b) the reported value is the simplimax criterion of the returned rotation, evaluated
+  # on the Kaiser-normalized scale the engine optimizes on (the criterion is invariant to
+  # the column reordering and sign reflection the returned solution has been through)
+  expect_equal(rd$criterion_best,
+               simplimax_Q(unclass(def$rot_loadings) / h, nrow(L)), tolerance = 1e-10)
+
+  # (c) the starts genuinely disagree at the default budget -- this is the documented start
+  # dependence, and the reason a reported simplimax solution needs a seed
+  expect_gt(rd$n_distinct_minima, 1L)
+  expect_gt(rd$criterion_spread, 0)
+
+  # (d) a larger budget at the same seed extends the same draw sequence, so the selected
+  # criterion can only improve
+  set.seed(seed)
+  wide <- suppressWarnings(.rotate_model(unrot, rotation = "simplimax", type = "EFAtools",
+                                         randomStarts = 300))
+  expect_lte(wide$settings$rotation_diagnostics$criterion_best, rd$criterion_best)
+})
+
 test_that("the public simplimax rotation path reproduces the native engine", {
   skip_on_cran()
 
