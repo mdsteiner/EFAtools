@@ -231,7 +231,10 @@ Note: Rowsums can exceed 1 due to cross-loadings.}
 \item{vars_accounted}{A list with the average, standard deviation, minimum,
 maximum, and range of explained variances and sums of squared loadings across
 the factor solutions. Based on the unrotated loadings if rotation was "none"
-or only one factor was extracted, otherwise on the rotated loadings.}
+or only one factor was extracted, otherwise on the rotated loadings. Each entry
+is a matrix with rows \code{"SS loadings"}, \code{"Prop Tot Var"}, and \code{"Prop Comm Var"};
+the last is omitted for a single-factor solution, where it is identically 1, so
+those matrices have two rows there and three otherwise.}
 \item{fit_indices}{A matrix containing the average, standard deviation,
 minimum, maximum, and range for all applicable fit indices across the respective
 factor solutions, and the degrees of freedom (df). If the estimator argument

@@ -116,6 +116,28 @@ test_that("Bartlett's test is skipped with a note when N is unavailable", {
   expect_true(is.finite(scr_non$condition))
 })
 
+test_that("a too-small N is reported rather than left as a bare NA", {
+  # N is known here, so the test is attempted and comes back undefined: the multiplier
+  # N - 1 - (2p + 5)/6 is non-positive at N = 5 for p = 18. Same condition and class as
+  # efa_bartlett(), so a user reads the same reason from either entry point.
+  expect_warning(scr_small <- efa_screen(test_models$baseline$cormat, N = 5),
+                 class = "efa_bartlett_n_too_small")
+  expect_true(is.na(scr_small$bartlett$chisq))
+  expect_true(is.na(scr_small$bartlett$p_value))
+  # the remaining suitability diagnostics are unaffected
+  expect_true(is.finite(scr_small$kmo$KMO))
+  expect_true(is.finite(scr_small$determinant))
+
+  # the printed report carries the same reason, so it is not only in the warning. Matched on
+  # the collapsed report rather than line by line, so the assertion does not depend on where
+  # cli happens to break the sentence.
+  expect_match(paste(cli::ansi_strip(format(scr_small)), collapse = " "),
+               "Bartlett multiplier", fixed = TRUE)
+
+  expect_no_warning(efa_screen(test_models$baseline$cormat, N = 500),
+                    class = "efa_bartlett_n_too_small")
+})
+
 test_that("settings are returned correctly", {
   expect_named(scr_cor$settings, c("N", "n_obs", "use", "cor_method", "mcd_alpha",
                                    "outlier_cutoff", "seed"))

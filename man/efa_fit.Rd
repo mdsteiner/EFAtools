@@ -122,7 +122,11 @@ otherwise). Use \code{\link[=efa_retain]{efa_retain()}} to decide on a value.}
 
 \item{N}{numeric. The number of observations. Needs only be specified if a
 correlation matrix is used. If input is a correlation matrix and \code{N} = NA
-(default), not all fit indices can be computed. When raw data with missing
+(default), not all fit indices can be computed; \code{NA} is the only accepted way of
+saying that the sample size is unknown, and a supplied \code{N} must be at least 1.
+A positive \code{N} that is very small relative to the number of variables leaves the
+chi-square-derived indices unavailable as well, with a warning.
+When raw data with missing
 values are entered and \code{use} is \code{"complete.obs"} or \code{"na.or.complete"}, rows
 are deleted listwise, so \code{N} is taken as the number of complete cases. The same
 applies, whatever \code{use} asks for, whenever an asymptotic covariance is required
@@ -234,7 +238,12 @@ also reported with a warning.}
 \item{heywood}{A named integer vector indicating which variables have a
 Heywood (improper) case in the unrotated solution; empty if there are none.}
 \item{unrot_loadings}{Loading matrix containing the final unrotated loadings.}
-\item{vars_accounted}{Matrix of explained variances and sums of squared loadings. Based on the unrotated loadings.}
+\item{vars_accounted}{Matrix of explained variances and sums of squared loadings. Based
+on the unrotated loadings. Its rows are \code{"SS loadings"} and \code{"Prop Tot Var"}, followed by
+\code{"Cum Prop Tot Var"}, \code{"Prop Comm Var"}, and \code{"Cum Prop Comm Var"}; those last three are
+omitted for a single-factor solution, where they would only repeat the two above them. So
+code that indexes a row by name (for example \verb{["Prop Comm Var", ]}) must allow for the
+two-row form at \code{n_factors = 1}.}
 \item{fit_indices}{A named list of fit indices computed from the unrotated
 loadings. For ML and ULS it holds the model Chi Square (with its p-value and
 df), CFI, TLI, RMSEA with its 90\% confidence interval, AIC, BIC, ECVI, RMSR,
@@ -258,8 +267,10 @@ and there leaves the sum of squared residual correlations over the unique variab
 pairs (equal there to the criterion \code{\link[psych:fa]{psych::fa()}} reports for \code{fm = "minres"}, and
 half the one it reports for \code{fm = "uls"}, which sums each pair twice), for DWLS the
 weighted residual sum of squares over those same unique
-pairs, and \code{NA} for PAF, which minimises no explicit objective. See the
-\emph{Fit indices} section in
+pairs, and \code{NA} for PAF, which minimises no explicit objective. It also carries the
+independence-baseline statistics \code{chi_null} (Bartlett's test of sphericity, the
+baseline that CFI and TLI are referenced to), its degrees of freedom \code{df_null}
+(\eqn{p(p - 1)/2}), and the corresponding \code{p_null}. See the \emph{Fit indices} section in
 Details for how each index is defined, scaled, and referenced.}
 \item{model_implied_R}{The model implied correlation
 matrix.}
@@ -276,7 +287,9 @@ for promax, and as \code{unrot_loadings \%*\% t(solve(rotmat))} for the other ob
 rotations.}
 \item{vars_accounted_rot}{Matrix of explained variances and sums of squared
 loadings. Based on rotated loadings and, for oblique rotations, the factor
-intercorrelations.}
+intercorrelations. Same rows as \code{vars_accounted}; it is returned only when a rotation
+was actually applied, which never happens for a single-factor solution, so it always
+has the five-row form.}
 \item{settings}{A list of the settings used, including \code{seed} (\code{NULL} when none was
 supplied), \code{input_type} (\code{"raw"} or \code{"correlation"}, what \code{x} was), and
 \code{cor_method_used} (the correlation method that actually ran, \code{NA_character_} for a
@@ -304,18 +317,15 @@ returned loadings.}
 \description{
 This function does an EFA with either \code{PAF}, \code{ML}, \code{ULS}/\code{MINRES},
 or \code{DWLS} with or without subsequent rotation.
-All arguments with default value \code{NA} can be left to default if \code{type}
-is set to one of "EFAtools", "SPSS", or "psych". The respective specifications are
-then handled according to the specified type (see details).
+Estimation and rotation are tuned through the control objects built by
+\code{\link[=estimate_control]{estimate_control()}} and \code{\link[=rotate_control]{rotate_control()}}; each accepts a \code{type} preset
+("EFAtools", "SPSS", "psych", or "none") that fills in its remaining settings.
 }
 \details{
-There are two main ways to use this function. The easiest way is to
-use it with a specified \code{type} (see above), which sets most of the other
-arguments accordingly. Another way is to use it more flexibly by explicitly
-specifying all arguments used and set \code{type} to "none" (see examples).
-A mix of the two can also be done by specifying a \code{type} as well as
-additional arguments. However, this will throw warnings to avoid unintentional
-deviations from the implementations according to the specified \code{type}.
+Estimation is configured with \code{\link[=estimate_control]{estimate_control()}} and rotation with
+\code{\link[=rotate_control]{rotate_control()}}. Each takes a \code{type} preset that sets its remaining knobs, and a knob
+given explicitly alongside a preset overrides that preset's value for it. See \emph{Using the
+type presets} below for what each preset sets.
 \subsection{Estimators}{
 
 The estimator is chosen with \code{estimator}.
@@ -586,17 +596,38 @@ of Approximation (RMSEA) with its 90\% confidence interval (Browne & Cudeck, 199
 Akaike and Bayesian Information Criteria (AIC, BIC), the Expected Cross-Validation Index
 (ECVI; Browne & Cudeck, 1989), the Root Mean Squared Residual (RMSR), the Standardized
 Root Mean Squared Residual (SRMR; Bentler, 1995), and the common-part-accounted-for
-(CAF) index (Lorenzo-Seva, Timmerman, & Kiers, 2011). The print and summary methods show
+(CAF) index (Lorenzo-Seva, Timmerman, & Kiers, 2011). They come with the
+independence-baseline statistics \code{chi_null}, \code{df_null}, and \code{p_null}: Bartlett's test of
+sphericity, which is the baseline that CFI and TLI are computed against.
+
+The degrees of freedom are \eqn{((p - k)^2 - (p + k))/2} for \eqn{p} variables and \eqn{k}
+factors: the \eqn{p(p + 1)/2} distinct correlations, less the \eqn{pk + p} free loadings
+and uniquenesses, plus the \eqn{k(k - 1)/2} constraints that fix the rotational
+indeterminacy. The baseline degrees of freedom \code{df_null} are \eqn{p(p - 1)/2}.
+
+RMSR is the root mean square of the \eqn{p(p - 1)/2} unique off-diagonal residuals; SRMR
+divides that same sum of squares by the \eqn{p(p + 1)/2} non-redundant elements of a
+\eqn{p \times p} matrix. The print and summary methods show
 SRMR, not RMSR, because the two residual summaries differ only by the fixed scaling
 \eqn{\sqrt{(p - 1) / (p + 1)}} for a fixed number of variables; RMSR remains in the
-returned object. The model chi-square is the
+returned object. They are computed over the same residuals, so an unavailable residual
+leaves both \code{NA} and that fixed relation holds wherever the two are reported.
+(\pkg{psych}'s \code{rms} divides the same one-per-pair sum of squares by \eqn{p(p - 1)}, the
+count of \emph{both} triangles, and so equals RMSR\eqn{/\sqrt{2}}; the two are not directly
+comparable.)
+
+The model chi-square is the
 Bartlett-corrected discrepancy (matching \code{\link[stats:factanal]{stats::factanal()}} for ML); the AIC, BIC, and
-ECVI are the minimum-fit-function (chi-square-based) forms (\eqn{\chi^2 - 2\,df} and
-\eqn{\chi^2 - \log(N)\,df} for AIC and BIC, as in \code{\link[psych:fa]{psych::fa()}}) and can therefore be
-negative. The RMSEA, CFI, and TLI place the model and baseline
+ECVI are the minimum-fit-function (chi-square-based) forms \eqn{\chi^2 - 2\,df} and
+\eqn{\chi^2 - \log(N)\,df} for AIC and BIC, as in \code{\link[psych:fa]{psych::fa()}}, and
+\eqn{(\chi^2 + 2\,q)/(N - 1)} with \eqn{q = p(p + 1)/2 - df} free parameters for ECVI. AIC
+and BIC can therefore be negative. All three are built on the reported
+(Bartlett-corrected) chi-square, so the ECVI differs slightly from the uncorrected
+Browne-Cudeck form reported by \pkg{lavaan} and Mplus. The RMSEA, CFI, and TLI instead
+place the model and baseline
 noncentrality on the uncorrected \eqn{N - 1} discrepancy scale on which these
-approximate-fit indices are defined, so the Bartlett small-sample correction enters only
-the chi-square test, not the approximate-fit indices.
+approximate-fit indices are defined, so the Bartlett small-sample correction does not
+enter those three.
 
 Which indices are reported depends on the estimator:
 \itemize{
@@ -618,6 +649,14 @@ because the plain two-stage likelihood-ratio statistic is not asymptotically
 \eqn{\chi^2(df)}. The CFI, TLI, and RMSEA follow from the scaled statistics; AIC, BIC,
 and ECVI are left \code{NA}, as for any scaled (moment-adjusted) chi-square.
 }
+
+Beyond the estimator, the chi-square and everything derived from it are \code{NA} whenever the
+statistic itself is undefined: when \code{N} is not supplied, when the model is underidentified
+(a negative df), and when a positive \code{N} is too small for Bartlett's small-sample multiplier
+\eqn{N - 1 - (2p + 5)/6 - 2q/3} to be positive. Each case raises its own warning. The
+residual summaries (RMSR, SRMR, CAF) and the degrees of freedom are still returned there,
+but residual size does not establish that a model is identified: below zero degrees of
+freedom a near-zero residual is an artefact of over-parameterisation, not close fit.
 
 Whenever the chi-square is a scaled one (\code{se = "sandwich"}, or any \code{cor_method = "fiml"}
 fit), the AIC, BIC, and ECVI are \code{NA} and the returned \code{fit_indices} additionally carry

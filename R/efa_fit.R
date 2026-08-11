@@ -2,9 +2,9 @@
 #'
 #' This function does an EFA with either `PAF`, `ML`, `ULS`/`MINRES`,
 #' or `DWLS` with or without subsequent rotation.
-#' All arguments with default value `NA` can be left to default if `type`
-#' is set to one of "EFAtools", "SPSS", or "psych". The respective specifications are
-#' then handled according to the specified type (see details).
+#' Estimation and rotation are tuned through the control objects built by
+#' [estimate_control()] and [rotate_control()]; each accepts a `type` preset
+#' ("EFAtools", "SPSS", "psych", or "none") that fills in its remaining settings.
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
 #' correlations. If raw data is entered, the correlation matrix is found from the
@@ -14,7 +14,11 @@
 #' otherwise). Use [efa_retain()] to decide on a value.
 #' @param N numeric. The number of observations. Needs only be specified if a
 #' correlation matrix is used. If input is a correlation matrix and `N` = NA
-#' (default), not all fit indices can be computed. When raw data with missing
+#' (default), not all fit indices can be computed; `NA` is the only accepted way of
+#' saying that the sample size is unknown, and a supplied `N` must be at least 1.
+#' A positive `N` that is very small relative to the number of variables leaves the
+#' chi-square-derived indices unavailable as well, with a warning.
+#' When raw data with missing
 #' values are entered and `use` is `"complete.obs"` or `"na.or.complete"`, rows
 #' are deleted listwise, so `N` is taken as the number of complete cases. The same
 #' applies, whatever `use` asks for, whenever an asymptotic covariance is required
@@ -91,13 +95,10 @@
 #'  `max_iter`, or `k`) is likewise *not* accepted here: it belongs to [estimate_control()]
 #'  or [rotate_control()].
 #'
-#' @details There are two main ways to use this function. The easiest way is to
-#' use it with a specified `type` (see above), which sets most of the other
-#' arguments accordingly. Another way is to use it more flexibly by explicitly
-#' specifying all arguments used and set `type` to "none" (see examples).
-#' A mix of the two can also be done by specifying a `type` as well as
-#' additional arguments. However, this will throw warnings to avoid unintentional
-#' deviations from the implementations according to the specified `type`.
+#' @details Estimation is configured with [estimate_control()] and rotation with
+#' [rotate_control()]. Each takes a `type` preset that sets its remaining knobs, and a knob
+#' given explicitly alongside a preset overrides that preset's value for it. See *Using the
+#' type presets* below for what each preset sets.
 #'
 #' ## Estimators
 #'
@@ -358,17 +359,38 @@
 #' Akaike and Bayesian Information Criteria (AIC, BIC), the Expected Cross-Validation Index
 #' (ECVI; Browne & Cudeck, 1989), the Root Mean Squared Residual (RMSR), the Standardized
 #' Root Mean Squared Residual (SRMR; Bentler, 1995), and the common-part-accounted-for
-#' (CAF) index (Lorenzo-Seva, Timmerman, & Kiers, 2011). The print and summary methods show
+#' (CAF) index (Lorenzo-Seva, Timmerman, & Kiers, 2011). They come with the
+#' independence-baseline statistics `chi_null`, `df_null`, and `p_null`: Bartlett's test of
+#' sphericity, which is the baseline that CFI and TLI are computed against.
+#'
+#' The degrees of freedom are \eqn{((p - k)^2 - (p + k))/2} for \eqn{p} variables and \eqn{k}
+#' factors: the \eqn{p(p + 1)/2} distinct correlations, less the \eqn{pk + p} free loadings
+#' and uniquenesses, plus the \eqn{k(k - 1)/2} constraints that fix the rotational
+#' indeterminacy. The baseline degrees of freedom `df_null` are \eqn{p(p - 1)/2}.
+#'
+#' RMSR is the root mean square of the \eqn{p(p - 1)/2} unique off-diagonal residuals; SRMR
+#' divides that same sum of squares by the \eqn{p(p + 1)/2} non-redundant elements of a
+#' \eqn{p \times p} matrix. The print and summary methods show
 #' SRMR, not RMSR, because the two residual summaries differ only by the fixed scaling
 #' \eqn{\sqrt{(p - 1) / (p + 1)}} for a fixed number of variables; RMSR remains in the
-#' returned object. The model chi-square is the
+#' returned object. They are computed over the same residuals, so an unavailable residual
+#' leaves both `NA` and that fixed relation holds wherever the two are reported.
+#' (\pkg{psych}'s `rms` divides the same one-per-pair sum of squares by \eqn{p(p - 1)}, the
+#' count of *both* triangles, and so equals RMSR\eqn{/\sqrt{2}}; the two are not directly
+#' comparable.)
+#'
+#' The model chi-square is the
 #' Bartlett-corrected discrepancy (matching [stats::factanal()] for ML); the AIC, BIC, and
-#' ECVI are the minimum-fit-function (chi-square-based) forms (\eqn{\chi^2 - 2\,df} and
-#' \eqn{\chi^2 - \log(N)\,df} for AIC and BIC, as in [psych::fa()]) and can therefore be
-#' negative. The RMSEA, CFI, and TLI place the model and baseline
+#' ECVI are the minimum-fit-function (chi-square-based) forms \eqn{\chi^2 - 2\,df} and
+#' \eqn{\chi^2 - \log(N)\,df} for AIC and BIC, as in [psych::fa()], and
+#' \eqn{(\chi^2 + 2\,q)/(N - 1)} with \eqn{q = p(p + 1)/2 - df} free parameters for ECVI. AIC
+#' and BIC can therefore be negative. All three are built on the reported
+#' (Bartlett-corrected) chi-square, so the ECVI differs slightly from the uncorrected
+#' Browne-Cudeck form reported by \pkg{lavaan} and Mplus. The RMSEA, CFI, and TLI instead
+#' place the model and baseline
 #' noncentrality on the uncorrected \eqn{N - 1} discrepancy scale on which these
-#' approximate-fit indices are defined, so the Bartlett small-sample correction enters only
-#' the chi-square test, not the approximate-fit indices.
+#' approximate-fit indices are defined, so the Bartlett small-sample correction does not
+#' enter those three.
 #'
 #' Which indices are reported depends on the estimator:
 #' - **ML and ULS** compute the full set above.
@@ -388,6 +410,14 @@
 #'   because the plain two-stage likelihood-ratio statistic is not asymptotically
 #'   \eqn{\chi^2(df)}. The CFI, TLI, and RMSEA follow from the scaled statistics; AIC, BIC,
 #'   and ECVI are left `NA`, as for any scaled (moment-adjusted) chi-square.
+#'
+#' Beyond the estimator, the chi-square and everything derived from it are `NA` whenever the
+#' statistic itself is undefined: when `N` is not supplied, when the model is underidentified
+#' (a negative df), and when a positive `N` is too small for Bartlett's small-sample multiplier
+#' \eqn{N - 1 - (2p + 5)/6 - 2q/3} to be positive. Each case raises its own warning. The
+#' residual summaries (RMSR, SRMR, CAF) and the degrees of freedom are still returned there,
+#' but residual size does not establish that a model is identified: below zero degrees of
+#' freedom a near-zero residual is an artefact of over-parameterisation, not close fit.
 #'
 #' Whenever the chi-square is a scaled one (`se = "sandwich"`, or any `cor_method = "fiml"`
 #' fit), the AIC, BIC, and ECVI are `NA` and the returned `fit_indices` additionally carry
@@ -535,7 +565,12 @@
 #' \item{heywood}{A named integer vector indicating which variables have a
 #'  Heywood (improper) case in the unrotated solution; empty if there are none.}
 #' \item{unrot_loadings}{Loading matrix containing the final unrotated loadings.}
-#' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings. Based on the unrotated loadings.}
+#' \item{vars_accounted}{Matrix of explained variances and sums of squared loadings. Based
+#' on the unrotated loadings. Its rows are `"SS loadings"` and `"Prop Tot Var"`, followed by
+#' `"Cum Prop Tot Var"`, `"Prop Comm Var"`, and `"Cum Prop Comm Var"`; those last three are
+#' omitted for a single-factor solution, where they would only repeat the two above them. So
+#' code that indexes a row by name (for example `["Prop Comm Var", ]`) must allow for the
+#' two-row form at `n_factors = 1`.}
 #' \item{fit_indices}{A named list of fit indices computed from the unrotated
 #' loadings. For ML and ULS it holds the model Chi Square (with its p-value and
 #' df), CFI, TLI, RMSEA with its 90% confidence interval, AIC, BIC, ECVI, RMSR,
@@ -559,8 +594,10 @@
 #' pairs (equal there to the criterion [psych::fa()] reports for `fm = "minres"`, and
 #' half the one it reports for `fm = "uls"`, which sums each pair twice), for DWLS the
 #' weighted residual sum of squares over those same unique
-#' pairs, and `NA` for PAF, which minimises no explicit objective. See the
-#' *Fit indices* section in
+#' pairs, and `NA` for PAF, which minimises no explicit objective. It also carries the
+#' independence-baseline statistics `chi_null` (Bartlett's test of sphericity, the
+#' baseline that CFI and TLI are referenced to), its degrees of freedom `df_null`
+#' (\eqn{p(p - 1)/2}), and the corresponding `p_null`. See the *Fit indices* section in
 #' Details for how each index is defined, scaled, and referenced.}
 #' \item{model_implied_R}{The model implied correlation
 #' matrix.}
@@ -577,7 +614,9 @@
 #' rotations.}
 #' \item{vars_accounted_rot}{Matrix of explained variances and sums of squared
 #' loadings. Based on rotated loadings and, for oblique rotations, the factor
-#' intercorrelations.}
+#' intercorrelations. Same rows as `vars_accounted`; it is returned only when a rotation
+#' was actually applied, which never happens for a single-factor solution, so it always
+#' has the five-row form.}
 #' \item{settings}{A list of the settings used, including `seed` (`NULL` when none was
 #' supplied), `input_type` (`"raw"` or `"correlation"`, what `x` was), and
 #' `cor_method_used` (the correlation method that actually ran, `NA_character_` for a
@@ -982,7 +1021,10 @@ efa_fit <- function(x, n_factors, N = NA,
 
   .assert_args({
     checkmate::assert_count(n_factors)
-    checkmate::assert_count(N, na.ok = TRUE)
+    # N = 0 is not an unknown sample size but an impossible one: it would silently NA the
+    # chi-square block through the same route a valid-but-small N does. NA remains the
+    # supported way of saying "sample size unknown".
+    checkmate::assert_count(N, positive = TRUE, na.ok = TRUE)
     checkmate::assert_count(max_iter, na.ok = TRUE)
     checkmate::assert_choice(init_comm, c("smc", "mac", "unity", NA))
     checkmate::assert_number(criterion, lower = 0, upper = 1, na.ok = TRUE)
@@ -1350,8 +1392,13 @@ efa_fit <- function(x, n_factors, N = NA,
 
   if(df < 0){
 
+    chisq_block <- .fit_unavailable_text("chisq_block")
+    residuals_kept <- .fit_unavailable_text("residuals_kept")
+    not_identification <- .fit_unavailable_text("residuals_not_identification")
     cli::cli_warn(
-      c("The model is underidentified; no fit indices were computed.",
+      c("The model is underidentified ({.code df = {df}}); {chisq_block}.",
+        "!" = "{residuals_kept}",
+        "!" = "{not_identification}",
         "i" = "Use fewer factors or more indicators."),
       class = "efa_underidentified"
     )
@@ -1386,6 +1433,27 @@ efa_fit <- function(x, n_factors, N = NA,
         c("{.arg N} is {.val NA}; not all fit indices could be computed.",
           "i" = "Provide {.arg N} or raw data to compute all fit indices."),
         class = "efa_fit_na_n"
+      )
+
+    } else if (estimator %in% c("ML", "ULS") && is.null(fiml) && se != "sandwich" &&
+               df >= 0 && .bartlett_mult(N, m, n_factors) <= 0) {
+
+      # A known but very small N relative to the number of variables turns Bartlett's
+      # small-sample multiplier non-positive, so .gof() leaves the whole chi-square block
+      # undefined -- the same output PAF produces, and previously with no explanation. The
+      # warning belongs here rather than in .gof(), which the bootstrap calls once per
+      # replicate. The FIML path (is.null(fiml)) uses a likelihood-ratio statistic that
+      # carries no Bartlett correction, DWLS reports no ML discrepancy at all, and
+      # se = "sandwich" refills the whole block from the scaled statistic afterwards, which
+      # the multiplier never enters -- so in none of those cases is the block missing.
+      chisq_block <- .fit_unavailable_text("chisq_block")
+      mult_note <- .fit_unavailable_text("bartlett_mult", N = N, p = m, q = n_factors)
+      residuals_kept <- .fit_unavailable_text("residuals_kept")
+      cli::cli_warn(
+        c("{.arg N} is too small for the small-sample correction; {chisq_block}.",
+          "i" = "{mult_note}",
+          "i" = "{residuals_kept}"),
+        class = "efa_fit_indices_undefined"
       )
 
     }

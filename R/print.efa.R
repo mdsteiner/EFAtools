@@ -626,9 +626,15 @@ format.summary.efa <- function(x, ...) {
   }
 
   if (df < 0) {
+    # The residual summaries are populated in the object even here, so the note names what is
+    # missing rather than claiming that nothing was computed; the wording is shared with the
+    # warning efa_fit() raises for the same model.
+    chisq_block <- .fit_unavailable_text("chisq_block")
+    residuals_kept <- .fit_unavailable_text("residuals_kept")
+    not_identification <- .fit_unavailable_text("residuals_not_identification")
     cli::cli_text("")
     cli::cli_alert_warning(
-      "The model is underidentified (df < 0). No goodness of fit indices were calculated.",
+      "The model is underidentified (df < 0); {chisq_block}. {residuals_kept} {not_identification}",
       wrap = TRUE
     )
     return(FALSE)

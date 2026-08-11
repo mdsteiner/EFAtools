@@ -93,9 +93,9 @@ An object of class \code{efa_screen}, a list containing:
 \item{kmo}{A list with the overall KMO (\code{KMO}) and the per-variable KMO
 (\code{KMO_i}).}
 \item{bartlett}{A list with Bartlett's chi-square statistic (\code{chisq}), its
-\code{p_value}, and its degrees of freedom (\code{df}); \code{chisq} and \code{p_value} are \code{NA}
-when \code{N} is too small for the Bartlett correction. \code{NULL} when \code{N} is
-unavailable.}
+\code{p_value}, and its degrees of freedom (\code{df}); \code{chisq} and \code{p_value} are \code{NA},
+with a warning, when \code{N} is too small for the Bartlett correction. \code{NULL} when
+\code{N} is unavailable.}
 \item{determinant}{The determinant of the correlation matrix.}
 \item{condition}{The condition number of the correlation matrix (largest over
 smallest eigenvalue).}
@@ -158,7 +158,9 @@ test of the hypothesis that \eqn{R} is an identity matrix, with
 \eqn{df = p(p - 1)/2} for \eqn{p} variables. It requires the sample size
 \code{N}; when \code{N} is unavailable (a correlation matrix supplied without \code{N}) the
 test is skipped with a warning, \verb{$bartlett} is \code{NULL}, and the remaining
-diagnostics are still returned. See \code{\link[=efa_bartlett]{efa_bartlett()}}.}
+diagnostics are still returned. A supplied \code{N} that is too small relative to
+\eqn{p} for the correction \eqn{N - 1 - (2p + 5)/6} to be positive leaves the
+statistic itself \code{NA}, also with a warning. See \code{\link[=efa_bartlett]{efa_bartlett()}}.}
 \item{Determinant}{The determinant of \eqn{R}. A value near zero signals
 extreme multicollinearity or a (near-)singular matrix; as a rough guide, a
 determinant below about 0.00001 is commonly taken as a sign of

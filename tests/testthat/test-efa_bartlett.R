@@ -68,8 +68,16 @@ test_that("settings are returned correctly", {
 
 test_that("the chi-square is NA when N is too small for the Bartlett correction", {
   # the documented guard: the multiplier N - 1 - (2p + 5)/6 turns non-positive at
-  # N = 5 for these p = 18 variables, so no statistic is reported
-  expect_true(is.na(efa_bartlett(test_models$baseline$cormat, N = 5)$chisq))
+  # N = 5 for these p = 18 variables, so no statistic is reported. N relative to p is the
+  # only actionable fact behind that NA, so it is reported rather than left silent.
+  expect_warning(bart_small <- efa_bartlett(test_models$baseline$cormat, N = 5),
+                 class = "efa_bartlett_n_too_small")
+  expect_true(is.na(bart_small$chisq))
+  expect_true(is.na(bart_small$p_value))
+
+  # An N that keeps the multiplier positive must not warn.
+  expect_no_warning(efa_bartlett(test_models$baseline$cormat, N = 500),
+                    class = "efa_bartlett_n_too_small")
 })
 
 test_that("errors are thrown correctly", {

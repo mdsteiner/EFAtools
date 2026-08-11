@@ -18,7 +18,9 @@ is used.}
 A matrix with sum of squared loadings, proportion explained variance
 from total variance per factor, same as previous but cumulative, Proportion
 of explained variance from total explained variance, and same as previous but
-cumulative.
+cumulative. The three cumulative and common-variance rows are omitted when
+\code{L_rot} has a single column, where they would only repeat the two above them,
+so the result has two rows there and five otherwise.
 }
 \description{
 From unrotated loadings compute the communalities and uniquenesses for total

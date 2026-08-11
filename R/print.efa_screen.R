@@ -99,8 +99,7 @@ format.efa_screen <- function(x, digits = 3, ...) {
       cli::cli_verbatim(paste0("\U03C7\U00B2(", bart$df, ") = ", round(bart$chisq, 2),
                                ", ", cli::style_italic("p"), .screen_p_str(bart$p_value)))
     } else {
-      cli::cli_alert_warning("The Bartlett's test of sphericity did not render a result.",
-                             wrap = TRUE)
+      .print_bartlett_no_result()
     }
 
     # -- Multicollinearity -----------------------------------------------------

@@ -43,7 +43,9 @@
 #'     \eqn{df = p(p - 1)/2} for \eqn{p} variables. It requires the sample size
 #'     `N`; when `N` is unavailable (a correlation matrix supplied without `N`) the
 #'     test is skipped with a warning, `$bartlett` is `NULL`, and the remaining
-#'     diagnostics are still returned. See [efa_bartlett()].}
+#'     diagnostics are still returned. A supplied `N` that is too small relative to
+#'     \eqn{p} for the correction \eqn{N - 1 - (2p + 5)/6} to be positive leaves the
+#'     statistic itself `NA`, also with a warning. See [efa_bartlett()].}
 #'   \item{Determinant}{The determinant of \eqn{R}. A value near zero signals
 #'     extreme multicollinearity or a (near-)singular matrix; as a rough guide, a
 #'     determinant below about 0.00001 is commonly taken as a sign of
@@ -108,9 +110,9 @@
 #' \item{kmo}{A list with the overall KMO (`KMO`) and the per-variable KMO
 #'   (`KMO_i`).}
 #' \item{bartlett}{A list with Bartlett's chi-square statistic (`chisq`), its
-#'   `p_value`, and its degrees of freedom (`df`); `chisq` and `p_value` are `NA`
-#'   when `N` is too small for the Bartlett correction. `NULL` when `N` is
-#'   unavailable.}
+#'   `p_value`, and its degrees of freedom (`df`); `chisq` and `p_value` are `NA`,
+#'   with a warning, when `N` is too small for the Bartlett correction. `NULL` when
+#'   `N` is unavailable.}
 #' \item{determinant}{The determinant of the correlation matrix.}
 #' \item{condition}{The condition number of the correlation matrix (largest over
 #'   smallest eigenvalue).}
@@ -278,6 +280,9 @@ efa_screen <- function(x, N = NA,
     NULL
   } else {
     chisq <- .null_chisq(R, N, ld = ld)
+    # Same reason, same condition and same wording as efa_bartlett(), so a user reads the
+    # same explanation from either entry point.
+    if (is.na(chisq)) .warn_bartlett_n_too_small(N, p)
     list(chisq = chisq,
          p_value = stats::pchisq(chisq, df, lower.tail = FALSE),
          df = df)

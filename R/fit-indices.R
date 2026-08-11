@@ -15,7 +15,9 @@
 #' @return A matrix with sum of squared loadings, proportion explained variance
 #'  from total variance per factor, same as previous but cumulative, Proportion
 #'  of explained variance from total explained variance, and same as previous but
-#'  cumulative.
+#'  cumulative. The three cumulative and common-variance rows are omitted when
+#'  `L_rot` has a single column, where they would only repeat the two above them,
+#'  so the result has two rows there and five otherwise.
 .compute_vars <- function(L_unrot, L_rot, Phi = NULL) {
 
   if (is.null(Phi)) {
@@ -52,15 +54,21 @@
 # divides that same one-per-pair sum by p(p - 1), the count of *both* triangles, and so reports
 # this value divided by sqrt(2); the two are not directly comparable. Shared by .gof() and the
 # multiple-imputation pooler.
+# An unavailable residual propagates rather than being dropped: RMSR and SRMR are the same sum
+# of squares over the same pairs and differ only by the fixed factor sqrt((p - 1)/(p + 1)),
+# which holds only while both are computed over the full set. Averaging RMSR over the surviving
+# pairs while .srmr() returns NA would break that relation, and would report a residual summary
+# describing fewer variable pairs than it appears to.
 .rmsr <- function(residuals) {
   E <- as.matrix(residuals)
-  sqrt(mean(E[upper.tri(E, diag = FALSE)]^2, na.rm = TRUE))
+  sqrt(mean(E[upper.tri(E, diag = FALSE)]^2))
 }
 
 # SRMR (standardized root mean square residual; Bentler, 1995) from a residual matrix whose
 # model-implied diagonal is 1, so only the off-diagonal residuals contribute; the denominator
 # is the count of non-redundant elements p(p + 1)/2. Distinct from .rmsr() (off-diagonal mean,
-# p(p - 1)/2 denominator). Shared by .gof() and the multiple-imputation pooler.
+# p(p - 1)/2 denominator). Shared by .gof() and the multiple-imputation pooler. An unavailable
+# residual propagates, as it does in .rmsr(); see the note there.
 .srmr <- function(residuals) {
   E <- as.matrix(residuals)
   # The denominator counts the non-redundant elements of a p x p matrix, so a non-square
@@ -97,6 +105,66 @@
 # .gof(), the baseline chi-square in .null_chisq(), and EFA_POOLED()'s pooled
 # (N - 1) rescaling so all three use one definition.
 .bartlett_mult <- function(N, p, q = 0) N - 1 - (2 * p + 5) / 6 - (2 * q) / 3
+
+# Shared wording for the situations in which the chi-square-derived quantities are
+# unavailable. efa_fit(), efa_bartlett(), and efa_screen() raise the warnings, and their print
+# methods repeat the same fact, so the sentences live here once instead of being restated (and
+# drifting) at six call sites. `what` selects the sentence; `N`, `p`, and `q` name the concrete
+# numbers where the caller has them (the warnings) and are omitted where it does not (the print
+# methods, which see only the resulting NA).
+.fit_unavailable_text <- function(what = c("chisq_block", "residuals_kept",
+                                           "residuals_not_identification", "bartlett_mult"),
+                                  N = NULL, p = NULL, q = NULL) {
+  what <- match.arg(what)
+  switch(
+    what,
+    # What becomes unavailable: the chi-square test itself and every index built on it.
+    chisq_block = paste("the chi-square test and the fit indices derived from it (CFI, TLI,",
+                        "RMSEA, AIC, BIC, ECVI) are not available"),
+    # What is still there, so a reader does not conclude that nothing was computed. Says
+    # "in the returned object" rather than "reported", because the print methods suppress
+    # the fit and residual sections in exactly the cases that use this sentence.
+    residuals_kept = paste("The residual summaries (CAF, RMSR, SRMR) and the degrees of freedom",
+                           "are still present in the returned object."),
+    # ... and what those residuals cannot settle.
+    residuals_not_identification = paste("Residual size does not establish that a model is",
+                                         "identified; with negative degrees of freedom a small",
+                                         "residual is an artefact of over-parameterisation."),
+    # Bartlett's (1951) small-sample multiplier, the reason a valid but small N leaves the
+    # statistic undefined. `q` is omitted for the sphericity (0-factor) multiplier.
+    bartlett_mult = {
+      form <- if (is.null(q)) "N - 1 - (2p + 5)/6" else "N - 1 - (2p + 5)/6 - 2q/3"
+      if (is.null(N) || is.null(p)) {
+        paste0("The Bartlett multiplier ", form, " is not positive for a sample this small ",
+               "relative to the number of variables.")
+      } else {
+        nums <- if (is.null(q)) {
+          paste0("N = ", N, " and p = ", p)
+        } else {
+          paste0("N = ", N, ", p = ", p, ", and q = ", q)
+        }
+        paste0("The Bartlett multiplier ", form, " is not positive for ", nums, ".")
+      }
+    }
+  )
+}
+
+# Report why .null_chisq() left Bartlett's test of sphericity undefined, for the callers that
+# expose that statistic to the user (efa_bartlett(), efa_screen()). N relative to p is the only
+# actionable fact behind the NA, and it is otherwise visible only as a missing value in the
+# returned list. Raises nothing when the multiplier is positive: the NA then came from the other
+# route (a non-positive-definite log-determinant) and would be misdescribed by this reason.
+.warn_bartlett_n_too_small <- function(N, p) {
+  if (!isTRUE(.bartlett_mult(N, p) <= 0)) return(invisible(NULL))
+  mult_note <- .fit_unavailable_text("bartlett_mult", N = N, p = p)
+  cli::cli_warn(
+    c("Bartlett's test of sphericity could not be computed; {.arg N} is too small relative
+       to the number of variables.",
+      "i" = "{mult_note}"),
+    class = "efa_bartlett_n_too_small"
+  )
+  invisible(NULL)
+}
 
 # Independence-model (baseline) chi-square of the null model (model-implied matrix =
 # identity), -log|R| * mult. With `corrected = TRUE` (default) mult is the Bartlett
@@ -139,10 +207,21 @@
     # nonetheless prove unbracketable, the bound is undefined rather than an estimation
     # failure, so report NA instead of aborting the whole fit. Callers must therefore keep
     # NA out of `if` conditions (see the min() caps in .chi_fit_indices()).
-    tryCatch(
-      stats::uniroot(f = p_chi_fun, interval = c(1e-10, 10000), val = chi, df = df,
-                     goal = goal, extendInt = "upX", maxiter = 100L)$root,
-      error = function(e) NA_real_
+    # stats::pchisq() stops converging for very large noncentralities (chi in the millions)
+    # and emits one base warning per evaluation, so a single fit could leak dozens of them.
+    # Muffle them here: the resulting bound is unreliable rather than absent, and the callers
+    # detect that from the bound itself (the bracketing checks in .chi_fit_indices() and
+    # .efa_pooled_rmsea_ci()). The handler is unconditional, so uniroot()'s own
+    # "_NOT_ converged" warning is muffled with them -- selecting on the message is not an
+    # option, since both texts are translated -- and those bracketing checks are therefore
+    # the only signal that a bound is untrustworthy.
+    withCallingHandlers(
+      tryCatch(
+        stats::uniroot(f = p_chi_fun, interval = c(1e-10, 10000), val = chi, df = df,
+                       goal = goal, extendInt = "upX", maxiter = 100L)$root,
+        error = function(e) NA_real_
+      ),
+      warning = function(w) invokeRestart("muffleWarning")
     )
   } else {
     0
@@ -156,6 +235,16 @@
 # convention lives in one place.
 .rmsea_point <- function(chi_cfi, df, N) {
   sqrt(max(0, chi_cfi - df) / (df * (N - 1)))
+}
+
+# TRUE when an RMSEA interval contains the point estimate reported beside it. A noncentrality
+# solve that did not converge (a chi in the millions, where stats::pchisq() stops converging)
+# can return bounds that collapse below the point estimate; callers withhold such an interval
+# rather than report it as a range. isTRUE() makes the test NA-safe, so a bound that is already
+# undefined is left alone instead of failing the comparison. Shared by .chi_fit_indices() and
+# .efa_pooled_rmsea_ci() so the single-fit and pooled paths apply one rule.
+.rmsea_ci_contains <- function(lower, upper, point) {
+  !isTRUE(lower > point || point > upper)
 }
 
 # CFI (Bentler, 1990) and TLI (Tucker & Lewis, 1973) from model and baseline
@@ -242,6 +331,14 @@
       # returns NA when the noncentrality root cannot be located.
       RMSEA_LB <- min(sqrt(lambda_l / (df * (N - 1))), 1)
       RMSEA_UB <- min(sqrt(lambda_u / (df * (N - 1))), 1)
+
+      # At chi around 4e6 both bounds collapse onto the same value below the point estimate.
+      # That is not an interval, so report it as undefined rather than clip or reorder it
+      # into something that looks usable.
+      if (!.rmsea_ci_contains(RMSEA_LB, RMSEA_UB, RMSEA)) {
+        RMSEA_LB <- NA_real_
+        RMSEA_UB <- NA_real_
+      }
 
     } else {
 

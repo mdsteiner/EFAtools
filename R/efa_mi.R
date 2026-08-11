@@ -1208,8 +1208,16 @@ efa_mi <- function(data_list,
   # from the single fit's pooled test statistic, matching how the information and
   # bootstrap routes apply rmsea_ci_level (a no-op when rmsea_ci_level == 0.90).
   fi <- mi_fit$fit_indices
-  if (!is.null(fi) && is.finite(fi$chi) && is.finite(fi$df) && fi$df > 0) {
-    rmsea_ci <- .efa_pooled_rmsea_ci(fi$chi, fi$df, N_pool, level = rmsea_ci_level)
+  # A finite point estimate is required as well as a finite statistic: only the bounds are
+  # re-solved here, so without one there is nothing for the new interval to be an interval
+  # around, and replacing the bounds would advertise a range for an undefined RMSEA.
+  if (!is.null(fi) && is.finite(fi$chi) && is.finite(fi$df) && fi$df > 0 &&
+      is.finite(fi$RMSEA)) {
+    # `fi$RMSEA` stays as .chi_fit_indices() computed it, so pass it in as the point estimate
+    # the new interval has to contain rather than letting the helper derive a second one from
+    # `fi$chi` and `N_pool`.
+    rmsea_ci <- .efa_pooled_rmsea_ci(fi$chi, fi$df, N_pool, point = fi$RMSEA,
+                                     level = rmsea_ci_level)
     fi$RMSEA_LB <- unname(rmsea_ci[["lower"]])
     fi$RMSEA_UB <- unname(rmsea_ci[["upper"]])
     mi_fit$fit_indices <- fi

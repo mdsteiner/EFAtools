@@ -280,7 +280,10 @@
 #' \item{vars_accounted}{A list with the average, standard deviation, minimum,
 #' maximum, and range of explained variances and sums of squared loadings across
 #' the factor solutions. Based on the unrotated loadings if rotation was "none"
-#' or only one factor was extracted, otherwise on the rotated loadings.}
+#' or only one factor was extracted, otherwise on the rotated loadings. Each entry
+#' is a matrix with rows `"SS loadings"`, `"Prop Tot Var"`, and `"Prop Comm Var"`;
+#' the last is omitted for a single-factor solution, where it is identically 1, so
+#' those matrices have two rows there and three otherwise.}
 #' \item{fit_indices}{A matrix containing the average, standard deviation,
 #' minimum, maximum, and range for all applicable fit indices across the respective
 #' factor solutions, and the degrees of freedom (df). If the estimator argument
@@ -393,7 +396,12 @@ efa_average <- function(x, n_factors, N = NA, estimator = "PAF", rotation = "pro
   if (lifecycle::is_present(P_type)) p_type <- P_type
 
   checkmate::assert_count(n_factors)
-  checkmate::assert_count(N, na.ok = TRUE)
+  # Matches efa_fit()'s contract: NA means "sample size unknown", 0 is an impossible one.
+  # Checked here as well as there, because the grid runs each fit inside try(), which would
+  # otherwise turn the argument error into an unexplained all-solutions-failed result.
+  # Raised through .assert_args() so the rejection carries the same condition class here as
+  # it does from efa_fit().
+  .assert_args(checkmate::assert_count(N, positive = TRUE, na.ok = TRUE))
   # The vector-valued choice arguments are case-insensitive: map them onto the
   # canonical spellings first, so the subset checks and the type grid below only
   # ever see the canonical values.

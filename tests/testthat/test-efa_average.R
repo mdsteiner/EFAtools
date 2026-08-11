@@ -95,9 +95,40 @@ test_that("efa_average runs end to end on a cheap grid (smoke test)", {
   expect_length(res$h2$average, m)
   expect_identical(dim(res$ind_fac_corres), c(m, 3L))
 
+  # The averaged variance table carries three rows for more than one factor (the
+  # single-factor form is pinned separately below).
+  expect_identical(rownames(res$vars_accounted$average),
+                   c("SS loadings", "Prop Tot Var", "Prop Comm Var"))
+
   # The averaging-rate sentence must never contain NaN (the empty-denominator guard).
   expect_no_match(paste(cli::ansi_strip(format(res)), collapse = " "), "NaN",
                   fixed = TRUE)
+})
+
+test_that("an impossible N is rejected at the argument, not inside the grid", {
+  # efa_average() runs every grid cell inside try(), so an N that efa_fit() refuses would
+  # otherwise be recorded as a per-cell failure and surface as an unexplained
+  # all-solutions-excluded result. It is rejected up front instead, with the same condition
+  # class efa_fit() uses, while NA still means "sample size unknown".
+  expect_error(efa_average(test_models$baseline$cormat, n_factors = 3, N = 0,
+                           show_progress = FALSE),
+               class = "efa_invalid_argument")
+})
+
+test_that("the averaged variance table drops 'Prop Comm Var' for a single factor", {
+  # With one factor the proportion of common variance is identically 1, so the row is
+  # omitted and these matrices have two rows rather than three. User code indexing a row by
+  # name depends on it, so the documented return says so and this pins it.
+  # Two grid rows, so the averaged (list) form is returned rather than the
+  # single-combination shortcut's plain efa_fit() object.
+  res_1 <- efa_average(test_models$baseline$cormat, n_factors = 1, N = 500,
+                       estimator = c("PAF", "ML"), type = "EFAtools",
+                       rotation = "none", start_method = "psych",
+                       show_progress = FALSE)
+  for (stat in c("average", "sd", "min", "max", "range")) {
+    expect_identical(rownames(res_1$vars_accounted[[stat]]),
+                     c("SS loadings", "Prop Tot Var"))
+  }
 })
 
 test_that("output class and dimensions are correct", {

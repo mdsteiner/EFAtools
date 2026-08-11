@@ -37,8 +37,8 @@
 #'  in the [efa_retain()] function.
 #'
 #' @return A list containing
-#' \item{chisq}{The chi square statistic, or `NA` if `N` is too small for the
-#'   Bartlett correction (i.e. \eqn{N - 1 - (2p + 5)/6 \le 0}).}
+#' \item{chisq}{The chi square statistic, or `NA`, with a warning, if `N` is too
+#'   small for the Bartlett correction (i.e. \eqn{N - 1 - (2p + 5)/6 \le 0}).}
 #' \item{p_value}{The p value of the chi square statistic, or `NA` when `chisq`
 #'   is `NA`.}
 #' \item{df}{The degrees of freedom for the chi square statistic.}
@@ -87,6 +87,11 @@ efa_bartlett <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
   p <- nrow(R)
   statistic <- .null_chisq(R, N)
   df <- p * (p - 1)/2
+
+  # An undefined statistic needs a reason at the point of use; the helper owns both the
+  # condition and the wording, shared with efa_screen().
+  if (is.na(statistic)) .warn_bartlett_n_too_small(N, p)
+
   pval <- stats::pchisq(statistic, df, lower.tail = FALSE)
 
   # prepare the output

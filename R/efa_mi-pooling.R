@@ -229,12 +229,16 @@
   list(loadings = out, meta = meta)
 }
 
-.efa_pooled_rmsea_ci <- function(chi, df, N, level = .90) {
+.efa_pooled_rmsea_ci <- function(chi, df, N, point, level = .90) {
   # RMSEA confidence bounds for a pooled test statistic: the same noncentral
   # chi-square inversion .chi_fit_indices() uses for a single fit (.rmsea_lambda();
   # Browne & Cudeck, 1992), at an arbitrary confidence `level` and on the pooled
   # (N - 1) scale. The chi-square supplied here should already be the pooled
   # statistic. An undefined bound is reported as NA rather than aborting.
+  # `point` is the RMSEA the caller reports alongside these bounds. It is required
+  # rather than re-derived here: the two callers report point estimates built on
+  # different statistics and scales, so a locally recomputed one would not be the
+  # value the interval has to contain.
   if (is.na(chi) || is.na(df) || is.na(N) || df <= 0 || N <= 1) {
     return(c(lower = NA_real_, upper = NA_real_))
   }
@@ -247,8 +251,16 @@
   alpha <- 1 - level
   # Cap the bounds at 1 like the non-pooled .chi_fit_indices() RMSEA CI, so all
   # pooled routes (information, bootstrap, MI2S) report RMSEA in [0, 1].
-  c(lower = min(sqrt(.rmsea_lambda(chi, df, 1 - alpha / 2) / denom), 1),
-    upper = min(sqrt(.rmsea_lambda(chi, df, alpha / 2) / denom), 1))
+  lower <- min(sqrt(.rmsea_lambda(chi, df, 1 - alpha / 2) / denom), 1)
+  upper <- min(sqrt(.rmsea_lambda(chi, df, alpha / 2) / denom), 1)
+
+  # Withhold an interval that does not contain the point estimate reported with it, by the
+  # same rule .chi_fit_indices() applies to a single fit.
+  if (!.rmsea_ci_contains(lower, upper, point)) {
+    return(c(lower = NA_real_, upper = NA_real_))
+  }
+
+  c(lower = lower, upper = upper)
 }
 
 .efa_pooled_D2 <- function(chis, df) {
@@ -469,8 +481,11 @@
   rmsea_denom <- df * (N - 1)
   if (is.finite(chi_cfi) && is.finite(df) && is.finite(N) &&
       df > 0 && N > 1 && is.finite(rmsea_denom) && rmsea_denom > 0) {
-    RMSEA <- .rmsea_point(chi_cfi, df, N)
-    rmsea_ci <- .efa_pooled_rmsea_ci(chi_cfi, df, N, level = rmsea_ci_level)
+    # Capped at 1 as .chi_fit_indices() caps the single-fit RMSEA, so the point estimate and
+    # the bounds below (also capped) stay on one scale.
+    RMSEA <- min(.rmsea_point(chi_cfi, df, N), 1)
+    rmsea_ci <- .efa_pooled_rmsea_ci(chi_cfi, df, N, point = RMSEA,
+                                     level = rmsea_ci_level)
   } else {
     RMSEA <- NA_real_
     rmsea_ci <- c(lower = NA_real_, upper = NA_real_)

@@ -400,6 +400,47 @@ test_that("errors are thrown correctly", {
   expect_warning(EFA(test_models$baseline$cormat, n_factors = 3, rotation = "quartimax", N = 500, type = "SPSS"), class = "efa_spss_rotation_untested")
 })
 
+test_that("an unusable N is rejected or reported, and never left silent", {
+  R <- test_models$baseline$cormat
+
+  # N = 0 is an impossible sample size, not an unknown one: it goes through the classed
+  # argument-validation path. NA remains the supported way of saying "sample size unknown",
+  # and still warns.
+  expect_error(efa_fit(R, n_factors = 3, N = 0, estimator = "ML"),
+               class = "efa_invalid_argument")
+  expect_warning(efa_fit(R, n_factors = 3, N = NA, estimator = "ML"),
+                 class = "efa_fit_na_n")
+
+  # A valid but very small N relative to p turns Bartlett's small-sample multiplier
+  # non-positive, so the chi-square block is undefined. That was previously silent and
+  # indistinguishable from a PAF fit; it now warns exactly once, and the residual summaries
+  # and df it leaves behind are still populated.
+  expect_warning(fit_small <- efa_fit(R, n_factors = 3, N = 8, estimator = "ML"),
+                 class = "efa_fit_indices_undefined")
+  expect_true(is.na(fit_small$fit_indices$chi))
+  expect_true(is.na(fit_small$fit_indices$CFI))
+  expect_true(is.na(fit_small$fit_indices$RMSEA))
+  expect_true(is.finite(fit_small$fit_indices$SRMR))
+  expect_equal(fit_small$fit_indices$df, .efa_df(ncol(R), 3))
+
+  # PAF reports no chi-square at any N, so the small-sample warning would be noise there.
+  expect_no_warning(efa_fit(R, n_factors = 3, N = 8, estimator = "PAF"),
+                    class = "efa_fit_indices_undefined")
+
+  # An underidentified model leaves the same block undefined, and its warning must not claim
+  # that no fit indices at all were computed: the residual summaries are returned, and are
+  # exactly the numbers a reader would otherwise misread as a flawless solution.
+  expect_warning(
+    fit_ui <- suppressWarnings(efa_fit(R, n_factors = 17, N = 500, estimator = "ML"),
+                               classes = c("efa_heywood", "efa_nonconvergence")),
+    class = "efa_underidentified"
+  )
+  expect_lt(fit_ui$fit_indices$df, 0)
+  expect_true(is.na(fit_ui$fit_indices$chi))
+  expect_true(is.finite(fit_ui$fit_indices$SRMR))
+  expect_true(is.finite(fit_ui$fit_indices$CAF))
+})
+
 test_that("a singular correlation matrix is rejected for every type except psych + PAF", {
   # The psych preset relaxes the singularity check because psych::smc() falls back
   # to a pseudo-inverse for the PAF starting communalities. ML and ULS have no such
@@ -546,6 +587,11 @@ test_that("print/summary.efa omit the inapplicable tables for a rotated single f
   # their print sections are skipped (rather than rendering a stray NA).
   expect_null(efa_1fac$Phi)
   expect_null(efa_1fac$vars_accounted_rot)
+
+  # The variance table also drops the three cumulative/common-variance rows here: with one
+  # factor they would only repeat the two above them. This shape is part of the documented
+  # return, because user code indexing a row by name has to allow for it.
+  expect_identical(rownames(efa_1fac$vars_accounted), c("SS loadings", "Prop Tot Var"))
 
   expect_snapshot(print(efa_1fac), transform = scrub_num)
   expect_snapshot(print(summary(efa_1fac)), transform = scrub_num)

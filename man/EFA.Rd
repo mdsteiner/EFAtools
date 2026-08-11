@@ -49,7 +49,11 @@ otherwise). Use \code{\link[=efa_retain]{efa_retain()}} to decide on a value.}
 
 \item{N}{numeric. The number of observations. Needs only be specified if a
 correlation matrix is used. If input is a correlation matrix and \code{N} = NA
-(default), not all fit indices can be computed. When raw data with missing
+(default), not all fit indices can be computed; \code{NA} is the only accepted way of
+saying that the sample size is unknown, and a supplied \code{N} must be at least 1.
+A positive \code{N} that is very small relative to the number of variables leaves the
+chi-square-derived indices unavailable as well, with a warning.
+When raw data with missing
 values are entered and \code{use} is \code{"complete.obs"} or \code{"na.or.complete"}, rows
 are deleted listwise, so \code{N} is taken as the number of complete cases. The same
 applies, whatever \code{use} asks for, whenever an asymptotic covariance is required

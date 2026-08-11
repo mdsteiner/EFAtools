@@ -848,3 +848,30 @@ test_that("pooled AIC/BIC/ECVI are reported on an unscaled ML pool", {
   expect_true(is.finite(pooled_ml$fit_indices$BIC))
   expect_true(is.finite(pooled_ml$fit_indices$ECVI))
 })
+
+test_that("a pooled RMSEA interval that misses its point estimate is reported as undefined", {
+  # The same non-convergent noncentrality solve the single-fit path guards: at a chi in the
+  # millions stats::pchisq() stops converging and both bounds collapse below the point
+  # estimate. An interval that does not contain the RMSEA reported beside it is not an
+  # interval, so it is withheld rather than shipped as a usable range.
+  point_big <- .rmsea_point(4101811, 135, 5e6)
+  ci_big <- .efa_pooled_rmsea_ci(4101811, df = 135, N = 5e6, point = point_big)
+  expect_true(is.na(ci_big[["lower"]]))
+  expect_true(is.na(ci_big[["upper"]]))
+
+  # An ordinary pooled statistic keeps its interval, and that interval brackets the point
+  # estimate the caller reports.
+  point_ok <- .rmsea_point(200, 102, 500)
+  ci_ok <- .efa_pooled_rmsea_ci(200, df = 102, N = 500, point = point_ok)
+  expect_true(is.finite(ci_ok[["lower"]]))
+  expect_true(is.finite(ci_ok[["upper"]]))
+  expect_lte(ci_ok[["lower"]], point_ok)
+  expect_lte(point_ok, ci_ok[["upper"]])
+
+  # Containment is judged against the caller's point estimate, not one re-derived here from
+  # chi and N: the two callers report estimates built on different statistics and scales.
+  outside <- .efa_pooled_rmsea_ci(200, df = 102, N = 500,
+                                  point = ci_ok[["upper"]] + .05)
+  expect_true(is.na(outside[["lower"]]))
+  expect_true(is.na(outside[["upper"]]))
+})

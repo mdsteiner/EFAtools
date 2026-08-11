@@ -54,6 +54,8 @@
 
 ## Input Validation and Correlation Handling
 
+* `efa_fit()` and `efa_average()` now reject `N = 0`. `N = NA` remains the way to say that the sample size is unknown.
+
 * `efa_*` arguments with fixed choices are now case-insensitive. Those accepting one choice also allow unambiguous abbreviations, invalid choices produce clearer errors, and results use the standard spelling.
 
 * Correlation matrices supplied as data frames are now recognised and analysed correctly.

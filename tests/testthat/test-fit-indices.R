@@ -17,6 +17,20 @@ test_that(".compute_vars works", {
   )
 })
 
+test_that(".compute_vars drops the cumulative rows for a single factor", {
+  # The documented row set: the three cumulative/common-variance rows are defined only for
+  # more than one factor, so the table has two rows at k = 1 and five otherwise. User code
+  # that indexes a row by name depends on this, so it is part of the contract.
+  five <- .compute_vars(efa_temp$unrot_loadings, efa_temp$unrot_loadings)
+  expect_identical(rownames(five),
+                   c("SS loadings", "Prop Tot Var", "Cum Prop Tot Var", "Prop Comm Var",
+                     "Cum Prop Comm Var"))
+
+  one <- .compute_vars(efa_temp$unrot_loadings[, 1, drop = FALSE],
+                       efa_temp$unrot_loadings[, 1, drop = FALSE])
+  expect_identical(rownames(one), c("SS loadings", "Prop Tot Var"))
+})
+
 set.seed(42)
 efa_ml <- suppressWarnings(EFA(cbind(rnorm(100), rnorm(100), rnorm(100), rnorm(100),
                                      rnorm(100), rnorm(100)), 3, N = 500,
@@ -110,6 +124,37 @@ test_that(".gof works", {
 })
 
 
+test_that("the documented fit-index definitions are the ones computed", {
+  # The help page states df, df_null, the ECVI formula, and the RMSR/SRMR scaling relation
+  # explicitly; pin each so the documentation and the code cannot drift apart.
+  R <- test_models$baseline$cormat
+  p <- ncol(R)
+  N <- 500
+  fit <- suppressWarnings(suppressMessages(
+    EFA(R, n_factors = 3, N = N, method = "ML")))
+  fi <- fit$fit_indices
+
+  # df = ((p - k)^2 - (p + k))/2, and the independence baseline df_null = p(p - 1)/2
+  expect_equal(fi$df, ((p - 3)^2 - (p + 3)) / 2)
+  expect_equal(fi$df_null, p * (p - 1) / 2)
+  # chi_null is documented as Bartlett's test of sphericity, so it must be that statistic and
+  # not merely some baseline that p_null happens to be a chi-square tail of.
+  expect_equal(fi$chi_null, efa_bartlett(R, N = N)$chisq)
+
+  # ECVI = (chi^2 + 2q)/(N - 1) with q = p(p + 1)/2 - df free parameters, built on the
+  # reported (Bartlett-corrected) chi-square rather than the uncorrected Browne-Cudeck one.
+  n_params <- p * (p + 1) / 2 - fi$df
+  expect_equal(fi$ECVI, (fi$chi + 2 * n_params) / (N - 1))
+
+  # AIC and BIC are the chi-square-based forms, on the same corrected statistic
+  expect_equal(fi$AIC, fi$chi - 2 * fi$df)
+  expect_equal(fi$BIC, fi$chi - log(N) * fi$df)
+
+  # SRMR = RMSR * sqrt((p - 1)/(p + 1)); psych's rms is RMSR/sqrt(2)
+  expect_equal(fi$SRMR, fi$RMSR * sqrt((p - 1) / (p + 1)))
+})
+
+
 test_that(".gof CFI uses the Bentler noncentrality truncation (matches lavaan)", {
   skip_on_cran()
   skip_if_not_installed("lavaan")
@@ -176,6 +221,110 @@ test_that("an unlocatable RMSEA noncentrality bound is NA, not an error", {
   expect_true(is.na(idx$RMSEA_LB))
   expect_true(is.na(idx$RMSEA_UB))
   expect_true(is.finite(idx$p_chi))
+})
+
+
+test_that("a non-convergent RMSEA noncentrality solve is contained, not leaked or dressed up", {
+  # stats::pchisq() stops converging for noncentralities in the millions and emits one base
+  # warning per evaluation, so a single interval solve used to leak dozens of them out of an
+  # efa_fit() call. The solver contains them.
+  expect_no_warning(lambda <- .rmsea_lambda(4101811, df = 135, goal = .95))
+  expect_true(is.finite(lambda))
+
+  # The bounds that same solve produces collapse onto a single value below the point
+  # estimate. An interval that does not contain its own point estimate is not an interval:
+  # both bounds are reported as undefined rather than clipped or reordered into something
+  # that reads as usable. The point estimate itself is unaffected.
+  idx <- .chi_fit_indices(chi = 4101811, df = 135, chi_null = 1e8, df_null = 153,
+                          N = 5e6, m = 18, ci = TRUE,
+                          chi_cfi = 4101811, chi_null_cfi = 1e8)
+  expect_true(is.na(idx$RMSEA_LB))
+  expect_true(is.na(idx$RMSEA_UB))
+  expect_true(is.finite(idx$RMSEA))
+
+  # ... and the whole fit stays quiet and consistent at that N.
+  expect_no_warning(
+    fit_huge <- suppressMessages(
+      efa_fit(test_models$baseline$cormat, n_factors = 1, N = 5e6, estimator = "ML"))
+  )
+  expect_true(is.finite(fit_huge$fit_indices$RMSEA))
+  expect_true(is.na(fit_huge$fit_indices$RMSEA_LB))
+  expect_true(is.na(fit_huge$fit_indices$RMSEA_UB))
+})
+
+
+test_that("an ordinary RMSEA interval is preserved and brackets its point estimate", {
+  idx <- .chi_fit_indices(chi = 200, df = 102, chi_null = 2000, df_null = 153, N = 500,
+                          m = 18, ci = TRUE, chi_cfi = 200, chi_null_cfi = 2000)
+  expect_true(is.finite(idx$RMSEA_LB))
+  expect_true(is.finite(idx$RMSEA_UB))
+  expect_lte(idx$RMSEA_LB, idx$RMSEA)
+  expect_lte(idx$RMSEA, idx$RMSEA_UB)
+  expect_gt(idx$RMSEA_UB, idx$RMSEA_LB)
+
+  # ci = FALSE still returns no bounds at all, and a just-identified model still reports the
+  # degenerate zero interval rather than being caught by the bracketing check.
+  no_ci <- .chi_fit_indices(chi = 200, df = 102, chi_null = 2000, df_null = 153, N = 500,
+                            m = 18, ci = FALSE, chi_cfi = 200, chi_null_cfi = 2000)
+  expect_true(is.na(no_ci$RMSEA_LB))
+  expect_true(is.na(no_ci$RMSEA_UB))
+
+  just_id <- .chi_fit_indices(chi = 5, df = 0, chi_null = 2000, df_null = 153, N = 500,
+                              m = 18, ci = TRUE, chi_cfi = 5, chi_null_cfi = 2000)
+  expect_equal(just_id$RMSEA_LB, 0)
+  expect_equal(just_id$RMSEA_UB, 0)
+})
+
+
+test_that("the shared unavailability wording names the block, the residuals, and the multiplier", {
+  # One source for the sentences efa_fit(), efa_bartlett(), efa_screen() and their print
+  # methods use, so a reader is told the same thing wherever the chi-square block goes away.
+  expect_match(.fit_unavailable_text("chisq_block"), "CFI, TLI, RMSEA, AIC, BIC, ECVI",
+               fixed = TRUE)
+  expect_match(.fit_unavailable_text("residuals_kept"), "CAF, RMSR, SRMR", fixed = TRUE)
+  expect_match(.fit_unavailable_text("residuals_not_identification"), "identified",
+               fixed = TRUE)
+
+  # The multiplier is named with the factor-count term only where there are factors, and
+  # with the caller's numbers only where the caller has them.
+  expect_match(.fit_unavailable_text("bartlett_mult", N = 8, p = 18, q = 3),
+               "N - 1 - (2p + 5)/6 - 2q/3 is not positive for N = 8, p = 18, and q = 3",
+               fixed = TRUE)
+  expect_match(.fit_unavailable_text("bartlett_mult", N = 5, p = 18),
+               "N - 1 - (2p + 5)/6 is not positive for N = 5 and p = 18", fixed = TRUE)
+  expect_match(.fit_unavailable_text("bartlett_mult"), "N - 1 - (2p + 5)/6", fixed = TRUE)
+
+  # A mistyped key is a caller bug, not a silently empty message.
+  expect_error(.fit_unavailable_text("not_a_key"))
+})
+
+
+test_that("RMSR and SRMR keep their fixed relation, and both drop out together on an NA", {
+  # Both summarise the same p(p - 1)/2 off-diagonal residuals and differ only in their
+  # denominator, so SRMR = RMSR * sqrt((p - 1)/(p + 1)) exactly. That is the relation the
+  # print methods rely on when they show only one of the two.
+  set.seed(11)
+  p <- 7
+  E <- matrix(0, p, p)
+  E[upper.tri(E)] <- stats::rnorm(p * (p - 1) / 2, sd = .05)
+  E <- E + t(E)
+
+  expect_equal(.srmr(E), .rmsr(E) * sqrt((p - 1) / (p + 1)))
+  expect_equal(.rmsr(E), sqrt(sum(E[upper.tri(E)]^2) / (p * (p - 1) / 2)))
+
+  # A residual that is not available makes the sum, and therefore both summaries, undefined.
+  # Averaging RMSR over the surviving pairs would report a number describing fewer variable
+  # pairs than it appears to, and would break the relation above.
+  E_na <- E
+  E_na[1, 3] <- E_na[3, 1] <- NA_real_
+  expect_true(is.na(.rmsr(E_na)))
+  expect_true(is.na(.srmr(E_na)))
+
+  # An NA on the diagonal is not a residual and must not reach either summary.
+  E_diag <- E
+  diag(E_diag) <- NA_real_
+  expect_equal(.rmsr(E_diag), .rmsr(E))
+  expect_equal(.srmr(E_diag), .srmr(E))
 })
 
 

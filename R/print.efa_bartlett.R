@@ -31,6 +31,18 @@ print.efa_bartlett <- function(x, ...) {
   invisible(x)
 }
 
+# The undefined-statistic verdict, shared by format.efa_bartlett() and format.efa_screen() so
+# the two entry points cannot drift. Names the reason as well as the outcome: a non-positive
+# small-sample multiplier is what leaves the statistic undefined, and the object carries no
+# other clue. Wording shared with the warning raised when that NA is computed.
+.print_bartlett_no_result <- function() {
+  mult_note <- .fit_unavailable_text("bartlett_mult")
+  cli::cli_alert_warning("The Bartlett's test of sphericity did not render a result.",
+                         wrap = TRUE)
+  cli::cli_text("{mult_note}")
+  invisible(NULL)
+}
+
 #' @rdname print.efa_bartlett
 #' @export
 #' @method format efa_bartlett
@@ -57,8 +69,7 @@ format.efa_bartlett <- function(x, ...) {
         cli::cli_text("These data are probably not suitable for factor analysis.")
       }
     } else {
-      cli::cli_alert_warning("The Bartlett's test of sphericity did not render a result.",
-                             wrap = TRUE)
+      .print_bartlett_no_result()
     }
 
     # The chi-square line is shown for every object, including the "no result" case above, so
