@@ -55,12 +55,26 @@
 #' (the default) aligns every imputation to the first imputation's rotated
 #' solution by one Procrustes rotation each. `"consensus"` instead refines a
 #' centroid target by Generalized Procrustes Analysis (Gower 1975; van Ginkel &
-#' Kroonenberg 2014; Lorenzo-Seva & Van Ginkel 2016). The two give the same pooled
-#' estimate for orthogonal rotations (consensus is just more expensive), and
-#' `"consensus"` is only supported there. Anchoring on the first imputation can
-#' understate the between-imputation variability when the imputations disagree
-#' substantially, whereas `"consensus"` is more robust to an atypical first
-#' imputation (van Ginkel & Kroonenberg 2014).
+#' Kroonenberg 2014; Lorenzo-Seva & Van Ginkel 2016), starting from the *medoid*
+#' imputation's rotated solution -- the one closest in aligned squared distance to
+#' all the others. `"consensus"` is supported for orthogonal rotations only.
+#'
+#' The two differ in the rotational gauge the pooled solution ends up in, and so
+#' in how it responds to the order of `data_list`. The GPA iteration moves its
+#' target toward the centroid but keeps the gauge of the solution it started from,
+#' so starting it at the medoid -- a property of the set, not of the list order --
+#' makes the pooled rotated solution invariant to that order, as the pooled
+#' unrotated solution already is. `"first_target"` anchors on the first imputation
+#' by construction: an atypical first imputation fixes the orientation for every
+#' other one, and permuting `data_list` moves the pooled pattern, by a few
+#' hundredths of a loading unit on a mildly heterogeneous set and by more when the
+#' imputations disagree substantially (the factor correlations of an oblique
+#' solution move with it). Where the two anchors coincide -- and, more generally,
+#' where the imputations agree -- the two methods give effectively the same pooled
+#' estimate and `"consensus"` is simply the more expensive; where they do not, the
+#' pooled patterns differ by the rotation between the two gauges. Passing `start`
+#' through `consensus_args` overrides the medoid anchor and makes the consensus
+#' order dependent again.
 #'
 #' `align_unrotated` controls how unrotated loadings are aligned before pooling:
 #' `"signed_tucker_congruence"` (the default) matches them up to factor reordering
@@ -203,13 +217,22 @@
 #' class. The ones most likely to be encountered:
 #'
 #' - **Inputs.** `efa_pooled_min_fits` (at least two fits are required);
-#'   `efa_pooled_mixed_se` (every imputation must use the same `se`).
+#'   `efa_pooled_fit_failed` (an imputation could not be fitted; the message names it
+#'   and carries the [efa_fit()] condition as its parent);
+#'   `efa_pooled_mixed_se` (the component fits recorded different `se` methods,
+#'   which a single `se` argument can still produce: [efa_fit()] cannot bootstrap a
+#'   correlation matrix and records `se = "none"` for it, so one correlation matrix
+#'   among raw datasets under `se = "np-boot"` is the way this is usually reached).
 #' - **Alignment.** `efa_consensus_oblique_unsupported` (`target_method =
-#'   "consensus"` is orthogonal-only).
+#'   "consensus"` is orthogonal-only); `efa_pooled_bad_procrustes_args`
+#'   (`procrustes_args` may only carry [efa_procrustes()] algorithm controls).
 #' - **Standard errors.** `efa_pooled_se_unavailable` (a warning: pooled SEs could
 #'   not be produced, so only point estimates are returned); `efa_pooled_no_vcov`
 #'   and `efa_pooled_unreliable_vcov` (the analytic `"procrustes"` path needs a
-#'   reliable `vcov_unrot_loadings` on every fit).
+#'   reliable `vcov_unrot_loadings` on every fit);
+#'   `efa_pooled_unrotated_se_unreliable` and `efa_pooled_rotated_se_unreliable`
+#'   (warnings: an imputation carried NA-filled analytic standard errors, so the
+#'   corresponding pooled block is returned as `NA`).
 #' - **Two-stage (`se = "sandwich"`).** `efa_pooled_mi2s_inputs_inconsistent`
 #'   (every imputation must use `se = "sandwich"` with the same `cor_method`);
 #'   `efa_pooled_mi2s_n_too_small` (a warning below 20 imputations);
@@ -230,8 +253,9 @@
 #' @param target_method Character. How rotated solutions are aligned across imputations
 #' before pooling: `"first_target"` (the default) aligns every imputation to the first
 #' imputation's rotated solution, while `"consensus"` refines a centroid target by
-#' Generalized Procrustes Analysis (orthogonal rotations only). See *Aligning solutions
-#' across imputations* in Details.
+#' Generalized Procrustes Analysis, started from the medoid imputation so that the
+#' pooled rotated solution does not depend on the order of `data_list` (orthogonal
+#' rotations only). See *Aligning solutions across imputations* in Details.
 #' @param align_unrotated Character. How unrotated loadings are aligned before pooling:
 #' `"signed_tucker_congruence"` (the default; sign/permutation via Tucker congruence,
 #' anchored on the medoid imputation and returned in the extraction's canonical
@@ -245,9 +269,12 @@
 #' GPA-consensus iteration when `target_method = "consensus"`. Recognised tuning
 #' parameters include the convergence tolerances `tol` and `loss_tol`, the
 #' iteration bounds `min_iter` and `max_iter`, the target-update damping `alpha`,
-#' and the multi-start controls `multi_start` and `starts`.
-#' @param procrustes_args List of additional arguments passed to [efa_procrustes()]
-#' for fixed-target alignment.
+#' the multi-start controls `multi_start` and `starts`, and `start`, which
+#' overrides the medoid imputation the iteration is otherwise started from.
+#' @param procrustes_args List of [efa_procrustes()] algorithm controls for
+#' fixed-target alignment, for example `oblique_maxit` or `oblique_random_starts`.
+#' The loadings `A`, the alignment `Target`, the `rotation` family, and the
+#' cross-product `S` are derived from the imputations and cannot be set here.
 #' @param rmsea_ci_level Numeric. Confidence level for the RMSEA CI.
 #' @param rmsr_upper `r lifecycle::badge("deprecated")` Accepted and ignored. It
 #' selected between computing RMSR from the unique off-diagonal residual correlations
@@ -261,7 +288,14 @@
 #' @param ... Additional arguments passed to [efa_fit()] (e.g. `estimator`, `rotation`, `se`,
 #' `n_factors`, `N`). These select the estimator, rotation, standard-error method, and
 #' fit indices used for every imputation; see [efa_fit()] for the available options, their
-#' properties, and which combinations are valid. The [estimate_control()] and
+#' properties, and which combinations are valid. Two of them shape the pooled object
+#' rather than a single fit: `seed` sets the random state once for the whole
+#' `efa_mi()` call -- every component bootstrap and every random-start rotation draws
+#' from it, so a seeded call is reproducible as a whole, and the caller's random stream
+#' is restored afterwards -- and `b_boot` sets the number of bootstrap replicates drawn
+#' per imputation under `se = "np-boot"`, which is what the pooled within-imputation
+#' variances are estimated from and is recorded in `settings$b_boot`. The
+#' [estimate_control()] and
 #' [rotate_control()] objects are accepted through `...` as well, although they are not
 #' declared formals: pass them as `estimate_control =` / `rotate_control =` exactly as you
 #' would to [efa_fit()].
@@ -273,8 +307,28 @@
 #' addition to the slots inherited from [efa_fit()] (including `SE`, `CI`, and,
 #' on the bootstrap path, `replicates`), the object carries:
 #' \describe{
+#' \item{SE, CI}{Pooled standard errors and confidence intervals, named as
+#' [efa_fit()] names them: where a pooled communality standard error and interval
+#' are produced, they are `SE$communalities` and `CI$communalities` on every route.
+#' The Rubin routes (`se = "information"`, `se = "np-boot"`) additionally return
+#' them under the compatibility alias `h2`, which holds the same values. The
+#' analytic route builds the communality family only when a rotation was requested;
+#' an unrotated analytic pool reports `uniquenesses` instead.}
+#' \item{fit_indices}{The pooled fit indices. Every route reports `chi`, `df`,
+#' `p_chi`, `CAF`, `CFI`, `TLI`, `RMSEA`, `RMSEA_LB`, `RMSEA_UB`, `AIC`, `BIC`,
+#' `ECVI`, `RMSR`, `SRMR`, `chi_null`, `df_null`, `p_null`, and `pool_method`
+#' under those names and in that order. `pool_method` records the rule the model
+#' chi-square was pooled with (`"D2"`); it is `NA` on the `se = "sandwich"` (MI2S)
+#' path, which fits once on the pooled inputs and reports that fit's own scaled
+#' statistic rather than pooling several. That path also carries the quantities a
+#' scaled statistic comes with -- `Fm`, `chi_unscaled`, `chi_scaled_type`,
+#' `chi_scaling`, `chi_shift`, `chi_mean_adjusted`, `chi_mean_var`, and
+#' `df_mean_var` -- after the common block, so the two schemas are not identical.}
+#' \item{standardized_residuals}{The pooled residuals divided by their pooled
+#' bootstrap standard errors, with a zero diagonal. Returned on the
+#' `se = "np-boot"` path only, the one route that pools a residual standard error.}
 #' \item{MI}{Multiple-imputation diagnostics for each pooled parameter family.
-#' On the bootstrap path: `unrot_loadings`, `h2`, `residuals`, optionally
+#' On the bootstrap path: `unrot_loadings`, `communalities`, `residuals`, optionally
 #' `rot_loadings`, `Phi`, `Structure`, and `fit_indices_descriptive`, plus
 #' integer vectors `bootstrap_source_failures` (replicates the component [efa_fit()]
 #' could not fit), `bootstrap_rotation_failures` (replicates whose Procrustes
@@ -282,7 +336,9 @@
 #' that entered the pool, `B - source - rotation` failures). Both paths use the
 #' plain Rubin (1987) df. On the analytic path (`se = "information"`):
 #' `unrot_loadings` and `uniquenesses`, plus, when a rotation was requested,
-#' `rot_loadings`, `h2`, and (oblique) `Phi` and `Structure`. Each per-family
+#' `rot_loadings`, `communalities`, and (oblique) `Phi` and `Structure`. The
+#' communality family is keyed by its canonical name here, without the `SE`/`CI`
+#' alias, so each family is counted once in the printed FMI/RIV summary. Each per-family
 #' entry is a list with `RIV` (relative increase in variance), `FMI` (the
 #' fraction of missing information, reported as Rubin's asymptotic
 #' \eqn{\lambda = RIV / (1 + RIV)}, equal to `lavaan.mi`'s `fmi`), and `df`; the
@@ -290,14 +346,18 @@
 #' recording the gauge alignment used (`"gauge_invariant"` for communalities and
 #' `"signed_permutation_approx"` for rotated loadings and, for oblique rotations,
 #' factor correlations and structure coefficients). `fit_indices_descriptive`, on
-#' the bootstrap path, pools every per-imputation fit index, so the structural
-#' constants among them (`df`, `df_null`) appear with a standard error of 0.}
+#' the bootstrap path, pools every fit index the bootstrap replicates carry, so the
+#' structural constants among them (`df`, `df_null`) appear with a standard error
+#' of 0. The RMSEA confidence bounds are not among them: the replicate fits run
+#' without confidence intervals, so no per-replicate value exists to pool.}
 #' \item{mi_fit}{On the `se = "sandwich"` (MI2S) path only: the single [efa_fit()]
 #' fit on the pooled correlation matrix \eqn{\bar r} and pooled asymptotic
 #' covariance \eqn{\tilde\Gamma}. Its `orig_R` is \eqn{\bar r} and its `Gamma`
-#' is \eqn{\tilde\Gamma}; the pooled `SE`, `CI`, and `fit_indices` are taken
-#' from it. `MI` is `NULL` on this path because the imputation uncertainty is
-#' carried by \eqn{\tilde\Gamma} rather than by per-parameter Rubin pooling.}
+#' is \eqn{\tilde\Gamma}; the pooled `SE` and `CI` are taken from it, as are the
+#' pooled `fit_indices` (put into the common order above and extended with
+#' `pool_method`, while `mi_fit` keeps [efa_fit()]'s own layout). `MI` is `NULL`
+#' on this path because the imputation uncertainty is carried by
+#' \eqn{\tilde\Gamma} rather than by per-parameter Rubin pooling.}
 #' \item{mi_diagnostics}{Diagnostics for the pooled model fit, `NULL` on the
 #' `se = "sandwich"` (MI2S) path, where there is one fit and no D2 pool. `m` is the
 #' number of imputations that entered the pool. `D2_F`, `D2_df1`, `D2_df2`,
@@ -305,7 +365,12 @@
 #' chi-square (the average relative increase in variance and the fraction of
 #' missing information it implies), and `chi_bar_naive` is the plain mean of the
 #' per-imputation statistics for comparison; the `*_null` entries are the same
-#' quantities for the independence baseline. `chi_cfi` and `chi_null_cfi` are the
+#' quantities for the independence baseline. `D2_F` is the rule's raw statistic and
+#' is reported unfloored, so it is negative whenever the between-imputation
+#' variability of the component statistics exceeds the pooled discrepancy -- a
+#' diagnostic of the pool rather than a fit statistic. The reported fit is not
+#' affected: the pooled chi-square is floored at zero and its p-value is 1 in that
+#' case. `chi_cfi` and `chi_null_cfi` are the
 #' pooled model and baseline **chi-squares** on the common \eqn{N - 1}
 #' noncentrality scale. `chi_cfi` is the statistic the reported RMSEA is formed
 #' from; the pair is also the basis on which `lavaan.mi`/`semTools` form pooled
@@ -313,6 +378,15 @@
 #' `1 - (chi_cfi - df) / (chi_null_cfi - df_null)` (and analogously for TLI) --
 #' a different quantity from the reported CFI/TLI, which average the
 #' per-imputation indices.}
+#' \item{mi_admissibility}{Admissibility and convergence of the component fits, kept on
+#' the pooled object so a saved solution carries the record independently of `fits`: `m`
+#' (the number of imputations that entered the pool), `heywood_imputations` (the indices
+#' of the fits with at least one flagged variable), `n_heywood_items` (the number of
+#' flagged variables per imputation), `nonconverged` (the indices whose extraction
+#' reported a non-zero convergence code), and `iter` (the iterations each extraction
+#' used). Averaging aligned solutions pulls boundary communalities back inside the
+#' admissible range, so a pooled matrix with no Heywood case can still rest on component
+#' fits that had them; `summary()` reports the pooled count together with these.}
 #' \item{fits}{The list of \eqn{m} component [efa_fit()] fits, in the order of
 #' `data_list`, kept for per-imputation diagnostics. On the MI2S path these are the
 #' per-imputation fits whose inputs were pooled, not the pooled fit itself (which
@@ -472,6 +546,7 @@ efa_mi <- function(data_list,
   checkmate::assert_number(p, na.ok = FALSE, lower = 0, upper = 1)
   checkmate::assert_list(consensus_args, null.ok = FALSE)
   checkmate::assert_list(procrustes_args, null.ok = FALSE)
+  .efa_pooled_check_procrustes_args(procrustes_args)
   checkmate::assert_number(rmsea_ci_level, na.ok = FALSE, lower = 0, upper = 1)
 
   # `rmsr_upper` never changed a returned value; the argument's documentation gives the
@@ -513,9 +588,25 @@ efa_mi <- function(data_list,
   ## Fit EFA to each imputed dataset
   ## -------------------------------------------------------------------------
 
-  fits <- lapply(data_list, function(data_list_subset) {
-    do.call(efa_fit, c(list(x = data_list_subset), efa_args))
-  })
+  # Pooling is all-or-nothing, so one unfittable imputation ends the call. Name it:
+  # the component condition is raised by efa_fit() and identifies no imputation, which
+  # leaves a long `data_list` to be bisected by hand. The original condition is kept as
+  # the parent so its own diagnosis stays visible.
+  fits <- vector("list", m_imp)
+  for (d in seq_len(m_imp)) {
+    fits[[d]] <- tryCatch(
+      do.call(efa_fit, c(list(x = data_list[[d]]), efa_args)),
+      error = function(e) {
+        cli::cli_abort(
+          c("Imputation {d} could not be fitted.",
+            "i" = "Inspect {.code data_list[[{d}]]}, then re-fit or replace it."),
+          class = "efa_pooled_fit_failed", parent = e
+        )
+      }
+    )
+  }
+  # `fits` is returned to the user, so it keeps whatever names `data_list` carried.
+  names(fits) <- names(data_list)
 
   .efa_pooled_check_fits(fits)
 
@@ -524,11 +615,7 @@ efa_mi <- function(data_list,
   # than silently producing an uninterpretable mixture.
   route <- .efa_pooled_route(fits)
   if (identical(route, "mixed")) {
-    cli::cli_abort(
-      c("The component {.fn efa_fit} fits use different {.arg se} methods, so their standard errors cannot be pooled.",
-        "i" = "Re-fit every imputation with the same {.arg se} (all {.val none}, {.val information}, {.val sandwich}, or {.val np-boot})."),
-      class = "efa_pooled_mixed_se"
-    )
+    .efa_pooled_mixed_se_abort(fits, data_list)
   }
 
   settings <- fits[[1]]$settings
@@ -640,12 +727,26 @@ efa_mi <- function(data_list,
                         converged = all(inner_converged))
 
     } else if (target_method == "consensus") {
+      # The GPA iteration starts from one imputation's rotated solution and moves it
+      # toward the centroid, inheriting the rotational gauge of wherever it started, so
+      # the start decides the gauge of the pooled rotated solution. Start it at the
+      # medoid rather than at the first imputation: the medoid is a property of the set,
+      # so the converged target -- and with it the pooled rotated pattern -- no longer
+      # depends on the order of `data_list`. `"first_target"` keeps its documented
+      # first-imputation anchor, which is what its name promises. An explicit `start` in
+      # `consensus_args` wins; it is matched the way do.call() would match it, so a
+      # partially spelled one is not silently duplicated.
+      consensus_call <- consensus_args
+      start_supplied <- any(!is.na(pmatch(names(consensus_args), "start")))
+      if (!start_supplied) {
+        consensus_call$start <- .efa_pooled_medoid_anchor(rot_loadings_initial)
+      }
       consensus <- do.call(
         .gpa_consensus_target,
         c(list(unrotated_list = unrot_loadings,
                init_targets = rot_loadings_initial,
                rotation = rotation_type),
-          consensus_args)
+          consensus_call)
       )
 
       if (!isTRUE(consensus$converged)) {
@@ -922,7 +1023,8 @@ efa_mi <- function(data_list,
     settings = settings_pooled,
     fits = fits,
     alignment = alignment,
-    mi_diagnostics = mi_diagnostics
+    mi_diagnostics = mi_diagnostics,
+    mi_admissibility = .efa_pooled_admissibility(fits)
   )
 
   if (rotation_type != "none") {
@@ -982,6 +1084,134 @@ efa_mi <- function(data_list,
     return("mixed")
   }
   ses[[1L]]
+}
+
+.efa_pooled_check_procrustes_args <- function(procrustes_args) {
+  # Restrict `procrustes_args` to efa_procrustes() algorithm controls. The matrices and
+  # the rotation family are derived from the imputations, and `S` is the cross-product
+  # of the loadings being rotated: supplying any of them here would either duplicate a
+  # formal do.call() already supplies or replace an internally derived quantity with one
+  # that does not belong to the alignment being run. efa_procrustes() has no dots, so R
+  # would match a partially spelled name onto a formal; canonicalize the names the same
+  # way before deciding, or `Tar =` would slip through as an override of `Target`.
+  # `charmatch()` rather than `pmatch()`: it separates an abbreviation that matches
+  # several formals (0) from one that matches none (NA), so an ambiguous name is
+  # diagnosed as ambiguous instead of as a typo.
+  if (length(procrustes_args) == 0L) {
+    return(invisible(TRUE))
+  }
+  nms <- names(procrustes_args)
+  if (is.null(nms) || any(!nzchar(nms))) {
+    cli::cli_abort(
+      c("Every element of {.arg procrustes_args} must be named.",
+        "i" = "Positional arguments cannot be matched to {.fn efa_procrustes} formals."),
+      class = "efa_pooled_bad_procrustes_args"
+    )
+  }
+
+  procrustes_formals <- names(formals(efa_procrustes))
+  matched <- charmatch(nms, procrustes_formals)
+  resolved <- !is.na(matched) & matched > 0L
+  canonical <- nms
+  canonical[resolved] <- procrustes_formals[matched[resolved]]
+  reserved <- c("A", "Target", "rotation", "S")
+
+  bad_reserved <- nms[canonical %in% reserved]
+  if (length(bad_reserved) > 0L) {
+    cli::cli_abort(
+      c("{.arg procrustes_args} must not set {.arg {bad_reserved}}.",
+        "i" = "{.fn efa_mi} derives the loadings, the alignment target, the rotation family, and the cross-product {.arg S} from the imputations; pass only {.fn efa_procrustes} algorithm controls (for example {.arg oblique_maxit})."),
+      class = "efa_pooled_bad_procrustes_args"
+    )
+  }
+
+  ambiguous <- nms[!is.na(matched) & matched == 0L]
+  if (length(ambiguous) > 0L) {
+    cli::cli_abort(
+      c("{cli::qty(length(ambiguous))}{?An/Some} abbreviated {.arg procrustes_args} name{?s} {cli::qty(length(ambiguous))}match{?es/} more than one {.fn efa_procrustes} argument.",
+        "x" = "Ambiguous: {.val {ambiguous}}.",
+        "i" = "Spell {cli::qty(length(ambiguous))}{?it/them} out."),
+      class = "efa_pooled_bad_procrustes_args"
+    )
+  }
+
+  bad_unknown <- nms[is.na(matched)]
+  if (length(bad_unknown) > 0L) {
+    cli::cli_abort(
+      c("{.arg procrustes_args} may only contain {.fn efa_procrustes} arguments.",
+        "x" = "{cli::qty(length(bad_unknown))}Unknown name{?s}: {.val {bad_unknown}}.",
+        "i" = "Available controls: {.arg {setdiff(procrustes_formals, reserved)}}."),
+      class = "efa_pooled_bad_procrustes_args"
+    )
+  }
+
+  invisible(TRUE)
+}
+
+.efa_pooled_mixed_se_abort <- function(fits, data_list) {
+  # Abort a pool whose component fits recorded different `se` methods, naming the
+  # imputations that broke the shared method. A caller passes one `se` to efa_mi(), so a
+  # mixture is never something they set directly: efa_fit() records `se = "none"` for a
+  # fit whose requested standard errors it could not compute -- a correlation matrix
+  # under `se = "np-boot"` being the reachable case -- and "re-fit with the same se" is
+  # then advice the caller already followed. Point at the imputations instead.
+  ses <- vapply(fits, .efa_pooled_setting_chr, character(1), name = "se")
+  known <- ses[!is.na(ses)]
+  majority <- if (length(known) > 0L) {
+    names(sort(table(known), decreasing = TRUE))[[1L]]
+  } else {
+    NA_character_
+  }
+  odd <- which(is.na(ses) | ses != majority)
+
+  bullets <- "The component {.fn efa_fit} fits use different {.arg se} methods, so their standard errors cannot be pooled."
+  if (!is.na(majority) && length(odd) > 0L) {
+    odd_ses <- unique(ses[odd])
+    n_rest <- length(ses) - length(odd)
+    bullets <- c(
+      bullets,
+      "x" = "{cli::qty(length(odd))}Imputation{?s} {.val {odd}} recorded {.code se} {.val {odd_ses}}; the remaining {n_rest} recorded {.val {majority}}."
+    )
+  }
+
+  cormat_odd <- odd[vapply(data_list[odd], .is_cormat, logical(1))]
+  bullets <- if (length(cormat_odd) > 0L) {
+    c(bullets,
+      "i" = "{cli::qty(length(cormat_odd))}Imputation{?s} {.val {cormat_odd}} {cli::qty(length(cormat_odd))}{?is a correlation matrix/are correlation matrices}, which cannot be bootstrapped, so {.fn efa_fit} fitted {cli::qty(length(cormat_odd))}{?it/them} with {.code se = \"none\"}.")
+  } else {
+    c(bullets,
+      "i" = "Re-fit every imputation with the same {.arg se} (all {.val none}, {.val information}, {.val sandwich}, or {.val np-boot}).")
+  }
+
+  cli::cli_abort(bullets, class = "efa_pooled_mixed_se")
+}
+
+.efa_pooled_admissibility <- function(fits) {
+  # Admissibility and convergence of the component fits, aggregated onto the pooled
+  # object. Averaging aligned solutions pulls boundary communalities back inside the
+  # admissible range, so a pooled matrix can be proper while several component fits were
+  # not; without this record the pooled object holds no evidence of that outside `$fits`,
+  # and the per-fit conditions raised at fitting time are gone once it is saved.
+  n_heywood <- vapply(fits, function(f) length(f[["heywood"]]), integer(1))
+  # Read non-convergence with the same predicate the print layer uses, so the recorded
+  # indices cannot disagree with the banner a component fit would print on its own.
+  nonconverged <- vapply(fits, function(f) {
+    .efa_iteration_nonconvergence(list(convergence = f[["convergence"]],
+                                       iter = f[["iter"]],
+                                       max_iter = f$settings$max_iter))
+  }, logical(1))
+  iter <- vapply(fits, function(f) {
+    it <- f[["iter"]]
+    if (is.numeric(it) && length(it) == 1L) as.integer(it) else NA_integer_
+  }, integer(1))
+
+  list(
+    m = length(fits),
+    heywood_imputations = which(n_heywood > 0L),
+    n_heywood_items = n_heywood,
+    nonconverged = which(nonconverged),
+    iter = iter
+  )
 }
 
 .efa_pooled_se_unavailable <- function(route, parent = NULL) {
@@ -1223,6 +1453,20 @@ efa_mi <- function(data_list,
     mi_fit$fit_indices <- fi
   }
 
+  # The pooled fit indices are the single fit's, reported under the same names and in
+  # the same order as on the other routes so that code reading `names(fit_indices)`
+  # does not have to branch on the route. `pool_method` is present but `NA`: this path
+  # applies no pooling rule to the chi-square -- the statistic is the pooled-inputs
+  # fit's own scaled one -- and an absent field would read as "not recorded" exactly
+  # where a caller asks whether the chi-square was D2-pooled. The extra quantities the
+  # scaled statistic carries follow the common block. `mi_fit` itself is left as
+  # .efa_core() returned it, so it stays comparable with a single efa_fit() solution.
+  fit_indices_pooled <- mi_fit$fit_indices
+  if (!is.null(fit_indices_pooled)) {
+    fit_indices_pooled$pool_method <- NA_character_
+    fit_indices_pooled <- .efa_pooled_order_fit_indices(fit_indices_pooled)
+  }
+
   ## ---- Assemble the pooled object ----------------------------------------
   settings_pooled <- settings
   settings_pooled$N <- N_pool
@@ -1242,7 +1486,7 @@ efa_mi <- function(data_list,
     h2 = mi_fit$h2,
     unrot_loadings = mi_fit$unrot_loadings,
     vars_accounted = mi_fit$vars_accounted,
-    fit_indices = mi_fit$fit_indices,
+    fit_indices = fit_indices_pooled,
     model_implied_R = mi_fit$model_implied_R,
     residuals = mi_fit$residuals,
     orig_R = mi_fit$orig_R,
@@ -1250,6 +1494,7 @@ efa_mi <- function(data_list,
     fits = fits,
     alignment = NULL,
     mi_diagnostics = NULL,
+    mi_admissibility = .efa_pooled_admissibility(fits),
     mi_fit = mi_fit
   )
 

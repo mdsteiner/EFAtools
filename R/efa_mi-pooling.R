@@ -321,6 +321,27 @@
   )
 }
 
+# The fit indices every pooled route reports, in the order they are reported in. The
+# routes reach them differently -- the Rubin routes pool the component statistics, the
+# two-stage route reads them off its single fit on the pooled inputs -- so the order is
+# fixed here rather than at each assembly point, and route-specific extras (a two-stage
+# fit's Fm and scaled-statistic descriptors) follow the common block.
+.efa_pooled_fit_index_order <- c("chi", "df", "p_chi", "CAF", "CFI", "TLI", "RMSEA",
+                                 "RMSEA_LB", "RMSEA_UB", "AIC", "BIC", "ECVI", "RMSR",
+                                 "SRMR", "chi_null", "df_null", "p_null", "pool_method")
+
+.efa_pooled_order_fit_indices <- function(fit_indices) {
+  # Put a pooled fit-index list into the common order, leaving any route-specific extra
+  # after it in the order it arrived in. Reordering is by name, so an unnamed list is
+  # returned untouched rather than subset away to nothing.
+  nms <- names(fit_indices)
+  if (is.null(nms)) {
+    return(fit_indices)
+  }
+  common <- intersect(.efa_pooled_fit_index_order, nms)
+  fit_indices[c(common, setdiff(nms, common))]
+}
+
 .efa_pooled_fit_indices <- function(fits,
                                     pooled_R,
                                     residuals,
@@ -520,7 +541,7 @@
   # object carries the diagnostics in its own top-level `mi_diagnostics` slot, so the
   # `fit_indices` slot keeps the same all-scalar shape a single efa_fit() returns.
   list(
-    fit_indices = list(
+    fit_indices = .efa_pooled_order_fit_indices(list(
       chi = chi,
       df = df,
       p_chi = p_chi,
@@ -539,7 +560,7 @@
       df_null = df_null,
       p_null = p_null,
       pool_method = pool_method
-    ),
+    )),
     mi_diagnostics = list(
       D2_F = if (!is.null(D2)) D2$F else NA_real_,
       D2_df1 = if (!is.null(D2)) D2$df1 else NA_real_,

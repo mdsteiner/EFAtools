@@ -230,9 +230,12 @@ test_that("the pooled object exposes mi_fit alongside the component fits", {
   expect_s3_class(pooled$mi_fit, "EFA")
   expect_length(pooled$fits, 5L)
 
-  # Pooled point estimates and fit indices come straight from the single fit.
+  # Pooled point estimates and fit indices come straight from the single fit; the
+  # indices are its own values, put into the order every pooled route reports and
+  # extended with pool_method (see the cross-route schema test below).
   expect_equal(pooled$orig_R, pooled$mi_fit$orig_R)
-  expect_identical(pooled$fit_indices, pooled$mi_fit$fit_indices)
+  expect_identical(pooled$fit_indices[names(pooled$mi_fit$fit_indices)],
+                   pooled$mi_fit$fit_indices)
   expect_identical(pooled$SE, pooled$mi_fit$SE)
   expect_identical(pooled$CI, pooled$mi_fit$CI)
 
@@ -253,6 +256,56 @@ test_that("the pooled object exposes mi_fit alongside the component fits", {
   expect_null(pooled$replicates)
   expect_true(isTRUE(pooled$settings$pooled))
   expect_identical(pooled$settings$n_imputations, 5L)
+})
+
+
+test_that("the two-stage pool reports its own fit's Heywood cases", {
+  # MI2S returns one fit on the pooled inputs, so that fit's Heywood detector is the
+  # pooled solution's. Without it the count falls back to h2 >= 1, which cannot see the
+  # boundary uniqueness an ML/ULS solution expresses an improper solution as.
+  local_reproducible_output()
+
+  imps <- .mi2s_ord_imps(m = 5L)
+  pooled <- .mi2s_fit(imps, n_factors = 1L, method = "ULS", rotation = "none",
+                      cor_method = "poly")
+  pooled$mi_fit$heywood <- c(x3 = 3L)
+
+  # precondition: the h2 fallback cannot see this case
+  expect_lt(max(pooled$h2), 1)
+  expect_identical(
+    grep("^Heywood cases:", cli::ansi_strip(format(summary(pooled))), value = TRUE),
+    "Heywood cases: 1"
+  )
+})
+
+
+test_that("the pooled fit indices share one schema and order across routes", {
+  # Code that reads names(fit_indices) must not have to branch on the pooling route:
+  # the common indices are reported under the same names, in the same order, with the
+  # two-stage extras after them rather than interleaved.
+  imps <- .mi2s_ord_imps(m = 5L)
+  mi2s <- .mi2s_fit(imps, n_factors = 2L, method = "ULS", rotation = "none",
+                    cor_method = "poly")
+  # The Rubin route assembles the same fit-index list whatever the correlations are, so
+  # the comparison pool uses the default Pearson correlations rather than paying for a
+  # second round of polychorics.
+  rubin <- suppressMessages(suppressWarnings(
+    efa_mi(imps, n_factors = 2L, estimator = "ULS", rotation = "none", se = "none")
+  ))
+
+  common <- names(rubin$fit_indices)
+  expect_identical(names(mi2s$fit_indices)[seq_along(common)], common)
+
+  # pool_method is reported on both routes: on MI2S no rule was applied to the
+  # chi-square (the inputs were pooled, not the statistic), which is NA rather than
+  # an absent field that would read as "not recorded".
+  expect_identical(rubin$fit_indices$pool_method, "D2")
+  expect_true(is.na(mi2s$fit_indices$pool_method))
+
+  # The scaled-statistic quantities are genuinely route-specific and stay outside the
+  # common block.
+  extras <- setdiff(names(mi2s$fit_indices), common)
+  expect_true(all(c("Fm", "chi_scaled_type") %in% extras))
 })
 
 

@@ -311,6 +311,16 @@ format.summary.efa <- function(x, ...) {
   se <- settings$se
   is_pooled <- inherits(x, "EFA_POOLED") || isTRUE(settings$pooled)
 
+  # The two-stage pooled solution IS a single fit on the pooled inputs, so that fit's
+  # Heywood detector is the pooled solution's own. Without it the count falls back to
+  # `h2 >= 1`, which cannot see the boundary uniqueness an ML/ULS solution expresses an
+  # improper solution as. The Rubin routes average several fits and have no such
+  # detector, so they keep the fallback.
+  heywood <- x[["heywood"]]
+  if (is.null(heywood) && !is.null(x[["mi_fit"]])) {
+    heywood <- x[["mi_fit"]][["heywood"]]
+  }
+
   list(
     estimator = settings$estimator,
     rotation = settings$rotation,
@@ -323,7 +333,7 @@ format.summary.efa <- function(x, ...) {
     N = settings$N,
     fit = x$fit_indices,
     h2 = x$h2,
-    heywood = x$heywood,
+    heywood = heywood,
     np_boot = identical(.efa_setting_text(se), "np-boot"),
     ci = .efa_ci_level(x),
     rmsea_ci_level = .efa_rmsea_ci_level(x),
@@ -1086,6 +1096,28 @@ format.summary.efa <- function(x, ...) {
   } else {
     0L
   }
+}
+
+# The Heywood count as it is reported in the diagnostics section. A pooled solution
+# counts the cases in the pooled matrix, and averaging aligned solutions pulls boundary
+# communalities back inside the admissible range, so that count can be 0 for a pool whose
+# component fits were improper. Where the components recorded Heywood cases, report them
+# beside the pooled count rather than leaving the pooled number to read as an all-clear.
+.efa_heywood_value_text <- function(x, count) {
+  adm <- x[["mi_admissibility"]]
+  if (is.null(adm) || is.null(adm$n_heywood_items)) {
+    return(count)
+  }
+
+  n_flags <- sum(adm$n_heywood_items)
+  if (n_flags < 1L) {
+    return(count)
+  }
+
+  # A variable flagged in several imputations counts once per imputation, so the total is
+  # a number of flags rather than of distinct variables.
+  paste0(count, " pooled (", n_flags, if (n_flags == 1L) " flag" else " flags",
+         " across ", length(adm$heywood_imputations), " of ", adm$m, " imputations)")
 }
 
 .print_efa_heywood_warning <- function(heywood, h2 = NULL) {
@@ -1855,9 +1887,9 @@ format.summary.efa <- function(x, ...) {
   }
 
   # Count Heywood cases the same way as the printed Heywood note (see
-  # `.efa_heywood_count()`).
+  # `.efa_heywood_count()`), qualified by the component fits on a pooled solution.
   heywood <- .efa_heywood_count(spec$heywood, spec$h2)
-  .efa_print_key_value("Heywood cases", heywood)
+  .efa_print_key_value("Heywood cases", .efa_heywood_value_text(x, heywood))
 
   cross_salient <- abs(loadings) >= cross_loading_cutoff
   cross_salient[is.na(cross_salient)] <- FALSE

@@ -114,17 +114,30 @@ test_that("orthogonal rotated SE is the criterion-aware delta SE, not the inflat
 
 # ---- Group 4 ---------------------------------------------------------------
 
-test_that("communalities (h2) pool is gauge-invariant: Rubin's rules on per-fit communality SEs, no alignment", {
-  # Identical imputations -> B = 0 -> pooled h2 SE equals the per-fit communality
-  # SE exactly (no alignment is applied; communalities are rotation-invariant).
-  expect_length(pooled_varimax$SE$h2, p_vars)
-  expect_equal(unname(pooled_varimax$SE$h2),
+test_that("communalities pool is gauge-invariant: Rubin's rules on per-fit communality SEs, no alignment", {
+  # Identical imputations -> B = 0 -> pooled communality SE equals the per-fit
+  # communality SE exactly (no alignment is applied; communalities are
+  # rotation-invariant).
+  expect_length(pooled_varimax$SE$communalities, p_vars)
+  expect_equal(unname(pooled_varimax$SE$communalities),
                unname(oracle_varimax$SE$communalities), tolerance = 1e-10)
-  expect_true(all(pooled_varimax$SE$h2[!is.na(pooled_varimax$SE$h2)] >= 0))
+  se_comm <- pooled_varimax$SE$communalities
+  expect_true(all(se_comm[!is.na(se_comm)] >= 0))
 
-  fmi <- pooled_varimax$MI$h2$FMI
+  fmi <- pooled_varimax$MI$communalities$FMI
   expect_true(all(abs(fmi[is.finite(fmi)]) < 1e-12))
-  expect_identical(pooled_varimax$MI$h2$method, "gauge_invariant")
+  expect_identical(pooled_varimax$MI$communalities$method, "gauge_invariant")
+})
+
+test_that("`h2` stays available as an alias of the canonical communality SE/CI", {
+  # `communalities` is what EFA() and the two-stage route call it, so it is the
+  # canonical name on every route; `h2` is what this route has always returned.
+  expect_identical(pooled_varimax$SE$h2, pooled_varimax$SE$communalities)
+  expect_identical(pooled_varimax$CI$h2, pooled_varimax$CI$communalities)
+
+  # The MI diagnostics carry the canonical name only: the printed FMI/RIV summary
+  # walks the whole MI tree, so an aliased family would be counted twice there.
+  expect_null(pooled_varimax$MI$h2)
 })
 
 # ---- Group 4b --------------------------------------------------------------
@@ -168,9 +181,9 @@ test_that("distinct imputations (B > 0): pooled rotated-loading and h2 SEs match
   Ubar_h2 <- colMeans(se_comm^2)
   B_h2    <- apply(comm, 2, stats::var)
   ref_se_h2 <- sqrt(Ubar_h2 + (1 + 1 / m) * B_h2)
-  expect_equal(unname(pooled_b$SE$h2), unname(ref_se_h2), tolerance = 1e-8)
+  expect_equal(unname(pooled_b$SE$communalities), unname(ref_se_h2), tolerance = 1e-8)
   expect_true(any(B_h2 > 0))                 # the regime is genuinely B > 0
-  expect_true(any(pooled_b$MI$h2$FMI > 0))   # and it flows through to FMI
+  expect_true(any(pooled_b$MI$communalities$FMI > 0))  # and it flows through to FMI
 
   # --- Rotated loadings: independent Rubin from the per-fit criterion-aware delta
   # SE. Mirror the production gauge exactly: the MI target is the first fit's
@@ -324,7 +337,7 @@ test_that("oblique Phi and Structure SE pooling: shapes, diag(Phi SE) = 0, symme
 # ---- Group 8 ---------------------------------------------------------------
 
 test_that("se = 'information' + rotation fills the rotated SE/CI/MI slots with correct shapes", {
-  # Orthogonal: rot_loadings + h2; no Phi/Structure.
+  # Orthogonal: rot_loadings + communalities; no Phi/Structure.
   rot_dn <- dimnames(unclass(pooled_varimax$rot_loadings))
 
   expect_identical(dim(pooled_varimax$SE$rot_loadings), c(p_vars, k))
@@ -335,9 +348,10 @@ test_that("se = 'information' + rotation fills the rotated SE/CI/MI slots with c
                   c("RIV", "FMI", "df", "method"))
   expect_identical(dim(pooled_varimax$MI$rot_loadings$df), c(p_vars, k))
 
-  expect_length(pooled_varimax$SE$h2, p_vars)
-  expect_length(pooled_varimax$CI$h2$lower, p_vars)
-  expect_setequal(names(pooled_varimax$MI$h2), c("RIV", "FMI", "df", "method"))
+  expect_length(pooled_varimax$SE$communalities, p_vars)
+  expect_length(pooled_varimax$CI$communalities$lower, p_vars)
+  expect_setequal(names(pooled_varimax$MI$communalities),
+                  c("RIV", "FMI", "df", "method"))
 
   expect_null(pooled_varimax$SE$Phi)
   expect_null(pooled_varimax$SE$Structure)
@@ -406,5 +420,5 @@ test_that("an unreliable per-imputation rotated SE warns and NA-blanks the poole
   expect_true(all(is.na(pooled$SE$Structure)))
   expect_true(all(is.na(pooled$SE$Phi[upper.tri(pooled$SE$Phi)])))
   expect_false(all(is.na(pooled$SE$unrot_loadings)))
-  expect_false(all(is.na(pooled$SE$h2)))
+  expect_false(all(is.na(pooled$SE$communalities)))
 })

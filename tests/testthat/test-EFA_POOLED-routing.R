@@ -160,6 +160,34 @@ test_that("mixed component se aborts with efa_pooled_mixed_se", {
   )
 })
 
+test_that("the mixed-se abort names the imputations that broke the shared se", {
+  # A caller passes one `se` to EFA_POOLED()/efa_mi(), so "re-fit with the same se" is
+  # advice they already followed: the mixture comes from efa_fit() recording
+  # se = "none" for a fit it could not compute the requested SEs for.
+  local_reproducible_output()
+
+  raw <- replicate(3L, matrix(stats::rnorm(40), 10L, 4L), simplify = FALSE)
+  fits_boot <- list(.route_mock_fit("np-boot"), .route_mock_fit("none"),
+                    .route_mock_fit("np-boot"))
+
+  # A correlation matrix among raw datasets cannot be bootstrapped, which is the
+  # reachable trigger; the message says so instead of blaming the `se` argument.
+  cor_input <- raw
+  cor_input[[2]] <- diag(4L)
+  expect_error(
+    EFAtools:::.efa_pooled_mixed_se_abort(fits_boot, cor_input),
+    class = "efa_pooled_mixed_se"
+  )
+  expect_snapshot(error = TRUE,
+                  EFAtools:::.efa_pooled_mixed_se_abort(fits_boot, cor_input))
+
+  # Any other mixture keeps the generic remediation.
+  fits_mixed <- list(.route_mock_fit("information"), .route_mock_fit("sandwich"),
+                     .route_mock_fit("information"))
+  expect_snapshot(error = TRUE,
+                  EFAtools:::.efa_pooled_mixed_se_abort(fits_mixed, raw))
+})
+
 # ---- 7. Information route: pooling failure -> se-unavailable + fallback ------
 
 test_that("an analytic-pool abort falls back with efa_pooled_se_unavailable", {

@@ -208,6 +208,27 @@
     )
   }
 
+  # A component fit whose analytic covariance was unreliable at the loading level carries
+  # an NA-filled $SE$unrot_loadings while keeping a finite $vcov_unrot_loadings, so the
+  # whole-fit gate above passes and the fail-closed mask then blanks the entire pooled
+  # unrotated SE block. Name the affected imputations, as the rotated family does: an
+  # all-NA block returned in silence reads as a computation that succeeded. The
+  # imputations already reported by the missing-covariance warning are excluded so a
+  # single downgrade is not announced twice.
+  unrot_se_unreliable <- setdiff(
+    which(apply(SE_mat, 1L, function(r) all(is.na(r)))),
+    gauge_no_vcov
+  )
+  if (length(unrot_se_unreliable) > 0L) {
+    n_bad <- length(unrot_se_unreliable)
+    cli::cli_warn(
+      c("Pooled unrotated standard errors could not be produced for {n_bad} imputation{?s}.",
+        "i" = "Affected: {.val {unrot_se_unreliable}} (each left an NA-filled unrotated standard error, typically the upstream {.code efa_se_unreliable} signal).",
+        "i" = "The pooled unrotated loading standard errors are returned as {.code NA}."),
+      class = "efa_pooled_unrotated_se_unreliable"
+    )
+  }
+
   # Fail-closed NA mask and Rubin pooling are shared with the rotated families
   # below via .efa_pooled_analytic_marginal().
   alpha <- 1 - ci
@@ -340,7 +361,13 @@
 
     h2_asm <- .efa_pooled_assemble_family(pool_h2, reshape_psi,
                                           method = "gauge_invariant")
-    SE$h2 <- h2_asm$SE; CI$h2 <- h2_asm$CI; MI$h2 <- h2_asm$MI
+    SE$communalities <- h2_asm$SE; CI$communalities <- h2_asm$CI
+    MI$communalities <- h2_asm$MI
+    # `communalities` is the name EFA() uses, so it is the canonical one here too;
+    # `h2` is what this route has always returned and is kept as an alias of it. The
+    # MI diagnostics carry no alias: the printed FMI/RIV summary walks the whole MI
+    # tree, so a duplicated family would enter those statistics twice.
+    SE$h2 <- SE$communalities; CI$h2 <- CI$communalities
 
     if (oblique) {
       phi_dn <- dimnames(as.matrix(phis[[1]]))
@@ -643,13 +670,13 @@
   )
 
   SE <- list(
-    h2 = pool_h2$se,
+    communalities = pool_h2$se,
     unrot_loadings = unrot_res$se,
     residuals = residual_res$se
   )
 
   CI <- list(
-    h2 = list(lower = pool_h2$ci$lower, upper = pool_h2$ci$upper),
+    communalities = list(lower = pool_h2$ci$lower, upper = pool_h2$ci$upper),
     unrot_loadings = unrot_res$ci,
     residuals = residual_res$ci
   )
@@ -660,9 +687,12 @@
     residuals = boot_residuals
   )
 
+  # Same canonical-name/alias split as the analytic route above.
+  SE$h2 <- SE$communalities; CI$h2 <- CI$communalities
+
   MI <- list(
     unrot_loadings = list(RIV = pool_unrot$RIV, FMI = pool_unrot$FMI, df = pool_unrot$df),
-    h2 = list(RIV = pool_h2$RIV, FMI = pool_h2$FMI, df = pool_h2$df),
+    communalities = list(RIV = pool_h2$RIV, FMI = pool_h2$FMI, df = pool_h2$df),
     residuals = list(RIV = pool_residuals$RIV, FMI = pool_residuals$FMI, df = pool_residuals$df),
     # Per-imputation alignment outcomes. `boot_failures` are replicates the
     # component EFA could not fit (NA-filled, dropped before rotation);

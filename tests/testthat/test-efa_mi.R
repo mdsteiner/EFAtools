@@ -83,6 +83,74 @@ test_that("efa_mi records the pooling settings", {
                      names(pooled_obl)))
 })
 
+test_that("efa_mi records the component fits' admissibility", {
+  adm <- pooled_obl$mi_admissibility
+  expect_identical(adm$m, 3L)
+  expect_identical(adm$n_heywood_items, c(0L, 0L, 0L))
+  expect_identical(adm$heywood_imputations, integer(0))
+  expect_identical(adm$nonconverged, integer(0))
+  expect_true(all(is.finite(adm$iter)))
+
+  # The record is read off the component fits, so an inadmissible or non-converged
+  # component is captured whatever the pooled matrix looks like.
+  affected <- pooled_obl$fits
+  affected[[1]]$heywood <- c(V1 = 1L, V5 = 5L)
+  affected[[3]]$heywood <- c(V3 = 3L)
+  affected[[3]]$convergence <- 1L
+  adm_affected <- .efa_pooled_admissibility(affected)
+  expect_identical(adm_affected$n_heywood_items, c(2L, 0L, 1L))
+  expect_identical(adm_affected$heywood_imputations, c(1L, 3L))
+  expect_identical(adm_affected$nonconverged, 3L)
+})
+
+test_that("summary() reports component Heywood cases behind a clean pooled count", {
+  # Averaging aligned solutions pulls boundary communalities back inside the admissible
+  # range, so a pool of improper solutions can have a proper pooled matrix. The pooled
+  # count alone then reads as an all-clear for the analysis.
+  local_reproducible_output()
+
+  affected <- pooled_obl
+  affected$fits[[1]]$heywood <- c(V1 = 1L, V5 = 5L)
+  affected$fits[[3]]$heywood <- c(V3 = 3L)
+  affected$mi_admissibility <- .efa_pooled_admissibility(affected$fits)
+
+  heywood_line <- function(x) {
+    grep("^Heywood cases:", cli::ansi_strip(format(summary(x))), value = TRUE)
+  }
+  # Three flags, not three distinct variables: a variable flagged in two imputations
+  # counts once per imputation.
+  expect_identical(heywood_line(affected),
+                   "Heywood cases: 0 pooled (3 flags across 2 of 3 imputations)")
+
+  # A pool whose component fits were all proper keeps the unqualified count.
+  expect_identical(heywood_line(pooled_obl), "Heywood cases: 0")
+})
+
+test_that("a pool of improper component fits does not report zero Heywood cases", {
+  skip_on_cran()
+  local_reproducible_output()
+
+  # One small imputation among larger ones: several component fits hit the uniqueness
+  # boundary while their average stays well inside the admissible range.
+  withr::local_seed(3)
+  imps <- lapply(1:6, function(i) {
+    n <- if (i == 1L) 45L else 300L
+    UPPS_raw[sample.int(nrow(UPPS_raw), n, replace = TRUE), 1:12]
+  })
+  pooled <- suppressWarnings(suppressMessages(
+    efa_mi(imps, n_factors = 4, estimator = "ML", rotation = "varimax")
+  ))
+
+  # precondition: the components really are improper and the pooled matrix is not
+  expect_gt(sum(pooled$mi_admissibility$n_heywood_items), 0)
+  expect_lt(max(pooled$h2), 1)
+
+  expect_match(
+    grep("^Heywood cases:", cli::ansi_strip(format(summary(pooled))), value = TRUE),
+    "imputations)", fixed = TRUE
+  )
+})
+
 test_that("rotation variants include exactly the applicable components", {
   # orthogonal: rotated loadings but no factor intercorrelations
   expect_s3_class(pooled_orth$rot_loadings, "LOADINGS")
@@ -124,6 +192,100 @@ test_that("alignment variants produce well-formed pooled objects", {
                 rotation = "none")
   expect_equal(unclass(nn$unrot_loadings), unclass(single$unrot_loadings),
                tolerance = 1e-10, ignore_attr = TRUE)
+})
+
+test_that("target_method = 'consensus' pools a solution that does not depend on the imputation order", {
+  skip_on_cran()
+
+  # One atypical imputation among larger ones. The GPA iteration keeps the gauge of the
+  # solution it starts from, so this is exactly the setting in which the anchor decides
+  # the pooled orientation.
+  withr::local_seed(11)
+  imps <- lapply(1:4, function(i) {
+    n <- if (i == 1L) 60L else 250L
+    GRiPS_raw[sample.int(nrow(GRiPS_raw), n, replace = TRUE), ]
+  })
+  fit_mi <- function(dl, tm, ...) {
+    suppressWarnings(suppressMessages(
+      efa_mi(dl, n_factors = 2, estimator = "ML", rotation = "varimax",
+             target_method = tm, ...)
+    ))
+  }
+  perm <- c(3L, 1L, 4L, 2L)
+
+  consensus <- fit_mi(imps, "consensus")
+  consensus_perm <- fit_mi(imps[perm], "consensus")
+  expect_equal(unclass(consensus_perm$rot_loadings), unclass(consensus$rot_loadings),
+               tolerance = 1e-8)
+  expect_equal(as.numeric(consensus_perm$h2), as.numeric(consensus$h2),
+               tolerance = 1e-8)
+
+  # The GPA record is returned and the iteration is started at the medoid rotated
+  # solution, which is a property of the set rather than of the list order.
+  expect_true(isTRUE(consensus$alignment$converged))
+  expect_length(consensus$alignment$aligned_loadings, length(imps))
+  expect_equal(
+    consensus$alignment$start,
+    .efa_pooled_medoid_anchor(lapply(consensus$fits,
+                                     function(f) unclass(f$rot_loadings)))
+  )
+
+  # The fixture is discriminating: the first-imputation anchor does move under the same
+  # permutation, and by more than a relabelling of the columns.
+  first_target <- fit_mi(imps, "first_target")
+  first_target_perm <- fit_mi(imps[perm], "first_target")
+  matched <- .align_solution(L_target = unclass(first_target$rot_loadings),
+                             L = unclass(first_target_perm$rot_loadings))$loadings
+  expect_gt(max(abs(unclass(matched) - unclass(first_target$rot_loadings))), 1e-3)
+
+  # ... because "first_target" is anchored on the first imputation by definition.
+  expect_equal(unclass(first_target$alignment$target),
+               unclass(first_target$fits[[1]]$rot_loadings), tolerance = 1e-12)
+
+  # An explicit start overrides the medoid anchor, and is honoured.
+  from_first <- fit_mi(imps, "consensus", consensus_args = list(start = 1))
+  expect_equal(from_first$alignment$start, 1)
+})
+
+test_that("procrustes_args forwards algorithm controls and nothing else", {
+  target <- matrix(0, p_vars, 3)
+  reserved <- list(list(A = target), list(Target = target),
+                   list(rotation = "orthogonal"), list(S = diag(3)),
+                   # partially spelled names are matched the way do.call() matches them
+                   list(Tar = target))
+  for (args in reserved) {
+    expect_error(
+      efa_mi(cormat_list, n_factors = 3, N = 500, estimator = "PAF",
+             rotation = "promax", procrustes_args = args),
+      class = "efa_pooled_bad_procrustes_args"
+    )
+  }
+
+  # An unknown name is rejected here rather than surfacing as an unused-argument error
+  # from inside the alignment, and an unnamed element cannot be matched at all.
+  expect_error(
+    efa_mi(cormat_list, n_factors = 3, N = 500, estimator = "PAF",
+           rotation = "promax", procrustes_args = list(oblique_maxitt = 5)),
+    class = "efa_pooled_bad_procrustes_args"
+  )
+  expect_error(
+    efa_mi(cormat_list, n_factors = 3, N = 500, estimator = "PAF",
+           rotation = "promax", procrustes_args = list(50)),
+    class = "efa_pooled_bad_procrustes_args"
+  )
+
+  # A genuine control reaches efa_procrustes(): capping the oblique solver at one
+  # iteration stops the alignment exactly there.
+  tuned <- suppressWarnings(efa_mi(
+    cormat_list, n_factors = 3, N = 500, estimator = "PAF", rotation = "promax",
+    procrustes_args = list(oblique_maxit = 1L)
+  ))
+  expect_identical(
+    vapply(tuned$alignment$target_rotations[-1L],
+           function(x) as.numeric(x$iterations), numeric(1)),
+    rep(1, length(cormat_list) - 1L)
+  )
+  expect_false(tuned$alignment$converged)
 })
 
 test_that("pooling identical imputations reproduces the single fit", {
@@ -196,6 +358,9 @@ test_that("pooled fit indices D2-pool the imputation chi-squares", {
   fi <- pooled_none$fit_indices
   md <- pooled_none$mi_diagnostics
   expect_identical(fi$pool_method, "D2")
+  # The reported names and their order are pinned by one shared definition, so a new
+  # index cannot be added to the assembled list without also being placed there.
+  expect_identical(names(fi), EFAtools:::.efa_pooled_fit_index_order)
   expect_equal(fi$df, pooled_none$fits[[1]]$fit_indices$df)
   expect_true(is.finite(fi$chi) && fi$chi >= 0)
   expect_true(is.finite(fi$p_chi))
@@ -243,6 +408,56 @@ test_that(".efa_pooled_D2 ARIV matches the Li et al. (1991) formula", {
   expect_equal(d2$FMI, d2$ARIV / (1 + d2$ARIV))
 })
 
+test_that("a negative D2 statistic is reported as such, and the pooled fit stays in range", {
+  # The pooling statistic is returned unfloored, so it can go negative when the
+  # between-imputation variability of the component statistics exceeds the pooled
+  # discrepancy; that is a diagnostic of the pool. The fit it feeds must not inherit
+  # it: the pooled chi-square is floored at zero and its p-value is 1.
+  d2 <- .efa_pooled_D2(c(10, 20, 40, 60, 80), df = 33)
+  expect_lt(d2$F, 0)
+  expect_identical(d2$chi, 0)
+  expect_identical(d2$p, 1)
+  expect_gt(d2$ARIV, 0)
+
+  # An ordinary pool keeps a positive statistic and a chi-square derived from it.
+  ok <- .efa_pooled_D2(c(30, 35, 50), df = 20)
+  expect_gt(ok$F, 0)
+  expect_equal(ok$chi, ok$df1 * ok$F)
+})
+
+test_that("seed and b_boot in the dots govern the whole pooled call", {
+  skip_on_cran()
+
+  withr::local_seed(20260812)
+  boot_list <- lapply(1:2, function(i) {
+    GRiPS_raw[sample(seq_len(nrow(GRiPS_raw)), 200, replace = TRUE), 1:5]
+  })
+  run <- function(seed) {
+    suppressWarnings(suppressMessages(
+      efa_mi(boot_list, n_factors = 1, estimator = "ML", se = "np-boot",
+             b_boot = 4, seed = seed)
+    ))
+  }
+
+  a <- run(99)
+  b <- run(99)
+  expect_identical(a$SE$unrot_loadings, b$SE$unrot_loadings)
+  # b_boot is the per-imputation replicate count and is recorded as such
+  expect_equal(a$settings$b_boot, 4)
+  expect_identical(dim(a$replicates$unrot_loadings[[1]])[1], 4L)
+
+  # A different seed moves the bootstrap SEs, so the reproducibility above is not
+  # vacuous ...
+  expect_false(isTRUE(all.equal(a$SE$unrot_loadings, run(100)$SE$unrot_loadings)))
+
+  # ... and the caller's own random stream is left where it was.
+  set.seed(7)
+  expected <- stats::runif(1)
+  set.seed(7)
+  invisible(run(99))
+  expect_identical(stats::runif(1), expected)
+})
+
 test_that("efa_mi validates its arguments with classed conditions", {
   expect_error(
     efa_mi(cormat_list, p = 0, n_factors = 3, N = 500, estimator = "PAF",
@@ -276,6 +491,34 @@ test_that("efa_mi validates its arguments with classed conditions", {
     efa_mi(structure(list(data = cormat, m = 2L), class = "mids"),
                n_factors = 3, N = 500, estimator = "PAF", rotation = "none"),
     class = "efa_pooled_mids_input"
+  )
+})
+
+test_that("a failing component fit names its imputation and keeps the original condition", {
+  local_reproducible_output()
+
+  mk <- function(seed) {
+    set.seed(seed)
+    f <- stats::rnorm(60)
+    X <- outer(f, rep(0.7, 4)) + matrix(stats::rnorm(240, sd = 0.7), 60, 4)
+    colnames(X) <- paste0("V", seq_len(4))
+    X
+  }
+  raw <- lapply(1:3, mk)
+  # A constant column in one imputation only: the pool is all-or-nothing, so the whole
+  # call ends, and without the index the user has to bisect `data_list` by hand.
+  raw[[2]][, 3] <- 1
+
+  err <- expect_error(
+    efa_mi(raw, n_factors = 1, estimator = "PAF", rotation = "none"),
+    class = "efa_pooled_fit_failed"
+  )
+  # the component condition is chained, not replaced, so its own diagnosis survives
+  expect_s3_class(err$parent, "efa_cor_uncomputable")
+
+  expect_snapshot(
+    error = TRUE,
+    efa_mi(raw, n_factors = 1, estimator = "PAF", rotation = "none")
   )
 })
 
@@ -368,6 +611,15 @@ test_that("bootstrap arrays are pooled into MI SEs and CIs", {
 
   expect_equal(pooled_boot$settings$b_boot, 6)
   expect_identical(pooled_boot$settings$se, "np-boot")
+
+  # Communality SEs/CIs use efa_fit()'s name on this route too, with `h2` kept as an
+  # alias of it; the MI diagnostics carry the canonical name alone, so each family
+  # enters the printed FMI/RIV summary once.
+  expect_false(is.null(pooled_boot$SE$communalities))
+  expect_identical(pooled_boot$SE$h2, pooled_boot$SE$communalities)
+  expect_identical(pooled_boot$CI$h2, pooled_boot$CI$communalities)
+  expect_false(is.null(pooled_boot$MI$communalities))
+  expect_null(pooled_boot$MI$h2)
 
   # FMIs must be computed (at least some finite) and in [0, 1]; an all-NA vector
   # would pass a bare all(..., na.rm = TRUE) range check vacuously.
@@ -706,6 +958,37 @@ test_that("an unreliable per-imputation SE still blanks the pooled element", {
 
   expect_true(all(is.na(na_pool$SE$unrot_loadings[2, ])))
   expect_true(all(is.finite(na_pool$SE$unrot_loadings[3, ])))
+})
+
+test_that("a missing gauge covariance is reported once, not by both unrotated warnings", {
+  # Dropping the covariance block leaves that imputation's row all-NA, which is also
+  # the shape the NA-filled-SE warning keys on. The two must not both fire for one
+  # downgrade: the missing-covariance branch is the specific diagnosis.
+  imps <- make_resamples(DOSPERT_raw)
+  pooled <- suppressWarnings(suppressMessages(
+    efa_mi(imps, n_factors = 3, estimator = "ML", rotation = "none",
+           se = "information")))
+
+  fits <- pooled$fits
+  fits[[2]]$vcov_unrot_loadings <- NULL
+  Ls <- lapply(fits, function(f) unclass(f$unrot_loadings))
+  aligned <- .efa_pooled_align_unrotated_list(
+    Ls, align_unrotated = "signed_tucker_congruence")
+  # precondition: the gauge rotation is active, so the covariance block is required
+  expect_false(is.null(aligned$meta[[1]]$C))
+
+  expect_warning(
+    gauge_pool <- withCallingHandlers(
+      .efa_pooled_analytic_pool(fits = fits,
+                                unrot_loadings_aligned = aligned$loadings,
+                                align_meta = aligned$meta, ci = 0.95),
+      efa_pooled_unrotated_se_unreliable = function(w) {
+        testthat::fail("the missing-covariance downgrade was reported twice")
+      }
+    ),
+    class = "efa_pooled_gauge_vcov_missing"
+  )
+  expect_true(all(is.na(gauge_pool$SE$unrot_loadings)))
 })
 
 test_that("the medoid anchor is order-invariant with only two imputations", {

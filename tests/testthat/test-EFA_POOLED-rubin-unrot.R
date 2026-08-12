@@ -320,6 +320,36 @@ test_that("FMI is in [0,1], RIV >= 0; per-element NA in any imputation propagate
   expect_false(is.na(na_pool$SE$unrot_loadings[3, 1]))
 })
 
+test_that("an unreliable per-imputation unrotated SE warns and NA-blanks the pooled block", {
+  base_fit <- EFA(cormat, n_factors = k, N = N_id, method = "ML",
+                  rotation = "none", se = "information")
+  fits <- replicate(3L, base_fit, simplify = FALSE)
+
+  # Mimic a gauge-degenerate fit: EFA() NA-fills the marginal unrotated SEs while the
+  # full covariance stays finite, so the whole-fit reliability gate passes and the
+  # fail-closed mask silently blanks the entire pooled unrotated SE block.
+  fits[[2]]$SE$unrot_loadings[] <- NA_real_
+
+  unrot_list <- lapply(fits, function(f) unclass(f$unrot_loadings))
+  aligned <- EFAtools:::.efa_pooled_align_unrotated_list(
+    unrot_list, align_unrotated = "signed_tucker_congruence"
+  )
+
+  expect_warning(
+    pooled <- EFAtools:::.efa_pooled_analytic_pool(
+      fits = fits,
+      unrot_loadings_aligned = aligned$loadings,
+      align_meta = aligned$meta,
+      ci = 0.95
+    ),
+    class = "efa_pooled_unrotated_se_unreliable"
+  )
+
+  expect_true(all(is.na(pooled$SE$unrot_loadings)))
+  # the uniquenesses were untouched, so the warning is specific to the affected family
+  expect_false(any(is.na(pooled$SE$uniquenesses)))
+})
+
 # ---- Group 8 ---------------------------------------------------------------
 
 test_that("analytic-pool output has correct slot shapes and preserves se = 'information'", {

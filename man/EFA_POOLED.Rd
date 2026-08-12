@@ -30,8 +30,9 @@ are available. For example, \code{p = .05} gives 95\% intervals.}
 \item{target_method}{Character. How rotated solutions are aligned across imputations
 before pooling: \code{"first_target"} (the default) aligns every imputation to the first
 imputation's rotated solution, while \code{"consensus"} refines a centroid target by
-Generalized Procrustes Analysis (orthogonal rotations only). See \emph{Aligning solutions
-across imputations} in Details.}
+Generalized Procrustes Analysis, started from the medoid imputation so that the
+pooled rotated solution does not depend on the order of \code{data_list} (orthogonal
+rotations only). See \emph{Aligning solutions across imputations} in Details.}
 
 \item{align_unrotated}{Character. How unrotated loadings are aligned before pooling:
 \code{"signed_tucker_congruence"} (the default; sign/permutation via Tucker congruence,
@@ -48,10 +49,13 @@ fit indices} in Details.}
 GPA-consensus iteration when \code{target_method = "consensus"}. Recognised tuning
 parameters include the convergence tolerances \code{tol} and \code{loss_tol}, the
 iteration bounds \code{min_iter} and \code{max_iter}, the target-update damping \code{alpha},
-and the multi-start controls \code{multi_start} and \code{starts}.}
+the multi-start controls \code{multi_start} and \code{starts}, and \code{start}, which
+overrides the medoid imputation the iteration is otherwise started from.}
 
-\item{procrustes_args}{List of additional arguments passed to \code{\link[=efa_procrustes]{efa_procrustes()}}
-for fixed-target alignment.}
+\item{procrustes_args}{List of \code{\link[=efa_procrustes]{efa_procrustes()}} algorithm controls for
+fixed-target alignment, for example \code{oblique_maxit} or \code{oblique_random_starts}.
+The loadings \code{A}, the alignment \code{Target}, the \code{rotation} family, and the
+cross-product \code{S} are derived from the imputations and cannot be set here.}
 
 \item{rmsea_ci_level}{Numeric. Confidence level for the RMSEA CI.}
 
@@ -68,7 +72,14 @@ signals a deprecation warning; the superseded \code{\link[=EFA_POOLED]{EFA_POOLE
 \item{...}{Additional arguments passed to \code{\link[=efa_fit]{efa_fit()}} (e.g. \code{estimator}, \code{rotation}, \code{se},
 \code{n_factors}, \code{N}). These select the estimator, rotation, standard-error method, and
 fit indices used for every imputation; see \code{\link[=efa_fit]{efa_fit()}} for the available options, their
-properties, and which combinations are valid. The \code{\link[=estimate_control]{estimate_control()}} and
+properties, and which combinations are valid. Two of them shape the pooled object
+rather than a single fit: \code{seed} sets the random state once for the whole
+\code{efa_mi()} call -- every component bootstrap and every random-start rotation draws
+from it, so a seeded call is reproducible as a whole, and the caller's random stream
+is restored afterwards -- and \code{b_boot} sets the number of bootstrap replicates drawn
+per imputation under \code{se = "np-boot"}, which is what the pooled within-imputation
+variances are estimated from and is recorded in \code{settings$b_boot}. The
+\code{\link[=estimate_control]{estimate_control()}} and
 \code{\link[=rotate_control]{rotate_control()}} objects are accepted through \code{...} as well, although they are not
 declared formals: pass them as \verb{estimate_control =} / \verb{rotate_control =} exactly as you
 would to \code{\link[=efa_fit]{efa_fit()}}.}

@@ -1,3 +1,19 @@
+# a failing component fit names its imputation and keeps the original condition
+
+    Code
+      efa_mi(raw, n_factors = 1, estimator = "PAF", rotation = "none")
+    Message
+      i `x` is not a correlation matrix; computing correlations from the raw data.
+      i `x` is not a correlation matrix; computing correlations from the raw data.
+    Condition
+      Error in `efa_mi()`:
+      ! Imputation 2 could not be fitted.
+      i Inspect `data_list[[2]]`, then re-fit or replace it.
+      Caused by error:
+      ! The correlation matrix could not be computed from the raw data.
+      x Column "V3" has zero variance.
+      i A constant variable correlates with nothing; drop it before the analysis.
+
 # bootstrap arrays are pooled into MI SEs and CIs
 
     Code
