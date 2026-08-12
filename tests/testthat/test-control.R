@@ -8,8 +8,13 @@ test_that("constructors return classed lists with the documented fields", {
   expect_true(is.na(ec$criterion))
   expect_true(is.na(ec$abs_eigen))
   expect_equal(ec$start_method, "psych")
+  # The two FIML knobs are not preset-driven, so they carry the EM's own defaults rather
+  # than the NA "resolve from the type preset" sentinel.
+  expect_equal(ec$fiml_max_iter, 500)
+  expect_equal(ec$fiml_tol, 1e-5)
   expect_named(ec, c("type", "init_comm", "criterion", "criterion_type",
-                     "max_iter", "abs_eigen", "start_method"))
+                     "max_iter", "abs_eigen", "start_method",
+                     "fiml_max_iter", "fiml_tol"))
 
   rc <- rotate_control()
   expect_s3_class(rc, "efa_rotate_control")
@@ -62,6 +67,21 @@ test_that("bad estimate_control inputs abort with a classed condition", {
   # an invalid `type` is rejected with the same class as the other knobs
   expect_error(estimate_control(type = "bogus"), class = "efa_control_input")
   expect_error(rotate_control(type = "bogus"), class = "efa_control_input")
+  # the FIML EM knobs mirror the bounds the EM itself enforces, and -- not being
+  # preset-driven -- do not accept the NA sentinel either
+  expect_error(estimate_control(fiml_max_iter = 0), class = "efa_control_input")
+  expect_error(estimate_control(fiml_max_iter = 2.5), class = "efa_control_input")
+  expect_error(estimate_control(fiml_max_iter = NA), class = "efa_control_input")
+  expect_error(estimate_control(fiml_tol = 0), class = "efa_control_input")
+  expect_error(estimate_control(fiml_tol = -1e-4), class = "efa_control_input")
+  expect_error(estimate_control(fiml_tol = NA), class = "efa_control_input")
+  # A tolerance at or above 1 is met on the first EM iteration, which would return the
+  # starting moments while reporting convergence; the EM itself only demands tol > 0, so the
+  # control is the only place that can refuse it (as it does for `criterion`).
+  expect_error(estimate_control(fiml_tol = 1), class = "efa_control_input")
+  expect_error(estimate_control(fiml_tol = 5), class = "efa_control_input")
+  expect_s3_class(estimate_control(fiml_max_iter = 2000, fiml_tol = 0.999),
+                  "efa_estimate_control")
 })
 
 test_that("efa_fit rejects unused dots when no rotation runs", {

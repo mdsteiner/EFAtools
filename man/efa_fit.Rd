@@ -251,12 +251,19 @@ df), CFI, TLI, RMSEA with its 90\% confidence interval, AIC, BIC, ECVI, RMSR,
 SRMR, and CAF; for PAF and DWLS only RMSR, SRMR, CAF, and df are populated and
 the Chi-Square-based indices are \code{NA} (for DWLS with \code{se = "sandwich"} the full
 block is filled from a scaled Chi Square instead). Whenever the Chi Square is a
-scaled statistic (\code{se = "sandwich"}, or any \code{cor_method = "fiml"} fit) AIC,
-BIC, and ECVI are \code{NA} and the list additionally carries the scaling
+scaled statistic (\code{se = "sandwich"}, or a \code{cor_method = "fiml"} fit whose
+correction could be formed) AIC, BIC, and ECVI are \code{NA} and the list
+additionally carries \code{chi_scaled_type} (\code{"scaled.shifted"}) and the scaling
 components: \code{chi_scaling} (the multiplier a in the scaled-and-shifted statistic
 \eqn{aT + b}, i.e. the reciprocal of \pkg{lavaan}'s \code{chisq.scaling.factor}),
 \code{chi_shift} (b), \code{chi_unscaled} (the unscaled statistic T), and the alternative
 \code{chi_mean_adjusted} and \code{chi_mean_var} statistics with their \code{df_mean_var}.
+\code{chi_scaled_type} is the field that says which statistic \code{chi} is: a
+\code{cor_method = "fiml"} fit whose corrected statistic could not be formed instead
+reports the plain two-stage likelihood-ratio statistic under
+\code{chi_scaled_type = "uncorrected.lrt"} and carries none of the scaling components,
+because nothing was rescaled (see \emph{Fit indices} in Details). The field is absent
+from an ordinary, unscaled chi-square block.
 RMSR is retained for programmatic use and backward compatibility, although the
 print and summary methods display SRMR. The list also carries \code{Fm}, the value of
 the estimator's own objective at the solution, which is on an estimator-specific
@@ -316,11 +323,20 @@ converged starts found; more than one means the criterion is multimodal on these
 Kaiser-normalized loadings the criterion is optimized on, not on the returned
 \code{rot_loadings}, so they are not directly comparable to a criterion recomputed from the
 returned loadings.}
+\item{fiml}{Diagnostics of the two-stage FIML correlation's EM estimation, present only
+for \code{cor_method = "fiml"}: \code{converged} (whether the EM met \code{fiml_tol} before reaching
+\code{fiml_max_iter}), \code{iter} (the number of EM iterations run), \code{n_patterns} (the number of
+distinct missingness patterns it accumulated over), and \code{n} (the number of rows carrying
+at least one observed value, which is the reported \code{N}). A \code{converged} of \code{FALSE} means
+the analysed correlation matrix is the EM's last iterate rather than the FIML estimate;
+it is raised as an \code{efa_fiml_em_nonconvergence} warning while the fit runs and shown by
+the print and summary methods. Both \code{fiml_max_iter} and \code{fiml_tol} are set through
+\code{\link[=estimate_control]{estimate_control()}}.}
 \item{SE}{A named list of standard error matrices. For \code{se = "np-boot"}: bootstrap standard deviations of the unrotated and (when a rotation is applied) rotated loadings, the residuals, and the fit indices, plus -- for oblique rotations -- the factor correlations (\code{Phi}) and the structure coefficients; it additionally carries \code{valid_replicates}, the number of bootstrap replicates that were fitted and aligned successfully and that every entry above is therefore based on (replicates that failed are excluded and warned about), and, when a rotation is applied, \code{valid_target_rotations}, the number of those replicates that could also be aligned to the rotated point estimate and that the rotated entries (\code{rot_loadings}, \code{Phi}, \code{Structure}) are based on. For \code{se = "information"}: Wald standard errors from the expected (Fisher) information matrix for the unrotated loadings, the uniquenesses, and the communalities and, when a rotation is applied, the rotated loadings (and, for oblique rotations, \code{Phi} and the structure coefficients). Because \eqn{h^2_i = 1 - \psi_i} exactly, the communality and uniqueness standard errors are identical. For \code{se = "sandwich"}: robust Godambe sandwich standard errors with the same coverage as \code{"information"}, robust to non-normality and weight misspecification. Only returned if \code{se} is not \code{"none"}.}
 \item{CI}{A named list of confidence intervals of width \code{ci}. For \code{se = "np-boot"}: percentile intervals matching the components of \code{SE}. For \code{se = "information"} and \code{se = "sandwich"}: Wald intervals matching the components of \code{SE}. Only returned if \code{se} is not \code{"none"}.}
-\item{replicates}{A named list of bootstrap replicate arrays for the aligned unrotated and (where applicable) rotated loadings, structure coefficients, factor correlations (\code{Phi}), residuals, and fit indices. The replicate is the last dimension of the loading, residual, \code{Phi}, and structure cubes, and the first dimension of the \code{fit_indices} matrix (whose columns are named after the fit indices). Replicates that failed are left \code{NA}. Populated only for \code{se = "np-boot"}; \code{NULL} for the analytic SE methods.}
+\item{replicates}{A named list of bootstrap replicate arrays for the aligned unrotated and (where applicable) rotated loadings, structure coefficients, factor correlations (\code{Phi}), residuals, and fit indices. The replicate is the last dimension of the loading, residual, \code{Phi}, and structure cubes, and the first dimension of the \code{fit_indices} matrix (whose columns are named after the fit indices). Replicates that failed are left \code{NA}. Populated only for \code{se = "np-boot"}; \code{NULL} for the analytic SE methods. Every block grows linearly in \code{b_boot}, and this list normally dominates the size of a bootstrap fit. The loading, \code{Phi}, and structure cubes grow as \eqn{O(B\,p\,k)}, but the residual cube is \eqn{p \times p \times B} and so grows as \eqn{O(B\,p^2)}: at \eqn{p = 50} and \code{b_boot = 5000} it alone is about 100 MB. If a saved fit is larger than the analysis warrants, that block is why; the standard errors and intervals derived from it are in \code{SE} and \code{CI} and do not need it.}
 \item{vcov_unrot_loadings}{The full unrotated loading covariance matrix the marginal \code{SE$unrot_loadings} were derived from: a \code{p * n_factors} by \code{p * n_factors} numeric matrix in column-major \code{vec(Lambda)} order, with rows and columns labelled \code{"<variable>_<factor>"} so that ordering can be read off the object. Populated for \code{se = "information"} (expected-information block) and \code{se = "sandwich"} (robust V_AA), even when a rotation is applied (the persisted block is always the unrotated one); NA-filled if the analytic covariance is unreliable (a Heywood case or a singular bordered information matrix); \code{NULL} for \code{se = "np-boot"} and \code{se = "none"}. A weakly determined rotational orientation is the one case where this matrix is populated while \code{SE$unrot_loadings} is \code{NA}: the covariance itself is finite and valid, and only its gauge-dependent marginals are not (see \emph{Standard errors}).}
-\item{Gamma}{The asymptotic covariance of the off-diagonal sample correlations -- the meat of the robust sandwich SEs -- on the variance scale (\code{Var(rho-hat)}; lavaan's correlation NACOV is \code{N * Gamma}). A \code{p (p - 1) / 2} by \code{p (p - 1) / 2} numeric matrix; rows and columns ordered by \code{\link[utils:combn]{utils::combn()}} over the column pairs and labelled \code{"<var_i>-<var_j>"}. Populated for \code{se = "sandwich"} on the polychoric/tetrachoric and Pearson paths; \code{NULL} otherwise, including under \code{cor_method = "fiml"}, whose meat is the saturated FIML asymptotic covariance and is not returned.}
+\item{Gamma}{The asymptotic covariance of the off-diagonal sample correlations -- the meat of the robust sandwich SEs -- on the variance scale (\code{Var(rho-hat)}; lavaan's correlation NACOV is \code{N * Gamma}). A \code{p (p - 1) / 2} by \code{p (p - 1) / 2} numeric matrix; rows and columns ordered by \code{\link[utils:combn]{utils::combn()}} over the column pairs and labelled \code{"<var_i>-<var_j>"}. Populated for \code{se = "sandwich"} on the polychoric/tetrachoric and Pearson paths; \code{NULL} otherwise, including under \code{cor_method = "fiml"}, whose meat is the saturated FIML asymptotic covariance and is not returned. Being square in \eqn{p(p-1)/2}, it grows as \eqn{O(p^4)} -- about 1.4 MB at \eqn{p = 30} and 11 MB at \eqn{p = 50} -- and typically dominates a sandwich fit's size. It is retained rather than discarded because \code{\link[=efa_mi]{efa_mi()}} reads it from each per-imputation fit to build the pooled asymptotic covariance, so an \code{m}-imputation sandwich run holds \code{m} of them.}
 }
 \description{
 This function does an EFA with either \code{PAF}, \code{ML}, \code{ULS}/\code{MINRES},
@@ -410,7 +426,8 @@ Marshall, & Bentler, 2002; Little & Rubin, 2002), and the standardized covarianc
 then analysed. This reproduces \code{psych::corFiml()} followed by \code{psych::fa()} and
 \code{lavaan(missing = "two.stage")}, \emph{not} \code{lavaan::efa(missing = "ml")}, so the point
 estimates are not expected to match the latter. The model fit indices are corrected
-two-stage statistics (see \emph{Fit indices}). \code{"fiml"} uses every case and handles the
+two-stage statistics wherever the correction can be formed (see \emph{Fit indices}).
+\code{"fiml"} uses every case and handles the
 missingness itself, so \code{use} is ignored; it supplies a continuous (Pearson-type)
 correlation only and is therefore not compatible with \code{estimator = "DWLS"}. Standard
 errors are available analytically for \code{estimator = "ML"} or \code{"ULS"} and, for any estimator,
@@ -556,13 +573,14 @@ that looks like a standard error but is an artefact of the orientation. Everythi
 that does not depend on the orientation -- the rotated loadings, \code{Phi}, the structure
 coefficients, the uniquenesses and the communalities -- is unaffected and still
 reported. Use those, or \code{se = "np-boot"}, when the unrotated loadings themselves are
-the quantity of interest. The detection covers the Pearson and polychoric paths; the
-two-stage \code{cor_method = "fiml"} sandwich carries no such diagnostic, so a weakly
-determined orientation is not flagged there. A Heywood case (a uniqueness at its lower
+the quantity of interest. The detection covers every analytic route -- the Pearson and
+polychoric paths and the two-stage \code{cor_method = "fiml"} sandwich alike, which share the
+gauge constraint it describes. A Heywood case (a uniqueness at its lower
 boundary) is separate: the Wald approximation fails there for every parameter, so
-neither analytic method reports a standard error at all -- the whole \code{SE}/\code{CI} block is
-\code{NA} with an \code{efa_se_unreliable} warning. The \code{"sandwich"} scaled chi-square is not a
-Wald quantity and is still reported, so the fit indices are unaffected.
+no analytic method reports a standard error at all -- the whole \code{SE}/\code{CI} block is
+\code{NA} with an \code{efa_se_unreliable} warning. The scaled chi-square (from \code{"sandwich"}, or
+from \code{cor_method = "fiml"}) is not a Wald quantity and is still reported, so the fit
+indices are unaffected.
 \item \strong{"sandwich"} returns robust (Godambe sandwich) standard errors from raw data,
 combining the estimator weight with an asymptotic-distribution-free covariance of the
 correlations, so it stays valid under non-normality and weight misspecification
@@ -682,6 +700,16 @@ EM-estimated correlation, rescaled by the saturated FIML asymptotic covariance,
 because the plain two-stage likelihood-ratio statistic is not asymptotically
 \eqn{\chi^2(df)}. The CFI, TLI, and RMSEA follow from the scaled statistics; AIC, BIC,
 and ECVI are left \code{NA}, as for any scaled (moment-adjusted) chi-square.
+
+The correction rests on the saturated FIML asymptotic covariance, which can itself be
+degenerate -- typically on a small sample with a high proportion of missing values, or
+with near-collinear variables. The plain two-stage likelihood-ratio statistic is then
+reported in its place, with an \code{efa_fiml_uncorrected_chisq} warning and
+\code{chi_scaled_type = "uncorrected.lrt"}; the print methods label that line
+\code{uncorrected} rather than \code{scaled}. It is a usable statistic, but referenced to
+\eqn{\chi^2(df)} it is only approximate under the two-stage estimator, so read its
+p-value and the CFI, TLI, and RMSEA derived from it as indicative. AIC, BIC, and ECVI
+stay \code{NA} there as well.
 }
 
 Beyond the estimator, the chi-square and everything derived from it are \code{NA} whenever the
@@ -692,9 +720,11 @@ residual summaries (RMSR, SRMR, CAF) and the degrees of freedom are still return
 but residual size does not establish that a model is identified: below zero degrees of
 freedom a near-zero residual is an artefact of over-parameterisation, not close fit.
 
-Whenever the chi-square is a scaled one (\code{se = "sandwich"}, or any \code{cor_method = "fiml"}
-fit), the AIC, BIC, and ECVI are \code{NA} and the returned \code{fit_indices} additionally carry
-the scaled-statistic components (see the \code{fit_indices} entry in Value). Note that
+Whenever the chi-square is a scaled one (\code{se = "sandwich"}, or a \code{cor_method = "fiml"}
+fit whose correction could be formed), the AIC, BIC, and ECVI are \code{NA} and the returned
+\code{fit_indices} additionally carry the scaled-statistic components (see the \code{fit_indices}
+entry in Value). AIC, BIC, and ECVI are \code{NA} on every \code{cor_method = "fiml"} fit,
+including the uncorrected fallback above, which carries no scaling components. Note that
 Lorenzo-Seva, Timmerman, and Kiers (2011) introduce the CAF as ranging between 0 and 1,
 with values close to 1 indicating close fit; this does not match the formula they apply,
 \eqn{1 - KMO(residuals)}, which only works if the diagonal of the residual

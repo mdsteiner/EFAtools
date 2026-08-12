@@ -635,7 +635,35 @@
     out$BIC <- NA_real_
     out$ECVI <- NA_real_
     st <- .fiml_scaled_test(L, R, N, method, df, m, fiml)
-    if (!is.null(st)) out <- .apply_scaled_test(out, st, N)
+    if (!is.null(st)) {
+      # Thread `ci` on: the scaled block replaces the whole chi-square-derived block, so it must
+      # honour the caller's request not to solve the RMSEA bounds -- which is exactly the
+      # per-replicate bootstrap path, where the bounds are computed and then discarded.
+      out <- .apply_scaled_test(out, st, N, ci = ci)
+    } else if (method %in% c("ML", "ULS") && !is.na(df) && df > 0 && !is.na(out$chi)) {
+      # The correction could not be formed although the model has a testable chi-square: the
+      # saturated FIML covariance is degenerate, which happens on small, heavily incomplete or
+      # near-collinear samples. Keep the plain two-stage likelihood-ratio statistic -- it is
+      # informative, and NA-ing the whole block would discard a usable (if approximate) test --
+      # but tag it, so the reported statistic is never read as the corrected one. Every consumer
+      # of the chi-square block branches on this tag: the print method labels the line from it,
+      # and the multiple-imputation pooler reads the withheld AIC alongside it. `chi_scaling`,
+      # `chi_shift` and the alternative scaled statistics are absent here, because no scaling was
+      # applied. The just-identified (df == 0) case is deliberately excluded: it has no
+      # chi-square test to mislabel.
+      out$chi_scaled_type <- "uncorrected.lrt"
+      cli::cli_warn(
+        c("The corrected two-stage chi-square could not be formed; the plain two-stage
+           likelihood-ratio statistic is reported instead.",
+          "i" = "Referenced to a chi-square({df}) distribution it is only approximate under the
+                 two-stage estimator, so read the p-value, CFI, TLI, and RMSEA as indicative.",
+          "i" = "This follows a degenerate saturated covariance, usually from a small sample with
+                 a high proportion of missing values, or from near-collinear variables.",
+          "i" = "The reported statistic is identified by {.code fit_indices$chi_scaled_type ==
+                 \"uncorrected.lrt\"}."),
+        class = "efa_fiml_uncorrected_chisq"
+      )
+    }
   }
 
   out

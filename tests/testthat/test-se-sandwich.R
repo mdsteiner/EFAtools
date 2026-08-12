@@ -609,15 +609,45 @@ test_that("the sandwich core degrades gracefully when the gauge is undefined or 
 })
 
 
+# A two-factor solution with variable 1's uniqueness pinned at the fitter's floor: the boundary an
+# ML/ULS optimiser can actually reach, and strictly interior to the sandwich core's own `psi <= 0`
+# gauge test. Shared by the two tests below so both exercise the same solution.
+.boundary_loadings <- function() {
+  L <- matrix(0, 6, 2)
+  L[, 1] <- c(sqrt(1 - EFAtools:::.uniqueness_floor), 0.6, 0.5, 0.1, 0.15, 0.2)
+  L[, 2] <- c(0.00, 0.05, 0.20, 0.70, 0.60, 0.55)
+  L
+}
+
+test_that("a non-finite solution is withheld but is not described as a Heywood case", {
+  # The gate the analytic paths withhold on fires on two quite different situations: a uniqueness
+  # pinned at the fitter's floor, and a solution that is not finite at all. Both must withhold --
+  # a Wald interval is invalid either way -- but only the first is a Heywood case, so only the
+  # first may be described by the boundary hint. Asserting the two predicates directly pins that
+  # split without pinning any wording.
+  L_boundary <- .boundary_loadings()
+  L_na <- L_boundary
+  L_na[1, ] <- c(0.7, NA)
+  L_interior <- L_boundary
+  L_interior[1, 1] <- 0.7
+
+  # withholding: the boundary and the non-finite solution alike
+  expect_true(EFAtools:::.at_uniqueness_boundary(L_boundary))
+  expect_true(EFAtools:::.at_uniqueness_boundary(L_na))
+  expect_false(EFAtools:::.at_uniqueness_boundary(L_interior))
+
+  # describing it as a Heywood case: the boundary only
+  expect_true(EFAtools:::.se_boundary_hint_applies(L_boundary))
+  expect_false(EFAtools:::.se_boundary_hint_applies(L_na))
+  expect_false(EFAtools:::.se_boundary_hint_applies(L_interior))
+})
+
 test_that("the sandwich withholds standard errors at a uniqueness pinned at the fitter's floor", {
   # The robust path reports the same Wald quantities as the expected-information path, from a
   # different covariance, so it must withhold on the same boundary test: on the parameter-space
   # boundary the Wald approximation fails for every parameter regardless of how the covariance was
-  # estimated. The boundary the ML/ULS fitters can actually reach is the uniqueness floor, not zero,
-  # so the solution below is strictly interior to the core's own `psi <= 0` gauge test.
-  L <- matrix(0, 6, 2)
-  L[, 1] <- c(sqrt(1 - EFAtools:::.uniqueness_floor), 0.6, 0.5, 0.1, 0.15, 0.2)
-  L[, 2] <- c(0.00, 0.05, 0.20, 0.70, 0.60, 0.55)
+  # estimated.
+  L <- .boundary_loadings()
   psi <- 1 - rowSums(L^2)
   expect_lte(min(psi), EFAtools:::.uniqueness_floor + sqrt(.Machine$double.eps))
   expect_gt(min(psi), 0)

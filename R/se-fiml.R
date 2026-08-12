@@ -11,77 +11,16 @@
 # it is rescaled by the Satorra-Bentler correction built from the same H and Omega_delta.
 # Two-stage standard errors / rescaled statistic: Yuan & Bentler (2000); Savalei & Bentler (2009,
 # SEM); Yuan, Marshall & Bentler (2002, Psychometrika 67:95-121). MAR/ignorability: Little & Rubin
-# (2002). The construction mirrors the ordinal/continuous robust sandwich (.se_sandwich_core), with
-# H fixed to the normal-theory ML weight and the meat supplied by the FIML saturated covariance.
+# (2002). The construction shares its geometry with the ordinal/continuous robust sandwich -- both
+# take D, H, the bordered bread and the gauge constraint from `.offdiag_sandwich_pieces()` -- and
+# differs only in the meat, which here is the FIML saturated covariance.
 
-# Shared building blocks of the two-stage sandwich and the rescaled chi-square: the off-diagonal
-# model Jacobian D, the Stage-2 weight V matched to the extraction method (the normal-theory ML
-# weight for ML, the identity for ULS; as in .se_sandwich_core), and the bordered (constrained
-# generalised) inverse of the bread A = D' V D. `method` also selects the gauge the unrotated
-# loadings are reported in (Lambda' Psi^-1 Lambda for ML, Lambda' Lambda otherwise; Lawley &
-# Maxwell); the projector D' V D and the rescaled chi-square are gauge-invariant. Returns NULL when
-# the model-implied correlation or the bordered system is singular.
-.fiml_sandwich_pieces <- function(L, method) {
-  L <- unclass(L)
-  p <- nrow(L)
-  k <- ncol(L)
-  pk <- p * k
-
-  pairs <- utils::combn(p, 2L)
-  pi <- pairs[1, ]
-  pj <- pairs[2, ]
-  n <- ncol(pairs)
-
-  # Model Jacobian Delta = d sigma_ij / d vec(Lambda) (n x pk). For pair (i, j),
-  # d sigma_ij / d Lambda[a, f] = (a == i) Lambda[j, f] + (a == j) Lambda[i, f]; rows in
-  # utils::combn(p, 2) order, columns in column-major vec(Lambda) order (as in .se_sandwich_core).
-  Delta <- matrix(0, n, pk)
-  for (f in seq_len(k)) {
-    Delta[cbind(seq_len(n), (f - 1L) * p + pi)] <- L[pj, f]
-    Delta[cbind(seq_len(n), (f - 1L) * p + pj)] <- L[pi, f]
-  }
-
-  # Stage-2 weight V, matched to the extraction method exactly as .se_sandwich_core() does: ULS
-  # minimises the unweighted off-diagonal residual sum of squares (identity weight); ML uses the
-  # normal-theory GLS weight V = 1/2 (Sigma^-1 (x) Sigma^-1) restricted to the off-diagonal pairs,
-  # at the model-implied correlation Sigma = Lambda Lambda' (unit diagonal). Held as a diagonal
-  # (vdiag) or a full matrix (Vmat), the other NULL, so the meat and the rescaled chi-square apply
-  # the same weight the loadings were fitted with.
-  if (method == "ULS") {
-    vdiag <- rep(1, n)
-    Vmat <- NULL
-  } else {
-    Sigma <- tcrossprod(L)
-    diag(Sigma) <- 1
-    P <- tryCatch(solve(Sigma), error = function(e) NULL)
-    if (is.null(P)) return(NULL)
-    vdiag <- NULL
-    Vmat <- matrix(0, n, n)
-    for (s in seq_len(n)) {
-      a <- pi[s]
-      b <- pj[s]
-      Vmat[, s] <- 0.5 * (P[pi, a] * P[pj, b] + P[pi, b] * P[pj, a])
-    }
-  }
-  is_diag <- is.null(Vmat)
-
-  # Bread A = D' V D (singular by the k(k-1)/2 rotational gauge freedoms); border with the
-  # gauge-fixing constraint matched to the solution's orientation and take the leading pk-block of
-  # the augmented inverse (the reflexive generalised inverse of A).
-  VD <- if (is_diag) vdiag * Delta else Vmat %*% Delta
-  A <- crossprod(Delta, VD)
-  psi <- 1 - rowSums(L^2)
-  use_ltpil <- k >= 2L && !anyNA(psi) && all(psi > 0) && method == "ML"
-  Cmat <- if (use_ltpil) .se_sandwich_constraint(L, psi = psi) else .se_sandwich_constraint(L)
-  Abread <- .bordered_inverse_block(A, Cmat, pk)
-  if (is.null(Abread)) return(NULL)
-
-  list(Delta = Delta, vdiag = vdiag, Vmat = Vmat, VD = VD, Abread = Abread, pairs = pairs)
-}
-
-# Robust two-stage loading covariance V_AA (p*k x p*k), the unrotated loading/uniqueness SEs, and a
-# reliability flag, from the fitted loadings and the FIML moments. Returns NA SEs (reliable = FALSE)
-# at a singular bordered system, a degenerate saturated covariance, or a non-PSD V_AA.
+# Robust two-stage loading covariance V_AA (p*k x p*k), the unrotated loading/uniqueness SEs, and
+# the reliability flags, from the fitted loadings and the FIML moments. The model Jacobian, the
+# Stage-2 weight (the normal-theory ML weight for ML, the identity for ULS), the bordered bread and
+# the gauge constraint come from `.offdiag_sandwich_pieces()`, shared with the polychoric/ADF and
+# expected-information sandwiches; only the meat differs. Returns NA SEs (reliable = FALSE) at a
+# singular bordered system, a degenerate saturated covariance, or a non-PSD V_AA.
 .se_fiml_core <- function(fit_out, fiml, N, method) {
 
   L <- unclass(fit_out$unrot_loadings)
@@ -89,14 +28,18 @@
   k <- ncol(L)
   pk <- p * k
 
+  # `gauge_reliable = TRUE` on the NA path, as on the other analytic paths: everything is already
+  # withheld and the gauge is not what withheld it, so the caller's gauge-specific message must not
+  # be attached to this branch.
   na_core <- list(
     V_AA = matrix(NA_real_, pk, pk),
     loadings_se = matrix(NA_real_, p, k),
     uniquenesses_se = rep(NA_real_, p),
-    reliable = FALSE
+    reliable = FALSE,
+    gauge_reliable = TRUE
   )
 
-  pieces <- .fiml_sandwich_pieces(L, method)
+  pieces <- .offdiag_sandwich_pieces(L, method)
   if (is.null(pieces)) return(na_core)
 
   # Stage-1 saturated correlation asymptotic covariance Omega_delta (the meat), on the variance
@@ -133,7 +76,11 @@
     V_AA = V_AA,
     loadings_se = matrix(loadings_se, p, k),
     uniquenesses_se = uniq_se,
-    reliable = reliable
+    reliable = reliable,
+    # Conditioning of the rotational gauge the unrotated loadings are reported in, from the shared
+    # geometry. Reported here so a degenerate orientation is caught on this path exactly as on the
+    # Pearson/polychoric one, rather than shipping an inflated unrotated loading SE as informative.
+    gauge_reliable = pieces$gauge_reliable
   )
 }
 
@@ -147,12 +94,19 @@
 
   core <- .se_fiml_core(fit_out, fiml, N, method)
 
+  # The two-stage sandwich withholds at a boundary solution on the same test, and through the same
+  # shared policy, as every other analytic path. The corrected chi-square is untouched: it is built
+  # in `.gof()` rather than here, and is a discrepancy-function quantity the boundary does not
+  # invalidate.
+  core <- .withhold_at_boundary(core, fit_out$unrot_loadings)
+
   if (is.null(rot_info)) {
     .se_sandwich_unrotated(fit_out, core, ci)
   } else {
     se0 <- list(vcov = core$V_AA,
                 loadings_se = core$loadings_se,
-                uniquenesses_se = core$uniquenesses_se)
+                uniquenesses_se = core$uniquenesses_se,
+                gauge_reliable = core$gauge_reliable)
     .se_information_rotated(fit_out, rot_info, N, ci, se0 = se0)
   }
 }
@@ -175,7 +129,9 @@
   L <- unclass(L)
   p <- nrow(L)
 
-  pieces <- .fiml_sandwich_pieces(L, method)
+  # The rescaled statistic is gauge-invariant, so the gauge diagnostic is not read here; skip it.
+  # This runs once per bootstrap replicate, where the discarded decomposition would be pure cost.
+  pieces <- .offdiag_sandwich_pieces(L, method, gauge = FALSE)
   if (is.null(pieces)) return(NULL)
 
   # Reuse the cached saturated correlation covariance when EFA() pre-built it for the SE sandwich

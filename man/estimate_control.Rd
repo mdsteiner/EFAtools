@@ -12,7 +12,9 @@ estimate_control(
   criterion_type = NA,
   max_iter = NA,
   abs_eigen = NA,
-  start_method = "psych"
+  start_method = "psych",
+  fiml_max_iter = 500,
+  fiml_tol = 1e-05
 )
 
 rotate_control(
@@ -59,6 +61,21 @@ optimiser: \code{"psych"} (default, the \code{\link[psych:fa]{psych::fa()}} star
 \code{\link[stats:factanal]{stats::factanal()}} starts); abbreviations are matched. Not governed by \code{type}.
 Only maximum likelihood uses it, so \code{NA} leaves it unset and is rejected only by
 a fit that is actually run with \code{estimator = "ML"}.}
+
+\item{fiml_max_iter}{numeric. The maximum number of EM iterations used to estimate the
+two-stage full-information maximum-likelihood moments from raw data with missing
+values (\code{cor_method = "fiml"}); the last iterate is returned, with a warning, if the
+cap is reached. A single whole number of at least 1; default \code{500}. Not governed by
+\code{type}, and unused by every other correlation method. The EM converges linearly and
+needs more iterations the larger the fraction of missing information, so raise it when
+a fit reports that the moments did not converge.}
+
+\item{fiml_tol}{numeric. The convergence tolerance of that EM: iteration stops once the
+largest change in the standardized moments (the standardized means, log-variances, and
+correlations) falls below it, so it does not depend on the variables' measurement
+scale. A single number greater than 0 and smaller than 1 (at or above 1 the criterion is
+met immediately and the starting moments would be returned as converged); default \code{1e-5}.
+Not governed by \code{type}.}
 
 \item{normalize}{logical. If \code{TRUE} (default), a Kaiser normalization is
 performed before the rotation. The one knob that is always on unless you turn
@@ -125,7 +142,8 @@ fit would silently drop it.}
 \value{
 \code{estimate_control()} returns a list of class \code{efa_estimate_control} with
 the components \code{type}, \code{init_comm}, \code{criterion}, \code{criterion_type}, \code{max_iter},
-\code{abs_eigen}, and \code{start_method}. \code{rotate_control()} returns a list of class
+\code{abs_eigen}, \code{start_method}, \code{fiml_max_iter}, and \code{fiml_tol}.
+\code{rotate_control()} returns a list of class
 \code{efa_rotate_control} with the components \code{type}, \code{normalize}, \code{precision},
 \code{order_type}, \code{varimax_type}, \code{p_type}, \code{k}, \code{random_starts}, and \code{extra_args}
 (a named list of any additional arguments forwarded to the rotation engine).

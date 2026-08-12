@@ -363,6 +363,15 @@
                                N_policy = c("optional", "none", "required"),
                                acov = c("none", "diag", "full"),
                                dwls = FALSE,
+                               # EM budget for the two-stage FIML moments; ignored by every other
+                               # cor_method. Taken FROM the control constructor rather than
+                               # restated, so the entry points that thread an `estimate_control()`
+                               # (efa_fit(), and what forwards to it) and those that cannot
+                               # (efa_average()) can never estimate different correlations from the
+                               # same data because one default was changed and the other was not.
+                               # Both are evaluated lazily, inside the FIML branch only.
+                               fiml_max_iter = estimate_control()$fiml_max_iter,
+                               fiml_tol = estimate_control()$fiml_tol,
                                inform_from_data = TRUE,
                                check_singular = TRUE,
                                posdef_abort = FALSE,
@@ -468,17 +477,22 @@
       # standardised covariance. Every case contributes, so `use` does not apply and N is the
       # EM case count (resolved below). Routed apart from stats::cor(), which would instead
       # delete cases. The EM moments are carried forward in the returned list for downstream use.
-      em <- .fiml_em_moments(x)
+      em <- .fiml_em_moments(x, max_iter = fiml_max_iter, tol = fiml_tol)
       R <- stats::cov2cor(em$sigma)
       # Mirror the other raw-data paths: label R by the input's column names (NULL for an
       # unnamed matrix) rather than the V1..Vp fallback the EM synthesises, so the analysis
       # matrix is named consistently across cor_method.
       dimnames(R) <- list(colnames(x), colnames(x))
-      fiml <- list(mu = em$mu, sigma = em$sigma, logl = em$logl)
+      fiml <- list(mu = em$mu, sigma = em$sigma, logl = em$logl,
+                   converged = em$converged, iter = em$iter,
+                   n_patterns = em$n_patterns, n = em$n)
       # The saturated mean/covariance and saturated log-likelihood are carried forward so the
       # downstream fit indices can form the FIML likelihood-ratio chi-square (model and
       # independence-baseline log-likelihoods over the missingness patterns) rather than a naive
-      # complete-case discrepancy on R; see .gof_fiml_chisq().
+      # complete-case discrepancy on R; see .gof_fiml_chisq(). The Stage-1 diagnostics travel
+      # with them so the caller can report that the analysed matrix is the EM's last iterate
+      # rather than the converged FIML estimate -- the warning alone leaves no record on the
+      # fitted object, and callers that suppress per-fit warnings would surface nothing at all.
 
     } else if (.is_poly_cor(cor_method)) {
 

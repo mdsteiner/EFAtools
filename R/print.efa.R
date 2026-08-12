@@ -316,6 +316,9 @@ format.summary.efa <- function(x, ...) {
     rotation = settings$rotation,
     rotation_diagnostics = settings$rotation_diagnostics,
     cor_method = settings$cor_method,
+    # `[[` rather than `$`: the slot is absent on every non-FIML fit, and `$` partial-matches, so
+    # any future slot whose name merely starts with "fiml" would be picked up here instead.
+    fiml = x[["fiml"]],
     se = se,
     N = settings$N,
     fit = x$fit_indices,
@@ -357,6 +360,19 @@ format.summary.efa <- function(x, ...) {
   # as an ordinary complete-case correlation. Emitted verbatim (plain, no ANSI).
   if (identical(.efa_setting_text(spec$cor_method), "fiml")) {
     cli::cli_verbatim("Correlations: FIML (two-stage, missing data)")
+
+    # A Stage-1 EM that stopped at its cap leaves the analysed matrix at the last iterate
+    # rather than the FIML estimate, which can differ materially at a high fraction of
+    # missing information. The warning fires only while the fit runs -- and is suppressed
+    # wherever fits are run in bulk -- so a saved object would otherwise carry no visible
+    # trace of it. Shown next to the line that names the correlation method.
+    if (isFALSE(spec$fiml$converged)) {
+      cli::cli_alert_warning(
+        "The FIML EM stopped after {spec$fiml$iter} iteration{?s} without converging; the
+         analysed correlation matrix is its last iterate. Raise {.arg fiml_max_iter}, or
+         relax {.arg fiml_tol}, in {.fn estimate_control}."
+      )
+    }
   }
 
   if (.efa_iteration_nonconvergence(spec)) {
@@ -701,12 +717,17 @@ format.summary.efa <- function(x, ...) {
 
   # When the sandwich path supplies a scaled (Satorra-Bentler) chi-square, mark the line so
   # it is not read as an ordinary chi-square (the CFI/TLI/RMSEA below are derived from it).
+  # A two-stage FIML fit whose correction could not be formed reports the plain
+  # likelihood-ratio statistic under the "uncorrected.lrt" tag; it must NOT be labelled
+  # scaled, because it carries no correction at all -- it is only approximately
+  # chi-square(df) under the two-stage estimator, which is what the label says.
   # A D2-pooled fit is flagged the same way: its chi-square is the Li et al. (1991)
   # asymptotic statistic df * F_D2, whose p-value comes from the D2 reference F(df1, df2)
   # rather than the chi-square(df) tail (the note below spells this out when they diverge).
   is_d2 <- isTRUE(spec$is_pooled) && identical(fit[["pool_method"]], "D2")
-  chi_prefix <- if (!is.null(fit[["chi_scaled_type"]]) && !is.na(fit[["chi_scaled_type"]])) {
-    "scaled "
+  scaled_type <- fit[["chi_scaled_type"]]
+  chi_prefix <- if (!is.null(scaled_type) && !is.na(scaled_type)) {
+    if (identical(scaled_type, "uncorrected.lrt")) "uncorrected " else "scaled "
   } else if (is_d2) {
     "D2-pooled "
   } else {

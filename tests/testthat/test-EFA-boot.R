@@ -568,6 +568,57 @@ test_that("the PAF kernel rejects a non-positive iteration budget", {
   expect_error(estimate_control(max_iter = -5), class = "efa_control_input")
 })
 
+test_that(".array_se_ci matches a per-probability sweep at every shape it is called with", {
+  # The helper takes both percentile bounds from one pass over the replicate array. The bounds
+  # must equal what a separate sweep per probability produced -- same values, same shapes, same
+  # dimnames -- at every rank its call sites use: a replicate matrix (the fit indices, M = 2),
+  # a 3-D cube (loadings, Phi, residuals, M = c(1, 2)), and the group bootstrap's 4-D cube.
+  ref <- function(x, probs, M) {
+    ci <- lapply(probs, function(p) apply(x, M, stats::quantile, probs = p, na.rm = TRUE))
+    stats::setNames(ci, c("lower", "upper"))
+  }
+  probs <- c(0.025, 0.975)
+
+  set.seed(20)
+  cases <- list(
+    matrix_M2 = list(
+      x = matrix(stats::rnorm(40 * 5), nrow = 40,
+                 dimnames = list(NULL, paste0("idx", 1:5))),
+      M = 2),
+    cube_M12 = list(
+      x = array(stats::rnorm(6 * 3 * 40), c(6, 3, 40),
+                dimnames = list(paste0("V", 1:6), paste0("F", 1:3), NULL)),
+      M = c(1, 2)),
+    cube4d_M123 = list(
+      x = array(stats::rnorm(2 * 2 * 4 * 30), c(2, 2, 4, 30),
+                dimnames = list(c("g1", "g2"), c("g1", "g2"), paste0("V", 1:4), NULL)),
+      M = c(1L, 2L, 3L))
+  )
+
+  for (nm in names(cases)) {
+    x <- cases[[nm]]$x
+    M <- cases[[nm]]$M
+    got <- .array_se_ci(x, probs, M = M)
+    want <- ref(x, probs, M)
+    expect_equal(got$ci$lower, want$lower, info = nm)
+    expect_equal(got$ci$upper, want$upper, info = nm)
+    expect_identical(dim(got$ci$lower), dim(got$se), info = nm)
+    expect_identical(dimnames(got$ci$lower), dimnames(got$se), info = nm)
+  }
+
+  # NA handling is unchanged too: a cell whose replicates are all missing must come back NA
+  # rather than error, and a partially missing cell must use its observed replicates only.
+  y <- array(stats::rnorm(3 * 2 * 20), c(3, 2, 20))
+  y[1, 1, ] <- NA_real_
+  y[2, 1, 1:5] <- NA_real_
+  got <- .array_se_ci(y, probs)
+  want <- ref(y, probs, c(1, 2))
+  expect_equal(got$ci$lower, want$lower)
+  expect_equal(got$ci$upper, want$upper)
+  expect_true(is.na(got$ci$lower[1, 1]))
+  expect_false(is.na(got$ci$lower[2, 1]))
+})
+
 test_that(".estimate_model(lean = TRUE) returns only the bootstrap-aggregated quantities", {
   # The bootstrap replicate fitter computes just the loadings, fit indices, and
   # residuals that .boot_se_ci() aggregates. Those must match the full fit

@@ -459,11 +459,11 @@
   # such a statistic. A D2 pool cannot rehabilitate them, so take the components'
   # decision rather than recomputing from the pooled chi-square: a component that
   # produced a chi-square but no AIC withheld it deliberately. Reading it off the
-  # returned indices covers the `chi_scaled_type` path (.apply_scaled_test() NAs all
-  # three) and the tagless FIML fallbacks alike -- the plain-LRT and just-identified
-  # cases at R/fit-indices.R:507-515 never reach .apply_scaled_test() and so carry no
-  # tag, but they withhold the criteria just the same. A fit with no chi-square at all
-  # (PAF, DWLS) is not a withholding: its pooled chi is NA, which zeroes these anyway.
+  # returned indices covers every route at once -- the corrected `chi_scaled_type =
+  # "scaled.shifted"` path, the `"uncorrected.lrt"` two-stage FIML fallback, and the
+  # just-identified FIML fit, which carries no tag at all -- because all three withhold
+  # the three criteria whether or not a correction was applied. A fit with no chi-square
+  # at all (PAF, DWLS) is not a withholding: its pooled chi is NA, which zeroes these anyway.
   withheld_components <- any(vapply(fit_list, function(x) {
     !is.null(x$chi) && is.finite(x$chi) && (is.null(x$AIC) || !is.finite(x$AIC))
   }, logical(1)))

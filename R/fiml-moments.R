@@ -165,11 +165,21 @@
     sigma <- T2 / n - tcrossprod(mu)
     sigma <- (sigma + t(sigma)) / 2                       # symmetrise away round-off
 
-    # A loss of positive-definiteness signals a (near-)degenerate / collinear problem.
+    # A loss of positive-definiteness means the completed-data covariance has lost rank. That
+    # has two quite different causes and the message must name both: a (near-)constant or
+    # collinear variable, and simply too few informative cases for p variables -- the latter is
+    # what n <= p produces, where a user sent to inspect the variables would inspect the wrong
+    # thing. The concrete counts are added only when the sample is that small, so the extra
+    # bullet never appears where it would be a red herring.
     if (inherits(try(chol(sigma), silent = TRUE), "try-error")) {
       cli::cli_abort(
         c("The FIML covariance estimate stopped being positive definite during the EM iteration.",
-          "i" = "A variable may be (near-)constant or collinear; check the data."),
+          "i" = "The completed-data covariance lost rank: a variable may be (near-)constant or
+                 collinear, or the observed cases may carry too little information to estimate
+                 {p} variance{?s} and their covariances.",
+          if (n <= p) {
+            c("x" = "Only {n} case{?s} carr{?ies/y} an observed value, for {p} variable{?s}.")
+          }),
         class = "efa_fiml_not_posdef"
       )
     }
@@ -183,9 +193,20 @@
   }
 
   if (!converged) {
+    # Every remedy named here has to be reachable from every entry point that estimates FIML
+    # correlations, not only from the ones that take an `estimate_control()`: this warning is
+    # raised during correlation preparation, which `efa_average()` also runs and which exposes no
+    # control object. So the remedy that always applies is stated first and unconditionally, and
+    # the knobs are named together with where they can be supplied.
     cli::cli_warn(
-      c("FIML EM did not converge in {max_iter} iteration{?s}.",
-        "i" = "Increase {.arg max_iter} or relax {.arg tol}; the last iterate is returned."),
+      c("FIML EM did not converge in {max_iter} iteration{?s}; the last iterate is returned and
+         analysed in place of the FIML estimate.",
+        "i" = "The EM converges linearly and needs more iterations the larger the fraction of
+               missing information, so analysing fewer variables, or ones with less missingness,
+               helps wherever the FIML correlation is estimated.",
+        "i" = "Where an {.fn estimate_control} can be supplied -- {.fn efa_fit}, and the functions
+               that forward one to it -- raise {.arg fiml_max_iter} or relax {.arg fiml_tol}
+               there."),
       class = "efa_fiml_em_nonconvergence"
     )
   }

@@ -4,13 +4,13 @@
 # psych::corFiml() -> psych::fa() and lavaan(missing = "two.stage"), not lavaan::efa()),
 # and the classed conditions guarding the unsupported input/option combinations.
 
-# A clean two-factor population covariance: items 1..p/2 load on factor 1, the rest on
-# factor 2, with unit diagonal.
-fiml_pop_cov <- function(p = 6) {
+# A clean two-factor population covariance: items 1..p/2 load on factor 1 at `loadings[1]`, the
+# rest on factor 2 at `loadings[2]`, with unit diagonal.
+fiml_pop_cov <- function(p = 6, loadings = c(0.7, 0.7)) {
   L <- matrix(0, p, 2)
   half <- p / 2
-  L[seq_len(half), 1] <- 0.7
-  L[(half + 1):p, 2] <- 0.7
+  L[seq_len(half), 1] <- loadings[1]
+  L[(half + 1):p, 2] <- loadings[2]
   S <- tcrossprod(L)
   diag(S) <- 1
   S
@@ -18,19 +18,32 @@ fiml_pop_cov <- function(p = 6) {
 
 # A missing-at-random fixture: column 1 is fully observed and drives the missingness in the
 # others, so the mechanism depends only on observed data. The multivariate normal draw goes
-# through the Cholesky factor rather than an eigendecomposition: the population covariance
-# below has repeated eigenvalues, whose eigenvector basis is mathematically undetermined and
-# therefore settled by rounding, while chol() is unique for a positive definite matrix, so the
-# same seed yields the same sample on every LAPACK build.
-fiml_mar_data <- function(n = 800, seed = 456) {
+# through the Cholesky factor rather than an eigendecomposition: at the default (equal) loadings
+# the population covariance has repeated eigenvalues, whose eigenvector basis is mathematically
+# undetermined and therefore settled by rounding, while chol() is unique for a positive definite
+# matrix, so the same seed yields the same sample on every LAPACK build.
+fiml_mar_data <- function(n = 800, seed = 456, loadings = c(0.7, 0.7)) {
   set.seed(seed)
-  X <- matrix(stats::rnorm(n * 6), n) %*% chol(fiml_pop_cov(6))
+  X <- matrix(stats::rnorm(n * 6), n) %*% chol(fiml_pop_cov(6, loadings))
   colnames(X) <- paste0("V", seq_len(6))
   X[X[, 1] >  0.8, 2] <- NA
   X[X[, 1] < -0.8, 3] <- NA
   X[X[, 1] >  1.2, 4] <- NA
   X[X[, 1] < -1.2, 5] <- NA
   X
+}
+
+# The same fixture with the two factors at different strengths. At the default equal loadings the
+# canonical variances diag(Lambda' Psi^-1 Lambda) that identify the unrotated ML solution coincide
+# exactly in the population: the loadings can then be rotated within that plane without leaving the
+# identifying constraint, so the unrotated orientation -- and with it the unrotated loading standard
+# errors -- has no well-defined sampling distribution, and a fitted solution sits right at the
+# detector's floor. Every test of an unrotated analytic standard error needs a solution where that
+# orientation is determined, which separating the two strengths provides (canonical variances 4.83
+# against 0.90, a transversal an order of magnitude clear of the floor). Rotated quantities are
+# gauge-invariant and need no such care.
+fiml_mar_data_2f <- function(n = 800, seed = 456) {
+  fiml_mar_data(n = n, seed = seed, loadings = c(0.8, 0.5))
 }
 
 # A single-factor MAR fixture: a clean SE / chi-square oracle, with no rotational indeterminacy.
@@ -138,6 +151,117 @@ test_that("FIML fit indices are the corrected (Satorra-Bentler) two-stage statis
   # AIC/BIC/ECVI are likelihood-ratio chi-square criteria with no meaning for the moment-scaled
   # statistic, so they are NA (as on the sandwich path), not the chi-square-based forms.
   expect_true(all(is.na(c(fi$AIC, fi$BIC, fi$ECVI))))
+})
+
+# Force the Stage-1 saturated covariance to fail, so the corrected two-stage statistic cannot be
+# formed. It is the covariance that is degenerate, not the model, so the plain two-stage
+# likelihood-ratio statistic is still available -- which is exactly the situation the fallback
+# contract covers. Used by the tests below to reach it deterministically.
+.mock_fiml_acov_failure <- function(env = parent.frame()) {
+  testthat::local_mocked_bindings(
+    .fiml_saturated_acov = function(...) {
+      cli::cli_abort("forced degenerate saturated covariance",
+                     class = "efa_fiml_singular_information")
+    },
+    .env = env
+  )
+}
+
+test_that("a formable correction is tagged as the corrected statistic, with no fallback warning", {
+  skip_on_cran()
+
+  expect_no_warning(
+    fi <- efa_fit(fiml_mar_data(), n_factors = 2, estimator = "ML",
+                  cor_method = "fiml")$fit_indices,
+    class = "efa_fiml_uncorrected_chisq"
+  )
+
+  # The success side of the tag: `chi` is the corrected statistic, and the components that
+  # describe the correction are present alongside it.
+  expect_identical(fi$chi_scaled_type, "scaled.shifted")
+  expect_true(all(is.finite(c(fi$chi_scaling, fi$chi_shift, fi$chi_unscaled))))
+})
+
+test_that("a degenerate saturated covariance falls back to the tagged plain two-stage LRT", {
+  skip_on_cran()
+
+  X <- fiml_mar_data()
+  .mock_fiml_acov_failure()
+
+  expect_warning(
+    fit <- efa_fit(X, n_factors = 2, estimator = "ML", cor_method = "fiml"),
+    class = "efa_fiml_uncorrected_chisq"
+  )
+  fi <- fit$fit_indices
+
+  # Tagged, so no consumer can read the substituted statistic as the Satorra-Bentler one ...
+  expect_identical(fi$chi_scaled_type, "uncorrected.lrt")
+  # ... and none of the scaling components ships, because nothing was rescaled.
+  expect_null(fi$chi_scaling)
+  expect_null(fi$chi_shift)
+  expect_null(fi$chi_unscaled)
+  expect_null(fi$chi_mean_adjusted)
+
+  # The reported statistic is the plain two-stage likelihood ratio, referenced to the
+  # chi-square(df) tail, and the block built on it is complete rather than NA-ed away: the
+  # statistic is approximate under the two-stage estimator, not meaningless.
+  em <- .fiml_em_moments(X)
+  ref <- .gof_fiml_chisq(tcrossprod(unclass(fit$unrot_loadings)), N = fit$settings$N,
+                         method = "ML", df = fi$df, m = ncol(X),
+                         fiml = list(data = X, mu = em$mu, sigma = em$sigma, logl = em$logl))
+  expect_equal(fi$chi, ref$chi, tolerance = 1e-8)
+  expect_equal(fi$p_chi, stats::pchisq(fi$chi, fi$df, lower.tail = FALSE), tolerance = 1e-10)
+  expect_true(all(is.finite(c(fi$CFI, fi$TLI, fi$RMSEA))))
+
+  # AIC/BIC/ECVI stay withheld: they are likelihood-ratio criteria the two-stage estimator
+  # cannot support, whether or not the correction was formed.
+  expect_true(all(is.na(c(fi$AIC, fi$BIC, fi$ECVI))))
+})
+
+test_that("the fallback chi-square prints as uncorrected, never as scaled", {
+  skip_on_cran()
+  local_reproducible_output()
+
+  .mock_fiml_acov_failure()
+  expect_warning(
+    fit <- efa_fit(fiml_mar_data(), n_factors = 2, estimator = "ML", cor_method = "fiml"),
+    class = "efa_fiml_uncorrected_chisq"
+  )
+
+  printed <- cli::ansi_strip(capture.output(print(fit)))
+  expect_true(any(grepl("uncorrected χ²(", printed, fixed = TRUE)))
+  expect_false(any(grepl("scaled χ²(", printed, fixed = TRUE)))
+})
+
+test_that("a just-identified FIML fit is left untagged rather than called uncorrected", {
+  skip_on_cran()
+
+  # With df = 0 there is no chi-square test to mislabel, so the fallback tag and its warning
+  # must not fire: the tag exists to distinguish a corrected statistic from an uncorrected
+  # one, and this fit has neither.
+  set.seed(77)
+  L <- matrix(0.7, 3, 1)
+  S <- tcrossprod(L); diag(S) <- 1
+  X <- matrix(stats::rnorm(500 * 3), 500) %*% chol(S)
+  colnames(X) <- paste0("V", seq_len(3))
+  X[X[, 1] >  0.8, 2] <- NA
+  X[X[, 1] < -0.8, 3] <- NA
+
+  # Collect the condition classes rather than suppressing wholesale: the fit legitimately
+  # raises efa_just_identified, and a blanket suppressWarnings() would also hide the very
+  # condition this test asserts is absent.
+  seen <- character()
+  fi <- withCallingHandlers(
+    efa_fit(X, n_factors = 1, estimator = "ML", cor_method = "fiml")$fit_indices,
+    warning = function(w) {
+      seen <<- c(seen, class(w))
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_true("efa_just_identified" %in% seen)
+  expect_false("efa_fiml_uncorrected_chisq" %in% seen)
+  expect_equal(fi$df, 0)
+  expect_null(fi$chi_scaled_type)
 })
 
 test_that("FIML fit indices match lavaan two-stage (Satorra-Bentler)", {
@@ -270,6 +394,77 @@ test_that("FIML np-boot fit-index SEs come from the corrected two-stage chi-squa
   expect_gt(fi_se[["chi"]], 0)
 })
 
+test_that("a converged FIML fit reports its Stage-1 EM diagnostics", {
+  skip_on_cran()
+
+  X <- fiml_mar_data()
+  fit <- efa_fit(X, n_factors = 2, estimator = "ML", cor_method = "fiml")
+
+  expect_named(fit$fiml, c("converged", "iter", "n_patterns", "n"))
+  expect_true(fit$fiml$converged)
+  expect_true(fit$fiml$iter >= 1L && fit$fiml$iter < 500L)
+  # The pattern count and the informative-row count are the EM's own, so they must match a
+  # direct read of the missingness structure rather than the raw data dimensions.
+  obs <- !is.na(X)
+  keep <- rowSums(obs) > 0L
+  expect_equal(fit$fiml$n_patterns, length(.fiml_patterns(obs[keep, , drop = FALSE])))
+  expect_equal(fit$fiml$n, sum(keep))
+  expect_equal(fit$fiml$n, fit$settings$N)
+
+  # The slot belongs to the FIML route alone; no other correlation method estimates them.
+  pear <- efa_fit(X, n_factors = 2, estimator = "ML", cor_method = "pearson")
+  expect_null(pear$fiml)
+})
+
+test_that("estimate_control's FIML EM knobs reach the moment estimation", {
+  skip_on_cran()
+
+  X <- fiml_mar_data()
+
+  # A cap of two iterations is reached on this fixture, so the warning fires and the fit
+  # records that the analysed matrix is the last iterate rather than the FIML estimate.
+  expect_warning(
+    capped <- efa_fit(X, n_factors = 2, estimator = "ML", cor_method = "fiml",
+                      estimate_control = estimate_control(fiml_max_iter = 2)),
+    class = "efa_fiml_em_nonconvergence"
+  )
+  expect_false(capped$fiml$converged)
+  expect_equal(capped$fiml$iter, 2L)
+
+  # The knobs are not inert: a capped EM stops at a different correlation matrix from the
+  # converged one, and a looser tolerance converges in fewer iterations.
+  full <- efa_fit(X, n_factors = 2, estimator = "ML", cor_method = "fiml")
+  expect_false(isTRUE(all.equal(unclass(capped$orig_R), unclass(full$orig_R))))
+
+  loose <- efa_fit(X, n_factors = 2, estimator = "ML", cor_method = "fiml",
+                   estimate_control = estimate_control(fiml_tol = 1e-2))
+  expect_true(loose$fiml$converged)
+  expect_lt(loose$fiml$iter, full$fiml$iter)
+})
+
+test_that("a non-converged FIML EM is visible in the printed output", {
+  skip_on_cran()
+  local_reproducible_output()
+
+  expect_warning(
+    capped <- efa_fit(fiml_mar_data(), n_factors = 2, estimator = "ML", cor_method = "fiml",
+                      estimate_control = estimate_control(fiml_max_iter = 2)),
+    class = "efa_fiml_em_nonconvergence"
+  )
+
+  printed <- cli::ansi_strip(capture.output(print(capped)))
+  expect_true(any(grepl("FIML EM stopped after 2 iterations without converging",
+                        printed, fixed = TRUE)))
+  # summary() renders the same header, so the diagnostic is surfaced there as well.
+  expect_match(cli::ansi_strip(format(summary(capped))),
+               "without converging", fixed = TRUE, all = FALSE)
+
+  # A converged fit says nothing, so the line marks the exception rather than the rule.
+  ok <- cli::ansi_strip(capture.output(print(
+    efa_fit(fiml_mar_data(), n_factors = 2, estimator = "ML", cor_method = "fiml"))))
+  expect_false(any(grepl("without converging", ok, fixed = TRUE)))
+})
+
 test_that("FIML aborts on unsupported input/option combinations", {
   raw <- matrix(c(1, 2, 3, NA, 5, 6,
                   2, 1, 4,  3, 2, 5,
@@ -358,8 +553,10 @@ test_that("FIML unrotated loading and uniqueness SEs match lavaan two-stage", {
 test_that("FIML two-stage loading SEs match an independent reference sandwich", {
   skip_on_cran()
 
-  X <- fiml_mar_data()
-  efa <- EFA(X, n_factors = 2, method = "ML", cor_method = "fiml", se = "sandwich")
+  # The unrotated loading SEs are gauge-dependent, so this needs the fixture whose rotational
+  # orientation is determined.
+  X <- fiml_mar_data_2f()
+  efa <- efa_fit(X, n_factors = 2, estimator = "ML", cor_method = "fiml", se = "sandwich")
   L <- unclass(efa$unrot_loadings)
 
   em <- .fiml_em_moments(X)
@@ -374,9 +571,9 @@ test_that("FIML rotated loading SEs match lavaan two-stage under a supported rot
   skip_on_cran()
   skip_if_not_installed("lavaan")
 
-  X <- fiml_mar_data()
-  efa <- EFA(X, n_factors = 2, method = "ML", rotation = "geominQ",
-             cor_method = "fiml", se = "sandwich")
+  X <- fiml_mar_data_2f()
+  efa <- efa_fit(X, n_factors = 2, estimator = "ML", rotation = "geominQ",
+                 cor_method = "fiml", se = "sandwich")
 
   # Match EFAtools' geominQ epsilon (default delta = 0.01) so the two rotations coincide; the
   # two-stage estimator carries the corrected rotated-loading SEs through standardizedSolution().
@@ -406,9 +603,9 @@ test_that("FIML rotated loading SEs match lavaan two-stage under a supported rot
 test_that("FIML sandwich SEs fill the analytic SE/CI schema (oblique)", {
   skip_on_cran()
 
-  X <- fiml_mar_data()
-  efa <- EFA(X, n_factors = 2, method = "ML", rotation = "oblimin",
-             cor_method = "fiml", se = "sandwich")
+  X <- fiml_mar_data_2f()
+  efa <- efa_fit(X, n_factors = 2, estimator = "ML", rotation = "oblimin",
+                 cor_method = "fiml", se = "sandwich")
 
   expect_named(efa$SE, c("unrot_loadings", "uniquenesses", "rot_loadings", "communalities",
                          "Phi", "Structure"))
@@ -433,9 +630,9 @@ test_that("FIML sandwich SEs fill the analytic SE/CI schema (oblique)", {
 test_that("FIML 'information' and 'sandwich' give the same corrected two-stage SEs", {
   skip_on_cran()
 
-  X <- fiml_mar_data()
-  fit_i <- EFA(X, n_factors = 2, method = "ML", cor_method = "fiml", se = "information")
-  fit_s <- EFA(X, n_factors = 2, method = "ML", cor_method = "fiml", se = "sandwich")
+  X <- fiml_mar_data_2f()
+  fit_i <- efa_fit(X, n_factors = 2, estimator = "ML", cor_method = "fiml", se = "information")
+  fit_s <- efa_fit(X, n_factors = 2, estimator = "ML", cor_method = "fiml", se = "sandwich")
   # Under FIML both analytic settings return the corrected two-stage sandwich, so the SEs and the
   # persisted loading covariance are identical.
   expect_equal(fit_i$SE$unrot_loadings, fit_s$SE$unrot_loadings)
@@ -446,8 +643,8 @@ test_that("FIML 'information' and 'sandwich' give the same corrected two-stage S
 test_that("FIML ULS uses the estimator's own (identity) Stage-2 weight, not the ML weight", {
   skip_on_cran()
 
-  X <- fiml_mar_data()
-  efa_u <- EFA(X, n_factors = 2, method = "ULS", cor_method = "fiml", se = "sandwich")
+  X <- fiml_mar_data_2f()
+  efa_u <- efa_fit(X, n_factors = 2, estimator = "ULS", cor_method = "fiml", se = "sandwich")
   L <- unclass(efa_u$unrot_loadings)
   expect_true(all(is.finite(efa_u$SE$unrot_loadings)) && all(efa_u$SE$unrot_loadings > 0))
   expect_true(all(is.finite(efa_u$SE$uniquenesses)))
@@ -466,7 +663,7 @@ test_that("FIML ULS uses the estimator's own (identity) Stage-2 weight, not the 
   expect_lt(err_uls, err_ml)
 
   # 'information' and 'sandwich' coincide for ULS too (both route to the corrected sandwich).
-  efa_ui <- EFA(X, n_factors = 2, method = "ULS", cor_method = "fiml", se = "information")
+  efa_ui <- efa_fit(X, n_factors = 2, estimator = "ULS", cor_method = "fiml", se = "information")
   expect_equal(efa_ui$SE$unrot_loadings, efa_u$SE$unrot_loadings)
 })
 
@@ -479,8 +676,9 @@ test_that("FIML analytic SEs NA-fill with a classed warning when the covariance 
 
   # A non-finite (NA) loading makes the model derivative and the parameter covariance undefined;
   # the unrotated SE schema must NA-fill with the classed efa_se_unreliable warning rather than
-  # ship a finite SE next to an unusable covariance. (A mild Heywood, by contrast, the two-stage
-  # sandwich handles via the Lambda'Lambda gauge.)
+  # ship a finite SE next to an unusable covariance. This is the unusable-covariance route, which
+  # is distinct from the boundary route tested above: there the covariance is fine and it is the
+  # Wald approximation that is not.
   fo <- list(unrot_loadings = matrix(c(0.7, NA, 0.6, 0.5, 0.4, 0.3,
                                        0.1, 0.2, 0.15, 0.7, 0.6, 0.5), 6, 2),
              orig_R = stats::cov2cor(em$sigma))
@@ -490,6 +688,143 @@ test_that("FIML analytic SEs NA-fill with a classed warning when the covariance 
   )
   expect_true(all(is.na(res$SE$unrot_loadings)))
   expect_true(all(is.na(res$vcov_unrot_loadings)))
+})
+
+test_that("the FIML sandwich picks its gauge from the loadings, not from the estimator label", {
+  skip_on_cran()
+
+  X <- fiml_mar_data_2f()
+  em <- .fiml_em_moments(X)
+  fiml <- list(data = X, mu = em$mu, sigma = em$sigma)
+  Omega <- .fiml_saturated_acov(X, em$mu, em$sigma)$cor
+
+  # ML-fitted loadings are reported in the Lambda' Psi^-1 Lambda orientation. Ask for the ULS
+  # Stage-2 weight on those same loadings: the gauge must still be the one the loadings are
+  # actually in, because it is detected from the fitted uniquenesses rather than assumed from the
+  # estimator name -- the unrotated loading SEs are scaled in whichever gauge is used, so picking
+  # the other one would report them in an orientation the solution is not in.
+  L <- unclass(efa_fit(X, n_factors = 2, estimator = "ML", cor_method = "fiml")$unrot_loadings)
+  fo <- list(unrot_loadings = L, orig_R = stats::cov2cor(em$sigma))
+  core <- .se_fiml_core(fo, fiml, N = em$n, method = "ULS")
+
+  ref_ltpil <- .ref_fiml_loading_se(L, Omega, "LtPiL", N = em$n, weight = "ULS")
+  ref_ltl <- .ref_fiml_loading_se(L, Omega, "LtL", N = em$n, weight = "ULS")
+  expect_equal(core$loadings_se, ref_ltpil, tolerance = 1e-5, ignore_attr = TRUE)
+  # The two gauges really do differ here, so the check above is not satisfied by both.
+  expect_gt(max(abs(ref_ltpil - ref_ltl)), 1e-3)
+})
+
+test_that("the FIML sandwich reports a degenerate rotational gauge", {
+  skip_on_cran()
+
+  X <- fiml_mar_data_2f()
+
+  # A weakly determined orientation inflates the unrotated loading SEs without bound while leaving
+  # every gauge-invariant quantity intact. This fixture's orientation is well determined, so the
+  # transversal is forced below its floor: the mock is then the only cause, and what is under test
+  # is that the two-stage path acts on the diagnostic at all, which it previously could not.
+  expect_true(all(is.finite(
+    efa_fit(X, n_factors = 2, estimator = "ML", cor_method = "fiml",
+            se = "sandwich")$SE$unrot_loadings)))
+
+  testthat::local_mocked_bindings(.gauge_transversal = function(...) 0)
+
+  expect_warning(
+    fit <- efa_fit(X, n_factors = 2, estimator = "ML", cor_method = "fiml", se = "sandwich"),
+    class = "efa_se_unreliable"
+  )
+
+  # The unrotated loadings alone are withheld ...
+  expect_true(all(is.na(fit$SE$unrot_loadings)))
+  # ... while the gauge-invariant uniquenesses and communalities, and the covariance itself, stay:
+  # the divergence lives purely in the gauge, so it must not take them down with it.
+  expect_true(all(is.finite(fit$SE$uniquenesses)))
+  expect_true(all(is.finite(fit$SE$communalities)))
+  expect_true(all(is.finite(fit$vcov_unrot_loadings)))
+})
+
+test_that("the FIML sandwich withholds standard errors at a uniqueness pinned at the floor", {
+  skip_on_cran()
+
+  X <- fiml_mar_data()
+  em <- .fiml_em_moments(X)
+  fiml <- list(data = X, mu = em$mu, sigma = em$sigma)
+  R <- stats::cov2cor(em$sigma)
+
+  # The two-stage sandwich reports the same Wald quantities as the other analytic paths, from a
+  # different covariance, so it withholds on the same boundary test: on the parameter-space
+  # boundary the Wald approximation fails for every parameter regardless of how the covariance was
+  # estimated. The boundary an ML/ULS fitter can actually reach is the uniqueness floor, not zero,
+  # so this solution is strictly interior to the gauge detection's own `psi <= 0` test.
+  L <- matrix(0, 6, 2)
+  L[, 1] <- c(sqrt(1 - .uniqueness_floor), 0.6, 0.5, 0.1, 0.15, 0.2)
+  L[, 2] <- c(0.00, 0.05, 0.20, 0.70, 0.60, 0.55)
+  psi <- 1 - rowSums(L^2)
+  expect_lte(min(psi), .uniqueness_floor + sqrt(.Machine$double.eps))
+  expect_gt(min(psi), 0)
+
+  fo <- list(unrot_loadings = L, orig_R = R)
+
+  # Without the gate this covariance is perfectly usable, so what withholds the SEs below is the
+  # boundary test and not a degenerate saturated covariance.
+  core <- .se_fiml_core(fo, fiml, N = em$n, method = "ML")
+  expect_true(core$reliable)
+  expect_true(all(is.finite(core$loadings_se)))
+
+  expect_warning(
+    out <- .se_fiml(fo, rot_info = NULL, N = em$n, ci = 0.95, fiml = fiml, method = "ML"),
+    class = "efa_se_unreliable"
+  )
+  expect_true(all(is.na(out$SE$unrot_loadings)))
+  expect_true(all(is.na(out$SE$uniquenesses)))
+  expect_true(all(is.na(out$SE$communalities)))
+  expect_true(all(is.na(out$vcov_unrot_loadings)))
+  expect_true(all(is.na(unlist(out$CI))))
+
+  # Under a rotation the withholding reaches the rotated quantities too: they are propagated from
+  # the same loading covariance, which the gate leaves unusable.
+  rot_info <- list(rotation = "oblimin", rotmat = diag(2), rot_loadings = L,
+                   Phi = diag(2), normalize = FALSE, crit_args = list(gam = 0, delta = 0.01))
+  expect_warning(
+    rot <- .se_fiml(fo, rot_info, N = em$n, ci = 0.95, fiml = fiml, method = "ML"),
+    class = "efa_se_unreliable"
+  )
+  expect_true(all(is.na(rot$SE$rot_loadings)))
+  expect_true(all(is.na(rot$SE$Phi)))
+  expect_true(all(is.na(rot$SE$Structure)))
+
+  # The corrected two-stage chi-square is a discrepancy-function quantity, not a Wald one, so the
+  # boundary does not invalidate it: it is built outside the standard-error route and is kept.
+  st <- .fiml_scaled_test(L, R, N = em$n, method = "ML", df = 4, m = 6, fiml = fiml)
+  expect_false(is.null(st))
+  expect_true(is.finite(st$chi))
+})
+
+test_that("the FIML fit indices honour ci = FALSE", {
+  skip_on_cran()
+
+  X <- fiml_mar_data()
+  em <- .fiml_em_moments(X)
+  fiml <- list(data = X, mu = em$mu, sigma = em$sigma, logl = em$logl)
+  R <- stats::cov2cor(em$sigma)
+  L <- unclass(efa_fit(X, n_factors = 2, estimator = "ML", cor_method = "fiml")$unrot_loadings)
+
+  with_ci <- .gof(L, R, em$n, "ML", Fm = NA_real_, ci = TRUE, fiml = fiml)
+  no_ci <- .gof(L, R, em$n, "ML", Fm = NA_real_, ci = FALSE, fiml = fiml)
+
+  # The scaled block replaces the whole chi-square-derived block, so it has to honour the request
+  # not to solve the RMSEA noncentrality bounds -- which is exactly the per-replicate bootstrap
+  # path, where the bounds are dropped again by the aggregation.
+  expect_true(any(is.finite(c(with_ci$RMSEA_LB, with_ci$RMSEA_UB))))
+  expect_true(is.na(no_ci$RMSEA_LB))
+  expect_true(is.na(no_ci$RMSEA_UB))
+
+  # Nothing else changes with it: the flag governs the bounds alone.
+  expect_identical(with_ci$chi_scaled_type, "scaled.shifted")
+  expect_identical(no_ci$chi_scaled_type, "scaled.shifted")
+  expect_equal(no_ci$chi, with_ci$chi)
+  expect_equal(no_ci$RMSEA, with_ci$RMSEA)
+  expect_equal(no_ci$CFI, with_ci$CFI)
 })
 
 test_that("the FIML CI-provenance note names the corrected two-stage sandwich", {
@@ -574,6 +909,86 @@ test_that("FIML np-boot returns the full SE/CI schema with finite SEs (oblique)"
     expect_true(all(efa$CI[[nm]]$lower <= efa$CI[[nm]]$upper), info = nm)
   }
   expect_true(all(efa$SE$unrot_loadings > 0))
+})
+
+test_that("the FIML bootstrap carries resample indices, not a matrix per replicate", {
+  skip_on_cran()
+
+  X <- fiml_mar_data()
+  b <- 8L
+
+  # Intercept what efa_fit() hands the replicate fits, then run them for real: the per-replicate
+  # list is a closure global of the parallel map, so whatever it carries is held once per worker
+  # on top of the parent.
+  real_boot <- .boot_fun
+  captured <- NULL
+  testthat::local_mocked_bindings(
+    .boot_fun = function(..., fiml_list = NULL, fiml_data = NULL) {
+      captured <<- list(fiml_list = fiml_list, fiml_data = fiml_data)
+      real_boot(..., fiml_list = fiml_list, fiml_data = fiml_data)
+    }
+  )
+
+  fit <- suppressWarnings(suppressMessages(
+    efa_fit(X, n_factors = 2, estimator = "ML", cor_method = "fiml",
+            se = "np-boot", b_boot = b, seed = 42)
+  ))
+  expect_s3_class(fit, "efa")
+
+  reps <- Filter(Negate(is.null), captured$fiml_list)
+  expect_length(reps, b)
+  for (r in reps) {
+    expect_named(r, c("rows", "mu", "sigma", "logl"))
+    expect_null(r$data)
+    expect_length(r$rows, fit$settings$N)
+  }
+  # The raw data travels once, alongside the indices that point into it.
+  expect_equal(captured$fiml_data, X)
+
+  # The indices identify exactly the resample the stored moments were estimated from, so the
+  # replicate fit sees the same data the old per-replicate matrix carried.
+  em_1 <- suppressWarnings(.fiml_em_moments(captured$fiml_data[reps[[1]]$rows, , drop = FALSE]))
+  expect_equal(em_1$sigma, reps[[1]]$sigma)
+  expect_equal(em_1$mu, reps[[1]]$mu)
+  expect_equal(em_1$logl, reps[[1]]$logl)
+
+  # ... and it is materially smaller than storing the slices themselves.
+  with_data <- lapply(reps, function(r) {
+    list(data = X[r$rows, , drop = FALSE], mu = r$mu, sigma = r$sigma, logl = r$logl)
+  })
+  expect_lt(as.numeric(utils::object.size(captured$fiml_list)),
+            as.numeric(utils::object.size(with_data)) / 3)
+})
+
+test_that("the FIML bootstrap replicate fit is unchanged by the index representation", {
+  skip_on_cran()
+
+  X <- fiml_mar_data()
+  rows <- which(rowSums(!is.na(X)) > 0L)
+  set.seed(99)
+  ind <- sample(rows, size = length(rows), replace = TRUE)
+  em_i <- suppressWarnings(.fiml_em_moments(X[ind, , drop = FALSE]))
+  R_i <- stats::cov2cor(em_i$sigma)
+
+  # Drive one replicate through .boot_fun() with the index representation ...
+  boot <- .boot_fun(array(R_i, c(ncol(X), ncol(X), 1L)), 1L, .estimate_model,
+                    method = "ML", n_factors = 2, N = length(rows), type = "EFAtools",
+                    start_method = "psych", lean = TRUE,
+                    fiml_list = list(list(rows = ind, mu = em_i$mu, sigma = em_i$sigma,
+                                          logl = em_i$logl)),
+                    fiml_data = X)
+
+  # ... and independently with the resampled matrix supplied directly, as the caller used to
+  # store it. The fit -- loadings and the FIML likelihood-ratio fit indices alike -- must be
+  # identical: the representation is a storage change, not a numerical one.
+  direct <- suppressWarnings(.estimate_model(
+    R_i, method = "ML", n_factors = 2, N = length(rows), type = "EFAtools",
+    start_method = "psych", lean = TRUE,
+    fiml = list(data = X[ind, , drop = FALSE], mu = em_i$mu, sigma = em_i$sigma,
+                logl = em_i$logl)))
+
+  expect_equal(boot[[1]]$unrot_loadings, direct$unrot_loadings)
+  expect_equal(boot[[1]]$fit_indices, direct$fit_indices)
 })
 
 test_that("FIML np-boot is reproducible given a fixed seed", {

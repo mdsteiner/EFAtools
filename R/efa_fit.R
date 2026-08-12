@@ -175,7 +175,8 @@
 #'   then analysed. This reproduces `psych::corFiml()` followed by `psych::fa()` and
 #'   `lavaan(missing = "two.stage")`, *not* `lavaan::efa(missing = "ml")`, so the point
 #'   estimates are not expected to match the latter. The model fit indices are corrected
-#'   two-stage statistics (see *Fit indices*). `"fiml"` uses every case and handles the
+#'   two-stage statistics wherever the correction can be formed (see *Fit indices*).
+#'   `"fiml"` uses every case and handles the
 #'   missingness itself, so `use` is ignored; it supplies a continuous (Pearson-type)
 #'   correlation only and is therefore not compatible with `estimator = "DWLS"`. Standard
 #'   errors are available analytically for `estimator = "ML"` or `"ULS"` and, for any estimator,
@@ -314,13 +315,14 @@
 #'   that does not depend on the orientation -- the rotated loadings, `Phi`, the structure
 #'   coefficients, the uniquenesses and the communalities -- is unaffected and still
 #'   reported. Use those, or `se = "np-boot"`, when the unrotated loadings themselves are
-#'   the quantity of interest. The detection covers the Pearson and polychoric paths; the
-#'   two-stage `cor_method = "fiml"` sandwich carries no such diagnostic, so a weakly
-#'   determined orientation is not flagged there. A Heywood case (a uniqueness at its lower
+#'   the quantity of interest. The detection covers every analytic route -- the Pearson and
+#'   polychoric paths and the two-stage `cor_method = "fiml"` sandwich alike, which share the
+#'   gauge constraint it describes. A Heywood case (a uniqueness at its lower
 #'   boundary) is separate: the Wald approximation fails there for every parameter, so
-#'   neither analytic method reports a standard error at all -- the whole `SE`/`CI` block is
-#'   `NA` with an `efa_se_unreliable` warning. The `"sandwich"` scaled chi-square is not a
-#'   Wald quantity and is still reported, so the fit indices are unaffected.
+#'   no analytic method reports a standard error at all -- the whole `SE`/`CI` block is
+#'   `NA` with an `efa_se_unreliable` warning. The scaled chi-square (from `"sandwich"`, or
+#'   from `cor_method = "fiml"`) is not a Wald quantity and is still reported, so the fit
+#'   indices are unaffected.
 #' - **"sandwich"** returns robust (Godambe sandwich) standard errors from raw data,
 #'   combining the estimator weight with an asymptotic-distribution-free covariance of the
 #'   correlations, so it stays valid under non-normality and weight misspecification
@@ -438,6 +440,16 @@
 #'   \eqn{\chi^2(df)}. The CFI, TLI, and RMSEA follow from the scaled statistics; AIC, BIC,
 #'   and ECVI are left `NA`, as for any scaled (moment-adjusted) chi-square.
 #'
+#'   The correction rests on the saturated FIML asymptotic covariance, which can itself be
+#'   degenerate -- typically on a small sample with a high proportion of missing values, or
+#'   with near-collinear variables. The plain two-stage likelihood-ratio statistic is then
+#'   reported in its place, with an `efa_fiml_uncorrected_chisq` warning and
+#'   `chi_scaled_type = "uncorrected.lrt"`; the print methods label that line
+#'   `uncorrected` rather than `scaled`. It is a usable statistic, but referenced to
+#'   \eqn{\chi^2(df)} it is only approximate under the two-stage estimator, so read its
+#'   p-value and the CFI, TLI, and RMSEA derived from it as indicative. AIC, BIC, and ECVI
+#'   stay `NA` there as well.
+#'
 #' Beyond the estimator, the chi-square and everything derived from it are `NA` whenever the
 #' statistic itself is undefined: when `N` is not supplied, when the model is underidentified
 #' (a negative df), and when a positive `N` is too small for Bartlett's small-sample multiplier
@@ -446,9 +458,11 @@
 #' but residual size does not establish that a model is identified: below zero degrees of
 #' freedom a near-zero residual is an artefact of over-parameterisation, not close fit.
 #'
-#' Whenever the chi-square is a scaled one (`se = "sandwich"`, or any `cor_method = "fiml"`
-#' fit), the AIC, BIC, and ECVI are `NA` and the returned `fit_indices` additionally carry
-#' the scaled-statistic components (see the `fit_indices` entry in Value). Note that
+#' Whenever the chi-square is a scaled one (`se = "sandwich"`, or a `cor_method = "fiml"`
+#' fit whose correction could be formed), the AIC, BIC, and ECVI are `NA` and the returned
+#' `fit_indices` additionally carry the scaled-statistic components (see the `fit_indices`
+#' entry in Value). AIC, BIC, and ECVI are `NA` on every `cor_method = "fiml"` fit,
+#' including the uncorrected fallback above, which carries no scaling components. Note that
 #' Lorenzo-Seva, Timmerman, and Kiers (2011) introduce the CAF as ranging between 0 and 1,
 #' with values close to 1 indicating close fit; this does not match the formula they apply,
 #' \eqn{1 - KMO(residuals)}, which only works if the diagonal of the residual
@@ -617,12 +631,19 @@
 #' SRMR, and CAF; for PAF and DWLS only RMSR, SRMR, CAF, and df are populated and
 #' the Chi-Square-based indices are `NA` (for DWLS with `se = "sandwich"` the full
 #' block is filled from a scaled Chi Square instead). Whenever the Chi Square is a
-#' scaled statistic (`se = "sandwich"`, or any `cor_method = "fiml"` fit) AIC,
-#' BIC, and ECVI are `NA` and the list additionally carries the scaling
+#' scaled statistic (`se = "sandwich"`, or a `cor_method = "fiml"` fit whose
+#' correction could be formed) AIC, BIC, and ECVI are `NA` and the list
+#' additionally carries `chi_scaled_type` (`"scaled.shifted"`) and the scaling
 #' components: `chi_scaling` (the multiplier a in the scaled-and-shifted statistic
 #' \eqn{aT + b}, i.e. the reciprocal of \pkg{lavaan}'s `chisq.scaling.factor`),
 #' `chi_shift` (b), `chi_unscaled` (the unscaled statistic T), and the alternative
 #' `chi_mean_adjusted` and `chi_mean_var` statistics with their `df_mean_var`.
+#' `chi_scaled_type` is the field that says which statistic `chi` is: a
+#' `cor_method = "fiml"` fit whose corrected statistic could not be formed instead
+#' reports the plain two-stage likelihood-ratio statistic under
+#' `chi_scaled_type = "uncorrected.lrt"` and carries none of the scaling components,
+#' because nothing was rescaled (see *Fit indices* in Details). The field is absent
+#' from an ordinary, unscaled chi-square block.
 #' RMSR is retained for programmatic use and backward compatibility, although the
 #' print and summary methods display SRMR. The list also carries `Fm`, the value of
 #' the estimator's own objective at the solution, which is on an estimator-specific
@@ -682,11 +703,20 @@
 #' Kaiser-normalized loadings the criterion is optimized on, not on the returned
 #' `rot_loadings`, so they are not directly comparable to a criterion recomputed from the
 #' returned loadings.}
+#' \item{fiml}{Diagnostics of the two-stage FIML correlation's EM estimation, present only
+#' for `cor_method = "fiml"`: `converged` (whether the EM met `fiml_tol` before reaching
+#' `fiml_max_iter`), `iter` (the number of EM iterations run), `n_patterns` (the number of
+#' distinct missingness patterns it accumulated over), and `n` (the number of rows carrying
+#' at least one observed value, which is the reported `N`). A `converged` of `FALSE` means
+#' the analysed correlation matrix is the EM's last iterate rather than the FIML estimate;
+#' it is raised as an `efa_fiml_em_nonconvergence` warning while the fit runs and shown by
+#' the print and summary methods. Both `fiml_max_iter` and `fiml_tol` are set through
+#' [estimate_control()].}
 #' \item{SE}{A named list of standard error matrices. For `se = "np-boot"`: bootstrap standard deviations of the unrotated and (when a rotation is applied) rotated loadings, the residuals, and the fit indices, plus -- for oblique rotations -- the factor correlations (`Phi`) and the structure coefficients; it additionally carries `valid_replicates`, the number of bootstrap replicates that were fitted and aligned successfully and that every entry above is therefore based on (replicates that failed are excluded and warned about), and, when a rotation is applied, `valid_target_rotations`, the number of those replicates that could also be aligned to the rotated point estimate and that the rotated entries (`rot_loadings`, `Phi`, `Structure`) are based on. For `se = "information"`: Wald standard errors from the expected (Fisher) information matrix for the unrotated loadings, the uniquenesses, and the communalities and, when a rotation is applied, the rotated loadings (and, for oblique rotations, `Phi` and the structure coefficients). Because \eqn{h^2_i = 1 - \psi_i} exactly, the communality and uniqueness standard errors are identical. For `se = "sandwich"`: robust Godambe sandwich standard errors with the same coverage as `"information"`, robust to non-normality and weight misspecification. Only returned if `se` is not `"none"`.}
 #' \item{CI}{A named list of confidence intervals of width `ci`. For `se = "np-boot"`: percentile intervals matching the components of `SE`. For `se = "information"` and `se = "sandwich"`: Wald intervals matching the components of `SE`. Only returned if `se` is not `"none"`.}
-#' \item{replicates}{A named list of bootstrap replicate arrays for the aligned unrotated and (where applicable) rotated loadings, structure coefficients, factor correlations (`Phi`), residuals, and fit indices. The replicate is the last dimension of the loading, residual, `Phi`, and structure cubes, and the first dimension of the `fit_indices` matrix (whose columns are named after the fit indices). Replicates that failed are left `NA`. Populated only for `se = "np-boot"`; `NULL` for the analytic SE methods.}
+#' \item{replicates}{A named list of bootstrap replicate arrays for the aligned unrotated and (where applicable) rotated loadings, structure coefficients, factor correlations (`Phi`), residuals, and fit indices. The replicate is the last dimension of the loading, residual, `Phi`, and structure cubes, and the first dimension of the `fit_indices` matrix (whose columns are named after the fit indices). Replicates that failed are left `NA`. Populated only for `se = "np-boot"`; `NULL` for the analytic SE methods. Every block grows linearly in `b_boot`, and this list normally dominates the size of a bootstrap fit. The loading, `Phi`, and structure cubes grow as \eqn{O(B\,p\,k)}, but the residual cube is \eqn{p \times p \times B} and so grows as \eqn{O(B\,p^2)}: at \eqn{p = 50} and `b_boot = 5000` it alone is about 100 MB. If a saved fit is larger than the analysis warrants, that block is why; the standard errors and intervals derived from it are in `SE` and `CI` and do not need it.}
 #' \item{vcov_unrot_loadings}{The full unrotated loading covariance matrix the marginal `SE$unrot_loadings` were derived from: a `p * n_factors` by `p * n_factors` numeric matrix in column-major `vec(Lambda)` order, with rows and columns labelled `"<variable>_<factor>"` so that ordering can be read off the object. Populated for `se = "information"` (expected-information block) and `se = "sandwich"` (robust V_AA), even when a rotation is applied (the persisted block is always the unrotated one); NA-filled if the analytic covariance is unreliable (a Heywood case or a singular bordered information matrix); `NULL` for `se = "np-boot"` and `se = "none"`. A weakly determined rotational orientation is the one case where this matrix is populated while `SE$unrot_loadings` is `NA`: the covariance itself is finite and valid, and only its gauge-dependent marginals are not (see *Standard errors*).}
-#' \item{Gamma}{The asymptotic covariance of the off-diagonal sample correlations -- the meat of the robust sandwich SEs -- on the variance scale (`Var(rho-hat)`; lavaan's correlation NACOV is `N * Gamma`). A `p (p - 1) / 2` by `p (p - 1) / 2` numeric matrix; rows and columns ordered by [utils::combn()] over the column pairs and labelled `"<var_i>-<var_j>"`. Populated for `se = "sandwich"` on the polychoric/tetrachoric and Pearson paths; `NULL` otherwise, including under `cor_method = "fiml"`, whose meat is the saturated FIML asymptotic covariance and is not returned.}
+#' \item{Gamma}{The asymptotic covariance of the off-diagonal sample correlations -- the meat of the robust sandwich SEs -- on the variance scale (`Var(rho-hat)`; lavaan's correlation NACOV is `N * Gamma`). A `p (p - 1) / 2` by `p (p - 1) / 2` numeric matrix; rows and columns ordered by [utils::combn()] over the column pairs and labelled `"<var_i>-<var_j>"`. Populated for `se = "sandwich"` on the polychoric/tetrachoric and Pearson paths; `NULL` otherwise, including under `cor_method = "fiml"`, whose meat is the saturated FIML asymptotic covariance and is not returned. Being square in \eqn{p(p-1)/2}, it grows as \eqn{O(p^4)} -- about 1.4 MB at \eqn{p = 30} and 11 MB at \eqn{p = 50} -- and typically dominates a sandwich fit's size. It is retained rather than discarded because [efa_mi()] reads it from each per-imputation fit to build the pooled asymptotic covariance, so an `m`-imputation sandwich run holds `m` of them.}
 #'
 #' @source Bollen, K. A., & Stine, R. A. (1992). Bootstrapping goodness-of-fit measures
 #' in structural equation models. Sociological Methods & Research, 21, 205–229.
@@ -934,6 +964,8 @@ efa_fit <- function(x, n_factors, N = NA,
   max_iter <- estimate_control$max_iter
   abs_eigen <- estimate_control$abs_eigen
   start_method <- estimate_control$start_method
+  fiml_max_iter <- estimate_control$fiml_max_iter
+  fiml_tol <- estimate_control$fiml_tol
 
   rot_type <- rotate_control$type
   normalize <- rotate_control$normalize
@@ -1202,6 +1234,9 @@ efa_fit <- function(x, n_factors, N = NA,
                              acov = if (se == "sandwich" && !is_cormat && cor_method != "fiml") "full"
                                     else if (estimator == "DWLS") "diag" else "none",
                              dwls = estimator == "DWLS",
+                             # EM budget for the two-stage FIML moments; ignored by every other
+                             # cor_method.
+                             fiml_max_iter = fiml_max_iter, fiml_tol = fiml_tol,
                              # The psych preset tolerates a singular correlation matrix only
                              # for PAF, whose starting communalities fall back to a
                              # pseudo-inverse. No other estimator has that fallback -- ML and
@@ -1221,8 +1256,13 @@ efa_fit <- function(x, n_factors, N = NA,
   # saturated mean/covariance and log-likelihood EM-estimated in .prepare_cor_input() are
   # carried alongside the raw data so .gof() can evaluate the model and baseline FIML log-
   # likelihoods. Reuse prep$fiml (no second EM run); NULL for every other cor_method.
+  # The Stage-1 EM diagnostics ride along so `.efa_core()` can report them on the fitted
+  # object: whether the EM met its tolerance, how many iterations and missingness patterns it
+  # used, and how many rows carried information.
   fiml_pt <- if (cor_method == "fiml") {
-    list(data = x, mu = prep$fiml$mu, sigma = prep$fiml$sigma, logl = prep$fiml$logl)
+    list(data = x, mu = prep$fiml$mu, sigma = prep$fiml$sigma, logl = prep$fiml$logl,
+         converged = prep$fiml$converged, iter = prep$fiml$iter,
+         n_patterns = prep$fiml$n_patterns, n = prep$fiml$n)
   }
   # On an analytic-SE fit the saturated FIML correlation covariance is needed twice from the same
   # moments -- by the scaled chi-square (.fiml_scaled_test, via .gof()) and by the SE sandwich
@@ -1293,10 +1333,15 @@ efa_fit <- function(x, n_factors, N = NA,
     # The weights are positional, so no dimnames are needed.
     W_boot_array <- if (dwls) array(NA_real_, c(m, m, b_boot)) else NULL
 
-    # FIML carries each replicate's resampled data and its own EM moments (saturated mean,
-    # covariance, and log-likelihood) into the lean fit, so the per-replicate fit indices use
-    # the same likelihood-ratio chi-square as the point estimate. One list element per
-    # replicate (NULL for a dropped resample); NULL for the other cor_methods.
+    # FIML carries each replicate's resample and its own EM moments (saturated mean, covariance,
+    # and log-likelihood) into the lean fit, so the per-replicate fit indices use the same
+    # likelihood-ratio chi-square as the point estimate. The resample is stored as the row
+    # INDICES, not as the resampled matrix: the list is a closure global of the replicate fits, so
+    # a matrix per replicate would be held here and serialised to every parallel worker on top of
+    # it, growing as B * N * p where the indices grow as B * N (at N = 3123, p = 30, B = 1000 that
+    # is the difference between roughly 715 MB and 3 MB). `.boot_fun()` receives the raw data once
+    # and rebuilds each slice. One list element per replicate (NULL for a dropped resample); NULL
+    # for the other cor_methods.
     fiml_boot <- if (fiml_cor) vector("list", b_boot) else NULL
 
     for (boot_i in seq_len(b_boot)) {
@@ -1331,20 +1376,22 @@ efa_fit <- function(x, n_factors, N = NA,
         }
       } else if (fiml_cor) {
         # Two-stage FIML: re-estimate the EM moments on the resample and standardise to a
-        # correlation, mirroring the point-estimate path. The full EM object (moments and the
-        # saturated log-likelihood) and the resampled data are retained so the lean fit can
+        # correlation, mirroring the point-estimate path. The moments, the saturated
+        # log-likelihood, and the resample's row indices are retained so the lean fit can
         # form this replicate's FIML likelihood-ratio chi-square. A degenerate resample (a
         # constant or collinear column, an EM breakdown) makes .fiml_em_moments() abort; fall
         # back to an all-NA matrix so the replicate is dropped at the fit stage, as on the poly
         # and Pearson paths. The EM recompute is serial here; the replicate fits parallelise
         # downstream.
-        em_i <- tryCatch(suppressWarnings(.fiml_em_moments(x[ind, , drop = FALSE])),
+        em_i <- tryCatch(suppressWarnings(.fiml_em_moments(x[ind, , drop = FALSE],
+                                                           max_iter = fiml_max_iter,
+                                                           tol = fiml_tol)),
                          error = function(e) NULL)
         if (is.null(em_i)) {
           R_boot_array[,, boot_i] <- matrix(NA_real_, m, m)
         } else {
           R_boot_array[,, boot_i] <- stats::cov2cor(em_i$sigma)
-          fiml_boot[[boot_i]] <- list(data = x[ind, , drop = FALSE], mu = em_i$mu,
+          fiml_boot[[boot_i]] <- list(rows = ind, mu = em_i$mu,
                                       sigma = em_i$sigma, logl = em_i$logl)
         }
       } else {
@@ -1563,9 +1610,11 @@ efa_fit <- function(x, n_factors, N = NA,
                            lean = TRUE,
                            # DWLS carries the per-replicate weight matrices; NULL otherwise.
                            weights_array = W_boot_array,
-                           # FIML carries the per-replicate EM moments + resampled data for the
-                           # likelihood-ratio fit indices; NULL for the other cor_methods.
-                           fiml_list = fiml_boot)
+                           # FIML carries the per-replicate EM moments and resample indices for
+                           # the likelihood-ratio fit indices, plus one copy of the raw data the
+                           # indices point into; NULL for the other cor_methods.
+                           fiml_list = fiml_boot,
+                           fiml_data = fiml$data)
 
   }
 
@@ -1646,6 +1695,16 @@ efa_fit <- function(x, n_factors, N = NA,
 
   }
 
+  # Stage-1 diagnostics of the two-stage FIML correlation. The EM's non-convergence warning
+  # fires once, inside the correlation preparation, and callers that suppress per-fit warnings
+  # (efa_average(), the bootstrap replicates) swallow it, so record it on the object as well:
+  # a `converged` of FALSE says the analysed matrix is the last iterate, not the FIML estimate.
+  # Present only under cor_method = "fiml", which is the only path that estimates them.
+  if (!is.null(fiml)) {
+    output$fiml <- list(converged = fiml$converged, iter = fiml$iter,
+                        n_patterns = fiml$n_patterns, n = fiml$n)
+  }
+
   # Persist the full unrotated loading covariance (populated below for the analytic SE
   # methods) and the asymptotic covariance of the off-diagonal correlations (populated
   # for `se = "sandwich"`). Both stay present-but-NULL elsewhere so downstream consumers
@@ -1720,7 +1779,8 @@ efa_fit <- function(x, n_factors, N = NA,
 
 
 
-.boot_fun <- function(x, b, call_fun, ..., weights_array = NULL, fiml_list = NULL) {
+.boot_fun <- function(x, b, call_fun, ..., weights_array = NULL, fiml_list = NULL,
+                      fiml_data = NULL) {
 
   # The per-replicate fits are independent and estimation is RNG-free, so they are
   # run in parallel across replicates at the R/process level with future.apply. A
@@ -1743,10 +1803,18 @@ efa_fit <- function(x, n_factors, N = NA,
     # DWLS passes the replicate's own weight matrix; the other estimators ignore the
     # NULL (.estimate_model()'s weights default).
     w_i <- if (is.null(weights_array)) NULL else weights_array[,, boot_i]
-    # FIML passes the replicate's own EM moments + resampled data for its likelihood-ratio fit
-    # indices; the other paths ignore the NULL (.estimate_model()'s fiml default). Each element
-    # carries an N x p resample, so the list adds to what future.apply serialises per worker.
-    f_i <- if (is.null(fiml_list)) NULL else fiml_list[[boot_i]]
+    # FIML passes the replicate's own EM moments plus its resample for the likelihood-ratio fit
+    # indices; the other paths ignore the NULL (.estimate_model()'s fiml default). The resample is
+    # rebuilt here from the stored row indices and the single copy of the raw data, so what the
+    # list -- and hence what future.apply serialises to each worker -- carries per replicate is
+    # N integers rather than an N x p matrix. A dropped resample is a NULL element and stays NULL.
+    f_i <- if (is.null(fiml_list) || is.null(fiml_list[[boot_i]])) {
+      NULL
+    } else {
+      fl <- fiml_list[[boot_i]]
+      list(data = fiml_data[fl$rows, , drop = FALSE], mu = fl$mu,
+           sigma = fl$sigma, logl = fl$logl)
+    }
     tryCatch(suppressWarnings(call_fun(x[,, boot_i], ..., weights = w_i, fiml = f_i)),
              error = function(e) NULL)
   }, future.seed = TRUE)

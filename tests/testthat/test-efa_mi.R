@@ -835,6 +835,52 @@ test_that("pooled AIC/BIC/ECVI are withheld when the component fits are scaled",
   expect_true(is.finite(pooled$fit_indices$RMSEA))
 })
 
+test_that("pooled AIC/BIC/ECVI are withheld when the components fell back to the plain LRT", {
+  # Same fixture as above, but with the Stage-1 saturated covariance forced to fail, so no
+  # component can form its correction and each reports the tagged plain two-stage
+  # likelihood-ratio statistic instead. The pooler takes the components' withholding
+  # decision, so the three criteria must stay NA on this route too -- the tag tells a reader
+  # which statistic was pooled, and it must never say "corrected" here.
+  imps <- lapply(1:3, function(i) {
+    set.seed(100 + i)
+    L <- matrix(0, 6, 2)
+    L[1:3, 1] <- 0.7
+    L[4:6, 2] <- 0.7
+    S <- tcrossprod(L)
+    diag(S) <- 1
+    X <- matrix(stats::rnorm(400 * 6), 400) %*% chol(S)
+    colnames(X) <- paste0("V", seq_len(6))
+    X[X[, 1] > 0.8, 2] <- NA
+    X[X[, 1] < -0.8, 3] <- NA
+    X[X[, 1] > 1.2, 4] <- NA
+    X
+  })
+
+  testthat::local_mocked_bindings(
+    .fiml_saturated_acov = function(...) {
+      cli::cli_abort("forced degenerate saturated covariance",
+                     class = "efa_fiml_singular_information")
+    }
+  )
+
+  pooled <- suppressMessages(suppressWarnings(
+    efa_mi(imps, n_factors = 2, estimator = "ML", rotation = "none",
+           cor_method = "fiml")
+  ))
+
+  expect_true(all(vapply(
+    pooled$fits,
+    function(f) identical(f$fit_indices$chi_scaled_type, "uncorrected.lrt"),
+    logical(1))))
+  expect_true(all(vapply(pooled$fits,
+                         function(f) is.na(f$fit_indices$AIC), logical(1))))
+
+  expect_true(is.na(pooled$fit_indices$AIC))
+  expect_true(is.na(pooled$fit_indices$BIC))
+  expect_true(is.na(pooled$fit_indices$ECVI))
+  expect_true(is.finite(pooled$fit_indices$chi))
+})
+
 test_that("pooled AIC/BIC/ECVI are reported on an unscaled ML pool", {
   # The guard is conditional, not a blanket suppression: with plain (unscaled)
   # component statistics the descriptive criteria are still returned.

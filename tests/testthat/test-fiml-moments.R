@@ -99,6 +99,18 @@ test_that("structural guards raise classed errors", {
   expect_error(.fiml_em_moments(no_obs), class = "efa_fiml_no_observed")
 })
 
+test_that("too few cases for the number of variables aborts with the classed error", {
+  # A second, independent route to efa_fiml_not_posdef: the sample size alone. With fewer
+  # informative cases than variables the completed-data covariance cannot have full rank, so the
+  # EM loses positive definiteness on its first M-step -- no constant or collinear variable
+  # involved, which is what the constant-column test below covers. The gap is wide (rank 2 of 8)
+  # rather than marginal, so the Cholesky verdict does not depend on rounding; the abort also
+  # exercises the sample-size clause the message adds when n <= p.
+  set.seed(11)
+  small <- matrix(stats::rnorm(3 * 8), nrow = 3, ncol = 8)
+  expect_error(.fiml_em_moments(small), class = "efa_fiml_not_posdef")
+})
+
 test_that("hitting max_iter warns and reports non-convergence", {
   skip_on_cran()
 

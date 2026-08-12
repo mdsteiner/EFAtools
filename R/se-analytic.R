@@ -110,6 +110,38 @@
   "{.code se = \"np-boot\"}, or extract fewer factors."
 )
 
+# Whether that hint may be attached to a withholding -- a narrower question than the gate above,
+# and the reason the two are separate predicates rather than one.
+#
+# The gate deliberately also fires on a non-finite solution (`anyNA(psi)`): a Wald interval is no
+# more valid there, so the standard errors must go either way. But nothing is at any boundary in
+# that case -- the parameter covariance is simply undefined -- so the hint's claim that the
+# solution is a Heywood case would be false, and "extract fewer factors" would send the user after
+# a problem the fit does not have. Those withholdings are described by the callers' general clause
+# (a singular information matrix or an unusable covariance) instead, which is what they are.
+# Held beside the hint so the wording and the condition it asserts cannot drift apart.
+.se_boundary_hint_applies <- function(L) {
+  all(is.finite(L)) && .at_uniqueness_boundary(L)
+}
+
+# Apply the boundary policy to a core's standard errors: at a solution on the parameter-space
+# boundary the Wald approximation fails for every parameter however the covariance was estimated,
+# so every analytic path withholds on the same test and the policy lives here rather than being
+# restated at each of them. The marginals go, `reliable` goes with them (which makes the consumers
+# NA-fill the persisted covariance to match), and `gauge_reliable` is RESET to TRUE because the
+# gauge is not what withheld them -- the caller must not attach its gauge-specific message. What is
+# deliberately NOT touched is the scaled chi-square: it is a discrepancy-function quantity rather
+# than a Wald one, the boundary does not invalidate it, and for DWLS it is the only chi-square block
+# the fit has. Returns the core unchanged at an interior solution.
+.withhold_at_boundary <- function(core, L) {
+  if (!.at_uniqueness_boundary(L)) return(core)
+  core$loadings_se[] <- NA_real_
+  core$uniquenesses_se[] <- NA_real_
+  core$reliable <- FALSE
+  core$gauge_reliable <- TRUE
+  core
+}
+
 # Row/column labels for a vec(Lambda)-ordered loading covariance: "<variable>_<factor>" in the same
 # column-major order the block is assembled in, so the documented ordering can be read off the
 # object. NULL when the loadings carry no dimnames, in which case the block ships unlabelled rather
@@ -266,8 +298,8 @@
   # coefficients and the communalities all stay valid and V must NOT be NA'd here. Withhold the
   # unrotated loadings alone -- and only after `info_reliable` has been read, so a degenerate gauge
   # cannot masquerade as an unusable covariance and take the rotated quantities down with it.
-  # Absent (rather than FALSE) means the path supplied no gauge diagnostic, e.g. the two-stage FIML
-  # sandwich in R/se-fiml.R, which builds its own `se0`; those paths keep their previous behaviour.
+  # Every analytic path supplies the flag (they share the gauge constraint it describes); absent
+  # rather than FALSE would mean no diagnostic was available, which is then not treated as one.
   gauge_degenerate <- isFALSE(se0$gauge_reliable)
   if (gauge_degenerate) SE_unrot[] <- NA_real_
 
@@ -378,13 +410,15 @@
       c("Analytic standard errors could not be computed for all parameters.",
         "i" = if (gauge_degenerate && info_reliable) {
           "The factor solution's rotational orientation is only weakly determined (two canonical variances nearly coincide), so the unrotated loadings have no well-defined standard error. The rotated loadings and communalities are gauge-invariant and unaffected."
-        } else if (!info_reliable && .at_uniqueness_boundary(A)) {
-          # Named rather than listed among the possible causes: `.se_sandwich_dispatch()` withholds
-          # on exactly this test, so when it holds it can be reported as a fact about the solution.
-          # `!info_reliable` is what makes that attribution safe: the two-stage FIML sandwich builds
-          # its own `se0` and carries no boundary gate, so a boundary FIML fit can arrive here with
-          # finite unrotated SEs and only the rotation Jacobian failed -- the hint's claim that
-          # nothing was reported would be false, and the last clause is the one that applies.
+        } else if (!info_reliable && .se_boundary_hint_applies(A)) {
+          # Named rather than listed among the possible causes: every analytic path
+          # (`.se_sandwich_dispatch()` and `.se_fiml()`) withholds through `.withhold_at_boundary()`,
+          # so where the hint applies it can be reported as a fact about the solution. Two things
+          # make that attribution safe. `!info_reliable`: a fit that reached the boundary but still
+          # produced finite unrotated SEs would contradict the hint's claim that nothing was
+          # reported. And `.se_boundary_hint_applies()` rather than the gate itself, which also
+          # fires on a non-finite solution that is at no boundary at all. Both fall to the last
+          # clause instead.
           .se_boundary_hint
         } else {
           "This occurs when the parameter covariance is singular, or when the rotation could not be reproduced for the standard-error Jacobian."
@@ -426,22 +460,11 @@
 
   core <- .se_sandwich_core(fit_out, N, Gamma, method, optimal_weight, scaled)
 
-  # A boundary solution invalidates the Wald interval however the covariance was estimated, so the
-  # robust path withholds on the same test the expected-information path uses. The gate sits here
-  # rather than inside the core for two reasons. The core's own `psi <= 0` test asks a different
-  # question -- whether Psi^-1 exists for the gauge constraint -- and must not be moved to the floor
-  # (see the note there). And the scaled chi-square the core builds is a discrepancy-function
-  # quantity rather than a Wald one: the boundary does not invalidate it, and for DWLS it is the
-  # only chi-square block the fit has, so the standard errors are withheld and it is kept. The
-  # persisted covariance follows from these flags -- both consumers NA-fill it when the marginal SEs
-  # are unusable -- and `gauge_reliable` is reset because the gauge is not what withheld them, so
-  # the caller must not attach its gauge-specific message.
-  if (.at_uniqueness_boundary(fit_out$unrot_loadings)) {
-    core$loadings_se[] <- NA_real_
-    core$uniquenesses_se[] <- NA_real_
-    core$reliable <- FALSE
-    core$gauge_reliable <- TRUE
-  }
+  # The gate sits here rather than inside the core because the core's own `psi <= 0` test asks a
+  # different question -- whether Psi^-1 exists for the gauge constraint -- and must not be moved to
+  # the floor (see the note there); and because the core's scaled chi-square is deliberately kept
+  # (see `.withhold_at_boundary()`, which owns the policy for every analytic path).
+  core <- .withhold_at_boundary(core, fit_out$unrot_loadings)
 
   res <- if (is.null(rot_info)) {
     .se_sandwich_unrotated(fit_out, core, ci)
@@ -600,6 +623,152 @@
   (G + t(G)) / 2
 }
 
+# Shared geometry of every off-diagonal sandwich: the estimator's Stage-2 weight V (held as a
+# diagonal `vdiag` or a full `Vmat`, the other NULL), the weighted model Jacobian VD, the bordered
+# (constrained generalised) inverse of the bread A = Delta' V Delta, and the conditioning of the
+# gauge constraint that bordering used. The polychoric/ADF sandwich, the expected-information path
+# (`.se_sandwich_core()`) and the corrected two-stage FIML sandwich (`.se_fiml_core()`,
+# `.fiml_scaled_test()`) differ only in the meat they sandwich between these pieces, so they share
+# them rather than each carrying a copy -- which is what let the gauge choice and the gauge
+# diagnostic drift apart between the paths before.
+#
+# `Gamma` is the asymptotic covariance on the UNIT scale (N * Var(rho-hat)) and is read only by the
+# two weights that need it: DWLS's diagonal inverse variances, and the efficient weight
+# `optimal_weight = TRUE` (V = Gamma^-1, at which the sandwich collapses onto its bread and returns
+# the Fisher information of the correlation structure). The ML/ULS paths -- including both FIML
+# ones -- pass `Gamma = NULL`. Returns NULL when the model-implied correlation, the efficient
+# weight, or the bordered system is singular, or when a weight that needs `Gamma` was asked for
+# without one; every caller NA-fills on that.
+#
+# `gauge = FALSE` skips the transversal diagnostic for a caller that does not read it (the
+# corrected two-stage chi-square, which runs once per bootstrap replicate and is gauge-invariant),
+# so that caller does not pay for a QR and an SVD it discards.
+.offdiag_sandwich_pieces <- function(L, method, Gamma = NULL, optimal_weight = FALSE,
+                                     gauge = TRUE) {
+
+  # The DWLS and efficient weights are built FROM `Gamma`, so neither is defined without one.
+  # `.se_sandwich_core()` screens that out before calling, but the FIML callers pass `Gamma = NULL`
+  # with a `method` their own callers guarantee is ML or ULS: fail closed here rather than let an
+  # unguarded combination surface as a non-conformable-arguments error further down.
+  if ((optimal_weight || identical(method, "DWLS")) && is.null(Gamma)) return(NULL)
+
+  L <- unclass(L)
+  p <- nrow(L)
+  k <- ncol(L)
+  pk <- p * k
+
+  pairs <- utils::combn(p, 2L)
+  pi <- pairs[1, ]
+  pj <- pairs[2, ]
+  n <- ncol(pairs)
+
+  # Model Jacobian Delta = d sigma_offdiag / d vec(Lambda) (n x pk). For pair (i, j),
+  # d sigma_ij / d Lambda[a, f] = (a == i) Lambda[j, f] + (a == j) Lambda[i, f]; rows in
+  # utils::combn(p, 2) order, columns in column-major vec(Lambda) order.
+  Delta <- matrix(0, n, pk)
+  for (f in seq_len(k)) {
+    Delta[cbind(seq_len(n), (f - 1L) * p + pi)] <- L[pj, f]
+    Delta[cbind(seq_len(n), (f - 1L) * p + pj)] <- L[pi, f]
+  }
+
+  # Estimator weight V (unit scale). DWLS: diagonal inverse variances; ULS: identity; ML: the
+  # normal-theory GLS weight 1/2 (Sigma^-1 (x) Sigma^-1) restricted to the off-diagonal pairs, at
+  # the model-implied correlation matrix Sigma = Lambda Lambda' (unit diagonal).
+  if (optimal_weight) {
+    # Efficient weight V = Gamma^-1. The meat Delta' V Gamma V Delta then equals the bread
+    # Delta' V Delta = Delta' Gamma^-1 Delta, so V_AA reduces to the (bordered) inverse of the
+    # correlation-structure Fisher information.
+    Vmat <- tryCatch(solve(Gamma), error = function(e) NULL)
+    if (is.null(Vmat)) return(NULL)
+    Vmat <- (Vmat + t(Vmat)) / 2
+    vdiag <- NULL
+  } else if (method == "DWLS") {
+    vdiag <- 1 / diag(Gamma)
+    Vmat <- NULL
+  } else if (method == "ULS") {
+    vdiag <- rep(1, n)
+    Vmat <- NULL
+  } else {
+    Sigma <- tcrossprod(L)
+    diag(Sigma) <- 1
+    P <- tryCatch(solve(Sigma), error = function(e) NULL)
+    if (is.null(P)) return(NULL)
+    vdiag <- NULL
+    Vmat <- matrix(0, n, n)
+    for (s in seq_len(n)) {
+      a <- pi[s]
+      b <- pj[s]
+      Vmat[, s] <- 0.5 * (P[pi, a] * P[pj, b] + P[pi, b] * P[pj, a])
+    }
+  }
+  is_diag <- is.null(Vmat)
+
+  # VD = V Delta; bread A = Delta' V Delta (singular by the k(k-1)/2 rotational gauge freedoms).
+  VD <- if (is_diag) vdiag * Delta else Vmat %*% Delta
+  A <- crossprod(Delta, VD)
+
+  # Border A with the gauge-fixing constraint so the augmented system is invertible; the leading
+  # pk-block of its inverse is the reflexive generalised inverse of A. The constraint fixes the
+  # rotational orientation, so it must match the one the solution's loadings are reported in: the
+  # unrotated loading SEs are scaled in that gauge (the rotated SEs and scaled chi-square are
+  # gauge-invariant, so the choice does not affect them). Rather than assume the orientation from the
+  # estimator label, detect it from the loadings: an eigen-based ULS/DWLS solution is
+  # Lambda'Lambda-diagonal, an ML solution is Lambda'Psi^-1 Lambda-diagonal (Lawley & Maxwell). The
+  # orientation the solution is in leaves a (scale-free) relative off-diagonal at the optimiser floor
+  # while the other is O(0.01-1), so the smaller ratio identifies the gauge -- and detecting keeps it
+  # tied to the actual solution, so a future estimator with either identification is handled without
+  # special-casing. Two cases the loadings cannot resolve fall back to a fixed choice: the
+  # Lambda'Psi^-1 Lambda gauge needs Psi^-1, so it is unavailable where that is undefined (psi <= 0)
+  # or at a non-finite solution -- routed to Lambda'Lambda; and homogeneous uniquenesses (Psi
+  # proportional to I) make BOTH orientations diagonal, so the gauge is undetermined by the loadings
+  # (yet the two still give different SEs through the chain-rule term), broken by the estimator's
+  # identification. A single factor has no rotational freedom (the constraint is empty either way).
+  #
+  # The test here is psi <= 0 and deliberately NOT the `.uniqueness_floor` boundary that the callers
+  # treat as a Heywood case. The two ask different questions: that one asks whether the solution sits
+  # on the parameter-space boundary (where a Wald interval is invalid), this one only whether Psi^-1
+  # exists. At a uniqueness pinned at the floor Psi^-1 is large but perfectly well defined, and the
+  # solution is still oriented Lambda'Psi^-1 Lambda-diagonal -- so forcing the Lambda'Lambda
+  # constraint there would mismatch the orientation the loadings are reported in and hand
+  # `.gauge_transversal()` a near-tangent transversal (0.002 against 0.16 for the matching constraint
+  # on a boundary ML fit), withholding standard errors that are fine.
+  psi <- 1 - rowSums(L^2)
+  use_ltpil_gauge <- if (k < 2L || anyNA(psi) || any(psi <= 0)) {
+    FALSE
+  } else {
+    rel_off <- function(M) max(abs(M[upper.tri(M)])) / max(abs(diag(M)), .Machine$double.eps)
+    r_ltl <- rel_off(crossprod(L))
+    r_ltpil <- rel_off(crossprod(L, L / psi))
+    # Both orientations near-diagonal (Psi proportional to I): the loadings cannot distinguish the
+    # gauge, so use the estimator's known identification; otherwise the smaller ratio wins.
+    if (max(r_ltl, r_ltpil) < 1e-4) method == "ML" else r_ltpil < r_ltl
+  }
+  Cmat <- if (use_ltpil_gauge) {
+    .se_sandwich_constraint(L, psi = psi)
+  } else {
+    .se_sandwich_constraint(L)
+  }
+  Abread <- .bordered_inverse_block(A, Cmat, pk)
+  if (is.null(Abread)) return(NULL)
+
+  # Conditioning of that constraint as a transversal to the gauge orbit. A near-degenerate
+  # transversal amplifies the unrotated loading covariance by ||(C Z)^-1|| without making it
+  # non-finite or non-PSD, so it passes the callers' `.is_psd()` gate and would otherwise ship a
+  # silently meaningless standard error. Reported separately from a caller's `reliable` flag because
+  # the divergence lives purely in the gauge: everything gauge-invariant derived from the covariance
+  # stays valid. Computed after the bordered inverse so an exactly singular augmented system -- which
+  # returns NULL above and discards this flag -- does not pay for the decomposition, and skipped
+  # entirely for a caller that does not read it.
+  gauge_reliable <- if (gauge) {
+    .gauge_transversal(L, Cmat) >= .gauge_transversal_floor
+  } else {
+    NULL
+  }
+
+  list(vdiag = vdiag, Vmat = Vmat, VD = VD, Abread = Abread, pairs = pairs,
+       gauge_reliable = gauge_reliable)
+}
+
 # Build the robust loading covariance V_AA (p*k x p*k), the unrotated loading/uniqueness SEs, and
 # the scaled chi-square from the fitted loadings and the polychoric ACOV `Gamma`. `Gamma` enters on
 # the variance scale Var(rho-hat) and is converted here to the unit asymptotic-variance scale
@@ -642,108 +811,13 @@
   # final covariance and the N on the chi-square then follow lavaan's robust.sem conventions.
   Gamma <- N * Gamma
 
-  pairs <- utils::combn(p, 2L)
-  pi <- pairs[1, ]
-  pj <- pairs[2, ]
-  n <- ncol(pairs)
-
-  # Model Jacobian Delta = d sigma_offdiag / d vec(Lambda) (n x pk). For pair (i, j),
-  # d sigma_ij / d Lambda[a, f] = (a == i) Lambda[j, f] + (a == j) Lambda[i, f]; rows in
-  # utils::combn(p, 2) order, columns in column-major vec(Lambda) order.
-  Delta <- matrix(0, n, pk)
-  for (f in seq_len(k)) {
-    Delta[cbind(seq_len(n), (f - 1L) * p + pi)] <- L[pj, f]
-    Delta[cbind(seq_len(n), (f - 1L) * p + pj)] <- L[pi, f]
-  }
-
-  # Estimator weight V (unit scale). DWLS: diagonal inverse variances; ULS: identity; ML: the
-  # normal-theory GLS weight 1/2 (Sigma^-1 (x) Sigma^-1) restricted to the off-diagonal pairs, at
-  # the model-implied correlation matrix Sigma = Lambda Lambda' (unit diagonal).
-  if (optimal_weight) {
-    # Efficient weight V = Gamma^-1. The meat Delta' V Gamma V Delta then equals the bread
-    # Delta' V Delta = Delta' Gamma^-1 Delta, so V_AA reduces to the (bordered) inverse of the
-    # correlation-structure Fisher information.
-    Vmat <- tryCatch(solve(Gamma), error = function(e) NULL)
-    if (is.null(Vmat)) return(na_core)
-    Vmat <- (Vmat + t(Vmat)) / 2
-    vdiag <- NULL
-  } else if (method == "DWLS") {
-    vdiag <- 1 / diag(Gamma)
-    Vmat <- NULL
-  } else if (method == "ULS") {
-    vdiag <- rep(1, n)
-    Vmat <- NULL
-  } else {
-    Sigma <- tcrossprod(L)
-    diag(Sigma) <- 1
-    P <- tryCatch(solve(Sigma), error = function(e) NULL)
-    if (is.null(P)) return(na_core)
-    vdiag <- NULL
-    Vmat <- matrix(0, n, n)
-    for (s in seq_len(n)) {
-      a <- pi[s]
-      b <- pj[s]
-      Vmat[, s] <- 0.5 * (P[pi, a] * P[pj, b] + P[pi, b] * P[pj, a])
-    }
-  }
-  is_diag <- is.null(Vmat)
-
-  # VD = V Delta; bread A = Delta' V Delta (singular by the k(k-1)/2 rotational gauge freedoms).
-  VD <- if (is_diag) vdiag * Delta else Vmat %*% Delta
-  A <- crossprod(Delta, VD)
-
-  # Border A with the gauge-fixing constraint so the augmented system is invertible; the leading
-  # pk-block of its inverse is the reflexive generalised inverse of A. The constraint fixes the
-  # rotational orientation, so it must match the one the solution's loadings are reported in: the
-  # unrotated loading SEs are scaled in that gauge (the rotated SEs and scaled chi-square are
-  # gauge-invariant, so the choice does not affect them). Rather than assume the orientation from the
-  # estimator label, detect it from the loadings: an eigen-based ULS/DWLS solution is
-  # Lambda'Lambda-diagonal, an ML solution is Lambda'Psi^-1 Lambda-diagonal (Lawley & Maxwell). The
-  # orientation the solution is in leaves a (scale-free) relative off-diagonal at the optimiser floor
-  # while the other is O(0.01-1), so the smaller ratio identifies the gauge -- and detecting keeps it
-  # tied to the actual solution, so a future estimator with either identification is handled without
-  # special-casing. Two cases the loadings cannot resolve fall back to a fixed choice: the
-  # Lambda'Psi^-1 Lambda gauge needs Psi^-1, so it is unavailable where that is undefined (psi <= 0)
-  # or at a non-finite solution -- routed to Lambda'Lambda; and homogeneous uniquenesses (Psi
-  # proportional to I) make BOTH orientations diagonal, so the gauge is undetermined by the loadings
-  # (yet the two still give different SEs through the chain-rule term), broken by the estimator's
-  # identification. A single factor has no rotational freedom (the constraint is empty either way).
-  #
-  # The test here is psi <= 0 and deliberately NOT the `.uniqueness_floor` boundary that
-  # `.se_information()` treats as a Heywood case. The two ask different questions: that one asks
-  # whether the solution sits on the parameter-space boundary (where a Wald interval is invalid),
-  # this one only whether Psi^-1 exists. At a uniqueness pinned at the floor Psi^-1 is large but
-  # perfectly well defined, and the solution is still oriented Lambda'Psi^-1 Lambda-diagonal -- so
-  # forcing the Lambda'Lambda constraint there would mismatch the orientation the loadings are
-  # reported in and hand `.gauge_transversal()` a near-tangent transversal (0.002 against 0.16 for
-  # the matching constraint on a boundary ML fit), withholding standard errors that are fine.
-  psi <- 1 - rowSums(L^2)
-  use_ltpil_gauge <- if (k < 2L || anyNA(psi) || any(psi <= 0)) {
-    FALSE
-  } else {
-    rel_off <- function(M) max(abs(M[upper.tri(M)])) / max(abs(diag(M)), .Machine$double.eps)
-    r_ltl <- rel_off(crossprod(L))
-    r_ltpil <- rel_off(crossprod(L, L / psi))
-    # Both orientations near-diagonal (Psi proportional to I): the loadings cannot distinguish the
-    # gauge, so use the estimator's known identification; otherwise the smaller ratio wins.
-    if (max(r_ltl, r_ltpil) < 1e-4) method == "ML" else r_ltpil < r_ltl
-  }
-  Cmat <- if (use_ltpil_gauge) {
-    .se_sandwich_constraint(L, psi = psi)
-  } else {
-    .se_sandwich_constraint(L)
-  }
-  Abread <- .bordered_inverse_block(A, Cmat, pk)
-  if (is.null(Abread)) return(na_core)
-
-  # Conditioning of that constraint as a transversal to the gauge orbit. A near-degenerate
-  # transversal amplifies the unrotated loading covariance by ||(C Z)^-1|| without making it
-  # non-finite or non-PSD, so it passes the `.is_psd()` gate below and would otherwise ship a
-  # silently meaningless standard error. Flagged separately from `reliable` because the divergence
-  # lives purely in the gauge: everything gauge-invariant the caller derives from V_AA stays valid.
-  # Computed after the bordered inverse so an exactly singular augmented system -- which returns
-  # through `na_core` and discards this flag -- does not pay for the decomposition.
-  gauge_reliable <- .gauge_transversal(L, Cmat) >= .gauge_transversal_floor
+  # Model Jacobian, estimator weight, bordered bread, and gauge conditioning; shared verbatim with
+  # the corrected two-stage FIML sandwich, which supplies a different meat below.
+  pieces <- .offdiag_sandwich_pieces(L, method, Gamma = Gamma,
+                                     optimal_weight = optimal_weight)
+  if (is.null(pieces)) return(na_core)
+  VD <- pieces$VD
+  Abread <- pieces$Abread
 
   # Meat Delta' V Gamma V Delta = (V Delta)' Gamma (V Delta); robust covariance A^- meat A^- /(N-1).
   Gamma_theta <- crossprod(VD, Gamma %*% VD)
@@ -759,7 +833,7 @@
   uniq_se <- if (!reliable) rep(NA_real_, p) else .communality_se(L, V_AA)
 
   scaled_test <- if (!reliable || !scaled) NULL else {
-    .scaled_chisq(fit_out, Gamma, pairs, VD, vdiag, Vmat, Abread, N)
+    .scaled_chisq(fit_out, Gamma, pieces$pairs, VD, pieces$vdiag, pieces$Vmat, Abread, N)
   }
 
   list(
@@ -768,7 +842,7 @@
     uniquenesses_se = uniq_se,
     scaled_test = scaled_test,
     reliable = reliable,
-    gauge_reliable = gauge_reliable
+    gauge_reliable = pieces$gauge_reliable
   )
 }
 
@@ -884,11 +958,13 @@
       c("Analytic standard errors could not be computed for all parameters.",
         "i" = if (gauge_degenerate) {
           "The factor solution's rotational orientation is only weakly determined (two canonical variances nearly coincide), so the unrotated loadings have no well-defined standard error. The communalities and uniquenesses are unaffected; apply a rotation, or use {.code se = \"np-boot\"}, for loading-level uncertainty."
-        } else if (anyNA(SE_L) && .at_uniqueness_boundary(L)) {
+        } else if (anyNA(SE_L) && .se_boundary_hint_applies(L)) {
           # As in `.se_information_rotated()`: the hint claims a total withholding, so it is only
           # attached once the loading SEs are actually gone. They and the uniqueness SEs are
           # all-or-nothing together today, but a path that withheld only one of them would
-          # otherwise be described by a hint that its own output contradicts.
+          # otherwise be described by a hint that its own output contradicts. And it claims a
+          # Heywood case, so a non-finite solution -- which the gate withholds on too, at no
+          # boundary -- takes the general clause below rather than this one.
           .se_boundary_hint
         } else {
           "This occurs when the bordered information matrix is singular, or when the asymptotic covariance is not usable."
@@ -939,13 +1015,16 @@
 # reported chi-square is the scaled-shifted (WLSMV-default) statistic; the mean-adjusted and
 # mean-and-variance-adjusted statistics and the scaling/shift are added as extra fields. CFI/TLI/
 # RMSEA come from the scaled model and baseline statistics via the shared .chi_fit_indices().
-.apply_scaled_test <- function(fit_indices, st, N) {
+# `ci` is the caller's own "solve the analytic RMSEA bounds" flag, threaded through rather than
+# fixed: `.gof()` runs this on every cor_method = "fiml" fit, including the bootstrap replicates it
+# calls with ci = FALSE, whose bounds are discarded by `.boot_se_ci()` anyway.
+.apply_scaled_test <- function(fit_indices, st, N, ci = TRUE) {
 
   if (is.null(st)) return(fit_indices)
 
   # The scaled (sandwich) model and baseline statistics are already on a comparable scale, so they
   # serve directly as the CFI/TLI/RMSEA noncentrality inputs (chi_cfi / chi_null_cfi).
-  idx <- .chi_fit_indices(st$chi, st$df, st$chi_null, st$df_null, N, st$m, ci = TRUE,
+  idx <- .chi_fit_indices(st$chi, st$df, st$chi_null, st$df_null, N, st$m, ci = ci,
                           chi_cfi = st$chi, chi_null_cfi = st$chi_null)
 
   fit_indices$chi <- st$chi
@@ -1252,15 +1331,36 @@
 
 }
 
+# Bootstrap standard deviation and percentile interval of a replicate array, over the margins `M`
+# (the replicate index is whichever dimension is left over).
+#
+# Both interval bounds come from ONE sweep. `stats::quantile()` sorts each cell's length-B
+# replicate vector, so requesting the two probabilities in separate sweeps sorts every cell twice;
+# asking for both at once halves the sorting and the traversals. `apply()` puts the two results on
+# a new LEADING dimension, so `q` is length(probs) x dim(x)[M] whatever `M` is; flattening it to a
+# 2 x length(se) matrix indexes that dimension without having to know the rank. `se` carries the
+# target shape and dimnames and the bounds are reshaped onto it, reproducing what a per-probability
+# `apply()` returned for every rank this is called with (a vector for a matrix input, a matrix for
+# a 3-D cube, a 3-D array for the group bootstrap's 4-D cube). Quantile type (the default 7) and
+# `na.rm` are unchanged, so the bounds are identical to sweeping twice.
 .array_se_ci <- function(x, probs, M = c(1, 2)) {
   se <- apply(x, M, stats::sd, na.rm = TRUE)
-  ci <- lapply(probs, function(p) {
-    apply(x, M, stats::quantile, probs = p, na.rm = TRUE)
-  })
-  names(ci) <- c("lower", "upper")
+  q <- apply(x, M, stats::quantile, probs = probs, na.rm = TRUE, names = FALSE)
+  dim(q) <- c(length(probs), length(se))
+
+  bound <- function(i) {
+    b <- q[i, ]
+    if (is.null(dim(se))) {
+      names(b) <- names(se)
+    } else {
+      dim(b) <- dim(se)
+      dimnames(b) <- dimnames(se)
+    }
+    b
+  }
 
   list(
     se = se,
-    ci = ci
+    ci = list(lower = bound(1L), upper = bound(2L))
   )
 }

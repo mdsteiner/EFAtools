@@ -235,10 +235,24 @@
 #'   [stats::factanal()] starts); abbreviations are matched. Not governed by `type`.
 #'   Only maximum likelihood uses it, so `NA` leaves it unset and is rejected only by
 #'   a fit that is actually run with `estimator = "ML"`.
+#' @param fiml_max_iter numeric. The maximum number of EM iterations used to estimate the
+#'   two-stage full-information maximum-likelihood moments from raw data with missing
+#'   values (`cor_method = "fiml"`); the last iterate is returned, with a warning, if the
+#'   cap is reached. A single whole number of at least 1; default `500`. Not governed by
+#'   `type`, and unused by every other correlation method. The EM converges linearly and
+#'   needs more iterations the larger the fraction of missing information, so raise it when
+#'   a fit reports that the moments did not converge.
+#' @param fiml_tol numeric. The convergence tolerance of that EM: iteration stops once the
+#'   largest change in the standardized moments (the standardized means, log-variances, and
+#'   correlations) falls below it, so it does not depend on the variables' measurement
+#'   scale. A single number greater than 0 and smaller than 1 (at or above 1 the criterion is
+#'   met immediately and the starting moments would be returned as converged); default `1e-5`.
+#'   Not governed by `type`.
 #'
 #' @returns `estimate_control()` returns a list of class `efa_estimate_control` with
 #'   the components `type`, `init_comm`, `criterion`, `criterion_type`, `max_iter`,
-#'   `abs_eigen`, and `start_method`. `rotate_control()` returns a list of class
+#'   `abs_eigen`, `start_method`, `fiml_max_iter`, and `fiml_tol`.
+#'   `rotate_control()` returns a list of class
 #'   `efa_rotate_control` with the components `type`, `normalize`, `precision`,
 #'   `order_type`, `varimax_type`, `p_type`, `k`, `random_starts`, and `extra_args`
 #'   (a named list of any additional arguments forwarded to the rotation engine).
@@ -263,7 +277,8 @@
 #' @export
 estimate_control <- function(type = c("EFAtools", "psych", "SPSS", "none"),
                              init_comm = NA, criterion = NA, criterion_type = NA,
-                             max_iter = NA, abs_eigen = NA, start_method = "psych") {
+                             max_iter = NA, abs_eigen = NA, start_method = "psych",
+                             fiml_max_iter = 500, fiml_tol = 1e-5) {
 
   # Match `type` case-insensitively, but keep the constructor's own condition class so a bad
   # `type` is caught alongside the other knobs (all `efa_control_input`).
@@ -281,11 +296,21 @@ estimate_control <- function(type = c("EFAtools", "psych", "SPSS", "none"),
   # `start_method` only governs the ML optimiser, so NA ("not needed here") is admissible and
   # is rejected by the fit itself, and only when `estimator = "ML"`.
   start_method <- .match_control_choice(start_method, c("psych", "factanal"), "start_method")
+  # The two FIML knobs are not preset-driven, so they carry real defaults rather than the NA
+  # sentinel and NA is not admissible. The tolerance is bounded above at 1 for the same reason
+  # `criterion` is: it is compared against a change in standardized moments -- standardized means,
+  # log-variances, and correlations -- so a value at or above 1 is met on the first iteration and
+  # the EM would return its starting moments while reporting itself converged. Unlike `criterion`
+  # the fit does not reject such a value downstream (the EM only demands tol > 0), so the bound has
+  # to be enforced here or not at all.
+  .assert_control_number(fiml_max_iter, "fiml_max_iter", int = TRUE, na_ok = FALSE)
+  .assert_control_number(fiml_tol, "fiml_tol", upper = 1, upper_strict = TRUE, na_ok = FALSE)
 
   structure(
     list(type = type, init_comm = init_comm, criterion = criterion,
          criterion_type = criterion_type, max_iter = max_iter,
-         abs_eigen = abs_eigen, start_method = start_method),
+         abs_eigen = abs_eigen, start_method = start_method,
+         fiml_max_iter = fiml_max_iter, fiml_tol = fiml_tol),
     class = "efa_estimate_control"
   )
 }
@@ -750,6 +775,8 @@ format.efa_estimate_control <- function(x, ...) {
     .control_knob_line("max_iter", x$max_iter)
     .control_knob_line("abs_eigen", x$abs_eigen)
     .control_knob_line("start_method", x$start_method)
+    .control_knob_line("fiml_max_iter", x$fiml_max_iter)
+    .control_knob_line("fiml_tol", x$fiml_tol)
   })
 }
 
