@@ -5,20 +5,27 @@
 using namespace Rcpp;
 using namespace arma;
 
+// Exact test for the null / no-factor model: whether the matrix square root M is the
+// identity (R = I in simulate_cfm_mvn, or the nf == 1 identity reference in
+// simulate_cfm_eigen). It allocates a p x p identity and a p x p comparison, and M is
+// fixed for a whole run, so each caller evaluates it once and passes the answer into
+// the draw rather than repeating it per replicate.
+static inline bool cfm_is_identity(const arma::mat& M) {
+  return M.is_square() &&
+         arma::all(arma::vectorise(M == arma::eye<arma::mat>(M.n_rows, M.n_cols)));
+}
+
 // Z * M draw shared by the population-MVN kernel (simulate_cfm_mvn) and the NEST
 // reference simulation (simulate_cfm_eigen): N rows of standard normal deviates
 // post-multiplied by a matrix square root M (with M' M equal to the target covariance),
 // so each row of the result is N(0, M' M). arma::randn draws column-major through R's
 // RNG (RcppArmadillo's ARMA_RNG_ALT), so the draw respects set.seed() and the
-// per-replicate future.seed streams.
-static inline arma::mat cfm_draw(const int N, const arma::mat& M) {
-  // Fast path for the null / no-factor model: when the square root M is the identity
-  // (R = I in simulate_cfm_mvn, or the nf == 1 identity reference in simulate_cfm_eigen),
-  // the Z * M product is a no-op, so draw the standard normal deviates directly. The check
-  // is exact, so the result stays byte-identical to Z * M -- the same N * M.n_rows deviates
-  // are drawn in the same order, only the identity multiply is skipped.
-  if (M.is_square() &&
-      arma::all(arma::vectorise(M == arma::eye<arma::mat>(M.n_rows, M.n_cols)))) {
+// per-replicate future.seed streams. `m_is_identity` comes from cfm_is_identity(M): the
+// Z * M product is then a no-op and only the multiply is skipped, so the same
+// N * M.n_rows deviates are drawn in the same order and the result stays byte-identical.
+static inline arma::mat cfm_draw(const int N, const arma::mat& M,
+                                 const bool m_is_identity) {
+  if (m_is_identity) {
     return arma::randn(N, M.n_rows);
   }
   return arma::randn(N, M.n_rows) * M;
@@ -71,7 +78,7 @@ arma::mat simulate_cfm_mvn(const arma::mat& R, const int N,
     M = eigvec * arma::diagmat(eigval) * eigvec.t();
   }
 
-  return cfm_draw(N, M);
+  return cfm_draw(N, M, cfm_is_identity(M));
 }
 
 //' Reference eigenvalues for the efa_nest() simulation via the shared kernel.
@@ -110,6 +117,8 @@ arma::vec simulate_cfm_eigen(const int nf, const int N, const arma::mat& Lambda,
   // case rather than relying on join_rows() accepting an empty first argument.
   arma::mat D = arma::diagmat(arma::sqrt(Psi));
   arma::mat M = (Lambda.n_cols == 0 ? D : arma::join_rows(Lambda, D)).t();
+  // M does not change inside the replicate loop, so the identity test is made once
+  const bool m_is_identity = cfm_is_identity(M);
 
   // eig_sym returns eigenvalues in ascending order, so ind = p - nf is the nf-th
   // largest.
@@ -118,7 +127,7 @@ arma::vec simulate_cfm_eigen(const int nf, const int N, const arma::mat& Lambda,
   arma::vec ref_values(nreps);
 
   for (arma::uword i = 0; i < static_cast<arma::uword>(nreps); i++) {
-    eig_sym_values_checked(eigvals, arma::cor(cfm_draw(N, M)),
+    eig_sym_values_checked(eigvals, arma::cor(cfm_draw(N, M, m_is_identity)),
                            "the reference simulation");
     ref_values(i) = eigvals(ind);
   }

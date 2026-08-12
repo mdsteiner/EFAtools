@@ -139,6 +139,7 @@ efa_retain(GRiPS_raw)
 #> • Original implementation (Braeken & van Assen, 2017): 1
 #> 
 #> Hull method
+#> Estimator: ML
 #> • CAF: 1
 #> • CFI: 1
 #> • RMSEA: 1
@@ -151,7 +152,8 @@ efa_retain(GRiPS_raw)
 #> • Suggested number of factors: 1
 #> 
 #> Parallel analysis
-#> • SMC eigenvalues: 1
+#> Eigenvalues found using SMC; 1000 simulated datasets.
+#> • SMC: 1
 ```
 
 Skips some criteria on correlation input:
@@ -177,6 +179,7 @@ efa_retain(DOSPERT$cormat, N = DOSPERT$N)
 #> • Original implementation (Braeken & van Assen, 2017): 10
 #> 
 #> Hull method
+#> Estimator: ML
 #> • CAF: 12
 #> • CFI: 1
 #> • RMSEA: 1
@@ -189,7 +192,8 @@ efa_retain(DOSPERT$cormat, N = DOSPERT$N)
 #> • Suggested number of factors: 10
 #> 
 #> Parallel analysis
-#> • SMC eigenvalues: 12
+#> Eigenvalues found using SMC; 1000 simulated datasets.
+#> • SMC: 12
 #> 
 #> ── Criteria that could not be run ──────────────────────────────────────────────
 #> 

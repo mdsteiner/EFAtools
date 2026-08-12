@@ -33,6 +33,57 @@ test_that(".n_factors_ctl() defaults mirror efa_retain()'s", {
   expect_equal(ctl[shared], ret[shared])
 })
 
+test_that(".eigen_subtitle names the eigenvalue types the same way for every criterion", {
+  # The criteria that report which eigenvalues they used share this one sentence, so
+  # pin both forms here: efa_parallel()'s `detail` variant is otherwise only covered
+  # by a print snapshot behind the slow gate.
+  expect_equal(.eigen_subtitle("SMC"), "Eigenvalues found using SMC.")
+  expect_equal(.eigen_subtitle(c("PCA", "SMC")),
+               "Eigenvalues found using PCA and SMC.")
+  expect_equal(.eigen_subtitle(c("PCA", "SMC", "EFA")),
+               "Eigenvalues found using PCA, SMC, and EFA.")
+
+  # a detail clause replaces the closing full stop rather than following it
+  expect_equal(.eigen_subtitle("SMC", "1000 simulated datasets"),
+               "Eigenvalues found using SMC; 1000 simulated datasets.")
+
+  # and the criteria really route through it
+  expect_equal(efa_scree(test_models$baseline$cormat, eigen_type = "PCA")$subtitle,
+               .eigen_subtitle("PCA"))
+  expect_equal(efa_kgc(test_models$baseline$cormat, eigen_type = "PCA")$subtitle,
+               .eigen_subtitle("PCA"))
+})
+
+test_that("printed bullets name what the count belongs to, not the eigenvalues", {
+  # Every bullet reads "<variant>: <suggested count>": the eigenvalue-based criteria
+  # key theirs by eigenvalue type, the Hull method by goodness-of-fit index, and the
+  # single-variant criteria name the quantity itself. The eigenvalues the counts were
+  # derived from belong in the subtitle, so that a count is never labelled as if it
+  # were the eigenvalues.
+  kgc <- efa_kgc(test_models$baseline$cormat)
+  expect_equal(vapply(kgc$results, function(r) r$label, character(1)),
+               c("PCA", "SMC", "EFA"))
+  expect_equal(kgc$subtitle, "Eigenvalues found using PCA, SMC, and EFA.")
+
+  scree <- efa_scree(test_models$baseline$cormat, eigen_type = "SMC")
+  expect_equal(vapply(scree$results, function(r) r$label, character(1)), "SMC")
+  expect_equal(scree$subtitle, "Eigenvalues found using SMC.")
+  # the one purely visual criterion names the call that shows the plot
+  expect_match(scree$note, "plot(x)", fixed = TRUE)
+})
+
+test_that("the retention report fits a narrow console", {
+  local_reproducible_output(width = 40)
+  objs <- list(efa_kgc(test_models$baseline$cormat),
+               efa_scree(test_models$baseline$cormat),
+               efa_ekc(test_models$baseline$cormat, N = 500),
+               efa_map(test_models$baseline$cormat))
+  for (obj in objs) {
+    expect_true(all(nchar(format(obj)) <= 40),
+                info = obj$criterion[["id"]])
+  }
+})
+
 test_that("format.efa_retention is the source of truth and honours the colour state", {
   ekc <- EKC(test_models$baseline$cormat, N = 500)
 

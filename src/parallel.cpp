@@ -37,16 +37,24 @@ arma::mat parallel_sim(const int n_datasets, const int n_vars, const int N,
     stop("N must be larger than n_vars for SMC simulation.");
   }
 
-  // initialize needed objects
+  // Initialize needed objects. The simulated data `x` and their correlation matrix
+  // `R` keep their dimensions across replicates, so they are allocated once here and
+  // refilled in place instead of once per simulated dataset -- at the default
+  // n_datasets = 1000 that is 1000 fewer N x n_vars allocations in the busiest
+  // simulation loop of the package. x.randn() draws from the same random-number
+  // stream in the same (column-major) order as arma::randn(N, n_vars), so the
+  // reference eigenvalues are unchanged.
   arma::vec eigval(n_vars);
   arma::mat eig_vals(n_datasets, n_vars);
+  arma::mat x(N, n_vars);
+  arma::mat R(n_vars, n_vars);
 
   if (eigen_type == 1) { // PCA
 
     // perform simulations for n_datasets time
     for (int i = 0; i < n_datasets; i++) {
-      arma::mat x = randn(N, n_vars);
-      arma::mat R = cor(x);
+      x.randn();
+      R = cor(x);
       eig_sym_values_checked(eigval, R, "the parallel-analysis simulation");
       eig_vals.row(i) = flipud(eigval).t();
     }
@@ -58,8 +66,8 @@ arma::mat parallel_sim(const int n_datasets, const int n_vars, const int N,
     int iter = 0;
 
     while((success < n_datasets) && (iter < maxit)) {
-      arma::mat x = randn(N, n_vars);
-      arma::mat R = cor(x);
+      x.randn();
+      R = cor(x);
       bool flag = inv_sympd(temp, R);
       if (!flag){
         iter++;

@@ -28,7 +28,7 @@
       -- Scree plot ------------------------------------------------------------------
       Eigenvalues found using PCA, SMC, and EFA.
       
-      i Scree plot is a visual criterion; inspect the plot to identify the elbow.
+      i Scree plot is a visual criterion; call plot(x) to identify the elbow.
 
 ---
 
@@ -38,7 +38,7 @@
       -- Scree plot ------------------------------------------------------------------
       Eigenvalues found using SMC.
       
-      i Scree plot is a visual criterion; inspect the plot to identify the elbow.
+      i Scree plot is a visual criterion; call plot(x) to identify the elbow.
 
 # print.efa_retention output is stable for CD
 
@@ -57,7 +57,7 @@
       -- Parallel analysis -----------------------------------------------------------
       Eigenvalues found using PCA; 1000 simulated datasets.
       
-      * PCA eigenvalues: 3
+      * PCA: 3
       
       i Number of factors retained using the "means" decision rule.
 
@@ -78,10 +78,11 @@
       print(kgc)
     Output
       -- Kaiser-Guttman criterion ----------------------------------------------------
+      Eigenvalues found using PCA, SMC, and EFA.
       
-      * PCA eigenvalues: 3
-      * SMC eigenvalues: 1
-      * EFA eigenvalues: 1
+      * PCA: 3
+      * SMC: 1
+      * EFA: 1
 
 ---
 
@@ -89,8 +90,9 @@
       print(kgc_smc)
     Output
       -- Kaiser-Guttman criterion ----------------------------------------------------
+      Eigenvalues found using SMC.
       
-      * SMC eigenvalues: 1
+      * SMC: 1
 
 # print.efa_retention output is stable for NEST
 
@@ -132,7 +134,7 @@
       print(hull)
     Output
       -- Hull method -----------------------------------------------------------------
-      Estimation method: ML
+      Estimator: ML
       
       * CAF: 3
       * CFI: 1
@@ -144,7 +146,7 @@
       print(hull_paf)
     Output
       -- Hull method -----------------------------------------------------------------
-      Estimation method: PAF
+      Estimator: PAF
       
       * CAF: 3
 
@@ -171,8 +173,9 @@
       * Original implementation (Braeken & van Assen, 2017): 3
       
       Kaiser-Guttman criterion
-      * PCA eigenvalues: 3
-      * SMC eigenvalues: 1
+      Eigenvalues found using PCA and SMC.
+      * PCA: 3
+      * SMC: 1
       
       Minimum average partial
       * Original implementation (TR2): 1
@@ -196,7 +199,8 @@
       * Original implementation (Braeken & van Assen, 2017): 3
       
       Kaiser-Guttman criterion
-      * PCA eigenvalues: 3
+      Eigenvalues found using PCA.
+      * PCA: 3
       
       Minimum average partial
       * Original implementation (TR2): 1

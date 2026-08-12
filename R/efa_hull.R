@@ -14,7 +14,7 @@
 #'   is used as the upper bound *J* of factors to extract in the Hull method.
 #' @param estimator character. The estimator to use. One of  `"PAF"`,
 #'    `"ULS"`, or  `"ML"`, for principal axis factoring, unweighted
-#'    least squares, and maximum likelihood, respectively.
+#'    least squares, and maximum likelihood, respectively. Default is `"PAF"`.
 #' @param gof character. The goodness of fit index to use. Either `"CAF"`,
 #'   `"CFI"`, or `"RMSEA"`, or any combination of them.
 #'   With the `"PAF"` estimator, only
@@ -104,9 +104,23 @@
 #'   `"RMSEA"`).}
 #' \item{results}{A list with one record per goodness-of-fit index, each holding
 #'   the goodness-of-fit values, the degrees of freedom, the hull membership, and
-#'   the retained solution used for printing and plotting.}
+#'   the retained solution used for printing and plotting. Each record also carries
+#'   `st`, the elbow sharpness of every solution (see details): the retained
+#'   solution has the largest value, and the runner-up shows how close the
+#'   selection was. `st` is `NA` for the solutions where it is undefined, that is
+#'   for those not on the hull and for the two hull endpoints, which have no
+#'   neighbouring hull solution on one side. When fewer than three solutions
+#'   remain on the hull, `st` is undefined throughout and the whole vector is `NA`;
+#'   the retained solution is then the one with the highest goodness of fit, and a
+#'   warning says so.}
 #' \item{settings}{A list of the settings used, including `n_fac_max`, the upper
-#'   bound *J* of the number of factors to extract (see details).}
+#'   bound *J* of the number of factors to extract (see details). For backwards
+#'   compatibility the estimator is also repeated in `settings$method`.}
+#'
+#' For backwards compatibility the per-index suggestions are additionally available
+#' as the top-level fields `n_fac_CAF`, `n_fac_CFI` and `n_fac_RMSEA`, each `NA` if
+#' that index was not requested in `gof`. New code should read them from
+#' `n_factors` instead.
 #'
 #' @source Auerswald, M., & Moshagen, M. (2019). How to determine the number of
 #' factors to retain in exploratory factor analysis: A comparison of extraction
@@ -126,7 +140,7 @@
 #'
 #' @examples
 #' \donttest{
-#' # using PAF (this will throw a warning if gof is not specified manually
+#' # using PAF (this will print a message if gof is not specified manually
 #' # and CAF will be used automatically)
 #' efa_hull(test_models$baseline$cormat, N = 500, gof = "CAF", n_datasets = 100)
 #'
@@ -376,7 +390,10 @@ efa_hull <- function(x, N = NA, n_fac_theor = NA,
       threshold = NULL,
       highlight = retain,
       point_labels = unname(sol[, "nfactors"]),
-      on_hull = gof_results[[g]]$on_hull
+      on_hull = gof_results[[g]]$on_hull,
+      # elbow sharpness of each solution (Eq 5); the selected one has the largest
+      # value, so the runner-up shows how close the decision was
+      st = unname(sol[, "st"])
     )
   }
 
@@ -401,7 +418,7 @@ efa_hull <- function(x, N = NA, n_fac_theor = NA,
                     use = use,
                     cor_method = cor_method,
                     n_fac_max = J),
-    subtitle = paste0("Estimation method: ", estimator)
+    subtitle = paste0("Estimator: ", estimator)
   )
 
   # back-compat aliases of the per-index suggestions, as for the frozen method key
@@ -493,7 +510,7 @@ efa_hull <- function(x, N = NA, n_fac_theor = NA,
     )
 
     # the st values are undefined with fewer than three hull solutions
-    s_complete[, 4] <- NA
+    s_complete[, 4] <- NA_real_
 
     # 8) select solution with highest gof value
     retain <- s[which.max(s[, 2]), 1]
@@ -515,16 +532,15 @@ efa_hull <- function(x, N = NA, n_fac_theor = NA,
 
     }
 
-    # combine values
-    for (row_i in 0:J) {
-
-      if (row_i %in% s[,1]) {
-        s_complete[row_i + 1, 4] <- s[s[,1] == row_i, 4]
-      } else {
-        s_complete[row_i + 1, 4] <- NA
-      }
-
-    }
+    # Combine values. Only the interior hull solutions have an st value: the ratio
+    # needs both a predecessor and a successor on the hull, so the two hull
+    # endpoints are as undefined as the solutions that are not on the hull at all,
+    # and are reported as NA. The local `s` still carries the zero its endpoints
+    # were initialised with, which is why the reported column is rebuilt here
+    # rather than copied wholesale from it.
+    interior <- s[-c(1, nrow(s)), , drop = FALSE]
+    s_complete[, 4] <- NA_real_
+    s_complete[match(interior[, 1], s_complete[, 1]), 4] <- interior[, 4]
 
     # 8) select solution with highest st value
     retain <- s[which.max(s[, 4]), 1]

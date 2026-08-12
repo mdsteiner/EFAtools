@@ -63,7 +63,14 @@
 #' @returns An object of class `efa_retention` (see [print.efa_retention()] and
 #'   [plot.efa_retention()] for the print and plot methods). Its main fields are:
 #' \item{n_factors}{A named numeric vector with the suggested number of factors
-#'   for each requested implementation (`"BvA2017"` and/or `"AM2019"`).}
+#'   for each requested implementation (`"BvA2017"` and/or `"AM2019"`). Both
+#'   implementations retain the factors up to the first observed eigenvalue that
+#'   fails to exceed its reference value. If every eigenvalue exceeds its
+#'   reference, so that no such crossing is found, all *J* factors are retained --
+#'   the same "all-exceed" convention parallel analysis ([efa_parallel()]) uses.
+#'   For a valid correlation matrix this boundary cannot be reached under
+#'   `"AM2019"`, whose last reference value is floored at 1 while the smallest
+#'   eigenvalue is at most 1.}
 #' \item{results}{A list with one record per implementation, each holding the
 #'   eigenvalues, the reference eigenvalues, and the retained solution used for
 #'   printing and plotting.}

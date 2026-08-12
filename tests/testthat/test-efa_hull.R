@@ -85,10 +85,17 @@ test_that("the factor-search bound stays over-identified with the minimum number
 test_that("records are correctly returned", {
   skip_if_not_slow()
   expect_named(hull_cor_paf$n_factors, "CAF")
+  expect_named(hull_cor_paf$results[[1]],
+               c("name", "label", "n_factors", "plot_type", "x", "y", "reference",
+                 "threshold", "highlight", "point_labels", "on_hull", "st"))
   expect_equal(hull_cor_paf$results[[1]]$plot_type, "hull")
   checkmate::expect_numeric(hull_cor_paf$results[[1]]$y)
   checkmate::expect_numeric(hull_cor_paf$results[[1]]$x)
   checkmate::expect_logical(hull_cor_paf$results[[1]]$on_hull)
+
+  # the subtitle names the estimator under the name the argument has
+  expect_equal(hull_cor_paf$subtitle, "Estimator: PAF")
+  expect_equal(hull_cor_ml$subtitle, "Estimator: ML")
 
   expect_named(hull_cor_uls$n_factors, c("CAF", "CFI", "RMSEA"))
   expect_named(hull_cor_uls_CFI$n_factors, "CFI")
@@ -131,6 +138,29 @@ test_that("n_factors are correctly returned", {
   expect_false("RMSEA" %in% names(hull_raw_uls_CFI$n_factors))
 })
 
+test_that("every record carries the elbow sharpness of its solutions", {
+  skip_if_not_slow()
+  for (obj in list(hull_cor_paf, hull_cor_uls, hull_cor_uls_CFI, hull_raw_uls)) {
+    for (rec in obj$results) {
+      # one st per solution, aligned with the df / fit / hull-membership series
+      expect_length(rec$st, length(rec$x))
+      # st is defined only for the interior hull solutions: NA off the hull ...
+      expect_true(all(is.na(rec$st[!rec$on_hull])))
+      # ... and, asserted in the other direction so an all-NA regression cannot
+      # pass, a value at every hull solution that has a neighbour on both sides
+      # (with fewer than three hull solutions there are none and st is all NA)
+      hull <- which(rec$on_hull)
+      if (length(hull) >= 3) {
+        expect_false(any(is.na(rec$st[hull[-c(1, length(hull))]])))
+        # and the retained solution is the one with the largest st
+        expect_equal(rec$point_labels[which.max(rec$st)], rec$n_factors)
+      } else {
+        expect_true(all(is.na(rec$st)))
+      }
+    }
+  }
+})
+
 test_that("the convex-hull elimination tests every interior triplet", {
   # Hand-built fit table (columns: nfactors, goodness-of-fit, df, st). The fit
   # values increase monotonically, so the boundary step removes nothing; the
@@ -144,6 +174,11 @@ test_that("the convex-hull elimination tests every interior triplet", {
   # ... while the supporting interior solution remains on it
   expect_false(is.na(out$s_complete[2, 4]))
   expect_equal(out$retain, 1)
+
+  # the two hull endpoints have no neighbouring hull solution on one side, so their
+  # st is undefined and reported as NA rather than as the initialised zero
+  expect_true(is.na(out$s_complete[1, 4]))
+  expect_true(is.na(out$s_complete[4, 4]))
 
   # a last interior solution lying above its neighbours' chord is kept
   s2 <- cbind(0:3, c(0.00, 0.85, 0.95, 1.00), c(10, 6, 3, 1), 0)

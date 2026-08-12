@@ -181,6 +181,15 @@
   )
 }
 
+# Subtitle naming the eigenvalue types a criterion computed its eigenvalues on,
+# shared by the eigenvalue-based criteria so they all say it the same way. `detail`
+# appends a clause (e.g. the number of simulated reference datasets) in place of the
+# closing full stop.
+.eigen_subtitle <- function(eigen_type, detail = NULL) {
+  paste0("Eigenvalues found using ", cli::ansi_collapse(eigen_type),
+         if (is.null(detail)) "." else paste0("; ", detail, "."))
+}
+
 # Bullet lines (one per record) shared by format.efa_retention and
 # format.efa_retain.
 .retention_bullets <- function(results) {

@@ -47,7 +47,8 @@ message for it. Its main elements are:
 \item \code{n_factors}: A named numeric vector (\code{"TR2"}, \code{"TR4"}) with the index
 \eqn{m} that minimizes the original (TR2) and revised (TR4) MAP criterion.
 \item \code{results}: A list with one record per criterion, each holding the
-criterion values over \eqn{m}.
+criterion values over \eqn{m} and, in \code{m_last}, the largest \eqn{m} at which
+the criterion could be evaluated (see details).
 \item \code{settings}: A list containing \code{use} and \code{cor_method}.
 }
 }
@@ -80,12 +81,28 @@ individual partial correlations; the matrix power is intended and is what
 Velicer, Eaton, and Fava (2000) describe.
 }
 
+Both criteria are returned for every call and they can suggest different numbers
+of factors on the same correlation matrix. Both are in use in the literature and
+neither is treated as the default here, so be sure to state which of the two you
+report, as you would for any other analysis choice.
+
 MAP is most dependable when the components are well determined, that is with many
 indicators per factor and substantial loadings. It has a well-documented tendency
 to under-extract, particularly with few indicators per factor or weak loadings
 (Zwick & Velicer, 1986; Auerswald & Moshagen, 2019), so it is best read as a lower
 bound and paired with a criterion that errs in the other direction, such as the
 Kaiser-Guttman criterion (\code{\link[=efa_kgc]{efa_kgc()}}).
+
+The criterion is evaluated over \eqn{m = 0, \ldots, p - 1}. Each step standardizes
+the partial covariance matrix by its residual standard deviations, which requires
+every residual variance to stay positive. Partialling out all but one component
+leaves a rank-one residual, so the final point \eqn{m = p - 1} is undefined for
+most correlation matrices and is routinely returned as \code{NA}. A residual variance
+can also reach zero earlier, most often on a near-singular matrix; the search then
+stops there, the criterion values that could be computed are kept, the remaining
+values stay \code{NA}, and a warning (class \code{efa_map_truncated}) reports how far the
+grid was searched. In that case the suggested \eqn{m} is the minimum over the
+evaluated range only, so it should be read together with the returned series.
 
 A non-positive-definite input correlation matrix (e.g. from sampling error) is
 smoothed with \code{\link[psych:cor.smooth]{psych::cor.smooth()}}.

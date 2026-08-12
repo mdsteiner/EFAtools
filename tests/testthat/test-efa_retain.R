@@ -133,6 +133,26 @@ test_that("print and plot work on the aggregate object", {
   }
 })
 
+test_that("the aggregate report carries each criterion's own context line", {
+  # The lines are compared verbatim, so pin the console width: the subtitle is longer
+  # than a narrow console and would otherwise be wrapped across two of them.
+  local_reproducible_output()
+
+  # The bullets are keyed by eigenvalue type / fit index, so the group has to repeat
+  # the criterion's subtitle -- otherwise the aggregate report shows a bare "PCA: 3"
+  # with nothing saying what that key is. Criteria without a subtitle add no line.
+  nf <- efa_retain(test_models$baseline$cormat, N = 500, suitability = FALSE,
+                   criteria = c("EKC", "KGC"), eigen_type_other = c("PCA", "SMC"))
+  txt <- format(nf)
+
+  expect_true(any(txt == nf$outputs$KGC$subtitle))
+  # and it sits between the criterion heading and that criterion's bullets
+  expect_equal(which(txt == nf$outputs$KGC$subtitle),
+               which(txt == "Kaiser-Guttman criterion") + 1)
+  # EKC has no subtitle, so its heading is followed straight by its bullet
+  expect_null(nf$outputs$EKC$subtitle)
+})
+
 test_that("format.efa_retain is the source of truth and honours the colour state", {
   skip_if_not_slow()
   # print() is exactly cat(format(x), sep = "\n"), so the two agree line for line.

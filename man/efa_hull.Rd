@@ -46,7 +46,7 @@ is used as the upper bound \emph{J} of factors to extract in the Hull method.}
 
 \item{estimator}{character. The estimator to use. One of  \code{"PAF"},
 \code{"ULS"}, or  \code{"ML"}, for principal axis factoring, unweighted
-least squares, and maximum likelihood, respectively.}
+least squares, and maximum likelihood, respectively. Default is \code{"PAF"}.}
 
 \item{gof}{character. The goodness of fit index to use. Either \code{"CAF"},
 \code{"CFI"}, or \code{"RMSEA"}, or any combination of them.
@@ -108,9 +108,23 @@ for each requested goodness-of-fit index (\code{"CAF"}, \code{"CFI"}, and/or
 \code{"RMSEA"}).}
 \item{results}{A list with one record per goodness-of-fit index, each holding
 the goodness-of-fit values, the degrees of freedom, the hull membership, and
-the retained solution used for printing and plotting.}
+the retained solution used for printing and plotting. Each record also carries
+\code{st}, the elbow sharpness of every solution (see details): the retained
+solution has the largest value, and the runner-up shows how close the
+selection was. \code{st} is \code{NA} for the solutions where it is undefined, that is
+for those not on the hull and for the two hull endpoints, which have no
+neighbouring hull solution on one side. When fewer than three solutions
+remain on the hull, \code{st} is undefined throughout and the whole vector is \code{NA};
+the retained solution is then the one with the highest goodness of fit, and a
+warning says so.}
 \item{settings}{A list of the settings used, including \code{n_fac_max}, the upper
-bound \emph{J} of the number of factors to extract (see details).}
+bound \emph{J} of the number of factors to extract (see details). For backwards
+compatibility the estimator is also repeated in \code{settings$method}.}
+
+For backwards compatibility the per-index suggestions are additionally available
+as the top-level fields \code{n_fac_CAF}, \code{n_fac_CFI} and \code{n_fac_RMSEA}, each \code{NA} if
+that index was not requested in \code{gof}. New code should read them from
+\code{n_factors} instead.
 }
 \description{
 Implementation of the Hull method suggested by Lorenzo-Seva, Timmerman,
@@ -159,7 +173,7 @@ starting values. See also the \link{efa_fit} documentation.
 }
 \examples{
 \donttest{
-# using PAF (this will throw a warning if gof is not specified manually
+# using PAF (this will print a message if gof is not specified manually
 # and CAF will be used automatically)
 efa_hull(test_models$baseline$cormat, N = 500, gof = "CAF", n_datasets = 100)
 

@@ -49,10 +49,12 @@
 #' to "EFA"; see Auerswald & Moshagen, 2019). However, although this variant
 #' of the KGC is more accurate in some cases compared to the traditional KGC, it
 #' is at the same time less accurate than the PCA-variant in other cases, and it
-#' is still often less accurate than other factor retention methods, for
-#' example parallel analysis ([efa_parallel()]), the Hull method
-#' [efa_hull()], or sequential \eqn{chi^2} model tests ([efa_smt()];
-#' see Auerswald & Moshagen, 2019).
+#' is still often less accurate than several of the other criteria available here,
+#' such as parallel analysis ([efa_parallel()]), the Hull method ([efa_hull()]),
+#' the empirical Kaiser criterion ([efa_ekc()]), or sequential \eqn{chi^2} model
+#' tests ([efa_smt()]; see Auerswald & Moshagen, 2019). Which criteria are
+#' informative depends on the data at hand, so rather than substituting one for
+#' another, run several of them together and compare their suggestions.
 #'
 #' The `efa_kgc` function can also be called together with other factor
 #' retention criteria in the [efa_retain()] function.
@@ -133,7 +135,7 @@ efa_kgc <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
     n_fac <- nfac_list[[et]]
     results[[et]] <- list(
       name = et,
-      label = paste0(et, " eigenvalues"),
+      label = et,
       n_factors = n_fac,
       plot_type = "eigen",
       x = seq_along(eig),
@@ -148,7 +150,8 @@ efa_kgc <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
     "KGC",
     results = unname(results),
     settings = list(eigen_type = eigen_type, use = use,
-                    cor_method = cor_method, n_factors = n_factors)
+                    cor_method = cor_method, n_factors = n_factors),
+    subtitle = .eigen_subtitle(eigen_type)
   )
 
   return(output)

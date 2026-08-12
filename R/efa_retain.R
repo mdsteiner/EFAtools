@@ -567,6 +567,12 @@ format.efa_retain <- function(x, ...) {
     for (out in x$outputs[!is_visual]) {
       cli::cli_text("")
       cli::cli_text("{out$criterion[['label']]}")
+      # the criterion's own context line, where it has one (which eigenvalues, which
+      # estimator): the bullets below are keyed by eigenvalue type or fit index, so
+      # without it the aggregate report would not say what those keys refer to
+      if (!is.null(out$subtitle)) {
+        cli::cli_text("{out$subtitle}")
+      }
       cli::cli_ul(.retention_bullets(out$results))
     }
 

@@ -99,10 +99,12 @@ initial communalities estimated from SMCs (done setting \code{eigen_type} to
 to "EFA"; see Auerswald & Moshagen, 2019). However, although this variant
 of the KGC is more accurate in some cases compared to the traditional KGC, it
 is at the same time less accurate than the PCA-variant in other cases, and it
-is still often less accurate than other factor retention methods, for
-example parallel analysis (\code{\link[=efa_parallel]{efa_parallel()}}), the Hull method
-\code{\link[=efa_hull]{efa_hull()}}, or sequential \eqn{chi^2} model tests (\code{\link[=efa_smt]{efa_smt()}};
-see Auerswald & Moshagen, 2019).
+is still often less accurate than several of the other criteria available here,
+such as parallel analysis (\code{\link[=efa_parallel]{efa_parallel()}}), the Hull method (\code{\link[=efa_hull]{efa_hull()}}),
+the empirical Kaiser criterion (\code{\link[=efa_ekc]{efa_ekc()}}), or sequential \eqn{chi^2} model
+tests (\code{\link[=efa_smt]{efa_smt()}}; see Auerswald & Moshagen, 2019). Which criteria are
+informative depends on the data at hand, so rather than substituting one for
+another, run several of them together and compare their suggestions.
 
 The \code{efa_kgc} function can also be called together with other factor
 retention criteria in the \code{\link[=efa_retain]{efa_retain()}} function.

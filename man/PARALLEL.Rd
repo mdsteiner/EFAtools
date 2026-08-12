@@ -61,10 +61,12 @@ Default is "pearson".}
 factors to retain. Default is \code{"means"}, which will use the average
 simulated eigenvalues. \code{"percentile"}, uses the percentiles specified
 in percent. \code{"crawford"} uses the 95th percentile for the first factor
-and the mean afterwards (based on Crawford et al, 2010). The \code{"means"} rule
-retains a factor whenever its real eigenvalue exceeds the average simulated
-one and thus tends to retain more factors than the more conservative
-\code{"percentile"} rule (Glorfeld, 1995).}
+and the mean afterwards (based on Crawford et al, 2010). All three rules retain
+the factors up to the first observed eigenvalue that fails to exceed its
+reference value; an eigenvalue further down the series that rises above its own
+reference again therefore adds no factor. Because the average simulated
+eigenvalue is a lower reference than the percentile, \code{"means"} tends to retain
+more factors than the more conservative \code{"percentile"} rule (Glorfeld, 1995).}
 
 \item{n_factors}{numeric. Number of factors to extract if "EFA" is included in
 \code{eigen_type}. Default is 1.}

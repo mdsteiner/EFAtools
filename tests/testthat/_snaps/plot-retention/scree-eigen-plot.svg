@@ -255,7 +255,7 @@
   </clipPath>
 </defs>
 <g clip-path='url(#cpMjcuOTB8MjQ2LjU3fDIyLjc4fDM5LjQz)'>
-<text x='137.23' y='34.14' text-anchor='middle' style='font-size: 8.80px; fill: #1A1A1A; font-family: sans;' textLength='67.52px' lengthAdjust='spacingAndGlyphs'>PCA eigenvalues</text>
+<text x='137.23' y='34.14' text-anchor='middle' style='font-size: 8.80px; fill: #1A1A1A; font-family: sans;' textLength='18.10px' lengthAdjust='spacingAndGlyphs'>PCA</text>
 </g>
 <g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>
 </g>
@@ -265,7 +265,7 @@
   </clipPath>
 </defs>
 <g clip-path='url(#cpMjYxLjg3fDQ4MC41NHwyMi43OHwzOS40Mw==)'>
-<text x='371.21' y='34.14' text-anchor='middle' style='font-size: 8.80px; fill: #1A1A1A; font-family: sans;' textLength='68.98px' lengthAdjust='spacingAndGlyphs'>SMC eigenvalues</text>
+<text x='371.21' y='34.14' text-anchor='middle' style='font-size: 8.80px; fill: #1A1A1A; font-family: sans;' textLength='19.56px' lengthAdjust='spacingAndGlyphs'>SMC</text>
 </g>
 <g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>
 </g>
@@ -275,7 +275,7 @@
   </clipPath>
 </defs>
 <g clip-path='url(#cpNDk1Ljg1fDcxNC41MnwyMi43OHwzOS40Mw==)'>
-<text x='605.19' y='34.14' text-anchor='middle' style='font-size: 8.80px; fill: #1A1A1A; font-family: sans;' textLength='66.54px' lengthAdjust='spacingAndGlyphs'>EFA eigenvalues</text>
+<text x='605.19' y='34.14' text-anchor='middle' style='font-size: 8.80px; fill: #1A1A1A; font-family: sans;' textLength='17.12px' lengthAdjust='spacingAndGlyphs'>EFA</text>
 </g>
 <g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>
 <text x='37.84' y='556.10' text-anchor='middle' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='4.89px' lengthAdjust='spacingAndGlyphs'>1</text>

@@ -82,7 +82,7 @@ efa_scree <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
     eig <- eigen_list[[et]]
     results[[et]] <- list(
       name = et,
-      label = paste0(et, " eigenvalues"),
+      label = et,
       n_factors = NA_real_,
       plot_type = "eigen",
       x = seq_along(eig),
@@ -95,9 +95,8 @@ efa_scree <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
     results = unname(results),
     settings = list(eigen_type = eigen_type, use = use,
                     cor_method = cor_method, n_factors = n_factors),
-    subtitle = paste0("Eigenvalues found using ",
-                      cli::ansi_collapse(eigen_type), "."),
-    note = "Scree plot is a visual criterion; inspect the plot to identify the elbow."
+    subtitle = .eigen_subtitle(eigen_type),
+    note = "Scree plot is a visual criterion; call plot(x) to identify the elbow."
   )
 
   return(output)

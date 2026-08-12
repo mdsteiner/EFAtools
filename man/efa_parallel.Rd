@@ -78,10 +78,12 @@ Default is "pearson".}
 factors to retain. Default is \code{"means"}, which will use the average
 simulated eigenvalues. \code{"percentile"}, uses the percentiles specified
 in percent. \code{"crawford"} uses the 95th percentile for the first factor
-and the mean afterwards (based on Crawford et al, 2010). The \code{"means"} rule
-retains a factor whenever its real eigenvalue exceeds the average simulated
-one and thus tends to retain more factors than the more conservative
-\code{"percentile"} rule (Glorfeld, 1995).}
+and the mean afterwards (based on Crawford et al, 2010). All three rules retain
+the factors up to the first observed eigenvalue that fails to exceed its
+reference value; an eigenvalue further down the series that rises above its own
+reference again therefore adds no factor. Because the average simulated
+eigenvalue is a lower reference than the percentile, \code{"means"} tends to retain
+more factors than the more conservative \code{"percentile"} rule (Glorfeld, 1995).}
 
 \item{n_factors}{numeric. Number of factors to extract if "EFA" is included in
 \code{eigen_type}. Default is 1.}
@@ -104,11 +106,11 @@ An object of class \code{efa_retention} (see \code{\link[=print.efa_retention]{p
 \item{n_factors}{A named numeric vector with the suggested number of factors for
 each requested eigenvalue type (\code{"PCA"}, \code{"SMC"}, and/or \code{"EFA"}). These are
 \code{NA} when no real data are supplied (i.e. only \code{N} and \code{n_vars} are given). When
-every real eigenvalue exceeds its reference (no crossing is found), all \code{n_vars}
-components are retained and a warning is issued.}
-\item{results}{A list with one record per eigenvalue type, each holding the real
-eigenvalues (when real data were supplied) and the simulated reference
-eigenvalues (means and percentiles) used for printing and plotting.}
+every observed eigenvalue exceeds its reference value (no crossing is found), all
+\code{n_vars} components are retained and a warning is issued.}
+\item{results}{A list with one record per eigenvalue type, each holding the
+observed eigenvalues (when real data were supplied) and the simulated reference
+values (means and percentiles) used for printing and plotting.}
 \item{settings}{A list of the settings used.}
 }
 \description{

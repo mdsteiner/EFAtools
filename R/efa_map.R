@@ -30,12 +30,28 @@
 #'   Velicer, Eaton, and Fava (2000) describe.
 #' }
 #'
+#' Both criteria are returned for every call and they can suggest different numbers
+#' of factors on the same correlation matrix. Both are in use in the literature and
+#' neither is treated as the default here, so be sure to state which of the two you
+#' report, as you would for any other analysis choice.
+#'
 #' MAP is most dependable when the components are well determined, that is with many
 #' indicators per factor and substantial loadings. It has a well-documented tendency
 #' to under-extract, particularly with few indicators per factor or weak loadings
 #' (Zwick & Velicer, 1986; Auerswald & Moshagen, 2019), so it is best read as a lower
 #' bound and paired with a criterion that errs in the other direction, such as the
 #' Kaiser-Guttman criterion ([efa_kgc()]).
+#'
+#' The criterion is evaluated over \eqn{m = 0, \ldots, p - 1}. Each step standardizes
+#' the partial covariance matrix by its residual standard deviations, which requires
+#' every residual variance to stay positive. Partialling out all but one component
+#' leaves a rank-one residual, so the final point \eqn{m = p - 1} is undefined for
+#' most correlation matrices and is routinely returned as `NA`. A residual variance
+#' can also reach zero earlier, most often on a near-singular matrix; the search then
+#' stops there, the criterion values that could be computed are kept, the remaining
+#' values stay `NA`, and a warning (class `efa_map_truncated`) reports how far the
+#' grid was searched. In that case the suggested \eqn{m} is the minimum over the
+#' evaluated range only, so it should be read together with the returned series.
 #'
 #' A non-positive-definite input correlation matrix (e.g. from sampling error) is
 #' smoothed with [psych::cor.smooth()].
@@ -56,7 +72,8 @@
 #'   \item `n_factors`: A named numeric vector (`"TR2"`, `"TR4"`) with the index
 #'   \eqn{m} that minimizes the original (TR2) and revised (TR4) MAP criterion.
 #'   \item `results`: A list with one record per criterion, each holding the
-#'   criterion values over \eqn{m}.
+#'   criterion values over \eqn{m} and, in `m_last`, the largest \eqn{m} at which
+#'   the criterion could be evaluated (see details).
 #'   \item `settings`: A list containing `use` and `cor_method`.
 #' }
 #'
@@ -108,7 +125,7 @@ efa_map <- function(x,
   p <- ncol(R)
 
   # set up m_grid
-  m_max <- p - 1
+  m_max <- p - 1L
   ms <- 0:m_max
   criteria <- matrix(NA_real_, nrow = p, ncol = 2)
   colnames(criteria) <- c("TR2 (orig. MAP)", "TR4 (revised MAP)")
@@ -134,6 +151,13 @@ efa_map <- function(x,
   # m=0, Rstar = R
   criteria[1, ] <- map_from_partials(R)
 
+  # Largest m at which the criterion could be evaluated, and whether that stop cut
+  # the grid short. Partialling out all but one component leaves a rank-one residual,
+  # so the final point m = p - 1 is undefined for most matrices; only a stop before
+  # that shortens the searched range in a way the user needs to know about.
+  m_last <- m_max
+  truncated <- FALSE
+
   # run through ms
   for (m in seq_len(m_max)) {
 
@@ -145,6 +169,8 @@ efa_map <- function(x,
     d <- diag(Cm)
     # Guard against zero/negative residual variances (can happen at very high m or numerical issues)
     if (any(!is.finite(d)) || any(d <= 1e-5)) {
+      m_last <- m - 1L
+      truncated <- m < m_max
       break
     }
     # D^(-1/2) to standardize to correlation matrix
@@ -155,6 +181,14 @@ efa_map <- function(x,
 
   }
 
+  if (isTRUE(truncated)) {
+    cli::cli_warn(
+      c("The MAP criterion could only be evaluated up to {m_last} partialled component{?s} of {m_max}.",
+        "i" = "A residual variance reached zero there, so the criterion is {.code NA} beyond that point and the suggestion is the minimum over the range that could be computed.",
+        "i" = "A stop well before the end of the grid usually indicates a near-singular correlation matrix."),
+      class = "efa_map_truncated"
+    )
+  }
 
   n_factors_TR2 <- ms[which.min(criteria[, "TR2 (orig. MAP)"])]
   n_factors_TR4 <- ms[which.min(criteria[, "TR4 (revised MAP)"])]
@@ -164,16 +198,21 @@ efa_map <- function(x,
   results <- list(
     list(name = "TR2", label = "Original implementation (TR2)",
          n_factors = n_factors_TR2, plot_type = "none",
-         x = ms, y = criteria[, "TR2 (orig. MAP)"]),
+         x = ms, y = criteria[, "TR2 (orig. MAP)"], m_last = m_last),
     list(name = "TR4", label = "Revised implementation (TR4)",
          n_factors = n_factors_TR4, plot_type = "none",
-         x = ms, y = criteria[, "TR4 (revised MAP)"])
+         x = ms, y = criteria[, "TR4 (revised MAP)"], m_last = m_last)
   )
 
   out <- .new_efa_retention(
     "MAP",
     results = results,
-    settings = list(use = use, cor_method = cor_method)
+    settings = list(use = use, cor_method = cor_method),
+    note = if (isTRUE(truncated)) {
+      paste0("The criterion could only be evaluated up to ", m_last, " of ",
+             m_max, " partialled components; the suggestion is the minimum over ",
+             "that range, not over the full grid.")
+    }
   )
 
   return(out)

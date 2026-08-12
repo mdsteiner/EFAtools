@@ -38,10 +38,12 @@
 #'  factors to retain. Default is `"means"`, which will use the average
 #'  simulated eigenvalues. `"percentile"`, uses the percentiles specified
 #'  in percent. `"crawford"` uses the 95th percentile for the first factor
-#'  and the mean afterwards (based on Crawford et al, 2010). The `"means"` rule
-#'  retains a factor whenever its real eigenvalue exceeds the average simulated
-#'  one and thus tends to retain more factors than the more conservative
-#'  `"percentile"` rule (Glorfeld, 1995).
+#'  and the mean afterwards (based on Crawford et al, 2010). All three rules retain
+#'  the factors up to the first observed eigenvalue that fails to exceed its
+#'  reference value; an eigenvalue further down the series that rises above its own
+#'  reference again therefore adds no factor. Because the average simulated
+#'  eigenvalue is a lower reference than the percentile, `"means"` tends to retain
+#'  more factors than the more conservative `"percentile"` rule (Glorfeld, 1995).
 #' @param n_factors numeric. Number of factors to extract if "EFA" is included in
 #' `eigen_type`. Default is 1.
 #' @param estimate_control an [estimate_control()] object with the estimation settings for the
@@ -87,11 +89,11 @@
 #' \item{n_factors}{A named numeric vector with the suggested number of factors for
 #'   each requested eigenvalue type (`"PCA"`, `"SMC"`, and/or `"EFA"`). These are
 #'   `NA` when no real data are supplied (i.e. only `N` and `n_vars` are given). When
-#'   every real eigenvalue exceeds its reference (no crossing is found), all `n_vars`
-#'   components are retained and a warning is issued.}
-#' \item{results}{A list with one record per eigenvalue type, each holding the real
-#'   eigenvalues (when real data were supplied) and the simulated reference
-#'   eigenvalues (means and percentiles) used for printing and plotting.}
+#'   every observed eigenvalue exceeds its reference value (no crossing is found), all
+#'   `n_vars` components are retained and a warning is issued.}
+#' \item{results}{A list with one record per eigenvalue type, each holding the
+#'   observed eigenvalues (when real data were supplied) and the simulated reference
+#'   values (means and percentiles) used for printing and plotting.}
 #' \item{settings}{A list of the settings used.}
 #'
 #' @source Braeken, J., & van Assen, M. A. (2017). An empirical Kaiser criterion.
@@ -423,7 +425,7 @@ efa_parallel <- function(x = NULL,
     }
     results[[et]] <- list(
       name = et,
-      label = paste0(et, " eigenvalues"),
+      label = et,
       n_factors = n_fac,
       plot_type = "eigen",
       x = seq_len(n_vars),
@@ -437,8 +439,8 @@ efa_parallel <- function(x = NULL,
     "PARALLEL",
     results = unname(results),
     settings = settings,
-    subtitle = paste0("Eigenvalues found using ", cli::ansi_collapse(eigen_type),
-                      "; ", n_datasets, " simulated datasets."),
+    subtitle = .eigen_subtitle(eigen_type,
+                               paste0(n_datasets, " simulated datasets")),
     note = if (isTRUE(x_dat)) {
       paste0("Number of factors retained using the \"", decision_rule,
              "\" decision rule.")
@@ -572,7 +574,7 @@ if (decision_rule == "crawford") {
 
 }
 
-  # When every real eigenvalue exceeds its reference the rule finds no crossing
+  # When every observed eigenvalue exceeds its reference the rule finds no crossing
   # (`which()` is empty, so the index is NA). Every dimension then sits above the
   # noise reference, so retain all tested components (the same "all-exceed"
   # convention as the empirical Kaiser criterion in [efa_ekc()]) and flag the boundary
@@ -580,7 +582,7 @@ if (decision_rule == "crawford") {
   if (is.na(n_fac)) {
     n_fac <- length(eigvals_real)
     cli::cli_warn(
-      c("All real eigenvalues exceeded the parallel analysis reference; no crossing was found.",
+      c("All observed eigenvalues exceeded their parallel analysis reference value; no crossing was found.",
         "i" = "Retaining all {n_fac} component{?s}. This often indicates a near-singular or highly collinear correlation matrix; interpret the suggestion with caution."),
       class = "efa_parallel_no_crossing"
     )
