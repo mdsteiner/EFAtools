@@ -8,8 +8,10 @@ colnames(mat_s) <- c("a", "b")
 mat_L <- matrix(c(0, 0, 0, 1), ncol = 2)
 colnames(mat_L) <- c("A", "B")
 
-int <- efa_compare(1:10, 1:10)
-dec <- efa_compare(c(.1, .2), c(.1, .1))
+# Vector fixtures ask for no reordering explicitly: the default "congruence" does not
+# apply to vectors and warns, which is asserted where it belongs rather than here.
+int <- efa_compare(1:10, 1:10, reorder = "none")
+dec <- efa_compare(c(.1, .2), c(.1, .1), reorder = "none")
 matr <- efa_compare(matrix(c(1,1,1,2), ncol = 2), matrix(c(1,1,1,1), ncol = 2))
 
 SPSS_PAF <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
@@ -68,8 +70,8 @@ test_that("output class and dimensions are correct", {
   expect_type(int$max_abs_diff, "integer")
   expect_type(int$max_dec, "double")
   expect_type(int$are_equal, "double")
-  expect_equal(int$diff_corres, NA)
-  expect_equal(int$diff_corres_cross, NA)
+  expect_identical(int$diff_corres, NA_integer_)
+  expect_identical(int$diff_corres_cross, NA_integer_)
   expect_type(int$g, "double")
   expect_type(int$settings, "list")
 
@@ -80,8 +82,8 @@ test_that("output class and dimensions are correct", {
   expect_type(dec$max_abs_diff, "double")
   expect_type(dec$max_dec, "integer")
   expect_type(dec$are_equal, "double")
-  expect_equal(dec$diff_corres, NA)
-  expect_equal(dec$diff_corres_cross, NA)
+  expect_identical(dec$diff_corres, NA_integer_)
+  expect_identical(dec$diff_corres_cross, NA_integer_)
   expect_type(dec$g, "double")
   expect_type(dec$settings, "list")
 
@@ -140,8 +142,8 @@ test_that("output class and dimensions are correct", {
   expect_type(load_F1$max_abs_diff, "double")
   expect_type(load_F1$max_dec, "integer")
   expect_type(load_F1$are_equal, "double")
-  expect_type(load_F1$diff_corres, "double")
-  expect_type(load_F1$diff_corres_cross, "double")
+  expect_type(load_F1$diff_corres, "integer")
+  expect_type(load_F1$diff_corres_cross, "integer")
   expect_type(load_F1$g, "double")
   expect_type(load_F1$settings, "list")
 
@@ -223,8 +225,9 @@ test_that("efa_compare returns the correct values", {
   expect_equal(load_F1$max_dec, 15)
   expect_equal(load_F1$are_equal, 2)
   expect_equal(round(load_F1$g, 4), 0)
-  expect_equal(load_F1$diff_corres, 0)
-  expect_equal(load_F1$diff_corres_cross, 0)
+  # a single factor is not compared for correspondences, and says so
+  expect_identical(load_F1$diff_corres, NA_integer_)
+  expect_identical(load_F1$diff_corres_cross, NA_integer_)
 
   expect_equal(efa_compare(vec_s, vec_s[c(3, 1, 2)],
                        reorder = "names")$mean_abs_diff, 0)
@@ -232,6 +235,86 @@ test_that("efa_compare returns the correct values", {
                        reorder = "names")$mean_abs_diff, 0)
   expect_equal(efa_compare(psych_PAF$unrot_loadings,
                        psych_PAF$unrot_loadings[, c(3, 1, 2)])$mean_abs_diff, 0)
+})
+
+
+test_that("congruence reordering also covers a single column", {
+  # A one-factor solution is identified only up to the sign of its column, so two
+  # solutions differing only in that sign are the same solution and the congruence
+  # alignment -- which handles a single column -- must be applied to them too.
+  v <- matrix(c(.8, .7, .6), ncol = 1)
+
+  flipped <- efa_compare(v, -v, reorder = "congruence")
+  expect_equal(flipped$max_abs_diff, 0)
+  expect_equal(flipped$mean_abs_diff, 0)
+  # an already-aligned pair is left as it is
+  expect_equal(efa_compare(v, v, reorder = "congruence")$max_abs_diff, 0)
+  # and the sign difference is only visible where no reordering was asked for
+  expect_equal(efa_compare(v, -v, reorder = "none")$max_abs_diff, 1.6)
+})
+
+
+test_that("factor correspondences report NA whenever they were not compared", {
+  m <- matrix(c(.8, .1, .1, .7), ncol = 2)
+
+  # Every route that skips the comparison uses the same sentinel: a count of 0 there
+  # would read as "compared, and found to agree everywhere".
+  no_corres <- efa_compare(m, m, corres = FALSE)
+  expect_identical(no_corres$diff_corres, NA_integer_)
+  expect_identical(no_corres$diff_corres_cross, NA_integer_)
+
+  one <- efa_compare(matrix(c(.8, .7, .6), ncol = 1), matrix(c(.8, .7, .6), ncol = 1))
+  expect_identical(one$diff_corres, NA_integer_)
+  expect_identical(one$diff_corres_cross, NA_integer_)
+
+  vec <- efa_compare(c(.8, .7), c(.7, .6), reorder = "none")
+  expect_identical(vec$diff_corres, NA_integer_)
+  expect_identical(vec$diff_corres_cross, NA_integer_)
+
+  # ... while a comparison that did run and found no difference still reports 0
+  done <- efa_compare(m, m, reorder = "none")
+  expect_identical(done$diff_corres, 0L)
+  expect_identical(done$diff_corres_cross, 0L)
+
+  # and the report only carries the line where the comparison actually happened
+  expect_no_match(paste(cli::ansi_strip(format(no_corres)), collapse = " "),
+                  "correspondences", fixed = TRUE)
+  expect_match(paste(cli::ansi_strip(format(done)), collapse = " "),
+               "correspondences", fixed = TRUE)
+})
+
+
+test_that("vectors are told that congruence reordering does not apply to them", {
+  # The lengths compared below are of rendered cli output, so the width, colour, and
+  # unicode state have to be fixed for the comparison to mean anything.
+  local_reproducible_output()
+
+  # Vectors have no columns to permute, so the default reordering never runs. That
+  # is true whether or not they are named; only the pointer to reorder = "names"
+  # depends on names being available, since it is no use without them.
+  expect_warning(efa_compare(1:3, 1:3), class = "efa_compare_reorder_vectors")
+  expect_warning(efa_compare(vec_s, vec_s), class = "efa_compare_reorder_vectors")
+
+  unnamed <- tryCatch(efa_compare(1:3, 1:3), warning = identity)
+  named <- tryCatch(efa_compare(vec_s, vec_s), warning = identity)
+  expect_lt(nchar(unnamed$message), nchar(named$message))
+})
+
+
+test_that("reorder = 'names' orders matrix columns and leaves the rows alone", {
+  # Documented contract: names order the columns of a matrix (or the elements of a
+  # vector); matrix rows are assumed to be aligned already.
+  A <- matrix(1:6, 3, 2, dimnames = list(c("r1", "r2", "r3"), c("F2", "F1")))
+  B <- matrix(1:6, 3, 2, dimnames = list(c("r3", "r2", "r1"), c("F1", "F2")))
+
+  expect_equal(
+    efa_compare(A, B, reorder = "names")$diff,
+    matrix(c(3, 3, 3, -3, -3, -3), 3, 2,
+           dimnames = list(c("r1", "r2", "r3"), c("F1", "F2")))
+  )
+
+  # for a vector the elements themselves are reordered, so the same labels line up
+  expect_equal(efa_compare(vec_s, vec_s[c(3, 1, 2)], reorder = "names")$max_abs_diff, 0)
 })
 
 
@@ -297,7 +380,9 @@ test_that("errors etc. are thrown correctly", {
                class = "efa_compare_bad_input")
   expect_error(efa_compare(c(1, Inf), c(1, 2), reorder = "none"),
                class = "efa_compare_nonfinite")
-  expect_error(efa_compare(matrix(Inf), matrix(Inf)),
+  # a matrix bound for congruence reordering reports the non-finite value as a
+  # reordering failure instead (pinned below); every other route reports it here
+  expect_error(efa_compare(matrix(Inf), matrix(Inf), reorder = "none"),
                class = "efa_compare_nonfinite")
   expect_error(efa_compare(c(1, 2), c(1, 2), thresh = -0.1), "not >= 0")
 
@@ -328,6 +413,11 @@ test_that("errors etc. are thrown correctly", {
   # error rather than a non-finite/solver abort from the alignment internals.
   m_inf <- matrix(c(Inf, 0.5, 0.5, 0.8, 0.6, 0.7), ncol = 2)
   expect_error(efa_compare(m_inf, m_inf, reorder = "congruence", corres = FALSE),
+               class = "efa_compare_congruence_na")
+  # ... and a single column takes the same branch, so it must report the same way
+  # rather than falling through to the generic non-finite abort
+  expect_error(efa_compare(m_inf[, 1, drop = FALSE], m_inf[, 1, drop = FALSE],
+                           reorder = "congruence", corres = FALSE),
                class = "efa_compare_congruence_na")
   m_big <- matrix(c(1e200, 1e200, 1e200, 0.8, 0.6, 0.7), ncol = 2)
   expect_error(efa_compare(m_big, m_big, reorder = "congruence", corres = FALSE),
@@ -505,12 +595,12 @@ ref_compare_loadings <- function(x, y, thresh = 0.3, na.rm = FALSE, corres = TRU
         diff_corres_cross <- corres_list$diff_corres_cross
       }
     } else {
-      diff_corres <- 0
-      diff_corres_cross <- 0
+      diff_corres <- NA_integer_
+      diff_corres_cross <- NA_integer_
     }
   } else if (inherits(x, c("numeric", "integer"))) {
-    diff_corres <- NA
-    diff_corres_cross <- NA
+    diff_corres <- NA_integer_
+    diff_corres_cross <- NA_integer_
   }
 
   diff <- x - y

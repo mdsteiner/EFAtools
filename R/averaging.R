@@ -157,6 +157,14 @@
 
 }
 
+# Range endpoints of a summary that may have no value at all. `min()`/`max()` with
+# `na.rm = TRUE` warn and return -Inf/Inf for an entirely missing input, which happens
+# routinely: a PAF-only grid carries no chi-square-based fit index, so those columns are
+# missing for every solution. A summary with nothing to summarise is NA, not an infinite
+# bound, so the endpoints are produced that way here rather than repaired afterwards.
+.range_min <- function(x) if (all(is.na(x))) NA_real_ else min(x, na.rm = TRUE)
+.range_max <- function(x) if (all(is.na(x))) NA_real_ else max(x, na.rm = TRUE)
+
 ### average arrays
 .average_values <- function(vars_accounted, L, L_corres, h2, phi, extract_phi,
                               averaging, trim, for_grid, df, ind_names) {
@@ -204,8 +212,8 @@
   row.names(L_corres_av) <- ind_names
   colnames(L_corres_av) <- f_names
 
-  L_min <- apply(L, 1:2, min, na.rm = TRUE)
-  L_max <- apply(L, 1:2, max, na.rm = TRUE)
+  L_min <- apply(L, 1:2, .range_min)
+  L_max <- apply(L, 1:2, .range_max)
   L_range <- L_max - L_min
   L_sd <- apply(L, 1:2, stats::sd, na.rm = TRUE)
   rownames(L_av) <- ind_names
@@ -224,8 +232,8 @@
 
 
 
-  vars_accounted_min <- apply(vars_accounted, 1:2, min, na.rm = TRUE)
-  vars_accounted_max <- apply(vars_accounted, 1:2, max, na.rm = TRUE)
+  vars_accounted_min <- apply(vars_accounted, 1:2, .range_min)
+  vars_accounted_max <- apply(vars_accounted, 1:2, .range_max)
   vars_accounted_range <- vars_accounted_max - vars_accounted_min
   vars_accounted_sd <- apply(vars_accounted, 1:2, stats::sd, na.rm = TRUE)
 
@@ -247,8 +255,8 @@
   colnames(vars_accounted_sd) <- f_names
 
 
-  h2_min <- apply(h2, 2, min, na.rm = TRUE)
-  h2_max <- apply(h2, 2, max, na.rm = TRUE)
+  h2_min <- apply(h2, 2, .range_min)
+  h2_max <- apply(h2, 2, .range_max)
   h2_range <- h2_max - h2_min
   h2_sd <- apply(h2, 2, stats::sd, na.rm = TRUE)
   names(h2_av) <- ind_names
@@ -258,15 +266,14 @@
   names(h2_sd) <- ind_names
 
 
-  fit_min <- apply(for_grid, 2, min, na.rm = TRUE)
-  fit_max <- apply(for_grid, 2, max, na.rm = TRUE)
+  fit_min <- apply(for_grid, 2, .range_min)
+  fit_max <- apply(for_grid, 2, .range_max)
   fit_range <- fit_max - fit_min
   fit_sd <- apply(for_grid, 2, stats::sd, na.rm = TRUE)
 
+  # colMeans()/mean() of an entirely missing column is NaN; the endpoints are already
+  # NA, and the range inherits it.
   fit_av[is.nan(fit_av)] <- NA
-  fit_min[is.infinite(fit_min)] <- NA
-  fit_max[is.infinite(fit_max)] <- NA
-  fit_range[is.infinite(fit_range)] <- NA
 
   # df is the same for every averaged solution (fixed m and n_factors), so its
   # dispersion is zero: sd and range of a constant are 0, while average/min/max
@@ -282,8 +289,8 @@
   )
 
   if (isTRUE(extract_phi)) {
-    phi_min <- apply(phi, 1:2, min, na.rm = TRUE)
-    phi_max <- apply(phi, 1:2, max, na.rm = TRUE)
+    phi_min <- apply(phi, 1:2, .range_min)
+    phi_max <- apply(phi, 1:2, .range_max)
     phi_range <- phi_max - phi_min
     phi_sd <- apply(phi, 1:2, stats::sd, na.rm = TRUE)
     # All five summaries are factor x factor, so they take the same dimnames.

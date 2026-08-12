@@ -31,8 +31,12 @@ factor analysis output to compare to x.}
 \item{reorder}{character. Whether and how elements / columns should be
 reordered. If "congruence" (default), the columns of \code{y} are matched to those
 of \code{x} by an optimal one-to-one assignment that maximizes Tucker's congruence
-coefficient, so each factor is matched exactly once; if "names", objects are
-reordered according to their names; if "none", no reordering is done.}
+coefficient, so each factor is matched exactly once; with a single column this
+reduces to matching its sign. It applies to matrices only, and warns when \code{x}
+and \code{y} are vectors. If "names", the columns of a matrix -- or the elements of
+a vector -- are put in alphabetical order of their names; the rows of a matrix
+are assumed to be aligned already and are left untouched. If "none", no
+reordering is done.}
 
 \item{corres}{logical. Whether factor correspondences should be compared if a
 matrix is entered.}
@@ -98,9 +102,13 @@ are reflected in \code{diff} and the mean / median / min / max absolute differen
 means there is no agreement at all: either they already differ in their integer
 parts, or \code{na.rm = FALSE} and an element is missing.}
 \item{diff_corres}{The number of differing variable-to-factor correspondences
-between x and y, when only the highest loading is considered.}
+between x and y, when only the highest loading is considered. \code{NA} whenever the
+correspondences were not compared: for vector input, for a matrix with a single
+column, with \code{corres = FALSE}, and when a loading is missing under
+\code{na.rm = FALSE}.}
 \item{diff_corres_cross}{The number of differing variable-to-factor correspondences
-between x and y when all loadings \verb{>= thresh} are considered.}
+between x and y when all loadings \verb{>= thresh} are considered. \code{NA} under the same
+conditions as \code{diff_corres}.}
 \item{g}{The root mean squared distance (RMSE) between x and y.}
 \item{settings}{List of the settings used.}
 }

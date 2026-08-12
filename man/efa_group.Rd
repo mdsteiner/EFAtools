@@ -37,8 +37,9 @@ data. Default is \code{NA}.}
 
 \item{reference_group}{The group to align the others to (a group name or an
 integer index). If \code{NULL} (default), orthogonal and unrotated solutions use
-the symmetric consensus target; oblique solutions fall back to the first
-group as reference. Supplying a value forces the reference alignment.}
+the symmetric consensus target; oblique solutions with more than one factor
+fall back to the first group as reference. Supplying a value forces the
+reference alignment.}
 
 \item{b_boot}{numeric. The number of non-parametric bootstrap replicates used to
 form percentile confidence intervals for the between-group Tucker congruences.
@@ -183,8 +184,10 @@ and a \code{"bifactorT"} request with two factors, whose criterion is identicall
 zero with a single group factor -- the principal-axes orientation of the
 target is used instead. Either way the columns are ordered by decreasing sum
 of squares and signed by their column sums, and the shared orientation, and
-hence every reported congruence, difference, and flag, is independent of the
-order in which the groups are supplied.
+hence every reported congruence, difference, and flag, does not depend on the
+order in which the groups are supplied -- up to the convergence tolerance of
+the consensus iteration, which is set tight enough that the residual is
+several orders of magnitude below the precision the loadings are reported to.
 \item \strong{Reference}: every group's loadings are aligned by Procrustes rotation to
 one reference group's loadings, which are kept fixed. This path is used when
 \code{reference_group} is given, and is used automatically for oblique rotations

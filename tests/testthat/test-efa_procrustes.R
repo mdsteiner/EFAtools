@@ -164,23 +164,65 @@ test_that("efa_procrustes rejects invalid matrices and oblique controls", {
 })
 
 
-test_that("an asymmetric S warns but still rotates", {
+test_that("S is rejected unless it is crossprod(A)", {
+  A <- unrot_loadings(2)
+  target <- rot_loadings(1)
+  S_ok <- crossprod(A)
+  # symmetric, correctly sized, and a perfectly plausible slip: the cross-product of a
+  # different group's loadings. It enters the oblique criterion and its gradient, so
+  # the solver would minimize a different problem and report that problem's value.
+  S_wrong <- crossprod(unrot_loadings(1))
+  S_asym <- S_ok
+  S_asym[1, 2] <- S_asym[1, 2] + 1
+
+  expect_error(efa_procrustes(A, target, rotation = "oblique", S = S_wrong),
+               class = "efa_bad_crossprod")
+  expect_error(efa_procrustes(A, target, rotation = "oblique", S = S_asym),
+               class = "efa_bad_crossprod")
+  expect_error(efa_procrustes(A, target, rotation = "oblique", S = S_ok[-1, -1]),
+               class = "efa_dim_mismatch")
+
+  # the correct cross-product is accepted, and is only the shortcut it claims to be
+  fit_S <- efa_procrustes(A, target, rotation = "oblique", S = S_ok)
+  fit_internal <- efa_procrustes(A, target, rotation = "oblique")
+  expect_equal(fit_S$value, fit_internal$value, tolerance = 1e-8)
+  expect_equal(fit_S$loadings, fit_internal$loadings, tolerance = 1e-6)
+})
+
+test_that("S is left unchecked, and unused, on the paths that never consume it", {
+  A <- unrot_loadings(2)
+  target <- rot_loadings(1)
+  S_wrong <- crossprod(unrot_loadings(1))
+  A_1 <- A[, 1, drop = FALSE]
+  target_1 <- target[, 1, drop = FALSE]
+
+  # Asserted as equality with the same call without S, not merely as the absence of
+  # an error: a wrong S must not reach the result on these paths either.
+
+  # orthogonal alignment is closed-form and never sees S ...
+  expect_equal(efa_procrustes(A, target, rotation = "orthogonal", S = S_wrong),
+               efa_procrustes(A, target, rotation = "orthogonal"))
+  # ... a one-factor oblique request is answered with the orthogonal solution ...
+  expect_equal(efa_procrustes(A_1, target_1, rotation = "oblique",
+                              S = S_wrong[1, 1, drop = FALSE]),
+               efa_procrustes(A_1, target_1, rotation = "oblique"))
+  # ... and Kaiser normalization changes the loadings, so the solver recomputes the
+  # cross-product on the normalized matrix regardless of what was supplied.
+  expect_equal(efa_procrustes(A, target, rotation = "oblique", S = S_wrong,
+                              oblique_normalize = TRUE, oblique_maxit = 5),
+               efa_procrustes(A, target, rotation = "oblique",
+                              oblique_normalize = TRUE, oblique_maxit = 5))
+})
+
+test_that("the native oblique solver uses only the symmetric part of S", {
   A <- unrot_loadings(2)
   S <- crossprod(A)
   S[1, 2] <- S[1, 2] + 1
-
-  # S should normally be crossprod(A); an asymmetric one is almost always a mistake.
-  # The quadratic form depends only on its symmetric part, so the warned input must
-  # follow the same objective and gradient as that part explicitly.
   S_sym <- S / 2 + t(S) / 2
-  expect_warning(fit <- efa_procrustes(A, rot_loadings(1), rotation = "oblique", S = S),
-                 class = "efa_not_symmetric")
-  fit_sym <- efa_procrustes(A, rot_loadings(1), rotation = "oblique", S = S_sym)
-  expect_equal(fit$value, fit_sym$value)
-  expect_equal(fit$loadings, fit_sym$loadings)
 
-  # The registered native entry point enforces the same objective/gradient contract
-  # even when called directly without the R validator.
+  # The quadratic form depends only on the symmetric part of S, and the analytic
+  # gradient assumes that same matrix. The registered native entry point enforces
+  # this contract when called directly, without the R validator above it.
   native <- .oblique_procrustes(A, rot_loadings(1), S_r = S)
   native_sym <- .oblique_procrustes(A, rot_loadings(1), S_r = S_sym)
   expect_equal(native$value, native_sym$value)

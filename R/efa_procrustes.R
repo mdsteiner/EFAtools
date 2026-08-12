@@ -29,10 +29,16 @@
 #' @param A Numeric loading matrix to be aligned.
 #' @param Target Numeric target matrix with the same dimensions as `A`.
 #' @param rotation Character string, either `"orthogonal"` or `"oblique"`.
-#' @param S Optional `k x k` cross-product matrix `crossprod(A)`. Supplying this
-#'   is useful when the same `A` is rotated repeatedly. `S` is used only when
-#'   `oblique_normalize = FALSE`; if Kaiser normalization is requested, the
-#'   cross-product must be recomputed on the normalized matrix.
+#' @param S Optional `k x k` cross-product matrix `crossprod(A)`, kept for
+#'   compatibility. It enters both the oblique criterion and its gradient, so any
+#'   other matrix would minimize a different criterion: where `S` is used it is
+#'   checked against `crossprod(A)` and must agree with it up to a relative
+#'   tolerance of `1e-8`. That check forms `crossprod(A)` itself, so passing `S`
+#'   no longer avoids any work: omitting it gives the same result for slightly
+#'   less. `S` is used, and therefore checked, only on the oblique path with more
+#'   than one factor and `oblique_normalize = FALSE`; if Kaiser normalization is
+#'   requested, the cross-product must be recomputed on the normalized matrix and
+#'   `S` is ignored.
 #' @param T_init Optional `k x k` starting transformation matrix for the oblique
 #'   solver. Its columns are normalized internally, and the normalized matrix must
 #'   be well enough conditioned to define a proper factor correlation matrix: its
@@ -59,13 +65,38 @@
 #' @param oblique_triage_improve_tol Non-negative scalar. Relative improvement
 #'   required for a triaged start to be promoted to full optimization.
 #'
-#' @returns A list containing aligned `loadings`, transformation matrix `T`,
-#'   factor intercorrelation matrix `Phi`, target criterion `value`, convergence
-#'   diagnostics, line-search diagnostics, and multi-start summaries. Row and
-#'   column names are preserved where possible. When `oblique_normalize = TRUE`
-#'   the returned `loadings` are back-transformed to the original scale, but
-#'   `value` is the criterion on the Kaiser-normalized loadings, so it is not
-#'   `0.5 * sum((loadings - Target)^2)`.
+#' @returns A list. Every path returns the following components:
+#'
+#' \item{loadings}{Aligned loading matrix.}
+#' \item{T}{Transformation matrix.}
+#' \item{Phi}{Factor intercorrelation matrix; the identity for orthogonal and
+#'   one-factor alignment.}
+#' \item{value}{Target criterion at the returned solution.}
+#' \item{convergence}{Logical; `TRUE` for the closed-form orthogonal solution.}
+#' \item{valid}{Logical; whether the transformation defines an admissible `Phi`.}
+#' \item{iterations}{Number of solver iterations; `0` for the closed-form
+#'   orthogonal solution.}
+#' \item{kappa_T}{Condition number of `T`; a constant `1` on the orthogonal path.}
+#' \item{Table}{Iteration history with columns `iter`, `f`, `log10_s`, and `step`;
+#'   a single placeholder row on the orthogonal path.}
+#' \item{method}{`"orthogonal_procrustes"`, `"oblique_procrustes"`, or
+#'   `"single_factor_procrustes"` for a one-factor oblique request.}
+#' \item{line_search_failed}{Logical line-search diagnostic.}
+#' \item{best_start_index, all_start_indices, all_values, all_converged,
+#'   all_iterations}{Multi-start summary of the starts that were fully
+#'   optimized; each has a single entry when no random starts were used.}
+#'
+#' The oblique solver additionally returns `screen_start_indices` and
+#' `screen_values` (the starts kept by cheap objective screening and their
+#' criterion values) together with the counts `n_random_starts`, `n_screened`,
+#' `n_triaged`, and `n_fully_optimized`. These six components are absent for
+#' `rotation = "orthogonal"` and for one-factor models, which are aligned with the
+#' orthogonal solution.
+#'
+#' Row and column names are preserved where possible. When
+#' `oblique_normalize = TRUE` the returned `loadings` are back-transformed to the
+#' original scale, but `value` is the criterion on the Kaiser-normalized loadings,
+#' so it is not `0.5 * sum((loadings - Target)^2)`.
 #'
 #' @family factor rotation
 #'
@@ -126,7 +157,15 @@ efa_procrustes <- function(A,
     oblique_triage_improve_tol = oblique_triage_improve_tol
   )
 
-  S_arg <- if (is.null(S)) NULL else .procrustes_validate_crossprod(S, k)
+  # Under Kaiser normalization the solver works on the row-weighted loadings and
+  # recomputes the cross-product itself, so a supplied `S` is neither consumed nor
+  # checked there; on the orthogonal and one-factor paths the function has already
+  # returned above.
+  S_arg <- if (is.null(S) || controls$oblique_normalize) {
+    NULL
+  } else {
+    .procrustes_validate_crossprod(S, k, A)
+  }
   T_arg <- if (is.null(T_init)) NULL else .procrustes_validate_t_init(T_init, k)
 
   # Warm-start the oblique solver from the closed-form orthogonal Procrustes

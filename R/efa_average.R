@@ -723,13 +723,13 @@ efa_average <- function(x, n_factors, N = NA, estimator = "PAF", rotation = "pro
     if (isTRUE(show_progress)) {
       cli::cli_progress_step("Averaging data")
     }
-    av_list <- suppressWarnings(
-      .average_values(re_list$vars_accounted, re_list$L, re_list$L_corres,
-                      ext_list$h2, re_list$phi, ext_list$extract_phi, averaging,
-                      trim, ext_list$for_grid[, c("chisq", "p_chi", "caf", "cfi",
-                                                  "rmsea", "aic", "bic", "srmr",
-                                                  "tli", "ecvi", "rmsr")], df,
-                      colnames(R)))
+    av_list <- .average_values(re_list$vars_accounted, re_list$L, re_list$L_corres,
+                               ext_list$h2, re_list$phi, ext_list$extract_phi,
+                               averaging, trim,
+                               ext_list$for_grid[, c("chisq", "p_chi", "caf", "cfi",
+                                                     "rmsea", "aic", "bic", "srmr",
+                                                     "tli", "ecvi", "rmsr")], df,
+                               colnames(R))
 
   }
 

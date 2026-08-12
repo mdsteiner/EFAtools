@@ -408,12 +408,15 @@ test_that("COMPARE() forwards to efa_compare() identically", {
 })
 
 test_that("COMPARE() adds no condition and stays transparent", {
-  expect_no_condition(COMPARE(1:10, 1:10))
+  expect_no_condition(COMPARE(matrix(c(1, 1, 1, 2), ncol = 2),
+                              matrix(c(1, 1, 1, 1), ncol = 2)))
 
-  # it neither swallows nor adds to the conditions efa_compare() itself raises: a named
-  # vector under the default congruence reordering still warns that it cannot be reordered
+  # it neither swallows nor adds to the conditions efa_compare() itself raises: a
+  # vector under the default congruence reordering still warns that it cannot be
+  # reordered, named or not
   expect_warning(COMPARE(c(a = 1, b = 2, c = 4), c(a = 1, b = 2, c = 4)),
                  class = "efa_compare_reorder_vectors")
+  expect_warning(COMPARE(1:10, 1:10), class = "efa_compare_reorder_vectors")
 })
 
 # The Procrustes alignment returns a plain, unclassed list, so the old name has no class

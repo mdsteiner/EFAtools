@@ -144,13 +144,13 @@ format.efa_compare <- function(x, digits = NULL, m_red = NULL, range_red = NULL,
     }
 
     # Differing indicator-to-factor correspondences. Only reported when they were
-    # actually compared: they are undefined for vector input (NA), and both
-    # `corres = FALSE` and a single-factor matrix skip the comparison and leave a
-    # placeholder 0, which must not be printed as if the two solutions had been found to
-    # agree. The single-factor case is recognised the same way `.compare_loadings()`
-    # decides to skip it, on the number of columns compared. Green when they do agree
-    # (0 differing), red otherwise -- mirroring the "smaller difference reads as a closer
-    # match" colouring of the statistics above.
+    # actually compared, which the NA sentinel records for every case that skips the
+    # comparison -- vector input, a single-factor matrix, `corres = FALSE`, and a
+    # missing loading under `na.rm = FALSE`. The remaining conditions restate the rule
+    # `.compare_loadings()` applies, so a hand-built or deserialized object carrying a
+    # count it never computed is still not printed as if its solutions had been found
+    # to agree. Green when they do agree (0 differing), red otherwise -- mirroring the
+    # "smaller difference reads as a closer match" colouring of the statistics above.
     if (isTRUE(corres) && !is.na(diff_corres) && is.matrix(diff) && ncol(diff) > 1L) {
       corres_style <- function(v) {
         .efa_style(v, if (v == 0) c("green", "bold") else c("red", "bold"))

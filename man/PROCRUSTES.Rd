@@ -28,10 +28,16 @@ PROCRUSTES(
 
 \item{rotation}{Character string, either \code{"orthogonal"} or \code{"oblique"}.}
 
-\item{S}{Optional \verb{k x k} cross-product matrix \code{crossprod(A)}. Supplying this
-is useful when the same \code{A} is rotated repeatedly. \code{S} is used only when
-\code{oblique_normalize = FALSE}; if Kaiser normalization is requested, the
-cross-product must be recomputed on the normalized matrix.}
+\item{S}{Optional \verb{k x k} cross-product matrix \code{crossprod(A)}, kept for
+compatibility. It enters both the oblique criterion and its gradient, so any
+other matrix would minimize a different criterion: where \code{S} is used it is
+checked against \code{crossprod(A)} and must agree with it up to a relative
+tolerance of \code{1e-8}. That check forms \code{crossprod(A)} itself, so passing \code{S}
+no longer avoids any work: omitting it gives the same result for slightly
+less. \code{S} is used, and therefore checked, only on the oblique path with more
+than one factor and \code{oblique_normalize = FALSE}; if Kaiser normalization is
+requested, the cross-product must be recomputed on the normalized matrix and
+\code{S} is ignored.}
 
 \item{T_init}{Optional \verb{k x k} starting transformation matrix for the oblique
 solver. Its columns are normalized internally, and the normalized matrix must

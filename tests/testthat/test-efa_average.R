@@ -105,6 +105,28 @@ test_that("efa_average runs end to end on a cheap grid (smoke test)", {
                   fixed = TRUE)
 })
 
+test_that("warnings raised while averaging reach the caller", {
+  # The averaging step must not be run under a blanket suppression: an entirely missing
+  # fit index is dealt with where the range is formed, so anything else the averaging
+  # raises is a real signal and has to surface. Captured before mocking so the stand-in
+  # can delegate to it instead of recursing.
+  real_average_values <- .average_values
+  testthat::local_mocked_bindings(
+    .average_values = function(...) {
+      cli::cli_warn("Something happened while averaging.",
+                    class = "efa_test_average_warning")
+      real_average_values(...)
+    }
+  )
+
+  expect_warning(
+    efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
+                estimator = c("PAF", "ML"), type = "EFAtools", rotation = "promax",
+                start_method = "psych", show_progress = FALSE),
+    class = "efa_test_average_warning"
+  )
+})
+
 test_that("an impossible N is rejected at the argument, not inside the grid", {
   # efa_average() runs every grid cell inside try(), so an N that efa_fit() refuses would
   # otherwise be recorded as a per-cell failure and surface as an unexplained

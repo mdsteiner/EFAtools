@@ -11,8 +11,12 @@
 #' @param reorder character. Whether and how elements / columns should be
 #' reordered. If "congruence" (default), the columns of `y` are matched to those
 #' of `x` by an optimal one-to-one assignment that maximizes Tucker's congruence
-#' coefficient, so each factor is matched exactly once; if "names", objects are
-#' reordered according to their names; if "none", no reordering is done.
+#' coefficient, so each factor is matched exactly once; with a single column this
+#' reduces to matching its sign. It applies to matrices only, and warns when `x`
+#' and `y` are vectors. If "names", the columns of a matrix -- or the elements of
+#' a vector -- are put in alphabetical order of their names; the rows of a matrix
+#' are assumed to be aligned already and are left untouched. If "none", no
+#' reordering is done.
 #' @param corres logical. Whether factor correspondences should be compared if a
 #'  matrix is entered.
 #' @param thresh numeric. The threshold to classify a pattern coefficient as substantial. Default is .3.
@@ -66,9 +70,13 @@
 #'  means there is no agreement at all: either they already differ in their integer
 #'  parts, or `na.rm = FALSE` and an element is missing.}
 #' \item{diff_corres}{The number of differing variable-to-factor correspondences
-#'  between x and y, when only the highest loading is considered.}
+#'  between x and y, when only the highest loading is considered. `NA` whenever the
+#'  correspondences were not compared: for vector input, for a matrix with a single
+#'  column, with `corres = FALSE`, and when a loading is missing under
+#'  `na.rm = FALSE`.}
 #' \item{diff_corres_cross}{The number of differing variable-to-factor correspondences
-#'  between x and y when all loadings `>= thresh` are considered.}
+#'  between x and y when all loadings `>= thresh` are considered. `NA` under the same
+#'  conditions as `diff_corres`.}
 #' \item{g}{The root mean squared distance (RMSE) between x and y.}
 #' \item{settings}{List of the settings used.}
 #'
@@ -173,8 +181,13 @@ efa_compare <- function(x,
     )
   }
 
+  # Matrices headed for congruence reordering are exempt: that branch reports a
+  # non-finite input as a reordering failure, which names the step that actually
+  # cannot proceed. The exemption has to cover every matrix the branch handles,
+  # single-column ones included, or the same input reports differently depending on
+  # how many columns it has.
   if ((any(is.infinite(x)) || any(is.infinite(y))) &&
-      !(is.matrix(x) && ncol(x) > 1L && identical(reorder, "congruence"))) {
+      !(is.matrix(x) && identical(reorder, "congruence"))) {
     cli::cli_abort(
       "{.arg x} and {.arg y} must not contain infinite values.",
       class = "efa_compare_nonfinite"
@@ -185,13 +198,16 @@ efa_compare <- function(x,
 
     n_factors <- ncol(x)
 
-    if (reorder == "congruence" && n_factors > 1) {
+    if (reorder == "congruence") {
       # Match y's columns to those of x with the shared congruence alignment: an
       # optimal one-to-one assignment that maximises the matched absolute Tucker
       # congruences and reflects signs accordingly. The linear assignment
       # guarantees a permutation (a greedy row-wise which.max could send two
       # x-factors to the same y column, duplicating one column and dropping
-      # another), and carries x's dimnames onto the realigned y.
+      # another), and carries x's dimnames onto the realigned y. A single column
+      # has nothing to permute but the same arbitrary sign as any other, so it
+      # goes through the alignment too: two one-factor solutions that differ only
+      # in the sign of their column are the same solution.
       #
       # Tucker's congruence is undefined for missing or non-finite inputs and for
       # zero/near-zero or non-finite congruences. Reject the former up front; map
@@ -235,13 +251,18 @@ efa_compare <- function(x,
 
   } else if (inherits(x, c("numeric", "integer"))) {
 
-    if (reorder == "congruence" && !is.null(names(x)) && !is.null(names(y))){
+    if (reorder == "congruence"){
 
-      cli::cli_warn(
-        c("{.arg reorder} was {.val congruence}, which only works for matrices; proceeding without reordering.",
-          "i" = "To reorder vectors, set {.code reorder = \"names\"}."),
-        class = "efa_compare_reorder_vectors"
-      )
+      # Congruence reordering needs columns to permute, so it does nothing here.
+      # That is true of any vector, named or not, and the default is
+      # `"congruence"` -- so the warning does not depend on the names. Only the
+      # pointer to the alternative does: `reorder = "names"` is no use to someone
+      # whose vectors carry no names.
+      msg <- "{.arg reorder} was {.val congruence}, which only works for matrices; proceeding without reordering."
+      if (!is.null(names(x)) && !is.null(names(y))) {
+        msg <- c(msg, "i" = "To reorder vectors, set {.code reorder = \"names\"}.")
+      }
+      cli::cli_warn(msg, class = "efa_compare_reorder_vectors")
 
     } else if (reorder == "names") {
 
@@ -305,8 +326,10 @@ efa_compare <- function(x,
 .compare_loadings <- function(x, y, thresh = 0.3, na.rm = FALSE, corres = TRUE,
                               decimals = TRUE) {
 
-  # factor correspondences are only defined for matrices; a single factor or a
-  # disabled comparison leaves nothing to disagree on, and vectors report NA.
+  # Factor correspondences need a matrix with more than one column, an enabled
+  # comparison, and no missing loading to work around. Wherever one of those is
+  # absent the correspondences were not compared, and the result must say so with
+  # NA: a count of 0 would read as "they were compared and agreed everywhere".
   if (inherits(x, "matrix")) {
     if (ncol(x) > 1 && isTRUE(corres)) {
       if (!na.rm && (anyNA(x) || anyNA(y))) {
@@ -318,12 +341,15 @@ efa_compare <- function(x,
         diff_corres_cross <- corres_list$diff_corres_cross
       }
     } else {
-      diff_corres <- 0
-      diff_corres_cross <- 0
+      # a single factor leaves nothing to disagree on, and `corres = FALSE` asked
+      # for no comparison at all
+      diff_corres <- NA_integer_
+      diff_corres_cross <- NA_integer_
     }
   } else {
-    diff_corres <- NA
-    diff_corres_cross <- NA
+    # a vector has no factors to correspond to
+    diff_corres <- NA_integer_
+    diff_corres_cross <- NA_integer_
   }
 
   # compute differences and statistics

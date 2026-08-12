@@ -31,8 +31,12 @@ factor analysis output to compare to x.}
 \item{reorder}{character. Whether and how elements / columns should be
 reordered. If "congruence" (default), the columns of \code{y} are matched to those
 of \code{x} by an optimal one-to-one assignment that maximizes Tucker's congruence
-coefficient, so each factor is matched exactly once; if "names", objects are
-reordered according to their names; if "none", no reordering is done.}
+coefficient, so each factor is matched exactly once; with a single column this
+reduces to matching its sign. It applies to matrices only, and warns when \code{x}
+and \code{y} are vectors. If "names", the columns of a matrix -- or the elements of
+a vector -- are put in alphabetical order of their names; the rows of a matrix
+are assumed to be aligned already and are left untouched. If "none", no
+reordering is done.}
 
 \item{corres}{logical. Whether factor correspondences should be compared if a
 matrix is entered.}

@@ -191,18 +191,33 @@
   out
 }
 
-.procrustes_validate_crossprod <- function(S, k) {
+# Validate the optional cross-product shortcut against the matrix it stands for.
+# `S` replaces `crossprod(A)` inside the compiled oblique objective and its analytic
+# gradient, so anything else makes the solver minimize a different criterion while
+# still reporting `convergence` and `valid`: the returned `value` then does not
+# measure the returned loadings and is not even bounded below by zero. Checking
+# costs the very O(p k^2) product the argument was meant to save, which is the
+# right trade against an iterative solver that performs hundreds of k x k
+# factorizations -- `S` survives as a compatibility argument, not an optimization.
+.procrustes_validate_crossprod <- function(S, k, A) {
   S <- .procrustes_as_matrix(S, "S")
   if (!identical(dim(S), c(k, k))) {
     cli::cli_abort("{.arg S} must be a {k} x {k} matrix.", class = "efa_dim_mismatch")
   }
-  if (max(abs(S - t(S))) > 1e-8 * max(1, max(abs(S)))) {
-    cli::cli_warn("{.arg S} is not symmetric; it should normally be {.code crossprod(A)}.",
-                  class = "efa_not_symmetric")
+  SA <- crossprod(A)
+  dev <- max(abs(S - SA))
+  if (dev > 1e-8 * max(1, max(abs(SA)))) {
+    cli::cli_abort(
+      c("{.arg S} must be {.code crossprod(A)}.",
+        "x" = "Largest absolute deviation from {.code crossprod(A)}: {signif(dev, 3)}.",
+        "i" = "Omit {.arg S} to have it computed from {.arg A}."),
+      class = "efa_bad_crossprod"
+    )
   }
   # The quadratic form depends only on the symmetric part of S, and its analytic
-  # gradient assumes that same matrix. Make the two agree for a warned-but-allowed
-  # asymmetric input; divide before adding to avoid overflow near double.xmax.
+  # gradient assumes that same matrix. `crossprod(A)` is symmetric and the check
+  # above admits only deviations far below the solver's tolerance, so symmetrizing
+  # cannot move the solution; divide before adding to avoid overflow near double.xmax.
   S / 2 + t(S) / 2
 }
 

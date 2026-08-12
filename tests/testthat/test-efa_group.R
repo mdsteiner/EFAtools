@@ -58,29 +58,17 @@ test_that("consensus alignment is invariant to the order of the groups", {
   # iteration -- i.e. on the order the groups are supplied in. The gauge is the simple
   # structure of the requested rotation (varimax here) evaluated on the consensus target,
   # and it removes that dependence: three genuinely different WJIV age bands are aligned
-  # in two group orders and must yield the same shared frame and statistics.
+  # in every group order and must yield the same shared frame and statistics.
   fit <- function(o) {
     efa_group(wj_trio[o], n_factors = 2, N = wj_trio_N[o],
               rotation = "varimax", invariance = TRUE)
   }
-  mg1 <- fit(c(1, 2, 3))
-  mg2 <- fit(c(3, 2, 1))
-
-  # The gauge fixes the shared frame, so each group's aligned loadings and the shared
-  # target match to the GPA convergence tolerance however the groups are ordered.
-  for (g in c("a", "b", "c")) {
-    expect_equal(mg1$loadings[[g]], mg2$loadings[[g]], tolerance = 1e-4,
-                 ignore_attr = TRUE)
-  }
-  expect_equal(mg1$target, mg2$target, tolerance = 1e-4, ignore_attr = TRUE)
-
-  # ... and hence every reported statistic. Matched congruences are indexed by group
-  # name, so they are directly comparable across orderings (and, being normalised, are
-  # tighter than the raw loadings).
-  for (pair in list(c("a", "b"), c("a", "c"), c("b", "c"))) {
-    expect_equal(mg1$congruence$matched[pair[1L], pair[2L], ],
-                 mg2$congruence$matched[pair[1L], pair[2L], ], tolerance = 1e-6)
-  }
+  # All six orders, not just the reversal: the centroid iteration is seeded by the
+  # first group supplied, so each order hands the gauge a different starting frame.
+  perms <- list(c(1, 2, 3), c(1, 3, 2), c(2, 1, 3),
+                c(2, 3, 1), c(3, 1, 2), c(3, 2, 1))
+  fits <- lapply(perms, fit)
+  mg1 <- fits[[1L]]
 
   # Salience flags compared per unordered pair, item, and factor: the absolute
   # difference and the flag are orientation-independent (only the signed diff flips
@@ -93,14 +81,44 @@ test_that("consensus alignment is invariant to the order of the groups", {
     list(abs_diff = fl$abs_diff[o], flagged = fl$flagged[o])
   }
   k1 <- flag_key(mg1$flags)
-  k2 <- flag_key(mg2$flags)
-  expect_equal(k1$abs_diff, k2$abs_diff, tolerance = 1e-5)
-  expect_identical(k1$flagged, k2$flagged)
 
-  # The seeding group is surfaced by name so a frame can be reproduced; the reference
-  # path has none. It is the first group supplied, so it differs between the two orders.
-  expect_identical(mg1$settings$alignment_start, "a")
-  expect_identical(mg2$settings$alignment_start, "c")
+  # The seeding group is surfaced by name so a frame can be reproduced; it is the
+  # first group supplied, so it changes with the order. The reference path has none.
+  expect_identical(
+    vapply(fits, function(f) f$settings$alignment_start, character(1L)),
+    vapply(perms, function(o) names(wj_trio)[o[1L]], character(1L))
+  )
+
+  # The residual is the consensus iteration's own convergence floor and nothing else,
+  # so the tolerances are set from it rather than from the reporting precision: the
+  # worst deviation observed over these six orders is ~3e-12 on the loadings. They are
+  # deliberately far tighter than the ~3e-5 a loosely converged centroid leaves behind,
+  # which is the scale at which a borderline salience flag could still flip.
+  for (i in seq_along(fits)[-1L]) {
+    mg2 <- fits[[i]]
+    info <- paste(names(wj_trio)[perms[[i]]], collapse = "")
+
+    # The gauge fixes the shared frame, so each group's aligned loadings and the
+    # shared target match however the groups are ordered.
+    for (g in c("a", "b", "c")) {
+      expect_equal(mg1$loadings[[g]], mg2$loadings[[g]], tolerance = 1e-8,
+                   ignore_attr = TRUE, info = paste(info, g))
+    }
+    expect_equal(mg1$target, mg2$target, tolerance = 1e-8, ignore_attr = TRUE,
+                 info = info)
+
+    # ... and hence every reported statistic. Matched congruences are indexed by group
+    # name, so they are directly comparable across orderings.
+    for (pair in list(c("a", "b"), c("a", "c"), c("b", "c"))) {
+      expect_equal(mg1$congruence$matched[pair[1L], pair[2L], ],
+                   mg2$congruence$matched[pair[1L], pair[2L], ], tolerance = 1e-8,
+                   info = paste(info, paste(pair, collapse = "-")))
+    }
+
+    k2 <- flag_key(mg2$flags)
+    expect_equal(k1$abs_diff, k2$abs_diff, tolerance = 1e-8, info = info)
+    expect_identical(k1$flagged, k2$flagged, info = info)
+  }
   expect_null(efa_group(wj_trio[1:2], n_factors = 2, N = wj_trio_N[1:2],
                         rotation = "varimax",
                         reference_group = "a")$settings$alignment_start)
@@ -126,9 +144,9 @@ test_that("an unrotated consensus solution uses the principal-axes gauge", {
   expect_true(all(colSums(unclass(mg1$target)) >= 0))
 
   # ... and, as on the varimax path, the frame does not depend on the group order.
-  expect_equal(mg1$target, mg2$target, tolerance = 1e-4, ignore_attr = TRUE)
+  expect_equal(mg1$target, mg2$target, tolerance = 1e-8, ignore_attr = TRUE)
   expect_equal(mg1$congruence$matched["a", "b", ],
-               mg2$congruence$matched["a", "b", ], tolerance = 1e-6)
+               mg2$congruence$matched["a", "b", ], tolerance = 1e-8)
 })
 
 
@@ -189,17 +207,17 @@ test_that("the criterion gauge is invariant to the order of the groups", {
   for (rot in c("quartimax", "geominT", "bifactorT")) {
     mg1 <- fit(c(1, 2, 3), rot)
     mg2 <- fit(c(3, 2, 1), rot)
-    expect_equal(mg1$target, mg2$target, tolerance = 5e-4, ignore_attr = TRUE,
+    expect_equal(mg1$target, mg2$target, tolerance = 1e-6, ignore_attr = TRUE,
                  info = rot)
     for (g in c("a", "b", "c")) {
-      expect_equal(mg1$loadings[[g]], mg2$loadings[[g]], tolerance = 5e-4,
+      expect_equal(mg1$loadings[[g]], mg2$loadings[[g]], tolerance = 1e-6,
                    ignore_attr = TRUE, info = paste(rot, g))
     }
-    # the congruences are normalised, so they are tighter than the raw loadings -- but
-    # only by about an order of magnitude, not the two the varimax path gets: the worst
-    # observed here is 3e-5 (bifactorT), against 1e-6 for varimax above
+    # These criteria are optimised iteratively rather than in closed form, so the gauge
+    # adds its own stopping slack on top of the consensus floor: the worst deviation
+    # observed here is 4e-9 (bifactorT), against 3e-12 on the varimax path above.
     expect_equal(mg1$congruence$matched["a", "b", ],
-                 mg2$congruence$matched["a", "b", ], tolerance = 1e-4, info = rot)
+                 mg2$congruence$matched["a", "b", ], tolerance = 1e-6, info = rot)
   }
 })
 

@@ -46,8 +46,10 @@
 #'   zero with a single group factor -- the principal-axes orientation of the
 #'   target is used instead. Either way the columns are ordered by decreasing sum
 #'   of squares and signed by their column sums, and the shared orientation, and
-#'   hence every reported congruence, difference, and flag, is independent of the
-#'   order in which the groups are supplied.
+#'   hence every reported congruence, difference, and flag, does not depend on the
+#'   order in which the groups are supplied -- up to the convergence tolerance of
+#'   the consensus iteration, which is set tight enough that the residual is
+#'   several orders of magnitude below the precision the loadings are reported to.
 #' - **Reference**: every group's loadings are aligned by Procrustes rotation to
 #'   one reference group's loadings, which are kept fixed. This path is used when
 #'   `reference_group` is given, and is used automatically for oblique rotations
@@ -85,8 +87,9 @@
 #'   data. Default is `NA`.
 #' @param reference_group The group to align the others to (a group name or an
 #'   integer index). If `NULL` (default), orthogonal and unrotated solutions use
-#'   the symmetric consensus target; oblique solutions fall back to the first
-#'   group as reference. Supplying a value forces the reference alignment.
+#'   the symmetric consensus target; oblique solutions with more than one factor
+#'   fall back to the first group as reference. Supplying a value forces the
+#'   reference alignment.
 #' @param b_boot numeric. The number of non-parametric bootstrap replicates used to
 #'   form percentile confidence intervals for the between-group Tucker congruences.
 #'   `0` (the default) skips the bootstrap and returns the congruence point estimates
@@ -758,7 +761,16 @@ efa_group <- function(x, groups = NULL, n_factors, N = NA,
   consensus <- .gpa_consensus_target(
     unrotated_list = unrot_loadings,
     init_targets = if (rotation_type == "none") NULL else rot_loadings,
-    rotation = "orthogonal"
+    rotation = "orthogonal",
+    # The shared frame is order-invariant only to the accuracy the centroid iteration
+    # reaches, and the iteration is seeded by the first group supplied. At the engine's
+    # own default (1e-3) it stops after two outer iterations and leaves a residual of
+    # about 3e-5 between group orders, which is large enough to move a borderline
+    # salience flag. It is therefore run well past the point where the frame is
+    # visually settled: the extra outer iterations are closed-form orthogonal
+    # Procrustes steps (one k x k SVD and one p x k product per group), which is cheap
+    # against the per-group fits that produced these loadings.
+    tol = 1e-8
   )
 
   if (!isTRUE(consensus$converged)) {

@@ -28,10 +28,16 @@ efa_procrustes(
 
 \item{rotation}{Character string, either \code{"orthogonal"} or \code{"oblique"}.}
 
-\item{S}{Optional \verb{k x k} cross-product matrix \code{crossprod(A)}. Supplying this
-is useful when the same \code{A} is rotated repeatedly. \code{S} is used only when
-\code{oblique_normalize = FALSE}; if Kaiser normalization is requested, the
-cross-product must be recomputed on the normalized matrix.}
+\item{S}{Optional \verb{k x k} cross-product matrix \code{crossprod(A)}, kept for
+compatibility. It enters both the oblique criterion and its gradient, so any
+other matrix would minimize a different criterion: where \code{S} is used it is
+checked against \code{crossprod(A)} and must agree with it up to a relative
+tolerance of \code{1e-8}. That check forms \code{crossprod(A)} itself, so passing \code{S}
+no longer avoids any work: omitting it gives the same result for slightly
+less. \code{S} is used, and therefore checked, only on the oblique path with more
+than one factor and \code{oblique_normalize = FALSE}; if Kaiser normalization is
+requested, the cross-product must be recomputed on the normalized matrix and
+\code{S} is ignored.}
 
 \item{T_init}{Optional \verb{k x k} starting transformation matrix for the oblique
 solver. Its columns are normalized internally, and the normalized matrix must
@@ -69,13 +75,38 @@ iterations used in the triage stage.}
 required for a triaged start to be promoted to full optimization.}
 }
 \value{
-A list containing aligned \code{loadings}, transformation matrix \code{T},
-factor intercorrelation matrix \code{Phi}, target criterion \code{value}, convergence
-diagnostics, line-search diagnostics, and multi-start summaries. Row and
-column names are preserved where possible. When \code{oblique_normalize = TRUE}
-the returned \code{loadings} are back-transformed to the original scale, but
-\code{value} is the criterion on the Kaiser-normalized loadings, so it is not
-\code{0.5 * sum((loadings - Target)^2)}.
+A list. Every path returns the following components:
+
+\item{loadings}{Aligned loading matrix.}
+\item{T}{Transformation matrix.}
+\item{Phi}{Factor intercorrelation matrix; the identity for orthogonal and
+one-factor alignment.}
+\item{value}{Target criterion at the returned solution.}
+\item{convergence}{Logical; \code{TRUE} for the closed-form orthogonal solution.}
+\item{valid}{Logical; whether the transformation defines an admissible \code{Phi}.}
+\item{iterations}{Number of solver iterations; \code{0} for the closed-form
+orthogonal solution.}
+\item{kappa_T}{Condition number of \code{T}; a constant \code{1} on the orthogonal path.}
+\item{Table}{Iteration history with columns \code{iter}, \code{f}, \code{log10_s}, and \code{step};
+a single placeholder row on the orthogonal path.}
+\item{method}{\code{"orthogonal_procrustes"}, \code{"oblique_procrustes"}, or
+\code{"single_factor_procrustes"} for a one-factor oblique request.}
+\item{line_search_failed}{Logical line-search diagnostic.}
+\item{best_start_index, all_start_indices, all_values, all_converged,
+all_iterations}{Multi-start summary of the starts that were fully
+optimized; each has a single entry when no random starts were used.}
+
+The oblique solver additionally returns \code{screen_start_indices} and
+\code{screen_values} (the starts kept by cheap objective screening and their
+criterion values) together with the counts \code{n_random_starts}, \code{n_screened},
+\code{n_triaged}, and \code{n_fully_optimized}. These six components are absent for
+\code{rotation = "orthogonal"} and for one-factor models, which are aligned with the
+orthogonal solution.
+
+Row and column names are preserved where possible. When
+\code{oblique_normalize = TRUE} the returned \code{loadings} are back-transformed to the
+original scale, but \code{value} is the criterion on the Kaiser-normalized loadings,
+so it is not \code{0.5 * sum((loadings - Target)^2)}.
 }
 \description{
 \code{efa_procrustes()} aligns one loading matrix to a target loading matrix with the
